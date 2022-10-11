@@ -34,49 +34,49 @@ case $ZLIB in
     *)     echo "  + using zlib library: $ZLIB" ;;
 esac
 
-case $NGX_LIBATOMIC in
+case $NJET_LIBATOMIC in
     YES)   echo "  + using system libatomic_ops library" ;;
     NO)    ;; # not used
-    *)     echo "  + using libatomic_ops library: $NGX_LIBATOMIC" ;;
+    *)     echo "  + using libatomic_ops library: $NJET_LIBATOMIC" ;;
 esac
 
 echo
 
 
 cat << END
-  njet path prefix: "$NGX_PREFIX"
-  njet binary file: "$NGX_SBIN_PATH"
-  njet modules path: "$NGX_MODULES_PATH"
-  njet configuration prefix: "$NGX_CONF_PREFIX"
-  njet configuration file: "$NGX_CONF_PATH"
-  njet pid file: "$NGX_PID_PATH"
+  njet path prefix: "$NJET_PREFIX"
+  njet binary file: "$NJET_SBIN_PATH"
+  njet modules path: "$NJET_MODULES_PATH"
+  njet configuration prefix: "$NJET_CONF_PREFIX"
+  njet configuration file: "$NJET_CONF_PATH"
+  njet pid file: "$NJET_PID_PATH"
 END
 
-if test -n "$NGX_ERROR_LOG_PATH"; then
-    echo "  njet error log file: \"$NGX_ERROR_LOG_PATH\""
+if test -n "$NJET_ERROR_LOG_PATH"; then
+    echo "  njet error log file: \"$NJET_ERROR_LOG_PATH\""
 else
     echo "  njet logs errors to stderr"
 fi
 
 cat << END
-  njet http access log file: "$NGX_HTTP_LOG_PATH"
-  njet http client request body temporary files: "$NGX_HTTP_CLIENT_TEMP_PATH"
+  njet http access log file: "$NJET_HTTP_LOG_PATH"
+  njet http client request body temporary files: "$NJET_HTTP_CLIENT_TEMP_PATH"
 END
 
 if [ $HTTP_PROXY = YES ]; then
-    echo "  njet http proxy temporary files: \"$NGX_HTTP_PROXY_TEMP_PATH\""
+    echo "  njet http proxy temporary files: \"$NJET_HTTP_PROXY_TEMP_PATH\""
 fi
 
 if [ $HTTP_FASTCGI = YES ]; then
-    echo "  njet http fastcgi temporary files: \"$NGX_HTTP_FASTCGI_TEMP_PATH\""
+    echo "  njet http fastcgi temporary files: \"$NJET_HTTP_FASTCGI_TEMP_PATH\""
 fi
 
 if [ $HTTP_UWSGI = YES ]; then
-    echo "  njet http uwsgi temporary files: \"$NGX_HTTP_UWSGI_TEMP_PATH\""
+    echo "  njet http uwsgi temporary files: \"$NJET_HTTP_UWSGI_TEMP_PATH\""
 fi
 
 if [ $HTTP_SCGI = YES ]; then
-    echo "  njet http scgi temporary files: \"$NGX_HTTP_SCGI_TEMP_PATH\""
+    echo "  njet http scgi temporary files: \"$NJET_HTTP_SCGI_TEMP_PATH\""
 fi
 
-echo "$NGX_POST_CONF_MSG"
+echo "$NJET_POST_CONF_MSG"

@@ -33,10 +33,10 @@ static ngx_http_module_t  ngx_http_postpone_filter_module_ctx = {
 
 
 ngx_module_t  ngx_http_postpone_filter_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_http_postpone_filter_module_ctx,  /* module context */
     NULL,                                  /* module directives */
-    NGX_HTTP_MODULE,                       /* module type */
+    NJET_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -44,7 +44,7 @@ ngx_module_t  ngx_http_postpone_filter_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -59,7 +59,7 @@ ngx_http_postpone_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
     c = r->connection;
 
-    ngx_log_debug3(NGX_LOG_DEBUG_HTTP, c->log, 0,
+    ngx_log_debug3(NJET_LOG_DEBUG_HTTP, c->log, 0,
                    "http postpone filter \"%V?%V\" %p", &r->uri, &r->args, in);
 
     if (r->subrequest_in_memory) {
@@ -69,20 +69,20 @@ ngx_http_postpone_filter(ngx_http_request_t *r, ngx_chain_t *in)
     if (r != c->data) {
 
         if (in) {
-            if (ngx_http_postpone_filter_add(r, in) != NGX_OK) {
-                return NGX_ERROR;
+            if (ngx_http_postpone_filter_add(r, in) != NJET_OK) {
+                return NJET_ERROR;
             }
 
-            return NGX_OK;
+            return NJET_OK;
         }
 
 #if 0
         /* TODO: SSI may pass NULL */
-        ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+        ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                       "http postpone filter NULL inactive request");
 #endif
 
-        return NGX_OK;
+        return NJET_OK;
     }
 
     if (r->postponed == NULL) {
@@ -91,12 +91,12 @@ ngx_http_postpone_filter(ngx_http_request_t *r, ngx_chain_t *in)
             return ngx_http_next_body_filter(r->main, in);
         }
 
-        return NGX_OK;
+        return NJET_OK;
     }
 
     if (in) {
-        if (ngx_http_postpone_filter_add(r, in) != NGX_OK) {
-            return NGX_ERROR;
+        if (ngx_http_postpone_filter_add(r, in) != NJET_OK) {
+            return NJET_ERROR;
         }
     }
 
@@ -105,7 +105,7 @@ ngx_http_postpone_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
         if (pr->request) {
 
-            ngx_log_debug2(NGX_LOG_DEBUG_HTTP, c->log, 0,
+            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, c->log, 0,
                            "http postpone filter wake \"%V?%V\"",
                            &pr->request->uri, &pr->request->args);
 
@@ -117,16 +117,16 @@ ngx_http_postpone_filter(ngx_http_request_t *r, ngx_chain_t *in)
         }
 
         if (pr->out == NULL) {
-            ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                           "http postpone filter NULL output");
 
         } else {
-            ngx_log_debug2(NGX_LOG_DEBUG_HTTP, c->log, 0,
+            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, c->log, 0,
                            "http postpone filter output \"%V?%V\"",
                            &r->uri, &r->args);
 
-            if (ngx_http_next_body_filter(r->main, pr->out) == NGX_ERROR) {
-                return NGX_ERROR;
+            if (ngx_http_next_body_filter(r->main, pr->out) == NJET_ERROR) {
+                return NJET_ERROR;
             }
         }
 
@@ -134,7 +134,7 @@ ngx_http_postpone_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
     } while (r->postponed);
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -158,7 +158,7 @@ ngx_http_postpone_filter_add(ngx_http_request_t *r, ngx_chain_t *in)
 
     pr = ngx_palloc(r->pool, sizeof(ngx_http_postponed_request_t));
     if (pr == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     *ppr = pr;
@@ -169,11 +169,11 @@ ngx_http_postpone_filter_add(ngx_http_request_t *r, ngx_chain_t *in)
 
 found:
 
-    if (ngx_chain_add_copy(r->pool, &pr->out, in) == NGX_OK) {
-        return NGX_OK;
+    if (ngx_chain_add_copy(r->pool, &pr->out, in) == NJET_OK) {
+        return NJET_OK;
     }
 
-    return NGX_ERROR;
+    return NJET_ERROR;
 }
 
 
@@ -187,7 +187,7 @@ ngx_http_postpone_filter_in_memory(ngx_http_request_t *r, ngx_chain_t *in)
 
     c = r->connection;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, c->log, 0,
                    "http postpone filter in memory");
 
     if (r->out == NULL) {
@@ -197,9 +197,9 @@ ngx_http_postpone_filter_in_memory(ngx_http_request_t *r, ngx_chain_t *in)
             len = r->headers_out.content_length_n;
 
             if (len > clcf->subrequest_output_buffer_size) {
-                ngx_log_error(NGX_LOG_ERR, c->log, 0,
+                ngx_log_error(NJET_LOG_ERR, c->log, 0,
                               "too big subrequest response: %uz", len);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
         } else {
@@ -208,14 +208,14 @@ ngx_http_postpone_filter_in_memory(ngx_http_request_t *r, ngx_chain_t *in)
 
         b = ngx_create_temp_buf(r->pool, len);
         if (b == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         b->last_buf = 1;
 
         r->out = ngx_alloc_chain_link(r->pool);
         if (r->out == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         r->out->buf = b;
@@ -233,19 +233,19 @@ ngx_http_postpone_filter_in_memory(ngx_http_request_t *r, ngx_chain_t *in)
         len = in->buf->last - in->buf->pos;
 
         if (len > (size_t) (b->end - b->last)) {
-            ngx_log_error(NGX_LOG_ERR, c->log, 0,
+            ngx_log_error(NJET_LOG_ERR, c->log, 0,
                           "too big subrequest response");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
-        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0,
+        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, c->log, 0,
                        "http postpone filter in memory %uz bytes", len);
 
         b->last = ngx_cpymem(b->last, in->buf->pos, len);
         in->buf->pos = in->buf->last;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -255,5 +255,5 @@ ngx_http_postpone_filter_init(ngx_conf_t *cf)
     ngx_http_next_body_filter = ngx_http_top_body_filter;
     ngx_http_top_body_filter = ngx_http_postpone_filter;
 
-    return NGX_OK;
+    return NJET_OK;
 }

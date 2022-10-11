@@ -9,7 +9,7 @@
 #include <ngx_core.h>
 
 
-#if (NGX_SETPROCTITLE_USES_ENV)
+#if (NJET_SETPROCTITLE_USES_ENV)
 
 /*
  * To change the process title in Linux and Solaris we have to set argv[1]
@@ -46,7 +46,7 @@ ngx_init_setproctitle(ngx_log_t *log)
 
     p = ngx_alloc(size, log);
     if (p == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     ngx_os_argv_last = ngx_os_argv[0];
@@ -71,7 +71,7 @@ ngx_init_setproctitle(ngx_log_t *log)
 
     ngx_os_argv_last--;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -80,7 +80,7 @@ ngx_setproctitle(char *title)
 {
     u_char     *p;
 
-#if (NGX_SOLARIS)
+#if (NJET_SOLARIS)
 
     ngx_int_t   i;
     size_t      size;
@@ -94,7 +94,7 @@ ngx_setproctitle(char *title)
 
     p = ngx_cpystrn(p, (u_char *) title, ngx_os_argv_last - (char *) p);
 
-#if (NGX_SOLARIS)
+#if (NJET_SOLARIS)
 
     size = 0;
 
@@ -125,11 +125,11 @@ ngx_setproctitle(char *title)
 #endif
 
     if (ngx_os_argv_last - (char *) p) {
-        ngx_memset(p, NGX_SETPROCTITLE_PAD, ngx_os_argv_last - (char *) p);
+        ngx_memset(p, NJET_SETPROCTITLE_PAD, ngx_os_argv_last - (char *) p);
     }
 
-    ngx_log_debug1(NGX_LOG_DEBUG_CORE, ngx_cycle->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_CORE, ngx_cycle->log, 0,
                    "setproctitle: \"%s\"", ngx_os_argv[0]);
 }
 
-#endif /* NGX_SETPROCTITLE_USES_ENV */
+#endif /* NJET_SETPROCTITLE_USES_ENV */

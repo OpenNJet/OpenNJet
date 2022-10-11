@@ -5,14 +5,14 @@
  */
 
 
-#ifndef _NGX_THREAD_H_INCLUDED_
-#define _NGX_THREAD_H_INCLUDED_
+#ifndef _NJET_THREAD_H_INCLUDED_
+#define _NJET_THREAD_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
-#if (NGX_THREADS)
+#if (NJET_THREADS)
 
 #include <pthread.h>
 
@@ -34,25 +34,25 @@ ngx_int_t ngx_thread_cond_wait(ngx_thread_cond_t *cond, ngx_thread_mutex_t *mtx,
     ngx_log_t *log);
 
 
-#if (NGX_LINUX)
+#if (NJET_LINUX)
 
 typedef pid_t      ngx_tid_t;
-#define NGX_TID_T_FMT         "%P"
+#define NJET_TID_T_FMT         "%P"
 
-#elif (NGX_FREEBSD)
+#elif (NJET_FREEBSD)
 
 typedef uint32_t   ngx_tid_t;
-#define NGX_TID_T_FMT         "%uD"
+#define NJET_TID_T_FMT         "%uD"
 
-#elif (NGX_DARWIN)
+#elif (NJET_DARWIN)
 
 typedef uint64_t   ngx_tid_t;
-#define NGX_TID_T_FMT         "%uL"
+#define NJET_TID_T_FMT         "%uL"
 
 #else
 
 typedef uint64_t   ngx_tid_t;
-#define NGX_TID_T_FMT         "%uL"
+#define NJET_TID_T_FMT         "%uL"
 
 #endif
 
@@ -63,9 +63,9 @@ ngx_tid_t ngx_thread_tid(void);
 #else
 
 #define ngx_log_tid           0
-#define NGX_TID_T_FMT         "%d"
+#define NJET_TID_T_FMT         "%d"
 
 #endif
 
 
-#endif /* _NGX_THREAD_H_INCLUDED_ */
+#endif /* _NJET_THREAD_H_INCLUDED_ */

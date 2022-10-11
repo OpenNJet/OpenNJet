@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_HTTP_CACHE_H_INCLUDED_
-#define _NGX_HTTP_CACHE_H_INCLUDED_
+#ifndef _NJET_HTTP_CACHE_H_INCLUDED_
+#define _NJET_HTTP_CACHE_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -14,20 +14,20 @@
 #include <ngx_http.h>
 
 
-#define NGX_HTTP_CACHE_MISS          1
-#define NGX_HTTP_CACHE_BYPASS        2
-#define NGX_HTTP_CACHE_EXPIRED       3
-#define NGX_HTTP_CACHE_STALE         4
-#define NGX_HTTP_CACHE_UPDATING      5
-#define NGX_HTTP_CACHE_REVALIDATED   6
-#define NGX_HTTP_CACHE_HIT           7
-#define NGX_HTTP_CACHE_SCARCE        8
+#define NJET_HTTP_CACHE_MISS          1
+#define NJET_HTTP_CACHE_BYPASS        2
+#define NJET_HTTP_CACHE_EXPIRED       3
+#define NJET_HTTP_CACHE_STALE         4
+#define NJET_HTTP_CACHE_UPDATING      5
+#define NJET_HTTP_CACHE_REVALIDATED   6
+#define NJET_HTTP_CACHE_HIT           7
+#define NJET_HTTP_CACHE_SCARCE        8
 
-#define NGX_HTTP_CACHE_KEY_LEN       16
-#define NGX_HTTP_CACHE_ETAG_LEN      128
-#define NGX_HTTP_CACHE_VARY_LEN      128
+#define NJET_HTTP_CACHE_KEY_LEN       16
+#define NJET_HTTP_CACHE_ETAG_LEN      128
+#define NJET_HTTP_CACHE_VARY_LEN      128
 
-#define NGX_HTTP_CACHE_VERSION       5
+#define NJET_HTTP_CACHE_VERSION       5
 
 
 typedef struct {
@@ -40,7 +40,7 @@ typedef struct {
     ngx_rbtree_node_t                node;
     ngx_queue_t                      queue;
 
-    u_char                           key[NGX_HTTP_CACHE_KEY_LEN
+    u_char                           key[NJET_HTTP_CACHE_KEY_LEN
                                          - sizeof(ngx_rbtree_key_t)];
 
     unsigned                         count:20;
@@ -66,8 +66,8 @@ struct ngx_http_cache_s {
     ngx_file_t                       file;
     ngx_array_t                      keys;
     uint32_t                         crc32;
-    u_char                           key[NGX_HTTP_CACHE_KEY_LEN];
-    u_char                           main[NGX_HTTP_CACHE_KEY_LEN];
+    u_char                           key[NJET_HTTP_CACHE_KEY_LEN];
+    u_char                           main[NJET_HTTP_CACHE_KEY_LEN];
 
     ngx_file_uniq_t                  uniq;
     time_t                           valid_sec;
@@ -78,7 +78,7 @@ struct ngx_http_cache_s {
 
     ngx_str_t                        etag;
     ngx_str_t                        vary;
-    u_char                           variant[NGX_HTTP_CACHE_KEY_LEN];
+    u_char                           variant[NJET_HTTP_CACHE_KEY_LEN];
 
     size_t                           buffer_size;
     size_t                           header_start;
@@ -96,7 +96,7 @@ struct ngx_http_cache_s {
     ngx_http_file_cache_t           *file_cache;
     ngx_http_file_cache_node_t      *node;
 
-#if (NGX_THREADS || NGX_COMPAT)
+#if (NJET_THREADS || NJET_COMPAT)
     ngx_thread_task_t               *thread_task;
 #endif
 
@@ -137,10 +137,10 @@ typedef struct {
     u_short                          header_start;
     u_short                          body_start;
     u_char                           etag_len;
-    u_char                           etag[NGX_HTTP_CACHE_ETAG_LEN];
+    u_char                           etag[NJET_HTTP_CACHE_ETAG_LEN];
     u_char                           vary_len;
-    u_char                           vary[NGX_HTTP_CACHE_VARY_LEN];
-    u_char                           variant[NGX_HTTP_CACHE_KEY_LEN];
+    u_char                           vary[NJET_HTTP_CACHE_VARY_LEN];
+    u_char                           variant[NJET_HTTP_CACHE_KEY_LEN];
 } ngx_http_file_cache_header_t;
 
 
@@ -207,4 +207,4 @@ char *ngx_http_file_cache_valid_set_slot(ngx_conf_t *cf, ngx_command_t *cmd,
 extern ngx_str_t  ngx_http_cache_status[];
 
 
-#endif /* _NGX_HTTP_CACHE_H_INCLUDED_ */
+#endif /* _NJET_HTTP_CACHE_H_INCLUDED_ */

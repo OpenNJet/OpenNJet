@@ -13,14 +13,14 @@
 #define NJET_VERSION      "1.23.1"
 #define NJET_VER          "njet/" NJET_VERSION
 
-#ifdef NGX_BUILD
-#define NJET_VER_BUILD    NJET_VER " (" NGX_BUILD ")"
+#ifdef NJET_BUILD
+#define NJET_VER_BUILD    NJET_VER " (" NJET_BUILD ")"
 #else
 #define NJET_VER_BUILD    NJET_VER
 #endif
 
 #define NJET_VAR          "NGINX"
-#define NGX_OLDPID_EXT     ".oldbin"
+#define NJET_OLDPID_EXT     ".oldbin"
 
 
 #endif /* _NJET_H_INCLUDED_ */

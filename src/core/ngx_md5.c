@@ -142,7 +142,7 @@ ngx_md5_final(u_char result[16], ngx_md5_t *ctx)
  * does not work.
  */
 
-#if (NGX_HAVE_LITTLE_ENDIAN && NGX_HAVE_NONALIGNED)
+#if (NJET_HAVE_LITTLE_ENDIAN && NJET_HAVE_NONALIGNED)
 
 #define SET(n)      (*(uint32_t *) &p[n * 4])
 #define GET(n)      (*(uint32_t *) &p[n * 4])
@@ -172,7 +172,7 @@ ngx_md5_body(ngx_md5_t *ctx, const u_char *data, size_t size)
     uint32_t       a, b, c, d;
     uint32_t       saved_a, saved_b, saved_c, saved_d;
     const u_char  *p;
-#if !(NGX_HAVE_LITTLE_ENDIAN && NGX_HAVE_NONALIGNED)
+#if !(NJET_HAVE_LITTLE_ENDIAN && NJET_HAVE_NONALIGNED)
     uint32_t       block[16];
 #endif
 

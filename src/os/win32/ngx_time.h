@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_TIME_H_INCLUDED_
-#define _NGX_TIME_H_INCLUDED_
+#ifndef _NJET_TIME_H_INCLUDED_
+#define _NJET_TIME_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -38,7 +38,7 @@ typedef FILETIME              ngx_mtime_t;
 
 #define ngx_msleep            Sleep
 
-#define NGX_HAVE_GETTIMEZONE  1
+#define NJET_HAVE_GETTIMEZONE  1
 
 #define  ngx_timezone_update()
 
@@ -48,4 +48,4 @@ void ngx_libc_gmtime(time_t s, struct tm *tm);
 void ngx_gettimeofday(struct timeval *tp);
 
 
-#endif /* _NGX_TIME_H_INCLUDED_ */
+#endif /* _NJET_TIME_H_INCLUDED_ */

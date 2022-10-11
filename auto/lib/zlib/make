@@ -3,7 +3,7 @@
 # Copyright (C) Nginx, Inc.
 
 
-case "$NGX_CC_NAME" in
+case "$NJET_CC_NAME" in
 
     msvc)
         ngx_makefile=makefile.msvc
@@ -34,23 +34,23 @@ esac
 done=NO
 
 
-case "$NGX_PLATFORM" in
+case "$NJET_PLATFORM" in
 
     win32)
 
         if [ -n "$ngx_makefile" ]; then
-            cat << END                                        >> $NGX_MAKEFILE
+            cat << END                                        >> $NJET_MAKEFILE
 
-`echo "$ZLIB/zlib.lib:	$NGX_MAKEFILE" | sed -e "s/\//$ngx_regex_dirsep/g"`
+`echo "$ZLIB/zlib.lib:	$NJET_MAKEFILE" | sed -e "s/\//$ngx_regex_dirsep/g"`
 	\$(MAKE) -f auto/lib/zlib/$ngx_makefile $ngx_opt $ngx_zlib
 
 END
 
         else
 
-            cat << END                                        >> $NGX_MAKEFILE
+            cat << END                                        >> $NJET_MAKEFILE
 
-$ZLIB/libz.a:	$NGX_MAKEFILE
+$ZLIB/libz.a:	$NJET_MAKEFILE
 	cd $ZLIB \\
 	&& \$(MAKE) distclean \\
 	&& \$(MAKE) -f win32/Makefile.gcc \\
@@ -71,9 +71,9 @@ END
         case $ZLIB_ASM in
             pentium)
 
-                cat << END                                    >> $NGX_MAKEFILE
+                cat << END                                    >> $NJET_MAKEFILE
 
-$ZLIB/libz.a:	$NGX_MAKEFILE
+$ZLIB/libz.a:	$NJET_MAKEFILE
 	cd $ZLIB \\
 	&& \$(MAKE) distclean \\
 	&& cp contrib/asm586/match.S . \\
@@ -88,9 +88,9 @@ END
 
             pentiumpro)
 
-                cat << END                                    >> $NGX_MAKEFILE
+                cat << END                                    >> $NJET_MAKEFILE
 
-$ZLIB/libz.a:	$NGX_MAKEFILE
+$ZLIB/libz.a:	$NJET_MAKEFILE
 	cd $ZLIB \\
 	&& \$(MAKE) distclean \\
 	&& cp contrib/asm686/match.S . \\
@@ -121,9 +121,9 @@ esac
 
 if [ $done = NO ]; then
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJET_MAKEFILE
 
-$ZLIB/libz.a:	$NGX_MAKEFILE
+$ZLIB/libz.a:	$NJET_MAKEFILE
 	cd $ZLIB \\
 	&& \$(MAKE) distclean \\
 	&& CFLAGS="$ZLIB_OPT" CC="\$(CC)" \\

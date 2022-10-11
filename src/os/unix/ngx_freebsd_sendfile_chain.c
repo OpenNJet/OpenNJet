@@ -39,15 +39,15 @@ ngx_freebsd_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
     ngx_err_t        err;
     ngx_buf_t       *file;
     ngx_uint_t       eintr, eagain;
-#if (NGX_HAVE_SENDFILE_NODISKIO)
+#if (NJET_HAVE_SENDFILE_NODISKIO)
     ngx_uint_t       ebusy;
 #endif
     ngx_event_t     *wev;
     ngx_chain_t     *cl;
     ngx_iovec_t      header, trailer;
     struct sf_hdtr   hdtr;
-    struct iovec     headers[NGX_IOVS_PREALLOCATE];
-    struct iovec     trailers[NGX_IOVS_PREALLOCATE];
+    struct iovec     headers[NJET_IOVS_PREALLOCATE];
+    struct iovec     trailers[NJET_IOVS_PREALLOCATE];
 
     wev = c->write;
 
@@ -55,21 +55,21 @@ ngx_freebsd_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
         return in;
     }
 
-#if (NGX_HAVE_KQUEUE)
+#if (NJET_HAVE_KQUEUE)
 
-    if ((ngx_event_flags & NGX_USE_KQUEUE_EVENT) && wev->pending_eof) {
+    if ((ngx_event_flags & NJET_USE_KQUEUE_EVENT) && wev->pending_eof) {
         (void) ngx_connection_error(c, wev->kq_errno,
                                "kevent() reported about an closed connection");
         wev->error = 1;
-        return NGX_CHAIN_ERROR;
+        return NJET_CHAIN_ERROR;
     }
 
 #endif
 
     /* the maximum limit size is the maximum size_t value - the page size */
 
-    if (limit == 0 || limit > (off_t) (NGX_MAX_SIZE_T_VALUE - ngx_pagesize)) {
-        limit = NGX_MAX_SIZE_T_VALUE - ngx_pagesize;
+    if (limit == 0 || limit > (off_t) (NJET_MAX_SIZE_T_VALUE - ngx_pagesize)) {
+        limit = NJET_MAX_SIZE_T_VALUE - ngx_pagesize;
     }
 
     send = 0;
@@ -77,14 +77,14 @@ ngx_freebsd_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
     flags = 0;
 
     header.iovs = headers;
-    header.nalloc = NGX_IOVS_PREALLOCATE;
+    header.nalloc = NJET_IOVS_PREALLOCATE;
 
     trailer.iovs = trailers;
-    trailer.nalloc = NGX_IOVS_PREALLOCATE;
+    trailer.nalloc = NJET_IOVS_PREALLOCATE;
 
     for ( ;; ) {
         eintr = 0;
-#if (NGX_HAVE_SENDFILE_NODISKIO)
+#if (NJET_HAVE_SENDFILE_NODISKIO)
         ebusy = 0;
 #endif
         prev_send = send;
@@ -93,8 +93,8 @@ ngx_freebsd_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
         cl = ngx_output_chain_to_iovec(&header, in, limit - send, c->log);
 
-        if (cl == NGX_CHAIN_ERROR) {
-            return NGX_CHAIN_ERROR;
+        if (cl == NJET_CHAIN_ERROR) {
+            return NJET_CHAIN_ERROR;
         }
 
         send += header.size;
@@ -116,8 +116,8 @@ ngx_freebsd_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
                 cl = ngx_output_chain_to_iovec(&trailer, cl, limit - send,
                                                c->log);
-                if (cl == NGX_CHAIN_ERROR) {
-                    return NGX_CHAIN_ERROR;
+                if (cl == NJET_CHAIN_ERROR) {
+                    return NJET_CHAIN_ERROR;
                 }
 
                 send += trailer.size;
@@ -127,7 +127,7 @@ ngx_freebsd_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
             }
 
             if (ngx_freebsd_use_tcp_nopush
-                && c->tcp_nopush == NGX_TCP_NOPUSH_UNSET)
+                && c->tcp_nopush == NJET_TCP_NOPUSH_UNSET)
             {
                 if (ngx_tcp_nopush(c->fd) == -1) {
                     err = ngx_socket_errno;
@@ -137,17 +137,17 @@ ngx_freebsd_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
                      * we continue a processing without the TCP_NOPUSH
                      */
 
-                    if (err != NGX_EINTR) {
+                    if (err != NJET_EINTR) {
                         wev->error = 1;
                         (void) ngx_connection_error(c, err,
                                                     ngx_tcp_nopush_n " failed");
-                        return NGX_CHAIN_ERROR;
+                        return NJET_CHAIN_ERROR;
                     }
 
                 } else {
-                    c->tcp_nopush = NGX_TCP_NOPUSH_SET;
+                    c->tcp_nopush = NJET_TCP_NOPUSH_SET;
 
-                    ngx_log_debug0(NGX_LOG_DEBUG_EVENT, c->log, 0,
+                    ngx_log_debug0(NJET_LOG_DEBUG_EVENT, c->log, 0,
                                    "tcp_nopush");
                 }
             }
@@ -173,7 +173,7 @@ ngx_freebsd_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
             sent = 0;
 
-#if (NGX_HAVE_SENDFILE_NODISKIO)
+#if (NJET_HAVE_SENDFILE_NODISKIO)
 
             flags = (c->busy_count <= 2) ? SF_NODISKIO : 0;
 
@@ -190,16 +190,16 @@ ngx_freebsd_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
                 err = ngx_errno;
 
                 switch (err) {
-                case NGX_EAGAIN:
+                case NJET_EAGAIN:
                     eagain = 1;
                     break;
 
-                case NGX_EINTR:
+                case NJET_EINTR:
                     eintr = 1;
                     break;
 
-#if (NGX_HAVE_SENDFILE_NODISKIO)
-                case NGX_EBUSY:
+#if (NJET_HAVE_SENDFILE_NODISKIO)
+                case NJET_EBUSY:
                     ebusy = 1;
                     break;
 #endif
@@ -207,10 +207,10 @@ ngx_freebsd_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
                 default:
                     wev->error = 1;
                     (void) ngx_connection_error(c, err, "sendfile() failed");
-                    return NGX_CHAIN_ERROR;
+                    return NJET_CHAIN_ERROR;
                 }
 
-                ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, err,
+                ngx_log_debug1(NJET_LOG_DEBUG_EVENT, c->log, err,
                                "sendfile() sent only %O bytes", sent);
 
             /*
@@ -226,38 +226,38 @@ ngx_freebsd_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
                  * the end of the file
                  */
 
-                ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+                ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                          "sendfile() reported that \"%s\" was truncated at %O",
                          file->file->name.data, file->file_pos);
 
-                return NGX_CHAIN_ERROR;
+                return NJET_CHAIN_ERROR;
             }
 
-            ngx_log_debug4(NGX_LOG_DEBUG_EVENT, c->log, 0,
+            ngx_log_debug4(NJET_LOG_DEBUG_EVENT, c->log, 0,
                            "sendfile: %d, @%O %O:%uz",
                            rc, file->file_pos, sent, file_size + header.size);
 
         } else {
             n = ngx_writev(c, &header);
 
-            if (n == NGX_ERROR) {
-                return NGX_CHAIN_ERROR;
+            if (n == NJET_ERROR) {
+                return NJET_CHAIN_ERROR;
             }
 
-            sent = (n == NGX_AGAIN) ? 0 : n;
+            sent = (n == NJET_AGAIN) ? 0 : n;
         }
 
         c->sent += sent;
 
         in = ngx_chain_update_sent(in, sent);
 
-#if (NGX_HAVE_SENDFILE_NODISKIO)
+#if (NJET_HAVE_SENDFILE_NODISKIO)
 
         if (ebusy) {
             if (sent == 0) {
                 c->busy_count++;
 
-                ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0,
+                ngx_log_debug1(NJET_LOG_DEBUG_EVENT, c->log, 0,
                                "sendfile() busy, count:%d", c->busy_count);
 
             } else {

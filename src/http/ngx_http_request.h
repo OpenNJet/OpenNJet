@@ -5,123 +5,123 @@
  */
 
 
-#ifndef _NGX_HTTP_REQUEST_H_INCLUDED_
-#define _NGX_HTTP_REQUEST_H_INCLUDED_
+#ifndef _NJET_HTTP_REQUEST_H_INCLUDED_
+#define _NJET_HTTP_REQUEST_H_INCLUDED_
 
 
-#define NGX_HTTP_MAX_URI_CHANGES           10
-#define NGX_HTTP_MAX_SUBREQUESTS           50
+#define NJET_HTTP_MAX_URI_CHANGES           10
+#define NJET_HTTP_MAX_SUBREQUESTS           50
 
 /* must be 2^n */
-#define NGX_HTTP_LC_HEADER_LEN             32
+#define NJET_HTTP_LC_HEADER_LEN             32
 
 
-#define NGX_HTTP_DISCARD_BUFFER_SIZE       4096
-#define NGX_HTTP_LINGERING_BUFFER_SIZE     4096
+#define NJET_HTTP_DISCARD_BUFFER_SIZE       4096
+#define NJET_HTTP_LINGERING_BUFFER_SIZE     4096
 
 
-#define NGX_HTTP_VERSION_9                 9
-#define NGX_HTTP_VERSION_10                1000
-#define NGX_HTTP_VERSION_11                1001
-#define NGX_HTTP_VERSION_20                2000
+#define NJET_HTTP_VERSION_9                 9
+#define NJET_HTTP_VERSION_10                1000
+#define NJET_HTTP_VERSION_11                1001
+#define NJET_HTTP_VERSION_20                2000
 
-#define NGX_HTTP_UNKNOWN                   0x00000001
-#define NGX_HTTP_GET                       0x00000002
-#define NGX_HTTP_HEAD                      0x00000004
-#define NGX_HTTP_POST                      0x00000008
-#define NGX_HTTP_PUT                       0x00000010
-#define NGX_HTTP_DELETE                    0x00000020
-#define NGX_HTTP_MKCOL                     0x00000040
-#define NGX_HTTP_COPY                      0x00000080
-#define NGX_HTTP_MOVE                      0x00000100
-#define NGX_HTTP_OPTIONS                   0x00000200
-#define NGX_HTTP_PROPFIND                  0x00000400
-#define NGX_HTTP_PROPPATCH                 0x00000800
-#define NGX_HTTP_LOCK                      0x00001000
-#define NGX_HTTP_UNLOCK                    0x00002000
-#define NGX_HTTP_PATCH                     0x00004000
-#define NGX_HTTP_TRACE                     0x00008000
-#define NGX_HTTP_CONNECT                   0x00010000
+#define NJET_HTTP_UNKNOWN                   0x00000001
+#define NJET_HTTP_GET                       0x00000002
+#define NJET_HTTP_HEAD                      0x00000004
+#define NJET_HTTP_POST                      0x00000008
+#define NJET_HTTP_PUT                       0x00000010
+#define NJET_HTTP_DELETE                    0x00000020
+#define NJET_HTTP_MKCOL                     0x00000040
+#define NJET_HTTP_COPY                      0x00000080
+#define NJET_HTTP_MOVE                      0x00000100
+#define NJET_HTTP_OPTIONS                   0x00000200
+#define NJET_HTTP_PROPFIND                  0x00000400
+#define NJET_HTTP_PROPPATCH                 0x00000800
+#define NJET_HTTP_LOCK                      0x00001000
+#define NJET_HTTP_UNLOCK                    0x00002000
+#define NJET_HTTP_PATCH                     0x00004000
+#define NJET_HTTP_TRACE                     0x00008000
+#define NJET_HTTP_CONNECT                   0x00010000
 
-#define NGX_HTTP_CONNECTION_CLOSE          1
-#define NGX_HTTP_CONNECTION_KEEP_ALIVE     2
-
-
-#define NGX_NONE                           1
+#define NJET_HTTP_CONNECTION_CLOSE          1
+#define NJET_HTTP_CONNECTION_KEEP_ALIVE     2
 
 
-#define NGX_HTTP_PARSE_HEADER_DONE         1
+#define NJET_NONE                           1
 
-#define NGX_HTTP_CLIENT_ERROR              10
-#define NGX_HTTP_PARSE_INVALID_METHOD      10
-#define NGX_HTTP_PARSE_INVALID_REQUEST     11
-#define NGX_HTTP_PARSE_INVALID_VERSION     12
-#define NGX_HTTP_PARSE_INVALID_09_METHOD   13
 
-#define NGX_HTTP_PARSE_INVALID_HEADER      14
+#define NJET_HTTP_PARSE_HEADER_DONE         1
+
+#define NJET_HTTP_CLIENT_ERROR              10
+#define NJET_HTTP_PARSE_INVALID_METHOD      10
+#define NJET_HTTP_PARSE_INVALID_REQUEST     11
+#define NJET_HTTP_PARSE_INVALID_VERSION     12
+#define NJET_HTTP_PARSE_INVALID_09_METHOD   13
+
+#define NJET_HTTP_PARSE_INVALID_HEADER      14
 
 
 /* unused                                  1 */
-#define NGX_HTTP_SUBREQUEST_IN_MEMORY      2
-#define NGX_HTTP_SUBREQUEST_WAITED         4
-#define NGX_HTTP_SUBREQUEST_CLONE          8
-#define NGX_HTTP_SUBREQUEST_BACKGROUND     16
+#define NJET_HTTP_SUBREQUEST_IN_MEMORY      2
+#define NJET_HTTP_SUBREQUEST_WAITED         4
+#define NJET_HTTP_SUBREQUEST_CLONE          8
+#define NJET_HTTP_SUBREQUEST_BACKGROUND     16
 
-#define NGX_HTTP_LOG_UNSAFE                1
+#define NJET_HTTP_LOG_UNSAFE                1
 
 
-#define NGX_HTTP_CONTINUE                  100
-#define NGX_HTTP_SWITCHING_PROTOCOLS       101
-#define NGX_HTTP_PROCESSING                102
+#define NJET_HTTP_CONTINUE                  100
+#define NJET_HTTP_SWITCHING_PROTOCOLS       101
+#define NJET_HTTP_PROCESSING                102
 
-#define NGX_HTTP_OK                        200
-#define NGX_HTTP_CREATED                   201
-#define NGX_HTTP_ACCEPTED                  202
-#define NGX_HTTP_NO_CONTENT                204
-#define NGX_HTTP_PARTIAL_CONTENT           206
+#define NJET_HTTP_OK                        200
+#define NJET_HTTP_CREATED                   201
+#define NJET_HTTP_ACCEPTED                  202
+#define NJET_HTTP_NO_CONTENT                204
+#define NJET_HTTP_PARTIAL_CONTENT           206
 
-#define NGX_HTTP_SPECIAL_RESPONSE          300
-#define NGX_HTTP_MOVED_PERMANENTLY         301
-#define NGX_HTTP_MOVED_TEMPORARILY         302
-#define NGX_HTTP_SEE_OTHER                 303
-#define NGX_HTTP_NOT_MODIFIED              304
-#define NGX_HTTP_TEMPORARY_REDIRECT        307
-#define NGX_HTTP_PERMANENT_REDIRECT        308
+#define NJET_HTTP_SPECIAL_RESPONSE          300
+#define NJET_HTTP_MOVED_PERMANENTLY         301
+#define NJET_HTTP_MOVED_TEMPORARILY         302
+#define NJET_HTTP_SEE_OTHER                 303
+#define NJET_HTTP_NOT_MODIFIED              304
+#define NJET_HTTP_TEMPORARY_REDIRECT        307
+#define NJET_HTTP_PERMANENT_REDIRECT        308
 
-#define NGX_HTTP_BAD_REQUEST               400
-#define NGX_HTTP_UNAUTHORIZED              401
-#define NGX_HTTP_FORBIDDEN                 403
-#define NGX_HTTP_NOT_FOUND                 404
-#define NGX_HTTP_NOT_ALLOWED               405
-#define NGX_HTTP_REQUEST_TIME_OUT          408
-#define NGX_HTTP_CONFLICT                  409
-#define NGX_HTTP_LENGTH_REQUIRED           411
-#define NGX_HTTP_PRECONDITION_FAILED       412
-#define NGX_HTTP_REQUEST_ENTITY_TOO_LARGE  413
-#define NGX_HTTP_REQUEST_URI_TOO_LARGE     414
-#define NGX_HTTP_UNSUPPORTED_MEDIA_TYPE    415
-#define NGX_HTTP_RANGE_NOT_SATISFIABLE     416
-#define NGX_HTTP_MISDIRECTED_REQUEST       421
-#define NGX_HTTP_TOO_MANY_REQUESTS         429
+#define NJET_HTTP_BAD_REQUEST               400
+#define NJET_HTTP_UNAUTHORIZED              401
+#define NJET_HTTP_FORBIDDEN                 403
+#define NJET_HTTP_NOT_FOUND                 404
+#define NJET_HTTP_NOT_ALLOWED               405
+#define NJET_HTTP_REQUEST_TIME_OUT          408
+#define NJET_HTTP_CONFLICT                  409
+#define NJET_HTTP_LENGTH_REQUIRED           411
+#define NJET_HTTP_PRECONDITION_FAILED       412
+#define NJET_HTTP_REQUEST_ENTITY_TOO_LARGE  413
+#define NJET_HTTP_REQUEST_URI_TOO_LARGE     414
+#define NJET_HTTP_UNSUPPORTED_MEDIA_TYPE    415
+#define NJET_HTTP_RANGE_NOT_SATISFIABLE     416
+#define NJET_HTTP_MISDIRECTED_REQUEST       421
+#define NJET_HTTP_TOO_MANY_REQUESTS         429
 
 
 /* Our own HTTP codes */
 
 /* The special code to close connection without any response */
-#define NGX_HTTP_CLOSE                     444
+#define NJET_HTTP_CLOSE                     444
 
-#define NGX_HTTP_NJET_CODES               494
+#define NJET_HTTP_NJET_CODES               494
 
-#define NGX_HTTP_REQUEST_HEADER_TOO_LARGE  494
+#define NJET_HTTP_REQUEST_HEADER_TOO_LARGE  494
 
-#define NGX_HTTPS_CERT_ERROR               495
-#define NGX_HTTPS_NO_CERT                  496
+#define NJET_HTTPS_CERT_ERROR               495
+#define NJET_HTTPS_NO_CERT                  496
 
 /*
  * We use the special code for the plain HTTP requests that are sent to
  * HTTPS port to distinguish it from 4XX in an error page redirection
  */
-#define NGX_HTTP_TO_HTTPS                  497
+#define NJET_HTTP_TO_HTTPS                  497
 
 /* 498 is the canceled code for the requests with invalid host name */
 
@@ -131,38 +131,38 @@
  * own code to log such situation when a client has closed the connection
  * before we even try to send the HTTP header to it
  */
-#define NGX_HTTP_CLIENT_CLOSED_REQUEST     499
+#define NJET_HTTP_CLIENT_CLOSED_REQUEST     499
 
 
-#define NGX_HTTP_INTERNAL_SERVER_ERROR     500
-#define NGX_HTTP_NOT_IMPLEMENTED           501
-#define NGX_HTTP_BAD_GATEWAY               502
-#define NGX_HTTP_SERVICE_UNAVAILABLE       503
-#define NGX_HTTP_GATEWAY_TIME_OUT          504
-#define NGX_HTTP_VERSION_NOT_SUPPORTED     505
-#define NGX_HTTP_INSUFFICIENT_STORAGE      507
+#define NJET_HTTP_INTERNAL_SERVER_ERROR     500
+#define NJET_HTTP_NOT_IMPLEMENTED           501
+#define NJET_HTTP_BAD_GATEWAY               502
+#define NJET_HTTP_SERVICE_UNAVAILABLE       503
+#define NJET_HTTP_GATEWAY_TIME_OUT          504
+#define NJET_HTTP_VERSION_NOT_SUPPORTED     505
+#define NJET_HTTP_INSUFFICIENT_STORAGE      507
 
 
-#define NGX_HTTP_LOWLEVEL_BUFFERED         0xf0
-#define NGX_HTTP_WRITE_BUFFERED            0x10
-#define NGX_HTTP_GZIP_BUFFERED             0x20
-#define NGX_HTTP_SSI_BUFFERED              0x01
-#define NGX_HTTP_SUB_BUFFERED              0x02
-#define NGX_HTTP_COPY_BUFFERED             0x04
+#define NJET_HTTP_LOWLEVEL_BUFFERED         0xf0
+#define NJET_HTTP_WRITE_BUFFERED            0x10
+#define NJET_HTTP_GZIP_BUFFERED             0x20
+#define NJET_HTTP_SSI_BUFFERED              0x01
+#define NJET_HTTP_SUB_BUFFERED              0x02
+#define NJET_HTTP_COPY_BUFFERED             0x04
 
 
 typedef enum {
-    NGX_HTTP_INITING_REQUEST_STATE = 0,
-    NGX_HTTP_READING_REQUEST_STATE,
-    NGX_HTTP_PROCESS_REQUEST_STATE,
+    NJET_HTTP_INITING_REQUEST_STATE = 0,
+    NJET_HTTP_READING_REQUEST_STATE,
+    NJET_HTTP_PROCESS_REQUEST_STATE,
 
-    NGX_HTTP_CONNECT_UPSTREAM_STATE,
-    NGX_HTTP_WRITING_UPSTREAM_STATE,
-    NGX_HTTP_READING_UPSTREAM_STATE,
+    NJET_HTTP_CONNECT_UPSTREAM_STATE,
+    NJET_HTTP_WRITING_UPSTREAM_STATE,
+    NJET_HTTP_READING_UPSTREAM_STATE,
 
-    NGX_HTTP_WRITING_REQUEST_STATE,
-    NGX_HTTP_LINGERING_CLOSE_STATE,
-    NGX_HTTP_KEEPALIVE_STATE
+    NJET_HTTP_WRITING_REQUEST_STATE,
+    NJET_HTTP_LINGERING_CLOSE_STATE,
+    NJET_HTTP_KEEPALIVE_STATE
 } ngx_http_state_e;
 
 
@@ -202,7 +202,7 @@ typedef struct {
     ngx_table_elt_t                  *expect;
     ngx_table_elt_t                  *upgrade;
 
-#if (NGX_HTTP_GZIP || NGX_HTTP_HEADERS)
+#if (NJET_HTTP_GZIP || NJET_HTTP_HEADERS)
     ngx_table_elt_t                  *accept_encoding;
     ngx_table_elt_t                  *via;
 #endif
@@ -211,20 +211,20 @@ typedef struct {
 
     ngx_table_elt_t                  *keep_alive;
 
-#if (NGX_HTTP_X_FORWARDED_FOR)
+#if (NJET_HTTP_X_FORWARDED_FOR)
     ngx_table_elt_t                  *x_forwarded_for;
 #endif
 
-#if (NGX_HTTP_REALIP)
+#if (NJET_HTTP_REALIP)
     ngx_table_elt_t                  *x_real_ip;
 #endif
 
-#if (NGX_HTTP_HEADERS)
+#if (NJET_HTTP_HEADERS)
     ngx_table_elt_t                  *accept;
     ngx_table_elt_t                  *accept_language;
 #endif
 
-#if (NGX_HTTP_DAV)
+#if (NJET_HTTP_DAV)
     ngx_table_elt_t                  *depth;
     ngx_table_elt_t                  *destination;
     ngx_table_elt_t                  *overwrite;
@@ -316,9 +316,9 @@ typedef struct {
     ngx_http_addr_conf_t             *addr_conf;
     ngx_http_conf_ctx_t              *conf_ctx;
 
-#if (NGX_HTTP_SSL || NGX_COMPAT)
+#if (NJET_HTTP_SSL || NJET_COMPAT)
     ngx_str_t                        *ssl_servername;
-#if (NGX_PCRE)
+#if (NJET_PCRE)
     ngx_http_regex_t                 *ssl_servername_regex;
 #endif
 #endif
@@ -387,7 +387,7 @@ struct ngx_http_request_s {
     ngx_http_event_handler_pt         read_event_handler;
     ngx_http_event_handler_pt         write_event_handler;
 
-#if (NGX_HTTP_CACHE)
+#if (NJET_HTTP_CACHE)
     ngx_http_cache_t                 *cache;
 #endif
 
@@ -433,7 +433,7 @@ struct ngx_http_request_s {
 
     ngx_http_variable_value_t        *variables;
 
-#if (NGX_PCRE)
+#if (NJET_PCRE)
     ngx_uint_t                        ncaptures;
     int                              *captures;
     u_char                           *captures_data;
@@ -495,17 +495,17 @@ struct ngx_http_request_s {
     unsigned                          subrequest_in_memory:1;
     unsigned                          waited:1;
 
-#if (NGX_HTTP_CACHE)
+#if (NJET_HTTP_CACHE)
     unsigned                          cached:1;
 #endif
 
-#if (NGX_HTTP_GZIP)
+#if (NJET_HTTP_GZIP)
     unsigned                          gzip_tested:1;
     unsigned                          gzip_ok:1;
     unsigned                          gzip_vary:1;
 #endif
 
-#if (NGX_PCRE)
+#if (NJET_PCRE)
     unsigned                          realloc_captures:1;
 #endif
 
@@ -571,7 +571,7 @@ struct ngx_http_request_s {
 
     ngx_uint_t                        header_hash;
     ngx_uint_t                        lowcase_index;
-    u_char                            lowcase_header[NGX_HTTP_LC_HEADER_LEN];
+    u_char                            lowcase_header[NJET_HTTP_LC_HEADER_LEN];
 
     u_char                           *header_name_start;
     u_char                           *header_name_end;
@@ -618,4 +618,4 @@ extern ngx_http_header_out_t   ngx_http_headers_out[];
     ((ngx_http_log_ctx_t *) log->data)->current_request = r
 
 
-#endif /* _NGX_HTTP_REQUEST_H_INCLUDED_ */
+#endif /* _NJET_HTTP_REQUEST_H_INCLUDED_ */

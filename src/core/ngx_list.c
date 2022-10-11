@@ -19,7 +19,7 @@ ngx_list_create(ngx_pool_t *pool, ngx_uint_t n, size_t size)
         return NULL;
     }
 
-    if (ngx_list_init(list, pool, n, size) != NGX_OK) {
+    if (ngx_list_init(list, pool, n, size) != NJET_OK) {
         return NULL;
     }
 

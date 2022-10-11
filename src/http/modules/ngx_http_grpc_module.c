@@ -30,7 +30,7 @@ typedef struct {
     ngx_array_t               *grpc_lengths;
     ngx_array_t               *grpc_values;
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
     ngx_uint_t                 ssl;
     ngx_uint_t                 ssl_protocols;
     ngx_str_t                  ssl_ciphers;
@@ -204,7 +204,7 @@ static ngx_int_t ngx_http_grpc_init_headers(ngx_conf_t *cf,
 static char *ngx_http_grpc_pass(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf);
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
 static char *ngx_http_grpc_ssl_password_file(ngx_conf_t *cf,
     ngx_command_t *cmd, void *conf);
 static char *ngx_http_grpc_ssl_conf_command_check(ngx_conf_t *cf, void *post,
@@ -217,31 +217,31 @@ static ngx_int_t ngx_http_grpc_set_ssl(ngx_conf_t *cf,
 
 
 static ngx_conf_bitmask_t  ngx_http_grpc_next_upstream_masks[] = {
-    { ngx_string("error"), NGX_HTTP_UPSTREAM_FT_ERROR },
-    { ngx_string("timeout"), NGX_HTTP_UPSTREAM_FT_TIMEOUT },
-    { ngx_string("invalid_header"), NGX_HTTP_UPSTREAM_FT_INVALID_HEADER },
-    { ngx_string("non_idempotent"), NGX_HTTP_UPSTREAM_FT_NON_IDEMPOTENT },
-    { ngx_string("http_500"), NGX_HTTP_UPSTREAM_FT_HTTP_500 },
-    { ngx_string("http_502"), NGX_HTTP_UPSTREAM_FT_HTTP_502 },
-    { ngx_string("http_503"), NGX_HTTP_UPSTREAM_FT_HTTP_503 },
-    { ngx_string("http_504"), NGX_HTTP_UPSTREAM_FT_HTTP_504 },
-    { ngx_string("http_403"), NGX_HTTP_UPSTREAM_FT_HTTP_403 },
-    { ngx_string("http_404"), NGX_HTTP_UPSTREAM_FT_HTTP_404 },
-    { ngx_string("http_429"), NGX_HTTP_UPSTREAM_FT_HTTP_429 },
-    { ngx_string("off"), NGX_HTTP_UPSTREAM_FT_OFF },
+    { ngx_string("error"), NJET_HTTP_UPSTREAM_FT_ERROR },
+    { ngx_string("timeout"), NJET_HTTP_UPSTREAM_FT_TIMEOUT },
+    { ngx_string("invalid_header"), NJET_HTTP_UPSTREAM_FT_INVALID_HEADER },
+    { ngx_string("non_idempotent"), NJET_HTTP_UPSTREAM_FT_NON_IDEMPOTENT },
+    { ngx_string("http_500"), NJET_HTTP_UPSTREAM_FT_HTTP_500 },
+    { ngx_string("http_502"), NJET_HTTP_UPSTREAM_FT_HTTP_502 },
+    { ngx_string("http_503"), NJET_HTTP_UPSTREAM_FT_HTTP_503 },
+    { ngx_string("http_504"), NJET_HTTP_UPSTREAM_FT_HTTP_504 },
+    { ngx_string("http_403"), NJET_HTTP_UPSTREAM_FT_HTTP_403 },
+    { ngx_string("http_404"), NJET_HTTP_UPSTREAM_FT_HTTP_404 },
+    { ngx_string("http_429"), NJET_HTTP_UPSTREAM_FT_HTTP_429 },
+    { ngx_string("off"), NJET_HTTP_UPSTREAM_FT_OFF },
     { ngx_null_string, 0 }
 };
 
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
 
 static ngx_conf_bitmask_t  ngx_http_grpc_ssl_protocols[] = {
-    { ngx_string("SSLv2"), NGX_SSL_SSLv2 },
-    { ngx_string("SSLv3"), NGX_SSL_SSLv3 },
-    { ngx_string("TLSv1"), NGX_SSL_TLSv1 },
-    { ngx_string("TLSv1.1"), NGX_SSL_TLSv1_1 },
-    { ngx_string("TLSv1.2"), NGX_SSL_TLSv1_2 },
-    { ngx_string("TLSv1.3"), NGX_SSL_TLSv1_3 },
+    { ngx_string("SSLv2"), NJET_SSL_SSLv2 },
+    { ngx_string("SSLv3"), NJET_SSL_SSLv3 },
+    { ngx_string("TLSv1"), NJET_SSL_TLSv1 },
+    { ngx_string("TLSv1.1"), NJET_SSL_TLSv1_1 },
+    { ngx_string("TLSv1.2"), NJET_SSL_TLSv1_2 },
+    { ngx_string("TLSv1.3"), NJET_SSL_TLSv1_3 },
     { ngx_null_string, 0 }
 };
 
@@ -254,200 +254,200 @@ static ngx_conf_post_t  ngx_http_grpc_ssl_conf_command_post =
 static ngx_command_t  ngx_http_grpc_commands[] = {
 
     { ngx_string("grpc_pass"),
-      NGX_HTTP_LOC_CONF|NGX_HTTP_LIF_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_LOC_CONF|NJET_HTTP_LIF_CONF|NJET_CONF_TAKE1,
       ngx_http_grpc_pass,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("grpc_bind"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE12,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE12,
       ngx_http_upstream_bind_set_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.local),
       NULL },
 
     { ngx_string("grpc_socket_keepalive"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.socket_keepalive),
       NULL },
 
     { ngx_string("grpc_connect_timeout"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.connect_timeout),
       NULL },
 
     { ngx_string("grpc_send_timeout"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.send_timeout),
       NULL },
 
     { ngx_string("grpc_intercept_errors"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.intercept_errors),
       NULL },
 
     { ngx_string("grpc_buffer_size"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_size_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.buffer_size),
       NULL },
 
     { ngx_string("grpc_read_timeout"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.read_timeout),
       NULL },
 
     { ngx_string("grpc_next_upstream"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_1MORE,
       ngx_conf_set_bitmask_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.next_upstream),
       &ngx_http_grpc_next_upstream_masks },
 
     { ngx_string("grpc_next_upstream_tries"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.next_upstream_tries),
       NULL },
 
     { ngx_string("grpc_next_upstream_timeout"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.next_upstream_timeout),
       NULL },
 
     { ngx_string("grpc_set_header"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE2,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE2,
       ngx_conf_set_keyval_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, headers_source),
       NULL },
 
     { ngx_string("grpc_pass_header"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_str_array_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.pass_headers),
       NULL },
 
     { ngx_string("grpc_hide_header"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_str_array_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.hide_headers),
       NULL },
 
     { ngx_string("grpc_ignore_headers"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_1MORE,
       ngx_conf_set_bitmask_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.ignore_headers),
       &ngx_http_upstream_ignore_headers_masks },
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
 
     { ngx_string("grpc_ssl_session_reuse"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.ssl_session_reuse),
       NULL },
 
     { ngx_string("grpc_ssl_protocols"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_1MORE,
       ngx_conf_set_bitmask_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, ssl_protocols),
       &ngx_http_grpc_ssl_protocols },
 
     { ngx_string("grpc_ssl_ciphers"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_str_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, ssl_ciphers),
       NULL },
 
     { ngx_string("grpc_ssl_name"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_http_set_complex_value_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.ssl_name),
       NULL },
 
     { ngx_string("grpc_ssl_server_name"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.ssl_server_name),
       NULL },
 
     { ngx_string("grpc_ssl_verify"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_FLAG,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.ssl_verify),
       NULL },
 
     { ngx_string("grpc_ssl_verify_depth"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, ssl_verify_depth),
       NULL },
 
     { ngx_string("grpc_ssl_trusted_certificate"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_str_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, ssl_trusted_certificate),
       NULL },
 
     { ngx_string("grpc_ssl_crl"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_str_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, ssl_crl),
       NULL },
 
     { ngx_string("grpc_ssl_certificate"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_http_set_complex_value_zero_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.ssl_certificate),
       NULL },
 
     { ngx_string("grpc_ssl_certificate_key"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_http_set_complex_value_zero_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, upstream.ssl_certificate_key),
       NULL },
 
     { ngx_string("grpc_ssl_password_file"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_http_grpc_ssl_password_file,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("grpc_ssl_conf_command"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE2,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE2,
       ngx_conf_set_keyval_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_grpc_loc_conf_t, ssl_conf_commands),
       &ngx_http_grpc_ssl_conf_command_post },
 
@@ -473,10 +473,10 @@ static ngx_http_module_t  ngx_http_grpc_module_ctx = {
 
 
 ngx_module_t  ngx_http_grpc_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_http_grpc_module_ctx,             /* module context */
     ngx_http_grpc_commands,                /* module directives */
-    NGX_HTTP_MODULE,                       /* module type */
+    NJET_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -484,7 +484,7 @@ ngx_module_t  ngx_http_grpc_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -529,7 +529,7 @@ static ngx_http_variable_t  ngx_http_grpc_vars[] = {
 
     { ngx_string("grpc_internal_trailers"), NULL,
       ngx_http_grpc_internal_trailers_variable, 0,
-      NGX_HTTP_VAR_NOCACHEABLE|NGX_HTTP_VAR_NOHASH, 0 },
+      NJET_HTTP_VAR_NOCACHEABLE|NJET_HTTP_VAR_NOHASH, 0 },
 
       ngx_http_null_variable
 };
@@ -543,13 +543,13 @@ ngx_http_grpc_handler(ngx_http_request_t *r)
     ngx_http_grpc_ctx_t       *ctx;
     ngx_http_grpc_loc_conf_t  *glcf;
 
-    if (ngx_http_upstream_create(r) != NGX_OK) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    if (ngx_http_upstream_create(r) != NJET_OK) {
+        return NJET_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_grpc_ctx_t));
     if (ctx == NULL) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NJET_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ctx->request = r;
@@ -563,7 +563,7 @@ ngx_http_grpc_handler(ngx_http_request_t *r)
     if (glcf->grpc_lengths == NULL) {
         ctx->host = glcf->host;
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
         u->ssl = glcf->ssl;
 
         if (u->ssl) {
@@ -577,8 +577,8 @@ ngx_http_grpc_handler(ngx_http_request_t *r)
 #endif
 
     } else {
-        if (ngx_http_grpc_eval(r, ctx, glcf) != NGX_OK) {
-            return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        if (ngx_http_grpc_eval(r, ctx, glcf) != NJET_OK) {
+            return NJET_HTTP_INTERNAL_SERVER_ERROR;
         }
     }
 
@@ -600,11 +600,11 @@ ngx_http_grpc_handler(ngx_http_request_t *r)
 
     rc = ngx_http_read_client_request_body(r, ngx_http_upstream_init);
 
-    if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+    if (rc >= NJET_HTTP_SPECIAL_RESPONSE) {
         return rc;
     }
 
-    return NGX_DONE;
+    return NJET_DONE;
 }
 
 
@@ -622,7 +622,7 @@ ngx_http_grpc_eval(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
                             glcf->grpc_values->elts)
         == NULL)
     {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (url.url.len > 7
@@ -634,13 +634,13 @@ ngx_http_grpc_eval(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
                && ngx_strncasecmp(url.url.data, (u_char *) "grpcs://", 8) == 0)
     {
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
         add = 8;
         r->upstream->ssl = 1;
 #else
-        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                       "grpcs protocol requires SSL support");
-        return NGX_ERROR;
+        return NJET_ERROR;
 #endif
 
     } else {
@@ -662,18 +662,18 @@ ngx_http_grpc_eval(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
 
     url.no_resolve = 1;
 
-    if (ngx_parse_url(r->pool, &url) != NGX_OK) {
+    if (ngx_parse_url(r->pool, &url) != NJET_OK) {
         if (url.err) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "%s in upstream \"%V\"", url.err, &url.url);
         }
 
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     u->resolved = ngx_pcalloc(r->pool, sizeof(ngx_http_upstream_resolved_t));
     if (u->resolved == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (url.addrs) {
@@ -701,7 +701,7 @@ ngx_http_grpc_eval(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
         ngx_str_set(&ctx->host, "localhost");
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -735,12 +735,12 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
 
     /* :method header */
 
-    if (r->method == NGX_HTTP_GET || r->method == NGX_HTTP_POST) {
+    if (r->method == NJET_HTTP_GET || r->method == NJET_HTTP_POST) {
         len += 1;
         tmp_len = 0;
 
     } else {
-        len += 1 + NGX_HTTP_V2_INT_OCTETS + r->method_name.len;
+        len += 1 + NJET_HTTP_V2_INT_OCTETS + r->method_name.len;
         tmp_len = r->method_name.len;
     }
 
@@ -756,11 +756,11 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
 
     } else {
         escape = 2 * ngx_escape_uri(NULL, r->uri.data, r->uri.len,
-                                    NGX_ESCAPE_URI);
+                                    NJET_ESCAPE_URI);
         uri_len = r->uri.len + escape + sizeof("?") - 1 + r->args.len;
     }
 
-    len += 1 + NGX_HTTP_V2_INT_OCTETS + uri_len;
+    len += 1 + NJET_HTTP_V2_INT_OCTETS + uri_len;
 
     if (tmp_len < uri_len) {
         tmp_len = uri_len;
@@ -769,7 +769,7 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
     /* :authority header */
 
     if (!glcf->host_set) {
-        len += 1 + NGX_HTTP_V2_INT_OCTETS + ctx->host.len;
+        len += 1 + NJET_HTTP_V2_INT_OCTETS + ctx->host.len;
 
         if (tmp_len < ctx->host.len) {
             tmp_len = ctx->host.len;
@@ -799,8 +799,8 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
             continue;
         }
 
-        len += 1 + NGX_HTTP_V2_INT_OCTETS + key_len
-                 + NGX_HTTP_V2_INT_OCTETS + val_len;
+        len += 1 + NJET_HTTP_V2_INT_OCTETS + key_len
+                 + NJET_HTTP_V2_INT_OCTETS + val_len;
 
         if (tmp_len < key_len) {
             tmp_len = key_len;
@@ -833,8 +833,8 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
                 continue;
             }
 
-            len += 1 + NGX_HTTP_V2_INT_OCTETS + header[i].key.len
-                     + NGX_HTTP_V2_INT_OCTETS + header[i].value.len;
+            len += 1 + NJET_HTTP_V2_INT_OCTETS + header[i].key.len
+                     + NJET_HTTP_V2_INT_OCTETS + header[i].value.len;
 
             if (tmp_len < header[i].key.len) {
                 tmp_len = header[i].key.len;
@@ -849,17 +849,17 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
     /* continuation frames */
 
     len += sizeof(ngx_http_grpc_frame_t)
-           * (len / NGX_HTTP_V2_DEFAULT_FRAME_SIZE);
+           * (len / NJET_HTTP_V2_DEFAULT_FRAME_SIZE);
 
 
     b = ngx_create_temp_buf(r->pool, len);
     if (b == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     cl = ngx_alloc_chain_link(r->pool);
     if (cl == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     cl->buf = b;
@@ -867,7 +867,7 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
 
     tmp = ngx_palloc(r->pool, tmp_len * 3);
     if (tmp == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     key_tmp = tmp + tmp_len;
@@ -888,61 +888,61 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
     f->length_0 = 0;
     f->length_1 = 0;
     f->length_2 = 0;
-    f->type = NGX_HTTP_V2_HEADERS_FRAME;
+    f->type = NJET_HTTP_V2_HEADERS_FRAME;
     f->flags = 0;
     f->stream_id_0 = 0;
     f->stream_id_1 = 0;
     f->stream_id_2 = 0;
     f->stream_id_3 = 1;
 
-    if (r->method == NGX_HTTP_GET) {
-        *b->last++ = ngx_http_v2_indexed(NGX_HTTP_V2_METHOD_GET_INDEX);
+    if (r->method == NJET_HTTP_GET) {
+        *b->last++ = ngx_http_v2_indexed(NJET_HTTP_V2_METHOD_GET_INDEX);
 
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc header: \":method: GET\"");
 
-    } else if (r->method == NGX_HTTP_POST) {
-        *b->last++ = ngx_http_v2_indexed(NGX_HTTP_V2_METHOD_POST_INDEX);
+    } else if (r->method == NJET_HTTP_POST) {
+        *b->last++ = ngx_http_v2_indexed(NJET_HTTP_V2_METHOD_POST_INDEX);
 
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc header: \":method: POST\"");
 
     } else {
-        *b->last++ = ngx_http_v2_inc_indexed(NGX_HTTP_V2_METHOD_INDEX);
+        *b->last++ = ngx_http_v2_inc_indexed(NJET_HTTP_V2_METHOD_INDEX);
         b->last = ngx_http_v2_write_value(b->last, r->method_name.data,
                                           r->method_name.len, tmp);
 
-        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc header: \":method: %V\"", &r->method_name);
     }
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
     if (u->ssl) {
-        *b->last++ = ngx_http_v2_indexed(NGX_HTTP_V2_SCHEME_HTTPS_INDEX);
+        *b->last++ = ngx_http_v2_indexed(NJET_HTTP_V2_SCHEME_HTTPS_INDEX);
 
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc header: \":scheme: https\"");
     } else
 #endif
     {
-        *b->last++ = ngx_http_v2_indexed(NGX_HTTP_V2_SCHEME_HTTP_INDEX);
+        *b->last++ = ngx_http_v2_indexed(NJET_HTTP_V2_SCHEME_HTTP_INDEX);
 
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc header: \":scheme: http\"");
     }
 
     if (r->valid_unparsed_uri) {
 
         if (r->unparsed_uri.len == 1 && r->unparsed_uri.data[0] == '/') {
-            *b->last++ = ngx_http_v2_indexed(NGX_HTTP_V2_PATH_ROOT_INDEX);
+            *b->last++ = ngx_http_v2_indexed(NJET_HTTP_V2_PATH_ROOT_INDEX);
 
         } else {
-            *b->last++ = ngx_http_v2_inc_indexed(NGX_HTTP_V2_PATH_INDEX);
+            *b->last++ = ngx_http_v2_inc_indexed(NJET_HTTP_V2_PATH_INDEX);
             b->last = ngx_http_v2_write_value(b->last, r->unparsed_uri.data,
                                               r->unparsed_uri.len, tmp);
         }
 
-        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc header: \":path: %V\"", &r->unparsed_uri);
 
     } else if (escape || r->args.len > 0) {
@@ -950,7 +950,7 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
 
         if (escape) {
             p = (u_char *) ngx_escape_uri(p, r->uri.data, r->uri.len,
-                                          NGX_ESCAPE_URI);
+                                          NJET_ESCAPE_URI);
 
         } else {
             p = ngx_copy(p, r->uri.data, r->uri.len);
@@ -961,27 +961,27 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
             p = ngx_copy(p, r->args.data, r->args.len);
         }
 
-        *b->last++ = ngx_http_v2_inc_indexed(NGX_HTTP_V2_PATH_INDEX);
+        *b->last++ = ngx_http_v2_inc_indexed(NJET_HTTP_V2_PATH_INDEX);
         b->last = ngx_http_v2_write_value(b->last, val_tmp, p - val_tmp, tmp);
 
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc header: \":path: %*s\"", p - val_tmp, val_tmp);
 
     } else {
-        *b->last++ = ngx_http_v2_inc_indexed(NGX_HTTP_V2_PATH_INDEX);
+        *b->last++ = ngx_http_v2_inc_indexed(NJET_HTTP_V2_PATH_INDEX);
         b->last = ngx_http_v2_write_value(b->last, r->uri.data,
                                           r->uri.len, tmp);
 
-        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc header: \":path: %V\"", &r->uri);
     }
 
     if (!glcf->host_set) {
-        *b->last++ = ngx_http_v2_inc_indexed(NGX_HTTP_V2_AUTHORITY_INDEX);
+        *b->last++ = ngx_http_v2_inc_indexed(NJET_HTTP_V2_AUTHORITY_INDEX);
         b->last = ngx_http_v2_write_value(b->last, ctx->host.data,
                                           ctx->host.len, tmp);
 
-        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc header: \":authority: %V\"", &ctx->host);
     }
 
@@ -1036,11 +1036,11 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
 
         b->last = ngx_http_v2_write_value(b->last, val_tmp, val_len, tmp);
 
-#if (NGX_DEBUG)
-        if (r->connection->log->log_level & NGX_LOG_DEBUG_HTTP) {
+#if (NJET_DEBUG)
+        if (r->connection->log->log_level & NJET_LOG_DEBUG_HTTP) {
             ngx_strlow(key_tmp, key_tmp, key_len);
 
-            ngx_log_debug4(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug4(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "grpc header: \"%*s: %*s\"",
                            key_len, key_tmp, val_len, val_tmp);
         }
@@ -1077,11 +1077,11 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
             b->last = ngx_http_v2_write_value(b->last, header[i].value.data,
                                               header[i].value.len, tmp);
 
-#if (NGX_DEBUG)
-            if (r->connection->log->log_level & NGX_LOG_DEBUG_HTTP) {
+#if (NJET_DEBUG)
+            if (r->connection->log->log_level & NJET_LOG_DEBUG_HTTP) {
                 ngx_strlow(tmp, header[i].key.data, header[i].key.len);
 
-                ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                ngx_log_debug3(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                                "grpc header: \"%*s: %V\"",
                                header[i].key.len, tmp, &header[i].value);
             }
@@ -1093,8 +1093,8 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
 
     len = b->last - headers_frame - sizeof(ngx_http_grpc_frame_t);
 
-    if (len > NGX_HTTP_V2_DEFAULT_FRAME_SIZE) {
-        len = NGX_HTTP_V2_DEFAULT_FRAME_SIZE;
+    if (len > NJET_HTTP_V2_DEFAULT_FRAME_SIZE) {
+        len = NJET_HTTP_V2_DEFAULT_FRAME_SIZE;
         next = 1;
 
     } else {
@@ -1112,14 +1112,14 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
     p = headers_frame;
 
     while (next) {
-        p += sizeof(ngx_http_grpc_frame_t) + NGX_HTTP_V2_DEFAULT_FRAME_SIZE;
+        p += sizeof(ngx_http_grpc_frame_t) + NJET_HTTP_V2_DEFAULT_FRAME_SIZE;
         len = b->last - p;
 
         ngx_memmove(p + sizeof(ngx_http_grpc_frame_t), p, len);
         b->last += sizeof(ngx_http_grpc_frame_t);
 
-        if (len > NGX_HTTP_V2_DEFAULT_FRAME_SIZE) {
-            len = NGX_HTTP_V2_DEFAULT_FRAME_SIZE;
+        if (len > NJET_HTTP_V2_DEFAULT_FRAME_SIZE) {
+            len = NJET_HTTP_V2_DEFAULT_FRAME_SIZE;
             next = 1;
 
         } else {
@@ -1131,7 +1131,7 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
         f->length_0 = (u_char) ((len >> 16) & 0xff);
         f->length_1 = (u_char) ((len >> 8) & 0xff);
         f->length_2 = (u_char) (len & 0xff);
-        f->type = NGX_HTTP_V2_CONTINUATION_FRAME;
+        f->type = NJET_HTTP_V2_CONTINUATION_FRAME;
         f->flags = 0;
         f->stream_id_0 = 0;
         f->stream_id_1 = 0;
@@ -1139,9 +1139,9 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
         f->stream_id_3 = 1;
     }
 
-    f->flags |= NGX_HTTP_V2_END_HEADERS_FLAG;
+    f->flags |= NJET_HTTP_V2_END_HEADERS_FLAG;
 
-    ngx_log_debug4(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug4(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "grpc header: %*xs%s, len: %uz",
                    (size_t) ngx_min(b->last - b->pos, 256), b->pos,
                    b->last - b->pos > 256 ? "..." : "",
@@ -1158,20 +1158,20 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
 
         if (body == NULL) {
             f = (ngx_http_grpc_frame_t *) headers_frame;
-            f->flags |= NGX_HTTP_V2_END_STREAM_FLAG;
+            f->flags |= NJET_HTTP_V2_END_STREAM_FLAG;
         }
 
         while (body) {
             b = ngx_alloc_buf(r->pool);
             if (b == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             ngx_memcpy(b, body->buf, sizeof(ngx_buf_t));
 
             cl->next = ngx_alloc_chain_link(r->pool);
             if (cl->next == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             cl = cl->next;
@@ -1189,7 +1189,7 @@ ngx_http_grpc_create_request(ngx_http_request_t *r)
     b->flush = 1;
     cl->next = NULL;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -1201,7 +1201,7 @@ ngx_http_grpc_reinit_request(ngx_http_request_t *r)
     ctx = ngx_http_get_module_ctx(r, ngx_http_grpc_module);
 
     if (ctx == NULL) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
     ctx->state = 0;
@@ -1216,7 +1216,7 @@ ngx_http_grpc_reinit_request(ngx_http_request_t *r)
     ctx->goaway = 0;
     ctx->connection = NULL;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -1236,18 +1236,18 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
     ngx_http_grpc_ctx_t    *ctx;
     ngx_http_grpc_frame_t  *f;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "grpc output filter");
 
     ctx = ngx_http_grpc_get_ctx(r);
 
     if (ctx == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (in) {
-        if (ngx_chain_add_copy(r->pool, &ctx->in, in) != NGX_OK) {
-            return NGX_ERROR;
+        if (ngx_chain_add_copy(r->pool, &ctx->in, in) != NJET_OK) {
+            return NJET_ERROR;
         }
     }
 
@@ -1257,7 +1257,7 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
     if (!ctx->header_sent) {
         /* first buffer contains headers */
 
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc output header");
 
         ctx->header_sent = 1;
@@ -1317,11 +1317,11 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
         limit = ctx->connection->send_window;
     }
 
-    ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug3(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "grpc output limit: %uz w:%z:%uz",
                    limit, ctx->send_window, ctx->connection->send_window);
 
-#if (NGX_SUPPRESS_WARN)
+#if (NJET_SUPPRESS_WARN)
     file_pos = 0;
     pos = NULL;
     cl = NULL;
@@ -1331,7 +1331,7 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
 
     while (in && limit > 0) {
 
-        ngx_log_debug7(NGX_LOG_DEBUG_EVENT, r->connection->log, 0,
+        ngx_log_debug7(NJET_LOG_DEBUG_EVENT, r->connection->log, 0,
                        "grpc output in  l:%d f:%d %p, pos %p, size: %z "
                        "file: %O, size: %O",
                        in->buf->last_buf,
@@ -1358,7 +1358,7 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
 
             cl = ngx_http_grpc_get_buf(r, ctx);
             if (cl == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             b = cl->buf;
@@ -1371,7 +1371,7 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
 
             cl = ngx_chain_get_free_buf(r->pool, &ctx->free);
             if (cl == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             b = cl->buf;
@@ -1388,7 +1388,7 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
 
             if (in->buf->in_file) {
                 b->file_pos = file_pos;
-                file_pos += ngx_min(NGX_HTTP_V2_DEFAULT_FRAME_SIZE, limit);
+                file_pos += ngx_min(NJET_HTTP_V2_DEFAULT_FRAME_SIZE, limit);
 
                 if (file_pos >= in->buf->file_last) {
                     file_pos = in->buf->file_last;
@@ -1400,7 +1400,7 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
 
             } else {
                 b->pos = pos;
-                pos += ngx_min(NGX_HTTP_V2_DEFAULT_FRAME_SIZE, limit);
+                pos += ngx_min(NJET_HTTP_V2_DEFAULT_FRAME_SIZE, limit);
 
                 if (pos >= in->buf->last) {
                     pos = in->buf->last;
@@ -1424,7 +1424,7 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
             f->length_0 = (u_char) ((len >> 16) & 0xff);
             f->length_1 = (u_char) ((len >> 8) & 0xff);
             f->length_2 = (u_char) (len & 0xff);
-            f->type = NGX_HTTP_V2_DATA_FRAME;
+            f->type = NJET_HTTP_V2_DATA_FRAME;
             f->flags = 0;
             f->stream_id_0 = (u_char) ((ctx->id >> 24) & 0xff);
             f->stream_id_1 = (u_char) ((ctx->id >> 16) & 0xff);
@@ -1466,18 +1466,18 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
 
     if (last) {
 
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc output last");
 
         ctx->output_closed = 1;
 
         if (f) {
-            f->flags |= NGX_HTTP_V2_END_STREAM_FLAG;
+            f->flags |= NJET_HTTP_V2_END_STREAM_FLAG;
 
         } else {
             cl = ngx_http_grpc_get_buf(r, ctx);
             if (cl == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             b = cl->buf;
@@ -1488,8 +1488,8 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
             f->length_0 = 0;
             f->length_1 = 0;
             f->length_2 = 0;
-            f->type = NGX_HTTP_V2_DATA_FRAME;
-            f->flags = NGX_HTTP_V2_END_STREAM_FLAG;
+            f->type = NJET_HTTP_V2_DATA_FRAME;
+            f->flags = NJET_HTTP_V2_END_STREAM_FLAG;
             f->stream_id_0 = (u_char) ((ctx->id >> 24) & 0xff);
             f->stream_id_1 = (u_char) ((ctx->id >> 16) & 0xff);
             f->stream_id_2 = (u_char) ((ctx->id >> 8) & 0xff);
@@ -1504,10 +1504,10 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
 
     *ll = NULL;
 
-#if (NGX_DEBUG)
+#if (NJET_DEBUG)
 
     for (cl = out; cl; cl = cl->next) {
-        ngx_log_debug7(NGX_LOG_DEBUG_EVENT, r->connection->log, 0,
+        ngx_log_debug7(NJET_LOG_DEBUG_EVENT, r->connection->log, 0,
                        "grpc output out l:%d f:%d %p, pos %p, size: %z "
                        "file: %O, size: %O",
                        cl->buf->last_buf,
@@ -1518,7 +1518,7 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
                        cl->buf->file_last - cl->buf->file_pos);
     }
 
-    ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug3(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "grpc output limit: %uz w:%z:%uz",
                    limit, ctx->send_window, ctx->connection->send_window);
 
@@ -1543,11 +1543,11 @@ ngx_http_grpc_body_output_filter(void *data, ngx_chain_t *in)
         }
     }
 
-    if (rc == NGX_OK && ctx->in) {
-        rc = NGX_AGAIN;
+    if (rc == NJET_OK && ctx->in) {
+        rc = NJET_AGAIN;
     }
 
-    if (rc == NGX_AGAIN) {
+    if (rc == NJET_AGAIN) {
         ctx->output_blocked = 1;
 
     } else {
@@ -1597,7 +1597,7 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
     u = r->upstream;
     b = &u->buffer;
 
-    ngx_log_debug4(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug4(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "grpc response: %*xs%s, len: %uz",
                    (size_t) ngx_min(b->last - b->pos, 256),
                    b->pos, b->last - b->pos > 256 ? "..." : "",
@@ -1606,7 +1606,7 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
     ctx = ngx_http_grpc_get_ctx(r);
 
     if (ctx == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     umcf = ngx_http_get_module_main_conf(r, ngx_http_upstream_module);
@@ -1617,7 +1617,7 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
 
             rc = ngx_http_grpc_parse_frame(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
+            if (rc == NJET_AGAIN) {
 
                 /*
                  * there can be a lot of window update frames,
@@ -1630,11 +1630,11 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
                     b->last = b->pos;
                 }
 
-                return NGX_AGAIN;
+                return NJET_AGAIN;
             }
 
-            if (rc == NGX_ERROR) {
-                return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            if (rc == NJET_ERROR) {
+                return NJET_HTTP_UPSTREAM_INVALID_HEADER;
             }
 
             /*
@@ -1646,57 +1646,57 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
              * to appear before all headers are parsed.
              */
 
-            if (ctx->type == NGX_HTTP_V2_DATA_FRAME
-                || (ctx->type == NGX_HTTP_V2_CONTINUATION_FRAME
+            if (ctx->type == NJET_HTTP_V2_DATA_FRAME
+                || (ctx->type == NJET_HTTP_V2_CONTINUATION_FRAME
                     && !ctx->parsing_headers)
-                || (ctx->type != NGX_HTTP_V2_CONTINUATION_FRAME
+                || (ctx->type != NJET_HTTP_V2_CONTINUATION_FRAME
                     && ctx->parsing_headers))
             {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent unexpected http2 frame: %d",
                               ctx->type);
-                return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+                return NJET_HTTP_UPSTREAM_INVALID_HEADER;
             }
 
             if (ctx->stream_id && ctx->stream_id != ctx->id) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent frame for unknown stream %ui",
                               ctx->stream_id);
-                return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+                return NJET_HTTP_UPSTREAM_INVALID_HEADER;
             }
         }
 
         /* frame payload */
 
-        if (ctx->type == NGX_HTTP_V2_RST_STREAM_FRAME) {
+        if (ctx->type == NJET_HTTP_V2_RST_STREAM_FRAME) {
 
             rc = ngx_http_grpc_parse_rst_stream(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
-                return NGX_AGAIN;
+            if (rc == NJET_AGAIN) {
+                return NJET_AGAIN;
             }
 
-            if (rc == NGX_ERROR) {
-                return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            if (rc == NJET_ERROR) {
+                return NJET_HTTP_UPSTREAM_INVALID_HEADER;
             }
 
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream rejected request with error %ui",
                           ctx->error);
 
-            return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            return NJET_HTTP_UPSTREAM_INVALID_HEADER;
         }
 
-        if (ctx->type == NGX_HTTP_V2_GOAWAY_FRAME) {
+        if (ctx->type == NJET_HTTP_V2_GOAWAY_FRAME) {
 
             rc = ngx_http_grpc_parse_goaway(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
-                return NGX_AGAIN;
+            if (rc == NJET_AGAIN) {
+                return NJET_AGAIN;
             }
 
-            if (rc == NGX_ERROR) {
-                return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            if (rc == NJET_ERROR) {
+                return NJET_HTTP_UPSTREAM_INVALID_HEADER;
             }
 
             /*
@@ -1712,11 +1712,11 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
 
                 /* TODO: we can retry non-idempotent requests */
 
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent goaway with error %ui",
                               ctx->error);
 
-                return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+                return NJET_HTTP_UPSTREAM_INVALID_HEADER;
             }
 
             ctx->goaway = 1;
@@ -1724,16 +1724,16 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
             continue;
         }
 
-        if (ctx->type == NGX_HTTP_V2_WINDOW_UPDATE_FRAME) {
+        if (ctx->type == NJET_HTTP_V2_WINDOW_UPDATE_FRAME) {
 
             rc = ngx_http_grpc_parse_window_update(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
-                return NGX_AGAIN;
+            if (rc == NJET_AGAIN) {
+                return NJET_AGAIN;
             }
 
-            if (rc == NGX_ERROR) {
-                return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            if (rc == NJET_ERROR) {
+                return NJET_HTTP_UPSTREAM_INVALID_HEADER;
             }
 
             if (ctx->in) {
@@ -1743,16 +1743,16 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
             continue;
         }
 
-        if (ctx->type == NGX_HTTP_V2_SETTINGS_FRAME) {
+        if (ctx->type == NJET_HTTP_V2_SETTINGS_FRAME) {
 
             rc = ngx_http_grpc_parse_settings(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
-                return NGX_AGAIN;
+            if (rc == NJET_AGAIN) {
+                return NJET_AGAIN;
             }
 
-            if (rc == NGX_ERROR) {
-                return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            if (rc == NJET_ERROR) {
+                return NJET_HTTP_UPSTREAM_INVALID_HEADER;
             }
 
             if (ctx->in) {
@@ -1762,37 +1762,37 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
             continue;
         }
 
-        if (ctx->type == NGX_HTTP_V2_PING_FRAME) {
+        if (ctx->type == NJET_HTTP_V2_PING_FRAME) {
 
             rc = ngx_http_grpc_parse_ping(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
-                return NGX_AGAIN;
+            if (rc == NJET_AGAIN) {
+                return NJET_AGAIN;
             }
 
-            if (rc == NGX_ERROR) {
-                return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            if (rc == NJET_ERROR) {
+                return NJET_HTTP_UPSTREAM_INVALID_HEADER;
             }
 
             ngx_post_event(u->peer.connection->write, &ngx_posted_events);
             continue;
         }
 
-        if (ctx->type == NGX_HTTP_V2_PUSH_PROMISE_FRAME) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+        if (ctx->type == NJET_HTTP_V2_PUSH_PROMISE_FRAME) {
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent unexpected push promise frame");
-            return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            return NJET_HTTP_UPSTREAM_INVALID_HEADER;
         }
 
-        if (ctx->type != NGX_HTTP_V2_HEADERS_FRAME
-            && ctx->type != NGX_HTTP_V2_CONTINUATION_FRAME)
+        if (ctx->type != NJET_HTTP_V2_HEADERS_FRAME
+            && ctx->type != NJET_HTTP_V2_CONTINUATION_FRAME)
         {
             /* priority, unknown frames */
 
             if (b->last - b->pos < (ssize_t) ctx->rest) {
                 ctx->rest -= b->last - b->pos;
                 b->pos = b->last;
-                return NGX_AGAIN;
+                return NJET_AGAIN;
             }
 
             b->pos += ctx->rest;
@@ -1808,15 +1808,15 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
 
             rc = ngx_http_grpc_parse_header(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
+            if (rc == NJET_AGAIN) {
                 break;
             }
 
-            if (rc == NGX_OK) {
+            if (rc == NJET_OK) {
 
                 /* a header line has been parsed successfully */
 
-                ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                                "grpc header: \"%V: %V\"",
                                &ctx->name, &ctx->value);
 
@@ -1827,41 +1827,41 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
                                        sizeof(":status") - 1)
                            != 0)
                     {
-                        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                       "upstream sent invalid header \"%V: %V\"",
                                       &ctx->name, &ctx->value);
-                        return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+                        return NJET_HTTP_UPSTREAM_INVALID_HEADER;
                     }
 
                     if (ctx->status) {
-                        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                       "upstream sent duplicate :status header");
-                        return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+                        return NJET_HTTP_UPSTREAM_INVALID_HEADER;
                     }
 
                     status_line = &ctx->value;
 
                     if (status_line->len != 3) {
-                        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                       "upstream sent invalid :status \"%V\"",
                                       status_line);
-                        return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+                        return NJET_HTTP_UPSTREAM_INVALID_HEADER;
                     }
 
                     status = ngx_atoi(status_line->data, 3);
 
-                    if (status == NGX_ERROR) {
-                        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    if (status == NJET_ERROR) {
+                        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                       "upstream sent invalid :status \"%V\"",
                                       status_line);
-                        return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+                        return NJET_HTTP_UPSTREAM_INVALID_HEADER;
                     }
 
-                    if (status < NGX_HTTP_OK) {
-                        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    if (status < NJET_HTTP_OK) {
+                        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                       "upstream sent unexpected :status \"%V\"",
                                       status_line);
-                        return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+                        return NJET_HTTP_UPSTREAM_INVALID_HEADER;
                     }
 
                     u->headers_in.status_n = status;
@@ -1875,14 +1875,14 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
                     continue;
 
                 } else if (!ctx->status) {
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream sent no :status header");
-                    return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+                    return NJET_HTTP_UPSTREAM_INVALID_HEADER;
                 }
 
                 h = ngx_list_push(&u->headers_in.headers);
                 if (h == NULL) {
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
                 h->key = ctx->name;
@@ -1896,7 +1896,7 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
                 if (hh) {
                     rc = hh->handler(r, h, hh->offset);
 
-                    if (rc != NGX_OK) {
+                    if (rc != NJET_OK) {
                         return rc;
                     }
                 }
@@ -1904,11 +1904,11 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
                 continue;
             }
 
-            if (rc == NGX_HTTP_PARSE_HEADER_DONE) {
+            if (rc == NJET_HTTP_PARSE_HEADER_DONE) {
 
                 /* a whole header has been parsed successfully */
 
-                ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                                "grpc header done");
 
                 if (ctx->end_stream) {
@@ -1925,25 +1925,25 @@ ngx_http_grpc_process_header(ngx_http_request_t *r)
                     }
                 }
 
-                return NGX_OK;
+                return NJET_OK;
             }
 
             /* there was error while a header line parsing */
 
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent invalid header");
 
-            return NGX_HTTP_UPSTREAM_INVALID_HEADER;
+            return NJET_HTTP_UPSTREAM_INVALID_HEADER;
         }
 
-        /* rc == NGX_AGAIN */
+        /* rc == NJET_AGAIN */
 
         if (ctx->rest == 0) {
             ctx->state = ngx_http_grpc_st_start;
             continue;
         }
 
-        return NGX_AGAIN;
+        return NJET_AGAIN;
     }
 }
 
@@ -1959,9 +1959,9 @@ ngx_http_grpc_filter_init(void *data)
     r = ctx->request;
     u = r->upstream;
 
-    if (u->headers_in.status_n == NGX_HTTP_NO_CONTENT
-        || u->headers_in.status_n == NGX_HTTP_NOT_MODIFIED
-        || r->method == NGX_HTTP_HEAD)
+    if (u->headers_in.status_n == NJET_HTTP_NO_CONTENT
+        || u->headers_in.status_n == NJET_HTTP_NOT_MODIFIED
+        || r->method == NJET_HTTP_HEAD)
     {
         ctx->length = 0;
 
@@ -1972,9 +1972,9 @@ ngx_http_grpc_filter_init(void *data)
     if (ctx->end_stream) {
 
         if (ctx->length > 0) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream prematurely closed stream");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         u->length = 0;
@@ -1984,7 +1984,7 @@ ngx_http_grpc_filter_init(void *data)
         u->length = 1;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -2004,7 +2004,7 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
     u = r->upstream;
     b = &u->buffer;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "grpc filter bytes:%z", bytes);
 
     b->pos = b->last;
@@ -2020,14 +2020,14 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
 
             rc = ngx_http_grpc_parse_frame(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
+            if (rc == NJET_AGAIN) {
 
                 if (ctx->done) {
 
                     if (ctx->length > 0) {
-                        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                       "upstream prematurely closed stream");
-                        return NGX_ERROR;
+                        return NJET_ERROR;
                     }
 
                     /*
@@ -2039,7 +2039,7 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
                     if (ctx->out) {
                         ngx_post_event(u->peer.connection->write,
                                        &ngx_posted_events);
-                        return NGX_AGAIN;
+                        return NJET_AGAIN;
                     }
 
                     u->length = 0;
@@ -2056,58 +2056,58 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
                     break;
                 }
 
-                return NGX_AGAIN;
+                return NJET_AGAIN;
             }
 
-            if (rc == NGX_ERROR) {
-                return NGX_ERROR;
+            if (rc == NJET_ERROR) {
+                return NJET_ERROR;
             }
 
-            if ((ctx->type == NGX_HTTP_V2_CONTINUATION_FRAME
+            if ((ctx->type == NJET_HTTP_V2_CONTINUATION_FRAME
                  && !ctx->parsing_headers)
-                || (ctx->type != NGX_HTTP_V2_CONTINUATION_FRAME
+                || (ctx->type != NJET_HTTP_V2_CONTINUATION_FRAME
                     && ctx->parsing_headers))
             {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent unexpected http2 frame: %d",
                               ctx->type);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
-            if (ctx->type == NGX_HTTP_V2_DATA_FRAME) {
+            if (ctx->type == NJET_HTTP_V2_DATA_FRAME) {
 
                 if (ctx->stream_id != ctx->id) {
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream sent data frame "
                                   "for unknown stream %ui",
                                   ctx->stream_id);
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
                 if (ctx->rest > ctx->recv_window) {
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream violated stream flow control, "
                                   "received %uz data frame with window %uz",
                                   ctx->rest, ctx->recv_window);
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
                 if (ctx->rest > ctx->connection->recv_window) {
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream violated connection flow control, "
                                   "received %uz data frame with window %uz",
                                   ctx->rest, ctx->connection->recv_window);
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
                 ctx->recv_window -= ctx->rest;
                 ctx->connection->recv_window -= ctx->rest;
 
-                if (ctx->connection->recv_window < NGX_HTTP_V2_MAX_WINDOW / 4
-                    || ctx->recv_window < NGX_HTTP_V2_MAX_WINDOW / 4)
+                if (ctx->connection->recv_window < NJET_HTTP_V2_MAX_WINDOW / 4
+                    || ctx->recv_window < NJET_HTTP_V2_MAX_WINDOW / 4)
                 {
-                    if (ngx_http_grpc_send_window_update(r, ctx) != NGX_OK) {
-                        return NGX_ERROR;
+                    if (ngx_http_grpc_send_window_update(r, ctx) != NJET_OK) {
+                        return NJET_ERROR;
                     }
 
                     ngx_post_event(u->peer.connection->write,
@@ -2116,20 +2116,20 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
             }
 
             if (ctx->stream_id && ctx->stream_id != ctx->id) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent frame for unknown stream %ui",
                               ctx->stream_id);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             if (ctx->stream_id && ctx->done
-                && ctx->type != NGX_HTTP_V2_RST_STREAM_FRAME
-                && ctx->type != NGX_HTTP_V2_WINDOW_UPDATE_FRAME)
+                && ctx->type != NJET_HTTP_V2_RST_STREAM_FRAME
+                && ctx->type != NJET_HTTP_V2_WINDOW_UPDATE_FRAME)
             {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent frame for closed stream %ui",
                               ctx->stream_id);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             ctx->padding = 0;
@@ -2140,14 +2140,14 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
             if (b->last - b->pos < (ssize_t) ctx->rest) {
                 ctx->rest -= b->last - b->pos;
                 b->pos = b->last;
-                return NGX_AGAIN;
+                return NJET_AGAIN;
             }
 
             b->pos += ctx->rest;
             ctx->rest = 0;
             ctx->state = ngx_http_grpc_st_start;
 
-            if (ctx->flags & NGX_HTTP_V2_END_STREAM_FLAG) {
+            if (ctx->flags & NJET_HTTP_V2_END_STREAM_FLAG) {
                 ctx->done = 1;
             }
 
@@ -2156,30 +2156,30 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
 
         /* frame payload */
 
-        if (ctx->type == NGX_HTTP_V2_RST_STREAM_FRAME) {
+        if (ctx->type == NJET_HTTP_V2_RST_STREAM_FRAME) {
 
             rc = ngx_http_grpc_parse_rst_stream(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
-                return NGX_AGAIN;
+            if (rc == NJET_AGAIN) {
+                return NJET_AGAIN;
             }
 
-            if (rc == NGX_ERROR) {
-                return NGX_ERROR;
+            if (rc == NJET_ERROR) {
+                return NJET_ERROR;
             }
 
             if (ctx->error || !ctx->done) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream rejected request with error %ui",
                               ctx->error);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             if (ctx->rst) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent frame for closed stream %ui",
                               ctx->stream_id);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             ctx->rst = 1;
@@ -2187,16 +2187,16 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
             continue;
         }
 
-        if (ctx->type == NGX_HTTP_V2_GOAWAY_FRAME) {
+        if (ctx->type == NJET_HTTP_V2_GOAWAY_FRAME) {
 
             rc = ngx_http_grpc_parse_goaway(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
-                return NGX_AGAIN;
+            if (rc == NJET_AGAIN) {
+                return NJET_AGAIN;
             }
 
-            if (rc == NGX_ERROR) {
-                return NGX_ERROR;
+            if (rc == NJET_ERROR) {
+                return NJET_ERROR;
             }
 
             /*
@@ -2212,11 +2212,11 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
 
                 /* TODO: we can retry non-idempotent requests */
 
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent goaway with error %ui",
                               ctx->error);
 
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             ctx->goaway = 1;
@@ -2224,16 +2224,16 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
             continue;
         }
 
-        if (ctx->type == NGX_HTTP_V2_WINDOW_UPDATE_FRAME) {
+        if (ctx->type == NJET_HTTP_V2_WINDOW_UPDATE_FRAME) {
 
             rc = ngx_http_grpc_parse_window_update(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
-                return NGX_AGAIN;
+            if (rc == NJET_AGAIN) {
+                return NJET_AGAIN;
             }
 
-            if (rc == NGX_ERROR) {
-                return NGX_ERROR;
+            if (rc == NJET_ERROR) {
+                return NJET_ERROR;
             }
 
             if (ctx->in) {
@@ -2243,16 +2243,16 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
             continue;
         }
 
-        if (ctx->type == NGX_HTTP_V2_SETTINGS_FRAME) {
+        if (ctx->type == NJET_HTTP_V2_SETTINGS_FRAME) {
 
             rc = ngx_http_grpc_parse_settings(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
-                return NGX_AGAIN;
+            if (rc == NJET_AGAIN) {
+                return NJET_AGAIN;
             }
 
-            if (rc == NGX_ERROR) {
-                return NGX_ERROR;
+            if (rc == NJET_ERROR) {
+                return NJET_ERROR;
             }
 
             if (ctx->in) {
@@ -2262,58 +2262,58 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
             continue;
         }
 
-        if (ctx->type == NGX_HTTP_V2_PING_FRAME) {
+        if (ctx->type == NJET_HTTP_V2_PING_FRAME) {
 
             rc = ngx_http_grpc_parse_ping(r, ctx, b);
 
-            if (rc == NGX_AGAIN) {
-                return NGX_AGAIN;
+            if (rc == NJET_AGAIN) {
+                return NJET_AGAIN;
             }
 
-            if (rc == NGX_ERROR) {
-                return NGX_ERROR;
+            if (rc == NJET_ERROR) {
+                return NJET_ERROR;
             }
 
             ngx_post_event(u->peer.connection->write, &ngx_posted_events);
             continue;
         }
 
-        if (ctx->type == NGX_HTTP_V2_PUSH_PROMISE_FRAME) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+        if (ctx->type == NJET_HTTP_V2_PUSH_PROMISE_FRAME) {
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent unexpected push promise frame");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
-        if (ctx->type == NGX_HTTP_V2_HEADERS_FRAME
-            || ctx->type == NGX_HTTP_V2_CONTINUATION_FRAME)
+        if (ctx->type == NJET_HTTP_V2_HEADERS_FRAME
+            || ctx->type == NJET_HTTP_V2_CONTINUATION_FRAME)
         {
             for ( ;; ) {
 
                 rc = ngx_http_grpc_parse_header(r, ctx, b);
 
-                if (rc == NGX_AGAIN) {
+                if (rc == NJET_AGAIN) {
                     break;
                 }
 
-                if (rc == NGX_OK) {
+                if (rc == NJET_OK) {
 
                     /* a header line has been parsed successfully */
 
-                    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                                    "grpc trailer: \"%V: %V\"",
                                    &ctx->name, &ctx->value);
 
                     if (ctx->name.len && ctx->name.data[0] == ':') {
-                        ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                       "upstream sent invalid "
                                       "trailer \"%V: %V\"",
                                       &ctx->name, &ctx->value);
-                        return NGX_ERROR;
+                        return NJET_ERROR;
                     }
 
                     h = ngx_list_push(&u->headers_in.trailers);
                     if (h == NULL) {
-                        return NGX_ERROR;
+                        return NJET_ERROR;
                     }
 
                     h->key = ctx->name;
@@ -2324,11 +2324,11 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
                     continue;
                 }
 
-                if (rc == NGX_HTTP_PARSE_HEADER_DONE) {
+                if (rc == NJET_HTTP_PARSE_HEADER_DONE) {
 
                     /* a whole header has been parsed successfully */
 
-                    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                                    "grpc trailer done");
 
                     if (ctx->end_stream) {
@@ -2336,42 +2336,42 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
                         break;
                     }
 
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream sent trailer without "
                                   "end stream flag");
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
                 /* there was error while a header line parsing */
 
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent invalid trailer");
 
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
-            if (rc == NGX_HTTP_PARSE_HEADER_DONE) {
+            if (rc == NJET_HTTP_PARSE_HEADER_DONE) {
                 continue;
             }
 
-            /* rc == NGX_AGAIN */
+            /* rc == NJET_AGAIN */
 
             if (ctx->rest == 0) {
                 ctx->state = ngx_http_grpc_st_start;
                 continue;
             }
 
-            return NGX_AGAIN;
+            return NJET_AGAIN;
         }
 
-        if (ctx->type != NGX_HTTP_V2_DATA_FRAME) {
+        if (ctx->type != NJET_HTTP_V2_DATA_FRAME) {
 
             /* priority, unknown frames */
 
             if (b->last - b->pos < (ssize_t) ctx->rest) {
                 ctx->rest -= b->last - b->pos;
                 b->pos = b->last;
-                return NGX_AGAIN;
+                return NJET_AGAIN;
             }
 
             b->pos += ctx->rest;
@@ -2393,28 +2393,28 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
          * +---------------------------------------------------------------+
          */
 
-        if (ctx->flags & NGX_HTTP_V2_PADDED_FLAG) {
+        if (ctx->flags & NJET_HTTP_V2_PADDED_FLAG) {
 
             if (ctx->rest == 0) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent too short http2 frame");
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             if (b->pos == b->last) {
-                return NGX_AGAIN;
+                return NJET_AGAIN;
             }
 
-            ctx->flags &= ~NGX_HTTP_V2_PADDED_FLAG;
+            ctx->flags &= ~NJET_HTTP_V2_PADDED_FLAG;
             ctx->padding = *b->pos++;
             ctx->rest -= 1;
 
             if (ctx->padding > ctx->rest) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent http2 frame with too long "
                               "padding: %d in frame %uz",
                               ctx->padding, ctx->rest);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             continue;
@@ -2425,12 +2425,12 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
         }
 
         if (b->pos == b->last) {
-            return NGX_AGAIN;
+            return NJET_AGAIN;
         }
 
         cl = ngx_chain_get_free_buf(r->pool, &u->free_bufs);
         if (cl == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         *ll = cl;
@@ -2444,7 +2444,7 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
         buf->pos = b->pos;
         buf->tag = u->output.tag;
 
-        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc output buf %p", buf->pos);
 
         if (b->last - b->pos < (ssize_t) ctx->rest - ctx->padding) {
@@ -2456,16 +2456,16 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
             if (ctx->length != -1) {
 
                 if (buf->last - buf->pos > ctx->length) {
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream sent response body larger "
                                   "than indicated content length");
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
                 ctx->length -= buf->last - buf->pos;
             }
 
-            return NGX_AGAIN;
+            return NJET_AGAIN;
         }
 
         b->pos += ctx->rest - ctx->padding;
@@ -2475,10 +2475,10 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
         if (ctx->length != -1) {
 
             if (buf->last - buf->pos > ctx->length) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent response body larger "
                               "than indicated content length");
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             ctx->length -= buf->last - buf->pos;
@@ -2493,12 +2493,12 @@ ngx_http_grpc_filter(void *data, ssize_t bytes)
 
         ctx->state = ngx_http_grpc_st_start;
 
-        if (ctx->flags & NGX_HTTP_V2_END_STREAM_FLAG) {
+        if (ctx->flags & NJET_HTTP_V2_END_STREAM_FLAG) {
             ctx->done = 1;
         }
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -2515,7 +2515,7 @@ ngx_http_grpc_parse_frame(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
         ch = *p;
 
 #if 0
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc frame byte: %02Xd, s:%d", ch, state);
 #endif
 
@@ -2534,11 +2534,11 @@ ngx_http_grpc_parse_frame(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
         case ngx_http_grpc_st_length_3:
             ctx->rest |= ch;
 
-            if (ctx->rest > NGX_HTTP_V2_DEFAULT_FRAME_SIZE) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            if (ctx->rest > NJET_HTTP_V2_DEFAULT_FRAME_SIZE) {
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent too large http2 frame: %uz",
                               ctx->rest);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             state = ngx_http_grpc_st_type;
@@ -2572,7 +2572,7 @@ ngx_http_grpc_parse_frame(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
         case ngx_http_grpc_st_stream_id_4:
             ctx->stream_id |= ch;
 
-            ngx_log_debug4(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug4(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "grpc frame: %d, len: %uz, f:%d, i:%ui",
                            ctx->type, ctx->rest, ctx->flags, ctx->stream_id);
 
@@ -2581,7 +2581,7 @@ ngx_http_grpc_parse_frame(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
             ctx->state = ngx_http_grpc_st_payload;
             ctx->frame_state = 0;
 
-            return NGX_OK;
+            return NJET_OK;
 
         /* suppress warning */
         case ngx_http_grpc_st_payload:
@@ -2593,7 +2593,7 @@ ngx_http_grpc_parse_frame(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
     b->pos = p;
     ctx->state = state;
 
-    return NGX_AGAIN;
+    return NJET_AGAIN;
 }
 
 
@@ -2620,39 +2620,39 @@ ngx_http_grpc_parse_header(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
 
     if (state == sw_start) {
 
-        ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc parse header: start");
 
-        if (ctx->type == NGX_HTTP_V2_HEADERS_FRAME) {
+        if (ctx->type == NJET_HTTP_V2_HEADERS_FRAME) {
             ctx->parsing_headers = 1;
             ctx->fragment_state = 0;
 
-            min = (ctx->flags & NGX_HTTP_V2_PADDED_FLAG ? 1 : 0)
-                  + (ctx->flags & NGX_HTTP_V2_PRIORITY_FLAG ? 5 : 0);
+            min = (ctx->flags & NJET_HTTP_V2_PADDED_FLAG ? 1 : 0)
+                  + (ctx->flags & NJET_HTTP_V2_PRIORITY_FLAG ? 5 : 0);
 
             if (ctx->rest < min) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent headers frame "
                               "with invalid length: %uz",
                               ctx->rest);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
-            if (ctx->flags & NGX_HTTP_V2_END_STREAM_FLAG) {
+            if (ctx->flags & NJET_HTTP_V2_END_STREAM_FLAG) {
                 ctx->end_stream = 1;
             }
 
-            if (ctx->flags & NGX_HTTP_V2_PADDED_FLAG) {
+            if (ctx->flags & NJET_HTTP_V2_PADDED_FLAG) {
                 state = sw_padding_length;
 
-            } else if (ctx->flags & NGX_HTTP_V2_PRIORITY_FLAG) {
+            } else if (ctx->flags & NJET_HTTP_V2_PRIORITY_FLAG) {
                 state = sw_dependency;
 
             } else {
                 state = sw_fragment;
             }
 
-        } else if (ctx->type == NGX_HTTP_V2_CONTINUATION_FRAME) {
+        } else if (ctx->type == NJET_HTTP_V2_CONTINUATION_FRAME) {
             state = sw_fragment;
         }
 
@@ -2673,7 +2673,7 @@ ngx_http_grpc_parse_header(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
             ch = *p;
 
 #if 0
-            ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "grpc header byte: %02Xd s:%d", ch, state);
 #endif
 
@@ -2699,7 +2699,7 @@ ngx_http_grpc_parse_header(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
 
                 ctx->padding = ch;
 
-                if (ctx->flags & NGX_HTTP_V2_PRIORITY_FLAG) {
+                if (ctx->flags & NJET_HTTP_V2_PRIORITY_FLAG) {
                     state = sw_dependency;
                     break;
                 }
@@ -2737,7 +2737,7 @@ ngx_http_grpc_parse_header(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
         b->pos = p;
 
         ctx->frame_state = state;
-        return NGX_AGAIN;
+        return NJET_AGAIN;
 
     fragment:
 
@@ -2746,11 +2746,11 @@ ngx_http_grpc_parse_header(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
         b->pos = p;
 
         if (ctx->padding > ctx->rest) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent http2 frame with too long "
                           "padding: %d in frame %uz",
                           ctx->padding, ctx->rest);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         state = sw_fragment;
@@ -2761,19 +2761,19 @@ ngx_http_grpc_parse_header(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
 
         rc = ngx_http_grpc_parse_fragment(r, ctx, b);
 
-        if (rc == NGX_AGAIN) {
-            return NGX_AGAIN;
+        if (rc == NJET_AGAIN) {
+            return NJET_AGAIN;
         }
 
-        if (rc == NGX_ERROR) {
-            return NGX_ERROR;
+        if (rc == NJET_ERROR) {
+            return NJET_ERROR;
         }
 
-        if (rc == NGX_OK) {
-            return NGX_OK;
+        if (rc == NJET_OK) {
+            return NJET_OK;
         }
 
-        /* rc == NGX_DONE */
+        /* rc == NJET_DONE */
 
         state = sw_padding;
         ctx->frame_state = state;
@@ -2786,7 +2786,7 @@ ngx_http_grpc_parse_header(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
             ctx->rest -= b->last - b->pos;
             b->pos = b->last;
 
-            return NGX_AGAIN;
+            return NJET_AGAIN;
         }
 
         b->pos += ctx->rest;
@@ -2794,25 +2794,25 @@ ngx_http_grpc_parse_header(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
 
         ctx->state = ngx_http_grpc_st_start;
 
-        if (ctx->flags & NGX_HTTP_V2_END_HEADERS_FLAG) {
+        if (ctx->flags & NJET_HTTP_V2_END_HEADERS_FLAG) {
 
             if (ctx->fragment_state) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent truncated http2 header");
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             ctx->parsing_headers = 0;
 
-            return NGX_HTTP_PARSE_HEADER_DONE;
+            return NJET_HTTP_PARSE_HEADER_DONE;
         }
 
-        return NGX_AGAIN;
+        return NJET_AGAIN;
     }
 
     /* unreachable */
 
-    return NGX_ERROR;
+    return NJET_ERROR;
 }
 
 
@@ -2843,7 +2843,7 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
     /* header block fragment */
 
 #if 0
-    ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug3(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "grpc header fragment %p:%p rest:%uz",
                    b->pos, b->last, ctx->rest);
 #endif
@@ -2861,7 +2861,7 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
         ch = *p;
 
 #if 0
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc header byte: %02Xd s:%d", ch, state);
 #endif
 
@@ -2883,13 +2883,13 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
                 index = ch & ~0x80;
 
                 if (index == 0 || index > 61) {
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream sent invalid http2 "
                                   "table index: %ui", index);
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
-                ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                                "grpc indexed header: %ui", index);
 
                 ctx->index = index;
@@ -2927,13 +2927,13 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
                 index = ch & ~0xc0;
 
                 if (index > 61) {
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream sent invalid http2 "
                                   "table index: %ui", index);
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
-                ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                                "grpc literal header: %ui", index);
 
                 if (index == 0) {
@@ -2960,14 +2960,14 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
                 size_update = ch & ~0xe0;
 
                 if (size_update > 0) {
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream sent invalid http2 "
                                   "dynamic table size update: %ui",
                                   size_update);
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
-                ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                                "grpc table size update: %ui", size_update);
 
                 break;
@@ -3013,7 +3013,7 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
                     break;
                 }
 
-                ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                                "grpc literal header never indexed: %ui",
                                index);
 
@@ -3064,7 +3064,7 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
                     break;
                 }
 
-                ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                                "grpc literal header without indexing: %ui",
                                index);
 
@@ -3077,26 +3077,26 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
 
             /* not reached */
 
-            return NGX_ERROR;
+            return NJET_ERROR;
 
         case sw_index:
             ctx->index = ctx->index + (ch & ~0x80);
 
             if (ch & 0x80) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent http2 table index "
                               "with continuation flag");
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             if (ctx->index > 61) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent invalid http2 "
                               "table index: %ui", ctx->index);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
-            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "grpc header index: %ui", ctx->index);
 
             state = sw_value_length;
@@ -3112,10 +3112,10 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
             }
 
             if (ctx->field_length == 0) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent zero http2 "
                               "header name length");
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             state = sw_name;
@@ -3147,10 +3147,10 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
             ctx->field_length += (ch & ~0x80) << 14;
 
             if (ch & 0x80) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent too large http2 "
                               "header name length");
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             state = sw_name;
@@ -3162,7 +3162,7 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
 
             ctx->name.data = ngx_pnalloc(r->pool, ctx->name.len + 1);
             if (ctx->name.data == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             ctx->field_end = ctx->name.data;
@@ -3175,7 +3175,7 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
 
         case sw_name_bytes:
 
-            ngx_log_debug4(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug4(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "grpc name: len:%uz h:%d last:%uz, rest:%uz",
                            ctx->field_length,
                            ctx->field_huffman,
@@ -3190,11 +3190,11 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
                                          &ctx->field_end,
                                          ctx->field_rest == 0,
                                          r->connection->log)
-                    != NGX_OK)
+                    != NJET_OK)
                 {
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream sent invalid encoded header");
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
                 ctx->name.len = ctx->field_end - ctx->name.data;
@@ -3256,10 +3256,10 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
             ctx->field_length += (ch & ~0x80) << 14;
 
             if (ch & 0x80) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent too large http2 "
                               "header value length");
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             state = sw_value;
@@ -3271,7 +3271,7 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
 
             ctx->value.data = ngx_pnalloc(r->pool, ctx->value.len + 1);
             if (ctx->value.data == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             ctx->field_end = ctx->value.data;
@@ -3284,7 +3284,7 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
 
         case sw_value_bytes:
 
-            ngx_log_debug4(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug4(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "grpc value: len:%uz h:%d last:%uz, rest:%uz",
                            ctx->field_length,
                            ctx->field_huffman,
@@ -3299,11 +3299,11 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
                                          &ctx->field_end,
                                          ctx->field_rest == 0,
                                          r->connection->log)
-                    != NGX_OK)
+                    != NJET_OK)
                 {
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream sent invalid encoded header");
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
                 ctx->value.len = ctx->field_end - ctx->value.data;
@@ -3341,24 +3341,24 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
         }
 
         if (!ctx->index) {
-            if (ngx_http_grpc_validate_header_name(r, &ctx->name) != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            if (ngx_http_grpc_validate_header_name(r, &ctx->name) != NJET_OK) {
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent invalid header: \"%V: %V\"",
                               &ctx->name, &ctx->value);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
         }
 
         if (!ctx->index || ctx->literal) {
-            if (ngx_http_grpc_validate_header_value(r, &ctx->value) != NGX_OK) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            if (ngx_http_grpc_validate_header_value(r, &ctx->value) != NJET_OK) {
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent invalid header: \"%V: %V\"",
                               &ctx->name, &ctx->value);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
         }
 
-        return NGX_OK;
+        return NJET_OK;
     }
 
     ctx->rest -= p - b->pos;
@@ -3366,10 +3366,10 @@ ngx_http_grpc_parse_fragment(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
     b->pos = p;
 
     if (ctx->rest > ctx->padding) {
-        return NGX_AGAIN;
+        return NJET_AGAIN;
     }
 
-    return NGX_DONE;
+    return NJET_DONE;
 }
 
 
@@ -3383,19 +3383,19 @@ ngx_http_grpc_validate_header_name(ngx_http_request_t *r, ngx_str_t *s)
         ch = s->data[i];
 
         if (ch == ':' && i > 0) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ch >= 'A' && ch <= 'Z') {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ch <= 0x20 || ch == 0x7f) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -3409,11 +3409,11 @@ ngx_http_grpc_validate_header_value(ngx_http_request_t *r, ngx_str_t *s)
         ch = s->data[i];
 
         if (ch == '\0' || ch == CR || ch == LF) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -3440,11 +3440,11 @@ ngx_http_grpc_parse_rst_stream(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
 
     if (state == sw_start) {
         if (ctx->rest != 4) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent rst stream frame "
                           "with invalid length: %uz",
                           ctx->rest);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
@@ -3452,7 +3452,7 @@ ngx_http_grpc_parse_rst_stream(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
         ch = *p;
 
 #if 0
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc rst byte: %02Xd s:%d", ch, state);
 #endif
 
@@ -3477,7 +3477,7 @@ ngx_http_grpc_parse_rst_stream(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
             ctx->error |= ch;
             state = sw_start;
 
-            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "grpc error: %ui", ctx->error);
 
             break;
@@ -3489,12 +3489,12 @@ ngx_http_grpc_parse_rst_stream(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
     b->pos = p;
 
     if (ctx->rest > 0) {
-        return NGX_AGAIN;
+        return NJET_AGAIN;
     }
 
     ctx->state = ngx_http_grpc_st_start;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -3527,19 +3527,19 @@ ngx_http_grpc_parse_goaway(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
     if (state == sw_start) {
 
         if (ctx->stream_id) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent goaway frame "
                           "with non-zero stream id: %ui",
                           ctx->stream_id);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ctx->rest < 8) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent goaway frame "
                           "with invalid length: %uz",
                           ctx->rest);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
@@ -3547,7 +3547,7 @@ ngx_http_grpc_parse_goaway(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
         ch = *p;
 
 #if 0
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc goaway byte: %02Xd s:%d", ch, state);
 #endif
 
@@ -3603,16 +3603,16 @@ ngx_http_grpc_parse_goaway(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
     b->pos = p;
 
     if (ctx->rest > 0) {
-        return NGX_AGAIN;
+        return NJET_AGAIN;
     }
 
-    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "grpc goaway: %ui, stream %ui",
                    ctx->error, ctx->stream_id);
 
     ctx->state = ngx_http_grpc_st_start;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -3639,11 +3639,11 @@ ngx_http_grpc_parse_window_update(ngx_http_request_t *r,
 
     if (state == sw_start) {
         if (ctx->rest != 4) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent window update frame "
                           "with invalid length: %uz",
                           ctx->rest);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
@@ -3651,7 +3651,7 @@ ngx_http_grpc_parse_window_update(ngx_http_request_t *r,
         ch = *p;
 
 #if 0
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc window update byte: %02Xd s:%d", ch, state);
 #endif
 
@@ -3684,40 +3684,40 @@ ngx_http_grpc_parse_window_update(ngx_http_request_t *r,
     b->pos = p;
 
     if (ctx->rest > 0) {
-        return NGX_AGAIN;
+        return NJET_AGAIN;
     }
 
     ctx->state = ngx_http_grpc_st_start;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "grpc window update: %ui", ctx->window_update);
 
     if (ctx->stream_id) {
 
-        if (ctx->window_update > (size_t) NGX_HTTP_V2_MAX_WINDOW
+        if (ctx->window_update > (size_t) NJET_HTTP_V2_MAX_WINDOW
                                  - ctx->send_window)
         {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent too large window update");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         ctx->send_window += ctx->window_update;
 
     } else {
 
-        if (ctx->window_update > NGX_HTTP_V2_MAX_WINDOW
+        if (ctx->window_update > NJET_HTTP_V2_MAX_WINDOW
                                  - ctx->connection->send_window)
         {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent too large window update");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         ctx->connection->send_window += ctx->window_update;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -3749,42 +3749,42 @@ ngx_http_grpc_parse_settings(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
     if (state == sw_start) {
 
         if (ctx->stream_id) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent settings frame "
                           "with non-zero stream id: %ui",
                           ctx->stream_id);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
-        if (ctx->flags & NGX_HTTP_V2_ACK_FLAG) {
-            ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        if (ctx->flags & NJET_HTTP_V2_ACK_FLAG) {
+            ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "grpc settings ack");
 
             if (ctx->rest != 0) {
-                ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                               "upstream sent settings frame "
                               "with ack flag and non-zero length: %uz",
                               ctx->rest);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             ctx->state = ngx_http_grpc_st_start;
 
-            return NGX_OK;
+            return NJET_OK;
         }
 
         if (ctx->rest % 6 != 0) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent settings frame "
                           "with invalid length: %uz",
                           ctx->rest);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ctx->free == NULL && ctx->settings++ > 1000) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent too many settings frames");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
@@ -3792,7 +3792,7 @@ ngx_http_grpc_parse_settings(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
         ch = *p;
 
 #if 0
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc settings byte: %02Xd s:%d", ch, state);
 #endif
 
@@ -3828,7 +3828,7 @@ ngx_http_grpc_parse_settings(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
             ctx->setting_value |= ch;
             state = sw_id;
 
-            ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "grpc setting: %ui %ui",
                            ctx->setting_id, ctx->setting_value);
 
@@ -3846,12 +3846,12 @@ ngx_http_grpc_parse_settings(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
             if (ctx->setting_id == 0x04) {
                 /* SETTINGS_INITIAL_WINDOW_SIZE */
 
-                if (ctx->setting_value > NGX_HTTP_V2_MAX_WINDOW) {
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                if (ctx->setting_value > NJET_HTTP_V2_MAX_WINDOW) {
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream sent settings frame "
                                   "with too large initial window size: %ui",
                                   ctx->setting_value);
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
                 window_update = ctx->setting_value
@@ -3859,14 +3859,14 @@ ngx_http_grpc_parse_settings(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
                 ctx->connection->init_window = ctx->setting_value;
 
                 if (ctx->send_window > 0
-                    && window_update > (ssize_t) NGX_HTTP_V2_MAX_WINDOW
+                    && window_update > (ssize_t) NJET_HTTP_V2_MAX_WINDOW
                                        - ctx->send_window)
                 {
-                    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                                   "upstream sent settings frame "
                                   "with too large initial window size: %ui",
                                   ctx->setting_value);
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
                 ctx->send_window += window_update;
@@ -3881,7 +3881,7 @@ ngx_http_grpc_parse_settings(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx,
     b->pos = p;
 
     if (ctx->rest > 0) {
-        return NGX_AGAIN;
+        return NJET_AGAIN;
     }
 
     ctx->state = ngx_http_grpc_st_start;
@@ -3918,31 +3918,31 @@ ngx_http_grpc_parse_ping(ngx_http_request_t *r,
     if (state == sw_start) {
 
         if (ctx->stream_id) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent ping frame "
                           "with non-zero stream id: %ui",
                           ctx->stream_id);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ctx->rest != 8) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent ping frame "
                           "with invalid length: %uz",
                           ctx->rest);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
-        if (ctx->flags & NGX_HTTP_V2_ACK_FLAG) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+        if (ctx->flags & NJET_HTTP_V2_ACK_FLAG) {
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent ping frame with ack flag");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ctx->free == NULL && ctx->pings++ > 1000) {
-            ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                           "upstream sent too many ping frames");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
@@ -3950,7 +3950,7 @@ ngx_http_grpc_parse_ping(ngx_http_request_t *r,
         ch = *p;
 
 #if 0
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "grpc ping byte: %02Xd s:%d", ch, state);
 #endif
 
@@ -3962,7 +3962,7 @@ ngx_http_grpc_parse_ping(ngx_http_request_t *r,
             ctx->ping_data[7] = ch;
             state = sw_start;
 
-            ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "grpc ping");
         }
     }
@@ -3972,7 +3972,7 @@ ngx_http_grpc_parse_ping(ngx_http_request_t *r,
     b->pos = p;
 
     if (ctx->rest > 0) {
-        return NGX_AGAIN;
+        return NJET_AGAIN;
     }
 
     ctx->state = ngx_http_grpc_st_start;
@@ -3987,7 +3987,7 @@ ngx_http_grpc_send_settings_ack(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx)
     ngx_chain_t            *cl, **ll;
     ngx_http_grpc_frame_t  *f;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "grpc send settings ack");
 
     for (cl = ctx->out, ll = &ctx->out; cl; cl = cl->next) {
@@ -3996,7 +3996,7 @@ ngx_http_grpc_send_settings_ack(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx)
 
     cl = ngx_http_grpc_get_buf(r, ctx);
     if (cl == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     f = (ngx_http_grpc_frame_t *) cl->buf->last;
@@ -4005,8 +4005,8 @@ ngx_http_grpc_send_settings_ack(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx)
     f->length_0 = 0;
     f->length_1 = 0;
     f->length_2 = 0;
-    f->type = NGX_HTTP_V2_SETTINGS_FRAME;
-    f->flags = NGX_HTTP_V2_ACK_FLAG;
+    f->type = NJET_HTTP_V2_SETTINGS_FRAME;
+    f->flags = NJET_HTTP_V2_ACK_FLAG;
     f->stream_id_0 = 0;
     f->stream_id_1 = 0;
     f->stream_id_2 = 0;
@@ -4014,7 +4014,7 @@ ngx_http_grpc_send_settings_ack(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx)
 
     *ll = cl;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -4024,7 +4024,7 @@ ngx_http_grpc_send_ping_ack(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx)
     ngx_chain_t            *cl, **ll;
     ngx_http_grpc_frame_t  *f;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "grpc send ping ack");
 
     for (cl = ctx->out, ll = &ctx->out; cl; cl = cl->next) {
@@ -4033,7 +4033,7 @@ ngx_http_grpc_send_ping_ack(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx)
 
     cl = ngx_http_grpc_get_buf(r, ctx);
     if (cl == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     f = (ngx_http_grpc_frame_t *) cl->buf->last;
@@ -4042,8 +4042,8 @@ ngx_http_grpc_send_ping_ack(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx)
     f->length_0 = 0;
     f->length_1 = 0;
     f->length_2 = 8;
-    f->type = NGX_HTTP_V2_PING_FRAME;
-    f->flags = NGX_HTTP_V2_ACK_FLAG;
+    f->type = NJET_HTTP_V2_PING_FRAME;
+    f->flags = NJET_HTTP_V2_ACK_FLAG;
     f->stream_id_0 = 0;
     f->stream_id_1 = 0;
     f->stream_id_2 = 0;
@@ -4053,7 +4053,7 @@ ngx_http_grpc_send_ping_ack(ngx_http_request_t *r, ngx_http_grpc_ctx_t *ctx)
 
     *ll = cl;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -4065,7 +4065,7 @@ ngx_http_grpc_send_window_update(ngx_http_request_t *r,
     ngx_chain_t            *cl, **ll;
     ngx_http_grpc_frame_t  *f;
 
-    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "grpc send window update: %uz %uz",
                    ctx->connection->recv_window, ctx->recv_window);
 
@@ -4075,7 +4075,7 @@ ngx_http_grpc_send_window_update(ngx_http_request_t *r,
 
     cl = ngx_http_grpc_get_buf(r, ctx);
     if (cl == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     f = (ngx_http_grpc_frame_t *) cl->buf->last;
@@ -4084,15 +4084,15 @@ ngx_http_grpc_send_window_update(ngx_http_request_t *r,
     f->length_0 = 0;
     f->length_1 = 0;
     f->length_2 = 4;
-    f->type = NGX_HTTP_V2_WINDOW_UPDATE_FRAME;
+    f->type = NJET_HTTP_V2_WINDOW_UPDATE_FRAME;
     f->flags = 0;
     f->stream_id_0 = 0;
     f->stream_id_1 = 0;
     f->stream_id_2 = 0;
     f->stream_id_3 = 0;
 
-    n = NGX_HTTP_V2_MAX_WINDOW - ctx->connection->recv_window;
-    ctx->connection->recv_window = NGX_HTTP_V2_MAX_WINDOW;
+    n = NJET_HTTP_V2_MAX_WINDOW - ctx->connection->recv_window;
+    ctx->connection->recv_window = NJET_HTTP_V2_MAX_WINDOW;
 
     *cl->buf->last++ = (u_char) ((n >> 24) & 0xff);
     *cl->buf->last++ = (u_char) ((n >> 16) & 0xff);
@@ -4105,15 +4105,15 @@ ngx_http_grpc_send_window_update(ngx_http_request_t *r,
     f->length_0 = 0;
     f->length_1 = 0;
     f->length_2 = 4;
-    f->type = NGX_HTTP_V2_WINDOW_UPDATE_FRAME;
+    f->type = NJET_HTTP_V2_WINDOW_UPDATE_FRAME;
     f->flags = 0;
     f->stream_id_0 = (u_char) ((ctx->id >> 24) & 0xff);
     f->stream_id_1 = (u_char) ((ctx->id >> 16) & 0xff);
     f->stream_id_2 = (u_char) ((ctx->id >> 8) & 0xff);
     f->stream_id_3 = (u_char) (ctx->id & 0xff);
 
-    n = NGX_HTTP_V2_MAX_WINDOW - ctx->recv_window;
-    ctx->recv_window = NGX_HTTP_V2_MAX_WINDOW;
+    n = NJET_HTTP_V2_MAX_WINDOW - ctx->recv_window;
+    ctx->recv_window = NJET_HTTP_V2_MAX_WINDOW;
 
     *cl->buf->last++ = (u_char) ((n >> 24) & 0xff);
     *cl->buf->last++ = (u_char) ((n >> 16) & 0xff);
@@ -4122,7 +4122,7 @@ ngx_http_grpc_send_window_update(ngx_http_request_t *r,
 
     *ll = cl;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -4181,7 +4181,7 @@ ngx_http_grpc_get_ctx(ngx_http_request_t *r)
     if (ctx->connection == NULL) {
         u = r->upstream;
 
-        if (ngx_http_grpc_get_connection_data(r, ctx, &u->peer) != NGX_OK) {
+        if (ngx_http_grpc_get_connection_data(r, ctx, &u->peer) != NJET_OK) {
             return NULL;
         }
     }
@@ -4214,40 +4214,40 @@ ngx_http_grpc_get_connection_data(ngx_http_request_t *r,
         }
 
         if (ctx->connection == NULL) {
-            ngx_log_error(NGX_LOG_ERR, c->log, 0,
+            ngx_log_error(NJET_LOG_ERR, c->log, 0,
                           "no connection data found for "
                           "keepalive http2 connection");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         ctx->send_window = ctx->connection->init_window;
-        ctx->recv_window = NGX_HTTP_V2_MAX_WINDOW;
+        ctx->recv_window = NJET_HTTP_V2_MAX_WINDOW;
 
         ctx->connection->last_stream_id += 2;
         ctx->id = ctx->connection->last_stream_id;
 
-        return NGX_OK;
+        return NJET_OK;
     }
 
     cln = ngx_pool_cleanup_add(c->pool, sizeof(ngx_http_grpc_conn_t));
     if (cln == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     cln->handler = ngx_http_grpc_cleanup;
     ctx->connection = cln->data;
 
-    ctx->connection->init_window = NGX_HTTP_V2_DEFAULT_WINDOW;
-    ctx->connection->send_window = NGX_HTTP_V2_DEFAULT_WINDOW;
-    ctx->connection->recv_window = NGX_HTTP_V2_MAX_WINDOW;
+    ctx->connection->init_window = NJET_HTTP_V2_DEFAULT_WINDOW;
+    ctx->connection->send_window = NJET_HTTP_V2_DEFAULT_WINDOW;
+    ctx->connection->recv_window = NJET_HTTP_V2_MAX_WINDOW;
 
-    ctx->send_window = NGX_HTTP_V2_DEFAULT_WINDOW;
-    ctx->recv_window = NGX_HTTP_V2_MAX_WINDOW;
+    ctx->send_window = NJET_HTTP_V2_DEFAULT_WINDOW;
+    ctx->recv_window = NJET_HTTP_V2_MAX_WINDOW;
 
     ctx->id = 1;
     ctx->connection->last_stream_id = 1;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -4255,7 +4255,7 @@ static void
 ngx_http_grpc_cleanup(void *data)
 {
 #if 0
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, c->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, c->log, 0,
                    "grpc cleanup");
 #endif
     return;
@@ -4265,7 +4265,7 @@ ngx_http_grpc_cleanup(void *data)
 static void
 ngx_http_grpc_abort_request(ngx_http_request_t *r)
 {
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "abort grpc request");
     return;
 }
@@ -4274,7 +4274,7 @@ ngx_http_grpc_abort_request(ngx_http_request_t *r)
 static void
 ngx_http_grpc_finalize_request(ngx_http_request_t *r, ngx_int_t rc)
 {
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "finalize grpc request");
     return;
 }
@@ -4290,7 +4290,7 @@ ngx_http_grpc_internal_trailers_variable(ngx_http_request_t *r,
 
     if (te == NULL) {
         v->not_found = 1;
-        return NGX_OK;
+        return NJET_OK;
     }
 
     if (ngx_strlcasestrn(te->value.data, te->value.data + te->value.len,
@@ -4298,7 +4298,7 @@ ngx_http_grpc_internal_trailers_variable(ngx_http_request_t *r,
         == NULL)
     {
         v->not_found = 1;
-        return NGX_OK;
+        return NJET_OK;
     }
 
     v->valid = 1;
@@ -4308,7 +4308,7 @@ ngx_http_grpc_internal_trailers_variable(ngx_http_request_t *r,
     v->data = (u_char *) "trailers";
     v->len = sizeof("trailers") - 1;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -4320,14 +4320,14 @@ ngx_http_grpc_add_variables(ngx_conf_t *cf)
     for (v = ngx_http_grpc_vars; v->name.len; v++) {
         var = ngx_http_add_variable(cf, &v->name, v->flags);
         if (var == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         var->get_handler = v->get_handler;
         var->data = v->data;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -4360,31 +4360,31 @@ ngx_http_grpc_create_loc_conf(ngx_conf_t *cf)
      *     conf->ssl_crl = { 0, NULL };
      */
 
-    conf->upstream.local = NGX_CONF_UNSET_PTR;
-    conf->upstream.socket_keepalive = NGX_CONF_UNSET;
-    conf->upstream.next_upstream_tries = NGX_CONF_UNSET_UINT;
-    conf->upstream.connect_timeout = NGX_CONF_UNSET_MSEC;
-    conf->upstream.send_timeout = NGX_CONF_UNSET_MSEC;
-    conf->upstream.read_timeout = NGX_CONF_UNSET_MSEC;
-    conf->upstream.next_upstream_timeout = NGX_CONF_UNSET_MSEC;
+    conf->upstream.local = NJET_CONF_UNSET_PTR;
+    conf->upstream.socket_keepalive = NJET_CONF_UNSET;
+    conf->upstream.next_upstream_tries = NJET_CONF_UNSET_UINT;
+    conf->upstream.connect_timeout = NJET_CONF_UNSET_MSEC;
+    conf->upstream.send_timeout = NJET_CONF_UNSET_MSEC;
+    conf->upstream.read_timeout = NJET_CONF_UNSET_MSEC;
+    conf->upstream.next_upstream_timeout = NJET_CONF_UNSET_MSEC;
 
-    conf->upstream.buffer_size = NGX_CONF_UNSET_SIZE;
+    conf->upstream.buffer_size = NJET_CONF_UNSET_SIZE;
 
-    conf->upstream.hide_headers = NGX_CONF_UNSET_PTR;
-    conf->upstream.pass_headers = NGX_CONF_UNSET_PTR;
+    conf->upstream.hide_headers = NJET_CONF_UNSET_PTR;
+    conf->upstream.pass_headers = NJET_CONF_UNSET_PTR;
 
-    conf->upstream.intercept_errors = NGX_CONF_UNSET;
+    conf->upstream.intercept_errors = NJET_CONF_UNSET;
 
-#if (NGX_HTTP_SSL)
-    conf->upstream.ssl_session_reuse = NGX_CONF_UNSET;
-    conf->upstream.ssl_name = NGX_CONF_UNSET_PTR;
-    conf->upstream.ssl_server_name = NGX_CONF_UNSET;
-    conf->upstream.ssl_verify = NGX_CONF_UNSET;
-    conf->ssl_verify_depth = NGX_CONF_UNSET_UINT;
-    conf->upstream.ssl_certificate = NGX_CONF_UNSET_PTR;
-    conf->upstream.ssl_certificate_key = NGX_CONF_UNSET_PTR;
-    conf->upstream.ssl_passwords = NGX_CONF_UNSET_PTR;
-    conf->ssl_conf_commands = NGX_CONF_UNSET_PTR;
+#if (NJET_HTTP_SSL)
+    conf->upstream.ssl_session_reuse = NJET_CONF_UNSET;
+    conf->upstream.ssl_name = NJET_CONF_UNSET_PTR;
+    conf->upstream.ssl_server_name = NJET_CONF_UNSET;
+    conf->upstream.ssl_verify = NJET_CONF_UNSET;
+    conf->ssl_verify_depth = NJET_CONF_UNSET_UINT;
+    conf->upstream.ssl_certificate = NJET_CONF_UNSET_PTR;
+    conf->upstream.ssl_certificate_key = NJET_CONF_UNSET_PTR;
+    conf->upstream.ssl_passwords = NJET_CONF_UNSET_PTR;
+    conf->ssl_conf_commands = NJET_CONF_UNSET_PTR;
 #endif
 
     /* the hardcoded values */
@@ -4402,7 +4402,7 @@ ngx_http_grpc_create_loc_conf(ngx_conf_t *cf)
     conf->upstream.pass_trailers = 1;
     conf->upstream.preserve_output = 1;
 
-    conf->headers_source = NGX_CONF_UNSET_PTR;
+    conf->headers_source = NJET_CONF_UNSET_PTR;
 
     ngx_str_set(&conf->upstream.module, "grpc");
 
@@ -4447,34 +4447,34 @@ ngx_http_grpc_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_bitmask_value(conf->upstream.ignore_headers,
                               prev->upstream.ignore_headers,
-                              NGX_CONF_BITMASK_SET);
+                              NJET_CONF_BITMASK_SET);
 
     ngx_conf_merge_bitmask_value(conf->upstream.next_upstream,
                               prev->upstream.next_upstream,
-                              (NGX_CONF_BITMASK_SET
-                               |NGX_HTTP_UPSTREAM_FT_ERROR
-                               |NGX_HTTP_UPSTREAM_FT_TIMEOUT));
+                              (NJET_CONF_BITMASK_SET
+                               |NJET_HTTP_UPSTREAM_FT_ERROR
+                               |NJET_HTTP_UPSTREAM_FT_TIMEOUT));
 
-    if (conf->upstream.next_upstream & NGX_HTTP_UPSTREAM_FT_OFF) {
-        conf->upstream.next_upstream = NGX_CONF_BITMASK_SET
-                                       |NGX_HTTP_UPSTREAM_FT_OFF;
+    if (conf->upstream.next_upstream & NJET_HTTP_UPSTREAM_FT_OFF) {
+        conf->upstream.next_upstream = NJET_CONF_BITMASK_SET
+                                       |NJET_HTTP_UPSTREAM_FT_OFF;
     }
 
     ngx_conf_merge_value(conf->upstream.intercept_errors,
                               prev->upstream.intercept_errors, 0);
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
 
-    if (ngx_http_grpc_merge_ssl(cf, conf, prev) != NGX_OK) {
-        return NGX_CONF_ERROR;
+    if (ngx_http_grpc_merge_ssl(cf, conf, prev) != NJET_OK) {
+        return NJET_CONF_ERROR;
     }
 
     ngx_conf_merge_value(conf->upstream.ssl_session_reuse,
                               prev->upstream.ssl_session_reuse, 1);
 
     ngx_conf_merge_bitmask_value(conf->ssl_protocols, prev->ssl_protocols,
-                                 (NGX_CONF_BITMASK_SET|NGX_SSL_TLSv1
-                                  |NGX_SSL_TLSv1_1|NGX_SSL_TLSv1_2));
+                                 (NJET_CONF_BITMASK_SET|NJET_SSL_TLSv1
+                                  |NJET_SSL_TLSv1_1|NJET_SSL_TLSv1_2));
 
     ngx_conf_merge_str_value(conf->ssl_ciphers, prev->ssl_ciphers,
                              "DEFAULT");
@@ -4501,8 +4501,8 @@ ngx_http_grpc_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_ptr_value(conf->ssl_conf_commands,
                               prev->ssl_conf_commands, NULL);
 
-    if (conf->ssl && ngx_http_grpc_set_ssl(cf, conf) != NGX_OK) {
-        return NGX_CONF_ERROR;
+    if (conf->ssl && ngx_http_grpc_set_ssl(cf, conf) != NJET_OK) {
+        return NJET_CONF_ERROR;
     }
 
 #endif
@@ -4513,9 +4513,9 @@ ngx_http_grpc_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 
     if (ngx_http_upstream_hide_headers_hash(cf, &conf->upstream,
             &prev->upstream, ngx_http_grpc_hide_headers, &hash)
-        != NGX_OK)
+        != NJET_OK)
     {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     clcf = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
@@ -4529,7 +4529,7 @@ ngx_http_grpc_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
         conf->grpc_lengths = prev->grpc_lengths;
         conf->grpc_values = prev->grpc_values;
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
         conf->ssl = prev->ssl;
 #endif
     }
@@ -4549,8 +4549,8 @@ ngx_http_grpc_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 
     rc = ngx_http_grpc_init_headers(cf, conf, &conf->headers,
                                     ngx_http_grpc_headers);
-    if (rc != NGX_OK) {
-        return NGX_CONF_ERROR;
+    if (rc != NJET_OK) {
+        return NJET_CONF_ERROR;
     }
 
     /*
@@ -4565,7 +4565,7 @@ ngx_http_grpc_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
         prev->host_set = conf->host_set;
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -4585,29 +4585,29 @@ ngx_http_grpc_init_headers(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *conf,
     ngx_http_script_copy_code_t  *copy;
 
     if (headers->hash.buckets) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
     if (ngx_array_init(&headers_names, cf->temp_pool, 4, sizeof(ngx_hash_key_t))
-        != NGX_OK)
+        != NJET_OK)
     {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (ngx_array_init(&headers_merged, cf->temp_pool, 4, sizeof(ngx_keyval_t))
-        != NGX_OK)
+        != NJET_OK)
     {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     headers->lengths = ngx_array_create(cf->pool, 64, 1);
     if (headers->lengths == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     headers->values = ngx_array_create(cf->pool, 512, 1);
     if (headers->values == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (conf->headers_source) {
@@ -4623,7 +4623,7 @@ ngx_http_grpc_init_headers(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *conf,
 
             s = ngx_array_push(&headers_merged);
             if (s == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             *s = src[i];
@@ -4643,7 +4643,7 @@ ngx_http_grpc_init_headers(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *conf,
 
         s = ngx_array_push(&headers_merged);
         if (s == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         *s = *h;
@@ -4659,7 +4659,7 @@ ngx_http_grpc_init_headers(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *conf,
 
         hk = ngx_array_push(&headers_names);
         if (hk == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         hk->key = src[i].key;
@@ -4673,7 +4673,7 @@ ngx_http_grpc_init_headers(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *conf,
         copy = ngx_array_push_n(headers->lengths,
                                 sizeof(ngx_http_script_copy_code_t));
         if (copy == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         copy->code = (ngx_http_script_code_pt) (void *)
@@ -4686,7 +4686,7 @@ ngx_http_grpc_init_headers(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *conf,
 
         copy = ngx_array_push_n(headers->values, size);
         if (copy == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         copy->code = ngx_http_script_copy_code;
@@ -4703,20 +4703,20 @@ ngx_http_grpc_init_headers(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *conf,
         sc.lengths = &headers->lengths;
         sc.values = &headers->values;
 
-        if (ngx_http_script_compile(&sc) != NGX_OK) {
-            return NGX_ERROR;
+        if (ngx_http_script_compile(&sc) != NJET_OK) {
+            return NJET_ERROR;
         }
 
         code = ngx_array_push_n(headers->lengths, sizeof(uintptr_t));
         if (code == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         *code = (uintptr_t) NULL;
 
         code = ngx_array_push_n(headers->values, sizeof(uintptr_t));
         if (code == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         *code = (uintptr_t) NULL;
@@ -4724,7 +4724,7 @@ ngx_http_grpc_init_headers(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *conf,
 
     code = ngx_array_push_n(headers->lengths, sizeof(uintptr_t));
     if (code == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     *code = (uintptr_t) NULL;
@@ -4784,15 +4784,15 @@ ngx_http_grpc_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         sc.complete_lengths = 1;
         sc.complete_values = 1;
 
-        if (ngx_http_script_compile(&sc) != NGX_OK) {
-            return NGX_CONF_ERROR;
+        if (ngx_http_script_compile(&sc) != NJET_OK) {
+            return NJET_CONF_ERROR;
         }
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
         glcf->ssl = 1;
 #endif
 
-        return NGX_CONF_OK;
+        return NJET_CONF_OK;
     }
 
     if (ngx_strncasecmp(url->data, (u_char *) "grpc://", 7) == 0) {
@@ -4800,14 +4800,14 @@ ngx_http_grpc_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     } else if (ngx_strncasecmp(url->data, (u_char *) "grpcs://", 8) == 0) {
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
         glcf->ssl = 1;
 
         add = 8;
 #else
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "grpcs protocol requires SSL support");
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
 #endif
 
     } else {
@@ -4822,7 +4822,7 @@ ngx_http_grpc_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     glcf->upstream.upstream = ngx_http_upstream_add(cf, &u, 0);
     if (glcf->upstream.upstream == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     if (u.family != AF_UNIX) {
@@ -4839,11 +4839,11 @@ ngx_http_grpc_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         ngx_str_set(&glcf->host, "localhost");
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
 
 static char *
 ngx_http_grpc_ssl_password_file(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
@@ -4852,7 +4852,7 @@ ngx_http_grpc_ssl_password_file(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     ngx_str_t  *value;
 
-    if (glcf->upstream.ssl_passwords != NGX_CONF_UNSET_PTR) {
+    if (glcf->upstream.ssl_passwords != NJET_CONF_UNSET_PTR) {
         return "is duplicate";
     }
 
@@ -4861,10 +4861,10 @@ ngx_http_grpc_ssl_password_file(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     glcf->upstream.ssl_passwords = ngx_ssl_read_password_file(cf, &value[1]);
 
     if (glcf->upstream.ssl_passwords == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -4874,7 +4874,7 @@ ngx_http_grpc_ssl_conf_command_check(ngx_conf_t *cf, void *post, void *data)
 #ifndef SSL_CONF_FLAG_FILE
     return "is not supported on this platform";
 #else
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 #endif
 }
 
@@ -4887,19 +4887,19 @@ ngx_http_grpc_merge_ssl(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *conf,
 
     if (conf->ssl_protocols == 0
         && conf->ssl_ciphers.data == NULL
-        && conf->upstream.ssl_certificate == NGX_CONF_UNSET_PTR
-        && conf->upstream.ssl_certificate_key == NGX_CONF_UNSET_PTR
-        && conf->upstream.ssl_passwords == NGX_CONF_UNSET_PTR
-        && conf->upstream.ssl_verify == NGX_CONF_UNSET
-        && conf->ssl_verify_depth == NGX_CONF_UNSET_UINT
+        && conf->upstream.ssl_certificate == NJET_CONF_UNSET_PTR
+        && conf->upstream.ssl_certificate_key == NJET_CONF_UNSET_PTR
+        && conf->upstream.ssl_passwords == NJET_CONF_UNSET_PTR
+        && conf->upstream.ssl_verify == NJET_CONF_UNSET
+        && conf->ssl_verify_depth == NJET_CONF_UNSET_UINT
         && conf->ssl_trusted_certificate.data == NULL
         && conf->ssl_crl.data == NULL
-        && conf->upstream.ssl_session_reuse == NGX_CONF_UNSET
-        && conf->ssl_conf_commands == NGX_CONF_UNSET_PTR)
+        && conf->upstream.ssl_session_reuse == NJET_CONF_UNSET
+        && conf->ssl_conf_commands == NJET_CONF_UNSET_PTR)
     {
         if (prev->upstream.ssl) {
             conf->upstream.ssl = prev->upstream.ssl;
-            return NGX_OK;
+            return NJET_OK;
         }
 
         preserve = 1;
@@ -4910,7 +4910,7 @@ ngx_http_grpc_merge_ssl(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *conf,
 
     conf->upstream.ssl = ngx_pcalloc(cf->pool, sizeof(ngx_ssl_t));
     if (conf->upstream.ssl == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     conf->upstream.ssl->log = cf->log;
@@ -4924,7 +4924,7 @@ ngx_http_grpc_merge_ssl(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *conf,
         prev->upstream.ssl = conf->upstream.ssl;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -4934,39 +4934,39 @@ ngx_http_grpc_set_ssl(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *glcf)
     ngx_pool_cleanup_t  *cln;
 
     if (glcf->upstream.ssl->ctx) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
     if (ngx_ssl_create(glcf->upstream.ssl, glcf->ssl_protocols, NULL)
-        != NGX_OK)
+        != NJET_OK)
     {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     cln = ngx_pool_cleanup_add(cf->pool, 0);
     if (cln == NULL) {
         ngx_ssl_cleanup_ctx(glcf->upstream.ssl);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     cln->handler = ngx_ssl_cleanup_ctx;
     cln->data = glcf->upstream.ssl;
 
     if (ngx_ssl_ciphers(cf, glcf->upstream.ssl, &glcf->ssl_ciphers, 0)
-        != NGX_OK)
+        != NJET_OK)
     {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (glcf->upstream.ssl_certificate
         && glcf->upstream.ssl_certificate->value.len)
     {
         if (glcf->upstream.ssl_certificate_key == NULL) {
-            ngx_log_error(NGX_LOG_EMERG, cf->log, 0,
+            ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
                           "no \"grpc_ssl_certificate_key\" is defined "
                           "for certificate \"%V\"",
                           &glcf->upstream.ssl_certificate->value);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (glcf->upstream.ssl_certificate->lengths
@@ -4975,7 +4975,7 @@ ngx_http_grpc_set_ssl(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *glcf)
             glcf->upstream.ssl_passwords =
                   ngx_ssl_preserve_passwords(cf, glcf->upstream.ssl_passwords);
             if (glcf->upstream.ssl_passwords == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
         } else {
@@ -4983,38 +4983,38 @@ ngx_http_grpc_set_ssl(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *glcf)
                                     &glcf->upstream.ssl_certificate->value,
                                     &glcf->upstream.ssl_certificate_key->value,
                                     glcf->upstream.ssl_passwords)
-                != NGX_OK)
+                != NJET_OK)
             {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
         }
     }
 
     if (glcf->upstream.ssl_verify) {
         if (glcf->ssl_trusted_certificate.len == 0) {
-            ngx_log_error(NGX_LOG_EMERG, cf->log, 0,
+            ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
                       "no grpc_ssl_trusted_certificate for grpc_ssl_verify");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ngx_ssl_trusted_certificate(cf, glcf->upstream.ssl,
                                         &glcf->ssl_trusted_certificate,
                                         glcf->ssl_verify_depth)
-            != NGX_OK)
+            != NJET_OK)
         {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
-        if (ngx_ssl_crl(cf, glcf->upstream.ssl, &glcf->ssl_crl) != NGX_OK) {
-            return NGX_ERROR;
+        if (ngx_ssl_crl(cf, glcf->upstream.ssl, &glcf->ssl_crl) != NJET_OK) {
+            return NJET_ERROR;
         }
     }
 
     if (ngx_ssl_client_session_cache(cf, glcf->upstream.ssl,
                                      glcf->upstream.ssl_session_reuse)
-        != NGX_OK)
+        != NJET_OK)
     {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
 #ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
@@ -5023,20 +5023,20 @@ ngx_http_grpc_set_ssl(ngx_conf_t *cf, ngx_http_grpc_loc_conf_t *glcf)
                                 (u_char *) "\x02h2", 3)
         != 0)
     {
-        ngx_ssl_error(NGX_LOG_EMERG, cf->log, 0,
+        ngx_ssl_error(NJET_LOG_EMERG, cf->log, 0,
                       "SSL_CTX_set_alpn_protos() failed");
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
 #endif
 
     if (ngx_ssl_conf_commands(cf, glcf->upstream.ssl, glcf->ssl_conf_commands)
-        != NGX_OK)
+        != NJET_OK)
     {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 #endif

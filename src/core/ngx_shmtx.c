@@ -9,7 +9,7 @@
 #include <ngx_core.h>
 
 
-#if (NGX_HAVE_ATOMIC_OPS)
+#if (NJET_HAVE_ATOMIC_OPS)
 
 
 static void ngx_shmtx_wakeup(ngx_shmtx_t *mtx);
@@ -21,17 +21,17 @@ ngx_shmtx_create(ngx_shmtx_t *mtx, ngx_shmtx_sh_t *addr, u_char *name)
     mtx->lock = &addr->lock;
 
     if (mtx->spin == (ngx_uint_t) -1) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
     mtx->spin = 2048;
 
-#if (NGX_HAVE_POSIX_SEM)
+#if (NJET_HAVE_POSIX_SEM)
 
     mtx->wait = &addr->wait;
 
     if (sem_init(&mtx->sem, 1, 0) == -1) {
-        ngx_log_error(NGX_LOG_ALERT, ngx_cycle->log, ngx_errno,
+        ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, ngx_errno,
                       "sem_init() failed");
     } else {
         mtx->semaphore = 1;
@@ -39,18 +39,18 @@ ngx_shmtx_create(ngx_shmtx_t *mtx, ngx_shmtx_sh_t *addr, u_char *name)
 
 #endif
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
 void
 ngx_shmtx_destroy(ngx_shmtx_t *mtx)
 {
-#if (NGX_HAVE_POSIX_SEM)
+#if (NJET_HAVE_POSIX_SEM)
 
     if (mtx->semaphore) {
         if (sem_destroy(&mtx->sem) == -1) {
-            ngx_log_error(NGX_LOG_ALERT, ngx_cycle->log, ngx_errno,
+            ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, ngx_errno,
                           "sem_destroy() failed");
         }
     }
@@ -71,7 +71,7 @@ ngx_shmtx_lock(ngx_shmtx_t *mtx)
 {
     ngx_uint_t         i, n;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_CORE, ngx_cycle->log, 0, "shmtx lock");
+    ngx_log_debug0(NJET_LOG_DEBUG_CORE, ngx_cycle->log, 0, "shmtx lock");
 
     for ( ;; ) {
 
@@ -95,7 +95,7 @@ ngx_shmtx_lock(ngx_shmtx_t *mtx)
             }
         }
 
-#if (NGX_HAVE_POSIX_SEM)
+#if (NJET_HAVE_POSIX_SEM)
 
         if (mtx->semaphore) {
             (void) ngx_atomic_fetch_add(mtx->wait, 1);
@@ -105,7 +105,7 @@ ngx_shmtx_lock(ngx_shmtx_t *mtx)
                 return;
             }
 
-            ngx_log_debug1(NGX_LOG_DEBUG_CORE, ngx_cycle->log, 0,
+            ngx_log_debug1(NJET_LOG_DEBUG_CORE, ngx_cycle->log, 0,
                            "shmtx wait %uA", *mtx->wait);
 
             while (sem_wait(&mtx->sem) == -1) {
@@ -113,14 +113,14 @@ ngx_shmtx_lock(ngx_shmtx_t *mtx)
 
                 err = ngx_errno;
 
-                if (err != NGX_EINTR) {
-                    ngx_log_error(NGX_LOG_ALERT, ngx_cycle->log, err,
+                if (err != NJET_EINTR) {
+                    ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, err,
                                   "sem_wait() failed while waiting on shmtx");
                     break;
                 }
             }
 
-            ngx_log_debug0(NGX_LOG_DEBUG_CORE, ngx_cycle->log, 0,
+            ngx_log_debug0(NJET_LOG_DEBUG_CORE, ngx_cycle->log, 0,
                            "shmtx awoke");
 
             continue;
@@ -137,7 +137,7 @@ void
 ngx_shmtx_unlock(ngx_shmtx_t *mtx)
 {
     if (mtx->spin != (ngx_uint_t) -1) {
-        ngx_log_debug0(NGX_LOG_DEBUG_CORE, ngx_cycle->log, 0, "shmtx unlock");
+        ngx_log_debug0(NJET_LOG_DEBUG_CORE, ngx_cycle->log, 0, "shmtx unlock");
     }
 
     if (ngx_atomic_cmp_set(mtx->lock, ngx_pid, 0)) {
@@ -149,7 +149,7 @@ ngx_shmtx_unlock(ngx_shmtx_t *mtx)
 ngx_uint_t
 ngx_shmtx_force_unlock(ngx_shmtx_t *mtx, ngx_pid_t pid)
 {
-    ngx_log_debug0(NGX_LOG_DEBUG_CORE, ngx_cycle->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_CORE, ngx_cycle->log, 0,
                    "shmtx forced unlock");
 
     if (ngx_atomic_cmp_set(mtx->lock, pid, 0)) {
@@ -164,7 +164,7 @@ ngx_shmtx_force_unlock(ngx_shmtx_t *mtx, ngx_pid_t pid)
 static void
 ngx_shmtx_wakeup(ngx_shmtx_t *mtx)
 {
-#if (NGX_HAVE_POSIX_SEM)
+#if (NJET_HAVE_POSIX_SEM)
     ngx_atomic_uint_t  wait;
 
     if (!mtx->semaphore) {
@@ -184,11 +184,11 @@ ngx_shmtx_wakeup(ngx_shmtx_t *mtx)
         }
     }
 
-    ngx_log_debug1(NGX_LOG_DEBUG_CORE, ngx_cycle->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_CORE, ngx_cycle->log, 0,
                    "shmtx wake %uA", wait);
 
     if (sem_post(&mtx->sem) == -1) {
-        ngx_log_error(NGX_LOG_ALERT, ngx_cycle->log, ngx_errno,
+        ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, ngx_errno,
                       "sem_post() failed while wake shmtx");
     }
 
@@ -206,37 +206,37 @@ ngx_shmtx_create(ngx_shmtx_t *mtx, ngx_shmtx_sh_t *addr, u_char *name)
 
         if (ngx_strcmp(name, mtx->name) == 0) {
             mtx->name = name;
-            return NGX_OK;
+            return NJET_OK;
         }
 
         ngx_shmtx_destroy(mtx);
     }
 
-    mtx->fd = ngx_open_file(name, NGX_FILE_RDWR, NGX_FILE_CREATE_OR_OPEN,
-                            NGX_FILE_DEFAULT_ACCESS);
+    mtx->fd = ngx_open_file(name, NJET_FILE_RDWR, NJET_FILE_CREATE_OR_OPEN,
+                            NJET_FILE_DEFAULT_ACCESS);
 
-    if (mtx->fd == NGX_INVALID_FILE) {
-        ngx_log_error(NGX_LOG_EMERG, ngx_cycle->log, ngx_errno,
+    if (mtx->fd == NJET_INVALID_FILE) {
+        ngx_log_error(NJET_LOG_EMERG, ngx_cycle->log, ngx_errno,
                       ngx_open_file_n " \"%s\" failed", name);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    if (ngx_delete_file(name) == NGX_FILE_ERROR) {
-        ngx_log_error(NGX_LOG_ALERT, ngx_cycle->log, ngx_errno,
+    if (ngx_delete_file(name) == NJET_FILE_ERROR) {
+        ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, ngx_errno,
                       ngx_delete_file_n " \"%s\" failed", name);
     }
 
     mtx->name = name;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
 void
 ngx_shmtx_destroy(ngx_shmtx_t *mtx)
 {
-    if (ngx_close_file(mtx->fd) == NGX_FILE_ERROR) {
-        ngx_log_error(NGX_LOG_ALERT, ngx_cycle->log, ngx_errno,
+    if (ngx_close_file(mtx->fd) == NJET_FILE_ERROR) {
+        ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, ngx_errno,
                       ngx_close_file_n " \"%s\" failed", mtx->name);
     }
 }
@@ -253,13 +253,13 @@ ngx_shmtx_trylock(ngx_shmtx_t *mtx)
         return 1;
     }
 
-    if (err == NGX_EAGAIN) {
+    if (err == NJET_EAGAIN) {
         return 0;
     }
 
 #if __osf__ /* Tru64 UNIX */
 
-    if (err == NGX_EACCES) {
+    if (err == NJET_EACCES) {
         return 0;
     }
 

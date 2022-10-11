@@ -29,10 +29,10 @@ static ngx_http_module_t  ngx_http_write_filter_module_ctx = {
 
 
 ngx_module_t  ngx_http_write_filter_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_http_write_filter_module_ctx,     /* module context */
     NULL,                                  /* module directives */
-    NGX_HTTP_MODULE,                       /* module type */
+    NJET_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -40,7 +40,7 @@ ngx_module_t  ngx_http_write_filter_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -57,7 +57,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
     c = r->connection;
 
     if (c->error) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     size = 0;
@@ -71,7 +71,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
     for (cl = r->out; cl; cl = cl->next) {
         ll = &cl->next;
 
-        ngx_log_debug7(NGX_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug7(NJET_LOG_DEBUG_EVENT, c->log, 0,
                        "write old buf t:%d f:%d %p, pos %p, size: %z "
                        "file: %O, size: %O",
                        cl->buf->temporary, cl->buf->in_file,
@@ -81,7 +81,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
                        cl->buf->file_last - cl->buf->file_pos);
 
         if (ngx_buf_size(cl->buf) == 0 && !ngx_buf_special(cl->buf)) {
-            ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                           "zero size buf in writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           cl->buf->temporary,
@@ -95,11 +95,11 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
                           cl->buf->file_last);
 
             ngx_debug_point();
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ngx_buf_size(cl->buf) < 0) {
-            ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                           "negative size buf in writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           cl->buf->temporary,
@@ -113,7 +113,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
                           cl->buf->file_last);
 
             ngx_debug_point();
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         size += ngx_buf_size(cl->buf);
@@ -136,14 +136,14 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
     for (ln = in; ln; ln = ln->next) {
         cl = ngx_alloc_chain_link(r->pool);
         if (cl == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         cl->buf = ln->buf;
         *ll = cl;
         ll = &cl->next;
 
-        ngx_log_debug7(NGX_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug7(NJET_LOG_DEBUG_EVENT, c->log, 0,
                        "write new buf t:%d f:%d %p, pos %p, size: %z "
                        "file: %O, size: %O",
                        cl->buf->temporary, cl->buf->in_file,
@@ -153,7 +153,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
                        cl->buf->file_last - cl->buf->file_pos);
 
         if (ngx_buf_size(cl->buf) == 0 && !ngx_buf_special(cl->buf)) {
-            ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                           "zero size buf in writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           cl->buf->temporary,
@@ -167,11 +167,11 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
                           cl->buf->file_last);
 
             ngx_debug_point();
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ngx_buf_size(cl->buf) < 0) {
-            ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                           "negative size buf in writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           cl->buf->temporary,
@@ -185,7 +185,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
                           cl->buf->file_last);
 
             ngx_debug_point();
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         size += ngx_buf_size(cl->buf);
@@ -205,7 +205,7 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
     *ll = NULL;
 
-    ngx_log_debug3(NGX_LOG_DEBUG_HTTP, c->log, 0,
+    ngx_log_debug3(NJET_LOG_DEBUG_HTTP, c->log, 0,
                    "http write filter: l:%ui f:%ui s:%O", last, flush, size);
 
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
@@ -217,16 +217,16 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
      */
 
     if (!last && !flush && in && size < (off_t) clcf->postpone_output) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
     if (c->write->delayed) {
-        c->buffered |= NGX_HTTP_WRITE_BUFFERED;
-        return NGX_AGAIN;
+        c->buffered |= NJET_HTTP_WRITE_BUFFERED;
+        return NJET_AGAIN;
     }
 
     if (size == 0
-        && !(c->buffered & NGX_LOWLEVEL_BUFFERED)
+        && !(c->buffered & NJET_LOWLEVEL_BUFFERED)
         && !(last && c->need_last_buf)
         && !(flush && c->need_flush_buf))
     {
@@ -238,17 +238,17 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
             }
 
             r->out = NULL;
-            c->buffered &= ~NGX_HTTP_WRITE_BUFFERED;
+            c->buffered &= ~NJET_HTTP_WRITE_BUFFERED;
 
-            return NGX_OK;
+            return NJET_OK;
         }
 
-        ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+        ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                       "the http output chain is empty");
 
         ngx_debug_point();
 
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (!r->limit_rate_set) {
@@ -272,9 +272,9 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
             delay = (ngx_msec_t) (- limit * 1000 / r->limit_rate + 1);
             ngx_add_timer(c->write, delay);
 
-            c->buffered |= NGX_HTTP_WRITE_BUFFERED;
+            c->buffered |= NJET_HTTP_WRITE_BUFFERED;
 
-            return NGX_AGAIN;
+            return NJET_AGAIN;
         }
 
         if (clcf->sendfile_max_chunk
@@ -289,17 +289,17 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
     sent = c->sent;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, c->log, 0,
                    "http write filter limit %O", limit);
 
     chain = c->send_chain(c, r->out, limit);
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, c->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, c->log, 0,
                    "http write filter %p", chain);
 
-    if (chain == NGX_CHAIN_ERROR) {
+    if (chain == NJET_CHAIN_ERROR) {
         c->error = 1;
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (r->limit_rate) {
@@ -340,17 +340,17 @@ ngx_http_write_filter(ngx_http_request_t *r, ngx_chain_t *in)
     r->out = chain;
 
     if (chain) {
-        c->buffered |= NGX_HTTP_WRITE_BUFFERED;
-        return NGX_AGAIN;
+        c->buffered |= NJET_HTTP_WRITE_BUFFERED;
+        return NJET_AGAIN;
     }
 
-    c->buffered &= ~NGX_HTTP_WRITE_BUFFERED;
+    c->buffered &= ~NJET_HTTP_WRITE_BUFFERED;
 
-    if ((c->buffered & NGX_LOWLEVEL_BUFFERED) && r->postponed == NULL) {
-        return NGX_AGAIN;
+    if ((c->buffered & NJET_LOWLEVEL_BUFFERED) && r->postponed == NULL) {
+        return NJET_AGAIN;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -359,5 +359,5 @@ ngx_http_write_filter_init(ngx_conf_t *cf)
 {
     ngx_http_top_body_filter = ngx_http_write_filter;
 
-    return NGX_OK;
+    return NJET_OK;
 }

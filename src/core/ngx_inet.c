@@ -59,7 +59,7 @@ ngx_inet_addr(u_char *text, size_t len)
 }
 
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
 
 ngx_int_t
 ngx_inet6_addr(u_char *p, size_t len, u_char *addr)
@@ -69,7 +69,7 @@ ngx_inet6_addr(u_char *p, size_t len, u_char *addr)
     ngx_uint_t  n, nibbles, word;
 
     if (len == 0) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     zero = NULL;
@@ -109,17 +109,17 @@ ngx_inet6_addr(u_char *p, size_t len, u_char *addr)
                 }
             }
 
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (c == '.' && nibbles) {
             if (n < 2 || digit == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             word = ngx_inet_addr(digit, len4 - 1);
             if (word == INADDR_NONE) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             word = ntohl(word);
@@ -130,7 +130,7 @@ ngx_inet6_addr(u_char *p, size_t len, u_char *addr)
         }
 
         if (++nibbles > 4) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (c >= '0' && c <= '9') {
@@ -145,11 +145,11 @@ ngx_inet6_addr(u_char *p, size_t len, u_char *addr)
             continue;
         }
 
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (nibbles == 0 && zero == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     *addr++ = (u_char) (word >> 8);
@@ -164,16 +164,16 @@ ngx_inet6_addr(u_char *p, size_t len, u_char *addr)
                 *d-- = *s--;
             }
             ngx_memzero(zero, n);
-            return NGX_OK;
+            return NJET_OK;
         }
 
     } else {
         if (zero == NULL) {
-            return NGX_OK;
+            return NJET_OK;
         }
     }
 
-    return NGX_ERROR;
+    return NJET_ERROR;
 }
 
 #endif
@@ -184,14 +184,14 @@ ngx_sock_ntop(struct sockaddr *sa, socklen_t socklen, u_char *text, size_t len,
     ngx_uint_t port)
 {
     u_char               *p;
-#if (NGX_HAVE_INET6 || NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_INET6 || NJET_HAVE_UNIX_DOMAIN)
     size_t                n;
 #endif
     struct sockaddr_in   *sin;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     struct sockaddr_in6  *sin6;
 #endif
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
     struct sockaddr_un   *saun;
 #endif
 
@@ -212,7 +212,7 @@ ngx_sock_ntop(struct sockaddr *sa, socklen_t socklen, u_char *text, size_t len,
 
         return (p - text);
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
 
     case AF_INET6:
 
@@ -234,7 +234,7 @@ ngx_sock_ntop(struct sockaddr *sa, socklen_t socklen, u_char *text, size_t len,
         return n;
 #endif
 
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
 
     case AF_UNIX:
         saun = (struct sockaddr_un *) sa;
@@ -277,7 +277,7 @@ ngx_inet_ntop(int family, void *addr, u_char *text, size_t len)
                             p[0], p[1], p[2], p[3])
                - text;
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
 
     case AF_INET6:
         return ngx_inet6_ntop(addr, text, len);
@@ -290,7 +290,7 @@ ngx_inet_ntop(int family, void *addr, u_char *text, size_t len)
 }
 
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
 
 size_t
 ngx_inet6_ntop(u_char *p, u_char *text, size_t len)
@@ -299,7 +299,7 @@ ngx_inet6_ntop(u_char *p, u_char *text, size_t len)
     size_t       max, n;
     ngx_uint_t   i, zero, last;
 
-    if (len < NGX_INET6_ADDRSTRLEN) {
+    if (len < NJET_INET6_ADDRSTRLEN) {
         return 0;
     }
 
@@ -377,7 +377,7 @@ ngx_ptocidr(ngx_str_t *text, ngx_cidr_t *cidr)
     u_char      *addr, *mask, *last;
     size_t       len;
     ngx_int_t    shift;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     ngx_int_t    rc;
     ngx_uint_t   s, i;
 #endif
@@ -395,41 +395,41 @@ ngx_ptocidr(ngx_str_t *text, ngx_cidr_t *cidr)
 
         if (mask == NULL) {
             cidr->u.in.mask = 0xffffffff;
-            return NGX_OK;
+            return NJET_OK;
         }
 
-#if (NGX_HAVE_INET6)
-    } else if (ngx_inet6_addr(addr, len, cidr->u.in6.addr.s6_addr) == NGX_OK) {
+#if (NJET_HAVE_INET6)
+    } else if (ngx_inet6_addr(addr, len, cidr->u.in6.addr.s6_addr) == NJET_OK) {
         cidr->family = AF_INET6;
 
         if (mask == NULL) {
             ngx_memset(cidr->u.in6.mask.s6_addr, 0xff, 16);
-            return NGX_OK;
+            return NJET_OK;
         }
 
 #endif
     } else {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     mask++;
 
     shift = ngx_atoi(mask, last - mask);
-    if (shift == NGX_ERROR) {
-        return NGX_ERROR;
+    if (shift == NJET_ERROR) {
+        return NJET_ERROR;
     }
 
     switch (cidr->family) {
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     case AF_INET6:
         if (shift > 128) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         addr = cidr->u.in6.addr.s6_addr;
         mask = cidr->u.in6.mask.s6_addr;
-        rc = NGX_OK;
+        rc = NJET_OK;
 
         for (i = 0; i < 16; i++) {
 
@@ -439,7 +439,7 @@ ngx_ptocidr(ngx_str_t *text, ngx_cidr_t *cidr)
             mask[i] = (u_char) (0xffu << (8 - s));
 
             if (addr[i] != (addr[i] & mask[i])) {
-                rc = NGX_DONE;
+                rc = NJET_DONE;
                 addr[i] &= mask[i];
             }
         }
@@ -449,7 +449,7 @@ ngx_ptocidr(ngx_str_t *text, ngx_cidr_t *cidr)
 
     default: /* AF_INET */
         if (shift > 32) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (shift) {
@@ -461,12 +461,12 @@ ngx_ptocidr(ngx_str_t *text, ngx_cidr_t *cidr)
         }
 
         if (cidr->u.in.addr == (cidr->u.in.addr & cidr->u.in.mask)) {
-            return NGX_OK;
+            return NJET_OK;
         }
 
         cidr->u.in.addr &= cidr->u.in.mask;
 
-        return NGX_DONE;
+        return NJET_DONE;
     }
 }
 
@@ -474,20 +474,20 @@ ngx_ptocidr(ngx_str_t *text, ngx_cidr_t *cidr)
 ngx_int_t
 ngx_cidr_match(struct sockaddr *sa, ngx_array_t *cidrs)
 {
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     u_char           *p;
 #endif
     in_addr_t         inaddr;
     ngx_cidr_t       *cidr;
     ngx_uint_t        family, i;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     ngx_uint_t        n;
     struct in6_addr  *inaddr6;
 #endif
 
-#if (NGX_SUPPRESS_WARN)
+#if (NJET_SUPPRESS_WARN)
     inaddr = 0;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     inaddr6 = NULL;
 #endif
 #endif
@@ -498,7 +498,7 @@ ngx_cidr_match(struct sockaddr *sa, ngx_array_t *cidrs)
         inaddr = ((struct sockaddr_in *) sa)->sin_addr.s_addr;
     }
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     else if (family == AF_INET6) {
         inaddr6 = &((struct sockaddr_in6 *) sa)->sin6_addr;
 
@@ -524,7 +524,7 @@ ngx_cidr_match(struct sockaddr *sa, ngx_array_t *cidrs)
 
         switch (family) {
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
         case AF_INET6:
             for (n = 0; n < 16; n++) {
                 if ((inaddr6->s6_addr[n] & cidr[i].u.in6.mask.s6_addr[n])
@@ -536,7 +536,7 @@ ngx_cidr_match(struct sockaddr *sa, ngx_array_t *cidrs)
             break;
 #endif
 
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
         case AF_UNIX:
             break;
 #endif
@@ -548,13 +548,13 @@ ngx_cidr_match(struct sockaddr *sa, ngx_array_t *cidrs)
             break;
         }
 
-        return NGX_OK;
+        return NJET_OK;
 
     next:
         continue;
     }
 
-    return NGX_DECLINED;
+    return NJET_DECLINED;
 }
 
 
@@ -564,7 +564,7 @@ ngx_parse_addr(ngx_pool_t *pool, ngx_addr_t *addr, u_char *text, size_t len)
     in_addr_t             inaddr;
     ngx_uint_t            family;
     struct sockaddr_in   *sin;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     struct in6_addr       inaddr6;
     struct sockaddr_in6  *sin6;
 
@@ -581,19 +581,19 @@ ngx_parse_addr(ngx_pool_t *pool, ngx_addr_t *addr, u_char *text, size_t len)
         family = AF_INET;
         len = sizeof(struct sockaddr_in);
 
-#if (NGX_HAVE_INET6)
-    } else if (ngx_inet6_addr(text, len, inaddr6.s6_addr) == NGX_OK) {
+#if (NJET_HAVE_INET6)
+    } else if (ngx_inet6_addr(text, len, inaddr6.s6_addr) == NJET_OK) {
         family = AF_INET6;
         len = sizeof(struct sockaddr_in6);
 
 #endif
     } else {
-        return NGX_DECLINED;
+        return NJET_DECLINED;
     }
 
     addr->sockaddr = ngx_pcalloc(pool, len);
     if (addr->sockaddr == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     addr->sockaddr->sa_family = (u_char) family;
@@ -601,7 +601,7 @@ ngx_parse_addr(ngx_pool_t *pool, ngx_addr_t *addr, u_char *text, size_t len)
 
     switch (family) {
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     case AF_INET6:
         sin6 = (struct sockaddr_in6 *) addr->sockaddr;
         ngx_memcpy(sin6->sin6_addr.s6_addr, inaddr6.s6_addr, 16);
@@ -614,7 +614,7 @@ ngx_parse_addr(ngx_pool_t *pool, ngx_addr_t *addr, u_char *text, size_t len)
         break;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -628,19 +628,19 @@ ngx_parse_addr_port(ngx_pool_t *pool, ngx_addr_t *addr, u_char *text,
 
     rc = ngx_parse_addr(pool, addr, text, len);
 
-    if (rc != NGX_DECLINED) {
+    if (rc != NJET_DECLINED) {
         return rc;
     }
 
     last = text + len;
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     if (len && text[0] == '[') {
 
         p = ngx_strlchr(text, last, ']');
 
         if (p == NULL || p == last - 1 || *++p != ':') {
-            return NGX_DECLINED;
+            return NJET_DECLINED;
         }
 
         text++;
@@ -653,7 +653,7 @@ ngx_parse_addr_port(ngx_pool_t *pool, ngx_addr_t *addr, u_char *text,
         p = ngx_strlchr(text, last, ':');
 
         if (p == NULL) {
-            return NGX_DECLINED;
+            return NJET_DECLINED;
         }
     }
 
@@ -663,20 +663,20 @@ ngx_parse_addr_port(ngx_pool_t *pool, ngx_addr_t *addr, u_char *text,
     port = ngx_atoi(p, plen);
 
     if (port < 1 || port > 65535) {
-        return NGX_DECLINED;
+        return NJET_DECLINED;
     }
 
     len -= plen + 1;
 
     rc = ngx_parse_addr(pool, addr, text, len);
 
-    if (rc != NGX_OK) {
+    if (rc != NJET_OK) {
         return rc;
     }
 
     ngx_inet_set_port(addr->sockaddr, (in_port_t) port);
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -704,7 +704,7 @@ ngx_parse_url(ngx_pool_t *pool, ngx_url_t *u)
 static ngx_int_t
 ngx_parse_unix_domain_url(ngx_pool_t *pool, ngx_url_t *u)
 {
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
     u_char              *path, *uri, *last;
     size_t               len;
     struct sockaddr_un  *saun;
@@ -730,7 +730,7 @@ ngx_parse_unix_domain_url(ngx_pool_t *pool, ngx_url_t *u)
 
     if (len == 0) {
         u->err = "no path in the unix domain socket";
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     u->host.len = len++;
@@ -738,7 +738,7 @@ ngx_parse_unix_domain_url(ngx_pool_t *pool, ngx_url_t *u)
 
     if (len > sizeof(saun->sun_path)) {
         u->err = "too long path in the unix domain socket";
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     u->socklen = sizeof(struct sockaddr_un);
@@ -748,12 +748,12 @@ ngx_parse_unix_domain_url(ngx_pool_t *pool, ngx_url_t *u)
 
     u->addrs = ngx_pcalloc(pool, sizeof(ngx_addr_t));
     if (u->addrs == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     saun = ngx_pcalloc(pool, sizeof(struct sockaddr_un));
     if (saun == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     u->family = AF_UNIX;
@@ -767,13 +767,13 @@ ngx_parse_unix_domain_url(ngx_pool_t *pool, ngx_url_t *u)
     u->addrs[0].name.len = len + 4;
     u->addrs[0].name.data = u->url.data;
 
-    return NGX_OK;
+    return NJET_OK;
 
 #else
 
     u->err = "the unix domain sockets are not supported on this platform";
 
-    return NGX_ERROR;
+    return NJET_ERROR;
 
 #endif
 }
@@ -812,7 +812,7 @@ ngx_parse_inet_url(ngx_pool_t *pool, ngx_url_t *u)
     if (uri) {
         if (u->listen || !u->uri_part) {
             u->err = "invalid host";
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         u->uri.len = last - uri;
@@ -840,7 +840,7 @@ ngx_parse_inet_url(ngx_pool_t *pool, ngx_url_t *u)
 
                 if (n < 1 || n > 65535) {
                     u->err = "invalid port";
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
                 u->last_port = (in_port_t) n;
@@ -853,12 +853,12 @@ ngx_parse_inet_url(ngx_pool_t *pool, ngx_url_t *u)
 
         if (n < 1 || n > 65535) {
             u->err = "invalid port";
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (u->last_port && n > u->last_port) {
             u->err = "invalid port range";
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         u->port = (in_port_t) n;
@@ -885,7 +885,7 @@ ngx_parse_inet_url(ngx_pool_t *pool, ngx_url_t *u)
 
                     n = ngx_atoi(dash, last - dash);
 
-                    if (n == NGX_ERROR) {
+                    if (n == NJET_ERROR) {
                         goto no_port;
                     }
 
@@ -901,20 +901,20 @@ ngx_parse_inet_url(ngx_pool_t *pool, ngx_url_t *u)
 
                 n = ngx_atoi(host, len);
 
-                if (n != NGX_ERROR) {
+                if (n != NJET_ERROR) {
 
                     if (u->err) {
-                        return NGX_ERROR;
+                        return NJET_ERROR;
                     }
 
                     if (n < 1 || n > 65535) {
                         u->err = "invalid port";
-                        return NGX_ERROR;
+                        return NJET_ERROR;
                     }
 
                     if (u->last_port && n > u->last_port) {
                         u->err = "invalid port range";
-                        return NGX_ERROR;
+                        return NJET_ERROR;
                     }
 
                     u->port = (in_port_t) n;
@@ -945,7 +945,7 @@ no_port:
 
     if (len == 0) {
         u->err = "no host";
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     u->host.len = len;
@@ -969,11 +969,11 @@ no_port:
     }
 
     if (u->no_resolve) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
-    if (ngx_inet_resolve_host(pool, u) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_inet_resolve_host(pool, u) != NJET_OK) {
+        return NJET_ERROR;
     }
 
     u->family = u->addrs[0].sockaddr->sa_family;
@@ -981,14 +981,14 @@ no_port:
     ngx_memcpy(&u->sockaddr, u->addrs[0].sockaddr, u->addrs[0].socklen);
     u->wildcard = ngx_inet_wildcard(&u->sockaddr.sockaddr);
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
 static ngx_int_t
 ngx_parse_inet6_url(ngx_pool_t *pool, ngx_url_t *u)
 {
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     u_char               *p, *host, *port, *last, *uri, *dash;
     size_t                len;
     ngx_int_t             n;
@@ -1006,7 +1006,7 @@ ngx_parse_inet6_url(ngx_pool_t *pool, ngx_url_t *u)
 
     if (p == NULL) {
         u->err = "invalid host";
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     port = p + 1;
@@ -1016,7 +1016,7 @@ ngx_parse_inet6_url(ngx_pool_t *pool, ngx_url_t *u)
     if (uri) {
         if (u->listen || !u->uri_part) {
             u->err = "invalid host";
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         u->uri.len = last - uri;
@@ -1028,7 +1028,7 @@ ngx_parse_inet6_url(ngx_pool_t *pool, ngx_url_t *u)
     if (port < last) {
         if (*port != ':') {
             u->err = "invalid host";
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         port++;
@@ -1045,7 +1045,7 @@ ngx_parse_inet6_url(ngx_pool_t *pool, ngx_url_t *u)
 
                 if (n < 1 || n > 65535) {
                     u->err = "invalid port";
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
 
                 u->last_port = (in_port_t) n;
@@ -1058,12 +1058,12 @@ ngx_parse_inet6_url(ngx_pool_t *pool, ngx_url_t *u)
 
         if (n < 1 || n > 65535) {
             u->err = "invalid port";
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (u->last_port && n > u->last_port) {
             u->err = "invalid port range";
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         u->port = (in_port_t) n;
@@ -1082,15 +1082,15 @@ ngx_parse_inet6_url(ngx_pool_t *pool, ngx_url_t *u)
 
     if (len == 0) {
         u->err = "no host";
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     u->host.len = len + 2;
     u->host.data = host - 1;
 
-    if (ngx_inet6_addr(host, len, sin6->sin6_addr.s6_addr) != NGX_OK) {
+    if (ngx_inet6_addr(host, len, sin6->sin6_addr.s6_addr) != NJET_OK) {
         u->err = "invalid IPv6 address";
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (IN6_IS_ADDR_UNSPECIFIED(&sin6->sin6_addr)) {
@@ -1105,13 +1105,13 @@ ngx_parse_inet6_url(ngx_pool_t *pool, ngx_url_t *u)
 
     u->err = "the INET6 sockets are not supported on this platform";
 
-    return NGX_ERROR;
+    return NJET_ERROR;
 
 #endif
 }
 
 
-#if (NGX_HAVE_GETADDRINFO && NGX_HAVE_INET6)
+#if (NJET_HAVE_GETADDRINFO && NJET_HAVE_INET6)
 
 ngx_int_t
 ngx_inet_resolve_host(ngx_pool_t *pool, ngx_url_t *u)
@@ -1122,7 +1122,7 @@ ngx_inet_resolve_host(ngx_pool_t *pool, ngx_url_t *u)
 
     host = ngx_alloc(u->host.len + 1, pool->log);
     if (host == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     (void) ngx_cpystrn(host, u->host.data, u->host.len + 1);
@@ -1137,7 +1137,7 @@ ngx_inet_resolve_host(ngx_pool_t *pool, ngx_url_t *u)
     if (getaddrinfo((char *) host, NULL, &hints, &res) != 0) {
         u->err = "host not found";
         ngx_free(host);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     ngx_free(host);
@@ -1177,22 +1177,22 @@ ngx_inet_resolve_host(ngx_pool_t *pool, ngx_url_t *u)
         }
 
         if (ngx_inet_add_addr(pool, u, rp->ai_addr, rp->ai_addrlen, n)
-            != NGX_OK)
+            != NJET_OK)
         {
             goto failed;
         }
     }
 
     freeaddrinfo(res);
-    return NGX_OK;
+    return NJET_OK;
 
 failed:
 
     freeaddrinfo(res);
-    return NGX_ERROR;
+    return NJET_ERROR;
 }
 
-#else /* !NGX_HAVE_GETADDRINFO || !NGX_HAVE_INET6 */
+#else /* !NJET_HAVE_GETADDRINFO || !NJET_HAVE_INET6 */
 
 ngx_int_t
 ngx_inet_resolve_host(ngx_pool_t *pool, ngx_url_t *u)
@@ -1212,7 +1212,7 @@ ngx_inet_resolve_host(ngx_pool_t *pool, ngx_url_t *u)
     if (sin.sin_addr.s_addr == INADDR_NONE) {
         host = ngx_alloc(u->host.len + 1, pool->log);
         if (host == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         (void) ngx_cpystrn(host, u->host.data, u->host.len + 1);
@@ -1223,7 +1223,7 @@ ngx_inet_resolve_host(ngx_pool_t *pool, ngx_url_t *u)
 
         if (h == NULL || h->h_addr_list[0] == NULL) {
             u->err = "host not found";
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         for (n = 0; h->h_addr_list[n] != NULL; n++) { /* void */ }
@@ -1235,9 +1235,9 @@ ngx_inet_resolve_host(ngx_pool_t *pool, ngx_url_t *u)
 
             if (ngx_inet_add_addr(pool, u, (struct sockaddr *) &sin,
                                   sizeof(struct sockaddr_in), n)
-                != NGX_OK)
+                != NJET_OK)
             {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
         }
 
@@ -1247,16 +1247,16 @@ ngx_inet_resolve_host(ngx_pool_t *pool, ngx_url_t *u)
 
         if (ngx_inet_add_addr(pool, u, (struct sockaddr *) &sin,
                               sizeof(struct sockaddr_in), 1)
-            != NGX_OK)
+            != NJET_OK)
         {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
-#endif /* NGX_HAVE_GETADDRINFO && NGX_HAVE_INET6 */
+#endif /* NJET_HAVE_GETADDRINFO && NJET_HAVE_INET6 */
 
 
 static ngx_int_t
@@ -1274,14 +1274,14 @@ ngx_inet_add_addr(ngx_pool_t *pool, ngx_url_t *u, struct sockaddr *sockaddr,
     if (u->addrs == NULL) {
         u->addrs = ngx_palloc(pool, total * nports * sizeof(ngx_addr_t));
         if (u->addrs == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
     for (i = 0; i < nports; i++) {
         sa = ngx_pcalloc(pool, socklen);
         if (sa == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         ngx_memcpy(sa, sockaddr, socklen);
@@ -1290,19 +1290,19 @@ ngx_inet_add_addr(ngx_pool_t *pool, ngx_url_t *u, struct sockaddr *sockaddr,
 
         switch (sa->sa_family) {
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
         case AF_INET6:
-            len = NGX_INET6_ADDRSTRLEN + sizeof("[]:65536") - 1;
+            len = NJET_INET6_ADDRSTRLEN + sizeof("[]:65536") - 1;
             break;
 #endif
 
         default: /* AF_INET */
-            len = NGX_INET_ADDRSTRLEN + sizeof(":65535") - 1;
+            len = NJET_INET_ADDRSTRLEN + sizeof(":65535") - 1;
         }
 
         p = ngx_pnalloc(pool, len);
         if (p == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         len = ngx_sock_ntop(sa, socklen, p, len, 1);
@@ -1316,7 +1316,7 @@ ngx_inet_add_addr(ngx_pool_t *pool, ngx_url_t *u, struct sockaddr *sockaddr,
         addr->name.data = p;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -1325,38 +1325,38 @@ ngx_cmp_sockaddr(struct sockaddr *sa1, socklen_t slen1,
     struct sockaddr *sa2, socklen_t slen2, ngx_uint_t cmp_port)
 {
     struct sockaddr_in   *sin1, *sin2;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     struct sockaddr_in6  *sin61, *sin62;
 #endif
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
     size_t                len;
     struct sockaddr_un   *saun1, *saun2;
 #endif
 
     if (sa1->sa_family != sa2->sa_family) {
-        return NGX_DECLINED;
+        return NJET_DECLINED;
     }
 
     switch (sa1->sa_family) {
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     case AF_INET6:
 
         sin61 = (struct sockaddr_in6 *) sa1;
         sin62 = (struct sockaddr_in6 *) sa2;
 
         if (cmp_port && sin61->sin6_port != sin62->sin6_port) {
-            return NGX_DECLINED;
+            return NJET_DECLINED;
         }
 
         if (ngx_memcmp(&sin61->sin6_addr, &sin62->sin6_addr, 16) != 0) {
-            return NGX_DECLINED;
+            return NJET_DECLINED;
         }
 
         break;
 #endif
 
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
     case AF_UNIX:
 
         saun1 = (struct sockaddr_un *) sa1;
@@ -1374,7 +1374,7 @@ ngx_cmp_sockaddr(struct sockaddr *sa1, socklen_t slen1,
         }
 
         if (ngx_memcmp(&saun1->sun_path, &saun2->sun_path, len) != 0) {
-            return NGX_DECLINED;
+            return NJET_DECLINED;
         }
 
         break;
@@ -1386,17 +1386,17 @@ ngx_cmp_sockaddr(struct sockaddr *sa1, socklen_t slen1,
         sin2 = (struct sockaddr_in *) sa2;
 
         if (cmp_port && sin1->sin_port != sin2->sin_port) {
-            return NGX_DECLINED;
+            return NJET_DECLINED;
         }
 
         if (sin1->sin_addr.s_addr != sin2->sin_addr.s_addr) {
-            return NGX_DECLINED;
+            return NJET_DECLINED;
         }
 
         break;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -1404,19 +1404,19 @@ in_port_t
 ngx_inet_get_port(struct sockaddr *sa)
 {
     struct sockaddr_in   *sin;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     struct sockaddr_in6  *sin6;
 #endif
 
     switch (sa->sa_family) {
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     case AF_INET6:
         sin6 = (struct sockaddr_in6 *) sa;
         return ntohs(sin6->sin6_port);
 #endif
 
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
     case AF_UNIX:
         return 0;
 #endif
@@ -1432,20 +1432,20 @@ void
 ngx_inet_set_port(struct sockaddr *sa, in_port_t port)
 {
     struct sockaddr_in   *sin;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     struct sockaddr_in6  *sin6;
 #endif
 
     switch (sa->sa_family) {
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     case AF_INET6:
         sin6 = (struct sockaddr_in6 *) sa;
         sin6->sin6_port = htons(port);
         break;
 #endif
 
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
     case AF_UNIX:
         break;
 #endif
@@ -1462,7 +1462,7 @@ ngx_uint_t
 ngx_inet_wildcard(struct sockaddr *sa)
 {
     struct sockaddr_in   *sin;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     struct sockaddr_in6  *sin6;
 #endif
 
@@ -1477,7 +1477,7 @@ ngx_inet_wildcard(struct sockaddr *sa)
 
         break;
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
 
     case AF_INET6:
         sin6 = (struct sockaddr_in6 *) sa;

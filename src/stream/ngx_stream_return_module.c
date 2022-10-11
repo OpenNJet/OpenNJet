@@ -30,9 +30,9 @@ static char *ngx_stream_return(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 static ngx_command_t  ngx_stream_return_commands[] = {
 
     { ngx_string("return"),
-      NGX_STREAM_SRV_CONF|NGX_CONF_TAKE1,
+      NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
       ngx_stream_return,
-      NGX_STREAM_SRV_CONF_OFFSET,
+      NJET_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
 
@@ -53,10 +53,10 @@ static ngx_stream_module_t  ngx_stream_return_module_ctx = {
 
 
 ngx_module_t  ngx_stream_return_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_stream_return_module_ctx,         /* module context */
     ngx_stream_return_commands,            /* module directives */
-    NGX_STREAM_MODULE,                     /* module type */
+    NJET_STREAM_MODULE,                     /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -64,7 +64,7 @@ ngx_module_t  ngx_stream_return_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -83,22 +83,22 @@ ngx_stream_return_handler(ngx_stream_session_t *s)
 
     rscf = ngx_stream_get_module_srv_conf(s, ngx_stream_return_module);
 
-    if (ngx_stream_complex_value(s, &rscf->text, &text) != NGX_OK) {
-        ngx_stream_finalize_session(s, NGX_STREAM_INTERNAL_SERVER_ERROR);
+    if (ngx_stream_complex_value(s, &rscf->text, &text) != NJET_OK) {
+        ngx_stream_finalize_session(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
-    ngx_log_debug1(NGX_LOG_DEBUG_STREAM, c->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, c->log, 0,
                    "stream return text: \"%V\"", &text);
 
     if (text.len == 0) {
-        ngx_stream_finalize_session(s, NGX_STREAM_OK);
+        ngx_stream_finalize_session(s, NJET_STREAM_OK);
         return;
     }
 
     ctx = ngx_pcalloc(c->pool, sizeof(ngx_stream_return_ctx_t));
     if (ctx == NULL) {
-        ngx_stream_finalize_session(s, NGX_STREAM_INTERNAL_SERVER_ERROR);
+        ngx_stream_finalize_session(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
@@ -106,7 +106,7 @@ ngx_stream_return_handler(ngx_stream_session_t *s)
 
     b = ngx_calloc_buf(c->pool);
     if (b == NULL) {
-        ngx_stream_finalize_session(s, NGX_STREAM_INTERNAL_SERVER_ERROR);
+        ngx_stream_finalize_session(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
@@ -117,7 +117,7 @@ ngx_stream_return_handler(ngx_stream_session_t *s)
 
     ctx->out = ngx_alloc_chain_link(c->pool);
     if (ctx->out == NULL) {
-        ngx_stream_finalize_session(s, NGX_STREAM_INTERNAL_SERVER_ERROR);
+        ngx_stream_finalize_session(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
@@ -141,29 +141,29 @@ ngx_stream_return_write_handler(ngx_event_t *ev)
     s = c->data;
 
     if (ev->timedout) {
-        ngx_connection_error(c, NGX_ETIMEDOUT, "connection timed out");
-        ngx_stream_finalize_session(s, NGX_STREAM_OK);
+        ngx_connection_error(c, NJET_ETIMEDOUT, "connection timed out");
+        ngx_stream_finalize_session(s, NJET_STREAM_OK);
         return;
     }
 
     ctx = ngx_stream_get_module_ctx(s, ngx_stream_return_module);
 
-    if (ngx_stream_top_filter(s, ctx->out, 1) == NGX_ERROR) {
-        ngx_stream_finalize_session(s, NGX_STREAM_INTERNAL_SERVER_ERROR);
+    if (ngx_stream_top_filter(s, ctx->out, 1) == NJET_ERROR) {
+        ngx_stream_finalize_session(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
     ctx->out = NULL;
 
     if (!c->buffered) {
-        ngx_log_debug0(NGX_LOG_DEBUG_STREAM, c->log, 0,
+        ngx_log_debug0(NJET_LOG_DEBUG_STREAM, c->log, 0,
                        "stream return done sending");
-        ngx_stream_finalize_session(s, NGX_STREAM_OK);
+        ngx_stream_finalize_session(s, NJET_STREAM_OK);
         return;
     }
 
-    if (ngx_handle_write_event(ev, 0) != NGX_OK) {
-        ngx_stream_finalize_session(s, NGX_STREAM_INTERNAL_SERVER_ERROR);
+    if (ngx_handle_write_event(ev, 0) != NJET_OK) {
+        ngx_stream_finalize_session(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
@@ -206,13 +206,13 @@ ngx_stream_return(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ccv.value = &value[1];
     ccv.complex_value = &rscf->text;
 
-    if (ngx_stream_compile_complex_value(&ccv) != NGX_OK) {
-        return NGX_CONF_ERROR;
+    if (ngx_stream_compile_complex_value(&ccv) != NJET_OK) {
+        return NJET_CONF_ERROR;
     }
 
     cscf = ngx_stream_conf_get_module_srv_conf(cf, ngx_stream_core_module);
 
     cscf->handler = ngx_stream_return_handler;
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }

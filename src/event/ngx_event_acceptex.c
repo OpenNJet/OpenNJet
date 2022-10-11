@@ -24,10 +24,10 @@ ngx_event_acceptex(ngx_event_t *rev)
 
     c->log->handler = ngx_accept_log_error;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0, "AcceptEx: %d", c->fd);
+    ngx_log_debug1(NJET_LOG_DEBUG_EVENT, c->log, 0, "AcceptEx: %d", c->fd);
 
     if (rev->ovlp.error) {
-        ngx_log_error(NGX_LOG_CRIT, c->log, rev->ovlp.error,
+        ngx_log_error(NJET_LOG_CRIT, c->log, rev->ovlp.error,
                       "AcceptEx() %V failed", &ls->addr_text);
         return;
     }
@@ -38,7 +38,7 @@ ngx_event_acceptex(ngx_event_t *rev)
                    (char *) &ls->fd, sizeof(ngx_socket_t))
         == -1)
     {
-        ngx_log_error(NGX_LOG_CRIT, c->log, ngx_socket_errno,
+        ngx_log_error(NJET_LOG_CRIT, c->log, ngx_socket_errno,
                       "setsockopt(SO_UPDATE_ACCEPT_CONTEXT) failed for %V",
                       &c->addr_text);
         /* TODO: close socket */
@@ -106,51 +106,51 @@ ngx_event_post_acceptex(ngx_listening_t *ls, ngx_uint_t n)
 
         s = ngx_socket(ls->sockaddr->sa_family, ls->type, 0);
 
-        ngx_log_debug1(NGX_LOG_DEBUG_EVENT, &ls->log, 0,
+        ngx_log_debug1(NJET_LOG_DEBUG_EVENT, &ls->log, 0,
                        ngx_socket_n " s:%d", s);
 
         if (s == (ngx_socket_t) -1) {
-            ngx_log_error(NGX_LOG_ALERT, &ls->log, ngx_socket_errno,
+            ngx_log_error(NJET_LOG_ALERT, &ls->log, ngx_socket_errno,
                           ngx_socket_n " failed");
 
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         c = ngx_get_connection(s, &ls->log);
 
         if (c == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         c->pool = ngx_create_pool(ls->pool_size, &ls->log);
         if (c->pool == NULL) {
             ngx_close_posted_connection(c);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         log = ngx_palloc(c->pool, sizeof(ngx_log_t));
         if (log == NULL) {
             ngx_close_posted_connection(c);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         c->buffer = ngx_create_temp_buf(c->pool, ls->post_accept_buffer_size
                                                  + 2 * (ls->socklen + 16));
         if (c->buffer == NULL) {
             ngx_close_posted_connection(c);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         c->local_sockaddr = ngx_palloc(c->pool, ls->socklen);
         if (c->local_sockaddr == NULL) {
             ngx_close_posted_connection(c);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         c->sockaddr = ngx_palloc(c->pool, ls->socklen);
         if (c->sockaddr == NULL) {
             ngx_close_posted_connection(c);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         *log = ls->log;
@@ -176,9 +176,9 @@ ngx_event_post_acceptex(ngx_listening_t *ls, ngx_uint_t n)
         rev->log = c->log;
         wev->log = c->log;
 
-        if (ngx_add_event(rev, 0, NGX_IOCP_IO) == NGX_ERROR) {
+        if (ngx_add_event(rev, 0, NJET_IOCP_IO) == NJET_ERROR) {
             ngx_close_posted_connection(c);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ngx_acceptex(ls->fd, s, c->buffer->pos, ls->post_accept_buffer_size,
@@ -188,16 +188,16 @@ ngx_event_post_acceptex(ngx_listening_t *ls, ngx_uint_t n)
         {
             err = ngx_socket_errno;
             if (err != WSA_IO_PENDING) {
-                ngx_log_error(NGX_LOG_ALERT, &ls->log, err,
+                ngx_log_error(NJET_LOG_ALERT, &ls->log, err,
                               "AcceptEx() %V failed", &ls->addr_text);
 
                 ngx_close_posted_connection(c);
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
         }
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -212,7 +212,7 @@ ngx_close_posted_connection(ngx_connection_t *c)
     c->fd = (ngx_socket_t) -1;
 
     if (ngx_close_socket(fd) == -1) {
-        ngx_log_error(NGX_LOG_ALERT, c->log, ngx_socket_errno,
+        ngx_log_error(NJET_LOG_ALERT, c->log, ngx_socket_errno,
                       ngx_close_socket_n " failed");
     }
 

@@ -18,7 +18,7 @@ ngx_writev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
     ngx_chain_t   *cl;
     ngx_event_t   *wev;
     ngx_iovec_t    vec;
-    struct iovec   iovs[NGX_IOVS_PREALLOCATE];
+    struct iovec   iovs[NJET_IOVS_PREALLOCATE];
 
     wev = c->write;
 
@@ -26,27 +26,27 @@ ngx_writev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
         return in;
     }
 
-#if (NGX_HAVE_KQUEUE)
+#if (NJET_HAVE_KQUEUE)
 
-    if ((ngx_event_flags & NGX_USE_KQUEUE_EVENT) && wev->pending_eof) {
+    if ((ngx_event_flags & NJET_USE_KQUEUE_EVENT) && wev->pending_eof) {
         (void) ngx_connection_error(c, wev->kq_errno,
                                "kevent() reported about an closed connection");
         wev->error = 1;
-        return NGX_CHAIN_ERROR;
+        return NJET_CHAIN_ERROR;
     }
 
 #endif
 
     /* the maximum limit size is the maximum size_t value - the page size */
 
-    if (limit == 0 || limit > (off_t) (NGX_MAX_SIZE_T_VALUE - ngx_pagesize)) {
-        limit = NGX_MAX_SIZE_T_VALUE - ngx_pagesize;
+    if (limit == 0 || limit > (off_t) (NJET_MAX_SIZE_T_VALUE - ngx_pagesize)) {
+        limit = NJET_MAX_SIZE_T_VALUE - ngx_pagesize;
     }
 
     send = 0;
 
     vec.iovs = iovs;
-    vec.nalloc = NGX_IOVS_PREALLOCATE;
+    vec.nalloc = NJET_IOVS_PREALLOCATE;
 
     for ( ;; ) {
         prev_send = send;
@@ -55,12 +55,12 @@ ngx_writev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
         cl = ngx_output_chain_to_iovec(&vec, in, limit - send, c->log);
 
-        if (cl == NGX_CHAIN_ERROR) {
-            return NGX_CHAIN_ERROR;
+        if (cl == NJET_CHAIN_ERROR) {
+            return NJET_CHAIN_ERROR;
         }
 
         if (cl && cl->buf->in_file) {
-            ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                           "file buf in writev "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           cl->buf->temporary,
@@ -75,18 +75,18 @@ ngx_writev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
             ngx_debug_point();
 
-            return NGX_CHAIN_ERROR;
+            return NJET_CHAIN_ERROR;
         }
 
         send += vec.size;
 
         n = ngx_writev(c, &vec);
 
-        if (n == NGX_ERROR) {
-            return NGX_CHAIN_ERROR;
+        if (n == NJET_ERROR) {
+            return NJET_CHAIN_ERROR;
         }
 
-        sent = (n == NGX_AGAIN) ? 0 : n;
+        sent = (n == NJET_AGAIN) ? 0 : n;
 
         c->sent += sent;
 
@@ -129,7 +129,7 @@ ngx_output_chain_to_iovec(ngx_iovec_t *vec, ngx_chain_t *in, size_t limit,
         }
 
         if (!ngx_buf_in_memory(in->buf)) {
-            ngx_log_error(NGX_LOG_ALERT, log, 0,
+            ngx_log_error(NJET_LOG_ALERT, log, 0,
                           "bad buf in output chain "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           in->buf->temporary,
@@ -144,7 +144,7 @@ ngx_output_chain_to_iovec(ngx_iovec_t *vec, ngx_chain_t *in, size_t limit,
 
             ngx_debug_point();
 
-            return NGX_CHAIN_ERROR;
+            return NJET_CHAIN_ERROR;
         }
 
         size = in->buf->last - in->buf->pos;
@@ -188,27 +188,27 @@ eintr:
 
     n = writev(c->fd, vec->iovs, vec->count);
 
-    ngx_log_debug2(NGX_LOG_DEBUG_EVENT, c->log, 0,
+    ngx_log_debug2(NJET_LOG_DEBUG_EVENT, c->log, 0,
                    "writev: %z of %uz", n, vec->size);
 
     if (n == -1) {
         err = ngx_errno;
 
         switch (err) {
-        case NGX_EAGAIN:
-            ngx_log_debug0(NGX_LOG_DEBUG_EVENT, c->log, err,
+        case NJET_EAGAIN:
+            ngx_log_debug0(NJET_LOG_DEBUG_EVENT, c->log, err,
                            "writev() not ready");
-            return NGX_AGAIN;
+            return NJET_AGAIN;
 
-        case NGX_EINTR:
-            ngx_log_debug0(NGX_LOG_DEBUG_EVENT, c->log, err,
+        case NJET_EINTR:
+            ngx_log_debug0(NJET_LOG_DEBUG_EVENT, c->log, err,
                            "writev() was interrupted");
             goto eintr;
 
         default:
             c->write->error = 1;
             ngx_connection_error(c, err, "writev() failed");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 

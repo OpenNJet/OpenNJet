@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_WIN32_CONFIG_H_INCLUDED_
-#define _NGX_WIN32_CONFIG_H_INCLUDED_
+#ifndef _NJET_WIN32_CONFIG_H_INCLUDED_
+#define _NJET_WIN32_CONFIG_H_INCLUDED_
 
 
 #undef  WIN32
@@ -22,7 +22,7 @@
 #define _CRT_SECURE_NO_DEPRECATE
 
 /* enable gethostbyname() in msvc2015 */
-#if !(NGX_HAVE_INET6)
+#if !(NJET_HAVE_INET6)
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #endif
 
@@ -213,74 +213,74 @@ typedef int                 sig_atomic_t;
 
 #ifdef _WIN64
 
-#define NGX_PTR_SIZE            8
-#define NGX_SIZE_T_LEN          (sizeof("-9223372036854775808") - 1)
-#define NGX_MAX_SIZE_T_VALUE    9223372036854775807
-#define NGX_TIME_T_LEN          (sizeof("-9223372036854775808") - 1)
-#define NGX_TIME_T_SIZE         8
-#define NGX_MAX_TIME_T_VALUE    9223372036854775807
+#define NJET_PTR_SIZE            8
+#define NJET_SIZE_T_LEN          (sizeof("-9223372036854775808") - 1)
+#define NJET_MAX_SIZE_T_VALUE    9223372036854775807
+#define NJET_TIME_T_LEN          (sizeof("-9223372036854775808") - 1)
+#define NJET_TIME_T_SIZE         8
+#define NJET_MAX_TIME_T_VALUE    9223372036854775807
 
 #else
 
-#define NGX_PTR_SIZE            4
-#define NGX_SIZE_T_LEN          (sizeof("-2147483648") - 1)
-#define NGX_MAX_SIZE_T_VALUE    2147483647
-#define NGX_TIME_T_LEN          (sizeof("-2147483648") - 1)
-#define NGX_TIME_T_SIZE         4
-#define NGX_MAX_TIME_T_VALUE    2147483647
+#define NJET_PTR_SIZE            4
+#define NJET_SIZE_T_LEN          (sizeof("-2147483648") - 1)
+#define NJET_MAX_SIZE_T_VALUE    2147483647
+#define NJET_TIME_T_LEN          (sizeof("-2147483648") - 1)
+#define NJET_TIME_T_SIZE         4
+#define NJET_MAX_TIME_T_VALUE    2147483647
 
 #endif
 
 
-#define NGX_OFF_T_LEN           (sizeof("-9223372036854775807") - 1)
-#define NGX_MAX_OFF_T_VALUE     9223372036854775807
-#define NGX_SIG_ATOMIC_T_SIZE   4
+#define NJET_OFF_T_LEN           (sizeof("-9223372036854775807") - 1)
+#define NJET_MAX_OFF_T_VALUE     9223372036854775807
+#define NJET_SIG_ATOMIC_T_SIZE   4
 
 
-#define NGX_HAVE_LITTLE_ENDIAN  1
-#define NGX_HAVE_NONALIGNED     1
+#define NJET_HAVE_LITTLE_ENDIAN  1
+#define NJET_HAVE_NONALIGNED     1
 
 
-#define NGX_WIN_NT        200000
+#define NJET_WIN_NT        200000
 
 
-#define NGX_LISTEN_BACKLOG           511
+#define NJET_LISTEN_BACKLOG           511
 
 
-#ifndef NGX_HAVE_INHERITED_NONBLOCK
-#define NGX_HAVE_INHERITED_NONBLOCK  1
+#ifndef NJET_HAVE_INHERITED_NONBLOCK
+#define NJET_HAVE_INHERITED_NONBLOCK  1
 #endif
 
-#ifndef NGX_HAVE_CASELESS_FILESYSTEM
-#define NGX_HAVE_CASELESS_FILESYSTEM  1
+#ifndef NJET_HAVE_CASELESS_FILESYSTEM
+#define NJET_HAVE_CASELESS_FILESYSTEM  1
 #endif
 
-#ifndef NGX_HAVE_WIN32_TRANSMITPACKETS
-#define NGX_HAVE_WIN32_TRANSMITPACKETS  1
-#define NGX_HAVE_WIN32_TRANSMITFILE     0
+#ifndef NJET_HAVE_WIN32_TRANSMITPACKETS
+#define NJET_HAVE_WIN32_TRANSMITPACKETS  1
+#define NJET_HAVE_WIN32_TRANSMITFILE     0
 #endif
 
-#ifndef NGX_HAVE_WIN32_TRANSMITFILE
-#define NGX_HAVE_WIN32_TRANSMITFILE  1
+#ifndef NJET_HAVE_WIN32_TRANSMITFILE
+#define NJET_HAVE_WIN32_TRANSMITFILE  1
 #endif
 
-#if (NGX_HAVE_WIN32_TRANSMITPACKETS) || (NGX_HAVE_WIN32_TRANSMITFILE)
-#define NGX_HAVE_SENDFILE  1
+#if (NJET_HAVE_WIN32_TRANSMITPACKETS) || (NJET_HAVE_WIN32_TRANSMITFILE)
+#define NJET_HAVE_SENDFILE  1
 #endif
 
-#ifndef NGX_HAVE_SO_SNDLOWAT
+#ifndef NJET_HAVE_SO_SNDLOWAT
 /* setsockopt(SO_SNDLOWAT) returns error WSAENOPROTOOPT */
-#define NGX_HAVE_SO_SNDLOWAT         0
+#define NJET_HAVE_SO_SNDLOWAT         0
 #endif
 
-#ifndef NGX_HAVE_FIONREAD
-#define NGX_HAVE_FIONREAD            1
+#ifndef NJET_HAVE_FIONREAD
+#define NJET_HAVE_FIONREAD            1
 #endif
 
-#define NGX_HAVE_GETADDRINFO         1
+#define NJET_HAVE_GETADDRINFO         1
 
 #define ngx_random               rand
 #define ngx_debug_init()
 
 
-#endif /* _NGX_WIN32_CONFIG_H_INCLUDED_ */
+#endif /* _NJET_WIN32_CONFIG_H_INCLUDED_ */

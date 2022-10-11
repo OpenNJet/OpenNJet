@@ -5,14 +5,14 @@
  */
 
 
-#ifndef _NGX_STREAM_H_INCLUDED_
-#define _NGX_STREAM_H_INCLUDED_
+#ifndef _NJET_STREAM_H_INCLUDED_
+#define _NJET_STREAM_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
-#if (NGX_STREAM_SSL)
+#if (NJET_STREAM_SSL)
 #include <ngx_stream_ssl_module.h>
 #endif
 
@@ -26,12 +26,12 @@ typedef struct ngx_stream_session_s  ngx_stream_session_t;
 #include <ngx_stream_upstream_round_robin.h>
 
 
-#define NGX_STREAM_OK                        200
-#define NGX_STREAM_BAD_REQUEST               400
-#define NGX_STREAM_FORBIDDEN                 403
-#define NGX_STREAM_INTERNAL_SERVER_ERROR     500
-#define NGX_STREAM_BAD_GATEWAY               502
-#define NGX_STREAM_SERVICE_UNAVAILABLE       503
+#define NJET_STREAM_OK                        200
+#define NJET_STREAM_BAD_REQUEST               400
+#define NJET_STREAM_FORBIDDEN                 403
+#define NJET_STREAM_INTERNAL_SERVER_ERROR     500
+#define NJET_STREAM_BAD_GATEWAY               502
+#define NJET_STREAM_SERVICE_UNAVAILABLE       503
 
 
 typedef struct {
@@ -51,13 +51,13 @@ typedef struct {
     unsigned                       bind:1;
     unsigned                       wildcard:1;
     unsigned                       ssl:1;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     unsigned                       ipv6only:1;
 #endif
     unsigned                       reuseport:1;
     unsigned                       so_keepalive:2;
     unsigned                       proxy_protocol:1;
-#if (NGX_HAVE_KEEPALIVE_TUNABLE)
+#if (NJET_HAVE_KEEPALIVE_TUNABLE)
     int                            tcp_keepidle;
     int                            tcp_keepintvl;
     int                            tcp_keepcnt;
@@ -65,7 +65,7 @@ typedef struct {
     int                            backlog;
     int                            rcvbuf;
     int                            sndbuf;
-#if (NGX_HAVE_TCP_FASTOPEN)
+#if (NJET_HAVE_TCP_FASTOPEN)
     int                            fastopen;
 #endif
     int                            type;
@@ -85,7 +85,7 @@ typedef struct {
 } ngx_stream_in_addr_t;
 
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
 
 typedef struct {
     struct in6_addr                addr6;
@@ -116,13 +116,13 @@ typedef struct {
 
 
 typedef enum {
-    NGX_STREAM_POST_ACCEPT_PHASE = 0,
-    NGX_STREAM_PREACCESS_PHASE,
-    NGX_STREAM_ACCESS_PHASE,
-    NGX_STREAM_SSL_PHASE,
-    NGX_STREAM_PREREAD_PHASE,
-    NGX_STREAM_CONTENT_PHASE,
-    NGX_STREAM_LOG_PHASE
+    NJET_STREAM_POST_ACCEPT_PHASE = 0,
+    NJET_STREAM_PREACCESS_PHASE,
+    NJET_STREAM_ACCESS_PHASE,
+    NJET_STREAM_SSL_PHASE,
+    NJET_STREAM_PREREAD_PHASE,
+    NJET_STREAM_CONTENT_PHASE,
+    NJET_STREAM_LOG_PHASE
 } ngx_stream_phases;
 
 
@@ -168,7 +168,7 @@ typedef struct {
 
     ngx_hash_keys_arrays_t        *variables_keys;
 
-    ngx_stream_phase_t             phases[NGX_STREAM_LOG_PHASE + 1];
+    ngx_stream_phase_t             phases[NJET_STREAM_LOG_PHASE + 1];
 } ngx_stream_core_main_conf_t;
 
 
@@ -215,7 +215,7 @@ struct ngx_stream_session_s {
                                            /* of ngx_stream_upstream_state_t */
     ngx_stream_variable_value_t   *variables;
 
-#if (NGX_PCRE)
+#if (NJET_PCRE)
     ngx_uint_t                     ncaptures;
     int                           *captures;
     u_char                        *captures_data;
@@ -247,15 +247,15 @@ typedef struct {
 } ngx_stream_module_t;
 
 
-#define NGX_STREAM_MODULE       0x4d525453     /* "STRM" */
+#define NJET_STREAM_MODULE       0x4d525453     /* "STRM" */
 
-#define NGX_STREAM_MAIN_CONF    0x02000000
-#define NGX_STREAM_SRV_CONF     0x04000000
-#define NGX_STREAM_UPS_CONF     0x08000000
+#define NJET_STREAM_MAIN_CONF    0x02000000
+#define NJET_STREAM_SRV_CONF     0x04000000
+#define NJET_STREAM_UPS_CONF     0x08000000
 
 
-#define NGX_STREAM_MAIN_CONF_OFFSET  offsetof(ngx_stream_conf_ctx_t, main_conf)
-#define NGX_STREAM_SRV_CONF_OFFSET   offsetof(ngx_stream_conf_ctx_t, srv_conf)
+#define NJET_STREAM_MAIN_CONF_OFFSET  offsetof(ngx_stream_conf_ctx_t, main_conf)
+#define NJET_STREAM_SRV_CONF_OFFSET   offsetof(ngx_stream_conf_ctx_t, srv_conf)
 
 
 #define ngx_stream_get_module_ctx(s, module)   (s)->ctx[module.ctx_index]
@@ -280,7 +280,7 @@ typedef struct {
         NULL)
 
 
-#define NGX_STREAM_WRITE_BUFFERED  0x10
+#define NJET_STREAM_WRITE_BUFFERED  0x10
 
 
 void ngx_stream_core_run_phases(ngx_stream_session_t *s);
@@ -309,4 +309,4 @@ typedef ngx_int_t (*ngx_stream_filter_pt)(ngx_stream_session_t *s,
 extern ngx_stream_filter_pt  ngx_stream_top_filter;
 
 
-#endif /* _NGX_STREAM_H_INCLUDED_ */
+#endif /* _NJET_STREAM_H_INCLUDED_ */

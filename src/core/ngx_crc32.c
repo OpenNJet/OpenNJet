@@ -111,12 +111,12 @@ ngx_crc32_table_init(void)
           & ~((uintptr_t) ngx_cacheline_size - 1))
         == (uintptr_t) ngx_crc32_table_short)
     {
-        return NGX_OK;
+        return NJET_OK;
     }
 
     p = ngx_alloc(16 * sizeof(uint32_t) + ngx_cacheline_size, ngx_cycle->log);
     if (p == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     p = ngx_align_ptr(p, ngx_cacheline_size);
@@ -125,5 +125,5 @@ ngx_crc32_table_init(void)
 
     ngx_crc32_table_short = p;
 
-    return NGX_OK;
+    return NJET_OK;
 }

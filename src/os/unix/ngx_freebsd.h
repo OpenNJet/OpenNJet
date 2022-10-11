@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_FREEBSD_H_INCLUDED_
-#define _NGX_FREEBSD_H_INCLUDED_
+#ifndef _NJET_FREEBSD_H_INCLUDED_
+#define _NJET_FREEBSD_H_INCLUDED_
 
 
 void ngx_debug_init(void);
@@ -22,4 +22,4 @@ extern ngx_uint_t  ngx_freebsd_use_tcp_nopush;
 extern ngx_uint_t  ngx_debug_malloc;
 
 
-#endif /* _NGX_FREEBSD_H_INCLUDED_ */
+#endif /* _NJET_FREEBSD_H_INCLUDED_ */

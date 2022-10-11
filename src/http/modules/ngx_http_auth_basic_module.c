@@ -11,7 +11,7 @@
 #include <ngx_crypt.h>
 
 
-#define NGX_HTTP_AUTH_BUF_SIZE  2048
+#define NJET_HTTP_AUTH_BUF_SIZE  2048
 
 
 typedef struct {
@@ -36,18 +36,18 @@ static char *ngx_http_auth_basic_user_file(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_http_auth_basic_commands[] = {
 
     { ngx_string("auth_basic"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
-                        |NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_HTTP_LMT_CONF
+                        |NJET_CONF_TAKE1,
       ngx_http_set_complex_value_slot,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_auth_basic_loc_conf_t, realm),
       NULL },
 
     { ngx_string("auth_basic_user_file"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_HTTP_LMT_CONF
-                        |NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_HTTP_LMT_CONF
+                        |NJET_CONF_TAKE1,
       ngx_http_auth_basic_user_file,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_auth_basic_loc_conf_t, user_file),
       NULL },
 
@@ -71,10 +71,10 @@ static ngx_http_module_t  ngx_http_auth_basic_module_ctx = {
 
 
 ngx_module_t  ngx_http_auth_basic_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_http_auth_basic_module_ctx,       /* module context */
     ngx_http_auth_basic_commands,          /* module directives */
-    NGX_HTTP_MODULE,                       /* module type */
+    NJET_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -82,7 +82,7 @@ ngx_module_t  ngx_http_auth_basic_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -98,7 +98,7 @@ ngx_http_auth_basic_handler(ngx_http_request_t *r)
     ngx_uint_t                       i, level, login, left, passwd;
     ngx_file_t                       file;
     ngx_http_auth_basic_loc_conf_t  *alcf;
-    u_char                           buf[NGX_HTTP_AUTH_BUF_SIZE];
+    u_char                           buf[NJET_HTTP_AUTH_BUF_SIZE];
     enum {
         sw_login,
         sw_passwd,
@@ -108,47 +108,47 @@ ngx_http_auth_basic_handler(ngx_http_request_t *r)
     alcf = ngx_http_get_module_loc_conf(r, ngx_http_auth_basic_module);
 
     if (alcf->realm == NULL || alcf->user_file == NULL) {
-        return NGX_DECLINED;
+        return NJET_DECLINED;
     }
 
-    if (ngx_http_complex_value(r, alcf->realm, &realm) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_http_complex_value(r, alcf->realm, &realm) != NJET_OK) {
+        return NJET_ERROR;
     }
 
     if (realm.len == 3 && ngx_strncmp(realm.data, "off", 3) == 0) {
-        return NGX_DECLINED;
+        return NJET_DECLINED;
     }
 
     rc = ngx_http_auth_basic_user(r);
 
-    if (rc == NGX_DECLINED) {
+    if (rc == NJET_DECLINED) {
 
-        ngx_log_error(NGX_LOG_INFO, r->connection->log, 0,
+        ngx_log_error(NJET_LOG_INFO, r->connection->log, 0,
                       "no user/password was provided for basic authentication");
 
         return ngx_http_auth_basic_set_realm(r, &realm);
     }
 
-    if (rc == NGX_ERROR) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    if (rc == NJET_ERROR) {
+        return NJET_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    if (ngx_http_complex_value(r, alcf->user_file, &user_file) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_http_complex_value(r, alcf->user_file, &user_file) != NJET_OK) {
+        return NJET_ERROR;
     }
 
-    fd = ngx_open_file(user_file.data, NGX_FILE_RDONLY, NGX_FILE_OPEN, 0);
+    fd = ngx_open_file(user_file.data, NJET_FILE_RDONLY, NJET_FILE_OPEN, 0);
 
-    if (fd == NGX_INVALID_FILE) {
+    if (fd == NJET_INVALID_FILE) {
         err = ngx_errno;
 
-        if (err == NGX_ENOENT) {
-            level = NGX_LOG_ERR;
-            rc = NGX_HTTP_FORBIDDEN;
+        if (err == NJET_ENOENT) {
+            level = NJET_LOG_ERR;
+            rc = NJET_HTTP_FORBIDDEN;
 
         } else {
-            level = NGX_LOG_CRIT;
-            rc = NGX_HTTP_INTERNAL_SERVER_ERROR;
+            level = NJET_LOG_CRIT;
+            rc = NJET_HTTP_INTERNAL_SERVER_ERROR;
         }
 
         ngx_log_error(level, r->connection->log, err,
@@ -172,11 +172,11 @@ ngx_http_auth_basic_handler(ngx_http_request_t *r)
     for ( ;; ) {
         i = left;
 
-        n = ngx_read_file(&file, buf + left, NGX_HTTP_AUTH_BUF_SIZE - left,
+        n = ngx_read_file(&file, buf + left, NJET_HTTP_AUTH_BUF_SIZE - left,
                           offset);
 
-        if (n == NGX_ERROR) {
-            rc = NGX_HTTP_INTERNAL_SERVER_ERROR;
+        if (n == NJET_ERROR) {
+            rc = NJET_HTTP_INTERNAL_SERVER_ERROR;
             goto cleanup;
         }
 
@@ -253,7 +253,7 @@ ngx_http_auth_basic_handler(ngx_http_request_t *r)
         pwd.len = i - passwd;
         pwd.data = ngx_pnalloc(r->pool, pwd.len + 1);
         if (pwd.data == NULL) {
-            return NGX_HTTP_INTERNAL_SERVER_ERROR;
+            return NJET_HTTP_INTERNAL_SERVER_ERROR;
         }
 
         ngx_cpystrn(pwd.data, &buf[passwd], pwd.len + 1);
@@ -262,7 +262,7 @@ ngx_http_auth_basic_handler(ngx_http_request_t *r)
         goto cleanup;
     }
 
-    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                   "user \"%V\" was not found in \"%s\"",
                   &r->headers_in.user, user_file.data);
 
@@ -270,12 +270,12 @@ ngx_http_auth_basic_handler(ngx_http_request_t *r)
 
 cleanup:
 
-    if (ngx_close_file(file.fd) == NGX_FILE_ERROR) {
-        ngx_log_error(NGX_LOG_ALERT, r->connection->log, ngx_errno,
+    if (ngx_close_file(file.fd) == NJET_FILE_ERROR) {
+        ngx_log_error(NJET_LOG_ALERT, r->connection->log, ngx_errno,
                       ngx_close_file_n " \"%s\" failed", user_file.data);
     }
 
-    ngx_explicit_memzero(buf, NGX_HTTP_AUTH_BUF_SIZE);
+    ngx_explicit_memzero(buf, NJET_HTTP_AUTH_BUF_SIZE);
 
     return rc;
 }
@@ -291,22 +291,22 @@ ngx_http_auth_basic_crypt_handler(ngx_http_request_t *r, ngx_str_t *passwd,
     rc = ngx_crypt(r->pool, r->headers_in.passwd.data, passwd->data,
                    &encrypted);
 
-    ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug3(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "rc: %i user: \"%V\" salt: \"%s\"",
                    rc, &r->headers_in.user, passwd->data);
 
-    if (rc != NGX_OK) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+    if (rc != NJET_OK) {
+        return NJET_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     if (ngx_strcmp(encrypted, passwd->data) == 0) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "encrypted: \"%s\"", encrypted);
 
-    ngx_log_error(NGX_LOG_ERR, r->connection->log, 0,
+    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
                   "user \"%V\": password mismatch",
                   &r->headers_in.user);
 
@@ -322,7 +322,7 @@ ngx_http_auth_basic_set_realm(ngx_http_request_t *r, ngx_str_t *realm)
 
     r->headers_out.www_authenticate = ngx_list_push(&r->headers_out.headers);
     if (r->headers_out.www_authenticate == NULL) {
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NJET_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     len = sizeof("Basic realm=\"\"") - 1 + realm->len;
@@ -331,7 +331,7 @@ ngx_http_auth_basic_set_realm(ngx_http_request_t *r, ngx_str_t *realm)
     if (basic == NULL) {
         r->headers_out.www_authenticate->hash = 0;
         r->headers_out.www_authenticate = NULL;
-        return NGX_HTTP_INTERNAL_SERVER_ERROR;
+        return NJET_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     p = ngx_cpymem(basic, "Basic realm=\"", sizeof("Basic realm=\"") - 1);
@@ -344,7 +344,7 @@ ngx_http_auth_basic_set_realm(ngx_http_request_t *r, ngx_str_t *realm)
     r->headers_out.www_authenticate->value.data = basic;
     r->headers_out.www_authenticate->value.len = len;
 
-    return NGX_HTTP_UNAUTHORIZED;
+    return NJET_HTTP_UNAUTHORIZED;
 }
 
 
@@ -358,8 +358,8 @@ ngx_http_auth_basic_create_loc_conf(ngx_conf_t *cf)
         return NULL;
     }
 
-    conf->realm = NGX_CONF_UNSET_PTR;
-    conf->user_file = NGX_CONF_UNSET_PTR;
+    conf->realm = NJET_CONF_UNSET_PTR;
+    conf->user_file = NJET_CONF_UNSET_PTR;
 
     return conf;
 }
@@ -374,7 +374,7 @@ ngx_http_auth_basic_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_ptr_value(conf->realm, prev->realm, NULL);
     ngx_conf_merge_ptr_value(conf->user_file, prev->user_file, NULL);
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -386,14 +386,14 @@ ngx_http_auth_basic_init(ngx_conf_t *cf)
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
-    h = ngx_array_push(&cmcf->phases[NGX_HTTP_ACCESS_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJET_HTTP_ACCESS_PHASE].handlers);
     if (h == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     *h = ngx_http_auth_basic_handler;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -405,13 +405,13 @@ ngx_http_auth_basic_user_file(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_str_t                         *value;
     ngx_http_compile_complex_value_t   ccv;
 
-    if (alcf->user_file != NGX_CONF_UNSET_PTR) {
+    if (alcf->user_file != NJET_CONF_UNSET_PTR) {
         return "is duplicate";
     }
 
     alcf->user_file = ngx_palloc(cf->pool, sizeof(ngx_http_complex_value_t));
     if (alcf->user_file == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     value = cf->args->elts;
@@ -424,9 +424,9 @@ ngx_http_auth_basic_user_file(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ccv.zero = 1;
     ccv.conf_prefix = 1;
 
-    if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
-        return NGX_CONF_ERROR;
+    if (ngx_http_compile_complex_value(&ccv) != NJET_OK) {
+        return NJET_CONF_ERROR;
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }

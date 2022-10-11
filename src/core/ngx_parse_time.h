@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_PARSE_TIME_H_INCLUDED_
-#define _NGX_PARSE_TIME_H_INCLUDED_
+#ifndef _NJET_PARSE_TIME_H_INCLUDED_
+#define _NJET_PARSE_TIME_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -19,4 +19,4 @@ time_t ngx_parse_http_time(u_char *value, size_t len);
 #define ngx_http_parse_time(value, len)  ngx_parse_http_time(value, len)
 
 
-#endif /* _NGX_PARSE_TIME_H_INCLUDED_ */
+#endif /* _NJET_PARSE_TIME_H_INCLUDED_ */

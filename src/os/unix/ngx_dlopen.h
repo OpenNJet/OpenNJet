@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_DLOPEN_H_INCLUDED_
-#define _NGX_DLOPEN_H_INCLUDED_
+#ifndef _NJET_DLOPEN_H_INCLUDED_
+#define _NJET_DLOPEN_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -23,9 +23,9 @@
 #define ngx_dlclose_n              "dlclose()"
 
 
-#if (NGX_HAVE_DLOPEN)
+#if (NJET_HAVE_DLOPEN)
 char *ngx_dlerror(void);
 #endif
 
 
-#endif /* _NGX_DLOPEN_H_INCLUDED_ */
+#endif /* _NJET_DLOPEN_H_INCLUDED_ */

@@ -5,12 +5,12 @@
  */
 
 
-#ifndef _NGX_PROCESS_H_INCLUDED_
-#define _NGX_PROCESS_H_INCLUDED_
+#ifndef _NJET_PROCESS_H_INCLUDED_
+#define _NJET_PROCESS_H_INCLUDED_
 
 
 typedef DWORD               ngx_pid_t;
-#define NGX_INVALID_PID     0
+#define NJET_INVALID_PID     0
 
 
 #define ngx_getpid          GetCurrentProcessId
@@ -18,8 +18,8 @@ typedef DWORD               ngx_pid_t;
 #define ngx_log_pid         ngx_pid
 
 
-#define NGX_PROCESS_SYNC_NAME                                                 \
-    (sizeof("ngx_cache_manager_mutex_") + NGX_INT32_LEN)
+#define NJET_PROCESS_SYNC_NAME                                                 \
+    (sizeof("ngx_cache_manager_mutex_") + NJET_INT32_LEN)
 
 
 typedef uint64_t            ngx_cpuset_t;
@@ -34,9 +34,9 @@ typedef struct {
     HANDLE                  quit;
     HANDLE                  reopen;
 
-    u_char                  term_event[NGX_PROCESS_SYNC_NAME];
-    u_char                  quit_event[NGX_PROCESS_SYNC_NAME];
-    u_char                  reopen_event[NGX_PROCESS_SYNC_NAME];
+    u_char                  term_event[NJET_PROCESS_SYNC_NAME];
+    u_char                  quit_event[NJET_PROCESS_SYNC_NAME];
+    u_char                  reopen_event[NJET_PROCESS_SYNC_NAME];
 
     unsigned                just_spawn:1;
     unsigned                exiting:1;
@@ -60,10 +60,10 @@ ngx_pid_t ngx_execute(ngx_cycle_t *cycle, ngx_exec_ctx_t *ctx);
 #define ngx_sched_yield()   SwitchToThread()
 
 
-#define NGX_MAX_PROCESSES         (MAXIMUM_WAIT_OBJECTS - 4)
+#define NJET_MAX_PROCESSES         (MAXIMUM_WAIT_OBJECTS - 4)
 
-#define NGX_PROCESS_RESPAWN       -2
-#define NGX_PROCESS_JUST_RESPAWN  -3
+#define NJET_PROCESS_RESPAWN       -2
+#define NJET_PROCESS_JUST_RESPAWN  -3
 
 
 extern int                  ngx_argc;
@@ -71,10 +71,10 @@ extern char               **ngx_argv;
 extern char               **ngx_os_argv;
 
 extern ngx_int_t            ngx_last_process;
-extern ngx_process_t        ngx_processes[NGX_MAX_PROCESSES];
+extern ngx_process_t        ngx_processes[NJET_MAX_PROCESSES];
 
 extern ngx_pid_t            ngx_pid;
 extern ngx_pid_t            ngx_parent;
 
 
-#endif /* _NGX_PROCESS_H_INCLUDED_ */
+#endif /* _NJET_PROCESS_H_INCLUDED_ */

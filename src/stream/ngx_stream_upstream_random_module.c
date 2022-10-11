@@ -52,9 +52,9 @@ static char *ngx_stream_upstream_random(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_stream_upstream_random_commands[] = {
 
     { ngx_string("random"),
-      NGX_STREAM_UPS_CONF|NGX_CONF_NOARGS|NGX_CONF_TAKE12,
+      NJET_STREAM_UPS_CONF|NJET_CONF_NOARGS|NJET_CONF_TAKE12,
       ngx_stream_upstream_random,
-      NGX_STREAM_SRV_CONF_OFFSET,
+      NJET_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
 
@@ -75,10 +75,10 @@ static ngx_stream_module_t  ngx_stream_upstream_random_module_ctx = {
 
 
 ngx_module_t  ngx_stream_upstream_random_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_stream_upstream_random_module_ctx,  /* module context */
     ngx_stream_upstream_random_commands,     /* module directives */
-    NGX_STREAM_MODULE,                       /* module type */
+    NJET_STREAM_MODULE,                       /* module type */
     NULL,                                    /* init master */
     NULL,                                    /* init module */
     NULL,                                    /* init process */
@@ -86,7 +86,7 @@ ngx_module_t  ngx_stream_upstream_random_module = {
     NULL,                                    /* exit thread */
     NULL,                                    /* exit process */
     NULL,                                    /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -94,17 +94,17 @@ static ngx_int_t
 ngx_stream_upstream_init_random(ngx_conf_t *cf,
     ngx_stream_upstream_srv_conf_t *us)
 {
-    ngx_log_debug0(NGX_LOG_DEBUG_STREAM, cf->log, 0, "init random");
+    ngx_log_debug0(NJET_LOG_DEBUG_STREAM, cf->log, 0, "init random");
 
-    if (ngx_stream_upstream_init_round_robin(cf, us) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_stream_upstream_init_round_robin(cf, us) != NJET_OK) {
+        return NJET_ERROR;
     }
 
     us->peer.init = ngx_stream_upstream_init_random_peer;
 
-#if (NGX_STREAM_UPSTREAM_ZONE)
+#if (NJET_STREAM_UPSTREAM_ZONE)
     if (us->shm_zone) {
-        return NGX_OK;
+        return NJET_OK;
     }
 #endif
 
@@ -131,7 +131,7 @@ ngx_stream_upstream_update_random(ngx_pool_t *pool,
 
     ranges = pool ? ngx_palloc(pool, size) : ngx_alloc(size, ngx_cycle->log);
     if (ranges == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     total_weight = 0;
@@ -144,7 +144,7 @@ ngx_stream_upstream_update_random(ngx_pool_t *pool,
 
     rcf->ranges = ranges;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -155,7 +155,7 @@ ngx_stream_upstream_init_random_peer(ngx_stream_session_t *s,
     ngx_stream_upstream_random_srv_conf_t   *rcf;
     ngx_stream_upstream_random_peer_data_t  *rp;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_STREAM, s->connection->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
                    "init random peer");
 
     rcf = ngx_stream_conf_upstream_srv_conf(us,
@@ -164,13 +164,13 @@ ngx_stream_upstream_init_random_peer(ngx_stream_session_t *s,
     rp = ngx_palloc(s->connection->pool,
                     sizeof(ngx_stream_upstream_random_peer_data_t));
     if (rp == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     s->upstream->peer.data = &rp->rrp;
 
-    if (ngx_stream_upstream_init_round_robin_peer(s, us) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_stream_upstream_init_round_robin_peer(s, us) != NJET_OK) {
+        return NJET_ERROR;
     }
 
     if (rcf->two) {
@@ -185,18 +185,18 @@ ngx_stream_upstream_init_random_peer(ngx_stream_session_t *s,
 
     ngx_stream_upstream_rr_peers_rlock(rp->rrp.peers);
 
-#if (NGX_STREAM_UPSTREAM_ZONE)
+#if (NJET_STREAM_UPSTREAM_ZONE)
     if (rp->rrp.peers->shpool && rcf->ranges == NULL) {
-        if (ngx_stream_upstream_update_random(NULL, us) != NGX_OK) {
+        if (ngx_stream_upstream_update_random(NULL, us) != NJET_OK) {
             ngx_stream_upstream_rr_peers_unlock(rp->rrp.peers);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 #endif
 
     ngx_stream_upstream_rr_peers_unlock(rp->rrp.peers);
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -212,7 +212,7 @@ ngx_stream_upstream_get_random_peer(ngx_peer_connection_t *pc, void *data)
     ngx_stream_upstream_rr_peers_t      *peers;
     ngx_stream_upstream_rr_peer_data_t  *rrp;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_STREAM, pc->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, pc->log, 0,
                    "get random peer, try: %ui", pc->tries);
 
     rrp = &rp->rrp;
@@ -290,7 +290,7 @@ ngx_stream_upstream_get_random_peer(ngx_peer_connection_t *pc, void *data)
 
     rrp->tried[n] |= m;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -306,7 +306,7 @@ ngx_stream_upstream_get_random2_peer(ngx_peer_connection_t *pc, void *data)
     ngx_stream_upstream_rr_peers_t      *peers;
     ngx_stream_upstream_rr_peer_data_t  *rrp;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_STREAM, pc->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, pc->log, 0,
                    "get random2 peer, try: %ui", pc->tries);
 
     rrp = &rp->rrp;
@@ -326,7 +326,7 @@ ngx_stream_upstream_get_random2_peer(ngx_peer_connection_t *pc, void *data)
 
     prev = NULL;
 
-#if (NGX_SUPPRESS_WARN)
+#if (NJET_SUPPRESS_WARN)
     p = 0;
 #endif
 
@@ -399,7 +399,7 @@ ngx_stream_upstream_get_random2_peer(ngx_peer_connection_t *pc, void *data)
 
     rrp->tried[n] |= m;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -460,21 +460,21 @@ ngx_stream_upstream_random(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     uscf = ngx_stream_conf_get_module_srv_conf(cf, ngx_stream_upstream_module);
 
     if (uscf->peer.init_upstream) {
-        ngx_conf_log_error(NGX_LOG_WARN, cf, 0,
+        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
                            "load balancing method redefined");
     }
 
     uscf->peer.init_upstream = ngx_stream_upstream_init_random;
 
-    uscf->flags = NGX_STREAM_UPSTREAM_CREATE
-                  |NGX_STREAM_UPSTREAM_WEIGHT
-                  |NGX_STREAM_UPSTREAM_MAX_CONNS
-                  |NGX_STREAM_UPSTREAM_MAX_FAILS
-                  |NGX_STREAM_UPSTREAM_FAIL_TIMEOUT
-                  |NGX_STREAM_UPSTREAM_DOWN;
+    uscf->flags = NJET_STREAM_UPSTREAM_CREATE
+                  |NJET_STREAM_UPSTREAM_WEIGHT
+                  |NJET_STREAM_UPSTREAM_MAX_CONNS
+                  |NJET_STREAM_UPSTREAM_MAX_FAILS
+                  |NJET_STREAM_UPSTREAM_FAIL_TIMEOUT
+                  |NJET_STREAM_UPSTREAM_DOWN;
 
     if (cf->args->nelts == 1) {
-        return NGX_CONF_OK;
+        return NJET_CONF_OK;
     }
 
     value = cf->args->elts;
@@ -483,20 +483,20 @@ ngx_stream_upstream_random(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         rcf->two = 1;
 
     } else {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "invalid parameter \"%V\"", &value[1]);
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     if (cf->args->nelts == 2) {
-        return NGX_CONF_OK;
+        return NJET_CONF_OK;
     }
 
     if (ngx_strcmp(value[2].data, "least_conn") != 0) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "invalid parameter \"%V\"", &value[2]);
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }

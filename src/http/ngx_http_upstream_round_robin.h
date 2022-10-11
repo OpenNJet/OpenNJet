@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_HTTP_UPSTREAM_ROUND_ROBIN_H_INCLUDED_
-#define _NGX_HTTP_UPSTREAM_ROUND_ROBIN_H_INCLUDED_
+#ifndef _NJET_HTTP_UPSTREAM_ROUND_ROBIN_H_INCLUDED_
+#define _NJET_HTTP_UPSTREAM_ROUND_ROBIN_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -40,19 +40,19 @@ struct ngx_http_upstream_rr_peer_s {
 
     ngx_uint_t                      down;
 
-#if (NGX_HTTP_SSL || NGX_COMPAT)
+#if (NJET_HTTP_SSL || NJET_COMPAT)
     void                           *ssl_session;
     int                             ssl_session_len;
 #endif
 
-#if (NGX_HTTP_UPSTREAM_ZONE)
+#if (NJET_HTTP_UPSTREAM_ZONE)
     ngx_atomic_t                    lock;
 #endif
 
     ngx_http_upstream_rr_peer_t    *next;
 
-    NGX_COMPAT_BEGIN(32)
-    NGX_COMPAT_END
+    NJET_COMPAT_BEGIN(32)
+    NJET_COMPAT_END
 };
 
 
@@ -61,7 +61,7 @@ typedef struct ngx_http_upstream_rr_peers_s  ngx_http_upstream_rr_peers_t;
 struct ngx_http_upstream_rr_peers_s {
     ngx_uint_t                      number;
 
-#if (NGX_HTTP_UPSTREAM_ZONE)
+#if (NJET_HTTP_UPSTREAM_ZONE)
     ngx_slab_pool_t                *shpool;
     ngx_atomic_t                    rwlock;
     ngx_http_upstream_rr_peers_t   *zone_next;
@@ -81,7 +81,7 @@ struct ngx_http_upstream_rr_peers_s {
 };
 
 
-#if (NGX_HTTP_UPSTREAM_ZONE)
+#if (NJET_HTTP_UPSTREAM_ZONE)
 
 #define ngx_http_upstream_rr_peers_rlock(peers)                               \
                                                                               \
@@ -145,7 +145,7 @@ ngx_int_t ngx_http_upstream_get_round_robin_peer(ngx_peer_connection_t *pc,
 void ngx_http_upstream_free_round_robin_peer(ngx_peer_connection_t *pc,
     void *data, ngx_uint_t state);
 
-#if (NGX_HTTP_SSL)
+#if (NJET_HTTP_SSL)
 ngx_int_t
     ngx_http_upstream_set_round_robin_peer_session(ngx_peer_connection_t *pc,
     void *data);
@@ -154,4 +154,4 @@ void ngx_http_upstream_save_round_robin_peer_session(ngx_peer_connection_t *pc,
 #endif
 
 
-#endif /* _NGX_HTTP_UPSTREAM_ROUND_ROBIN_H_INCLUDED_ */
+#endif /* _NJET_HTTP_UPSTREAM_ROUND_ROBIN_H_INCLUDED_ */

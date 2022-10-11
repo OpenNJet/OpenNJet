@@ -3,7 +3,7 @@
 # Copyright (C) Nginx, Inc.
 
 
-if [ "$NGX_PLATFORM" != win32 ]; then
+if [ "$NJET_PLATFORM" != win32 ]; then
 
     ngx_feature="C compiler"
     ngx_feature_name=
@@ -25,46 +25,46 @@ fi
 
 
 if [ "$CC" = cl ]; then
-    NGX_CC_NAME=msvc
+    NJET_CC_NAME=msvc
     echo " + using Microsoft Visual C++ compiler"
 
 elif [ "$CC" = wcl386 ]; then
-    NGX_CC_NAME=owc
+    NJET_CC_NAME=owc
     echo " + using Open Watcom C compiler"
 
 elif [ "$CC" = bcc32 ]; then
-    NGX_CC_NAME=bcc
+    NJET_CC_NAME=bcc
     echo " + using Borland C++ compiler"
 
 elif `$CC -V 2>&1 | grep '^Intel(R) C' >/dev/null 2>&1`; then
-    NGX_CC_NAME=icc
+    NJET_CC_NAME=icc
     echo " + using Intel C++ compiler"
 
 elif `$CC -v 2>&1 | grep 'gcc version' >/dev/null 2>&1`; then
-    NGX_CC_NAME=gcc
+    NJET_CC_NAME=gcc
     echo " + using GNU C compiler"
 
 elif `$CC -v 2>&1 | grep 'clang version' >/dev/null 2>&1`; then
-    NGX_CC_NAME=clang
+    NJET_CC_NAME=clang
     echo " + using Clang C compiler"
 
 elif `$CC -v 2>&1 | grep 'LLVM version' >/dev/null 2>&1`; then
-    NGX_CC_NAME=clang
+    NJET_CC_NAME=clang
     echo " + using Clang C compiler"
 
 elif `$CC -V 2>&1 | grep 'Sun C' >/dev/null 2>&1`; then
-    NGX_CC_NAME=sunc
+    NJET_CC_NAME=sunc
     echo " + using Sun C compiler"
 
 elif `$CC -V 2>&1 | grep '^Compaq C' >/dev/null 2>&1`; then
-    NGX_CC_NAME=ccc
+    NJET_CC_NAME=ccc
     echo " + using Compaq C compiler"
 
 elif `$CC -V 2>&1 | grep '^aCC: ' >/dev/null 2>&1`; then
-    NGX_CC_NAME=acc
+    NJET_CC_NAME=acc
     echo " + using HP aC++ compiler"
 
 else
-    NGX_CC_NAME=unknown
+    NJET_CC_NAME=unknown
 
 fi

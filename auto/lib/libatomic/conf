@@ -3,17 +3,17 @@
 # Copyright (C) Nginx, Inc.
 
 
-if [ $NGX_LIBATOMIC != YES ]; then
+if [ $NJET_LIBATOMIC != YES ]; then
 
-    have=NGX_HAVE_LIBATOMIC . auto/have
-    CORE_INCS="$CORE_INCS $NGX_LIBATOMIC/src"
-    LINK_DEPS="$LINK_DEPS $NGX_LIBATOMIC/src/libatomic_ops.a"
-    CORE_LIBS="$CORE_LIBS $NGX_LIBATOMIC/src/libatomic_ops.a"
+    have=NJET_HAVE_LIBATOMIC . auto/have
+    CORE_INCS="$CORE_INCS $NJET_LIBATOMIC/src"
+    LINK_DEPS="$LINK_DEPS $NJET_LIBATOMIC/src/libatomic_ops.a"
+    CORE_LIBS="$CORE_LIBS $NJET_LIBATOMIC/src/libatomic_ops.a"
 
 else
 
     ngx_feature="atomic_ops library"
-    ngx_feature_name=NGX_HAVE_LIBATOMIC
+    ngx_feature_name=NJET_HAVE_LIBATOMIC
     ngx_feature_run=yes
     ngx_feature_incs="#define AO_REQUIRE_CAS
                       #include <atomic_ops.h>"

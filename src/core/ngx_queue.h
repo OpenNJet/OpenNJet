@@ -9,8 +9,8 @@
 #include <ngx_core.h>
 
 
-#ifndef _NGX_QUEUE_H_INCLUDED_
-#define _NGX_QUEUE_H_INCLUDED_
+#ifndef _NJET_QUEUE_H_INCLUDED_
+#define _NJET_QUEUE_H_INCLUDED_
 
 
 typedef struct ngx_queue_s  ngx_queue_t;
@@ -67,7 +67,7 @@ struct ngx_queue_s {
     (q)->prev
 
 
-#if (NGX_DEBUG)
+#if (NJET_DEBUG)
 
 #define ngx_queue_remove(x)                                                   \
     (x)->next->prev = (x)->prev;                                              \
@@ -109,4 +109,4 @@ void ngx_queue_sort(ngx_queue_t *queue,
     ngx_int_t (*cmp)(const ngx_queue_t *, const ngx_queue_t *));
 
 
-#endif /* _NGX_QUEUE_H_INCLUDED_ */
+#endif /* _NJET_QUEUE_H_INCLUDED_ */

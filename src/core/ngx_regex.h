@@ -5,20 +5,20 @@
  */
 
 
-#ifndef _NGX_REGEX_H_INCLUDED_
-#define _NGX_REGEX_H_INCLUDED_
+#ifndef _NJET_REGEX_H_INCLUDED_
+#define _NJET_REGEX_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#if (NGX_PCRE2)
+#if (NJET_PCRE2)
 
 #define PCRE2_CODE_UNIT_WIDTH  8
 #include <pcre2.h>
 
-#define NGX_REGEX_NO_MATCHED   PCRE2_ERROR_NOMATCH   /* -1 */
+#define NJET_REGEX_NO_MATCHED   PCRE2_ERROR_NOMATCH   /* -1 */
 
 typedef pcre2_code  ngx_regex_t;
 
@@ -26,7 +26,7 @@ typedef pcre2_code  ngx_regex_t;
 
 #include <pcre.h>
 
-#define NGX_REGEX_NO_MATCHED   PCRE_ERROR_NOMATCH    /* -1 */
+#define NJET_REGEX_NO_MATCHED   PCRE_ERROR_NOMATCH    /* -1 */
 
 typedef struct {
     pcre        *code;
@@ -36,8 +36,8 @@ typedef struct {
 #endif
 
 
-#define NGX_REGEX_CASELESS     0x00000001
-#define NGX_REGEX_MULTILINE    0x00000002
+#define NJET_REGEX_CASELESS     0x00000001
+#define NJET_REGEX_MULTILINE    0x00000002
 
 
 typedef struct {
@@ -66,7 +66,7 @@ ngx_int_t ngx_regex_compile(ngx_regex_compile_t *rc);
 ngx_int_t ngx_regex_exec(ngx_regex_t *re, ngx_str_t *s, int *captures,
     ngx_uint_t size);
 
-#if (NGX_PCRE2)
+#if (NJET_PCRE2)
 #define ngx_regex_exec_n       "pcre2_match()"
 #else
 #define ngx_regex_exec_n       "pcre_exec()"
@@ -75,4 +75,4 @@ ngx_int_t ngx_regex_exec(ngx_regex_t *re, ngx_str_t *s, int *captures,
 ngx_int_t ngx_regex_exec_array(ngx_array_t *a, ngx_str_t *s, ngx_log_t *log);
 
 
-#endif /* _NGX_REGEX_H_INCLUDED_ */
+#endif /* _NJET_REGEX_H_INCLUDED_ */

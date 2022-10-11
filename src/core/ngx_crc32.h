@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_CRC32_H_INCLUDED_
-#define _NGX_CRC32_H_INCLUDED_
+#ifndef _NJET_CRC32_H_INCLUDED_
+#define _NJET_CRC32_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -76,4 +76,4 @@ ngx_crc32_update(uint32_t *crc, u_char *p, size_t len)
 ngx_int_t ngx_crc32_table_init(void);
 
 
-#endif /* _NGX_CRC32_H_INCLUDED_ */
+#endif /* _NJET_CRC32_H_INCLUDED_ */

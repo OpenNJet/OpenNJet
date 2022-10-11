@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_HTTP_SCRIPT_H_INCLUDED_
-#define _NGX_HTTP_SCRIPT_H_INCLUDED_
+#ifndef _NJET_HTTP_SCRIPT_H_INCLUDED_
+#define _NJET_HTTP_SCRIPT_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -115,7 +115,7 @@ typedef struct {
 } ngx_http_script_copy_capture_code_t;
 
 
-#if (NGX_PCRE)
+#if (NJET_PCRE)
 
 typedef struct {
     ngx_http_script_code_pt     code;
@@ -248,7 +248,7 @@ size_t ngx_http_script_copy_capture_len_code(ngx_http_script_engine_t *e);
 void ngx_http_script_copy_capture_code(ngx_http_script_engine_t *e);
 size_t ngx_http_script_mark_args_code(ngx_http_script_engine_t *e);
 void ngx_http_script_start_args_code(ngx_http_script_engine_t *e);
-#if (NGX_PCRE)
+#if (NJET_PCRE)
 void ngx_http_script_regex_start_code(ngx_http_script_engine_t *e);
 void ngx_http_script_regex_end_code(ngx_http_script_engine_t *e);
 #endif
@@ -266,4 +266,4 @@ void ngx_http_script_var_code(ngx_http_script_engine_t *e);
 void ngx_http_script_nop_code(ngx_http_script_engine_t *e);
 
 
-#endif /* _NGX_HTTP_SCRIPT_H_INCLUDED_ */
+#endif /* _NJET_HTTP_SCRIPT_H_INCLUDED_ */

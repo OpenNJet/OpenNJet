@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_BUF_H_INCLUDED_
-#define _NGX_BUF_H_INCLUDED_
+#ifndef _NJET_BUF_H_INCLUDED_
+#define _NJET_BUF_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -88,11 +88,11 @@ struct ngx_output_chain_ctx_s {
     unsigned                     need_in_temp:1;
     unsigned                     aio:1;
 
-#if (NGX_HAVE_FILE_AIO || NGX_COMPAT)
+#if (NJET_HAVE_FILE_AIO || NJET_COMPAT)
     ngx_output_chain_aio_pt      aio_handler;
 #endif
 
-#if (NGX_THREADS || NGX_COMPAT)
+#if (NJET_THREADS || NJET_COMPAT)
     ngx_int_t                  (*thread_handler)(ngx_thread_task_t *task,
                                                  ngx_file_t *file);
     ngx_thread_task_t           *thread_task;
@@ -119,7 +119,7 @@ typedef struct {
 } ngx_chain_writer_ctx_t;
 
 
-#define NGX_CHAIN_ERROR     (ngx_chain_t *) NGX_ERROR
+#define NJET_CHAIN_ERROR     (ngx_chain_t *) NJET_ERROR
 
 
 #define ngx_buf_in_memory(b)       ((b)->temporary || (b)->memory || (b)->mmap)
@@ -164,4 +164,4 @@ off_t ngx_chain_coalesce_file(ngx_chain_t **in, off_t limit);
 
 ngx_chain_t *ngx_chain_update_sent(ngx_chain_t *in, off_t sent);
 
-#endif /* _NGX_BUF_H_INCLUDED_ */
+#endif /* _NJET_BUF_H_INCLUDED_ */

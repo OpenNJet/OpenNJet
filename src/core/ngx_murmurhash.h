@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_MURMURHASH_H_INCLUDED_
-#define _NGX_MURMURHASH_H_INCLUDED_
+#ifndef _NJET_MURMURHASH_H_INCLUDED_
+#define _NJET_MURMURHASH_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -16,4 +16,4 @@
 uint32_t ngx_murmur_hash2(u_char *data, size_t len);
 
 
-#endif /* _NGX_MURMURHASH_H_INCLUDED_ */
+#endif /* _NJET_MURMURHASH_H_INCLUDED_ */

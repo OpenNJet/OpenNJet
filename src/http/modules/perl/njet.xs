@@ -45,23 +45,23 @@ ngx_http_perl_sv2str(pTHX_ ngx_http_request_t *r, ngx_str_t *s, SV *sv)
     if (SvREADONLY(sv) && SvPOK(sv)) {
         s->data = p;
 
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "perl sv2str: %08XD \"%V\"", sv->sv_flags, s);
 
-        return NGX_OK;
+        return NJET_OK;
     }
 
     s->data = ngx_pnalloc(r->pool, len);
     if (s->data == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     ngx_memcpy(s->data, p, len);
 
-    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "perl sv2str: %08XD \"%V\"", sv->sv_flags, s);
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -70,13 +70,13 @@ ngx_http_perl_output(ngx_http_request_t *r, ngx_http_perl_ctx_t *ctx,
     ngx_buf_t *b)
 {
     ngx_chain_t   out;
-#if (NGX_HTTP_SSI)
+#if (NJET_HTTP_SSI)
     ngx_chain_t  *cl;
 
     if (ctx->ssi) {
         cl = ngx_alloc_chain_link(r->pool);
         if (cl == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         cl->buf = b;
@@ -84,7 +84,7 @@ ngx_http_perl_output(ngx_http_request_t *r, ngx_http_perl_ctx_t *ctx,
         *ctx->ssi->last_out = cl;
         ctx->ssi->last_out = &cl->next;
 
-        return NGX_OK;
+        return NJET_OK;
     }
 #endif
 
@@ -116,7 +116,7 @@ status(r, code)
 
     r->headers_out.status = SvIV(ST(1));
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "perl status: %d", r->headers_out.status);
 
     XSRETURN_UNDEF;
@@ -150,14 +150,14 @@ send_http_header(r, ...)
     }
 
     if (r->headers_out.status == 0) {
-        r->headers_out.status = NGX_HTTP_OK;
+        r->headers_out.status = NJET_HTTP_OK;
     }
 
     if (items != 1) {
         sv = ST(1);
 
         if (ngx_http_perl_sv2str(aTHX_ r, &r->headers_out.content_type, sv)
-            != NGX_OK)
+            != NJET_OK)
         {
             ctx->error = 1;
             croak("ngx_http_perl_sv2str() failed");
@@ -166,7 +166,7 @@ send_http_header(r, ...)
         r->headers_out.content_type_len = r->headers_out.content_type.len;
 
     } else {
-        if (ngx_http_set_content_type(r) != NGX_OK) {
+        if (ngx_http_set_content_type(r) != NJET_OK) {
             ctx->error = 1;
             croak("ngx_http_set_content_type() failed");
         }
@@ -178,7 +178,7 @@ send_http_header(r, ...)
 
     rc = ngx_http_send_header(r);
 
-    if (rc == NGX_ERROR || rc > NGX_OK) {
+    if (rc == NJET_ERROR || rc > NJET_OK) {
         ctx->error = 1;
         ctx->status = rc;
         croak("ngx_http_send_header() failed");
@@ -423,7 +423,7 @@ has_request_body(r, next)
 
     rc = ngx_http_read_client_request_body(r, ngx_http_perl_handle_request);
 
-    if (rc >= NGX_HTTP_SPECIAL_RESPONSE) {
+    if (rc >= NJET_HTTP_SPECIAL_RESPONSE) {
         ctx->error = 1;
         ctx->status = rc;
         ctx->next = NULL;
@@ -535,7 +535,7 @@ discard_request_body(r)
 
     rc = ngx_http_discard_request_body(r);
 
-    if (rc != NGX_OK) {
+    if (rc != NJET_OK) {
         ctx->error = 1;
         ctx->status = rc;
         croak("ngx_http_discard_request_body() failed");
@@ -574,13 +574,13 @@ header_out(r, key, value)
     header->hash = 1;
     header->next = NULL;
 
-    if (ngx_http_perl_sv2str(aTHX_ r, &header->key, key) != NGX_OK) {
+    if (ngx_http_perl_sv2str(aTHX_ r, &header->key, key) != NJET_OK) {
         header->hash = 0;
         ctx->error = 1;
         croak("ngx_http_perl_sv2str() failed");
     }
 
-    if (ngx_http_perl_sv2str(aTHX_ r, &header->value, value) != NGX_OK) {
+    if (ngx_http_perl_sv2str(aTHX_ r, &header->value, value) != NJET_OK) {
         header->hash = 0;
         ctx->error = 1;
         croak("ngx_http_perl_sv2str() failed");
@@ -693,7 +693,7 @@ print(r, ...)
             b->start = p;
             b->end = b->last;
 
-            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "$r->print: read-only SV: %z", len);
 
             goto out;
@@ -712,7 +712,7 @@ print(r, ...)
 
         (void) SvPV(sv, len);
 
-        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "$r->print: copy SV: %z", len);
 
         size += len;
@@ -743,7 +743,7 @@ print(r, ...)
 
     rc = ngx_http_perl_output(r, ctx, b);
 
-    if (rc == NGX_ERROR) {
+    if (rc == NJET_ERROR) {
         ctx->error = 1;
         croak("ngx_http_perl_output() failed");
     }
@@ -820,20 +820,20 @@ sendfile(r, filename, offset = -1, bytes = 0)
     of.errors = clcf->open_file_cache_errors;
     of.events = clcf->open_file_cache_events;
 
-    if (ngx_http_set_disable_symlinks(r, clcf, &path, &of) != NGX_OK) {
+    if (ngx_http_set_disable_symlinks(r, clcf, &path, &of) != NJET_OK) {
         ctx->error = 1;
         croak("ngx_http_set_disable_symlinks() failed");
     }
 
     if (ngx_open_cached_file(clcf->open_file_cache, &path, &of, r->pool)
-        != NGX_OK)
+        != NJET_OK)
     {
         if (of.err == 0) {
             ctx->error = 1;
             croak("ngx_open_cached_file() failed");
         }
 
-        ngx_log_error(NGX_LOG_CRIT, r->connection->log, ngx_errno,
+        ngx_log_error(NJET_LOG_CRIT, r->connection->log, ngx_errno,
                       "%s \"%s\" failed", of.failed, filename);
 
         ctx->error = 1;
@@ -859,7 +859,7 @@ sendfile(r, filename, offset = -1, bytes = 0)
 
     rc = ngx_http_perl_output(r, ctx, b);
 
-    if (rc == NGX_ERROR) {
+    if (rc == NJET_ERROR) {
         ctx->error = 1;
         croak("ngx_http_perl_output() failed");
     }
@@ -896,11 +896,11 @@ flush(r)
 
     b->flush = 1;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_HTTP, r->connection->log, 0, "$r->flush");
+    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0, "$r->flush");
 
     rc = ngx_http_perl_output(r, ctx, b);
 
-    if (rc == NGX_ERROR) {
+    if (rc == NJET_ERROR) {
         ctx->error = 1;
         croak("ngx_http_perl_output() failed");
     }
@@ -928,7 +928,7 @@ internal_redirect(r, uri)
 
     uri = ST(1);
 
-    if (ngx_http_perl_sv2str(aTHX_ r, &ctx->redirect_uri, uri) != NGX_OK) {
+    if (ngx_http_perl_sv2str(aTHX_ r, &ctx->redirect_uri, uri) != NJET_OK) {
         ctx->error = 1;
         croak("ngx_http_perl_sv2str() failed");
     }
@@ -1019,7 +1019,7 @@ variable(r, name, value = NULL)
             value = SvRV(value);
         }
 
-        if (ngx_http_perl_sv2str(aTHX_ r, &val, value) != NGX_OK) {
+        if (ngx_http_perl_sv2str(aTHX_ r, &val, value) != NJET_OK) {
             ctx->error = 1;
             croak("ngx_http_perl_sv2str() failed");
         }
@@ -1037,13 +1037,13 @@ variable(r, name, value = NULL)
 
     var.len = len;
     var.data = lowcase;
-#if (NGX_DEBUG)
+#if (NJET_DEBUG)
 
     if (value) {
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "perl variable: \"%V\"=\"%V\"", &var, &val);
     } else {
-        ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "perl variable: \"%V\"", &var);
     }
 #endif
@@ -1143,7 +1143,7 @@ sleep(r, sleep, next)
 
     sleep = (ngx_msec_t) SvIV(ST(1));
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "perl sleep: %M", sleep);
 
     ctx->next = SvRV(ST(2));
@@ -1184,4 +1184,4 @@ log_error(r, err, msg)
 
     p = (u_char *) SvPV(msg, len);
 
-    ngx_log_error(NGX_LOG_ERR, r->connection->log, e, "perl: %s", p);
+    ngx_log_error(NJET_LOG_ERR, r->connection->log, e, "perl: %s", p);

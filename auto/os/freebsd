@@ -3,7 +3,7 @@
 # Copyright (C) Nginx, Inc.
 
 
-have=NGX_FREEBSD . auto/have_headers
+have=NJET_FREEBSD . auto/have_headers
 
 CORE_INCS="$UNIX_INCS"
 CORE_DEPS="$UNIX_DEPS $FREEBSD_DEPS"
@@ -32,7 +32,7 @@ then
     echo " + setproctitle() in libutil"
 
     CORE_LIBS="$CORE_LIBS -lutil"
-    NGX_SETPROCTITLE_LIB="-lutil"
+    NJET_SETPROCTITLE_LIB="-lutil"
 fi
 
 # sendfile
@@ -40,14 +40,14 @@ fi
 if [ $osreldate -gt 300007 ]; then
     echo " + sendfile() found"
 
-    have=NGX_HAVE_SENDFILE . auto/have
+    have=NJET_HAVE_SENDFILE . auto/have
     CORE_SRCS="$CORE_SRCS $FREEBSD_SENDFILE_SRCS"
 fi
 
 if [ $osreldate -gt 1100093 ]; then
     echo " + sendfile()'s SF_NODISKIO found"
 
-    have=NGX_HAVE_SENDFILE_NODISKIO . auto/have
+    have=NJET_HAVE_SENDFILE_NODISKIO . auto/have
 fi
 
 # POSIX semaphores
@@ -56,7 +56,7 @@ fi
 if [ $osreldate -ge 701106 ]; then
     echo " + POSIX semaphores should work"
 else
-    have=NGX_HAVE_POSIX_SEM . auto/nohave
+    have=NJET_HAVE_POSIX_SEM . auto/nohave
 fi
 
 
@@ -67,15 +67,15 @@ if [ \( $osreldate -lt 500000 -a $osreldate -ge 410000 \) \
 then
     echo " + kqueue found"
 
-    have=NGX_HAVE_KQUEUE . auto/have
-    have=NGX_HAVE_CLEAR_EVENT . auto/have
+    have=NJET_HAVE_KQUEUE . auto/have
+    have=NJET_HAVE_CLEAR_EVENT . auto/have
     EVENT_MODULES="$EVENT_MODULES $KQUEUE_MODULE"
     CORE_SRCS="$CORE_SRCS $KQUEUE_SRCS"
     EVENT_FOUND=YES
 fi
 
 
-NGX_KQUEUE_CHECKED=YES
+NJET_KQUEUE_CHECKED=YES
 
 
 # kqueue's NOTE_LOWAT
@@ -84,7 +84,7 @@ if [ \( $version -lt 500000 -a $version -ge 430000 \) \
      -o $version -ge 500018 ]
 then
     echo " + kqueue's NOTE_LOWAT found"
-    have=NGX_HAVE_LOWAT_EVENT . auto/have
+    have=NJET_HAVE_LOWAT_EVENT . auto/have
 fi
 
 # kqueue's EVFILT_TIMER
@@ -93,7 +93,7 @@ if [ \( $version -lt 500000 -a $version -ge 440001 \) \
      -o $version -ge 500023 ]
 then
     echo " + kqueue's EVFILT_TIMER found"
-    have=NGX_HAVE_TIMER_EVENT . auto/have
+    have=NJET_HAVE_TIMER_EVENT . auto/have
 fi
 
 
@@ -101,5 +101,5 @@ fi
 
 if [ $version -ge 701000 ]; then
     echo " + cpuset_setaffinity() found"
-    have=NGX_HAVE_CPUSET_SETAFFINITY . auto/have
+    have=NJET_HAVE_CPUSET_SETAFFINITY . auto/have
 fi

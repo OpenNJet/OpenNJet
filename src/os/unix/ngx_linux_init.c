@@ -20,9 +20,9 @@ static ngx_os_io_t ngx_linux_io = {
     ngx_unix_send,
     ngx_udp_unix_send,
     ngx_udp_unix_sendmsg_chain,
-#if (NGX_HAVE_SENDFILE)
+#if (NJET_HAVE_SENDFILE)
     ngx_linux_sendfile_chain,
-    NGX_IO_SENDFILE
+    NJET_IO_SENDFILE
 #else
     ngx_writev_chain,
     0
@@ -36,8 +36,8 @@ ngx_os_specific_init(ngx_log_t *log)
     struct utsname  u;
 
     if (uname(&u) == -1) {
-        ngx_log_error(NGX_LOG_ALERT, log, ngx_errno, "uname() failed");
-        return NGX_ERROR;
+        ngx_log_error(NJET_LOG_ALERT, log, ngx_errno, "uname() failed");
+        return NJET_ERROR;
     }
 
     (void) ngx_cpystrn(ngx_linux_kern_ostype, (u_char *) u.sysname,
@@ -48,13 +48,13 @@ ngx_os_specific_init(ngx_log_t *log)
 
     ngx_os_io = ngx_linux_io;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
 void
 ngx_os_specific_status(ngx_log_t *log)
 {
-    ngx_log_error(NGX_LOG_NOTICE, log, 0, "OS: %s %s",
+    ngx_log_error(NJET_LOG_NOTICE, log, 0, "OS: %s %s",
                   ngx_linux_kern_ostype, ngx_linux_kern_osrelease);
 }

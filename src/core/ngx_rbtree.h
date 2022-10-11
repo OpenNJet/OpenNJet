@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_RBTREE_H_INCLUDED_
-#define _NGX_RBTREE_H_INCLUDED_
+#ifndef _NJET_RBTREE_H_INCLUDED_
+#define _NJET_RBTREE_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -84,4 +84,4 @@ ngx_rbtree_min(ngx_rbtree_node_t *node, ngx_rbtree_node_t *sentinel)
 }
 
 
-#endif /* _NGX_RBTREE_H_INCLUDED_ */
+#endif /* _NJET_RBTREE_H_INCLUDED_ */

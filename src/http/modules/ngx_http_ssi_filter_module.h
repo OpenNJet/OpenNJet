@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_HTTP_SSI_FILTER_H_INCLUDED_
-#define _NGX_HTTP_SSI_FILTER_H_INCLUDED_
+#ifndef _NJET_HTTP_SSI_FILTER_H_INCLUDED_
+#define _NJET_HTTP_SSI_FILTER_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -14,20 +14,20 @@
 #include <ngx_http.h>
 
 
-#define NGX_HTTP_SSI_MAX_PARAMS       16
+#define NJET_HTTP_SSI_MAX_PARAMS       16
 
-#define NGX_HTTP_SSI_COMMAND_LEN      32
-#define NGX_HTTP_SSI_PARAM_LEN        32
-#define NGX_HTTP_SSI_PARAMS_N         4
-
-
-#define NGX_HTTP_SSI_COND_IF          1
-#define NGX_HTTP_SSI_COND_ELSE        2
+#define NJET_HTTP_SSI_COMMAND_LEN      32
+#define NJET_HTTP_SSI_PARAM_LEN        32
+#define NJET_HTTP_SSI_PARAMS_N         4
 
 
-#define NGX_HTTP_SSI_NO_ENCODING      0
-#define NGX_HTTP_SSI_URL_ENCODING     1
-#define NGX_HTTP_SSI_ENTITY_ENCODING  2
+#define NJET_HTTP_SSI_COND_IF          1
+#define NJET_HTTP_SSI_COND_ELSE        2
+
+
+#define NJET_HTTP_SSI_NO_ENCODING      0
+#define NJET_HTTP_SSI_URL_ENCODING     1
+#define NJET_HTTP_SSI_ENTITY_ENCODING  2
 
 
 typedef struct {
@@ -47,7 +47,7 @@ typedef struct {
     ngx_str_t                 command;
     ngx_array_t               params;
     ngx_table_elt_t          *param;
-    ngx_table_elt_t           params_array[NGX_HTTP_SSI_PARAMS_N];
+    ngx_table_elt_t           params_array[NJET_HTTP_SSI_PARAMS_N];
 
     ngx_chain_t              *in;
     ngx_chain_t              *out;
@@ -65,7 +65,7 @@ typedef struct {
     ngx_list_t               *variables;
     ngx_array_t              *blocks;
 
-#if (NGX_PCRE)
+#if (NJET_PCRE)
     ngx_uint_t                ncaptures;
     int                      *captures;
     u_char                   *captures_data;
@@ -111,4 +111,4 @@ typedef struct {
 extern ngx_module_t  ngx_http_ssi_filter_module;
 
 
-#endif /* _NGX_HTTP_SSI_FILTER_H_INCLUDED_ */
+#endif /* _NJET_HTTP_SSI_FILTER_H_INCLUDED_ */

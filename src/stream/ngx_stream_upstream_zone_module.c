@@ -23,7 +23,7 @@ static ngx_stream_upstream_rr_peer_t *ngx_stream_upstream_zone_copy_peer(
 static ngx_command_t  ngx_stream_upstream_zone_commands[] = {
 
     { ngx_string("zone"),
-      NGX_STREAM_UPS_CONF|NGX_CONF_TAKE12,
+      NJET_STREAM_UPS_CONF|NJET_CONF_TAKE12,
       ngx_stream_upstream_zone,
       0,
       0,
@@ -46,10 +46,10 @@ static ngx_stream_module_t  ngx_stream_upstream_zone_module_ctx = {
 
 
 ngx_module_t  ngx_stream_upstream_zone_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_stream_upstream_zone_module_ctx,  /* module context */
     ngx_stream_upstream_zone_commands,     /* module directives */
-    NGX_STREAM_MODULE,                     /* module type */
+    NJET_STREAM_MODULE,                     /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -57,7 +57,7 @@ ngx_module_t  ngx_stream_upstream_zone_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -75,24 +75,24 @@ ngx_stream_upstream_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     value = cf->args->elts;
 
     if (!value[1].len) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "invalid zone name \"%V\"", &value[1]);
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     if (cf->args->nelts == 3) {
         size = ngx_parse_size(&value[2]);
 
-        if (size == NGX_ERROR) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        if (size == NJET_ERROR) {
+            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                "invalid zone size \"%V\"", &value[2]);
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         if (size < (ssize_t) (8 * ngx_pagesize)) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                "zone \"%V\" is too small", &value[1]);
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
     } else {
@@ -102,7 +102,7 @@ ngx_stream_upstream_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     uscf->shm_zone = ngx_shared_memory_add(cf, &value[1], size,
                                            &ngx_stream_upstream_module);
     if (uscf->shm_zone == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     uscf->shm_zone->init = ngx_stream_upstream_init_zone;
@@ -110,7 +110,7 @@ ngx_stream_upstream_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     uscf->shm_zone->noreuse = 1;
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -142,14 +142,14 @@ ngx_stream_upstream_init_zone(ngx_shm_zone_t *shm_zone, void *data)
             peers = peers->zone_next;
         }
 
-        return NGX_OK;
+        return NJET_OK;
     }
 
     len = sizeof(" in upstream zone \"\"") + shm_zone->shm.name.len;
 
     shpool->log_ctx = ngx_slab_alloc(shpool, len);
     if (shpool->log_ctx == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     ngx_sprintf(shpool->log_ctx, " in upstream zone \"%V\"%Z",
@@ -169,14 +169,14 @@ ngx_stream_upstream_init_zone(ngx_shm_zone_t *shm_zone, void *data)
 
         peers = ngx_stream_upstream_zone_copy_peers(shpool, uscf);
         if (peers == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         *peersp = peers;
         peersp = &peers->zone_next;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -283,7 +283,7 @@ ngx_stream_upstream_zone_copy_peer(ngx_stream_upstream_rr_peers_t *peers,
         goto failed;
     }
 
-    dst->name.data = ngx_slab_calloc_locked(pool, NGX_SOCKADDR_STRLEN);
+    dst->name.data = ngx_slab_calloc_locked(pool, NJET_SOCKADDR_STRLEN);
     if (dst->name.data == NULL) {
         goto failed;
     }

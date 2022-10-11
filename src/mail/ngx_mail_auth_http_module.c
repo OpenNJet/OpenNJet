@@ -87,30 +87,30 @@ static char *ngx_mail_auth_http_header(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_mail_auth_http_commands[] = {
 
     { ngx_string("auth_http"),
-      NGX_MAIL_MAIN_CONF|NGX_MAIL_SRV_CONF|NGX_CONF_TAKE1,
+      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_TAKE1,
       ngx_mail_auth_http,
-      NGX_MAIL_SRV_CONF_OFFSET,
+      NJET_MAIL_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("auth_http_timeout"),
-      NGX_MAIL_MAIN_CONF|NGX_MAIL_SRV_CONF|NGX_CONF_TAKE1,
+      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NGX_MAIL_SRV_CONF_OFFSET,
+      NJET_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_auth_http_conf_t, timeout),
       NULL },
 
     { ngx_string("auth_http_header"),
-      NGX_MAIL_MAIN_CONF|NGX_MAIL_SRV_CONF|NGX_CONF_TAKE2,
+      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_TAKE2,
       ngx_mail_auth_http_header,
-      NGX_MAIL_SRV_CONF_OFFSET,
+      NJET_MAIL_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("auth_http_pass_client_cert"),
-      NGX_MAIL_MAIN_CONF|NGX_MAIL_SRV_CONF|NGX_CONF_FLAG,
+      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NGX_MAIL_SRV_CONF_OFFSET,
+      NJET_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_auth_http_conf_t, pass_client_cert),
       NULL },
 
@@ -130,10 +130,10 @@ static ngx_mail_module_t  ngx_mail_auth_http_module_ctx = {
 
 
 ngx_module_t  ngx_mail_auth_http_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_mail_auth_http_module_ctx,        /* module context */
     ngx_mail_auth_http_commands,           /* module directives */
-    NGX_MAIL_MODULE,                       /* module type */
+    NJET_MAIL_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -141,7 +141,7 @@ ngx_module_t  ngx_mail_auth_http_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -199,11 +199,11 @@ ngx_mail_auth_http_init(ngx_mail_session_t *s)
     ctx->peer.name = &ahcf->peer->name;
     ctx->peer.get = ngx_event_get_peer;
     ctx->peer.log = s->connection->log;
-    ctx->peer.log_error = NGX_ERROR_ERR;
+    ctx->peer.log_error = NJET_ERROR_ERR;
 
     rc = ngx_event_connect_peer(&ctx->peer);
 
-    if (rc == NGX_ERROR || rc == NGX_BUSY || rc == NGX_DECLINED) {
+    if (rc == NJET_ERROR || rc == NJET_BUSY || rc == NJET_DECLINED) {
         if (ctx->peer.connection) {
             ngx_close_connection(ctx->peer.connection);
         }
@@ -225,7 +225,7 @@ ngx_mail_auth_http_init(ngx_mail_session_t *s)
     ngx_add_timer(ctx->peer.connection->read, ahcf->timeout);
     ngx_add_timer(ctx->peer.connection->write, ahcf->timeout);
 
-    if (rc == NGX_OK) {
+    if (rc == NJET_OK) {
         ngx_mail_auth_http_write_handler(ctx->peer.connection->write);
         return;
     }
@@ -246,11 +246,11 @@ ngx_mail_auth_http_write_handler(ngx_event_t *wev)
 
     ctx = ngx_mail_get_module_ctx(s, ngx_mail_auth_http_module);
 
-    ngx_log_debug0(NGX_LOG_DEBUG_MAIL, wev->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_MAIL, wev->log, 0,
                    "mail auth http write handler");
 
     if (wev->timedout) {
-        ngx_log_error(NGX_LOG_ERR, wev->log, NGX_ETIMEDOUT,
+        ngx_log_error(NJET_LOG_ERR, wev->log, NJET_ETIMEDOUT,
                       "auth http server %V timed out", ctx->peer.name);
         ngx_close_connection(c);
         ngx_destroy_pool(ctx->pool);
@@ -262,7 +262,7 @@ ngx_mail_auth_http_write_handler(ngx_event_t *wev)
 
     n = ngx_send(c, ctx->request->pos, size);
 
-    if (n == NGX_ERROR) {
+    if (n == NJET_ERROR) {
         ngx_close_connection(c);
         ngx_destroy_pool(ctx->pool);
         ngx_mail_session_internal_server_error(s);
@@ -279,7 +279,7 @@ ngx_mail_auth_http_write_handler(ngx_event_t *wev)
                 ngx_del_timer(wev);
             }
 
-            if (ngx_handle_write_event(wev, 0) != NGX_OK) {
+            if (ngx_handle_write_event(wev, 0) != NJET_OK) {
                 ngx_close_connection(c);
                 ngx_destroy_pool(ctx->pool);
                 ngx_mail_session_internal_server_error(s);
@@ -307,13 +307,13 @@ ngx_mail_auth_http_read_handler(ngx_event_t *rev)
     c = rev->data;
     s = c->data;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_MAIL, rev->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_MAIL, rev->log, 0,
                    "mail auth http read handler");
 
     ctx = ngx_mail_get_module_ctx(s, ngx_mail_auth_http_module);
 
     if (rev->timedout) {
-        ngx_log_error(NGX_LOG_ERR, rev->log, NGX_ETIMEDOUT,
+        ngx_log_error(NJET_LOG_ERR, rev->log, NJET_ETIMEDOUT,
                       "auth http server %V timed out", ctx->peer.name);
         ngx_close_connection(c);
         ngx_destroy_pool(ctx->pool);
@@ -342,7 +342,7 @@ ngx_mail_auth_http_read_handler(ngx_event_t *rev)
         return;
     }
 
-    if (n == NGX_AGAIN) {
+    if (n == NJET_AGAIN) {
         return;
     }
 
@@ -367,7 +367,7 @@ ngx_mail_auth_http_ignore_status_line(ngx_mail_session_t *s,
         sw_almost_done
     } state;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_MAIL, s->connection->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_MAIL, s->connection->log, 0,
                    "mail auth http process status line");
 
     state = ctx->state;
@@ -431,7 +431,7 @@ ngx_mail_auth_http_ignore_status_line(ngx_mail_session_t *s,
                 goto done;
             }
 
-            ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
                           "auth http server %V sent invalid response",
                           ctx->peer.name);
             ngx_close_connection(ctx->peer.connection);
@@ -469,15 +469,15 @@ ngx_mail_auth_http_process_headers(ngx_mail_session_t *s,
     ngx_int_t    rc, port, n;
     ngx_addr_t  *peer;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_MAIL, s->connection->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_MAIL, s->connection->log, 0,
                    "mail auth http process headers");
 
     for ( ;; ) {
         rc = ngx_mail_auth_http_parse_header_line(s, ctx);
 
-        if (rc == NGX_OK) {
+        if (rc == NJET_OK) {
 
-#if (NGX_DEBUG)
+#if (NJET_DEBUG)
             {
             ngx_str_t  key, value;
 
@@ -486,7 +486,7 @@ ngx_mail_auth_http_process_headers(ngx_mail_session_t *s,
             value.len = ctx->header_end - ctx->header_start;
             value.data = ctx->header_start;
 
-            ngx_log_debug2(NGX_LOG_DEBUG_MAIL, s->connection->log, 0,
+            ngx_log_debug2(NJET_LOG_DEBUG_MAIL, s->connection->log, 0,
                            "mail auth http header: \"%V: %V\"",
                            &key, &value);
             }
@@ -524,16 +524,16 @@ ngx_mail_auth_http_process_headers(ngx_mail_session_t *s,
 
                 switch (s->protocol) {
 
-                case NGX_MAIL_POP3_PROTOCOL:
+                case NJET_MAIL_POP3_PROTOCOL:
                     size = sizeof("-ERR ") - 1 + len + sizeof(CRLF) - 1;
                     break;
 
-                case NGX_MAIL_IMAP_PROTOCOL:
+                case NJET_MAIL_IMAP_PROTOCOL:
                     size = s->tag.len + sizeof("NO ") - 1 + len
                            + sizeof(CRLF) - 1;
                     break;
 
-                default: /* NGX_MAIL_SMTP_PROTOCOL */
+                default: /* NJET_MAIL_SMTP_PROTOCOL */
                     ctx->err = ctx->errmsg;
                     continue;
                 }
@@ -550,16 +550,16 @@ ngx_mail_auth_http_process_headers(ngx_mail_session_t *s,
 
                 switch (s->protocol) {
 
-                case NGX_MAIL_POP3_PROTOCOL:
+                case NJET_MAIL_POP3_PROTOCOL:
                     *p++ = '-'; *p++ = 'E'; *p++ = 'R'; *p++ = 'R'; *p++ = ' ';
                     break;
 
-                case NGX_MAIL_IMAP_PROTOCOL:
+                case NJET_MAIL_IMAP_PROTOCOL:
                     p = ngx_cpymem(p, s->tag.data, s->tag.len);
                     *p++ = 'N'; *p++ = 'O'; *p++ = ' ';
                     break;
 
-                default: /* NGX_MAIL_SMTP_PROTOCOL */
+                default: /* NJET_MAIL_SMTP_PROTOCOL */
                     break;
                 }
 
@@ -647,7 +647,7 @@ ngx_mail_auth_http_process_headers(ngx_mail_session_t *s,
                 n = ngx_atoi(ctx->header_start,
                              ctx->header_end - ctx->header_start);
 
-                if (n != NGX_ERROR) {
+                if (n != NJET_ERROR) {
                     ctx->sleep = n;
                 }
 
@@ -682,18 +682,18 @@ ngx_mail_auth_http_process_headers(ngx_mail_session_t *s,
             continue;
         }
 
-        if (rc == NGX_DONE) {
-            ngx_log_debug0(NGX_LOG_DEBUG_MAIL, s->connection->log, 0,
+        if (rc == NJET_DONE) {
+            ngx_log_debug0(NJET_LOG_DEBUG_MAIL, s->connection->log, 0,
                            "mail auth http header done");
 
             ngx_close_connection(ctx->peer.connection);
 
             if (ctx->err.len) {
 
-                ngx_log_error(NGX_LOG_INFO, s->connection->log, 0,
+                ngx_log_error(NJET_LOG_INFO, s->connection->log, 0,
                               "client login failed: \"%V\"", &ctx->errmsg);
 
-                if (s->protocol == NGX_MAIL_SMTP_PROTOCOL) {
+                if (s->protocol == NJET_MAIL_SMTP_PROTOCOL) {
 
                     if (ctx->errcode.len == 0) {
                         ctx->errcode = ngx_mail_smtp_errcode;
@@ -753,7 +753,7 @@ ngx_mail_auth_http_process_headers(ngx_mail_session_t *s,
             }
 
             if (ctx->addr.len == 0 || ctx->port.len == 0) {
-                ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
                               "auth http server %V did not send server or port",
                               ctx->peer.name);
                 ngx_destroy_pool(ctx->pool);
@@ -762,9 +762,9 @@ ngx_mail_auth_http_process_headers(ngx_mail_session_t *s,
             }
 
             if (s->passwd.data == NULL
-                && s->protocol != NGX_MAIL_SMTP_PROTOCOL)
+                && s->protocol != NJET_MAIL_SMTP_PROTOCOL)
             {
-                ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+                ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
                               "auth http server %V did not send password",
                               ctx->peer.name);
                 ngx_destroy_pool(ctx->pool);
@@ -783,11 +783,11 @@ ngx_mail_auth_http_process_headers(ngx_mail_session_t *s,
                                 ctx->addr.data, ctx->addr.len);
 
             switch (rc) {
-            case NGX_OK:
+            case NJET_OK:
                 break;
 
-            case NGX_DECLINED:
-                ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+            case NJET_DECLINED:
+                ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
                               "auth http server %V sent invalid server "
                               "address:\"%V\"",
                               ctx->peer.name, &ctx->addr);
@@ -800,8 +800,8 @@ ngx_mail_auth_http_process_headers(ngx_mail_session_t *s,
             }
 
             port = ngx_atoi(ctx->port.data, ctx->port.len);
-            if (port == NGX_ERROR || port < 1 || port > 65535) {
-                ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+            if (port == NJET_ERROR || port < 1 || port > 65535) {
+                ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
                               "auth http server %V sent invalid server "
                               "port:\"%V\"",
                               ctx->peer.name, &ctx->port);
@@ -837,13 +837,13 @@ ngx_mail_auth_http_process_headers(ngx_mail_session_t *s,
             return;
         }
 
-        if (rc == NGX_AGAIN ) {
+        if (rc == NJET_AGAIN ) {
             return;
         }
 
-        /* rc == NGX_ERROR */
+        /* rc == NJET_ERROR */
 
-        ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+        ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
                       "auth http server %V sent invalid header in response",
                       ctx->peer.name);
         ngx_close_connection(ctx->peer.connection);
@@ -862,7 +862,7 @@ ngx_mail_auth_sleep_handler(ngx_event_t *rev)
     ngx_mail_session_t        *s;
     ngx_mail_core_srv_conf_t  *cscf;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_MAIL, rev->log, 0, "mail auth sleep handler");
+    ngx_log_debug0(NJET_LOG_DEBUG_MAIL, rev->log, 0, "mail auth sleep handler");
 
     c = rev->data;
     s = c->data;
@@ -882,7 +882,7 @@ ngx_mail_auth_sleep_handler(ngx_event_t *rev)
         rev->handler = cscf->protocol->auth_state;
 
         s->mail_state = 0;
-        s->auth_method = NGX_MAIL_AUTH_PLAIN;
+        s->auth_method = NJET_MAIL_AUTH_PLAIN;
 
         c->log->action = "in auth state";
 
@@ -899,7 +899,7 @@ ngx_mail_auth_sleep_handler(ngx_event_t *rev)
             return;
         }
 
-        if (ngx_handle_read_event(rev, 0) != NGX_OK) {
+        if (ngx_handle_read_event(rev, 0) != NJET_OK) {
             ngx_mail_close_connection(c);
         }
 
@@ -907,7 +907,7 @@ ngx_mail_auth_sleep_handler(ngx_event_t *rev)
     }
 
     if (rev->active) {
-        if (ngx_handle_read_event(rev, 0) != NGX_OK) {
+        if (ngx_handle_read_event(rev, 0) != NJET_OK) {
             ngx_mail_close_connection(c);
         }
     }
@@ -960,7 +960,7 @@ ngx_mail_auth_http_parse_header_line(ngx_mail_session_t *s,
                     break;
                 }
 
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
             break;
 
@@ -1000,7 +1000,7 @@ ngx_mail_auth_http_parse_header_line(ngx_mail_session_t *s,
                 goto done;
             }
 
-            return NGX_ERROR;
+            return NJET_ERROR;
 
         /* space* before header value */
         case sw_space_before_value:
@@ -1062,7 +1062,7 @@ ngx_mail_auth_http_parse_header_line(ngx_mail_session_t *s,
             case LF:
                 goto done;
             default:
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
         /* end of header */
@@ -1071,7 +1071,7 @@ ngx_mail_auth_http_parse_header_line(ngx_mail_session_t *s,
             case LF:
                 goto header_done;
             default:
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
         }
     }
@@ -1079,21 +1079,21 @@ ngx_mail_auth_http_parse_header_line(ngx_mail_session_t *s,
     ctx->response->pos = p;
     ctx->state = state;
 
-    return NGX_AGAIN;
+    return NJET_AGAIN;
 
 done:
 
     ctx->response->pos = p + 1;
     ctx->state = sw_start;
 
-    return NGX_OK;
+    return NJET_OK;
 
 header_done:
 
     ctx->response->pos = p + 1;
     ctx->state = sw_start;
 
-    return NGX_DONE;
+    return NJET_DONE;
 }
 
 
@@ -1104,10 +1104,10 @@ ngx_mail_auth_http_block_read(ngx_event_t *rev)
     ngx_mail_session_t        *s;
     ngx_mail_auth_http_ctx_t  *ctx;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_MAIL, rev->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_MAIL, rev->log, 0,
                    "mail auth http block read");
 
-    if (ngx_handle_read_event(rev, 0) != NGX_OK) {
+    if (ngx_handle_read_event(rev, 0) != NJET_OK) {
         c = rev->data;
         s = c->data;
 
@@ -1123,7 +1123,7 @@ ngx_mail_auth_http_block_read(ngx_event_t *rev)
 static void
 ngx_mail_auth_http_dummy_handler(ngx_event_t *ev)
 {
-    ngx_log_debug0(NGX_LOG_DEBUG_MAIL, ev->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_MAIL, ev->log, 0,
                    "mail auth http dummy handler");
 }
 
@@ -1136,34 +1136,34 @@ ngx_mail_auth_http_create_request(ngx_mail_session_t *s, ngx_pool_t *pool,
     ngx_buf_t                 *b;
     ngx_str_t                  login, passwd;
     ngx_connection_t          *c;
-#if (NGX_MAIL_SSL)
+#if (NJET_MAIL_SSL)
     ngx_str_t                  protocol, cipher, verify, subject, issuer,
                                serial, fingerprint, raw_cert, cert;
     ngx_mail_ssl_conf_t       *sslcf;
 #endif
     ngx_mail_core_srv_conf_t  *cscf;
 
-    if (ngx_mail_auth_http_escape(pool, &s->login, &login) != NGX_OK) {
+    if (ngx_mail_auth_http_escape(pool, &s->login, &login) != NJET_OK) {
         return NULL;
     }
 
-    if (ngx_mail_auth_http_escape(pool, &s->passwd, &passwd) != NGX_OK) {
+    if (ngx_mail_auth_http_escape(pool, &s->passwd, &passwd) != NJET_OK) {
         return NULL;
     }
 
     c = s->connection;
 
-#if (NGX_MAIL_SSL)
+#if (NJET_MAIL_SSL)
 
     if (c->ssl) {
 
-        if (ngx_ssl_get_protocol(c, pool, &protocol) != NGX_OK) {
+        if (ngx_ssl_get_protocol(c, pool, &protocol) != NJET_OK) {
             return NULL;
         }
 
         protocol.len = ngx_strlen(protocol.data);
 
-        if (ngx_ssl_get_cipher_name(c, pool, &cipher) != NGX_OK) {
+        if (ngx_ssl_get_cipher_name(c, pool, &cipher) != NJET_OK) {
             return NULL;
         }
 
@@ -1180,23 +1180,23 @@ ngx_mail_auth_http_create_request(ngx_mail_session_t *s, ngx_pool_t *pool,
 
         /* certificate details */
 
-        if (ngx_ssl_get_client_verify(c, pool, &verify) != NGX_OK) {
+        if (ngx_ssl_get_client_verify(c, pool, &verify) != NJET_OK) {
             return NULL;
         }
 
-        if (ngx_ssl_get_subject_dn(c, pool, &subject) != NGX_OK) {
+        if (ngx_ssl_get_subject_dn(c, pool, &subject) != NJET_OK) {
             return NULL;
         }
 
-        if (ngx_ssl_get_issuer_dn(c, pool, &issuer) != NGX_OK) {
+        if (ngx_ssl_get_issuer_dn(c, pool, &issuer) != NJET_OK) {
             return NULL;
         }
 
-        if (ngx_ssl_get_serial_number(c, pool, &serial) != NGX_OK) {
+        if (ngx_ssl_get_serial_number(c, pool, &serial) != NJET_OK) {
             return NULL;
         }
 
-        if (ngx_ssl_get_fingerprint(c, pool, &fingerprint) != NGX_OK) {
+        if (ngx_ssl_get_fingerprint(c, pool, &fingerprint) != NJET_OK) {
             return NULL;
         }
 
@@ -1204,11 +1204,11 @@ ngx_mail_auth_http_create_request(ngx_mail_session_t *s, ngx_pool_t *pool,
 
             /* certificate itself, if configured */
 
-            if (ngx_ssl_get_raw_certificate(c, pool, &raw_cert) != NGX_OK) {
+            if (ngx_ssl_get_raw_certificate(c, pool, &raw_cert) != NJET_OK) {
                 return NULL;
             }
 
-            if (ngx_mail_auth_http_escape(pool, &raw_cert, &cert) != NGX_OK) {
+            if (ngx_mail_auth_http_escape(pool, &raw_cert, &cert) != NJET_OK) {
                 return NULL;
             }
 
@@ -1239,7 +1239,7 @@ ngx_mail_auth_http_create_request(ngx_mail_session_t *s, ngx_pool_t *pool,
           + sizeof("Auth-Salt: ") - 1 + s->salt.len
           + sizeof("Auth-Protocol: ") - 1 + cscf->protocol->name.len
                 + sizeof(CRLF) - 1
-          + sizeof("Auth-Login-Attempt: ") - 1 + NGX_INT_T_LEN
+          + sizeof("Auth-Login-Attempt: ") - 1 + NJET_INT_T_LEN
                 + sizeof(CRLF) - 1
           + sizeof("Client-IP: ") - 1 + s->connection->addr_text.len
                 + sizeof(CRLF) - 1
@@ -1258,7 +1258,7 @@ ngx_mail_auth_http_create_request(ngx_mail_session_t *s, ngx_pool_t *pool,
                      + sizeof("65535") - 1 + sizeof(CRLF) - 1;
     }
 
-    if (s->auth_method == NGX_MAIL_AUTH_NONE) {
+    if (s->auth_method == NJET_MAIL_AUTH_NONE) {
         len += sizeof("Auth-SMTP-Helo: ") - 1 + s->smtp_helo.len
                      + sizeof(CRLF) - 1
                + sizeof("Auth-SMTP-From: ") - 1 + s->smtp_from.len
@@ -1267,7 +1267,7 @@ ngx_mail_auth_http_create_request(ngx_mail_session_t *s, ngx_pool_t *pool,
                      + sizeof(CRLF) - 1;
     }
 
-#if (NGX_MAIL_SSL)
+#if (NJET_MAIL_SSL)
 
     if (c->ssl) {
         len += sizeof("Auth-SSL: on" CRLF) - 1
@@ -1321,7 +1321,7 @@ ngx_mail_auth_http_create_request(ngx_mail_session_t *s, ngx_pool_t *pool,
     b->last = ngx_copy(b->last, passwd.data, passwd.len);
     *b->last++ = CR; *b->last++ = LF;
 
-    if (s->auth_method != NGX_MAIL_AUTH_PLAIN && s->salt.len) {
+    if (s->auth_method != NJET_MAIL_AUTH_PLAIN && s->salt.len) {
         b->last = ngx_cpymem(b->last, "Auth-Salt: ", sizeof("Auth-Salt: ") - 1);
         b->last = ngx_copy(b->last, s->salt.data, s->salt.len);
 
@@ -1369,7 +1369,7 @@ ngx_mail_auth_http_create_request(ngx_mail_session_t *s, ngx_pool_t *pool,
                               c->proxy_protocol->dst_port);
     }
 
-    if (s->auth_method == NGX_MAIL_AUTH_NONE) {
+    if (s->auth_method == NJET_MAIL_AUTH_NONE) {
 
         /* HELO, MAIL FROM, and RCPT TO can't contain CRLF, no need to escape */
 
@@ -1390,7 +1390,7 @@ ngx_mail_auth_http_create_request(ngx_mail_session_t *s, ngx_pool_t *pool,
 
     }
 
-#if (NGX_MAIL_SSL)
+#if (NJET_MAIL_SSL)
 
     if (c->ssl) {
         b->last = ngx_cpymem(b->last, "Auth-SSL: on" CRLF,
@@ -1462,8 +1462,8 @@ ngx_mail_auth_http_create_request(ngx_mail_session_t *s, ngx_pool_t *pool,
     /* add "\r\n" at the header end */
     *b->last++ = CR; *b->last++ = LF;
 
-#if (NGX_DEBUG_MAIL_PASSWD)
-    ngx_log_debug2(NGX_LOG_DEBUG_MAIL, s->connection->log, 0,
+#if (NJET_DEBUG_MAIL_PASSWD)
+    ngx_log_debug2(NJET_LOG_DEBUG_MAIL, s->connection->log, 0,
                    "mail auth http header:%N\"%*s\"",
                    (size_t) (b->last - b->pos), b->pos);
 #endif
@@ -1478,25 +1478,25 @@ ngx_mail_auth_http_escape(ngx_pool_t *pool, ngx_str_t *text, ngx_str_t *escaped)
     u_char     *p;
     uintptr_t   n;
 
-    n = ngx_escape_uri(NULL, text->data, text->len, NGX_ESCAPE_MAIL_AUTH);
+    n = ngx_escape_uri(NULL, text->data, text->len, NJET_ESCAPE_MAIL_AUTH);
 
     if (n == 0) {
         *escaped = *text;
-        return NGX_OK;
+        return NJET_OK;
     }
 
     escaped->len = text->len + n * 2;
 
     p = ngx_pnalloc(pool, escaped->len);
     if (p == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    (void) ngx_escape_uri(p, text->data, text->len, NGX_ESCAPE_MAIL_AUTH);
+    (void) ngx_escape_uri(p, text->data, text->len, NJET_ESCAPE_MAIL_AUTH);
 
     escaped->data = p;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -1510,8 +1510,8 @@ ngx_mail_auth_http_create_conf(ngx_conf_t *cf)
         return NULL;
     }
 
-    ahcf->timeout = NGX_CONF_UNSET_MSEC;
-    ahcf->pass_client_cert = NGX_CONF_UNSET;
+    ahcf->timeout = NJET_CONF_UNSET_MSEC;
+    ahcf->pass_client_cert = NJET_CONF_UNSET;
 
     ahcf->file = cf->conf_file->file.name.data;
     ahcf->line = cf->conf_file->line;
@@ -1537,11 +1537,11 @@ ngx_mail_auth_http_merge_conf(ngx_conf_t *cf, void *parent, void *child)
         conf->uri = prev->uri;
 
         if (conf->peer == NULL) {
-            ngx_log_error(NGX_LOG_EMERG, cf->log, 0,
+            ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
                           "no \"auth_http\" is defined for server in %s:%ui",
                           conf->file, conf->line);
 
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
     }
 
@@ -1563,7 +1563,7 @@ ngx_mail_auth_http_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 
         p = ngx_pnalloc(cf->pool, len);
         if (p == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         conf->header.len = len;
@@ -1577,7 +1577,7 @@ ngx_mail_auth_http_merge_conf(ngx_conf_t *cf, void *parent, void *child)
         }
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -1602,13 +1602,13 @@ ngx_mail_auth_http(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         u.url.data += 7;
     }
 
-    if (ngx_parse_url(cf->pool, &u) != NGX_OK) {
+    if (ngx_parse_url(cf->pool, &u) != NJET_OK) {
         if (u.err) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                "%s in auth_http \"%V\"", u.err, &u.url);
         }
 
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     ahcf->peer = u.addrs;
@@ -1626,7 +1626,7 @@ ngx_mail_auth_http(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         ngx_str_set(&ahcf->uri, "/");
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -1641,13 +1641,13 @@ ngx_mail_auth_http_header(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (ahcf->headers == NULL) {
         ahcf->headers = ngx_array_create(cf->pool, 1, sizeof(ngx_table_elt_t));
         if (ahcf->headers == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
     }
 
     header = ngx_array_push(ahcf->headers);
     if (header == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     value = cf->args->elts;
@@ -1655,5 +1655,5 @@ ngx_mail_auth_http_header(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     header->key = value[1];
     header->value = value[2];
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }

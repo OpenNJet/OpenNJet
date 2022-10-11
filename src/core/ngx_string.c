@@ -315,7 +315,7 @@ ngx_vslprintf(u_char *buf, u_char *last, const char *fmt, va_list args)
                 }
 
                 if (max_width) {
-                    width = NGX_INT_T_LEN;
+                    width = NJET_INT_T_LEN;
                 }
 
                 break;
@@ -360,7 +360,7 @@ ngx_vslprintf(u_char *buf, u_char *last, const char *fmt, va_list args)
                 }
 
                 if (max_width) {
-                    width = NGX_ATOMIC_T_LEN;
+                    width = NJET_ATOMIC_T_LEN;
                 }
 
                 break;
@@ -405,7 +405,7 @@ ngx_vslprintf(u_char *buf, u_char *last, const char *fmt, va_list args)
 
                 continue;
 
-#if !(NGX_WIN32)
+#if !(NJET_WIN32)
             case 'r':
                 i64 = (int64_t) va_arg(args, rlim_t);
                 sign = 1;
@@ -434,7 +434,7 @@ ngx_vslprintf(u_char *buf, u_char *last, const char *fmt, va_list args)
                 continue;
 
             case 'N':
-#if (NGX_WIN32)
+#if (NJET_WIN32)
                 *buf++ = CR;
                 if (buf < last) {
                     *buf++ = LF;
@@ -485,9 +485,9 @@ static u_char *
 ngx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64, u_char zero,
     ngx_uint_t hexadecimal, ngx_uint_t width)
 {
-    u_char         *p, temp[NGX_INT64_LEN + 1];
+    u_char         *p, temp[NJET_INT64_LEN + 1];
                        /*
-                        * we need temp[NGX_INT64_LEN] only,
+                        * we need temp[NJET_INT64_LEN] only,
                         * but icc issues the warning
                         */
     size_t          len;
@@ -495,11 +495,11 @@ ngx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64, u_char zero,
     static u_char   hex[] = "0123456789abcdef";
     static u_char   HEX[] = "0123456789ABCDEF";
 
-    p = temp + NGX_INT64_LEN;
+    p = temp + NJET_INT64_LEN;
 
     if (hexadecimal == 0) {
 
-        if (ui64 <= (uint64_t) NGX_MAX_UINT32_VALUE) {
+        if (ui64 <= (uint64_t) NJET_MAX_UINT32_VALUE) {
 
             /*
              * To divide 64-bit numbers and to find remainders
@@ -549,7 +549,7 @@ ngx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64, u_char zero,
 
     /* zero or space padding */
 
-    len = (temp + NGX_INT64_LEN) - p;
+    len = (temp + NJET_INT64_LEN) - p;
 
     while (len++ < width && buf < last) {
         *buf++ = zero;
@@ -557,7 +557,7 @@ ngx_sprintf_num(u_char *buf, u_char *last, uint64_t ui64, u_char zero,
 
     /* number safe copy */
 
-    len = (temp + NGX_INT64_LEN) - p;
+    len = (temp + NJET_INT64_LEN) - p;
 
     if (buf + len > last) {
         len = last - buf;
@@ -932,7 +932,7 @@ ngx_filename_cmp(u_char *s1, u_char *s2, size_t n)
         c1 = (ngx_uint_t) *s1++;
         c2 = (ngx_uint_t) *s2++;
 
-#if (NGX_HAVE_CASELESS_FILESYSTEM)
+#if (NJET_HAVE_CASELESS_FILESYSTEM)
         c1 = tolower(c1);
         c2 = tolower(c2);
 #endif
@@ -969,19 +969,19 @@ ngx_atoi(u_char *line, size_t n)
     ngx_int_t  value, cutoff, cutlim;
 
     if (n == 0) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    cutoff = NGX_MAX_INT_T_VALUE / 10;
-    cutlim = NGX_MAX_INT_T_VALUE % 10;
+    cutoff = NJET_MAX_INT_T_VALUE / 10;
+    cutlim = NJET_MAX_INT_T_VALUE % 10;
 
     for (value = 0; n--; line++) {
         if (*line < '0' || *line > '9') {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (value >= cutoff && (value > cutoff || *line - '0' > cutlim)) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         value = value * 10 + (*line - '0');
@@ -1000,23 +1000,23 @@ ngx_atofp(u_char *line, size_t n, size_t point)
     ngx_uint_t  dot;
 
     if (n == 0) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    cutoff = NGX_MAX_INT_T_VALUE / 10;
-    cutlim = NGX_MAX_INT_T_VALUE % 10;
+    cutoff = NJET_MAX_INT_T_VALUE / 10;
+    cutlim = NJET_MAX_INT_T_VALUE % 10;
 
     dot = 0;
 
     for (value = 0; n--; line++) {
 
         if (point == 0) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (*line == '.') {
             if (dot) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             dot = 1;
@@ -1024,11 +1024,11 @@ ngx_atofp(u_char *line, size_t n, size_t point)
         }
 
         if (*line < '0' || *line > '9') {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (value >= cutoff && (value > cutoff || *line - '0' > cutlim)) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         value = value * 10 + (*line - '0');
@@ -1037,7 +1037,7 @@ ngx_atofp(u_char *line, size_t n, size_t point)
 
     while (point--) {
         if (value > cutoff) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         value = value * 10;
@@ -1053,19 +1053,19 @@ ngx_atosz(u_char *line, size_t n)
     ssize_t  value, cutoff, cutlim;
 
     if (n == 0) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    cutoff = NGX_MAX_SIZE_T_VALUE / 10;
-    cutlim = NGX_MAX_SIZE_T_VALUE % 10;
+    cutoff = NJET_MAX_SIZE_T_VALUE / 10;
+    cutlim = NJET_MAX_SIZE_T_VALUE % 10;
 
     for (value = 0; n--; line++) {
         if (*line < '0' || *line > '9') {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (value >= cutoff && (value > cutoff || *line - '0' > cutlim)) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         value = value * 10 + (*line - '0');
@@ -1081,19 +1081,19 @@ ngx_atoof(u_char *line, size_t n)
     off_t  value, cutoff, cutlim;
 
     if (n == 0) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    cutoff = NGX_MAX_OFF_T_VALUE / 10;
-    cutlim = NGX_MAX_OFF_T_VALUE % 10;
+    cutoff = NJET_MAX_OFF_T_VALUE / 10;
+    cutlim = NJET_MAX_OFF_T_VALUE % 10;
 
     for (value = 0; n--; line++) {
         if (*line < '0' || *line > '9') {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (value >= cutoff && (value > cutoff || *line - '0' > cutlim)) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         value = value * 10 + (*line - '0');
@@ -1109,19 +1109,19 @@ ngx_atotm(u_char *line, size_t n)
     time_t  value, cutoff, cutlim;
 
     if (n == 0) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    cutoff = NGX_MAX_TIME_T_VALUE / 10;
-    cutlim = NGX_MAX_TIME_T_VALUE % 10;
+    cutoff = NJET_MAX_TIME_T_VALUE / 10;
+    cutlim = NJET_MAX_TIME_T_VALUE % 10;
 
     for (value = 0; n--; line++) {
         if (*line < '0' || *line > '9') {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (value >= cutoff && (value > cutoff || *line - '0' > cutlim)) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         value = value * 10 + (*line - '0');
@@ -1138,14 +1138,14 @@ ngx_hextoi(u_char *line, size_t n)
     ngx_int_t  value, cutoff;
 
     if (n == 0) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    cutoff = NGX_MAX_INT_T_VALUE / 16;
+    cutoff = NJET_MAX_INT_T_VALUE / 16;
 
     for (value = 0; n--; line++) {
         if (value > cutoff) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         ch = *line;
@@ -1162,7 +1162,7 @@ ngx_hextoi(u_char *line, size_t n)
             continue;
         }
 
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     return value;
@@ -1313,12 +1313,12 @@ ngx_decode_base64_internal(ngx_str_t *dst, ngx_str_t *src, const u_char *basis)
         }
 
         if (basis[src->data[len]] == 77) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
     if (len % 4 == 1) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     s = src->data;
@@ -1343,7 +1343,7 @@ ngx_decode_base64_internal(ngx_str_t *dst, ngx_str_t *src, const u_char *basis)
 
     dst->len = d - dst->data;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -1691,7 +1691,7 @@ ngx_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
         switch (state) {
         case sw_usual:
             if (ch == '?'
-                && (type & (NGX_UNESCAPE_URI|NGX_UNESCAPE_REDIRECT)))
+                && (type & (NJET_UNESCAPE_URI|NJET_UNESCAPE_REDIRECT)))
             {
                 *d++ = ch;
                 goto done;
@@ -1735,7 +1735,7 @@ ngx_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
             if (ch >= '0' && ch <= '9') {
                 ch = (u_char) ((decoded << 4) + (ch - '0'));
 
-                if (type & NGX_UNESCAPE_REDIRECT) {
+                if (type & NJET_UNESCAPE_REDIRECT) {
                     if (ch > '%' && ch < 0x7f) {
                         *d++ = ch;
                         break;
@@ -1755,7 +1755,7 @@ ngx_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
             if (c >= 'a' && c <= 'f') {
                 ch = (u_char) ((decoded << 4) + (c - 'a') + 10);
 
-                if (type & NGX_UNESCAPE_URI) {
+                if (type & NJET_UNESCAPE_URI) {
                     if (ch == '?') {
                         *d++ = ch;
                         goto done;
@@ -1765,7 +1765,7 @@ ngx_unescape_uri(u_char **dst, u_char **src, size_t size, ngx_uint_t type)
                     break;
                 }
 
-                if (type & NGX_UNESCAPE_REDIRECT) {
+                if (type & NJET_UNESCAPE_REDIRECT) {
                     if (ch == '?') {
                         *d++ = ch;
                         goto done;
@@ -2083,13 +2083,13 @@ ngx_explicit_memzero(void *buf, size_t n)
 }
 
 
-#if (NGX_MEMCPY_LIMIT)
+#if (NJET_MEMCPY_LIMIT)
 
 void *
 ngx_memcpy(void *dst, const void *src, size_t n)
 {
-    if (n > NGX_MEMCPY_LIMIT) {
-        ngx_log_error(NGX_LOG_ALERT, ngx_cycle->log, 0, "memcpy %uz bytes", n);
+    if (n > NJET_MEMCPY_LIMIT) {
+        ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, 0, "memcpy %uz bytes", n);
         ngx_debug_point();
     }
 

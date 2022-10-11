@@ -18,10 +18,10 @@ static ngx_msec_t ngx_monotonic_time(time_t sec, ngx_uint_t msec);
  * The time read operations are frequent, so they are lock-free and get time
  * values and strings from the current slot.  Thus thread may get the corrupted
  * values only if it is preempted while copying and then it is not scheduled
- * to run more than NGX_TIME_SLOTS seconds.
+ * to run more than NJET_TIME_SLOTS seconds.
  */
 
-#define NGX_TIME_SLOTS   64
+#define NJET_TIME_SLOTS   64
 
 static ngx_uint_t        slot;
 static ngx_atomic_t      ngx_time_lock;
@@ -34,7 +34,7 @@ volatile ngx_str_t       ngx_cached_http_log_time;
 volatile ngx_str_t       ngx_cached_http_log_iso8601;
 volatile ngx_str_t       ngx_cached_syslog_time;
 
-#if !(NGX_WIN32)
+#if !(NJET_WIN32)
 
 /*
  * localtime() and localtime_r() are not Async-Signal-Safe functions, therefore,
@@ -45,16 +45,16 @@ volatile ngx_str_t       ngx_cached_syslog_time;
 static ngx_int_t         cached_gmtoff;
 #endif
 
-static ngx_time_t        cached_time[NGX_TIME_SLOTS];
-static u_char            cached_err_log_time[NGX_TIME_SLOTS]
+static ngx_time_t        cached_time[NJET_TIME_SLOTS];
+static u_char            cached_err_log_time[NJET_TIME_SLOTS]
                                     [sizeof("1970/09/28 12:00:00")];
-static u_char            cached_http_time[NGX_TIME_SLOTS]
+static u_char            cached_http_time[NJET_TIME_SLOTS]
                                     [sizeof("Mon, 28 Sep 1970 06:00:00 GMT")];
-static u_char            cached_http_log_time[NGX_TIME_SLOTS]
+static u_char            cached_http_log_time[NJET_TIME_SLOTS]
                                     [sizeof("28/Sep/1970:12:00:00 +0600")];
-static u_char            cached_http_log_iso8601[NGX_TIME_SLOTS]
+static u_char            cached_http_log_iso8601[NJET_TIME_SLOTS]
                                     [sizeof("1970-09-28T12:00:00+06:00")];
-static u_char            cached_syslog_time[NGX_TIME_SLOTS]
+static u_char            cached_syslog_time[NJET_TIME_SLOTS]
                                     [sizeof("Sep 28 12:00:00")];
 
 
@@ -106,7 +106,7 @@ ngx_time_update(void)
         return;
     }
 
-    if (slot == NGX_TIME_SLOTS - 1) {
+    if (slot == NJET_TIME_SLOTS - 1) {
         slot = 0;
     } else {
         slot++;
@@ -127,12 +127,12 @@ ngx_time_update(void)
                        months[gmt.ngx_tm_mon - 1], gmt.ngx_tm_year,
                        gmt.ngx_tm_hour, gmt.ngx_tm_min, gmt.ngx_tm_sec);
 
-#if (NGX_HAVE_GETTIMEZONE)
+#if (NJET_HAVE_GETTIMEZONE)
 
     tp->gmtoff = ngx_gettimezone();
     ngx_gmtime(sec + tp->gmtoff * 60, &tm);
 
-#elif (NGX_HAVE_GMTOFF)
+#elif (NJET_HAVE_GMTOFF)
 
     ngx_localtime(sec, &tm);
     cached_gmtoff = (ngx_int_t) (tm.ngx_tm_gmtoff / 60);
@@ -195,7 +195,7 @@ ngx_time_update(void)
 static ngx_msec_t
 ngx_monotonic_time(time_t sec, ngx_uint_t msec)
 {
-#if (NGX_HAVE_CLOCK_MONOTONIC)
+#if (NJET_HAVE_CLOCK_MONOTONIC)
     struct timespec  ts;
 
 #if defined(CLOCK_MONOTONIC_FAST)
@@ -213,7 +213,7 @@ ngx_monotonic_time(time_t sec, ngx_uint_t msec)
 }
 
 
-#if !(NGX_WIN32)
+#if !(NJET_WIN32)
 
 void
 ngx_time_sigsafe_update(void)
@@ -239,7 +239,7 @@ ngx_time_sigsafe_update(void)
         return;
     }
 
-    if (slot == NGX_TIME_SLOTS - 1) {
+    if (slot == NJET_TIME_SLOTS - 1) {
         slot = 0;
     } else {
         slot++;

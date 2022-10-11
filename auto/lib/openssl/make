@@ -7,9 +7,9 @@ case "$CC" in
 
     cl)
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJET_MAKEFILE
 
-$OPENSSL/openssl/include/openssl/ssl.h:	$NGX_MAKEFILE
+$OPENSSL/openssl/include/openssl/ssl.h:	$NJET_MAKEFILE
 	\$(MAKE) -f auto/lib/openssl/makefile.msvc			\
 		OPENSSL="$OPENSSL" OPENSSL_OPT="$OPENSSL_OPT"
 
@@ -22,7 +22,7 @@ END
         ngx_opt=`echo "-DOPENSSL=\"$OPENSSL\" -DOPENSSL_OPT=\"$OPENSSL_OPT\"" \
             | sed -e "s/\//$ngx_regex_dirsep/g"`
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJET_MAKEFILE
 
 `echo "$OPENSSL\\openssl\\lib\\libeay32.lib:				\
 	$OPENSSL\\openssl\\include\\openssl\\ssl.h"			\
@@ -32,7 +32,7 @@ END
 	$OPENSSL\\openssl\\include\\openssl\\ssl.h"			\
 	| sed -e "s/\//$ngx_regex_dirsep/g"`
 
-`echo "$OPENSSL\\openssl\\include\\openssl\\ssl.h:	$NGX_MAKEFILE"	\
+`echo "$OPENSSL\\openssl\\include\\openssl\\ssl.h:	$NJET_MAKEFILE"	\
 	| sed -e "s/\//$ngx_regex_dirsep/g"`
 	\$(MAKE) -f auto/lib/openssl/makefile.bcc $ngx_opt
 
@@ -46,9 +46,9 @@ END
             *)  ngx_prefix="$PWD/$OPENSSL/.openssl" ;;
         esac
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJET_MAKEFILE
 
-$OPENSSL/.openssl/include/openssl/ssl.h:	$NGX_MAKEFILE
+$OPENSSL/.openssl/include/openssl/ssl.h:	$NJET_MAKEFILE
 	cd $OPENSSL \\
 	&& if [ -f Makefile ]; then \$(MAKE) clean; fi \\
 	&& ./config --prefix=$ngx_prefix no-shared no-threads $OPENSSL_OPT \\

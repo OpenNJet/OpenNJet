@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_PARSE_H_INCLUDED_
-#define _NGX_PARSE_H_INCLUDED_
+#ifndef _NJET_PARSE_H_INCLUDED_
+#define _NJET_PARSE_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -18,4 +18,4 @@ off_t ngx_parse_offset(ngx_str_t *line);
 ngx_int_t ngx_parse_time(ngx_str_t *line, ngx_uint_t is_sec);
 
 
-#endif /* _NGX_PARSE_H_INCLUDED_ */
+#endif /* _NJET_PARSE_H_INCLUDED_ */

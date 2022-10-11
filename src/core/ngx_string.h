@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_STRING_H_INCLUDED_
-#define _NGX_STRING_H_INCLUDED_
+#ifndef _NJET_STRING_H_INCLUDED_
+#define _NJET_STRING_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -91,7 +91,7 @@ ngx_strlchr(u_char *p, u_char *last, u_char c)
 void ngx_explicit_memzero(void *buf, size_t n);
 
 
-#if (NGX_MEMCPY_LIMIT)
+#if (NJET_MEMCPY_LIMIT)
 
 void *ngx_memcpy(void *dst, const void *src, size_t n);
 #define ngx_cpymem(dst, src, n)   (((u_char *) ngx_memcpy(dst, src, n)) + (n))
@@ -196,16 +196,16 @@ size_t ngx_utf8_length(u_char *p, size_t n);
 u_char *ngx_utf8_cpystrn(u_char *dst, u_char *src, size_t n, size_t len);
 
 
-#define NGX_ESCAPE_URI            0
-#define NGX_ESCAPE_ARGS           1
-#define NGX_ESCAPE_URI_COMPONENT  2
-#define NGX_ESCAPE_HTML           3
-#define NGX_ESCAPE_REFRESH        4
-#define NGX_ESCAPE_MEMCACHED      5
-#define NGX_ESCAPE_MAIL_AUTH      6
+#define NJET_ESCAPE_URI            0
+#define NJET_ESCAPE_ARGS           1
+#define NJET_ESCAPE_URI_COMPONENT  2
+#define NJET_ESCAPE_HTML           3
+#define NJET_ESCAPE_REFRESH        4
+#define NJET_ESCAPE_MEMCACHED      5
+#define NJET_ESCAPE_MAIL_AUTH      6
 
-#define NGX_UNESCAPE_URI       1
-#define NGX_UNESCAPE_REDIRECT  2
+#define NJET_UNESCAPE_URI       1
+#define NJET_UNESCAPE_REDIRECT  2
 
 uintptr_t ngx_escape_uri(u_char *dst, u_char *src, size_t size,
     ngx_uint_t type);
@@ -235,4 +235,4 @@ void ngx_sort(void *base, size_t n, size_t size,
 #define ngx_value(n)          ngx_value_helper(n)
 
 
-#endif /* _NGX_STRING_H_INCLUDED_ */
+#endif /* _NJET_STRING_H_INCLUDED_ */

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_EVENT_POSTED_H_INCLUDED_
-#define _NGX_EVENT_POSTED_H_INCLUDED_
+#ifndef _NJET_EVENT_POSTED_H_INCLUDED_
+#define _NJET_EVENT_POSTED_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -20,10 +20,10 @@
         (ev)->posted = 1;                                                     \
         ngx_queue_insert_tail(q, &(ev)->queue);                               \
                                                                               \
-        ngx_log_debug1(NGX_LOG_DEBUG_CORE, (ev)->log, 0, "post event %p", ev);\
+        ngx_log_debug1(NJET_LOG_DEBUG_CORE, (ev)->log, 0, "post event %p", ev);\
                                                                               \
     } else  {                                                                 \
-        ngx_log_debug1(NGX_LOG_DEBUG_CORE, (ev)->log, 0,                      \
+        ngx_log_debug1(NJET_LOG_DEBUG_CORE, (ev)->log, 0,                      \
                        "update posted event %p", ev);                         \
     }
 
@@ -33,7 +33,7 @@
     (ev)->posted = 0;                                                         \
     ngx_queue_remove(&(ev)->queue);                                           \
                                                                               \
-    ngx_log_debug1(NGX_LOG_DEBUG_CORE, (ev)->log, 0,                          \
+    ngx_log_debug1(NJET_LOG_DEBUG_CORE, (ev)->log, 0,                          \
                    "delete posted event %p", ev);
 
 
@@ -47,4 +47,4 @@ extern ngx_queue_t  ngx_posted_next_events;
 extern ngx_queue_t  ngx_posted_events;
 
 
-#endif /* _NGX_EVENT_POSTED_H_INCLUDED_ */
+#endif /* _NJET_EVENT_POSTED_H_INCLUDED_ */

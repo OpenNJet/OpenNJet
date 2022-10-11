@@ -341,8 +341,8 @@ static ngx_str_t ngx_http_error_pages[] = {
 
     ngx_null_string,                     /* 201, 204 */
 
-#define NGX_HTTP_LAST_2XX  202
-#define NGX_HTTP_OFF_3XX   (NGX_HTTP_LAST_2XX - 201)
+#define NJET_HTTP_LAST_2XX  202
+#define NJET_HTTP_OFF_3XX   (NJET_HTTP_LAST_2XX - 201)
 
     /* ngx_null_string, */               /* 300 */
     ngx_string(ngx_http_error_301_page),
@@ -354,8 +354,8 @@ static ngx_str_t ngx_http_error_pages[] = {
     ngx_string(ngx_http_error_307_page),
     ngx_string(ngx_http_error_308_page),
 
-#define NGX_HTTP_LAST_3XX  309
-#define NGX_HTTP_OFF_4XX   (NGX_HTTP_LAST_3XX - 301 + NGX_HTTP_OFF_3XX)
+#define NJET_HTTP_LAST_3XX  309
+#define NJET_HTTP_OFF_4XX   (NJET_HTTP_LAST_3XX - 301 + NJET_HTTP_OFF_3XX)
 
     ngx_string(ngx_http_error_400_page),
     ngx_string(ngx_http_error_401_page),
@@ -388,8 +388,8 @@ static ngx_str_t ngx_http_error_pages[] = {
     ngx_null_string,                     /* 428 */
     ngx_string(ngx_http_error_429_page),
 
-#define NGX_HTTP_LAST_4XX  430
-#define NGX_HTTP_OFF_5XX   (NGX_HTTP_LAST_4XX - 400 + NGX_HTTP_OFF_4XX)
+#define NJET_HTTP_LAST_4XX  430
+#define NJET_HTTP_OFF_5XX   (NJET_HTTP_LAST_4XX - 400 + NJET_HTTP_OFF_4XX)
 
     ngx_string(ngx_http_error_494_page), /* 494, request header too large */
     ngx_string(ngx_http_error_495_page), /* 495, https certificate error */
@@ -407,7 +407,7 @@ static ngx_str_t ngx_http_error_pages[] = {
     ngx_null_string,                     /* 506 */
     ngx_string(ngx_http_error_507_page)
 
-#define NGX_HTTP_LAST_5XX  508
+#define NJET_HTTP_LAST_5XX  508
 
 };
 
@@ -419,7 +419,7 @@ ngx_http_special_response_handler(ngx_http_request_t *r, ngx_int_t error)
     ngx_http_err_page_t       *err_page;
     ngx_http_core_loc_conf_t  *clcf;
 
-    ngx_log_debug3(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug3(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http special response: %i, \"%V?%V\"",
                    error, &r->uri, &r->args);
 
@@ -427,24 +427,24 @@ ngx_http_special_response_handler(ngx_http_request_t *r, ngx_int_t error)
 
     if (r->keepalive) {
         switch (error) {
-            case NGX_HTTP_BAD_REQUEST:
-            case NGX_HTTP_REQUEST_ENTITY_TOO_LARGE:
-            case NGX_HTTP_REQUEST_URI_TOO_LARGE:
-            case NGX_HTTP_TO_HTTPS:
-            case NGX_HTTPS_CERT_ERROR:
-            case NGX_HTTPS_NO_CERT:
-            case NGX_HTTP_INTERNAL_SERVER_ERROR:
-            case NGX_HTTP_NOT_IMPLEMENTED:
+            case NJET_HTTP_BAD_REQUEST:
+            case NJET_HTTP_REQUEST_ENTITY_TOO_LARGE:
+            case NJET_HTTP_REQUEST_URI_TOO_LARGE:
+            case NJET_HTTP_TO_HTTPS:
+            case NJET_HTTPS_CERT_ERROR:
+            case NJET_HTTPS_NO_CERT:
+            case NJET_HTTP_INTERNAL_SERVER_ERROR:
+            case NJET_HTTP_NOT_IMPLEMENTED:
                 r->keepalive = 0;
         }
     }
 
     if (r->lingering_close) {
         switch (error) {
-            case NGX_HTTP_BAD_REQUEST:
-            case NGX_HTTP_TO_HTTPS:
-            case NGX_HTTPS_CERT_ERROR:
-            case NGX_HTTPS_NO_CERT:
+            case NJET_HTTP_BAD_REQUEST:
+            case NJET_HTTP_TO_HTTPS:
+            case NJET_HTTPS_CERT_ERROR:
+            case NJET_HTTPS_NO_CERT:
                 r->lingering_close = 0;
         }
     }
@@ -470,49 +470,49 @@ ngx_http_special_response_handler(ngx_http_request_t *r, ngx_int_t error)
 
     r->expect_tested = 1;
 
-    if (ngx_http_discard_request_body(r) != NGX_OK) {
+    if (ngx_http_discard_request_body(r) != NJET_OK) {
         r->keepalive = 0;
     }
 
     if (clcf->msie_refresh
         && r->headers_in.msie
-        && (error == NGX_HTTP_MOVED_PERMANENTLY
-            || error == NGX_HTTP_MOVED_TEMPORARILY))
+        && (error == NJET_HTTP_MOVED_PERMANENTLY
+            || error == NJET_HTTP_MOVED_TEMPORARILY))
     {
         return ngx_http_send_refresh(r);
     }
 
-    if (error == NGX_HTTP_CREATED) {
+    if (error == NJET_HTTP_CREATED) {
         /* 201 */
         err = 0;
 
-    } else if (error == NGX_HTTP_NO_CONTENT) {
+    } else if (error == NJET_HTTP_NO_CONTENT) {
         /* 204 */
         err = 0;
 
-    } else if (error >= NGX_HTTP_MOVED_PERMANENTLY
-               && error < NGX_HTTP_LAST_3XX)
+    } else if (error >= NJET_HTTP_MOVED_PERMANENTLY
+               && error < NJET_HTTP_LAST_3XX)
     {
         /* 3XX */
-        err = error - NGX_HTTP_MOVED_PERMANENTLY + NGX_HTTP_OFF_3XX;
+        err = error - NJET_HTTP_MOVED_PERMANENTLY + NJET_HTTP_OFF_3XX;
 
-    } else if (error >= NGX_HTTP_BAD_REQUEST
-               && error < NGX_HTTP_LAST_4XX)
+    } else if (error >= NJET_HTTP_BAD_REQUEST
+               && error < NJET_HTTP_LAST_4XX)
     {
         /* 4XX */
-        err = error - NGX_HTTP_BAD_REQUEST + NGX_HTTP_OFF_4XX;
+        err = error - NJET_HTTP_BAD_REQUEST + NJET_HTTP_OFF_4XX;
 
-    } else if (error >= NGX_HTTP_NJET_CODES
-               && error < NGX_HTTP_LAST_5XX)
+    } else if (error >= NJET_HTTP_NJET_CODES
+               && error < NJET_HTTP_LAST_5XX)
     {
         /* 49X, 5XX */
-        err = error - NGX_HTTP_NJET_CODES + NGX_HTTP_OFF_5XX;
+        err = error - NJET_HTTP_NJET_CODES + NJET_HTTP_OFF_5XX;
         switch (error) {
-            case NGX_HTTP_TO_HTTPS:
-            case NGX_HTTPS_CERT_ERROR:
-            case NGX_HTTPS_NO_CERT:
-            case NGX_HTTP_REQUEST_HEADER_TOO_LARGE:
-                r->err_status = NGX_HTTP_BAD_REQUEST;
+            case NJET_HTTP_TO_HTTPS:
+            case NJET_HTTPS_CERT_ERROR:
+            case NJET_HTTPS_NO_CERT:
+            case NJET_HTTP_REQUEST_HEADER_TOO_LARGE:
+                r->err_status = NJET_HTTP_BAD_REQUEST;
         }
 
     } else {
@@ -550,13 +550,13 @@ ngx_http_filter_finalize_request(ngx_http_request_t *r, ngx_module_t *m,
 
     rc = ngx_http_special_response_handler(r, error);
 
-    /* NGX_ERROR resets any pending data */
+    /* NJET_ERROR resets any pending data */
 
     switch (rc) {
 
-    case NGX_OK:
-    case NGX_DONE:
-        return NGX_ERROR;
+    case NJET_OK:
+    case NJET_DONE:
+        return NJET_ERROR;
 
     default:
         return rc;
@@ -594,7 +594,7 @@ ngx_http_send_error_page(ngx_http_request_t *r, ngx_http_err_page_t *err_page)
 
     overwrite = err_page->overwrite;
 
-    if (overwrite && overwrite != NGX_HTTP_OK) {
+    if (overwrite && overwrite != NJET_HTTP_OK) {
         r->expect_tested = 1;
     }
 
@@ -602,8 +602,8 @@ ngx_http_send_error_page(ngx_http_request_t *r, ngx_http_err_page_t *err_page)
         r->err_status = overwrite;
     }
 
-    if (ngx_http_complex_value(r, &err_page->value, &uri) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_http_complex_value(r, &err_page->value, &uri) != NJET_OK) {
+        return NJET_ERROR;
     }
 
     if (uri.len && uri.data[0] == '/') {
@@ -615,8 +615,8 @@ ngx_http_send_error_page(ngx_http_request_t *r, ngx_http_err_page_t *err_page)
             args = err_page->args;
         }
 
-        if (r->method != NGX_HTTP_HEAD) {
-            r->method = NGX_HTTP_GET;
+        if (r->method != NJET_HTTP_HEAD) {
+            r->method = NJET_HTTP_GET;
             r->method_name = ngx_http_core_get_method;
         }
 
@@ -629,23 +629,23 @@ ngx_http_send_error_page(ngx_http_request_t *r, ngx_http_err_page_t *err_page)
 
     r->expect_tested = 1;
 
-    if (ngx_http_discard_request_body(r) != NGX_OK) {
+    if (ngx_http_discard_request_body(r) != NJET_OK) {
         r->keepalive = 0;
     }
 
     location = ngx_list_push(&r->headers_out.headers);
 
     if (location == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    if (overwrite != NGX_HTTP_MOVED_PERMANENTLY
-        && overwrite != NGX_HTTP_MOVED_TEMPORARILY
-        && overwrite != NGX_HTTP_SEE_OTHER
-        && overwrite != NGX_HTTP_TEMPORARY_REDIRECT
-        && overwrite != NGX_HTTP_PERMANENT_REDIRECT)
+    if (overwrite != NJET_HTTP_MOVED_PERMANENTLY
+        && overwrite != NJET_HTTP_MOVED_TEMPORARILY
+        && overwrite != NJET_HTTP_SEE_OTHER
+        && overwrite != NJET_HTTP_TEMPORARY_REDIRECT
+        && overwrite != NJET_HTTP_PERMANENT_REDIRECT)
     {
-        r->err_status = NGX_HTTP_MOVED_TEMPORARILY;
+        r->err_status = NJET_HTTP_MOVED_TEMPORARILY;
     }
 
     location->hash = 1;
@@ -664,8 +664,8 @@ ngx_http_send_error_page(ngx_http_request_t *r, ngx_http_err_page_t *err_page)
     }
 
     return ngx_http_send_special_response(r, clcf, r->err_status
-                                                   - NGX_HTTP_MOVED_PERMANENTLY
-                                                   + NGX_HTTP_OFF_3XX);
+                                                   - NJET_HTTP_MOVED_PERMANENTLY
+                                                   + NJET_HTTP_OFF_3XX);
 }
 
 
@@ -680,11 +680,11 @@ ngx_http_send_special_response(ngx_http_request_t *r,
     ngx_uint_t    msie_padding;
     ngx_chain_t   out[3];
 
-    if (clcf->server_tokens == NGX_HTTP_SERVER_TOKENS_ON) {
+    if (clcf->server_tokens == NJET_HTTP_SERVER_TOKENS_ON) {
         len = sizeof(ngx_http_error_full_tail) - 1;
         tail = ngx_http_error_full_tail;
 
-    } else if (clcf->server_tokens == NGX_HTTP_SERVER_TOKENS_BUILD) {
+    } else if (clcf->server_tokens == NJET_HTTP_SERVER_TOKENS_BUILD) {
         len = sizeof(ngx_http_error_build_tail) - 1;
         tail = ngx_http_error_build_tail;
 
@@ -699,8 +699,8 @@ ngx_http_send_special_response(ngx_http_request_t *r,
         r->headers_out.content_length_n = ngx_http_error_pages[err].len + len;
         if (clcf->msie_padding
             && (r->headers_in.msie || r->headers_in.chrome)
-            && r->http_version >= NGX_HTTP_VERSION_10
-            && err >= NGX_HTTP_OFF_4XX)
+            && r->http_version >= NJET_HTTP_VERSION_10
+            && err >= NJET_HTTP_OFF_4XX)
         {
             r->headers_out.content_length_n +=
                                          sizeof(ngx_http_msie_padding) - 1;
@@ -726,17 +726,17 @@ ngx_http_send_special_response(ngx_http_request_t *r,
 
     rc = ngx_http_send_header(r);
 
-    if (rc == NGX_ERROR || r->header_only) {
+    if (rc == NJET_ERROR || r->header_only) {
         return rc;
     }
 
     if (ngx_http_error_pages[err].len == 0) {
-        return ngx_http_send_special(r, NGX_HTTP_LAST);
+        return ngx_http_send_special(r, NJET_HTTP_LAST);
     }
 
     b = ngx_calloc_buf(r->pool);
     if (b == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     b->memory = 1;
@@ -748,7 +748,7 @@ ngx_http_send_special_response(ngx_http_request_t *r,
 
     b = ngx_calloc_buf(r->pool);
     if (b == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     b->memory = 1;
@@ -762,7 +762,7 @@ ngx_http_send_special_response(ngx_http_request_t *r,
     if (msie_padding) {
         b = ngx_calloc_buf(r->pool);
         if (b == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         b->memory = 1;
@@ -797,13 +797,13 @@ ngx_http_send_refresh(ngx_http_request_t *r)
     len = r->headers_out.location->value.len;
     location = r->headers_out.location->value.data;
 
-    escape = 2 * ngx_escape_uri(NULL, location, len, NGX_ESCAPE_REFRESH);
+    escape = 2 * ngx_escape_uri(NULL, location, len, NJET_ESCAPE_REFRESH);
 
     size = sizeof(ngx_http_msie_refresh_head) - 1
            + escape + len
            + sizeof(ngx_http_msie_refresh_tail) - 1;
 
-    r->err_status = NGX_HTTP_OK;
+    r->err_status = NJET_HTTP_OK;
 
     r->headers_out.content_type_len = sizeof("text/html") - 1;
     ngx_str_set(&r->headers_out.content_type, "text/html");
@@ -825,13 +825,13 @@ ngx_http_send_refresh(ngx_http_request_t *r)
 
     rc = ngx_http_send_header(r);
 
-    if (rc == NGX_ERROR || r->header_only) {
+    if (rc == NJET_ERROR || r->header_only) {
         return rc;
     }
 
     b = ngx_create_temp_buf(r->pool, size);
     if (b == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     p = ngx_cpymem(b->pos, ngx_http_msie_refresh_head,
@@ -841,7 +841,7 @@ ngx_http_send_refresh(ngx_http_request_t *r)
         p = ngx_cpymem(p, location, len);
 
     } else {
-        p = (u_char *) ngx_escape_uri(p, location, len, NGX_ESCAPE_REFRESH);
+        p = (u_char *) ngx_escape_uri(p, location, len, NJET_ESCAPE_REFRESH);
     }
 
     b->last = ngx_cpymem(p, ngx_http_msie_refresh_tail,

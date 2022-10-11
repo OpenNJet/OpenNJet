@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_LINUX_CONFIG_H_INCLUDED_
-#define _NGX_LINUX_CONFIG_H_INCLUDED_
+#ifndef _NJET_LINUX_CONFIG_H_INCLUDED_
+#define _NJET_LINUX_CONFIG_H_INCLUDED_
 
 
 #ifndef _GNU_SOURCE
@@ -61,72 +61,72 @@
 #include <ngx_auto_config.h>
 
 
-#if (NGX_HAVE_POSIX_SEM)
+#if (NJET_HAVE_POSIX_SEM)
 #include <semaphore.h>
 #endif
 
 
-#if (NGX_HAVE_SYS_PRCTL_H)
+#if (NJET_HAVE_SYS_PRCTL_H)
 #include <sys/prctl.h>
 #endif
 
 
-#if (NGX_HAVE_SENDFILE64)
+#if (NJET_HAVE_SENDFILE64)
 #include <sys/sendfile.h>
 #else
 extern ssize_t sendfile(int s, int fd, int32_t *offset, size_t size);
-#define NGX_SENDFILE_LIMIT  0x80000000
+#define NJET_SENDFILE_LIMIT  0x80000000
 #endif
 
 
-#if (NGX_HAVE_POLL)
+#if (NJET_HAVE_POLL)
 #include <poll.h>
 #endif
 
 
-#if (NGX_HAVE_EPOLL)
+#if (NJET_HAVE_EPOLL)
 #include <sys/epoll.h>
 #endif
 
 
-#if (NGX_HAVE_SYS_EVENTFD_H)
+#if (NJET_HAVE_SYS_EVENTFD_H)
 #include <sys/eventfd.h>
 #endif
 #include <sys/syscall.h>
-#if (NGX_HAVE_FILE_AIO)
+#if (NJET_HAVE_FILE_AIO)
 #include <linux/aio_abi.h>
 typedef struct iocb  ngx_aiocb_t;
 #endif
 
 
-#if (NGX_HAVE_CAPABILITIES)
+#if (NJET_HAVE_CAPABILITIES)
 #include <linux/capability.h>
 #endif
 
-#if (NGX_HAVE_UDP_SEGMENT)
+#if (NJET_HAVE_UDP_SEGMENT)
 #include <netinet/udp.h>
 #endif
 
 
-#define NGX_LISTEN_BACKLOG        511
+#define NJET_LISTEN_BACKLOG        511
 
 
-#ifndef NGX_HAVE_SO_SNDLOWAT
+#ifndef NJET_HAVE_SO_SNDLOWAT
 /* setsockopt(SO_SNDLOWAT) returns ENOPROTOOPT */
-#define NGX_HAVE_SO_SNDLOWAT         0
+#define NJET_HAVE_SO_SNDLOWAT         0
 #endif
 
 
-#ifndef NGX_HAVE_INHERITED_NONBLOCK
-#define NGX_HAVE_INHERITED_NONBLOCK  0
+#ifndef NJET_HAVE_INHERITED_NONBLOCK
+#define NJET_HAVE_INHERITED_NONBLOCK  0
 #endif
 
 
-#define NGX_HAVE_OS_SPECIFIC_INIT    1
+#define NJET_HAVE_OS_SPECIFIC_INIT    1
 #define ngx_debug_init()
 
 
 extern char **environ;
 
 
-#endif /* _NGX_LINUX_CONFIG_H_INCLUDED_ */
+#endif /* _NJET_LINUX_CONFIG_H_INCLUDED_ */

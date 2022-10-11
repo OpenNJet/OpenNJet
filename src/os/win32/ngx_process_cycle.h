@@ -5,18 +5,18 @@
  */
 
 
-#ifndef _NGX_PROCESS_CYCLE_H_INCLUDED_
-#define _NGX_PROCESS_CYCLE_H_INCLUDED_
+#ifndef _NJET_PROCESS_CYCLE_H_INCLUDED_
+#define _NJET_PROCESS_CYCLE_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#define NGX_PROCESS_SINGLE     0
-#define NGX_PROCESS_MASTER     1
-#define NGX_PROCESS_SIGNALLER  2
-#define NGX_PROCESS_WORKER     3
+#define NJET_PROCESS_SINGLE     0
+#define NJET_PROCESS_MASTER     1
+#define NJET_PROCESS_SIGNALLER  2
+#define NJET_PROCESS_WORKER     3
 
 
 void ngx_master_process_cycle(ngx_cycle_t *cycle);
@@ -41,4 +41,4 @@ extern HANDLE          ngx_master_process_event;
 extern char            ngx_master_process_event_name[];
 
 
-#endif /* _NGX_PROCESS_CYCLE_H_INCLUDED_ */
+#endif /* _NJET_PROCESS_CYCLE_H_INCLUDED_ */

@@ -10,7 +10,7 @@
 #include <ngx_event.h>
 
 
-#if !(NGX_WIN32)
+#if !(NJET_WIN32)
 
 struct ngx_udp_connection_s {
     ngx_rbtree_node_t   node;
@@ -46,12 +46,12 @@ ngx_event_recvmsg(ngx_event_t *ev)
     ngx_connection_t  *c, *lc;
     static u_char      buffer[65535];
 
-#if (NGX_HAVE_ADDRINFO_CMSG)
+#if (NJET_HAVE_ADDRINFO_CMSG)
     u_char             msg_control[CMSG_SPACE(sizeof(ngx_addrinfo_t))];
 #endif
 
     if (ev->timedout) {
-        if (ngx_enable_accept_events((ngx_cycle_t *) ngx_cycle) != NGX_OK) {
+        if (ngx_enable_accept_events((ngx_cycle_t *) ngx_cycle) != NJET_OK) {
             return;
         }
 
@@ -60,7 +60,7 @@ ngx_event_recvmsg(ngx_event_t *ev)
 
     ecf = ngx_event_get_conf(ngx_cycle->conf_ctx, ngx_event_core_module);
 
-    if (!(ngx_event_flags & NGX_USE_KQUEUE_EVENT)) {
+    if (!(ngx_event_flags & NJET_USE_KQUEUE_EVENT)) {
         ev->available = ecf->multi_accept;
     }
 
@@ -68,7 +68,7 @@ ngx_event_recvmsg(ngx_event_t *ev)
     ls = lc->listening;
     ev->ready = 0;
 
-    ngx_log_debug2(NGX_LOG_DEBUG_EVENT, ev->log, 0,
+    ngx_log_debug2(NJET_LOG_DEBUG_EVENT, ev->log, 0,
                    "recvmsg on %V, ready: %d", &ls->addr_text, ev->available);
 
     do {
@@ -82,7 +82,7 @@ ngx_event_recvmsg(ngx_event_t *ev)
         msg.msg_iov = iov;
         msg.msg_iovlen = 1;
 
-#if (NGX_HAVE_ADDRINFO_CMSG)
+#if (NJET_HAVE_ADDRINFO_CMSG)
         if (ls->wildcard) {
             msg.msg_control = &msg_control;
             msg.msg_controllen = sizeof(msg_control);
@@ -96,20 +96,20 @@ ngx_event_recvmsg(ngx_event_t *ev)
         if (n == -1) {
             err = ngx_socket_errno;
 
-            if (err == NGX_EAGAIN) {
-                ngx_log_debug0(NGX_LOG_DEBUG_EVENT, ev->log, err,
+            if (err == NJET_EAGAIN) {
+                ngx_log_debug0(NJET_LOG_DEBUG_EVENT, ev->log, err,
                                "recvmsg() not ready");
                 return;
             }
 
-            ngx_log_error(NGX_LOG_ALERT, ev->log, err, "recvmsg() failed");
+            ngx_log_error(NJET_LOG_ALERT, ev->log, err, "recvmsg() failed");
 
             return;
         }
 
-#if (NGX_HAVE_ADDRINFO_CMSG)
+#if (NJET_HAVE_ADDRINFO_CMSG)
         if (msg.msg_flags & (MSG_TRUNC|MSG_CTRUNC)) {
-            ngx_log_error(NGX_LOG_ALERT, ev->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, ev->log, 0,
                           "recvmsg() truncated data");
             continue;
         }
@@ -137,7 +137,7 @@ ngx_event_recvmsg(ngx_event_t *ev)
         local_sockaddr = ls->sockaddr;
         local_socklen = ls->socklen;
 
-#if (NGX_HAVE_ADDRINFO_CMSG)
+#if (NJET_HAVE_ADDRINFO_CMSG)
 
         if (ls->wildcard) {
             struct cmsghdr  *cmsg;
@@ -149,7 +149,7 @@ ngx_event_recvmsg(ngx_event_t *ev)
                  cmsg != NULL;
                  cmsg = CMSG_NXTHDR(&msg, cmsg))
             {
-                if (ngx_get_srcaddr_cmsg(cmsg, local_sockaddr) == NGX_OK) {
+                if (ngx_get_srcaddr_cmsg(cmsg, local_sockaddr) == NJET_OK) {
                     break;
                 }
             }
@@ -162,14 +162,14 @@ ngx_event_recvmsg(ngx_event_t *ev)
 
         if (c) {
 
-#if (NGX_DEBUG)
-            if (c->log->log_level & NGX_LOG_DEBUG_EVENT) {
+#if (NJET_DEBUG)
+            if (c->log->log_level & NJET_LOG_DEBUG_EVENT) {
                 ngx_log_handler_pt  handler;
 
                 handler = c->log->handler;
                 c->log->handler = NULL;
 
-                ngx_log_debug2(NGX_LOG_DEBUG_EVENT, c->log, 0,
+                ngx_log_debug2(NJET_LOG_DEBUG_EVENT, c->log, 0,
                                "recvmsg: fd:%d n:%z", c->fd, n);
 
                 c->log->handler = handler;
@@ -200,7 +200,7 @@ ngx_event_recvmsg(ngx_event_t *ev)
             goto next;
         }
 
-#if (NGX_STAT_STUB)
+#if (NJET_STAT_STUB)
         (void) ngx_atomic_fetch_add(ngx_stat_accepted, 1);
 #endif
 
@@ -216,7 +216,7 @@ ngx_event_recvmsg(ngx_event_t *ev)
         c->type = SOCK_DGRAM;
         c->socklen = socklen;
 
-#if (NGX_STAT_STUB)
+#if (NJET_STAT_STUB)
         (void) ngx_atomic_fetch_add(ngx_stat_active, 1);
 #endif
 
@@ -295,7 +295,7 @@ ngx_event_recvmsg(ngx_event_t *ev)
 
         c->start_time = ngx_current_msec;
 
-#if (NGX_STAT_STUB)
+#if (NJET_STAT_STUB)
         (void) ngx_atomic_fetch_add(ngx_stat_handled, 1);
 #endif
 
@@ -315,19 +315,19 @@ ngx_event_recvmsg(ngx_event_t *ev)
             }
         }
 
-#if (NGX_DEBUG)
+#if (NJET_DEBUG)
         {
         ngx_str_t  addr;
-        u_char     text[NGX_SOCKADDR_STRLEN];
+        u_char     text[NJET_SOCKADDR_STRLEN];
 
         ngx_debug_accepted_connection(ecf, c);
 
-        if (log->log_level & NGX_LOG_DEBUG_EVENT) {
+        if (log->log_level & NJET_LOG_DEBUG_EVENT) {
             addr.data = text;
             addr.len = ngx_sock_ntop(c->sockaddr, c->socklen, text,
-                                     NGX_SOCKADDR_STRLEN, 1);
+                                     NJET_SOCKADDR_STRLEN, 1);
 
-            ngx_log_debug4(NGX_LOG_DEBUG_EVENT, log, 0,
+            ngx_log_debug4(NJET_LOG_DEBUG_EVENT, log, 0,
                            "*%uA recvmsg: %V fd:%d n:%z",
                            c->number, &addr, c->fd, n);
         }
@@ -335,7 +335,7 @@ ngx_event_recvmsg(ngx_event_t *ev)
         }
 #endif
 
-        if (ngx_insert_udp_connection(c) != NGX_OK) {
+        if (ngx_insert_udp_connection(c) != NJET_OK) {
             ngx_close_accepted_udp_connection(c);
             return;
         }
@@ -347,7 +347,7 @@ ngx_event_recvmsg(ngx_event_t *ev)
 
     next:
 
-        if (ngx_event_flags & NGX_USE_KQUEUE_EVENT) {
+        if (ngx_event_flags & NJET_USE_KQUEUE_EVENT) {
             ev->available -= n;
         }
 
@@ -366,7 +366,7 @@ ngx_close_accepted_udp_connection(ngx_connection_t *c)
         ngx_destroy_pool(c->pool);
     }
 
-#if (NGX_STAT_STUB)
+#if (NJET_STAT_STUB)
     (void) ngx_atomic_fetch_add(ngx_stat_active, -1);
 #endif
 }
@@ -379,7 +379,7 @@ ngx_udp_shared_recv(ngx_connection_t *c, u_char *buf, size_t size)
     ngx_buf_t  *b;
 
     if (c->udp == NULL || c->udp->buffer == NULL) {
-        return NGX_AGAIN;
+        return NJET_AGAIN;
     }
 
     b = c->udp->buffer;
@@ -458,12 +458,12 @@ ngx_insert_udp_connection(ngx_connection_t *c)
     ngx_udp_connection_t  *udp;
 
     if (c->udp) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
     udp = ngx_pcalloc(c->pool, sizeof(ngx_udp_connection_t));
     if (udp == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     udp->connection = c;
@@ -481,7 +481,7 @@ ngx_insert_udp_connection(ngx_connection_t *c)
 
     cln = ngx_pool_cleanup_add(c->pool, 0);
     if (cln == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     cln->data = c;
@@ -491,7 +491,7 @@ ngx_insert_udp_connection(ngx_connection_t *c)
 
     c->udp = udp;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -520,7 +520,7 @@ ngx_lookup_udp_connection(ngx_listening_t *ls, struct sockaddr *sockaddr,
     ngx_rbtree_node_t     *node, *sentinel;
     ngx_udp_connection_t  *udp;
 
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
 
     if (sockaddr->sa_family == AF_UNIX) {
         struct sockaddr_un *saun = (struct sockaddr_un *) sockaddr;
@@ -528,7 +528,7 @@ ngx_lookup_udp_connection(ngx_listening_t *ls, struct sockaddr *sockaddr,
         if (socklen <= (socklen_t) offsetof(struct sockaddr_un, sun_path)
             || saun->sun_path[0] == '\0')
         {
-            ngx_log_debug0(NGX_LOG_DEBUG_EVENT, ngx_cycle->log, 0,
+            ngx_log_debug0(NJET_LOG_DEBUG_EVENT, ngx_cycle->log, 0,
                            "unbound unix socket");
             return NULL;
         }

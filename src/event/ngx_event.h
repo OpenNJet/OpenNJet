@@ -5,18 +5,18 @@
  */
 
 
-#ifndef _NGX_EVENT_H_INCLUDED_
-#define _NGX_EVENT_H_INCLUDED_
+#ifndef _NJET_EVENT_H_INCLUDED_
+#define _NJET_EVENT_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#define NGX_INVALID_INDEX  0xd0d0d0d0
+#define NJET_INVALID_INDEX  0xd0d0d0d0
 
 
-#if (NGX_HAVE_IOCP)
+#if (NJET_HAVE_IOCP)
 
 typedef struct {
     WSAOVERLAPPED    ovlp;
@@ -76,7 +76,7 @@ struct ngx_event_s {
 
     unsigned         cancelable:1;
 
-#if (NGX_HAVE_KQUEUE)
+#if (NJET_HAVE_KQUEUE)
     unsigned         kq_vnode:1;
 
     /* the pending errno reported by kqueue */
@@ -87,9 +87,9 @@ struct ngx_event_s {
      * kqueue only:
      *   accept:     number of sockets that wait to be accepted
      *   read:       bytes to read when event is ready
-     *               or lowat when event is set with NGX_LOWAT_EVENT flag
+     *               or lowat when event is set with NJET_LOWAT_EVENT flag
      *   write:      available space in buffer when event is ready
-     *               or lowat when event is set with NGX_LOWAT_EVENT flag
+     *               or lowat when event is set with NJET_LOWAT_EVENT flag
      *
      * iocp: TODO
      *
@@ -103,7 +103,7 @@ struct ngx_event_s {
     ngx_event_handler_pt  handler;
 
 
-#if (NGX_HAVE_IOCP)
+#if (NJET_HAVE_IOCP)
     ngx_event_ovlp_t ovlp;
 #endif
 
@@ -128,17 +128,17 @@ struct ngx_event_s {
 
     void            *thr_ctx;
 
-#if (NGX_EVENT_T_PADDING)
+#if (NJET_EVENT_T_PADDING)
 
     /* event should not cross cache line in SMP */
 
-    uint32_t         padding[NGX_EVENT_T_PADDING];
+    uint32_t         padding[NJET_EVENT_T_PADDING];
 #endif
 #endif
 };
 
 
-#if (NGX_HAVE_FILE_AIO)
+#if (NJET_HAVE_FILE_AIO)
 
 struct ngx_event_aio_s {
     void                      *data;
@@ -147,11 +147,11 @@ struct ngx_event_aio_s {
 
     ngx_fd_t                   fd;
 
-#if (NGX_HAVE_EVENTFD)
+#if (NJET_HAVE_EVENTFD)
     int64_t                    res;
 #endif
 
-#if !(NGX_HAVE_EVENTFD) || (NGX_TEST_BUILD_EPOLL)
+#if !(NJET_HAVE_EVENTFD) || (NJET_TEST_BUILD_EPOLL)
     ngx_err_t                  err;
     size_t                     nbytes;
 #endif
@@ -184,7 +184,7 @@ typedef struct {
 
 
 extern ngx_event_actions_t   ngx_event_actions;
-#if (NGX_HAVE_EPOLLRDHUP)
+#if (NJET_HAVE_EPOLLRDHUP)
 extern ngx_uint_t            ngx_use_epoll_rdhup;
 #endif
 
@@ -193,79 +193,79 @@ extern ngx_uint_t            ngx_use_epoll_rdhup;
  * The event filter requires to read/write the whole data:
  * select, poll, /dev/poll, kqueue, epoll.
  */
-#define NGX_USE_LEVEL_EVENT      0x00000001
+#define NJET_USE_LEVEL_EVENT      0x00000001
 
 /*
  * The event filter is deleted after a notification without an additional
  * syscall: kqueue, epoll.
  */
-#define NGX_USE_ONESHOT_EVENT    0x00000002
+#define NJET_USE_ONESHOT_EVENT    0x00000002
 
 /*
  * The event filter notifies only the changes and an initial level:
  * kqueue, epoll.
  */
-#define NGX_USE_CLEAR_EVENT      0x00000004
+#define NJET_USE_CLEAR_EVENT      0x00000004
 
 /*
  * The event filter has kqueue features: the eof flag, errno,
  * available data, etc.
  */
-#define NGX_USE_KQUEUE_EVENT     0x00000008
+#define NJET_USE_KQUEUE_EVENT     0x00000008
 
 /*
  * The event filter supports low water mark: kqueue's NOTE_LOWAT.
  * kqueue in FreeBSD 4.1-4.2 has no NOTE_LOWAT so we need a separate flag.
  */
-#define NGX_USE_LOWAT_EVENT      0x00000010
+#define NJET_USE_LOWAT_EVENT      0x00000010
 
 /*
  * The event filter requires to do i/o operation until EAGAIN: epoll.
  */
-#define NGX_USE_GREEDY_EVENT     0x00000020
+#define NJET_USE_GREEDY_EVENT     0x00000020
 
 /*
  * The event filter is epoll.
  */
-#define NGX_USE_EPOLL_EVENT      0x00000040
+#define NJET_USE_EPOLL_EVENT      0x00000040
 
 /*
  * Obsolete.
  */
-#define NGX_USE_RTSIG_EVENT      0x00000080
+#define NJET_USE_RTSIG_EVENT      0x00000080
 
 /*
  * Obsolete.
  */
-#define NGX_USE_AIO_EVENT        0x00000100
+#define NJET_USE_AIO_EVENT        0x00000100
 
 /*
  * Need to add socket or handle only once: i/o completion port.
  */
-#define NGX_USE_IOCP_EVENT       0x00000200
+#define NJET_USE_IOCP_EVENT       0x00000200
 
 /*
  * The event filter has no opaque data and requires file descriptors table:
  * poll, /dev/poll.
  */
-#define NGX_USE_FD_EVENT         0x00000400
+#define NJET_USE_FD_EVENT         0x00000400
 
 /*
  * The event module handles periodic or absolute timer event by itself:
  * kqueue in FreeBSD 4.4, NetBSD 2.0, and MacOSX 10.4, Solaris 10's event ports.
  */
-#define NGX_USE_TIMER_EVENT      0x00000800
+#define NJET_USE_TIMER_EVENT      0x00000800
 
 /*
  * All event filters on file descriptor are deleted after a notification:
  * Solaris 10's event ports.
  */
-#define NGX_USE_EVENTPORT_EVENT  0x00001000
+#define NJET_USE_EVENTPORT_EVENT  0x00001000
 
 /*
  * The event filter support vnode notifications: kqueue.
  */
-#define NGX_USE_VNODE_EVENT      0x00002000
+#define NJET_USE_VNODE_EVENT      0x00002000
 
 
 /*
@@ -278,122 +278,122 @@ extern ngx_uint_t            ngx_use_epoll_rdhup;
  * /dev/poll:                        we need to flush POLLREMOVE event
  *                                   before closing file.
  */
-#define NGX_CLOSE_EVENT    1
+#define NJET_CLOSE_EVENT    1
 
 /*
  * disable temporarily event filter, this may avoid locks
  * in kernel malloc()/free(): kqueue.
  */
-#define NGX_DISABLE_EVENT  2
+#define NJET_DISABLE_EVENT  2
 
 /*
  * event must be passed to kernel right now, do not wait until batch processing.
  */
-#define NGX_FLUSH_EVENT    4
+#define NJET_FLUSH_EVENT    4
 
 
 /* these flags have a meaning only for kqueue */
-#define NGX_LOWAT_EVENT    0
-#define NGX_VNODE_EVENT    0
+#define NJET_LOWAT_EVENT    0
+#define NJET_VNODE_EVENT    0
 
 
-#if (NGX_HAVE_EPOLL) && !(NGX_HAVE_EPOLLRDHUP)
+#if (NJET_HAVE_EPOLL) && !(NJET_HAVE_EPOLLRDHUP)
 #define EPOLLRDHUP         0
 #endif
 
 
-#if (NGX_HAVE_KQUEUE)
+#if (NJET_HAVE_KQUEUE)
 
-#define NGX_READ_EVENT     EVFILT_READ
-#define NGX_WRITE_EVENT    EVFILT_WRITE
+#define NJET_READ_EVENT     EVFILT_READ
+#define NJET_WRITE_EVENT    EVFILT_WRITE
 
-#undef  NGX_VNODE_EVENT
-#define NGX_VNODE_EVENT    EVFILT_VNODE
+#undef  NJET_VNODE_EVENT
+#define NJET_VNODE_EVENT    EVFILT_VNODE
 
 /*
- * NGX_CLOSE_EVENT, NGX_LOWAT_EVENT, and NGX_FLUSH_EVENT are the module flags
+ * NJET_CLOSE_EVENT, NJET_LOWAT_EVENT, and NJET_FLUSH_EVENT are the module flags
  * and they must not go into a kernel so we need to choose the value
  * that must not interfere with any existent and future kqueue flags.
  * kqueue has such values - EV_FLAG1, EV_EOF, and EV_ERROR:
  * they are reserved and cleared on a kernel entrance.
  */
-#undef  NGX_CLOSE_EVENT
-#define NGX_CLOSE_EVENT    EV_EOF
+#undef  NJET_CLOSE_EVENT
+#define NJET_CLOSE_EVENT    EV_EOF
 
-#undef  NGX_LOWAT_EVENT
-#define NGX_LOWAT_EVENT    EV_FLAG1
+#undef  NJET_LOWAT_EVENT
+#define NJET_LOWAT_EVENT    EV_FLAG1
 
-#undef  NGX_FLUSH_EVENT
-#define NGX_FLUSH_EVENT    EV_ERROR
+#undef  NJET_FLUSH_EVENT
+#define NJET_FLUSH_EVENT    EV_ERROR
 
-#define NGX_LEVEL_EVENT    0
-#define NGX_ONESHOT_EVENT  EV_ONESHOT
-#define NGX_CLEAR_EVENT    EV_CLEAR
+#define NJET_LEVEL_EVENT    0
+#define NJET_ONESHOT_EVENT  EV_ONESHOT
+#define NJET_CLEAR_EVENT    EV_CLEAR
 
-#undef  NGX_DISABLE_EVENT
-#define NGX_DISABLE_EVENT  EV_DISABLE
-
-
-#elif (NGX_HAVE_DEVPOLL && !(NGX_TEST_BUILD_DEVPOLL)) \
-      || (NGX_HAVE_EVENTPORT && !(NGX_TEST_BUILD_EVENTPORT))
-
-#define NGX_READ_EVENT     POLLIN
-#define NGX_WRITE_EVENT    POLLOUT
-
-#define NGX_LEVEL_EVENT    0
-#define NGX_ONESHOT_EVENT  1
+#undef  NJET_DISABLE_EVENT
+#define NJET_DISABLE_EVENT  EV_DISABLE
 
 
-#elif (NGX_HAVE_EPOLL) && !(NGX_TEST_BUILD_EPOLL)
+#elif (NJET_HAVE_DEVPOLL && !(NJET_TEST_BUILD_DEVPOLL)) \
+      || (NJET_HAVE_EVENTPORT && !(NJET_TEST_BUILD_EVENTPORT))
 
-#define NGX_READ_EVENT     (EPOLLIN|EPOLLRDHUP)
-#define NGX_WRITE_EVENT    EPOLLOUT
+#define NJET_READ_EVENT     POLLIN
+#define NJET_WRITE_EVENT    POLLOUT
 
-#define NGX_LEVEL_EVENT    0
-#define NGX_CLEAR_EVENT    EPOLLET
-#define NGX_ONESHOT_EVENT  0x70000000
+#define NJET_LEVEL_EVENT    0
+#define NJET_ONESHOT_EVENT  1
+
+
+#elif (NJET_HAVE_EPOLL) && !(NJET_TEST_BUILD_EPOLL)
+
+#define NJET_READ_EVENT     (EPOLLIN|EPOLLRDHUP)
+#define NJET_WRITE_EVENT    EPOLLOUT
+
+#define NJET_LEVEL_EVENT    0
+#define NJET_CLEAR_EVENT    EPOLLET
+#define NJET_ONESHOT_EVENT  0x70000000
 #if 0
-#define NGX_ONESHOT_EVENT  EPOLLONESHOT
+#define NJET_ONESHOT_EVENT  EPOLLONESHOT
 #endif
 
-#if (NGX_HAVE_EPOLLEXCLUSIVE)
-#define NGX_EXCLUSIVE_EVENT  EPOLLEXCLUSIVE
+#if (NJET_HAVE_EPOLLEXCLUSIVE)
+#define NJET_EXCLUSIVE_EVENT  EPOLLEXCLUSIVE
 #endif
 
-#elif (NGX_HAVE_POLL)
+#elif (NJET_HAVE_POLL)
 
-#define NGX_READ_EVENT     POLLIN
-#define NGX_WRITE_EVENT    POLLOUT
+#define NJET_READ_EVENT     POLLIN
+#define NJET_WRITE_EVENT    POLLOUT
 
-#define NGX_LEVEL_EVENT    0
-#define NGX_ONESHOT_EVENT  1
+#define NJET_LEVEL_EVENT    0
+#define NJET_ONESHOT_EVENT  1
 
 
 #else /* select */
 
-#define NGX_READ_EVENT     0
-#define NGX_WRITE_EVENT    1
+#define NJET_READ_EVENT     0
+#define NJET_WRITE_EVENT    1
 
-#define NGX_LEVEL_EVENT    0
-#define NGX_ONESHOT_EVENT  1
+#define NJET_LEVEL_EVENT    0
+#define NJET_ONESHOT_EVENT  1
 
-#endif /* NGX_HAVE_KQUEUE */
+#endif /* NJET_HAVE_KQUEUE */
 
 
-#if (NGX_HAVE_IOCP)
-#define NGX_IOCP_ACCEPT      0
-#define NGX_IOCP_IO          1
-#define NGX_IOCP_CONNECT     2
+#if (NJET_HAVE_IOCP)
+#define NJET_IOCP_ACCEPT      0
+#define NJET_IOCP_IO          1
+#define NJET_IOCP_CONNECT     2
 #endif
 
 
-#if (NGX_TEST_BUILD_EPOLL)
-#define NGX_EXCLUSIVE_EVENT  0
+#if (NJET_TEST_BUILD_EPOLL)
+#define NJET_EXCLUSIVE_EVENT  0
 #endif
 
 
-#ifndef NGX_CLEAR_EVENT
-#define NGX_CLEAR_EVENT    0    /* dummy declaration */
+#ifndef NJET_CLEAR_EVENT
+#define NJET_CLEAR_EVENT    0    /* dummy declaration */
 #endif
 
 
@@ -422,8 +422,8 @@ extern ngx_os_io_t  ngx_io;
 #define ngx_udp_send_chain   ngx_io.udp_send_chain
 
 
-#define NGX_EVENT_MODULE      0x544E5645  /* "EVNT" */
-#define NGX_EVENT_CONF        0x02000000
+#define NJET_EVENT_MODULE      0x544E5645  /* "EVNT" */
+#define NJET_EVENT_CONF        0x02000000
 
 
 typedef struct {
@@ -437,7 +437,7 @@ typedef struct {
 
     u_char       *name;
 
-#if (NGX_DEBUG)
+#if (NJET_DEBUG)
     ngx_array_t   debug_connection;
 #endif
 } ngx_event_conf_t;
@@ -465,7 +465,7 @@ extern ngx_int_t              ngx_accept_disabled;
 extern ngx_uint_t             ngx_use_exclusive_accept;
 
 
-#if (NGX_STAT_STUB)
+#if (NJET_STAT_STUB)
 
 extern ngx_atomic_t  *ngx_stat_accepted;
 extern ngx_atomic_t  *ngx_stat_handled;
@@ -478,8 +478,8 @@ extern ngx_atomic_t  *ngx_stat_waiting;
 #endif
 
 
-#define NGX_UPDATE_TIME         1
-#define NGX_POST_EVENTS         2
+#define NJET_UPDATE_TIME         1
+#define NJET_POST_EVENTS         2
 
 
 extern sig_atomic_t           ngx_event_timer_alarm;
@@ -497,7 +497,7 @@ void ngx_event_accept(ngx_event_t *ev);
 ngx_int_t ngx_trylock_accept_mutex(ngx_cycle_t *cycle);
 ngx_int_t ngx_enable_accept_events(ngx_cycle_t *cycle);
 u_char *ngx_accept_log_error(ngx_log_t *log, u_char *buf, size_t len);
-#if (NGX_DEBUG)
+#if (NJET_DEBUG)
 void ngx_debug_accepted_connection(ngx_event_conf_t *ecf, ngx_connection_t *c);
 #endif
 
@@ -507,7 +507,7 @@ ngx_int_t ngx_handle_read_event(ngx_event_t *rev, ngx_uint_t flags);
 ngx_int_t ngx_handle_write_event(ngx_event_t *wev, size_t lowat);
 
 
-#if (NGX_WIN32)
+#if (NJET_WIN32)
 void ngx_event_acceptex(ngx_event_t *ev);
 ngx_int_t ngx_event_post_acceptex(ngx_listening_t *ls, ngx_uint_t n);
 u_char *ngx_acceptex_log_error(ngx_log_t *log, u_char *buf, size_t len);
@@ -525,9 +525,9 @@ ngx_int_t ngx_send_lowat(ngx_connection_t *c, size_t lowat);
 #include <ngx_event_posted.h>
 #include <ngx_event_udp.h>
 
-#if (NGX_WIN32)
+#if (NJET_WIN32)
 #include <ngx_iocp_module.h>
 #endif
 
 
-#endif /* _NGX_EVENT_H_INCLUDED_ */
+#endif /* _NJET_EVENT_H_INCLUDED_ */

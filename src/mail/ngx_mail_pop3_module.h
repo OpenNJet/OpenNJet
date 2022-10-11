@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_MAIL_POP3_MODULE_H_INCLUDED_
-#define _NGX_MAIL_POP3_MODULE_H_INCLUDED_
+#ifndef _NJET_MAIL_POP3_MODULE_H_INCLUDED_
+#define _NJET_MAIL_POP3_MODULE_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -35,4 +35,4 @@ ngx_int_t ngx_mail_pop3_parse_command(ngx_mail_session_t *s);
 extern ngx_module_t  ngx_mail_pop3_module;
 
 
-#endif /* _NGX_MAIL_POP3_MODULE_H_INCLUDED_ */
+#endif /* _NJET_MAIL_POP3_MODULE_H_INCLUDED_ */

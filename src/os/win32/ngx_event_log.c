@@ -8,7 +8,7 @@
 #include <ngx_core.h>
 
 
-#define NGX_MAX_ERROR_STR   2048
+#define NJET_MAX_ERROR_STR   2048
 
 
 void ngx_cdecl
@@ -19,12 +19,12 @@ ngx_event_log(ngx_err_t err, const char *fmt, ...)
     HKEY            key;
     HANDLE          ev;
     va_list         args;
-    u_char          text[NGX_MAX_ERROR_STR];
+    u_char          text[NJET_MAX_ERROR_STR];
     const char     *msgarg[9];
     static u_char   netmsg[] = "%SystemRoot%\\System32\\netmsg.dll";
 
-    last = text + NGX_MAX_ERROR_STR;
-    p = text + GetModuleFileName(NULL, (char *) text, NGX_MAX_ERROR_STR - 50);
+    last = text + NJET_MAX_ERROR_STR;
+    p = text + GetModuleFileName(NULL, (char *) text, NJET_MAX_ERROR_STR - 50);
 
     *p++ = ':';
     ngx_linefeed(p);
@@ -37,8 +37,8 @@ ngx_event_log(ngx_err_t err, const char *fmt, ...)
         p = ngx_log_errno(p, last, err);
     }
 
-    if (p > last - NGX_LINEFEED_SIZE - 1) {
-        p = last - NGX_LINEFEED_SIZE - 1;
+    if (p > last - NJET_LINEFEED_SIZE - 1) {
+        p = last - NJET_LINEFEED_SIZE - 1;
     }
 
     ngx_linefeed(p);

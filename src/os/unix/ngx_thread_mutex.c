@@ -82,33 +82,33 @@ ngx_thread_mutex_create(ngx_thread_mutex_t *mtx, ngx_log_t *log)
 
     err = pthread_mutexattr_init(&attr);
     if (err != 0) {
-        ngx_log_error(NGX_LOG_EMERG, log, err,
+        ngx_log_error(NJET_LOG_EMERG, log, err,
                       "pthread_mutexattr_init() failed");
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     err = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
     if (err != 0) {
-        ngx_log_error(NGX_LOG_EMERG, log, err,
+        ngx_log_error(NJET_LOG_EMERG, log, err,
                       "pthread_mutexattr_settype"
                       "(PTHREAD_MUTEX_ERRORCHECK) failed");
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     err = pthread_mutex_init(mtx, &attr);
     if (err != 0) {
-        ngx_log_error(NGX_LOG_EMERG, log, err,
+        ngx_log_error(NJET_LOG_EMERG, log, err,
                       "pthread_mutex_init() failed");
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     err = pthread_mutexattr_destroy(&attr);
     if (err != 0) {
-        ngx_log_error(NGX_LOG_ALERT, log, err,
+        ngx_log_error(NJET_LOG_ALERT, log, err,
                       "pthread_mutexattr_destroy() failed");
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -119,12 +119,12 @@ ngx_thread_mutex_destroy(ngx_thread_mutex_t *mtx, ngx_log_t *log)
 
     err = pthread_mutex_destroy(mtx);
     if (err != 0) {
-        ngx_log_error(NGX_LOG_ALERT, log, err,
+        ngx_log_error(NJET_LOG_ALERT, log, err,
                       "pthread_mutex_destroy() failed");
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -135,12 +135,12 @@ ngx_thread_mutex_lock(ngx_thread_mutex_t *mtx, ngx_log_t *log)
 
     err = pthread_mutex_lock(mtx);
     if (err == 0) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
-    ngx_log_error(NGX_LOG_ALERT, log, err, "pthread_mutex_lock() failed");
+    ngx_log_error(NJET_LOG_ALERT, log, err, "pthread_mutex_lock() failed");
 
-    return NGX_ERROR;
+    return NJET_ERROR;
 }
 
 
@@ -156,10 +156,10 @@ ngx_thread_mutex_unlock(ngx_thread_mutex_t *mtx, ngx_log_t *log)
 #endif
 
     if (err == 0) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
-    ngx_log_error(NGX_LOG_ALERT, log, err, "pthread_mutex_unlock() failed");
+    ngx_log_error(NJET_LOG_ALERT, log, err, "pthread_mutex_unlock() failed");
 
-    return NGX_ERROR;
+    return NJET_ERROR;
 }

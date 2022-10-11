@@ -17,7 +17,7 @@ ngx_int_t   ngx_max_sockets;
 ngx_uint_t  ngx_inherited_nonblocking = 1;
 ngx_uint_t  ngx_tcp_nodelay_and_tcp_nopush;
 
-char        ngx_unique[NGX_INT32_LEN + 1];
+char        ngx_unique[NJET_INT32_LEN + 1];
 
 
 ngx_os_io_t ngx_os_io = {
@@ -58,7 +58,7 @@ static GUID cx_guid = WSAID_CONNECTEX;
 static GUID dx_guid = WSAID_DISCONNECTEX;
 
 
-#if (NGX_LOAD_WSAPOLL)
+#if (NJET_LOAD_WSAPOLL)
 ngx_wsapoll_pt             WSAPoll;
 ngx_uint_t                 ngx_have_wsapoll;
 #endif
@@ -89,9 +89,9 @@ ngx_os_init(ngx_log_t *log)
     if (osviex == 0) {
         osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
         if (GetVersionEx((OSVERSIONINFO *) &osvi) == 0) {
-            ngx_log_error(NGX_LOG_EMERG, log, ngx_errno,
+            ngx_log_error(NJET_LOG_EMERG, log, ngx_errno,
                           "GetVersionEx() failed");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
@@ -129,7 +129,7 @@ ngx_os_init(ngx_log_t *log)
     ngx_pagesize = si.dwPageSize;
     ngx_allocation_granularity = si.dwAllocationGranularity;
     ngx_ncpu = si.dwNumberOfProcessors;
-    ngx_cacheline_size = NGX_CPU_CACHE_LINE;
+    ngx_cacheline_size = NJET_CPU_CACHE_LINE;
 
     for (n = ngx_pagesize; n >>= 1; ngx_pagesize_shift++) { /* void */ }
 
@@ -140,14 +140,14 @@ ngx_os_init(ngx_log_t *log)
     /* init Winsock */
 
     if (WSAStartup(MAKEWORD(2,2), &wsd) != 0) {
-        ngx_log_error(NGX_LOG_EMERG, log, ngx_socket_errno,
+        ngx_log_error(NJET_LOG_EMERG, log, ngx_socket_errno,
                       "WSAStartup() failed");
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    if (ngx_win32_version < NGX_WIN_NT) {
+    if (ngx_win32_version < NJET_WIN_NT) {
         ngx_max_wsabufs = 16;
-        return NGX_OK;
+        return NJET_OK;
     }
 
     /* STUB: ngx_uint_t max */
@@ -160,16 +160,16 @@ ngx_os_init(ngx_log_t *log)
 
     s = ngx_socket(AF_INET, SOCK_STREAM, IPPROTO_IP);
     if (s == (ngx_socket_t) -1) {
-        ngx_log_error(NGX_LOG_EMERG, log, ngx_socket_errno,
+        ngx_log_error(NJET_LOG_EMERG, log, ngx_socket_errno,
                       ngx_socket_n " failed");
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (WSAIoctl(s, SIO_GET_EXTENSION_FUNCTION_POINTER, &ax_guid, sizeof(GUID),
                  &ngx_acceptex, sizeof(LPFN_ACCEPTEX), &bytes, NULL, NULL)
         == -1)
     {
-        ngx_log_error(NGX_LOG_NOTICE, log, ngx_socket_errno,
+        ngx_log_error(NJET_LOG_NOTICE, log, ngx_socket_errno,
                       "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER, "
                                "WSAID_ACCEPTEX) failed");
     }
@@ -179,7 +179,7 @@ ngx_os_init(ngx_log_t *log)
                  &bytes, NULL, NULL)
         == -1)
     {
-        ngx_log_error(NGX_LOG_NOTICE, log, ngx_socket_errno,
+        ngx_log_error(NJET_LOG_NOTICE, log, ngx_socket_errno,
                       "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER, "
                                "WSAID_GETACCEPTEXSOCKADDRS) failed");
     }
@@ -189,7 +189,7 @@ ngx_os_init(ngx_log_t *log)
                  NULL, NULL)
         == -1)
     {
-        ngx_log_error(NGX_LOG_NOTICE, log, ngx_socket_errno,
+        ngx_log_error(NJET_LOG_NOTICE, log, ngx_socket_errno,
                       "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER, "
                                "WSAID_TRANSMITFILE) failed");
     }
@@ -199,7 +199,7 @@ ngx_os_init(ngx_log_t *log)
                  NULL, NULL)
         == -1)
     {
-        ngx_log_error(NGX_LOG_NOTICE, log, ngx_socket_errno,
+        ngx_log_error(NJET_LOG_NOTICE, log, ngx_socket_errno,
                       "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER, "
                                "WSAID_TRANSMITPACKETS) failed");
     }
@@ -209,7 +209,7 @@ ngx_os_init(ngx_log_t *log)
                  NULL, NULL)
         == -1)
     {
-        ngx_log_error(NGX_LOG_NOTICE, log, ngx_socket_errno,
+        ngx_log_error(NJET_LOG_NOTICE, log, ngx_socket_errno,
                       "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER, "
                                "WSAID_CONNECTEX) failed");
     }
@@ -219,30 +219,30 @@ ngx_os_init(ngx_log_t *log)
                  NULL, NULL)
         == -1)
     {
-        ngx_log_error(NGX_LOG_NOTICE, log, ngx_socket_errno,
+        ngx_log_error(NJET_LOG_NOTICE, log, ngx_socket_errno,
                       "WSAIoctl(SIO_GET_EXTENSION_FUNCTION_POINTER, "
                                "WSAID_DISCONNECTEX) failed");
     }
 
     if (ngx_close_socket(s) == -1) {
-        ngx_log_error(NGX_LOG_ALERT, log, ngx_socket_errno,
+        ngx_log_error(NJET_LOG_ALERT, log, ngx_socket_errno,
                       ngx_close_socket_n " failed");
     }
 
-#if (NGX_LOAD_WSAPOLL)
+#if (NJET_LOAD_WSAPOLL)
     {
     HMODULE  hmod;
 
     hmod = GetModuleHandle("ws2_32.dll");
     if (hmod == NULL) {
-        ngx_log_error(NGX_LOG_NOTICE, log, ngx_errno,
+        ngx_log_error(NJET_LOG_NOTICE, log, ngx_errno,
                       "GetModuleHandle(\"ws2_32.dll\") failed");
         goto nopoll;
     }
 
     WSAPoll = (ngx_wsapoll_pt) (void *) GetProcAddress(hmod, "WSAPoll");
     if (WSAPoll == NULL) {
-        ngx_log_error(NGX_LOG_NOTICE, log, ngx_errno,
+        ngx_log_error(NJET_LOG_NOTICE, log, ngx_errno,
                       "GetProcAddress(\"WSAPoll\") failed");
         goto nopoll;
     }
@@ -255,18 +255,18 @@ nopoll:
 
 #endif
 
-    if (GetEnvironmentVariable("ngx_unique", ngx_unique, NGX_INT32_LEN + 1)
+    if (GetEnvironmentVariable("ngx_unique", ngx_unique, NJET_INT32_LEN + 1)
         != 0)
     {
-        ngx_process = NGX_PROCESS_WORKER;
+        ngx_process = NJET_PROCESS_WORKER;
 
     } else {
         err = ngx_errno;
 
         if (err != ERROR_ENVVAR_NOT_FOUND) {
-            ngx_log_error(NGX_LOG_EMERG, log, err,
+            ngx_log_error(NJET_LOG_EMERG, log, err,
                           "GetEnvironmentVariable(\"ngx_unique\") failed");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         ngx_sprintf((u_char *) ngx_unique, "%P%Z", ngx_pid);
@@ -275,7 +275,7 @@ nopoll:
     tp = ngx_timeofday();
     srand((ngx_pid << 16) ^ (unsigned) tp->sec ^ tp->msec);
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -284,7 +284,7 @@ ngx_os_status(ngx_log_t *log)
 {
     ngx_osviex_stub_t  *osviex_stub;
 
-    ngx_log_error(NGX_LOG_NOTICE, log, 0, NJET_VER_BUILD);
+    ngx_log_error(NJET_LOG_NOTICE, log, 0, NJET_VER_BUILD);
 
     if (osviex) {
 
@@ -294,7 +294,7 @@ ngx_os_status(ngx_log_t *log)
          */
         osviex_stub = (ngx_osviex_stub_t *) &osvi.wServicePackMinor;
 
-        ngx_log_error(NGX_LOG_INFO, log, 0,
+        ngx_log_error(NJET_LOG_INFO, log, 0,
                       "OS: %ui build:%ud, \"%s\", suite:%Xd, type:%ud",
                       ngx_win32_version, osvi.dwBuildNumber, osvi.szCSDVersion,
                       osviex_stub->wSuiteMask, osviex_stub->wProductType);
@@ -304,7 +304,7 @@ ngx_os_status(ngx_log_t *log)
 
             /* Win9x build */
 
-            ngx_log_error(NGX_LOG_INFO, log, 0,
+            ngx_log_error(NJET_LOG_INFO, log, 0,
                           "OS: %ui build:%ud.%ud.%ud, \"%s\"",
                           ngx_win32_version,
                           osvi.dwBuildNumber >> 24,
@@ -321,7 +321,7 @@ ngx_os_status(ngx_log_t *log)
              * and we do not support VER_PLATFORM_WIN32s at all
              */
 
-            ngx_log_error(NGX_LOG_INFO, log, 0, "OS: %ui build:%ud, \"%s\"",
+            ngx_log_error(NJET_LOG_INFO, log, 0, "OS: %ui build:%ud, \"%s\"",
                           ngx_win32_version, osvi.dwBuildNumber,
                           osvi.szCSDVersion);
         }

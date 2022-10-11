@@ -5,29 +5,29 @@
  */
 
 
-#ifndef _NGX_ATOMIC_H_INCLUDED_
-#define _NGX_ATOMIC_H_INCLUDED_
+#ifndef _NJET_ATOMIC_H_INCLUDED_
+#define _NJET_ATOMIC_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#if (NGX_HAVE_LIBATOMIC)
+#if (NJET_HAVE_LIBATOMIC)
 
 #define AO_REQUIRE_CAS
 #include <atomic_ops.h>
 
-#define NGX_HAVE_ATOMIC_OPS  1
+#define NJET_HAVE_ATOMIC_OPS  1
 
 typedef long                        ngx_atomic_int_t;
 typedef AO_t                        ngx_atomic_uint_t;
 typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
 
-#if (NGX_PTR_SIZE == 8)
-#define NGX_ATOMIC_T_LEN            (sizeof("-9223372036854775808") - 1)
+#if (NJET_PTR_SIZE == 8)
+#define NJET_ATOMIC_T_LEN            (sizeof("-9223372036854775808") - 1)
 #else
-#define NGX_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
+#define NJET_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
 #endif
 
 #define ngx_atomic_cmp_set(lock, old, new)                                    \
@@ -38,19 +38,19 @@ typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
 #define ngx_cpu_pause()
 
 
-#elif (NGX_HAVE_GCC_ATOMIC)
+#elif (NJET_HAVE_GCC_ATOMIC)
 
 /* GCC 4.1 builtin atomic operations */
 
-#define NGX_HAVE_ATOMIC_OPS  1
+#define NJET_HAVE_ATOMIC_OPS  1
 
 typedef long                        ngx_atomic_int_t;
 typedef unsigned long               ngx_atomic_uint_t;
 
-#if (NGX_PTR_SIZE == 8)
-#define NGX_ATOMIC_T_LEN            (sizeof("-9223372036854775808") - 1)
+#if (NJET_PTR_SIZE == 8)
+#define NJET_ATOMIC_T_LEN            (sizeof("-9223372036854775808") - 1)
 #else
-#define NGX_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
+#define NJET_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
 #endif
 
 typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
@@ -71,7 +71,7 @@ typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
 #endif
 
 
-#elif (NGX_DARWIN_ATOMIC)
+#elif (NJET_DARWIN_ATOMIC)
 
 /*
  * use Darwin 8 atomic(3) and barrier(3) operations
@@ -86,13 +86,13 @@ typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
 #endif
 
 
-#define NGX_HAVE_ATOMIC_OPS  1
+#define NJET_HAVE_ATOMIC_OPS  1
 
-#if (NGX_PTR_SIZE == 8)
+#if (NJET_PTR_SIZE == 8)
 
 typedef int64_t                     ngx_atomic_int_t;
 typedef uint64_t                    ngx_atomic_uint_t;
-#define NGX_ATOMIC_T_LEN            (sizeof("-9223372036854775808") - 1)
+#define NJET_ATOMIC_T_LEN            (sizeof("-9223372036854775808") - 1)
 
 #define ngx_atomic_cmp_set(lock, old, new)                                    \
     OSAtomicCompareAndSwap64Barrier(old, new, (int64_t *) lock)
@@ -104,7 +104,7 @@ typedef uint64_t                    ngx_atomic_uint_t;
 
 typedef int32_t                     ngx_atomic_int_t;
 typedef uint32_t                    ngx_atomic_uint_t;
-#define NGX_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
+#define NJET_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
 
 #define ngx_atomic_cmp_set(lock, old, new)                                    \
     OSAtomicCompareAndSwap32Barrier(old, new, (int32_t *) lock)
@@ -126,12 +126,12 @@ typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
 typedef int32_t                     ngx_atomic_int_t;
 typedef uint32_t                    ngx_atomic_uint_t;
 typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
-#define NGX_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
+#define NJET_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
 
 
 #if ( __SUNPRO_C )
 
-#define NGX_HAVE_ATOMIC_OPS  1
+#define NJET_HAVE_ATOMIC_OPS  1
 
 ngx_atomic_uint_t
 ngx_atomic_cmp_set(ngx_atomic_t *lock, ngx_atomic_uint_t old,
@@ -155,7 +155,7 @@ ngx_cpu_pause(void);
 
 #else /* ( __GNUC__ || __INTEL_COMPILER ) */
 
-#define NGX_HAVE_ATOMIC_OPS  1
+#define NJET_HAVE_ATOMIC_OPS  1
 
 #include "ngx_gcc_atomic_x86.h"
 
@@ -167,12 +167,12 @@ ngx_cpu_pause(void);
 typedef int64_t                     ngx_atomic_int_t;
 typedef uint64_t                    ngx_atomic_uint_t;
 typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
-#define NGX_ATOMIC_T_LEN            (sizeof("-9223372036854775808") - 1)
+#define NJET_ATOMIC_T_LEN            (sizeof("-9223372036854775808") - 1)
 
 
 #if ( __SUNPRO_C )
 
-#define NGX_HAVE_ATOMIC_OPS  1
+#define NJET_HAVE_ATOMIC_OPS  1
 
 ngx_atomic_uint_t
 ngx_atomic_cmp_set(ngx_atomic_t *lock, ngx_atomic_uint_t old,
@@ -196,7 +196,7 @@ ngx_cpu_pause(void);
 
 #else /* ( __GNUC__ || __INTEL_COMPILER ) */
 
-#define NGX_HAVE_ATOMIC_OPS  1
+#define NJET_HAVE_ATOMIC_OPS  1
 
 #include "ngx_gcc_atomic_amd64.h"
 
@@ -205,17 +205,17 @@ ngx_cpu_pause(void);
 
 #elif ( __sparc__ || __sparc || __sparcv9 )
 
-#if (NGX_PTR_SIZE == 8)
+#if (NJET_PTR_SIZE == 8)
 
 typedef int64_t                     ngx_atomic_int_t;
 typedef uint64_t                    ngx_atomic_uint_t;
-#define NGX_ATOMIC_T_LEN            (sizeof("-9223372036854775808") - 1)
+#define NJET_ATOMIC_T_LEN            (sizeof("-9223372036854775808") - 1)
 
 #else
 
 typedef int32_t                     ngx_atomic_int_t;
 typedef uint32_t                    ngx_atomic_uint_t;
-#define NGX_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
+#define NJET_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
 
 #endif
 
@@ -224,14 +224,14 @@ typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
 
 #if ( __SUNPRO_C )
 
-#define NGX_HAVE_ATOMIC_OPS  1
+#define NJET_HAVE_ATOMIC_OPS  1
 
 #include "ngx_sunpro_atomic_sparc64.h"
 
 
 #else /* ( __GNUC__ || __INTEL_COMPILER ) */
 
-#define NGX_HAVE_ATOMIC_OPS  1
+#define NJET_HAVE_ATOMIC_OPS  1
 
 #include "ngx_gcc_atomic_sparc64.h"
 
@@ -240,19 +240,19 @@ typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
 
 #elif ( __powerpc__ || __POWERPC__ )
 
-#define NGX_HAVE_ATOMIC_OPS  1
+#define NJET_HAVE_ATOMIC_OPS  1
 
-#if (NGX_PTR_SIZE == 8)
+#if (NJET_PTR_SIZE == 8)
 
 typedef int64_t                     ngx_atomic_int_t;
 typedef uint64_t                    ngx_atomic_uint_t;
-#define NGX_ATOMIC_T_LEN            (sizeof("-9223372036854775808") - 1)
+#define NJET_ATOMIC_T_LEN            (sizeof("-9223372036854775808") - 1)
 
 #else
 
 typedef int32_t                     ngx_atomic_int_t;
 typedef uint32_t                    ngx_atomic_uint_t;
-#define NGX_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
+#define NJET_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
 
 #endif
 
@@ -264,14 +264,14 @@ typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
 #endif
 
 
-#if !(NGX_HAVE_ATOMIC_OPS)
+#if !(NJET_HAVE_ATOMIC_OPS)
 
-#define NGX_HAVE_ATOMIC_OPS  0
+#define NJET_HAVE_ATOMIC_OPS  0
 
 typedef int32_t                     ngx_atomic_int_t;
 typedef uint32_t                    ngx_atomic_uint_t;
 typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
-#define NGX_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
+#define NJET_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
 
 
 static ngx_inline ngx_atomic_uint_t
@@ -310,4 +310,4 @@ void ngx_spinlock(ngx_atomic_t *lock, ngx_atomic_int_t value, ngx_uint_t spin);
 #define ngx_unlock(lock)    *(lock) = 0
 
 
-#endif /* _NGX_ATOMIC_H_INCLUDED_ */
+#endif /* _NJET_ATOMIC_H_INCLUDED_ */

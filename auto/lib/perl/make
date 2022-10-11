@@ -3,22 +3,22 @@
 # Copyright (C) Nginx, Inc.
 
 
-cat << END                                                    >> $NGX_MAKEFILE
+cat << END                                                    >> $NJET_MAKEFILE
 
-$NGX_OBJS/src/http/modules/perl/ngx_http_perl_module.o: \\
-		$NGX_OBJS/$ngx_perl_module
+$NJET_OBJS/src/http/modules/perl/ngx_http_perl_module.o: \\
+		$NJET_OBJS/$ngx_perl_module
 
-$NGX_OBJS/$ngx_perl_module: \\
+$NJET_OBJS/$ngx_perl_module: \\
 		\$(CORE_DEPS) \$(HTTP_DEPS) \\
 		src/http/modules/perl/ngx_http_perl_module.h \\
-		$NGX_OBJS/src/http/modules/perl/Makefile
-	cd $NGX_OBJS/src/http/modules/perl && \$(MAKE)
+		$NJET_OBJS/src/http/modules/perl/Makefile
+	cd $NJET_OBJS/src/http/modules/perl && \$(MAKE)
 
-	rm -rf $NGX_OBJS/install_perl
+	rm -rf $NJET_OBJS/install_perl
 
 
-$NGX_OBJS/src/http/modules/perl/Makefile: \\
-		$NGX_AUTO_CONFIG_H \\
+$NJET_OBJS/src/http/modules/perl/Makefile: \\
+		$NJET_AUTO_CONFIG_H \\
 		src/core/njet.h \\
 		src/http/modules/perl/Makefile.PL \\
 		src/http/modules/perl/njet.pm \\
@@ -26,21 +26,21 @@ $NGX_OBJS/src/http/modules/perl/Makefile: \\
 		src/http/modules/perl/typemap
 	grep 'define NJET_VERSION' src/core/njet.h \\
 		| sed -e 's/^.*"\(.*\)".*/\1/' > \\
-		$NGX_OBJS/src/http/modules/perl/version
-	sed "s/%%VERSION%%/\`cat $NGX_OBJS/src/http/modules/perl/version\`/" \\
+		$NJET_OBJS/src/http/modules/perl/version
+	sed "s/%%VERSION%%/\`cat $NJET_OBJS/src/http/modules/perl/version\`/" \\
 		src/http/modules/perl/njet.pm > \\
-		$NGX_OBJS/src/http/modules/perl/njet.pm
-	cp -p src/http/modules/perl/njet.xs $NGX_OBJS/src/http/modules/perl/
-	cp -p src/http/modules/perl/typemap $NGX_OBJS/src/http/modules/perl/
-	cp -p src/http/modules/perl/Makefile.PL $NGX_OBJS/src/http/modules/perl/
+		$NJET_OBJS/src/http/modules/perl/njet.pm
+	cp -p src/http/modules/perl/njet.xs $NJET_OBJS/src/http/modules/perl/
+	cp -p src/http/modules/perl/typemap $NJET_OBJS/src/http/modules/perl/
+	cp -p src/http/modules/perl/Makefile.PL $NJET_OBJS/src/http/modules/perl/
 
-	cd $NGX_OBJS/src/http/modules/perl \\
-		&& NGX_PM_CFLAGS="\$(NGX_PM_CFLAGS) -g $NGX_CC_OPT" \\
-			NGX_PM_LDFLAGS="$NGX_LD_OPT \$(NGX_PM_LDFLAGS)" \\
-			NGX_INCS="$CORE_INCS $NGX_OBJS $HTTP_INCS" \\
-			NGX_DEPS="\$(CORE_DEPS) \$(HTTP_DEPS)" \\
-		$NGX_PERL Makefile.PL \\
-			LIB=$NGX_PERL_MODULES \\
-			INSTALLSITEMAN3DIR=$NGX_PERL_MODULES_MAN
+	cd $NJET_OBJS/src/http/modules/perl \\
+		&& NJET_PM_CFLAGS="\$(NJET_PM_CFLAGS) -g $NJET_CC_OPT" \\
+			NJET_PM_LDFLAGS="$NJET_LD_OPT \$(NJET_PM_LDFLAGS)" \\
+			NJET_INCS="$CORE_INCS $NJET_OBJS $HTTP_INCS" \\
+			NJET_DEPS="\$(CORE_DEPS) \$(HTTP_DEPS)" \\
+		$NJET_PERL Makefile.PL \\
+			LIB=$NJET_PERL_MODULES \\
+			INSTALLSITEMAN3DIR=$NJET_PERL_MODULES_MAN
 
 END

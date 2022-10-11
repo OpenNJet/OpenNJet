@@ -15,7 +15,7 @@ static char *ngx_http_empty_gif(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_http_empty_gif_commands[] = {
 
     { ngx_string("empty_gif"),
-      NGX_HTTP_LOC_CONF|NGX_CONF_NOARGS,
+      NJET_HTTP_LOC_CONF|NJET_CONF_NOARGS,
       ngx_http_empty_gif,
       0,
       0,
@@ -91,10 +91,10 @@ static ngx_http_module_t  ngx_http_empty_gif_module_ctx = {
 
 
 ngx_module_t  ngx_http_empty_gif_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_http_empty_gif_module_ctx, /* module context */
     ngx_http_empty_gif_commands,   /* module directives */
-    NGX_HTTP_MODULE,               /* module type */
+    NJET_HTTP_MODULE,               /* module type */
     NULL,                          /* init master */
     NULL,                          /* init module */
     NULL,                          /* init process */
@@ -102,7 +102,7 @@ ngx_module_t  ngx_http_empty_gif_module = {
     NULL,                          /* exit thread */
     NULL,                          /* exit process */
     NULL,                          /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -114,8 +114,8 @@ ngx_http_empty_gif_handler(ngx_http_request_t *r)
 {
     ngx_http_complex_value_t  cv;
 
-    if (!(r->method & (NGX_HTTP_GET|NGX_HTTP_HEAD))) {
-        return NGX_HTTP_NOT_ALLOWED;
+    if (!(r->method & (NJET_HTTP_GET|NJET_HTTP_HEAD))) {
+        return NJET_HTTP_NOT_ALLOWED;
     }
 
     ngx_memzero(&cv, sizeof(ngx_http_complex_value_t));
@@ -124,7 +124,7 @@ ngx_http_empty_gif_handler(ngx_http_request_t *r)
     cv.value.data = ngx_empty_gif;
     r->headers_out.last_modified_time = 23349600;
 
-    return ngx_http_send_response(r, NGX_HTTP_OK, &ngx_http_gif_type, &cv);
+    return ngx_http_send_response(r, NJET_HTTP_OK, &ngx_http_gif_type, &cv);
 }
 
 
@@ -136,5 +136,5 @@ ngx_http_empty_gif(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     clcf = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
     clcf->handler = ngx_http_empty_gif_handler;
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }

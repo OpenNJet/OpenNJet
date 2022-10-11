@@ -5,7 +5,7 @@
 
 echo $ngx_n "checking for $ngx_include ...$ngx_c"
 
-cat << END >> $NGX_AUTOCONF_ERR
+cat << END >> $NJET_AUTOCONF_ERR
 
 ----------------------------------------
 checking for $ngx_include
@@ -15,9 +15,9 @@ END
 
 ngx_found=no
 
-cat << END > $NGX_AUTOTEST.c
+cat << END > $NJET_AUTOTEST.c
 
-$NGX_INCLUDE_SYS_PARAM_H
+$NJET_INCLUDE_SYS_PARAM_H
 #include <$ngx_include>
 
 int main(void) {
@@ -27,11 +27,11 @@ int main(void) {
 END
 
 
-ngx_test="$CC -o $NGX_AUTOTEST $NGX_AUTOTEST.c"
+ngx_test="$CC -o $NJET_AUTOTEST $NJET_AUTOTEST.c"
 
-eval "$ngx_test >> $NGX_AUTOCONF_ERR 2>&1"
+eval "$ngx_test >> $NJET_AUTOCONF_ERR 2>&1"
 
-if [ -x $NGX_AUTOTEST ]; then
+if [ -x $NJET_AUTOTEST ]; then
 
     ngx_found=yes
 
@@ -41,18 +41,18 @@ if [ -x $NGX_AUTOTEST ]; then
               | tr abcdefghijklmnopqrstuvwxyz/. ABCDEFGHIJKLMNOPQRSTUVWXYZ__`
 
 
-    have=NGX_HAVE_$ngx_name . auto/have_headers
+    have=NJET_HAVE_$ngx_name . auto/have_headers
 
-    eval "NGX_INCLUDE_$ngx_name='#include <$ngx_include>'"
+    eval "NJET_INCLUDE_$ngx_name='#include <$ngx_include>'"
 
 else
     echo " not found"
 
-    echo "----------"    >> $NGX_AUTOCONF_ERR
-    cat $NGX_AUTOTEST.c  >> $NGX_AUTOCONF_ERR
-    echo "----------"    >> $NGX_AUTOCONF_ERR
-    echo $ngx_test       >> $NGX_AUTOCONF_ERR
-    echo "----------"    >> $NGX_AUTOCONF_ERR
+    echo "----------"    >> $NJET_AUTOCONF_ERR
+    cat $NJET_AUTOTEST.c  >> $NJET_AUTOCONF_ERR
+    echo "----------"    >> $NJET_AUTOCONF_ERR
+    echo $ngx_test       >> $NJET_AUTOCONF_ERR
+    echo "----------"    >> $NJET_AUTOCONF_ERR
 fi
 
-rm -rf $NGX_AUTOTEST*
+rm -rf $NJET_AUTOTEST*

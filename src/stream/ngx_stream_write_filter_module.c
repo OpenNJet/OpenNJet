@@ -34,10 +34,10 @@ static ngx_stream_module_t  ngx_stream_write_filter_module_ctx = {
 
 
 ngx_module_t  ngx_stream_write_filter_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_stream_write_filter_module_ctx,   /* module context */
     NULL,                                  /* module directives */
-    NGX_STREAM_MODULE,                     /* module type */
+    NJET_STREAM_MODULE,                     /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -45,7 +45,7 @@ ngx_module_t  ngx_stream_write_filter_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -65,7 +65,7 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
         ctx = ngx_pcalloc(s->connection->pool,
                           sizeof(ngx_stream_write_filter_ctx_t));
         if (ctx == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         ngx_stream_set_ctx(s, ctx, ngx_stream_write_filter_module);
@@ -81,7 +81,7 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
     }
 
     if (c->error) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     size = 0;
@@ -95,7 +95,7 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
     for (cl = *out; cl; cl = cl->next) {
         ll = &cl->next;
 
-        ngx_log_debug7(NGX_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug7(NJET_LOG_DEBUG_EVENT, c->log, 0,
                        "write old buf t:%d f:%d %p, pos %p, size: %z "
                        "file: %O, size: %O",
                        cl->buf->temporary, cl->buf->in_file,
@@ -105,7 +105,7 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
                        cl->buf->file_last - cl->buf->file_pos);
 
         if (ngx_buf_size(cl->buf) == 0 && !ngx_buf_special(cl->buf)) {
-            ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                           "zero size buf in writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           cl->buf->temporary,
@@ -119,11 +119,11 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
                           cl->buf->file_last);
 
             ngx_debug_point();
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ngx_buf_size(cl->buf) < 0) {
-            ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                           "negative size buf in writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           cl->buf->temporary,
@@ -137,7 +137,7 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
                           cl->buf->file_last);
 
             ngx_debug_point();
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         size += ngx_buf_size(cl->buf);
@@ -160,14 +160,14 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
     for (ln = in; ln; ln = ln->next) {
         cl = ngx_alloc_chain_link(c->pool);
         if (cl == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         cl->buf = ln->buf;
         *ll = cl;
         ll = &cl->next;
 
-        ngx_log_debug7(NGX_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug7(NJET_LOG_DEBUG_EVENT, c->log, 0,
                        "write new buf t:%d f:%d %p, pos %p, size: %z "
                        "file: %O, size: %O",
                        cl->buf->temporary, cl->buf->in_file,
@@ -177,7 +177,7 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
                        cl->buf->file_last - cl->buf->file_pos);
 
         if (ngx_buf_size(cl->buf) == 0 && !ngx_buf_special(cl->buf)) {
-            ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                           "zero size buf in writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           cl->buf->temporary,
@@ -191,11 +191,11 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
                           cl->buf->file_last);
 
             ngx_debug_point();
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ngx_buf_size(cl->buf) < 0) {
-            ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                           "negative size buf in writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           cl->buf->temporary,
@@ -209,7 +209,7 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
                           cl->buf->file_last);
 
             ngx_debug_point();
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         size += ngx_buf_size(cl->buf);
@@ -229,11 +229,11 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
 
     *ll = NULL;
 
-    ngx_log_debug3(NGX_LOG_DEBUG_STREAM, c->log, 0,
+    ngx_log_debug3(NJET_LOG_DEBUG_STREAM, c->log, 0,
                    "stream write filter: l:%ui f:%ui s:%O", last, flush, size);
 
     if (size == 0
-        && !(c->buffered & NGX_LOWLEVEL_BUFFERED)
+        && !(c->buffered & NJET_LOWLEVEL_BUFFERED)
         && !(last && c->need_last_buf)
         && !(flush && c->need_flush_buf))
     {
@@ -245,27 +245,27 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
             }
 
             *out = NULL;
-            c->buffered &= ~NGX_STREAM_WRITE_BUFFERED;
+            c->buffered &= ~NJET_STREAM_WRITE_BUFFERED;
 
-            return NGX_OK;
+            return NJET_OK;
         }
 
-        ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+        ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                       "the stream output chain is empty");
 
         ngx_debug_point();
 
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     chain = c->send_chain(c, *out, 0);
 
-    ngx_log_debug1(NGX_LOG_DEBUG_STREAM, c->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, c->log, 0,
                    "stream write filter %p", chain);
 
-    if (chain == NGX_CHAIN_ERROR) {
+    if (chain == NJET_CHAIN_ERROR) {
         c->error = 1;
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     for (cl = *out; cl && cl != chain; /* void */) {
@@ -278,22 +278,22 @@ ngx_stream_write_filter(ngx_stream_session_t *s, ngx_chain_t *in,
 
     if (chain) {
         if (c->shared) {
-            ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                           "shared connection is busy");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
-        c->buffered |= NGX_STREAM_WRITE_BUFFERED;
-        return NGX_AGAIN;
+        c->buffered |= NJET_STREAM_WRITE_BUFFERED;
+        return NJET_AGAIN;
     }
 
-    c->buffered &= ~NGX_STREAM_WRITE_BUFFERED;
+    c->buffered &= ~NJET_STREAM_WRITE_BUFFERED;
 
-    if (c->buffered & NGX_LOWLEVEL_BUFFERED) {
-        return NGX_AGAIN;
+    if (c->buffered & NJET_LOWLEVEL_BUFFERED) {
+        return NJET_AGAIN;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -302,5 +302,5 @@ ngx_stream_write_filter_init(ngx_conf_t *cf)
 {
     ngx_stream_top_filter = ngx_stream_write_filter;
 
-    return NGX_OK;
+    return NJET_OK;
 }

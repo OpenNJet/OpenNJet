@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_HTTP_PERL_MODULE_H_INCLUDED_
-#define _NGX_HTTP_PERL_MODULE_H_INCLUDED_
+#ifndef _NJET_HTTP_PERL_MODULE_H_INCLUDED_
+#define _NJET_HTTP_PERL_MODULE_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -37,7 +37,7 @@ typedef struct {
 
     ngx_array_t              *variables;  /* array of ngx_http_perl_var_t */
 
-#if (NGX_HTTP_SSI)
+#if (NJET_HTTP_SSI)
     ngx_http_ssi_ctx_t       *ssi;
 #endif
 } ngx_http_perl_ctx_t;
@@ -70,4 +70,4 @@ void ngx_http_perl_handle_request(ngx_http_request_t *r);
 void ngx_http_perl_sleep_handler(ngx_http_request_t *r);
 
 
-#endif /* _NGX_HTTP_PERL_MODULE_H_INCLUDED_ */
+#endif /* _NJET_HTTP_PERL_MODULE_H_INCLUDED_ */

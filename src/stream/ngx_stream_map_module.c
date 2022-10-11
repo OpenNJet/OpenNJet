@@ -20,7 +20,7 @@ typedef struct {
     ngx_hash_keys_arrays_t        keys;
 
     ngx_array_t                  *values_hash;
-#if (NGX_PCRE)
+#if (NJET_PCRE)
     ngx_array_t                   regexes;
 #endif
 
@@ -50,23 +50,23 @@ static char *ngx_stream_map(ngx_conf_t *cf, ngx_command_t *dummy, void *conf);
 static ngx_command_t  ngx_stream_map_commands[] = {
 
     { ngx_string("map"),
-      NGX_STREAM_MAIN_CONF|NGX_CONF_BLOCK|NGX_CONF_TAKE2,
+      NJET_STREAM_MAIN_CONF|NJET_CONF_BLOCK|NJET_CONF_TAKE2,
       ngx_stream_map_block,
-      NGX_STREAM_MAIN_CONF_OFFSET,
+      NJET_STREAM_MAIN_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("map_hash_max_size"),
-      NGX_STREAM_MAIN_CONF|NGX_CONF_TAKE1,
+      NJET_STREAM_MAIN_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NGX_STREAM_MAIN_CONF_OFFSET,
+      NJET_STREAM_MAIN_CONF_OFFSET,
       offsetof(ngx_stream_map_conf_t, hash_max_size),
       NULL },
 
     { ngx_string("map_hash_bucket_size"),
-      NGX_STREAM_MAIN_CONF|NGX_CONF_TAKE1,
+      NJET_STREAM_MAIN_CONF|NJET_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NGX_STREAM_MAIN_CONF_OFFSET,
+      NJET_STREAM_MAIN_CONF_OFFSET,
       offsetof(ngx_stream_map_conf_t, hash_bucket_size),
       NULL },
 
@@ -87,10 +87,10 @@ static ngx_stream_module_t  ngx_stream_map_module_ctx = {
 
 
 ngx_module_t  ngx_stream_map_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_stream_map_module_ctx,            /* module context */
     ngx_stream_map_commands,               /* module directives */
-    NGX_STREAM_MODULE,                     /* module type */
+    NJET_STREAM_MODULE,                     /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -98,7 +98,7 @@ ngx_module_t  ngx_stream_map_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -112,11 +112,11 @@ ngx_stream_map_variable(ngx_stream_session_t *s, ngx_stream_variable_value_t *v,
     ngx_stream_complex_value_t   *cv;
     ngx_stream_variable_value_t  *value;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_STREAM, s->connection->log, 0,
+    ngx_log_debug0(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
                    "stream map started");
 
-    if (ngx_stream_complex_value(s, &map->value, &val) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_stream_complex_value(s, &map->value, &val) != NJET_OK) {
+        return NJET_ERROR;
     }
 
     if (map->hostnames && val.len > 0 && val.data[val.len - 1] == '.') {
@@ -132,8 +132,8 @@ ngx_stream_map_variable(ngx_stream_session_t *s, ngx_stream_variable_value_t *v,
     if (!value->valid) {
         cv = (ngx_stream_complex_value_t *) value->data;
 
-        if (ngx_stream_complex_value(s, cv, &str) != NGX_OK) {
-            return NGX_ERROR;
+        if (ngx_stream_complex_value(s, cv, &str) != NJET_OK) {
+            return NJET_ERROR;
         }
 
         v->valid = 1;
@@ -146,10 +146,10 @@ ngx_stream_map_variable(ngx_stream_session_t *s, ngx_stream_variable_value_t *v,
         *v = *value;
     }
 
-    ngx_log_debug2(NGX_LOG_DEBUG_STREAM, s->connection->log, 0,
+    ngx_log_debug2(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
                    "stream map: \"%V\" \"%v\"", &val, v);
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -163,8 +163,8 @@ ngx_stream_map_create_conf(ngx_conf_t *cf)
         return NULL;
     }
 
-    mcf->hash_max_size = NGX_CONF_UNSET_UINT;
-    mcf->hash_bucket_size = NGX_CONF_UNSET_UINT;
+    mcf->hash_max_size = NJET_CONF_UNSET_UINT;
+    mcf->hash_bucket_size = NJET_CONF_UNSET_UINT;
 
     return mcf;
 }
@@ -185,11 +185,11 @@ ngx_stream_map_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_stream_map_conf_ctx_t            ctx;
     ngx_stream_compile_complex_value_t   ccv;
 
-    if (mcf->hash_max_size == NGX_CONF_UNSET_UINT) {
+    if (mcf->hash_max_size == NJET_CONF_UNSET_UINT) {
         mcf->hash_max_size = 2048;
     }
 
-    if (mcf->hash_bucket_size == NGX_CONF_UNSET_UINT) {
+    if (mcf->hash_bucket_size == NJET_CONF_UNSET_UINT) {
         mcf->hash_bucket_size = ngx_cacheline_size;
 
     } else {
@@ -199,7 +199,7 @@ ngx_stream_map_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     map = ngx_pcalloc(cf->pool, sizeof(ngx_stream_map_ctx_t));
     if (map == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     value = cf->args->elts;
@@ -210,55 +210,55 @@ ngx_stream_map_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ccv.value = &value[1];
     ccv.complex_value = &map->value;
 
-    if (ngx_stream_compile_complex_value(&ccv) != NGX_OK) {
-        return NGX_CONF_ERROR;
+    if (ngx_stream_compile_complex_value(&ccv) != NJET_OK) {
+        return NJET_CONF_ERROR;
     }
 
     name = value[2];
 
     if (name.data[0] != '$') {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "invalid variable name \"%V\"", &name);
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     name.len--;
     name.data++;
 
-    var = ngx_stream_add_variable(cf, &name, NGX_STREAM_VAR_CHANGEABLE);
+    var = ngx_stream_add_variable(cf, &name, NJET_STREAM_VAR_CHANGEABLE);
     if (var == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     var->get_handler = ngx_stream_map_variable;
     var->data = (uintptr_t) map;
 
-    pool = ngx_create_pool(NGX_DEFAULT_POOL_SIZE, cf->log);
+    pool = ngx_create_pool(NJET_DEFAULT_POOL_SIZE, cf->log);
     if (pool == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     ctx.keys.pool = cf->pool;
     ctx.keys.temp_pool = pool;
 
-    if (ngx_hash_keys_array_init(&ctx.keys, NGX_HASH_LARGE) != NGX_OK) {
+    if (ngx_hash_keys_array_init(&ctx.keys, NJET_HASH_LARGE) != NJET_OK) {
         ngx_destroy_pool(pool);
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     ctx.values_hash = ngx_pcalloc(pool, sizeof(ngx_array_t) * ctx.keys.hsize);
     if (ctx.values_hash == NULL) {
         ngx_destroy_pool(pool);
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
-#if (NGX_PCRE)
+#if (NJET_PCRE)
     if (ngx_array_init(&ctx.regexes, cf->pool, 2,
                        sizeof(ngx_stream_map_regex_t))
-        != NGX_OK)
+        != NJET_OK)
     {
         ngx_destroy_pool(pool);
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 #endif
 
@@ -277,13 +277,13 @@ ngx_stream_map_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     *cf = save;
 
-    if (rv != NGX_CONF_OK) {
+    if (rv != NJET_CONF_OK) {
         ngx_destroy_pool(pool);
         return rv;
     }
 
     if (ctx.no_cacheable) {
-        var->flags |= NGX_STREAM_VAR_NOCACHEABLE;
+        var->flags |= NJET_STREAM_VAR_NOCACHEABLE;
     }
 
     map->default_value = ctx.default_value ? ctx.default_value:
@@ -302,10 +302,10 @@ ngx_stream_map_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         hash.temp_pool = NULL;
 
         if (ngx_hash_init(&hash, ctx.keys.keys.elts, ctx.keys.keys.nelts)
-            != NGX_OK)
+            != NJET_OK)
         {
             ngx_destroy_pool(pool);
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
     }
 
@@ -320,10 +320,10 @@ ngx_stream_map_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
         if (ngx_hash_wildcard_init(&hash, ctx.keys.dns_wc_head.elts,
                                    ctx.keys.dns_wc_head.nelts)
-            != NGX_OK)
+            != NJET_OK)
         {
             ngx_destroy_pool(pool);
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         map->map.hash.wc_head = (ngx_hash_wildcard_t *) hash.hash;
@@ -340,16 +340,16 @@ ngx_stream_map_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
         if (ngx_hash_wildcard_init(&hash, ctx.keys.dns_wc_tail.elts,
                                    ctx.keys.dns_wc_tail.nelts)
-            != NGX_OK)
+            != NJET_OK)
         {
             ngx_destroy_pool(pool);
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         map->map.hash.wc_tail = (ngx_hash_wildcard_t *) hash.hash;
     }
 
-#if (NGX_PCRE)
+#if (NJET_PCRE)
 
     if (ctx.regexes.nelts) {
         map->map.regex = ctx.regexes.elts;
@@ -397,20 +397,20 @@ ngx_stream_map(ngx_conf_t *cf, ngx_command_t *dummy, void *conf)
         && ngx_strcmp(value[0].data, "hostnames") == 0)
     {
         ctx->hostnames = 1;
-        return NGX_CONF_OK;
+        return NJET_CONF_OK;
     }
 
     if (cf->args->nelts == 1
         && ngx_strcmp(value[0].data, "volatile") == 0)
     {
         ctx->no_cacheable = 1;
-        return NGX_CONF_OK;
+        return NJET_CONF_OK;
     }
 
     if (cf->args->nelts != 2) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "invalid number of the map parameters");
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     if (ngx_strcmp(value[0].data, "include") == 0) {
@@ -453,21 +453,21 @@ ngx_stream_map(ngx_conf_t *cf, ngx_command_t *dummy, void *conf)
     } else {
         if (ngx_array_init(&ctx->values_hash[key], cf->pool, 4,
                            sizeof(ngx_stream_variable_value_t *))
-            != NGX_OK)
+            != NJET_OK)
         {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
     }
 
     var = ngx_palloc(ctx->keys.pool, sizeof(ngx_stream_variable_value_t));
     if (var == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     v.len = value[1].len;
     v.data = ngx_pstrdup(ctx->keys.pool, &value[1]);
     if (v.data == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     ngx_memzero(&ccv, sizeof(ngx_stream_compile_complex_value_t));
@@ -476,14 +476,14 @@ ngx_stream_map(ngx_conf_t *cf, ngx_command_t *dummy, void *conf)
     ccv.value = &v;
     ccv.complex_value = &cv;
 
-    if (ngx_stream_compile_complex_value(&ccv) != NGX_OK) {
-        return NGX_CONF_ERROR;
+    if (ngx_stream_compile_complex_value(&ccv) != NJET_OK) {
+        return NJET_CONF_ERROR;
     }
 
     if (cv.lengths != NULL) {
         cvp = ngx_palloc(ctx->keys.pool, sizeof(ngx_stream_complex_value_t));
         if (cvp == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         *cvp = cv;
@@ -503,7 +503,7 @@ ngx_stream_map(ngx_conf_t *cf, ngx_command_t *dummy, void *conf)
 
     vp = ngx_array_push(&ctx->values_hash[key]);
     if (vp == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     *vp = var;
@@ -513,26 +513,26 @@ found:
     if (ngx_strcmp(value[0].data, "default") == 0) {
 
         if (ctx->default_value) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                "duplicate default map parameter");
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         ctx->default_value = var;
 
-        return NGX_CONF_OK;
+        return NJET_CONF_OK;
     }
 
-#if (NGX_PCRE)
+#if (NJET_PCRE)
 
     if (value[0].len && value[0].data[0] == '~') {
         ngx_regex_compile_t      rc;
         ngx_stream_map_regex_t  *regex;
-        u_char                   errstr[NGX_MAX_CONF_ERRSTR];
+        u_char                   errstr[NJET_MAX_CONF_ERRSTR];
 
         regex = ngx_array_push(&ctx->regexes);
         if (regex == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         value[0].len--;
@@ -543,21 +543,21 @@ found:
         if (value[0].data[0] == '*') {
             value[0].len--;
             value[0].data++;
-            rc.options = NGX_REGEX_CASELESS;
+            rc.options = NJET_REGEX_CASELESS;
         }
 
         rc.pattern = value[0];
-        rc.err.len = NGX_MAX_CONF_ERRSTR;
+        rc.err.len = NJET_MAX_CONF_ERRSTR;
         rc.err.data = errstr;
 
         regex->regex = ngx_stream_regex_compile(ctx->cf, &rc);
         if (regex->regex == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         regex->value = var;
 
-        return NGX_CONF_OK;
+        return NJET_CONF_OK;
     }
 
 #endif
@@ -568,21 +568,21 @@ found:
     }
 
     rv = ngx_hash_add_key(&ctx->keys, &value[0], var,
-                          (ctx->hostnames) ? NGX_HASH_WILDCARD_KEY : 0);
+                          (ctx->hostnames) ? NJET_HASH_WILDCARD_KEY : 0);
 
-    if (rv == NGX_OK) {
-        return NGX_CONF_OK;
+    if (rv == NJET_OK) {
+        return NJET_CONF_OK;
     }
 
-    if (rv == NGX_DECLINED) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+    if (rv == NJET_DECLINED) {
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "invalid hostname or wildcard \"%V\"", &value[0]);
     }
 
-    if (rv == NGX_BUSY) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+    if (rv == NJET_BUSY) {
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "conflicting parameter \"%V\"", &value[0]);
     }
 
-    return NGX_CONF_ERROR;
+    return NJET_CONF_ERROR;
 }

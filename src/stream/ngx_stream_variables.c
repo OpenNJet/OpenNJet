@@ -92,10 +92,10 @@ static ngx_stream_variable_t  ngx_stream_core_variables[] = {
       1, 0, 0 },
 
     { ngx_string("session_time"), NULL, ngx_stream_variable_session_time,
-      0, NGX_STREAM_VAR_NOCACHEABLE, 0 },
+      0, NJET_STREAM_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("status"), NULL, ngx_stream_variable_status,
-      0, NGX_STREAM_VAR_NOCACHEABLE, 0 },
+      0, NJET_STREAM_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("connection"), NULL,
       ngx_stream_variable_connection, 0, 0, 0 },
@@ -110,13 +110,13 @@ static ngx_stream_variable_t  ngx_stream_core_variables[] = {
       0, 0, 0 },
 
     { ngx_string("msec"), NULL, ngx_stream_variable_msec,
-      0, NGX_STREAM_VAR_NOCACHEABLE, 0 },
+      0, NJET_STREAM_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("time_iso8601"), NULL, ngx_stream_variable_time_iso8601,
-      0, NGX_STREAM_VAR_NOCACHEABLE, 0 },
+      0, NJET_STREAM_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("time_local"), NULL, ngx_stream_variable_time_local,
-      0, NGX_STREAM_VAR_NOCACHEABLE, 0 },
+      0, NJET_STREAM_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("protocol"), NULL,
       ngx_stream_variable_protocol, 0, 0, 0 },
@@ -144,12 +144,12 @@ ngx_stream_add_variable(ngx_conf_t *cf, ngx_str_t *name, ngx_uint_t flags)
     ngx_stream_core_main_conf_t  *cmcf;
 
     if (name->len == 0) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "invalid variable name \"$\"");
         return NULL;
     }
 
-    if (flags & NGX_STREAM_VAR_PREFIX) {
+    if (flags & NJET_STREAM_VAR_PREFIX) {
         return ngx_stream_add_prefix_variable(cf, name, flags);
     }
 
@@ -165,14 +165,14 @@ ngx_stream_add_variable(ngx_conf_t *cf, ngx_str_t *name, ngx_uint_t flags)
 
         v = key[i].value;
 
-        if (!(v->flags & NGX_STREAM_VAR_CHANGEABLE)) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        if (!(v->flags & NJET_STREAM_VAR_CHANGEABLE)) {
+            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                "the duplicate \"%V\" variable", name);
             return NULL;
         }
 
-        if (!(flags & NGX_STREAM_VAR_WEAK)) {
-            v->flags &= ~NGX_STREAM_VAR_WEAK;
+        if (!(flags & NJET_STREAM_VAR_WEAK)) {
+            v->flags &= ~NJET_STREAM_VAR_WEAK;
         }
 
         return v;
@@ -199,12 +199,12 @@ ngx_stream_add_variable(ngx_conf_t *cf, ngx_str_t *name, ngx_uint_t flags)
 
     rc = ngx_hash_add_key(cmcf->variables_keys, &v->name, v, 0);
 
-    if (rc == NGX_ERROR) {
+    if (rc == NJET_ERROR) {
         return NULL;
     }
 
-    if (rc == NGX_BUSY) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+    if (rc == NJET_BUSY) {
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "conflicting variable name \"%V\"", name);
         return NULL;
     }
@@ -233,14 +233,14 @@ ngx_stream_add_prefix_variable(ngx_conf_t *cf, ngx_str_t *name,
 
         v = &v[i];
 
-        if (!(v->flags & NGX_STREAM_VAR_CHANGEABLE)) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        if (!(v->flags & NJET_STREAM_VAR_CHANGEABLE)) {
+            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                "the duplicate \"%V\" variable", name);
             return NULL;
         }
 
-        if (!(flags & NGX_STREAM_VAR_WEAK)) {
-            v->flags &= ~NGX_STREAM_VAR_WEAK;
+        if (!(flags & NJET_STREAM_VAR_WEAK)) {
+            v->flags &= ~NJET_STREAM_VAR_WEAK;
         }
 
         return v;
@@ -277,9 +277,9 @@ ngx_stream_get_variable_index(ngx_conf_t *cf, ngx_str_t *name)
     ngx_stream_core_main_conf_t  *cmcf;
 
     if (name->len == 0) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "invalid variable name \"$\"");
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     cmcf = ngx_stream_conf_get_module_main_conf(cf, ngx_stream_core_module);
@@ -289,9 +289,9 @@ ngx_stream_get_variable_index(ngx_conf_t *cf, ngx_str_t *name)
     if (v == NULL) {
         if (ngx_array_init(&cmcf->variables, cf->pool, 4,
                            sizeof(ngx_stream_variable_t))
-            != NGX_OK)
+            != NJET_OK)
         {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
     } else {
@@ -308,13 +308,13 @@ ngx_stream_get_variable_index(ngx_conf_t *cf, ngx_str_t *name)
 
     v = ngx_array_push(&cmcf->variables);
     if (v == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     v->name.len = name->len;
     v->name.data = ngx_pnalloc(cf->pool, name->len);
     if (v->name.data == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     ngx_strlow(v->name.data, name->data, name->len);
@@ -338,7 +338,7 @@ ngx_stream_get_indexed_variable(ngx_stream_session_t *s, ngx_uint_t index)
     cmcf = ngx_stream_get_module_main_conf(s, ngx_stream_core_module);
 
     if (cmcf->variables.nelts <= index) {
-        ngx_log_error(NGX_LOG_ALERT, s->connection->log, 0,
+        ngx_log_error(NJET_LOG_ALERT, s->connection->log, 0,
                       "unknown variable index: %ui", index);
         return NULL;
     }
@@ -350,7 +350,7 @@ ngx_stream_get_indexed_variable(ngx_stream_session_t *s, ngx_uint_t index)
     v = cmcf->variables.elts;
 
     if (ngx_stream_variable_depth == 0) {
-        ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+        ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
                       "cycle while evaluating variable \"%V\"",
                       &v[index].name);
         return NULL;
@@ -359,11 +359,11 @@ ngx_stream_get_indexed_variable(ngx_stream_session_t *s, ngx_uint_t index)
     ngx_stream_variable_depth--;
 
     if (v[index].get_handler(s, &s->variables[index], v[index].data)
-        == NGX_OK)
+        == NJET_OK)
     {
         ngx_stream_variable_depth++;
 
-        if (v[index].flags & NGX_STREAM_VAR_NOCACHEABLE) {
+        if (v[index].flags & NJET_STREAM_VAR_NOCACHEABLE) {
             s->variables[index].no_cacheable = 1;
         }
 
@@ -414,12 +414,12 @@ ngx_stream_get_variable(ngx_stream_session_t *s, ngx_str_t *name,
     v = ngx_hash_find(&cmcf->variables_hash, key, name->data, name->len);
 
     if (v) {
-        if (v->flags & NGX_STREAM_VAR_INDEXED) {
+        if (v->flags & NJET_STREAM_VAR_INDEXED) {
             return ngx_stream_get_flushed_variable(s, v->index);
         }
 
         if (ngx_stream_variable_depth == 0) {
-            ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+            ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
                           "cycle while evaluating variable \"%V\"", name);
             return NULL;
         }
@@ -429,7 +429,7 @@ ngx_stream_get_variable(ngx_stream_session_t *s, ngx_str_t *name,
         vv = ngx_palloc(s->connection->pool,
                         sizeof(ngx_stream_variable_value_t));
 
-        if (vv && v->get_handler(s, vv, v->data) == NGX_OK) {
+        if (vv && v->get_handler(s, vv, v->data) == NJET_OK) {
             ngx_stream_variable_depth++;
             return vv;
         }
@@ -458,7 +458,7 @@ ngx_stream_get_variable(ngx_stream_session_t *s, ngx_str_t *name,
     }
 
     if (n != cmcf->prefix_variables.nelts) {
-        if (v[n].get_handler(s, vv, (uintptr_t) name) == NGX_OK) {
+        if (v[n].get_handler(s, vv, (uintptr_t) name) == NJET_OK) {
             return vv;
         }
 
@@ -476,13 +476,13 @@ ngx_stream_variable_binary_remote_addr(ngx_stream_session_t *s,
      ngx_stream_variable_value_t *v, uintptr_t data)
 {
     struct sockaddr_in   *sin;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     struct sockaddr_in6  *sin6;
 #endif
 
     switch (s->connection->sockaddr->sa_family) {
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     case AF_INET6:
         sin6 = (struct sockaddr_in6 *) s->connection->sockaddr;
 
@@ -495,7 +495,7 @@ ngx_stream_variable_binary_remote_addr(ngx_stream_session_t *s,
         break;
 #endif
 
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
     case AF_UNIX:
 
         v->len = s->connection->addr_text.len;
@@ -519,7 +519,7 @@ ngx_stream_variable_binary_remote_addr(ngx_stream_session_t *s,
         break;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -533,7 +533,7 @@ ngx_stream_variable_remote_addr(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = s->connection->addr_text.data;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -550,7 +550,7 @@ ngx_stream_variable_remote_port(ngx_stream_session_t *s,
 
     v->data = ngx_pnalloc(s->connection->pool, sizeof("65535") - 1);
     if (v->data == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     port = ngx_inet_get_port(s->connection->sockaddr);
@@ -559,7 +559,7 @@ ngx_stream_variable_remote_port(ngx_stream_session_t *s,
         v->len = ngx_sprintf(v->data, "%ui", port) - v->data;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -573,7 +573,7 @@ ngx_stream_variable_proxy_protocol_addr(ngx_stream_session_t *s,
     pp = s->connection->proxy_protocol;
     if (pp == NULL) {
         v->not_found = 1;
-        return NGX_OK;
+        return NJET_OK;
     }
 
     addr = (ngx_str_t *) ((char *) pp + data);
@@ -584,7 +584,7 @@ ngx_stream_variable_proxy_protocol_addr(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = addr->data;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -598,7 +598,7 @@ ngx_stream_variable_proxy_protocol_port(ngx_stream_session_t *s,
     pp = s->connection->proxy_protocol;
     if (pp == NULL) {
         v->not_found = 1;
-        return NGX_OK;
+        return NJET_OK;
     }
 
     v->len = 0;
@@ -608,7 +608,7 @@ ngx_stream_variable_proxy_protocol_port(ngx_stream_session_t *s,
 
     v->data = ngx_pnalloc(s->connection->pool, sizeof("65535") - 1);
     if (v->data == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     port = *(in_port_t *) ((char *) pp + data);
@@ -617,7 +617,7 @@ ngx_stream_variable_proxy_protocol_port(ngx_stream_session_t *s,
         v->len = ngx_sprintf(v->data, "%ui", port) - v->data;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -626,18 +626,18 @@ ngx_stream_variable_server_addr(ngx_stream_session_t *s,
     ngx_stream_variable_value_t *v, uintptr_t data)
 {
     ngx_str_t  str;
-    u_char     addr[NGX_SOCKADDR_STRLEN];
+    u_char     addr[NJET_SOCKADDR_STRLEN];
 
-    str.len = NGX_SOCKADDR_STRLEN;
+    str.len = NJET_SOCKADDR_STRLEN;
     str.data = addr;
 
-    if (ngx_connection_local_sockaddr(s->connection, &str, 0) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_connection_local_sockaddr(s->connection, &str, 0) != NJET_OK) {
+        return NJET_ERROR;
     }
 
     str.data = ngx_pnalloc(s->connection->pool, str.len);
     if (str.data == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     ngx_memcpy(str.data, addr, str.len);
@@ -648,7 +648,7 @@ ngx_stream_variable_server_addr(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = str.data;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -663,13 +663,13 @@ ngx_stream_variable_server_port(ngx_stream_session_t *s,
     v->no_cacheable = 0;
     v->not_found = 0;
 
-    if (ngx_connection_local_sockaddr(s->connection, NULL, 0) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_connection_local_sockaddr(s->connection, NULL, 0) != NJET_OK) {
+        return NJET_ERROR;
     }
 
     v->data = ngx_pnalloc(s->connection->pool, sizeof("65535") - 1);
     if (v->data == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     port = ngx_inet_get_port(s->connection->local_sockaddr);
@@ -678,7 +678,7 @@ ngx_stream_variable_server_port(ngx_stream_session_t *s,
         v->len = ngx_sprintf(v->data, "%ui", port) - v->data;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -688,9 +688,9 @@ ngx_stream_variable_bytes(ngx_stream_session_t *s,
 {
     u_char  *p;
 
-    p = ngx_pnalloc(s->connection->pool, NGX_OFF_T_LEN);
+    p = ngx_pnalloc(s->connection->pool, NJET_OFF_T_LEN);
     if (p == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (data == 1) {
@@ -705,7 +705,7 @@ ngx_stream_variable_bytes(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = p;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -717,9 +717,9 @@ ngx_stream_variable_session_time(ngx_stream_session_t *s,
     ngx_time_t      *tp;
     ngx_msec_int_t   ms;
 
-    p = ngx_pnalloc(s->connection->pool, NGX_TIME_T_LEN + 4);
+    p = ngx_pnalloc(s->connection->pool, NJET_TIME_T_LEN + 4);
     if (p == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     tp = ngx_timeofday();
@@ -734,7 +734,7 @@ ngx_stream_variable_session_time(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = p;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -742,9 +742,9 @@ static ngx_int_t
 ngx_stream_variable_status(ngx_stream_session_t *s,
     ngx_stream_variable_value_t *v, uintptr_t data)
 {
-    v->data = ngx_pnalloc(s->connection->pool, NGX_INT_T_LEN);
+    v->data = ngx_pnalloc(s->connection->pool, NJET_INT_T_LEN);
     if (v->data == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     v->len = ngx_sprintf(v->data, "%03ui", s->status) - v->data;
@@ -752,7 +752,7 @@ ngx_stream_variable_status(ngx_stream_session_t *s,
     v->no_cacheable = 0;
     v->not_found = 0;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -762,9 +762,9 @@ ngx_stream_variable_connection(ngx_stream_session_t *s,
 {
     u_char  *p;
 
-    p = ngx_pnalloc(s->connection->pool, NGX_ATOMIC_T_LEN);
+    p = ngx_pnalloc(s->connection->pool, NJET_ATOMIC_T_LEN);
     if (p == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     v->len = ngx_sprintf(p, "%uA", s->connection->number) - p;
@@ -773,7 +773,7 @@ ngx_stream_variable_connection(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = p;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -787,7 +787,7 @@ ngx_stream_variable_njet_version(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = (u_char *) NJET_VERSION;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -801,7 +801,7 @@ ngx_stream_variable_hostname(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = ngx_cycle->hostname.data;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -811,9 +811,9 @@ ngx_stream_variable_pid(ngx_stream_session_t *s,
 {
     u_char  *p;
 
-    p = ngx_pnalloc(s->connection->pool, NGX_INT64_LEN);
+    p = ngx_pnalloc(s->connection->pool, NJET_INT64_LEN);
     if (p == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     v->len = ngx_sprintf(p, "%P", ngx_pid) - p;
@@ -822,7 +822,7 @@ ngx_stream_variable_pid(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = p;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -833,9 +833,9 @@ ngx_stream_variable_msec(ngx_stream_session_t *s,
     u_char      *p;
     ngx_time_t  *tp;
 
-    p = ngx_pnalloc(s->connection->pool, NGX_TIME_T_LEN + 4);
+    p = ngx_pnalloc(s->connection->pool, NJET_TIME_T_LEN + 4);
     if (p == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     tp = ngx_timeofday();
@@ -846,7 +846,7 @@ ngx_stream_variable_msec(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = p;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -858,7 +858,7 @@ ngx_stream_variable_time_iso8601(ngx_stream_session_t *s,
 
     p = ngx_pnalloc(s->connection->pool, ngx_cached_http_log_iso8601.len);
     if (p == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     ngx_memcpy(p, ngx_cached_http_log_iso8601.data,
@@ -870,7 +870,7 @@ ngx_stream_variable_time_iso8601(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = p;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -882,7 +882,7 @@ ngx_stream_variable_time_local(ngx_stream_session_t *s,
 
     p = ngx_pnalloc(s->connection->pool, ngx_cached_http_log_time.len);
     if (p == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     ngx_memcpy(p, ngx_cached_http_log_time.data, ngx_cached_http_log_time.len);
@@ -893,7 +893,7 @@ ngx_stream_variable_time_local(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = p;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -907,7 +907,7 @@ ngx_stream_variable_protocol(ngx_stream_session_t *s,
     v->not_found = 0;
     v->data = (u_char *) (s->connection->type == SOCK_DGRAM ? "UDP" : "TCP");
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -939,7 +939,7 @@ ngx_stream_map_find(ngx_stream_session_t *s, ngx_stream_map_t *map,
         return value;
     }
 
-#if (NGX_PCRE)
+#if (NJET_PCRE)
 
     if (len && map->nregex) {
         ngx_int_t                n;
@@ -952,15 +952,15 @@ ngx_stream_map_find(ngx_stream_session_t *s, ngx_stream_map_t *map,
 
             n = ngx_stream_regex_exec(s, reg[i].regex, match);
 
-            if (n == NGX_OK) {
+            if (n == NJET_OK) {
                 return reg[i].value;
             }
 
-            if (n == NGX_DECLINED) {
+            if (n == NJET_DECLINED) {
                 continue;
             }
 
-            /* NGX_ERROR */
+            /* NJET_ERROR */
 
             return NULL;
         }
@@ -972,14 +972,14 @@ ngx_stream_map_find(ngx_stream_session_t *s, ngx_stream_map_t *map,
 }
 
 
-#if (NGX_PCRE)
+#if (NJET_PCRE)
 
 static ngx_int_t
 ngx_stream_variable_not_found(ngx_stream_session_t *s,
     ngx_stream_variable_value_t *v, uintptr_t data)
 {
     v->not_found = 1;
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -997,8 +997,8 @@ ngx_stream_regex_compile(ngx_conf_t *cf, ngx_regex_compile_t *rc)
 
     rc->pool = cf->pool;
 
-    if (ngx_regex_compile(rc) != NGX_OK) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0, "%V", &rc->err);
+    if (ngx_regex_compile(rc) != NJET_OK) {
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0, "%V", &rc->err);
         return NULL;
     }
 
@@ -1037,13 +1037,13 @@ ngx_stream_regex_compile(ngx_conf_t *cf, ngx_regex_compile_t *rc)
         name.data = &p[2];
         name.len = ngx_strlen(name.data);
 
-        v = ngx_stream_add_variable(cf, &name, NGX_STREAM_VAR_CHANGEABLE);
+        v = ngx_stream_add_variable(cf, &name, NJET_STREAM_VAR_CHANGEABLE);
         if (v == NULL) {
             return NULL;
         }
 
         rv[i].index = ngx_stream_get_variable_index(cf, &name);
-        if (rv[i].index == NGX_ERROR) {
+        if (rv[i].index == NJET_ERROR) {
             return NULL;
         }
 
@@ -1073,7 +1073,7 @@ ngx_stream_regex_exec(ngx_stream_session_t *s, ngx_stream_regex_t *re,
         if (s->captures == NULL) {
             s->captures = ngx_palloc(s->connection->pool, len * sizeof(int));
             if (s->captures == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
         }
 
@@ -1083,15 +1083,15 @@ ngx_stream_regex_exec(ngx_stream_session_t *s, ngx_stream_regex_t *re,
 
     rc = ngx_regex_exec(re->regex, str, s->captures, len);
 
-    if (rc == NGX_REGEX_NO_MATCHED) {
-        return NGX_DECLINED;
+    if (rc == NJET_REGEX_NO_MATCHED) {
+        return NJET_DECLINED;
     }
 
     if (rc < 0) {
-        ngx_log_error(NGX_LOG_ALERT, s->connection->log, 0,
+        ngx_log_error(NJET_LOG_ALERT, s->connection->log, 0,
                       ngx_regex_exec_n " failed: %i on \"%V\" using \"%V\"",
                       rc, str, &re->name);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     for (i = 0; i < re->nvariables; i++) {
@@ -1106,13 +1106,13 @@ ngx_stream_regex_exec(ngx_stream_session_t *s, ngx_stream_regex_t *re,
         vv->not_found = 0;
         vv->data = &str->data[s->captures[n]];
 
-#if (NGX_DEBUG)
+#if (NJET_DEBUG)
         {
         ngx_stream_variable_t  *v;
 
         v = cmcf->variables.elts;
 
-        ngx_log_debug2(NGX_LOG_DEBUG_STREAM, s->connection->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
                        "stream regex set $%V to \"%v\"", &v[index].name, vv);
         }
 #endif
@@ -1121,7 +1121,7 @@ ngx_stream_regex_exec(ngx_stream_session_t *s, ngx_stream_regex_t *re,
     s->ncaptures = rc * 2;
     s->captures_data = str->data;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 #endif
@@ -1138,35 +1138,35 @@ ngx_stream_variables_add_core_vars(ngx_conf_t *cf)
     cmcf->variables_keys = ngx_pcalloc(cf->temp_pool,
                                        sizeof(ngx_hash_keys_arrays_t));
     if (cmcf->variables_keys == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     cmcf->variables_keys->pool = cf->pool;
     cmcf->variables_keys->temp_pool = cf->pool;
 
-    if (ngx_hash_keys_array_init(cmcf->variables_keys, NGX_HASH_SMALL)
-        != NGX_OK)
+    if (ngx_hash_keys_array_init(cmcf->variables_keys, NJET_HASH_SMALL)
+        != NJET_OK)
     {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (ngx_array_init(&cmcf->prefix_variables, cf->pool, 8,
                        sizeof(ngx_stream_variable_t))
-        != NGX_OK)
+        != NJET_OK)
     {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     for (cv = ngx_stream_core_variables; cv->name.len; cv++) {
         v = ngx_stream_add_variable(cf, &cv->name, cv->flags);
         if (v == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         *v = *cv;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -1201,13 +1201,13 @@ ngx_stream_variables_init_vars(ngx_conf_t *cf)
                 v[i].get_handler = av->get_handler;
                 v[i].data = av->data;
 
-                av->flags |= NGX_STREAM_VAR_INDEXED;
+                av->flags |= NJET_STREAM_VAR_INDEXED;
                 v[i].flags = av->flags;
 
                 av->index = i;
 
                 if (av->get_handler == NULL
-                    || (av->flags & NGX_STREAM_VAR_WEAK))
+                    || (av->flags & NJET_STREAM_VAR_WEAK))
                 {
                     break;
                 }
@@ -1238,9 +1238,9 @@ ngx_stream_variables_init_vars(ngx_conf_t *cf)
          }
 
         if (v[i].get_handler == NULL) {
-            ngx_log_error(NGX_LOG_EMERG, cf->log, 0,
+            ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
                           "unknown \"%V\" variable", &v[i].name);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
     next:
@@ -1251,7 +1251,7 @@ ngx_stream_variables_init_vars(ngx_conf_t *cf)
     for (n = 0; n < cmcf->variables_keys->keys.nelts; n++) {
         av = key[n].value;
 
-        if (av->flags & NGX_STREAM_VAR_NOHASH) {
+        if (av->flags & NJET_STREAM_VAR_NOHASH) {
             key[n].key.data = NULL;
         }
     }
@@ -1267,12 +1267,12 @@ ngx_stream_variables_init_vars(ngx_conf_t *cf)
 
     if (ngx_hash_init(&hash, cmcf->variables_keys->keys.elts,
                       cmcf->variables_keys->keys.nelts)
-        != NGX_OK)
+        != NJET_OK)
     {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     cmcf->variables_keys = NULL;
 
-    return NGX_OK;
+    return NJET_OK;
 }

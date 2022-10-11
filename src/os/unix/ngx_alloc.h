@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_ALLOC_H_INCLUDED_
-#define _NGX_ALLOC_H_INCLUDED_
+#ifndef _NJET_ALLOC_H_INCLUDED_
+#define _NJET_ALLOC_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -26,7 +26,7 @@ void *ngx_calloc(size_t size, ngx_log_t *log);
  * aligns allocations bigger than page size at the page boundary
  */
 
-#if (NGX_HAVE_POSIX_MEMALIGN || NGX_HAVE_MEMALIGN)
+#if (NJET_HAVE_POSIX_MEMALIGN || NJET_HAVE_MEMALIGN)
 
 void *ngx_memalign(size_t alignment, size_t size, ngx_log_t *log);
 
@@ -42,4 +42,4 @@ extern ngx_uint_t  ngx_pagesize_shift;
 extern ngx_uint_t  ngx_cacheline_size;
 
 
-#endif /* _NGX_ALLOC_H_INCLUDED_ */
+#endif /* _NJET_ALLOC_H_INCLUDED_ */

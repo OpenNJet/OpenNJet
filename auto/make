@@ -3,22 +3,22 @@
 # Copyright (C) Nginx, Inc.
 
 
-echo "creating $NGX_MAKEFILE"
+echo "creating $NJET_MAKEFILE"
 
-mkdir -p $NGX_OBJS/src/core $NGX_OBJS/src/event $NGX_OBJS/src/event/modules \
-         $NGX_OBJS/src/os/unix $NGX_OBJS/src/os/win32 \
-         $NGX_OBJS/src/http $NGX_OBJS/src/http/v2 $NGX_OBJS/src/http/modules \
-         $NGX_OBJS/src/http/modules/perl \
-         $NGX_OBJS/src/mail \
-         $NGX_OBJS/src/stream \
-         $NGX_OBJS/src/misc
-
-
-ngx_objs_dir=$NGX_OBJS$ngx_regex_dirsep
-ngx_use_pch=`echo $NGX_USE_PCH | sed -e "s/\//$ngx_regex_dirsep/g"`
+mkdir -p $NJET_OBJS/src/core $NJET_OBJS/src/event $NJET_OBJS/src/event/modules \
+         $NJET_OBJS/src/os/unix $NJET_OBJS/src/os/win32 \
+         $NJET_OBJS/src/http $NJET_OBJS/src/http/v2 $NJET_OBJS/src/http/modules \
+         $NJET_OBJS/src/http/modules/perl \
+         $NJET_OBJS/src/mail \
+         $NJET_OBJS/src/stream \
+         $NJET_OBJS/src/misc
 
 
-cat << END                                                     > $NGX_MAKEFILE
+ngx_objs_dir=$NJET_OBJS$ngx_regex_dirsep
+ngx_use_pch=`echo $NJET_USE_PCH | sed -e "s/\//$ngx_regex_dirsep/g"`
+
+
+cat << END                                                     > $NJET_MAKEFILE
 
 CC =	$CC
 CFLAGS = $CFLAGS
@@ -28,20 +28,20 @@ LINK =	$LINK
 END
 
 
-if test -n "$NGX_PERL_CFLAGS"; then
-    echo NGX_PERL_CFLAGS = $NGX_PERL_CFLAGS                   >> $NGX_MAKEFILE
-    echo NGX_PM_CFLAGS = $NGX_PM_CFLAGS                       >> $NGX_MAKEFILE
-    echo NGX_PM_LDFLAGS = $NGX_PM_LDFLAGS                     >> $NGX_MAKEFILE
+if test -n "$NJET_PERL_CFLAGS"; then
+    echo NJET_PERL_CFLAGS = $NJET_PERL_CFLAGS                   >> $NJET_MAKEFILE
+    echo NJET_PM_CFLAGS = $NJET_PM_CFLAGS                       >> $NJET_MAKEFILE
+    echo NJET_PM_LDFLAGS = $NJET_PM_LDFLAGS                     >> $NJET_MAKEFILE
 fi
 
 
 # ALL_INCS, required by the addons and by OpenWatcom C precompiled headers
 
-ngx_incs=`echo $CORE_INCS $NGX_OBJS $HTTP_INCS $MAIL_INCS $STREAM_INCS\
+ngx_incs=`echo $CORE_INCS $NJET_OBJS $HTTP_INCS $MAIL_INCS $STREAM_INCS\
     | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont$ngx_include_opt\1/g" \
           -e "s/\//$ngx_regex_dirsep/g"`
 
-cat << END                                                    >> $NGX_MAKEFILE
+cat << END                                                    >> $NJET_MAKEFILE
 
 ALL_INCS = $ngx_include_opt$ngx_incs
 
@@ -53,15 +53,15 @@ ngx_all_srcs="$CORE_SRCS"
 
 # the core dependencies and include paths
 
-ngx_deps=`echo $CORE_DEPS $NGX_AUTO_CONFIG_H $NGX_PCH \
+ngx_deps=`echo $CORE_DEPS $NJET_AUTO_CONFIG_H $NJET_PCH \
     | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont\1/g" \
           -e "s/\//$ngx_regex_dirsep/g"`
 
-ngx_incs=`echo $CORE_INCS $NGX_OBJS \
+ngx_incs=`echo $CORE_INCS $NJET_OBJS \
     | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont$ngx_include_opt\1/g" \
           -e "s/\//$ngx_regex_dirsep/g"`
 
-cat << END                                                    >> $NGX_MAKEFILE
+cat << END                                                    >> $NJET_MAKEFILE
 
 CORE_DEPS = $ngx_deps
 
@@ -85,7 +85,7 @@ if [ $HTTP = YES ]; then
         | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont$ngx_include_opt\1/g" \
               -e "s/\//$ngx_regex_dirsep/g"`
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJET_MAKEFILE
 
 HTTP_DEPS = $ngx_deps
 
@@ -113,7 +113,7 @@ if [ $MAIL != NO ]; then
         | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont$ngx_include_opt\1/g" \
               -e "s/\//$ngx_regex_dirsep/g"`
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJET_MAKEFILE
 
 MAIL_DEPS = $ngx_deps
 
@@ -141,7 +141,7 @@ if [ $STREAM != NO ]; then
         | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont$ngx_include_opt\1/g" \
               -e "s/\//$ngx_regex_dirsep/g"`
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJET_MAKEFILE
 
 STREAM_DEPS = $ngx_deps
 
@@ -156,11 +156,11 @@ fi
 ngx_all_srcs="$ngx_all_srcs $MISC_SRCS"
 
 
-if test -n "$NGX_ADDON_SRCS$DYNAMIC_MODULES"; then
+if test -n "$NJET_ADDON_SRCS$DYNAMIC_MODULES"; then
 
-cat << END                                                >> $NGX_MAKEFILE
+cat << END                                                >> $NJET_MAKEFILE
 
-ADDON_DEPS = \$(CORE_DEPS) $NGX_ADDON_DEPS
+ADDON_DEPS = \$(CORE_DEPS) $NJET_ADDON_DEPS
 
 END
 
@@ -171,11 +171,11 @@ fi
 
 ngx_all_srcs=`echo $ngx_all_srcs | sed -e "s/\//$ngx_regex_dirsep/g"`
 
-for ngx_src in $NGX_ADDON_SRCS
+for ngx_src in $NJET_ADDON_SRCS
 do
     ngx_obj="addon/`basename \`dirname $ngx_src\``"
 
-    test -d $NGX_OBJS/$ngx_obj || mkdir -p $NGX_OBJS/$ngx_obj
+    test -d $NJET_OBJS/$ngx_obj || mkdir -p $NJET_OBJS/$ngx_obj
 
     ngx_obj=`echo $ngx_obj/\`basename $ngx_src\` \
         | sed -e "s/\//$ngx_regex_dirsep/g"`
@@ -184,21 +184,21 @@ do
 done
 
 ngx_all_objs=`echo $ngx_all_srcs \
-    | sed -e "s#\([^ ]*\.\)cpp#$NGX_OBJS\/\1$ngx_objext#g" \
-          -e "s#\([^ ]*\.\)cc#$NGX_OBJS\/\1$ngx_objext#g" \
-          -e "s#\([^ ]*\.\)c#$NGX_OBJS\/\1$ngx_objext#g" \
-          -e "s#\([^ ]*\.\)S#$NGX_OBJS\/\1$ngx_objext#g"`
+    | sed -e "s#\([^ ]*\.\)cpp#$NJET_OBJS\/\1$ngx_objext#g" \
+          -e "s#\([^ ]*\.\)cc#$NJET_OBJS\/\1$ngx_objext#g" \
+          -e "s#\([^ ]*\.\)c#$NJET_OBJS\/\1$ngx_objext#g" \
+          -e "s#\([^ ]*\.\)S#$NJET_OBJS\/\1$ngx_objext#g"`
 
-ngx_modules_c=`echo $NGX_MODULES_C | sed -e "s/\//$ngx_regex_dirsep/g"`
+ngx_modules_c=`echo $NJET_MODULES_C | sed -e "s/\//$ngx_regex_dirsep/g"`
 
 ngx_modules_obj=`echo $ngx_modules_c | sed -e "s/\(.*\.\)c/\1$ngx_objext/"`
 
 
-if test -n "$NGX_RES"; then
-   ngx_res=$NGX_RES
+if test -n "$NJET_RES"; then
+   ngx_res=$NJET_RES
 else
-   ngx_res="$NGX_RC $NGX_ICONS"
-   ngx_rcc=`echo $NGX_RCC | sed -e "s/\//$ngx_regex_dirsep/g"`
+   ngx_res="$NJET_RC $NJET_ICONS"
+   ngx_rcc=`echo $NJET_RCC | sed -e "s/\//$ngx_regex_dirsep/g"`
 fi
 
 ngx_deps=`echo $ngx_all_objs $ngx_modules_obj $ngx_res $LINK_DEPS \
@@ -210,8 +210,8 @@ ngx_objs=`echo $ngx_all_objs $ngx_modules_obj \
           -e "s/\//$ngx_regex_dirsep/g"`
 
 ngx_libs=
-if test -n "$NGX_LD_OPT$CORE_LIBS"; then
-    ngx_libs=`echo $NGX_LD_OPT $CORE_LIBS \
+if test -n "$NJET_LD_OPT$CORE_LIBS"; then
+    ngx_libs=`echo $NJET_LD_OPT $CORE_LIBS \
         | sed -e "s/\//$ngx_regex_dirsep/g" -e "s/^/$ngx_long_regex_cont/"`
 fi
 
@@ -222,14 +222,14 @@ ngx_main_link=${MAIN_LINK:+`echo $MAIN_LINK \
     | sed -e "s/\//$ngx_regex_dirsep/g" -e "s/^/$ngx_long_regex_cont/"`}
 
 
-cat << END                                                    >> $NGX_MAKEFILE
+cat << END                                                    >> $NJET_MAKEFILE
 
 build:	binary modules manpage
 
-binary:	$NGX_OBJS${ngx_dirsep}njet$ngx_binext
+binary:	$NJET_OBJS${ngx_dirsep}njet$ngx_binext
 
-$NGX_OBJS${ngx_dirsep}njet$ngx_binext:	$ngx_deps$ngx_spacer
-	\$(LINK) $ngx_long_start$ngx_binout$NGX_OBJS${ngx_dirsep}njet$ngx_binext$ngx_long_cont$ngx_objs$ngx_libs$ngx_link$ngx_main_link
+$NJET_OBJS${ngx_dirsep}njet$ngx_binext:	$ngx_deps$ngx_spacer
+	\$(LINK) $ngx_long_start$ngx_binout$NJET_OBJS${ngx_dirsep}njet$ngx_binext$ngx_long_cont$ngx_objs$ngx_libs$ngx_link$ngx_main_link
 	$ngx_rcc
 $ngx_long_end
 
@@ -239,16 +239,16 @@ END
 
 # ngx_modules.c
 
-if test -n "$NGX_PCH"; then
+if test -n "$NJET_PCH"; then
     ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
 else
     ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) \$(CORE_INCS)"
 fi
 
-cat << END                                                    >> $NGX_MAKEFILE
+cat << END                                                    >> $NJET_MAKEFILE
 
 $ngx_modules_obj:	\$(CORE_DEPS)$ngx_cont$ngx_modules_c
-	$ngx_cc$ngx_tab$ngx_objout$ngx_modules_obj$ngx_tab$ngx_modules_c$NGX_AUX
+	$ngx_cc$ngx_tab$ngx_objout$ngx_modules_obj$ngx_tab$ngx_modules_c$NJET_AUX
 
 END
 
@@ -264,10 +264,10 @@ do
               -e "s#^\(.*\.\)c\\$#$ngx_objs_dir\1$ngx_objext#g" \
               -e "s#^\(.*\.\)S\\$#$ngx_objs_dir\1$ngx_objext#g"`
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJET_MAKEFILE
 
 $ngx_obj:	\$(CORE_DEPS)$ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NJET_AUX
 
 END
 
@@ -278,11 +278,11 @@ done
 
 if [ $HTTP = YES ]; then
 
-    if test -n "$NGX_PCH"; then
+    if test -n "$NJET_PCH"; then
         ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
     else
         ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) \$(CORE_INCS) \$(HTTP_INCS)"
-        ngx_perl_cc="\$(CC) $ngx_compile_opt \$(NGX_PERL_CFLAGS)"
+        ngx_perl_cc="\$(CC) $ngx_compile_opt \$(NJET_PERL_CFLAGS)"
         ngx_perl_cc="$ngx_perl_cc \$(CORE_INCS) \$(HTTP_INCS)"
     fi
 
@@ -297,18 +297,18 @@ if [ $HTTP = YES ]; then
 
         if [ $ngx_source = src/http/modules/perl/ngx_http_perl_module.c ]; then
 
-            cat << END                                        >> $NGX_MAKEFILE
+            cat << END                                        >> $NJET_MAKEFILE
 
 $ngx_obj:	\$(CORE_DEPS) \$(HTTP_DEPS)$ngx_cont$ngx_src
-	$ngx_perl_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+	$ngx_perl_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NJET_AUX
 
 END
         else
 
-            cat << END                                        >> $NGX_MAKEFILE
+            cat << END                                        >> $NJET_MAKEFILE
 
 $ngx_obj:	\$(CORE_DEPS) \$(HTTP_DEPS)$ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NJET_AUX
 
 END
 
@@ -322,7 +322,7 @@ fi
 
 if [ $MAIL = YES ]; then
 
-    if test -n "$NGX_PCH"; then
+    if test -n "$NJET_PCH"; then
         ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
     else
         ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) \$(CORE_INCS) \$(MAIL_INCS)"
@@ -337,10 +337,10 @@ if [ $MAIL = YES ]; then
                   -e "s#^\(.*\.\)c\\$#$ngx_objs_dir\1$ngx_objext#g" \
                   -e "s#^\(.*\.\)S\\$#$ngx_objs_dir\1$ngx_objext#g"`
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJET_MAKEFILE
 
 $ngx_obj:	\$(CORE_DEPS) \$(MAIL_DEPS)$ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NJET_AUX
 
 END
     done
@@ -352,7 +352,7 @@ fi
 
 if [ $STREAM = YES ]; then
 
-    if test -n "$NGX_PCH"; then
+    if test -n "$NJET_PCH"; then
         ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
     else
         ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) \$(CORE_INCS) \$(STREAM_INCS)"
@@ -367,10 +367,10 @@ if [ $STREAM = YES ]; then
                   -e "s#^\(.*\.\)c\\$#$ngx_objs_dir\1$ngx_objext#g" \
                   -e "s#^\(.*\.\)S\\$#$ngx_objs_dir\1$ngx_objext#g"`
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJET_MAKEFILE
 
 $ngx_obj:	\$(CORE_DEPS) \$(STREAM_DEPS)$ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NJET_AUX
 
 END
     done
@@ -393,10 +393,10 @@ if test -n "$MISC_SRCS"; then
                   -e "s#^\(.*\.\)c\\$#$ngx_objs_dir\1$ngx_objext#g" \
                   -e "s#^\(.*\.\)S\\$#$ngx_objs_dir\1$ngx_objext#g"`
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJET_MAKEFILE
 
 $ngx_obj:	\$(CORE_DEPS) $ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NJET_AUX
 
 END
     done
@@ -406,11 +406,11 @@ fi
 
 # the addons sources
 
-if test -n "$NGX_ADDON_SRCS"; then
+if test -n "$NJET_ADDON_SRCS"; then
 
     ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
 
-    for ngx_src in $NGX_ADDON_SRCS
+    for ngx_src in $NJET_ADDON_SRCS
     do
         ngx_obj="addon/`basename \`dirname $ngx_src\``"
 
@@ -425,10 +425,10 @@ if test -n "$NGX_ADDON_SRCS"; then
 
         ngx_src=`echo $ngx_src | sed -e "s/\//$ngx_regex_dirsep/g"`
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJET_MAKEFILE
 
 $ngx_obj:	\$(ADDON_DEPS)$ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NJET_AUX
 
 END
     done
@@ -438,9 +438,9 @@ fi
 
 # the addons config.make
 
-if test -n "$NGX_ADDONS$DYNAMIC_ADDONS"; then
+if test -n "$NJET_ADDONS$DYNAMIC_ADDONS"; then
 
-    for ngx_addon_dir in $NGX_ADDONS $DYNAMIC_ADDONS
+    for ngx_addon_dir in $NJET_ADDONS $DYNAMIC_ADDONS
     do
         if test -f $ngx_addon_dir/config.make; then
             . $ngx_addon_dir/config.make
@@ -451,13 +451,13 @@ fi
 
 # Win32 resource file
 
-if test -n "$NGX_RES"; then
+if test -n "$NJET_RES"; then
 
-    ngx_res=`echo "$NGX_RES:	$NGX_RC $NGX_ICONS" \
+    ngx_res=`echo "$NJET_RES:	$NJET_RC $NJET_ICONS" \
                  | sed -e "s/\//$ngx_regex_dirsep/g"`
-    ngx_rcc=`echo $NGX_RCC | sed -e "s/\//$ngx_regex_dirsep/g"`
+    ngx_rcc=`echo $NJET_RCC | sed -e "s/\//$ngx_regex_dirsep/g"`
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJET_MAKEFILE
 
 $ngx_res
 	$ngx_rcc
@@ -469,17 +469,17 @@ fi
 
 # the precompiled headers
 
-if test -n "$NGX_PCH"; then
-    echo "#include <ngx_config.h>" > $NGX_OBJS/ngx_pch.c
+if test -n "$NJET_PCH"; then
+    echo "#include <ngx_config.h>" > $NJET_OBJS/ngx_pch.c
 
-    ngx_pch="src/core/ngx_config.h $OS_CONFIG $NGX_OBJS/ngx_auto_config.h"
-    ngx_pch=`echo "$NGX_PCH:	$ngx_pch" | sed -e "s/\//$ngx_regex_dirsep/g"`
+    ngx_pch="src/core/ngx_config.h $OS_CONFIG $NJET_OBJS/ngx_auto_config.h"
+    ngx_pch=`echo "$NJET_PCH:	$ngx_pch" | sed -e "s/\//$ngx_regex_dirsep/g"`
 
-    ngx_src="\$(CC) \$(CFLAGS) $NGX_BUILD_PCH $ngx_compile_opt \$(ALL_INCS)"
-    ngx_src="$ngx_src $ngx_objout$NGX_OBJS/ngx_pch.obj $NGX_OBJS/ngx_pch.c"
+    ngx_src="\$(CC) \$(CFLAGS) $NJET_BUILD_PCH $ngx_compile_opt \$(ALL_INCS)"
+    ngx_src="$ngx_src $ngx_objout$NJET_OBJS/ngx_pch.obj $NJET_OBJS/ngx_pch.c"
     ngx_src=`echo $ngx_src | sed -e "s/\//$ngx_regex_dirsep/g"`
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJET_MAKEFILE
 
 $ngx_pch
 	$ngx_src
@@ -491,11 +491,11 @@ fi
 
 # dynamic modules
 
-if test -n "$NGX_PCH"; then
+if test -n "$NJET_PCH"; then
     ngx_cc="\$(CC) $ngx_compile_opt $ngx_pic_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
 else
     ngx_cc="\$(CC) $ngx_compile_opt $ngx_pic_opt \$(CFLAGS) \$(ALL_INCS)"
-    ngx_perl_cc="\$(CC) $ngx_compile_opt $ngx_pic_opt \$(NGX_PERL_CFLAGS)"
+    ngx_perl_cc="\$(CC) $ngx_compile_opt $ngx_pic_opt \$(NJET_PERL_CFLAGS)"
     ngx_perl_cc="$ngx_perl_cc \$(ALL_INCS)"
 fi
 
@@ -508,7 +508,7 @@ do
     eval ngx_module_modules="\$${ngx_module}_MODULES"
     eval ngx_module_order="\$${ngx_module}_ORDER"
 
-    ngx_modules_c=$NGX_OBJS/${ngx_module}_modules.c
+    ngx_modules_c=$NJET_OBJS/${ngx_module}_modules.c
 
     cat << END                                    > $ngx_modules_c
 
@@ -576,7 +576,7 @@ END
                 ;;
             *)
                 ngx_obj="addon/`basename \`dirname $ngx_src\``"
-                mkdir -p $NGX_OBJS/$ngx_obj
+                mkdir -p $NJET_OBJS/$ngx_obj
                 ngx_obj="$ngx_obj/`basename $ngx_src`"
                 ;;
         esac
@@ -585,10 +585,10 @@ END
     done
 
     ngx_module_objs=`echo $ngx_module_objs \
-        | sed -e "s#\([^ ]*\.\)cpp#$NGX_OBJS\/\1$ngx_objext#g" \
-              -e "s#\([^ ]*\.\)cc#$NGX_OBJS\/\1$ngx_objext#g" \
-              -e "s#\([^ ]*\.\)c#$NGX_OBJS\/\1$ngx_objext#g" \
-              -e "s#\([^ ]*\.\)S#$NGX_OBJS\/\1$ngx_objext#g"`
+        | sed -e "s#\([^ ]*\.\)cpp#$NJET_OBJS\/\1$ngx_objext#g" \
+              -e "s#\([^ ]*\.\)cc#$NJET_OBJS\/\1$ngx_objext#g" \
+              -e "s#\([^ ]*\.\)c#$NJET_OBJS\/\1$ngx_objext#g" \
+              -e "s#\([^ ]*\.\)S#$NJET_OBJS\/\1$ngx_objext#g"`
 
     ngx_deps=`echo $ngx_module_objs $ngx_modules_obj $LINK_DEPS \
         | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont\1/g" \
@@ -598,15 +598,15 @@ END
         | sed -e "s/  *\([^ ][^ ]*\)/$ngx_long_regex_cont\1/g" \
               -e "s/\//$ngx_regex_dirsep/g"`
 
-    ngx_obj=$NGX_OBJS$ngx_dirsep$ngx_module$ngx_modext
+    ngx_obj=$NJET_OBJS$ngx_dirsep$ngx_module$ngx_modext
 
-    if [ "$NGX_PLATFORM" = win32 ]; then
+    if [ "$NJET_PLATFORM" = win32 ]; then
         ngx_module_libs="$CORE_LIBS $ngx_module_libs"
     fi
 
     ngx_libs=
-    if test -n "$NGX_LD_OPT$ngx_module_libs"; then
-        ngx_libs=`echo $NGX_LD_OPT $ngx_module_libs \
+    if test -n "$NJET_LD_OPT$ngx_module_libs"; then
+        ngx_libs=`echo $NJET_LD_OPT $ngx_module_libs \
             | sed -e "s/\//$ngx_regex_dirsep/g" -e "s/^/$ngx_long_regex_cont/"`
     fi
 
@@ -617,7 +617,7 @@ END
         | sed -e "s/\//$ngx_regex_dirsep/g" -e "s/^/$ngx_long_regex_cont/"`}
 
 
-    cat << END                                            >> $NGX_MAKEFILE
+    cat << END                                            >> $NJET_MAKEFILE
 
 modules:	$ngx_obj
 
@@ -626,7 +626,7 @@ $ngx_obj:	$ngx_deps$ngx_spacer
 $ngx_long_end
 
 $ngx_modules_obj:	\$(CORE_DEPS)$ngx_cont$ngx_modules_c
-	$ngx_cc$ngx_tab$ngx_objout$ngx_modules_obj$ngx_tab$ngx_modules_c$NGX_AUX
+	$ngx_cc$ngx_tab$ngx_objout$ngx_modules_obj$ngx_tab$ngx_modules_c$NJET_AUX
 
 END
 
@@ -653,18 +653,18 @@ END
 
         if [ $ngx_source = src/http/modules/perl/ngx_http_perl_module.c ]; then
 
-            cat << END                                        >> $NGX_MAKEFILE
+            cat << END                                        >> $NJET_MAKEFILE
 
 $ngx_obj:	\$(ADDON_DEPS)$ngx_cont$ngx_src
-	$ngx_perl_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+	$ngx_perl_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NJET_AUX
 
 END
         else
 
-            cat << END                                        >> $NGX_MAKEFILE
+            cat << END                                        >> $NJET_MAKEFILE
 
 $ngx_obj:	\$(ADDON_DEPS)$ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NJET_AUX
 
 END
 

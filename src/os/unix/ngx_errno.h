@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_ERRNO_H_INCLUDED_
-#define _NGX_ERRNO_H_INCLUDED_
+#ifndef _NJET_ERRNO_H_INCLUDED_
+#define _NJET_ERRNO_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -15,54 +15,54 @@
 
 typedef int               ngx_err_t;
 
-#define NGX_EPERM         EPERM
-#define NGX_ENOENT        ENOENT
-#define NGX_ENOPATH       ENOENT
-#define NGX_ESRCH         ESRCH
-#define NGX_EINTR         EINTR
-#define NGX_ECHILD        ECHILD
-#define NGX_ENOMEM        ENOMEM
-#define NGX_EACCES        EACCES
-#define NGX_EBUSY         EBUSY
-#define NGX_EEXIST        EEXIST
-#define NGX_EEXIST_FILE   EEXIST
-#define NGX_EXDEV         EXDEV
-#define NGX_ENOTDIR       ENOTDIR
-#define NGX_EISDIR        EISDIR
-#define NGX_EINVAL        EINVAL
-#define NGX_ENFILE        ENFILE
-#define NGX_EMFILE        EMFILE
-#define NGX_ENOSPC        ENOSPC
-#define NGX_EPIPE         EPIPE
-#define NGX_EINPROGRESS   EINPROGRESS
-#define NGX_ENOPROTOOPT   ENOPROTOOPT
-#define NGX_EOPNOTSUPP    EOPNOTSUPP
-#define NGX_EADDRINUSE    EADDRINUSE
-#define NGX_ECONNABORTED  ECONNABORTED
-#define NGX_ECONNRESET    ECONNRESET
-#define NGX_ENOTCONN      ENOTCONN
-#define NGX_ETIMEDOUT     ETIMEDOUT
-#define NGX_ECONNREFUSED  ECONNREFUSED
-#define NGX_ENAMETOOLONG  ENAMETOOLONG
-#define NGX_ENETDOWN      ENETDOWN
-#define NGX_ENETUNREACH   ENETUNREACH
-#define NGX_EHOSTDOWN     EHOSTDOWN
-#define NGX_EHOSTUNREACH  EHOSTUNREACH
-#define NGX_ENOSYS        ENOSYS
-#define NGX_ECANCELED     ECANCELED
-#define NGX_EILSEQ        EILSEQ
-#define NGX_ENOMOREFILES  0
-#define NGX_ELOOP         ELOOP
-#define NGX_EBADF         EBADF
+#define NJET_EPERM         EPERM
+#define NJET_ENOENT        ENOENT
+#define NJET_ENOPATH       ENOENT
+#define NJET_ESRCH         ESRCH
+#define NJET_EINTR         EINTR
+#define NJET_ECHILD        ECHILD
+#define NJET_ENOMEM        ENOMEM
+#define NJET_EACCES        EACCES
+#define NJET_EBUSY         EBUSY
+#define NJET_EEXIST        EEXIST
+#define NJET_EEXIST_FILE   EEXIST
+#define NJET_EXDEV         EXDEV
+#define NJET_ENOTDIR       ENOTDIR
+#define NJET_EISDIR        EISDIR
+#define NJET_EINVAL        EINVAL
+#define NJET_ENFILE        ENFILE
+#define NJET_EMFILE        EMFILE
+#define NJET_ENOSPC        ENOSPC
+#define NJET_EPIPE         EPIPE
+#define NJET_EINPROGRESS   EINPROGRESS
+#define NJET_ENOPROTOOPT   ENOPROTOOPT
+#define NJET_EOPNOTSUPP    EOPNOTSUPP
+#define NJET_EADDRINUSE    EADDRINUSE
+#define NJET_ECONNABORTED  ECONNABORTED
+#define NJET_ECONNRESET    ECONNRESET
+#define NJET_ENOTCONN      ENOTCONN
+#define NJET_ETIMEDOUT     ETIMEDOUT
+#define NJET_ECONNREFUSED  ECONNREFUSED
+#define NJET_ENAMETOOLONG  ENAMETOOLONG
+#define NJET_ENETDOWN      ENETDOWN
+#define NJET_ENETUNREACH   ENETUNREACH
+#define NJET_EHOSTDOWN     EHOSTDOWN
+#define NJET_EHOSTUNREACH  EHOSTUNREACH
+#define NJET_ENOSYS        ENOSYS
+#define NJET_ECANCELED     ECANCELED
+#define NJET_EILSEQ        EILSEQ
+#define NJET_ENOMOREFILES  0
+#define NJET_ELOOP         ELOOP
+#define NJET_EBADF         EBADF
 
-#if (NGX_HAVE_OPENAT)
-#define NGX_EMLINK        EMLINK
+#if (NJET_HAVE_OPENAT)
+#define NJET_EMLINK        EMLINK
 #endif
 
 #if (__hpux__)
-#define NGX_EAGAIN        EWOULDBLOCK
+#define NJET_EAGAIN        EWOULDBLOCK
 #else
-#define NGX_EAGAIN        EAGAIN
+#define NJET_EAGAIN        EAGAIN
 #endif
 
 
@@ -76,4 +76,4 @@ u_char *ngx_strerror(ngx_err_t err, u_char *errstr, size_t size);
 ngx_int_t ngx_strerror_init(void);
 
 
-#endif /* _NGX_ERRNO_H_INCLUDED_ */
+#endif /* _NJET_ERRNO_H_INCLUDED_ */

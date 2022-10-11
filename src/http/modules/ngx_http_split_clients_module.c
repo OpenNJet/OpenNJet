@@ -30,9 +30,9 @@ static char *ngx_http_split_clients(ngx_conf_t *cf, ngx_command_t *dummy,
 static ngx_command_t  ngx_http_split_clients_commands[] = {
 
     { ngx_string("split_clients"),
-      NGX_HTTP_MAIN_CONF|NGX_CONF_BLOCK|NGX_CONF_TAKE2,
+      NJET_HTTP_MAIN_CONF|NJET_CONF_BLOCK|NJET_CONF_TAKE2,
       ngx_conf_split_clients_block,
-      NGX_HTTP_MAIN_CONF_OFFSET,
+      NJET_HTTP_MAIN_CONF_OFFSET,
       0,
       NULL },
 
@@ -56,10 +56,10 @@ static ngx_http_module_t  ngx_http_split_clients_module_ctx = {
 
 
 ngx_module_t  ngx_http_split_clients_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_http_split_clients_module_ctx,    /* module context */
     ngx_http_split_clients_commands,       /* module directives */
-    NGX_HTTP_MODULE,                       /* module type */
+    NJET_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -67,7 +67,7 @@ ngx_module_t  ngx_http_split_clients_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -84,8 +84,8 @@ ngx_http_split_clients_variable(ngx_http_request_t *r,
 
     *v = ngx_http_variable_null_value;
 
-    if (ngx_http_complex_value(r, &ctx->value, &val) != NGX_OK) {
-        return NGX_OK;
+    if (ngx_http_complex_value(r, &ctx->value, &val) != NJET_OK) {
+        return NJET_OK;
     }
 
     hash = ngx_murmur_hash2(val.data, val.len);
@@ -94,16 +94,16 @@ ngx_http_split_clients_variable(ngx_http_request_t *r,
 
     for (i = 0; i < ctx->parts.nelts; i++) {
 
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "http split: %uD %uD", hash, part[i].percent);
 
         if (hash < part[i].percent || part[i].percent == 0) {
             *v = part[i].value;
-            return NGX_OK;
+            return NJET_OK;
         }
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -122,7 +122,7 @@ ngx_conf_split_clients_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     ctx = ngx_pcalloc(cf->pool, sizeof(ngx_http_split_clients_ctx_t));
     if (ctx == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     value = cf->args->elts;
@@ -133,24 +133,24 @@ ngx_conf_split_clients_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ccv.value = &value[1];
     ccv.complex_value = &ctx->value;
 
-    if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
-        return NGX_CONF_ERROR;
+    if (ngx_http_compile_complex_value(&ccv) != NJET_OK) {
+        return NJET_CONF_ERROR;
     }
 
     name = value[2];
 
     if (name.data[0] != '$') {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "invalid variable name \"%V\"", &name);
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     name.len--;
     name.data++;
 
-    var = ngx_http_add_variable(cf, &name, NGX_HTTP_VAR_CHANGEABLE);
+    var = ngx_http_add_variable(cf, &name, NJET_HTTP_VAR_CHANGEABLE);
     if (var == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     var->get_handler = ngx_http_split_clients_variable;
@@ -158,9 +158,9 @@ ngx_conf_split_clients_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     if (ngx_array_init(&ctx->parts, cf->pool, 2,
                        sizeof(ngx_http_split_clients_part_t))
-        != NGX_OK)
+        != NJET_OK)
     {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     save = *cf;
@@ -172,7 +172,7 @@ ngx_conf_split_clients_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     *cf = save;
 
-    if (rv != NGX_CONF_OK) {
+    if (rv != NJET_CONF_OK) {
         return rv;
     }
 
@@ -183,9 +183,9 @@ ngx_conf_split_clients_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     for (i = 0; i < ctx->parts.nelts; i++) {
         sum = part[i].percent ? sum + part[i].percent : 10000;
         if (sum > 10000) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                "percent total is greater than 100%%");
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         if (part[i].percent) {
@@ -211,7 +211,7 @@ ngx_http_split_clients(ngx_conf_t *cf, ngx_command_t *dummy, void *conf)
 
     part = ngx_array_push(&ctx->parts);
     if (part == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     if (value[0].len == 1 && value[0].data[0] == '*') {
@@ -223,7 +223,7 @@ ngx_http_split_clients(ngx_conf_t *cf, ngx_command_t *dummy, void *conf)
         }
 
         n = ngx_atofp(value[0].data, value[0].len - 1, 2);
-        if (n == NGX_ERROR || n == 0) {
+        if (n == NJET_ERROR || n == 0) {
             goto invalid;
         }
 
@@ -236,11 +236,11 @@ ngx_http_split_clients(ngx_conf_t *cf, ngx_command_t *dummy, void *conf)
     part->value.not_found = 0;
     part->value.data = value[1].data;
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 
 invalid:
 
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+    ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                        "invalid percent value \"%V\"", &value[0]);
-    return NGX_CONF_ERROR;
+    return NJET_CONF_ERROR;
 }

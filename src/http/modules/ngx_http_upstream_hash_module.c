@@ -66,9 +66,9 @@ static char *ngx_http_upstream_hash(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_http_upstream_hash_commands[] = {
 
     { ngx_string("hash"),
-      NGX_HTTP_UPS_CONF|NGX_CONF_TAKE12,
+      NJET_HTTP_UPS_CONF|NJET_CONF_TAKE12,
       ngx_http_upstream_hash,
-      NGX_HTTP_SRV_CONF_OFFSET,
+      NJET_HTTP_SRV_CONF_OFFSET,
       0,
       NULL },
 
@@ -92,10 +92,10 @@ static ngx_http_module_t  ngx_http_upstream_hash_module_ctx = {
 
 
 ngx_module_t  ngx_http_upstream_hash_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_http_upstream_hash_module_ctx,    /* module context */
     ngx_http_upstream_hash_commands,       /* module directives */
-    NGX_HTTP_MODULE,                       /* module type */
+    NJET_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -103,20 +103,20 @@ ngx_module_t  ngx_http_upstream_hash_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
 static ngx_int_t
 ngx_http_upstream_init_hash(ngx_conf_t *cf, ngx_http_upstream_srv_conf_t *us)
 {
-    if (ngx_http_upstream_init_round_robin(cf, us) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_http_upstream_init_round_robin(cf, us) != NJET_OK) {
+        return NJET_ERROR;
     }
 
     us->peer.init = ngx_http_upstream_init_hash_peer;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -129,24 +129,24 @@ ngx_http_upstream_init_hash_peer(ngx_http_request_t *r,
 
     hp = ngx_palloc(r->pool, sizeof(ngx_http_upstream_hash_peer_data_t));
     if (hp == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     r->upstream->peer.data = &hp->rrp;
 
-    if (ngx_http_upstream_init_round_robin_peer(r, us) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_http_upstream_init_round_robin_peer(r, us) != NJET_OK) {
+        return NJET_ERROR;
     }
 
     r->upstream->peer.get = ngx_http_upstream_get_hash_peer;
 
     hcf = ngx_http_conf_upstream_srv_conf(us, ngx_http_upstream_hash_module);
 
-    if (ngx_http_complex_value(r, &hcf->key, &hp->key) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_http_complex_value(r, &hcf->key, &hp->key) != NJET_OK) {
+        return NJET_ERROR;
     }
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "upstream hash key:\"%V\"", &hp->key);
 
     hp->conf = hcf;
@@ -155,7 +155,7 @@ ngx_http_upstream_init_hash_peer(ngx_http_request_t *r,
     hp->hash = 0;
     hp->get_rr_peer = ngx_http_upstream_get_round_robin_peer;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -165,7 +165,7 @@ ngx_http_upstream_get_hash_peer(ngx_peer_connection_t *pc, void *data)
     ngx_http_upstream_hash_peer_data_t  *hp = data;
 
     time_t                        now;
-    u_char                        buf[NGX_INT_T_LEN];
+    u_char                        buf[NJET_INT_T_LEN];
     size_t                        size;
     uint32_t                      hash;
     ngx_int_t                     w;
@@ -173,7 +173,7 @@ ngx_http_upstream_get_hash_peer(ngx_peer_connection_t *pc, void *data)
     ngx_uint_t                    n, p;
     ngx_http_upstream_rr_peer_t  *peer;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, pc->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, pc->log, 0,
                    "get hash peer, try: %ui", pc->tries);
 
     ngx_http_upstream_rr_peers_rlock(hp->rrp.peers);
@@ -230,7 +230,7 @@ ngx_http_upstream_get_hash_peer(ngx_peer_connection_t *pc, void *data)
 
         ngx_http_upstream_rr_peer_lock(hp->rrp.peers, peer);
 
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, pc->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, pc->log, 0,
                        "get hash peer, value:%uD, peer:%ui", hp->hash, p);
 
         if (peer->down) {
@@ -278,7 +278,7 @@ ngx_http_upstream_get_hash_peer(ngx_peer_connection_t *pc, void *data)
 
     hp->rrp.tried[n] |= m;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -299,8 +299,8 @@ ngx_http_upstream_init_chash(ngx_conf_t *cf, ngx_http_upstream_srv_conf_t *us)
         u_char                          byte[4];
     } prev_hash;
 
-    if (ngx_http_upstream_init_round_robin(cf, us) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_http_upstream_init_round_robin(cf, us) != NJET_OK) {
+        return NJET_ERROR;
     }
 
     us->peer.init = ngx_http_upstream_init_chash_peer;
@@ -313,7 +313,7 @@ ngx_http_upstream_init_chash(ngx_conf_t *cf, ngx_http_upstream_srv_conf_t *us)
 
     points = ngx_palloc(cf->pool, size);
     if (points == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     points->number = 0;
@@ -377,7 +377,7 @@ ngx_http_upstream_init_chash(ngx_conf_t *cf, ngx_http_upstream_srv_conf_t *us)
             points->point[points->number].server = server;
             points->number++;
 
-#if (NGX_HAVE_LITTLE_ENDIAN)
+#if (NJET_HAVE_LITTLE_ENDIAN)
             prev_hash.value = hash;
 #else
             prev_hash.byte[0] = (u_char) (hash & 0xff);
@@ -404,7 +404,7 @@ ngx_http_upstream_init_chash(ngx_conf_t *cf, ngx_http_upstream_srv_conf_t *us)
     hcf = ngx_http_conf_upstream_srv_conf(us, ngx_http_upstream_hash_module);
     hcf->points = points;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -468,8 +468,8 @@ ngx_http_upstream_init_chash_peer(ngx_http_request_t *r,
     ngx_http_upstream_hash_srv_conf_t   *hcf;
     ngx_http_upstream_hash_peer_data_t  *hp;
 
-    if (ngx_http_upstream_init_hash_peer(r, us) != NGX_OK) {
-        return NGX_ERROR;
+    if (ngx_http_upstream_init_hash_peer(r, us) != NJET_OK) {
+        return NJET_ERROR;
     }
 
     r->upstream->peer.get = ngx_http_upstream_get_chash_peer;
@@ -485,7 +485,7 @@ ngx_http_upstream_init_chash_peer(ngx_http_request_t *r,
 
     ngx_http_upstream_rr_peers_unlock(hp->rrp.peers);
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -504,7 +504,7 @@ ngx_http_upstream_get_chash_peer(ngx_peer_connection_t *pc, void *data)
     ngx_http_upstream_chash_points_t   *points;
     ngx_http_upstream_hash_srv_conf_t  *hcf;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_HTTP, pc->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, pc->log, 0,
                    "get consistent hash peer, try: %ui", pc->tries);
 
     ngx_http_upstream_rr_peers_wlock(hp->rrp.peers);
@@ -526,7 +526,7 @@ ngx_http_upstream_get_chash_peer(ngx_peer_connection_t *pc, void *data)
     for ( ;; ) {
         server = point[hp->hash % points->number].server;
 
-        ngx_log_debug2(NGX_LOG_DEBUG_HTTP, pc->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, pc->log, 0,
                        "consistent hash peer:%uD, server:\"%V\"",
                        hp->hash, server);
 
@@ -615,7 +615,7 @@ found:
 
     hp->rrp.tried[n] |= m;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -652,23 +652,23 @@ ngx_http_upstream_hash(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ccv.value = &value[1];
     ccv.complex_value = &hcf->key;
 
-    if (ngx_http_compile_complex_value(&ccv) != NGX_OK) {
-        return NGX_CONF_ERROR;
+    if (ngx_http_compile_complex_value(&ccv) != NJET_OK) {
+        return NJET_CONF_ERROR;
     }
 
     uscf = ngx_http_conf_get_module_srv_conf(cf, ngx_http_upstream_module);
 
     if (uscf->peer.init_upstream) {
-        ngx_conf_log_error(NGX_LOG_WARN, cf, 0,
+        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
                            "load balancing method redefined");
     }
 
-    uscf->flags = NGX_HTTP_UPSTREAM_CREATE
-                  |NGX_HTTP_UPSTREAM_WEIGHT
-                  |NGX_HTTP_UPSTREAM_MAX_CONNS
-                  |NGX_HTTP_UPSTREAM_MAX_FAILS
-                  |NGX_HTTP_UPSTREAM_FAIL_TIMEOUT
-                  |NGX_HTTP_UPSTREAM_DOWN;
+    uscf->flags = NJET_HTTP_UPSTREAM_CREATE
+                  |NJET_HTTP_UPSTREAM_WEIGHT
+                  |NJET_HTTP_UPSTREAM_MAX_CONNS
+                  |NJET_HTTP_UPSTREAM_MAX_FAILS
+                  |NJET_HTTP_UPSTREAM_FAIL_TIMEOUT
+                  |NJET_HTTP_UPSTREAM_DOWN;
 
     if (cf->args->nelts == 2) {
         uscf->peer.init_upstream = ngx_http_upstream_init_hash;
@@ -677,10 +677,10 @@ ngx_http_upstream_hash(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         uscf->peer.init_upstream = ngx_http_upstream_init_chash;
 
     } else {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "invalid parameter \"%V\"", &value[2]);
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }

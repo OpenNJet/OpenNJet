@@ -8,35 +8,35 @@
 #include <ngx_core.h>
 
 
-#define NGX_SLAB_PAGE_MASK   3
-#define NGX_SLAB_PAGE        0
-#define NGX_SLAB_BIG         1
-#define NGX_SLAB_EXACT       2
-#define NGX_SLAB_SMALL       3
+#define NJET_SLAB_PAGE_MASK   3
+#define NJET_SLAB_PAGE        0
+#define NJET_SLAB_BIG         1
+#define NJET_SLAB_EXACT       2
+#define NJET_SLAB_SMALL       3
 
-#if (NGX_PTR_SIZE == 4)
+#if (NJET_PTR_SIZE == 4)
 
-#define NGX_SLAB_PAGE_FREE   0
-#define NGX_SLAB_PAGE_BUSY   0xffffffff
-#define NGX_SLAB_PAGE_START  0x80000000
+#define NJET_SLAB_PAGE_FREE   0
+#define NJET_SLAB_PAGE_BUSY   0xffffffff
+#define NJET_SLAB_PAGE_START  0x80000000
 
-#define NGX_SLAB_SHIFT_MASK  0x0000000f
-#define NGX_SLAB_MAP_MASK    0xffff0000
-#define NGX_SLAB_MAP_SHIFT   16
+#define NJET_SLAB_SHIFT_MASK  0x0000000f
+#define NJET_SLAB_MAP_MASK    0xffff0000
+#define NJET_SLAB_MAP_SHIFT   16
 
-#define NGX_SLAB_BUSY        0xffffffff
+#define NJET_SLAB_BUSY        0xffffffff
 
-#else /* (NGX_PTR_SIZE == 8) */
+#else /* (NJET_PTR_SIZE == 8) */
 
-#define NGX_SLAB_PAGE_FREE   0
-#define NGX_SLAB_PAGE_BUSY   0xffffffffffffffff
-#define NGX_SLAB_PAGE_START  0x8000000000000000
+#define NJET_SLAB_PAGE_FREE   0
+#define NJET_SLAB_PAGE_BUSY   0xffffffffffffffff
+#define NJET_SLAB_PAGE_START  0x8000000000000000
 
-#define NGX_SLAB_SHIFT_MASK  0x000000000000000f
-#define NGX_SLAB_MAP_MASK    0xffffffff00000000
-#define NGX_SLAB_MAP_SHIFT   32
+#define NJET_SLAB_SHIFT_MASK  0x000000000000000f
+#define NJET_SLAB_MAP_MASK    0xffffffff00000000
+#define NJET_SLAB_MAP_SHIFT   32
 
-#define NGX_SLAB_BUSY        0xffffffffffffffff
+#define NJET_SLAB_BUSY        0xffffffffffffffff
 
 #endif
 
@@ -44,21 +44,21 @@
 #define ngx_slab_slots(pool)                                                  \
     (ngx_slab_page_t *) ((u_char *) (pool) + sizeof(ngx_slab_pool_t))
 
-#define ngx_slab_page_type(page)   ((page)->prev & NGX_SLAB_PAGE_MASK)
+#define ngx_slab_page_type(page)   ((page)->prev & NJET_SLAB_PAGE_MASK)
 
 #define ngx_slab_page_prev(page)                                              \
-    (ngx_slab_page_t *) ((page)->prev & ~NGX_SLAB_PAGE_MASK)
+    (ngx_slab_page_t *) ((page)->prev & ~NJET_SLAB_PAGE_MASK)
 
 #define ngx_slab_page_addr(pool, page)                                        \
     ((((page) - (pool)->pages) << ngx_pagesize_shift)                         \
      + (uintptr_t) (pool)->start)
 
 
-#if (NGX_DEBUG_MALLOC)
+#if (NJET_DEBUG_MALLOC)
 
 #define ngx_slab_junk(p, size)     ngx_memset(p, 0xA5, size)
 
-#elif (NGX_HAVE_DEBUG_MALLOC)
+#elif (NJET_HAVE_DEBUG_MALLOC)
 
 #define ngx_slab_junk(p, size)                                                \
     if (ngx_debug_malloc)          ngx_memset(p, 0xA5, size)
@@ -190,7 +190,7 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
 
     if (size > ngx_slab_max_size) {
 
-        ngx_log_debug1(NGX_LOG_DEBUG_ALLOC, ngx_cycle->log, 0,
+        ngx_log_debug1(NJET_LOG_DEBUG_ALLOC, ngx_cycle->log, 0,
                        "slab alloc: %uz", size);
 
         page = ngx_slab_alloc_pages(pool, (size >> ngx_pagesize_shift)
@@ -217,7 +217,7 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
 
     pool->stats[slot].reqs++;
 
-    ngx_log_debug2(NGX_LOG_DEBUG_ALLOC, ngx_cycle->log, 0,
+    ngx_log_debug2(NJET_LOG_DEBUG_ALLOC, ngx_cycle->log, 0,
                    "slab alloc: %uz slot: %ui", size, slot);
 
     slots = ngx_slab_slots(pool);
@@ -233,7 +233,7 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
 
             for (n = 0; n < map; n++) {
 
-                if (bitmap[n] != NGX_SLAB_BUSY) {
+                if (bitmap[n] != NJET_SLAB_BUSY) {
 
                     for (m = 1, i = 0; m; m <<= 1, i++) {
                         if (bitmap[n] & m) {
@@ -248,9 +248,9 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
 
                         pool->stats[slot].used++;
 
-                        if (bitmap[n] == NGX_SLAB_BUSY) {
+                        if (bitmap[n] == NJET_SLAB_BUSY) {
                             for (n = n + 1; n < map; n++) {
-                                if (bitmap[n] != NGX_SLAB_BUSY) {
+                                if (bitmap[n] != NJET_SLAB_BUSY) {
                                     goto done;
                                 }
                             }
@@ -260,7 +260,7 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
                             page->next->prev = page->prev;
 
                             page->next = NULL;
-                            page->prev = NGX_SLAB_SMALL;
+                            page->prev = NJET_SLAB_SMALL;
                         }
 
                         goto done;
@@ -277,13 +277,13 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
 
                 page->slab |= m;
 
-                if (page->slab == NGX_SLAB_BUSY) {
+                if (page->slab == NJET_SLAB_BUSY) {
                     prev = ngx_slab_page_prev(page);
                     prev->next = page->next;
                     page->next->prev = page->prev;
 
                     page->next = NULL;
-                    page->prev = NGX_SLAB_EXACT;
+                    page->prev = NJET_SLAB_EXACT;
                 }
 
                 p = ngx_slab_page_addr(pool, page) + (i << shift);
@@ -296,9 +296,9 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
         } else { /* shift > ngx_slab_exact_shift */
 
             mask = ((uintptr_t) 1 << (ngx_pagesize >> shift)) - 1;
-            mask <<= NGX_SLAB_MAP_SHIFT;
+            mask <<= NJET_SLAB_MAP_SHIFT;
 
-            for (m = (uintptr_t) 1 << NGX_SLAB_MAP_SHIFT, i = 0;
+            for (m = (uintptr_t) 1 << NJET_SLAB_MAP_SHIFT, i = 0;
                  m & mask;
                  m <<= 1, i++)
             {
@@ -308,13 +308,13 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
 
                 page->slab |= m;
 
-                if ((page->slab & NGX_SLAB_MAP_MASK) == mask) {
+                if ((page->slab & NJET_SLAB_MAP_MASK) == mask) {
                     prev = ngx_slab_page_prev(page);
                     prev->next = page->next;
                     page->next->prev = page->prev;
 
                     page->next = NULL;
-                    page->prev = NGX_SLAB_BIG;
+                    page->prev = NJET_SLAB_BIG;
                 }
 
                 p = ngx_slab_page_addr(pool, page) + (i << shift);
@@ -325,7 +325,7 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
             }
         }
 
-        ngx_slab_error(pool, NGX_LOG_ALERT, "ngx_slab_alloc(): page is busy");
+        ngx_slab_error(pool, NJET_LOG_ALERT, "ngx_slab_alloc(): page is busy");
         ngx_debug_point();
     }
 
@@ -344,7 +344,7 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
             /* "n" elements for bitmap, plus one requested */
 
             for (i = 0; i < (n + 1) / (8 * sizeof(uintptr_t)); i++) {
-                bitmap[i] = NGX_SLAB_BUSY;
+                bitmap[i] = NJET_SLAB_BUSY;
             }
 
             m = ((uintptr_t) 1 << ((n + 1) % (8 * sizeof(uintptr_t)))) - 1;
@@ -358,7 +358,7 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
 
             page->slab = shift;
             page->next = &slots[slot];
-            page->prev = (uintptr_t) &slots[slot] | NGX_SLAB_SMALL;
+            page->prev = (uintptr_t) &slots[slot] | NJET_SLAB_SMALL;
 
             slots[slot].next = page;
 
@@ -374,7 +374,7 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
 
             page->slab = 1;
             page->next = &slots[slot];
-            page->prev = (uintptr_t) &slots[slot] | NGX_SLAB_EXACT;
+            page->prev = (uintptr_t) &slots[slot] | NJET_SLAB_EXACT;
 
             slots[slot].next = page;
 
@@ -388,9 +388,9 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
 
         } else { /* shift > ngx_slab_exact_shift */
 
-            page->slab = ((uintptr_t) 1 << NGX_SLAB_MAP_SHIFT) | shift;
+            page->slab = ((uintptr_t) 1 << NJET_SLAB_MAP_SHIFT) | shift;
             page->next = &slots[slot];
-            page->prev = (uintptr_t) &slots[slot] | NGX_SLAB_BIG;
+            page->prev = (uintptr_t) &slots[slot] | NJET_SLAB_BIG;
 
             slots[slot].next = page;
 
@@ -410,7 +410,7 @@ ngx_slab_alloc_locked(ngx_slab_pool_t *pool, size_t size)
 
 done:
 
-    ngx_log_debug1(NGX_LOG_DEBUG_ALLOC, ngx_cycle->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_ALLOC, ngx_cycle->log, 0,
                    "slab alloc: %p", (void *) p);
 
     return (void *) p;
@@ -465,10 +465,10 @@ ngx_slab_free_locked(ngx_slab_pool_t *pool, void *p)
     ngx_uint_t        i, n, type, slot, shift, map;
     ngx_slab_page_t  *slots, *page;
 
-    ngx_log_debug1(NGX_LOG_DEBUG_ALLOC, ngx_cycle->log, 0, "slab free: %p", p);
+    ngx_log_debug1(NJET_LOG_DEBUG_ALLOC, ngx_cycle->log, 0, "slab free: %p", p);
 
     if ((u_char *) p < pool->start || (u_char *) p > pool->end) {
-        ngx_slab_error(pool, NGX_LOG_ALERT, "ngx_slab_free(): outside of pool");
+        ngx_slab_error(pool, NJET_LOG_ALERT, "ngx_slab_free(): outside of pool");
         goto fail;
     }
 
@@ -479,9 +479,9 @@ ngx_slab_free_locked(ngx_slab_pool_t *pool, void *p)
 
     switch (type) {
 
-    case NGX_SLAB_SMALL:
+    case NJET_SLAB_SMALL:
 
-        shift = slab & NGX_SLAB_SHIFT_MASK;
+        shift = slab & NJET_SLAB_SHIFT_MASK;
         size = (size_t) 1 << shift;
 
         if ((uintptr_t) p & (size - 1)) {
@@ -503,8 +503,8 @@ ngx_slab_free_locked(ngx_slab_pool_t *pool, void *p)
                 page->next = slots[slot].next;
                 slots[slot].next = page;
 
-                page->prev = (uintptr_t) &slots[slot] | NGX_SLAB_SMALL;
-                page->next->prev = (uintptr_t) page | NGX_SLAB_SMALL;
+                page->prev = (uintptr_t) &slots[slot] | NJET_SLAB_SMALL;
+                page->next->prev = (uintptr_t) page | NJET_SLAB_SMALL;
             }
 
             bitmap[n] &= ~m;
@@ -539,7 +539,7 @@ ngx_slab_free_locked(ngx_slab_pool_t *pool, void *p)
 
         goto chunk_already_free;
 
-    case NGX_SLAB_EXACT:
+    case NJET_SLAB_EXACT:
 
         m = (uintptr_t) 1 <<
                 (((uintptr_t) p & (ngx_pagesize - 1)) >> ngx_slab_exact_shift);
@@ -552,14 +552,14 @@ ngx_slab_free_locked(ngx_slab_pool_t *pool, void *p)
         if (slab & m) {
             slot = ngx_slab_exact_shift - pool->min_shift;
 
-            if (slab == NGX_SLAB_BUSY) {
+            if (slab == NJET_SLAB_BUSY) {
                 slots = ngx_slab_slots(pool);
 
                 page->next = slots[slot].next;
                 slots[slot].next = page;
 
-                page->prev = (uintptr_t) &slots[slot] | NGX_SLAB_EXACT;
-                page->next->prev = (uintptr_t) page | NGX_SLAB_EXACT;
+                page->prev = (uintptr_t) &slots[slot] | NJET_SLAB_EXACT;
+                page->next->prev = (uintptr_t) page | NJET_SLAB_EXACT;
             }
 
             page->slab &= ~m;
@@ -577,9 +577,9 @@ ngx_slab_free_locked(ngx_slab_pool_t *pool, void *p)
 
         goto chunk_already_free;
 
-    case NGX_SLAB_BIG:
+    case NJET_SLAB_BIG:
 
-        shift = slab & NGX_SLAB_SHIFT_MASK;
+        shift = slab & NJET_SLAB_SHIFT_MASK;
         size = (size_t) 1 << shift;
 
         if ((uintptr_t) p & (size - 1)) {
@@ -587,7 +587,7 @@ ngx_slab_free_locked(ngx_slab_pool_t *pool, void *p)
         }
 
         m = (uintptr_t) 1 << ((((uintptr_t) p & (ngx_pagesize - 1)) >> shift)
-                              + NGX_SLAB_MAP_SHIFT);
+                              + NJET_SLAB_MAP_SHIFT);
 
         if (slab & m) {
             slot = shift - pool->min_shift;
@@ -598,13 +598,13 @@ ngx_slab_free_locked(ngx_slab_pool_t *pool, void *p)
                 page->next = slots[slot].next;
                 slots[slot].next = page;
 
-                page->prev = (uintptr_t) &slots[slot] | NGX_SLAB_BIG;
-                page->next->prev = (uintptr_t) page | NGX_SLAB_BIG;
+                page->prev = (uintptr_t) &slots[slot] | NJET_SLAB_BIG;
+                page->next->prev = (uintptr_t) page | NJET_SLAB_BIG;
             }
 
             page->slab &= ~m;
 
-            if (page->slab & NGX_SLAB_MAP_MASK) {
+            if (page->slab & NJET_SLAB_MAP_MASK) {
                 goto done;
             }
 
@@ -617,25 +617,25 @@ ngx_slab_free_locked(ngx_slab_pool_t *pool, void *p)
 
         goto chunk_already_free;
 
-    case NGX_SLAB_PAGE:
+    case NJET_SLAB_PAGE:
 
         if ((uintptr_t) p & (ngx_pagesize - 1)) {
             goto wrong_chunk;
         }
 
-        if (!(slab & NGX_SLAB_PAGE_START)) {
-            ngx_slab_error(pool, NGX_LOG_ALERT,
+        if (!(slab & NJET_SLAB_PAGE_START)) {
+            ngx_slab_error(pool, NJET_LOG_ALERT,
                            "ngx_slab_free(): page is already free");
             goto fail;
         }
 
-        if (slab == NGX_SLAB_PAGE_BUSY) {
-            ngx_slab_error(pool, NGX_LOG_ALERT,
+        if (slab == NJET_SLAB_PAGE_BUSY) {
+            ngx_slab_error(pool, NJET_LOG_ALERT,
                            "ngx_slab_free(): pointer to wrong page");
             goto fail;
         }
 
-        size = slab & ~NGX_SLAB_PAGE_START;
+        size = slab & ~NJET_SLAB_PAGE_START;
 
         ngx_slab_free_pages(pool, page, size);
 
@@ -658,14 +658,14 @@ done:
 
 wrong_chunk:
 
-    ngx_slab_error(pool, NGX_LOG_ALERT,
+    ngx_slab_error(pool, NJET_LOG_ALERT,
                    "ngx_slab_free(): pointer to wrong chunk");
 
     goto fail;
 
 chunk_already_free:
 
-    ngx_slab_error(pool, NGX_LOG_ALERT,
+    ngx_slab_error(pool, NJET_LOG_ALERT,
                    "ngx_slab_free(): chunk is already free");
 
 fail:
@@ -700,9 +700,9 @@ ngx_slab_alloc_pages(ngx_slab_pool_t *pool, ngx_uint_t pages)
                 page->next->prev = page->prev;
             }
 
-            page->slab = pages | NGX_SLAB_PAGE_START;
+            page->slab = pages | NJET_SLAB_PAGE_START;
             page->next = NULL;
-            page->prev = NGX_SLAB_PAGE;
+            page->prev = NJET_SLAB_PAGE;
 
             pool->pfree -= pages;
 
@@ -711,9 +711,9 @@ ngx_slab_alloc_pages(ngx_slab_pool_t *pool, ngx_uint_t pages)
             }
 
             for (p = page + 1; pages; pages--) {
-                p->slab = NGX_SLAB_PAGE_BUSY;
+                p->slab = NJET_SLAB_PAGE_BUSY;
                 p->next = NULL;
-                p->prev = NGX_SLAB_PAGE;
+                p->prev = NJET_SLAB_PAGE;
                 p++;
             }
 
@@ -722,7 +722,7 @@ ngx_slab_alloc_pages(ngx_slab_pool_t *pool, ngx_uint_t pages)
     }
 
     if (pool->log_nomem) {
-        ngx_slab_error(pool, NGX_LOG_CRIT,
+        ngx_slab_error(pool, NJET_LOG_CRIT,
                        "ngx_slab_alloc() failed: no memory");
     }
 
@@ -754,7 +754,7 @@ ngx_slab_free_pages(ngx_slab_pool_t *pool, ngx_slab_page_t *page,
 
     if (join < pool->last) {
 
-        if (ngx_slab_page_type(join) == NGX_SLAB_PAGE) {
+        if (ngx_slab_page_type(join) == NJET_SLAB_PAGE) {
 
             if (join->next != NULL) {
                 pages += join->slab;
@@ -764,9 +764,9 @@ ngx_slab_free_pages(ngx_slab_pool_t *pool, ngx_slab_page_t *page,
                 prev->next = join->next;
                 join->next->prev = join->prev;
 
-                join->slab = NGX_SLAB_PAGE_FREE;
+                join->slab = NJET_SLAB_PAGE_FREE;
                 join->next = NULL;
-                join->prev = NGX_SLAB_PAGE;
+                join->prev = NJET_SLAB_PAGE;
             }
         }
     }
@@ -774,9 +774,9 @@ ngx_slab_free_pages(ngx_slab_pool_t *pool, ngx_slab_page_t *page,
     if (page > pool->pages) {
         join = page - 1;
 
-        if (ngx_slab_page_type(join) == NGX_SLAB_PAGE) {
+        if (ngx_slab_page_type(join) == NJET_SLAB_PAGE) {
 
-            if (join->slab == NGX_SLAB_PAGE_FREE) {
+            if (join->slab == NJET_SLAB_PAGE_FREE) {
                 join = ngx_slab_page_prev(join);
             }
 
@@ -788,9 +788,9 @@ ngx_slab_free_pages(ngx_slab_pool_t *pool, ngx_slab_page_t *page,
                 prev->next = join->next;
                 join->next->prev = join->prev;
 
-                page->slab = NGX_SLAB_PAGE_FREE;
+                page->slab = NJET_SLAB_PAGE_FREE;
                 page->next = NULL;
-                page->prev = NGX_SLAB_PAGE;
+                page->prev = NJET_SLAB_PAGE;
 
                 page = join;
             }

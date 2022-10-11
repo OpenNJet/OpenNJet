@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_CORE_H_INCLUDED_
-#define _NGX_CORE_H_INCLUDED_
+#ifndef _NJET_CORE_H_INCLUDED_
+#define _NJET_CORE_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -34,13 +34,13 @@ typedef void (*ngx_event_handler_pt)(ngx_event_t *ev);
 typedef void (*ngx_connection_handler_pt)(ngx_connection_t *c);
 
 
-#define  NGX_OK          0
-#define  NGX_ERROR      -1
-#define  NGX_AGAIN      -2
-#define  NGX_BUSY       -3
-#define  NGX_DONE       -4
-#define  NGX_DECLINED   -5
-#define  NGX_ABORT      -6
+#define  NJET_OK          0
+#define  NJET_ERROR      -1
+#define  NJET_AGAIN      -2
+#define  NJET_BUSY       -3
+#define  NJET_DONE       -4
+#define  NJET_DECLINED   -5
+#define  NJET_ABORT      -6
 
 
 #include <ngx_errno.h>
@@ -69,7 +69,7 @@ typedef void (*ngx_connection_handler_pt)(ngx_connection_t *c);
 #include <ngx_crc.h>
 #include <ngx_crc32.h>
 #include <ngx_murmurhash.h>
-#if (NGX_PCRE)
+#if (NJET_PCRE)
 #include <ngx_regex.h>
 #endif
 #include <ngx_radix_tree.h>
@@ -80,7 +80,7 @@ typedef void (*ngx_connection_handler_pt)(ngx_connection_t *c);
 #include <ngx_inet.h>
 #include <ngx_cycle.h>
 #include <ngx_resolver.h>
-#if (NGX_OPENSSL)
+#if (NJET_OPENSSL)
 #include <ngx_event_openssl.h>
 #endif
 #include <ngx_process_cycle.h>
@@ -104,10 +104,10 @@ typedef void (*ngx_connection_handler_pt)(ngx_connection_t *c);
 
 void ngx_cpuinfo(void);
 
-#if (NGX_HAVE_OPENAT)
-#define NGX_DISABLE_SYMLINKS_OFF        0
-#define NGX_DISABLE_SYMLINKS_ON         1
-#define NGX_DISABLE_SYMLINKS_NOTOWNER   2
+#if (NJET_HAVE_OPENAT)
+#define NJET_DISABLE_SYMLINKS_OFF        0
+#define NJET_DISABLE_SYMLINKS_ON         1
+#define NJET_DISABLE_SYMLINKS_NOTOWNER   2
 #endif
 
-#endif /* _NGX_CORE_H_INCLUDED_ */
+#endif /* _NJET_CORE_H_INCLUDED_ */

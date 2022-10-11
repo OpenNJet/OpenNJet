@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_STREAM_UPSTREAM_ROUND_ROBIN_H_INCLUDED_
-#define _NGX_STREAM_UPSTREAM_ROUND_ROBIN_H_INCLUDED_
+#ifndef _NJET_STREAM_UPSTREAM_ROUND_ROBIN_H_INCLUDED_
+#define _NJET_STREAM_UPSTREAM_ROUND_ROBIN_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -43,14 +43,14 @@ struct ngx_stream_upstream_rr_peer_s {
     void                            *ssl_session;
     int                              ssl_session_len;
 
-#if (NGX_STREAM_UPSTREAM_ZONE)
+#if (NJET_STREAM_UPSTREAM_ZONE)
     ngx_atomic_t                     lock;
 #endif
 
     ngx_stream_upstream_rr_peer_t   *next;
 
-    NGX_COMPAT_BEGIN(25)
-    NGX_COMPAT_END
+    NJET_COMPAT_BEGIN(25)
+    NJET_COMPAT_END
 };
 
 
@@ -59,7 +59,7 @@ typedef struct ngx_stream_upstream_rr_peers_s  ngx_stream_upstream_rr_peers_t;
 struct ngx_stream_upstream_rr_peers_s {
     ngx_uint_t                       number;
 
-#if (NGX_STREAM_UPSTREAM_ZONE)
+#if (NJET_STREAM_UPSTREAM_ZONE)
     ngx_slab_pool_t                 *shpool;
     ngx_atomic_t                     rwlock;
     ngx_stream_upstream_rr_peers_t  *zone_next;
@@ -79,7 +79,7 @@ struct ngx_stream_upstream_rr_peers_s {
 };
 
 
-#if (NGX_STREAM_UPSTREAM_ZONE)
+#if (NJET_STREAM_UPSTREAM_ZONE)
 
 #define ngx_stream_upstream_rr_peers_rlock(peers)                             \
                                                                               \
@@ -144,4 +144,4 @@ void ngx_stream_upstream_free_round_robin_peer(ngx_peer_connection_t *pc,
     void *data, ngx_uint_t state);
 
 
-#endif /* _NGX_STREAM_UPSTREAM_ROUND_ROBIN_H_INCLUDED_ */
+#endif /* _NJET_STREAM_UPSTREAM_ROUND_ROBIN_H_INCLUDED_ */

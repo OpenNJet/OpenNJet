@@ -10,7 +10,7 @@
 #include <ngx_event.h>
 
 
-#if (NGX_TEST_BUILD_SOLARIS_SENDFILEV)
+#if (NJET_TEST_BUILD_SOLARIS_SENDFILEV)
 
 /* Solaris declarations */
 
@@ -35,7 +35,7 @@ ngx_chain_t *ngx_solaris_sendfilev_chain(ngx_connection_t *c, ngx_chain_t *in,
 #endif
 
 
-#define NGX_SENDFILEVECS  NGX_IOVS_PREALLOCATE
+#define NJET_SENDFILEVECS  NJET_IOVS_PREALLOCATE
 
 
 ngx_chain_t *
@@ -50,7 +50,7 @@ ngx_solaris_sendfilev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
     ngx_err_t       err;
     ngx_buf_t      *file;
     ngx_uint_t      nsfv;
-    sendfilevec_t  *sfv, sfvs[NGX_SENDFILEVECS];
+    sendfilevec_t  *sfv, sfvs[NJET_SENDFILEVECS];
     ngx_event_t    *wev;
     ngx_chain_t    *cl;
 
@@ -67,8 +67,8 @@ ngx_solaris_sendfilev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
     /* the maximum limit size is the maximum size_t value - the page size */
 
-    if (limit == 0 || limit > (off_t) (NGX_MAX_SIZE_T_VALUE - ngx_pagesize)) {
-        limit = NGX_MAX_SIZE_T_VALUE - ngx_pagesize;
+    if (limit == 0 || limit > (off_t) (NJET_MAX_SIZE_T_VALUE - ngx_pagesize)) {
+        limit = NJET_MAX_SIZE_T_VALUE - ngx_pagesize;
     }
 
 
@@ -107,7 +107,7 @@ ngx_solaris_sendfilev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
                     sfv->sfv_len += (size_t) size;
 
                 } else {
-                    if (nsfv == NGX_SENDFILEVECS) {
+                    if (nsfv == NJET_SENDFILEVECS) {
                         break;
                     }
 
@@ -142,7 +142,7 @@ ngx_solaris_sendfilev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
                     sfv->sfv_len += (size_t) size;
 
                 } else {
-                    if (nsfv == NGX_SENDFILEVECS) {
+                    if (nsfv == NJET_SENDFILEVECS) {
                         break;
                     }
 
@@ -167,20 +167,20 @@ ngx_solaris_sendfilev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
             err = ngx_errno;
 
             switch (err) {
-            case NGX_EAGAIN:
+            case NJET_EAGAIN:
                 break;
 
-            case NGX_EINTR:
+            case NJET_EINTR:
                 eintr = 1;
                 break;
 
             default:
                 wev->error = 1;
                 ngx_connection_error(c, err, "sendfilev() failed");
-                return NGX_CHAIN_ERROR;
+                return NJET_CHAIN_ERROR;
             }
 
-            ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, err,
+            ngx_log_debug1(NJET_LOG_DEBUG_EVENT, c->log, err,
                           "sendfilev() sent only %uz bytes", sent);
 
         } else if (n == 0 && sent == 0) {
@@ -192,19 +192,19 @@ ngx_solaris_sendfilev_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
              */
 
             if (file) {
-                ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+                ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                         "sendfilev() reported that \"%s\" was truncated at %O",
                         file->file->name.data, file->file_pos);
 
             } else {
-                ngx_log_error(NGX_LOG_ALERT, c->log, 0,
+                ngx_log_error(NJET_LOG_ALERT, c->log, 0,
                               "sendfilev() returned 0 with memory buffers");
             }
 
-            return NGX_CHAIN_ERROR;
+            return NJET_CHAIN_ERROR;
         }
 
-        ngx_log_debug2(NGX_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug2(NJET_LOG_DEBUG_EVENT, c->log, 0,
                        "sendfilev: %z %z", n, sent);
 
         c->sent += sent;

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_SOLARIS_CONFIG_H_INCLUDED_
-#define _NGX_SOLARIS_CONFIG_H_INCLUDED_
+#ifndef _NJET_SOLARIS_CONFIG_H_INCLUDED_
+#define _NJET_SOLARIS_CONFIG_H_INCLUDED_
 
 
 #ifndef _REENTRANT
@@ -57,56 +57,56 @@
 
 #include <dlfcn.h>
 
-#define NGX_ALIGNMENT  _MAX_ALIGNMENT
+#define NJET_ALIGNMENT  _MAX_ALIGNMENT
 
 #include <ngx_auto_config.h>
 
 
-#if (NGX_HAVE_POSIX_SEM)
+#if (NJET_HAVE_POSIX_SEM)
 #include <semaphore.h>
 #endif
 
 
-#if (NGX_HAVE_POLL)
+#if (NJET_HAVE_POLL)
 #include <poll.h>
 #endif
 
 
-#if (NGX_HAVE_DEVPOLL)
+#if (NJET_HAVE_DEVPOLL)
 #include <sys/ioctl.h>
 #include <sys/devpoll.h>
 #endif
 
 
-#if (NGX_HAVE_EVENTPORT)
+#if (NJET_HAVE_EVENTPORT)
 #include <port.h>
 #endif
 
 
-#if (NGX_HAVE_SENDFILE)
+#if (NJET_HAVE_SENDFILE)
 #include <sys/sendfile.h>
 #endif
 
 
-#define NGX_LISTEN_BACKLOG           511
+#define NJET_LISTEN_BACKLOG           511
 
 
-#ifndef NGX_HAVE_INHERITED_NONBLOCK
-#define NGX_HAVE_INHERITED_NONBLOCK  1
+#ifndef NJET_HAVE_INHERITED_NONBLOCK
+#define NJET_HAVE_INHERITED_NONBLOCK  1
 #endif
 
 
-#ifndef NGX_HAVE_SO_SNDLOWAT
+#ifndef NJET_HAVE_SO_SNDLOWAT
 /* setsockopt(SO_SNDLOWAT) returns ENOPROTOOPT */
-#define NGX_HAVE_SO_SNDLOWAT         0
+#define NJET_HAVE_SO_SNDLOWAT         0
 #endif
 
 
-#define NGX_HAVE_OS_SPECIFIC_INIT    1
+#define NJET_HAVE_OS_SPECIFIC_INIT    1
 #define ngx_debug_init()
 
 
 extern char **environ;
 
 
-#endif /* _NGX_SOLARIS_CONFIG_H_INCLUDED_ */
+#endif /* _NJET_SOLARIS_CONFIG_H_INCLUDED_ */

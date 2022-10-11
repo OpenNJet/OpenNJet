@@ -10,7 +10,7 @@
 #include <ngx_core.h>
 
 
-#define NGX_MAX_DYNAMIC_MODULES  128
+#define NJET_MAX_DYNAMIC_MODULES  128
 
 
 static ngx_uint_t ngx_module_index(ngx_cycle_t *cycle);
@@ -33,9 +33,9 @@ ngx_preinit_modules(void)
     }
 
     ngx_modules_n = i;
-    ngx_max_module = ngx_modules_n + NGX_MAX_DYNAMIC_MODULES;
+    ngx_max_module = ngx_modules_n + NJET_MAX_DYNAMIC_MODULES;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -50,7 +50,7 @@ ngx_cycle_modules(ngx_cycle_t *cycle)
     cycle->modules = ngx_pcalloc(cycle->pool, (ngx_max_module + 1)
                                               * sizeof(ngx_module_t *));
     if (cycle->modules == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     ngx_memcpy(cycle->modules, ngx_modules,
@@ -58,7 +58,7 @@ ngx_cycle_modules(ngx_cycle_t *cycle)
 
     cycle->modules_n = ngx_modules_n;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -69,13 +69,13 @@ ngx_init_modules(ngx_cycle_t *cycle)
 
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->init_module) {
-            if (cycle->modules[i]->init_module(cycle) != NGX_OK) {
-                return NGX_ERROR;
+            if (cycle->modules[i]->init_module(cycle) != NJET_OK) {
+                return NJET_ERROR;
             }
         }
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -97,7 +97,7 @@ ngx_count_modules(ngx_cycle_t *cycle, ngx_uint_t type)
             continue;
         }
 
-        if (module->ctx_index != NGX_MODULE_UNSET_INDEX) {
+        if (module->ctx_index != NJET_MODULE_UNSET_INDEX) {
 
             /* if ctx_index was assigned, preserve it */
 
@@ -162,31 +162,31 @@ ngx_add_module(ngx_conf_t *cf, ngx_str_t *file, ngx_module_t *module,
     ngx_core_module_t  *core_module;
 
     if (cf->cycle->modules_n >= ngx_max_module) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "too many modules loaded");
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (module->version != njet_version) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "module \"%V\" version %ui instead of %ui",
                            file, module->version, (ngx_uint_t) njet_version);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-    if (ngx_strcmp(module->signature, NGX_MODULE_SIGNATURE) != 0) {
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+    if (ngx_strcmp(module->signature, NJET_MODULE_SIGNATURE) != 0) {
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "module \"%V\" is not binary compatible",
                            file);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     for (m = 0; cf->cycle->modules[m]; m++) {
         if (ngx_strcmp(cf->cycle->modules[m]->name, module->name) == 0) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                "module \"%s\" is already loaded",
                                module->name);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
@@ -194,13 +194,13 @@ ngx_add_module(ngx_conf_t *cf, ngx_str_t *file, ngx_module_t *module,
      * if the module wasn't previously loaded, assign an index
      */
 
-    if (module->index == NGX_MODULE_UNSET_INDEX) {
+    if (module->index == NJET_MODULE_UNSET_INDEX) {
         module->index = ngx_module_index(cf->cycle);
 
         if (module->index >= ngx_max_module) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                "too many modules loaded");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
@@ -221,7 +221,7 @@ ngx_add_module(ngx_conf_t *cf, ngx_str_t *file, ngx_module_t *module,
         for ( /* void */ ; order[i]; i++) {
 
 #if 0
-            ngx_log_debug2(NGX_LOG_DEBUG_CORE, cf->log, 0,
+            ngx_log_debug2(NJET_LOG_DEBUG_CORE, cf->log, 0,
                            "module: %s before %s",
                            module->name, order[i]);
 #endif
@@ -229,7 +229,7 @@ ngx_add_module(ngx_conf_t *cf, ngx_str_t *file, ngx_module_t *module,
             for (m = 0; m < before; m++) {
                 if (ngx_strcmp(cf->cycle->modules[m]->name, order[i]) == 0) {
 
-                    ngx_log_debug3(NGX_LOG_DEBUG_CORE, cf->log, 0,
+                    ngx_log_debug3(NJET_LOG_DEBUG_CORE, cf->log, 0,
                                    "module: %s before %s:%i",
                                    module->name, order[i], m);
 
@@ -251,7 +251,7 @@ ngx_add_module(ngx_conf_t *cf, ngx_str_t *file, ngx_module_t *module,
     cf->cycle->modules[before] = module;
     cf->cycle->modules_n++;
 
-    if (module->type == NGX_CORE_MODULE) {
+    if (module->type == NJET_CORE_MODULE) {
 
         /*
          * we are smart enough to initialize core modules;
@@ -265,14 +265,14 @@ ngx_add_module(ngx_conf_t *cf, ngx_str_t *file, ngx_module_t *module,
         if (core_module->create_conf) {
             rv = core_module->create_conf(cf->cycle);
             if (rv == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             cf->cycle->conf_ctx[module->index] = rv;
         }
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 

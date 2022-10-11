@@ -55,35 +55,35 @@ ngx_mail_pop3_parse_command(ngx_mail_session_t *s)
 
                     if (c0 == 'U' && c1 == 'S' && c2 == 'E' && c3 == 'R')
                     {
-                        s->command = NGX_POP3_USER;
+                        s->command = NJET_POP3_USER;
 
                     } else if (c0 == 'P' && c1 == 'A' && c2 == 'S' && c3 == 'S')
                     {
-                        s->command = NGX_POP3_PASS;
+                        s->command = NJET_POP3_PASS;
 
                     } else if (c0 == 'A' && c1 == 'P' && c2 == 'O' && c3 == 'P')
                     {
-                        s->command = NGX_POP3_APOP;
+                        s->command = NJET_POP3_APOP;
 
                     } else if (c0 == 'Q' && c1 == 'U' && c2 == 'I' && c3 == 'T')
                     {
-                        s->command = NGX_POP3_QUIT;
+                        s->command = NJET_POP3_QUIT;
 
                     } else if (c0 == 'C' && c1 == 'A' && c2 == 'P' && c3 == 'A')
                     {
-                        s->command = NGX_POP3_CAPA;
+                        s->command = NJET_POP3_CAPA;
 
                     } else if (c0 == 'A' && c1 == 'U' && c2 == 'T' && c3 == 'H')
                     {
-                        s->command = NGX_POP3_AUTH;
+                        s->command = NJET_POP3_AUTH;
 
                     } else if (c0 == 'N' && c1 == 'O' && c2 == 'O' && c3 == 'P')
                     {
-                        s->command = NGX_POP3_NOOP;
-#if (NGX_MAIL_SSL)
+                        s->command = NJET_POP3_NOOP;
+#if (NJET_MAIL_SSL)
                     } else if (c0 == 'S' && c1 == 'T' && c2 == 'L' && c3 == 'S')
                     {
-                        s->command = NGX_POP3_STLS;
+                        s->command = NJET_POP3_STLS;
 #endif
                     } else {
                         goto invalid;
@@ -147,8 +147,8 @@ ngx_mail_pop3_parse_command(ngx_mail_session_t *s)
                  * or password, but not of argument in other commands
                  */
 
-                if (s->command == NGX_POP3_USER
-                    || s->command == NGX_POP3_PASS)
+                if (s->command == NJET_POP3_USER
+                    || s->command == NJET_POP3_PASS)
                 {
                     break;
                 }
@@ -159,7 +159,7 @@ ngx_mail_pop3_parse_command(ngx_mail_session_t *s)
             case LF:
                 arg = ngx_array_push(&s->args);
                 if (arg == NULL) {
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
                 arg->len = p - s->arg_start;
                 arg->data = s->arg_start;
@@ -195,14 +195,14 @@ ngx_mail_pop3_parse_command(ngx_mail_session_t *s)
     s->buffer->pos = p;
     s->state = state;
 
-    return NGX_AGAIN;
+    return NJET_AGAIN;
 
 done:
 
     s->buffer->pos = p + 1;
-    s->state = (s->command != NGX_POP3_AUTH) ? sw_start : sw_argument;
+    s->state = (s->command != NJET_POP3_AUTH) ? sw_start : sw_argument;
 
-    return NGX_OK;
+    return NJET_OK;
 
 invalid:
 
@@ -214,13 +214,13 @@ invalid:
         if (*p == LF) {
             s->state = sw_start;
             s->buffer->pos = p + 1;
-            return NGX_MAIL_PARSE_INVALID_COMMAND;
+            return NJET_MAIL_PARSE_INVALID_COMMAND;
         }
     }
 
     s->buffer->pos = p;
 
-    return NGX_AGAIN;
+    return NJET_AGAIN;
 }
 
 
@@ -314,7 +314,7 @@ ngx_mail_imap_parse_command(ngx_mail_session_t *s)
                         && (c[2] == 'O'|| c[2] == 'o')
                         && (c[3] == 'P'|| c[3] == 'p'))
                     {
-                        s->command = NGX_IMAP_NOOP;
+                        s->command = NJET_IMAP_NOOP;
 
                     } else {
                         goto invalid;
@@ -328,7 +328,7 @@ ngx_mail_imap_parse_command(ngx_mail_session_t *s)
                         && (c[3] == 'I'|| c[3] == 'i')
                         && (c[4] == 'N'|| c[4] == 'n'))
                     {
-                        s->command = NGX_IMAP_LOGIN;
+                        s->command = NJET_IMAP_LOGIN;
 
                     } else {
                         goto invalid;
@@ -343,14 +343,14 @@ ngx_mail_imap_parse_command(ngx_mail_session_t *s)
                         && (c[4] == 'U'|| c[4] == 'u')
                         && (c[5] == 'T'|| c[5] == 't'))
                     {
-                        s->command = NGX_IMAP_LOGOUT;
+                        s->command = NJET_IMAP_LOGOUT;
 
                     } else {
                         goto invalid;
                     }
                     break;
 
-#if (NGX_MAIL_SSL)
+#if (NJET_MAIL_SSL)
                 case 8:
                     if ((c[0] == 'S'|| c[0] == 's')
                         && (c[1] == 'T'|| c[1] == 't')
@@ -361,7 +361,7 @@ ngx_mail_imap_parse_command(ngx_mail_session_t *s)
                         && (c[6] == 'L'|| c[6] == 'l')
                         && (c[7] == 'S'|| c[7] == 's'))
                     {
-                        s->command = NGX_IMAP_STARTTLS;
+                        s->command = NJET_IMAP_STARTTLS;
 
                     } else {
                         goto invalid;
@@ -381,7 +381,7 @@ ngx_mail_imap_parse_command(ngx_mail_session_t *s)
                         && (c[8] == 'T'|| c[8] == 't')
                         && (c[9] == 'Y'|| c[9] == 'y'))
                     {
-                        s->command = NGX_IMAP_CAPABILITY;
+                        s->command = NJET_IMAP_CAPABILITY;
 
                     } else {
                         goto invalid;
@@ -402,7 +402,7 @@ ngx_mail_imap_parse_command(ngx_mail_session_t *s)
                         && (c[10] == 'T'|| c[10] == 't')
                         && (c[11] == 'E'|| c[11] == 'e'))
                     {
-                        s->command = NGX_IMAP_AUTHENTICATE;
+                        s->command = NJET_IMAP_AUTHENTICATE;
 
                     } else {
                         goto invalid;
@@ -485,7 +485,7 @@ ngx_mail_imap_parse_command(ngx_mail_session_t *s)
             case LF:
                 arg = ngx_array_push(&s->args);
                 if (arg == NULL) {
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
                 arg->len = p - s->arg_start;
                 arg->data = s->arg_start;
@@ -570,7 +570,7 @@ ngx_mail_imap_parse_command(ngx_mail_session_t *s)
                 s->arg_start = p + 1;
                 if (s->no_sync_literal == 0) {
                     s->state = sw_literal_argument;
-                    return NGX_IMAP_NEXT;
+                    return NJET_IMAP_NEXT;
                 }
                 state = sw_literal_argument;
                 s->no_sync_literal = 0;
@@ -587,7 +587,7 @@ ngx_mail_imap_parse_command(ngx_mail_session_t *s)
 
             arg = ngx_array_push(&s->args);
             if (arg == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
             arg->len = p + 1 - s->arg_start;
             arg->data = s->arg_start;
@@ -628,14 +628,14 @@ ngx_mail_imap_parse_command(ngx_mail_session_t *s)
     s->buffer->pos = p;
     s->state = state;
 
-    return NGX_AGAIN;
+    return NJET_AGAIN;
 
 done:
 
     s->buffer->pos = p + 1;
-    s->state = (s->command != NGX_IMAP_AUTHENTICATE) ? sw_start : sw_argument;
+    s->state = (s->command != NJET_IMAP_AUTHENTICATE) ? sw_start : sw_argument;
 
-    return NGX_OK;
+    return NJET_OK;
 
 invalid:
 
@@ -666,13 +666,13 @@ invalid:
                 }
             }
 
-            return NGX_MAIL_PARSE_INVALID_COMMAND;
+            return NJET_MAIL_PARSE_INVALID_COMMAND;
         }
     }
 
     s->buffer->pos = p;
 
-    return NGX_AGAIN;
+    return NJET_AGAIN;
 }
 
 
@@ -717,52 +717,52 @@ ngx_mail_smtp_parse_command(ngx_mail_session_t *s)
 
                     if (c0 == 'H' && c1 == 'E' && c2 == 'L' && c3 == 'O')
                     {
-                        s->command = NGX_SMTP_HELO;
+                        s->command = NJET_SMTP_HELO;
 
                     } else if (c0 == 'E' && c1 == 'H' && c2 == 'L' && c3 == 'O')
                     {
-                        s->command = NGX_SMTP_EHLO;
+                        s->command = NJET_SMTP_EHLO;
 
                     } else if (c0 == 'Q' && c1 == 'U' && c2 == 'I' && c3 == 'T')
                     {
-                        s->command = NGX_SMTP_QUIT;
+                        s->command = NJET_SMTP_QUIT;
 
                     } else if (c0 == 'A' && c1 == 'U' && c2 == 'T' && c3 == 'H')
                     {
-                        s->command = NGX_SMTP_AUTH;
+                        s->command = NJET_SMTP_AUTH;
 
                     } else if (c0 == 'N' && c1 == 'O' && c2 == 'O' && c3 == 'P')
                     {
-                        s->command = NGX_SMTP_NOOP;
+                        s->command = NJET_SMTP_NOOP;
 
                     } else if (c0 == 'M' && c1 == 'A' && c2 == 'I' && c3 == 'L')
                     {
-                        s->command = NGX_SMTP_MAIL;
+                        s->command = NJET_SMTP_MAIL;
 
                     } else if (c0 == 'R' && c1 == 'S' && c2 == 'E' && c3 == 'T')
                     {
-                        s->command = NGX_SMTP_RSET;
+                        s->command = NJET_SMTP_RSET;
 
                     } else if (c0 == 'R' && c1 == 'C' && c2 == 'P' && c3 == 'T')
                     {
-                        s->command = NGX_SMTP_RCPT;
+                        s->command = NJET_SMTP_RCPT;
 
                     } else if (c0 == 'V' && c1 == 'R' && c2 == 'F' && c3 == 'Y')
                     {
-                        s->command = NGX_SMTP_VRFY;
+                        s->command = NJET_SMTP_VRFY;
 
                     } else if (c0 == 'E' && c1 == 'X' && c2 == 'P' && c3 == 'N')
                     {
-                        s->command = NGX_SMTP_EXPN;
+                        s->command = NJET_SMTP_EXPN;
 
                     } else if (c0 == 'H' && c1 == 'E' && c2 == 'L' && c3 == 'P')
                     {
-                        s->command = NGX_SMTP_HELP;
+                        s->command = NJET_SMTP_HELP;
 
                     } else {
                         goto invalid;
                     }
-#if (NGX_MAIL_SSL)
+#if (NJET_MAIL_SSL)
                 } else if (p - c == 8) {
 
                     if ((c[0] == 'S'|| c[0] == 's')
@@ -774,7 +774,7 @@ ngx_mail_smtp_parse_command(ngx_mail_session_t *s)
                         && (c[6] == 'L'|| c[6] == 'l')
                         && (c[7] == 'S'|| c[7] == 's'))
                     {
-                        s->command = NGX_SMTP_STARTTLS;
+                        s->command = NJET_SMTP_STARTTLS;
 
                     } else {
                         goto invalid;
@@ -835,7 +835,7 @@ ngx_mail_smtp_parse_command(ngx_mail_session_t *s)
             case LF:
                 arg = ngx_array_push(&s->args);
                 if (arg == NULL) {
-                    return NGX_ERROR;
+                    return NJET_ERROR;
                 }
                 arg->len = p - s->arg_start;
                 arg->data = s->arg_start;
@@ -871,14 +871,14 @@ ngx_mail_smtp_parse_command(ngx_mail_session_t *s)
     s->buffer->pos = p;
     s->state = state;
 
-    return NGX_AGAIN;
+    return NJET_AGAIN;
 
 done:
 
     s->buffer->pos = p + 1;
-    s->state = (s->command != NGX_SMTP_AUTH) ? sw_start : sw_argument;
+    s->state = (s->command != NJET_SMTP_AUTH) ? sw_start : sw_argument;
 
-    return NGX_OK;
+    return NJET_OK;
 
 invalid:
 
@@ -890,13 +890,13 @@ invalid:
         if (*p == LF) {
             s->state = sw_start;
             s->buffer->pos = p + 1;
-            return NGX_MAIL_PARSE_INVALID_COMMAND;
+            return NJET_MAIL_PARSE_INVALID_COMMAND;
         }
     }
 
     s->buffer->pos = p;
 
-    return NGX_AGAIN;
+    return NJET_AGAIN;
 }
 
 
@@ -905,14 +905,14 @@ ngx_mail_auth_parse(ngx_mail_session_t *s, ngx_connection_t *c)
 {
     ngx_str_t                 *arg;
 
-#if (NGX_MAIL_SSL)
+#if (NJET_MAIL_SSL)
     if (ngx_mail_starttls_only(s, c)) {
-        return NGX_MAIL_PARSE_INVALID_COMMAND;
+        return NJET_MAIL_PARSE_INVALID_COMMAND;
     }
 #endif
 
     if (s->args.nelts == 0) {
-        return NGX_MAIL_PARSE_INVALID_COMMAND;
+        return NJET_MAIL_PARSE_INVALID_COMMAND;
     }
 
     arg = s->args.elts;
@@ -922,20 +922,20 @@ ngx_mail_auth_parse(ngx_mail_session_t *s, ngx_connection_t *c)
         if (ngx_strncasecmp(arg[0].data, (u_char *) "LOGIN", 5) == 0) {
 
             if (s->args.nelts == 1) {
-                return NGX_MAIL_AUTH_LOGIN;
+                return NJET_MAIL_AUTH_LOGIN;
             }
 
             if (s->args.nelts == 2) {
-                return NGX_MAIL_AUTH_LOGIN_USERNAME;
+                return NJET_MAIL_AUTH_LOGIN_USERNAME;
             }
 
-            return NGX_MAIL_PARSE_INVALID_COMMAND;
+            return NJET_MAIL_PARSE_INVALID_COMMAND;
         }
 
         if (ngx_strncasecmp(arg[0].data, (u_char *) "PLAIN", 5) == 0) {
 
             if (s->args.nelts == 1) {
-                return NGX_MAIL_AUTH_PLAIN;
+                return NJET_MAIL_AUTH_PLAIN;
             }
 
             if (s->args.nelts == 2) {
@@ -943,7 +943,7 @@ ngx_mail_auth_parse(ngx_mail_session_t *s, ngx_connection_t *c)
             }
         }
 
-        return NGX_MAIL_PARSE_INVALID_COMMAND;
+        return NJET_MAIL_PARSE_INVALID_COMMAND;
     }
 
     if (arg[0].len == 8) {
@@ -951,16 +951,16 @@ ngx_mail_auth_parse(ngx_mail_session_t *s, ngx_connection_t *c)
         if (ngx_strncasecmp(arg[0].data, (u_char *) "CRAM-MD5", 8) == 0) {
 
             if (s->args.nelts != 1) {
-                return NGX_MAIL_PARSE_INVALID_COMMAND;
+                return NJET_MAIL_PARSE_INVALID_COMMAND;
             }
 
-            return NGX_MAIL_AUTH_CRAM_MD5;
+            return NJET_MAIL_AUTH_CRAM_MD5;
         }
 
         if (ngx_strncasecmp(arg[0].data, (u_char *) "EXTERNAL", 8) == 0) {
 
             if (s->args.nelts == 1) {
-                return NGX_MAIL_AUTH_EXTERNAL;
+                return NJET_MAIL_AUTH_EXTERNAL;
             }
 
             if (s->args.nelts == 2) {
@@ -968,8 +968,8 @@ ngx_mail_auth_parse(ngx_mail_session_t *s, ngx_connection_t *c)
             }
         }
 
-        return NGX_MAIL_PARSE_INVALID_COMMAND;
+        return NJET_MAIL_PARSE_INVALID_COMMAND;
     }
 
-    return NGX_MAIL_PARSE_INVALID_COMMAND;
+    return NJET_MAIL_PARSE_INVALID_COMMAND;
 }

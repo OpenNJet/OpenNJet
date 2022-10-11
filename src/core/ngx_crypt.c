@@ -11,7 +11,7 @@
 #include <ngx_sha1.h>
 
 
-#if (NGX_CRYPT)
+#if (NJET_CRYPT)
 
 static ngx_int_t ngx_crypt_apr1(ngx_pool_t *pool, u_char *key, u_char *salt,
     u_char **encrypted);
@@ -130,7 +130,7 @@ ngx_crypt_apr1(ngx_pool_t *pool, u_char *key, u_char *salt, u_char **encrypted)
 
     *encrypted = ngx_pnalloc(pool, sizeof("$apr1$") - 1 + saltlen + 1 + 22 + 1);
     if (*encrypted == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     p = ngx_cpymem(*encrypted, "$apr1$", sizeof("$apr1$") - 1);
@@ -145,7 +145,7 @@ ngx_crypt_apr1(ngx_pool_t *pool, u_char *key, u_char *salt, u_char **encrypted)
     p = ngx_crypt_to64(p, final[11], 2);
     *p = '\0';
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -174,13 +174,13 @@ ngx_crypt_plain(ngx_pool_t *pool, u_char *key, u_char *salt, u_char **encrypted)
 
     *encrypted = ngx_pnalloc(pool, sizeof("{PLAIN}") - 1 + len + 1);
     if (*encrypted == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     p = ngx_cpymem(*encrypted, "{PLAIN}", sizeof("{PLAIN}") - 1);
     ngx_memcpy(p, key, len + 1);
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -203,12 +203,12 @@ ngx_crypt_ssha(ngx_pool_t *pool, u_char *key, u_char *salt, u_char **encrypted)
 
     decoded.data = ngx_pnalloc(pool, len);
     if (decoded.data == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     rc = ngx_decode_base64(&decoded, &encoded);
 
-    if (rc != NGX_OK || decoded.len < 20) {
+    if (rc != NJET_OK || decoded.len < 20) {
         decoded.len = 20;
     }
 
@@ -225,14 +225,14 @@ ngx_crypt_ssha(ngx_pool_t *pool, u_char *key, u_char *salt, u_char **encrypted)
 
     *encrypted = ngx_pnalloc(pool, len);
     if (*encrypted == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     encoded.data = ngx_cpymem(*encrypted, "{SSHA}", sizeof("{SSHA}") - 1);
     ngx_encode_base64(&encoded, &decoded);
     encoded.data[encoded.len] = '\0';
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -257,14 +257,14 @@ ngx_crypt_sha(ngx_pool_t *pool, u_char *key, u_char *salt, u_char **encrypted)
 
     *encrypted = ngx_pnalloc(pool, len);
     if (*encrypted == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     encoded.data = ngx_cpymem(*encrypted, "{SHA}", sizeof("{SHA}") - 1);
     ngx_encode_base64(&encoded, &decoded);
     encoded.data[encoded.len] = '\0';
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
-#endif /* NGX_CRYPT */
+#endif /* NJET_CRYPT */

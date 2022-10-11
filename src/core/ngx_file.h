@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_FILE_H_INCLUDED_
-#define _NGX_FILE_H_INCLUDED_
+#ifndef _NJET_FILE_H_INCLUDED_
+#define _NJET_FILE_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -23,14 +23,14 @@ struct ngx_file_s {
 
     ngx_log_t                 *log;
 
-#if (NGX_THREADS || NGX_COMPAT)
+#if (NJET_THREADS || NJET_COMPAT)
     ngx_int_t                (*thread_handler)(ngx_thread_task_t *task,
                                                ngx_file_t *file);
     void                      *thread_ctx;
     ngx_thread_task_t         *thread_task;
 #endif
 
-#if (NGX_HAVE_FILE_AIO || NGX_COMPAT)
+#if (NJET_HAVE_FILE_AIO || NJET_COMPAT)
     ngx_event_aio_t           *aio;
 #endif
 
@@ -39,7 +39,7 @@ struct ngx_file_s {
 };
 
 
-#define NGX_MAX_PATH_LEVEL  3
+#define NJET_MAX_PATH_LEVEL  3
 
 
 typedef ngx_msec_t (*ngx_path_manager_pt) (void *data);
@@ -50,7 +50,7 @@ typedef void (*ngx_path_loader_pt) (void *data);
 typedef struct {
     ngx_str_t                  name;
     size_t                     len;
-    size_t                     level[NGX_MAX_PATH_LEVEL];
+    size_t                     level[NJET_MAX_PATH_LEVEL];
 
     ngx_path_manager_pt        manager;
     ngx_path_purger_pt         purger;
@@ -64,7 +64,7 @@ typedef struct {
 
 typedef struct {
     ngx_str_t                  name;
-    size_t                     level[NGX_MAX_PATH_LEVEL];
+    size_t                     level[NJET_MAX_PATH_LEVEL];
 } ngx_path_init_t;
 
 
@@ -161,4 +161,4 @@ extern ngx_atomic_t      *ngx_temp_number;
 extern ngx_atomic_int_t   ngx_random_number;
 
 
-#endif /* _NGX_FILE_H_INCLUDED_ */
+#endif /* _NJET_FILE_H_INCLUDED_ */

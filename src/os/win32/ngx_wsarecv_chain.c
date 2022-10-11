@@ -10,7 +10,7 @@
 #include <ngx_event.h>
 
 
-#define NGX_WSABUFS  64
+#define NJET_WSABUFS  64
 
 
 ssize_t
@@ -24,7 +24,7 @@ ngx_wsarecv_chain(ngx_connection_t *c, ngx_chain_t *chain, off_t limit)
     ngx_array_t   vec;
     ngx_event_t  *rev;
     LPWSABUF      wsabuf;
-    WSABUF        wsabufs[NGX_WSABUFS];
+    WSABUF        wsabufs[NJET_WSABUFS];
 
     prev = NULL;
     wsabuf = NULL;
@@ -35,7 +35,7 @@ ngx_wsarecv_chain(ngx_connection_t *c, ngx_chain_t *chain, off_t limit)
     vec.elts = wsabufs;
     vec.nelts = 0;
     vec.size = sizeof(WSABUF);
-    vec.nalloc = NGX_WSABUFS;
+    vec.nalloc = NJET_WSABUFS;
     vec.pool = c->pool;
 
     /* coalesce the neighbouring bufs */
@@ -63,7 +63,7 @@ ngx_wsarecv_chain(ngx_connection_t *c, ngx_chain_t *chain, off_t limit)
 
             wsabuf = ngx_array_push(&vec);
             if (wsabuf == NULL) {
-                return NGX_ERROR;
+                return NJET_ERROR;
             }
 
             wsabuf->buf = (char *) chain->buf->last;
@@ -75,7 +75,7 @@ ngx_wsarecv_chain(ngx_connection_t *c, ngx_chain_t *chain, off_t limit)
         chain = chain->next;
     }
 
-    ngx_log_debug2(NGX_LOG_DEBUG_EVENT, c->log, 0,
+    ngx_log_debug2(NJET_LOG_DEBUG_EVENT, c->log, 0,
                    "WSARecv: %d:%d", vec.nelts, wsabuf->len);
 
 
@@ -88,17 +88,17 @@ ngx_wsarecv_chain(ngx_connection_t *c, ngx_chain_t *chain, off_t limit)
         err = ngx_socket_errno;
 
         if (err == WSAEWOULDBLOCK) {
-            ngx_log_debug0(NGX_LOG_DEBUG_EVENT, c->log, err,
+            ngx_log_debug0(NJET_LOG_DEBUG_EVENT, c->log, err,
                            "WSARecv() not ready");
-            return NGX_AGAIN;
+            return NJET_AGAIN;
         }
 
         rev->error = 1;
         ngx_connection_error(c, err, "WSARecv() failed");
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
-#if (NGX_HAVE_FIONREAD)
+#if (NJET_HAVE_FIONREAD)
 
     if (rev->available >= 0 && bytes > 0) {
         rev->available -= bytes;
@@ -115,7 +115,7 @@ ngx_wsarecv_chain(ngx_connection_t *c, ngx_chain_t *chain, off_t limit)
             rev->ready = 0;
         }
 
-        ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug1(NJET_LOG_DEBUG_EVENT, c->log, 0,
                        "WSARecv: avail:%d", rev->available);
 
     } else if (bytes == size) {
@@ -124,10 +124,10 @@ ngx_wsarecv_chain(ngx_connection_t *c, ngx_chain_t *chain, off_t limit)
             rev->error = 1;
             ngx_connection_error(c, ngx_socket_errno,
                                  ngx_socket_nread_n " failed");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
-        ngx_log_debug1(NGX_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug1(NJET_LOG_DEBUG_EVENT, c->log, 0,
                        "WSARecv: avail:%d", rev->available);
     }
 

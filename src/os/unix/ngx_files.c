@@ -9,7 +9,7 @@
 #include <ngx_core.h>
 
 
-#if (NGX_THREADS)
+#if (NJET_THREADS)
 #include <ngx_thread_pool.h>
 static void ngx_thread_read_handler(void *data, ngx_log_t *log);
 static void ngx_thread_write_chain_to_file_handler(void *data, ngx_log_t *log);
@@ -20,7 +20,7 @@ static ssize_t ngx_writev_file(ngx_file_t *file, ngx_iovec_t *vec,
     off_t offset);
 
 
-#if (NGX_HAVE_FILE_AIO)
+#if (NJET_HAVE_FILE_AIO)
 
 ngx_uint_t  ngx_file_aio = 1;
 
@@ -32,26 +32,26 @@ ngx_read_file(ngx_file_t *file, u_char *buf, size_t size, off_t offset)
 {
     ssize_t  n;
 
-    ngx_log_debug4(NGX_LOG_DEBUG_CORE, file->log, 0,
+    ngx_log_debug4(NJET_LOG_DEBUG_CORE, file->log, 0,
                    "read: %d, %p, %uz, %O", file->fd, buf, size, offset);
 
-#if (NGX_HAVE_PREAD)
+#if (NJET_HAVE_PREAD)
 
     n = pread(file->fd, buf, size, offset);
 
     if (n == -1) {
-        ngx_log_error(NGX_LOG_CRIT, file->log, ngx_errno,
+        ngx_log_error(NJET_LOG_CRIT, file->log, ngx_errno,
                       "pread() \"%s\" failed", file->name.data);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
 #else
 
     if (file->sys_offset != offset) {
         if (lseek(file->fd, offset, SEEK_SET) == -1) {
-            ngx_log_error(NGX_LOG_CRIT, file->log, ngx_errno,
+            ngx_log_error(NJET_LOG_CRIT, file->log, ngx_errno,
                           "lseek() \"%s\" failed", file->name.data);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         file->sys_offset = offset;
@@ -60,9 +60,9 @@ ngx_read_file(ngx_file_t *file, u_char *buf, size_t size, off_t offset)
     n = read(file->fd, buf, size);
 
     if (n == -1) {
-        ngx_log_error(NGX_LOG_CRIT, file->log, ngx_errno,
+        ngx_log_error(NJET_LOG_CRIT, file->log, ngx_errno,
                       "read() \"%s\" failed", file->name.data);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     file->sys_offset += n;
@@ -75,7 +75,7 @@ ngx_read_file(ngx_file_t *file, u_char *buf, size_t size, off_t offset)
 }
 
 
-#if (NGX_THREADS)
+#if (NJET_THREADS)
 
 typedef struct {
     ngx_fd_t       fd;
@@ -98,7 +98,7 @@ ngx_thread_read(ngx_file_t *file, u_char *buf, size_t size, off_t offset,
     ngx_thread_task_t      *task;
     ngx_thread_file_ctx_t  *ctx;
 
-    ngx_log_debug4(NGX_LOG_DEBUG_CORE, file->log, 0,
+    ngx_log_debug4(NJET_LOG_DEBUG_CORE, file->log, 0,
                    "thread read: %d, %p, %uz, %O",
                    file->fd, buf, size, offset);
 
@@ -107,7 +107,7 @@ ngx_thread_read(ngx_file_t *file, u_char *buf, size_t size, off_t offset,
     if (task == NULL) {
         task = ngx_thread_task_alloc(pool, sizeof(ngx_thread_file_ctx_t));
         if (task == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         file->thread_task = task;
@@ -119,15 +119,15 @@ ngx_thread_read(ngx_file_t *file, u_char *buf, size_t size, off_t offset,
         task->event.complete = 0;
 
         if (ctx->write) {
-            ngx_log_error(NGX_LOG_ALERT, file->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, file->log, 0,
                           "invalid thread call, read instead of write");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ctx->err) {
-            ngx_log_error(NGX_LOG_CRIT, file->log, ctx->err,
+            ngx_log_error(NJET_LOG_CRIT, file->log, ctx->err,
                           "pread() \"%s\" failed", file->name.data);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         return ctx->nbytes;
@@ -142,15 +142,15 @@ ngx_thread_read(ngx_file_t *file, u_char *buf, size_t size, off_t offset,
     ctx->size = size;
     ctx->offset = offset;
 
-    if (file->thread_handler(task, file) != NGX_OK) {
-        return NGX_ERROR;
+    if (file->thread_handler(task, file) != NJET_OK) {
+        return NJET_ERROR;
     }
 
-    return NGX_AGAIN;
+    return NJET_AGAIN;
 }
 
 
-#if (NGX_HAVE_PREAD)
+#if (NJET_HAVE_PREAD)
 
 static void
 ngx_thread_read_handler(void *data, ngx_log_t *log)
@@ -159,7 +159,7 @@ ngx_thread_read_handler(void *data, ngx_log_t *log)
 
     ssize_t  n;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_CORE, log, 0, "thread read handler");
+    ngx_log_debug0(NJET_LOG_DEBUG_CORE, log, 0, "thread read handler");
 
     n = pread(ctx->fd, ctx->buf, ctx->size, ctx->offset);
 
@@ -175,7 +175,7 @@ ngx_thread_read_handler(void *data, ngx_log_t *log)
     ngx_time_update();
 #endif
 
-    ngx_log_debug4(NGX_LOG_DEBUG_CORE, log, 0,
+    ngx_log_debug4(NJET_LOG_DEBUG_CORE, log, 0,
                    "pread: %z (err: %d) of %uz @%O",
                    n, ctx->err, ctx->size, ctx->offset);
 }
@@ -186,7 +186,7 @@ ngx_thread_read_handler(void *data, ngx_log_t *log)
 
 #endif
 
-#endif /* NGX_THREADS */
+#endif /* NJET_THREADS */
 
 
 ssize_t
@@ -195,12 +195,12 @@ ngx_write_file(ngx_file_t *file, u_char *buf, size_t size, off_t offset)
     ssize_t    n, written;
     ngx_err_t  err;
 
-    ngx_log_debug4(NGX_LOG_DEBUG_CORE, file->log, 0,
+    ngx_log_debug4(NJET_LOG_DEBUG_CORE, file->log, 0,
                    "write: %d, %p, %uz, %O", file->fd, buf, size, offset);
 
     written = 0;
 
-#if (NGX_HAVE_PWRITE)
+#if (NJET_HAVE_PWRITE)
 
     for ( ;; ) {
         n = pwrite(file->fd, buf + written, size, offset);
@@ -208,15 +208,15 @@ ngx_write_file(ngx_file_t *file, u_char *buf, size_t size, off_t offset)
         if (n == -1) {
             err = ngx_errno;
 
-            if (err == NGX_EINTR) {
-                ngx_log_debug0(NGX_LOG_DEBUG_CORE, file->log, err,
+            if (err == NJET_EINTR) {
+                ngx_log_debug0(NJET_LOG_DEBUG_CORE, file->log, err,
                                "pwrite() was interrupted");
                 continue;
             }
 
-            ngx_log_error(NGX_LOG_CRIT, file->log, err,
+            ngx_log_error(NJET_LOG_CRIT, file->log, err,
                           "pwrite() \"%s\" failed", file->name.data);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         file->offset += n;
@@ -234,9 +234,9 @@ ngx_write_file(ngx_file_t *file, u_char *buf, size_t size, off_t offset)
 
     if (file->sys_offset != offset) {
         if (lseek(file->fd, offset, SEEK_SET) == -1) {
-            ngx_log_error(NGX_LOG_CRIT, file->log, ngx_errno,
+            ngx_log_error(NJET_LOG_CRIT, file->log, ngx_errno,
                           "lseek() \"%s\" failed", file->name.data);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         file->sys_offset = offset;
@@ -248,15 +248,15 @@ ngx_write_file(ngx_file_t *file, u_char *buf, size_t size, off_t offset)
         if (n == -1) {
             err = ngx_errno;
 
-            if (err == NGX_EINTR) {
-                ngx_log_debug0(NGX_LOG_DEBUG_CORE, file->log, err,
+            if (err == NJET_EINTR) {
+                ngx_log_debug0(NJET_LOG_DEBUG_CORE, file->log, err,
                                "write() was interrupted");
                 continue;
             }
 
-            ngx_log_error(NGX_LOG_CRIT, file->log, err,
+            ngx_log_error(NJET_LOG_CRIT, file->log, err,
                           "write() \"%s\" failed", file->name.data);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         file->sys_offset += n;
@@ -295,7 +295,7 @@ ngx_write_chain_to_file(ngx_file_t *file, ngx_chain_t *cl, off_t offset,
 {
     ssize_t        total, n;
     ngx_iovec_t    vec;
-    struct iovec   iovs[NGX_IOVS_PREALLOCATE];
+    struct iovec   iovs[NJET_IOVS_PREALLOCATE];
 
     /* use pwrite() if there is the only buf in a chain */
 
@@ -308,7 +308,7 @@ ngx_write_chain_to_file(ngx_file_t *file, ngx_chain_t *cl, off_t offset,
     total = 0;
 
     vec.iovs = iovs;
-    vec.nalloc = NGX_IOVS_PREALLOCATE;
+    vec.nalloc = NJET_IOVS_PREALLOCATE;
 
     do {
         /* create the iovec and coalesce the neighbouring bufs */
@@ -320,7 +320,7 @@ ngx_write_chain_to_file(ngx_file_t *file, ngx_chain_t *cl, off_t offset,
             n = ngx_write_file(file, (u_char *) iovs[0].iov_base,
                                iovs[0].iov_len, offset);
 
-            if (n == NGX_ERROR) {
+            if (n == NJET_ERROR) {
                 return n;
             }
 
@@ -329,7 +329,7 @@ ngx_write_chain_to_file(ngx_file_t *file, ngx_chain_t *cl, off_t offset,
 
         n = ngx_writev_file(file, &vec, offset);
 
-        if (n == NGX_ERROR) {
+        if (n == NJET_ERROR) {
             return n;
         }
 
@@ -394,10 +394,10 @@ ngx_writev_file(ngx_file_t *file, ngx_iovec_t *vec, off_t offset)
     ssize_t    n;
     ngx_err_t  err;
 
-    ngx_log_debug3(NGX_LOG_DEBUG_CORE, file->log, 0,
+    ngx_log_debug3(NJET_LOG_DEBUG_CORE, file->log, 0,
                    "writev: %d, %uz, %O", file->fd, vec->size, offset);
 
-#if (NGX_HAVE_PWRITEV)
+#if (NJET_HAVE_PWRITEV)
 
 eintr:
 
@@ -406,31 +406,31 @@ eintr:
     if (n == -1) {
         err = ngx_errno;
 
-        if (err == NGX_EINTR) {
-            ngx_log_debug0(NGX_LOG_DEBUG_CORE, file->log, err,
+        if (err == NJET_EINTR) {
+            ngx_log_debug0(NJET_LOG_DEBUG_CORE, file->log, err,
                            "pwritev() was interrupted");
             goto eintr;
         }
 
-        ngx_log_error(NGX_LOG_CRIT, file->log, err,
+        ngx_log_error(NJET_LOG_CRIT, file->log, err,
                       "pwritev() \"%s\" failed", file->name.data);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if ((size_t) n != vec->size) {
-        ngx_log_error(NGX_LOG_CRIT, file->log, 0,
+        ngx_log_error(NJET_LOG_CRIT, file->log, 0,
                       "pwritev() \"%s\" has written only %z of %uz",
                       file->name.data, n, vec->size);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
 #else
 
     if (file->sys_offset != offset) {
         if (lseek(file->fd, offset, SEEK_SET) == -1) {
-            ngx_log_error(NGX_LOG_CRIT, file->log, ngx_errno,
+            ngx_log_error(NJET_LOG_CRIT, file->log, ngx_errno,
                           "lseek() \"%s\" failed", file->name.data);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         file->sys_offset = offset;
@@ -443,22 +443,22 @@ eintr:
     if (n == -1) {
         err = ngx_errno;
 
-        if (err == NGX_EINTR) {
-            ngx_log_debug0(NGX_LOG_DEBUG_CORE, file->log, err,
+        if (err == NJET_EINTR) {
+            ngx_log_debug0(NJET_LOG_DEBUG_CORE, file->log, err,
                            "writev() was interrupted");
             goto eintr;
         }
 
-        ngx_log_error(NGX_LOG_CRIT, file->log, err,
+        ngx_log_error(NJET_LOG_CRIT, file->log, err,
                       "writev() \"%s\" failed", file->name.data);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if ((size_t) n != vec->size) {
-        ngx_log_error(NGX_LOG_CRIT, file->log, 0,
+        ngx_log_error(NJET_LOG_CRIT, file->log, 0,
                       "writev() \"%s\" has written only %z of %uz",
                       file->name.data, n, vec->size);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     file->sys_offset += n;
@@ -471,7 +471,7 @@ eintr:
 }
 
 
-#if (NGX_THREADS)
+#if (NJET_THREADS)
 
 ssize_t
 ngx_thread_write_chain_to_file(ngx_file_t *file, ngx_chain_t *cl, off_t offset,
@@ -480,7 +480,7 @@ ngx_thread_write_chain_to_file(ngx_file_t *file, ngx_chain_t *cl, off_t offset,
     ngx_thread_task_t      *task;
     ngx_thread_file_ctx_t  *ctx;
 
-    ngx_log_debug3(NGX_LOG_DEBUG_CORE, file->log, 0,
+    ngx_log_debug3(NJET_LOG_DEBUG_CORE, file->log, 0,
                    "thread write chain: %d, %p, %O",
                    file->fd, cl, offset);
 
@@ -490,7 +490,7 @@ ngx_thread_write_chain_to_file(ngx_file_t *file, ngx_chain_t *cl, off_t offset,
         task = ngx_thread_task_alloc(pool,
                                      sizeof(ngx_thread_file_ctx_t));
         if (task == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         file->thread_task = task;
@@ -502,15 +502,15 @@ ngx_thread_write_chain_to_file(ngx_file_t *file, ngx_chain_t *cl, off_t offset,
         task->event.complete = 0;
 
         if (!ctx->write) {
-            ngx_log_error(NGX_LOG_ALERT, file->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, file->log, 0,
                           "invalid thread call, write instead of read");
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         if (ctx->err || ctx->nbytes == 0) {
-            ngx_log_error(NGX_LOG_CRIT, file->log, ctx->err,
+            ngx_log_error(NJET_LOG_CRIT, file->log, ctx->err,
                           "pwritev() \"%s\" failed", file->name.data);
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         file->offset += ctx->nbytes;
@@ -525,11 +525,11 @@ ngx_thread_write_chain_to_file(ngx_file_t *file, ngx_chain_t *cl, off_t offset,
     ctx->chain = cl;
     ctx->offset = offset;
 
-    if (file->thread_handler(task, file) != NGX_OK) {
-        return NGX_ERROR;
+    if (file->thread_handler(task, file) != NJET_OK) {
+        return NJET_ERROR;
     }
 
-    return NGX_AGAIN;
+    return NJET_AGAIN;
 }
 
 
@@ -538,17 +538,17 @@ ngx_thread_write_chain_to_file_handler(void *data, ngx_log_t *log)
 {
     ngx_thread_file_ctx_t *ctx = data;
 
-#if (NGX_HAVE_PWRITEV)
+#if (NJET_HAVE_PWRITEV)
 
     off_t          offset;
     ssize_t        n;
     ngx_err_t      err;
     ngx_chain_t   *cl;
     ngx_iovec_t    vec;
-    struct iovec   iovs[NGX_IOVS_PREALLOCATE];
+    struct iovec   iovs[NJET_IOVS_PREALLOCATE];
 
     vec.iovs = iovs;
-    vec.nalloc = NGX_IOVS_PREALLOCATE;
+    vec.nalloc = NJET_IOVS_PREALLOCATE;
 
     cl = ctx->chain;
     offset = ctx->offset;
@@ -567,8 +567,8 @@ eintr:
         if (n == -1) {
             err = ngx_errno;
 
-            if (err == NGX_EINTR) {
-                ngx_log_debug0(NGX_LOG_DEBUG_CORE, log, err,
+            if (err == NJET_EINTR) {
+                ngx_log_debug0(NJET_LOG_DEBUG_CORE, log, err,
                                "pwritev() was interrupted");
                 goto eintr;
             }
@@ -588,13 +588,13 @@ eintr:
 
 #else
 
-    ctx->err = NGX_ENOSYS;
+    ctx->err = NJET_ENOSYS;
     return;
 
 #endif
 }
 
-#endif /* NGX_THREADS */
+#endif /* NJET_THREADS */
 
 
 ngx_int_t
@@ -608,27 +608,27 @@ ngx_set_file_time(u_char *name, ngx_fd_t fd, time_t s)
     tv[1].tv_usec = 0;
 
     if (utimes((char *) name, tv) != -1) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
-    return NGX_ERROR;
+    return NJET_ERROR;
 }
 
 
 ngx_int_t
 ngx_create_file_mapping(ngx_file_mapping_t *fm)
 {
-    fm->fd = ngx_open_file(fm->name, NGX_FILE_RDWR, NGX_FILE_TRUNCATE,
-                           NGX_FILE_DEFAULT_ACCESS);
+    fm->fd = ngx_open_file(fm->name, NJET_FILE_RDWR, NJET_FILE_TRUNCATE,
+                           NJET_FILE_DEFAULT_ACCESS);
 
-    if (fm->fd == NGX_INVALID_FILE) {
-        ngx_log_error(NGX_LOG_CRIT, fm->log, ngx_errno,
+    if (fm->fd == NJET_INVALID_FILE) {
+        ngx_log_error(NJET_LOG_CRIT, fm->log, ngx_errno,
                       ngx_open_file_n " \"%s\" failed", fm->name);
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (ftruncate(fm->fd, fm->size) == -1) {
-        ngx_log_error(NGX_LOG_CRIT, fm->log, ngx_errno,
+        ngx_log_error(NJET_LOG_CRIT, fm->log, ngx_errno,
                       "ftruncate() \"%s\" failed", fm->name);
         goto failed;
     }
@@ -636,20 +636,20 @@ ngx_create_file_mapping(ngx_file_mapping_t *fm)
     fm->addr = mmap(NULL, fm->size, PROT_READ|PROT_WRITE, MAP_SHARED,
                     fm->fd, 0);
     if (fm->addr != MAP_FAILED) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
-    ngx_log_error(NGX_LOG_CRIT, fm->log, ngx_errno,
+    ngx_log_error(NJET_LOG_CRIT, fm->log, ngx_errno,
                   "mmap(%uz) \"%s\" failed", fm->size, fm->name);
 
 failed:
 
-    if (ngx_close_file(fm->fd) == NGX_FILE_ERROR) {
-        ngx_log_error(NGX_LOG_ALERT, fm->log, ngx_errno,
+    if (ngx_close_file(fm->fd) == NJET_FILE_ERROR) {
+        ngx_log_error(NJET_LOG_ALERT, fm->log, ngx_errno,
                       ngx_close_file_n " \"%s\" failed", fm->name);
     }
 
-    return NGX_ERROR;
+    return NJET_ERROR;
 }
 
 
@@ -657,12 +657,12 @@ void
 ngx_close_file_mapping(ngx_file_mapping_t *fm)
 {
     if (munmap(fm->addr, fm->size) == -1) {
-        ngx_log_error(NGX_LOG_CRIT, fm->log, ngx_errno,
+        ngx_log_error(NJET_LOG_CRIT, fm->log, ngx_errno,
                       "munmap(%uz) \"%s\" failed", fm->size, fm->name);
     }
 
-    if (ngx_close_file(fm->fd) == NGX_FILE_ERROR) {
-        ngx_log_error(NGX_LOG_ALERT, fm->log, ngx_errno,
+    if (ngx_close_file(fm->fd) == NJET_FILE_ERROR) {
+        ngx_log_error(NJET_LOG_ALERT, fm->log, ngx_errno,
                       ngx_close_file_n " \"%s\" failed", fm->name);
     }
 }
@@ -674,12 +674,12 @@ ngx_open_dir(ngx_str_t *name, ngx_dir_t *dir)
     dir->dir = opendir((const char *) name->data);
 
     if (dir->dir == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     dir->valid_info = 0;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -689,15 +689,15 @@ ngx_read_dir(ngx_dir_t *dir)
     dir->de = readdir(dir->dir);
 
     if (dir->de) {
-#if (NGX_HAVE_D_TYPE)
+#if (NJET_HAVE_D_TYPE)
         dir->type = dir->de->d_type;
 #else
         dir->type = 0;
 #endif
-        return NGX_OK;
+        return NJET_OK;
     }
 
-    return NGX_ERROR;
+    return NJET_ERROR;
 }
 
 
@@ -709,18 +709,18 @@ ngx_open_glob(ngx_glob_t *gl)
     n = glob((char *) gl->pattern, 0, NULL, &gl->pglob);
 
     if (n == 0) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
 #ifdef GLOB_NOMATCH
 
     if (n == GLOB_NOMATCH && gl->test) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
 #endif
 
-    return NGX_ERROR;
+    return NJET_ERROR;
 }
 
 
@@ -741,10 +741,10 @@ ngx_read_glob(ngx_glob_t *gl, ngx_str_t *name)
         name->data = (u_char *) gl->pglob.gl_pathv[gl->n];
         gl->n++;
 
-        return NGX_OK;
+        return NJET_OK;
     }
 
-    return NGX_DONE;
+    return NJET_DONE;
 }
 
 
@@ -806,7 +806,7 @@ ngx_unlock_fd(ngx_fd_t fd)
 }
 
 
-#if (NGX_HAVE_POSIX_FADVISE) && !(NGX_HAVE_F_READAHEAD)
+#if (NJET_HAVE_POSIX_FADVISE) && !(NJET_HAVE_F_READAHEAD)
 
 ngx_int_t
 ngx_read_ahead(ngx_fd_t fd, size_t n)
@@ -820,13 +820,13 @@ ngx_read_ahead(ngx_fd_t fd, size_t n)
     }
 
     ngx_set_errno(err);
-    return NGX_FILE_ERROR;
+    return NJET_FILE_ERROR;
 }
 
 #endif
 
 
-#if (NGX_HAVE_O_DIRECT)
+#if (NJET_HAVE_O_DIRECT)
 
 ngx_int_t
 ngx_directio_on(ngx_fd_t fd)
@@ -836,7 +836,7 @@ ngx_directio_on(ngx_fd_t fd)
     flags = fcntl(fd, F_GETFL);
 
     if (flags == -1) {
-        return NGX_FILE_ERROR;
+        return NJET_FILE_ERROR;
     }
 
     return fcntl(fd, F_SETFL, flags | O_DIRECT);
@@ -851,7 +851,7 @@ ngx_directio_off(ngx_fd_t fd)
     flags = fcntl(fd, F_GETFL);
 
     if (flags == -1) {
-        return NGX_FILE_ERROR;
+        return NJET_FILE_ERROR;
     }
 
     return fcntl(fd, F_SETFL, flags & ~O_DIRECT);
@@ -860,7 +860,7 @@ ngx_directio_off(ngx_fd_t fd)
 #endif
 
 
-#if (NGX_HAVE_STATFS)
+#if (NJET_HAVE_STATFS)
 
 size_t
 ngx_fs_bsize(u_char *name)
@@ -875,7 +875,7 @@ ngx_fs_bsize(u_char *name)
         return 512;
     }
 
-#if (NGX_LINUX)
+#if (NJET_LINUX)
     if ((size_t) fs.f_bsize > ngx_pagesize) {
         return 512;
     }
@@ -891,13 +891,13 @@ ngx_fs_available(u_char *name)
     struct statfs  fs;
 
     if (statfs((char *) name, &fs) == -1) {
-        return NGX_MAX_OFF_T_VALUE;
+        return NJET_MAX_OFF_T_VALUE;
     }
 
     return (off_t) fs.f_bavail * fs.f_bsize;
 }
 
-#elif (NGX_HAVE_STATVFS)
+#elif (NJET_HAVE_STATVFS)
 
 size_t
 ngx_fs_bsize(u_char *name)
@@ -912,7 +912,7 @@ ngx_fs_bsize(u_char *name)
         return 512;
     }
 
-#if (NGX_LINUX)
+#if (NJET_LINUX)
     if ((size_t) fs.f_frsize > ngx_pagesize) {
         return 512;
     }
@@ -928,7 +928,7 @@ ngx_fs_available(u_char *name)
     struct statvfs  fs;
 
     if (statvfs((char *) name, &fs) == -1) {
-        return NGX_MAX_OFF_T_VALUE;
+        return NJET_MAX_OFF_T_VALUE;
     }
 
     return (off_t) fs.f_bavail * fs.f_frsize;
@@ -946,7 +946,7 @@ ngx_fs_bsize(u_char *name)
 off_t
 ngx_fs_available(u_char *name)
 {
-    return NGX_MAX_OFF_T_VALUE;
+    return NJET_MAX_OFF_T_VALUE;
 }
 
 #endif

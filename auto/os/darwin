@@ -3,7 +3,7 @@
 # Copyright (C) Nginx, Inc.
 
 
-have=NGX_DARWIN . auto/have_headers
+have=NJET_DARWIN . auto/have_headers
 
 CORE_INCS="$UNIX_INCS"
 CORE_DEPS="$UNIX_DEPS $DARWIN_DEPS"
@@ -23,15 +23,15 @@ CC_AUX_FLAGS="$CC_AUX_FLAGS -D__APPLE_USE_RFC_3542"
 # kqueue
 
 echo " + kqueue found"
-have=NGX_HAVE_KQUEUE . auto/have
-have=NGX_HAVE_CLEAR_EVENT . auto/have
+have=NJET_HAVE_KQUEUE . auto/have
+have=NJET_HAVE_CLEAR_EVENT . auto/have
 EVENT_MODULES="$EVENT_MODULES $KQUEUE_MODULE"
 CORE_SRCS="$CORE_SRCS $KQUEUE_SRCS"
 EVENT_FOUND=YES
-NGX_KQUEUE_CHECKED=YES
+NJET_KQUEUE_CHECKED=YES
 
 ngx_feature="kqueue's EVFILT_TIMER"
-ngx_feature_name="NGX_HAVE_TIMER_EVENT"
+ngx_feature_name="NJET_HAVE_TIMER_EVENT"
 ngx_feature_run=yes
 ngx_feature_incs="#include <sys/event.h>
                   #include <sys/time.h>"
@@ -61,7 +61,7 @@ ngx_feature_test="int      kq;
 
 
 ngx_feature="Darwin 64-bit kqueue millisecond timeout bug"
-ngx_feature_name=NGX_DARWIN_KEVENT_BUG
+ngx_feature_name=NJET_DARWIN_KEVENT_BUG
 ngx_feature_run=bug
 ngx_feature_incs="#include <sys/event.h>
                   #include <sys/time.h>"
@@ -90,7 +90,7 @@ ngx_feature_test="int  kq;
 # sendfile()
 
 ngx_feature="sendfile()"
-ngx_feature_name="NGX_HAVE_SENDFILE"
+ngx_feature_name="NJET_HAVE_SENDFILE"
 ngx_feature_run=yes
 ngx_feature_incs="#include <sys/types.h>
                   #include <sys/socket.h>
@@ -110,7 +110,7 @@ fi
 
 
 ngx_feature="atomic(3)"
-ngx_feature_name=NGX_DARWIN_ATOMIC
+ngx_feature_name=NJET_DARWIN_ATOMIC
 ngx_feature_run=no
 ngx_feature_incs="#include <libkern/OSAtomic.h>"
 ngx_feature_path=

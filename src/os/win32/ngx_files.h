@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_FILES_H_INCLUDED_
-#define _NGX_FILES_H_INCLUDED_
+#ifndef _NJET_FILES_H_INCLUDED_
+#define _NJET_FILES_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -65,25 +65,25 @@ typedef struct {
 #endif
 
 
-#define NGX_INVALID_FILE            INVALID_HANDLE_VALUE
-#define NGX_FILE_ERROR              0
+#define NJET_INVALID_FILE            INVALID_HANDLE_VALUE
+#define NJET_FILE_ERROR              0
 
 
 ngx_fd_t ngx_open_file(u_char *name, u_long mode, u_long create, u_long access);
 #define ngx_open_file_n             "CreateFile()"
 
-#define NGX_FILE_RDONLY             GENERIC_READ
-#define NGX_FILE_WRONLY             GENERIC_WRITE
-#define NGX_FILE_RDWR               GENERIC_READ|GENERIC_WRITE
-#define NGX_FILE_APPEND             FILE_APPEND_DATA|SYNCHRONIZE
-#define NGX_FILE_NONBLOCK           0
+#define NJET_FILE_RDONLY             GENERIC_READ
+#define NJET_FILE_WRONLY             GENERIC_WRITE
+#define NJET_FILE_RDWR               GENERIC_READ|GENERIC_WRITE
+#define NJET_FILE_APPEND             FILE_APPEND_DATA|SYNCHRONIZE
+#define NJET_FILE_NONBLOCK           0
 
-#define NGX_FILE_CREATE_OR_OPEN     OPEN_ALWAYS
-#define NGX_FILE_OPEN               OPEN_EXISTING
-#define NGX_FILE_TRUNCATE           CREATE_ALWAYS
+#define NJET_FILE_CREATE_OR_OPEN     OPEN_ALWAYS
+#define NJET_FILE_OPEN               OPEN_EXISTING
+#define NJET_FILE_TRUNCATE           CREATE_ALWAYS
 
-#define NGX_FILE_DEFAULT_ACCESS     0
-#define NGX_FILE_OWNER_ACCESS       0
+#define NJET_FILE_DEFAULT_ACCESS     0
+#define NJET_FILE_OWNER_ACCESS       0
 
 
 #define ngx_open_tempfile(name, persistent, access)                          \
@@ -115,8 +115,8 @@ ssize_t ngx_write_console(ngx_fd_t fd, void *buf, size_t size);
 
 
 #define ngx_linefeed(p)             *p++ = CR; *p++ = LF;
-#define NGX_LINEFEED_SIZE           2
-#define NGX_LINEFEED                CRLF
+#define NJET_LINEFEED_SIZE           2
+#define NJET_LINEFEED                CRLF
 
 
 #define ngx_delete_file(name)       DeleteFile((const char *) name)
@@ -178,8 +178,8 @@ u_char *ngx_realpath(u_char *path, u_char *resolved);
 #define ngx_getcwd_n                "GetCurrentDirectory()"
 #define ngx_path_separator(c)       ((c) == '/' || (c) == '\\')
 
-#define NGX_HAVE_MAX_PATH           1
-#define NGX_MAX_PATH                MAX_PATH
+#define NJET_HAVE_MAX_PATH           1
+#define NJET_MAX_PATH                MAX_PATH
 
 
 ngx_int_t ngx_open_dir(ngx_str_t *name, ngx_dir_t *dir);
@@ -268,4 +268,4 @@ off_t ngx_fs_available(u_char *name);
 #define ngx_set_stderr_n         "SetStdHandle(STD_ERROR_HANDLE)"
 
 
-#endif /* _NGX_FILES_H_INCLUDED_ */
+#endif /* _NJET_FILES_H_INCLUDED_ */

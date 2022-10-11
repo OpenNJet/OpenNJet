@@ -17,8 +17,8 @@
  */
 
 
-#define  NGX_HTTP_MODERN_BROWSER   0
-#define  NGX_HTTP_ANCIENT_BROWSER  1
+#define  NJET_HTTP_MODERN_BROWSER   0
+#define  NJET_HTTP_ANCIENT_BROWSER  1
 
 
 typedef struct {
@@ -75,30 +75,30 @@ static char *ngx_http_ancient_browser_value(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_http_browser_commands[] = {
 
     { ngx_string("modern_browser"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE12,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE12,
       ngx_http_modern_browser,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("ancient_browser"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_1MORE,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_1MORE,
       ngx_http_ancient_browser,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("modern_browser_value"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_http_modern_browser_value,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("ancient_browser_value"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE1,
+      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
       ngx_http_ancient_browser_value,
-      NGX_HTTP_LOC_CONF_OFFSET,
+      NJET_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
@@ -122,10 +122,10 @@ static ngx_http_module_t  ngx_http_browser_module_ctx = {
 
 
 ngx_module_t  ngx_http_browser_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_http_browser_module_ctx,          /* module context */
     ngx_http_browser_commands,             /* module directives */
-    NGX_HTTP_MODULE,                       /* module type */
+    NJET_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -133,7 +133,7 @@ ngx_module_t  ngx_http_browser_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -214,13 +214,13 @@ static ngx_http_modern_browser_mask_t  ngx_http_modern_browser_masks[] = {
 static ngx_http_variable_t  ngx_http_browser_vars[] = {
 
     { ngx_string("msie"), NULL, ngx_http_msie_variable,
-      0, NGX_HTTP_VAR_CHANGEABLE, 0 },
+      0, NJET_HTTP_VAR_CHANGEABLE, 0 },
 
     { ngx_string("modern_browser"), NULL, ngx_http_browser_variable,
-      NGX_HTTP_MODERN_BROWSER, NGX_HTTP_VAR_CHANGEABLE, 0 },
+      NJET_HTTP_MODERN_BROWSER, NJET_HTTP_VAR_CHANGEABLE, 0 },
 
     { ngx_string("ancient_browser"), NULL, ngx_http_browser_variable,
-      NGX_HTTP_ANCIENT_BROWSER, NGX_HTTP_VAR_CHANGEABLE, 0 },
+      NJET_HTTP_ANCIENT_BROWSER, NJET_HTTP_VAR_CHANGEABLE, 0 },
 
       ngx_http_null_variable
 };
@@ -237,18 +237,18 @@ ngx_http_browser_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v,
 
     rc = ngx_http_browser(r, cf);
 
-    if (data == NGX_HTTP_MODERN_BROWSER && rc == NGX_HTTP_MODERN_BROWSER) {
+    if (data == NJET_HTTP_MODERN_BROWSER && rc == NJET_HTTP_MODERN_BROWSER) {
         *v = *cf->modern_browser_value;
-        return NGX_OK;
+        return NJET_OK;
     }
 
-    if (data == NGX_HTTP_ANCIENT_BROWSER && rc == NGX_HTTP_ANCIENT_BROWSER) {
+    if (data == NJET_HTTP_ANCIENT_BROWSER && rc == NJET_HTTP_ANCIENT_BROWSER) {
         *v = *cf->ancient_browser_value;
-        return NGX_OK;
+        return NJET_OK;
     }
 
     *v = ngx_http_variable_null_value;
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -263,10 +263,10 @@ ngx_http_browser(ngx_http_request_t *r, ngx_http_browser_conf_t *cf)
 
     if (r->headers_in.user_agent == NULL) {
         if (cf->modern_unlisted_browsers) {
-            return NGX_HTTP_MODERN_BROWSER;
+            return NJET_HTTP_MODERN_BROWSER;
         }
 
-        return NGX_HTTP_ANCIENT_BROWSER;
+        return NJET_HTTP_ANCIENT_BROWSER;
     }
 
     ua = r->headers_in.user_agent->value.data;
@@ -289,7 +289,7 @@ ngx_http_browser(ngx_http_request_t *r, ngx_http_browser_conf_t *cf)
                 continue;
             }
 
-            ngx_log_debug1(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "browser: \"%s\"", name);
 
             name += modern[i].add;
@@ -298,7 +298,7 @@ ngx_http_browser(ngx_http_request_t *r, ngx_http_browser_conf_t *cf)
                 continue;
             }
 
-            ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "version: \"%ui\" \"%s\"", modern[i].version, name);
 
             version = 0;
@@ -317,12 +317,12 @@ ngx_http_browser(ngx_http_request_t *r, ngx_http_browser_conf_t *cf)
                 if (c == '.') {
                     version += ver * scale;
 
-                    ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+                    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                                    "version: \"%ui\" \"%ui\"",
                                    modern[i].version, version);
 
                     if (version > modern[i].version) {
-                        return NGX_HTTP_MODERN_BROWSER;
+                        return NJET_HTTP_MODERN_BROWSER;
                     }
 
                     ver = 0;
@@ -335,19 +335,19 @@ ngx_http_browser(ngx_http_request_t *r, ngx_http_browser_conf_t *cf)
 
             version += ver * scale;
 
-            ngx_log_debug2(NGX_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "version: \"%ui\" \"%ui\"",
                            modern[i].version, version);
 
             if (version >= modern[i].version) {
-                return NGX_HTTP_MODERN_BROWSER;
+                return NJET_HTTP_MODERN_BROWSER;
             }
 
-            return NGX_HTTP_ANCIENT_BROWSER;
+            return NJET_HTTP_ANCIENT_BROWSER;
         }
 
         if (!cf->modern_unlisted_browsers) {
-            return NGX_HTTP_ANCIENT_BROWSER;
+            return NJET_HTTP_ANCIENT_BROWSER;
         }
     }
 
@@ -356,7 +356,7 @@ ngx_http_browser(ngx_http_request_t *r, ngx_http_browser_conf_t *cf)
             && ngx_strncmp(ua, "Mozilla/", sizeof("Mozilla/") - 1) == 0
             && ua[8] > '0' && ua[8] < '5')
         {
-            return NGX_HTTP_ANCIENT_BROWSER;
+            return NJET_HTTP_ANCIENT_BROWSER;
         }
     }
 
@@ -367,16 +367,16 @@ ngx_http_browser(ngx_http_request_t *r, ngx_http_browser_conf_t *cf)
             if (len >= ancient[i].len
                 && ngx_strstr(ua, ancient[i].data) != NULL)
             {
-                return NGX_HTTP_ANCIENT_BROWSER;
+                return NJET_HTTP_ANCIENT_BROWSER;
             }
         }
     }
 
     if (cf->modern_unlisted_browsers) {
-        return NGX_HTTP_MODERN_BROWSER;
+        return NJET_HTTP_MODERN_BROWSER;
     }
 
-    return NGX_HTTP_ANCIENT_BROWSER;
+    return NJET_HTTP_ANCIENT_BROWSER;
 }
 
 
@@ -386,11 +386,11 @@ ngx_http_msie_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v,
 {
     if (r->headers_in.msie) {
         *v = ngx_http_variable_true_value;
-        return NGX_OK;
+        return NJET_OK;
     }
 
     *v = ngx_http_variable_null_value;
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -403,14 +403,14 @@ ngx_http_browser_add_variables(ngx_conf_t *cf)
 
         var = ngx_http_add_variable(cf, &v->name, v->flags);
         if (var == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
         var->get_handler = v->get_handler;
         var->data = v->data;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -475,7 +475,7 @@ ngx_http_browser_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 
         opera = ngx_array_push(conf->modern_browsers);
         if (opera == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         opera->skip = 0;
@@ -520,7 +520,7 @@ found:
         conf->ancient_browser_value = &ngx_http_variable_true_value;
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -550,23 +550,23 @@ ngx_http_modern_browser(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (cf->args->nelts == 2) {
         if (ngx_strcmp(value[1].data, "unlisted") == 0) {
             bcf->modern_unlisted_browsers = 1;
-            return NGX_CONF_OK;
+            return NJET_CONF_OK;
         }
 
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     if (bcf->modern_browsers == NULL) {
         bcf->modern_browsers = ngx_array_create(cf->pool, 5,
                                             sizeof(ngx_http_modern_browser_t));
         if (bcf->modern_browsers == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
     }
 
     browser = ngx_array_push(bcf->modern_browsers);
     if (browser == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     mask = ngx_http_modern_browser_masks;
@@ -577,10 +577,10 @@ ngx_http_modern_browser(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         }
     }
 
-    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+    ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                        "unknown browser name \"%V\"", &value[1]);
 
-    return NGX_CONF_ERROR;
+    return NJET_CONF_ERROR;
 
 found:
 
@@ -612,17 +612,17 @@ found:
             continue;
         }
 
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "invalid browser version \"%V\"", &value[2]);
 
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     version += ver * scale;
 
     browser->version = version;
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -646,19 +646,19 @@ ngx_http_ancient_browser(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             bcf->ancient_browsers = ngx_array_create(cf->pool, 4,
                                                      sizeof(ngx_str_t));
             if (bcf->ancient_browsers == NULL) {
-                return NGX_CONF_ERROR;
+                return NJET_CONF_ERROR;
             }
         }
 
         browser = ngx_array_push(bcf->ancient_browsers);
         if (browser == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         *browser = value[i];
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -672,7 +672,7 @@ ngx_http_modern_browser_value(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     bcf->modern_browser_value = ngx_palloc(cf->pool,
                                            sizeof(ngx_http_variable_value_t));
     if (bcf->modern_browser_value == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     value = cf->args->elts;
@@ -683,7 +683,7 @@ ngx_http_modern_browser_value(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     bcf->modern_browser_value->not_found = 0;
     bcf->modern_browser_value->data = value[1].data;
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -697,7 +697,7 @@ ngx_http_ancient_browser_value(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     bcf->ancient_browser_value = ngx_palloc(cf->pool,
                                             sizeof(ngx_http_variable_value_t));
     if (bcf->ancient_browser_value == NULL) {
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
     }
 
     value = cf->args->elts;
@@ -708,5 +708,5 @@ ngx_http_ancient_browser_value(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     bcf->ancient_browser_value->not_found = 0;
     bcf->ancient_browser_value->data = value[1].data;
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }

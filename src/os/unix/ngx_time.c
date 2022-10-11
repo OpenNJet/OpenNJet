@@ -24,7 +24,7 @@
 void
 ngx_timezone_update(void)
 {
-#if (NGX_FREEBSD)
+#if (NJET_FREEBSD)
 
     if (getenv("TZ")) {
         return;
@@ -38,7 +38,7 @@ ngx_timezone_update(void)
 
     tzset();
 
-#elif (NGX_LINUX)
+#elif (NJET_LINUX)
     time_t      s;
     struct tm  *t;
     char        buf[4];
@@ -56,7 +56,7 @@ ngx_timezone_update(void)
 void
 ngx_localtime(time_t s, ngx_tm_t *tm)
 {
-#if (NGX_HAVE_LOCALTIME_R)
+#if (NJET_HAVE_LOCALTIME_R)
     (void) localtime_r(&s, tm);
 
 #else
@@ -75,7 +75,7 @@ ngx_localtime(time_t s, ngx_tm_t *tm)
 void
 ngx_libc_localtime(time_t s, struct tm *tm)
 {
-#if (NGX_HAVE_LOCALTIME_R)
+#if (NJET_HAVE_LOCALTIME_R)
     (void) localtime_r(&s, tm);
 
 #else
@@ -91,7 +91,7 @@ ngx_libc_localtime(time_t s, struct tm *tm)
 void
 ngx_libc_gmtime(time_t s, struct tm *tm)
 {
-#if (NGX_HAVE_LOCALTIME_R)
+#if (NJET_HAVE_LOCALTIME_R)
     (void) gmtime_r(&s, tm);
 
 #else

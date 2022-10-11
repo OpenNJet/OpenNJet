@@ -3,7 +3,7 @@
 # Copyright (C) Nginx, Inc.
 
 
-cat << END >> $NGX_AUTO_CONFIG_H
+cat << END >> $NJET_AUTO_CONFIG_H
 
 #ifndef $have
 #define $have  1

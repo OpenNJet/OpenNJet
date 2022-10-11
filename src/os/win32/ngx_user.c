@@ -8,7 +8,7 @@
 #include <ngx_core.h>
 
 
-#if (NGX_CRYPT)
+#if (NJET_CRYPT)
 
 ngx_int_t
 ngx_libc_crypt(ngx_pool_t *pool, u_char *key, u_char *salt, u_char **encrypted)
@@ -17,7 +17,7 @@ ngx_libc_crypt(ngx_pool_t *pool, u_char *key, u_char *salt, u_char **encrypted)
 
     *encrypted = key;
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
-#endif /* NGX_CRYPT */
+#endif /* NJET_CRYPT */

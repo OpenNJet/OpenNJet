@@ -16,7 +16,7 @@ typedef struct {
     ngx_uint_t        deny;      /* unsigned  deny:1; */
 } ngx_stream_access_rule_t;
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
 
 typedef struct {
     struct in6_addr   addr;
@@ -26,7 +26,7 @@ typedef struct {
 
 #endif
 
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
 
 typedef struct {
     ngx_uint_t        deny;      /* unsigned  deny:1; */
@@ -36,10 +36,10 @@ typedef struct {
 
 typedef struct {
     ngx_array_t      *rules;     /* array of ngx_stream_access_rule_t */
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     ngx_array_t      *rules6;    /* array of ngx_stream_access_rule6_t */
 #endif
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
     ngx_array_t      *rules_un;  /* array of ngx_stream_access_rule_un_t */
 #endif
 } ngx_stream_access_srv_conf_t;
@@ -48,11 +48,11 @@ typedef struct {
 static ngx_int_t ngx_stream_access_handler(ngx_stream_session_t *s);
 static ngx_int_t ngx_stream_access_inet(ngx_stream_session_t *s,
     ngx_stream_access_srv_conf_t *ascf, in_addr_t addr);
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
 static ngx_int_t ngx_stream_access_inet6(ngx_stream_session_t *s,
     ngx_stream_access_srv_conf_t *ascf, u_char *p);
 #endif
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
 static ngx_int_t ngx_stream_access_unix(ngx_stream_session_t *s,
     ngx_stream_access_srv_conf_t *ascf);
 #endif
@@ -69,16 +69,16 @@ static ngx_int_t ngx_stream_access_init(ngx_conf_t *cf);
 static ngx_command_t  ngx_stream_access_commands[] = {
 
     { ngx_string("allow"),
-      NGX_STREAM_MAIN_CONF|NGX_STREAM_SRV_CONF|NGX_CONF_TAKE1,
+      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
       ngx_stream_access_rule,
-      NGX_STREAM_SRV_CONF_OFFSET,
+      NJET_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("deny"),
-      NGX_STREAM_MAIN_CONF|NGX_STREAM_SRV_CONF|NGX_CONF_TAKE1,
+      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
       ngx_stream_access_rule,
-      NGX_STREAM_SRV_CONF_OFFSET,
+      NJET_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
 
@@ -100,10 +100,10 @@ static ngx_stream_module_t  ngx_stream_access_module_ctx = {
 
 
 ngx_module_t  ngx_stream_access_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_stream_access_module_ctx,         /* module context */
     ngx_stream_access_commands,            /* module directives */
-    NGX_STREAM_MODULE,                     /* module type */
+    NJET_STREAM_MODULE,                     /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -111,7 +111,7 @@ ngx_module_t  ngx_stream_access_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -120,7 +120,7 @@ ngx_stream_access_handler(ngx_stream_session_t *s)
 {
     struct sockaddr_in            *sin;
     ngx_stream_access_srv_conf_t  *ascf;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     u_char                        *p;
     in_addr_t                      addr;
     struct sockaddr_in6           *sin6;
@@ -137,7 +137,7 @@ ngx_stream_access_handler(ngx_stream_session_t *s)
         }
         break;
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
 
     case AF_INET6:
         sin6 = (struct sockaddr_in6 *) s->connection->sockaddr;
@@ -159,7 +159,7 @@ ngx_stream_access_handler(ngx_stream_session_t *s)
 
 #endif
 
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
 
     case AF_UNIX:
         if (ascf->rules_un) {
@@ -171,7 +171,7 @@ ngx_stream_access_handler(ngx_stream_session_t *s)
 #endif
     }
 
-    return NGX_DECLINED;
+    return NJET_DECLINED;
 }
 
 
@@ -185,7 +185,7 @@ ngx_stream_access_inet(ngx_stream_session_t *s,
     rule = ascf->rules->elts;
     for (i = 0; i < ascf->rules->nelts; i++) {
 
-        ngx_log_debug3(NGX_LOG_DEBUG_STREAM, s->connection->log, 0,
+        ngx_log_debug3(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
                        "access: %08XD %08XD %08XD",
                        addr, rule[i].mask, rule[i].addr);
 
@@ -194,11 +194,11 @@ ngx_stream_access_inet(ngx_stream_session_t *s,
         }
     }
 
-    return NGX_DECLINED;
+    return NJET_DECLINED;
 }
 
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
 
 static ngx_int_t
 ngx_stream_access_inet6(ngx_stream_session_t *s,
@@ -211,18 +211,18 @@ ngx_stream_access_inet6(ngx_stream_session_t *s,
     rule6 = ascf->rules6->elts;
     for (i = 0; i < ascf->rules6->nelts; i++) {
 
-#if (NGX_DEBUG)
+#if (NJET_DEBUG)
         {
         size_t  cl, ml, al;
-        u_char  ct[NGX_INET6_ADDRSTRLEN];
-        u_char  mt[NGX_INET6_ADDRSTRLEN];
-        u_char  at[NGX_INET6_ADDRSTRLEN];
+        u_char  ct[NJET_INET6_ADDRSTRLEN];
+        u_char  mt[NJET_INET6_ADDRSTRLEN];
+        u_char  at[NJET_INET6_ADDRSTRLEN];
 
-        cl = ngx_inet6_ntop(p, ct, NGX_INET6_ADDRSTRLEN);
-        ml = ngx_inet6_ntop(rule6[i].mask.s6_addr, mt, NGX_INET6_ADDRSTRLEN);
-        al = ngx_inet6_ntop(rule6[i].addr.s6_addr, at, NGX_INET6_ADDRSTRLEN);
+        cl = ngx_inet6_ntop(p, ct, NJET_INET6_ADDRSTRLEN);
+        ml = ngx_inet6_ntop(rule6[i].mask.s6_addr, mt, NJET_INET6_ADDRSTRLEN);
+        al = ngx_inet6_ntop(rule6[i].addr.s6_addr, at, NJET_INET6_ADDRSTRLEN);
 
-        ngx_log_debug6(NGX_LOG_DEBUG_STREAM, s->connection->log, 0,
+        ngx_log_debug6(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
                        "access: %*s %*s %*s", cl, ct, ml, mt, al, at);
         }
 #endif
@@ -239,13 +239,13 @@ ngx_stream_access_inet6(ngx_stream_session_t *s,
         continue;
     }
 
-    return NGX_DECLINED;
+    return NJET_DECLINED;
 }
 
 #endif
 
 
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
 
 static ngx_int_t
 ngx_stream_access_unix(ngx_stream_session_t *s,
@@ -263,7 +263,7 @@ ngx_stream_access_unix(ngx_stream_session_t *s,
         }
     }
 
-    return NGX_DECLINED;
+    return NJET_DECLINED;
 }
 
 #endif
@@ -273,12 +273,12 @@ static ngx_int_t
 ngx_stream_access_found(ngx_stream_session_t *s, ngx_uint_t deny)
 {
     if (deny) {
-        ngx_log_error(NGX_LOG_ERR, s->connection->log, 0,
+        ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
                       "access forbidden by rule");
-        return NGX_STREAM_FORBIDDEN;
+        return NJET_STREAM_FORBIDDEN;
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -292,10 +292,10 @@ ngx_stream_access_rule(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_str_t                    *value;
     ngx_cidr_t                    cidr;
     ngx_stream_access_rule_t     *rule;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     ngx_stream_access_rule6_t    *rule6;
 #endif
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
     ngx_stream_access_rule_un_t  *rule_un;
 #endif
 
@@ -307,7 +307,7 @@ ngx_stream_access_rule(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (value[1].len == 3 && ngx_strcmp(value[1].data, "all") == 0) {
         all = 1;
 
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
     } else if (value[1].len == 5 && ngx_strcmp(value[1].data, "unix:") == 0) {
         cidr.family = AF_UNIX;
 #endif
@@ -315,14 +315,14 @@ ngx_stream_access_rule(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     } else {
         rc = ngx_ptocidr(&value[1], &cidr);
 
-        if (rc == NGX_ERROR) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        if (rc == NJET_ERROR) {
+            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                          "invalid parameter \"%V\"", &value[1]);
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
-        if (rc == NGX_DONE) {
-            ngx_conf_log_error(NGX_LOG_WARN, cf, 0,
+        if (rc == NJET_DONE) {
+            ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
                          "low address bits of %V are meaningless", &value[1]);
         }
     }
@@ -333,13 +333,13 @@ ngx_stream_access_rule(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             ascf->rules = ngx_array_create(cf->pool, 4,
                                            sizeof(ngx_stream_access_rule_t));
             if (ascf->rules == NULL) {
-                return NGX_CONF_ERROR;
+                return NJET_CONF_ERROR;
             }
         }
 
         rule = ngx_array_push(ascf->rules);
         if (rule == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         rule->mask = cidr.u.in.mask;
@@ -347,20 +347,20 @@ ngx_stream_access_rule(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         rule->deny = (value[0].data[0] == 'd') ? 1 : 0;
     }
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     if (cidr.family == AF_INET6 || all) {
 
         if (ascf->rules6 == NULL) {
             ascf->rules6 = ngx_array_create(cf->pool, 4,
                                             sizeof(ngx_stream_access_rule6_t));
             if (ascf->rules6 == NULL) {
-                return NGX_CONF_ERROR;
+                return NJET_CONF_ERROR;
             }
         }
 
         rule6 = ngx_array_push(ascf->rules6);
         if (rule6 == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         rule6->mask = cidr.u.in6.mask;
@@ -369,27 +369,27 @@ ngx_stream_access_rule(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     }
 #endif
 
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
     if (cidr.family == AF_UNIX || all) {
 
         if (ascf->rules_un == NULL) {
             ascf->rules_un = ngx_array_create(cf->pool, 1,
                                           sizeof(ngx_stream_access_rule_un_t));
             if (ascf->rules_un == NULL) {
-                return NGX_CONF_ERROR;
+                return NJET_CONF_ERROR;
             }
         }
 
         rule_un = ngx_array_push(ascf->rules_un);
         if (rule_un == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         rule_un->deny = (value[0].data[0] == 'd') ? 1 : 0;
     }
 #endif
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -414,23 +414,23 @@ ngx_stream_access_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_stream_access_srv_conf_t  *conf = child;
 
     if (conf->rules == NULL
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
         && conf->rules6 == NULL
 #endif
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
         && conf->rules_un == NULL
 #endif
     ) {
         conf->rules = prev->rules;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
         conf->rules6 = prev->rules6;
 #endif
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
         conf->rules_un = prev->rules_un;
 #endif
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -442,12 +442,12 @@ ngx_stream_access_init(ngx_conf_t *cf)
 
     cmcf = ngx_stream_conf_get_module_main_conf(cf, ngx_stream_core_module);
 
-    h = ngx_array_push(&cmcf->phases[NGX_STREAM_ACCESS_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJET_STREAM_ACCESS_PHASE].handlers);
     if (h == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     *h = ngx_stream_access_handler;
 
-    return NGX_OK;
+    return NJET_OK;
 }

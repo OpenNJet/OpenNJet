@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_EVENT_CONNECT_H_INCLUDED_
-#define _NGX_EVENT_CONNECT_H_INCLUDED_
+#ifndef _NJET_EVENT_CONNECT_H_INCLUDED_
+#define _NJET_EVENT_CONNECT_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -14,9 +14,9 @@
 #include <ngx_event.h>
 
 
-#define NGX_PEER_KEEPALIVE           1
-#define NGX_PEER_NEXT                2
-#define NGX_PEER_FAILED              4
+#define NJET_PEER_KEEPALIVE           1
+#define NJET_PEER_NEXT                2
+#define NJET_PEER_FAILED              4
 
 
 typedef struct ngx_peer_connection_s  ngx_peer_connection_t;
@@ -48,7 +48,7 @@ struct ngx_peer_connection_s {
     ngx_event_notify_peer_pt         notify;
     void                            *data;
 
-#if (NGX_SSL || NGX_COMPAT)
+#if (NJET_SSL || NJET_COMPAT)
     ngx_event_set_peer_session_pt    set_session;
     ngx_event_save_peer_session_pt   save_session;
 #endif
@@ -68,8 +68,8 @@ struct ngx_peer_connection_s {
                                      /* ngx_connection_log_error_e */
     unsigned                         log_error:2;
 
-    NGX_COMPAT_BEGIN(2)
-    NGX_COMPAT_END
+    NJET_COMPAT_BEGIN(2)
+    NJET_COMPAT_END
 };
 
 
@@ -77,4 +77,4 @@ ngx_int_t ngx_event_connect_peer(ngx_peer_connection_t *pc);
 ngx_int_t ngx_event_get_peer(ngx_peer_connection_t *pc, void *data);
 
 
-#endif /* _NGX_EVENT_CONNECT_H_INCLUDED_ */
+#endif /* _NJET_EVENT_CONNECT_H_INCLUDED_ */

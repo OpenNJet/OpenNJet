@@ -21,7 +21,7 @@
  */
 
 
-#if (NGX_HAVE_FIONBIO)
+#if (NJET_HAVE_FIONBIO)
 
 int
 ngx_nonblocking(ngx_socket_t s)
@@ -47,7 +47,7 @@ ngx_blocking(ngx_socket_t s)
 #endif
 
 
-#if (NGX_FREEBSD)
+#if (NJET_FREEBSD)
 
 int
 ngx_tcp_nopush(ngx_socket_t s)
@@ -72,7 +72,7 @@ ngx_tcp_push(ngx_socket_t s)
                       (const void *) &tcp_nopush, sizeof(int));
 }
 
-#elif (NGX_LINUX)
+#elif (NJET_LINUX)
 
 
 int

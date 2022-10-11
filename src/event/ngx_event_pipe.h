@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_EVENT_PIPE_H_INCLUDED_
-#define _NGX_EVENT_PIPE_H_INCLUDED_
+#ifndef _NJET_EVENT_PIPE_H_INCLUDED_
+#define _NJET_EVENT_PIPE_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -47,7 +47,7 @@ struct ngx_event_pipe_s {
     ngx_event_pipe_output_filter_pt   output_filter;
     void                             *output_ctx;
 
-#if (NGX_THREADS || NGX_COMPAT)
+#if (NJET_THREADS || NJET_COMPAT)
     ngx_int_t                       (*thread_handler)(ngx_thread_task_t *task,
                                                       ngx_file_t *file);
     void                             *thread_ctx;
@@ -104,4 +104,4 @@ ngx_int_t ngx_event_pipe_copy_input_filter(ngx_event_pipe_t *p, ngx_buf_t *buf);
 ngx_int_t ngx_event_pipe_add_free_buf(ngx_event_pipe_t *p, ngx_buf_t *b);
 
 
-#endif /* _NGX_EVENT_PIPE_H_INCLUDED_ */
+#endif /* _NJET_EVENT_PIPE_H_INCLUDED_ */

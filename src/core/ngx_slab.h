@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_SLAB_H_INCLUDED_
-#define _NGX_SLAB_H_INCLUDED_
+#ifndef _NJET_SLAB_H_INCLUDED_
+#define _NJET_SLAB_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -69,4 +69,4 @@ void ngx_slab_free(ngx_slab_pool_t *pool, void *p);
 void ngx_slab_free_locked(ngx_slab_pool_t *pool, void *p);
 
 
-#endif /* _NGX_SLAB_H_INCLUDED_ */
+#endif /* _NJET_SLAB_H_INCLUDED_ */

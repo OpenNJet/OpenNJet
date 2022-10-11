@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_SHMEM_H_INCLUDED_
-#define _NGX_SHMEM_H_INCLUDED_
+#ifndef _NJET_SHMEM_H_INCLUDED_
+#define _NJET_SHMEM_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -30,4 +30,4 @@ void ngx_shm_free(ngx_shm_t *shm);
 extern ngx_uint_t  ngx_allocation_granularity;
 
 
-#endif /* _NGX_SHMEM_H_INCLUDED_ */
+#endif /* _NJET_SHMEM_H_INCLUDED_ */

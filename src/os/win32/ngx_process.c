@@ -14,7 +14,7 @@ char           **ngx_argv;
 char           **ngx_os_argv;
 
 ngx_int_t        ngx_last_process;
-ngx_process_t    ngx_processes[NGX_MAX_PROCESSES];
+ngx_process_t    ngx_processes[NJET_MAX_PROCESSES];
 
 
 ngx_pid_t
@@ -37,25 +37,25 @@ ngx_spawn_process(ngx_cycle_t *cycle, char *name, ngx_int_t respawn)
             }
         }
 
-        if (s == NGX_MAX_PROCESSES) {
-            ngx_log_error(NGX_LOG_ALERT, cycle->log, 0,
+        if (s == NJET_MAX_PROCESSES) {
+            ngx_log_error(NJET_LOG_ALERT, cycle->log, 0,
                           "no more than %d processes can be spawned",
-                          NGX_MAX_PROCESSES);
-            return NGX_INVALID_PID;
+                          NJET_MAX_PROCESSES);
+            return NJET_INVALID_PID;
         }
     }
 
     n = GetModuleFileName(NULL, file, MAX_PATH);
 
     if (n == 0) {
-        ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
+        ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
                       "GetModuleFileName() failed");
-        return NGX_INVALID_PID;
+        return NJET_INVALID_PID;
     }
 
     file[n] = '\0';
 
-    ngx_log_debug1(NGX_LOG_DEBUG_CORE, cycle->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_CORE, cycle->log, 0,
                    "GetModuleFileName: \"%s\"", file);
 
     ctx.path = file;
@@ -66,7 +66,7 @@ ngx_spawn_process(ngx_cycle_t *cycle, char *name, ngx_int_t respawn)
 
     pid = ngx_execute(cycle, &ctx);
 
-    if (pid == NGX_INVALID_PID) {
+    if (pid == NJET_INVALID_PID) {
         return pid;
     }
 
@@ -88,7 +88,7 @@ ngx_spawn_process(ngx_cycle_t *cycle, char *name, ngx_int_t respawn)
 
     ngx_time_update();
 
-    ngx_log_debug1(NGX_LOG_DEBUG_CORE, cycle->log, 0,
+    ngx_log_debug1(NJET_LOG_DEBUG_CORE, cycle->log, 0,
                    "WaitForMultipleObjects: %ul", rc);
 
     switch (rc) {
@@ -98,7 +98,7 @@ ngx_spawn_process(ngx_cycle_t *cycle, char *name, ngx_int_t respawn)
         ngx_processes[s].term = OpenEvent(EVENT_MODIFY_STATE, 0,
                                           (char *) ngx_processes[s].term_event);
         if (ngx_processes[s].term == NULL) {
-            ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
                           "OpenEvent(\"%s\") failed",
                           ngx_processes[s].term_event);
             goto failed;
@@ -107,7 +107,7 @@ ngx_spawn_process(ngx_cycle_t *cycle, char *name, ngx_int_t respawn)
         ngx_processes[s].quit = OpenEvent(EVENT_MODIFY_STATE, 0,
                                           (char *) ngx_processes[s].quit_event);
         if (ngx_processes[s].quit == NULL) {
-            ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
                           "OpenEvent(\"%s\") failed",
                           ngx_processes[s].quit_event);
             goto failed;
@@ -116,14 +116,14 @@ ngx_spawn_process(ngx_cycle_t *cycle, char *name, ngx_int_t respawn)
         ngx_processes[s].reopen = OpenEvent(EVENT_MODIFY_STATE, 0,
                                        (char *) ngx_processes[s].reopen_event);
         if (ngx_processes[s].reopen == NULL) {
-            ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
                           "OpenEvent(\"%s\") failed",
                           ngx_processes[s].reopen_event);
             goto failed;
         }
 
         if (ResetEvent(ngx_master_process_event) == 0) {
-            ngx_log_error(NGX_LOG_ALERT, cycle->log, 0,
+            ngx_log_error(NJET_LOG_ALERT, cycle->log, 0,
                           "ResetEvent(\"%s\") failed",
                           ngx_master_process_event_name);
             goto failed;
@@ -133,24 +133,24 @@ ngx_spawn_process(ngx_cycle_t *cycle, char *name, ngx_int_t respawn)
 
     case WAIT_OBJECT_0 + 1:
         if (GetExitCodeProcess(ctx.child, &code) == 0) {
-            ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
                           "GetExitCodeProcess(%P) failed", pid);
         }
 
-        ngx_log_error(NGX_LOG_ALERT, cycle->log, 0,
+        ngx_log_error(NJET_LOG_ALERT, cycle->log, 0,
                       "%s process %P exited with code %Xl",
                       name, pid, code);
 
         goto failed;
 
     case WAIT_TIMEOUT:
-        ngx_log_error(NGX_LOG_ALERT, cycle->log, 0,
+        ngx_log_error(NJET_LOG_ALERT, cycle->log, 0,
                       "the event \"%s\" was not signaled for 5s",
                       ngx_master_process_event_name);
         goto failed;
 
     case WAIT_FAILED:
-        ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
+        ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
                       "WaitForSingleObject(\"%s\") failed",
                       ngx_master_process_event_name);
 
@@ -163,11 +163,11 @@ ngx_spawn_process(ngx_cycle_t *cycle, char *name, ngx_int_t respawn)
 
     switch (respawn) {
 
-    case NGX_PROCESS_RESPAWN:
+    case NJET_PROCESS_RESPAWN:
         ngx_processes[s].just_spawn = 0;
         break;
 
-    case NGX_PROCESS_JUST_RESPAWN:
+    case NJET_PROCESS_JUST_RESPAWN:
         ngx_processes[s].just_spawn = 1;
         break;
     }
@@ -199,7 +199,7 @@ failed:
         ngx_processes[s].handle = NULL;
     }
 
-    return NGX_INVALID_PID;
+    return NJET_INVALID_PID;
 }
 
 
@@ -218,7 +218,7 @@ ngx_execute(ngx_cycle_t *cycle, ngx_exec_ctx_t *ctx)
                       NULL, NULL, 0, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)
         == 0)
     {
-        ngx_log_error(NGX_LOG_CRIT, cycle->log, ngx_errno,
+        ngx_log_error(NJET_LOG_CRIT, cycle->log, ngx_errno,
                       "CreateProcess(\"%s\") failed", ngx_argv[0]);
 
         return 0;
@@ -227,11 +227,11 @@ ngx_execute(ngx_cycle_t *cycle, ngx_exec_ctx_t *ctx)
     ctx->child = pi.hProcess;
 
     if (CloseHandle(pi.hThread) == 0) {
-        ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
+        ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
                       "CloseHandle(pi.hThread) failed");
     }
 
-    ngx_log_error(NGX_LOG_NOTICE, cycle->log, 0,
+    ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0,
                   "start %s process %P", ctx->name, pi.dwProcessId);
 
     return pi.dwProcessId;

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_TIMES_H_INCLUDED_
-#define _NGX_TIMES_H_INCLUDED_
+#ifndef _NJET_TIMES_H_INCLUDED_
+#define _NJET_TIMES_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -49,4 +49,4 @@ extern volatile ngx_str_t    ngx_cached_syslog_time;
 extern volatile ngx_msec_t  ngx_current_msec;
 
 
-#endif /* _NGX_TIMES_H_INCLUDED_ */
+#endif /* _NJET_TIMES_H_INCLUDED_ */

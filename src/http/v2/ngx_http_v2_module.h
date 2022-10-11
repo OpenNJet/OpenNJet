@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_HTTP_V2_MODULE_H_INCLUDED_
-#define _NGX_HTTP_V2_MODULE_H_INCLUDED_
+#ifndef _NJET_HTTP_V2_MODULE_H_INCLUDED_
+#define _NJET_HTTP_V2_MODULE_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -42,4 +42,4 @@ typedef struct {
 extern ngx_module_t  ngx_http_v2_module;
 
 
-#endif /* _NGX_HTTP_V2_MODULE_H_INCLUDED_ */
+#endif /* _NJET_HTTP_V2_MODULE_H_INCLUDED_ */

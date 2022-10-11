@@ -5,20 +5,20 @@
  */
 
 
-#ifndef _NGX_ATOMIC_H_INCLUDED_
-#define _NGX_ATOMIC_H_INCLUDED_
+#ifndef _NJET_ATOMIC_H_INCLUDED_
+#define _NJET_ATOMIC_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#define NGX_HAVE_ATOMIC_OPS   1
+#define NJET_HAVE_ATOMIC_OPS   1
 
 typedef int32_t                     ngx_atomic_int_t;
 typedef uint32_t                    ngx_atomic_uint_t;
 typedef volatile ngx_atomic_uint_t  ngx_atomic_t;
-#define NGX_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
+#define NJET_ATOMIC_T_LEN            (sizeof("-2147483648") - 1)
 
 
 #if defined( __WATCOMC__ ) || defined( __BORLANDC__ ) || defined(__GNUC__)    \
@@ -66,4 +66,4 @@ void ngx_spinlock(ngx_atomic_t *lock, ngx_atomic_int_t value, ngx_uint_t spin);
 #define ngx_unlock(lock)    *(lock) = 0
 
 
-#endif /* _NGX_ATOMIC_H_INCLUDED_ */
+#endif /* _NJET_ATOMIC_H_INCLUDED_ */

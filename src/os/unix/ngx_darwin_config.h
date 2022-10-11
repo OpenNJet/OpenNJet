@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_DARWIN_CONFIG_H_INCLUDED_
-#define _NGX_DARWIN_CONFIG_H_INCLUDED_
+#ifndef _NJET_DARWIN_CONFIG_H_INCLUDED_
+#define _NJET_DARWIN_CONFIG_H_INCLUDED_
 
 
 #define __APPLE_USE_RFC_3542    /* IPV6_PKTINFO */
@@ -62,39 +62,39 @@
 #include <ngx_auto_config.h>
 
 
-#if (NGX_HAVE_POSIX_SEM)
+#if (NJET_HAVE_POSIX_SEM)
 #include <semaphore.h>
 #endif
 
 
-#if (NGX_HAVE_POLL)
+#if (NJET_HAVE_POLL)
 #include <poll.h>
 #endif
 
 
-#if (NGX_HAVE_KQUEUE)
+#if (NJET_HAVE_KQUEUE)
 #include <sys/event.h>
 #endif
 
 
-#define NGX_LISTEN_BACKLOG  -1
+#define NJET_LISTEN_BACKLOG  -1
 
 
-#ifndef NGX_HAVE_INHERITED_NONBLOCK
-#define NGX_HAVE_INHERITED_NONBLOCK  1
+#ifndef NJET_HAVE_INHERITED_NONBLOCK
+#define NJET_HAVE_INHERITED_NONBLOCK  1
 #endif
 
 
-#ifndef NGX_HAVE_CASELESS_FILESYSTEM
-#define NGX_HAVE_CASELESS_FILESYSTEM  1
+#ifndef NJET_HAVE_CASELESS_FILESYSTEM
+#define NJET_HAVE_CASELESS_FILESYSTEM  1
 #endif
 
 
-#define NGX_HAVE_OS_SPECIFIC_INIT    1
-#define NGX_HAVE_DEBUG_MALLOC        1
+#define NJET_HAVE_OS_SPECIFIC_INIT    1
+#define NJET_HAVE_DEBUG_MALLOC        1
 
 
 extern char **environ;
 
 
-#endif /* _NGX_DARWIN_CONFIG_H_INCLUDED_ */
+#endif /* _NJET_DARWIN_CONFIG_H_INCLUDED_ */

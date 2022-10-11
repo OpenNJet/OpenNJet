@@ -8,7 +8,7 @@ if [ $EVENT_SELECT = NO -a $EVENT_FOUND = NO ]; then
 fi
 
 if [ $EVENT_SELECT = YES ]; then
-    have=NGX_HAVE_SELECT . auto/have
+    have=NJET_HAVE_SELECT . auto/have
     CORE_SRCS="$CORE_SRCS $SELECT_SRCS"
     EVENT_MODULES="$EVENT_MODULES $SELECT_MODULE"
 fi
@@ -19,39 +19,39 @@ if [ $EVENT_POLL = NO -a $EVENT_FOUND = NO ]; then
 fi
 
 if [ $EVENT_POLL = YES ]; then
-    have=NGX_HAVE_POLL . auto/have
+    have=NJET_HAVE_POLL . auto/have
     CORE_SRCS="$CORE_SRCS $POLL_SRCS"
     EVENT_MODULES="$EVENT_MODULES $POLL_MODULE"
 fi
 
 
-if [ $NGX_TEST_BUILD_DEVPOLL = YES ]; then
-    have=NGX_HAVE_DEVPOLL . auto/have
-    have=NGX_TEST_BUILD_DEVPOLL . auto/have
+if [ $NJET_TEST_BUILD_DEVPOLL = YES ]; then
+    have=NJET_HAVE_DEVPOLL . auto/have
+    have=NJET_TEST_BUILD_DEVPOLL . auto/have
     EVENT_MODULES="$EVENT_MODULES $DEVPOLL_MODULE"
     CORE_SRCS="$CORE_SRCS $DEVPOLL_SRCS"
 fi
 
 
-if [ $NGX_TEST_BUILD_EVENTPORT = YES ]; then
-    have=NGX_HAVE_EVENTPORT . auto/have
-    have=NGX_TEST_BUILD_EVENTPORT . auto/have
+if [ $NJET_TEST_BUILD_EVENTPORT = YES ]; then
+    have=NJET_HAVE_EVENTPORT . auto/have
+    have=NJET_TEST_BUILD_EVENTPORT . auto/have
     EVENT_MODULES="$EVENT_MODULES $EVENTPORT_MODULE"
     CORE_SRCS="$CORE_SRCS $EVENTPORT_SRCS"
 fi
 
-if [ $NGX_TEST_BUILD_EPOLL = YES ]; then
-    have=NGX_HAVE_EPOLL . auto/have
-    have=NGX_HAVE_EPOLLRDHUP . auto/have
-    have=NGX_HAVE_EPOLLEXCLUSIVE . auto/have
-    have=NGX_HAVE_EVENTFD . auto/have
-    have=NGX_TEST_BUILD_EPOLL . auto/have
+if [ $NJET_TEST_BUILD_EPOLL = YES ]; then
+    have=NJET_HAVE_EPOLL . auto/have
+    have=NJET_HAVE_EPOLLRDHUP . auto/have
+    have=NJET_HAVE_EPOLLEXCLUSIVE . auto/have
+    have=NJET_HAVE_EVENTFD . auto/have
+    have=NJET_TEST_BUILD_EPOLL . auto/have
     EVENT_MODULES="$EVENT_MODULES $EPOLL_MODULE"
     CORE_SRCS="$CORE_SRCS $EPOLL_SRCS"
 fi
 
-if [ $NGX_TEST_BUILD_SOLARIS_SENDFILEV = YES ]; then
-    have=NGX_TEST_BUILD_SOLARIS_SENDFILEV . auto/have
+if [ $NJET_TEST_BUILD_SOLARIS_SENDFILEV = YES ]; then
+    have=NJET_TEST_BUILD_SOLARIS_SENDFILEV . auto/have
     CORE_SRCS="$CORE_SRCS $SOLARIS_SENDFILEV_SRCS"
 fi
 
@@ -97,7 +97,7 @@ if [ $HTTP = YES ]; then
 
 
     if [ $HTTP_CACHE = YES ]; then
-        have=NGX_HTTP_CACHE . auto/have
+        have=NJET_HTTP_CACHE . auto/have
         HTTP_SRCS="$HTTP_SRCS $HTTP_FILE_CACHE_SRCS"
     fi
 
@@ -229,7 +229,7 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_GZIP = YES ]; then
-        have=NGX_HTTP_GZIP . auto/have
+        have=NJET_HTTP_GZIP . auto/have
         USE_ZLIB=YES
 
         ngx_module_name=ngx_http_gzip_filter_module
@@ -254,7 +254,7 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_SSI = YES ]; then
-        have=NGX_HTTP_SSI . auto/have
+        have=NJET_HTTP_SSI . auto/have
 
         ngx_module_name=ngx_http_ssi_filter_module
         ngx_module_incs=
@@ -322,7 +322,7 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_GUNZIP = YES ]; then
-        have=NGX_HTTP_GZIP . auto/have
+        have=NJET_HTTP_GZIP . auto/have
         USE_ZLIB=YES
 
         ngx_module_name=ngx_http_gunzip_filter_module
@@ -409,8 +409,8 @@ if [ $HTTP = YES ]; then
     ngx_module_type=HTTP
 
     if [ $HTTP_V2 = YES ]; then
-        have=NGX_HTTP_V2 . auto/have
-        have=NGX_HTTP_HEADERS . auto/have
+        have=NJET_HTTP_V2 . auto/have
+        have=NJET_HTTP_HEADERS . auto/have
 
         ngx_module_name=ngx_http_v2_module
         ngx_module_incs=src/http/v2
@@ -438,7 +438,7 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_GZIP_STATIC = YES ]; then
-        have=NGX_HTTP_GZIP . auto/have
+        have=NJET_HTTP_GZIP . auto/have
 
         ngx_module_name=ngx_http_gzip_static_module
         ngx_module_incs=
@@ -451,7 +451,7 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_DAV = YES ]; then
-        have=NGX_HTTP_DAV . auto/have
+        have=NJET_HTTP_DAV . auto/have
 
         ngx_module_name=ngx_http_dav_module
         ngx_module_incs=
@@ -530,7 +530,7 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_AUTH_BASIC = YES ]; then
-        have=NGX_CRYPT . auto/have
+        have=NJET_CRYPT . auto/have
 
         ngx_module_name=ngx_http_auth_basic_module
         ngx_module_incs=
@@ -576,8 +576,8 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_REALIP = YES ]; then
-        have=NGX_HTTP_REALIP . auto/have
-        have=NGX_HTTP_X_FORWARDED_FOR . auto/have
+        have=NJET_HTTP_REALIP . auto/have
+        have=NJET_HTTP_X_FORWARDED_FOR . auto/have
 
         ngx_module_name=ngx_http_realip_module
         ngx_module_incs=
@@ -601,7 +601,7 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_GEO = YES ]; then
-        have=NGX_HTTP_X_FORWARDED_FOR . auto/have
+        have=NJET_HTTP_X_FORWARDED_FOR . auto/have
 
         ngx_module_name=ngx_http_geo_module
         ngx_module_incs=
@@ -614,7 +614,7 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_GEOIP != NO ]; then
-        have=NGX_HTTP_X_FORWARDED_FOR . auto/have
+        have=NJET_HTTP_X_FORWARDED_FOR . auto/have
 
         ngx_module_name=ngx_http_geoip_module
         ngx_module_incs=
@@ -674,7 +674,7 @@ if [ $HTTP = YES ]; then
 
     if [ $HTTP_SSL = YES ]; then
         USE_OPENSSL=YES
-        have=NGX_HTTP_SSL . auto/have
+        have=NJET_HTTP_SSL . auto/have
 
         ngx_module_name=ngx_http_ssl_module
         ngx_module_incs=
@@ -687,7 +687,7 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_PROXY = YES ]; then
-        have=NGX_HTTP_X_FORWARDED_FOR . auto/have
+        have=NJET_HTTP_X_FORWARDED_FOR . auto/have
 
         ngx_module_name=ngx_http_proxy_module
         ngx_module_incs=
@@ -799,7 +799,7 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_DEGRADATION = YES ]; then
-        have=NGX_HTTP_DEGRADATION . auto/have
+        have=NJET_HTTP_DEGRADATION . auto/have
 
         ngx_module_name=ngx_http_degradation_module
         ngx_module_incs=
@@ -889,7 +889,7 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_UPSTREAM_ZONE = YES ]; then
-        have=NGX_HTTP_UPSTREAM_ZONE . auto/have
+        have=NJET_HTTP_UPSTREAM_ZONE . auto/have
 
         ngx_module_name=ngx_http_upstream_zone_module
         ngx_module_incs=
@@ -902,7 +902,7 @@ if [ $HTTP = YES ]; then
     fi
 
     if [ $HTTP_STUB_STATUS = YES ]; then
-        have=NGX_STAT_STUB . auto/have
+        have=NJET_STAT_STUB . auto/have
 
         ngx_module_name=ngx_http_stub_status_module
         ngx_module_incs=
@@ -941,7 +941,7 @@ if [ $MAIL != NO ]; then
 
     if [ $MAIL_SSL = YES ]; then
         USE_OPENSSL=YES
-        have=NGX_MAIL_SSL . auto/have
+        have=NJET_MAIL_SSL . auto/have
 
         ngx_module_name=ngx_mail_ssl_module
         ngx_module_deps=src/mail/ngx_mail_ssl_module.h
@@ -1037,7 +1037,7 @@ if [ $STREAM != NO ]; then
 
     if [ $STREAM_SSL = YES ]; then
         USE_OPENSSL=YES
-        have=NGX_STREAM_SSL . auto/have
+        have=NJET_STREAM_SSL . auto/have
 
         ngx_module_name=ngx_stream_ssl_module
         ngx_module_deps=src/stream/ngx_stream_ssl_module.h
@@ -1169,7 +1169,7 @@ if [ $STREAM != NO ]; then
     fi
 
     if [ $STREAM_UPSTREAM_ZONE = YES ]; then
-        have=NGX_STREAM_UPSTREAM_ZONE . auto/have
+        have=NJET_STREAM_UPSTREAM_ZONE . auto/have
 
         ngx_module_name=ngx_stream_upstream_zone_module
         ngx_module_deps=
@@ -1192,16 +1192,16 @@ if [ $STREAM != NO ]; then
 fi
 
 
-#if [ -r $NGX_OBJS/auto ]; then
-#    . $NGX_OBJS/auto
+#if [ -r $NJET_OBJS/auto ]; then
+#    . $NJET_OBJS/auto
 #fi
 
 
-if test -n "$NGX_ADDONS"; then
+if test -n "$NJET_ADDONS"; then
 
     echo configuring additional modules
 
-    for ngx_addon_dir in $NGX_ADDONS
+    for ngx_addon_dir in $NJET_ADDONS
     do
         echo "adding module in $ngx_addon_dir"
 
@@ -1299,7 +1299,7 @@ if [ $HTTP = YES ]; then
     modules="$modules $HTTP_MODULES $HTTP_FILTER_MODULES \
              $HTTP_AUX_FILTER_MODULES $HTTP_INIT_FILTER_MODULES"
 
-    NGX_ADDON_DEPS="$NGX_ADDON_DEPS \$(HTTP_DEPS)"
+    NJET_ADDON_DEPS="$NJET_ADDON_DEPS \$(HTTP_DEPS)"
 fi
 
 
@@ -1319,7 +1319,7 @@ if [ $MAIL != NO ]; then
         . auto/module
     fi
 
-    NGX_ADDON_DEPS="$NGX_ADDON_DEPS \$(MAIL_DEPS)"
+    NJET_ADDON_DEPS="$NJET_ADDON_DEPS \$(MAIL_DEPS)"
 fi
 
 
@@ -1339,31 +1339,31 @@ if [ $STREAM != NO ]; then
         . auto/module
     fi
 
-    NGX_ADDON_DEPS="$NGX_ADDON_DEPS \$(STREAM_DEPS)"
+    NJET_ADDON_DEPS="$NJET_ADDON_DEPS \$(STREAM_DEPS)"
 fi
 
 
 ngx_module_type=MISC
 MISC_MODULES=
 
-if [ $NGX_GOOGLE_PERFTOOLS = YES ]; then
+if [ $NJET_GOOGLE_PERFTOOLS = YES ]; then
     ngx_module_name=ngx_google_perftools_module
     ngx_module_incs=
     ngx_module_deps=
     ngx_module_srcs=src/misc/ngx_google_perftools_module.c
     ngx_module_libs=
-    ngx_module_link=$NGX_GOOGLE_PERFTOOLS
+    ngx_module_link=$NJET_GOOGLE_PERFTOOLS
 
     . auto/module
 fi
 
-if [ $NGX_CPP_TEST = YES ]; then
+if [ $NJET_CPP_TEST = YES ]; then
     ngx_module_name=
     ngx_module_incs=
     ngx_module_deps=
     ngx_module_srcs=src/misc/ngx_cpp_test_module.cpp
     ngx_module_libs=-lstdc++
-    ngx_module_link=$NGX_CPP_TEST
+    ngx_module_link=$NJET_CPP_TEST
 
     . auto/module
 fi
@@ -1371,54 +1371,54 @@ fi
 modules="$modules $MISC_MODULES"
 
 
-if [ $NGX_COMPAT = YES ]; then
-    have=NGX_COMPAT . auto/have
-    have=NGX_HTTP_GZIP . auto/have
-    have=NGX_HTTP_DAV . auto/have
-    have=NGX_HTTP_REALIP . auto/have
-    have=NGX_HTTP_X_FORWARDED_FOR . auto/have
-    have=NGX_HTTP_HEADERS . auto/have
-    have=NGX_HTTP_UPSTREAM_ZONE . auto/have
-    have=NGX_STREAM_UPSTREAM_ZONE . auto/have
+if [ $NJET_COMPAT = YES ]; then
+    have=NJET_COMPAT . auto/have
+    have=NJET_HTTP_GZIP . auto/have
+    have=NJET_HTTP_DAV . auto/have
+    have=NJET_HTTP_REALIP . auto/have
+    have=NJET_HTTP_X_FORWARDED_FOR . auto/have
+    have=NJET_HTTP_HEADERS . auto/have
+    have=NJET_HTTP_UPSTREAM_ZONE . auto/have
+    have=NJET_STREAM_UPSTREAM_ZONE . auto/have
 fi
 
 
-cat << END                                    > $NGX_MODULES_C
+cat << END                                    > $NJET_MODULES_C
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
-$NGX_PRAGMA
+$NJET_PRAGMA
 
 END
 
 for mod in $modules
 do
-    echo "extern ngx_module_t  $mod;"         >> $NGX_MODULES_C
+    echo "extern ngx_module_t  $mod;"         >> $NJET_MODULES_C
 done
 
-echo                                          >> $NGX_MODULES_C
-echo 'ngx_module_t *ngx_modules[] = {'        >> $NGX_MODULES_C
+echo                                          >> $NJET_MODULES_C
+echo 'ngx_module_t *ngx_modules[] = {'        >> $NJET_MODULES_C
 
 for mod in $modules
 do
-    echo "    &$mod,"                         >> $NGX_MODULES_C
+    echo "    &$mod,"                         >> $NJET_MODULES_C
 done
 
-cat << END                                    >> $NGX_MODULES_C
+cat << END                                    >> $NJET_MODULES_C
     NULL
 };
 
 END
 
-echo 'char *ngx_module_names[] = {'           >> $NGX_MODULES_C
+echo 'char *ngx_module_names[] = {'           >> $NJET_MODULES_C
 
 for mod in $modules
 do
-    echo "    \"$mod\","                      >> $NGX_MODULES_C
+    echo "    \"$mod\","                      >> $NJET_MODULES_C
 done
 
-cat << END                                    >> $NGX_MODULES_C
+cat << END                                    >> $NJET_MODULES_C
     NULL
 };
 

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_HTTP_UPSTREAM_H_INCLUDED_
-#define _NGX_HTTP_UPSTREAM_H_INCLUDED_
+#ifndef _NJET_HTTP_UPSTREAM_H_INCLUDED_
+#define _NJET_HTTP_UPSTREAM_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -17,43 +17,43 @@
 #include <ngx_http.h>
 
 
-#define NGX_HTTP_UPSTREAM_FT_ERROR           0x00000002
-#define NGX_HTTP_UPSTREAM_FT_TIMEOUT         0x00000004
-#define NGX_HTTP_UPSTREAM_FT_INVALID_HEADER  0x00000008
-#define NGX_HTTP_UPSTREAM_FT_HTTP_500        0x00000010
-#define NGX_HTTP_UPSTREAM_FT_HTTP_502        0x00000020
-#define NGX_HTTP_UPSTREAM_FT_HTTP_503        0x00000040
-#define NGX_HTTP_UPSTREAM_FT_HTTP_504        0x00000080
-#define NGX_HTTP_UPSTREAM_FT_HTTP_403        0x00000100
-#define NGX_HTTP_UPSTREAM_FT_HTTP_404        0x00000200
-#define NGX_HTTP_UPSTREAM_FT_HTTP_429        0x00000400
-#define NGX_HTTP_UPSTREAM_FT_UPDATING        0x00000800
-#define NGX_HTTP_UPSTREAM_FT_BUSY_LOCK       0x00001000
-#define NGX_HTTP_UPSTREAM_FT_MAX_WAITING     0x00002000
-#define NGX_HTTP_UPSTREAM_FT_NON_IDEMPOTENT  0x00004000
-#define NGX_HTTP_UPSTREAM_FT_NOLIVE          0x40000000
-#define NGX_HTTP_UPSTREAM_FT_OFF             0x80000000
+#define NJET_HTTP_UPSTREAM_FT_ERROR           0x00000002
+#define NJET_HTTP_UPSTREAM_FT_TIMEOUT         0x00000004
+#define NJET_HTTP_UPSTREAM_FT_INVALID_HEADER  0x00000008
+#define NJET_HTTP_UPSTREAM_FT_HTTP_500        0x00000010
+#define NJET_HTTP_UPSTREAM_FT_HTTP_502        0x00000020
+#define NJET_HTTP_UPSTREAM_FT_HTTP_503        0x00000040
+#define NJET_HTTP_UPSTREAM_FT_HTTP_504        0x00000080
+#define NJET_HTTP_UPSTREAM_FT_HTTP_403        0x00000100
+#define NJET_HTTP_UPSTREAM_FT_HTTP_404        0x00000200
+#define NJET_HTTP_UPSTREAM_FT_HTTP_429        0x00000400
+#define NJET_HTTP_UPSTREAM_FT_UPDATING        0x00000800
+#define NJET_HTTP_UPSTREAM_FT_BUSY_LOCK       0x00001000
+#define NJET_HTTP_UPSTREAM_FT_MAX_WAITING     0x00002000
+#define NJET_HTTP_UPSTREAM_FT_NON_IDEMPOTENT  0x00004000
+#define NJET_HTTP_UPSTREAM_FT_NOLIVE          0x40000000
+#define NJET_HTTP_UPSTREAM_FT_OFF             0x80000000
 
-#define NGX_HTTP_UPSTREAM_FT_STATUS          (NGX_HTTP_UPSTREAM_FT_HTTP_500  \
-                                             |NGX_HTTP_UPSTREAM_FT_HTTP_502  \
-                                             |NGX_HTTP_UPSTREAM_FT_HTTP_503  \
-                                             |NGX_HTTP_UPSTREAM_FT_HTTP_504  \
-                                             |NGX_HTTP_UPSTREAM_FT_HTTP_403  \
-                                             |NGX_HTTP_UPSTREAM_FT_HTTP_404  \
-                                             |NGX_HTTP_UPSTREAM_FT_HTTP_429)
+#define NJET_HTTP_UPSTREAM_FT_STATUS          (NJET_HTTP_UPSTREAM_FT_HTTP_500  \
+                                             |NJET_HTTP_UPSTREAM_FT_HTTP_502  \
+                                             |NJET_HTTP_UPSTREAM_FT_HTTP_503  \
+                                             |NJET_HTTP_UPSTREAM_FT_HTTP_504  \
+                                             |NJET_HTTP_UPSTREAM_FT_HTTP_403  \
+                                             |NJET_HTTP_UPSTREAM_FT_HTTP_404  \
+                                             |NJET_HTTP_UPSTREAM_FT_HTTP_429)
 
-#define NGX_HTTP_UPSTREAM_INVALID_HEADER     40
+#define NJET_HTTP_UPSTREAM_INVALID_HEADER     40
 
 
-#define NGX_HTTP_UPSTREAM_IGN_XA_REDIRECT    0x00000002
-#define NGX_HTTP_UPSTREAM_IGN_XA_EXPIRES     0x00000004
-#define NGX_HTTP_UPSTREAM_IGN_EXPIRES        0x00000008
-#define NGX_HTTP_UPSTREAM_IGN_CACHE_CONTROL  0x00000010
-#define NGX_HTTP_UPSTREAM_IGN_SET_COOKIE     0x00000020
-#define NGX_HTTP_UPSTREAM_IGN_XA_LIMIT_RATE  0x00000040
-#define NGX_HTTP_UPSTREAM_IGN_XA_BUFFERING   0x00000080
-#define NGX_HTTP_UPSTREAM_IGN_XA_CHARSET     0x00000100
-#define NGX_HTTP_UPSTREAM_IGN_VARY           0x00000200
+#define NJET_HTTP_UPSTREAM_IGN_XA_REDIRECT    0x00000002
+#define NJET_HTTP_UPSTREAM_IGN_XA_EXPIRES     0x00000004
+#define NJET_HTTP_UPSTREAM_IGN_EXPIRES        0x00000008
+#define NJET_HTTP_UPSTREAM_IGN_CACHE_CONTROL  0x00000010
+#define NJET_HTTP_UPSTREAM_IGN_SET_COOKIE     0x00000020
+#define NJET_HTTP_UPSTREAM_IGN_XA_LIMIT_RATE  0x00000040
+#define NJET_HTTP_UPSTREAM_IGN_XA_BUFFERING   0x00000080
+#define NJET_HTTP_UPSTREAM_IGN_XA_CHARSET     0x00000100
+#define NJET_HTTP_UPSTREAM_IGN_VARY           0x00000200
 
 
 typedef struct {
@@ -104,18 +104,18 @@ typedef struct {
 
     unsigned                         backup:1;
 
-    NGX_COMPAT_BEGIN(6)
-    NGX_COMPAT_END
+    NJET_COMPAT_BEGIN(6)
+    NJET_COMPAT_END
 } ngx_http_upstream_server_t;
 
 
-#define NGX_HTTP_UPSTREAM_CREATE        0x0001
-#define NGX_HTTP_UPSTREAM_WEIGHT        0x0002
-#define NGX_HTTP_UPSTREAM_MAX_FAILS     0x0004
-#define NGX_HTTP_UPSTREAM_FAIL_TIMEOUT  0x0008
-#define NGX_HTTP_UPSTREAM_DOWN          0x0010
-#define NGX_HTTP_UPSTREAM_BACKUP        0x0020
-#define NGX_HTTP_UPSTREAM_MAX_CONNS     0x0100
+#define NJET_HTTP_UPSTREAM_CREATE        0x0001
+#define NJET_HTTP_UPSTREAM_WEIGHT        0x0002
+#define NJET_HTTP_UPSTREAM_MAX_FAILS     0x0004
+#define NJET_HTTP_UPSTREAM_FAIL_TIMEOUT  0x0008
+#define NJET_HTTP_UPSTREAM_DOWN          0x0010
+#define NJET_HTTP_UPSTREAM_BACKUP        0x0020
+#define NJET_HTTP_UPSTREAM_MAX_CONNS     0x0100
 
 
 struct ngx_http_upstream_srv_conf_s {
@@ -131,7 +131,7 @@ struct ngx_http_upstream_srv_conf_s {
     in_port_t                        port;
     ngx_uint_t                       no_port;  /* unsigned no_port:1 */
 
-#if (NGX_HTTP_UPSTREAM_ZONE)
+#if (NJET_HTTP_UPSTREAM_ZONE)
     ngx_shm_zone_t                  *shm_zone;
 #endif
 };
@@ -140,7 +140,7 @@ struct ngx_http_upstream_srv_conf_s {
 typedef struct {
     ngx_addr_t                      *addr;
     ngx_http_complex_value_t        *value;
-#if (NGX_HAVE_TRANSPARENT_PROXY)
+#if (NJET_HAVE_TRANSPARENT_PROXY)
     ngx_uint_t                       transparent; /* unsigned  transparent:1; */
 #endif
 } ngx_http_upstream_local_t;
@@ -191,7 +191,7 @@ typedef struct {
     ngx_http_upstream_local_t       *local;
     ngx_flag_t                       socket_keepalive;
 
-#if (NGX_HTTP_CACHE)
+#if (NJET_HTTP_CACHE)
     ngx_shm_zone_t                  *cache_zone;
     ngx_http_complex_value_t        *cache_value;
 
@@ -218,7 +218,7 @@ typedef struct {
     ngx_array_t                     *store_lengths;
     ngx_array_t                     *store_values;
 
-#if (NGX_HTTP_CACHE)
+#if (NJET_HTTP_CACHE)
     signed                           cache:2;
 #endif
     signed                           store:2;
@@ -227,7 +227,7 @@ typedef struct {
     unsigned                         pass_trailers:1;
     unsigned                         preserve_output:1;
 
-#if (NGX_HTTP_SSL || NGX_COMPAT)
+#if (NJET_HTTP_SSL || NJET_COMPAT)
     ngx_ssl_t                       *ssl;
     ngx_flag_t                       ssl_session_reuse;
 
@@ -242,8 +242,8 @@ typedef struct {
 
     ngx_str_t                        module;
 
-    NGX_COMPAT_BEGIN(2)
-    NGX_COMPAT_END
+    NJET_COMPAT_BEGIN(2)
+    NJET_COMPAT_END
 } ngx_http_upstream_conf_t;
 
 
@@ -333,7 +333,7 @@ struct ngx_http_upstream_s {
 
     ngx_http_upstream_conf_t        *conf;
     ngx_http_upstream_srv_conf_t    *upstream;
-#if (NGX_HTTP_CACHE)
+#if (NJET_HTTP_CACHE)
     ngx_array_t                     *caches;
 #endif
 
@@ -354,7 +354,7 @@ struct ngx_http_upstream_s {
     ngx_int_t                      (*input_filter)(void *data, ssize_t bytes);
     void                            *input_filter_ctx;
 
-#if (NGX_HTTP_CACHE)
+#if (NJET_HTTP_CACHE)
     ngx_int_t                      (*create_key)(ngx_http_request_t *r);
 #endif
     ngx_int_t                      (*create_request)(ngx_http_request_t *r);
@@ -376,7 +376,7 @@ struct ngx_http_upstream_s {
     ngx_str_t                        schema;
     ngx_str_t                        uri;
 
-#if (NGX_HTTP_SSL || NGX_COMPAT)
+#if (NJET_HTTP_SSL || NJET_COMPAT)
     ngx_str_t                        ssl_name;
 #endif
 
@@ -386,7 +386,7 @@ struct ngx_http_upstream_s {
     unsigned                         cacheable:1;
     unsigned                         accel:1;
     unsigned                         ssl:1;
-#if (NGX_HTTP_CACHE)
+#if (NJET_HTTP_CACHE)
     unsigned                         cache_status:3;
 #endif
 
@@ -439,4 +439,4 @@ extern ngx_conf_bitmask_t  ngx_http_upstream_cache_method_mask[];
 extern ngx_conf_bitmask_t  ngx_http_upstream_ignore_headers_masks[];
 
 
-#endif /* _NGX_HTTP_UPSTREAM_H_INCLUDED_ */
+#endif /* _NJET_HTTP_UPSTREAM_H_INCLUDED_ */

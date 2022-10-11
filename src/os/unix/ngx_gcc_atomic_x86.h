@@ -5,10 +5,10 @@
  */
 
 
-#if (NGX_SMP)
-#define NGX_SMP_LOCK  "lock;"
+#if (NJET_SMP)
+#define NJET_SMP_LOCK  "lock;"
 #else
-#define NGX_SMP_LOCK
+#define NJET_SMP_LOCK
 #endif
 
 
@@ -42,7 +42,7 @@ ngx_atomic_cmp_set(ngx_atomic_t *lock, ngx_atomic_uint_t old,
 
     __asm__ volatile (
 
-         NGX_SMP_LOCK
+         NJET_SMP_LOCK
     "    cmpxchgl  %3, %1;   "
     "    sete      %0;       "
 
@@ -81,7 +81,7 @@ ngx_atomic_fetch_add(ngx_atomic_t *value, ngx_atomic_int_t add)
 {
     __asm__ volatile (
 
-         NGX_SMP_LOCK
+         NJET_SMP_LOCK
     "    xaddl  %0, %1;   "
 
     : "+r" (add) : "m" (*value) : "cc", "memory");
@@ -105,7 +105,7 @@ ngx_atomic_fetch_add(ngx_atomic_t *value, ngx_atomic_int_t add)
 
     __asm__ volatile (
 
-         NGX_SMP_LOCK
+         NJET_SMP_LOCK
     "    xaddl  %2, %1;   "
 
     : "=a" (old) : "m" (*value), "a" (add) : "cc", "memory");

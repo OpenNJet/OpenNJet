@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_PROCESS_H_INCLUDED_
-#define _NGX_PROCESS_H_INCLUDED_
+#ifndef _NJET_PROCESS_H_INCLUDED_
+#define _NJET_PROCESS_H_INCLUDED_
 
 
 #include <ngx_setaffinity.h>
@@ -15,7 +15,7 @@
 
 typedef pid_t       ngx_pid_t;
 
-#define NGX_INVALID_PID  -1
+#define NJET_INVALID_PID  -1
 
 typedef void (*ngx_spawn_proc_pt) (ngx_cycle_t *cycle, void *data);
 
@@ -44,13 +44,13 @@ typedef struct {
 } ngx_exec_ctx_t;
 
 
-#define NGX_MAX_PROCESSES         1024
+#define NJET_MAX_PROCESSES         1024
 
-#define NGX_PROCESS_NORESPAWN     -1
-#define NGX_PROCESS_JUST_SPAWN    -2
-#define NGX_PROCESS_RESPAWN       -3
-#define NGX_PROCESS_JUST_RESPAWN  -4
-#define NGX_PROCESS_DETACHED      -5
+#define NJET_PROCESS_NORESPAWN     -1
+#define NJET_PROCESS_JUST_SPAWN    -2
+#define NJET_PROCESS_RESPAWN       -3
+#define NJET_PROCESS_JUST_RESPAWN  -4
+#define NJET_PROCESS_DETACHED      -5
 
 
 #define ngx_getpid   getpid
@@ -68,7 +68,7 @@ ngx_int_t ngx_init_signals(ngx_log_t *log);
 void ngx_debug_point(void);
 
 
-#if (NGX_HAVE_SCHED_YIELD)
+#if (NJET_HAVE_SCHED_YIELD)
 #define ngx_sched_yield()  sched_yield()
 #else
 #define ngx_sched_yield()  usleep(1)
@@ -84,7 +84,7 @@ extern ngx_pid_t      ngx_parent;
 extern ngx_socket_t   ngx_channel;
 extern ngx_int_t      ngx_process_slot;
 extern ngx_int_t      ngx_last_process;
-extern ngx_process_t  ngx_processes[NGX_MAX_PROCESSES];
+extern ngx_process_t  ngx_processes[NJET_MAX_PROCESSES];
 
 
-#endif /* _NGX_PROCESS_H_INCLUDED_ */
+#endif /* _NJET_PROCESS_H_INCLUDED_ */

@@ -5,40 +5,40 @@
  */
 
 
-#ifndef _NGX_INET_H_INCLUDED_
-#define _NGX_INET_H_INCLUDED_
+#ifndef _NJET_INET_H_INCLUDED_
+#define _NJET_INET_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#define NGX_INET_ADDRSTRLEN   (sizeof("255.255.255.255") - 1)
-#define NGX_INET6_ADDRSTRLEN                                                 \
+#define NJET_INET_ADDRSTRLEN   (sizeof("255.255.255.255") - 1)
+#define NJET_INET6_ADDRSTRLEN                                                 \
     (sizeof("ffff:ffff:ffff:ffff:ffff:ffff:255.255.255.255") - 1)
-#define NGX_UNIX_ADDRSTRLEN                                                  \
+#define NJET_UNIX_ADDRSTRLEN                                                  \
     (sizeof("unix:") - 1 +                                                   \
      sizeof(struct sockaddr_un) - offsetof(struct sockaddr_un, sun_path))
 
-#if (NGX_HAVE_UNIX_DOMAIN)
-#define NGX_SOCKADDR_STRLEN   NGX_UNIX_ADDRSTRLEN
-#elif (NGX_HAVE_INET6)
-#define NGX_SOCKADDR_STRLEN   (NGX_INET6_ADDRSTRLEN + sizeof("[]:65535") - 1)
+#if (NJET_HAVE_UNIX_DOMAIN)
+#define NJET_SOCKADDR_STRLEN   NJET_UNIX_ADDRSTRLEN
+#elif (NJET_HAVE_INET6)
+#define NJET_SOCKADDR_STRLEN   (NJET_INET6_ADDRSTRLEN + sizeof("[]:65535") - 1)
 #else
-#define NGX_SOCKADDR_STRLEN   (NGX_INET_ADDRSTRLEN + sizeof(":65535") - 1)
+#define NJET_SOCKADDR_STRLEN   (NJET_INET_ADDRSTRLEN + sizeof(":65535") - 1)
 #endif
 
 /* compatibility */
-#define NGX_SOCKADDRLEN       sizeof(ngx_sockaddr_t)
+#define NJET_SOCKADDRLEN       sizeof(ngx_sockaddr_t)
 
 
 typedef union {
     struct sockaddr           sockaddr;
     struct sockaddr_in        sockaddr_in;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     struct sockaddr_in6       sockaddr_in6;
 #endif
-#if (NGX_HAVE_UNIX_DOMAIN)
+#if (NJET_HAVE_UNIX_DOMAIN)
     struct sockaddr_un        sockaddr_un;
 #endif
 } ngx_sockaddr_t;
@@ -50,7 +50,7 @@ typedef struct {
 } ngx_in_cidr_t;
 
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
 
 typedef struct {
     struct in6_addr           addr;
@@ -64,7 +64,7 @@ typedef struct {
     ngx_uint_t                family;
     union {
         ngx_in_cidr_t         in;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
         ngx_in6_cidr_t        in6;
 #endif
     } u;
@@ -107,7 +107,7 @@ typedef struct {
 
 
 in_addr_t ngx_inet_addr(u_char *text, size_t len);
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
 ngx_int_t ngx_inet6_addr(u_char *p, size_t len, u_char *addr);
 size_t ngx_inet6_ntop(u_char *p, u_char *text, size_t len);
 #endif
@@ -129,4 +129,4 @@ void ngx_inet_set_port(struct sockaddr *sa, in_port_t port);
 ngx_uint_t ngx_inet_wildcard(struct sockaddr *sa);
 
 
-#endif /* _NGX_INET_H_INCLUDED_ */
+#endif /* _NJET_INET_H_INCLUDED_ */

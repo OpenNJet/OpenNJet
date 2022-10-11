@@ -9,32 +9,32 @@
 #include <ngx_core.h>
 
 
-#ifndef _NGX_RESOLVER_H_INCLUDED_
-#define _NGX_RESOLVER_H_INCLUDED_
+#ifndef _NJET_RESOLVER_H_INCLUDED_
+#define _NJET_RESOLVER_H_INCLUDED_
 
 
-#define NGX_RESOLVE_A         1
-#define NGX_RESOLVE_CNAME     5
-#define NGX_RESOLVE_PTR       12
-#define NGX_RESOLVE_MX        15
-#define NGX_RESOLVE_TXT       16
-#if (NGX_HAVE_INET6)
-#define NGX_RESOLVE_AAAA      28
+#define NJET_RESOLVE_A         1
+#define NJET_RESOLVE_CNAME     5
+#define NJET_RESOLVE_PTR       12
+#define NJET_RESOLVE_MX        15
+#define NJET_RESOLVE_TXT       16
+#if (NJET_HAVE_INET6)
+#define NJET_RESOLVE_AAAA      28
 #endif
-#define NGX_RESOLVE_SRV       33
-#define NGX_RESOLVE_DNAME     39
+#define NJET_RESOLVE_SRV       33
+#define NJET_RESOLVE_DNAME     39
 
-#define NGX_RESOLVE_FORMERR   1
-#define NGX_RESOLVE_SERVFAIL  2
-#define NGX_RESOLVE_NXDOMAIN  3
-#define NGX_RESOLVE_NOTIMP    4
-#define NGX_RESOLVE_REFUSED   5
-#define NGX_RESOLVE_TIMEDOUT  NGX_ETIMEDOUT
+#define NJET_RESOLVE_FORMERR   1
+#define NJET_RESOLVE_SERVFAIL  2
+#define NJET_RESOLVE_NXDOMAIN  3
+#define NJET_RESOLVE_NOTIMP    4
+#define NJET_RESOLVE_REFUSED   5
+#define NJET_RESOLVE_TIMEDOUT  NJET_ETIMEDOUT
 
 
-#define NGX_NO_RESOLVER       (void *) -1
+#define NJET_NO_RESOLVER       (void *) -1
 
-#define NGX_RESOLVER_MAX_RECURSION    50
+#define NJET_RESOLVER_MAX_RECURSION    50
 
 
 typedef struct ngx_resolver_s  ngx_resolver_t;
@@ -96,7 +96,7 @@ typedef struct {
     /* PTR: resolved name, A: name to resolve */
     u_char                   *name;
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     /* PTR: IPv6 address to resolve (IPv4 address is in rbtree node key) */
     struct in6_addr           addr6;
 #endif
@@ -105,7 +105,7 @@ typedef struct {
     u_short                   qlen;
 
     u_char                   *query;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     u_char                   *query6;
 #endif
 
@@ -121,7 +121,7 @@ typedef struct {
     u_short                   nsrvs;
     u_short                   cnlen;
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     union {
         struct in6_addr       addr6;
         struct in6_addr      *addrs6;
@@ -135,7 +135,7 @@ typedef struct {
     uint32_t                  ttl;
 
     unsigned                  tcp:1;
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     unsigned                  tcp6:1;
 #endif
 
@@ -177,7 +177,7 @@ struct ngx_resolver_s {
 
     unsigned                  ipv4:1;
 
-#if (NGX_HAVE_INET6)
+#if (NJET_HAVE_INET6)
     unsigned                  ipv6:1;
     ngx_rbtree_t              addr6_rbtree;
     ngx_rbtree_node_t         addr6_sentinel;
@@ -239,4 +239,4 @@ void ngx_resolve_addr_done(ngx_resolver_ctx_t *ctx);
 char *ngx_resolver_strerror(ngx_int_t err);
 
 
-#endif /* _NGX_RESOLVER_H_INCLUDED_ */
+#endif /* _NJET_RESOLVER_H_INCLUDED_ */

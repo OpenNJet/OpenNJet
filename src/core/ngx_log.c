@@ -14,7 +14,7 @@ static char *ngx_log_set_levels(ngx_conf_t *cf, ngx_log_t *log);
 static void ngx_log_insert(ngx_log_t *log, ngx_log_t *new_log);
 
 
-#if (NGX_DEBUG)
+#if (NJET_DEBUG)
 
 static void ngx_log_memory_writer(ngx_log_t *log, ngx_uint_t level,
     u_char *buf, size_t len);
@@ -34,7 +34,7 @@ typedef struct {
 static ngx_command_t  ngx_errlog_commands[] = {
 
     { ngx_string("error_log"),
-      NGX_MAIN_CONF|NGX_CONF_1MORE,
+      NJET_MAIN_CONF|NJET_CONF_1MORE,
       ngx_error_log,
       0,
       0,
@@ -52,10 +52,10 @@ static ngx_core_module_t  ngx_errlog_module_ctx = {
 
 
 ngx_module_t  ngx_errlog_module = {
-    NGX_MODULE_V1,
+    NJET_MODULE_V1,
     &ngx_errlog_module_ctx,                /* module context */
     ngx_errlog_commands,                   /* module directives */
-    NGX_CORE_MODULE,                       /* module type */
+    NJET_CORE_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -63,7 +63,7 @@ ngx_module_t  ngx_errlog_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NGX_MODULE_V1_PADDING
+    NJET_MODULE_V1_PADDING
 };
 
 
@@ -90,7 +90,7 @@ static const char *debug_levels[] = {
 };
 
 
-#if (NGX_HAVE_VARIADIC_MACROS)
+#if (NJET_HAVE_VARIADIC_MACROS)
 
 void
 ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
@@ -104,15 +104,15 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
 
 #endif
 {
-#if (NGX_HAVE_VARIADIC_MACROS)
+#if (NJET_HAVE_VARIADIC_MACROS)
     va_list      args;
 #endif
     u_char      *p, *last, *msg;
     ssize_t      n;
     ngx_uint_t   wrote_stderr, debug_connection;
-    u_char       errstr[NGX_MAX_ERROR_STR];
+    u_char       errstr[NJET_MAX_ERROR_STR];
 
-    last = errstr + NGX_MAX_ERROR_STR;
+    last = errstr + NJET_MAX_ERROR_STR;
 
     p = ngx_cpymem(errstr, ngx_cached_err_log_time.data,
                    ngx_cached_err_log_time.len);
@@ -120,7 +120,7 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
     p = ngx_slprintf(p, last, " [%V] ", &err_levels[level]);
 
     /* pid#tid */
-    p = ngx_slprintf(p, last, "%P#" NGX_TID_T_FMT ": ",
+    p = ngx_slprintf(p, last, "%P#" NJET_TID_T_FMT ": ",
                     ngx_log_pid, ngx_log_tid);
 
     if (log->connection) {
@@ -129,7 +129,7 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
 
     msg = p;
 
-#if (NGX_HAVE_VARIADIC_MACROS)
+#if (NJET_HAVE_VARIADIC_MACROS)
 
     va_start(args, fmt);
     p = ngx_vslprintf(p, last, fmt, args);
@@ -145,18 +145,18 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
         p = ngx_log_errno(p, last, err);
     }
 
-    if (level != NGX_LOG_DEBUG && log->handler) {
+    if (level != NJET_LOG_DEBUG && log->handler) {
         p = log->handler(log, p, last - p);
     }
 
-    if (p > last - NGX_LINEFEED_SIZE) {
-        p = last - NGX_LINEFEED_SIZE;
+    if (p > last - NJET_LINEFEED_SIZE) {
+        p = last - NJET_LINEFEED_SIZE;
     }
 
     ngx_linefeed(p);
 
     wrote_stderr = 0;
-    debug_connection = (log->log_level & NGX_LOG_DEBUG_CONNECTION) != 0;
+    debug_connection = (log->log_level & NJET_LOG_DEBUG_CONNECTION) != 0;
 
     while (log) {
 
@@ -182,7 +182,7 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
 
         n = ngx_write_fd(log->file->fd, errstr, p - errstr);
 
-        if (n == -1 && ngx_errno == NGX_ENOSPC) {
+        if (n == -1 && ngx_errno == NJET_ENOSPC) {
             log->disk_full_time = ngx_time();
         }
 
@@ -196,7 +196,7 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
     }
 
     if (!ngx_use_stderr
-        || level > NGX_LOG_WARN
+        || level > NJET_LOG_WARN
         || wrote_stderr)
     {
         return;
@@ -210,7 +210,7 @@ ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
 }
 
 
-#if !(NGX_HAVE_VARIADIC_MACROS)
+#if !(NJET_HAVE_VARIADIC_MACROS)
 
 void ngx_cdecl
 ngx_log_error(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
@@ -232,7 +232,7 @@ ngx_log_debug_core(ngx_log_t *log, ngx_err_t err, const char *fmt, ...)
     va_list  args;
 
     va_start(args, fmt);
-    ngx_log_error_core(NGX_LOG_DEBUG, log, err, fmt, args);
+    ngx_log_error_core(NJET_LOG_DEBUG, log, err, fmt, args);
     va_end(args);
 }
 
@@ -244,13 +244,13 @@ ngx_log_abort(ngx_err_t err, const char *fmt, ...)
 {
     u_char   *p;
     va_list   args;
-    u_char    errstr[NGX_MAX_CONF_ERRSTR];
+    u_char    errstr[NJET_MAX_CONF_ERRSTR];
 
     va_start(args, fmt);
     p = ngx_vsnprintf(errstr, sizeof(errstr) - 1, fmt, args);
     va_end(args);
 
-    ngx_log_error(NGX_LOG_ALERT, ngx_cycle->log, err,
+    ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, err,
                   "%*s", p - errstr, errstr);
 }
 
@@ -260,9 +260,9 @@ ngx_log_stderr(ngx_err_t err, const char *fmt, ...)
 {
     u_char   *p, *last;
     va_list   args;
-    u_char    errstr[NGX_MAX_ERROR_STR];
+    u_char    errstr[NJET_MAX_ERROR_STR];
 
-    last = errstr + NGX_MAX_ERROR_STR;
+    last = errstr + NJET_MAX_ERROR_STR;
 
     p = ngx_cpymem(errstr, "njet: ", 7);
 
@@ -274,8 +274,8 @@ ngx_log_stderr(ngx_err_t err, const char *fmt, ...)
         p = ngx_log_errno(p, last, err);
     }
 
-    if (p > last - NGX_LINEFEED_SIZE) {
-        p = last - NGX_LINEFEED_SIZE;
+    if (p > last - NJET_LINEFEED_SIZE) {
+        p = last - NJET_LINEFEED_SIZE;
     }
 
     ngx_linefeed(p);
@@ -297,7 +297,7 @@ ngx_log_errno(u_char *buf, u_char *last, ngx_err_t err)
         *buf++ = '.';
     }
 
-#if (NGX_WIN32)
+#if (NJET_WIN32)
     buf = ngx_slprintf(buf, last, ((unsigned) err < 0x80000000)
                                        ? " (%d: " : " (%Xd: ", err);
 #else
@@ -321,10 +321,10 @@ ngx_log_init(u_char *prefix, u_char *error_log)
     size_t   nlen, plen;
 
     ngx_log.file = &ngx_log_file;
-    ngx_log.log_level = NGX_LOG_NOTICE;
+    ngx_log.log_level = NJET_LOG_NOTICE;
 
     if (error_log == NULL) {
-        error_log = (u_char *) NGX_ERROR_LOG_PATH;
+        error_log = (u_char *) NJET_ERROR_LOG_PATH;
     }
 
     name = error_log;
@@ -337,7 +337,7 @@ ngx_log_init(u_char *prefix, u_char *error_log)
 
     p = NULL;
 
-#if (NGX_WIN32)
+#if (NJET_WIN32)
     if (name[1] != ':') {
 #else
     if (name[0] != '/') {
@@ -347,8 +347,8 @@ ngx_log_init(u_char *prefix, u_char *error_log)
             plen = ngx_strlen(prefix);
 
         } else {
-#ifdef NGX_PREFIX
-            prefix = (u_char *) NGX_PREFIX;
+#ifdef NJET_PREFIX
+            prefix = (u_char *) NJET_PREFIX;
             plen = ngx_strlen(prefix);
 #else
             plen = 0;
@@ -373,15 +373,15 @@ ngx_log_init(u_char *prefix, u_char *error_log)
         }
     }
 
-    ngx_log_file.fd = ngx_open_file(name, NGX_FILE_APPEND,
-                                    NGX_FILE_CREATE_OR_OPEN,
-                                    NGX_FILE_DEFAULT_ACCESS);
+    ngx_log_file.fd = ngx_open_file(name, NJET_FILE_APPEND,
+                                    NJET_FILE_CREATE_OR_OPEN,
+                                    NJET_FILE_DEFAULT_ACCESS);
 
-    if (ngx_log_file.fd == NGX_INVALID_FILE) {
+    if (ngx_log_file.fd == NJET_INVALID_FILE) {
         ngx_log_stderr(ngx_errno,
                        "[alert] could not open error log file: "
                        ngx_open_file_n " \"%s\" failed", name);
-#if (NGX_WIN32)
+#if (NJET_WIN32)
         ngx_event_log(ngx_errno,
                        "could not open error log file: "
                        ngx_open_file_n " \"%s\" failed", name);
@@ -404,7 +404,7 @@ ngx_log_open_default(ngx_cycle_t *cycle)
     ngx_log_t  *log;
 
     if (ngx_log_get_file_log(&cycle->new_log) != NULL) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
     if (cycle->new_log.log_level != 0) {
@@ -412,7 +412,7 @@ ngx_log_open_default(ngx_cycle_t *cycle)
 
         log = ngx_pcalloc(cycle->pool, sizeof(ngx_log_t));
         if (log == NULL) {
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
 
     } else {
@@ -420,18 +420,18 @@ ngx_log_open_default(ngx_cycle_t *cycle)
         log = &cycle->new_log;
     }
 
-    log->log_level = NGX_LOG_ERR;
+    log->log_level = NJET_LOG_ERR;
 
     log->file = ngx_conf_open_file(cycle, &cycle->error_log);
     if (log->file == NULL) {
-        return NGX_ERROR;
+        return NJET_ERROR;
     }
 
     if (log != &cycle->new_log) {
         ngx_log_insert(&cycle->new_log, log);
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -441,22 +441,22 @@ ngx_log_redirect_stderr(ngx_cycle_t *cycle)
     ngx_fd_t  fd;
 
     if (cycle->log_use_stderr) {
-        return NGX_OK;
+        return NJET_OK;
     }
 
     /* file log always exists when we are called */
     fd = ngx_log_get_file_log(cycle->log)->file->fd;
 
     if (fd != ngx_stderr) {
-        if (ngx_set_stderr(fd) == NGX_FILE_ERROR) {
-            ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno,
+        if (ngx_set_stderr(fd) == NJET_FILE_ERROR) {
+            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
                           ngx_set_stderr_n " failed");
 
-            return NGX_ERROR;
+            return NJET_ERROR;
         }
     }
 
-    return NGX_OK;
+    return NJET_OK;
 }
 
 
@@ -482,8 +482,8 @@ ngx_log_set_levels(ngx_conf_t *cf, ngx_log_t *log)
     ngx_str_t   *value;
 
     if (cf->args->nelts == 2) {
-        log->log_level = NGX_LOG_ERR;
-        return NGX_CONF_OK;
+        log->log_level = NJET_LOG_ERR;
+        return NJET_CONF_OK;
     }
 
     value = cf->args->elts;
@@ -491,14 +491,14 @@ ngx_log_set_levels(ngx_conf_t *cf, ngx_log_t *log)
     for (i = 2; i < cf->args->nelts; i++) {
         found = 0;
 
-        for (n = 1; n <= NGX_LOG_DEBUG; n++) {
+        for (n = 1; n <= NJET_LOG_DEBUG; n++) {
             if (ngx_strcmp(value[i].data, err_levels[n].data) == 0) {
 
                 if (log->log_level != 0) {
-                    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                    ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                        "duplicate log level \"%V\"",
                                        &value[i]);
-                    return NGX_CONF_ERROR;
+                    return NJET_CONF_ERROR;
                 }
 
                 log->log_level = n;
@@ -507,13 +507,13 @@ ngx_log_set_levels(ngx_conf_t *cf, ngx_log_t *log)
             }
         }
 
-        for (n = 0, d = NGX_LOG_DEBUG_FIRST; d <= NGX_LOG_DEBUG_LAST; d <<= 1) {
+        for (n = 0, d = NJET_LOG_DEBUG_FIRST; d <= NJET_LOG_DEBUG_LAST; d <<= 1) {
             if (ngx_strcmp(value[i].data, debug_levels[n++]) == 0) {
-                if (log->log_level & ~NGX_LOG_DEBUG_ALL) {
-                    ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                if (log->log_level & ~NJET_LOG_DEBUG_ALL) {
+                    ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                        "invalid log level \"%V\"",
                                        &value[i]);
-                    return NGX_CONF_ERROR;
+                    return NJET_CONF_ERROR;
                 }
 
                 log->log_level |= d;
@@ -524,17 +524,17 @@ ngx_log_set_levels(ngx_conf_t *cf, ngx_log_t *log)
 
 
         if (!found) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                "invalid log level \"%V\"", &value[i]);
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
     }
 
-    if (log->log_level == NGX_LOG_DEBUG) {
-        log->log_level = NGX_LOG_DEBUG_ALL;
+    if (log->log_level == NJET_LOG_DEBUG) {
+        log->log_level = NJET_LOG_DEBUG_ALL;
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -563,7 +563,7 @@ ngx_log_set_log(ngx_conf_t *cf, ngx_log_t **head)
 
         new_log = ngx_pcalloc(cf->pool, sizeof(ngx_log_t));
         if (new_log == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         if (*head == NULL) {
@@ -579,12 +579,12 @@ ngx_log_set_log(ngx_conf_t *cf, ngx_log_t **head)
 
         new_log->file = ngx_conf_open_file(cf->cycle, &name);
         if (new_log->file == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
     } else if (ngx_strncmp(value[1].data, "memory:", 7) == 0) {
 
-#if (NGX_DEBUG)
+#if (NJET_DEBUG)
         size_t                 size, needed;
         ngx_pool_cleanup_t    *cln;
         ngx_log_memory_buf_t  *buf;
@@ -592,28 +592,28 @@ ngx_log_set_log(ngx_conf_t *cf, ngx_log_t **head)
         value[1].len -= 7;
         value[1].data += 7;
 
-        needed = sizeof("MEMLOG  :" NGX_LINEFEED)
+        needed = sizeof("MEMLOG  :" NJET_LINEFEED)
                  + cf->conf_file->file.name.len
-                 + NGX_SIZE_T_LEN
-                 + NGX_INT_T_LEN
-                 + NGX_MAX_ERROR_STR;
+                 + NJET_SIZE_T_LEN
+                 + NJET_INT_T_LEN
+                 + NJET_MAX_ERROR_STR;
 
         size = ngx_parse_size(&value[1]);
 
-        if (size == (size_t) NGX_ERROR || size < needed) {
-            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        if (size == (size_t) NJET_ERROR || size < needed) {
+            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                                "invalid buffer size \"%V\"", &value[1]);
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         buf = ngx_pcalloc(cf->pool, sizeof(ngx_log_memory_buf_t));
         if (buf == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         buf->start = ngx_pnalloc(cf->pool, size);
         if (buf->start == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         buf->end = buf->start + size;
@@ -626,7 +626,7 @@ ngx_log_set_log(ngx_conf_t *cf, ngx_log_t **head)
 
         cln = ngx_pool_cleanup_add(cf->pool, 0);
         if (cln == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
         cln->data = new_log;
@@ -636,19 +636,19 @@ ngx_log_set_log(ngx_conf_t *cf, ngx_log_t **head)
         new_log->wdata = buf;
 
 #else
-        ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
                            "njet was built without debug support");
-        return NGX_CONF_ERROR;
+        return NJET_CONF_ERROR;
 #endif
 
     } else if (ngx_strncmp(value[1].data, "syslog:", 7) == 0) {
         peer = ngx_pcalloc(cf->pool, sizeof(ngx_syslog_peer_t));
         if (peer == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
 
-        if (ngx_syslog_process_conf(cf, peer) != NGX_CONF_OK) {
-            return NGX_CONF_ERROR;
+        if (ngx_syslog_process_conf(cf, peer) != NJET_CONF_OK) {
+            return NJET_CONF_ERROR;
         }
 
         new_log->writer = ngx_syslog_writer;
@@ -657,19 +657,19 @@ ngx_log_set_log(ngx_conf_t *cf, ngx_log_t **head)
     } else {
         new_log->file = ngx_conf_open_file(cf->cycle, &value[1]);
         if (new_log->file == NULL) {
-            return NGX_CONF_ERROR;
+            return NJET_CONF_ERROR;
         }
     }
 
-    if (ngx_log_set_levels(cf, new_log) != NGX_CONF_OK) {
-        return NGX_CONF_ERROR;
+    if (ngx_log_set_levels(cf, new_log) != NJET_CONF_OK) {
+        return NJET_CONF_ERROR;
     }
 
     if (*head != new_log) {
         ngx_log_insert(*head, new_log);
     }
 
-    return NGX_CONF_OK;
+    return NJET_CONF_OK;
 }
 
 
@@ -707,7 +707,7 @@ ngx_log_insert(ngx_log_t *log, ngx_log_t *new_log)
 }
 
 
-#if (NGX_DEBUG)
+#if (NJET_DEBUG)
 
 static void
 ngx_log_memory_writer(ngx_log_t *log, ngx_uint_t level, u_char *buf,
@@ -744,7 +744,7 @@ ngx_log_memory_cleanup(void *data)
 {
     ngx_log_t *log = data;
 
-    ngx_log_debug0(NGX_LOG_DEBUG_CORE, log, 0, "destroy memory log buffer");
+    ngx_log_debug0(NJET_LOG_DEBUG_CORE, log, 0, "destroy memory log buffer");
 
     log->wdata = NULL;
 }

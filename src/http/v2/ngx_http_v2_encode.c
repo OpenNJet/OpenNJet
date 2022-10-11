@@ -23,12 +23,12 @@ ngx_http_v2_string_encode(u_char *dst, u_char *src, size_t len, u_char *tmp,
     hlen = ngx_http_huff_encode(src, len, tmp, lower);
 
     if (hlen > 0) {
-        *dst = NGX_HTTP_V2_ENCODE_HUFF;
+        *dst = NJET_HTTP_V2_ENCODE_HUFF;
         dst = ngx_http_v2_write_int(dst, ngx_http_v2_prefix(7), hlen);
         return ngx_cpymem(dst, tmp, hlen);
     }
 
-    *dst = NGX_HTTP_V2_ENCODE_RAW;
+    *dst = NJET_HTTP_V2_ENCODE_RAW;
     dst = ngx_http_v2_write_int(dst, ngx_http_v2_prefix(7), len);
 
     if (lower) {

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_EVENT_OPENSSL_H_INCLUDED_
-#define _NGX_EVENT_OPENSSL_H_INCLUDED_
+#ifndef _NJET_EVENT_OPENSSL_H_INCLUDED_
+#define _NJET_EVENT_OPENSSL_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -32,7 +32,7 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
-#define NGX_SSL_NAME     "OpenSSL"
+#define NJET_SSL_NAME     "OpenSSL"
 
 
 #if (defined LIBRESSL_VERSION_NUMBER && OPENSSL_VERSION_NUMBER == 0x20000000L)
@@ -122,13 +122,13 @@ struct ngx_ssl_connection_s {
 };
 
 
-#define NGX_SSL_NO_SCACHE            -2
-#define NGX_SSL_NONE_SCACHE          -3
-#define NGX_SSL_NO_BUILTIN_SCACHE    -4
-#define NGX_SSL_DFLT_BUILTIN_SCACHE  -5
+#define NJET_SSL_NO_SCACHE            -2
+#define NJET_SSL_NONE_SCACHE          -3
+#define NJET_SSL_NO_BUILTIN_SCACHE    -4
+#define NJET_SSL_DFLT_BUILTIN_SCACHE  -5
 
 
-#define NGX_SSL_MAX_SESSION_SIZE  4096
+#define NJET_SSL_MAX_SESSION_SIZE  4096
 
 typedef struct ngx_ssl_sess_id_s  ngx_ssl_sess_id_t;
 
@@ -139,7 +139,7 @@ struct ngx_ssl_sess_id_s {
     u_char                     *session;
     ngx_queue_t                 queue;
     time_t                      expire;
-#if (NGX_PTR_SIZE == 8)
+#if (NJET_PTR_SIZE == 8)
     void                       *stub;
     u_char                      sess_id[32];
 #endif
@@ -165,18 +165,18 @@ typedef struct {
 #endif
 
 
-#define NGX_SSL_SSLv2    0x0002
-#define NGX_SSL_SSLv3    0x0004
-#define NGX_SSL_TLSv1    0x0008
-#define NGX_SSL_TLSv1_1  0x0010
-#define NGX_SSL_TLSv1_2  0x0020
-#define NGX_SSL_TLSv1_3  0x0040
+#define NJET_SSL_SSLv2    0x0002
+#define NJET_SSL_SSLv3    0x0004
+#define NJET_SSL_TLSv1    0x0008
+#define NJET_SSL_TLSv1_1  0x0010
+#define NJET_SSL_TLSv1_2  0x0020
+#define NJET_SSL_TLSv1_3  0x0040
 
 
-#define NGX_SSL_BUFFER   1
-#define NGX_SSL_CLIENT   2
+#define NJET_SSL_BUFFER   1
+#define NJET_SSL_CLIENT   2
 
-#define NGX_SSL_BUFSIZE  16384
+#define NJET_SSL_BUFSIZE  16384
 
 
 ngx_int_t ngx_ssl_init(ngx_log_t *log);
@@ -322,4 +322,4 @@ extern int  ngx_ssl_certificate_name_index;
 extern int  ngx_ssl_stapling_index;
 
 
-#endif /* _NGX_EVENT_OPENSSL_H_INCLUDED_ */
+#endif /* _NJET_EVENT_OPENSSL_H_INCLUDED_ */

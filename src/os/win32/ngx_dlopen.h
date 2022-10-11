@@ -5,15 +5,15 @@
  */
 
 
-#ifndef _NGX_DLOPEN_H_INCLUDED_
-#define _NGX_DLOPEN_H_INCLUDED_
+#ifndef _NJET_DLOPEN_H_INCLUDED_
+#define _NJET_DLOPEN_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#define NGX_HAVE_DLOPEN  1
+#define NJET_HAVE_DLOPEN  1
 
 
 #define ngx_dlopen(path)           LoadLibrary((char *) path)
@@ -29,4 +29,4 @@
 char *ngx_dlerror(void);
 
 
-#endif /* _NGX_DLOPEN_H_INCLUDED_ */
+#endif /* _NJET_DLOPEN_H_INCLUDED_ */

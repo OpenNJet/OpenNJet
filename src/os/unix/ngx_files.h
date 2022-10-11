@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_FILES_H_INCLUDED_
-#define _NGX_FILES_H_INCLUDED_
+#ifndef _NJET_FILES_H_INCLUDED_
+#define _NJET_FILES_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -46,15 +46,15 @@ typedef struct {
 } ngx_glob_t;
 
 
-#define NGX_INVALID_FILE         -1
-#define NGX_FILE_ERROR           -1
+#define NJET_INVALID_FILE         -1
+#define NJET_FILE_ERROR           -1
 
 
 
 #ifdef __CYGWIN__
 
-#ifndef NGX_HAVE_CASELESS_FILESYSTEM
-#define NGX_HAVE_CASELESS_FILESYSTEM  1
+#ifndef NJET_HAVE_CASELESS_FILESYSTEM
+#define NJET_HAVE_CASELESS_FILESYSTEM  1
 #endif
 
 #define ngx_open_file(name, mode, create, access)                            \
@@ -69,41 +69,41 @@ typedef struct {
 
 #define ngx_open_file_n          "open()"
 
-#define NGX_FILE_RDONLY          O_RDONLY
-#define NGX_FILE_WRONLY          O_WRONLY
-#define NGX_FILE_RDWR            O_RDWR
-#define NGX_FILE_CREATE_OR_OPEN  O_CREAT
-#define NGX_FILE_OPEN            0
-#define NGX_FILE_TRUNCATE        (O_CREAT|O_TRUNC)
-#define NGX_FILE_APPEND          (O_WRONLY|O_APPEND)
-#define NGX_FILE_NONBLOCK        O_NONBLOCK
+#define NJET_FILE_RDONLY          O_RDONLY
+#define NJET_FILE_WRONLY          O_WRONLY
+#define NJET_FILE_RDWR            O_RDWR
+#define NJET_FILE_CREATE_OR_OPEN  O_CREAT
+#define NJET_FILE_OPEN            0
+#define NJET_FILE_TRUNCATE        (O_CREAT|O_TRUNC)
+#define NJET_FILE_APPEND          (O_WRONLY|O_APPEND)
+#define NJET_FILE_NONBLOCK        O_NONBLOCK
 
-#if (NGX_HAVE_OPENAT)
-#define NGX_FILE_NOFOLLOW        O_NOFOLLOW
+#if (NJET_HAVE_OPENAT)
+#define NJET_FILE_NOFOLLOW        O_NOFOLLOW
 
 #if defined(O_DIRECTORY)
-#define NGX_FILE_DIRECTORY       O_DIRECTORY
+#define NJET_FILE_DIRECTORY       O_DIRECTORY
 #else
-#define NGX_FILE_DIRECTORY       0
+#define NJET_FILE_DIRECTORY       0
 #endif
 
 #if defined(O_SEARCH)
-#define NGX_FILE_SEARCH          (O_SEARCH|NGX_FILE_DIRECTORY)
+#define NJET_FILE_SEARCH          (O_SEARCH|NJET_FILE_DIRECTORY)
 
 #elif defined(O_EXEC)
-#define NGX_FILE_SEARCH          (O_EXEC|NGX_FILE_DIRECTORY)
+#define NJET_FILE_SEARCH          (O_EXEC|NJET_FILE_DIRECTORY)
 
-#elif (NGX_HAVE_O_PATH)
-#define NGX_FILE_SEARCH          (O_PATH|O_RDONLY|NGX_FILE_DIRECTORY)
+#elif (NJET_HAVE_O_PATH)
+#define NJET_FILE_SEARCH          (O_PATH|O_RDONLY|NJET_FILE_DIRECTORY)
 
 #else
-#define NGX_FILE_SEARCH          (O_RDONLY|NGX_FILE_DIRECTORY)
+#define NJET_FILE_SEARCH          (O_RDONLY|NJET_FILE_DIRECTORY)
 #endif
 
-#endif /* NGX_HAVE_OPENAT */
+#endif /* NJET_HAVE_OPENAT */
 
-#define NGX_FILE_DEFAULT_ACCESS  0644
-#define NGX_FILE_OWNER_ACCESS    0600
+#define NJET_FILE_DEFAULT_ACCESS  0644
+#define NJET_FILE_OWNER_ACCESS    0600
 
 
 #define ngx_close_file           close
@@ -120,7 +120,7 @@ ngx_fd_t ngx_open_tempfile(u_char *name, ngx_uint_t persistent,
 
 
 ssize_t ngx_read_file(ngx_file_t *file, u_char *buf, size_t size, off_t offset);
-#if (NGX_HAVE_PREAD)
+#if (NJET_HAVE_PREAD)
 #define ngx_read_file_n          "pread()"
 #else
 #define ngx_read_file_n          "read()"
@@ -154,8 +154,8 @@ ngx_write_fd(ngx_fd_t fd, void *buf, size_t n)
 
 
 #define ngx_linefeed(p)          *p++ = LF;
-#define NGX_LINEFEED_SIZE        1
-#define NGX_LINEFEED             "\x0a"
+#define NJET_LINEFEED_SIZE        1
+#define NJET_LINEFEED             "\x0a"
 
 
 #define ngx_rename_file(o, n)    rename((const char *) o, (const char *) n)
@@ -206,12 +206,12 @@ void ngx_close_file_mapping(ngx_file_mapping_t *fm);
 
 #if defined(PATH_MAX)
 
-#define NGX_HAVE_MAX_PATH        1
-#define NGX_MAX_PATH             PATH_MAX
+#define NJET_HAVE_MAX_PATH        1
+#define NJET_MAX_PATH             PATH_MAX
 
 #else
 
-#define NGX_MAX_PATH             4096
+#define NJET_MAX_PATH             4096
 
 #endif
 
@@ -240,7 +240,7 @@ ngx_int_t ngx_read_dir(ngx_dir_t *dir);
 
 
 #define ngx_de_name(dir)         ((u_char *) (dir)->de->d_name)
-#if (NGX_HAVE_D_NAMLEN)
+#if (NJET_HAVE_D_NAMLEN)
 #define ngx_de_namelen(dir)      (dir)->de->d_namlen
 #else
 #define ngx_de_namelen(dir)      ngx_strlen((dir)->de->d_name)
@@ -257,7 +257,7 @@ ngx_de_info(u_char *name, ngx_dir_t *dir)
 #define ngx_de_link_info(name, dir)  lstat((const char *) name, &(dir)->info)
 #define ngx_de_link_info_n       "lstat()"
 
-#if (NGX_HAVE_D_TYPE)
+#if (NJET_HAVE_D_TYPE)
 
 /*
  * some file systems (e.g. XFS on Linux and CD9660 on FreeBSD)
@@ -301,16 +301,16 @@ ngx_err_t ngx_unlock_fd(ngx_fd_t fd);
 #define ngx_unlock_fd_n          "fcntl(F_SETLK, F_UNLCK)"
 
 
-#if (NGX_HAVE_F_READAHEAD)
+#if (NJET_HAVE_F_READAHEAD)
 
-#define NGX_HAVE_READ_AHEAD      1
+#define NJET_HAVE_READ_AHEAD      1
 
 #define ngx_read_ahead(fd, n)    fcntl(fd, F_READAHEAD, (int) n)
 #define ngx_read_ahead_n         "fcntl(fd, F_READAHEAD)"
 
-#elif (NGX_HAVE_POSIX_FADVISE)
+#elif (NJET_HAVE_POSIX_FADVISE)
 
-#define NGX_HAVE_READ_AHEAD      1
+#define NJET_HAVE_READ_AHEAD      1
 
 ngx_int_t ngx_read_ahead(ngx_fd_t fd, size_t n);
 #define ngx_read_ahead_n         "posix_fadvise(POSIX_FADV_SEQUENTIAL)"
@@ -323,7 +323,7 @@ ngx_int_t ngx_read_ahead(ngx_fd_t fd, size_t n);
 #endif
 
 
-#if (NGX_HAVE_O_DIRECT)
+#if (NJET_HAVE_O_DIRECT)
 
 ngx_int_t ngx_directio_on(ngx_fd_t fd);
 #define ngx_directio_on_n        "fcntl(O_DIRECT)"
@@ -331,12 +331,12 @@ ngx_int_t ngx_directio_on(ngx_fd_t fd);
 ngx_int_t ngx_directio_off(ngx_fd_t fd);
 #define ngx_directio_off_n       "fcntl(!O_DIRECT)"
 
-#elif (NGX_HAVE_F_NOCACHE)
+#elif (NJET_HAVE_F_NOCACHE)
 
 #define ngx_directio_on(fd)      fcntl(fd, F_NOCACHE, 1)
 #define ngx_directio_on_n        "fcntl(F_NOCACHE, 1)"
 
-#elif (NGX_HAVE_DIRECTIO)
+#elif (NJET_HAVE_DIRECTIO)
 
 #define ngx_directio_on(fd)      directio(fd, DIRECTIO_ON)
 #define ngx_directio_on_n        "directio(DIRECTIO_ON)"
@@ -352,7 +352,7 @@ size_t ngx_fs_bsize(u_char *name);
 off_t ngx_fs_available(u_char *name);
 
 
-#if (NGX_HAVE_OPENAT)
+#if (NJET_HAVE_OPENAT)
 
 #define ngx_openat_file(fd, name, mode, create, access)                      \
     openat(fd, (const char *) name, mode|create, access)
@@ -364,7 +364,7 @@ off_t ngx_fs_available(u_char *name);
 
 #define ngx_file_at_info_n       "fstatat()"
 
-#define NGX_AT_FDCWD             (ngx_fd_t) AT_FDCWD
+#define NJET_AT_FDCWD             (ngx_fd_t) AT_FDCWD
 
 #endif
 
@@ -375,7 +375,7 @@ off_t ngx_fs_available(u_char *name);
 #define ngx_set_stderr_n         "dup2(STDERR_FILENO)"
 
 
-#if (NGX_HAVE_FILE_AIO)
+#if (NJET_HAVE_FILE_AIO)
 
 ngx_int_t ngx_file_aio_init(ngx_file_t *file, ngx_pool_t *pool);
 ssize_t ngx_file_aio_read(ngx_file_t *file, u_char *buf, size_t size,
@@ -385,7 +385,7 @@ extern ngx_uint_t  ngx_file_aio;
 
 #endif
 
-#if (NGX_THREADS)
+#if (NJET_THREADS)
 ssize_t ngx_thread_read(ngx_file_t *file, u_char *buf, size_t size,
     off_t offset, ngx_pool_t *pool);
 ssize_t ngx_thread_write_chain_to_file(ngx_file_t *file, ngx_chain_t *cl,
@@ -393,4 +393,4 @@ ssize_t ngx_thread_write_chain_to_file(ngx_file_t *file, ngx_chain_t *cl,
 #endif
 
 
-#endif /* _NGX_FILES_H_INCLUDED_ */
+#endif /* _NJET_FILES_H_INCLUDED_ */

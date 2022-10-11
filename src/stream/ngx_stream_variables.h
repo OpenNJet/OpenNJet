@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NGX_STREAM_VARIABLES_H_INCLUDED_
-#define _NGX_STREAM_VARIABLES_H_INCLUDED_
+#ifndef _NJET_STREAM_VARIABLES_H_INCLUDED_
+#define _NJET_STREAM_VARIABLES_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -26,12 +26,12 @@ typedef ngx_int_t (*ngx_stream_get_variable_pt) (ngx_stream_session_t *s,
     ngx_stream_variable_value_t *v, uintptr_t data);
 
 
-#define NGX_STREAM_VAR_CHANGEABLE   1
-#define NGX_STREAM_VAR_NOCACHEABLE  2
-#define NGX_STREAM_VAR_INDEXED      4
-#define NGX_STREAM_VAR_NOHASH       8
-#define NGX_STREAM_VAR_WEAK         16
-#define NGX_STREAM_VAR_PREFIX       32
+#define NJET_STREAM_VAR_CHANGEABLE   1
+#define NJET_STREAM_VAR_NOCACHEABLE  2
+#define NJET_STREAM_VAR_INDEXED      4
+#define NJET_STREAM_VAR_NOHASH       8
+#define NJET_STREAM_VAR_WEAK         16
+#define NJET_STREAM_VAR_PREFIX       32
 
 
 struct ngx_stream_variable_s {
@@ -58,7 +58,7 @@ ngx_stream_variable_value_t *ngx_stream_get_variable(ngx_stream_session_t *s,
     ngx_str_t *name, ngx_uint_t key);
 
 
-#if (NGX_PCRE)
+#if (NJET_PCRE)
 
 typedef struct {
     ngx_uint_t                    capture;
@@ -91,7 +91,7 @@ ngx_int_t ngx_stream_regex_exec(ngx_stream_session_t *s, ngx_stream_regex_t *re,
 
 typedef struct {
     ngx_hash_combined_t           hash;
-#if (NGX_PCRE)
+#if (NJET_PCRE)
     ngx_stream_map_regex_t       *regex;
     ngx_uint_t                    nregex;
 #endif
@@ -110,4 +110,4 @@ extern ngx_stream_variable_value_t  ngx_stream_variable_null_value;
 extern ngx_stream_variable_value_t  ngx_stream_variable_true_value;
 
 
-#endif /* _NGX_STREAM_VARIABLES_H_INCLUDED_ */
+#endif /* _NJET_STREAM_VARIABLES_H_INCLUDED_ */
