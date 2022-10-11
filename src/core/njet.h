@@ -5,22 +5,22 @@
  */
 
 
-#ifndef _NGINX_H_INCLUDED_
-#define _NGINX_H_INCLUDED_
+#ifndef _NJET_H_INCLUDED_
+#define _NJET_H_INCLUDED_
 
 
 #define njet_version      1023001
-#define NGINX_VERSION      "1.23.1"
-#define NGINX_VER          "njet/" NGINX_VERSION
+#define NJET_VERSION      "1.23.1"
+#define NJET_VER          "njet/" NJET_VERSION
 
 #ifdef NGX_BUILD
-#define NGINX_VER_BUILD    NGINX_VER " (" NGX_BUILD ")"
+#define NJET_VER_BUILD    NJET_VER " (" NGX_BUILD ")"
 #else
-#define NGINX_VER_BUILD    NGINX_VER
+#define NJET_VER_BUILD    NJET_VER
 #endif
 
-#define NGINX_VAR          "NGINX"
+#define NJET_VAR          "NGINX"
 #define NGX_OLDPID_EXT     ".oldbin"
 
 
-#endif /* _NGINX_H_INCLUDED_ */
+#endif /* _NJET_H_INCLUDED_ */

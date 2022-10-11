@@ -24,7 +24,7 @@ $NGX_OBJS/src/http/modules/perl/Makefile: \\
 		src/http/modules/perl/njet.pm \\
 		src/http/modules/perl/njet.xs \\
 		src/http/modules/perl/typemap
-	grep 'define NGINX_VERSION' src/core/njet.h \\
+	grep 'define NJET_VERSION' src/core/njet.h \\
 		| sed -e 's/^.*"\(.*\)".*/\1/' > \\
 		$NGX_OBJS/src/http/modules/perl/version
 	sed "s/%%VERSION%%/\`cat $NGX_OBJS/src/http/modules/perl/version\`/" \\

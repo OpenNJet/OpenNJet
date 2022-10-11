@@ -154,12 +154,12 @@ ngx_http_v2_header_filter(ngx_http_request_t *r)
         "\x8b\x84\x84\x2d\x69\x5b\x05\x44\x3c\x86\xaa\x6f";
 #endif
 
-    static size_t njet_ver_len = ngx_http_v2_literal_size(NGINX_VER);
-    static u_char njet_ver[ngx_http_v2_literal_size(NGINX_VER)];
+    static size_t njet_ver_len = ngx_http_v2_literal_size(NJET_VER);
+    static u_char njet_ver[ngx_http_v2_literal_size(NJET_VER)];
 
     static size_t njet_ver_build_len =
-                                  ngx_http_v2_literal_size(NGINX_VER_BUILD);
-    static u_char njet_ver_build[ngx_http_v2_literal_size(NGINX_VER_BUILD)];
+                                  ngx_http_v2_literal_size(NJET_VER_BUILD);
+    static u_char njet_ver_build[ngx_http_v2_literal_size(NJET_VER_BUILD)];
 
     stream = r->stream;
 
@@ -468,12 +468,12 @@ ngx_http_v2_header_filter(ngx_http_request_t *r)
         if (clcf->server_tokens == NGX_HTTP_SERVER_TOKENS_ON) {
             ngx_log_debug1(NGX_LOG_DEBUG_HTTP, fc->log, 0,
                            "http2 output header: \"server: %s\"",
-                           NGINX_VER);
+                           NJET_VER);
 
         } else if (clcf->server_tokens == NGX_HTTP_SERVER_TOKENS_BUILD) {
             ngx_log_debug1(NGX_LOG_DEBUG_HTTP, fc->log, 0,
                            "http2 output header: \"server: %s\"",
-                           NGINX_VER_BUILD);
+                           NJET_VER_BUILD);
 
         } else {
             ngx_log_debug0(NGX_LOG_DEBUG_HTTP, fc->log, 0,
@@ -484,8 +484,8 @@ ngx_http_v2_header_filter(ngx_http_request_t *r)
 
         if (clcf->server_tokens == NGX_HTTP_SERVER_TOKENS_ON) {
             if (njet_ver[0] == '\0') {
-                p = ngx_http_v2_write_value(njet_ver, (u_char *) NGINX_VER,
-                                            sizeof(NGINX_VER) - 1, tmp);
+                p = ngx_http_v2_write_value(njet_ver, (u_char *) NJET_VER,
+                                            sizeof(NJET_VER) - 1, tmp);
                 njet_ver_len = p - njet_ver;
             }
 
@@ -494,8 +494,8 @@ ngx_http_v2_header_filter(ngx_http_request_t *r)
         } else if (clcf->server_tokens == NGX_HTTP_SERVER_TOKENS_BUILD) {
             if (njet_ver_build[0] == '\0') {
                 p = ngx_http_v2_write_value(njet_ver_build,
-                                            (u_char *) NGINX_VER_BUILD,
-                                            sizeof(NGINX_VER_BUILD) - 1, tmp);
+                                            (u_char *) NJET_VER_BUILD,
+                                            sizeof(NJET_VER_BUILD) - 1, tmp);
                 njet_ver_build_len = p - njet_ver_build;
             }
 

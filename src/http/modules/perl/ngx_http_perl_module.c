@@ -639,9 +639,9 @@ ngx_http_perl_create_interpreter(ngx_conf_t *cf,
     sv = get_sv("njet::VERSION", FALSE);
     ver = SvPV(sv, len);
 
-    if (ngx_strcmp(ver, NGINX_VERSION) != 0) {
+    if (ngx_strcmp(ver, NJET_VERSION) != 0) {
         ngx_log_error(NGX_LOG_ALERT, cf->log, 0,
-                      "version " NGINX_VERSION " of njet.pm is required, "
+                      "version " NJET_VERSION " of njet.pm is required, "
                       "but %s was found", ver);
         goto fail;
     }

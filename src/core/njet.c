@@ -390,7 +390,7 @@ main(int argc, char *const *argv)
 static void
 ngx_show_version_info(void)
 {
-    ngx_write_stderr("njet version: " NGINX_VER_BUILD NGX_LINEFEED);
+    ngx_write_stderr("njet version: " NJET_VER_BUILD NGX_LINEFEED);
 
     if (ngx_show_help) {
         ngx_write_stderr(
@@ -462,7 +462,7 @@ ngx_add_inherited_sockets(ngx_cycle_t *cycle)
     ngx_int_t         s;
     ngx_listening_t  *ls;
 
-    inherited = (u_char *) getenv(NGINX_VAR);
+    inherited = (u_char *) getenv(NJET_VAR);
 
     if (inherited == NULL) {
         return NGX_OK;
@@ -483,7 +483,7 @@ ngx_add_inherited_sockets(ngx_cycle_t *cycle)
             s = ngx_atoi(v, p - v);
             if (s == NGX_ERROR) {
                 ngx_log_error(NGX_LOG_EMERG, cycle->log, 0,
-                              "invalid socket number \"%s\" in " NGINX_VAR
+                              "invalid socket number \"%s\" in " NJET_VAR
                               " environment variable, ignoring the rest"
                               " of the variable", v);
                 break;
@@ -505,7 +505,7 @@ ngx_add_inherited_sockets(ngx_cycle_t *cycle)
 
     if (v != p) {
         ngx_log_error(NGX_LOG_EMERG, cycle->log, 0,
-                      "invalid socket number \"%s\" in " NGINX_VAR
+                      "invalid socket number \"%s\" in " NJET_VAR
                       " environment variable, ignoring", v);
     }
 
@@ -668,7 +668,7 @@ ngx_exec_new_binary(ngx_cycle_t *cycle, char *const *argv)
         return NGX_INVALID_PID;
     }
 
-    var = ngx_alloc(sizeof(NGINX_VAR)
+    var = ngx_alloc(sizeof(NJET_VAR)
                     + cycle->listening.nelts * (NGX_INT32_LEN + 1) + 2,
                     cycle->log);
     if (var == NULL) {
@@ -676,7 +676,7 @@ ngx_exec_new_binary(ngx_cycle_t *cycle, char *const *argv)
         return NGX_INVALID_PID;
     }
 
-    p = ngx_cpymem(var, NGINX_VAR "=", sizeof(NGINX_VAR));
+    p = ngx_cpymem(var, NJET_VAR "=", sizeof(NJET_VAR));
 
     ls = cycle->listening.elts;
     for (i = 0; i < cycle->listening.nelts; i++) {
