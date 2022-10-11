@@ -3,7 +3,7 @@
 # Copyright (C) Nginx, Inc.
 
 
-echo $ngx_n "checking for uintptr_t ...$ngx_c"
+echo $njt_n "checking for uintptr_t ...$njt_c"
 
 cat << END >> $NJT_AUTOCONF_ERR
 
@@ -26,23 +26,23 @@ int main(void) {
 
 END
 
-ngx_test="$CC $CC_TEST_FLAGS $CC_AUX_FLAGS \
+njt_test="$CC $CC_TEST_FLAGS $CC_AUX_FLAGS \
           -o $NJT_AUTOTEST $NJT_AUTOTEST.c $NJT_LD_OPT"
 
-eval "$ngx_test >> $NJT_AUTOCONF_ERR 2>&1"
+eval "$njt_test >> $NJT_AUTOCONF_ERR 2>&1"
 
 if [ -x $NJT_AUTOTEST ]; then
     echo " uintptr_t found"
     found=yes
 else
-    echo $ngx_n " uintptr_t not found" $ngx_c
+    echo $njt_n " uintptr_t not found" $njt_c
 fi
 
 rm -rf $NJT_AUTOTEST*
 
 
 if [ $found = no ]; then
-    found="uint`expr 8 \* $ngx_ptr_size`_t"
+    found="uint`expr 8 \* $njt_ptr_size`_t"
     echo ", $found used"
 
     echo "typedef $found  uintptr_t;"                   >> $NJT_AUTO_CONFIG_H

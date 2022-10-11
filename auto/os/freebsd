@@ -9,7 +9,7 @@ CORE_INCS="$UNIX_INCS"
 CORE_DEPS="$UNIX_DEPS $FREEBSD_DEPS"
 CORE_SRCS="$UNIX_SRCS $FREEBSD_SRCS"
 
-ngx_spacer='
+njt_spacer='
 '
 
 

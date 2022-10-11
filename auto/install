@@ -179,16 +179,16 @@ END
 fi
 
 
-for ngx_module in $DYNAMIC_MODULES
+for njt_module in $DYNAMIC_MODULES
 do
-    ngx_module=$ngx_module$ngx_modext
+    njt_module=$njt_module$njt_modext
 
     cat << END                                                >> $NJT_MAKEFILE
 
-	test ! -f '\$(DESTDIR)$NJT_MODULES_PATH/$ngx_module' \\
-		|| mv '\$(DESTDIR)$NJT_MODULES_PATH/$ngx_module' \\
-			'\$(DESTDIR)$NJT_MODULES_PATH/$ngx_module.old'
-	cp $NJT_OBJS/$ngx_module '\$(DESTDIR)$NJT_MODULES_PATH/$ngx_module'
+	test ! -f '\$(DESTDIR)$NJT_MODULES_PATH/$njt_module' \\
+		|| mv '\$(DESTDIR)$NJT_MODULES_PATH/$njt_module' \\
+			'\$(DESTDIR)$NJT_MODULES_PATH/$njt_module.old'
+	cp $NJT_OBJS/$njt_module '\$(DESTDIR)$NJT_MODULES_PATH/$njt_module'
 END
 
 done

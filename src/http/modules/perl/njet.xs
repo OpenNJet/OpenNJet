@@ -7,29 +7,29 @@
 
 #define PERL_NO_GET_CONTEXT
 
-#include <ngx_config.h>
-#include <ngx_core.h>
-#include <ngx_http.h>
-#include <ngx_http_perl_module.h>
+#include <njt_config.h>
+#include <njt_core.h>
+#include <njt_http.h>
+#include <njt_http_perl_module.h>
 
 #include "XSUB.h"
 
 
-#define ngx_http_perl_set_request(r, ctx)                                     \
+#define njt_http_perl_set_request(r, ctx)                                     \
                                                                               \
-    ctx = INT2PTR(ngx_http_perl_ctx_t *, SvIV((SV *) SvRV(ST(0))));           \
+    ctx = INT2PTR(njt_http_perl_ctx_t *, SvIV((SV *) SvRV(ST(0))));           \
     r = ctx->request
 
 
-#define ngx_http_perl_set_targ(p, len)                                        \
+#define njt_http_perl_set_targ(p, len)                                        \
                                                                               \
     SvUPGRADE(TARG, SVt_PV);                                                  \
     SvPOK_on(TARG);                                                           \
     sv_setpvn(TARG, (char *) p, len)
 
 
-static ngx_int_t
-ngx_http_perl_sv2str(pTHX_ ngx_http_request_t *r, ngx_str_t *s, SV *sv)
+static njt_int_t
+njt_http_perl_sv2str(pTHX_ njt_http_request_t *r, njt_str_t *s, SV *sv)
 {
     u_char  *p;
     STRLEN   len;
@@ -45,36 +45,36 @@ ngx_http_perl_sv2str(pTHX_ ngx_http_request_t *r, ngx_str_t *s, SV *sv)
     if (SvREADONLY(sv) && SvPOK(sv)) {
         s->data = p;
 
-        ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+        njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "perl sv2str: %08XD \"%V\"", sv->sv_flags, s);
 
         return NJT_OK;
     }
 
-    s->data = ngx_pnalloc(r->pool, len);
+    s->data = njt_pnalloc(r->pool, len);
     if (s->data == NULL) {
         return NJT_ERROR;
     }
 
-    ngx_memcpy(s->data, p, len);
+    njt_memcpy(s->data, p, len);
 
-    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+    njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "perl sv2str: %08XD \"%V\"", sv->sv_flags, s);
 
     return NJT_OK;
 }
 
 
-static ngx_int_t
-ngx_http_perl_output(ngx_http_request_t *r, ngx_http_perl_ctx_t *ctx,
-    ngx_buf_t *b)
+static njt_int_t
+njt_http_perl_output(njt_http_request_t *r, njt_http_perl_ctx_t *ctx,
+    njt_buf_t *b)
 {
-    ngx_chain_t   out;
+    njt_chain_t   out;
 #if (NJT_HTTP_SSI)
-    ngx_chain_t  *cl;
+    njt_chain_t  *cl;
 
     if (ctx->ssi) {
-        cl = ngx_alloc_chain_link(r->pool);
+        cl = njt_alloc_chain_link(r->pool);
         if (cl == NULL) {
             return NJT_ERROR;
         }
@@ -91,7 +91,7 @@ ngx_http_perl_output(ngx_http_request_t *r, ngx_http_perl_ctx_t *ctx,
     out.buf = b;
     out.next = NULL;
 
-    return ngx_http_output_filter(r, &out);
+    return njt_http_output_filter(r, &out);
 }
 
 
@@ -105,10 +105,10 @@ void
 status(r, code)
     CODE:
 
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (ctx->variable) {
         croak("status(): cannot be used in variable handler");
@@ -116,7 +116,7 @@ status(r, code)
 
     r->headers_out.status = SvIV(ST(1));
 
-    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "perl status: %d", r->headers_out.status);
 
     XSRETURN_UNDEF;
@@ -126,12 +126,12 @@ void
 send_http_header(r, ...)
     CODE:
 
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
     SV                   *sv;
-    ngx_int_t             rc;
+    njt_int_t             rc;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (ctx->error) {
         croak("send_http_header(): called after error");
@@ -156,19 +156,19 @@ send_http_header(r, ...)
     if (items != 1) {
         sv = ST(1);
 
-        if (ngx_http_perl_sv2str(aTHX_ r, &r->headers_out.content_type, sv)
+        if (njt_http_perl_sv2str(aTHX_ r, &r->headers_out.content_type, sv)
             != NJT_OK)
         {
             ctx->error = 1;
-            croak("ngx_http_perl_sv2str() failed");
+            croak("njt_http_perl_sv2str() failed");
         }
 
         r->headers_out.content_type_len = r->headers_out.content_type.len;
 
     } else {
-        if (ngx_http_set_content_type(r) != NJT_OK) {
+        if (njt_http_set_content_type(r) != NJT_OK) {
             ctx->error = 1;
-            croak("ngx_http_set_content_type() failed");
+            croak("njt_http_set_content_type() failed");
         }
     }
 
@@ -176,12 +176,12 @@ send_http_header(r, ...)
 
     r->disable_not_modified = 1;
 
-    rc = ngx_http_send_header(r);
+    rc = njt_http_send_header(r);
 
     if (rc == NJT_ERROR || rc > NJT_OK) {
         ctx->error = 1;
         ctx->status = rc;
-        croak("ngx_http_send_header() failed");
+        croak("njt_http_send_header() failed");
     }
 
 
@@ -190,10 +190,10 @@ header_only(r)
     CODE:
 
     dXSTARG;
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     sv_upgrade(TARG, SVt_IV);
     sv_setiv(TARG, r->header_only);
@@ -206,11 +206,11 @@ uri(r)
     CODE:
 
     dXSTARG;
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
 
-    ngx_http_perl_set_request(r, ctx);
-    ngx_http_perl_set_targ(r->uri.data, r->uri.len);
+    njt_http_perl_set_request(r, ctx);
+    njt_http_perl_set_targ(r->uri.data, r->uri.len);
 
     ST(0) = TARG;
 
@@ -220,11 +220,11 @@ args(r)
     CODE:
 
     dXSTARG;
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
 
-    ngx_http_perl_set_request(r, ctx);
-    ngx_http_perl_set_targ(r->args.data, r->args.len);
+    njt_http_perl_set_request(r, ctx);
+    njt_http_perl_set_targ(r->args.data, r->args.len);
 
     ST(0) = TARG;
 
@@ -234,11 +234,11 @@ request_method(r)
     CODE:
 
     dXSTARG;
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
 
-    ngx_http_perl_set_request(r, ctx);
-    ngx_http_perl_set_targ(r->method_name.data, r->method_name.len);
+    njt_http_perl_set_request(r, ctx);
+    njt_http_perl_set_targ(r->method_name.data, r->method_name.len);
 
     ST(0) = TARG;
 
@@ -248,11 +248,11 @@ remote_addr(r)
     CODE:
 
     dXSTARG;
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
 
-    ngx_http_perl_set_request(r, ctx);
-    ngx_http_perl_set_targ(r->connection->addr_text.data,
+    njt_http_perl_set_request(r, ctx);
+    njt_http_perl_set_targ(r->connection->addr_text.data,
                            r->connection->addr_text.len);
 
     ST(0) = TARG;
@@ -263,19 +263,19 @@ header_in(r, key)
     CODE:
 
     dXSTARG;
-    ngx_http_request_t         *r;
-    ngx_http_perl_ctx_t        *ctx;
+    njt_http_request_t         *r;
+    njt_http_perl_ctx_t        *ctx;
     SV                         *key;
     u_char                     *p, *lowcase_key, *value, sep;
     STRLEN                      len;
     ssize_t                     size;
-    ngx_uint_t                  i, hash;
-    ngx_list_part_t            *part;
-    ngx_table_elt_t            *h, *header, **ph;
-    ngx_http_header_t          *hh;
-    ngx_http_core_main_conf_t  *cmcf;
+    njt_uint_t                  i, hash;
+    njt_list_part_t            *part;
+    njt_table_elt_t            *h, *header, **ph;
+    njt_http_header_t          *hh;
+    njt_http_core_main_conf_t  *cmcf;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     key = ST(1);
 
@@ -287,28 +287,28 @@ header_in(r, key)
 
     /* look up hashed headers */
 
-    lowcase_key = ngx_pnalloc(r->pool, len);
+    lowcase_key = njt_pnalloc(r->pool, len);
     if (lowcase_key == NULL) {
         ctx->error = 1;
-        croak("ngx_pnalloc() failed");
+        croak("njt_pnalloc() failed");
     }
 
-    hash = ngx_hash_strlow(lowcase_key, p, len);
+    hash = njt_hash_strlow(lowcase_key, p, len);
 
-    cmcf = ngx_http_get_module_main_conf(r, ngx_http_core_module);
+    cmcf = njt_http_get_module_main_conf(r, njt_http_core_module);
 
-    hh = ngx_hash_find(&cmcf->headers_in_hash, hash, lowcase_key, len);
+    hh = njt_hash_find(&cmcf->headers_in_hash, hash, lowcase_key, len);
 
     if (hh) {
 
-        if (hh->offset == offsetof(ngx_http_headers_in_t, cookie)) {
+        if (hh->offset == offsetof(njt_http_headers_in_t, cookie)) {
             sep = ';';
 
         } else {
             sep = ',';
         }
 
-        ph = (ngx_table_elt_t **) ((char *) &r->headers_in + hh->offset);
+        ph = (njt_table_elt_t **) ((char *) &r->headers_in + hh->offset);
 
         goto found;
     }
@@ -334,7 +334,7 @@ header_in(r, key)
         }
 
         if (len != h[i].key.len
-            || ngx_strcasecmp(p, h[i].key.data) != 0)
+            || njt_strcasecmp(p, h[i].key.data) != 0)
         {
             continue;
         }
@@ -353,7 +353,7 @@ header_in(r, key)
     }
 
     if ((*ph)->next == NULL) {
-        ngx_http_perl_set_targ((*ph)->value.data, (*ph)->value.len);
+        njt_http_perl_set_targ((*ph)->value.data, (*ph)->value.len);
         goto done;
     }
 
@@ -363,16 +363,16 @@ header_in(r, key)
         size += h->value.len + sizeof("; ") - 1;
     }
 
-    value = ngx_pnalloc(r->pool, size);
+    value = njt_pnalloc(r->pool, size);
     if (value == NULL) {
         ctx->error = 1;
-        croak("ngx_pnalloc() failed");
+        croak("njt_pnalloc() failed");
     }
 
     p = value;
 
     for (h = *ph; h; h = h->next) {
-        p = ngx_copy(p, h->value.data, h->value.len);
+        p = njt_copy(p, h->value.data, h->value.len);
 
         if (h->next == NULL) {
             break;
@@ -381,7 +381,7 @@ header_in(r, key)
         *p++ = sep; *p++ = ' ';
     }
 
-    ngx_http_perl_set_targ(value, size);
+    njt_http_perl_set_targ(value, size);
 
     done:
 
@@ -393,11 +393,11 @@ has_request_body(r, next)
     CODE:
 
     dXSTARG;
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
-    ngx_int_t             rc;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
+    njt_int_t             rc;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (ctx->variable) {
         croak("has_request_body(): cannot be used in variable handler");
@@ -421,13 +421,13 @@ has_request_body(r, next)
         r->request_body_file_log_level = 0;
     }
 
-    rc = ngx_http_read_client_request_body(r, ngx_http_perl_handle_request);
+    rc = njt_http_read_client_request_body(r, njt_http_perl_handle_request);
 
     if (rc >= NJT_HTTP_SPECIAL_RESPONSE) {
         ctx->error = 1;
         ctx->status = rc;
         ctx->next = NULL;
-        croak("ngx_http_read_client_request_body() failed");
+        croak("njt_http_read_client_request_body() failed");
     }
 
     sv_upgrade(TARG, SVt_IV);
@@ -441,14 +441,14 @@ request_body(r)
     CODE:
 
     dXSTARG;
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
     u_char               *p, *data;
     size_t                len;
-    ngx_buf_t            *buf;
-    ngx_chain_t          *cl;
+    njt_buf_t            *buf;
+    njt_chain_t          *cl;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (r->request_body == NULL
         || r->request_body->temp_file
@@ -474,10 +474,10 @@ request_body(r)
         len += buf->last - buf->pos;
     }
 
-    p = ngx_pnalloc(r->pool, len);
+    p = njt_pnalloc(r->pool, len);
     if (p == NULL) {
         ctx->error = 1;
-        croak("ngx_pnalloc() failed");
+        croak("njt_pnalloc() failed");
     }
 
     data = p;
@@ -485,7 +485,7 @@ request_body(r)
 
     for ( /* void */ ; cl; cl = cl->next) {
         buf = cl->buf;
-        p = ngx_cpymem(p, buf->pos, buf->last - buf->pos);
+        p = njt_cpymem(p, buf->pos, buf->last - buf->pos);
     }
 
     done:
@@ -494,7 +494,7 @@ request_body(r)
         XSRETURN_UNDEF;
     }
 
-    ngx_http_perl_set_targ(data, len);
+    njt_http_perl_set_targ(data, len);
 
     ST(0) = TARG;
 
@@ -504,16 +504,16 @@ request_body_file(r)
     CODE:
 
     dXSTARG;
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (r->request_body == NULL || r->request_body->temp_file == NULL) {
         XSRETURN_UNDEF;
     }
 
-    ngx_http_perl_set_targ(r->request_body->temp_file->file.name.data,
+    njt_http_perl_set_targ(r->request_body->temp_file->file.name.data,
                            r->request_body->temp_file->file.name.len);
 
     ST(0) = TARG;
@@ -523,22 +523,22 @@ void
 discard_request_body(r)
     CODE:
 
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
-    ngx_int_t             rc;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
+    njt_int_t             rc;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (ctx->variable) {
         croak("discard_request_body(): cannot be used in variable handler");
     }
 
-    rc = ngx_http_discard_request_body(r);
+    rc = njt_http_discard_request_body(r);
 
     if (rc != NJT_OK) {
         ctx->error = 1;
         ctx->status = rc;
-        croak("ngx_http_discard_request_body() failed");
+        croak("njt_http_discard_request_body() failed");
     }
 
 
@@ -546,13 +546,13 @@ void
 header_out(r, key, value)
     CODE:
 
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
     SV                   *key;
     SV                   *value;
-    ngx_table_elt_t      *header;
+    njt_table_elt_t      *header;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (ctx->error) {
         croak("header_out(): called after error");
@@ -565,29 +565,29 @@ header_out(r, key, value)
     key = ST(1);
     value = ST(2);
 
-    header = ngx_list_push(&r->headers_out.headers);
+    header = njt_list_push(&r->headers_out.headers);
     if (header == NULL) {
         ctx->error = 1;
-        croak("ngx_list_push() failed");
+        croak("njt_list_push() failed");
     }
 
     header->hash = 1;
     header->next = NULL;
 
-    if (ngx_http_perl_sv2str(aTHX_ r, &header->key, key) != NJT_OK) {
+    if (njt_http_perl_sv2str(aTHX_ r, &header->key, key) != NJT_OK) {
         header->hash = 0;
         ctx->error = 1;
-        croak("ngx_http_perl_sv2str() failed");
+        croak("njt_http_perl_sv2str() failed");
     }
 
-    if (ngx_http_perl_sv2str(aTHX_ r, &header->value, value) != NJT_OK) {
+    if (njt_http_perl_sv2str(aTHX_ r, &header->value, value) != NJT_OK) {
         header->hash = 0;
         ctx->error = 1;
-        croak("ngx_http_perl_sv2str() failed");
+        croak("njt_http_perl_sv2str() failed");
     }
 
     if (header->key.len == sizeof("Content-Length") - 1
-        && ngx_strncasecmp(header->key.data, (u_char *) "Content-Length",
+        && njt_strncasecmp(header->key.data, (u_char *) "Content-Length",
                            sizeof("Content-Length") - 1) == 0)
     {
         r->headers_out.content_length_n = (off_t) SvIV(value);
@@ -595,7 +595,7 @@ header_out(r, key, value)
     }
 
     if (header->key.len == sizeof("Content-Encoding") - 1
-        && ngx_strncasecmp(header->key.data, (u_char *) "Content-Encoding",
+        && njt_strncasecmp(header->key.data, (u_char *) "Content-Encoding",
                            sizeof("Content-Encoding") - 1) == 0)
     {
         r->headers_out.content_encoding = header;
@@ -607,19 +607,19 @@ filename(r)
     CODE:
 
     dXSTARG;
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
     size_t                root;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (ctx->filename.data) {
         goto done;
     }
 
-    if (ngx_http_map_uri_to_path(r, &ctx->filename, &root, 0) == NULL) {
+    if (njt_http_map_uri_to_path(r, &ctx->filename, &root, 0) == NULL) {
         ctx->error = 1;
-        croak("ngx_http_map_uri_to_path() failed");
+        croak("njt_http_map_uri_to_path() failed");
     }
 
     ctx->filename.len--;
@@ -627,7 +627,7 @@ filename(r)
 
     done:
 
-    ngx_http_perl_set_targ(ctx->filename.data, ctx->filename.len);
+    njt_http_perl_set_targ(ctx->filename.data, ctx->filename.len);
 
     ST(0) = TARG;
 
@@ -636,17 +636,17 @@ void
 print(r, ...)
     CODE:
 
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
     SV                   *sv;
     int                   i;
     u_char               *p;
     size_t                size;
     STRLEN                len;
-    ngx_int_t             rc;
-    ngx_buf_t            *b;
+    njt_int_t             rc;
+    njt_buf_t            *b;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (ctx->error) {
         croak("print(): called after error");
@@ -681,10 +681,10 @@ print(r, ...)
                 XSRETURN_EMPTY;
             }
 
-            b = ngx_calloc_buf(r->pool);
+            b = njt_calloc_buf(r->pool);
             if (b == NULL) {
                 ctx->error = 1;
-                croak("ngx_calloc_buf() failed");
+                croak("njt_calloc_buf() failed");
             }
 
             b->memory = 1;
@@ -693,7 +693,7 @@ print(r, ...)
             b->start = p;
             b->end = b->last;
 
-            ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+            njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "$r->print: read-only SV: %z", len);
 
             goto out;
@@ -712,7 +712,7 @@ print(r, ...)
 
         (void) SvPV(sv, len);
 
-        ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "$r->print: copy SV: %z", len);
 
         size += len;
@@ -722,10 +722,10 @@ print(r, ...)
         XSRETURN_EMPTY;
     }
 
-    b = ngx_create_temp_buf(r->pool, size);
+    b = njt_create_temp_buf(r->pool, size);
     if (b == NULL) {
         ctx->error = 1;
-        croak("ngx_create_temp_buf() failed");
+        croak("njt_create_temp_buf() failed");
     }
 
     for (i = 1; i < items; i++) {
@@ -736,16 +736,16 @@ print(r, ...)
         }
 
         p = (u_char *) SvPV(sv, len);
-        b->last = ngx_cpymem(b->last, p, len);
+        b->last = njt_cpymem(b->last, p, len);
     }
 
     out:
 
-    rc = ngx_http_perl_output(r, ctx, b);
+    rc = njt_http_perl_output(r, ctx, b);
 
     if (rc == NJT_ERROR) {
         ctx->error = 1;
-        croak("ngx_http_perl_output() failed");
+        croak("njt_http_perl_output() failed");
     }
 
 
@@ -753,18 +753,18 @@ void
 sendfile(r, filename, offset = -1, bytes = 0)
     CODE:
 
-    ngx_http_request_t        *r;
-    ngx_http_perl_ctx_t       *ctx;
+    njt_http_request_t        *r;
+    njt_http_perl_ctx_t       *ctx;
     char                      *filename;
     off_t                      offset;
     size_t                     bytes;
-    ngx_int_t                  rc;
-    ngx_str_t                  path;
-    ngx_buf_t                 *b;
-    ngx_open_file_info_t       of;
-    ngx_http_core_loc_conf_t  *clcf;
+    njt_int_t                  rc;
+    njt_str_t                  path;
+    njt_buf_t                 *b;
+    njt_open_file_info_t       of;
+    njt_http_core_loc_conf_t  *clcf;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (ctx->error) {
         croak("sendfile(): called after error");
@@ -787,31 +787,31 @@ sendfile(r, filename, offset = -1, bytes = 0)
     offset = items < 3 ? -1 : SvIV(ST(2));
     bytes = items < 4 ? 0 : SvIV(ST(3));
 
-    b = ngx_calloc_buf(r->pool);
+    b = njt_calloc_buf(r->pool);
     if (b == NULL) {
         ctx->error = 1;
-        croak("ngx_calloc_buf() failed");
+        croak("njt_calloc_buf() failed");
     }
 
-    b->file = ngx_pcalloc(r->pool, sizeof(ngx_file_t));
+    b->file = njt_pcalloc(r->pool, sizeof(njt_file_t));
     if (b->file == NULL) {
         ctx->error = 1;
-        croak("ngx_pcalloc() failed");
+        croak("njt_pcalloc() failed");
     }
 
-    path.len = ngx_strlen(filename);
+    path.len = njt_strlen(filename);
 
-    path.data = ngx_pnalloc(r->pool, path.len + 1);
+    path.data = njt_pnalloc(r->pool, path.len + 1);
     if (path.data == NULL) {
         ctx->error = 1;
-        croak("ngx_pnalloc() failed");
+        croak("njt_pnalloc() failed");
     }
 
-    (void) ngx_cpystrn(path.data, (u_char *) filename, path.len + 1);
+    (void) njt_cpystrn(path.data, (u_char *) filename, path.len + 1);
 
-    clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
+    clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
 
-    ngx_memzero(&of, sizeof(ngx_open_file_info_t));
+    njt_memzero(&of, sizeof(njt_open_file_info_t));
 
     of.read_ahead = clcf->read_ahead;
     of.directio = clcf->directio;
@@ -820,24 +820,24 @@ sendfile(r, filename, offset = -1, bytes = 0)
     of.errors = clcf->open_file_cache_errors;
     of.events = clcf->open_file_cache_events;
 
-    if (ngx_http_set_disable_symlinks(r, clcf, &path, &of) != NJT_OK) {
+    if (njt_http_set_disable_symlinks(r, clcf, &path, &of) != NJT_OK) {
         ctx->error = 1;
-        croak("ngx_http_set_disable_symlinks() failed");
+        croak("njt_http_set_disable_symlinks() failed");
     }
 
-    if (ngx_open_cached_file(clcf->open_file_cache, &path, &of, r->pool)
+    if (njt_open_cached_file(clcf->open_file_cache, &path, &of, r->pool)
         != NJT_OK)
     {
         if (of.err == 0) {
             ctx->error = 1;
-            croak("ngx_open_cached_file() failed");
+            croak("njt_open_cached_file() failed");
         }
 
-        ngx_log_error(NJT_LOG_CRIT, r->connection->log, ngx_errno,
+        njt_log_error(NJT_LOG_CRIT, r->connection->log, njt_errno,
                       "%s \"%s\" failed", of.failed, filename);
 
         ctx->error = 1;
-        croak("ngx_open_cached_file() failed");
+        croak("njt_open_cached_file() failed");
     }
 
     if (offset == -1) {
@@ -857,11 +857,11 @@ sendfile(r, filename, offset = -1, bytes = 0)
     b->file->log = r->connection->log;
     b->file->directio = of.is_directio;
 
-    rc = ngx_http_perl_output(r, ctx, b);
+    rc = njt_http_perl_output(r, ctx, b);
 
     if (rc == NJT_ERROR) {
         ctx->error = 1;
-        croak("ngx_http_perl_output() failed");
+        croak("njt_http_perl_output() failed");
     }
 
 
@@ -869,12 +869,12 @@ void
 flush(r)
     CODE:
 
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
-    ngx_int_t             rc;
-    ngx_buf_t            *b;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
+    njt_int_t             rc;
+    njt_buf_t            *b;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (ctx->error) {
         croak("flush(): called after error");
@@ -888,21 +888,21 @@ flush(r)
         croak("flush(): header not sent");
     }
 
-    b = ngx_calloc_buf(r->pool);
+    b = njt_calloc_buf(r->pool);
     if (b == NULL) {
         ctx->error = 1;
-        croak("ngx_calloc_buf() failed");
+        croak("njt_calloc_buf() failed");
     }
 
     b->flush = 1;
 
-    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0, "$r->flush");
+    njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0, "$r->flush");
 
-    rc = ngx_http_perl_output(r, ctx, b);
+    rc = njt_http_perl_output(r, ctx, b);
 
     if (rc == NJT_ERROR) {
         ctx->error = 1;
-        croak("ngx_http_perl_output() failed");
+        croak("njt_http_perl_output() failed");
     }
 
     XSRETURN_EMPTY;
@@ -912,11 +912,11 @@ void
 internal_redirect(r, uri)
     CODE:
 
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
     SV                   *uri;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (ctx->variable) {
         croak("internal_redirect(): cannot be used in variable handler");
@@ -928,9 +928,9 @@ internal_redirect(r, uri)
 
     uri = ST(1);
 
-    if (ngx_http_perl_sv2str(aTHX_ r, &ctx->redirect_uri, uri) != NJT_OK) {
+    if (njt_http_perl_sv2str(aTHX_ r, &ctx->redirect_uri, uri) != NJT_OK) {
         ctx->error = 1;
-        croak("ngx_http_perl_sv2str() failed");
+        croak("njt_http_perl_sv2str() failed");
     }
 
 
@@ -938,10 +938,10 @@ void
 allow_ranges(r)
     CODE:
 
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (ctx->variable) {
         croak("allow_ranges(): cannot be used in variable handler");
@@ -955,33 +955,33 @@ unescape(r, text, type = 0)
     CODE:
 
     dXSTARG;
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
     SV                   *text;
     int                   type;
     u_char               *p, *dst, *src;
     STRLEN                len;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     text = ST(1);
 
     src = (u_char *) SvPV(text, len);
 
-    p = ngx_pnalloc(r->pool, len + 1);
+    p = njt_pnalloc(r->pool, len + 1);
     if (p == NULL) {
         ctx->error = 1;
-        croak("ngx_pnalloc() failed");
+        croak("njt_pnalloc() failed");
     }
 
     dst = p;
 
     type = items < 3 ? 0 : SvIV(ST(2));
 
-    ngx_unescape_uri(&dst, &src, len, (ngx_uint_t) type);
+    njt_unescape_uri(&dst, &src, len, (njt_uint_t) type);
     *dst = '\0';
 
-    ngx_http_perl_set_targ(p, dst - p);
+    njt_http_perl_set_targ(p, dst - p);
 
     ST(0) = TARG;
 
@@ -991,17 +991,17 @@ variable(r, name, value = NULL)
     CODE:
 
     dXSTARG;
-    ngx_http_request_t         *r;
-    ngx_http_perl_ctx_t        *ctx;
+    njt_http_request_t         *r;
+    njt_http_perl_ctx_t        *ctx;
     SV                         *name, *value;
     u_char                     *p, *lowcase;
     STRLEN                      len;
-    ngx_str_t                   var, val;
-    ngx_uint_t                  i, hash;
-    ngx_http_perl_var_t        *v;
-    ngx_http_variable_value_t  *vv;
+    njt_str_t                   var, val;
+    njt_uint_t                  i, hash;
+    njt_http_perl_var_t        *v;
+    njt_http_variable_value_t  *vv;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     name = ST(1);
 
@@ -1019,39 +1019,39 @@ variable(r, name, value = NULL)
             value = SvRV(value);
         }
 
-        if (ngx_http_perl_sv2str(aTHX_ r, &val, value) != NJT_OK) {
+        if (njt_http_perl_sv2str(aTHX_ r, &val, value) != NJT_OK) {
             ctx->error = 1;
-            croak("ngx_http_perl_sv2str() failed");
+            croak("njt_http_perl_sv2str() failed");
         }
     }
 
     p = (u_char *) SvPV(name, len);
 
-    lowcase = ngx_pnalloc(r->pool, len);
+    lowcase = njt_pnalloc(r->pool, len);
     if (lowcase == NULL) {
         ctx->error = 1;
-        croak("ngx_pnalloc() failed");
+        croak("njt_pnalloc() failed");
     }
 
-    hash = ngx_hash_strlow(lowcase, p, len);
+    hash = njt_hash_strlow(lowcase, p, len);
 
     var.len = len;
     var.data = lowcase;
 #if (NJT_DEBUG)
 
     if (value) {
-        ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+        njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "perl variable: \"%V\"=\"%V\"", &var, &val);
     } else {
-        ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "perl variable: \"%V\"", &var);
     }
 #endif
 
-    vv = ngx_http_get_variable(r, &var, hash);
+    vv = njt_http_get_variable(r, &var, hash);
     if (vv == NULL) {
         ctx->error = 1;
-        croak("ngx_http_get_variable() failed");
+        croak("njt_http_get_variable() failed");
     }
 
     if (vv->not_found) {
@@ -1063,7 +1063,7 @@ variable(r, name, value = NULL)
 
                 if (hash != v[i].hash
                     || len != v[i].name.len
-                    || ngx_strncmp(lowcase, v[i].name.data, len) != 0)
+                    || njt_strncmp(lowcase, v[i].name.data, len) != 0)
                 {
                     continue;
                 }
@@ -1073,7 +1073,7 @@ variable(r, name, value = NULL)
                     XSRETURN_UNDEF;
                 }
 
-                ngx_http_perl_set_targ(v[i].value.data, v[i].value.len);
+                njt_http_perl_set_targ(v[i].value.data, v[i].value.len);
 
                 goto done;
             }
@@ -1081,18 +1081,18 @@ variable(r, name, value = NULL)
 
         if (value) {
             if (ctx->variables == NULL) {
-                ctx->variables = ngx_array_create(r->pool, 1,
-                                                  sizeof(ngx_http_perl_var_t));
+                ctx->variables = njt_array_create(r->pool, 1,
+                                                  sizeof(njt_http_perl_var_t));
                 if (ctx->variables == NULL) {
                     ctx->error = 1;
-                    croak("ngx_array_create() failed");
+                    croak("njt_array_create() failed");
                 }
             }
 
-            v = ngx_array_push(ctx->variables);
+            v = njt_array_push(ctx->variables);
             if (v == NULL) {
                 ctx->error = 1;
-                croak("ngx_array_push() failed");
+                croak("njt_array_push() failed");
             }
 
             v->hash = hash;
@@ -1116,7 +1116,7 @@ variable(r, name, value = NULL)
         XSRETURN_UNDEF;
     }
 
-    ngx_http_perl_set_targ(vv->data, vv->len);
+    njt_http_perl_set_targ(vv->data, vv->len);
 
     done:
 
@@ -1127,11 +1127,11 @@ void
 sleep(r, sleep, next)
     CODE:
 
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
-    ngx_msec_t            sleep;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
+    njt_msec_t            sleep;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     if (ctx->variable) {
         croak("sleep(): cannot be used in variable handler");
@@ -1141,17 +1141,17 @@ sleep(r, sleep, next)
         croak("sleep(): another handler active");
     }
 
-    sleep = (ngx_msec_t) SvIV(ST(1));
+    sleep = (njt_msec_t) SvIV(ST(1));
 
-    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "perl sleep: %M", sleep);
 
     ctx->next = SvRV(ST(2));
 
     r->connection->write->delayed = 1;
-    ngx_add_timer(r->connection->write, sleep);
+    njt_add_timer(r->connection->write, sleep);
 
-    r->write_event_handler = ngx_http_perl_sleep_handler;
+    r->write_event_handler = njt_http_perl_sleep_handler;
     r->main->count++;
 
 
@@ -1159,14 +1159,14 @@ void
 log_error(r, err, msg)
     CODE:
 
-    ngx_http_request_t   *r;
-    ngx_http_perl_ctx_t  *ctx;
+    njt_http_request_t   *r;
+    njt_http_perl_ctx_t  *ctx;
     SV                   *err, *msg;
     u_char               *p;
     STRLEN                len;
-    ngx_err_t             e;
+    njt_err_t             e;
 
-    ngx_http_perl_set_request(r, ctx);
+    njt_http_perl_set_request(r, ctx);
 
     err = ST(1);
 
@@ -1184,4 +1184,4 @@ log_error(r, err, msg)
 
     p = (u_char *) SvPV(msg, len);
 
-    ngx_log_error(NJT_LOG_ERR, r->connection->log, e, "perl: %s", p);
+    njt_log_error(NJT_LOG_ERR, r->connection->log, e, "perl: %s", p);

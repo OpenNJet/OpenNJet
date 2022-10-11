@@ -19,7 +19,7 @@ echo " + cl version: $NJT_MSVC_VER"
 have=NJT_COMPILER value="\"cl $NJT_MSVC_VER\"" . auto/define
 
 
-ngx_msvc_ver=`echo $NJT_MSVC_VER | sed -e 's/^\([0-9]*\).*/\1/'`
+njt_msvc_ver=`echo $NJT_MSVC_VER | sed -e 's/^\([0-9]*\).*/\1/'`
 
 
 # optimizations
@@ -114,17 +114,17 @@ fi
 
 
 # MSVC 2005 supports C99 variadic macros
-if [ "$ngx_msvc_ver" -ge 14 ]; then
+if [ "$njt_msvc_ver" -ge 14 ]; then
     have=NJT_HAVE_C99_VARIADIC_MACROS . auto/have
 fi
 
 
 # precompiled headers
-CORE_DEPS="$CORE_DEPS $NJT_OBJS/ngx_config.pch"
-CORE_LINK="$CORE_LINK $NJT_OBJS/ngx_pch.obj"
-NJT_PCH="$NJT_OBJS/ngx_config.pch"
-NJT_BUILD_PCH="-Ycngx_config.h -Fp$NJT_OBJS/ngx_config.pch"
-NJT_USE_PCH="-Yungx_config.h -Fp$NJT_OBJS/ngx_config.pch"
+CORE_DEPS="$CORE_DEPS $NJT_OBJS/njt_config.pch"
+CORE_LINK="$CORE_LINK $NJT_OBJS/njt_pch.obj"
+NJT_PCH="$NJT_OBJS/njt_config.pch"
+NJT_BUILD_PCH="-Ycnjt_config.h -Fp$NJT_OBJS/njt_config.pch"
+NJT_USE_PCH="-Yunjt_config.h -Fp$NJT_OBJS/njt_config.pch"
 
 
 # the resource file
@@ -138,19 +138,19 @@ CORE_LINK="$NJT_RES $CORE_LINK"
 #MODULE_LINK="-LD $NJT_OBJS/njet.lib"
 
 
-ngx_pic_opt=
-ngx_objout="-Fo"
-ngx_binout="-Fe"
-ngx_objext="obj"
+njt_pic_opt=
+njt_objout="-Fo"
+njt_binout="-Fe"
+njt_objext="obj"
 
-ngx_long_start='@<<
+njt_long_start='@<<
 	'
-ngx_long_end='<<'
-ngx_long_regex_cont=' \
+njt_long_end='<<'
+njt_long_regex_cont=' \
 	'
-ngx_long_cont='
+njt_long_cont='
 	'
 
 # MSVC understand / in path
-#ngx_regex_dirsep='\\'
-#ngx_dirsep="\\"
+#njt_regex_dirsep='\\'
+#njt_dirsep="\\"

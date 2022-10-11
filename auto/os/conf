@@ -37,7 +37,7 @@ case "$NJT_PLATFORM" in
         have=NJT_HAVE_SENDFILE . auto/have
         CORE_SRCS="$CORE_SRCS $FREEBSD_SENDFILE_SRCS"
 
-        ngx_spacer='
+        njt_spacer='
 '
     ;;
 

@@ -125,7 +125,7 @@ This module provides a Perl interface to the njet HTTP server API.
 
 =head1 SEE ALSO
 
-http://njet.org/en/docs/http/ngx_http_perl_module.html
+http://njet.org/en/docs/http/njt_http_perl_module.html
 
 =head1 AUTHOR
 

@@ -47,20 +47,20 @@ else
 
         # FreeBSD, Solaris, Linux
 
-        ngx_feature="zlib library"
-        ngx_feature_name="NJT_ZLIB"
-        ngx_feature_run=no
-        ngx_feature_incs="#include <zlib.h>"
-        ngx_feature_path=
-        ngx_feature_libs="-lz"
-        ngx_feature_test="z_stream z; deflate(&z, Z_NO_FLUSH)"
+        njt_feature="zlib library"
+        njt_feature_name="NJT_ZLIB"
+        njt_feature_run=no
+        njt_feature_incs="#include <zlib.h>"
+        njt_feature_path=
+        njt_feature_libs="-lz"
+        njt_feature_test="z_stream z; deflate(&z, Z_NO_FLUSH)"
         . auto/feature
 
 
-        if [ $ngx_found = yes ]; then
-            CORE_LIBS="$CORE_LIBS $ngx_feature_libs"
+        if [ $njt_found = yes ]; then
+            CORE_LIBS="$CORE_LIBS $njt_feature_libs"
             ZLIB=YES
-            ngx_found=no
+            njt_found=no
         fi
     fi
 

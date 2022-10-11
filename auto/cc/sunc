@@ -33,32 +33,32 @@ END
 eval "$CC -o $NJT_AUTOTEST $NJT_AUTOTEST.c >> $NJT_ERR 2>&1"
 
 if [ -x $NJT_AUTOTEST ]; then
-    ngx_sunc_ver=`$NJT_AUTOTEST`
+    njt_sunc_ver=`$NJT_AUTOTEST`
 fi
 
 rm -rf $NJT_AUTOTEST*
 
 # 1424 == 0x590, Sun Studio 12
 
-if [ "$ngx_sunc_ver" -ge 1424 ]; then
-    ngx_sparc32="-m32"
-    ngx_sparc64="-m64"
-    ngx_amd64="-m64"
+if [ "$njt_sunc_ver" -ge 1424 ]; then
+    njt_sparc32="-m32"
+    njt_sparc64="-m64"
+    njt_amd64="-m64"
 
 else
-    ngx_sparc32="-xarch=v8plus"
-    ngx_sparc64="-xarch=v9"
-    ngx_amd64="-xarch=amd64"
+    njt_sparc32="-xarch=v8plus"
+    njt_sparc64="-xarch=v9"
+    njt_amd64="-xarch=amd64"
 fi
 
 case "$NJT_MACHINE" in
 
     i86pc)
-        NJT_AUX=" src/os/unix/ngx_sunpro_x86.il"
+        NJT_AUX=" src/os/unix/njt_sunpro_x86.il"
     ;;
 
     sun4u | sun4v)
-        NJT_AUX=" src/os/unix/ngx_sunpro_sparc64.il"
+        NJT_AUX=" src/os/unix/njt_sunpro_sparc64.il"
     ;;
 
 esac
@@ -71,17 +71,17 @@ MODULE_LINK="-G"
 
 # 20736 == 0x5100, Sun Studio 12.1
 
-if [ "$ngx_sunc_ver" -ge 20736 ]; then
-    ngx_fast="-fast"
+if [ "$njt_sunc_ver" -ge 20736 ]; then
+    njt_fast="-fast"
 
 else
     # older versions had problems with bit-fields
-    ngx_fast="-fast -xalias_level=any"
+    njt_fast="-fast -xalias_level=any"
 fi
 
 IPO=-xipo
-CFLAGS="$CFLAGS $ngx_fast $IPO"
-CORE_LINK="$CORE_LINK $ngx_fast $IPO"
+CFLAGS="$CFLAGS $njt_fast $IPO"
+CORE_LINK="$CORE_LINK $njt_fast $IPO"
 
 
 case $CPU in
@@ -118,26 +118,26 @@ case $CPU in
 
     sparc32)
         # build 32-bit UltraSparc binary
-        CPU_OPT="$ngx_sparc32"
-        CORE_LINK="$CORE_LINK $ngx_sparc32"
-        CC_AUX_FLAGS="$CC_AUX_FLAGS $ngx_sparc32"
+        CPU_OPT="$njt_sparc32"
+        CORE_LINK="$CORE_LINK $njt_sparc32"
+        CC_AUX_FLAGS="$CC_AUX_FLAGS $njt_sparc32"
         NJT_CPU_CACHE_LINE=64
     ;;
 
     sparc64)
         # build 64-bit UltraSparc binary
-        CPU_OPT="$ngx_sparc64"
-        CORE_LINK="$CORE_LINK $ngx_sparc64"
-        CC_AUX_FLAGS="$CC_AUX_FLAGS $ngx_sparc64"
+        CPU_OPT="$njt_sparc64"
+        CORE_LINK="$CORE_LINK $njt_sparc64"
+        CC_AUX_FLAGS="$CC_AUX_FLAGS $njt_sparc64"
         NJT_CPU_CACHE_LINE=64
     ;;
 
     amd64)
         # build 64-bit amd64 binary
-        CPU_OPT="$ngx_amd64"
-        CORE_LINK="$CORE_LINK $ngx_amd64"
-        CC_AUX_FLAGS="$CC_AUX_FLAGS $ngx_amd64"
-        NJT_AUX=" src/os/unix/ngx_sunpro_amd64.il"
+        CPU_OPT="$njt_amd64"
+        CORE_LINK="$CORE_LINK $njt_amd64"
+        CC_AUX_FLAGS="$CC_AUX_FLAGS $njt_amd64"
+        NJT_AUX=" src/os/unix/njt_sunpro_amd64.il"
         NJT_CPU_CACHE_LINE=64
     ;;
 
@@ -148,11 +148,11 @@ CFLAGS="$CFLAGS $CPU_OPT"
 
 
 if [ ".$PCRE_OPT" = "." ]; then
-    PCRE_OPT="$ngx_fast $IPO $CPU_OPT"
+    PCRE_OPT="$njt_fast $IPO $CPU_OPT"
 fi
 
 if [ ".$ZLIB_OPT" = "." ]; then
-    ZLIB_OPT="$ngx_fast $IPO $CPU_OPT"
+    ZLIB_OPT="$njt_fast $IPO $CPU_OPT"
 fi
 
 

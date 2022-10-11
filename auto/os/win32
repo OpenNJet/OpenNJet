@@ -13,8 +13,8 @@ NJT_ICONS="$NJT_WIN32_ICONS"
 SELECT_SRCS=$WIN32_SELECT_SRCS
 POLL_SRCS=$WIN32_POLL_SRCS
 
-ngx_pic_opt=
-ngx_binext=".exe"
+njt_pic_opt=
+njt_binext=".exe"
 
 case "$NJT_CC_NAME" in
 

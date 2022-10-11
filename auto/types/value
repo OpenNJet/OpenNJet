@@ -5,8 +5,8 @@
 
 cat << END >> $NJT_AUTO_CONFIG_H
 
-#ifndef $ngx_param
-#define $ngx_param  $ngx_value
+#ifndef $njt_param
+#define $njt_param  $njt_value
 #endif
 
 END

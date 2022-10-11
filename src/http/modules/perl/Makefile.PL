@@ -26,7 +26,7 @@ WriteMakefile(
         'njet.c'     => join(" ", map {
                              m#^/# ? $_ : "../../../../../$_"
                          } (split(/\s+/, $ENV{NJT_DEPS}),
-                            "src/http/modules/perl/ngx_http_perl_module.h"))
+                            "src/http/modules/perl/njt_http_perl_module.h"))
     },
 
     PM => {

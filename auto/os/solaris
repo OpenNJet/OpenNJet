@@ -13,7 +13,7 @@ CORE_LIBS="$CORE_LIBS -lsocket -lnsl"
 NJT_RPATH=YES
 
 # Solaris's make does not support a blank line between target and rules
-ngx_spacer=
+njt_spacer=
 
 CC_AUX_FLAGS="$CC_AUX_FLAGS -D_FILE_OFFSET_BITS=64 -lsocket -lnsl"
 
@@ -27,35 +27,35 @@ if [ $ZLIB_ASM != NO ]; then
 fi
 
 
-ngx_feature="sendfilev()"
-ngx_feature_name="NJT_HAVE_SENDFILE"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/sendfile.h>"
-ngx_feature_path=
-ngx_feature_libs="-lsendfile"
-ngx_feature_test="int fd = 1; sendfilevec_t vec[1];
+njt_feature="sendfilev()"
+njt_feature_name="NJT_HAVE_SENDFILE"
+njt_feature_run=no
+njt_feature_incs="#include <sys/sendfile.h>"
+njt_feature_path=
+njt_feature_libs="-lsendfile"
+njt_feature_test="int fd = 1; sendfilevec_t vec[1];
                   size_t sent; ssize_t n;
                   n = sendfilev(fd, vec, 1, &sent);
                   if (n == -1) return 1"
 . auto/feature
 
 
-if [ $ngx_found = yes ]; then
+if [ $njt_found = yes ]; then
     CORE_SRCS="$CORE_SRCS $SOLARIS_SENDFILEV_SRCS"
     CORE_LIBS="$CORE_LIBS -lsendfile"
 fi
 
 
-ngx_feature="event ports"
-ngx_feature_name="NJT_HAVE_EVENTPORT"
-ngx_feature_run=no
-ngx_feature_incs="#include <port.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="(void) port_create()"
+njt_feature="event ports"
+njt_feature_name="NJT_HAVE_EVENTPORT"
+njt_feature_run=no
+njt_feature_incs="#include <port.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="(void) port_create()"
 . auto/feature
 
-if [ $ngx_found = yes ]; then
+if [ $njt_found = yes ]; then
     CORE_SRCS="$CORE_SRCS $EVENTPORT_SRCS"
     EVENT_MODULES="$EVENT_MODULES $EVENTPORT_MODULE"
 fi

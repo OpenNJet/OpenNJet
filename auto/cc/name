@@ -5,16 +5,16 @@
 
 if [ "$NJT_PLATFORM" != win32 ]; then
 
-    ngx_feature="C compiler"
-    ngx_feature_name=
-    ngx_feature_run=yes
-    ngx_feature_incs=
-    ngx_feature_path=
-    ngx_feature_libs=
-    ngx_feature_test=
+    njt_feature="C compiler"
+    njt_feature_name=
+    njt_feature_run=yes
+    njt_feature_incs=
+    njt_feature_path=
+    njt_feature_libs=
+    njt_feature_test=
     . auto/feature
 
-    if [ $ngx_found = no ]; then
+    if [ $njt_found = no ]; then
         echo
         echo $0: error: C compiler $CC is not found
         echo

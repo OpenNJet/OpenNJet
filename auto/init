@@ -4,10 +4,10 @@
 
 
 NJT_MAKEFILE=$NJT_OBJS/Makefile
-NJT_MODULES_C=$NJT_OBJS/ngx_modules.c
+NJT_MODULES_C=$NJT_OBJS/njt_modules.c
 
-NJT_AUTO_HEADERS_H=$NJT_OBJS/ngx_auto_headers.h
-NJT_AUTO_CONFIG_H=$NJT_OBJS/ngx_auto_config.h
+NJT_AUTO_HEADERS_H=$NJT_OBJS/njt_auto_headers.h
+NJT_AUTO_CONFIG_H=$NJT_OBJS/njt_auto_config.h
 
 NJT_AUTOTEST=$NJT_OBJS/autotest
 NJT_AUTOCONF_ERR=$NJT_OBJS/autoconf.err
@@ -26,17 +26,17 @@ NJT_USE_PCH=
 if echo "test\c" | grep c >/dev/null; then
 
     if echo -n test | grep n >/dev/null; then
-        ngx_n=
-        ngx_c=
+        njt_n=
+        njt_c=
 
     else
-        ngx_n=-n
-        ngx_c=
+        njt_n=-n
+        njt_c=
     fi
 
 else
-    ngx_n=
-    ngx_c='\c'
+    njt_n=
+    njt_c='\c'
 fi
 
 

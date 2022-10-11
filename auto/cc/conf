@@ -8,31 +8,31 @@ LINK="\$(CC)"
 MAIN_LINK=
 MODULE_LINK="-shared"
 
-ngx_include_opt="-I "
-ngx_compile_opt="-c"
-ngx_pic_opt="-fPIC"
-ngx_objout="-o "
-ngx_binout="-o "
-ngx_objext="o"
-ngx_binext=
-ngx_modext=".so"
+njt_include_opt="-I "
+njt_compile_opt="-c"
+njt_pic_opt="-fPIC"
+njt_objout="-o "
+njt_binout="-o "
+njt_objext="o"
+njt_binext=
+njt_modext=".so"
 
-ngx_long_start=
-ngx_long_end=
+njt_long_start=
+njt_long_end=
 
-ngx_regex_dirsep="\/"
-ngx_dirsep='/'
+njt_regex_dirsep="\/"
+njt_dirsep='/'
 
-ngx_regex_cont=' \\\
+njt_regex_cont=' \\\
 	'
-ngx_cont=' \
+njt_cont=' \
 	'
-ngx_tab=' \
+njt_tab=' \
 		'
-ngx_spacer=
+njt_spacer=
 
-ngx_long_regex_cont=$ngx_regex_cont
-ngx_long_cont=$ngx_cont
+njt_long_regex_cont=$njt_regex_cont
+njt_long_cont=$njt_cont
 
 . auto/cc/name
 
@@ -45,7 +45,7 @@ if test -n "$CFLAGS"; then
         ccc)
             # Compaq C V6.5-207
 
-            ngx_include_opt="-I"
+            njt_include_opt="-I"
         ;;
 
         sunc)
@@ -56,11 +56,11 @@ if test -n "$CFLAGS"; then
             case "$NJT_MACHINE" in
 
                 i86pc)
-                    NJT_AUX=" src/os/unix/ngx_sunpro_x86.il"
+                    NJT_AUX=" src/os/unix/njt_sunpro_x86.il"
                 ;;
 
                 sun4u | sun4v)
-                    NJT_AUX=" src/os/unix/ngx_sunpro_sparc64.il"
+                    NJT_AUX=" src/os/unix/njt_sunpro_sparc64.il"
                 ;;
 
             esac
@@ -68,7 +68,7 @@ if test -n "$CFLAGS"; then
             case $CPU in
 
                 amd64)
-                    NJT_AUX=" src/os/unix/ngx_sunpro_amd64.il"
+                    NJT_AUX=" src/os/unix/njt_sunpro_amd64.il"
                 ;;
 
             esac
@@ -147,16 +147,16 @@ NJT_TEST_LD_OPT="$NJT_LD_OPT"
 if [ "$NJT_PLATFORM" != win32 ]; then
 
     if test -n "$NJT_LD_OPT"; then
-        ngx_feature=--with-ld-opt=\"$NJT_LD_OPT\"
-        ngx_feature_name=
-        ngx_feature_run=no
-        ngx_feature_incs=
-        ngx_feature_path=
-        ngx_feature_libs=
-        ngx_feature_test=
+        njt_feature=--with-ld-opt=\"$NJT_LD_OPT\"
+        njt_feature_name=
+        njt_feature_run=no
+        njt_feature_incs=
+        njt_feature_path=
+        njt_feature_libs=
+        njt_feature_test=
         . auto/feature
 
-        if [ $ngx_found = no ]; then
+        if [ $njt_found = no ]; then
             echo $0: error: the invalid value in --with-ld-opt=\"$NJT_LD_OPT\"
             echo
             exit 1
@@ -164,16 +164,16 @@ if [ "$NJT_PLATFORM" != win32 ]; then
     fi
 
 
-    ngx_feature="-Wl,-E switch"
-    ngx_feature_name=
-    ngx_feature_run=no
-    ngx_feature_incs=
-    ngx_feature_path=
-    ngx_feature_libs=-Wl,-E
-    ngx_feature_test=
+    njt_feature="-Wl,-E switch"
+    njt_feature_name=
+    njt_feature_run=no
+    njt_feature_incs=
+    njt_feature_path=
+    njt_feature_libs=-Wl,-E
+    njt_feature_test=
     . auto/feature
 
-    if [ $ngx_found = yes ]; then
+    if [ $njt_found = yes ]; then
         MAIN_LINK="-Wl,-E"
     fi
 
@@ -181,13 +181,13 @@ if [ "$NJT_PLATFORM" != win32 ]; then
     if [ "$NJT_CC_NAME" = "sunc" ]; then
         echo "checking for gcc builtin atomic operations ... disabled"
     else
-        ngx_feature="gcc builtin atomic operations"
-        ngx_feature_name=NJT_HAVE_GCC_ATOMIC
-        ngx_feature_run=yes
-        ngx_feature_incs=
-        ngx_feature_path=
-        ngx_feature_libs=
-        ngx_feature_test="long  n = 0;
+        njt_feature="gcc builtin atomic operations"
+        njt_feature_name=NJT_HAVE_GCC_ATOMIC
+        njt_feature_run=yes
+        njt_feature_incs=
+        njt_feature_path=
+        njt_feature_libs=
+        njt_feature_test="long  n = 0;
                           if (!__sync_bool_compare_and_swap(&n, 0, 1))
                               return 1;
                           if (__sync_fetch_and_add(&n, 1) != 1)
@@ -202,53 +202,53 @@ if [ "$NJT_PLATFORM" != win32 ]; then
     if [ "$NJT_CC_NAME" = "ccc" ]; then
         echo "checking for C99 variadic macros ... disabled"
     else
-        ngx_feature="C99 variadic macros"
-        ngx_feature_name="NJT_HAVE_C99_VARIADIC_MACROS"
-        ngx_feature_run=yes
-        ngx_feature_incs="#include <stdio.h>
+        njt_feature="C99 variadic macros"
+        njt_feature_name="NJT_HAVE_C99_VARIADIC_MACROS"
+        njt_feature_run=yes
+        njt_feature_incs="#include <stdio.h>
 #define var(dummy, ...)  sprintf(__VA_ARGS__)"
-        ngx_feature_path=
-        ngx_feature_libs=
-        ngx_feature_test="char  buf[30]; buf[0] = '0';
+        njt_feature_path=
+        njt_feature_libs=
+        njt_feature_test="char  buf[30]; buf[0] = '0';
                           var(0, buf, \"%d\", 1);
                           if (buf[0] != '1') return 1"
         . auto/feature
     fi
 
 
-    ngx_feature="gcc variadic macros"
-    ngx_feature_name="NJT_HAVE_GCC_VARIADIC_MACROS"
-    ngx_feature_run=yes
-    ngx_feature_incs="#include <stdio.h>
+    njt_feature="gcc variadic macros"
+    njt_feature_name="NJT_HAVE_GCC_VARIADIC_MACROS"
+    njt_feature_run=yes
+    njt_feature_incs="#include <stdio.h>
 #define var(dummy, args...)  sprintf(args)"
-    ngx_feature_path=
-    ngx_feature_libs=
-    ngx_feature_test="char  buf[30]; buf[0] = '0';
+    njt_feature_path=
+    njt_feature_libs=
+    njt_feature_test="char  buf[30]; buf[0] = '0';
                       var(0, buf, \"%d\", 1);
                       if (buf[0] != '1') return 1"
     . auto/feature
 
 
-    ngx_feature="gcc builtin 64 bit byteswap"
-    ngx_feature_name="NJT_HAVE_GCC_BSWAP64"
-    ngx_feature_run=no
-    ngx_feature_incs=
-    ngx_feature_path=
-    ngx_feature_libs=
-    ngx_feature_test="if (__builtin_bswap64(0)) return 1"
+    njt_feature="gcc builtin 64 bit byteswap"
+    njt_feature_name="NJT_HAVE_GCC_BSWAP64"
+    njt_feature_run=no
+    njt_feature_incs=
+    njt_feature_path=
+    njt_feature_libs=
+    njt_feature_test="if (__builtin_bswap64(0)) return 1"
     . auto/feature
 
 
-#    ngx_feature="inline"
-#    ngx_feature_name=
-#    ngx_feature_run=no
-#    ngx_feature_incs="int inline f(void) { return 1 }"
-#    ngx_feature_path=
-#    ngx_feature_libs=
-#    ngx_feature_test=
+#    njt_feature="inline"
+#    njt_feature_name=
+#    njt_feature_run=no
+#    njt_feature_incs="int inline f(void) { return 1 }"
+#    njt_feature_path=
+#    njt_feature_libs=
+#    njt_feature_test=
 #    . auto/feature
 #
-#    if [ $ngx_found = yes ]; then
+#    if [ $njt_found = yes ]; then
 #    fi
 
 fi

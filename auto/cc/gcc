@@ -20,18 +20,18 @@ have=NJT_COMPILER value="\"gcc $NJT_GCC_VER\"" . auto/define
 
 CC_TEST_FLAGS="-pipe"
 
-ngx_feature="gcc -pipe switch"
-ngx_feature_name=
-ngx_feature_run=no
-ngx_feature_incs=
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test=
+njt_feature="gcc -pipe switch"
+njt_feature_name=
+njt_feature_run=no
+njt_feature_incs=
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test=
 . auto/feature
 
 CC_TEST_FLAGS=
 
-if [ $ngx_found = yes ]; then
+if [ $njt_found = yes ]; then
     PIPE="-pipe"
 fi
 

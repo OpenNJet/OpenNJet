@@ -5,12 +5,12 @@
 
 cat << END                                                    >> $NJT_MAKEFILE
 
-$NJT_OBJS/src/http/modules/perl/ngx_http_perl_module.o: \\
-		$NJT_OBJS/$ngx_perl_module
+$NJT_OBJS/src/http/modules/perl/njt_http_perl_module.o: \\
+		$NJT_OBJS/$njt_perl_module
 
-$NJT_OBJS/$ngx_perl_module: \\
+$NJT_OBJS/$njt_perl_module: \\
 		\$(CORE_DEPS) \$(HTTP_DEPS) \\
-		src/http/modules/perl/ngx_http_perl_module.h \\
+		src/http/modules/perl/njt_http_perl_module.h \\
 		$NJT_OBJS/src/http/modules/perl/Makefile
 	cd $NJT_OBJS/src/http/modules/perl && \$(MAKE)
 

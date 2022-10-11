@@ -40,11 +40,11 @@ if test -n "$NJT_PERL_VER"; then
     NJT_PERL_CFLAGS=`echo $NJT_PERL_CFLAGS \
                      | sed -e 's/-wd171/-wd171 -wd1599/'`
 
-    ngx_perl_ldopts=`$NJT_PERL -MExtUtils::Embed -e ldopts`
+    njt_perl_ldopts=`$NJT_PERL -MExtUtils::Embed -e ldopts`
 
-    ngx_perl_dlext=`$NJT_PERL -MConfig -e 'print $Config{dlext}'`
-    ngx_perl_libdir="src/http/modules/perl/blib/arch/auto"
-    ngx_perl_module="$ngx_perl_libdir/njet/njet.$ngx_perl_dlext"
+    njt_perl_dlext=`$NJT_PERL -MConfig -e 'print $Config{dlext}'`
+    njt_perl_libdir="src/http/modules/perl/blib/arch/auto"
+    njt_perl_module="$njt_perl_libdir/njet/njet.$njt_perl_dlext"
 
     if $NJT_PERL -V:usemultiplicity | grep define > /dev/null; then
         have=NJT_HAVE_PERL_MULTIPLICITY . auto/have
@@ -53,20 +53,20 @@ if test -n "$NJT_PERL_VER"; then
 
     if $NJT_PERL -V:useithreads | grep undef > /dev/null; then
         # FreeBSD port wants to link with -pthread non-threaded perl
-        ngx_perl_ldopts=`echo $ngx_perl_ldopts | sed 's/ -pthread//'`
+        njt_perl_ldopts=`echo $njt_perl_ldopts | sed 's/ -pthread//'`
     fi
 
     if [ "$NJT_SYSTEM" = "Darwin" ]; then
         # OS X system perl wants to link universal binaries
-        ngx_perl_ldopts=`echo $ngx_perl_ldopts \
+        njt_perl_ldopts=`echo $njt_perl_ldopts \
                          | sed -e 's/-arch i386//' -e 's/-arch x86_64//'`
     fi
 
     if [ $USE_PERL = YES ]; then
-        CORE_LINK="$CORE_LINK $ngx_perl_ldopts"
+        CORE_LINK="$CORE_LINK $njt_perl_ldopts"
     fi
 
-    NJT_LIB_PERL="$ngx_perl_ldopts"
+    NJT_LIB_PERL="$njt_perl_ldopts"
 
     if test -n "$NJT_PERL_MODULES"; then
         have=NJT_PERL_MODULES value="(u_char *) \"$NJT_PERL_MODULES\""

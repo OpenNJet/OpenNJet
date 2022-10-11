@@ -3,51 +3,51 @@
 # Copyright (C) Nginx, Inc.
 
 
-    ngx_feature="Google perftools"
-    ngx_feature_name=
-    ngx_feature_run=no
-    ngx_feature_incs=
-    ngx_feature_path=
-    ngx_feature_libs="-lprofiler"
-    ngx_feature_test="void ProfilerStop(void);
+    njt_feature="Google perftools"
+    njt_feature_name=
+    njt_feature_run=no
+    njt_feature_incs=
+    njt_feature_path=
+    njt_feature_libs="-lprofiler"
+    njt_feature_test="void ProfilerStop(void);
                       ProfilerStop()"
     . auto/feature
 
 
-if [ $ngx_found = no ]; then
+if [ $njt_found = no ]; then
 
     # FreeBSD port
 
-    ngx_feature="Google perftools in /usr/local/"
+    njt_feature="Google perftools in /usr/local/"
 
     if [ $NJT_RPATH = YES ]; then
-        ngx_feature_libs="-R/usr/local/lib -L/usr/local/lib -lprofiler"
+        njt_feature_libs="-R/usr/local/lib -L/usr/local/lib -lprofiler"
     else
-        ngx_feature_libs="-L/usr/local/lib -lprofiler"
+        njt_feature_libs="-L/usr/local/lib -lprofiler"
     fi
 
     . auto/feature
 fi
 
 
-if [ $ngx_found = no ]; then
+if [ $njt_found = no ]; then
 
     # MacPorts
 
-    ngx_feature="Google perftools in /opt/local/"
+    njt_feature="Google perftools in /opt/local/"
 
     if [ $NJT_RPATH = YES ]; then
-        ngx_feature_libs="-R/opt/local/lib -L/opt/local/lib -lprofiler"
+        njt_feature_libs="-R/opt/local/lib -L/opt/local/lib -lprofiler"
     else
-        ngx_feature_libs="-L/opt/local/lib -lprofiler"
+        njt_feature_libs="-L/opt/local/lib -lprofiler"
     fi
 
     . auto/feature
 fi
 
 
-if [ $ngx_found = yes ]; then
-    CORE_LIBS="$CORE_LIBS $ngx_feature_libs"
+if [ $njt_found = yes ]; then
+    CORE_LIBS="$CORE_LIBS $njt_feature_libs"
 
 else
 

@@ -61,36 +61,36 @@ if [ $HTTP = YES ]; then
     HTTP_DEPS=
     HTTP_INCS=
 
-    ngx_module_type=HTTP
+    njt_module_type=HTTP
 
     if :; then
-        ngx_module_name="ngx_http_module \
-                         ngx_http_core_module \
-                         ngx_http_log_module \
-                         ngx_http_upstream_module"
-        ngx_module_incs="src/http src/http/modules"
-        ngx_module_deps="src/http/ngx_http.h \
-                         src/http/ngx_http_request.h \
-                         src/http/ngx_http_config.h \
-                         src/http/ngx_http_core_module.h \
-                         src/http/ngx_http_cache.h \
-                         src/http/ngx_http_variables.h \
-                         src/http/ngx_http_script.h \
-                         src/http/ngx_http_upstream.h \
-                         src/http/ngx_http_upstream_round_robin.h"
-        ngx_module_srcs="src/http/ngx_http.c \
-                         src/http/ngx_http_core_module.c \
-                         src/http/ngx_http_special_response.c \
-                         src/http/ngx_http_request.c \
-                         src/http/ngx_http_parse.c \
-                         src/http/modules/ngx_http_log_module.c \
-                         src/http/ngx_http_request_body.c \
-                         src/http/ngx_http_variables.c \
-                         src/http/ngx_http_script.c \
-                         src/http/ngx_http_upstream.c \
-                         src/http/ngx_http_upstream_round_robin.c"
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name="njt_http_module \
+                         njt_http_core_module \
+                         njt_http_log_module \
+                         njt_http_upstream_module"
+        njt_module_incs="src/http src/http/modules"
+        njt_module_deps="src/http/njt_http.h \
+                         src/http/njt_http_request.h \
+                         src/http/njt_http_config.h \
+                         src/http/njt_http_core_module.h \
+                         src/http/njt_http_cache.h \
+                         src/http/njt_http_variables.h \
+                         src/http/njt_http_script.h \
+                         src/http/njt_http_upstream.h \
+                         src/http/njt_http_upstream_round_robin.h"
+        njt_module_srcs="src/http/njt_http.c \
+                         src/http/njt_http_core_module.c \
+                         src/http/njt_http_special_response.c \
+                         src/http/njt_http_request.c \
+                         src/http/njt_http_parse.c \
+                         src/http/modules/njt_http_log_module.c \
+                         src/http/njt_http_request_body.c \
+                         src/http/njt_http_variables.c \
+                         src/http/njt_http_script.c \
+                         src/http/njt_http_upstream.c \
+                         src/http/njt_http_upstream_round_robin.c"
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
@@ -108,122 +108,122 @@ if [ $HTTP = YES ]; then
 
 
     # the module order is important
-    #     ngx_http_static_module
-    #     ngx_http_gzip_static_module
-    #     ngx_http_dav_module
-    #     ngx_http_autoindex_module
-    #     ngx_http_index_module
-    #     ngx_http_random_index_module
+    #     njt_http_static_module
+    #     njt_http_gzip_static_module
+    #     njt_http_dav_module
+    #     njt_http_autoindex_module
+    #     njt_http_index_module
+    #     njt_http_random_index_module
     #
-    #     ngx_http_access_module
-    #     ngx_http_realip_module
+    #     njt_http_access_module
+    #     njt_http_realip_module
     #
     #
     # the filter order is important
-    #     ngx_http_write_filter
-    #     ngx_http_header_filter
-    #     ngx_http_chunked_filter
-    #     ngx_http_v2_filter
-    #     ngx_http_range_header_filter
-    #     ngx_http_gzip_filter
-    #     ngx_http_postpone_filter
-    #     ngx_http_ssi_filter
-    #     ngx_http_charset_filter
-    #         ngx_http_xslt_filter
-    #         ngx_http_image_filter
-    #         ngx_http_sub_filter
-    #         ngx_http_addition_filter
-    #         ngx_http_gunzip_filter
-    #         ngx_http_userid_filter
-    #         ngx_http_headers_filter
-    #     ngx_http_copy_filter
-    #     ngx_http_range_body_filter
-    #     ngx_http_not_modified_filter
-    #     ngx_http_slice_filter
+    #     njt_http_write_filter
+    #     njt_http_header_filter
+    #     njt_http_chunked_filter
+    #     njt_http_v2_filter
+    #     njt_http_range_header_filter
+    #     njt_http_gzip_filter
+    #     njt_http_postpone_filter
+    #     njt_http_ssi_filter
+    #     njt_http_charset_filter
+    #         njt_http_xslt_filter
+    #         njt_http_image_filter
+    #         njt_http_sub_filter
+    #         njt_http_addition_filter
+    #         njt_http_gunzip_filter
+    #         njt_http_userid_filter
+    #         njt_http_headers_filter
+    #     njt_http_copy_filter
+    #     njt_http_range_body_filter
+    #     njt_http_not_modified_filter
+    #     njt_http_slice_filter
 
-    ngx_module_type=HTTP_FILTER
+    njt_module_type=HTTP_FILTER
     HTTP_FILTER_MODULES=
 
-    ngx_module_order="ngx_http_static_module \
-                      ngx_http_gzip_static_module \
-                      ngx_http_dav_module \
-                      ngx_http_autoindex_module \
-                      ngx_http_index_module \
-                      ngx_http_random_index_module \
-                      ngx_http_access_module \
-                      ngx_http_realip_module \
-                      ngx_http_write_filter_module \
-                      ngx_http_header_filter_module \
-                      ngx_http_chunked_filter_module \
-                      ngx_http_v2_filter_module \
-                      ngx_http_range_header_filter_module \
-                      ngx_http_gzip_filter_module \
-                      ngx_http_postpone_filter_module \
-                      ngx_http_ssi_filter_module \
-                      ngx_http_charset_filter_module \
-                      ngx_http_xslt_filter_module \
-                      ngx_http_image_filter_module \
-                      ngx_http_sub_filter_module \
-                      ngx_http_addition_filter_module \
-                      ngx_http_gunzip_filter_module \
-                      ngx_http_userid_filter_module \
-                      ngx_http_headers_filter_module \
-                      ngx_http_copy_filter_module \
-                      ngx_http_range_body_filter_module \
-                      ngx_http_not_modified_filter_module \
-                      ngx_http_slice_filter_module"
+    njt_module_order="njt_http_static_module \
+                      njt_http_gzip_static_module \
+                      njt_http_dav_module \
+                      njt_http_autoindex_module \
+                      njt_http_index_module \
+                      njt_http_random_index_module \
+                      njt_http_access_module \
+                      njt_http_realip_module \
+                      njt_http_write_filter_module \
+                      njt_http_header_filter_module \
+                      njt_http_chunked_filter_module \
+                      njt_http_v2_filter_module \
+                      njt_http_range_header_filter_module \
+                      njt_http_gzip_filter_module \
+                      njt_http_postpone_filter_module \
+                      njt_http_ssi_filter_module \
+                      njt_http_charset_filter_module \
+                      njt_http_xslt_filter_module \
+                      njt_http_image_filter_module \
+                      njt_http_sub_filter_module \
+                      njt_http_addition_filter_module \
+                      njt_http_gunzip_filter_module \
+                      njt_http_userid_filter_module \
+                      njt_http_headers_filter_module \
+                      njt_http_copy_filter_module \
+                      njt_http_range_body_filter_module \
+                      njt_http_not_modified_filter_module \
+                      njt_http_slice_filter_module"
 
     if :; then
-        ngx_module_name=ngx_http_write_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/ngx_http_write_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name=njt_http_write_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/njt_http_write_filter_module.c
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
 
     if :; then
-        ngx_module_name=ngx_http_header_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/ngx_http_header_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name=njt_http_header_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/njt_http_header_filter_module.c
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
 
     if :; then
-        ngx_module_name=ngx_http_chunked_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_chunked_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name=njt_http_chunked_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_chunked_filter_module.c
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
 
     if [ $HTTP_V2 = YES ]; then
-        ngx_module_name=ngx_http_v2_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/v2/ngx_http_v2_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_V2
+        njt_module_name=njt_http_v2_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/v2/njt_http_v2_filter_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_V2
 
         . auto/module
     fi
 
     if :; then
-        ngx_module_name=ngx_http_range_header_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_range_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name=njt_http_range_header_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_range_filter_module.c
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
@@ -232,23 +232,23 @@ if [ $HTTP = YES ]; then
         have=NJT_HTTP_GZIP . auto/have
         USE_ZLIB=YES
 
-        ngx_module_name=ngx_http_gzip_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_gzip_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_GZIP
+        njt_module_name=njt_http_gzip_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_gzip_filter_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_GZIP
 
         . auto/module
     fi
 
     if :; then
-        ngx_module_name=ngx_http_postpone_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/ngx_http_postpone_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name=njt_http_postpone_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/njt_http_postpone_filter_module.c
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
@@ -256,67 +256,67 @@ if [ $HTTP = YES ]; then
     if [ $HTTP_SSI = YES ]; then
         have=NJT_HTTP_SSI . auto/have
 
-        ngx_module_name=ngx_http_ssi_filter_module
-        ngx_module_incs=
-        ngx_module_deps=src/http/modules/ngx_http_ssi_filter_module.h
-        ngx_module_srcs=src/http/modules/ngx_http_ssi_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_SSI
+        njt_module_name=njt_http_ssi_filter_module
+        njt_module_incs=
+        njt_module_deps=src/http/modules/njt_http_ssi_filter_module.h
+        njt_module_srcs=src/http/modules/njt_http_ssi_filter_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_SSI
 
         . auto/module
     fi
 
     if [ $HTTP_CHARSET = YES ]; then
-        ngx_module_name=ngx_http_charset_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_charset_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_CHARSET
+        njt_module_name=njt_http_charset_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_charset_filter_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_CHARSET
 
         . auto/module
     fi
 
     if [ $HTTP_XSLT != NO ]; then
-        ngx_module_name=ngx_http_xslt_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_xslt_filter_module.c
-        ngx_module_libs=LIBXSLT
-        ngx_module_link=$HTTP_XSLT
+        njt_module_name=njt_http_xslt_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_xslt_filter_module.c
+        njt_module_libs=LIBXSLT
+        njt_module_link=$HTTP_XSLT
 
         . auto/module
     fi
 
     if [ $HTTP_IMAGE_FILTER != NO ]; then
-        ngx_module_name=ngx_http_image_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_image_filter_module.c
-        ngx_module_libs=LIBGD
-        ngx_module_link=$HTTP_IMAGE_FILTER
+        njt_module_name=njt_http_image_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_image_filter_module.c
+        njt_module_libs=LIBGD
+        njt_module_link=$HTTP_IMAGE_FILTER
 
         . auto/module
     fi
 
     if [ $HTTP_SUB = YES ]; then
-        ngx_module_name=ngx_http_sub_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_sub_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_SUB
+        njt_module_name=njt_http_sub_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_sub_filter_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_SUB
 
         . auto/module
     fi
 
     if [ $HTTP_ADDITION = YES ]; then
-        ngx_module_name=ngx_http_addition_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_addition_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_ADDITION
+        njt_module_name=njt_http_addition_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_addition_filter_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_ADDITION
 
         . auto/module
     fi
@@ -325,114 +325,114 @@ if [ $HTTP = YES ]; then
         have=NJT_HTTP_GZIP . auto/have
         USE_ZLIB=YES
 
-        ngx_module_name=ngx_http_gunzip_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_gunzip_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_GUNZIP
+        njt_module_name=njt_http_gunzip_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_gunzip_filter_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_GUNZIP
 
         . auto/module
     fi
 
     if [ $HTTP_USERID = YES ]; then
-        ngx_module_name=ngx_http_userid_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_userid_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_USERID
+        njt_module_name=njt_http_userid_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_userid_filter_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_USERID
 
         . auto/module
     fi
 
     if :; then
-        ngx_module_name=ngx_http_headers_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_headers_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name=njt_http_headers_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_headers_filter_module.c
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
 
 
-    ngx_module_type=HTTP_INIT_FILTER
+    njt_module_type=HTTP_INIT_FILTER
     HTTP_INIT_FILTER_MODULES=
 
     if :; then
-        ngx_module_name=ngx_http_copy_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/ngx_http_copy_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name=njt_http_copy_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/njt_http_copy_filter_module.c
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
 
     if :; then
-        ngx_module_name=ngx_http_range_body_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name=njt_http_range_body_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
 
     if :; then
-        ngx_module_name=ngx_http_not_modified_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_not_modified_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name=njt_http_not_modified_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_not_modified_filter_module.c
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
 
     if [ $HTTP_SLICE = YES ]; then
-        ngx_module_name=ngx_http_slice_filter_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_slice_filter_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_SLICE
+        njt_module_name=njt_http_slice_filter_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_slice_filter_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_SLICE
 
         . auto/module
     fi
 
 
-    ngx_module_type=HTTP
+    njt_module_type=HTTP
 
     if [ $HTTP_V2 = YES ]; then
         have=NJT_HTTP_V2 . auto/have
         have=NJT_HTTP_HEADERS . auto/have
 
-        ngx_module_name=ngx_http_v2_module
-        ngx_module_incs=src/http/v2
-        ngx_module_deps="src/http/v2/ngx_http_v2.h \
-                         src/http/v2/ngx_http_v2_module.h"
-        ngx_module_srcs="src/http/v2/ngx_http_v2.c \
-                         src/http/v2/ngx_http_v2_table.c \
-                         src/http/v2/ngx_http_v2_encode.c \
-                         src/http/v2/ngx_http_v2_module.c"
-        ngx_module_libs=
-        ngx_module_link=$HTTP_V2
+        njt_module_name=njt_http_v2_module
+        njt_module_incs=src/http/v2
+        njt_module_deps="src/http/v2/njt_http_v2.h \
+                         src/http/v2/njt_http_v2_module.h"
+        njt_module_srcs="src/http/v2/njt_http_v2.c \
+                         src/http/v2/njt_http_v2_table.c \
+                         src/http/v2/njt_http_v2_encode.c \
+                         src/http/v2/njt_http_v2_module.c"
+        njt_module_libs=
+        njt_module_link=$HTTP_V2
 
         . auto/module
     fi
 
     if :; then
-        ngx_module_name=ngx_http_static_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_static_module.c
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name=njt_http_static_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_static_module.c
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
@@ -440,12 +440,12 @@ if [ $HTTP = YES ]; then
     if [ $HTTP_GZIP_STATIC = YES ]; then
         have=NJT_HTTP_GZIP . auto/have
 
-        ngx_module_name=ngx_http_gzip_static_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_gzip_static_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_GZIP_STATIC
+        njt_module_name=njt_http_gzip_static_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_gzip_static_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_GZIP_STATIC
 
         . auto/module
     fi
@@ -453,78 +453,78 @@ if [ $HTTP = YES ]; then
     if [ $HTTP_DAV = YES ]; then
         have=NJT_HTTP_DAV . auto/have
 
-        ngx_module_name=ngx_http_dav_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_dav_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_DAV
+        njt_module_name=njt_http_dav_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_dav_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_DAV
 
         . auto/module
     fi
 
     if [ $HTTP_AUTOINDEX = YES ]; then
-        ngx_module_name=ngx_http_autoindex_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_autoindex_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_AUTOINDEX
+        njt_module_name=njt_http_autoindex_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_autoindex_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_AUTOINDEX
 
         . auto/module
     fi
 
     if :; then
-        ngx_module_name=ngx_http_index_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_index_module.c
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name=njt_http_index_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_index_module.c
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
 
     if [ $HTTP_RANDOM_INDEX = YES ]; then
-        ngx_module_name=ngx_http_random_index_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_random_index_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_RANDOM_INDEX
+        njt_module_name=njt_http_random_index_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_random_index_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_RANDOM_INDEX
 
         . auto/module
     fi
 
     if [ $HTTP_MIRROR = YES ]; then
-        ngx_module_name=ngx_http_mirror_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_mirror_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_MIRROR
+        njt_module_name=njt_http_mirror_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_mirror_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_MIRROR
 
         . auto/module
     fi
 
     if :; then
-        ngx_module_name=ngx_http_try_files_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_try_files_module.c
-        ngx_module_libs=
-        ngx_module_link=YES
+        njt_module_name=njt_http_try_files_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_try_files_module.c
+        njt_module_libs=
+        njt_module_link=YES
 
         . auto/module
     fi
 
     if [ $HTTP_AUTH_REQUEST = YES ]; then
-        ngx_module_name=ngx_http_auth_request_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_auth_request_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_AUTH_REQUEST
+        njt_module_name=njt_http_auth_request_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_auth_request_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_AUTH_REQUEST
 
         . auto/module
     fi
@@ -532,45 +532,45 @@ if [ $HTTP = YES ]; then
     if [ $HTTP_AUTH_BASIC = YES ]; then
         have=NJT_CRYPT . auto/have
 
-        ngx_module_name=ngx_http_auth_basic_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_auth_basic_module.c
-        ngx_module_libs=$CRYPT_LIB
-        ngx_module_link=$HTTP_AUTH_BASIC
+        njt_module_name=njt_http_auth_basic_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_auth_basic_module.c
+        njt_module_libs=$CRYPT_LIB
+        njt_module_link=$HTTP_AUTH_BASIC
 
         . auto/module
     fi
 
     if [ $HTTP_ACCESS = YES ]; then
-        ngx_module_name=ngx_http_access_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_access_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_ACCESS
+        njt_module_name=njt_http_access_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_access_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_ACCESS
 
         . auto/module
     fi
 
     if [ $HTTP_LIMIT_CONN = YES ]; then
-        ngx_module_name=ngx_http_limit_conn_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_limit_conn_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_LIMIT_CONN
+        njt_module_name=njt_http_limit_conn_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_limit_conn_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_LIMIT_CONN
 
         . auto/module
     fi
 
     if [ $HTTP_LIMIT_REQ = YES ]; then
-        ngx_module_name=ngx_http_limit_req_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_limit_req_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_LIMIT_REQ
+        njt_module_name=njt_http_limit_req_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_limit_req_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_LIMIT_REQ
 
         . auto/module
     fi
@@ -579,23 +579,23 @@ if [ $HTTP = YES ]; then
         have=NJT_HTTP_REALIP . auto/have
         have=NJT_HTTP_X_FORWARDED_FOR . auto/have
 
-        ngx_module_name=ngx_http_realip_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_realip_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_REALIP
+        njt_module_name=njt_http_realip_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_realip_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_REALIP
 
         . auto/module
     fi
 
     if [ $HTTP_STATUS = YES ]; then
-        ngx_module_name=ngx_http_status_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_status_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_STATUS
+        njt_module_name=njt_http_status_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_status_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_STATUS
 
         . auto/module
     fi
@@ -603,12 +603,12 @@ if [ $HTTP = YES ]; then
     if [ $HTTP_GEO = YES ]; then
         have=NJT_HTTP_X_FORWARDED_FOR . auto/have
 
-        ngx_module_name=ngx_http_geo_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_geo_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_GEO
+        njt_module_name=njt_http_geo_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_geo_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_GEO
 
         . auto/module
     fi
@@ -616,45 +616,45 @@ if [ $HTTP = YES ]; then
     if [ $HTTP_GEOIP != NO ]; then
         have=NJT_HTTP_X_FORWARDED_FOR . auto/have
 
-        ngx_module_name=ngx_http_geoip_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_geoip_module.c
-        ngx_module_libs=GEOIP
-        ngx_module_link=$HTTP_GEOIP
+        njt_module_name=njt_http_geoip_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_geoip_module.c
+        njt_module_libs=GEOIP
+        njt_module_link=$HTTP_GEOIP
 
         . auto/module
     fi
 
     if [ $HTTP_MAP = YES ]; then
-        ngx_module_name=ngx_http_map_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_map_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_MAP
+        njt_module_name=njt_http_map_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_map_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_MAP
 
         . auto/module
     fi
 
     if [ $HTTP_SPLIT_CLIENTS = YES ]; then
-        ngx_module_name=ngx_http_split_clients_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_split_clients_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_SPLIT_CLIENTS
+        njt_module_name=njt_http_split_clients_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_split_clients_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_SPLIT_CLIENTS
 
         . auto/module
     fi
 
     if [ $HTTP_REFERER = YES ]; then
-        ngx_module_name=ngx_http_referer_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_referer_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_REFERER
+        njt_module_name=njt_http_referer_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_referer_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_REFERER
 
         . auto/module
     fi
@@ -662,12 +662,12 @@ if [ $HTTP = YES ]; then
     if [ $HTTP_REWRITE = YES -a $USE_PCRE != DISABLED ]; then
         USE_PCRE=YES
 
-        ngx_module_name=ngx_http_rewrite_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_rewrite_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_REWRITE
+        njt_module_name=njt_http_rewrite_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_rewrite_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_REWRITE
 
         . auto/module
     fi
@@ -676,12 +676,12 @@ if [ $HTTP = YES ]; then
         USE_OPENSSL=YES
         have=NJT_HTTP_SSL . auto/have
 
-        ngx_module_name=ngx_http_ssl_module
-        ngx_module_incs=
-        ngx_module_deps=src/http/modules/ngx_http_ssl_module.h
-        ngx_module_srcs=src/http/modules/ngx_http_ssl_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_SSL
+        njt_module_name=njt_http_ssl_module
+        njt_module_incs=
+        njt_module_deps=src/http/modules/njt_http_ssl_module.h
+        njt_module_srcs=src/http/modules/njt_http_ssl_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_SSL
 
         . auto/module
     fi
@@ -689,111 +689,111 @@ if [ $HTTP = YES ]; then
     if [ $HTTP_PROXY = YES ]; then
         have=NJT_HTTP_X_FORWARDED_FOR . auto/have
 
-        ngx_module_name=ngx_http_proxy_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_proxy_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_PROXY
+        njt_module_name=njt_http_proxy_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_proxy_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_PROXY
 
         . auto/module
     fi
 
     if [ $HTTP_FASTCGI = YES ]; then
-        ngx_module_name=ngx_http_fastcgi_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_fastcgi_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_FASTCGI
+        njt_module_name=njt_http_fastcgi_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_fastcgi_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_FASTCGI
 
         . auto/module
     fi
 
     if [ $HTTP_UWSGI = YES ]; then
-        ngx_module_name=ngx_http_uwsgi_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_uwsgi_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_UWSGI
+        njt_module_name=njt_http_uwsgi_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_uwsgi_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_UWSGI
 
         . auto/module
     fi
 
     if [ $HTTP_SCGI = YES ]; then
-        ngx_module_name=ngx_http_scgi_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_scgi_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_SCGI
+        njt_module_name=njt_http_scgi_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_scgi_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_SCGI
 
         . auto/module
     fi
 
     if [ $HTTP_GRPC = YES -a $HTTP_V2 = YES ]; then
-        ngx_module_name=ngx_http_grpc_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_grpc_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_GRPC
+        njt_module_name=njt_http_grpc_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_grpc_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_GRPC
 
         . auto/module
     fi
 
     if [ $HTTP_PERL != NO ]; then
-        ngx_module_name=ngx_http_perl_module
-        ngx_module_incs=src/http/modules/perl
-        ngx_module_deps=src/http/modules/perl/ngx_http_perl_module.h
-        ngx_module_srcs=src/http/modules/perl/ngx_http_perl_module.c
-        ngx_module_libs=PERL
-        ngx_module_link=$HTTP_PERL
+        njt_module_name=njt_http_perl_module
+        njt_module_incs=src/http/modules/perl
+        njt_module_deps=src/http/modules/perl/njt_http_perl_module.h
+        njt_module_srcs=src/http/modules/perl/njt_http_perl_module.c
+        njt_module_libs=PERL
+        njt_module_link=$HTTP_PERL
 
         . auto/module
     fi
 
     if [ $HTTP_MEMCACHED = YES ]; then
-        ngx_module_name=ngx_http_memcached_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_memcached_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_MEMCACHED
+        njt_module_name=njt_http_memcached_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_memcached_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_MEMCACHED
 
         . auto/module
     fi
 
     if [ $HTTP_EMPTY_GIF = YES ]; then
-        ngx_module_name=ngx_http_empty_gif_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_empty_gif_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_EMPTY_GIF
+        njt_module_name=njt_http_empty_gif_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_empty_gif_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_EMPTY_GIF
 
         . auto/module
     fi
 
     if [ $HTTP_BROWSER = YES ]; then
-        ngx_module_name=ngx_http_browser_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_browser_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_BROWSER
+        njt_module_name=njt_http_browser_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_browser_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_BROWSER
 
         . auto/module
     fi
 
     if [ $HTTP_SECURE_LINK = YES ]; then
-        ngx_module_name=ngx_http_secure_link_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_secure_link_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_SECURE_LINK
+        njt_module_name=njt_http_secure_link_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_secure_link_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_SECURE_LINK
 
         . auto/module
     fi
@@ -801,89 +801,89 @@ if [ $HTTP = YES ]; then
     if [ $HTTP_DEGRADATION = YES ]; then
         have=NJT_HTTP_DEGRADATION . auto/have
 
-        ngx_module_name=ngx_http_degradation_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_degradation_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_DEGRADATION
+        njt_module_name=njt_http_degradation_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_degradation_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_DEGRADATION
 
         . auto/module
     fi
 
     if [ $HTTP_FLV = YES ]; then
-        ngx_module_name=ngx_http_flv_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_flv_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_FLV
+        njt_module_name=njt_http_flv_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_flv_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_FLV
 
         . auto/module
     fi
 
     if [ $HTTP_MP4 = YES ]; then
-        ngx_module_name=ngx_http_mp4_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_mp4_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_MP4
+        njt_module_name=njt_http_mp4_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_mp4_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_MP4
 
         . auto/module
     fi
 
     if [ $HTTP_UPSTREAM_HASH = YES ]; then
-        ngx_module_name=ngx_http_upstream_hash_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_upstream_hash_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_UPSTREAM_HASH
+        njt_module_name=njt_http_upstream_hash_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_upstream_hash_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_UPSTREAM_HASH
 
         . auto/module
     fi
 
     if [ $HTTP_UPSTREAM_IP_HASH = YES ]; then
-        ngx_module_name=ngx_http_upstream_ip_hash_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_upstream_ip_hash_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_UPSTREAM_IP_HASH
+        njt_module_name=njt_http_upstream_ip_hash_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_upstream_ip_hash_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_UPSTREAM_IP_HASH
 
         . auto/module
     fi
 
     if [ $HTTP_UPSTREAM_LEAST_CONN = YES ]; then
-        ngx_module_name=ngx_http_upstream_least_conn_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_upstream_least_conn_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_UPSTREAM_LEAST_CONN
+        njt_module_name=njt_http_upstream_least_conn_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_upstream_least_conn_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_UPSTREAM_LEAST_CONN
 
         . auto/module
     fi
 
     if [ $HTTP_UPSTREAM_RANDOM = YES ]; then
-        ngx_module_name=ngx_http_upstream_random_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_upstream_random_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_UPSTREAM_RANDOM
+        njt_module_name=njt_http_upstream_random_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_upstream_random_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_UPSTREAM_RANDOM
 
         . auto/module
     fi
 
     if [ $HTTP_UPSTREAM_KEEPALIVE = YES ]; then
-        ngx_module_name=ngx_http_upstream_keepalive_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_upstream_keepalive_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_UPSTREAM_KEEPALIVE
+        njt_module_name=njt_http_upstream_keepalive_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_upstream_keepalive_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_UPSTREAM_KEEPALIVE
 
         . auto/module
     fi
@@ -891,12 +891,12 @@ if [ $HTTP = YES ]; then
     if [ $HTTP_UPSTREAM_ZONE = YES ]; then
         have=NJT_HTTP_UPSTREAM_ZONE . auto/have
 
-        ngx_module_name=ngx_http_upstream_zone_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_upstream_zone_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_UPSTREAM_ZONE
+        njt_module_name=njt_http_upstream_zone_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_upstream_zone_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_UPSTREAM_ZONE
 
         . auto/module
     fi
@@ -904,12 +904,12 @@ if [ $HTTP = YES ]; then
     if [ $HTTP_STUB_STATUS = YES ]; then
         have=NJT_STAT_STUB . auto/have
 
-        ngx_module_name=ngx_http_stub_status_module
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=src/http/modules/ngx_http_stub_status_module.c
-        ngx_module_libs=
-        ngx_module_link=$HTTP_STUB_STATUS
+        njt_module_name=njt_http_stub_status_module
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=src/http/modules/njt_http_stub_status_module.c
+        njt_module_libs=
+        njt_module_link=$HTTP_STUB_STATUS
 
         . auto/module
     fi
@@ -921,77 +921,77 @@ if [ $MAIL != NO ]; then
     MAIL_DEPS=
     MAIL_INCS=
 
-    ngx_module_type=MAIL
-    ngx_module_libs=
-    ngx_module_link=YES
+    njt_module_type=MAIL
+    njt_module_libs=
+    njt_module_link=YES
 
-    ngx_module_order=
+    njt_module_order=
 
-    ngx_module_name="ngx_mail_module ngx_mail_core_module"
-    ngx_module_incs="src/mail"
-    ngx_module_deps="src/mail/ngx_mail.h"
-    ngx_module_srcs="src/mail/ngx_mail.c \
-                     src/mail/ngx_mail_core_module.c \
-                     src/mail/ngx_mail_handler.c \
-                     src/mail/ngx_mail_parse.c"
+    njt_module_name="njt_mail_module njt_mail_core_module"
+    njt_module_incs="src/mail"
+    njt_module_deps="src/mail/njt_mail.h"
+    njt_module_srcs="src/mail/njt_mail.c \
+                     src/mail/njt_mail_core_module.c \
+                     src/mail/njt_mail_handler.c \
+                     src/mail/njt_mail_parse.c"
 
     . auto/module
 
-    ngx_module_incs=
+    njt_module_incs=
 
     if [ $MAIL_SSL = YES ]; then
         USE_OPENSSL=YES
         have=NJT_MAIL_SSL . auto/have
 
-        ngx_module_name=ngx_mail_ssl_module
-        ngx_module_deps=src/mail/ngx_mail_ssl_module.h
-        ngx_module_srcs=src/mail/ngx_mail_ssl_module.c
+        njt_module_name=njt_mail_ssl_module
+        njt_module_deps=src/mail/njt_mail_ssl_module.h
+        njt_module_srcs=src/mail/njt_mail_ssl_module.c
 
         . auto/module
     fi
 
     if [ $MAIL_POP3 = YES ]; then
-        ngx_module_name=ngx_mail_pop3_module
-        ngx_module_deps=src/mail/ngx_mail_pop3_module.h
-        ngx_module_srcs="src/mail/ngx_mail_pop3_module.c \
-                         src/mail/ngx_mail_pop3_handler.c"
+        njt_module_name=njt_mail_pop3_module
+        njt_module_deps=src/mail/njt_mail_pop3_module.h
+        njt_module_srcs="src/mail/njt_mail_pop3_module.c \
+                         src/mail/njt_mail_pop3_handler.c"
 
         . auto/module
     fi
 
     if [ $MAIL_IMAP = YES ]; then
-        ngx_module_name=ngx_mail_imap_module
-        ngx_module_deps=src/mail/ngx_mail_imap_module.h
-        ngx_module_srcs="src/mail/ngx_mail_imap_module.c \
-                         src/mail/ngx_mail_imap_handler.c"
+        njt_module_name=njt_mail_imap_module
+        njt_module_deps=src/mail/njt_mail_imap_module.h
+        njt_module_srcs="src/mail/njt_mail_imap_module.c \
+                         src/mail/njt_mail_imap_handler.c"
 
         . auto/module
     fi
 
     if [ $MAIL_SMTP = YES ]; then
-        ngx_module_name=ngx_mail_smtp_module
-        ngx_module_deps=src/mail/ngx_mail_smtp_module.h
-        ngx_module_srcs="src/mail/ngx_mail_smtp_module.c \
-                         src/mail/ngx_mail_smtp_handler.c"
+        njt_module_name=njt_mail_smtp_module
+        njt_module_deps=src/mail/njt_mail_smtp_module.h
+        njt_module_srcs="src/mail/njt_mail_smtp_module.c \
+                         src/mail/njt_mail_smtp_handler.c"
 
         . auto/module
     fi
 
-    ngx_module_name=ngx_mail_auth_http_module
-    ngx_module_deps=
-    ngx_module_srcs=src/mail/ngx_mail_auth_http_module.c
+    njt_module_name=njt_mail_auth_http_module
+    njt_module_deps=
+    njt_module_srcs=src/mail/njt_mail_auth_http_module.c
 
     . auto/module
 
-    ngx_module_name=ngx_mail_proxy_module
-    ngx_module_deps=
-    ngx_module_srcs=src/mail/ngx_mail_proxy_module.c
+    njt_module_name=njt_mail_proxy_module
+    njt_module_deps=
+    njt_module_srcs=src/mail/njt_mail_proxy_module.c
 
     . auto/module
 
-    ngx_module_name=ngx_mail_realip_module
-    ngx_module_deps=
-    ngx_module_srcs=src/mail/ngx_mail_realip_module.c
+    njt_module_name=njt_mail_realip_module
+    njt_module_deps=
+    njt_module_srcs=src/mail/njt_mail_realip_module.c
 
     . auto/module
 fi
@@ -1002,168 +1002,168 @@ if [ $STREAM != NO ]; then
     STREAM_DEPS=
     STREAM_INCS=
 
-    ngx_module_type=STREAM
-    ngx_module_libs=
-    ngx_module_link=YES
+    njt_module_type=STREAM
+    njt_module_libs=
+    njt_module_link=YES
 
-    ngx_module_order=
+    njt_module_order=
 
-    ngx_module_name="ngx_stream_module \
-                     ngx_stream_core_module \
-                     ngx_stream_log_module \
-                     ngx_stream_proxy_module \
-                     ngx_stream_upstream_module \
-                     ngx_stream_write_filter_module"
-    ngx_module_incs="src/stream"
-    ngx_module_deps="src/stream/ngx_stream.h \
-                     src/stream/ngx_stream_variables.h \
-                     src/stream/ngx_stream_script.h \
-                     src/stream/ngx_stream_upstream.h \
-                     src/stream/ngx_stream_upstream_round_robin.h"
-    ngx_module_srcs="src/stream/ngx_stream.c \
-                     src/stream/ngx_stream_variables.c \
-                     src/stream/ngx_stream_script.c \
-                     src/stream/ngx_stream_handler.c \
-                     src/stream/ngx_stream_core_module.c \
-                     src/stream/ngx_stream_log_module.c \
-                     src/stream/ngx_stream_proxy_module.c \
-                     src/stream/ngx_stream_upstream.c \
-                     src/stream/ngx_stream_upstream_round_robin.c \
-                     src/stream/ngx_stream_write_filter_module.c"
+    njt_module_name="njt_stream_module \
+                     njt_stream_core_module \
+                     njt_stream_log_module \
+                     njt_stream_proxy_module \
+                     njt_stream_upstream_module \
+                     njt_stream_write_filter_module"
+    njt_module_incs="src/stream"
+    njt_module_deps="src/stream/njt_stream.h \
+                     src/stream/njt_stream_variables.h \
+                     src/stream/njt_stream_script.h \
+                     src/stream/njt_stream_upstream.h \
+                     src/stream/njt_stream_upstream_round_robin.h"
+    njt_module_srcs="src/stream/njt_stream.c \
+                     src/stream/njt_stream_variables.c \
+                     src/stream/njt_stream_script.c \
+                     src/stream/njt_stream_handler.c \
+                     src/stream/njt_stream_core_module.c \
+                     src/stream/njt_stream_log_module.c \
+                     src/stream/njt_stream_proxy_module.c \
+                     src/stream/njt_stream_upstream.c \
+                     src/stream/njt_stream_upstream_round_robin.c \
+                     src/stream/njt_stream_write_filter_module.c"
 
     . auto/module
 
-    ngx_module_incs=
+    njt_module_incs=
 
     if [ $STREAM_SSL = YES ]; then
         USE_OPENSSL=YES
         have=NJT_STREAM_SSL . auto/have
 
-        ngx_module_name=ngx_stream_ssl_module
-        ngx_module_deps=src/stream/ngx_stream_ssl_module.h
-        ngx_module_srcs=src/stream/ngx_stream_ssl_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_SSL
+        njt_module_name=njt_stream_ssl_module
+        njt_module_deps=src/stream/njt_stream_ssl_module.h
+        njt_module_srcs=src/stream/njt_stream_ssl_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_SSL
 
         . auto/module
     fi
 
     if [ $STREAM_REALIP = YES ]; then
-        ngx_module_name=ngx_stream_realip_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_realip_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_REALIP
+        njt_module_name=njt_stream_realip_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_realip_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_REALIP
 
         . auto/module
     fi
 
     if [ $STREAM_LIMIT_CONN = YES ]; then
-        ngx_module_name=ngx_stream_limit_conn_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_limit_conn_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_LIMIT_CONN
+        njt_module_name=njt_stream_limit_conn_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_limit_conn_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_LIMIT_CONN
 
         . auto/module
     fi
 
     if [ $STREAM_ACCESS = YES ]; then
-        ngx_module_name=ngx_stream_access_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_access_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_ACCESS
+        njt_module_name=njt_stream_access_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_access_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_ACCESS
 
         . auto/module
     fi
 
     if [ $STREAM_GEO = YES ]; then
-        ngx_module_name=ngx_stream_geo_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_geo_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_GEO
+        njt_module_name=njt_stream_geo_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_geo_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_GEO
 
         . auto/module
     fi
 
     if [ $STREAM_GEOIP != NO ]; then
-        ngx_module_name=ngx_stream_geoip_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_geoip_module.c
-        ngx_module_libs=GEOIP
-        ngx_module_link=$STREAM_GEOIP
+        njt_module_name=njt_stream_geoip_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_geoip_module.c
+        njt_module_libs=GEOIP
+        njt_module_link=$STREAM_GEOIP
 
         . auto/module
     fi
 
     if [ $STREAM_MAP = YES ]; then
-        ngx_module_name=ngx_stream_map_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_map_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_MAP
+        njt_module_name=njt_stream_map_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_map_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_MAP
 
         . auto/module
     fi
 
     if [ $STREAM_SPLIT_CLIENTS = YES ]; then
-        ngx_module_name=ngx_stream_split_clients_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_split_clients_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_SPLIT_CLIENTS
+        njt_module_name=njt_stream_split_clients_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_split_clients_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_SPLIT_CLIENTS
 
         . auto/module
     fi
 
     if [ $STREAM_RETURN = YES ]; then
-        ngx_module_name=ngx_stream_return_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_return_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_RETURN
+        njt_module_name=njt_stream_return_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_return_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_RETURN
 
         . auto/module
     fi
 
     if [ $STREAM_SET = YES ]; then
-        ngx_module_name=ngx_stream_set_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_set_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_SET
+        njt_module_name=njt_stream_set_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_set_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_SET
 
         . auto/module
     fi
 
     if [ $STREAM_UPSTREAM_HASH = YES ]; then
-        ngx_module_name=ngx_stream_upstream_hash_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_upstream_hash_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_UPSTREAM_HASH
+        njt_module_name=njt_stream_upstream_hash_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_upstream_hash_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_UPSTREAM_HASH
 
         . auto/module
     fi
 
     if [ $STREAM_UPSTREAM_LEAST_CONN = YES ]; then
-        ngx_module_name=ngx_stream_upstream_least_conn_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_upstream_least_conn_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_UPSTREAM_LEAST_CONN
+        njt_module_name=njt_stream_upstream_least_conn_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_upstream_least_conn_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_UPSTREAM_LEAST_CONN
 
         . auto/module
     fi
 
     if [ $STREAM_UPSTREAM_RANDOM = YES ]; then
-        ngx_module_name=ngx_stream_upstream_random_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_upstream_random_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_UPSTREAM_RANDOM
+        njt_module_name=njt_stream_upstream_random_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_upstream_random_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_UPSTREAM_RANDOM
 
         . auto/module
     fi
@@ -1171,21 +1171,21 @@ if [ $STREAM != NO ]; then
     if [ $STREAM_UPSTREAM_ZONE = YES ]; then
         have=NJT_STREAM_UPSTREAM_ZONE . auto/have
 
-        ngx_module_name=ngx_stream_upstream_zone_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_upstream_zone_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_UPSTREAM_ZONE
+        njt_module_name=njt_stream_upstream_zone_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_upstream_zone_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_UPSTREAM_ZONE
 
         . auto/module
     fi
 
     if [ $STREAM_SSL_PREREAD = YES ]; then
-        ngx_module_name=ngx_stream_ssl_preread_module
-        ngx_module_deps=
-        ngx_module_srcs=src/stream/ngx_stream_ssl_preread_module.c
-        ngx_module_libs=
-        ngx_module_link=$STREAM_SSL_PREREAD
+        njt_module_name=njt_stream_ssl_preread_module
+        njt_module_deps=
+        njt_module_srcs=src/stream/njt_stream_ssl_preread_module.c
+        njt_module_libs=
+        njt_module_link=$STREAM_SSL_PREREAD
 
         . auto/module
     fi
@@ -1201,26 +1201,26 @@ if test -n "$NJT_ADDONS"; then
 
     echo configuring additional modules
 
-    for ngx_addon_dir in $NJT_ADDONS
+    for njt_addon_dir in $NJT_ADDONS
     do
-        echo "adding module in $ngx_addon_dir"
+        echo "adding module in $njt_addon_dir"
 
-        ngx_module_type=
-        ngx_module_name=
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=
-        ngx_module_libs=
-        ngx_module_order=
-        ngx_module_link=ADDON
+        njt_module_type=
+        njt_module_name=
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=
+        njt_module_libs=
+        njt_module_order=
+        njt_module_link=ADDON
 
-        if test -f $ngx_addon_dir/config; then
-            . $ngx_addon_dir/config
+        if test -f $njt_addon_dir/config; then
+            . $njt_addon_dir/config
 
-            echo " + $ngx_addon_name was configured"
+            echo " + $njt_addon_name was configured"
 
         else
-            echo "$0: error: no $ngx_addon_dir/config was found"
+            echo "$0: error: no $njt_addon_dir/config was found"
             exit 1
         fi
     done
@@ -1231,26 +1231,26 @@ if test -n "$DYNAMIC_ADDONS"; then
 
     echo configuring additional dynamic modules
 
-    for ngx_addon_dir in $DYNAMIC_ADDONS
+    for njt_addon_dir in $DYNAMIC_ADDONS
     do
-        echo "adding module in $ngx_addon_dir"
+        echo "adding module in $njt_addon_dir"
 
-        ngx_module_type=
-        ngx_module_name=
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=
-        ngx_module_libs=
-        ngx_module_order=
-        ngx_module_link=DYNAMIC
+        njt_module_type=
+        njt_module_name=
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=
+        njt_module_libs=
+        njt_module_order=
+        njt_module_link=DYNAMIC
 
-        if test -f $ngx_addon_dir/config; then
-            . $ngx_addon_dir/config
+        if test -f $njt_addon_dir/config; then
+            . $njt_addon_dir/config
 
-            echo " + $ngx_addon_name was configured"
+            echo " + $njt_addon_name was configured"
 
         else
-            echo "$0: error: no $ngx_addon_dir/config was found"
+            echo "$0: error: no $njt_addon_dir/config was found"
             exit 1
         fi
     done
@@ -1258,29 +1258,29 @@ fi
 
 
 if [ $USE_OPENSSL = YES ]; then
-    ngx_module_type=CORE
-    ngx_module_name=ngx_openssl_module
-    ngx_module_incs=
-    ngx_module_deps=src/event/ngx_event_openssl.h
-    ngx_module_srcs="src/event/ngx_event_openssl.c
-                     src/event/ngx_event_openssl_stapling.c"
-    ngx_module_libs=
-    ngx_module_link=YES
-    ngx_module_order=
+    njt_module_type=CORE
+    njt_module_name=njt_openssl_module
+    njt_module_incs=
+    njt_module_deps=src/event/njt_event_openssl.h
+    njt_module_srcs="src/event/njt_event_openssl.c
+                     src/event/njt_event_openssl_stapling.c"
+    njt_module_libs=
+    njt_module_link=YES
+    njt_module_order=
 
     . auto/module
 fi
 
 
 if [ $USE_PCRE = YES ]; then
-    ngx_module_type=CORE
-    ngx_module_name=ngx_regex_module
-    ngx_module_incs=
-    ngx_module_deps=src/core/ngx_regex.h
-    ngx_module_srcs=src/core/ngx_regex.c
-    ngx_module_libs=
-    ngx_module_link=YES
-    ngx_module_order=
+    njt_module_type=CORE
+    njt_module_name=njt_regex_module
+    njt_module_incs=
+    njt_module_deps=src/core/njt_regex.h
+    njt_module_srcs=src/core/njt_regex.c
+    njt_module_libs=
+    njt_module_link=YES
+    njt_module_order=
 
     . auto/module
 fi
@@ -1309,12 +1309,12 @@ if [ $MAIL != NO ]; then
         modules="$modules $MAIL_MODULES"
 
     elif [ $MAIL = DYNAMIC ]; then
-        ngx_module_name=$MAIL_MODULES
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=$MAIL_SRCS
-        ngx_module_libs=
-        ngx_module_link=DYNAMIC
+        njt_module_name=$MAIL_MODULES
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=$MAIL_SRCS
+        njt_module_libs=
+        njt_module_link=DYNAMIC
 
         . auto/module
     fi
@@ -1329,12 +1329,12 @@ if [ $STREAM != NO ]; then
         modules="$modules $STREAM_MODULES"
 
     elif [ $STREAM = DYNAMIC ]; then
-        ngx_module_name=$STREAM_MODULES
-        ngx_module_incs=
-        ngx_module_deps=
-        ngx_module_srcs=$STREAM_SRCS
-        ngx_module_libs=
-        ngx_module_link=DYNAMIC
+        njt_module_name=$STREAM_MODULES
+        njt_module_incs=
+        njt_module_deps=
+        njt_module_srcs=$STREAM_SRCS
+        njt_module_libs=
+        njt_module_link=DYNAMIC
 
         . auto/module
     fi
@@ -1343,27 +1343,27 @@ if [ $STREAM != NO ]; then
 fi
 
 
-ngx_module_type=MISC
+njt_module_type=MISC
 MISC_MODULES=
 
 if [ $NJT_GOOGLE_PERFTOOLS = YES ]; then
-    ngx_module_name=ngx_google_perftools_module
-    ngx_module_incs=
-    ngx_module_deps=
-    ngx_module_srcs=src/misc/ngx_google_perftools_module.c
-    ngx_module_libs=
-    ngx_module_link=$NJT_GOOGLE_PERFTOOLS
+    njt_module_name=njt_google_perftools_module
+    njt_module_incs=
+    njt_module_deps=
+    njt_module_srcs=src/misc/njt_google_perftools_module.c
+    njt_module_libs=
+    njt_module_link=$NJT_GOOGLE_PERFTOOLS
 
     . auto/module
 fi
 
 if [ $NJT_CPP_TEST = YES ]; then
-    ngx_module_name=
-    ngx_module_incs=
-    ngx_module_deps=
-    ngx_module_srcs=src/misc/ngx_cpp_test_module.cpp
-    ngx_module_libs=-lstdc++
-    ngx_module_link=$NJT_CPP_TEST
+    njt_module_name=
+    njt_module_incs=
+    njt_module_deps=
+    njt_module_srcs=src/misc/njt_cpp_test_module.cpp
+    njt_module_libs=-lstdc++
+    njt_module_link=$NJT_CPP_TEST
 
     . auto/module
 fi
@@ -1385,8 +1385,8 @@ fi
 
 cat << END                                    > $NJT_MODULES_C
 
-#include <ngx_config.h>
-#include <ngx_core.h>
+#include <njt_config.h>
+#include <njt_core.h>
 
 $NJT_PRAGMA
 
@@ -1394,11 +1394,11 @@ END
 
 for mod in $modules
 do
-    echo "extern ngx_module_t  $mod;"         >> $NJT_MODULES_C
+    echo "extern njt_module_t  $mod;"         >> $NJT_MODULES_C
 done
 
 echo                                          >> $NJT_MODULES_C
-echo 'ngx_module_t *ngx_modules[] = {'        >> $NJT_MODULES_C
+echo 'njt_module_t *njt_modules[] = {'        >> $NJT_MODULES_C
 
 for mod in $modules
 do
@@ -1411,7 +1411,7 @@ cat << END                                    >> $NJT_MODULES_C
 
 END
 
-echo 'char *ngx_module_names[] = {'           >> $NJT_MODULES_C
+echo 'char *njt_module_names[] = {'           >> $NJT_MODULES_C
 
 for mod in $modules
 do
