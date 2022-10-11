@@ -1,0 +1,6 @@
+
+// Copyright (C) Igor Sysoev
+// Copyright (C) Nginx, Inc.
+
+
+njet   icon  discardable  "src\\os\\win32\\njet.ico"
