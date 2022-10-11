@@ -5,19 +5,19 @@
 
 # Intel C++ compiler 7.1, 8.0, 8.1, 9.0, 11.1
 
-NJET_ICC_VER=`$CC -V 2>&1 | grep 'Version' 2>&1 \
+NJT_ICC_VER=`$CC -V 2>&1 | grep 'Version' 2>&1 \
                          | sed -e 's/^.* Version \([^ ]*\) *Build.*$/\1/'`
 
-echo " + icc version: $NJET_ICC_VER"
+echo " + icc version: $NJT_ICC_VER"
 
-have=NJET_COMPILER value="\"Intel C Compiler $NJET_ICC_VER\"" . auto/define
+have=NJT_COMPILER value="\"Intel C Compiler $NJT_ICC_VER\"" . auto/define
 
 
 # optimizations
 
 CFLAGS="$CFLAGS -O"
 
-CORE_LINK="$CORE_LINK -opt_report_file=$NJET_OBJS/opt_report_file"
+CORE_LINK="$CORE_LINK -opt_report_file=$NJT_OBJS/opt_report_file"
 
 
 case $CPU in
@@ -83,7 +83,7 @@ CFLAGS="$CFLAGS -wd1418"
 # external declaration in primary source file
 CFLAGS="$CFLAGS -wd1419"
 
-case "$NJET_ICC_VER" in
+case "$NJT_ICC_VER" in
     9.*)
         # "cc" clobber ignored, warnings for Linux's htonl()/htons()
         CFLAGS="$CFLAGS -wd1469"

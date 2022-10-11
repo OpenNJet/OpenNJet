@@ -9,9 +9,9 @@
 #include <ngx_core.h>
 
 
-#if (NJET_CRYPT)
+#if (NJT_CRYPT)
 
-#if (NJET_HAVE_GNU_CRYPT_R)
+#if (NJT_HAVE_GNU_CRYPT_R)
 
 ngx_int_t
 ngx_libc_crypt(ngx_pool_t *pool, u_char *key, u_char *salt, u_char **encrypted)
@@ -29,16 +29,16 @@ ngx_libc_crypt(ngx_pool_t *pool, u_char *key, u_char *salt, u_char **encrypted)
 
         *encrypted = ngx_pnalloc(pool, len);
         if (*encrypted == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ngx_memcpy(*encrypted, value, len);
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    ngx_log_error(NJET_LOG_CRIT, pool->log, ngx_errno, "crypt_r() failed");
+    ngx_log_error(NJT_LOG_CRIT, pool->log, ngx_errno, "crypt_r() failed");
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 #else
@@ -57,20 +57,20 @@ ngx_libc_crypt(ngx_pool_t *pool, u_char *key, u_char *salt, u_char **encrypted)
 
         *encrypted = ngx_pnalloc(pool, len);
         if (*encrypted == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ngx_memcpy(*encrypted, value, len);
-        return NJET_OK;
+        return NJT_OK;
     }
 
     err = ngx_errno;
 
-    ngx_log_error(NJET_LOG_CRIT, pool->log, err, "crypt() failed");
+    ngx_log_error(NJT_LOG_CRIT, pool->log, err, "crypt() failed");
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 #endif
 
-#endif /* NJET_CRYPT */
+#endif /* NJT_CRYPT */

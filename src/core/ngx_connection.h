@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_CONNECTION_H_INCLUDED_
-#define _NJET_CONNECTION_H_INCLUDED_
+#ifndef _NJT_CONNECTION_H_INCLUDED_
+#define _NJT_CONNECTION_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -28,7 +28,7 @@ struct ngx_listening_s {
     int                 backlog;
     int                 rcvbuf;
     int                 sndbuf;
-#if (NJET_HAVE_KEEPALIVE_TUNABLE)
+#if (NJT_HAVE_KEEPALIVE_TUNABLE)
     int                 keepidle;
     int                 keepintvl;
     int                 keepcnt;
@@ -67,7 +67,7 @@ struct ngx_listening_s {
     unsigned            addr_ntop:1;
     unsigned            wildcard:1;
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     unsigned            ipv6only:1;
 #endif
     unsigned            reuseport:1;
@@ -77,14 +77,14 @@ struct ngx_listening_s {
     unsigned            deferred_accept:1;
     unsigned            delete_deferred:1;
     unsigned            add_deferred:1;
-#if (NJET_HAVE_DEFERRED_ACCEPT && defined SO_ACCEPTFILTER)
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined SO_ACCEPTFILTER)
     char               *accept_filter;
 #endif
-#if (NJET_HAVE_SETFIB)
+#if (NJT_HAVE_SETFIB)
     int                 setfib;
 #endif
 
-#if (NJET_HAVE_TCP_FASTOPEN)
+#if (NJT_HAVE_TCP_FASTOPEN)
     int                 fastopen;
 #endif
 
@@ -92,31 +92,31 @@ struct ngx_listening_s {
 
 
 typedef enum {
-    NJET_ERROR_ALERT = 0,
-    NJET_ERROR_ERR,
-    NJET_ERROR_INFO,
-    NJET_ERROR_IGNORE_ECONNRESET,
-    NJET_ERROR_IGNORE_EINVAL
+    NJT_ERROR_ALERT = 0,
+    NJT_ERROR_ERR,
+    NJT_ERROR_INFO,
+    NJT_ERROR_IGNORE_ECONNRESET,
+    NJT_ERROR_IGNORE_EINVAL
 } ngx_connection_log_error_e;
 
 
 typedef enum {
-    NJET_TCP_NODELAY_UNSET = 0,
-    NJET_TCP_NODELAY_SET,
-    NJET_TCP_NODELAY_DISABLED
+    NJT_TCP_NODELAY_UNSET = 0,
+    NJT_TCP_NODELAY_SET,
+    NJT_TCP_NODELAY_DISABLED
 } ngx_connection_tcp_nodelay_e;
 
 
 typedef enum {
-    NJET_TCP_NOPUSH_UNSET = 0,
-    NJET_TCP_NOPUSH_SET,
-    NJET_TCP_NOPUSH_DISABLED
+    NJT_TCP_NOPUSH_UNSET = 0,
+    NJT_TCP_NOPUSH_SET,
+    NJT_TCP_NOPUSH_DISABLED
 } ngx_connection_tcp_nopush_e;
 
 
-#define NJET_LOWLEVEL_BUFFERED  0x0f
-#define NJET_SSL_BUFFERED       0x01
-#define NJET_HTTP_V2_BUFFERED   0x02
+#define NJT_LOWLEVEL_BUFFERED  0x0f
+#define NJT_SSL_BUFFERED       0x01
+#define NJT_HTTP_V2_BUFFERED   0x02
 
 
 struct ngx_connection_s {
@@ -147,7 +147,7 @@ struct ngx_connection_s {
 
     ngx_proxy_protocol_t  *proxy_protocol;
 
-#if (NJET_SSL || NJET_COMPAT)
+#if (NJT_SSL || NJT_COMPAT)
     ngx_ssl_connection_t  *ssl;
 #endif
 
@@ -186,11 +186,11 @@ struct ngx_connection_s {
     unsigned            need_last_buf:1;
     unsigned            need_flush_buf:1;
 
-#if (NJET_HAVE_SENDFILE_NODISKIO || NJET_COMPAT)
+#if (NJT_HAVE_SENDFILE_NODISKIO || NJT_COMPAT)
     unsigned            busy_count:2;
 #endif
 
-#if (NJET_THREADS || NJET_COMPAT)
+#if (NJT_THREADS || NJT_COMPAT)
     ngx_thread_task_t  *sendfile_task;
 #endif
 };
@@ -202,7 +202,7 @@ struct ngx_connection_s {
     c->log->next = l->next;                                                  \
     c->log->writer = l->writer;                                              \
     c->log->wdata = l->wdata;                                                \
-    if (!(c->log->log_level & NJET_LOG_DEBUG_CONNECTION)) {                   \
+    if (!(c->log->log_level & NJT_LOG_DEBUG_CONNECTION)) {                   \
         c->log->log_level = l->log_level;                                    \
     }
 
@@ -226,4 +226,4 @@ void ngx_free_connection(ngx_connection_t *c);
 
 void ngx_reusable_connection(ngx_connection_t *c, ngx_uint_t reusable);
 
-#endif /* _NJET_CONNECTION_H_INCLUDED_ */
+#endif /* _NJT_CONNECTION_H_INCLUDED_ */

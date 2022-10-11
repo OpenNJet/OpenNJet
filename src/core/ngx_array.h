@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_ARRAY_H_INCLUDED_
-#define _NJET_ARRAY_H_INCLUDED_
+#ifndef _NJT_ARRAY_H_INCLUDED_
+#define _NJT_ARRAY_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -43,11 +43,11 @@ ngx_array_init(ngx_array_t *array, ngx_pool_t *pool, ngx_uint_t n, size_t size)
 
     array->elts = ngx_palloc(pool, n * size);
     if (array->elts == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
-#endif /* _NJET_ARRAY_H_INCLUDED_ */
+#endif /* _NJT_ARRAY_H_INCLUDED_ */

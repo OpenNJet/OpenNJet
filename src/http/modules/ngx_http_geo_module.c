@@ -19,7 +19,7 @@ typedef struct {
 
 typedef struct {
     ngx_radix_tree_t                *tree;
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     ngx_radix_tree_t                *tree6;
 #endif
 } ngx_http_geo_trees_t;
@@ -43,7 +43,7 @@ typedef struct {
     ngx_str_t                       *net;
     ngx_http_geo_high_ranges_t       high;
     ngx_radix_tree_t                *tree;
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     ngx_radix_tree_t                *tree6;
 #endif
     ngx_rbtree_t                     rbtree;
@@ -113,9 +113,9 @@ static u_char *ngx_http_geo_copy_values(u_char *base, u_char *p,
 static ngx_command_t  ngx_http_geo_commands[] = {
 
     { ngx_string("geo"),
-      NJET_HTTP_MAIN_CONF|NJET_CONF_BLOCK|NJET_CONF_TAKE12,
+      NJT_HTTP_MAIN_CONF|NJT_CONF_BLOCK|NJT_CONF_TAKE12,
       ngx_http_geo_block,
-      NJET_HTTP_MAIN_CONF_OFFSET,
+      NJT_HTTP_MAIN_CONF_OFFSET,
       0,
       NULL },
 
@@ -139,10 +139,10 @@ static ngx_http_module_t  ngx_http_geo_module_ctx = {
 
 
 ngx_module_t  ngx_http_geo_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_geo_module_ctx,              /* module context */
     ngx_http_geo_commands,                 /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -150,7 +150,7 @@ ngx_module_t  ngx_http_geo_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -180,12 +180,12 @@ ngx_http_geo_cidr_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v,
     ngx_addr_t                  addr;
     struct sockaddr_in         *sin;
     ngx_http_variable_value_t  *vv;
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     u_char                     *p;
     struct in6_addr            *inaddr6;
 #endif
 
-    if (ngx_http_geo_addr(r, ctx, &addr) != NJET_OK) {
+    if (ngx_http_geo_addr(r, ctx, &addr) != NJT_OK) {
         vv = (ngx_http_variable_value_t *)
                   ngx_radix32tree_find(ctx->u.trees.tree, INADDR_NONE);
         goto done;
@@ -193,7 +193,7 @@ ngx_http_geo_cidr_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v,
 
     switch (addr.sockaddr->sa_family) {
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     case AF_INET6:
         inaddr6 = &((struct sockaddr_in6 *) addr.sockaddr)->sin6_addr;
         p = inaddr6->s6_addr;
@@ -215,7 +215,7 @@ ngx_http_geo_cidr_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v,
         break;
 #endif
 
-#if (NJET_HAVE_UNIX_DOMAIN)
+#if (NJT_HAVE_UNIX_DOMAIN)
     case AF_UNIX:
         vv = (ngx_http_variable_value_t *)
                   ngx_radix32tree_find(ctx->u.trees.tree, INADDR_NONE);
@@ -236,10 +236,10 @@ done:
 
     *v = *vv;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http geo: %v", v);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -254,18 +254,18 @@ ngx_http_geo_range_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v,
     ngx_uint_t             n;
     struct sockaddr_in    *sin;
     ngx_http_geo_range_t  *range;
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     u_char                *p;
     struct in6_addr       *inaddr6;
 #endif
 
     *v = *ctx->u.high.default_value;
 
-    if (ngx_http_geo_addr(r, ctx, &addr) == NJET_OK) {
+    if (ngx_http_geo_addr(r, ctx, &addr) == NJT_OK) {
 
         switch (addr.sockaddr->sa_family) {
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
         case AF_INET6:
             inaddr6 = &((struct sockaddr_in6 *) addr.sockaddr)->sin6_addr;
 
@@ -284,7 +284,7 @@ ngx_http_geo_range_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v,
             break;
 #endif
 
-#if (NJET_HAVE_UNIX_DOMAIN)
+#if (NJT_HAVE_UNIX_DOMAIN)
         case AF_UNIX:
             inaddr = INADDR_NONE;
             break;
@@ -316,10 +316,10 @@ ngx_http_geo_range_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v,
         }
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http geo: %v", v);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -329,8 +329,8 @@ ngx_http_geo_addr(ngx_http_request_t *r, ngx_http_geo_ctx_t *ctx,
 {
     ngx_table_elt_t  *xfwd;
 
-    if (ngx_http_geo_real_addr(r, ctx, addr) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_http_geo_real_addr(r, ctx, addr) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     xfwd = r->headers_in.x_forwarded_for;
@@ -340,7 +340,7 @@ ngx_http_geo_addr(ngx_http_request_t *r, ngx_http_geo_ctx_t *ctx,
                                            ctx->proxies, ctx->proxy_recursive);
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -351,33 +351,33 @@ ngx_http_geo_real_addr(ngx_http_request_t *r, ngx_http_geo_ctx_t *ctx,
     ngx_http_variable_value_t  *v;
 
     if (ctx->index == -1) {
-        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "http geo started: %V", &r->connection->addr_text);
 
         addr->sockaddr = r->connection->sockaddr;
         addr->socklen = r->connection->socklen;
         /* addr->name = r->connection->addr_text; */
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     v = ngx_http_get_flushed_variable(r, ctx->index);
 
     if (v == NULL || v->not_found) {
-        ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "http geo not found");
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http geo started: %v", v);
 
-    if (ngx_parse_addr(r->pool, addr, v->data, v->len) == NJET_OK) {
-        return NJET_OK;
+    if (ngx_parse_addr(r->pool, addr, v->data, v->len) == NJT_OK) {
+        return NJT_OK;
     }
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
@@ -394,7 +394,7 @@ ngx_http_geo_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_http_variable_t      *var;
     ngx_http_geo_ctx_t       *geo;
     ngx_http_geo_conf_ctx_t   ctx;
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     static struct in6_addr    zero;
 #endif
 
@@ -402,15 +402,15 @@ ngx_http_geo_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     geo = ngx_palloc(cf->pool, sizeof(ngx_http_geo_ctx_t));
     if (geo == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     name = value[1];
 
     if (name.data[0] != '$') {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid variable name \"%V\"", &name);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     name.len--;
@@ -419,16 +419,16 @@ ngx_http_geo_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (cf->args->nelts == 3) {
 
         geo->index = ngx_http_get_variable_index(cf, &name);
-        if (geo->index == NJET_ERROR) {
-            return NJET_CONF_ERROR;
+        if (geo->index == NJT_ERROR) {
+            return NJT_CONF_ERROR;
         }
 
         name = value[2];
 
         if (name.data[0] != '$') {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid variable name \"%V\"", &name);
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         name.len--;
@@ -438,22 +438,22 @@ ngx_http_geo_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         geo->index = -1;
     }
 
-    var = ngx_http_add_variable(cf, &name, NJET_HTTP_VAR_CHANGEABLE);
+    var = ngx_http_add_variable(cf, &name, NJT_HTTP_VAR_CHANGEABLE);
     if (var == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
-    pool = ngx_create_pool(NJET_DEFAULT_POOL_SIZE, cf->log);
+    pool = ngx_create_pool(NJT_DEFAULT_POOL_SIZE, cf->log);
     if (pool == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ngx_memzero(&ctx, sizeof(ngx_http_geo_conf_ctx_t));
 
-    ctx.temp_pool = ngx_create_pool(NJET_DEFAULT_POOL_SIZE, cf->log);
+    ctx.temp_pool = ngx_create_pool(NJT_DEFAULT_POOL_SIZE, cf->log);
     if (ctx.temp_pool == NULL) {
         ngx_destroy_pool(pool);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ngx_rbtree_init(&ctx.rbtree, &ctx.sentinel, ngx_str_rbtree_insert_value);
@@ -474,7 +474,7 @@ ngx_http_geo_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     *cf = save;
 
-    if (rv != NJET_CONF_OK) {
+    if (rv != NJT_CONF_OK) {
         goto failed;
     }
 
@@ -536,7 +536,7 @@ ngx_http_geo_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
         geo->u.trees.tree = ctx.tree;
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
         if (ctx.tree6 == NULL) {
             ctx.tree6 = ngx_radix_tree_create(cf->pool, -1);
             if (ctx.tree6 == NULL) {
@@ -552,17 +552,17 @@ ngx_http_geo_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
         if (ngx_radix32tree_insert(ctx.tree, 0, 0,
                                    (uintptr_t) &ngx_http_variable_null_value)
-            == NJET_ERROR)
+            == NJT_ERROR)
         {
             goto failed;
         }
 
-        /* NJET_BUSY is okay (default was set explicitly) */
+        /* NJT_BUSY is okay (default was set explicitly) */
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
         if (ngx_radix128tree_insert(ctx.tree6, zero.s6_addr, zero.s6_addr,
                                     (uintptr_t) &ngx_http_variable_null_value)
-            == NJET_ERROR)
+            == NJT_ERROR)
         {
             goto failed;
         }
@@ -572,14 +572,14 @@ ngx_http_geo_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_destroy_pool(ctx.temp_pool);
     ngx_destroy_pool(pool);
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 
 failed:
 
     ngx_destroy_pool(ctx.temp_pool);
     ngx_destroy_pool(pool);
 
-    return NJET_CONF_ERROR;
+    return NJT_CONF_ERROR;
 }
 
 
@@ -600,12 +600,12 @@ ngx_http_geo(ngx_conf_t *cf, ngx_command_t *dummy, void *conf)
         if (ngx_strcmp(value[0].data, "ranges") == 0) {
 
             if (ctx->tree
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
                 || ctx->tree6
 #endif
                )
             {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "the \"ranges\" directive must be "
                                    "the first directive inside \"geo\" block");
                 goto failed;
@@ -613,20 +613,20 @@ ngx_http_geo(ngx_conf_t *cf, ngx_command_t *dummy, void *conf)
 
             ctx->ranges = 1;
 
-            rv = NJET_CONF_OK;
+            rv = NJT_CONF_OK;
 
             goto done;
         }
 
         else if (ngx_strcmp(value[0].data, "proxy_recursive") == 0) {
             ctx->proxy_recursive = 1;
-            rv = NJET_CONF_OK;
+            rv = NJT_CONF_OK;
             goto done;
         }
     }
 
     if (cf->args->nelts != 2) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid number of the geo parameters");
         goto failed;
     }
@@ -639,7 +639,7 @@ ngx_http_geo(ngx_conf_t *cf, ngx_command_t *dummy, void *conf)
 
     } else if (ngx_strcmp(value[0].data, "proxy") == 0) {
 
-        if (ngx_http_geo_cidr_value(cf, &value[1], &cidr) != NJET_OK) {
+        if (ngx_http_geo_cidr_value(cf, &value[1], &cidr) != NJT_OK) {
             goto failed;
         }
 
@@ -665,7 +665,7 @@ failed:
 
     ngx_reset_pool(cf->pool);
 
-    return NJET_CONF_ERROR;
+    return NJT_CONF_ERROR;
 }
 
 
@@ -681,31 +681,31 @@ ngx_http_geo_range(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
     if (ngx_strcmp(value[0].data, "default") == 0) {
 
         if (ctx->high.default_value) {
-            ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+            ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                 "duplicate default geo range value: \"%V\", old value: \"%v\"",
                 &value[1], ctx->high.default_value);
         }
 
         ctx->high.default_value = ngx_http_geo_value(cf, ctx, &value[1]);
         if (ctx->high.default_value == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     if (ctx->binary_include) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
             "binary geo range base \"%s\" cannot be mixed with usual entries",
             ctx->include_name.data);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     if (ctx->high.low == NULL) {
         ctx->high.low = ngx_pcalloc(ctx->pool,
                                     0x10000 * sizeof(ngx_http_geo_range_t *));
         if (ctx->high.low == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
@@ -753,17 +753,17 @@ ngx_http_geo_range(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
 
     if (del) {
         if (ngx_http_geo_delete_range(cf, ctx, start, end)) {
-            ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+            ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                                "no address range \"%V\" to delete", net);
         }
 
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     ctx->value = ngx_http_geo_value(cf, ctx, &value[1]);
 
     if (ctx->value == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ctx->net = net;
@@ -772,9 +772,9 @@ ngx_http_geo_range(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
 
 invalid:
 
-    ngx_conf_log_error(NJET_LOG_EMERG, cf, 0, "invalid range \"%V\"", net);
+    ngx_conf_log_error(NJT_LOG_EMERG, cf, 0, "invalid range \"%V\"", net);
 
-    return NJET_CONF_ERROR;
+    return NJT_CONF_ERROR;
 }
 
 
@@ -812,7 +812,7 @@ ngx_http_geo_add_range(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
             a = ngx_array_create(ctx->temp_pool, 64,
                                  sizeof(ngx_http_geo_range_t));
             if (a == NULL) {
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             ctx->high.low[h] = (ngx_http_geo_range_t *) a;
@@ -835,7 +835,7 @@ ngx_http_geo_add_range(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
 
                 range = ngx_array_push(a);
                 if (range == NULL) {
-                    return NJET_CONF_ERROR;
+                    return NJT_CONF_ERROR;
                 }
 
                 range = a->elts;
@@ -853,7 +853,7 @@ ngx_http_geo_add_range(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
             if (s == (ngx_uint_t) range[i].start
                 && e == (ngx_uint_t) range[i].end)
             {
-                ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+                ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                     "duplicate range \"%V\", value: \"%v\", old value: \"%v\"",
                     ctx->net, ctx->value, range[i].value);
 
@@ -869,12 +869,12 @@ ngx_http_geo_add_range(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
 
                 range = ngx_array_push(a);
                 if (range == NULL) {
-                    return NJET_CONF_ERROR;
+                    return NJT_CONF_ERROR;
                 }
 
                 range = ngx_array_push(a);
                 if (range == NULL) {
-                    return NJET_CONF_ERROR;
+                    return NJT_CONF_ERROR;
                 }
 
                 range = a->elts;
@@ -902,7 +902,7 @@ ngx_http_geo_add_range(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
 
                 range = ngx_array_push(a);
                 if (range == NULL) {
-                    return NJET_CONF_ERROR;
+                    return NJT_CONF_ERROR;
                 }
 
                 range = a->elts;
@@ -926,7 +926,7 @@ ngx_http_geo_add_range(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
 
                 range = ngx_array_push(a);
                 if (range == NULL) {
-                    return NJET_CONF_ERROR;
+                    return NJT_CONF_ERROR;
                 }
 
                 range = a->elts;
@@ -946,20 +946,20 @@ ngx_http_geo_add_range(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
             s = (ngx_uint_t) range[i].start;
             e = (ngx_uint_t) range[i].end;
 
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                          "range \"%V\" overlaps \"%d.%d.%d.%d-%d.%d.%d.%d\"",
                          ctx->net,
                          h >> 8, h & 0xff, s >> 8, s & 0xff,
                          h >> 8, h & 0xff, e >> 8, e & 0xff);
 
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         /* add the first range */
 
         range = ngx_array_push(a);
         if (range == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         range = a->elts;
@@ -978,7 +978,7 @@ ngx_http_geo_add_range(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
         }
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -1059,15 +1059,15 @@ ngx_http_geo_cidr(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
     if (ctx->tree == NULL) {
         ctx->tree = ngx_radix_tree_create(ctx->pool, -1);
         if (ctx->tree == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     if (ctx->tree6 == NULL) {
         ctx->tree6 = ngx_radix_tree_create(ctx->pool, -1);
         if (ctx->tree6 == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 #endif
@@ -1079,22 +1079,22 @@ ngx_http_geo_cidr(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
 
         rv = ngx_http_geo_cidr_add(cf, ctx, &cidr, &value[1], &value[0]);
 
-        if (rv != NJET_CONF_OK) {
+        if (rv != NJT_CONF_OK) {
             return rv;
         }
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
         cidr.family = AF_INET6;
         ngx_memzero(&cidr.u.in6, sizeof(ngx_in6_cidr_t));
 
         rv = ngx_http_geo_cidr_add(cf, ctx, &cidr, &value[1], &value[0]);
 
-        if (rv != NJET_CONF_OK) {
+        if (rv != NJT_CONF_OK) {
             return rv;
         }
 #endif
 
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     if (ngx_strcmp(value[0].data, "delete") == 0) {
@@ -1106,8 +1106,8 @@ ngx_http_geo_cidr(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
         del = 0;
     }
 
-    if (ngx_http_geo_cidr_value(cf, net, &cidr) != NJET_OK) {
-        return NJET_CONF_ERROR;
+    if (ngx_http_geo_cidr_value(cf, net, &cidr) != NJT_OK) {
+        return NJT_CONF_ERROR;
     }
 
     if (cidr.family == AF_INET) {
@@ -1118,7 +1118,7 @@ ngx_http_geo_cidr(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
     if (del) {
         switch (cidr.family) {
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
         case AF_INET6:
             rc = ngx_radix128tree_delete(ctx->tree6,
                                          cidr.u.in6.addr.s6_addr,
@@ -1132,12 +1132,12 @@ ngx_http_geo_cidr(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
             break;
         }
 
-        if (rc != NJET_OK) {
-            ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+        if (rc != NJT_OK) {
+            ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                                "no network \"%V\" to delete", net);
         }
 
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     return ngx_http_geo_cidr_add(cf, ctx, &cidr, &value[1], net);
@@ -1154,32 +1154,32 @@ ngx_http_geo_cidr_add(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
     val = ngx_http_geo_value(cf, ctx, value);
 
     if (val == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     switch (cidr->family) {
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     case AF_INET6:
         rc = ngx_radix128tree_insert(ctx->tree6, cidr->u.in6.addr.s6_addr,
                                      cidr->u.in6.mask.s6_addr,
                                      (uintptr_t) val);
 
-        if (rc == NJET_OK) {
-            return NJET_CONF_OK;
+        if (rc == NJT_OK) {
+            return NJT_CONF_OK;
         }
 
-        if (rc == NJET_ERROR) {
-            return NJET_CONF_ERROR;
+        if (rc == NJT_ERROR) {
+            return NJT_CONF_ERROR;
         }
 
-        /* rc == NJET_BUSY */
+        /* rc == NJT_BUSY */
 
         old = (ngx_http_variable_value_t *)
                    ngx_radix128tree_find(ctx->tree6,
                                          cidr->u.in6.addr.s6_addr);
 
-        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+        ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
               "duplicate network \"%V\", value: \"%v\", old value: \"%v\"",
               net, val, old);
 
@@ -1187,9 +1187,9 @@ ngx_http_geo_cidr_add(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
                                      cidr->u.in6.addr.s6_addr,
                                      cidr->u.in6.mask.s6_addr);
 
-        if (rc == NJET_ERROR) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0, "invalid radix tree");
-            return NJET_CONF_ERROR;
+        if (rc == NJT_ERROR) {
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0, "invalid radix tree");
+            return NJT_CONF_ERROR;
         }
 
         rc = ngx_radix128tree_insert(ctx->tree6, cidr->u.in6.addr.s6_addr,
@@ -1203,29 +1203,29 @@ ngx_http_geo_cidr_add(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
         rc = ngx_radix32tree_insert(ctx->tree, cidr->u.in.addr,
                                     cidr->u.in.mask, (uintptr_t) val);
 
-        if (rc == NJET_OK) {
-            return NJET_CONF_OK;
+        if (rc == NJT_OK) {
+            return NJT_CONF_OK;
         }
 
-        if (rc == NJET_ERROR) {
-            return NJET_CONF_ERROR;
+        if (rc == NJT_ERROR) {
+            return NJT_CONF_ERROR;
         }
 
-        /* rc == NJET_BUSY */
+        /* rc == NJT_BUSY */
 
         old = (ngx_http_variable_value_t *)
                    ngx_radix32tree_find(ctx->tree, cidr->u.in.addr);
 
-        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+        ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
               "duplicate network \"%V\", value: \"%v\", old value: \"%v\"",
               net, val, old);
 
         rc = ngx_radix32tree_delete(ctx->tree,
                                     cidr->u.in.addr, cidr->u.in.mask);
 
-        if (rc == NJET_ERROR) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0, "invalid radix tree");
-            return NJET_CONF_ERROR;
+        if (rc == NJT_ERROR) {
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0, "invalid radix tree");
+            return NJT_CONF_ERROR;
         }
 
         rc = ngx_radix32tree_insert(ctx->tree, cidr->u.in.addr,
@@ -1234,11 +1234,11 @@ ngx_http_geo_cidr_add(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
         break;
     }
 
-    if (rc == NJET_OK) {
-        return NJET_CONF_OK;
+    if (rc == NJT_OK) {
+        return NJT_CONF_OK;
     }
 
-    return NJET_CONF_ERROR;
+    return NJT_CONF_ERROR;
 }
 
 
@@ -1304,18 +1304,18 @@ ngx_http_geo_add_proxy(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
     if (ctx->proxies == NULL) {
         ctx->proxies = ngx_array_create(ctx->pool, 4, sizeof(ngx_cidr_t));
         if (ctx->proxies == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
     c = ngx_array_push(ctx->proxies);
     if (c == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     *c = *cidr;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -1329,22 +1329,22 @@ ngx_http_geo_cidr_value(ngx_conf_t *cf, ngx_str_t *net, ngx_cidr_t *cidr)
         cidr->u.in.addr = 0xffffffff;
         cidr->u.in.mask = 0xffffffff;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     rc = ngx_ptocidr(net, cidr);
 
-    if (rc == NJET_ERROR) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0, "invalid network \"%V\"", net);
-        return NJET_ERROR;
+    if (rc == NJT_ERROR) {
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0, "invalid network \"%V\"", net);
+        return NJT_ERROR;
     }
 
-    if (rc == NJET_DONE) {
-        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+    if (rc == NJT_DONE) {
+        ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                            "low address bits of %V are meaningless", net);
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -1358,23 +1358,23 @@ ngx_http_geo_include(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
     file.len = name->len + 4;
     file.data = ngx_pnalloc(ctx->temp_pool, name->len + 5);
     if (file.data == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ngx_sprintf(file.data, "%V.bin%Z", name);
 
-    if (ngx_conf_full_name(cf->cycle, &file, 1) != NJET_OK) {
-        return NJET_CONF_ERROR;
+    if (ngx_conf_full_name(cf->cycle, &file, 1) != NJT_OK) {
+        return NJT_CONF_ERROR;
     }
 
     if (ctx->ranges) {
-        ngx_log_debug1(NJET_LOG_DEBUG_CORE, cf->log, 0, "include %s", file.data);
+        ngx_log_debug1(NJT_LOG_DEBUG_CORE, cf->log, 0, "include %s", file.data);
 
         switch (ngx_http_geo_include_binary_base(cf, ctx, &file)) {
-        case NJET_OK:
-            return NJET_CONF_OK;
-        case NJET_ERROR:
-            return NJET_CONF_ERROR;
+        case NJT_OK:
+            return NJT_CONF_OK;
+        case NJT_ERROR:
+            return NJT_CONF_ERROR;
         default:
             break;
         }
@@ -1389,7 +1389,7 @@ ngx_http_geo_include(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
         ctx->allow_binary_include = 0;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_CORE, cf->log, 0, "include %s", file.data);
+    ngx_log_debug1(NJT_LOG_DEBUG_CORE, cf->log, 0, "include %s", file.data);
 
     rv = ngx_conf_parse(cf, &file);
 
@@ -1422,35 +1422,35 @@ ngx_http_geo_include_binary_base(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
     file.name = *name;
     file.log = cf->log;
 
-    file.fd = ngx_open_file(name->data, NJET_FILE_RDONLY, NJET_FILE_OPEN, 0);
+    file.fd = ngx_open_file(name->data, NJT_FILE_RDONLY, NJT_FILE_OPEN, 0);
 
-    if (file.fd == NJET_INVALID_FILE) {
+    if (file.fd == NJT_INVALID_FILE) {
         err = ngx_errno;
-        if (err != NJET_ENOENT) {
-            ngx_conf_log_error(NJET_LOG_CRIT, cf, err,
+        if (err != NJT_ENOENT) {
+            ngx_conf_log_error(NJT_LOG_CRIT, cf, err,
                                ngx_open_file_n " \"%s\" failed", name->data);
         }
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     if (ctx->outside_entries) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
             "binary geo range base \"%s\" cannot be mixed with usual entries",
             name->data);
-        rc = NJET_ERROR;
+        rc = NJT_ERROR;
         goto done;
     }
 
     if (ctx->binary_include) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
             "second binary geo range base \"%s\" cannot be mixed with \"%s\"",
             name->data, ctx->include_name.data);
-        rc = NJET_ERROR;
+        rc = NJT_ERROR;
         goto done;
     }
 
-    if (ngx_fd_info(file.fd, &fi) == NJET_FILE_ERROR) {
-        ngx_conf_log_error(NJET_LOG_CRIT, cf, ngx_errno,
+    if (ngx_fd_info(file.fd, &fi) == NJT_FILE_ERROR) {
+        ngx_conf_log_error(NJT_LOG_CRIT, cf, ngx_errno,
                            ngx_fd_info_n " \"%s\" failed", name->data);
         goto failed;
     }
@@ -1461,8 +1461,8 @@ ngx_http_geo_include_binary_base(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
     ch = name->data[name->len - 4];
     name->data[name->len - 4] = '\0';
 
-    if (ngx_file_info(name->data, &fi) == NJET_FILE_ERROR) {
-        ngx_conf_log_error(NJET_LOG_CRIT, cf, ngx_errno,
+    if (ngx_file_info(name->data, &fi) == NJT_FILE_ERROR) {
+        ngx_conf_log_error(NJT_LOG_CRIT, cf, ngx_errno,
                            ngx_file_info_n " \"%s\" failed", name->data);
         goto failed;
     }
@@ -1470,7 +1470,7 @@ ngx_http_geo_include_binary_base(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
     name->data[name->len - 4] = ch;
 
     if (mtime < ngx_file_mtime(&fi)) {
-        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+        ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                            "stale binary geo range base \"%s\"", name->data);
         goto failed;
     }
@@ -1482,14 +1482,14 @@ ngx_http_geo_include_binary_base(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
 
     n = ngx_read_file(&file, base, size, 0);
 
-    if (n == NJET_ERROR) {
-        ngx_conf_log_error(NJET_LOG_CRIT, cf, ngx_errno,
+    if (n == NJT_ERROR) {
+        ngx_conf_log_error(NJT_LOG_CRIT, cf, ngx_errno,
                            ngx_read_file_n " \"%s\" failed", name->data);
         goto failed;
     }
 
     if ((size_t) n != size) {
-        ngx_conf_log_error(NJET_LOG_CRIT, cf, 0,
+        ngx_conf_log_error(NJT_LOG_CRIT, cf, 0,
             ngx_read_file_n " \"%s\" returned only %z bytes instead of %z",
             name->data, n, size);
         goto failed;
@@ -1498,7 +1498,7 @@ ngx_http_geo_include_binary_base(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
     header = (ngx_http_geo_header_t *) base;
 
     if (size < 16 || ngx_memcmp(&ngx_http_geo_header, header, 12) != 0) {
-        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+        ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
              "incompatible binary geo range base \"%s\"", name->data);
         goto failed;
     }
@@ -1544,29 +1544,29 @@ ngx_http_geo_include_binary_base(ngx_conf_t *cf, ngx_http_geo_conf_ctx_t *ctx,
     ngx_crc32_final(crc32);
 
     if (crc32 != header->crc32) {
-        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+        ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                   "CRC32 mismatch in binary geo range base \"%s\"", name->data);
         goto failed;
     }
 
-    ngx_conf_log_error(NJET_LOG_NOTICE, cf, 0,
+    ngx_conf_log_error(NJT_LOG_NOTICE, cf, 0,
                        "using binary geo range base \"%s\"", name->data);
 
     ctx->include_name = *name;
     ctx->binary_include = 1;
     ctx->high.low = ranges;
-    rc = NJET_OK;
+    rc = NJT_OK;
 
     goto done;
 
 failed:
 
-    rc = NJET_DECLINED;
+    rc = NJT_DECLINED;
 
 done:
 
-    if (ngx_close_file(file.fd) == NJET_FILE_ERROR) {
-        ngx_log_error(NJET_LOG_ALERT, cf->log, ngx_errno,
+    if (ngx_close_file(file.fd) == NJT_FILE_ERROR) {
+        ngx_log_error(NJT_LOG_ALERT, cf->log, ngx_errno,
                       ngx_close_file_n " \"%s\" failed", name->data);
     }
 
@@ -1596,10 +1596,10 @@ ngx_http_geo_create_binary_base(ngx_http_geo_conf_ctx_t *ctx)
     fm.size = ctx->data_size;
     fm.log = ctx->pool->log;
 
-    ngx_log_error(NJET_LOG_NOTICE, fm.log, 0,
+    ngx_log_error(NJT_LOG_NOTICE, fm.log, 0,
                   "creating binary geo range base \"%s\"", fm.name);
 
-    if (ngx_create_file_mapping(&fm) != NJET_OK) {
+    if (ngx_create_file_mapping(&fm) != NJT_OK) {
         return;
     }
 

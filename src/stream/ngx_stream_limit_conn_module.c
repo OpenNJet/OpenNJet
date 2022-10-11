@@ -10,9 +10,9 @@
 #include <ngx_stream.h>
 
 
-#define NJET_STREAM_LIMIT_CONN_PASSED            1
-#define NJET_STREAM_LIMIT_CONN_REJECTED          2
-#define NJET_STREAM_LIMIT_CONN_REJECTED_DRY_RUN  3
+#define NJT_STREAM_LIMIT_CONN_PASSED            1
+#define NJT_STREAM_LIMIT_CONN_REJECTED          2
+#define NJT_STREAM_LIMIT_CONN_REJECTED_DRY_RUN  3
 
 
 typedef struct {
@@ -74,10 +74,10 @@ static ngx_int_t ngx_stream_limit_conn_init(ngx_conf_t *cf);
 
 
 static ngx_conf_enum_t  ngx_stream_limit_conn_log_levels[] = {
-    { ngx_string("info"), NJET_LOG_INFO },
-    { ngx_string("notice"), NJET_LOG_NOTICE },
-    { ngx_string("warn"), NJET_LOG_WARN },
-    { ngx_string("error"), NJET_LOG_ERR },
+    { ngx_string("info"), NJT_LOG_INFO },
+    { ngx_string("notice"), NJT_LOG_NOTICE },
+    { ngx_string("warn"), NJT_LOG_WARN },
+    { ngx_string("error"), NJT_LOG_ERR },
     { ngx_null_string, 0 }
 };
 
@@ -85,30 +85,30 @@ static ngx_conf_enum_t  ngx_stream_limit_conn_log_levels[] = {
 static ngx_command_t  ngx_stream_limit_conn_commands[] = {
 
     { ngx_string("limit_conn_zone"),
-      NJET_STREAM_MAIN_CONF|NJET_CONF_TAKE2,
+      NJT_STREAM_MAIN_CONF|NJT_CONF_TAKE2,
       ngx_stream_limit_conn_zone,
       0,
       0,
       NULL },
 
     { ngx_string("limit_conn"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE2,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE2,
       ngx_stream_limit_conn,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("limit_conn_log_level"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_enum_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_limit_conn_conf_t, log_level),
       &ngx_stream_limit_conn_log_levels },
 
     { ngx_string("limit_conn_dry_run"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_FLAG,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_limit_conn_conf_t, dry_run),
       NULL },
 
@@ -129,10 +129,10 @@ static ngx_stream_module_t  ngx_stream_limit_conn_module_ctx = {
 
 
 ngx_module_t  ngx_stream_limit_conn_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_stream_limit_conn_module_ctx,     /* module context */
     ngx_stream_limit_conn_commands,        /* module directives */
-    NJET_STREAM_MODULE,                     /* module type */
+    NJT_STREAM_MODULE,                     /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -140,14 +140,14 @@ ngx_module_t  ngx_stream_limit_conn_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
 static ngx_stream_variable_t  ngx_stream_limit_conn_vars[] = {
 
     { ngx_string("limit_conn_status"), NULL,
-      ngx_stream_limit_conn_status_variable, 0, NJET_STREAM_VAR_NOCACHEABLE, 0 },
+      ngx_stream_limit_conn_status_variable, 0, NJT_STREAM_VAR_NOCACHEABLE, 0 },
 
       ngx_stream_null_variable
 };
@@ -181,8 +181,8 @@ ngx_stream_limit_conn_handler(ngx_stream_session_t *s)
     for (i = 0; i < lccf->limits.nelts; i++) {
         ctx = limits[i].shm_zone->data;
 
-        if (ngx_stream_complex_value(s, &ctx->key, &key) != NJET_OK) {
-            return NJET_ERROR;
+        if (ngx_stream_complex_value(s, &ctx->key, &key) != NJT_OK) {
+            return NJT_ERROR;
         }
 
         if (key.len == 0) {
@@ -190,14 +190,14 @@ ngx_stream_limit_conn_handler(ngx_stream_session_t *s)
         }
 
         if (key.len > 255) {
-            ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
+            ngx_log_error(NJT_LOG_ERR, s->connection->log, 0,
                           "the value of the \"%V\" key "
                           "is more than 255 bytes: \"%V\"",
                           &ctx->key.value, &key);
             continue;
         }
 
-        s->limit_conn_status = NJET_STREAM_LIMIT_CONN_PASSED;
+        s->limit_conn_status = NJT_STREAM_LIMIT_CONN_PASSED;
 
         hash = ngx_crc32_short(key.data, key.len);
 
@@ -219,13 +219,13 @@ ngx_stream_limit_conn_handler(ngx_stream_session_t *s)
 
                 if (lccf->dry_run) {
                     s->limit_conn_status =
-                                        NJET_STREAM_LIMIT_CONN_REJECTED_DRY_RUN;
-                    return NJET_DECLINED;
+                                        NJT_STREAM_LIMIT_CONN_REJECTED_DRY_RUN;
+                    return NJT_DECLINED;
                 }
 
-                s->limit_conn_status = NJET_STREAM_LIMIT_CONN_REJECTED;
+                s->limit_conn_status = NJT_STREAM_LIMIT_CONN_REJECTED;
 
-                return NJET_STREAM_SERVICE_UNAVAILABLE;
+                return NJT_STREAM_SERVICE_UNAVAILABLE;
             }
 
             lc = (ngx_stream_limit_conn_node_t *) &node->color;
@@ -254,19 +254,19 @@ ngx_stream_limit_conn_handler(ngx_stream_session_t *s)
 
                 if (lccf->dry_run) {
                     s->limit_conn_status =
-                                        NJET_STREAM_LIMIT_CONN_REJECTED_DRY_RUN;
-                    return NJET_DECLINED;
+                                        NJT_STREAM_LIMIT_CONN_REJECTED_DRY_RUN;
+                    return NJT_DECLINED;
                 }
 
-                s->limit_conn_status = NJET_STREAM_LIMIT_CONN_REJECTED;
+                s->limit_conn_status = NJT_STREAM_LIMIT_CONN_REJECTED;
 
-                return NJET_STREAM_SERVICE_UNAVAILABLE;
+                return NJT_STREAM_SERVICE_UNAVAILABLE;
             }
 
             lc->conn++;
         }
 
-        ngx_log_debug2(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                        "limit conn: %08Xi %d", node->key, lc->conn);
 
         ngx_shmtx_unlock(&ctx->shpool->mutex);
@@ -274,7 +274,7 @@ ngx_stream_limit_conn_handler(ngx_stream_session_t *s)
         cln = ngx_pool_cleanup_add(s->connection->pool,
                                    sizeof(ngx_stream_limit_conn_cleanup_t));
         if (cln == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         cln->handler = ngx_stream_limit_conn_cleanup;
@@ -284,7 +284,7 @@ ngx_stream_limit_conn_handler(ngx_stream_session_t *s)
         lccln->node = node;
     }
 
-    return NJET_DECLINED;
+    return NJT_DECLINED;
 }
 
 
@@ -384,7 +384,7 @@ ngx_stream_limit_conn_cleanup(void *data)
 
     ngx_shmtx_lock(&ctx->shpool->mutex);
 
-    ngx_log_debug2(NJET_LOG_DEBUG_STREAM, lccln->shm_zone->shm.log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_STREAM, lccln->shm_zone->shm.log, 0,
                    "limit conn cleanup: %08Xi %d", node->key, lc->conn);
 
     lc->conn--;
@@ -430,18 +430,18 @@ ngx_stream_limit_conn_init_zone(ngx_shm_zone_t *shm_zone, void *data)
                            ctx->key.value.len)
                != 0)
         {
-            ngx_log_error(NJET_LOG_EMERG, shm_zone->shm.log, 0,
+            ngx_log_error(NJT_LOG_EMERG, shm_zone->shm.log, 0,
                           "limit_conn_zone \"%V\" uses the \"%V\" key "
                           "while previously it used the \"%V\" key",
                           &shm_zone->shm.name, &ctx->key.value,
                           &octx->key.value);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ctx->sh = octx->sh;
         ctx->shpool = octx->shpool;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     ctx->shpool = (ngx_slab_pool_t *) shm_zone->shm.addr;
@@ -449,13 +449,13 @@ ngx_stream_limit_conn_init_zone(ngx_shm_zone_t *shm_zone, void *data)
     if (shm_zone->shm.exists) {
         ctx->sh = ctx->shpool->data;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     ctx->sh = ngx_slab_alloc(ctx->shpool,
                              sizeof(ngx_stream_limit_conn_shctx_t));
     if (ctx->sh == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ctx->shpool->data = ctx->sh;
@@ -467,13 +467,13 @@ ngx_stream_limit_conn_init_zone(ngx_shm_zone_t *shm_zone, void *data)
 
     ctx->shpool->log_ctx = ngx_slab_alloc(ctx->shpool, len);
     if (ctx->shpool->log_ctx == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_sprintf(ctx->shpool->log_ctx, " in limit_conn_zone \"%V\"%Z",
                 &shm_zone->shm.name);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -483,7 +483,7 @@ ngx_stream_limit_conn_status_variable(ngx_stream_session_t *s,
 {
     if (s->limit_conn_status == 0) {
         v->not_found = 1;
-        return NJET_OK;
+        return NJT_OK;
     }
 
     v->valid = 1;
@@ -492,7 +492,7 @@ ngx_stream_limit_conn_status_variable(ngx_stream_session_t *s,
     v->len = ngx_stream_limit_conn_status[s->limit_conn_status - 1].len;
     v->data = ngx_stream_limit_conn_status[s->limit_conn_status - 1].data;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -512,8 +512,8 @@ ngx_stream_limit_conn_create_conf(ngx_conf_t *cf)
      *     conf->limits.elts = NULL;
      */
 
-    conf->log_level = NJET_CONF_UNSET_UINT;
-    conf->dry_run = NJET_CONF_UNSET;
+    conf->log_level = NJT_CONF_UNSET_UINT;
+    conf->dry_run = NJT_CONF_UNSET;
 
     return conf;
 }
@@ -529,11 +529,11 @@ ngx_stream_limit_conn_merge_conf(ngx_conf_t *cf, void *parent, void *child)
         conf->limits = prev->limits;
     }
 
-    ngx_conf_merge_uint_value(conf->log_level, prev->log_level, NJET_LOG_ERR);
+    ngx_conf_merge_uint_value(conf->log_level, prev->log_level, NJT_LOG_ERR);
 
     ngx_conf_merge_value(conf->dry_run, prev->dry_run, 0);
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -552,7 +552,7 @@ ngx_stream_limit_conn_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     ctx = ngx_pcalloc(cf->pool, sizeof(ngx_stream_limit_conn_ctx_t));
     if (ctx == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ngx_memzero(&ccv, sizeof(ngx_stream_compile_complex_value_t));
@@ -561,8 +561,8 @@ ngx_stream_limit_conn_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ccv.value = &value[1];
     ccv.complex_value = &ctx->key;
 
-    if (ngx_stream_compile_complex_value(&ccv) != NJET_OK) {
-        return NJET_CONF_ERROR;
+    if (ngx_stream_compile_complex_value(&ccv) != NJT_OK) {
+        return NJT_CONF_ERROR;
     }
 
     size = 0;
@@ -577,9 +577,9 @@ ngx_stream_limit_conn_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             p = (u_char *) ngx_strchr(name.data, ':');
 
             if (p == NULL) {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid zone size \"%V\"", &value[i]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             name.len = p - name.data;
@@ -589,52 +589,52 @@ ngx_stream_limit_conn_zone(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
             size = ngx_parse_size(&s);
 
-            if (size == NJET_ERROR) {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            if (size == NJT_ERROR) {
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid zone size \"%V\"", &value[i]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             if (size < (ssize_t) (8 * ngx_pagesize)) {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "zone \"%V\" is too small", &value[i]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             continue;
         }
 
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid parameter \"%V\"", &value[i]);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     if (name.len == 0) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "\"%V\" must have \"zone\" parameter",
                            &cmd->name);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     shm_zone = ngx_shared_memory_add(cf, &name, size,
                                      &ngx_stream_limit_conn_module);
     if (shm_zone == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     if (shm_zone->data) {
         ctx = shm_zone->data;
 
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "%V \"%V\" is already bound to key \"%V\"",
                            &cmd->name, &name, &ctx->key.value);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     shm_zone->init = ngx_stream_limit_conn_init_zone;
     shm_zone->data = ctx;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -654,7 +654,7 @@ ngx_stream_limit_conn(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     shm_zone = ngx_shared_memory_add(cf, &value[1], 0,
                                      &ngx_stream_limit_conn_module);
     if (shm_zone == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     limits = lccf->limits.elts;
@@ -662,9 +662,9 @@ ngx_stream_limit_conn(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (limits == NULL) {
         if (ngx_array_init(&lccf->limits, cf->pool, 1,
                            sizeof(ngx_stream_limit_conn_limit_t))
-            != NJET_OK)
+            != NJT_OK)
         {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
@@ -676,26 +676,26 @@ ngx_stream_limit_conn(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     n = ngx_atoi(value[2].data, value[2].len);
     if (n <= 0) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid number of connections \"%V\"", &value[2]);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     if (n > 65535) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "connection limit must be less 65536");
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     limit = ngx_array_push(&lccf->limits);
     if (limit == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     limit->conn = n;
     limit->shm_zone = shm_zone;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -707,14 +707,14 @@ ngx_stream_limit_conn_add_variables(ngx_conf_t *cf)
     for (v = ngx_stream_limit_conn_vars; v->name.len; v++) {
         var = ngx_stream_add_variable(cf, &v->name, v->flags);
         if (var == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         var->get_handler = v->get_handler;
         var->data = v->data;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -726,12 +726,12 @@ ngx_stream_limit_conn_init(ngx_conf_t *cf)
 
     cmcf = ngx_stream_conf_get_module_main_conf(cf, ngx_stream_core_module);
 
-    h = ngx_array_push(&cmcf->phases[NJET_STREAM_PREACCESS_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJT_STREAM_PREACCESS_PHASE].handlers);
     if (h == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *h = ngx_stream_limit_conn_handler;
 
-    return NJET_OK;
+    return NJT_OK;
 }

@@ -32,12 +32,12 @@ ngx_event_pipe(ngx_event_pipe_t *p, ngx_int_t do_write)
 
             rc = ngx_event_pipe_write_to_downstream(p);
 
-            if (rc == NJET_ABORT) {
-                return NJET_ABORT;
+            if (rc == NJT_ABORT) {
+                return NJT_ABORT;
             }
 
-            if (rc == NJET_BUSY) {
-                return NJET_OK;
+            if (rc == NJT_BUSY) {
+                return NJT_OK;
             }
         }
 
@@ -46,8 +46,8 @@ ngx_event_pipe(ngx_event_pipe_t *p, ngx_int_t do_write)
 
         p->log->action = "reading upstream";
 
-        if (ngx_event_pipe_read_upstream(p) == NJET_ABORT) {
-            return NJET_ABORT;
+        if (ngx_event_pipe_read_upstream(p) == NJT_ABORT) {
+            return NJT_ABORT;
         }
 
         if (!p->read && !p->upstream_blocked) {
@@ -60,10 +60,10 @@ ngx_event_pipe(ngx_event_pipe_t *p, ngx_int_t do_write)
     if (p->upstream->fd != (ngx_socket_t) -1) {
         rev = p->upstream->read;
 
-        flags = (rev->eof || rev->error) ? NJET_CLOSE_EVENT : 0;
+        flags = (rev->eof || rev->error) ? NJT_CLOSE_EVENT : 0;
 
-        if (ngx_handle_read_event(rev, flags) != NJET_OK) {
-            return NJET_ABORT;
+        if (ngx_handle_read_event(rev, flags) != NJT_OK) {
+            return NJT_ABORT;
         }
 
         if (!rev->delayed) {
@@ -80,8 +80,8 @@ ngx_event_pipe(ngx_event_pipe_t *p, ngx_int_t do_write)
         && p->downstream->data == p->output_ctx)
     {
         wev = p->downstream->write;
-        if (ngx_handle_write_event(wev, p->send_lowat) != NJET_OK) {
-            return NJET_ABORT;
+        if (ngx_handle_write_event(wev, p->send_lowat) != NJT_OK) {
+            return NJT_ABORT;
         }
 
         if (!wev->delayed) {
@@ -94,7 +94,7 @@ ngx_event_pipe(ngx_event_pipe_t *p, ngx_int_t do_write)
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -109,31 +109,31 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
     ngx_chain_t  *chain, *cl, *ln;
 
     if (p->upstream_eof || p->upstream_error || p->upstream_done) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
-#if (NJET_THREADS)
+#if (NJT_THREADS)
 
     if (p->aio) {
-        ngx_log_debug0(NJET_LOG_DEBUG_EVENT, p->log, 0,
+        ngx_log_debug0(NJT_LOG_DEBUG_EVENT, p->log, 0,
                        "pipe read upstream: aio");
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
     if (p->writing) {
-        ngx_log_debug0(NJET_LOG_DEBUG_EVENT, p->log, 0,
+        ngx_log_debug0(NJT_LOG_DEBUG_EVENT, p->log, 0,
                        "pipe read upstream: writing");
 
         rc = ngx_event_pipe_write_chain_to_temp_file(p);
 
-        if (rc != NJET_OK) {
+        if (rc != NJT_OK) {
             return rc;
         }
     }
 
 #endif
 
-    ngx_log_debug1(NJET_LOG_DEBUG_EVENT, p->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_EVENT, p->log, 0,
                    "pipe read upstream: %d", p->upstream->read->ready);
 
     for ( ;; ) {
@@ -154,7 +154,7 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
             p->preread_bufs = NULL;
             n = p->preread_size;
 
-            ngx_log_debug1(NJET_LOG_DEBUG_EVENT, p->log, 0,
+            ngx_log_debug1(NJT_LOG_DEBUG_EVENT, p->log, 0,
                            "pipe preread: %z", n);
 
             if (n) {
@@ -163,7 +163,7 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
 
         } else {
 
-#if (NJET_HAVE_KQUEUE)
+#if (NJT_HAVE_KQUEUE)
 
             /*
              * kqueue notifies about the end of file or a pending error.
@@ -173,7 +173,7 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
 
             if (p->upstream->read->available == 0
                 && p->upstream->read->pending_eof
-#if (NJET_SSL)
+#if (NJT_SSL)
                 && !p->upstream->ssl
 #endif
                 )
@@ -188,7 +188,7 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
                     p->upstream_error = 1;
                     p->upstream_eof = 0;
 
-                    ngx_log_error(NJET_LOG_ERR, p->log,
+                    ngx_log_error(NJT_LOG_ERR, p->log,
                                   p->upstream->read->kq_errno,
                                   "kevent() reported that upstream "
                                   "closed connection");
@@ -235,14 +235,14 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
 
                 b = ngx_create_temp_buf(p->pool, p->bufs.size);
                 if (b == NULL) {
-                    return NJET_ABORT;
+                    return NJT_ABORT;
                 }
 
                 p->allocated++;
 
                 chain = ngx_alloc_chain_link(p->pool);
                 if (chain == NULL) {
-                    return NJET_ABORT;
+                    return NJT_ABORT;
                 }
 
                 chain->buf = b;
@@ -260,7 +260,7 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
 
                 p->upstream_blocked = 1;
 
-                ngx_log_debug0(NJET_LOG_DEBUG_EVENT, p->log, 0,
+                ngx_log_debug0(NJT_LOG_DEBUG_EVENT, p->log, 0,
                                "pipe downstream ready");
 
                 break;
@@ -276,14 +276,14 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
 
                 rc = ngx_event_pipe_write_chain_to_temp_file(p);
 
-                ngx_log_debug1(NJET_LOG_DEBUG_EVENT, p->log, 0,
+                ngx_log_debug1(NJT_LOG_DEBUG_EVENT, p->log, 0,
                                "pipe temp offset: %O", p->temp_file->offset);
 
-                if (rc == NJET_BUSY) {
+                if (rc == NJT_BUSY) {
                     break;
                 }
 
-                if (rc != NJET_OK) {
+                if (rc != NJT_OK) {
                     return rc;
                 }
 
@@ -299,7 +299,7 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
 
                 /* there are no bufs to read in */
 
-                ngx_log_debug0(NJET_LOG_DEBUG_EVENT, p->log, 0,
+                ngx_log_debug0(NJT_LOG_DEBUG_EVENT, p->log, 0,
                                "no pipe bufs to read in");
 
                 break;
@@ -307,7 +307,7 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
 
             n = p->upstream->recv_chain(p->upstream, chain, limit);
 
-            ngx_log_debug1(NJET_LOG_DEBUG_EVENT, p->log, 0,
+            ngx_log_debug1(NJT_LOG_DEBUG_EVENT, p->log, 0,
                            "pipe recv chain: %z", n);
 
             if (p->free_raw_bufs) {
@@ -315,12 +315,12 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
             }
             p->free_raw_bufs = chain;
 
-            if (n == NJET_ERROR) {
+            if (n == NJT_ERROR) {
                 p->upstream_error = 1;
                 break;
             }
 
-            if (n == NJET_AGAIN) {
+            if (n == NJT_AGAIN) {
                 if (p->single_buf) {
                     ngx_event_pipe_remove_shadow_links(chain->buf);
                 }
@@ -353,8 +353,8 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
 
                 /* STUB */ cl->buf->num = p->num++;
 
-                if (p->input_filter(p, cl->buf) == NJET_ERROR) {
-                    return NJET_ABORT;
+                if (p->input_filter(p, cl->buf) == NJT_ERROR) {
+                    return NJT_ABORT;
                 }
 
                 n -= size;
@@ -382,10 +382,10 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
         }
     }
 
-#if (NJET_DEBUG)
+#if (NJT_DEBUG)
 
     for (cl = p->busy; cl; cl = cl->next) {
-        ngx_log_debug8(NJET_LOG_DEBUG_EVENT, p->log, 0,
+        ngx_log_debug8(NJT_LOG_DEBUG_EVENT, p->log, 0,
                        "pipe buf busy s:%d t:%d f:%d "
                        "%p, pos %p, size: %z "
                        "file: %O, size: %O",
@@ -398,7 +398,7 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
     }
 
     for (cl = p->out; cl; cl = cl->next) {
-        ngx_log_debug8(NJET_LOG_DEBUG_EVENT, p->log, 0,
+        ngx_log_debug8(NJT_LOG_DEBUG_EVENT, p->log, 0,
                        "pipe buf out  s:%d t:%d f:%d "
                        "%p, pos %p, size: %z "
                        "file: %O, size: %O",
@@ -411,7 +411,7 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
     }
 
     for (cl = p->in; cl; cl = cl->next) {
-        ngx_log_debug8(NJET_LOG_DEBUG_EVENT, p->log, 0,
+        ngx_log_debug8(NJT_LOG_DEBUG_EVENT, p->log, 0,
                        "pipe buf in   s:%d t:%d f:%d "
                        "%p, pos %p, size: %z "
                        "file: %O, size: %O",
@@ -424,7 +424,7 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
     }
 
     for (cl = p->free_raw_bufs; cl; cl = cl->next) {
-        ngx_log_debug8(NJET_LOG_DEBUG_EVENT, p->log, 0,
+        ngx_log_debug8(NJT_LOG_DEBUG_EVENT, p->log, 0,
                        "pipe buf free s:%d t:%d f:%d "
                        "%p, pos %p, size: %z "
                        "file: %O, size: %O",
@@ -436,7 +436,7 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
                        cl->buf->file_last - cl->buf->file_pos);
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_EVENT, p->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_EVENT, p->log, 0,
                    "pipe length: %O", p->length);
 
 #endif
@@ -450,8 +450,8 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
 
             /* STUB */ cl->buf->num = p->num++;
 
-            if (p->input_filter(p, cl->buf) == NJET_ERROR) {
-                return NJET_ABORT;
+            if (p->input_filter(p, cl->buf) == NJT_ERROR) {
+                return NJT_ABORT;
             }
 
             ngx_free_chain(p->pool, cl);
@@ -467,8 +467,8 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
 
         /* STUB */ p->free_raw_bufs->buf->num = p->num++;
 
-        if (p->input_filter(p, p->free_raw_bufs->buf) == NJET_ERROR) {
-            return NJET_ABORT;
+        if (p->input_filter(p, p->free_raw_bufs->buf) == NJT_ERROR) {
+            return NJT_ABORT;
         }
 
         p->free_raw_bufs = p->free_raw_bufs->next;
@@ -484,17 +484,17 @@ ngx_event_pipe_read_upstream(ngx_event_pipe_t *p)
 
     if (p->cacheable && (p->in || p->buf_to_file)) {
 
-        ngx_log_debug0(NJET_LOG_DEBUG_EVENT, p->log, 0,
+        ngx_log_debug0(NJT_LOG_DEBUG_EVENT, p->log, 0,
                        "pipe write chain");
 
         rc = ngx_event_pipe_write_chain_to_temp_file(p);
 
-        if (rc != NJET_OK) {
+        if (rc != NJT_OK) {
             return rc;
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -510,16 +510,16 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
 
     downstream = p->downstream;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_EVENT, p->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_EVENT, p->log, 0,
                    "pipe write downstream: %d", downstream->write->ready);
 
-#if (NJET_THREADS)
+#if (NJT_THREADS)
 
     if (p->writing) {
         rc = ngx_event_pipe_write_chain_to_temp_file(p);
 
-        if (rc == NJET_ABORT) {
-            return NJET_ABORT;
+        if (rc == NJT_ABORT) {
+            return NJT_ABORT;
         }
     }
 
@@ -541,7 +541,7 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
             }
 
             if (p->out) {
-                ngx_log_debug0(NJET_LOG_DEBUG_EVENT, p->log, 0,
+                ngx_log_debug0(NJT_LOG_DEBUG_EVENT, p->log, 0,
                                "pipe write downstream flush out");
 
                 for (cl = p->out; cl; cl = cl->next) {
@@ -550,7 +550,7 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
 
                 rc = p->output_filter(p->output_ctx, p->out);
 
-                if (rc == NJET_ERROR) {
+                if (rc == NJT_ERROR) {
                     p->downstream_error = 1;
                     return ngx_event_pipe_drain_chains(p);
                 }
@@ -563,7 +563,7 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
             }
 
             if (p->in) {
-                ngx_log_debug0(NJET_LOG_DEBUG_EVENT, p->log, 0,
+                ngx_log_debug0(NJT_LOG_DEBUG_EVENT, p->log, 0,
                                "pipe write downstream flush in");
 
                 for (cl = p->in; cl; cl = cl->next) {
@@ -572,7 +572,7 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
 
                 rc = p->output_filter(p->output_ctx, p->in);
 
-                if (rc == NJET_ERROR) {
+                if (rc == NJT_ERROR) {
                     p->downstream_error = 1;
                     return ngx_event_pipe_drain_chains(p);
                 }
@@ -580,7 +580,7 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
                 p->in = NULL;
             }
 
-            ngx_log_debug0(NJET_LOG_DEBUG_EVENT, p->log, 0,
+            ngx_log_debug0(NJT_LOG_DEBUG_EVENT, p->log, 0,
                            "pipe write downstream done");
 
             /* TODO: free unused bufs */
@@ -613,7 +613,7 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
             }
         }
 
-        ngx_log_debug1(NJET_LOG_DEBUG_EVENT, p->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_EVENT, p->log, 0,
                        "pipe write busy: %uz", bsize);
 
         out = NULL;
@@ -632,7 +632,7 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
                 cl = p->out;
 
                 if (cl->buf->recycled) {
-                    ngx_log_error(NJET_LOG_ALERT, p->log, 0,
+                    ngx_log_error(NJT_LOG_ALERT, p->log, 0,
                                   "recycled buffer in pipe out chain");
                 }
 
@@ -641,7 +641,7 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
             } else if (!p->cacheable && !p->writing && p->in) {
                 cl = p->in;
 
-                ngx_log_debug3(NJET_LOG_DEBUG_EVENT, p->log, 0,
+                ngx_log_debug3(NJT_LOG_DEBUG_EVENT, p->log, 0,
                                "pipe write buf ls:%d %p %z",
                                cl->buf->last_shadow,
                                cl->buf->pos,
@@ -676,7 +676,7 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
 
     flush:
 
-        ngx_log_debug2(NJET_LOG_DEBUG_EVENT, p->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_EVENT, p->log, 0,
                        "pipe write: out:%p, f:%ui", out, flush);
 
         if (out == NULL) {
@@ -687,7 +687,7 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
 
             /* a workaround for AIO */
             if (flushed++ > 10) {
-                return NJET_BUSY;
+                return NJT_BUSY;
             }
         }
 
@@ -695,7 +695,7 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
 
         ngx_chain_update_chains(p->pool, &p->free, &p->busy, &out, p->tag);
 
-        if (rc == NJET_ERROR) {
+        if (rc == NJT_ERROR) {
             p->downstream_error = 1;
             return ngx_event_pipe_drain_chains(p);
         }
@@ -719,8 +719,8 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
             /* add the free shadow raw buf to p->free_raw_bufs */
 
             if (cl->buf->last_shadow) {
-                if (ngx_event_pipe_add_free_buf(p, cl->buf->shadow) != NJET_OK) {
-                    return NJET_ABORT;
+                if (ngx_event_pipe_add_free_buf(p, cl->buf->shadow) != NJT_OK) {
+                    return NJT_ABORT;
                 }
 
                 cl->buf->last_shadow = 0;
@@ -730,7 +730,7 @@ ngx_event_pipe_write_to_downstream(ngx_event_pipe_t *p)
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -742,12 +742,12 @@ ngx_event_pipe_write_chain_to_temp_file(ngx_event_pipe_t *p)
     ngx_uint_t    prev_last_shadow;
     ngx_chain_t  *cl, *tl, *next, *out, **ll, **last_out, **last_free;
 
-#if (NJET_THREADS)
+#if (NJT_THREADS)
 
     if (p->writing) {
 
         if (p->aio) {
-            return NJET_AGAIN;
+            return NJT_AGAIN;
         }
 
         out = p->writing;
@@ -755,8 +755,8 @@ ngx_event_pipe_write_chain_to_temp_file(ngx_event_pipe_t *p)
 
         n = ngx_write_chain_to_temp_file(p->temp_file, NULL);
 
-        if (n == NJET_ERROR) {
-            return NJET_ABORT;
+        if (n == NJT_ERROR) {
+            return NJT_ABORT;
         }
 
         goto done;
@@ -767,7 +767,7 @@ ngx_event_pipe_write_chain_to_temp_file(ngx_event_pipe_t *p)
     if (p->buf_to_file) {
         out = ngx_alloc_chain_link(p->pool);
         if (out == NULL) {
-            return NJET_ABORT;
+            return NJT_ABORT;
         }
 
         out->buf = p->buf_to_file;
@@ -784,13 +784,13 @@ ngx_event_pipe_write_chain_to_temp_file(ngx_event_pipe_t *p)
         ll = NULL;
         prev_last_shadow = 1;
 
-        ngx_log_debug1(NJET_LOG_DEBUG_EVENT, p->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_EVENT, p->log, 0,
                        "pipe offset: %O", p->temp_file->offset);
 
         do {
             bsize = cl->buf->last - cl->buf->pos;
 
-            ngx_log_debug4(NJET_LOG_DEBUG_EVENT, p->log, 0,
+            ngx_log_debug4(NJT_LOG_DEBUG_EVENT, p->log, 0,
                            "pipe buf ls:%d %p, pos %p, size: %z",
                            cl->buf->last_shadow, cl->buf->start,
                            cl->buf->pos, bsize);
@@ -811,10 +811,10 @@ ngx_event_pipe_write_chain_to_temp_file(ngx_event_pipe_t *p)
 
         } while (cl);
 
-        ngx_log_debug1(NJET_LOG_DEBUG_EVENT, p->log, 0, "size: %z", size);
+        ngx_log_debug1(NJT_LOG_DEBUG_EVENT, p->log, 0, "size: %z", size);
 
         if (ll == NULL) {
-            return NJET_BUSY;
+            return NJT_BUSY;
         }
 
         if (cl) {
@@ -831,7 +831,7 @@ ngx_event_pipe_write_chain_to_temp_file(ngx_event_pipe_t *p)
         p->last_in = &p->in;
     }
 
-#if (NJET_THREADS)
+#if (NJT_THREADS)
     if (p->thread_handler) {
         p->temp_file->thread_write = 1;
         p->temp_file->file.thread_task = p->thread_task;
@@ -842,16 +842,16 @@ ngx_event_pipe_write_chain_to_temp_file(ngx_event_pipe_t *p)
 
     n = ngx_write_chain_to_temp_file(p->temp_file, out);
 
-    if (n == NJET_ERROR) {
-        return NJET_ABORT;
+    if (n == NJT_ERROR) {
+        return NJT_ABORT;
     }
 
-#if (NJET_THREADS)
+#if (NJT_THREADS)
 
-    if (n == NJET_AGAIN) {
+    if (n == NJT_AGAIN) {
         p->writing = out;
         p->thread_task = p->temp_file->file.thread_task;
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
 done:
@@ -887,7 +887,7 @@ done:
 
         cl = ngx_chain_get_free_buf(p->pool, &p->free);
         if (cl == NULL) {
-            return NJET_ABORT;
+            return NJT_ABORT;
         }
 
         b = cl->buf;
@@ -928,7 +928,7 @@ free:
 
             tl = ngx_alloc_chain_link(p->pool);
             if (tl == NULL) {
-                return NJET_ABORT;
+                return NJT_ABORT;
             }
 
             tl->buf = b->shadow;
@@ -944,7 +944,7 @@ free:
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -957,28 +957,28 @@ ngx_event_pipe_copy_input_filter(ngx_event_pipe_t *p, ngx_buf_t *buf)
     ngx_chain_t  *cl;
 
     if (buf->pos == buf->last) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (p->upstream_done) {
-        ngx_log_debug0(NJET_LOG_DEBUG_EVENT, p->log, 0,
+        ngx_log_debug0(NJT_LOG_DEBUG_EVENT, p->log, 0,
                        "input data after close");
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (p->length == 0) {
         p->upstream_done = 1;
 
-        ngx_log_error(NJET_LOG_WARN, p->log, 0,
+        ngx_log_error(NJT_LOG_WARN, p->log, 0,
                       "upstream sent more data than specified in "
                       "\"Content-Length\" header");
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     cl = ngx_chain_get_free_buf(p->pool, &p->free);
     if (cl == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     b = cl->buf;
@@ -990,7 +990,7 @@ ngx_event_pipe_copy_input_filter(ngx_event_pipe_t *p, ngx_buf_t *buf)
     b->recycled = 1;
     buf->shadow = b;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_EVENT, p->log, 0, "input buf #%d", b->num);
+    ngx_log_debug1(NJT_LOG_DEBUG_EVENT, p->log, 0, "input buf #%d", b->num);
 
     if (p->in) {
         *p->last_in = cl;
@@ -1000,24 +1000,24 @@ ngx_event_pipe_copy_input_filter(ngx_event_pipe_t *p, ngx_buf_t *buf)
     p->last_in = &cl->next;
 
     if (p->length == -1) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (b->last - b->pos > p->length) {
 
-        ngx_log_error(NJET_LOG_WARN, p->log, 0,
+        ngx_log_error(NJT_LOG_WARN, p->log, 0,
                       "upstream sent more data than specified in "
                       "\"Content-Length\" header");
 
         b->last = b->pos + p->length;
         p->upstream_done = 1;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     p->length -= b->last - b->pos;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -1059,7 +1059,7 @@ ngx_event_pipe_add_free_buf(ngx_event_pipe_t *p, ngx_buf_t *b)
 
     cl = ngx_alloc_chain_link(p->pool);
     if (cl == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (p->buf_to_file && b->start == p->buf_to_file->start) {
@@ -1079,7 +1079,7 @@ ngx_event_pipe_add_free_buf(ngx_event_pipe_t *p, ngx_buf_t *b)
         p->free_raw_bufs = cl;
         cl->next = NULL;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (p->free_raw_bufs->buf->pos == p->free_raw_bufs->buf->last) {
@@ -1089,7 +1089,7 @@ ngx_event_pipe_add_free_buf(ngx_event_pipe_t *p, ngx_buf_t *b)
         cl->next = p->free_raw_bufs;
         p->free_raw_bufs = cl;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     /* the first free buf is partially filled, thus add the free buf after it */
@@ -1097,7 +1097,7 @@ ngx_event_pipe_add_free_buf(ngx_event_pipe_t *p, ngx_buf_t *b)
     cl->next = p->free_raw_bufs->next;
     p->free_raw_bufs->next = cl;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -1120,13 +1120,13 @@ ngx_event_pipe_drain_chains(ngx_event_pipe_t *p)
             p->in = NULL;
 
         } else {
-            return NJET_OK;
+            return NJT_OK;
         }
 
         while (cl) {
             if (cl->buf->last_shadow) {
-                if (ngx_event_pipe_add_free_buf(p, cl->buf->shadow) != NJET_OK) {
-                    return NJET_ABORT;
+                if (ngx_event_pipe_add_free_buf(p, cl->buf->shadow) != NJT_OK) {
+                    return NJT_ABORT;
                 }
 
                 cl->buf->last_shadow = 0;

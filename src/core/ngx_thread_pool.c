@@ -63,7 +63,7 @@ static void ngx_thread_pool_exit_worker(ngx_cycle_t *cycle);
 static ngx_command_t  ngx_thread_pool_commands[] = {
 
     { ngx_string("thread_pool"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE23,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE23,
       ngx_thread_pool,
       0,
       0,
@@ -81,10 +81,10 @@ static ngx_core_module_t  ngx_thread_pool_module_ctx = {
 
 
 ngx_module_t  ngx_thread_pool_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_thread_pool_module_ctx,           /* module context */
     ngx_thread_pool_commands,              /* module directives */
-    NJET_CORE_MODULE,                       /* module type */
+    NJT_CORE_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     ngx_thread_pool_init_worker,           /* init process */
@@ -92,7 +92,7 @@ ngx_module_t  ngx_thread_pool_module = {
     NULL,                                  /* exit thread */
     ngx_thread_pool_exit_worker,           /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -112,59 +112,59 @@ ngx_thread_pool_init(ngx_thread_pool_t *tp, ngx_log_t *log, ngx_pool_t *pool)
     pthread_attr_t  attr;
 
     if (ngx_notify == NULL) {
-        ngx_log_error(NJET_LOG_ALERT, log, 0,
+        ngx_log_error(NJT_LOG_ALERT, log, 0,
                "the configured event method cannot be used with thread pools");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_thread_pool_queue_init(&tp->queue);
 
-    if (ngx_thread_mutex_create(&tp->mtx, log) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_thread_mutex_create(&tp->mtx, log) != NJT_OK) {
+        return NJT_ERROR;
     }
 
-    if (ngx_thread_cond_create(&tp->cond, log) != NJET_OK) {
+    if (ngx_thread_cond_create(&tp->cond, log) != NJT_OK) {
         (void) ngx_thread_mutex_destroy(&tp->mtx, log);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     tp->log = log;
 
     err = pthread_attr_init(&attr);
     if (err) {
-        ngx_log_error(NJET_LOG_ALERT, log, err,
+        ngx_log_error(NJT_LOG_ALERT, log, err,
                       "pthread_attr_init() failed");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     err = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     if (err) {
-        ngx_log_error(NJET_LOG_ALERT, log, err,
+        ngx_log_error(NJT_LOG_ALERT, log, err,
                       "pthread_attr_setdetachstate() failed");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
 #if 0
     err = pthread_attr_setstacksize(&attr, PTHREAD_STACK_MIN);
     if (err) {
-        ngx_log_error(NJET_LOG_ALERT, log, err,
+        ngx_log_error(NJT_LOG_ALERT, log, err,
                       "pthread_attr_setstacksize() failed");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 #endif
 
     for (n = 0; n < tp->threads; n++) {
         err = pthread_create(&tid, &attr, ngx_thread_pool_cycle, tp);
         if (err) {
-            ngx_log_error(NJET_LOG_ALERT, log, err,
+            ngx_log_error(NJT_LOG_ALERT, log, err,
                           "pthread_create() failed");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
     (void) pthread_attr_destroy(&attr);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -183,7 +183,7 @@ ngx_thread_pool_destroy(ngx_thread_pool_t *tp)
     for (n = 0; n < tp->threads; n++) {
         lock = 1;
 
-        if (ngx_thread_task_post(tp, &task) != NJET_OK) {
+        if (ngx_thread_task_post(tp, &task) != NJT_OK) {
             return;
         }
 
@@ -231,22 +231,22 @@ ngx_int_t
 ngx_thread_task_post(ngx_thread_pool_t *tp, ngx_thread_task_t *task)
 {
     if (task->event.active) {
-        ngx_log_error(NJET_LOG_ALERT, tp->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, tp->log, 0,
                       "task #%ui already active", task->id);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    if (ngx_thread_mutex_lock(&tp->mtx, tp->log) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_thread_mutex_lock(&tp->mtx, tp->log) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     if (tp->waiting >= tp->max_queue) {
         (void) ngx_thread_mutex_unlock(&tp->mtx, tp->log);
 
-        ngx_log_error(NJET_LOG_ERR, tp->log, 0,
+        ngx_log_error(NJT_LOG_ERR, tp->log, 0,
                       "thread pool \"%V\" queue overflow: %i tasks waiting",
                       &tp->name, tp->waiting);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     task->event.active = 1;
@@ -254,9 +254,9 @@ ngx_thread_task_post(ngx_thread_pool_t *tp, ngx_thread_task_t *task)
     task->id = ngx_thread_pool_task_id++;
     task->next = NULL;
 
-    if (ngx_thread_cond_signal(&tp->cond, tp->log) != NJET_OK) {
+    if (ngx_thread_cond_signal(&tp->cond, tp->log) != NJT_OK) {
         (void) ngx_thread_mutex_unlock(&tp->mtx, tp->log);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *tp->queue.last = task;
@@ -266,11 +266,11 @@ ngx_thread_task_post(ngx_thread_pool_t *tp, ngx_thread_task_t *task)
 
     (void) ngx_thread_mutex_unlock(&tp->mtx, tp->log);
 
-    ngx_log_debug2(NJET_LOG_DEBUG_CORE, tp->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_CORE, tp->log, 0,
                    "task #%ui added to thread pool \"%V\"",
                    task->id, &tp->name);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -287,7 +287,7 @@ ngx_thread_pool_cycle(void *data)
     ngx_time_update();
 #endif
 
-    ngx_log_debug1(NJET_LOG_DEBUG_CORE, tp->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_CORE, tp->log, 0,
                    "thread in pool \"%V\" started", &tp->name);
 
     sigfillset(&set);
@@ -299,12 +299,12 @@ ngx_thread_pool_cycle(void *data)
 
     err = pthread_sigmask(SIG_BLOCK, &set, NULL);
     if (err) {
-        ngx_log_error(NJET_LOG_ALERT, tp->log, err, "pthread_sigmask() failed");
+        ngx_log_error(NJT_LOG_ALERT, tp->log, err, "pthread_sigmask() failed");
         return NULL;
     }
 
     for ( ;; ) {
-        if (ngx_thread_mutex_lock(&tp->mtx, tp->log) != NJET_OK) {
+        if (ngx_thread_mutex_lock(&tp->mtx, tp->log) != NJT_OK) {
             return NULL;
         }
 
@@ -313,7 +313,7 @@ ngx_thread_pool_cycle(void *data)
 
         while (tp->queue.first == NULL) {
             if (ngx_thread_cond_wait(&tp->cond, &tp->mtx, tp->log)
-                != NJET_OK)
+                != NJT_OK)
             {
                 (void) ngx_thread_mutex_unlock(&tp->mtx, tp->log);
                 return NULL;
@@ -327,7 +327,7 @@ ngx_thread_pool_cycle(void *data)
             tp->queue.last = &tp->queue.first;
         }
 
-        if (ngx_thread_mutex_unlock(&tp->mtx, tp->log) != NJET_OK) {
+        if (ngx_thread_mutex_unlock(&tp->mtx, tp->log) != NJT_OK) {
             return NULL;
         }
 
@@ -335,13 +335,13 @@ ngx_thread_pool_cycle(void *data)
         ngx_time_update();
 #endif
 
-        ngx_log_debug2(NJET_LOG_DEBUG_CORE, tp->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_CORE, tp->log, 0,
                        "run task #%ui in thread pool \"%V\"",
                        task->id, &tp->name);
 
         task->handler(task->ctx, tp->log);
 
-        ngx_log_debug2(NJET_LOG_DEBUG_CORE, tp->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_CORE, tp->log, 0,
                        "complete task #%ui in thread pool \"%V\"",
                        task->id, &tp->name);
 
@@ -367,7 +367,7 @@ ngx_thread_pool_handler(ngx_event_t *ev)
     ngx_event_t        *event;
     ngx_thread_task_t  *task;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_CORE, ev->log, 0, "thread pool handler");
+    ngx_log_debug0(NJT_LOG_DEBUG_CORE, ev->log, 0, "thread pool handler");
 
     ngx_spinlock(&ngx_thread_pool_done_lock, 1, 2048);
 
@@ -380,7 +380,7 @@ ngx_thread_pool_handler(ngx_event_t *ev)
     ngx_unlock(&ngx_thread_pool_done_lock);
 
     while (task) {
-        ngx_log_debug1(NJET_LOG_DEBUG_CORE, ev->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_CORE, ev->log, 0,
                        "run completion handler for task #%ui", task->id);
 
         event = &task->event;
@@ -406,7 +406,7 @@ ngx_thread_pool_create_conf(ngx_cycle_t *cycle)
 
     if (ngx_array_init(&tcf->pools, cycle->pool, 4,
                        sizeof(ngx_thread_pool_t *))
-        != NJET_OK)
+        != NJT_OK)
     {
         return NULL;
     }
@@ -441,14 +441,14 @@ ngx_thread_pool_init_conf(ngx_cycle_t *cycle, void *conf)
             continue;
         }
 
-        ngx_log_error(NJET_LOG_EMERG, cycle->log, 0,
+        ngx_log_error(NJT_LOG_EMERG, cycle->log, 0,
                       "unknown thread pool \"%V\" in %s:%ui",
                       &tpp[i]->name, tpp[i]->file, tpp[i]->line);
 
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -464,13 +464,13 @@ ngx_thread_pool(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     tp = ngx_thread_pool_add(cf, &value[1]);
 
     if (tp == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     if (tp->threads) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "duplicate thread pool \"%V\"", &tp->name);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     tp->max_queue = 65536;
@@ -481,10 +481,10 @@ ngx_thread_pool(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
             tp->threads = ngx_atoi(value[i].data + 8, value[i].len - 8);
 
-            if (tp->threads == (ngx_uint_t) NJET_ERROR || tp->threads == 0) {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            if (tp->threads == (ngx_uint_t) NJT_ERROR || tp->threads == 0) {
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid threads value \"%V\"", &value[i]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             continue;
@@ -494,10 +494,10 @@ ngx_thread_pool(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
             tp->max_queue = ngx_atoi(value[i].data + 10, value[i].len - 10);
 
-            if (tp->max_queue == NJET_ERROR) {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            if (tp->max_queue == NJT_ERROR) {
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid max_queue value \"%V\"", &value[i]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             continue;
@@ -505,13 +505,13 @@ ngx_thread_pool(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     }
 
     if (tp->threads == 0) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "\"%V\" must have \"threads\" parameter",
                            &cmd->name);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -586,17 +586,17 @@ ngx_thread_pool_init_worker(ngx_cycle_t *cycle)
     ngx_thread_pool_t       **tpp;
     ngx_thread_pool_conf_t   *tcf;
 
-    if (ngx_process != NJET_PROCESS_WORKER
-        && ngx_process != NJET_PROCESS_SINGLE)
+    if (ngx_process != NJT_PROCESS_WORKER
+        && ngx_process != NJT_PROCESS_SINGLE)
     {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     tcf = (ngx_thread_pool_conf_t *) ngx_get_conf(cycle->conf_ctx,
                                                   ngx_thread_pool_module);
 
     if (tcf == NULL) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     ngx_thread_pool_queue_init(&ngx_thread_pool_done);
@@ -604,12 +604,12 @@ ngx_thread_pool_init_worker(ngx_cycle_t *cycle)
     tpp = tcf->pools.elts;
 
     for (i = 0; i < tcf->pools.nelts; i++) {
-        if (ngx_thread_pool_init(tpp[i], cycle->log, cycle->pool) != NJET_OK) {
-            return NJET_ERROR;
+        if (ngx_thread_pool_init(tpp[i], cycle->log, cycle->pool) != NJT_OK) {
+            return NJT_ERROR;
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -620,8 +620,8 @@ ngx_thread_pool_exit_worker(ngx_cycle_t *cycle)
     ngx_thread_pool_t       **tpp;
     ngx_thread_pool_conf_t   *tcf;
 
-    if (ngx_process != NJET_PROCESS_WORKER
-        && ngx_process != NJET_PROCESS_SINGLE)
+    if (ngx_process != NJT_PROCESS_WORKER
+        && ngx_process != NJT_PROCESS_SINGLE)
     {
         return;
     }

@@ -5,26 +5,26 @@
  */
 
 
-#ifndef _NJET_PROCESS_CYCLE_H_INCLUDED_
-#define _NJET_PROCESS_CYCLE_H_INCLUDED_
+#ifndef _NJT_PROCESS_CYCLE_H_INCLUDED_
+#define _NJT_PROCESS_CYCLE_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#define NJET_CMD_OPEN_CHANNEL   1
-#define NJET_CMD_CLOSE_CHANNEL  2
-#define NJET_CMD_QUIT           3
-#define NJET_CMD_TERMINATE      4
-#define NJET_CMD_REOPEN         5
+#define NJT_CMD_OPEN_CHANNEL   1
+#define NJT_CMD_CLOSE_CHANNEL  2
+#define NJT_CMD_QUIT           3
+#define NJT_CMD_TERMINATE      4
+#define NJT_CMD_REOPEN         5
 
 
-#define NJET_PROCESS_SINGLE     0
-#define NJET_PROCESS_MASTER     1
-#define NJET_PROCESS_SIGNALLER  2
-#define NJET_PROCESS_WORKER     3
-#define NJET_PROCESS_HELPER     4
+#define NJT_PROCESS_SINGLE     0
+#define NJT_PROCESS_MASTER     1
+#define NJT_PROCESS_SIGNALLER  2
+#define NJT_PROCESS_WORKER     3
+#define NJT_PROCESS_HELPER     4
 
 
 typedef struct {
@@ -58,4 +58,4 @@ extern sig_atomic_t    ngx_reopen;
 extern sig_atomic_t    ngx_change_binary;
 
 
-#endif /* _NJET_PROCESS_CYCLE_H_INCLUDED_ */
+#endif /* _NJT_PROCESS_CYCLE_H_INCLUDED_ */

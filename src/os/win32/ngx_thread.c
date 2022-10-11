@@ -19,12 +19,12 @@ ngx_create_thread(ngx_tid_t *tid,
     *tid = CreateThread(NULL, 0, func, arg, 0, &id);
 
     if (*tid != NULL) {
-        ngx_log_error(NJET_LOG_NOTICE, log, 0,
-                      "create thread " NJET_TID_T_FMT, id);
+        ngx_log_error(NJT_LOG_NOTICE, log, 0,
+                      "create thread " NJT_TID_T_FMT, id);
         return 0;
     }
 
     err = ngx_errno;
-    ngx_log_error(NJET_LOG_ALERT, log, err, "CreateThread() failed");
+    ngx_log_error(NJT_LOG_ALERT, log, err, "CreateThread() failed");
     return err;
 }

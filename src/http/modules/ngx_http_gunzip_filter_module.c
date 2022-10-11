@@ -65,16 +65,16 @@ static char *ngx_http_gunzip_merge_conf(ngx_conf_t *cf,
 static ngx_command_t  ngx_http_gunzip_filter_commands[] = {
 
     { ngx_string("gunzip"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_gunzip_conf_t, enable),
       NULL },
 
     { ngx_string("gunzip_buffers"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE2,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE2,
       ngx_conf_set_bufs_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_gunzip_conf_t, bufs),
       NULL },
 
@@ -98,10 +98,10 @@ static ngx_http_module_t  ngx_http_gunzip_filter_module_ctx = {
 
 
 ngx_module_t  ngx_http_gunzip_filter_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_gunzip_filter_module_ctx,    /* module context */
     ngx_http_gunzip_filter_commands,       /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -109,7 +109,7 @@ ngx_module_t  ngx_http_gunzip_filter_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -141,7 +141,7 @@ ngx_http_gunzip_header_filter(ngx_http_request_t *r)
     r->gzip_vary = 1;
 
     if (!r->gzip_tested) {
-        if (ngx_http_gzip_ok(r) == NJET_OK) {
+        if (ngx_http_gzip_ok(r) == NJT_OK) {
             return ngx_http_next_header_filter(r);
         }
 
@@ -151,7 +151,7 @@ ngx_http_gunzip_header_filter(ngx_http_request_t *r)
 
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_gunzip_ctx_t));
     if (ctx == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_http_set_ctx(r, ctx, ngx_http_gunzip_filter_module);
@@ -185,17 +185,17 @@ ngx_http_gunzip_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
         return ngx_http_next_body_filter(r, in);
     }
 
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http gunzip filter");
 
     if (!ctx->started) {
-        if (ngx_http_gunzip_filter_inflate_start(r, ctx) != NJET_OK) {
+        if (ngx_http_gunzip_filter_inflate_start(r, ctx) != NJT_OK) {
             goto failed;
         }
     }
 
     if (in) {
-        if (ngx_chain_add_copy(r->pool, &ctx->in, in) != NJET_OK) {
+        if (ngx_chain_add_copy(r->pool, &ctx->in, in) != NJT_OK) {
             goto failed;
         }
     }
@@ -204,7 +204,7 @@ ngx_http_gunzip_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
         /* flush busy buffers */
 
-        if (ngx_http_next_body_filter(r, NULL) == NJET_ERROR) {
+        if (ngx_http_next_body_filter(r, NULL) == NJT_ERROR) {
             goto failed;
         }
 
@@ -229,11 +229,11 @@ ngx_http_gunzip_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
             rc = ngx_http_gunzip_filter_add_data(r, ctx);
 
-            if (rc == NJET_DECLINED) {
+            if (rc == NJT_DECLINED) {
                 break;
             }
 
-            if (rc == NJET_AGAIN) {
+            if (rc == NJT_AGAIN) {
                 continue;
             }
 
@@ -242,34 +242,34 @@ ngx_http_gunzip_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
             rc = ngx_http_gunzip_filter_get_buf(r, ctx);
 
-            if (rc == NJET_DECLINED) {
+            if (rc == NJT_DECLINED) {
                 break;
             }
 
-            if (rc == NJET_ERROR) {
+            if (rc == NJT_ERROR) {
                 goto failed;
             }
 
             rc = ngx_http_gunzip_filter_inflate(r, ctx);
 
-            if (rc == NJET_OK) {
+            if (rc == NJT_OK) {
                 break;
             }
 
-            if (rc == NJET_ERROR) {
+            if (rc == NJT_ERROR) {
                 goto failed;
             }
 
-            /* rc == NJET_AGAIN */
+            /* rc == NJT_AGAIN */
         }
 
         if (ctx->out == NULL && !flush) {
-            return ctx->busy ? NJET_AGAIN : NJET_OK;
+            return ctx->busy ? NJT_AGAIN : NJT_OK;
         }
 
         rc = ngx_http_next_body_filter(r, ctx->out);
 
-        if (rc == NJET_ERROR) {
+        if (rc == NJT_ERROR) {
             goto failed;
         }
 
@@ -277,7 +277,7 @@ ngx_http_gunzip_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                                 (ngx_buf_tag_t) &ngx_http_gunzip_filter_module);
         ctx->last_out = &ctx->out;
 
-        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "gunzip out: %p", ctx->out);
 
         ctx->nomem = 0;
@@ -294,7 +294,7 @@ failed:
 
     ctx->done = 1;
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
@@ -315,9 +315,9 @@ ngx_http_gunzip_filter_inflate_start(ngx_http_request_t *r,
     rc = inflateInit2(&ctx->zstream, MAX_WBITS + 16);
 
     if (rc != Z_OK) {
-        ngx_log_error(NJET_LOG_ALERT, r->connection->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, r->connection->log, 0,
                       "inflateInit2() failed: %d", rc);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ctx->started = 1;
@@ -325,7 +325,7 @@ ngx_http_gunzip_filter_inflate_start(ngx_http_request_t *r,
     ctx->last_out = &ctx->out;
     ctx->flush = Z_NO_FLUSH;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -334,14 +334,14 @@ ngx_http_gunzip_filter_add_data(ngx_http_request_t *r,
     ngx_http_gunzip_ctx_t *ctx)
 {
     if (ctx->zstream.avail_in || ctx->flush != Z_NO_FLUSH || ctx->redo) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "gunzip in: %p", ctx->in);
 
     if (ctx->in == NULL) {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     ctx->in_buf = ctx->in->buf;
@@ -350,7 +350,7 @@ ngx_http_gunzip_filter_add_data(ngx_http_request_t *r,
     ctx->zstream.next_in = ctx->in_buf->pos;
     ctx->zstream.avail_in = ctx->in_buf->last - ctx->in_buf->pos;
 
-    ngx_log_debug3(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug3(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "gunzip in_buf:%p ni:%p ai:%ud",
                    ctx->in_buf,
                    ctx->zstream.next_in, ctx->zstream.avail_in);
@@ -363,10 +363,10 @@ ngx_http_gunzip_filter_add_data(ngx_http_request_t *r,
 
     } else if (ctx->zstream.avail_in == 0) {
         /* ctx->flush == Z_NO_FLUSH */
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -377,7 +377,7 @@ ngx_http_gunzip_filter_get_buf(ngx_http_request_t *r,
     ngx_http_gunzip_conf_t  *conf;
 
     if (ctx->zstream.avail_out) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     conf = ngx_http_get_module_loc_conf(r, ngx_http_gunzip_filter_module);
@@ -392,7 +392,7 @@ ngx_http_gunzip_filter_get_buf(ngx_http_request_t *r,
 
         ctx->out_buf = ngx_create_temp_buf(r->pool, conf->bufs.size);
         if (ctx->out_buf == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ctx->out_buf->tag = (ngx_buf_tag_t) &ngx_http_gunzip_filter_module;
@@ -401,13 +401,13 @@ ngx_http_gunzip_filter_get_buf(ngx_http_request_t *r,
 
     } else {
         ctx->nomem = 1;
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     ctx->zstream.next_out = ctx->out_buf->pos;
     ctx->zstream.avail_out = conf->bufs.size;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -419,7 +419,7 @@ ngx_http_gunzip_filter_inflate(ngx_http_request_t *r,
     ngx_buf_t    *b;
     ngx_chain_t  *cl;
 
-    ngx_log_debug6(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug6(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "inflate in: ni:%p no:%p ai:%ud ao:%ud fl:%d redo:%d",
                    ctx->zstream.next_in, ctx->zstream.next_out,
                    ctx->zstream.avail_in, ctx->zstream.avail_out,
@@ -428,18 +428,18 @@ ngx_http_gunzip_filter_inflate(ngx_http_request_t *r,
     rc = inflate(&ctx->zstream, ctx->flush);
 
     if (rc != Z_OK && rc != Z_STREAM_END && rc != Z_BUF_ERROR) {
-        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+        ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                       "inflate() failed: %d, %d", ctx->flush, rc);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    ngx_log_debug5(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug5(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "inflate out: ni:%p no:%p ai:%ud ao:%ud rc:%d",
                    ctx->zstream.next_in, ctx->zstream.next_out,
                    ctx->zstream.avail_in, ctx->zstream.avail_out,
                    rc);
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "gunzip in_buf:%p pos:%p",
                    ctx->in_buf, ctx->in_buf->pos);
 
@@ -459,7 +459,7 @@ ngx_http_gunzip_filter_inflate(ngx_http_request_t *r,
 
         cl = ngx_alloc_chain_link(r->pool);
         if (cl == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         cl->buf = ctx->out_buf;
@@ -469,7 +469,7 @@ ngx_http_gunzip_filter_inflate(ngx_http_request_t *r,
 
         ctx->redo = 1;
 
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
     ctx->redo = 0;
@@ -480,7 +480,7 @@ ngx_http_gunzip_filter_inflate(ngx_http_request_t *r,
 
         cl = ngx_alloc_chain_link(r->pool);
         if (cl == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         b = ctx->out_buf;
@@ -489,7 +489,7 @@ ngx_http_gunzip_filter_inflate(ngx_http_request_t *r,
 
             b = ngx_calloc_buf(ctx->request->pool);
             if (b == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
         } else {
@@ -503,22 +503,22 @@ ngx_http_gunzip_filter_inflate(ngx_http_request_t *r,
         *ctx->last_out = cl;
         ctx->last_out = &cl->next;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (ctx->flush == Z_FINISH && ctx->zstream.avail_in == 0) {
 
         if (rc != Z_STREAM_END) {
-            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                           "inflate() returned %d on response end", rc);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
-        if (ngx_http_gunzip_filter_inflate_end(r, ctx) != NJET_OK) {
-            return NJET_ERROR;
+        if (ngx_http_gunzip_filter_inflate_end(r, ctx) != NJT_OK) {
+            return NJT_ERROR;
         }
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (rc == Z_STREAM_END && ctx->zstream.avail_in > 0) {
@@ -526,14 +526,14 @@ ngx_http_gunzip_filter_inflate(ngx_http_request_t *r,
         rc = inflateReset(&ctx->zstream);
 
         if (rc != Z_OK) {
-            ngx_log_error(NJET_LOG_ALERT, r->connection->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, r->connection->log, 0,
                           "inflateReset() failed: %d", rc);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ctx->redo = 1;
 
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
     if (ctx->in == NULL) {
@@ -541,12 +541,12 @@ ngx_http_gunzip_filter_inflate(ngx_http_request_t *r,
         b = ctx->out_buf;
 
         if (ngx_buf_size(b) == 0) {
-            return NJET_OK;
+            return NJT_OK;
         }
 
         cl = ngx_alloc_chain_link(r->pool);
         if (cl == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ctx->zstream.avail_out = 0;
@@ -556,10 +556,10 @@ ngx_http_gunzip_filter_inflate(ngx_http_request_t *r,
         *ctx->last_out = cl;
         ctx->last_out = &cl->next;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    return NJET_AGAIN;
+    return NJT_AGAIN;
 }
 
 
@@ -571,15 +571,15 @@ ngx_http_gunzip_filter_inflate_end(ngx_http_request_t *r,
     ngx_buf_t    *b;
     ngx_chain_t  *cl;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "gunzip inflate end");
 
     rc = inflateEnd(&ctx->zstream);
 
     if (rc != Z_OK) {
-        ngx_log_error(NJET_LOG_ALERT, r->connection->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, r->connection->log, 0,
                       "inflateEnd() failed: %d", rc);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     b = ctx->out_buf;
@@ -588,13 +588,13 @@ ngx_http_gunzip_filter_inflate_end(ngx_http_request_t *r,
 
         b = ngx_calloc_buf(ctx->request->pool);
         if (b == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
     cl = ngx_alloc_chain_link(r->pool);
     if (cl == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     cl->buf = b;
@@ -608,7 +608,7 @@ ngx_http_gunzip_filter_inflate_end(ngx_http_request_t *r,
 
     ctx->done = 1;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -617,7 +617,7 @@ ngx_http_gunzip_filter_alloc(void *opaque, u_int items, u_int size)
 {
     ngx_http_gunzip_ctx_t *ctx = opaque;
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, ctx->request->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, ctx->request->connection->log, 0,
                    "gunzip alloc: n:%ud s:%ud",
                    items, size);
 
@@ -631,7 +631,7 @@ ngx_http_gunzip_filter_free(void *opaque, void *address)
 #if 0
     ngx_http_gunzip_ctx_t *ctx = opaque;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, ctx->request->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, ctx->request->connection->log, 0,
                    "gunzip free: %p", address);
 #endif
 }
@@ -653,7 +653,7 @@ ngx_http_gunzip_create_conf(ngx_conf_t *cf)
      *     conf->bufs.num = 0;
      */
 
-    conf->enable = NJET_CONF_UNSET;
+    conf->enable = NJT_CONF_UNSET;
 
     return conf;
 }
@@ -670,7 +670,7 @@ ngx_http_gunzip_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_bufs_value(conf->bufs, prev->bufs,
                               (128 * 1024) / ngx_pagesize, ngx_pagesize);
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -683,5 +683,5 @@ ngx_http_gunzip_filter_init(ngx_conf_t *cf)
     ngx_http_next_body_filter = ngx_http_top_body_filter;
     ngx_http_top_body_filter = ngx_http_gunzip_body_filter;
 
-    return NJET_OK;
+    return NJT_OK;
 }

@@ -34,9 +34,9 @@ static ngx_os_io_t ngx_freebsd_io = {
     ngx_unix_send,
     ngx_udp_unix_send,
     ngx_udp_unix_sendmsg_chain,
-#if (NJET_HAVE_SENDFILE)
+#if (NJT_HAVE_SENDFILE)
     ngx_freebsd_sendfile_chain,
-    NJET_IO_SENDFILE
+    NJT_IO_SENDFILE
 #else
     ngx_writev_chain,
     0
@@ -76,7 +76,7 @@ sysctl_t sysctls[] = {
 void
 ngx_debug_init(void)
 {
-#if (NJET_DEBUG_MALLOC)
+#if (NJT_DEBUG_MALLOC)
 
 #if __FreeBSD_version >= 500014 && __FreeBSD_version < 1000011
     _malloc_options = "J";
@@ -109,11 +109,11 @@ ngx_os_specific_init(ngx_log_t *log)
     size = sizeof(ngx_freebsd_kern_ostype);
     if (sysctlbyname("kern.ostype",
                      ngx_freebsd_kern_ostype, &size, NULL, 0) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                       "sysctlbyname(kern.ostype) failed");
 
-        if (ngx_errno != NJET_ENOMEM) {
-            return NJET_ERROR;
+        if (ngx_errno != NJT_ENOMEM) {
+            return NJT_ERROR;
         }
 
         ngx_freebsd_kern_ostype[size - 1] = '\0';
@@ -122,11 +122,11 @@ ngx_os_specific_init(ngx_log_t *log)
     size = sizeof(ngx_freebsd_kern_osrelease);
     if (sysctlbyname("kern.osrelease",
                      ngx_freebsd_kern_osrelease, &size, NULL, 0) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                       "sysctlbyname(kern.osrelease) failed");
 
-        if (ngx_errno != NJET_ENOMEM) {
-            return NJET_ERROR;
+        if (ngx_errno != NJT_ENOMEM) {
+            return NJT_ERROR;
         }
 
         ngx_freebsd_kern_osrelease[size - 1] = '\0';
@@ -136,15 +136,15 @@ ngx_os_specific_init(ngx_log_t *log)
     size = sizeof(int);
     if (sysctlbyname("kern.osreldate",
                      &ngx_freebsd_kern_osreldate, &size, NULL, 0) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                       "sysctlbyname(kern.osreldate) failed");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     version = ngx_freebsd_kern_osreldate;
 
 
-#if (NJET_HAVE_SENDFILE)
+#if (NJT_HAVE_SENDFILE)
 
     /*
      * The determination of the sendfile() "nbytes bug" is complex enough.
@@ -177,7 +177,7 @@ ngx_os_specific_init(ngx_log_t *log)
 
 #endif
 
-#endif /* NJET_HAVE_SENDFILE */
+#endif /* NJT_HAVE_SENDFILE */
 
 
     if ((version < 500000 && version >= 440003) || version >= 500017) {
@@ -197,13 +197,13 @@ ngx_os_specific_init(ngx_log_t *log)
 
         err = ngx_errno;
 
-        if (err == NJET_ENOENT) {
+        if (err == NJT_ENOENT) {
             continue;
         }
 
-        ngx_log_error(NJET_LOG_ALERT, log, err,
+        ngx_log_error(NJT_LOG_ALERT, log, err,
                       "sysctlbyname(%s) failed", sysctls[i].name);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (ngx_freebsd_machdep_hlt_logical_cpus) {
@@ -214,16 +214,16 @@ ngx_os_specific_init(ngx_log_t *log)
     }
 
     if (version < 600008 && ngx_freebsd_kern_ipc_somaxconn > 32767) {
-        ngx_log_error(NJET_LOG_ALERT, log, 0,
+        ngx_log_error(NJT_LOG_ALERT, log, 0,
                       "sysctl kern.ipc.somaxconn must be less than 32768");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_tcp_nodelay_and_tcp_nopush = 1;
 
     ngx_os_io = ngx_freebsd_io;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -233,15 +233,15 @@ ngx_os_specific_status(ngx_log_t *log)
     u_long      value;
     ngx_uint_t  i;
 
-    ngx_log_error(NJET_LOG_NOTICE, log, 0, "OS: %s %s",
+    ngx_log_error(NJT_LOG_NOTICE, log, 0, "OS: %s %s",
                   ngx_freebsd_kern_ostype, ngx_freebsd_kern_osrelease);
 
 #ifdef __DragonFly_version
-    ngx_log_error(NJET_LOG_NOTICE, log, 0,
+    ngx_log_error(NJT_LOG_NOTICE, log, 0,
                   "kern.osreldate: %d, built on %d",
                   ngx_freebsd_kern_osreldate, __DragonFly_version);
 #else
-    ngx_log_error(NJET_LOG_NOTICE, log, 0,
+    ngx_log_error(NJT_LOG_NOTICE, log, 0,
                   "kern.osreldate: %d, built on %d",
                   ngx_freebsd_kern_osreldate, __FreeBSD_version);
 #endif
@@ -255,7 +255,7 @@ ngx_os_specific_status(ngx_log_t *log)
                 value = *(int *) sysctls[i].value;
             }
 
-            ngx_log_error(NJET_LOG_NOTICE, log, 0, "%s: %l",
+            ngx_log_error(NJT_LOG_NOTICE, log, 0, "%s: %l",
                           sysctls[i].name, value);
         }
     }

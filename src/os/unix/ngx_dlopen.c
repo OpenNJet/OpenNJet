@@ -9,7 +9,7 @@
 #include <ngx_core.h>
 
 
-#if (NJET_HAVE_DLOPEN)
+#if (NJT_HAVE_DLOPEN)
 
 char *
 ngx_dlerror(void)

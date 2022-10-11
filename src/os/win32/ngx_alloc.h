@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_ALLOC_H_INCLUDED_
-#define _NJET_ALLOC_H_INCLUDED_
+#ifndef _NJT_ALLOC_H_INCLUDED_
+#define _NJT_ALLOC_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -24,4 +24,4 @@ extern ngx_uint_t  ngx_pagesize_shift;
 extern ngx_uint_t  ngx_cacheline_size;
 
 
-#endif /* _NJET_ALLOC_H_INCLUDED_ */
+#endif /* _NJT_ALLOC_H_INCLUDED_ */

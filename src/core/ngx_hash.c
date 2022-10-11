@@ -16,7 +16,7 @@ ngx_hash_find(ngx_hash_t *hash, ngx_uint_t key, u_char *name, size_t len)
     ngx_hash_elt_t  *elt;
 
 #if 0
-    ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, 0, "hf:\"%*s\"", len, name);
+    ngx_log_error(NJT_LOG_ALERT, ngx_cycle->log, 0, "hf:\"%*s\"", len, name);
 #endif
 
     elt = hash->buckets[key % hash->size];
@@ -56,7 +56,7 @@ ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
     ngx_uint_t   i, n, key;
 
 #if 0
-    ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, 0, "wch:\"%*s\"", len, name);
+    ngx_log_error(NJT_LOG_ALERT, ngx_cycle->log, 0, "wch:\"%*s\"", len, name);
 #endif
 
     n = len;
@@ -76,13 +76,13 @@ ngx_hash_find_wc_head(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
     }
 
 #if 0
-    ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, 0, "key:\"%ui\"", key);
+    ngx_log_error(NJT_LOG_ALERT, ngx_cycle->log, 0, "key:\"%ui\"", key);
 #endif
 
     value = ngx_hash_find(&hwc->hash, key, &name[n], len - n);
 
 #if 0
-    ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, 0, "value:\"%p\"", value);
+    ngx_log_error(NJT_LOG_ALERT, ngx_cycle->log, 0, "value:\"%p\"", value);
 #endif
 
     if (value) {
@@ -150,7 +150,7 @@ ngx_hash_find_wc_tail(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
     ngx_uint_t   i, key;
 
 #if 0
-    ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, 0, "wct:\"%*s\"", len, name);
+    ngx_log_error(NJT_LOG_ALERT, ngx_cycle->log, 0, "wct:\"%*s\"", len, name);
 #endif
 
     key = 0;
@@ -168,13 +168,13 @@ ngx_hash_find_wc_tail(ngx_hash_wildcard_t *hwc, u_char *name, size_t len)
     }
 
 #if 0
-    ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, 0, "key:\"%ui\"", key);
+    ngx_log_error(NJT_LOG_ALERT, ngx_cycle->log, 0, "key:\"%ui\"", key);
 #endif
 
     value = ngx_hash_find(&hwc->hash, key, name, i);
 
 #if 0
-    ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, 0, "value:\"%p\"", value);
+    ngx_log_error(NJT_LOG_ALERT, ngx_cycle->log, 0, "value:\"%p\"", value);
 #endif
 
     if (value) {
@@ -245,7 +245,7 @@ ngx_hash_find_combined(ngx_hash_combined_t *hash, ngx_uint_t key, u_char *name,
 }
 
 
-#define NJET_HASH_ELT_SIZE(name)                                               \
+#define NJT_HASH_ELT_SIZE(name)                                               \
     (sizeof(void *) + ngx_align((name)->key.len + 2, sizeof(void *)))
 
 ngx_int_t
@@ -258,19 +258,19 @@ ngx_hash_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names, ngx_uint_t nelts)
     ngx_hash_elt_t  *elt, **buckets;
 
     if (hinit->max_size == 0) {
-        ngx_log_error(NJET_LOG_EMERG, hinit->pool->log, 0,
+        ngx_log_error(NJT_LOG_EMERG, hinit->pool->log, 0,
                       "could not build %s, you should "
                       "increase %s_max_size: %i",
                       hinit->name, hinit->name, hinit->max_size);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (hinit->bucket_size > 65536 - ngx_cacheline_size) {
-        ngx_log_error(NJET_LOG_EMERG, hinit->pool->log, 0,
+        ngx_log_error(NJT_LOG_EMERG, hinit->pool->log, 0,
                       "could not build %s, too large "
                       "%s_bucket_size: %i",
                       hinit->name, hinit->name, hinit->bucket_size);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     for (n = 0; n < nelts; n++) {
@@ -278,19 +278,19 @@ ngx_hash_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names, ngx_uint_t nelts)
             continue;
         }
 
-        if (hinit->bucket_size < NJET_HASH_ELT_SIZE(&names[n]) + sizeof(void *))
+        if (hinit->bucket_size < NJT_HASH_ELT_SIZE(&names[n]) + sizeof(void *))
         {
-            ngx_log_error(NJET_LOG_EMERG, hinit->pool->log, 0,
+            ngx_log_error(NJT_LOG_EMERG, hinit->pool->log, 0,
                           "could not build %s, you should "
                           "increase %s_bucket_size: %i",
                           hinit->name, hinit->name, hinit->bucket_size);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
     test = ngx_alloc(hinit->max_size * sizeof(u_short), hinit->pool->log);
     if (test == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     bucket_size = hinit->bucket_size - sizeof(void *);
@@ -312,10 +312,10 @@ ngx_hash_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names, ngx_uint_t nelts)
             }
 
             key = names[n].key_hash % size;
-            len = test[key] + NJET_HASH_ELT_SIZE(&names[n]);
+            len = test[key] + NJT_HASH_ELT_SIZE(&names[n]);
 
 #if 0
-            ngx_log_error(NJET_LOG_ALERT, hinit->pool->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, hinit->pool->log, 0,
                           "%ui: %ui %uz \"%V\"",
                           size, key, len, &names[n].key);
 #endif
@@ -336,7 +336,7 @@ ngx_hash_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names, ngx_uint_t nelts)
 
     size = hinit->max_size;
 
-    ngx_log_error(NJET_LOG_WARN, hinit->pool->log, 0,
+    ngx_log_error(NJT_LOG_WARN, hinit->pool->log, 0,
                   "could not build optimal %s, you should increase "
                   "either %s_max_size: %i or %s_bucket_size: %i; "
                   "ignoring %s_bucket_size",
@@ -355,15 +355,15 @@ found:
         }
 
         key = names[n].key_hash % size;
-        len = test[key] + NJET_HASH_ELT_SIZE(&names[n]);
+        len = test[key] + NJT_HASH_ELT_SIZE(&names[n]);
 
         if (len > 65536 - ngx_cacheline_size) {
-            ngx_log_error(NJET_LOG_EMERG, hinit->pool->log, 0,
+            ngx_log_error(NJT_LOG_EMERG, hinit->pool->log, 0,
                           "could not build %s, you should "
                           "increase %s_max_size: %i",
                           hinit->name, hinit->name, hinit->max_size);
             ngx_free(test);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         test[key] = (u_short) len;
@@ -386,7 +386,7 @@ found:
                                              + size * sizeof(ngx_hash_elt_t *));
         if (hinit->hash == NULL) {
             ngx_free(test);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         buckets = (ngx_hash_elt_t **)
@@ -396,14 +396,14 @@ found:
         buckets = ngx_pcalloc(hinit->pool, size * sizeof(ngx_hash_elt_t *));
         if (buckets == NULL) {
             ngx_free(test);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
     elts = ngx_palloc(hinit->pool, len + ngx_cacheline_size);
     if (elts == NULL) {
         ngx_free(test);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     elts = ngx_align_ptr(elts, ngx_cacheline_size);
@@ -434,7 +434,7 @@ found:
 
         ngx_strlow(elt->name, names[n].key.data, names[n].key.len);
 
-        test[key] = (u_short) (test[key] + NJET_HASH_ELT_SIZE(&names[n]));
+        test[key] = (u_short) (test[key] + NJT_HASH_ELT_SIZE(&names[n]));
     }
 
     for (i = 0; i < size; i++) {
@@ -461,7 +461,7 @@ found:
         elt = buckets[i];
 
         if (elt == NULL) {
-            ngx_log_error(NJET_LOG_ALERT, hinit->pool->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, hinit->pool->log, 0,
                           "%ui: NULL", i);
             continue;
         }
@@ -472,7 +472,7 @@ found:
 
             key = hinit->key(val.data, val.len);
 
-            ngx_log_error(NJET_LOG_ALERT, hinit->pool->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, hinit->pool->log, 0,
                           "%ui: %p \"%V\" %ui", i, elt, &val, key);
 
             elt = (ngx_hash_elt_t *) ngx_align_ptr(&elt->name[0] + elt->len,
@@ -482,7 +482,7 @@ found:
 
 #endif
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -499,22 +499,22 @@ ngx_hash_wildcard_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
 
     if (ngx_array_init(&curr_names, hinit->temp_pool, nelts,
                        sizeof(ngx_hash_key_t))
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (ngx_array_init(&next_names, hinit->temp_pool, nelts,
                        sizeof(ngx_hash_key_t))
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     for (n = 0; n < nelts; n = i) {
 
 #if 0
-        ngx_log_error(NJET_LOG_ALERT, hinit->pool->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, hinit->pool->log, 0,
                       "wc0: \"%V\"", &names[n].key);
 #endif
 
@@ -529,7 +529,7 @@ ngx_hash_wildcard_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
 
         name = ngx_array_push(&curr_names);
         if (name == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         name->key.len = len;
@@ -538,7 +538,7 @@ ngx_hash_wildcard_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
         name->value = names[n].value;
 
 #if 0
-        ngx_log_error(NJET_LOG_ALERT, hinit->pool->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, hinit->pool->log, 0,
                       "wc1: \"%V\" %ui", &name->key, dot);
 #endif
 
@@ -553,7 +553,7 @@ ngx_hash_wildcard_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
         if (names[n].key.len != len) {
             next_name = ngx_array_push(&next_names);
             if (next_name == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             next_name->key.len = names[n].key.len - len;
@@ -562,7 +562,7 @@ ngx_hash_wildcard_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
             next_name->value = names[n].value;
 
 #if 0
-            ngx_log_error(NJET_LOG_ALERT, hinit->pool->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, hinit->pool->log, 0,
                           "wc2: \"%V\"", &next_name->key);
 #endif
         }
@@ -581,7 +581,7 @@ ngx_hash_wildcard_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
 
             next_name = ngx_array_push(&next_names);
             if (next_name == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             next_name->key.len = names[i].key.len - dot_len;
@@ -590,7 +590,7 @@ ngx_hash_wildcard_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
             next_name->value = names[i].value;
 
 #if 0
-            ngx_log_error(NJET_LOG_ALERT, hinit->pool->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, hinit->pool->log, 0,
                           "wc3: \"%V\"", &next_name->key);
 #endif
         }
@@ -602,9 +602,9 @@ ngx_hash_wildcard_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
 
             if (ngx_hash_wildcard_init(&h, (ngx_hash_key_t *) next_names.elts,
                                        next_names.nelts)
-                != NJET_OK)
+                != NJT_OK)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             wdc = (ngx_hash_wildcard_t *) h.hash;
@@ -622,12 +622,12 @@ ngx_hash_wildcard_init(ngx_hash_init_t *hinit, ngx_hash_key_t *names,
 
     if (ngx_hash_init(hinit, (ngx_hash_key_t *) curr_names.elts,
                       curr_names.nelts)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -684,53 +684,53 @@ ngx_hash_keys_array_init(ngx_hash_keys_arrays_t *ha, ngx_uint_t type)
 {
     ngx_uint_t  asize;
 
-    if (type == NJET_HASH_SMALL) {
+    if (type == NJT_HASH_SMALL) {
         asize = 4;
         ha->hsize = 107;
 
     } else {
-        asize = NJET_HASH_LARGE_ASIZE;
-        ha->hsize = NJET_HASH_LARGE_HSIZE;
+        asize = NJT_HASH_LARGE_ASIZE;
+        ha->hsize = NJT_HASH_LARGE_HSIZE;
     }
 
     if (ngx_array_init(&ha->keys, ha->temp_pool, asize, sizeof(ngx_hash_key_t))
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (ngx_array_init(&ha->dns_wc_head, ha->temp_pool, asize,
                        sizeof(ngx_hash_key_t))
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (ngx_array_init(&ha->dns_wc_tail, ha->temp_pool, asize,
                        sizeof(ngx_hash_key_t))
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ha->keys_hash = ngx_pcalloc(ha->temp_pool, sizeof(ngx_array_t) * ha->hsize);
     if (ha->keys_hash == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ha->dns_wc_head_hash = ngx_pcalloc(ha->temp_pool,
                                        sizeof(ngx_array_t) * ha->hsize);
     if (ha->dns_wc_head_hash == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ha->dns_wc_tail_hash = ngx_pcalloc(ha->temp_pool,
                                        sizeof(ngx_array_t) * ha->hsize);
     if (ha->dns_wc_tail_hash == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -747,7 +747,7 @@ ngx_hash_add_key(ngx_hash_keys_arrays_t *ha, ngx_str_t *key, void *value,
 
     last = key->len;
 
-    if (flags & NJET_HASH_WILDCARD_KEY) {
+    if (flags & NJT_HASH_WILDCARD_KEY) {
 
         /*
          * supported wildcards:
@@ -760,16 +760,16 @@ ngx_hash_add_key(ngx_hash_keys_arrays_t *ha, ngx_str_t *key, void *value,
 
             if (key->data[i] == '*') {
                 if (++n > 1) {
-                    return NJET_DECLINED;
+                    return NJT_DECLINED;
                 }
             }
 
             if (key->data[i] == '.' && key->data[i + 1] == '.') {
-                return NJET_DECLINED;
+                return NJT_DECLINED;
             }
 
             if (key->data[i] == '\0') {
-                return NJET_DECLINED;
+                return NJT_DECLINED;
             }
         }
 
@@ -793,7 +793,7 @@ ngx_hash_add_key(ngx_hash_keys_arrays_t *ha, ngx_str_t *key, void *value,
         }
 
         if (n) {
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
     }
 
@@ -802,7 +802,7 @@ ngx_hash_add_key(ngx_hash_keys_arrays_t *ha, ngx_str_t *key, void *value,
     k = 0;
 
     for (i = 0; i < last; i++) {
-        if (!(flags & NJET_HASH_READONLY_KEY)) {
+        if (!(flags & NJT_HASH_READONLY_KEY)) {
             key->data[i] = ngx_tolower(key->data[i]);
         }
         k = ngx_hash(k, key->data[i]);
@@ -821,36 +821,36 @@ ngx_hash_add_key(ngx_hash_keys_arrays_t *ha, ngx_str_t *key, void *value,
             }
 
             if (ngx_strncmp(key->data, name[i].data, last) == 0) {
-                return NJET_BUSY;
+                return NJT_BUSY;
             }
         }
 
     } else {
         if (ngx_array_init(&ha->keys_hash[k], ha->temp_pool, 4,
                            sizeof(ngx_str_t))
-            != NJET_OK)
+            != NJT_OK)
         {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
     name = ngx_array_push(&ha->keys_hash[k]);
     if (name == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *name = *key;
 
     hk = ngx_array_push(&ha->keys);
     if (hk == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     hk->key = *key;
     hk->key_hash = ngx_hash_key(key->data, last);
     hk->value = value;
 
-    return NJET_OK;
+    return NJT_OK;
 
 
 wildcard:
@@ -876,28 +876,28 @@ wildcard:
                 }
 
                 if (ngx_strncmp(&key->data[1], name[i].data, len) == 0) {
-                    return NJET_BUSY;
+                    return NJT_BUSY;
                 }
             }
 
         } else {
             if (ngx_array_init(&ha->keys_hash[k], ha->temp_pool, 4,
                                sizeof(ngx_str_t))
-                != NJET_OK)
+                != NJT_OK)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
         }
 
         name = ngx_array_push(&ha->keys_hash[k]);
         if (name == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         name->len = last - 1;
         name->data = ngx_pnalloc(ha->temp_pool, name->len);
         if (name->data == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ngx_memcpy(name->data, &key->data[1], name->len);
@@ -913,7 +913,7 @@ wildcard:
 
         p = ngx_pnalloc(ha->temp_pool, last);
         if (p == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         len = 0;
@@ -949,7 +949,7 @@ wildcard:
 
         p = ngx_pnalloc(ha->temp_pool, last);
         if (p == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ngx_cpystrn(p, key->data, last);
@@ -972,26 +972,26 @@ wildcard:
             }
 
             if (ngx_strncmp(key->data + skip, name[i].data, len) == 0) {
-                return NJET_BUSY;
+                return NJT_BUSY;
             }
         }
 
     } else {
-        if (ngx_array_init(keys, ha->temp_pool, 4, sizeof(ngx_str_t)) != NJET_OK)
+        if (ngx_array_init(keys, ha->temp_pool, 4, sizeof(ngx_str_t)) != NJT_OK)
         {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
     name = ngx_array_push(keys);
     if (name == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     name->len = last - skip;
     name->data = ngx_pnalloc(ha->temp_pool, name->len);
     if (name->data == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_memcpy(name->data, key->data + skip, name->len);
@@ -1001,7 +1001,7 @@ wildcard:
 
     hk = ngx_array_push(hwc);
     if (hk == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     hk->key.len = last - 1;
@@ -1009,5 +1009,5 @@ wildcard:
     hk->key_hash = 0;
     hk->value = value;
 
-    return NJET_OK;
+    return NJT_OK;
 }

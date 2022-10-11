@@ -3,6 +3,6 @@
 # Copyright (C) Nginx, Inc.
 
 
-have=NJET_SUPPRESS_WARN . auto/have
+have=NJT_SUPPRESS_WARN . auto/have
 
-have=NJET_SMP . auto/have
+have=NJT_SMP . auto/have

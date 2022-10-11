@@ -28,7 +28,7 @@ ngx_parse_http_time(u_char *value, size_t len)
     fmt = 0;
     end = value + len;
 
-#if (NJET_SUPPRESS_WARN)
+#if (NJT_SUPPRESS_WARN)
     day = 32;
     year = 2038;
 #endif
@@ -51,12 +51,12 @@ ngx_parse_http_time(u_char *value, size_t len)
     }
 
     if (end - p < 18) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (fmt != isoc) {
         if (*p < '0' || *p > '9' || *(p + 1) < '0' || *(p + 1) > '9') {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         day = (*p - '0') * 10 + (*(p + 1) - '0');
@@ -64,7 +64,7 @@ ngx_parse_http_time(u_char *value, size_t len)
 
         if (*p == ' ') {
             if (end - p < 18) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
             fmt = rfc822;
 
@@ -72,7 +72,7 @@ ngx_parse_http_time(u_char *value, size_t len)
             fmt = rfc850;
 
         } else {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         p++;
@@ -113,13 +113,13 @@ ngx_parse_http_time(u_char *value, size_t len)
         break;
 
     default:
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     p += 3;
 
     if ((fmt == rfc822 && *p != ' ') || (fmt == rfc850 && *p != '-')) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     p++;
@@ -129,7 +129,7 @@ ngx_parse_http_time(u_char *value, size_t len)
             || *(p + 2) < '0' || *(p + 2) > '9'
             || *(p + 3) < '0' || *(p + 3) > '9')
         {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         year = (*p - '0') * 1000 + (*(p + 1) - '0') * 100
@@ -138,7 +138,7 @@ ngx_parse_http_time(u_char *value, size_t len)
 
     } else if (fmt == rfc850) {
         if (*p < '0' || *p > '9' || *(p + 1) < '0' || *(p + 1) > '9') {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         year = (*p - '0') * 10 + (*(p + 1) - '0');
@@ -152,52 +152,52 @@ ngx_parse_http_time(u_char *value, size_t len)
         }
 
         if (*p < '0' || *p > '9') {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         day = *p++ - '0';
 
         if (*p != ' ') {
             if (*p < '0' || *p > '9') {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             day = day * 10 + (*p++ - '0');
         }
 
         if (end - p < 14) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
     if (*p++ != ' ') {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (*p < '0' || *p > '9' || *(p + 1) < '0' || *(p + 1) > '9') {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     hour = (*p - '0') * 10 + (*(p + 1) - '0');
     p += 2;
 
     if (*p++ != ':') {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (*p < '0' || *p > '9' || *(p + 1) < '0' || *(p + 1) > '9') {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     min = (*p - '0') * 10 + (*(p + 1) - '0');
     p += 2;
 
     if (*p++ != ':') {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (*p < '0' || *p > '9' || *(p + 1) < '0' || *(p + 1) > '9') {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     sec = (*p - '0') * 10 + (*(p + 1) - '0');
@@ -206,14 +206,14 @@ ngx_parse_http_time(u_char *value, size_t len)
         p += 2;
 
         if (*p++ != ' ') {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         if (*p < '0' || *p > '9' || *(p + 1) < '0' || *(p + 1) > '9'
             || *(p + 2) < '0' || *(p + 2) > '9'
             || *(p + 3) < '0' || *(p + 3) > '9')
         {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         year = (*p - '0') * 1000 + (*(p + 1) - '0') * 100
@@ -221,16 +221,16 @@ ngx_parse_http_time(u_char *value, size_t len)
     }
 
     if (hour > 23 || min > 59 || sec > 59) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (day == 29 && month == 1) {
         if ((year & 3) || ((year % 100 == 0) && (year % 400) != 0)) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
     } else if (day > mday[month]) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     /*
@@ -265,10 +265,10 @@ ngx_parse_http_time(u_char *value, size_t len)
 
             - 719527 + 31 + 28) * 86400 + hour * 3600 + min * 60 + sec;
 
-#if (NJET_TIME_T_SIZE <= 4)
+#if (NJT_TIME_T_SIZE <= 4)
 
     if (time > 0x7fffffff) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
 #endif

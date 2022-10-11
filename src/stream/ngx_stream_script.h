@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_STREAM_SCRIPT_H_INCLUDED_
-#define _NJET_STREAM_SCRIPT_H_INCLUDED_
+#ifndef _NJT_STREAM_SCRIPT_H_INCLUDED_
+#define _NJT_STREAM_SCRIPT_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -134,4 +134,4 @@ void ngx_stream_script_copy_var_code(ngx_stream_script_engine_t *e);
 size_t ngx_stream_script_copy_capture_len_code(ngx_stream_script_engine_t *e);
 void ngx_stream_script_copy_capture_code(ngx_stream_script_engine_t *e);
 
-#endif /* _NJET_STREAM_SCRIPT_H_INCLUDED_ */
+#endif /* _NJT_STREAM_SCRIPT_H_INCLUDED_ */

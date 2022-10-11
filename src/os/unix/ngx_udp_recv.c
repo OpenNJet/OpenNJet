@@ -22,14 +22,14 @@ ngx_udp_unix_recv(ngx_connection_t *c, u_char *buf, size_t size)
     do {
         n = recv(c->fd, buf, size, 0);
 
-        ngx_log_debug3(NJET_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug3(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "recv: fd:%d %z of %uz", c->fd, n, size);
 
         if (n >= 0) {
 
-#if (NJET_HAVE_KQUEUE)
+#if (NJT_HAVE_KQUEUE)
 
-            if (ngx_event_flags & NJET_USE_KQUEUE_EVENT) {
+            if (ngx_event_flags & NJT_USE_KQUEUE_EVENT) {
                 rev->available -= n;
 
                 /*
@@ -50,21 +50,21 @@ ngx_udp_unix_recv(ngx_connection_t *c, u_char *buf, size_t size)
 
         err = ngx_socket_errno;
 
-        if (err == NJET_EAGAIN || err == NJET_EINTR) {
-            ngx_log_debug0(NJET_LOG_DEBUG_EVENT, c->log, err,
+        if (err == NJT_EAGAIN || err == NJT_EINTR) {
+            ngx_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, err,
                            "recv() not ready");
-            n = NJET_AGAIN;
+            n = NJT_AGAIN;
 
         } else {
             n = ngx_connection_error(c, err, "recv() failed");
             break;
         }
 
-    } while (err == NJET_EINTR);
+    } while (err == NJT_EINTR);
 
     rev->ready = 0;
 
-    if (n == NJET_ERROR) {
+    if (n == NJT_ERROR) {
         rev->error = 1;
     }
 

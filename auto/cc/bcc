@@ -40,10 +40,10 @@ CFLAGS="$CFLAGS -q"
 
 
 # precompiled headers
-CORE_DEPS="$CORE_DEPS $NJET_OBJS/ngx_config.csm"
-NJET_PCH="$NJET_OBJS/ngx_config.csm"
-NJET_BUILD_PCH="-H=$NJET_OBJS/ngx_config.csm"
-NJET_USE_PCH="-Hu -H=$NJET_OBJS/ngx_config.csm"
+CORE_DEPS="$CORE_DEPS $NJT_OBJS/ngx_config.csm"
+NJT_PCH="$NJT_OBJS/ngx_config.csm"
+NJT_BUILD_PCH="-H=$NJT_OBJS/ngx_config.csm"
+NJT_USE_PCH="-Hu -H=$NJT_OBJS/ngx_config.csm"
 
 
 # Win32 GUI mode application
@@ -51,11 +51,11 @@ NJET_USE_PCH="-Hu -H=$NJET_OBJS/ngx_config.csm"
 
 
 # the resource file
-NJET_RES="$NJET_OBJS/njet.res"
-NJET_RCC="brcc32 -fo$NJET_OBJS/njet.res \$(CORE_INCS) $NJET_WIN32_RC"
+NJT_RES="$NJT_OBJS/njet.res"
+NJT_RCC="brcc32 -fo$NJT_OBJS/njet.res \$(CORE_INCS) $NJT_WIN32_RC"
 # the pragma allows to link the resource file using bcc32 and
 # to avoid the direct ilink32 calling and the c0w32.obj's WinMain/main problem
-NJET_PRAGMA="#pragma resource \"$NJET_OBJS/njet.res\""
+NJT_PRAGMA="#pragma resource \"$NJT_OBJS/njet.res\""
 
 
 ngx_include_opt="-I"

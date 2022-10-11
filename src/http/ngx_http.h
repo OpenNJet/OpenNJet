@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_HTTP_H_INCLUDED_
-#define _NJET_HTTP_H_INCLUDED_
+#ifndef _NJT_HTTP_H_INCLUDED_
+#define _NJT_HTTP_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -35,16 +35,16 @@ typedef u_char *(*ngx_http_log_handler_pt)(ngx_http_request_t *r,
 #include <ngx_http_upstream_round_robin.h>
 #include <ngx_http_core_module.h>
 
-#if (NJET_HTTP_V2)
+#if (NJT_HTTP_V2)
 #include <ngx_http_v2.h>
 #endif
-#if (NJET_HTTP_CACHE)
+#if (NJT_HTTP_CACHE)
 #include <ngx_http_cache.h>
 #endif
-#if (NJET_HTTP_SSI)
+#if (NJT_HTTP_SSI)
 #include <ngx_http_ssi_filter_module.h>
 #endif
-#if (NJET_HTTP_SSL)
+#if (NJT_HTTP_SSL)
 #include <ngx_http_ssl_module.h>
 #endif
 
@@ -85,10 +85,10 @@ ngx_int_t ngx_http_add_listen(ngx_conf_t *cf, ngx_http_core_srv_conf_t *cscf,
 void ngx_http_init_connection(ngx_connection_t *c);
 void ngx_http_close_connection(ngx_connection_t *c);
 
-#if (NJET_HTTP_SSL && defined SSL_CTRL_SET_TLSEXT_HOSTNAME)
+#if (NJT_HTTP_SSL && defined SSL_CTRL_SET_TLSEXT_HOSTNAME)
 int ngx_http_ssl_servername(ngx_ssl_conn_t *ssl_conn, int *ad, void *arg);
 #endif
-#if (NJET_HTTP_SSL && defined SSL_R_CERT_CB_ERROR)
+#if (NJT_HTTP_SSL && defined SSL_R_CERT_CB_ERROR)
 int ngx_http_ssl_certificate(ngx_ssl_conn_t *ssl_conn, void *arg);
 #endif
 
@@ -131,8 +131,8 @@ void ngx_http_empty_handler(ngx_event_t *wev);
 void ngx_http_request_empty_handler(ngx_http_request_t *r);
 
 
-#define NJET_HTTP_LAST   1
-#define NJET_HTTP_FLUSH  2
+#define NJT_HTTP_LAST   1
+#define NJT_HTTP_FLUSH  2
 
 ngx_int_t ngx_http_send_special(ngx_http_request_t *r, ngx_uint_t flags);
 
@@ -162,12 +162,12 @@ char *ngx_http_merge_types(ngx_conf_t *cf, ngx_array_t **keys,
 ngx_int_t ngx_http_set_default_types(ngx_conf_t *cf, ngx_array_t **types,
     ngx_str_t *default_type);
 
-#if (NJET_HTTP_DEGRADATION)
+#if (NJT_HTTP_DEGRADATION)
 ngx_uint_t  ngx_http_degraded(ngx_http_request_t *);
 #endif
 
 
-#if (NJET_HTTP_V2)
+#if (NJT_HTTP_V2)
 ngx_int_t ngx_http_huff_decode(u_char *state, u_char *src, size_t len,
     u_char **dst, ngx_uint_t last, ngx_log_t *log);
 size_t ngx_http_huff_encode(u_char *src, size_t len, u_char *dst,
@@ -185,4 +185,4 @@ extern ngx_http_output_body_filter_pt    ngx_http_top_body_filter;
 extern ngx_http_request_body_filter_pt   ngx_http_top_request_body_filter;
 
 
-#endif /* _NJET_HTTP_H_INCLUDED_ */
+#endif /* _NJT_HTTP_H_INCLUDED_ */

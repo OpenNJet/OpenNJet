@@ -6,13 +6,13 @@
 echo "checking for perl"
 
 
-NJET_PERL_VER=`$NJET_PERL -v 2>&1 | grep '^This is perl' 2>&1 \
+NJT_PERL_VER=`$NJT_PERL -v 2>&1 | grep '^This is perl' 2>&1 \
                                 | sed -e 's/^This is perl, \(.*\)/\1/'`
 
-if test -n "$NJET_PERL_VER"; then
-    echo " + perl version: $NJET_PERL_VER"
+if test -n "$NJT_PERL_VER"; then
+    echo " + perl version: $NJT_PERL_VER"
 
-    if [ "`$NJET_PERL -e 'use 5.008006; print "OK"'`" != "OK" ]; then
+    if [ "`$NJT_PERL -e 'use 5.008006; print "OK"'`" != "OK" ]; then
         echo
         echo "$0: error: perl 5.8.6 or higher is required"
         echo
@@ -20,7 +20,7 @@ if test -n "$NJET_PERL_VER"; then
         exit 1;
     fi
 
-    if [ "`$NJET_PERL -MExtUtils::Embed -e 'print "OK"'`" != "OK" ]; then
+    if [ "`$NJT_PERL -MExtUtils::Embed -e 'print "OK"'`" != "OK" ]; then
         echo
         echo "$0: error: perl module ExtUtils::Embed is required"
         echo
@@ -28,35 +28,35 @@ if test -n "$NJET_PERL_VER"; then
         exit 1;
     fi
 
-    NJET_PM_CFLAGS=`$NJET_PERL -MExtUtils::Embed -e ccopts`
-    NJET_PM_LDFLAGS=`$NJET_PERL -MConfig -e 'print $Config{lddlflags}'`
+    NJT_PM_CFLAGS=`$NJT_PERL -MExtUtils::Embed -e ccopts`
+    NJT_PM_LDFLAGS=`$NJT_PERL -MConfig -e 'print $Config{lddlflags}'`
 
-    NJET_PERL_CFLAGS="$CFLAGS `$NJET_PERL -MExtUtils::Embed -e ccopts`"
+    NJT_PERL_CFLAGS="$CFLAGS `$NJT_PERL -MExtUtils::Embed -e ccopts`"
 
     # gcc 4.1/4.2 warn about unused values in pTHX_
-    NJET_PERL_CFLAGS=`echo $NJET_PERL_CFLAGS \
+    NJT_PERL_CFLAGS=`echo $NJT_PERL_CFLAGS \
                      | sed -e 's/-Wunused-value/-Wno-unused-value/'`
     # icc8 warns 'declaration hides parameter "my_perl"' in ENTER and LEAVE
-    NJET_PERL_CFLAGS=`echo $NJET_PERL_CFLAGS \
+    NJT_PERL_CFLAGS=`echo $NJT_PERL_CFLAGS \
                      | sed -e 's/-wd171/-wd171 -wd1599/'`
 
-    ngx_perl_ldopts=`$NJET_PERL -MExtUtils::Embed -e ldopts`
+    ngx_perl_ldopts=`$NJT_PERL -MExtUtils::Embed -e ldopts`
 
-    ngx_perl_dlext=`$NJET_PERL -MConfig -e 'print $Config{dlext}'`
+    ngx_perl_dlext=`$NJT_PERL -MConfig -e 'print $Config{dlext}'`
     ngx_perl_libdir="src/http/modules/perl/blib/arch/auto"
     ngx_perl_module="$ngx_perl_libdir/njet/njet.$ngx_perl_dlext"
 
-    if $NJET_PERL -V:usemultiplicity | grep define > /dev/null; then
-        have=NJET_HAVE_PERL_MULTIPLICITY . auto/have
+    if $NJT_PERL -V:usemultiplicity | grep define > /dev/null; then
+        have=NJT_HAVE_PERL_MULTIPLICITY . auto/have
         echo " + perl interpreter multiplicity found"
     fi
 
-    if $NJET_PERL -V:useithreads | grep undef > /dev/null; then
+    if $NJT_PERL -V:useithreads | grep undef > /dev/null; then
         # FreeBSD port wants to link with -pthread non-threaded perl
         ngx_perl_ldopts=`echo $ngx_perl_ldopts | sed 's/ -pthread//'`
     fi
 
-    if [ "$NJET_SYSTEM" = "Darwin" ]; then
+    if [ "$NJT_SYSTEM" = "Darwin" ]; then
         # OS X system perl wants to link universal binaries
         ngx_perl_ldopts=`echo $ngx_perl_ldopts \
                          | sed -e 's/-arch i386//' -e 's/-arch x86_64//'`
@@ -66,12 +66,12 @@ if test -n "$NJET_PERL_VER"; then
         CORE_LINK="$CORE_LINK $ngx_perl_ldopts"
     fi
 
-    NJET_LIB_PERL="$ngx_perl_ldopts"
+    NJT_LIB_PERL="$ngx_perl_ldopts"
 
-    if test -n "$NJET_PERL_MODULES"; then
-        have=NJET_PERL_MODULES value="(u_char *) \"$NJET_PERL_MODULES\""
+    if test -n "$NJT_PERL_MODULES"; then
+        have=NJT_PERL_MODULES value="(u_char *) \"$NJT_PERL_MODULES\""
         . auto/define
-        NJET_PERL_MODULES_MAN=$NJET_PERL_MODULES/man3
+        NJT_PERL_MODULES_MAN=$NJT_PERL_MODULES/man3
     fi
 
 else

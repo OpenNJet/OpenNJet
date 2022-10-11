@@ -5,15 +5,15 @@
  */
 
 
-#ifndef _NJET_RADIX_TREE_H_INCLUDED_
-#define _NJET_RADIX_TREE_H_INCLUDED_
+#ifndef _NJT_RADIX_TREE_H_INCLUDED_
+#define _NJT_RADIX_TREE_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#define NJET_RADIX_NO_VALUE   (uintptr_t) -1
+#define NJT_RADIX_NO_VALUE   (uintptr_t) -1
 
 typedef struct ngx_radix_node_s  ngx_radix_node_t;
 
@@ -43,7 +43,7 @@ ngx_int_t ngx_radix32tree_delete(ngx_radix_tree_t *tree,
     uint32_t key, uint32_t mask);
 uintptr_t ngx_radix32tree_find(ngx_radix_tree_t *tree, uint32_t key);
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
 ngx_int_t ngx_radix128tree_insert(ngx_radix_tree_t *tree,
     u_char *key, u_char *mask, uintptr_t value);
 ngx_int_t ngx_radix128tree_delete(ngx_radix_tree_t *tree,
@@ -52,4 +52,4 @@ uintptr_t ngx_radix128tree_find(ngx_radix_tree_t *tree, u_char *key);
 #endif
 
 
-#endif /* _NJET_RADIX_TREE_H_INCLUDED_ */
+#endif /* _NJT_RADIX_TREE_H_INCLUDED_ */

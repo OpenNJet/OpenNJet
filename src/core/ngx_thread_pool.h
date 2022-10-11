@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_THREAD_POOL_H_INCLUDED_
-#define _NJET_THREAD_POOL_H_INCLUDED_
+#ifndef _NJT_THREAD_POOL_H_INCLUDED_
+#define _NJT_THREAD_POOL_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -33,4 +33,4 @@ ngx_thread_task_t *ngx_thread_task_alloc(ngx_pool_t *pool, size_t size);
 ngx_int_t ngx_thread_task_post(ngx_thread_pool_t *tp, ngx_thread_task_t *task);
 
 
-#endif /* _NJET_THREAD_POOL_H_INCLUDED_ */
+#endif /* _NJT_THREAD_POOL_H_INCLUDED_ */

@@ -9,12 +9,12 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
-#define NJET_HTTP_SSI_ERROR          1
+#define NJT_HTTP_SSI_ERROR          1
 
-#define NJET_HTTP_SSI_DATE_LEN       2048
+#define NJT_HTTP_SSI_DATE_LEN       2048
 
-#define NJET_HTTP_SSI_ADD_PREFIX     1
-#define NJET_HTTP_SSI_ADD_ZERO       2
+#define NJT_HTTP_SSI_ADD_PREFIX     1
+#define NJT_HTTP_SSI_ADD_ZERO       2
 
 
 typedef struct {
@@ -121,52 +121,52 @@ static ngx_int_t ngx_http_ssi_filter_init(ngx_conf_t *cf);
 static ngx_command_t  ngx_http_ssi_filter_commands[] = {
 
     { ngx_string("ssi"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_HTTP_LIF_CONF
-                        |NJET_CONF_FLAG,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_HTTP_LIF_CONF
+                        |NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_ssi_loc_conf_t, enable),
       NULL },
 
     { ngx_string("ssi_silent_errors"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_ssi_loc_conf_t, silent_errors),
       NULL },
 
     { ngx_string("ssi_ignore_recycled_buffers"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_ssi_loc_conf_t, ignore_recycled_buffers),
       NULL },
 
     { ngx_string("ssi_min_file_chunk"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_size_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_ssi_loc_conf_t, min_file_chunk),
       NULL },
 
     { ngx_string("ssi_value_length"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_size_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_ssi_loc_conf_t, value_len),
       NULL },
 
     { ngx_string("ssi_types"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_1MORE,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_1MORE,
       ngx_http_types_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_ssi_loc_conf_t, types_keys),
       &ngx_http_html_default_types[0] },
 
     { ngx_string("ssi_last_modified"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_ssi_loc_conf_t, last_modified),
       NULL },
 
@@ -191,10 +191,10 @@ static ngx_http_module_t  ngx_http_ssi_filter_module_ctx = {
 
 
 ngx_module_t  ngx_http_ssi_filter_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_ssi_filter_module_ctx,       /* module context */
     ngx_http_ssi_filter_commands,          /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -202,7 +202,7 @@ ngx_module_t  ngx_http_ssi_filter_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -217,67 +217,67 @@ static ngx_str_t ngx_http_ssi_timefmt = ngx_string("%A, %d-%b-%Y %H:%M:%S %Z");
 static ngx_str_t ngx_http_ssi_null_string = ngx_null_string;
 
 
-#define  NJET_HTTP_SSI_INCLUDE_VIRTUAL  0
-#define  NJET_HTTP_SSI_INCLUDE_FILE     1
-#define  NJET_HTTP_SSI_INCLUDE_WAIT     2
-#define  NJET_HTTP_SSI_INCLUDE_SET      3
-#define  NJET_HTTP_SSI_INCLUDE_STUB     4
+#define  NJT_HTTP_SSI_INCLUDE_VIRTUAL  0
+#define  NJT_HTTP_SSI_INCLUDE_FILE     1
+#define  NJT_HTTP_SSI_INCLUDE_WAIT     2
+#define  NJT_HTTP_SSI_INCLUDE_SET      3
+#define  NJT_HTTP_SSI_INCLUDE_STUB     4
 
-#define  NJET_HTTP_SSI_ECHO_VAR         0
-#define  NJET_HTTP_SSI_ECHO_DEFAULT     1
-#define  NJET_HTTP_SSI_ECHO_ENCODING    2
+#define  NJT_HTTP_SSI_ECHO_VAR         0
+#define  NJT_HTTP_SSI_ECHO_DEFAULT     1
+#define  NJT_HTTP_SSI_ECHO_ENCODING    2
 
-#define  NJET_HTTP_SSI_CONFIG_ERRMSG    0
-#define  NJET_HTTP_SSI_CONFIG_TIMEFMT   1
+#define  NJT_HTTP_SSI_CONFIG_ERRMSG    0
+#define  NJT_HTTP_SSI_CONFIG_TIMEFMT   1
 
-#define  NJET_HTTP_SSI_SET_VAR          0
-#define  NJET_HTTP_SSI_SET_VALUE        1
+#define  NJT_HTTP_SSI_SET_VAR          0
+#define  NJT_HTTP_SSI_SET_VALUE        1
 
-#define  NJET_HTTP_SSI_IF_EXPR          0
+#define  NJT_HTTP_SSI_IF_EXPR          0
 
-#define  NJET_HTTP_SSI_BLOCK_NAME       0
+#define  NJT_HTTP_SSI_BLOCK_NAME       0
 
 
 static ngx_http_ssi_param_t  ngx_http_ssi_include_params[] = {
-    { ngx_string("virtual"), NJET_HTTP_SSI_INCLUDE_VIRTUAL, 0, 0 },
-    { ngx_string("file"), NJET_HTTP_SSI_INCLUDE_FILE, 0, 0 },
-    { ngx_string("wait"), NJET_HTTP_SSI_INCLUDE_WAIT, 0, 0 },
-    { ngx_string("set"), NJET_HTTP_SSI_INCLUDE_SET, 0, 0 },
-    { ngx_string("stub"), NJET_HTTP_SSI_INCLUDE_STUB, 0, 0 },
+    { ngx_string("virtual"), NJT_HTTP_SSI_INCLUDE_VIRTUAL, 0, 0 },
+    { ngx_string("file"), NJT_HTTP_SSI_INCLUDE_FILE, 0, 0 },
+    { ngx_string("wait"), NJT_HTTP_SSI_INCLUDE_WAIT, 0, 0 },
+    { ngx_string("set"), NJT_HTTP_SSI_INCLUDE_SET, 0, 0 },
+    { ngx_string("stub"), NJT_HTTP_SSI_INCLUDE_STUB, 0, 0 },
     { ngx_null_string, 0, 0, 0 }
 };
 
 
 static ngx_http_ssi_param_t  ngx_http_ssi_echo_params[] = {
-    { ngx_string("var"), NJET_HTTP_SSI_ECHO_VAR, 1, 0 },
-    { ngx_string("default"), NJET_HTTP_SSI_ECHO_DEFAULT, 0, 0 },
-    { ngx_string("encoding"), NJET_HTTP_SSI_ECHO_ENCODING, 0, 0 },
+    { ngx_string("var"), NJT_HTTP_SSI_ECHO_VAR, 1, 0 },
+    { ngx_string("default"), NJT_HTTP_SSI_ECHO_DEFAULT, 0, 0 },
+    { ngx_string("encoding"), NJT_HTTP_SSI_ECHO_ENCODING, 0, 0 },
     { ngx_null_string, 0, 0, 0 }
 };
 
 
 static ngx_http_ssi_param_t  ngx_http_ssi_config_params[] = {
-    { ngx_string("errmsg"), NJET_HTTP_SSI_CONFIG_ERRMSG, 0, 0 },
-    { ngx_string("timefmt"), NJET_HTTP_SSI_CONFIG_TIMEFMT, 0, 0 },
+    { ngx_string("errmsg"), NJT_HTTP_SSI_CONFIG_ERRMSG, 0, 0 },
+    { ngx_string("timefmt"), NJT_HTTP_SSI_CONFIG_TIMEFMT, 0, 0 },
     { ngx_null_string, 0, 0, 0 }
 };
 
 
 static ngx_http_ssi_param_t  ngx_http_ssi_set_params[] = {
-    { ngx_string("var"), NJET_HTTP_SSI_SET_VAR, 1, 0 },
-    { ngx_string("value"), NJET_HTTP_SSI_SET_VALUE, 1, 0 },
+    { ngx_string("var"), NJT_HTTP_SSI_SET_VAR, 1, 0 },
+    { ngx_string("value"), NJT_HTTP_SSI_SET_VALUE, 1, 0 },
     { ngx_null_string, 0, 0, 0 }
 };
 
 
 static ngx_http_ssi_param_t  ngx_http_ssi_if_params[] = {
-    { ngx_string("expr"), NJET_HTTP_SSI_IF_EXPR, 1, 0 },
+    { ngx_string("expr"), NJT_HTTP_SSI_IF_EXPR, 1, 0 },
     { ngx_null_string, 0, 0, 0 }
 };
 
 
 static ngx_http_ssi_param_t  ngx_http_ssi_block_params[] = {
-    { ngx_string("name"), NJET_HTTP_SSI_BLOCK_NAME, 1, 0 },
+    { ngx_string("name"), NJT_HTTP_SSI_BLOCK_NAME, 1, 0 },
     { ngx_null_string, 0, 0, 0 }
 };
 
@@ -298,11 +298,11 @@ static ngx_http_ssi_command_t  ngx_http_ssi_commands[] = {
 
     { ngx_string("if"), ngx_http_ssi_if, ngx_http_ssi_if_params, 0, 0, 0 },
     { ngx_string("elif"), ngx_http_ssi_if, ngx_http_ssi_if_params,
-                       NJET_HTTP_SSI_COND_IF, 0, 0 },
+                       NJT_HTTP_SSI_COND_IF, 0, 0 },
     { ngx_string("else"), ngx_http_ssi_else, ngx_http_ssi_no_params,
-                       NJET_HTTP_SSI_COND_IF, 0, 0 },
+                       NJT_HTTP_SSI_COND_IF, 0, 0 },
     { ngx_string("endif"), ngx_http_ssi_endif, ngx_http_ssi_no_params,
-                       NJET_HTTP_SSI_COND_ELSE, 0, 0 },
+                       NJT_HTTP_SSI_COND_ELSE, 0, 0 },
 
     { ngx_string("block"), ngx_http_ssi_block,
                        ngx_http_ssi_block_params, 0, 0, 0 },
@@ -316,10 +316,10 @@ static ngx_http_ssi_command_t  ngx_http_ssi_commands[] = {
 static ngx_http_variable_t  ngx_http_ssi_vars[] = {
 
     { ngx_string("date_local"), NULL, ngx_http_ssi_date_gmt_local_variable, 0,
-      NJET_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("date_gmt"), NULL, ngx_http_ssi_date_gmt_local_variable, 1,
-      NJET_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0 },
 
       ngx_http_null_variable
 };
@@ -343,7 +343,7 @@ ngx_http_ssi_header_filter(ngx_http_request_t *r)
 
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_ssi_ctx_t));
     if (ctx == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_http_set_ctx(r, ctx, ngx_http_ssi_filter_module);
@@ -352,12 +352,12 @@ ngx_http_ssi_header_filter(ngx_http_request_t *r)
     ctx->value_len = slcf->value_len;
     ctx->last_out = &ctx->out;
 
-    ctx->encoding = NJET_HTTP_SSI_ENTITY_ENCODING;
+    ctx->encoding = NJT_HTTP_SSI_ENTITY_ENCODING;
     ctx->output = 1;
 
     ctx->params.elts = ctx->params_array;
     ctx->params.size = sizeof(ngx_table_elt_t);
-    ctx->params.nalloc = NJET_HTTP_SSI_PARAMS_N;
+    ctx->params.nalloc = NJT_HTTP_SSI_PARAMS_N;
     ctx->params.pool = r->pool;
 
     ctx->timefmt = ngx_http_ssi_timefmt;
@@ -400,7 +400,7 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     ngx_http_ssi_command_t    *cmd;
     ngx_http_ssi_loc_conf_t   *slcf;
     ngx_http_ssi_main_conf_t  *smcf;
-    ngx_str_t                 *params[NJET_HTTP_SSI_MAX_PARAMS + 1];
+    ngx_str_t                 *params[NJT_HTTP_SSI_MAX_PARAMS + 1];
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_ssi_filter_module);
 
@@ -416,33 +416,33 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     /* add the incoming chain to the chain ctx->in */
 
     if (in) {
-        if (ngx_chain_add_copy(r->pool, &ctx->in, in) != NJET_OK) {
-            return NJET_ERROR;
+        if (ngx_chain_add_copy(r->pool, &ctx->in, in) != NJT_OK) {
+            return NJT_ERROR;
         }
     }
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http ssi filter \"%V?%V\"", &r->uri, &r->args);
 
     if (ctx->wait) {
 
         if (r != r->connection->data) {
-            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "http ssi filter wait \"%V?%V\" non-active",
                            &ctx->wait->uri, &ctx->wait->args);
 
-            return NJET_AGAIN;
+            return NJT_AGAIN;
         }
 
         if (ctx->wait->done) {
-            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "http ssi filter wait \"%V?%V\" done",
                            &ctx->wait->uri, &ctx->wait->args);
 
             ctx->wait = NULL;
 
         } else {
-            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "http ssi filter wait \"%V?%V\"",
                            &ctx->wait->uri, &ctx->wait->args);
 
@@ -469,16 +469,16 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
         while (ctx->pos < ctx->buf->last) {
 
-            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "saved: %uz state: %ui", ctx->saved, ctx->state);
 
             rc = ngx_http_ssi_parse(r, ctx);
 
-            ngx_log_debug4(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+            ngx_log_debug4(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "parse: %i, looked: %uz %p-%p",
                            rc, ctx->looked, ctx->copy_start, ctx->copy_end);
 
-            if (rc == NJET_ERROR) {
+            if (rc == NJT_ERROR) {
                 return rc;
             }
 
@@ -486,7 +486,7 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
                 if (ctx->output) {
 
-                    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+                    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                                    "saved: %uz", ctx->saved);
 
                     if (ctx->saved) {
@@ -500,12 +500,12 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                         } else {
                             b = ngx_calloc_buf(r->pool);
                             if (b == NULL) {
-                                return NJET_ERROR;
+                                return NJT_ERROR;
                             }
 
                             cl = ngx_alloc_chain_link(r->pool);
                             if (cl == NULL) {
-                                return NJET_ERROR;
+                                return NJT_ERROR;
                             }
 
                             cl->buf = b;
@@ -529,12 +529,12 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                     } else {
                         b = ngx_alloc_buf(r->pool);
                         if (b == NULL) {
-                            return NJET_ERROR;
+                            return NJT_ERROR;
                         }
 
                         cl = ngx_alloc_chain_link(r->pool);
                         if (cl == NULL) {
-                            return NJET_ERROR;
+                            return NJT_ERROR;
                         }
 
                         cl->buf = b;
@@ -572,7 +572,7 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                                ctx->saved + (ctx->copy_end - ctx->copy_start));
 
                         if (b == NULL) {
-                            return NJET_ERROR;
+                            return NJT_ERROR;
                         }
 
                         if (ctx->saved) {
@@ -585,7 +585,7 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
                         cl = ngx_alloc_chain_link(r->pool);
                         if (cl == NULL) {
-                            return NJET_ERROR;
+                            return NJT_ERROR;
                         }
 
                         cl->buf = b;
@@ -619,14 +619,14 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                 ctx->copy_end = NULL;
             }
 
-            if (rc == NJET_AGAIN) {
+            if (rc == NJT_AGAIN) {
                 continue;
             }
 
 
             b = NULL;
 
-            if (rc == NJET_OK) {
+            if (rc == NJT_OK) {
 
                 smcf = ngx_http_get_module_main_conf(r,
                                                    ngx_http_ssi_filter_module);
@@ -636,7 +636,7 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
                 if (cmd == NULL) {
                     if (ctx->output) {
-                        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                        ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                                       "invalid SSI command: \"%V\"",
                                       &ctx->command);
                         goto ssi_error;
@@ -662,12 +662,12 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                         b = ngx_create_temp_buf(r->pool, len);
 
                         if (b == NULL) {
-                            return NJET_ERROR;
+                            return NJT_ERROR;
                         }
 
                         cl = ngx_alloc_chain_link(r->pool);
                         if (cl == NULL) {
-                            return NJET_ERROR;
+                            return NJT_ERROR;
                         }
 
                         cl->buf = b;
@@ -724,21 +724,21 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                     && (ctx->conditional == 0
                         || ctx->conditional > cmd->conditional))
                 {
-                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                                   "invalid context of SSI command: \"%V\"",
                                   &ctx->command);
                     goto ssi_error;
                 }
 
-                if (ctx->params.nelts > NJET_HTTP_SSI_MAX_PARAMS) {
-                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                if (ctx->params.nelts > NJT_HTTP_SSI_MAX_PARAMS) {
+                    ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                                   "too many SSI command parameters: \"%V\"",
                                   &ctx->command);
                     goto ssi_error;
                 }
 
                 ngx_memzero(params,
-                           (NJET_HTTP_SSI_MAX_PARAMS + 1) * sizeof(ngx_str_t *));
+                           (NJT_HTTP_SSI_MAX_PARAMS + 1) * sizeof(ngx_str_t *));
 
                 param = ctx->params.elts;
 
@@ -755,7 +755,7 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
                         if (!prm->multiple) {
                             if (params[prm->index]) {
-                                ngx_log_error(NJET_LOG_ERR,
+                                ngx_log_error(NJT_LOG_ERR,
                                               r->connection->log, 0,
                                               "duplicate \"%V\" parameter "
                                               "in \"%V\" SSI command",
@@ -779,7 +779,7 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                     }
 
                     if (prm->name.len == 0) {
-                        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                        ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                                       "invalid parameter name: \"%V\" "
                                       "in \"%V\" SSI command",
                                       &param[i].key, &ctx->command);
@@ -790,7 +790,7 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
                 for (prm = cmd->params; prm->name.len; prm++) {
                     if (prm->mandatory && params[prm->index] == 0) {
-                        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                        ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                                       "mandatory \"%V\" parameter is absent "
                                       "in \"%V\" SSI command",
                                       &prm->name, &ctx->command);
@@ -801,28 +801,28 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
                 if (cmd->flush && ctx->out) {
 
-                    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+                    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                                    "ssi flush");
 
-                    if (ngx_http_ssi_output(r, ctx) == NJET_ERROR) {
-                        return NJET_ERROR;
+                    if (ngx_http_ssi_output(r, ctx) == NJT_ERROR) {
+                        return NJT_ERROR;
                     }
                 }
 
                 rc = cmd->handler(r, ctx, params);
 
-                if (rc == NJET_OK) {
+                if (rc == NJT_OK) {
                     continue;
                 }
 
-                if (rc == NJET_DONE || rc == NJET_AGAIN || rc == NJET_ERROR) {
+                if (rc == NJT_DONE || rc == NJT_AGAIN || rc == NJT_ERROR) {
                     ngx_http_ssi_buffered(r, ctx);
                     return rc;
                 }
             }
 
 
-            /* rc == NJET_HTTP_SSI_ERROR */
+            /* rc == NJT_HTTP_SSI_ERROR */
 
     ssi_error:
 
@@ -839,12 +839,12 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
             } else {
                 b = ngx_calloc_buf(r->pool);
                 if (b == NULL) {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
 
                 cl = ngx_alloc_chain_link(r->pool);
                 if (cl == NULL) {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
 
                 cl->buf = b;
@@ -872,12 +872,12 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
                 } else {
                     b = ngx_calloc_buf(r->pool);
                     if (b == NULL) {
-                        return NJET_ERROR;
+                        return NJT_ERROR;
                     }
 
                     cl = ngx_alloc_chain_link(r->pool);
                     if (cl == NULL) {
-                        return NJET_ERROR;
+                        return NJT_ERROR;
                     }
 
                     cl->buf = b;
@@ -904,7 +904,7 @@ ngx_http_ssi_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
     }
 
     if (ctx->out == NULL && ctx->busy == NULL) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     return ngx_http_ssi_output(r, ctx);
@@ -921,13 +921,13 @@ ngx_http_ssi_output(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
 #if 1
     b = NULL;
     for (cl = ctx->out; cl; cl = cl->next) {
-        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "ssi out: %p %p", cl->buf, cl->buf->pos);
         if (cl->buf == b) {
-            ngx_log_error(NJET_LOG_ALERT, r->connection->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, r->connection->log, 0,
                           "the same buf was used in ssi");
             ngx_debug_point();
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
         b = cl->buf;
     }
@@ -979,10 +979,10 @@ static void
 ngx_http_ssi_buffered(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
 {
     if (ctx->in || ctx->buf) {
-        r->buffered |= NJET_HTTP_SSI_BUFFERED;
+        r->buffered |= NJT_HTTP_SSI_BUFFERED;
 
     } else {
-        r->buffered &= ~NJET_HTTP_SSI_BUFFERED;
+        r->buffered &= ~NJT_HTTP_SSI_BUFFERED;
     }
 }
 
@@ -1032,7 +1032,7 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
                 ctx->copy_start = ctx->buf->pos;
             }
 
-            return NJET_AGAIN;
+            return NJT_AGAIN;
 
         tag_started:
 
@@ -1145,9 +1145,9 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
             default:
                 ctx->command.len = 1;
                 ctx->command.data = ngx_pnalloc(r->pool,
-                                                NJET_HTTP_SSI_COMMAND_LEN);
+                                                NJT_HTTP_SSI_COMMAND_LEN);
                 if (ctx->command.data == NULL) {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
 
                 ctx->command.data[0] = ch;
@@ -1177,8 +1177,8 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
                 break;
 
             default:
-                if (ctx->command.len == NJET_HTTP_SSI_COMMAND_LEN) {
-                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                if (ctx->command.len == NJT_HTTP_SSI_COMMAND_LEN) {
+                    ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                                   "the \"%V%c...\" SSI command is too long",
                                   &ctx->command, ch);
 
@@ -1207,14 +1207,14 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
             default:
                 ctx->param = ngx_array_push(&ctx->params);
                 if (ctx->param == NULL) {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
 
                 ctx->param->key.len = 1;
                 ctx->param->key.data = ngx_pnalloc(r->pool,
-                                                   NJET_HTTP_SSI_PARAM_LEN);
+                                                   NJT_HTTP_SSI_PARAM_LEN);
                 if (ctx->param->key.data == NULL) {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
 
                 ctx->param->key.data[0] = ch;
@@ -1225,7 +1225,7 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
                     ctx->param->value.data = ngx_pnalloc(r->pool,
                                                          ctx->value_len + 1);
                     if (ctx->param->value.data == NULL) {
-                        return NJET_ERROR;
+                        return NJT_ERROR;
                     }
 
                 } else {
@@ -1254,16 +1254,16 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
             case '-':
                 state = ssi_error_end0_state;
 
-                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                               "unexpected \"-\" symbol after \"%V\" "
                               "parameter in \"%V\" SSI command",
                               &ctx->param->key, &ctx->command);
                 break;
 
             default:
-                if (ctx->param->key.len == NJET_HTTP_SSI_PARAM_LEN) {
+                if (ctx->param->key.len == NJT_HTTP_SSI_PARAM_LEN) {
                     state = ssi_error_state;
-                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                                   "too long \"%V%c...\" parameter in "
                                   "\"%V\" SSI command",
                                   &ctx->param->key, ch, &ctx->command);
@@ -1294,7 +1294,7 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
                     state = ssi_error_state;
                 }
 
-                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                               "unexpected \"%c\" symbol after \"%V\" "
                               "parameter in \"%V\" SSI command",
                               ch, &ctx->param->key, &ctx->command);
@@ -1326,7 +1326,7 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
                     state = ssi_error_state;
                 }
 
-                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                               "unexpected \"%c\" symbol before value of "
                               "\"%V\" parameter in \"%V\" SSI command",
                               ch, &ctx->param->key, &ctx->command);
@@ -1349,7 +1349,7 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
 
             default:
                 if (ctx->param->value.len == ctx->value_len) {
-                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                                   "too long \"%V%c...\" value of \"%V\" "
                                   "parameter in \"%V\" SSI command",
                                   &ctx->param->value, ch, &ctx->param->key,
@@ -1377,7 +1377,7 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
 
             default:
                 if (ctx->param->value.len == ctx->value_len) {
-                    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                    ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                                   "too long \"%V%c...\" value of \"%V\" "
                                   "parameter in \"%V\" SSI command",
                                   &ctx->param->value, ch, &ctx->param->key,
@@ -1395,7 +1395,7 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
             state = ctx->saved_state;
 
             if (ctx->param->value.len == ctx->value_len) {
-                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                               "too long \"%V%c...\" value of \"%V\" "
                               "parameter in \"%V\" SSI command",
                               &ctx->param->value, ch, &ctx->param->key,
@@ -1413,7 +1413,7 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
             if (ctx->param->value.len + 1 < ctx->value_len / 2) {
                 value = ngx_pnalloc(r->pool, ctx->param->value.len + 1);
                 if (value == NULL) {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
 
                 ngx_memcpy(value, ctx->param->value.data,
@@ -1439,7 +1439,7 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
                 break;
 
             default:
-                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                               "unexpected \"%c\" symbol after \"%V\" value "
                               "of \"%V\" parameter in \"%V\" SSI command",
                               ch, &ctx->param->value, &ctx->param->key,
@@ -1457,7 +1457,7 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
                 break;
 
             default:
-                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                               "unexpected \"%c\" symbol in \"%V\" SSI command",
                               ch, &ctx->command);
                 state = ssi_error_state;
@@ -1478,10 +1478,10 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
                     ctx->copy_start = ctx->buf->pos;
                 }
 
-                return NJET_OK;
+                return NJT_OK;
 
             default:
-                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                               "unexpected \"%c\" symbol in \"%V\" SSI command",
                               ch, &ctx->command);
                 state = ssi_error_state;
@@ -1527,7 +1527,7 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
                     ctx->copy_start = ctx->buf->pos;
                 }
 
-                return NJET_HTTP_SSI_ERROR;
+                return NJT_HTTP_SSI_ERROR;
 
             default:
                 state = ssi_error_state;
@@ -1548,7 +1548,7 @@ ngx_http_ssi_parse(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx)
         ctx->copy_start = ctx->buf->pos;
     }
 
-    return NJET_AGAIN;
+    return NJT_AGAIN;
 }
 
 
@@ -1563,7 +1563,7 @@ ngx_http_ssi_get_variable(ngx_http_request_t *r, ngx_str_t *name,
 
     ctx = ngx_http_get_module_ctx(r->main, ngx_http_ssi_filter_module);
 
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     {
     ngx_str_t  *value;
 
@@ -1641,7 +1641,7 @@ ngx_http_ssi_evaluate_string(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         data = text->data;
         p = data;
 
-        if ((flags & NJET_HTTP_SSI_ADD_PREFIX) && text->data[0] != '/') {
+        if ((flags & NJT_HTTP_SSI_ADD_PREFIX) && text->data[0] != '/') {
 
             for (prefix = r->uri.len; prefix; prefix--) {
                 if (r->uri.data[prefix - 1] == '/') {
@@ -1654,7 +1654,7 @@ ngx_http_ssi_evaluate_string(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
 
                 data = ngx_pnalloc(r->pool, len);
                 if (data == NULL) {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
 
                 p = ngx_copy(data, r->uri.data, prefix);
@@ -1687,15 +1687,15 @@ ngx_http_ssi_evaluate_string(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         text->len = p - data;
         text->data = data;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    if (ngx_array_init(&lengths, r->pool, 8, sizeof(size_t *)) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_array_init(&lengths, r->pool, 8, sizeof(size_t *)) != NJT_OK) {
+        return NJT_ERROR;
     }
 
-    if (ngx_array_init(&values, r->pool, 8, sizeof(u_char *)) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_array_init(&values, r->pool, 8, sizeof(u_char *)) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     len = 0;
@@ -1746,10 +1746,10 @@ ngx_http_ssi_evaluate_string(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
             }
 
             if (bracket) {
-                ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+                ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                               "the closing bracket in \"%V\" "
                               "variable is missing", &var);
-                return NJET_HTTP_SSI_ERROR;
+                return NJT_HTTP_SSI_ERROR;
             }
 
             if (var.len == 0) {
@@ -1763,7 +1763,7 @@ ngx_http_ssi_evaluate_string(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
             if (val == NULL) {
                 vv = ngx_http_get_variable(r, &var, key);
                 if (vv == NULL) {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
 
                 if (vv->not_found) {
@@ -1814,14 +1814,14 @@ ngx_http_ssi_evaluate_string(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
 
         size = ngx_array_push(&lengths);
         if (size == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         *size = part_len;
 
         value = ngx_array_push(&values);
         if (value == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         *value = part_data;
@@ -1832,7 +1832,7 @@ ngx_http_ssi_evaluate_string(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
     size = lengths.elts;
     value = values.elts;
 
-    if (flags & NJET_HTTP_SSI_ADD_PREFIX) {
+    if (flags & NJT_HTTP_SSI_ADD_PREFIX) {
         for (i = 0; i < values.nelts; i++) {
             if (size[i] != 0) {
                 if (*value[i] != '/') {
@@ -1849,9 +1849,9 @@ ngx_http_ssi_evaluate_string(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         }
     }
 
-    p = ngx_pnalloc(r->pool, len + ((flags & NJET_HTTP_SSI_ADD_ZERO) ? 1 : 0));
+    p = ngx_pnalloc(r->pool, len + ((flags & NJT_HTTP_SSI_ADD_ZERO) ? 1 : 0));
     if (p == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     text->len = len;
@@ -1863,14 +1863,14 @@ ngx_http_ssi_evaluate_string(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         p = ngx_copy(p, value[i], size[i]);
     }
 
-    return NJET_OK;
+    return NJT_OK;
 
 invalid_variable:
 
-    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+    ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                   "invalid variable name in \"%V\"", text);
 
-    return NJET_HTTP_SSI_ERROR;
+    return NJT_HTTP_SSI_ERROR;
 }
 
 
@@ -1878,9 +1878,9 @@ static ngx_int_t
 ngx_http_ssi_regex_match(ngx_http_request_t *r, ngx_str_t *pattern,
     ngx_str_t *str)
 {
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     int                   rc, *captures;
-    u_char               *p, errstr[NJET_MAX_CONF_ERRSTR];
+    u_char               *p, errstr[NJT_MAX_CONF_ERRSTR];
     size_t                size;
     ngx_str_t            *vv, name, value;
     ngx_uint_t            i, n, key;
@@ -1892,32 +1892,32 @@ ngx_http_ssi_regex_match(ngx_http_request_t *r, ngx_str_t *pattern,
 
     rgc.pattern = *pattern;
     rgc.pool = r->pool;
-    rgc.err.len = NJET_MAX_CONF_ERRSTR;
+    rgc.err.len = NJT_MAX_CONF_ERRSTR;
     rgc.err.data = errstr;
 
-    if (ngx_regex_compile(&rgc) != NJET_OK) {
-        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0, "%V", &rgc.err);
-        return NJET_HTTP_SSI_ERROR;
+    if (ngx_regex_compile(&rgc) != NJT_OK) {
+        ngx_log_error(NJT_LOG_ERR, r->connection->log, 0, "%V", &rgc.err);
+        return NJT_HTTP_SSI_ERROR;
     }
 
     n = (rgc.captures + 1) * 3;
 
     captures = ngx_palloc(r->pool, n * sizeof(int));
     if (captures == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     rc = ngx_regex_exec(rgc.regex, str, captures, n);
 
-    if (rc < NJET_REGEX_NO_MATCHED) {
-        ngx_log_error(NJET_LOG_ALERT, r->connection->log, 0,
+    if (rc < NJT_REGEX_NO_MATCHED) {
+        ngx_log_error(NJT_LOG_ALERT, r->connection->log, 0,
                       ngx_regex_exec_n " failed: %d on \"%V\" using \"%V\"",
                       rc, str, pattern);
-        return NJET_HTTP_SSI_ERROR;
+        return NJT_HTTP_SSI_ERROR;
     }
 
-    if (rc == NJET_REGEX_NO_MATCHED) {
-        return NJET_DECLINED;
+    if (rc == NJT_REGEX_NO_MATCHED) {
+        return NJT_DECLINED;
     }
 
     ctx = ngx_http_get_module_ctx(r->main, ngx_http_ssi_filter_module);
@@ -1932,7 +1932,7 @@ ngx_http_ssi_regex_match(ngx_http_request_t *r, ngx_str_t *pattern,
             ctx->variables = ngx_list_create(r->pool, 4,
                                              sizeof(ngx_http_ssi_var_t));
             if (ctx->variables == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
         }
 
@@ -1960,7 +1960,7 @@ ngx_http_ssi_regex_match(ngx_http_request_t *r, ngx_str_t *pattern,
 
             var = ngx_list_push(ctx->variables);
             if (var == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             var->name = name;
@@ -1969,14 +1969,14 @@ ngx_http_ssi_regex_match(ngx_http_request_t *r, ngx_str_t *pattern,
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 
 #else
 
-    ngx_log_error(NJET_LOG_ALERT, r->connection->log, 0,
+    ngx_log_error(NJT_LOG_ALERT, r->connection->log, 0,
                   "the using of the regex \"%V\" in SSI requires PCRE library",
                   pattern);
-    return NJET_HTTP_SSI_ERROR;
+    return NJT_HTTP_SSI_ERROR;
 
 #endif
 }
@@ -1997,37 +1997,37 @@ ngx_http_ssi_include(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
     ngx_http_ssi_block_t        *bl;
     ngx_http_post_subrequest_t  *psr;
 
-    uri = params[NJET_HTTP_SSI_INCLUDE_VIRTUAL];
-    file = params[NJET_HTTP_SSI_INCLUDE_FILE];
-    wait = params[NJET_HTTP_SSI_INCLUDE_WAIT];
-    set = params[NJET_HTTP_SSI_INCLUDE_SET];
-    stub = params[NJET_HTTP_SSI_INCLUDE_STUB];
+    uri = params[NJT_HTTP_SSI_INCLUDE_VIRTUAL];
+    file = params[NJT_HTTP_SSI_INCLUDE_FILE];
+    wait = params[NJT_HTTP_SSI_INCLUDE_WAIT];
+    set = params[NJT_HTTP_SSI_INCLUDE_SET];
+    stub = params[NJT_HTTP_SSI_INCLUDE_STUB];
 
     if (uri && file) {
-        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+        ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                       "inclusion may be either virtual=\"%V\" or file=\"%V\"",
                       uri, file);
-        return NJET_HTTP_SSI_ERROR;
+        return NJT_HTTP_SSI_ERROR;
     }
 
     if (uri == NULL && file == NULL) {
-        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+        ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                       "no parameter in \"include\" SSI command");
-        return NJET_HTTP_SSI_ERROR;
+        return NJT_HTTP_SSI_ERROR;
     }
 
     if (set && stub) {
-        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+        ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                       "\"set\" and \"stub\" cannot be used together "
                       "in \"include\" SSI command");
-        return NJET_HTTP_SSI_ERROR;
+        return NJT_HTTP_SSI_ERROR;
     }
 
     if (wait) {
         if (uri == NULL) {
-            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                           "\"wait\" cannot be used with file=\"%V\"", file);
-            return NJET_HTTP_SSI_ERROR;
+            return NJT_HTTP_SSI_ERROR;
         }
 
         if (wait->len == 2
@@ -2038,10 +2038,10 @@ ngx_http_ssi_include(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         } else if (wait->len != 3
                    || ngx_strncasecmp(wait->data, (u_char *) "yes", 3) != 0)
         {
-            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                           "invalid value \"%V\" in the \"wait\" parameter",
                           wait);
-            return NJET_HTTP_SSI_ERROR;
+            return NJT_HTTP_SSI_ERROR;
         }
     }
 
@@ -2050,20 +2050,20 @@ ngx_http_ssi_include(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         wait = (ngx_str_t *) -1;
     }
 
-    rc = ngx_http_ssi_evaluate_string(r, ctx, uri, NJET_HTTP_SSI_ADD_PREFIX);
+    rc = ngx_http_ssi_evaluate_string(r, ctx, uri, NJT_HTTP_SSI_ADD_PREFIX);
 
-    if (rc != NJET_OK) {
+    if (rc != NJT_OK) {
         return rc;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ssi include: \"%V\"", uri);
 
     ngx_str_null(&args);
-    flags = NJET_HTTP_LOG_UNSAFE;
+    flags = NJT_HTTP_LOG_UNSAFE;
 
-    if (ngx_http_parse_unsafe_uri(r, uri, &args, &flags) != NJET_OK) {
-        return NJET_HTTP_SSI_ERROR;
+    if (ngx_http_parse_unsafe_uri(r, uri, &args, &flags) != NJT_OK) {
+        return NJT_HTTP_SSI_ERROR;
     }
 
     psr = NULL;
@@ -2082,15 +2082,15 @@ ngx_http_ssi_include(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
             }
         }
 
-        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+        ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                       "\"stub\"=\"%V\" for \"include\" not found", stub);
-        return NJET_HTTP_SSI_ERROR;
+        return NJT_HTTP_SSI_ERROR;
 
     found:
 
         psr = ngx_palloc(r->pool, sizeof(ngx_http_post_subrequest_t));
         if (psr == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         psr->handler = ngx_http_ssi_stub_output;
@@ -2110,12 +2110,12 @@ ngx_http_ssi_include(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
                 } else {
                     b = ngx_alloc_buf(r->pool);
                     if (b == NULL) {
-                        return NJET_ERROR;
+                        return NJT_ERROR;
                     }
 
                     cl = ngx_alloc_chain_link(r->pool);
                     if (cl == NULL) {
-                        return NJET_ERROR;
+                        return NJT_ERROR;
                     }
 
                     cl->buf = b;
@@ -2138,7 +2138,7 @@ ngx_http_ssi_include(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
     }
 
     if (wait) {
-        flags |= NJET_HTTP_SUBREQUEST_WAITED;
+        flags |= NJT_HTTP_SUBREQUEST_WAITED;
     }
 
     if (set) {
@@ -2146,7 +2146,7 @@ ngx_http_ssi_include(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
 
         psr = ngx_palloc(r->pool, sizeof(ngx_http_post_subrequest_t));
         if (psr == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         psr->handler = ngx_http_ssi_set_variable;
@@ -2158,13 +2158,13 @@ ngx_http_ssi_include(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
                 mctx->variables = ngx_list_create(r->pool, 4,
                                                   sizeof(ngx_http_ssi_var_t));
                 if (mctx->variables == NULL) {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
             }
 
             var = ngx_list_push(mctx->variables);
             if (var == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             var->name = *set;
@@ -2173,28 +2173,28 @@ ngx_http_ssi_include(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
             psr->data = &var->value;
         }
 
-        flags |= NJET_HTTP_SUBREQUEST_IN_MEMORY|NJET_HTTP_SUBREQUEST_WAITED;
+        flags |= NJT_HTTP_SUBREQUEST_IN_MEMORY|NJT_HTTP_SUBREQUEST_WAITED;
     }
 
-    if (ngx_http_subrequest(r, uri, &args, &sr, psr, flags) != NJET_OK) {
-        return NJET_HTTP_SSI_ERROR;
+    if (ngx_http_subrequest(r, uri, &args, &sr, psr, flags) != NJT_OK) {
+        return NJT_HTTP_SSI_ERROR;
     }
 
     if (wait == NULL && set == NULL) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (ctx->wait == NULL) {
         ctx->wait = sr;
 
-        return NJET_AGAIN;
+        return NJT_AGAIN;
 
     } else {
-        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+        ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                       "can only wait for one subrequest at a time");
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -2203,11 +2203,11 @@ ngx_http_ssi_stub_output(ngx_http_request_t *r, void *data, ngx_int_t rc)
 {
     ngx_chain_t  *out;
 
-    if (rc == NJET_ERROR || r->connection->error || r->request_output) {
+    if (rc == NJT_ERROR || r->connection->error || r->request_output) {
         return rc;
     }
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ssi stub output: \"%V?%V\"", &r->uri, &r->args);
 
     out = data;
@@ -2217,8 +2217,8 @@ ngx_http_ssi_stub_output(ngx_http_request_t *r, void *data, ngx_int_t rc)
                                       r->parent->headers_out.content_type_len;
         r->headers_out.content_type = r->parent->headers_out.content_type;
 
-        if (ngx_http_send_header(r) == NJET_ERROR) {
-            return NJET_ERROR;
+        if (ngx_http_send_header(r) == NJT_ERROR) {
+            return NJT_ERROR;
         }
     }
 
@@ -2231,7 +2231,7 @@ ngx_http_ssi_set_variable(ngx_http_request_t *r, void *data, ngx_int_t rc)
 {
     ngx_str_t  *value = data;
 
-    if (r->headers_out.status < NJET_HTTP_SPECIAL_RESPONSE
+    if (r->headers_out.status < NJT_HTTP_SPECIAL_RESPONSE
         && r->out && r->out->buf)
     {
         value->len = r->out->buf->last - r->out->buf->pos;
@@ -2254,9 +2254,9 @@ ngx_http_ssi_echo(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
     ngx_chain_t                *cl;
     ngx_http_variable_value_t  *vv;
 
-    var = params[NJET_HTTP_SSI_ECHO_VAR];
+    var = params[NJT_HTTP_SSI_ECHO_VAR];
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ssi echo \"%V\"", var);
 
     key = ngx_hash_strlow(var->data, var->data, var->len);
@@ -2267,7 +2267,7 @@ ngx_http_ssi_echo(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         vv = ngx_http_get_variable(r, var, key);
 
         if (vv == NULL) {
-            return NJET_HTTP_SSI_ERROR;
+            return NJT_HTTP_SSI_ERROR;
         }
 
         if (!vv->not_found) {
@@ -2278,38 +2278,38 @@ ngx_http_ssi_echo(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
     }
 
     if (value == NULL) {
-        value = params[NJET_HTTP_SSI_ECHO_DEFAULT];
+        value = params[NJT_HTTP_SSI_ECHO_DEFAULT];
 
         if (value == NULL) {
             value = &ngx_http_ssi_none;
 
         } else if (value->len == 0) {
-            return NJET_OK;
+            return NJT_OK;
         }
 
     } else {
         if (value->len == 0) {
-            return NJET_OK;
+            return NJT_OK;
         }
     }
 
-    enc = params[NJET_HTTP_SSI_ECHO_ENCODING];
+    enc = params[NJT_HTTP_SSI_ECHO_ENCODING];
 
     if (enc) {
         if (enc->len == 4 && ngx_strncmp(enc->data, "none", 4) == 0) {
 
-            ctx->encoding = NJET_HTTP_SSI_NO_ENCODING;
+            ctx->encoding = NJT_HTTP_SSI_NO_ENCODING;
 
         } else if (enc->len == 3 && ngx_strncmp(enc->data, "url", 3) == 0) {
 
-            ctx->encoding = NJET_HTTP_SSI_URL_ENCODING;
+            ctx->encoding = NJT_HTTP_SSI_URL_ENCODING;
 
         } else if (enc->len == 6 && ngx_strncmp(enc->data, "entity", 6) == 0) {
 
-            ctx->encoding = NJET_HTTP_SSI_ENTITY_ENCODING;
+            ctx->encoding = NJT_HTTP_SSI_ENTITY_ENCODING;
 
         } else {
-            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                           "unknown encoding \"%V\" in the \"echo\" command",
                           enc);
         }
@@ -2319,29 +2319,29 @@ ngx_http_ssi_echo(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
 
     switch (ctx->encoding) {
 
-    case NJET_HTTP_SSI_URL_ENCODING:
+    case NJT_HTTP_SSI_URL_ENCODING:
         len = 2 * ngx_escape_uri(NULL, value->data, value->len,
-                                 NJET_ESCAPE_HTML);
+                                 NJT_ESCAPE_HTML);
 
         if (len) {
             p = ngx_pnalloc(r->pool, value->len + len);
             if (p == NULL) {
-                return NJET_HTTP_SSI_ERROR;
+                return NJT_HTTP_SSI_ERROR;
             }
 
-            (void) ngx_escape_uri(p, value->data, value->len, NJET_ESCAPE_HTML);
+            (void) ngx_escape_uri(p, value->data, value->len, NJT_ESCAPE_HTML);
         }
 
         len += value->len;
         break;
 
-    case NJET_HTTP_SSI_ENTITY_ENCODING:
+    case NJT_HTTP_SSI_ENTITY_ENCODING:
         len = ngx_escape_html(NULL, value->data, value->len);
 
         if (len) {
             p = ngx_pnalloc(r->pool, value->len + len);
             if (p == NULL) {
-                return NJET_HTTP_SSI_ERROR;
+                return NJT_HTTP_SSI_ERROR;
             }
 
             (void) ngx_escape_html(p, value->data, value->len);
@@ -2350,19 +2350,19 @@ ngx_http_ssi_echo(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         len += value->len;
         break;
 
-    default: /* NJET_HTTP_SSI_NO_ENCODING */
+    default: /* NJT_HTTP_SSI_NO_ENCODING */
         len = value->len;
         break;
     }
 
     b = ngx_calloc_buf(r->pool);
     if (b == NULL) {
-        return NJET_HTTP_SSI_ERROR;
+        return NJT_HTTP_SSI_ERROR;
     }
 
     cl = ngx_alloc_chain_link(r->pool);
     if (cl == NULL) {
-        return NJET_HTTP_SSI_ERROR;
+        return NJT_HTTP_SSI_ERROR;
     }
 
     b->memory = 1;
@@ -2374,7 +2374,7 @@ ngx_http_ssi_echo(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
     *ctx->last_out = cl;
     ctx->last_out = &cl->next;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -2384,25 +2384,25 @@ ngx_http_ssi_config(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
 {
     ngx_str_t  *value;
 
-    value = params[NJET_HTTP_SSI_CONFIG_TIMEFMT];
+    value = params[NJT_HTTP_SSI_CONFIG_TIMEFMT];
 
     if (value) {
         ctx->timefmt.len = value->len;
         ctx->timefmt.data = ngx_pnalloc(r->pool, value->len + 1);
         if (ctx->timefmt.data == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ngx_cpystrn(ctx->timefmt.data, value->data, value->len + 1);
     }
 
-    value = params[NJET_HTTP_SSI_CONFIG_ERRMSG];
+    value = params[NJT_HTTP_SSI_CONFIG_ERRMSG];
 
     if (value) {
         ctx->errmsg = *value;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -2422,19 +2422,19 @@ ngx_http_ssi_set(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         mctx->variables = ngx_list_create(r->pool, 4,
                                           sizeof(ngx_http_ssi_var_t));
         if (mctx->variables == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
-    name = params[NJET_HTTP_SSI_SET_VAR];
-    value = params[NJET_HTTP_SSI_SET_VALUE];
+    name = params[NJT_HTTP_SSI_SET_VAR];
+    value = params[NJT_HTTP_SSI_SET_VALUE];
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ssi set \"%V\" \"%V\"", name, value);
 
     rc = ngx_http_ssi_evaluate_string(r, ctx, value, 0);
 
-    if (rc != NJET_OK) {
+    if (rc != NJT_OK) {
         return rc;
     }
 
@@ -2444,22 +2444,22 @@ ngx_http_ssi_set(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
 
     if (vv) {
         *vv = *value;
-        return NJET_OK;
+        return NJT_OK;
     }
 
     var = ngx_list_push(mctx->variables);
     if (var == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     var->name = *name;
     var->key = key;
     var->value = *value;
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "set: \"%V\"=\"%V\"", name, value);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -2474,20 +2474,20 @@ ngx_http_ssi_if(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
 
     if (ctx->command.len == 2) {
         if (ctx->conditional) {
-            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                           "the \"if\" command inside the \"if\" command");
-            return NJET_HTTP_SSI_ERROR;
+            return NJT_HTTP_SSI_ERROR;
         }
     }
 
     if (ctx->output_chosen) {
         ctx->output = 0;
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    expr = params[NJET_HTTP_SSI_IF_EXPR];
+    expr = params[NJT_HTTP_SSI_IF_EXPR];
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ssi if expr=\"%V\"", expr);
 
     left.data = expr->data;
@@ -2518,16 +2518,16 @@ ngx_http_ssi_if(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
 
     flags = 0;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "left: \"%V\"", &left);
 
     rc = ngx_http_ssi_evaluate_string(r, ctx, &left, flags);
 
-    if (rc != NJET_OK) {
+    if (rc != NJT_OK) {
         return rc;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "evaluated left: \"%V\"", &left);
 
     if (p == last) {
@@ -2539,9 +2539,9 @@ ngx_http_ssi_if(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
             ctx->output = 0;
         }
 
-        ctx->conditional = NJET_HTTP_SSI_COND_IF;
+        ctx->conditional = NJT_HTTP_SSI_COND_IF;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (p < last && *p == '=') {
@@ -2566,7 +2566,7 @@ ngx_http_ssi_if(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         }
 
         noregex = 0;
-        flags = NJET_HTTP_SSI_ADD_ZERO;
+        flags = NJT_HTTP_SSI_ADD_ZERO;
         last--;
         p++;
 
@@ -2582,16 +2582,16 @@ ngx_http_ssi_if(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
     right.len = last - p;
     right.data = p;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "right: \"%V\"", &right);
 
     rc = ngx_http_ssi_evaluate_string(r, ctx, &right, flags);
 
-    if (rc != NJET_OK) {
+    if (rc != NJT_OK) {
         return rc;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "evaluated right: \"%V\"", &right);
 
     if (noregex) {
@@ -2607,9 +2607,9 @@ ngx_http_ssi_if(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
 
         rc = ngx_http_ssi_regex_match(r, &right, &left);
 
-        if (rc == NJET_OK) {
+        if (rc == NJT_OK) {
             rc = 0;
-        } else if (rc == NJET_DECLINED) {
+        } else if (rc == NJT_DECLINED) {
             rc = -1;
         } else {
             return rc;
@@ -2624,16 +2624,16 @@ ngx_http_ssi_if(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         ctx->output = 0;
     }
 
-    ctx->conditional = NJET_HTTP_SSI_COND_IF;
+    ctx->conditional = NJT_HTTP_SSI_COND_IF;
 
-    return NJET_OK;
+    return NJT_OK;
 
 invalid_expression:
 
-    ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+    ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                   "invalid expression in \"%V\"", expr);
 
-    return NJET_HTTP_SSI_ERROR;
+    return NJT_HTTP_SSI_ERROR;
 }
 
 
@@ -2641,7 +2641,7 @@ static ngx_int_t
 ngx_http_ssi_else(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
     ngx_str_t **params)
 {
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ssi else");
 
     if (ctx->output_chosen) {
@@ -2650,9 +2650,9 @@ ngx_http_ssi_else(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         ctx->output = 1;
     }
 
-    ctx->conditional = NJET_HTTP_SSI_COND_ELSE;
+    ctx->conditional = NJT_HTTP_SSI_COND_ELSE;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -2660,14 +2660,14 @@ static ngx_int_t
 ngx_http_ssi_endif(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
     ngx_str_t **params)
 {
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ssi endif");
 
     ctx->output = 1;
     ctx->output_chosen = 0;
     ctx->conditional = 0;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -2678,7 +2678,7 @@ ngx_http_ssi_block(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
     ngx_http_ssi_ctx_t    *mctx;
     ngx_http_ssi_block_t  *bl;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ssi block");
 
     mctx = ngx_http_get_module_ctx(r->main, ngx_http_ssi_filter_module);
@@ -2687,23 +2687,23 @@ ngx_http_ssi_block(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
         mctx->blocks = ngx_array_create(r->pool, 4,
                                         sizeof(ngx_http_ssi_block_t));
         if (mctx->blocks == NULL) {
-            return NJET_HTTP_SSI_ERROR;
+            return NJT_HTTP_SSI_ERROR;
         }
     }
 
     bl = ngx_array_push(mctx->blocks);
     if (bl == NULL) {
-        return NJET_HTTP_SSI_ERROR;
+        return NJT_HTTP_SSI_ERROR;
     }
 
-    bl->name = *params[NJET_HTTP_SSI_BLOCK_NAME];
+    bl->name = *params[NJT_HTTP_SSI_BLOCK_NAME];
     bl->bufs = NULL;
     bl->count = 0;
 
     ctx->output = 0;
     ctx->block = 1;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -2711,13 +2711,13 @@ static ngx_int_t
 ngx_http_ssi_endblock(ngx_http_request_t *r, ngx_http_ssi_ctx_t *ctx,
     ngx_str_t **params)
 {
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "ssi endblock");
 
     ctx->output = 1;
     ctx->block = 0;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -2729,7 +2729,7 @@ ngx_http_ssi_date_gmt_local_variable(ngx_http_request_t *r,
     ngx_http_ssi_ctx_t  *ctx;
     ngx_str_t           *timefmt;
     struct tm            tm;
-    char                 buf[NJET_HTTP_SSI_DATE_LEN];
+    char                 buf[NJT_HTTP_SSI_DATE_LEN];
 
     v->valid = 1;
     v->no_cacheable = 0;
@@ -2744,14 +2744,14 @@ ngx_http_ssi_date_gmt_local_variable(ngx_http_request_t *r,
     if (timefmt->len == sizeof("%s") - 1
         && timefmt->data[0] == '%' && timefmt->data[1] == 's')
     {
-        v->data = ngx_pnalloc(r->pool, NJET_TIME_T_LEN);
+        v->data = ngx_pnalloc(r->pool, NJT_TIME_T_LEN);
         if (v->data == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         v->len = ngx_sprintf(v->data, "%T", now) - v->data;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (gmt) {
@@ -2760,20 +2760,20 @@ ngx_http_ssi_date_gmt_local_variable(ngx_http_request_t *r,
         ngx_libc_localtime(now, &tm);
     }
 
-    v->len = strftime(buf, NJET_HTTP_SSI_DATE_LEN,
+    v->len = strftime(buf, NJT_HTTP_SSI_DATE_LEN,
                       (char *) timefmt->data, &tm);
     if (v->len == 0) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     v->data = ngx_pnalloc(r->pool, v->len);
     if (v->data == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_memcpy(v->data, buf, v->len);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -2788,7 +2788,7 @@ ngx_http_ssi_preconfiguration(ngx_conf_t *cf)
     for (v = ngx_http_ssi_vars; v->name.len; v++) {
         var = ngx_http_add_variable(cf, &v->name, v->flags);
         if (var == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         var->get_handler = v->get_handler;
@@ -2799,21 +2799,21 @@ ngx_http_ssi_preconfiguration(ngx_conf_t *cf)
 
     for (cmd = ngx_http_ssi_commands; cmd->name.len; cmd++) {
         rc = ngx_hash_add_key(&smcf->commands, &cmd->name, cmd,
-                              NJET_HASH_READONLY_KEY);
+                              NJT_HASH_READONLY_KEY);
 
-        if (rc == NJET_OK) {
+        if (rc == NJT_OK) {
             continue;
         }
 
-        if (rc == NJET_BUSY) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        if (rc == NJT_BUSY) {
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "conflicting SSI command \"%V\"", &cmd->name);
         }
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -2830,7 +2830,7 @@ ngx_http_ssi_create_main_conf(ngx_conf_t *cf)
     smcf->commands.pool = cf->pool;
     smcf->commands.temp_pool = cf->temp_pool;
 
-    if (ngx_hash_keys_array_init(&smcf->commands, NJET_HASH_SMALL) != NJET_OK) {
+    if (ngx_hash_keys_array_init(&smcf->commands, NJT_HASH_SMALL) != NJT_OK) {
         return NULL;
     }
 
@@ -2855,12 +2855,12 @@ ngx_http_ssi_init_main_conf(ngx_conf_t *cf, void *conf)
 
     if (ngx_hash_init(&hash, smcf->commands.keys.elts,
                       smcf->commands.keys.nelts)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -2881,13 +2881,13 @@ ngx_http_ssi_create_loc_conf(ngx_conf_t *cf)
      *     conf->types_keys = NULL;
      */
 
-    slcf->enable = NJET_CONF_UNSET;
-    slcf->silent_errors = NJET_CONF_UNSET;
-    slcf->ignore_recycled_buffers = NJET_CONF_UNSET;
-    slcf->last_modified = NJET_CONF_UNSET;
+    slcf->enable = NJT_CONF_UNSET;
+    slcf->silent_errors = NJT_CONF_UNSET;
+    slcf->ignore_recycled_buffers = NJT_CONF_UNSET;
+    slcf->last_modified = NJT_CONF_UNSET;
 
-    slcf->min_file_chunk = NJET_CONF_UNSET_SIZE;
-    slcf->value_len = NJET_CONF_UNSET_SIZE;
+    slcf->min_file_chunk = NJT_CONF_UNSET_SIZE;
+    slcf->value_len = NJT_CONF_UNSET_SIZE;
 
     return slcf;
 }
@@ -2911,12 +2911,12 @@ ngx_http_ssi_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     if (ngx_http_merge_types(cf, &conf->types_keys, &conf->types,
                              &prev->types_keys, &prev->types,
                              ngx_http_html_default_types)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -2929,5 +2929,5 @@ ngx_http_ssi_filter_init(ngx_conf_t *cf)
     ngx_http_next_body_filter = ngx_http_top_body_filter;
     ngx_http_top_body_filter = ngx_http_ssi_body_filter;
 
-    return NJET_OK;
+    return NJT_OK;
 }

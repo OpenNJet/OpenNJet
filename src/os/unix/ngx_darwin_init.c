@@ -25,9 +25,9 @@ static ngx_os_io_t ngx_darwin_io = {
     ngx_unix_send,
     ngx_udp_unix_send,
     ngx_udp_unix_sendmsg_chain,
-#if (NJET_HAVE_SENDFILE)
+#if (NJT_HAVE_SENDFILE)
     ngx_darwin_sendfile_chain,
-    NJET_IO_SENDFILE
+    NJT_IO_SENDFILE
 #else
     ngx_writev_chain,
     0
@@ -63,7 +63,7 @@ sysctl_t sysctls[] = {
 void
 ngx_debug_init(void)
 {
-#if (NJET_DEBUG_MALLOC)
+#if (NJT_DEBUG_MALLOC)
 
     /*
      * MacOSX 10.6, 10.7:  MallocScribble fills freed memory with 0x55
@@ -101,13 +101,13 @@ ngx_os_specific_init(ngx_log_t *log)
     {
         err = ngx_errno;
 
-        if (err != NJET_ENOENT) {
+        if (err != NJT_ENOENT) {
 
-            ngx_log_error(NJET_LOG_ALERT, log, err,
+            ngx_log_error(NJT_LOG_ALERT, log, err,
                           "sysctlbyname(kern.ostype) failed");
 
-            if (err != NJET_ENOMEM) {
-                return NJET_ERROR;
+            if (err != NJT_ENOMEM) {
+                return NJT_ERROR;
             }
 
             ngx_darwin_kern_ostype[size - 1] = '\0';
@@ -121,13 +121,13 @@ ngx_os_specific_init(ngx_log_t *log)
     {
         err = ngx_errno;
 
-        if (err != NJET_ENOENT) {
+        if (err != NJT_ENOENT) {
 
-            ngx_log_error(NJET_LOG_ALERT, log, err,
+            ngx_log_error(NJT_LOG_ALERT, log, err,
                           "sysctlbyname(kern.osrelease) failed");
 
-            if (err != NJET_ENOMEM) {
-                return NJET_ERROR;
+            if (err != NJT_ENOMEM) {
+                return NJT_ERROR;
             }
 
             ngx_darwin_kern_osrelease[size - 1] = '\0';
@@ -146,28 +146,28 @@ ngx_os_specific_init(ngx_log_t *log)
 
         err = ngx_errno;
 
-        if (err == NJET_ENOENT) {
+        if (err == NJT_ENOENT) {
             continue;
         }
 
-        ngx_log_error(NJET_LOG_ALERT, log, err,
+        ngx_log_error(NJT_LOG_ALERT, log, err,
                       "sysctlbyname(%s) failed", sysctls[i].name);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_ncpu = ngx_darwin_hw_ncpu;
 
     if (ngx_darwin_kern_ipc_somaxconn > 32767) {
-        ngx_log_error(NJET_LOG_ALERT, log, 0,
+        ngx_log_error(NJT_LOG_ALERT, log, 0,
                       "sysctl kern.ipc.somaxconn must be less than 32768");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_tcp_nodelay_and_tcp_nopush = 1;
 
     ngx_os_io = ngx_darwin_io;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -178,7 +178,7 @@ ngx_os_specific_status(ngx_log_t *log)
     ngx_uint_t  i;
 
     if (ngx_darwin_kern_ostype[0]) {
-        ngx_log_error(NJET_LOG_NOTICE, log, 0, "OS: %s %s",
+        ngx_log_error(NJT_LOG_NOTICE, log, 0, "OS: %s %s",
                       ngx_darwin_kern_ostype, ngx_darwin_kern_osrelease);
     }
 
@@ -191,7 +191,7 @@ ngx_os_specific_status(ngx_log_t *log)
                 value = *(int *) sysctls[i].value;
             }
 
-            ngx_log_error(NJET_LOG_NOTICE, log, 0, "%s: %l",
+            ngx_log_error(NJT_LOG_NOTICE, log, 0, "%s: %l",
                           sysctls[i].name, value);
         }
     }

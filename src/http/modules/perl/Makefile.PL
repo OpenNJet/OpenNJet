@@ -13,19 +13,19 @@ WriteMakefile(
     ABSTRACT_FROM     => 'njet.pm',     # retrieve abstract from module
     AUTHOR            => 'Igor Sysoev',
 
-    CCFLAGS           => "$ENV{NJET_PM_CFLAGS}",
+    CCFLAGS           => "$ENV{NJT_PM_CFLAGS}",
     OPTIMIZE          => '-O',
 
-    LDDLFLAGS         => "$ENV{NJET_PM_LDFLAGS}",
+    LDDLFLAGS         => "$ENV{NJT_PM_LDFLAGS}",
 
     INC               => join(" ", map {
                              m#^/# ? "-I $_" : "-I ../../../../../$_"
-                         } (split /\s+/, $ENV{NJET_INCS})),
+                         } (split /\s+/, $ENV{NJT_INCS})),
 
     depend => {
         'njet.c'     => join(" ", map {
                              m#^/# ? $_ : "../../../../../$_"
-                         } (split(/\s+/, $ENV{NJET_DEPS}),
+                         } (split(/\s+/, $ENV{NJT_DEPS}),
                             "src/http/modules/perl/ngx_http_perl_module.h"))
     },
 

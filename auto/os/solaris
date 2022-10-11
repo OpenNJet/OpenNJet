@@ -3,14 +3,14 @@
 # Copyright (C) Nginx, Inc.
 
 
-have=NJET_SOLARIS . auto/have_headers
+have=NJT_SOLARIS . auto/have_headers
 
 CORE_INCS="$UNIX_INCS"
 CORE_DEPS="$UNIX_DEPS $SOLARIS_DEPS"
 CORE_SRCS="$UNIX_SRCS $SOLARIS_SRCS "
 CORE_LIBS="$CORE_LIBS -lsocket -lnsl"
 
-NJET_RPATH=YES
+NJT_RPATH=YES
 
 # Solaris's make does not support a blank line between target and rules
 ngx_spacer=
@@ -28,7 +28,7 @@ fi
 
 
 ngx_feature="sendfilev()"
-ngx_feature_name="NJET_HAVE_SENDFILE"
+ngx_feature_name="NJT_HAVE_SENDFILE"
 ngx_feature_run=no
 ngx_feature_incs="#include <sys/sendfile.h>"
 ngx_feature_path=
@@ -47,7 +47,7 @@ fi
 
 
 ngx_feature="event ports"
-ngx_feature_name="NJET_HAVE_EVENTPORT"
+ngx_feature_name="NJT_HAVE_EVENTPORT"
 ngx_feature_run=no
 ngx_feature_incs="#include <port.h>"
 ngx_feature_path=

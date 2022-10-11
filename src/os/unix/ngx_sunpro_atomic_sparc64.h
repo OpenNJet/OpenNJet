@@ -5,10 +5,10 @@
  */
 
 
-#if (NJET_PTR_SIZE == 4)
-#define NJET_CASA  ngx_casa
+#if (NJT_PTR_SIZE == 4)
+#define NJT_CASA  ngx_casa
 #else
-#define NJET_CASA  ngx_casxa
+#define NJT_CASA  ngx_casxa
 #endif
 
 
@@ -25,7 +25,7 @@ static ngx_inline ngx_atomic_uint_t
 ngx_atomic_cmp_set(ngx_atomic_t *lock, ngx_atomic_uint_t old,
     ngx_atomic_uint_t set)
 {
-    set = NJET_CASA(set, old, lock);
+    set = NJT_CASA(set, old, lock);
 
     return (set == old);
 }
@@ -42,7 +42,7 @@ ngx_atomic_fetch_add(ngx_atomic_t *value, ngx_atomic_int_t add)
 
         res = old + add;
 
-        res = NJET_CASA(res, old, value);
+        res = NJT_CASA(res, old, value);
 
         if (res == old) {
             return res;

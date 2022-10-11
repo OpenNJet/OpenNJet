@@ -33,23 +33,23 @@ static ngx_int_t ngx_http_addition_filter_init(ngx_conf_t *cf);
 static ngx_command_t  ngx_http_addition_commands[] = {
 
     { ngx_string("add_before_body"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_str_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_addition_conf_t, before_body),
       NULL },
 
     { ngx_string("add_after_body"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_str_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_addition_conf_t, after_body),
       NULL },
 
     { ngx_string("addition_types"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_1MORE,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_1MORE,
       ngx_http_types_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_addition_conf_t, types_keys),
       &ngx_http_html_default_types[0] },
 
@@ -73,10 +73,10 @@ static ngx_http_module_t  ngx_http_addition_filter_module_ctx = {
 
 
 ngx_module_t  ngx_http_addition_filter_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_addition_filter_module_ctx,  /* module context */
     ngx_http_addition_commands,            /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -84,7 +84,7 @@ ngx_module_t  ngx_http_addition_filter_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -98,7 +98,7 @@ ngx_http_addition_header_filter(ngx_http_request_t *r)
     ngx_http_addition_ctx_t   *ctx;
     ngx_http_addition_conf_t  *conf;
 
-    if (r->headers_out.status != NJET_HTTP_OK || r != r->main) {
+    if (r->headers_out.status != NJT_HTTP_OK || r != r->main) {
         return ngx_http_next_header_filter(r);
     }
 
@@ -114,7 +114,7 @@ ngx_http_addition_header_filter(ngx_http_request_t *r)
 
     ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_addition_ctx_t));
     if (ctx == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_http_set_ctx(r, ctx, ngx_http_addition_filter_module);
@@ -156,9 +156,9 @@ ngx_http_addition_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
         if (conf->before_body.len) {
             if (ngx_http_subrequest(r, &conf->before_body, NULL, &sr, NULL, 0)
-                != NJET_OK)
+                != NJT_OK)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
         }
     }
@@ -181,19 +181,19 @@ ngx_http_addition_body_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
     rc = ngx_http_next_body_filter(r, in);
 
-    if (rc == NJET_ERROR || !last || conf->after_body.len == 0) {
+    if (rc == NJT_ERROR || !last || conf->after_body.len == 0) {
         return rc;
     }
 
     if (ngx_http_subrequest(r, &conf->after_body, NULL, &sr, NULL, 0)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_http_set_ctx(r, NULL, ngx_http_addition_filter_module);
 
-    return ngx_http_send_special(r, NJET_HTTP_LAST);
+    return ngx_http_send_special(r, NJT_HTTP_LAST);
 }
 
 
@@ -206,7 +206,7 @@ ngx_http_addition_filter_init(ngx_conf_t *cf)
     ngx_http_next_body_filter = ngx_http_top_body_filter;
     ngx_http_top_body_filter = ngx_http_addition_body_filter;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -245,10 +245,10 @@ ngx_http_addition_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     if (ngx_http_merge_types(cf, &conf->types_keys, &conf->types,
                              &prev->types_keys, &prev->types,
                              ngx_http_html_default_types)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

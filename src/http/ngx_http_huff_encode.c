@@ -156,11 +156,11 @@ static ngx_http_huff_encode_code_t  ngx_http_huff_encode_table_lc[256] =
 };
 
 
-#if (NJET_PTR_SIZE == 8)
+#if (NJT_PTR_SIZE == 8)
 
-#if (NJET_HAVE_LITTLE_ENDIAN)
+#if (NJT_HAVE_LITTLE_ENDIAN)
 
-#if (NJET_HAVE_GCC_BSWAP64)
+#if (NJT_HAVE_GCC_BSWAP64)
 #define ngx_http_huff_encode_buf(dst, buf)                                    \
     (*(uint64_t *) (dst) = __builtin_bswap64(buf))
 #else
@@ -175,12 +175,12 @@ static ngx_http_huff_encode_code_t  ngx_http_huff_encode_table_lc[256] =
      (dst)[7] = (u_char)  (buf))
 #endif
 
-#else /* !NJET_HAVE_LITTLE_ENDIAN */
+#else /* !NJT_HAVE_LITTLE_ENDIAN */
 #define ngx_http_huff_encode_buf(dst, buf)                                    \
     (*(uint64_t *) (dst) = (buf))
 #endif
 
-#else /* NJET_PTR_SIZE == 4 */
+#else /* NJT_PTR_SIZE == 4 */
 
 #define ngx_http_huff_encode_buf(dst, buf)                                    \
     (*(uint32_t *) (dst) = htonl(buf))

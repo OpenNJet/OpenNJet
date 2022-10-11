@@ -10,7 +10,7 @@
 #include <ngx_thread_pool.h>
 
 
-#if (NJET_LINUX)
+#if (NJT_LINUX)
 
 /*
  * Linux thread id is a pid of thread created by clone(2),
@@ -23,7 +23,7 @@ ngx_thread_tid(void)
     return syscall(SYS_gettid);
 }
 
-#elif (NJET_FREEBSD) && (__FreeBSD_version >= 900031)
+#elif (NJT_FREEBSD) && (__FreeBSD_version >= 900031)
 
 #include <pthread_np.h>
 
@@ -33,7 +33,7 @@ ngx_thread_tid(void)
     return pthread_getthreadid_np();
 }
 
-#elif (NJET_DARWIN)
+#elif (NJT_DARWIN)
 
 /*
  * MacOSX thread has two thread ids:

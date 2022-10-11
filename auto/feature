@@ -5,7 +5,7 @@
 
 echo $ngx_n "checking for $ngx_feature ...$ngx_c"
 
-cat << END >> $NJET_AUTOCONF_ERR
+cat << END >> $NJT_AUTOCONF_ERR
 
 ----------------------------------------
 checking for $ngx_feature
@@ -25,10 +25,10 @@ if test -n "$ngx_feature_path"; then
     done
 fi
 
-cat << END > $NJET_AUTOTEST.c
+cat << END > $NJT_AUTOTEST.c
 
 #include <sys/types.h>
-$NJET_INCLUDE_UNISTD_H
+$NJT_INCLUDE_UNISTD_H
 $ngx_feature_incs
 
 int main(void) {
@@ -40,20 +40,20 @@ END
 
 
 ngx_test="$CC $CC_TEST_FLAGS $CC_AUX_FLAGS $ngx_feature_inc_path \
-          -o $NJET_AUTOTEST $NJET_AUTOTEST.c $NJET_TEST_LD_OPT $ngx_feature_libs"
+          -o $NJT_AUTOTEST $NJT_AUTOTEST.c $NJT_TEST_LD_OPT $ngx_feature_libs"
 
 ngx_feature_inc_path=
 
-eval "/bin/sh -c \"$ngx_test\" >> $NJET_AUTOCONF_ERR 2>&1"
+eval "/bin/sh -c \"$ngx_test\" >> $NJT_AUTOCONF_ERR 2>&1"
 
 
-if [ -x $NJET_AUTOTEST ]; then
+if [ -x $NJT_AUTOTEST ]; then
 
     case "$ngx_feature_run" in
 
         yes)
             # /bin/sh is used to intercept "Killed" or "Abort trap" messages
-            if /bin/sh -c $NJET_AUTOTEST >> $NJET_AUTOCONF_ERR 2>&1; then
+            if /bin/sh -c $NJT_AUTOTEST >> $NJT_AUTOCONF_ERR 2>&1; then
                 echo " found"
                 ngx_found=yes
 
@@ -68,14 +68,14 @@ if [ -x $NJET_AUTOTEST ]; then
 
         value)
             # /bin/sh is used to intercept "Killed" or "Abort trap" messages
-            if /bin/sh -c $NJET_AUTOTEST >> $NJET_AUTOCONF_ERR 2>&1; then
+            if /bin/sh -c $NJT_AUTOTEST >> $NJT_AUTOCONF_ERR 2>&1; then
                 echo " found"
                 ngx_found=yes
 
-                cat << END >> $NJET_AUTO_CONFIG_H
+                cat << END >> $NJT_AUTO_CONFIG_H
 
 #ifndef $ngx_feature_name
-#define $ngx_feature_name  `$NJET_AUTOTEST`
+#define $ngx_feature_name  `$NJT_AUTOTEST`
 #endif
 
 END
@@ -86,7 +86,7 @@ END
 
         bug)
             # /bin/sh is used to intercept "Killed" or "Abort trap" messages
-            if /bin/sh -c $NJET_AUTOTEST >> $NJET_AUTOCONF_ERR 2>&1; then
+            if /bin/sh -c $NJT_AUTOTEST >> $NJT_AUTOCONF_ERR 2>&1; then
                 echo " not found"
 
             else
@@ -113,11 +113,11 @@ END
 else
     echo " not found"
 
-    echo "----------"    >> $NJET_AUTOCONF_ERR
-    cat $NJET_AUTOTEST.c  >> $NJET_AUTOCONF_ERR
-    echo "----------"    >> $NJET_AUTOCONF_ERR
-    echo $ngx_test       >> $NJET_AUTOCONF_ERR
-    echo "----------"    >> $NJET_AUTOCONF_ERR
+    echo "----------"    >> $NJT_AUTOCONF_ERR
+    cat $NJT_AUTOTEST.c  >> $NJT_AUTOCONF_ERR
+    echo "----------"    >> $NJT_AUTOCONF_ERR
+    echo $ngx_test       >> $NJT_AUTOCONF_ERR
+    echo "----------"    >> $NJT_AUTOCONF_ERR
 fi
 
-rm -rf $NJET_AUTOTEST*
+rm -rf $NJT_AUTOTEST*

@@ -15,7 +15,7 @@ static void ngx_mail_proxy_protocol_handler(ngx_event_t *rev);
 static void ngx_mail_init_session_handler(ngx_event_t *rev);
 static void ngx_mail_init_session(ngx_connection_t *c);
 
-#if (NJET_MAIL_SSL)
+#if (NJT_MAIL_SSL)
 static void ngx_mail_ssl_init_connection(ngx_ssl_t *ssl, ngx_connection_t *c);
 static void ngx_mail_ssl_handshake_handler(ngx_connection_t *c);
 static ngx_int_t ngx_mail_verify_cert(ngx_mail_session_t *s,
@@ -37,8 +37,8 @@ ngx_mail_init_connection(ngx_connection_t *c)
     ngx_mail_session_t        *s;
     ngx_mail_addr_conf_t      *addr_conf;
     ngx_mail_core_srv_conf_t  *cscf;
-    u_char                     text[NJET_SOCKADDR_STRLEN];
-#if (NJET_HAVE_INET6)
+    u_char                     text[NJT_SOCKADDR_STRLEN];
+#if (NJT_HAVE_INET6)
     struct sockaddr_in6       *sin6;
     ngx_mail_in6_addr_t       *addr6;
 #endif
@@ -58,7 +58,7 @@ ngx_mail_init_connection(ngx_connection_t *c)
          * AcceptEx() already gave this address.
          */
 
-        if (ngx_connection_local_sockaddr(c, NULL, 0) != NJET_OK) {
+        if (ngx_connection_local_sockaddr(c, NULL, 0) != NJT_OK) {
             ngx_mail_close_connection(c);
             return;
         }
@@ -67,7 +67,7 @@ ngx_mail_init_connection(ngx_connection_t *c)
 
         switch (sa->sa_family) {
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
         case AF_INET6:
             sin6 = (struct sockaddr_in6 *) sa;
 
@@ -107,7 +107,7 @@ ngx_mail_init_connection(ngx_connection_t *c)
     } else {
         switch (c->local_sockaddr->sa_family) {
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
         case AF_INET6:
             addr6 = port->addrs;
             addr_conf = &addr6[0].conf;
@@ -127,12 +127,12 @@ ngx_mail_init_connection(ngx_connection_t *c)
         return;
     }
 
-    s->signature = NJET_MAIL_MODULE;
+    s->signature = NJT_MAIL_MODULE;
 
     s->main_conf = addr_conf->ctx->main_conf;
     s->srv_conf = addr_conf->ctx->srv_conf;
 
-#if (NJET_MAIL_SSL)
+#if (NJT_MAIL_SSL)
     s->ssl = addr_conf->ssl;
 #endif
 
@@ -145,9 +145,9 @@ ngx_mail_init_connection(ngx_connection_t *c)
 
     ngx_set_connection_log(c, cscf->error_log);
 
-    len = ngx_sock_ntop(c->sockaddr, c->socklen, text, NJET_SOCKADDR_STRLEN, 1);
+    len = ngx_sock_ntop(c->sockaddr, c->socklen, text, NJT_SOCKADDR_STRLEN, 1);
 
-    ngx_log_error(NJET_LOG_INFO, c->log, 0, "*%uA client %*s connected to %V",
+    ngx_log_error(NJT_LOG_INFO, c->log, 0, "*%uA client %*s connected to %V",
                   c->number, len, text, s->addr_text);
 
     ctx = ngx_palloc(c->pool, sizeof(ngx_mail_log_ctx_t));
@@ -164,7 +164,7 @@ ngx_mail_init_connection(ngx_connection_t *c)
     c->log->data = ctx;
     c->log->action = "sending client greeting line";
 
-    c->log_error = NJET_ERROR_INFO;
+    c->log_error = NJT_ERROR_INFO;
 
     rev = c->read;
     rev->handler = ngx_mail_init_session_handler;
@@ -177,7 +177,7 @@ ngx_mail_init_connection(ngx_connection_t *c)
         if (!rev->ready) {
             ngx_add_timer(rev, cscf->timeout);
 
-            if (ngx_handle_read_event(rev, 0) != NJET_OK) {
+            if (ngx_handle_read_event(rev, 0) != NJT_OK) {
                 ngx_mail_close_connection(c);
             }
 
@@ -197,7 +197,7 @@ ngx_mail_init_connection(ngx_connection_t *c)
 static void
 ngx_mail_proxy_protocol_handler(ngx_event_t *rev)
 {
-    u_char                    *p, buf[NJET_PROXY_PROTOCOL_MAX_HEADER];
+    u_char                    *p, buf[NJT_PROXY_PROTOCOL_MAX_HEADER];
     size_t                     size;
     ssize_t                    n;
     ngx_err_t                  err;
@@ -208,11 +208,11 @@ ngx_mail_proxy_protocol_handler(ngx_event_t *rev)
     c = rev->data;
     s = c->data;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_MAIL, c->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_MAIL, c->log, 0,
                    "mail PROXY protocol handler");
 
     if (rev->timedout) {
-        ngx_log_error(NJET_LOG_INFO, c->log, NJET_ETIMEDOUT, "client timed out");
+        ngx_log_error(NJT_LOG_INFO, c->log, NJT_ETIMEDOUT, "client timed out");
         c->timedout = 1;
         ngx_mail_close_connection(c);
         return;
@@ -222,10 +222,10 @@ ngx_mail_proxy_protocol_handler(ngx_event_t *rev)
 
     err = ngx_socket_errno;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_MAIL, c->log, 0, "recv(): %z", n);
+    ngx_log_debug1(NJT_LOG_DEBUG_MAIL, c->log, 0, "recv(): %z", n);
 
     if (n == -1) {
-        if (err == NJET_EAGAIN) {
+        if (err == NJT_EAGAIN) {
             rev->ready = 0;
 
             if (!rev->timer_set) {
@@ -233,7 +233,7 @@ ngx_mail_proxy_protocol_handler(ngx_event_t *rev)
                 ngx_add_timer(rev, cscf->timeout);
             }
 
-            if (ngx_handle_read_event(rev, 0) != NJET_OK) {
+            if (ngx_handle_read_event(rev, 0) != NJT_OK) {
                 ngx_mail_close_connection(c);
             }
 
@@ -260,7 +260,7 @@ ngx_mail_proxy_protocol_handler(ngx_event_t *rev)
         return;
     }
 
-    if (ngx_mail_realip_handler(s) != NJET_OK) {
+    if (ngx_mail_realip_handler(s) != NJT_OK) {
         ngx_mail_close_connection(c);
         return;
     }
@@ -276,7 +276,7 @@ ngx_mail_init_session_handler(ngx_event_t *rev)
 
     c = rev->data;
 
-#if (NJET_MAIL_SSL)
+#if (NJT_MAIL_SSL)
     {
     ngx_mail_session_t   *s;
     ngx_mail_ssl_conf_t  *sslcf;
@@ -299,7 +299,7 @@ ngx_mail_init_session_handler(ngx_event_t *rev)
 }
 
 
-#if (NJET_MAIL_SSL)
+#if (NJT_MAIL_SSL)
 
 void
 ngx_mail_starttls_handler(ngx_event_t *rev)
@@ -326,12 +326,12 @@ ngx_mail_ssl_init_connection(ngx_ssl_t *ssl, ngx_connection_t *c)
     ngx_mail_session_t        *s;
     ngx_mail_core_srv_conf_t  *cscf;
 
-    if (ngx_ssl_create_connection(ssl, c, 0) != NJET_OK) {
+    if (ngx_ssl_create_connection(ssl, c, 0) != NJT_OK) {
         ngx_mail_close_connection(c);
         return;
     }
 
-    if (ngx_ssl_handshake(c) == NJET_AGAIN) {
+    if (ngx_ssl_handshake(c) == NJT_AGAIN) {
 
         s = c->data;
 
@@ -359,7 +359,7 @@ ngx_mail_ssl_handshake_handler(ngx_connection_t *c)
 
         s = c->data;
 
-        if (ngx_mail_verify_cert(s, c) != NJET_OK) {
+        if (ngx_mail_verify_cert(s, c) != NJT_OK) {
             return;
         }
 
@@ -395,7 +395,7 @@ ngx_mail_verify_cert(ngx_mail_session_t *s, ngx_connection_t *c)
     sslcf = ngx_mail_get_module_srv_conf(s, ngx_mail_ssl_module);
 
     if (!sslcf->verify) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     rc = SSL_get_verify_result(c->ssl->connection);
@@ -403,7 +403,7 @@ ngx_mail_verify_cert(ngx_mail_session_t *s, ngx_connection_t *c)
     if (rc != X509_V_OK
         && (sslcf->verify != 3 || !ngx_ssl_verify_error_optional(rc)))
     {
-        ngx_log_error(NJET_LOG_INFO, c->log, 0,
+        ngx_log_error(NJT_LOG_INFO, c->log, 0,
                       "client SSL certificate verify error: (%l:%s)",
                       rc, X509_verify_cert_error_string(rc));
 
@@ -418,14 +418,14 @@ ngx_mail_verify_cert(ngx_mail_session_t *s, ngx_connection_t *c)
         c->write->handler = ngx_mail_send;
 
         ngx_mail_send(s->connection->write);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (sslcf->verify == 1) {
         cert = SSL_get_peer_certificate(c->ssl->connection);
 
         if (cert == NULL) {
-            ngx_log_error(NJET_LOG_INFO, c->log, 0,
+            ngx_log_error(NJT_LOG_INFO, c->log, 0,
                           "client sent no required SSL certificate");
 
             ngx_ssl_remove_cached_session(c->ssl->session_ctx,
@@ -439,13 +439,13 @@ ngx_mail_verify_cert(ngx_mail_session_t *s, ngx_connection_t *c)
             c->write->handler = ngx_mail_send;
 
             ngx_mail_send(s->connection->write);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         X509_free(cert);
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 #endif
@@ -483,21 +483,21 @@ ngx_mail_salt(ngx_mail_session_t *s, ngx_connection_t *c,
 {
     s->salt.data = ngx_pnalloc(c->pool,
                                sizeof(" <18446744073709551616.@>" CRLF) - 1
-                               + NJET_TIME_T_LEN
+                               + NJT_TIME_T_LEN
                                + cscf->server_name.len);
     if (s->salt.data == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     s->salt.len = ngx_sprintf(s->salt.data, "<%ul.%T@%V>" CRLF,
                               ngx_random(), ngx_time(), &cscf->server_name)
                   - s->salt.data;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
-#if (NJET_MAIL_SSL)
+#if (NJT_MAIL_SSL)
 
 ngx_int_t
 ngx_mail_starttls_only(ngx_mail_session_t *s, ngx_connection_t *c)
@@ -510,7 +510,7 @@ ngx_mail_starttls_only(ngx_mail_session_t *s, ngx_connection_t *c)
 
     sslcf = ngx_mail_get_module_srv_conf(s, ngx_mail_ssl_module);
 
-    if (sslcf->starttls == NJET_MAIL_STARTTLS_ONLY) {
+    if (sslcf->starttls == NJT_MAIL_STARTTLS_ONLY) {
         return 1;
     }
 
@@ -528,20 +528,20 @@ ngx_mail_auth_plain(ngx_mail_session_t *s, ngx_connection_t *c, ngx_uint_t n)
 
     arg = s->args.elts;
 
-#if (NJET_DEBUG_MAIL_PASSWD)
-    ngx_log_debug1(NJET_LOG_DEBUG_MAIL, c->log, 0,
+#if (NJT_DEBUG_MAIL_PASSWD)
+    ngx_log_debug1(NJT_LOG_DEBUG_MAIL, c->log, 0,
                    "mail auth plain: \"%V\"", &arg[n]);
 #endif
 
     plain.data = ngx_pnalloc(c->pool, ngx_base64_decoded_length(arg[n].len));
     if (plain.data == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    if (ngx_decode_base64(&plain, &arg[n]) != NJET_OK) {
-        ngx_log_error(NJET_LOG_INFO, c->log, 0,
+    if (ngx_decode_base64(&plain, &arg[n]) != NJT_OK) {
+        ngx_log_error(NJT_LOG_INFO, c->log, 0,
             "client sent invalid base64 encoding in AUTH PLAIN command");
-        return NJET_MAIL_PARSE_INVALID_COMMAND;
+        return NJT_MAIL_PARSE_INVALID_COMMAND;
     }
 
     p = plain.data;
@@ -550,9 +550,9 @@ ngx_mail_auth_plain(ngx_mail_session_t *s, ngx_connection_t *c, ngx_uint_t n)
     while (p < last && *p++) { /* void */ }
 
     if (p == last) {
-        ngx_log_error(NJET_LOG_INFO, c->log, 0,
+        ngx_log_error(NJT_LOG_INFO, c->log, 0,
                       "client sent invalid login in AUTH PLAIN command");
-        return NJET_MAIL_PARSE_INVALID_COMMAND;
+        return NJT_MAIL_PARSE_INVALID_COMMAND;
     }
 
     s->login.data = p;
@@ -560,9 +560,9 @@ ngx_mail_auth_plain(ngx_mail_session_t *s, ngx_connection_t *c, ngx_uint_t n)
     while (p < last && *p) { p++; }
 
     if (p == last) {
-        ngx_log_error(NJET_LOG_INFO, c->log, 0,
+        ngx_log_error(NJT_LOG_INFO, c->log, 0,
                       "client sent invalid password in AUTH PLAIN command");
-        return NJET_MAIL_PARSE_INVALID_COMMAND;
+        return NJT_MAIL_PARSE_INVALID_COMMAND;
     }
 
     s->login.len = p++ - s->login.data;
@@ -570,12 +570,12 @@ ngx_mail_auth_plain(ngx_mail_session_t *s, ngx_connection_t *c, ngx_uint_t n)
     s->passwd.len = last - p;
     s->passwd.data = p;
 
-#if (NJET_DEBUG_MAIL_PASSWD)
-    ngx_log_debug2(NJET_LOG_DEBUG_MAIL, c->log, 0,
+#if (NJT_DEBUG_MAIL_PASSWD)
+    ngx_log_debug2(NJT_LOG_DEBUG_MAIL, c->log, 0,
                    "mail auth plain: \"%V\" \"%V\"", &s->login, &s->passwd);
 #endif
 
-    return NJET_DONE;
+    return NJT_DONE;
 }
 
 
@@ -587,24 +587,24 @@ ngx_mail_auth_login_username(ngx_mail_session_t *s, ngx_connection_t *c,
 
     arg = s->args.elts;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_MAIL, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_MAIL, c->log, 0,
                    "mail auth login username: \"%V\"", &arg[n]);
 
     s->login.data = ngx_pnalloc(c->pool, ngx_base64_decoded_length(arg[n].len));
     if (s->login.data == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    if (ngx_decode_base64(&s->login, &arg[n]) != NJET_OK) {
-        ngx_log_error(NJET_LOG_INFO, c->log, 0,
+    if (ngx_decode_base64(&s->login, &arg[n]) != NJT_OK) {
+        ngx_log_error(NJT_LOG_INFO, c->log, 0,
             "client sent invalid base64 encoding in AUTH LOGIN command");
-        return NJET_MAIL_PARSE_INVALID_COMMAND;
+        return NJT_MAIL_PARSE_INVALID_COMMAND;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_MAIL, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_MAIL, c->log, 0,
                    "mail auth login username: \"%V\"", &s->login);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -615,29 +615,29 @@ ngx_mail_auth_login_password(ngx_mail_session_t *s, ngx_connection_t *c)
 
     arg = s->args.elts;
 
-#if (NJET_DEBUG_MAIL_PASSWD)
-    ngx_log_debug1(NJET_LOG_DEBUG_MAIL, c->log, 0,
+#if (NJT_DEBUG_MAIL_PASSWD)
+    ngx_log_debug1(NJT_LOG_DEBUG_MAIL, c->log, 0,
                    "mail auth login password: \"%V\"", &arg[0]);
 #endif
 
     s->passwd.data = ngx_pnalloc(c->pool,
                                  ngx_base64_decoded_length(arg[0].len));
     if (s->passwd.data == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    if (ngx_decode_base64(&s->passwd, &arg[0]) != NJET_OK) {
-        ngx_log_error(NJET_LOG_INFO, c->log, 0,
+    if (ngx_decode_base64(&s->passwd, &arg[0]) != NJT_OK) {
+        ngx_log_error(NJT_LOG_INFO, c->log, 0,
             "client sent invalid base64 encoding in AUTH LOGIN command");
-        return NJET_MAIL_PARSE_INVALID_COMMAND;
+        return NJT_MAIL_PARSE_INVALID_COMMAND;
     }
 
-#if (NJET_DEBUG_MAIL_PASSWD)
-    ngx_log_debug1(NJET_LOG_DEBUG_MAIL, c->log, 0,
+#if (NJT_DEBUG_MAIL_PASSWD)
+    ngx_log_debug1(NJT_LOG_DEBUG_MAIL, c->log, 0,
                    "mail auth login password: \"%V\"", &s->passwd);
 #endif
 
-    return NJET_DONE;
+    return NJT_DONE;
 }
 
 
@@ -651,7 +651,7 @@ ngx_mail_auth_cram_md5_salt(ngx_mail_session_t *s, ngx_connection_t *c,
 
     p = ngx_pnalloc(c->pool, len + ngx_base64_encoded_length(s->salt.len) + 2);
     if (p == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     salt.data = ngx_cpymem(p, prefix, len);
@@ -666,7 +666,7 @@ ngx_mail_auth_cram_md5_salt(ngx_mail_session_t *s, ngx_connection_t *c,
     s->out.len = n;
     s->out.data = p;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -678,18 +678,18 @@ ngx_mail_auth_cram_md5(ngx_mail_session_t *s, ngx_connection_t *c)
 
     arg = s->args.elts;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_MAIL, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_MAIL, c->log, 0,
                    "mail auth cram-md5: \"%V\"", &arg[0]);
 
     s->login.data = ngx_pnalloc(c->pool, ngx_base64_decoded_length(arg[0].len));
     if (s->login.data == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    if (ngx_decode_base64(&s->login, &arg[0]) != NJET_OK) {
-        ngx_log_error(NJET_LOG_INFO, c->log, 0,
+    if (ngx_decode_base64(&s->login, &arg[0]) != NJT_OK) {
+        ngx_log_error(NJT_LOG_INFO, c->log, 0,
             "client sent invalid base64 encoding in AUTH CRAM-MD5 command");
-        return NJET_MAIL_PARSE_INVALID_COMMAND;
+        return NJT_MAIL_PARSE_INVALID_COMMAND;
     }
 
     p = s->login.data;
@@ -705,17 +705,17 @@ ngx_mail_auth_cram_md5(ngx_mail_session_t *s, ngx_connection_t *c)
     }
 
     if (s->passwd.len != 32) {
-        ngx_log_error(NJET_LOG_INFO, c->log, 0,
+        ngx_log_error(NJT_LOG_INFO, c->log, 0,
             "client sent invalid CRAM-MD5 hash in AUTH CRAM-MD5 command");
-        return NJET_MAIL_PARSE_INVALID_COMMAND;
+        return NJT_MAIL_PARSE_INVALID_COMMAND;
     }
 
-    ngx_log_debug2(NJET_LOG_DEBUG_MAIL, c->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_MAIL, c->log, 0,
                    "mail auth cram-md5: \"%V\" \"%V\"", &s->login, &s->passwd);
 
-    s->auth_method = NJET_MAIL_AUTH_CRAM_MD5;
+    s->auth_method = NJT_MAIL_AUTH_CRAM_MD5;
 
-    return NJET_DONE;
+    return NJT_DONE;
 }
 
 
@@ -727,29 +727,29 @@ ngx_mail_auth_external(ngx_mail_session_t *s, ngx_connection_t *c,
 
     arg = s->args.elts;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_MAIL, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_MAIL, c->log, 0,
                    "mail auth external: \"%V\"", &arg[n]);
 
     external.data = ngx_pnalloc(c->pool, ngx_base64_decoded_length(arg[n].len));
     if (external.data == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    if (ngx_decode_base64(&external, &arg[n]) != NJET_OK) {
-        ngx_log_error(NJET_LOG_INFO, c->log, 0,
+    if (ngx_decode_base64(&external, &arg[n]) != NJT_OK) {
+        ngx_log_error(NJT_LOG_INFO, c->log, 0,
             "client sent invalid base64 encoding in AUTH EXTERNAL command");
-        return NJET_MAIL_PARSE_INVALID_COMMAND;
+        return NJT_MAIL_PARSE_INVALID_COMMAND;
     }
 
     s->login.len = external.len;
     s->login.data = external.data;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_MAIL, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_MAIL, c->log, 0,
                    "mail auth external: \"%V\"", &s->login);
 
-    s->auth_method = NJET_MAIL_AUTH_EXTERNAL;
+    s->auth_method = NJT_MAIL_AUTH_EXTERNAL;
 
-    return NJET_DONE;
+    return NJT_DONE;
 }
 
 
@@ -765,14 +765,14 @@ ngx_mail_send(ngx_event_t *wev)
     s = c->data;
 
     if (wev->timedout) {
-        ngx_log_error(NJET_LOG_INFO, c->log, NJET_ETIMEDOUT, "client timed out");
+        ngx_log_error(NJT_LOG_INFO, c->log, NJT_ETIMEDOUT, "client timed out");
         c->timedout = 1;
         ngx_mail_close_connection(c);
         return;
     }
 
     if (s->out.len == 0) {
-        if (ngx_handle_write_event(c->write, 0) != NJET_OK) {
+        if (ngx_handle_write_event(c->write, 0) != NJT_OK) {
             ngx_mail_close_connection(c);
         }
 
@@ -805,12 +805,12 @@ ngx_mail_send(ngx_event_t *wev)
         return;
     }
 
-    if (n == NJET_ERROR) {
+    if (n == NJT_ERROR) {
         ngx_mail_close_connection(c);
         return;
     }
 
-    /* n == NJET_AGAIN */
+    /* n == NJT_AGAIN */
 
 again:
 
@@ -818,7 +818,7 @@ again:
 
     ngx_add_timer(c->write, cscf->timeout);
 
-    if (ngx_handle_write_event(c->write, 0) != NJET_OK) {
+    if (ngx_handle_write_event(c->write, 0) != NJT_OK) {
         ngx_mail_close_connection(c);
         return;
     }
@@ -837,18 +837,18 @@ ngx_mail_read_command(ngx_mail_session_t *s, ngx_connection_t *c)
 
         n = c->recv(c, s->buffer->last, s->buffer->end - s->buffer->last);
 
-        if (n == NJET_ERROR || n == 0) {
+        if (n == NJT_ERROR || n == 0) {
             ngx_mail_close_connection(c);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         if (n > 0) {
             s->buffer->last += n;
         }
 
-        if (n == NJET_AGAIN) {
+        if (n == NJT_AGAIN) {
             if (s->buffer->pos == s->buffer->last) {
-                return NJET_AGAIN;
+                return NJT_AGAIN;
             }
         }
     }
@@ -857,7 +857,7 @@ ngx_mail_read_command(ngx_mail_session_t *s, ngx_connection_t *c)
 
     rc = cscf->protocol->parse_command(s);
 
-    if (rc == NJET_AGAIN) {
+    if (rc == NJT_AGAIN) {
 
         if (s->buffer->last < s->buffer->end) {
             return rc;
@@ -866,20 +866,20 @@ ngx_mail_read_command(ngx_mail_session_t *s, ngx_connection_t *c)
         l.len = s->buffer->last - s->buffer->start;
         l.data = s->buffer->start;
 
-        ngx_log_error(NJET_LOG_INFO, c->log, 0,
+        ngx_log_error(NJT_LOG_INFO, c->log, 0,
                       "client sent too long command \"%V\"", &l);
 
         s->quit = 1;
 
-        return NJET_MAIL_PARSE_INVALID_COMMAND;
+        return NJT_MAIL_PARSE_INVALID_COMMAND;
     }
 
-    if (rc == NJET_MAIL_PARSE_INVALID_COMMAND) {
+    if (rc == NJT_MAIL_PARSE_INVALID_COMMAND) {
 
         s->errors++;
 
         if (s->errors >= cscf->max_errors) {
-            ngx_log_error(NJET_LOG_INFO, c->log, 0,
+            ngx_log_error(NJT_LOG_INFO, c->log, 0,
                           "client sent too many invalid commands");
             s->quit = 1;
         }
@@ -887,16 +887,16 @@ ngx_mail_read_command(ngx_mail_session_t *s, ngx_connection_t *c)
         return rc;
     }
 
-    if (rc == NJET_IMAP_NEXT) {
+    if (rc == NJT_IMAP_NEXT) {
         return rc;
     }
 
-    if (rc == NJET_ERROR) {
+    if (rc == NJT_ERROR) {
         ngx_mail_close_connection(c);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -941,13 +941,13 @@ ngx_mail_close_connection(ngx_connection_t *c)
 {
     ngx_pool_t  *pool;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_MAIL, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_MAIL, c->log, 0,
                    "close mail connection: %d", c->fd);
 
-#if (NJET_MAIL_SSL)
+#if (NJT_MAIL_SSL)
 
     if (c->ssl) {
-        if (ngx_ssl_shutdown(c) == NJET_AGAIN) {
+        if (ngx_ssl_shutdown(c) == NJT_AGAIN) {
             c->ssl->handler = ngx_mail_close_connection;
             return;
         }
@@ -955,7 +955,7 @@ ngx_mail_close_connection(ngx_connection_t *c)
 
 #endif
 
-#if (NJET_STAT_STUB)
+#if (NJT_STAT_STUB)
     (void) ngx_atomic_fetch_add(ngx_stat_active, -1);
 #endif
 

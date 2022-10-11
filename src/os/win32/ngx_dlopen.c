@@ -13,9 +13,9 @@ char *
 ngx_dlerror(void)
 {
     u_char         *p;
-    static u_char   errstr[NJET_MAX_ERROR_STR];
+    static u_char   errstr[NJT_MAX_ERROR_STR];
 
-    p = ngx_strerror(ngx_errno, errstr, NJET_MAX_ERROR_STR);
+    p = ngx_strerror(ngx_errno, errstr, NJT_MAX_ERROR_STR);
     *p = '\0';
 
     return (char *) errstr;

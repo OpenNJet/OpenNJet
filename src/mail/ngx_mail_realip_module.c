@@ -27,9 +27,9 @@ static char *ngx_mail_realip_merge_srv_conf(ngx_conf_t *cf, void *parent,
 static ngx_command_t  ngx_mail_realip_commands[] = {
 
     { ngx_string("set_real_ip_from"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_TAKE1,
       ngx_mail_realip_from,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       0,
       NULL },
 
@@ -49,10 +49,10 @@ static ngx_mail_module_t  ngx_mail_realip_module_ctx = {
 
 
 ngx_module_t  ngx_mail_realip_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_mail_realip_module_ctx,           /* module context */
     ngx_mail_realip_commands,              /* module directives */
-    NJET_MAIL_MODULE,                       /* module type */
+    NJT_MAIL_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -60,7 +60,7 @@ ngx_module_t  ngx_mail_realip_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -74,24 +74,24 @@ ngx_mail_realip_handler(ngx_mail_session_t *s)
     rscf = ngx_mail_get_module_srv_conf(s, ngx_mail_realip_module);
 
     if (rscf->from == NULL) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     c = s->connection;
 
     if (c->proxy_protocol == NULL) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    if (ngx_cidr_match(c->sockaddr, rscf->from) != NJET_OK) {
-        return NJET_OK;
+    if (ngx_cidr_match(c->sockaddr, rscf->from) != NJT_OK) {
+        return NJT_OK;
     }
 
     if (ngx_parse_addr(c->pool, &addr, c->proxy_protocol->src_addr.data,
                        c->proxy_protocol->src_addr.len)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     ngx_inet_set_port(addr.sockaddr, c->proxy_protocol->src_port);
@@ -105,20 +105,20 @@ ngx_mail_realip_set_addr(ngx_mail_session_t *s, ngx_addr_t *addr)
 {
     size_t             len;
     u_char            *p;
-    u_char             text[NJET_SOCKADDR_STRLEN];
+    u_char             text[NJT_SOCKADDR_STRLEN];
     ngx_connection_t  *c;
 
     c = s->connection;
 
     len = ngx_sock_ntop(addr->sockaddr, addr->socklen, text,
-                        NJET_SOCKADDR_STRLEN, 0);
+                        NJT_SOCKADDR_STRLEN, 0);
     if (len == 0) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     p = ngx_pnalloc(c->pool, len);
     if (p == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_memcpy(p, text, len);
@@ -128,7 +128,7 @@ ngx_mail_realip_set_addr(ngx_mail_session_t *s, ngx_addr_t *addr)
     c->addr_text.len = len;
     c->addr_text.data = p;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -143,7 +143,7 @@ ngx_mail_realip_from(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_cidr_t            c, *cidr;
     ngx_uint_t            i;
     struct sockaddr_in   *sin;
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     struct sockaddr_in6  *sin6;
 #endif
 
@@ -153,59 +153,59 @@ ngx_mail_realip_from(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         rscf->from = ngx_array_create(cf->pool, 2,
                                       sizeof(ngx_cidr_t));
         if (rscf->from == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
-#if (NJET_HAVE_UNIX_DOMAIN)
+#if (NJT_HAVE_UNIX_DOMAIN)
 
     if (ngx_strcmp(value[1].data, "unix:") == 0) {
         cidr = ngx_array_push(rscf->from);
         if (cidr == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         cidr->family = AF_UNIX;
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
 #endif
 
     rc = ngx_ptocidr(&value[1], &c);
 
-    if (rc != NJET_ERROR) {
-        if (rc == NJET_DONE) {
-            ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+    if (rc != NJT_ERROR) {
+        if (rc == NJT_DONE) {
+            ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                                "low address bits of %V are meaningless",
                                &value[1]);
         }
 
         cidr = ngx_array_push(rscf->from);
         if (cidr == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         *cidr = c;
 
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     ngx_memzero(&u, sizeof(ngx_url_t));
     u.host = value[1];
 
-    if (ngx_inet_resolve_host(cf->pool, &u) != NJET_OK) {
+    if (ngx_inet_resolve_host(cf->pool, &u) != NJT_OK) {
         if (u.err) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "%s in set_real_ip_from \"%V\"",
                                u.err, &u.host);
         }
 
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     cidr = ngx_array_push_n(rscf->from, u.naddrs);
     if (cidr == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ngx_memzero(cidr, u.naddrs * sizeof(ngx_cidr_t));
@@ -215,7 +215,7 @@ ngx_mail_realip_from(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
         switch (cidr[i].family) {
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
         case AF_INET6:
             sin6 = (struct sockaddr_in6 *) u.addrs[i].sockaddr;
             cidr[i].u.in6.addr = sin6->sin6_addr;
@@ -231,7 +231,7 @@ ngx_mail_realip_from(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         }
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -265,5 +265,5 @@ ngx_mail_realip_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
         conf->from = prev->from;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

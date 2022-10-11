@@ -18,14 +18,14 @@
  */
 
 
-#define NJET_MIN_READ_AHEAD  (128 * 1024)
+#define NJT_MIN_READ_AHEAD  (128 * 1024)
 
 
 static void ngx_open_file_cache_cleanup(void *data);
-#if (NJET_HAVE_OPENAT)
+#if (NJT_HAVE_OPENAT)
 static ngx_fd_t ngx_openat_file_owner(ngx_fd_t at_fd, const u_char *name,
     ngx_int_t mode, ngx_int_t create, ngx_int_t access, ngx_log_t *log);
-#if (NJET_HAVE_O_PATH)
+#if (NJT_HAVE_O_PATH)
 static ngx_int_t ngx_file_o_path_info(ngx_fd_t fd, ngx_file_info_t *fi,
     ngx_log_t *log);
 #endif
@@ -93,7 +93,7 @@ ngx_open_file_cache_cleanup(void *data)
     ngx_queue_t             *q;
     ngx_cached_open_file_t  *file;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_CORE, ngx_cycle->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_CORE, ngx_cycle->log, 0,
                    "open file cache cleanup");
 
     for ( ;; ) {
@@ -112,7 +112,7 @@ ngx_open_file_cache_cleanup(void *data)
 
         cache->current--;
 
-        ngx_log_debug1(NJET_LOG_DEBUG_CORE, ngx_cycle->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_CORE, ngx_cycle->log, 0,
                        "delete cached open file: %s", file->name);
 
         if (!file->err && !file->is_dir) {
@@ -127,13 +127,13 @@ ngx_open_file_cache_cleanup(void *data)
     }
 
     if (cache->current) {
-        ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, ngx_cycle->log, 0,
                       "%ui items still left in open file cache",
                       cache->current);
     }
 
     if (cache->rbtree.root != cache->rbtree.sentinel) {
-        ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, ngx_cycle->log, 0,
                       "rbtree still is not empty in open file cache");
 
     }
@@ -153,7 +153,7 @@ ngx_open_cached_file(ngx_open_file_cache_t *cache, ngx_str_t *name,
     ngx_pool_cleanup_file_t        *clnf;
     ngx_open_file_cache_cleanup_t  *ofcln;
 
-    of->fd = NJET_INVALID_FILE;
+    of->fd = NJT_INVALID_FILE;
     of->err = 0;
 
     if (cache == NULL) {
@@ -161,9 +161,9 @@ ngx_open_cached_file(ngx_open_file_cache_t *cache, ngx_str_t *name,
         if (of->test_only) {
 
             if (ngx_file_info_wrapper(name, of, &fi, pool->log)
-                == NJET_FILE_ERROR)
+                == NJT_FILE_ERROR)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             of->uniq = ngx_file_uniq(&fi);
@@ -175,17 +175,17 @@ ngx_open_cached_file(ngx_open_file_cache_t *cache, ngx_str_t *name,
             of->is_link = ngx_is_link(&fi);
             of->is_exec = ngx_is_exec(&fi);
 
-            return NJET_OK;
+            return NJT_OK;
         }
 
         cln = ngx_pool_cleanup_add(pool, sizeof(ngx_pool_cleanup_file_t));
         if (cln == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         rc = ngx_open_and_stat_file(name, of, pool->log);
 
-        if (rc == NJET_OK && !of->is_dir) {
+        if (rc == NJT_OK && !of->is_dir) {
             cln->handler = ngx_pool_cleanup_file;
             clnf = cln->data;
 
@@ -199,7 +199,7 @@ ngx_open_cached_file(ngx_open_file_cache_t *cache, ngx_str_t *name,
 
     cln = ngx_pool_cleanup_add(pool, sizeof(ngx_open_file_cache_cleanup_t));
     if (cln == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     now = ngx_time();
@@ -214,13 +214,13 @@ ngx_open_cached_file(ngx_open_file_cache_t *cache, ngx_str_t *name,
 
         ngx_queue_remove(&file->queue);
 
-        if (file->fd == NJET_INVALID_FILE && file->err == 0 && !file->is_dir) {
+        if (file->fd == NJT_INVALID_FILE && file->err == 0 && !file->is_dir) {
 
             /* file was not used often enough to keep open */
 
             rc = ngx_open_and_stat_file(name, of, pool->log);
 
-            if (rc != NJET_OK && (of->err == 0 || !of->errors)) {
+            if (rc != NJT_OK && (of->err == 0 || !of->errors)) {
                 goto failed;
             }
 
@@ -231,7 +231,7 @@ ngx_open_cached_file(ngx_open_file_cache_t *cache, ngx_str_t *name,
             || (file->event == NULL
                 && (of->uniq == 0 || of->uniq == file->uniq)
                 && now - file->created < of->valid
-#if (NJET_HAVE_OPENAT)
+#if (NJT_HAVE_OPENAT)
                 && of->disable_symlinks == file->disable_symlinks
                 && of->disable_symlinks_from == file->disable_symlinks_from
 #endif
@@ -257,7 +257,7 @@ ngx_open_cached_file(ngx_open_file_cache_t *cache, ngx_str_t *name,
 
             } else {
                 of->err = file->err;
-#if (NJET_HAVE_OPENAT)
+#if (NJT_HAVE_OPENAT)
                 of->failed = file->disable_symlinks ? ngx_openat_file_n
                                                     : ngx_open_file_n;
 #else
@@ -268,7 +268,7 @@ ngx_open_cached_file(ngx_open_file_cache_t *cache, ngx_str_t *name,
             goto found;
         }
 
-        ngx_log_debug4(NJET_LOG_DEBUG_CORE, pool->log, 0,
+        ngx_log_debug4(NJT_LOG_DEBUG_CORE, pool->log, 0,
                        "retest open file: %s, fd:%d, c:%d, e:%d",
                        file->name, file->fd, file->count, file->err);
 
@@ -288,7 +288,7 @@ ngx_open_cached_file(ngx_open_file_cache_t *cache, ngx_str_t *name,
 
         rc = ngx_open_and_stat_file(name, of, pool->log);
 
-        if (rc != NJET_OK && (of->err == 0 || !of->errors)) {
+        if (rc != NJT_OK && (of->err == 0 || !of->errors)) {
             goto failed;
         }
 
@@ -332,8 +332,8 @@ ngx_open_cached_file(ngx_open_file_cache_t *cache, ngx_str_t *name,
 
             ngx_open_file_del_event(file);
 
-            if (ngx_close_file(file->fd) == NJET_FILE_ERROR) {
-                ngx_log_error(NJET_LOG_ALERT, pool->log, ngx_errno,
+            if (ngx_close_file(file->fd) == NJT_FILE_ERROR) {
+                ngx_log_error(NJT_LOG_ALERT, pool->log, ngx_errno,
                               ngx_close_file_n " \"%V\" failed", name);
             }
 
@@ -353,7 +353,7 @@ ngx_open_cached_file(ngx_open_file_cache_t *cache, ngx_str_t *name,
 
     rc = ngx_open_and_stat_file(name, of, pool->log);
 
-    if (rc != NJET_OK && (of->err == 0 || !of->errors)) {
+    if (rc != NJT_OK && (of->err == 0 || !of->errors)) {
         goto failed;
     }
 
@@ -398,7 +398,7 @@ update:
 
     file->fd = of->fd;
     file->err = of->err;
-#if (NJET_HAVE_OPENAT)
+#if (NJT_HAVE_OPENAT)
     file->disable_symlinks = of->disable_symlinks;
     file->disable_symlinks_from = of->disable_symlinks_from;
 #endif
@@ -429,7 +429,7 @@ found:
 
     ngx_queue_insert_head(&cache->expire_queue, &file->queue);
 
-    ngx_log_debug5(NJET_LOG_DEBUG_CORE, pool->log, 0,
+    ngx_log_debug5(NJT_LOG_DEBUG_CORE, pool->log, 0,
                    "cached open file: %s, fd:%d, c:%d, e:%d, u:%d",
                    file->name, file->fd, file->count, file->err, file->uses);
 
@@ -445,10 +445,10 @@ found:
             ofcln->log = pool->log;
         }
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 
 failed:
 
@@ -459,9 +459,9 @@ failed:
 
         if (file->count == 0) {
 
-            if (file->fd != NJET_INVALID_FILE) {
-                if (ngx_close_file(file->fd) == NJET_FILE_ERROR) {
-                    ngx_log_error(NJET_LOG_ALERT, pool->log, ngx_errno,
+            if (file->fd != NJT_INVALID_FILE) {
+                if (ngx_close_file(file->fd) == NJT_FILE_ERROR) {
+                    ngx_log_error(NJT_LOG_ALERT, pool->log, ngx_errno,
                                   ngx_close_file_n " \"%s\" failed",
                                   file->name);
                 }
@@ -475,18 +475,18 @@ failed:
         }
     }
 
-    if (of->fd != NJET_INVALID_FILE) {
-        if (ngx_close_file(of->fd) == NJET_FILE_ERROR) {
-            ngx_log_error(NJET_LOG_ALERT, pool->log, ngx_errno,
+    if (of->fd != NJT_INVALID_FILE) {
+        if (ngx_close_file(of->fd) == NJT_FILE_ERROR) {
+            ngx_log_error(NJT_LOG_ALERT, pool->log, ngx_errno,
                           ngx_close_file_n " \"%V\" failed", name);
         }
     }
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
-#if (NJET_HAVE_OPENAT)
+#if (NJT_HAVE_OPENAT)
 
 static ngx_fd_t
 ngx_openat_file_owner(ngx_fd_t at_fd, const u_char *name,
@@ -510,31 +510,31 @@ ngx_openat_file_owner(ngx_fd_t at_fd, const u_char *name,
 
     fd = ngx_openat_file(at_fd, name, mode, create, access);
 
-    if (fd == NJET_INVALID_FILE) {
-        return NJET_INVALID_FILE;
+    if (fd == NJT_INVALID_FILE) {
+        return NJT_INVALID_FILE;
     }
 
     if (ngx_file_at_info(at_fd, name, &atfi, AT_SYMLINK_NOFOLLOW)
-        == NJET_FILE_ERROR)
+        == NJT_FILE_ERROR)
     {
         err = ngx_errno;
         goto failed;
     }
 
-#if (NJET_HAVE_O_PATH)
-    if (ngx_file_o_path_info(fd, &fi, log) == NJET_ERROR) {
+#if (NJT_HAVE_O_PATH)
+    if (ngx_file_o_path_info(fd, &fi, log) == NJT_ERROR) {
         err = ngx_errno;
         goto failed;
     }
 #else
-    if (ngx_fd_info(fd, &fi) == NJET_FILE_ERROR) {
+    if (ngx_fd_info(fd, &fi) == NJT_FILE_ERROR) {
         err = ngx_errno;
         goto failed;
     }
 #endif
 
     if (fi.st_uid != atfi.st_uid) {
-        err = NJET_ELOOP;
+        err = NJT_ELOOP;
         goto failed;
     }
 
@@ -542,18 +542,18 @@ ngx_openat_file_owner(ngx_fd_t at_fd, const u_char *name,
 
 failed:
 
-    if (ngx_close_file(fd) == NJET_FILE_ERROR) {
-        ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+    if (ngx_close_file(fd) == NJT_FILE_ERROR) {
+        ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                       ngx_close_file_n " \"%s\" failed", name);
     }
 
     ngx_set_errno(err);
 
-    return NJET_INVALID_FILE;
+    return NJT_INVALID_FILE;
 }
 
 
-#if (NJET_HAVE_O_PATH)
+#if (NJT_HAVE_O_PATH)
 
 static ngx_int_t
 ngx_file_o_path_info(ngx_fd_t fd, ngx_file_info_t *fi, ngx_log_t *log)
@@ -583,31 +583,31 @@ ngx_file_o_path_info(ngx_fd_t fd, ngx_file_info_t *fi, ngx_log_t *log)
      */
 
     if (use_fstat) {
-        if (ngx_fd_info(fd, fi) != NJET_FILE_ERROR) {
-            return NJET_OK;
+        if (ngx_fd_info(fd, fi) != NJT_FILE_ERROR) {
+            return NJT_OK;
         }
 
-        if (ngx_errno != NJET_EBADF) {
-            return NJET_ERROR;
+        if (ngx_errno != NJT_EBADF) {
+            return NJT_ERROR;
         }
 
-        ngx_log_error(NJET_LOG_NOTICE, log, 0,
+        ngx_log_error(NJT_LOG_NOTICE, log, 0,
                       "fstat(O_PATH) failed with EBADF, "
                       "switching to fstatat(AT_EMPTY_PATH)");
 
         use_fstat = 0;
     }
 
-    if (ngx_file_at_info(fd, "", fi, AT_EMPTY_PATH) != NJET_FILE_ERROR) {
-        return NJET_OK;
+    if (ngx_file_at_info(fd, "", fi, AT_EMPTY_PATH) != NJT_FILE_ERROR) {
+        return NJT_OK;
     }
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 #endif
 
-#endif /* NJET_HAVE_OPENAT */
+#endif /* NJT_HAVE_OPENAT */
 
 
 static ngx_fd_t
@@ -616,14 +616,14 @@ ngx_open_file_wrapper(ngx_str_t *name, ngx_open_file_info_t *of,
 {
     ngx_fd_t  fd;
 
-#if !(NJET_HAVE_OPENAT)
+#if !(NJT_HAVE_OPENAT)
 
     fd = ngx_open_file(name->data, mode, create, access);
 
-    if (fd == NJET_INVALID_FILE) {
+    if (fd == NJT_INVALID_FILE) {
         of->err = ngx_errno;
         of->failed = ngx_open_file_n;
-        return NJET_INVALID_FILE;
+        return NJT_INVALID_FILE;
     }
 
     return fd;
@@ -634,13 +634,13 @@ ngx_open_file_wrapper(ngx_str_t *name, ngx_open_file_info_t *of,
     ngx_fd_t          at_fd;
     ngx_str_t         at_name;
 
-    if (of->disable_symlinks == NJET_DISABLE_SYMLINKS_OFF) {
+    if (of->disable_symlinks == NJT_DISABLE_SYMLINKS_OFF) {
         fd = ngx_open_file(name->data, mode, create, access);
 
-        if (fd == NJET_INVALID_FILE) {
+        if (fd == NJT_INVALID_FILE) {
             of->err = ngx_errno;
             of->failed = ngx_open_file_n;
-            return NJET_INVALID_FILE;
+            return NJT_INVALID_FILE;
         }
 
         return fd;
@@ -657,15 +657,15 @@ ngx_open_file_wrapper(ngx_str_t *name, ngx_open_file_info_t *of,
 
         *cp = '\0';
 
-        at_fd = ngx_open_file(p, NJET_FILE_SEARCH|NJET_FILE_NONBLOCK,
-                              NJET_FILE_OPEN, 0);
+        at_fd = ngx_open_file(p, NJT_FILE_SEARCH|NJT_FILE_NONBLOCK,
+                              NJT_FILE_OPEN, 0);
 
         *cp = '/';
 
-        if (at_fd == NJET_INVALID_FILE) {
+        if (at_fd == NJT_INVALID_FILE) {
             of->err = ngx_errno;
             of->failed = ngx_open_file_n;
-            return NJET_INVALID_FILE;
+            return NJT_INVALID_FILE;
         }
 
         at_name.len = of->disable_symlinks_from;
@@ -674,20 +674,20 @@ ngx_open_file_wrapper(ngx_str_t *name, ngx_open_file_info_t *of,
     } else if (*p == '/') {
 
         at_fd = ngx_open_file("/",
-                              NJET_FILE_SEARCH|NJET_FILE_NONBLOCK,
-                              NJET_FILE_OPEN, 0);
+                              NJT_FILE_SEARCH|NJT_FILE_NONBLOCK,
+                              NJT_FILE_OPEN, 0);
 
-        if (at_fd == NJET_INVALID_FILE) {
+        if (at_fd == NJT_INVALID_FILE) {
             of->err = ngx_errno;
             of->failed = ngx_openat_file_n;
-            return NJET_INVALID_FILE;
+            return NJT_INVALID_FILE;
         }
 
         at_name.len = 1;
         p++;
 
     } else {
-        at_fd = NJET_AT_FDCWD;
+        at_fd = NJT_AT_FDCWD;
     }
 
     for ( ;; ) {
@@ -703,27 +703,27 @@ ngx_open_file_wrapper(ngx_str_t *name, ngx_open_file_info_t *of,
 
         *cp = '\0';
 
-        if (of->disable_symlinks == NJET_DISABLE_SYMLINKS_NOTOWNER) {
+        if (of->disable_symlinks == NJT_DISABLE_SYMLINKS_NOTOWNER) {
             fd = ngx_openat_file_owner(at_fd, p,
-                                       NJET_FILE_SEARCH|NJET_FILE_NONBLOCK,
-                                       NJET_FILE_OPEN, 0, log);
+                                       NJT_FILE_SEARCH|NJT_FILE_NONBLOCK,
+                                       NJT_FILE_OPEN, 0, log);
 
         } else {
             fd = ngx_openat_file(at_fd, p,
-                           NJET_FILE_SEARCH|NJET_FILE_NONBLOCK|NJET_FILE_NOFOLLOW,
-                           NJET_FILE_OPEN, 0);
+                           NJT_FILE_SEARCH|NJT_FILE_NONBLOCK|NJT_FILE_NOFOLLOW,
+                           NJT_FILE_OPEN, 0);
         }
 
         *cp = '/';
 
-        if (fd == NJET_INVALID_FILE) {
+        if (fd == NJT_INVALID_FILE) {
             of->err = ngx_errno;
             of->failed = ngx_openat_file_n;
             goto failed;
         }
 
-        if (at_fd != NJET_AT_FDCWD && ngx_close_file(at_fd) == NJET_FILE_ERROR) {
-            ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+        if (at_fd != NJT_AT_FDCWD && ngx_close_file(at_fd) == NJT_FILE_ERROR) {
+            ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                           ngx_close_file_n " \"%V\" failed", &at_name);
         }
 
@@ -749,26 +749,26 @@ ngx_open_file_wrapper(ngx_str_t *name, ngx_open_file_info_t *of,
         goto done;
     }
 
-    if (of->disable_symlinks == NJET_DISABLE_SYMLINKS_NOTOWNER
-        && !(create & (NJET_FILE_CREATE_OR_OPEN|NJET_FILE_TRUNCATE)))
+    if (of->disable_symlinks == NJT_DISABLE_SYMLINKS_NOTOWNER
+        && !(create & (NJT_FILE_CREATE_OR_OPEN|NJT_FILE_TRUNCATE)))
     {
         fd = ngx_openat_file_owner(at_fd, p, mode, create, access, log);
 
     } else {
-        fd = ngx_openat_file(at_fd, p, mode|NJET_FILE_NOFOLLOW, create, access);
+        fd = ngx_openat_file(at_fd, p, mode|NJT_FILE_NOFOLLOW, create, access);
     }
 
 done:
 
-    if (fd == NJET_INVALID_FILE) {
+    if (fd == NJT_INVALID_FILE) {
         of->err = ngx_errno;
         of->failed = ngx_openat_file_n;
     }
 
 failed:
 
-    if (at_fd != NJET_AT_FDCWD && ngx_close_file(at_fd) == NJET_FILE_ERROR) {
-        ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+    if (at_fd != NJT_AT_FDCWD && ngx_close_file(at_fd) == NJT_FILE_ERROR) {
+        ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                       ngx_close_file_n " \"%V\" failed", &at_name);
     }
 
@@ -783,14 +783,14 @@ ngx_file_info_wrapper(ngx_str_t *name, ngx_open_file_info_t *of,
 {
     ngx_int_t  rc;
 
-#if !(NJET_HAVE_OPENAT)
+#if !(NJT_HAVE_OPENAT)
 
     rc = ngx_file_info(name->data, fi);
 
-    if (rc == NJET_FILE_ERROR) {
+    if (rc == NJT_FILE_ERROR) {
         of->err = ngx_errno;
         of->failed = ngx_file_info_n;
-        return NJET_FILE_ERROR;
+        return NJT_FILE_ERROR;
     }
 
     return rc;
@@ -799,35 +799,35 @@ ngx_file_info_wrapper(ngx_str_t *name, ngx_open_file_info_t *of,
 
     ngx_fd_t  fd;
 
-    if (of->disable_symlinks == NJET_DISABLE_SYMLINKS_OFF) {
+    if (of->disable_symlinks == NJT_DISABLE_SYMLINKS_OFF) {
 
         rc = ngx_file_info(name->data, fi);
 
-        if (rc == NJET_FILE_ERROR) {
+        if (rc == NJT_FILE_ERROR) {
             of->err = ngx_errno;
             of->failed = ngx_file_info_n;
-            return NJET_FILE_ERROR;
+            return NJT_FILE_ERROR;
         }
 
         return rc;
     }
 
-    fd = ngx_open_file_wrapper(name, of, NJET_FILE_RDONLY|NJET_FILE_NONBLOCK,
-                               NJET_FILE_OPEN, 0, log);
+    fd = ngx_open_file_wrapper(name, of, NJT_FILE_RDONLY|NJT_FILE_NONBLOCK,
+                               NJT_FILE_OPEN, 0, log);
 
-    if (fd == NJET_INVALID_FILE) {
-        return NJET_FILE_ERROR;
+    if (fd == NJT_INVALID_FILE) {
+        return NJT_FILE_ERROR;
     }
 
     rc = ngx_fd_info(fd, fi);
 
-    if (rc == NJET_FILE_ERROR) {
+    if (rc == NJT_FILE_ERROR) {
         of->err = ngx_errno;
         of->failed = ngx_fd_info_n;
     }
 
-    if (ngx_close_file(fd) == NJET_FILE_ERROR) {
-        ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+    if (ngx_close_file(fd) == NJT_FILE_ERROR) {
+        ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                       ngx_close_file_n " \"%V\" failed", name);
     }
 
@@ -843,11 +843,11 @@ ngx_open_and_stat_file(ngx_str_t *name, ngx_open_file_info_t *of,
     ngx_fd_t         fd;
     ngx_file_info_t  fi;
 
-    if (of->fd != NJET_INVALID_FILE) {
+    if (of->fd != NJT_INVALID_FILE) {
 
-        if (ngx_file_info_wrapper(name, of, &fi, log) == NJET_FILE_ERROR) {
-            of->fd = NJET_INVALID_FILE;
-            return NJET_ERROR;
+        if (ngx_file_info_wrapper(name, of, &fi, log) == NJT_FILE_ERROR) {
+            of->fd = NJT_INVALID_FILE;
+            return NJT_ERROR;
         }
 
         if (of->uniq == ngx_file_uniq(&fi)) {
@@ -856,9 +856,9 @@ ngx_open_and_stat_file(ngx_str_t *name, ngx_open_file_info_t *of,
 
     } else if (of->test_dir) {
 
-        if (ngx_file_info_wrapper(name, of, &fi, log) == NJET_FILE_ERROR) {
-            of->fd = NJET_INVALID_FILE;
-            return NJET_ERROR;
+        if (ngx_file_info_wrapper(name, of, &fi, log) == NJT_FILE_ERROR) {
+            of->fd = NJT_INVALID_FILE;
+            return NJT_ERROR;
         }
 
         if (ngx_is_dir(&fi)) {
@@ -873,55 +873,55 @@ ngx_open_and_stat_file(ngx_str_t *name, ngx_open_file_info_t *of,
          * This flag has no effect on a regular files.
          */
 
-        fd = ngx_open_file_wrapper(name, of, NJET_FILE_RDONLY|NJET_FILE_NONBLOCK,
-                                   NJET_FILE_OPEN, 0, log);
+        fd = ngx_open_file_wrapper(name, of, NJT_FILE_RDONLY|NJT_FILE_NONBLOCK,
+                                   NJT_FILE_OPEN, 0, log);
 
     } else {
-        fd = ngx_open_file_wrapper(name, of, NJET_FILE_APPEND,
-                                   NJET_FILE_CREATE_OR_OPEN,
-                                   NJET_FILE_DEFAULT_ACCESS, log);
+        fd = ngx_open_file_wrapper(name, of, NJT_FILE_APPEND,
+                                   NJT_FILE_CREATE_OR_OPEN,
+                                   NJT_FILE_DEFAULT_ACCESS, log);
     }
 
-    if (fd == NJET_INVALID_FILE) {
-        of->fd = NJET_INVALID_FILE;
-        return NJET_ERROR;
+    if (fd == NJT_INVALID_FILE) {
+        of->fd = NJT_INVALID_FILE;
+        return NJT_ERROR;
     }
 
-    if (ngx_fd_info(fd, &fi) == NJET_FILE_ERROR) {
-        ngx_log_error(NJET_LOG_CRIT, log, ngx_errno,
+    if (ngx_fd_info(fd, &fi) == NJT_FILE_ERROR) {
+        ngx_log_error(NJT_LOG_CRIT, log, ngx_errno,
                       ngx_fd_info_n " \"%V\" failed", name);
 
-        if (ngx_close_file(fd) == NJET_FILE_ERROR) {
-            ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+        if (ngx_close_file(fd) == NJT_FILE_ERROR) {
+            ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                           ngx_close_file_n " \"%V\" failed", name);
         }
 
-        of->fd = NJET_INVALID_FILE;
+        of->fd = NJT_INVALID_FILE;
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (ngx_is_dir(&fi)) {
-        if (ngx_close_file(fd) == NJET_FILE_ERROR) {
-            ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+        if (ngx_close_file(fd) == NJT_FILE_ERROR) {
+            ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                           ngx_close_file_n " \"%V\" failed", name);
         }
 
-        of->fd = NJET_INVALID_FILE;
+        of->fd = NJT_INVALID_FILE;
 
     } else {
         of->fd = fd;
 
-        if (of->read_ahead && ngx_file_size(&fi) > NJET_MIN_READ_AHEAD) {
-            if (ngx_read_ahead(fd, of->read_ahead) == NJET_ERROR) {
-                ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+        if (of->read_ahead && ngx_file_size(&fi) > NJT_MIN_READ_AHEAD) {
+            if (ngx_read_ahead(fd, of->read_ahead) == NJT_ERROR) {
+                ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                               ngx_read_ahead_n " \"%V\" failed", name);
             }
         }
 
         if (of->directio <= ngx_file_size(&fi)) {
-            if (ngx_directio_on(fd) == NJET_FILE_ERROR) {
-                ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+            if (ngx_directio_on(fd) == NJT_FILE_ERROR) {
+                ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                               ngx_directio_on_n " \"%V\" failed", name);
 
             } else {
@@ -941,7 +941,7 @@ done:
     of->is_link = ngx_is_link(&fi);
     of->is_exec = ngx_is_exec(&fi);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -956,10 +956,10 @@ ngx_open_file_add_event(ngx_open_file_cache_t *cache,
 {
     ngx_open_file_cache_event_t  *fev;
 
-    if (!(ngx_event_flags & NJET_USE_VNODE_EVENT)
+    if (!(ngx_event_flags & NJT_USE_VNODE_EVENT)
         || !of->events
         || file->event
-        || of->fd == NJET_INVALID_FILE
+        || of->fd == NJT_INVALID_FILE
         || file->uses < of->min_uses)
     {
         return;
@@ -994,8 +994,8 @@ ngx_open_file_add_event(ngx_open_file_cache_t *cache,
 
     file->event->log = ngx_cycle->log;
 
-    if (ngx_add_event(file->event, NJET_VNODE_EVENT, NJET_ONESHOT_EVENT)
-        != NJET_OK)
+    if (ngx_add_event(file->event, NJT_VNODE_EVENT, NJT_ONESHOT_EVENT)
+        != NJT_OK)
     {
         ngx_free(file->event->data);
         ngx_free(file->event);
@@ -1032,7 +1032,7 @@ static void
 ngx_close_cached_file(ngx_open_file_cache_t *cache,
     ngx_cached_open_file_t *file, ngx_uint_t min_uses, ngx_log_t *log)
 {
-    ngx_log_debug5(NJET_LOG_DEBUG_CORE, log, 0,
+    ngx_log_debug5(NJT_LOG_DEBUG_CORE, log, 0,
                    "close cached open file: %s, fd:%d, c:%d, u:%d, %d",
                    file->name, file->fd, file->count, file->uses, file->close);
 
@@ -1055,14 +1055,14 @@ ngx_close_cached_file(ngx_open_file_cache_t *cache,
         return;
     }
 
-    if (file->fd != NJET_INVALID_FILE) {
+    if (file->fd != NJT_INVALID_FILE) {
 
-        if (ngx_close_file(file->fd) == NJET_FILE_ERROR) {
-            ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+        if (ngx_close_file(file->fd) == NJT_FILE_ERROR) {
+            ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                           ngx_close_file_n " \"%s\" failed", file->name);
         }
 
-        file->fd = NJET_INVALID_FILE;
+        file->fd = NJT_INVALID_FILE;
     }
 
     if (!file->close) {
@@ -1081,8 +1081,8 @@ ngx_open_file_del_event(ngx_cached_open_file_t *file)
         return;
     }
 
-    (void) ngx_del_event(file->event, NJET_VNODE_EVENT,
-                         file->count ? NJET_FLUSH_EVENT : NJET_CLOSE_EVENT);
+    (void) ngx_del_event(file->event, NJT_VNODE_EVENT,
+                         file->count ? NJT_FLUSH_EVENT : NJT_CLOSE_EVENT);
 
     ngx_free(file->event->data);
     ngx_free(file->event);
@@ -1127,7 +1127,7 @@ ngx_expire_old_cached_files(ngx_open_file_cache_t *cache, ngx_uint_t n,
 
         cache->current--;
 
-        ngx_log_debug1(NJET_LOG_DEBUG_CORE, log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_CORE, log, 0,
                        "expire cached open file: %s", file->name);
 
         if (!file->err && !file->is_dir) {
@@ -1238,7 +1238,7 @@ ngx_open_file_cache_remove(ngx_event_t *ev)
 
     fev->cache->current--;
 
-    /* NJET_ONESHOT_EVENT was already deleted */
+    /* NJT_ONESHOT_EVENT was already deleted */
     file->event = NULL;
     file->use_event = 0;
 

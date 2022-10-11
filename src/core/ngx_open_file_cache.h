@@ -9,11 +9,11 @@
 #include <ngx_core.h>
 
 
-#ifndef _NJET_OPEN_FILE_CACHE_H_INCLUDED_
-#define _NJET_OPEN_FILE_CACHE_H_INCLUDED_
+#ifndef _NJT_OPEN_FILE_CACHE_H_INCLUDED_
+#define _NJT_OPEN_FILE_CACHE_H_INCLUDED_
 
 
-#define NJET_OPEN_FILE_DIRECTIO_OFF  NJET_MAX_OFF_T_VALUE
+#define NJT_OPEN_FILE_DIRECTIO_OFF  NJT_MAX_OFF_T_VALUE
 
 
 typedef struct {
@@ -32,7 +32,7 @@ typedef struct {
 
     ngx_uint_t               min_uses;
 
-#if (NJET_HAVE_OPENAT)
+#if (NJT_HAVE_OPENAT)
     size_t                   disable_symlinks_from;
     unsigned                 disable_symlinks:2;
 #endif
@@ -69,7 +69,7 @@ struct ngx_cached_open_file_s {
 
     uint32_t                 uses;
 
-#if (NJET_HAVE_OPENAT)
+#if (NJT_HAVE_OPENAT)
     size_t                   disable_symlinks_from;
     unsigned                 disable_symlinks:2;
 #endif
@@ -126,4 +126,4 @@ ngx_int_t ngx_open_cached_file(ngx_open_file_cache_t *cache, ngx_str_t *name,
     ngx_open_file_info_t *of, ngx_pool_t *pool);
 
 
-#endif /* _NJET_OPEN_FILE_CACHE_H_INCLUDED_ */
+#endif /* _NJT_OPEN_FILE_CACHE_H_INCLUDED_ */

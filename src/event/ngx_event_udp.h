@@ -4,37 +4,37 @@
  */
 
 
-#ifndef _NJET_EVENT_UDP_H_INCLUDED_
-#define _NJET_EVENT_UDP_H_INCLUDED_
+#ifndef _NJT_EVENT_UDP_H_INCLUDED_
+#define _NJT_EVENT_UDP_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#if !(NJET_WIN32)
+#if !(NJT_WIN32)
 
-#if ((NJET_HAVE_MSGHDR_MSG_CONTROL)                                            \
-     && (NJET_HAVE_IP_SENDSRCADDR || NJET_HAVE_IP_RECVDSTADDR                   \
-         || NJET_HAVE_IP_PKTINFO                                               \
-         || (NJET_HAVE_INET6 && NJET_HAVE_IPV6_RECVPKTINFO)))
-#define NJET_HAVE_ADDRINFO_CMSG  1
+#if ((NJT_HAVE_MSGHDR_MSG_CONTROL)                                            \
+     && (NJT_HAVE_IP_SENDSRCADDR || NJT_HAVE_IP_RECVDSTADDR                   \
+         || NJT_HAVE_IP_PKTINFO                                               \
+         || (NJT_HAVE_INET6 && NJT_HAVE_IPV6_RECVPKTINFO)))
+#define NJT_HAVE_ADDRINFO_CMSG  1
 
 #endif
 
 
-#if (NJET_HAVE_ADDRINFO_CMSG)
+#if (NJT_HAVE_ADDRINFO_CMSG)
 
 typedef union {
-#if (NJET_HAVE_IP_SENDSRCADDR || NJET_HAVE_IP_RECVDSTADDR)
+#if (NJT_HAVE_IP_SENDSRCADDR || NJT_HAVE_IP_RECVDSTADDR)
     struct in_addr        addr;
 #endif
 
-#if (NJET_HAVE_IP_PKTINFO)
+#if (NJT_HAVE_IP_PKTINFO)
     struct in_pktinfo     pkt;
 #endif
 
-#if (NJET_HAVE_INET6 && NJET_HAVE_IPV6_RECVPKTINFO)
+#if (NJT_HAVE_INET6 && NJT_HAVE_IPV6_RECVPKTINFO)
     struct in6_pktinfo    pkt6;
 #endif
 } ngx_addrinfo_t;
@@ -55,4 +55,4 @@ void ngx_udp_rbtree_insert_value(ngx_rbtree_node_t *temp,
 void ngx_delete_udp_connection(void *data);
 
 
-#endif /* _NJET_EVENT_UDP_H_INCLUDED_ */
+#endif /* _NJT_EVENT_UDP_H_INCLUDED_ */

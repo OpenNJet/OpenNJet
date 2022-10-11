@@ -21,7 +21,7 @@ static char *ngx_http_set_stub_status(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_http_status_commands[] = {
 
     { ngx_string("stub_status"),
-      NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_NOARGS|NJET_CONF_TAKE1,
+      NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_NOARGS|NJT_CONF_TAKE1,
       ngx_http_set_stub_status,
       0,
       0,
@@ -47,10 +47,10 @@ static ngx_http_module_t  ngx_http_stub_status_module_ctx = {
 
 
 ngx_module_t  ngx_http_stub_status_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_stub_status_module_ctx,      /* module context */
     ngx_http_status_commands,              /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -58,23 +58,23 @@ ngx_module_t  ngx_http_stub_status_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
 static ngx_http_variable_t  ngx_http_stub_status_vars[] = {
 
     { ngx_string("connections_active"), NULL, ngx_http_stub_status_variable,
-      0, NJET_HTTP_VAR_NOCACHEABLE, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("connections_reading"), NULL, ngx_http_stub_status_variable,
-      1, NJET_HTTP_VAR_NOCACHEABLE, 0 },
+      1, NJT_HTTP_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("connections_writing"), NULL, ngx_http_stub_status_variable,
-      2, NJET_HTTP_VAR_NOCACHEABLE, 0 },
+      2, NJT_HTTP_VAR_NOCACHEABLE, 0 },
 
     { ngx_string("connections_waiting"), NULL, ngx_http_stub_status_variable,
-      3, NJET_HTTP_VAR_NOCACHEABLE, 0 },
+      3, NJT_HTTP_VAR_NOCACHEABLE, 0 },
 
       ngx_http_null_variable
 };
@@ -89,13 +89,13 @@ ngx_http_stub_status_handler(ngx_http_request_t *r)
     ngx_chain_t        out;
     ngx_atomic_int_t   ap, hn, ac, rq, rd, wr, wa;
 
-    if (!(r->method & (NJET_HTTP_GET|NJET_HTTP_HEAD))) {
-        return NJET_HTTP_NOT_ALLOWED;
+    if (!(r->method & (NJT_HTTP_GET|NJT_HTTP_HEAD))) {
+        return NJT_HTTP_NOT_ALLOWED;
     }
 
     rc = ngx_http_discard_request_body(r);
 
-    if (rc != NJET_OK) {
+    if (rc != NJT_OK) {
         return rc;
     }
 
@@ -103,14 +103,14 @@ ngx_http_stub_status_handler(ngx_http_request_t *r)
     ngx_str_set(&r->headers_out.content_type, "text/plain");
     r->headers_out.content_type_lowcase = NULL;
 
-    size = sizeof("Active connections:  \n") + NJET_ATOMIC_T_LEN
+    size = sizeof("Active connections:  \n") + NJT_ATOMIC_T_LEN
            + sizeof("server accepts handled requests\n") - 1
-           + 6 + 3 * NJET_ATOMIC_T_LEN
-           + sizeof("Reading:  Writing:  Waiting:  \n") + 3 * NJET_ATOMIC_T_LEN;
+           + 6 + 3 * NJT_ATOMIC_T_LEN
+           + sizeof("Reading:  Writing:  Waiting:  \n") + 3 * NJT_ATOMIC_T_LEN;
 
     b = ngx_create_temp_buf(r->pool, size);
     if (b == NULL) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     out.buf = b;
@@ -134,7 +134,7 @@ ngx_http_stub_status_handler(ngx_http_request_t *r)
     b->last = ngx_sprintf(b->last, "Reading: %uA Writing: %uA Waiting: %uA \n",
                           rd, wr, wa);
 
-    r->headers_out.status = NJET_HTTP_OK;
+    r->headers_out.status = NJT_HTTP_OK;
     r->headers_out.content_length_n = b->last - b->pos;
 
     b->last_buf = (r == r->main) ? 1 : 0;
@@ -142,7 +142,7 @@ ngx_http_stub_status_handler(ngx_http_request_t *r)
 
     rc = ngx_http_send_header(r);
 
-    if (rc == NJET_ERROR || rc > NJET_OK || r->header_only) {
+    if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
         return rc;
     }
 
@@ -157,9 +157,9 @@ ngx_http_stub_status_variable(ngx_http_request_t *r,
     u_char            *p;
     ngx_atomic_int_t   value;
 
-    p = ngx_pnalloc(r->pool, NJET_ATOMIC_T_LEN);
+    p = ngx_pnalloc(r->pool, NJT_ATOMIC_T_LEN);
     if (p == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     switch (data) {
@@ -191,7 +191,7 @@ ngx_http_stub_status_variable(ngx_http_request_t *r,
     v->not_found = 0;
     v->data = p;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -203,14 +203,14 @@ ngx_http_stub_status_add_variables(ngx_conf_t *cf)
     for (v = ngx_http_stub_status_vars; v->name.len; v++) {
         var = ngx_http_add_variable(cf, &v->name, v->flags);
         if (var == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         var->get_handler = v->get_handler;
         var->data = v->data;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -222,5 +222,5 @@ ngx_http_set_stub_status(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     clcf = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
     clcf->handler = ngx_http_stub_status_handler;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

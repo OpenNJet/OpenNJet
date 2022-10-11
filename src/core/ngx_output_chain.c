@@ -11,7 +11,7 @@
 
 
 #if 0
-#define NJET_SENDFILE_LIMIT  4096
+#define NJT_SENDFILE_LIMIT  4096
 #endif
 
 /*
@@ -24,7 +24,7 @@
  * usually 512 bytes, however, on XFS it may be 4096 bytes.
  */
 
-#define NJET_NONE            1
+#define NJT_NONE            1
 
 
 static ngx_inline ngx_int_t
@@ -46,7 +46,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
     ngx_chain_t  *cl, *out, **last_out;
 
     if (ctx->in == NULL && ctx->busy == NULL
-#if (NJET_HAVE_FILE_AIO || NJET_THREADS)
+#if (NJT_HAVE_FILE_AIO || NJT_THREADS)
         && !ctx->aio
 #endif
        )
@@ -62,8 +62,8 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
         }
 
         if (in->next == NULL
-#if (NJET_SENDFILE_LIMIT)
-            && !(in->buf->in_file && in->buf->file_last > NJET_SENDFILE_LIMIT)
+#if (NJT_SENDFILE_LIMIT)
+            && !(in->buf->in_file && in->buf->file_last > NJT_SENDFILE_LIMIT)
 #endif
             && ngx_output_chain_as_is(ctx, in->buf))
         {
@@ -74,20 +74,20 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
     /* add the incoming buf to the chain ctx->in */
 
     if (in) {
-        if (ngx_output_chain_add_copy(ctx->pool, &ctx->in, in) == NJET_ERROR) {
-            return NJET_ERROR;
+        if (ngx_output_chain_add_copy(ctx->pool, &ctx->in, in) == NJT_ERROR) {
+            return NJT_ERROR;
         }
     }
 
     out = NULL;
     last_out = &out;
-    last = NJET_NONE;
+    last = NJT_NONE;
 
     for ( ;; ) {
 
-#if (NJET_HAVE_FILE_AIO || NJET_THREADS)
+#if (NJT_HAVE_FILE_AIO || NJT_THREADS)
         if (ctx->aio) {
-            return NJET_AGAIN;
+            return NJT_AGAIN;
         }
 #endif
 
@@ -102,7 +102,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
 
             if (bsize == 0 && !ngx_buf_special(ctx->in->buf)) {
 
-                ngx_log_error(NJET_LOG_ALERT, ctx->pool->log, 0,
+                ngx_log_error(NJT_LOG_ALERT, ctx->pool->log, 0,
                               "zero size buf in output "
                               "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                               ctx->in->buf->temporary,
@@ -124,7 +124,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
 
             if (bsize < 0) {
 
-                ngx_log_error(NJET_LOG_ALERT, ctx->pool->log, 0,
+                ngx_log_error(NJT_LOG_ALERT, ctx->pool->log, 0,
                               "negative size buf in output "
                               "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                               ctx->in->buf->temporary,
@@ -139,7 +139,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
 
                 ngx_debug_point();
 
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             if (ngx_output_chain_as_is(ctx, ctx->in->buf)) {
@@ -160,11 +160,11 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
 
                 rc = ngx_output_chain_align_file_buf(ctx, bsize);
 
-                if (rc == NJET_ERROR) {
-                    return NJET_ERROR;
+                if (rc == NJT_ERROR) {
+                    return NJT_ERROR;
                 }
 
-                if (rc != NJET_OK) {
+                if (rc != NJT_OK) {
 
                     if (ctx->free) {
 
@@ -180,19 +180,19 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
 
                         break;
 
-                    } else if (ngx_output_chain_get_buf(ctx, bsize) != NJET_OK) {
-                        return NJET_ERROR;
+                    } else if (ngx_output_chain_get_buf(ctx, bsize) != NJT_OK) {
+                        return NJT_ERROR;
                     }
                 }
             }
 
             rc = ngx_output_chain_copy_buf(ctx);
 
-            if (rc == NJET_ERROR) {
+            if (rc == NJT_ERROR) {
                 return rc;
             }
 
-            if (rc == NJET_AGAIN) {
+            if (rc == NJT_AGAIN) {
                 if (out) {
                     break;
                 }
@@ -208,7 +208,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
 
             cl = ngx_alloc_chain_link(ctx->pool);
             if (cl == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             cl->buf = ctx->buf;
@@ -218,10 +218,10 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
             ctx->buf = NULL;
         }
 
-        if (out == NULL && last != NJET_NONE) {
+        if (out == NULL && last != NJT_NONE) {
 
             if (ctx->in) {
-                return NJET_AGAIN;
+                return NJT_AGAIN;
             }
 
             return last;
@@ -229,7 +229,7 @@ ngx_output_chain(ngx_output_chain_ctx_t *ctx, ngx_chain_t *in)
 
         last = ctx->output_filter(ctx->filter_ctx, out);
 
-        if (last == NJET_ERROR || last == NJET_DONE) {
+        if (last == NJT_ERROR || last == NJT_DONE) {
             return last;
         }
 
@@ -249,7 +249,7 @@ ngx_output_chain_as_is(ngx_output_chain_ctx_t *ctx, ngx_buf_t *buf)
         return 1;
     }
 
-#if (NJET_THREADS)
+#if (NJT_THREADS)
     if (buf->in_file) {
         buf->file->thread_handler = ctx->thread_handler;
         buf->file->thread_ctx = ctx->filter_ctx;
@@ -258,15 +258,15 @@ ngx_output_chain_as_is(ngx_output_chain_ctx_t *ctx, ngx_buf_t *buf)
 
     sendfile = ctx->sendfile;
 
-#if (NJET_SENDFILE_LIMIT)
+#if (NJT_SENDFILE_LIMIT)
 
-    if (buf->in_file && buf->file_pos >= NJET_SENDFILE_LIMIT) {
+    if (buf->in_file && buf->file_pos >= NJT_SENDFILE_LIMIT) {
         sendfile = 0;
     }
 
 #endif
 
-#if !(NJET_HAVE_SENDFILE_NODISKIO)
+#if !(NJT_HAVE_SENDFILE_NODISKIO)
 
     /*
      * With DIRECTIO, disable sendfile() unless sendfile(SF_NOCACHE)
@@ -305,7 +305,7 @@ ngx_output_chain_add_copy(ngx_pool_t *pool, ngx_chain_t **chain,
     ngx_chain_t *in)
 {
     ngx_chain_t  *cl, **ll;
-#if (NJET_SENDFILE_LIMIT)
+#if (NJT_SENDFILE_LIMIT)
     ngx_buf_t    *b, *buf;
 #endif
 
@@ -319,33 +319,33 @@ ngx_output_chain_add_copy(ngx_pool_t *pool, ngx_chain_t **chain,
 
         cl = ngx_alloc_chain_link(pool);
         if (cl == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
-#if (NJET_SENDFILE_LIMIT)
+#if (NJT_SENDFILE_LIMIT)
 
         buf = in->buf;
 
         if (buf->in_file
-            && buf->file_pos < NJET_SENDFILE_LIMIT
-            && buf->file_last > NJET_SENDFILE_LIMIT)
+            && buf->file_pos < NJT_SENDFILE_LIMIT
+            && buf->file_last > NJT_SENDFILE_LIMIT)
         {
             /* split a file buf on two bufs by the sendfile limit */
 
             b = ngx_calloc_buf(pool);
             if (b == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             ngx_memcpy(b, buf, sizeof(ngx_buf_t));
 
             if (ngx_buf_in_memory(buf)) {
-                buf->pos += (ssize_t) (NJET_SENDFILE_LIMIT - buf->file_pos);
+                buf->pos += (ssize_t) (NJT_SENDFILE_LIMIT - buf->file_pos);
                 b->last = buf->pos;
             }
 
-            buf->file_pos = NJET_SENDFILE_LIMIT;
-            b->file_last = NJET_SENDFILE_LIMIT;
+            buf->file_pos = NJT_SENDFILE_LIMIT;
+            b->file_last = NJT_SENDFILE_LIMIT;
 
             cl->buf = b;
 
@@ -365,7 +365,7 @@ ngx_output_chain_add_copy(ngx_pool_t *pool, ngx_chain_t **chain,
         ll = &cl->next;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -378,7 +378,7 @@ ngx_output_chain_align_file_buf(ngx_output_chain_ctx_t *ctx, off_t bsize)
     in = ctx->in->buf;
 
     if (in->file == NULL || !in->file->directio) {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     ctx->directio = 1;
@@ -388,7 +388,7 @@ ngx_output_chain_align_file_buf(ngx_output_chain_ctx_t *ctx, off_t bsize)
     if (size == 0) {
 
         if (bsize >= (off_t) ctx->bufs.size) {
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
 
         size = (size_t) bsize;
@@ -403,7 +403,7 @@ ngx_output_chain_align_file_buf(ngx_output_chain_ctx_t *ctx, off_t bsize)
 
     ctx->buf = ngx_create_temp_buf(ctx->pool, size);
     if (ctx->buf == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     /*
@@ -411,11 +411,11 @@ ngx_output_chain_align_file_buf(ngx_output_chain_ctx_t *ctx, off_t bsize)
      * to reuse the buf via ctx->free list
      */
 
-#if (NJET_HAVE_ALIGNED_DIRECTIO)
+#if (NJT_HAVE_ALIGNED_DIRECTIO)
     ctx->unaligned = 1;
 #endif
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -459,7 +459,7 @@ ngx_output_chain_get_buf(ngx_output_chain_ctx_t *ctx, off_t bsize)
 
     b = ngx_calloc_buf(ctx->pool);
     if (b == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (ctx->directio) {
@@ -471,13 +471,13 @@ ngx_output_chain_get_buf(ngx_output_chain_ctx_t *ctx, off_t bsize)
 
         b->start = ngx_pmemalign(ctx->pool, size, (size_t) ctx->alignment);
         if (b->start == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
     } else {
         b->start = ngx_palloc(ctx->pool, size);
         if (b->start == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
@@ -491,7 +491,7 @@ ngx_output_chain_get_buf(ngx_output_chain_ctx_t *ctx, off_t bsize)
     ctx->buf = b;
     ctx->allocated++;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -511,9 +511,9 @@ ngx_output_chain_copy_buf(ngx_output_chain_ctx_t *ctx)
 
     sendfile = ctx->sendfile && !ctx->directio;
 
-#if (NJET_SENDFILE_LIMIT)
+#if (NJT_SENDFILE_LIMIT)
 
-    if (src->in_file && src->file_pos >= NJET_SENDFILE_LIMIT) {
+    if (src->in_file && src->file_pos >= NJT_SENDFILE_LIMIT) {
         sendfile = 0;
     }
 
@@ -550,11 +550,11 @@ ngx_output_chain_copy_buf(ngx_output_chain_ctx_t *ctx)
 
     } else {
 
-#if (NJET_HAVE_ALIGNED_DIRECTIO)
+#if (NJT_HAVE_ALIGNED_DIRECTIO)
 
         if (ctx->unaligned) {
-            if (ngx_directio_off(src->file->fd) == NJET_FILE_ERROR) {
-                ngx_log_error(NJET_LOG_ALERT, ctx->pool->log, ngx_errno,
+            if (ngx_directio_off(src->file->fd) == NJT_FILE_ERROR) {
+                ngx_log_error(NJT_LOG_ALERT, ctx->pool->log, ngx_errno,
                               ngx_directio_off_n " \"%s\" failed",
                               src->file->name.data);
             }
@@ -562,18 +562,18 @@ ngx_output_chain_copy_buf(ngx_output_chain_ctx_t *ctx)
 
 #endif
 
-#if (NJET_HAVE_FILE_AIO)
+#if (NJT_HAVE_FILE_AIO)
         if (ctx->aio_handler) {
             n = ngx_file_aio_read(src->file, dst->pos, (size_t) size,
                                   src->file_pos, ctx->pool);
-            if (n == NJET_AGAIN) {
+            if (n == NJT_AGAIN) {
                 ctx->aio_handler(ctx, src->file);
-                return NJET_AGAIN;
+                return NJT_AGAIN;
             }
 
         } else
 #endif
-#if (NJET_THREADS)
+#if (NJT_THREADS)
         if (ctx->thread_handler) {
             src->file->thread_task = ctx->thread_task;
             src->file->thread_handler = ctx->thread_handler;
@@ -581,9 +581,9 @@ ngx_output_chain_copy_buf(ngx_output_chain_ctx_t *ctx)
 
             n = ngx_thread_read(src->file, dst->pos, (size_t) size,
                                 src->file_pos, ctx->pool);
-            if (n == NJET_AGAIN) {
+            if (n == NJT_AGAIN) {
                 ctx->thread_task = src->file->thread_task;
-                return NJET_AGAIN;
+                return NJT_AGAIN;
             }
 
         } else
@@ -593,15 +593,15 @@ ngx_output_chain_copy_buf(ngx_output_chain_ctx_t *ctx)
                               src->file_pos);
         }
 
-#if (NJET_HAVE_ALIGNED_DIRECTIO)
+#if (NJT_HAVE_ALIGNED_DIRECTIO)
 
         if (ctx->unaligned) {
             ngx_err_t  err;
 
             err = ngx_errno;
 
-            if (ngx_directio_on(src->file->fd) == NJET_FILE_ERROR) {
-                ngx_log_error(NJET_LOG_ALERT, ctx->pool->log, ngx_errno,
+            if (ngx_directio_on(src->file->fd) == NJT_FILE_ERROR) {
+                ngx_log_error(NJT_LOG_ALERT, ctx->pool->log, ngx_errno,
                               ngx_directio_on_n " \"%s\" failed",
                               src->file->name.data);
             }
@@ -613,15 +613,15 @@ ngx_output_chain_copy_buf(ngx_output_chain_ctx_t *ctx)
 
 #endif
 
-        if (n == NJET_ERROR) {
+        if (n == NJT_ERROR) {
             return (ngx_int_t) n;
         }
 
         if (n != size) {
-            ngx_log_error(NJET_LOG_ALERT, ctx->pool->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, ctx->pool->log, 0,
                           ngx_read_file_n " read only %z of %O from \"%s\"",
                           n, size, src->file->name.data);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         dst->last += n;
@@ -645,7 +645,7 @@ ngx_output_chain_copy_buf(ngx_output_chain_ctx_t *ctx)
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -664,7 +664,7 @@ ngx_chain_writer(void *data, ngx_chain_t *in)
 
         if (ngx_buf_size(in->buf) == 0 && !ngx_buf_special(in->buf)) {
 
-            ngx_log_error(NJET_LOG_ALERT, ctx->pool->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, ctx->pool->log, 0,
                           "zero size buf in chain writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           in->buf->temporary,
@@ -684,7 +684,7 @@ ngx_chain_writer(void *data, ngx_chain_t *in)
 
         if (ngx_buf_size(in->buf) < 0) {
 
-            ngx_log_error(NJET_LOG_ALERT, ctx->pool->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, ctx->pool->log, 0,
                           "negative size buf in chain writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           in->buf->temporary,
@@ -699,18 +699,18 @@ ngx_chain_writer(void *data, ngx_chain_t *in)
 
             ngx_debug_point();
 
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         size += ngx_buf_size(in->buf);
 
-        ngx_log_debug2(NJET_LOG_DEBUG_CORE, c->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_CORE, c->log, 0,
                        "chain writer buf fl:%d s:%uO",
                        in->buf->flush, ngx_buf_size(in->buf));
 
         cl = ngx_alloc_chain_link(ctx->pool);
         if (cl == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         cl->buf = in->buf;
@@ -719,14 +719,14 @@ ngx_chain_writer(void *data, ngx_chain_t *in)
         ctx->last = &cl->next;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_CORE, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_CORE, c->log, 0,
                    "chain writer in: %p", ctx->out);
 
     for (cl = ctx->out; cl; cl = cl->next) {
 
         if (ngx_buf_size(cl->buf) == 0 && !ngx_buf_special(cl->buf)) {
 
-            ngx_log_error(NJET_LOG_ALERT, ctx->pool->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, ctx->pool->log, 0,
                           "zero size buf in chain writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           cl->buf->temporary,
@@ -746,7 +746,7 @@ ngx_chain_writer(void *data, ngx_chain_t *in)
 
         if (ngx_buf_size(cl->buf) < 0) {
 
-            ngx_log_error(NJET_LOG_ALERT, ctx->pool->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, ctx->pool->log, 0,
                           "negative size buf in chain writer "
                           "t:%d r:%d f:%d %p %p-%p %p %O-%O",
                           cl->buf->temporary,
@@ -761,23 +761,23 @@ ngx_chain_writer(void *data, ngx_chain_t *in)
 
             ngx_debug_point();
 
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         size += ngx_buf_size(cl->buf);
     }
 
     if (size == 0 && !c->buffered) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     chain = c->send_chain(c, ctx->out, ctx->limit);
 
-    ngx_log_debug1(NJET_LOG_DEBUG_CORE, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_CORE, c->log, 0,
                    "chain writer out: %p", chain);
 
-    if (chain == NJET_CHAIN_ERROR) {
-        return NJET_ERROR;
+    if (chain == NJT_CHAIN_ERROR) {
+        return NJT_ERROR;
     }
 
     if (chain && c->write->ready) {
@@ -796,9 +796,9 @@ ngx_chain_writer(void *data, ngx_chain_t *in)
         ctx->last = &ctx->out;
 
         if (!c->buffered) {
-            return NJET_OK;
+            return NJT_OK;
         }
     }
 
-    return NJET_AGAIN;
+    return NJT_AGAIN;
 }

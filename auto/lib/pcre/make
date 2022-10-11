@@ -7,7 +7,7 @@ if [ $PCRE_LIBRARY = PCRE2 ]; then
 
     # PCRE2
 
-    if [ $NJET_CC_NAME = msvc ]; then
+    if [ $NJT_CC_NAME = msvc ]; then
 
         # With PCRE2, it is not possible to compile all sources.
         # Since list of source files changes between versions, we
@@ -57,7 +57,7 @@ if [ $PCRE_LIBRARY = PCRE2 ]; then
         ngx_pcre_objs=`echo $ngx_pcre_objs \
             | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont\1/g"`
 
-        cat << END                                            >> $NJET_MAKEFILE
+        cat << END                                            >> $NJT_MAKEFILE
 
 PCRE_CFLAGS =	-O2 -Ob1 -Oi -Gs $LIBC $CPU_OPT
 PCRE_FLAGS =	-DHAVE_CONFIG_H -DPCRE2_STATIC -DPCRE2_CODE_UNIT_WIDTH=8 \\
@@ -72,7 +72,7 @@ $PCRE/src/pcre2.h:
 	&& copy /y pcre2.h.generic pcre2.h \\
 	&& copy /y pcre2_chartables.c.dist pcre2_chartables.c
 
-$PCRE/src/pcre2-8.lib:	$PCRE/src/pcre2.h $NJET_MAKEFILE
+$PCRE/src/pcre2-8.lib:	$PCRE/src/pcre2.h $NJT_MAKEFILE
 	cd $PCRE/src \\
 	&& cl -nologo -c \$(PCRE_CFLAGS) -I . \$(PCRE_FLAGS) \$(PCRE_SRCS) \\
 	&& link -lib -out:pcre2-8.lib -verbose:lib \$(PCRE_OBJS)
@@ -81,11 +81,11 @@ END
 
     else
 
-        cat << END                                            >> $NJET_MAKEFILE
+        cat << END                                            >> $NJT_MAKEFILE
 
 $PCRE/src/pcre2.h:	$PCRE/Makefile
 
-$PCRE/Makefile:	$NJET_MAKEFILE
+$PCRE/Makefile:	$NJT_MAKEFILE
 	cd $PCRE \\
 	&& if [ -f Makefile ]; then \$(MAKE) distclean; fi \\
 	&& CC="\$(CC)" CFLAGS="$PCRE_OPT" \\
@@ -104,7 +104,7 @@ else
 
     # PCRE
 
-    case "$NJET_CC_NAME" in
+    case "$NJT_CC_NAME" in
 
         msvc)
             ngx_makefile=makefile.msvc
@@ -134,9 +134,9 @@ else
 
     if [ -n "$ngx_makefile" ]; then
 
-        cat << END                                            >> $NJET_MAKEFILE
+        cat << END                                            >> $NJT_MAKEFILE
 
-`echo "$PCRE/pcre.lib:	$PCRE/pcre.h $NJET_MAKEFILE"			\
+`echo "$PCRE/pcre.lib:	$PCRE/pcre.h $NJT_MAKEFILE"			\
 	| sed -e "s/\//$ngx_regex_dirsep/g"`
 	\$(MAKE) -f auto/lib/pcre/$ngx_makefile $ngx_pcre $ngx_opt
 
@@ -147,11 +147,11 @@ END
 
     else
 
-        cat << END                                            >> $NJET_MAKEFILE
+        cat << END                                            >> $NJT_MAKEFILE
 
 $PCRE/pcre.h:	$PCRE/Makefile
 
-$PCRE/Makefile:	$NJET_MAKEFILE
+$PCRE/Makefile:	$NJT_MAKEFILE
 	cd $PCRE \\
 	&& if [ -f Makefile ]; then \$(MAKE) distclean; fi \\
 	&& CC="\$(CC)" CFLAGS="$PCRE_OPT" \\

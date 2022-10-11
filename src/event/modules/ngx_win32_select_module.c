@@ -58,10 +58,10 @@ static ngx_event_module_t  ngx_select_module_ctx = {
 };
 
 ngx_module_t  ngx_select_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_select_module_ctx,                /* module context */
     NULL,                                  /* module directives */
-    NJET_EVENT_MODULE,                      /* module type */
+    NJT_EVENT_MODULE,                      /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -69,7 +69,7 @@ ngx_module_t  ngx_select_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -84,14 +84,14 @@ ngx_select_init(ngx_cycle_t *cycle, ngx_msec_t timer)
         nevents = 0;
     }
 
-    if (ngx_process >= NJET_PROCESS_WORKER
+    if (ngx_process >= NJT_PROCESS_WORKER
         || cycle->old_cycle == NULL
         || cycle->old_cycle->connection_n < cycle->connection_n)
     {
         index = ngx_alloc(sizeof(ngx_event_t *) * 2 * cycle->connection_n,
                           cycle->log);
         if (index == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         if (event_index) {
@@ -106,12 +106,12 @@ ngx_select_init(ngx_cycle_t *cycle, ngx_msec_t timer)
 
     ngx_event_actions = ngx_select_module_ctx.actions;
 
-    ngx_event_flags = NJET_USE_LEVEL_EVENT;
+    ngx_event_flags = NJT_USE_LEVEL_EVENT;
 
     max_read = 0;
     max_write = 0;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -131,38 +131,38 @@ ngx_select_add_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
 
     c = ev->data;
 
-    ngx_log_debug2(NJET_LOG_DEBUG_EVENT, ev->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_EVENT, ev->log, 0,
                    "select add event fd:%d ev:%i", c->fd, event);
 
-    if (ev->index != NJET_INVALID_INDEX) {
-        ngx_log_error(NJET_LOG_ALERT, ev->log, 0,
+    if (ev->index != NJT_INVALID_INDEX) {
+        ngx_log_error(NJT_LOG_ALERT, ev->log, 0,
                       "select event fd:%d ev:%i is already set", c->fd, event);
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    if ((event == NJET_READ_EVENT && ev->write)
-        || (event == NJET_WRITE_EVENT && !ev->write))
+    if ((event == NJT_READ_EVENT && ev->write)
+        || (event == NJT_WRITE_EVENT && !ev->write))
     {
-        ngx_log_error(NJET_LOG_ALERT, ev->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, ev->log, 0,
                       "invalid select %s event fd:%d ev:%i",
                       ev->write ? "write" : "read", c->fd, event);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    if ((event == NJET_READ_EVENT && max_read >= FD_SETSIZE)
-        || (event == NJET_WRITE_EVENT && max_write >= FD_SETSIZE))
+    if ((event == NJT_READ_EVENT && max_read >= FD_SETSIZE)
+        || (event == NJT_WRITE_EVENT && max_write >= FD_SETSIZE))
     {
-        ngx_log_error(NJET_LOG_ERR, ev->log, 0,
+        ngx_log_error(NJT_LOG_ERR, ev->log, 0,
                       "maximum number of descriptors "
                       "supported by select() is %d", FD_SETSIZE);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    if (event == NJET_READ_EVENT) {
+    if (event == NJT_READ_EVENT) {
         FD_SET(c->fd, &master_read_fd_set);
         max_read++;
 
-    } else if (event == NJET_WRITE_EVENT) {
+    } else if (event == NJT_WRITE_EVENT) {
         FD_SET(c->fd, &master_write_fd_set);
         max_write++;
     }
@@ -173,7 +173,7 @@ ngx_select_add_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
     ev->index = nevents;
     nevents++;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -187,18 +187,18 @@ ngx_select_del_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
 
     ev->active = 0;
 
-    if (ev->index == NJET_INVALID_INDEX) {
-        return NJET_OK;
+    if (ev->index == NJT_INVALID_INDEX) {
+        return NJT_OK;
     }
 
-    ngx_log_debug2(NJET_LOG_DEBUG_EVENT, ev->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_EVENT, ev->log, 0,
                    "select del event fd:%d ev:%i", c->fd, event);
 
-    if (event == NJET_READ_EVENT) {
+    if (event == NJT_READ_EVENT) {
         FD_CLR(c->fd, &master_read_fd_set);
         max_read--;
 
-    } else if (event == NJET_WRITE_EVENT) {
+    } else if (event == NJT_WRITE_EVENT) {
         FD_CLR(c->fd, &master_write_fd_set);
         max_write--;
     }
@@ -209,9 +209,9 @@ ngx_select_del_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
         e->index = ev->index;
     }
 
-    ev->index = NJET_INVALID_INDEX;
+    ev->index = NJT_INVALID_INDEX;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -227,18 +227,18 @@ ngx_select_process_events(ngx_cycle_t *cycle, ngx_msec_t timer,
     struct timeval     tv, *tp;
     ngx_connection_t  *c;
 
-#if (NJET_DEBUG)
-    if (cycle->log->log_level & NJET_LOG_DEBUG_ALL) {
+#if (NJT_DEBUG)
+    if (cycle->log->log_level & NJT_LOG_DEBUG_ALL) {
         for (i = 0; i < nevents; i++) {
             ev = event_index[i];
             c = ev->data;
-            ngx_log_debug2(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+            ngx_log_debug2(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                            "select event: fd:%d wr:%d", c->fd, ev->write);
         }
     }
 #endif
 
-    if (timer == NJET_TIMER_INFINITE) {
+    if (timer == NJT_TIMER_INFINITE) {
         tp = NULL;
 
     } else {
@@ -247,7 +247,7 @@ ngx_select_process_events(ngx_cycle_t *cycle, ngx_msec_t timer,
         tp = &tv;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                    "select timer: %M", timer);
 
     work_read_fd_set = master_read_fd_set;
@@ -273,31 +273,31 @@ ngx_select_process_events(ngx_cycle_t *cycle, ngx_msec_t timer,
 
     err = (ready == -1) ? ngx_socket_errno : 0;
 
-    if (flags & NJET_UPDATE_TIME) {
+    if (flags & NJT_UPDATE_TIME) {
         ngx_time_update();
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                    "select ready %d", ready);
 
     if (err) {
-        ngx_log_error(NJET_LOG_ALERT, cycle->log, err, "select() failed");
+        ngx_log_error(NJT_LOG_ALERT, cycle->log, err, "select() failed");
 
         if (err == WSAENOTSOCK) {
             ngx_select_repair_fd_sets(cycle);
         }
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (ready == 0) {
-        if (timer != NJET_TIMER_INFINITE) {
-            return NJET_OK;
+        if (timer != NJT_TIMER_INFINITE) {
+            return NJT_OK;
         }
 
-        ngx_log_error(NJET_LOG_ALERT, cycle->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, cycle->log, 0,
                       "select() returned no events without timeout");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     nready = 0;
@@ -310,20 +310,20 @@ ngx_select_process_events(ngx_cycle_t *cycle, ngx_msec_t timer,
         if (ev->write) {
             if (FD_ISSET(c->fd, &work_write_fd_set)) {
                 found++;
-                ngx_log_debug1(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+                ngx_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                                "select write %d", c->fd);
             }
 
             if (FD_ISSET(c->fd, &work_except_fd_set)) {
                 found++;
-                ngx_log_debug1(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+                ngx_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                                "select except %d", c->fd);
             }
 
         } else {
             if (FD_ISSET(c->fd, &work_read_fd_set)) {
                 found++;
-                ngx_log_debug1(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+                ngx_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                                "select read %d", c->fd);
             }
         }
@@ -342,13 +342,13 @@ ngx_select_process_events(ngx_cycle_t *cycle, ngx_msec_t timer,
     }
 
     if (ready != nready) {
-        ngx_log_error(NJET_LOG_ALERT, cycle->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, cycle->log, 0,
                       "select ready != events: %d:%d", ready, nready);
 
         ngx_select_repair_fd_sets(cycle);
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -369,7 +369,7 @@ ngx_select_repair_fd_sets(ngx_cycle_t *cycle)
         if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *) &n, &len) == -1) {
             err = ngx_socket_errno;
 
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, err,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, err,
                           "invalid descriptor #%d in read fd_set", s);
 
             FD_CLR(s, &master_read_fd_set);
@@ -384,7 +384,7 @@ ngx_select_repair_fd_sets(ngx_cycle_t *cycle)
         if (getsockopt(s, SOL_SOCKET, SO_TYPE, (char *) &n, &len) == -1) {
             err = ngx_socket_errno;
 
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, err,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, err,
                           "invalid descriptor #%d in write fd_set", s);
 
             FD_CLR(s, &master_write_fd_set);
@@ -401,8 +401,8 @@ ngx_select_init_conf(ngx_cycle_t *cycle, void *conf)
     ecf = ngx_event_get_conf(cycle->conf_ctx, ngx_event_core_module);
 
     if (ecf->use != ngx_select_module.ctx_index) {
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

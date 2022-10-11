@@ -16,8 +16,8 @@ ngx_daemon(ngx_log_t *log)
 
     switch (fork()) {
     case -1:
-        ngx_log_error(NJET_LOG_EMERG, log, ngx_errno, "fork() failed");
-        return NJET_ERROR;
+        ngx_log_error(NJT_LOG_EMERG, log, ngx_errno, "fork() failed");
+        return NJT_ERROR;
 
     case 0:
         break;
@@ -30,42 +30,42 @@ ngx_daemon(ngx_log_t *log)
     ngx_pid = ngx_getpid();
 
     if (setsid() == -1) {
-        ngx_log_error(NJET_LOG_EMERG, log, ngx_errno, "setsid() failed");
-        return NJET_ERROR;
+        ngx_log_error(NJT_LOG_EMERG, log, ngx_errno, "setsid() failed");
+        return NJT_ERROR;
     }
 
     umask(0);
 
     fd = open("/dev/null", O_RDWR);
     if (fd == -1) {
-        ngx_log_error(NJET_LOG_EMERG, log, ngx_errno,
+        ngx_log_error(NJT_LOG_EMERG, log, ngx_errno,
                       "open(\"/dev/null\") failed");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (dup2(fd, STDIN_FILENO) == -1) {
-        ngx_log_error(NJET_LOG_EMERG, log, ngx_errno, "dup2(STDIN) failed");
-        return NJET_ERROR;
+        ngx_log_error(NJT_LOG_EMERG, log, ngx_errno, "dup2(STDIN) failed");
+        return NJT_ERROR;
     }
 
     if (dup2(fd, STDOUT_FILENO) == -1) {
-        ngx_log_error(NJET_LOG_EMERG, log, ngx_errno, "dup2(STDOUT) failed");
-        return NJET_ERROR;
+        ngx_log_error(NJT_LOG_EMERG, log, ngx_errno, "dup2(STDOUT) failed");
+        return NJT_ERROR;
     }
 
 #if 0
     if (dup2(fd, STDERR_FILENO) == -1) {
-        ngx_log_error(NJET_LOG_EMERG, log, ngx_errno, "dup2(STDERR) failed");
-        return NJET_ERROR;
+        ngx_log_error(NJT_LOG_EMERG, log, ngx_errno, "dup2(STDERR) failed");
+        return NJT_ERROR;
     }
 #endif
 
     if (fd > STDERR_FILENO) {
         if (close(fd) == -1) {
-            ngx_log_error(NJET_LOG_EMERG, log, ngx_errno, "close() failed");
-            return NJET_ERROR;
+            ngx_log_error(NJT_LOG_EMERG, log, ngx_errno, "close() failed");
+            return NJT_ERROR;
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }

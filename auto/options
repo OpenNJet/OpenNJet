@@ -5,36 +5,36 @@
 
 help=no
 
-NJET_PREFIX=
-NJET_SBIN_PATH=
-NJET_MODULES_PATH=
-NJET_CONF_PREFIX=
-NJET_CONF_PATH=
-NJET_ERROR_LOG_PATH=
-NJET_PID_PATH=
-NJET_LOCK_PATH=
-NJET_USER=
-NJET_GROUP=
-NJET_BUILD=
+NJT_PREFIX=
+NJT_SBIN_PATH=
+NJT_MODULES_PATH=
+NJT_CONF_PREFIX=
+NJT_CONF_PATH=
+NJT_ERROR_LOG_PATH=
+NJT_PID_PATH=
+NJT_LOCK_PATH=
+NJT_USER=
+NJT_GROUP=
+NJT_BUILD=
 
 CC=${CC:-cc}
 CPP=
-NJET_OBJS=objs
+NJT_OBJS=objs
 
-NJET_DEBUG=NO
-NJET_CC_OPT=
-NJET_LD_OPT=
+NJT_DEBUG=NO
+NJT_CC_OPT=
+NJT_LD_OPT=
 CPU=NO
 
-NJET_RPATH=NO
+NJT_RPATH=NO
 
-NJET_TEST_BUILD_DEVPOLL=NO
-NJET_TEST_BUILD_EVENTPORT=NO
-NJET_TEST_BUILD_EPOLL=NO
-NJET_TEST_BUILD_SOLARIS_SENDFILEV=NO
+NJT_TEST_BUILD_DEVPOLL=NO
+NJT_TEST_BUILD_EVENTPORT=NO
+NJT_TEST_BUILD_EPOLL=NO
+NJT_TEST_BUILD_SOLARIS_SENDFILEV=NO
 
-NJET_PLATFORM=
-NJET_WINE=
+NJT_PLATFORM=
+NJT_WINE=
 
 EVENT_FOUND=NO
 
@@ -43,16 +43,16 @@ EVENT_POLL=NO
 
 USE_THREADS=NO
 
-NJET_FILE_AIO=NO
+NJT_FILE_AIO=NO
 
 HTTP=YES
 
-NJET_HTTP_LOG_PATH=
-NJET_HTTP_CLIENT_TEMP_PATH=
-NJET_HTTP_PROXY_TEMP_PATH=
-NJET_HTTP_FASTCGI_TEMP_PATH=
-NJET_HTTP_UWSGI_TEMP_PATH=
-NJET_HTTP_SCGI_TEMP_PATH=
+NJT_HTTP_LOG_PATH=
+NJT_HTTP_CLIENT_TEMP_PATH=
+NJT_HTTP_PROXY_TEMP_PATH=
+NJT_HTTP_FASTCGI_TEMP_PATH=
+NJT_HTTP_UWSGI_TEMP_PATH=
+NJT_HTTP_SCGI_TEMP_PATH=
 
 HTTP_CACHE=YES
 HTTP_CHARSET=YES
@@ -134,12 +134,12 @@ STREAM_SSL_PREREAD=NO
 DYNAMIC_MODULES=
 DYNAMIC_MODULES_SRCS=
 
-NJET_ADDONS=
-NJET_ADDON_SRCS=
-NJET_ADDON_DEPS=
+NJT_ADDONS=
+NJT_ADDON_SRCS=
+NJT_ADDON_DEPS=
 DYNAMIC_ADDONS=
 
-NJET_COMPAT=NO
+NJT_COMPAT=NO
 
 USE_PCRE=NO
 PCRE=NONE
@@ -157,20 +157,20 @@ ZLIB_OPT=
 ZLIB_ASM=NO
 
 USE_PERL=NO
-NJET_PERL=perl
+NJT_PERL=perl
 
 USE_LIBXSLT=NO
 USE_LIBGD=NO
 USE_GEOIP=NO
 
-NJET_GOOGLE_PERFTOOLS=NO
-NJET_CPP_TEST=NO
+NJT_GOOGLE_PERFTOOLS=NO
+NJT_CPP_TEST=NO
 
-NJET_LIBATOMIC=NO
+NJT_LIBATOMIC=NO
 
-NJET_CPU_CACHE_LINE=
+NJT_CPU_CACHE_LINE=
 
-NJET_POST_CONF_MSG=
+NJT_POST_CONF_MSG=
 
 opt=
 
@@ -186,21 +186,21 @@ do
     case "$option" in
         --help)                          help=yes                   ;;
 
-        --prefix=)                       NJET_PREFIX="!"             ;;
-        --prefix=*)                      NJET_PREFIX="$value"        ;;
-        --sbin-path=*)                   NJET_SBIN_PATH="$value"     ;;
-        --modules-path=*)                NJET_MODULES_PATH="$value"  ;;
-        --conf-path=*)                   NJET_CONF_PATH="$value"     ;;
-        --error-log-path=*)              NJET_ERROR_LOG_PATH="$value";;
-        --pid-path=*)                    NJET_PID_PATH="$value"      ;;
-        --lock-path=*)                   NJET_LOCK_PATH="$value"     ;;
-        --user=*)                        NJET_USER="$value"          ;;
-        --group=*)                       NJET_GROUP="$value"         ;;
+        --prefix=)                       NJT_PREFIX="!"             ;;
+        --prefix=*)                      NJT_PREFIX="$value"        ;;
+        --sbin-path=*)                   NJT_SBIN_PATH="$value"     ;;
+        --modules-path=*)                NJT_MODULES_PATH="$value"  ;;
+        --conf-path=*)                   NJT_CONF_PATH="$value"     ;;
+        --error-log-path=*)              NJT_ERROR_LOG_PATH="$value";;
+        --pid-path=*)                    NJT_PID_PATH="$value"      ;;
+        --lock-path=*)                   NJT_LOCK_PATH="$value"     ;;
+        --user=*)                        NJT_USER="$value"          ;;
+        --group=*)                       NJT_GROUP="$value"         ;;
 
-        --crossbuild=*)                  NJET_PLATFORM="$value"      ;;
+        --crossbuild=*)                  NJT_PLATFORM="$value"      ;;
 
-        --build=*)                       NJET_BUILD="$value"         ;;
-        --builddir=*)                    NJET_OBJS="$value"          ;;
+        --build=*)                       NJT_BUILD="$value"         ;;
+        --builddir=*)                    NJT_OBJS="$value"          ;;
 
         --with-select_module)            EVENT_SELECT=YES           ;;
         --without-select_module)         EVENT_SELECT=NONE          ;;
@@ -209,22 +209,22 @@ do
 
         --with-threads)                  USE_THREADS=YES            ;;
 
-        --with-file-aio)                 NJET_FILE_AIO=YES           ;;
+        --with-file-aio)                 NJT_FILE_AIO=YES           ;;
 
         --with-ipv6)
-            NJET_POST_CONF_MSG="$NJET_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-ipv6\" option is deprecated"
         ;;
 
         --without-http)                  HTTP=NO                    ;;
         --without-http-cache)            HTTP_CACHE=NO              ;;
 
-        --http-log-path=*)               NJET_HTTP_LOG_PATH="$value" ;;
-        --http-client-body-temp-path=*)  NJET_HTTP_CLIENT_TEMP_PATH="$value" ;;
-        --http-proxy-temp-path=*)        NJET_HTTP_PROXY_TEMP_PATH="$value" ;;
-        --http-fastcgi-temp-path=*)      NJET_HTTP_FASTCGI_TEMP_PATH="$value" ;;
-        --http-uwsgi-temp-path=*)        NJET_HTTP_UWSGI_TEMP_PATH="$value" ;;
-        --http-scgi-temp-path=*)         NJET_HTTP_SCGI_TEMP_PATH="$value" ;;
+        --http-log-path=*)               NJT_HTTP_LOG_PATH="$value" ;;
+        --http-client-body-temp-path=*)  NJT_HTTP_CLIENT_TEMP_PATH="$value" ;;
+        --http-proxy-temp-path=*)        NJT_HTTP_PROXY_TEMP_PATH="$value" ;;
+        --http-fastcgi-temp-path=*)      NJT_HTTP_FASTCGI_TEMP_PATH="$value" ;;
+        --http-uwsgi-temp-path=*)        NJT_HTTP_UWSGI_TEMP_PATH="$value" ;;
+        --http-scgi-temp-path=*)         NJT_HTTP_SCGI_TEMP_PATH="$value" ;;
 
         --with-http_ssl_module)          HTTP_SSL=YES               ;;
         --with-http_v2_module)           HTTP_V2=YES                ;;
@@ -285,8 +285,8 @@ $0: warning: the \"--with-ipv6\" option is deprecated"
 
         --with-http_perl_module)         HTTP_PERL=YES              ;;
         --with-http_perl_module=dynamic) HTTP_PERL=DYNAMIC          ;;
-        --with-perl_modules_path=*)      NJET_PERL_MODULES="$value"  ;;
-        --with-perl=*)                   NJET_PERL="$value"          ;;
+        --with-perl_modules_path=*)      NJT_PERL_MODULES="$value"  ;;
+        --with-perl=*)                   NJT_PERL="$value"          ;;
 
         # STUB
         --with-http_stub_status_module)  HTTP_STUB_STATUS=YES       ;;
@@ -297,13 +297,13 @@ $0: warning: the \"--with-ipv6\" option is deprecated"
         # STUB
         --with-imap)
             MAIL=YES
-            NJET_POST_CONF_MSG="$NJET_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-imap\" option is deprecated, \
 use the \"--with-mail\" option instead"
         ;;
         --with-imap_ssl_module)
             MAIL_SSL=YES
-            NJET_POST_CONF_MSG="$NJET_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-imap_ssl_module\" option is deprecated, \
 use the \"--with-mail_ssl_module\" option instead"
         ;;
@@ -338,20 +338,20 @@ use the \"--with-mail_ssl_module\" option instead"
         --without-stream_upstream_zone_module)
                                          STREAM_UPSTREAM_ZONE=NO    ;;
 
-        --with-google_perftools_module)  NJET_GOOGLE_PERFTOOLS=YES   ;;
-        --with-cpp_test_module)          NJET_CPP_TEST=YES           ;;
+        --with-google_perftools_module)  NJT_GOOGLE_PERFTOOLS=YES   ;;
+        --with-cpp_test_module)          NJT_CPP_TEST=YES           ;;
 
-        --add-module=*)                  NJET_ADDONS="$NJET_ADDONS $value" ;;
+        --add-module=*)                  NJT_ADDONS="$NJT_ADDONS $value" ;;
         --add-dynamic-module=*)          DYNAMIC_ADDONS="$DYNAMIC_ADDONS $value" ;;
 
-        --with-compat)                   NJET_COMPAT=YES             ;;
+        --with-compat)                   NJT_COMPAT=YES             ;;
 
         --with-cc=*)                     CC="$value"                ;;
         --with-cpp=*)                    CPP="$value"               ;;
-        --with-cc-opt=*)                 NJET_CC_OPT="$value"        ;;
-        --with-ld-opt=*)                 NJET_LD_OPT="$value"        ;;
+        --with-cc-opt=*)                 NJT_CC_OPT="$value"        ;;
+        --with-ld-opt=*)                 NJT_LD_OPT="$value"        ;;
         --with-cpu-opt=*)                CPU="$value"               ;;
-        --with-debug)                    NJET_DEBUG=YES              ;;
+        --with-debug)                    NJT_DEBUG=YES              ;;
 
         --without-pcre)                  USE_PCRE=DISABLED          ;;
         --with-pcre)                     USE_PCRE=YES               ;;
@@ -364,28 +364,28 @@ use the \"--with-mail_ssl_module\" option instead"
         --with-openssl-opt=*)            OPENSSL_OPT="$value"       ;;
 
         --with-md5=*)
-            NJET_POST_CONF_MSG="$NJET_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-md5\" option is deprecated"
         ;;
         --with-md5-opt=*)
-            NJET_POST_CONF_MSG="$NJET_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-md5-opt\" option is deprecated"
         ;;
         --with-md5-asm)
-            NJET_POST_CONF_MSG="$NJET_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-md5-asm\" option is deprecated"
         ;;
 
         --with-sha1=*)
-            NJET_POST_CONF_MSG="$NJET_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-sha1\" option is deprecated"
         ;;
         --with-sha1-opt=*)
-            NJET_POST_CONF_MSG="$NJET_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-sha1-opt\" option is deprecated"
         ;;
         --with-sha1-asm)
-            NJET_POST_CONF_MSG="$NJET_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-sha1-asm\" option is deprecated"
         ;;
 
@@ -393,13 +393,13 @@ $0: warning: the \"--with-sha1-asm\" option is deprecated"
         --with-zlib-opt=*)               ZLIB_OPT="$value"          ;;
         --with-zlib-asm=*)               ZLIB_ASM="$value"          ;;
 
-        --with-libatomic)                NJET_LIBATOMIC=YES          ;;
-        --with-libatomic=*)              NJET_LIBATOMIC="$value"     ;;
+        --with-libatomic)                NJT_LIBATOMIC=YES          ;;
+        --with-libatomic=*)              NJT_LIBATOMIC="$value"     ;;
 
-        --test-build-devpoll)            NJET_TEST_BUILD_DEVPOLL=YES ;;
-        --test-build-eventport)          NJET_TEST_BUILD_EVENTPORT=YES ;;
-        --test-build-epoll)              NJET_TEST_BUILD_EPOLL=YES   ;;
-        --test-build-solaris-sendfilev)  NJET_TEST_BUILD_SOLARIS_SENDFILEV=YES ;;
+        --test-build-devpoll)            NJT_TEST_BUILD_DEVPOLL=YES ;;
+        --test-build-eventport)          NJT_TEST_BUILD_EVENTPORT=YES ;;
+        --test-build-epoll)              NJT_TEST_BUILD_EPOLL=YES   ;;
+        --test-build-solaris-sendfilev)  NJT_TEST_BUILD_SOLARIS_SENDFILEV=YES ;;
 
         *)
             echo "$0: error: invalid option \"$option\""
@@ -409,7 +409,7 @@ $0: warning: the \"--with-sha1-asm\" option is deprecated"
 done
 
 
-NJET_CONFIGURE="$opt"
+NJT_CONFIGURE="$opt"
 
 
 if [ $help = yes ]; then
@@ -597,32 +597,32 @@ END
 fi
 
 
-if [ ".$NJET_PLATFORM" = ".win32" ]; then
-    NJET_WINE=$WINE
+if [ ".$NJT_PLATFORM" = ".win32" ]; then
+    NJT_WINE=$WINE
 fi
 
 
-NJET_SBIN_PATH=${NJET_SBIN_PATH:-sbin/njet}
-NJET_MODULES_PATH=${NJET_MODULES_PATH:-modules}
-NJET_CONF_PATH=${NJET_CONF_PATH:-conf/njet.conf}
-NJET_CONF_PREFIX=`dirname $NJET_CONF_PATH`
-NJET_PID_PATH=${NJET_PID_PATH:-logs/njet.pid}
-NJET_LOCK_PATH=${NJET_LOCK_PATH:-logs/njet.lock}
+NJT_SBIN_PATH=${NJT_SBIN_PATH:-sbin/njet}
+NJT_MODULES_PATH=${NJT_MODULES_PATH:-modules}
+NJT_CONF_PATH=${NJT_CONF_PATH:-conf/njet.conf}
+NJT_CONF_PREFIX=`dirname $NJT_CONF_PATH`
+NJT_PID_PATH=${NJT_PID_PATH:-logs/njet.pid}
+NJT_LOCK_PATH=${NJT_LOCK_PATH:-logs/njet.lock}
 
-if [ ".$NJET_ERROR_LOG_PATH" = ".stderr" ]; then
-    NJET_ERROR_LOG_PATH=
+if [ ".$NJT_ERROR_LOG_PATH" = ".stderr" ]; then
+    NJT_ERROR_LOG_PATH=
 else
-    NJET_ERROR_LOG_PATH=${NJET_ERROR_LOG_PATH:-logs/error.log}
+    NJT_ERROR_LOG_PATH=${NJT_ERROR_LOG_PATH:-logs/error.log}
 fi
 
-NJET_HTTP_LOG_PATH=${NJET_HTTP_LOG_PATH:-logs/access.log}
-NJET_HTTP_CLIENT_TEMP_PATH=${NJET_HTTP_CLIENT_TEMP_PATH:-client_body_temp}
-NJET_HTTP_PROXY_TEMP_PATH=${NJET_HTTP_PROXY_TEMP_PATH:-proxy_temp}
-NJET_HTTP_FASTCGI_TEMP_PATH=${NJET_HTTP_FASTCGI_TEMP_PATH:-fastcgi_temp}
-NJET_HTTP_UWSGI_TEMP_PATH=${NJET_HTTP_UWSGI_TEMP_PATH:-uwsgi_temp}
-NJET_HTTP_SCGI_TEMP_PATH=${NJET_HTTP_SCGI_TEMP_PATH:-scgi_temp}
+NJT_HTTP_LOG_PATH=${NJT_HTTP_LOG_PATH:-logs/access.log}
+NJT_HTTP_CLIENT_TEMP_PATH=${NJT_HTTP_CLIENT_TEMP_PATH:-client_body_temp}
+NJT_HTTP_PROXY_TEMP_PATH=${NJT_HTTP_PROXY_TEMP_PATH:-proxy_temp}
+NJT_HTTP_FASTCGI_TEMP_PATH=${NJT_HTTP_FASTCGI_TEMP_PATH:-fastcgi_temp}
+NJT_HTTP_UWSGI_TEMP_PATH=${NJT_HTTP_UWSGI_TEMP_PATH:-uwsgi_temp}
+NJT_HTTP_SCGI_TEMP_PATH=${NJT_HTTP_SCGI_TEMP_PATH:-scgi_temp}
 
-case ".$NJET_PERL_MODULES" in
+case ".$NJT_PERL_MODULES" in
     ./*)
     ;;
 
@@ -630,6 +630,6 @@ case ".$NJET_PERL_MODULES" in
     ;;
 
     *)
-        NJET_PERL_MODULES=$NJET_PREFIX/$NJET_PERL_MODULES
+        NJT_PERL_MODULES=$NJT_PREFIX/$NJT_PERL_MODULES
     ;;
 esac

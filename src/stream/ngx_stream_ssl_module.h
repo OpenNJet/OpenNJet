@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_STREAM_SSL_H_INCLUDED_
-#define _NJET_STREAM_SSL_H_INCLUDED_
+#ifndef _NJT_STREAM_SSL_H_INCLUDED_
+#define _NJT_STREAM_SSL_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -62,4 +62,4 @@ typedef struct {
 extern ngx_module_t  ngx_stream_ssl_module;
 
 
-#endif /* _NJET_STREAM_SSL_H_INCLUDED_ */
+#endif /* _NJT_STREAM_SSL_H_INCLUDED_ */

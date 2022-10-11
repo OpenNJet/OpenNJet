@@ -5,15 +5,15 @@
  */
 
 
-#ifndef _NJET_OS_H_INCLUDED_
-#define _NJET_OS_H_INCLUDED_
+#ifndef _NJT_OS_H_INCLUDED_
+#define _NJT_OS_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#define NJET_IO_SENDFILE    1
+#define NJT_IO_SENDFILE    1
 
 
 typedef ssize_t (*ngx_recv_pt)(ngx_connection_t *c, u_char *buf, size_t size);
@@ -65,4 +65,4 @@ extern ngx_uint_t   ngx_win32_version;
 extern char         ngx_unique[];
 
 
-#endif /* _NJET_OS_H_INCLUDED_ */
+#endif /* _NJT_OS_H_INCLUDED_ */

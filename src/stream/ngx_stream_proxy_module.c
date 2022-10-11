@@ -13,7 +13,7 @@
 typedef struct {
     ngx_addr_t                      *addr;
     ngx_stream_complex_value_t      *value;
-#if (NJET_HAVE_TRANSPARENT_PROXY)
+#if (NJT_HAVE_TRANSPARENT_PROXY)
     ngx_uint_t                       transparent; /* unsigned  transparent:1; */
 #endif
 } ngx_stream_upstream_local_t;
@@ -35,7 +35,7 @@ typedef struct {
     ngx_stream_upstream_local_t     *local;
     ngx_flag_t                       socket_keepalive;
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
     ngx_flag_t                       ssl_enable;
     ngx_flag_t                       ssl_session_reuse;
     ngx_uint_t                       ssl_protocols;
@@ -91,7 +91,7 @@ static char *ngx_stream_proxy_pass(ngx_conf_t *cf, ngx_command_t *cmd,
 static char *ngx_stream_proxy_bind(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf);
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
 
 static ngx_int_t ngx_stream_proxy_send_proxy_protocol(ngx_stream_session_t *s);
 static char *ngx_stream_proxy_ssl_password_file(ngx_conf_t *cf,
@@ -110,12 +110,12 @@ static ngx_int_t ngx_stream_proxy_set_ssl(ngx_conf_t *cf,
 
 
 static ngx_conf_bitmask_t  ngx_stream_proxy_ssl_protocols[] = {
-    { ngx_string("SSLv2"), NJET_SSL_SSLv2 },
-    { ngx_string("SSLv3"), NJET_SSL_SSLv3 },
-    { ngx_string("TLSv1"), NJET_SSL_TLSv1 },
-    { ngx_string("TLSv1.1"), NJET_SSL_TLSv1_1 },
-    { ngx_string("TLSv1.2"), NJET_SSL_TLSv1_2 },
-    { ngx_string("TLSv1.3"), NJET_SSL_TLSv1_3 },
+    { ngx_string("SSLv2"), NJT_SSL_SSLv2 },
+    { ngx_string("SSLv3"), NJT_SSL_SSLv3 },
+    { ngx_string("TLSv1"), NJT_SSL_TLSv1 },
+    { ngx_string("TLSv1.1"), NJT_SSL_TLSv1_1 },
+    { ngx_string("TLSv1.2"), NJT_SSL_TLSv1_2 },
+    { ngx_string("TLSv1.3"), NJT_SSL_TLSv1_3 },
     { ngx_null_string, 0 }
 };
 
@@ -137,221 +137,221 @@ static ngx_conf_deprecated_t  ngx_conf_deprecated_proxy_upstream_buffer = {
 static ngx_command_t  ngx_stream_proxy_commands[] = {
 
     { ngx_string("proxy_pass"),
-      NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_stream_proxy_pass,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("proxy_bind"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE12,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE12,
       ngx_stream_proxy_bind,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("proxy_socket_keepalive"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_FLAG,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, socket_keepalive),
       NULL },
 
     { ngx_string("proxy_connect_timeout"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, connect_timeout),
       NULL },
 
     { ngx_string("proxy_timeout"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, timeout),
       NULL },
 
     { ngx_string("proxy_buffer_size"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_size_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, buffer_size),
       NULL },
 
     { ngx_string("proxy_downstream_buffer"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_size_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, buffer_size),
       &ngx_conf_deprecated_proxy_downstream_buffer },
 
     { ngx_string("proxy_upstream_buffer"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_size_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, buffer_size),
       &ngx_conf_deprecated_proxy_upstream_buffer },
 
     { ngx_string("proxy_upload_rate"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_stream_set_complex_value_size_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, upload_rate),
       NULL },
 
     { ngx_string("proxy_download_rate"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_stream_set_complex_value_size_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, download_rate),
       NULL },
 
     { ngx_string("proxy_requests"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, requests),
       NULL },
 
     { ngx_string("proxy_responses"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, responses),
       NULL },
 
     { ngx_string("proxy_next_upstream"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_FLAG,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, next_upstream),
       NULL },
 
     { ngx_string("proxy_next_upstream_tries"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, next_upstream_tries),
       NULL },
 
     { ngx_string("proxy_next_upstream_timeout"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, next_upstream_timeout),
       NULL },
 
     { ngx_string("proxy_protocol"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_FLAG,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, proxy_protocol),
       NULL },
 
     { ngx_string("proxy_half_close"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_FLAG,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, half_close),
       NULL },
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
 
     { ngx_string("proxy_ssl"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_FLAG,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_enable),
       NULL },
 
     { ngx_string("proxy_ssl_session_reuse"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_FLAG,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_session_reuse),
       NULL },
 
     { ngx_string("proxy_ssl_protocols"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_1MORE,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_1MORE,
       ngx_conf_set_bitmask_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_protocols),
       &ngx_stream_proxy_ssl_protocols },
 
     { ngx_string("proxy_ssl_ciphers"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_str_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_ciphers),
       NULL },
 
     { ngx_string("proxy_ssl_name"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_stream_set_complex_value_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_name),
       NULL },
 
     { ngx_string("proxy_ssl_server_name"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_FLAG,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_server_name),
       NULL },
 
     { ngx_string("proxy_ssl_verify"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_FLAG,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_verify),
       NULL },
 
     { ngx_string("proxy_ssl_verify_depth"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_verify_depth),
       NULL },
 
     { ngx_string("proxy_ssl_trusted_certificate"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_str_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_trusted_certificate),
       NULL },
 
     { ngx_string("proxy_ssl_crl"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_str_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_crl),
       NULL },
 
     { ngx_string("proxy_ssl_certificate"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_stream_set_complex_value_zero_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_certificate),
       NULL },
 
     { ngx_string("proxy_ssl_certificate_key"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_stream_set_complex_value_zero_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_certificate_key),
       NULL },
 
     { ngx_string("proxy_ssl_password_file"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_stream_proxy_ssl_password_file,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("proxy_ssl_conf_command"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE2,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE2,
       ngx_conf_set_keyval_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_proxy_srv_conf_t, ssl_conf_commands),
       &ngx_stream_proxy_ssl_conf_command_post },
 
@@ -374,10 +374,10 @@ static ngx_stream_module_t  ngx_stream_proxy_module_ctx = {
 
 
 ngx_module_t  ngx_stream_proxy_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_stream_proxy_module_ctx,          /* module context */
     ngx_stream_proxy_commands,             /* module directives */
-    NJET_STREAM_MODULE,                     /* module type */
+    NJT_STREAM_MODULE,                     /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -385,7 +385,7 @@ ngx_module_t  ngx_stream_proxy_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -407,12 +407,12 @@ ngx_stream_proxy_handler(ngx_stream_session_t *s)
 
     pscf = ngx_stream_get_module_srv_conf(s, ngx_stream_proxy_module);
 
-    ngx_log_debug0(NJET_LOG_DEBUG_STREAM, c->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_STREAM, c->log, 0,
                    "proxy connection handler");
 
     u = ngx_pcalloc(c->pool, sizeof(ngx_stream_upstream_t));
     if (u == NULL) {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
@@ -423,10 +423,10 @@ ngx_stream_proxy_handler(ngx_stream_session_t *s)
     u->requests = 1;
 
     u->peer.log = c->log;
-    u->peer.log_error = NJET_ERROR_ERR;
+    u->peer.log_error = NJT_ERROR_ERR;
 
-    if (ngx_stream_proxy_set_local(s, u, pscf->local) != NJET_OK) {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+    if (ngx_stream_proxy_set_local(s, u, pscf->local) != NJT_OK) {
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
@@ -443,13 +443,13 @@ ngx_stream_proxy_handler(ngx_stream_session_t *s)
     s->upstream_states = ngx_array_create(c->pool, 1,
                                           sizeof(ngx_stream_upstream_state_t));
     if (s->upstream_states == NULL) {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
     p = ngx_pnalloc(c->pool, pscf->buffer_size);
     if (p == NULL) {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
@@ -463,8 +463,8 @@ ngx_stream_proxy_handler(ngx_stream_session_t *s)
     }
 
     if (pscf->upstream_value) {
-        if (ngx_stream_proxy_eval(s, pscf) != NJET_OK) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        if (ngx_stream_proxy_eval(s, pscf) != NJT_OK) {
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
     }
@@ -475,7 +475,7 @@ ngx_stream_proxy_handler(ngx_stream_session_t *s)
 
     } else {
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
         u->ssl_name = u->resolved->host;
 #endif
 
@@ -503,16 +503,16 @@ ngx_stream_proxy_handler(ngx_stream_session_t *s)
             if (u->resolved->port == 0
                 && u->resolved->sockaddr->sa_family != AF_UNIX)
             {
-                ngx_log_error(NJET_LOG_ERR, c->log, 0,
+                ngx_log_error(NJT_LOG_ERR, c->log, 0,
                               "no port in upstream \"%V\"", host);
-                ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+                ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
                 return;
             }
 
             if (ngx_stream_upstream_create_round_robin_peer(s, u->resolved)
-                != NJET_OK)
+                != NJT_OK)
             {
-                ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+                ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
                 return;
             }
 
@@ -522,9 +522,9 @@ ngx_stream_proxy_handler(ngx_stream_session_t *s)
         }
 
         if (u->resolved->port == 0) {
-            ngx_log_error(NJET_LOG_ERR, c->log, 0,
+            ngx_log_error(NJT_LOG_ERR, c->log, 0,
                           "no port in upstream \"%V\"", host);
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
 
@@ -534,14 +534,14 @@ ngx_stream_proxy_handler(ngx_stream_session_t *s)
 
         ctx = ngx_resolve_start(cscf->resolver, &temp);
         if (ctx == NULL) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
 
-        if (ctx == NJET_NO_RESOLVER) {
-            ngx_log_error(NJET_LOG_ERR, c->log, 0,
+        if (ctx == NJT_NO_RESOLVER) {
+            ngx_log_error(NJT_LOG_ERR, c->log, 0,
                           "no resolver defined to resolve %V", host);
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
 
@@ -552,9 +552,9 @@ ngx_stream_proxy_handler(ngx_stream_session_t *s)
 
         u->resolved->ctx = ctx;
 
-        if (ngx_resolve_name(ctx) != NJET_OK) {
+        if (ngx_resolve_name(ctx) != NJT_OK) {
             u->resolved->ctx = NULL;
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
 
@@ -564,19 +564,19 @@ ngx_stream_proxy_handler(ngx_stream_session_t *s)
 found:
 
     if (uscf == NULL) {
-        ngx_log_error(NJET_LOG_ALERT, c->log, 0, "no upstream configuration");
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        ngx_log_error(NJT_LOG_ALERT, c->log, 0, "no upstream configuration");
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
     u->upstream = uscf;
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
     u->ssl_name = uscf->host;
 #endif
 
-    if (uscf->peer.init(s, uscf) != NJET_OK) {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+    if (uscf->peer.init(s, uscf) != NJT_OK) {
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
@@ -600,8 +600,8 @@ ngx_stream_proxy_eval(ngx_stream_session_t *s,
     ngx_url_t               url;
     ngx_stream_upstream_t  *u;
 
-    if (ngx_stream_complex_value(s, pscf->upstream_value, &host) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_stream_complex_value(s, pscf->upstream_value, &host) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     ngx_memzero(&url, sizeof(ngx_url_t));
@@ -609,13 +609,13 @@ ngx_stream_proxy_eval(ngx_stream_session_t *s,
     url.url = host;
     url.no_resolve = 1;
 
-    if (ngx_parse_url(s->connection->pool, &url) != NJET_OK) {
+    if (ngx_parse_url(s->connection->pool, &url) != NJT_OK) {
         if (url.err) {
-            ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
+            ngx_log_error(NJT_LOG_ERR, s->connection->log, 0,
                           "%s in upstream \"%V\"", url.err, &url.url);
         }
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     u = s->upstream;
@@ -623,7 +623,7 @@ ngx_stream_proxy_eval(ngx_stream_session_t *s,
     u->resolved = ngx_pcalloc(s->connection->pool,
                               sizeof(ngx_stream_upstream_resolved_t));
     if (u->resolved == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (url.addrs) {
@@ -637,7 +637,7 @@ ngx_stream_proxy_eval(ngx_stream_session_t *s,
     u->resolved->port = url.port;
     u->resolved->no_port = url.no_port;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -651,46 +651,46 @@ ngx_stream_proxy_set_local(ngx_stream_session_t *s, ngx_stream_upstream_t *u,
 
     if (local == NULL) {
         u->peer.local = NULL;
-        return NJET_OK;
+        return NJT_OK;
     }
 
-#if (NJET_HAVE_TRANSPARENT_PROXY)
+#if (NJT_HAVE_TRANSPARENT_PROXY)
     u->peer.transparent = local->transparent;
 #endif
 
     if (local->value == NULL) {
         u->peer.local = local->addr;
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    if (ngx_stream_complex_value(s, local->value, &val) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_stream_complex_value(s, local->value, &val) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     if (val.len == 0) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     addr = ngx_palloc(s->connection->pool, sizeof(ngx_addr_t));
     if (addr == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     rc = ngx_parse_addr_port(s->connection->pool, addr, val.data, val.len);
-    if (rc == NJET_ERROR) {
-        return NJET_ERROR;
+    if (rc == NJT_ERROR) {
+        return NJT_ERROR;
     }
 
-    if (rc != NJET_OK) {
-        ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
+    if (rc != NJT_OK) {
+        ngx_log_error(NJT_LOG_ERR, s->connection->log, 0,
                       "invalid local address \"%V\"", &val);
-        return NJET_OK;
+        return NJT_OK;
     }
 
     addr->name = val;
     u->peer.local = addr;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -719,7 +719,7 @@ ngx_stream_proxy_connect(ngx_stream_session_t *s)
 
     u->state = ngx_array_push(s->upstream_states);
     if (u->state == NULL) {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
@@ -733,27 +733,27 @@ ngx_stream_proxy_connect(ngx_stream_session_t *s)
 
     rc = ngx_event_connect_peer(&u->peer);
 
-    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, c->log, 0, "proxy connect: %i", rc);
+    ngx_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "proxy connect: %i", rc);
 
-    if (rc == NJET_ERROR) {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+    if (rc == NJT_ERROR) {
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
     u->state->peer = u->peer.name;
 
-    if (rc == NJET_BUSY) {
-        ngx_log_error(NJET_LOG_ERR, c->log, 0, "no live upstreams");
-        ngx_stream_proxy_finalize(s, NJET_STREAM_BAD_GATEWAY);
+    if (rc == NJT_BUSY) {
+        ngx_log_error(NJT_LOG_ERR, c->log, 0, "no live upstreams");
+        ngx_stream_proxy_finalize(s, NJT_STREAM_BAD_GATEWAY);
         return;
     }
 
-    if (rc == NJET_DECLINED) {
+    if (rc == NJT_DECLINED) {
         ngx_stream_proxy_next_upstream(s);
         return;
     }
 
-    /* rc == NJET_OK || rc == NJET_AGAIN || rc == NJET_DONE */
+    /* rc == NJT_OK || rc == NJT_AGAIN || rc == NJT_DONE */
 
     pc = u->peer.connection;
 
@@ -763,7 +763,7 @@ ngx_stream_proxy_connect(ngx_stream_session_t *s)
     pc->read->log = c->log;
     pc->write->log = c->log;
 
-    if (rc != NJET_AGAIN) {
+    if (rc != NJT_AGAIN) {
         ngx_stream_proxy_init_upstream(s);
         return;
     }
@@ -793,7 +793,7 @@ ngx_stream_proxy_init_upstream(ngx_stream_session_t *s)
 
     if (pc->type == SOCK_STREAM
         && cscf->tcp_nodelay
-        && ngx_tcp_nodelay(pc) != NJET_OK)
+        && ngx_tcp_nodelay(pc) != NJT_OK)
     {
         ngx_stream_proxy_next_upstream(s);
         return;
@@ -801,12 +801,12 @@ ngx_stream_proxy_init_upstream(ngx_stream_session_t *s)
 
     pscf = ngx_stream_get_module_srv_conf(s, ngx_stream_proxy_module);
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
 
     if (pc->type == SOCK_STREAM && pscf->ssl_enable) {
 
         if (u->proxy_protocol) {
-            if (ngx_stream_proxy_send_proxy_protocol(s) != NJET_OK) {
+            if (ngx_stream_proxy_send_proxy_protocol(s) != NJT_OK) {
                 return;
             }
 
@@ -823,18 +823,18 @@ ngx_stream_proxy_init_upstream(ngx_stream_session_t *s)
 
     c = s->connection;
 
-    if (c->log->log_level >= NJET_LOG_INFO) {
+    if (c->log->log_level >= NJT_LOG_INFO) {
         ngx_str_t  str;
-        u_char     addr[NJET_SOCKADDR_STRLEN];
+        u_char     addr[NJT_SOCKADDR_STRLEN];
 
-        str.len = NJET_SOCKADDR_STRLEN;
+        str.len = NJT_SOCKADDR_STRLEN;
         str.data = addr;
 
-        if (ngx_connection_local_sockaddr(pc, &str, 1) == NJET_OK) {
+        if (ngx_connection_local_sockaddr(pc, &str, 1) == NJT_OK) {
             handler = c->log->handler;
             c->log->handler = NULL;
 
-            ngx_log_error(NJET_LOG_INFO, c->log, 0,
+            ngx_log_error(NJT_LOG_INFO, c->log, 0,
                           "%sproxy %V connected to %V",
                           pc->type == SOCK_DGRAM ? "udp " : "",
                           &str, u->peer.name);
@@ -847,13 +847,13 @@ ngx_stream_proxy_init_upstream(ngx_stream_session_t *s)
 
     if (u->peer.notify) {
         u->peer.notify(&u->peer, u->peer.data,
-                       NJET_STREAM_UPSTREAM_NOTIFY_CONNECT);
+                       NJT_STREAM_UPSTREAM_NOTIFY_CONNECT);
     }
 
     if (u->upstream_buf.start == NULL) {
         p = ngx_pnalloc(c->pool, pscf->buffer_size);
         if (p == NULL) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
 
@@ -864,13 +864,13 @@ ngx_stream_proxy_init_upstream(ngx_stream_session_t *s)
     }
 
     if (c->buffer && c->buffer->pos <= c->buffer->last) {
-        ngx_log_debug1(NJET_LOG_DEBUG_STREAM, c->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0,
                        "stream proxy add preread buffer: %uz",
                        c->buffer->last - c->buffer->pos);
 
         cl = ngx_chain_get_free_buf(c->pool, &u->free);
         if (cl == NULL) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
 
@@ -885,26 +885,26 @@ ngx_stream_proxy_init_upstream(ngx_stream_session_t *s)
     }
 
     if (u->proxy_protocol) {
-        ngx_log_debug0(NJET_LOG_DEBUG_STREAM, c->log, 0,
+        ngx_log_debug0(NJT_LOG_DEBUG_STREAM, c->log, 0,
                        "stream proxy add PROXY protocol header");
 
         cl = ngx_chain_get_free_buf(c->pool, &u->free);
         if (cl == NULL) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
 
-        p = ngx_pnalloc(c->pool, NJET_PROXY_PROTOCOL_MAX_HEADER);
+        p = ngx_pnalloc(c->pool, NJT_PROXY_PROTOCOL_MAX_HEADER);
         if (p == NULL) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
 
         cl->buf->pos = p;
 
-        p = ngx_proxy_protocol_write(c, p, p + NJET_PROXY_PROTOCOL_MAX_HEADER);
+        p = ngx_proxy_protocol_write(c, p, p + NJT_PROXY_PROTOCOL_MAX_HEADER);
         if (p == NULL) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
 
@@ -936,7 +936,7 @@ ngx_stream_proxy_init_upstream(ngx_stream_session_t *s)
 }
 
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
 
 static ngx_int_t
 ngx_stream_proxy_send_proxy_protocol(ngx_stream_session_t *s)
@@ -946,17 +946,17 @@ ngx_stream_proxy_send_proxy_protocol(ngx_stream_session_t *s)
     ngx_connection_t             *c, *pc;
     ngx_stream_upstream_t        *u;
     ngx_stream_proxy_srv_conf_t  *pscf;
-    u_char                        buf[NJET_PROXY_PROTOCOL_MAX_HEADER];
+    u_char                        buf[NJT_PROXY_PROTOCOL_MAX_HEADER];
 
     c = s->connection;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_STREAM, c->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_STREAM, c->log, 0,
                    "stream proxy send PROXY protocol header");
 
-    p = ngx_proxy_protocol_write(c, buf, buf + NJET_PROXY_PROTOCOL_MAX_HEADER);
+    p = ngx_proxy_protocol_write(c, buf, buf + NJT_PROXY_PROTOCOL_MAX_HEADER);
     if (p == NULL) {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
-        return NJET_ERROR;
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
+        return NJT_ERROR;
     }
 
     u = s->upstream;
@@ -967,10 +967,10 @@ ngx_stream_proxy_send_proxy_protocol(ngx_stream_session_t *s)
 
     n = pc->send(pc, buf, size);
 
-    if (n == NJET_AGAIN) {
-        if (ngx_handle_write_event(pc->write, 0) != NJET_OK) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
-            return NJET_ERROR;
+    if (n == NJT_AGAIN) {
+        if (ngx_handle_write_event(pc->write, 0) != NJT_OK) {
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
+            return NJT_ERROR;
         }
 
         pscf = ngx_stream_get_module_srv_conf(s, ngx_stream_proxy_module);
@@ -979,12 +979,12 @@ ngx_stream_proxy_send_proxy_protocol(ngx_stream_session_t *s)
 
         pc->write->handler = ngx_stream_proxy_connect_handler;
 
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
-    if (n == NJET_ERROR) {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_OK);
-        return NJET_ERROR;
+    if (n == NJT_ERROR) {
+        ngx_stream_proxy_finalize(s, NJT_STREAM_OK);
+        return NJT_ERROR;
     }
 
     if (n != size) {
@@ -996,15 +996,15 @@ ngx_stream_proxy_send_proxy_protocol(ngx_stream_session_t *s)
          * maintains atomicity along the path to the receiver.
          */
 
-        ngx_log_error(NJET_LOG_ERR, c->log, 0,
+        ngx_log_error(NJT_LOG_ERR, c->log, 0,
                       "could not send PROXY protocol header at once");
 
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -1016,7 +1016,7 @@ ngx_stream_proxy_ssl_password_file(ngx_conf_t *cf, ngx_command_t *cmd,
 
     ngx_str_t  *value;
 
-    if (pscf->ssl_passwords != NJET_CONF_UNSET_PTR) {
+    if (pscf->ssl_passwords != NJT_CONF_UNSET_PTR) {
         return "is duplicate";
     }
 
@@ -1025,10 +1025,10 @@ ngx_stream_proxy_ssl_password_file(ngx_conf_t *cf, ngx_command_t *cmd,
     pscf->ssl_passwords = ngx_ssl_read_password_file(cf, &value[1]);
 
     if (pscf->ssl_passwords == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -1038,7 +1038,7 @@ ngx_stream_proxy_ssl_conf_command_check(ngx_conf_t *cf, void *post, void *data)
 #ifndef SSL_CONF_FLAG_FILE
     return "is not supported on this platform";
 #else
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 #endif
 }
 
@@ -1057,16 +1057,16 @@ ngx_stream_proxy_ssl_init_connection(ngx_stream_session_t *s)
 
     pscf = ngx_stream_get_module_srv_conf(s, ngx_stream_proxy_module);
 
-    if (ngx_ssl_create_connection(pscf->ssl, pc, NJET_SSL_BUFFER|NJET_SSL_CLIENT)
-        != NJET_OK)
+    if (ngx_ssl_create_connection(pscf->ssl, pc, NJT_SSL_BUFFER|NJT_SSL_CLIENT)
+        != NJT_OK)
     {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
     if (pscf->ssl_server_name || pscf->ssl_verify) {
-        if (ngx_stream_proxy_ssl_name(s) != NJET_OK) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        if (ngx_stream_proxy_ssl_name(s) != NJT_OK) {
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
     }
@@ -1076,8 +1076,8 @@ ngx_stream_proxy_ssl_init_connection(ngx_stream_session_t *s)
         && (pscf->ssl_certificate->lengths
             || pscf->ssl_certificate_key->lengths))
     {
-        if (ngx_stream_proxy_ssl_certificate(s) != NJET_OK) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        if (ngx_stream_proxy_ssl_certificate(s) != NJT_OK) {
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
     }
@@ -1085,8 +1085,8 @@ ngx_stream_proxy_ssl_init_connection(ngx_stream_session_t *s)
     if (pscf->ssl_session_reuse) {
         pc->ssl->save_session = ngx_stream_proxy_ssl_save_session;
 
-        if (u->peer.set_session(&u->peer, u->peer.data) != NJET_OK) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        if (u->peer.set_session(&u->peer, u->peer.data) != NJT_OK) {
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
     }
@@ -1095,7 +1095,7 @@ ngx_stream_proxy_ssl_init_connection(ngx_stream_session_t *s)
 
     rc = ngx_ssl_handshake(pc);
 
-    if (rc == NJET_AGAIN) {
+    if (rc == NJT_AGAIN) {
 
         if (!pc->write->timer_set) {
             ngx_add_timer(pc->write, pscf->connect_timeout);
@@ -1127,7 +1127,7 @@ ngx_stream_proxy_ssl_handshake(ngx_connection_t *pc)
             rc = SSL_get_verify_result(pc->ssl->connection);
 
             if (rc != X509_V_OK) {
-                ngx_log_error(NJET_LOG_ERR, pc->log, 0,
+                ngx_log_error(NJT_LOG_ERR, pc->log, 0,
                               "upstream SSL certificate verify error: (%l:%s)",
                               rc, X509_verify_cert_error_string(rc));
                 goto failed;
@@ -1135,8 +1135,8 @@ ngx_stream_proxy_ssl_handshake(ngx_connection_t *pc)
 
             u = s->upstream;
 
-            if (ngx_ssl_check_host(pc, &u->ssl_name) != NJET_OK) {
-                ngx_log_error(NJET_LOG_ERR, pc->log, 0,
+            if (ngx_ssl_check_host(pc, &u->ssl_name) != NJT_OK) {
+                ngx_log_error(NJT_LOG_ERR, pc->log, 0,
                               "upstream SSL certificate does not match \"%V\"",
                               &u->ssl_name);
                 goto failed;
@@ -1184,8 +1184,8 @@ ngx_stream_proxy_ssl_name(ngx_stream_session_t *s)
     u = s->upstream;
 
     if (pscf->ssl_name) {
-        if (ngx_stream_complex_value(s, pscf->ssl_name, &name) != NJET_OK) {
-            return NJET_ERROR;
+        if (ngx_stream_complex_value(s, pscf->ssl_name, &name) != NJT_OK) {
+            return NJT_ERROR;
         }
 
     } else {
@@ -1241,23 +1241,23 @@ ngx_stream_proxy_ssl_name(ngx_stream_session_t *s)
 
     p = ngx_pnalloc(s->connection->pool, name.len + 1);
     if (p == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     (void) ngx_cpystrn(p, name.data, name.len + 1);
 
     name.data = p;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                    "upstream SSL server name: \"%s\"", name.data);
 
     if (SSL_set_tlsext_host_name(u->peer.connection->ssl->connection,
                                  (char *) name.data)
         == 0)
     {
-        ngx_ssl_error(NJET_LOG_ERR, s->connection->log, 0,
+        ngx_ssl_error(NJT_LOG_ERR, s->connection->log, 0,
                       "SSL_set_tlsext_host_name(\"%s\") failed", name.data);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
 #endif
@@ -1266,7 +1266,7 @@ done:
 
     u->ssl_name = name;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -1282,35 +1282,35 @@ ngx_stream_proxy_ssl_certificate(ngx_stream_session_t *s)
     pscf = ngx_stream_get_module_srv_conf(s, ngx_stream_proxy_module);
 
     if (ngx_stream_complex_value(s, pscf->ssl_certificate, &cert)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0,
                    "stream upstream ssl cert: \"%s\"", cert.data);
 
     if (*cert.data == '\0') {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (ngx_stream_complex_value(s, pscf->ssl_certificate_key, &key)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0,
                    "stream upstream ssl key: \"%s\"", key.data);
 
     if (ngx_ssl_connection_certificate(c, c->pool, &cert, &key,
                                        pscf->ssl_passwords)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 #endif
@@ -1336,25 +1336,25 @@ ngx_stream_proxy_resolve_handler(ngx_resolver_ctx_t *ctx)
     u = s->upstream;
     ur = u->resolved;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                    "stream upstream resolve");
 
     if (ctx->state) {
-        ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
+        ngx_log_error(NJT_LOG_ERR, s->connection->log, 0,
                       "%V could not be resolved (%i: %s)",
                       &ctx->name, ctx->state,
                       ngx_resolver_strerror(ctx->state));
 
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
     ur->naddrs = ctx->naddrs;
     ur->addrs = ctx->addrs;
 
-#if (NJET_DEBUG)
+#if (NJT_DEBUG)
     {
-    u_char      text[NJET_SOCKADDR_STRLEN];
+    u_char      text[NJT_SOCKADDR_STRLEN];
     ngx_str_t   addr;
     ngx_uint_t  i;
 
@@ -1362,16 +1362,16 @@ ngx_stream_proxy_resolve_handler(ngx_resolver_ctx_t *ctx)
 
     for (i = 0; i < ctx->naddrs; i++) {
         addr.len = ngx_sock_ntop(ur->addrs[i].sockaddr, ur->addrs[i].socklen,
-                                 text, NJET_SOCKADDR_STRLEN, 0);
+                                 text, NJT_SOCKADDR_STRLEN, 0);
 
-        ngx_log_debug1(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                        "name was resolved to %V", &addr);
     }
     }
 #endif
 
-    if (ngx_stream_upstream_create_round_robin_peer(s, ur) != NJET_OK) {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+    if (ngx_stream_upstream_create_round_robin_peer(s, ur) != NJT_OK) {
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
@@ -1413,8 +1413,8 @@ ngx_stream_proxy_process_connection(ngx_event_t *ev, ngx_uint_t from_upstream)
     u = s->upstream;
 
     if (c->close) {
-        ngx_log_error(NJET_LOG_INFO, c->log, 0, "shutdown timeout");
-        ngx_stream_proxy_finalize(s, NJET_STREAM_OK);
+        ngx_log_error(NJT_LOG_INFO, c->log, 0, "shutdown timeout");
+        ngx_stream_proxy_finalize(s, NJT_STREAM_OK);
         return;
     }
 
@@ -1430,9 +1430,9 @@ ngx_stream_proxy_process_connection(ngx_event_t *ev, ngx_uint_t from_upstream)
             ev->delayed = 0;
 
             if (!ev->ready) {
-                if (ngx_handle_read_event(ev, 0) != NJET_OK) {
+                if (ngx_handle_read_event(ev, 0) != NJT_OK) {
                     ngx_stream_proxy_finalize(s,
-                                              NJET_STREAM_INTERNAL_SERVER_ERROR);
+                                              NJT_STREAM_INTERNAL_SERVER_ERROR);
                     return;
                 }
 
@@ -1446,7 +1446,7 @@ ngx_stream_proxy_process_connection(ngx_event_t *ev, ngx_uint_t from_upstream)
         } else {
             if (s->connection->type == SOCK_DGRAM) {
 
-                if (pscf->responses == NJET_MAX_INT32_VALUE
+                if (pscf->responses == NJT_MAX_INT32_VALUE
                     || (u->responses >= pscf->responses * u->requests))
                 {
 
@@ -1458,7 +1458,7 @@ ngx_stream_proxy_process_connection(ngx_event_t *ev, ngx_uint_t from_upstream)
                     handler = c->log->handler;
                     c->log->handler = NULL;
 
-                    ngx_log_error(NJET_LOG_INFO, c->log, 0,
+                    ngx_log_error(NJT_LOG_INFO, c->log, 0,
                                   "udp timed out"
                                   ", packets from/to client:%ui/%ui"
                                   ", bytes from/to client:%O/%O"
@@ -1469,33 +1469,33 @@ ngx_stream_proxy_process_connection(ngx_event_t *ev, ngx_uint_t from_upstream)
 
                     c->log->handler = handler;
 
-                    ngx_stream_proxy_finalize(s, NJET_STREAM_OK);
+                    ngx_stream_proxy_finalize(s, NJT_STREAM_OK);
                     return;
                 }
 
-                ngx_connection_error(pc, NJET_ETIMEDOUT, "upstream timed out");
+                ngx_connection_error(pc, NJT_ETIMEDOUT, "upstream timed out");
 
                 pc->read->error = 1;
 
-                ngx_stream_proxy_finalize(s, NJET_STREAM_BAD_GATEWAY);
+                ngx_stream_proxy_finalize(s, NJT_STREAM_BAD_GATEWAY);
 
                 return;
             }
 
-            ngx_connection_error(c, NJET_ETIMEDOUT, "connection timed out");
+            ngx_connection_error(c, NJT_ETIMEDOUT, "connection timed out");
 
-            ngx_stream_proxy_finalize(s, NJET_STREAM_OK);
+            ngx_stream_proxy_finalize(s, NJT_STREAM_OK);
 
             return;
         }
 
     } else if (ev->delayed) {
 
-        ngx_log_debug0(NJET_LOG_DEBUG_STREAM, c->log, 0,
+        ngx_log_debug0(NJT_LOG_DEBUG_STREAM, c->log, 0,
                        "stream connection delayed");
 
-        if (ngx_handle_read_event(ev, 0) != NJET_OK) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        if (ngx_handle_read_event(ev, 0) != NJT_OK) {
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         }
 
         return;
@@ -1519,17 +1519,17 @@ ngx_stream_proxy_connect_handler(ngx_event_t *ev)
     s = c->data;
 
     if (ev->timedout) {
-        ngx_log_error(NJET_LOG_ERR, c->log, NJET_ETIMEDOUT, "upstream timed out");
+        ngx_log_error(NJT_LOG_ERR, c->log, NJT_ETIMEDOUT, "upstream timed out");
         ngx_stream_proxy_next_upstream(s);
         return;
     }
 
     ngx_del_timer(c->write);
 
-    ngx_log_debug0(NJET_LOG_DEBUG_STREAM, c->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_STREAM, c->log, 0,
                    "stream proxy connect upstream");
 
-    if (ngx_stream_proxy_test_connect(c) != NJET_OK) {
+    if (ngx_stream_proxy_test_connect(c) != NJT_OK) {
         ngx_stream_proxy_next_upstream(s);
         return;
     }
@@ -1544,15 +1544,15 @@ ngx_stream_proxy_test_connect(ngx_connection_t *c)
     int        err;
     socklen_t  len;
 
-#if (NJET_HAVE_KQUEUE)
+#if (NJT_HAVE_KQUEUE)
 
-    if (ngx_event_flags & NJET_USE_KQUEUE_EVENT)  {
+    if (ngx_event_flags & NJT_USE_KQUEUE_EVENT)  {
         err = c->write->kq_errno ? c->write->kq_errno : c->read->kq_errno;
 
         if (err) {
             (void) ngx_connection_error(c, err,
                                     "kevent() reported that connect() failed");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
     } else
@@ -1574,11 +1574,11 @@ ngx_stream_proxy_test_connect(ngx_connection_t *c)
 
         if (err) {
             (void) ngx_connection_error(c, err, "connect() failed");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -1612,11 +1612,11 @@ ngx_stream_proxy_process(ngx_stream_session_t *s, ngx_uint_t from_upstream,
         handler = c->log->handler;
         c->log->handler = NULL;
 
-        ngx_log_error(NJET_LOG_INFO, c->log, 0, "disconnected on shutdown");
+        ngx_log_error(NJT_LOG_INFO, c->log, 0, "disconnected on shutdown");
 
         c->log->handler = handler;
 
-        ngx_stream_proxy_finalize(s, NJET_STREAM_OK);
+        ngx_stream_proxy_finalize(s, NJT_STREAM_OK);
         return;
     }
 
@@ -1656,8 +1656,8 @@ ngx_stream_proxy_process(ngx_stream_session_t *s, ngx_uint_t from_upstream,
 
                 rc = ngx_stream_top_filter(s, *out, from_upstream);
 
-                if (rc == NJET_ERROR) {
-                    ngx_stream_proxy_finalize(s, NJET_STREAM_OK);
+                if (rc == NJT_ERROR) {
+                    ngx_stream_proxy_finalize(s, NJT_STREAM_OK);
                     return;
                 }
 
@@ -1696,11 +1696,11 @@ ngx_stream_proxy_process(ngx_stream_session_t *s, ngx_uint_t from_upstream,
 
             n = src->recv(src, b->last, size);
 
-            if (n == NJET_AGAIN) {
+            if (n == NJT_AGAIN) {
                 break;
             }
 
-            if (n == NJET_ERROR) {
+            if (n == NJT_ERROR) {
                 src->read->eof = 1;
                 n = 0;
             }
@@ -1727,7 +1727,7 @@ ngx_stream_proxy_process(ngx_stream_session_t *s, ngx_uint_t from_upstream,
                 cl = ngx_chain_get_free_buf(c->pool, &u->free);
                 if (cl == NULL) {
                     ngx_stream_proxy_finalize(s,
-                                              NJET_STREAM_INTERNAL_SERVER_ERROR);
+                                              NJT_STREAM_INTERNAL_SERVER_ERROR);
                     return;
                 }
 
@@ -1755,14 +1755,14 @@ ngx_stream_proxy_process(ngx_stream_session_t *s, ngx_uint_t from_upstream,
 
     c->log->action = "proxying connection";
 
-    if (ngx_stream_proxy_test_finalize(s, from_upstream) == NJET_OK) {
+    if (ngx_stream_proxy_test_finalize(s, from_upstream) == NJT_OK) {
         return;
     }
 
-    flags = src->read->eof ? NJET_CLOSE_EVENT : 0;
+    flags = src->read->eof ? NJT_CLOSE_EVENT : 0;
 
-    if (ngx_handle_read_event(src->read, flags) != NJET_OK) {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+    if (ngx_handle_read_event(src->read, flags) != NJT_OK) {
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
@@ -1771,22 +1771,22 @@ ngx_stream_proxy_process(ngx_stream_session_t *s, ngx_uint_t from_upstream,
         if (dst->type == SOCK_STREAM && pscf->half_close
             && src->read->eof && !u->half_closed && !dst->buffered)
         {
-            if (ngx_shutdown_socket(dst->fd, NJET_WRITE_SHUTDOWN) == -1) {
+            if (ngx_shutdown_socket(dst->fd, NJT_WRITE_SHUTDOWN) == -1) {
                 ngx_connection_error(c, ngx_socket_errno,
                                      ngx_shutdown_socket_n " failed");
 
-                ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+                ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
                 return;
             }
 
             u->half_closed = 1;
-            ngx_log_debug1(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
+            ngx_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                            "stream proxy %s socket shutdown",
                            from_upstream ? "client" : "upstream");
         }
 
-        if (ngx_handle_write_event(dst->write, 0) != NJET_OK) {
-            ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        if (ngx_handle_write_event(dst->write, 0) != NJT_OK) {
+            ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
         }
 
@@ -1818,27 +1818,27 @@ ngx_stream_proxy_test_finalize(ngx_stream_session_t *s,
     if (c->type == SOCK_DGRAM) {
 
         if (pscf->requests && u->requests < pscf->requests) {
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
 
         if (pscf->requests) {
             ngx_delete_udp_connection(c);
         }
 
-        if (pscf->responses == NJET_MAX_INT32_VALUE
+        if (pscf->responses == NJT_MAX_INT32_VALUE
             || u->responses < pscf->responses * u->requests)
         {
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
 
         if (pc == NULL || c->buffered || pc->buffered) {
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
 
         handler = c->log->handler;
         c->log->handler = NULL;
 
-        ngx_log_error(NJET_LOG_INFO, c->log, 0,
+        ngx_log_error(NJT_LOG_INFO, c->log, 0,
                       "udp done"
                       ", packets from/to client:%ui/%ui"
                       ", bytes from/to client:%O/%O"
@@ -1848,9 +1848,9 @@ ngx_stream_proxy_test_finalize(ngx_stream_session_t *s,
 
         c->log->handler = handler;
 
-        ngx_stream_proxy_finalize(s, NJET_STREAM_OK);
+        ngx_stream_proxy_finalize(s, NJT_STREAM_OK);
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     /* c->type == SOCK_STREAM */
@@ -1860,20 +1860,20 @@ ngx_stream_proxy_test_finalize(ngx_stream_session_t *s,
         || (!c->read->eof && c->buffered)
         || (!pc->read->eof && pc->buffered))
     {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     if (pscf->half_close) {
         /* avoid closing live connections until both read ends get EOF */
         if (!(c->read->eof && pc->read->eof && !c->buffered && !pc->buffered)) {
-             return NJET_DECLINED;
+             return NJT_DECLINED;
         }
     }
 
     handler = c->log->handler;
     c->log->handler = NULL;
 
-    ngx_log_error(NJET_LOG_INFO, c->log, 0,
+    ngx_log_error(NJT_LOG_INFO, c->log, 0,
                   "%s disconnected"
                   ", bytes from/to client:%O/%O"
                   ", bytes from/to upstream:%O/%O",
@@ -1882,9 +1882,9 @@ ngx_stream_proxy_test_finalize(ngx_stream_session_t *s,
 
     c->log->handler = handler;
 
-    ngx_stream_proxy_finalize(s, NJET_STREAM_OK);
+    ngx_stream_proxy_finalize(s, NJT_STREAM_OK);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -1896,16 +1896,16 @@ ngx_stream_proxy_next_upstream(ngx_stream_session_t *s)
     ngx_stream_upstream_t        *u;
     ngx_stream_proxy_srv_conf_t  *pscf;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                    "stream proxy next upstream");
 
     u = s->upstream;
     pc = u->peer.connection;
 
     if (pc && pc->buffered) {
-        ngx_log_error(NJET_LOG_ERR, s->connection->log, 0,
+        ngx_log_error(NJT_LOG_ERR, s->connection->log, 0,
                       "buffered data on next upstream");
-        ngx_stream_proxy_finalize(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
+        ngx_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return;
     }
 
@@ -1914,7 +1914,7 @@ ngx_stream_proxy_next_upstream(ngx_stream_session_t *s)
     }
 
     if (u->peer.sockaddr) {
-        u->peer.free(&u->peer, u->peer.data, NJET_PEER_FAILED);
+        u->peer.free(&u->peer, u->peer.data, NJT_PEER_FAILED);
         u->peer.sockaddr = NULL;
     }
 
@@ -1926,15 +1926,15 @@ ngx_stream_proxy_next_upstream(ngx_stream_session_t *s)
         || !pscf->next_upstream
         || (timeout && ngx_current_msec - u->peer.start_time >= timeout))
     {
-        ngx_stream_proxy_finalize(s, NJET_STREAM_BAD_GATEWAY);
+        ngx_stream_proxy_finalize(s, NJT_STREAM_BAD_GATEWAY);
         return;
     }
 
     if (pc) {
-        ngx_log_debug1(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                        "close proxy upstream connection: %d", pc->fd);
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
         if (pc->ssl) {
             pc->ssl->no_wait_shutdown = 1;
             pc->ssl->no_send_shutdown = 1;
@@ -1961,7 +1961,7 @@ ngx_stream_proxy_finalize(ngx_stream_session_t *s, ngx_uint_t rc)
     ngx_connection_t       *pc;
     ngx_stream_upstream_t  *u;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                    "finalize stream proxy: %i", rc);
 
     u = s->upstream;
@@ -1994,7 +1994,7 @@ ngx_stream_proxy_finalize(ngx_stream_session_t *s, ngx_uint_t rc)
         if (pc && pc->type == SOCK_DGRAM
             && (pc->read->error || pc->write->error))
         {
-            state = NJET_PEER_FAILED;
+            state = NJT_PEER_FAILED;
         }
 
         u->peer.free(&u->peer, u->peer.data, state);
@@ -2002,10 +2002,10 @@ ngx_stream_proxy_finalize(ngx_stream_session_t *s, ngx_uint_t rc)
     }
 
     if (pc) {
-        ngx_log_debug1(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                        "close stream proxy upstream connection: %d", pc->fd);
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
         if (pc->ssl) {
             pc->ssl->no_wait_shutdown = 1;
             (void) ngx_ssl_shutdown(pc);
@@ -2076,32 +2076,32 @@ ngx_stream_proxy_create_srv_conf(ngx_conf_t *cf)
      *     conf->upstream_value = NULL;
      */
 
-    conf->connect_timeout = NJET_CONF_UNSET_MSEC;
-    conf->timeout = NJET_CONF_UNSET_MSEC;
-    conf->next_upstream_timeout = NJET_CONF_UNSET_MSEC;
-    conf->buffer_size = NJET_CONF_UNSET_SIZE;
-    conf->upload_rate = NJET_CONF_UNSET_PTR;
-    conf->download_rate = NJET_CONF_UNSET_PTR;
-    conf->requests = NJET_CONF_UNSET_UINT;
-    conf->responses = NJET_CONF_UNSET_UINT;
-    conf->next_upstream_tries = NJET_CONF_UNSET_UINT;
-    conf->next_upstream = NJET_CONF_UNSET;
-    conf->proxy_protocol = NJET_CONF_UNSET;
-    conf->local = NJET_CONF_UNSET_PTR;
-    conf->socket_keepalive = NJET_CONF_UNSET;
-    conf->half_close = NJET_CONF_UNSET;
+    conf->connect_timeout = NJT_CONF_UNSET_MSEC;
+    conf->timeout = NJT_CONF_UNSET_MSEC;
+    conf->next_upstream_timeout = NJT_CONF_UNSET_MSEC;
+    conf->buffer_size = NJT_CONF_UNSET_SIZE;
+    conf->upload_rate = NJT_CONF_UNSET_PTR;
+    conf->download_rate = NJT_CONF_UNSET_PTR;
+    conf->requests = NJT_CONF_UNSET_UINT;
+    conf->responses = NJT_CONF_UNSET_UINT;
+    conf->next_upstream_tries = NJT_CONF_UNSET_UINT;
+    conf->next_upstream = NJT_CONF_UNSET;
+    conf->proxy_protocol = NJT_CONF_UNSET;
+    conf->local = NJT_CONF_UNSET_PTR;
+    conf->socket_keepalive = NJT_CONF_UNSET;
+    conf->half_close = NJT_CONF_UNSET;
 
-#if (NJET_STREAM_SSL)
-    conf->ssl_enable = NJET_CONF_UNSET;
-    conf->ssl_session_reuse = NJET_CONF_UNSET;
-    conf->ssl_name = NJET_CONF_UNSET_PTR;
-    conf->ssl_server_name = NJET_CONF_UNSET;
-    conf->ssl_verify = NJET_CONF_UNSET;
-    conf->ssl_verify_depth = NJET_CONF_UNSET_UINT;
-    conf->ssl_certificate = NJET_CONF_UNSET_PTR;
-    conf->ssl_certificate_key = NJET_CONF_UNSET_PTR;
-    conf->ssl_passwords = NJET_CONF_UNSET_PTR;
-    conf->ssl_conf_commands = NJET_CONF_UNSET_PTR;
+#if (NJT_STREAM_SSL)
+    conf->ssl_enable = NJT_CONF_UNSET;
+    conf->ssl_session_reuse = NJT_CONF_UNSET;
+    conf->ssl_name = NJT_CONF_UNSET_PTR;
+    conf->ssl_server_name = NJT_CONF_UNSET;
+    conf->ssl_verify = NJT_CONF_UNSET;
+    conf->ssl_verify_depth = NJT_CONF_UNSET_UINT;
+    conf->ssl_certificate = NJT_CONF_UNSET_PTR;
+    conf->ssl_certificate_key = NJT_CONF_UNSET_PTR;
+    conf->ssl_passwords = NJT_CONF_UNSET_PTR;
+    conf->ssl_conf_commands = NJT_CONF_UNSET_PTR;
 #endif
 
     return conf;
@@ -2134,7 +2134,7 @@ ngx_stream_proxy_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
                               prev->requests, 0);
 
     ngx_conf_merge_uint_value(conf->responses,
-                              prev->responses, NJET_MAX_INT32_VALUE);
+                              prev->responses, NJT_MAX_INT32_VALUE);
 
     ngx_conf_merge_uint_value(conf->next_upstream_tries,
                               prev->next_upstream_tries, 0);
@@ -2150,10 +2150,10 @@ ngx_stream_proxy_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_value(conf->half_close, prev->half_close, 0);
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
 
-    if (ngx_stream_proxy_merge_ssl(cf, conf, prev) != NJET_OK) {
-        return NJET_CONF_ERROR;
+    if (ngx_stream_proxy_merge_ssl(cf, conf, prev) != NJT_OK) {
+        return NJT_CONF_ERROR;
     }
 
     ngx_conf_merge_value(conf->ssl_enable, prev->ssl_enable, 0);
@@ -2162,8 +2162,8 @@ ngx_stream_proxy_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
                               prev->ssl_session_reuse, 1);
 
     ngx_conf_merge_bitmask_value(conf->ssl_protocols, prev->ssl_protocols,
-                              (NJET_CONF_BITMASK_SET|NJET_SSL_TLSv1
-                               |NJET_SSL_TLSv1_1|NJET_SSL_TLSv1_2));
+                              (NJT_CONF_BITMASK_SET|NJT_SSL_TLSv1
+                               |NJT_SSL_TLSv1_1|NJT_SSL_TLSv1_2));
 
     ngx_conf_merge_str_value(conf->ssl_ciphers, prev->ssl_ciphers, "DEFAULT");
 
@@ -2192,17 +2192,17 @@ ngx_stream_proxy_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_ptr_value(conf->ssl_conf_commands,
                               prev->ssl_conf_commands, NULL);
 
-    if (conf->ssl_enable && ngx_stream_proxy_set_ssl(cf, conf) != NJET_OK) {
-        return NJET_CONF_ERROR;
+    if (conf->ssl_enable && ngx_stream_proxy_set_ssl(cf, conf) != NJT_OK) {
+        return NJT_CONF_ERROR;
     }
 
 #endif
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
 
 static ngx_int_t
 ngx_stream_proxy_merge_ssl(ngx_conf_t *cf, ngx_stream_proxy_srv_conf_t *conf,
@@ -2212,19 +2212,19 @@ ngx_stream_proxy_merge_ssl(ngx_conf_t *cf, ngx_stream_proxy_srv_conf_t *conf,
 
     if (conf->ssl_protocols == 0
         && conf->ssl_ciphers.data == NULL
-        && conf->ssl_certificate == NJET_CONF_UNSET_PTR
-        && conf->ssl_certificate_key == NJET_CONF_UNSET_PTR
-        && conf->ssl_passwords == NJET_CONF_UNSET_PTR
-        && conf->ssl_verify == NJET_CONF_UNSET
-        && conf->ssl_verify_depth == NJET_CONF_UNSET_UINT
+        && conf->ssl_certificate == NJT_CONF_UNSET_PTR
+        && conf->ssl_certificate_key == NJT_CONF_UNSET_PTR
+        && conf->ssl_passwords == NJT_CONF_UNSET_PTR
+        && conf->ssl_verify == NJT_CONF_UNSET
+        && conf->ssl_verify_depth == NJT_CONF_UNSET_UINT
         && conf->ssl_trusted_certificate.data == NULL
         && conf->ssl_crl.data == NULL
-        && conf->ssl_session_reuse == NJET_CONF_UNSET
-        && conf->ssl_conf_commands == NJET_CONF_UNSET_PTR)
+        && conf->ssl_session_reuse == NJT_CONF_UNSET
+        && conf->ssl_conf_commands == NJT_CONF_UNSET_PTR)
     {
         if (prev->ssl) {
             conf->ssl = prev->ssl;
-            return NJET_OK;
+            return NJT_OK;
         }
 
         preserve = 1;
@@ -2235,7 +2235,7 @@ ngx_stream_proxy_merge_ssl(ngx_conf_t *cf, ngx_stream_proxy_srv_conf_t *conf,
 
     conf->ssl = ngx_pcalloc(cf->pool, sizeof(ngx_ssl_t));
     if (conf->ssl == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     conf->ssl->log = cf->log;
@@ -2249,7 +2249,7 @@ ngx_stream_proxy_merge_ssl(ngx_conf_t *cf, ngx_stream_proxy_srv_conf_t *conf,
         prev->ssl = conf->ssl;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -2259,35 +2259,35 @@ ngx_stream_proxy_set_ssl(ngx_conf_t *cf, ngx_stream_proxy_srv_conf_t *pscf)
     ngx_pool_cleanup_t  *cln;
 
     if (pscf->ssl->ctx) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    if (ngx_ssl_create(pscf->ssl, pscf->ssl_protocols, NULL) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_ssl_create(pscf->ssl, pscf->ssl_protocols, NULL) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     cln = ngx_pool_cleanup_add(cf->pool, 0);
     if (cln == NULL) {
         ngx_ssl_cleanup_ctx(pscf->ssl);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     cln->handler = ngx_ssl_cleanup_ctx;
     cln->data = pscf->ssl;
 
-    if (ngx_ssl_ciphers(cf, pscf->ssl, &pscf->ssl_ciphers, 0) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_ssl_ciphers(cf, pscf->ssl, &pscf->ssl_ciphers, 0) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     if (pscf->ssl_certificate
         && pscf->ssl_certificate->value.len)
     {
         if (pscf->ssl_certificate_key == NULL) {
-            ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
+            ngx_log_error(NJT_LOG_EMERG, cf->log, 0,
                           "no \"proxy_ssl_certificate_key\" is defined "
                           "for certificate \"%V\"",
                           &pscf->ssl_certificate->value);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         if (pscf->ssl_certificate->lengths
@@ -2296,7 +2296,7 @@ ngx_stream_proxy_set_ssl(ngx_conf_t *cf, ngx_stream_proxy_srv_conf_t *pscf)
             pscf->ssl_passwords =
                            ngx_ssl_preserve_passwords(cf, pscf->ssl_passwords);
             if (pscf->ssl_passwords == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
         } else {
@@ -2304,46 +2304,46 @@ ngx_stream_proxy_set_ssl(ngx_conf_t *cf, ngx_stream_proxy_srv_conf_t *pscf)
                                     &pscf->ssl_certificate->value,
                                     &pscf->ssl_certificate_key->value,
                                     pscf->ssl_passwords)
-                != NJET_OK)
+                != NJT_OK)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
         }
     }
 
     if (pscf->ssl_verify) {
         if (pscf->ssl_trusted_certificate.len == 0) {
-            ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
+            ngx_log_error(NJT_LOG_EMERG, cf->log, 0,
                       "no proxy_ssl_trusted_certificate for proxy_ssl_verify");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         if (ngx_ssl_trusted_certificate(cf, pscf->ssl,
                                         &pscf->ssl_trusted_certificate,
                                         pscf->ssl_verify_depth)
-            != NJET_OK)
+            != NJT_OK)
         {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
-        if (ngx_ssl_crl(cf, pscf->ssl, &pscf->ssl_crl) != NJET_OK) {
-            return NJET_ERROR;
+        if (ngx_ssl_crl(cf, pscf->ssl, &pscf->ssl_crl) != NJT_OK) {
+            return NJT_ERROR;
         }
     }
 
     if (ngx_ssl_client_session_cache(cf, pscf->ssl, pscf->ssl_session_reuse)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (ngx_ssl_conf_commands(cf, pscf->ssl, pscf->ssl_conf_commands)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 #endif
@@ -2378,20 +2378,20 @@ ngx_stream_proxy_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ccv.value = url;
     ccv.complex_value = &cv;
 
-    if (ngx_stream_compile_complex_value(&ccv) != NJET_OK) {
-        return NJET_CONF_ERROR;
+    if (ngx_stream_compile_complex_value(&ccv) != NJT_OK) {
+        return NJT_CONF_ERROR;
     }
 
     if (cv.lengths) {
         pscf->upstream_value = ngx_palloc(cf->pool,
                                           sizeof(ngx_stream_complex_value_t));
         if (pscf->upstream_value == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         *pscf->upstream_value = cv;
 
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     ngx_memzero(&u, sizeof(ngx_url_t));
@@ -2401,10 +2401,10 @@ ngx_stream_proxy_pass(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     pscf->upstream = ngx_stream_upstream_add(cf, &u, 0);
     if (pscf->upstream == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -2419,7 +2419,7 @@ ngx_stream_proxy_bind(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_stream_upstream_local_t         *local;
     ngx_stream_compile_complex_value_t   ccv;
 
-    if (pscf->local != NJET_CONF_UNSET_PTR) {
+    if (pscf->local != NJT_CONF_UNSET_PTR) {
         return "is duplicate";
     }
 
@@ -2427,7 +2427,7 @@ ngx_stream_proxy_bind(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     if (cf->args->nelts == 2 && ngx_strcmp(value[1].data, "off") == 0) {
         pscf->local = NULL;
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     ngx_memzero(&ccv, sizeof(ngx_stream_compile_complex_value_t));
@@ -2436,13 +2436,13 @@ ngx_stream_proxy_bind(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ccv.value = &value[1];
     ccv.complex_value = &cv;
 
-    if (ngx_stream_compile_complex_value(&ccv) != NJET_OK) {
-        return NJET_CONF_ERROR;
+    if (ngx_stream_compile_complex_value(&ccv) != NJT_OK) {
+        return NJT_CONF_ERROR;
     }
 
     local = ngx_pcalloc(cf->pool, sizeof(ngx_stream_upstream_local_t));
     if (local == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     pscf->local = local;
@@ -2450,7 +2450,7 @@ ngx_stream_proxy_bind(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (cv.lengths) {
         local->value = ngx_palloc(cf->pool, sizeof(ngx_stream_complex_value_t));
         if (local->value == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         *local->value = cv;
@@ -2458,30 +2458,30 @@ ngx_stream_proxy_bind(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     } else {
         local->addr = ngx_palloc(cf->pool, sizeof(ngx_addr_t));
         if (local->addr == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         rc = ngx_parse_addr_port(cf->pool, local->addr, value[1].data,
                                  value[1].len);
 
         switch (rc) {
-        case NJET_OK:
+        case NJT_OK:
             local->addr->name = value[1];
             break;
 
-        case NJET_DECLINED:
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        case NJT_DECLINED:
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid address \"%V\"", &value[1]);
             /* fall through */
 
         default:
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
     if (cf->args->nelts > 2) {
         if (ngx_strcmp(value[2].data, "transparent") == 0) {
-#if (NJET_HAVE_TRANSPARENT_PROXY)
+#if (NJT_HAVE_TRANSPARENT_PROXY)
             ngx_core_conf_t  *ccf;
 
             ccf = (ngx_core_conf_t *) ngx_get_conf(cf->cycle->conf_ctx,
@@ -2490,16 +2490,16 @@ ngx_stream_proxy_bind(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             ccf->transparent = 1;
             local->transparent = 1;
 #else
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "transparent proxying is not supported "
                                "on this platform, ignored");
 #endif
         } else {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid parameter \"%V\"", &value[2]);
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

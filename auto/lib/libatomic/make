@@ -3,13 +3,13 @@
 # Copyright (C) Nginx, Inc.
 
 
-    cat << END                                            >> $NJET_MAKEFILE
+    cat << END                                            >> $NJT_MAKEFILE
 
-$NJET_LIBATOMIC/src/libatomic_ops.a:	$NJET_LIBATOMIC/Makefile
-	cd $NJET_LIBATOMIC && \$(MAKE)
+$NJT_LIBATOMIC/src/libatomic_ops.a:	$NJT_LIBATOMIC/Makefile
+	cd $NJT_LIBATOMIC && \$(MAKE)
 
-$NJET_LIBATOMIC/Makefile:	$NJET_MAKEFILE
-	cd $NJET_LIBATOMIC \\
+$NJT_LIBATOMIC/Makefile:	$NJT_MAKEFILE
+	cd $NJT_LIBATOMIC \\
 	&& if [ -f Makefile ]; then \$(MAKE) distclean; fi \\
 	&& ./configure
 

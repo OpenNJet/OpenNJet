@@ -18,11 +18,11 @@ static char *ngx_mail_smtp_merge_srv_conf(ngx_conf_t *cf, void *parent,
 
 
 static ngx_conf_bitmask_t  ngx_mail_smtp_auth_methods[] = {
-    { ngx_string("plain"), NJET_MAIL_AUTH_PLAIN_ENABLED },
-    { ngx_string("login"), NJET_MAIL_AUTH_LOGIN_ENABLED },
-    { ngx_string("cram-md5"), NJET_MAIL_AUTH_CRAM_MD5_ENABLED },
-    { ngx_string("external"), NJET_MAIL_AUTH_EXTERNAL_ENABLED },
-    { ngx_string("none"), NJET_MAIL_AUTH_NONE_ENABLED },
+    { ngx_string("plain"), NJT_MAIL_AUTH_PLAIN_ENABLED },
+    { ngx_string("login"), NJT_MAIL_AUTH_LOGIN_ENABLED },
+    { ngx_string("cram-md5"), NJT_MAIL_AUTH_CRAM_MD5_ENABLED },
+    { ngx_string("external"), NJT_MAIL_AUTH_EXTERNAL_ENABLED },
+    { ngx_string("none"), NJT_MAIL_AUTH_NONE_ENABLED },
     { ngx_null_string, 0 }
 };
 
@@ -41,7 +41,7 @@ static ngx_mail_protocol_t  ngx_mail_smtp_protocol = {
     ngx_string("smtp"),
     ngx_string("\x04smtp"),
     { 25, 465, 587, 0 },
-    NJET_MAIL_SMTP_PROTOCOL,
+    NJT_MAIL_SMTP_PROTOCOL,
 
     ngx_mail_smtp_init_session,
     ngx_mail_smtp_init_protocol,
@@ -57,30 +57,30 @@ static ngx_mail_protocol_t  ngx_mail_smtp_protocol = {
 static ngx_command_t  ngx_mail_smtp_commands[] = {
 
     { ngx_string("smtp_client_buffer"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_size_slot,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_smtp_srv_conf_t, client_buffer_size),
       NULL },
 
     { ngx_string("smtp_greeting_delay"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_smtp_srv_conf_t, greeting_delay),
       NULL },
 
     { ngx_string("smtp_capabilities"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_1MORE,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_1MORE,
       ngx_mail_capabilities,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_smtp_srv_conf_t, capabilities),
       NULL },
 
     { ngx_string("smtp_auth"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_1MORE,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_1MORE,
       ngx_conf_set_bitmask_slot,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_smtp_srv_conf_t, auth_methods),
       &ngx_mail_smtp_auth_methods },
 
@@ -100,10 +100,10 @@ static ngx_mail_module_t  ngx_mail_smtp_module_ctx = {
 
 
 ngx_module_t  ngx_mail_smtp_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_mail_smtp_module_ctx,             /* module context */
     ngx_mail_smtp_commands,                /* module directives */
-    NJET_MAIL_MODULE,                       /* module type */
+    NJT_MAIL_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -111,7 +111,7 @@ ngx_module_t  ngx_mail_smtp_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -125,11 +125,11 @@ ngx_mail_smtp_create_srv_conf(ngx_conf_t *cf)
         return NULL;
     }
 
-    sscf->client_buffer_size = NJET_CONF_UNSET_SIZE;
-    sscf->greeting_delay = NJET_CONF_UNSET_MSEC;
+    sscf->client_buffer_size = NJT_CONF_UNSET_SIZE;
+    sscf->greeting_delay = NJT_CONF_UNSET_MSEC;
 
     if (ngx_array_init(&sscf->capabilities, cf->pool, 4, sizeof(ngx_str_t))
-        != NJET_OK)
+        != NJT_OK)
     {
         return NULL;
     }
@@ -159,9 +159,9 @@ ngx_mail_smtp_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_bitmask_value(conf->auth_methods,
                               prev->auth_methods,
-                              (NJET_CONF_BITMASK_SET
-                               |NJET_MAIL_AUTH_PLAIN_ENABLED
-                               |NJET_MAIL_AUTH_LOGIN_ENABLED));
+                              (NJT_CONF_BITMASK_SET
+                               |NJT_MAIL_AUTH_PLAIN_ENABLED
+                               |NJT_MAIL_AUTH_LOGIN_ENABLED));
 
 
     cscf = ngx_mail_conf_get_module_srv_conf(cf, ngx_mail_core_module);
@@ -170,7 +170,7 @@ ngx_mail_smtp_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_pnalloc(cf->pool, size);
     if (p == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     conf->greeting.len = size;
@@ -185,7 +185,7 @@ ngx_mail_smtp_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_pnalloc(cf->pool, size);
     if (p == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     conf->server_name.len = size;
@@ -209,8 +209,8 @@ ngx_mail_smtp_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     auth_enabled = 0;
 
-    for (m = NJET_MAIL_AUTH_PLAIN_ENABLED, i = 0;
-         m <= NJET_MAIL_AUTH_EXTERNAL_ENABLED;
+    for (m = NJT_MAIL_AUTH_PLAIN_ENABLED, i = 0;
+         m <= NJT_MAIL_AUTH_EXTERNAL_ENABLED;
          m <<= 1, i++)
     {
         if (m & conf->auth_methods) {
@@ -225,7 +225,7 @@ ngx_mail_smtp_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_pnalloc(cf->pool, size);
     if (p == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     conf->capability.len = size;
@@ -252,8 +252,8 @@ ngx_mail_smtp_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
         *p++ = '2'; *p++ = '5'; *p++ = '0'; *p++ = ' ';
         *p++ = 'A'; *p++ = 'U'; *p++ = 'T'; *p++ = 'H';
 
-        for (m = NJET_MAIL_AUTH_PLAIN_ENABLED, i = 0;
-             m <= NJET_MAIL_AUTH_EXTERNAL_ENABLED;
+        for (m = NJT_MAIL_AUTH_PLAIN_ENABLED, i = 0;
+             m <= NJT_MAIL_AUTH_EXTERNAL_ENABLED;
              m <<= 1, i++)
         {
             if (m & conf->auth_methods) {
@@ -273,7 +273,7 @@ ngx_mail_smtp_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_pnalloc(cf->pool, size);
     if (p == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     conf->starttls_capability.len = size;
@@ -292,7 +292,7 @@ ngx_mail_smtp_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_pnalloc(cf->pool, size);
     if (p == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     conf->starttls_only_capability.len = size;
@@ -308,5 +308,5 @@ ngx_mail_smtp_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
         *p = '-';
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

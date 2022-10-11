@@ -5,59 +5,59 @@
  */
 
 
-#ifndef _NJET_HTTP_CORE_H_INCLUDED_
-#define _NJET_HTTP_CORE_H_INCLUDED_
+#ifndef _NJT_HTTP_CORE_H_INCLUDED_
+#define _NJT_HTTP_CORE_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
 
-#if (NJET_THREADS)
+#if (NJT_THREADS)
 #include <ngx_thread_pool.h>
-#elif (NJET_COMPAT)
+#elif (NJT_COMPAT)
 typedef struct ngx_thread_pool_s  ngx_thread_pool_t;
 #endif
 
 
-#define NJET_HTTP_GZIP_PROXIED_OFF       0x0002
-#define NJET_HTTP_GZIP_PROXIED_EXPIRED   0x0004
-#define NJET_HTTP_GZIP_PROXIED_NO_CACHE  0x0008
-#define NJET_HTTP_GZIP_PROXIED_NO_STORE  0x0010
-#define NJET_HTTP_GZIP_PROXIED_PRIVATE   0x0020
-#define NJET_HTTP_GZIP_PROXIED_NO_LM     0x0040
-#define NJET_HTTP_GZIP_PROXIED_NO_ETAG   0x0080
-#define NJET_HTTP_GZIP_PROXIED_AUTH      0x0100
-#define NJET_HTTP_GZIP_PROXIED_ANY       0x0200
+#define NJT_HTTP_GZIP_PROXIED_OFF       0x0002
+#define NJT_HTTP_GZIP_PROXIED_EXPIRED   0x0004
+#define NJT_HTTP_GZIP_PROXIED_NO_CACHE  0x0008
+#define NJT_HTTP_GZIP_PROXIED_NO_STORE  0x0010
+#define NJT_HTTP_GZIP_PROXIED_PRIVATE   0x0020
+#define NJT_HTTP_GZIP_PROXIED_NO_LM     0x0040
+#define NJT_HTTP_GZIP_PROXIED_NO_ETAG   0x0080
+#define NJT_HTTP_GZIP_PROXIED_AUTH      0x0100
+#define NJT_HTTP_GZIP_PROXIED_ANY       0x0200
 
 
-#define NJET_HTTP_AIO_OFF                0
-#define NJET_HTTP_AIO_ON                 1
-#define NJET_HTTP_AIO_THREADS            2
+#define NJT_HTTP_AIO_OFF                0
+#define NJT_HTTP_AIO_ON                 1
+#define NJT_HTTP_AIO_THREADS            2
 
 
-#define NJET_HTTP_SATISFY_ALL            0
-#define NJET_HTTP_SATISFY_ANY            1
+#define NJT_HTTP_SATISFY_ALL            0
+#define NJT_HTTP_SATISFY_ANY            1
 
 
-#define NJET_HTTP_LINGERING_OFF          0
-#define NJET_HTTP_LINGERING_ON           1
-#define NJET_HTTP_LINGERING_ALWAYS       2
+#define NJT_HTTP_LINGERING_OFF          0
+#define NJT_HTTP_LINGERING_ON           1
+#define NJT_HTTP_LINGERING_ALWAYS       2
 
 
-#define NJET_HTTP_IMS_OFF                0
-#define NJET_HTTP_IMS_EXACT              1
-#define NJET_HTTP_IMS_BEFORE             2
+#define NJT_HTTP_IMS_OFF                0
+#define NJT_HTTP_IMS_EXACT              1
+#define NJT_HTTP_IMS_BEFORE             2
 
 
-#define NJET_HTTP_KEEPALIVE_DISABLE_NONE    0x0002
-#define NJET_HTTP_KEEPALIVE_DISABLE_MSIE6   0x0004
-#define NJET_HTTP_KEEPALIVE_DISABLE_SAFARI  0x0008
+#define NJT_HTTP_KEEPALIVE_DISABLE_NONE    0x0002
+#define NJT_HTTP_KEEPALIVE_DISABLE_MSIE6   0x0004
+#define NJT_HTTP_KEEPALIVE_DISABLE_SAFARI  0x0008
 
 
-#define NJET_HTTP_SERVER_TOKENS_OFF      0
-#define NJET_HTTP_SERVER_TOKENS_ON       1
-#define NJET_HTTP_SERVER_TOKENS_BUILD    2
+#define NJT_HTTP_SERVER_TOKENS_OFF      0
+#define NJT_HTTP_SERVER_TOKENS_ON       1
+#define NJT_HTTP_SERVER_TOKENS_BUILD    2
 
 
 typedef struct ngx_http_location_tree_node_s  ngx_http_location_tree_node_t;
@@ -75,7 +75,7 @@ typedef struct {
     unsigned                   wildcard:1;
     unsigned                   ssl:1;
     unsigned                   http2:1;
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     unsigned                   ipv6only:1;
 #endif
     unsigned                   deferred_accept:1;
@@ -86,43 +86,43 @@ typedef struct {
     int                        backlog;
     int                        rcvbuf;
     int                        sndbuf;
-#if (NJET_HAVE_SETFIB)
+#if (NJT_HAVE_SETFIB)
     int                        setfib;
 #endif
-#if (NJET_HAVE_TCP_FASTOPEN)
+#if (NJT_HAVE_TCP_FASTOPEN)
     int                        fastopen;
 #endif
-#if (NJET_HAVE_KEEPALIVE_TUNABLE)
+#if (NJT_HAVE_KEEPALIVE_TUNABLE)
     int                        tcp_keepidle;
     int                        tcp_keepintvl;
     int                        tcp_keepcnt;
 #endif
 
-#if (NJET_HAVE_DEFERRED_ACCEPT && defined SO_ACCEPTFILTER)
+#if (NJT_HAVE_DEFERRED_ACCEPT && defined SO_ACCEPTFILTER)
     char                      *accept_filter;
 #endif
 } ngx_http_listen_opt_t;
 
 
 typedef enum {
-    NJET_HTTP_POST_READ_PHASE = 0,
+    NJT_HTTP_POST_READ_PHASE = 0,
 
-    NJET_HTTP_SERVER_REWRITE_PHASE,
+    NJT_HTTP_SERVER_REWRITE_PHASE,
 
-    NJET_HTTP_FIND_CONFIG_PHASE,
-    NJET_HTTP_REWRITE_PHASE,
-    NJET_HTTP_POST_REWRITE_PHASE,
+    NJT_HTTP_FIND_CONFIG_PHASE,
+    NJT_HTTP_REWRITE_PHASE,
+    NJT_HTTP_POST_REWRITE_PHASE,
 
-    NJET_HTTP_PREACCESS_PHASE,
+    NJT_HTTP_PREACCESS_PHASE,
 
-    NJET_HTTP_ACCESS_PHASE,
-    NJET_HTTP_POST_ACCESS_PHASE,
+    NJT_HTTP_ACCESS_PHASE,
+    NJT_HTTP_POST_ACCESS_PHASE,
 
-    NJET_HTTP_PRECONTENT_PHASE,
+    NJT_HTTP_PRECONTENT_PHASE,
 
-    NJET_HTTP_CONTENT_PHASE,
+    NJT_HTTP_CONTENT_PHASE,
 
-    NJET_HTTP_LOG_PHASE
+    NJT_HTTP_LOG_PHASE
 } ngx_http_phases;
 
 typedef struct ngx_http_phase_handler_s  ngx_http_phase_handler_t;
@@ -172,7 +172,7 @@ typedef struct {
 
     ngx_array_t               *ports;
 
-    ngx_http_phase_t           phases[NJET_HTTP_LOG_PHASE + 1];
+    ngx_http_phase_t           phases[NJT_HTTP_LOG_PHASE + 1];
 } ngx_http_core_main_conf_t;
 
 
@@ -201,7 +201,7 @@ typedef struct {
     ngx_flag_t                  underscores_in_headers;
 
     unsigned                    listen:1;
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     unsigned                    captures:1;
 #endif
 
@@ -213,7 +213,7 @@ typedef struct {
 
 
 typedef struct {
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     ngx_http_regex_t          *regex;
 #endif
     ngx_http_core_srv_conf_t  *server;   /* virtual name server conf */
@@ -247,7 +247,7 @@ typedef struct {
 } ngx_http_in_addr_t;
 
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
 
 typedef struct {
     struct in6_addr            addr6;
@@ -278,7 +278,7 @@ typedef struct {
     ngx_hash_wildcard_t       *wc_head;
     ngx_hash_wildcard_t       *wc_tail;
 
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     ngx_uint_t                 nregex;
     ngx_http_server_name_t    *regex;
 #endif
@@ -301,7 +301,7 @@ struct ngx_http_core_loc_conf_s {
     ngx_str_t     name;          /* location name */
     ngx_str_t     escaped_name;
 
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     ngx_http_regex_t  *regex;
 #endif
 
@@ -313,13 +313,13 @@ struct ngx_http_core_loc_conf_s {
     unsigned      noregex:1;
 
     unsigned      auto_redirect:1;
-#if (NJET_HTTP_GZIP)
+#if (NJT_HTTP_GZIP)
     unsigned      gzip_disable_msie6:2;
     unsigned      gzip_disable_degradation:2;
 #endif
 
     ngx_http_location_tree_node_t   *static_locations;
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     ngx_http_core_loc_conf_t       **regex_locations;
 #endif
 
@@ -400,23 +400,23 @@ struct ngx_http_core_loc_conf_s {
     ngx_flag_t    chunked_transfer_encoding; /* chunked_transfer_encoding */
     ngx_flag_t    etag;                    /* etag */
 
-#if (NJET_HTTP_GZIP)
+#if (NJT_HTTP_GZIP)
     ngx_flag_t    gzip_vary;               /* gzip_vary */
 
     ngx_uint_t    gzip_http_version;       /* gzip_http_version */
     ngx_uint_t    gzip_proxied;            /* gzip_proxied */
 
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     ngx_array_t  *gzip_disable;            /* gzip_disable */
 #endif
 #endif
 
-#if (NJET_THREADS || NJET_COMPAT)
+#if (NJT_THREADS || NJT_COMPAT)
     ngx_thread_pool_t         *thread_pool;
     ngx_http_complex_value_t  *thread_pool_value;
 #endif
 
-#if (NJET_HAVE_OPENAT)
+#if (NJT_HAVE_OPENAT)
     ngx_uint_t    disable_symlinks;        /* disable_symlinks */
     ngx_http_complex_value_t  *disable_symlinks_from;
 #endif
@@ -496,7 +496,7 @@ ngx_int_t ngx_http_send_response(ngx_http_request_t *r, ngx_uint_t status,
 u_char *ngx_http_map_uri_to_path(ngx_http_request_t *r, ngx_str_t *name,
     size_t *root_length, size_t reserved);
 ngx_int_t ngx_http_auth_basic_user(ngx_http_request_t *r);
-#if (NJET_HTTP_GZIP)
+#if (NJT_HTTP_GZIP)
 ngx_int_t ngx_http_gzip_ok(ngx_http_request_t *r);
 #endif
 
@@ -581,4 +581,4 @@ extern ngx_str_t  ngx_http_core_get_method;
     }
 
 
-#endif /* _NJET_HTTP_CORE_H_INCLUDED_ */
+#endif /* _NJT_HTTP_CORE_H_INCLUDED_ */

@@ -56,5 +56,5 @@ ngx_strerror(ngx_err_t err, u_char *errstr, size_t size)
 ngx_int_t
 ngx_strerror_init(void)
 {
-    return NJET_OK;
+    return NJT_OK;
 }

@@ -251,8 +251,8 @@ WIN32_SRCS="$CORE_SRCS $EVENT_SRCS \
             src/os/win32/ngx_process_cycle.c \
             src/event/ngx_event_acceptex.c"
 
-NJET_WIN32_ICONS="src/os/win32/njet.ico"
-NJET_WIN32_RC="src/os/win32/njet.rc"
+NJT_WIN32_ICONS="src/os/win32/njet.ico"
+NJT_WIN32_RC="src/os/win32/njet.rc"
 
 
 HTTP_FILE_CACHE_SRCS=src/http/ngx_http_file_cache.c

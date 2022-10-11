@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_FREEBSD_CONFIG_H_INCLUDED_
-#define _NJET_FREEBSD_CONFIG_H_INCLUDED_
+#ifndef _NJT_FREEBSD_CONFIG_H_INCLUDED_
+#define _NJT_FREEBSD_CONFIG_H_INCLUDED_
 
 
 #include <sys/types.h>
@@ -73,22 +73,22 @@
 #include <ngx_auto_config.h>
 
 
-#if (NJET_HAVE_POSIX_SEM)
+#if (NJT_HAVE_POSIX_SEM)
 #include <semaphore.h>
 #endif
 
 
-#if (NJET_HAVE_POLL)
+#if (NJT_HAVE_POLL)
 #include <poll.h>
 #endif
 
 
-#if (NJET_HAVE_KQUEUE)
+#if (NJT_HAVE_KQUEUE)
 #include <sys/event.h>
 #endif
 
 
-#if (NJET_HAVE_FILE_AIO)
+#if (NJT_HAVE_FILE_AIO)
 
 #include <aio.h>
 typedef struct aiocb  ngx_aiocb_t;
@@ -100,11 +100,11 @@ typedef struct aiocb  ngx_aiocb_t;
 #endif
 
 
-#define NJET_LISTEN_BACKLOG        -1
+#define NJT_LISTEN_BACKLOG        -1
 
 
 #ifdef __DragonFly__
-#define NJET_KEEPALIVE_FACTOR      1000
+#define NJT_KEEPALIVE_FACTOR      1000
 #endif
 
 
@@ -113,17 +113,17 @@ typedef struct aiocb  ngx_aiocb_t;
 #endif
 
 
-#ifndef NJET_HAVE_INHERITED_NONBLOCK
-#define NJET_HAVE_INHERITED_NONBLOCK  1
+#ifndef NJT_HAVE_INHERITED_NONBLOCK
+#define NJT_HAVE_INHERITED_NONBLOCK  1
 #endif
 
 
-#define NJET_HAVE_OS_SPECIFIC_INIT    1
-#define NJET_HAVE_DEBUG_MALLOC        1
+#define NJT_HAVE_OS_SPECIFIC_INIT    1
+#define NJT_HAVE_DEBUG_MALLOC        1
 
 
 extern char **environ;
 extern char  *malloc_options;
 
 
-#endif /* _NJET_FREEBSD_CONFIG_H_INCLUDED_ */
+#endif /* _NJT_FREEBSD_CONFIG_H_INCLUDED_ */

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_DARWIN_H_INCLUDED_
-#define _NJET_DARWIN_H_INCLUDED_
+#ifndef _NJT_DARWIN_H_INCLUDED_
+#define _NJT_DARWIN_H_INCLUDED_
 
 
 void ngx_debug_init(void);
@@ -20,4 +20,4 @@ extern u_long    ngx_darwin_net_inet_tcp_sendspace;
 extern ngx_uint_t  ngx_debug_malloc;
 
 
-#endif /* _NJET_DARWIN_H_INCLUDED_ */
+#endif /* _NJT_DARWIN_H_INCLUDED_ */

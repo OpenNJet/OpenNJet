@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_MAIL_SSL_H_INCLUDED_
-#define _NJET_MAIL_SSL_H_INCLUDED_
+#ifndef _NJT_MAIL_SSL_H_INCLUDED_
+#define _NJT_MAIL_SSL_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -14,9 +14,9 @@
 #include <ngx_mail.h>
 
 
-#define NJET_MAIL_STARTTLS_OFF   0
-#define NJET_MAIL_STARTTLS_ON    1
-#define NJET_MAIL_STARTTLS_ONLY  2
+#define NJT_MAIL_STARTTLS_OFF   0
+#define NJT_MAIL_STARTTLS_ON    1
+#define NJT_MAIL_STARTTLS_ONLY  2
 
 
 typedef struct {
@@ -63,4 +63,4 @@ typedef struct {
 extern ngx_module_t  ngx_mail_ssl_module;
 
 
-#endif /* _NJET_MAIL_SSL_H_INCLUDED_ */
+#endif /* _NJT_MAIL_SSL_H_INCLUDED_ */

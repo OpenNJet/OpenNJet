@@ -12,7 +12,7 @@
 static ngx_str_t   ngx_unknown_error = ngx_string("Unknown error");
 
 
-#if (NJET_HAVE_STRERRORDESC_NP)
+#if (NJT_HAVE_STRERRORDESC_NP)
 
 /*
  * The strerrordesc_np() function, introduced in glibc 2.32, is
@@ -46,7 +46,7 @@ ngx_strerror(ngx_err_t err, u_char *errstr, size_t size)
 ngx_int_t
 ngx_strerror_init(void)
 {
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -99,9 +99,9 @@ ngx_strerror_init(void)
     size_t      len;
     ngx_err_t   err;
 
-#if (NJET_SYS_NERR)
+#if (NJT_SYS_NERR)
     ngx_first_error = 0;
-    ngx_last_error = NJET_SYS_NERR;
+    ngx_last_error = NJT_SYS_NERR;
 
 #elif (EPERM > 1000 && EPERM < 0x7fffffff - 1000)
 
@@ -197,14 +197,14 @@ ngx_strerror_init(void)
         ngx_sys_errlist[err - ngx_first_error].data = p;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 
 failed:
 
     err = errno;
     ngx_log_stderr(0, "malloc(%uz) failed (%d: %s)", len, err, strerror(err));
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 #endif

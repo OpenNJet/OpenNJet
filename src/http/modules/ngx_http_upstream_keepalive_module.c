@@ -47,7 +47,7 @@ typedef struct {
     ngx_event_get_peer_pt              original_get_peer;
     ngx_event_free_peer_pt             original_free_peer;
 
-#if (NJET_HTTP_SSL)
+#if (NJT_HTTP_SSL)
     ngx_event_set_peer_session_pt      original_set_session;
     ngx_event_save_peer_session_pt     original_save_session;
 #endif
@@ -66,7 +66,7 @@ static void ngx_http_upstream_keepalive_dummy_handler(ngx_event_t *ev);
 static void ngx_http_upstream_keepalive_close_handler(ngx_event_t *ev);
 static void ngx_http_upstream_keepalive_close(ngx_connection_t *c);
 
-#if (NJET_HTTP_SSL)
+#if (NJT_HTTP_SSL)
 static ngx_int_t ngx_http_upstream_keepalive_set_session(
     ngx_peer_connection_t *pc, void *data);
 static void ngx_http_upstream_keepalive_save_session(ngx_peer_connection_t *pc,
@@ -81,30 +81,30 @@ static char *ngx_http_upstream_keepalive(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_http_upstream_keepalive_commands[] = {
 
     { ngx_string("keepalive"),
-      NJET_HTTP_UPS_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_UPS_CONF|NJT_CONF_TAKE1,
       ngx_http_upstream_keepalive,
-      NJET_HTTP_SRV_CONF_OFFSET,
+      NJT_HTTP_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("keepalive_time"),
-      NJET_HTTP_UPS_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_UPS_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NJET_HTTP_SRV_CONF_OFFSET,
+      NJT_HTTP_SRV_CONF_OFFSET,
       offsetof(ngx_http_upstream_keepalive_srv_conf_t, time),
       NULL },
 
     { ngx_string("keepalive_timeout"),
-      NJET_HTTP_UPS_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_UPS_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NJET_HTTP_SRV_CONF_OFFSET,
+      NJT_HTTP_SRV_CONF_OFFSET,
       offsetof(ngx_http_upstream_keepalive_srv_conf_t, timeout),
       NULL },
 
     { ngx_string("keepalive_requests"),
-      NJET_HTTP_UPS_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_UPS_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NJET_HTTP_SRV_CONF_OFFSET,
+      NJT_HTTP_SRV_CONF_OFFSET,
       offsetof(ngx_http_upstream_keepalive_srv_conf_t, requests),
       NULL },
 
@@ -128,10 +128,10 @@ static ngx_http_module_t  ngx_http_upstream_keepalive_module_ctx = {
 
 
 ngx_module_t  ngx_http_upstream_keepalive_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_upstream_keepalive_module_ctx, /* module context */
     ngx_http_upstream_keepalive_commands,    /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -139,7 +139,7 @@ ngx_module_t  ngx_http_upstream_keepalive_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -151,7 +151,7 @@ ngx_http_upstream_init_keepalive(ngx_conf_t *cf,
     ngx_http_upstream_keepalive_srv_conf_t  *kcf;
     ngx_http_upstream_keepalive_cache_t     *cached;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, cf->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, cf->log, 0,
                    "init keepalive");
 
     kcf = ngx_http_conf_upstream_srv_conf(us,
@@ -161,8 +161,8 @@ ngx_http_upstream_init_keepalive(ngx_conf_t *cf,
     ngx_conf_init_msec_value(kcf->timeout, 60000);
     ngx_conf_init_uint_value(kcf->requests, 1000);
 
-    if (kcf->original_init_upstream(cf, us) != NJET_OK) {
-        return NJET_ERROR;
+    if (kcf->original_init_upstream(cf, us) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     kcf->original_init_peer = us->peer.init;
@@ -174,7 +174,7 @@ ngx_http_upstream_init_keepalive(ngx_conf_t *cf,
     cached = ngx_pcalloc(cf->pool,
                 sizeof(ngx_http_upstream_keepalive_cache_t) * kcf->max_cached);
     if (cached == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_queue_init(&kcf->cache);
@@ -185,7 +185,7 @@ ngx_http_upstream_init_keepalive(ngx_conf_t *cf,
         cached[i].conf = kcf;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -196,7 +196,7 @@ ngx_http_upstream_init_keepalive_peer(ngx_http_request_t *r,
     ngx_http_upstream_keepalive_peer_data_t  *kp;
     ngx_http_upstream_keepalive_srv_conf_t   *kcf;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "init keepalive peer");
 
     kcf = ngx_http_conf_upstream_srv_conf(us,
@@ -204,11 +204,11 @@ ngx_http_upstream_init_keepalive_peer(ngx_http_request_t *r,
 
     kp = ngx_palloc(r->pool, sizeof(ngx_http_upstream_keepalive_peer_data_t));
     if (kp == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    if (kcf->original_init_peer(r, us) != NJET_OK) {
-        return NJET_ERROR;
+    if (kcf->original_init_peer(r, us) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     kp->conf = kcf;
@@ -221,14 +221,14 @@ ngx_http_upstream_init_keepalive_peer(ngx_http_request_t *r,
     r->upstream->peer.get = ngx_http_upstream_get_keepalive_peer;
     r->upstream->peer.free = ngx_http_upstream_free_keepalive_peer;
 
-#if (NJET_HTTP_SSL)
+#if (NJT_HTTP_SSL)
     kp->original_set_session = r->upstream->peer.set_session;
     kp->original_save_session = r->upstream->peer.save_session;
     r->upstream->peer.set_session = ngx_http_upstream_keepalive_set_session;
     r->upstream->peer.save_session = ngx_http_upstream_keepalive_save_session;
 #endif
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -242,14 +242,14 @@ ngx_http_upstream_get_keepalive_peer(ngx_peer_connection_t *pc, void *data)
     ngx_queue_t       *q, *cache;
     ngx_connection_t  *c;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, pc->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, pc->log, 0,
                    "get keepalive peer");
 
     /* ask balancer */
 
     rc = kp->original_get_peer(pc, kp->data);
 
-    if (rc != NJET_OK) {
+    if (rc != NJT_OK) {
         return rc;
     }
 
@@ -275,11 +275,11 @@ ngx_http_upstream_get_keepalive_peer(ngx_peer_connection_t *pc, void *data)
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 
 found:
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, pc->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, pc->log, 0,
                    "get keepalive peer: using connection %p", c);
 
     c->idle = 0;
@@ -297,7 +297,7 @@ found:
     pc->connection = c;
     pc->cached = 1;
 
-    return NJET_DONE;
+    return NJT_DONE;
 }
 
 
@@ -312,7 +312,7 @@ ngx_http_upstream_free_keepalive_peer(ngx_peer_connection_t *pc, void *data,
     ngx_connection_t     *c;
     ngx_http_upstream_t  *u;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, pc->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, pc->log, 0,
                    "free keepalive peer");
 
     /* cache valid connections */
@@ -320,7 +320,7 @@ ngx_http_upstream_free_keepalive_peer(ngx_peer_connection_t *pc, void *data,
     u = kp->upstream;
     c = pc->connection;
 
-    if (state & NJET_PEER_FAILED
+    if (state & NJT_PEER_FAILED
         || c == NULL
         || c->read->eof
         || c->read->error
@@ -351,11 +351,11 @@ ngx_http_upstream_free_keepalive_peer(ngx_peer_connection_t *pc, void *data,
         goto invalid;
     }
 
-    if (ngx_handle_read_event(c->read, 0) != NJET_OK) {
+    if (ngx_handle_read_event(c->read, 0) != NJT_OK) {
         goto invalid;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, pc->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, pc->log, 0,
                    "free keepalive peer: saving connection %p", c);
 
     if (ngx_queue_empty(&kp->conf->free)) {
@@ -413,7 +413,7 @@ invalid:
 static void
 ngx_http_upstream_keepalive_dummy_handler(ngx_event_t *ev)
 {
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, ev->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, ev->log, 0,
                    "keepalive dummy handler");
 }
 
@@ -428,7 +428,7 @@ ngx_http_upstream_keepalive_close_handler(ngx_event_t *ev)
     char               buf[1];
     ngx_connection_t  *c;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, ev->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, ev->log, 0,
                    "keepalive close handler");
 
     c = ev->data;
@@ -439,10 +439,10 @@ ngx_http_upstream_keepalive_close_handler(ngx_event_t *ev)
 
     n = recv(c->fd, buf, 1, MSG_PEEK);
 
-    if (n == -1 && ngx_socket_errno == NJET_EAGAIN) {
+    if (n == -1 && ngx_socket_errno == NJT_EAGAIN) {
         ev->ready = 0;
 
-        if (ngx_handle_read_event(c->read, 0) != NJET_OK) {
+        if (ngx_handle_read_event(c->read, 0) != NJT_OK) {
             goto close;
         }
 
@@ -465,13 +465,13 @@ static void
 ngx_http_upstream_keepalive_close(ngx_connection_t *c)
 {
 
-#if (NJET_HTTP_SSL)
+#if (NJT_HTTP_SSL)
 
     if (c->ssl) {
         c->ssl->no_wait_shutdown = 1;
         c->ssl->no_send_shutdown = 1;
 
-        if (ngx_ssl_shutdown(c) == NJET_AGAIN) {
+        if (ngx_ssl_shutdown(c) == NJT_AGAIN) {
             c->ssl->handler = ngx_http_upstream_keepalive_close;
             return;
         }
@@ -484,7 +484,7 @@ ngx_http_upstream_keepalive_close(ngx_connection_t *c)
 }
 
 
-#if (NJET_HTTP_SSL)
+#if (NJT_HTTP_SSL)
 
 static ngx_int_t
 ngx_http_upstream_keepalive_set_session(ngx_peer_connection_t *pc, void *data)
@@ -526,9 +526,9 @@ ngx_http_upstream_keepalive_create_conf(ngx_conf_t *cf)
      *     conf->max_cached = 0;
      */
 
-    conf->time = NJET_CONF_UNSET_MSEC;
-    conf->timeout = NJET_CONF_UNSET_MSEC;
-    conf->requests = NJET_CONF_UNSET_UINT;
+    conf->time = NJT_CONF_UNSET_MSEC;
+    conf->timeout = NJT_CONF_UNSET_MSEC;
+    conf->requests = NJT_CONF_UNSET_UINT;
 
     return conf;
 }
@@ -553,11 +553,11 @@ ngx_http_upstream_keepalive(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     n = ngx_atoi(value[1].data, value[1].len);
 
-    if (n == NJET_ERROR || n == 0) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+    if (n == NJT_ERROR || n == 0) {
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid value \"%V\" in \"%V\" directive",
                            &value[1], &cmd->name);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     kcf->max_cached = n;
@@ -572,5 +572,5 @@ ngx_http_upstream_keepalive(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     uscf->peer.init_upstream = ngx_http_upstream_init_keepalive;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_HTTP_VARIABLES_H_INCLUDED_
-#define _NJET_HTTP_VARIABLES_H_INCLUDED_
+#ifndef _NJT_HTTP_VARIABLES_H_INCLUDED_
+#define _NJT_HTTP_VARIABLES_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -26,12 +26,12 @@ typedef ngx_int_t (*ngx_http_get_variable_pt) (ngx_http_request_t *r,
     ngx_http_variable_value_t *v, uintptr_t data);
 
 
-#define NJET_HTTP_VAR_CHANGEABLE   1
-#define NJET_HTTP_VAR_NOCACHEABLE  2
-#define NJET_HTTP_VAR_INDEXED      4
-#define NJET_HTTP_VAR_NOHASH       8
-#define NJET_HTTP_VAR_WEAK         16
-#define NJET_HTTP_VAR_PREFIX       32
+#define NJT_HTTP_VAR_CHANGEABLE   1
+#define NJT_HTTP_VAR_NOCACHEABLE  2
+#define NJT_HTTP_VAR_INDEXED      4
+#define NJT_HTTP_VAR_NOHASH       8
+#define NJT_HTTP_VAR_WEAK         16
+#define NJT_HTTP_VAR_PREFIX       32
 
 
 struct ngx_http_variable_s {
@@ -62,7 +62,7 @@ ngx_int_t ngx_http_variable_unknown_header(ngx_http_request_t *r,
     size_t prefix);
 
 
-#if (NJET_PCRE)
+#if (NJT_PCRE)
 
 typedef struct {
     ngx_uint_t                    capture;
@@ -95,7 +95,7 @@ ngx_int_t ngx_http_regex_exec(ngx_http_request_t *r, ngx_http_regex_t *re,
 
 typedef struct {
     ngx_hash_combined_t           hash;
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     ngx_http_map_regex_t         *regex;
     ngx_uint_t                    nregex;
 #endif
@@ -114,4 +114,4 @@ extern ngx_http_variable_value_t  ngx_http_variable_null_value;
 extern ngx_http_variable_value_t  ngx_http_variable_true_value;
 
 
-#endif /* _NJET_HTTP_VARIABLES_H_INCLUDED_ */
+#endif /* _NJT_HTTP_VARIABLES_H_INCLUDED_ */

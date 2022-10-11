@@ -26,14 +26,14 @@ static char *ngx_set_cpu_affinity(ngx_conf_t *cf, ngx_command_t *cmd,
 static char *ngx_set_worker_processes(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf);
 static char *ngx_load_module(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
-#if (NJET_HAVE_DLOPEN)
+#if (NJT_HAVE_DLOPEN)
 static void ngx_unload_module(void *data);
 #endif
 
 
 static ngx_conf_enum_t  ngx_debug_points[] = {
-    { ngx_string("stop"), NJET_DEBUG_POINTS_STOP },
-    { ngx_string("abort"), NJET_DEBUG_POINTS_ABORT },
+    { ngx_string("stop"), NJT_DEBUG_POINTS_STOP },
+    { ngx_string("abort"), NJT_DEBUG_POINTS_ABORT },
     { ngx_null_string, 0 }
 };
 
@@ -41,112 +41,112 @@ static ngx_conf_enum_t  ngx_debug_points[] = {
 static ngx_command_t  ngx_core_commands[] = {
 
     { ngx_string("daemon"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_FLAG,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
       0,
       offsetof(ngx_core_conf_t, daemon),
       NULL },
 
     { ngx_string("master_process"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_FLAG,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
       0,
       offsetof(ngx_core_conf_t, master),
       NULL },
 
     { ngx_string("timer_resolution"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE1,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
       0,
       offsetof(ngx_core_conf_t, timer_resolution),
       NULL },
 
     { ngx_string("pid"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE1,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_str_slot,
       0,
       offsetof(ngx_core_conf_t, pid),
       NULL },
 
     { ngx_string("lock_file"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE1,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_str_slot,
       0,
       offsetof(ngx_core_conf_t, lock_file),
       NULL },
 
     { ngx_string("worker_processes"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE1,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
       ngx_set_worker_processes,
       0,
       0,
       NULL },
 
     { ngx_string("debug_points"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE1,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_enum_slot,
       0,
       offsetof(ngx_core_conf_t, debug_points),
       &ngx_debug_points },
 
     { ngx_string("user"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE12,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE12,
       ngx_set_user,
       0,
       0,
       NULL },
 
     { ngx_string("worker_priority"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE1,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
       ngx_set_priority,
       0,
       0,
       NULL },
 
     { ngx_string("worker_cpu_affinity"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_1MORE,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_1MORE,
       ngx_set_cpu_affinity,
       0,
       0,
       NULL },
 
     { ngx_string("worker_rlimit_nofile"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE1,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
       0,
       offsetof(ngx_core_conf_t, rlimit_nofile),
       NULL },
 
     { ngx_string("worker_rlimit_core"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE1,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_off_slot,
       0,
       offsetof(ngx_core_conf_t, rlimit_core),
       NULL },
 
     { ngx_string("worker_shutdown_timeout"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE1,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
       0,
       offsetof(ngx_core_conf_t, shutdown_timeout),
       NULL },
 
     { ngx_string("working_directory"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE1,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_str_slot,
       0,
       offsetof(ngx_core_conf_t, working_directory),
       NULL },
 
     { ngx_string("env"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE1,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
       ngx_set_env,
       0,
       0,
       NULL },
 
     { ngx_string("load_module"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_TAKE1,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
       ngx_load_module,
       0,
       0,
@@ -164,10 +164,10 @@ static ngx_core_module_t  ngx_core_module_ctx = {
 
 
 ngx_module_t  ngx_core_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_core_module_ctx,                  /* module context */
     ngx_core_commands,                     /* module directives */
-    NJET_CORE_MODULE,                       /* module type */
+    NJT_CORE_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -175,7 +175,7 @@ ngx_module_t  ngx_core_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -204,11 +204,11 @@ main(int argc, char *const *argv)
 
     ngx_debug_init();
 
-    if (ngx_strerror_init() != NJET_OK) {
+    if (ngx_strerror_init() != NJT_OK) {
         return 1;
     }
 
-    if (ngx_get_options(argc, argv) != NJET_OK) {
+    if (ngx_get_options(argc, argv) != NJT_OK) {
         return 1;
     }
 
@@ -224,7 +224,7 @@ main(int argc, char *const *argv)
 
     ngx_time_init();
 
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     ngx_regex_init();
 #endif
 
@@ -237,7 +237,7 @@ main(int argc, char *const *argv)
     }
 
     /* STUB */
-#if (NJET_OPENSSL)
+#if (NJT_OPENSSL)
     ngx_ssl_init(log);
 #endif
 
@@ -255,15 +255,15 @@ main(int argc, char *const *argv)
         return 1;
     }
 
-    if (ngx_save_argv(&init_cycle, argc, argv) != NJET_OK) {
+    if (ngx_save_argv(&init_cycle, argc, argv) != NJT_OK) {
         return 1;
     }
 
-    if (ngx_process_options(&init_cycle) != NJET_OK) {
+    if (ngx_process_options(&init_cycle) != NJT_OK) {
         return 1;
     }
 
-    if (ngx_os_init(log) != NJET_OK) {
+    if (ngx_os_init(log) != NJT_OK) {
         return 1;
     }
 
@@ -271,7 +271,7 @@ main(int argc, char *const *argv)
      * ngx_crc32_table_init() requires ngx_cacheline_size set in ngx_os_init()
      */
 
-    if (ngx_crc32_table_init() != NJET_OK) {
+    if (ngx_crc32_table_init() != NJT_OK) {
         return 1;
     }
 
@@ -281,11 +281,11 @@ main(int argc, char *const *argv)
 
     ngx_slab_sizes_init();
 
-    if (ngx_add_inherited_sockets(&init_cycle) != NJET_OK) {
+    if (ngx_add_inherited_sockets(&init_cycle) != NJT_OK) {
         return 1;
     }
 
-    if (ngx_preinit_modules() != NJET_OK) {
+    if (ngx_preinit_modules() != NJT_OK) {
         return 1;
     }
 
@@ -313,12 +313,12 @@ main(int argc, char *const *argv)
                 ngx_write_stdout("# configuration file ");
                 (void) ngx_write_fd(ngx_stdout, cd[i].name.data,
                                     cd[i].name.len);
-                ngx_write_stdout(":" NJET_LINEFEED);
+                ngx_write_stdout(":" NJT_LINEFEED);
 
                 b = cd[i].buffer;
 
                 (void) ngx_write_fd(ngx_stdout, b->pos, b->last - b->pos);
-                ngx_write_stdout(NJET_LINEFEED);
+                ngx_write_stdout(NJT_LINEFEED);
             }
         }
 
@@ -335,18 +335,18 @@ main(int argc, char *const *argv)
 
     ccf = (ngx_core_conf_t *) ngx_get_conf(cycle->conf_ctx, ngx_core_module);
 
-    if (ccf->master && ngx_process == NJET_PROCESS_SINGLE) {
-        ngx_process = NJET_PROCESS_MASTER;
+    if (ccf->master && ngx_process == NJT_PROCESS_SINGLE) {
+        ngx_process = NJT_PROCESS_MASTER;
     }
 
-#if !(NJET_WIN32)
+#if !(NJT_WIN32)
 
-    if (ngx_init_signals(cycle->log) != NJET_OK) {
+    if (ngx_init_signals(cycle->log) != NJT_OK) {
         return 1;
     }
 
     if (!ngx_inherited && ccf->daemon) {
-        if (ngx_daemon(cycle->log) != NJET_OK) {
+        if (ngx_daemon(cycle->log) != NJT_OK) {
             return 1;
         }
 
@@ -359,24 +359,24 @@ main(int argc, char *const *argv)
 
 #endif
 
-    if (ngx_create_pidfile(&ccf->pid, cycle->log) != NJET_OK) {
+    if (ngx_create_pidfile(&ccf->pid, cycle->log) != NJT_OK) {
         return 1;
     }
 
-    if (ngx_log_redirect_stderr(cycle) != NJET_OK) {
+    if (ngx_log_redirect_stderr(cycle) != NJT_OK) {
         return 1;
     }
 
     if (log->file->fd != ngx_stderr) {
-        if (ngx_close_file(log->file->fd) == NJET_FILE_ERROR) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+        if (ngx_close_file(log->file->fd) == NJT_FILE_ERROR) {
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                           ngx_close_file_n " built-in log failed");
         }
     }
 
     ngx_use_stderr = 0;
 
-    if (ngx_process == NJET_PROCESS_SINGLE) {
+    if (ngx_process == NJT_PROCESS_SINGLE) {
         ngx_single_process_cycle(cycle);
 
     } else {
@@ -390,67 +390,67 @@ main(int argc, char *const *argv)
 static void
 ngx_show_version_info(void)
 {
-    ngx_write_stderr("njet version: " NJET_VER_BUILD NJET_LINEFEED);
+    ngx_write_stderr("njet version: " NJT_VER_BUILD NJT_LINEFEED);
 
     if (ngx_show_help) {
         ngx_write_stderr(
-            "Usage: njet [-?hvVtTq] [-s signal] [-p prefix]" NJET_LINEFEED
+            "Usage: njet [-?hvVtTq] [-s signal] [-p prefix]" NJT_LINEFEED
             "             [-e filename] [-c filename] [-g directives]"
-                          NJET_LINEFEED NJET_LINEFEED
-            "Options:" NJET_LINEFEED
-            "  -?,-h         : this help" NJET_LINEFEED
-            "  -v            : show version and exit" NJET_LINEFEED
+                          NJT_LINEFEED NJT_LINEFEED
+            "Options:" NJT_LINEFEED
+            "  -?,-h         : this help" NJT_LINEFEED
+            "  -v            : show version and exit" NJT_LINEFEED
             "  -V            : show version and configure options then exit"
-                               NJET_LINEFEED
-            "  -t            : test configuration and exit" NJET_LINEFEED
+                               NJT_LINEFEED
+            "  -t            : test configuration and exit" NJT_LINEFEED
             "  -T            : test configuration, dump it and exit"
-                               NJET_LINEFEED
+                               NJT_LINEFEED
             "  -q            : suppress non-error messages "
-                               "during configuration testing" NJET_LINEFEED
+                               "during configuration testing" NJT_LINEFEED
             "  -s signal     : send signal to a master process: "
-                               "stop, quit, reopen, reload" NJET_LINEFEED
-#ifdef NJET_PREFIX
-            "  -p prefix     : set prefix path (default: " NJET_PREFIX ")"
-                               NJET_LINEFEED
+                               "stop, quit, reopen, reload" NJT_LINEFEED
+#ifdef NJT_PREFIX
+            "  -p prefix     : set prefix path (default: " NJT_PREFIX ")"
+                               NJT_LINEFEED
 #else
-            "  -p prefix     : set prefix path (default: NONE)" NJET_LINEFEED
+            "  -p prefix     : set prefix path (default: NONE)" NJT_LINEFEED
 #endif
             "  -e filename   : set error log file (default: "
-#ifdef NJET_ERROR_LOG_STDERR
-                               "stderr)" NJET_LINEFEED
+#ifdef NJT_ERROR_LOG_STDERR
+                               "stderr)" NJT_LINEFEED
 #else
-                               NJET_ERROR_LOG_PATH ")" NJET_LINEFEED
+                               NJT_ERROR_LOG_PATH ")" NJT_LINEFEED
 #endif
-            "  -c filename   : set configuration file (default: " NJET_CONF_PATH
-                               ")" NJET_LINEFEED
+            "  -c filename   : set configuration file (default: " NJT_CONF_PATH
+                               ")" NJT_LINEFEED
             "  -g directives : set global directives out of configuration "
-                               "file" NJET_LINEFEED NJET_LINEFEED
+                               "file" NJT_LINEFEED NJT_LINEFEED
         );
     }
 
     if (ngx_show_configure) {
 
-#ifdef NJET_COMPILER
-        ngx_write_stderr("built by " NJET_COMPILER NJET_LINEFEED);
+#ifdef NJT_COMPILER
+        ngx_write_stderr("built by " NJT_COMPILER NJT_LINEFEED);
 #endif
 
-#if (NJET_SSL)
+#if (NJT_SSL)
         if (ngx_strcmp(ngx_ssl_version(), OPENSSL_VERSION_TEXT) == 0) {
-            ngx_write_stderr("built with " OPENSSL_VERSION_TEXT NJET_LINEFEED);
+            ngx_write_stderr("built with " OPENSSL_VERSION_TEXT NJT_LINEFEED);
         } else {
             ngx_write_stderr("built with " OPENSSL_VERSION_TEXT
                              " (running with ");
             ngx_write_stderr((char *) (uintptr_t) ngx_ssl_version());
-            ngx_write_stderr(")" NJET_LINEFEED);
+            ngx_write_stderr(")" NJT_LINEFEED);
         }
 #ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
-        ngx_write_stderr("TLS SNI support enabled" NJET_LINEFEED);
+        ngx_write_stderr("TLS SNI support enabled" NJT_LINEFEED);
 #else
-        ngx_write_stderr("TLS SNI support disabled" NJET_LINEFEED);
+        ngx_write_stderr("TLS SNI support disabled" NJT_LINEFEED);
 #endif
 #endif
 
-        ngx_write_stderr("configure arguments:" NJET_CONFIGURE NJET_LINEFEED);
+        ngx_write_stderr("configure arguments:" NJT_CONFIGURE NJT_LINEFEED);
     }
 }
 
@@ -462,28 +462,28 @@ ngx_add_inherited_sockets(ngx_cycle_t *cycle)
     ngx_int_t         s;
     ngx_listening_t  *ls;
 
-    inherited = (u_char *) getenv(NJET_VAR);
+    inherited = (u_char *) getenv(NJT_VAR);
 
     if (inherited == NULL) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0,
+    ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0,
                   "using inherited sockets from \"%s\"", inherited);
 
     if (ngx_array_init(&cycle->listening, cycle->pool, 10,
                        sizeof(ngx_listening_t))
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     for (p = inherited, v = p; *p; p++) {
         if (*p == ':' || *p == ';') {
             s = ngx_atoi(v, p - v);
-            if (s == NJET_ERROR) {
-                ngx_log_error(NJET_LOG_EMERG, cycle->log, 0,
-                              "invalid socket number \"%s\" in " NJET_VAR
+            if (s == NJT_ERROR) {
+                ngx_log_error(NJT_LOG_EMERG, cycle->log, 0,
+                              "invalid socket number \"%s\" in " NJT_VAR
                               " environment variable, ignoring the rest"
                               " of the variable", v);
                 break;
@@ -493,7 +493,7 @@ ngx_add_inherited_sockets(ngx_cycle_t *cycle)
 
             ls = ngx_array_push(&cycle->listening);
             if (ls == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             ngx_memzero(ls, sizeof(ngx_listening_t));
@@ -504,8 +504,8 @@ ngx_add_inherited_sockets(ngx_cycle_t *cycle)
     }
 
     if (v != p) {
-        ngx_log_error(NJET_LOG_EMERG, cycle->log, 0,
-                      "invalid socket number \"%s\" in " NJET_VAR
+        ngx_log_error(NJT_LOG_EMERG, cycle->log, 0,
+                      "invalid socket number \"%s\" in " NJT_VAR
                       " environment variable, ignoring", v);
     }
 
@@ -665,18 +665,18 @@ ngx_exec_new_binary(ngx_cycle_t *cycle, char *const *argv)
     n = 2;
     env = ngx_set_environment(cycle, &n);
     if (env == NULL) {
-        return NJET_INVALID_PID;
+        return NJT_INVALID_PID;
     }
 
-    var = ngx_alloc(sizeof(NJET_VAR)
-                    + cycle->listening.nelts * (NJET_INT32_LEN + 1) + 2,
+    var = ngx_alloc(sizeof(NJT_VAR)
+                    + cycle->listening.nelts * (NJT_INT32_LEN + 1) + 2,
                     cycle->log);
     if (var == NULL) {
         ngx_free(env);
-        return NJET_INVALID_PID;
+        return NJT_INVALID_PID;
     }
 
-    p = ngx_cpymem(var, NJET_VAR "=", sizeof(NJET_VAR));
+    p = ngx_cpymem(var, NJT_VAR "=", sizeof(NJT_VAR));
 
     ls = cycle->listening.elts;
     for (i = 0; i < cycle->listening.nelts; i++) {
@@ -687,7 +687,7 @@ ngx_exec_new_binary(ngx_cycle_t *cycle, char *const *argv)
 
     env[n++] = var;
 
-#if (NJET_SETPROCTITLE_USES_ENV)
+#if (NJT_SETPROCTITLE_USES_ENV)
 
     /* allocate the spare 300 bytes for the new binary process title */
 
@@ -701,11 +701,11 @@ ngx_exec_new_binary(ngx_cycle_t *cycle, char *const *argv)
 
     env[n] = NULL;
 
-#if (NJET_DEBUG)
+#if (NJT_DEBUG)
     {
     char  **e;
     for (e = env; *e; e++) {
-        ngx_log_debug1(NJET_LOG_DEBUG_CORE, cycle->log, 0, "env: %s", *e);
+        ngx_log_debug1(NJT_LOG_DEBUG_CORE, cycle->log, 0, "env: %s", *e);
     }
     }
 #endif
@@ -714,8 +714,8 @@ ngx_exec_new_binary(ngx_cycle_t *cycle, char *const *argv)
 
     ccf = (ngx_core_conf_t *) ngx_get_conf(cycle->conf_ctx, ngx_core_module);
 
-    if (ngx_rename_file(ccf->pid.data, ccf->oldpid.data) == NJET_FILE_ERROR) {
-        ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+    if (ngx_rename_file(ccf->pid.data, ccf->oldpid.data) == NJT_FILE_ERROR) {
+        ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                       ngx_rename_file_n " %s to %s failed "
                       "before executing new binary process \"%s\"",
                       ccf->pid.data, ccf->oldpid.data, argv[0]);
@@ -723,16 +723,16 @@ ngx_exec_new_binary(ngx_cycle_t *cycle, char *const *argv)
         ngx_free(env);
         ngx_free(var);
 
-        return NJET_INVALID_PID;
+        return NJT_INVALID_PID;
     }
 
     pid = ngx_execute(cycle, &ctx);
 
-    if (pid == NJET_INVALID_PID) {
+    if (pid == NJT_INVALID_PID) {
         if (ngx_rename_file(ccf->oldpid.data, ccf->pid.data)
-            == NJET_FILE_ERROR)
+            == NJT_FILE_ERROR)
         {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                           ngx_rename_file_n " %s back to %s failed after "
                           "an attempt to execute new binary process \"%s\"",
                           ccf->oldpid.data, ccf->pid.data, argv[0]);
@@ -758,7 +758,7 @@ ngx_get_options(int argc, char *const *argv)
 
         if (*p++ != '-') {
             ngx_log_stderr(0, "invalid option: \"%s\"", argv[i]);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         while (*p) {
@@ -805,7 +805,7 @@ ngx_get_options(int argc, char *const *argv)
                 }
 
                 ngx_log_stderr(0, "option \"-p\" requires directory name");
-                return NJET_ERROR;
+                return NJT_ERROR;
 
             case 'e':
                 if (*p) {
@@ -816,7 +816,7 @@ ngx_get_options(int argc, char *const *argv)
 
                 } else {
                     ngx_log_stderr(0, "option \"-e\" requires file name");
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
 
                 if (ngx_strcmp(ngx_error_log, "stderr") == 0) {
@@ -837,7 +837,7 @@ ngx_get_options(int argc, char *const *argv)
                 }
 
                 ngx_log_stderr(0, "option \"-c\" requires file name");
-                return NJET_ERROR;
+                return NJT_ERROR;
 
             case 'g':
                 if (*p) {
@@ -851,7 +851,7 @@ ngx_get_options(int argc, char *const *argv)
                 }
 
                 ngx_log_stderr(0, "option \"-g\" requires parameter");
-                return NJET_ERROR;
+                return NJT_ERROR;
 
             case 's':
                 if (*p) {
@@ -862,7 +862,7 @@ ngx_get_options(int argc, char *const *argv)
 
                 } else {
                     ngx_log_stderr(0, "option \"-s\" requires parameter");
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
 
                 if (ngx_strcmp(ngx_signal, "stop") == 0
@@ -870,16 +870,16 @@ ngx_get_options(int argc, char *const *argv)
                     || ngx_strcmp(ngx_signal, "reopen") == 0
                     || ngx_strcmp(ngx_signal, "reload") == 0)
                 {
-                    ngx_process = NJET_PROCESS_SIGNALLER;
+                    ngx_process = NJT_PROCESS_SIGNALLER;
                     goto next;
                 }
 
                 ngx_log_stderr(0, "invalid option: \"-s %s\"", ngx_signal);
-                return NJET_ERROR;
+                return NJT_ERROR;
 
             default:
                 ngx_log_stderr(0, "invalid option: \"%c\"", *(p - 1));
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
         }
 
@@ -888,14 +888,14 @@ ngx_get_options(int argc, char *const *argv)
         continue;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
 static ngx_int_t
 ngx_save_argv(ngx_cycle_t *cycle, int argc, char *const *argv)
 {
-#if (NJET_FREEBSD)
+#if (NJT_FREEBSD)
 
     ngx_os_argv = (char **) argv;
     ngx_argc = argc;
@@ -910,7 +910,7 @@ ngx_save_argv(ngx_cycle_t *cycle, int argc, char *const *argv)
 
     ngx_argv = ngx_alloc((argc + 1) * sizeof(char *), cycle->log);
     if (ngx_argv == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     for (i = 0; i < argc; i++) {
@@ -918,7 +918,7 @@ ngx_save_argv(ngx_cycle_t *cycle, int argc, char *const *argv)
 
         ngx_argv[i] = ngx_alloc(len, cycle->log);
         if (ngx_argv[i] == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         (void) ngx_cpystrn((u_char *) ngx_argv[i], (u_char *) argv[i], len);
@@ -930,7 +930,7 @@ ngx_save_argv(ngx_cycle_t *cycle, int argc, char *const *argv)
 
     ngx_os_environ = environ;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -947,7 +947,7 @@ ngx_process_options(ngx_cycle_t *cycle)
         if (len && !ngx_path_separator(p[len - 1])) {
             p = ngx_pnalloc(cycle->pool, len + 1);
             if (p == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             ngx_memcpy(p, ngx_prefix, len);
@@ -961,16 +961,16 @@ ngx_process_options(ngx_cycle_t *cycle)
 
     } else {
 
-#ifndef NJET_PREFIX
+#ifndef NJT_PREFIX
 
-        p = ngx_pnalloc(cycle->pool, NJET_MAX_PATH);
+        p = ngx_pnalloc(cycle->pool, NJT_MAX_PATH);
         if (p == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
-        if (ngx_getcwd(p, NJET_MAX_PATH) == 0) {
+        if (ngx_getcwd(p, NJT_MAX_PATH) == 0) {
             ngx_log_stderr(ngx_errno, "[emerg]: " ngx_getcwd_n " failed");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         len = ngx_strlen(p);
@@ -984,12 +984,12 @@ ngx_process_options(ngx_cycle_t *cycle)
 
 #else
 
-#ifdef NJET_CONF_PREFIX
-        ngx_str_set(&cycle->conf_prefix, NJET_CONF_PREFIX);
+#ifdef NJT_CONF_PREFIX
+        ngx_str_set(&cycle->conf_prefix, NJT_CONF_PREFIX);
 #else
-        ngx_str_set(&cycle->conf_prefix, NJET_PREFIX);
+        ngx_str_set(&cycle->conf_prefix, NJT_PREFIX);
 #endif
-        ngx_str_set(&cycle->prefix, NJET_PREFIX);
+        ngx_str_set(&cycle->prefix, NJT_PREFIX);
 
 #endif
     }
@@ -999,11 +999,11 @@ ngx_process_options(ngx_cycle_t *cycle)
         cycle->conf_file.data = ngx_conf_file;
 
     } else {
-        ngx_str_set(&cycle->conf_file, NJET_CONF_PATH);
+        ngx_str_set(&cycle->conf_file, NJT_CONF_PATH);
     }
 
-    if (ngx_conf_full_name(cycle, &cycle->conf_file, 0) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_conf_full_name(cycle, &cycle->conf_file, 0) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     for (p = cycle->conf_file.data + cycle->conf_file.len - 1;
@@ -1022,7 +1022,7 @@ ngx_process_options(ngx_cycle_t *cycle)
         cycle->error_log.data = ngx_error_log;
 
     } else {
-        ngx_str_set(&cycle->error_log, NJET_ERROR_LOG_PATH);
+        ngx_str_set(&cycle->error_log, NJT_ERROR_LOG_PATH);
     }
 
     if (ngx_conf_params) {
@@ -1031,10 +1031,10 @@ ngx_process_options(ngx_cycle_t *cycle)
     }
 
     if (ngx_test_config) {
-        cycle->log->log_level = NJET_LOG_INFO;
+        cycle->log->log_level = NJT_LOG_INFO;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -1059,22 +1059,22 @@ ngx_core_module_create_conf(ngx_cycle_t *cycle)
      *     ccf->cpu_affinity = NULL;
      */
 
-    ccf->daemon = NJET_CONF_UNSET;
-    ccf->master = NJET_CONF_UNSET;
-    ccf->timer_resolution = NJET_CONF_UNSET_MSEC;
-    ccf->shutdown_timeout = NJET_CONF_UNSET_MSEC;
+    ccf->daemon = NJT_CONF_UNSET;
+    ccf->master = NJT_CONF_UNSET;
+    ccf->timer_resolution = NJT_CONF_UNSET_MSEC;
+    ccf->shutdown_timeout = NJT_CONF_UNSET_MSEC;
 
-    ccf->worker_processes = NJET_CONF_UNSET;
-    ccf->debug_points = NJET_CONF_UNSET;
+    ccf->worker_processes = NJT_CONF_UNSET;
+    ccf->debug_points = NJT_CONF_UNSET;
 
-    ccf->rlimit_nofile = NJET_CONF_UNSET;
-    ccf->rlimit_core = NJET_CONF_UNSET;
+    ccf->rlimit_nofile = NJT_CONF_UNSET;
+    ccf->rlimit_core = NJT_CONF_UNSET;
 
-    ccf->user = (ngx_uid_t) NJET_CONF_UNSET_UINT;
-    ccf->group = (ngx_gid_t) NJET_CONF_UNSET_UINT;
+    ccf->user = (ngx_uid_t) NJT_CONF_UNSET_UINT;
+    ccf->group = (ngx_gid_t) NJT_CONF_UNSET_UINT;
 
     if (ngx_array_init(&ccf->env, cycle->pool, 1, sizeof(ngx_str_t))
-        != NJET_OK)
+        != NJT_OK)
     {
         return NULL;
     }
@@ -1096,14 +1096,14 @@ ngx_core_module_init_conf(ngx_cycle_t *cycle, void *conf)
     ngx_conf_init_value(ccf->worker_processes, 1);
     ngx_conf_init_value(ccf->debug_points, 0);
 
-#if (NJET_HAVE_CPU_AFFINITY)
+#if (NJT_HAVE_CPU_AFFINITY)
 
     if (!ccf->cpu_affinity_auto
         && ccf->cpu_affinity_n
         && ccf->cpu_affinity_n != 1
         && ccf->cpu_affinity_n != (ngx_uint_t) ccf->worker_processes)
     {
-        ngx_log_error(NJET_LOG_WARN, cycle->log, 0,
+        ngx_log_error(NJT_LOG_WARN, cycle->log, 0,
                       "the number of \"worker_processes\" is not equal to "
                       "the number of \"worker_cpu_affinity\" masks, "
                       "using last mask for remaining worker processes");
@@ -1113,47 +1113,47 @@ ngx_core_module_init_conf(ngx_cycle_t *cycle, void *conf)
 
 
     if (ccf->pid.len == 0) {
-        ngx_str_set(&ccf->pid, NJET_PID_PATH);
+        ngx_str_set(&ccf->pid, NJT_PID_PATH);
     }
 
-    if (ngx_conf_full_name(cycle, &ccf->pid, 0) != NJET_OK) {
-        return NJET_CONF_ERROR;
+    if (ngx_conf_full_name(cycle, &ccf->pid, 0) != NJT_OK) {
+        return NJT_CONF_ERROR;
     }
 
-    ccf->oldpid.len = ccf->pid.len + sizeof(NJET_OLDPID_EXT);
+    ccf->oldpid.len = ccf->pid.len + sizeof(NJT_OLDPID_EXT);
 
     ccf->oldpid.data = ngx_pnalloc(cycle->pool, ccf->oldpid.len);
     if (ccf->oldpid.data == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ngx_memcpy(ngx_cpymem(ccf->oldpid.data, ccf->pid.data, ccf->pid.len),
-               NJET_OLDPID_EXT, sizeof(NJET_OLDPID_EXT));
+               NJT_OLDPID_EXT, sizeof(NJT_OLDPID_EXT));
 
 
-#if !(NJET_WIN32)
+#if !(NJT_WIN32)
 
-    if (ccf->user == (uid_t) NJET_CONF_UNSET_UINT && geteuid() == 0) {
+    if (ccf->user == (uid_t) NJT_CONF_UNSET_UINT && geteuid() == 0) {
         struct group   *grp;
         struct passwd  *pwd;
 
         ngx_set_errno(0);
-        pwd = getpwnam(NJET_USER);
+        pwd = getpwnam(NJT_USER);
         if (pwd == NULL) {
-            ngx_log_error(NJET_LOG_EMERG, cycle->log, ngx_errno,
-                          "getpwnam(\"" NJET_USER "\") failed");
-            return NJET_CONF_ERROR;
+            ngx_log_error(NJT_LOG_EMERG, cycle->log, ngx_errno,
+                          "getpwnam(\"" NJT_USER "\") failed");
+            return NJT_CONF_ERROR;
         }
 
-        ccf->username = NJET_USER;
+        ccf->username = NJT_USER;
         ccf->user = pwd->pw_uid;
 
         ngx_set_errno(0);
-        grp = getgrnam(NJET_GROUP);
+        grp = getgrnam(NJT_GROUP);
         if (grp == NULL) {
-            ngx_log_error(NJET_LOG_EMERG, cycle->log, ngx_errno,
-                          "getgrnam(\"" NJET_GROUP "\") failed");
-            return NJET_CONF_ERROR;
+            ngx_log_error(NJT_LOG_EMERG, cycle->log, ngx_errno,
+                          "getgrnam(\"" NJT_GROUP "\") failed");
+            return NJT_CONF_ERROR;
         }
 
         ccf->group = grp->gr_gid;
@@ -1161,11 +1161,11 @@ ngx_core_module_init_conf(ngx_cycle_t *cycle, void *conf)
 
 
     if (ccf->lock_file.len == 0) {
-        ngx_str_set(&ccf->lock_file, NJET_LOCK_PATH);
+        ngx_str_set(&ccf->lock_file, NJT_LOCK_PATH);
     }
 
-    if (ngx_conf_full_name(cycle, &ccf->lock_file, 0) != NJET_OK) {
-        return NJET_CONF_ERROR;
+    if (ngx_conf_full_name(cycle, &ccf->lock_file, 0) != NJT_OK) {
+        return NJT_CONF_ERROR;
     }
 
     {
@@ -1180,7 +1180,7 @@ ngx_core_module_init_conf(ngx_cycle_t *cycle, void *conf)
             || ngx_strncmp(ccf->lock_file.data, lock_file.data, lock_file.len)
                != 0)
         {
-            ngx_log_error(NJET_LOG_EMERG, cycle->log, 0,
+            ngx_log_error(NJT_LOG_EMERG, cycle->log, 0,
                           "\"lock_file\" could not be changed, ignored");
         }
 
@@ -1189,7 +1189,7 @@ ngx_core_module_init_conf(ngx_cycle_t *cycle, void *conf)
 
         cycle->lock_file.data = ngx_pstrdup(cycle->pool, &lock_file);
         if (cycle->lock_file.data == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
     } else {
@@ -1197,7 +1197,7 @@ ngx_core_module_init_conf(ngx_cycle_t *cycle, void *conf)
         cycle->lock_file.data = ngx_pnalloc(cycle->pool,
                                       ccf->lock_file.len + sizeof(".accept"));
         if (cycle->lock_file.data == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         ngx_memcpy(ngx_cpymem(cycle->lock_file.data, ccf->lock_file.data,
@@ -1208,19 +1208,19 @@ ngx_core_module_init_conf(ngx_cycle_t *cycle, void *conf)
 
 #endif
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
 static char *
 ngx_set_user(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-#if (NJET_WIN32)
+#if (NJT_WIN32)
 
-    ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+    ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                        "\"user\" is not supported, ignored");
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 
 #else
 
@@ -1231,16 +1231,16 @@ ngx_set_user(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     struct group     *grp;
     ngx_str_t        *value;
 
-    if (ccf->user != (uid_t) NJET_CONF_UNSET_UINT) {
+    if (ccf->user != (uid_t) NJT_CONF_UNSET_UINT) {
         return "is duplicate";
     }
 
     if (geteuid() != 0) {
-        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+        ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                            "the \"user\" directive makes sense only "
                            "if the master process runs "
                            "with super-user privileges, ignored");
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     value = cf->args->elts;
@@ -1250,9 +1250,9 @@ ngx_set_user(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_set_errno(0);
     pwd = getpwnam((const char *) value[1].data);
     if (pwd == NULL) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, ngx_errno,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, ngx_errno,
                            "getpwnam(\"%s\") failed", value[1].data);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ccf->user = pwd->pw_uid;
@@ -1262,14 +1262,14 @@ ngx_set_user(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_set_errno(0);
     grp = getgrnam(group);
     if (grp == NULL) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, ngx_errno,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, ngx_errno,
                            "getgrnam(\"%s\") failed", group);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ccf->group = grp->gr_gid;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 
 #endif
 }
@@ -1285,7 +1285,7 @@ ngx_set_env(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     var = ngx_array_push(&ccf->env);
     if (var == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     value = cf->args->elts;
@@ -1297,11 +1297,11 @@ ngx_set_env(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
             var->len = i;
 
-            return NJET_CONF_OK;
+            return NJT_CONF_OK;
         }
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -1333,7 +1333,7 @@ ngx_set_priority(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     }
 
     ccf->priority = ngx_atoi(&value[1].data[n], value[1].len - n);
-    if (ccf->priority == NJET_ERROR) {
+    if (ccf->priority == NJT_ERROR) {
         return "invalid number";
     }
 
@@ -1341,14 +1341,14 @@ ngx_set_priority(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         ccf->priority = -ccf->priority;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
 static char *
 ngx_set_cpu_affinity(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-#if (NJET_HAVE_CPU_AFFINITY)
+#if (NJT_HAVE_CPU_AFFINITY)
     ngx_core_conf_t  *ccf = conf;
 
     u_char            ch, *p;
@@ -1362,7 +1362,7 @@ ngx_set_cpu_affinity(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     mask = ngx_palloc(cf->pool, (cf->args->nelts - 1) * sizeof(ngx_cpuset_t));
     if (mask == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ccf->cpu_affinity_n = cf->args->nelts - 1;
@@ -1373,10 +1373,10 @@ ngx_set_cpu_affinity(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (ngx_strcmp(value[1].data, "auto") == 0) {
 
         if (cf->args->nelts > 3) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid number of arguments in "
                                "\"worker_cpu_affinity\" directive");
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         ccf->cpu_affinity_auto = 1;
@@ -1395,10 +1395,10 @@ ngx_set_cpu_affinity(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     for ( /* void */ ; n < cf->args->nelts; n++) {
 
         if (value[n].len > CPU_SETSIZE) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                          "\"worker_cpu_affinity\" supports up to %d CPUs only",
                          CPU_SETSIZE);
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         i = 0;
@@ -1425,28 +1425,28 @@ ngx_set_cpu_affinity(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
                 continue;
             }
 
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                           "invalid character \"%c\" in \"worker_cpu_affinity\"",
                           ch);
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
 #else
 
-    ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+    ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                        "\"worker_cpu_affinity\" is not supported "
                        "on this platform, ignored");
 #endif
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
 ngx_cpuset_t *
 ngx_get_cpu_affinity(ngx_uint_t n)
 {
-#if (NJET_HAVE_CPU_AFFINITY)
+#if (NJT_HAVE_CPU_AFFINITY)
     ngx_uint_t        i, j;
     ngx_cpuset_t     *mask;
     ngx_core_conf_t  *ccf;
@@ -1505,7 +1505,7 @@ ngx_set_worker_processes(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     ccf = (ngx_core_conf_t *) conf;
 
-    if (ccf->worker_processes != NJET_CONF_UNSET) {
+    if (ccf->worker_processes != NJT_CONF_UNSET) {
         return "is duplicate";
     }
 
@@ -1513,23 +1513,23 @@ ngx_set_worker_processes(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     if (ngx_strcmp(value[1].data, "auto") == 0) {
         ccf->worker_processes = ngx_ncpu;
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     ccf->worker_processes = ngx_atoi(value[1].data, value[1].len);
 
-    if (ccf->worker_processes == NJET_ERROR) {
+    if (ccf->worker_processes == NJT_ERROR) {
         return "invalid value";
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
 static char *
 ngx_load_module(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-#if (NJET_HAVE_DLOPEN)
+#if (NJT_HAVE_DLOPEN)
     void                *handle;
     char               **names, **order;
     ngx_str_t           *value, file;
@@ -1545,21 +1545,21 @@ ngx_load_module(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     file = value[1];
 
-    if (ngx_conf_full_name(cf->cycle, &file, 0) != NJET_OK) {
-        return NJET_CONF_ERROR;
+    if (ngx_conf_full_name(cf->cycle, &file, 0) != NJT_OK) {
+        return NJT_CONF_ERROR;
     }
 
     cln = ngx_pool_cleanup_add(cf->cycle->pool, 0);
     if (cln == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     handle = ngx_dlopen(file.data);
     if (handle == NULL) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            ngx_dlopen_n " \"%s\" failed (%s)",
                            file.data, ngx_dlerror());
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     cln->handler = ngx_unload_module;
@@ -1567,18 +1567,18 @@ ngx_load_module(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     modules = ngx_dlsym(handle, "ngx_modules");
     if (modules == NULL) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            ngx_dlsym_n " \"%V\", \"%s\" failed (%s)",
                            &value[1], "ngx_modules", ngx_dlerror());
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     names = ngx_dlsym(handle, "ngx_module_names");
     if (names == NULL) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            ngx_dlsym_n " \"%V\", \"%s\" failed (%s)",
                            &value[1], "ngx_module_names", ngx_dlerror());
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     order = ngx_dlsym(handle, "ngx_module_order");
@@ -1587,28 +1587,28 @@ ngx_load_module(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         module = modules[i];
         module->name = names[i];
 
-        if (ngx_add_module(cf, &file, module, order) != NJET_OK) {
-            return NJET_CONF_ERROR;
+        if (ngx_add_module(cf, &file, module, order) != NJT_OK) {
+            return NJT_CONF_ERROR;
         }
 
-        ngx_log_debug2(NJET_LOG_DEBUG_CORE, cf->log, 0, "module: %s i:%ui",
+        ngx_log_debug2(NJT_LOG_DEBUG_CORE, cf->log, 0, "module: %s i:%ui",
                        module->name, module->index);
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 
 #else
 
-    ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+    ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                        "\"load_module\" is not supported "
                        "on this platform");
-    return NJET_CONF_ERROR;
+    return NJT_CONF_ERROR;
 
 #endif
 }
 
 
-#if (NJET_HAVE_DLOPEN)
+#if (NJT_HAVE_DLOPEN)
 
 static void
 ngx_unload_module(void *data)
@@ -1616,7 +1616,7 @@ ngx_unload_module(void *data)
     void  *handle = data;
 
     if (ngx_dlclose(handle) != 0) {
-        ngx_log_error(NJET_LOG_ALERT, ngx_cycle->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, ngx_cycle->log, 0,
                       ngx_dlclose_n " failed (%s)", ngx_dlerror());
     }
 }

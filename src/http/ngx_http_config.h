@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_HTTP_CONFIG_H_INCLUDED_
-#define _NJET_HTTP_CONFIG_H_INCLUDED_
+#ifndef _NJT_HTTP_CONFIG_H_INCLUDED_
+#define _NJT_HTTP_CONFIG_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -36,20 +36,20 @@ typedef struct {
 } ngx_http_module_t;
 
 
-#define NJET_HTTP_MODULE           0x50545448   /* "HTTP" */
+#define NJT_HTTP_MODULE           0x50545448   /* "HTTP" */
 
-#define NJET_HTTP_MAIN_CONF        0x02000000
-#define NJET_HTTP_SRV_CONF         0x04000000
-#define NJET_HTTP_LOC_CONF         0x08000000
-#define NJET_HTTP_UPS_CONF         0x10000000
-#define NJET_HTTP_SIF_CONF         0x20000000
-#define NJET_HTTP_LIF_CONF         0x40000000
-#define NJET_HTTP_LMT_CONF         0x80000000
+#define NJT_HTTP_MAIN_CONF        0x02000000
+#define NJT_HTTP_SRV_CONF         0x04000000
+#define NJT_HTTP_LOC_CONF         0x08000000
+#define NJT_HTTP_UPS_CONF         0x10000000
+#define NJT_HTTP_SIF_CONF         0x20000000
+#define NJT_HTTP_LIF_CONF         0x40000000
+#define NJT_HTTP_LMT_CONF         0x80000000
 
 
-#define NJET_HTTP_MAIN_CONF_OFFSET  offsetof(ngx_http_conf_ctx_t, main_conf)
-#define NJET_HTTP_SRV_CONF_OFFSET   offsetof(ngx_http_conf_ctx_t, srv_conf)
-#define NJET_HTTP_LOC_CONF_OFFSET   offsetof(ngx_http_conf_ctx_t, loc_conf)
+#define NJT_HTTP_MAIN_CONF_OFFSET  offsetof(ngx_http_conf_ctx_t, main_conf)
+#define NJT_HTTP_SRV_CONF_OFFSET   offsetof(ngx_http_conf_ctx_t, srv_conf)
+#define NJT_HTTP_LOC_CONF_OFFSET   offsetof(ngx_http_conf_ctx_t, loc_conf)
 
 
 #define ngx_http_get_module_main_conf(r, module)                             \
@@ -72,4 +72,4 @@ typedef struct {
         NULL)
 
 
-#endif /* _NJET_HTTP_CONFIG_H_INCLUDED_ */
+#endif /* _NJT_HTTP_CONFIG_H_INCLUDED_ */

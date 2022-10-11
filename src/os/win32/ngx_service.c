@@ -6,8 +6,8 @@
 
 
 
-#define NJET_SERVICE_CONTROL_SHUTDOWN   128
-#define NJET_SERVICE_CONTROL_REOPEN     129
+#define NJT_SERVICE_CONTROL_SHUTDOWN   128
+#define NJT_SERVICE_CONTROL_REOPEN     129
 
 
 SERVICE_TABLE_ENTRY st[] = {
@@ -24,12 +24,12 @@ ngx_service(ngx_log_t *log)
     /* StartServiceCtrlDispatcher() should be called within 30 seconds */
 
     if (StartServiceCtrlDispatcher(st) == 0) {
-        ngx_log_error(NJET_LOG_EMERG, log, ngx_errno,
+        ngx_log_error(NJT_LOG_EMERG, log, ngx_errno,
                       "StartServiceCtrlDispatcher() failed");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -43,7 +43,7 @@ service_main(u_int argc, char **argv)
 
     service = RegisterServiceCtrlHandlerEx("njet", service_handler, ctx);
     if (service == INVALID_HANDLE_VALUE) {
-        ngx_log_error(NJET_LOG_EMERG, log, ngx_errno,
+        ngx_log_error(NJT_LOG_EMERG, log, ngx_errno,
                       "RegisterServiceCtrlHandlerEx() failed");
         return;
     }
@@ -60,7 +60,7 @@ service_main(u_int argc, char **argv)
     /* SetServiceStatus() should be called within 80 seconds */
 
     if (SetServiceStatus(service, &status) == 0) {
-        ngx_log_error(NJET_LOG_EMERG, log, ngx_errno,
+        ngx_log_error(NJT_LOG_EMERG, log, ngx_errno,
                       "SetServiceStatus() failed");
         return;
     }
@@ -72,7 +72,7 @@ service_main(u_int argc, char **argv)
     status.dwWaitHint = 0;
 
     if (SetServiceStatus(service, &status) == 0) {
-        ngx_log_error(NJET_LOG_EMERG, log, ngx_errno,
+        ngx_log_error(NJT_LOG_EMERG, log, ngx_errno,
                       "SetServiceStatus() failed");
         return;
     }
@@ -95,23 +95,23 @@ service_handler(u_int control, u_int type, void *data, void *ctx)
     switch (control) {
 
     case SERVICE_CONTROL_INTERROGATE:
-        status = NJET_IOCP_INTERROGATE;
+        status = NJT_IOCP_INTERROGATE;
         break;
 
     case SERVICE_CONTROL_STOP:
-        status = NJET_IOCP_STOP;
+        status = NJT_IOCP_STOP;
         break;
 
     case SERVICE_CONTROL_PARAMCHANGE:
-        status = NJET_IOCP_RECONFIGURE;
+        status = NJT_IOCP_RECONFIGURE;
         break;
 
-    case NJET_SERVICE_CONTROL_SHUTDOWN:
-        status = NJET_IOCP_REOPEN;
+    case NJT_SERVICE_CONTROL_SHUTDOWN:
+        status = NJT_IOCP_REOPEN;
         break;
 
-    case NJET_SERVICE_CONTROL_REOPEN:
-        status = NJET_IOCP_REOPEN;
+    case NJT_SERVICE_CONTROL_REOPEN:
+        status = NJT_IOCP_REOPEN;
         break;
 
     default:
@@ -121,7 +121,7 @@ service_handler(u_int control, u_int type, void *data, void *ctx)
     if (ngx_single) {
         if (PostQueuedCompletionStatus(iocp, ... status, ...) == 0) {
             err = ngx_errno;
-            ngx_log_error(NJET_LOG_ALERT, log, err,
+            ngx_log_error(NJT_LOG_ALERT, log, err,
                           "PostQueuedCompletionStatus() failed");
             return err;
         }

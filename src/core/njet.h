@@ -5,22 +5,22 @@
  */
 
 
-#ifndef _NJET_H_INCLUDED_
-#define _NJET_H_INCLUDED_
+#ifndef _NJT_H_INCLUDED_
+#define _NJT_H_INCLUDED_
 
 
 #define njet_version      1023001
-#define NJET_VERSION      "1.23.1"
-#define NJET_VER          "njet/" NJET_VERSION
+#define NJT_VERSION      "1.23.1"
+#define NJT_VER          "njet/" NJT_VERSION
 
-#ifdef NJET_BUILD
-#define NJET_VER_BUILD    NJET_VER " (" NJET_BUILD ")"
+#ifdef NJT_BUILD
+#define NJT_VER_BUILD    NJT_VER " (" NJT_BUILD ")"
 #else
-#define NJET_VER_BUILD    NJET_VER
+#define NJT_VER_BUILD    NJT_VER
 #endif
 
-#define NJET_VAR          "NGINX"
-#define NJET_OLDPID_EXT     ".oldbin"
+#define NJT_VAR          "NGINX"
+#define NJT_OLDPID_EXT     ".oldbin"
 
 
-#endif /* _NJET_H_INCLUDED_ */
+#endif /* _NJT_H_INCLUDED_ */

@@ -17,7 +17,7 @@ static ngx_int_t ngx_mail_add_ports(ngx_conf_t *cf, ngx_array_t *ports,
 static char *ngx_mail_optimize_servers(ngx_conf_t *cf, ngx_array_t *ports);
 static ngx_int_t ngx_mail_add_addrs(ngx_conf_t *cf, ngx_mail_port_t *mport,
     ngx_mail_conf_addr_t *addr);
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
 static ngx_int_t ngx_mail_add_addrs6(ngx_conf_t *cf, ngx_mail_port_t *mport,
     ngx_mail_conf_addr_t *addr);
 #endif
@@ -30,7 +30,7 @@ ngx_uint_t  ngx_mail_max_module;
 static ngx_command_t  ngx_mail_commands[] = {
 
     { ngx_string("mail"),
-      NJET_MAIN_CONF|NJET_CONF_BLOCK|NJET_CONF_NOARGS,
+      NJT_MAIN_CONF|NJT_CONF_BLOCK|NJT_CONF_NOARGS,
       ngx_mail_block,
       0,
       0,
@@ -48,10 +48,10 @@ static ngx_core_module_t  ngx_mail_module_ctx = {
 
 
 ngx_module_t  ngx_mail_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_mail_module_ctx,                  /* module context */
     ngx_mail_commands,                     /* module directives */
-    NJET_CORE_MODULE,                       /* module type */
+    NJT_CORE_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -59,7 +59,7 @@ ngx_module_t  ngx_mail_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -84,14 +84,14 @@ ngx_mail_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     ctx = ngx_pcalloc(cf->pool, sizeof(ngx_mail_conf_ctx_t));
     if (ctx == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     *(ngx_mail_conf_ctx_t **) conf = ctx;
 
     /* count the number of the mail modules and set up their indices */
 
-    ngx_mail_max_module = ngx_count_modules(cf->cycle, NJET_MAIL_MODULE);
+    ngx_mail_max_module = ngx_count_modules(cf->cycle, NJT_MAIL_MODULE);
 
 
     /* the mail main_conf context, it is the same in the all mail contexts */
@@ -99,7 +99,7 @@ ngx_mail_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ctx->main_conf = ngx_pcalloc(cf->pool,
                                  sizeof(void *) * ngx_mail_max_module);
     if (ctx->main_conf == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
 
@@ -110,7 +110,7 @@ ngx_mail_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     ctx->srv_conf = ngx_pcalloc(cf->pool, sizeof(void *) * ngx_mail_max_module);
     if (ctx->srv_conf == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
 
@@ -119,7 +119,7 @@ ngx_mail_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
      */
 
     for (m = 0; cf->cycle->modules[m]; m++) {
-        if (cf->cycle->modules[m]->type != NJET_MAIL_MODULE) {
+        if (cf->cycle->modules[m]->type != NJT_MAIL_MODULE) {
             continue;
         }
 
@@ -129,14 +129,14 @@ ngx_mail_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         if (module->create_main_conf) {
             ctx->main_conf[mi] = module->create_main_conf(cf);
             if (ctx->main_conf[mi] == NULL) {
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
         }
 
         if (module->create_srv_conf) {
             ctx->srv_conf[mi] = module->create_srv_conf(cf);
             if (ctx->srv_conf[mi] == NULL) {
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
         }
     }
@@ -147,11 +147,11 @@ ngx_mail_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     pcf = *cf;
     cf->ctx = ctx;
 
-    cf->module_type = NJET_MAIL_MODULE;
-    cf->cmd_type = NJET_MAIL_MAIN_CONF;
+    cf->module_type = NJT_MAIL_MODULE;
+    cf->cmd_type = NJT_MAIL_MAIN_CONF;
     rv = ngx_conf_parse(cf, NULL);
 
-    if (rv != NJET_CONF_OK) {
+    if (rv != NJT_CONF_OK) {
         *cf = pcf;
         return rv;
     }
@@ -163,7 +163,7 @@ ngx_mail_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     cscfp = cmcf->servers.elts;
 
     for (m = 0; cf->cycle->modules[m]; m++) {
-        if (cf->cycle->modules[m]->type != NJET_MAIL_MODULE) {
+        if (cf->cycle->modules[m]->type != NJT_MAIL_MODULE) {
             continue;
         }
 
@@ -176,7 +176,7 @@ ngx_mail_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
         if (module->init_main_conf) {
             rv = module->init_main_conf(cf, ctx->main_conf[mi]);
-            if (rv != NJET_CONF_OK) {
+            if (rv != NJT_CONF_OK) {
                 *cf = pcf;
                 return rv;
             }
@@ -192,7 +192,7 @@ ngx_mail_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
                 rv = module->merge_srv_conf(cf,
                                             ctx->srv_conf[mi],
                                             cscfp[s]->ctx->srv_conf[mi]);
-                if (rv != NJET_CONF_OK) {
+                if (rv != NJT_CONF_OK) {
                     *cf = pcf;
                     return rv;
                 }
@@ -204,16 +204,16 @@ ngx_mail_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
 
     if (ngx_array_init(&ports, cf->temp_pool, 4, sizeof(ngx_mail_conf_port_t))
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     listen = cmcf->listen.elts;
 
     for (i = 0; i < cmcf->listen.nelts; i++) {
-        if (ngx_mail_add_ports(cf, &ports, &listen[i]) != NJET_OK) {
-            return NJET_CONF_ERROR;
+        if (ngx_mail_add_ports(cf, &ports, &listen[i]) != NJT_OK) {
+            return NJT_CONF_ERROR;
         }
     }
 
@@ -249,7 +249,7 @@ ngx_mail_add_ports(ngx_conf_t *cf, ngx_array_t *ports,
 
     port = ngx_array_push(ports);
     if (port == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     port->family = sa->sa_family;
@@ -257,21 +257,21 @@ ngx_mail_add_ports(ngx_conf_t *cf, ngx_array_t *ports,
 
     if (ngx_array_init(&port->addrs, cf->temp_pool, 2,
                        sizeof(ngx_mail_conf_addr_t))
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
 found:
 
     addr = ngx_array_push(&port->addrs);
     if (addr == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     addr->opt = *listen;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -319,7 +319,7 @@ ngx_mail_optimize_servers(ngx_conf_t *cf, ngx_array_t *ports)
             ls = ngx_create_listening(cf, addr[i].opt.sockaddr,
                                       addr[i].opt.socklen);
             if (ls == NULL) {
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             ls->addr_ntop = 1;
@@ -337,19 +337,19 @@ ngx_mail_optimize_servers(ngx_conf_t *cf, ngx_array_t *ports)
             ls->sndbuf = addr[i].opt.sndbuf;
 
             ls->keepalive = addr[i].opt.so_keepalive;
-#if (NJET_HAVE_KEEPALIVE_TUNABLE)
+#if (NJT_HAVE_KEEPALIVE_TUNABLE)
             ls->keepidle = addr[i].opt.tcp_keepidle;
             ls->keepintvl = addr[i].opt.tcp_keepintvl;
             ls->keepcnt = addr[i].opt.tcp_keepcnt;
 #endif
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
             ls->ipv6only = addr[i].opt.ipv6only;
 #endif
 
             mport = ngx_palloc(cf->pool, sizeof(ngx_mail_port_t));
             if (mport == NULL) {
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             ls->servers = mport;
@@ -357,16 +357,16 @@ ngx_mail_optimize_servers(ngx_conf_t *cf, ngx_array_t *ports)
             mport->naddrs = i + 1;
 
             switch (ls->sockaddr->sa_family) {
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
             case AF_INET6:
-                if (ngx_mail_add_addrs6(cf, mport, addr) != NJET_OK) {
-                    return NJET_CONF_ERROR;
+                if (ngx_mail_add_addrs6(cf, mport, addr) != NJT_OK) {
+                    return NJT_CONF_ERROR;
                 }
                 break;
 #endif
             default: /* AF_INET */
-                if (ngx_mail_add_addrs(cf, mport, addr) != NJET_OK) {
-                    return NJET_CONF_ERROR;
+                if (ngx_mail_add_addrs(cf, mport, addr) != NJT_OK) {
+                    return NJT_CONF_ERROR;
                 }
                 break;
             }
@@ -376,7 +376,7 @@ ngx_mail_optimize_servers(ngx_conf_t *cf, ngx_array_t *ports)
         }
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -391,7 +391,7 @@ ngx_mail_add_addrs(ngx_conf_t *cf, ngx_mail_port_t *mport,
     mport->addrs = ngx_pcalloc(cf->pool,
                                mport->naddrs * sizeof(ngx_mail_in_addr_t));
     if (mport->addrs == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     addrs = mport->addrs;
@@ -402,18 +402,18 @@ ngx_mail_add_addrs(ngx_conf_t *cf, ngx_mail_port_t *mport,
         addrs[i].addr = sin->sin_addr.s_addr;
 
         addrs[i].conf.ctx = addr[i].opt.ctx;
-#if (NJET_MAIL_SSL)
+#if (NJT_MAIL_SSL)
         addrs[i].conf.ssl = addr[i].opt.ssl;
 #endif
         addrs[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
         addrs[i].conf.addr_text = addr[i].opt.addr_text;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
 
 static ngx_int_t
 ngx_mail_add_addrs6(ngx_conf_t *cf, ngx_mail_port_t *mport,
@@ -426,7 +426,7 @@ ngx_mail_add_addrs6(ngx_conf_t *cf, ngx_mail_port_t *mport,
     mport->addrs = ngx_pcalloc(cf->pool,
                                mport->naddrs * sizeof(ngx_mail_in6_addr_t));
     if (mport->addrs == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     addrs6 = mport->addrs;
@@ -437,14 +437,14 @@ ngx_mail_add_addrs6(ngx_conf_t *cf, ngx_mail_port_t *mport,
         addrs6[i].addr6 = sin6->sin6_addr;
 
         addrs6[i].conf.ctx = addr[i].opt.ctx;
-#if (NJET_MAIL_SSL)
+#if (NJT_MAIL_SSL)
         addrs6[i].conf.ssl = addr[i].opt.ssl;
 #endif
         addrs6[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
         addrs6[i].conf.addr_text = addr[i].opt.addr_text;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 #endif

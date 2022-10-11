@@ -5,23 +5,23 @@
  */
 
 
-#ifndef _NJET_POSIX_CONFIG_H_INCLUDED_
-#define _NJET_POSIX_CONFIG_H_INCLUDED_
+#ifndef _NJT_POSIX_CONFIG_H_INCLUDED_
+#define _NJT_POSIX_CONFIG_H_INCLUDED_
 
 
-#if (NJET_HPUX)
+#if (NJT_HPUX)
 #define _XOPEN_SOURCE
 #define _XOPEN_SOURCE_EXTENDED  1
 #define _HPUX_ALT_XOPEN_SOCKET_API
 #endif
 
 
-#if (NJET_TRU64)
+#if (NJT_TRU64)
 #define _REENTRANT
 #endif
 
 
-#if (NJET_GNU_HURD)
+#if (NJT_GNU_HURD)
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE             /* accept4() */
 #endif
@@ -31,16 +31,16 @@
 
 #ifdef __CYGWIN__
 #define timezonevar             /* timezone is variable */
-#define NJET_BROKEN_SCM_RIGHTS   1
+#define NJT_BROKEN_SCM_RIGHTS   1
 #endif
 
 
 #include <sys/types.h>
 #include <sys/time.h>
-#if (NJET_HAVE_UNISTD_H)
+#if (NJT_HAVE_UNISTD_H)
 #include <unistd.h>
 #endif
-#if (NJET_HAVE_INTTYPES_H)
+#if (NJT_HAVE_INTTYPES_H)
 #include <inttypes.h>
 #endif
 #include <stdarg.h>
@@ -56,17 +56,17 @@
 #include <dirent.h>
 #include <glob.h>
 #include <time.h>
-#if (NJET_HAVE_SYS_PARAM_H)
+#if (NJT_HAVE_SYS_PARAM_H)
 #include <sys/param.h>          /* statfs() */
 #endif
-#if (NJET_HAVE_SYS_MOUNT_H)
+#if (NJT_HAVE_SYS_MOUNT_H)
 #include <sys/mount.h>          /* statfs() */
 #endif
-#if (NJET_HAVE_SYS_STATVFS_H)
+#if (NJT_HAVE_SYS_STATVFS_H)
 #include <sys/statvfs.h>        /* statvfs() */
 #endif
 
-#if (NJET_HAVE_SYS_FILIO_H)
+#if (NJT_HAVE_SYS_FILIO_H)
 #include <sys/filio.h>          /* FIONBIO */
 #endif
 #include <sys/ioctl.h>          /* FIONBIO */
@@ -87,7 +87,7 @@
 #include <netdb.h>
 #include <sys/un.h>
 
-#if (NJET_HAVE_LIMITS_H)
+#if (NJT_HAVE_LIMITS_H)
 #include <limits.h>             /* IOV_MAX */
 #endif
 
@@ -95,7 +95,7 @@
 #include <malloc.h>             /* memalign() */
 #endif
 
-#if (NJET_HAVE_CRYPT_H)
+#if (NJT_HAVE_CRYPT_H)
 #include <crypt.h>
 #endif
 
@@ -108,39 +108,39 @@
 #include <ngx_auto_config.h>
 
 
-#if (NJET_HAVE_DLOPEN)
+#if (NJT_HAVE_DLOPEN)
 #include <dlfcn.h>
 #endif
 
 
-#if (NJET_HAVE_POSIX_SEM)
+#if (NJT_HAVE_POSIX_SEM)
 #include <semaphore.h>
 #endif
 
 
-#if (NJET_HAVE_POLL)
+#if (NJT_HAVE_POLL)
 #include <poll.h>
 #endif
 
 
-#if (NJET_HAVE_KQUEUE)
+#if (NJT_HAVE_KQUEUE)
 #include <sys/event.h>
 #endif
 
 
-#if (NJET_HAVE_DEVPOLL) && !(NJET_TEST_BUILD_DEVPOLL)
+#if (NJT_HAVE_DEVPOLL) && !(NJT_TEST_BUILD_DEVPOLL)
 #include <sys/ioctl.h>
 #include <sys/devpoll.h>
 #endif
 
 
-#if (NJET_HAVE_FILE_AIO)
+#if (NJT_HAVE_FILE_AIO)
 #include <aio.h>
 typedef struct aiocb  ngx_aiocb_t;
 #endif
 
 
-#define NJET_LISTEN_BACKLOG  511
+#define NJT_LISTEN_BACKLOG  511
 
 #define ngx_debug_init()
 
@@ -148,4 +148,4 @@ typedef struct aiocb  ngx_aiocb_t;
 extern char **environ;
 
 
-#endif /* _NJET_POSIX_CONFIG_H_INCLUDED_ */
+#endif /* _NJT_POSIX_CONFIG_H_INCLUDED_ */

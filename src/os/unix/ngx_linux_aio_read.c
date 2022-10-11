@@ -31,7 +31,7 @@ ngx_file_aio_init(ngx_file_t *file, ngx_pool_t *pool)
 
     aio = ngx_pcalloc(pool, sizeof(ngx_event_aio_t));
     if (aio == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     aio->file = file;
@@ -42,7 +42,7 @@ ngx_file_aio_init(ngx_file_t *file, ngx_pool_t *pool)
 
     file->aio = aio;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -59,20 +59,20 @@ ngx_file_aio_read(ngx_file_t *file, u_char *buf, size_t size, off_t offset,
         return ngx_read_file(file, buf, size, offset);
     }
 
-    if (file->aio == NULL && ngx_file_aio_init(file, pool) != NJET_OK) {
-        return NJET_ERROR;
+    if (file->aio == NULL && ngx_file_aio_init(file, pool) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     aio = file->aio;
     ev = &aio->event;
 
     if (!ev->ready) {
-        ngx_log_error(NJET_LOG_ALERT, file->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, file->log, 0,
                       "second aio post for \"%V\"", &file->name);
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
-    ngx_log_debug4(NJET_LOG_DEBUG_CORE, file->log, 0,
+    ngx_log_debug4(NJT_LOG_DEBUG_CORE, file->log, 0,
                    "aio complete:%d @%O:%uz %V",
                    ev->complete, offset, size, &file->name);
 
@@ -87,10 +87,10 @@ ngx_file_aio_read(ngx_file_t *file, u_char *buf, size_t size, off_t offset,
 
         ngx_set_errno(-aio->res);
 
-        ngx_log_error(NJET_LOG_CRIT, file->log, ngx_errno,
+        ngx_log_error(NJT_LOG_CRIT, file->log, ngx_errno,
                       "aio read \"%s\" failed", file->name.data);
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_memzero(&aio->aiocb, sizeof(struct iocb));
@@ -113,24 +113,24 @@ ngx_file_aio_read(ngx_file_t *file, u_char *buf, size_t size, off_t offset,
         ev->ready = 0;
         ev->complete = 0;
 
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
     err = ngx_errno;
 
-    if (err == NJET_EAGAIN) {
+    if (err == NJT_EAGAIN) {
         return ngx_read_file(file, buf, size, offset);
     }
 
-    ngx_log_error(NJET_LOG_CRIT, file->log, err,
+    ngx_log_error(NJT_LOG_CRIT, file->log, err,
                   "io_submit(\"%V\") failed", &file->name);
 
-    if (err == NJET_ENOSYS) {
+    if (err == NJT_ENOSYS) {
         ngx_file_aio = 0;
         return ngx_read_file(file, buf, size, offset);
     }
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
@@ -141,7 +141,7 @@ ngx_file_aio_event_handler(ngx_event_t *ev)
 
     aio = ev->data;
 
-    ngx_log_debug2(NJET_LOG_DEBUG_CORE, ev->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_CORE, ev->log, 0,
                    "aio event handler fd:%d %V", aio->fd, &aio->file->name);
 
     aio->handler(ev);

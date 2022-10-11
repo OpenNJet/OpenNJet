@@ -9,17 +9,17 @@ if [ $PCRE != NONE ]; then
 
         PCRE_LIBRARY=PCRE2
 
-        have=NJET_PCRE . auto/have
-        have=NJET_PCRE2 . auto/have
+        have=NJT_PCRE . auto/have
+        have=NJT_PCRE2 . auto/have
 
-        if [ "$NJET_PLATFORM" = win32 ]; then
+        if [ "$NJT_PLATFORM" = win32 ]; then
             have=PCRE2_STATIC . auto/have
         fi
 
         CORE_INCS="$CORE_INCS $PCRE/src/"
         CORE_DEPS="$CORE_DEPS $PCRE/src/pcre2.h"
 
-        case "$NJET_CC_NAME" in
+        case "$NJT_CC_NAME" in
 
             msvc)
                 LINK_DEPS="$LINK_DEPS $PCRE/src/pcre2-8.lib"
@@ -37,16 +37,16 @@ if [ $PCRE != NONE ]; then
 
         PCRE_LIBRARY=PCRE
 
-        have=NJET_PCRE . auto/have
+        have=NJT_PCRE . auto/have
 
-        if [ "$NJET_PLATFORM" = win32 ]; then
+        if [ "$NJT_PLATFORM" = win32 ]; then
             have=PCRE_STATIC . auto/have
         fi
 
         CORE_INCS="$CORE_INCS $PCRE"
         CORE_DEPS="$CORE_DEPS $PCRE/pcre.h"
 
-        case "$NJET_CC_NAME" in
+        case "$NJT_CC_NAME" in
 
             msvc | owc | bcc)
                 LINK_DEPS="$LINK_DEPS $PCRE/pcre.lib"
@@ -62,20 +62,20 @@ if [ $PCRE != NONE ]; then
     fi
 
     if [ $PCRE_JIT = YES ]; then
-        have=NJET_HAVE_PCRE_JIT . auto/have
+        have=NJT_HAVE_PCRE_JIT . auto/have
         PCRE_CONF_OPT="$PCRE_CONF_OPT --enable-jit"
     fi
 
 else
 
-    if [ "$NJET_PLATFORM" != win32 ]; then
+    if [ "$NJT_PLATFORM" != win32 ]; then
         PCRE=NO
     fi
 
     if [ $PCRE = NO -a $PCRE2 != DISABLED ]; then
 
         ngx_feature="PCRE2 library"
-        ngx_feature_name="NJET_PCRE2"
+        ngx_feature_name="NJT_PCRE2"
         ngx_feature_run=no
         ngx_feature_incs="#define PCRE2_CODE_UNIT_WIDTH 8
                           #include <pcre2.h>"
@@ -102,7 +102,7 @@ else
         fi
 
         if [ $ngx_found = yes ]; then
-            have=NJET_PCRE . auto/have
+            have=NJT_PCRE . auto/have
             CORE_INCS="$CORE_INCS $ngx_feature_path"
             CORE_LIBS="$CORE_LIBS $ngx_feature_libs"
             PCRE=YES
@@ -113,7 +113,7 @@ else
     if [ $PCRE = NO ]; then
 
         ngx_feature="PCRE library"
-        ngx_feature_name="NJET_PCRE"
+        ngx_feature_name="NJT_PCRE"
         ngx_feature_run=no
         ngx_feature_incs="#include <pcre.h>"
         ngx_feature_path=
@@ -130,7 +130,7 @@ else
             ngx_feature="PCRE library in /usr/local/"
             ngx_feature_path="/usr/local/include"
 
-            if [ $NJET_RPATH = YES ]; then
+            if [ $NJT_RPATH = YES ]; then
                 ngx_feature_libs="-R/usr/local/lib -L/usr/local/lib -lpcre"
             else
                 ngx_feature_libs="-L/usr/local/lib -lpcre"
@@ -157,7 +157,7 @@ else
             ngx_feature="PCRE library in /usr/pkg/"
             ngx_feature_path="/usr/pkg/include"
 
-            if [ $NJET_RPATH = YES ]; then
+            if [ $NJT_RPATH = YES ]; then
                 ngx_feature_libs="-R/usr/pkg/lib -L/usr/pkg/lib -lpcre"
             else
                 ngx_feature_libs="-L/usr/pkg/lib -lpcre"
@@ -173,7 +173,7 @@ else
             ngx_feature="PCRE library in /opt/local/"
             ngx_feature_path="/opt/local/include"
 
-            if [ $NJET_RPATH = YES ]; then
+            if [ $NJT_RPATH = YES ]; then
                 ngx_feature_libs="-R/opt/local/lib -L/opt/local/lib -lpcre"
             else
                 ngx_feature_libs="-L/opt/local/lib -lpcre"
@@ -191,7 +191,7 @@ else
 
         if [ $PCRE = YES ]; then
             ngx_feature="PCRE JIT support"
-            ngx_feature_name="NJET_HAVE_PCRE_JIT"
+            ngx_feature_name="NJT_HAVE_PCRE_JIT"
             ngx_feature_test="int jit = 0;
                               pcre_free_study(NULL);
                               pcre_config(PCRE_CONFIG_JIT, &jit);

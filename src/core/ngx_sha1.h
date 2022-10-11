@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_SHA1_H_INCLUDED_
-#define _NJET_SHA1_H_INCLUDED_
+#ifndef _NJT_SHA1_H_INCLUDED_
+#define _NJT_SHA1_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -25,4 +25,4 @@ void ngx_sha1_update(ngx_sha1_t *ctx, const void *data, size_t size);
 void ngx_sha1_final(u_char result[20], ngx_sha1_t *ctx);
 
 
-#endif /* _NJET_SHA1_H_INCLUDED_ */
+#endif /* _NJT_SHA1_H_INCLUDED_ */

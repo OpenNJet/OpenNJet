@@ -36,7 +36,7 @@ static char *ngx_http_upstream_ip_hash(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_http_upstream_ip_hash_commands[] = {
 
     { ngx_string("ip_hash"),
-      NJET_HTTP_UPS_CONF|NJET_CONF_NOARGS,
+      NJT_HTTP_UPS_CONF|NJT_CONF_NOARGS,
       ngx_http_upstream_ip_hash,
       0,
       0,
@@ -62,10 +62,10 @@ static ngx_http_module_t  ngx_http_upstream_ip_hash_module_ctx = {
 
 
 ngx_module_t  ngx_http_upstream_ip_hash_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_upstream_ip_hash_module_ctx, /* module context */
     ngx_http_upstream_ip_hash_commands,    /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -73,7 +73,7 @@ ngx_module_t  ngx_http_upstream_ip_hash_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -83,13 +83,13 @@ static u_char ngx_http_upstream_ip_hash_pseudo_addr[3];
 static ngx_int_t
 ngx_http_upstream_init_ip_hash(ngx_conf_t *cf, ngx_http_upstream_srv_conf_t *us)
 {
-    if (ngx_http_upstream_init_round_robin(cf, us) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_http_upstream_init_round_robin(cf, us) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     us->peer.init = ngx_http_upstream_init_ip_hash_peer;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -98,20 +98,20 @@ ngx_http_upstream_init_ip_hash_peer(ngx_http_request_t *r,
     ngx_http_upstream_srv_conf_t *us)
 {
     struct sockaddr_in                     *sin;
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     struct sockaddr_in6                    *sin6;
 #endif
     ngx_http_upstream_ip_hash_peer_data_t  *iphp;
 
     iphp = ngx_palloc(r->pool, sizeof(ngx_http_upstream_ip_hash_peer_data_t));
     if (iphp == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     r->upstream->peer.data = &iphp->rrp;
 
-    if (ngx_http_upstream_init_round_robin_peer(r, us) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_http_upstream_init_round_robin_peer(r, us) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     r->upstream->peer.get = ngx_http_upstream_get_ip_hash_peer;
@@ -124,7 +124,7 @@ ngx_http_upstream_init_ip_hash_peer(ngx_http_request_t *r,
         iphp->addrlen = 3;
         break;
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     case AF_INET6:
         sin6 = (struct sockaddr_in6 *) r->connection->sockaddr;
         iphp->addr = (u_char *) &sin6->sin6_addr.s6_addr;
@@ -141,7 +141,7 @@ ngx_http_upstream_init_ip_hash_peer(ngx_http_request_t *r,
     iphp->tries = 0;
     iphp->get_rr_peer = ngx_http_upstream_get_round_robin_peer;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -156,7 +156,7 @@ ngx_http_upstream_get_ip_hash_peer(ngx_peer_connection_t *pc, void *data)
     ngx_uint_t                    i, n, p, hash;
     ngx_http_upstream_rr_peer_t  *peer;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, pc->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, pc->log, 0,
                    "get ip hash peer, try: %ui", pc->tries);
 
     /* TODO: cached */
@@ -198,7 +198,7 @@ ngx_http_upstream_get_ip_hash_peer(ngx_peer_connection_t *pc, void *data)
             goto next;
         }
 
-        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, pc->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_HTTP, pc->log, 0,
                        "get ip hash peer, hash: %ui %04XL", p, (uint64_t) m);
 
         ngx_http_upstream_rr_peer_lock(iphp->rrp.peers, peer);
@@ -249,7 +249,7 @@ ngx_http_upstream_get_ip_hash_peer(ngx_peer_connection_t *pc, void *data)
     iphp->rrp.tried[n] |= m;
     iphp->hash = hash;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -261,18 +261,18 @@ ngx_http_upstream_ip_hash(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     uscf = ngx_http_conf_get_module_srv_conf(cf, ngx_http_upstream_module);
 
     if (uscf->peer.init_upstream) {
-        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+        ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                            "load balancing method redefined");
     }
 
     uscf->peer.init_upstream = ngx_http_upstream_init_ip_hash;
 
-    uscf->flags = NJET_HTTP_UPSTREAM_CREATE
-                  |NJET_HTTP_UPSTREAM_WEIGHT
-                  |NJET_HTTP_UPSTREAM_MAX_CONNS
-                  |NJET_HTTP_UPSTREAM_MAX_FAILS
-                  |NJET_HTTP_UPSTREAM_FAIL_TIMEOUT
-                  |NJET_HTTP_UPSTREAM_DOWN;
+    uscf->flags = NJT_HTTP_UPSTREAM_CREATE
+                  |NJT_HTTP_UPSTREAM_WEIGHT
+                  |NJT_HTTP_UPSTREAM_MAX_CONNS
+                  |NJT_HTTP_UPSTREAM_MAX_FAILS
+                  |NJT_HTTP_UPSTREAM_FAIL_TIMEOUT
+                  |NJT_HTTP_UPSTREAM_DOWN;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

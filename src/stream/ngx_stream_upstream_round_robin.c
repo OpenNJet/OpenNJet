@@ -19,7 +19,7 @@ static ngx_stream_upstream_rr_peer_t *ngx_stream_upstream_get_peer(
 static void ngx_stream_upstream_notify_round_robin_peer(
     ngx_peer_connection_t *pc, void *data, ngx_uint_t state);
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
 
 static ngx_int_t ngx_stream_upstream_set_round_robin_peer_session(
     ngx_peer_connection_t *pc, void *data);
@@ -66,20 +66,20 @@ ngx_stream_upstream_init_round_robin(ngx_conf_t *cf,
         }
 
         if (n == 0) {
-            ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
+            ngx_log_error(NJT_LOG_EMERG, cf->log, 0,
                           "no servers in upstream \"%V\" in %s:%ui",
                           &us->host, us->file_name, us->line);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         peers = ngx_pcalloc(cf->pool, sizeof(ngx_stream_upstream_rr_peers_t));
         if (peers == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         peer = ngx_pcalloc(cf->pool, sizeof(ngx_stream_upstream_rr_peer_t) * n);
         if (peer == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         peers->single = (n == 1);
@@ -138,17 +138,17 @@ ngx_stream_upstream_init_round_robin(ngx_conf_t *cf,
         }
 
         if (n == 0) {
-            return NJET_OK;
+            return NJT_OK;
         }
 
         backup = ngx_pcalloc(cf->pool, sizeof(ngx_stream_upstream_rr_peers_t));
         if (backup == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         peer = ngx_pcalloc(cf->pool, sizeof(ngx_stream_upstream_rr_peer_t) * n);
         if (peer == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         peers->single = 0;
@@ -188,17 +188,17 @@ ngx_stream_upstream_init_round_robin(ngx_conf_t *cf,
 
         peers->next = backup;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
 
     /* an upstream implicitly defined by proxy_pass, etc. */
 
     if (us->port == 0) {
-        ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
+        ngx_log_error(NJT_LOG_EMERG, cf->log, 0,
                       "no port in upstream \"%V\" in %s:%ui",
                       &us->host, us->file_name, us->line);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_memzero(&u, sizeof(ngx_url_t));
@@ -206,26 +206,26 @@ ngx_stream_upstream_init_round_robin(ngx_conf_t *cf,
     u.host = us->host;
     u.port = us->port;
 
-    if (ngx_inet_resolve_host(cf->pool, &u) != NJET_OK) {
+    if (ngx_inet_resolve_host(cf->pool, &u) != NJT_OK) {
         if (u.err) {
-            ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
+            ngx_log_error(NJT_LOG_EMERG, cf->log, 0,
                           "%s in upstream \"%V\" in %s:%ui",
                           u.err, &us->host, us->file_name, us->line);
         }
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     n = u.naddrs;
 
     peers = ngx_pcalloc(cf->pool, sizeof(ngx_stream_upstream_rr_peers_t));
     if (peers == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     peer = ngx_pcalloc(cf->pool, sizeof(ngx_stream_upstream_rr_peer_t) * n);
     if (peer == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     peers->single = (n == 1);
@@ -255,7 +255,7 @@ ngx_stream_upstream_init_round_robin(ngx_conf_t *cf,
 
     /* implicitly defined upstream has no backup servers */
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -272,7 +272,7 @@ ngx_stream_upstream_init_round_robin_peer(ngx_stream_session_t *s,
         rrp = ngx_palloc(s->connection->pool,
                          sizeof(ngx_stream_upstream_rr_peer_data_t));
         if (rrp == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         s->upstream->peer.data = rrp;
@@ -297,7 +297,7 @@ ngx_stream_upstream_init_round_robin_peer(ngx_stream_session_t *s,
 
         rrp->tried = ngx_pcalloc(s->connection->pool, n * sizeof(uintptr_t));
         if (rrp->tried == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
@@ -305,14 +305,14 @@ ngx_stream_upstream_init_round_robin_peer(ngx_stream_session_t *s,
     s->upstream->peer.free = ngx_stream_upstream_free_round_robin_peer;
     s->upstream->peer.notify = ngx_stream_upstream_notify_round_robin_peer;
     s->upstream->peer.tries = ngx_stream_upstream_tries(rrp->peers);
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
     s->upstream->peer.set_session =
                              ngx_stream_upstream_set_round_robin_peer_session;
     s->upstream->peer.save_session =
                              ngx_stream_upstream_save_round_robin_peer_session;
 #endif
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -335,7 +335,7 @@ ngx_stream_upstream_create_round_robin_peer(ngx_stream_session_t *s,
         rrp = ngx_palloc(s->connection->pool,
                          sizeof(ngx_stream_upstream_rr_peer_data_t));
         if (rrp == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         s->upstream->peer.data = rrp;
@@ -344,13 +344,13 @@ ngx_stream_upstream_create_round_robin_peer(ngx_stream_session_t *s,
     peers = ngx_pcalloc(s->connection->pool,
                         sizeof(ngx_stream_upstream_rr_peers_t));
     if (peers == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     peer = ngx_pcalloc(s->connection->pool,
                        sizeof(ngx_stream_upstream_rr_peer_t) * ur->naddrs);
     if (peer == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     peers->single = (ur->naddrs == 1);
@@ -379,18 +379,18 @@ ngx_stream_upstream_create_round_robin_peer(ngx_stream_session_t *s,
 
             sockaddr = ngx_palloc(s->connection->pool, socklen);
             if (sockaddr == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             ngx_memcpy(sockaddr, ur->addrs[i].sockaddr, socklen);
             ngx_inet_set_port(sockaddr, ur->port);
 
-            p = ngx_pnalloc(s->connection->pool, NJET_SOCKADDR_STRLEN);
+            p = ngx_pnalloc(s->connection->pool, NJT_SOCKADDR_STRLEN);
             if (p == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
-            len = ngx_sock_ntop(sockaddr, socklen, p, NJET_SOCKADDR_STRLEN, 1);
+            len = ngx_sock_ntop(sockaddr, socklen, p, NJT_SOCKADDR_STRLEN, 1);
 
             peer[i].sockaddr = sockaddr;
             peer[i].socklen = socklen;
@@ -421,19 +421,19 @@ ngx_stream_upstream_create_round_robin_peer(ngx_stream_session_t *s,
 
         rrp->tried = ngx_pcalloc(s->connection->pool, n * sizeof(uintptr_t));
         if (rrp->tried == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
     s->upstream->peer.get = ngx_stream_upstream_get_round_robin_peer;
     s->upstream->peer.free = ngx_stream_upstream_free_round_robin_peer;
     s->upstream->peer.tries = ngx_stream_upstream_tries(rrp->peers);
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
     s->upstream->peer.set_session = ngx_stream_upstream_empty_set_session;
     s->upstream->peer.save_session = ngx_stream_upstream_empty_save_session;
 #endif
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -447,7 +447,7 @@ ngx_stream_upstream_get_round_robin_peer(ngx_peer_connection_t *pc, void *data)
     ngx_stream_upstream_rr_peer_t   *peer;
     ngx_stream_upstream_rr_peers_t  *peers;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                    "get rr peer, try: %ui", pc->tries);
 
     pc->connection = NULL;
@@ -478,7 +478,7 @@ ngx_stream_upstream_get_round_robin_peer(ngx_peer_connection_t *pc, void *data)
             goto failed;
         }
 
-        ngx_log_debug2(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                        "get rr peer, current: %p %i",
                        peer, peer->current_weight);
     }
@@ -491,13 +491,13 @@ ngx_stream_upstream_get_round_robin_peer(ngx_peer_connection_t *pc, void *data)
 
     ngx_stream_upstream_rr_peers_unlock(peers);
 
-    return NJET_OK;
+    return NJT_OK;
 
 failed:
 
     if (peers->next) {
 
-        ngx_log_debug0(NJET_LOG_DEBUG_STREAM, pc->log, 0, "backup servers");
+        ngx_log_debug0(NJT_LOG_DEBUG_STREAM, pc->log, 0, "backup servers");
 
         rrp->peers = peers->next;
 
@@ -512,7 +512,7 @@ failed:
 
         rc = ngx_stream_upstream_get_round_robin_peer(pc, rrp);
 
-        if (rc != NJET_BUSY) {
+        if (rc != NJT_BUSY) {
             return rc;
         }
 
@@ -523,7 +523,7 @@ failed:
 
     pc->name = peers->name;
 
-    return NJET_BUSY;
+    return NJT_BUSY;
 }
 
 
@@ -541,7 +541,7 @@ ngx_stream_upstream_get_peer(ngx_stream_upstream_rr_peer_data_t *rrp)
     best = NULL;
     total = 0;
 
-#if (NJET_SUPPRESS_WARN)
+#if (NJT_SUPPRESS_WARN)
     p = 0;
 #endif
 
@@ -614,7 +614,7 @@ ngx_stream_upstream_free_round_robin_peer(ngx_peer_connection_t *pc, void *data,
     time_t                          now;
     ngx_stream_upstream_rr_peer_t  *peer;
 
-    ngx_log_debug2(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                    "free rr peer %ui %ui", pc->tries, state);
 
     peer = rrp->current;
@@ -632,7 +632,7 @@ ngx_stream_upstream_free_round_robin_peer(ngx_peer_connection_t *pc, void *data,
         return;
     }
 
-    if (state & NJET_PEER_FAILED) {
+    if (state & NJT_PEER_FAILED) {
         now = ngx_time();
 
         peer->fails++;
@@ -643,12 +643,12 @@ ngx_stream_upstream_free_round_robin_peer(ngx_peer_connection_t *pc, void *data,
             peer->effective_weight -= peer->weight / peer->max_fails;
 
             if (peer->fails >= peer->max_fails) {
-                ngx_log_error(NJET_LOG_WARN, pc->log, 0,
+                ngx_log_error(NJT_LOG_WARN, pc->log, 0,
                               "upstream server temporarily disabled");
             }
         }
 
-        ngx_log_debug2(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                        "free rr peer failed: %p %i",
                        peer, peer->effective_weight);
 
@@ -686,7 +686,7 @@ ngx_stream_upstream_notify_round_robin_peer(ngx_peer_connection_t *pc,
 
     peer = rrp->current;
 
-    if (type == NJET_STREAM_UPSTREAM_NOTIFY_CONNECT
+    if (type == NJT_STREAM_UPSTREAM_NOTIFY_CONNECT
         && pc->connection->type == SOCK_STREAM)
     {
         ngx_stream_upstream_rr_peers_rlock(rrp->peers);
@@ -702,7 +702,7 @@ ngx_stream_upstream_notify_round_robin_peer(ngx_peer_connection_t *pc,
 }
 
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
 
 static ngx_int_t
 ngx_stream_upstream_set_round_robin_peer_session(ngx_peer_connection_t *pc,
@@ -713,16 +713,16 @@ ngx_stream_upstream_set_round_robin_peer_session(ngx_peer_connection_t *pc,
     ngx_int_t                        rc;
     ngx_ssl_session_t               *ssl_session;
     ngx_stream_upstream_rr_peer_t   *peer;
-#if (NJET_STREAM_UPSTREAM_ZONE)
+#if (NJT_STREAM_UPSTREAM_ZONE)
     int                              len;
     const u_char                    *p;
     ngx_stream_upstream_rr_peers_t  *peers;
-    u_char                           buf[NJET_SSL_MAX_SESSION_SIZE];
+    u_char                           buf[NJT_SSL_MAX_SESSION_SIZE];
 #endif
 
     peer = rrp->current;
 
-#if (NJET_STREAM_UPSTREAM_ZONE)
+#if (NJT_STREAM_UPSTREAM_ZONE)
     peers = rrp->peers;
 
     if (peers->shpool) {
@@ -732,7 +732,7 @@ ngx_stream_upstream_set_round_robin_peer_session(ngx_peer_connection_t *pc,
         if (peer->ssl_session == NULL) {
             ngx_stream_upstream_rr_peer_unlock(peers, peer);
             ngx_stream_upstream_rr_peers_unlock(peers);
-            return NJET_OK;
+            return NJT_OK;
         }
 
         len = peer->ssl_session_len;
@@ -747,7 +747,7 @@ ngx_stream_upstream_set_round_robin_peer_session(ngx_peer_connection_t *pc,
 
         rc = ngx_ssl_set_session(pc->connection, ssl_session);
 
-        ngx_log_debug1(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                        "set session: %p", ssl_session);
 
         ngx_ssl_free_session(ssl_session);
@@ -760,7 +760,7 @@ ngx_stream_upstream_set_round_robin_peer_session(ngx_peer_connection_t *pc,
 
     rc = ngx_ssl_set_session(pc->connection, ssl_session);
 
-    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                    "set session: %p", ssl_session);
 
     return rc;
@@ -775,14 +775,14 @@ ngx_stream_upstream_save_round_robin_peer_session(ngx_peer_connection_t *pc,
 
     ngx_ssl_session_t               *old_ssl_session, *ssl_session;
     ngx_stream_upstream_rr_peer_t   *peer;
-#if (NJET_STREAM_UPSTREAM_ZONE)
+#if (NJT_STREAM_UPSTREAM_ZONE)
     int                              len;
     u_char                          *p;
     ngx_stream_upstream_rr_peers_t  *peers;
-    u_char                           buf[NJET_SSL_MAX_SESSION_SIZE];
+    u_char                           buf[NJT_SSL_MAX_SESSION_SIZE];
 #endif
 
-#if (NJET_STREAM_UPSTREAM_ZONE)
+#if (NJT_STREAM_UPSTREAM_ZONE)
     peers = rrp->peers;
 
     if (peers->shpool) {
@@ -793,14 +793,14 @@ ngx_stream_upstream_save_round_robin_peer_session(ngx_peer_connection_t *pc,
             return;
         }
 
-        ngx_log_debug1(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                        "save session: %p", ssl_session);
 
         len = i2d_SSL_SESSION(ssl_session, NULL);
 
         /* do not cache too big session */
 
-        if (len > NJET_SSL_MAX_SESSION_SIZE) {
+        if (len > NJT_SSL_MAX_SESSION_SIZE) {
             return;
         }
 
@@ -849,7 +849,7 @@ ngx_stream_upstream_save_round_robin_peer_session(ngx_peer_connection_t *pc,
         return;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                    "save session: %p", ssl_session);
 
     peer = rrp->current;
@@ -859,7 +859,7 @@ ngx_stream_upstream_save_round_robin_peer_session(ngx_peer_connection_t *pc,
 
     if (old_ssl_session) {
 
-        ngx_log_debug1(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                        "old session: %p", old_ssl_session);
 
         /* TODO: may block */
@@ -872,7 +872,7 @@ ngx_stream_upstream_save_round_robin_peer_session(ngx_peer_connection_t *pc,
 static ngx_int_t
 ngx_stream_upstream_empty_set_session(ngx_peer_connection_t *pc, void *data)
 {
-    return NJET_OK;
+    return NJT_OK;
 }
 
 

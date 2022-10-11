@@ -26,10 +26,10 @@ static ngx_str_t  ngx_mail_imap_default_capabilities[] = {
 
 
 static ngx_conf_bitmask_t  ngx_mail_imap_auth_methods[] = {
-    { ngx_string("plain"), NJET_MAIL_AUTH_PLAIN_ENABLED },
-    { ngx_string("login"), NJET_MAIL_AUTH_LOGIN_ENABLED },
-    { ngx_string("cram-md5"), NJET_MAIL_AUTH_CRAM_MD5_ENABLED },
-    { ngx_string("external"), NJET_MAIL_AUTH_EXTERNAL_ENABLED },
+    { ngx_string("plain"), NJT_MAIL_AUTH_PLAIN_ENABLED },
+    { ngx_string("login"), NJT_MAIL_AUTH_LOGIN_ENABLED },
+    { ngx_string("cram-md5"), NJT_MAIL_AUTH_CRAM_MD5_ENABLED },
+    { ngx_string("external"), NJT_MAIL_AUTH_EXTERNAL_ENABLED },
     { ngx_null_string, 0 }
 };
 
@@ -48,7 +48,7 @@ static ngx_mail_protocol_t  ngx_mail_imap_protocol = {
     ngx_string("imap"),
     ngx_string("\x04imap"),
     { 143, 993, 0, 0 },
-    NJET_MAIL_IMAP_PROTOCOL,
+    NJT_MAIL_IMAP_PROTOCOL,
 
     ngx_mail_imap_init_session,
     ngx_mail_imap_init_protocol,
@@ -64,23 +64,23 @@ static ngx_mail_protocol_t  ngx_mail_imap_protocol = {
 static ngx_command_t  ngx_mail_imap_commands[] = {
 
     { ngx_string("imap_client_buffer"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_size_slot,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_imap_srv_conf_t, client_buffer_size),
       NULL },
 
     { ngx_string("imap_capabilities"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_1MORE,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_1MORE,
       ngx_mail_capabilities,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_imap_srv_conf_t, capabilities),
       NULL },
 
     { ngx_string("imap_auth"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_1MORE,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_1MORE,
       ngx_conf_set_bitmask_slot,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_imap_srv_conf_t, auth_methods),
       &ngx_mail_imap_auth_methods },
 
@@ -100,10 +100,10 @@ static ngx_mail_module_t  ngx_mail_imap_module_ctx = {
 
 
 ngx_module_t  ngx_mail_imap_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_mail_imap_module_ctx,             /* module context */
     ngx_mail_imap_commands,                /* module directives */
-    NJET_MAIL_MODULE,                       /* module type */
+    NJT_MAIL_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -111,7 +111,7 @@ ngx_module_t  ngx_mail_imap_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -125,10 +125,10 @@ ngx_mail_imap_create_srv_conf(ngx_conf_t *cf)
         return NULL;
     }
 
-    iscf->client_buffer_size = NJET_CONF_UNSET_SIZE;
+    iscf->client_buffer_size = NJT_CONF_UNSET_SIZE;
 
     if (ngx_array_init(&iscf->capabilities, cf->pool, 4, sizeof(ngx_str_t))
-        != NJET_OK)
+        != NJT_OK)
     {
         return NULL;
     }
@@ -154,8 +154,8 @@ ngx_mail_imap_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_bitmask_value(conf->auth_methods,
                               prev->auth_methods,
-                              (NJET_CONF_BITMASK_SET
-                               |NJET_MAIL_AUTH_PLAIN_ENABLED));
+                              (NJT_CONF_BITMASK_SET
+                               |NJT_MAIL_AUTH_PLAIN_ENABLED));
 
 
     if (conf->capabilities.nelts == 0) {
@@ -167,7 +167,7 @@ ngx_mail_imap_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
         for (d = ngx_mail_imap_default_capabilities; d->len; d++) {
             c = ngx_array_push(&conf->capabilities);
             if (c == NULL) {
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             *c = *d;
@@ -181,8 +181,8 @@ ngx_mail_imap_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
         size += 1 + c[i].len;
     }
 
-    for (m = NJET_MAIL_AUTH_PLAIN_ENABLED, i = 0;
-         m <= NJET_MAIL_AUTH_EXTERNAL_ENABLED;
+    for (m = NJT_MAIL_AUTH_PLAIN_ENABLED, i = 0;
+         m <= NJT_MAIL_AUTH_EXTERNAL_ENABLED;
          m <<= 1, i++)
     {
         if (m & conf->auth_methods) {
@@ -192,7 +192,7 @@ ngx_mail_imap_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_pnalloc(cf->pool, size);
     if (p == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     conf->capability.len = size;
@@ -207,8 +207,8 @@ ngx_mail_imap_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     auth = p;
 
-    for (m = NJET_MAIL_AUTH_PLAIN_ENABLED, i = 0;
-         m <= NJET_MAIL_AUTH_EXTERNAL_ENABLED;
+    for (m = NJT_MAIL_AUTH_PLAIN_ENABLED, i = 0;
+         m <= NJT_MAIL_AUTH_EXTERNAL_ENABLED;
          m <<= 1, i++)
     {
         if (m & conf->auth_methods) {
@@ -225,7 +225,7 @@ ngx_mail_imap_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_pnalloc(cf->pool, size);
     if (p == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     conf->starttls_capability.len = size;
@@ -242,7 +242,7 @@ ngx_mail_imap_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_pnalloc(cf->pool, size);
     if (p == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     conf->starttls_only_capability.len = size;
@@ -254,5 +254,5 @@ ngx_mail_imap_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
                    sizeof(" STARTTLS LOGINDISABLED") - 1);
     *p++ = CR; *p = LF;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

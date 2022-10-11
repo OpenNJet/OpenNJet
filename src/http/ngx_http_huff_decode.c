@@ -2654,39 +2654,39 @@ ngx_http_huff_decode(u_char *state, u_char *src, size_t len, u_char **dst,
         ch = *src++;
 
         if (ngx_http_huff_decode_bits(state, &ending, ch >> 4, dst)
-            != NJET_OK)
+            != NJT_OK)
         {
-            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, log, 0,
+            ngx_log_debug2(NJT_LOG_DEBUG_HTTP, log, 0,
                            "http2 huffman decoding error at state %d: "
                            "bad code 0x%Xd", *state, ch >> 4);
 
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         if (ngx_http_huff_decode_bits(state, &ending, ch & 0xf, dst)
-            != NJET_OK)
+            != NJT_OK)
         {
-            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, log, 0,
+            ngx_log_debug2(NJT_LOG_DEBUG_HTTP, log, 0,
                            "http2 huffman decoding error at state %d: "
                            "bad code 0x%Xd", *state, ch & 0xf);
 
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
     if (last) {
         if (!ending) {
-            ngx_log_debug1(NJET_LOG_DEBUG_HTTP, log, 0,
+            ngx_log_debug1(NJT_LOG_DEBUG_HTTP, log, 0,
                            "http2 huffman decoding error: "
                            "incomplete code 0x%Xd", ch);
 
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         *state = 0;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -2700,7 +2700,7 @@ ngx_http_huff_decode_bits(u_char *state, u_char *ending, ngx_uint_t bits,
     code = ngx_http_huff_decode_codes[*state][bits];
 
     if (code.next == *state) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (code.emit) {
@@ -2710,5 +2710,5 @@ ngx_http_huff_decode_bits(u_char *state, u_char *ending, ngx_uint_t bits,
     *ending = code.ending;
     *state = code.next;
 
-    return NJET_OK;
+    return NJT_OK;
 }

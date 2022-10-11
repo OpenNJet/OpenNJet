@@ -22,7 +22,7 @@ ngx_udp_unix_send(ngx_connection_t *c, u_char *buf, size_t size)
     for ( ;; ) {
         n = sendto(c->fd, buf, size, 0, c->sockaddr, c->socklen);
 
-        ngx_log_debug4(NJET_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug4(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "sendto: fd:%d %z of %uz to \"%V\"",
                        c->fd, n, size, &c->addr_text);
 
@@ -30,7 +30,7 @@ ngx_udp_unix_send(ngx_connection_t *c, u_char *buf, size_t size)
             if ((size_t) n != size) {
                 wev->error = 1;
                 (void) ngx_connection_error(c, 0, "sendto() incomplete");
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             c->sent += n;
@@ -40,17 +40,17 @@ ngx_udp_unix_send(ngx_connection_t *c, u_char *buf, size_t size)
 
         err = ngx_socket_errno;
 
-        if (err == NJET_EAGAIN) {
+        if (err == NJT_EAGAIN) {
             wev->ready = 0;
-            ngx_log_debug0(NJET_LOG_DEBUG_EVENT, c->log, NJET_EAGAIN,
+            ngx_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, NJT_EAGAIN,
                            "sendto() not ready");
-            return NJET_AGAIN;
+            return NJT_AGAIN;
         }
 
-        if (err != NJET_EINTR) {
+        if (err != NJT_EINTR) {
             wev->error = 1;
             (void) ngx_connection_error(c, err, "sendto() failed");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 }

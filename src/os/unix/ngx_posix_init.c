@@ -36,26 +36,26 @@ ngx_os_init(ngx_log_t *log)
 {
     ngx_time_t  *tp;
     ngx_uint_t   n;
-#if (NJET_HAVE_LEVEL1_DCACHE_LINESIZE)
+#if (NJT_HAVE_LEVEL1_DCACHE_LINESIZE)
     long         size;
 #endif
 
-#if (NJET_HAVE_OS_SPECIFIC_INIT)
-    if (ngx_os_specific_init(log) != NJET_OK) {
-        return NJET_ERROR;
+#if (NJT_HAVE_OS_SPECIFIC_INIT)
+    if (ngx_os_specific_init(log) != NJT_OK) {
+        return NJT_ERROR;
     }
 #endif
 
-    if (ngx_init_setproctitle(log) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_init_setproctitle(log) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     ngx_pagesize = getpagesize();
-    ngx_cacheline_size = NJET_CPU_CACHE_LINE;
+    ngx_cacheline_size = NJT_CPU_CACHE_LINE;
 
     for (n = ngx_pagesize; n >>= 1; ngx_pagesize_shift++) { /* void */ }
 
-#if (NJET_HAVE_SC_NPROCESSORS_ONLN)
+#if (NJT_HAVE_SC_NPROCESSORS_ONLN)
     if (ngx_ncpu == 0) {
         ngx_ncpu = sysconf(_SC_NPROCESSORS_ONLN);
     }
@@ -65,7 +65,7 @@ ngx_os_init(ngx_log_t *log)
         ngx_ncpu = 1;
     }
 
-#if (NJET_HAVE_LEVEL1_DCACHE_LINESIZE)
+#if (NJT_HAVE_LEVEL1_DCACHE_LINESIZE)
     size = sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
     if (size > 0) {
         ngx_cacheline_size = size;
@@ -75,14 +75,14 @@ ngx_os_init(ngx_log_t *log)
     ngx_cpuinfo();
 
     if (getrlimit(RLIMIT_NOFILE, &rlmt) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, log, errno,
+        ngx_log_error(NJT_LOG_ALERT, log, errno,
                       "getrlimit(RLIMIT_NOFILE) failed");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_max_sockets = (ngx_int_t) rlmt.rlim_cur;
 
-#if (NJET_HAVE_INHERITED_NONBLOCK || NJET_HAVE_ACCEPT4)
+#if (NJT_HAVE_INHERITED_NONBLOCK || NJT_HAVE_ACCEPT4)
     ngx_inherited_nonblocking = 1;
 #else
     ngx_inherited_nonblocking = 0;
@@ -91,24 +91,24 @@ ngx_os_init(ngx_log_t *log)
     tp = ngx_timeofday();
     srandom(((unsigned) ngx_pid << 16) ^ tp->sec ^ tp->msec);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
 void
 ngx_os_status(ngx_log_t *log)
 {
-    ngx_log_error(NJET_LOG_NOTICE, log, 0, NJET_VER_BUILD);
+    ngx_log_error(NJT_LOG_NOTICE, log, 0, NJT_VER_BUILD);
 
-#ifdef NJET_COMPILER
-    ngx_log_error(NJET_LOG_NOTICE, log, 0, "built by " NJET_COMPILER);
+#ifdef NJT_COMPILER
+    ngx_log_error(NJT_LOG_NOTICE, log, 0, "built by " NJT_COMPILER);
 #endif
 
-#if (NJET_HAVE_OS_SPECIFIC_INIT)
+#if (NJT_HAVE_OS_SPECIFIC_INIT)
     ngx_os_specific_status(log);
 #endif
 
-    ngx_log_error(NJET_LOG_NOTICE, log, 0,
+    ngx_log_error(NJT_LOG_NOTICE, log, 0,
                   "getrlimit(RLIMIT_NOFILE): %r:%r",
                   rlmt.rlim_cur, rlmt.rlim_max);
 }
@@ -122,23 +122,23 @@ ngx_posix_post_conf_init(ngx_log_t *log)
     ngx_fd_t  pp[2];
 
     if (pipe(pp) == -1) {
-        ngx_log_error(NJET_LOG_EMERG, log, ngx_errno, "pipe() failed");
-        return NJET_ERROR;
+        ngx_log_error(NJT_LOG_EMERG, log, ngx_errno, "pipe() failed");
+        return NJT_ERROR;
     }
 
     if (dup2(pp[1], STDERR_FILENO) == -1) {
-        ngx_log_error(NJET_LOG_EMERG, log, errno, "dup2(STDERR) failed");
-        return NJET_ERROR;
+        ngx_log_error(NJT_LOG_EMERG, log, errno, "dup2(STDERR) failed");
+        return NJT_ERROR;
     }
 
     if (pp[1] > STDERR_FILENO) {
         if (close(pp[1]) == -1) {
-            ngx_log_error(NJET_LOG_EMERG, log, errno, "close() failed");
-            return NJET_ERROR;
+            ngx_log_error(NJT_LOG_EMERG, log, errno, "close() failed");
+            return NJT_ERROR;
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 #endif

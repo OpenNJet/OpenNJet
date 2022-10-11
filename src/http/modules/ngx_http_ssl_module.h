@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_HTTP_SSL_H_INCLUDED_
-#define _NJET_HTTP_SSL_H_INCLUDED_
+#ifndef _NJT_HTTP_SSL_H_INCLUDED_
+#define _NJT_HTTP_SSL_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -73,4 +73,4 @@ typedef struct {
 extern ngx_module_t  ngx_http_ssl_module;
 
 
-#endif /* _NJET_HTTP_SSL_H_INCLUDED_ */
+#endif /* _NJT_HTTP_SSL_H_INCLUDED_ */

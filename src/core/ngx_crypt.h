@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_CRYPT_H_INCLUDED_
-#define _NJET_CRYPT_H_INCLUDED_
+#ifndef _NJT_CRYPT_H_INCLUDED_
+#define _NJT_CRYPT_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -17,4 +17,4 @@ ngx_int_t ngx_crypt(ngx_pool_t *pool, u_char *key, u_char *salt,
     u_char **encrypted);
 
 
-#endif /* _NJET_CRYPT_H_INCLUDED_ */
+#endif /* _NJT_CRYPT_H_INCLUDED_ */

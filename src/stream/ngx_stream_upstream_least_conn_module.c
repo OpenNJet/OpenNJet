@@ -21,7 +21,7 @@ static char *ngx_stream_upstream_least_conn(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_stream_upstream_least_conn_commands[] = {
 
     { ngx_string("least_conn"),
-      NJET_STREAM_UPS_CONF|NJET_CONF_NOARGS,
+      NJT_STREAM_UPS_CONF|NJT_CONF_NOARGS,
       ngx_stream_upstream_least_conn,
       0,
       0,
@@ -44,10 +44,10 @@ static ngx_stream_module_t  ngx_stream_upstream_least_conn_module_ctx = {
 
 
 ngx_module_t  ngx_stream_upstream_least_conn_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_stream_upstream_least_conn_module_ctx, /* module context */
     ngx_stream_upstream_least_conn_commands, /* module directives */
-    NJET_STREAM_MODULE,                       /* module type */
+    NJT_STREAM_MODULE,                       /* module type */
     NULL,                                    /* init master */
     NULL,                                    /* init module */
     NULL,                                    /* init process */
@@ -55,7 +55,7 @@ ngx_module_t  ngx_stream_upstream_least_conn_module = {
     NULL,                                    /* exit thread */
     NULL,                                    /* exit process */
     NULL,                                    /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -63,16 +63,16 @@ static ngx_int_t
 ngx_stream_upstream_init_least_conn(ngx_conf_t *cf,
     ngx_stream_upstream_srv_conf_t *us)
 {
-    ngx_log_debug0(NJET_LOG_DEBUG_STREAM, cf->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_STREAM, cf->log, 0,
                    "init least conn");
 
-    if (ngx_stream_upstream_init_round_robin(cf, us) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_stream_upstream_init_round_robin(cf, us) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     us->peer.init = ngx_stream_upstream_init_least_conn_peer;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -80,16 +80,16 @@ static ngx_int_t
 ngx_stream_upstream_init_least_conn_peer(ngx_stream_session_t *s,
     ngx_stream_upstream_srv_conf_t *us)
 {
-    ngx_log_debug0(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                    "init least conn peer");
 
-    if (ngx_stream_upstream_init_round_robin_peer(s, us) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_stream_upstream_init_round_robin_peer(s, us) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     s->upstream->peer.get = ngx_stream_upstream_get_least_conn_peer;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -105,7 +105,7 @@ ngx_stream_upstream_get_least_conn_peer(ngx_peer_connection_t *pc, void *data)
     ngx_stream_upstream_rr_peer_t   *peer, *best;
     ngx_stream_upstream_rr_peers_t  *peers;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                    "get least conn peer, try: %ui", pc->tries);
 
     if (rrp->peers->single) {
@@ -123,7 +123,7 @@ ngx_stream_upstream_get_least_conn_peer(ngx_peer_connection_t *pc, void *data)
     best = NULL;
     total = 0;
 
-#if (NJET_SUPPRESS_WARN)
+#if (NJT_SUPPRESS_WARN)
     many = 0;
     p = 0;
 #endif
@@ -173,14 +173,14 @@ ngx_stream_upstream_get_least_conn_peer(ngx_peer_connection_t *pc, void *data)
     }
 
     if (best == NULL) {
-        ngx_log_debug0(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+        ngx_log_debug0(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                        "get least conn peer, no peer found");
 
         goto failed;
     }
 
     if (many) {
-        ngx_log_debug0(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+        ngx_log_debug0(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                        "get least conn peer, many");
 
         for (peer = best, i = p;
@@ -248,12 +248,12 @@ ngx_stream_upstream_get_least_conn_peer(ngx_peer_connection_t *pc, void *data)
 
     ngx_stream_upstream_rr_peers_unlock(peers);
 
-    return NJET_OK;
+    return NJT_OK;
 
 failed:
 
     if (peers->next) {
-        ngx_log_debug0(NJET_LOG_DEBUG_STREAM, pc->log, 0,
+        ngx_log_debug0(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                        "get least conn peer, backup servers");
 
         rrp->peers = peers->next;
@@ -269,7 +269,7 @@ failed:
 
         rc = ngx_stream_upstream_get_least_conn_peer(pc, rrp);
 
-        if (rc != NJET_BUSY) {
+        if (rc != NJT_BUSY) {
             return rc;
         }
 
@@ -280,7 +280,7 @@ failed:
 
     pc->name = peers->name;
 
-    return NJET_BUSY;
+    return NJT_BUSY;
 }
 
 
@@ -292,19 +292,19 @@ ngx_stream_upstream_least_conn(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     uscf = ngx_stream_conf_get_module_srv_conf(cf, ngx_stream_upstream_module);
 
     if (uscf->peer.init_upstream) {
-        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+        ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                            "load balancing method redefined");
     }
 
     uscf->peer.init_upstream = ngx_stream_upstream_init_least_conn;
 
-    uscf->flags = NJET_STREAM_UPSTREAM_CREATE
-                  |NJET_STREAM_UPSTREAM_WEIGHT
-                  |NJET_STREAM_UPSTREAM_MAX_CONNS
-                  |NJET_STREAM_UPSTREAM_MAX_FAILS
-                  |NJET_STREAM_UPSTREAM_FAIL_TIMEOUT
-                  |NJET_STREAM_UPSTREAM_DOWN
-                  |NJET_STREAM_UPSTREAM_BACKUP;
+    uscf->flags = NJT_STREAM_UPSTREAM_CREATE
+                  |NJT_STREAM_UPSTREAM_WEIGHT
+                  |NJT_STREAM_UPSTREAM_MAX_CONNS
+                  |NJT_STREAM_UPSTREAM_MAX_FAILS
+                  |NJT_STREAM_UPSTREAM_FAIL_TIMEOUT
+                  |NJT_STREAM_UPSTREAM_DOWN
+                  |NJT_STREAM_UPSTREAM_BACKUP;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

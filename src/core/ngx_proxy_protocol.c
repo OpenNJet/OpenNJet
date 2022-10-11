@@ -9,8 +9,8 @@
 #include <ngx_core.h>
 
 
-#define NJET_PROXY_PROTOCOL_AF_INET          1
-#define NJET_PROXY_PROTOCOL_AF_INET6         2
+#define NJT_PROXY_PROTOCOL_AF_INET          1
+#define NJT_PROXY_PROTOCOL_AF_INET6         2
 
 
 #define ngx_proxy_protocol_parse_uint16(p)  ((p)[0] << 8 | (p)[1])
@@ -74,7 +74,7 @@ ngx_proxy_protocol_read(ngx_connection_t *c, u_char *buf, u_char *last)
     len -= 6;
 
     if (len >= 7 && ngx_strncmp(p, "UNKNOWN", 7) == 0) {
-        ngx_log_debug0(NJET_LOG_DEBUG_CORE, c->log, 0,
+        ngx_log_debug0(NJT_LOG_DEBUG_CORE, c->log, 0,
                        "PROXY protocol unknown protocol");
         p += 7;
         goto skip;
@@ -121,7 +121,7 @@ ngx_proxy_protocol_read(ngx_connection_t *c, u_char *buf, u_char *last)
         goto invalid;
     }
 
-    ngx_log_debug4(NJET_LOG_DEBUG_CORE, c->log, 0,
+    ngx_log_debug4(NJT_LOG_DEBUG_CORE, c->log, 0,
                    "PROXY protocol src: %V %d, dst: %V %d",
                    &pp->src_addr, pp->src_port, &pp->dst_addr, pp->dst_port);
 
@@ -139,7 +139,7 @@ skip:
 
 invalid:
 
-    ngx_log_error(NJET_LOG_ERR, c->log, 0,
+    ngx_log_error(NJT_LOG_ERR, c->log, 0,
                   "broken header: \"%*s\"", (size_t) (last - buf), buf);
 
     return NULL;
@@ -227,11 +227,11 @@ ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
 {
     ngx_uint_t  port, lport;
 
-    if (last - buf < NJET_PROXY_PROTOCOL_MAX_HEADER) {
+    if (last - buf < NJT_PROXY_PROTOCOL_MAX_HEADER) {
         return NULL;
     }
 
-    if (ngx_connection_local_sockaddr(c, NULL, 0) != NJET_OK) {
+    if (ngx_connection_local_sockaddr(c, NULL, 0) != NJT_OK) {
         return NULL;
     }
 
@@ -241,7 +241,7 @@ ngx_proxy_protocol_write(ngx_connection_t *c, u_char *buf, u_char *last)
         buf = ngx_cpymem(buf, "PROXY TCP4 ", sizeof("PROXY TCP4 ") - 1);
         break;
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     case AF_INET6:
         buf = ngx_cpymem(buf, "PROXY TCP6 ", sizeof("PROXY TCP6 ") - 1);
         break;
@@ -277,7 +277,7 @@ ngx_proxy_protocol_v2_read(ngx_connection_t *c, u_char *buf, u_char *last)
     ngx_proxy_protocol_t               *pp;
     ngx_proxy_protocol_header_t        *header;
     ngx_proxy_protocol_inet_addrs_t    *in;
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     ngx_proxy_protocol_inet6_addrs_t   *in6;
 #endif
 
@@ -288,7 +288,7 @@ ngx_proxy_protocol_v2_read(ngx_connection_t *c, u_char *buf, u_char *last)
     version = header->version_command >> 4;
 
     if (version != 2) {
-        ngx_log_error(NJET_LOG_ERR, c->log, 0,
+        ngx_log_error(NJT_LOG_ERR, c->log, 0,
                       "unknown PROXY protocol version: %ui", version);
         return NULL;
     }
@@ -296,7 +296,7 @@ ngx_proxy_protocol_v2_read(ngx_connection_t *c, u_char *buf, u_char *last)
     len = ngx_proxy_protocol_parse_uint16(header->len);
 
     if ((size_t) (last - buf) < len) {
-        ngx_log_error(NJET_LOG_ERR, c->log, 0, "header is too large");
+        ngx_log_error(NJT_LOG_ERR, c->log, 0, "header is too large");
         return NULL;
     }
 
@@ -306,7 +306,7 @@ ngx_proxy_protocol_v2_read(ngx_connection_t *c, u_char *buf, u_char *last)
 
     /* only PROXY is supported */
     if (command != 1) {
-        ngx_log_debug1(NJET_LOG_DEBUG_CORE, c->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_CORE, c->log, 0,
                        "PROXY protocol v2 unsupported command %ui", command);
         return end;
     }
@@ -315,7 +315,7 @@ ngx_proxy_protocol_v2_read(ngx_connection_t *c, u_char *buf, u_char *last)
 
     /* only STREAM is supported */
     if (transport != 1) {
-        ngx_log_debug1(NJET_LOG_DEBUG_CORE, c->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_CORE, c->log, 0,
                        "PROXY protocol v2 unsupported transport %ui",
                        transport);
         return end;
@@ -330,7 +330,7 @@ ngx_proxy_protocol_v2_read(ngx_connection_t *c, u_char *buf, u_char *last)
 
     switch (family) {
 
-    case NJET_PROXY_PROTOCOL_AF_INET:
+    case NJT_PROXY_PROTOCOL_AF_INET:
 
         if ((size_t) (end - buf) < sizeof(ngx_proxy_protocol_inet_addrs_t)) {
             return NULL;
@@ -355,9 +355,9 @@ ngx_proxy_protocol_v2_read(ngx_connection_t *c, u_char *buf, u_char *last)
 
         break;
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
 
-    case NJET_PROXY_PROTOCOL_AF_INET6:
+    case NJT_PROXY_PROTOCOL_AF_INET6:
 
         if ((size_t) (end - buf) < sizeof(ngx_proxy_protocol_inet6_addrs_t)) {
             return NULL;
@@ -385,34 +385,34 @@ ngx_proxy_protocol_v2_read(ngx_connection_t *c, u_char *buf, u_char *last)
 #endif
 
     default:
-        ngx_log_debug1(NJET_LOG_DEBUG_CORE, c->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_CORE, c->log, 0,
                        "PROXY protocol v2 unsupported address family %ui",
                        family);
         return end;
     }
 
-    pp->src_addr.data = ngx_pnalloc(c->pool, NJET_SOCKADDR_STRLEN);
+    pp->src_addr.data = ngx_pnalloc(c->pool, NJT_SOCKADDR_STRLEN);
     if (pp->src_addr.data == NULL) {
         return NULL;
     }
 
     pp->src_addr.len = ngx_sock_ntop(&src_sockaddr.sockaddr, socklen,
-                                     pp->src_addr.data, NJET_SOCKADDR_STRLEN, 0);
+                                     pp->src_addr.data, NJT_SOCKADDR_STRLEN, 0);
 
-    pp->dst_addr.data = ngx_pnalloc(c->pool, NJET_SOCKADDR_STRLEN);
+    pp->dst_addr.data = ngx_pnalloc(c->pool, NJT_SOCKADDR_STRLEN);
     if (pp->dst_addr.data == NULL) {
         return NULL;
     }
 
     pp->dst_addr.len = ngx_sock_ntop(&dst_sockaddr.sockaddr, socklen,
-                                     pp->dst_addr.data, NJET_SOCKADDR_STRLEN, 0);
+                                     pp->dst_addr.data, NJT_SOCKADDR_STRLEN, 0);
 
-    ngx_log_debug4(NJET_LOG_DEBUG_CORE, c->log, 0,
+    ngx_log_debug4(NJT_LOG_DEBUG_CORE, c->log, 0,
                    "PROXY protocol v2 src: %V %d, dst: %V %d",
                    &pp->src_addr, pp->src_port, &pp->dst_addr, pp->dst_port);
 
     if (buf < end) {
-        ngx_log_debug1(NJET_LOG_DEBUG_CORE, c->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_CORE, c->log, 0,
                        "PROXY protocol v2 %z bytes of tlv ignored", end - buf);
     }
 

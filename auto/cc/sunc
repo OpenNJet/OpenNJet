@@ -13,15 +13,15 @@
 # Sun C 5.13 SunOS_i386 2014/10/20        Oracle Solaris Studio 12.4
 # Sun C 5.14 SunOS_i386 2016/05/31        Oracle Developer Studio 12.5
 
-NJET_SUNC_VER=`$CC -V 2>&1 | grep 'Sun C' 2>&1 \
+NJT_SUNC_VER=`$CC -V 2>&1 | grep 'Sun C' 2>&1 \
                           | sed -e 's/^.* Sun C \(.*\)/\1/'`
 
-echo " + Sun C version: $NJET_SUNC_VER"
+echo " + Sun C version: $NJT_SUNC_VER"
 
-have=NJET_COMPILER value="\"Sun C $NJET_SUNC_VER\"" . auto/define
+have=NJT_COMPILER value="\"Sun C $NJT_SUNC_VER\"" . auto/define
 
 
-cat << END > $NJET_AUTOTEST.c
+cat << END > $NJT_AUTOTEST.c
 
 int main(void) {
     printf("%d", __SUNPRO_C);
@@ -30,13 +30,13 @@ int main(void) {
 
 END
 
-eval "$CC -o $NJET_AUTOTEST $NJET_AUTOTEST.c >> $NJET_ERR 2>&1"
+eval "$CC -o $NJT_AUTOTEST $NJT_AUTOTEST.c >> $NJT_ERR 2>&1"
 
-if [ -x $NJET_AUTOTEST ]; then
-    ngx_sunc_ver=`$NJET_AUTOTEST`
+if [ -x $NJT_AUTOTEST ]; then
+    ngx_sunc_ver=`$NJT_AUTOTEST`
 fi
 
-rm -rf $NJET_AUTOTEST*
+rm -rf $NJT_AUTOTEST*
 
 # 1424 == 0x590, Sun Studio 12
 
@@ -51,14 +51,14 @@ else
     ngx_amd64="-xarch=amd64"
 fi
 
-case "$NJET_MACHINE" in
+case "$NJT_MACHINE" in
 
     i86pc)
-        NJET_AUX=" src/os/unix/ngx_sunpro_x86.il"
+        NJT_AUX=" src/os/unix/ngx_sunpro_x86.il"
     ;;
 
     sun4u | sun4v)
-        NJET_AUX=" src/os/unix/ngx_sunpro_sparc64.il"
+        NJT_AUX=" src/os/unix/ngx_sunpro_sparc64.il"
     ;;
 
 esac
@@ -121,7 +121,7 @@ case $CPU in
         CPU_OPT="$ngx_sparc32"
         CORE_LINK="$CORE_LINK $ngx_sparc32"
         CC_AUX_FLAGS="$CC_AUX_FLAGS $ngx_sparc32"
-        NJET_CPU_CACHE_LINE=64
+        NJT_CPU_CACHE_LINE=64
     ;;
 
     sparc64)
@@ -129,7 +129,7 @@ case $CPU in
         CPU_OPT="$ngx_sparc64"
         CORE_LINK="$CORE_LINK $ngx_sparc64"
         CC_AUX_FLAGS="$CC_AUX_FLAGS $ngx_sparc64"
-        NJET_CPU_CACHE_LINE=64
+        NJT_CPU_CACHE_LINE=64
     ;;
 
     amd64)
@@ -137,8 +137,8 @@ case $CPU in
         CPU_OPT="$ngx_amd64"
         CORE_LINK="$CORE_LINK $ngx_amd64"
         CC_AUX_FLAGS="$CC_AUX_FLAGS $ngx_amd64"
-        NJET_AUX=" src/os/unix/ngx_sunpro_amd64.il"
-        NJET_CPU_CACHE_LINE=64
+        NJT_AUX=" src/os/unix/ngx_sunpro_amd64.il"
+        NJT_CPU_CACHE_LINE=64
     ;;
 
 esac

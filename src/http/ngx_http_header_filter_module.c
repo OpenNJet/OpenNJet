@@ -31,10 +31,10 @@ static ngx_http_module_t  ngx_http_header_filter_module_ctx = {
 
 
 ngx_module_t  ngx_http_header_filter_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_header_filter_module_ctx,    /* module context */
     NULL,                                  /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -42,13 +42,13 @@ ngx_module_t  ngx_http_header_filter_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
 static u_char ngx_http_server_string[] = "Server: njet" CRLF;
-static u_char ngx_http_server_full_string[] = "Server: " NJET_VER CRLF;
-static u_char ngx_http_server_build_string[] = "Server: " NJET_VER_BUILD CRLF;
+static u_char ngx_http_server_full_string[] = "Server: " NJT_VER CRLF;
+static u_char ngx_http_server_build_string[] = "Server: " NJT_VER_BUILD CRLF;
 
 
 static ngx_str_t ngx_http_status_lines[] = {
@@ -63,8 +63,8 @@ static ngx_str_t ngx_http_status_lines[] = {
 
     /* ngx_null_string, */  /* "207 Multi-Status" */
 
-#define NJET_HTTP_LAST_2XX  207
-#define NJET_HTTP_OFF_3XX   (NJET_HTTP_LAST_2XX - 200)
+#define NJT_HTTP_LAST_2XX  207
+#define NJT_HTTP_OFF_3XX   (NJT_HTTP_LAST_2XX - 200)
 
     /* ngx_null_string, */  /* "300 Multiple Choices" */
 
@@ -77,8 +77,8 @@ static ngx_str_t ngx_http_status_lines[] = {
     ngx_string("307 Temporary Redirect"),
     ngx_string("308 Permanent Redirect"),
 
-#define NJET_HTTP_LAST_3XX  309
-#define NJET_HTTP_OFF_4XX   (NJET_HTTP_LAST_3XX - 301 + NJET_HTTP_OFF_3XX)
+#define NJT_HTTP_LAST_3XX  309
+#define NJT_HTTP_OFF_4XX   (NJT_HTTP_LAST_3XX - 301 + NJT_HTTP_OFF_3XX)
 
     ngx_string("400 Bad Request"),
     ngx_string("401 Unauthorized"),
@@ -111,8 +111,8 @@ static ngx_str_t ngx_http_status_lines[] = {
     ngx_null_string,  /* "428 Precondition Required" */
     ngx_string("429 Too Many Requests"),
 
-#define NJET_HTTP_LAST_4XX  430
-#define NJET_HTTP_OFF_5XX   (NJET_HTTP_LAST_4XX - 400 + NJET_HTTP_OFF_4XX)
+#define NJT_HTTP_LAST_4XX  430
+#define NJT_HTTP_OFF_5XX   (NJT_HTTP_LAST_4XX - 400 + NJT_HTTP_OFF_4XX)
 
     ngx_string("500 Internal Server Error"),
     ngx_string("501 Not Implemented"),
@@ -127,7 +127,7 @@ static ngx_str_t ngx_http_status_lines[] = {
     /* ngx_null_string, */  /* "509 unused" */
     /* ngx_null_string, */  /* "510 Not Extended" */
 
-#define NJET_HTTP_LAST_5XX  508
+#define NJT_HTTP_LAST_5XX  508
 
 };
 
@@ -167,30 +167,30 @@ ngx_http_header_filter(ngx_http_request_t *r)
     ngx_connection_t          *c;
     ngx_http_core_loc_conf_t  *clcf;
     ngx_http_core_srv_conf_t  *cscf;
-    u_char                     addr[NJET_SOCKADDR_STRLEN];
+    u_char                     addr[NJT_SOCKADDR_STRLEN];
 
     if (r->header_sent) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     r->header_sent = 1;
 
     if (r != r->main) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    if (r->http_version < NJET_HTTP_VERSION_10) {
-        return NJET_OK;
+    if (r->http_version < NJT_HTTP_VERSION_10) {
+        return NJT_OK;
     }
 
-    if (r->method == NJET_HTTP_HEAD) {
+    if (r->method == NJT_HTTP_HEAD) {
         r->header_only = 1;
     }
 
     if (r->headers_out.last_modified_time != -1) {
-        if (r->headers_out.status != NJET_HTTP_OK
-            && r->headers_out.status != NJET_HTTP_PARTIAL_CONTENT
-            && r->headers_out.status != NJET_HTTP_NOT_MODIFIED)
+        if (r->headers_out.status != NJT_HTTP_OK
+            && r->headers_out.status != NJT_HTTP_PARTIAL_CONTENT
+            && r->headers_out.status != NJT_HTTP_NOT_MODIFIED)
         {
             r->headers_out.last_modified_time = -1;
             r->headers_out.last_modified = NULL;
@@ -210,7 +210,7 @@ ngx_http_header_filter(ngx_http_request_t *r)
     if (r->headers_out.status_line.len) {
         len += r->headers_out.status_line.len;
         status_line = &r->headers_out.status_line;
-#if (NJET_SUPPRESS_WARN)
+#if (NJT_SUPPRESS_WARN)
         status = 0;
 #endif
 
@@ -218,12 +218,12 @@ ngx_http_header_filter(ngx_http_request_t *r)
 
         status = r->headers_out.status;
 
-        if (status >= NJET_HTTP_OK
-            && status < NJET_HTTP_LAST_2XX)
+        if (status >= NJT_HTTP_OK
+            && status < NJT_HTTP_LAST_2XX)
         {
             /* 2XX */
 
-            if (status == NJET_HTTP_NO_CONTENT) {
+            if (status == NJT_HTTP_NO_CONTENT) {
                 r->header_only = 1;
                 ngx_str_null(&r->headers_out.content_type);
                 r->headers_out.last_modified_time = -1;
@@ -232,51 +232,51 @@ ngx_http_header_filter(ngx_http_request_t *r)
                 r->headers_out.content_length_n = -1;
             }
 
-            status -= NJET_HTTP_OK;
+            status -= NJT_HTTP_OK;
             status_line = &ngx_http_status_lines[status];
             len += ngx_http_status_lines[status].len;
 
-        } else if (status >= NJET_HTTP_MOVED_PERMANENTLY
-                   && status < NJET_HTTP_LAST_3XX)
+        } else if (status >= NJT_HTTP_MOVED_PERMANENTLY
+                   && status < NJT_HTTP_LAST_3XX)
         {
             /* 3XX */
 
-            if (status == NJET_HTTP_NOT_MODIFIED) {
+            if (status == NJT_HTTP_NOT_MODIFIED) {
                 r->header_only = 1;
             }
 
-            status = status - NJET_HTTP_MOVED_PERMANENTLY + NJET_HTTP_OFF_3XX;
+            status = status - NJT_HTTP_MOVED_PERMANENTLY + NJT_HTTP_OFF_3XX;
             status_line = &ngx_http_status_lines[status];
             len += ngx_http_status_lines[status].len;
 
-        } else if (status >= NJET_HTTP_BAD_REQUEST
-                   && status < NJET_HTTP_LAST_4XX)
+        } else if (status >= NJT_HTTP_BAD_REQUEST
+                   && status < NJT_HTTP_LAST_4XX)
         {
             /* 4XX */
-            status = status - NJET_HTTP_BAD_REQUEST
-                            + NJET_HTTP_OFF_4XX;
+            status = status - NJT_HTTP_BAD_REQUEST
+                            + NJT_HTTP_OFF_4XX;
 
             status_line = &ngx_http_status_lines[status];
             len += ngx_http_status_lines[status].len;
 
-        } else if (status >= NJET_HTTP_INTERNAL_SERVER_ERROR
-                   && status < NJET_HTTP_LAST_5XX)
+        } else if (status >= NJT_HTTP_INTERNAL_SERVER_ERROR
+                   && status < NJT_HTTP_LAST_5XX)
         {
             /* 5XX */
-            status = status - NJET_HTTP_INTERNAL_SERVER_ERROR
-                            + NJET_HTTP_OFF_5XX;
+            status = status - NJT_HTTP_INTERNAL_SERVER_ERROR
+                            + NJT_HTTP_OFF_5XX;
 
             status_line = &ngx_http_status_lines[status];
             len += ngx_http_status_lines[status].len;
 
         } else {
-            len += NJET_INT_T_LEN + 1 /* SP */;
+            len += NJT_INT_T_LEN + 1 /* SP */;
             status_line = NULL;
         }
 
         if (status_line && status_line->len == 0) {
             status = r->headers_out.status;
-            len += NJET_INT_T_LEN + 1 /* SP */;
+            len += NJT_INT_T_LEN + 1 /* SP */;
             status_line = NULL;
         }
     }
@@ -284,10 +284,10 @@ ngx_http_header_filter(ngx_http_request_t *r)
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
     if (r->headers_out.server == NULL) {
-        if (clcf->server_tokens == NJET_HTTP_SERVER_TOKENS_ON) {
+        if (clcf->server_tokens == NJT_HTTP_SERVER_TOKENS_ON) {
             len += sizeof(ngx_http_server_full_string) - 1;
 
-        } else if (clcf->server_tokens == NJET_HTTP_SERVER_TOKENS_BUILD) {
+        } else if (clcf->server_tokens == NJT_HTTP_SERVER_TOKENS_BUILD) {
             len += sizeof(ngx_http_server_build_string) - 1;
 
         } else {
@@ -313,7 +313,7 @@ ngx_http_header_filter(ngx_http_request_t *r)
     if (r->headers_out.content_length == NULL
         && r->headers_out.content_length_n >= 0)
     {
-        len += sizeof("Content-Length: ") - 1 + NJET_OFF_T_LEN + 2;
+        len += sizeof("Content-Length: ") - 1 + NJT_OFF_T_LEN + 2;
     }
 
     if (r->headers_out.last_modified == NULL
@@ -339,11 +339,11 @@ ngx_http_header_filter(ngx_http_request_t *r)
             host = r->headers_in.server;
 
         } else {
-            host.len = NJET_SOCKADDR_STRLEN;
+            host.len = NJT_SOCKADDR_STRLEN;
             host.data = addr;
 
-            if (ngx_connection_local_sockaddr(c, &host, 0) != NJET_OK) {
-                return NJET_ERROR;
+            if (ngx_connection_local_sockaddr(c, &host, 0) != NJT_OK) {
+                return NJT_ERROR;
             }
         }
 
@@ -355,7 +355,7 @@ ngx_http_header_filter(ngx_http_request_t *r)
 
         if (clcf->port_in_redirect) {
 
-#if (NJET_HTTP_SSL)
+#if (NJT_HTTP_SSL)
             if (c->ssl)
                 port = (port == 443) ? 0 : port;
             else
@@ -379,7 +379,7 @@ ngx_http_header_filter(ngx_http_request_t *r)
         len += sizeof("Transfer-Encoding: chunked" CRLF) - 1;
     }
 
-    if (r->headers_out.status == NJET_HTTP_SWITCHING_PROTOCOLS) {
+    if (r->headers_out.status == NJT_HTTP_SWITCHING_PROTOCOLS) {
         len += sizeof("Connection: upgrade" CRLF) - 1;
 
     } else if (r->keepalive) {
@@ -394,14 +394,14 @@ ngx_http_header_filter(ngx_http_request_t *r)
          */
 
         if (clcf->keepalive_header) {
-            len += sizeof("Keep-Alive: timeout=") - 1 + NJET_TIME_T_LEN + 2;
+            len += sizeof("Keep-Alive: timeout=") - 1 + NJT_TIME_T_LEN + 2;
         }
 
     } else {
         len += sizeof("Connection: close" CRLF) - 1;
     }
 
-#if (NJET_HTTP_GZIP)
+#if (NJT_HTTP_GZIP)
     if (r->gzip_vary) {
         if (clcf->gzip_vary) {
             len += sizeof("Vary: Accept-Encoding" CRLF) - 1;
@@ -437,7 +437,7 @@ ngx_http_header_filter(ngx_http_request_t *r)
 
     b = ngx_create_temp_buf(r->pool, len);
     if (b == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     /* "HTTP/1.x " */
@@ -453,11 +453,11 @@ ngx_http_header_filter(ngx_http_request_t *r)
     *b->last++ = CR; *b->last++ = LF;
 
     if (r->headers_out.server == NULL) {
-        if (clcf->server_tokens == NJET_HTTP_SERVER_TOKENS_ON) {
+        if (clcf->server_tokens == NJT_HTTP_SERVER_TOKENS_ON) {
             p = ngx_http_server_full_string;
             len = sizeof(ngx_http_server_full_string) - 1;
 
-        } else if (clcf->server_tokens == NJET_HTTP_SERVER_TOKENS_BUILD) {
+        } else if (clcf->server_tokens == NJT_HTTP_SERVER_TOKENS_BUILD) {
             p = ngx_http_server_build_string;
             len = sizeof(ngx_http_server_build_string) - 1;
 
@@ -525,7 +525,7 @@ ngx_http_header_filter(ngx_http_request_t *r)
         b->last = ngx_cpymem(b->last, "Location: http",
                              sizeof("Location: http") - 1);
 
-#if (NJET_HTTP_SSL)
+#if (NJT_HTTP_SSL)
         if (c->ssl) {
             *b->last++ ='s';
         }
@@ -555,7 +555,7 @@ ngx_http_header_filter(ngx_http_request_t *r)
                              sizeof("Transfer-Encoding: chunked" CRLF) - 1);
     }
 
-    if (r->headers_out.status == NJET_HTTP_SWITCHING_PROTOCOLS) {
+    if (r->headers_out.status == NJT_HTTP_SWITCHING_PROTOCOLS) {
         b->last = ngx_cpymem(b->last, "Connection: upgrade" CRLF,
                              sizeof("Connection: upgrade" CRLF) - 1);
 
@@ -573,7 +573,7 @@ ngx_http_header_filter(ngx_http_request_t *r)
                              sizeof("Connection: close" CRLF) - 1);
     }
 
-#if (NJET_HTTP_GZIP)
+#if (NJT_HTTP_GZIP)
     if (r->gzip_vary) {
         b->last = ngx_cpymem(b->last, "Vary: Accept-Encoding" CRLF,
                              sizeof("Vary: Accept-Encoding" CRLF) - 1);
@@ -606,7 +606,7 @@ ngx_http_header_filter(ngx_http_request_t *r)
         *b->last++ = CR; *b->last++ = LF;
     }
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, c->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "%*s", (size_t) (b->last - b->pos), b->pos);
 
     /* the end of HTTP header */
@@ -630,5 +630,5 @@ ngx_http_header_filter_init(ngx_conf_t *cf)
 {
     ngx_http_top_header_filter = ngx_http_header_filter;
 
-    return NJET_OK;
+    return NJT_OK;
 }

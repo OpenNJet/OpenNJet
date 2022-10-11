@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_ERRNO_H_INCLUDED_
-#define _NJET_ERRNO_H_INCLUDED_
+#ifndef _NJT_ERRNO_H_INCLUDED_
+#define _NJT_ERRNO_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -20,52 +20,52 @@ typedef DWORD                      ngx_err_t;
 #define ngx_socket_errno           WSAGetLastError()
 #define ngx_set_socket_errno(err)  WSASetLastError(err)
 
-#define NJET_EPERM                  ERROR_ACCESS_DENIED
-#define NJET_ENOENT                 ERROR_FILE_NOT_FOUND
-#define NJET_ENOPATH                ERROR_PATH_NOT_FOUND
-#define NJET_ENOMEM                 ERROR_NOT_ENOUGH_MEMORY
-#define NJET_EACCES                 ERROR_ACCESS_DENIED
+#define NJT_EPERM                  ERROR_ACCESS_DENIED
+#define NJT_ENOENT                 ERROR_FILE_NOT_FOUND
+#define NJT_ENOPATH                ERROR_PATH_NOT_FOUND
+#define NJT_ENOMEM                 ERROR_NOT_ENOUGH_MEMORY
+#define NJT_EACCES                 ERROR_ACCESS_DENIED
 /*
  * there are two EEXIST error codes:
  * ERROR_FILE_EXISTS used by CreateFile(CREATE_NEW),
  * and ERROR_ALREADY_EXISTS used by CreateDirectory();
  * MoveFile() uses both
  */
-#define NJET_EEXIST                 ERROR_ALREADY_EXISTS
-#define NJET_EEXIST_FILE            ERROR_FILE_EXISTS
-#define NJET_EXDEV                  ERROR_NOT_SAME_DEVICE
-#define NJET_ENOTDIR                ERROR_PATH_NOT_FOUND
-#define NJET_EISDIR                 ERROR_CANNOT_MAKE
-#define NJET_ENOSPC                 ERROR_DISK_FULL
-#define NJET_EPIPE                  EPIPE
-#define NJET_EAGAIN                 WSAEWOULDBLOCK
-#define NJET_EINPROGRESS            WSAEINPROGRESS
-#define NJET_ENOPROTOOPT            WSAENOPROTOOPT
-#define NJET_EOPNOTSUPP             WSAEOPNOTSUPP
-#define NJET_EADDRINUSE             WSAEADDRINUSE
-#define NJET_ECONNABORTED           WSAECONNABORTED
-#define NJET_ECONNRESET             WSAECONNRESET
-#define NJET_ENOTCONN               WSAENOTCONN
-#define NJET_ETIMEDOUT              WSAETIMEDOUT
-#define NJET_ECONNREFUSED           WSAECONNREFUSED
-#define NJET_ENAMETOOLONG           ERROR_BAD_PATHNAME
-#define NJET_ENETDOWN               WSAENETDOWN
-#define NJET_ENETUNREACH            WSAENETUNREACH
-#define NJET_EHOSTDOWN              WSAEHOSTDOWN
-#define NJET_EHOSTUNREACH           WSAEHOSTUNREACH
-#define NJET_ENOMOREFILES           ERROR_NO_MORE_FILES
-#define NJET_EILSEQ                 ERROR_NO_UNICODE_TRANSLATION
-#define NJET_ELOOP                  0
-#define NJET_EBADF                  WSAEBADF
+#define NJT_EEXIST                 ERROR_ALREADY_EXISTS
+#define NJT_EEXIST_FILE            ERROR_FILE_EXISTS
+#define NJT_EXDEV                  ERROR_NOT_SAME_DEVICE
+#define NJT_ENOTDIR                ERROR_PATH_NOT_FOUND
+#define NJT_EISDIR                 ERROR_CANNOT_MAKE
+#define NJT_ENOSPC                 ERROR_DISK_FULL
+#define NJT_EPIPE                  EPIPE
+#define NJT_EAGAIN                 WSAEWOULDBLOCK
+#define NJT_EINPROGRESS            WSAEINPROGRESS
+#define NJT_ENOPROTOOPT            WSAENOPROTOOPT
+#define NJT_EOPNOTSUPP             WSAEOPNOTSUPP
+#define NJT_EADDRINUSE             WSAEADDRINUSE
+#define NJT_ECONNABORTED           WSAECONNABORTED
+#define NJT_ECONNRESET             WSAECONNRESET
+#define NJT_ENOTCONN               WSAENOTCONN
+#define NJT_ETIMEDOUT              WSAETIMEDOUT
+#define NJT_ECONNREFUSED           WSAECONNREFUSED
+#define NJT_ENAMETOOLONG           ERROR_BAD_PATHNAME
+#define NJT_ENETDOWN               WSAENETDOWN
+#define NJT_ENETUNREACH            WSAENETUNREACH
+#define NJT_EHOSTDOWN              WSAEHOSTDOWN
+#define NJT_EHOSTUNREACH           WSAEHOSTUNREACH
+#define NJT_ENOMOREFILES           ERROR_NO_MORE_FILES
+#define NJT_EILSEQ                 ERROR_NO_UNICODE_TRANSLATION
+#define NJT_ELOOP                  0
+#define NJT_EBADF                  WSAEBADF
 
-#define NJET_EALREADY               WSAEALREADY
-#define NJET_EINVAL                 WSAEINVAL
-#define NJET_EMFILE                 WSAEMFILE
-#define NJET_ENFILE                 WSAEMFILE
+#define NJT_EALREADY               WSAEALREADY
+#define NJT_EINVAL                 WSAEINVAL
+#define NJT_EMFILE                 WSAEMFILE
+#define NJT_ENFILE                 WSAEMFILE
 
 
 u_char *ngx_strerror(ngx_err_t err, u_char *errstr, size_t size);
 ngx_int_t ngx_strerror_init(void);
 
 
-#endif /* _NJET_ERRNO_H_INCLUDED_ */
+#endif /* _NJT_ERRNO_H_INCLUDED_ */

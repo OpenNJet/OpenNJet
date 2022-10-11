@@ -5,175 +5,175 @@
 
 if [ $USE_PERL != NO ]; then
 
-    cat << END                                                >> $NJET_MAKEFILE
+    cat << END                                                >> $NJT_MAKEFILE
 
 install_perl_modules:
-	cd $NJET_OBJS/src/http/modules/perl && \$(MAKE) install
+	cd $NJT_OBJS/src/http/modules/perl && \$(MAKE) install
 END
 
-    NJET_INSTALL_PERL_MODULES=install_perl_modules
+    NJT_INSTALL_PERL_MODULES=install_perl_modules
 
 fi
 
 
-case ".$NJET_SBIN_PATH" in
+case ".$NJT_SBIN_PATH" in
     ./*)
     ;;
 
     *)
-        NJET_SBIN_PATH=$NJET_PREFIX/$NJET_SBIN_PATH
+        NJT_SBIN_PATH=$NJT_PREFIX/$NJT_SBIN_PATH
     ;;
 esac
 
 
-case ".$NJET_MODULES_PATH" in
+case ".$NJT_MODULES_PATH" in
     ./*)
     ;;
 
     *)
-        NJET_MODULES_PATH=$NJET_PREFIX/$NJET_MODULES_PATH
+        NJT_MODULES_PATH=$NJT_PREFIX/$NJT_MODULES_PATH
     ;;
 esac
 
-NJET_MODULES_PATH=`dirname $NJET_MODULES_PATH/.`
+NJT_MODULES_PATH=`dirname $NJT_MODULES_PATH/.`
 
 
-case ".$NJET_CONF_PATH" in
+case ".$NJT_CONF_PATH" in
     ./*)
     ;;
 
     *)
-        NJET_CONF_PATH=$NJET_PREFIX/$NJET_CONF_PATH
+        NJT_CONF_PATH=$NJT_PREFIX/$NJT_CONF_PATH
     ;;
 esac
 
 
-NJET_CONF_PREFIX=`dirname $NJET_CONF_PATH`
+NJT_CONF_PREFIX=`dirname $NJT_CONF_PATH`
 
 
-case ".$NJET_PID_PATH" in
+case ".$NJT_PID_PATH" in
     ./*)
     ;;
 
     *)
-        NJET_PID_PATH=$NJET_PREFIX/$NJET_PID_PATH
+        NJT_PID_PATH=$NJT_PREFIX/$NJT_PID_PATH
     ;;
 esac
 
 
-case ".$NJET_ERROR_LOG_PATH" in
+case ".$NJT_ERROR_LOG_PATH" in
     ./* | .)
     ;;
 
     *)
-        NJET_ERROR_LOG_PATH=$NJET_PREFIX/$NJET_ERROR_LOG_PATH
+        NJT_ERROR_LOG_PATH=$NJT_PREFIX/$NJT_ERROR_LOG_PATH
     ;;
 esac
 
 
-case ".$NJET_HTTP_LOG_PATH" in
+case ".$NJT_HTTP_LOG_PATH" in
     ./*)
     ;;
 
     *)
-        NJET_HTTP_LOG_PATH=$NJET_PREFIX/$NJET_HTTP_LOG_PATH
+        NJT_HTTP_LOG_PATH=$NJT_PREFIX/$NJT_HTTP_LOG_PATH
     ;;
 esac
 
 
 if test -f man/njet.8 ; then
-    NJET_MAN=man/njet.8
+    NJT_MAN=man/njet.8
 else
-    NJET_MAN=docs/man/njet.8
+    NJT_MAN=docs/man/njet.8
 fi
 
 if test -d html ; then
-    NJET_HTML=html
+    NJT_HTML=html
 else
-    NJET_HTML=docs/html
+    NJT_HTML=docs/html
 fi
 
-cat << END                                                    >> $NJET_MAKEFILE
+cat << END                                                    >> $NJT_MAKEFILE
 
-manpage:	$NJET_OBJS/njet.8
+manpage:	$NJT_OBJS/njet.8
 
-$NJET_OBJS/njet.8:	$NJET_MAN $NJET_AUTO_CONFIG_H
-	sed -e "s|%%PREFIX%%|$NJET_PREFIX|" \\
-		-e "s|%%PID_PATH%%|$NJET_PID_PATH|" \\
-		-e "s|%%CONF_PATH%%|$NJET_CONF_PATH|" \\
-		-e "s|%%ERROR_LOG_PATH%%|${NJET_ERROR_LOG_PATH:-stderr}|" \\
-		< $NJET_MAN > \$@
+$NJT_OBJS/njet.8:	$NJT_MAN $NJT_AUTO_CONFIG_H
+	sed -e "s|%%PREFIX%%|$NJT_PREFIX|" \\
+		-e "s|%%PID_PATH%%|$NJT_PID_PATH|" \\
+		-e "s|%%CONF_PATH%%|$NJT_CONF_PATH|" \\
+		-e "s|%%ERROR_LOG_PATH%%|${NJT_ERROR_LOG_PATH:-stderr}|" \\
+		< $NJT_MAN > \$@
 
-install:	build $NJET_INSTALL_PERL_MODULES
-	test -d '\$(DESTDIR)$NJET_PREFIX' || mkdir -p '\$(DESTDIR)$NJET_PREFIX'
+install:	build $NJT_INSTALL_PERL_MODULES
+	test -d '\$(DESTDIR)$NJT_PREFIX' || mkdir -p '\$(DESTDIR)$NJT_PREFIX'
 
-	test -d '\$(DESTDIR)`dirname "$NJET_SBIN_PATH"`' \\
-		|| mkdir -p '\$(DESTDIR)`dirname "$NJET_SBIN_PATH"`'
-	test ! -f '\$(DESTDIR)$NJET_SBIN_PATH' \\
-		|| mv '\$(DESTDIR)$NJET_SBIN_PATH' \\
-			'\$(DESTDIR)$NJET_SBIN_PATH.old'
-	cp $NJET_OBJS/njet '\$(DESTDIR)$NJET_SBIN_PATH'
+	test -d '\$(DESTDIR)`dirname "$NJT_SBIN_PATH"`' \\
+		|| mkdir -p '\$(DESTDIR)`dirname "$NJT_SBIN_PATH"`'
+	test ! -f '\$(DESTDIR)$NJT_SBIN_PATH' \\
+		|| mv '\$(DESTDIR)$NJT_SBIN_PATH' \\
+			'\$(DESTDIR)$NJT_SBIN_PATH.old'
+	cp $NJT_OBJS/njet '\$(DESTDIR)$NJT_SBIN_PATH'
 
-	test -d '\$(DESTDIR)$NJET_CONF_PREFIX' \\
-		|| mkdir -p '\$(DESTDIR)$NJET_CONF_PREFIX'
+	test -d '\$(DESTDIR)$NJT_CONF_PREFIX' \\
+		|| mkdir -p '\$(DESTDIR)$NJT_CONF_PREFIX'
 
-	cp conf/koi-win '\$(DESTDIR)$NJET_CONF_PREFIX'
-	cp conf/koi-utf '\$(DESTDIR)$NJET_CONF_PREFIX'
-	cp conf/win-utf '\$(DESTDIR)$NJET_CONF_PREFIX'
+	cp conf/koi-win '\$(DESTDIR)$NJT_CONF_PREFIX'
+	cp conf/koi-utf '\$(DESTDIR)$NJT_CONF_PREFIX'
+	cp conf/win-utf '\$(DESTDIR)$NJT_CONF_PREFIX'
 
-	test -f '\$(DESTDIR)$NJET_CONF_PREFIX/mime.types' \\
-		|| cp conf/mime.types '\$(DESTDIR)$NJET_CONF_PREFIX'
-	cp conf/mime.types '\$(DESTDIR)$NJET_CONF_PREFIX/mime.types.default'
+	test -f '\$(DESTDIR)$NJT_CONF_PREFIX/mime.types' \\
+		|| cp conf/mime.types '\$(DESTDIR)$NJT_CONF_PREFIX'
+	cp conf/mime.types '\$(DESTDIR)$NJT_CONF_PREFIX/mime.types.default'
 
-	test -f '\$(DESTDIR)$NJET_CONF_PREFIX/fastcgi_params' \\
-		|| cp conf/fastcgi_params '\$(DESTDIR)$NJET_CONF_PREFIX'
+	test -f '\$(DESTDIR)$NJT_CONF_PREFIX/fastcgi_params' \\
+		|| cp conf/fastcgi_params '\$(DESTDIR)$NJT_CONF_PREFIX'
 	cp conf/fastcgi_params \\
-		'\$(DESTDIR)$NJET_CONF_PREFIX/fastcgi_params.default'
+		'\$(DESTDIR)$NJT_CONF_PREFIX/fastcgi_params.default'
 
-	test -f '\$(DESTDIR)$NJET_CONF_PREFIX/fastcgi.conf' \\
-		|| cp conf/fastcgi.conf '\$(DESTDIR)$NJET_CONF_PREFIX'
-	cp conf/fastcgi.conf '\$(DESTDIR)$NJET_CONF_PREFIX/fastcgi.conf.default'
+	test -f '\$(DESTDIR)$NJT_CONF_PREFIX/fastcgi.conf' \\
+		|| cp conf/fastcgi.conf '\$(DESTDIR)$NJT_CONF_PREFIX'
+	cp conf/fastcgi.conf '\$(DESTDIR)$NJT_CONF_PREFIX/fastcgi.conf.default'
 
-	test -f '\$(DESTDIR)$NJET_CONF_PREFIX/uwsgi_params' \\
-		|| cp conf/uwsgi_params '\$(DESTDIR)$NJET_CONF_PREFIX'
+	test -f '\$(DESTDIR)$NJT_CONF_PREFIX/uwsgi_params' \\
+		|| cp conf/uwsgi_params '\$(DESTDIR)$NJT_CONF_PREFIX'
 	cp conf/uwsgi_params \\
-		'\$(DESTDIR)$NJET_CONF_PREFIX/uwsgi_params.default'
+		'\$(DESTDIR)$NJT_CONF_PREFIX/uwsgi_params.default'
 
-	test -f '\$(DESTDIR)$NJET_CONF_PREFIX/scgi_params' \\
-		|| cp conf/scgi_params '\$(DESTDIR)$NJET_CONF_PREFIX'
+	test -f '\$(DESTDIR)$NJT_CONF_PREFIX/scgi_params' \\
+		|| cp conf/scgi_params '\$(DESTDIR)$NJT_CONF_PREFIX'
 	cp conf/scgi_params \\
-		'\$(DESTDIR)$NJET_CONF_PREFIX/scgi_params.default'
+		'\$(DESTDIR)$NJT_CONF_PREFIX/scgi_params.default'
 
-	test -f '\$(DESTDIR)$NJET_CONF_PATH' \\
-		|| cp conf/njet.conf '\$(DESTDIR)$NJET_CONF_PATH'
-	cp conf/njet.conf '\$(DESTDIR)$NJET_CONF_PREFIX/njet.conf.default'
+	test -f '\$(DESTDIR)$NJT_CONF_PATH' \\
+		|| cp conf/njet.conf '\$(DESTDIR)$NJT_CONF_PATH'
+	cp conf/njet.conf '\$(DESTDIR)$NJT_CONF_PREFIX/njet.conf.default'
 
-	test -d '\$(DESTDIR)`dirname "$NJET_PID_PATH"`' \\
-		|| mkdir -p '\$(DESTDIR)`dirname "$NJET_PID_PATH"`'
+	test -d '\$(DESTDIR)`dirname "$NJT_PID_PATH"`' \\
+		|| mkdir -p '\$(DESTDIR)`dirname "$NJT_PID_PATH"`'
 
-	test -d '\$(DESTDIR)`dirname "$NJET_HTTP_LOG_PATH"`' \\
-		|| mkdir -p '\$(DESTDIR)`dirname "$NJET_HTTP_LOG_PATH"`'
+	test -d '\$(DESTDIR)`dirname "$NJT_HTTP_LOG_PATH"`' \\
+		|| mkdir -p '\$(DESTDIR)`dirname "$NJT_HTTP_LOG_PATH"`'
 
-	test -d '\$(DESTDIR)$NJET_PREFIX/html' \\
-		|| cp -R $NJET_HTML '\$(DESTDIR)$NJET_PREFIX'
+	test -d '\$(DESTDIR)$NJT_PREFIX/html' \\
+		|| cp -R $NJT_HTML '\$(DESTDIR)$NJT_PREFIX'
 END
 
 
-if test -n "$NJET_ERROR_LOG_PATH"; then
-    cat << END                                                >> $NJET_MAKEFILE
+if test -n "$NJT_ERROR_LOG_PATH"; then
+    cat << END                                                >> $NJT_MAKEFILE
 
-	test -d '\$(DESTDIR)`dirname "$NJET_ERROR_LOG_PATH"`' \\
-		|| mkdir -p '\$(DESTDIR)`dirname "$NJET_ERROR_LOG_PATH"`'
+	test -d '\$(DESTDIR)`dirname "$NJT_ERROR_LOG_PATH"`' \\
+		|| mkdir -p '\$(DESTDIR)`dirname "$NJT_ERROR_LOG_PATH"`'
 END
 
 fi
 
 
 if test -n "$DYNAMIC_MODULES"; then
-    cat << END                                                >> $NJET_MAKEFILE
+    cat << END                                                >> $NJT_MAKEFILE
 
-	test -d '\$(DESTDIR)$NJET_MODULES_PATH' \\
-		|| mkdir -p '\$(DESTDIR)$NJET_MODULES_PATH'
+	test -d '\$(DESTDIR)$NJT_MODULES_PATH' \\
+		|| mkdir -p '\$(DESTDIR)$NJT_MODULES_PATH'
 END
 
 fi
@@ -183,12 +183,12 @@ for ngx_module in $DYNAMIC_MODULES
 do
     ngx_module=$ngx_module$ngx_modext
 
-    cat << END                                                >> $NJET_MAKEFILE
+    cat << END                                                >> $NJT_MAKEFILE
 
-	test ! -f '\$(DESTDIR)$NJET_MODULES_PATH/$ngx_module' \\
-		|| mv '\$(DESTDIR)$NJET_MODULES_PATH/$ngx_module' \\
-			'\$(DESTDIR)$NJET_MODULES_PATH/$ngx_module.old'
-	cp $NJET_OBJS/$ngx_module '\$(DESTDIR)$NJET_MODULES_PATH/$ngx_module'
+	test ! -f '\$(DESTDIR)$NJT_MODULES_PATH/$ngx_module' \\
+		|| mv '\$(DESTDIR)$NJT_MODULES_PATH/$ngx_module' \\
+			'\$(DESTDIR)$NJT_MODULES_PATH/$ngx_module.old'
+	cp $NJT_OBJS/$ngx_module '\$(DESTDIR)$NJT_MODULES_PATH/$ngx_module'
 END
 
 done
@@ -199,22 +199,22 @@ done
 cat << END >> Makefile
 
 build:
-	\$(MAKE) -f $NJET_MAKEFILE
+	\$(MAKE) -f $NJT_MAKEFILE
 
 install:
-	\$(MAKE) -f $NJET_MAKEFILE install
+	\$(MAKE) -f $NJT_MAKEFILE install
 
 modules:
-	\$(MAKE) -f $NJET_MAKEFILE modules
+	\$(MAKE) -f $NJT_MAKEFILE modules
 
 upgrade:
-	$NJET_SBIN_PATH -t
+	$NJT_SBIN_PATH -t
 
-	kill -USR2 \`cat $NJET_PID_PATH\`
+	kill -USR2 \`cat $NJT_PID_PATH\`
 	sleep 1
-	test -f $NJET_PID_PATH.oldbin
+	test -f $NJT_PID_PATH.oldbin
 
-	kill -QUIT \`cat $NJET_PID_PATH.oldbin\`
+	kill -QUIT \`cat $NJT_PID_PATH.oldbin\`
 
 .PHONY:	build install modules upgrade
 END

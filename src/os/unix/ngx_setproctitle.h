@@ -5,48 +5,48 @@
  */
 
 
-#ifndef _NJET_SETPROCTITLE_H_INCLUDED_
-#define _NJET_SETPROCTITLE_H_INCLUDED_
+#ifndef _NJT_SETPROCTITLE_H_INCLUDED_
+#define _NJT_SETPROCTITLE_H_INCLUDED_
 
 
-#if (NJET_HAVE_SETPROCTITLE)
+#if (NJT_HAVE_SETPROCTITLE)
 
 /* FreeBSD, NetBSD, OpenBSD */
 
-#define ngx_init_setproctitle(log) NJET_OK
+#define ngx_init_setproctitle(log) NJT_OK
 #define ngx_setproctitle(title)    setproctitle("%s", title)
 
 
-#else /* !NJET_HAVE_SETPROCTITLE */
+#else /* !NJT_HAVE_SETPROCTITLE */
 
-#if !defined NJET_SETPROCTITLE_USES_ENV
+#if !defined NJT_SETPROCTITLE_USES_ENV
 
-#if (NJET_SOLARIS)
+#if (NJT_SOLARIS)
 
-#define NJET_SETPROCTITLE_USES_ENV  1
-#define NJET_SETPROCTITLE_PAD       ' '
+#define NJT_SETPROCTITLE_USES_ENV  1
+#define NJT_SETPROCTITLE_PAD       ' '
 
 ngx_int_t ngx_init_setproctitle(ngx_log_t *log);
 void ngx_setproctitle(char *title);
 
-#elif (NJET_LINUX) || (NJET_DARWIN)
+#elif (NJT_LINUX) || (NJT_DARWIN)
 
-#define NJET_SETPROCTITLE_USES_ENV  1
-#define NJET_SETPROCTITLE_PAD       '\0'
+#define NJT_SETPROCTITLE_USES_ENV  1
+#define NJT_SETPROCTITLE_PAD       '\0'
 
 ngx_int_t ngx_init_setproctitle(ngx_log_t *log);
 void ngx_setproctitle(char *title);
 
 #else
 
-#define ngx_init_setproctitle(log) NJET_OK
+#define ngx_init_setproctitle(log) NJT_OK
 #define ngx_setproctitle(title)
 
 #endif /* OSes */
 
-#endif /* NJET_SETPROCTITLE_USES_ENV */
+#endif /* NJT_SETPROCTITLE_USES_ENV */
 
-#endif /* NJET_HAVE_SETPROCTITLE */
+#endif /* NJT_HAVE_SETPROCTITLE */
 
 
-#endif /* _NJET_SETPROCTITLE_H_INCLUDED_ */
+#endif /* _NJT_SETPROCTITLE_H_INCLUDED_ */

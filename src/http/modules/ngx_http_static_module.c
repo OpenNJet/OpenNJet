@@ -30,10 +30,10 @@ static ngx_http_module_t  ngx_http_static_module_ctx = {
 
 
 ngx_module_t  ngx_http_static_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_static_module_ctx,           /* module context */
     NULL,                                  /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -41,7 +41,7 @@ ngx_module_t  ngx_http_static_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -60,12 +60,12 @@ ngx_http_static_handler(ngx_http_request_t *r)
     ngx_open_file_info_t       of;
     ngx_http_core_loc_conf_t  *clcf;
 
-    if (!(r->method & (NJET_HTTP_GET|NJET_HTTP_HEAD|NJET_HTTP_POST))) {
-        return NJET_HTTP_NOT_ALLOWED;
+    if (!(r->method & (NJT_HTTP_GET|NJT_HTTP_HEAD|NJT_HTTP_POST))) {
+        return NJT_HTTP_NOT_ALLOWED;
     }
 
     if (r->uri.data[r->uri.len - 1] == '/') {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     log = r->connection->log;
@@ -77,12 +77,12 @@ ngx_http_static_handler(ngx_http_request_t *r)
 
     last = ngx_http_map_uri_to_path(r, &path, &root, 0);
     if (last == NULL) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     path.len = last - path.data;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, log, 0,
                    "http filename: \"%s\"", path.data);
 
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
@@ -96,44 +96,44 @@ ngx_http_static_handler(ngx_http_request_t *r)
     of.errors = clcf->open_file_cache_errors;
     of.events = clcf->open_file_cache_events;
 
-    if (ngx_http_set_disable_symlinks(r, clcf, &path, &of) != NJET_OK) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+    if (ngx_http_set_disable_symlinks(r, clcf, &path, &of) != NJT_OK) {
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     if (ngx_open_cached_file(clcf->open_file_cache, &path, &of, r->pool)
-        != NJET_OK)
+        != NJT_OK)
     {
         switch (of.err) {
 
         case 0:
-            return NJET_HTTP_INTERNAL_SERVER_ERROR;
+            return NJT_HTTP_INTERNAL_SERVER_ERROR;
 
-        case NJET_ENOENT:
-        case NJET_ENOTDIR:
-        case NJET_ENAMETOOLONG:
+        case NJT_ENOENT:
+        case NJT_ENOTDIR:
+        case NJT_ENAMETOOLONG:
 
-            level = NJET_LOG_ERR;
-            rc = NJET_HTTP_NOT_FOUND;
+            level = NJT_LOG_ERR;
+            rc = NJT_HTTP_NOT_FOUND;
             break;
 
-        case NJET_EACCES:
-#if (NJET_HAVE_OPENAT)
-        case NJET_EMLINK:
-        case NJET_ELOOP:
+        case NJT_EACCES:
+#if (NJT_HAVE_OPENAT)
+        case NJT_EMLINK:
+        case NJT_ELOOP:
 #endif
 
-            level = NJET_LOG_ERR;
-            rc = NJET_HTTP_FORBIDDEN;
+            level = NJT_LOG_ERR;
+            rc = NJT_HTTP_FORBIDDEN;
             break;
 
         default:
 
-            level = NJET_LOG_CRIT;
-            rc = NJET_HTTP_INTERNAL_SERVER_ERROR;
+            level = NJT_LOG_CRIT;
+            rc = NJT_HTTP_INTERNAL_SERVER_ERROR;
             break;
         }
 
-        if (rc != NJET_HTTP_NOT_FOUND || clcf->log_not_found) {
+        if (rc != NJT_HTTP_NOT_FOUND || clcf->log_not_found) {
             ngx_log_error(level, log, of.err,
                           "%s \"%s\" failed", of.failed, path.data);
         }
@@ -143,21 +143,21 @@ ngx_http_static_handler(ngx_http_request_t *r)
 
     r->root_tested = !r->error_page;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, log, 0, "http static fd: %d", of.fd);
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, log, 0, "http static fd: %d", of.fd);
 
     if (of.is_dir) {
 
-        ngx_log_debug0(NJET_LOG_DEBUG_HTTP, log, 0, "http dir");
+        ngx_log_debug0(NJT_LOG_DEBUG_HTTP, log, 0, "http dir");
 
         ngx_http_clear_location(r);
 
         r->headers_out.location = ngx_list_push(&r->headers_out.headers);
         if (r->headers_out.location == NULL) {
-            return NJET_HTTP_INTERNAL_SERVER_ERROR;
+            return NJT_HTTP_INTERNAL_SERVER_ERROR;
         }
 
         escape = 2 * ngx_escape_uri(NULL, r->uri.data, r->uri.len,
-                                    NJET_ESCAPE_URI);
+                                    NJT_ESCAPE_URI);
 
         if (!clcf->alias && r->args.len == 0 && escape == 0) {
             len = r->uri.len + 1;
@@ -175,12 +175,12 @@ ngx_http_static_handler(ngx_http_request_t *r)
             location = ngx_pnalloc(r->pool, len);
             if (location == NULL) {
                 ngx_http_clear_location(r);
-                return NJET_HTTP_INTERNAL_SERVER_ERROR;
+                return NJT_HTTP_INTERNAL_SERVER_ERROR;
             }
 
             if (escape) {
                 last = (u_char *) ngx_escape_uri(location, r->uri.data,
-                                                 r->uri.len, NJET_ESCAPE_URI);
+                                                 r->uri.len, NJT_ESCAPE_URI);
 
             } else {
                 last = ngx_copy(location, r->uri.data, r->uri.len);
@@ -200,42 +200,42 @@ ngx_http_static_handler(ngx_http_request_t *r)
         r->headers_out.location->value.len = len;
         r->headers_out.location->value.data = location;
 
-        return NJET_HTTP_MOVED_PERMANENTLY;
+        return NJT_HTTP_MOVED_PERMANENTLY;
     }
 
-#if !(NJET_WIN32) /* the not regular files are probably Unix specific */
+#if !(NJT_WIN32) /* the not regular files are probably Unix specific */
 
     if (!of.is_file) {
-        ngx_log_error(NJET_LOG_CRIT, log, 0,
+        ngx_log_error(NJT_LOG_CRIT, log, 0,
                       "\"%s\" is not a regular file", path.data);
 
-        return NJET_HTTP_NOT_FOUND;
+        return NJT_HTTP_NOT_FOUND;
     }
 
 #endif
 
-    if (r->method == NJET_HTTP_POST) {
-        return NJET_HTTP_NOT_ALLOWED;
+    if (r->method == NJT_HTTP_POST) {
+        return NJT_HTTP_NOT_ALLOWED;
     }
 
     rc = ngx_http_discard_request_body(r);
 
-    if (rc != NJET_OK) {
+    if (rc != NJT_OK) {
         return rc;
     }
 
     log->action = "sending response to client";
 
-    r->headers_out.status = NJET_HTTP_OK;
+    r->headers_out.status = NJT_HTTP_OK;
     r->headers_out.content_length_n = of.size;
     r->headers_out.last_modified_time = of.mtime;
 
-    if (ngx_http_set_etag(r) != NJET_OK) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+    if (ngx_http_set_etag(r) != NJT_OK) {
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    if (ngx_http_set_content_type(r) != NJET_OK) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+    if (ngx_http_set_content_type(r) != NJT_OK) {
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     if (r != r->main && of.size == 0) {
@@ -248,17 +248,17 @@ ngx_http_static_handler(ngx_http_request_t *r)
 
     b = ngx_calloc_buf(r->pool);
     if (b == NULL) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     b->file = ngx_pcalloc(r->pool, sizeof(ngx_file_t));
     if (b->file == NULL) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     rc = ngx_http_send_header(r);
 
-    if (rc == NJET_ERROR || rc > NJET_OK || r->header_only) {
+    if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
         return rc;
     }
 
@@ -289,12 +289,12 @@ ngx_http_static_init(ngx_conf_t *cf)
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
-    h = ngx_array_push(&cmcf->phases[NJET_HTTP_CONTENT_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
     if (h == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *h = ngx_http_static_handler;
 
-    return NJET_OK;
+    return NJT_OK;
 }

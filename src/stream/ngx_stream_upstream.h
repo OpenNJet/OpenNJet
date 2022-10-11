@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_STREAM_UPSTREAM_H_INCLUDED_
-#define _NJET_STREAM_UPSTREAM_H_INCLUDED_
+#ifndef _NJT_STREAM_UPSTREAM_H_INCLUDED_
+#define _NJT_STREAM_UPSTREAM_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -15,16 +15,16 @@
 #include <ngx_event_connect.h>
 
 
-#define NJET_STREAM_UPSTREAM_CREATE        0x0001
-#define NJET_STREAM_UPSTREAM_WEIGHT        0x0002
-#define NJET_STREAM_UPSTREAM_MAX_FAILS     0x0004
-#define NJET_STREAM_UPSTREAM_FAIL_TIMEOUT  0x0008
-#define NJET_STREAM_UPSTREAM_DOWN          0x0010
-#define NJET_STREAM_UPSTREAM_BACKUP        0x0020
-#define NJET_STREAM_UPSTREAM_MAX_CONNS     0x0100
+#define NJT_STREAM_UPSTREAM_CREATE        0x0001
+#define NJT_STREAM_UPSTREAM_WEIGHT        0x0002
+#define NJT_STREAM_UPSTREAM_MAX_FAILS     0x0004
+#define NJT_STREAM_UPSTREAM_FAIL_TIMEOUT  0x0008
+#define NJT_STREAM_UPSTREAM_DOWN          0x0010
+#define NJT_STREAM_UPSTREAM_BACKUP        0x0020
+#define NJT_STREAM_UPSTREAM_MAX_CONNS     0x0100
 
 
-#define NJET_STREAM_UPSTREAM_NOTIFY_CONNECT     0x1
+#define NJT_STREAM_UPSTREAM_NOTIFY_CONNECT     0x1
 
 
 typedef struct {
@@ -62,8 +62,8 @@ typedef struct {
 
     unsigned                           backup:1;
 
-    NJET_COMPAT_BEGIN(4)
-    NJET_COMPAT_END
+    NJT_COMPAT_BEGIN(4)
+    NJT_COMPAT_END
 } ngx_stream_upstream_server_t;
 
 
@@ -81,7 +81,7 @@ struct ngx_stream_upstream_srv_conf_s {
     in_port_t                          port;
     ngx_uint_t                         no_port;  /* unsigned no_port:1 */
 
-#if (NJET_STREAM_UPSTREAM_ZONE)
+#if (NJT_STREAM_UPSTREAM_ZONE)
     ngx_shm_zone_t                    *shm_zone;
 #endif
 };
@@ -157,4 +157,4 @@ ngx_stream_upstream_srv_conf_t *ngx_stream_upstream_add(ngx_conf_t *cf,
 extern ngx_module_t  ngx_stream_upstream_module;
 
 
-#endif /* _NJET_STREAM_UPSTREAM_H_INCLUDED_ */
+#endif /* _NJT_STREAM_UPSTREAM_H_INCLUDED_ */

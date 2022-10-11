@@ -5,21 +5,21 @@
  */
 
 
-#ifndef _NJET_CYCLE_H_INCLUDED_
-#define _NJET_CYCLE_H_INCLUDED_
+#ifndef _NJT_CYCLE_H_INCLUDED_
+#define _NJT_CYCLE_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#ifndef NJET_CYCLE_POOL_SIZE
-#define NJET_CYCLE_POOL_SIZE     NJET_DEFAULT_POOL_SIZE
+#ifndef NJT_CYCLE_POOL_SIZE
+#define NJT_CYCLE_POOL_SIZE     NJT_DEFAULT_POOL_SIZE
 #endif
 
 
-#define NJET_DEBUG_POINTS_STOP   1
-#define NJET_DEBUG_POINTS_ABORT  2
+#define NJT_DEBUG_POINTS_STOP   1
+#define NJT_DEBUG_POINTS_ABORT  2
 
 
 typedef struct ngx_shm_zone_s  ngx_shm_zone_t;
@@ -146,4 +146,4 @@ extern ngx_uint_t             ngx_dump_config;
 extern ngx_uint_t             ngx_quiet_mode;
 
 
-#endif /* _NJET_CYCLE_H_INCLUDED_ */
+#endif /* _NJT_CYCLE_H_INCLUDED_ */

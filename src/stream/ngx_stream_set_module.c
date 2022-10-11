@@ -34,9 +34,9 @@ static char *ngx_stream_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 static ngx_command_t  ngx_stream_set_commands[] = {
 
     { ngx_string("set"),
-      NJET_STREAM_SRV_CONF|NJET_CONF_TAKE2,
+      NJT_STREAM_SRV_CONF|NJT_CONF_TAKE2,
       ngx_stream_set,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
 
@@ -57,10 +57,10 @@ static ngx_stream_module_t  ngx_stream_set_module_ctx = {
 
 
 ngx_module_t  ngx_stream_set_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_stream_set_module_ctx,            /* module context */
     ngx_stream_set_commands,               /* module directives */
-    NJET_STREAM_MODULE,                     /* module type */
+    NJT_STREAM_MODULE,                     /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -68,7 +68,7 @@ ngx_module_t  ngx_stream_set_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -86,8 +86,8 @@ ngx_stream_set_handler(ngx_stream_session_t *s)
     vv = ngx_stream_variable_null_value;
 
     for (i = 0; i < scf->commands.nelts; i++) {
-        if (ngx_stream_complex_value(s, &cmds[i].value, &str) != NJET_OK) {
-            return NJET_ERROR;
+        if (ngx_stream_complex_value(s, &cmds[i].value, &str) != NJT_OK) {
+            return NJT_ERROR;
         }
 
         if (cmds[i].set_handler != NULL) {
@@ -104,7 +104,7 @@ ngx_stream_set_handler(ngx_stream_session_t *s)
         }
     }
 
-    return NJET_DECLINED;
+    return NJT_DECLINED;
 }
 
 
@@ -114,7 +114,7 @@ ngx_stream_set_var(ngx_stream_session_t *s, ngx_stream_variable_value_t *v,
 {
     *v = ngx_stream_variable_null_value;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -126,14 +126,14 @@ ngx_stream_set_init(ngx_conf_t *cf)
 
     cmcf = ngx_stream_conf_get_module_main_conf(cf, ngx_stream_core_module);
 
-    h = ngx_array_push(&cmcf->phases[NJET_STREAM_PREACCESS_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJT_STREAM_PREACCESS_PHASE].handlers);
     if (h == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *h = ngx_stream_set_handler;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -171,23 +171,23 @@ ngx_stream_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     args = cf->args->elts;
 
     if (args[1].data[0] != '$') {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid variable name \"%V\"", &args[1]);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     args[1].len--;
     args[1].data++;
 
     v = ngx_stream_add_variable(cf, &args[1],
-                                NJET_STREAM_VAR_CHANGEABLE|NJET_STREAM_VAR_WEAK);
+                                NJT_STREAM_VAR_CHANGEABLE|NJT_STREAM_VAR_WEAK);
     if (v == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     index = ngx_stream_get_variable_index(cf, &args[1]);
-    if (index == NJET_ERROR) {
-        return NJET_CONF_ERROR;
+    if (index == NJT_ERROR) {
+        return NJT_CONF_ERROR;
     }
 
     if (v->get_handler == NULL) {
@@ -197,15 +197,15 @@ ngx_stream_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (scf->commands.elts == NULL) {
         if (ngx_array_init(&scf->commands, cf->pool, 1,
                            sizeof(ngx_stream_set_cmd_t))
-            != NJET_OK)
+            != NJT_OK)
         {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
     set_cmd = ngx_array_push(&scf->commands);
     if (set_cmd == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     set_cmd->index = index;
@@ -218,9 +218,9 @@ ngx_stream_set(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ccv.value = &args[2];
     ccv.complex_value = &set_cmd->value;
 
-    if (ngx_stream_compile_complex_value(&ccv) != NJET_OK) {
-        return NJET_CONF_ERROR;
+    if (ngx_stream_compile_complex_value(&ccv) != NJT_OK) {
+        return NJT_CONF_ERROR;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

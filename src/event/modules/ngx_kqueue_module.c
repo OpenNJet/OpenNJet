@@ -56,14 +56,14 @@ static ngx_str_t      kqueue_name = ngx_string("kqueue");
 static ngx_command_t  ngx_kqueue_commands[] = {
 
     { ngx_string("kqueue_changes"),
-      NJET_EVENT_CONF|NJET_CONF_TAKE1,
+      NJT_EVENT_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
       0,
       offsetof(ngx_kqueue_conf_t, changes),
       NULL },
 
     { ngx_string("kqueue_events"),
-      NJET_EVENT_CONF|NJET_CONF_TAKE1,
+      NJT_EVENT_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
       0,
       offsetof(ngx_kqueue_conf_t, events),
@@ -98,10 +98,10 @@ static ngx_event_module_t  ngx_kqueue_module_ctx = {
 };
 
 ngx_module_t  ngx_kqueue_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_kqueue_module_ctx,                /* module context */
     ngx_kqueue_commands,                   /* module directives */
-    NJET_EVENT_MODULE,                      /* module type */
+    NJT_EVENT_MODULE,                      /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -109,7 +109,7 @@ ngx_module_t  ngx_kqueue_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -118,7 +118,7 @@ ngx_kqueue_init(ngx_cycle_t *cycle, ngx_msec_t timer)
 {
     ngx_kqueue_conf_t  *kcf;
     struct timespec     ts;
-#if (NJET_HAVE_TIMER_EVENT)
+#if (NJT_HAVE_TIMER_EVENT)
     struct kevent       kev;
 #endif
 
@@ -128,14 +128,14 @@ ngx_kqueue_init(ngx_cycle_t *cycle, ngx_msec_t timer)
         ngx_kqueue = kqueue();
 
         if (ngx_kqueue == -1) {
-            ngx_log_error(NJET_LOG_EMERG, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_EMERG, cycle->log, ngx_errno,
                           "kqueue() failed");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
 #ifdef EVFILT_USER
-        if (ngx_kqueue_notify_init(cycle->log) != NJET_OK) {
-            return NJET_ERROR;
+        if (ngx_kqueue_notify_init(cycle->log) != NJT_OK) {
+            return NJT_ERROR;
         }
 #endif
     }
@@ -148,9 +148,9 @@ ngx_kqueue_init(ngx_cycle_t *cycle, ngx_msec_t timer)
             if (kevent(ngx_kqueue, change_list, (int) nchanges, NULL, 0, &ts)
                 == -1)
             {
-                ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+                ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                               "kevent() failed");
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
             nchanges = 0;
         }
@@ -162,7 +162,7 @@ ngx_kqueue_init(ngx_cycle_t *cycle, ngx_msec_t timer)
         change_list = ngx_alloc(kcf->changes * sizeof(struct kevent),
                                 cycle->log);
         if (change_list == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
@@ -175,15 +175,15 @@ ngx_kqueue_init(ngx_cycle_t *cycle, ngx_msec_t timer)
 
         event_list = ngx_alloc(kcf->events * sizeof(struct kevent), cycle->log);
         if (event_list == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
-    ngx_event_flags = NJET_USE_ONESHOT_EVENT
-                      |NJET_USE_KQUEUE_EVENT
-                      |NJET_USE_VNODE_EVENT;
+    ngx_event_flags = NJT_USE_ONESHOT_EVENT
+                      |NJT_USE_KQUEUE_EVENT
+                      |NJT_USE_VNODE_EVENT;
 
-#if (NJET_HAVE_TIMER_EVENT)
+#if (NJT_HAVE_TIMER_EVENT)
 
     if (timer) {
         kev.ident = 0;
@@ -197,24 +197,24 @@ ngx_kqueue_init(ngx_cycle_t *cycle, ngx_msec_t timer)
         ts.tv_nsec = 0;
 
         if (kevent(ngx_kqueue, &kev, 1, NULL, 0, &ts) == -1) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                           "kevent(EVFILT_TIMER) failed");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
-        ngx_event_flags |= NJET_USE_TIMER_EVENT;
+        ngx_event_flags |= NJT_USE_TIMER_EVENT;
     }
 
 #endif
 
-#if (NJET_HAVE_CLEAR_EVENT)
-    ngx_event_flags |= NJET_USE_CLEAR_EVENT;
+#if (NJT_HAVE_CLEAR_EVENT)
+    ngx_event_flags |= NJT_USE_CLEAR_EVENT;
 #else
-    ngx_event_flags |= NJET_USE_LEVEL_EVENT;
+    ngx_event_flags |= NJT_USE_LEVEL_EVENT;
 #endif
 
-#if (NJET_HAVE_LOWAT_EVENT)
-    ngx_event_flags |= NJET_USE_LOWAT_EVENT;
+#if (NJT_HAVE_LOWAT_EVENT)
+    ngx_event_flags |= NJT_USE_LOWAT_EVENT;
 #endif
 
     nevents = kcf->events;
@@ -223,7 +223,7 @@ ngx_kqueue_init(ngx_cycle_t *cycle, ngx_msec_t timer)
 
     ngx_event_actions = ngx_kqueue_module_ctx.actions;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -240,9 +240,9 @@ ngx_kqueue_notify_init(ngx_log_t *log)
     notify_kev.udata = 0;
 
     if (kevent(ngx_kqueue, &notify_kev, 1, NULL, 0, NULL) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, log, ngx_errno,
                       "kevent(EVFILT_USER, EV_ADD) failed");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     notify_event.active = 1;
@@ -250,9 +250,9 @@ ngx_kqueue_notify_init(ngx_log_t *log)
 
     notify_kev.flags = 0;
     notify_kev.fflags = NOTE_TRIGGER;
-    notify_kev.udata = NJET_KQUEUE_UDATA_T ((uintptr_t) &notify_event);
+    notify_kev.udata = NJT_KQUEUE_UDATA_T ((uintptr_t) &notify_event);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 #endif
@@ -262,7 +262,7 @@ static void
 ngx_kqueue_done(ngx_cycle_t *cycle)
 {
     if (close(ngx_kqueue) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                       "kqueue close() failed");
     }
 
@@ -290,7 +290,7 @@ ngx_kqueue_add_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
 
     ev->active = 1;
     ev->disabled = 0;
-    ev->oneshot = (flags & NJET_ONESHOT_EVENT) ? 1 : 0;
+    ev->oneshot = (flags & NJT_ONESHOT_EVENT) ? 1 : 0;
 
 #if 0
 
@@ -305,7 +305,7 @@ ngx_kqueue_add_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
              * we will not pass it
              */
 
-            ngx_log_debug2(NJET_LOG_DEBUG_EVENT, ev->log, 0,
+            ngx_log_debug2(NJT_LOG_DEBUG_EVENT, ev->log, 0,
                            "kevent activated: %d: ft:%i",
                            ngx_event_ident(ev->data), event);
 
@@ -316,15 +316,15 @@ ngx_kqueue_add_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
                 e->index = ev->index;
             }
 
-            return NJET_OK;
+            return NJT_OK;
         }
 
         c = ev->data;
 
-        ngx_log_error(NJET_LOG_ALERT, ev->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, ev->log, 0,
                       "previous event on #%d were not passed in kernel", c->fd);
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
 #endif
@@ -348,7 +348,7 @@ ngx_kqueue_del_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
         && ((uintptr_t) change_list[ev->index].udata & (uintptr_t) ~1)
             == (uintptr_t) ev)
     {
-        ngx_log_debug2(NJET_LOG_DEBUG_EVENT, ev->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_EVENT, ev->log, 0,
                        "kevent deleted: %d: ft:%i",
                        ngx_event_ident(ev->data), event);
 
@@ -363,7 +363,7 @@ ngx_kqueue_del_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
             e->index = ev->index;
         }
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     /*
@@ -372,11 +372,11 @@ ngx_kqueue_del_event(ngx_event_t *ev, ngx_int_t event, ngx_uint_t flags)
      * before the closing the file descriptor.
      */
 
-    if (flags & NJET_CLOSE_EVENT) {
-        return NJET_OK;
+    if (flags & NJT_CLOSE_EVENT) {
+        return NJT_OK;
     }
 
-    if (flags & NJET_DISABLE_EVENT) {
+    if (flags & NJT_DISABLE_EVENT) {
         ev->disabled = 1;
 
     } else {
@@ -398,12 +398,12 @@ ngx_kqueue_set_event(ngx_event_t *ev, ngx_int_t filter, ngx_uint_t flags)
 
     c = ev->data;
 
-    ngx_log_debug3(NJET_LOG_DEBUG_EVENT, ev->log, 0,
+    ngx_log_debug3(NJT_LOG_DEBUG_EVENT, ev->log, 0,
                    "kevent set event: %d: ft:%i fl:%04Xi",
                    c->fd, filter, flags);
 
     if (nchanges >= max_changes) {
-        ngx_log_error(NJET_LOG_WARN, ev->log, 0,
+        ngx_log_error(NJT_LOG_WARN, ev->log, 0,
                       "kqueue change list is filled up");
 
         ts.tv_sec = 0;
@@ -412,8 +412,8 @@ ngx_kqueue_set_event(ngx_event_t *ev, ngx_int_t filter, ngx_uint_t flags)
         if (kevent(ngx_kqueue, change_list, (int) nchanges, NULL, 0, &ts)
             == -1)
         {
-            ngx_log_error(NJET_LOG_ALERT, ev->log, ngx_errno, "kevent() failed");
-            return NJET_ERROR;
+            ngx_log_error(NJT_LOG_ALERT, ev->log, ngx_errno, "kevent() failed");
+            return NJT_ERROR;
         }
 
         nchanges = 0;
@@ -424,7 +424,7 @@ ngx_kqueue_set_event(ngx_event_t *ev, ngx_int_t filter, ngx_uint_t flags)
     kev->ident = c->fd;
     kev->filter = (short) filter;
     kev->flags = (u_short) flags;
-    kev->udata = NJET_KQUEUE_UDATA_T ((uintptr_t) ev | ev->instance);
+    kev->udata = NJT_KQUEUE_UDATA_T ((uintptr_t) ev | ev->instance);
 
     if (filter == EVFILT_VNODE) {
         kev->fflags = NOTE_DELETE|NOTE_WRITE|NOTE_EXTEND
@@ -437,8 +437,8 @@ ngx_kqueue_set_event(ngx_event_t *ev, ngx_int_t filter, ngx_uint_t flags)
         kev->data = 0;
 
     } else {
-#if (NJET_HAVE_LOWAT_EVENT)
-        if (flags & NJET_LOWAT_EVENT) {
+#if (NJT_HAVE_LOWAT_EVENT)
+        if (flags & NJT_LOWAT_EVENT) {
             kev->fflags = NOTE_LOWAT;
             kev->data = ev->available;
 
@@ -455,23 +455,23 @@ ngx_kqueue_set_event(ngx_event_t *ev, ngx_int_t filter, ngx_uint_t flags)
     ev->index = nchanges;
     nchanges++;
 
-    if (flags & NJET_FLUSH_EVENT) {
+    if (flags & NJT_FLUSH_EVENT) {
         ts.tv_sec = 0;
         ts.tv_nsec = 0;
 
-        ngx_log_debug0(NJET_LOG_DEBUG_EVENT, ev->log, 0, "kevent flush");
+        ngx_log_debug0(NJT_LOG_DEBUG_EVENT, ev->log, 0, "kevent flush");
 
         if (kevent(ngx_kqueue, change_list, (int) nchanges, NULL, 0, &ts)
             == -1)
         {
-            ngx_log_error(NJET_LOG_ALERT, ev->log, ngx_errno, "kevent() failed");
-            return NJET_ERROR;
+            ngx_log_error(NJT_LOG_ALERT, ev->log, ngx_errno, "kevent() failed");
+            return NJT_ERROR;
         }
 
         nchanges = 0;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -483,12 +483,12 @@ ngx_kqueue_notify(ngx_event_handler_pt handler)
     notify_event.handler = handler;
 
     if (kevent(ngx_kqueue, &notify_kev, 1, NULL, 0, NULL) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, notify_event.log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, notify_event.log, ngx_errno,
                       "kevent(EVFILT_USER, NOTE_TRIGGER) failed");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 #endif
@@ -509,7 +509,7 @@ ngx_kqueue_process_events(ngx_cycle_t *cycle, ngx_msec_t timer,
     n = (int) nchanges;
     nchanges = 0;
 
-    if (timer == NJET_TIMER_INFINITE) {
+    if (timer == NJT_TIMER_INFINITE) {
         tp = NULL;
 
     } else {
@@ -523,53 +523,53 @@ ngx_kqueue_process_events(ngx_cycle_t *cycle, ngx_msec_t timer,
          * so on the big endian PowerPC all nanoseconds are lost.
          */
 
-#if (NJET_DARWIN_KEVENT_BUG)
+#if (NJT_DARWIN_KEVENT_BUG)
         ts.tv_nsec <<= 32;
 #endif
 
         tp = &ts;
     }
 
-    ngx_log_debug2(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                    "kevent timer: %M, changes: %d", timer, n);
 
     events = kevent(ngx_kqueue, change_list, n, event_list, (int) nevents, tp);
 
     err = (events == -1) ? ngx_errno : 0;
 
-    if (flags & NJET_UPDATE_TIME || ngx_event_timer_alarm) {
+    if (flags & NJT_UPDATE_TIME || ngx_event_timer_alarm) {
         ngx_time_update();
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                    "kevent events: %d", events);
 
     if (err) {
-        if (err == NJET_EINTR) {
+        if (err == NJT_EINTR) {
 
             if (ngx_event_timer_alarm) {
                 ngx_event_timer_alarm = 0;
-                return NJET_OK;
+                return NJT_OK;
             }
 
-            level = NJET_LOG_INFO;
+            level = NJT_LOG_INFO;
 
         } else {
-            level = NJET_LOG_ALERT;
+            level = NJT_LOG_ALERT;
         }
 
         ngx_log_error(level, cycle->log, err, "kevent() failed");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (events == 0) {
-        if (timer != NJET_TIMER_INFINITE) {
-            return NJET_OK;
+        if (timer != NJT_TIMER_INFINITE) {
+            return NJT_OK;
         }
 
-        ngx_log_error(NJET_LOG_ALERT, cycle->log, 0,
+        ngx_log_error(NJT_LOG_ALERT, cycle->log, 0,
                       "kevent() returned no events without timeout");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     for (i = 0; i < events; i++) {
@@ -577,14 +577,14 @@ ngx_kqueue_process_events(ngx_cycle_t *cycle, ngx_msec_t timer,
         ngx_kqueue_dump_event(cycle->log, &event_list[i]);
 
         if (event_list[i].flags & EV_ERROR) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, event_list[i].data,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, event_list[i].data,
                           "kevent() error on %d filter:%d flags:%04Xd",
                           (int) event_list[i].ident, event_list[i].filter,
                           event_list[i].flags);
             continue;
         }
 
-#if (NJET_HAVE_TIMER_EVENT)
+#if (NJT_HAVE_TIMER_EVENT)
 
         if (event_list[i].filter == EVFILT_TIMER) {
             ngx_time_update();
@@ -610,12 +610,12 @@ ngx_kqueue_process_events(ngx_cycle_t *cycle, ngx_msec_t timer,
                  * that was just closed in this iteration
                  */
 
-                ngx_log_debug1(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+                ngx_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                                "kevent: stale event %p", ev);
                 continue;
             }
 
-            if (ev->log && (ev->log->log_level & NJET_LOG_DEBUG_CONNECTION)) {
+            if (ev->log && (ev->log->log_level & NJT_LOG_DEBUG_CONNECTION)) {
                 ngx_kqueue_dump_event(ev->log, &event_list[i]);
             }
 
@@ -651,13 +651,13 @@ ngx_kqueue_process_events(ngx_cycle_t *cycle, ngx_msec_t timer,
 #endif
 
         default:
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, 0,
                           "unexpected kevent() filter %d",
                           event_list[i].filter);
             continue;
         }
 
-        if (flags & NJET_POST_EVENTS) {
+        if (flags & NJT_POST_EVENTS) {
             queue = ev->accept ? &ngx_posted_accept_events
                                : &ngx_posted_events;
 
@@ -669,7 +669,7 @@ ngx_kqueue_process_events(ngx_cycle_t *cycle, ngx_msec_t timer,
         ev->handler(ev);
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -677,14 +677,14 @@ static ngx_inline void
 ngx_kqueue_dump_event(ngx_log_t *log, struct kevent *kev)
 {
     if (kev->ident > 0x8000000 && kev->ident != (unsigned) -1) {
-        ngx_log_debug6(NJET_LOG_DEBUG_EVENT, log, 0,
+        ngx_log_debug6(NJT_LOG_DEBUG_EVENT, log, 0,
                        "kevent: %p: ft:%d fl:%04Xd ff:%08Xd d:%d ud:%p",
                        (void *) kev->ident, kev->filter,
                        kev->flags, kev->fflags,
                        (int) kev->data, kev->udata);
 
     } else {
-        ngx_log_debug6(NJET_LOG_DEBUG_EVENT, log, 0,
+        ngx_log_debug6(NJT_LOG_DEBUG_EVENT, log, 0,
                        "kevent: %d: ft:%d fl:%04Xd ff:%08Xd d:%d ud:%p",
                        (int) kev->ident, kev->filter,
                        kev->flags, kev->fflags,
@@ -703,8 +703,8 @@ ngx_kqueue_create_conf(ngx_cycle_t *cycle)
         return NULL;
     }
 
-    kcf->changes = NJET_CONF_UNSET;
-    kcf->events = NJET_CONF_UNSET;
+    kcf->changes = NJT_CONF_UNSET;
+    kcf->events = NJT_CONF_UNSET;
 
     return kcf;
 }
@@ -718,5 +718,5 @@ ngx_kqueue_init_conf(ngx_cycle_t *cycle, void *conf)
     ngx_conf_init_uint_value(kcf->changes, 512);
     ngx_conf_init_uint_value(kcf->events, 512);
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

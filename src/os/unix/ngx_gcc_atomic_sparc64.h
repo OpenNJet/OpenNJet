@@ -23,10 +23,10 @@
  */
 
 
-#if (NJET_PTR_SIZE == 4)
-#define NJET_CASA  "casa"
+#if (NJT_PTR_SIZE == 4)
+#define NJT_CASA  "casa"
 #else
-#define NJET_CASA  "casxa"
+#define NJT_CASA  "casxa"
 #endif
 
 
@@ -36,7 +36,7 @@ ngx_atomic_cmp_set(ngx_atomic_t *lock, ngx_atomic_uint_t old,
 {
     __asm__ volatile (
 
-    NJET_CASA " [%1] 0x80, %2, %0"
+    NJT_CASA " [%1] 0x80, %2, %0"
 
     : "+r" (set) : "r" (lock), "r" (old) : "memory");
 
@@ -57,7 +57,7 @@ ngx_atomic_fetch_add(ngx_atomic_t *value, ngx_atomic_int_t add)
 
         __asm__ volatile (
 
-        NJET_CASA " [%1] 0x80, %2, %0"
+        NJT_CASA " [%1] 0x80, %2, %0"
 
         : "+r" (res) : "r" (value), "r" (old) : "memory");
 
@@ -70,7 +70,7 @@ ngx_atomic_fetch_add(ngx_atomic_t *value, ngx_atomic_int_t add)
 }
 
 
-#if (NJET_SMP)
+#if (NJT_SMP)
 #define ngx_memory_barrier()                                                  \
             __asm__ volatile (                                                \
             "membar #LoadLoad | #LoadStore | #StoreStore | #StoreLoad"        \

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_MAIL_H_INCLUDED_
-#define _NJET_MAIL_H_INCLUDED_
+#ifndef _NJT_MAIL_H_INCLUDED_
+#define _NJT_MAIL_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -14,7 +14,7 @@
 #include <ngx_event.h>
 #include <ngx_event_connect.h>
 
-#if (NJET_MAIL_SSL)
+#if (NJT_MAIL_SSL)
 #include <ngx_mail_ssl_module.h>
 #endif
 
@@ -37,12 +37,12 @@ typedef struct {
     unsigned                bind:1;
     unsigned                wildcard:1;
     unsigned                ssl:1;
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     unsigned                ipv6only:1;
 #endif
     unsigned                so_keepalive:2;
     unsigned                proxy_protocol:1;
-#if (NJET_HAVE_KEEPALIVE_TUNABLE)
+#if (NJT_HAVE_KEEPALIVE_TUNABLE)
     int                     tcp_keepidle;
     int                     tcp_keepintvl;
     int                     tcp_keepcnt;
@@ -66,7 +66,7 @@ typedef struct {
 } ngx_mail_in_addr_t;
 
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
 
 typedef struct {
     struct in6_addr         addr6;
@@ -101,9 +101,9 @@ typedef struct {
 } ngx_mail_core_main_conf_t;
 
 
-#define NJET_MAIL_POP3_PROTOCOL  0
-#define NJET_MAIL_IMAP_PROTOCOL  1
-#define NJET_MAIL_SMTP_PROTOCOL  2
+#define NJT_MAIL_POP3_PROTOCOL  0
+#define NJT_MAIL_IMAP_PROTOCOL  1
+#define NJT_MAIL_SMTP_PROTOCOL  2
 
 
 typedef struct ngx_mail_protocol_s  ngx_mail_protocol_t;
@@ -252,67 +252,67 @@ typedef struct {
 } ngx_mail_log_ctx_t;
 
 
-#define NJET_POP3_USER          1
-#define NJET_POP3_PASS          2
-#define NJET_POP3_CAPA          3
-#define NJET_POP3_QUIT          4
-#define NJET_POP3_NOOP          5
-#define NJET_POP3_STLS          6
-#define NJET_POP3_APOP          7
-#define NJET_POP3_AUTH          8
-#define NJET_POP3_STAT          9
-#define NJET_POP3_LIST          10
-#define NJET_POP3_RETR          11
-#define NJET_POP3_DELE          12
-#define NJET_POP3_RSET          13
-#define NJET_POP3_TOP           14
-#define NJET_POP3_UIDL          15
+#define NJT_POP3_USER          1
+#define NJT_POP3_PASS          2
+#define NJT_POP3_CAPA          3
+#define NJT_POP3_QUIT          4
+#define NJT_POP3_NOOP          5
+#define NJT_POP3_STLS          6
+#define NJT_POP3_APOP          7
+#define NJT_POP3_AUTH          8
+#define NJT_POP3_STAT          9
+#define NJT_POP3_LIST          10
+#define NJT_POP3_RETR          11
+#define NJT_POP3_DELE          12
+#define NJT_POP3_RSET          13
+#define NJT_POP3_TOP           14
+#define NJT_POP3_UIDL          15
 
 
-#define NJET_IMAP_LOGIN         1
-#define NJET_IMAP_LOGOUT        2
-#define NJET_IMAP_CAPABILITY    3
-#define NJET_IMAP_NOOP          4
-#define NJET_IMAP_STARTTLS      5
+#define NJT_IMAP_LOGIN         1
+#define NJT_IMAP_LOGOUT        2
+#define NJT_IMAP_CAPABILITY    3
+#define NJT_IMAP_NOOP          4
+#define NJT_IMAP_STARTTLS      5
 
-#define NJET_IMAP_NEXT          6
+#define NJT_IMAP_NEXT          6
 
-#define NJET_IMAP_AUTHENTICATE  7
-
-
-#define NJET_SMTP_HELO          1
-#define NJET_SMTP_EHLO          2
-#define NJET_SMTP_AUTH          3
-#define NJET_SMTP_QUIT          4
-#define NJET_SMTP_NOOP          5
-#define NJET_SMTP_MAIL          6
-#define NJET_SMTP_RSET          7
-#define NJET_SMTP_RCPT          8
-#define NJET_SMTP_DATA          9
-#define NJET_SMTP_VRFY          10
-#define NJET_SMTP_EXPN          11
-#define NJET_SMTP_HELP          12
-#define NJET_SMTP_STARTTLS      13
+#define NJT_IMAP_AUTHENTICATE  7
 
 
-#define NJET_MAIL_AUTH_PLAIN             0
-#define NJET_MAIL_AUTH_LOGIN             1
-#define NJET_MAIL_AUTH_LOGIN_USERNAME    2
-#define NJET_MAIL_AUTH_APOP              3
-#define NJET_MAIL_AUTH_CRAM_MD5          4
-#define NJET_MAIL_AUTH_EXTERNAL          5
-#define NJET_MAIL_AUTH_NONE              6
+#define NJT_SMTP_HELO          1
+#define NJT_SMTP_EHLO          2
+#define NJT_SMTP_AUTH          3
+#define NJT_SMTP_QUIT          4
+#define NJT_SMTP_NOOP          5
+#define NJT_SMTP_MAIL          6
+#define NJT_SMTP_RSET          7
+#define NJT_SMTP_RCPT          8
+#define NJT_SMTP_DATA          9
+#define NJT_SMTP_VRFY          10
+#define NJT_SMTP_EXPN          11
+#define NJT_SMTP_HELP          12
+#define NJT_SMTP_STARTTLS      13
 
 
-#define NJET_MAIL_AUTH_PLAIN_ENABLED     0x0002
-#define NJET_MAIL_AUTH_LOGIN_ENABLED     0x0004
-#define NJET_MAIL_AUTH_APOP_ENABLED      0x0008
-#define NJET_MAIL_AUTH_CRAM_MD5_ENABLED  0x0010
-#define NJET_MAIL_AUTH_EXTERNAL_ENABLED  0x0020
-#define NJET_MAIL_AUTH_NONE_ENABLED      0x0040
+#define NJT_MAIL_AUTH_PLAIN             0
+#define NJT_MAIL_AUTH_LOGIN             1
+#define NJT_MAIL_AUTH_LOGIN_USERNAME    2
+#define NJT_MAIL_AUTH_APOP              3
+#define NJT_MAIL_AUTH_CRAM_MD5          4
+#define NJT_MAIL_AUTH_EXTERNAL          5
+#define NJT_MAIL_AUTH_NONE              6
 
 
-#define NJET_MAIL_PARSE_INVALID_COMMAND  20
+#define NJT_MAIL_AUTH_PLAIN_ENABLED     0x0002
+#define NJT_MAIL_AUTH_LOGIN_ENABLED     0x0004
+#define NJT_MAIL_AUTH_APOP_ENABLED      0x0008
+#define NJT_MAIL_AUTH_CRAM_MD5_ENABLED  0x0010
+#define NJT_MAIL_AUTH_EXTERNAL_ENABLED  0x0020
+#define NJT_MAIL_AUTH_NONE_ENABLED      0x0040
+
+
+#define NJT_MAIL_PARSE_INVALID_COMMAND  20
 
 
 typedef void (*ngx_mail_init_session_pt)(ngx_mail_session_t *s,
@@ -351,14 +351,14 @@ typedef struct {
 } ngx_mail_module_t;
 
 
-#define NJET_MAIL_MODULE         0x4C49414D     /* "MAIL" */
+#define NJT_MAIL_MODULE         0x4C49414D     /* "MAIL" */
 
-#define NJET_MAIL_MAIN_CONF      0x02000000
-#define NJET_MAIL_SRV_CONF       0x04000000
+#define NJT_MAIL_MAIN_CONF      0x02000000
+#define NJT_MAIL_SRV_CONF       0x04000000
 
 
-#define NJET_MAIL_MAIN_CONF_OFFSET  offsetof(ngx_mail_conf_ctx_t, main_conf)
-#define NJET_MAIL_SRV_CONF_OFFSET   offsetof(ngx_mail_conf_ctx_t, srv_conf)
+#define NJT_MAIL_MAIN_CONF_OFFSET  offsetof(ngx_mail_conf_ctx_t, main_conf)
+#define NJT_MAIL_SRV_CONF_OFFSET   offsetof(ngx_mail_conf_ctx_t, srv_conf)
 
 
 #define ngx_mail_get_module_ctx(s, module)     (s)->ctx[module.ctx_index]
@@ -376,7 +376,7 @@ typedef struct {
     ((ngx_mail_conf_ctx_t *) cf->ctx)->srv_conf[module.ctx_index]
 
 
-#if (NJET_MAIL_SSL)
+#if (NJT_MAIL_SSL)
 void ngx_mail_starttls_handler(ngx_event_t *rev);
 ngx_int_t ngx_mail_starttls_only(ngx_mail_session_t *s, ngx_connection_t *c);
 #endif
@@ -421,4 +421,4 @@ extern ngx_uint_t    ngx_mail_max_module;
 extern ngx_module_t  ngx_mail_core_module;
 
 
-#endif /* _NJET_MAIL_H_INCLUDED_ */
+#endif /* _NJT_MAIL_H_INCLUDED_ */

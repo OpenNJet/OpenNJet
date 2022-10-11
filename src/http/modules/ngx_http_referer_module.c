@@ -10,13 +10,13 @@
 #include <ngx_http.h>
 
 
-#define NJET_HTTP_REFERER_NO_URI_PART  ((void *) 4)
+#define NJT_HTTP_REFERER_NO_URI_PART  ((void *) 4)
 
 
 typedef struct {
     ngx_hash_combined_t      hash;
 
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     ngx_array_t             *regex;
     ngx_array_t             *server_name_regex;
 #endif
@@ -42,7 +42,7 @@ static ngx_int_t ngx_http_add_referer(ngx_conf_t *cf,
     ngx_hash_keys_arrays_t *keys, ngx_str_t *value, ngx_str_t *uri);
 static ngx_int_t ngx_http_add_regex_referer(ngx_conf_t *cf,
     ngx_http_referer_conf_t *rlcf, ngx_str_t *name);
-#if (NJET_PCRE)
+#if (NJT_PCRE)
 static ngx_int_t ngx_http_add_regex_server_name(ngx_conf_t *cf,
     ngx_http_referer_conf_t *rlcf, ngx_http_regex_t *regex);
 #endif
@@ -53,23 +53,23 @@ static int ngx_libc_cdecl ngx_http_cmp_referer_wildcards(const void *one,
 static ngx_command_t  ngx_http_referer_commands[] = {
 
     { ngx_string("valid_referers"),
-      NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_1MORE,
+      NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_1MORE,
       ngx_http_valid_referers,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("referer_hash_max_size"),
-      NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_referer_conf_t, referer_hash_max_size),
       NULL },
 
     { ngx_string("referer_hash_bucket_size"),
-      NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_referer_conf_t, referer_hash_bucket_size),
       NULL },
 
@@ -93,10 +93,10 @@ static ngx_http_module_t  ngx_http_referer_module_ctx = {
 
 
 ngx_module_t  ngx_http_referer_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_referer_module_ctx,          /* module context */
     ngx_http_referer_commands,             /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -104,7 +104,7 @@ ngx_module_t  ngx_http_referer_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -121,7 +121,7 @@ ngx_http_referer_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v,
     ngx_uint_t                 i, key;
     ngx_http_referer_conf_t   *rlcf;
     u_char                     buf[256];
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     ngx_int_t                  rc;
     ngx_str_t                  referer;
 #endif
@@ -131,7 +131,7 @@ ngx_http_referer_variable(ngx_http_request_t *r, ngx_http_variable_value_t *v,
     if (rlcf->hash.hash.buckets == NULL
         && rlcf->hash.wc_head == NULL
         && rlcf->hash.wc_tail == NULL
-#if (NJET_PCRE)
+#if (NJT_PCRE)
         && rlcf->regex == NULL
         && rlcf->server_name_regex == NULL
 #endif
@@ -196,7 +196,7 @@ valid_scheme:
         goto uri;
     }
 
-#if (NJET_PCRE)
+#if (NJT_PCRE)
 
     if (rlcf->server_name_regex) {
         referer.len = p - ref;
@@ -205,15 +205,15 @@ valid_scheme:
         rc = ngx_regex_exec_array(rlcf->server_name_regex, &referer,
                                   r->connection->log);
 
-        if (rc == NJET_OK) {
+        if (rc == NJT_OK) {
             goto valid;
         }
 
-        if (rc == NJET_ERROR) {
+        if (rc == NJT_ERROR) {
             return rc;
         }
 
-        /* NJET_DECLINED */
+        /* NJT_DECLINED */
     }
 
     if (rlcf->regex) {
@@ -222,15 +222,15 @@ valid_scheme:
 
         rc = ngx_regex_exec_array(rlcf->regex, &referer, r->connection->log);
 
-        if (rc == NJET_OK) {
+        if (rc == NJT_OK) {
             goto valid;
         }
 
-        if (rc == NJET_ERROR) {
+        if (rc == NJT_ERROR) {
             return rc;
         }
 
-        /* NJET_DECLINED */
+        /* NJT_DECLINED */
     }
 
 #endif
@@ -239,7 +239,7 @@ invalid:
 
     *v = ngx_http_variable_true_value;
 
-    return NJET_OK;
+    return NJT_OK;
 
 uri:
 
@@ -251,7 +251,7 @@ uri:
 
     len = last - p;
 
-    if (uri == NJET_HTTP_REFERER_NO_URI_PART) {
+    if (uri == NJT_HTTP_REFERER_NO_URI_PART) {
         goto valid;
     }
 
@@ -263,7 +263,7 @@ valid:
 
     *v = ngx_http_variable_null_value;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -273,14 +273,14 @@ ngx_http_referer_add_variables(ngx_conf_t *cf)
     ngx_http_variable_t  *var;
 
     var = ngx_http_add_variable(cf, &ngx_http_invalid_referer_name,
-                                NJET_HTTP_VAR_CHANGEABLE);
+                                NJT_HTTP_VAR_CHANGEABLE);
     if (var == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     var->get_handler = ngx_http_referer_variable;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -302,15 +302,15 @@ ngx_http_referer_create_conf(ngx_conf_t *cf)
      *     conf->keys = NULL;
      */
 
-#if (NJET_PCRE)
-    conf->regex = NJET_CONF_UNSET_PTR;
-    conf->server_name_regex = NJET_CONF_UNSET_PTR;
+#if (NJT_PCRE)
+    conf->regex = NJT_CONF_UNSET_PTR;
+    conf->server_name_regex = NJT_CONF_UNSET_PTR;
 #endif
 
-    conf->no_referer = NJET_CONF_UNSET;
-    conf->blocked_referer = NJET_CONF_UNSET;
-    conf->referer_hash_max_size = NJET_CONF_UNSET_UINT;
-    conf->referer_hash_bucket_size = NJET_CONF_UNSET_UINT;
+    conf->no_referer = NJT_CONF_UNSET;
+    conf->blocked_referer = NJT_CONF_UNSET;
+    conf->referer_hash_max_size = NJT_CONF_UNSET_UINT;
+    conf->referer_hash_bucket_size = NJT_CONF_UNSET_UINT;
 
     return conf;
 }
@@ -330,7 +330,7 @@ ngx_http_referer_merge_conf(ngx_conf_t *cf, void *parent, void *child)
     if (conf->keys == NULL) {
         conf->hash = prev->hash;
 
-#if (NJET_PCRE)
+#if (NJT_PCRE)
         ngx_conf_merge_ptr_value(conf->regex, prev->regex, NULL);
         ngx_conf_merge_ptr_value(conf->server_name_regex,
                                  prev->server_name_regex, NULL);
@@ -342,7 +342,7 @@ ngx_http_referer_merge_conf(ngx_conf_t *cf, void *parent, void *child)
         ngx_conf_merge_uint_value(conf->referer_hash_bucket_size,
                                   prev->referer_hash_bucket_size, 64);
 
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     if (conf->server_names == 1) {
@@ -351,13 +351,13 @@ ngx_http_referer_merge_conf(ngx_conf_t *cf, void *parent, void *child)
         sn = cscf->server_names.elts;
         for (n = 0; n < cscf->server_names.nelts; n++) {
 
-#if (NJET_PCRE)
+#if (NJT_PCRE)
             if (sn[n].regex) {
 
                 if (ngx_http_add_regex_server_name(cf, conf, sn[n].regex)
-                    != NJET_OK)
+                    != NJT_OK)
                 {
-                    return NJET_CONF_ERROR;
+                    return NJT_CONF_ERROR;
                 }
 
                 continue;
@@ -365,9 +365,9 @@ ngx_http_referer_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 #endif
 
             if (ngx_http_add_referer(cf, conf->keys, &sn[n].name, NULL)
-                != NJET_OK)
+                != NJT_OK)
             {
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
         }
     }
@@ -377,11 +377,11 @@ ngx_http_referer_merge_conf(ngx_conf_t *cf, void *parent, void *child)
         && conf->keys->dns_wc_head.nelts == 0
         && conf->keys->dns_wc_tail.nelts == 0)
     {
-        ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
+        ngx_log_error(NJT_LOG_EMERG, cf->log, 0,
                       "the \"none\" or \"blocked\" referers are specified "
                       "in the \"valid_referers\" directive "
                       "without any valid referer");
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ngx_conf_merge_uint_value(conf->referer_hash_max_size,
@@ -402,9 +402,9 @@ ngx_http_referer_merge_conf(ngx_conf_t *cf, void *parent, void *child)
         hash.temp_pool = NULL;
 
         if (ngx_hash_init(&hash, conf->keys->keys.elts, conf->keys->keys.nelts)
-            != NJET_OK)
+            != NJT_OK)
         {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
@@ -420,9 +420,9 @@ ngx_http_referer_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 
         if (ngx_hash_wildcard_init(&hash, conf->keys->dns_wc_head.elts,
                                    conf->keys->dns_wc_head.nelts)
-            != NJET_OK)
+            != NJT_OK)
         {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         conf->hash.wc_head = (ngx_hash_wildcard_t *) hash.hash;
@@ -440,31 +440,31 @@ ngx_http_referer_merge_conf(ngx_conf_t *cf, void *parent, void *child)
 
         if (ngx_hash_wildcard_init(&hash, conf->keys->dns_wc_tail.elts,
                                    conf->keys->dns_wc_tail.nelts)
-            != NJET_OK)
+            != NJT_OK)
         {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         conf->hash.wc_tail = (ngx_hash_wildcard_t *) hash.hash;
     }
 
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     ngx_conf_merge_ptr_value(conf->regex, prev->regex, NULL);
     ngx_conf_merge_ptr_value(conf->server_name_regex, prev->server_name_regex,
                              NULL);
 #endif
 
-    if (conf->no_referer == NJET_CONF_UNSET) {
+    if (conf->no_referer == NJT_CONF_UNSET) {
         conf->no_referer = 0;
     }
 
-    if (conf->blocked_referer == NJET_CONF_UNSET) {
+    if (conf->blocked_referer == NJT_CONF_UNSET) {
         conf->blocked_referer = 0;
     }
 
     conf->keys = NULL;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -480,14 +480,14 @@ ngx_http_valid_referers(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (rlcf->keys == NULL) {
         rlcf->keys = ngx_pcalloc(cf->temp_pool, sizeof(ngx_hash_keys_arrays_t));
         if (rlcf->keys == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         rlcf->keys->pool = cf->pool;
         rlcf->keys->temp_pool = cf->pool;
 
-        if (ngx_hash_keys_array_init(rlcf->keys, NJET_HASH_SMALL) != NJET_OK) {
-            return NJET_CONF_ERROR;
+        if (ngx_hash_keys_array_init(rlcf->keys, NJT_HASH_SMALL) != NJT_OK) {
+            return NJT_CONF_ERROR;
         }
     }
 
@@ -495,9 +495,9 @@ ngx_http_valid_referers(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     for (i = 1; i < cf->args->nelts; i++) {
         if (value[i].len == 0) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid referer \"%V\"", &value[i]);
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         if (ngx_strcmp(value[i].data, "none") == 0) {
@@ -516,8 +516,8 @@ ngx_http_valid_referers(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         }
 
         if (value[i].data[0] == '~') {
-            if (ngx_http_add_regex_referer(cf, rlcf, &value[i]) != NJET_OK) {
-                return NJET_CONF_ERROR;
+            if (ngx_http_add_regex_referer(cf, rlcf, &value[i]) != NJT_OK) {
+                return NJT_CONF_ERROR;
             }
 
             continue;
@@ -533,12 +533,12 @@ ngx_http_valid_referers(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             value[i].len = p - value[i].data;
         }
 
-        if (ngx_http_add_referer(cf, rlcf->keys, &value[i], &uri) != NJET_OK) {
-            return NJET_CONF_ERROR;
+        if (ngx_http_add_referer(cf, rlcf->keys, &value[i], &uri) != NJT_OK) {
+            return NJT_CONF_ERROR;
         }
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -550,34 +550,34 @@ ngx_http_add_referer(ngx_conf_t *cf, ngx_hash_keys_arrays_t *keys,
     ngx_str_t  *u;
 
     if (uri == NULL || uri->len == 0) {
-        u = NJET_HTTP_REFERER_NO_URI_PART;
+        u = NJT_HTTP_REFERER_NO_URI_PART;
 
     } else {
         u = ngx_palloc(cf->pool, sizeof(ngx_str_t));
         if (u == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         *u = *uri;
     }
 
-    rc = ngx_hash_add_key(keys, value, u, NJET_HASH_WILDCARD_KEY);
+    rc = ngx_hash_add_key(keys, value, u, NJT_HASH_WILDCARD_KEY);
 
-    if (rc == NJET_OK) {
-        return NJET_OK;
+    if (rc == NJT_OK) {
+        return NJT_OK;
     }
 
-    if (rc == NJET_DECLINED) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+    if (rc == NJT_DECLINED) {
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid hostname or wildcard \"%V\"", value);
     }
 
-    if (rc == NJET_BUSY) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+    if (rc == NJT_BUSY) {
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "conflicting parameter \"%V\"", value);
     }
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
@@ -585,26 +585,26 @@ static ngx_int_t
 ngx_http_add_regex_referer(ngx_conf_t *cf, ngx_http_referer_conf_t *rlcf,
     ngx_str_t *name)
 {
-#if (NJET_PCRE)
+#if (NJT_PCRE)
     ngx_regex_elt_t      *re;
     ngx_regex_compile_t   rc;
-    u_char                errstr[NJET_MAX_CONF_ERRSTR];
+    u_char                errstr[NJT_MAX_CONF_ERRSTR];
 
     if (name->len == 1) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0, "empty regex in \"%V\"", name);
-        return NJET_ERROR;
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0, "empty regex in \"%V\"", name);
+        return NJT_ERROR;
     }
 
-    if (rlcf->regex == NJET_CONF_UNSET_PTR) {
+    if (rlcf->regex == NJT_CONF_UNSET_PTR) {
         rlcf->regex = ngx_array_create(cf->pool, 2, sizeof(ngx_regex_elt_t));
         if (rlcf->regex == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
     re = ngx_array_push(rlcf->regex);
     if (re == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     name->len--;
@@ -614,33 +614,33 @@ ngx_http_add_regex_referer(ngx_conf_t *cf, ngx_http_referer_conf_t *rlcf,
 
     rc.pattern = *name;
     rc.pool = cf->pool;
-    rc.options = NJET_REGEX_CASELESS;
-    rc.err.len = NJET_MAX_CONF_ERRSTR;
+    rc.options = NJT_REGEX_CASELESS;
+    rc.err.len = NJT_MAX_CONF_ERRSTR;
     rc.err.data = errstr;
 
-    if (ngx_regex_compile(&rc) != NJET_OK) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0, "%V", &rc.err);
-        return NJET_ERROR;
+    if (ngx_regex_compile(&rc) != NJT_OK) {
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0, "%V", &rc.err);
+        return NJT_ERROR;
     }
 
     re->regex = rc.regex;
     re->name = name->data;
 
-    return NJET_OK;
+    return NJT_OK;
 
 #else
 
-    ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+    ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                        "the using of the regex \"%V\" requires PCRE library",
                        name);
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 
 #endif
 }
 
 
-#if (NJET_PCRE)
+#if (NJT_PCRE)
 
 static ngx_int_t
 ngx_http_add_regex_server_name(ngx_conf_t *cf, ngx_http_referer_conf_t *rlcf,
@@ -648,23 +648,23 @@ ngx_http_add_regex_server_name(ngx_conf_t *cf, ngx_http_referer_conf_t *rlcf,
 {
     ngx_regex_elt_t  *re;
 
-    if (rlcf->server_name_regex == NJET_CONF_UNSET_PTR) {
+    if (rlcf->server_name_regex == NJT_CONF_UNSET_PTR) {
         rlcf->server_name_regex = ngx_array_create(cf->pool, 2,
                                                    sizeof(ngx_regex_elt_t));
         if (rlcf->server_name_regex == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
     re = ngx_array_push(rlcf->server_name_regex);
     if (re == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     re->regex = regex->regex;
     re->name = regex->name.data;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 #endif

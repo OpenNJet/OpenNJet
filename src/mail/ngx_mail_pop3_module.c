@@ -26,10 +26,10 @@ static ngx_str_t  ngx_mail_pop3_default_capabilities[] = {
 
 
 static ngx_conf_bitmask_t  ngx_mail_pop3_auth_methods[] = {
-    { ngx_string("plain"), NJET_MAIL_AUTH_PLAIN_ENABLED },
-    { ngx_string("apop"), NJET_MAIL_AUTH_APOP_ENABLED },
-    { ngx_string("cram-md5"), NJET_MAIL_AUTH_CRAM_MD5_ENABLED },
-    { ngx_string("external"), NJET_MAIL_AUTH_EXTERNAL_ENABLED },
+    { ngx_string("plain"), NJT_MAIL_AUTH_PLAIN_ENABLED },
+    { ngx_string("apop"), NJT_MAIL_AUTH_APOP_ENABLED },
+    { ngx_string("cram-md5"), NJT_MAIL_AUTH_CRAM_MD5_ENABLED },
+    { ngx_string("external"), NJT_MAIL_AUTH_EXTERNAL_ENABLED },
     { ngx_null_string, 0 }
 };
 
@@ -48,7 +48,7 @@ static ngx_mail_protocol_t  ngx_mail_pop3_protocol = {
     ngx_string("pop3"),
     ngx_string("\x04pop3"),
     { 110, 995, 0, 0 },
-    NJET_MAIL_POP3_PROTOCOL,
+    NJT_MAIL_POP3_PROTOCOL,
 
     ngx_mail_pop3_init_session,
     ngx_mail_pop3_init_protocol,
@@ -64,16 +64,16 @@ static ngx_mail_protocol_t  ngx_mail_pop3_protocol = {
 static ngx_command_t  ngx_mail_pop3_commands[] = {
 
     { ngx_string("pop3_capabilities"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_1MORE,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_1MORE,
       ngx_mail_capabilities,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_pop3_srv_conf_t, capabilities),
       NULL },
 
     { ngx_string("pop3_auth"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_1MORE,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_1MORE,
       ngx_conf_set_bitmask_slot,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_pop3_srv_conf_t, auth_methods),
       &ngx_mail_pop3_auth_methods },
 
@@ -93,10 +93,10 @@ static ngx_mail_module_t  ngx_mail_pop3_module_ctx = {
 
 
 ngx_module_t  ngx_mail_pop3_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_mail_pop3_module_ctx,             /* module context */
     ngx_mail_pop3_commands,                /* module directives */
-    NJET_MAIL_MODULE,                       /* module type */
+    NJT_MAIL_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -104,7 +104,7 @@ ngx_module_t  ngx_mail_pop3_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -119,7 +119,7 @@ ngx_mail_pop3_create_srv_conf(ngx_conf_t *cf)
     }
 
     if (ngx_array_init(&pscf->capabilities, cf->pool, 4, sizeof(ngx_str_t))
-        != NJET_OK)
+        != NJT_OK)
     {
         return NULL;
     }
@@ -141,11 +141,11 @@ ngx_mail_pop3_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_bitmask_value(conf->auth_methods,
                                  prev->auth_methods,
-                                 (NJET_CONF_BITMASK_SET
-                                  |NJET_MAIL_AUTH_PLAIN_ENABLED));
+                                 (NJT_CONF_BITMASK_SET
+                                  |NJT_MAIL_AUTH_PLAIN_ENABLED));
 
-    if (conf->auth_methods & NJET_MAIL_AUTH_PLAIN_ENABLED) {
-        conf->auth_methods |= NJET_MAIL_AUTH_LOGIN_ENABLED;
+    if (conf->auth_methods & NJT_MAIL_AUTH_PLAIN_ENABLED) {
+        conf->auth_methods |= NJT_MAIL_AUTH_LOGIN_ENABLED;
     }
 
     if (conf->capabilities.nelts == 0) {
@@ -157,7 +157,7 @@ ngx_mail_pop3_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
         for (d = ngx_mail_pop3_default_capabilities; d->len; d++) {
             c = ngx_array_push(&conf->capabilities);
             if (c == NULL) {
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             *c = *d;
@@ -182,8 +182,8 @@ ngx_mail_pop3_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     size += sizeof("SASL") - 1 + sizeof(CRLF) - 1;
 
-    for (m = NJET_MAIL_AUTH_PLAIN_ENABLED, i = 0;
-         m <= NJET_MAIL_AUTH_EXTERNAL_ENABLED;
+    for (m = NJT_MAIL_AUTH_PLAIN_ENABLED, i = 0;
+         m <= NJT_MAIL_AUTH_EXTERNAL_ENABLED;
          m <<= 1, i++)
     {
         if (ngx_mail_pop3_auth_methods_names[i].len == 0) {
@@ -197,7 +197,7 @@ ngx_mail_pop3_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_pnalloc(cf->pool, size);
     if (p == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     conf->capability.len = size;
@@ -213,8 +213,8 @@ ngx_mail_pop3_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_cpymem(p, "SASL", sizeof("SASL") - 1);
 
-    for (m = NJET_MAIL_AUTH_PLAIN_ENABLED, i = 0;
-         m <= NJET_MAIL_AUTH_EXTERNAL_ENABLED;
+    for (m = NJT_MAIL_AUTH_PLAIN_ENABLED, i = 0;
+         m <= NJT_MAIL_AUTH_EXTERNAL_ENABLED;
          m <<= 1, i++)
     {
         if (ngx_mail_pop3_auth_methods_names[i].len == 0) {
@@ -237,7 +237,7 @@ ngx_mail_pop3_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_pnalloc(cf->pool, size);
     if (p == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     conf->starttls_capability.len = size;
@@ -253,8 +253,8 @@ ngx_mail_pop3_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
     size = sizeof("+OK methods supported:" CRLF) - 1
            + sizeof("." CRLF) - 1;
 
-    for (m = NJET_MAIL_AUTH_PLAIN_ENABLED, i = 0;
-         m <= NJET_MAIL_AUTH_EXTERNAL_ENABLED;
+    for (m = NJT_MAIL_AUTH_PLAIN_ENABLED, i = 0;
+         m <= NJT_MAIL_AUTH_EXTERNAL_ENABLED;
          m <<= 1, i++)
     {
         if (ngx_mail_pop3_auth_methods_names[i].len == 0) {
@@ -269,7 +269,7 @@ ngx_mail_pop3_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_pnalloc(cf->pool, size);
     if (p == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     conf->auth_capability.data = p;
@@ -278,8 +278,8 @@ ngx_mail_pop3_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
     p = ngx_cpymem(p, "+OK methods supported:" CRLF,
                    sizeof("+OK methods supported:" CRLF) - 1);
 
-    for (m = NJET_MAIL_AUTH_PLAIN_ENABLED, i = 0;
-         m <= NJET_MAIL_AUTH_EXTERNAL_ENABLED;
+    for (m = NJT_MAIL_AUTH_PLAIN_ENABLED, i = 0;
+         m <= NJT_MAIL_AUTH_EXTERNAL_ENABLED;
          m <<= 1, i++)
     {
         if (ngx_mail_pop3_auth_methods_names[i].len == 0) {
@@ -298,7 +298,7 @@ ngx_mail_pop3_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     p = ngx_pnalloc(cf->pool, stls_only_size);
     if (p == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     conf->starttls_only_capability.len = stls_only_size;
@@ -319,5 +319,5 @@ ngx_mail_pop3_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
     p = ngx_cpymem(p, "STLS" CRLF, sizeof("STLS" CRLF) - 1);
     *p++ = '.'; *p++ = CR; *p = LF;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

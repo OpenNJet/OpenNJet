@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_CONFIG_H_INCLUDED_
-#define _NJET_CONFIG_H_INCLUDED_
+#ifndef _NJT_CONFIG_H_INCLUDED_
+#define _NJT_CONFIG_H_INCLUDED_
 
 
 #include <ngx_auto_headers.h>
@@ -18,23 +18,23 @@
 #endif
 
 
-#if (NJET_FREEBSD)
+#if (NJT_FREEBSD)
 #include <ngx_freebsd_config.h>
 
 
-#elif (NJET_LINUX)
+#elif (NJT_LINUX)
 #include <ngx_linux_config.h>
 
 
-#elif (NJET_SOLARIS)
+#elif (NJT_SOLARIS)
 #include <ngx_solaris_config.h>
 
 
-#elif (NJET_DARWIN)
+#elif (NJT_DARWIN)
 #include <ngx_darwin_config.h>
 
 
-#elif (NJET_WIN32)
+#elif (NJT_WIN32)
 #include <ngx_win32_config.h>
 
 
@@ -44,12 +44,12 @@
 #endif
 
 
-#ifndef NJET_HAVE_SO_SNDLOWAT
-#define NJET_HAVE_SO_SNDLOWAT     1
+#ifndef NJT_HAVE_SO_SNDLOWAT
+#define NJT_HAVE_SO_SNDLOWAT     1
 #endif
 
 
-#if !(NJET_WIN32)
+#if !(NJT_WIN32)
 
 #define ngx_signal_helper(n)     SIG##n
 #define ngx_signal_value(n)      ngx_signal_helper(n)
@@ -57,17 +57,17 @@
 #define ngx_random               random
 
 /* TODO: #ifndef */
-#define NJET_SHUTDOWN_SIGNAL      QUIT
-#define NJET_TERMINATE_SIGNAL     TERM
-#define NJET_NOACCEPT_SIGNAL      WINCH
-#define NJET_RECONFIGURE_SIGNAL   HUP
+#define NJT_SHUTDOWN_SIGNAL      QUIT
+#define NJT_TERMINATE_SIGNAL     TERM
+#define NJT_NOACCEPT_SIGNAL      WINCH
+#define NJT_RECONFIGURE_SIGNAL   HUP
 
-#if (NJET_LINUXTHREADS)
-#define NJET_REOPEN_SIGNAL        INFO
-#define NJET_CHANGEBIN_SIGNAL     XCPU
+#if (NJT_LINUXTHREADS)
+#define NJT_REOPEN_SIGNAL        INFO
+#define NJT_CHANGEBIN_SIGNAL     XCPU
 #else
-#define NJET_REOPEN_SIGNAL        USR1
-#define NJET_CHANGEBIN_SIGNAL     USR2
+#define NJT_REOPEN_SIGNAL        USR1
+#define NJT_CHANGEBIN_SIGNAL     USR2
 #endif
 
 #define ngx_cdecl
@@ -80,21 +80,21 @@ typedef uintptr_t       ngx_uint_t;
 typedef intptr_t        ngx_flag_t;
 
 
-#define NJET_INT32_LEN   (sizeof("-2147483648") - 1)
-#define NJET_INT64_LEN   (sizeof("-9223372036854775808") - 1)
+#define NJT_INT32_LEN   (sizeof("-2147483648") - 1)
+#define NJT_INT64_LEN   (sizeof("-9223372036854775808") - 1)
 
-#if (NJET_PTR_SIZE == 4)
-#define NJET_INT_T_LEN   NJET_INT32_LEN
-#define NJET_MAX_INT_T_VALUE  2147483647
+#if (NJT_PTR_SIZE == 4)
+#define NJT_INT_T_LEN   NJT_INT32_LEN
+#define NJT_MAX_INT_T_VALUE  2147483647
 
 #else
-#define NJET_INT_T_LEN   NJET_INT64_LEN
-#define NJET_MAX_INT_T_VALUE  9223372036854775807
+#define NJT_INT_T_LEN   NJT_INT64_LEN
+#define NJT_MAX_INT_T_VALUE  9223372036854775807
 #endif
 
 
-#ifndef NJET_ALIGNMENT
-#define NJET_ALIGNMENT   sizeof(unsigned long)    /* platform word */
+#ifndef NJT_ALIGNMENT
+#define NJT_ALIGNMENT   sizeof(unsigned long)    /* platform word */
 #endif
 
 #define ngx_align(d, a)     (((d) + (a - 1)) & ~(a - 1))
@@ -105,8 +105,8 @@ typedef intptr_t        ngx_flag_t;
 #define ngx_abort       abort
 
 
-/* TODO: platform specific: array[NJET_INVALID_ARRAY_INDEX] must cause SIGSEGV */
-#define NJET_INVALID_ARRAY_INDEX 0x80000000
+/* TODO: platform specific: array[NJT_INVALID_ARRAY_INDEX] must cause SIGSEGV */
+#define NJT_INVALID_ARRAY_INDEX 0x80000000
 
 
 /* TODO: auto_conf: ngx_inline   inline __inline __inline__ */
@@ -119,27 +119,27 @@ typedef intptr_t        ngx_flag_t;
 #endif
 
 #ifdef MAXHOSTNAMELEN
-#define NJET_MAXHOSTNAMELEN  MAXHOSTNAMELEN
+#define NJT_MAXHOSTNAMELEN  MAXHOSTNAMELEN
 #else
-#define NJET_MAXHOSTNAMELEN  256
+#define NJT_MAXHOSTNAMELEN  256
 #endif
 
 
-#define NJET_MAX_UINT32_VALUE  (uint32_t) 0xffffffff
-#define NJET_MAX_INT32_VALUE   (uint32_t) 0x7fffffff
+#define NJT_MAX_UINT32_VALUE  (uint32_t) 0xffffffff
+#define NJT_MAX_INT32_VALUE   (uint32_t) 0x7fffffff
 
 
-#if (NJET_COMPAT)
+#if (NJT_COMPAT)
 
-#define NJET_COMPAT_BEGIN(slots)  uint64_t spare[slots];
-#define NJET_COMPAT_END
+#define NJT_COMPAT_BEGIN(slots)  uint64_t spare[slots];
+#define NJT_COMPAT_END
 
 #else
 
-#define NJET_COMPAT_BEGIN(slots)
-#define NJET_COMPAT_END
+#define NJT_COMPAT_BEGIN(slots)
+#define NJT_COMPAT_END
 
 #endif
 
 
-#endif /* _NJET_CONFIG_H_INCLUDED_ */
+#endif /* _NJT_CONFIG_H_INCLUDED_ */

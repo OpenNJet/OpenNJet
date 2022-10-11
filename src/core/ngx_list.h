@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_LIST_H_INCLUDED_
-#define _NJET_LIST_H_INCLUDED_
+#ifndef _NJT_LIST_H_INCLUDED_
+#define _NJT_LIST_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -38,7 +38,7 @@ ngx_list_init(ngx_list_t *list, ngx_pool_t *pool, ngx_uint_t n, size_t size)
 {
     list->part.elts = ngx_palloc(pool, n * size);
     if (list->part.elts == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     list->part.nelts = 0;
@@ -48,7 +48,7 @@ ngx_list_init(ngx_list_t *list, ngx_pool_t *pool, ngx_uint_t n, size_t size)
     list->nalloc = n;
     list->pool = pool;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -80,4 +80,4 @@ ngx_list_init(ngx_list_t *list, ngx_pool_t *pool, ngx_uint_t n, size_t size)
 void *ngx_list_push(ngx_list_t *list);
 
 
-#endif /* _NJET_LIST_H_INCLUDED_ */
+#endif /* _NJT_LIST_H_INCLUDED_ */

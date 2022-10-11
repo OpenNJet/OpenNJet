@@ -19,7 +19,7 @@ ngx_array_create(ngx_pool_t *p, ngx_uint_t n, size_t size)
         return NULL;
     }
 
-    if (ngx_array_init(a, p, n, size) != NJET_OK) {
+    if (ngx_array_init(a, p, n, size) != NJT_OK) {
         return NULL;
     }
 

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_CRC_H_INCLUDED_
-#define _NJET_CRC_H_INCLUDED_
+#ifndef _NJT_CRC_H_INCLUDED_
+#define _NJT_CRC_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -36,4 +36,4 @@ ngx_crc(u_char *data, size_t len)
 }
 
 
-#endif /* _NJET_CRC_H_INCLUDED_ */
+#endif /* _NJT_CRC_H_INCLUDED_ */

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_CHANNEL_H_INCLUDED_
-#define _NJET_CHANNEL_H_INCLUDED_
+#ifndef _NJT_CHANNEL_H_INCLUDED_
+#define _NJT_CHANNEL_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -31,4 +31,4 @@ ngx_int_t ngx_add_channel_event(ngx_cycle_t *cycle, ngx_fd_t fd,
 void ngx_close_channel(ngx_fd_t *fd, ngx_log_t *log);
 
 
-#endif /* _NJET_CHANNEL_H_INCLUDED_ */
+#endif /* _NJT_CHANNEL_H_INCLUDED_ */

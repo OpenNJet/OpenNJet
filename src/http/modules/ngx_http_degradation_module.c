@@ -39,16 +39,16 @@ static ngx_int_t ngx_http_degradation_init(ngx_conf_t *cf);
 static ngx_command_t  ngx_http_degradation_commands[] = {
 
     { ngx_string("degradation"),
-      NJET_HTTP_MAIN_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_MAIN_CONF|NJT_CONF_TAKE1,
       ngx_http_degradation,
-      NJET_HTTP_MAIN_CONF_OFFSET,
+      NJT_HTTP_MAIN_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("degrade"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_enum_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_degradation_loc_conf_t, degrade),
       &ngx_http_degrade },
 
@@ -72,10 +72,10 @@ static ngx_http_module_t  ngx_http_degradation_module_ctx = {
 
 
 ngx_module_t  ngx_http_degradation_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_degradation_module_ctx,      /* module context */
     ngx_http_degradation_commands,         /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -83,7 +83,7 @@ ngx_module_t  ngx_http_degradation_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -98,7 +98,7 @@ ngx_http_degradation_handler(ngx_http_request_t *r)
         return dlcf->degrade;
     }
 
-    return NJET_DECLINED;
+    return NJT_DECLINED;
 }
 
 
@@ -138,7 +138,7 @@ ngx_http_degraded(ngx_http_request_t *r)
 
         if (sbrk_size >= dmcf->sbrk_size) {
             if (log) {
-                ngx_log_error(NJET_LOG_NOTICE, r->connection->log, 0,
+                ngx_log_error(NJT_LOG_NOTICE, r->connection->log, 0,
                               "degradation sbrk:%uzM",
                               sbrk_size / (1024 * 1024));
             }
@@ -175,7 +175,7 @@ ngx_http_degradation_create_loc_conf(ngx_conf_t *cf)
         return NULL;
     }
 
-    conf->degrade = NJET_CONF_UNSET_UINT;
+    conf->degrade = NJT_CONF_UNSET_UINT;
 
     return conf;
 }
@@ -189,7 +189,7 @@ ngx_http_degradation_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_uint_value(conf->degrade, prev->degrade, 0);
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -208,19 +208,19 @@ ngx_http_degradation(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         s.data = value[1].data + 5;
 
         dmcf->sbrk_size = ngx_parse_size(&s);
-        if (dmcf->sbrk_size == (size_t) NJET_ERROR) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        if (dmcf->sbrk_size == (size_t) NJT_ERROR) {
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid sbrk size \"%V\"", &value[1]);
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
-    ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+    ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                        "invalid parameter \"%V\"", &value[1]);
 
-    return NJET_CONF_ERROR;
+    return NJT_CONF_ERROR;
 }
 
 
@@ -232,12 +232,12 @@ ngx_http_degradation_init(ngx_conf_t *cf)
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
-    h = ngx_array_push(&cmcf->phases[NJET_HTTP_PREACCESS_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJT_HTTP_PREACCESS_PHASE].handlers);
     if (h == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *h = ngx_http_degradation_handler;
 
-    return NJET_OK;
+    return NJT_OK;
 }

@@ -138,7 +138,7 @@ ngx_chain_add_copy(ngx_pool_t *pool, ngx_chain_t **chain, ngx_chain_t *in)
         cl = ngx_alloc_chain_link(pool);
         if (cl == NULL) {
             *ll = NULL;
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         cl->buf = in->buf;
@@ -149,7 +149,7 @@ ngx_chain_add_copy(ngx_pool_t *pool, ngx_chain_t **chain, ngx_chain_t *in)
 
     *ll = NULL;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 

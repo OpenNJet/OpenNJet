@@ -14,7 +14,7 @@ static char *ngx_http_flv(ngx_conf_t *cf, ngx_command_t *cmd, void *conf);
 static ngx_command_t  ngx_http_flv_commands[] = {
 
     { ngx_string("flv"),
-      NJET_HTTP_LOC_CONF|NJET_CONF_NOARGS,
+      NJT_HTTP_LOC_CONF|NJT_CONF_NOARGS,
       ngx_http_flv,
       0,
       0,
@@ -43,10 +43,10 @@ static ngx_http_module_t  ngx_http_flv_module_ctx = {
 
 
 ngx_module_t  ngx_http_flv_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_flv_module_ctx,      /* module context */
     ngx_http_flv_commands,         /* module directives */
-    NJET_HTTP_MODULE,               /* module type */
+    NJT_HTTP_MODULE,               /* module type */
     NULL,                          /* init master */
     NULL,                          /* init module */
     NULL,                          /* init process */
@@ -54,7 +54,7 @@ ngx_module_t  ngx_http_flv_module = {
     NULL,                          /* exit thread */
     NULL,                          /* exit process */
     NULL,                          /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -73,30 +73,30 @@ ngx_http_flv_handler(ngx_http_request_t *r)
     ngx_open_file_info_t       of;
     ngx_http_core_loc_conf_t  *clcf;
 
-    if (!(r->method & (NJET_HTTP_GET|NJET_HTTP_HEAD))) {
-        return NJET_HTTP_NOT_ALLOWED;
+    if (!(r->method & (NJT_HTTP_GET|NJT_HTTP_HEAD))) {
+        return NJT_HTTP_NOT_ALLOWED;
     }
 
     if (r->uri.data[r->uri.len - 1] == '/') {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     rc = ngx_http_discard_request_body(r);
 
-    if (rc != NJET_OK) {
+    if (rc != NJT_OK) {
         return rc;
     }
 
     last = ngx_http_map_uri_to_path(r, &path, &root, 0);
     if (last == NULL) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     log = r->connection->log;
 
     path.len = last - path.data;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, log, 0,
                    "http flv filename: \"%V\"", &path);
 
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
@@ -110,44 +110,44 @@ ngx_http_flv_handler(ngx_http_request_t *r)
     of.errors = clcf->open_file_cache_errors;
     of.events = clcf->open_file_cache_events;
 
-    if (ngx_http_set_disable_symlinks(r, clcf, &path, &of) != NJET_OK) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+    if (ngx_http_set_disable_symlinks(r, clcf, &path, &of) != NJT_OK) {
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     if (ngx_open_cached_file(clcf->open_file_cache, &path, &of, r->pool)
-        != NJET_OK)
+        != NJT_OK)
     {
         switch (of.err) {
 
         case 0:
-            return NJET_HTTP_INTERNAL_SERVER_ERROR;
+            return NJT_HTTP_INTERNAL_SERVER_ERROR;
 
-        case NJET_ENOENT:
-        case NJET_ENOTDIR:
-        case NJET_ENAMETOOLONG:
+        case NJT_ENOENT:
+        case NJT_ENOTDIR:
+        case NJT_ENAMETOOLONG:
 
-            level = NJET_LOG_ERR;
-            rc = NJET_HTTP_NOT_FOUND;
+            level = NJT_LOG_ERR;
+            rc = NJT_HTTP_NOT_FOUND;
             break;
 
-        case NJET_EACCES:
-#if (NJET_HAVE_OPENAT)
-        case NJET_EMLINK:
-        case NJET_ELOOP:
+        case NJT_EACCES:
+#if (NJT_HAVE_OPENAT)
+        case NJT_EMLINK:
+        case NJT_ELOOP:
 #endif
 
-            level = NJET_LOG_ERR;
-            rc = NJET_HTTP_FORBIDDEN;
+            level = NJT_LOG_ERR;
+            rc = NJT_HTTP_FORBIDDEN;
             break;
 
         default:
 
-            level = NJET_LOG_CRIT;
-            rc = NJET_HTTP_INTERNAL_SERVER_ERROR;
+            level = NJT_LOG_CRIT;
+            rc = NJT_HTTP_INTERNAL_SERVER_ERROR;
             break;
         }
 
-        if (rc != NJET_HTTP_NOT_FOUND || clcf->log_not_found) {
+        if (rc != NJT_HTTP_NOT_FOUND || clcf->log_not_found) {
             ngx_log_error(level, log, of.err,
                           "%s \"%s\" failed", of.failed, path.data);
         }
@@ -156,7 +156,7 @@ ngx_http_flv_handler(ngx_http_request_t *r)
     }
 
     if (!of.is_file) {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     r->root_tested = !r->error_page;
@@ -167,11 +167,11 @@ ngx_http_flv_handler(ngx_http_request_t *r)
 
     if (r->args.len) {
 
-        if (ngx_http_arg(r, (u_char *) "start", 5, &value) == NJET_OK) {
+        if (ngx_http_arg(r, (u_char *) "start", 5, &value) == NJT_OK) {
 
             start = ngx_atoof(value.data, value.len);
 
-            if (start == NJET_ERROR || start >= len) {
+            if (start == NJT_ERROR || start >= len) {
                 start = 0;
             }
 
@@ -184,22 +184,22 @@ ngx_http_flv_handler(ngx_http_request_t *r)
 
     log->action = "sending flv to client";
 
-    r->headers_out.status = NJET_HTTP_OK;
+    r->headers_out.status = NJT_HTTP_OK;
     r->headers_out.content_length_n = len;
     r->headers_out.last_modified_time = of.mtime;
 
-    if (ngx_http_set_etag(r) != NJET_OK) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+    if (ngx_http_set_etag(r) != NJT_OK) {
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    if (ngx_http_set_content_type(r) != NJET_OK) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+    if (ngx_http_set_content_type(r) != NJT_OK) {
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     if (i == 0) {
         b = ngx_calloc_buf(r->pool);
         if (b == NULL) {
-            return NJET_HTTP_INTERNAL_SERVER_ERROR;
+            return NJT_HTTP_INTERNAL_SERVER_ERROR;
         }
 
         b->pos = ngx_flv_header;
@@ -213,19 +213,19 @@ ngx_http_flv_handler(ngx_http_request_t *r)
 
     b = ngx_calloc_buf(r->pool);
     if (b == NULL) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     b->file = ngx_pcalloc(r->pool, sizeof(ngx_file_t));
     if (b->file == NULL) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     r->allow_ranges = 1;
 
     rc = ngx_http_send_header(r);
 
-    if (rc == NJET_ERROR || rc > NJET_OK || r->header_only) {
+    if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
         return rc;
     }
 
@@ -256,5 +256,5 @@ ngx_http_flv(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     clcf = ngx_http_conf_get_module_loc_conf(cf, ngx_http_core_module);
     clcf->handler = ngx_http_flv_handler;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

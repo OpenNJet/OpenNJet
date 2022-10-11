@@ -15,12 +15,12 @@ typedef struct {
 } ngx_http_copy_filter_conf_t;
 
 
-#if (NJET_HAVE_FILE_AIO)
+#if (NJT_HAVE_FILE_AIO)
 static void ngx_http_copy_aio_handler(ngx_output_chain_ctx_t *ctx,
     ngx_file_t *file);
 static void ngx_http_copy_aio_event_handler(ngx_event_t *ev);
 #endif
-#if (NJET_THREADS)
+#if (NJT_THREADS)
 static ngx_int_t ngx_http_copy_thread_handler(ngx_thread_task_t *task,
     ngx_file_t *file);
 static void ngx_http_copy_thread_event_handler(ngx_event_t *ev);
@@ -35,9 +35,9 @@ static ngx_int_t ngx_http_copy_filter_init(ngx_conf_t *cf);
 static ngx_command_t  ngx_http_copy_filter_commands[] = {
 
     { ngx_string("output_buffers"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE2,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE2,
       ngx_conf_set_bufs_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_copy_filter_conf_t, bufs),
       NULL },
 
@@ -61,10 +61,10 @@ static ngx_http_module_t  ngx_http_copy_filter_module_ctx = {
 
 
 ngx_module_t  ngx_http_copy_filter_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_copy_filter_module_ctx,      /* module context */
     ngx_http_copy_filter_commands,         /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -72,7 +72,7 @@ ngx_module_t  ngx_http_copy_filter_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -90,7 +90,7 @@ ngx_http_copy_filter(ngx_http_request_t *r, ngx_chain_t *in)
 
     c = r->connection;
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, c->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http copy filter: \"%V?%V\"", &r->uri, &r->args);
 
     ctx = ngx_http_get_module_ctx(r, ngx_http_copy_filter_module);
@@ -98,7 +98,7 @@ ngx_http_copy_filter(ngx_http_request_t *r, ngx_chain_t *in)
     if (ctx == NULL) {
         ctx = ngx_pcalloc(r->pool, sizeof(ngx_output_chain_ctx_t));
         if (ctx == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ngx_http_set_ctx(r, ctx, ngx_http_copy_filter_module);
@@ -121,14 +121,14 @@ ngx_http_copy_filter(ngx_http_request_t *r, ngx_chain_t *in)
                                   ngx_http_next_body_filter;
         ctx->filter_ctx = r;
 
-#if (NJET_HAVE_FILE_AIO)
-        if (ngx_file_aio && clcf->aio == NJET_HTTP_AIO_ON) {
+#if (NJT_HAVE_FILE_AIO)
+        if (ngx_file_aio && clcf->aio == NJT_HTTP_AIO_ON) {
             ctx->aio_handler = ngx_http_copy_aio_handler;
         }
 #endif
 
-#if (NJET_THREADS)
-        if (clcf->aio == NJET_HTTP_AIO_THREADS) {
+#if (NJT_THREADS)
+        if (clcf->aio == NJT_HTTP_AIO_THREADS) {
             ctx->thread_handler = ngx_http_copy_thread_handler;
         }
 #endif
@@ -138,27 +138,27 @@ ngx_http_copy_filter(ngx_http_request_t *r, ngx_chain_t *in)
         }
     }
 
-#if (NJET_HAVE_FILE_AIO || NJET_THREADS)
+#if (NJT_HAVE_FILE_AIO || NJT_THREADS)
     ctx->aio = r->aio;
 #endif
 
     rc = ngx_output_chain(ctx, in);
 
     if (ctx->in == NULL) {
-        r->buffered &= ~NJET_HTTP_COPY_BUFFERED;
+        r->buffered &= ~NJT_HTTP_COPY_BUFFERED;
 
     } else {
-        r->buffered |= NJET_HTTP_COPY_BUFFERED;
+        r->buffered |= NJT_HTTP_COPY_BUFFERED;
     }
 
-    ngx_log_debug3(NJET_LOG_DEBUG_HTTP, c->log, 0,
+    ngx_log_debug3(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http copy filter: %i \"%V?%V\"", rc, &r->uri, &r->args);
 
     return rc;
 }
 
 
-#if (NJET_HAVE_FILE_AIO)
+#if (NJT_HAVE_FILE_AIO)
 
 static void
 ngx_http_copy_aio_handler(ngx_output_chain_ctx_t *ctx, ngx_file_t *file)
@@ -189,7 +189,7 @@ ngx_http_copy_aio_event_handler(ngx_event_t *ev)
 
     ngx_http_set_log_request(c->log, r);
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, c->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http aio: \"%V?%V\"", &r->uri, &r->args);
 
     r->main->blocked--;
@@ -203,7 +203,7 @@ ngx_http_copy_aio_event_handler(ngx_event_t *ev)
 #endif
 
 
-#if (NJET_THREADS)
+#if (NJT_THREADS)
 
 static ngx_int_t
 ngx_http_copy_thread_handler(ngx_thread_task_t *task, ngx_file_t *file)
@@ -227,14 +227,14 @@ ngx_http_copy_thread_handler(ngx_thread_task_t *task, ngx_file_t *file)
 
         c = r->connection;
 
-#if (NJET_HTTP_V2)
+#if (NJT_HTTP_V2)
         if (r->stream) {
             c = r->stream->connection->connection;
         }
 #endif
 
         if (task == c->sendfile_task) {
-            return NJET_OK;
+            return NJT_OK;
         }
     }
 
@@ -243,25 +243,25 @@ ngx_http_copy_thread_handler(ngx_thread_task_t *task, ngx_file_t *file)
 
     if (tp == NULL) {
         if (ngx_http_complex_value(r, clcf->thread_pool_value, &name)
-            != NJET_OK)
+            != NJT_OK)
         {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         tp = ngx_thread_pool_get((ngx_cycle_t *) ngx_cycle, &name);
 
         if (tp == NULL) {
-            ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+            ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                           "thread pool \"%V\" not found", &name);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
     task->event.data = r;
     task->event.handler = ngx_http_copy_thread_event_handler;
 
-    if (ngx_thread_task_post(tp, task) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_thread_task_post(tp, task) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     r->main->blocked++;
@@ -270,7 +270,7 @@ ngx_http_copy_thread_handler(ngx_thread_task_t *task, ngx_file_t *file)
     ctx = ngx_http_get_module_ctx(r, ngx_http_copy_filter_module);
     ctx->aio = 1;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -285,13 +285,13 @@ ngx_http_copy_thread_event_handler(ngx_event_t *ev)
 
     ngx_http_set_log_request(c->log, r);
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, c->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http thread: \"%V?%V\"", &r->uri, &r->args);
 
     r->main->blocked--;
     r->aio = 0;
 
-#if (NJET_HTTP_V2)
+#if (NJT_HTTP_V2)
 
     if (r->stream) {
         /*
@@ -357,6 +357,6 @@ ngx_http_copy_filter_init(ngx_conf_t *cf)
     ngx_http_next_body_filter = ngx_http_top_body_filter;
     ngx_http_top_body_filter = ngx_http_copy_filter;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 

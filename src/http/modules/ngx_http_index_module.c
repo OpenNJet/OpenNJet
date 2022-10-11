@@ -23,7 +23,7 @@ typedef struct {
 } ngx_http_index_loc_conf_t;
 
 
-#define NJET_HTTP_DEFAULT_INDEX   "index.html"
+#define NJT_HTTP_DEFAULT_INDEX   "index.html"
 
 
 static ngx_int_t ngx_http_index_test_dir(ngx_http_request_t *r,
@@ -42,9 +42,9 @@ static char *ngx_http_index_set_index(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_http_index_commands[] = {
 
     { ngx_string("index"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_1MORE,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_1MORE,
       ngx_http_index_set_index,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
@@ -68,10 +68,10 @@ static ngx_http_module_t  ngx_http_index_module_ctx = {
 
 
 ngx_module_t  ngx_http_index_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_index_module_ctx,            /* module context */
     ngx_http_index_commands,               /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -79,7 +79,7 @@ ngx_module_t  ngx_http_index_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -88,7 +88,7 @@ ngx_module_t  ngx_http_index_module = {
  * existence because valid requests should prevail over invalid ones.
  * If open()/stat() of a file will fail then stat() of a directory
  * should be faster because kernel may have already cached some data.
- * Besides, Win32 may return ERROR_PATH_NOT_FOUND (NJET_ENOTDIR) at once.
+ * Besides, Win32 may return ERROR_PATH_NOT_FOUND (NJT_ENOTDIR) at once.
  * Unix has ENOTDIR error; however, it's less helpful than Win32's one:
  * it only indicates that path points to a regular file, not a directory.
  */
@@ -110,11 +110,11 @@ ngx_http_index_handler(ngx_http_request_t *r)
     ngx_http_script_len_code_pt   lcode;
 
     if (r->uri.data[r->uri.len - 1] != '/') {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
-    if (!(r->method & (NJET_HTTP_GET|NJET_HTTP_HEAD|NJET_HTTP_POST))) {
-        return NJET_DECLINED;
+    if (!(r->method & (NJT_HTTP_GET|NJT_HTTP_HEAD|NJT_HTTP_POST))) {
+        return NJT_DECLINED;
     }
 
     ilcf = ngx_http_get_module_loc_conf(r, ngx_http_index_module);
@@ -163,7 +163,7 @@ ngx_http_index_handler(ngx_http_request_t *r)
 
             name = ngx_http_map_uri_to_path(r, &path, &root, reserve);
             if (name == NULL) {
-                return NJET_HTTP_INTERNAL_SERVER_ERROR;
+                return NJT_HTTP_INTERNAL_SERVER_ERROR;
             }
 
             allocated = path.data + path.len - name;
@@ -197,7 +197,7 @@ ngx_http_index_handler(ngx_http_request_t *r)
             *e.pos = '\0';
         }
 
-        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "open index \"%V\"", &path);
 
         ngx_memzero(&of, sizeof(ngx_open_file_info_t));
@@ -210,31 +210,31 @@ ngx_http_index_handler(ngx_http_request_t *r)
         of.errors = clcf->open_file_cache_errors;
         of.events = clcf->open_file_cache_events;
 
-        if (ngx_http_set_disable_symlinks(r, clcf, &path, &of) != NJET_OK) {
-            return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        if (ngx_http_set_disable_symlinks(r, clcf, &path, &of) != NJT_OK) {
+            return NJT_HTTP_INTERNAL_SERVER_ERROR;
         }
 
         if (ngx_open_cached_file(clcf->open_file_cache, &path, &of, r->pool)
-            != NJET_OK)
+            != NJT_OK)
         {
             if (of.err == 0) {
-                return NJET_HTTP_INTERNAL_SERVER_ERROR;
+                return NJT_HTTP_INTERNAL_SERVER_ERROR;
             }
 
-            ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, of.err,
+            ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, of.err,
                            "%s \"%s\" failed", of.failed, path.data);
 
-#if (NJET_HAVE_OPENAT)
-            if (of.err == NJET_EMLINK
-                || of.err == NJET_ELOOP)
+#if (NJT_HAVE_OPENAT)
+            if (of.err == NJT_EMLINK
+                || of.err == NJT_ELOOP)
             {
-                return NJET_HTTP_FORBIDDEN;
+                return NJT_HTTP_FORBIDDEN;
             }
 #endif
 
-            if (of.err == NJET_ENOTDIR
-                || of.err == NJET_ENAMETOOLONG
-                || of.err == NJET_EACCES)
+            if (of.err == NJT_ENOTDIR
+                || of.err == NJT_ENAMETOOLONG
+                || of.err == NJT_EACCES)
             {
                 return ngx_http_index_error(r, clcf, path.data, of.err);
             }
@@ -242,21 +242,21 @@ ngx_http_index_handler(ngx_http_request_t *r)
             if (!dir_tested) {
                 rc = ngx_http_index_test_dir(r, clcf, path.data, name - 1);
 
-                if (rc != NJET_OK) {
+                if (rc != NJT_OK) {
                     return rc;
                 }
 
                 dir_tested = 1;
             }
 
-            if (of.err == NJET_ENOENT) {
+            if (of.err == NJT_ENOENT) {
                 continue;
             }
 
-            ngx_log_error(NJET_LOG_CRIT, r->connection->log, of.err,
+            ngx_log_error(NJT_LOG_CRIT, r->connection->log, of.err,
                           "%s \"%s\" failed", of.failed, path.data);
 
-            return NJET_HTTP_INTERNAL_SERVER_ERROR;
+            return NJT_HTTP_INTERNAL_SERVER_ERROR;
         }
 
         uri.len = r->uri.len + len - 1;
@@ -267,7 +267,7 @@ ngx_http_index_handler(ngx_http_request_t *r)
         } else {
             uri.data = ngx_pnalloc(r->pool, uri.len);
             if (uri.data == NULL) {
-                return NJET_HTTP_INTERNAL_SERVER_ERROR;
+                return NJT_HTTP_INTERNAL_SERVER_ERROR;
             }
 
             p = ngx_copy(uri.data, r->uri.data, r->uri.len);
@@ -277,7 +277,7 @@ ngx_http_index_handler(ngx_http_request_t *r)
         return ngx_http_internal_redirect(r, &uri, &r->args);
     }
 
-    return NJET_DECLINED;
+    return NJT_DECLINED;
 }
 
 
@@ -299,7 +299,7 @@ ngx_http_index_test_dir(ngx_http_request_t *r, ngx_http_core_loc_conf_t *clcf,
     dir.len = last - path;
     dir.data = path;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http index check dir: \"%V\"", &dir);
 
     ngx_memzero(&of, sizeof(ngx_open_file_info_t));
@@ -309,58 +309,58 @@ ngx_http_index_test_dir(ngx_http_request_t *r, ngx_http_core_loc_conf_t *clcf,
     of.valid = clcf->open_file_cache_valid;
     of.errors = clcf->open_file_cache_errors;
 
-    if (ngx_http_set_disable_symlinks(r, clcf, &dir, &of) != NJET_OK) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+    if (ngx_http_set_disable_symlinks(r, clcf, &dir, &of) != NJT_OK) {
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     if (ngx_open_cached_file(clcf->open_file_cache, &dir, &of, r->pool)
-        != NJET_OK)
+        != NJT_OK)
     {
         if (of.err) {
 
-#if (NJET_HAVE_OPENAT)
-            if (of.err == NJET_EMLINK
-                || of.err == NJET_ELOOP)
+#if (NJT_HAVE_OPENAT)
+            if (of.err == NJT_EMLINK
+                || of.err == NJT_ELOOP)
             {
-                return NJET_HTTP_FORBIDDEN;
+                return NJT_HTTP_FORBIDDEN;
             }
 #endif
 
-            if (of.err == NJET_ENOENT) {
+            if (of.err == NJT_ENOENT) {
                 *last = c;
-                return ngx_http_index_error(r, clcf, dir.data, NJET_ENOENT);
+                return ngx_http_index_error(r, clcf, dir.data, NJT_ENOENT);
             }
 
-            if (of.err == NJET_EACCES) {
+            if (of.err == NJT_EACCES) {
 
                 *last = c;
 
                 /*
                  * ngx_http_index_test_dir() is called after the first index
-                 * file testing has returned an error distinct from NJET_EACCES.
+                 * file testing has returned an error distinct from NJT_EACCES.
                  * This means that directory searching is allowed.
                  */
 
-                return NJET_OK;
+                return NJT_OK;
             }
 
-            ngx_log_error(NJET_LOG_CRIT, r->connection->log, of.err,
+            ngx_log_error(NJT_LOG_CRIT, r->connection->log, of.err,
                           "%s \"%s\" failed", of.failed, dir.data);
         }
 
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     *last = c;
 
     if (of.is_dir) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    ngx_log_error(NJET_LOG_ALERT, r->connection->log, 0,
+    ngx_log_error(NJT_LOG_ALERT, r->connection->log, 0,
                   "\"%s\" is not a directory", dir.data);
 
-    return NJET_HTTP_INTERNAL_SERVER_ERROR;
+    return NJT_HTTP_INTERNAL_SERVER_ERROR;
 }
 
 
@@ -368,19 +368,19 @@ static ngx_int_t
 ngx_http_index_error(ngx_http_request_t *r, ngx_http_core_loc_conf_t  *clcf,
     u_char *file, ngx_err_t err)
 {
-    if (err == NJET_EACCES) {
-        ngx_log_error(NJET_LOG_ERR, r->connection->log, err,
+    if (err == NJT_EACCES) {
+        ngx_log_error(NJT_LOG_ERR, r->connection->log, err,
                       "\"%s\" is forbidden", file);
 
-        return NJET_HTTP_FORBIDDEN;
+        return NJT_HTTP_FORBIDDEN;
     }
 
     if (clcf->log_not_found) {
-        ngx_log_error(NJET_LOG_ERR, r->connection->log, err,
+        ngx_log_error(NJT_LOG_ERR, r->connection->log, err,
                       "\"%s\" is not found", file);
     }
 
-    return NJET_HTTP_NOT_FOUND;
+    return NJT_HTTP_NOT_FOUND;
 }
 
 
@@ -417,25 +417,25 @@ ngx_http_index_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     if (conf->indices == NULL) {
         conf->indices = ngx_array_create(cf->pool, 1, sizeof(ngx_http_index_t));
         if (conf->indices == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         index = ngx_array_push(conf->indices);
         if (index == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
-        index->name.len = sizeof(NJET_HTTP_DEFAULT_INDEX);
-        index->name.data = (u_char *) NJET_HTTP_DEFAULT_INDEX;
+        index->name.len = sizeof(NJT_HTTP_DEFAULT_INDEX);
+        index->name.data = (u_char *) NJT_HTTP_DEFAULT_INDEX;
         index->lengths = NULL;
         index->values = NULL;
 
-        conf->max_index_len = sizeof(NJET_HTTP_DEFAULT_INDEX);
+        conf->max_index_len = sizeof(NJT_HTTP_DEFAULT_INDEX);
 
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -447,14 +447,14 @@ ngx_http_index_init(ngx_conf_t *cf)
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
-    h = ngx_array_push(&cmcf->phases[NJET_HTTP_CONTENT_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
     if (h == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *h = ngx_http_index_handler;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -473,7 +473,7 @@ ngx_http_index_set_index(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     if (ilcf->indices == NULL) {
         ilcf->indices = ngx_array_create(cf->pool, 2, sizeof(ngx_http_index_t));
         if (ilcf->indices == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
@@ -482,21 +482,21 @@ ngx_http_index_set_index(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     for (i = 1; i < cf->args->nelts; i++) {
 
         if (value[i].data[0] == '/' && i != cf->args->nelts - 1) {
-            ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+            ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                                "only the last index in \"index\" directive "
                                "should be absolute");
         }
 
         if (value[i].len == 0) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "index \"%V\" in \"index\" directive is invalid",
                                &value[1]);
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         index = ngx_array_push(ilcf->indices);
         if (index == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         index->name.len = value[i].len;
@@ -531,10 +531,10 @@ ngx_http_index_set_index(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         sc.complete_lengths = 1;
         sc.complete_values = 1;
 
-        if (ngx_http_script_compile(&sc) != NJET_OK) {
-            return NJET_CONF_ERROR;
+        if (ngx_http_script_compile(&sc) != NJT_OK) {
+            return NJT_CONF_ERROR;
         }
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

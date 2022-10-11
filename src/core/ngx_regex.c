@@ -18,7 +18,7 @@ typedef struct {
 static ngx_inline void ngx_regex_malloc_init(ngx_pool_t *pool);
 static ngx_inline void ngx_regex_malloc_done(void);
 
-#if (NJET_PCRE2)
+#if (NJT_PCRE2)
 static void * ngx_libc_cdecl ngx_regex_malloc(size_t size, void *data);
 static void ngx_libc_cdecl ngx_regex_free(void *p, void *data);
 #else
@@ -39,7 +39,7 @@ static ngx_conf_post_t  ngx_regex_pcre_jit_post = { ngx_regex_pcre_jit };
 static ngx_command_t  ngx_regex_commands[] = {
 
     { ngx_string("pcre_jit"),
-      NJET_MAIN_CONF|NJET_DIRECT_CONF|NJET_CONF_FLAG,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
       0,
       offsetof(ngx_regex_conf_t, pcre_jit),
@@ -57,10 +57,10 @@ static ngx_core_module_t  ngx_regex_module_ctx = {
 
 
 ngx_module_t  ngx_regex_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_regex_module_ctx,                 /* module context */
     ngx_regex_commands,                    /* module directives */
-    NJET_CORE_MODULE,                       /* module type */
+    NJT_CORE_MODULE,                       /* module type */
     NULL,                                  /* init master */
     ngx_regex_module_init,                 /* init module */
     NULL,                                  /* init process */
@@ -68,7 +68,7 @@ ngx_module_t  ngx_regex_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -76,7 +76,7 @@ static ngx_pool_t             *ngx_regex_pool;
 static ngx_list_t             *ngx_regex_studies;
 static ngx_uint_t              ngx_regex_direct_alloc;
 
-#if (NJET_PCRE2)
+#if (NJT_PCRE2)
 static pcre2_compile_context  *ngx_regex_compile_context;
 static pcre2_match_data       *ngx_regex_match_data;
 static ngx_uint_t              ngx_regex_match_data_size;
@@ -86,7 +86,7 @@ static ngx_uint_t              ngx_regex_match_data_size;
 void
 ngx_regex_init(void)
 {
-#if !(NJET_PCRE2)
+#if !(NJT_PCRE2)
     pcre_malloc = ngx_regex_malloc;
     pcre_free = ngx_regex_free;
 #endif
@@ -109,7 +109,7 @@ ngx_regex_malloc_done(void)
 }
 
 
-#if (NJET_PCRE2)
+#if (NJT_PCRE2)
 
 ngx_int_t
 ngx_regex_compile(ngx_regex_compile_t *rc)
@@ -155,20 +155,20 @@ ngx_regex_compile(ngx_regex_compile_t *rc)
 
     options = 0;
 
-    if (rc->options & NJET_REGEX_CASELESS) {
+    if (rc->options & NJT_REGEX_CASELESS) {
         options |= PCRE2_CASELESS;
     }
 
-    if (rc->options & NJET_REGEX_MULTILINE) {
+    if (rc->options & NJT_REGEX_MULTILINE) {
         options |= PCRE2_MULTILINE;
     }
 
-    if (rc->options & ~(NJET_REGEX_CASELESS|NJET_REGEX_MULTILINE)) {
+    if (rc->options & ~(NJT_REGEX_CASELESS|NJT_REGEX_MULTILINE)) {
         rc->err.len = ngx_snprintf(rc->err.data, rc->err.len,
                             "regex \"%V\" compilation failed: invalid options",
                             &rc->pattern)
                       - rc->err.data;
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_regex_malloc_init(rc->pool);
@@ -195,7 +195,7 @@ ngx_regex_compile(ngx_regex_compile_t *rc)
                           - rc->err.data;
         }
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     rc->regex = re;
@@ -219,7 +219,7 @@ ngx_regex_compile(ngx_regex_compile_t *rc)
     }
 
     if (rc->captures == 0) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     n = pcre2_pattern_info(re, PCRE2_INFO_NAMECOUNT, &rc->named_captures);
@@ -229,7 +229,7 @@ ngx_regex_compile(ngx_regex_compile_t *rc)
     }
 
     if (rc->named_captures == 0) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     n = pcre2_pattern_info(re, PCRE2_INFO_NAMEENTRYSIZE, &rc->name_size);
@@ -244,13 +244,13 @@ ngx_regex_compile(ngx_regex_compile_t *rc)
         goto failed;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 
 failed:
 
     rc->err.len = ngx_snprintf(rc->err.data, rc->err.len, p, &rc->pattern, n)
                   - rc->err.data;
-    return NJET_ERROR;
+    return NJT_ERROR;
 
 nomem:
 
@@ -258,7 +258,7 @@ nomem:
                                "regex \"%V\" compilation failed: no memory",
                                &rc->pattern)
                   - rc->err.data;
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 #else
@@ -275,20 +275,20 @@ ngx_regex_compile(ngx_regex_compile_t *rc)
 
     options = 0;
 
-    if (rc->options & NJET_REGEX_CASELESS) {
+    if (rc->options & NJT_REGEX_CASELESS) {
         options |= PCRE_CASELESS;
     }
 
-    if (rc->options & NJET_REGEX_MULTILINE) {
+    if (rc->options & NJT_REGEX_MULTILINE) {
         options |= PCRE_MULTILINE;
     }
 
-    if (rc->options & ~(NJET_REGEX_CASELESS|NJET_REGEX_MULTILINE)) {
+    if (rc->options & ~(NJT_REGEX_CASELESS|NJT_REGEX_MULTILINE)) {
         rc->err.len = ngx_snprintf(rc->err.data, rc->err.len,
                             "regex \"%V\" compilation failed: invalid options",
                             &rc->pattern)
                       - rc->err.data;
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_regex_malloc_init(rc->pool);
@@ -313,7 +313,7 @@ ngx_regex_compile(ngx_regex_compile_t *rc)
                          - rc->err.data;
         }
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     rc->regex = ngx_pcalloc(rc->pool, sizeof(ngx_regex_t));
@@ -342,7 +342,7 @@ ngx_regex_compile(ngx_regex_compile_t *rc)
     }
 
     if (rc->captures == 0) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     n = pcre_fullinfo(re, NULL, PCRE_INFO_NAMECOUNT, &rc->named_captures);
@@ -352,7 +352,7 @@ ngx_regex_compile(ngx_regex_compile_t *rc)
     }
 
     if (rc->named_captures == 0) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     n = pcre_fullinfo(re, NULL, PCRE_INFO_NAMEENTRYSIZE, &rc->name_size);
@@ -367,13 +367,13 @@ ngx_regex_compile(ngx_regex_compile_t *rc)
         goto failed;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 
 failed:
 
     rc->err.len = ngx_snprintf(rc->err.data, rc->err.len, p, &rc->pattern, n)
                   - rc->err.data;
-    return NJET_ERROR;
+    return NJT_ERROR;
 
 nomem:
 
@@ -381,13 +381,13 @@ nomem:
                                "regex \"%V\" compilation failed: no memory",
                                &rc->pattern)
                   - rc->err.data;
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 #endif
 
 
-#if (NJET_PCRE2)
+#if (NJT_PCRE2)
 
 ngx_int_t
 ngx_regex_exec(ngx_regex_t *re, ngx_str_t *s, int *captures, ngx_uint_t size)
@@ -475,27 +475,27 @@ ngx_regex_exec_array(ngx_array_t *a, ngx_str_t *s, ngx_log_t *log)
 
         n = ngx_regex_exec(re[i].regex, s, NULL, 0);
 
-        if (n == NJET_REGEX_NO_MATCHED) {
+        if (n == NJT_REGEX_NO_MATCHED) {
             continue;
         }
 
         if (n < 0) {
-            ngx_log_error(NJET_LOG_ALERT, log, 0,
+            ngx_log_error(NJT_LOG_ALERT, log, 0,
                           ngx_regex_exec_n " failed: %i on \"%V\" using \"%s\"",
                           n, s, re[i].name);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         /* match */
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    return NJET_DECLINED;
+    return NJT_DECLINED;
 }
 
 
-#if (NJET_PCRE2)
+#if (NJT_PCRE2)
 
 static void * ngx_libc_cdecl
 ngx_regex_malloc(size_t size, void *data)
@@ -547,7 +547,7 @@ ngx_regex_free(void *p)
 static void
 ngx_regex_cleanup(void *data)
 {
-#if (NJET_PCRE2 || NJET_HAVE_PCRE_JIT)
+#if (NJT_PCRE2 || NJT_HAVE_PCRE_JIT)
     ngx_regex_conf_t *rcf = data;
 
     ngx_uint_t        i;
@@ -576,7 +576,7 @@ ngx_regex_cleanup(void *data)
          * for the same reason.
          */
 
-#if (NJET_PCRE2)
+#if (NJT_PCRE2)
         pcre2_code_free(elts[i].regex);
 #else
         if (elts[i].regex->extra != NULL) {
@@ -593,7 +593,7 @@ ngx_regex_cleanup(void *data)
 
     ngx_regex_studies = NULL;
 
-#if (NJET_PCRE2)
+#if (NJT_PCRE2)
 
     /*
      * Free compile context and match data.  If needed at runtime by
@@ -619,7 +619,7 @@ static ngx_int_t
 ngx_regex_module_init(ngx_cycle_t *cycle)
 {
     int                opt;
-#if !(NJET_PCRE2)
+#if !(NJT_PCRE2)
     const char        *errstr;
 #endif
     ngx_uint_t         i;
@@ -631,10 +631,10 @@ ngx_regex_module_init(ngx_cycle_t *cycle)
 
     rcf = (ngx_regex_conf_t *) ngx_get_conf(cycle->conf_ctx, ngx_regex_module);
 
-#if (NJET_PCRE2 || NJET_HAVE_PCRE_JIT)
+#if (NJT_PCRE2 || NJT_HAVE_PCRE_JIT)
 
     if (rcf->pcre_jit) {
-#if (NJET_PCRE2)
+#if (NJT_PCRE2)
         opt = 1;
 #else
         opt = PCRE_STUDY_JIT_COMPILE;
@@ -660,7 +660,7 @@ ngx_regex_module_init(ngx_cycle_t *cycle)
             i = 0;
         }
 
-#if (NJET_PCRE2)
+#if (NJT_PCRE2)
 
         if (opt) {
             int  n;
@@ -668,7 +668,7 @@ ngx_regex_module_init(ngx_cycle_t *cycle)
             n = pcre2_jit_compile(elts[i].regex, PCRE2_JIT_COMPLETE);
 
             if (n != 0) {
-                ngx_log_error(NJET_LOG_INFO, cycle->log, 0,
+                ngx_log_error(NJT_LOG_INFO, cycle->log, 0,
                               "pcre2_jit_compile() failed: %d in \"%s\", "
                               "ignored",
                               n, elts[i].name);
@@ -680,12 +680,12 @@ ngx_regex_module_init(ngx_cycle_t *cycle)
         elts[i].regex->extra = pcre_study(elts[i].regex->code, opt, &errstr);
 
         if (errstr != NULL) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, 0,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, 0,
                           "pcre_study() failed: %s in \"%s\"",
                           errstr, elts[i].name);
         }
 
-#if (NJET_HAVE_PCRE_JIT)
+#if (NJT_HAVE_PCRE_JIT)
         if (opt & PCRE_STUDY_JIT_COMPILE) {
             int jit, n;
 
@@ -694,7 +694,7 @@ ngx_regex_module_init(ngx_cycle_t *cycle)
                               PCRE_INFO_JIT, &jit);
 
             if (n != 0 || jit != 1) {
-                ngx_log_error(NJET_LOG_INFO, cycle->log, 0,
+                ngx_log_error(NJT_LOG_INFO, cycle->log, 0,
                               "JIT compiler does not support pattern: \"%s\"",
                               elts[i].name);
             }
@@ -706,11 +706,11 @@ ngx_regex_module_init(ngx_cycle_t *cycle)
     ngx_regex_malloc_done();
 
     ngx_regex_studies = NULL;
-#if (NJET_PCRE2)
+#if (NJT_PCRE2)
     ngx_regex_compile_context = NULL;
 #endif
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -725,7 +725,7 @@ ngx_regex_create_conf(ngx_cycle_t *cycle)
         return NULL;
     }
 
-    rcf->pcre_jit = NJET_CONF_UNSET;
+    rcf->pcre_jit = NJT_CONF_UNSET;
 
     cln = ngx_pool_cleanup_add(cycle->pool, 0);
     if (cln == NULL) {
@@ -753,7 +753,7 @@ ngx_regex_init_conf(ngx_cycle_t *cycle, void *conf)
 
     ngx_conf_init_value(rcf->pcre_jit, 0);
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -763,10 +763,10 @@ ngx_regex_pcre_jit(ngx_conf_t *cf, void *post, void *data)
     ngx_flag_t  *fp = data;
 
     if (*fp == 0) {
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
-#if (NJET_PCRE2)
+#if (NJT_PCRE2)
     {
     int       r;
     uint32_t  jit;
@@ -775,12 +775,12 @@ ngx_regex_pcre_jit(ngx_conf_t *cf, void *post, void *data)
     r = pcre2_config(PCRE2_CONFIG_JIT, &jit);
 
     if (r != 0 || jit != 1) {
-        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+        ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                            "PCRE2 library does not support JIT");
         *fp = 0;
     }
     }
-#elif (NJET_HAVE_PCRE_JIT)
+#elif (NJT_HAVE_PCRE_JIT)
     {
     int  jit, r;
 
@@ -788,16 +788,16 @@ ngx_regex_pcre_jit(ngx_conf_t *cf, void *post, void *data)
     r = pcre_config(PCRE_CONFIG_JIT, &jit);
 
     if (r != 0 || jit != 1) {
-        ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+        ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                            "PCRE library does not support JIT");
         *fp = 0;
     }
     }
 #else
-    ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+    ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                        "njet was built without PCRE JIT support");
     *fp = 0;
 #endif
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

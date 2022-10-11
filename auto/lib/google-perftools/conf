@@ -20,7 +20,7 @@ if [ $ngx_found = no ]; then
 
     ngx_feature="Google perftools in /usr/local/"
 
-    if [ $NJET_RPATH = YES ]; then
+    if [ $NJT_RPATH = YES ]; then
         ngx_feature_libs="-R/usr/local/lib -L/usr/local/lib -lprofiler"
     else
         ngx_feature_libs="-L/usr/local/lib -lprofiler"
@@ -36,7 +36,7 @@ if [ $ngx_found = no ]; then
 
     ngx_feature="Google perftools in /opt/local/"
 
-    if [ $NJET_RPATH = YES ]; then
+    if [ $NJT_RPATH = YES ]; then
         ngx_feature_libs="-R/opt/local/lib -L/opt/local/lib -lprofiler"
     else
         ngx_feature_libs="-L/opt/local/lib -lprofiler"

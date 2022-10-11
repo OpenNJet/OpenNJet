@@ -89,15 +89,15 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
     sigaddset(&set, SIGALRM);
     sigaddset(&set, SIGIO);
     sigaddset(&set, SIGINT);
-    sigaddset(&set, ngx_signal_value(NJET_RECONFIGURE_SIGNAL));
-    sigaddset(&set, ngx_signal_value(NJET_REOPEN_SIGNAL));
-    sigaddset(&set, ngx_signal_value(NJET_NOACCEPT_SIGNAL));
-    sigaddset(&set, ngx_signal_value(NJET_TERMINATE_SIGNAL));
-    sigaddset(&set, ngx_signal_value(NJET_SHUTDOWN_SIGNAL));
-    sigaddset(&set, ngx_signal_value(NJET_CHANGEBIN_SIGNAL));
+    sigaddset(&set, ngx_signal_value(NJT_RECONFIGURE_SIGNAL));
+    sigaddset(&set, ngx_signal_value(NJT_REOPEN_SIGNAL));
+    sigaddset(&set, ngx_signal_value(NJT_NOACCEPT_SIGNAL));
+    sigaddset(&set, ngx_signal_value(NJT_TERMINATE_SIGNAL));
+    sigaddset(&set, ngx_signal_value(NJT_SHUTDOWN_SIGNAL));
+    sigaddset(&set, ngx_signal_value(NJT_CHANGEBIN_SIGNAL));
 
     if (sigprocmask(SIG_BLOCK, &set, NULL) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                       "sigprocmask() failed");
     }
 
@@ -128,7 +128,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
     ccf = (ngx_core_conf_t *) ngx_get_conf(cycle->conf_ctx, ngx_core_module);
 
     ngx_start_worker_processes(cycle, ccf->worker_processes,
-                               NJET_PROCESS_RESPAWN);
+                               NJT_PROCESS_RESPAWN);
     ngx_start_cache_manager_processes(cycle, 0);
 
     ngx_new_binary = 0;
@@ -144,7 +144,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
                 ngx_sigalrm = 0;
             }
 
-            ngx_log_debug1(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+            ngx_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                            "termination cycle: %M", delay);
 
             itv.it_interval.tv_sec = 0;
@@ -153,23 +153,23 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
             itv.it_value.tv_usec = (delay % 1000 ) * 1000;
 
             if (setitimer(ITIMER_REAL, &itv, NULL) == -1) {
-                ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+                ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                               "setitimer() failed");
             }
         }
 
-        ngx_log_debug0(NJET_LOG_DEBUG_EVENT, cycle->log, 0, "sigsuspend");
+        ngx_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "sigsuspend");
 
         sigsuspend(&set);
 
         ngx_time_update();
 
-        ngx_log_debug1(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                        "wake up, sigio %i", sigio);
 
         if (ngx_reap) {
             ngx_reap = 0;
-            ngx_log_debug0(NJET_LOG_DEBUG_EVENT, cycle->log, 0, "reap children");
+            ngx_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "reap children");
 
             live = ngx_reap_children(cycle);
         }
@@ -194,7 +194,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
                 ngx_signal_worker_processes(cycle, SIGKILL);
             } else {
                 ngx_signal_worker_processes(cycle,
-                                       ngx_signal_value(NJET_TERMINATE_SIGNAL));
+                                       ngx_signal_value(NJT_TERMINATE_SIGNAL));
             }
 
             continue;
@@ -202,7 +202,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
 
         if (ngx_quit) {
             ngx_signal_worker_processes(cycle,
-                                        ngx_signal_value(NJET_SHUTDOWN_SIGNAL));
+                                        ngx_signal_value(NJT_SHUTDOWN_SIGNAL));
             ngx_close_listening_sockets(cycle);
 
             continue;
@@ -213,14 +213,14 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
 
             if (ngx_new_binary) {
                 ngx_start_worker_processes(cycle, ccf->worker_processes,
-                                           NJET_PROCESS_RESPAWN);
+                                           NJT_PROCESS_RESPAWN);
                 ngx_start_cache_manager_processes(cycle, 0);
                 ngx_noaccepting = 0;
 
                 continue;
             }
 
-            ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0, "reconfiguring");
+            ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0, "reconfiguring");
 
             cycle = ngx_init_cycle(cycle);
             if (cycle == NULL) {
@@ -232,7 +232,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
             ccf = (ngx_core_conf_t *) ngx_get_conf(cycle->conf_ctx,
                                                    ngx_core_module);
             ngx_start_worker_processes(cycle, ccf->worker_processes,
-                                       NJET_PROCESS_JUST_RESPAWN);
+                                       NJT_PROCESS_JUST_RESPAWN);
             ngx_start_cache_manager_processes(cycle, 1);
 
             /* allow new processes to start */
@@ -240,28 +240,28 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
 
             live = 1;
             ngx_signal_worker_processes(cycle,
-                                        ngx_signal_value(NJET_SHUTDOWN_SIGNAL));
+                                        ngx_signal_value(NJT_SHUTDOWN_SIGNAL));
         }
 
         if (ngx_restart) {
             ngx_restart = 0;
             ngx_start_worker_processes(cycle, ccf->worker_processes,
-                                       NJET_PROCESS_RESPAWN);
+                                       NJT_PROCESS_RESPAWN);
             ngx_start_cache_manager_processes(cycle, 0);
             live = 1;
         }
 
         if (ngx_reopen) {
             ngx_reopen = 0;
-            ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0, "reopening logs");
+            ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0, "reopening logs");
             ngx_reopen_files(cycle, ccf->user);
             ngx_signal_worker_processes(cycle,
-                                        ngx_signal_value(NJET_REOPEN_SIGNAL));
+                                        ngx_signal_value(NJT_REOPEN_SIGNAL));
         }
 
         if (ngx_change_binary) {
             ngx_change_binary = 0;
-            ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0, "changing binary");
+            ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0, "changing binary");
             ngx_new_binary = ngx_exec_new_binary(cycle, ngx_argv);
         }
 
@@ -269,7 +269,7 @@ ngx_master_process_cycle(ngx_cycle_t *cycle)
             ngx_noaccept = 0;
             ngx_noaccepting = 1;
             ngx_signal_worker_processes(cycle,
-                                        ngx_signal_value(NJET_SHUTDOWN_SIGNAL));
+                                        ngx_signal_value(NJT_SHUTDOWN_SIGNAL));
         }
     }
 }
@@ -287,7 +287,7 @@ ngx_single_process_cycle(ngx_cycle_t *cycle)
 
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->init_process) {
-            if (cycle->modules[i]->init_process(cycle) == NJET_ERROR) {
+            if (cycle->modules[i]->init_process(cycle) == NJT_ERROR) {
                 /* fatal */
                 exit(2);
             }
@@ -295,7 +295,7 @@ ngx_single_process_cycle(ngx_cycle_t *cycle)
     }
 
     for ( ;; ) {
-        ngx_log_debug0(NJET_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
+        ngx_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
 
         ngx_process_events_and_timers(cycle);
 
@@ -312,7 +312,7 @@ ngx_single_process_cycle(ngx_cycle_t *cycle)
 
         if (ngx_reconfigure) {
             ngx_reconfigure = 0;
-            ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0, "reconfiguring");
+            ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0, "reconfiguring");
 
             cycle = ngx_init_cycle(cycle);
             if (cycle == NULL) {
@@ -325,7 +325,7 @@ ngx_single_process_cycle(ngx_cycle_t *cycle)
 
         if (ngx_reopen) {
             ngx_reopen = 0;
-            ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0, "reopening logs");
+            ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0, "reopening logs");
             ngx_reopen_files(cycle, (ngx_uid_t) -1);
         }
     }
@@ -337,7 +337,7 @@ ngx_start_worker_processes(ngx_cycle_t *cycle, ngx_int_t n, ngx_int_t type)
 {
     ngx_int_t  i;
 
-    ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0, "start worker processes");
+    ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0, "start worker processes");
 
     for (i = 0; i < n; i++) {
 
@@ -376,7 +376,7 @@ ngx_start_cache_manager_processes(ngx_cycle_t *cycle, ngx_uint_t respawn)
 
     ngx_spawn_process(cycle, ngx_cache_manager_process_cycle,
                       &ngx_cache_manager_ctx, "cache manager process",
-                      respawn ? NJET_PROCESS_JUST_RESPAWN : NJET_PROCESS_RESPAWN);
+                      respawn ? NJT_PROCESS_JUST_RESPAWN : NJT_PROCESS_RESPAWN);
 
     ngx_pass_open_channel(cycle);
 
@@ -386,7 +386,7 @@ ngx_start_cache_manager_processes(ngx_cycle_t *cycle, ngx_uint_t respawn)
 
     ngx_spawn_process(cycle, ngx_cache_manager_process_cycle,
                       &ngx_cache_loader_ctx, "cache loader process",
-                      respawn ? NJET_PROCESS_JUST_SPAWN : NJET_PROCESS_NORESPAWN);
+                      respawn ? NJT_PROCESS_JUST_SPAWN : NJT_PROCESS_NORESPAWN);
 
     ngx_pass_open_channel(cycle);
 }
@@ -400,7 +400,7 @@ ngx_pass_open_channel(ngx_cycle_t *cycle)
 
     ngx_memzero(&ch, sizeof(ngx_channel_t));
 
-    ch.command = NJET_CMD_OPEN_CHANNEL;
+    ch.command = NJT_CMD_OPEN_CHANNEL;
     ch.pid = ngx_processes[ngx_process_slot].pid;
     ch.slot = ngx_process_slot;
     ch.fd = ngx_processes[ngx_process_slot].channel[0];
@@ -414,13 +414,13 @@ ngx_pass_open_channel(ngx_cycle_t *cycle)
             continue;
         }
 
-        ngx_log_debug6(NJET_LOG_DEBUG_CORE, cycle->log, 0,
+        ngx_log_debug6(NJT_LOG_DEBUG_CORE, cycle->log, 0,
                       "pass channel s:%i pid:%P fd:%d to s:%i pid:%P fd:%d",
                       ch.slot, ch.pid, ch.fd,
                       i, ngx_processes[i].pid,
                       ngx_processes[i].channel[0]);
 
-        /* TODO: NJET_AGAIN */
+        /* TODO: NJT_AGAIN */
 
         ngx_write_channel(ngx_processes[i].channel[0],
                           &ch, sizeof(ngx_channel_t), cycle->log);
@@ -437,7 +437,7 @@ ngx_signal_worker_processes(ngx_cycle_t *cycle, int signo)
 
     ngx_memzero(&ch, sizeof(ngx_channel_t));
 
-#if (NJET_BROKEN_SCM_RIGHTS)
+#if (NJT_BROKEN_SCM_RIGHTS)
 
     ch.command = 0;
 
@@ -445,16 +445,16 @@ ngx_signal_worker_processes(ngx_cycle_t *cycle, int signo)
 
     switch (signo) {
 
-    case ngx_signal_value(NJET_SHUTDOWN_SIGNAL):
-        ch.command = NJET_CMD_QUIT;
+    case ngx_signal_value(NJT_SHUTDOWN_SIGNAL):
+        ch.command = NJT_CMD_QUIT;
         break;
 
-    case ngx_signal_value(NJET_TERMINATE_SIGNAL):
-        ch.command = NJET_CMD_TERMINATE;
+    case ngx_signal_value(NJT_TERMINATE_SIGNAL):
+        ch.command = NJT_CMD_TERMINATE;
         break;
 
-    case ngx_signal_value(NJET_REOPEN_SIGNAL):
-        ch.command = NJET_CMD_REOPEN;
+    case ngx_signal_value(NJT_REOPEN_SIGNAL):
+        ch.command = NJT_CMD_REOPEN;
         break;
 
     default:
@@ -468,7 +468,7 @@ ngx_signal_worker_processes(ngx_cycle_t *cycle, int signo)
 
     for (i = 0; i < ngx_last_process; i++) {
 
-        ngx_log_debug7(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+        ngx_log_debug7(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                        "child: %i %P e:%d t:%d d:%d r:%d j:%d",
                        i,
                        ngx_processes[i].pid,
@@ -488,7 +488,7 @@ ngx_signal_worker_processes(ngx_cycle_t *cycle, int signo)
         }
 
         if (ngx_processes[i].exiting
-            && signo == ngx_signal_value(NJET_SHUTDOWN_SIGNAL))
+            && signo == ngx_signal_value(NJT_SHUTDOWN_SIGNAL))
         {
             continue;
         }
@@ -496,9 +496,9 @@ ngx_signal_worker_processes(ngx_cycle_t *cycle, int signo)
         if (ch.command) {
             if (ngx_write_channel(ngx_processes[i].channel[0],
                                   &ch, sizeof(ngx_channel_t), cycle->log)
-                == NJET_OK)
+                == NJT_OK)
             {
-                if (signo != ngx_signal_value(NJET_REOPEN_SIGNAL)) {
+                if (signo != ngx_signal_value(NJT_REOPEN_SIGNAL)) {
                     ngx_processes[i].exiting = 1;
                 }
 
@@ -506,15 +506,15 @@ ngx_signal_worker_processes(ngx_cycle_t *cycle, int signo)
             }
         }
 
-        ngx_log_debug2(NJET_LOG_DEBUG_CORE, cycle->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_CORE, cycle->log, 0,
                        "kill (%P, %d)", ngx_processes[i].pid, signo);
 
         if (kill(ngx_processes[i].pid, signo) == -1) {
             err = ngx_errno;
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, err,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, err,
                           "kill(%P, %d) failed", ngx_processes[i].pid, signo);
 
-            if (err == NJET_ESRCH) {
+            if (err == NJT_ESRCH) {
                 ngx_processes[i].exited = 1;
                 ngx_processes[i].exiting = 0;
                 ngx_reap = 1;
@@ -523,7 +523,7 @@ ngx_signal_worker_processes(ngx_cycle_t *cycle, int signo)
             continue;
         }
 
-        if (signo != ngx_signal_value(NJET_REOPEN_SIGNAL)) {
+        if (signo != ngx_signal_value(NJT_REOPEN_SIGNAL)) {
             ngx_processes[i].exiting = 1;
         }
     }
@@ -540,13 +540,13 @@ ngx_reap_children(ngx_cycle_t *cycle)
 
     ngx_memzero(&ch, sizeof(ngx_channel_t));
 
-    ch.command = NJET_CMD_CLOSE_CHANNEL;
+    ch.command = NJT_CMD_CLOSE_CHANNEL;
     ch.fd = -1;
 
     live = 0;
     for (i = 0; i < ngx_last_process; i++) {
 
-        ngx_log_debug7(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+        ngx_log_debug7(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                        "child: %i %P e:%d t:%d d:%d r:%d j:%d",
                        i,
                        ngx_processes[i].pid,
@@ -579,11 +579,11 @@ ngx_reap_children(ngx_cycle_t *cycle)
                         continue;
                     }
 
-                    ngx_log_debug3(NJET_LOG_DEBUG_CORE, cycle->log, 0,
+                    ngx_log_debug3(NJT_LOG_DEBUG_CORE, cycle->log, 0,
                                    "pass close channel s:%i pid:%P to:%P",
                                    ch.slot, ch.pid, ngx_processes[n].pid);
 
-                    /* TODO: NJET_AGAIN */
+                    /* TODO: NJT_AGAIN */
 
                     ngx_write_channel(ngx_processes[n].channel[0],
                                       &ch, sizeof(ngx_channel_t), cycle->log);
@@ -598,9 +598,9 @@ ngx_reap_children(ngx_cycle_t *cycle)
                 if (ngx_spawn_process(cycle, ngx_processes[i].proc,
                                       ngx_processes[i].data,
                                       ngx_processes[i].name, i)
-                    == NJET_INVALID_PID)
+                    == NJT_INVALID_PID)
                 {
-                    ngx_log_error(NJET_LOG_ALERT, cycle->log, 0,
+                    ngx_log_error(NJT_LOG_ALERT, cycle->log, 0,
                                   "could not respawn %s",
                                   ngx_processes[i].name);
                     continue;
@@ -621,9 +621,9 @@ ngx_reap_children(ngx_cycle_t *cycle)
 
                 if (ngx_rename_file((char *) ccf->oldpid.data,
                                     (char *) ccf->pid.data)
-                    == NJET_FILE_ERROR)
+                    == NJT_FILE_ERROR)
                 {
-                    ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+                    ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                                   ngx_rename_file_n " %s back to %s failed "
                                   "after the new binary process \"%s\" exited",
                                   ccf->oldpid.data, ccf->pid.data, ngx_argv[0]);
@@ -659,7 +659,7 @@ ngx_master_process_exit(ngx_cycle_t *cycle)
 
     ngx_delete_pidfile(cycle);
 
-    ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0, "exit");
+    ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exit");
 
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->exit_master) {
@@ -700,7 +700,7 @@ ngx_worker_process_cycle(ngx_cycle_t *cycle, void *data)
 {
     ngx_int_t worker = (intptr_t) data;
 
-    ngx_process = NJET_PROCESS_WORKER;
+    ngx_process = NJT_PROCESS_WORKER;
     ngx_worker = worker;
 
     ngx_worker_process_init(cycle, worker);
@@ -710,24 +710,24 @@ ngx_worker_process_cycle(ngx_cycle_t *cycle, void *data)
     for ( ;; ) {
 
         if (ngx_exiting) {
-            if (ngx_event_no_timers_left() == NJET_OK) {
-                ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0, "exiting");
+            if (ngx_event_no_timers_left() == NJT_OK) {
+                ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exiting");
                 ngx_worker_process_exit(cycle);
             }
         }
 
-        ngx_log_debug0(NJET_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
+        ngx_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
 
         ngx_process_events_and_timers(cycle);
 
         if (ngx_terminate) {
-            ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0, "exiting");
+            ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exiting");
             ngx_worker_process_exit(cycle);
         }
 
         if (ngx_quit) {
             ngx_quit = 0;
-            ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0,
+            ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0,
                           "gracefully shutting down");
             ngx_setproctitle("worker process is shutting down");
 
@@ -741,7 +741,7 @@ ngx_worker_process_cycle(ngx_cycle_t *cycle, void *data)
 
         if (ngx_reopen) {
             ngx_reopen = 0;
-            ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0, "reopening logs");
+            ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0, "reopening logs");
             ngx_reopen_files(cycle, -1);
         }
     }
@@ -769,28 +769,28 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
 
     if (worker >= 0 && ccf->priority != 0) {
         if (setpriority(PRIO_PROCESS, 0, ccf->priority) == -1) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                           "setpriority(%d) failed", ccf->priority);
         }
     }
 
-    if (ccf->rlimit_nofile != NJET_CONF_UNSET) {
+    if (ccf->rlimit_nofile != NJT_CONF_UNSET) {
         rlmt.rlim_cur = (rlim_t) ccf->rlimit_nofile;
         rlmt.rlim_max = (rlim_t) ccf->rlimit_nofile;
 
         if (setrlimit(RLIMIT_NOFILE, &rlmt) == -1) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                           "setrlimit(RLIMIT_NOFILE, %i) failed",
                           ccf->rlimit_nofile);
         }
     }
 
-    if (ccf->rlimit_core != NJET_CONF_UNSET) {
+    if (ccf->rlimit_core != NJT_CONF_UNSET) {
         rlmt.rlim_cur = (rlim_t) ccf->rlimit_core;
         rlmt.rlim_max = (rlim_t) ccf->rlimit_core;
 
         if (setrlimit(RLIMIT_CORE, &rlmt) == -1) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                           "setrlimit(RLIMIT_CORE, %O) failed",
                           ccf->rlimit_core);
         }
@@ -798,22 +798,22 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
 
     if (geteuid() == 0) {
         if (setgid(ccf->group) == -1) {
-            ngx_log_error(NJET_LOG_EMERG, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_EMERG, cycle->log, ngx_errno,
                           "setgid(%d) failed", ccf->group);
             /* fatal */
             exit(2);
         }
 
         if (initgroups(ccf->username, ccf->group) == -1) {
-            ngx_log_error(NJET_LOG_EMERG, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_EMERG, cycle->log, ngx_errno,
                           "initgroups(%s, %d) failed",
                           ccf->username, ccf->group);
         }
 
-#if (NJET_HAVE_PR_SET_KEEPCAPS && NJET_HAVE_CAPABILITIES)
+#if (NJT_HAVE_PR_SET_KEEPCAPS && NJT_HAVE_CAPABILITIES)
         if (ccf->transparent && ccf->user) {
             if (prctl(PR_SET_KEEPCAPS, 1, 0, 0, 0) == -1) {
-                ngx_log_error(NJET_LOG_EMERG, cycle->log, ngx_errno,
+                ngx_log_error(NJT_LOG_EMERG, cycle->log, ngx_errno,
                               "prctl(PR_SET_KEEPCAPS, 1) failed");
                 /* fatal */
                 exit(2);
@@ -822,13 +822,13 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
 #endif
 
         if (setuid(ccf->user) == -1) {
-            ngx_log_error(NJET_LOG_EMERG, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_EMERG, cycle->log, ngx_errno,
                           "setuid(%d) failed", ccf->user);
             /* fatal */
             exit(2);
         }
 
-#if (NJET_HAVE_CAPABILITIES)
+#if (NJT_HAVE_CAPABILITIES)
         if (ccf->transparent && ccf->user) {
             struct __user_cap_data_struct    data;
             struct __user_cap_header_struct  header;
@@ -841,7 +841,7 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
             data.permitted = data.effective;
 
             if (syscall(SYS_capset, &header, &data) == -1) {
-                ngx_log_error(NJET_LOG_EMERG, cycle->log, ngx_errno,
+                ngx_log_error(NJT_LOG_EMERG, cycle->log, ngx_errno,
                               "capset() failed");
                 /* fatal */
                 exit(2);
@@ -858,12 +858,12 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
         }
     }
 
-#if (NJET_HAVE_PR_SET_DUMPABLE)
+#if (NJT_HAVE_PR_SET_DUMPABLE)
 
     /* allow coredump after setuid() in Linux 2.4.x */
 
     if (prctl(PR_SET_DUMPABLE, 1, 0, 0, 0) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                       "prctl(PR_SET_DUMPABLE) failed");
     }
 
@@ -871,7 +871,7 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
 
     if (ccf->working_directory.len) {
         if (chdir((char *) ccf->working_directory.data) == -1) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                           "chdir(\"%s\") failed", ccf->working_directory.data);
             /* fatal */
             exit(2);
@@ -881,7 +881,7 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
     sigemptyset(&set);
 
     if (sigprocmask(SIG_SETMASK, &set, NULL) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                       "sigprocmask() failed");
     }
 
@@ -899,7 +899,7 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
 
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->init_process) {
-            if (cycle->modules[i]->init_process(cycle) == NJET_ERROR) {
+            if (cycle->modules[i]->init_process(cycle) == NJT_ERROR) {
                 /* fatal */
                 exit(2);
             }
@@ -921,13 +921,13 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
         }
 
         if (close(ngx_processes[n].channel[1]) == -1) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                           "close() channel failed");
         }
     }
 
     if (close(ngx_processes[ngx_process_slot].channel[0]) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                       "close() channel failed");
     }
 
@@ -935,9 +935,9 @@ ngx_worker_process_init(ngx_cycle_t *cycle, ngx_int_t worker)
     ngx_last_process = 0;
 #endif
 
-    if (ngx_add_channel_event(cycle, ngx_channel, NJET_READ_EVENT,
+    if (ngx_add_channel_event(cycle, ngx_channel, NJT_READ_EVENT,
                               ngx_channel_handler)
-        == NJET_ERROR)
+        == NJT_ERROR)
     {
         /* fatal */
         exit(2);
@@ -966,7 +966,7 @@ ngx_worker_process_exit(ngx_cycle_t *cycle)
                 && !c[i].read->channel
                 && !c[i].read->resolver)
             {
-                ngx_log_error(NJET_LOG_ALERT, cycle->log, 0,
+                ngx_log_error(NJT_LOG_ALERT, cycle->log, 0,
                               "*%uA open socket #%d left in connection %ui",
                               c[i].number, c[i].fd, i);
                 ngx_debug_quit = 1;
@@ -974,7 +974,7 @@ ngx_worker_process_exit(ngx_cycle_t *cycle)
         }
 
         if (ngx_debug_quit) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, 0, "aborting");
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, 0, "aborting");
             ngx_debug_point();
         }
     }
@@ -1000,7 +1000,7 @@ ngx_worker_process_exit(ngx_cycle_t *cycle)
 
     ngx_destroy_pool(cycle->pool);
 
-    ngx_log_error(NJET_LOG_NOTICE, ngx_cycle->log, 0, "exit");
+    ngx_log_error(NJT_LOG_NOTICE, ngx_cycle->log, 0, "exit");
 
     exit(0);
 }
@@ -1020,17 +1020,17 @@ ngx_channel_handler(ngx_event_t *ev)
 
     c = ev->data;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_CORE, ev->log, 0, "channel handler");
+    ngx_log_debug0(NJT_LOG_DEBUG_CORE, ev->log, 0, "channel handler");
 
     for ( ;; ) {
 
         n = ngx_read_channel(c->fd, &ch, sizeof(ngx_channel_t), ev->log);
 
-        ngx_log_debug1(NJET_LOG_DEBUG_CORE, ev->log, 0, "channel: %i", n);
+        ngx_log_debug1(NJT_LOG_DEBUG_CORE, ev->log, 0, "channel: %i", n);
 
-        if (n == NJET_ERROR) {
+        if (n == NJT_ERROR) {
 
-            if (ngx_event_flags & NJET_USE_EPOLL_EVENT) {
+            if (ngx_event_flags & NJT_USE_EPOLL_EVENT) {
                 ngx_del_conn(c, 0);
             }
 
@@ -1038,36 +1038,36 @@ ngx_channel_handler(ngx_event_t *ev)
             return;
         }
 
-        if (ngx_event_flags & NJET_USE_EVENTPORT_EVENT) {
-            if (ngx_add_event(ev, NJET_READ_EVENT, 0) == NJET_ERROR) {
+        if (ngx_event_flags & NJT_USE_EVENTPORT_EVENT) {
+            if (ngx_add_event(ev, NJT_READ_EVENT, 0) == NJT_ERROR) {
                 return;
             }
         }
 
-        if (n == NJET_AGAIN) {
+        if (n == NJT_AGAIN) {
             return;
         }
 
-        ngx_log_debug1(NJET_LOG_DEBUG_CORE, ev->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_CORE, ev->log, 0,
                        "channel command: %ui", ch.command);
 
         switch (ch.command) {
 
-        case NJET_CMD_QUIT:
+        case NJT_CMD_QUIT:
             ngx_quit = 1;
             break;
 
-        case NJET_CMD_TERMINATE:
+        case NJT_CMD_TERMINATE:
             ngx_terminate = 1;
             break;
 
-        case NJET_CMD_REOPEN:
+        case NJT_CMD_REOPEN:
             ngx_reopen = 1;
             break;
 
-        case NJET_CMD_OPEN_CHANNEL:
+        case NJT_CMD_OPEN_CHANNEL:
 
-            ngx_log_debug3(NJET_LOG_DEBUG_CORE, ev->log, 0,
+            ngx_log_debug3(NJT_LOG_DEBUG_CORE, ev->log, 0,
                            "get channel s:%i pid:%P fd:%d",
                            ch.slot, ch.pid, ch.fd);
 
@@ -1075,15 +1075,15 @@ ngx_channel_handler(ngx_event_t *ev)
             ngx_processes[ch.slot].channel[0] = ch.fd;
             break;
 
-        case NJET_CMD_CLOSE_CHANNEL:
+        case NJT_CMD_CLOSE_CHANNEL:
 
-            ngx_log_debug4(NJET_LOG_DEBUG_CORE, ev->log, 0,
+            ngx_log_debug4(NJT_LOG_DEBUG_CORE, ev->log, 0,
                            "close channel s:%i pid:%P our:%P fd:%d",
                            ch.slot, ch.pid, ngx_processes[ch.slot].pid,
                            ngx_processes[ch.slot].channel[0]);
 
             if (close(ngx_processes[ch.slot].channel[0]) == -1) {
-                ngx_log_error(NJET_LOG_ALERT, ev->log, ngx_errno,
+                ngx_log_error(NJT_LOG_ALERT, ev->log, ngx_errno,
                               "close() channel failed");
             }
 
@@ -1106,7 +1106,7 @@ ngx_cache_manager_process_cycle(ngx_cycle_t *cycle, void *data)
      * Set correct process type since closing listening Unix domain socket
      * in a master process also removes the Unix domain socket file.
      */
-    ngx_process = NJET_PROCESS_HELPER;
+    ngx_process = NJT_PROCESS_HELPER;
 
     ngx_close_listening_sockets(cycle);
 
@@ -1130,13 +1130,13 @@ ngx_cache_manager_process_cycle(ngx_cycle_t *cycle, void *data)
     for ( ;; ) {
 
         if (ngx_terminate || ngx_quit) {
-            ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0, "exiting");
+            ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exiting");
             exit(0);
         }
 
         if (ngx_reopen) {
             ngx_reopen = 0;
-            ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0, "reopening logs");
+            ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0, "reopening logs");
             ngx_reopen_files(cycle, -1);
         }
 

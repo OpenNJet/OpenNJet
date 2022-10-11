@@ -3,7 +3,7 @@
 # Copyright (C) Nginx, Inc.
 
 
-cat << END >> $NJET_AUTO_CONFIG_H
+cat << END >> $NJT_AUTO_CONFIG_H
 
 #ifndef $ngx_param
 #define $ngx_param  $ngx_value

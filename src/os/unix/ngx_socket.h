@@ -5,14 +5,14 @@
  */
 
 
-#ifndef _NJET_SOCKET_H_INCLUDED_
-#define _NJET_SOCKET_H_INCLUDED_
+#ifndef _NJT_SOCKET_H_INCLUDED_
+#define _NJT_SOCKET_H_INCLUDED_
 
 
 #include <ngx_config.h>
 
 
-#define NJET_WRITE_SHUTDOWN SHUT_WR
+#define NJT_WRITE_SHUTDOWN SHUT_WR
 
 typedef int  ngx_socket_t;
 
@@ -20,7 +20,7 @@ typedef int  ngx_socket_t;
 #define ngx_socket_n        "socket()"
 
 
-#if (NJET_HAVE_FIONBIO)
+#if (NJT_HAVE_FIONBIO)
 
 int ngx_nonblocking(ngx_socket_t s);
 int ngx_blocking(ngx_socket_t s);
@@ -38,7 +38,7 @@ int ngx_blocking(ngx_socket_t s);
 
 #endif
 
-#if (NJET_HAVE_FIONREAD)
+#if (NJT_HAVE_FIONREAD)
 
 #define ngx_socket_nread(s, n)  ioctl(s, FIONREAD, n)
 #define ngx_socket_nread_n      "ioctl(FIONREAD)"
@@ -48,7 +48,7 @@ int ngx_blocking(ngx_socket_t s);
 int ngx_tcp_nopush(ngx_socket_t s);
 int ngx_tcp_push(ngx_socket_t s);
 
-#if (NJET_LINUX)
+#if (NJT_LINUX)
 
 #define ngx_tcp_nopush_n   "setsockopt(TCP_CORK)"
 #define ngx_tcp_push_n     "setsockopt(!TCP_CORK)"
@@ -68,4 +68,4 @@ int ngx_tcp_push(ngx_socket_t s);
 #define ngx_close_socket_n  "close() socket"
 
 
-#endif /* _NJET_SOCKET_H_INCLUDED_ */
+#endif /* _NJT_SOCKET_H_INCLUDED_ */

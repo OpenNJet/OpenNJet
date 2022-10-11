@@ -34,9 +34,9 @@ static ngx_int_t ngx_http_try_files_init(ngx_conf_t *cf);
 static ngx_command_t  ngx_http_try_files_commands[] = {
 
     { ngx_string("try_files"),
-      NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_2MORE,
+      NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_2MORE,
       ngx_http_try_files,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
@@ -60,10 +60,10 @@ static ngx_http_module_t  ngx_http_try_files_module_ctx = {
 
 
 ngx_module_t  ngx_http_try_files_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_try_files_module_ctx,        /* module context */
     ngx_http_try_files_commands,           /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -71,7 +71,7 @@ ngx_module_t  ngx_http_try_files_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -93,10 +93,10 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
     tlcf = ngx_http_get_module_loc_conf(r, ngx_http_try_files_module);
 
     if (tlcf->try_files == NULL) {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "try files handler");
 
     allocated = 0;
@@ -134,7 +134,7 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
         if (!alias) {
             reserve = len > r->uri.len ? len - r->uri.len : 0;
 
-        } else if (alias == NJET_MAX_SIZE_T_VALUE) {
+        } else if (alias == NJT_MAX_SIZE_T_VALUE) {
             reserve = len;
 
         } else {
@@ -147,7 +147,7 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
             allocated = reserve + 16;
 
             if (ngx_http_map_uri_to_path(r, &path, &root, allocated) == NULL) {
-                return NJET_HTTP_INTERNAL_SERVER_ERROR;
+                return NJT_HTTP_INTERNAL_SERVER_ERROR;
             }
 
             name = path.data + root;
@@ -175,7 +175,7 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
 
             *e.pos = '\0';
 
-            if (alias && alias != NJET_MAX_SIZE_T_VALUE
+            if (alias && alias != NJT_MAX_SIZE_T_VALUE
                 && ngx_strncmp(name, r->uri.data, alias) == 0)
             {
                 ngx_memmove(name, name + alias, len - alias);
@@ -187,7 +187,7 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
 
         tf++;
 
-        ngx_log_debug3(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug3(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "trying to use %s: \"%s\" \"%s\"",
                        test_dir ? "dir" : "file", name, path.data);
 
@@ -209,8 +209,8 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
                 (void) ngx_http_internal_redirect(r, &path, &args);
             }
 
-            ngx_http_finalize_request(r, NJET_DONE);
-            return NJET_DONE;
+            ngx_http_finalize_request(r, NJT_DONE);
+            return NJT_DONE;
         }
 
         ngx_memzero(&of, sizeof(ngx_open_file_info_t));
@@ -223,22 +223,22 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
         of.errors = clcf->open_file_cache_errors;
         of.events = clcf->open_file_cache_events;
 
-        if (ngx_http_set_disable_symlinks(r, clcf, &path, &of) != NJET_OK) {
-            return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        if (ngx_http_set_disable_symlinks(r, clcf, &path, &of) != NJT_OK) {
+            return NJT_HTTP_INTERNAL_SERVER_ERROR;
         }
 
         if (ngx_open_cached_file(clcf->open_file_cache, &path, &of, r->pool)
-            != NJET_OK)
+            != NJT_OK)
         {
             if (of.err == 0) {
-                return NJET_HTTP_INTERNAL_SERVER_ERROR;
+                return NJT_HTTP_INTERNAL_SERVER_ERROR;
             }
 
-            if (of.err != NJET_ENOENT
-                && of.err != NJET_ENOTDIR
-                && of.err != NJET_ENAMETOOLONG)
+            if (of.err != NJT_ENOENT
+                && of.err != NJT_ENOTDIR
+                && of.err != NJT_ENAMETOOLONG)
             {
-                ngx_log_error(NJET_LOG_CRIT, r->connection->log, of.err,
+                ngx_log_error(NJT_LOG_CRIT, r->connection->log, of.err,
                               "%s \"%s\" failed", of.failed, path.data);
             }
 
@@ -255,7 +255,7 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
         if (!alias) {
             r->uri = path;
 
-        } else if (alias == NJET_MAX_SIZE_T_VALUE) {
+        } else if (alias == NJT_MAX_SIZE_T_VALUE) {
             if (!test_dir) {
                 r->uri = path;
                 r->add_uri_to_alias = 1;
@@ -268,7 +268,7 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
             r->uri.data = ngx_pnalloc(r->pool, r->uri.len);
             if (r->uri.data == NULL) {
                 r->uri.len = 0;
-                return NJET_HTTP_INTERNAL_SERVER_ERROR;
+                return NJT_HTTP_INTERNAL_SERVER_ERROR;
             }
 
             p = ngx_copy(r->uri.data, name, alias);
@@ -277,10 +277,10 @@ ngx_http_try_files_handler(ngx_http_request_t *r)
 
         ngx_http_set_exten(r);
 
-        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "try file uri: \"%V\"", &r->uri);
 
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     /* not reached */
@@ -304,7 +304,7 @@ ngx_http_try_files(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     tf = ngx_pcalloc(cf->pool, cf->args->nelts * sizeof(ngx_http_try_file_t));
     if (tf == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     tlcf->try_files = tf;
@@ -337,8 +337,8 @@ ngx_http_try_files(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             sc.complete_lengths = 1;
             sc.complete_values = 1;
 
-            if (ngx_http_script_compile(&sc) != NJET_OK) {
-                return NJET_CONF_ERROR;
+            if (ngx_http_script_compile(&sc) != NJT_OK) {
+                return NJT_CONF_ERROR;
             }
 
         } else {
@@ -351,17 +351,17 @@ ngx_http_try_files(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
         code = ngx_atoi(tf[i - 1].name.data + 1, tf[i - 1].name.len - 2);
 
-        if (code == NJET_ERROR || code > 999) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        if (code == NJT_ERROR || code > 999) {
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid code \"%*s\"",
                                tf[i - 1].name.len - 1, tf[i - 1].name.data);
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         tf[i].code = code;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -393,12 +393,12 @@ ngx_http_try_files_init(ngx_conf_t *cf)
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
-    h = ngx_array_push(&cmcf->phases[NJET_HTTP_PRECONTENT_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJT_HTTP_PRECONTENT_PHASE].handlers);
     if (h == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *h = ngx_http_try_files_handler;
 
-    return NJET_OK;
+    return NJT_OK;
 }

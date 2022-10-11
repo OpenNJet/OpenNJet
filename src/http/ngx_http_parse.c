@@ -17,7 +17,7 @@ static uint32_t  usual[] = {
     0x7fff37d6, /* 0111 1111 1111 1111  0011 0111 1101 0110 */
 
                 /* _^]\ [ZYX WVUT SRQP  ONML KJIH GFED CBA@ */
-#if (NJET_WIN32)
+#if (NJT_WIN32)
     0xefffffff, /* 1110 1111 1111 1111  1111 1111 1111 1111 */
 #else
     0xffffffff, /* 1111 1111 1111 1111  1111 1111 1111 1111 */
@@ -33,7 +33,7 @@ static uint32_t  usual[] = {
 };
 
 
-#if (NJET_HAVE_LITTLE_ENDIAN && NJET_HAVE_NONALIGNED)
+#if (NJT_HAVE_LITTLE_ENDIAN && NJT_HAVE_NONALIGNED)
 
 #define ngx_str3_cmp(m, c0, c1, c2, c3)                                       \
     *(uint32_t *) m == ((c3 << 24) | (c2 << 16) | (c1 << 8) | c0)
@@ -65,7 +65,7 @@ static uint32_t  usual[] = {
         && ((uint32_t *) m)[1] == ((c7 << 24) | (c6 << 16) | (c5 << 8) | c4)  \
         && m[8] == c8
 
-#else /* !(NJET_HAVE_LITTLE_ENDIAN && NJET_HAVE_NONALIGNED) */
+#else /* !(NJT_HAVE_LITTLE_ENDIAN && NJT_HAVE_NONALIGNED) */
 
 #define ngx_str3_cmp(m, c0, c1, c2, c3)                                       \
     m[0] == c0 && m[1] == c1 && m[2] == c2
@@ -148,7 +148,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
             }
 
             if ((ch < 'A' || ch > 'Z') && ch != '_' && ch != '-') {
-                return NJET_HTTP_PARSE_INVALID_METHOD;
+                return NJT_HTTP_PARSE_INVALID_METHOD;
             }
 
             state = sw_method;
@@ -163,12 +163,12 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
 
                 case 3:
                     if (ngx_str3_cmp(m, 'G', 'E', 'T', ' ')) {
-                        r->method = NJET_HTTP_GET;
+                        r->method = NJT_HTTP_GET;
                         break;
                     }
 
                     if (ngx_str3_cmp(m, 'P', 'U', 'T', ' ')) {
-                        r->method = NJET_HTTP_PUT;
+                        r->method = NJT_HTTP_PUT;
                         break;
                     }
 
@@ -178,29 +178,29 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                     if (m[1] == 'O') {
 
                         if (ngx_str3Ocmp(m, 'P', 'O', 'S', 'T')) {
-                            r->method = NJET_HTTP_POST;
+                            r->method = NJT_HTTP_POST;
                             break;
                         }
 
                         if (ngx_str3Ocmp(m, 'C', 'O', 'P', 'Y')) {
-                            r->method = NJET_HTTP_COPY;
+                            r->method = NJT_HTTP_COPY;
                             break;
                         }
 
                         if (ngx_str3Ocmp(m, 'M', 'O', 'V', 'E')) {
-                            r->method = NJET_HTTP_MOVE;
+                            r->method = NJT_HTTP_MOVE;
                             break;
                         }
 
                         if (ngx_str3Ocmp(m, 'L', 'O', 'C', 'K')) {
-                            r->method = NJET_HTTP_LOCK;
+                            r->method = NJT_HTTP_LOCK;
                             break;
                         }
 
                     } else {
 
                         if (ngx_str4cmp(m, 'H', 'E', 'A', 'D')) {
-                            r->method = NJET_HTTP_HEAD;
+                            r->method = NJT_HTTP_HEAD;
                             break;
                         }
                     }
@@ -209,17 +209,17 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
 
                 case 5:
                     if (ngx_str5cmp(m, 'M', 'K', 'C', 'O', 'L')) {
-                        r->method = NJET_HTTP_MKCOL;
+                        r->method = NJT_HTTP_MKCOL;
                         break;
                     }
 
                     if (ngx_str5cmp(m, 'P', 'A', 'T', 'C', 'H')) {
-                        r->method = NJET_HTTP_PATCH;
+                        r->method = NJT_HTTP_PATCH;
                         break;
                     }
 
                     if (ngx_str5cmp(m, 'T', 'R', 'A', 'C', 'E')) {
-                        r->method = NJET_HTTP_TRACE;
+                        r->method = NJT_HTTP_TRACE;
                         break;
                     }
 
@@ -227,12 +227,12 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
 
                 case 6:
                     if (ngx_str6cmp(m, 'D', 'E', 'L', 'E', 'T', 'E')) {
-                        r->method = NJET_HTTP_DELETE;
+                        r->method = NJT_HTTP_DELETE;
                         break;
                     }
 
                     if (ngx_str6cmp(m, 'U', 'N', 'L', 'O', 'C', 'K')) {
-                        r->method = NJET_HTTP_UNLOCK;
+                        r->method = NJT_HTTP_UNLOCK;
                         break;
                     }
 
@@ -241,12 +241,12 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 case 7:
                     if (ngx_str7_cmp(m, 'O', 'P', 'T', 'I', 'O', 'N', 'S', ' '))
                     {
-                        r->method = NJET_HTTP_OPTIONS;
+                        r->method = NJT_HTTP_OPTIONS;
                     }
 
                     if (ngx_str7_cmp(m, 'C', 'O', 'N', 'N', 'E', 'C', 'T', ' '))
                     {
-                        r->method = NJET_HTTP_CONNECT;
+                        r->method = NJT_HTTP_CONNECT;
                     }
 
                     break;
@@ -254,7 +254,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 case 8:
                     if (ngx_str8cmp(m, 'P', 'R', 'O', 'P', 'F', 'I', 'N', 'D'))
                     {
-                        r->method = NJET_HTTP_PROPFIND;
+                        r->method = NJT_HTTP_PROPFIND;
                     }
 
                     break;
@@ -263,7 +263,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                     if (ngx_str9cmp(m,
                             'P', 'R', 'O', 'P', 'P', 'A', 'T', 'C', 'H'))
                     {
-                        r->method = NJET_HTTP_PROPPATCH;
+                        r->method = NJT_HTTP_PROPPATCH;
                     }
 
                     break;
@@ -274,7 +274,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
             }
 
             if ((ch < 'A' || ch > 'Z') && ch != '_' && ch != '-') {
-                return NJET_HTTP_PARSE_INVALID_METHOD;
+                return NJT_HTTP_PARSE_INVALID_METHOD;
             }
 
             break;
@@ -299,7 +299,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
             case ' ':
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
@@ -321,7 +321,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 state = sw_schema_slash;
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
@@ -331,7 +331,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 state = sw_schema_slash_slash;
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
@@ -341,7 +341,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 state = sw_host_start;
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
@@ -399,7 +399,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 state = sw_http_09;
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
@@ -440,7 +440,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 /* sub-delims */
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
@@ -473,7 +473,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 state = sw_http_09;
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
@@ -511,7 +511,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 r->complex_uri = 1;
                 state = sw_uri;
                 break;
-#if (NJET_WIN32)
+#if (NJT_WIN32)
             case '\\':
                 r->complex_uri = 1;
                 state = sw_uri;
@@ -530,7 +530,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 break;
             default:
                 if (ch < 0x20 || ch == 0x7f) {
-                    return NJET_HTTP_PARSE_INVALID_REQUEST;
+                    return NJT_HTTP_PARSE_INVALID_REQUEST;
                 }
                 state = sw_check_uri;
                 break;
@@ -546,7 +546,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
 
             switch (ch) {
             case '/':
-#if (NJET_WIN32)
+#if (NJT_WIN32)
                 if (r->uri_ext == p) {
                     r->complex_uri = 1;
                     state = sw_uri;
@@ -572,7 +572,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 r->uri_end = p;
                 r->http_minor = 9;
                 goto done;
-#if (NJET_WIN32)
+#if (NJT_WIN32)
             case '\\':
                 r->complex_uri = 1;
                 state = sw_after_slash_in_uri;
@@ -595,7 +595,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 break;
             default:
                 if (ch < 0x20 || ch == 0x7f) {
-                    return NJET_HTTP_PARSE_INVALID_REQUEST;
+                    return NJT_HTTP_PARSE_INVALID_REQUEST;
                 }
                 break;
             }
@@ -627,7 +627,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 break;
             default:
                 if (ch < 0x20 || ch == 0x7f) {
-                    return NJET_HTTP_PARSE_INVALID_REQUEST;
+                    return NJT_HTTP_PARSE_INVALID_REQUEST;
                 }
                 break;
             }
@@ -650,7 +650,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 state = sw_http_H;
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
@@ -660,7 +660,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 state = sw_http_HT;
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
@@ -670,7 +670,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 state = sw_http_HTT;
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
@@ -680,7 +680,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 state = sw_http_HTTP;
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
@@ -690,20 +690,20 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
                 state = sw_first_major_digit;
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
         /* first digit of major HTTP version */
         case sw_first_major_digit:
             if (ch < '1' || ch > '9') {
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
 
             r->http_major = ch - '0';
 
             if (r->http_major > 1) {
-                return NJET_HTTP_PARSE_INVALID_VERSION;
+                return NJT_HTTP_PARSE_INVALID_VERSION;
             }
 
             state = sw_major_digit;
@@ -717,13 +717,13 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
             }
 
             if (ch < '0' || ch > '9') {
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
 
             r->http_major = r->http_major * 10 + (ch - '0');
 
             if (r->http_major > 1) {
-                return NJET_HTTP_PARSE_INVALID_VERSION;
+                return NJT_HTTP_PARSE_INVALID_VERSION;
             }
 
             break;
@@ -731,7 +731,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
         /* first digit of minor HTTP version */
         case sw_first_minor_digit:
             if (ch < '0' || ch > '9') {
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
 
             r->http_minor = ch - '0';
@@ -755,11 +755,11 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
             }
 
             if (ch < '0' || ch > '9') {
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
 
             if (r->http_minor > 99) {
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
 
             r->http_minor = r->http_minor * 10 + (ch - '0');
@@ -775,7 +775,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
             case LF:
                 goto done;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
             break;
 
@@ -786,7 +786,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
             case LF:
                 goto done;
             default:
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
         }
     }
@@ -794,7 +794,7 @@ ngx_http_parse_request_line(ngx_http_request_t *r, ngx_buf_t *b)
     b->pos = p;
     r->state = state;
 
-    return NJET_AGAIN;
+    return NJT_AGAIN;
 
 done:
 
@@ -807,11 +807,11 @@ done:
     r->http_version = r->http_major * 1000 + r->http_minor;
     r->state = sw_start;
 
-    if (r->http_version == 9 && r->method != NJET_HTTP_GET) {
-        return NJET_HTTP_PARSE_INVALID_09_METHOD;
+    if (r->http_version == 9 && r->method != NJT_HTTP_GET) {
+        return NJT_HTTP_PARSE_INVALID_09_METHOD;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -895,7 +895,7 @@ ngx_http_parse_header_line(ngx_http_request_t *r, ngx_buf_t *b,
 
                 if (ch <= 0x20 || ch == 0x7f || ch == ':') {
                     r->header_end = p;
-                    return NJET_HTTP_PARSE_INVALID_HEADER;
+                    return NJT_HTTP_PARSE_INVALID_HEADER;
                 }
 
                 hash = 0;
@@ -914,7 +914,7 @@ ngx_http_parse_header_line(ngx_http_request_t *r, ngx_buf_t *b,
             if (c) {
                 hash = ngx_hash(hash, c);
                 r->lowcase_header[i++] = c;
-                i &= (NJET_HTTP_LC_HEADER_LEN - 1);
+                i &= (NJT_HTTP_LC_HEADER_LEN - 1);
                 break;
             }
 
@@ -922,7 +922,7 @@ ngx_http_parse_header_line(ngx_http_request_t *r, ngx_buf_t *b,
                 if (allow_underscores) {
                     hash = ngx_hash(hash, ch);
                     r->lowcase_header[i++] = ch;
-                    i &= (NJET_HTTP_LC_HEADER_LEN - 1);
+                    i &= (NJT_HTTP_LC_HEADER_LEN - 1);
 
                 } else {
                     r->invalid_header = 1;
@@ -964,7 +964,7 @@ ngx_http_parse_header_line(ngx_http_request_t *r, ngx_buf_t *b,
 
             if (ch <= 0x20 || ch == 0x7f) {
                 r->header_end = p;
-                return NJET_HTTP_PARSE_INVALID_HEADER;
+                return NJT_HTTP_PARSE_INVALID_HEADER;
             }
 
             r->invalid_header = 1;
@@ -987,7 +987,7 @@ ngx_http_parse_header_line(ngx_http_request_t *r, ngx_buf_t *b,
                 goto done;
             case '\0':
                 r->header_end = p;
-                return NJET_HTTP_PARSE_INVALID_HEADER;
+                return NJT_HTTP_PARSE_INVALID_HEADER;
             default:
                 r->header_start = p;
                 state = sw_value;
@@ -1011,7 +1011,7 @@ ngx_http_parse_header_line(ngx_http_request_t *r, ngx_buf_t *b,
                 goto done;
             case '\0':
                 r->header_end = p;
-                return NJET_HTTP_PARSE_INVALID_HEADER;
+                return NJT_HTTP_PARSE_INVALID_HEADER;
             }
             break;
 
@@ -1027,7 +1027,7 @@ ngx_http_parse_header_line(ngx_http_request_t *r, ngx_buf_t *b,
                 goto done;
             case '\0':
                 r->header_end = p;
-                return NJET_HTTP_PARSE_INVALID_HEADER;
+                return NJT_HTTP_PARSE_INVALID_HEADER;
             default:
                 state = sw_value;
                 break;
@@ -1053,7 +1053,7 @@ ngx_http_parse_header_line(ngx_http_request_t *r, ngx_buf_t *b,
             case CR:
                 break;
             default:
-                return NJET_HTTP_PARSE_INVALID_HEADER;
+                return NJT_HTTP_PARSE_INVALID_HEADER;
             }
             break;
 
@@ -1063,7 +1063,7 @@ ngx_http_parse_header_line(ngx_http_request_t *r, ngx_buf_t *b,
             case LF:
                 goto header_done;
             default:
-                return NJET_HTTP_PARSE_INVALID_HEADER;
+                return NJT_HTTP_PARSE_INVALID_HEADER;
             }
         }
     }
@@ -1073,7 +1073,7 @@ ngx_http_parse_header_line(ngx_http_request_t *r, ngx_buf_t *b,
     r->header_hash = hash;
     r->lowcase_index = i;
 
-    return NJET_AGAIN;
+    return NJT_AGAIN;
 
 done:
 
@@ -1082,14 +1082,14 @@ done:
     r->header_hash = hash;
     r->lowcase_index = i;
 
-    return NJET_OK;
+    return NJT_OK;
 
 header_done:
 
     b->pos = p + 1;
     r->state = sw_start;
 
-    return NJET_HTTP_PARSE_HEADER_DONE;
+    return NJT_HTTP_PARSE_HEADER_DONE;
 }
 
 
@@ -1115,7 +1115,7 @@ ngx_http_parse_uri(ngx_http_request_t *r)
         case sw_start:
 
             if (ch != '/') {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             state = sw_after_slash_in_uri;
@@ -1142,7 +1142,7 @@ ngx_http_parse_uri(ngx_http_request_t *r)
                 r->complex_uri = 1;
                 state = sw_uri;
                 break;
-#if (NJET_WIN32)
+#if (NJT_WIN32)
             case '\\':
                 r->complex_uri = 1;
                 state = sw_uri;
@@ -1161,7 +1161,7 @@ ngx_http_parse_uri(ngx_http_request_t *r)
                 break;
             default:
                 if (ch <= 0x20 || ch == 0x7f) {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
                 state = sw_check_uri;
                 break;
@@ -1177,7 +1177,7 @@ ngx_http_parse_uri(ngx_http_request_t *r)
 
             switch (ch) {
             case '/':
-#if (NJET_WIN32)
+#if (NJT_WIN32)
                 if (r->uri_ext == p) {
                     r->complex_uri = 1;
                     state = sw_uri;
@@ -1190,7 +1190,7 @@ ngx_http_parse_uri(ngx_http_request_t *r)
             case '.':
                 r->uri_ext = p + 1;
                 break;
-#if (NJET_WIN32)
+#if (NJT_WIN32)
             case '\\':
                 r->complex_uri = 1;
                 state = sw_after_slash_in_uri;
@@ -1213,7 +1213,7 @@ ngx_http_parse_uri(ngx_http_request_t *r)
                 break;
             default:
                 if (ch <= 0x20 || ch == 0x7f) {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
                 break;
             }
@@ -1232,7 +1232,7 @@ ngx_http_parse_uri(ngx_http_request_t *r)
                 break;
             default:
                 if (ch <= 0x20 || ch == 0x7f) {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
                 break;
             }
@@ -1240,7 +1240,7 @@ ngx_http_parse_uri(ngx_http_request_t *r)
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -1257,7 +1257,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
         sw_quoted_second
     } state, quoted_state;
 
-#if (NJET_SUPPRESS_WARN)
+#if (NJT_SUPPRESS_WARN)
     decoded = '\0';
     quoted_state = sw_usual;
 #endif
@@ -1282,7 +1282,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
          * the line feed
          */
 
-        ngx_log_debug3(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug3(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "s:%d in:'%Xd:%c'", state, ch, ch);
 
         switch (state) {
@@ -1296,7 +1296,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
             }
 
             switch (ch) {
-#if (NJET_WIN32)
+#if (NJT_WIN32)
             case '\\':
                 if (u - 2 >= r->uri.data
                     && *(u - 1) == '.' && *(u - 2) != '.')
@@ -1321,7 +1321,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
                 break;
 #endif
             case '/':
-#if (NJET_WIN32)
+#if (NJT_WIN32)
                 if (u - 2 >= r->uri.data
                     && *(u - 1) == '.' && *(u - 2) != '.')
                 {
@@ -1366,7 +1366,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
             }
 
             switch (ch) {
-#if (NJET_WIN32)
+#if (NJT_WIN32)
             case '\\':
                 break;
 #endif
@@ -1410,7 +1410,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
             }
 
             switch (ch) {
-#if (NJET_WIN32)
+#if (NJT_WIN32)
             case '\\':
 #endif
             case '/':
@@ -1454,7 +1454,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
             }
 
             switch (ch) {
-#if (NJET_WIN32)
+#if (NJT_WIN32)
             case '\\':
 #endif
             case '/':
@@ -1463,7 +1463,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
                 u -= 4;
                 for ( ;; ) {
                     if (u < r->uri.data) {
-                        return NJET_HTTP_PARSE_INVALID_REQUEST;
+                        return NJT_HTTP_PARSE_INVALID_REQUEST;
                     }
                     if (*u == '/') {
                         u++;
@@ -1514,7 +1514,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
                 break;
             }
 
-            return NJET_HTTP_PARSE_INVALID_REQUEST;
+            return NJT_HTTP_PARSE_INVALID_REQUEST;
 
         case sw_quoted_second:
             if (ch >= '0' && ch <= '9') {
@@ -1527,7 +1527,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
                     break;
 
                 } else if (ch == '\0') {
-                    return NJET_HTTP_PARSE_INVALID_REQUEST;
+                    return NJT_HTTP_PARSE_INVALID_REQUEST;
                 }
 
                 state = quoted_state;
@@ -1552,12 +1552,12 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
                 break;
             }
 
-            return NJET_HTTP_PARSE_INVALID_REQUEST;
+            return NJT_HTTP_PARSE_INVALID_REQUEST;
         }
     }
 
     if (state == sw_quoted || state == sw_quoted_second) {
-        return NJET_HTTP_PARSE_INVALID_REQUEST;
+        return NJT_HTTP_PARSE_INVALID_REQUEST;
     }
 
     if (state == sw_dot) {
@@ -1568,7 +1568,7 @@ ngx_http_parse_complex_uri(ngx_http_request_t *r, ngx_uint_t merge_slashes)
 
         for ( ;; ) {
             if (u < r->uri.data) {
-                return NJET_HTTP_PARSE_INVALID_REQUEST;
+                return NJT_HTTP_PARSE_INVALID_REQUEST;
             }
 
             if (*u == '/') {
@@ -1591,7 +1591,7 @@ done:
 
     r->uri_ext = NULL;
 
-    return NJET_OK;
+    return NJT_OK;
 
 args:
 
@@ -1616,7 +1616,7 @@ args:
 
     r->uri_ext = NULL;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -1656,7 +1656,7 @@ ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
                 state = sw_H;
                 break;
             default:
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
             break;
 
@@ -1666,7 +1666,7 @@ ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
                 state = sw_HT;
                 break;
             default:
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
             break;
 
@@ -1676,7 +1676,7 @@ ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
                 state = sw_HTT;
                 break;
             default:
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
             break;
 
@@ -1686,7 +1686,7 @@ ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
                 state = sw_HTTP;
                 break;
             default:
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
             break;
 
@@ -1696,14 +1696,14 @@ ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
                 state = sw_first_major_digit;
                 break;
             default:
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
             break;
 
         /* the first digit of major HTTP version */
         case sw_first_major_digit:
             if (ch < '1' || ch > '9') {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             r->http_major = ch - '0';
@@ -1718,11 +1718,11 @@ ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
             }
 
             if (ch < '0' || ch > '9') {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             if (r->http_major > 99) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             r->http_major = r->http_major * 10 + (ch - '0');
@@ -1731,7 +1731,7 @@ ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
         /* the first digit of minor HTTP version */
         case sw_first_minor_digit:
             if (ch < '0' || ch > '9') {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             r->http_minor = ch - '0';
@@ -1746,11 +1746,11 @@ ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
             }
 
             if (ch < '0' || ch > '9') {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             if (r->http_minor > 99) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             r->http_minor = r->http_minor * 10 + (ch - '0');
@@ -1763,7 +1763,7 @@ ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
             }
 
             if (ch < '0' || ch > '9') {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             status->code = status->code * 10 + (ch - '0');
@@ -1790,7 +1790,7 @@ ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
             case LF:
                 goto done;
             default:
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
             break;
 
@@ -1813,7 +1813,7 @@ ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
             case LF:
                 goto done;
             default:
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
         }
     }
@@ -1821,7 +1821,7 @@ ngx_http_parse_status_line(ngx_http_request_t *r, ngx_buf_t *b,
     b->pos = p;
     r->state = state;
 
-    return NJET_AGAIN;
+    return NJT_AGAIN;
 
 done:
 
@@ -1834,7 +1834,7 @@ done:
     status->http_version = r->http_major * 1000 + r->http_minor;
     r->state = sw_start;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -1898,14 +1898,14 @@ ngx_http_parse_unsafe_uri(ngx_http_request_t *r, ngx_str_t *uri,
     }
 
     if (quoted) {
-        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "escaped URI: \"%V\"", uri);
 
         src = uri->data;
 
         dst = ngx_pnalloc(r->pool, uri->len);
         if (dst == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         uri->data = dst;
@@ -1914,7 +1914,7 @@ ngx_http_parse_unsafe_uri(ngx_http_request_t *r, ngx_str_t *uri,
 
         uri->len = dst - uri->data;
 
-        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "unescaped URI: \"%V\"", uri);
 
         len = uri->len;
@@ -1947,16 +1947,16 @@ ngx_http_parse_unsafe_uri(ngx_http_request_t *r, ngx_str_t *uri,
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 
 unsafe:
 
-    if (*flags & NJET_HTTP_LOG_UNSAFE) {
-        ngx_log_error(NJET_LOG_ERR, r->connection->log, 0,
+    if (*flags & NJT_HTTP_LOG_UNSAFE) {
+        ngx_log_error(NJT_LOG_ERR, r->connection->log, 0,
                       "unsafe URI \"%V\" was detected", uri);
     }
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
@@ -1969,7 +1969,7 @@ ngx_http_parse_multi_header_lines(ngx_http_request_t *r,
 
     for (h = headers; h; h = h->next) {
 
-        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "parse header: \"%V: %V\"", &h->key, &h->value);
 
         if (name->len > h->value.len) {
@@ -2039,7 +2039,7 @@ ngx_http_parse_set_cookie_lines(ngx_http_request_t *r,
 
     for (h = headers; h; h = h->next) {
 
-        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "parse header: \"%V: %V\"", &h->key, &h->value);
 
         if (name->len >= h->value.len) {
@@ -2084,7 +2084,7 @@ ngx_http_arg(ngx_http_request_t *r, u_char *name, size_t len, ngx_str_t *value)
     u_char  *p, *last;
 
     if (r->args.len == 0) {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     p = r->args.data;
@@ -2097,7 +2097,7 @@ ngx_http_arg(ngx_http_request_t *r, u_char *name, size_t len, ngx_str_t *value)
         p = ngx_strlcasestrn(p, last - 1, name, len - 1);
 
         if (p == NULL) {
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
 
         if ((p == r->args.data || *(p - 1) == '&') && *(p + len) == '=') {
@@ -2112,11 +2112,11 @@ ngx_http_arg(ngx_http_request_t *r, u_char *name, size_t len, ngx_str_t *value)
 
             value->len = p - value->data;
 
-            return NJET_OK;
+            return NJT_OK;
         }
     }
 
-    return NJET_DECLINED;
+    return NJT_DECLINED;
 }
 
 
@@ -2169,13 +2169,13 @@ ngx_http_parse_chunked(ngx_http_request_t *r, ngx_buf_t *b,
         state = sw_after_data;
     }
 
-    rc = NJET_AGAIN;
+    rc = NJT_AGAIN;
 
     for (pos = b->pos; pos < b->last; pos++) {
 
         ch = *pos;
 
-        ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "http chunked byte: %02Xd s:%d", ch, state);
 
         switch (state) {
@@ -2198,7 +2198,7 @@ ngx_http_parse_chunked(ngx_http_request_t *r, ngx_buf_t *b,
             goto invalid;
 
         case sw_chunk_size:
-            if (ctx->size > NJET_MAX_OFF_T_VALUE / 16) {
+            if (ctx->size > NJT_MAX_OFF_T_VALUE / 16) {
                 goto invalid;
             }
 
@@ -2271,7 +2271,7 @@ ngx_http_parse_chunked(ngx_http_request_t *r, ngx_buf_t *b,
             goto invalid;
 
         case sw_chunk_data:
-            rc = NJET_OK;
+            rc = NJT_OK;
             goto data;
 
         case sw_after_data:
@@ -2354,7 +2354,7 @@ data:
     ctx->state = state;
     b->pos = pos;
 
-    if (ctx->size > NJET_MAX_OFF_T_VALUE - 5) {
+    if (ctx->size > NJT_MAX_OFF_T_VALUE - 5) {
         goto invalid;
     }
 
@@ -2401,9 +2401,9 @@ done:
     ctx->state = 0;
     b->pos = pos + 1;
 
-    return NJET_DONE;
+    return NJT_DONE;
 
 invalid:
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }

@@ -23,7 +23,7 @@
  * "lwsync"  write barrier, is faster than "eieio" on ppc64
  */
 
-#if (NJET_PTR_SIZE == 8)
+#if (NJT_PTR_SIZE == 8)
 
 static ngx_inline ngx_atomic_uint_t
 ngx_atomic_cmp_set(ngx_atomic_t *lock, ngx_atomic_uint_t old,
@@ -79,7 +79,7 @@ ngx_atomic_fetch_add(ngx_atomic_t *value, ngx_atomic_int_t add)
 }
 
 
-#if (NJET_SMP)
+#if (NJT_SMP)
 #define ngx_memory_barrier()                                                  \
     __asm__ volatile ("isync  \n  lwsync  \n" ::: "memory")
 #else
@@ -142,7 +142,7 @@ ngx_atomic_fetch_add(ngx_atomic_t *value, ngx_atomic_int_t add)
 }
 
 
-#if (NJET_SMP)
+#if (NJT_SMP)
 #define ngx_memory_barrier()                                                  \
     __asm__ volatile ("isync  \n  eieio  \n" ::: "memory")
 #else

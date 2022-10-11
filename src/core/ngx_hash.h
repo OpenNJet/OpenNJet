@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_HASH_H_INCLUDED_
-#define _NJET_HASH_H_INCLUDED_
+#ifndef _NJT_HASH_H_INCLUDED_
+#define _NJT_HASH_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -62,14 +62,14 @@ typedef struct {
 } ngx_hash_init_t;
 
 
-#define NJET_HASH_SMALL            1
-#define NJET_HASH_LARGE            2
+#define NJT_HASH_SMALL            1
+#define NJT_HASH_LARGE            2
 
-#define NJET_HASH_LARGE_ASIZE      16384
-#define NJET_HASH_LARGE_HSIZE      10007
+#define NJT_HASH_LARGE_ASIZE      16384
+#define NJT_HASH_LARGE_HSIZE      10007
 
-#define NJET_HASH_WILDCARD_KEY     1
-#define NJET_HASH_READONLY_KEY     2
+#define NJT_HASH_WILDCARD_KEY     1
+#define NJT_HASH_READONLY_KEY     2
 
 
 typedef struct {
@@ -122,4 +122,4 @@ ngx_int_t ngx_hash_add_key(ngx_hash_keys_arrays_t *ha, ngx_str_t *key,
     void *value, ngx_uint_t flags);
 
 
-#endif /* _NJET_HASH_H_INCLUDED_ */
+#endif /* _NJT_HASH_H_INCLUDED_ */

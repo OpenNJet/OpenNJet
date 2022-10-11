@@ -41,8 +41,8 @@ ngx_darwin_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
     ngx_chain_t     *cl;
     ngx_iovec_t      header, trailer;
     struct sf_hdtr   hdtr;
-    struct iovec     headers[NJET_IOVS_PREALLOCATE];
-    struct iovec     trailers[NJET_IOVS_PREALLOCATE];
+    struct iovec     headers[NJT_IOVS_PREALLOCATE];
+    struct iovec     trailers[NJT_IOVS_PREALLOCATE];
 
     wev = c->write;
 
@@ -50,30 +50,30 @@ ngx_darwin_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
         return in;
     }
 
-#if (NJET_HAVE_KQUEUE)
+#if (NJT_HAVE_KQUEUE)
 
-    if ((ngx_event_flags & NJET_USE_KQUEUE_EVENT) && wev->pending_eof) {
+    if ((ngx_event_flags & NJT_USE_KQUEUE_EVENT) && wev->pending_eof) {
         (void) ngx_connection_error(c, wev->kq_errno,
                                "kevent() reported about an closed connection");
         wev->error = 1;
-        return NJET_CHAIN_ERROR;
+        return NJT_CHAIN_ERROR;
     }
 
 #endif
 
     /* the maximum limit size is the maximum size_t value - the page size */
 
-    if (limit == 0 || limit > (off_t) (NJET_MAX_SIZE_T_VALUE - ngx_pagesize)) {
-        limit = NJET_MAX_SIZE_T_VALUE - ngx_pagesize;
+    if (limit == 0 || limit > (off_t) (NJT_MAX_SIZE_T_VALUE - ngx_pagesize)) {
+        limit = NJT_MAX_SIZE_T_VALUE - ngx_pagesize;
     }
 
     send = 0;
 
     header.iovs = headers;
-    header.nalloc = NJET_IOVS_PREALLOCATE;
+    header.nalloc = NJT_IOVS_PREALLOCATE;
 
     trailer.iovs = trailers;
-    trailer.nalloc = NJET_IOVS_PREALLOCATE;
+    trailer.nalloc = NJT_IOVS_PREALLOCATE;
 
     for ( ;; ) {
         eintr = 0;
@@ -83,8 +83,8 @@ ngx_darwin_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
         cl = ngx_output_chain_to_iovec(&header, in, limit - send, c->log);
 
-        if (cl == NJET_CHAIN_ERROR) {
-            return NJET_CHAIN_ERROR;
+        if (cl == NJT_CHAIN_ERROR) {
+            return NJT_CHAIN_ERROR;
         }
 
         send += header.size;
@@ -106,8 +106,8 @@ ngx_darwin_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
                 cl = ngx_output_chain_to_iovec(&trailer, cl, limit - send,
                                                c->log);
-                if (cl == NJET_CHAIN_ERROR) {
-                    return NJET_CHAIN_ERROR;
+                if (cl == NJT_CHAIN_ERROR) {
+                    return NJT_CHAIN_ERROR;
                 }
 
                 send += trailer.size;
@@ -128,7 +128,7 @@ ngx_darwin_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
             sent = header.size + file_size;
 
-            ngx_log_debug3(NJET_LOG_DEBUG_EVENT, c->log, 0,
+            ngx_log_debug3(NJT_LOG_DEBUG_EVENT, c->log, 0,
                            "sendfile: @%O %O h:%uz",
                            file->file_pos, sent, header.size);
 
@@ -139,20 +139,20 @@ ngx_darwin_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
                 err = ngx_errno;
 
                 switch (err) {
-                case NJET_EAGAIN:
+                case NJT_EAGAIN:
                     break;
 
-                case NJET_EINTR:
+                case NJT_EINTR:
                     eintr = 1;
                     break;
 
                 default:
                     wev->error = 1;
                     (void) ngx_connection_error(c, err, "sendfile() failed");
-                    return NJET_CHAIN_ERROR;
+                    return NJT_CHAIN_ERROR;
                 }
 
-                ngx_log_debug1(NJET_LOG_DEBUG_EVENT, c->log, err,
+                ngx_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, err,
                                "sendfile() sent only %O bytes", sent);
             }
 
@@ -164,25 +164,25 @@ ngx_darwin_sendfile_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
                  * the end of the file
                  */
 
-                ngx_log_error(NJET_LOG_ALERT, c->log, 0,
+                ngx_log_error(NJT_LOG_ALERT, c->log, 0,
                               "sendfile() reported that \"%s\" was truncated",
                               file->file->name.data);
 
-                return NJET_CHAIN_ERROR;
+                return NJT_CHAIN_ERROR;
             }
 
-            ngx_log_debug4(NJET_LOG_DEBUG_EVENT, c->log, 0,
+            ngx_log_debug4(NJT_LOG_DEBUG_EVENT, c->log, 0,
                            "sendfile: %d, @%O %O:%O",
                            rc, file->file_pos, sent, file_size + header.size);
 
         } else {
             n = ngx_writev(c, &header);
 
-            if (n == NJET_ERROR) {
-                return NJET_CHAIN_ERROR;
+            if (n == NJT_ERROR) {
+                return NJT_CHAIN_ERROR;
             }
 
-            sent = (n == NJET_AGAIN) ? 0 : n;
+            sent = (n == NJT_AGAIN) ? 0 : n;
         }
 
         c->sent += sent;

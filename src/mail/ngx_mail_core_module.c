@@ -30,65 +30,65 @@ static char *ngx_mail_core_resolver(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_mail_core_commands[] = {
 
     { ngx_string("server"),
-      NJET_MAIL_MAIN_CONF|NJET_CONF_BLOCK|NJET_CONF_NOARGS,
+      NJT_MAIL_MAIN_CONF|NJT_CONF_BLOCK|NJT_CONF_NOARGS,
       ngx_mail_core_server,
       0,
       0,
       NULL },
 
     { ngx_string("listen"),
-      NJET_MAIL_SRV_CONF|NJET_CONF_1MORE,
+      NJT_MAIL_SRV_CONF|NJT_CONF_1MORE,
       ngx_mail_core_listen,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("protocol"),
-      NJET_MAIL_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_MAIL_SRV_CONF|NJT_CONF_TAKE1,
       ngx_mail_core_protocol,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("timeout"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_core_srv_conf_t, timeout),
       NULL },
 
     { ngx_string("server_name"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_str_slot,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_core_srv_conf_t, server_name),
       NULL },
 
     { ngx_string("error_log"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_1MORE,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_1MORE,
       ngx_mail_core_error_log,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("resolver"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_1MORE,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_1MORE,
       ngx_mail_core_resolver,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("resolver_timeout"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_core_srv_conf_t, resolver_timeout),
       NULL },
 
     { ngx_string("max_errors"),
-      NJET_MAIL_MAIN_CONF|NJET_MAIL_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NJET_MAIL_SRV_CONF_OFFSET,
+      NJT_MAIL_SRV_CONF_OFFSET,
       offsetof(ngx_mail_core_srv_conf_t, max_errors),
       NULL },
 
@@ -108,10 +108,10 @@ static ngx_mail_module_t  ngx_mail_core_module_ctx = {
 
 
 ngx_module_t  ngx_mail_core_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_mail_core_module_ctx,             /* module context */
     ngx_mail_core_commands,                /* module directives */
-    NJET_MAIL_MODULE,                       /* module type */
+    NJT_MAIL_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -119,7 +119,7 @@ ngx_module_t  ngx_mail_core_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -135,13 +135,13 @@ ngx_mail_core_create_main_conf(ngx_conf_t *cf)
 
     if (ngx_array_init(&cmcf->servers, cf->pool, 4,
                        sizeof(ngx_mail_core_srv_conf_t *))
-        != NJET_OK)
+        != NJT_OK)
     {
         return NULL;
     }
 
     if (ngx_array_init(&cmcf->listen, cf->pool, 4, sizeof(ngx_mail_listen_t))
-        != NJET_OK)
+        != NJT_OK)
     {
         return NULL;
     }
@@ -167,12 +167,12 @@ ngx_mail_core_create_srv_conf(ngx_conf_t *cf)
      *     cscf->error_log = NULL;
      */
 
-    cscf->timeout = NJET_CONF_UNSET_MSEC;
-    cscf->resolver_timeout = NJET_CONF_UNSET_MSEC;
+    cscf->timeout = NJT_CONF_UNSET_MSEC;
+    cscf->resolver_timeout = NJT_CONF_UNSET_MSEC;
 
-    cscf->max_errors = NJET_CONF_UNSET_UINT;
+    cscf->max_errors = NJT_CONF_UNSET_UINT;
 
-    cscf->resolver = NJET_CONF_UNSET_PTR;
+    cscf->resolver = NJT_CONF_UNSET_PTR;
 
     cscf->file_name = cf->conf_file->file.name.data;
     cscf->line = cf->conf_file->line;
@@ -200,10 +200,10 @@ ngx_mail_core_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
     }
 
     if (conf->protocol == NULL) {
-        ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
+        ngx_log_error(NJT_LOG_EMERG, cf->log, 0,
                       "unknown mail protocol for server in %s:%ui",
                       conf->file_name, conf->line);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     if (conf->error_log == NULL) {
@@ -216,7 +216,7 @@ ngx_mail_core_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_ptr_value(conf->resolver, prev->resolver, NULL);
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -234,7 +234,7 @@ ngx_mail_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     ctx = ngx_pcalloc(cf->pool, sizeof(ngx_mail_conf_ctx_t));
     if (ctx == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     mail_ctx = cf->ctx;
@@ -244,11 +244,11 @@ ngx_mail_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     ctx->srv_conf = ngx_pcalloc(cf->pool, sizeof(void *) * ngx_mail_max_module);
     if (ctx->srv_conf == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     for (m = 0; cf->cycle->modules[m]; m++) {
-        if (cf->cycle->modules[m]->type != NJET_MAIL_MODULE) {
+        if (cf->cycle->modules[m]->type != NJT_MAIL_MODULE) {
             continue;
         }
 
@@ -257,7 +257,7 @@ ngx_mail_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         if (module->create_srv_conf) {
             mconf = module->create_srv_conf(cf);
             if (mconf == NULL) {
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             ctx->srv_conf[cf->cycle->modules[m]->ctx_index] = mconf;
@@ -273,7 +273,7 @@ ngx_mail_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     cscfp = ngx_array_push(&cmcf->servers);
     if (cscfp == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     *cscfp = cscf;
@@ -283,17 +283,17 @@ ngx_mail_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     pcf = *cf;
     cf->ctx = ctx;
-    cf->cmd_type = NJET_MAIL_SRV_CONF;
+    cf->cmd_type = NJT_MAIL_SRV_CONF;
 
     rv = ngx_conf_parse(cf, NULL);
 
     *cf = pcf;
 
-    if (rv == NJET_CONF_OK && !cscf->listen) {
-        ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
+    if (rv == NJT_CONF_OK && !cscf->listen) {
+        ngx_log_error(NJT_LOG_EMERG, cf->log, 0,
                       "no \"listen\" is defined for server in %s:%ui",
                       cscf->file_name, cscf->line);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     return rv;
@@ -321,37 +321,37 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     u.url = value[1];
     u.listen = 1;
 
-    if (ngx_parse_url(cf->pool, &u) != NJET_OK) {
+    if (ngx_parse_url(cf->pool, &u) != NJT_OK) {
         if (u.err) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "%s in \"%V\" of the \"listen\" directive",
                                u.err, &u.url);
         }
 
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     cmcf = ngx_mail_conf_get_module_main_conf(cf, ngx_mail_core_module);
 
     ls = ngx_array_push_n(&cmcf->listen, u.naddrs);
     if (ls == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ngx_memzero(ls, sizeof(ngx_mail_listen_t));
 
-    ls->backlog = NJET_LISTEN_BACKLOG;
+    ls->backlog = NJT_LISTEN_BACKLOG;
     ls->rcvbuf = -1;
     ls->sndbuf = -1;
     ls->ctx = cf->ctx;
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     ls->ipv6only = 1;
 #endif
 
     if (cscf->protocol == NULL) {
         for (m = 0; cf->cycle->modules[m]; m++) {
-            if (cf->cycle->modules[m]->type != NJET_MAIL_MODULE) {
+            if (cf->cycle->modules[m]->type != NJT_MAIL_MODULE) {
                 continue;
             }
 
@@ -381,10 +381,10 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             ls->backlog = ngx_atoi(value[i].data + 8, value[i].len - 8);
             ls->bind = 1;
 
-            if (ls->backlog == NJET_ERROR || ls->backlog == 0) {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            if (ls->backlog == NJT_ERROR || ls->backlog == 0) {
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid backlog \"%V\"", &value[i]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             continue;
@@ -397,10 +397,10 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             ls->rcvbuf = ngx_parse_size(&size);
             ls->bind = 1;
 
-            if (ls->rcvbuf == NJET_ERROR) {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            if (ls->rcvbuf == NJT_ERROR) {
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid rcvbuf \"%V\"", &value[i]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             continue;
@@ -413,17 +413,17 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             ls->sndbuf = ngx_parse_size(&size);
             ls->bind = 1;
 
-            if (ls->sndbuf == NJET_ERROR) {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            if (ls->sndbuf == NJT_ERROR) {
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid sndbuf \"%V\"", &value[i]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             continue;
         }
 
         if (ngx_strncmp(value[i].data, "ipv6only=o", 10) == 0) {
-#if (NJET_HAVE_INET6 && defined IPV6_V6ONLY)
+#if (NJT_HAVE_INET6 && defined IPV6_V6ONLY)
             if (ngx_strcmp(&value[i].data[10], "n") == 0) {
                 ls->ipv6only = 1;
 
@@ -431,24 +431,24 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
                 ls->ipv6only = 0;
 
             } else {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid ipv6only flags \"%s\"",
                                    &value[i].data[9]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             ls->bind = 1;
             continue;
 #else
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "bind ipv6only is not supported "
                                "on this platform");
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
 #endif
         }
 
         if (ngx_strcmp(value[i].data, "ssl") == 0) {
-#if (NJET_MAIL_SSL)
+#if (NJT_MAIL_SSL)
             ngx_mail_ssl_conf_t  *sslcf;
 
             sslcf = ngx_mail_conf_get_module_srv_conf(cf, ngx_mail_ssl_module);
@@ -461,10 +461,10 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
             continue;
 #else
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "the \"ssl\" parameter requires "
                                "ngx_mail_ssl_module");
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
 #endif
         }
 
@@ -478,7 +478,7 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
             } else {
 
-#if (NJET_HAVE_KEEPALIVE_TUNABLE)
+#if (NJT_HAVE_KEEPALIVE_TUNABLE)
                 u_char     *p, *end;
                 ngx_str_t   s;
 
@@ -494,7 +494,7 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
                     s.len = p - s.data;
 
                     ls->tcp_keepidle = ngx_parse_time(&s, 1);
-                    if (ls->tcp_keepidle == (time_t) NJET_ERROR) {
+                    if (ls->tcp_keepidle == (time_t) NJT_ERROR) {
                         goto invalid_so_keepalive;
                     }
                 }
@@ -510,7 +510,7 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
                     s.len = p - s.data;
 
                     ls->tcp_keepintvl = ngx_parse_time(&s, 1);
-                    if (ls->tcp_keepintvl == (time_t) NJET_ERROR) {
+                    if (ls->tcp_keepintvl == (time_t) NJT_ERROR) {
                         goto invalid_so_keepalive;
                     }
                 }
@@ -521,7 +521,7 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
                     s.len = end - s.data;
 
                     ls->tcp_keepcnt = ngx_atoi(s.data, s.len);
-                    if (ls->tcp_keepcnt == NJET_ERROR) {
+                    if (ls->tcp_keepcnt == NJT_ERROR) {
                         goto invalid_so_keepalive;
                     }
                 }
@@ -536,10 +536,10 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
 #else
 
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "the \"so_keepalive\" parameter accepts "
                                    "only \"on\" or \"off\" on this platform");
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
 
 #endif
             }
@@ -548,13 +548,13 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
             continue;
 
-#if (NJET_HAVE_KEEPALIVE_TUNABLE)
+#if (NJT_HAVE_KEEPALIVE_TUNABLE)
         invalid_so_keepalive:
 
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid so_keepalive value: \"%s\"",
                                &value[i].data[13]);
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
 #endif
         }
 
@@ -563,9 +563,9 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             continue;
         }
 
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "the invalid \"%V\" parameter", &value[i]);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     als = cmcf->listen.elts;
@@ -582,19 +582,19 @@ ngx_mail_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
             if (ngx_cmp_sockaddr(als[i].sockaddr, als[i].socklen,
                                  ls[n].sockaddr, ls[n].socklen, 1)
-                != NJET_OK)
+                != NJT_OK)
             {
                 continue;
             }
 
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "duplicate \"%V\" address and port pair",
                                &ls[n].addr_text);
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -610,7 +610,7 @@ ngx_mail_core_protocol(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     value = cf->args->elts;
 
     for (m = 0; cf->cycle->modules[m]; m++) {
-        if (cf->cycle->modules[m]->type != NJET_MAIL_MODULE) {
+        if (cf->cycle->modules[m]->type != NJT_MAIL_MODULE) {
             continue;
         }
 
@@ -621,13 +621,13 @@ ngx_mail_core_protocol(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         {
             cscf->protocol = module->protocol;
 
-            return NJET_CONF_OK;
+            return NJT_CONF_OK;
         }
     }
 
-    ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+    ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                        "unknown protocol \"%V\"", &value[1]);
-    return NJET_CONF_ERROR;
+    return NJT_CONF_ERROR;
 }
 
 
@@ -649,21 +649,21 @@ ngx_mail_core_resolver(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     value = cf->args->elts;
 
-    if (cscf->resolver != NJET_CONF_UNSET_PTR) {
+    if (cscf->resolver != NJT_CONF_UNSET_PTR) {
         return "is duplicate";
     }
 
     if (ngx_strcmp(value[1].data, "off") == 0) {
         cscf->resolver = NULL;
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     cscf->resolver = ngx_resolver_create(cf, &value[1], cf->args->nelts - 1);
     if (cscf->resolver == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -683,11 +683,11 @@ ngx_mail_capabilities(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     for (i = 1; i < cf->args->nelts; i++) {
         c = ngx_array_push(a);
         if (c == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         *c = value[i];
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

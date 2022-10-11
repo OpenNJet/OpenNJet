@@ -3,22 +3,22 @@
 # Copyright (C) Nginx, Inc.
 
 
-NJET_MAKEFILE=$NJET_OBJS/Makefile
-NJET_MODULES_C=$NJET_OBJS/ngx_modules.c
+NJT_MAKEFILE=$NJT_OBJS/Makefile
+NJT_MODULES_C=$NJT_OBJS/ngx_modules.c
 
-NJET_AUTO_HEADERS_H=$NJET_OBJS/ngx_auto_headers.h
-NJET_AUTO_CONFIG_H=$NJET_OBJS/ngx_auto_config.h
+NJT_AUTO_HEADERS_H=$NJT_OBJS/ngx_auto_headers.h
+NJT_AUTO_CONFIG_H=$NJT_OBJS/ngx_auto_config.h
 
-NJET_AUTOTEST=$NJET_OBJS/autotest
-NJET_AUTOCONF_ERR=$NJET_OBJS/autoconf.err
+NJT_AUTOTEST=$NJT_OBJS/autotest
+NJT_AUTOCONF_ERR=$NJT_OBJS/autoconf.err
 
 # STUBs
-NJET_ERR=$NJET_OBJS/autoconf.err
-MAKEFILE=$NJET_OBJS/Makefile
+NJT_ERR=$NJT_OBJS/autoconf.err
+MAKEFILE=$NJT_OBJS/Makefile
 
 
-NJET_PCH=
-NJET_USE_PCH=
+NJT_PCH=
+NJT_USE_PCH=
 
 
 # check the echo's "-n" option and "\c" capability
@@ -47,7 +47,7 @@ cat << END > Makefile
 default:	build
 
 clean:
-	rm -rf Makefile $NJET_OBJS
+	rm -rf Makefile $NJT_OBJS
 
 .PHONY:	default clean
 END

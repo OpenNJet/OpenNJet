@@ -5,15 +5,15 @@
  */
 
 
-#ifndef _NJET_SOCKET_H_INCLUDED_
-#define _NJET_SOCKET_H_INCLUDED_
+#ifndef _NJT_SOCKET_H_INCLUDED_
+#define _NJT_SOCKET_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#define NJET_WRITE_SHUTDOWN SD_SEND
+#define NJT_WRITE_SHUTDOWN SD_SEND
 
 
 typedef SOCKET  ngx_socket_t;
@@ -203,7 +203,7 @@ extern LPFN_CONNECTEX             ngx_connectex;
 extern LPFN_DISCONNECTEX          ngx_disconnectex;
 
 
-#if (NJET_HAVE_POLL && !defined POLLIN)
+#if (NJT_HAVE_POLL && !defined POLLIN)
 
 /*
  * WSAPoll() is only available if _WIN32_WINNT >= 0x0600.
@@ -211,7 +211,7 @@ extern LPFN_DISCONNECTEX          ngx_disconnectex;
  * load it dynamically at runtime.
  */
 
-#define NJET_LOAD_WSAPOLL 1
+#define NJT_LOAD_WSAPOLL 1
 
 #define POLLRDNORM  0x0100
 #define POLLRDBAND  0x0200
@@ -250,4 +250,4 @@ int ngx_tcp_push(ngx_socket_t s);
 #define ngx_tcp_push_n            "tcp_push()"
 
 
-#endif /* _NJET_SOCKET_H_INCLUDED_ */
+#endif /* _NJT_SOCKET_H_INCLUDED_ */

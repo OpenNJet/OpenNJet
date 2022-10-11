@@ -59,7 +59,7 @@ if [ "$ngx_module_link" = DYNAMIC ]; then
     fi
 
     if test -n "$ngx_module_deps"; then
-        NJET_ADDON_DEPS="$NJET_ADDON_DEPS $ngx_module_deps"
+        NJT_ADDON_DEPS="$NJT_ADDON_DEPS $ngx_module_deps"
     fi
 
     libs=
@@ -68,7 +68,7 @@ if [ "$ngx_module_link" = DYNAMIC ]; then
         case $lib in
 
             LIBXSLT | LIBGD | GEOIP | PERL)
-                libs="$libs \$NJET_LIB_$lib"
+                libs="$libs \$NJT_LIB_$lib"
 
                 if eval [ "\$USE_${lib}" = NO ] ; then
                     eval USE_${lib}=DYNAMIC
@@ -134,7 +134,7 @@ elif [ "$ngx_module_link" = ADDON ]; then
     for src in $ngx_module_srcs
     do
         found=no
-        for old in $NJET_ADDON_SRCS
+        for old in $NJT_ADDON_SRCS
         do
             if [ $src = $old ]; then
                 found=yes
@@ -147,14 +147,14 @@ elif [ "$ngx_module_link" = ADDON ]; then
         fi
     done
 
-    NJET_ADDON_SRCS="$NJET_ADDON_SRCS $srcs"
+    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $srcs"
 
     if test -n "$ngx_module_incs"; then
         eval ${ngx_var}_INCS=\"\$${ngx_var}_INCS $ngx_module_incs\"
     fi
 
     if test -n "$ngx_module_deps"; then
-        NJET_ADDON_DEPS="$NJET_ADDON_DEPS $ngx_module_deps"
+        NJT_ADDON_DEPS="$NJT_ADDON_DEPS $ngx_module_deps"
     fi
 
     for lib in $ngx_module_libs

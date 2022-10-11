@@ -4,8 +4,8 @@
  */
 
 
-#ifndef _NJET_SYSLOG_H_INCLUDED_
-#define _NJET_SYSLOG_H_INCLUDED_
+#ifndef _NJT_SYSLOG_H_INCLUDED_
+#define _NJT_SYSLOG_H_INCLUDED_
 
 
 typedef struct {
@@ -27,4 +27,4 @@ void ngx_syslog_writer(ngx_log_t *log, ngx_uint_t level, u_char *buf,
 ssize_t ngx_syslog_send(ngx_syslog_peer_t *peer, u_char *buf, size_t len);
 
 
-#endif /* _NJET_SYSLOG_H_INCLUDED_ */
+#endif /* _NJT_SYSLOG_H_INCLUDED_ */

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_PALLOC_H_INCLUDED_
-#define _NJET_PALLOC_H_INCLUDED_
+#ifndef _NJT_PALLOC_H_INCLUDED_
+#define _NJT_PALLOC_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -14,17 +14,17 @@
 
 
 /*
- * NJET_MAX_ALLOC_FROM_POOL should be (ngx_pagesize - 1), i.e. 4095 on x86.
+ * NJT_MAX_ALLOC_FROM_POOL should be (ngx_pagesize - 1), i.e. 4095 on x86.
  * On Windows NT it decreases a number of locked pages in a kernel.
  */
-#define NJET_MAX_ALLOC_FROM_POOL  (ngx_pagesize - 1)
+#define NJT_MAX_ALLOC_FROM_POOL  (ngx_pagesize - 1)
 
-#define NJET_DEFAULT_POOL_SIZE    (16 * 1024)
+#define NJT_DEFAULT_POOL_SIZE    (16 * 1024)
 
-#define NJET_POOL_ALIGNMENT       16
-#define NJET_MIN_POOL_SIZE                                                     \
+#define NJT_POOL_ALIGNMENT       16
+#define NJT_MIN_POOL_SIZE                                                     \
     ngx_align((sizeof(ngx_pool_t) + 2 * sizeof(ngx_pool_large_t)),            \
-              NJET_POOL_ALIGNMENT)
+              NJT_POOL_ALIGNMENT)
 
 
 typedef void (*ngx_pool_cleanup_pt)(void *data);
@@ -89,4 +89,4 @@ void ngx_pool_cleanup_file(void *data);
 void ngx_pool_delete_file(void *data);
 
 
-#endif /* _NJET_PALLOC_H_INCLUDED_ */
+#endif /* _NJT_PALLOC_H_INCLUDED_ */

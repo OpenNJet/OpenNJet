@@ -9,7 +9,7 @@
 #include <ngx_core.h>
 
 
-#define NJET_UTF16_BUFLEN  256
+#define NJT_UTF16_BUFLEN  256
 
 static ngx_int_t ngx_win32_check_filename(u_char *name, u_short *u,
     size_t len);
@@ -25,9 +25,9 @@ ngx_open_file(u_char *name, u_long mode, u_long create, u_long access)
     u_short    *u;
     ngx_fd_t    fd;
     ngx_err_t   err;
-    u_short     utf16[NJET_UTF16_BUFLEN];
+    u_short     utf16[NJT_UTF16_BUFLEN];
 
-    len = NJET_UTF16_BUFLEN;
+    len = NJT_UTF16_BUFLEN;
     u = ngx_utf8_to_utf16(utf16, name, &len);
 
     if (u == NULL) {
@@ -36,8 +36,8 @@ ngx_open_file(u_char *name, u_long mode, u_long create, u_long access)
 
     fd = INVALID_HANDLE_VALUE;
 
-    if (create == NJET_FILE_OPEN
-        && ngx_win32_check_filename(name, u, len) != NJET_OK)
+    if (create == NJT_FILE_OPEN
+        && ngx_win32_check_filename(name, u, len) != NJT_OK)
     {
         goto failed;
     }
@@ -80,9 +80,9 @@ ngx_read_file(ngx_file_t *file, u_char *buf, size_t size, off_t offset)
             return 0;
         }
 
-        ngx_log_error(NJET_LOG_ERR, file->log, err,
+        ngx_log_error(NJT_LOG_ERR, file->log, err,
                       "ReadFile() \"%s\" failed", file->name.data);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     file->offset += n;
@@ -106,16 +106,16 @@ ngx_write_file(ngx_file_t *file, u_char *buf, size_t size, off_t offset)
     povlp = &ovlp;
 
     if (WriteFile(file->fd, buf, size, &n, povlp) == 0) {
-        ngx_log_error(NJET_LOG_ERR, file->log, ngx_errno,
+        ngx_log_error(NJT_LOG_ERR, file->log, ngx_errno,
                       "WriteFile() \"%s\" failed", file->name.data);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     if (n != size) {
-        ngx_log_error(NJET_LOG_CRIT, file->log, 0,
+        ngx_log_error(NJT_LOG_CRIT, file->log, 0,
                       "WriteFile() \"%s\" has written only %ul of %uz",
                       file->name.data, n, size);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     file->offset += n;
@@ -149,8 +149,8 @@ ngx_write_chain_to_file(ngx_file_t *file, ngx_chain_t *cl, off_t offset,
 
         n = ngx_write_file(file, buf, size, offset);
 
-        if (n == NJET_ERROR) {
-            return NJET_ERROR;
+        if (n == NJT_ERROR) {
+            return NJT_ERROR;
         }
 
         total += n;
@@ -210,10 +210,10 @@ ngx_win32_rename_file(ngx_str_t *from, ngx_str_t *to, ngx_log_t *log)
     ngx_uint_t          collision;
     ngx_atomic_uint_t   num;
 
-    name = ngx_alloc(to->len + 1 + NJET_ATOMIC_T_LEN + 1 + sizeof("DELETE"),
+    name = ngx_alloc(to->len + 1 + NJT_ATOMIC_T_LEN + 1 + sizeof("DELETE"),
                      log);
     if (name == NULL) {
-        return NJET_ENOMEM;
+        return NJT_ENOMEM;
     }
 
     ngx_memcpy(name, to->data, to->len);
@@ -233,7 +233,7 @@ ngx_win32_rename_file(ngx_str_t *from, ngx_str_t *to, ngx_log_t *log)
 
         collision = 1;
 
-        ngx_log_error(NJET_LOG_CRIT, log, ngx_errno,
+        ngx_log_error(NJT_LOG_CRIT, log, ngx_errno,
                       "MoveFile() \"%s\" to \"%s\" failed", to->data, name);
     }
 
@@ -245,7 +245,7 @@ ngx_win32_rename_file(ngx_str_t *from, ngx_str_t *to, ngx_log_t *log)
     }
 
     if (DeleteFile((const char *) name) == 0) {
-        ngx_log_error(NJET_LOG_CRIT, log, ngx_errno,
+        ngx_log_error(NJT_LOG_CRIT, log, ngx_errno,
                       "DeleteFile() \"%s\" failed", name);
     }
 
@@ -265,19 +265,19 @@ ngx_file_info(u_char *file, ngx_file_info_t *sb)
     u_short                    *u;
     ngx_err_t                   err;
     WIN32_FILE_ATTRIBUTE_DATA   fa;
-    u_short                     utf16[NJET_UTF16_BUFLEN];
+    u_short                     utf16[NJT_UTF16_BUFLEN];
 
-    len = NJET_UTF16_BUFLEN;
+    len = NJT_UTF16_BUFLEN;
 
     u = ngx_utf8_to_utf16(utf16, file, &len);
 
     if (u == NULL) {
-        return NJET_FILE_ERROR;
+        return NJT_FILE_ERROR;
     }
 
-    rc = NJET_FILE_ERROR;
+    rc = NJT_FILE_ERROR;
 
-    if (ngx_win32_check_filename(file, u, len) != NJET_OK) {
+    if (ngx_win32_check_filename(file, u, len) != NJT_OK) {
         goto failed;
     }
 
@@ -316,10 +316,10 @@ ngx_set_file_time(u_char *name, ngx_fd_t fd, time_t s)
     ft.dwHighDateTime = (DWORD) (intervals >> 32);
 
     if (SetFileTime(fd, NULL, NULL, &ft) != 0) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
@@ -328,13 +328,13 @@ ngx_create_file_mapping(ngx_file_mapping_t *fm)
 {
     LARGE_INTEGER  size;
 
-    fm->fd = ngx_open_file(fm->name, NJET_FILE_RDWR, NJET_FILE_TRUNCATE,
-                           NJET_FILE_DEFAULT_ACCESS);
+    fm->fd = ngx_open_file(fm->name, NJT_FILE_RDWR, NJT_FILE_TRUNCATE,
+                           NJT_FILE_DEFAULT_ACCESS);
 
-    if (fm->fd == NJET_INVALID_FILE) {
-        ngx_log_error(NJET_LOG_CRIT, fm->log, ngx_errno,
+    if (fm->fd == NJT_INVALID_FILE) {
+        ngx_log_error(NJT_LOG_CRIT, fm->log, ngx_errno,
                       ngx_open_file_n " \"%s\" failed", fm->name);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     fm->handle = NULL;
@@ -342,14 +342,14 @@ ngx_create_file_mapping(ngx_file_mapping_t *fm)
     size.QuadPart = fm->size;
 
     if (SetFilePointerEx(fm->fd, size, NULL, FILE_BEGIN) == 0) {
-        ngx_log_error(NJET_LOG_CRIT, fm->log, ngx_errno,
+        ngx_log_error(NJT_LOG_CRIT, fm->log, ngx_errno,
                       "SetFilePointerEx(\"%s\", %uz) failed",
                       fm->name, fm->size);
         goto failed;
     }
 
     if (SetEndOfFile(fm->fd) == 0) {
-        ngx_log_error(NJET_LOG_CRIT, fm->log, ngx_errno,
+        ngx_log_error(NJT_LOG_CRIT, fm->log, ngx_errno,
                       "SetEndOfFile() \"%s\" failed", fm->name);
         goto failed;
     }
@@ -359,7 +359,7 @@ ngx_create_file_mapping(ngx_file_mapping_t *fm)
                                    (u_long) ((off_t) fm->size & 0xffffffff),
                                    NULL);
     if (fm->handle == NULL) {
-        ngx_log_error(NJET_LOG_CRIT, fm->log, ngx_errno,
+        ngx_log_error(NJT_LOG_CRIT, fm->log, ngx_errno,
                       "CreateFileMapping(%s, %uz) failed",
                       fm->name, fm->size);
         goto failed;
@@ -368,10 +368,10 @@ ngx_create_file_mapping(ngx_file_mapping_t *fm)
     fm->addr = MapViewOfFile(fm->handle, FILE_MAP_WRITE, 0, 0, 0);
 
     if (fm->addr != NULL) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    ngx_log_error(NJET_LOG_CRIT, fm->log, ngx_errno,
+    ngx_log_error(NJT_LOG_CRIT, fm->log, ngx_errno,
                   "MapViewOfFile(%uz) of file mapping \"%s\" failed",
                   fm->size, fm->name);
 
@@ -379,18 +379,18 @@ failed:
 
     if (fm->handle) {
         if (CloseHandle(fm->handle) == 0) {
-            ngx_log_error(NJET_LOG_ALERT, fm->log, ngx_errno,
+            ngx_log_error(NJT_LOG_ALERT, fm->log, ngx_errno,
                           "CloseHandle() of file mapping \"%s\" failed",
                           fm->name);
         }
     }
 
-    if (ngx_close_file(fm->fd) == NJET_FILE_ERROR) {
-        ngx_log_error(NJET_LOG_ALERT, fm->log, ngx_errno,
+    if (ngx_close_file(fm->fd) == NJT_FILE_ERROR) {
+        ngx_log_error(NJT_LOG_ALERT, fm->log, ngx_errno,
                       ngx_close_file_n " \"%s\" failed", fm->name);
     }
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
@@ -398,19 +398,19 @@ void
 ngx_close_file_mapping(ngx_file_mapping_t *fm)
 {
     if (UnmapViewOfFile(fm->addr) == 0) {
-        ngx_log_error(NJET_LOG_ALERT, fm->log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, fm->log, ngx_errno,
                       "UnmapViewOfFile(%p) of file mapping \"%s\" failed",
                       fm->addr, &fm->name);
     }
 
     if (CloseHandle(fm->handle) == 0) {
-        ngx_log_error(NJET_LOG_ALERT, fm->log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, fm->log, ngx_errno,
                       "CloseHandle() of file mapping \"%s\" failed",
                       &fm->name);
     }
 
-    if (ngx_close_file(fm->fd) == NJET_FILE_ERROR) {
-        ngx_log_error(NJET_LOG_ALERT, fm->log, ngx_errno,
+    if (ngx_close_file(fm->fd) == NJT_FILE_ERROR) {
+        ngx_log_error(NJT_LOG_ALERT, fm->log, ngx_errno,
                       ngx_close_file_n " \"%s\" failed", fm->name);
     }
 }
@@ -432,7 +432,7 @@ ngx_open_dir(ngx_str_t *name, ngx_dir_t *dir)
 
     pattern = malloc(name->len + 3);
     if (pattern == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     p = ngx_cpymem(pattern, name->data, name->len);
@@ -447,7 +447,7 @@ ngx_open_dir(ngx_str_t *name, ngx_dir_t *dir)
         err = ngx_errno;
         ngx_free(pattern);
         ngx_set_errno(err);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_free(pattern);
@@ -455,7 +455,7 @@ ngx_open_dir(ngx_str_t *name, ngx_dir_t *dir)
     dir->valid_info = 1;
     dir->ready = 1;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -464,15 +464,15 @@ ngx_read_dir(ngx_dir_t *dir)
 {
     if (dir->ready) {
         dir->ready = 0;
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (FindNextFile(dir->dir, &dir->finddata) != 0) {
         dir->type = 1;
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
@@ -480,10 +480,10 @@ ngx_int_t
 ngx_close_dir(ngx_dir_t *dir)
 {
     if (FindClose(dir->dir) == 0) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -504,10 +504,10 @@ ngx_open_glob(ngx_glob_t *gl)
              && gl->test)
         {
             gl->no_match = 1;
-            return NJET_OK;
+            return NJT_OK;
         }
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     for (p = gl->pattern; *p; p++) {
@@ -521,7 +521,7 @@ ngx_open_glob(ngx_glob_t *gl)
 
     gl->name.data = ngx_alloc(gl->name.len + 1, gl->log);
     if (gl->name.data == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_memcpy(gl->name.data, gl->pattern, gl->last);
@@ -530,7 +530,7 @@ ngx_open_glob(ngx_glob_t *gl)
 
     gl->ready = 1;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -541,14 +541,14 @@ ngx_read_glob(ngx_glob_t *gl, ngx_str_t *name)
     ngx_err_t  err;
 
     if (gl->no_match) {
-        return NJET_DONE;
+        return NJT_DONE;
     }
 
     if (gl->ready) {
         *name = gl->name;
 
         gl->ready = 0;
-        return NJET_OK;
+        return NJT_OK;
     }
 
     ngx_free(gl->name.data);
@@ -561,7 +561,7 @@ ngx_read_glob(ngx_glob_t *gl, ngx_str_t *name)
 
         gl->name.data = ngx_alloc(gl->name.len + 1, gl->log);
         if (gl->name.data == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ngx_memcpy(gl->name.data, gl->pattern, gl->last);
@@ -570,19 +570,19 @@ ngx_read_glob(ngx_glob_t *gl, ngx_str_t *name)
 
         *name = gl->name;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     err = ngx_errno;
 
-    if (err == NJET_ENOMOREFILES) {
-        return NJET_DONE;
+    if (err == NJT_ENOMOREFILES) {
+        return NJT_DONE;
     }
 
-    ngx_log_error(NJET_LOG_ALERT, gl->log, err,
+    ngx_log_error(NJT_LOG_ALERT, gl->log, err,
                   "FindNextFile(%s) failed", gl->pattern);
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
@@ -598,7 +598,7 @@ ngx_close_glob(ngx_glob_t *gl)
     }
 
     if (FindClose(gl->dir) == 0) {
-        ngx_log_error(NJET_LOG_ALERT, gl->log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, gl->log, ngx_errno,
                       "FindClose(%s) failed", gl->pattern);
     }
 }
@@ -607,35 +607,35 @@ ngx_close_glob(ngx_glob_t *gl)
 ngx_int_t
 ngx_de_info(u_char *name, ngx_dir_t *dir)
 {
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
 ngx_int_t
 ngx_de_link_info(u_char *name, ngx_dir_t *dir)
 {
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
 ngx_int_t
 ngx_read_ahead(ngx_fd_t fd, size_t n)
 {
-    return ~NJET_FILE_ERROR;
+    return ~NJT_FILE_ERROR;
 }
 
 
 ngx_int_t
 ngx_directio_on(ngx_fd_t fd)
 {
-    return ~NJET_FILE_ERROR;
+    return ~NJT_FILE_ERROR;
 }
 
 
 ngx_int_t
 ngx_directio_off(ngx_fd_t fd)
 {
-    return ~NJET_FILE_ERROR;
+    return ~NJT_FILE_ERROR;
 }
 
 
@@ -664,7 +664,7 @@ ngx_fs_available(u_char *name)
     ULARGE_INTEGER  navail;
 
     if (GetDiskFreeSpaceEx((const char *) name, &navail, NULL, NULL) == 0) {
-        return NJET_MAX_OFF_T_VALUE;
+        return NJT_MAX_OFF_T_VALUE;
     }
 
     return (off_t) navail.QuadPart;
@@ -782,7 +782,7 @@ ngx_win32_check_filename(u_char *name, u_short *u, size_t len)
 
     lu = malloc(len * 2);
     if (lu == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     n = GetLongPathNameW(u, lu, len);
@@ -797,11 +797,11 @@ ngx_win32_check_filename(u_char *name, u_short *u, size_t len)
 
     ngx_free(lu);
 
-    return NJET_OK;
+    return NJT_OK;
 
 invalid:
 
-    ngx_set_errno(NJET_ENOENT);
+    ngx_set_errno(NJT_ENOENT);
 
 failed:
 
@@ -811,7 +811,7 @@ failed:
         ngx_set_errno(err);
     }
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
@@ -849,7 +849,7 @@ ngx_utf8_to_utf16(u_short *utf16, u_char *utf8, size_t *len)
         n = ngx_utf8_decode(&p, 4);
 
         if (n > 0x10ffff) {
-            ngx_set_errno(NJET_EILSEQ);
+            ngx_set_errno(NJT_EILSEQ);
             return NULL;
         }
 
@@ -894,7 +894,7 @@ ngx_utf8_to_utf16(u_short *utf16, u_char *utf8, size_t *len)
 
         if (n > 0x10ffff) {
             ngx_free(utf16);
-            ngx_set_errno(NJET_EILSEQ);
+            ngx_set_errno(NJT_EILSEQ);
             return NULL;
         }
 

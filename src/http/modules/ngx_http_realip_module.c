@@ -10,10 +10,10 @@
 #include <ngx_http.h>
 
 
-#define NJET_HTTP_REALIP_XREALIP  0
-#define NJET_HTTP_REALIP_XFWD     1
-#define NJET_HTTP_REALIP_HEADER   2
-#define NJET_HTTP_REALIP_PROXY    3
+#define NJT_HTTP_REALIP_XREALIP  0
+#define NJT_HTTP_REALIP_XFWD     1
+#define NJT_HTTP_REALIP_HEADER   2
+#define NJT_HTTP_REALIP_PROXY    3
 
 
 typedef struct {
@@ -58,23 +58,23 @@ static ngx_int_t ngx_http_realip_remote_port_variable(ngx_http_request_t *r,
 static ngx_command_t  ngx_http_realip_commands[] = {
 
     { ngx_string("set_real_ip_from"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       ngx_http_realip_from,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("real_ip_header"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       ngx_http_realip,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("real_ip_recursive"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_realip_loc_conf_t, recursive),
       NULL },
 
@@ -99,10 +99,10 @@ static ngx_http_module_t  ngx_http_realip_module_ctx = {
 
 
 ngx_module_t  ngx_http_realip_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_realip_module_ctx,           /* module context */
     ngx_http_realip_commands,              /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -110,7 +110,7 @@ ngx_module_t  ngx_http_realip_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -143,21 +143,21 @@ ngx_http_realip_handler(ngx_http_request_t *r)
     rlcf = ngx_http_get_module_loc_conf(r, ngx_http_realip_module);
 
     if (rlcf->from == NULL) {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     ctx = ngx_http_realip_get_module_ctx(r);
 
     if (ctx) {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     switch (rlcf->type) {
 
-    case NJET_HTTP_REALIP_XREALIP:
+    case NJT_HTTP_REALIP_XREALIP:
 
         if (r->headers_in.x_real_ip == NULL) {
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
 
         value = &r->headers_in.x_real_ip->value;
@@ -165,22 +165,22 @@ ngx_http_realip_handler(ngx_http_request_t *r)
 
         break;
 
-    case NJET_HTTP_REALIP_XFWD:
+    case NJT_HTTP_REALIP_XFWD:
 
         xfwd = r->headers_in.x_forwarded_for;
 
         if (xfwd == NULL) {
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
 
         value = NULL;
 
         break;
 
-    case NJET_HTTP_REALIP_PROXY:
+    case NJT_HTTP_REALIP_PROXY:
 
         if (r->connection->proxy_protocol == NULL) {
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
 
         value = &r->connection->proxy_protocol->src_addr;
@@ -188,7 +188,7 @@ ngx_http_realip_handler(ngx_http_request_t *r)
 
         break;
 
-    default: /* NJET_HTTP_REALIP_HEADER */
+    default: /* NJT_HTTP_REALIP_HEADER */
 
         part = &r->headers_in.headers.part;
         header = part->elts;
@@ -220,7 +220,7 @@ ngx_http_realip_handler(ngx_http_request_t *r)
             }
         }
 
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
 found:
@@ -233,16 +233,16 @@ found:
 
     if (ngx_http_get_forwarded_addr(r, &addr, xfwd, value, rlcf->from,
                                     rlcf->recursive)
-        != NJET_DECLINED)
+        != NJT_DECLINED)
     {
-        if (rlcf->type == NJET_HTTP_REALIP_PROXY) {
+        if (rlcf->type == NJT_HTTP_REALIP_PROXY) {
             ngx_inet_set_port(addr.sockaddr, c->proxy_protocol->src_port);
         }
 
         return ngx_http_realip_set_addr(r, &addr);
     }
 
-    return NJET_DECLINED;
+    return NJT_DECLINED;
 }
 
 
@@ -251,14 +251,14 @@ ngx_http_realip_set_addr(ngx_http_request_t *r, ngx_addr_t *addr)
 {
     size_t                  len;
     u_char                 *p;
-    u_char                  text[NJET_SOCKADDR_STRLEN];
+    u_char                  text[NJT_SOCKADDR_STRLEN];
     ngx_connection_t       *c;
     ngx_pool_cleanup_t     *cln;
     ngx_http_realip_ctx_t  *ctx;
 
     cln = ngx_pool_cleanup_add(r->pool, sizeof(ngx_http_realip_ctx_t));
     if (cln == NULL) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ctx = cln->data;
@@ -266,14 +266,14 @@ ngx_http_realip_set_addr(ngx_http_request_t *r, ngx_addr_t *addr)
     c = r->connection;
 
     len = ngx_sock_ntop(addr->sockaddr, addr->socklen, text,
-                        NJET_SOCKADDR_STRLEN, 0);
+                        NJT_SOCKADDR_STRLEN, 0);
     if (len == 0) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     p = ngx_pnalloc(c->pool, len);
     if (p == NULL) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ngx_memcpy(p, text, len);
@@ -291,7 +291,7 @@ ngx_http_realip_set_addr(ngx_http_request_t *r, ngx_addr_t *addr)
     c->addr_text.len = len;
     c->addr_text.data = p;
 
-    return NJET_DECLINED;
+    return NJT_DECLINED;
 }
 
 
@@ -321,7 +321,7 @@ ngx_http_realip_from(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_cidr_t            c, *cidr;
     ngx_uint_t            i;
     struct sockaddr_in   *sin;
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     struct sockaddr_in6  *sin6;
 #endif
 
@@ -331,59 +331,59 @@ ngx_http_realip_from(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         rlcf->from = ngx_array_create(cf->pool, 2,
                                       sizeof(ngx_cidr_t));
         if (rlcf->from == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
-#if (NJET_HAVE_UNIX_DOMAIN)
+#if (NJT_HAVE_UNIX_DOMAIN)
 
     if (ngx_strcmp(value[1].data, "unix:") == 0) {
         cidr = ngx_array_push(rlcf->from);
         if (cidr == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         cidr->family = AF_UNIX;
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
 #endif
 
     rc = ngx_ptocidr(&value[1], &c);
 
-    if (rc != NJET_ERROR) {
-        if (rc == NJET_DONE) {
-            ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+    if (rc != NJT_ERROR) {
+        if (rc == NJT_DONE) {
+            ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                                "low address bits of %V are meaningless",
                                &value[1]);
         }
 
         cidr = ngx_array_push(rlcf->from);
         if (cidr == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         *cidr = c;
 
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     ngx_memzero(&u, sizeof(ngx_url_t));
     u.host = value[1];
 
-    if (ngx_inet_resolve_host(cf->pool, &u) != NJET_OK) {
+    if (ngx_inet_resolve_host(cf->pool, &u) != NJT_OK) {
         if (u.err) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "%s in set_real_ip_from \"%V\"",
                                u.err, &u.host);
         }
 
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     cidr = ngx_array_push_n(rlcf->from, u.naddrs);
     if (cidr == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ngx_memzero(cidr, u.naddrs * sizeof(ngx_cidr_t));
@@ -393,7 +393,7 @@ ngx_http_realip_from(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
         switch (cidr[i].family) {
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
         case AF_INET6:
             sin6 = (struct sockaddr_in6 *) u.addrs[i].sockaddr;
             cidr[i].u.in6.addr = sin6->sin6_addr;
@@ -409,7 +409,7 @@ ngx_http_realip_from(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         }
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -420,32 +420,32 @@ ngx_http_realip(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     ngx_str_t  *value;
 
-    if (rlcf->type != NJET_CONF_UNSET_UINT) {
+    if (rlcf->type != NJT_CONF_UNSET_UINT) {
         return "is duplicate";
     }
 
     value = cf->args->elts;
 
     if (ngx_strcmp(value[1].data, "X-Real-IP") == 0) {
-        rlcf->type = NJET_HTTP_REALIP_XREALIP;
-        return NJET_CONF_OK;
+        rlcf->type = NJT_HTTP_REALIP_XREALIP;
+        return NJT_CONF_OK;
     }
 
     if (ngx_strcmp(value[1].data, "X-Forwarded-For") == 0) {
-        rlcf->type = NJET_HTTP_REALIP_XFWD;
-        return NJET_CONF_OK;
+        rlcf->type = NJT_HTTP_REALIP_XFWD;
+        return NJT_CONF_OK;
     }
 
     if (ngx_strcmp(value[1].data, "proxy_protocol") == 0) {
-        rlcf->type = NJET_HTTP_REALIP_PROXY;
-        return NJET_CONF_OK;
+        rlcf->type = NJT_HTTP_REALIP_PROXY;
+        return NJT_CONF_OK;
     }
 
-    rlcf->type = NJET_HTTP_REALIP_HEADER;
+    rlcf->type = NJT_HTTP_REALIP_HEADER;
     rlcf->hash = ngx_hash_strlow(value[1].data, value[1].data, value[1].len);
     rlcf->header = value[1];
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -467,8 +467,8 @@ ngx_http_realip_create_loc_conf(ngx_conf_t *cf)
      *     conf->header = { 0, NULL };
      */
 
-    conf->type = NJET_CONF_UNSET_UINT;
-    conf->recursive = NJET_CONF_UNSET;
+    conf->type = NJT_CONF_UNSET_UINT;
+    conf->recursive = NJT_CONF_UNSET;
 
     return conf;
 }
@@ -484,7 +484,7 @@ ngx_http_realip_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
         conf->from = prev->from;
     }
 
-    ngx_conf_merge_uint_value(conf->type, prev->type, NJET_HTTP_REALIP_XREALIP);
+    ngx_conf_merge_uint_value(conf->type, prev->type, NJT_HTTP_REALIP_XREALIP);
     ngx_conf_merge_value(conf->recursive, prev->recursive, 0);
 
     if (conf->header.len == 0) {
@@ -492,7 +492,7 @@ ngx_http_realip_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
         conf->header = prev->header;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -504,14 +504,14 @@ ngx_http_realip_add_variables(ngx_conf_t *cf)
     for (v = ngx_http_realip_vars; v->name.len; v++) {
         var = ngx_http_add_variable(cf, &v->name, v->flags);
         if (var == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         var->get_handler = v->get_handler;
         var->data = v->data;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -523,21 +523,21 @@ ngx_http_realip_init(ngx_conf_t *cf)
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
-    h = ngx_array_push(&cmcf->phases[NJET_HTTP_POST_READ_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJT_HTTP_POST_READ_PHASE].handlers);
     if (h == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *h = ngx_http_realip_handler;
 
-    h = ngx_array_push(&cmcf->phases[NJET_HTTP_PREACCESS_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJT_HTTP_PREACCESS_PHASE].handlers);
     if (h == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *h = ngx_http_realip_handler;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -585,7 +585,7 @@ ngx_http_realip_remote_addr_variable(ngx_http_request_t *r,
     v->not_found = 0;
     v->data = addr_text->data;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -608,7 +608,7 @@ ngx_http_realip_remote_port_variable(ngx_http_request_t *r,
 
     v->data = ngx_pnalloc(r->pool, sizeof("65535") - 1);
     if (v->data == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     port = ngx_inet_get_port(sa);
@@ -617,5 +617,5 @@ ngx_http_realip_remote_port_variable(ngx_http_request_t *r,
         v->len = ngx_sprintf(v->data, "%ui", port) - v->data;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }

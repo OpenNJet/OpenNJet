@@ -58,7 +58,7 @@ ngx_int_t             ngx_accept_disabled;
 ngx_uint_t            ngx_use_exclusive_accept;
 
 
-#if (NJET_STAT_STUB)
+#if (NJT_STAT_STUB)
 
 static ngx_atomic_t   ngx_stat_accepted0;
 ngx_atomic_t         *ngx_stat_accepted = &ngx_stat_accepted0;
@@ -82,7 +82,7 @@ ngx_atomic_t         *ngx_stat_waiting = &ngx_stat_waiting0;
 static ngx_command_t  ngx_events_commands[] = {
 
     { ngx_string("events"),
-      NJET_MAIN_CONF|NJET_CONF_BLOCK|NJET_CONF_NOARGS,
+      NJT_MAIN_CONF|NJT_CONF_BLOCK|NJT_CONF_NOARGS,
       ngx_events_block,
       0,
       0,
@@ -100,10 +100,10 @@ static ngx_core_module_t  ngx_events_module_ctx = {
 
 
 ngx_module_t  ngx_events_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_events_module_ctx,                /* module context */
     ngx_events_commands,                   /* module directives */
-    NJET_CORE_MODULE,                       /* module type */
+    NJT_CORE_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -111,7 +111,7 @@ ngx_module_t  ngx_events_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -121,42 +121,42 @@ static ngx_str_t  event_core_name = ngx_string("event_core");
 static ngx_command_t  ngx_event_core_commands[] = {
 
     { ngx_string("worker_connections"),
-      NJET_EVENT_CONF|NJET_CONF_TAKE1,
+      NJT_EVENT_CONF|NJT_CONF_TAKE1,
       ngx_event_connections,
       0,
       0,
       NULL },
 
     { ngx_string("use"),
-      NJET_EVENT_CONF|NJET_CONF_TAKE1,
+      NJT_EVENT_CONF|NJT_CONF_TAKE1,
       ngx_event_use,
       0,
       0,
       NULL },
 
     { ngx_string("multi_accept"),
-      NJET_EVENT_CONF|NJET_CONF_FLAG,
+      NJT_EVENT_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
       0,
       offsetof(ngx_event_conf_t, multi_accept),
       NULL },
 
     { ngx_string("accept_mutex"),
-      NJET_EVENT_CONF|NJET_CONF_FLAG,
+      NJT_EVENT_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
       0,
       offsetof(ngx_event_conf_t, accept_mutex),
       NULL },
 
     { ngx_string("accept_mutex_delay"),
-      NJET_EVENT_CONF|NJET_CONF_TAKE1,
+      NJT_EVENT_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
       0,
       offsetof(ngx_event_conf_t, accept_mutex_delay),
       NULL },
 
     { ngx_string("debug_connection"),
-      NJET_EVENT_CONF|NJET_CONF_TAKE1,
+      NJT_EVENT_CONF|NJT_CONF_TAKE1,
       ngx_event_debug_connection,
       0,
       0,
@@ -176,10 +176,10 @@ static ngx_event_module_t  ngx_event_core_module_ctx = {
 
 
 ngx_module_t  ngx_event_core_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_event_core_module_ctx,            /* module context */
     ngx_event_core_commands,               /* module directives */
-    NJET_EVENT_MODULE,                      /* module type */
+    NJT_EVENT_MODULE,                      /* module type */
     NULL,                                  /* init master */
     ngx_event_module_init,                 /* init module */
     ngx_event_process_init,                /* init process */
@@ -187,7 +187,7 @@ ngx_module_t  ngx_event_core_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -198,18 +198,18 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
     ngx_msec_t  timer, delta;
 
     if (ngx_timer_resolution) {
-        timer = NJET_TIMER_INFINITE;
+        timer = NJT_TIMER_INFINITE;
         flags = 0;
 
     } else {
         timer = ngx_event_find_timer();
-        flags = NJET_UPDATE_TIME;
+        flags = NJT_UPDATE_TIME;
 
-#if (NJET_WIN32)
+#if (NJT_WIN32)
 
         /* handle signals from master in case of network inactivity */
 
-        if (timer == NJET_TIMER_INFINITE || timer > 500) {
+        if (timer == NJT_TIMER_INFINITE || timer > 500) {
             timer = 500;
         }
 
@@ -221,15 +221,15 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
             ngx_accept_disabled--;
 
         } else {
-            if (ngx_trylock_accept_mutex(cycle) == NJET_ERROR) {
+            if (ngx_trylock_accept_mutex(cycle) == NJT_ERROR) {
                 return;
             }
 
             if (ngx_accept_mutex_held) {
-                flags |= NJET_POST_EVENTS;
+                flags |= NJT_POST_EVENTS;
 
             } else {
-                if (timer == NJET_TIMER_INFINITE
+                if (timer == NJT_TIMER_INFINITE
                     || timer > ngx_accept_mutex_delay)
                 {
                     timer = ngx_accept_mutex_delay;
@@ -249,7 +249,7 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
 
     delta = ngx_current_msec - delta;
 
-    ngx_log_debug1(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                    "timer delta: %M", delta);
 
     ngx_event_process_posted(cycle, &ngx_posted_accept_events);
@@ -267,68 +267,68 @@ ngx_process_events_and_timers(ngx_cycle_t *cycle)
 ngx_int_t
 ngx_handle_read_event(ngx_event_t *rev, ngx_uint_t flags)
 {
-    if (ngx_event_flags & NJET_USE_CLEAR_EVENT) {
+    if (ngx_event_flags & NJT_USE_CLEAR_EVENT) {
 
         /* kqueue, epoll */
 
         if (!rev->active && !rev->ready) {
-            if (ngx_add_event(rev, NJET_READ_EVENT, NJET_CLEAR_EVENT)
-                == NJET_ERROR)
+            if (ngx_add_event(rev, NJT_READ_EVENT, NJT_CLEAR_EVENT)
+                == NJT_ERROR)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
         }
 
-        return NJET_OK;
+        return NJT_OK;
 
-    } else if (ngx_event_flags & NJET_USE_LEVEL_EVENT) {
+    } else if (ngx_event_flags & NJT_USE_LEVEL_EVENT) {
 
         /* select, poll, /dev/poll */
 
         if (!rev->active && !rev->ready) {
-            if (ngx_add_event(rev, NJET_READ_EVENT, NJET_LEVEL_EVENT)
-                == NJET_ERROR)
+            if (ngx_add_event(rev, NJT_READ_EVENT, NJT_LEVEL_EVENT)
+                == NJT_ERROR)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
-            return NJET_OK;
+            return NJT_OK;
         }
 
-        if (rev->active && (rev->ready || (flags & NJET_CLOSE_EVENT))) {
-            if (ngx_del_event(rev, NJET_READ_EVENT, NJET_LEVEL_EVENT | flags)
-                == NJET_ERROR)
+        if (rev->active && (rev->ready || (flags & NJT_CLOSE_EVENT))) {
+            if (ngx_del_event(rev, NJT_READ_EVENT, NJT_LEVEL_EVENT | flags)
+                == NJT_ERROR)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
-            return NJET_OK;
+            return NJT_OK;
         }
 
-    } else if (ngx_event_flags & NJET_USE_EVENTPORT_EVENT) {
+    } else if (ngx_event_flags & NJT_USE_EVENTPORT_EVENT) {
 
         /* event ports */
 
         if (!rev->active && !rev->ready) {
-            if (ngx_add_event(rev, NJET_READ_EVENT, 0) == NJET_ERROR) {
-                return NJET_ERROR;
+            if (ngx_add_event(rev, NJT_READ_EVENT, 0) == NJT_ERROR) {
+                return NJT_ERROR;
             }
 
-            return NJET_OK;
+            return NJT_OK;
         }
 
         if (rev->oneshot && rev->ready) {
-            if (ngx_del_event(rev, NJET_READ_EVENT, 0) == NJET_ERROR) {
-                return NJET_ERROR;
+            if (ngx_del_event(rev, NJT_READ_EVENT, 0) == NJT_ERROR) {
+                return NJT_ERROR;
             }
 
-            return NJET_OK;
+            return NJT_OK;
         }
     }
 
     /* iocp */
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -340,89 +340,89 @@ ngx_handle_write_event(ngx_event_t *wev, size_t lowat)
     if (lowat) {
         c = wev->data;
 
-        if (ngx_send_lowat(c, lowat) == NJET_ERROR) {
-            return NJET_ERROR;
+        if (ngx_send_lowat(c, lowat) == NJT_ERROR) {
+            return NJT_ERROR;
         }
     }
 
-    if (ngx_event_flags & NJET_USE_CLEAR_EVENT) {
+    if (ngx_event_flags & NJT_USE_CLEAR_EVENT) {
 
         /* kqueue, epoll */
 
         if (!wev->active && !wev->ready) {
-            if (ngx_add_event(wev, NJET_WRITE_EVENT,
-                              NJET_CLEAR_EVENT | (lowat ? NJET_LOWAT_EVENT : 0))
-                == NJET_ERROR)
+            if (ngx_add_event(wev, NJT_WRITE_EVENT,
+                              NJT_CLEAR_EVENT | (lowat ? NJT_LOWAT_EVENT : 0))
+                == NJT_ERROR)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
         }
 
-        return NJET_OK;
+        return NJT_OK;
 
-    } else if (ngx_event_flags & NJET_USE_LEVEL_EVENT) {
+    } else if (ngx_event_flags & NJT_USE_LEVEL_EVENT) {
 
         /* select, poll, /dev/poll */
 
         if (!wev->active && !wev->ready) {
-            if (ngx_add_event(wev, NJET_WRITE_EVENT, NJET_LEVEL_EVENT)
-                == NJET_ERROR)
+            if (ngx_add_event(wev, NJT_WRITE_EVENT, NJT_LEVEL_EVENT)
+                == NJT_ERROR)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
-            return NJET_OK;
+            return NJT_OK;
         }
 
         if (wev->active && wev->ready) {
-            if (ngx_del_event(wev, NJET_WRITE_EVENT, NJET_LEVEL_EVENT)
-                == NJET_ERROR)
+            if (ngx_del_event(wev, NJT_WRITE_EVENT, NJT_LEVEL_EVENT)
+                == NJT_ERROR)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
-            return NJET_OK;
+            return NJT_OK;
         }
 
-    } else if (ngx_event_flags & NJET_USE_EVENTPORT_EVENT) {
+    } else if (ngx_event_flags & NJT_USE_EVENTPORT_EVENT) {
 
         /* event ports */
 
         if (!wev->active && !wev->ready) {
-            if (ngx_add_event(wev, NJET_WRITE_EVENT, 0) == NJET_ERROR) {
-                return NJET_ERROR;
+            if (ngx_add_event(wev, NJT_WRITE_EVENT, 0) == NJT_ERROR) {
+                return NJT_ERROR;
             }
 
-            return NJET_OK;
+            return NJT_OK;
         }
 
         if (wev->oneshot && wev->ready) {
-            if (ngx_del_event(wev, NJET_WRITE_EVENT, 0) == NJET_ERROR) {
-                return NJET_ERROR;
+            if (ngx_del_event(wev, NJT_WRITE_EVENT, 0) == NJT_ERROR) {
+                return NJT_ERROR;
             }
 
-            return NJET_OK;
+            return NJT_OK;
         }
     }
 
     /* iocp */
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
 static char *
 ngx_event_init_conf(ngx_cycle_t *cycle, void *conf)
 {
-#if (NJET_HAVE_REUSEPORT)
+#if (NJT_HAVE_REUSEPORT)
     ngx_uint_t        i;
     ngx_listening_t  *ls;
 #endif
 
     if (ngx_get_conf(cycle->conf_ctx, ngx_events_module) == NULL) {
-        ngx_log_error(NJET_LOG_EMERG, cycle->log, 0,
+        ngx_log_error(NJT_LOG_EMERG, cycle->log, 0,
                       "no \"events\" section in configuration");
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     if (cycle->connection_n < cycle->listening.nelts + 1) {
@@ -432,15 +432,15 @@ ngx_event_init_conf(ngx_cycle_t *cycle, void *conf)
          * socket, plus an additional connection for channel
          */
 
-        ngx_log_error(NJET_LOG_EMERG, cycle->log, 0,
+        ngx_log_error(NJT_LOG_EMERG, cycle->log, 0,
                       "%ui worker_connections are not enough "
                       "for %ui listening sockets",
                       cycle->connection_n, cycle->listening.nelts);
 
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
-#if (NJET_HAVE_REUSEPORT)
+#if (NJT_HAVE_REUSEPORT)
 
     if (!ngx_test_config) {
 
@@ -451,8 +451,8 @@ ngx_event_init_conf(ngx_cycle_t *cycle, void *conf)
                 continue;
             }
 
-            if (ngx_clone_listening(cycle, &ls[i]) != NJET_OK) {
-                return NJET_CONF_ERROR;
+            if (ngx_clone_listening(cycle, &ls[i]) != NJT_OK) {
+                return NJT_CONF_ERROR;
             }
 
             /* cloning may change cycle->listening.elts */
@@ -463,7 +463,7 @@ ngx_event_init_conf(ngx_cycle_t *cycle, void *conf)
 
 #endif
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -481,8 +481,8 @@ ngx_event_module_init(ngx_cycle_t *cycle)
     cf = ngx_get_conf(cycle->conf_ctx, ngx_events_module);
     ecf = (*cf)[ngx_event_core_module.ctx_index];
 
-    if (!ngx_test_config && ngx_process <= NJET_PROCESS_MASTER) {
-        ngx_log_error(NJET_LOG_NOTICE, cycle->log, 0,
+    if (!ngx_test_config && ngx_process <= NJT_PROCESS_MASTER) {
+        ngx_log_error(NJT_LOG_NOTICE, cycle->log, 0,
                       "using the \"%s\" event method", ecf->name);
     }
 
@@ -490,39 +490,39 @@ ngx_event_module_init(ngx_cycle_t *cycle)
 
     ngx_timer_resolution = ccf->timer_resolution;
 
-#if !(NJET_WIN32)
+#if !(NJT_WIN32)
     {
     ngx_int_t      limit;
     struct rlimit  rlmt;
 
     if (getrlimit(RLIMIT_NOFILE, &rlmt) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+        ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                       "getrlimit(RLIMIT_NOFILE) failed, ignored");
 
     } else {
         if (ecf->connections > (ngx_uint_t) rlmt.rlim_cur
-            && (ccf->rlimit_nofile == NJET_CONF_UNSET
+            && (ccf->rlimit_nofile == NJT_CONF_UNSET
                 || ecf->connections > (ngx_uint_t) ccf->rlimit_nofile))
         {
-            limit = (ccf->rlimit_nofile == NJET_CONF_UNSET) ?
+            limit = (ccf->rlimit_nofile == NJT_CONF_UNSET) ?
                          (ngx_int_t) rlmt.rlim_cur : ccf->rlimit_nofile;
 
-            ngx_log_error(NJET_LOG_WARN, cycle->log, 0,
+            ngx_log_error(NJT_LOG_WARN, cycle->log, 0,
                           "%ui worker_connections exceed "
                           "open file resource limit: %i",
                           ecf->connections, limit);
         }
     }
     }
-#endif /* !(NJET_WIN32) */
+#endif /* !(NJT_WIN32) */
 
 
     if (ccf->master == 0) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (ngx_accept_mutex_ptr) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
 
@@ -534,7 +534,7 @@ ngx_event_module_init(ngx_cycle_t *cycle)
            + cl          /* ngx_connection_counter */
            + cl;         /* ngx_temp_number */
 
-#if (NJET_STAT_STUB)
+#if (NJT_STAT_STUB)
 
     size += cl           /* ngx_stat_accepted */
            + cl          /* ngx_stat_handled */
@@ -550,8 +550,8 @@ ngx_event_module_init(ngx_cycle_t *cycle)
     ngx_str_set(&shm.name, "njet_shared_zone");
     shm.log = cycle->log;
 
-    if (ngx_shm_alloc(&shm) != NJET_OK) {
-        return NJET_ERROR;
+    if (ngx_shm_alloc(&shm) != NJT_OK) {
+        return NJT_ERROR;
     }
 
     shared = shm.addr;
@@ -561,16 +561,16 @@ ngx_event_module_init(ngx_cycle_t *cycle)
 
     if (ngx_shmtx_create(&ngx_accept_mutex, (ngx_shmtx_sh_t *) shared,
                          cycle->lock_file.data)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     ngx_connection_counter = (ngx_atomic_t *) (shared + 1 * cl);
 
     (void) ngx_atomic_cmp_set(ngx_connection_counter, 0, 1);
 
-    ngx_log_debug2(NJET_LOG_DEBUG_EVENT, cycle->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
                    "counter: %p, %uA",
                    ngx_connection_counter, *ngx_connection_counter);
 
@@ -580,7 +580,7 @@ ngx_event_module_init(ngx_cycle_t *cycle)
 
     ngx_random_number = (tp->msec << 16) + ngx_pid;
 
-#if (NJET_STAT_STUB)
+#if (NJT_STAT_STUB)
 
     ngx_stat_accepted = (ngx_atomic_t *) (shared + 3 * cl);
     ngx_stat_handled = (ngx_atomic_t *) (shared + 4 * cl);
@@ -592,11 +592,11 @@ ngx_event_module_init(ngx_cycle_t *cycle)
 
 #endif
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
-#if !(NJET_WIN32)
+#if !(NJT_WIN32)
 
 static void
 ngx_timer_signal_handler(int signo)
@@ -604,7 +604,7 @@ ngx_timer_signal_handler(int signo)
     ngx_event_timer_alarm = 1;
 
 #if 1
-    ngx_log_debug0(NJET_LOG_DEBUG_EVENT, ngx_cycle->log, 0, "timer signal");
+    ngx_log_debug0(NJT_LOG_DEBUG_EVENT, ngx_cycle->log, 0, "timer signal");
 #endif
 }
 
@@ -634,7 +634,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         ngx_use_accept_mutex = 0;
     }
 
-#if (NJET_WIN32)
+#if (NJT_WIN32)
 
     /*
      * disable accept mutex on win32 as it may cause deadlock if
@@ -651,12 +651,12 @@ ngx_event_process_init(ngx_cycle_t *cycle)
     ngx_queue_init(&ngx_posted_next_events);
     ngx_queue_init(&ngx_posted_events);
 
-    if (ngx_event_timer_init(cycle->log) == NJET_ERROR) {
-        return NJET_ERROR;
+    if (ngx_event_timer_init(cycle->log) == NJT_ERROR) {
+        return NJT_ERROR;
     }
 
     for (m = 0; cycle->modules[m]; m++) {
-        if (cycle->modules[m]->type != NJET_EVENT_MODULE) {
+        if (cycle->modules[m]->type != NJT_EVENT_MODULE) {
             continue;
         }
 
@@ -666,7 +666,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
 
         module = cycle->modules[m]->ctx;
 
-        if (module->actions.init(cycle, ngx_timer_resolution) != NJET_OK) {
+        if (module->actions.init(cycle, ngx_timer_resolution) != NJT_OK) {
             /* fatal */
             exit(2);
         }
@@ -674,9 +674,9 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         break;
     }
 
-#if !(NJET_WIN32)
+#if !(NJT_WIN32)
 
-    if (ngx_timer_resolution && !(ngx_event_flags & NJET_USE_TIMER_EVENT)) {
+    if (ngx_timer_resolution && !(ngx_event_flags & NJT_USE_TIMER_EVENT)) {
         struct sigaction  sa;
         struct itimerval  itv;
 
@@ -685,9 +685,9 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         sigemptyset(&sa.sa_mask);
 
         if (sigaction(SIGALRM, &sa, NULL) == -1) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                           "sigaction(SIGALRM) failed");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         itv.it_interval.tv_sec = ngx_timer_resolution / 1000;
@@ -696,18 +696,18 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         itv.it_value.tv_usec = (ngx_timer_resolution % 1000 ) * 1000;
 
         if (setitimer(ITIMER_REAL, &itv, NULL) == -1) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                           "setitimer() failed");
         }
     }
 
-    if (ngx_event_flags & NJET_USE_FD_EVENT) {
+    if (ngx_event_flags & NJT_USE_FD_EVENT) {
         struct rlimit  rlmt;
 
         if (getrlimit(RLIMIT_NOFILE, &rlmt) == -1) {
-            ngx_log_error(NJET_LOG_ALERT, cycle->log, ngx_errno,
+            ngx_log_error(NJT_LOG_ALERT, cycle->log, ngx_errno,
                           "getrlimit(RLIMIT_NOFILE) failed");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         cycle->files_n = (ngx_uint_t) rlmt.rlim_cur;
@@ -715,14 +715,14 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         cycle->files = ngx_calloc(sizeof(ngx_connection_t *) * cycle->files_n,
                                   cycle->log);
         if (cycle->files == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
 #else
 
-    if (ngx_timer_resolution && !(ngx_event_flags & NJET_USE_TIMER_EVENT)) {
-        ngx_log_error(NJET_LOG_WARN, cycle->log, 0,
+    if (ngx_timer_resolution && !(ngx_event_flags & NJT_USE_TIMER_EVENT)) {
+        ngx_log_error(NJT_LOG_WARN, cycle->log, 0,
                       "the \"timer_resolution\" directive is not supported "
                       "with the configured event method, ignored");
         ngx_timer_resolution = 0;
@@ -733,7 +733,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
     cycle->connections =
         ngx_alloc(sizeof(ngx_connection_t) * cycle->connection_n, cycle->log);
     if (cycle->connections == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     c = cycle->connections;
@@ -741,7 +741,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
     cycle->read_events = ngx_alloc(sizeof(ngx_event_t) * cycle->connection_n,
                                    cycle->log);
     if (cycle->read_events == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     rev = cycle->read_events;
@@ -753,7 +753,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
     cycle->write_events = ngx_alloc(sizeof(ngx_event_t) * cycle->connection_n,
                                     cycle->log);
     if (cycle->write_events == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     wev = cycle->write_events;
@@ -783,7 +783,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
     ls = cycle->listening.elts;
     for (i = 0; i < cycle->listening.nelts; i++) {
 
-#if (NJET_HAVE_REUSEPORT)
+#if (NJT_HAVE_REUSEPORT)
         if (ls[i].reuseport && ls[i].worker != ngx_worker) {
             continue;
         }
@@ -792,7 +792,7 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         c = ngx_get_connection(ls[i].fd, cycle->log);
 
         if (c == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         c->type = ls[i].type;
@@ -806,11 +806,11 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         rev->log = c->log;
         rev->accept = 1;
 
-#if (NJET_HAVE_DEFERRED_ACCEPT)
+#if (NJT_HAVE_DEFERRED_ACCEPT)
         rev->deferred_accept = ls[i].deferred_accept;
 #endif
 
-        if (!(ngx_event_flags & NJET_USE_IOCP_EVENT)) {
+        if (!(ngx_event_flags & NJT_USE_IOCP_EVENT)) {
             if (ls[i].previous) {
 
                 /*
@@ -820,19 +820,19 @@ ngx_event_process_init(ngx_cycle_t *cycle)
 
                 old = ls[i].previous->connection;
 
-                if (ngx_del_event(old->read, NJET_READ_EVENT, NJET_CLOSE_EVENT)
-                    == NJET_ERROR)
+                if (ngx_del_event(old->read, NJT_READ_EVENT, NJT_CLOSE_EVENT)
+                    == NJT_ERROR)
                 {
-                    return NJET_ERROR;
+                    return NJT_ERROR;
                 }
 
                 old->fd = (ngx_socket_t) -1;
             }
         }
 
-#if (NJET_WIN32)
+#if (NJT_WIN32)
 
-        if (ngx_event_flags & NJET_USE_IOCP_EVENT) {
+        if (ngx_event_flags & NJT_USE_IOCP_EVENT) {
             ngx_iocp_conf_t  *iocpcf;
 
             rev->handler = ngx_event_acceptex;
@@ -841,17 +841,17 @@ ngx_event_process_init(ngx_cycle_t *cycle)
                 continue;
             }
 
-            if (ngx_add_event(rev, 0, NJET_IOCP_ACCEPT) == NJET_ERROR) {
-                return NJET_ERROR;
+            if (ngx_add_event(rev, 0, NJT_IOCP_ACCEPT) == NJT_ERROR) {
+                return NJT_ERROR;
             }
 
             ls[i].log.handler = ngx_acceptex_log_error;
 
             iocpcf = ngx_event_get_conf(cycle->conf_ctx, ngx_iocp_module);
             if (ngx_event_post_acceptex(&ls[i], iocpcf->post_acceptex)
-                == NJET_ERROR)
+                == NJT_ERROR)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
         } else {
@@ -861,8 +861,8 @@ ngx_event_process_init(ngx_cycle_t *cycle)
                 continue;
             }
 
-            if (ngx_add_event(rev, NJET_READ_EVENT, 0) == NJET_ERROR) {
-                return NJET_ERROR;
+            if (ngx_add_event(rev, NJT_READ_EVENT, 0) == NJT_ERROR) {
+                return NJT_ERROR;
             }
         }
 
@@ -871,11 +871,11 @@ ngx_event_process_init(ngx_cycle_t *cycle)
         rev->handler = (c->type == SOCK_STREAM) ? ngx_event_accept
                                                 : ngx_event_recvmsg;
 
-#if (NJET_HAVE_REUSEPORT)
+#if (NJT_HAVE_REUSEPORT)
 
         if (ls[i].reuseport) {
-            if (ngx_add_event(rev, NJET_READ_EVENT, 0) == NJET_ERROR) {
-                return NJET_ERROR;
+            if (ngx_add_event(rev, NJT_READ_EVENT, 0) == NJT_ERROR) {
+                return NJT_ERROR;
             }
 
             continue;
@@ -887,17 +887,17 @@ ngx_event_process_init(ngx_cycle_t *cycle)
             continue;
         }
 
-#if (NJET_HAVE_EPOLLEXCLUSIVE)
+#if (NJT_HAVE_EPOLLEXCLUSIVE)
 
-        if ((ngx_event_flags & NJET_USE_EPOLL_EVENT)
+        if ((ngx_event_flags & NJT_USE_EPOLL_EVENT)
             && ccf->worker_processes > 1)
         {
             ngx_use_exclusive_accept = 1;
 
-            if (ngx_add_event(rev, NJET_READ_EVENT, NJET_EXCLUSIVE_EVENT)
-                == NJET_ERROR)
+            if (ngx_add_event(rev, NJT_READ_EVENT, NJT_EXCLUSIVE_EVENT)
+                == NJT_ERROR)
             {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             continue;
@@ -905,15 +905,15 @@ ngx_event_process_init(ngx_cycle_t *cycle)
 
 #endif
 
-        if (ngx_add_event(rev, NJET_READ_EVENT, 0) == NJET_ERROR) {
-            return NJET_ERROR;
+        if (ngx_add_event(rev, NJT_READ_EVENT, 0) == NJT_ERROR) {
+            return NJT_ERROR;
         }
 
 #endif
 
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -922,17 +922,17 @@ ngx_send_lowat(ngx_connection_t *c, size_t lowat)
 {
     int  sndlowat;
 
-#if (NJET_HAVE_LOWAT_EVENT)
+#if (NJT_HAVE_LOWAT_EVENT)
 
-    if (ngx_event_flags & NJET_USE_KQUEUE_EVENT) {
+    if (ngx_event_flags & NJT_USE_KQUEUE_EVENT) {
         c->write->available = lowat;
-        return NJET_OK;
+        return NJT_OK;
     }
 
 #endif
 
     if (lowat == 0 || c->sndlowat) {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     sndlowat = (int) lowat;
@@ -943,12 +943,12 @@ ngx_send_lowat(ngx_connection_t *c, size_t lowat)
     {
         ngx_connection_error(c, ngx_socket_errno,
                              "setsockopt(SO_SNDLOWAT) failed");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     c->sndlowat = 1;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -967,22 +967,22 @@ ngx_events_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     /* count the number of the event modules and set up their indices */
 
-    ngx_event_max_module = ngx_count_modules(cf->cycle, NJET_EVENT_MODULE);
+    ngx_event_max_module = ngx_count_modules(cf->cycle, NJT_EVENT_MODULE);
 
     ctx = ngx_pcalloc(cf->pool, sizeof(void *));
     if (ctx == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     *ctx = ngx_pcalloc(cf->pool, ngx_event_max_module * sizeof(void *));
     if (*ctx == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     *(void **) conf = ctx;
 
     for (i = 0; cf->cycle->modules[i]; i++) {
-        if (cf->cycle->modules[i]->type != NJET_EVENT_MODULE) {
+        if (cf->cycle->modules[i]->type != NJT_EVENT_MODULE) {
             continue;
         }
 
@@ -992,26 +992,26 @@ ngx_events_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             (*ctx)[cf->cycle->modules[i]->ctx_index] =
                                                      m->create_conf(cf->cycle);
             if ((*ctx)[cf->cycle->modules[i]->ctx_index] == NULL) {
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
         }
     }
 
     pcf = *cf;
     cf->ctx = ctx;
-    cf->module_type = NJET_EVENT_MODULE;
-    cf->cmd_type = NJET_EVENT_CONF;
+    cf->module_type = NJT_EVENT_MODULE;
+    cf->cmd_type = NJT_EVENT_CONF;
 
     rv = ngx_conf_parse(cf, NULL);
 
     *cf = pcf;
 
-    if (rv != NJET_CONF_OK) {
+    if (rv != NJT_CONF_OK) {
         return rv;
     }
 
     for (i = 0; cf->cycle->modules[i]; i++) {
-        if (cf->cycle->modules[i]->type != NJET_EVENT_MODULE) {
+        if (cf->cycle->modules[i]->type != NJT_EVENT_MODULE) {
             continue;
         }
 
@@ -1020,13 +1020,13 @@ ngx_events_block(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         if (m->init_conf) {
             rv = m->init_conf(cf->cycle,
                               (*ctx)[cf->cycle->modules[i]->ctx_index]);
-            if (rv != NJET_CONF_OK) {
+            if (rv != NJT_CONF_OK) {
                 return rv;
             }
         }
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -1037,22 +1037,22 @@ ngx_event_connections(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     ngx_str_t  *value;
 
-    if (ecf->connections != NJET_CONF_UNSET_UINT) {
+    if (ecf->connections != NJT_CONF_UNSET_UINT) {
         return "is duplicate";
     }
 
     value = cf->args->elts;
     ecf->connections = ngx_atoi(value[1].data, value[1].len);
-    if (ecf->connections == (ngx_uint_t) NJET_ERROR) {
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+    if (ecf->connections == (ngx_uint_t) NJT_ERROR) {
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid number \"%V\"", &value[1]);
 
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     cf->cycle->connection_n = ecf->connections;
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -1066,7 +1066,7 @@ ngx_event_use(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_event_conf_t     *old_ecf;
     ngx_event_module_t   *module;
 
-    if (ecf->use != NJET_CONF_UNSET_UINT) {
+    if (ecf->use != NJT_CONF_UNSET_UINT) {
         return "is duplicate";
     }
 
@@ -1081,7 +1081,7 @@ ngx_event_use(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
 
     for (m = 0; cf->cycle->modules[m]; m++) {
-        if (cf->cycle->modules[m]->type != NJET_EVENT_MODULE) {
+        if (cf->cycle->modules[m]->type != NJT_EVENT_MODULE) {
             continue;
         }
 
@@ -1091,11 +1091,11 @@ ngx_event_use(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
                 ecf->use = cf->cycle->modules[m]->ctx_index;
                 ecf->name = module->name->data;
 
-                if (ngx_process == NJET_PROCESS_SINGLE
+                if (ngx_process == NJT_PROCESS_SINGLE
                     && old_ecf
                     && old_ecf->use != ecf->use)
                 {
-                    ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+                    ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "when the server runs without a master process "
                                "the \"%V\" event type must be the same as "
                                "in previous configuration - \"%s\" "
@@ -1104,25 +1104,25 @@ ngx_event_use(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
                                "and start it again",
                                &value[1], old_ecf->name);
 
-                    return NJET_CONF_ERROR;
+                    return NJT_CONF_ERROR;
                 }
 
-                return NJET_CONF_OK;
+                return NJT_CONF_OK;
             }
         }
     }
 
-    ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+    ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                        "invalid event type \"%V\"", &value[1]);
 
-    return NJET_CONF_ERROR;
+    return NJT_CONF_ERROR;
 }
 
 
 static char *
 ngx_event_debug_connection(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 {
-#if (NJET_DEBUG)
+#if (NJT_DEBUG)
     ngx_event_conf_t  *ecf = conf;
 
     ngx_int_t             rc;
@@ -1131,61 +1131,61 @@ ngx_event_debug_connection(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_cidr_t            c, *cidr;
     ngx_uint_t            i;
     struct sockaddr_in   *sin;
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     struct sockaddr_in6  *sin6;
 #endif
 
     value = cf->args->elts;
 
-#if (NJET_HAVE_UNIX_DOMAIN)
+#if (NJT_HAVE_UNIX_DOMAIN)
 
     if (ngx_strcmp(value[1].data, "unix:") == 0) {
         cidr = ngx_array_push(&ecf->debug_connection);
         if (cidr == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         cidr->family = AF_UNIX;
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
 #endif
 
     rc = ngx_ptocidr(&value[1], &c);
 
-    if (rc != NJET_ERROR) {
-        if (rc == NJET_DONE) {
-            ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+    if (rc != NJT_ERROR) {
+        if (rc == NJT_DONE) {
+            ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                                "low address bits of %V are meaningless",
                                &value[1]);
         }
 
         cidr = ngx_array_push(&ecf->debug_connection);
         if (cidr == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
 
         *cidr = c;
 
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     ngx_memzero(&u, sizeof(ngx_url_t));
     u.host = value[1];
 
-    if (ngx_inet_resolve_host(cf->pool, &u) != NJET_OK) {
+    if (ngx_inet_resolve_host(cf->pool, &u) != NJT_OK) {
         if (u.err) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "%s in debug_connection \"%V\"",
                                u.err, &u.host);
         }
 
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     cidr = ngx_array_push_n(&ecf->debug_connection, u.naddrs);
     if (cidr == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ngx_memzero(cidr, u.naddrs * sizeof(ngx_cidr_t));
@@ -1195,7 +1195,7 @@ ngx_event_debug_connection(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
         switch (cidr[i].family) {
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
         case AF_INET6:
             sin6 = (struct sockaddr_in6 *) u.addrs[i].sockaddr;
             cidr[i].u.in6.addr = sin6->sin6_addr;
@@ -1213,13 +1213,13 @@ ngx_event_debug_connection(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
 #else
 
-    ngx_conf_log_error(NJET_LOG_WARN, cf, 0,
+    ngx_conf_log_error(NJT_LOG_WARN, cf, 0,
                        "\"debug_connection\" is ignored, you need to rebuild "
                        "njet using --with-debug option to enable it");
 
 #endif
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -1233,17 +1233,17 @@ ngx_event_core_create_conf(ngx_cycle_t *cycle)
         return NULL;
     }
 
-    ecf->connections = NJET_CONF_UNSET_UINT;
-    ecf->use = NJET_CONF_UNSET_UINT;
-    ecf->multi_accept = NJET_CONF_UNSET;
-    ecf->accept_mutex = NJET_CONF_UNSET;
-    ecf->accept_mutex_delay = NJET_CONF_UNSET_MSEC;
-    ecf->name = (void *) NJET_CONF_UNSET;
+    ecf->connections = NJT_CONF_UNSET_UINT;
+    ecf->use = NJT_CONF_UNSET_UINT;
+    ecf->multi_accept = NJT_CONF_UNSET;
+    ecf->accept_mutex = NJT_CONF_UNSET;
+    ecf->accept_mutex_delay = NJT_CONF_UNSET_MSEC;
+    ecf->name = (void *) NJT_CONF_UNSET;
 
-#if (NJET_DEBUG)
+#if (NJT_DEBUG)
 
     if (ngx_array_init(&ecf->debug_connection, cycle->pool, 4,
-                       sizeof(ngx_cidr_t)) == NJET_ERROR)
+                       sizeof(ngx_cidr_t)) == NJT_ERROR)
     {
         return NULL;
     }
@@ -1259,7 +1259,7 @@ ngx_event_core_init_conf(ngx_cycle_t *cycle, void *conf)
 {
     ngx_event_conf_t  *ecf = conf;
 
-#if (NJET_HAVE_EPOLL) && !(NJET_TEST_BUILD_EPOLL)
+#if (NJT_HAVE_EPOLL) && !(NJT_TEST_BUILD_EPOLL)
     int                  fd;
 #endif
     ngx_int_t            i;
@@ -1268,7 +1268,7 @@ ngx_event_core_init_conf(ngx_cycle_t *cycle, void *conf)
 
     module = NULL;
 
-#if (NJET_HAVE_EPOLL) && !(NJET_TEST_BUILD_EPOLL)
+#if (NJT_HAVE_EPOLL) && !(NJT_TEST_BUILD_EPOLL)
 
     fd = epoll_create(100);
 
@@ -1276,25 +1276,25 @@ ngx_event_core_init_conf(ngx_cycle_t *cycle, void *conf)
         (void) close(fd);
         module = &ngx_epoll_module;
 
-    } else if (ngx_errno != NJET_ENOSYS) {
+    } else if (ngx_errno != NJT_ENOSYS) {
         module = &ngx_epoll_module;
     }
 
 #endif
 
-#if (NJET_HAVE_DEVPOLL) && !(NJET_TEST_BUILD_DEVPOLL)
+#if (NJT_HAVE_DEVPOLL) && !(NJT_TEST_BUILD_DEVPOLL)
 
     module = &ngx_devpoll_module;
 
 #endif
 
-#if (NJET_HAVE_KQUEUE)
+#if (NJT_HAVE_KQUEUE)
 
     module = &ngx_kqueue_module;
 
 #endif
 
-#if (NJET_HAVE_SELECT)
+#if (NJT_HAVE_SELECT)
 
     if (module == NULL) {
         module = &ngx_select_module;
@@ -1305,7 +1305,7 @@ ngx_event_core_init_conf(ngx_cycle_t *cycle, void *conf)
     if (module == NULL) {
         for (i = 0; cycle->modules[i]; i++) {
 
-            if (cycle->modules[i]->type != NJET_EVENT_MODULE) {
+            if (cycle->modules[i]->type != NJT_EVENT_MODULE) {
                 continue;
             }
 
@@ -1322,8 +1322,8 @@ ngx_event_core_init_conf(ngx_cycle_t *cycle, void *conf)
     }
 
     if (module == NULL) {
-        ngx_log_error(NJET_LOG_EMERG, cycle->log, 0, "no events module found");
-        return NJET_CONF_ERROR;
+        ngx_log_error(NJT_LOG_EMERG, cycle->log, 0, "no events module found");
+        return NJT_CONF_ERROR;
     }
 
     ngx_conf_init_uint_value(ecf->connections, DEFAULT_CONNECTIONS);
@@ -1338,5 +1338,5 @@ ngx_event_core_init_conf(ngx_cycle_t *cycle, void *conf)
     ngx_conf_init_value(ecf->accept_mutex, 0);
     ngx_conf_init_msec_value(ecf->accept_mutex_delay, 500);
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

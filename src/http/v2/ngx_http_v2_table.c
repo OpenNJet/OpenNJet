@@ -10,7 +10,7 @@
 #include <ngx_http.h>
 
 
-#define NJET_HTTP_V2_TABLE_SIZE  4096
+#define NJT_HTTP_V2_TABLE_SIZE  4096
 
 
 static ngx_int_t ngx_http_v2_table_account(ngx_http_v2_connection_t *h2c,
@@ -81,7 +81,7 @@ static ngx_http_v2_header_t  ngx_http_v2_static_table[] = {
     { ngx_string("www-authenticate"), ngx_string("") },
 };
 
-#define NJET_HTTP_V2_STATIC_TABLE_ENTRIES                                      \
+#define NJT_HTTP_V2_STATIC_TABLE_ENTRIES                                      \
     (sizeof(ngx_http_v2_static_table)                                         \
      / sizeof(ngx_http_v2_header_t))
 
@@ -109,23 +109,23 @@ ngx_http_v2_get_indexed_header(ngx_http_v2_connection_t *h2c, ngx_uint_t index,
     ngx_http_v2_header_t  *entry;
 
     if (index == 0) {
-        ngx_log_error(NJET_LOG_INFO, h2c->connection->log, 0,
+        ngx_log_error(NJT_LOG_INFO, h2c->connection->log, 0,
                       "client sent invalid hpack table index 0");
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, h2c->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
                    "http2 get indexed %s: %ui",
                    name_only ? "name" : "header", index);
 
     index--;
 
-    if (index < NJET_HTTP_V2_STATIC_TABLE_ENTRIES) {
+    if (index < NJT_HTTP_V2_STATIC_TABLE_ENTRIES) {
         h2c->state.header = ngx_http_v2_static_table[index];
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    index -= NJET_HTTP_V2_STATIC_TABLE_ENTRIES;
+    index -= NJT_HTTP_V2_STATIC_TABLE_ENTRIES;
 
     if (index < h2c->hpack.added - h2c->hpack.deleted) {
         index = (h2c->hpack.added - index - 1) % h2c->hpack.allocated;
@@ -133,13 +133,13 @@ ngx_http_v2_get_indexed_header(ngx_http_v2_connection_t *h2c, ngx_uint_t index,
 
         p = ngx_pnalloc(h2c->state.pool, entry->name.len + 1);
         if (p == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         h2c->state.header.name.len = entry->name.len;
         h2c->state.header.name.data = p;
 
-        rest = h2c->hpack.storage + NJET_HTTP_V2_TABLE_SIZE - entry->name.data;
+        rest = h2c->hpack.storage + NJT_HTTP_V2_TABLE_SIZE - entry->name.data;
 
         if (entry->name.len > rest) {
             p = ngx_cpymem(p, entry->name.data, rest);
@@ -152,18 +152,18 @@ ngx_http_v2_get_indexed_header(ngx_http_v2_connection_t *h2c, ngx_uint_t index,
         *p = '\0';
 
         if (name_only) {
-            return NJET_OK;
+            return NJT_OK;
         }
 
         p = ngx_pnalloc(h2c->state.pool, entry->value.len + 1);
         if (p == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         h2c->state.header.value.len = entry->value.len;
         h2c->state.header.value.data = p;
 
-        rest = h2c->hpack.storage + NJET_HTTP_V2_TABLE_SIZE - entry->value.data;
+        rest = h2c->hpack.storage + NJT_HTTP_V2_TABLE_SIZE - entry->value.data;
 
         if (entry->value.len > rest) {
             p = ngx_cpymem(p, entry->value.data, rest);
@@ -175,13 +175,13 @@ ngx_http_v2_get_indexed_header(ngx_http_v2_connection_t *h2c, ngx_uint_t index,
 
         *p = '\0';
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
-    ngx_log_error(NJET_LOG_INFO, h2c->connection->log, 0,
+    ngx_log_error(NJT_LOG_INFO, h2c->connection->log, 0,
                   "client sent out of bound hpack table index: %ui", index);
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
@@ -193,48 +193,48 @@ ngx_http_v2_add_header(ngx_http_v2_connection_t *h2c,
     ngx_uint_t             index;
     ngx_http_v2_header_t  *entry, **entries;
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, h2c->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
                    "http2 table add: \"%V: %V\"",
                    &header->name, &header->value);
 
     if (h2c->hpack.entries == NULL) {
         h2c->hpack.allocated = 64;
-        h2c->hpack.size = NJET_HTTP_V2_TABLE_SIZE;
-        h2c->hpack.free = NJET_HTTP_V2_TABLE_SIZE;
+        h2c->hpack.size = NJT_HTTP_V2_TABLE_SIZE;
+        h2c->hpack.free = NJT_HTTP_V2_TABLE_SIZE;
 
         h2c->hpack.entries = ngx_palloc(h2c->connection->pool,
                                         sizeof(ngx_http_v2_header_t *)
                                         * h2c->hpack.allocated);
         if (h2c->hpack.entries == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         h2c->hpack.storage = ngx_palloc(h2c->connection->pool,
                                         h2c->hpack.free);
         if (h2c->hpack.storage == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         h2c->hpack.pos = h2c->hpack.storage;
     }
 
     if (ngx_http_v2_table_account(h2c, header->name.len + header->value.len)
-        != NJET_OK)
+        != NJT_OK)
     {
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (h2c->hpack.reused == h2c->hpack.deleted) {
         entry = ngx_palloc(h2c->connection->pool, sizeof(ngx_http_v2_header_t));
         if (entry == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
     } else {
         entry = h2c->hpack.entries[h2c->hpack.reused++ % h2c->hpack.allocated];
     }
 
-    avail = h2c->hpack.storage + NJET_HTTP_V2_TABLE_SIZE - h2c->hpack.pos;
+    avail = h2c->hpack.storage + NJT_HTTP_V2_TABLE_SIZE - h2c->hpack.pos;
 
     entry->name.len = header->name.len;
     entry->name.data = h2c->hpack.pos;
@@ -247,7 +247,7 @@ ngx_http_v2_add_header(ngx_http_v2_connection_t *h2c,
         h2c->hpack.pos = ngx_cpymem(h2c->hpack.storage,
                                     header->name.data + avail,
                                     header->name.len - avail);
-        avail = NJET_HTTP_V2_TABLE_SIZE;
+        avail = NJT_HTTP_V2_TABLE_SIZE;
     }
 
     avail -= header->name.len;
@@ -271,7 +271,7 @@ ngx_http_v2_add_header(ngx_http_v2_connection_t *h2c,
                              sizeof(ngx_http_v2_header_t *)
                              * (h2c->hpack.allocated + 64));
         if (entries == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         index = h2c->hpack.deleted % h2c->hpack.allocated;
@@ -295,7 +295,7 @@ ngx_http_v2_add_header(ngx_http_v2_connection_t *h2c,
 
     h2c->hpack.entries[h2c->hpack.added++ % h2c->hpack.allocated] = entry;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -306,19 +306,19 @@ ngx_http_v2_table_account(ngx_http_v2_connection_t *h2c, size_t size)
 
     size += 32;
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, h2c->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
                    "http2 table account: %uz free:%uz",
                    size, h2c->hpack.free);
 
     if (size <= h2c->hpack.free) {
         h2c->hpack.free -= size;
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (size > h2c->hpack.size) {
         h2c->hpack.deleted = h2c->hpack.added;
         h2c->hpack.free = h2c->hpack.size;
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     do {
@@ -328,7 +328,7 @@ ngx_http_v2_table_account(ngx_http_v2_connection_t *h2c, size_t size)
 
     h2c->hpack.free -= size;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -338,14 +338,14 @@ ngx_http_v2_table_size(ngx_http_v2_connection_t *h2c, size_t size)
     ssize_t                needed;
     ngx_http_v2_header_t  *entry;
 
-    if (size > NJET_HTTP_V2_TABLE_SIZE) {
-        ngx_log_error(NJET_LOG_INFO, h2c->connection->log, 0,
+    if (size > NJT_HTTP_V2_TABLE_SIZE) {
+        ngx_log_error(NJT_LOG_INFO, h2c->connection->log, 0,
                       "client sent invalid table size update: %uz", size);
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, h2c->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, h2c->connection->log, 0,
                    "http2 new hpack table size: %uz was:%uz",
                    size, h2c->hpack.size);
 
@@ -359,5 +359,5 @@ ngx_http_v2_table_size(ngx_http_v2_connection_t *h2c, size_t size)
     h2c->hpack.size = size;
     h2c->hpack.free -= needed;
 
-    return NJET_OK;
+    return NJT_OK;
 }

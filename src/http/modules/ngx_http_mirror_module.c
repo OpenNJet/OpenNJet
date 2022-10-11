@@ -34,16 +34,16 @@ static ngx_int_t ngx_http_mirror_init(ngx_conf_t *cf);
 static ngx_command_t  ngx_http_mirror_commands[] = {
 
     { ngx_string("mirror"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       ngx_http_mirror,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("mirror_request_body"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_mirror_loc_conf_t, request_body),
       NULL },
 
@@ -67,10 +67,10 @@ static ngx_http_module_t  ngx_http_mirror_module_ctx = {
 
 
 ngx_module_t  ngx_http_mirror_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_mirror_module_ctx,           /* module context */
     ngx_http_mirror_commands,              /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -78,7 +78,7 @@ ngx_module_t  ngx_http_mirror_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -90,16 +90,16 @@ ngx_http_mirror_handler(ngx_http_request_t *r)
     ngx_http_mirror_loc_conf_t  *mlcf;
 
     if (r != r->main) {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     mlcf = ngx_http_get_module_loc_conf(r, ngx_http_mirror_module);
 
     if (mlcf->mirror == NULL) {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
-    ngx_log_debug0(NJET_LOG_DEBUG_HTTP, r->connection->log, 0, "mirror handler");
+    ngx_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0, "mirror handler");
 
     if (mlcf->request_body) {
         ctx = ngx_http_get_module_ctx(r, ngx_http_mirror_module);
@@ -110,20 +110,20 @@ ngx_http_mirror_handler(ngx_http_request_t *r)
 
         ctx = ngx_pcalloc(r->pool, sizeof(ngx_http_mirror_ctx_t));
         if (ctx == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
-        ctx->status = NJET_DONE;
+        ctx->status = NJT_DONE;
 
         ngx_http_set_ctx(r, ctx, ngx_http_mirror_module);
 
         rc = ngx_http_read_client_request_body(r, ngx_http_mirror_body_handler);
-        if (rc >= NJET_HTTP_SPECIAL_RESPONSE) {
+        if (rc >= NJT_HTTP_SPECIAL_RESPONSE) {
             return rc;
         }
 
-        ngx_http_finalize_request(r, NJET_DONE);
-        return NJET_DONE;
+        ngx_http_finalize_request(r, NJT_DONE);
+        return NJT_DONE;
     }
 
     return ngx_http_mirror_handler_internal(r);
@@ -160,10 +160,10 @@ ngx_http_mirror_handler_internal(ngx_http_request_t *r)
 
     for (i = 0; i < mlcf->mirror->nelts; i++) {
         if (ngx_http_subrequest(r, &name[i], &r->args, &sr, NULL,
-                                NJET_HTTP_SUBREQUEST_BACKGROUND)
-            != NJET_OK)
+                                NJT_HTTP_SUBREQUEST_BACKGROUND)
+            != NJT_OK)
         {
-            return NJET_HTTP_INTERNAL_SERVER_ERROR;
+            return NJT_HTTP_INTERNAL_SERVER_ERROR;
         }
 
         sr->header_only = 1;
@@ -171,7 +171,7 @@ ngx_http_mirror_handler_internal(ngx_http_request_t *r)
         sr->method_name = r->method_name;
     }
 
-    return NJET_DECLINED;
+    return NJT_DECLINED;
 }
 
 
@@ -185,8 +185,8 @@ ngx_http_mirror_create_loc_conf(ngx_conf_t *cf)
         return NULL;
     }
 
-    mlcf->mirror = NJET_CONF_UNSET_PTR;
-    mlcf->request_body = NJET_CONF_UNSET;
+    mlcf->mirror = NJT_CONF_UNSET_PTR;
+    mlcf->request_body = NJT_CONF_UNSET;
 
     return mlcf;
 }
@@ -201,7 +201,7 @@ ngx_http_mirror_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_ptr_value(conf->mirror, prev->mirror, NULL);
     ngx_conf_merge_value(conf->request_body, prev->request_body, 1);
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -215,33 +215,33 @@ ngx_http_mirror(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     value = cf->args->elts;
 
     if (ngx_strcmp(value[1].data, "off") == 0) {
-        if (mlcf->mirror != NJET_CONF_UNSET_PTR) {
+        if (mlcf->mirror != NJT_CONF_UNSET_PTR) {
             return "is duplicate";
         }
 
         mlcf->mirror = NULL;
-        return NJET_CONF_OK;
+        return NJT_CONF_OK;
     }
 
     if (mlcf->mirror == NULL) {
         return "is duplicate";
     }
 
-    if (mlcf->mirror == NJET_CONF_UNSET_PTR) {
+    if (mlcf->mirror == NJT_CONF_UNSET_PTR) {
         mlcf->mirror = ngx_array_create(cf->pool, 4, sizeof(ngx_str_t));
         if (mlcf->mirror == NULL) {
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
     s = ngx_array_push(mlcf->mirror);
     if (s == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     *s = value[1];
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -253,12 +253,12 @@ ngx_http_mirror_init(ngx_conf_t *cf)
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
-    h = ngx_array_push(&cmcf->phases[NJET_HTTP_PRECONTENT_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJT_HTTP_PRECONTENT_PHASE].handlers);
     if (h == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *h = ngx_http_mirror_handler;
 
-    return NJET_OK;
+    return NJT_OK;
 }

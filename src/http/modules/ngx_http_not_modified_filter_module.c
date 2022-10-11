@@ -33,10 +33,10 @@ static ngx_http_module_t  ngx_http_not_modified_filter_module_ctx = {
 
 
 ngx_module_t  ngx_http_not_modified_filter_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_not_modified_filter_module_ctx, /* module context */
     NULL,                                  /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -44,7 +44,7 @@ ngx_module_t  ngx_http_not_modified_filter_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -54,7 +54,7 @@ static ngx_http_output_header_filter_pt  ngx_http_next_header_filter;
 static ngx_int_t
 ngx_http_not_modified_header_filter(ngx_http_request_t *r)
 {
-    if (r->headers_out.status != NJET_HTTP_OK
+    if (r->headers_out.status != NJT_HTTP_OK
         || r != r->main
         || r->disable_not_modified)
     {
@@ -65,14 +65,14 @@ ngx_http_not_modified_header_filter(ngx_http_request_t *r)
         && !ngx_http_test_if_unmodified(r))
     {
         return ngx_http_filter_finalize_request(r, NULL,
-                                                NJET_HTTP_PRECONDITION_FAILED);
+                                                NJT_HTTP_PRECONDITION_FAILED);
     }
 
     if (r->headers_in.if_match
         && !ngx_http_test_if_match(r, r->headers_in.if_match, 0))
     {
         return ngx_http_filter_finalize_request(r, NULL,
-                                                NJET_HTTP_PRECONDITION_FAILED);
+                                                NJT_HTTP_PRECONDITION_FAILED);
     }
 
     if (r->headers_in.if_modified_since || r->headers_in.if_none_match) {
@@ -91,7 +91,7 @@ ngx_http_not_modified_header_filter(ngx_http_request_t *r)
 
         /* not modified */
 
-        r->headers_out.status = NJET_HTTP_NOT_MODIFIED;
+        r->headers_out.status = NJT_HTTP_NOT_MODIFIED;
         r->headers_out.status_line.len = 0;
         r->headers_out.content_type.len = 0;
         ngx_http_clear_content_length(r);
@@ -121,7 +121,7 @@ ngx_http_test_if_unmodified(ngx_http_request_t *r)
     iums = ngx_parse_http_time(r->headers_in.if_unmodified_since->value.data,
                                r->headers_in.if_unmodified_since->value.len);
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                  "http iums:%T lm:%T", iums, r->headers_out.last_modified_time);
 
     if (iums >= r->headers_out.last_modified_time) {
@@ -144,21 +144,21 @@ ngx_http_test_if_modified(ngx_http_request_t *r)
 
     clcf = ngx_http_get_module_loc_conf(r, ngx_http_core_module);
 
-    if (clcf->if_modified_since == NJET_HTTP_IMS_OFF) {
+    if (clcf->if_modified_since == NJT_HTTP_IMS_OFF) {
         return 1;
     }
 
     ims = ngx_parse_http_time(r->headers_in.if_modified_since->value.data,
                               r->headers_in.if_modified_since->value.len);
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http ims:%T lm:%T", ims, r->headers_out.last_modified_time);
 
     if (ims == r->headers_out.last_modified_time) {
         return 0;
     }
 
-    if (clcf->if_modified_since == NJET_HTTP_IMS_EXACT
+    if (clcf->if_modified_since == NJT_HTTP_IMS_EXACT
         || ims < r->headers_out.last_modified_time)
     {
         return 1;
@@ -187,7 +187,7 @@ ngx_http_test_if_match(ngx_http_request_t *r, ngx_table_elt_t *header,
 
     etag = r->headers_out.etag->value;
 
-    ngx_log_debug2(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http im:\"%V\" etag:%V", list, &etag);
 
     if (weak
@@ -262,5 +262,5 @@ ngx_http_not_modified_filter_init(ngx_conf_t *cf)
     ngx_http_next_header_filter = ngx_http_top_header_filter;
     ngx_http_top_header_filter = ngx_http_not_modified_header_filter;
 
-    return NJET_OK;
+    return NJT_OK;
 }

@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_MAIL_SMTP_MODULE_H_INCLUDED_
-#define _NJET_MAIL_SMTP_MODULE_H_INCLUDED_
+#ifndef _NJT_MAIL_SMTP_MODULE_H_INCLUDED_
+#define _NJT_MAIL_SMTP_MODULE_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -42,4 +42,4 @@ ngx_int_t ngx_mail_smtp_parse_command(ngx_mail_session_t *s);
 extern ngx_module_t  ngx_mail_smtp_module;
 
 
-#endif /* _NJET_MAIL_SMTP_MODULE_H_INCLUDED_ */
+#endif /* _NJT_MAIL_SMTP_MODULE_H_INCLUDED_ */

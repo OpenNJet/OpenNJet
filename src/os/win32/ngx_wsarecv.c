@@ -27,7 +27,7 @@ ngx_wsarecv(ngx_connection_t *c, u_char *buf, size_t size)
 
     rc = WSARecv(c->fd, wsabuf, 1, &bytes, &flags, NULL, NULL);
 
-    ngx_log_debug4(NJET_LOG_DEBUG_EVENT, c->log, 0,
+    ngx_log_debug4(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "WSARecv: fd:%d rc:%d %ul of %z", c->fd, rc, bytes, size);
 
     rev = c->read;
@@ -37,21 +37,21 @@ ngx_wsarecv(ngx_connection_t *c, u_char *buf, size_t size)
         err = ngx_socket_errno;
 
         if (err == WSAEWOULDBLOCK) {
-            ngx_log_debug0(NJET_LOG_DEBUG_EVENT, c->log, err,
+            ngx_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, err,
                            "WSARecv() not ready");
-            return NJET_AGAIN;
+            return NJT_AGAIN;
         }
 
         n = ngx_connection_error(c, err, "WSARecv() failed");
 
-        if (n == NJET_ERROR) {
+        if (n == NJT_ERROR) {
             rev->error = 1;
         }
 
         return n;
     }
 
-#if (NJET_HAVE_FIONREAD)
+#if (NJT_HAVE_FIONREAD)
 
     if (rev->available >= 0 && bytes > 0) {
         rev->available -= bytes;
@@ -68,7 +68,7 @@ ngx_wsarecv(ngx_connection_t *c, u_char *buf, size_t size)
             rev->ready = 0;
         }
 
-        ngx_log_debug1(NJET_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "WSARecv: avail:%d", rev->available);
 
     } else if (bytes == size) {
@@ -77,14 +77,14 @@ ngx_wsarecv(ngx_connection_t *c, u_char *buf, size_t size)
             n = ngx_connection_error(c, ngx_socket_errno,
                                      ngx_socket_nread_n " failed");
 
-            if (n == NJET_ERROR) {
+            if (n == NJT_ERROR) {
                 rev->error = 1;
             }
 
             return n;
         }
 
-        ngx_log_debug1(NJET_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "WSARecv: avail:%d", rev->available);
     }
 
@@ -116,23 +116,23 @@ ngx_overlapped_wsarecv(ngx_connection_t *c, u_char *buf, size_t size)
     rev = c->read;
 
     if (!rev->ready) {
-        ngx_log_error(NJET_LOG_ALERT, c->log, 0, "second wsa post");
-        return NJET_AGAIN;
+        ngx_log_error(NJT_LOG_ALERT, c->log, 0, "second wsa post");
+        return NJT_AGAIN;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_EVENT, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "rev->complete: %d", rev->complete);
 
     if (rev->complete) {
         rev->complete = 0;
 
-        if (ngx_event_flags & NJET_USE_IOCP_EVENT) {
+        if (ngx_event_flags & NJT_USE_IOCP_EVENT) {
             if (rev->ovlp.error) {
                 ngx_connection_error(c, rev->ovlp.error, "WSARecv() failed");
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
-            ngx_log_debug3(NJET_LOG_DEBUG_EVENT, c->log, 0,
+            ngx_log_debug3(NJT_LOG_DEBUG_EVENT, c->log, 0,
                            "WSARecv ovlp: fd:%d %ul of %z",
                            c->fd, rev->available, size);
 
@@ -145,10 +145,10 @@ ngx_overlapped_wsarecv(ngx_connection_t *c, u_char *buf, size_t size)
         {
             ngx_connection_error(c, ngx_socket_errno,
                                "WSARecv() or WSAGetOverlappedResult() failed");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
-        ngx_log_debug3(NJET_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug3(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "WSARecv: fd:%d %ul of %z", c->fd, bytes, size);
 
         return bytes;
@@ -165,7 +165,7 @@ ngx_overlapped_wsarecv(ngx_connection_t *c, u_char *buf, size_t size)
 
     rev->complete = 0;
 
-    ngx_log_debug4(NJET_LOG_DEBUG_EVENT, c->log, 0,
+    ngx_log_debug4(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "WSARecv ovlp: fd:%d rc:%d %ul of %z",
                    c->fd, rc, bytes, size);
 
@@ -173,21 +173,21 @@ ngx_overlapped_wsarecv(ngx_connection_t *c, u_char *buf, size_t size)
         err = ngx_socket_errno;
         if (err == WSA_IO_PENDING) {
             rev->active = 1;
-            ngx_log_debug0(NJET_LOG_DEBUG_EVENT, c->log, err,
+            ngx_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, err,
                            "WSARecv() posted");
-            return NJET_AGAIN;
+            return NJT_AGAIN;
         }
 
         n = ngx_connection_error(c, err, "WSARecv() failed");
 
-        if (n == NJET_ERROR) {
+        if (n == NJT_ERROR) {
             rev->error = 1;
         }
 
         return n;
     }
 
-    if (ngx_event_flags & NJET_USE_IOCP_EVENT) {
+    if (ngx_event_flags & NJT_USE_IOCP_EVENT) {
 
         /*
          * if a socket was bound with I/O completion port
@@ -196,7 +196,7 @@ ngx_overlapped_wsarecv(ngx_connection_t *c, u_char *buf, size_t size)
          */
 
         rev->active = 1;
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
     if (bytes == 0) {

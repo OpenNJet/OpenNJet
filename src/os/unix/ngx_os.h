@@ -5,15 +5,15 @@
  */
 
 
-#ifndef _NJET_OS_H_INCLUDED_
-#define _NJET_OS_H_INCLUDED_
+#ifndef _NJT_OS_H_INCLUDED_
+#define _NJT_OS_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#define NJET_IO_SENDFILE    1
+#define NJT_IO_SENDFILE    1
 
 
 typedef ssize_t (*ngx_recv_pt)(ngx_connection_t *c, u_char *buf, size_t size);
@@ -55,9 +55,9 @@ ngx_chain_t *ngx_udp_unix_sendmsg_chain(ngx_connection_t *c, ngx_chain_t *in,
 
 
 #if (IOV_MAX > 64)
-#define NJET_IOVS_PREALLOCATE  64
+#define NJT_IOVS_PREALLOCATE  64
 #else
-#define NJET_IOVS_PREALLOCATE  IOV_MAX
+#define NJT_IOVS_PREALLOCATE  IOV_MAX
 #endif
 
 
@@ -82,21 +82,21 @@ extern ngx_uint_t   ngx_inherited_nonblocking;
 extern ngx_uint_t   ngx_tcp_nodelay_and_tcp_nopush;
 
 
-#if (NJET_FREEBSD)
+#if (NJT_FREEBSD)
 #include <ngx_freebsd.h>
 
 
-#elif (NJET_LINUX)
+#elif (NJT_LINUX)
 #include <ngx_linux.h>
 
 
-#elif (NJET_SOLARIS)
+#elif (NJT_SOLARIS)
 #include <ngx_solaris.h>
 
 
-#elif (NJET_DARWIN)
+#elif (NJT_DARWIN)
 #include <ngx_darwin.h>
 #endif
 
 
-#endif /* _NJET_OS_H_INCLUDED_ */
+#endif /* _NJT_OS_H_INCLUDED_ */

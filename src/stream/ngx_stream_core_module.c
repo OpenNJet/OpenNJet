@@ -29,79 +29,79 @@ static char *ngx_stream_core_resolver(ngx_conf_t *cf, ngx_command_t *cmd,
 static ngx_command_t  ngx_stream_core_commands[] = {
 
     { ngx_string("variables_hash_max_size"),
-      NJET_STREAM_MAIN_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NJET_STREAM_MAIN_CONF_OFFSET,
+      NJT_STREAM_MAIN_CONF_OFFSET,
       offsetof(ngx_stream_core_main_conf_t, variables_hash_max_size),
       NULL },
 
     { ngx_string("variables_hash_bucket_size"),
-      NJET_STREAM_MAIN_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_num_slot,
-      NJET_STREAM_MAIN_CONF_OFFSET,
+      NJT_STREAM_MAIN_CONF_OFFSET,
       offsetof(ngx_stream_core_main_conf_t, variables_hash_bucket_size),
       NULL },
 
     { ngx_string("server"),
-      NJET_STREAM_MAIN_CONF|NJET_CONF_BLOCK|NJET_CONF_NOARGS,
+      NJT_STREAM_MAIN_CONF|NJT_CONF_BLOCK|NJT_CONF_NOARGS,
       ngx_stream_core_server,
       0,
       0,
       NULL },
 
     { ngx_string("listen"),
-      NJET_STREAM_SRV_CONF|NJET_CONF_1MORE,
+      NJT_STREAM_SRV_CONF|NJT_CONF_1MORE,
       ngx_stream_core_listen,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("error_log"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_1MORE,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_1MORE,
       ngx_stream_core_error_log,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("resolver"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_1MORE,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_1MORE,
       ngx_stream_core_resolver,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
 
     { ngx_string("resolver_timeout"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_core_srv_conf_t, resolver_timeout),
       NULL },
 
     { ngx_string("proxy_protocol_timeout"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_core_srv_conf_t, proxy_protocol_timeout),
       NULL },
 
     { ngx_string("tcp_nodelay"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_FLAG,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_core_srv_conf_t, tcp_nodelay),
       NULL },
 
     { ngx_string("preread_buffer_size"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_size_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_core_srv_conf_t, preread_buffer_size),
       NULL },
 
     { ngx_string("preread_timeout"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_TAKE1,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_msec_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_core_srv_conf_t, preread_timeout),
       NULL },
 
@@ -122,10 +122,10 @@ static ngx_stream_module_t  ngx_stream_core_module_ctx = {
 
 
 ngx_module_t  ngx_stream_core_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_stream_core_module_ctx,           /* module context */
     ngx_stream_core_commands,              /* module directives */
-    NJET_STREAM_MODULE,                     /* module type */
+    NJT_STREAM_MODULE,                     /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -133,7 +133,7 @@ ngx_module_t  ngx_stream_core_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -152,7 +152,7 @@ ngx_stream_core_run_phases(ngx_stream_session_t *s)
 
         rc = ph[s->phase_handler].checker(s, &ph[s->phase_handler]);
 
-        if (rc == NJET_OK) {
+        if (rc == NJT_OK) {
             return;
         }
     }
@@ -170,32 +170,32 @@ ngx_stream_core_generic_phase(ngx_stream_session_t *s,
      * used by all phases, except for preread and content
      */
 
-    ngx_log_debug1(NJET_LOG_DEBUG_STREAM, s->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log, 0,
                    "generic phase: %ui", s->phase_handler);
 
     rc = ph->handler(s);
 
-    if (rc == NJET_OK) {
+    if (rc == NJT_OK) {
         s->phase_handler = ph->next;
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
-    if (rc == NJET_DECLINED) {
+    if (rc == NJT_DECLINED) {
         s->phase_handler++;
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
-    if (rc == NJET_AGAIN || rc == NJET_DONE) {
-        return NJET_OK;
+    if (rc == NJT_AGAIN || rc == NJT_DONE) {
+        return NJT_OK;
     }
 
-    if (rc == NJET_ERROR) {
-        rc = NJET_STREAM_INTERNAL_SERVER_ERROR;
+    if (rc == NJT_ERROR) {
+        rc = NJT_STREAM_INTERNAL_SERVER_ERROR;
     }
 
     ngx_stream_finalize_session(s, rc);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -216,21 +216,21 @@ ngx_stream_core_preread_phase(ngx_stream_session_t *s,
     cscf = ngx_stream_get_module_srv_conf(s, ngx_stream_core_module);
 
     if (c->read->timedout) {
-        rc = NJET_STREAM_OK;
+        rc = NJT_STREAM_OK;
 
     } else if (c->read->timer_set) {
-        rc = NJET_AGAIN;
+        rc = NJT_AGAIN;
 
     } else {
         rc = ph->handler(s);
     }
 
-    while (rc == NJET_AGAIN) {
+    while (rc == NJT_AGAIN) {
 
         if (c->buffer == NULL) {
             c->buffer = ngx_create_temp_buf(c->pool, cscf->preread_buffer_size);
             if (c->buffer == NULL) {
-                rc = NJET_ERROR;
+                rc = NJT_ERROR;
                 break;
             }
         }
@@ -238,13 +238,13 @@ ngx_stream_core_preread_phase(ngx_stream_session_t *s,
         size = c->buffer->end - c->buffer->last;
 
         if (size == 0) {
-            ngx_log_error(NJET_LOG_ERR, c->log, 0, "preread buffer full");
-            rc = NJET_STREAM_BAD_REQUEST;
+            ngx_log_error(NJT_LOG_ERR, c->log, 0, "preread buffer full");
+            rc = NJT_STREAM_BAD_REQUEST;
             break;
         }
 
         if (c->read->eof) {
-            rc = NJET_STREAM_OK;
+            rc = NJT_STREAM_OK;
             break;
         }
 
@@ -254,12 +254,12 @@ ngx_stream_core_preread_phase(ngx_stream_session_t *s,
 
         n = c->recv(c, c->buffer->last, size);
 
-        if (n == NJET_ERROR || n == 0) {
-            rc = NJET_STREAM_OK;
+        if (n == NJT_ERROR || n == 0) {
+            rc = NJT_STREAM_OK;
             break;
         }
 
-        if (n == NJET_AGAIN) {
+        if (n == NJT_AGAIN) {
             break;
         }
 
@@ -268,10 +268,10 @@ ngx_stream_core_preread_phase(ngx_stream_session_t *s,
         rc = ph->handler(s);
     }
 
-    if (rc == NJET_AGAIN) {
-        if (ngx_handle_read_event(c->read, 0) != NJET_OK) {
-            ngx_stream_finalize_session(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
-            return NJET_OK;
+    if (rc == NJT_AGAIN) {
+        if (ngx_handle_read_event(c->read, 0) != NJT_OK) {
+            ngx_stream_finalize_session(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
+            return NJT_OK;
         }
 
         if (!c->read->timer_set) {
@@ -280,34 +280,34 @@ ngx_stream_core_preread_phase(ngx_stream_session_t *s,
 
         c->read->handler = ngx_stream_session_handler;
 
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (c->read->timer_set) {
         ngx_del_timer(c->read);
     }
 
-    if (rc == NJET_OK) {
+    if (rc == NJT_OK) {
         s->phase_handler = ph->next;
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
-    if (rc == NJET_DECLINED) {
+    if (rc == NJT_DECLINED) {
         s->phase_handler++;
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
-    if (rc == NJET_DONE) {
-        return NJET_OK;
+    if (rc == NJT_DONE) {
+        return NJT_OK;
     }
 
-    if (rc == NJET_ERROR) {
-        rc = NJET_STREAM_INTERNAL_SERVER_ERROR;
+    if (rc == NJT_ERROR) {
+        rc = NJT_STREAM_INTERNAL_SERVER_ERROR;
     }
 
     ngx_stream_finalize_session(s, rc);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -326,15 +326,15 @@ ngx_stream_core_content_phase(ngx_stream_session_t *s,
 
     if (c->type == SOCK_STREAM
         && cscf->tcp_nodelay
-        && ngx_tcp_nodelay(c) != NJET_OK)
+        && ngx_tcp_nodelay(c) != NJT_OK)
     {
-        ngx_stream_finalize_session(s, NJET_STREAM_INTERNAL_SERVER_ERROR);
-        return NJET_OK;
+        ngx_stream_finalize_session(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
+        return NJT_OK;
     }
 
     cscf->handler(s);
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -357,19 +357,19 @@ ngx_stream_core_create_main_conf(ngx_conf_t *cf)
 
     if (ngx_array_init(&cmcf->servers, cf->pool, 4,
                        sizeof(ngx_stream_core_srv_conf_t *))
-        != NJET_OK)
+        != NJT_OK)
     {
         return NULL;
     }
 
     if (ngx_array_init(&cmcf->listen, cf->pool, 4, sizeof(ngx_stream_listen_t))
-        != NJET_OK)
+        != NJT_OK)
     {
         return NULL;
     }
 
-    cmcf->variables_hash_max_size = NJET_CONF_UNSET_UINT;
-    cmcf->variables_hash_bucket_size = NJET_CONF_UNSET_UINT;
+    cmcf->variables_hash_max_size = NJT_CONF_UNSET_UINT;
+    cmcf->variables_hash_bucket_size = NJT_CONF_UNSET_UINT;
 
     return cmcf;
 }
@@ -390,7 +390,7 @@ ngx_stream_core_init_main_conf(ngx_conf_t *cf, void *conf)
         cmcf->ncaptures = (cmcf->ncaptures + 1) * 3;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -413,11 +413,11 @@ ngx_stream_core_create_srv_conf(ngx_conf_t *cf)
 
     cscf->file_name = cf->conf_file->file.name.data;
     cscf->line = cf->conf_file->line;
-    cscf->resolver_timeout = NJET_CONF_UNSET_MSEC;
-    cscf->proxy_protocol_timeout = NJET_CONF_UNSET_MSEC;
-    cscf->tcp_nodelay = NJET_CONF_UNSET;
-    cscf->preread_buffer_size = NJET_CONF_UNSET_SIZE;
-    cscf->preread_timeout = NJET_CONF_UNSET_MSEC;
+    cscf->resolver_timeout = NJT_CONF_UNSET_MSEC;
+    cscf->proxy_protocol_timeout = NJT_CONF_UNSET_MSEC;
+    cscf->tcp_nodelay = NJT_CONF_UNSET;
+    cscf->preread_buffer_size = NJT_CONF_UNSET_SIZE;
+    cscf->preread_timeout = NJT_CONF_UNSET_MSEC;
 
     return cscf;
 }
@@ -443,7 +443,7 @@ ngx_stream_core_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
             prev->resolver = ngx_resolver_create(cf, NULL, 0);
             if (prev->resolver == NULL) {
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
         }
 
@@ -451,10 +451,10 @@ ngx_stream_core_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
     }
 
     if (conf->handler == NULL) {
-        ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
+        ngx_log_error(NJT_LOG_EMERG, cf->log, 0,
                       "no handler for server in %s:%ui",
                       conf->file_name, conf->line);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     if (conf->error_log == NULL) {
@@ -476,7 +476,7 @@ ngx_stream_core_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_msec_value(conf->preread_timeout,
                               prev->preread_timeout, 30000);
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -503,7 +503,7 @@ ngx_stream_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     ctx = ngx_pcalloc(cf->pool, sizeof(ngx_stream_conf_ctx_t));
     if (ctx == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     stream_ctx = cf->ctx;
@@ -514,11 +514,11 @@ ngx_stream_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ctx->srv_conf = ngx_pcalloc(cf->pool,
                                 sizeof(void *) * ngx_stream_max_module);
     if (ctx->srv_conf == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     for (m = 0; cf->cycle->modules[m]; m++) {
-        if (cf->cycle->modules[m]->type != NJET_STREAM_MODULE) {
+        if (cf->cycle->modules[m]->type != NJT_STREAM_MODULE) {
             continue;
         }
 
@@ -527,7 +527,7 @@ ngx_stream_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         if (module->create_srv_conf) {
             mconf = module->create_srv_conf(cf);
             if (mconf == NULL) {
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             ctx->srv_conf[cf->cycle->modules[m]->ctx_index] = mconf;
@@ -543,7 +543,7 @@ ngx_stream_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     cscfp = ngx_array_push(&cmcf->servers);
     if (cscfp == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     *cscfp = cscf;
@@ -553,17 +553,17 @@ ngx_stream_core_server(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     pcf = *cf;
     cf->ctx = ctx;
-    cf->cmd_type = NJET_STREAM_SRV_CONF;
+    cf->cmd_type = NJT_STREAM_SRV_CONF;
 
     rv = ngx_conf_parse(cf, NULL);
 
     *cf = pcf;
 
-    if (rv == NJET_CONF_OK && !cscf->listen) {
-        ngx_log_error(NJET_LOG_EMERG, cf->log, 0,
+    if (rv == NJT_CONF_OK && !cscf->listen) {
+        ngx_log_error(NJT_LOG_EMERG, cf->log, 0,
                       "no \"listen\" is defined for server in %s:%ui",
                       cscf->file_name, cscf->line);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     return rv;
@@ -590,36 +590,36 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     u.url = value[1];
     u.listen = 1;
 
-    if (ngx_parse_url(cf->pool, &u) != NJET_OK) {
+    if (ngx_parse_url(cf->pool, &u) != NJT_OK) {
         if (u.err) {
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "%s in \"%V\" of the \"listen\" directive",
                                u.err, &u.url);
         }
 
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     cmcf = ngx_stream_conf_get_module_main_conf(cf, ngx_stream_core_module);
 
     ls = ngx_array_push_n(&cmcf->listen, u.naddrs);
     if (ls == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     ngx_memzero(ls, sizeof(ngx_stream_listen_t));
 
-    ls->backlog = NJET_LISTEN_BACKLOG;
+    ls->backlog = NJT_LISTEN_BACKLOG;
     ls->rcvbuf = -1;
     ls->sndbuf = -1;
     ls->type = SOCK_STREAM;
     ls->ctx = cf->ctx;
 
-#if (NJET_HAVE_TCP_FASTOPEN)
+#if (NJT_HAVE_TCP_FASTOPEN)
     ls->fastopen = -1;
 #endif
 
-#if (NJET_HAVE_INET6)
+#if (NJT_HAVE_INET6)
     ls->ipv6only = 1;
 #endif
 
@@ -627,7 +627,7 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     for (i = 2; i < cf->args->nelts; i++) {
 
-#if !(NJET_WIN32)
+#if !(NJT_WIN32)
         if (ngx_strcmp(value[i].data, "udp") == 0) {
             ls->type = SOCK_DGRAM;
             continue;
@@ -639,15 +639,15 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             continue;
         }
 
-#if (NJET_HAVE_TCP_FASTOPEN)
+#if (NJT_HAVE_TCP_FASTOPEN)
         if (ngx_strncmp(value[i].data, "fastopen=", 9) == 0) {
             ls->fastopen = ngx_atoi(value[i].data + 9, value[i].len - 9);
             ls->bind = 1;
 
-            if (ls->fastopen == NJET_ERROR) {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            if (ls->fastopen == NJT_ERROR) {
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid fastopen \"%V\"", &value[i]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             continue;
@@ -658,10 +658,10 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             ls->backlog = ngx_atoi(value[i].data + 8, value[i].len - 8);
             ls->bind = 1;
 
-            if (ls->backlog == NJET_ERROR || ls->backlog == 0) {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            if (ls->backlog == NJT_ERROR || ls->backlog == 0) {
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid backlog \"%V\"", &value[i]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             backlog = 1;
@@ -676,10 +676,10 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             ls->rcvbuf = ngx_parse_size(&size);
             ls->bind = 1;
 
-            if (ls->rcvbuf == NJET_ERROR) {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            if (ls->rcvbuf == NJT_ERROR) {
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid rcvbuf \"%V\"", &value[i]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             continue;
@@ -692,17 +692,17 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             ls->sndbuf = ngx_parse_size(&size);
             ls->bind = 1;
 
-            if (ls->sndbuf == NJET_ERROR) {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            if (ls->sndbuf == NJT_ERROR) {
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid sndbuf \"%V\"", &value[i]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             continue;
         }
 
         if (ngx_strncmp(value[i].data, "ipv6only=o", 10) == 0) {
-#if (NJET_HAVE_INET6 && defined IPV6_V6ONLY)
+#if (NJT_HAVE_INET6 && defined IPV6_V6ONLY)
             if (ngx_strcmp(&value[i].data[10], "n") == 0) {
                 ls->ipv6only = 1;
 
@@ -710,28 +710,28 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
                 ls->ipv6only = 0;
 
             } else {
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid ipv6only flags \"%s\"",
                                    &value[i].data[9]);
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
             }
 
             ls->bind = 1;
             continue;
 #else
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "bind ipv6only is not supported "
                                "on this platform");
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
 #endif
         }
 
         if (ngx_strcmp(value[i].data, "reuseport") == 0) {
-#if (NJET_HAVE_REUSEPORT)
+#if (NJT_HAVE_REUSEPORT)
             ls->reuseport = 1;
             ls->bind = 1;
 #else
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "reuseport is not supported "
                                "on this platform, ignored");
 #endif
@@ -739,7 +739,7 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         }
 
         if (ngx_strcmp(value[i].data, "ssl") == 0) {
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
             ngx_stream_ssl_conf_t  *sslcf;
 
             sslcf = ngx_stream_conf_get_module_srv_conf(cf,
@@ -753,10 +753,10 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
             continue;
 #else
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "the \"ssl\" parameter requires "
                                "ngx_stream_ssl_module");
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
 #endif
         }
 
@@ -770,7 +770,7 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
             } else {
 
-#if (NJET_HAVE_KEEPALIVE_TUNABLE)
+#if (NJT_HAVE_KEEPALIVE_TUNABLE)
                 u_char     *p, *end;
                 ngx_str_t   s;
 
@@ -786,7 +786,7 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
                     s.len = p - s.data;
 
                     ls->tcp_keepidle = ngx_parse_time(&s, 1);
-                    if (ls->tcp_keepidle == (time_t) NJET_ERROR) {
+                    if (ls->tcp_keepidle == (time_t) NJT_ERROR) {
                         goto invalid_so_keepalive;
                     }
                 }
@@ -802,7 +802,7 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
                     s.len = p - s.data;
 
                     ls->tcp_keepintvl = ngx_parse_time(&s, 1);
-                    if (ls->tcp_keepintvl == (time_t) NJET_ERROR) {
+                    if (ls->tcp_keepintvl == (time_t) NJT_ERROR) {
                         goto invalid_so_keepalive;
                     }
                 }
@@ -813,7 +813,7 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
                     s.len = end - s.data;
 
                     ls->tcp_keepcnt = ngx_atoi(s.data, s.len);
-                    if (ls->tcp_keepcnt == NJET_ERROR) {
+                    if (ls->tcp_keepcnt == NJT_ERROR) {
                         goto invalid_so_keepalive;
                     }
                 }
@@ -828,10 +828,10 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
 #else
 
-                ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+                ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "the \"so_keepalive\" parameter accepts "
                                    "only \"on\" or \"off\" on this platform");
-                return NJET_CONF_ERROR;
+                return NJT_CONF_ERROR;
 
 #endif
             }
@@ -840,13 +840,13 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
             continue;
 
-#if (NJET_HAVE_KEEPALIVE_TUNABLE)
+#if (NJT_HAVE_KEEPALIVE_TUNABLE)
         invalid_so_keepalive:
 
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid so_keepalive value: \"%s\"",
                                &value[i].data[13]);
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
 #endif
         }
 
@@ -855,9 +855,9 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             continue;
         }
 
-        ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+        ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "the invalid \"%V\" parameter", &value[i]);
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
     if (ls->type == SOCK_DGRAM) {
@@ -865,7 +865,7 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             return "\"backlog\" parameter is incompatible with \"udp\"";
         }
 
-#if (NJET_STREAM_SSL)
+#if (NJT_STREAM_SSL)
         if (ls->ssl) {
             return "\"ssl\" parameter is incompatible with \"udp\"";
         }
@@ -879,7 +879,7 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
             return "\"proxy_protocol\" parameter is incompatible with \"udp\"";
         }
 
-#if (NJET_HAVE_TCP_FASTOPEN)
+#if (NJT_HAVE_TCP_FASTOPEN)
         if (ls->fastopen != -1) {
             return "\"fastopen\" parameter is incompatible with \"udp\"";
         }
@@ -903,19 +903,19 @@ ngx_stream_core_listen(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
             if (ngx_cmp_sockaddr(als[i].sockaddr, als[i].socklen,
                                  ls[n].sockaddr, ls[n].socklen, 1)
-                != NJET_OK)
+                != NJT_OK)
             {
                 continue;
             }
 
-            ngx_conf_log_error(NJET_LOG_EMERG, cf, 0,
+            ngx_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "duplicate \"%V\" address and port pair",
                                &ls[n].addr_text);
-            return NJET_CONF_ERROR;
+            return NJT_CONF_ERROR;
         }
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -934,8 +934,8 @@ ngx_stream_core_resolver(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     cscf->resolver = ngx_resolver_create(cf, &value[1], cf->args->nelts - 1);
     if (cscf->resolver == NULL) {
-        return NJET_CONF_ERROR;
+        return NJT_CONF_ERROR;
     }
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }

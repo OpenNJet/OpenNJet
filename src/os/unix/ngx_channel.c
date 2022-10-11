@@ -19,7 +19,7 @@ ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size,
     struct iovec        iov[1];
     struct msghdr       msg;
 
-#if (NJET_HAVE_MSGHDR_MSG_CONTROL)
+#if (NJT_HAVE_MSGHDR_MSG_CONTROL)
 
     union {
         struct cmsghdr  cm;
@@ -80,15 +80,15 @@ ngx_write_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size,
 
     if (n == -1) {
         err = ngx_errno;
-        if (err == NJET_EAGAIN) {
-            return NJET_AGAIN;
+        if (err == NJT_EAGAIN) {
+            return NJT_AGAIN;
         }
 
-        ngx_log_error(NJET_LOG_ALERT, log, err, "sendmsg() failed");
-        return NJET_ERROR;
+        ngx_log_error(NJT_LOG_ALERT, log, err, "sendmsg() failed");
+        return NJT_ERROR;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -100,7 +100,7 @@ ngx_read_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size, ngx_log_t *log)
     struct iovec        iov[1];
     struct msghdr       msg;
 
-#if (NJET_HAVE_MSGHDR_MSG_CONTROL)
+#if (NJT_HAVE_MSGHDR_MSG_CONTROL)
     union {
         struct cmsghdr  cm;
         char            space[CMSG_SPACE(sizeof(int))];
@@ -117,7 +117,7 @@ ngx_read_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size, ngx_log_t *log)
     msg.msg_iov = iov;
     msg.msg_iovlen = 1;
 
-#if (NJET_HAVE_MSGHDR_MSG_CONTROL)
+#if (NJT_HAVE_MSGHDR_MSG_CONTROL)
     msg.msg_control = (caddr_t) &cmsg;
     msg.msg_controllen = sizeof(cmsg);
 #else
@@ -129,42 +129,42 @@ ngx_read_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size, ngx_log_t *log)
 
     if (n == -1) {
         err = ngx_errno;
-        if (err == NJET_EAGAIN) {
-            return NJET_AGAIN;
+        if (err == NJT_EAGAIN) {
+            return NJT_AGAIN;
         }
 
-        ngx_log_error(NJET_LOG_ALERT, log, err, "recvmsg() failed");
-        return NJET_ERROR;
+        ngx_log_error(NJT_LOG_ALERT, log, err, "recvmsg() failed");
+        return NJT_ERROR;
     }
 
     if (n == 0) {
-        ngx_log_debug0(NJET_LOG_DEBUG_CORE, log, 0, "recvmsg() returned zero");
-        return NJET_ERROR;
+        ngx_log_debug0(NJT_LOG_DEBUG_CORE, log, 0, "recvmsg() returned zero");
+        return NJT_ERROR;
     }
 
     if ((size_t) n < sizeof(ngx_channel_t)) {
-        ngx_log_error(NJET_LOG_ALERT, log, 0,
+        ngx_log_error(NJT_LOG_ALERT, log, 0,
                       "recvmsg() returned not enough data: %z", n);
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
-#if (NJET_HAVE_MSGHDR_MSG_CONTROL)
+#if (NJT_HAVE_MSGHDR_MSG_CONTROL)
 
-    if (ch->command == NJET_CMD_OPEN_CHANNEL) {
+    if (ch->command == NJT_CMD_OPEN_CHANNEL) {
 
         if (cmsg.cm.cmsg_len < (socklen_t) CMSG_LEN(sizeof(int))) {
-            ngx_log_error(NJET_LOG_ALERT, log, 0,
+            ngx_log_error(NJT_LOG_ALERT, log, 0,
                           "recvmsg() returned too small ancillary data");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         if (cmsg.cm.cmsg_level != SOL_SOCKET || cmsg.cm.cmsg_type != SCM_RIGHTS)
         {
-            ngx_log_error(NJET_LOG_ALERT, log, 0,
+            ngx_log_error(NJT_LOG_ALERT, log, 0,
                           "recvmsg() returned invalid ancillary data "
                           "level %d or type %d",
                           cmsg.cm.cmsg_level, cmsg.cm.cmsg_type);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         /* ch->fd = *(int *) CMSG_DATA(&cmsg.cm); */
@@ -173,17 +173,17 @@ ngx_read_channel(ngx_socket_t s, ngx_channel_t *ch, size_t size, ngx_log_t *log)
     }
 
     if (msg.msg_flags & (MSG_TRUNC|MSG_CTRUNC)) {
-        ngx_log_error(NJET_LOG_ALERT, log, 0,
+        ngx_log_error(NJT_LOG_ALERT, log, 0,
                       "recvmsg() truncated data");
     }
 
 #else
 
-    if (ch->command == NJET_CMD_OPEN_CHANNEL) {
+    if (ch->command == NJT_CMD_OPEN_CHANNEL) {
         if (msg.msg_accrightslen != sizeof(int)) {
-            ngx_log_error(NJET_LOG_ALERT, log, 0,
+            ngx_log_error(NJT_LOG_ALERT, log, 0,
                           "recvmsg() returned no ancillary data");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ch->fd = fd;
@@ -205,7 +205,7 @@ ngx_add_channel_event(ngx_cycle_t *cycle, ngx_fd_t fd, ngx_int_t event,
     c = ngx_get_connection(fd, cycle->log);
 
     if (c == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     c->pool = cycle->pool;
@@ -219,24 +219,24 @@ ngx_add_channel_event(ngx_cycle_t *cycle, ngx_fd_t fd, ngx_int_t event,
     rev->channel = 1;
     wev->channel = 1;
 
-    ev = (event == NJET_READ_EVENT) ? rev : wev;
+    ev = (event == NJT_READ_EVENT) ? rev : wev;
 
     ev->handler = handler;
 
-    if (ngx_add_conn && (ngx_event_flags & NJET_USE_EPOLL_EVENT) == 0) {
-        if (ngx_add_conn(c) == NJET_ERROR) {
+    if (ngx_add_conn && (ngx_event_flags & NJT_USE_EPOLL_EVENT) == 0) {
+        if (ngx_add_conn(c) == NJT_ERROR) {
             ngx_free_connection(c);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
     } else {
-        if (ngx_add_event(ev, event, 0) == NJET_ERROR) {
+        if (ngx_add_event(ev, event, 0) == NJT_ERROR) {
             ngx_free_connection(c);
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -244,10 +244,10 @@ void
 ngx_close_channel(ngx_fd_t *fd, ngx_log_t *log)
 {
     if (close(fd[0]) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, log, ngx_errno, "close() channel failed");
+        ngx_log_error(NJT_LOG_ALERT, log, ngx_errno, "close() channel failed");
     }
 
     if (close(fd[1]) == -1) {
-        ngx_log_error(NJET_LOG_ALERT, log, ngx_errno, "close() channel failed");
+        ngx_log_error(NJT_LOG_ALERT, log, ngx_errno, "close() channel failed");
     }
 }

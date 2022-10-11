@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_IOCP_MODULE_H_INCLUDED_
-#define _NJET_IOCP_MODULE_H_INCLUDED_
+#ifndef _NJT_IOCP_MODULE_H_INCLUDED_
+#define _NJT_IOCP_MODULE_H_INCLUDED_
 
 
 typedef struct {
@@ -19,4 +19,4 @@ typedef struct {
 extern ngx_module_t  ngx_iocp_module;
 
 
-#endif /* _NJET_IOCP_MODULE_H_INCLUDED_ */
+#endif /* _NJT_IOCP_MODULE_H_INCLUDED_ */

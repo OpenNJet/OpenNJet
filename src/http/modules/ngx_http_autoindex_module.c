@@ -45,14 +45,14 @@ typedef struct {
 } ngx_http_autoindex_loc_conf_t;
 
 
-#define NJET_HTTP_AUTOINDEX_HTML         0
-#define NJET_HTTP_AUTOINDEX_JSON         1
-#define NJET_HTTP_AUTOINDEX_JSONP        2
-#define NJET_HTTP_AUTOINDEX_XML          3
+#define NJT_HTTP_AUTOINDEX_HTML         0
+#define NJT_HTTP_AUTOINDEX_JSON         1
+#define NJT_HTTP_AUTOINDEX_JSONP        2
+#define NJT_HTTP_AUTOINDEX_XML          3
 
-#define NJET_HTTP_AUTOINDEX_PREALLOCATE  50
+#define NJT_HTTP_AUTOINDEX_PREALLOCATE  50
 
-#define NJET_HTTP_AUTOINDEX_NAME_LEN     50
+#define NJT_HTTP_AUTOINDEX_NAME_LEN     50
 
 
 static ngx_buf_t *ngx_http_autoindex_html(ngx_http_request_t *r,
@@ -76,10 +76,10 @@ static char *ngx_http_autoindex_merge_loc_conf(ngx_conf_t *cf,
 
 
 static ngx_conf_enum_t  ngx_http_autoindex_format[] = {
-    { ngx_string("html"), NJET_HTTP_AUTOINDEX_HTML },
-    { ngx_string("json"), NJET_HTTP_AUTOINDEX_JSON },
-    { ngx_string("jsonp"), NJET_HTTP_AUTOINDEX_JSONP },
-    { ngx_string("xml"), NJET_HTTP_AUTOINDEX_XML },
+    { ngx_string("html"), NJT_HTTP_AUTOINDEX_HTML },
+    { ngx_string("json"), NJT_HTTP_AUTOINDEX_JSON },
+    { ngx_string("jsonp"), NJT_HTTP_AUTOINDEX_JSONP },
+    { ngx_string("xml"), NJT_HTTP_AUTOINDEX_XML },
     { ngx_null_string, 0 }
 };
 
@@ -87,30 +87,30 @@ static ngx_conf_enum_t  ngx_http_autoindex_format[] = {
 static ngx_command_t  ngx_http_autoindex_commands[] = {
 
     { ngx_string("autoindex"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_autoindex_loc_conf_t, enable),
       NULL },
 
     { ngx_string("autoindex_format"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_TAKE1,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       ngx_conf_set_enum_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_autoindex_loc_conf_t, format),
       &ngx_http_autoindex_format },
 
     { ngx_string("autoindex_localtime"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_autoindex_loc_conf_t, localtime),
       NULL },
 
     { ngx_string("autoindex_exact_size"),
-      NJET_HTTP_MAIN_CONF|NJET_HTTP_SRV_CONF|NJET_HTTP_LOC_CONF|NJET_CONF_FLAG,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_HTTP_LOC_CONF_OFFSET,
+      NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_autoindex_loc_conf_t, exact_size),
       NULL },
 
@@ -134,10 +134,10 @@ static ngx_http_module_t  ngx_http_autoindex_module_ctx = {
 
 
 ngx_module_t  ngx_http_autoindex_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_http_autoindex_module_ctx,        /* module context */
     ngx_http_autoindex_commands,           /* module directives */
-    NJET_HTTP_MODULE,                       /* module type */
+    NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
     NULL,                                  /* init process */
@@ -145,7 +145,7 @@ ngx_module_t  ngx_http_autoindex_module = {
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
     NULL,                                  /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -167,29 +167,29 @@ ngx_http_autoindex_handler(ngx_http_request_t *r)
     ngx_http_autoindex_loc_conf_t  *alcf;
 
     if (r->uri.data[r->uri.len - 1] != '/') {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
-    if (!(r->method & (NJET_HTTP_GET|NJET_HTTP_HEAD))) {
-        return NJET_DECLINED;
+    if (!(r->method & (NJT_HTTP_GET|NJT_HTTP_HEAD))) {
+        return NJT_DECLINED;
     }
 
     alcf = ngx_http_get_module_loc_conf(r, ngx_http_autoindex_module);
 
     if (!alcf->enable) {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     rc = ngx_http_discard_request_body(r);
 
-    if (rc != NJET_OK) {
+    if (rc != NJT_OK) {
         return rc;
     }
 
     last = ngx_http_map_uri_to_path(r, &path, &root,
-                                    NJET_HTTP_AUTOINDEX_PREALLOCATE);
+                                    NJT_HTTP_AUTOINDEX_PREALLOCATE);
     if (last == NULL) {
-        return NJET_HTTP_INTERNAL_SERVER_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     allocated = path.len;
@@ -199,38 +199,38 @@ ngx_http_autoindex_handler(ngx_http_request_t *r)
     }
     path.data[path.len] = '\0';
 
-    ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http autoindex: \"%s\"", path.data);
 
     format = alcf->format;
 
-    if (format == NJET_HTTP_AUTOINDEX_JSONP) {
-        if (ngx_http_autoindex_jsonp_callback(r, &callback) != NJET_OK) {
-            return NJET_HTTP_BAD_REQUEST;
+    if (format == NJT_HTTP_AUTOINDEX_JSONP) {
+        if (ngx_http_autoindex_jsonp_callback(r, &callback) != NJT_OK) {
+            return NJT_HTTP_BAD_REQUEST;
         }
 
         if (callback.len == 0) {
-            format = NJET_HTTP_AUTOINDEX_JSON;
+            format = NJT_HTTP_AUTOINDEX_JSON;
         }
     }
 
-    if (ngx_open_dir(&path, &dir) == NJET_ERROR) {
+    if (ngx_open_dir(&path, &dir) == NJT_ERROR) {
         err = ngx_errno;
 
-        if (err == NJET_ENOENT
-            || err == NJET_ENOTDIR
-            || err == NJET_ENAMETOOLONG)
+        if (err == NJT_ENOENT
+            || err == NJT_ENOTDIR
+            || err == NJT_ENAMETOOLONG)
         {
-            level = NJET_LOG_ERR;
-            rc = NJET_HTTP_NOT_FOUND;
+            level = NJT_LOG_ERR;
+            rc = NJT_HTTP_NOT_FOUND;
 
-        } else if (err == NJET_EACCES) {
-            level = NJET_LOG_ERR;
-            rc = NJET_HTTP_FORBIDDEN;
+        } else if (err == NJT_EACCES) {
+            level = NJT_LOG_ERR;
+            rc = NJT_HTTP_FORBIDDEN;
 
         } else {
-            level = NJET_LOG_CRIT;
-            rc = NJET_HTTP_INTERNAL_SERVER_ERROR;
+            level = NJT_LOG_CRIT;
+            rc = NJT_HTTP_INTERNAL_SERVER_ERROR;
         }
 
         ngx_log_error(level, r->connection->log, err,
@@ -239,7 +239,7 @@ ngx_http_autoindex_handler(ngx_http_request_t *r)
         return rc;
     }
 
-#if (NJET_SUPPRESS_WARN)
+#if (NJT_SUPPRESS_WARN)
 
     /* MSVC thinks 'entries' may be used without having been initialized */
     ngx_memzero(&entries, sizeof(ngx_array_t));
@@ -250,29 +250,29 @@ ngx_http_autoindex_handler(ngx_http_request_t *r)
     pool = r->pool;
 
     if (ngx_array_init(&entries, pool, 40, sizeof(ngx_http_autoindex_entry_t))
-        != NJET_OK)
+        != NJT_OK)
     {
         return ngx_http_autoindex_error(r, &dir, &path);
     }
 
-    r->headers_out.status = NJET_HTTP_OK;
+    r->headers_out.status = NJT_HTTP_OK;
 
     switch (format) {
 
-    case NJET_HTTP_AUTOINDEX_JSON:
+    case NJT_HTTP_AUTOINDEX_JSON:
         ngx_str_set(&r->headers_out.content_type, "application/json");
         break;
 
-    case NJET_HTTP_AUTOINDEX_JSONP:
+    case NJT_HTTP_AUTOINDEX_JSONP:
         ngx_str_set(&r->headers_out.content_type, "application/javascript");
         break;
 
-    case NJET_HTTP_AUTOINDEX_XML:
+    case NJT_HTTP_AUTOINDEX_XML:
         ngx_str_set(&r->headers_out.content_type, "text/xml");
         ngx_str_set(&r->headers_out.charset, "utf-8");
         break;
 
-    default: /* NJET_HTTP_AUTOINDEX_HTML */
+    default: /* NJT_HTTP_AUTOINDEX_HTML */
         ngx_str_set(&r->headers_out.content_type, "text/html");
         break;
     }
@@ -282,9 +282,9 @@ ngx_http_autoindex_handler(ngx_http_request_t *r)
 
     rc = ngx_http_send_header(r);
 
-    if (rc == NJET_ERROR || rc > NJET_OK || r->header_only) {
-        if (ngx_close_dir(&dir) == NJET_ERROR) {
-            ngx_log_error(NJET_LOG_ALERT, r->connection->log, ngx_errno,
+    if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
+        if (ngx_close_dir(&dir) == NJT_ERROR) {
+            ngx_log_error(NJT_LOG_ALERT, r->connection->log, ngx_errno,
                           ngx_close_dir_n " \"%V\" failed", &path);
         }
 
@@ -297,11 +297,11 @@ ngx_http_autoindex_handler(ngx_http_request_t *r)
     for ( ;; ) {
         ngx_set_errno(0);
 
-        if (ngx_read_dir(&dir) == NJET_ERROR) {
+        if (ngx_read_dir(&dir) == NJT_ERROR) {
             err = ngx_errno;
 
-            if (err != NJET_ENOMOREFILES) {
-                ngx_log_error(NJET_LOG_CRIT, r->connection->log, err,
+            if (err != NJT_ENOMOREFILES) {
+                ngx_log_error(NJT_LOG_CRIT, r->connection->log, err,
                               ngx_read_dir_n " \"%V\" failed", &path);
                 return ngx_http_autoindex_error(r, &dir, &path);
             }
@@ -309,7 +309,7 @@ ngx_http_autoindex_handler(ngx_http_request_t *r)
             break;
         }
 
-        ngx_log_debug1(NJET_LOG_DEBUG_HTTP, r->connection->log, 0,
+        ngx_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "http autoindex file: \"%s\"", ngx_de_name(&dir));
 
         len = ngx_de_namelen(&dir);
@@ -324,7 +324,7 @@ ngx_http_autoindex_handler(ngx_http_request_t *r)
 
             if (path.len + 1 + len + 1 > allocated) {
                 allocated = path.len + 1 + len + 1
-                                     + NJET_HTTP_AUTOINDEX_PREALLOCATE;
+                                     + NJT_HTTP_AUTOINDEX_PREALLOCATE;
 
                 filename = ngx_pnalloc(pool, allocated);
                 if (filename == NULL) {
@@ -337,22 +337,22 @@ ngx_http_autoindex_handler(ngx_http_request_t *r)
 
             ngx_cpystrn(last, ngx_de_name(&dir), len + 1);
 
-            if (ngx_de_info(filename, &dir) == NJET_FILE_ERROR) {
+            if (ngx_de_info(filename, &dir) == NJT_FILE_ERROR) {
                 err = ngx_errno;
 
-                if (err != NJET_ENOENT && err != NJET_ELOOP) {
-                    ngx_log_error(NJET_LOG_CRIT, r->connection->log, err,
+                if (err != NJT_ENOENT && err != NJT_ELOOP) {
+                    ngx_log_error(NJT_LOG_CRIT, r->connection->log, err,
                                   ngx_de_info_n " \"%s\" failed", filename);
 
-                    if (err == NJET_EACCES) {
+                    if (err == NJT_EACCES) {
                         continue;
                     }
 
                     return ngx_http_autoindex_error(r, &dir, &path);
                 }
 
-                if (ngx_de_link_info(filename, &dir) == NJET_FILE_ERROR) {
-                    ngx_log_error(NJET_LOG_CRIT, r->connection->log, ngx_errno,
+                if (ngx_de_link_info(filename, &dir) == NJT_FILE_ERROR) {
+                    ngx_log_error(NJT_LOG_CRIT, r->connection->log, ngx_errno,
                                   ngx_de_link_info_n " \"%s\" failed",
                                   filename);
                     return ngx_http_autoindex_error(r, &dir, &path);
@@ -380,8 +380,8 @@ ngx_http_autoindex_handler(ngx_http_request_t *r)
         entry->size = ngx_de_size(&dir);
     }
 
-    if (ngx_close_dir(&dir) == NJET_ERROR) {
-        ngx_log_error(NJET_LOG_ALERT, r->connection->log, ngx_errno,
+    if (ngx_close_dir(&dir) == NJT_ERROR) {
+        ngx_log_error(NJT_LOG_ALERT, r->connection->log, ngx_errno,
                       ngx_close_dir_n " \"%V\" failed", &path);
     }
 
@@ -393,25 +393,25 @@ ngx_http_autoindex_handler(ngx_http_request_t *r)
 
     switch (format) {
 
-    case NJET_HTTP_AUTOINDEX_JSON:
+    case NJT_HTTP_AUTOINDEX_JSON:
         b = ngx_http_autoindex_json(r, &entries, NULL);
         break;
 
-    case NJET_HTTP_AUTOINDEX_JSONP:
+    case NJT_HTTP_AUTOINDEX_JSONP:
         b = ngx_http_autoindex_json(r, &entries, &callback);
         break;
 
-    case NJET_HTTP_AUTOINDEX_XML:
+    case NJT_HTTP_AUTOINDEX_XML:
         b = ngx_http_autoindex_xml(r, &entries);
         break;
 
-    default: /* NJET_HTTP_AUTOINDEX_HTML */
+    default: /* NJT_HTTP_AUTOINDEX_HTML */
         b = ngx_http_autoindex_html(r, &entries);
         break;
     }
 
     if (b == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     /* TODO: free temporary pool */
@@ -487,7 +487,7 @@ ngx_http_autoindex_html(ngx_http_request_t *r, ngx_array_t *entries)
     for (i = 0; i < entries->nelts; i++) {
         entry[i].escape = 2 * ngx_escape_uri(NULL, entry[i].name.data,
                                              entry[i].name.len,
-                                             NJET_ESCAPE_URI_COMPONENT);
+                                             NJT_ESCAPE_URI_COMPONENT);
 
         entry[i].escape_html = ngx_escape_html(NULL, entry[i].name.data,
                                                entry[i].name.len);
@@ -505,13 +505,13 @@ ngx_http_autoindex_html(ngx_http_request_t *r, ngx_array_t *entries)
                   + sizeof("\">") - 1
                   + entry[i].name.len - entry[i].utf_len
                   + entry[i].escape_html
-                  + NJET_HTTP_AUTOINDEX_NAME_LEN + sizeof("&gt;") - 2
+                  + NJT_HTTP_AUTOINDEX_NAME_LEN + sizeof("&gt;") - 2
                   + sizeof("</a>") - 1
                   + sizeof(" 28-Sep-1970 12:00 ") - 1
                   + 20                                   /* the file size */
                   + 2;
 
-        if (len > NJET_MAX_SIZE_T_VALUE - entry_len) {
+        if (len > NJT_MAX_SIZE_T_VALUE - entry_len) {
             return NULL;
         }
 
@@ -549,7 +549,7 @@ ngx_http_autoindex_html(ngx_http_request_t *r, ngx_array_t *entries)
 
         if (entry[i].escape) {
             ngx_escape_uri(b->last, entry[i].name.data, entry[i].name.len,
-                           NJET_ESCAPE_URI_COMPONENT);
+                           NJT_ESCAPE_URI_COMPONENT);
 
             b->last += entry[i].name.len + entry[i].escape;
 
@@ -568,11 +568,11 @@ ngx_http_autoindex_html(ngx_http_request_t *r, ngx_array_t *entries)
         len = entry[i].utf_len;
 
         if (entry[i].name.len != len) {
-            if (len > NJET_HTTP_AUTOINDEX_NAME_LEN) {
-                char_len = NJET_HTTP_AUTOINDEX_NAME_LEN - 3 + 1;
+            if (len > NJT_HTTP_AUTOINDEX_NAME_LEN) {
+                char_len = NJT_HTTP_AUTOINDEX_NAME_LEN - 3 + 1;
 
             } else {
-                char_len = NJET_HTTP_AUTOINDEX_NAME_LEN + 1;
+                char_len = NJT_HTTP_AUTOINDEX_NAME_LEN + 1;
             }
 
             last = b->last;
@@ -588,8 +588,8 @@ ngx_http_autoindex_html(ngx_http_request_t *r, ngx_array_t *entries)
 
         } else {
             if (entry[i].escape_html) {
-                if (len > NJET_HTTP_AUTOINDEX_NAME_LEN) {
-                    char_len = NJET_HTTP_AUTOINDEX_NAME_LEN - 3;
+                if (len > NJT_HTTP_AUTOINDEX_NAME_LEN) {
+                    char_len = NJT_HTTP_AUTOINDEX_NAME_LEN - 3;
 
                 } else {
                     char_len = len;
@@ -601,25 +601,25 @@ ngx_http_autoindex_html(ngx_http_request_t *r, ngx_array_t *entries)
 
             } else {
                 b->last = ngx_cpystrn(b->last, entry[i].name.data,
-                                      NJET_HTTP_AUTOINDEX_NAME_LEN + 1);
+                                      NJT_HTTP_AUTOINDEX_NAME_LEN + 1);
                 last = b->last - 3;
             }
         }
 
-        if (len > NJET_HTTP_AUTOINDEX_NAME_LEN) {
+        if (len > NJT_HTTP_AUTOINDEX_NAME_LEN) {
             b->last = ngx_cpymem(last, "..&gt;</a>", sizeof("..&gt;</a>") - 1);
 
         } else {
-            if (entry[i].dir && NJET_HTTP_AUTOINDEX_NAME_LEN - len > 0) {
+            if (entry[i].dir && NJT_HTTP_AUTOINDEX_NAME_LEN - len > 0) {
                 *b->last++ = '/';
                 len++;
             }
 
             b->last = ngx_cpymem(b->last, "</a>", sizeof("</a>") - 1);
 
-            if (NJET_HTTP_AUTOINDEX_NAME_LEN - len > 0) {
-                ngx_memset(b->last, ' ', NJET_HTTP_AUTOINDEX_NAME_LEN - len);
-                b->last += NJET_HTTP_AUTOINDEX_NAME_LEN - len;
+            if (NJT_HTTP_AUTOINDEX_NAME_LEN - len > 0) {
+                ngx_memset(b->last, ' ', NJT_HTTP_AUTOINDEX_NAME_LEN - len);
+                b->last += NJT_HTTP_AUTOINDEX_NAME_LEN - len;
             }
         }
 
@@ -727,10 +727,10 @@ ngx_http_autoindex_json(ngx_http_request_t *r, ngx_array_t *entries,
                   + sizeof(", \"mtime\":\"Wed, 31 Dec 1986 10:00:00 GMT\"") - 1;
 
         if (entry[i].file) {
-            entry_len += sizeof(", \"size\":") - 1 + NJET_OFF_T_LEN;
+            entry_len += sizeof(", \"size\":") - 1 + NJT_OFF_T_LEN;
         }
 
-        if (len > NJET_MAX_SIZE_T_VALUE - entry_len) {
+        if (len > NJT_MAX_SIZE_T_VALUE - entry_len) {
             return NULL;
         }
 
@@ -815,15 +815,15 @@ ngx_http_autoindex_jsonp_callback(ngx_http_request_t *r, ngx_str_t *callback)
     u_char      *p, c, ch;
     ngx_uint_t   i;
 
-    if (ngx_http_arg(r, (u_char *) "callback", 8, callback) != NJET_OK) {
+    if (ngx_http_arg(r, (u_char *) "callback", 8, callback) != NJT_OK) {
         callback->len = 0;
-        return NJET_OK;
+        return NJT_OK;
     }
 
     if (callback->len > 128) {
-        ngx_log_error(NJET_LOG_INFO, r->connection->log, 0,
+        ngx_log_error(NJT_LOG_INFO, r->connection->log, 0,
                       "client sent too long callback name: \"%V\"", callback);
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     p = callback->data;
@@ -840,13 +840,13 @@ ngx_http_autoindex_jsonp_callback(ngx_http_request_t *r, ngx_str_t *callback)
             continue;
         }
 
-        ngx_log_error(NJET_LOG_INFO, r->connection->log, 0,
+        ngx_log_error(NJT_LOG_INFO, r->connection->log, 0,
                       "client sent invalid callback name: \"%V\"", callback);
 
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -876,10 +876,10 @@ ngx_http_autoindex_xml(ngx_http_request_t *r, ngx_array_t *entries)
                   + sizeof(" mtime=\"1986-12-31T10:00:00Z\"") - 1;
 
         if (entry[i].file) {
-            entry_len += sizeof(" size=\"\"") - 1 + NJET_OFF_T_LEN;
+            entry_len += sizeof(" size=\"\"") - 1 + NJT_OFF_T_LEN;
         }
 
-        if (len > NJET_MAX_SIZE_T_VALUE - entry_len) {
+        if (len > NJT_MAX_SIZE_T_VALUE - entry_len) {
             return NULL;
         }
 
@@ -1009,12 +1009,12 @@ ngx_http_autoindex_alloc(ngx_http_autoindex_ctx_t *ctx, size_t size)
 static ngx_int_t
 ngx_http_autoindex_error(ngx_http_request_t *r, ngx_dir_t *dir, ngx_str_t *name)
 {
-    if (ngx_close_dir(dir) == NJET_ERROR) {
-        ngx_log_error(NJET_LOG_ALERT, r->connection->log, ngx_errno,
+    if (ngx_close_dir(dir) == NJT_ERROR) {
+        ngx_log_error(NJT_LOG_ALERT, r->connection->log, ngx_errno,
                       ngx_close_dir_n " \"%V\" failed", name);
     }
 
-    return r->header_sent ? NJET_ERROR : NJET_HTTP_INTERNAL_SERVER_ERROR;
+    return r->header_sent ? NJT_ERROR : NJT_HTTP_INTERNAL_SERVER_ERROR;
 }
 
 
@@ -1028,10 +1028,10 @@ ngx_http_autoindex_create_loc_conf(ngx_conf_t *cf)
         return NULL;
     }
 
-    conf->enable = NJET_CONF_UNSET;
-    conf->format = NJET_CONF_UNSET_UINT;
-    conf->localtime = NJET_CONF_UNSET;
-    conf->exact_size = NJET_CONF_UNSET;
+    conf->enable = NJT_CONF_UNSET;
+    conf->format = NJT_CONF_UNSET_UINT;
+    conf->localtime = NJT_CONF_UNSET;
+    conf->exact_size = NJT_CONF_UNSET;
 
     return conf;
 }
@@ -1045,11 +1045,11 @@ ngx_http_autoindex_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_value(conf->enable, prev->enable, 0);
     ngx_conf_merge_uint_value(conf->format, prev->format,
-                              NJET_HTTP_AUTOINDEX_HTML);
+                              NJT_HTTP_AUTOINDEX_HTML);
     ngx_conf_merge_value(conf->localtime, prev->localtime, 0);
     ngx_conf_merge_value(conf->exact_size, prev->exact_size, 1);
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -1061,12 +1061,12 @@ ngx_http_autoindex_init(ngx_conf_t *cf)
 
     cmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_core_module);
 
-    h = ngx_array_push(&cmcf->phases[NJET_HTTP_CONTENT_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
     if (h == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *h = ngx_http_autoindex_handler;
 
-    return NJET_OK;
+    return NJT_OK;
 }

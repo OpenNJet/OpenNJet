@@ -49,9 +49,9 @@ static ngx_int_t ngx_stream_ssl_preread_init(ngx_conf_t *cf);
 static ngx_command_t  ngx_stream_ssl_preread_commands[] = {
 
     { ngx_string("ssl_preread"),
-      NJET_STREAM_MAIN_CONF|NJET_STREAM_SRV_CONF|NJET_CONF_FLAG,
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       ngx_conf_set_flag_slot,
-      NJET_STREAM_SRV_CONF_OFFSET,
+      NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(ngx_stream_ssl_preread_srv_conf_t, enabled),
       NULL },
 
@@ -72,10 +72,10 @@ static ngx_stream_module_t  ngx_stream_ssl_preread_module_ctx = {
 
 
 ngx_module_t  ngx_stream_ssl_preread_module = {
-    NJET_MODULE_V1,
+    NJT_MODULE_V1,
     &ngx_stream_ssl_preread_module_ctx,     /* module context */
     ngx_stream_ssl_preread_commands,        /* module directives */
-    NJET_STREAM_MODULE,                      /* module type */
+    NJT_STREAM_MODULE,                      /* module type */
     NULL,                                   /* init master */
     NULL,                                   /* init module */
     NULL,                                   /* init process */
@@ -83,7 +83,7 @@ ngx_module_t  ngx_stream_ssl_preread_module = {
     NULL,                                   /* exit thread */
     NULL,                                   /* exit process */
     NULL,                                   /* exit master */
-    NJET_MODULE_V1_PADDING
+    NJT_MODULE_V1_PADDING
 };
 
 
@@ -114,27 +114,27 @@ ngx_stream_ssl_preread_handler(ngx_stream_session_t *s)
 
     c = s->connection;
 
-    ngx_log_debug0(NJET_LOG_DEBUG_STREAM, c->log, 0, "ssl preread handler");
+    ngx_log_debug0(NJT_LOG_DEBUG_STREAM, c->log, 0, "ssl preread handler");
 
     sscf = ngx_stream_get_module_srv_conf(s, ngx_stream_ssl_preread_module);
 
     if (!sscf->enabled) {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     if (c->type != SOCK_STREAM) {
-        return NJET_DECLINED;
+        return NJT_DECLINED;
     }
 
     if (c->buffer == NULL) {
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
     ctx = ngx_stream_get_module_ctx(s, ngx_stream_ssl_preread_module);
     if (ctx == NULL) {
         ctx = ngx_pcalloc(c->pool, sizeof(ngx_stream_ssl_preread_ctx_t));
         if (ctx == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         ngx_stream_set_ctx(s, ctx, ngx_stream_ssl_preread_module);
@@ -150,25 +150,25 @@ ngx_stream_ssl_preread_handler(ngx_stream_session_t *s)
     while (last - p >= 5) {
 
         if ((p[0] & 0x80) && p[2] == 1 && (p[3] == 0 || p[3] == 3)) {
-            ngx_log_debug0(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+            ngx_log_debug0(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                            "ssl preread: version 2 ClientHello");
             ctx->version[0] = p[3];
             ctx->version[1] = p[4];
-            return NJET_OK;
+            return NJT_OK;
         }
 
         if (p[0] != 0x16) {
-            ngx_log_debug0(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+            ngx_log_debug0(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                            "ssl preread: not a handshake");
             ngx_stream_set_ctx(s, NULL, ngx_stream_ssl_preread_module);
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
 
         if (p[1] != 3) {
-            ngx_log_debug0(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+            ngx_log_debug0(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                            "ssl preread: unsupported SSL version");
             ngx_stream_set_ctx(s, NULL, ngx_stream_ssl_preread_module);
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
 
         len = (p[3] << 8) + p[4];
@@ -182,12 +182,12 @@ ngx_stream_ssl_preread_handler(ngx_stream_session_t *s)
 
         rc = ngx_stream_ssl_preread_parse_record(ctx, p, p + len);
 
-        if (rc == NJET_DECLINED) {
+        if (rc == NJT_DECLINED) {
             ngx_stream_set_ctx(s, NULL, ngx_stream_ssl_preread_module);
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
 
-        if (rc != NJET_AGAIN) {
+        if (rc != NJT_AGAIN) {
             return rc;
         }
 
@@ -196,7 +196,7 @@ ngx_stream_ssl_preread_handler(ngx_stream_session_t *s)
 
     ctx->pos = p;
 
-    return NJET_AGAIN;
+    return NJT_AGAIN;
 }
 
 
@@ -229,7 +229,7 @@ ngx_stream_ssl_preread_parse_record(ngx_stream_ssl_preread_ctx_t *ctx,
         sw_supver_len       /* supported_versions length */
     } state;
 
-    ngx_log_debug2(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                    "ssl preread: state %ui left %z", ctx->state, ctx->left);
 
     state = ctx->state;
@@ -265,9 +265,9 @@ ngx_stream_ssl_preread_parse_record(ngx_stream_ssl_preread_ctx_t *ctx,
 
         case sw_header:
             if (p[0] != 1) {
-                ngx_log_debug0(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+                ngx_log_debug0(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                                "ssl preread: not a client hello");
-                return NJET_DECLINED;
+                return NJT_DECLINED;
             }
 
             state = sw_version;
@@ -321,7 +321,7 @@ ngx_stream_ssl_preread_parse_record(ngx_stream_ssl_preread_ctx_t *ctx,
         case sw_cm:
             if (left == 0) {
                 /* no extensions */
-                return NJET_OK;
+                return NJT_OK;
             }
 
             state = sw_ext;
@@ -331,7 +331,7 @@ ngx_stream_ssl_preread_parse_record(ngx_stream_ssl_preread_ctx_t *ctx,
 
         case sw_ext:
             if (left == 0) {
-                return NJET_OK;
+                return NJT_OK;
             }
 
             state = sw_ext_header;
@@ -378,23 +378,23 @@ ngx_stream_ssl_preread_parse_record(ngx_stream_ssl_preread_ctx_t *ctx,
 
         case sw_sni_host_head:
             if (p[0] != 0) {
-                ngx_log_debug0(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+                ngx_log_debug0(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                                "ssl preread: SNI hostname type is not DNS");
-                return NJET_DECLINED;
+                return NJT_DECLINED;
             }
 
             size = (p[1] << 8) + p[2];
 
             if (ext < 3 + size) {
-                ngx_log_debug0(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+                ngx_log_debug0(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                                "ssl preread: SNI format error");
-                return NJET_DECLINED;
+                return NJT_DECLINED;
             }
             ext -= 3 + size;
 
             ctx->host.data = ngx_pnalloc(ctx->pool, size);
             if (ctx->host.data == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             state = sw_sni_host;
@@ -404,7 +404,7 @@ ngx_stream_ssl_preread_parse_record(ngx_stream_ssl_preread_ctx_t *ctx,
         case sw_sni_host:
             ctx->host.len = (p[1] << 8) + p[2];
 
-            ngx_log_debug1(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+            ngx_log_debug1(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                            "ssl preread: SNI hostname \"%V\"", &ctx->host);
 
             state = sw_ext;
@@ -417,7 +417,7 @@ ngx_stream_ssl_preread_parse_record(ngx_stream_ssl_preread_ctx_t *ctx,
 
             ctx->alpn.data = ngx_pnalloc(ctx->pool, ext);
             if (ctx->alpn.data == NULL) {
-                return NJET_ERROR;
+                return NJT_ERROR;
             }
 
             state = sw_alpn_proto_len;
@@ -429,15 +429,15 @@ ngx_stream_ssl_preread_parse_record(ngx_stream_ssl_preread_ctx_t *ctx,
             size = p[0];
 
             if (size == 0) {
-                ngx_log_debug0(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+                ngx_log_debug0(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                                "ssl preread: ALPN empty protocol");
-                return NJET_DECLINED;
+                return NJT_DECLINED;
             }
 
             if (ext < 1 + size) {
-                ngx_log_debug0(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+                ngx_log_debug0(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                                "ssl preread: ALPN format error");
-                return NJET_DECLINED;
+                return NJT_DECLINED;
             }
             ext -= 1 + size;
 
@@ -448,7 +448,7 @@ ngx_stream_ssl_preread_parse_record(ngx_stream_ssl_preread_ctx_t *ctx,
         case sw_alpn_proto_data:
             ctx->alpn.len += p[0];
 
-            ngx_log_debug1(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+            ngx_log_debug1(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                            "ssl preread: ALPN protocols \"%V\"", &ctx->alpn);
 
             if (ext) {
@@ -466,7 +466,7 @@ ngx_stream_ssl_preread_parse_record(ngx_stream_ssl_preread_ctx_t *ctx,
             break;
 
         case sw_supver_len:
-            ngx_log_debug0(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+            ngx_log_debug0(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                            "ssl preread: supported_versions");
 
             /* set TLSv1.3 */
@@ -480,9 +480,9 @@ ngx_stream_ssl_preread_parse_record(ngx_stream_ssl_preread_ctx_t *ctx,
         }
 
         if (left < size) {
-            ngx_log_debug0(NJET_LOG_DEBUG_STREAM, ctx->log, 0,
+            ngx_log_debug0(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                            "ssl preread: failed to parse handshake");
-            return NJET_DECLINED;
+            return NJT_DECLINED;
         }
     }
 
@@ -492,7 +492,7 @@ ngx_stream_ssl_preread_parse_record(ngx_stream_ssl_preread_ctx_t *ctx,
     ctx->ext = ext;
     ctx->dst = dst;
 
-    return NJET_AGAIN;
+    return NJT_AGAIN;
 }
 
 
@@ -507,7 +507,7 @@ ngx_stream_ssl_preread_protocol_variable(ngx_stream_session_t *s,
 
     if (ctx == NULL) {
         v->not_found = 1;
-        return NJET_OK;
+        return NJT_OK;
     }
 
     /* SSL_get_version() format */
@@ -548,7 +548,7 @@ ngx_stream_ssl_preread_protocol_variable(ngx_stream_session_t *s,
     v->len = version.len;
     v->data = version.data;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -562,7 +562,7 @@ ngx_stream_ssl_preread_server_name_variable(ngx_stream_session_t *s,
 
     if (ctx == NULL) {
         v->not_found = 1;
-        return NJET_OK;
+        return NJT_OK;
     }
 
     v->valid = 1;
@@ -571,7 +571,7 @@ ngx_stream_ssl_preread_server_name_variable(ngx_stream_session_t *s,
     v->len = ctx->host.len;
     v->data = ctx->host.data;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -585,7 +585,7 @@ ngx_stream_ssl_preread_alpn_protocols_variable(ngx_stream_session_t *s,
 
     if (ctx == NULL) {
         v->not_found = 1;
-        return NJET_OK;
+        return NJT_OK;
     }
 
     v->valid = 1;
@@ -594,7 +594,7 @@ ngx_stream_ssl_preread_alpn_protocols_variable(ngx_stream_session_t *s,
     v->len = ctx->alpn.len;
     v->data = ctx->alpn.data;
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -606,14 +606,14 @@ ngx_stream_ssl_preread_add_variables(ngx_conf_t *cf)
     for (v = ngx_stream_ssl_preread_vars; v->name.len; v++) {
         var = ngx_stream_add_variable(cf, &v->name, v->flags);
         if (var == NULL) {
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         var->get_handler = v->get_handler;
         var->data = v->data;
     }
 
-    return NJET_OK;
+    return NJT_OK;
 }
 
 
@@ -627,7 +627,7 @@ ngx_stream_ssl_preread_create_srv_conf(ngx_conf_t *cf)
         return NULL;
     }
 
-    conf->enabled = NJET_CONF_UNSET;
+    conf->enabled = NJT_CONF_UNSET;
 
     return conf;
 }
@@ -641,7 +641,7 @@ ngx_stream_ssl_preread_merge_srv_conf(ngx_conf_t *cf, void *parent, void *child)
 
     ngx_conf_merge_value(conf->enabled, prev->enabled, 0);
 
-    return NJET_CONF_OK;
+    return NJT_CONF_OK;
 }
 
 
@@ -653,12 +653,12 @@ ngx_stream_ssl_preread_init(ngx_conf_t *cf)
 
     cmcf = ngx_stream_conf_get_module_main_conf(cf, ngx_stream_core_module);
 
-    h = ngx_array_push(&cmcf->phases[NJET_STREAM_PREREAD_PHASE].handlers);
+    h = ngx_array_push(&cmcf->phases[NJT_STREAM_PREREAD_PHASE].handlers);
     if (h == NULL) {
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     *h = ngx_stream_ssl_preread_handler;
 
-    return NJET_OK;
+    return NJT_OK;
 }

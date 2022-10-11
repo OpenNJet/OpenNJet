@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_SHMTX_H_INCLUDED_
-#define _NJET_SHMTX_H_INCLUDED_
+#ifndef _NJT_SHMTX_H_INCLUDED_
+#define _NJT_SHMTX_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -15,16 +15,16 @@
 
 typedef struct {
     ngx_atomic_t   lock;
-#if (NJET_HAVE_POSIX_SEM)
+#if (NJT_HAVE_POSIX_SEM)
     ngx_atomic_t   wait;
 #endif
 } ngx_shmtx_sh_t;
 
 
 typedef struct {
-#if (NJET_HAVE_ATOMIC_OPS)
+#if (NJT_HAVE_ATOMIC_OPS)
     ngx_atomic_t  *lock;
-#if (NJET_HAVE_POSIX_SEM)
+#if (NJT_HAVE_POSIX_SEM)
     ngx_atomic_t  *wait;
     ngx_uint_t     semaphore;
     sem_t          sem;
@@ -46,4 +46,4 @@ void ngx_shmtx_unlock(ngx_shmtx_t *mtx);
 ngx_uint_t ngx_shmtx_force_unlock(ngx_shmtx_t *mtx, ngx_pid_t pid);
 
 
-#endif /* _NJET_SHMTX_H_INCLUDED_ */
+#endif /* _NJT_SHMTX_H_INCLUDED_ */

@@ -22,7 +22,7 @@ ngx_wsasend(ngx_connection_t *c, u_char *buf, size_t size)
     wev = c->write;
 
     if (!wev->ready) {
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
     /*
@@ -37,7 +37,7 @@ ngx_wsasend(ngx_connection_t *c, u_char *buf, size_t size)
 
     n = WSASend(c->fd, &wsabuf, 1, &sent, 0, NULL, NULL);
 
-    ngx_log_debug4(NJET_LOG_DEBUG_EVENT, c->log, 0,
+    ngx_log_debug4(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "WSASend: fd:%d, %d, %ul of %uz", c->fd, n, sent, size);
 
     if (n == 0) {
@@ -53,15 +53,15 @@ ngx_wsasend(ngx_connection_t *c, u_char *buf, size_t size)
     err = ngx_socket_errno;
 
     if (err == WSAEWOULDBLOCK) {
-        ngx_log_debug0(NJET_LOG_DEBUG_EVENT, c->log, err, "WSASend() not ready");
+        ngx_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, err, "WSASend() not ready");
         wev->ready = 0;
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
     wev->error = 1;
     ngx_connection_error(c, err, "WSASend() failed");
 
-    return NJET_ERROR;
+    return NJT_ERROR;
 }
 
 
@@ -78,10 +78,10 @@ ngx_overlapped_wsasend(ngx_connection_t *c, u_char *buf, size_t size)
     wev = c->write;
 
     if (!wev->ready) {
-        return NJET_AGAIN;
+        return NJT_AGAIN;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_EVENT, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "wev->complete: %d", wev->complete);
 
     if (!wev->complete) {
@@ -103,13 +103,13 @@ ngx_overlapped_wsasend(ngx_connection_t *c, u_char *buf, size_t size)
 
         n = WSASend(c->fd, &wsabuf, 1, &sent, 0, ovlp, NULL);
 
-        ngx_log_debug4(NJET_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug4(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "WSASend: fd:%d, %d, %ul of %uz", c->fd, n, sent, size);
 
         wev->complete = 0;
 
         if (n == 0) {
-            if (ngx_event_flags & NJET_USE_IOCP_EVENT) {
+            if (ngx_event_flags & NJT_USE_IOCP_EVENT) {
 
                 /*
                  * if a socket was bound with I/O completion port then
@@ -118,7 +118,7 @@ ngx_overlapped_wsasend(ngx_connection_t *c, u_char *buf, size_t size)
                  */
 
                 wev->active = 1;
-                return NJET_AGAIN;
+                return NJT_AGAIN;
             }
 
             if (sent < size) {
@@ -133,16 +133,16 @@ ngx_overlapped_wsasend(ngx_connection_t *c, u_char *buf, size_t size)
         err = ngx_socket_errno;
 
         if (err == WSA_IO_PENDING) {
-            ngx_log_debug0(NJET_LOG_DEBUG_EVENT, c->log, err,
+            ngx_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, err,
                            "WSASend() posted");
             wev->active = 1;
-            return NJET_AGAIN;
+            return NJT_AGAIN;
         }
 
         wev->error = 1;
         ngx_connection_error(c, err, "WSASend() failed");
 
-        return NJET_ERROR;
+        return NJT_ERROR;
     }
 
     /* the overlapped WSASend() complete */
@@ -150,11 +150,11 @@ ngx_overlapped_wsasend(ngx_connection_t *c, u_char *buf, size_t size)
     wev->complete = 0;
     wev->active = 0;
 
-    if (ngx_event_flags & NJET_USE_IOCP_EVENT) {
+    if (ngx_event_flags & NJT_USE_IOCP_EVENT) {
 
         if (wev->ovlp.error) {
             ngx_connection_error(c, wev->ovlp.error, "WSASend() failed");
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
 
         sent = wev->available;
@@ -167,11 +167,11 @@ ngx_overlapped_wsasend(ngx_connection_t *c, u_char *buf, size_t size)
             ngx_connection_error(c, ngx_socket_errno,
                            "WSASend() or WSAGetOverlappedResult() failed");
 
-            return NJET_ERROR;
+            return NJT_ERROR;
         }
     }
 
-    ngx_log_debug3(NJET_LOG_DEBUG_EVENT, c->log, 0,
+    ngx_log_debug3(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "WSAGetOverlappedResult: fd:%d, %ul of %uz",
                    c->fd, sent, size);
 

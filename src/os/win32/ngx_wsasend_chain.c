@@ -10,7 +10,7 @@
 #include <ngx_event.h>
 
 
-#define NJET_WSABUFS  64
+#define NJT_WSABUFS  64
 
 
 ngx_chain_t *
@@ -24,7 +24,7 @@ ngx_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
     ngx_array_t   vec;
     ngx_chain_t  *cl;
     LPWSABUF      wsabuf;
-    WSABUF        wsabufs[NJET_WSABUFS];
+    WSABUF        wsabufs[NJT_WSABUFS];
 
     wev = c->write;
 
@@ -34,8 +34,8 @@ ngx_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
     /* the maximum limit size is the maximum u_long value - the page size */
 
-    if (limit == 0 || limit > (off_t) (NJET_MAX_UINT32_VALUE - ngx_pagesize)) {
-        limit = NJET_MAX_UINT32_VALUE - ngx_pagesize;
+    if (limit == 0 || limit > (off_t) (NJT_MAX_UINT32_VALUE - ngx_pagesize)) {
+        limit = NJT_MAX_UINT32_VALUE - ngx_pagesize;
     }
 
     send = 0;
@@ -47,7 +47,7 @@ ngx_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
     vec.elts = wsabufs;
     vec.size = sizeof(WSABUF);
-    vec.nalloc = ngx_min(NJET_WSABUFS, ngx_max_wsabufs);
+    vec.nalloc = ngx_min(NJT_WSABUFS, ngx_max_wsabufs);
     vec.pool = c->pool;
 
     for ( ;; ) {
@@ -81,7 +81,7 @@ ngx_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
                 wsabuf = ngx_array_push(&vec);
                 if (wsabuf == NULL) {
-                    return NJET_CHAIN_ERROR;
+                    return NJT_CHAIN_ERROR;
                 }
 
                 wsabuf->buf = (char *) cl->buf->pos;
@@ -100,17 +100,17 @@ ngx_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
             err = ngx_errno;
 
             if (err == WSAEWOULDBLOCK) {
-                ngx_log_debug0(NJET_LOG_DEBUG_EVENT, c->log, err,
+                ngx_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, err,
                                "WSASend() not ready");
 
             } else {
                 wev->error = 1;
                 ngx_connection_error(c, err, "WSASend() failed");
-                return NJET_CHAIN_ERROR;
+                return NJT_CHAIN_ERROR;
             }
         }
 
-        ngx_log_debug2(NJET_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "WSASend: fd:%d, s:%ul", c->fd, sent);
 
         c->sent += sent;
@@ -141,7 +141,7 @@ ngx_overlapped_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
     ngx_chain_t      *cl;
     LPWSAOVERLAPPED   ovlp;
     LPWSABUF          wsabuf;
-    WSABUF            wsabufs[NJET_WSABUFS];
+    WSABUF            wsabufs[NJT_WSABUFS];
 
     wev = c->write;
 
@@ -149,7 +149,7 @@ ngx_overlapped_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
         return in;
     }
 
-    ngx_log_debug1(NJET_LOG_DEBUG_EVENT, c->log, 0,
+    ngx_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "wev->complete: %d", wev->complete);
 
     if (!wev->complete) {
@@ -158,9 +158,9 @@ ngx_overlapped_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
         /* the maximum limit size is the maximum u_long value - the page size */
 
-        if (limit == 0 || limit > (off_t) (NJET_MAX_UINT32_VALUE - ngx_pagesize))
+        if (limit == 0 || limit > (off_t) (NJT_MAX_UINT32_VALUE - ngx_pagesize))
         {
-            limit = NJET_MAX_UINT32_VALUE - ngx_pagesize;
+            limit = NJT_MAX_UINT32_VALUE - ngx_pagesize;
         }
 
         /*
@@ -171,7 +171,7 @@ ngx_overlapped_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
         vec.elts = wsabufs;
         vec.nelts = 0;
         vec.size = sizeof(WSABUF);
-        vec.nalloc = ngx_min(NJET_WSABUFS, ngx_max_wsabufs);
+        vec.nalloc = ngx_min(NJT_WSABUFS, ngx_max_wsabufs);
         vec.pool = c->pool;
 
         send = 0;
@@ -202,7 +202,7 @@ ngx_overlapped_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
 
                 wsabuf = ngx_array_push(&vec);
                 if (wsabuf == NULL) {
-                    return NJET_CHAIN_ERROR;
+                    return NJT_CHAIN_ERROR;
                 }
 
                 wsabuf->buf = (char *) cl->buf->pos;
@@ -224,7 +224,7 @@ ngx_overlapped_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
             err = ngx_errno;
 
             if (err == WSA_IO_PENDING) {
-                ngx_log_debug0(NJET_LOG_DEBUG_EVENT, c->log, err,
+                ngx_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, err,
                                "WSASend() posted");
                 wev->active = 1;
                 return in;
@@ -232,10 +232,10 @@ ngx_overlapped_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
             } else {
                 wev->error = 1;
                 ngx_connection_error(c, err, "WSASend() failed");
-                return NJET_CHAIN_ERROR;
+                return NJT_CHAIN_ERROR;
             }
 
-        } else if (ngx_event_flags & NJET_USE_IOCP_EVENT) {
+        } else if (ngx_event_flags & NJT_USE_IOCP_EVENT) {
 
             /*
              * if a socket was bound with I/O completion port then
@@ -247,7 +247,7 @@ ngx_overlapped_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
             return in;
         }
 
-        ngx_log_debug2(NJET_LOG_DEBUG_EVENT, c->log, 0,
+        ngx_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "WSASend: fd:%d, s:%ul", c->fd, sent);
 
     } else {
@@ -257,10 +257,10 @@ ngx_overlapped_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
         wev->complete = 0;
         wev->active = 0;
 
-        if (ngx_event_flags & NJET_USE_IOCP_EVENT) {
+        if (ngx_event_flags & NJT_USE_IOCP_EVENT) {
             if (wev->ovlp.error) {
                 ngx_connection_error(c, wev->ovlp.error, "WSASend() failed");
-                return NJET_CHAIN_ERROR;
+                return NJT_CHAIN_ERROR;
             }
 
             sent = wev->available;
@@ -273,12 +273,12 @@ ngx_overlapped_wsasend_chain(ngx_connection_t *c, ngx_chain_t *in, off_t limit)
                 ngx_connection_error(c, ngx_socket_errno,
                                "WSASend() or WSAGetOverlappedResult() failed");
 
-                return NJET_CHAIN_ERROR;
+                return NJT_CHAIN_ERROR;
             }
         }
     }
 
-    ngx_log_debug2(NJET_LOG_DEBUG_EVENT, c->log, 0,
+    ngx_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "WSASend ovlp: fd:%d, s:%ul", c->fd, sent);
 
     c->sent += sent;

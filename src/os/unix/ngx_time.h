@@ -5,8 +5,8 @@
  */
 
 
-#ifndef _NJET_TIME_H_INCLUDED_
-#define _NJET_TIME_H_INCLUDED_
+#ifndef _NJT_TIME_H_INCLUDED_
+#define _NJT_TIME_H_INCLUDED_
 
 
 #include <ngx_config.h>
@@ -36,13 +36,13 @@ typedef struct tm             ngx_tm_t;
 #define ngx_tm_wday_t         int
 
 
-#if (NJET_HAVE_GMTOFF)
+#if (NJT_HAVE_GMTOFF)
 #define ngx_tm_gmtoff         tm_gmtoff
 #define ngx_tm_zone           tm_zone
 #endif
 
 
-#if (NJET_SOLARIS)
+#if (NJT_SOLARIS)
 
 #define ngx_timezone(isdst) (- (isdst ? altzone : timezone) / 60)
 
@@ -63,4 +63,4 @@ void ngx_libc_gmtime(time_t s, struct tm *tm);
 #define ngx_sleep(s)          (void) sleep(s)
 
 
-#endif /* _NJET_TIME_H_INCLUDED_ */
+#endif /* _NJT_TIME_H_INCLUDED_ */

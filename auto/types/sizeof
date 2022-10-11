@@ -5,7 +5,7 @@
 
 echo $ngx_n "checking for $ngx_type size ...$ngx_c"
 
-cat << END >> $NJET_AUTOCONF_ERR
+cat << END >> $NJT_AUTOCONF_ERR
 
 ----------------------------------------
 checking for $ngx_type size
@@ -14,16 +14,16 @@ END
 
 ngx_size=
 
-cat << END > $NJET_AUTOTEST.c
+cat << END > $NJT_AUTOTEST.c
 
 #include <sys/types.h>
 #include <sys/time.h>
-$NJET_INCLUDE_UNISTD_H
+$NJT_INCLUDE_UNISTD_H
 #include <signal.h>
 #include <stdio.h>
 #include <sys/resource.h>
-$NJET_INCLUDE_INTTYPES_H
-$NJET_INCLUDE_AUTO_CONFIG_H
+$NJT_INCLUDE_INTTYPES_H
+$NJT_INCLUDE_AUTO_CONFIG_H
 
 int main(void) {
     printf("%d", (int) sizeof($ngx_type));
@@ -34,13 +34,13 @@ END
 
 
 ngx_test="$CC $CC_TEST_FLAGS $CC_AUX_FLAGS \
-          -o $NJET_AUTOTEST $NJET_AUTOTEST.c $NJET_LD_OPT $ngx_feature_libs"
+          -o $NJT_AUTOTEST $NJT_AUTOTEST.c $NJT_LD_OPT $ngx_feature_libs"
 
-eval "$ngx_test >> $NJET_AUTOCONF_ERR 2>&1"
+eval "$ngx_test >> $NJT_AUTOCONF_ERR 2>&1"
 
 
-if [ -x $NJET_AUTOTEST ]; then
-    ngx_size=`$NJET_AUTOTEST`
+if [ -x $NJT_AUTOTEST ]; then
+    ngx_size=`$NJT_AUTOTEST`
     echo " $ngx_size bytes"
 fi
 
@@ -60,17 +60,17 @@ case $ngx_size in
         echo
         echo "$0: error: can not detect $ngx_type size"
 
-        echo "----------"    >> $NJET_AUTOCONF_ERR
-        cat $NJET_AUTOTEST.c  >> $NJET_AUTOCONF_ERR
-        echo "----------"    >> $NJET_AUTOCONF_ERR
-        echo $ngx_test       >> $NJET_AUTOCONF_ERR
-        echo "----------"    >> $NJET_AUTOCONF_ERR
+        echo "----------"    >> $NJT_AUTOCONF_ERR
+        cat $NJT_AUTOTEST.c  >> $NJT_AUTOCONF_ERR
+        echo "----------"    >> $NJT_AUTOCONF_ERR
+        echo $ngx_test       >> $NJT_AUTOCONF_ERR
+        echo "----------"    >> $NJT_AUTOCONF_ERR
 
-        rm -rf $NJET_AUTOTEST*
+        rm -rf $NJT_AUTOTEST*
 
         exit 1
 esac
 
 
-rm -rf $NJET_AUTOTEST*
+rm -rf $NJT_AUTOTEST*
 

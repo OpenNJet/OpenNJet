@@ -5,41 +5,41 @@
  */
 
 
-#ifndef _NJET_LOG_H_INCLUDED_
-#define _NJET_LOG_H_INCLUDED_
+#ifndef _NJT_LOG_H_INCLUDED_
+#define _NJT_LOG_H_INCLUDED_
 
 
 #include <ngx_config.h>
 #include <ngx_core.h>
 
 
-#define NJET_LOG_STDERR            0
-#define NJET_LOG_EMERG             1
-#define NJET_LOG_ALERT             2
-#define NJET_LOG_CRIT              3
-#define NJET_LOG_ERR               4
-#define NJET_LOG_WARN              5
-#define NJET_LOG_NOTICE            6
-#define NJET_LOG_INFO              7
-#define NJET_LOG_DEBUG             8
+#define NJT_LOG_STDERR            0
+#define NJT_LOG_EMERG             1
+#define NJT_LOG_ALERT             2
+#define NJT_LOG_CRIT              3
+#define NJT_LOG_ERR               4
+#define NJT_LOG_WARN              5
+#define NJT_LOG_NOTICE            6
+#define NJT_LOG_INFO              7
+#define NJT_LOG_DEBUG             8
 
-#define NJET_LOG_DEBUG_CORE        0x010
-#define NJET_LOG_DEBUG_ALLOC       0x020
-#define NJET_LOG_DEBUG_MUTEX       0x040
-#define NJET_LOG_DEBUG_EVENT       0x080
-#define NJET_LOG_DEBUG_HTTP        0x100
-#define NJET_LOG_DEBUG_MAIL        0x200
-#define NJET_LOG_DEBUG_STREAM      0x400
+#define NJT_LOG_DEBUG_CORE        0x010
+#define NJT_LOG_DEBUG_ALLOC       0x020
+#define NJT_LOG_DEBUG_MUTEX       0x040
+#define NJT_LOG_DEBUG_EVENT       0x080
+#define NJT_LOG_DEBUG_HTTP        0x100
+#define NJT_LOG_DEBUG_MAIL        0x200
+#define NJT_LOG_DEBUG_STREAM      0x400
 
 /*
  * do not forget to update debug_levels[] in src/core/ngx_log.c
  * after the adding a new debug level
  */
 
-#define NJET_LOG_DEBUG_FIRST       NJET_LOG_DEBUG_CORE
-#define NJET_LOG_DEBUG_LAST        NJET_LOG_DEBUG_STREAM
-#define NJET_LOG_DEBUG_CONNECTION  0x80000000
-#define NJET_LOG_DEBUG_ALL         0x7ffffff0
+#define NJT_LOG_DEBUG_FIRST       NJT_LOG_DEBUG_CORE
+#define NJT_LOG_DEBUG_LAST        NJT_LOG_DEBUG_STREAM
+#define NJT_LOG_DEBUG_CONNECTION  0x80000000
+#define NJT_LOG_DEBUG_ALL         0x7ffffff0
 
 
 typedef u_char *(*ngx_log_handler_pt) (ngx_log_t *log, u_char *buf, size_t len);
@@ -73,14 +73,14 @@ struct ngx_log_s {
 };
 
 
-#define NJET_MAX_ERROR_STR   2048
+#define NJT_MAX_ERROR_STR   2048
 
 
 /*********************************/
 
-#if (NJET_HAVE_C99_VARIADIC_MACROS)
+#if (NJT_HAVE_C99_VARIADIC_MACROS)
 
-#define NJET_HAVE_VARIADIC_MACROS  1
+#define NJT_HAVE_VARIADIC_MACROS  1
 
 #define ngx_log_error(level, log, ...)                                        \
     if ((log)->log_level >= level) ngx_log_error_core(level, log, __VA_ARGS__)
@@ -90,13 +90,13 @@ void ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
 
 #define ngx_log_debug(level, log, ...)                                        \
     if ((log)->log_level & level)                                             \
-        ngx_log_error_core(NJET_LOG_DEBUG, log, __VA_ARGS__)
+        ngx_log_error_core(NJT_LOG_DEBUG, log, __VA_ARGS__)
 
 /*********************************/
 
-#elif (NJET_HAVE_GCC_VARIADIC_MACROS)
+#elif (NJT_HAVE_GCC_VARIADIC_MACROS)
 
-#define NJET_HAVE_VARIADIC_MACROS  1
+#define NJT_HAVE_VARIADIC_MACROS  1
 
 #define ngx_log_error(level, log, args...)                                    \
     if ((log)->log_level >= level) ngx_log_error_core(level, log, args)
@@ -106,13 +106,13 @@ void ngx_log_error_core(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
 
 #define ngx_log_debug(level, log, args...)                                    \
     if ((log)->log_level & level)                                             \
-        ngx_log_error_core(NJET_LOG_DEBUG, log, args)
+        ngx_log_error_core(NJT_LOG_DEBUG, log, args)
 
 /*********************************/
 
 #else /* no variadic macros */
 
-#define NJET_HAVE_VARIADIC_MACROS  0
+#define NJT_HAVE_VARIADIC_MACROS  0
 
 void ngx_cdecl ngx_log_error(ngx_uint_t level, ngx_log_t *log, ngx_err_t err,
     const char *fmt, ...);
@@ -127,9 +127,9 @@ void ngx_cdecl ngx_log_debug_core(ngx_log_t *log, ngx_err_t err,
 
 /*********************************/
 
-#if (NJET_DEBUG)
+#if (NJT_DEBUG)
 
-#if (NJET_HAVE_VARIADIC_MACROS)
+#if (NJT_HAVE_VARIADIC_MACROS)
 
 #define ngx_log_debug0(level, log, err, fmt)                                  \
         ngx_log_debug(level, log, err, fmt)
@@ -210,7 +210,7 @@ void ngx_cdecl ngx_log_debug_core(ngx_log_t *log, ngx_err_t err,
 
 #endif
 
-#else /* !NJET_DEBUG */
+#else /* !NJT_DEBUG */
 
 #define ngx_log_debug0(level, log, err, fmt)
 #define ngx_log_debug1(level, log, err, fmt, arg1)
@@ -265,4 +265,4 @@ extern ngx_module_t  ngx_errlog_module;
 extern ngx_uint_t    ngx_use_stderr;
 
 
-#endif /* _NJET_LOG_H_INCLUDED_ */
+#endif /* _NJT_LOG_H_INCLUDED_ */
