@@ -8,7 +8,7 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_stream.h>
-#include <nginx.h>
+#include <njet.h>
 
 static ngx_stream_variable_t *ngx_stream_add_prefix_variable(ngx_conf_t *cf,
     ngx_str_t *name, ngx_uint_t flags);
@@ -36,7 +36,7 @@ static ngx_int_t ngx_stream_variable_status(ngx_stream_session_t *s,
 static ngx_int_t ngx_stream_variable_connection(ngx_stream_session_t *s,
     ngx_stream_variable_value_t *v, uintptr_t data);
 
-static ngx_int_t ngx_stream_variable_nginx_version(ngx_stream_session_t *s,
+static ngx_int_t ngx_stream_variable_njet_version(ngx_stream_session_t *s,
     ngx_stream_variable_value_t *v, uintptr_t data);
 static ngx_int_t ngx_stream_variable_hostname(ngx_stream_session_t *s,
     ngx_stream_variable_value_t *v, uintptr_t data);
@@ -100,7 +100,7 @@ static ngx_stream_variable_t  ngx_stream_core_variables[] = {
     { ngx_string("connection"), NULL,
       ngx_stream_variable_connection, 0, 0, 0 },
 
-    { ngx_string("nginx_version"), NULL, ngx_stream_variable_nginx_version,
+    { ngx_string("njet_version"), NULL, ngx_stream_variable_njet_version,
       0, 0, 0 },
 
     { ngx_string("hostname"), NULL, ngx_stream_variable_hostname,
@@ -778,7 +778,7 @@ ngx_stream_variable_connection(ngx_stream_session_t *s,
 
 
 static ngx_int_t
-ngx_stream_variable_nginx_version(ngx_stream_session_t *s,
+ngx_stream_variable_njet_version(ngx_stream_session_t *s,
     ngx_stream_variable_value_t *v, uintptr_t data)
 {
     v->len = sizeof(NGINX_VERSION) - 1;

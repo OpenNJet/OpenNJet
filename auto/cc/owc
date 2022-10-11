@@ -76,8 +76,8 @@ have=NGX_HAVE_C99_VARIADIC_MACROS . auto/have
 
 
 # the resource file
-NGX_RCC="wrc \$(CORE_INCS) -fo=$NGX_OBJS/nginx.res "
-NGX_RCC="$NGX_RCC $NGX_WIN32_RC $NGX_OBJS/nginx.exe"
+NGX_RCC="wrc \$(CORE_INCS) -fo=$NGX_OBJS/njet.res "
+NGX_RCC="$NGX_RCC $NGX_WIN32_RC $NGX_OBJS/njet.exe"
 
 
 ngx_include_opt="-i="

@@ -12,13 +12,13 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
-#include <nginx.h>
+#include <njet.h>
 
 #include <EXTERN.h>
 #include <perl.h>
 
 
-typedef ngx_http_request_t   *nginx;
+typedef ngx_http_request_t   *njet;
 
 typedef struct {
     ngx_http_request_t       *request;

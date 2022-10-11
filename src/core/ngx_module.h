@@ -12,7 +12,7 @@
 
 #include <ngx_config.h>
 #include <ngx_core.h>
-#include <nginx.h>
+#include <njet.h>
 
 
 #define NGX_MODULE_UNSET_INDEX  (ngx_uint_t) -1
@@ -214,7 +214,7 @@
 
 #define NGX_MODULE_V1                                                         \
     NGX_MODULE_UNSET_INDEX, NGX_MODULE_UNSET_INDEX,                           \
-    NULL, 0, 0, nginx_version, NGX_MODULE_SIGNATURE
+    NULL, 0, 0, njet_version, NGX_MODULE_SIGNATURE
 
 #define NGX_MODULE_V1_PADDING  0, 0, 0, 0, 0, 0, 0, 0
 

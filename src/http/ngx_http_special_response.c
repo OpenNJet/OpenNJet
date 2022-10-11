@@ -8,7 +8,7 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_http.h>
-#include <nginx.h>
+#include <njet.h>
 
 
 static ngx_int_t ngx_http_send_error_page(ngx_http_request_t *r,
@@ -33,7 +33,7 @@ static u_char ngx_http_error_build_tail[] =
 
 
 static u_char ngx_http_error_tail[] =
-"<hr><center>nginx</center>" CRLF
+"<hr><center>njet</center>" CRLF
 "</body>" CRLF
 "</html>" CRLF
 ;

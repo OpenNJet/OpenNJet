@@ -21,8 +21,8 @@ case "$NGX_CC_NAME" in
     gcc)
         CORE_LIBS="$CORE_LIBS -ladvapi32 -lws2_32"
         MAIN_LINK="$MAIN_LINK -Wl,--export-all-symbols"
-        MAIN_LINK="$MAIN_LINK -Wl,--out-implib=$NGX_OBJS/libnginx.a"
-        MODULE_LINK="-shared -L $NGX_OBJS -lnginx"
+        MAIN_LINK="$MAIN_LINK -Wl,--out-implib=$NGX_OBJS/libnjet.a"
+        MODULE_LINK="-shared -L $NGX_OBJS -lnjet"
     ;;
 
     *)

@@ -7,7 +7,7 @@
 
 #include <ngx_config.h>
 #include <ngx_core.h>
-#include <nginx.h>
+#include <njet.h>
 
 
 ngx_int_t   ngx_ncpu;

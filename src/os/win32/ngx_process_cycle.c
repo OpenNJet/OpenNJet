@@ -8,7 +8,7 @@
 #include <ngx_config.h>
 #include <ngx_core.h>
 #include <ngx_event.h>
-#include <nginx.h>
+#include <njet.h>
 
 
 static void ngx_console_init(ngx_cycle_t *cycle);

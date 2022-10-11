@@ -19,18 +19,18 @@ $NGX_OBJS/$ngx_perl_module: \\
 
 $NGX_OBJS/src/http/modules/perl/Makefile: \\
 		$NGX_AUTO_CONFIG_H \\
-		src/core/nginx.h \\
+		src/core/njet.h \\
 		src/http/modules/perl/Makefile.PL \\
-		src/http/modules/perl/nginx.pm \\
-		src/http/modules/perl/nginx.xs \\
+		src/http/modules/perl/njet.pm \\
+		src/http/modules/perl/njet.xs \\
 		src/http/modules/perl/typemap
-	grep 'define NGINX_VERSION' src/core/nginx.h \\
+	grep 'define NGINX_VERSION' src/core/njet.h \\
 		| sed -e 's/^.*"\(.*\)".*/\1/' > \\
 		$NGX_OBJS/src/http/modules/perl/version
 	sed "s/%%VERSION%%/\`cat $NGX_OBJS/src/http/modules/perl/version\`/" \\
-		src/http/modules/perl/nginx.pm > \\
-		$NGX_OBJS/src/http/modules/perl/nginx.pm
-	cp -p src/http/modules/perl/nginx.xs $NGX_OBJS/src/http/modules/perl/
+		src/http/modules/perl/njet.pm > \\
+		$NGX_OBJS/src/http/modules/perl/njet.pm
+	cp -p src/http/modules/perl/njet.xs $NGX_OBJS/src/http/modules/perl/
 	cp -p src/http/modules/perl/typemap $NGX_OBJS/src/http/modules/perl/
 	cp -p src/http/modules/perl/Makefile.PL $NGX_OBJS/src/http/modules/perl/
 
