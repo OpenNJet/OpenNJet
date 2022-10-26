@@ -34,49 +34,49 @@ case $ZLIB in
     *)     echo "  + using zlib library: $ZLIB" ;;
 esac
 
-case $NGX_LIBATOMIC in
+case $NJT_LIBATOMIC in
     YES)   echo "  + using system libatomic_ops library" ;;
     NO)    ;; # not used
-    *)     echo "  + using libatomic_ops library: $NGX_LIBATOMIC" ;;
+    *)     echo "  + using libatomic_ops library: $NJT_LIBATOMIC" ;;
 esac
 
 echo
 
 
 cat << END
-  nginx path prefix: "$NGX_PREFIX"
-  nginx binary file: "$NGX_SBIN_PATH"
-  nginx modules path: "$NGX_MODULES_PATH"
-  nginx configuration prefix: "$NGX_CONF_PREFIX"
-  nginx configuration file: "$NGX_CONF_PATH"
-  nginx pid file: "$NGX_PID_PATH"
+  njet path prefix: "$NJT_PREFIX"
+  njet binary file: "$NJT_SBIN_PATH"
+  njet modules path: "$NJT_MODULES_PATH"
+  njet configuration prefix: "$NJT_CONF_PREFIX"
+  njet configuration file: "$NJT_CONF_PATH"
+  njet pid file: "$NJT_PID_PATH"
 END
 
-if test -n "$NGX_ERROR_LOG_PATH"; then
-    echo "  nginx error log file: \"$NGX_ERROR_LOG_PATH\""
+if test -n "$NJT_ERROR_LOG_PATH"; then
+    echo "  njet error log file: \"$NJT_ERROR_LOG_PATH\""
 else
-    echo "  nginx logs errors to stderr"
+    echo "  njet logs errors to stderr"
 fi
 
 cat << END
-  nginx http access log file: "$NGX_HTTP_LOG_PATH"
-  nginx http client request body temporary files: "$NGX_HTTP_CLIENT_TEMP_PATH"
+  njet http access log file: "$NJT_HTTP_LOG_PATH"
+  njet http client request body temporary files: "$NJT_HTTP_CLIENT_TEMP_PATH"
 END
 
 if [ $HTTP_PROXY = YES ]; then
-    echo "  nginx http proxy temporary files: \"$NGX_HTTP_PROXY_TEMP_PATH\""
+    echo "  njet http proxy temporary files: \"$NJT_HTTP_PROXY_TEMP_PATH\""
 fi
 
 if [ $HTTP_FASTCGI = YES ]; then
-    echo "  nginx http fastcgi temporary files: \"$NGX_HTTP_FASTCGI_TEMP_PATH\""
+    echo "  njet http fastcgi temporary files: \"$NJT_HTTP_FASTCGI_TEMP_PATH\""
 fi
 
 if [ $HTTP_UWSGI = YES ]; then
-    echo "  nginx http uwsgi temporary files: \"$NGX_HTTP_UWSGI_TEMP_PATH\""
+    echo "  njet http uwsgi temporary files: \"$NJT_HTTP_UWSGI_TEMP_PATH\""
 fi
 
 if [ $HTTP_SCGI = YES ]; then
-    echo "  nginx http scgi temporary files: \"$NGX_HTTP_SCGI_TEMP_PATH\""
+    echo "  njet http scgi temporary files: \"$NJT_HTTP_SCGI_TEMP_PATH\""
 fi
 
-echo "$NGX_POST_CONF_MSG"
+echo "$NJT_POST_CONF_MSG"

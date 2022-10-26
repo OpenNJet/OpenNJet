@@ -7,9 +7,9 @@ case "$CC" in
 
     cl)
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJT_MAKEFILE
 
-$OPENSSL/openssl/include/openssl/ssl.h:	$NGX_MAKEFILE
+$OPENSSL/openssl/include/openssl/ssl.h:	$NJT_MAKEFILE
 	\$(MAKE) -f auto/lib/openssl/makefile.msvc			\
 		OPENSSL="$OPENSSL" OPENSSL_OPT="$OPENSSL_OPT"
 
@@ -19,22 +19,22 @@ END
 
     bcc32)
 
-        ngx_opt=`echo "-DOPENSSL=\"$OPENSSL\" -DOPENSSL_OPT=\"$OPENSSL_OPT\"" \
-            | sed -e "s/\//$ngx_regex_dirsep/g"`
+        njt_opt=`echo "-DOPENSSL=\"$OPENSSL\" -DOPENSSL_OPT=\"$OPENSSL_OPT\"" \
+            | sed -e "s/\//$njt_regex_dirsep/g"`
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJT_MAKEFILE
 
 `echo "$OPENSSL\\openssl\\lib\\libeay32.lib:				\
 	$OPENSSL\\openssl\\include\\openssl\\ssl.h"			\
-	| sed -e "s/\//$ngx_regex_dirsep/g"`
+	| sed -e "s/\//$njt_regex_dirsep/g"`
 
 `echo "$OPENSSL\\openssl\\lib\\ssleay32.lib:				\
 	$OPENSSL\\openssl\\include\\openssl\\ssl.h"			\
-	| sed -e "s/\//$ngx_regex_dirsep/g"`
+	| sed -e "s/\//$njt_regex_dirsep/g"`
 
-`echo "$OPENSSL\\openssl\\include\\openssl\\ssl.h:	$NGX_MAKEFILE"	\
-	| sed -e "s/\//$ngx_regex_dirsep/g"`
-	\$(MAKE) -f auto/lib/openssl/makefile.bcc $ngx_opt
+`echo "$OPENSSL\\openssl\\include\\openssl\\ssl.h:	$NJT_MAKEFILE"	\
+	| sed -e "s/\//$njt_regex_dirsep/g"`
+	\$(MAKE) -f auto/lib/openssl/makefile.bcc $njt_opt
 
 END
 
@@ -42,16 +42,16 @@ END
 
     *)
         case $OPENSSL in
-            /*) ngx_prefix="$OPENSSL/.openssl" ;;
-            *)  ngx_prefix="$PWD/$OPENSSL/.openssl" ;;
+            /*) njt_prefix="$OPENSSL/.openssl" ;;
+            *)  njt_prefix="$PWD/$OPENSSL/.openssl" ;;
         esac
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJT_MAKEFILE
 
-$OPENSSL/.openssl/include/openssl/ssl.h:	$NGX_MAKEFILE
+$OPENSSL/.openssl/include/openssl/ssl.h:	$NJT_MAKEFILE
 	cd $OPENSSL \\
 	&& if [ -f Makefile ]; then \$(MAKE) clean; fi \\
-	&& ./config --prefix=$ngx_prefix no-shared no-threads $OPENSSL_OPT \\
+	&& ./config --prefix=$njt_prefix no-shared no-threads $OPENSSL_OPT \\
 	&& \$(MAKE) \\
 	&& \$(MAKE) install_sw LIBDIR=lib
 

@@ -3,62 +3,62 @@
 # Copyright (C) Nginx, Inc.
 
 
-echo $ngx_n "checking for $ngx_feature ...$ngx_c"
+echo $njt_n "checking for $njt_feature ...$njt_c"
 
-cat << END >> $NGX_AUTOCONF_ERR
+cat << END >> $NJT_AUTOCONF_ERR
 
 ----------------------------------------
-checking for $ngx_feature
+checking for $njt_feature
 
 END
 
-ngx_found=no
+njt_found=no
 
-if test -n "$ngx_feature_name"; then
-    ngx_have_feature=`echo $ngx_feature_name \
+if test -n "$njt_feature_name"; then
+    njt_have_feature=`echo $njt_feature_name \
                    | tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ`
 fi
 
-if test -n "$ngx_feature_path"; then
-    for ngx_temp in $ngx_feature_path; do
-        ngx_feature_inc_path="$ngx_feature_inc_path -I $ngx_temp"
+if test -n "$njt_feature_path"; then
+    for njt_temp in $njt_feature_path; do
+        njt_feature_inc_path="$njt_feature_inc_path -I $njt_temp"
     done
 fi
 
-cat << END > $NGX_AUTOTEST.c
+cat << END > $NJT_AUTOTEST.c
 
 #include <sys/types.h>
-$NGX_INCLUDE_UNISTD_H
-$ngx_feature_incs
+$NJT_INCLUDE_UNISTD_H
+$njt_feature_incs
 
 int main(void) {
-    $ngx_feature_test;
+    $njt_feature_test;
     return 0;
 }
 
 END
 
 
-ngx_test="$CC $CC_TEST_FLAGS $CC_AUX_FLAGS $ngx_feature_inc_path \
-          -o $NGX_AUTOTEST $NGX_AUTOTEST.c $NGX_TEST_LD_OPT $ngx_feature_libs"
+njt_test="$CC $CC_TEST_FLAGS $CC_AUX_FLAGS $njt_feature_inc_path \
+          -o $NJT_AUTOTEST $NJT_AUTOTEST.c $NJT_TEST_LD_OPT $njt_feature_libs"
 
-ngx_feature_inc_path=
+njt_feature_inc_path=
 
-eval "/bin/sh -c \"$ngx_test\" >> $NGX_AUTOCONF_ERR 2>&1"
+eval "/bin/sh -c \"$njt_test\" >> $NJT_AUTOCONF_ERR 2>&1"
 
 
-if [ -x $NGX_AUTOTEST ]; then
+if [ -x $NJT_AUTOTEST ]; then
 
-    case "$ngx_feature_run" in
+    case "$njt_feature_run" in
 
         yes)
             # /bin/sh is used to intercept "Killed" or "Abort trap" messages
-            if /bin/sh -c $NGX_AUTOTEST >> $NGX_AUTOCONF_ERR 2>&1; then
+            if /bin/sh -c $NJT_AUTOTEST >> $NJT_AUTOCONF_ERR 2>&1; then
                 echo " found"
-                ngx_found=yes
+                njt_found=yes
 
-                if test -n "$ngx_feature_name"; then
-                    have=$ngx_have_feature . auto/have
+                if test -n "$njt_feature_name"; then
+                    have=$njt_have_feature . auto/have
                 fi
 
             else
@@ -68,14 +68,14 @@ if [ -x $NGX_AUTOTEST ]; then
 
         value)
             # /bin/sh is used to intercept "Killed" or "Abort trap" messages
-            if /bin/sh -c $NGX_AUTOTEST >> $NGX_AUTOCONF_ERR 2>&1; then
+            if /bin/sh -c $NJT_AUTOTEST >> $NJT_AUTOCONF_ERR 2>&1; then
                 echo " found"
-                ngx_found=yes
+                njt_found=yes
 
-                cat << END >> $NGX_AUTO_CONFIG_H
+                cat << END >> $NJT_AUTO_CONFIG_H
 
-#ifndef $ngx_feature_name
-#define $ngx_feature_name  `$NGX_AUTOTEST`
+#ifndef $njt_feature_name
+#define $njt_feature_name  `$NJT_AUTOTEST`
 #endif
 
 END
@@ -86,25 +86,25 @@ END
 
         bug)
             # /bin/sh is used to intercept "Killed" or "Abort trap" messages
-            if /bin/sh -c $NGX_AUTOTEST >> $NGX_AUTOCONF_ERR 2>&1; then
+            if /bin/sh -c $NJT_AUTOTEST >> $NJT_AUTOCONF_ERR 2>&1; then
                 echo " not found"
 
             else
                 echo " found"
-                ngx_found=yes
+                njt_found=yes
 
-                if test -n "$ngx_feature_name"; then
-                    have=$ngx_have_feature . auto/have
+                if test -n "$njt_feature_name"; then
+                    have=$njt_have_feature . auto/have
                 fi
             fi
         ;;
 
         *)
             echo " found"
-            ngx_found=yes
+            njt_found=yes
 
-            if test -n "$ngx_feature_name"; then
-                have=$ngx_have_feature . auto/have
+            if test -n "$njt_feature_name"; then
+                have=$njt_have_feature . auto/have
             fi
         ;;
 
@@ -113,11 +113,11 @@ END
 else
     echo " not found"
 
-    echo "----------"    >> $NGX_AUTOCONF_ERR
-    cat $NGX_AUTOTEST.c  >> $NGX_AUTOCONF_ERR
-    echo "----------"    >> $NGX_AUTOCONF_ERR
-    echo $ngx_test       >> $NGX_AUTOCONF_ERR
-    echo "----------"    >> $NGX_AUTOCONF_ERR
+    echo "----------"    >> $NJT_AUTOCONF_ERR
+    cat $NJT_AUTOTEST.c  >> $NJT_AUTOCONF_ERR
+    echo "----------"    >> $NJT_AUTOCONF_ERR
+    echo $njt_test       >> $NJT_AUTOCONF_ERR
+    echo "----------"    >> $NJT_AUTOCONF_ERR
 fi
 
-rm -rf $NGX_AUTOTEST*
+rm -rf $NJT_AUTOTEST*

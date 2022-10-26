@@ -11,50 +11,50 @@ export LC_ALL
 . auto/init
 . auto/sources
 
-test -d $NGX_OBJS || mkdir -p $NGX_OBJS
+test -d $NJT_OBJS || mkdir -p $NJT_OBJS
 
-echo > $NGX_AUTO_HEADERS_H
-echo > $NGX_AUTOCONF_ERR
+echo > $NJT_AUTO_HEADERS_H
+echo > $NJT_AUTOCONF_ERR
 
-echo "#define NGX_CONFIGURE \"$NGX_CONFIGURE\"" > $NGX_AUTO_CONFIG_H
+echo "#define NJT_CONFIGURE \"$NJT_CONFIGURE\"" > $NJT_AUTO_CONFIG_H
 
 
-if [ $NGX_DEBUG = YES ]; then
-    have=NGX_DEBUG . auto/have
+if [ $NJT_DEBUG = YES ]; then
+    have=NJT_DEBUG . auto/have
 fi
 
 
-if test -z "$NGX_PLATFORM"; then
+if test -z "$NJT_PLATFORM"; then
     echo "checking for OS"
 
-    NGX_SYSTEM=`uname -s 2>/dev/null`
-    NGX_RELEASE=`uname -r 2>/dev/null`
-    NGX_MACHINE=`uname -m 2>/dev/null`
+    NJT_SYSTEM=`uname -s 2>/dev/null`
+    NJT_RELEASE=`uname -r 2>/dev/null`
+    NJT_MACHINE=`uname -m 2>/dev/null`
 
-    echo " + $NGX_SYSTEM $NGX_RELEASE $NGX_MACHINE"
+    echo " + $NJT_SYSTEM $NJT_RELEASE $NJT_MACHINE"
 
-    NGX_PLATFORM="$NGX_SYSTEM:$NGX_RELEASE:$NGX_MACHINE";
+    NJT_PLATFORM="$NJT_SYSTEM:$NJT_RELEASE:$NJT_MACHINE";
 
-    case "$NGX_SYSTEM" in
+    case "$NJT_SYSTEM" in
         MINGW32_* | MINGW64_* | MSYS_*)
-            NGX_PLATFORM=win32
+            NJT_PLATFORM=win32
         ;;
     esac
 
 else
-    echo "building for $NGX_PLATFORM"
-    NGX_SYSTEM=$NGX_PLATFORM
+    echo "building for $NJT_PLATFORM"
+    NJT_SYSTEM=$NJT_PLATFORM
 fi
 
 . auto/cc/conf
 
-if [ "$NGX_PLATFORM" != win32 ]; then
+if [ "$NJT_PLATFORM" != win32 ]; then
     . auto/headers
 fi
 
 . auto/os/conf
 
-if [ "$NGX_PLATFORM" != win32 ]; then
+if [ "$NJT_PLATFORM" != win32 ]; then
     . auto/unix
 fi
 
@@ -62,45 +62,45 @@ fi
 . auto/modules
 . auto/lib/conf
 
-case ".$NGX_PREFIX" in
+case ".$NJT_PREFIX" in
     .)
-        NGX_PREFIX=${NGX_PREFIX:-/usr/local/nginx}
-        have=NGX_PREFIX value="\"$NGX_PREFIX/\"" . auto/define
+        NJT_PREFIX=${NJT_PREFIX:-/usr/local/njet}
+        have=NJT_PREFIX value="\"$NJT_PREFIX/\"" . auto/define
     ;;
 
     .!)
-        NGX_PREFIX=
+        NJT_PREFIX=
     ;;
 
     *)
-        have=NGX_PREFIX value="\"$NGX_PREFIX/\"" . auto/define
+        have=NJT_PREFIX value="\"$NJT_PREFIX/\"" . auto/define
     ;;
 esac
 
-if [ ".$NGX_CONF_PREFIX" != "." ]; then
-    have=NGX_CONF_PREFIX value="\"$NGX_CONF_PREFIX/\"" . auto/define
+if [ ".$NJT_CONF_PREFIX" != "." ]; then
+    have=NJT_CONF_PREFIX value="\"$NJT_CONF_PREFIX/\"" . auto/define
 fi
 
-have=NGX_SBIN_PATH value="\"$NGX_SBIN_PATH\"" . auto/define
-have=NGX_CONF_PATH value="\"$NGX_CONF_PATH\"" . auto/define
-have=NGX_PID_PATH value="\"$NGX_PID_PATH\"" . auto/define
-have=NGX_LOCK_PATH value="\"$NGX_LOCK_PATH\"" . auto/define
-have=NGX_ERROR_LOG_PATH value="\"$NGX_ERROR_LOG_PATH\"" . auto/define
+have=NJT_SBIN_PATH value="\"$NJT_SBIN_PATH\"" . auto/define
+have=NJT_CONF_PATH value="\"$NJT_CONF_PATH\"" . auto/define
+have=NJT_PID_PATH value="\"$NJT_PID_PATH\"" . auto/define
+have=NJT_LOCK_PATH value="\"$NJT_LOCK_PATH\"" . auto/define
+have=NJT_ERROR_LOG_PATH value="\"$NJT_ERROR_LOG_PATH\"" . auto/define
 
-if [ ".$NGX_ERROR_LOG_PATH" = "." ]; then
-    have=NGX_ERROR_LOG_STDERR . auto/have
+if [ ".$NJT_ERROR_LOG_PATH" = "." ]; then
+    have=NJT_ERROR_LOG_STDERR . auto/have
 fi
 
-have=NGX_HTTP_LOG_PATH value="\"$NGX_HTTP_LOG_PATH\"" . auto/define
-have=NGX_HTTP_CLIENT_TEMP_PATH value="\"$NGX_HTTP_CLIENT_TEMP_PATH\""
+have=NJT_HTTP_LOG_PATH value="\"$NJT_HTTP_LOG_PATH\"" . auto/define
+have=NJT_HTTP_CLIENT_TEMP_PATH value="\"$NJT_HTTP_CLIENT_TEMP_PATH\""
 . auto/define
-have=NGX_HTTP_PROXY_TEMP_PATH value="\"$NGX_HTTP_PROXY_TEMP_PATH\""
+have=NJT_HTTP_PROXY_TEMP_PATH value="\"$NJT_HTTP_PROXY_TEMP_PATH\""
 . auto/define
-have=NGX_HTTP_FASTCGI_TEMP_PATH value="\"$NGX_HTTP_FASTCGI_TEMP_PATH\""
+have=NJT_HTTP_FASTCGI_TEMP_PATH value="\"$NJT_HTTP_FASTCGI_TEMP_PATH\""
 . auto/define
-have=NGX_HTTP_UWSGI_TEMP_PATH value="\"$NGX_HTTP_UWSGI_TEMP_PATH\""
+have=NJT_HTTP_UWSGI_TEMP_PATH value="\"$NJT_HTTP_UWSGI_TEMP_PATH\""
 . auto/define
-have=NGX_HTTP_SCGI_TEMP_PATH value="\"$NGX_HTTP_SCGI_TEMP_PATH\""
+have=NJT_HTTP_SCGI_TEMP_PATH value="\"$NJT_HTTP_SCGI_TEMP_PATH\""
 . auto/define
 
 . auto/make
@@ -110,11 +110,11 @@ have=NGX_HTTP_SCGI_TEMP_PATH value="\"$NGX_HTTP_SCGI_TEMP_PATH\""
 # STUB
 . auto/stubs
 
-have=NGX_USER value="\"$NGX_USER\"" . auto/define
-have=NGX_GROUP value="\"$NGX_GROUP\"" . auto/define
+have=NJT_USER value="\"$NJT_USER\"" . auto/define
+have=NJT_GROUP value="\"$NJT_GROUP\"" . auto/define
 
-if [ ".$NGX_BUILD" != "." ]; then
-    have=NGX_BUILD value="\"$NGX_BUILD\"" . auto/define
+if [ ".$NJT_BUILD" != "." ]; then
+    have=NJT_BUILD value="\"$NJT_BUILD\"" . auto/define
 fi
 
 . auto/summary

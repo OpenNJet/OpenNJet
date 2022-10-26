@@ -61,14 +61,14 @@ CFLAGS="$CFLAGS -d2"
 CFLAGS="$CFLAGS -zq"
 
 # Open Watcom C 1.2
-have=NGX_HAVE_C99_VARIADIC_MACROS . auto/have
+have=NJT_HAVE_C99_VARIADIC_MACROS . auto/have
 
 
 # the precompiled headers
-#CORE_DEPS="$CORE_DEPS $NGX_OBJS/ngx_config.pch"
-#NGX_PCH="$NGX_OBJS/ngx_config.pch"
-#NGX_BUILD_PCH="-fhq=$NGX_OBJS/ngx_config.pch"
-#NGX_USE_PCH="-fh=$NGX_OBJS/ngx_config.pch"
+#CORE_DEPS="$CORE_DEPS $NJT_OBJS/njt_config.pch"
+#NJT_PCH="$NJT_OBJS/njt_config.pch"
+#NJT_BUILD_PCH="-fhq=$NJT_OBJS/njt_config.pch"
+#NJT_USE_PCH="-fh=$NJT_OBJS/njt_config.pch"
 
 
 # the link flags, built target is NT GUI mode application
@@ -76,28 +76,28 @@ have=NGX_HAVE_C99_VARIADIC_MACROS . auto/have
 
 
 # the resource file
-NGX_RCC="wrc \$(CORE_INCS) -fo=$NGX_OBJS/nginx.res "
-NGX_RCC="$NGX_RCC $NGX_WIN32_RC $NGX_OBJS/nginx.exe"
+NJT_RCC="wrc \$(CORE_INCS) -fo=$NJT_OBJS/njet.res "
+NJT_RCC="$NJT_RCC $NJT_WIN32_RC $NJT_OBJS/njet.exe"
 
 
-ngx_include_opt="-i="
-ngx_objout="-fo"
-ngx_binout="-fe="
-ngx_objext="obj"
+njt_include_opt="-i="
+njt_objout="-fo"
+njt_binout="-fe="
+njt_objext="obj"
 
-ngx_regex_dirsep='\\'
-ngx_dirsep="\\"
+njt_regex_dirsep='\\'
+njt_dirsep="\\"
 
-ngx_long_start=' '
-ngx_long_end=' '
-ngx_long_regex_cont=' \&\
+njt_long_start=' '
+njt_long_end=' '
+njt_long_regex_cont=' \&\
 	'
-ngx_long_cont=' &
+njt_long_cont=' &
 	'
 
-ngx_regex_cont=' \&\
+njt_regex_cont=' \&\
 	'
-ngx_cont=' &
+njt_cont=' &
 	'
-ngx_tab=' &
+njt_tab=' &
 		'

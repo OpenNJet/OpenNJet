@@ -3,21 +3,21 @@
 # Copyright (C) Nginx, Inc.
 
 
-echo $ngx_n "checking for $ngx_type ...$ngx_c"
+echo $njt_n "checking for $njt_type ...$njt_c"
 
-cat << END >> $NGX_AUTOCONF_ERR
+cat << END >> $NJT_AUTOCONF_ERR
 
 ----------------------------------------
-checking for $ngx_type
+checking for $njt_type
 
 END
 
-ngx_found=no
+njt_found=no
 
-for ngx_try in $ngx_type $ngx_types
+for njt_try in $njt_type $njt_types
 do
 
-    cat << END > $NGX_AUTOTEST.c
+    cat << END > $NJT_AUTOTEST.c
 
 #include <sys/types.h>
 #include <signal.h>
@@ -25,58 +25,58 @@ do
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <netinet/in.h>
-$NGX_INCLUDE_INTTYPES_H
+$NJT_INCLUDE_INTTYPES_H
 
 int main(void) {
-    $ngx_try i = 0;
+    $njt_try i = 0;
     return (int) i;
 }
 
 END
 
-    ngx_test="$CC $CC_TEST_FLAGS $CC_AUX_FLAGS \
-              -o $NGX_AUTOTEST $NGX_AUTOTEST.c $NGX_LD_OPT $ngx_feature_libs"
+    njt_test="$CC $CC_TEST_FLAGS $CC_AUX_FLAGS \
+              -o $NJT_AUTOTEST $NJT_AUTOTEST.c $NJT_LD_OPT $njt_feature_libs"
 
-    eval "$ngx_test >> $NGX_AUTOCONF_ERR 2>&1"
+    eval "$njt_test >> $NJT_AUTOCONF_ERR 2>&1"
 
-    if [ -x $NGX_AUTOTEST ]; then
-        if [ $ngx_try = $ngx_type ]; then
+    if [ -x $NJT_AUTOTEST ]; then
+        if [ $njt_try = $njt_type ]; then
             echo " found"
-            ngx_found=yes
+            njt_found=yes
         else
-            echo ", $ngx_try used"
-            ngx_found=$ngx_try
+            echo ", $njt_try used"
+            njt_found=$njt_try
         fi
     fi
 
-    if [ $ngx_found = no ]; then
-        if [ $ngx_try = $ngx_type ]; then
-            echo $ngx_n " $ngx_try not found$ngx_c"
+    if [ $njt_found = no ]; then
+        if [ $njt_try = $njt_type ]; then
+            echo $njt_n " $njt_try not found$njt_c"
         else
-            echo $ngx_n ", $ngx_try not found$ngx_c"
+            echo $njt_n ", $njt_try not found$njt_c"
         fi
 
-        echo "----------"    >> $NGX_AUTOCONF_ERR
-        cat $NGX_AUTOTEST.c  >> $NGX_AUTOCONF_ERR
-        echo "----------"    >> $NGX_AUTOCONF_ERR
-        echo $ngx_test       >> $NGX_AUTOCONF_ERR
-        echo "----------"    >> $NGX_AUTOCONF_ERR
+        echo "----------"    >> $NJT_AUTOCONF_ERR
+        cat $NJT_AUTOTEST.c  >> $NJT_AUTOCONF_ERR
+        echo "----------"    >> $NJT_AUTOCONF_ERR
+        echo $njt_test       >> $NJT_AUTOCONF_ERR
+        echo "----------"    >> $NJT_AUTOCONF_ERR
     fi
 
-    rm -rf $NGX_AUTOTEST*
+    rm -rf $NJT_AUTOTEST*
 
-    if [ $ngx_found != no ]; then
+    if [ $njt_found != no ]; then
         break
     fi
 done
 
-if [ $ngx_found = no ]; then
+if [ $njt_found = no ]; then
     echo
-    echo "$0: error: can not define $ngx_type"
+    echo "$0: error: can not define $njt_type"
 
     exit 1
 fi
 
-if [ $ngx_found != yes ]; then
-    echo "typedef $ngx_found  $ngx_type;"   >> $NGX_AUTO_CONFIG_H
+if [ $njt_found != yes ]; then
+    echo "typedef $njt_found  $njt_type;"   >> $NJT_AUTO_CONFIG_H
 fi

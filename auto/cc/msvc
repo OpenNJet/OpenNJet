@@ -11,15 +11,15 @@
 # MSVC 2015 (14.0)                        cl 19.00
 
 
-NGX_MSVC_VER=`$NGX_WINE $CC 2>&1 | grep 'Compiler Version' 2>&1 \
+NJT_MSVC_VER=`$NJT_WINE $CC 2>&1 | grep 'Compiler Version' 2>&1 \
                                  | sed -e 's/^.* Version \(.*\)/\1/'`
 
-echo " + cl version: $NGX_MSVC_VER"
+echo " + cl version: $NJT_MSVC_VER"
 
-have=NGX_COMPILER value="\"cl $NGX_MSVC_VER\"" . auto/define
+have=NJT_COMPILER value="\"cl $NJT_MSVC_VER\"" . auto/define
 
 
-ngx_msvc_ver=`echo $NGX_MSVC_VER | sed -e 's/^\([0-9]*\).*/\1/'`
+njt_msvc_ver=`echo $NJT_MSVC_VER | sed -e 's/^\([0-9]*\).*/\1/'`
 
 
 # optimizations
@@ -107,50 +107,50 @@ CORE_LIBS="$CORE_LIBS kernel32.lib user32.lib"
 # debug
 # msvc under Wine issues
 # C1902: Program database manager mismatch; please check your installation
-if [ -z "$NGX_WINE" ]; then
-   CFLAGS="$CFLAGS -Zi -Fd$NGX_OBJS/nginx.pdb"
+if [ -z "$NJT_WINE" ]; then
+   CFLAGS="$CFLAGS -Zi -Fd$NJT_OBJS/njet.pdb"
    CORE_LINK="$CORE_LINK -debug"
 fi
 
 
 # MSVC 2005 supports C99 variadic macros
-if [ "$ngx_msvc_ver" -ge 14 ]; then
-    have=NGX_HAVE_C99_VARIADIC_MACROS . auto/have
+if [ "$njt_msvc_ver" -ge 14 ]; then
+    have=NJT_HAVE_C99_VARIADIC_MACROS . auto/have
 fi
 
 
 # precompiled headers
-CORE_DEPS="$CORE_DEPS $NGX_OBJS/ngx_config.pch"
-CORE_LINK="$CORE_LINK $NGX_OBJS/ngx_pch.obj"
-NGX_PCH="$NGX_OBJS/ngx_config.pch"
-NGX_BUILD_PCH="-Ycngx_config.h -Fp$NGX_OBJS/ngx_config.pch"
-NGX_USE_PCH="-Yungx_config.h -Fp$NGX_OBJS/ngx_config.pch"
+CORE_DEPS="$CORE_DEPS $NJT_OBJS/njt_config.pch"
+CORE_LINK="$CORE_LINK $NJT_OBJS/njt_pch.obj"
+NJT_PCH="$NJT_OBJS/njt_config.pch"
+NJT_BUILD_PCH="-Ycnjt_config.h -Fp$NJT_OBJS/njt_config.pch"
+NJT_USE_PCH="-Yunjt_config.h -Fp$NJT_OBJS/njt_config.pch"
 
 
 # the resource file
-NGX_RES="$NGX_OBJS/nginx.res"
-NGX_RCC="rc -fo$NGX_RES \$(CORE_INCS) $NGX_WIN32_RC"
-CORE_LINK="$NGX_RES $CORE_LINK"
+NJT_RES="$NJT_OBJS/njet.res"
+NJT_RCC="rc -fo$NJT_RES \$(CORE_INCS) $NJT_WIN32_RC"
+CORE_LINK="$NJT_RES $CORE_LINK"
 
 
 # dynamic modules
-#MAIN_LINK="-link -def:$NGX_OBJS/nginx.def"
-#MODULE_LINK="-LD $NGX_OBJS/nginx.lib"
+#MAIN_LINK="-link -def:$NJT_OBJS/njet.def"
+#MODULE_LINK="-LD $NJT_OBJS/njet.lib"
 
 
-ngx_pic_opt=
-ngx_objout="-Fo"
-ngx_binout="-Fe"
-ngx_objext="obj"
+njt_pic_opt=
+njt_objout="-Fo"
+njt_binout="-Fe"
+njt_objext="obj"
 
-ngx_long_start='@<<
+njt_long_start='@<<
 	'
-ngx_long_end='<<'
-ngx_long_regex_cont=' \
+njt_long_end='<<'
+njt_long_regex_cont=' \
 	'
-ngx_long_cont='
+njt_long_cont='
 	'
 
 # MSVC understand / in path
-#ngx_regex_dirsep='\\'
-#ngx_dirsep="\\"
+#njt_regex_dirsep='\\'
+#njt_dirsep="\\"

@@ -3,23 +3,23 @@
 # Copyright (C) Nginx, Inc.
 
 
-if [ $NGX_LIBATOMIC != YES ]; then
+if [ $NJT_LIBATOMIC != YES ]; then
 
-    have=NGX_HAVE_LIBATOMIC . auto/have
-    CORE_INCS="$CORE_INCS $NGX_LIBATOMIC/src"
-    LINK_DEPS="$LINK_DEPS $NGX_LIBATOMIC/src/libatomic_ops.a"
-    CORE_LIBS="$CORE_LIBS $NGX_LIBATOMIC/src/libatomic_ops.a"
+    have=NJT_HAVE_LIBATOMIC . auto/have
+    CORE_INCS="$CORE_INCS $NJT_LIBATOMIC/src"
+    LINK_DEPS="$LINK_DEPS $NJT_LIBATOMIC/src/libatomic_ops.a"
+    CORE_LIBS="$CORE_LIBS $NJT_LIBATOMIC/src/libatomic_ops.a"
 
 else
 
-    ngx_feature="atomic_ops library"
-    ngx_feature_name=NGX_HAVE_LIBATOMIC
-    ngx_feature_run=yes
-    ngx_feature_incs="#define AO_REQUIRE_CAS
+    njt_feature="atomic_ops library"
+    njt_feature_name=NJT_HAVE_LIBATOMIC
+    njt_feature_run=yes
+    njt_feature_incs="#define AO_REQUIRE_CAS
                       #include <atomic_ops.h>"
-    ngx_feature_path=
-    ngx_feature_libs="-latomic_ops"
-    ngx_feature_test="long  n = 0;
+    njt_feature_path=
+    njt_feature_libs="-latomic_ops"
+    njt_feature_test="long  n = 0;
                       if (!AO_compare_and_swap(&n, 0, 1))
                           return 1;
                       if (AO_fetch_and_add(&n, 1) != 1)
@@ -29,8 +29,8 @@ else
                       AO_nop();"
     . auto/feature
 
-    if [ $ngx_found = yes ]; then
-        CORE_LIBS="$CORE_LIBS $ngx_feature_libs"
+    if [ $njt_found = yes ]; then
+        CORE_LIBS="$CORE_LIBS $njt_feature_libs"
     else
 
 cat << END

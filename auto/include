@@ -3,22 +3,22 @@
 # Copyright (C) Nginx, Inc.
 
 
-echo $ngx_n "checking for $ngx_include ...$ngx_c"
+echo $njt_n "checking for $njt_include ...$njt_c"
 
-cat << END >> $NGX_AUTOCONF_ERR
+cat << END >> $NJT_AUTOCONF_ERR
 
 ----------------------------------------
-checking for $ngx_include
+checking for $njt_include
 
 END
 
 
-ngx_found=no
+njt_found=no
 
-cat << END > $NGX_AUTOTEST.c
+cat << END > $NJT_AUTOTEST.c
 
-$NGX_INCLUDE_SYS_PARAM_H
-#include <$ngx_include>
+$NJT_INCLUDE_SYS_PARAM_H
+#include <$njt_include>
 
 int main(void) {
     return 0;
@@ -27,32 +27,32 @@ int main(void) {
 END
 
 
-ngx_test="$CC -o $NGX_AUTOTEST $NGX_AUTOTEST.c"
+njt_test="$CC -o $NJT_AUTOTEST $NJT_AUTOTEST.c"
 
-eval "$ngx_test >> $NGX_AUTOCONF_ERR 2>&1"
+eval "$njt_test >> $NJT_AUTOCONF_ERR 2>&1"
 
-if [ -x $NGX_AUTOTEST ]; then
+if [ -x $NJT_AUTOTEST ]; then
 
-    ngx_found=yes
+    njt_found=yes
 
     echo " found"
 
-    ngx_name=`echo $ngx_include \
+    njt_name=`echo $njt_include \
               | tr abcdefghijklmnopqrstuvwxyz/. ABCDEFGHIJKLMNOPQRSTUVWXYZ__`
 
 
-    have=NGX_HAVE_$ngx_name . auto/have_headers
+    have=NJT_HAVE_$njt_name . auto/have_headers
 
-    eval "NGX_INCLUDE_$ngx_name='#include <$ngx_include>'"
+    eval "NJT_INCLUDE_$njt_name='#include <$njt_include>'"
 
 else
     echo " not found"
 
-    echo "----------"    >> $NGX_AUTOCONF_ERR
-    cat $NGX_AUTOTEST.c  >> $NGX_AUTOCONF_ERR
-    echo "----------"    >> $NGX_AUTOCONF_ERR
-    echo $ngx_test       >> $NGX_AUTOCONF_ERR
-    echo "----------"    >> $NGX_AUTOCONF_ERR
+    echo "----------"    >> $NJT_AUTOCONF_ERR
+    cat $NJT_AUTOTEST.c  >> $NJT_AUTOCONF_ERR
+    echo "----------"    >> $NJT_AUTOCONF_ERR
+    echo $njt_test       >> $NJT_AUTOCONF_ERR
+    echo "----------"    >> $NJT_AUTOCONF_ERR
 fi
 
-rm -rf $NGX_AUTOTEST*
+rm -rf $NJT_AUTOTEST*

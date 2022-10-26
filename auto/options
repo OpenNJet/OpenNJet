@@ -5,36 +5,36 @@
 
 help=no
 
-NGX_PREFIX=
-NGX_SBIN_PATH=
-NGX_MODULES_PATH=
-NGX_CONF_PREFIX=
-NGX_CONF_PATH=
-NGX_ERROR_LOG_PATH=
-NGX_PID_PATH=
-NGX_LOCK_PATH=
-NGX_USER=
-NGX_GROUP=
-NGX_BUILD=
+NJT_PREFIX=
+NJT_SBIN_PATH=
+NJT_MODULES_PATH=
+NJT_CONF_PREFIX=
+NJT_CONF_PATH=
+NJT_ERROR_LOG_PATH=
+NJT_PID_PATH=
+NJT_LOCK_PATH=
+NJT_USER=
+NJT_GROUP=
+NJT_BUILD=
 
 CC=${CC:-cc}
 CPP=
-NGX_OBJS=objs
+NJT_OBJS=objs
 
-NGX_DEBUG=NO
-NGX_CC_OPT=
-NGX_LD_OPT=
+NJT_DEBUG=NO
+NJT_CC_OPT=
+NJT_LD_OPT=
 CPU=NO
 
-NGX_RPATH=NO
+NJT_RPATH=NO
 
-NGX_TEST_BUILD_DEVPOLL=NO
-NGX_TEST_BUILD_EVENTPORT=NO
-NGX_TEST_BUILD_EPOLL=NO
-NGX_TEST_BUILD_SOLARIS_SENDFILEV=NO
+NJT_TEST_BUILD_DEVPOLL=NO
+NJT_TEST_BUILD_EVENTPORT=NO
+NJT_TEST_BUILD_EPOLL=NO
+NJT_TEST_BUILD_SOLARIS_SENDFILEV=NO
 
-NGX_PLATFORM=
-NGX_WINE=
+NJT_PLATFORM=
+NJT_WINE=
 
 EVENT_FOUND=NO
 
@@ -43,16 +43,16 @@ EVENT_POLL=NO
 
 USE_THREADS=NO
 
-NGX_FILE_AIO=NO
+NJT_FILE_AIO=NO
 
 HTTP=YES
 
-NGX_HTTP_LOG_PATH=
-NGX_HTTP_CLIENT_TEMP_PATH=
-NGX_HTTP_PROXY_TEMP_PATH=
-NGX_HTTP_FASTCGI_TEMP_PATH=
-NGX_HTTP_UWSGI_TEMP_PATH=
-NGX_HTTP_SCGI_TEMP_PATH=
+NJT_HTTP_LOG_PATH=
+NJT_HTTP_CLIENT_TEMP_PATH=
+NJT_HTTP_PROXY_TEMP_PATH=
+NJT_HTTP_FASTCGI_TEMP_PATH=
+NJT_HTTP_UWSGI_TEMP_PATH=
+NJT_HTTP_SCGI_TEMP_PATH=
 
 HTTP_CACHE=YES
 HTTP_CHARSET=YES
@@ -134,12 +134,12 @@ STREAM_SSL_PREREAD=NO
 DYNAMIC_MODULES=
 DYNAMIC_MODULES_SRCS=
 
-NGX_ADDONS=
-NGX_ADDON_SRCS=
-NGX_ADDON_DEPS=
+NJT_ADDONS=
+NJT_ADDON_SRCS=
+NJT_ADDON_DEPS=
 DYNAMIC_ADDONS=
 
-NGX_COMPAT=NO
+NJT_COMPAT=NO
 
 USE_PCRE=NO
 PCRE=NONE
@@ -157,20 +157,20 @@ ZLIB_OPT=
 ZLIB_ASM=NO
 
 USE_PERL=NO
-NGX_PERL=perl
+NJT_PERL=perl
 
 USE_LIBXSLT=NO
 USE_LIBGD=NO
 USE_GEOIP=NO
 
-NGX_GOOGLE_PERFTOOLS=NO
-NGX_CPP_TEST=NO
+NJT_GOOGLE_PERFTOOLS=NO
+NJT_CPP_TEST=NO
 
-NGX_LIBATOMIC=NO
+NJT_LIBATOMIC=NO
 
-NGX_CPU_CACHE_LINE=
+NJT_CPU_CACHE_LINE=
 
-NGX_POST_CONF_MSG=
+NJT_POST_CONF_MSG=
 
 opt=
 
@@ -186,21 +186,21 @@ do
     case "$option" in
         --help)                          help=yes                   ;;
 
-        --prefix=)                       NGX_PREFIX="!"             ;;
-        --prefix=*)                      NGX_PREFIX="$value"        ;;
-        --sbin-path=*)                   NGX_SBIN_PATH="$value"     ;;
-        --modules-path=*)                NGX_MODULES_PATH="$value"  ;;
-        --conf-path=*)                   NGX_CONF_PATH="$value"     ;;
-        --error-log-path=*)              NGX_ERROR_LOG_PATH="$value";;
-        --pid-path=*)                    NGX_PID_PATH="$value"      ;;
-        --lock-path=*)                   NGX_LOCK_PATH="$value"     ;;
-        --user=*)                        NGX_USER="$value"          ;;
-        --group=*)                       NGX_GROUP="$value"         ;;
+        --prefix=)                       NJT_PREFIX="!"             ;;
+        --prefix=*)                      NJT_PREFIX="$value"        ;;
+        --sbin-path=*)                   NJT_SBIN_PATH="$value"     ;;
+        --modules-path=*)                NJT_MODULES_PATH="$value"  ;;
+        --conf-path=*)                   NJT_CONF_PATH="$value"     ;;
+        --error-log-path=*)              NJT_ERROR_LOG_PATH="$value";;
+        --pid-path=*)                    NJT_PID_PATH="$value"      ;;
+        --lock-path=*)                   NJT_LOCK_PATH="$value"     ;;
+        --user=*)                        NJT_USER="$value"          ;;
+        --group=*)                       NJT_GROUP="$value"         ;;
 
-        --crossbuild=*)                  NGX_PLATFORM="$value"      ;;
+        --crossbuild=*)                  NJT_PLATFORM="$value"      ;;
 
-        --build=*)                       NGX_BUILD="$value"         ;;
-        --builddir=*)                    NGX_OBJS="$value"          ;;
+        --build=*)                       NJT_BUILD="$value"         ;;
+        --builddir=*)                    NJT_OBJS="$value"          ;;
 
         --with-select_module)            EVENT_SELECT=YES           ;;
         --without-select_module)         EVENT_SELECT=NONE          ;;
@@ -209,22 +209,22 @@ do
 
         --with-threads)                  USE_THREADS=YES            ;;
 
-        --with-file-aio)                 NGX_FILE_AIO=YES           ;;
+        --with-file-aio)                 NJT_FILE_AIO=YES           ;;
 
         --with-ipv6)
-            NGX_POST_CONF_MSG="$NGX_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-ipv6\" option is deprecated"
         ;;
 
         --without-http)                  HTTP=NO                    ;;
         --without-http-cache)            HTTP_CACHE=NO              ;;
 
-        --http-log-path=*)               NGX_HTTP_LOG_PATH="$value" ;;
-        --http-client-body-temp-path=*)  NGX_HTTP_CLIENT_TEMP_PATH="$value" ;;
-        --http-proxy-temp-path=*)        NGX_HTTP_PROXY_TEMP_PATH="$value" ;;
-        --http-fastcgi-temp-path=*)      NGX_HTTP_FASTCGI_TEMP_PATH="$value" ;;
-        --http-uwsgi-temp-path=*)        NGX_HTTP_UWSGI_TEMP_PATH="$value" ;;
-        --http-scgi-temp-path=*)         NGX_HTTP_SCGI_TEMP_PATH="$value" ;;
+        --http-log-path=*)               NJT_HTTP_LOG_PATH="$value" ;;
+        --http-client-body-temp-path=*)  NJT_HTTP_CLIENT_TEMP_PATH="$value" ;;
+        --http-proxy-temp-path=*)        NJT_HTTP_PROXY_TEMP_PATH="$value" ;;
+        --http-fastcgi-temp-path=*)      NJT_HTTP_FASTCGI_TEMP_PATH="$value" ;;
+        --http-uwsgi-temp-path=*)        NJT_HTTP_UWSGI_TEMP_PATH="$value" ;;
+        --http-scgi-temp-path=*)         NJT_HTTP_SCGI_TEMP_PATH="$value" ;;
 
         --with-http_ssl_module)          HTTP_SSL=YES               ;;
         --with-http_v2_module)           HTTP_V2=YES                ;;
@@ -285,8 +285,8 @@ $0: warning: the \"--with-ipv6\" option is deprecated"
 
         --with-http_perl_module)         HTTP_PERL=YES              ;;
         --with-http_perl_module=dynamic) HTTP_PERL=DYNAMIC          ;;
-        --with-perl_modules_path=*)      NGX_PERL_MODULES="$value"  ;;
-        --with-perl=*)                   NGX_PERL="$value"          ;;
+        --with-perl_modules_path=*)      NJT_PERL_MODULES="$value"  ;;
+        --with-perl=*)                   NJT_PERL="$value"          ;;
 
         # STUB
         --with-http_stub_status_module)  HTTP_STUB_STATUS=YES       ;;
@@ -297,13 +297,13 @@ $0: warning: the \"--with-ipv6\" option is deprecated"
         # STUB
         --with-imap)
             MAIL=YES
-            NGX_POST_CONF_MSG="$NGX_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-imap\" option is deprecated, \
 use the \"--with-mail\" option instead"
         ;;
         --with-imap_ssl_module)
             MAIL_SSL=YES
-            NGX_POST_CONF_MSG="$NGX_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-imap_ssl_module\" option is deprecated, \
 use the \"--with-mail_ssl_module\" option instead"
         ;;
@@ -338,20 +338,20 @@ use the \"--with-mail_ssl_module\" option instead"
         --without-stream_upstream_zone_module)
                                          STREAM_UPSTREAM_ZONE=NO    ;;
 
-        --with-google_perftools_module)  NGX_GOOGLE_PERFTOOLS=YES   ;;
-        --with-cpp_test_module)          NGX_CPP_TEST=YES           ;;
+        --with-google_perftools_module)  NJT_GOOGLE_PERFTOOLS=YES   ;;
+        --with-cpp_test_module)          NJT_CPP_TEST=YES           ;;
 
-        --add-module=*)                  NGX_ADDONS="$NGX_ADDONS $value" ;;
+        --add-module=*)                  NJT_ADDONS="$NJT_ADDONS $value" ;;
         --add-dynamic-module=*)          DYNAMIC_ADDONS="$DYNAMIC_ADDONS $value" ;;
 
-        --with-compat)                   NGX_COMPAT=YES             ;;
+        --with-compat)                   NJT_COMPAT=YES             ;;
 
         --with-cc=*)                     CC="$value"                ;;
         --with-cpp=*)                    CPP="$value"               ;;
-        --with-cc-opt=*)                 NGX_CC_OPT="$value"        ;;
-        --with-ld-opt=*)                 NGX_LD_OPT="$value"        ;;
+        --with-cc-opt=*)                 NJT_CC_OPT="$value"        ;;
+        --with-ld-opt=*)                 NJT_LD_OPT="$value"        ;;
         --with-cpu-opt=*)                CPU="$value"               ;;
-        --with-debug)                    NGX_DEBUG=YES              ;;
+        --with-debug)                    NJT_DEBUG=YES              ;;
 
         --without-pcre)                  USE_PCRE=DISABLED          ;;
         --with-pcre)                     USE_PCRE=YES               ;;
@@ -364,28 +364,28 @@ use the \"--with-mail_ssl_module\" option instead"
         --with-openssl-opt=*)            OPENSSL_OPT="$value"       ;;
 
         --with-md5=*)
-            NGX_POST_CONF_MSG="$NGX_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-md5\" option is deprecated"
         ;;
         --with-md5-opt=*)
-            NGX_POST_CONF_MSG="$NGX_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-md5-opt\" option is deprecated"
         ;;
         --with-md5-asm)
-            NGX_POST_CONF_MSG="$NGX_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-md5-asm\" option is deprecated"
         ;;
 
         --with-sha1=*)
-            NGX_POST_CONF_MSG="$NGX_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-sha1\" option is deprecated"
         ;;
         --with-sha1-opt=*)
-            NGX_POST_CONF_MSG="$NGX_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-sha1-opt\" option is deprecated"
         ;;
         --with-sha1-asm)
-            NGX_POST_CONF_MSG="$NGX_POST_CONF_MSG
+            NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-sha1-asm\" option is deprecated"
         ;;
 
@@ -393,13 +393,13 @@ $0: warning: the \"--with-sha1-asm\" option is deprecated"
         --with-zlib-opt=*)               ZLIB_OPT="$value"          ;;
         --with-zlib-asm=*)               ZLIB_ASM="$value"          ;;
 
-        --with-libatomic)                NGX_LIBATOMIC=YES          ;;
-        --with-libatomic=*)              NGX_LIBATOMIC="$value"     ;;
+        --with-libatomic)                NJT_LIBATOMIC=YES          ;;
+        --with-libatomic=*)              NJT_LIBATOMIC="$value"     ;;
 
-        --test-build-devpoll)            NGX_TEST_BUILD_DEVPOLL=YES ;;
-        --test-build-eventport)          NGX_TEST_BUILD_EVENTPORT=YES ;;
-        --test-build-epoll)              NGX_TEST_BUILD_EPOLL=YES   ;;
-        --test-build-solaris-sendfilev)  NGX_TEST_BUILD_SOLARIS_SENDFILEV=YES ;;
+        --test-build-devpoll)            NJT_TEST_BUILD_DEVPOLL=YES ;;
+        --test-build-eventport)          NJT_TEST_BUILD_EVENTPORT=YES ;;
+        --test-build-epoll)              NJT_TEST_BUILD_EPOLL=YES   ;;
+        --test-build-solaris-sendfilev)  NJT_TEST_BUILD_SOLARIS_SENDFILEV=YES ;;
 
         *)
             echo "$0: error: invalid option \"$option\""
@@ -409,7 +409,7 @@ $0: warning: the \"--with-sha1-asm\" option is deprecated"
 done
 
 
-NGX_CONFIGURE="$opt"
+NJT_CONFIGURE="$opt"
 
 
 if [ $help = yes ]; then
@@ -419,12 +419,12 @@ cat << END
   --help                             print this message
 
   --prefix=PATH                      set installation prefix
-  --sbin-path=PATH                   set nginx binary pathname
+  --sbin-path=PATH                   set njet binary pathname
   --modules-path=PATH                set modules path
-  --conf-path=PATH                   set nginx.conf pathname
+  --conf-path=PATH                   set njet.conf pathname
   --error-log-path=PATH              set error log pathname
-  --pid-path=PATH                    set nginx.pid pathname
-  --lock-path=PATH                   set nginx.lock pathname
+  --pid-path=PATH                    set njet.pid pathname
+  --lock-path=PATH                   set njet.lock pathname
 
   --user=USER                        set non-privileged user for
                                      worker processes
@@ -443,68 +443,68 @@ cat << END
 
   --with-file-aio                    enable file AIO support
 
-  --with-http_ssl_module             enable ngx_http_ssl_module
-  --with-http_v2_module              enable ngx_http_v2_module
-  --with-http_realip_module          enable ngx_http_realip_module
-  --with-http_addition_module        enable ngx_http_addition_module
-  --with-http_xslt_module            enable ngx_http_xslt_module
-  --with-http_xslt_module=dynamic    enable dynamic ngx_http_xslt_module
-  --with-http_image_filter_module    enable ngx_http_image_filter_module
+  --with-http_ssl_module             enable njt_http_ssl_module
+  --with-http_v2_module              enable njt_http_v2_module
+  --with-http_realip_module          enable njt_http_realip_module
+  --with-http_addition_module        enable njt_http_addition_module
+  --with-http_xslt_module            enable njt_http_xslt_module
+  --with-http_xslt_module=dynamic    enable dynamic njt_http_xslt_module
+  --with-http_image_filter_module    enable njt_http_image_filter_module
   --with-http_image_filter_module=dynamic
-                                     enable dynamic ngx_http_image_filter_module
-  --with-http_geoip_module           enable ngx_http_geoip_module
-  --with-http_geoip_module=dynamic   enable dynamic ngx_http_geoip_module
-  --with-http_sub_module             enable ngx_http_sub_module
-  --with-http_dav_module             enable ngx_http_dav_module
-  --with-http_flv_module             enable ngx_http_flv_module
-  --with-http_mp4_module             enable ngx_http_mp4_module
-  --with-http_gunzip_module          enable ngx_http_gunzip_module
-  --with-http_gzip_static_module     enable ngx_http_gzip_static_module
-  --with-http_auth_request_module    enable ngx_http_auth_request_module
-  --with-http_random_index_module    enable ngx_http_random_index_module
-  --with-http_secure_link_module     enable ngx_http_secure_link_module
-  --with-http_degradation_module     enable ngx_http_degradation_module
-  --with-http_slice_module           enable ngx_http_slice_module
-  --with-http_stub_status_module     enable ngx_http_stub_status_module
+                                     enable dynamic njt_http_image_filter_module
+  --with-http_geoip_module           enable njt_http_geoip_module
+  --with-http_geoip_module=dynamic   enable dynamic njt_http_geoip_module
+  --with-http_sub_module             enable njt_http_sub_module
+  --with-http_dav_module             enable njt_http_dav_module
+  --with-http_flv_module             enable njt_http_flv_module
+  --with-http_mp4_module             enable njt_http_mp4_module
+  --with-http_gunzip_module          enable njt_http_gunzip_module
+  --with-http_gzip_static_module     enable njt_http_gzip_static_module
+  --with-http_auth_request_module    enable njt_http_auth_request_module
+  --with-http_random_index_module    enable njt_http_random_index_module
+  --with-http_secure_link_module     enable njt_http_secure_link_module
+  --with-http_degradation_module     enable njt_http_degradation_module
+  --with-http_slice_module           enable njt_http_slice_module
+  --with-http_stub_status_module     enable njt_http_stub_status_module
 
-  --without-http_charset_module      disable ngx_http_charset_module
-  --without-http_gzip_module         disable ngx_http_gzip_module
-  --without-http_ssi_module          disable ngx_http_ssi_module
-  --without-http_userid_module       disable ngx_http_userid_module
-  --without-http_access_module       disable ngx_http_access_module
-  --without-http_auth_basic_module   disable ngx_http_auth_basic_module
-  --without-http_mirror_module       disable ngx_http_mirror_module
-  --without-http_autoindex_module    disable ngx_http_autoindex_module
-  --without-http_geo_module          disable ngx_http_geo_module
-  --without-http_map_module          disable ngx_http_map_module
-  --without-http_split_clients_module disable ngx_http_split_clients_module
-  --without-http_referer_module      disable ngx_http_referer_module
-  --without-http_rewrite_module      disable ngx_http_rewrite_module
-  --without-http_proxy_module        disable ngx_http_proxy_module
-  --without-http_fastcgi_module      disable ngx_http_fastcgi_module
-  --without-http_uwsgi_module        disable ngx_http_uwsgi_module
-  --without-http_scgi_module         disable ngx_http_scgi_module
-  --without-http_grpc_module         disable ngx_http_grpc_module
-  --without-http_memcached_module    disable ngx_http_memcached_module
-  --without-http_limit_conn_module   disable ngx_http_limit_conn_module
-  --without-http_limit_req_module    disable ngx_http_limit_req_module
-  --without-http_empty_gif_module    disable ngx_http_empty_gif_module
-  --without-http_browser_module      disable ngx_http_browser_module
+  --without-http_charset_module      disable njt_http_charset_module
+  --without-http_gzip_module         disable njt_http_gzip_module
+  --without-http_ssi_module          disable njt_http_ssi_module
+  --without-http_userid_module       disable njt_http_userid_module
+  --without-http_access_module       disable njt_http_access_module
+  --without-http_auth_basic_module   disable njt_http_auth_basic_module
+  --without-http_mirror_module       disable njt_http_mirror_module
+  --without-http_autoindex_module    disable njt_http_autoindex_module
+  --without-http_geo_module          disable njt_http_geo_module
+  --without-http_map_module          disable njt_http_map_module
+  --without-http_split_clients_module disable njt_http_split_clients_module
+  --without-http_referer_module      disable njt_http_referer_module
+  --without-http_rewrite_module      disable njt_http_rewrite_module
+  --without-http_proxy_module        disable njt_http_proxy_module
+  --without-http_fastcgi_module      disable njt_http_fastcgi_module
+  --without-http_uwsgi_module        disable njt_http_uwsgi_module
+  --without-http_scgi_module         disable njt_http_scgi_module
+  --without-http_grpc_module         disable njt_http_grpc_module
+  --without-http_memcached_module    disable njt_http_memcached_module
+  --without-http_limit_conn_module   disable njt_http_limit_conn_module
+  --without-http_limit_req_module    disable njt_http_limit_req_module
+  --without-http_empty_gif_module    disable njt_http_empty_gif_module
+  --without-http_browser_module      disable njt_http_browser_module
   --without-http_upstream_hash_module
-                                     disable ngx_http_upstream_hash_module
+                                     disable njt_http_upstream_hash_module
   --without-http_upstream_ip_hash_module
-                                     disable ngx_http_upstream_ip_hash_module
+                                     disable njt_http_upstream_ip_hash_module
   --without-http_upstream_least_conn_module
-                                     disable ngx_http_upstream_least_conn_module
+                                     disable njt_http_upstream_least_conn_module
   --without-http_upstream_random_module
-                                     disable ngx_http_upstream_random_module
+                                     disable njt_http_upstream_random_module
   --without-http_upstream_keepalive_module
-                                     disable ngx_http_upstream_keepalive_module
+                                     disable njt_http_upstream_keepalive_module
   --without-http_upstream_zone_module
-                                     disable ngx_http_upstream_zone_module
+                                     disable njt_http_upstream_zone_module
 
-  --with-http_perl_module            enable ngx_http_perl_module
-  --with-http_perl_module=dynamic    enable dynamic ngx_http_perl_module
+  --with-http_perl_module            enable njt_http_perl_module
+  --with-http_perl_module=dynamic    enable dynamic njt_http_perl_module
   --with-perl_modules_path=PATH      set Perl modules path
   --with-perl=PATH                   set perl binary pathname
 
@@ -525,37 +525,37 @@ cat << END
 
   --with-mail                        enable POP3/IMAP4/SMTP proxy module
   --with-mail=dynamic                enable dynamic POP3/IMAP4/SMTP proxy module
-  --with-mail_ssl_module             enable ngx_mail_ssl_module
-  --without-mail_pop3_module         disable ngx_mail_pop3_module
-  --without-mail_imap_module         disable ngx_mail_imap_module
-  --without-mail_smtp_module         disable ngx_mail_smtp_module
+  --with-mail_ssl_module             enable njt_mail_ssl_module
+  --without-mail_pop3_module         disable njt_mail_pop3_module
+  --without-mail_imap_module         disable njt_mail_imap_module
+  --without-mail_smtp_module         disable njt_mail_smtp_module
 
   --with-stream                      enable TCP/UDP proxy module
   --with-stream=dynamic              enable dynamic TCP/UDP proxy module
-  --with-stream_ssl_module           enable ngx_stream_ssl_module
-  --with-stream_realip_module        enable ngx_stream_realip_module
-  --with-stream_geoip_module         enable ngx_stream_geoip_module
-  --with-stream_geoip_module=dynamic enable dynamic ngx_stream_geoip_module
-  --with-stream_ssl_preread_module   enable ngx_stream_ssl_preread_module
-  --without-stream_limit_conn_module disable ngx_stream_limit_conn_module
-  --without-stream_access_module     disable ngx_stream_access_module
-  --without-stream_geo_module        disable ngx_stream_geo_module
-  --without-stream_map_module        disable ngx_stream_map_module
+  --with-stream_ssl_module           enable njt_stream_ssl_module
+  --with-stream_realip_module        enable njt_stream_realip_module
+  --with-stream_geoip_module         enable njt_stream_geoip_module
+  --with-stream_geoip_module=dynamic enable dynamic njt_stream_geoip_module
+  --with-stream_ssl_preread_module   enable njt_stream_ssl_preread_module
+  --without-stream_limit_conn_module disable njt_stream_limit_conn_module
+  --without-stream_access_module     disable njt_stream_access_module
+  --without-stream_geo_module        disable njt_stream_geo_module
+  --without-stream_map_module        disable njt_stream_map_module
   --without-stream_split_clients_module
-                                     disable ngx_stream_split_clients_module
-  --without-stream_return_module     disable ngx_stream_return_module
-  --without-stream_set_module        disable ngx_stream_set_module
+                                     disable njt_stream_split_clients_module
+  --without-stream_return_module     disable njt_stream_return_module
+  --without-stream_set_module        disable njt_stream_set_module
   --without-stream_upstream_hash_module
-                                     disable ngx_stream_upstream_hash_module
+                                     disable njt_stream_upstream_hash_module
   --without-stream_upstream_least_conn_module
-                                     disable ngx_stream_upstream_least_conn_module
+                                     disable njt_stream_upstream_least_conn_module
   --without-stream_upstream_random_module
-                                     disable ngx_stream_upstream_random_module
+                                     disable njt_stream_upstream_random_module
   --without-stream_upstream_zone_module
-                                     disable ngx_stream_upstream_zone_module
+                                     disable njt_stream_upstream_zone_module
 
-  --with-google_perftools_module     enable ngx_google_perftools_module
-  --with-cpp_test_module             enable ngx_cpp_test_module
+  --with-google_perftools_module     enable njt_google_perftools_module
+  --with-cpp_test_module             enable njt_cpp_test_module
 
   --add-module=PATH                  enable external module
   --add-dynamic-module=PATH          enable dynamic external module
@@ -597,32 +597,32 @@ END
 fi
 
 
-if [ ".$NGX_PLATFORM" = ".win32" ]; then
-    NGX_WINE=$WINE
+if [ ".$NJT_PLATFORM" = ".win32" ]; then
+    NJT_WINE=$WINE
 fi
 
 
-NGX_SBIN_PATH=${NGX_SBIN_PATH:-sbin/nginx}
-NGX_MODULES_PATH=${NGX_MODULES_PATH:-modules}
-NGX_CONF_PATH=${NGX_CONF_PATH:-conf/nginx.conf}
-NGX_CONF_PREFIX=`dirname $NGX_CONF_PATH`
-NGX_PID_PATH=${NGX_PID_PATH:-logs/nginx.pid}
-NGX_LOCK_PATH=${NGX_LOCK_PATH:-logs/nginx.lock}
+NJT_SBIN_PATH=${NJT_SBIN_PATH:-sbin/njet}
+NJT_MODULES_PATH=${NJT_MODULES_PATH:-modules}
+NJT_CONF_PATH=${NJT_CONF_PATH:-conf/njet.conf}
+NJT_CONF_PREFIX=`dirname $NJT_CONF_PATH`
+NJT_PID_PATH=${NJT_PID_PATH:-logs/njet.pid}
+NJT_LOCK_PATH=${NJT_LOCK_PATH:-logs/njet.lock}
 
-if [ ".$NGX_ERROR_LOG_PATH" = ".stderr" ]; then
-    NGX_ERROR_LOG_PATH=
+if [ ".$NJT_ERROR_LOG_PATH" = ".stderr" ]; then
+    NJT_ERROR_LOG_PATH=
 else
-    NGX_ERROR_LOG_PATH=${NGX_ERROR_LOG_PATH:-logs/error.log}
+    NJT_ERROR_LOG_PATH=${NJT_ERROR_LOG_PATH:-logs/error.log}
 fi
 
-NGX_HTTP_LOG_PATH=${NGX_HTTP_LOG_PATH:-logs/access.log}
-NGX_HTTP_CLIENT_TEMP_PATH=${NGX_HTTP_CLIENT_TEMP_PATH:-client_body_temp}
-NGX_HTTP_PROXY_TEMP_PATH=${NGX_HTTP_PROXY_TEMP_PATH:-proxy_temp}
-NGX_HTTP_FASTCGI_TEMP_PATH=${NGX_HTTP_FASTCGI_TEMP_PATH:-fastcgi_temp}
-NGX_HTTP_UWSGI_TEMP_PATH=${NGX_HTTP_UWSGI_TEMP_PATH:-uwsgi_temp}
-NGX_HTTP_SCGI_TEMP_PATH=${NGX_HTTP_SCGI_TEMP_PATH:-scgi_temp}
+NJT_HTTP_LOG_PATH=${NJT_HTTP_LOG_PATH:-logs/access.log}
+NJT_HTTP_CLIENT_TEMP_PATH=${NJT_HTTP_CLIENT_TEMP_PATH:-client_body_temp}
+NJT_HTTP_PROXY_TEMP_PATH=${NJT_HTTP_PROXY_TEMP_PATH:-proxy_temp}
+NJT_HTTP_FASTCGI_TEMP_PATH=${NJT_HTTP_FASTCGI_TEMP_PATH:-fastcgi_temp}
+NJT_HTTP_UWSGI_TEMP_PATH=${NJT_HTTP_UWSGI_TEMP_PATH:-uwsgi_temp}
+NJT_HTTP_SCGI_TEMP_PATH=${NJT_HTTP_SCGI_TEMP_PATH:-scgi_temp}
 
-case ".$NGX_PERL_MODULES" in
+case ".$NJT_PERL_MODULES" in
     ./*)
     ;;
 
@@ -630,6 +630,6 @@ case ".$NGX_PERL_MODULES" in
     ;;
 
     *)
-        NGX_PERL_MODULES=$NGX_PREFIX/$NGX_PERL_MODULES
+        NJT_PERL_MODULES=$NJT_PREFIX/$NJT_PERL_MODULES
     ;;
 esac

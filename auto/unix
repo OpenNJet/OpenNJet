@@ -3,37 +3,37 @@
 # Copyright (C) Nginx, Inc.
 
 
-NGX_USER=${NGX_USER:-nobody}
+NJT_USER=${NJT_USER:-nobody}
 
-if [ -z "$NGX_GROUP" ]; then
-    if [ $NGX_USER = nobody ]; then
+if [ -z "$NJT_GROUP" ]; then
+    if [ $NJT_USER = nobody ]; then
         if grep nobody /etc/group 2>&1 >/dev/null; then
             echo "checking for nobody group ... found"
-            NGX_GROUP=nobody
+            NJT_GROUP=nobody
         else
             echo "checking for nobody group ... not found"
 
             if grep nogroup /etc/group 2>&1 >/dev/null; then
                 echo "checking for nogroup group ... found"
-                NGX_GROUP=nogroup
+                NJT_GROUP=nogroup
             else
                 echo "checking for nogroup group ... not found"
-                NGX_GROUP=nobody
+                NJT_GROUP=nobody
             fi
         fi
     else
-        NGX_GROUP=$NGX_USER
+        NJT_GROUP=$NJT_USER
     fi
 fi
 
 
-ngx_feature="poll()"
-ngx_feature_name=
-ngx_feature_run=no
-ngx_feature_incs="#include <poll.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="int  n; struct pollfd  pl;
+njt_feature="poll()"
+njt_feature_name=
+njt_feature_run=no
+njt_feature_incs="#include <poll.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="int  n; struct pollfd  pl;
                   pl.fd = 0;
                   pl.events = 0;
                   pl.revents = 0;
@@ -41,18 +41,18 @@ ngx_feature_test="int  n; struct pollfd  pl;
                   if (n == -1) return 1"
 . auto/feature
 
-if [ $ngx_found = no ]; then
+if [ $njt_found = no ]; then
     EVENT_POLL=NONE
 fi
 
 
-ngx_feature="/dev/poll"
-ngx_feature_name="NGX_HAVE_DEVPOLL"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/devpoll.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="int  n, dp; struct dvpoll  dvp;
+njt_feature="/dev/poll"
+njt_feature_name="NJT_HAVE_DEVPOLL"
+njt_feature_run=no
+njt_feature_incs="#include <sys/devpoll.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="int  n, dp; struct dvpoll  dvp;
                   dp = 0;
                   dvp.dp_fds = NULL;
                   dvp.dp_nfds = 0;
@@ -61,50 +61,50 @@ ngx_feature_test="int  n, dp; struct dvpoll  dvp;
                   if (n == -1) return 1"
 . auto/feature
 
-if [ $ngx_found = yes ]; then
+if [ $njt_found = yes ]; then
     CORE_SRCS="$CORE_SRCS $DEVPOLL_SRCS"
     EVENT_MODULES="$EVENT_MODULES $DEVPOLL_MODULE"
     EVENT_FOUND=YES
 fi
 
 
-if test -z "$NGX_KQUEUE_CHECKED"; then
-    ngx_feature="kqueue"
-    ngx_feature_name="NGX_HAVE_KQUEUE"
-    ngx_feature_run=no
-    ngx_feature_incs="#include <sys/event.h>"
-    ngx_feature_path=
-    ngx_feature_libs=
-    ngx_feature_test="(void) kqueue()"
+if test -z "$NJT_KQUEUE_CHECKED"; then
+    njt_feature="kqueue"
+    njt_feature_name="NJT_HAVE_KQUEUE"
+    njt_feature_run=no
+    njt_feature_incs="#include <sys/event.h>"
+    njt_feature_path=
+    njt_feature_libs=
+    njt_feature_test="(void) kqueue()"
     . auto/feature
 
-    if [ $ngx_found = yes ]; then
+    if [ $njt_found = yes ]; then
 
-        have=NGX_HAVE_CLEAR_EVENT . auto/have
+        have=NJT_HAVE_CLEAR_EVENT . auto/have
         EVENT_MODULES="$EVENT_MODULES $KQUEUE_MODULE"
         CORE_SRCS="$CORE_SRCS $KQUEUE_SRCS"
         EVENT_FOUND=YES
 
-        ngx_feature="kqueue's NOTE_LOWAT"
-        ngx_feature_name="NGX_HAVE_LOWAT_EVENT"
-        ngx_feature_run=no
-        ngx_feature_incs="#include <sys/event.h>"
-        ngx_feature_path=
-        ngx_feature_libs=
-        ngx_feature_test="struct kevent  kev;
+        njt_feature="kqueue's NOTE_LOWAT"
+        njt_feature_name="NJT_HAVE_LOWAT_EVENT"
+        njt_feature_run=no
+        njt_feature_incs="#include <sys/event.h>"
+        njt_feature_path=
+        njt_feature_libs=
+        njt_feature_test="struct kevent  kev;
                           kev.fflags = NOTE_LOWAT;
                           (void) kev"
         . auto/feature
 
 
-        ngx_feature="kqueue's EVFILT_TIMER"
-        ngx_feature_name="NGX_HAVE_TIMER_EVENT"
-        ngx_feature_run=yes
-        ngx_feature_incs="#include <sys/event.h>
+        njt_feature="kqueue's EVFILT_TIMER"
+        njt_feature_name="NJT_HAVE_TIMER_EVENT"
+        njt_feature_run=yes
+        njt_feature_incs="#include <sys/event.h>
                           #include <sys/time.h>"
-        ngx_feature_path=
-        ngx_feature_libs=
-        ngx_feature_test="int      kq;
+        njt_feature_path=
+        njt_feature_libs=
+        njt_feature_test="int      kq;
                   struct kevent    kev;
                   struct timespec  ts;
 
@@ -129,306 +129,306 @@ if test -z "$NGX_KQUEUE_CHECKED"; then
 fi
 
 
-if [ "$NGX_SYSTEM" = "NetBSD" ]; then
+if [ "$NJT_SYSTEM" = "NetBSD" ]; then
 
     # NetBSD 2.0 incompatibly defines kevent.udata as "intptr_t"
 
-    cat << END >> $NGX_AUTO_CONFIG_H
+    cat << END >> $NJT_AUTO_CONFIG_H
 
-#define NGX_KQUEUE_UDATA_T
+#define NJT_KQUEUE_UDATA_T
 
 END
 
 else
-    cat << END >> $NGX_AUTO_CONFIG_H
+    cat << END >> $NJT_AUTO_CONFIG_H
 
-#define NGX_KQUEUE_UDATA_T  (void *)
+#define NJT_KQUEUE_UDATA_T  (void *)
 
 END
 
 fi
 
 
-ngx_feature="crypt()"
-ngx_feature_name=
-ngx_feature_run=no
-ngx_feature_incs=
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="crypt(\"test\", \"salt\");"
+njt_feature="crypt()"
+njt_feature_name=
+njt_feature_run=no
+njt_feature_incs=
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="crypt(\"test\", \"salt\");"
 . auto/feature
 
 
-if [ $ngx_found = no ]; then
+if [ $njt_found = no ]; then
 
-    ngx_feature="crypt() in libcrypt"
-    ngx_feature_name=
-    ngx_feature_run=no
-    ngx_feature_incs=
-    ngx_feature_path=
-    ngx_feature_libs=-lcrypt
+    njt_feature="crypt() in libcrypt"
+    njt_feature_name=
+    njt_feature_run=no
+    njt_feature_incs=
+    njt_feature_path=
+    njt_feature_libs=-lcrypt
     . auto/feature
 
-    if [ $ngx_found = yes ]; then
+    if [ $njt_found = yes ]; then
         CRYPT_LIB="-lcrypt"
     fi
 fi
 
 
-ngx_feature="F_READAHEAD"
-ngx_feature_name="NGX_HAVE_F_READAHEAD"
-ngx_feature_run=no
-ngx_feature_incs="#include <fcntl.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="fcntl(0, F_READAHEAD, 1);"
+njt_feature="F_READAHEAD"
+njt_feature_name="NJT_HAVE_F_READAHEAD"
+njt_feature_run=no
+njt_feature_incs="#include <fcntl.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="fcntl(0, F_READAHEAD, 1);"
 . auto/feature
 
 
-ngx_feature="posix_fadvise()"
-ngx_feature_name="NGX_HAVE_POSIX_FADVISE"
-ngx_feature_run=no
-ngx_feature_incs="#include <fcntl.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="posix_fadvise(0, 0, 0, POSIX_FADV_SEQUENTIAL);"
+njt_feature="posix_fadvise()"
+njt_feature_name="NJT_HAVE_POSIX_FADVISE"
+njt_feature_run=no
+njt_feature_incs="#include <fcntl.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="posix_fadvise(0, 0, 0, POSIX_FADV_SEQUENTIAL);"
 . auto/feature
 
 
-ngx_feature="O_DIRECT"
-ngx_feature_name="NGX_HAVE_O_DIRECT"
-ngx_feature_run=no
-ngx_feature_incs="#include <fcntl.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="fcntl(0, F_SETFL, O_DIRECT);"
+njt_feature="O_DIRECT"
+njt_feature_name="NJT_HAVE_O_DIRECT"
+njt_feature_run=no
+njt_feature_incs="#include <fcntl.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="fcntl(0, F_SETFL, O_DIRECT);"
 . auto/feature
 
 
-if [ $ngx_found = yes -a "$NGX_SYSTEM" = "Linux" ]; then
-    have=NGX_HAVE_ALIGNED_DIRECTIO . auto/have
+if [ $njt_found = yes -a "$NJT_SYSTEM" = "Linux" ]; then
+    have=NJT_HAVE_ALIGNED_DIRECTIO . auto/have
 fi
 
-ngx_feature="F_NOCACHE"
-ngx_feature_name="NGX_HAVE_F_NOCACHE"
-ngx_feature_run=no
-ngx_feature_incs="#include <fcntl.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="fcntl(0, F_NOCACHE, 1);"
+njt_feature="F_NOCACHE"
+njt_feature_name="NJT_HAVE_F_NOCACHE"
+njt_feature_run=no
+njt_feature_incs="#include <fcntl.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="fcntl(0, F_NOCACHE, 1);"
 . auto/feature
 
 
-ngx_feature="directio()"
-ngx_feature_name="NGX_HAVE_DIRECTIO"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/types.h>
+njt_feature="directio()"
+njt_feature_name="NJT_HAVE_DIRECTIO"
+njt_feature_run=no
+njt_feature_incs="#include <sys/types.h>
                   #include <sys/fcntl.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="directio(0, DIRECTIO_ON);"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="directio(0, DIRECTIO_ON);"
 . auto/feature
 
 
-ngx_feature="statfs()"
-ngx_feature_name="NGX_HAVE_STATFS"
-ngx_feature_run=no
-ngx_feature_incs="$NGX_INCLUDE_SYS_PARAM_H
-                  $NGX_INCLUDE_SYS_MOUNT_H
-                  $NGX_INCLUDE_SYS_VFS_H"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="struct statfs  fs;
+njt_feature="statfs()"
+njt_feature_name="NJT_HAVE_STATFS"
+njt_feature_run=no
+njt_feature_incs="$NJT_INCLUDE_SYS_PARAM_H
+                  $NJT_INCLUDE_SYS_MOUNT_H
+                  $NJT_INCLUDE_SYS_VFS_H"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="struct statfs  fs;
                   statfs(\".\", &fs);"
 . auto/feature
 
 
-ngx_feature="statvfs()"
-ngx_feature_name="NGX_HAVE_STATVFS"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/types.h>
+njt_feature="statvfs()"
+njt_feature_name="NJT_HAVE_STATVFS"
+njt_feature_run=no
+njt_feature_incs="#include <sys/types.h>
                   #include <sys/statvfs.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="struct statvfs  fs;
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="struct statvfs  fs;
                   statvfs(\".\", &fs);"
 . auto/feature
 
 
-ngx_feature="dlopen()"
-ngx_feature_name="NGX_HAVE_DLOPEN"
-ngx_feature_run=no
-ngx_feature_incs="#include <dlfcn.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="dlopen(NULL, RTLD_NOW | RTLD_GLOBAL); dlsym(NULL, \"\")"
+njt_feature="dlopen()"
+njt_feature_name="NJT_HAVE_DLOPEN"
+njt_feature_run=no
+njt_feature_incs="#include <dlfcn.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="dlopen(NULL, RTLD_NOW | RTLD_GLOBAL); dlsym(NULL, \"\")"
 . auto/feature
 
 
-if [ $ngx_found = no ]; then
+if [ $njt_found = no ]; then
 
-    ngx_feature="dlopen() in libdl"
-    ngx_feature_libs="-ldl"
+    njt_feature="dlopen() in libdl"
+    njt_feature_libs="-ldl"
     . auto/feature
 
-    if [ $ngx_found = yes ]; then
+    if [ $njt_found = yes ]; then
         CORE_LIBS="$CORE_LIBS -ldl"
-        NGX_LIBDL="-ldl"
+        NJT_LIBDL="-ldl"
     fi
 fi
 
 
-ngx_feature="sched_yield()"
-ngx_feature_name="NGX_HAVE_SCHED_YIELD"
-ngx_feature_run=no
-ngx_feature_incs="#include <sched.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="sched_yield()"
+njt_feature="sched_yield()"
+njt_feature_name="NJT_HAVE_SCHED_YIELD"
+njt_feature_run=no
+njt_feature_incs="#include <sched.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="sched_yield()"
 . auto/feature
 
 
-if [ $ngx_found = no ]; then
+if [ $njt_found = no ]; then
 
-    ngx_feature="sched_yield() in librt"
-    ngx_feature_libs="-lrt"
+    njt_feature="sched_yield() in librt"
+    njt_feature_libs="-lrt"
     . auto/feature
 
-    if [ $ngx_found = yes ]; then
+    if [ $njt_found = yes ]; then
         CORE_LIBS="$CORE_LIBS -lrt"
     fi
 fi
 
 
-ngx_feature="sched_setaffinity()"
-ngx_feature_name="NGX_HAVE_SCHED_SETAFFINITY"
-ngx_feature_run=no
-ngx_feature_incs="#include <sched.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="cpu_set_t mask;
+njt_feature="sched_setaffinity()"
+njt_feature_name="NJT_HAVE_SCHED_SETAFFINITY"
+njt_feature_run=no
+njt_feature_incs="#include <sched.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="cpu_set_t mask;
                   CPU_ZERO(&mask);
                   sched_setaffinity(0, sizeof(cpu_set_t), &mask)"
 . auto/feature
 
 
-ngx_feature="SO_SETFIB"
-ngx_feature_name="NGX_HAVE_SETFIB"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, SOL_SOCKET, SO_SETFIB, NULL, 0)"
+njt_feature="SO_SETFIB"
+njt_feature_name="NJT_HAVE_SETFIB"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, SOL_SOCKET, SO_SETFIB, NULL, 0)"
 . auto/feature
 
 
-ngx_feature="SO_REUSEPORT"
-ngx_feature_name="NGX_HAVE_REUSEPORT"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, SOL_SOCKET, SO_REUSEPORT, NULL, 0)"
+njt_feature="SO_REUSEPORT"
+njt_feature_name="NJT_HAVE_REUSEPORT"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, SOL_SOCKET, SO_REUSEPORT, NULL, 0)"
 . auto/feature
 
 
-ngx_feature="SO_ACCEPTFILTER"
-ngx_feature_name="NGX_HAVE_DEFERRED_ACCEPT"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, SOL_SOCKET, SO_ACCEPTFILTER, NULL, 0)"
+njt_feature="SO_ACCEPTFILTER"
+njt_feature_name="NJT_HAVE_DEFERRED_ACCEPT"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, SOL_SOCKET, SO_ACCEPTFILTER, NULL, 0)"
 . auto/feature
 
 
 # OpenBSD bind to any address for transparent proxying
 
-ngx_feature="SO_BINDANY"
-ngx_feature_name="NGX_HAVE_TRANSPARENT_PROXY"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, SOL_SOCKET, SO_BINDANY, NULL, 0)"
+njt_feature="SO_BINDANY"
+njt_feature_name="NJT_HAVE_TRANSPARENT_PROXY"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, SOL_SOCKET, SO_BINDANY, NULL, 0)"
 . auto/feature
 
 
 # Linux transparent proxying
 
-ngx_feature="IP_TRANSPARENT"
-ngx_feature_name="NGX_HAVE_TRANSPARENT_PROXY"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="IP_TRANSPARENT"
+njt_feature_name="NJT_HAVE_TRANSPARENT_PROXY"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <netinet/in.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, IPPROTO_IP, IP_TRANSPARENT, NULL, 0)"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, IPPROTO_IP, IP_TRANSPARENT, NULL, 0)"
 . auto/feature
 
 
 # FreeBSD bind to any address for transparent proxying
 
-ngx_feature="IP_BINDANY"
-ngx_feature_name="NGX_HAVE_TRANSPARENT_PROXY"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="IP_BINDANY"
+njt_feature_name="NJT_HAVE_TRANSPARENT_PROXY"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <netinet/in.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, IPPROTO_IP, IP_BINDANY, NULL, 0)"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, IPPROTO_IP, IP_BINDANY, NULL, 0)"
 . auto/feature
 
 
 # Linux IP_BIND_ADDRESS_NO_PORT
 
-ngx_feature="IP_BIND_ADDRESS_NO_PORT"
-ngx_feature_name="NGX_HAVE_IP_BIND_ADDRESS_NO_PORT"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="IP_BIND_ADDRESS_NO_PORT"
+njt_feature_name="NJT_HAVE_IP_BIND_ADDRESS_NO_PORT"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <netinet/in.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, IPPROTO_IP, IP_BIND_ADDRESS_NO_PORT, NULL, 0)"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, IPPROTO_IP, IP_BIND_ADDRESS_NO_PORT, NULL, 0)"
 . auto/feature
 
 
 # BSD way to get IPv4 datagram destination address
 
-ngx_feature="IP_RECVDSTADDR"
-ngx_feature_name="NGX_HAVE_IP_RECVDSTADDR"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="IP_RECVDSTADDR"
+njt_feature_name="NJT_HAVE_IP_RECVDSTADDR"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <netinet/in.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, IPPROTO_IP, IP_RECVDSTADDR, NULL, 0)"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, IPPROTO_IP, IP_RECVDSTADDR, NULL, 0)"
 . auto/feature
 
 
 # BSD way to set IPv4 datagram source address
 
-ngx_feature="IP_SENDSRCADDR"
-ngx_feature_name="NGX_HAVE_IP_SENDSRCADDR"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="IP_SENDSRCADDR"
+njt_feature_name="NJT_HAVE_IP_SENDSRCADDR"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <netinet/in.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, IPPROTO_IP, IP_SENDSRCADDR, NULL, 0)"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, IPPROTO_IP, IP_SENDSRCADDR, NULL, 0)"
 . auto/feature
 
 
 # Linux way to get IPv4 datagram destination address
 
-ngx_feature="IP_PKTINFO"
-ngx_feature_name="NGX_HAVE_IP_PKTINFO"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="IP_PKTINFO"
+njt_feature_name="NJT_HAVE_IP_PKTINFO"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <netinet/in.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="struct in_pktinfo  pkt;
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="struct in_pktinfo  pkt;
                   pkt.ipi_spec_dst.s_addr = INADDR_ANY;
                   (void) pkt;
                   setsockopt(0, IPPROTO_IP, IP_PKTINFO, NULL, 0)"
@@ -437,64 +437,64 @@ ngx_feature_test="struct in_pktinfo  pkt;
 
 # RFC 3542 way to get IPv6 datagram destination address
 
-ngx_feature="IPV6_RECVPKTINFO"
-ngx_feature_name="NGX_HAVE_IPV6_RECVPKTINFO"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="IPV6_RECVPKTINFO"
+njt_feature_name="NJT_HAVE_IPV6_RECVPKTINFO"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <netinet/in.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, IPPROTO_IPV6, IPV6_RECVPKTINFO, NULL, 0)"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, IPPROTO_IPV6, IPV6_RECVPKTINFO, NULL, 0)"
 . auto/feature
 
 
-ngx_feature="TCP_DEFER_ACCEPT"
-ngx_feature_name="NGX_HAVE_DEFERRED_ACCEPT"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="TCP_DEFER_ACCEPT"
+njt_feature_name="NJT_HAVE_DEFERRED_ACCEPT"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <netinet/in.h>
                   #include <netinet/tcp.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, IPPROTO_TCP, TCP_DEFER_ACCEPT, NULL, 0)"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, IPPROTO_TCP, TCP_DEFER_ACCEPT, NULL, 0)"
 . auto/feature
 
 
-ngx_feature="TCP_KEEPIDLE"
-ngx_feature_name="NGX_HAVE_KEEPALIVE_TUNABLE"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="TCP_KEEPIDLE"
+njt_feature_name="NJT_HAVE_KEEPALIVE_TUNABLE"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <netinet/in.h>
                   #include <netinet/tcp.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, IPPROTO_TCP, TCP_KEEPIDLE, NULL, 0);
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, IPPROTO_TCP, TCP_KEEPIDLE, NULL, 0);
                   setsockopt(0, IPPROTO_TCP, TCP_KEEPINTVL, NULL, 0);
                   setsockopt(0, IPPROTO_TCP, TCP_KEEPCNT, NULL, 0)"
 . auto/feature
 
 
-ngx_feature="TCP_FASTOPEN"
-ngx_feature_name="NGX_HAVE_TCP_FASTOPEN"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="TCP_FASTOPEN"
+njt_feature_name="NJT_HAVE_TCP_FASTOPEN"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <netinet/in.h>
                   #include <netinet/tcp.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="setsockopt(0, IPPROTO_TCP, TCP_FASTOPEN, NULL, 0)"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="setsockopt(0, IPPROTO_TCP, TCP_FASTOPEN, NULL, 0)"
 . auto/feature
 
 
-ngx_feature="TCP_INFO"
-ngx_feature_name="NGX_HAVE_TCP_INFO"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="TCP_INFO"
+njt_feature_name="NJT_HAVE_TCP_INFO"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <netinet/in.h>
                   #include <netinet/tcp.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="socklen_t optlen = sizeof(struct tcp_info);
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="socklen_t optlen = sizeof(struct tcp_info);
                   struct tcp_info ti;
                   ti.tcpi_rtt = 0;
                   ti.tcpi_rttvar = 0;
@@ -504,42 +504,42 @@ ngx_feature_test="socklen_t optlen = sizeof(struct tcp_info);
 . auto/feature
 
 
-ngx_feature="accept4()"
-ngx_feature_name="NGX_HAVE_ACCEPT4"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="accept4(0, NULL, NULL, SOCK_NONBLOCK)"
+njt_feature="accept4()"
+njt_feature_name="NJT_HAVE_ACCEPT4"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="accept4(0, NULL, NULL, SOCK_NONBLOCK)"
 . auto/feature
 
-if [ $NGX_FILE_AIO = YES ]; then
+if [ $NJT_FILE_AIO = YES ]; then
 
-    ngx_feature="kqueue AIO support"
-    ngx_feature_name="NGX_HAVE_FILE_AIO"
-    ngx_feature_run=no
-    ngx_feature_incs="#include <aio.h>"
-    ngx_feature_path=
-    ngx_feature_libs=
-    ngx_feature_test="struct aiocb  iocb;
+    njt_feature="kqueue AIO support"
+    njt_feature_name="NJT_HAVE_FILE_AIO"
+    njt_feature_run=no
+    njt_feature_incs="#include <aio.h>"
+    njt_feature_path=
+    njt_feature_libs=
+    njt_feature_test="struct aiocb  iocb;
                       iocb.aio_sigevent.sigev_notify = SIGEV_KEVENT;
                       (void) aio_read(&iocb)"
     . auto/feature
 
-    if [ $ngx_found = yes ]; then
+    if [ $njt_found = yes ]; then
         CORE_SRCS="$CORE_SRCS $FILE_AIO_SRCS"
     fi
 
-    if [ $ngx_found = no ]; then
+    if [ $njt_found = no ]; then
 
-        ngx_feature="Linux AIO support"
-        ngx_feature_name="NGX_HAVE_FILE_AIO"
-        ngx_feature_run=no
-        ngx_feature_incs="#include <linux/aio_abi.h>
+        njt_feature="Linux AIO support"
+        njt_feature_name="NJT_HAVE_FILE_AIO"
+        njt_feature_run=no
+        njt_feature_incs="#include <linux/aio_abi.h>
                           #include <sys/eventfd.h>"
-        ngx_feature_path=
-        ngx_feature_libs=
-        ngx_feature_test="struct iocb  iocb;
+        njt_feature_path=
+        njt_feature_libs=
+        njt_feature_test="struct iocb  iocb;
                           iocb.aio_lio_opcode = IOCB_CMD_PREAD;
                           iocb.aio_flags = IOCB_FLAG_RESFD;
                           iocb.aio_resfd = -1;
@@ -547,19 +547,19 @@ if [ $NGX_FILE_AIO = YES ]; then
                           (void) eventfd(0, 0)"
         . auto/feature
 
-        if [ $ngx_found = yes ]; then
-            have=NGX_HAVE_EVENTFD . auto/have
-            have=NGX_HAVE_SYS_EVENTFD_H . auto/have
+        if [ $njt_found = yes ]; then
+            have=NJT_HAVE_EVENTFD . auto/have
+            have=NJT_HAVE_SYS_EVENTFD_H . auto/have
             CORE_SRCS="$CORE_SRCS $LINUX_AIO_SRCS"
         fi
     fi
 
-    if [ $ngx_found = no ]; then
+    if [ $njt_found = no ]; then
 
-        ngx_feature="Linux AIO support (SYS_eventfd)"
-        ngx_feature_incs="#include <linux/aio_abi.h>
+        njt_feature="Linux AIO support (SYS_eventfd)"
+        njt_feature_incs="#include <linux/aio_abi.h>
                           #include <sys/syscall.h>"
-        ngx_feature_test="struct iocb  iocb;
+        njt_feature_test="struct iocb  iocb;
                           iocb.aio_lio_opcode = IOCB_CMD_PREAD;
                           iocb.aio_flags = IOCB_FLAG_RESFD;
                           iocb.aio_resfd = -1;
@@ -567,13 +567,13 @@ if [ $NGX_FILE_AIO = YES ]; then
                           (void) SYS_eventfd"
         . auto/feature
 
-        if [ $ngx_found = yes ]; then
-            have=NGX_HAVE_EVENTFD . auto/have
+        if [ $njt_found = yes ]; then
+            have=NJT_HAVE_EVENTFD . auto/have
             CORE_SRCS="$CORE_SRCS $LINUX_AIO_SRCS"
         fi
     fi
 
-    if [ $ngx_found = no ]; then
+    if [ $njt_found = no ]; then
         cat << END
 
 $0: no supported file AIO was found
@@ -585,118 +585,118 @@ END
 fi
 
 
-have=NGX_HAVE_UNIX_DOMAIN . auto/have
+have=NJT_HAVE_UNIX_DOMAIN . auto/have
 
-ngx_feature_libs=
+njt_feature_libs=
 
 
 # C types
 
-ngx_type="int"; . auto/types/sizeof
+njt_type="int"; . auto/types/sizeof
 
-ngx_type="long"; . auto/types/sizeof
+njt_type="long"; . auto/types/sizeof
 
-ngx_type="long long"; . auto/types/sizeof
+njt_type="long long"; . auto/types/sizeof
 
-ngx_type="void *"; . auto/types/sizeof; ngx_ptr_size=$ngx_size
-ngx_param=NGX_PTR_SIZE; ngx_value=$ngx_size; . auto/types/value
+njt_type="void *"; . auto/types/sizeof; njt_ptr_size=$njt_size
+njt_param=NJT_PTR_SIZE; njt_value=$njt_size; . auto/types/value
 
 
 # POSIX types
 
-NGX_INCLUDE_AUTO_CONFIG_H="#include \"ngx_auto_config.h\""
+NJT_INCLUDE_AUTO_CONFIG_H="#include \"njt_auto_config.h\""
 
-ngx_type="uint32_t"; ngx_types="u_int32_t"; . auto/types/typedef
-ngx_type="uint64_t"; ngx_types="u_int64_t"; . auto/types/typedef
+njt_type="uint32_t"; njt_types="u_int32_t"; . auto/types/typedef
+njt_type="uint64_t"; njt_types="u_int64_t"; . auto/types/typedef
 
-ngx_type="sig_atomic_t"; ngx_types="int"; . auto/types/typedef
+njt_type="sig_atomic_t"; njt_types="int"; . auto/types/typedef
 . auto/types/sizeof
-ngx_param=NGX_SIG_ATOMIC_T_SIZE; ngx_value=$ngx_size; . auto/types/value
+njt_param=NJT_SIG_ATOMIC_T_SIZE; njt_value=$njt_size; . auto/types/value
 
-ngx_type="socklen_t"; ngx_types="int"; . auto/types/typedef
+njt_type="socklen_t"; njt_types="int"; . auto/types/typedef
 
-ngx_type="in_addr_t"; ngx_types="uint32_t u_int32_t"; . auto/types/typedef
+njt_type="in_addr_t"; njt_types="uint32_t u_int32_t"; . auto/types/typedef
 
-ngx_type="in_port_t"; ngx_types="u_short"; . auto/types/typedef
+njt_type="in_port_t"; njt_types="u_short"; . auto/types/typedef
 
-ngx_type="rlim_t"; ngx_types="int"; . auto/types/typedef
+njt_type="rlim_t"; njt_types="int"; . auto/types/typedef
 
 . auto/types/uintptr_t
 
 . auto/endianness
 
-ngx_type="size_t"; . auto/types/sizeof
-ngx_param=NGX_MAX_SIZE_T_VALUE; ngx_value=$ngx_max_value; . auto/types/value
-ngx_param=NGX_SIZE_T_LEN; ngx_value=$ngx_max_len; . auto/types/value
+njt_type="size_t"; . auto/types/sizeof
+njt_param=NJT_MAX_SIZE_T_VALUE; njt_value=$njt_max_value; . auto/types/value
+njt_param=NJT_SIZE_T_LEN; njt_value=$njt_max_len; . auto/types/value
 
-ngx_type="off_t"; . auto/types/sizeof
-ngx_param=NGX_MAX_OFF_T_VALUE; ngx_value=$ngx_max_value; . auto/types/value
-ngx_param=NGX_OFF_T_LEN; ngx_value=$ngx_max_len; . auto/types/value
+njt_type="off_t"; . auto/types/sizeof
+njt_param=NJT_MAX_OFF_T_VALUE; njt_value=$njt_max_value; . auto/types/value
+njt_param=NJT_OFF_T_LEN; njt_value=$njt_max_len; . auto/types/value
 
-ngx_type="time_t"; . auto/types/sizeof
-ngx_param=NGX_TIME_T_SIZE; ngx_value=$ngx_size; . auto/types/value
-ngx_param=NGX_TIME_T_LEN; ngx_value=$ngx_max_len; . auto/types/value
-ngx_param=NGX_MAX_TIME_T_VALUE; ngx_value=$ngx_max_value; . auto/types/value
+njt_type="time_t"; . auto/types/sizeof
+njt_param=NJT_TIME_T_SIZE; njt_value=$njt_size; . auto/types/value
+njt_param=NJT_TIME_T_LEN; njt_value=$njt_max_len; . auto/types/value
+njt_param=NJT_MAX_TIME_T_VALUE; njt_value=$njt_max_value; . auto/types/value
 
 
 # syscalls, libc calls and some features
 
 
-ngx_feature="AF_INET6"
-ngx_feature_name="NGX_HAVE_INET6"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="AF_INET6"
+njt_feature_name="NJT_HAVE_INET6"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <netinet/in.h>
                   #include <arpa/inet.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="struct sockaddr_in6  sin6;
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="struct sockaddr_in6  sin6;
                   sin6.sin6_family = AF_INET6;
                   (void) sin6"
 . auto/feature
 
 
-ngx_feature="setproctitle()"
-ngx_feature_name="NGX_HAVE_SETPROCTITLE"
-ngx_feature_run=no
-ngx_feature_incs="#include <stdlib.h>"
-ngx_feature_path=
-ngx_feature_libs=$NGX_SETPROCTITLE_LIB
-ngx_feature_test="setproctitle(\"test\");"
+njt_feature="setproctitle()"
+njt_feature_name="NJT_HAVE_SETPROCTITLE"
+njt_feature_run=no
+njt_feature_incs="#include <stdlib.h>"
+njt_feature_path=
+njt_feature_libs=$NJT_SETPROCTITLE_LIB
+njt_feature_test="setproctitle(\"test\");"
 . auto/feature
 
 
-ngx_feature="pread()"
-ngx_feature_name="NGX_HAVE_PREAD"
-ngx_feature_run=no
-ngx_feature_incs=
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="char buf[1]; ssize_t n; n = pread(0, buf, 1, 0);
+njt_feature="pread()"
+njt_feature_name="NJT_HAVE_PREAD"
+njt_feature_run=no
+njt_feature_incs=
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="char buf[1]; ssize_t n; n = pread(0, buf, 1, 0);
                   if (n == -1) return 1"
 . auto/feature
 
 
-ngx_feature="pwrite()"
-ngx_feature_name="NGX_HAVE_PWRITE"
-ngx_feature_run=no
-ngx_feature_incs=
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="char buf[1]; ssize_t n; n = pwrite(1, buf, 1, 0);
+njt_feature="pwrite()"
+njt_feature_name="NJT_HAVE_PWRITE"
+njt_feature_run=no
+njt_feature_incs=
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="char buf[1]; ssize_t n; n = pwrite(1, buf, 1, 0);
                   if (n == -1) return 1"
 . auto/feature
 
 
 # pwritev() was introduced in FreeBSD 6 and Linux 2.6.30, glibc 2.10
 
-ngx_feature="pwritev()"
-ngx_feature_name="NGX_HAVE_PWRITEV"
-ngx_feature_run=no
-ngx_feature_incs='#include <sys/uio.h>'
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="char buf[1]; struct iovec vec[1]; ssize_t n;
+njt_feature="pwritev()"
+njt_feature_name="NJT_HAVE_PWRITEV"
+njt_feature_run=no
+njt_feature_incs='#include <sys/uio.h>'
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="char buf[1]; struct iovec vec[1]; ssize_t n;
                   vec[0].iov_base = buf;
                   vec[0].iov_len = 1;
                   n = pwritev(1, vec, 1, 0);
@@ -706,299 +706,299 @@ ngx_feature_test="char buf[1]; struct iovec vec[1]; ssize_t n;
 
 # strerrordesc_np(), introduced in glibc 2.32
 
-ngx_feature="strerrordesc_np()"
-ngx_feature_name="NGX_HAVE_STRERRORDESC_NP"
-ngx_feature_run=no
-ngx_feature_incs='#include <string.h>'
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="char *p; p = strerrordesc_np(0);
+njt_feature="strerrordesc_np()"
+njt_feature_name="NJT_HAVE_STRERRORDESC_NP"
+njt_feature_run=no
+njt_feature_incs='#include <string.h>'
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="char *p; p = strerrordesc_np(0);
                   if (p == NULL) return 1"
 . auto/feature
 
 
-if [ $ngx_found = no ]; then
+if [ $njt_found = no ]; then
 
-    ngx_feature="sys_nerr"
-    ngx_feature_name="NGX_SYS_NERR"
-    ngx_feature_run=value
-    ngx_feature_incs='#include <errno.h>
+    njt_feature="sys_nerr"
+    njt_feature_name="NJT_SYS_NERR"
+    njt_feature_run=value
+    njt_feature_incs='#include <errno.h>
                       #include <stdio.h>'
-    ngx_feature_path=
-    ngx_feature_libs=
-    ngx_feature_test='printf("%d", sys_nerr);'
+    njt_feature_path=
+    njt_feature_libs=
+    njt_feature_test='printf("%d", sys_nerr);'
     . auto/feature
 fi
 
 
-if [ $ngx_found = no ]; then
+if [ $njt_found = no ]; then
 
     # Cygiwn defines _sys_nerr
-    ngx_feature="_sys_nerr"
-    ngx_feature_name="NGX_SYS_NERR"
-    ngx_feature_run=value
-    ngx_feature_incs='#include <errno.h>
+    njt_feature="_sys_nerr"
+    njt_feature_name="NJT_SYS_NERR"
+    njt_feature_run=value
+    njt_feature_incs='#include <errno.h>
                       #include <stdio.h>'
-    ngx_feature_path=
-    ngx_feature_libs=
-    ngx_feature_test='printf("%d", _sys_nerr);'
+    njt_feature_path=
+    njt_feature_libs=
+    njt_feature_test='printf("%d", _sys_nerr);'
     . auto/feature
 fi
 
 
-ngx_feature="localtime_r()"
-ngx_feature_name="NGX_HAVE_LOCALTIME_R"
-ngx_feature_run=no
-ngx_feature_incs="#include <time.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="struct tm t; time_t c=0; localtime_r(&c, &t)"
+njt_feature="localtime_r()"
+njt_feature_name="NJT_HAVE_LOCALTIME_R"
+njt_feature_run=no
+njt_feature_incs="#include <time.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="struct tm t; time_t c=0; localtime_r(&c, &t)"
 . auto/feature
 
 
-ngx_feature="clock_gettime(CLOCK_MONOTONIC)"
-ngx_feature_name="NGX_HAVE_CLOCK_MONOTONIC"
-ngx_feature_run=no
-ngx_feature_incs="#include <time.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts)"
+njt_feature="clock_gettime(CLOCK_MONOTONIC)"
+njt_feature_name="NJT_HAVE_CLOCK_MONOTONIC"
+njt_feature_run=no
+njt_feature_incs="#include <time.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts)"
 . auto/feature
 
 
-if [ $ngx_found = no ]; then
+if [ $njt_found = no ]; then
 
     # Linux before glibc 2.17, notably CentOS 6
 
-    ngx_feature="clock_gettime(CLOCK_MONOTONIC) in librt"
-    ngx_feature_libs="-lrt"
+    njt_feature="clock_gettime(CLOCK_MONOTONIC) in librt"
+    njt_feature_libs="-lrt"
     . auto/feature
 
-    if [ $ngx_found = yes ]; then
+    if [ $njt_found = yes ]; then
         CORE_LIBS="$CORE_LIBS -lrt"
     fi
 fi
 
 
-ngx_feature="posix_memalign()"
-ngx_feature_name="NGX_HAVE_POSIX_MEMALIGN"
-ngx_feature_run=no
-ngx_feature_incs="#include <stdlib.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="void *p; int n; n = posix_memalign(&p, 4096, 4096);
+njt_feature="posix_memalign()"
+njt_feature_name="NJT_HAVE_POSIX_MEMALIGN"
+njt_feature_run=no
+njt_feature_incs="#include <stdlib.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="void *p; int n; n = posix_memalign(&p, 4096, 4096);
                   if (n != 0) return 1"
 . auto/feature
 
 
-ngx_feature="memalign()"
-ngx_feature_name="NGX_HAVE_MEMALIGN"
-ngx_feature_run=no
-ngx_feature_incs="#include <stdlib.h>
+njt_feature="memalign()"
+njt_feature_name="NJT_HAVE_MEMALIGN"
+njt_feature_run=no
+njt_feature_incs="#include <stdlib.h>
                   #include <malloc.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="void *p; p = memalign(4096, 4096);
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="void *p; p = memalign(4096, 4096);
                   if (p == NULL) return 1"
 . auto/feature
 
 
-ngx_feature="mmap(MAP_ANON|MAP_SHARED)"
-ngx_feature_name="NGX_HAVE_MAP_ANON"
-ngx_feature_run=yes
-ngx_feature_incs="#include <sys/mman.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="void *p;
+njt_feature="mmap(MAP_ANON|MAP_SHARED)"
+njt_feature_name="NJT_HAVE_MAP_ANON"
+njt_feature_run=yes
+njt_feature_incs="#include <sys/mman.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="void *p;
                   p = mmap(NULL, 4096, PROT_READ|PROT_WRITE,
                            MAP_ANON|MAP_SHARED, -1, 0);
                   if (p == MAP_FAILED) return 1;"
 . auto/feature
 
 
-ngx_feature='mmap("/dev/zero", MAP_SHARED)'
-ngx_feature_name="NGX_HAVE_MAP_DEVZERO"
-ngx_feature_run=yes
-ngx_feature_incs="#include <sys/mman.h>
+njt_feature='mmap("/dev/zero", MAP_SHARED)'
+njt_feature_name="NJT_HAVE_MAP_DEVZERO"
+njt_feature_run=yes
+njt_feature_incs="#include <sys/mman.h>
                   #include <sys/stat.h>
                   #include <fcntl.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test='void *p; int  fd;
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test='void *p; int  fd;
                   fd = open("/dev/zero", O_RDWR);
                   p = mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
                   if (p == MAP_FAILED) return 1;'
 . auto/feature
 
 
-ngx_feature="System V shared memory"
-ngx_feature_name="NGX_HAVE_SYSVSHM"
-ngx_feature_run=yes
-ngx_feature_incs="#include <sys/ipc.h>
+njt_feature="System V shared memory"
+njt_feature_name="NJT_HAVE_SYSVSHM"
+njt_feature_run=yes
+njt_feature_incs="#include <sys/ipc.h>
                   #include <sys/shm.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="int  id;
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="int  id;
                   id = shmget(IPC_PRIVATE, 4096, (SHM_R|SHM_W|IPC_CREAT));
                   if (id == -1) return 1;
                   shmctl(id, IPC_RMID, NULL);"
 . auto/feature
 
 
-ngx_feature="POSIX semaphores"
-ngx_feature_name="NGX_HAVE_POSIX_SEM"
-ngx_feature_run=yes
-ngx_feature_incs="#include <semaphore.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="sem_t  sem;
+njt_feature="POSIX semaphores"
+njt_feature_name="NJT_HAVE_POSIX_SEM"
+njt_feature_run=yes
+njt_feature_incs="#include <semaphore.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="sem_t  sem;
                   if (sem_init(&sem, 1, 0) == -1) return 1;
                   sem_destroy(&sem);"
 . auto/feature
 
 
-if [ $ngx_found = no ]; then
+if [ $njt_found = no ]; then
 
     # Linux has POSIX semaphores in libpthread
-    ngx_feature="POSIX semaphores in libpthread"
-    ngx_feature_libs=-lpthread
+    njt_feature="POSIX semaphores in libpthread"
+    njt_feature_libs=-lpthread
     . auto/feature
 
-    if [ $ngx_found = yes ]; then
+    if [ $njt_found = yes ]; then
         CORE_LIBS="$CORE_LIBS -lpthread"
-        NGX_LIBPTHREAD="-lpthread"
+        NJT_LIBPTHREAD="-lpthread"
     fi
 fi
 
 
-if [ $ngx_found = no ]; then
+if [ $njt_found = no ]; then
 
     # Solaris has POSIX semaphores in librt
-    ngx_feature="POSIX semaphores in librt"
-    ngx_feature_libs=-lrt
+    njt_feature="POSIX semaphores in librt"
+    njt_feature_libs=-lrt
     . auto/feature
 
-    if [ $ngx_found = yes ]; then
+    if [ $njt_found = yes ]; then
         CORE_LIBS="$CORE_LIBS -lrt"
     fi
 fi
 
 
-ngx_feature="struct msghdr.msg_control"
-ngx_feature_name="NGX_HAVE_MSGHDR_MSG_CONTROL"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/socket.h>
+njt_feature="struct msghdr.msg_control"
+njt_feature_name="NJT_HAVE_MSGHDR_MSG_CONTROL"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
                   #include <stdio.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="struct msghdr  msg;
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="struct msghdr  msg;
                   printf(\"%d\", (int) sizeof(msg.msg_control))"
 . auto/feature
 
 
-ngx_feature="ioctl(FIONBIO)"
-ngx_feature_name="NGX_HAVE_FIONBIO"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/ioctl.h>
+njt_feature="ioctl(FIONBIO)"
+njt_feature_name="NJT_HAVE_FIONBIO"
+njt_feature_run=no
+njt_feature_incs="#include <sys/ioctl.h>
                   #include <stdio.h>
-                  $NGX_INCLUDE_SYS_FILIO_H"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="int i = FIONBIO; printf(\"%d\", i)"
+                  $NJT_INCLUDE_SYS_FILIO_H"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="int i = FIONBIO; printf(\"%d\", i)"
 . auto/feature
 
 
-ngx_feature="ioctl(FIONREAD)"
-ngx_feature_name="NGX_HAVE_FIONREAD"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/ioctl.h>
+njt_feature="ioctl(FIONREAD)"
+njt_feature_name="NJT_HAVE_FIONREAD"
+njt_feature_run=no
+njt_feature_incs="#include <sys/ioctl.h>
                   #include <stdio.h>
-                  $NGX_INCLUDE_SYS_FILIO_H"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="int i = FIONREAD; printf(\"%d\", i)"
+                  $NJT_INCLUDE_SYS_FILIO_H"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="int i = FIONREAD; printf(\"%d\", i)"
 . auto/feature
 
 
-ngx_feature="struct tm.tm_gmtoff"
-ngx_feature_name="NGX_HAVE_GMTOFF"
-ngx_feature_run=no
-ngx_feature_incs="#include <time.h>
+njt_feature="struct tm.tm_gmtoff"
+njt_feature_name="NJT_HAVE_GMTOFF"
+njt_feature_run=no
+njt_feature_incs="#include <time.h>
                   #include <stdio.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="struct tm  tm; tm.tm_gmtoff = 0;
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="struct tm  tm; tm.tm_gmtoff = 0;
                   printf(\"%d\", (int) tm.tm_gmtoff)"
 . auto/feature
 
 
-ngx_feature="struct dirent.d_namlen"
-ngx_feature_name="NGX_HAVE_D_NAMLEN"
-ngx_feature_run=no
-ngx_feature_incs="#include <dirent.h>
+njt_feature="struct dirent.d_namlen"
+njt_feature_name="NJT_HAVE_D_NAMLEN"
+njt_feature_run=no
+njt_feature_incs="#include <dirent.h>
                   #include <stdio.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="struct dirent  dir; dir.d_namlen = 0;
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="struct dirent  dir; dir.d_namlen = 0;
                   printf(\"%d\", (int) dir.d_namlen)"
 . auto/feature
 
 
-ngx_feature="struct dirent.d_type"
-ngx_feature_name="NGX_HAVE_D_TYPE"
-ngx_feature_run=no
-ngx_feature_incs="#include <dirent.h>
+njt_feature="struct dirent.d_type"
+njt_feature_name="NJT_HAVE_D_TYPE"
+njt_feature_run=no
+njt_feature_incs="#include <dirent.h>
                   #include <stdio.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="struct dirent  dir; dir.d_type = DT_REG;
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="struct dirent  dir; dir.d_type = DT_REG;
                   printf(\"%d\", (int) dir.d_type)"
 . auto/feature
 
 
-ngx_feature="sysconf(_SC_NPROCESSORS_ONLN)"
-ngx_feature_name="NGX_HAVE_SC_NPROCESSORS_ONLN"
-ngx_feature_run=no
-ngx_feature_incs=
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="sysconf(_SC_NPROCESSORS_ONLN)"
+njt_feature="sysconf(_SC_NPROCESSORS_ONLN)"
+njt_feature_name="NJT_HAVE_SC_NPROCESSORS_ONLN"
+njt_feature_run=no
+njt_feature_incs=
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="sysconf(_SC_NPROCESSORS_ONLN)"
 . auto/feature
 
 
-ngx_feature="sysconf(_SC_LEVEL1_DCACHE_LINESIZE)"
-ngx_feature_name="NGX_HAVE_LEVEL1_DCACHE_LINESIZE"
-ngx_feature_run=no
-ngx_feature_incs=
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="sysconf(_SC_LEVEL1_DCACHE_LINESIZE)"
+njt_feature="sysconf(_SC_LEVEL1_DCACHE_LINESIZE)"
+njt_feature_name="NJT_HAVE_LEVEL1_DCACHE_LINESIZE"
+njt_feature_run=no
+njt_feature_incs=
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="sysconf(_SC_LEVEL1_DCACHE_LINESIZE)"
 . auto/feature
 
 
-ngx_feature="openat(), fstatat()"
-ngx_feature_name="NGX_HAVE_OPENAT"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/types.h>
+njt_feature="openat(), fstatat()"
+njt_feature_name="NJT_HAVE_OPENAT"
+njt_feature_run=no
+njt_feature_incs="#include <sys/types.h>
                   #include <sys/stat.h>
                   #include <fcntl.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test="struct stat sb;
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="struct stat sb;
                   openat(AT_FDCWD, \".\", O_RDONLY|O_NOFOLLOW);
                   fstatat(AT_FDCWD, \".\", &sb, AT_SYMLINK_NOFOLLOW);"
 . auto/feature
 
 
-ngx_feature="getaddrinfo()"
-ngx_feature_name="NGX_HAVE_GETADDRINFO"
-ngx_feature_run=no
-ngx_feature_incs="#include <sys/types.h>
+njt_feature="getaddrinfo()"
+njt_feature_name="NJT_HAVE_GETADDRINFO"
+njt_feature_run=no
+njt_feature_incs="#include <sys/types.h>
                   #include <sys/socket.h>
                   #include <netdb.h>"
-ngx_feature_path=
-ngx_feature_libs=
-ngx_feature_test='struct addrinfo *res;
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test='struct addrinfo *res;
                   if (getaddrinfo("localhost", NULL, NULL, &res) != 0) return 1;
                   freeaddrinfo(res)'
 . auto/feature

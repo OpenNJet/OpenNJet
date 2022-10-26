@@ -3,22 +3,22 @@
 # Copyright (C) Nginx, Inc.
 
 
-echo "creating $NGX_MAKEFILE"
+echo "creating $NJT_MAKEFILE"
 
-mkdir -p $NGX_OBJS/src/core $NGX_OBJS/src/event $NGX_OBJS/src/event/modules \
-         $NGX_OBJS/src/os/unix $NGX_OBJS/src/os/win32 \
-         $NGX_OBJS/src/http $NGX_OBJS/src/http/v2 $NGX_OBJS/src/http/modules \
-         $NGX_OBJS/src/http/modules/perl \
-         $NGX_OBJS/src/mail \
-         $NGX_OBJS/src/stream \
-         $NGX_OBJS/src/misc
-
-
-ngx_objs_dir=$NGX_OBJS$ngx_regex_dirsep
-ngx_use_pch=`echo $NGX_USE_PCH | sed -e "s/\//$ngx_regex_dirsep/g"`
+mkdir -p $NJT_OBJS/src/core $NJT_OBJS/src/event $NJT_OBJS/src/event/modules \
+         $NJT_OBJS/src/os/unix $NJT_OBJS/src/os/win32 \
+         $NJT_OBJS/src/http $NJT_OBJS/src/http/v2 $NJT_OBJS/src/http/modules \
+         $NJT_OBJS/src/http/modules/perl \
+         $NJT_OBJS/src/mail \
+         $NJT_OBJS/src/stream \
+         $NJT_OBJS/src/misc
 
 
-cat << END                                                     > $NGX_MAKEFILE
+njt_objs_dir=$NJT_OBJS$njt_regex_dirsep
+njt_use_pch=`echo $NJT_USE_PCH | sed -e "s/\//$njt_regex_dirsep/g"`
+
+
+cat << END                                                     > $NJT_MAKEFILE
 
 CC =	$CC
 CFLAGS = $CFLAGS
@@ -28,45 +28,45 @@ LINK =	$LINK
 END
 
 
-if test -n "$NGX_PERL_CFLAGS"; then
-    echo NGX_PERL_CFLAGS = $NGX_PERL_CFLAGS                   >> $NGX_MAKEFILE
-    echo NGX_PM_CFLAGS = $NGX_PM_CFLAGS                       >> $NGX_MAKEFILE
-    echo NGX_PM_LDFLAGS = $NGX_PM_LDFLAGS                     >> $NGX_MAKEFILE
+if test -n "$NJT_PERL_CFLAGS"; then
+    echo NJT_PERL_CFLAGS = $NJT_PERL_CFLAGS                   >> $NJT_MAKEFILE
+    echo NJT_PM_CFLAGS = $NJT_PM_CFLAGS                       >> $NJT_MAKEFILE
+    echo NJT_PM_LDFLAGS = $NJT_PM_LDFLAGS                     >> $NJT_MAKEFILE
 fi
 
 
 # ALL_INCS, required by the addons and by OpenWatcom C precompiled headers
 
-ngx_incs=`echo $CORE_INCS $NGX_OBJS $HTTP_INCS $MAIL_INCS $STREAM_INCS\
-    | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont$ngx_include_opt\1/g" \
-          -e "s/\//$ngx_regex_dirsep/g"`
+njt_incs=`echo $CORE_INCS $NJT_OBJS $HTTP_INCS $MAIL_INCS $STREAM_INCS\
+    | sed -e "s/  *\([^ ][^ ]*\)/$njt_regex_cont$njt_include_opt\1/g" \
+          -e "s/\//$njt_regex_dirsep/g"`
 
-cat << END                                                    >> $NGX_MAKEFILE
+cat << END                                                    >> $NJT_MAKEFILE
 
-ALL_INCS = $ngx_include_opt$ngx_incs
+ALL_INCS = $njt_include_opt$njt_incs
 
 END
 
 
-ngx_all_srcs="$CORE_SRCS"
+njt_all_srcs="$CORE_SRCS"
 
 
 # the core dependencies and include paths
 
-ngx_deps=`echo $CORE_DEPS $NGX_AUTO_CONFIG_H $NGX_PCH \
-    | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont\1/g" \
-          -e "s/\//$ngx_regex_dirsep/g"`
+njt_deps=`echo $CORE_DEPS $NJT_AUTO_CONFIG_H $NJT_PCH \
+    | sed -e "s/  *\([^ ][^ ]*\)/$njt_regex_cont\1/g" \
+          -e "s/\//$njt_regex_dirsep/g"`
 
-ngx_incs=`echo $CORE_INCS $NGX_OBJS \
-    | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont$ngx_include_opt\1/g" \
-          -e "s/\//$ngx_regex_dirsep/g"`
+njt_incs=`echo $CORE_INCS $NJT_OBJS \
+    | sed -e "s/  *\([^ ][^ ]*\)/$njt_regex_cont$njt_include_opt\1/g" \
+          -e "s/\//$njt_regex_dirsep/g"`
 
-cat << END                                                    >> $NGX_MAKEFILE
+cat << END                                                    >> $NJT_MAKEFILE
 
-CORE_DEPS = $ngx_deps
+CORE_DEPS = $njt_deps
 
 
-CORE_INCS = $ngx_include_opt$ngx_incs
+CORE_INCS = $njt_include_opt$njt_incs
 
 END
 
@@ -75,22 +75,22 @@ END
 
 if [ $HTTP = YES ]; then
 
-    ngx_all_srcs="$ngx_all_srcs $HTTP_SRCS"
+    njt_all_srcs="$njt_all_srcs $HTTP_SRCS"
 
-    ngx_deps=`echo $HTTP_DEPS \
-        | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont\1/g" \
-              -e "s/\//$ngx_regex_dirsep/g"`
+    njt_deps=`echo $HTTP_DEPS \
+        | sed -e "s/  *\([^ ][^ ]*\)/$njt_regex_cont\1/g" \
+              -e "s/\//$njt_regex_dirsep/g"`
 
-    ngx_incs=`echo $HTTP_INCS \
-        | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont$ngx_include_opt\1/g" \
-              -e "s/\//$ngx_regex_dirsep/g"`
+    njt_incs=`echo $HTTP_INCS \
+        | sed -e "s/  *\([^ ][^ ]*\)/$njt_regex_cont$njt_include_opt\1/g" \
+              -e "s/\//$njt_regex_dirsep/g"`
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJT_MAKEFILE
 
-HTTP_DEPS = $ngx_deps
+HTTP_DEPS = $njt_deps
 
 
-HTTP_INCS = $ngx_include_opt$ngx_incs
+HTTP_INCS = $njt_include_opt$njt_incs
 
 END
 
@@ -102,23 +102,23 @@ fi
 if [ $MAIL != NO ]; then
 
     if [ $MAIL = YES ]; then
-        ngx_all_srcs="$ngx_all_srcs $MAIL_SRCS"
+        njt_all_srcs="$njt_all_srcs $MAIL_SRCS"
     fi
 
-    ngx_deps=`echo $MAIL_DEPS \
-        | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont\1/g" \
-              -e "s/\//$ngx_regex_dirsep/g"`
+    njt_deps=`echo $MAIL_DEPS \
+        | sed -e "s/  *\([^ ][^ ]*\)/$njt_regex_cont\1/g" \
+              -e "s/\//$njt_regex_dirsep/g"`
 
-    ngx_incs=`echo $MAIL_INCS \
-        | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont$ngx_include_opt\1/g" \
-              -e "s/\//$ngx_regex_dirsep/g"`
+    njt_incs=`echo $MAIL_INCS \
+        | sed -e "s/  *\([^ ][^ ]*\)/$njt_regex_cont$njt_include_opt\1/g" \
+              -e "s/\//$njt_regex_dirsep/g"`
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJT_MAKEFILE
 
-MAIL_DEPS = $ngx_deps
+MAIL_DEPS = $njt_deps
 
 
-MAIL_INCS = $ngx_include_opt$ngx_incs
+MAIL_INCS = $njt_include_opt$njt_incs
 
 END
 
@@ -130,144 +130,144 @@ fi
 if [ $STREAM != NO ]; then
 
     if [ $STREAM = YES ]; then
-        ngx_all_srcs="$ngx_all_srcs $STREAM_SRCS"
+        njt_all_srcs="$njt_all_srcs $STREAM_SRCS"
     fi
 
-    ngx_deps=`echo $STREAM_DEPS \
-        | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont\1/g" \
-              -e "s/\//$ngx_regex_dirsep/g"`
+    njt_deps=`echo $STREAM_DEPS \
+        | sed -e "s/  *\([^ ][^ ]*\)/$njt_regex_cont\1/g" \
+              -e "s/\//$njt_regex_dirsep/g"`
 
-    ngx_incs=`echo $STREAM_INCS \
-        | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont$ngx_include_opt\1/g" \
-              -e "s/\//$ngx_regex_dirsep/g"`
+    njt_incs=`echo $STREAM_INCS \
+        | sed -e "s/  *\([^ ][^ ]*\)/$njt_regex_cont$njt_include_opt\1/g" \
+              -e "s/\//$njt_regex_dirsep/g"`
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJT_MAKEFILE
 
-STREAM_DEPS = $ngx_deps
-
-
-STREAM_INCS = $ngx_include_opt$ngx_incs
-
-END
-
-fi
+STREAM_DEPS = $njt_deps
 
 
-ngx_all_srcs="$ngx_all_srcs $MISC_SRCS"
-
-
-if test -n "$NGX_ADDON_SRCS$DYNAMIC_MODULES"; then
-
-cat << END                                                >> $NGX_MAKEFILE
-
-ADDON_DEPS = \$(CORE_DEPS) $NGX_ADDON_DEPS
+STREAM_INCS = $njt_include_opt$njt_incs
 
 END
 
 fi
 
 
-# nginx
+njt_all_srcs="$njt_all_srcs $MISC_SRCS"
 
-ngx_all_srcs=`echo $ngx_all_srcs | sed -e "s/\//$ngx_regex_dirsep/g"`
 
-for ngx_src in $NGX_ADDON_SRCS
+if test -n "$NJT_ADDON_SRCS$DYNAMIC_MODULES"; then
+
+cat << END                                                >> $NJT_MAKEFILE
+
+ADDON_DEPS = \$(CORE_DEPS) $NJT_ADDON_DEPS
+
+END
+
+fi
+
+
+# njet
+
+njt_all_srcs=`echo $njt_all_srcs | sed -e "s/\//$njt_regex_dirsep/g"`
+
+for njt_src in $NJT_ADDON_SRCS
 do
-    ngx_obj="addon/`basename \`dirname $ngx_src\``"
+    njt_obj="addon/`basename \`dirname $njt_src\``"
 
-    test -d $NGX_OBJS/$ngx_obj || mkdir -p $NGX_OBJS/$ngx_obj
+    test -d $NJT_OBJS/$njt_obj || mkdir -p $NJT_OBJS/$njt_obj
 
-    ngx_obj=`echo $ngx_obj/\`basename $ngx_src\` \
-        | sed -e "s/\//$ngx_regex_dirsep/g"`
+    njt_obj=`echo $njt_obj/\`basename $njt_src\` \
+        | sed -e "s/\//$njt_regex_dirsep/g"`
 
-    ngx_all_srcs="$ngx_all_srcs $ngx_obj"
+    njt_all_srcs="$njt_all_srcs $njt_obj"
 done
 
-ngx_all_objs=`echo $ngx_all_srcs \
-    | sed -e "s#\([^ ]*\.\)cpp#$NGX_OBJS\/\1$ngx_objext#g" \
-          -e "s#\([^ ]*\.\)cc#$NGX_OBJS\/\1$ngx_objext#g" \
-          -e "s#\([^ ]*\.\)c#$NGX_OBJS\/\1$ngx_objext#g" \
-          -e "s#\([^ ]*\.\)S#$NGX_OBJS\/\1$ngx_objext#g"`
+njt_all_objs=`echo $njt_all_srcs \
+    | sed -e "s#\([^ ]*\.\)cpp#$NJT_OBJS\/\1$njt_objext#g" \
+          -e "s#\([^ ]*\.\)cc#$NJT_OBJS\/\1$njt_objext#g" \
+          -e "s#\([^ ]*\.\)c#$NJT_OBJS\/\1$njt_objext#g" \
+          -e "s#\([^ ]*\.\)S#$NJT_OBJS\/\1$njt_objext#g"`
 
-ngx_modules_c=`echo $NGX_MODULES_C | sed -e "s/\//$ngx_regex_dirsep/g"`
+njt_modules_c=`echo $NJT_MODULES_C | sed -e "s/\//$njt_regex_dirsep/g"`
 
-ngx_modules_obj=`echo $ngx_modules_c | sed -e "s/\(.*\.\)c/\1$ngx_objext/"`
+njt_modules_obj=`echo $njt_modules_c | sed -e "s/\(.*\.\)c/\1$njt_objext/"`
 
 
-if test -n "$NGX_RES"; then
-   ngx_res=$NGX_RES
+if test -n "$NJT_RES"; then
+   njt_res=$NJT_RES
 else
-   ngx_res="$NGX_RC $NGX_ICONS"
-   ngx_rcc=`echo $NGX_RCC | sed -e "s/\//$ngx_regex_dirsep/g"`
+   njt_res="$NJT_RC $NJT_ICONS"
+   njt_rcc=`echo $NJT_RCC | sed -e "s/\//$njt_regex_dirsep/g"`
 fi
 
-ngx_deps=`echo $ngx_all_objs $ngx_modules_obj $ngx_res $LINK_DEPS \
-    | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont\1/g" \
-          -e "s/\//$ngx_regex_dirsep/g"`
+njt_deps=`echo $njt_all_objs $njt_modules_obj $njt_res $LINK_DEPS \
+    | sed -e "s/  *\([^ ][^ ]*\)/$njt_regex_cont\1/g" \
+          -e "s/\//$njt_regex_dirsep/g"`
 
-ngx_objs=`echo $ngx_all_objs $ngx_modules_obj \
-    | sed -e "s/  *\([^ ][^ ]*\)/$ngx_long_regex_cont\1/g" \
-          -e "s/\//$ngx_regex_dirsep/g"`
+njt_objs=`echo $njt_all_objs $njt_modules_obj \
+    | sed -e "s/  *\([^ ][^ ]*\)/$njt_long_regex_cont\1/g" \
+          -e "s/\//$njt_regex_dirsep/g"`
 
-ngx_libs=
-if test -n "$NGX_LD_OPT$CORE_LIBS"; then
-    ngx_libs=`echo $NGX_LD_OPT $CORE_LIBS \
-        | sed -e "s/\//$ngx_regex_dirsep/g" -e "s/^/$ngx_long_regex_cont/"`
+njt_libs=
+if test -n "$NJT_LD_OPT$CORE_LIBS"; then
+    njt_libs=`echo $NJT_LD_OPT $CORE_LIBS \
+        | sed -e "s/\//$njt_regex_dirsep/g" -e "s/^/$njt_long_regex_cont/"`
 fi
 
-ngx_link=${CORE_LINK:+`echo $CORE_LINK \
-    | sed -e "s/\//$ngx_regex_dirsep/g" -e "s/^/$ngx_long_regex_cont/"`}
+njt_link=${CORE_LINK:+`echo $CORE_LINK \
+    | sed -e "s/\//$njt_regex_dirsep/g" -e "s/^/$njt_long_regex_cont/"`}
 
-ngx_main_link=${MAIN_LINK:+`echo $MAIN_LINK \
-    | sed -e "s/\//$ngx_regex_dirsep/g" -e "s/^/$ngx_long_regex_cont/"`}
+njt_main_link=${MAIN_LINK:+`echo $MAIN_LINK \
+    | sed -e "s/\//$njt_regex_dirsep/g" -e "s/^/$njt_long_regex_cont/"`}
 
 
-cat << END                                                    >> $NGX_MAKEFILE
+cat << END                                                    >> $NJT_MAKEFILE
 
 build:	binary modules manpage
 
-binary:	$NGX_OBJS${ngx_dirsep}nginx$ngx_binext
+binary:	$NJT_OBJS${njt_dirsep}njet$njt_binext
 
-$NGX_OBJS${ngx_dirsep}nginx$ngx_binext:	$ngx_deps$ngx_spacer
-	\$(LINK) $ngx_long_start$ngx_binout$NGX_OBJS${ngx_dirsep}nginx$ngx_binext$ngx_long_cont$ngx_objs$ngx_libs$ngx_link$ngx_main_link
-	$ngx_rcc
-$ngx_long_end
+$NJT_OBJS${njt_dirsep}njet$njt_binext:	$njt_deps$njt_spacer
+	\$(LINK) $njt_long_start$njt_binout$NJT_OBJS${njt_dirsep}njet$njt_binext$njt_long_cont$njt_objs$njt_libs$njt_link$njt_main_link
+	$njt_rcc
+$njt_long_end
 
 modules:
 END
 
 
-# ngx_modules.c
+# njt_modules.c
 
-if test -n "$NGX_PCH"; then
-    ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
+if test -n "$NJT_PCH"; then
+    njt_cc="\$(CC) $njt_compile_opt \$(CFLAGS) $njt_use_pch \$(ALL_INCS)"
 else
-    ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) \$(CORE_INCS)"
+    njt_cc="\$(CC) $njt_compile_opt \$(CFLAGS) \$(CORE_INCS)"
 fi
 
-cat << END                                                    >> $NGX_MAKEFILE
+cat << END                                                    >> $NJT_MAKEFILE
 
-$ngx_modules_obj:	\$(CORE_DEPS)$ngx_cont$ngx_modules_c
-	$ngx_cc$ngx_tab$ngx_objout$ngx_modules_obj$ngx_tab$ngx_modules_c$NGX_AUX
+$njt_modules_obj:	\$(CORE_DEPS)$njt_cont$njt_modules_c
+	$njt_cc$njt_tab$njt_objout$njt_modules_obj$njt_tab$njt_modules_c$NJT_AUX
 
 END
 
 
 # the core sources
 
-for ngx_src in $CORE_SRCS
+for njt_src in $CORE_SRCS
 do
-    ngx_src=`echo $ngx_src | sed -e "s/\//$ngx_regex_dirsep/g"`
-    ngx_obj=`echo $ngx_src \
-        | sed -e "s#^\(.*\.\)cpp\\$#$ngx_objs_dir\1$ngx_objext#g" \
-              -e "s#^\(.*\.\)cc\\$#$ngx_objs_dir\1$ngx_objext#g" \
-              -e "s#^\(.*\.\)c\\$#$ngx_objs_dir\1$ngx_objext#g" \
-              -e "s#^\(.*\.\)S\\$#$ngx_objs_dir\1$ngx_objext#g"`
+    njt_src=`echo $njt_src | sed -e "s/\//$njt_regex_dirsep/g"`
+    njt_obj=`echo $njt_src \
+        | sed -e "s#^\(.*\.\)cpp\\$#$njt_objs_dir\1$njt_objext#g" \
+              -e "s#^\(.*\.\)cc\\$#$njt_objs_dir\1$njt_objext#g" \
+              -e "s#^\(.*\.\)c\\$#$njt_objs_dir\1$njt_objext#g" \
+              -e "s#^\(.*\.\)S\\$#$njt_objs_dir\1$njt_objext#g"`
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJT_MAKEFILE
 
-$ngx_obj:	\$(CORE_DEPS)$ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+$njt_obj:	\$(CORE_DEPS)$njt_cont$njt_src
+	$njt_cc$njt_tab$njt_objout$njt_obj$njt_tab$njt_src$NJT_AUX
 
 END
 
@@ -278,37 +278,37 @@ done
 
 if [ $HTTP = YES ]; then
 
-    if test -n "$NGX_PCH"; then
-        ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
+    if test -n "$NJT_PCH"; then
+        njt_cc="\$(CC) $njt_compile_opt \$(CFLAGS) $njt_use_pch \$(ALL_INCS)"
     else
-        ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) \$(CORE_INCS) \$(HTTP_INCS)"
-        ngx_perl_cc="\$(CC) $ngx_compile_opt \$(NGX_PERL_CFLAGS)"
-        ngx_perl_cc="$ngx_perl_cc \$(CORE_INCS) \$(HTTP_INCS)"
+        njt_cc="\$(CC) $njt_compile_opt \$(CFLAGS) \$(CORE_INCS) \$(HTTP_INCS)"
+        njt_perl_cc="\$(CC) $njt_compile_opt \$(NJT_PERL_CFLAGS)"
+        njt_perl_cc="$njt_perl_cc \$(CORE_INCS) \$(HTTP_INCS)"
     fi
 
-    for ngx_source in $HTTP_SRCS
+    for njt_source in $HTTP_SRCS
     do
-        ngx_src=`echo $ngx_source | sed -e "s/\//$ngx_regex_dirsep/g"`
-        ngx_obj=`echo $ngx_src \
-            | sed -e "s#^\(.*\.\)cpp\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)cc\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)c\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)S\\$#$ngx_objs_dir\1$ngx_objext#g"`
+        njt_src=`echo $njt_source | sed -e "s/\//$njt_regex_dirsep/g"`
+        njt_obj=`echo $njt_src \
+            | sed -e "s#^\(.*\.\)cpp\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)cc\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)c\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)S\\$#$njt_objs_dir\1$njt_objext#g"`
 
-        if [ $ngx_source = src/http/modules/perl/ngx_http_perl_module.c ]; then
+        if [ $njt_source = src/http/modules/perl/njt_http_perl_module.c ]; then
 
-            cat << END                                        >> $NGX_MAKEFILE
+            cat << END                                        >> $NJT_MAKEFILE
 
-$ngx_obj:	\$(CORE_DEPS) \$(HTTP_DEPS)$ngx_cont$ngx_src
-	$ngx_perl_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+$njt_obj:	\$(CORE_DEPS) \$(HTTP_DEPS)$njt_cont$njt_src
+	$njt_perl_cc$njt_tab$njt_objout$njt_obj$njt_tab$njt_src$NJT_AUX
 
 END
         else
 
-            cat << END                                        >> $NGX_MAKEFILE
+            cat << END                                        >> $NJT_MAKEFILE
 
-$ngx_obj:	\$(CORE_DEPS) \$(HTTP_DEPS)$ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+$njt_obj:	\$(CORE_DEPS) \$(HTTP_DEPS)$njt_cont$njt_src
+	$njt_cc$njt_tab$njt_objout$njt_obj$njt_tab$njt_src$NJT_AUX
 
 END
 
@@ -322,25 +322,25 @@ fi
 
 if [ $MAIL = YES ]; then
 
-    if test -n "$NGX_PCH"; then
-        ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
+    if test -n "$NJT_PCH"; then
+        njt_cc="\$(CC) $njt_compile_opt \$(CFLAGS) $njt_use_pch \$(ALL_INCS)"
     else
-        ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) \$(CORE_INCS) \$(MAIL_INCS)"
+        njt_cc="\$(CC) $njt_compile_opt \$(CFLAGS) \$(CORE_INCS) \$(MAIL_INCS)"
     fi
 
-    for ngx_src in $MAIL_SRCS
+    for njt_src in $MAIL_SRCS
     do
-        ngx_src=`echo $ngx_src | sed -e "s/\//$ngx_regex_dirsep/g"`
-        ngx_obj=`echo $ngx_src \
-            | sed -e "s#^\(.*\.\)cpp\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)cc\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)c\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)S\\$#$ngx_objs_dir\1$ngx_objext#g"`
+        njt_src=`echo $njt_src | sed -e "s/\//$njt_regex_dirsep/g"`
+        njt_obj=`echo $njt_src \
+            | sed -e "s#^\(.*\.\)cpp\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)cc\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)c\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)S\\$#$njt_objs_dir\1$njt_objext#g"`
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJT_MAKEFILE
 
-$ngx_obj:	\$(CORE_DEPS) \$(MAIL_DEPS)$ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+$njt_obj:	\$(CORE_DEPS) \$(MAIL_DEPS)$njt_cont$njt_src
+	$njt_cc$njt_tab$njt_objout$njt_obj$njt_tab$njt_src$NJT_AUX
 
 END
     done
@@ -352,25 +352,25 @@ fi
 
 if [ $STREAM = YES ]; then
 
-    if test -n "$NGX_PCH"; then
-        ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
+    if test -n "$NJT_PCH"; then
+        njt_cc="\$(CC) $njt_compile_opt \$(CFLAGS) $njt_use_pch \$(ALL_INCS)"
     else
-        ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) \$(CORE_INCS) \$(STREAM_INCS)"
+        njt_cc="\$(CC) $njt_compile_opt \$(CFLAGS) \$(CORE_INCS) \$(STREAM_INCS)"
     fi
 
-    for ngx_src in $STREAM_SRCS
+    for njt_src in $STREAM_SRCS
     do
-        ngx_src=`echo $ngx_src | sed -e "s/\//$ngx_regex_dirsep/g"`
-        ngx_obj=`echo $ngx_src \
-            | sed -e "s#^\(.*\.\)cpp\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)cc\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)c\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)S\\$#$ngx_objs_dir\1$ngx_objext#g"`
+        njt_src=`echo $njt_src | sed -e "s/\//$njt_regex_dirsep/g"`
+        njt_obj=`echo $njt_src \
+            | sed -e "s#^\(.*\.\)cpp\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)cc\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)c\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)S\\$#$njt_objs_dir\1$njt_objext#g"`
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJT_MAKEFILE
 
-$ngx_obj:	\$(CORE_DEPS) \$(STREAM_DEPS)$ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+$njt_obj:	\$(CORE_DEPS) \$(STREAM_DEPS)$njt_cont$njt_src
+	$njt_cc$njt_tab$njt_objout$njt_obj$njt_tab$njt_src$NJT_AUX
 
 END
     done
@@ -382,21 +382,21 @@ fi
 
 if test -n "$MISC_SRCS"; then
 
-    ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
+    njt_cc="\$(CC) $njt_compile_opt \$(CFLAGS) $njt_use_pch \$(ALL_INCS)"
 
-    for ngx_src in $MISC_SRCS
+    for njt_src in $MISC_SRCS
     do
-        ngx_src=`echo $ngx_src | sed -e "s/\//$ngx_regex_dirsep/g"`
-        ngx_obj=`echo $ngx_src \
-            | sed -e "s#^\(.*\.\)cpp\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)cc\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)c\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)S\\$#$ngx_objs_dir\1$ngx_objext#g"`
+        njt_src=`echo $njt_src | sed -e "s/\//$njt_regex_dirsep/g"`
+        njt_obj=`echo $njt_src \
+            | sed -e "s#^\(.*\.\)cpp\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)cc\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)c\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)S\\$#$njt_objs_dir\1$njt_objext#g"`
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJT_MAKEFILE
 
-$ngx_obj:	\$(CORE_DEPS) $ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+$njt_obj:	\$(CORE_DEPS) $njt_cont$njt_src
+	$njt_cc$njt_tab$njt_objout$njt_obj$njt_tab$njt_src$NJT_AUX
 
 END
     done
@@ -406,29 +406,29 @@ fi
 
 # the addons sources
 
-if test -n "$NGX_ADDON_SRCS"; then
+if test -n "$NJT_ADDON_SRCS"; then
 
-    ngx_cc="\$(CC) $ngx_compile_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
+    njt_cc="\$(CC) $njt_compile_opt \$(CFLAGS) $njt_use_pch \$(ALL_INCS)"
 
-    for ngx_src in $NGX_ADDON_SRCS
+    for njt_src in $NJT_ADDON_SRCS
     do
-        ngx_obj="addon/`basename \`dirname $ngx_src\``"
+        njt_obj="addon/`basename \`dirname $njt_src\``"
 
-        ngx_obj=`echo $ngx_obj/\`basename $ngx_src\` \
-            | sed -e "s/\//$ngx_regex_dirsep/g"`
+        njt_obj=`echo $njt_obj/\`basename $njt_src\` \
+            | sed -e "s/\//$njt_regex_dirsep/g"`
 
-        ngx_obj=`echo $ngx_obj \
-            | sed -e "s#^\(.*\.\)cpp\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)cc\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)c\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)S\\$#$ngx_objs_dir\1$ngx_objext#g"`
+        njt_obj=`echo $njt_obj \
+            | sed -e "s#^\(.*\.\)cpp\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)cc\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)c\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)S\\$#$njt_objs_dir\1$njt_objext#g"`
 
-        ngx_src=`echo $ngx_src | sed -e "s/\//$ngx_regex_dirsep/g"`
+        njt_src=`echo $njt_src | sed -e "s/\//$njt_regex_dirsep/g"`
 
-        cat << END                                            >> $NGX_MAKEFILE
+        cat << END                                            >> $NJT_MAKEFILE
 
-$ngx_obj:	\$(ADDON_DEPS)$ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+$njt_obj:	\$(ADDON_DEPS)$njt_cont$njt_src
+	$njt_cc$njt_tab$njt_objout$njt_obj$njt_tab$njt_src$NJT_AUX
 
 END
     done
@@ -438,12 +438,12 @@ fi
 
 # the addons config.make
 
-if test -n "$NGX_ADDONS$DYNAMIC_ADDONS"; then
+if test -n "$NJT_ADDONS$DYNAMIC_ADDONS"; then
 
-    for ngx_addon_dir in $NGX_ADDONS $DYNAMIC_ADDONS
+    for njt_addon_dir in $NJT_ADDONS $DYNAMIC_ADDONS
     do
-        if test -f $ngx_addon_dir/config.make; then
-            . $ngx_addon_dir/config.make
+        if test -f $njt_addon_dir/config.make; then
+            . $njt_addon_dir/config.make
         fi
     done
 fi
@@ -451,16 +451,16 @@ fi
 
 # Win32 resource file
 
-if test -n "$NGX_RES"; then
+if test -n "$NJT_RES"; then
 
-    ngx_res=`echo "$NGX_RES:	$NGX_RC $NGX_ICONS" \
-                 | sed -e "s/\//$ngx_regex_dirsep/g"`
-    ngx_rcc=`echo $NGX_RCC | sed -e "s/\//$ngx_regex_dirsep/g"`
+    njt_res=`echo "$NJT_RES:	$NJT_RC $NJT_ICONS" \
+                 | sed -e "s/\//$njt_regex_dirsep/g"`
+    njt_rcc=`echo $NJT_RCC | sed -e "s/\//$njt_regex_dirsep/g"`
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJT_MAKEFILE
 
-$ngx_res
-	$ngx_rcc
+$njt_res
+	$njt_rcc
 
 END
 
@@ -469,20 +469,20 @@ fi
 
 # the precompiled headers
 
-if test -n "$NGX_PCH"; then
-    echo "#include <ngx_config.h>" > $NGX_OBJS/ngx_pch.c
+if test -n "$NJT_PCH"; then
+    echo "#include <njt_config.h>" > $NJT_OBJS/njt_pch.c
 
-    ngx_pch="src/core/ngx_config.h $OS_CONFIG $NGX_OBJS/ngx_auto_config.h"
-    ngx_pch=`echo "$NGX_PCH:	$ngx_pch" | sed -e "s/\//$ngx_regex_dirsep/g"`
+    njt_pch="src/core/njt_config.h $OS_CONFIG $NJT_OBJS/njt_auto_config.h"
+    njt_pch=`echo "$NJT_PCH:	$njt_pch" | sed -e "s/\//$njt_regex_dirsep/g"`
 
-    ngx_src="\$(CC) \$(CFLAGS) $NGX_BUILD_PCH $ngx_compile_opt \$(ALL_INCS)"
-    ngx_src="$ngx_src $ngx_objout$NGX_OBJS/ngx_pch.obj $NGX_OBJS/ngx_pch.c"
-    ngx_src=`echo $ngx_src | sed -e "s/\//$ngx_regex_dirsep/g"`
+    njt_src="\$(CC) \$(CFLAGS) $NJT_BUILD_PCH $njt_compile_opt \$(ALL_INCS)"
+    njt_src="$njt_src $njt_objout$NJT_OBJS/njt_pch.obj $NJT_OBJS/njt_pch.c"
+    njt_src=`echo $njt_src | sed -e "s/\//$njt_regex_dirsep/g"`
 
-    cat << END                                                >> $NGX_MAKEFILE
+    cat << END                                                >> $NJT_MAKEFILE
 
-$ngx_pch
-	$ngx_src
+$njt_pch
+	$njt_src
 
 END
 
@@ -491,180 +491,180 @@ fi
 
 # dynamic modules
 
-if test -n "$NGX_PCH"; then
-    ngx_cc="\$(CC) $ngx_compile_opt $ngx_pic_opt \$(CFLAGS) $ngx_use_pch \$(ALL_INCS)"
+if test -n "$NJT_PCH"; then
+    njt_cc="\$(CC) $njt_compile_opt $njt_pic_opt \$(CFLAGS) $njt_use_pch \$(ALL_INCS)"
 else
-    ngx_cc="\$(CC) $ngx_compile_opt $ngx_pic_opt \$(CFLAGS) \$(ALL_INCS)"
-    ngx_perl_cc="\$(CC) $ngx_compile_opt $ngx_pic_opt \$(NGX_PERL_CFLAGS)"
-    ngx_perl_cc="$ngx_perl_cc \$(ALL_INCS)"
+    njt_cc="\$(CC) $njt_compile_opt $njt_pic_opt \$(CFLAGS) \$(ALL_INCS)"
+    njt_perl_cc="\$(CC) $njt_compile_opt $njt_pic_opt \$(NJT_PERL_CFLAGS)"
+    njt_perl_cc="$njt_perl_cc \$(ALL_INCS)"
 fi
 
-for ngx_module in $DYNAMIC_MODULES
+for njt_module in $DYNAMIC_MODULES
 do
-    eval ngx_module_srcs="\$${ngx_module}_SRCS"
-    eval ngx_module_shrd="\$${ngx_module}_SHRD"
-    eval eval ngx_module_libs="\\\"\$${ngx_module}_LIBS\\\""
+    eval njt_module_srcs="\$${njt_module}_SRCS"
+    eval njt_module_shrd="\$${njt_module}_SHRD"
+    eval eval njt_module_libs="\\\"\$${njt_module}_LIBS\\\""
 
-    eval ngx_module_modules="\$${ngx_module}_MODULES"
-    eval ngx_module_order="\$${ngx_module}_ORDER"
+    eval njt_module_modules="\$${njt_module}_MODULES"
+    eval njt_module_order="\$${njt_module}_ORDER"
 
-    ngx_modules_c=$NGX_OBJS/${ngx_module}_modules.c
+    njt_modules_c=$NJT_OBJS/${njt_module}_modules.c
 
-    cat << END                                    > $ngx_modules_c
+    cat << END                                    > $njt_modules_c
 
-#include <ngx_config.h>
-#include <ngx_core.h>
+#include <njt_config.h>
+#include <njt_core.h>
 
 END
 
-    for mod in $ngx_module_modules
+    for mod in $njt_module_modules
     do
-        echo "extern ngx_module_t  $mod;"         >> $ngx_modules_c
+        echo "extern njt_module_t  $mod;"         >> $njt_modules_c
     done
 
-    echo                                          >> $ngx_modules_c
-    echo 'ngx_module_t *ngx_modules[] = {'        >> $ngx_modules_c
+    echo                                          >> $njt_modules_c
+    echo 'njt_module_t *njt_modules[] = {'        >> $njt_modules_c
 
-    for mod in $ngx_module_modules
+    for mod in $njt_module_modules
     do
-        echo "    &$mod,"                         >> $ngx_modules_c
+        echo "    &$mod,"                         >> $njt_modules_c
     done
 
-    cat << END                                    >> $ngx_modules_c
+    cat << END                                    >> $njt_modules_c
     NULL
 };
 
 END
 
-    echo 'char *ngx_module_names[] = {'           >> $ngx_modules_c
+    echo 'char *njt_module_names[] = {'           >> $njt_modules_c
 
-    for mod in $ngx_module_modules
+    for mod in $njt_module_modules
     do
-        echo "    \"$mod\","                      >> $ngx_modules_c
+        echo "    \"$mod\","                      >> $njt_modules_c
     done
 
-    cat << END                                    >> $ngx_modules_c
+    cat << END                                    >> $njt_modules_c
     NULL
 };
 
 END
 
-    echo 'char *ngx_module_order[] = {'           >> $ngx_modules_c
+    echo 'char *njt_module_order[] = {'           >> $njt_modules_c
 
-    for mod in $ngx_module_order
+    for mod in $njt_module_order
     do
-        echo "    \"$mod\","                      >> $ngx_modules_c
+        echo "    \"$mod\","                      >> $njt_modules_c
     done
 
-    cat << END                                    >> $ngx_modules_c
+    cat << END                                    >> $njt_modules_c
     NULL
 };
 
 END
 
-    ngx_modules_c=`echo $ngx_modules_c | sed -e "s/\//$ngx_regex_dirsep/g"`
+    njt_modules_c=`echo $njt_modules_c | sed -e "s/\//$njt_regex_dirsep/g"`
 
-    ngx_modules_obj=`echo $ngx_modules_c \
-        | sed -e "s/\(.*\.\)c/\1$ngx_objext/"`
+    njt_modules_obj=`echo $njt_modules_c \
+        | sed -e "s/\(.*\.\)c/\1$njt_objext/"`
 
-    ngx_module_objs=
-    for ngx_src in $ngx_module_srcs $ngx_module_shrd
+    njt_module_objs=
+    for njt_src in $njt_module_srcs $njt_module_shrd
     do
-        case "$ngx_src" in
+        case "$njt_src" in
             src/*)
-                ngx_obj=$ngx_src
+                njt_obj=$njt_src
                 ;;
             *)
-                ngx_obj="addon/`basename \`dirname $ngx_src\``"
-                mkdir -p $NGX_OBJS/$ngx_obj
-                ngx_obj="$ngx_obj/`basename $ngx_src`"
+                njt_obj="addon/`basename \`dirname $njt_src\``"
+                mkdir -p $NJT_OBJS/$njt_obj
+                njt_obj="$njt_obj/`basename $njt_src`"
                 ;;
         esac
 
-        ngx_module_objs="$ngx_module_objs $ngx_obj"
+        njt_module_objs="$njt_module_objs $njt_obj"
     done
 
-    ngx_module_objs=`echo $ngx_module_objs \
-        | sed -e "s#\([^ ]*\.\)cpp#$NGX_OBJS\/\1$ngx_objext#g" \
-              -e "s#\([^ ]*\.\)cc#$NGX_OBJS\/\1$ngx_objext#g" \
-              -e "s#\([^ ]*\.\)c#$NGX_OBJS\/\1$ngx_objext#g" \
-              -e "s#\([^ ]*\.\)S#$NGX_OBJS\/\1$ngx_objext#g"`
+    njt_module_objs=`echo $njt_module_objs \
+        | sed -e "s#\([^ ]*\.\)cpp#$NJT_OBJS\/\1$njt_objext#g" \
+              -e "s#\([^ ]*\.\)cc#$NJT_OBJS\/\1$njt_objext#g" \
+              -e "s#\([^ ]*\.\)c#$NJT_OBJS\/\1$njt_objext#g" \
+              -e "s#\([^ ]*\.\)S#$NJT_OBJS\/\1$njt_objext#g"`
 
-    ngx_deps=`echo $ngx_module_objs $ngx_modules_obj $LINK_DEPS \
-        | sed -e "s/  *\([^ ][^ ]*\)/$ngx_regex_cont\1/g" \
-              -e "s/\//$ngx_regex_dirsep/g"`
+    njt_deps=`echo $njt_module_objs $njt_modules_obj $LINK_DEPS \
+        | sed -e "s/  *\([^ ][^ ]*\)/$njt_regex_cont\1/g" \
+              -e "s/\//$njt_regex_dirsep/g"`
 
-    ngx_objs=`echo $ngx_module_objs $ngx_modules_obj \
-        | sed -e "s/  *\([^ ][^ ]*\)/$ngx_long_regex_cont\1/g" \
-              -e "s/\//$ngx_regex_dirsep/g"`
+    njt_objs=`echo $njt_module_objs $njt_modules_obj \
+        | sed -e "s/  *\([^ ][^ ]*\)/$njt_long_regex_cont\1/g" \
+              -e "s/\//$njt_regex_dirsep/g"`
 
-    ngx_obj=$NGX_OBJS$ngx_dirsep$ngx_module$ngx_modext
+    njt_obj=$NJT_OBJS$njt_dirsep$njt_module$njt_modext
 
-    if [ "$NGX_PLATFORM" = win32 ]; then
-        ngx_module_libs="$CORE_LIBS $ngx_module_libs"
+    if [ "$NJT_PLATFORM" = win32 ]; then
+        njt_module_libs="$CORE_LIBS $njt_module_libs"
     fi
 
-    ngx_libs=
-    if test -n "$NGX_LD_OPT$ngx_module_libs"; then
-        ngx_libs=`echo $NGX_LD_OPT $ngx_module_libs \
-            | sed -e "s/\//$ngx_regex_dirsep/g" -e "s/^/$ngx_long_regex_cont/"`
+    njt_libs=
+    if test -n "$NJT_LD_OPT$njt_module_libs"; then
+        njt_libs=`echo $NJT_LD_OPT $njt_module_libs \
+            | sed -e "s/\//$njt_regex_dirsep/g" -e "s/^/$njt_long_regex_cont/"`
     fi
 
-    ngx_link=${CORE_LINK:+`echo $CORE_LINK \
-        | sed -e "s/\//$ngx_regex_dirsep/g" -e "s/^/$ngx_long_regex_cont/"`}
+    njt_link=${CORE_LINK:+`echo $CORE_LINK \
+        | sed -e "s/\//$njt_regex_dirsep/g" -e "s/^/$njt_long_regex_cont/"`}
 
-    ngx_module_link=${MODULE_LINK:+`echo $MODULE_LINK \
-        | sed -e "s/\//$ngx_regex_dirsep/g" -e "s/^/$ngx_long_regex_cont/"`}
+    njt_module_link=${MODULE_LINK:+`echo $MODULE_LINK \
+        | sed -e "s/\//$njt_regex_dirsep/g" -e "s/^/$njt_long_regex_cont/"`}
 
 
-    cat << END                                            >> $NGX_MAKEFILE
+    cat << END                                            >> $NJT_MAKEFILE
 
-modules:	$ngx_obj
+modules:	$njt_obj
 
-$ngx_obj:	$ngx_deps$ngx_spacer
-	\$(LINK) $ngx_long_start$ngx_binout$ngx_obj$ngx_long_cont$ngx_objs$ngx_libs$ngx_link$ngx_module_link
-$ngx_long_end
+$njt_obj:	$njt_deps$njt_spacer
+	\$(LINK) $njt_long_start$njt_binout$njt_obj$njt_long_cont$njt_objs$njt_libs$njt_link$njt_module_link
+$njt_long_end
 
-$ngx_modules_obj:	\$(CORE_DEPS)$ngx_cont$ngx_modules_c
-	$ngx_cc$ngx_tab$ngx_objout$ngx_modules_obj$ngx_tab$ngx_modules_c$NGX_AUX
+$njt_modules_obj:	\$(CORE_DEPS)$njt_cont$njt_modules_c
+	$njt_cc$njt_tab$njt_objout$njt_modules_obj$njt_tab$njt_modules_c$NJT_AUX
 
 END
 
-    for ngx_source in $ngx_module_srcs
+    for njt_source in $njt_module_srcs
     do
-        case "$ngx_source" in
+        case "$njt_source" in
             src/*)
-                ngx_obj=`echo $ngx_source | sed -e "s/\//$ngx_regex_dirsep/g"`
+                njt_obj=`echo $njt_source | sed -e "s/\//$njt_regex_dirsep/g"`
                 ;;
             *)
-                ngx_obj="addon/`basename \`dirname $ngx_source\``"
-                ngx_obj=`echo $ngx_obj/\`basename $ngx_source\` \
-                    | sed -e "s/\//$ngx_regex_dirsep/g"`
+                njt_obj="addon/`basename \`dirname $njt_source\``"
+                njt_obj=`echo $njt_obj/\`basename $njt_source\` \
+                    | sed -e "s/\//$njt_regex_dirsep/g"`
                 ;;
         esac
 
-        ngx_obj=`echo $ngx_obj \
-            | sed -e "s#^\(.*\.\)cpp\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)cc\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)c\\$#$ngx_objs_dir\1$ngx_objext#g" \
-                  -e "s#^\(.*\.\)S\\$#$ngx_objs_dir\1$ngx_objext#g"`
+        njt_obj=`echo $njt_obj \
+            | sed -e "s#^\(.*\.\)cpp\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)cc\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)c\\$#$njt_objs_dir\1$njt_objext#g" \
+                  -e "s#^\(.*\.\)S\\$#$njt_objs_dir\1$njt_objext#g"`
 
-        ngx_src=`echo $ngx_source | sed -e "s/\//$ngx_regex_dirsep/g"`
+        njt_src=`echo $njt_source | sed -e "s/\//$njt_regex_dirsep/g"`
 
-        if [ $ngx_source = src/http/modules/perl/ngx_http_perl_module.c ]; then
+        if [ $njt_source = src/http/modules/perl/njt_http_perl_module.c ]; then
 
-            cat << END                                        >> $NGX_MAKEFILE
+            cat << END                                        >> $NJT_MAKEFILE
 
-$ngx_obj:	\$(ADDON_DEPS)$ngx_cont$ngx_src
-	$ngx_perl_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+$njt_obj:	\$(ADDON_DEPS)$njt_cont$njt_src
+	$njt_perl_cc$njt_tab$njt_objout$njt_obj$njt_tab$njt_src$NJT_AUX
 
 END
         else
 
-            cat << END                                        >> $NGX_MAKEFILE
+            cat << END                                        >> $NJT_MAKEFILE
 
-$ngx_obj:	\$(ADDON_DEPS)$ngx_cont$ngx_src
-	$ngx_cc$ngx_tab$ngx_objout$ngx_obj$ngx_tab$ngx_src$NGX_AUX
+$njt_obj:	\$(ADDON_DEPS)$njt_cont$njt_src
+	$njt_cc$njt_tab$njt_objout$njt_obj$njt_tab$njt_src$NJT_AUX
 
 END
 

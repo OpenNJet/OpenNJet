@@ -5,7 +5,7 @@
 
 # Compaq C V6.5-207
 
-ngx_include_opt="-I"
+njt_include_opt="-I"
 
 # warnings
 
