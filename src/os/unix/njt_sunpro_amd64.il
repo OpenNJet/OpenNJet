@@ -1,6 +1,7 @@
 /
 / Copyright (C) Igor Sysoev
 / Copyright (C) Nginx, Inc.
+ * Copyright (C) TMLake, Inc.
 /
 
 / njt_atomic_uint_t njt_atomic_cmp_set(njt_atomic_t *lock,

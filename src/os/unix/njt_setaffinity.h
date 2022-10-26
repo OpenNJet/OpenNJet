@@ -1,6 +1,7 @@
 
 /*
  * Copyright (C) Nginx, Inc.
+ * Copyright (C) TMLake, Inc.
  */
 
 #ifndef _NJT_SETAFFINITY_H_INCLUDED_
