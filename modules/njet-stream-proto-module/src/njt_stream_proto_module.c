@@ -40,6 +40,7 @@ typedef struct {
 	///nginmesh_dest
 	njt_str_t       dest;
 	njt_str_t       proto;
+	njt_flag_t      complete;
 
 } njt_stream_proto_ctx_t;
 
@@ -197,11 +198,15 @@ static njt_int_t njt_stream_handler(njt_stream_session_t *s)
         ctx->pool = c->pool;
         ctx->log = c->log;
         ctx->pos = c->buffer->pos;
-
-		njt_stream_nginmesh_dest_handler(s);
+	ctx->complete = 0;
+	njt_stream_nginmesh_dest_handler(s);
     }
+	if(ctx->complete == 1){
+		return NJT_DECLINED;
+	}
 	rc = njt_stream_preread_proto_handler(s);
 	if(rc == NJT_OK) {
+		ctx->complete = 1;
 		return NJT_DECLINED;
 	} else if (rc == NJT_DECLINED) {
 		
@@ -212,6 +217,7 @@ static njt_int_t njt_stream_handler(njt_stream_session_t *s)
 		 rc_http = njt_http_parse_request_line(&r,r.header_in);
 		 s->connection->buffer->pos = pos;
 		  if(rc_http == NJT_OK) {
+			  ctx->complete = 1;
 			  njt_str_set(&ctx->proto,"http");
 			  return NJT_OK;
 		  } 
@@ -219,6 +225,7 @@ static njt_int_t njt_stream_handler(njt_stream_session_t *s)
 	if(rc == NJT_AGAIN || rc_http == NJT_AGAIN) {
 		return NJT_AGAIN;
 	}
+	ctx->complete = 1;
 	return NJT_DECLINED;
 }
 
@@ -243,7 +250,6 @@ static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
 	} else {
 		njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, "ip address length %d",org_src_addr_len);
 		if(org_src_addr.ss_family == AF_INET )  {
-		   njt_log_debug(NJT_LOG_DEBUG_STREAM, s->connection->log, 0, "address is is INET format");
 		   struct sockaddr_in *addr_in = (struct sockaddr_in *)&org_src_addr;
 		   char *paddr = inet_ntoa(addr_in->sin_addr);
 		   int port = ntohs(addr_in->sin_port);
@@ -258,6 +264,9 @@ static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
 		   njt_memcpy(ctx->dest.data,dest_text,dest_str_size);
 		}
 	}
+	 njt_log_debug(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
+                   "assignment njtmesh_dest: %V",&ctx->dest);
+
 	return rc;
 
 }
@@ -356,7 +365,8 @@ static njt_int_t njt_stream_proto_dest_variable(njt_stream_session_t *s,  //
     v->len = ctx->dest.len;
     v->data = ctx->dest.data;
 
-	njt_log_debug2(NJT_LOG_DEBUG_HTTP,  s->connection->log, 0,"set var nginmesh_dest %*s",v->len,v->data);
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
+                   "get variable njtmesh_dest: %V",&ctx->dest);
 
     return NJT_OK;
 }
