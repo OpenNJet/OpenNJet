@@ -1,6 +1,7 @@
 
 # Copyright (C) Igor Sysoev
 # Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
 
 
 have=NJT_SUPPRESS_WARN . auto/have

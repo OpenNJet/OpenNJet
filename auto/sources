@@ -1,6 +1,7 @@
 
 # Copyright (C) Igor Sysoev
 # Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
 
 
 CORE_MODULES="njt_core_module njt_errlog_module njt_conf_module"

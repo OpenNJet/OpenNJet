@@ -1,6 +1,7 @@
 
 # Copyright (C) Igor Sysoev
 # Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
 
 
 if [ $USE_PCRE = YES -o $PCRE != NONE ]; then

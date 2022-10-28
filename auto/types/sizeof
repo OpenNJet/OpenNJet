@@ -1,6 +1,7 @@
 
 # Copyright (C) Igor Sysoev
 # Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
 
 
 echo $njt_n "checking for $njt_type size ...$njt_c"
