@@ -1,5 +1,6 @@
 
 # Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
 
 
 if [ $USE_THREADS = YES ]; then

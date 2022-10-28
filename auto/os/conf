@@ -1,6 +1,8 @@
 
 # Copyright (C) Igor Sysoev
 # Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
+# Copyright (C) TMLake, Inc.
 
 
 echo "checking for $NJT_SYSTEM specific features"

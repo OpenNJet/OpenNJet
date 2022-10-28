@@ -1,6 +1,7 @@
 
 # Copyright (C) Ruslan Ermilov
 # Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
 
 
 case $njt_module_type in

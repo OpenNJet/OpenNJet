@@ -1,6 +1,7 @@
 
 # Copyright (C) Igor Sysoev
 # Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
 
 
 if [ $EVENT_SELECT = NO -a $EVENT_FOUND = NO ]; then
