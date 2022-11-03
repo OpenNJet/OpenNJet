@@ -1,0 +1,16 @@
+diff -pNr a/src/core/njt_config.h b/src/core/njt_config.h
+*** a/src/core/njt_config.h	2008-09-19 13:47:13.000000000 +0100
+--- b/src/core/njt_config.h	2010-10-09 17:14:13.000000000 +0100
+*************** typedef intptr_t        njt_flag_t;
+*** 127,131 ****
+  #define NJT_MAX_UINT32_VALUE  (uint32_t) 0xffffffff
+  #endif
+  
+! 
+  #endif /* _NJT_CONFIG_H_INCLUDED_ */
+--- 127,131 ----
+  #define NJT_MAX_UINT32_VALUE  (uint32_t) 0xffffffff
+  #endif
+  
+! #include <ndk_config.h>
+  #endif /* _NJT_CONFIG_H_INCLUDED_ */

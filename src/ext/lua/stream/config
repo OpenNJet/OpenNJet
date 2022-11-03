@@ -1,0 +1,455 @@
+njt_lua_opt_I=
+njt_lua_opt_L=
+luajit_ld_opt=
+
+njt_feature_name=
+njt_feature_run=no
+njt_feature_incs=
+njt_feature_test=
+
+if [ -n "$LUAJIT_INC" -o -n "$LUAJIT_LIB" ]; then
+    # explicitly set LuaJIT paths
+
+    if [ "$NJT_PLATFORM" = win32 ]; then
+        njt_feature="LuaJIT library in $LUAJIT_LIB and $LUAJIT_INC (win32)"
+        njt_feature_path="$LUAJIT_INC"
+        njt_lua_opt_I="-I$LUAJIT_INC"
+        njt_lua_opt_L="-L$LUAJIT_LIB"
+
+        # ensure that -I$LUAJIT_INC and -L$LUAJIT_LIB come first.
+        SAVED_CC_TEST_FLAGS="$CC_TEST_FLAGS"
+        CC_TEST_FLAGS="$njt_lua_opt_I $CC_TEST_FLAGS"
+        SAVED_NJT_TEST_LD_OPT="$NJT_TEST_LD_OPT"
+        NJT_TEST_LD_OPT="$njt_lua_opt_L $NJT_TEST_LD_OPT"
+
+        # LuaJIT's win32 build uses the library file name lua51.dll
+        njt_feature_libs="$njt_lua_opt_L -llua51"
+
+        . auto/feature
+
+        # clean up
+        CC_TEST_FLAGS="$SAVED_CC_TEST_FLAGS"
+        NJT_TEST_LD_OPT="$SAVED_NJT_TEST_LD_OPT"
+    else
+        # attempt to link with -ldl, static linking on Linux requires it.
+        njt_feature="LuaJIT library in $LUAJIT_LIB and $LUAJIT_INC (specified by the LUAJIT_LIB and LUAJIT_INC env, with -ldl)"
+        njt_feature_path="$LUAJIT_INC"
+        njt_lua_opt_I="-I$LUAJIT_INC"
+        njt_lua_opt_L="-L$LUAJIT_LIB"
+        luajit_ld_opt="-lm -ldl"
+
+        # ensure that -I$LUAJIT_INC and -L$LUAJIT_LIB come first
+        SAVED_CC_TEST_FLAGS="$CC_TEST_FLAGS"
+        CC_TEST_FLAGS="$njt_lua_opt_I $CC_TEST_FLAGS"
+        SAVED_NJT_TEST_LD_OPT="$NJT_TEST_LD_OPT"
+        NJT_TEST_LD_OPT="$njt_lua_opt_L $NJT_TEST_LD_OPT"
+
+        if [ $NJT_RPATH = YES ]; then
+            njt_feature_libs="-R$LUAJIT_LIB $njt_lua_opt_L -lluajit-5.1 $luajit_ld_opt"
+        else
+            njt_feature_libs="$njt_lua_opt_L -lluajit-5.1 $luajit_ld_opt"
+        fi
+
+        . auto/feature
+
+        # clean up
+        CC_TEST_FLAGS="$SAVED_CC_TEST_FLAGS"
+        NJT_TEST_LD_OPT="$SAVED_NJT_TEST_LD_OPT"
+
+        if [ $njt_found = no ]; then
+            # retry without -ldl
+            njt_feature="LuaJIT library in $LUAJIT_LIB and $LUAJIT_INC (specified by the LUAJIT_LIB and LUAJIT_INC env)"
+            njt_feature_path="$LUAJIT_INC"
+            njt_lua_opt_I="-I$LUAJIT_INC"
+            njt_lua_opt_L="-L$LUAJIT_LIB"
+            luajit_ld_opt="-lm"
+
+            # ensure that -I$LUAJIT_INC and -L$LUAJIT_LIB come first
+            SAVED_CC_TEST_FLAGS="$CC_TEST_FLAGS"
+            CC_TEST_FLAGS="$njt_lua_opt_I $CC_TEST_FLAGS"
+            SAVED_NJT_TEST_LD_OPT="$NJT_TEST_LD_OPT"
+            NJT_TEST_LD_OPT="$njt_lua_opt_L $NJT_TEST_LD_OPT"
+
+            if [ $NJT_RPATH = YES ]; then
+                njt_feature_libs="-R$LUAJIT_LIB $njt_lua_opt_L -lluajit-5.1 $luajit_ld_opt"
+            else
+                njt_feature_libs="$njt_lua_opt_L -lluajit-5.1 $luajit_ld_opt"
+            fi
+
+            . auto/feature
+
+            # clean up
+            CC_TEST_FLAGS="$SAVED_CC_TEST_FLAGS"
+            NJT_TEST_LD_OPT="$SAVED_NJT_TEST_LD_OPT"
+        fi
+    fi
+
+    if [ $njt_found = no ]; then
+        cat << END
+        $0: error: njt_stream_lua_module requires the LuaJIT library, but it could not be found where specified (LUAJIT_LIB=$LUAJIT_LIB, LUAJIT_INC=$LUAJIT_INC).
+END
+        exit 1
+    fi
+
+    case "$NJT_PLATFORM" in
+        Darwin:*)
+            case "$NJT_MACHINE" in
+                amd64 | x86_64 | i386)
+                    echo "adding extra linking options needed by LuaJIT on $NJT_MACHINE"
+                    luajit_ld_opt="$luajit_ld_opt -pagezero_size 10000 -image_base 100000000"
+                    njt_feature_libs="$njt_feature_libs -pagezero_size 10000 -image_base 100000000"
+                ;;
+
+                *)
+                ;;
+            esac
+        ;;
+
+        *)
+        ;;
+    esac
+else
+    # auto-discovery
+    if [ $njt_found = no ]; then
+        # FreeBSD with luajit-2.0 from ports collection
+        njt_feature="LuaJIT library in /usr/local/"
+        njt_feature_path="/usr/local/include/luajit-2.0"
+        luajit_ld_opt="-lm"
+        LUAJIT_LIB="/usr/local/lib"
+        if [ $NJT_RPATH = YES ]; then
+            njt_feature_libs="-R/usr/local/lib -L/usr/local/lib -lluajit-5.1 -lm"
+        else
+            njt_feature_libs="-L/usr/local/lib -lluajit-5.1 -lm"
+        fi
+        . auto/feature
+    fi
+
+    if [ $njt_found = no ]; then
+        # Gentoo with LuaJIT-2.0, try with -ldl
+        njt_feature="LuaJIT library in /usr/"
+        njt_feature_path="/usr/include/luajit-2.0"
+        luajit_ld_opt="-lm -ldl"
+        LUAJIT_LIB="/usr/lib"
+        if [ $NJT_RPATH = YES ]; then
+            njt_feature_libs="-R/usr/lib -L/usr/lib -lm -lluajit-5.1 -ldl"
+        else
+            njt_feature_libs="-L/usr/lib -lm -lluajit-5.1 -ldl"
+        fi
+        . auto/feature
+    fi
+
+    if [ $njt_found = no ]; then
+        # Gentoo with LuaJIT 2.0
+        njt_feature="LuaJIT library in /usr/"
+        njt_feature_path="/usr/include/luajit-2.0"
+        luajit_ld_opt="-lm"
+        LUAJIT_LIB="/usr/lib"
+        if [ $NJT_RPATH = YES ]; then
+            njt_feature_libs="-R/usr/lib -L/usr/lib -lm -lluajit-5.1"
+        else
+            njt_feature_libs="-L/usr/lib -lm -lluajit-5.1"
+        fi
+        . auto/feature
+    fi
+fi
+
+njt_module_incs=
+njt_module_libs=
+
+if [ $njt_found = yes ]; then
+    # this is a hack to persuade nginx's build system to favor
+    # the paths set by our user environment
+    CFLAGS="$njt_lua_opt_I $CFLAGS"
+    NJT_LD_OPT="$njt_lua_opt_L $NJT_LD_OPT"
+
+    njt_module_incs="$njt_module_incs $njt_feature_path"
+    njt_module_libs="$njt_module_libs $njt_feature_libs"
+else
+    cat << END
+    $0: error: njt_stream_lua_module requires the LuaJIT library.
+END
+    exit 1
+fi
+
+# ----------------------------------------
+
+njt_feature="LuaJIT 2.x"
+njt_feature_run=no
+njt_feature_incs="#include <luajit.h>"
+njt_feature_test="#if !defined(LUAJIT_VERSION_NUM) || LUAJIT_VERSION_NUM < 20000
+                  #    error unsupported LuaJIT version
+                  #endif
+                  "
+
+. auto/feature
+
+if [ $njt_found = no ]; then
+    cat << END
+    $0: error: unsupported LuaJIT version; njt_stream_lua_module requires LuaJIT 2.x.
+END
+    exit 1
+fi
+
+# ----------------------------------------
+
+njt_feature="Lua language 5.1"
+njt_feature_run=no
+njt_feature_incs="#include <lua.h>"
+njt_feature_test="#if !defined(LUA_VERSION_NUM) || LUA_VERSION_NUM != 501
+                  #   error unsupported Lua language version
+                  #endif
+                  "
+
+. auto/feature
+
+if [ $njt_found = no ]; then
+    cat << END
+    $0: error: unsupported Lua language version; njt_stream_lua_module requires Lua 5.1.
+END
+    exit 1
+fi
+
+# ----------------------------------------
+
+njt_feature="LuaJIT has FFI"
+njt_feature_libs="$njt_module_libs"
+njt_feature_run=no
+njt_feature_incs="#include <lualib.h>
+                  #include <lauxlib.h>
+                  #include <assert.h>
+                  "
+njt_feature_test="lua_State *L = luaL_newstate();
+                  assert(L != NULL);
+                  luaopen_ffi(L);
+                  "
+
+. auto/feature
+
+if [ $njt_found = no ]; then
+    cat << END
+    $0: error: unsupported LuaJIT build; njt_stream_lua_module requires LuaJIT with FFI enabled.
+END
+    exit 1
+fi
+
+# ----------------------------------------
+
+njt_addon_name=njt_stream_lua_module
+STREAM_LUA_SRCS=" \
+                $njt_addon_dir/src/njt_stream_lua_api.c \
+                $njt_addon_dir/src/njt_stream_lua_request.c \
+                $njt_addon_dir/src/njt_stream_lua_module.c \
+                $njt_addon_dir/src/njt_stream_lua_directive.c \
+                $njt_addon_dir/src/njt_stream_lua_lex.c \
+                $njt_addon_dir/src/njt_stream_lua_contentby.c \
+                $njt_addon_dir/src/njt_stream_lua_util.c \
+                $njt_addon_dir/src/njt_stream_lua_cache.c \
+                $njt_addon_dir/src/njt_stream_lua_clfactory.c \
+                $njt_addon_dir/src/njt_stream_lua_exception.c \
+                $njt_addon_dir/src/njt_stream_lua_pcrefix.c \
+                $njt_addon_dir/src/njt_stream_lua_uthread.c \
+                $njt_addon_dir/src/njt_stream_lua_coroutine.c \
+                $njt_addon_dir/src/njt_stream_lua_output.c \
+                $njt_addon_dir/src/njt_stream_lua_consts.c \
+                $njt_addon_dir/src/njt_stream_lua_log.c \
+                $njt_addon_dir/src/njt_stream_lua_time.c \
+                $njt_addon_dir/src/njt_stream_lua_string.c \
+                $njt_addon_dir/src/njt_stream_lua_control.c \
+                $njt_addon_dir/src/njt_stream_lua_sleep.c \
+                $njt_addon_dir/src/njt_stream_lua_phase.c \
+                $njt_addon_dir/src/njt_stream_lua_ctx.c \
+                $njt_addon_dir/src/njt_stream_lua_regex.c \
+                $njt_addon_dir/src/njt_stream_lua_script.c \
+                $njt_addon_dir/src/njt_stream_lua_shdict.c \
+                $njt_addon_dir/src/njt_stream_lua_variable.c \
+                $njt_addon_dir/src/njt_stream_lua_timer.c \
+                $njt_addon_dir/src/njt_stream_lua_config.c \
+                $njt_addon_dir/src/njt_stream_lua_worker.c \
+                $njt_addon_dir/src/njt_stream_lua_misc.c \
+                $njt_addon_dir/src/njt_stream_lua_initby.c \
+                $njt_addon_dir/src/njt_stream_lua_initworkerby.c \
+                $njt_addon_dir/src/njt_stream_lua_socket_tcp.c \
+                $njt_addon_dir/src/njt_stream_lua_socket_udp.c \
+                $njt_addon_dir/src/njt_stream_lua_args.c \
+                $njt_addon_dir/src/njt_stream_lua_ssl.c \
+                $njt_addon_dir/src/njt_stream_lua_balancer.c \
+                $njt_addon_dir/src/njt_stream_lua_logby.c \
+                $njt_addon_dir/src/njt_stream_lua_prereadby.c \
+                $njt_addon_dir/src/njt_stream_lua_semaphore.c \
+                $njt_addon_dir/src/njt_stream_lua_ssl_client_helloby.c \
+                $njt_addon_dir/src/njt_stream_lua_ssl_certby.c \
+                $njt_addon_dir/src/njt_stream_lua_log_ringbuf.c \
+                $njt_addon_dir/src/njt_stream_lua_input_filters.c \
+                "
+
+STREAM_LUA_DEPS=" \
+                $njt_addon_dir/src/ddebug.h \
+                $njt_addon_dir/src/njt_stream_lua_autoconf.h \
+                $njt_addon_dir/src/api/njt_stream_lua_api.h \
+                $njt_addon_dir/src/njt_stream_lua_request.h \
+                $njt_addon_dir/src/njt_stream_lua_common.h \
+                $njt_addon_dir/src/njt_stream_lua_lex.h \
+                $njt_addon_dir/src/njt_stream_lua_contentby.h \
+                $njt_addon_dir/src/njt_stream_lua_util.h \
+                $njt_addon_dir/src/njt_stream_lua_cache.h \
+                $njt_addon_dir/src/njt_stream_lua_clfactory.h \
+                $njt_addon_dir/src/njt_stream_lua_pcrefix.h \
+                $njt_addon_dir/src/njt_stream_lua_uthread.h \
+                $njt_addon_dir/src/njt_stream_lua_coroutine.h \
+                $njt_addon_dir/src/njt_stream_lua_output.h \
+                $njt_addon_dir/src/njt_stream_lua_consts.h \
+                $njt_addon_dir/src/njt_stream_lua_log.h \
+                $njt_addon_dir/src/njt_stream_lua_string.h \
+                $njt_addon_dir/src/njt_stream_lua_control.h \
+                $njt_addon_dir/src/njt_stream_lua_sleep.h \
+                $njt_addon_dir/src/njt_stream_lua_phase.h \
+                $njt_addon_dir/src/njt_stream_lua_ctx.h \
+                $njt_addon_dir/src/njt_stream_lua_script.h \
+                $njt_addon_dir/src/njt_stream_lua_shdict.h \
+                $njt_addon_dir/src/njt_stream_lua_timer.h \
+                $njt_addon_dir/src/njt_stream_lua_config.h \
+                $njt_addon_dir/src/api/njt_stream_lua_api.h \
+                $njt_addon_dir/src/njt_stream_lua_misc.h \
+                $njt_addon_dir/src/njt_stream_lua_initby.h \
+                $njt_addon_dir/src/njt_stream_lua_initworkerby.h \
+                $njt_addon_dir/src/njt_stream_lua_socket_tcp.h \
+                $njt_addon_dir/src/njt_stream_lua_socket_udp.h \
+                $njt_addon_dir/src/njt_stream_lua_args.h \
+                $njt_addon_dir/src/njt_stream_lua_ssl.h \
+                $njt_addon_dir/src/njt_stream_lua_balancer.h \
+                $njt_addon_dir/src/njt_stream_lua_logby.h \
+                $njt_addon_dir/src/njt_stream_lua_prereadby.h \
+                $njt_addon_dir/src/njt_stream_lua_semaphore.h \
+                $njt_addon_dir/src/njt_stream_lua_ssl_client_helloby.h \
+                $njt_addon_dir/src/njt_stream_lua_ssl_certby.h \
+                $njt_addon_dir/src/njt_stream_lua_log_ringbuf.h \
+                $njt_addon_dir/src/njt_stream_lua_input_filters.h \
+                "
+
+# ----------------------------------------
+
+njt_feature="export symbols by default (-E)"
+njt_feature_libs="-Wl,-E"
+njt_feature_name=
+njt_feature_run=no
+njt_feature_incs="#include <stdio.h>"
+njt_feature_path=
+njt_feature_test='printf("hello");'
+
+. auto/feature
+
+if [ $njt_found = yes ]; then
+    CORE_LIBS="-Wl,-E $CORE_LIBS"
+fi
+
+# ----------------------------------------
+
+# for Cygwin
+njt_feature="export symbols by default (--export-all-symbols)"
+njt_feature_libs="-Wl,--export-all-symbols"
+njt_feature_name=
+njt_feature_run=no
+njt_feature_incs="#include <stdio.h>"
+njt_feature_path=
+njt_feature_test='printf("hello");'
+
+. auto/feature
+
+if [ $njt_found = yes ]; then
+    CORE_LIBS="-Wl,--export-all-symbols $CORE_LIBS"
+fi
+
+# ----------------------------------------
+
+njt_feature="SO_PASSCRED"
+njt_feature_libs=
+njt_feature_name="NJT_STREAM_LUA_HAVE_SO_PASSCRED"
+njt_feature_run=no
+njt_feature_incs="#include <sys/types.h>
+#include <sys/socket.h>"
+njt_feature_path=
+njt_feature_test='setsockopt(1, SOL_SOCKET, SO_PASSCRED, NULL, 0);'
+
+. auto/feature
+
+# ----------------------------------------
+
+njt_feature="SA_RESTART"
+njt_feature_libs=
+njt_feature_name="NJT_STREAM_LUA_HAVE_SA_RESTART"
+njt_feature_run=no
+njt_feature_incs="#include <signal.h>"
+njt_feature_path=
+njt_feature_test='struct sigaction act;
+                  act.sa_flags |= SA_RESTART;'
+
+. auto/feature
+
+# ----------------------------------------
+
+if [ -n "$njt_module_link" ]; then
+    njt_module_type=STREAM
+    njt_module_name=$njt_addon_name
+    njt_module_deps="$STREAM_LUA_DEPS"
+    njt_module_srcs="$STREAM_LUA_SRCS"
+
+    . auto/module
+else
+    STREAM_MODULES="$STREAM_MODULES $njt_addon_name"
+    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $STREAM_LUA_SRCS"
+    NJT_ADDON_DEPS="$NJT_ADDON_DEPS $STREAM_LUA_DEPS"
+
+    CORE_INCS="$CORE_INCS $njt_module_incs"
+    CORE_LIBS="$CORE_LIBS $njt_module_libs"
+fi
+
+# ----------------------------------------
+
+if [ $USE_PCRE = YES -o $PCRE != NONE ] && [ $PCRE != NO -a $PCRE != YES ]; then
+    # force pcre_version symbol to be required when PCRE is statically linked
+    case "$NJT_PLATFORM" in
+        Darwin:*)
+            njt_feature="require defined symbols (-u)"
+            njt_feature_name=
+            njt_feature_path=
+            njt_feature_libs="-Wl,-u,_strerror"
+            njt_feature_run=no
+            njt_feature_incs="#include <stdio.h>"
+            njt_feature_test='printf("hello");'
+
+            . auto/feature
+
+            if [ $njt_found = yes ]; then
+                CORE_LIBS="-Wl,-u,_pcre_version $CORE_LIBS"
+            fi
+        ;;
+
+        *)
+            njt_feature="require defined symbols (--require-defined)"
+            njt_feature_name=
+            njt_feature_path=
+            njt_feature_libs="-Wl,--require-defined=strerror"
+            njt_feature_run=no
+            njt_feature_incs="#include <stdio.h>"
+            njt_feature_test='printf("hello");'
+
+            . auto/feature
+
+            if [ $njt_found = yes ]; then
+                CORE_LIBS="-Wl,--require-defined=pcre_version $CORE_LIBS"
+            fi
+        ;;
+    esac
+fi
+
+# ----------------------------------------
+
+USE_MD5=YES
+USE_SHA1=YES
+
+#NJT_DTRACE_PROVIDERS="$NJT_DTRACE_PROVIDERS $njt_addon_dir/dtrace/njt_lua_provider.d"
+#NJT_TAPSET_SRCS="$NJT_TAPSET_SRCS $njt_addon_dir/tapset/njt_lua.stp"
+
+CORE_INCS="$CORE_INCS $njt_addon_dir/src/api"
+
+echo "/* DO NOT EDIT! This file was automatically generated by config */" > "$njt_addon_dir/src/njt_stream_lua_autoconf.h"
