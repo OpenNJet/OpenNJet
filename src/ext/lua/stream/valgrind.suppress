@@ -1,0 +1,233 @@
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr1
+   fun:njt_init_cycle
+   fun:njt_master_process_cycle
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr4
+   fun:njt_init_cycle
+   fun:njt_master_process_cycle
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:njt_vslprintf
+   fun:njt_snprintf
+   fun:njt_sock_ntop
+   fun:njt_event_accept
+   fun:njt_epoll_process_events
+   fun:njt_process_events_and_timers
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:njt_vslprintf
+   fun:njt_snprintf
+   fun:njt_sock_ntop
+   fun:njt_event_accept
+   fun:njt_epoll_process_events
+   fun:njt_process_events_and_timers
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr1
+   fun:njt_vslprintf
+   fun:njt_snprintf
+   fun:njt_sock_ntop
+   fun:njt_event_accept
+}
+{
+   <insert_a_suppression_name_here>
+   exp-sgcheck:SorG
+   fun:njt_http_lua_ndk_set_var_get
+}
+{
+   <insert_a_suppression_name_here>
+   exp-sgcheck:SorG
+   fun:njt_http_variables_init_vars
+   fun:njt_http_block
+}
+{
+   <insert_a_suppression_name_here>
+   exp-sgcheck:SorG
+   fun:njt_conf_parse
+}
+{
+   <insert_a_suppression_name_here>
+   exp-sgcheck:SorG
+   fun:njt_vslprintf
+   fun:njt_log_error_core
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   epoll_ctl(event)
+   fun:epoll_ctl
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   epoll_pwait(sigmask)
+   fun:epoll_pwait
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:njt_conf_flush_files
+   fun:njt_single_process_cycle
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:memcpy
+   fun:njt_vslprintf
+   fun:njt_log_error_core
+   fun:njt_http_charset_header_filter
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   socketcall.setsockopt(optval)
+   fun:setsockopt
+   fun:drizzle_state_connect
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:njt_conf_flush_files
+   fun:njt_single_process_cycle
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:njt_alloc
+   fun:njt_event_process_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   sendmsg(mmsg[0].msg_hdr)
+   fun:sendmmsg
+   fun:__libc_res_nsend
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   sendmsg(msg.msg_iov[0])
+   fun:__sendmsg_nocancel
+   fun:njt_write_channel
+   fun:njt_pass_open_channel
+   fun:njt_start_cache_manager_processes
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:njt_init_cycle
+   fun:njt_master_process_cycle
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:index
+   fun:expand_dynamic_string_token
+   fun:_dl_map_object
+   fun:map_doit
+   fun:_dl_catch_error
+   fun:do_preload
+   fun:dl_main
+   fun:_dl_sysdep_start
+   fun:_dl_start
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   sendmsg(mmsg[0].msg_hdr)
+   fun:sendmmsg
+   fun:__libc_res_nsend
+   fun:__libc_res_nquery
+   fun:__libc_res_nquerydomain
+   fun:__libc_res_nsearch
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:njt_alloc
+   fun:njt_set_environment
+   fun:njt_single_process_cycle
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   obj:*
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:njt_alloc
+   fun:njt_set_environment
+   fun:njt_worker_process_init
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:njt_alloc
+   fun:njt_create_pool
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:njt_alloc
+   fun:njt_set_environment
+   fun:njt_single_process_cycle
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   sendmsg(msg.msg_control)
+   fun:sendmsg
+   fun:njt_stream_lua_udp_sendmsg
+   fun:njt_stream_lua_socket_udp_send
+   fun:lj_BC_FUNCC
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   sendmsg(msg.msg_iov[0])
+   fun:__sendmsg_nocancel
+   fun:njt_write_channel
+   fun:njt_pass_open_channel
+   fun:njt_start_worker_processes
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   sendmsg(msg.msg_iov[0])
+   fun:__sendmsg_nocancel
+   fun:njt_write_channel
+   fun:njt_pass_open_channel
+   fun:njt_start_privileged_agent_processes
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   sendmsg(msg.msg_control)
+   fun:__sendmsg_nocancel
+   fun:njt_stream_lua_udp_sendmsg
+   fun:njt_stream_lua_socket_udp_send
+}

@@ -8,7 +8,7 @@
  * @section LICENSE
  *
  * Copyright (C) 2017 by Nginx
- *
+ * Copyright (C) TMLake, Inc.
  */
 #include <njt_config.h>
 #include <njt_core.h>

@@ -1,0 +1,4 @@
+njt_addon_name=njt_http_set_var_examples_module
+HTTP_MODULES="$HTTP_MODULES njt_http_set_var_examples_module"
+NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_addon_dir/njt_http_set_var_examples_module.c"
+have=NDK_SET_VAR . auto/have

@@ -4,7 +4,7 @@ tgtdir=/etc/njet
 tgbindir=/usr/sbin/njet
 tglogdir=/var/log/njet/error.log
 modulesdir=/usr/lib/njet/modules
-flags=" --conf-path=/etc/njet/njet.conf --with-debug --with-stream --build=NJT1.0 --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module  --add-module=./modules/njet-stream-proto-module  --with-cc=/usr/bin/cc --with-cc-opt=-O0  --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir --error-log-path=$tglogdir"
+flags=" --conf-path=/etc/njet/njet.conf --with-ld-opt='-Wl,-rpath,/usr/local/luajit/lib' --with-debug --with-stream --build=NJT1.0 --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module  --add-module=./modules/njet-stream-proto-module  --add-module=src/ext/lua/kit  --add-module=src/ext/lua/http --add-module=src/ext/lua/stream  --with-cc=/usr/bin/cc --with-cc-opt=-O0  --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir --error-log-path=$tglogdir --with-pcre=auto/lib/pcre-8.45" 
 cdir=`cd $(dirname $0); pwd`
 (
     cd $cdir
@@ -12,6 +12,12 @@ cdir=`cd $(dirname $0); pwd`
     for option; do
         case $option in
             conf*)
+		if [ ! -d /etc/njet/luajit ]; then
+		   cd luajit;make;make install;cd -;
+		fi
+		if [ ! -d /etc/njet/lualib ]; then
+		   cp -fr lualib /etc/njet/lualib
+		fi
                 ./configure $flags
                 ;;
             make)

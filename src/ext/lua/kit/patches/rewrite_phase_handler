@@ -1,0 +1,19 @@
+diff -p -r a/src/http/njt_http_core_module.c b/src/http/njt_http_core_module.c
+*** a/src/http/njt_http_core_module.c	2010-09-27 12:48:12.000000000 +0100
+--- b/src/http/njt_http_core_module.c	2010-10-09 13:44:09.000000000 +0100
+*************** njt_http_core_rewrite_phase(njt_http_req
+*** 910,915 ****
+--- 910,922 ----
+          return NJT_AGAIN;
+      }
+  
++ #if defined(njet_version) && njet_version >= 8042 && (NDK_REWRITE_PHASE)
++ 
++     if (rc == NJT_AGAIN || rc == NJT_DONE) {
++         return NJT_OK;
++     }
++     
++ #endif
+      /* rc == NJT_OK || rc == NJT_ERROR || rc == NJT_HTTP_...  */
+  
+      njt_http_finalize_request(r, rc);

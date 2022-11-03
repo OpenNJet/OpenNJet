@@ -1,0 +1,5 @@
+
+OK      NJT_OK
+E       NJT_ERROR
+CE      NJT_CONF_ERROR
+COK     NJT_CONF_OK
