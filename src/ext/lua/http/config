@@ -7,8 +7,8 @@ njt_feature_run=no
 njt_feature_incs=
 njt_feature_test=
 
-LUAJIT_INC='/etc/njet/luajit/include/luajit-2.1'
-LUAJIT_LIB='/etc/njet/luajit/lib'
+#LUAJIT_INC='/etc/njet/luajit/include/luajit-2.1'
+#LUAJIT_LIB='/etc/njet/luajit/lib'
 
 if [ -n "$LUAJIT_INC" -o -n "$LUAJIT_LIB" ]; then
     # explicitly set LuaJIT paths
