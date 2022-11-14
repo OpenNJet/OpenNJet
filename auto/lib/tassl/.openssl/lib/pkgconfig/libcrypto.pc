@@ -1,4 +1,4 @@
-prefix=/home/zhaoyg/code/njet/auto/lib/tassl/.openssl
+prefix=//home/zhaoyg/code/tassl/.openssl
 exec_prefix=${prefix}
 libdir=${exec_prefix}/lib
 includedir=${prefix}/include
