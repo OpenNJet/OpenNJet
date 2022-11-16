@@ -10,7 +10,7 @@
 #include <njt_core.h>
 #include <njt_stream.h>
 
-
+extern njt_module_t njt_stream_proto_module;
 typedef njt_int_t (*njt_ssl_variable_handler_pt)(njt_connection_t *c,
     njt_pool_t *pool, njt_str_t *s);
 
@@ -59,6 +59,7 @@ static char *njt_stream_ssl_conf_command_check(njt_conf_t *cf, void *post,
     void *data);
 
 static njt_int_t njt_stream_ssl_init(njt_conf_t *cf);
+extern njt_int_t njt_stream_handler(njt_stream_session_t *s);
 
 
 static njt_conf_bitmask_t  njt_stream_ssl_protocols[] = {
@@ -331,6 +332,114 @@ static njt_str_t njt_stream_ssl_sess_id_ctx = njt_string("STREAM");
 
 
 static njt_int_t
+njt_stream_preread_phase(njt_stream_session_t *s,
+    njt_stream_handler_pt handler)
+{
+    size_t                       size;
+    ssize_t                      n;
+    njt_int_t                    rc;
+    njt_connection_t            *c;
+    njt_stream_core_srv_conf_t  *cscf;
+
+    c = s->connection;
+
+    c->log->action = "prereading client data";
+
+    cscf = njt_stream_get_module_srv_conf(s, njt_stream_core_module);
+
+    if (c->read->timedout) {
+        rc = NJT_STREAM_OK;
+
+    } else if (c->read->timer_set) {
+        rc = NJT_AGAIN;
+
+    } else {
+        rc = handler(s);
+    }
+
+    while (rc == NJT_AGAIN) {
+
+        if (c->buffer == NULL) {
+            c->buffer = njt_create_temp_buf(c->pool, cscf->preread_buffer_size);
+            if (c->buffer == NULL) {
+                rc = NJT_ERROR;
+                break;
+            }
+        }
+
+        size = c->buffer->end - c->buffer->last;
+
+        if (size == 0) {
+            rc = NJT_STREAM_BAD_REQUEST;
+            break;
+        }
+
+        if (c->read->eof) {
+            rc = NJT_STREAM_OK;
+            break;
+        }
+
+        if (!c->read->ready) {
+            break;
+        }
+
+        //n = c->recv(c, c->buffer->last, size);
+		n = recv(c->fd,c->buffer->last, size, MSG_PEEK);
+
+        if (n == NJT_ERROR || n == 0) {
+            rc = NJT_STREAM_OK;
+            break;
+        }
+
+        if (n == NJT_AGAIN) {
+            break;
+        }
+
+        c->buffer->last += n;
+
+        rc = handler(s);
+    }
+
+    if (rc == NJT_AGAIN) {
+        if (njt_handle_read_event(c->read, 0) != NJT_OK) {
+            return NJT_OK;
+        }
+
+        if (!c->read->timer_set) {
+            njt_add_timer(c->read, 10000);
+        }
+
+        c->read->handler = njt_stream_session_handler;
+
+        return NJT_AGAIN;
+    }
+
+    if (c->read->timer_set) {
+        njt_del_timer(c->read);
+    }
+
+    if (rc == NJT_OK) {
+       
+        return NJT_OK;
+    }
+
+    if (rc == NJT_DECLINED) {
+        return NJT_AGAIN;
+    }
+
+    if (rc == NJT_DONE) {
+        return NJT_OK;
+    }
+
+    if (rc == NJT_ERROR) {
+        rc = NJT_STREAM_INTERNAL_SERVER_ERROR;
+    }
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
 njt_stream_ssl_handler(njt_stream_session_t *s)
 {
     long                    rc;
@@ -339,12 +448,35 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
     njt_connection_t       *c;
     njt_stream_ssl_conf_t  *sslcf;
 
+	
+	njt_stream_proto_ctx_t *ctx;
+	njt_stream_proto_srv_conf_t  *cf;
+
+	c = s->connection;
+
+	cf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
+	if(cf != NULL && cf->enabled) {
+		ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
+		if(ctx == NULL) {
+			rc = njt_stream_preread_phase(s,njt_stream_handler);
+			if(rc == NJT_AGAIN) {
+				return NJT_AGAIN;
+			} else if( rc == NJT_OK) {
+				c->buffer = NULL;
+				ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
+				if (ctx != NULL && ctx->ssl == 0) {
+					return NJT_OK;
+				}
+			}
+		}
+	}
+	
     if (!s->ssl) {
         return NJT_OK;
     }
 
-    c = s->connection;
 
+	
     sslcf = njt_stream_get_module_srv_conf(s, njt_stream_ssl_module);
 
     if (c->ssl == NULL) {

@@ -247,6 +247,31 @@ typedef struct {
                                                    void *conf);
 } njt_stream_module_t;
 
+typedef struct {
+    size_t          left;
+    size_t          size;
+    size_t          ext;
+    u_char         *pos;
+    u_char         *dst;
+    u_char          buf[4];
+    u_char          version[2];
+    njt_str_t       host;
+    njt_str_t       alpn;
+    njt_log_t      *log;
+    njt_pool_t     *pool;
+    njt_uint_t      state;
+
+	///nginmesh_dest
+	njt_flag_t      ssl;
+	njt_str_t       dest;
+	njt_str_t       proto;
+	njt_flag_t      complete;
+
+} njt_stream_proto_ctx_t;
+typedef struct {
+    njt_flag_t      enabled;
+	njt_flag_t      proto_enabled;
+} njt_stream_proto_srv_conf_t;
 
 #define NJT_STREAM_MODULE       0x4d525453     /* "STRM" */
 

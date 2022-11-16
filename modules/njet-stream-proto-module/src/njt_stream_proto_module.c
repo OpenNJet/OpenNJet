@@ -17,32 +17,6 @@
 #include <sys/socket.h>
 #include <linux/netfilter_ipv4.h>
 
-typedef struct {
-    njt_flag_t      enabled;
-	njt_flag_t      proto_enabled;
-} njt_stream_proto_srv_conf_t;
-
-
-typedef struct {
-    size_t          left;
-    size_t          size;
-    size_t          ext;
-    u_char         *pos;
-    u_char         *dst;
-    u_char          buf[4];
-    u_char          version[2];
-    njt_str_t       host;
-    njt_str_t       alpn;
-    njt_log_t      *log;
-    njt_pool_t     *pool;
-    njt_uint_t      state;
-
-	///nginmesh_dest
-	njt_str_t       dest;
-	njt_str_t       proto;
-	njt_flag_t      complete;
-
-} njt_stream_proto_ctx_t;
 
 
 
@@ -160,7 +134,7 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
 }
 
 
-static njt_int_t njt_stream_handler(njt_stream_session_t *s)
+ njt_int_t njt_stream_handler(njt_stream_session_t *s)
 {
 	njt_connection_t                    *c;
 	njt_stream_proto_ctx_t           *ctx;
@@ -183,11 +157,14 @@ static njt_int_t njt_stream_handler(njt_stream_session_t *s)
 	if (c->type != SOCK_STREAM) {
         return NJT_DECLINED;
     }
-
+	ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
+	if(ctx && ctx->complete == 1) {
+		return NJT_OK;
+	}
     if (c->buffer == NULL) {
         return NJT_AGAIN;
     }
-	ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
+	
     if (ctx == NULL) {
         ctx = njt_pcalloc(c->pool, sizeof(njt_stream_proto_ctx_t));
         if (ctx == NULL) {
@@ -202,12 +179,13 @@ static njt_int_t njt_stream_handler(njt_stream_session_t *s)
 	njt_stream_nginmesh_dest_handler(s);
     }
 	if(ctx->complete == 1){
-		return NJT_DECLINED;
+		return NJT_OK;
 	}
 	rc = njt_stream_preread_proto_handler(s);
 	if(rc == NJT_OK) {
 		ctx->complete = 1;
-		return NJT_DECLINED;
+		 ctx->ssl = 1;
+		return NJT_OK;
 	} else if (rc == NJT_DECLINED) {
 		
 		njt_memzero(&r,sizeof(njt_http_request_t));
@@ -218,6 +196,7 @@ static njt_int_t njt_stream_handler(njt_stream_session_t *s)
 		 s->connection->buffer->pos = pos;
 		  if(rc_http == NJT_OK) {
 			  ctx->complete = 1;
+			   ctx->ssl = 0;
 			  njt_str_set(&ctx->proto,"http");
 			  return NJT_OK;
 		  } 
@@ -225,8 +204,9 @@ static njt_int_t njt_stream_handler(njt_stream_session_t *s)
 	if(rc == NJT_AGAIN || rc_http == NJT_AGAIN) {
 		return NJT_AGAIN;
 	}
+	ctx->ssl = 2;
 	ctx->complete = 1;
-	return NJT_DECLINED;
+	return NJT_OK;
 }
 
 static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
