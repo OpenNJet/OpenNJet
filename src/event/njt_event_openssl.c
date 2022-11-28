@@ -10,9 +10,7 @@
 #include <njt_core.h>
 #include <njt_event.h>
 
-
 #define NJT_SSL_PASSWORD_BUFFER_SIZE  4096
-
 
 typedef struct {
     njt_uint_t  engine;   /* unsigned  engine:1; */
@@ -77,11 +75,9 @@ static int njt_ssl_session_ticket_key_callback(njt_ssl_conn_t *ssl_conn,
     HMAC_CTX *hctx, int enc);
 static void njt_ssl_session_ticket_keys_cleanup(void *data);
 #endif
-
-#ifndef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT
+#if X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT == 0
 static njt_int_t njt_ssl_check_name(njt_str_t *name, ASN1_STRING *str);
 #endif
-
 static time_t njt_ssl_parse_time(
 #if OPENSSL_VERSION_NUMBER > 0x10100000L
     const
@@ -91,8 +87,12 @@ static time_t njt_ssl_parse_time(
 static void *njt_openssl_create_conf(njt_cycle_t *cycle);
 static char *njt_openssl_engine(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static void njt_openssl_exit(njt_cycle_t *cycle);
-
-
+#if X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT  == 0
+static unsigned char *njt_string_data(ASN1_STRING *x)
+{
+    return x->data;
+}
+#endif
 static njt_command_t  njt_openssl_commands[] = {
 
     { njt_string("ssl_engine"),
@@ -4542,8 +4542,7 @@ njt_ssl_check_host(njt_connection_t *c, njt_str_t *name)
     if (cert == NULL) {
         return NJT_ERROR;
     }
-
-#ifdef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT
+#if  X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT 
 
     /* X509_check_host() is only available in OpenSSL 1.0.2+ */
 
@@ -4584,20 +4583,20 @@ njt_ssl_check_host(njt_connection_t *c, njt_str_t *name)
         for (i = 0; i < n; i++) {
             altname = sk_GENERAL_NAME_value(altnames, i);
 
-            if (altname->type != GEN_DNS) {
+            if (altname->type != GEN_DNS && altname->type != GEN_URI) {
                 continue;
             }
 
             str = altname->d.dNSName;
-
+	   /*
             njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
                            "SSL subjectAltName: \"%*s\"",
                            ASN1_STRING_length(str), ASN1_STRING_data(str));
-
+		*/
             if (njt_ssl_check_name(name, str) == NJT_OK) {
-                njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0,
-                               "SSL subjectAltName: match");
-                GENERAL_NAMES_free(altnames);
+               // njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0,
+               //                "SSL subjectAltName: match");
+                //GENERAL_NAMES_free(altnames);
                 goto found;
             }
         }
@@ -4631,11 +4630,11 @@ njt_ssl_check_host(njt_connection_t *c, njt_str_t *name)
 
         entry = X509_NAME_get_entry(sname, i);
         str = X509_NAME_ENTRY_get_data(entry);
-
+	/*
         njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "SSL commonName: \"%*s\"",
                        ASN1_STRING_length(str), ASN1_STRING_data(str));
-
+	*/
         if (njt_ssl_check_name(name, str) == NJT_OK) {
             njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0,
                            "SSL commonName: match");
@@ -4660,8 +4659,7 @@ found:
 }
 
 
-#ifndef X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT
-
+#if X509_CHECK_FLAG_ALWAYS_CHECK_SUBJECT  == 0
 static njt_int_t
 njt_ssl_check_name(njt_str_t *name, ASN1_STRING *pattern)
 {
@@ -4671,7 +4669,7 @@ njt_ssl_check_name(njt_str_t *name, ASN1_STRING *pattern)
     s = name->data;
     slen = name->len;
 
-    p = ASN1_STRING_data(pattern);
+    p = njt_string_data(pattern);
     plen = ASN1_STRING_length(pattern);
 
     if (slen == plen && njt_strncasecmp(s, p, plen) == 0) {
@@ -4698,7 +4696,6 @@ njt_ssl_check_name(njt_str_t *name, ASN1_STRING *pattern)
 
     return NJT_ERROR;
 }
-
 #endif
 
 

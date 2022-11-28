@@ -1841,6 +1841,7 @@ njt_http_upstream_ssl_name(njt_http_request_t *r, njt_http_upstream_t *u,
 {
     u_char     *p, *last;
     njt_str_t   name;
+    njt_str_t   uri;
 
     if (u->conf->ssl_name) {
         if (njt_http_complex_value(r, u->conf->ssl_name, &name) != NJT_OK) {
@@ -1859,7 +1860,7 @@ njt_http_upstream_ssl_name(njt_http_request_t *r, njt_http_upstream_t *u,
      * ssl name here may contain port, notably if derived from $proxy_host
      * or $http_host; we have to strip it
      */
-
+    uri = name;
     p = name.data;
     last = name.data + name.len;
 
@@ -1922,8 +1923,11 @@ njt_http_upstream_ssl_name(njt_http_request_t *r, njt_http_upstream_t *u,
 #endif
 
 done:
-
-    u->ssl_name = name;
+    if(njt_strncmp(uri.data, "spiffe://",9) == 0) {
+    	u->ssl_name = uri;
+    } else {
+	u->ssl_name = name;
+    }
 
     return NJT_OK;
 }
