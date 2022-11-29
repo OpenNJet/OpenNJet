@@ -21,6 +21,8 @@
 
 
 static njt_int_t njt_stream_proto_dest_variable(njt_stream_session_t *s,njt_stream_variable_value_t *v, uintptr_t data);
+static njt_int_t njt_stream_proto_ip_variable(njt_stream_session_t *s,njt_stream_variable_value_t *v, uintptr_t data);
+static njt_int_t njt_stream_proto_port_variable(njt_stream_session_t *s,njt_stream_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_stream_proto_add_variables(njt_conf_t *cf);
 static njt_int_t njt_stream_proto_init(njt_conf_t *cf);
 static void *njt_stream_proto_create_srv_conf(njt_conf_t *cf);
@@ -48,6 +50,14 @@ static njt_command_t njt_stream_proto_commands[] = {
       njt_conf_set_flag_slot,     // do custom config
       NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(njt_stream_proto_srv_conf_t, enabled),
+      NULL
+    },
+    {
+      njt_string("njtmesh_port_mode"),
+      NJT_STREAM_MAIN_CONF | NJT_STREAM_SRV_CONF | NJT_CONF_TAKE2,
+      njt_conf_set_keyval_slot,     // do custom config
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_proto_srv_conf_t,proto_ports),
       NULL
     },
 	 {
@@ -96,7 +106,11 @@ static njt_stream_variable_t  njt_stream_proto_vars[] = {
 
     { njt_string("njtmesh_dest"), NULL,
       njt_stream_proto_dest_variable, 0, 0, 0 },
-	 { njt_string("preread_proto"), NULL,
+    { njt_string("njtmesh_ip"), NULL,
+      njt_stream_proto_ip_variable, 0, 0, 0 },
+    { njt_string("njtmesh_port"), NULL,
+      njt_stream_proto_port_variable, 0, 0, 0 },
+    { njt_string("preread_proto"), NULL,
       njt_stream_preread_proto_variable, 0, 0, 0 },
     njt_stream_null_variable
 };
@@ -216,32 +230,51 @@ static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
     socklen_t                           org_src_addr_len;
     njt_connection_t                    *c;
     njt_stream_proto_ctx_t           *ctx;
-    char                                dest_text[30];  // 4*4 + 5 + 1
-	njt_int_t  rc = NJT_OK;
+    char *paddr;
+    njt_uint_t port,nelts,i;
+    u_char *p;
+    njt_keyval_t      *kv;
+    njt_stream_proto_srv_conf_t  *sscf;
+    struct sockaddr_in *addr_in;
+    njt_int_t  rc = NJT_OK;
 	
 
     c = s->connection;
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
-	
+    sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);	
 	njt_memzero(&org_src_addr, sizeof(struct sockaddr));
 	 org_src_addr_len =  sizeof(struct sockaddr);
 	if(getsockopt ( c->fd, SOL_IP, SO_ORIGINAL_DST, &org_src_addr,&org_src_addr_len) == -1) {
-
+	   int n = errno;
+	   printf("%d",n);
 	} else {
 		njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, "ip address length %d",org_src_addr_len);
 		if(org_src_addr.ss_family == AF_INET )  {
-		   struct sockaddr_in *addr_in = (struct sockaddr_in *)&org_src_addr;
-		   char *paddr = inet_ntoa(addr_in->sin_addr);
-		   int port = ntohs(addr_in->sin_port);
+		   addr_in = (struct sockaddr_in *)&org_src_addr;
+		   paddr = inet_ntoa(addr_in->sin_addr);
+		   port = ntohs(addr_in->sin_port);
+		   ctx->dest.data = njt_pnalloc(ctx->pool,46);
+		   if(ctx->dest.data != NULL) {
+			ctx->dest.len = 46;
+		   	njt_memzero(ctx->dest.data,ctx->dest.len);
+			ctx->dest_ip.data = ctx->dest.data;
+			p  = njt_sprintf(ctx->dest.data,"%s",paddr);
+			ctx->dest_ip.len = p - ctx->dest.data;
+			ctx->dest_port.data = p + 1;
 
-
-		   njt_memzero(dest_text,30);
-		   sprintf(dest_text,"%s:%d",paddr,port);
-	
-		   size_t dest_str_size = njt_strlen(dest_text);
-		   ctx->dest.data = njt_pnalloc(ctx->pool, dest_str_size);
-		   ctx->dest.len = dest_str_size;
-		   njt_memcpy(ctx->dest.data,dest_text,dest_str_size);
+			p  = njt_sprintf(p,":%d",port);
+			ctx->dest.len = p - ctx->dest.data;
+			ctx->dest_port.len = p - ctx->dest_port.data;
+			
+			 kv = sscf->proto_ports->elts;
+			 nelts = sscf->proto_ports->nelts;	
+			 for (i = 0; i < nelts; i++) {
+			   if(kv[i].key.len == ctx->dest_port.len && njt_strncmp(kv[i].key.data,ctx->dest_port.data,kv[i].key.len) == 0) {
+				ctx->port_mode = kv[i].value;
+				break;
+			   }		   
+			 }
+		   }
 		}
 	}
 	 njt_log_debug(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
@@ -351,7 +384,53 @@ static njt_int_t njt_stream_proto_dest_variable(njt_stream_session_t *s,  //
     return NJT_OK;
 }
 
+static njt_int_t njt_stream_proto_ip_variable(njt_stream_session_t *s,  //
+    njt_variable_value_t *v, uintptr_t data)
+{
+    njt_stream_proto_ctx_t  *ctx;
 
+    ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
+
+    if (ctx == NULL) {
+        v->not_found = 1;
+        return NJT_OK;
+    }
+
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+    v->len = ctx->dest_ip.len;
+    v->data = ctx->dest_ip.data;
+
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
+                   "get variable njtmesh_dest: %V",&ctx->dest);
+
+    return NJT_OK;
+}
+
+static njt_int_t njt_stream_proto_port_variable(njt_stream_session_t *s,  //
+    njt_variable_value_t *v, uintptr_t data)
+{
+    njt_stream_proto_ctx_t  *ctx;
+
+    ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
+
+    if (ctx == NULL) {
+        v->not_found = 1;
+        return NJT_OK;
+    }
+
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+    v->len = ctx->dest_port.len;
+    v->data = ctx->dest_port.data;
+
+    njt_log_debug(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
+                   "get variable njtmesh_dest_port: %V",&ctx->dest);
+
+    return NJT_OK;
+}
 static njt_int_t njt_stream_proto_add_variables(njt_conf_t *cf)
 {
     njt_stream_variable_t  *var, *v;

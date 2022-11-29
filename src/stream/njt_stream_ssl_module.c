@@ -448,6 +448,9 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
     njt_connection_t       *c;
     njt_stream_ssl_conf_t  *sslcf;
 
+    njt_str_t  strict = njt_string("STRICT");
+    njt_str_t  disable = njt_string("DISABLE");
+    njt_str_t  both = njt_string("BOTH");
 	
 	njt_stream_proto_ctx_t *ctx;
 	njt_stream_proto_srv_conf_t  *cf;
@@ -465,7 +468,19 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
 				c->buffer = NULL;
 				ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
 				if (ctx != NULL && ctx->ssl == 0) {
-					return NJT_OK;
+					if((ctx->port_mode.len == disable.len && njt_strncmp(ctx->port_mode.data,disable.data,disable.len) == 0) ||
+					 (ctx->port_mode.len == both.len && njt_strncmp(ctx->port_mode.data,both.data,both.len) == 0)) {
+						return NJT_OK;
+					} else {
+						return NJT_ERROR;
+					}
+				} else if (ctx != NULL){
+					if((ctx->port_mode.len == strict.len && njt_strncmp(ctx->port_mode.data,strict.data,strict.len) == 0) ||
+                                         (ctx->port_mode.len == both.len && njt_strncmp(ctx->port_mode.data,both.data,both.len) == 0)) {
+                                                return NJT_OK;
+                                        } else {
+                                                return NJT_ERROR;
+                                        }
 				}
 			}
 		}

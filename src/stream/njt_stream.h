@@ -264,12 +264,16 @@ typedef struct {
 	///nginmesh_dest
 	njt_flag_t      ssl;
 	njt_str_t       dest;
+	njt_str_t       dest_ip;
+	njt_str_t       dest_port;
 	njt_str_t       proto;
+	njt_str_t       port_mode;
 	njt_flag_t      complete;
 
 } njt_stream_proto_ctx_t;
 typedef struct {
-    njt_flag_t      enabled;
+    	njt_flag_t      enabled;
+	njt_array_t     *proto_ports;
 	njt_flag_t      proto_enabled;
 } njt_stream_proto_srv_conf_t;
 
