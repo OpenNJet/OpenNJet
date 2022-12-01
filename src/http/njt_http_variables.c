@@ -1507,8 +1507,12 @@ static void
 njt_http_variable_set_uri_key(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data)
 {
-    r->uri_key.len = v->len;
-    r->uri_key.data = v->data;
+    r->uri_key.data = njt_pnalloc(r->pool, v->len + 1);
+    if(r->uri_key.data != NULL) {
+    	r->uri_key.len = v->len + 1;
+	r->uri_key.data[0] = '/';
+    	njt_memcpy(r->uri_key.data+1,v->data, v->len);
+    }
 }
 
 static void
