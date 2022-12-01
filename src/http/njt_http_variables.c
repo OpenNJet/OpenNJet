@@ -143,6 +143,8 @@ static njt_int_t njt_http_variable_time_iso8601(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_http_variable_time_local(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
+static void njt_http_variable_set_uri_key(njt_http_request_t *r,
+    njt_http_variable_value_t *v, uintptr_t data);
 
 /*
  * TODO:
@@ -232,7 +234,9 @@ static njt_http_variable_t  njt_http_core_variables[] = {
     { njt_string("uri"), NULL, njt_http_variable_request,
       offsetof(njt_http_request_t, uri),
       NJT_HTTP_VAR_NOCACHEABLE, 0 },
-
+    { njt_string("uri_key"),njt_http_variable_set_uri_key,njt_http_variable_request,
+      offsetof(njt_http_request_t, uri_key),
+      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE, 0 },
     { njt_string("document_uri"), NULL, njt_http_variable_request,
       offsetof(njt_http_request_t, uri),
       NJT_HTTP_VAR_NOCACHEABLE, 0 },
@@ -1499,6 +1503,13 @@ njt_http_variable_https(njt_http_request_t *r,
     return NJT_OK;
 }
 
+static void
+njt_http_variable_set_uri_key(njt_http_request_t *r,
+    njt_http_variable_value_t *v, uintptr_t data)
+{
+    r->uri_key.len = v->len;
+    r->uri_key.data = v->data;
+}
 
 static void
 njt_http_variable_set_args(njt_http_request_t *r,

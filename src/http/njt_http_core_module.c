@@ -1477,9 +1477,12 @@ njt_http_core_find_static_location(njt_http_request_t *r,
     u_char     *uri;
     size_t      len, n;
     njt_int_t   rc, rv;
-
     len = r->uri.len;
     uri = r->uri.data;
+    if(r->uri_key.len != 0 && r->uri_key.data != NULL){
+    	len = r->uri_key.len;
+    	uri = r->uri_key.data;
+    }
 
     rv = NJT_DECLINED;
 

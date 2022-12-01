@@ -413,6 +413,7 @@ struct njt_http_request_s {
 
     njt_str_t                         request_line;
     njt_str_t                         uri;
+    njt_str_t                         uri_key;
     njt_str_t                         args;
     njt_str_t                         exten;
     njt_str_t                         unparsed_uri;
