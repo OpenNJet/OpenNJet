@@ -145,6 +145,8 @@ static njt_int_t njt_http_variable_time_local(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 static void njt_http_variable_set_uri_key(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
+static njt_int_t njt_http_variable_get_uri_key(njt_http_request_t *r,
+    njt_http_variable_value_t *v, uintptr_t data);
 
 /*
  * TODO:
@@ -234,7 +236,7 @@ static njt_http_variable_t  njt_http_core_variables[] = {
     { njt_string("uri"), NULL, njt_http_variable_request,
       offsetof(njt_http_request_t, uri),
       NJT_HTTP_VAR_NOCACHEABLE, 0 },
-    { njt_string("uri_key"),njt_http_variable_set_uri_key,njt_http_variable_request,
+    { njt_string("uri_key"),njt_http_variable_set_uri_key,njt_http_variable_get_uri_key,
       offsetof(njt_http_request_t, uri_key),
       NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE, 0 },
     { njt_string("document_uri"), NULL, njt_http_variable_request,
@@ -743,7 +745,27 @@ njt_http_get_variable(njt_http_request_t *r, njt_str_t *name, njt_uint_t key)
     return vv;
 }
 
+static njt_int_t
+njt_http_variable_get_uri_key(njt_http_request_t *r, njt_http_variable_value_t *v,
+    uintptr_t data)
+{
+    njt_str_t  *s;
 
+    s = (njt_str_t *) ((char *) r + data);
+
+    if (s->len > 1 && s->data) {
+        v->len = s->len-1;
+        v->valid = 1;
+        v->no_cacheable = 0;
+        v->not_found = 0;
+        v->data = s->data + 1;
+
+    } else {
+        v->not_found = 1;
+    }
+
+    return NJT_OK;
+}
 static njt_int_t
 njt_http_variable_request(njt_http_request_t *r, njt_http_variable_value_t *v,
     uintptr_t data)
@@ -1507,12 +1529,14 @@ static void
 njt_http_variable_set_uri_key(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data)
 {
+   if(v->len != 0) {  
     r->uri_key.data = njt_pnalloc(r->pool, v->len + 1);
     if(r->uri_key.data != NULL) {
     	r->uri_key.len = v->len + 1;
 	r->uri_key.data[0] = '/';
     	njt_memcpy(r->uri_key.data+1,v->data, v->len);
     }
+   }
 }
 
 static void
