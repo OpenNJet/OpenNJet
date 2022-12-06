@@ -49,7 +49,32 @@ struct njt_http_upstream_rr_peer_s {
 #if (NJT_HTTP_UPSTREAM_ZONE)
     njt_atomic_t                    lock;
 #endif
-
+#if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
+    njt_uint_t                      id;
+    unsigned                        del_pending:1;
+     union {
+    	//unsigned                        dynamic:1;
+    	unsigned                        set_backup:1;
+    };
+    njt_str_t                       route;
+    njt_int_t                       parent_id;
+    njt_uint_t                      hc_checks;
+    njt_uint_t                      hc_fails;
+    njt_flag_t                      hc_last_passed;
+    njt_flag_t                      hc_check_in_process;
+    njt_uint_t                      hc_unhealthy;
+    njt_uint_t                      hc_consecutive_fails;
+    njt_uint_t                      hc_consecutive_passes;
+    njt_uint_t                      hc_down;
+    njt_msec_t                      hc_downtime;
+    njt_msec_t                      hc_downstart;
+    njt_msec_t                      hc_upstart;
+    njt_uint_t                      unavail;
+    njt_msec_t                      selected_time;
+    njt_atomic_t                    total_header_time;
+    njt_atomic_t                    total_response_time;
+    
+#endif
     njt_http_upstream_rr_peer_t    *next;
 
     NJT_COMPAT_BEGIN(32)
@@ -79,6 +104,10 @@ struct njt_http_upstream_rr_peers_s {
     njt_http_upstream_rr_peers_t   *next;
 
     njt_http_upstream_rr_peer_t    *peer;
+#if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
+    njt_uint_t                       next_order;
+    njt_http_upstream_rr_peer_t   *parent_node;
+#endif
 };
 
 
@@ -145,7 +174,8 @@ njt_int_t njt_http_upstream_get_round_robin_peer(njt_peer_connection_t *pc,
     void *data);
 void njt_http_upstream_free_round_robin_peer(njt_peer_connection_t *pc,
     void *data, njt_uint_t state);
-
+void njt_http_upstream_free_peer_memory(njt_slab_pool_t *pool,
+        njt_http_upstream_rr_peer_t *peer);
 #if (NJT_HTTP_SSL)
 njt_int_t
     njt_http_upstream_set_round_robin_peer_session(njt_peer_connection_t *pc,

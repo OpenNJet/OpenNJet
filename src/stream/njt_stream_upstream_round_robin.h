@@ -50,6 +50,16 @@ struct njt_stream_upstream_rr_peer_s {
 
     njt_stream_upstream_rr_peer_t   *next;
 
+#if (NJT_STREAM_UPSTREAM_DYNAMIC_SERVER)
+   njt_uint_t                       id;
+   njt_uint_t                      hc_down;
+   unsigned                            del_pending:1;
+   union {
+    	//unsigned                        dynamic:1;
+    	unsigned                        set_backup:1;
+    };
+    njt_int_t                          parent_id;
+#endif
     NJT_COMPAT_BEGIN(25)
     NJT_COMPAT_END
 };
@@ -77,6 +87,11 @@ struct njt_stream_upstream_rr_peers_s {
     njt_stream_upstream_rr_peers_t  *next;
 
     njt_stream_upstream_rr_peer_t   *peer;
+
+#if (NJT_STREAM_UPSTREAM_DYNAMIC_SERVER)
+    njt_uint_t                       next_order;
+    njt_stream_upstream_rr_peer_t     *parent_node;
+#endif
 };
 
 
@@ -143,6 +158,7 @@ njt_int_t njt_stream_upstream_get_round_robin_peer(njt_peer_connection_t *pc,
     void *data);
 void njt_stream_upstream_free_round_robin_peer(njt_peer_connection_t *pc,
     void *data, njt_uint_t state);
-
+ void
+njt_stream_upstream_del_round_robin_peer(njt_slab_pool_t *pool, njt_stream_upstream_rr_peer_t *peer);
 
 #endif /* _NJT_STREAM_UPSTREAM_ROUND_ROBIN_H_INCLUDED_ */

@@ -851,4 +851,26 @@ njt_http_upstream_empty_save_session(njt_peer_connection_t *pc, void *data)
     return;
 }
 
+void
+njt_http_upstream_free_peer_memory(njt_slab_pool_t *pool, njt_http_upstream_rr_peer_t *peer)
+{
+    if (peer->server.data) {
+        njt_slab_free_locked(pool, peer->server.data);
+    }
+
+    if (peer->name.data) {
+        njt_slab_free_locked(pool, peer->name.data);
+    }
+
+    if (peer->sockaddr) {
+        njt_slab_free_locked(pool, peer->sockaddr);
+    }
+    if (peer->route.data) {
+        njt_slab_free_locked(pool, peer->route.data);
+    }
+    njt_slab_free_locked(pool, peer);
+
+    return;
+}
+
 #endif

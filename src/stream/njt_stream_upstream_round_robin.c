@@ -882,5 +882,23 @@ njt_stream_upstream_empty_save_session(njt_peer_connection_t *pc, void *data)
 {
     return;
 }
+ void
+njt_stream_upstream_del_round_robin_peer(njt_slab_pool_t *pool, njt_stream_upstream_rr_peer_t *peer)
+{
+    if (peer->server.data) {
+        njt_slab_free_locked(pool, peer->server.data);
+    }
 
+    if (peer->name.data) {
+        njt_slab_free_locked(pool, peer->name.data);
+    }
+
+    if (peer->sockaddr) {
+        njt_slab_free_locked(pool, peer->sockaddr);
+    }
+
+    njt_slab_free_locked(pool, peer);
+
+    return;
+}
 #endif

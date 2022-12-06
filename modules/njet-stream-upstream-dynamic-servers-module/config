@@ -1,0 +1,28 @@
+njt_feature="njt_stream_upstream_dynamic_servers_module"
+njt_feature_name=
+njt_feature_run=no
+njt_feature_incs=
+njt_feature_libs=""
+njt_feature_path="$njt_addon_dir"
+njt_feature_deps=
+njt_check_src="$njt_addon_dir/src/njt_stream_upstream_dynamic_servers.c"
+
+njt_feature_test="int a;"
+. auto/feature
+
+if [ $njt_found = yes ]; then
+    have=NJT_STREAM_UPSTREAM_DYNAMIC_SERVER . auto/have
+    CORE_INCS="$CORE_INCS $njt_feature_path"
+    njt_addon_name=njt_stream_upstream_dynamic_servers_module
+    njt_module_type=STREAM
+    njt_module_name=$njt_addon_name
+    STREAM_MODULES=$(echo $STREAM_MODULES  | sed "s/njt_stream_upstream_module/njt_stream_upstream_dynamic_servers_module njt_stream_upstream_module/")
+    
+    NJT_ADDON_DEPS="$NJT_ADDON_DEPS $njt_feature_deps"
+    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_check_src"
+else
+    cat << END
+    $0: error: the njt_stream_upstream_dynamic_servers_module addon error.
+END
+    exit 1
+fi

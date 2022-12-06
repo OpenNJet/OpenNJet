@@ -104,7 +104,11 @@ typedef struct {
     njt_uint_t                       down;
 
     unsigned                         backup:1;
-
+#if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
+    //unsigned                         dynamic:1;
+    njt_int_t                        parent_id;
+    njt_str_t                        route;
+#endif
     NJT_COMPAT_BEGIN(6)
     NJT_COMPAT_END
 } njt_http_upstream_server_t;
@@ -117,9 +121,9 @@ typedef struct {
 #define NJT_HTTP_UPSTREAM_DOWN          0x0010
 #define NJT_HTTP_UPSTREAM_BACKUP        0x0020
 #define NJT_HTTP_UPSTREAM_MAX_CONNS     0x0100
+#define NJT_HTTP_UPSTREAM_SLOW_START    0x0200
 
-
-struct njt_http_upstream_srv_conf_s {
+ struct njt_http_upstream_srv_conf_s {
     njt_http_upstream_peer_t         peer;
     void                           **srv_conf;
 
@@ -134,6 +138,15 @@ struct njt_http_upstream_srv_conf_s {
 
 #if (NJT_HTTP_UPSTREAM_ZONE)
     njt_shm_zone_t                  *shm_zone;
+#endif
+#if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
+    njt_str_t                       state_file;
+    njt_resolver_t                 *resolver;/* resolver */
+    njt_msec_t                      resolver_timeout;
+    time_t                          valid;
+    unsigned                         set_keep_alive:1;
+    unsigned                         hc_type:2;
+    unsigned                         reload:1;
 #endif
 };
 

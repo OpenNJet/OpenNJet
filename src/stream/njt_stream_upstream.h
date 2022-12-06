@@ -23,7 +23,7 @@
 #define NJT_STREAM_UPSTREAM_DOWN          0x0010
 #define NJT_STREAM_UPSTREAM_BACKUP        0x0020
 #define NJT_STREAM_UPSTREAM_MAX_CONNS     0x0100
-
+#define NJT_STREAM_UPSTREAM_SLOW_START    0x0200
 
 #define NJT_STREAM_UPSTREAM_NOTIFY_CONNECT     0x1
 
@@ -62,7 +62,9 @@ typedef struct {
     njt_uint_t                         down;
 
     unsigned                           backup:1;
-
+#if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
+    njt_int_t                          parent_id;
+#endif
     NJT_COMPAT_BEGIN(4)
     NJT_COMPAT_END
 } njt_stream_upstream_server_t;
@@ -84,6 +86,14 @@ struct njt_stream_upstream_srv_conf_s {
 
 #if (NJT_STREAM_UPSTREAM_ZONE)
     njt_shm_zone_t                    *shm_zone;
+#endif
+#if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
+    njt_str_t                       state_file;
+    njt_resolver_t                 *resolver;/* resolver */
+    njt_msec_t                      resolver_timeout;
+    time_t                    valid;
+    unsigned                         hc_type:2;
+    unsigned                         reload:1;
 #endif
 };
 
