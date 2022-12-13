@@ -52,16 +52,14 @@ struct njt_http_upstream_rr_peer_s {
 #if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
     njt_uint_t                      id;
     unsigned                        del_pending:1;
-     union {
-    	//unsigned                        dynamic:1;
-    	unsigned                        set_backup:1;
-    };
+    unsigned                        hc_last_passed:1;
+    unsigned                        hc_check_in_process:1;
+    unsigned                        set_backup:1;
+    
     njt_str_t                       route;
     njt_int_t                       parent_id;
     njt_uint_t                      hc_checks;
     njt_uint_t                      hc_fails;
-    njt_flag_t                      hc_last_passed;
-    njt_flag_t                      hc_check_in_process;
     njt_uint_t                      hc_unhealthy;
     njt_uint_t                      hc_consecutive_fails;
     njt_uint_t                      hc_consecutive_passes;
