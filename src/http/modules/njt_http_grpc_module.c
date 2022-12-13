@@ -145,9 +145,9 @@ typedef struct {
 
 static njt_int_t njt_http_grpc_eval(njt_http_request_t *r,
     njt_http_grpc_ctx_t *ctx, njt_http_grpc_loc_conf_t *glcf);
-static njt_int_t njt_http_grpc_create_request(njt_http_request_t *r);
+ njt_int_t njt_http_grpc_create_request(njt_http_request_t *r);
 static njt_int_t njt_http_grpc_reinit_request(njt_http_request_t *r);
-static njt_int_t njt_http_grpc_body_output_filter(void *data, njt_chain_t *in);
+njt_int_t njt_http_grpc_body_output_filter(void *data, njt_chain_t *in);
 static njt_int_t njt_http_grpc_process_header(njt_http_request_t *r);
 static njt_int_t njt_http_grpc_filter_init(void *data);
 static njt_int_t njt_http_grpc_filter(void *data, ssize_t bytes);
@@ -706,7 +706,7 @@ njt_http_grpc_eval(njt_http_request_t *r, njt_http_grpc_ctx_t *ctx,
 }
 
 
-static njt_int_t
+ njt_int_t
 njt_http_grpc_create_request(njt_http_request_t *r)
 {
     u_char                       *p, *tmp, *key_tmp, *val_tmp, *headers_frame;
@@ -1221,7 +1221,7 @@ njt_http_grpc_reinit_request(njt_http_request_t *r)
 }
 
 
-static njt_int_t
+ njt_int_t
 njt_http_grpc_body_output_filter(void *data, njt_chain_t *in)
 {
     njt_http_request_t  *r = data;
@@ -5039,5 +5039,68 @@ njt_http_grpc_set_ssl(njt_conf_t *cf, njt_http_grpc_loc_conf_t *glcf)
 
     return NJT_OK;
 }
+void *njt_http_grpc_hc_get_up_uptream(void *pglcf) {
+    return ((njt_http_grpc_loc_conf_t *)pglcf)->upstream.upstream;
+}
+void *njt_http_grpc_hc_get_uptream(void *pglcf) {
+    return &((njt_http_grpc_loc_conf_t *)pglcf)->upstream;
+}
 
+
+njt_array_t *njt_http_grpc_hc_get_lengths(void *pglcf) {
+    return ((njt_http_grpc_loc_conf_t *)pglcf)->grpc_lengths;
+}
+
+
+njt_shm_zone_t *njt_http_grpc_hc_get_shm_zone(void *pglcf) {
+    return ((njt_http_grpc_loc_conf_t *)pglcf)->upstream.upstream->shm_zone;
+}
+void *njt_http_grpc_hc_create_grpc_on(njt_pool_t *pool) {
+    njt_http_grpc_conn_t                 *grpc_con;
+
+    grpc_con = njt_pcalloc(pool, sizeof(njt_http_grpc_conn_t));
+    if (grpc_con == NULL) {
+        return NULL;
+    };
+    grpc_con->init_window = NJT_HTTP_V2_DEFAULT_WINDOW;
+    grpc_con->send_window = NJT_HTTP_V2_DEFAULT_WINDOW;
+    grpc_con->recv_window = NJT_HTTP_V2_MAX_WINDOW;
+
+    return grpc_con;
+}
+void *njt_http_grpc_hc_create_in_filter_ctx(njt_pool_t *pool, void *r, void *grpc_con) {
+    njt_http_grpc_ctx_t                 *ctx;
+
+    ctx = njt_pcalloc(pool, sizeof(njt_http_grpc_ctx_t));
+    if (ctx == NULL) {
+        return NULL;
+    };
+    ctx->connection = (njt_http_grpc_conn_t *)grpc_con;
+    ctx->send_window = NJT_HTTP_V2_DEFAULT_WINDOW;
+    ctx->recv_window = NJT_HTTP_V2_MAX_WINDOW;
+    ctx->id = 1;
+    ctx->connection->last_stream_id = 1;
+    ctx->request = (njt_http_request_t *)r;
+    ctx->in = njt_pcalloc(pool, sizeof(njt_chain_t));
+    if (ctx->in == NULL) {
+        return NULL;
+    };
+    ctx->in->buf = njt_pcalloc(pool, sizeof(njt_buf_t));
+    if (ctx->in->buf == NULL) {
+        return NULL;
+    };
+
+    return ctx;
+}
+void njt_http_grpc_hc_set_upstream(njt_http_upstream_t *u)
+{
+    u->create_request = njt_http_grpc_create_request;
+    u->reinit_request = njt_http_grpc_reinit_request;
+    u->process_header = njt_http_grpc_process_header;
+    u->abort_request = njt_http_grpc_abort_request;
+    u->finalize_request = njt_http_grpc_finalize_request;
+
+    u->input_filter_init = njt_http_grpc_filter_init;
+    u->input_filter = njt_http_grpc_filter;
+}
 #endif

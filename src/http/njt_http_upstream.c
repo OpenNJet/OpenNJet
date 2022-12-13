@@ -44,10 +44,10 @@ static void njt_http_upstream_send_request(njt_http_request_t *r,
     njt_http_upstream_t *u, njt_uint_t do_write);
 static njt_int_t njt_http_upstream_send_request_body(njt_http_request_t *r,
     njt_http_upstream_t *u, njt_uint_t do_write);
-static void njt_http_upstream_send_request_handler(njt_http_request_t *r,
+ void njt_http_upstream_send_request_handler(njt_http_request_t *r,
     njt_http_upstream_t *u);
 static void njt_http_upstream_read_request_handler(njt_http_request_t *r);
-static void njt_http_upstream_process_header(njt_http_request_t *r,
+void njt_http_upstream_process_header(njt_http_request_t *r,
     njt_http_upstream_t *u);
 static njt_int_t njt_http_upstream_test_next(njt_http_request_t *r,
     njt_http_upstream_t *u);
@@ -1263,7 +1263,7 @@ failed:
 }
 
 
-static void
+ void
 njt_http_upstream_handler(njt_event_t *ev)
 {
     njt_connection_t     *c;
@@ -2060,7 +2060,7 @@ njt_http_upstream_reinit(njt_http_request_t *r, njt_http_upstream_t *u)
 }
 
 
-static void
+ void
 njt_http_upstream_send_request(njt_http_request_t *r, njt_http_upstream_t *u,
     njt_uint_t do_write)
 {
@@ -2293,7 +2293,7 @@ njt_http_upstream_send_request_body(njt_http_request_t *r,
 }
 
 
-static void
+ void
 njt_http_upstream_send_request_handler(njt_http_request_t *r,
     njt_http_upstream_t *u)
 {
@@ -2352,7 +2352,7 @@ njt_http_upstream_read_request_handler(njt_http_request_t *r)
 }
 
 
-static void
+ void
 njt_http_upstream_process_header(njt_http_request_t *r, njt_http_upstream_t *u)
 {
     ssize_t            n;
