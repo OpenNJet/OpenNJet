@@ -143,7 +143,7 @@ njt_http_upstream_get_least_conn_peer(njt_peer_connection_t *pc, void *data)
         if (rrp->tried[n] & m) {
             continue;
         }
-
+	/*zyg
         if (peer->down) {
             continue;
         }
@@ -157,7 +157,9 @@ njt_http_upstream_get_least_conn_peer(njt_peer_connection_t *pc, void *data)
 
         if (peer->max_conns && peer->conns >= peer->max_conns) {
             continue;
-        }
+        }*/
+	if(njt_http_upstream_pre_handle_peer(peer) == NJT_ERROR)
+                continue;
 
         /*
          * select peer with least number of connections; if there are
@@ -198,15 +200,15 @@ njt_http_upstream_get_least_conn_peer(njt_peer_connection_t *pc, void *data)
             if (rrp->tried[n] & m) {
                 continue;
             }
-
+	    /*zyg
             if (peer->down) {
                 continue;
-            }
+            }*/
 
             if (peer->conns * best->weight != best->conns * peer->weight) {
                 continue;
             }
-
+	    /*
             if (peer->max_fails
                 && peer->fails >= peer->max_fails
                 && now - peer->checked <= peer->fail_timeout)
@@ -216,7 +218,9 @@ njt_http_upstream_get_least_conn_peer(njt_peer_connection_t *pc, void *data)
 
             if (peer->max_conns && peer->conns >= peer->max_conns) {
                 continue;
-            }
+            }*/
+	    if(njt_http_upstream_pre_handle_peer(peer) == NJT_ERROR)
+                continue;
 
             peer->current_weight += peer->effective_weight;
             total += peer->effective_weight;

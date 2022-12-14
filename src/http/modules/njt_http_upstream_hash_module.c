@@ -233,7 +233,7 @@ njt_http_upstream_get_hash_peer(njt_peer_connection_t *pc, void *data)
 
         njt_log_debug2(NJT_LOG_DEBUG_HTTP, pc->log, 0,
                        "get hash peer, value:%uD, peer:%ui", hp->hash, p);
-
+	/* zyg
         if (peer->down) {
             njt_http_upstream_rr_peer_unlock(hp->rrp.peers, peer);
             goto next;
@@ -250,8 +250,11 @@ njt_http_upstream_get_hash_peer(njt_peer_connection_t *pc, void *data)
         if (peer->max_conns && peer->conns >= peer->max_conns) {
             njt_http_upstream_rr_peer_unlock(hp->rrp.peers, peer);
             goto next;
+        }*/
+	if(njt_http_upstream_pre_handle_peer(peer) == NJT_ERROR) {
+                njt_http_upstream_rr_peer_unlock(hp->rrp.peers, peer);
+                goto next;
         }
-
         break;
 
     next:
@@ -545,7 +548,7 @@ njt_http_upstream_get_chash_peer(njt_peer_connection_t *pc, void *data)
             if (hp->rrp.tried[n] & m) {
                 continue;
             }
-
+	    /* zyg
             if (peer->down) {
                 continue;
             }
@@ -559,8 +562,9 @@ njt_http_upstream_get_chash_peer(njt_peer_connection_t *pc, void *data)
 
             if (peer->max_conns && peer->conns >= peer->max_conns) {
                 continue;
-            }
-
+            }*/
+	    if(njt_http_upstream_pre_handle_peer(peer) == NJT_ERROR)
+                continue;
             if (peer->server.len != server->len
                 || njt_strncmp(peer->server.data, server->data, server->len)
                    != 0)

@@ -55,7 +55,8 @@ struct njt_http_upstream_rr_peer_s {
     unsigned                        hc_last_passed:1;
     unsigned                        hc_check_in_process:1;
     unsigned                        set_backup:1;
-    
+ 
+    njt_uint_t                      requests;   
     njt_str_t                       route;
     njt_int_t                       parent_id;
     njt_uint_t                      hc_checks;
@@ -174,6 +175,8 @@ void njt_http_upstream_free_round_robin_peer(njt_peer_connection_t *pc,
     void *data, njt_uint_t state);
 void njt_http_upstream_free_peer_memory(njt_slab_pool_t *pool,
         njt_http_upstream_rr_peer_t *peer);
+njt_int_t
+njt_http_upstream_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer);
 #if (NJT_HTTP_SSL)
 njt_int_t
     njt_http_upstream_set_round_robin_peer_session(njt_peer_connection_t *pc,

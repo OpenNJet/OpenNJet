@@ -221,7 +221,7 @@ njt_http_upstream_get_random_peer(njt_peer_connection_t *pc, void *data)
 
     njt_http_upstream_rr_peers_rlock(peers);
 
-    if (rp->tries > 20 || peers->single) {
+    if (rp->tries > 20 || peers->single || peers->number == 0) {
         njt_http_upstream_rr_peers_unlock(peers);
         return njt_http_upstream_get_round_robin_peer(pc, rrp);
     }
@@ -245,7 +245,7 @@ njt_http_upstream_get_random_peer(njt_peer_connection_t *pc, void *data)
         }
 
         njt_http_upstream_rr_peer_lock(peers, peer);
-
+	/* zyg
         if (peer->down) {
             njt_http_upstream_rr_peer_unlock(peers, peer);
             goto next;
@@ -260,6 +260,10 @@ njt_http_upstream_get_random_peer(njt_peer_connection_t *pc, void *data)
         }
 
         if (peer->max_conns && peer->conns >= peer->max_conns) {
+            njt_http_upstream_rr_peer_unlock(peers, peer);
+            goto next;
+        }*/
+	if (njt_http_upstream_pre_handle_peer(peer) == NJT_ERROR) {
             njt_http_upstream_rr_peer_unlock(peers, peer);
             goto next;
         }
@@ -315,7 +319,7 @@ njt_http_upstream_get_random2_peer(njt_peer_connection_t *pc, void *data)
 
     njt_http_upstream_rr_peers_wlock(peers);
 
-    if (rp->tries > 20 || peers->single) {
+    if (rp->tries > 20 || peers->single || peers->number == 0) {
         njt_http_upstream_rr_peers_unlock(peers);
         return njt_http_upstream_get_round_robin_peer(pc, rrp);
     }
@@ -347,7 +351,7 @@ njt_http_upstream_get_random2_peer(njt_peer_connection_t *pc, void *data)
         if (rrp->tried[n] & m) {
             goto next;
         }
-
+	/* zyg
         if (peer->down) {
             goto next;
         }
@@ -361,8 +365,10 @@ njt_http_upstream_get_random2_peer(njt_peer_connection_t *pc, void *data)
 
         if (peer->max_conns && peer->conns >= peer->max_conns) {
             goto next;
+        }*/
+	 if (njt_http_upstream_pre_handle_peer(peer) == NJT_ERROR) {
+            goto next;
         }
-
         if (prev) {
             if (peer->conns * prev->weight > prev->conns * peer->weight) {
                 peer = prev;

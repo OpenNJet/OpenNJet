@@ -203,7 +203,7 @@ njt_http_upstream_get_ip_hash_peer(njt_peer_connection_t *pc, void *data)
                        "get ip hash peer, hash: %ui %04XL", p, (uint64_t) m);
 
         njt_http_upstream_rr_peer_lock(iphp->rrp.peers, peer);
-
+	/* zyg
         if (peer->down) {
             njt_http_upstream_rr_peer_unlock(iphp->rrp.peers, peer);
             goto next;
@@ -220,8 +220,11 @@ njt_http_upstream_get_ip_hash_peer(njt_peer_connection_t *pc, void *data)
         if (peer->max_conns && peer->conns >= peer->max_conns) {
             njt_http_upstream_rr_peer_unlock(iphp->rrp.peers, peer);
             goto next;
+        }*/
+	if (njt_http_upstream_pre_handle_peer(peer) == NJT_ERROR) {
+            njt_http_upstream_rr_peer_unlock(iphp->rrp.peers, peer);
+            goto next;
         }
-
         break;
 
     next:
