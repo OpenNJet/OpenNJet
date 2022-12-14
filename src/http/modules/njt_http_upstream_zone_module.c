@@ -19,7 +19,11 @@ static njt_http_upstream_rr_peers_t *njt_http_upstream_zone_copy_peers(
     njt_slab_pool_t *shpool, njt_http_upstream_srv_conf_t *uscf);
 static njt_http_upstream_rr_peer_t *njt_http_upstream_zone_copy_peer(
     njt_http_upstream_rr_peers_t *peers, njt_http_upstream_rr_peer_t *src);
-
+ static njt_int_t
+njt_http_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *data);
+static void
+njt_http_upstream_zone_inherit_peer_status (njt_http_upstream_rr_peers_t *peers,
+                njt_http_upstream_rr_peers_t *src_peers);
 
 static njt_command_t  njt_http_upstream_zone_commands[] = {
 
@@ -110,13 +114,43 @@ njt_http_upstream_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     uscf->shm_zone->init = njt_http_upstream_init_zone;
+    uscf->shm_zone->merge = njt_http_upstream_merge_zone;
     uscf->shm_zone->data = umcf;
 
     uscf->shm_zone->noreuse = 1;
 
     return NJT_CONF_OK;
 }
-
+static njt_int_t
+njt_http_upstream_merge_zone(njt_shm_zone_t *shm_zone, void *data)
+{
+         njt_http_upstream_srv_conf_t   *uscf, **uscfp,*old_uscf,**old_uscfp;
+         njt_http_upstream_main_conf_t  *umcf,*old_umcf;
+         njt_uint_t                      i;
+         njt_http_upstream_rr_peers_t   *peers;
+         umcf = shm_zone->data;
+          uscfp = umcf->upstreams.elts;
+           if(data && shm_zone->shm.exists == 0) {
+                old_umcf = data;
+                old_uscfp = old_umcf->upstreams.elts;
+                if(umcf->upstreams.nelts == old_umcf->upstreams.nelts) {
+                        for (i = 0; i < umcf->upstreams.nelts; i++) {
+                                uscf = uscfp[i];
+                                if(uscf->hc_type == 2) {
+                                        old_uscf = old_uscfp[i];
+                                        if (uscf->shm_zone->shm.name.len != old_uscf->shm_zone->shm.name.len 
+					|| njt_strncmp(uscf->shm_zone->shm.name.data,old_uscf->shm_zone->shm.name.data,uscf->shm_zone->shm.name.len) != 0 ) 					    {
+                                                continue;
+                                        }
+                                        peers = old_uscf->peer.data;
+                                        njt_http_upstream_zone_inherit_peer_status(uscf->peer.data,peers);
+                                        uscf->reload = 1;
+                                }
+                        }
+                }
+     }
+        return NJT_OK;
+}
 
 static njt_int_t
 njt_http_upstream_init_zone(njt_shm_zone_t *shm_zone, void *data)
@@ -323,4 +357,25 @@ failed:
     njt_slab_free_locked(pool, dst);
 
     return NULL;
+}
+static void
+njt_http_upstream_zone_inherit_peer_status (njt_http_upstream_rr_peers_t *peers,
+		njt_http_upstream_rr_peers_t *src_peers) {
+
+	njt_http_upstream_rr_peer_t    *peer,*old_peer;
+
+	if(src_peers == NULL)
+		return;
+	for (peer = peers->peer; peer;peer = peer->next) {
+		if(peer->parent_id == -1) {
+			for (old_peer = src_peers->peer; old_peer;old_peer = old_peer->next) {
+				if(peer->server.len == old_peer->server.len && njt_strncmp(peer->server.data,old_peer->server.data,peer->server.len
+							) == 0){
+					peer->hc_down = old_peer->hc_down;
+					break;
+				}
+			}
+		}
+
+	}
 }

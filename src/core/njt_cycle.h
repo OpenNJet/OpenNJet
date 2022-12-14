@@ -31,6 +31,7 @@ struct njt_shm_zone_s {
     void                     *data;
     njt_shm_t                 shm;
     njt_shm_zone_init_pt      init;
+    njt_shm_zone_init_pt      merge;
     void                     *tag;
     void                     *sync;
     njt_uint_t                noreuse;  /* unsigned  noreuse:1; */

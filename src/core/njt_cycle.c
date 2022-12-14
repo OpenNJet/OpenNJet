@@ -478,7 +478,11 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                 }
 
                 goto shm_zone_found;
-            }
+            } else if (shm_zone[i].tag == oshm_zone[n].tag
+		&& shm_zone[i].shm.size == oshm_zone[n].shm.size
+		&& shm_zone[i].noreuse == 1 && shm_zone[i].merge != NULL){
+			shm_zone[i].merge(&shm_zone[i], oshm_zone[n].data);
+		}
 
             break;
         }
@@ -1356,6 +1360,7 @@ njt_shared_memory_add(njt_conf_t *cf, njt_str_t *name, size_t size, void *tag)
     shm_zone->shm.name = *name;
     shm_zone->shm.exists = 0;
     shm_zone->init = NULL;
+    shm_zone->merge = NULL;
     shm_zone->tag = tag;
     shm_zone->noreuse = 0;
 
