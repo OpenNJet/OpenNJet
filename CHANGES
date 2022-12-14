@@ -1,0 +1,2 @@
+1.nginx-1.23.3 r->headers_in.cookies[ngx_array_t]  to r->headers_in.cookie[ngx_table_elt_t]
+2.nginx-1.23.3 ngx_http_proxy_merge_ssl:plcf->upstream.ssl  init not null.  http health check;

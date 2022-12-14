@@ -383,11 +383,6 @@ static char *njt_http_health_check(njt_conf_t *cf, njt_command_t *cmd,
     njt_uint_t                         type = NJT_HTTP_HC_HTTP;
     njt_str_t                          gsvc = njt_http_grpc_hc_svc;
 
-#if !(NJT_HTTP_PROXY)
-    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                       "http proxy modular must be enabled.");
-    return NJT_CONF_ERROR;
-#endif
 
     hcmcf = njt_http_conf_get_module_main_conf(cf, njt_http_health_check_module);
     if (hcmcf == NULL) {
@@ -1280,7 +1275,7 @@ static void njt_http_health_loop_peer(njt_http_health_check_loc_conf_t    *hclcf
             hc_peer->peer.connection->pool = hc_peer->pool;
 #if (NJT_HTTP_SSL)
 
-            if (hclcf->plcf->upstream.ssl && hc_peer->peer.connection->ssl == NULL) {
+            if (hclcf->plcf->upstream.ssl && hclcf->plcf->upstream.ssl->ctx &&  hc_peer->peer.connection->ssl == NULL) { //zyg
                 rc = njt_http_hc_ssl_init_connection( hc_peer->peer.connection,hc_peer);
                 if (rc == NJT_ERROR){
                     njt_http_health_check_update_wo_lock(hclcf,hc_peer, peer, NJT_ERROR);
