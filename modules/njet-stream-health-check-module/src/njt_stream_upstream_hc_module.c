@@ -1366,7 +1366,7 @@ njt_stream_hc_init_upstream(njt_stream_health_check_peer_t *hc_peer,njt_stream_u
 #if (NJT_STREAM_SSL)
 
     hc_peer->rr_peer = peer;
-    if (pc->type == SOCK_STREAM && hc_peer->hcscf->plcf->ssl) {
+    if (pc->type == SOCK_STREAM && hc_peer->hcscf->plcf->ssl != NULL && hc_peer->hcscf->plcf->ssl->ctx != NULL) {  //zyg 
 
         if (hc_peer->hcscf->plcf->proxy_protocol) {
             if (njt_stream_hc_send_proxy_protocol(hc_peer) != NJT_OK) {

@@ -568,6 +568,7 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
                through njt_parse_url with no_resolve enabled. Only if a hostname is given
                will we add this to the list of dynamic servers that we will resolve again.*/
 
+	    us->dynamic = 1;  //zyg
             njt_memzero(&u, sizeof(njt_url_t));
             u.url = value[1];
             u.default_port = 80;
@@ -581,7 +582,6 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
                 }
 
                 njt_memzero(dynamic_server, sizeof(njt_http_upstream_dynamic_server_conf_t));
-				//us->dynamic = 1;
                 dynamic_server->server = us;
                 dynamic_server->upstream_conf = uscf;
 
