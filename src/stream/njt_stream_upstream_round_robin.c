@@ -53,11 +53,21 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
         w = 0;
         t = 0;
 
+        peers = njt_pcalloc(cf->pool, sizeof(njt_stream_upstream_rr_peers_t));
+        if (peers == NULL) {
+            return NJT_ERROR;
+        }
         for (i = 0; i < us->servers->nelts; i++) {
             if (server[i].backup) {
                 continue;
             }
-
+	    //zyg
+	    if(server[i].dynamic != 1){
+		server[i].parent_id = -1;
+	    }else {
+		server[i].parent_id = (njt_int_t)peers->next_order++;
+	    }
+	    //end
             n += server[i].naddrs;
             w += server[i].naddrs * server[i].weight;
 
@@ -73,10 +83,6 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
             return NJT_ERROR;
         }
 
-        peers = njt_pcalloc(cf->pool, sizeof(njt_stream_upstream_rr_peers_t));
-        if (peers == NULL) {
-            return NJT_ERROR;
-        }
 
         peer = njt_pcalloc(cf->pool, sizeof(njt_stream_upstream_rr_peer_t) * n);
         if (peer == NULL) {
@@ -110,7 +116,10 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
                 peer[n].fail_timeout = server[i].fail_timeout;
                 peer[n].down = server[i].down;
                 peer[n].server = server[i].name;
-
+		//zyg
+		peer[n].id = peers->next_order++;
+		peer[n].parent_id = server[i].parent_id;
+		//end
                 *peerp = &peer[n];
                 peerp = &peer[n].next;
                 n++;
@@ -129,7 +138,11 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
             if (!server[i].backup) {
                 continue;
             }
-
+	    if(server[i].dynamic != 1) {
+		server[i].parent_id = -1;
+	    } else {
+		server[i].parent_id = (njt_int_t)peers->next_order++;
+	    }
             n += server[i].naddrs;
             w += server[i].naddrs * server[i].weight;
 

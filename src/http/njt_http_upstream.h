@@ -105,7 +105,7 @@ typedef struct {
 
     unsigned                         backup:1;
 #if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
-    //unsigned                         dynamic:1;
+    unsigned                         dynamic:1;
     njt_int_t                        parent_id;
     njt_str_t                        route;
 #endif
