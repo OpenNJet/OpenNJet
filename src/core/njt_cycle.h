@@ -65,6 +65,7 @@ struct njt_cycle_s {
     njt_array_t               config_dump;
     njt_rbtree_t              config_dump_rbtree;
     njt_rbtree_node_t         config_dump_sentinel;
+    njt_rbtree_t              old_config_dump_rbtree;
 
     njt_list_t                open_files;
     njt_list_t                shared_memory;

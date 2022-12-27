@@ -115,6 +115,15 @@ void njt_http_split_args(njt_http_request_t *r, njt_str_t *uri,
 njt_int_t njt_http_parse_chunked(njt_http_request_t *r, njt_buf_t *b,
     njt_http_chunked_t *ctx);
 
+njt_int_t njt_http_init_new_locations(njt_conf_t *cf,
+    njt_http_core_srv_conf_t *cscf, njt_http_core_loc_conf_t *pclcf);
+
+njt_int_t njt_http_init_new_static_location_trees(njt_conf_t *cf,
+    njt_http_core_loc_conf_t *pclcf);
+
+char *njt_http_merge_servers(njt_conf_t *cf,
+    njt_http_core_main_conf_t *cmcf, njt_http_module_t *module,
+    njt_uint_t ctx_index);
 
 njt_http_request_t *njt_http_create_request(njt_connection_t *c);
 njt_int_t njt_http_process_request_uri(njt_http_request_t *r);

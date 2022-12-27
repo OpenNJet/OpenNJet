@@ -144,7 +144,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     njt_rbtree_init(&cycle->config_dump_rbtree, &cycle->config_dump_sentinel,
                     njt_str_rbtree_insert_value);
-
+    cycle->old_config_dump_rbtree = cycle->config_dump_rbtree;
     if (old_cycle->open_files.part.nelts) {
         n = old_cycle->open_files.part.nelts;
         for (part = old_cycle->open_files.part.next; part; part = part->next) {

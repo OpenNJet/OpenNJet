@@ -207,6 +207,7 @@ typedef struct {
 #endif
 
     njt_http_core_loc_conf_t  **named_locations;
+    njt_http_core_loc_conf_t  **new_named_locations;
 } njt_http_core_srv_conf_t;
 
 
@@ -320,8 +321,10 @@ struct njt_http_core_loc_conf_s {
 #endif
 
     njt_http_location_tree_node_t   *static_locations;
+    njt_http_location_tree_node_t   *new_static_locations;
 #if (NJT_PCRE)
     njt_http_core_loc_conf_t       **regex_locations;
+    njt_http_core_loc_conf_t       **new_regex_locations;
 #endif
 
     /* pointer to the modules' loc_conf */
@@ -438,6 +441,8 @@ struct njt_http_core_loc_conf_s {
     njt_uint_t    types_hash_bucket_size;
 
     njt_queue_t  *locations;
+    njt_queue_t  *old_locations; //zyg
+    njt_queue_t  *new_locations;    //clb
 
 #if 0
     njt_http_core_loc_conf_t  *prev_location;

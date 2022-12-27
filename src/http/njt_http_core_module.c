@@ -2918,7 +2918,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (ctx == NULL) {
         return NJT_CONF_ERROR;
     }
-
+    // ctx->type = 2;
     http_ctx = cf->ctx;
     ctx->main_conf = http_ctx->main_conf;
 
@@ -3059,7 +3059,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (ctx == NULL) {
         return NJT_CONF_ERROR;
     }
-
+    // ctx->type = 3;
     pctx = cf->ctx;
     ctx->main_conf = pctx->main_conf;
     ctx->srv_conf = pctx->srv_conf;
@@ -3219,11 +3219,17 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
             return NJT_CONF_ERROR;
         }
     }
-
+    // if(pclcf->old_locations == NULL) {
+	// pclcf->old_locations = njt_palloc(cf->temp_pool,
+    //                             sizeof(njt_http_location_queue_t));
+	// njt_queue_init(pclcf->old_locations);
+    // }
     if (njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
         return NJT_CONF_ERROR;
     }
-
+    if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
     save = *cf;
     cf->ctx = ctx;
     cf->cmd_type = NJT_HTTP_LOC_CONF;
@@ -4577,7 +4583,7 @@ njt_http_core_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (ctx == NULL) {
         return NJT_CONF_ERROR;
     }
-
+    // ctx->type = 4;
     pctx = cf->ctx;
     ctx->main_conf = pctx->main_conf;
     ctx->srv_conf = pctx->srv_conf;
