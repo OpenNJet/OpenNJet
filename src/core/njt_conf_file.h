@@ -124,6 +124,8 @@ struct njt_conf_s {
     njt_conf_file_t      *conf_file;
     njt_log_t            *log;
 
+    njt_uint_t           dynamic;   //add by clb
+
     void                 *ctx;
     njt_uint_t            module_type;
     njt_uint_t            cmd_type;

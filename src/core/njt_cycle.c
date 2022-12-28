@@ -249,7 +249,6 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     senv = environ;
 
-
     njt_memzero(&conf, sizeof(njt_conf_t));
     /* STUB: init array ? */
     conf.args = njt_array_create(pool, 10, sizeof(njt_str_t));
@@ -263,7 +262,6 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         njt_destroy_pool(pool);
         return NULL;
     }
-
 
     conf.ctx = cycle->conf_ctx;
     conf.cycle = cycle;
@@ -769,7 +767,7 @@ old_shm_zone_done:
         }
     }
 
-    njt_destroy_pool(conf.temp_pool);
+    //njt_destroy_pool(conf.temp_pool); //add by clb
 
     if (njt_process == NJT_PROCESS_MASTER || njt_is_init_cycle(old_cycle)) {
 

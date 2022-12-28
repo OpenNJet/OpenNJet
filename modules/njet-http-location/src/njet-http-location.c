@@ -285,16 +285,20 @@ njt_http_location_handler(njt_http_request_t *r)
     char                        *rv;
     njt_http_module_t           *module;
     njt_uint_t                   mi, m;
+    // njt_http_core_main_conf_t   *cmcf;
     njt_queue_t                *x;
     njt_http_location_queue_t  *lq, *lx;
    njt_http_core_loc_conf_t    *clcf, *loc;
-   njt_http_core_main_conf_t   *cmcf;
+   njt_http_conf_ctx_t         *saved_ctx;
+//    njt_queue_t  *save_queue;
+   
    njt_str_t  location_path = njt_string("/etc/njet/add_location.txt");
    njt_str_t  location_req = njt_string("/add_location");
  
     njt_memzero(&conf,sizeof(njt_conf_t));
     loc = njt_http_get_module_loc_conf(r,njt_http_core_module);
-    if(loc && loc->name.len == location_req.len && njt_strncmp(loc->name.data,location_req.data,loc->name.len) == 0) {
+    // if(loc && loc->name.len == location_req.len && njt_strncmp(loc->name.data,location_req.data,loc->name.len) == 0) {
+    if(loc && r->uri.len == location_req.len && njt_strncmp(r->uri.data,location_req.data,r->uri.len) == 0) {
 	printf("11");
     } else {
 	return NJT_DECLINED;
@@ -341,14 +345,10 @@ njt_http_location_handler(njt_http_request_t *r)
     conf.log = njt_cycle->log;
     conf.module_type = NJT_HTTP_MODULE;
     conf.cmd_type = NJT_HTTP_SRV_CONF;
+    conf.dynamic = 1;
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
     //clcf->locations = NULL; // clcf->old_locations;
     njt_conf_parse(&conf, &location_path);
-
-    //merge servers
-    // cmcf = ctx->main_conf[njt_http_core_module.ctx_index];
-    // cscfp = cmcf->servers.elts;
-    cmcf = njt_http_get_module_main_conf(r, njt_http_core_module);
 
     for (m = 0; conf.cycle->modules[m]; m++) {
         if (conf.cycle->modules[m]->type != NJT_HTTP_MODULE) {
@@ -358,22 +358,36 @@ njt_http_location_handler(njt_http_request_t *r)
         module = conf.cycle->modules[m]->ctx;
         mi = conf.cycle->modules[m]->ctx_index;
 
-        /* init http{} main_conf's */
+        /* merge the server{}s' srv_conf's */
+        saved_ctx = (njt_http_conf_ctx_t *) conf.ctx;
+        if (module->merge_srv_conf) {
+            rv = module->merge_srv_conf(&conf, saved_ctx->srv_conf[mi],
+                                        cscf->ctx->srv_conf[mi]);
+            if (rv != NJT_CONF_OK) {
+                return NJT_ERROR;
+            }
+        }
 
-        // if (module->init_main_conf) {
-        //     rv = module->init_main_conf(cf, ctx->main_conf[mi]);
-        //     if (rv != NJT_CONF_OK) {
-        //         goto failed;
-        //     }
-        // }
+        if (module->merge_loc_conf) {
 
-        rv = njt_http_merge_servers(&conf, cmcf, module, mi);
-        if (rv != NJT_CONF_OK) {
-            return NJT_ERROR;
+            /* merge the server{}'s loc_conf */
+            rv = module->merge_loc_conf(&conf, saved_ctx->loc_conf[mi],
+                                        cscf->ctx->loc_conf[mi]);
+            if (rv != NJT_CONF_OK) {
+                return NJT_ERROR;
+            }
+
+            /* merge the locations{}' loc_conf's */
+            rv = njt_http_merge_locations(&conf, clcf->old_locations,
+                                          cscf->ctx->loc_conf,
+                                          module, mi);
+            if (rv != NJT_CONF_OK) {
+                return NJT_ERROR;
+            }
         }
     }
 
-    //dump old_location to a tmp_location
+    //dump old_location to a new_location
     if (clcf->new_locations == NULL) {
         clcf->new_locations = njt_palloc(conf.temp_pool,
                                 sizeof(njt_http_location_queue_t));
@@ -401,18 +415,10 @@ njt_http_location_handler(njt_http_request_t *r)
         njt_queue_insert_tail(clcf->new_locations, &lq->queue);
     }
 
-    //init location, may update named_location and regex_location
-    // if (njt_http_init_locations(&conf, cscf, clcf) != NJT_OK) {
-    //     return rc;
-    // }
     if (njt_http_init_new_locations(&conf, cscf, clcf) != NJT_OK) {
         return rc;
     }
 
-    //create static location tree
-    // if (njt_http_init_static_location_trees(&conf, clcf) != NJT_OK) {
-    //     return rc;
-    // }
     if (njt_http_init_new_static_location_trees(&conf, clcf) != NJT_OK) {
         return rc;
     }

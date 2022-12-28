@@ -31,9 +31,9 @@ static njt_int_t njt_http_add_server(njt_conf_t *cf,
 // static char *njt_http_merge_servers(njt_conf_t *cf,
 //     njt_http_core_main_conf_t *cmcf, njt_http_module_t *module,
 //     njt_uint_t ctx_index);
-static char *njt_http_merge_locations(njt_conf_t *cf,
-    njt_queue_t *locations, void **loc_conf, njt_http_module_t *module,
-    njt_uint_t ctx_index);
+// static char *njt_http_merge_locations(njt_conf_t *cf,
+//     njt_queue_t *locations, void **loc_conf, njt_http_module_t *module,
+//     njt_uint_t ctx_index);
  njt_int_t njt_http_init_locations(njt_conf_t *cf,
     njt_http_core_srv_conf_t *cscf, njt_http_core_loc_conf_t *pclcf);
 
