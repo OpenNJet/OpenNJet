@@ -944,7 +944,12 @@ njt_http_core_rewrite_phase(njt_http_request_t *r, njt_http_phase_handler_t *ph)
 
     return NJT_OK;
 }
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+static void njt_http_core_free_ctx(void* data){
+    njt_http_core_loc_conf_t  *clcf = data;
+    --clcf->ref_count;
+}
+#endif
 
 njt_int_t
 njt_http_core_find_config_phase(njt_http_request_t *r,
@@ -978,7 +983,24 @@ njt_http_core_find_config_phase(njt_http_request_t *r,
                    &clcf->name);
 
     njt_http_update_location_config(r);
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_http_core_loc_conf_t  *temp;
+    njt_http_cleanup_t  **cln,*end;
+    if (r->used_ref == 0 ){
+        r->used_ref =1;
+        temp = njt_http_get_module_loc_conf(r,njt_http_core_module);
+        ++temp->ref_count;
+        cln = &r->main->cleanup;
+        end = njt_pcalloc(r->pool, sizeof(njt_http_cleanup_t));
+        end->data = temp;
+        end->handler = njt_http_core_free_ctx;
+        end->next = NULL;
+        while (*cln != NULL){
+            cln = &(*cln)->next;
+        }
+        *cln = end;
+    }
+#endif
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http cl:%O max:%O",
                    r->headers_in.content_length_n, clcf->client_max_body_size);
@@ -3635,6 +3657,7 @@ njt_http_core_create_loc_conf(njt_conf_t *cf)
 #if (NJT_HTTP_DYNAMIC_LOC)
     clcf->pool=cf->pool;  // cx 处理内存释放
     clcf->destroy_locs = NULL; // cx 处理资源释放
+    clcf->ref_count = 0;
 #endif
 
     clcf->client_max_body_size = NJT_CONF_UNSET;

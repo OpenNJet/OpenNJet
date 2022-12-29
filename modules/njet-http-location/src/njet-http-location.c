@@ -294,7 +294,10 @@ static void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
         clcf->destroy_locs = clcf->destroy_locs->next;
         ld->destroy_loc = NULL;
     }
-    njt_destroy_pool(clcf->pool);
+    clcf->disable = 1;
+    if(clcf->disable && clcf->ref_count == 0 && clcf->pool != NULL){
+        njt_destroy_pool(clcf->pool);
+    }
 }
 
 static njt_http_location_queue_t *njt_http_find_location(njt_str_t name, njt_queue_t *locations) {
@@ -321,7 +324,7 @@ njt_http_location_delete_handler(njt_http_request_t *r) {
     njt_queue_t *x;
     njt_http_location_queue_t *lq, *lx;
 
-    njt_str_t name = njt_string("= /test/demo");
+    njt_str_t name = njt_string("/websocket");
     cscf = njt_http_get_module_srv_conf(r, njt_http_core_module);
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
 
@@ -373,7 +376,7 @@ njt_http_location_delete_handler(njt_http_request_t *r) {
         njt_queue_insert_tail(clcf->new_locations, &lq->queue);
     }
 
-
+// todo 换pool 清理内存
     if (njt_http_init_new_locations(&cf, cscf, clcf) != NJT_OK) {
         return NJT_ERROR;
     }
@@ -382,7 +385,7 @@ njt_http_location_delete_handler(njt_http_request_t *r) {
         return NJT_ERROR;
     }
 
-    //todo 处理变量
+
     cscf->named_locations = cscf->new_named_locations;
     clcf->regex_locations = clcf->new_regex_locations;
     clcf->static_locations = clcf->new_static_locations;
@@ -476,6 +479,7 @@ njt_http_location_handler(njt_http_request_t *r) {
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
     //clcf->locations = NULL; // clcf->old_locations;
     njt_conf_parse(&conf, &location_path);
+    clcf->pool = location_pool;
 
     //merge servers
     // cmcf = ctx->main_conf[njt_http_core_module.ctx_index];

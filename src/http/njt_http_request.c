@@ -3704,7 +3704,12 @@ njt_http_free_request(njt_http_request_t *r, njt_int_t rc)
      * Setting r->pool to NULL will increase probability to catch double close
      * of request since the request object is allocated from its own pool.
      */
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+    clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
+    if(clcf->disable && clcf->ref_count == 0 && clcf->pool != NULL ){
+        njt_destroy_pool(clcf->pool);
+    }
+#endif
     pool = r->pool;
     r->pool = NULL;
 
