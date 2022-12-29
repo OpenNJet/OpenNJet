@@ -757,6 +757,17 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     }
 
     if (named) {
+#if (NJT_HTTP_DYNAMIC_LOC)
+        if (cscf->named_locations != NULL){
+            njt_pfree(cf->cycle->pool,cscf->named_locations);
+            cscf->named_locations = NULL;
+        }
+        clcfp = njt_palloc(cf->cycle->pool,
+                           (r + 1) * sizeof(njt_http_core_loc_conf_t *));
+#else
+        clcfp = njt_palloc(cf->pool,
+                           (n + 1) * sizeof(njt_http_core_loc_conf_t *));
+#endif
         clcfp = njt_palloc(cf->pool,
                            (n + 1) * sizeof(njt_http_core_loc_conf_t *));
         if (clcfp == NULL) {
@@ -782,9 +793,14 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 #if (NJT_PCRE)
 
     if (regex) {
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+        clcfp = njt_palloc(pclcf->pool,
+                           (r + 1) * sizeof(njt_http_core_loc_conf_t *));
+#else
         clcfp = njt_palloc(cf->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
+#endif
+
         if (clcfp == NULL) {
             return NJT_ERROR;
         }
@@ -886,8 +902,18 @@ njt_http_init_new_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     }
 
     if (named) {
+        //todo 待定
+#if (NJT_HTTP_DYNAMIC_LOC)
+        if ( cscf->new_named_locations != NULL){
+            njt_pfree(cf->cycle->pool,cscf->new_named_locations);
+            cscf->new_named_locations = NULL;
+        }
+        clcfp = njt_palloc(cf->cycle->pool,
+                           (n + 1) * sizeof(njt_http_core_loc_conf_t *));
+#else
         clcfp = njt_palloc(cf->pool,
                            (n + 1) * sizeof(njt_http_core_loc_conf_t *));
+#endif
         if (clcfp == NULL) {
             return NJT_ERROR;
         }
@@ -912,9 +938,14 @@ njt_http_init_new_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 #if (NJT_PCRE)
 
     if (regex) {
-
+        //todo 待定
+#if (NJT_HTTP_DYNAMIC_LOC)
+        clcfp = njt_palloc(pclcf->pool,
+                           (r + 1) * sizeof(njt_http_core_loc_conf_t *));
+#else
         clcfp = njt_palloc(cf->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
+#endif
         if (clcfp == NULL) {
             return NJT_ERROR;
         }
