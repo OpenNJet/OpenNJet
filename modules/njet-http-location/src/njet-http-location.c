@@ -479,6 +479,7 @@ njt_http_location_handler(njt_http_request_t *r) {
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
     //clcf->locations = NULL; // clcf->old_locations;
     njt_conf_parse(&conf, &location_path);
+    njt_http_variables_init_vars(&conf);
     clcf->pool = location_pool;
 
     //merge servers

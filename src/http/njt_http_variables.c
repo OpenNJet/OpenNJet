@@ -2808,7 +2808,7 @@ njt_http_variables_init_vars(njt_conf_t *cf)
         av = key[n].value;
 
         if (av->flags & NJT_HTTP_VAR_NOHASH) {
-            key[n].key.data = NULL;
+            //zyg key[n].key.data = NULL;
         }
     }
 
@@ -2828,7 +2828,7 @@ njt_http_variables_init_vars(njt_conf_t *cf)
         return NJT_ERROR;
     }
 
-    cmcf->variables_keys = NULL;
+   //zyg  cmcf->variables_keys = NULL;
 
     return NJT_OK;
 }
