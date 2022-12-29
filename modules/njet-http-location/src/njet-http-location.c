@@ -338,6 +338,7 @@ njt_http_location_delete_handler(njt_http_request_t *r) {
             clcf->pool,
             NULL,
             njt_cycle->log,
+            1,
             &cf_ctx,
             NJT_HTTP_MODULE,
             NJT_CONF_BLOCK,
@@ -405,7 +406,7 @@ njt_http_location_handler(njt_http_request_t *r) {
     char *rv;
     njt_http_module_t *module;
     njt_uint_t mi, m;
-    // njt_http_core_main_conf_t   *cmcf;njt_queue_t *x;
+    njt_queue_t *x;
     njt_http_location_queue_t *lq, *lx;
     njt_http_core_loc_conf_t *clcf, *loc;
     njt_http_conf_ctx_t         *saved_ctx;
@@ -417,8 +418,6 @@ njt_http_location_handler(njt_http_request_t *r) {
 
     njt_memzero(&conf, sizeof(njt_conf_t));
     loc = njt_http_get_module_loc_conf(r, njt_http_core_module);
-    //if (loc && loc->name.len == location_req.len &&
-        njt_strncmp(loc->name.data, location_req.data, loc->name.len) == 0) {
     if(loc && r->uri.len == location_req.len && njt_strncmp(r->uri.data,location_req.data,r->uri.len) ==0) {
         printf("11");
     } else {
@@ -481,7 +480,7 @@ njt_http_location_handler(njt_http_request_t *r) {
     //merge servers
     // cmcf = ctx->main_conf[njt_http_core_module.ctx_index];
     // cscfp = cmcf->servers.elts;
-    cmcf = njt_http_get_module_main_conf(r, njt_http_core_module);
+//    cmcf = njt_http_get_module_main_conf(r, njt_http_core_module);
 
     for (m = 0; conf.cycle->modules[m]; m++) {
         if (conf.cycle->modules[m]->type != NJT_HTTP_MODULE) {
@@ -566,11 +565,8 @@ njt_http_location_handler(njt_http_request_t *r) {
     return njt_http_output_filter(r, &out);
 }
 
-
 static char *
-njt_http_location(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
-
-
+njt_http_location(njt_conf_t *cf, njt_command_t *cmd, void *conf){
     return NJT_CONF_OK;
 }
 

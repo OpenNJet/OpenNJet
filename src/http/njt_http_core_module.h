@@ -453,7 +453,8 @@ struct njt_http_core_loc_conf_s {
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t   *pool;          //cx 处理上下文内存释放
     njt_http_location_destroy_t *destroy_locs; //cx 处理上下文内存释放,按照链表顺序释放
-    njt_str_t    full_name;
+    njt_str_t    full_name;       // cx 查找location
+    njt_uint_t   ref_count;
 #endif
 
 #if 0
