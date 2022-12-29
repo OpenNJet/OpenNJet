@@ -766,8 +766,10 @@ old_shm_zone_done:
                           file[i].name.data);
         }
     }
-
-    //njt_destroy_pool(conf.temp_pool); //add by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+#else
+        njt_destroy_pool(conf.temp_pool);
+#endif
 
     if (njt_process == NJT_PROCESS_MASTER || njt_is_init_cycle(old_cycle)) {
 
