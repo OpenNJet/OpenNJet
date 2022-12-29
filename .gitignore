@@ -4,3 +4,4 @@ nginx/target
 build/
 *.swp
 ./Makefile
+auto/lib/tassl/.openssl/

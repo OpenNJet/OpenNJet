@@ -146,7 +146,9 @@ void njt_http_request_empty_handler(njt_http_request_t *r);
 
 njt_int_t njt_http_send_special(njt_http_request_t *r, njt_uint_t flags);
 
-
+char *njt_http_merge_locations(njt_conf_t *cf,
+    njt_queue_t *locations, void **loc_conf, njt_http_module_t *module,
+    njt_uint_t ctx_index);
 njt_int_t njt_http_read_client_request_body(njt_http_request_t *r,
     njt_http_client_body_handler_pt post_handler);
 njt_int_t njt_http_read_unbuffered_request_body(njt_http_request_t *r);

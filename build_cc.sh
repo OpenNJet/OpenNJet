@@ -22,7 +22,9 @@ cdir=`cd $(dirname $0); pwd`
 		if [ ! -d /etc/njet/lualib ]; then
 		   cp -fr lualib /etc/njet/lualib
 		fi
-                ./configure $flags
+                #./configure $flags
+		./configure --with-cc-opt=" -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan" \
+			--with-ld-opt=" -fsanitize=address -static-libgcc -static-libasan" $flags
                 ;;
             make)
                 make

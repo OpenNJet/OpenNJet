@@ -3268,9 +3268,12 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     //                             sizeof(njt_http_location_queue_t));
 	// njt_queue_init(pclcf->old_locations);
     // }
-    if (njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
-        return NJT_CONF_ERROR;
+    if(cf->dynamic != 1){
+        if (njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
+            return NJT_CONF_ERROR;
+        }
     }
+
     if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
         return NJT_CONF_ERROR;
     }

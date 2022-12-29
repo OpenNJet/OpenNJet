@@ -249,7 +249,6 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     senv = environ;
 
-
     njt_memzero(&conf, sizeof(njt_conf_t));
     /* STUB: init array ? */
     conf.args = njt_array_create(pool, 10, sizeof(njt_str_t));
@@ -263,7 +262,6 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         njt_destroy_pool(pool);
         return NULL;
     }
-
 
     conf.ctx = cycle->conf_ctx;
     conf.cycle = cycle;
