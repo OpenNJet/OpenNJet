@@ -12,7 +12,7 @@ njt_feature_test="int a;"
 . auto/feature
 
 if [ $njt_found = yes ]; then
-    have=NJT_HTTP_UPSTREAM_API . auto/have
+    have=NJT_HTTP_DYNAMIC_LOC . auto/have
     CORE_INCS="$CORE_INCS $njt_feature_path"
     njt_addon_name=njt_http_location_module
     njt_module_type=HTTP

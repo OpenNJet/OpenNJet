@@ -298,6 +298,13 @@ typedef struct {
     njt_str_t                  args;
 } njt_http_err_page_t;
 
+#if (NJT_HTTP_DYNAMIC_LOC)
+typedef struct njt_http_location_destroy_s {
+    void(*destroy_loc)(njt_http_core_loc_conf_t *hclf,void* data);
+    void* data;     // 携带必要上下文数据
+    struct njt_http_location_destroy_s *next;
+} njt_http_location_destroy_t;
+#endif
 
 struct njt_http_core_loc_conf_s {
     njt_str_t     name;          /* location name */
@@ -443,6 +450,11 @@ struct njt_http_core_loc_conf_s {
     njt_queue_t  *locations;
     njt_queue_t  *old_locations; //zyg
     njt_queue_t  *new_locations;    //clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t   *pool;          //cx 处理上下文内存释放
+    njt_http_location_destroy_t *destroy_locs; //cx 处理上下文内存释放,按照链表顺序释放
+    njt_str_t    full_name;
+#endif
 
 #if 0
     njt_http_core_loc_conf_t  *prev_location;

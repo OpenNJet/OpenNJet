@@ -557,14 +557,23 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (ctx->loc_conf == NULL) {
         return NJT_CONF_ERROR;
     }
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t *old_pool,*new_pool;
+    old_pool = cf->pool;
+    new_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
+    if (new_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+#endif
     for (i = 0; cf->cycle->modules[i]; i++) {
         if (cf->cycle->modules[i]->type != NJT_HTTP_MODULE) {
             continue;
         }
 
         module = cf->cycle->modules[i]->ctx;
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+        cf->pool = new_pool;
+#endif
         if (module->create_loc_conf) {
 
             mconf = module->create_loc_conf(cf);
@@ -574,6 +583,9 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
             ctx->loc_conf[cf->cycle->modules[i]->ctx_index] = mconf;
         }
+#if (NJT_HTTP_DYNAMIC_LOC)
+        cf->pool = old_pool;
+#endif
     }
 
     pclcf = pctx->loc_conf[njt_http_core_module.ctx_index];

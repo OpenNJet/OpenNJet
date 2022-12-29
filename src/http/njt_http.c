@@ -133,6 +133,7 @@ njt_http_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_core_srv_conf_t   **cscfp;
     njt_http_core_main_conf_t   *cmcf;
 
+
     if (*(njt_http_conf_ctx_t **) conf) {
         return "is duplicate";
     }
@@ -187,7 +188,14 @@ njt_http_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
      * create the main_conf's, the null srv_conf's, and the null loc_conf's
      * of the all http modules
      */
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t *old_pool,*new_pool;
+    old_pool = cf->pool;
+    new_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
+    if (new_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+#endif
     for (m = 0; cf->cycle->modules[m]; m++) {
         if (cf->cycle->modules[m]->type != NJT_HTTP_MODULE) {
             continue;
@@ -209,13 +217,18 @@ njt_http_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                 return NJT_CONF_ERROR;
             }
         }
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+        cf->pool = new_pool;
+#endif
         if (module->create_loc_conf) {
             ctx->loc_conf[mi] = module->create_loc_conf(cf);
             if (ctx->loc_conf[mi] == NULL) {
                 return NJT_CONF_ERROR;
             }
         }
+#if (NJT_HTTP_DYNAMIC_LOC)
+        cf->pool = old_pool;
+#endif
     }
 
     pcf = *cf;
