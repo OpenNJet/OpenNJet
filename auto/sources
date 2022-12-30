@@ -42,6 +42,7 @@ CORE_DEPS="src/core/njet.h \
            src/core/njt_open_file_cache.h \
            src/core/njt_crypt.h \
            src/core/njt_proxy_protocol.h \
+           src/core/njt_json_api.h \
            src/core/njt_syslog.h"
 
 
@@ -79,6 +80,8 @@ CORE_SRCS="src/core/njet.c \
            src/core/njt_open_file_cache.c \
            src/core/njt_crypt.c \
            src/core/njt_proxy_protocol.c \
+           src/core/njt_json.c \
+           src/core/njt_json_api.c \
            src/core/njt_syslog.c"
 
 
