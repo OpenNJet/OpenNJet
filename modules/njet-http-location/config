@@ -3,7 +3,7 @@ njt_feature_run=no
 njt_feature_incs=
 njt_feature_libs=
 njt_feature_path="$njt_addon_dir"
-njt_check_src="$njt_addon_dir/src/njet-http-location.c"
+njt_check_src="$njt_addon_dir/src/njet_http_location.c"
 
 
 njt_feature_deps=""
