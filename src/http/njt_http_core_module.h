@@ -297,7 +297,7 @@ typedef struct {
     njt_http_complex_value_t   value;
     njt_str_t                  args;
 } njt_http_err_page_t;
-
+// by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
 typedef struct njt_http_location_destroy_s {
     void(*destroy_loc)(njt_http_core_loc_conf_t *hclf,void* data);
@@ -305,6 +305,7 @@ typedef struct njt_http_location_destroy_s {
     struct njt_http_location_destroy_s *next;
 } njt_http_location_destroy_t;
 #endif
+//end
 
 struct njt_http_core_loc_conf_s {
     njt_str_t     name;          /* location name */
@@ -448,15 +449,17 @@ struct njt_http_core_loc_conf_s {
     njt_uint_t    types_hash_bucket_size;
 
     njt_queue_t  *locations;
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
     njt_queue_t  *old_locations; //zyg
     njt_queue_t  *new_locations;    //clb
-#if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t   *pool;          //cx 处理上下文内存释放
     njt_http_location_destroy_t *destroy_locs; //cx 处理上下文内存释放,按照链表顺序释放
     njt_str_t    full_name;       // cx 查找location
     njt_uint_t   ref_count;
     unsigned     disable;
 #endif
+    //end
 
 #if 0
     njt_http_core_loc_conf_t  *prev_location;
