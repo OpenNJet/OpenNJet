@@ -944,12 +944,14 @@ njt_http_core_rewrite_phase(njt_http_request_t *r, njt_http_phase_handler_t *ph)
 
     return NJT_OK;
 }
+// by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
 static void njt_http_core_free_ctx(void* data){
     njt_http_core_loc_conf_t  *clcf = data;
     --clcf->ref_count;
 }
 #endif
+//end
 
 njt_int_t
 njt_http_core_find_config_phase(njt_http_request_t *r,
@@ -983,6 +985,7 @@ njt_http_core_find_config_phase(njt_http_request_t *r,
                    &clcf->name);
 
     njt_http_update_location_config(r);
+    // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_http_core_loc_conf_t  *temp;
     njt_http_cleanup_t  **cln,*end;
@@ -1001,6 +1004,7 @@ njt_http_core_find_config_phase(njt_http_request_t *r,
         *cln = end;
     }
 #endif
+    //end
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http cl:%O max:%O",
                    r->headers_in.content_length_n, clcf->client_max_body_size);
@@ -2957,6 +2961,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (ctx->loc_conf == NULL) {
         return NJT_CONF_ERROR;
     }
+    // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t *old_pool,*new_pool;
     old_pool = cf->pool;
@@ -2965,6 +2970,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
         return NJT_CONF_ERROR;
     }
 #endif
+    //end
     for (i = 0; cf->cycle->modules[i]; i++) {
         if (cf->cycle->modules[i]->type != NJT_HTTP_MODULE) {
             continue;
@@ -2980,9 +2986,11 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
             ctx->srv_conf[cf->cycle->modules[i]->ctx_index] = mconf;
         }
+        // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
         cf->pool = new_pool;
 #endif
+        //end
         if (module->create_loc_conf) {
             mconf = module->create_loc_conf(cf);
             if (mconf == NULL) {
@@ -2991,9 +2999,11 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
             ctx->loc_conf[cf->cycle->modules[i]->ctx_index] = mconf;
         }
+        // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
         cf->pool = old_pool;
 #endif
+        //end
     }
 
 
@@ -3102,6 +3112,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (ctx->loc_conf == NULL) {
         return NJT_CONF_ERROR;
     }
+    // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t *old_pool,*new_pool;
     old_pool = cf->pool;
@@ -3110,15 +3121,18 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
         return NJT_CONF_ERROR;
     }
 #endif
+    //end
     for (i = 0; cf->cycle->modules[i]; i++) {
         if (cf->cycle->modules[i]->type != NJT_HTTP_MODULE) {
             continue;
         }
 
         module = cf->cycle->modules[i]->ctx;
+        // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
         cf->pool = new_pool;
 #endif
+        //end
         if (module->create_loc_conf) {
             ctx->loc_conf[cf->cycle->modules[i]->ctx_index] =
                                                    module->create_loc_conf(cf);
@@ -3126,15 +3140,18 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
                 return NJT_CONF_ERROR;
             }
         }
+        // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
         cf->pool = old_pool;
 #endif
+        //end
     }
 
     clcf = ctx->loc_conf[njt_http_core_module.ctx_index];
     clcf->loc_conf = ctx->loc_conf;
 
     value = cf->args->elts;
+    // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     u_char* index;
     cf->pool = new_pool;
@@ -3156,6 +3173,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     clcf->full_name.len = len-1;
     cf->pool = old_pool;
 #endif
+    //end
     if (cf->args->nelts == 3) {
 
         len = value[1].len;
@@ -3654,12 +3672,13 @@ njt_http_core_create_loc_conf(njt_conf_t *cf)
      *     clcf->gzip_proxied = 0;
      *     clcf->keepalive_disable = 0;
      */
+    // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     clcf->pool=cf->pool;  // cx 处理内存释放
     clcf->destroy_locs = NULL; // cx 处理资源释放
     clcf->ref_count = 0;
 #endif
-
+    //end
     clcf->client_max_body_size = NJT_CONF_UNSET;
     clcf->client_body_buffer_size = NJT_CONF_UNSET_SIZE;
     clcf->client_body_timeout = NJT_CONF_UNSET_MSEC;
@@ -4666,6 +4685,7 @@ njt_http_core_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (ctx->loc_conf == NULL) {
         return NJT_CONF_ERROR;
     }
+    // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t *old_pool,*new_pool;
     old_pool = cf->pool;
@@ -4674,15 +4694,18 @@ njt_http_core_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
 #endif
+    //end
     for (i = 0; cf->cycle->modules[i]; i++) {
         if (cf->cycle->modules[i]->type != NJT_HTTP_MODULE) {
             continue;
         }
 
         module = cf->cycle->modules[i]->ctx;
+        // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
         cf->pool = new_pool;
 #endif
+        //end
         if (module->create_loc_conf) {
 
             mconf = module->create_loc_conf(cf);
@@ -4692,9 +4715,11 @@ njt_http_core_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
             ctx->loc_conf[cf->cycle->modules[i]->ctx_index] = mconf;
         }
+        // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
         cf->pool = old_pool;
 #endif
+        //end
     }
 
 

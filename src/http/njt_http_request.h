@@ -601,9 +601,11 @@ struct njt_http_request_s {
 
     unsigned                          http_minor:16;
     unsigned                          http_major:16;
+    // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     unsigned                          used_ref;
 #endif
+    //end
 };
 
 

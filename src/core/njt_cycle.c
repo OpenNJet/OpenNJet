@@ -766,11 +766,12 @@ old_shm_zone_done:
                           file[i].name.data);
         }
     }
+    // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
 #else
         njt_destroy_pool(conf.temp_pool);
 #endif
-
+    //end
     if (njt_process == NJT_PROCESS_MASTER || njt_is_init_cycle(old_cycle)) {
 
         njt_destroy_pool(old_cycle->pool);

@@ -6071,6 +6071,7 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (ctx->loc_conf == NULL) {
         return NJT_CONF_ERROR;
     }
+    // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t *old_pool,*new_pool;
     old_pool = cf->pool;
@@ -6079,6 +6080,7 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
         return NJT_CONF_ERROR;
     }
 #endif
+    //end
     for (m = 0; cf->cycle->modules[m]; m++) {
         if (cf->cycle->modules[m]->type != NJT_HTTP_MODULE) {
             continue;
@@ -6094,9 +6096,11 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
             ctx->srv_conf[cf->cycle->modules[m]->ctx_index] = mconf;
         }
+        // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
         cf->pool = new_pool;
 #endif
+        //end
         if (module->create_loc_conf) {
             mconf = module->create_loc_conf(cf);
             if (mconf == NULL) {
@@ -6105,9 +6109,11 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
             ctx->loc_conf[cf->cycle->modules[m]->ctx_index] = mconf;
         }
+        // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
         cf->pool = old_pool;
 #endif
+        //end
     }
 
     uscf->servers = njt_array_create(cf->pool, 4,
