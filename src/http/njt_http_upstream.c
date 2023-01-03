@@ -6074,9 +6074,15 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t *old_pool,*new_pool;
+    njt_int_t rc;
+
     old_pool = cf->pool;
     new_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
     if (new_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    rc = njt_sub_pool(cf->pool,new_pool);
+    if (rc != NJT_OK) {
         return NJT_CONF_ERROR;
     }
 #endif

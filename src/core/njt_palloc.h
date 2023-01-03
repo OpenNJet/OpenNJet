@@ -53,7 +53,13 @@ typedef struct {
     njt_pool_t           *next;
     njt_uint_t            failed;
 } njt_pool_data_t;
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+typedef struct njt_pool_link_s njt_pool_link_t;
+struct njt_pool_link_s {
+    njt_pool_t           *pool;
+    struct njt_pool_link_s *next;
+};
+#endif
 
 struct njt_pool_s {
     njt_pool_data_t       d;
@@ -63,6 +69,12 @@ struct njt_pool_s {
     njt_pool_large_t     *large;
     njt_pool_cleanup_t   *cleanup;
     njt_log_t            *log;
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_link_t      *sub_pools;
+    njt_pool_t           *parent_pool;
+#endif
+    // end
 };
 
 
@@ -76,6 +88,11 @@ typedef struct {
 njt_pool_t *njt_create_pool(size_t size, njt_log_t *log);
 void njt_destroy_pool(njt_pool_t *pool);
 void njt_reset_pool(njt_pool_t *pool);
+// by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+njt_int_t njt_sub_pool(njt_pool_t *pool,njt_pool_t *sub);
+#endif
+// end
 
 void *njt_palloc(njt_pool_t *pool, size_t size);
 void *njt_pnalloc(njt_pool_t *pool, size_t size);
