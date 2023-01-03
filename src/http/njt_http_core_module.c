@@ -988,13 +988,16 @@ njt_http_core_find_config_phase(njt_http_request_t *r,
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_http_core_loc_conf_t  *temp;
-    njt_http_cleanup_t  **cln,*end;
+    njt_http_cleanup_t   **cln,*end;
+//    njt_pool_cleanup_t  **cln,*end;
     if (r->used_ref == 0 ){
         r->used_ref =1;
         temp = njt_http_get_module_loc_conf(r,njt_http_core_module);
         ++temp->ref_count;
         cln = &r->main->cleanup;
         end = njt_pcalloc(r->pool, sizeof(njt_http_cleanup_t));
+//        cln = &r->pool->cleanup;
+//        end = njt_pcalloc(r->pool, sizeof(njt_pool_cleanup_t));
         end->data = temp;
         end->handler = njt_http_core_free_ctx;
         end->next = NULL;
@@ -2964,9 +2967,15 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t *old_pool,*new_pool;
+    njt_int_t rc;
+
     old_pool = cf->pool;
     new_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
     if (new_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    rc = njt_sub_pool(cf->pool,new_pool);
+    if (rc != NJT_OK) {
         return NJT_CONF_ERROR;
     }
 #endif
@@ -3115,9 +3124,15 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t *old_pool,*new_pool;
+    njt_int_t rc;
+
     old_pool = cf->pool;
     new_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
     if (new_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    rc = njt_sub_pool(cf->pool,new_pool);
+    if (rc != NJT_OK) {
         return NJT_CONF_ERROR;
     }
 #endif
@@ -4688,9 +4703,15 @@ njt_http_core_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t *old_pool,*new_pool;
+    njt_int_t rc;
+
     old_pool = cf->pool;
     new_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
     if (new_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    rc = njt_sub_pool(cf->pool,new_pool);
+    if (rc != NJT_OK) {
         return NJT_CONF_ERROR;
     }
 #endif
