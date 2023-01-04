@@ -756,68 +756,69 @@ njt_http_location_read_data(njt_http_request_t *r) {
         }
    }
     target_ls = NULL;
-    ls = njt_cycle->listening.elts;
-    for (i = 0; i < njt_cycle->listening.nelts; i++){
-	    if (ls[i].addr_text.len == location_info.addr_port.len && njt_strncmp(ls[i].addr_text.data,location_info.addr_port.data,location_info.addr_port.len) == 0) {
-           target_ls = &ls[i];
-	   break;
-       	 } else {
-	    last = ls[i].addr_text.data + ls[i].addr_text.len;
-	    sport = njt_strlchr(ls[i].addr_text.data, last, ':');
-	    nport2 = njt_atoi(sport+1,last-sport-1);
-	    len = sport - ls[i].addr_text.data;
-	    if(nport2 == nport
-		&& wide_addr.len == len
-                && njt_strncmp(wide_addr.data,ls[i].addr_text.data,wide_addr.len)== 0) {
-       target_ls = &ls[i];
-       break;
-}
-	  }
+	if(location_info.addr_port.len > 0) {
+		ls = njt_cycle->listening.elts;
+		for (i = 0; i < njt_cycle->listening.nelts; i++){
+			if (ls[i].addr_text.len == location_info.addr_port.len && njt_strncmp(ls[i].addr_text.data,location_info.addr_port.data,location_info.addr_port.len) == 0) {
+			   target_ls = &ls[i];
+		   break;
+			 } else {
+			last = ls[i].addr_text.data + ls[i].addr_text.len;
+			sport = njt_strlchr(ls[i].addr_text.data, last, ':');
+			nport2 = njt_atoi(sport+1,last-sport-1);
+			len = sport - ls[i].addr_text.data;
+			if(nport2 == nport
+			&& wide_addr.len == len
+					&& njt_strncmp(wide_addr.data,ls[i].addr_text.data,wide_addr.len)== 0) {
+			   target_ls = &ls[i];
+			   break;
+			}
+		  }
+		}
+	
+		if(target_ls == NULL) {
+			return;
+		}
+		 port = target_ls->servers;
+
+		 njt_memzero(&u, sizeof(njt_url_t));
+		 u.url = location_info.addr_port;
+		 u.default_port = 80;
+		 njt_parse_url(r->pool, &u);
+		 njt_memcpy(&local_sockaddr, &u.sockaddr, u.socklen);
+
+		if (port->naddrs > 1) {
+				sin = (struct sockaddr_in *) &local_sockaddr;
+
+				addr = port->addrs;
+
+				/* the last address is "*" */
+				for (i = 0; i < port->naddrs - 1; i++) {
+					if (addr[i].addr == sin->sin_addr.s_addr) {
+						break;
+					}
+				}
+
+				hc.addr_conf = &addr[i].conf;
+		} else {
+				addr = port->addrs;
+				hc.addr_conf = &addr[0].conf;
+
+		}
+		hc.conf_ctx = hc.addr_conf->default_server->ctx;
+		virtual_names = hc.addr_conf->virtual_names;
+		cscf = njt_hash_find_combined(&virtual_names->names,
+									  njt_hash_key(location_info.server_name.data, location_info.server_name.len),
+									  location_info.server_name.data, location_info.server_name.len);
+		if(cscf == NULL) {
+			cscf = njt_http_get_module_srv_conf(hc.conf_ctx,njt_http_core_module);
+		}
+	} else {
+		cscf = njt_http_get_module_srv_conf(r, njt_http_core_module);
 	}
-	if(target_ls == NULL) {
-		return;
-	}
-	 port = target_ls->servers;
-
-	 njt_memzero(&u, sizeof(njt_url_t));
-	 u.url = location_info.addr_port;
-     u.default_port = 80;
-	 njt_parse_url(r->pool, &u);
-	 njt_memcpy(&local_sockaddr, &u.sockaddr, u.socklen);
-
-    if (port->naddrs > 1) {
-            sin = (struct sockaddr_in *) &local_sockaddr;
-
-            addr = port->addrs;
-
-            /* the last address is "*" */
-            for (i = 0; i < port->naddrs - 1; i++) {
-                if (addr[i].addr == sin->sin_addr.s_addr) {
-                    break;
-                }
-            }
-
-            hc.addr_conf = &addr[i].conf;
-    } else {
-            addr = port->addrs;
-            hc.addr_conf = &addr[0].conf;
-
-    }
-    hc.conf_ctx = hc.addr_conf->default_server->ctx;
-    virtual_names = hc.addr_conf->virtual_names;
-    cscf = njt_hash_find_combined(&virtual_names->names,
-                                  njt_hash_key(location_info.server_name.data, location_info.server_name.len),
-                                  location_info.server_name.data, location_info.server_name.len);
-	if(cscf == NULL) {
-		cscf = njt_http_get_module_srv_conf(hc.conf_ctx,njt_http_core_module);
-	}
+	
 
 	location_info.cscf = cscf;
-
-   if(target_ls != NULL && location_info.server_name.len > 0 && hc.addr_conf){
-	printf("111");
-   }
-
 
    fd = njt_open_file(location_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR,NJT_FILE_TRUNCATE, 0);
    if (fd == NJT_INVALID_FILE ){
