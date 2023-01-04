@@ -313,21 +313,23 @@ static njt_http_location_queue_t *njt_http_find_location(njt_str_t name, njt_que
          x = njt_queue_next(x)) {
         lq = (njt_http_location_queue_t *) x;
         clcf = lq->exact ? lq->exact : lq->inclusive;
-        if (njt_strcmp(&name, &clcf->full_name) == 0) {
+        if(name.len == clcf->full_name.len){
+           if (njt_strncmp(name.data, clcf->full_name.data, name.len) == 0) {
             return lq;
+           } 
         }
     }
     return NULL;
 }
 
 static njt_int_t
-njt_http_location_delete_handler(njt_http_request_t *r) {
+njt_http_location_delete_handler(njt_http_request_t *r, njt_str_t name) {
     njt_http_core_srv_conf_t *cscf;
     njt_http_core_loc_conf_t *clcf, *dclcf;
     njt_queue_t *x;
     njt_http_location_queue_t *lq, *lx;
 
-    njt_str_t name = njt_string("/websocket");
+    // njt_str_t name = njt_string("/websocket");
     cscf = njt_http_get_module_srv_conf(r, njt_http_core_module);
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
 
@@ -430,7 +432,14 @@ njt_http_location_handler(njt_http_request_t *r) {
         return NJT_DECLINED;
     }
     if (r->method == NJT_HTTP_DELETE) {
-        return njt_http_location_delete_handler(r);
+        njt_str_t name = njt_string("/websocket");
+        return njt_http_location_delete_handler(r, name);
+    }
+
+    //put (delete location)
+    if (r->method == NJT_HTTP_PUT) {
+        rc = njt_http_read_client_request_body(r,njt_http_location_read_data);
+        return njt_http_location_delete_handler(r, r->exten);
     }
 
     //read json data
@@ -650,6 +659,8 @@ njt_http_location_read_data(njt_http_request_t *r)
             }
 
             location = items[i].strval;
+            //temp use for delete location
+            r->exten = location;
             continue;
         }
         if (njt_strncmp(items[i].key.data, "proxy_pass", 10) == 0) {
@@ -672,6 +683,12 @@ njt_http_location_read_data(njt_http_request_t *r)
    }
    p = njt_snprintf(location_info,512,"location %V {\nproxy_pass %V;\n}\n",&location,&proxy_pass);
    len = njt_write_fd(fd, location_info,p-location_info);
+   if (fd != NJT_INVALID_FILE) {
+
+        if (njt_close_file(fd) == NJT_FILE_ERROR) {
+           
+        }
+   }
    if(len < 0) {
          return ;
    }
