@@ -600,7 +600,6 @@ njt_http_location_handler(njt_http_request_t *r) {
     clcf->regex_locations = clcf->new_regex_locations;
     clcf->static_locations = clcf->new_static_locations;
 
-    // clcf->internal = 0;
     out:
     if (rc == NJT_OK) {
         njt_str_set(&insert, "ok");
