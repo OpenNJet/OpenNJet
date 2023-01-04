@@ -475,11 +475,18 @@ njt_http_location_handler(njt_http_request_t *r) {
         goto out;
     }
     cscf = location_info.cscf;  //njt_http_get_module_srv_conf(r, njt_http_core_module);
-	if(cscf == NULL){
+	if(cscf == NULL || location_info.location.len == 0){
 		 rc = NJT_ERROR;
          goto out;
 	}
-    clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
+	clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
+	lq = njt_http_find_location(location_info.location, clcf->old_locations);
+    if (lq != NULL) {
+        rc = NJT_ERROR;
+         goto out;
+    }
+
+    
     // njt_cycle->conf_ctx
 
     // njt_memzero(&conf, sizeof(njt_conf_t));
