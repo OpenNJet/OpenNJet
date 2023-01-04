@@ -439,7 +439,7 @@ njt_http_location_handler(njt_http_request_t *r) {
     //put (delete location)
     if (r->method == NJT_HTTP_PUT) {
         rc = njt_http_read_client_request_body(r,njt_http_location_read_data);
-        return njt_http_location_delete_handler(r, r->exten);
+        return njt_http_location_delete_handler(r, r->tmp_location_name);
     }
 
     //read json data
@@ -663,7 +663,10 @@ njt_http_location_read_data(njt_http_request_t *r) {
 
             location = items[i].strval;
             //temp use for delete location
-            r->exten = location;
+            r->tmp_location_name.len = items[i].strval.len;
+            r->tmp_location_name.data = njt_pnalloc(r->pool, items[i].strval.len + 1);
+            // njt_cpystrn(r->tmp_location_name.data, items[i].strval.data, items[i].strval.len);
+            (void) njt_cpystrn(r->tmp_location_name.data, items[i].strval.data, items[i].strval.len + 1);
             continue;
         }
         if (njt_strncmp(items[i].key.data, "proxy_pass", 10) == 0) {
