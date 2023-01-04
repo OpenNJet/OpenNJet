@@ -768,8 +768,13 @@ old_shm_zone_done:
     }
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
+    if (njt_sub_pool(conf.pool,conf.temp_pool) != NJT_OK){
+        njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
+                      "could not set sub_pool njt_temp_pool");
+        exit(1);
+    }
 #else
-        njt_destroy_pool(conf.temp_pool);
+    njt_destroy_pool(conf.temp_pool);
 #endif
     //end
     if (njt_process == NJT_PROCESS_MASTER || njt_is_init_cycle(old_cycle)) {

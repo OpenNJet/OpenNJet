@@ -39,17 +39,61 @@ njt_create_pool(size_t size, njt_log_t *log)
     p->large = NULL;
     p->cleanup = NULL;
     p->log = log;
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    p->parent_pool = NULL;
+    p->sub_pools = NULL;
+#endif
+    //end
 
     return p;
 }
+// by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+njt_int_t njt_sub_pool(njt_pool_t *pool,njt_pool_t *sub){
+    njt_pool_link_t     *l;
 
-
+    if(sub->parent_pool != NULL){
+        return NJT_ERROR;
+    }
+    l = njt_pcalloc(pool, sizeof(njt_pool_link_t));
+    if (l == NULL){
+        njt_log_error(NJT_LOG_EMERG, pool->log, njt_errno, "sub pool relation error");
+        return NJT_ERROR;
+    }
+    sub->parent_pool = pool;
+    l->pool = sub;
+    l->next = pool->sub_pools;
+    pool->sub_pools = l;
+    return NJT_OK;
+}
+#endif
+// end
 void
 njt_destroy_pool(njt_pool_t *pool)
 {
     njt_pool_t          *p, *n;
     njt_pool_large_t    *l;
     njt_pool_cleanup_t  *c;
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_link_t     **iterator;
+    njt_pool_t          *sub_pool;
+    if (pool->parent_pool != NULL){
+        for (iterator = &pool->parent_pool->sub_pools;*iterator ; iterator = &(*iterator)->next){
+            if ((*iterator)->pool == pool){
+                (*iterator) = (*iterator)->next;
+                break;
+            }
+        }
+    }
+    for (iterator = &pool->sub_pools;*iterator ; ){
+        sub_pool = (*iterator)->pool;
+        iterator = &(*iterator)->next;  // 先计算偏移防止节点被删除
+        njt_destroy_pool(sub_pool);
+    }
+#endif
+    // end
 
     for (c = pool->cleanup; c; c = c->next) {
         if (c->handler) {

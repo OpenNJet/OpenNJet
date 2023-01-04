@@ -413,6 +413,10 @@ static char *njt_http_health_check(njt_conf_t *cf, njt_command_t *cmd,
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t                             *pool;
     pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, cf->log);
+    if (pool == NULL){
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,"http hc create pool error");
+        return NJT_CONF_ERROR;
+    }
     hclcf = njt_pcalloc(pool,sizeof (njt_http_health_check_loc_conf_t));
 #else
     hclcf = njt_pcalloc(cf->pool,sizeof (njt_http_health_check_loc_conf_t));
