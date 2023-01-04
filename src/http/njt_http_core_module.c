@@ -3331,11 +3331,17 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
         if (njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
             return NJT_CONF_ERROR;
         }
-    }
+		if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
+			return NJT_CONF_ERROR;
+		}
+    } else {
+		 clcf->dynamic_status = 1;  // 1 
+		 if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
+			return NJT_CONF_ERROR;
+		}
+	}
 
-    if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
-        return NJT_CONF_ERROR;
-    }
+   
     save = *cf;
     cf->ctx = ctx;
     cf->cmd_type = NJT_HTTP_LOC_CONF;

@@ -457,7 +457,8 @@ struct njt_http_core_loc_conf_s {
     njt_http_location_destroy_t *destroy_locs; //cx 处理上下文内存释放,按照链表顺序释放
     njt_str_t    full_name;       // cx 查找location
     njt_uint_t   ref_count;
-    unsigned     disable;
+    unsigned     disable:1;
+	unsigned     dynamic_status:2; // 1 init, 2 nomal
 #endif
     //end
 
@@ -475,6 +476,10 @@ typedef struct {
     u_char                          *file_name;
     njt_uint_t                       line;
     njt_queue_t                      list;
+	    // by zyg
+#if (NJT_HTTP_DYNAMIC_LOC)
+	unsigned     dynamic_status:2; // 1 init, 2 nomal
+#endif
 } njt_http_location_queue_t;
 
 
