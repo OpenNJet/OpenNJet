@@ -8,6 +8,9 @@
 void
 njt_http_location_read_data(njt_http_request_t *r);
 
+static void
+free_static_tree_momery(njt_http_location_tree_node_t *static_tree);
+
 static njt_int_t
 njt_http_location_handler(njt_http_request_t *r);
 
@@ -340,6 +343,9 @@ njt_http_location_delete_handler(njt_http_request_t *r, njt_str_t name) {
     njt_http_core_loc_conf_t *clcf, *dclcf;
     njt_queue_t *x;
     njt_http_location_queue_t *lq, *lx;
+    njt_http_core_loc_conf_t **saved_regex_locations;
+    njt_http_core_loc_conf_t **saved_named_locations;
+    njt_http_location_tree_node_t *saved_static_locations;
 
     // njt_str_t name = njt_string("/websocket");
     cscf = njt_http_get_module_srv_conf(r, njt_http_core_module);
@@ -408,10 +414,36 @@ njt_http_location_delete_handler(njt_http_request_t *r, njt_str_t name) {
         return NJT_ERROR;
     }
 
+//save last locations
+    saved_regex_locations = clcf->regex_locations;
+    saved_named_locations = cscf->named_locations;
+    saved_static_locations = clcf->static_locations;
 
-    cscf->named_locations = cscf->new_named_locations;
+    //update locations
     clcf->regex_locations = clcf->new_regex_locations;
+    cscf->named_locations = cscf->new_named_locations;
     clcf->static_locations = clcf->new_static_locations;
+
+    //free old locaions memory
+    //free old regex_locations
+    if(saved_regex_locations != NULL){
+        njt_pfree(clcf->regex_parent_pool, saved_regex_locations);
+    }
+    //update regex_parent_pool
+    clcf->regex_parent_pool = clcf->new_regex_parent_pool;
+
+    //free old named_locations
+    if(saved_named_locations != NULL){
+        njt_pfree(cscf->named_parent_pool, saved_named_locations);
+    }
+    //update named_parent_pool
+    cscf->named_parent_pool = cscf->new_named_parent_pool;
+
+    //free old static_locations tree node
+    //now just delete dynamic tree(clcf->pool), initial static tree not delete(cf->pool)
+    free_static_tree_momery(saved_static_locations);
+
+    //note: delete queue memory, which delete when remove queue 
 
     njt_http_discard_request_body(r);
     r->headers_out.status = NJT_HTTP_NO_CONTENT;
@@ -420,6 +452,21 @@ njt_http_location_delete_handler(njt_http_request_t *r, njt_str_t name) {
         return rc;
     }
     return NJT_OK;
+}
+
+static void free_static_tree_momery(njt_http_location_tree_node_t *static_tree){
+    if(static_tree == NULL){
+        return;
+    }
+
+    free_static_tree_momery(static_tree->left);
+    static_tree->left = NULL;
+    free_static_tree_momery(static_tree->right);
+    static_tree->right = NULL;
+    free_static_tree_momery(static_tree->right);
+    static_tree->right = NULL;
+
+    njt_pfree(static_tree->parent_pool, static_tree);
 }
 
 static njt_int_t
@@ -435,9 +482,13 @@ njt_http_location_handler(njt_http_request_t *r) {
     njt_queue_t *x;
     njt_http_location_queue_t *lq, *lx;
     njt_http_core_loc_conf_t *clcf, *loc;
+    njt_http_location_queue_t *tmp_queue;
 //    njt_http_conf_ctx_t *saved_ctx;
 //    njt_queue_t  *save_queue;
     njt_pool_t *location_pool = NULL;
+    njt_http_core_loc_conf_t **saved_regex_locations;
+    njt_http_core_loc_conf_t **saved_named_locations;
+    njt_http_location_tree_node_t *saved_static_locations;
 
     njt_str_t location_path = njt_string("/dev/shm/add_location.txt");
     njt_str_t location_req = njt_string("/add_location");
@@ -592,6 +643,9 @@ njt_http_location_handler(njt_http_request_t *r) {
             goto out;
         }
 
+        tmp_queue = (njt_http_location_queue_t *)clcf->new_locations;
+        //used for delete memory
+        tmp_queue->parent_pool = clcf->pool;
         njt_queue_init(clcf->new_locations);
     }
 
@@ -609,6 +663,8 @@ njt_http_location_handler(njt_http_request_t *r) {
 			lx->dynamic_status = 2;
 		}
         *lq = *lx;
+        //used for delete memory
+        lq->parent_pool = clcf->pool;
         njt_queue_init(&lq->list);
 
         njt_queue_insert_tail(clcf->new_locations, &lq->queue);
@@ -623,10 +679,38 @@ njt_http_location_handler(njt_http_request_t *r) {
         rc = NJT_ERROR;
         goto out;
     }
-    //update tmp value
-    cscf->named_locations = cscf->new_named_locations;
+
+    //save last locations
+    saved_regex_locations = clcf->regex_locations;
+    saved_named_locations = cscf->named_locations;
+    saved_static_locations = clcf->static_locations;
+
+    //update locations
     clcf->regex_locations = clcf->new_regex_locations;
+    cscf->named_locations = cscf->new_named_locations;
     clcf->static_locations = clcf->new_static_locations;
+
+    //free old locaions memory
+    //free old regex_locations
+    if(saved_regex_locations != NULL){
+        njt_pfree(clcf->regex_parent_pool, saved_regex_locations);
+    }
+    
+    //update regex_parent_pool
+    clcf->regex_parent_pool = clcf->new_regex_parent_pool;
+
+    //free old named_locations
+    if(saved_named_locations != NULL){
+        njt_pfree(cscf->named_parent_pool, saved_named_locations);
+    }
+    //update named_parent_pool
+    cscf->named_parent_pool = cscf->new_named_parent_pool;
+
+    //free old static_locations tree node
+    //now just delete dynamic tree(clcf->pool), initial static tree not delete(cf->pool)
+    free_static_tree_momery(saved_static_locations);
+    
+    //note: delete queue memory, which delete when remove queue 
 
     // clcf->internal = 0;
     out:
