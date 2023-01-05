@@ -678,6 +678,11 @@ njt_http_merge_locations(njt_conf_t *cf, njt_queue_t *locations,
         ctx->loc_conf = clcf->loc_conf;
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
+	if(cf->dynamic == 1) {
+	   if(lq->dynamic_status != 1){
+		continue;
+	   }
+	}
         njt_pool_t *old_pool,*old_temp_pool;
         old_pool = cf->pool;
         old_temp_pool = cf->temp_pool;
@@ -1146,9 +1151,11 @@ njt_http_add_location(njt_conf_t *cf, njt_queue_t **locations,
     lq->name = &clcf->name;
     lq->file_name = cf->conf_file->file.name.data;
     lq->line = cf->conf_file->line;
+    //by zyg
     #if (NJT_HTTP_DYNAMIC_LOC)
 	lq->dynamic_status = clcf->dynamic_status; // 1 init, 2 nomal
     #endif
+    //end
     njt_queue_init(&lq->list);
 
     njt_queue_insert_tail(*locations, &lq->queue);

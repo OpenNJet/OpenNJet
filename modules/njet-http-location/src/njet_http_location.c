@@ -653,7 +653,9 @@ njt_http_location_handler(njt_http_request_t *r) {
             rc = NJT_ERROR;
             goto out;
         }
-
+		if(lx->dynamic_status == 1) {
+			lx->dynamic_status = 2;
+		}
         *lq = *lx;
         //used for delete memory
         lq->parent_pool = clcf->pool;
