@@ -459,12 +459,18 @@ njt_http_location_handler(njt_http_request_t *r) {
     //put (delete location)
     if (r->method == NJT_HTTP_PUT) {
         rc = njt_http_read_client_request_body(r,njt_http_location_read_data);
+		if(rc == NJT_OK) {
+			njt_http_finalize_request(r, NJT_DONE);
+		} 
         return njt_http_location_delete_handler(r,location_info.location);
     }
 
     //read json data
     if (r->method == NJT_HTTP_POST) {
         rc = njt_http_read_client_request_body(r, njt_http_location_read_data);
+		if(rc == NJT_OK) {
+			njt_http_finalize_request(r, NJT_DONE);
+		}
     }
 
     out.next = NULL;
