@@ -207,7 +207,12 @@ typedef struct {
 #endif
 
     njt_http_core_loc_conf_t  **named_locations;
+    //add by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t                *named_parent_pool;
+    njt_pool_t                *new_named_parent_pool;
     njt_http_core_loc_conf_t  **new_named_locations;
+#endif
 } njt_http_core_srv_conf_t;
 
 
@@ -329,10 +334,21 @@ struct njt_http_core_loc_conf_s {
 #endif
 
     njt_http_location_tree_node_t   *static_locations;
+    //add by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
     njt_http_location_tree_node_t   *new_static_locations;
+#endif
+    //end
+
 #if (NJT_PCRE)
     njt_http_core_loc_conf_t       **regex_locations;
+    //add by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t                     *regex_parent_pool;
     njt_http_core_loc_conf_t       **new_regex_locations;
+    njt_pool_t                     *new_regex_parent_pool;
+#endif
+    //end
 #endif
 
     /* pointer to the modules' loc_conf */
@@ -479,6 +495,7 @@ typedef struct {
 	    // by zyg
 #if (NJT_HTTP_DYNAMIC_LOC)
 	unsigned     dynamic_status:2; // 1 init, 2 nomal
+    njt_pool_t   *parent_pool;  //add by clb
 #endif
 } njt_http_location_queue_t;
 
@@ -490,7 +507,11 @@ struct njt_http_location_tree_node_s {
 
     njt_http_core_loc_conf_t        *exact;
     njt_http_core_loc_conf_t        *inclusive;
-
+    //by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t   *parent_pool;
+#endif
+//end by clb
     u_char                           auto_redirect;
     u_char                           len;
     u_char                           name[1];

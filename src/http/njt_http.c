@@ -791,13 +791,14 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         }
         clcfp = njt_palloc(cf->cycle->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
+        cscf->named_parent_pool = cf->cycle->pool;  //add by clb
 #else
         clcfp = njt_palloc(cf->pool,
                            (n + 1) * sizeof(njt_http_core_loc_conf_t *));
 #endif
         //end
-        clcfp = njt_palloc(cf->pool,
-                           (n + 1) * sizeof(njt_http_core_loc_conf_t *));
+        // clcfp = njt_palloc(cf->pool,
+        //                    (n + 1) * sizeof(njt_http_core_loc_conf_t *));
         if (clcfp == NULL) {
             return NJT_ERROR;
         }
@@ -824,6 +825,7 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 #if (NJT_HTTP_DYNAMIC_LOC)
         clcfp = njt_palloc(pclcf->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
+        pclcf->regex_parent_pool =  pclcf->pool;   //add by clb
 #else
         clcfp = njt_palloc(cf->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
@@ -855,6 +857,7 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 }
 
 
+//add by clb
 njt_int_t
 njt_http_init_new_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
                             njt_http_core_loc_conf_t *pclcf) {
@@ -936,9 +939,11 @@ njt_http_init_new_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         }
         clcfp = njt_palloc(cf->cycle->pool,
                            (n + 1) * sizeof(njt_http_core_loc_conf_t *));
+        cscf->new_named_parent_pool = cf->cycle->pool; //add by clb
 #else
         clcfp = njt_palloc(cf->pool,
                            (n + 1) * sizeof(njt_http_core_loc_conf_t *));
+        cscf->new_named_parent_pool = cf->pool;     //add by clb
 #endif
         //end
         if (clcfp == NULL) {
@@ -968,6 +973,7 @@ njt_http_init_new_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 #if (NJT_HTTP_DYNAMIC_LOC)
         clcfp = njt_palloc(pclcf->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
+        pclcf->new_regex_parent_pool = pclcf->pool;     //add by clb
 #else
         clcfp = njt_palloc(cf->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
@@ -1041,6 +1047,7 @@ njt_http_init_static_location_trees(njt_conf_t *cf,
     return NJT_OK;
 }
 
+//add by clb
 njt_int_t
 njt_http_init_new_static_location_trees(njt_conf_t *cf,
                                         njt_http_core_loc_conf_t *pclcf) {
@@ -1096,6 +1103,7 @@ njt_int_t
 njt_http_add_location(njt_conf_t *cf, njt_queue_t **locations,
                       njt_http_core_loc_conf_t *clcf) {
     njt_http_location_queue_t *lq;
+    njt_http_location_queue_t *tmp_queue;
 
     if (*locations == NULL) {
         *locations = njt_palloc(cf->temp_pool,
@@ -1104,6 +1112,12 @@ njt_http_add_location(njt_conf_t *cf, njt_queue_t **locations,
             return NJT_ERROR;
         }
 
+        //add by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+        tmp_queue = (njt_http_location_queue_t *)*locations;
+        tmp_queue->parent_pool = cf->temp_pool;
+#endif
+        //end
         njt_queue_init(*locations);
     }
 
@@ -1111,7 +1125,11 @@ njt_http_add_location(njt_conf_t *cf, njt_queue_t **locations,
     if (lq == NULL) {
         return NJT_ERROR;
     }
-
+        //add by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+        lq->parent_pool = cf->temp_pool;
+#endif
+        //end
     if (clcf->exact_match
         #if (NJT_PCRE)
         || clcf->regex
@@ -1364,6 +1382,11 @@ njt_http_create_locations_tree(njt_conf_t *cf, njt_queue_t *locations,
         return NULL;
     }
 
+    //by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+    node->parent_pool = cf->pool;
+#endif
+    //end
     node->left = NULL;
     node->right = NULL;
     node->tree = NULL;
@@ -1392,6 +1415,13 @@ njt_http_create_locations_tree(njt_conf_t *cf, njt_queue_t *locations,
     }
 
     njt_queue_remove(q);
+        //by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+    //need remove q memory
+    njt_pfree(lq->parent_pool, q);
+#endif
+    //end
+
 
     if (njt_queue_empty(&tail)) {
         goto inclusive;
