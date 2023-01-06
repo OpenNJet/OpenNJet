@@ -400,12 +400,12 @@ found:
             return NJT_ERROR;
         }
     }
-
     elts = njt_palloc(hinit->pool, len + njt_cacheline_size);
     if (elts == NULL) {
         njt_free(test);
         return NJT_ERROR;
     }
+    hinit->hash->elts = elts;
 
     elts = njt_align_ptr(elts, njt_cacheline_size);
 
@@ -1015,8 +1015,12 @@ wildcard:
 //by zyg
 #if (NJT_HTTP_DYNAMIC_LOC)
 void njt_hash_free(njt_hash_t *hash){
-	njt_pfree(hash->pool,hash->elts);
-	njt_pfree(hash->pool,hash->buckets);
+	if(hash->elts != NULL) {
+		njt_pfree(hash->pool,hash->elts);
+	}
+	if(hash->buckets == NULL) {
+		njt_pfree(hash->pool,hash->buckets);
+	}
 }
 #endif
 //end
