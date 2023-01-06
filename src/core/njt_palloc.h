@@ -73,6 +73,7 @@ struct njt_pool_s {
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_link_t      *sub_pools;
     njt_pool_t           *parent_pool;
+    unsigned             dynamic:1;
 #endif
     // end
 };
@@ -90,6 +91,7 @@ void njt_destroy_pool(njt_pool_t *pool);
 void njt_reset_pool(njt_pool_t *pool);
 // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
+njt_pool_t *njt_create_dynamic_pool(size_t size, njt_log_t *log);
 njt_int_t njt_sub_pool(njt_pool_t *pool,njt_pool_t *sub);
 #endif
 // end
