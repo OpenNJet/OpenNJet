@@ -108,7 +108,13 @@ njt_conf_add_dump(njt_conf_t *cf, njt_str_t *filename)
     njt_buf_t        *buf;
     njt_str_node_t   *sn;
     njt_conf_dump_t  *cd;
-
+ //byg zyg
+ #if (NJT_HTTP_DYNAMIC_LOC)
+	if(cf->dynamic == 1){
+           cf->conf_file->dump = NULL;
+	   return NJT_OK;
+	}
+ #endif
     hash = njt_crc32_long(filename->data, filename->len);
 
     sn = njt_str_rbtree_lookup(&cf->cycle->config_dump_rbtree, filename, hash);
