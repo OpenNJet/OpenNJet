@@ -1012,3 +1012,11 @@ wildcard:
 
     return NJT_OK;
 }
+//by zyg
+#if (NJT_HTTP_DYNAMIC_LOC)
+void njt_hash_free(njt_hash_t *hash){
+	njt_pfree(hash->pool,hash->elts);
+	njt_pfree(hash->pool,hash->buckets);
+}
+#endif
+//end

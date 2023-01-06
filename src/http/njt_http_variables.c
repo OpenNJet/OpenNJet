@@ -2814,13 +2814,20 @@ njt_http_variables_init_vars(njt_conf_t *cf)
 
 
     hash.hash = &cmcf->variables_hash;
+    //by zyg
+    #if (NJT_HTTP_DYNAMIC_LOC)
+       if(hash.hash->pool != NULL) {
+	  njt_hash_free(hash.hash);
+	}   
+	hash.hash->pool = cf->pool;
+    #endif
+    //end
     hash.key = njt_hash_key;
     hash.max_size = cmcf->variables_hash_max_size;
     hash.bucket_size = cmcf->variables_hash_bucket_size;
     hash.name = "variables_hash";
     hash.pool = cf->pool;
     hash.temp_pool = NULL;
-
     if (njt_hash_init(&hash, cmcf->variables_keys->keys.elts,
                       cmcf->variables_keys->keys.nelts)
         != NJT_OK)
