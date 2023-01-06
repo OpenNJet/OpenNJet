@@ -43,6 +43,7 @@ njt_create_pool(size_t size, njt_log_t *log)
 #if (NJT_HTTP_DYNAMIC_LOC)
     p->parent_pool = NULL;
     p->sub_pools = NULL;
+    p->dynamic = 1;
 #endif
     //end
 
@@ -50,6 +51,38 @@ njt_create_pool(size_t size, njt_log_t *log)
 }
 // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
+njt_pool_t *
+njt_create_dynamic_pool(size_t size, njt_log_t *log)
+{
+    njt_pool_t  *p;
+
+    p = njt_memalign(NJT_POOL_ALIGNMENT, size, log);
+    if (p == NULL) {
+        return NULL;
+    }
+
+    p->d.last = (u_char *) p + sizeof(njt_pool_t);
+    p->d.end = (u_char *) p + size;
+    p->d.next = NULL;
+    p->d.failed = 0;
+
+    size = size - sizeof(njt_pool_t);
+    p->max = (size < NJT_MAX_ALLOC_FROM_POOL) ? size : NJT_MAX_ALLOC_FROM_POOL;
+
+    p->current = p;
+    p->chain = NULL;
+    p->large = NULL;
+    p->cleanup = NULL;
+    p->log = log;
+    p->parent_pool = NULL;
+    p->sub_pools = NULL;
+    p->dynamic = 1;
+    return p;
+}
+//#endif
+////end
+//// by ChengXu
+//#if (NJT_HTTP_DYNAMIC_LOC)
 njt_int_t njt_sub_pool(njt_pool_t *pool,njt_pool_t *sub){
     njt_pool_link_t     *l;
 
@@ -67,8 +100,109 @@ njt_int_t njt_sub_pool(njt_pool_t *pool,njt_pool_t *sub){
     pool->sub_pools = l;
     return NJT_OK;
 }
+static void *
+njt_dynamic_alloc(njt_pool_t *pool, size_t size)
+{
+    void              *p;
+    njt_uint_t         n;
+    njt_pool_large_t  *large;
+
+    p = njt_alloc(size + sizeof(njt_pool_large_t), pool->log);
+    if (p == NULL) {
+        return NULL;
+    }
+
+    n = 0;
+
+    for (large = pool->large; large; large = large->next) {
+        if (large->alloc == NULL) {
+            large->alloc = p;
+            return p;
+        }
+        if (n++ > 3) {
+            break;
+        }
+    }
+
+    large = p;
+    large->alloc = p;
+    large->next = pool->large;
+    pool->large = large;
+
+    return (void*)(large+1);
+}
+
+void
+njt_destroy_root_pool(njt_pool_t *pool)
+{
+    njt_pool_t          *p, *n;
+    njt_pool_large_t    *l;
+    njt_pool_cleanup_t  *c;
+
+
+    for (c = pool->cleanup; c; c = c->next) {
+        if (c->handler) {
+            njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0,
+                           "run cleanup: %p", c);
+            c->handler(c->data);
+        }
+    }
+
+#if (NJT_DEBUG)
+
+    /*
+     * we could allocate the pool->log from this pool
+     * so we cannot use this log while free()ing the pool
+     */
+
+    for (l = pool->large; l; l = l->next) {
+        njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0, "free: %p", l->alloc);
+    }
+
+    for (p = pool, n = pool->d.next; /* void */; p = n, n = n->d.next) {
+        njt_log_debug2(NJT_LOG_DEBUG_ALLOC, pool->log, 0,
+                       "free: %p, unused: %uz", p, p->d.end - p->d.last);
+
+        if (n == NULL) {
+            break;
+        }
+    }
+
+#endif
+
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    void* data;
+    for (l = pool->large; l; ) {
+        data = l->alloc;
+        l = l->next;
+        if (data) {
+            njt_free(data);
+        }
+    }
+#else
+    for (l = pool->large; l; l = l->next) {
+        if (l->alloc) {
+            njt_free(l->alloc);
+        }
+    }
+#endif
+    //end
+
+
+    for (p = pool, n = pool->d.next; /* void */; p = n, n = n->d.next) {
+        njt_free(p);
+
+        if (n == NULL) {
+            break;
+        }
+    }
+}
+
 #endif
 // end
+
+
 void
 njt_destroy_pool(njt_pool_t *pool)
 {
@@ -125,11 +259,25 @@ njt_destroy_pool(njt_pool_t *pool)
 
 #endif
 
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    void* data;
+    for (l = pool->large; l; ) {
+        data = l->alloc;
+        l = l->next;
+        if (data) {
+            njt_free(data);
+        }
+    }
+#else
     for (l = pool->large; l; l = l->next) {
         if (l->alloc) {
             njt_free(l->alloc);
         }
     }
+#endif
+    //end
+
 
     for (p = pool, n = pool->d.next; /* void */; p = n, n = n->d.next) {
         njt_free(p);
@@ -167,6 +315,13 @@ njt_reset_pool(njt_pool_t *pool)
 void *
 njt_palloc(njt_pool_t *pool, size_t size)
 {
+// by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    if( pool->dynamic ){
+        return njt_dynamic_alloc(pool,size);
+    }
+#endif
+//end
 #if !(NJT_DEBUG_PALLOC)
     if (size <= pool->max) {
         return njt_palloc_small(pool, size, 1);
@@ -180,6 +335,13 @@ njt_palloc(njt_pool_t *pool, size_t size)
 void *
 njt_pnalloc(njt_pool_t *pool, size_t size)
 {
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    if( pool->dynamic ){
+        return njt_dynamic_alloc(pool,size);
+    }
+#endif
+//end
 #if !(NJT_DEBUG_PALLOC)
     if (size <= pool->max) {
         return njt_palloc_small(pool, size, 0);
@@ -317,14 +479,47 @@ njt_pmemalign(njt_pool_t *pool, size_t size, size_t alignment)
 
     return p;
 }
+#if (NJT_HTTP_DYNAMIC_LOC)
+njt_int_t
+njt_pfree(njt_pool_t *pool, void *p)
+{
+    njt_pool_large_t  **l;
 
+    for (l = &pool->large; *l; ) {
+        // by ChengXu
+
+        if (pool->dynamic){
+            void *fp = (*l)->alloc;
+            void* data = ((njt_pool_large_t*)p)-1;
+            if (data == fp) {
+                njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0,
+                               "free: %p", (*l)->alloc);
+                *l = (*l)->next;
+                njt_free(fp);
+                return NJT_OK;
+            }
+            l = &(*l)->next;
+        }else{
+            if (p == (*l)->alloc) {
+                njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0,
+                               "free: %p", (*l)->alloc);
+                njt_free((*l)->alloc);
+                (*l)->alloc = NULL;
+                return NJT_OK;
+            }
+        }
+    }
+
+    return NJT_DECLINED;
+}
+
+#else
 
 njt_int_t
 njt_pfree(njt_pool_t *pool, void *p)
 {
     njt_pool_large_t  *l;
-
-    for (l = pool->large; l; l = l->next) {
+    for (l = pool->large; l; ) {
         if (p == l->alloc) {
             njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0,
                            "free: %p", l->alloc);
@@ -337,7 +532,8 @@ njt_pfree(njt_pool_t *pool, void *p)
 
     return NJT_DECLINED;
 }
-
+#endif
+//end
 
 void *
 njt_pcalloc(njt_pool_t *pool, size_t size)
