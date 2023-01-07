@@ -828,6 +828,10 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     if (regex) {
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
+        if (pclcf->regex_locations!= NULL){
+            njt_pfree(pclcf->pool,pclcf->regex_locations);
+            pclcf->regex_locations= NULL;
+        }
         clcfp = njt_palloc(pclcf->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
         pclcf->regex_parent_pool =  pclcf->pool;   //add by clb
@@ -976,6 +980,10 @@ njt_http_init_new_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     if (regex) {
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
+        if (pclcf->regex_locations!= NULL){
+            njt_pfree(pclcf->pool,pclcf->regex_locations);
+            pclcf->regex_locations= NULL;
+        }
         clcfp = njt_palloc(pclcf->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
         pclcf->new_regex_parent_pool = pclcf->pool;     //add by clb
@@ -1087,13 +1095,7 @@ njt_http_init_new_static_location_trees(njt_conf_t *cf,
     }
 
     njt_http_create_locations_list(locations, njt_queue_head(locations));
-    // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
-    if (pclcf->new_static_locations != NULL){
 
-    }
-#endif
-    //end
     // pclcf->static_locations = njt_http_create_locations_tree(cf, locations, 0);
     pclcf->new_static_locations = njt_http_create_locations_tree(cf, locations, 0);
     if (pclcf->new_static_locations == NULL) {
@@ -1425,7 +1427,7 @@ njt_http_create_locations_tree(njt_conf_t *cf, njt_queue_t *locations,
         //by clb
 #if (NJT_HTTP_DYNAMIC_LOC)
     //need remove q memory
-    njt_pfree(lq->parent_pool, q);
+    njt_pfree(lq->parent_pool, lq);
 #endif
     //end
 

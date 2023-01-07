@@ -9,6 +9,8 @@
 #include <njt_config.h>
 #include <njt_core.h>
 
+#include <execinfo.h>
+
 
 static njt_inline void *njt_palloc_small(njt_pool_t *pool, size_t size,
     njt_uint_t align);
@@ -79,17 +81,17 @@ njt_create_dynamic_pool(size_t size, njt_log_t *log)
     p->dynamic = 1;
     return p;
 }
-//#endif
-////end
-//// by ChengXu
-//#if (NJT_HTTP_DYNAMIC_LOC)
+#endif
+//end
+// by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
 njt_int_t njt_sub_pool(njt_pool_t *pool,njt_pool_t *sub){
     njt_pool_link_t     *l;
 
     if(sub->parent_pool != NULL){
         return NJT_ERROR;
     }
-    l = njt_pcalloc(pool, sizeof(njt_pool_link_t));
+    l = njt_pcalloc(sub, sizeof(njt_pool_link_t));
     if (l == NULL){
         njt_log_error(NJT_LOG_EMERG, pool->log, njt_errno, "sub pool relation error");
         return NJT_ERROR;
@@ -100,6 +102,40 @@ njt_int_t njt_sub_pool(njt_pool_t *pool,njt_pool_t *sub){
     pool->sub_pools = l;
     return NJT_OK;
 }
+
+typedef struct {
+    njt_log_t              *log;
+    njt_int_t               max_stack_size;
+} njt_backtrace_conf_t;
+
+static void
+ngx_error_signal_handler(njt_pool_t *pool)
+{
+    void                 *buffer;
+    size_t                size;
+    njt_backtrace_conf_t bcf;
+
+    bcf.max_stack_size = 30;
+    njt_log_t *log = pool->log;
+
+
+    buffer = njt_alloc(sizeof(void *) * bcf.max_stack_size,pool->log);
+    if (buffer == NULL) {
+        goto invalid;
+    }
+
+    size = backtrace(buffer, bcf.max_stack_size);
+    backtrace_symbols_fd(buffer, size, log->file->fd);
+    njt_free(buffer);
+
+    return;
+
+    invalid:
+
+    exit(1);
+}
+
+
 static void *
 njt_dynamic_alloc(njt_pool_t *pool, size_t size)
 {
@@ -111,6 +147,7 @@ njt_dynamic_alloc(njt_pool_t *pool, size_t size)
     if (p == NULL) {
         return NULL;
     }
+    ngx_error_signal_handler(pool);
 
     n = 0;
 
