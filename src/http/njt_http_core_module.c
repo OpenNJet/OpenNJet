@@ -3346,7 +3346,21 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     cf->ctx = ctx;
     cf->cmd_type = NJT_HTTP_LOC_CONF;
 
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = new_pool;
+    cf->temp_pool = new_pool;
+#endif
+    //end
     rv = njt_conf_parse(cf, NULL);
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = old_pool;
+    cf->temp_pool = old_temp_pool;
+#endif
+    //end
+
+
 
     *cf = save;
 
@@ -4771,8 +4785,20 @@ njt_http_core_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     save = *cf;
     cf->ctx = ctx;
     cf->cmd_type = NJT_HTTP_LMT_CONF;
-
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = new_pool;
+    cf->temp_pool = new_pool;
+#endif
+    //end
     rv = njt_conf_parse(cf, NULL);
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = old_pool;
+    cf->temp_pool = old_temp_pool;
+#endif
+    //end
+
 
     *cf = save;
 

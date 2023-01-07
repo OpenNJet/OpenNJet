@@ -386,12 +386,12 @@ njt_http_location_delete_handler(njt_http_request_t *r, njt_str_t name) {
     dclcf = lq->exact ? lq->exact : lq->inclusive;
     njt_http_location_destroy(dclcf);
     njt_queue_remove(&lq->queue);
-//    njt_pfree(clcf->pool,lq);
+    njt_pfree(lq->parent_pool,lq);
 //    for (x = njt_queue_head(clcf->new_locations);
 //         x != njt_queue_sentinel(clcf->new_locations);) {
 //        lq = njt_queue_data(x,njt_http_location_queue_t,queue);
 //        x = njt_queue_next(x);
-//        njt_pfree(clcf->pool,lq);
+//        njt_pfree(lq->parent_pool,lq);
 //    }
 
     for (x = njt_queue_head(clcf->old_locations);
@@ -402,7 +402,12 @@ njt_http_location_delete_handler(njt_http_request_t *r, njt_str_t name) {
         if (lq == NULL) {
             return NJT_ERROR;
         }
+        if(lx->dynamic_status == 1) {
+            lx->dynamic_status = 2;
+        }
         *lq = *lx;
+        lq->parent_pool = clcf->pool;
+
         njt_queue_init(&lq->list);
         njt_queue_insert_tail(clcf->new_locations, &lq->queue);
     }
@@ -576,7 +581,7 @@ njt_http_location_handler(njt_http_request_t *r) {
     //conf.conf_file = *njt_cycle->conf_file;
     //cycle->config_dump_rbtree;
     conf.cycle = (njt_cycle_t *) njt_cycle;
-    conf.cycle->config_dump_rbtree = conf.cycle->old_config_dump_rbtree;
+//    conf.cycle->config_dump_rbtree = conf.cycle->old_config_dump_rbtree;
     conf.pool = clcf->pool;
     conf.log = njt_cycle->log;
     conf.module_type = NJT_HTTP_MODULE;
@@ -665,6 +670,7 @@ njt_http_location_handler(njt_http_request_t *r) {
             rc = NJT_ERROR;
             goto out;
         }
+//        *lq = *lx;
 		if(lx->dynamic_status == 1) {
 			lx->dynamic_status = 2;
 		}

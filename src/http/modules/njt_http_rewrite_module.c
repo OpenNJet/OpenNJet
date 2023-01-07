@@ -645,8 +645,20 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         if_code->loc_conf = ctx->loc_conf;
         cf->cmd_type = NJT_HTTP_LIF_CONF;
     }
-
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = new_pool;
+    cf->temp_pool = new_pool;
+#endif
+    //end
     rv = njt_conf_parse(cf, NULL);
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = old_pool;
+    cf->temp_pool = old_temp_pool;
+#endif
+    //end
+
 
     *cf = save;
 
