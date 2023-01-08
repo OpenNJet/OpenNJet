@@ -5,6 +5,7 @@
 #include <njt_json_api.h>
 #include <math.h>
 
+njt_uint_t    ngx_worker;
 void
 njt_http_location_read_data(njt_http_request_t *r);
 
@@ -52,6 +53,7 @@ typedef struct njt_http_location_main_conf_s {
 
 
 typedef struct njt_http_location_info_s {
+	njt_str_t file;
 	njt_str_t addr_port;
 	njt_str_t server_name;
 	njt_str_t location;
@@ -495,9 +497,12 @@ njt_http_location_handler(njt_http_request_t *r) {
     njt_http_core_loc_conf_t **saved_named_locations;
     njt_http_location_tree_node_t *saved_static_locations;
 
-    njt_str_t location_path = njt_string("/dev/shm/add_location.txt");
+    njt_str_t location_path;
     njt_str_t location_req = njt_string("/add_location");
 
+    
+    out.next = NULL;
+    out.buf = NULL;
     njt_memzero(&conf, sizeof(njt_conf_t));
     loc = njt_http_get_module_loc_conf(r, njt_http_core_module);
     if (loc && r->uri.len == location_req.len && njt_strncmp(r->uri.data, location_req.data, r->uri.len) == 0) {
@@ -535,11 +540,15 @@ njt_http_location_handler(njt_http_request_t *r) {
 		njt_str_set(&location_info.location,"test");
 
 	}
-    out.next = NULL;
-    out.buf = NULL;
+    location_path = location_info.file;
+    if(location_path.len == 0) {
+	 rc = NJT_ERROR;
+       goto out;
+    }
 
 
     if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
+	rc = NJT_ERROR;
         goto out;
     }
     cscf = location_info.cscf;  //njt_http_get_module_srv_conf(r, njt_http_core_module);
@@ -768,7 +777,7 @@ njt_http_location_read_data(njt_http_request_t *r) {
     njt_str_t                          json_str;
      njt_fd_t                       fd;
      njt_uint_t         i,len;
-    njt_int_t          rlen,nport,nport2;
+    njt_int_t          rlen,nport,nport2,idx;
     u_char	       *last,*sport;
     njt_json_element  *items;
     //njt_str_t          proxy_pass;
@@ -786,7 +795,9 @@ njt_http_location_read_data(njt_http_request_t *r) {
 	 struct sockaddr         local_sockaddr;
 	 njt_http_virtual_names_t *virtual_names;
 	njt_url_t                           u;
-    njt_str_t                      location_file = njt_string("/dev/shm/add_location.txt");
+    njt_str_t                      location_file = njt_string("add_location.txt");
+    njt_str_t                      location_path;
+    njt_str_t                      location_full_file;
     njt_str_t  wide_addr = njt_string("0.0.0.0");
     //njt_chain_t                        out;
 
@@ -924,16 +935,31 @@ njt_http_location_read_data(njt_http_request_t *r) {
 
 	location_info.cscf = cscf;
 
-   fd = njt_open_file(location_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR,NJT_FILE_TRUNCATE, 0);
+   for(idx = njt_cycle->error_log.len-1; idx >= 0; idx--) {
+	if(njt_cycle->error_log.data[idx] == '/') {
+	  break;
+	}
+   }
+   if(idx >= 0){
+      location_path.len = idx + 1;
+      location_path.data = njt_cycle->error_log.data;
+      
+      //todo
+      njt_str_set(&location_path,"/tmp/");
+      location_full_file.len = location_path.len + location_file.len + 10;//  workid_add_location.txt
+      location_full_file.data = njt_pcalloc(r->pool, location_full_file.len);
+      p = njt_snprintf(location_full_file.data,location_full_file.len,"%V%d_%V",&location_path,ngx_worker,&location_file);
+      location_full_file.len = p - location_full_file.data;
+   }
+   fd = njt_open_file(location_full_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR,NJT_FILE_TRUNCATE, 0);
    if (fd == NJT_INVALID_FILE ){
 	return ;
    }
    data = njt_pcalloc(r->pool, 512);
-   if(data == NULL) {
-	 return ;
+   if(data != NULL) {
+   	p = njt_snprintf(data,512,"location %V {\nproxy_pass %V;\n}\n",&location_info.location,&location_info.proxy_pass);
+   	rlen = njt_write_fd(fd,data,p-data);
    }
-   p = njt_snprintf(data,512,"location %V {\nproxy_pass %V;\n}\n",&location_info.location,&location_info.proxy_pass);
-   rlen = njt_write_fd(fd,data,p-data);
 
    if (fd != NJT_INVALID_FILE) {
 
@@ -945,6 +971,7 @@ njt_http_location_read_data(njt_http_request_t *r) {
    if(rlen < 0) {
          return ;
    }
+   location_info.file = location_full_file;
 
 
 }
