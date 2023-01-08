@@ -1424,12 +1424,6 @@ njt_http_create_locations_tree(njt_conf_t *cf, njt_queue_t *locations,
     }
 
     njt_queue_remove(q);
-        //by clb
-#if (NJT_HTTP_DYNAMIC_LOC)
-    //need remove q memory
-    njt_pfree(lq->parent_pool, lq);
-#endif
-    //end
 
 
     if (njt_queue_empty(&tail)) {
@@ -1442,6 +1436,16 @@ njt_http_create_locations_tree(njt_conf_t *cf, njt_queue_t *locations,
     }
 
     inclusive:
+
+    //by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+    //need remove q memory
+    if (lq != NULL && lq->parent_pool != NULL){
+        njt_pfree(lq->parent_pool, lq);
+    }
+#endif
+    //end
+
 
     if (njt_queue_empty(&lq->list)) {
         return node;
