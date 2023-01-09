@@ -2971,7 +2971,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
     old_pool = cf->pool;
     old_temp_pool = cf->temp_pool;
-    new_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
+    new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
     if (new_pool == NULL) {
         return NJT_CONF_ERROR;
     }
@@ -3117,7 +3117,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
     old_pool = cf->pool;
     old_temp_pool = cf->temp_pool;
-    new_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
+    new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
     if (new_pool == NULL) {
         return NJT_CONF_ERROR;
     }
@@ -4714,7 +4714,7 @@ njt_http_core_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     old_pool = cf->pool;
     old_temp_pool = cf->temp_pool;
-    new_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
+    new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
     if (new_pool == NULL) {
         return NJT_CONF_ERROR;
     }

@@ -210,8 +210,8 @@ typedef struct {
     //add by clb
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t                *named_parent_pool;
-    njt_pool_t                *new_named_parent_pool;
-    njt_http_core_loc_conf_t  **new_named_locations;
+//    njt_pool_t                *new_named_parent_pool;
+//    njt_http_core_loc_conf_t  **new_named_locations;
 #endif
 } njt_http_core_srv_conf_t;
 
@@ -334,19 +334,15 @@ struct njt_http_core_loc_conf_s {
 #endif
 
     njt_http_location_tree_node_t   *static_locations;
-    //add by clb
-#if (NJT_HTTP_DYNAMIC_LOC)
-    njt_http_location_tree_node_t   *new_static_locations;
-#endif
-    //end
+
 
 #if (NJT_PCRE)
     njt_http_core_loc_conf_t       **regex_locations;
     //add by clb
 #if (NJT_HTTP_DYNAMIC_LOC)
-    njt_pool_t                     *regex_parent_pool;
-    njt_http_core_loc_conf_t       **new_regex_locations;
-    njt_pool_t                     *new_regex_parent_pool;
+//    njt_pool_t                     *regex_parent_pool;
+//    njt_http_core_loc_conf_t       **new_regex_locations;
+//    njt_pool_t                     *new_regex_parent_pool;
 #endif
     //end
 #endif
@@ -475,6 +471,7 @@ struct njt_http_core_loc_conf_s {
     njt_uint_t   ref_count;
     unsigned     disable:1;
 	unsigned     dynamic_status:2; // 1 init, 2 nomal
+    njt_http_location_tree_node_t   *new_static_locations;//add by clb
 #endif
     //end
 
