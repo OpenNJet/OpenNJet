@@ -543,20 +543,6 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_core_loc_conf_t     *clcf, *pclcf;
     njt_http_script_if_code_t    *if_code;
     njt_http_rewrite_loc_conf_t  *nlcf;
-
-    ctx = njt_pcalloc(cf->pool, sizeof(njt_http_conf_ctx_t));
-    if (ctx == NULL) {
-        return NJT_CONF_ERROR;
-    }
-
-    pctx = cf->ctx;
-    ctx->main_conf = pctx->main_conf;
-    ctx->srv_conf = pctx->srv_conf;
-
-    ctx->loc_conf = njt_pcalloc(cf->pool, sizeof(void *) * njt_http_max_module);
-    if (ctx->loc_conf == NULL) {
-        return NJT_CONF_ERROR;
-    }
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t *old_pool,*new_pool,*old_temp_pool;
@@ -572,20 +558,31 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (rc != NJT_OK) {
         return NJT_CONF_ERROR;
     }
+    cf->pool = new_pool;
+    cf->temp_pool = new_pool;
 #endif
     //end
+    ctx = njt_pcalloc(cf->pool, sizeof(njt_http_conf_ctx_t));
+    if (ctx == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    pctx = cf->ctx;
+    ctx->main_conf = pctx->main_conf;
+    ctx->srv_conf = pctx->srv_conf;
+
+    ctx->loc_conf = njt_pcalloc(cf->pool, sizeof(void *) * njt_http_max_module);
+    if (ctx->loc_conf == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
     for (i = 0; cf->cycle->modules[i]; i++) {
         if (cf->cycle->modules[i]->type != NJT_HTTP_MODULE) {
             continue;
         }
 
         module = cf->cycle->modules[i]->ctx;
-        // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
-        cf->pool = new_pool;
-        cf->temp_pool = new_pool;
-#endif
-        //end
+
         if (module->create_loc_conf) {
 
             mconf = module->create_loc_conf(cf);
@@ -595,14 +592,14 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
             ctx->loc_conf[cf->cycle->modules[i]->ctx_index] = mconf;
         }
-        // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
-        cf->pool = old_pool;
-        cf->temp_pool = old_temp_pool;
-#endif
-        //end
-    }
 
+    }
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = old_pool;
+    cf->temp_pool = old_temp_pool;
+#endif
+    //end
     pclcf = pctx->loc_conf[njt_http_core_module.ctx_index];
 
     clcf = ctx->loc_conf[njt_http_core_module.ctx_index];
