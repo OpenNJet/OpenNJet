@@ -58,6 +58,7 @@ typedef struct njt_http_location_info_s {
 	njt_str_t server_name;
 	njt_str_t location;
 	njt_str_t proxy_pass;
+	njt_str_t content;
 	njt_http_core_srv_conf_t *cscf;
 } njt_http_location_info_t;
 
@@ -816,6 +817,14 @@ njt_http_location_read_data(njt_http_request_t *r) {
 
             location_info.server_name = items[i].strval;
             continue;
+        }else if (njt_strncmp(items[i].key.data, "content", 7) == 0) {
+
+            if (items[i].type != NJT_JSON_STR) {
+                return ;
+            }
+
+            location_info.content = items[i].strval;
+            continue;
         }
    }
     target_ls = NULL;
@@ -905,7 +914,7 @@ njt_http_location_read_data(njt_http_request_t *r) {
    }
    data = njt_pcalloc(r->pool, 512);
    if(data != NULL) {
-   	p = njt_snprintf(data,512,"location %V {\nproxy_pass %V;\n}\n",&location_info.location,&location_info.proxy_pass);
+   	p = njt_snprintf(data,512,"location %V {\n%V\nproxy_pass %V;\n}\n",&location_info.location,&location_info.content,&location_info.proxy_pass);
    	rlen = njt_write_fd(fd,data,p-data);
    }
 
