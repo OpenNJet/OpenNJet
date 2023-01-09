@@ -334,11 +334,7 @@ struct njt_http_core_loc_conf_s {
 #endif
 
     njt_http_location_tree_node_t   *static_locations;
-    //add by clb
-#if (NJT_HTTP_DYNAMIC_LOC)
-    njt_http_location_tree_node_t   *new_static_locations;
-#endif
-    //end
+
 
 #if (NJT_PCRE)
     njt_http_core_loc_conf_t       **regex_locations;
@@ -475,6 +471,7 @@ struct njt_http_core_loc_conf_s {
     njt_uint_t   ref_count;
     unsigned     disable:1;
 	unsigned     dynamic_status:2; // 1 init, 2 nomal
+    njt_http_location_tree_node_t   *new_static_locations;//add by clb
 #endif
     //end
 

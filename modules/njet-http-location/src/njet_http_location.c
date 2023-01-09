@@ -729,6 +729,7 @@ njt_http_location_read_data(njt_http_request_t *r) {
 
     rc = NJT_OK;
     rlen = 0;
+    cscf = NULL;
 
     body_chain = r->request_body->bufs;
     if (body_chain && body_chain->next) {

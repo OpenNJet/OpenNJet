@@ -811,16 +811,25 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         cscf->named_locations = clcfp;
 
         for (q = named;
-             q != njt_queue_sentinel(locations);
-             q = njt_queue_next(q)) {
+             q != njt_queue_sentinel(locations);) {
             lq = (njt_http_location_queue_t *) q;
-
+            q = njt_queue_next(q);
             *(clcfp++) = lq->exact;
+            // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+            njt_queue_remove(&lq->queue);
+            njt_pfree(lq->parent_pool,lq);
+#endif
+            //end
         }
 
         *clcfp = NULL;
-
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+#else
         njt_queue_split(locations, named, &tail);
+#endif
+        // end
     }
 
 #if (NJT_PCRE)
@@ -850,16 +859,25 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         pclcf->regex_locations = clcfp;
 
         for (q = regex;
-             q != njt_queue_sentinel(locations);
-             q = njt_queue_next(q)) {
+             q != njt_queue_sentinel(locations);) {
             lq = (njt_http_location_queue_t *) q;
-
+            q = njt_queue_next(q);
             *(clcfp++) = lq->exact;
+            // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+            njt_queue_remove(&lq->queue);
+            njt_pfree(lq->parent_pool,lq);
+#endif
+            //end
         }
 
         *clcfp = NULL;
-
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+#else
         njt_queue_split(locations, regex, &tail);
+#endif
+        // end
     }
 
 #endif
