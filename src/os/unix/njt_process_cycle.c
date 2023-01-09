@@ -657,7 +657,7 @@ static void
 njt_master_process_exit(njt_cycle_t *cycle)
 {
     njt_uint_t  i;
-
+    fprintf(stderr,"njt exit start++++++++++++++++++++++ \r\n");
     njt_delete_pidfile(cycle);
 
     njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exit");
@@ -691,7 +691,7 @@ njt_master_process_exit(njt_cycle_t *cycle)
     njt_cycle = &njt_exit_cycle;
 
     njt_destroy_pool(cycle->pool);
-
+    fprintf(stderr,"njt exit end++++++++++++++++++++++ \r\n");
     exit(0);
 }
 
@@ -951,7 +951,9 @@ njt_worker_process_exit(njt_cycle_t *cycle)
 {
     njt_uint_t         i;
     njt_connection_t  *c;
-
+    // by chengxu
+    fprintf(stderr,"njt exit start++++++++++++++++++++++ \r\n");
+    //end
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->exit_process) {
             cycle->modules[i]->exit_process(cycle);
@@ -1000,7 +1002,9 @@ njt_worker_process_exit(njt_cycle_t *cycle)
     njt_cycle = &njt_exit_cycle;
 
     njt_destroy_pool(cycle->pool);
-
+    // by chengxu
+    fprintf(stderr,"njt exit end++++++++++++++++++++++ \r\n");
+    // end
     njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "exit");
 
     exit(0);
