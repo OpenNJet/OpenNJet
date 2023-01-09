@@ -340,9 +340,6 @@ static njt_http_location_queue_t *njt_http_find_location(njt_str_t name, njt_que
 }
 
 static njt_int_t njt_http_refresh_location(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,njt_http_core_loc_conf_t *clcf){
-
-    njt_http_core_loc_conf_t **saved_regex_locations;
-    njt_http_core_loc_conf_t **saved_named_locations;
     njt_http_location_tree_node_t *saved_static_locations;
     njt_queue_t *x;
     njt_http_location_queue_t *lq, *lx;
@@ -410,29 +407,9 @@ static njt_int_t njt_http_refresh_location(njt_conf_t *cf, njt_http_core_srv_con
     njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0,"free old location start +++++++++++++++");
 
 //save last locations
-    saved_regex_locations = clcf->regex_locations;
-    saved_named_locations = cscf->named_locations;
     saved_static_locations = clcf->static_locations;
 
-    //update locations
-    clcf->regex_locations = clcf->new_regex_locations;
-    cscf->named_locations = cscf->new_named_locations;
     clcf->static_locations = clcf->new_static_locations;
-
-    //free old locaions memory
-    //free old regex_locations
-    if(saved_regex_locations != NULL){
-        njt_pfree(clcf->regex_parent_pool, saved_regex_locations);
-    }
-    //update regex_parent_pool
-    clcf->regex_parent_pool = clcf->new_regex_parent_pool;
-
-    //free old named_locations
-    if(saved_named_locations != NULL){
-        njt_pfree(cscf->named_parent_pool, saved_named_locations);
-    }
-    //update named_parent_pool
-    cscf->named_parent_pool = cscf->new_named_parent_pool;
 
     //free old static_locations tree node
     //now just delete dynamic tree(clcf->pool), initial static tree not delete(cf->pool)
@@ -526,8 +503,8 @@ njt_http_location_handler(njt_http_request_t *r) {
     njt_http_core_loc_conf_t *clcf, *loc;
     njt_pool_t *location_pool = NULL;
 
-    njt_str_t location_path;
-//    location_path = njt_string("/dev/shm/add_location.txt");
+//    njt_str_t location_path;
+    njt_str_t location_path = njt_string("./conf/add_location.txt");
     njt_str_t location_req = njt_string("/add_location");
 
 
@@ -583,7 +560,7 @@ njt_http_location_handler(njt_http_request_t *r) {
 //		njt_str_set(&location_info.location,"test");
 //
 //	}
-    location_path = location_info.file;
+//    location_path = location_info.file;
     if(location_path.len == 0) {
 	 rc = NJT_ERROR;
        goto out;
@@ -750,6 +727,7 @@ njt_http_location_read_data(njt_http_request_t *r) {
     //njt_chain_t                        out;
 
     rc = NJT_OK;
+    rlen = 0;
 
     body_chain = r->request_body->bufs;
     if (body_chain && body_chain->next) {

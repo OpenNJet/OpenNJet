@@ -16,16 +16,16 @@
 
 void *njt_alloc(size_t size, njt_log_t *log);
 void *njt_calloc(size_t size, njt_log_t *log);
-//by cheng xu
-#if (NJT_DEBUG)
-#define njt_free          njt_cx_free
-void njt_cx_free(void *p);
-void *njt_cx_malloc (size_t size);
-#define malloc           njt_cx_malloc
-#else
+////by cheng xu
+//#if (NJT_DEBUG)
+//#define njt_free          njt_cx_free
+//void njt_cx_free(void *p);
+//void *njt_cx_malloc (size_t size);
+//#define malloc           njt_cx_malloc
+//#else
 #define njt_free          free
-#endif
-//end
+//#endif
+////end
 
 
 
