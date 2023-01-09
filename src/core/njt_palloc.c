@@ -9,7 +9,6 @@
 #include <njt_config.h>
 #include <njt_core.h>
 
-#include <execinfo.h>
 
 
 static njt_inline void *njt_palloc_small(njt_pool_t *pool, size_t size,
@@ -103,37 +102,6 @@ njt_int_t njt_sub_pool(njt_pool_t *pool,njt_pool_t *sub){
     return NJT_OK;
 }
 
-typedef struct {
-    njt_log_t              *log;
-    njt_int_t               max_stack_size;
-} njt_backtrace_conf_t;
-
-static void
-ngx_error_signal_handler(njt_pool_t *pool)
-{
-    void                 *buffer;
-    size_t                size;
-    njt_backtrace_conf_t bcf;
-
-    bcf.max_stack_size = 30;
-    njt_log_t *log = pool->log;
-
-
-    buffer = njt_alloc(sizeof(void *) * bcf.max_stack_size,pool->log);
-    if (buffer == NULL) {
-        goto invalid;
-    }
-
-    size = backtrace(buffer, bcf.max_stack_size);
-    backtrace_symbols_fd(buffer, size, log->file->fd);
-    njt_free(buffer);
-
-    return;
-
-    invalid:
-
-    exit(1);
-}
 
 
 static void *
@@ -143,11 +111,13 @@ njt_dynamic_alloc(njt_pool_t *pool, size_t size)
     njt_uint_t         n;
     njt_pool_large_t  *large;
 
+    njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0,"dynamic_alloc: %p,", pool);
+
     p = njt_alloc(size + sizeof(njt_pool_large_t), pool->log);
     if (p == NULL) {
         return NULL;
     }
-    ngx_error_signal_handler(pool);
+//    ngx_error_signal_handler(pool);
 
     n = 0;
 
@@ -546,7 +516,8 @@ njt_pfree(njt_pool_t *pool, void *p)
             }
         }
     }
-
+    njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0,
+                   "free error: %p", (*l)->alloc);
     return NJT_DECLINED;
 }
 

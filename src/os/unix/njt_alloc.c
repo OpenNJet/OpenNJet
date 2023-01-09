@@ -9,11 +9,61 @@
 #include <njt_config.h>
 #include <njt_core.h>
 
+#include <execinfo.h>
 
 njt_uint_t  njt_pagesize;
 njt_uint_t  njt_pagesize_shift;
 njt_uint_t  njt_cacheline_size;
 
+//by cheng xu
+#if (NJT_DEBUG)
+
+
+typedef struct {
+    njt_log_t              *log;
+    njt_int_t               max_stack_size;
+} njt_backtrace_conf_t;
+static void
+ngx_error_signal_handler()
+{
+    void                 *buffer;
+    size_t                size;
+    njt_backtrace_conf_t bcf;
+
+    bcf.max_stack_size = 30;
+
+
+
+    buffer = calloc(1,sizeof(void *) * bcf.max_stack_size);
+    if (buffer == NULL) {
+        goto invalid;
+    }
+
+    size = backtrace(buffer, bcf.max_stack_size);
+    backtrace_symbols_fd(buffer, size, 2);
+    njt_free(buffer);
+
+    return;
+
+    invalid:
+
+    exit(1);
+}
+
+
+void njt_cx_free(void *p){
+    fprintf(stderr,"free: %016x cx_free\r\n",(unsigned int)(uintptr_t)p);
+    free(p);
+}
+void *njt_cx_malloc (size_t size){
+    void  *p;
+    p = calloc(1,size);
+    fprintf(stderr,"malloc：%016x:%u cx_malloc \r\n",(unsigned int)(uintptr_t)p,(unsigned int)size);
+    ngx_error_signal_handler();
+    return p;
+}
+#endif
+//end
 
 void *
 njt_alloc(size_t size, njt_log_t *log)
