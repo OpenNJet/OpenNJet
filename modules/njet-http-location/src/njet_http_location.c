@@ -58,6 +58,7 @@ typedef struct njt_http_location_info_s {
 	njt_str_t server_name;
 	njt_str_t location;
 	njt_str_t proxy_pass;
+	njt_str_t content;
 	njt_http_core_srv_conf_t *cscf;
 } njt_http_location_info_t;
 
@@ -711,8 +712,8 @@ njt_http_location_read_data(njt_http_request_t *r) {
     u_char                         *p,*data;
 	njt_http_in_addr_t        *addr;
 	struct sockaddr_in        *sin;
-    njt_http_core_srv_conf_t    *cscf; // **cscfp;
-    //njt_http_core_main_conf_t   *cmcf;
+    njt_http_core_srv_conf_t    *cscf, **cscfp;
+    njt_http_core_main_conf_t   *cmcf;
 	njt_http_connection_t     hc;
     njt_listening_t     *ls,*target_ls;
 
@@ -736,7 +737,7 @@ njt_http_location_read_data(njt_http_request_t *r) {
         return ;
     }
 
-	/*
+	
     cmcf = njt_http_get_module_main_conf(r, njt_http_core_module);
     cscfp = cmcf->servers.elts;
     for(i=0; i < cmcf->servers.nelts; i++) {
@@ -744,7 +745,7 @@ njt_http_location_read_data(njt_http_request_t *r) {
 	if(cscf->server_name.len > 0) {
 		printf("%s","123");
 	}
-    }*/
+    }
 
     /*check the sanity of the json body*/
     json_str.data = body_chain->buf->pos;
@@ -794,6 +795,14 @@ njt_http_location_read_data(njt_http_request_t *r) {
 
             location_info.server_name = items[i].strval;
             continue;
+        }else if (njt_strncmp(items[i].key.data, "content", 7) == 0) {
+
+            if (items[i].type != NJT_JSON_STR) {
+                return ;
+            }
+
+            location_info.content = items[i].strval;
+            continue;
         }
    }
     target_ls = NULL;
@@ -822,13 +831,14 @@ njt_http_location_read_data(njt_http_request_t *r) {
 		}
 		 port = target_ls->servers;
 
-		 njt_memzero(&u, sizeof(njt_url_t));
-		 u.url = location_info.addr_port;
-		 u.default_port = 80;
-		 njt_parse_url(r->pool, &u);
-		 njt_memcpy(&local_sockaddr, &u.sockaddr, u.socklen);
+		
 
 		if (port->naddrs > 1) {
+			     njt_memzero(&u, sizeof(njt_url_t));
+				 u.url = location_info.addr_port;
+				 u.default_port = 80;
+				 njt_parse_url(r->pool, &u);
+				 njt_memcpy(&local_sockaddr, &u.sockaddr, u.socklen);
 				sin = (struct sockaddr_in *) &local_sockaddr;
 
 				addr = port->addrs;
@@ -848,9 +858,11 @@ njt_http_location_read_data(njt_http_request_t *r) {
 		}
 		hc.conf_ctx = hc.addr_conf->default_server->ctx;
 		virtual_names = hc.addr_conf->virtual_names;
-		cscf = njt_hash_find_combined(&virtual_names->names,
-									  njt_hash_key(location_info.server_name.data, location_info.server_name.len),
-									  location_info.server_name.data, location_info.server_name.len);
+		if(virtual_names != NULL) {
+			cscf = njt_hash_find_combined(&virtual_names->names,
+										  njt_hash_key(location_info.server_name.data, location_info.server_name.len),
+										  location_info.server_name.data, location_info.server_name.len);
+		}
 		if(cscf == NULL) {
 			cscf = njt_http_get_module_srv_conf(hc.conf_ctx,njt_http_core_module);
 		}
@@ -883,7 +895,7 @@ njt_http_location_read_data(njt_http_request_t *r) {
    }
    data = njt_pcalloc(r->pool, 512);
    if(data != NULL) {
-   	p = njt_snprintf(data,512,"location %V {\nproxy_pass %V;\n}\n",&location_info.location,&location_info.proxy_pass);
+   	p = njt_snprintf(data,512,"location %V {\n%V\nproxy_pass %V;\n}\n",&location_info.location,&location_info.content,&location_info.proxy_pass);
    	rlen = njt_write_fd(fd,data,p-data);
    }
 
