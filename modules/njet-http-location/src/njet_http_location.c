@@ -544,6 +544,7 @@ njt_http_location_handler(njt_http_request_t *r) {
 		if(rc == NJT_OK) {
 			njt_http_finalize_request(r, NJT_DONE);
 		}
+		location_path = location_info.file;
         njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0,"read_client_request_body end +++++++++++++++");
 
     }
@@ -561,7 +562,7 @@ njt_http_location_handler(njt_http_request_t *r) {
 //		njt_str_set(&location_info.location,"test");
 //
 //	}
-//    location_path = location_info.file;
+    
     if(location_path.len == 0) {
 	 rc = NJT_ERROR;
        goto out;
