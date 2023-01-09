@@ -790,13 +790,13 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     if (named) {
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
-        if (cscf->named_locations != NULL) {
-            njt_pfree(cf->cycle->pool, cscf->named_locations);
-            cscf->named_locations = NULL;
+        if (cscf->new_named_locations != NULL) {
+            njt_pfree(cscf->new_named_parent_pool, cscf->new_named_locations);
+            cscf->new_named_locations = NULL;
         }
-        clcfp = njt_palloc(cf->cycle->pool,
-                           (r + 1) * sizeof(njt_http_core_loc_conf_t *));
-        cscf->named_parent_pool = cf->cycle->pool;  //add by clb
+        clcfp = njt_palloc(cf->pool,
+                           (n + 1) * sizeof(njt_http_core_loc_conf_t *));
+        cscf->new_named_parent_pool = cf->pool; //add by clb
 #else
         clcfp = njt_palloc(cf->pool,
                            (n + 1) * sizeof(njt_http_core_loc_conf_t *));
@@ -829,7 +829,7 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
         if (pclcf->regex_locations!= NULL){
-            njt_pfree(pclcf->pool,pclcf->regex_locations);
+            njt_pfree(pclcf->regex_parent_pool,pclcf->regex_locations);
             pclcf->regex_locations= NULL;
         }
         clcfp = njt_palloc(pclcf->pool,
@@ -943,12 +943,12 @@ njt_http_init_new_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
         if (cscf->new_named_locations != NULL) {
-            njt_pfree(cf->cycle->pool, cscf->new_named_locations);
+            njt_pfree(cscf->new_named_parent_pool, cscf->new_named_locations);
             cscf->new_named_locations = NULL;
         }
-        clcfp = njt_palloc(cf->cycle->pool,
+        clcfp = njt_palloc(cf->pool,
                            (n + 1) * sizeof(njt_http_core_loc_conf_t *));
-        cscf->new_named_parent_pool = cf->cycle->pool; //add by clb
+        cscf->new_named_parent_pool = cf->pool; //add by clb
 #else
         clcfp = njt_palloc(cf->pool,
                            (n + 1) * sizeof(njt_http_core_loc_conf_t *));
@@ -981,12 +981,12 @@ njt_http_init_new_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
         if (pclcf->regex_locations!= NULL){
-            njt_pfree(pclcf->pool,pclcf->regex_locations);
+            njt_pfree(pclcf->regex_parent_pool,pclcf->regex_locations);
             pclcf->regex_locations= NULL;
         }
         clcfp = njt_palloc(pclcf->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
-        pclcf->new_regex_parent_pool = pclcf->pool;     //add by clb
+        pclcf->regex_parent_pool =  pclcf->pool;   //add by clb
 #else
         clcfp = njt_palloc(cf->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
@@ -1437,6 +1437,30 @@ njt_http_create_locations_tree(njt_conf_t *cf, njt_queue_t *locations,
 
     inclusive:
 
+    if (njt_queue_empty(&lq->list)) {
+        //by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+        //need remove q memory
+        if (lq != NULL && lq->parent_pool != NULL){
+            njt_pfree(lq->parent_pool, lq);
+        }
+#endif
+        //end
+        return node;
+    }
+
+    node->tree = njt_http_create_locations_tree(cf, &lq->list, prefix + len);
+    if (node->tree == NULL) {
+        //by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+        //need remove q memory
+        if (lq != NULL && lq->parent_pool != NULL){
+            njt_pfree(lq->parent_pool, lq);
+        }
+#endif
+        //end
+        return NULL;
+    }
     //by clb
 #if (NJT_HTTP_DYNAMIC_LOC)
     //need remove q memory
@@ -1445,17 +1469,6 @@ njt_http_create_locations_tree(njt_conf_t *cf, njt_queue_t *locations,
     }
 #endif
     //end
-
-
-    if (njt_queue_empty(&lq->list)) {
-        return node;
-    }
-
-    node->tree = njt_http_create_locations_tree(cf, &lq->list, prefix + len);
-    if (node->tree == NULL) {
-        return NULL;
-    }
-
     return node;
 }
 
