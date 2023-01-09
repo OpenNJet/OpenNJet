@@ -211,7 +211,7 @@ njt_http_block(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
 
     old_pool = cf->pool;
     old_temp_pool = cf->temp_pool;
-    new_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
+    new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
     if (new_pool == NULL) {
         return NJT_CONF_ERROR;
     }
@@ -715,11 +715,11 @@ njt_http_merge_locations(njt_conf_t *cf, njt_queue_t *locations,
 }
 
 
-njt_int_t
-njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
-                        njt_http_core_loc_conf_t *pclcf) {
+static njt_inline njt_int_t
+njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
+                        njt_http_core_loc_conf_t *pclcf,njt_queue_t *locations) {
     njt_uint_t n;
-    njt_queue_t *q, *locations, *named, tail;
+    njt_queue_t *q, *named, tail;
     njt_http_core_loc_conf_t *clcf;
     njt_http_location_queue_t *lq;
     njt_http_core_loc_conf_t **clcfp;
@@ -727,8 +727,6 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     njt_uint_t r;
     njt_queue_t *regex;
 #endif
-
-    locations = pclcf->locations;
 
     if (locations == NULL) {
         return NJT_OK;
@@ -790,24 +788,26 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     if (named) {
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
-        if (cscf->new_named_locations != NULL) {
-            njt_pfree(cscf->new_named_parent_pool, cscf->new_named_locations);
-            cscf->new_named_locations = NULL;
+        if (cscf->named_parent_pool == NULL) {
+            cscf->named_parent_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE,cf->pool->log);
         }
-        clcfp = njt_palloc(cf->pool,
+        clcfp = njt_palloc(cscf->named_parent_pool,
                            (n + 1) * sizeof(njt_http_core_loc_conf_t *));
-        cscf->new_named_parent_pool = cf->pool; //add by clb
 #else
         clcfp = njt_palloc(cf->pool,
                            (n + 1) * sizeof(njt_http_core_loc_conf_t *));
 #endif
         //end
-        // clcfp = njt_palloc(cf->pool,
-        //                    (n + 1) * sizeof(njt_http_core_loc_conf_t *));
         if (clcfp == NULL) {
             return NJT_ERROR;
         }
-
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+        if (cscf->named_locations != NULL) {
+            njt_pfree(cscf->named_parent_pool, cscf->named_locations);
+        }
+#endif
+        //end
         cscf->named_locations = clcfp;
 
         for (q = named;
@@ -828,13 +828,8 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     if (regex) {
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
-        if (pclcf->regex_locations!= NULL){
-            njt_pfree(pclcf->regex_parent_pool,pclcf->regex_locations);
-            pclcf->regex_locations= NULL;
-        }
         clcfp = njt_palloc(pclcf->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
-        pclcf->regex_parent_pool =  pclcf->pool;   //add by clb
 #else
         clcfp = njt_palloc(cf->pool,
                            (r + 1) * sizeof(njt_http_core_loc_conf_t *));
@@ -844,7 +839,14 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         if (clcfp == NULL) {
             return NJT_ERROR;
         }
-
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+        if (pclcf->regex_locations!= NULL){
+            njt_pfree(pclcf->pool,pclcf->regex_locations);
+            pclcf->regex_locations= NULL;
+        }
+#endif
+        // end
         pclcf->regex_locations = clcfp;
 
         for (q = regex;
@@ -864,167 +866,27 @@ njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 
     return NJT_OK;
 }
-
+njt_int_t
+njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
+                        njt_http_core_loc_conf_t *pclcf) {
+    return njt_http_init_locations_common(cf, cscf,pclcf,pclcf->locations);
+}
 
 //add by clb
 njt_int_t
 njt_http_init_new_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
                             njt_http_core_loc_conf_t *pclcf) {
-    njt_uint_t n;
-    njt_queue_t *q, *locations, *named, tail;
-    njt_http_core_loc_conf_t *clcf;
-    njt_http_location_queue_t *lq;
-    njt_http_core_loc_conf_t **clcfp;
-#if (NJT_PCRE)
-    njt_uint_t r;
-    njt_queue_t *regex;
-#endif
 
-    locations = pclcf->new_locations;
-
-    if (locations == NULL) {
-        return NJT_OK;
-    }
-
-    njt_queue_sort(locations, njt_http_cmp_locations);
-
-    named = NULL;
-    n = 0;
-#if (NJT_PCRE)
-    regex = NULL;
-    r = 0;
-#endif
-
-    for (q = njt_queue_head(locations);
-         q != njt_queue_sentinel(locations);
-         q = njt_queue_next(q)) {
-        lq = (njt_http_location_queue_t *) q;
-
-        clcf = lq->exact ? lq->exact : lq->inclusive;
-
-        if (njt_http_init_new_locations(cf, NULL, clcf) != NJT_OK) {
-            return NJT_ERROR;
-        }
-
-#if (NJT_PCRE)
-
-        if (clcf->regex) {
-            r++;
-
-            if (regex == NULL) {
-                regex = q;
-            }
-
-            continue;
-        }
-
-#endif
-
-        if (clcf->named) {
-            n++;
-
-            if (named == NULL) {
-                named = q;
-            }
-
-            continue;
-        }
-
-        if (clcf->noname) {
-            break;
-        }
-    }
-
-    if (q != njt_queue_sentinel(locations)) {
-        njt_queue_split(locations, q, &tail);
-    }
-
-    if (named) {
-        // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
-        if (cscf->new_named_locations != NULL) {
-            njt_pfree(cscf->new_named_parent_pool, cscf->new_named_locations);
-            cscf->new_named_locations = NULL;
-        }
-        clcfp = njt_palloc(cf->pool,
-                           (n + 1) * sizeof(njt_http_core_loc_conf_t *));
-        cscf->new_named_parent_pool = cf->pool; //add by clb
-#else
-        clcfp = njt_palloc(cf->pool,
-                           (n + 1) * sizeof(njt_http_core_loc_conf_t *));
-        cscf->new_named_parent_pool = cf->pool;     //add by clb
-#endif
-        //end
-        if (clcfp == NULL) {
-            return NJT_ERROR;
-        }
-
-        // cscf->named_locations = clcfp;
-        cscf->new_named_locations = clcfp;
-
-        for (q = named;
-             q != njt_queue_sentinel(locations);
-             q = njt_queue_next(q)) {
-            lq = (njt_http_location_queue_t *) q;
-
-            *(clcfp++) = lq->exact;
-        }
-
-        *clcfp = NULL;
-
-        njt_queue_split(locations, named, &tail);
-    }
-
-#if (NJT_PCRE)
-
-    if (regex) {
-        // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
-        if (pclcf->regex_locations!= NULL){
-            njt_pfree(pclcf->regex_parent_pool,pclcf->regex_locations);
-            pclcf->regex_locations= NULL;
-        }
-        clcfp = njt_palloc(pclcf->pool,
-                           (r + 1) * sizeof(njt_http_core_loc_conf_t *));
-        pclcf->regex_parent_pool =  pclcf->pool;   //add by clb
-#else
-        clcfp = njt_palloc(cf->pool,
-                           (r + 1) * sizeof(njt_http_core_loc_conf_t *));
-#endif
-        //end
-        if (clcfp == NULL) {
-            return NJT_ERROR;
-        }
-
-        // pclcf->regex_locations = clcfp;
-        pclcf->new_regex_locations = clcfp;
-
-        for (q = regex;
-             q != njt_queue_sentinel(locations);
-             q = njt_queue_next(q)) {
-            lq = (njt_http_location_queue_t *) q;
-
-            *(clcfp++) = lq->exact;
-        }
-
-        *clcfp = NULL;
-
-        njt_queue_split(locations, regex, &tail);
-    }
-
-#endif
-
-    return NJT_OK;
+    return njt_http_init_locations_common(cf, cscf,pclcf,pclcf->new_locations);
 }
 
-njt_int_t
-njt_http_init_static_location_trees(njt_conf_t *cf,
-                                    njt_http_core_loc_conf_t *pclcf) {
-    njt_queue_t *q, *locations;
+static njt_inline njt_int_t
+njt_http_init_static_location_trees_common(njt_conf_t *cf,njt_http_core_loc_conf_t *pclcf,
+                                           njt_queue_t *locations,njt_http_location_tree_node_t   **static_locations) {
+    njt_queue_t *q;
     njt_http_core_loc_conf_t *clcf;
     njt_http_location_queue_t *lq;
 
-    locations = pclcf->locations;
 
     if (locations == NULL) {
         return NJT_OK;
@@ -1052,57 +914,23 @@ njt_http_init_static_location_trees(njt_conf_t *cf,
 
     njt_http_create_locations_list(locations, njt_queue_head(locations));
 
-    pclcf->static_locations = njt_http_create_locations_tree(cf, locations, 0);
-    if (pclcf->static_locations == NULL) {
+    *static_locations = njt_http_create_locations_tree(cf, locations, 0);
+    if (*static_locations == NULL) {
         return NJT_ERROR;
     }
 
     return NJT_OK;
 }
-
+njt_int_t
+njt_http_init_static_location_trees(njt_conf_t *cf,
+                                    njt_http_core_loc_conf_t *pclcf) {
+    return njt_http_init_static_location_trees_common(cf,pclcf,pclcf->locations,&pclcf->static_locations);
+}
 //add by clb
 njt_int_t
 njt_http_init_new_static_location_trees(njt_conf_t *cf,
                                         njt_http_core_loc_conf_t *pclcf) {
-    njt_queue_t *q, *locations;
-    njt_http_core_loc_conf_t *clcf;
-    njt_http_location_queue_t *lq;
-
-    locations = pclcf->new_locations;
-
-    if (locations == NULL) {
-        return NJT_OK;
-    }
-
-    if (njt_queue_empty(locations)) {
-        return NJT_OK;
-    }
-
-    for (q = njt_queue_head(locations);
-         q != njt_queue_sentinel(locations);
-         q = njt_queue_next(q)) {
-        lq = (njt_http_location_queue_t *) q;
-
-        clcf = lq->exact ? lq->exact : lq->inclusive;
-
-        if (njt_http_init_new_static_location_trees(cf, clcf) != NJT_OK) {
-            return NJT_ERROR;
-        }
-    }
-
-    if (njt_http_join_exact_locations(cf, locations) != NJT_OK) {
-        return NJT_ERROR;
-    }
-
-    njt_http_create_locations_list(locations, njt_queue_head(locations));
-
-    // pclcf->static_locations = njt_http_create_locations_tree(cf, locations, 0);
-    pclcf->new_static_locations = njt_http_create_locations_tree(cf, locations, 0);
-    if (pclcf->new_static_locations == NULL) {
-        return NJT_ERROR;
-    }
-
-    return NJT_OK;
+    return njt_http_init_static_location_trees_common(cf,pclcf,pclcf->new_locations,&pclcf->new_static_locations);
 }
 
 

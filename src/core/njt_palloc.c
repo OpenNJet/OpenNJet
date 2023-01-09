@@ -44,7 +44,7 @@ njt_create_pool(size_t size, njt_log_t *log)
 #if (NJT_HTTP_DYNAMIC_LOC)
     p->parent_pool = NULL;
     p->sub_pools = NULL;
-    p->dynamic = 1;
+    p->dynamic = 0;
 #endif
     //end
 
@@ -440,7 +440,7 @@ njt_pfree(njt_pool_t *pool, void *p)
                 njt_free(fp);
                 return NJT_OK;
             }
-            l = &(*l)->next;
+
         }else{
             if (p == (*l)->alloc) {
                 njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0,
@@ -450,9 +450,10 @@ njt_pfree(njt_pool_t *pool, void *p)
                 return NJT_OK;
             }
         }
+        l = &(*l)->next;
     }
     njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0,
-                   "free error: %p", (*l)->alloc);
+                   "free error: %p", p);
     return NJT_DECLINED;
 }
 
