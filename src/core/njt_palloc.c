@@ -139,72 +139,7 @@ njt_dynamic_alloc(njt_pool_t *pool, size_t size)
     return (void*)(large+1);
 }
 
-void
-njt_destroy_root_pool(njt_pool_t *pool)
-{
-    njt_pool_t          *p, *n;
-    njt_pool_large_t    *l;
-    njt_pool_cleanup_t  *c;
 
-
-    for (c = pool->cleanup; c; c = c->next) {
-        if (c->handler) {
-            njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0,
-                           "run cleanup: %p", c);
-            c->handler(c->data);
-        }
-    }
-
-#if (NJT_DEBUG)
-
-    /*
-     * we could allocate the pool->log from this pool
-     * so we cannot use this log while free()ing the pool
-     */
-
-    for (l = pool->large; l; l = l->next) {
-        njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0, "free: %p", l->alloc);
-    }
-
-    for (p = pool, n = pool->d.next; /* void */; p = n, n = n->d.next) {
-        njt_log_debug2(NJT_LOG_DEBUG_ALLOC, pool->log, 0,
-                       "free: %p, unused: %uz", p, p->d.end - p->d.last);
-
-        if (n == NULL) {
-            break;
-        }
-    }
-
-#endif
-
-    // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
-    void* data;
-    for (l = pool->large; l; ) {
-        data = l->alloc;
-        l = l->next;
-        if (data) {
-            njt_free(data);
-        }
-    }
-#else
-    for (l = pool->large; l; l = l->next) {
-        if (l->alloc) {
-            njt_free(l->alloc);
-        }
-    }
-#endif
-    //end
-
-
-    for (p = pool, n = pool->d.next; /* void */; p = n, n = n->d.next) {
-        njt_free(p);
-
-        if (n == NULL) {
-            break;
-        }
-    }
-}
 
 #endif
 // end
