@@ -2661,6 +2661,49 @@ njt_http_named_location(njt_http_request_t *r, njt_str_t *name)
     return NJT_DONE;
 }
 
+//by chengxu
+#if (NJT_HTTP_DYNAMIC_LOC)
+void njt_http_location_cleanup(njt_http_core_loc_conf_t *clcf){
+    njt_http_location_destroy_t *ld;
+    if(clcf->clean_end ){
+        return;
+    }
+    while (clcf->destroy_locs != NULL) {
+        clcf->destroy_locs->destroy_loc(clcf, clcf->destroy_locs->data);
+        ld = clcf->destroy_locs;
+        clcf->destroy_locs = clcf->destroy_locs->next;
+        ld->destroy_loc = NULL;
+    }
+    clcf->clean_end = 1;
+}
+
+static njt_inline void njt_http_location_cleanup_handler(void * data){
+    njt_http_location_cleanup((njt_http_core_loc_conf_t*) data);
+}
+
+njt_int_t
+njt_http_location_cleanup_add(njt_http_core_loc_conf_t *clcf, void(*handler)(njt_http_core_loc_conf_t *hclcf,void* data) ,void* data){
+    njt_http_location_destroy_t *ld;
+    njt_pool_cleanup_t *pc;
+
+    ld = njt_pcalloc(clcf->pool,sizeof (njt_http_location_destroy_t));
+    if ( ld == NULL ){
+        return NJT_ERROR;
+    }
+    ld->data = data;
+    ld->destroy_loc = handler;
+    ld->next = clcf->destroy_locs;
+    clcf->destroy_locs = ld;
+    if(!clcf->clean_set){
+        clcf->clean_set = 1;
+        pc = njt_pool_cleanup_add(clcf->pool,0);
+        pc->handler = njt_http_location_cleanup_handler;
+        pc->data = clcf;
+    }
+    return NJT_OK;
+}
+#endif
+//end
 
 njt_http_cleanup_t *
 njt_http_cleanup_add(njt_http_request_t *r, size_t size)
@@ -3713,6 +3756,8 @@ njt_http_core_create_loc_conf(njt_conf_t *cf)
     clcf->pool=cf->pool;  // cx 处理内存释放
     clcf->destroy_locs = NULL; // cx 处理资源释放
     clcf->ref_count = 0;
+    clcf->clean_set = 0;
+    clcf->clean_end = 0;
 #endif
     //end
     clcf->client_max_body_size = NJT_CONF_UNSET;
