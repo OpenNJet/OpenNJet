@@ -537,6 +537,7 @@ njt_http_location_handler(njt_http_request_t *r) {
 		if(rc == NJT_OK) {
 			njt_http_finalize_request(r, NJT_DONE);
 		}
+		location_path = location_info.file;
         njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0,"read_client_request_body end +++++++++++++++");
 
     }
@@ -554,7 +555,7 @@ njt_http_location_handler(njt_http_request_t *r) {
 //		njt_str_set(&location_info.location,"test");
 //
 //	}
-//    location_path = location_info.file;
+    
     if(location_path.len == 0) {
 	 rc = NJT_ERROR;
        goto out;
@@ -693,11 +694,11 @@ void
 njt_http_location_read_data(njt_http_request_t *r) {
 
     njt_json_manager                   json_body;
-    njt_str_t                          json_str;
+    njt_str_t                          json_str,sport,dport;
      njt_fd_t                       fd;
      njt_uint_t         i,len;
-    njt_int_t          rlen,nport,nport2,idx;
-    u_char	       *last,*sport;
+    njt_int_t          rlen,idx;
+    u_char	       *last;
     njt_json_element  *items;
     //njt_str_t          proxy_pass;
     njt_chain_t                        *body_chain;
@@ -750,10 +751,10 @@ njt_http_location_read_data(njt_http_request_t *r) {
 	rc = NJT_ERROR;
         return ;
     }
-    nport = 0;
+	sport.data = NULL;
+	sport.len  = 0;
     items = json_body.json_keyval->elts;
     for (i = 0; i < json_body.json_keyval->nelts; i ++) {
-
         if (njt_strncmp(items[i].key.data, "addr_port", 9) == 0) {
 
             if (items[i].type != NJT_JSON_STR) {
@@ -762,8 +763,15 @@ njt_http_location_read_data(njt_http_request_t *r) {
 
             location_info.addr_port = items[i].strval;
 			last = location_info.addr_port.data + location_info.addr_port.len;
-			sport = njt_strlchr(location_info.addr_port.data, last, ':');
-            nport = njt_atoi(sport+1,last-sport-1);
+			p = njt_strlchr(location_info.addr_port.data, last, ':');
+			if(p != NULL) {
+			   //nport = njt_atoi(sport+1,last-sport-1);
+			   p = p+1;
+			   sport.data = p;
+			   sport.len = location_info.addr_port.data + location_info.addr_port.len - p;
+			} else {
+				sport = location_info.addr_port;
+			}
             continue;
         } else if (njt_strncmp(items[i].key.data, "location", 8) == 0) {
 
@@ -805,18 +813,23 @@ njt_http_location_read_data(njt_http_request_t *r) {
 		for (i = 0; i < njt_cycle->listening.nelts; i++){
 			if (ls[i].addr_text.len == location_info.addr_port.len && njt_strncmp(ls[i].addr_text.data,location_info.addr_port.data,location_info.addr_port.len) == 0) {
 			   target_ls = &ls[i];
-		   break;
+			   break;
 			 } else {
 			last = ls[i].addr_text.data + ls[i].addr_text.len;
-			sport = njt_strlchr(ls[i].addr_text.data, last, ':');
-			nport2 = njt_atoi(sport+1,last-sport-1);
-			len = sport - ls[i].addr_text.data;
-			if(nport2 == nport
-			&& wide_addr.len == len
-					&& njt_strncmp(wide_addr.data,ls[i].addr_text.data,wide_addr.len)== 0) {
-			   target_ls = &ls[i];
-			   break;
+			p = njt_strlchr(ls[i].addr_text.data, last, ':');
+			if(p != NULL) {
+				dport.data = p + 1;
+				dport.len =  last - dport.data;
+				len = p - ls[i].addr_text.data;
+				if(dport.len == sport.len && njt_strncmp(dport.data,sport.data,dport.len)== 0
+						&& wide_addr.len == len
+						&& njt_strncmp(wide_addr.data,ls[i].addr_text.data,wide_addr.len)== 0)
+				{
+				   target_ls = &ls[i];
+				   break;
+				}
 			}
+			
 		  }
 		}
 	
