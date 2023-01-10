@@ -290,7 +290,6 @@ static void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
     njt_queue_t *locations;
     njt_queue_t *q;
     njt_http_location_queue_t *lq;
-    njt_http_location_destroy_t *ld;
 
     locations = clcf->old_locations;
     if (locations != NULL) {
@@ -308,15 +307,9 @@ static void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
             }
         }
     }
-
-    while (clcf->destroy_locs != NULL) {
-        clcf->destroy_locs->destroy_loc(clcf, clcf->destroy_locs->data);
-        ld = clcf->destroy_locs;
-        clcf->destroy_locs = clcf->destroy_locs->next;
-        ld->destroy_loc = NULL;
-    }
+    njt_http_location_cleanup(clcf);
     clcf->disable = 1;
-    if (clcf->disable && clcf->ref_count == 0 && clcf->pool != NULL) {
+    if ( clcf->ref_count == 0 && clcf->pool != NULL) {
         njt_destroy_pool(clcf->pool);
     }
 }

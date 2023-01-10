@@ -470,6 +470,8 @@ struct njt_http_core_loc_conf_s {
     njt_str_t    full_name;       // cx 查找location
     njt_uint_t   ref_count;
     unsigned     disable:1;
+    unsigned     clean_set:1;
+    unsigned     clean_end:1;
 	unsigned     dynamic_status:2; // 1 init, 2 nomal
     njt_http_location_tree_node_t   *new_static_locations;//add by clb
 #endif
@@ -556,7 +558,12 @@ njt_int_t njt_http_named_location(njt_http_request_t *r, njt_str_t *name);
 
 
 njt_http_cleanup_t *njt_http_cleanup_add(njt_http_request_t *r, size_t size);
-
+//by chengxu
+#if (NJT_HTTP_DYNAMIC_LOC)
+void njt_http_location_cleanup(njt_http_core_loc_conf_t *clcf);
+njt_int_t njt_http_location_cleanup_add(njt_http_core_loc_conf_t *clcf, void(*handler)(njt_http_core_loc_conf_t *hclcf,void* data) ,void* data);
+#endif
+//end
 
 typedef njt_int_t (*njt_http_output_header_filter_pt)(njt_http_request_t *r);
 typedef njt_int_t (*njt_http_output_body_filter_pt)
