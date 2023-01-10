@@ -42,8 +42,8 @@ njt_create_pool(size_t size, njt_log_t *log)
     p->log = log;
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
-    p->parent_pool = NULL;
-    p->sub_pools = NULL;
+    njt_queue_init(&p->parent_pool);
+    njt_queue_init(&p->sub_pools);
     p->dynamic = 0;
 #endif
     //end
@@ -75,8 +75,8 @@ njt_create_dynamic_pool(size_t size, njt_log_t *log)
     p->large = NULL;
     p->cleanup = NULL;
     p->log = log;
-    p->parent_pool = NULL;
-    p->sub_pools = NULL;
+    njt_queue_init(&p->parent_pool);
+    njt_queue_init(&p->sub_pools);
     p->dynamic = 1;
     return p;
 }
@@ -85,20 +85,11 @@ njt_create_dynamic_pool(size_t size, njt_log_t *log)
 // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
 njt_int_t njt_sub_pool(njt_pool_t *pool,njt_pool_t *sub){
-    njt_pool_link_t     *l;
 
-    if(sub->parent_pool != NULL){
+    if (!njt_queue_empty(&sub->parent_pool)) {
         return NJT_ERROR;
     }
-    l = njt_pcalloc(sub, sizeof(njt_pool_link_t));
-    if (l == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, njt_errno, "sub pool relation error");
-        return NJT_ERROR;
-    }
-    sub->parent_pool = pool;
-    l->pool = sub;
-    l->next = pool->sub_pools;
-    pool->sub_pools = l;
+    njt_queue_insert_head(&pool->sub_pools,&sub->parent_pool);
     return NJT_OK;
 }
 
@@ -153,19 +144,15 @@ njt_destroy_pool(njt_pool_t *pool)
     njt_pool_cleanup_t  *c;
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
-    njt_pool_link_t     **iterator;
     njt_pool_t          *sub_pool;
-    if (pool->parent_pool != NULL){
-        for (iterator = &pool->parent_pool->sub_pools;*iterator ; iterator = &(*iterator)->next){
-            if ((*iterator)->pool == pool){
-                (*iterator) = (*iterator)->next;
-                break;
-            }
-        }
+    njt_queue_t         *sub_queue;
+    if (!njt_queue_empty(&pool->parent_pool)){
+        njt_queue_remove(&pool->parent_pool);
     }
-    for (iterator = &pool->sub_pools;*iterator ; ){
-        sub_pool = (*iterator)->pool;
-        iterator = &(*iterator)->next;  // 先计算偏移防止节点被删除
+    for (sub_queue = njt_queue_head(&pool->sub_pools);
+         sub_queue != njt_queue_sentinel(&pool->sub_pools); ){
+        sub_pool = njt_queue_data(sub_queue,njt_pool_t,parent_pool);
+        sub_queue = njt_queue_next(sub_queue);  // 先计算偏移防止节点被删除
         njt_destroy_pool(sub_pool);
     }
 #endif
