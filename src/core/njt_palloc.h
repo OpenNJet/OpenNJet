@@ -12,6 +12,7 @@
 
 #include <njt_config.h>
 #include <njt_core.h>
+#include "njt_queue.h"
 
 
 /*
@@ -53,13 +54,6 @@ typedef struct {
     njt_pool_t           *next;
     njt_uint_t            failed;
 } njt_pool_data_t;
-#if (NJT_HTTP_DYNAMIC_LOC)
-typedef struct njt_pool_link_s njt_pool_link_t;
-struct njt_pool_link_s {
-    njt_pool_t           *pool;
-    struct njt_pool_link_s *next;
-};
-#endif
 
 struct njt_pool_s {
     njt_pool_data_t       d;
@@ -71,8 +65,10 @@ struct njt_pool_s {
     njt_log_t            *log;
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
-    njt_pool_link_t      *sub_pools;
-    njt_pool_t           *parent_pool;
+//    njt_pool_link_t      *sub_pools;
+//    njt_pool_t           *parent_pool;
+    njt_queue_t          sub_pools;
+    njt_queue_t          parent_pool;
     unsigned             dynamic:1;
 #endif
     // end

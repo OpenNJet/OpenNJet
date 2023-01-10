@@ -537,7 +537,9 @@ njt_http_location_handler(njt_http_request_t *r) {
 		if(rc == NJT_OK) {
 			njt_http_finalize_request(r, NJT_DONE);
 		}
-		location_path = location_info.file;
+        if(location_info.file.len != 0) {
+            location_path = location_info.file;
+        }
         njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0,"read_client_request_body end +++++++++++++++");
 
     }
