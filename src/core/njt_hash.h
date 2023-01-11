@@ -27,7 +27,6 @@ typedef struct {
 //by zyg
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t       *pool;
-    u_char           *elts;
 #endif
 //end
 } njt_hash_t;

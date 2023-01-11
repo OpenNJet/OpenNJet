@@ -405,7 +405,7 @@ found:
         njt_free(test);
         return NJT_ERROR;
     }
-    hinit->hash->elts = elts;
+    //hinit->hash->elts = elts;
 
     elts = njt_align_ptr(elts, njt_cacheline_size);
 
@@ -1012,15 +1012,3 @@ wildcard:
 
     return NJT_OK;
 }
-//by zyg
-#if (NJT_HTTP_DYNAMIC_LOC)
-void njt_hash_free(njt_hash_t *hash){
-	if(hash->elts != NULL) {
-		njt_pfree(hash->pool,hash->elts);
-	}
-	if(hash->buckets == NULL) {
-		njt_pfree(hash->pool,hash->buckets);
-	}
-}
-#endif
-//end

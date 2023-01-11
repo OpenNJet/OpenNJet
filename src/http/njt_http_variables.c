@@ -2818,7 +2818,7 @@ njt_http_variables_init_vars(njt_conf_t *cf)
 
     //by zyg
     #if (NJT_HTTP_DYNAMIC_LOC)
-		njt_pool_t *new_pool;
+      njt_pool_t *new_pool;
      if(hash.hash->pool != NULL) {
 	  njt_destroy_pool(hash.hash->pool);
 	}   
@@ -2826,12 +2826,12 @@ njt_http_variables_init_vars(njt_conf_t *cf)
     if (new_pool == NULL) {
         return NJT_ERROR;
     }
+    hash.hash->pool = new_pool;
     rc = njt_sub_pool(cf->cycle->pool,new_pool);
     if (rc != NJT_OK) {
         return NJT_ERROR;
     }
 
-	hash.hash->pool = new_pool;
     #endif
     //end
     hash.key = njt_hash_key;
@@ -2839,6 +2839,9 @@ njt_http_variables_init_vars(njt_conf_t *cf)
     hash.bucket_size = cmcf->variables_hash_bucket_size;
     hash.name = "variables_hash";
     hash.pool = cf->pool;
+	#if (NJT_HTTP_DYNAMIC_LOC)
+		hash.pool = new_pool;
+	#endif
     hash.temp_pool = NULL;
     if (njt_hash_init(&hash, cmcf->variables_keys->keys.elts,
                       cmcf->variables_keys->keys.nelts)
