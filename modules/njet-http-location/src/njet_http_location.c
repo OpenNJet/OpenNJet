@@ -487,15 +487,15 @@ static void free_static_tree_momery(njt_http_location_tree_node_t *static_tree) 
     njt_pfree(static_tree->parent_pool, static_tree);
 }
 
-static njt_int_t njt_http_check_upstream_exist(njt_http_request_t *r,njt_str_t *name){
-    njt_uint_t                      i;
-    njt_http_upstream_srv_conf_t   **uscfp;
-    njt_http_upstream_main_conf_t  *umcf;
+static njt_int_t njt_http_check_upstream_exist(njt_http_request_t *r, njt_str_t *name) {
+    njt_uint_t i;
+    njt_http_upstream_srv_conf_t **uscfp;
+    njt_http_upstream_main_conf_t *umcf;
     njt_url_t u;
-    size_t                      add;
-    u_short                     port;
+    size_t add;
+    u_short port;
 
-    if(name->len < 8){
+    if (name->len < 8) {
         return NJT_ERROR;
     }
     if (njt_strncasecmp(name->data, (u_char *) "http://", 7) == 0) {
@@ -537,7 +537,7 @@ static njt_int_t njt_http_check_upstream_exist(njt_http_request_t *r,njt_str_t *
     return NJT_ERROR;
 }
 
-static njt_int_t njt_http_add_location_handler(njt_http_request_t *r,njt_http_location_info_t *location_info){
+static njt_int_t njt_http_add_location_handler(njt_http_request_t *r, njt_http_location_info_t *location_info) {
     njt_conf_t conf;
     njt_int_t rc = NJT_OK;
     njt_http_core_srv_conf_t *cscf;
@@ -552,8 +552,8 @@ static njt_int_t njt_http_add_location_handler(njt_http_request_t *r,njt_http_lo
     if (location_info->file.len != 0) {
         location_path = location_info->file;
     }
-    rc = njt_http_check_upstream_exist(r,&location_info->proxy_pass);
-    if(rc != NJT_OK){
+    rc = njt_http_check_upstream_exist(r, &location_info->proxy_pass);
+    if (rc != NJT_OK) {
         goto out;
     }
     if (location_path.len == 0) {
@@ -643,8 +643,8 @@ njt_http_location_handler(njt_http_request_t *r) {
     njt_chain_t out;
     njt_str_t insert;
     njt_conf_t conf;
-    njt_http_core_loc_conf_t  *loc;
-	njt_http_location_info_t *location_info;
+    njt_http_core_loc_conf_t *loc;
+    njt_http_location_info_t *location_info;
 
     njt_str_t location_req = njt_string("/add_location");
 
@@ -661,25 +661,24 @@ njt_http_location_handler(njt_http_request_t *r) {
     }
 
 
-
     njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "read_client_request_body start +++++++++++++++");
     rc = njt_http_read_client_request_body(r, njt_http_location_read_data);
     if (rc == NJT_OK) {
         njt_http_finalize_request(r, NJT_DONE);
     }
     njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "read_client_request_body end +++++++++++++++");
-    location_info = njt_http_get_module_ctx(r,njt_http_location_module);
-    if(location_info == NULL || location_info->cscf == NULL){
+    location_info = njt_http_get_module_ctx(r, njt_http_location_module);
+    if (location_info == NULL || location_info->cscf == NULL) {
         rc = NJT_ERROR;
         goto out;
     }
     //put (delete location)
     if (r->method == NJT_HTTP_PUT) {
-        rc= njt_http_location_delete_handler(r, location_info->location);
-    }else if (r->method == NJT_HTTP_POST) {
-        rc = njt_http_add_location_handler(r,location_info);
+        rc = njt_http_location_delete_handler(r, location_info->location);
+    } else if (r->method == NJT_HTTP_POST) {
+        rc = njt_http_add_location_handler(r, location_info);
     } else {
-		 rc = NJT_ERROR;
+        rc = NJT_ERROR;
         goto out;
     }
 
@@ -738,7 +737,7 @@ njt_http_location_read_data(njt_http_request_t *r) {
     njt_http_core_main_conf_t *cmcf;
     njt_http_connection_t hc;
     njt_listening_t *ls, *target_ls;
-	njt_http_location_info_t *location_info;
+    njt_http_location_info_t *location_info;
     njt_http_port_t *port;
     struct sockaddr local_sockaddr;
     njt_http_virtual_names_t *virtual_names;
@@ -783,10 +782,10 @@ njt_http_location_read_data(njt_http_request_t *r) {
     sport.len = 0;
 
 
-	location_info = njt_pcalloc(r->pool, sizeof(njt_http_location_info_t));
-        if (location_info == NULL) {
-            return;
-        }
+    location_info = njt_pcalloc(r->pool, sizeof(njt_http_location_info_t));
+    if (location_info == NULL) {
+        return;
+    }
 
 
     items = json_body.json_keyval->elts;
@@ -932,7 +931,8 @@ njt_http_location_read_data(njt_http_request_t *r) {
                          &location_file);
         location_full_file.len = p - location_full_file.data;
     }
-    fd = njt_open_file(location_full_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE, NJT_FILE_DEFAULT_ACCESS);
+    fd = njt_open_file(location_full_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE,
+                       NJT_FILE_DEFAULT_ACCESS);
     if (fd == NJT_INVALID_FILE) {
         return;
     }
@@ -955,8 +955,7 @@ njt_http_location_read_data(njt_http_request_t *r) {
     }
     location_info->file = location_full_file;
 
-	 njt_http_set_ctx(r, location_info, njt_http_location_module);
-
+    njt_http_set_ctx(r, location_info, njt_http_location_module);
 
 
 }
