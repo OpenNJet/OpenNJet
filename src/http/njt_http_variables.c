@@ -2734,6 +2734,7 @@ njt_http_variables_init_vars(njt_conf_t *cf)
     njt_hash_init_t             hash;
     njt_http_variable_t        *v, *av, *pv;
     njt_http_core_main_conf_t  *cmcf;
+	njt_int_t rc;
 
     /* set the handlers for the indexed http variables */
 
@@ -2814,12 +2815,23 @@ njt_http_variables_init_vars(njt_conf_t *cf)
 
 
     hash.hash = &cmcf->variables_hash;
+
     //by zyg
     #if (NJT_HTTP_DYNAMIC_LOC)
-       if(hash.hash->pool != NULL) {
-	  njt_hash_free(hash.hash);
+		njt_pool_t *new_pool;
+     if(hash.hash->pool != NULL) {
+	  njt_destroy_pool(hash.hash->pool);
 	}   
-	hash.hash->pool = cf->pool;
+	 new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (new_pool == NULL) {
+        return NJT_ERROR;
+    }
+    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    if (rc != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+	hash.hash->pool = new_pool;
     #endif
     //end
     hash.key = njt_hash_key;
