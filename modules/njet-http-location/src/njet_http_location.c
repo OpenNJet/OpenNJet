@@ -611,10 +611,10 @@ static njt_int_t njt_http_add_location_handler(njt_http_request_t *r, njt_http_l
         }
 
         module = conf.cycle->modules[m]->ctx;
-        mi = conf.cycle->modules[m]->ctx_index;
-
+        
         if (module->merge_loc_conf) {
 
+			mi = conf.cycle->modules[m]->ctx_index;
             /* merge the locations{}' loc_conf's */
             rv = njt_http_merge_locations(&conf, clcf->old_locations,
                                           cscf->ctx->loc_conf,
@@ -936,9 +936,9 @@ njt_http_location_read_data(njt_http_request_t *r) {
     if (fd == NJT_INVALID_FILE) {
         return;
     }
-    data = njt_pcalloc(r->pool, 512);
+    data = njt_pcalloc(r->pool, 2048);
     if (data != NULL) {
-        p = njt_snprintf(data, 512, "location %V {\n%V\nproxy_pass %V;\n}\n", &location_info->location,
+        p = njt_snprintf(data, 2048, "location %V {\n%V\nproxy_pass %V;\n}\n", &location_info->location,
                          &location_info->content, &location_info->proxy_pass);
         rlen = njt_write_fd(fd, data, p - data);
     }
