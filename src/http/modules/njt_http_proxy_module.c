@@ -4016,7 +4016,19 @@ njt_http_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     value = cf->args->elts;
 
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_str_t value_name;
+    value_name.data = njt_pcalloc(clcf->pool,value[1].len+1);
+    if (value_name.data == NULL){
+        return NJT_CONF_ERROR;
+    }
+    value_name.len = value[1].len;
+    njt_memcpy(value_name.data,value[1].data,value[1].len+1);
+    url = &value_name;
+#else
     url = &value[1];
+#endif
 
     n = njt_http_script_variables_count(url);
 

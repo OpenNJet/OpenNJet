@@ -774,11 +774,13 @@ njt_conf_read_token(njt_conf_t *cf)
                     return NJT_ERROR;
                 }
                 // by chengxu
+#if (NJT_HTTP_DYNAMIC_LOC)
                 njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0,"malloc word data start +++++++++++++++");
-                // by end
-                word->data = njt_pnalloc(cf->pool, b->pos - 1 - start + 1);
-                // by chengxu
+                word->data = njt_pnalloc(cf->args->pool, b->pos - 1 - start + 1);
                 njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0,"malloc word data end +++++++++++++++");
+#else
+                word->data = njt_pnalloc(cf->pool, b->pos - 1 - start + 1);
+#endif
                 // end
                 if (word->data == NULL) {
                     return NJT_ERROR;

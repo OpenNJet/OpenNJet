@@ -3237,7 +3237,20 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
         len = value[1].len;
         mod = value[1].data;
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+        njt_str_t location_name;
+        location_name.data = njt_pcalloc(clcf->pool,value[2].len+1);
+        if (location_name.data == NULL){
+            return NJT_CONF_ERROR;
+        }
+        location_name.len = value[2].len;
+        njt_memcpy(location_name.data,value[2].data,value[2].len+1);
+        name = & location_name;
+#else
         name = &value[2];
+#endif
+        //end
 
         if (len == 1 && mod[0] == '=') {
 
@@ -3268,8 +3281,20 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
         }
 
     } else {
-
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+        njt_str_t location_name;
+        location_name.data = njt_pcalloc(clcf->pool,value[1].len+1);
+        if (location_name.data == NULL){
+            return NJT_CONF_ERROR;
+        }
+        location_name.len = value[1].len;
+        njt_memcpy(location_name.data,value[1].data,value[1].len+1);
+        name = &location_name;
+#else
         name = &value[1];
+#endif
+        //end
 
         if (name->data[0] == '=') {
 
