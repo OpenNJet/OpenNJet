@@ -542,7 +542,6 @@ static njt_int_t njt_http_add_location_handler(njt_http_request_t *r,njt_http_lo
     njt_int_t rc = NJT_OK;
     njt_http_core_srv_conf_t *cscf;
     char *rv;
-    njt_http_location_queue_t *lq;
     njt_http_core_loc_conf_t *clcf;
     njt_pool_t *location_pool = NULL;
 
@@ -573,16 +572,8 @@ static njt_int_t njt_http_add_location_handler(njt_http_request_t *r,njt_http_lo
         goto out;
     }
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
-    lq = njt_http_find_location(location_info->location, clcf->old_locations);
-    if (lq != NULL) {
-        rc = NJT_ERROR;
-        goto out;
-    }
 
-
-    // njt_cycle->conf_ctx
-
-    // njt_memzero(&conf, sizeof(njt_conf_t));
+    njt_memzero(&conf, sizeof(njt_conf_t));
     conf.args = njt_array_create(r->pool, 10, sizeof(njt_str_t));
     if (conf.args == NULL) {
     }
