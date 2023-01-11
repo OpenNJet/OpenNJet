@@ -4015,7 +4015,6 @@ njt_http_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     value = cf->args->elts;
-
     url = &value[1];
 
     n = njt_http_script_variables_count(url);
