@@ -591,7 +591,9 @@ static njt_int_t njt_http_add_location_handler(njt_http_request_t *r, njt_http_l
 
     //clcf->locations = NULL; // clcf->old_locations;
     njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "njt_conf_parse start +++++++++++++++");
+    conf.pool = r->pool;
     rv = njt_conf_parse(&conf, &location_path);
+    conf.pool = clcf->pool;
     if (rv != NULL) {
         njt_http_location_clear_dirty_data(clcf);
         rc = NJT_ERROR;
