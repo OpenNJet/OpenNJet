@@ -59,8 +59,12 @@ static njt_int_t njt_http_file_cache_manage_directory(njt_tree_ctx_t *ctx,
     njt_str_t *path);
 static njt_int_t njt_http_file_cache_add_file(njt_tree_ctx_t *ctx,
     njt_str_t *path);
+#if (NJT_HTTP_CACHE_PURGE)
+static njt_int_t njt_http_file_cache_add(njt_http_file_cache_t *cache, njt_http_cache_t *c,njt_str_t* name);
+#else
 static njt_int_t njt_http_file_cache_add(njt_http_file_cache_t *cache,
     njt_http_cache_t *c);
+#endif
 static njt_int_t njt_http_file_cache_delete_file(njt_tree_ctx_t *ctx,
     njt_str_t *path);
 static void njt_http_file_cache_set_watermark(njt_http_file_cache_t *cache);
@@ -78,7 +82,11 @@ njt_str_t  njt_http_cache_status[] = {
 
 
 static u_char  njt_http_file_cache_key[] = { LF, 'K', 'E', 'Y', ':', ' ' };
-
+// by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+static u_char  njt_http_file_key[] = { LF ,'F', 'I', 'L','E', ':', ' ' };
+#endif
+//end
 
 static njt_int_t
 njt_http_file_cache_init(njt_shm_zone_t *shm_zone, void *data)
@@ -186,7 +194,13 @@ njt_http_file_cache_new(njt_http_request_t *r)
     if (njt_array_init(&c->keys, r->pool, 4, sizeof(njt_str_t)) != NJT_OK) {
         return NJT_ERROR;
     }
-
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    if (njt_array_init(&c->file_keys, r->pool, 4, sizeof(njt_str_t)) != NJT_OK) {
+        return NJT_ERROR;
+    }
+#endif
+    //end
     r->cache = c;
     c->file.log = r->connection->log;
     c->file.fd = NJT_INVALID_FILE;
@@ -223,7 +237,40 @@ njt_http_file_cache_create(njt_http_request_t *r)
 
     return NJT_OK;
 }
-
+// by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+//获取自定义key长度
+static njt_int_t njt_http_file_cache_request_key_len(njt_http_request_t *r){
+    njt_int_t len = 0;
+    njt_str_t         *key;
+    key = r->cache->keys.elts;
+    njt_uint_t i;
+    for (i = 0; i < r->cache->keys.nelts; i++) {
+        len += key[i].len;
+    }
+    return len;
+}
+//设置请求生成的key
+njt_int_t njt_http_file_cache_set_request_key(njt_http_request_t *r){
+    njt_str_t         *key;
+    u_int i=0;
+    u_char* data = njt_pnalloc(r->pool, r->cache->request_key.len );
+    if (data == NULL) {
+        return NJT_ERROR;
+    }
+    r->cache->request_key.data = data;
+    int len = 0;
+    key = r->cache->keys.elts;
+    for (i = 0; i < r->cache->keys.nelts; i++) {
+        njt_memcpy(data+len,key[i].data, key[i].len);
+        len += key[i].len;
+    }
+    njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "save http file cache request key:  \"%V\" , p:%Xp", &r->cache->request_key,&r->cache->request_key);
+    return NJT_OK;
+}
+#endif
+// end
 
 void
 njt_http_file_cache_create_key(njt_http_request_t *r)
@@ -235,7 +282,12 @@ njt_http_file_cache_create_key(njt_http_request_t *r)
     njt_http_cache_t  *c;
 
     c = r->cache;
-
+// by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    len = njt_http_file_cache_request_key_len(r);
+    r->cache->request_key.len = len;
+#endif
+    // end
     len = 0;
 
     njt_crc32_init(c->crc32);
@@ -251,16 +303,178 @@ njt_http_file_cache_create_key(njt_http_request_t *r)
         njt_crc32_update(&c->crc32, key[i].data, key[i].len);
         njt_md5_update(&md5, key[i].data, key[i].len);
     }
-
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    key = c->file_keys.elts;
+    for (i = 0; i < c->file_keys.nelts; i++) {
+        len += key[i].len;
+    }
+#endif
+    // end
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    c->header_start = sizeof(njt_http_file_cache_header_t)
+                      + sizeof(njt_http_file_cache_key) +sizeof (njt_http_file_key) + len + 1;
+#else
     c->header_start = sizeof(njt_http_file_cache_header_t)
                       + sizeof(njt_http_file_cache_key) + len + 1;
+#endif
+    // end
 
     njt_crc32_final(c->crc32);
     njt_md5_final(c->key, &md5);
 
     njt_memcpy(c->main, c->key, NJT_HTTP_CACHE_KEY_LEN);
 }
+// by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+njt_int_t njt_http_file_cache_delete_file_slice(njt_http_request_t *r)
+{
+    njt_http_cache_t            *c;
+    njt_http_file_cache_t       *cache;
+    njt_int_t                   rc;
+    njt_http_file_cache_node_t  *fcn;
+    njt_queue_t                 *item;
 
+    c = r->cache;
+    cache = c->file_cache;
+    rc = NJT_OK;
+
+    if(r->cache->node== NULL || r->cache->node->file_key.data == NULL ){
+        return NJT_OK;
+    }
+
+    njt_shmtx_lock(&cache->shpool->mutex);
+    item = njt_queue_head(&cache->sh->queue);
+    while(item != njt_queue_sentinel(&cache->sh->queue)) {
+        fcn = njt_queue_data(item, njt_http_file_cache_node_t, queue);
+        if ( njt_strcmp(&fcn->file_key,&r->cache->node->file_key) == 0 ) {
+            fcn->purged = 1;
+        }
+        item = njt_queue_next(item);
+    }
+    njt_shmtx_unlock(&cache->shpool->mutex);
+    return rc;
+}
+njt_int_t
+njt_http_file_cache_purge_one_cache_files(njt_http_file_cache_t *cache)
+{
+    njt_queue_t                 *item;
+    njt_http_file_cache_node_t  *fcn;
+
+    /*
+     * TODO if the list of this queue is long enough,
+     * will it time consuming for this loop?
+     */
+
+    njt_shmtx_lock(&cache->shpool->mutex);
+    //遍历队列
+    item = njt_queue_head(&cache->sh->queue);
+    while(item != njt_queue_sentinel(&cache->sh->queue)) {
+        fcn = njt_queue_data(item, njt_http_file_cache_node_t, queue);
+        if (fcn) {
+            //设置删除状态
+            fcn->purged = 1;
+        }
+        item = njt_queue_next(item);
+    }
+    njt_shmtx_unlock(&cache->shpool->mutex);
+
+    return NJT_OK;
+}
+
+njt_int_t
+njt_http_file_cache_purge_one_file(njt_http_request_t *r)
+{
+    //    判断是否开启统配符匹配
+    njt_http_slice_loc_conf_t* slice_conf = njt_http_get_module_loc_conf(r,njt_http_slice_filter_module);
+    if(slice_conf->size != NJT_CONF_UNSET_SIZE && slice_conf->size != 0 ){
+        njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "http file cache purge is wildcard used : ");
+        return njt_http_file_cache_purge_one_path(r);
+    }
+
+    njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                  "http file cache purge is one file used : ");
+    njt_http_cache_t            *c;
+    njt_http_file_cache_t       *cache;
+    njt_int_t                   rc;
+    njt_http_file_cache_node_t  *fcn;
+
+    c = r->cache;
+    cache = c->file_cache;
+    rc = NJT_OK;
+
+    njt_shmtx_lock(&cache->shpool->mutex);
+    fcn = c->node;
+    if (fcn == NULL) {
+        fcn = njt_http_file_cache_lookup(cache, c->key);
+    }
+
+    if (fcn) {
+        fcn->purged = 1;
+    }
+//    else {
+//        rc = NJT_DECLINED;
+//    }
+    njt_shmtx_unlock(&cache->shpool->mutex);
+    return rc;
+}
+
+//清理指定路径缓存文件
+njt_int_t njt_http_file_cache_purge_one_path(njt_http_request_t *r){
+
+    //遍历红黑树前缀
+    njt_http_cache_t            *c;
+    njt_http_file_cache_t       *cache;
+    njt_int_t                   rc;
+    njt_http_file_cache_node_t  *fcn;
+    njt_queue_t                 *item;
+    njt_str_t prefix;
+
+
+    c = r->cache;
+    cache = c->file_cache;
+    rc = NJT_OK;
+
+    prefix.data = r->cache->request_key.data;
+    prefix.len = r->cache->request_key.len;
+    u_char * index = njt_strlchr(prefix.data,prefix.data+prefix.len,'*');
+    if(index != NULL){
+        prefix.len = index - prefix.data;
+    }
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,"http file cache purge key prefix : \"%V\"",&prefix);
+
+    njt_shmtx_lock(&cache->shpool->mutex);
+    item = njt_queue_head(&cache->sh->queue);
+    njt_uint_t count = 0;
+    while(item != njt_queue_sentinel(&cache->sh->queue)) {
+        fcn = njt_queue_data(item, njt_http_file_cache_node_t, queue);
+        if(fcn){
+            njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                           "http file cache purge fcn->request_key : \"%V\"",&fcn->request_key);
+        }
+        if (fcn
+	&& fcn->request_key.len >= prefix.len
+        && njt_strncmp(prefix.data,fcn->request_key.data,prefix.len) == 0
+        ) {
+            //设置删除状态
+            fcn->purged = 1;
+            ++count;
+        }
+        item = njt_queue_next(item);
+    }
+    njt_shmtx_unlock(&cache->shpool->mutex);
+//    if(count == 0 && !njt_queue_empty(&cache->sh->queue)){
+//        rc=NJT_DECLINED;
+//    }
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "http file cache purge files quantity : \"%ui\"",count);
+    return rc;
+}
+
+#endif
+// end
 
 njt_int_t
 njt_http_file_cache_open(njt_http_request_t *r)
@@ -636,6 +850,14 @@ njt_http_file_cache_read(njt_http_request_t *r, njt_http_cache_t *c)
     }
 
     now = njt_time();
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    if(c->node && c->node->valid_sec != 0 && c->node->valid_sec < now) {
+        c->valid_sec = c->node->valid_sec;
+    }
+#endif
+    // end
+
 
     if (c->valid_sec < now) {
         c->stale_updating = c->valid_sec + c->updating_sec >= now;
@@ -825,6 +1047,11 @@ njt_http_file_cache_exists(njt_http_file_cache_t *cache, njt_http_cache_t *c)
     njt_int_t                    rc;
     njt_http_file_cache_node_t  *fcn;
 
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    njt_uint_t  index,len=0;
+#endif
+    // end
     njt_shmtx_lock(&cache->shpool->mutex);
 
     fcn = c->node;
@@ -840,7 +1067,13 @@ njt_http_file_cache_exists(njt_http_file_cache_t *cache, njt_http_cache_t *c)
             fcn->uses++;
             fcn->count++;
         }
-
+        // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+        if (fcn->purged) {
+            goto purged;
+        }
+#endif
+        // end
         if (fcn->error) {
 
             if (fcn->valid_sec < njt_time()) {
@@ -868,9 +1101,22 @@ njt_http_file_cache_exists(njt_http_file_cache_t *cache, njt_http_cache_t *c)
 
         goto done;
     }
-
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    njt_str_t *data = c->file_keys.elts;
+    for(index = 0 ; index < c->file_keys.nelts ;index++){
+        len += data[index].len;
+    }
+    fcn = njt_slab_calloc_locked(cache->shpool,
+                                 sizeof(njt_http_file_cache_node_t)+ len + c->request_key.len);
+#else
     fcn = njt_slab_calloc_locked(cache->shpool,
                                  sizeof(njt_http_file_cache_node_t));
+#endif
+    // end
+
+
+
     if (fcn == NULL) {
         njt_http_file_cache_set_watermark(cache);
 
@@ -879,9 +1125,16 @@ njt_http_file_cache_exists(njt_http_file_cache_t *cache, njt_http_cache_t *c)
         (void) njt_http_file_cache_forced_expire(cache);
 
         njt_shmtx_lock(&cache->shpool->mutex);
-
+        // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+        fcn = njt_slab_calloc_locked(cache->shpool,
+                                     sizeof(njt_http_file_cache_node_t) + len);
+#else
         fcn = njt_slab_calloc_locked(cache->shpool,
                                      sizeof(njt_http_file_cache_node_t));
+#endif
+        // end
+
         if (fcn == NULL) {
             njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
                           "could not allocate node%s", cache->shpool->log_ctx);
@@ -889,11 +1142,39 @@ njt_http_file_cache_exists(njt_http_file_cache_t *cache, njt_http_cache_t *c)
             goto failed;
         }
     }
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    fcn->file_key.data = ((u_char*)fcn) + sizeof(njt_http_file_cache_node_t) ;
+    fcn->file_key.len = len;
+    len=0;
+    for(index = 0 ; index < c->file_keys.nelts ;index++){
+        njt_memcpy(fcn->file_key.data+len,data[index].data,data[index].len);
+        len += data[index].len;
+    }
+#endif
+    // end
 
     cache->sh->count++;
 
     njt_memcpy((u_char *) &fcn->node.key, c->key, sizeof(njt_rbtree_key_t));
-
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    fcn->request_key.data = ((u_char*)fcn) + sizeof(njt_http_file_cache_node_t) + fcn->file_key.len;
+    //copy key内存数据
+    njt_str_t         *key;
+    u_int i=0;
+    u_char* u_data = fcn->request_key.data;
+    njt_uint_t u_len = 0;
+    key = c->keys.elts;
+    for (i = 0; i < c->keys.nelts; i++) {
+        njt_memcpy(u_data+u_len,key[i].data, key[i].len);
+        u_len += key[i].len;
+    }
+    fcn->request_key.len = c->request_key.len;
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                  "save key fcn->request_key \"%V\"", &fcn->request_key);
+#endif
+    // end
     njt_memcpy(fcn->key, &c->key[sizeof(njt_rbtree_key_t)],
                NJT_HTTP_CACHE_KEY_LEN - sizeof(njt_rbtree_key_t));
 
@@ -903,7 +1184,12 @@ njt_http_file_cache_exists(njt_http_file_cache_t *cache, njt_http_cache_t *c)
     fcn->count = 1;
 
 renew:
-
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    fcn->purged = 0;
+#endif
+    // end
+purged:
     rc = NJT_DECLINED;
 
     fcn->valid_msec = 0;
@@ -1299,6 +1585,15 @@ njt_http_file_cache_set_header(njt_http_request_t *r, u_char *buf)
     for (i = 0; i < c->keys.nelts; i++) {
         p = njt_copy(p, key[i].data, key[i].len);
     }
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    p = njt_cpymem(p, njt_http_file_key, sizeof(njt_http_file_key));
+    key = c->file_keys.elts;
+    for (i = 0; i < c->file_keys.nelts; i++) {
+        p = njt_copy(p, key[i].data, key[i].len);
+    }
+#endif
+    //end
 
     *p = LF;
 
@@ -1961,7 +2256,108 @@ njt_http_file_cache_delete(njt_http_file_cache_t *cache, njt_queue_t *q,
         cache->sh->count--;
     }
 }
+// by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
 
+static time_t
+njt_http_file_cache_purge(njt_http_file_cache_t *cache)
+{
+    u_char                      *name;
+    size_t                       len;
+    time_t                       wait;
+    njt_path_t                  *path;
+    njt_msec_t                   elapsed;
+    njt_queue_t                 *item;
+    njt_http_file_cache_node_t  *fcn;
+
+    njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                   "http file purge");
+
+    path = cache->path;
+    len = path->name.len + 1 + path->len + 2 * NJT_HTTP_CACHE_KEY_LEN;
+
+    name = njt_alloc(len + 1, njt_cycle->log);
+    if (name == NULL) {
+        return 10;
+    }
+
+    njt_memcpy(name, path->name.data, path->name.len);
+
+    njt_shmtx_lock(&cache->shpool->mutex);
+    item = njt_queue_head(&cache->sh->queue);
+    wait = 1;
+    if(njt_queue_empty(&cache->sh->queue)){
+        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,"http cache files size is 0 ");
+    }
+    while(item != njt_queue_sentinel(&cache->sh->queue)) {
+
+        if (njt_quit || njt_terminate) {
+            wait = 1;
+            break;
+        }
+
+        if (njt_queue_empty(&cache->sh->queue)) {
+            wait = 10;
+            break;
+        }
+
+        fcn = njt_queue_data(item, njt_http_file_cache_node_t, queue);
+
+        njt_log_debug4(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                       "http cache file : #%d %d %d \"%v\" ",
+                       fcn->count, fcn->exists, fcn->purged,&fcn->request_key );
+        if (!fcn->purged) {
+            item = njt_queue_next(item);
+            continue;
+        }
+        njt_log_debug4(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                       "http file purge: #%d %d %d \"%v\" ",
+                       fcn->count, fcn->exists, fcn->purged,
+                       &fcn->request_key );
+
+        if (fcn->deleting) {
+            wait = 1;
+            break;
+        }
+
+        njt_http_file_cache_delete(cache, item, name);
+
+        if (++cache->files >= cache->purger_files) {
+            wait = 0;
+            break;
+        }
+
+        njt_time_update();
+
+        elapsed = njt_abs((njt_msec_int_t) (njt_current_msec - cache->last));
+
+        if (elapsed >= cache->purger_threshold) {
+            wait = 0;
+            break;
+        }
+        item = njt_queue_next(item);
+    }
+
+    njt_shmtx_unlock(&cache->shpool->mutex);
+
+    njt_free(name);
+
+    return wait;
+}
+
+static njt_msec_t
+njt_http_file_cache_purger(void *data)
+{
+    njt_http_file_cache_t  *cache = data;
+    njt_msec_t             next;
+
+    cache->last = njt_current_msec;
+    cache->files = 0;
+    next = (njt_msec_t) njt_http_file_cache_purge(cache) * 1000;
+    return next;
+}
+#endif
+// end
 
 static njt_msec_t
 njt_http_file_cache_manager(void *data)
@@ -2209,11 +2605,115 @@ njt_http_file_cache_add_file(njt_tree_ctx_t *ctx, njt_str_t *name)
 
         c.key[i] = (u_char) n;
     }
-
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    return njt_http_file_cache_add(cache, &c , name);
+#else
     return njt_http_file_cache_add(cache, &c);
+#endif
+    //end
 }
 
+// by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+//把缓存文件元数据加载到共享内存
+static njt_int_t
+njt_http_file_cache_add(njt_http_file_cache_t *cache, njt_http_cache_t *c,njt_str_t* name)
+{
+    njt_http_file_cache_node_t  *fcn;
+    njt_http_file_cache_header_t header;
+    u_char *key_data,*file_index;
+    njt_uint_t key_size,key_offset,file_key_size,cache_key_size,size;
 
+    //读取request_key
+    njt_file_t cache_file;
+    cache_file.name = *name;
+    cache_file.log = njt_cycle->log;
+    cache_file.fd = njt_open_file(cache_file.name.data, NJT_FILE_RDONLY, NJT_FILE_OPEN, 0  );
+    size = njt_read_file(&cache_file, (u_char*)&header, sizeof (njt_http_file_cache_header_t),0);
+    if(size < sizeof (njt_http_file_cache_header_t) ){
+        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,"could not load file header");
+        return NJT_ERROR;
+    }
+    key_offset = sizeof (njt_http_file_cache_header_t) + sizeof (njt_http_file_cache_key) ;
+    key_size = header.header_start - key_offset;
+    key_data = njt_pcalloc(njt_cycle->pool,key_size);
+    if( key_data == NULL){
+        njt_close_file(cache_file.fd);
+        return NJT_ERROR;
+    }
+    size = njt_read_file(&cache_file, key_data, key_size,key_offset);
+    if( size < key_size){
+        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,"read file too small , name: %V ,size: %i ",&cache_file.name,size);
+        njt_close_file(cache_file.fd);
+        return NJT_ERROR;
+    }
+    //关闭文件
+    njt_close_file(cache_file.fd);
+    file_index = njt_strlchr(key_data,key_data+key_size,LF); //判断去掉换行符
+    if( file_index == NULL){
+        return NJT_ERROR;
+    }
+    cache_key_size =  file_index - key_data;
+    file_index += sizeof(njt_http_file_key);
+    file_key_size = (key_data+key_size) - file_index;
+
+    njt_shmtx_lock(&cache->shpool->mutex);
+
+    fcn = njt_http_file_cache_lookup(cache, c->key);
+
+    if (fcn == NULL) {
+
+        fcn = njt_slab_calloc_locked(cache->shpool,
+                                     sizeof(njt_http_file_cache_node_t) + file_key_size + cache_key_size);
+        if (fcn == NULL) {
+            njt_http_file_cache_set_watermark(cache);
+
+            if (cache->fail_time != njt_time()) {
+                cache->fail_time = njt_time();
+                njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                              "could not allocate node%s", cache->shpool->log_ctx);
+            }
+
+            njt_shmtx_unlock(&cache->shpool->mutex);
+            return NJT_ERROR;
+        }
+        fcn->file_key.data = ((u_char*)fcn) + sizeof(njt_http_file_cache_node_t);
+
+        cache->sh->count++;
+        fcn->request_key.data = ((u_char*)fcn) + sizeof(njt_http_file_cache_node_t) + file_key_size;
+        fcn->request_key.len = cache_key_size;
+        njt_memcpy(fcn->request_key.data, key_data, fcn->request_key.len);
+
+        njt_memcpy((u_char *) &fcn->node.key, c->key, sizeof(njt_rbtree_key_t));
+
+        njt_memcpy(fcn->key, &c->key[sizeof(njt_rbtree_key_t)],
+                   NJT_HTTP_CACHE_KEY_LEN - sizeof(njt_rbtree_key_t));
+
+        njt_memcpy(fcn->file_key.data, file_index,file_key_size);
+        fcn->file_key.len = file_key_size;
+
+        njt_rbtree_insert(&cache->sh->rbtree, &fcn->node);
+
+        fcn->uses = 1;
+        fcn->exists = 1;
+        fcn->fs_size = c->fs_size;
+
+        cache->sh->size += c->fs_size;
+
+    } else {
+        njt_queue_remove(&fcn->queue);
+    }
+
+    fcn->expire = njt_time() + cache->inactive;
+
+    njt_queue_insert_head(&cache->sh->queue, &fcn->queue);
+
+    njt_shmtx_unlock(&cache->shpool->mutex);
+
+    return NJT_OK;
+}
+#else
 static njt_int_t
 njt_http_file_cache_add(njt_http_file_cache_t *cache, njt_http_cache_t *c)
 {
@@ -2267,6 +2767,9 @@ njt_http_file_cache_add(njt_http_file_cache_t *cache, njt_http_cache_t *c)
 
     return NJT_OK;
 }
+#endif
+//end
+
 
 
 static njt_int_t
@@ -2337,6 +2840,14 @@ njt_http_file_cache_set_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_array_t            *caches;
     njt_http_file_cache_t  *cache, **ce;
 
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    njt_int_t   purger_files;
+    njt_msec_t  purger_sleep, purger_threshold;
+    njt_uint_t  purger_on;
+#endif
+    // end
+
     cache = njt_pcalloc(cf->pool, sizeof(njt_http_file_cache_t));
     if (cache == NULL) {
         return NJT_CONF_ERROR;
@@ -2358,6 +2869,14 @@ njt_http_file_cache_set_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     manager_files = 100;
     manager_sleep = 50;
     manager_threshold = 200;
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    purger_files = 10;
+    purger_sleep = 50;
+    purger_threshold = 0;
+    purger_on = 0;
+#endif
+    //end
 
     name.len = 0;
     size = 0;
@@ -2604,6 +3123,68 @@ njt_http_file_cache_set_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
             continue;
         }
+        // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+        if (njt_strncmp(value[i].data, "purger=", 7) == 0) {
+
+            if (njt_strcmp(&value[i].data[7], "on") == 0) {
+                purger_on = 1;
+            } else if (njt_strcmp(&value[i].data[7], "off") == 0) {
+                purger_on = 0;
+
+            } else {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "invalid purger value \"%V\", "
+                                   "it must be \"on\" or \"off\"",
+                                   &value[i]);
+                return NJT_CONF_ERROR;
+            }
+
+            continue;
+        }
+        if (njt_strncmp(value[i].data, "purger_files=", 13) == 0) {
+
+            purger_files = njt_atoi(value[i].data + 13, value[i].len - 13);
+            if (purger_files == NJT_ERROR) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "invalid purger_files value \"%V\"", &value[i]);
+                return NJT_CONF_ERROR;
+            }
+
+            continue;
+        }
+
+        if (njt_strncmp(value[i].data, "purger_sleep=", 13) == 0) {
+
+            s.len = value[i].len - 13;
+            s.data = value[i].data + 13;
+
+            purger_sleep = njt_parse_time(&s, 0);
+            if (purger_sleep == (njt_msec_t) NJT_ERROR) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "invalid purger_sleep value \"%V\"", &value[i]);
+                return NJT_CONF_ERROR;
+            }
+
+            continue;
+        }
+
+        if (njt_strncmp(value[i].data, "purger_threshold=", 17) == 0) {
+
+            s.len = value[i].len - 17;
+            s.data = value[i].data + 17;
+
+            purger_threshold = njt_parse_time(&s, 0);
+            if (purger_threshold == (njt_msec_t) NJT_ERROR) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "invalid purger_threshold value \"%V\"", &value[i]);
+                return NJT_CONF_ERROR;
+            }
+
+            continue;
+        }
+#endif
+        //end
 
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid parameter \"%V\"", &value[i]);
@@ -2619,6 +3200,17 @@ njt_http_file_cache_set_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     cache->path->manager = njt_http_file_cache_manager;
     cache->path->loader = njt_http_file_cache_loader;
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    if (purger_on) {
+        cache->path->purger = njt_http_file_cache_purger;
+    }
+    cache->purger_files = purger_files;
+    cache->purger_sleep = purger_sleep;
+    cache->purger_threshold = purger_threshold;
+#endif
+    //end
+
     cache->path->data = cache;
     cache->path->conf_file = cf->conf_file->file.name.data;
     cache->path->line = cf->conf_file->line;
