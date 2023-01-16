@@ -5,8 +5,8 @@ build_bin:
   stage: build_bin
   image: gcc:4.8.5
   script:
-    - chmod +x ./build_cc.sh ./configure $CI_COMMIT_SHA
-    - ./build_cc.sh conf
+    - chmod +x ./build_cc.sh ./configure
+    - ./build_cc.sh conf $CI_COMMIT_SHA
     - make -j `nproc`
   artifacts:
     paths:
