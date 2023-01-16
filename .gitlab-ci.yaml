@@ -1,0 +1,14 @@
+stages:
+  - build_bin
+
+build_bin:
+  stage: build
+  image: gcc:4.8.5
+  script:
+    - chmod +x ./build_cc.sh ./configure $CI_COMMIT_SHA
+    - ./build_cc.sh conf
+    - make -j `nproc`
+  artifacts:
+    paths:
+      - objs/njet
+    expire_in: 1 week
