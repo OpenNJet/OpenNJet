@@ -1,14 +1,41 @@
 stages:
   - build_bin
+  - build_rpm
 
 build_bin:
   stage: build_bin
-  image: gcc:4.8.5
+  image: 192.168.30.226/yunke-slb-ingress/rpmbuild:1.0
+  variables:
+    DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "Y2hlbmd4dWU6Q2hlbmd4dWUxMjM="}}}'
+#  image: gcc:4.8.5   # gcc 版本
   script:
-    - chmod +x ./build_cc.sh ./configure
-    - ./build_cc.sh conf $CI_COMMIT_SHA
-    - make -j `nproc`
+    - sudo chmod +x ./build_cc.sh ./configure
+    - sudo ./build_cc.sh conf $CI_COMMIT_SHA
+    - sudo rm -rf /etc/njet/luajit/lib/*.so     # 使用lua静态库
+    - sudo make -j `nproc`
+    - sudo mkdir -p work/etc/njet/lualib/ work/usr/local/lib/ work/etc/njet/logs/ logs/  # 创建文件包目录
+#    - cp -R /etc/njet/* work/etc/njet/
+#    - cp -R /etc/njet/luajit/lib/* work/usr/local/lib/
   artifacts:
-    paths:
+    paths:     # 需要打包的文件
       - objs/njet
-    expire_in: 1 week
+      - work/*
+      - logs/
+    expire_in: 1 week # 打包文件存储有效期
+
+build_rpm:
+  stage: build_rpm
+  image: 192.168.30.226/yunke-slb-ingress/rpmbuild:1.0
+  variables:
+    DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "Y2hlbmd4dWU6Q2hlbmd4dWUxMjM="}}}'
+  when: manual
+  script:
+    - sudo ln -s `pwd` /srv
+    - sudo chown -R builder `pwd`
+    - rpmbuild -bb /srv/njet_main/build/rpm/njet.spec
+    - mkdir ./output/
+    - cp /home/builder/rpm/x86_64/*.rpm ./output/
+  artifacts:
+    paths: # 需要打包的文件
+      - ./output/*.rpm
+    expire_in: 2h20min # 打包文件存储有效期
