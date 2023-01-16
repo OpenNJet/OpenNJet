@@ -2,7 +2,7 @@ stages:
   - build_bin
 
 build_bin:
-  stage: build
+  stage: build_bin
   image: gcc:4.8.5
   script:
     - chmod +x ./build_cc.sh ./configure $CI_COMMIT_SHA
