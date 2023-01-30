@@ -753,8 +753,8 @@ njt_http_location_read_data(njt_http_request_t *r) {
     u_char *p, *data;
     njt_http_in_addr_t *addr;
     struct sockaddr_in *sin;
-    njt_http_core_srv_conf_t *cscf, **cscfp;
-    njt_http_core_main_conf_t *cmcf;
+    njt_http_core_srv_conf_t *cscf;
+    //njt_http_core_main_conf_t *cmcf;
     njt_http_connection_t hc;
     njt_listening_t *ls, *target_ls;
     njt_http_location_info_t *location_info;
@@ -780,14 +780,9 @@ njt_http_location_read_data(njt_http_request_t *r) {
     }
 
 
-    cmcf = njt_http_get_module_main_conf(r, njt_http_core_module);
-    cscfp = cmcf->servers.elts;
-    for (i = 0; i < cmcf->servers.nelts; i++) {
-        cscf = cscfp[i];
-        if (cscf->server_name.len > 0) {
-            printf("%s", "123\n");
-        }
-    }
+    //cmcf = njt_http_get_module_main_conf(r, njt_http_core_module);
+    
+    
 
     /*check the sanity of the json body*/
     json_str.data = body_chain->buf->pos;
