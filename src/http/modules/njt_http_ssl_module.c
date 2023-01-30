@@ -335,76 +335,76 @@ njt_module_t  njt_http_ssl_module = {
 static njt_http_variable_t  njt_http_ssl_vars[] = {
 
     { njt_string("ssl_protocol"), NULL, njt_http_ssl_static_variable,
-      (uintptr_t) njt_ssl_get_protocol, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_protocol, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_cipher"), NULL, njt_http_ssl_static_variable,
-      (uintptr_t) njt_ssl_get_cipher_name, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_cipher_name, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_ciphers"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_ciphers, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_ciphers, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_curve"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_curve, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_curve, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_curves"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_curves, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_curves, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_session_id"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_session_id, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_session_id, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_session_reused"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_session_reused, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_session_reused, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_early_data"), NULL, njt_http_ssl_variable,
       (uintptr_t) njt_ssl_get_early_data,
-      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_server_name"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_server_name, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_server_name, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_alpn_protocol"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_alpn_protocol, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_alpn_protocol, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_cert"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_certificate, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_certificate, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_raw_cert"), NULL, njt_http_ssl_variable,
       (uintptr_t) njt_ssl_get_raw_certificate,
-      NJT_HTTP_VAR_CHANGEABLE, 0 },
+      NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_escaped_cert"), NULL, njt_http_ssl_variable,
       (uintptr_t) njt_ssl_get_escaped_certificate,
-      NJT_HTTP_VAR_CHANGEABLE, 0 },
+      NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_s_dn"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_subject_dn, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_subject_dn, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_i_dn"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_issuer_dn, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_issuer_dn, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_s_dn_legacy"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_subject_dn_legacy, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_subject_dn_legacy, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_i_dn_legacy"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_issuer_dn_legacy, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_issuer_dn_legacy, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_serial"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_serial_number, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_serial_number, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_fingerprint"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_fingerprint, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_fingerprint, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_verify"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_client_verify, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_client_verify, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_v_start"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_client_v_start, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_client_v_start, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_v_end"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_client_v_end, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_client_v_end, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ssl_client_v_remain"), NULL, njt_http_ssl_variable,
-      (uintptr_t) njt_ssl_get_client_v_remain, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      (uintptr_t) njt_ssl_get_client_v_remain, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
       njt_http_null_variable
 };

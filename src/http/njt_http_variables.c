@@ -167,237 +167,237 @@ static njt_int_t njt_http_variable_get_uri_key(njt_http_request_t *r,
 static njt_http_variable_t  njt_http_core_variables[] = {
 
     { njt_string("http_host"), NULL, njt_http_variable_header,
-      offsetof(njt_http_request_t, headers_in.host), 0, 0 },
+      offsetof(njt_http_request_t, headers_in.host), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("http_user_agent"), NULL, njt_http_variable_header,
-      offsetof(njt_http_request_t, headers_in.user_agent), 0, 0 },
+      offsetof(njt_http_request_t, headers_in.user_agent), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("http_referer"), NULL, njt_http_variable_header,
-      offsetof(njt_http_request_t, headers_in.referer), 0, 0 },
+      offsetof(njt_http_request_t, headers_in.referer), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
 #if (NJT_HTTP_GZIP)
     { njt_string("http_via"), NULL, njt_http_variable_header,
-      offsetof(njt_http_request_t, headers_in.via), 0, 0 },
+      offsetof(njt_http_request_t, headers_in.via), 0, 0, NJT_VAR_INIT_REF_COUNT },
 #endif
 
 #if (NJT_HTTP_X_FORWARDED_FOR)
     { njt_string("http_x_forwarded_for"), NULL, njt_http_variable_header,
-      offsetof(njt_http_request_t, headers_in.x_forwarded_for), 0, 0 },
+      offsetof(njt_http_request_t, headers_in.x_forwarded_for), 0, 0, NJT_VAR_INIT_REF_COUNT },
 #endif
 
     { njt_string("http_cookie"), NULL, njt_http_variable_cookies,
-      offsetof(njt_http_request_t, headers_in.cookie), 0, 0 },
+      offsetof(njt_http_request_t, headers_in.cookie), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("content_length"), NULL, njt_http_variable_content_length,
-      0, 0, 0 },
+      0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("content_type"), NULL, njt_http_variable_header,
-      offsetof(njt_http_request_t, headers_in.content_type), 0, 0 },
+      offsetof(njt_http_request_t, headers_in.content_type), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
-    { njt_string("host"), NULL, njt_http_variable_host, 0, 0, 0 },
+    { njt_string("host"), NULL, njt_http_variable_host, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("binary_remote_addr"), NULL,
-      njt_http_variable_binary_remote_addr, 0, 0, 0 },
+      njt_http_variable_binary_remote_addr, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
-    { njt_string("remote_addr"), NULL, njt_http_variable_remote_addr, 0, 0, 0 },
+    { njt_string("remote_addr"), NULL, njt_http_variable_remote_addr, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
-    { njt_string("remote_port"), NULL, njt_http_variable_remote_port, 0, 0, 0 },
+    { njt_string("remote_port"), NULL, njt_http_variable_remote_port, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("proxy_protocol_addr"), NULL,
       njt_http_variable_proxy_protocol_addr,
-      offsetof(njt_proxy_protocol_t, src_addr), 0, 0 },
+      offsetof(njt_proxy_protocol_t, src_addr), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("proxy_protocol_port"), NULL,
       njt_http_variable_proxy_protocol_port,
-      offsetof(njt_proxy_protocol_t, src_port), 0, 0 },
+      offsetof(njt_proxy_protocol_t, src_port), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("proxy_protocol_server_addr"), NULL,
       njt_http_variable_proxy_protocol_addr,
-      offsetof(njt_proxy_protocol_t, dst_addr), 0, 0 },
+      offsetof(njt_proxy_protocol_t, dst_addr), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("proxy_protocol_server_port"), NULL,
       njt_http_variable_proxy_protocol_port,
-      offsetof(njt_proxy_protocol_t, dst_port), 0, 0 },
+      offsetof(njt_proxy_protocol_t, dst_port), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
-    { njt_string("server_addr"), NULL, njt_http_variable_server_addr, 0, 0, 0 },
+    { njt_string("server_addr"), NULL, njt_http_variable_server_addr, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
-    { njt_string("server_port"), NULL, njt_http_variable_server_port, 0, 0, 0 },
+    { njt_string("server_port"), NULL, njt_http_variable_server_port, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("server_protocol"), NULL, njt_http_variable_request,
-      offsetof(njt_http_request_t, http_protocol), 0, 0 },
+      offsetof(njt_http_request_t, http_protocol), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
-    { njt_string("scheme"), NULL, njt_http_variable_scheme, 0, 0, 0 },
+    { njt_string("scheme"), NULL, njt_http_variable_scheme, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
-    { njt_string("https"), NULL, njt_http_variable_https, 0, 0, 0 },
+    { njt_string("https"), NULL, njt_http_variable_https, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("request_uri"), NULL, njt_http_variable_request,
-      offsetof(njt_http_request_t, unparsed_uri), 0, 0 },
+      offsetof(njt_http_request_t, unparsed_uri), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("uri"), NULL, njt_http_variable_request,
       offsetof(njt_http_request_t, uri),
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
     { njt_string("uri_key"),njt_http_variable_set_uri_key,njt_http_variable_get_uri_key,
       offsetof(njt_http_request_t, uri_key),
-      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
     { njt_string("document_uri"), NULL, njt_http_variable_request,
       offsetof(njt_http_request_t, uri),
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
-    { njt_string("request"), NULL, njt_http_variable_request_line, 0, 0, 0 },
+    { njt_string("request"), NULL, njt_http_variable_request_line, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("document_root"), NULL,
-      njt_http_variable_document_root, 0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      njt_http_variable_document_root, 0, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("realpath_root"), NULL,
-      njt_http_variable_realpath_root, 0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      njt_http_variable_realpath_root, 0, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("query_string"), NULL, njt_http_variable_request,
       offsetof(njt_http_request_t, args),
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("args"),
       njt_http_variable_set_args,
       njt_http_variable_request,
       offsetof(njt_http_request_t, args),
-      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("is_args"), NULL, njt_http_variable_is_args,
-      0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("request_filename"), NULL,
       njt_http_variable_request_filename, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
-    { njt_string("server_name"), NULL, njt_http_variable_server_name, 0, 0, 0 },
+    { njt_string("server_name"), NULL, njt_http_variable_server_name, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("request_method"), NULL,
       njt_http_variable_request_method, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
-    { njt_string("remote_user"), NULL, njt_http_variable_remote_user, 0, 0, 0 },
+    { njt_string("remote_user"), NULL, njt_http_variable_remote_user, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("bytes_sent"), NULL, njt_http_variable_bytes_sent,
-      0, 0, 0 },
+      0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("body_bytes_sent"), NULL, njt_http_variable_body_bytes_sent,
-      0, 0, 0 },
+      0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("pipe"), NULL, njt_http_variable_pipe,
-      0, 0, 0 },
+      0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("request_completion"), NULL,
       njt_http_variable_request_completion,
-      0, 0, 0 },
+      0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("request_body"), NULL,
       njt_http_variable_request_body,
-      0, 0, 0 },
+      0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("request_body_file"), NULL,
       njt_http_variable_request_body_file,
-      0, 0, 0 },
+      0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("request_length"), NULL, njt_http_variable_request_length,
-      0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("request_time"), NULL, njt_http_variable_request_time,
-      0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("request_id"), NULL,
       njt_http_variable_request_id,
-      0, 0, 0 },
+      0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("status"), NULL,
       njt_http_variable_status, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("sent_http_content_type"), NULL,
-      njt_http_variable_sent_content_type, 0, 0, 0 },
+      njt_http_variable_sent_content_type, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("sent_http_content_length"), NULL,
-      njt_http_variable_sent_content_length, 0, 0, 0 },
+      njt_http_variable_sent_content_length, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("sent_http_location"), NULL,
-      njt_http_variable_sent_location, 0, 0, 0 },
+      njt_http_variable_sent_location, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("sent_http_last_modified"), NULL,
-      njt_http_variable_sent_last_modified, 0, 0, 0 },
+      njt_http_variable_sent_last_modified, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("sent_http_connection"), NULL,
-      njt_http_variable_sent_connection, 0, 0, 0 },
+      njt_http_variable_sent_connection, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("sent_http_keep_alive"), NULL,
-      njt_http_variable_sent_keep_alive, 0, 0, 0 },
+      njt_http_variable_sent_keep_alive, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("sent_http_transfer_encoding"), NULL,
-      njt_http_variable_sent_transfer_encoding, 0, 0, 0 },
+      njt_http_variable_sent_transfer_encoding, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("sent_http_cache_control"), NULL, njt_http_variable_header,
-      offsetof(njt_http_request_t, headers_out.cache_control), 0, 0 },
+      offsetof(njt_http_request_t, headers_out.cache_control), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("sent_http_link"), NULL, njt_http_variable_header,
-      offsetof(njt_http_request_t, headers_out.link), 0, 0 },
+      offsetof(njt_http_request_t, headers_out.link), 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("limit_rate"), njt_http_variable_set_limit_rate,
       njt_http_variable_request_get_size,
       offsetof(njt_http_request_t, limit_rate),
-      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("connection"), NULL,
-      njt_http_variable_connection, 0, 0, 0 },
+      njt_http_variable_connection, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("connection_requests"), NULL,
-      njt_http_variable_connection_requests, 0, 0, 0 },
+      njt_http_variable_connection_requests, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("connection_time"), NULL, njt_http_variable_connection_time,
-      0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("njet_version"), NULL, njt_http_variable_njet_version,
-      0, 0, 0 },
+      0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("hostname"), NULL, njt_http_variable_hostname,
-      0, 0, 0 },
+      0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("pid"), NULL, njt_http_variable_pid,
-      0, 0, 0 },
+      0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("msec"), NULL, njt_http_variable_msec,
-      0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("time_iso8601"), NULL, njt_http_variable_time_iso8601,
-      0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("time_local"), NULL, njt_http_variable_time_local,
-      0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
 #if (NJT_HAVE_TCP_INFO)
     { njt_string("tcpinfo_rtt"), NULL, njt_http_variable_tcpinfo,
-      0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("tcpinfo_rttvar"), NULL, njt_http_variable_tcpinfo,
-      1, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      1, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("tcpinfo_snd_cwnd"), NULL, njt_http_variable_tcpinfo,
-      2, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      2, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("tcpinfo_rcv_space"), NULL, njt_http_variable_tcpinfo,
-      3, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      3, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 #endif
 
     { njt_string("http_"), NULL, njt_http_variable_unknown_header_in,
-      0, NJT_HTTP_VAR_PREFIX, 0 },
+      0, NJT_HTTP_VAR_PREFIX, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("sent_http_"), NULL, njt_http_variable_unknown_header_out,
-      0, NJT_HTTP_VAR_PREFIX, 0 },
+      0, NJT_HTTP_VAR_PREFIX, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("sent_trailer_"), NULL, njt_http_variable_unknown_trailer_out,
-      0, NJT_HTTP_VAR_PREFIX, 0 },
+      0, NJT_HTTP_VAR_PREFIX, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("cookie_"), NULL, njt_http_variable_cookie,
-      0, NJT_HTTP_VAR_PREFIX, 0 },
+      0, NJT_HTTP_VAR_PREFIX, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("arg_"), NULL, njt_http_variable_argument,
-      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0,NJT_VAR_INIT_REF_COUNT},
 
       njt_http_null_variable
 };
@@ -418,8 +418,9 @@ njt_http_add_variable(njt_conf_t *cf, njt_str_t *name, njt_uint_t flags)
     njt_int_t                   rc;
     njt_uint_t                  i;
     njt_hash_key_t             *key;
-    njt_http_variable_t        *v;
+    njt_http_variable_t        *v,*free_v;
     njt_http_core_main_conf_t  *cmcf;
+	//njt_http_rewrite_loc_conf_t  *rlcf;
 
     if (name->len == 0) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
@@ -433,15 +434,24 @@ njt_http_add_variable(njt_conf_t *cf, njt_str_t *name, njt_uint_t flags)
 
     cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
 
+	//rlcf = njt_http_conf_get_module_main_conf(cf, njt_http_rewrite_module);
+
+	free_v = NULL;
     key = cmcf->variables_keys->keys.elts;
     for (i = 0; i < cmcf->variables_keys->keys.nelts; i++) {
+		v = key[i].value;
+#if (NJT_HTTP_DYNAMIC_LOC)
+		if(v->name.len == 0 && v->name.data == NULL && free_v == NULL){
+			free_v = v;
+		}
+#endif
         if (name->len != key[i].key.len
             || njt_strncasecmp(name->data, key[i].key.data, name->len) != 0)
         {
             continue;
         }
 
-        v = key[i].value;
+        
 
         if (!(v->flags & NJT_HTTP_VAR_CHANGEABLE)) {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
@@ -452,17 +462,38 @@ njt_http_add_variable(njt_conf_t *cf, njt_str_t *name, njt_uint_t flags)
         if (!(flags & NJT_HTTP_VAR_WEAK)) {
             v->flags &= ~NJT_HTTP_VAR_WEAK;
         }
-
+		v->ref_count++;
         return v;
     }
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+		if(cf->dynamic == 1) {
+			if(free_v == NULL) {
+				v = njt_palloc(cmcf->dyn_var_pool, sizeof(njt_http_variable_t));
+			} else {
+				v = free_v;
+			}
+		 } else {
+			  v = njt_palloc(cf->pool, sizeof(njt_http_variable_t));
+		 }
+	 
+#else
     v = njt_palloc(cf->pool, sizeof(njt_http_variable_t));
+#endif
     if (v == NULL) {
         return NULL;
     }
 
     v->name.len = name->len;
+#if (NJT_HTTP_DYNAMIC_LOC)
+	if(cf->dynamic == 1) {
+		v->name.data = njt_pnalloc(cmcf->dyn_var_pool, name->len);
+	} else {
+		 v->name.data = njt_pnalloc(cf->pool, name->len);
+	}
+	v->ref_count++;
+#else
     v->name.data = njt_pnalloc(cf->pool, name->len);
+#endif
     if (v->name.data == NULL) {
         return NULL;
     }
@@ -480,12 +511,17 @@ njt_http_add_variable(njt_conf_t *cf, njt_str_t *name, njt_uint_t flags)
     if (rc == NJT_ERROR) {
         return NULL;
     }
-
+	
     if (rc == NJT_BUSY) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "conflicting variable name \"%V\"", name);
         return NULL;
     }
+#if (NJT_HTTP_DYNAMIC_LOC)
+	if(cf->dynamic == 1) {
+		v->flags |=  NJT_HTTP_DYN_VAR;
+	}
+#endif
 
     return v;
 }
@@ -550,9 +586,9 @@ njt_int_t
 njt_http_get_variable_index(njt_conf_t *cf, njt_str_t *name)
 {
     njt_uint_t                  i;
-    njt_http_variable_t        *v;
+    njt_http_variable_t        *v,*free_v;
     njt_http_core_main_conf_t  *cmcf;
-
+	
     if (name->len == 0) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "invalid variable name \"$\"");
@@ -562,17 +598,34 @@ njt_http_get_variable_index(njt_conf_t *cf, njt_str_t *name)
     cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
 
     v = cmcf->variables.elts;
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+	free_v = NULL;
+#endif
     if (v == NULL) {
+#if (NJT_HTTP_DYNAMIC_LOC)
+		 njt_pool_t *new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+			if (new_pool == NULL) {
+				return NJT_ERROR;
+			}
+			if (njt_array_init(&cmcf->variables, new_pool, 4,
+                           sizeof(njt_http_variable_t))
+            != NJT_OK)
+#else
         if (njt_array_init(&cmcf->variables, cf->pool, 4,
                            sizeof(njt_http_variable_t))
             != NJT_OK)
+#endif
         {
             return NJT_ERROR;
         }
 
     } else {
         for (i = 0; i < cmcf->variables.nelts; i++) {
+#if (NJT_HTTP_DYNAMIC_LOC)
+			if(v[i].name.data == NULL && v[i].name.len == 0 && free_v == NULL){
+				free_v = v;
+			}
+#endif
             if (name->len != v[i].name.len
                 || njt_strncasecmp(name->data, v[i].name.data, name->len) != 0)
             {
@@ -582,14 +635,32 @@ njt_http_get_variable_index(njt_conf_t *cf, njt_str_t *name)
             return i;
         }
     }
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+			if(free_v != NULL){
+				v = free_v;
+			} else {
+				 v = njt_array_push(&cmcf->variables);
+			}
+#else
     v = njt_array_push(&cmcf->variables);
+#endif
     if (v == NULL) {
         return NJT_ERROR;
     }
 
     v->name.len = name->len;
-    v->name.data = njt_pnalloc(cf->pool, name->len);
+
+#if (NJT_HTTP_DYNAMIC_LOC)
+	if(cf->dynamic == 1) {
+		v->name.data = njt_pnalloc(cmcf->variables.pool, name->len);
+	} else {
+		v->name.data = njt_pnalloc(cf->pool, name->len);
+	}
+#else
+	v->name.data = njt_pnalloc(cf->pool, name->len);
+#endif
+
+   
     if (v->name.data == NULL) {
         return NJT_ERROR;
     }
@@ -600,6 +671,11 @@ njt_http_get_variable_index(njt_conf_t *cf, njt_str_t *name)
     v->get_handler = NULL;
     v->data = 0;
     v->flags = 0;
+#if (NJT_HTTP_DYNAMIC_LOC)
+	if(cf->dynamic == 1) {
+		v->flags |=  NJT_HTTP_DYN_VAR;
+	} 
+#endif
     v->index = cmcf->variables.nelts - 1;
 
     return v->index;
@@ -2690,6 +2766,22 @@ njt_http_variables_add_core_vars(njt_conf_t *cf)
 
     cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
 
+#if (NJT_HTTP_DYNAMIC_LOC)
+       njt_pool_t *new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+	   if(new_pool == NULL) {
+		   return NJT_ERROR;
+	   }
+	   cmcf->variables_keys = njt_pcalloc(new_pool,
+                                       sizeof(njt_hash_keys_arrays_t));
+		if (cmcf->variables_keys == NULL) {
+			return NJT_ERROR;
+		}
+
+		cmcf->variables_keys->pool = new_pool;
+		cmcf->variables_keys->temp_pool = new_pool;
+    
+#else
+
     cmcf->variables_keys = njt_pcalloc(cf->temp_pool,
                                        sizeof(njt_hash_keys_arrays_t));
     if (cmcf->variables_keys == NULL) {
@@ -2698,7 +2790,7 @@ njt_http_variables_add_core_vars(njt_conf_t *cf)
 
     cmcf->variables_keys->pool = cf->pool;
     cmcf->variables_keys->temp_pool = cf->pool;
-
+#endif
     if (njt_hash_keys_array_init(cmcf->variables_keys, NJT_HASH_SMALL)
         != NJT_OK)
     {
@@ -2711,7 +2803,11 @@ njt_http_variables_add_core_vars(njt_conf_t *cf)
     {
         return NJT_ERROR;
     }
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+         if (cmcf->dyn_var_pool == NULL) {
+        cmcf->dyn_var_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    }
+#endif
     for (cv = njt_http_core_variables; cv->name.len; cv++) {
         v = njt_http_add_variable(cf, &cv->name, cv->flags);
         if (v == NULL) {
@@ -2854,3 +2950,4 @@ njt_http_variables_init_vars(njt_conf_t *cf)
 
     return NJT_OK;
 }
+

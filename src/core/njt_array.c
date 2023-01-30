@@ -80,6 +80,9 @@ njt_array_push(njt_array_t *a)
             }
 
             njt_memcpy(new, a->elts, size);
+#if (NJT_HTTP_DYNAMIC_LOC)
+			//njt_pfree(p,a->elts);	
+#endif
             a->elts = new;
             a->nalloc *= 2;
         }
@@ -130,6 +133,9 @@ njt_array_push_n(njt_array_t *a, njt_uint_t n)
             }
 
             njt_memcpy(new, a->elts, a->nelts * a->size);
+#if (NJT_HTTP_DYNAMIC_LOC)
+			//njt_pfree(p,a->elts);
+#endif
             a->elts = new;
             a->nalloc = nalloc;
         }

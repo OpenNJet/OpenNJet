@@ -752,25 +752,25 @@ static njt_keyval_t  njt_http_proxy_cache_headers[] = {
 static njt_http_variable_t  njt_http_proxy_vars[] = {
 
     { njt_string("proxy_host"), NULL, njt_http_proxy_host_variable, 0,
-      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0 },
+      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("proxy_port"), NULL, njt_http_proxy_port_variable, 0,
-      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0 },
+      NJT_HTTP_VAR_CHANGEABLE|NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("proxy_add_x_forwarded_for"), NULL,
-      njt_http_proxy_add_x_forwarded_for_variable, 0, NJT_HTTP_VAR_NOHASH, 0 },
+      njt_http_proxy_add_x_forwarded_for_variable, 0, NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 
 #if 0
-    { njt_string("proxy_add_via"), NULL, NULL, 0, NJT_HTTP_VAR_NOHASH, 0 },
+    { njt_string("proxy_add_via"), NULL, NULL, 0, NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 #endif
 
     { njt_string("proxy_internal_body_length"), NULL,
       njt_http_proxy_internal_body_length_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("proxy_internal_chunked"), NULL,
       njt_http_proxy_internal_chunked_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 
       njt_http_null_variable
 };

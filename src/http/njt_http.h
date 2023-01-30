@@ -72,6 +72,18 @@ typedef struct {
     u_char              *end;
 } njt_http_status_t;
 
+typedef struct {
+    njt_array_t  *codes;        /* uintptr_t */
+
+    njt_uint_t    stack_size;
+
+    njt_flag_t    log;
+    njt_flag_t    uninitialized_variable_warn;
+	#if (NJT_HTTP_DYNAMIC_LOC)
+		 njt_array_t  var_names;  
+	#endif
+} njt_http_rewrite_loc_conf_t;
+
 
 #define njt_http_get_module_ctx(r, module)  (r)->ctx[module.ctx_index]
 #define njt_http_set_ctx(r, c, module)      r->ctx[module.ctx_index] = c;

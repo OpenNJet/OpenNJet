@@ -118,10 +118,10 @@ njt_module_t  njt_http_realip_module = {
 static njt_http_variable_t  njt_http_realip_vars[] = {
 
     { njt_string("realip_remote_addr"), NULL,
-      njt_http_realip_remote_addr_variable, 0, 0, 0 },
+      njt_http_realip_remote_addr_variable, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("realip_remote_port"), NULL,
-      njt_http_realip_remote_port_variable, 0, 0, 0 },
+      njt_http_realip_remote_port_variable, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
       njt_http_null_variable
 };

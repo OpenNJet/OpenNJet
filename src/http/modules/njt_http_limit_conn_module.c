@@ -164,7 +164,7 @@ njt_module_t  njt_http_limit_conn_module = {
 static njt_http_variable_t  njt_http_limit_conn_vars[] = {
 
     { njt_string("limit_conn_status"), NULL,
-      njt_http_limit_conn_status_variable, 0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      njt_http_limit_conn_status_variable, 0, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
       njt_http_null_variable
 };

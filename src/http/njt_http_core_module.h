@@ -170,7 +170,9 @@ typedef struct {
     njt_uint_t                 variables_hash_bucket_size;
 
     njt_hash_keys_arrays_t    *variables_keys;
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t		           *dyn_var_pool;
+#endif
     njt_array_t               *ports;
 
     njt_http_phase_t           phases[NJT_HTTP_LOG_PHASE + 1];

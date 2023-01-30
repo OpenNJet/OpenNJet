@@ -379,60 +379,60 @@ static njt_http_variable_t  njt_http_upstream_vars[] = {
 
     { njt_string("upstream_addr"), NULL,
       njt_http_upstream_addr_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_status"), NULL,
       njt_http_upstream_status_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_connect_time"), NULL,
       njt_http_upstream_response_time_variable, 2,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_header_time"), NULL,
       njt_http_upstream_response_time_variable, 1,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_response_time"), NULL,
       njt_http_upstream_response_time_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_response_length"), NULL,
       njt_http_upstream_response_length_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_bytes_received"), NULL,
       njt_http_upstream_response_length_variable, 1,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_bytes_sent"), NULL,
       njt_http_upstream_response_length_variable, 2,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
 #if (NJT_HTTP_CACHE)
 
     { njt_string("upstream_cache_status"), NULL,
       njt_http_upstream_cache_status, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_cache_last_modified"), NULL,
       njt_http_upstream_cache_last_modified, 0,
-      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_cache_etag"), NULL,
       njt_http_upstream_cache_etag, 0,
-      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 
 #endif
 
     { njt_string("upstream_http_"), NULL, njt_http_upstream_header_variable,
-      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_trailer_"), NULL, njt_http_upstream_trailer_variable,
-      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_cookie_"), NULL, njt_http_upstream_cookie_variable,
-      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0, NJT_VAR_INIT_REF_COUNT },
 
       njt_http_null_variable
 };

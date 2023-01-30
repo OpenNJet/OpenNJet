@@ -530,7 +530,7 @@ static njt_http_variable_t  njt_http_grpc_vars[] = {
 
     { njt_string("grpc_internal_trailers"), NULL,
       njt_http_grpc_internal_trailers_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 
       njt_http_null_variable
 };

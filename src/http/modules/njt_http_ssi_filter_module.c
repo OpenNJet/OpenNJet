@@ -317,10 +317,10 @@ static njt_http_ssi_command_t  njt_http_ssi_commands[] = {
 static njt_http_variable_t  njt_http_ssi_vars[] = {
 
     { njt_string("date_local"), NULL, njt_http_ssi_date_gmt_local_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("date_gmt"), NULL, njt_http_ssi_date_gmt_local_variable, 1,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
       njt_http_null_variable
 };
