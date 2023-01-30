@@ -71,10 +71,9 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     if (pool == NULL) {
         return NULL;
     }
-    //by chengxu
-    fprintf(stderr,"create global pool：%p \r\n",pool);
+
     pool->log = log;
-    //end
+
     cycle = njt_pcalloc(pool, sizeof(njt_cycle_t));
     if (cycle == NULL) {
         njt_destroy_pool(pool);
@@ -264,7 +263,6 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         njt_destroy_pool(pool);
         return NULL;
     }
-    fprintf(stderr,"create global temp pool：%p \r\n",conf.temp_pool);
 
     conf.ctx = cycle->conf_ctx;
     conf.cycle = cycle;
