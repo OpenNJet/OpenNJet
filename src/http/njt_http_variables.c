@@ -466,15 +466,15 @@ njt_http_add_variable(njt_conf_t *cf, njt_str_t *name, njt_uint_t flags)
         return v;
     }
 #if (NJT_HTTP_DYNAMIC_LOC)
-		if(cf->dynamic == 1) {
+		//if(cf->dynamic == 1) {
 			if(free_v == NULL) {
 				v = njt_palloc(cmcf->dyn_var_pool, sizeof(njt_http_variable_t));
 			} else {
 				v = free_v;
 			}
-		 } else {
-			  v = njt_palloc(cf->pool, sizeof(njt_http_variable_t));
-		 }
+		 //} else {
+			 // v = njt_palloc(cf->pool, sizeof(njt_http_variable_t));
+		 //}
 	 
 #else
     v = njt_palloc(cf->pool, sizeof(njt_http_variable_t));
@@ -485,11 +485,11 @@ njt_http_add_variable(njt_conf_t *cf, njt_str_t *name, njt_uint_t flags)
 
     v->name.len = name->len;
 #if (NJT_HTTP_DYNAMIC_LOC)
-	if(cf->dynamic == 1) {
+	//if(cf->dynamic == 1) {
 		v->name.data = njt_pnalloc(cmcf->dyn_var_pool, name->len);
-	} else {
-		 v->name.data = njt_pnalloc(cf->pool, name->len);
-	}
+	//} else {
+	//	 v->name.data = njt_pnalloc(cf->pool, name->len);
+	//}
 	v->ref_count++;
 #else
     v->name.data = njt_pnalloc(cf->pool, name->len);
@@ -506,6 +506,10 @@ njt_http_add_variable(njt_conf_t *cf, njt_str_t *name, njt_uint_t flags)
     v->flags = flags;
     v->index = 0;
 
+//static int  num = 0;
+//int count = cmcf->variables_keys->keys.nelts;
+ //njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+   //                        "0 zyg all:%d,%d",count, ++num);
     rc = njt_hash_add_key(cmcf->variables_keys, &v->name, v, 0);
 
     if (rc == NJT_ERROR) {
@@ -677,7 +681,12 @@ njt_http_get_variable_index(njt_conf_t *cf, njt_str_t *name)
 		v->flags |=  NJT_HTTP_DYN_VAR;
 	} 
 #endif
-    v->index = cmcf->variables.nelts - 1;
+	if(free_v != v) {
+		v->index = cmcf->variables.nelts - 1;
+	} else {
+		v->index = free_v->index; // zyg ʹ�þɵġ�
+	}
+    
 
     return v->index;
 }

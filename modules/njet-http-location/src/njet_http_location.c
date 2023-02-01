@@ -951,9 +951,9 @@ njt_http_location_read_data(njt_http_request_t *r) {
     if (fd == NJT_INVALID_FILE) {
         return;
     }
-    data = njt_pcalloc(r->pool, 2048);
+    data = njt_pcalloc(r->pool, 10240);
     if (data != NULL) {
-        p = njt_snprintf(data, 2048, "location %V {\n%V\nproxy_pass %V;\n}\n", &location_info->location,
+        p = njt_snprintf(data, 10240, "location %V {\n%V\nproxy_pass %V;\n}\n", &location_info->location,
                          &location_info->content, &location_info->proxy_pass);
         rlen = njt_write_fd(fd, data, p - data);
     }
@@ -994,29 +994,27 @@ static void njt_http_location_clear_dirty_data(njt_http_core_loc_conf_t *clcf) {
 
 static void njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf) {
 
-	njt_http_core_main_conf_t  *cmcf;
+	
+	//njt_http_core_main_conf_t  *cmcf;
 	
 	//njt_hash_keys_arrays_t    *new_variables_keys;
 	njt_http_variable_t                     **ip;
 	njt_uint_t	               i;
 	njt_http_rewrite_loc_conf_t  *rlcf = clcf->loc_conf[njt_http_rewrite_module.ctx_index];  //njt_http_conf_get_module_loc_conf(clcf,njt_http_rewrite_module); //clcf->loc_conf[njt_http_core_module.ctx_index])
-	cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
+	//cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
 	
 	ip = rlcf->var_names.elts;
 
 	for(i=0; i < rlcf->var_names.nelts; i++) {   //var_names，location 上内存不需要释放。
 		ip[i]->ref_count--;
-		printf("%s",ip[i]->name.data);
+		//printf("%s",ip[i]->name.data);
 		if( (ip[i]->ref_count == 0 && ip[i]->flags &  NJT_HTTP_DYN_VAR) ){
 
 			
 			
-			printf("%s",ip[i]->name.data);
+			//printf("%s",ip[i]->name.data);
 			njt_http_set_del_variable_flag(&ip[i]->name);
 			njt_http_set_del_variables_keys_flag(&ip[i]->name);
-			njt_pfree(cmcf->dyn_var_pool,ip[i]->name.data);  //var_names需要释放。
-			ip[i]->name.data = NULL;
-			ip[i]->name.len = 0;
 		}
 	}
 	njt_http_refresh_variables_keys();
@@ -1081,7 +1079,7 @@ njt_http_set_del_variables_keys_flag( njt_str_t *name)
 
         v = key[i].value;
 		if(v){
-			printf("12");
+			//printf("12");
 		}
 		njt_pfree(cmcf->dyn_var_pool,v->name.data);
 		v->name.data = NULL;
@@ -1101,21 +1099,27 @@ njt_http_refresh_variables_keys(){
     njt_http_core_main_conf_t  *cmcf;
 	njt_hash_key_t             *key;
 	njt_pool_t *old_pool;
-
-
-  
+	u_char *pdata;
+	njt_hash_keys_arrays_t    *old_variables_keys;
+	//return;
 
    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
    key = cmcf->variables_keys->keys.elts;
    count = cmcf->variables_keys->keys.nelts;
 	  old_pool = cmcf->variables_keys->pool;
+	  old_variables_keys = cmcf->variables_keys;
+
 	  njt_pool_t *new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
 	   if(new_pool == NULL) {
 		   return ;
 	   }
+
+
 	   cmcf->variables_keys = njt_pcalloc(new_pool,
                                        sizeof(njt_hash_keys_arrays_t));
 		if (cmcf->variables_keys == NULL) {
+			cmcf->variables_keys = old_variables_keys; //失败时，继续使用旧的。
+			njt_destroy_pool(new_pool);
 			return ;
 		}
 
@@ -1124,41 +1128,53 @@ njt_http_refresh_variables_keys(){
 
 		if (njt_hash_keys_array_init(cmcf->variables_keys, NJT_HASH_SMALL) != NJT_OK)
 		{
+			cmcf->variables_keys = old_variables_keys; //失败时，继续使用旧的。
+			njt_destroy_pool(new_pool);
 			return;
 		}
  
        for (i = 0; i < count; i++) {
 		    v = key[i].value;
-			if (v->name.data == NULL && v->name.len == 0)
+			if (v->name.data == NULL || v->name.len == 0)
 			{
 				njt_pfree(cmcf->dyn_var_pool,v);
 				continue;
 			}
 			
-
+			/*
 			newv = njt_palloc(new_pool, sizeof(njt_http_variable_t));
 			if (newv == NULL) {
 				exit(0); //todo
 				return;
 			}
-			*newv = *v;
+			*newv = *v;*/
+			pdata = v->name.data;
+			newv = v;
+			newv->name.data = njt_pnalloc(cmcf->dyn_var_pool, v->name.len);
 			
-			newv->name.len = v->name.len;
-			newv->name.data = njt_pnalloc(new_pool, v->name.len);
+
+			//num++;
 			if (newv->name.data == NULL) {
 				exit(0); //todo
+				cmcf->variables_keys = old_variables_keys; //失败时，继续使用旧的。
+				 njt_destroy_pool(new_pool);
 				return;
 			}
 
-			njt_strlow(newv->name.data, v->name.data, v->name.len);
+			njt_strlow(newv->name.data, pdata, v->name.len);
 
 
 			njt_hash_add_key(cmcf->variables_keys, &newv->name, newv, 0);
+			
+			njt_pfree(cmcf->dyn_var_pool,v->name.data);
+			
+
 		}
+
 		if(old_pool){
 		   njt_destroy_pool(old_pool);
 		}
-		
+		 //njt_log_debug2(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "zyg all:%d, remain:%d",count,num);
 		
 }
 
