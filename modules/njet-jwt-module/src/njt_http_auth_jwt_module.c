@@ -240,9 +240,10 @@ static char * njt_http_auth_jwt_merge_conf(njt_conf_t *cf, void *parent, void *c
 // Convert an hexadecimal string to a binary string
 static int hex_to_binary(u_char* dest, u_char* src, const size_t n)
 {
+    size_t i;
     u_char *p = &dest[0];
     njt_int_t dst;
-    for (size_t i = 0; i < n; i += 2) {
+    for( i = 0; i < n; i += 2) {
       dst = njt_hextoi(&src[i], 2);
       if (dst == NJT_ERROR || dst > 255)
       {
