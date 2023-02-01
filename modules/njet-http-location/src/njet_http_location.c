@@ -1177,7 +1177,7 @@ njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "zyg begin");
 
 			njt_hash_add_key(cmcf->variables_keys, &newv->name, newv, 0);
 			
-			njt_pfree(cmcf->dyn_var_pool,v->name.data);
+			njt_pfree(cmcf->dyn_var_pool,pdata);
 			
 
 		}

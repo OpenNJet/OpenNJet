@@ -628,7 +628,7 @@ njt_http_get_variable_index(njt_conf_t *cf, njt_str_t *name)
         for (i = 0; i < cmcf->variables.nelts; i++) {
 #if (NJT_HTTP_DYNAMIC_LOC)
 			if(v[i].name.data == NULL && v[i].name.len == 0 && free_v == NULL){
-				free_v = v;
+				free_v = &v[i];
 			}
 #endif
             if (name->len != v[i].name.len
@@ -656,11 +656,7 @@ njt_http_get_variable_index(njt_conf_t *cf, njt_str_t *name)
     v->name.len = name->len;
 
 #if (NJT_HTTP_DYNAMIC_LOC)
-	if(cf->dynamic == 1) {
 		v->name.data = njt_pnalloc(cmcf->variables.pool, name->len);
-	} else {
-		v->name.data = njt_pnalloc(cf->pool, name->len);
-	}
 #else
 	v->name.data = njt_pnalloc(cf->pool, name->len);
 #endif
