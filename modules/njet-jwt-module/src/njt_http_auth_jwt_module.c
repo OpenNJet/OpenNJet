@@ -8,7 +8,7 @@
 #include <njt_http.h>
 
 #include <jwt.h>
-#include <jansson.h>
+//#include <jansson.h>
 
 typedef struct {
   njt_str_t jwt_key;          // Forwarded key (with auth_jwt_key)
