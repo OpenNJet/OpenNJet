@@ -99,7 +99,7 @@ static void *
 njt_dynamic_alloc(njt_pool_t *pool, size_t size)
 {
     void              *p;
-    njt_uint_t         n;
+    //njt_uint_t         n;
     njt_pool_large_t  *large;
 
     njt_log_debug1(NJT_LOG_DEBUG_ALLOC, pool->log, 0,"dynamic_alloc: %p,", pool);
@@ -109,18 +109,6 @@ njt_dynamic_alloc(njt_pool_t *pool, size_t size)
         return NULL;
     }
 //    ngx_error_signal_handler(pool);
-
-    n = 0;
-
-    for (large = pool->large; large; large = large->next) {
-        if (large->alloc == NULL) {
-            large->alloc = p;
-            return p;
-        }
-        if (n++ > 3) {
-            break;
-        }
-    }
 
     large = p;
     large->alloc = p;
