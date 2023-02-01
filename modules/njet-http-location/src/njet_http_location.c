@@ -1000,6 +1000,7 @@ static void njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf) {
 	//njt_hash_keys_arrays_t    *new_variables_keys;
 	njt_http_variable_t                     **ip;
 	njt_uint_t	               i;
+	njt_uint_t                 rf = 0;
 	njt_http_rewrite_loc_conf_t  *rlcf = clcf->loc_conf[njt_http_rewrite_module.ctx_index];  //njt_http_conf_get_module_loc_conf(clcf,njt_http_rewrite_module); //clcf->loc_conf[njt_http_core_module.ctx_index])
 	//cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
 	
@@ -1015,9 +1016,12 @@ static void njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf) {
 			//printf("%s",ip[i]->name.data);
 			njt_http_set_del_variable_flag(&ip[i]->name);
 			njt_http_set_del_variables_keys_flag(&ip[i]->name);
+			rf = 1;
 		}
 	}
-	njt_http_refresh_variables_keys();
+	if(rf == 1) {
+		njt_http_refresh_variables_keys();
+	}
 
 	
 }
@@ -1101,7 +1105,8 @@ njt_http_refresh_variables_keys(){
 	njt_pool_t *old_pool;
 	u_char *pdata;
 	njt_hash_keys_arrays_t    *old_variables_keys;
-	//return;
+
+njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "zyg begin");
 
    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
    key = cmcf->variables_keys->keys.elts;
@@ -1111,6 +1116,7 @@ njt_http_refresh_variables_keys(){
 
 	  njt_pool_t *new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
 	   if(new_pool == NULL) {
+		   exit(0);
 		   return ;
 	   }
 
@@ -1120,16 +1126,21 @@ njt_http_refresh_variables_keys(){
 		if (cmcf->variables_keys == NULL) {
 			cmcf->variables_keys = old_variables_keys; //失败时，继续使用旧的。
 			njt_destroy_pool(new_pool);
+			exit(0);
 			return ;
 		}
 
 		cmcf->variables_keys->pool = new_pool;
 		cmcf->variables_keys->temp_pool = new_pool;
 
+		
+
+
 		if (njt_hash_keys_array_init(cmcf->variables_keys, NJT_HASH_SMALL) != NJT_OK)
 		{
 			cmcf->variables_keys = old_variables_keys; //失败时，继续使用旧的。
 			njt_destroy_pool(new_pool);
+			exit(0);
 			return;
 		}
  
@@ -1173,7 +1184,9 @@ njt_http_refresh_variables_keys(){
 
 		if(old_pool){
 		   njt_destroy_pool(old_pool);
+		   njt_log_debug2(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "zyg njt_destroy_pool pool:%p, remain:%p",old_pool,new_pool);
 		}
+		njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "zyg end");
 		 //njt_log_debug2(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "zyg all:%d, remain:%d",count,num);
 		
 }
