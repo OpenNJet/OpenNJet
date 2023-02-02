@@ -1,0 +1,11 @@
+njt_addon_name=njt_helper_ctrl_module
+
+if test -n "$njt_module_link"; then
+  njt_module_type=HTTP
+  njt_module_name=njt_helper_ctrl_module
+  njt_module_srcs="$njt_addon_dir/njt_helper_ctrl_module.c"
+  . auto/module
+else
+	HTTP_MODULES="$HTTP_MODULES njt_helper_ctrl_module"
+	njt_ADDON_SRCS="$njt_ADDON_SRCS $njt_addon_dir/njt_helper_ctrl_module.c"
+fi

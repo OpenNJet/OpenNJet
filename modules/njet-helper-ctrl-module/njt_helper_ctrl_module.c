@@ -27,7 +27,7 @@ njt_helper_run(helper_param param)
     char confname[128];
     njt_cycle_t *cycle;
 
-    printf("helper vts started\n");
+    printf("helper ctrl started\n");
 
     memset(confname, 0, sizeof(confname));
     memcpy(confname, param.conf_fn.data, param.conf_fn.len);
@@ -41,15 +41,15 @@ njt_helper_run(helper_param param)
         if (njt_reconfigure) {
             njt_reconfigure = 0;
 
-            njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "vts reconfiguring");
+            njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ctrl reconfiguring");
             cycle = njt_init_cycle(cycle);
             if (cycle == NULL) {
                 cycle = (njt_cycle_t *) njt_cycle;
-                njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "vts reconfiguring continue");
+                njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ctrl reconfiguring continue");
                 continue;
             }
 
-            njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "vts reconfiguring done");
+            njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ctrl reconfiguring done");
 
             njt_cycle = cycle;
 
@@ -74,7 +74,7 @@ njt_helper_run(helper_param param)
         }
 
         if (cmd == NJT_HELPER_CMD_STOP) {
-            printf("helper vts stop\n");
+            printf("helper ctrl stop\n");
             break;            
         }
 
@@ -94,4 +94,4 @@ unsigned int njt_helper_check_version(void)
 }
 
 
-njt_module_t njt_helper_vts_module = {0};
+njt_module_t njt_helper_ctrl_module = {0};

@@ -541,8 +541,8 @@ njt_helper_process_cycle(njt_cycle_t *cycle, void *data)
 
     njt_use_accept_mutex = 0;
 
-    len = njt_strlen("helper process ");
-    njt_memcpy(title, "helper process ", len);
+    len = njt_strlen("copilot process ");
+    njt_memcpy(title, "copilot process ", len);
 
     if (ctx->param.conf_fn.len + len < 128) {
         len2 = ctx->param.conf_fn.len;
@@ -586,7 +586,7 @@ njt_start_helper_processes(njt_cycle_t *cycle, njt_uint_t respawn)
             nelts = mqcf->helper.nelts;
             for (i = 0; i < nelts; i++) {
                 njt_spawn_process(cycle, njt_helper_process_cycle,
-                            &helpers[i], "helper process",
+                            &helpers[i], "copilot process",
                             respawn ? NJT_PROCESS_JUST_RESPAWN : NJT_PROCESS_RESPAWN, njt_helper_preprocess_cycle);
             }
 
