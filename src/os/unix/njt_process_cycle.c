@@ -10,14 +10,20 @@
 #include <njt_core.h>
 #include <njt_event.h>
 #include <njt_channel.h>
+#include <njt_mqconf_module.h>
 
 
 static void njt_start_worker_processes(njt_cycle_t *cycle, njt_int_t n,
     njt_int_t type);
 static void njt_start_cache_manager_processes(njt_cycle_t *cycle,
     njt_uint_t respawn);
+static njt_uint_t njt_start_helper_processes(njt_cycle_t *cycle,
+    njt_uint_t respawn);
+static njt_uint_t njt_restart_helper_processes(njt_cycle_t *cycle,
+    njt_uint_t respawn);
 static void njt_pass_open_channel(njt_cycle_t *cycle);
 static void njt_signal_worker_processes(njt_cycle_t *cycle, int signo);
+static void njt_signal_helper_processes(njt_cycle_t *cycle, int signo);
 static njt_uint_t njt_reap_children(njt_cycle_t *cycle);
 static void njt_master_process_exit(njt_cycle_t *cycle);
 static void njt_worker_process_cycle(njt_cycle_t *cycle, void *data);
@@ -43,6 +49,7 @@ sig_atomic_t  njt_debug_quit;
 njt_uint_t    njt_exiting;
 sig_atomic_t  njt_reconfigure;
 sig_atomic_t  njt_reopen;
+sig_atomic_t  njt_reap_helper;
 
 sig_atomic_t  njt_change_binary;
 njt_pid_t     njt_new_binary;
@@ -52,6 +59,8 @@ njt_uint_t    njt_daemonized;
 sig_atomic_t  njt_noaccept;
 njt_uint_t    njt_noaccepting;
 njt_uint_t    njt_restart;
+
+njt_uint_t    njt_is_privileged_helper = 0;
 
 
 static u_char  master_process[] = "master process";
@@ -131,6 +140,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
     njt_start_worker_processes(cycle, ccf->worker_processes,
                                NJT_PROCESS_RESPAWN);
     njt_start_cache_manager_processes(cycle, 0);
+    njt_start_helper_processes(cycle, 0);
 
     njt_new_binary = 0;
     delay = 0;
@@ -173,6 +183,13 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             njt_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "reap children");
 
             live = njt_reap_children(cycle);
+
+            if (njt_reap_helper) {
+                njt_reap_helper = 0;
+                if ((njt_restart_helper_processes(cycle, 0) > 0) && (live == 0)) {
+                    live = 1;
+                }
+            }
         }
 
         if (!live && (njt_terminate || njt_quit)) {
@@ -239,6 +256,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             /* allow new processes to start */
             njt_msleep(100);
 
+            njt_reap_helper = 1;
             live = 1;
             njt_signal_worker_processes(cycle,
                                         njt_signal_value(NJT_SHUTDOWN_SIGNAL));
@@ -263,6 +281,8 @@ njt_master_process_cycle(njt_cycle_t *cycle)
         if (njt_change_binary) {
             njt_change_binary = 0;
             njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "changing binary");
+            njt_signal_helper_processes(cycle,
+                                        njt_signal_value(NJT_SHUTDOWN_SIGNAL));            
             njt_new_binary = njt_exec_new_binary(cycle, njt_argv);
         }
 
@@ -343,7 +363,7 @@ njt_start_worker_processes(njt_cycle_t *cycle, njt_int_t n, njt_int_t type)
     for (i = 0; i < n; i++) {
 
         njt_spawn_process(cycle, njt_worker_process_cycle,
-                          (void *) (intptr_t) i, "worker process", type);
+                          (void *) (intptr_t) i, "worker process", type, NULL);
 
         njt_pass_open_channel(cycle);
     }
@@ -377,7 +397,7 @@ njt_start_cache_manager_processes(njt_cycle_t *cycle, njt_uint_t respawn)
 
     njt_spawn_process(cycle, njt_cache_manager_process_cycle,
                       &njt_cache_manager_ctx, "cache manager process",
-                      respawn ? NJT_PROCESS_JUST_RESPAWN : NJT_PROCESS_RESPAWN);
+                      respawn ? NJT_PROCESS_JUST_RESPAWN : NJT_PROCESS_RESPAWN, NULL);
 
     njt_pass_open_channel(cycle);
 
@@ -387,9 +407,218 @@ njt_start_cache_manager_processes(njt_cycle_t *cycle, njt_uint_t respawn)
 
     njt_spawn_process(cycle, njt_cache_manager_process_cycle,
                       &njt_cache_loader_ctx, "cache loader process",
-                      respawn ? NJT_PROCESS_JUST_SPAWN : NJT_PROCESS_NORESPAWN);
+                      respawn ? NJT_PROCESS_JUST_SPAWN : NJT_PROCESS_NORESPAWN, NULL);
 
     njt_pass_open_channel(cycle);
+}
+
+
+unsigned int njt_helper_check_cmd(void *cctx)
+{
+    njt_cycle_t *cycle = (njt_cycle_t *)cctx;
+
+    njt_process_events_and_timers(cycle);
+
+    if (njt_terminate || njt_quit) {
+        // njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exiting");
+        if (njt_terminate) {
+            printf("helper found njt_terminate\n");
+            return NJT_HELPER_CMD_STOP;
+        }
+
+        if (njt_quit) {
+            printf("helper found njt_quit\n");
+            return NJT_HELPER_CMD_STOP;
+        }
+    }
+
+    return NJT_HELPER_CMD_NO;
+}
+
+
+void
+njt_helper_process_handler(njt_event_t *ev)
+{
+    njt_uint_t    i;
+    njt_msec_t    next = 0, n;
+    njt_path_t  **path;
+
+    path = njt_cycle->paths.elts;
+    for (i = 0; i < njt_cycle->paths.nelts; i++) {
+
+        if (path[i]->manager) {
+            n = path[i]->manager(path[i]->data);
+
+            next = (n <= next) ? n : next;
+
+            njt_time_update();
+        }
+    }
+
+    if (next == 0) {
+        next = 1;
+    }
+
+    njt_add_timer(ev, next);
+}
+
+
+static void
+njt_helper_preprocess_cycle(njt_cycle_t *cycle, void *data)
+{
+    njt_helper_check_ver_fp  fp = NULL;
+    njt_helper_ctx *ctx = data;
+    unsigned int         result;
+    // struct timeval   tv;
+
+    // njt_gettimeofday(&tv);
+    ctx->start_time_bef =  ctx->start_time;
+    ctx->start_time = njt_time();
+
+    if (!ctx->handle) {
+        njt_dlclose(ctx->handle);
+    }
+
+    ctx->run_fp = NULL;
+
+    ctx->handle = njt_dlopen(ctx->file.data);
+    if (ctx->handle == NULL) {
+        njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, njt_dlopen_n " \"%s\" failed (%s)",
+                           ctx->file.data, njt_dlerror()); 
+        return;
+    }
+
+    fp = njt_dlsym(ctx->handle, "njt_helper_check_version");
+    if (fp == NULL) {
+        njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, njt_dlsym_n " \"%V\", \"%s\" failed (%s)",
+                           &ctx->file, "njt_helper_check_version", njt_dlerror());
+        return;
+    }
+
+    result = fp();
+    if (result != NJT_HELPER_VER) {
+        njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "njet helper check version failed");
+        return;
+    }
+
+    ctx->run_fp = njt_dlsym(ctx->handle, "njt_helper_run");
+    if (ctx->run_fp == NULL) {
+        njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, njt_dlsym_n " \"%V\", \"%s\" failed (%s)",
+                          ctx->file.data, "njt_helper_run", njt_dlerror());
+    }
+}
+
+
+void
+njt_helper_process_cycle(njt_cycle_t *cycle, void *data)
+{
+    njt_helper_ctx *ctx = data;
+    void          *ident[4];
+    njt_event_t    ev;
+    char           title[128];
+    unsigned int   len, len2;
+
+    /*
+     * Set correct process type since closing listening Unix domain socket
+     * in a master process also removes the Unix domain socket file.
+     */
+    njt_process = NJT_PROCESS_HELPER;
+    njt_is_privileged_helper = 1;
+
+    njt_close_listening_sockets(cycle);
+
+    /* Set a moderate number of connections for a helper process. */
+    cycle->connection_n = 512;
+
+    njt_worker_process_init(cycle, -1);
+    
+    njt_memzero(&ev, sizeof(njt_event_t));
+    //ev.handler = ctx->handler;
+    ev.handler = njt_helper_process_handler;
+    ev.data = ident;
+    ev.log = cycle->log;
+    ident[3] = (void *) -1;
+
+    njt_use_accept_mutex = 0;
+
+    len = njt_strlen("helper process ");
+    njt_memcpy(title, "helper process ", len);
+
+    if (ctx->param.conf_fn.len + len < 128) {
+        len2 = ctx->param.conf_fn.len;
+    } else {
+        len2 = 127 - len;
+    }
+
+    njt_memcpy(title+len, ctx->param.conf_fn.data, len2);
+    title[len + len2] = 0;
+    njt_setproctitle(title);
+    njt_add_timer(&ev, 0);
+    ctx->param.check_cmd_fp = njt_helper_check_cmd;
+    ctx->param.ctx = cycle;
+
+    if ((ctx->start_time_bef > 0) && (ctx->start_time - ctx->start_time_bef < 12)) {
+        njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "to sleep %ui seconds", 12+ctx->start_time_bef-ctx->start_time);
+        sleep(12+ctx->start_time_bef-ctx->start_time);
+    }
+
+    if (ctx->run_fp) {
+        ctx->run_fp(ctx->param);
+    }
+
+    exit(0);
+}
+
+
+static njt_uint_t
+njt_start_helper_processes(njt_cycle_t *cycle, njt_uint_t respawn)
+{
+    njt_helper_ctx       *helpers;
+    njt_uint_t            i;
+    njt_mqconf_conf_t    *mqcf;
+    njt_uint_t            nelts = 0;
+
+    for (i=0; i<cycle->modules_n; i++) {
+        if (njt_strcmp(cycle->modules[i]->name, "njt_mqconf_module") != 0) continue;
+        mqcf= (njt_mqconf_conf_t *) (cycle->conf_ctx[cycle->modules[i]->index]);
+        if (mqcf) {
+            helpers = mqcf->helper.elts;
+            nelts = mqcf->helper.nelts;
+            for (i = 0; i < nelts; i++) {
+                njt_spawn_process(cycle, njt_helper_process_cycle,
+                            &helpers[i], "helper process",
+                            respawn ? NJT_PROCESS_JUST_RESPAWN : NJT_PROCESS_RESPAWN, njt_helper_preprocess_cycle);
+            }
+
+            // if (mqcf->admin_server.data)
+            //     njt_start_iot_processes(cycle, 0,mqcf->admin_server);
+            // if (mqcf->admin_client.data)
+            //     njt_start_iot_client_processes(cycle, mqcf->worker_cnt,mqcf->admin_client,mqcf->cluster_name,mqcf->node_name);
+            // if (mqcf->dyn_conf.data)
+            //     njt_start_dyn_processes(cycle,0,mqcf->dyn_conf);
+
+            njt_pass_open_channel(cycle);
+        }
+        break;
+    }
+
+    return nelts;
+}
+
+
+static njt_uint_t
+njt_restart_helper_processes(njt_cycle_t *cycle, njt_uint_t respawn)
+{
+    njt_int_t         i;
+
+    for (i = 0; i < njt_last_process; i++) {
+        if ((njt_processes[i].pid != -1) && (njt_processes[i].preproc)) {
+            njt_reap_helper = 1;
+            return 1;
+        }
+    }
+
+    return njt_start_helper_processes(cycle, respawn);
 }
 
 
@@ -531,6 +760,112 @@ njt_signal_worker_processes(njt_cycle_t *cycle, int signo)
 }
 
 
+static void
+njt_signal_helper_processes(njt_cycle_t *cycle, int signo)
+{
+    njt_int_t      i;
+    njt_err_t      err;
+    njt_channel_t  ch;
+
+    njt_memzero(&ch, sizeof(njt_channel_t));
+
+#if (NJT_BROKEN_SCM_RIGHTS)
+
+    ch.command = 0;
+
+#else
+
+    switch (signo) {
+
+    case njt_signal_value(NJT_SHUTDOWN_SIGNAL):
+        ch.command = NJT_CMD_QUIT;
+        break;
+
+    case njt_signal_value(NJT_TERMINATE_SIGNAL):
+        ch.command = NJT_CMD_TERMINATE;
+        break;
+
+    case njt_signal_value(NJT_REOPEN_SIGNAL):
+        ch.command = NJT_CMD_REOPEN;
+        break;
+
+    default:
+        ch.command = 0;
+    }
+
+#endif
+
+    ch.fd = -1;
+
+
+    for (i = 0; i < njt_last_process; i++) {
+
+        njt_log_debug7(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
+                       "child: %i %P e:%d t:%d d:%d r:%d j:%d",
+                       i,
+                       njt_processes[i].pid,
+                       njt_processes[i].exiting,
+                       njt_processes[i].exited,
+                       njt_processes[i].detached,
+                       njt_processes[i].respawn,
+                       njt_processes[i].just_spawn);
+
+        if (!njt_processes[i].preproc) {
+            continue;
+        }
+
+        if (njt_processes[i].detached || njt_processes[i].pid == -1) {
+            continue;
+        }
+
+        if (njt_processes[i].just_spawn) {
+            njt_processes[i].just_spawn = 0;
+            continue;
+        }
+
+        if (njt_processes[i].exiting
+            && signo == njt_signal_value(NJT_SHUTDOWN_SIGNAL))
+        {
+            continue;
+        }
+
+        if (ch.command) {
+            if (njt_write_channel(njt_processes[i].channel[0],
+                                  &ch, sizeof(njt_channel_t), cycle->log)
+                == NJT_OK)
+            {
+                if (signo != njt_signal_value(NJT_REOPEN_SIGNAL)) {
+                    njt_processes[i].exiting = 1;
+                }
+
+                continue;
+            }
+        }
+
+        njt_log_debug2(NJT_LOG_DEBUG_CORE, cycle->log, 0,
+                       "kill (%P, %d)", njt_processes[i].pid, signo);
+
+        if (kill(njt_processes[i].pid, signo) == -1) {
+            err = njt_errno;
+            njt_log_error(NJT_LOG_ALERT, cycle->log, err,
+                          "kill(%P, %d) failed", njt_processes[i].pid, signo);
+
+            if (err == NJT_ESRCH) {
+                njt_processes[i].exited = 1;
+                njt_processes[i].exiting = 0;
+                njt_reap = 1;
+            }
+
+            continue;
+        }
+
+        if (signo != njt_signal_value(NJT_REOPEN_SIGNAL)) {
+            njt_processes[i].exiting = 1;
+        }
+    }
+}
+
+
 static njt_uint_t
 njt_reap_children(njt_cycle_t *cycle)
 {
@@ -598,7 +933,7 @@ njt_reap_children(njt_cycle_t *cycle)
             {
                 if (njt_spawn_process(cycle, njt_processes[i].proc,
                                       njt_processes[i].data,
-                                      njt_processes[i].name, i)
+                                      njt_processes[i].name, i, njt_processes[i].preproc)
                     == NJT_INVALID_PID)
                 {
                     njt_log_error(NJT_LOG_ALERT, cycle->log, 0,
@@ -797,7 +1132,7 @@ njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker)
         }
     }
 
-    if (geteuid() == 0) {
+    if (!njt_is_privileged_helper && geteuid() == 0) {
         if (setgid(ccf->group) == -1) {
             njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
                           "setgid(%d) failed", ccf->group);

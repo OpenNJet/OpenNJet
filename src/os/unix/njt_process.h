@@ -26,6 +26,7 @@ typedef struct {
     njt_socket_t        channel[2];
 
     njt_spawn_proc_pt   proc;
+    njt_spawn_proc_pt   preproc;
     void               *data;
     char               *name;
 
@@ -63,7 +64,7 @@ typedef struct {
 
 
 njt_pid_t njt_spawn_process(njt_cycle_t *cycle,
-    njt_spawn_proc_pt proc, void *data, char *name, njt_int_t respawn);
+    njt_spawn_proc_pt proc, void *data, char *name, njt_int_t respawn, njt_spawn_proc_pt preproc);
 njt_pid_t njt_execute(njt_cycle_t *cycle, njt_exec_ctx_t *ctx);
 njt_int_t njt_init_signals(njt_log_t *log);
 void njt_debug_point(void);

@@ -86,7 +86,7 @@ njt_signal_t  signals[] = {
 
 njt_pid_t
 njt_spawn_process(njt_cycle_t *cycle, njt_spawn_proc_pt proc, void *data,
-    char *name, njt_int_t respawn)
+    char *name, njt_int_t respawn, njt_spawn_proc_pt preproc)
 {
     u_long     on;
     njt_pid_t  pid;
@@ -183,6 +183,9 @@ njt_spawn_process(njt_cycle_t *cycle, njt_spawn_proc_pt proc, void *data,
 
     njt_process_slot = s;
 
+    if (preproc) {
+        preproc(cycle, data);
+    }
 
     pid = fork();
 
@@ -214,6 +217,7 @@ njt_spawn_process(njt_cycle_t *cycle, njt_spawn_proc_pt proc, void *data,
     }
 
     njt_processes[s].proc = proc;
+    njt_processes[s].preproc = preproc;
     njt_processes[s].data = data;
     njt_processes[s].name = name;
     njt_processes[s].exiting = 0;
@@ -263,7 +267,7 @@ njt_pid_t
 njt_execute(njt_cycle_t *cycle, njt_exec_ctx_t *ctx)
 {
     return njt_spawn_process(cycle, njt_execute_proc, ctx, ctx->name,
-                             NJT_PROCESS_DETACHED);
+                             NJT_PROCESS_DETACHED, NULL);
 }
 
 
