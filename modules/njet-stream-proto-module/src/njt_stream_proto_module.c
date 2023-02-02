@@ -129,7 +129,7 @@ static void *njt_stream_proto_create_srv_conf(njt_conf_t *cf)
     }
 
     conf->enabled = NJT_CONF_UNSET;
-
+    conf->proto_ports = NJT_CONF_UNSET_PTR;
     return conf;
 }
 
@@ -143,7 +143,8 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
     njt_stream_proto_srv_conf_t *conf = child;
 
     njt_conf_merge_value(conf->enabled, prev->enabled, 0);
-
+    njt_conf_merge_ptr_value(conf->proto_ports,
+                              prev->proto_ports, NULL);
     return NJT_CONF_OK;
 }
 
@@ -265,15 +266,17 @@ static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
 			p  = njt_sprintf(p,":%d",port);
 			ctx->dest.len = p - ctx->dest.data;
 			ctx->dest_port.len = p - ctx->dest_port.data;
-			
-			 kv = sscf->proto_ports->elts;
-			 nelts = sscf->proto_ports->nelts;	
-			 for (i = 0; i < nelts; i++) {
-			   if(kv[i].key.len == ctx->dest_port.len && njt_strncmp(kv[i].key.data,ctx->dest_port.data,kv[i].key.len) == 0) {
-				ctx->port_mode = kv[i].value;
-				break;
-			   }		   
-			 }
+			njt_str_set(&ctx->port_mode,"PERMISSIVE");
+			 if(sscf->proto_ports != NULL) {
+			 	kv = sscf->proto_ports->elts;
+				 nelts = sscf->proto_ports->nelts;	
+				 for (i = 0; i < nelts; i++) {
+				   if(kv[i].key.len == ctx->dest_port.len && njt_strncmp(kv[i].key.data,ctx->dest_port.data,kv[i].key.len) == 0) {
+					ctx->port_mode = kv[i].value;
+					break;
+				   }		   
+				 }
+			 } 
 		   }
 		}
 	}

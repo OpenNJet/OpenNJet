@@ -450,7 +450,7 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
 
     njt_str_t  strict = njt_string("STRICT");
     njt_str_t  disable = njt_string("DISABLE");
-    njt_str_t  both = njt_string("BOTH");
+    njt_str_t  both = njt_string("PERMISSIVE");
 	
 	njt_stream_proto_ctx_t *ctx;
 	njt_stream_proto_srv_conf_t  *cf;
