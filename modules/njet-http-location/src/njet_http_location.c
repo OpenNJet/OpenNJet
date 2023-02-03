@@ -4,6 +4,7 @@
 #include <njt_stream.h>
 #include <njt_json_api.h>
 #include <math.h>
+#include <njt_http_kv_module.h>
 
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
@@ -680,6 +681,7 @@ njt_http_location_handler(njt_http_request_t *r) {
     rc = njt_http_read_client_request_body(r, njt_http_location_read_data);
     if (rc == NJT_OK) {
         njt_http_finalize_request(r, NJT_DONE);
+		 goto out;
     }
     njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "read_client_request_body end +++++++++++++++");
     location_info = njt_http_get_module_ctx(r, njt_http_location_module);
@@ -731,9 +733,19 @@ njt_http_location(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
     return NJT_CONF_OK;
 }
 
+static int topic_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data) {
+	printf("1");
+	printf("2");
+	printf("3");
+	njt_log_debug2(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "topic_kv_change_handler key=%V,value=%V",key,value);
+	return NJT_OK;
+}
 
 static njt_int_t
 njt_http_location_init_worker(njt_cycle_t *cycle) {
+
+	njt_str_t  key = njt_string("/dyn/#");
+	njt_reg_kv_change_handler(&key, topic_kv_change_handler, NULL);
     return NJT_OK;
 }
 
@@ -766,7 +778,10 @@ njt_http_location_read_data(njt_http_request_t *r) {
     njt_str_t location_path;
     njt_str_t location_full_file;
     njt_str_t wide_addr = njt_string("0.0.0.0");
-    //njt_chain_t                        out;
+	 uint32_t                                      crc32,type = 1;
+	 uint32_t									   topic_len = NJT_INT64_LEN  + 2;
+	 njt_str_t									   topic_name;
+   
 
     rc = NJT_OK;
     rlen = 0;
@@ -796,6 +811,8 @@ njt_http_location_read_data(njt_http_request_t *r) {
     sport.data = NULL;
     sport.len = 0;
 
+	
+	
 
     location_info = njt_pcalloc(r->pool, sizeof(njt_http_location_info_t));
     if (location_info == NULL) {
@@ -855,8 +872,39 @@ njt_http_location_read_data(njt_http_request_t *r) {
 
             location_info->content = items[i].strval;
             continue;
+        }else if (njt_strncmp(items[i].key.data, "type", 4) == 0) {
+
+            if (items[i].type != NJT_JSON_STR) {
+                return;
+            }
+
+            type = njt_atoi(items[i].strval.data,items[i].strval.len);
+            continue;
         }
     }
+
+
+
+	njt_crc32_init(crc32);
+	njt_crc32_update(&crc32,location_info->addr_port.data,location_info->addr_port.len);
+	njt_crc32_update(&crc32,location_info->server_name.data,location_info->server_name.len);
+	njt_crc32_update(&crc32,location_info->location.data,location_info->location.len);
+	njt_crc32_final(crc32);
+
+   
+	topic_name.data = njt_pcalloc(r->pool,topic_len);
+	 if (topic_name.data == NULL) {
+		 njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                      "topic_name njt_pcalloc error.");
+        return;
+    }
+	p = njt_snprintf(topic_name.data,topic_len,"l_%V",&topic_name);
+	topic_name.len = p - topic_name.data;
+	njt_dyn_sendmsg(&topic_name,&json_str,type);
+
+	njt_log_debug2(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "topic_kv_change_handler key=%V,value=%V",&topic_name,&json_str);
+	return;
+
     target_ls = NULL;
     if (location_info->addr_port.len > 0) {
         ls = njt_cycle->listening.elts;
