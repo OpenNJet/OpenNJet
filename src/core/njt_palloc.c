@@ -41,7 +41,7 @@ njt_create_pool(size_t size, njt_log_t *log)
     p->cleanup = NULL;
     p->log = log;
     // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
+#if (NJT_DYNAMIC_POOL)
     njt_queue_init(&p->parent_pool);
     njt_queue_init(&p->sub_pools);
     p->dynamic = 0;
@@ -51,7 +51,7 @@ njt_create_pool(size_t size, njt_log_t *log)
     return p;
 }
 // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
+#if (NJT_DYNAMIC_POOL)
 njt_pool_t *
 njt_create_dynamic_pool(size_t size, njt_log_t *log)
 {
@@ -83,7 +83,7 @@ njt_create_dynamic_pool(size_t size, njt_log_t *log)
 #endif
 //end
 // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
+#if (NJT_DYNAMIC_POOL)
 njt_int_t njt_sub_pool(njt_pool_t *pool,njt_pool_t *sub){
 
     if (!njt_queue_empty(&sub->parent_pool)) {
@@ -131,7 +131,7 @@ njt_destroy_pool(njt_pool_t *pool)
     njt_pool_large_t    *l;
     njt_pool_cleanup_t  *c;
     // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
+#if (NJT_DYNAMIC_POOL)
     njt_pool_t          *sub_pool;
     njt_queue_t         *sub_queue;
     if (!njt_queue_empty(&pool->parent_pool)){
@@ -177,7 +177,7 @@ njt_destroy_pool(njt_pool_t *pool)
 #endif
 
     // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
+#if (NJT_DYNAMIC_POOL)
     void* data;
     for (l = pool->large; l; ) {
         data = l->alloc;
@@ -233,7 +233,7 @@ void *
 njt_palloc(njt_pool_t *pool, size_t size)
 {
 // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
+#if (NJT_DYNAMIC_POOL)
     if( pool->dynamic ){
         return njt_dynamic_alloc(pool,size);
     }
@@ -253,7 +253,7 @@ void *
 njt_pnalloc(njt_pool_t *pool, size_t size)
 {
     // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
+#if (NJT_DYNAMIC_POOL)
     if( pool->dynamic ){
         return njt_dynamic_alloc(pool,size);
     }
@@ -396,7 +396,7 @@ njt_pmemalign(njt_pool_t *pool, size_t size, size_t alignment)
 
     return p;
 }
-#if (NJT_HTTP_DYNAMIC_LOC)
+#if (NJT_DYNAMIC_POOL)
 njt_int_t
 njt_pfree(njt_pool_t *pool, void *p)
 {
