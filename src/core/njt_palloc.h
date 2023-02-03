@@ -64,7 +64,7 @@ struct njt_pool_s {
     njt_pool_cleanup_t   *cleanup;
     njt_log_t            *log;
     // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
+#if (NJT_DYNAMIC_POOL)
 //    njt_pool_link_t      *sub_pools;
 //    njt_pool_t           *parent_pool;
     njt_queue_t          sub_pools;
@@ -86,7 +86,7 @@ njt_pool_t *njt_create_pool(size_t size, njt_log_t *log);
 void njt_destroy_pool(njt_pool_t *pool);
 void njt_reset_pool(njt_pool_t *pool);
 // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
+#if (NJT_DYNAMIC_POOL)
 njt_pool_t *njt_create_dynamic_pool(size_t size, njt_log_t *log);
 njt_int_t njt_sub_pool(njt_pool_t *pool,njt_pool_t *sub);
 #endif

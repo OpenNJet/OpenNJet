@@ -56,6 +56,9 @@ if [ $NJT_TEST_BUILD_SOLARIS_SENDFILEV = YES ]; then
     CORE_SRCS="$CORE_SRCS $SOLARIS_SENDFILEV_SRCS"
 fi
 
+if [ $DYNAMIC_POOL = YES ]; then
+    have=NJT_DYNAMIC_POOL . auto/have
+fi
 
 if [ $HTTP = YES ]; then
     HTTP_MODULES=
