@@ -19,7 +19,7 @@ chmod +x ./configure ./auto/lib/pcre-8.45/configure ./auto/lib/tassl/configure
 #--with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 #--with-cc-opt=-I'auto/lib/tassl/include' --with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-proto-module"
-#NJET_MODULES="$NJET_MODULES --add-module=src/ext/lua/kit  --add-module=src/ext/lua/http --add-module=src/ext/lua/stream"
+#NJET_MODULES="$NJET_MODULES --add-module=src/ext/lua/kit  --add-module=src/ext/lua/http --add-module=src/ext/lua/stream"  njet-http-kv-module
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-upstream-dynamic-servers-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-upstream-dynamic-servers-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-match-module"
@@ -28,6 +28,7 @@ NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-health-check-modu
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-sticky-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-location"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-mqconf-module"
+NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-kv-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-helper-ctrl-module"
 #NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir --error-log-path=$tglogdir "
