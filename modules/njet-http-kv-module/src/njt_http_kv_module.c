@@ -19,13 +19,6 @@ typedef struct
 
 typedef struct
 {
-    void *data;
-    njt_str_t key;
-    topic_msg_handler handler;
-} topic_msg_handler_t;
-
-typedef struct
-{
     u_char color;
     u_char len;
     njt_str_t *val;
@@ -55,7 +48,6 @@ static struct mqtt_ctx_t *local_mqtt_ctx;
 static char mqtt_kv_topic[128];
 static njt_str_t cluster_name;
 static njt_array_t *kv_change_handler_fac = NULL;
-static njt_array_t *topic_msg_handler_fac = NULL;
 
 static njt_http_module_t njt_http_kv_module_ctx = {
     njt_http_kv_add_variables, /* preconfiguration */
@@ -355,10 +347,12 @@ static int msg_callback(const char *topic, const char *msg, int msg_len, void *o
         njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "worker write kv in local kv tree:%s,%V", key, &kv_key);
         return 0;
     }
+    else if (njt_strncmp(topic, "/dyn", 4) == 0)
+    {
+        invoke_topic_msg_handler(topic, msg, msg_len);
+    }
 
-    invoke_topic_msg_handler(topic, msg, msg_len);
-    // for http_kv module, lua script processing is not used
-    return 0;
+    return 1;
 }
 
 static njt_int_t kv_init_worker(njt_cycle_t *cycle)
@@ -552,7 +546,7 @@ njt_dyn_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 }
 
 static njt_http_variable_t njt_http_kv_vars[] = {
-    {njt_string("kv_http_"), NULL, njt_http_kv_get, 0, NJT_HTTP_VAR_NOCACHEABLE | NJT_HTTP_VAR_PREFIX, 0,  NJT_VAR_INIT_REF_COUNT},
+    {njt_string("kv_http_"), NULL, njt_http_kv_get, 0, NJT_HTTP_VAR_NOCACHEABLE | NJT_HTTP_VAR_PREFIX, 0, NJT_VAR_INIT_REF_COUNT},
     njt_http_null_variable};
 
 static njt_int_t
@@ -583,12 +577,13 @@ int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
         qos = 16;
 
     u_char *t;
-    t=njt_pcalloc(njt_cycle->pool, topic->len+1);
-    if (t == NULL) {
-         return NJT_ERROR;
+    t = njt_pcalloc(njt_cycle->pool, topic->len + 1);
+    if (t == NULL)
+    {
+        return NJT_ERROR;
     }
-    njt_memcpy(t, topic->data,topic->len);
-    t[topic->len]='\0';
+    njt_memcpy(t, topic->data, topic->len);
+    t[topic->len] = '\0';
     ret = mqtt_client_sendmsg((const char *)t, (const char *)content->data, (int)content->len, qos, local_mqtt_ctx);
     njt_pfree(njt_cycle->pool, t);
     if (ret < 0)
@@ -599,7 +594,11 @@ int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
 }
 int njt_dyn_kv_get(njt_str_t *key, njt_str_t *value)
 {
-    //the invoker is responsible to call free(value->data)
+    if (key->data == NULL )
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_dyn_kv_get got wrong key:value data");
+        return NJT_ERROR;
+    }
     int ret = mqtt_client_kv_get((void *)key->data, key->len, (void **)&value->data, (uint32_t *)&value->len, local_mqtt_ctx);
     if (ret < 0)
     {
@@ -609,6 +608,11 @@ int njt_dyn_kv_get(njt_str_t *key, njt_str_t *value)
 }
 int njt_dyn_kv_set(njt_str_t *key, njt_str_t *value)
 {
+    if (key->data == NULL || value->data == NULL)
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_dyn_kv_set got wrong key:value data");
+        return NJT_ERROR;
+    }
     int ret = mqtt_client_kv_set(key->data, key->len, value->data, value->len, NULL, local_mqtt_ctx);
     if (ret < 0)
     {
@@ -625,18 +629,9 @@ int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, void *d
     kv_change_handler_t *kv_handle = njt_array_push(kv_change_handler_fac);
 
     kv_handle->key.data = (u_char *)njt_pcalloc(njt_cycle->pool, key->len);
+    njt_memcpy(kv_handle->key.data, key->data, key->len);
+    kv_handle->key.len = key->len;
 
-    // remove kv_http_ prefix
-    if (njt_strncmp(key->data, "kv_http_", 8) == 0)
-    {
-        njt_memcpy(kv_handle->key.data, key->data + 8, key->len - 8);
-        kv_handle->key.len = key->len - 8;
-    }
-    else
-    {
-        njt_memcpy(kv_handle->key.data, key->data, key->len);
-        kv_handle->key.len = key->len;
-    }
     kv_handle->data = data;
     kv_handle->handler = handler;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add kv handler for key:%v", &kv_handle->key);
@@ -652,31 +647,14 @@ static void invoke_kv_change_handler(njt_str_t *key, njt_str_t *value)
         kv_change_handler_t *kv_handle = kv_change_handler_fac->elts;
         for (i = 0; i < kv_change_handler_fac->nelts; i++)
         {
+            // key is "kv_http_", handler key is with "$" as prefix
             if (kv_handle[i].handler &&
-                njt_strncmp(key->data + 8, kv_handle[i].key.data, kv_handle[i].key.len) == 0)
+                njt_strncmp(key->data, kv_handle[i].key.data + 1, kv_handle[i].key.len - 1) == 0)
             {
                 kv_handle[i].handler(&kv_handle[i].key, value, kv_handle[i].data);
             }
         }
     }
-}
-
-int njt_reg_topic_msg_handler(njt_str_t *topic_prefix, topic_msg_handler handler, void *data)
-{
-    if (topic_msg_handler_fac == NULL)
-        topic_msg_handler_fac = njt_array_create(njt_cycle->pool, 4, sizeof(topic_msg_handler_t));
-
-    topic_msg_handler_t *tm_handler = njt_array_push(topic_msg_handler_fac);
-
-    tm_handler->key.data = (u_char *)njt_pcalloc(njt_cycle->pool, topic_prefix->len);
-
-    njt_memcpy(tm_handler->key.data, topic_prefix->data, topic_prefix->len);
-    tm_handler->key.len = topic_prefix->len;
-
-    tm_handler->data = data;
-    tm_handler->handler = handler;
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic msg handler for topic:%v", topic_prefix);
-    return NJT_OK;
 }
 
 static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg_len)
@@ -685,10 +663,10 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
     njt_str_t nstr_topic;
     njt_str_t nstr_msg;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke topic msg handler for topic:%s ", topic);
-    if (topic_msg_handler_fac)
+    if (kv_change_handler_fac)
     {
-        topic_msg_handler_t *tm_handler = topic_msg_handler_fac->elts;
-        for (i = 0; i < topic_msg_handler_fac->nelts; i++)
+        kv_change_handler_t *tm_handler = kv_change_handler_fac->elts;
+        for (i = 0; i < kv_change_handler_fac->nelts; i++)
         {
             if (tm_handler[i].handler &&
                 njt_strncmp(topic, tm_handler[i].key.data, tm_handler[i].key.len) == 0)

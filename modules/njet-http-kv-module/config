@@ -1,12 +1,3 @@
-if [ -z "$njt_module_link" ]; then
-cat << END
-
-$0: error: cluster rate limit module requires recent version of NGINX (1.9.11+).
-
-END
-    exit 1
-fi
-
 njt_addon_name=njt_http_kv_module
 njt_module_type=HTTP
 njt_module_name=$njt_addon_name
