@@ -46,6 +46,8 @@ USE_THREADS=NO
 
 NJT_FILE_AIO=NO
 
+DYNAMIC_POOL=YES
+
 HTTP=YES
 
 NJT_HTTP_LOG_PATH=
@@ -216,6 +218,7 @@ do
             NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-ipv6\" option is deprecated"
         ;;
+        --without-dynamic-pool)          DYNAMIC_POOL=NO            ;;
 
         --without-http)                  HTTP=NO                    ;;
         --without-http-cache)            HTTP_CACHE=NO              ;;
@@ -443,6 +446,8 @@ cat << END
   --with-threads                     enable thread pool support
 
   --with-file-aio                    enable file AIO support
+
+  --without-dynamic-pool             disable njet dynamic pool usage
 
   --with-http_ssl_module             enable njt_http_ssl_module
   --with-http_v2_module              enable njt_http_v2_module
