@@ -569,57 +569,6 @@ njt_http_kv_add_variables(njt_conf_t *cf)
     return NJT_OK;
 }
 
-int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
-{
-    int ret;
-    int qos = 0;
-    if (retain_flag)
-        qos = 16;
-
-    u_char *t;
-    t = njt_pcalloc(njt_cycle->pool, topic->len + 1);
-    if (t == NULL)
-    {
-        return NJT_ERROR;
-    }
-    njt_memcpy(t, topic->data, topic->len);
-    t[topic->len] = '\0';
-    ret = mqtt_client_sendmsg((const char *)t, (const char *)content->data, (int)content->len, qos, local_mqtt_ctx);
-    njt_pfree(njt_cycle->pool, t);
-    if (ret < 0)
-    {
-        return NJT_ERROR;
-    }
-    return NJT_OK;
-}
-int njt_dyn_kv_get(njt_str_t *key, njt_str_t *value)
-{
-    if (key->data == NULL )
-    {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_dyn_kv_get got wrong key:value data");
-        return NJT_ERROR;
-    }
-    int ret = mqtt_client_kv_get((void *)key->data, key->len, (void **)&value->data, (uint32_t *)&value->len, local_mqtt_ctx);
-    if (ret < 0)
-    {
-        return NJT_ERROR;
-    }
-    return NJT_OK;
-}
-int njt_dyn_kv_set(njt_str_t *key, njt_str_t *value)
-{
-    if (key->data == NULL || value->data == NULL)
-    {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_dyn_kv_set got wrong key:value data");
-        return NJT_ERROR;
-    }
-    int ret = mqtt_client_kv_set(key->data, key->len, value->data, value->len, NULL, local_mqtt_ctx);
-    if (ret < 0)
-    {
-        return NJT_ERROR;
-    }
-    return NJT_OK;
-}
 
 int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, void *data)
 {

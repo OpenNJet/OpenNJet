@@ -11,6 +11,5 @@ njt_module_srcs=" \
 njt_module_incs=""
 njt_module_libs=" -lmosquitto_emb"
 
-+CORE_INCS="$CORE_INCS $njt_addon_dir/src"
-
+CORE_INCS="$CORE_INCS $njt_addon_dir/src"
 . auto/module

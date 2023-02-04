@@ -5,7 +5,7 @@
 #include <njt_json_api.h>
 #include <math.h>
 #include <njt_http_kv_module.h>
-
+#include <njt_http_sendmsg_module.h>
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 
@@ -674,7 +674,9 @@ njt_http_location_handler(njt_http_request_t *r) {
     njt_http_core_loc_conf_t *loc;
     njt_http_location_info_t *location_info;
 
+	 //njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "zyg 0 read_client_request_body start +++++++++++++++");
     njt_str_t location_req = njt_string("/add_location");
+
 
 
     out.next = NULL;
@@ -689,12 +691,12 @@ njt_http_location_handler(njt_http_request_t *r) {
     }
 
 
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "read_client_request_body start +++++++++++++++");
+    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "1 read_client_request_body start +++++++++++++++");
     rc = njt_http_read_client_request_body(r, njt_http_location_read_data);
     if (rc == NJT_OK) {
         njt_http_finalize_request(r, NJT_DONE);
     }
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "read_client_request_body end +++++++++++++++");
+    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "2 read_client_request_body end +++++++++++++++");
     location_info = njt_http_get_module_ctx(r, njt_http_location_module);
     if (location_info == NULL || location_info->file.len == 0 || location_info->file.data == NULL) {
         rc = NJT_ERROR;
@@ -894,11 +896,15 @@ njt_http_location_read_data(njt_http_request_t *r){
    
 
     //rc = NJT_OK;
+	 njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                      "2 njt_http_location_read_data njt_pcalloc error.");
 
     body_chain = r->request_body->bufs;
     if (body_chain && body_chain->next) {
         /*The post body is too large*/
         //rc = NJT_ERROR;
+		 njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                      "njt_http_location_read_data njt_pcalloc error.");
         return;
     }
 
@@ -925,11 +931,12 @@ njt_http_location_read_data(njt_http_request_t *r){
                       "topic_name njt_pcalloc error.");
         return;
     }
+	njt_log_debug2(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, " 0 send topic key=%V,value=%V",&topic_name,&json_str);
 	p = njt_snprintf(topic_name.data,topic_len,"/dyn/loc/l_%d",crc32);
 	topic_name.len = p - topic_name.data;
 	njt_dyn_sendmsg(&topic_name,&json_str,location_info->type);
 
-	njt_log_debug2(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "send topic key=%V,value=%V",&topic_name,&json_str);
+	njt_log_debug2(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "1 send topic key=%V,value=%V",&topic_name,&json_str);
 
 	njt_http_location_write_data(location_info);
 
