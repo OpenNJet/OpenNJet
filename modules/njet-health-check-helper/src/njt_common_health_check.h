@@ -44,7 +44,7 @@ typedef struct njt_helper_hc_ssl_conf_s {
     njt_str_t ssl_name;
     njt_flag_t ssl_server_name;
     njt_flag_t ssl_verify;
-    njt_uint_t ssl_verify_depth;
+    njt_int_t ssl_verify_depth;
     njt_str_t ssl_trusted_certificate;
     njt_str_t ssl_crl;
     njt_str_t ssl_certificate;
@@ -149,6 +149,7 @@ njt_int_t njt_json_parse_data(njt_pool_t *pool, njt_str_t *str, njt_json_define_
 
 #if (NJT_OPENSSL)
 njt_int_t njt_json_parse_ssl_protocols(njt_json_element *el,njt_json_define_t *def,void *data);
+njt_int_t njt_helper_hc_set_ssl(njt_helper_health_check_conf_t *hhccf, njt_helper_hc_ssl_conf_t *hcscf);
 #endif
 
 #endif //NJET_MAIN_NJT_COMMON_HEALTH_CHECK_H

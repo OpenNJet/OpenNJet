@@ -298,7 +298,7 @@ static njt_json_define_t njt_helper_hc_api_data_ssl_json_dt[] ={
                 NULL,
         },
         {
-                njt_string("session_reuse"),
+                njt_string("sessionReuse"),
                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_session_reuse),
                 NJT_JSON_BOOL,
                 NULL,
@@ -677,6 +677,40 @@ static njt_http_upstream_srv_conf_t* njt_http_find_upstream_by_name(njt_cycle_t 
 }
 
 
+
+static njt_int_t njy_hc_api_data2_ssl_cf(njt_helper_hc_api_data_t *api_data,njt_helper_health_check_conf_t *hhccf){
+
+    hhccf->ssl.ssl_enable = api_data->ssl.ssl_enable?1:0;
+    hhccf->ssl.ssl_session_reuse = api_data->ssl.ssl_session_reuse?1:0;
+    hhccf->ssl.ssl_protocols = api_data->ssl.ssl_protocols==0?
+            (NJT_CONF_BITMASK_SET|NJT_SSL_TLSv1|NJT_SSL_TLSv1_1|NJT_SSL_TLSv1_2):api_data->ssl.ssl_protocols;
+    if(api_data->ssl.ssl_ciphers.len <= 0){
+        njt_str_set(&hhccf->ssl.ssl_ciphers,"DEFAULT");
+    }else{
+        njt_str_copy_pool(hhccf->pool,hhccf->ssl.ssl_ciphers,api_data->ssl.ssl_ciphers,return NJT_ERROR);
+    }
+    njt_str_copy_pool(hhccf->pool,hhccf->ssl.ssl_name,api_data->ssl.ssl_name,return NJT_ERROR);
+    hhccf->ssl.ssl_server_name = api_data->ssl.ssl_server_name?1:0;
+    hhccf->ssl.ssl_verify = api_data->ssl.ssl_verify?1:0;
+    hhccf->ssl.ssl_verify_depth = api_data->ssl.ssl_verify_depth;
+    njt_str_copy_pool(hhccf->pool,hhccf->ssl.ssl_trusted_certificate,api_data->ssl.ssl_trusted_certificate,return NJT_ERROR);
+    njt_str_copy_pool(hhccf->pool,hhccf->ssl.ssl_crl,api_data->ssl.ssl_crl,return NJT_ERROR);
+    njt_str_copy_pool(hhccf->pool,hhccf->ssl.ssl_certificate,api_data->ssl.ssl_certificate,return NJT_ERROR);
+    njt_str_copy_pool(hhccf->pool,hhccf->ssl.ssl_certificate_key,api_data->ssl.ssl_certificate_key,return NJT_ERROR);
+    //todo
+//    njt_array_t *ssl_passwords;
+//    njt_array_t *ssl_conf_commands;
+
+    hhccf->ssl.ssl = njt_pcalloc(hhccf->pool, sizeof(njt_ssl_t));
+    if ( hhccf->ssl.ssl == NULL) {
+        return NJT_ERROR;
+    }
+    hhccf->ssl.ssl->log = hhccf->log;
+    njt_helper_hc_set_ssl(hhccf,&hhccf->ssl);
+    return NJT_OK;
+}
+
+
 static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data,njt_helper_health_check_conf_t *hhccf){
     njt_http_health_check_conf_ctx_t *hhccc;
     njt_int_t rc;
@@ -707,7 +741,7 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data,n
     if(hhccf->type == NJT_STREAM_MODULE){
         //todo stream
     }
-
+    njy_hc_api_data2_ssl_cf(api_data,hhccf);
     //todo ssl
     return NJT_OK;
 }
