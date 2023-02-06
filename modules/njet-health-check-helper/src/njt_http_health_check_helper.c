@@ -828,31 +828,36 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
     out:
 
     if (rc == NJT_OK) {
-        njt_str_set(&insert, "ok");
+        njt_str_set(&insert, "{\"status\":\"success\"}");
+        r->headers_out.status = NJT_HTTP_OK;
     } else {
-        njt_str_set(&insert, "error");
+        njt_str_set(&insert, "{\"status\":\"error\"}");
+        r->headers_out.status = NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
-    r->headers_out.content_type_len = sizeof("text/plain") - 1;
-    njt_str_set(&r->headers_out.content_type, "text/plain");
-    r->headers_out.content_type_lowcase = NULL;
-    r->headers_out.status = NJT_HTTP_OK;
-    buf = njt_create_temp_buf(r->pool,insert.len);
-    if(buf == NULL){
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "could not alloc buffer in function %s", __func__);
-        return NJT_ERROR;
-    }
-    njt_memcpy(buf->pos,insert.data, insert.len);
-    buf->last = buf->pos + insert.len;
-    out.buf = buf;
-    out.next = NULL;
+    njt_str_t type=njt_string("application/json");
+    r->headers_out.content_type = type;
     r->headers_out.content_length_n = insert.len;
     if (r->headers_out.content_length) {
         r->headers_out.content_length->hash = 0;
         r->headers_out.content_length = NULL;
     }
     rc = njt_http_send_header(r);
+
+    if(rc == NJT_ERROR || rc > NJT_OK || r->header_only){
+        return rc;
+    }
+    buf = njt_create_temp_buf(r->pool,insert.len);
+    if(buf == NULL){
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "could not alloc buffer in function %s", __func__);
+        return NJT_ERROR;
+    }
+    njt_memcpy(buf->last,insert.data, insert.len);
+    buf->last = buf->pos + insert.len;
+    buf->last_buf = 1;
+    out.buf = buf;
+    out.next = NULL;
     return njt_http_output_filter(r, &out);
 }
 
