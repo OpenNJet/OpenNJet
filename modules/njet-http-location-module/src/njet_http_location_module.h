@@ -15,6 +15,7 @@ typedef struct njt_http_location_info_s {
 	njt_pool_t *pool;
 	njt_str_t  sport;
     njt_http_core_srv_conf_t *cscf;
+	njt_int_t code;
 } njt_http_location_info_t;
 
 typedef struct njt_http_location_loc_conf_s {

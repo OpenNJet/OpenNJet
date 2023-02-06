@@ -775,7 +775,6 @@ static njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_s
 	location_info->type = -1;
 	location_info->pool = location_pool;
 
-
     items = json_body.json_keyval->elts;
     for (i = 0; i < json_body.json_keyval->nelts; i++) {
         if (njt_strncmp(items[i].key.data, "addr_port", 9) == 0 && items[i].key.len == 9) {
