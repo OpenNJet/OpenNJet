@@ -37,6 +37,21 @@ njt_int_t njt_json_parse_msec(njt_json_element *el,njt_json_define_t *def,void *
     return NJT_OK;
 }
 
+njt_int_t njt_json_parse_str_list(njt_json_element *el,njt_json_define_t *def,void *data){
+    njt_json_element *tmp;
+    njt_uint_t i;
+    njt_array_t *arr;
+    njt_str_t *item;
+
+    arr = data;
+    tmp = el->sudata->elts;
+    for(i = 0 ; i < el->sudata->nelts;i++){
+        item = njt_array_push(arr);
+        *item = tmp[i].strval;
+    }
+    return NJT_OK;
+}
+
 #if (NJT_OPENSSL)
 static njt_conf_bitmask_t  njt_http_ssl_protocols[] = {
         { njt_string("SSLv2"), NJT_SSL_SSLv2 },
@@ -82,18 +97,6 @@ njt_int_t njt_json_parse_ssl_protocols(njt_json_element *el,njt_json_define_t *d
         }
     }
 
-    return NJT_OK;
-}
-
-njt_int_t njt_json_parse_ssl(njt_json_element *el,njt_json_define_t *def,void *data){
-    njt_int_t tmp;
-    njt_msec_t *target = data ;
-    tmp = njt_parse_time(&el->strval, 0);
-    if(tmp == NJT_ERROR){
-        return NJT_ERROR;
-    }
-    target= data;
-    *target = tmp;
     return NJT_OK;
 }
 #endif
@@ -279,3 +282,29 @@ njt_int_t njt_helper_hc_set_ssl(njt_helper_health_check_conf_t *hhccf, njt_helpe
     return NJT_OK;
 }
 #endif
+
+njt_int_t njt_str_split(njt_str_t *src,njt_array_t *array,char sign){
+    u_char              *p, *last, *end;
+    size_t               len;
+    njt_str_t           *pwd;
+
+    p = last=src->data;
+    end = src->data + src->len;
+    for ( ;last < end ; ) {
+        last = njt_strlchr(last, end, sign);
+        if (last == NULL) {
+            last = end;
+        }
+        len = last - p;
+        if (len) {
+            pwd = njt_array_push(array);
+            if (pwd == NULL) {
+                return NJT_ERROR;
+            }
+            pwd->len = len;
+            pwd->data = p ;
+        }
+        p = ++last;
+    }
+    return NJT_OK;
+}

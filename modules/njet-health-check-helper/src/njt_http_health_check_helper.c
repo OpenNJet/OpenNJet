@@ -46,17 +46,13 @@ typedef struct njt_health_check_http_parse_s njt_health_check_http_parse_t;
 
 
 /*Type of callbacks of the checker*/
-typedef njt_int_t (*njt_http_health_check_init_pt)
-        (njt_http_upstream_rr_peer_t *peer);
+typedef njt_int_t (*njt_http_health_check_init_pt)(njt_http_upstream_rr_peer_t *peer);
 
-typedef njt_int_t (*njt_http_health_check_process_pt)
-        (njt_http_health_check_peer_t *peer);
+typedef njt_int_t (*njt_http_health_check_process_pt)(njt_http_health_check_peer_t *peer);
 
-typedef njt_int_t (*njt_http_health_check_event_handler)
-        (njt_event_t *ev);
+typedef njt_int_t (*njt_http_health_check_event_handler)(njt_event_t *ev);
 
-typedef njt_int_t (*njt_http_health_check_update_pt)
-        (njt_http_health_check_peer_t *hc_peer, njt_int_t status);
+typedef njt_int_t (*njt_http_health_check_update_pt)(njt_http_health_check_peer_t *hc_peer, njt_int_t status);
 
 typedef struct {
     njt_uint_t type;
@@ -73,37 +69,6 @@ typedef struct {
 
 } njt_health_checker_t;
 
-
-typedef struct njt_http_health_check_main_conf_s {
-    njt_array_t health_checks;
-} njt_http_health_check_main_conf_t;
-
-
-typedef struct njt_http_health_check_loc_conf_s {
-    njt_str_t *upstream;
-    njt_msec_t interval;
-    njt_msec_t jitter;
-    njt_msec_t timeout;
-    njt_uint_t protocol;
-    njt_health_checker_t *checker;
-    njt_uint_t port;
-    njt_str_t uri;
-    njt_http_match_t *match;
-    njt_uint_t passes;
-    njt_uint_t fails;
-    njt_event_t hc_timer;
-    //njt_conf_t                            *cf;
-//    njt_http_proxy_loc_conf_t *plcf;
-    void *pglcf;//njt_http_grpc_loc_conf_t
-    njt_str_t gsvc;
-    njt_uint_t gstatus;
-    unsigned persistent: 1;
-    unsigned mandatory: 1;
-    njt_uint_t type;
-    njt_uint_t curr_delay;
-    njt_uint_t curr_frame;
-    njt_uint_t test_val;
-} njt_http_health_check_loc_conf_t;
 
 
 #define NJT_HTTP_PARSE_INIT           0
@@ -219,20 +184,15 @@ static njt_int_t
 njt_http_health_check_http_update_status(njt_http_health_check_peer_t *hc_peer,
                                          njt_int_t status);
 
-static njt_int_t njt_http_health_check_http_process(
-        njt_http_health_check_peer_t *hc_peer);
+static njt_int_t njt_http_health_check_http_process(njt_http_health_check_peer_t *hc_peer);
 
-static njt_int_t njt_health_check_http_parse_status_line(
-        njt_http_health_check_peer_t *hc_peer);
+static njt_int_t njt_health_check_http_parse_status_line(njt_http_health_check_peer_t *hc_peer);
 
-static njt_int_t njt_health_check_http_parse_header_line(
-        njt_http_health_check_peer_t *hc_peer);
+static njt_int_t njt_health_check_http_parse_header_line(njt_http_health_check_peer_t *hc_peer);
 
-static njt_int_t njt_health_check_http_process_headers(
-        njt_http_health_check_peer_t *hc_peer);
+static njt_int_t njt_health_check_http_process_headers(njt_http_health_check_peer_t *hc_peer);
 
-static njt_int_t njt_health_check_http_process_body(
-        njt_http_health_check_peer_t *hc_peer);
+static njt_int_t njt_health_check_http_process_body(njt_http_health_check_peer_t *hc_peer);
 
 static void njt_http_hc_grpc_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstream_rr_peer_t *peer);
 
@@ -266,24 +226,9 @@ static njt_int_t njt_hc_helper_module_init(njt_cycle_t *cycle);
 static njt_http_match_t *njt_helper_http_match_create(njt_helper_health_check_conf_t *hhccf);
 extern njt_module_t njt_http_grpc_module;
 
-typedef struct njt_http_match_ctx_s {
-    njt_http_match_t *match;
-} njt_http_match_ctx_t;
-
-typedef njt_uint_t (*njt_http_match_check_handler)
-        (njt_http_match_t *match, njt_uint_t code, njt_array_t *headers,
-         njt_buf_t *body);
-
-typedef struct njt_http_match_main_conf_s {
-    /*array of njt_http_match_t*/
-    njt_array_t matches;
-} njt_http_match_main_conf_t;
-
-
 static njt_int_t njt_http_match_block(njt_helper_hc_api_data_t *api_data,njt_helper_health_check_conf_t *hhccf);
 
 static njt_int_t njt_http_match(njt_helper_hc_api_data_t *api_data,njt_helper_health_check_conf_t *hhccf);
-
 
 
 //static njt_str_t njt_http_grpc_hc_svc = njt_string("/grpc.health.v1.Health/Check");
@@ -402,9 +347,9 @@ static njt_json_define_t njt_helper_hc_api_data_http_json_dt[] ={
         {
                 njt_string("header"),
                 offsetof(njt_helper_hc_http_add_data_t, headers),
-                NJT_JSON_STR,
+                NJT_JSON_ARRAY,
                 NULL,
-                NULL,
+                njt_json_parse_str_list,
         },
         {
                 njt_string("body"),
@@ -639,7 +584,7 @@ static void njt_http_hc_api_read_data(njt_http_request_t *r) {
                        "could not alloc buffer in function %s", __func__);
         return;
     }
-
+    njt_array_init(&api_data->http.headers,r->pool,4, sizeof(njt_str_t));
     rc =njt_json_parse_data(r->pool,&json_str,njt_helper_hc_api_data_json_dt,api_data);
     api_data->rc = rc;
     if(rc != NJT_OK ){
@@ -676,6 +621,28 @@ static njt_http_upstream_srv_conf_t* njt_http_find_upstream_by_name(njt_cycle_t 
     return NULL;
 }
 
+static njt_helper_health_check_conf_t * njt_http_find_helper_hc(njt_cycle_t *cycle,njt_helper_hc_api_data_t *api_data){
+    njt_helper_main_conf_t *hmcf;
+    njt_health_checker_t *checker;
+    njt_helper_health_check_conf_t *hhccf;
+    njt_queue_t *q;
+
+    hmcf= (njt_helper_main_conf_t *) njt_get_conf(cycle->conf_ctx,njt_http_health_check_helper);
+    checker = njt_http_get_health_check_type(&api_data->hc_type);
+    if(checker == NULL){
+        return NULL;
+    }
+    q = njt_queue_head(&hmcf->hc_queue);
+    for(;q != njt_queue_sentinel(&hmcf->hc_queue);q = njt_queue_next(q)){
+        hhccf = njt_queue_data(q,njt_helper_health_check_conf_t,queue);
+        if(hhccf->type == checker->type && hhccf->upstream_name.len == api_data->upstream_name.len &&
+                njt_strncmp( hhccf->upstream_name.data,api_data->upstream_name.data,hhccf->upstream_name.len ) == 0 ){
+            return hhccf;
+        }
+    }
+    return NULL;
+}
+
 
 
 static njt_int_t njy_hc_api_data2_ssl_cf(njt_helper_hc_api_data_t *api_data,njt_helper_health_check_conf_t *hhccf){
@@ -692,7 +659,7 @@ static njt_int_t njy_hc_api_data2_ssl_cf(njt_helper_hc_api_data_t *api_data,njt_
     njt_str_copy_pool(hhccf->pool,hhccf->ssl.ssl_name,api_data->ssl.ssl_name,return NJT_ERROR);
     hhccf->ssl.ssl_server_name = api_data->ssl.ssl_server_name?1:0;
     hhccf->ssl.ssl_verify = api_data->ssl.ssl_verify?1:0;
-    hhccf->ssl.ssl_verify_depth = api_data->ssl.ssl_verify_depth;
+    hhccf->ssl.ssl_verify_depth = api_data->ssl.ssl_verify_depth<=0?1:api_data->ssl.ssl_verify_depth;
     njt_str_copy_pool(hhccf->pool,hhccf->ssl.ssl_trusted_certificate,api_data->ssl.ssl_trusted_certificate,return NJT_ERROR);
     njt_str_copy_pool(hhccf->pool,hhccf->ssl.ssl_crl,api_data->ssl.ssl_crl,return NJT_ERROR);
     njt_str_copy_pool(hhccf->pool,hhccf->ssl.ssl_certificate,api_data->ssl.ssl_certificate,return NJT_ERROR);
@@ -715,13 +682,8 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data,n
     njt_http_health_check_conf_ctx_t *hhccc;
     njt_int_t rc;
 
-    hhccf->upstream_name.data = njt_pcalloc(hhccf->pool,api_data->upstream_name.len);
-    if(hhccf == NULL){
-        njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "health check helper create dynamic pool error ");
-        return NJT_ERROR;
-    }
-    njt_memcpy(hhccf->upstream_name.data,api_data->upstream_name.data,api_data->upstream_name.len);
-    hhccf->upstream_name.len = api_data->upstream_name.len;
+    njt_str_copy_pool(hhccf->pool,hhccf->upstream_name,api_data->upstream_name,
+                      njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "health check helper create dynamic pool error "); return NJT_ERROR);
 
     hhccf->interval = api_data->interval==0?NJT_HTTP_HC_INTERVAL:api_data->interval ;
     hhccf->jitter = api_data->jitter==0?0:api_data->jitter ;
@@ -742,12 +704,29 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data,n
         //todo stream
     }
     njy_hc_api_data2_ssl_cf(api_data,hhccf);
-    //todo ssl
+    return NJT_OK;
+}
+static njt_int_t njt_hc_api_delete_conf(njt_http_request_t *r,njt_helper_hc_api_data_t *api_data){
+    njt_cycle_t *cycle;
+    njt_helper_health_check_conf_t *hhccf;
+
+    cycle =(njt_cycle_t *)njt_cycle;
+
+    if(api_data->hc_type.len == 0 || api_data->upstream_name.len == 0 ){
+        njt_log_error(NJT_LOG_ERR, r->connection->log, 0," type and upstream must be set !!");
+        return NJT_ERROR;
+    }
+    hhccf = njt_http_find_helper_hc(cycle,api_data);
+    if(hhccf == NULL){
+        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,"not find upstream %V hc",&api_data->upstream_name);
+        return NJT_ERROR;
+    }
+    njt_queue_remove(&hhccf->queue);
+    hhccf->disable = 1;
     return NJT_OK;
 }
 
-
-static njt_int_t njt_http_api_add_conf(njt_http_request_t *r,njt_helper_hc_api_data_t *api_data){
+static njt_int_t njt_hc_api_add_conf(njt_http_request_t *r,njt_helper_hc_api_data_t *api_data){
     njt_health_checker_t *checker;
     njt_http_upstream_srv_conf_t* uscf;
     njt_helper_health_check_conf_t *hhccf;
@@ -760,7 +739,11 @@ static njt_int_t njt_http_api_add_conf(njt_http_request_t *r,njt_helper_hc_api_d
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0," type and upstream must be set !!");
         return NJT_ERROR;
     }
-
+    hhccf = njt_http_find_helper_hc(cycle,api_data);
+    if(hhccf != NULL){
+        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,"find upstream %V hc, double set",&api_data->upstream_name);
+        return NJT_ERROR;
+    }
     hc_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, cycle->log);
     if(hc_pool == NULL) {
         njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "health check helper create dynamic pool error ");
@@ -834,9 +817,9 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
     }
     //put (delete location)
     if (r->method == NJT_HTTP_PUT) {
-        // todo 删除
+        rc = njt_hc_api_delete_conf(r,api_data);
     } else if (r->method == NJT_HTTP_POST) {
-        rc = njt_http_api_add_conf(r,api_data);
+        rc = njt_hc_api_add_conf(r,api_data);
     } else {
         rc = NJT_ERROR;
         goto out;
@@ -971,14 +954,17 @@ njt_http_match_regex_value(njt_conf_t *cf, njt_str_t *regex) {
 }
 
 //todo 未完成 解析期望header
-static njt_int_t njt_http_match_parse_dheaders(njt_str_t *args,njt_http_match_t *match,njt_helper_health_check_conf_t *hhccf){
+static njt_int_t njt_http_match_parse_dheaders(njt_array_t *arr,njt_http_match_t *match,njt_helper_health_check_conf_t *hhccf){
     njt_uint_t nelts;
     njt_http_match_header_t *header;
     njt_uint_t i;
     njt_conf_t cf;
+    njt_str_t *args;
 
+    cf.pool = hhccf->pool;
     i=0;
-    nelts = args->len;
+    args = arr->elts;
+    nelts = arr->nelts;
     header = njt_array_push(&match->headers);
     if (header == NULL) {
         njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "header array push error.");
@@ -986,44 +972,45 @@ static njt_int_t njt_http_match_parse_dheaders(njt_str_t *args,njt_http_match_t 
     }
     njt_memzero(header, sizeof(njt_http_match_header_t));
 
-    i++;
     /*header ! abc;*/
     if (njt_strncmp(args[i].data, "!", 1) == 0) {
         header->operation = NJT_HTTP_MATCH_NOT_CONTAIN;
         i++;
-        if (nelts != 3) {
+        if (nelts != 2) {
             njt_log_error(NJT_LOG_EMERG,  hhccf->log, 0,"parameter number %u of header ! error.", nelts);
             return NJT_ERROR;
         }
-        header->key = args[2];
+        njt_str_copy_pool(hhccf->pool,header->key,args[1],return NJT_ERROR);
+//        header->key = args[2];
         return NJT_OK;
     }
-    header->key = args[i];
+    njt_str_copy_pool(hhccf->pool,header->key,args[i],return NJT_ERROR);
+//    header->key = args[i];
     i++;
 
     /*header abc;*/
-    if (nelts == 2) {
+    if (nelts == 1) {
         header->operation = NJT_HTTP_MATCH_CONTAIN;
         return NJT_OK;
     }
 
-    if (nelts != 4) {
+    if (nelts != 3) {
         njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "header parse error.");
         return NJT_ERROR;
     }
 
     if (args[i].len == 1) {
+        njt_str_copy_pool(hhccf->pool,header->key,args[2],return NJT_ERROR);
         if (njt_strncmp(args[i].data, "=", 1) == 0) {
             header->operation = NJT_HTTP_MATCH_EQUAL;
-
         } else if (njt_strncmp(args[i].data, "~", 1) == 0) {
 
             header->operation = NJT_HTTP_MATCH_REG_MATCH;
-            header->regex = njt_http_match_regex_value(&cf, &args[3]);
+            header->regex = njt_http_match_regex_value(&cf, &header->key);
 
             if (header->regex == NULL) {
                 njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "header regex %V parse error.",
-                              &args[3]);
+                              &args[2]);
                 return NJT_ERROR;
             }
 
@@ -1032,23 +1019,23 @@ static njt_int_t njt_http_match_parse_dheaders(njt_str_t *args,njt_http_match_t 
             return NJT_ERROR;
         }
 
-        header->value = args[3];
+//        header->value = args[3];
 
         return NJT_OK;
 
     } else if (args[i].len == 2) {
-
+        njt_str_copy_pool(hhccf->pool,header->value,args[2],return NJT_ERROR);
         if (njt_strncmp(args[i].data, "!=", 2) == 0) {
             header->operation = NJT_HTTP_MATCH_NOT_EQUAL;
 
         } else if (njt_strncmp(args[i].data, "!~", 2) == 0) {
 
             header->operation = NJT_HTTP_MATCH_NOT_REG_MATCH;
-            header->regex = njt_http_match_regex_value(&cf, &args[3]);
+            header->regex = njt_http_match_regex_value(&cf, &header->value);
 
             if (header->regex == NULL) {
                 njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "header regex %V parse error.",
-                              &args[3]);
+                              &args[2]);
                 return NJT_ERROR;
             }
 
@@ -1056,7 +1043,7 @@ static njt_int_t njt_http_match_parse_dheaders(njt_str_t *args,njt_http_match_t 
             return NJT_ERROR;
         }
 
-        header->value = args[3];
+//        header->value = args[3];
         return NJT_OK;
     } else {
         njt_log_error(NJT_LOG_EMERG, hhccf->log, 0,
@@ -1093,7 +1080,6 @@ static njt_int_t njt_http_match(njt_helper_hc_api_data_t *api_data,njt_helper_he
         }
 
         for (; i < args.len;) {
-            // todo 测试分割是否正确
             tmp.data = args.data+i;
             end = njt_strlchr(args.data+i,args.data+args.len-i,' ');
             if(end == NULL){
@@ -1117,9 +1103,15 @@ static njt_int_t njt_http_match(njt_helper_hc_api_data_t *api_data,njt_helper_he
         }
 
     }
-    if (api_data->http.headers.len > 0 ) {
-        args = api_data->http.headers;
-        njt_http_match_parse_dheaders(&args,match,hhccf);
+    if (api_data->http.headers.nelts > 0 ) {
+        njt_str_t *tmp;
+        njt_array_t *arr;
+        tmp = api_data->http.headers.elts;
+        for(i = 0 ; i < api_data->http.headers.nelts ; i++ ){
+            arr = njt_array_create(hhccf->pool,4,sizeof(njt_str_t));
+            njt_str_split(&tmp[i],arr,' ');
+            njt_http_match_parse_dheaders(arr,match,hhccf);
+        }
     }
     if (api_data->http.body.len > 0) {
         args = api_data->http.body;
@@ -1231,14 +1223,16 @@ static void njt_free_peer_resource(njt_http_health_check_peer_t *hc_peer) {
     njt_pool_t *pool;
 
     pool = hc_peer->pool;
-    if (pool) {
-        njt_destroy_pool(pool);
-    }
-
     if (hc_peer->peer.connection) {
         njt_close_connection(hc_peer->peer.connection);
     }
 
+    if (pool) {
+        njt_destroy_pool(pool);
+    }
+    if (hc_peer->hhccf->disable){
+        njt_destroy_pool(hc_peer->hhccf->pool);
+    }
     njt_free(hc_peer);
     return;
 }
@@ -1396,6 +1390,10 @@ static void njt_http_health_check_write_handler(njt_event_t *wev) {
     if (wev->timer_set) {
         njt_del_timer(wev);
     }
+    if (hc_peer->hhccf->disable){
+        njt_free_peer_resource(hc_peer);
+        return;
+    }
 
     rc = cf_ctx->checker->write_handler(wev);
     if (rc == NJT_ERROR) {
@@ -1440,6 +1438,10 @@ static void njt_http_health_check_read_handler(njt_event_t *rev) {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                        "read action for health check timeout");
         njt_http_health_check_update_status(hc_peer, NJT_ERROR);
+        return;
+    }
+    if (hc_peer->hhccf->disable){
+        njt_free_peer_resource(hc_peer);
         return;
     }
 
@@ -1830,7 +1832,12 @@ static void njt_http_health_check_timer_handler(njt_event_t *ev) {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "no valid data");
         return;
     }
-
+    if(hhccf->disable){
+        njt_destroy_pool(hhccf->pool);
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                      "active probe clearup for disable ");
+        return;
+    }
     uscf = cf_ctx->upstream;
     if (uscf == NULL) {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "no upstream data");

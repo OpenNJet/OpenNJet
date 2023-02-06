@@ -77,12 +77,13 @@ typedef struct njt_helper_health_check_conf_s {
     void *ctx;    // http 或stream 特异化字段
     unsigned persistent: 1;
     unsigned mandatory: 1;
+    unsigned disable:1;
 } njt_helper_health_check_conf_t;
 
 typedef struct {
     njt_str_t uri;
     njt_str_t status;
-    njt_str_t headers;
+    njt_array_t headers;
     njt_str_t body;
     njt_str_t grpc_service;
     njt_int_t grpc_status;
@@ -151,5 +152,8 @@ njt_int_t njt_json_parse_data(njt_pool_t *pool, njt_str_t *str, njt_json_define_
 njt_int_t njt_json_parse_ssl_protocols(njt_json_element *el,njt_json_define_t *def,void *data);
 njt_int_t njt_helper_hc_set_ssl(njt_helper_health_check_conf_t *hhccf, njt_helper_hc_ssl_conf_t *hcscf);
 #endif
+
+njt_int_t njt_str_split(njt_str_t *src,njt_array_t *array,char sign);
+njt_int_t njt_json_parse_str_list(njt_json_element *el,njt_json_define_t *def,void *data);
 
 #endif //NJET_MAIN_NJT_COMMON_HEALTH_CHECK_H
