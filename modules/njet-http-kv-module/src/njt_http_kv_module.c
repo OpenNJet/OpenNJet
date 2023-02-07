@@ -629,3 +629,33 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
         }
     }
 }
+
+int njt_db_kv_get(njt_str_t *key, njt_str_t *value)
+{
+    if (key->data == NULL )
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_db_kv_get got wrong key:value data");
+        return NJT_ERROR;
+    }
+    int ret = mqtt_client_kv_get((void *)key->data, key->len, (void **)&value->data, (uint32_t *)&value->len, local_mqtt_ctx);
+    if (ret < 0)
+    {
+        return NJT_ERROR;
+    }
+    return NJT_OK;
+}
+int njt_db_kv_set(njt_str_t *key, njt_str_t *value)
+{
+    if (key->data == NULL || value->data == NULL)
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_db_kv_set got wrong key:value data");
+        return NJT_ERROR;
+    }
+    int ret = mqtt_client_kv_set(key->data, key->len, value->data, value->len, NULL, local_mqtt_ctx);
+    if (ret < 0)
+    {
+        return NJT_ERROR;
+    }
+    return NJT_OK;
+}
+
