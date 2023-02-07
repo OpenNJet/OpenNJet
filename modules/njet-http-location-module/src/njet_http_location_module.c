@@ -54,7 +54,7 @@ njt_http_set_del_variables_keys_flag( njt_str_t *name);
 
 static void
 njt_http_refresh_variables_keys();
-static njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str);
+
 
 
 static void njt_http_location_write_data(njt_http_location_info_t *location_info);
@@ -416,7 +416,8 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     njt_http_core_srv_conf_t *cscf;
     njt_http_core_loc_conf_t *clcf, *dclcf;
     njt_http_location_queue_t *lq;
-
+	u_char *p;
+	njt_str_t location_name;
     cscf = location_info->cscf;
     if (cscf == NULL || location_info->location.len == 0) {
         return NJT_ERROR;
@@ -443,11 +444,20 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
             NULL,
             NULL,
     };
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC,njt_cycle->pool->log, 0, "delete start +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "delete start +++++++++++++++");
 
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC,njt_cycle->pool->log, 0, "find && free old location start +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "find && free old location start +++++++++++++++");
 
-    lq = njt_http_find_location(location_info->location, clcf->old_locations);
+	location_name.data = njt_pcalloc(location_info->pool, 1024);
+	if(location_info->location_rule.len > 0) {
+		p = njt_snprintf(location_name.data, 1024, "%V%V", &location_info->location_rule,
+								 &location_info->location);
+	} else {
+		p = njt_snprintf(location_name.data, 1024, "%V", &location_info->location);
+	}
+	location_name.len = p - location_name.data;
+
+    lq = njt_http_find_location(location_name, clcf->old_locations);
     if (lq == NULL) {
         return NJT_ERROR;
     }
@@ -457,12 +467,12 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     njt_http_location_destroy(dclcf);
     njt_queue_remove(&lq->queue);
     njt_pfree(lq->parent_pool, lq);
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "find && free old location end +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "find && free old location end +++++++++++++++");
 
     njt_http_refresh_location(&cf, cscf, clcf);
 
     //note: delete queue memory, which delete when remove queue 
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "delete end +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "delete end  %V+++++++++++++++",&location_name);
     return NJT_OK;
 }
 
@@ -717,7 +727,8 @@ out:
 
 
 static int topic_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data) {
-	
+	njt_str_t  add = njt_string("add");
+	njt_str_t  del = njt_string("del");
 	njt_http_location_info_t *location_info;
 	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "get topic  key=%V,value=%V",key,value);
 
@@ -726,15 +737,16 @@ static int topic_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "topic msg error key=%V,value=%V",key,value);
 		return NJT_ERROR;
 	}
-	if(location_info->type == 1) {
+	if(location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0 ) {
 		njt_http_location_write_data(location_info);
 		njt_http_add_location_handler(location_info);  //njt_http_location_delete_handler
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler key=%V,value=%V",key,value);
-	} else if(location_info->type == 0){
+	} else if(location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0 ){
+		njt_http_location_write_data(location_info);
 		njt_http_location_delete_handler(location_info);
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V",key,value);
 	}
-
+	njt_destroy_pool(location_info->pool);
 	
 	return NJT_OK;
 }
@@ -746,7 +758,7 @@ njt_http_location_init_worker(njt_cycle_t *cycle) {
 	njt_reg_kv_change_handler(&key, topic_kv_change_handler, NULL);
     return NJT_OK;
 }
-static njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str) {
+njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str) {
 	 njt_json_manager json_body;
 	 njt_pool_t  *location_pool;
 	  njt_http_location_info_t *location_info;
@@ -754,6 +766,8 @@ static njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_s
 	 njt_uint_t i;
 	 u_char *last;
 	  u_char *p;
+	  njt_str_t  add = njt_string("add");
+	njt_str_t  del = njt_string("del");
 	 njt_json_element *items;
 
 	location_pool = njt_create_pool(NJT_DEFAULT_POOL_SIZE, njt_cycle->log);
@@ -772,15 +786,17 @@ static njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_s
 		njt_destroy_pool(location_pool);
         return NULL;;
     }
-	location_info->type = -1;
+	//location_info->type = -1;
 	location_info->pool = location_pool;
+	location_info->code = 0;
+
 
     items = json_body.json_keyval->elts;
     for (i = 0; i < json_body.json_keyval->nelts; i++) {
         if (njt_strncmp(items[i].key.data, "addr_port", 9) == 0 && items[i].key.len == 9) {
 
             if (items[i].type != NJT_JSON_STR) {
-               rc = NJT_ERROR;
+               location_info->code = 1; //sport error
 			   break;
             }
 
@@ -798,8 +814,8 @@ static njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_s
         } else if (njt_strncmp(items[i].key.data, "location", 8) == 0 && items[i].key.len == 8) {
 
             if (items[i].type != NJT_JSON_STR) {
-                rc = NJT_ERROR;
-				break;;
+                location_info->code = 2; //location error
+				break;
             }
 
             location_info->location = items[i].strval;
@@ -807,8 +823,8 @@ static njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_s
         } else if (njt_strncmp(items[i].key.data, "proxy_pass", 10) == 0 && items[i].key.len == 10) {
 
             if (items[i].type != NJT_JSON_STR) {
-               rc = NJT_ERROR;
-			   break;;
+               location_info->code = 3; //proxy_pass error
+			   break;
             }
 
             location_info->proxy_pass = items[i].strval;
@@ -816,8 +832,8 @@ static njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_s
         } else if (njt_strncmp(items[i].key.data, "server_name", 11) == 0 && items[i].key.len == 11) {
 
             if (items[i].type != NJT_JSON_STR) {
-               rc = NJT_ERROR;
-			   break;;
+               location_info->code = 4; //server_name error
+			   break;
             }
 
             location_info->server_name = items[i].strval;
@@ -825,8 +841,8 @@ static njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_s
         } else if (njt_strncmp(items[i].key.data, "location_body", 13) == 0 && items[i].key.len == 13) {
 
             if (items[i].type != NJT_JSON_STR) {
-               rc = NJT_ERROR;
-			   break;;
+              location_info->code = 5; //location_body error
+			   break;
             }
 
             location_info->location_body = items[i].strval;
@@ -834,19 +850,29 @@ static njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_s
         }else if (njt_strncmp(items[i].key.data, "type", 4) == 0 && items[i].key.len == 4) {
 
             if (items[i].type != NJT_JSON_STR) {
-               rc = NJT_ERROR;
-			   break;;
+               location_info->code = 6; //type error
+			   break;
             }
 
-            location_info->type = njt_atoi(items[i].strval.data,items[i].strval.len);
+            location_info->type = items[i].strval;
+            continue;
+        } else if (njt_strncmp(items[i].key.data, "location_rule", 13) == 0 && items[i].key.len == 13) {
+
+            if (items[i].type != NJT_JSON_STR) {
+                location_info->code = 7; //location error
+				break;
+            }
+
+            location_info->location_rule = items[i].strval;
             continue;
         }
     }
-	if(rc == NJT_ERROR){
-		if(location_pool != NULL){
-			njt_destroy_pool(location_pool);
-		}
-		location_info = NULL;
+	if(location_info->sport.len == 0) {
+		location_info->code = 1; //sport error
+	} else if(location_info->location.len == 0) {
+		location_info->code = 2; //location error
+	}else if( !((location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0) || (location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0))  ) {
+		location_info->code = 6; //type error
 	}
 	return location_info;
 
@@ -863,7 +889,8 @@ njt_http_location_read_data(njt_http_request_t *r){
 	 uint32_t                                      crc32;
 	 uint32_t									   topic_len = NJT_INT64_LEN  + 2;
 	 njt_str_t									   topic_name;
-   
+     njt_str_t  add = njt_string("add");
+	njt_str_t  del = njt_string("del");
 
     //rc = NJT_OK;
 	 //njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
@@ -890,7 +917,12 @@ njt_http_location_read_data(njt_http_request_t *r){
 
 	njt_crc32_init(crc32);
 	njt_crc32_update(&crc32,location_info->addr_port.data,location_info->addr_port.len);
-	njt_crc32_update(&crc32,location_info->server_name.data,location_info->server_name.len);
+	if (location_info->server_name.len > 0) {
+		njt_crc32_update(&crc32,location_info->server_name.data,location_info->server_name.len);
+	}
+	if (location_info->location_rule.len > 0) {
+		njt_crc32_update(&crc32,location_info->location_rule.data,location_info->location_rule.len);
+	}
 	njt_crc32_update(&crc32,location_info->location.data,location_info->location.len);
 	njt_crc32_final(crc32);
 
@@ -904,7 +936,11 @@ njt_http_location_read_data(njt_http_request_t *r){
 	
 	p = njt_snprintf(topic_name.data,topic_len,"/dyn/loc/l_%d",crc32);
 	topic_name.len = p - topic_name.data;
-	//njt_dyn_sendmsg(&topic_name,&json_str,location_info->type);
+	if(location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0 ){
+		//njt_dyn_sendmsg(&topic_name,&json_str,0);
+	} else  if(location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0 ){
+		//njt_dyn_sendmsg(&topic_name,&json_str,1);
+	}
 
 	njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "1 send topic key=%V,value=%V",&topic_name,&json_str);
 
@@ -1044,8 +1080,13 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
     }
     data = njt_pcalloc(location_info->pool, 10240);
     if (data != NULL) {
-        p = njt_snprintf(data, 10240, "location %V {\n%V\nproxy_pass %V;\n}\n", &location_info->location,
-                         &location_info->location_body, &location_info->proxy_pass);
+		if(location_info->location_rule.len == 0 || location_info->location_rule.data == NULL) {
+			p = njt_snprintf(data, 10240, "location %V {\n%V\nproxy_pass %V;\n}\n", &location_info->location,
+							 &location_info->location_body, &location_info->proxy_pass);
+		} else{
+			p = njt_snprintf(data, 10240, "location %V%V {\n%V\nproxy_pass %V;\n}\n", &location_info->location_rule,&location_info->location,
+							 &location_info->location_body, &location_info->proxy_pass);
+		}
         rlen = njt_write_fd(fd, data, p - data);
     }
 
