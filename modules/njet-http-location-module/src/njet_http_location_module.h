@@ -6,9 +6,10 @@
 
 typedef struct njt_http_location_info_s {
     njt_str_t file;
-	njt_flag_t type;
+	njt_str_t type;
     njt_str_t addr_port;
     njt_str_t server_name;
+	njt_str_t location_rule;
     njt_str_t location;
     njt_str_t proxy_pass;
     njt_str_t location_body;
@@ -19,7 +20,9 @@ typedef struct njt_http_location_info_s {
 } njt_http_location_info_t;
 
 typedef struct njt_http_location_loc_conf_s {
-    njt_flag_t add_location_enable;
+    njt_flag_t dyn_location_enable;
 } njt_http_location_loc_conf_t;
+
+njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str);
 
 #endif
