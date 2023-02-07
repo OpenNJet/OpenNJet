@@ -20,7 +20,7 @@ typedef struct njt_http_location_info_s {
 } njt_http_location_info_t;
 
 typedef struct njt_http_location_loc_conf_s {
-    njt_flag_t add_location_enable;
+    njt_flag_t dyn_location_enable;
 } njt_http_location_loc_conf_t;
 
 njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str);

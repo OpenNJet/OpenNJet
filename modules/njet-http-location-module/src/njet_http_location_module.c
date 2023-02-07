@@ -56,6 +56,9 @@ static void
 njt_http_refresh_variables_keys();
 
 
+static char *
+njt_http_location_api(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+
 
 static void njt_http_location_write_data(njt_http_location_info_t *location_info);
 typedef struct njt_http_location_ctx_s {
@@ -71,11 +74,11 @@ typedef struct njt_http_location_main_conf_s {
 
 static njt_command_t njt_http_location_commands[] = {
         {
-                njt_string("add_location"),
-                NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
-                njt_conf_set_flag_slot,
+                njt_string("dyn_location_api"),
+                NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_ANY,
+                njt_http_location_api,
                 NJT_HTTP_LOC_CONF_OFFSET,
-                offsetof(njt_http_location_loc_conf_t, add_location_enable),
+                offsetof(njt_http_location_loc_conf_t, dyn_location_enable),
                 NULL
         },
         njt_null_command
@@ -111,6 +114,15 @@ njt_module_t njt_http_location_module = {
         NJT_MODULE_V1_PADDING
 };
 
+static char *
+njt_http_location_api(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
+    
+	njt_http_location_loc_conf_t   *clcf = conf;
+
+
+    clcf->dyn_location_enable = 1;
+    return NJT_CONF_OK;
+}
 
 
 static njt_int_t
@@ -139,7 +151,7 @@ njt_http_location_create_loc_conf(njt_conf_t *cf) {
         njt_log_error(NJT_LOG_ERR, cf->log, 0, "malloc uclcf eror");
         return NULL;
     }
-	uclcf->add_location_enable = NJT_CONF_UNSET;
+	uclcf->dyn_location_enable = NJT_CONF_UNSET;
     return uclcf;
 }
 
@@ -160,7 +172,7 @@ static char *njt_http_location_merge_loc_conf(njt_conf_t *cf,
 	  njt_http_location_loc_conf_t *prev = parent;
     njt_http_location_loc_conf_t *conf = child;
 
-    njt_conf_merge_value(conf->add_location_enable, prev->add_location_enable, 0);
+    njt_conf_merge_value(conf->dyn_location_enable, prev->dyn_location_enable, 0);
 
     return NJT_CONF_OK;
 }
@@ -671,7 +683,7 @@ njt_http_location_handler(njt_http_request_t *r) {
     out.buf = NULL;
     njt_memzero(&conf, sizeof(njt_conf_t));
     loc = njt_http_get_module_loc_conf(r, njt_http_location_module);
-    if (loc && loc->add_location_enable) {
+    if (loc && loc->dyn_location_enable) {
     } else {
         return NJT_DECLINED;
     }
@@ -811,7 +823,7 @@ njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str) {
                 location_info->sport = location_info->addr_port;
             }
             continue;
-        } else if (njt_strncmp(items[i].key.data, "location", 8) == 0 && items[i].key.len == 8) {
+        } else if (njt_strncmp(items[i].key.data, "location_name", 13) == 0 && items[i].key.len == 13) {
 
             if (items[i].type != NJT_JSON_STR) {
                 location_info->code = 2; //location error
@@ -1046,6 +1058,10 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
                                           njt_hash_key(location_info->server_name.data, location_info->server_name.len),
                                           location_info->server_name.data, location_info->server_name.len);
         }
+		if(cscf == NULL && virtual_names != NULL && location_info->server_name.len > 0 && location_info->server_name.data != NULL) {
+			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "no find location=%V%V,add_port=%V,server_name=%V",&location_info->location_rule,&location_info->location,&location_info->addr_port,&location_info->server_name);
+			return;
+		}
         if (cscf == NULL) {
             cscf = njt_http_get_module_srv_conf(hc.conf_ctx, njt_http_core_module);
         }

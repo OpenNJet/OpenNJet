@@ -44,7 +44,8 @@ extern njt_int_t njt_http_init_locations(njt_conf_t *cf,
                                          njt_http_core_srv_conf_t *cscf, njt_http_core_loc_conf_t *pclcf);
 
 
-
+static char *
+njt_http_location_api(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 
 
@@ -61,11 +62,11 @@ typedef struct njt_http_location_main_conf_s {
 
 static njt_command_t njt_http_location_commands[] = {
         {
-                njt_string("add_location"),
-                NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
-                njt_conf_set_flag_slot,
+                njt_string("dyn_location_api"),
+                NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_ANY,
+                njt_http_location_api,
                 NJT_HTTP_LOC_CONF_OFFSET,
-                offsetof(njt_http_location_loc_conf_t, add_location_enable),
+                offsetof(njt_http_location_loc_conf_t, dyn_location_enable),
                 NULL
         },
         njt_null_command
@@ -102,6 +103,17 @@ njt_module_t njt_http_location_api_module = {
 };
 
 
+static char *
+njt_http_location_api(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
+    
+	njt_http_location_loc_conf_t   *clcf = conf;
+
+
+    clcf->dyn_location_enable = 1;
+    return NJT_CONF_OK;
+}
+
+
 
 static njt_int_t
 njt_http_location_init(njt_conf_t *cf) {
@@ -130,7 +142,7 @@ njt_http_location_create_loc_conf(njt_conf_t *cf) {
         njt_log_error(NJT_LOG_ERR, cf->log, 0, "malloc uclcf eror");
         return NULL;
     }
-    uclcf->add_location_enable = NJT_CONF_UNSET;
+    uclcf->dyn_location_enable = NJT_CONF_UNSET;
     return uclcf;
 }
 
@@ -156,7 +168,7 @@ static char *njt_http_location_merge_loc_conf(njt_conf_t *cf,
     njt_http_location_loc_conf_t *prev = parent;
     njt_http_location_loc_conf_t *conf = child;
 
-    njt_conf_merge_value(conf->add_location_enable, prev->add_location_enable, 0);
+    njt_conf_merge_value(conf->dyn_location_enable, prev->dyn_location_enable, 0);
 
     return NJT_CONF_OK;
 }
@@ -299,7 +311,7 @@ njt_http_location_handler(njt_http_request_t *r) {
     out.buf = NULL;
     njt_memzero(&conf, sizeof(njt_conf_t));
     loc = njt_http_get_module_loc_conf(r, njt_http_location_api_module);
-    if (loc && loc->add_location_enable) {
+    if (loc && loc->dyn_location_enable) {
         //printf("11");
     } else {
         //printf("NJT_DECLINED");
