@@ -1,0 +1,4 @@
+# Configuration file for the njet service.
+
+NGINX=/usr/sbin/njet
+CONFFILE=/etc/njet/njet.conf

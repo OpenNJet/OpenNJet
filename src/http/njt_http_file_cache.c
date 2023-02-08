@@ -1187,9 +1187,9 @@ renew:
     // by chengxu
 #if (NJT_HTTP_CACHE_PURGE)
     fcn->purged = 0;
+purged:
 #endif
     // end
-purged:
     rc = NJT_DECLINED;
 
     fcn->valid_msec = 0;
