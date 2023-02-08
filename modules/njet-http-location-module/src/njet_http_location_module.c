@@ -766,7 +766,7 @@ static int topic_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
 static njt_int_t
 njt_http_location_init_worker(njt_cycle_t *cycle) {
 
-	njt_str_t  key = njt_string("/dyn/loc");
+	njt_str_t  key = njt_string("loc");
 	njt_reg_kv_change_handler(&key, topic_kv_change_handler, NULL);
     return NJT_OK;
 }

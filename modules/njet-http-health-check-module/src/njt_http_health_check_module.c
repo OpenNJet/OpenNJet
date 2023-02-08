@@ -1493,6 +1493,7 @@ njt_http_health_check_init_process(njt_cycle_t *cycle)
 //        njt_add_timer(hc_timer, refresh_in);
 //    }
 //
+    hcmcf->check_event.cancelable = 1;
     check_timer = &hcmcf->check_event;
     check_timer->handler = njt_http_health_check_add_handler;
     check_timer->log = cycle->log;
