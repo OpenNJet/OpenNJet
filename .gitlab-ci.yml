@@ -14,8 +14,8 @@ build_bin:
     - sudo rm -rf /etc/njet/luajit/lib/*.so     # 使用lua静态库
     - sudo make -j `nproc`
     - sudo mkdir -p work/etc/njet/lualib/ work/usr/local/lib/ work/etc/njet/logs/ logs/  # 创建文件包目录
-    - cp -R /etc/njet/* work/etc/njet/
-    - cp -R /etc/njet/luajit/lib/* work/usr/local/lib/
+#    - cp -R /etc/njet/* work/etc/njet/
+#    - cp -R /etc/njet/luajit/lib/* work/usr/local/lib/
   artifacts:
     paths:     # 需要打包的文件
       - objs/njet
