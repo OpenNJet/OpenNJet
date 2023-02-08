@@ -10,6 +10,9 @@
 #define IOT_HELPER_NAME "iot"
 #define IOT_HELPER_NAME_LEN 3
 
+#define DYN_TOPIC_PREFIX "/dyn/"
+#define DYN_TOPIC_PREFIX_LEN 5
+
 typedef struct
 {
     void *data;
@@ -347,7 +350,7 @@ static int msg_callback(const char *topic, const char *msg, int msg_len, void *o
         njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "worker write kv in local kv tree:%s,%V", key, &kv_key);
         return 0;
     }
-    else if (njt_strncmp(topic, "/dyn", 4) == 0)
+    else if (strlen(topic) > DYN_TOPIC_PREFIX_LEN && njt_strncmp(topic, DYN_TOPIC_PREFIX, DYN_TOPIC_PREFIX_LEN) == 0)
     {
         invoke_topic_msg_handler(topic, msg, msg_len);
     }
@@ -569,7 +572,6 @@ njt_http_kv_add_variables(njt_conf_t *cf)
     return NJT_OK;
 }
 
-
 int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, void *data)
 {
     if (kv_change_handler_fac == NULL)
@@ -596,9 +598,9 @@ static void invoke_kv_change_handler(njt_str_t *key, njt_str_t *value)
         kv_change_handler_t *kv_handle = kv_change_handler_fac->elts;
         for (i = 0; i < kv_change_handler_fac->nelts; i++)
         {
-            // key is "kv_http_", handler key is with "$" as prefix
+            // key and handler key are the same, "kv_http_"
             if (kv_handle[i].handler &&
-                njt_strncmp(key->data, kv_handle[i].key.data + 1, kv_handle[i].key.len - 1) == 0)
+                njt_strncmp(key->data, kv_handle[i].key.data, kv_handle[i].key.len) == 0)
             {
                 kv_handle[i].handler(&kv_handle[i].key, value, kv_handle[i].data);
             }
@@ -610,15 +612,24 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
 {
     njt_uint_t i;
     njt_str_t nstr_topic;
+    njt_uint_t topic_sf_len; // topic's second field length
     njt_str_t nstr_msg;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke topic msg handler for topic:%s ", topic);
     if (kv_change_handler_fac)
     {
+        // found second field of topic's length,  for example: topic /dyn/loc/1 , second field is "loc", length is 3 
+        for (i = DYN_TOPIC_PREFIX_LEN; i < strlen(topic); i++)
+        {
+            if (topic[i] == '/')
+                break;
+        }
+        topic_sf_len = i - DYN_TOPIC_PREFIX_LEN;
         kv_change_handler_t *tm_handler = kv_change_handler_fac->elts;
         for (i = 0; i < kv_change_handler_fac->nelts; i++)
         {
             if (tm_handler[i].handler &&
-                njt_strncmp(topic, tm_handler[i].key.data, tm_handler[i].key.len) == 0)
+                topic_sf_len == tm_handler[i].key.len &&
+                njt_strncmp(topic + DYN_TOPIC_PREFIX_LEN, tm_handler[i].key.data, tm_handler[i].key.len) == 0)
             {
                 nstr_topic.data = (u_char *)topic;
                 nstr_topic.len = strlen(topic);
@@ -632,7 +643,7 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
 
 int njt_db_kv_get(njt_str_t *key, njt_str_t *value)
 {
-    if (key->data == NULL )
+    if (key->data == NULL)
     {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_db_kv_get got wrong key:value data");
         return NJT_ERROR;
@@ -658,4 +669,3 @@ int njt_db_kv_set(njt_str_t *key, njt_str_t *value)
     }
     return NJT_OK;
 }
-
