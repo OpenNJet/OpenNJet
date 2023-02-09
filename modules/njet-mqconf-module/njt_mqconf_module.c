@@ -4,6 +4,7 @@
 #include "njt_mqconf_module.h"
 
 static void *njt_mqconf_create_conf(njt_cycle_t *cycle);
+static char *njt_mqconf_init_conf(njt_cycle_t *cycle, void *conf);
 
 static char *njt_mqconf_admin_server_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static char *njt_mqconf_admin_client_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
@@ -56,8 +57,9 @@ static njt_command_t njt_mqconf_commands[] = {
 static njt_core_module_t njt_mqconf_module_ctx = {
     njt_string("mqconf"),
     njt_mqconf_create_conf,
-    NULL 
+    njt_mqconf_init_conf
 };
+
 
 /* Module definition. */
 njt_module_t  njt_mqconf_module = {
@@ -155,6 +157,32 @@ static void *njt_mqconf_create_conf(njt_cycle_t *cycle)
     return conf;
 }
 
+static char *njt_mqconf_init_conf(njt_cycle_t *cycle, void *cf)
+{
+    njt_str_t  def_cluster = njt_string("def_c");
+    njt_str_t  def_node = njt_string("def_n");
+    njt_mqconf_conf_t *conf;
+    njt_uint_t flag = 0;
+
+    conf = (njt_mqconf_conf_t *)cf;
+
+    if (conf->cluster_name.data == NULL) {
+        conf->cluster_name = def_cluster;
+        flag = 1;
+    }
+
+    if (conf->node_name.data == NULL) {
+        conf->node_name = def_node;
+        flag = 1;
+    }
+
+    if (flag) {
+        njt_log_error(NJT_LOG_INFO, cycle->log, 0,
+                      "set default value for mqconf");
+    }
+
+    return NJT_CONF_OK;
+}
 
 static char *
 njt_helper(njt_conf_t *cf, njt_command_t *cmd, void *conf)
