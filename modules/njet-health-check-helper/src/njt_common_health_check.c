@@ -14,6 +14,7 @@
 // Created by Administrator on 2023/2/1/001.
 //
 #include "njt_common_health_check.h"
+#include <njt_http.h>
 
 
 /**
@@ -67,6 +68,10 @@ njt_int_t njt_json_parse_ssl_protocols(njt_json_element *el,njt_json_define_t *d
     njt_uint_t          *np, i, m;
     njt_str_t           value;
     njt_conf_bitmask_t  *mask;
+
+    njt_helper_hc_ssl_add_data_t *ssl_data = (void*) ((char *)data - def->offset);
+
+    ssl_data->ssl_protocols_str = el->strval;
 
     if(el->type != NJT_JSON_STR){
         return NJT_ERROR;
@@ -219,7 +224,6 @@ njt_int_t njt_helper_hc_set_ssl(njt_helper_health_check_conf_t *hhccf, njt_helpe
 
     cln->handler = njt_ssl_cleanup_ctx;
     cln->data = hcscf->ssl;
-// 未使用
     if (njt_ssl_ciphers(&cf, hcscf->ssl, &hcscf->ssl_ciphers, 0)
         != NJT_OK)
     {
@@ -307,4 +311,31 @@ njt_int_t njt_str_split(njt_str_t *src,njt_array_t *array,char sign){
         p = ++last;
     }
     return NJT_OK;
+}
+
+
+/**
+ * > 按名称查找upstream配置
+ *
+ * @param cycle 当前cycle。
+ * @param name upstream的名称。
+ *
+ * @return njt_http_upstream_srv_conf_t
+ */
+njt_http_upstream_srv_conf_t* njt_http_find_upstream_by_name(njt_cycle_t *cycle,njt_str_t *name){
+    njt_http_upstream_main_conf_t  *umcf;
+    njt_http_upstream_srv_conf_t   **uscfp;
+    njt_uint_t i;
+
+    umcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_upstream_module);
+    uscfp = umcf->upstreams.elts;
+
+    for (i = 0; i < umcf->upstreams.nelts; i++) {
+        if (uscfp[i]->host.len != name->len
+            || njt_strncasecmp(uscfp[i]->host.data, name->data, name->len) != 0) {
+            continue;
+        }
+        return uscfp[i];
+    }
+    return NULL;
 }
