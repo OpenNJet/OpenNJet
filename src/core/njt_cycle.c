@@ -341,7 +341,9 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                 goto failed;
             }
 
-            njt_delete_pidfile(old_cycle);
+            if (njt_process != NJT_PROCESS_HELPER) {
+                njt_delete_pidfile(old_cycle);
+            }
         }
     }
 
