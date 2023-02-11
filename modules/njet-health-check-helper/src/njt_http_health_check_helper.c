@@ -315,7 +315,7 @@ static njt_json_define_t njt_helper_hc_api_data_ssl_json_dt[] ={
                 NULL,
         },
         {
-                njt_string("server_name"),
+                njt_string("serverName"),
                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_server_name),
                 NJT_JSON_BOOL,
                 NULL,
@@ -329,14 +329,14 @@ static njt_json_define_t njt_helper_hc_api_data_ssl_json_dt[] ={
                 NULL,
         },
         {
-                njt_string("verify_depth"),
+                njt_string("verifyDepth"),
                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_verify_depth),
                 NJT_JSON_INT,
                 NULL,
                 NULL,
         },
         {
-                njt_string("trusted_certificate"),
+                njt_string("trustedCertificate"),
                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_trusted_certificate),
                 NJT_JSON_STR,
                 NULL,
@@ -357,7 +357,7 @@ static njt_json_define_t njt_helper_hc_api_data_ssl_json_dt[] ={
                 NULL,
         },
         {
-                njt_string("certificate_key"),
+                njt_string("certificateKey"),
                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_certificate_key),
                 NJT_JSON_STR,
                 NULL,
@@ -371,7 +371,7 @@ static njt_json_define_t njt_helper_hc_api_data_ssl_json_dt[] ={
                 NULL,
         },
         {
-                njt_string("conf_commands"),
+                njt_string("confCommands"),
                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_conf_commands),
                 NJT_JSON_STR,
                 NULL,
@@ -410,14 +410,14 @@ static njt_json_define_t njt_helper_hc_api_data_http_json_dt[] ={
                 NULL,
         },
         {
-                njt_string("grpc_service"),
+                njt_string("grpcService"),
                 offsetof(njt_helper_hc_http_add_data_t, grpc_service),
                 NJT_JSON_STR,
                 NULL,
                 NULL,
         },
         {
-                njt_string("grpc_status"),
+                njt_string("grpcStatus"),
                 offsetof(njt_helper_hc_http_add_data_t, grpc_status),
                 NJT_JSON_INT,
                 NULL,
@@ -1235,8 +1235,8 @@ static njt_buf_t* njt_hc_conf_info_to_json(njt_pool_t *pool,njt_helper_health_ch
             buf->last = njt_snprintf(buf->last, buf->end - buf->last  , "\"uri\":\"%V\",",&cf_ctx->uri);
         }
         if(cf_ctx->gsvc.len > 0){
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last  , "\"grpc_service\":\"%V\",",&cf_ctx->gsvc);
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last  , "\"grpc_status\":\"%u\",",&cf_ctx->gstatus);
+            buf->last = njt_snprintf(buf->last, buf->end - buf->last  , "\"grpcService\":\"%V\",",&cf_ctx->gsvc);
+            buf->last = njt_snprintf(buf->last, buf->end - buf->last  , "\"grpcStatus\":\"%u\",",&cf_ctx->gstatus);
         }
         if(cf_ctx->status.len > 0){
             buf->last = njt_snprintf(buf->last, buf->end - buf->last  , "\"status\":\"%V\",",&cf_ctx->status);
@@ -1268,9 +1268,9 @@ static njt_buf_t* njt_hc_conf_info_to_json(njt_pool_t *pool,njt_helper_health_ch
             buf->last = njt_snprintf(buf->last, buf->end - buf->last  , "\"name\": %V,",&hhccf->ssl.ssl_name);
         }
         if(hhccf->ssl.ssl_server_name){
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last  , "\"server_name\": true," );
+            buf->last = njt_snprintf(buf->last, buf->end - buf->last  , "\"serverName\": true," );
         }else{
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last  , "\"server_name\": false," );
+            buf->last = njt_snprintf(buf->last, buf->end - buf->last  , "\"serverName\": false," );
         }
         if(hhccf->ssl.ssl_verify){
             buf->last = njt_snprintf(buf->last, buf->end - buf->last  , "\"verify\": true," );
@@ -1279,11 +1279,11 @@ static njt_buf_t* njt_hc_conf_info_to_json(njt_pool_t *pool,njt_helper_health_ch
         }
         if(hhccf->ssl.ssl_verify_depth > 0){
             buf->last = njt_snprintf(buf->last, buf->end - buf->last  ,
-                                     "\"verify_depth\": %u,",hhccf->ssl.ssl_verify_depth );
+                                     "\"verifyDepth\": %u,",hhccf->ssl.ssl_verify_depth );
         }
         if(hhccf->ssl.ssl_trusted_certificate.len >0 ){
             buf->last = njt_snprintf(buf->last, buf->end - buf->last  ,
-                                     "\"trusted_certificate\": %V,",&hhccf->ssl.ssl_trusted_certificate);
+                                     "\"trustedCertificate\": %V,",&hhccf->ssl.ssl_trusted_certificate);
         }
         if(hhccf->ssl.ssl_crl.len >0 ){
             buf->last = njt_snprintf(buf->last, buf->end - buf->last  ,
@@ -1295,7 +1295,7 @@ static njt_buf_t* njt_hc_conf_info_to_json(njt_pool_t *pool,njt_helper_health_ch
         }
         if(hhccf->ssl.ssl_certificate_key.len >0 ){
             buf->last = njt_snprintf(buf->last, buf->end - buf->last  ,
-                                     "\"certificate_key\": %V,",&hhccf->ssl.ssl_certificate_key);
+                                     "\"certificateKey\": %V,",&hhccf->ssl.ssl_certificate_key);
         }
         if(hhccf->ssl.ssl_ciphers.len >0 ){
             buf->last = njt_snprintf(buf->last, buf->end - buf->last  ,
