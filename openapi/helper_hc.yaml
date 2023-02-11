@@ -172,18 +172,18 @@ components:
         interval:
           type: string
           description: 健康检查间隔
-          default: 3s
-          example: 3s
+          default: 5s
+          example: 5s
         jitter:
           type: string
           description: 健康检查间隔
-          default: 1s
+          default: 0s
           example: 1s
         timeout:
           type: string
           description: 健康检查超时时间
-          default: 10s
-          example: 10s
+          default: 5s
+          example: 5s
         port:
           type: number
           description: 健康检查的端口
