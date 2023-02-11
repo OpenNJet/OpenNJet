@@ -1097,9 +1097,9 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data,n
     njt_str_copy_pool(hhccf->pool,hhccf->upstream_name,api_data->upstream_name,
                       njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "health check helper create dynamic pool error "); return HC_SERVER_ERROR);
 
-    hhccf->interval = api_data->interval==0?NJT_HTTP_HC_INTERVAL:api_data->interval ;
-    hhccf->jitter = api_data->jitter==0?0:api_data->jitter ;
-    hhccf->timeout = api_data->timeout==0?NJT_HTTP_HC_CONNECT_TIMEOUT:api_data->timeout;
+    hhccf->interval = api_data->interval<=0?NJT_HTTP_HC_INTERVAL:api_data->interval ;
+    hhccf->jitter = api_data->jitter<=0?0:api_data->jitter ;
+    hhccf->timeout = api_data->timeout<=0?NJT_HTTP_HC_CONNECT_TIMEOUT:api_data->timeout;
     hhccf->port = api_data->port;
     hhccf->passes = api_data->passes==0?1:api_data->passes;
     hhccf->fails = api_data->fails==0?1:api_data->fails;
