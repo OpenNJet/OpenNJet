@@ -128,6 +128,7 @@ static void mqtt_register_outside_reader(njt_event_handler_pt h, struct mqtt_ctx
 
     rev->log = njt_cycle->log;
     rev->handler = h;
+    rev->cancelable = 1;
     rev->data = c;
 
     wev->data = c;
@@ -161,6 +162,7 @@ static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx
 
     ev->log = njt_cycle->log;
     ev->handler = h;
+    ev->cancelable = 1;
     ev->data = c;
     c->fd = (njt_socket_t)-1;
     c->data = ctx;
