@@ -1,5 +1,4 @@
 #include <njt_config.h>
-#include <njt_core.h>
 #include <njt_http.h>
 
 #include "mosquitto_emb.h"
