@@ -44,19 +44,18 @@ njt_helper_run(helper_param param)
             if (cycle == NULL) {
                 cycle = (njt_cycle_t *) njt_cycle;
                 njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ctrl reconfiguring continue");
-                continue;
+                return;
             }
 
             njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ctrl reconfiguring done");
-
             njt_cycle = cycle;
-
 
             njt_uint_t  i;
             for (i = 0; cycle->modules[i]; i++) {
                 if (cycle->modules[i]->init_process) {
                     if (cycle->modules[i]->init_process(cycle) == NJT_ERROR) {
                         /* fatal */
+                        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "ctrl fatal error");
                         njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "ctrl fatal error");
                         exit(2);
                     }
@@ -73,7 +72,7 @@ njt_helper_run(helper_param param)
         }
 
         if (cmd == NJT_HELPER_CMD_STOP) {
-            printf("helper ctrl stop\n");
+            njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper ctrl stop");
             break;            
         }
 
