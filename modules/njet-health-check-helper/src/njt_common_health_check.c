@@ -126,7 +126,8 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_array_t *json_keyval,
     items = json_keyval->elts;
     for (i = 0; i < json_keyval->nelts; ++i ) {
         for( j = 0 ; def[j].name.len != 0 ; ++j ){
-            if(njt_strncmp(items[i].key.data, def[j].name.data, def[j].name.len) == 0){
+            if(items[i].key.len == def[j].name.len &&
+                njt_strncmp(items[i].key.data, def[j].name.data, def[j].name.len) == 0){
                 if (items[i].type != def[j].type){
                     njt_log_error(NJT_LOG_EMERG, pool->log, 0, "%V type not matching",&items[i].key);
                     return NJT_ERROR;

@@ -208,13 +208,13 @@ static njt_int_t njt_helper_hc_agent_set_http_upstream(njt_cycle_t *cycle){
         j =0;
         peer = peers->peer;
         while (peer != NULL){
-            njt_memcpy(&peer_info[i].sockaddr,peer->sockaddr, sizeof(struct sockaddr));
-            peer_info[i].socklen = peer->socklen;
-            peer_info[i].peer_id = peer->id;
-            peer_info[i].name.len = peer->name.len;
-            peer_info[i].down = peer->down;
+            njt_memcpy(&peer_info[j].sockaddr,peer->sockaddr, sizeof(struct sockaddr));
+            peer_info[j].socklen = peer->socklen;
+            peer_info[j].peer_id = peer->id;
+            peer_info[j].name.len = peer->name.len;
+            peer_info[j].down = peer->down;
             njt_memcpy(index,peer->name.data,peer->name.len);
-            peer_info[i].name.data = index - msg.data;
+            peer_info[j].name.data = index - msg.data;
             index += peer->name.len;
             peer = peer->next;
             ++j;
@@ -226,13 +226,13 @@ static njt_int_t njt_helper_hc_agent_set_http_upstream(njt_cycle_t *cycle){
         if(peers->next != NULL) {
             peer = peers->next->peer; //backup
             while (peer != NULL) {
-                njt_memcpy(&peer_info[i].sockaddr,peer->sockaddr,sizeof(struct sockaddr));
-                peer_info[i].socklen = peer->socklen;
-                peer_info[i].peer_id = peer->id;
-                peer_info[i].name.len = peer->name.len;
-                peer_info[i].down = peer->down;
+                njt_memcpy(&peer_info[j].sockaddr,peer->sockaddr,sizeof(struct sockaddr));
+                peer_info[j].socklen = peer->socklen;
+                peer_info[j].peer_id = peer->id;
+                peer_info[j].name.len = peer->name.len;
+                peer_info[j].down = peer->down;
                 njt_memcpy(index, peer->name.data, peer->name.len);
-                peer_info[i].name.data = index - msg.data;
+                peer_info[j].name.data = index - msg.data;
                 index += peer->name.len;
                 peer = peer->next;
             }

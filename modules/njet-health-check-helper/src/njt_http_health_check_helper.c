@@ -856,6 +856,7 @@ static void njt_health_check_recovery_confs(){
     if(hmcf == NULL ){
         return;
     }
+    njt_memzero(&msg, sizeof(njt_str_t));
     njt_dyn_kv_get(&key,&msg);
     if(msg.len <= 2){
         return;
@@ -863,12 +864,12 @@ static void njt_health_check_recovery_confs(){
     pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
     if (pool == NULL) {
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "create pool error in function %s",__func__);
-        return;
+        goto end;
     }
     rc = njt_json_2_structure(&msg, &json_body,pool);
     if (rc != NJT_OK) {
         njt_log_error(NJT_LOG_EMERG, pool->log, 0, "structure json body mem malloc error !!");
-        return ;
+        goto end;
     }
 
     items = json_body.json_keyval->elts;
@@ -898,6 +899,7 @@ static void njt_health_check_recovery_confs(){
             njt_health_check_recovery_conf_info(pool,&msg,&upstream,&type);
         }
     }
+
     end:
     njt_destroy_pool(pool);
 
@@ -999,16 +1001,12 @@ static char *njt_http_health_check_conf(njt_conf_t *cf, njt_command_t *cmd, void
  */
 static void njt_http_hc_api_read_data(njt_http_request_t *r) {
     njt_str_t json_str;
-    njt_chain_t *body_chain;
+    njt_chain_t *body_chain,*tmp_chain;
     njt_int_t rc;
     njt_helper_hc_api_data_t *api_data = NULL;
+    njt_uint_t len,size;
 
     body_chain = r->request_body->bufs;
-    if (body_chain && body_chain->next) {
-        api_data->success = 0;
-        api_data->rc= NJT_OK;
-        return;
-    }
     /*check the sanity of the json body*/
     json_str.data = body_chain->buf->pos;
     json_str.len = body_chain->buf->last - body_chain->buf->pos;
@@ -1019,6 +1017,28 @@ static void njt_http_hc_api_read_data(njt_http_request_t *r) {
                        "could not alloc buffer in function %s", __func__);
         return;
     }
+    len = 0 ;
+    tmp_chain = body_chain;
+    while (tmp_chain!= NULL){
+        len += tmp_chain->buf->last - tmp_chain->buf->pos;
+        tmp_chain = tmp_chain->next;
+    }
+    json_str.len = len;
+    json_str.data = njt_pcalloc(r->pool,len);
+    if(json_str.data == NULL){
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "could not alloc buffer in function %s", __func__);
+        return;
+    }
+    len = 0;
+    tmp_chain = r->request_body->bufs;
+    while (tmp_chain!= NULL){
+        size = tmp_chain->buf->last-tmp_chain->buf->pos;
+        njt_memcpy(json_str.data + len,tmp_chain->buf->pos,size);
+        tmp_chain = tmp_chain->next;
+        len += size;
+    }
+
     njt_array_init(&api_data->http.headers,r->pool,4, sizeof(njt_str_t));
     rc =njt_json_parse_data(r->pool,&json_str,njt_helper_hc_api_data_json_dt,api_data);
     api_data->rc = rc;
