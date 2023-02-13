@@ -27,15 +27,13 @@ njt_helper_run(helper_param param)
     char confname[128];
     njt_cycle_t *cycle;
 
-    printf("helper ctrl started\n");
-
     memset(confname, 0, sizeof(confname));
     memcpy(confname, param.conf_fn.data, param.conf_fn.len);
-
     njt_reconfigure = 1;
     cycle = param.cycle;
     cycle->conf_file.data = param.conf_fullfn.data;
     cycle->conf_file.len = param.conf_fullfn.len;
+    njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper ctrl started");
 
     for ( ;; ) {
         if (njt_reconfigure) {
@@ -59,6 +57,7 @@ njt_helper_run(helper_param param)
                 if (cycle->modules[i]->init_process) {
                     if (cycle->modules[i]->init_process(cycle) == NJT_ERROR) {
                         /* fatal */
+                        njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "ctrl fatal error");
                         exit(2);
                     }
                 }
