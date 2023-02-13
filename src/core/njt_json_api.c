@@ -7,7 +7,7 @@ njt_int_t parseJson(njt_array_t *json_array, njt_json_val *key,
                     njt_json_val *val, njt_pool_t *pool)
 {
     njt_json_element        *json_element;
-    char buffer[256] = {};
+    char buffer[4096] = {};
     const char *pData;
     njt_uint_t len;
 
@@ -206,13 +206,13 @@ njt_int_t njt_json_2_structure(njt_str_t *json,
 
     pjson_manager->free = njt_json_manager_free;
 
-    json_buf = njt_pnalloc(pool, njt_pagesize);
+    json_buf = njt_pnalloc(pool, json->len+njt_pagesize);
     if (json_buf == NULL) {
         goto cleanup;
     }
 
 
-    njt_json_alc_pool_init(&alc, json_buf, njt_pagesize);
+    njt_json_alc_pool_init(&alc, json_buf, json->len +njt_pagesize);
 
     //doc = njt_json_read((const char*)json->data,json->len, 0);
     doc = njt_json_read_opts((char *)json->data, json->len, 0, &alc, NULL);
