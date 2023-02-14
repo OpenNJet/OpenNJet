@@ -259,6 +259,10 @@ njt_http_vhost_traffic_status_handler(njt_http_request_t *r)
     ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
     vtscf = njt_http_get_module_loc_conf(r, njt_http_vhost_traffic_status_module);
 
+    if (njt_process == NJT_PROCESS_HELPER)  {
+        return NJT_DECLINED;
+    }
+
     if (!ctx->enable || !vtscf->enable || vtscf->bypass_stats) {
         return NJT_DECLINED;
     }
