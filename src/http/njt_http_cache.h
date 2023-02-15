@@ -84,7 +84,7 @@ struct njt_http_cache_s {
     u_char                           key[NJT_HTTP_CACHE_KEY_LEN];
     u_char                           main[NJT_HTTP_CACHE_KEY_LEN];
     // by chengxu
-#if (NJT_HTTP_CACHE_PURGE)
+#if (NJT_HTTP_CACHE)
     //增加请求key
     njt_str_t                       request_key;
     njt_array_t                      file_keys;
