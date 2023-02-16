@@ -1,6 +1,5 @@
 
 #include <njt_config.h>
-#include <njt_core.h>
 #include <njt_http.h>
 
 #include "mosquitto_emb.h"
@@ -41,6 +40,7 @@ static njt_int_t njt_http_kv_add_variables(njt_conf_t *cf);
 static void invoke_kv_change_handler(njt_str_t *key, njt_str_t *value);
 static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg_len);
 static njt_int_t kv_init_worker(njt_cycle_t *cycle);
+static void kv_exit_worker(njt_cycle_t *cycle);
 static void *njt_http_kv_create_conf(njt_conf_t *cf);
 static char *njt_dyn_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
@@ -87,7 +87,7 @@ njt_module_t njt_http_kv_module = {
     kv_init_worker,          /* init process */
     NULL,                    /* init thread */
     NULL,                    /* exit thread */
-    NULL,                    /* exit process */
+    kv_exit_worker,          /* exit process */
     NULL,                    /* exit master */
     NJT_MODULE_V1_PADDING};
 
@@ -279,6 +279,21 @@ static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx
     c->data = ctx;
     njt_add_timer(ev, interval);
 }
+
+static char *kv_rr_callback(const char *topic, int is_req, const char *msg, int msg_len, int session_id, int *out_len)
+{
+    njt_str_t topic_str, msg_str;
+    topic_str.data = (u_char *)topic;
+    topic_str.len = strlen(topic);
+    msg_str.data = (u_char *)msg;
+    msg_str.len = msg_len;
+
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "kv got rr msg, topic: %V, msg:%V, seesion_id: %d", &topic_str, &msg_str, session_id);
+    // TODO: need to add codes to handle different rpc msg
+
+    *out_len = msg_len;
+    return (char *)msg;
+}
 static int msg_callback(const char *topic, const char *msg, int msg_len, void *out_data)
 {
     njt_rbtree_node_t *node;
@@ -418,7 +433,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     cluster_name.len = mqconf->cluster_name.len;
 
     njt_log_error(NJT_LOG_INFO, cycle->log, 0, "module http_kv init worker");
-    local_mqtt_ctx = mqtt_client_init(localcfg, NULL, msg_callback, client_id, log, cycle);
+    local_mqtt_ctx = mqtt_client_init(localcfg, kv_rr_callback, msg_callback, client_id, log, cycle);
 
     if (local_mqtt_ctx == NULL)
     {
@@ -439,6 +454,11 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
 
     return NJT_OK;
 };
+
+static void kv_exit_worker(njt_cycle_t *cycle)
+{
+    mqtt_client_exit(local_mqtt_ctx);
+}
 
 njt_int_t njt_http_kv_get(njt_http_request_t *r, njt_http_variable_value_t *v, uintptr_t data)
 {
@@ -617,7 +637,7 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke topic msg handler for topic:%s ", topic);
     if (kv_change_handler_fac)
     {
-        // found second field of topic's length,  for example: topic /dyn/loc/1 , second field is "loc", length is 3 
+        // found second field of topic's length,  for example: topic /dyn/loc/1 , second field is "loc", length is 3
         for (i = DYN_TOPIC_PREFIX_LEN; i < strlen(topic); i++)
         {
             if (topic[i] == '/')

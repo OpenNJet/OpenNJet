@@ -1,11 +1,20 @@
 #include <njt_config.h>
-#include <njt_core.h>
 #include <njt_http.h>
 #include <njt_json_api.h>
 
 #include "mosquitto_emb.h"
 #include "njt_http_sendmsg_module.h"
 #include <njt_mqconf_module.h>
+
+#define RPC_TOPIC_PREFIX "/dyn/"
+#define RPC_TOPIC_PREFIX_LEN 5
+
+typedef struct
+{
+    void *data;
+    int session_id;
+    rpc_msg_handler handler;
+} rpc_msg_handler_t;
 
 typedef struct
 {
@@ -32,13 +41,16 @@ static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx
 static void mqtt_loop_mqtt(njt_event_t *ev);
 static void mqtt_register_outside_reader(njt_event_handler_pt h, struct mqtt_ctx_t *ctx);
 static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle);
+static void sendmsg_exit_worker(njt_cycle_t *cycle);
 static void *njt_http_sendmsg_create_conf(njt_conf_t *cf);
 static char *njt_dyn_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static njt_int_t njt_http_sendmsg_init(njt_conf_t *cf);
 static njt_int_t njt_http_sendmsg_handler(njt_http_request_t *r);
 static void *njt_http_sendmsg_create_loc_conf(njt_conf_t *cf);
 static char *njt_dyn_kv_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+static void invoke_rpc_msg_handler(int session_id, const char *msg, int msg_len);
 
+static njt_array_t *rpc_msg_handler_fac = NULL;
 static struct mqtt_ctx_t *sendmsg_mqtt_ctx;
 
 static njt_http_module_t njt_http_sendmsg_module_ctx = {
@@ -82,7 +94,7 @@ njt_module_t njt_http_sendmsg_module = {
     sendmsg_init_worker,          /* init process */
     NULL,                         /* init thread */
     NULL,                         /* exit thread */
-    NULL,                         /* exit process */
+    sendmsg_exit_worker,          /* exit process */
     NULL,                         /* exit master */
     NJT_MODULE_V1_PADDING};
 
@@ -459,6 +471,25 @@ njt_http_sendmsg_handler(njt_http_request_t *r)
     return NJT_DECLINED;
 }
 
+static char *sendmsg_rr_callback(const char *topic, int is_reply, const char *msg, int msg_len, int session_id, int *out_len)
+{
+    njt_str_t topic_str, msg_str;
+    topic_str.data = (u_char *)topic;
+    topic_str.len = strlen(topic);
+    msg_str.data = (u_char *)msg;
+    msg_str.len = msg_len;
+
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "sendmsg got response msg, topic: %V, msg:%V, seesion_id: %d", &topic_str, &msg_str, session_id);
+
+    if (is_reply)
+    {
+        invoke_rpc_msg_handler(session_id, msg, msg_len);
+    }
+
+    *out_len = 0;
+    return NULL;
+}
+
 static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
 {
     njt_http_conf_ctx_t *conf_ctx;
@@ -505,7 +536,7 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
     localcfg[smcf->conf_file.len] = '\0';
 
     njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "module http_sendmsg init worker");
-    sendmsg_mqtt_ctx = mqtt_client_init(localcfg, NULL, NULL, client_id, log, cycle);
+    sendmsg_mqtt_ctx = mqtt_client_init(localcfg, sendmsg_rr_callback, NULL, client_id, log, cycle);
 
     if (sendmsg_mqtt_ctx == NULL)
     {
@@ -526,6 +557,11 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
 
     return NJT_OK;
 };
+
+static void sendmsg_exit_worker(njt_cycle_t *cycle)
+{
+    mqtt_client_exit(sendmsg_mqtt_ctx);
+}
 
 static void *
 njt_http_sendmsg_create_conf(njt_conf_t *cf)
@@ -616,6 +652,28 @@ int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
     return NJT_OK;
 }
 
+int njt_dyn_rpc_sendmsg(njt_str_t *topic, njt_str_t *content, int sessionId)
+{
+    int ret;
+    int qos = 0;
+
+    u_char *t;
+    t = njt_pcalloc(njt_cycle->pool, topic->len + 1);
+    if (t == NULL)
+    {
+        return NJT_ERROR;
+    }
+    njt_memcpy(t, topic->data, topic->len);
+    t[topic->len] = '\0';
+    ret = mqtt_client_sendmsg_rr((const char *)t, (const char *)content->data, (int)content->len, qos, sessionId, 0, sendmsg_mqtt_ctx);
+    njt_pfree(njt_cycle->pool, t);
+    if (ret < 0)
+    {
+        return NJT_ERROR;
+    }
+    return NJT_OK;
+}
+
 int njt_dyn_kv_get(njt_str_t *key, njt_str_t *value)
 {
     if (key->data == NULL)
@@ -643,4 +701,48 @@ int njt_dyn_kv_set(njt_str_t *key, njt_str_t *value)
         return NJT_ERROR;
     }
     return NJT_OK;
+}
+
+int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void *data)
+{
+    njt_uint_t i;
+    if (rpc_msg_handler_fac == NULL)
+        rpc_msg_handler_fac = njt_array_create(njt_cycle->pool, 4, sizeof(rpc_msg_handler_t));
+
+    rpc_msg_handler_t *tm_handler = rpc_msg_handler_fac->elts;
+    for (i = 0; i < rpc_msg_handler_fac->nelts; i++)
+    {
+        if (tm_handler[i].session_id == session_id)
+        {
+            tm_handler[i].handler = handler;
+            return NJT_OK;
+        }
+    }
+
+    rpc_msg_handler_t *rpc_handle = njt_array_push(rpc_msg_handler_fac);
+    rpc_handle->session_id = session_id;
+    rpc_handle->data = data;
+    rpc_handle->handler = handler;
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add rpc handler for session_id:%d", &session_id);
+    return NJT_OK;
+}
+
+static void invoke_rpc_msg_handler(int session_id, const char *msg, int msg_len)
+{
+    njt_uint_t i;
+    njt_str_t nstr_msg;
+    if (rpc_msg_handler_fac)
+    {
+        rpc_msg_handler_t *tm_handler = rpc_msg_handler_fac->elts;
+        for (i = 0; i < rpc_msg_handler_fac->nelts; i++)
+        {
+            if (tm_handler[i].session_id == session_id)
+            {
+                nstr_msg.data = (u_char *)msg;
+                nstr_msg.len = msg_len;
+                tm_handler[i].handler(session_id, &nstr_msg, tm_handler[i].data);
+                break;
+            }
+        }
+    }
 }

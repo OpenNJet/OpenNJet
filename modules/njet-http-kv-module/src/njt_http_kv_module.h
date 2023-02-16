@@ -1,5 +1,6 @@
 #ifndef NJT_HTTP_KV_MODULE_H_
 #define NJT_HTTP_KV_MODULE_H_
+#include <njt_core.h>
 
 typedef int (*kv_change_handler)(njt_str_t *key, njt_str_t *value, void *data);
 
