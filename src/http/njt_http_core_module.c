@@ -944,7 +944,14 @@ njt_http_core_rewrite_phase(njt_http_request_t *r, njt_http_phase_handler_t *ph)
 
     return NJT_OK;
 }
-
+// by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+static void njt_http_core_free_ctx(void* data){
+    njt_http_core_loc_conf_t  *clcf = data;
+    --clcf->ref_count;
+}
+#endif
+//end
 
 njt_int_t
 njt_http_core_find_config_phase(njt_http_request_t *r,
@@ -978,7 +985,29 @@ njt_http_core_find_config_phase(njt_http_request_t *r,
                    &clcf->name);
 
     njt_http_update_location_config(r);
-
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_http_core_loc_conf_t  *temp;
+    njt_http_cleanup_t   **cln,*end;
+//    njt_pool_cleanup_t  **cln,*end;
+    if (r->used_ref == 0 ){
+        r->used_ref =1;
+        temp = njt_http_get_module_loc_conf(r,njt_http_core_module);
+        ++temp->ref_count;
+        cln = &r->main->cleanup;
+        end = njt_pcalloc(r->pool, sizeof(njt_http_cleanup_t));
+//        cln = &r->pool->cleanup;
+//        end = njt_pcalloc(r->pool, sizeof(njt_pool_cleanup_t));
+        end->data = temp;
+        end->handler = njt_http_core_free_ctx;
+        end->next = NULL;
+        while (*cln != NULL){
+            cln = &(*cln)->next;
+        }
+        *cln = end;
+    }
+#endif
+    //end
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http cl:%O max:%O",
                    r->headers_in.content_length_n, clcf->client_max_body_size);
@@ -2632,6 +2661,49 @@ njt_http_named_location(njt_http_request_t *r, njt_str_t *name)
     return NJT_DONE;
 }
 
+//by chengxu
+#if (NJT_HTTP_DYNAMIC_LOC)
+void njt_http_location_cleanup(njt_http_core_loc_conf_t *clcf){
+    njt_http_location_destroy_t *ld;
+    if(clcf->clean_end ){
+        return;
+    }
+    while (clcf->destroy_locs != NULL) {
+        clcf->destroy_locs->destroy_loc(clcf, clcf->destroy_locs->data);
+        ld = clcf->destroy_locs;
+        clcf->destroy_locs = clcf->destroy_locs->next;
+        ld->destroy_loc = NULL;
+    }
+    clcf->clean_end = 1;
+}
+
+static njt_inline void njt_http_location_cleanup_handler(void * data){
+    njt_http_location_cleanup((njt_http_core_loc_conf_t*) data);
+}
+
+njt_int_t
+njt_http_location_cleanup_add(njt_http_core_loc_conf_t *clcf, void(*handler)(njt_http_core_loc_conf_t *hclcf,void* data) ,void* data){
+    njt_http_location_destroy_t *ld;
+    njt_pool_cleanup_t *pc;
+
+    ld = njt_pcalloc(clcf->pool,sizeof (njt_http_location_destroy_t));
+    if ( ld == NULL ){
+        return NJT_ERROR;
+    }
+    ld->data = data;
+    ld->destroy_loc = handler;
+    ld->next = clcf->destroy_locs;
+    clcf->destroy_locs = ld;
+    if(!clcf->clean_set){
+        clcf->clean_set = 1;
+        pc = njt_pool_cleanup_add(clcf->pool,0);
+        pc->handler = njt_http_location_cleanup_handler;
+        pc->data = clcf;
+    }
+    return NJT_OK;
+}
+#endif
+//end
 
 njt_http_cleanup_t *
 njt_http_cleanup_add(njt_http_request_t *r, size_t size)
@@ -2918,7 +2990,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (ctx == NULL) {
         return NJT_CONF_ERROR;
     }
-
+    // ctx->type = 2;
     http_ctx = cf->ctx;
     ctx->main_conf = http_ctx->main_conf;
 
@@ -2935,7 +3007,23 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (ctx->loc_conf == NULL) {
         return NJT_CONF_ERROR;
     }
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t *old_pool,*new_pool,*old_temp_pool;
+    njt_int_t rc;
 
+    old_pool = cf->pool;
+    old_temp_pool = cf->temp_pool;
+    new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (new_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    if (rc != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
+#endif
+    //end
     for (i = 0; cf->cycle->modules[i]; i++) {
         if (cf->cycle->modules[i]->type != NJT_HTTP_MODULE) {
             continue;
@@ -2951,7 +3039,12 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
             ctx->srv_conf[cf->cycle->modules[i]->ctx_index] = mconf;
         }
-
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+        cf->pool = new_pool;
+        cf->temp_pool = new_pool;
+#endif
+        //end
         if (module->create_loc_conf) {
             mconf = module->create_loc_conf(cf);
             if (mconf == NULL) {
@@ -2960,6 +3053,12 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
             ctx->loc_conf[cf->cycle->modules[i]->ctx_index] = mconf;
         }
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+        cf->pool = old_pool;
+        cf->temp_pool = old_temp_pool;
+#endif
+        //end
     }
 
 
@@ -3054,12 +3153,30 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     njt_http_module_t         *module;
     njt_http_conf_ctx_t       *ctx, *pctx;
     njt_http_core_loc_conf_t  *clcf, *pclcf;
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t *old_pool,*new_pool,*old_temp_pool;
+    njt_int_t rc;
 
+    old_pool = cf->pool;
+    old_temp_pool = cf->temp_pool;
+    new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (new_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    if (rc != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
+    cf->pool = new_pool;
+    cf->temp_pool = new_pool;
+#endif
+    //end
     ctx = njt_pcalloc(cf->pool, sizeof(njt_http_conf_ctx_t));
     if (ctx == NULL) {
         return NJT_CONF_ERROR;
     }
-
+    // ctx->type = 3;
     pctx = cf->ctx;
     ctx->main_conf = pctx->main_conf;
     ctx->srv_conf = pctx->srv_conf;
@@ -3083,18 +3200,57 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
                 return NJT_CONF_ERROR;
             }
         }
-    }
 
+    }
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = old_pool;
+    cf->temp_pool = old_temp_pool;
+#endif
+    //end
     clcf = ctx->loc_conf[njt_http_core_module.ctx_index];
     clcf->loc_conf = ctx->loc_conf;
 
     value = cf->args->elts;
-
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    u_char* index;
+    len =0;
+    for(i = 1; i < cf->args->nelts; i++){
+        len += value[i].len+1;
+    }
+    index = njt_pcalloc(clcf->pool,len);
+    if (index == NULL){
+        return NJT_CONF_ERROR;
+    }
+    clcf->full_name.data = index;
+    for(i = 1; i < cf->args->nelts; i++){
+        njt_memcpy(index,value[i].data,value[i].len);
+        index += value[i].len;
+        *index = (u_char)' ';
+        ++index;
+    }
+    clcf->full_name.len = len-1;
+#endif
+    //end
     if (cf->args->nelts == 3) {
 
         len = value[1].len;
         mod = value[1].data;
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+        njt_str_t location_name;
+        location_name.data = njt_pcalloc(clcf->pool,value[2].len+1);
+        if (location_name.data == NULL){
+            return NJT_CONF_ERROR;
+        }
+        location_name.len = value[2].len;
+        njt_memcpy(location_name.data,value[2].data,value[2].len+1);
+        name = & location_name;
+#else
         name = &value[2];
+#endif
+        //end
 
         if (len == 1 && mod[0] == '=') {
 
@@ -3125,8 +3281,20 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
         }
 
     } else {
-
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+        njt_str_t location_name;
+        location_name.data = njt_pcalloc(clcf->pool,value[1].len+1);
+        if (location_name.data == NULL){
+            return NJT_CONF_ERROR;
+        }
+        location_name.len = value[1].len;
+        njt_memcpy(location_name.data,value[1].data,value[1].len+1);
+        name = &location_name;
+#else
         name = &value[1];
+#endif
+        //end
 
         if (name->data[0] == '=') {
 
@@ -3219,16 +3387,45 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
             return NJT_CONF_ERROR;
         }
     }
+    // if(pclcf->old_locations == NULL) {
+	// pclcf->old_locations = njt_palloc(cf->temp_pool,
+    //                             sizeof(njt_http_location_queue_t));
+	// njt_queue_init(pclcf->old_locations);
+    // }
+    if(cf->dynamic != 1){
+        if (njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
+            return NJT_CONF_ERROR;
+        }
+		if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
+			return NJT_CONF_ERROR;
+		}
+    } else {
+		 clcf->dynamic_status = 1;  // 1 
+		 if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
+			return NJT_CONF_ERROR;
+		}
+	}
 
-    if (njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
-        return NJT_CONF_ERROR;
-    }
-
+   
     save = *cf;
     cf->ctx = ctx;
     cf->cmd_type = NJT_HTTP_LOC_CONF;
 
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = new_pool;
+    cf->temp_pool = new_pool;
+#endif
+    //end
     rv = njt_conf_parse(cf, NULL);
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = old_pool;
+    cf->temp_pool = old_temp_pool;
+#endif
+    //end
+
+
 
     *cf = save;
 
@@ -3579,7 +3776,15 @@ njt_http_core_create_loc_conf(njt_conf_t *cf)
      *     clcf->gzip_proxied = 0;
      *     clcf->keepalive_disable = 0;
      */
-
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    clcf->pool=cf->pool;  // cx 处理内存释放
+    clcf->destroy_locs = NULL; // cx 处理资源释放
+    clcf->ref_count = 0;
+    clcf->clean_set = 0;
+    clcf->clean_end = 0;
+#endif
+    //end
     clcf->client_max_body_size = NJT_CONF_UNSET;
     clcf->client_body_buffer_size = NJT_CONF_UNSET_SIZE;
     clcf->client_body_timeout = NJT_CONF_UNSET_MSEC;
@@ -4572,12 +4777,30 @@ njt_http_core_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (!(pclcf->limit_except & NJT_HTTP_GET)) {
         pclcf->limit_except &= (uint32_t) ~NJT_HTTP_HEAD;
     }
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t *old_pool,*new_pool,*old_temp_pool;
+    njt_int_t rc;
 
+    old_pool = cf->pool;
+    old_temp_pool = cf->temp_pool;
+    new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (new_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    if (rc != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
+    cf->pool = new_pool;
+    cf->temp_pool = new_pool;
+#endif
+    //end
     ctx = njt_pcalloc(cf->pool, sizeof(njt_http_conf_ctx_t));
     if (ctx == NULL) {
         return NJT_CONF_ERROR;
     }
-
+    // ctx->type = 4;
     pctx = cf->ctx;
     ctx->main_conf = pctx->main_conf;
     ctx->srv_conf = pctx->srv_conf;
@@ -4603,8 +4826,14 @@ njt_http_core_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
             ctx->loc_conf[cf->cycle->modules[i]->ctx_index] = mconf;
         }
-    }
 
+    }
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = old_pool;
+    cf->temp_pool = old_temp_pool;
+#endif
+    //end
 
     clcf = ctx->loc_conf[njt_http_core_module.ctx_index];
     pclcf->limit_except_loc_conf = ctx->loc_conf;
@@ -4620,8 +4849,20 @@ njt_http_core_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     save = *cf;
     cf->ctx = ctx;
     cf->cmd_type = NJT_HTTP_LMT_CONF;
-
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = new_pool;
+    cf->temp_pool = new_pool;
+#endif
+    //end
     rv = njt_conf_parse(cf, NULL);
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = old_pool;
+    cf->temp_pool = old_temp_pool;
+#endif
+    //end
+
 
     *cf = save;
 

@@ -11,14 +11,7 @@
 #include <njt_http.h>
 
 
-typedef struct {
-    njt_array_t  *codes;        /* uintptr_t */
 
-    njt_uint_t    stack_size;
-
-    njt_flag_t    log;
-    njt_flag_t    uninitialized_variable_warn;
-} njt_http_rewrite_loc_conf_t;
 
 
 static void *njt_http_rewrite_create_loc_conf(njt_conf_t *cf);
@@ -543,7 +536,25 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_core_loc_conf_t     *clcf, *pclcf;
     njt_http_script_if_code_t    *if_code;
     njt_http_rewrite_loc_conf_t  *nlcf;
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t *old_pool,*new_pool,*old_temp_pool;
+    njt_int_t rc;
 
+    old_pool = cf->pool;
+    old_temp_pool = cf->temp_pool;
+    new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (new_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    if (rc != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
+    cf->pool = new_pool;
+    cf->temp_pool = new_pool;
+#endif
+    //end
     ctx = njt_pcalloc(cf->pool, sizeof(njt_http_conf_ctx_t));
     if (ctx == NULL) {
         return NJT_CONF_ERROR;
@@ -574,8 +585,14 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
             ctx->loc_conf[cf->cycle->modules[i]->ctx_index] = mconf;
         }
-    }
 
+    }
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = old_pool;
+    cf->temp_pool = old_temp_pool;
+#endif
+    //end
     pclcf = pctx->loc_conf[njt_http_core_module.ctx_index];
 
     clcf = ctx->loc_conf[njt_http_core_module.ctx_index];
@@ -618,8 +635,20 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         if_code->loc_conf = ctx->loc_conf;
         cf->cmd_type = NJT_HTTP_LIF_CONF;
     }
-
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = new_pool;
+    cf->temp_pool = new_pool;
+#endif
+    //end
     rv = njt_conf_parse(cf, NULL);
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    cf->pool = old_pool;
+    cf->temp_pool = old_temp_pool;
+#endif
+    //end
+
 
     *cf = save;
 
@@ -929,6 +958,21 @@ njt_http_rewrite_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (v->get_handler == NULL) {
         v->get_handler = njt_http_rewrite_var;
         v->data = index;
+#if (NJT_HTTP_DYNAMIC_LOC)
+	if(lcf->var_names.pool == NULL) {
+			if (njt_array_init(&lcf->var_names, cf->pool, 4,
+                           sizeof(njt_http_dyn_variable_t))
+            != NJT_OK)
+			{
+				return NULL;
+			}
+		} 
+			njt_http_variable_t **v_name = njt_array_push(&lcf->var_names);
+			if(v_name != NULL) {
+				*v_name = v;
+			}
+		
+#endif
     }
 
     if (njt_http_rewrite_value(cf, lcf, &value[2]) != NJT_CONF_OK) {

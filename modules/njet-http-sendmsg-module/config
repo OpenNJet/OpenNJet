@@ -1,0 +1,15 @@
+njt_addon_name=njt_http_sendmsg_module
+njt_module_type=HTTP
+njt_module_name=$njt_addon_name
+njt_module_deps=" \
+  $njt_addon_dir/src/mosquitto_emb.h \
+  $njt_addon_dir/src/njt_http_sendmsg_module.h \
+"
+njt_module_srcs=" \
+  $njt_addon_dir/src/njt_http_sendmsg_module.c \
+"
+njt_module_incs=""
+njt_module_libs=" -lmosquitto_emb"
+
+CORE_INCS="$CORE_INCS $njt_addon_dir/src"
+. auto/module

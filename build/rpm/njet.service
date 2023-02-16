@@ -1,0 +1,15 @@
+[Unit]
+Description=njet - high performance web server
+After=network.target remote-fs.target nss-lookup.target
+ 
+[Service]
+Type=forking
+PIDFile=/var/run/njet.pid
+ExecStartPre=/usr/sbin/njet -t -c /etc/njet/njet.conf
+ExecStart=/usr/sbin/njet -c /etc/njet/njet.conf
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s QUIT $MAINPID
+PrivateTmp=true
+ 
+[Install]
+WantedBy=multi-user.target

@@ -400,12 +400,12 @@ found:
             return NJT_ERROR;
         }
     }
-
     elts = njt_palloc(hinit->pool, len + njt_cacheline_size);
     if (elts == NULL) {
         njt_free(test);
         return NJT_ERROR;
     }
+    //hinit->hash->elts = elts;
 
     elts = njt_align_ptr(elts, njt_cacheline_size);
 

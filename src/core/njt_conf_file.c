@@ -108,7 +108,13 @@ njt_conf_add_dump(njt_conf_t *cf, njt_str_t *filename)
     njt_buf_t        *buf;
     njt_str_node_t   *sn;
     njt_conf_dump_t  *cd;
-
+ //byg zyg
+ #if (NJT_HTTP_DYNAMIC_LOC)
+	if(cf->dynamic == 1){
+           cf->conf_file->dump = NULL;
+	   return NJT_OK;
+	}
+ #endif
     hash = njt_crc32_long(filename->data, filename->len);
 
     sn = njt_str_rbtree_lookup(&cf->cycle->config_dump_rbtree, filename, hash);
@@ -202,7 +208,11 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
         if (buf.start == NULL) {
             goto failed;
         }
-
+        //by cheng xu
+#if (NJT_DEBUG)
+        njt_log_debug0(NJT_LOG_DEBUG_CORE, cf->log, 0,"alloc cf->conf_file->buffer ");
+#endif
+        //end
         buf.pos = buf.start;
         buf.last = buf.start;
         buf.end = buf.last + NJT_CONF_BUFFER;
@@ -763,7 +773,6 @@ njt_conf_read_token(njt_conf_t *cf)
                 if (word == NULL) {
                     return NJT_ERROR;
                 }
-
                 word->data = njt_pnalloc(cf->pool, b->pos - 1 - start + 1);
                 if (word->data == NULL) {
                     return NJT_ERROR;

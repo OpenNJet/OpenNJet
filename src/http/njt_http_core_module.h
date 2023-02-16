@@ -170,7 +170,9 @@ typedef struct {
     njt_uint_t                 variables_hash_bucket_size;
 
     njt_hash_keys_arrays_t    *variables_keys;
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t		           *dyn_var_pool;
+#endif
     njt_array_t               *ports;
 
     njt_http_phase_t           phases[NJT_HTTP_LOG_PHASE + 1];
@@ -207,6 +209,12 @@ typedef struct {
 #endif
 
     njt_http_core_loc_conf_t  **named_locations;
+    //add by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t                *named_parent_pool;
+//    njt_pool_t                *new_named_parent_pool;
+//    njt_http_core_loc_conf_t  **new_named_locations;
+#endif
 } njt_http_core_srv_conf_t;
 
 
@@ -296,7 +304,15 @@ typedef struct {
     njt_http_complex_value_t   value;
     njt_str_t                  args;
 } njt_http_err_page_t;
-
+// by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+typedef struct njt_http_location_destroy_s {
+    void(*destroy_loc)(njt_http_core_loc_conf_t *hclf,void* data);
+    void* data;     // 携带必要上下文数据
+    struct njt_http_location_destroy_s *next;
+} njt_http_location_destroy_t;
+#endif
+//end
 
 struct njt_http_core_loc_conf_s {
     njt_str_t     name;          /* location name */
@@ -320,8 +336,17 @@ struct njt_http_core_loc_conf_s {
 #endif
 
     njt_http_location_tree_node_t   *static_locations;
+
+
 #if (NJT_PCRE)
     njt_http_core_loc_conf_t       **regex_locations;
+    //add by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+//    njt_pool_t                     *regex_parent_pool;
+//    njt_http_core_loc_conf_t       **new_regex_locations;
+//    njt_pool_t                     *new_regex_parent_pool;
+#endif
+    //end
 #endif
 
     /* pointer to the modules' loc_conf */
@@ -438,6 +463,21 @@ struct njt_http_core_loc_conf_s {
     njt_uint_t    types_hash_bucket_size;
 
     njt_queue_t  *locations;
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_queue_t  *old_locations; //zyg
+    njt_queue_t  *new_locations;    //clb
+    njt_pool_t   *pool;          //cx 处理上下文内存释放
+    njt_http_location_destroy_t *destroy_locs; //cx 处理上下文内存释放,按照链表顺序释放
+    njt_str_t    full_name;       // cx 查找location
+    njt_uint_t   ref_count;
+    unsigned     disable:1;
+    unsigned     clean_set:1;
+    unsigned     clean_end:1;
+	unsigned     dynamic_status:2; // 1 init, 2 nomal
+    njt_http_location_tree_node_t   *new_static_locations;//add by clb
+#endif
+    //end
 
 #if 0
     njt_http_core_loc_conf_t  *prev_location;
@@ -453,6 +493,11 @@ typedef struct {
     u_char                          *file_name;
     njt_uint_t                       line;
     njt_queue_t                      list;
+	    // by zyg
+#if (NJT_HTTP_DYNAMIC_LOC)
+	unsigned     dynamic_status:2; // 1 init, 2 nomal
+    njt_pool_t   *parent_pool;  //add by clb
+#endif
 } njt_http_location_queue_t;
 
 
@@ -463,7 +508,11 @@ struct njt_http_location_tree_node_s {
 
     njt_http_core_loc_conf_t        *exact;
     njt_http_core_loc_conf_t        *inclusive;
-
+    //by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t   *parent_pool;
+#endif
+//end by clb
     u_char                           auto_redirect;
     u_char                           len;
     u_char                           name[1];
@@ -511,7 +560,12 @@ njt_int_t njt_http_named_location(njt_http_request_t *r, njt_str_t *name);
 
 
 njt_http_cleanup_t *njt_http_cleanup_add(njt_http_request_t *r, size_t size);
-
+//by chengxu
+#if (NJT_HTTP_DYNAMIC_LOC)
+void njt_http_location_cleanup(njt_http_core_loc_conf_t *clcf);
+njt_int_t njt_http_location_cleanup_add(njt_http_core_loc_conf_t *clcf, void(*handler)(njt_http_core_loc_conf_t *hclcf,void* data) ,void* data);
+#endif
+//end
 
 typedef njt_int_t (*njt_http_output_header_filter_pt)(njt_http_request_t *r);
 typedef njt_int_t (*njt_http_output_body_filter_pt)

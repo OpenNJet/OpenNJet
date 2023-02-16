@@ -416,6 +416,7 @@ struct njt_http_request_s {
     njt_str_t                         uri_key;
     njt_str_t                         args;
     njt_str_t                         exten;
+    njt_str_t                         tmp_location_name;     //add by clb
     njt_str_t                         unparsed_uri;
 
     njt_str_t                         method_name;
@@ -601,6 +602,11 @@ struct njt_http_request_s {
 
     unsigned                          http_minor:16;
     unsigned                          http_major:16;
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    unsigned                          used_ref;
+#endif
+    //end
 };
 
 

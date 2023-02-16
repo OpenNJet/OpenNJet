@@ -1,0 +1,7 @@
+njt_addon_name=njt_mqconf_module
+
+CORE_MODULES="$CORE_MODULES njt_mqconf_module"
+NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_addon_dir/njt_mqconf_module.c"
+NJT_ADDON_DEPS="$NJT_ADDON_DEPS $njt_addon_dir/njt_mqconf_module.h"
+CORE_INCS="$CORE_INCS $njt_addon_dir/"
+have=NJT_MQCONF . auto/have

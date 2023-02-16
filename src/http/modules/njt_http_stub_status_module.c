@@ -66,16 +66,16 @@ njt_module_t  njt_http_stub_status_module = {
 static njt_http_variable_t  njt_http_stub_status_vars[] = {
 
     { njt_string("connections_active"), NULL, njt_http_stub_status_variable,
-      0, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("connections_reading"), NULL, njt_http_stub_status_variable,
-      1, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      1, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("connections_writing"), NULL, njt_http_stub_status_variable,
-      2, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      2, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("connections_waiting"), NULL, njt_http_stub_status_variable,
-      3, NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      3, NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
       njt_http_null_variable
 };

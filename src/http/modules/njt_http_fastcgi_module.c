@@ -636,11 +636,11 @@ static njt_http_variable_t  njt_http_fastcgi_vars[] = {
 
     { njt_string("fastcgi_script_name"), NULL,
       njt_http_fastcgi_script_name_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("fastcgi_path_info"), NULL,
       njt_http_fastcgi_path_info_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 
       njt_http_null_variable
 };

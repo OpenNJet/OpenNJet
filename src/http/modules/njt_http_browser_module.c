@@ -215,13 +215,13 @@ static njt_http_modern_browser_mask_t  njt_http_modern_browser_masks[] = {
 static njt_http_variable_t  njt_http_browser_vars[] = {
 
     { njt_string("msie"), NULL, njt_http_msie_variable,
-      0, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      0, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("modern_browser"), NULL, njt_http_browser_variable,
-      NJT_HTTP_MODERN_BROWSER, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      NJT_HTTP_MODERN_BROWSER, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("ancient_browser"), NULL, njt_http_browser_variable,
-      NJT_HTTP_ANCIENT_BROWSER, NJT_HTTP_VAR_CHANGEABLE, 0 },
+      NJT_HTTP_ANCIENT_BROWSER, NJT_HTTP_VAR_CHANGEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
       njt_http_null_variable
 };

@@ -71,6 +71,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     if (pool == NULL) {
         return NULL;
     }
+
     pool->log = log;
 
     cycle = njt_pcalloc(pool, sizeof(njt_cycle_t));
@@ -144,7 +145,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     njt_rbtree_init(&cycle->config_dump_rbtree, &cycle->config_dump_sentinel,
                     njt_str_rbtree_insert_value);
-
+    cycle->old_config_dump_rbtree = cycle->config_dump_rbtree;
     if (old_cycle->open_files.part.nelts) {
         n = old_cycle->open_files.part.nelts;
         for (part = old_cycle->open_files.part.next; part; part = part->next) {
@@ -249,7 +250,6 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     senv = environ;
 
-
     njt_memzero(&conf, sizeof(njt_conf_t));
     /* STUB: init array ? */
     conf.args = njt_array_create(pool, 10, sizeof(njt_str_t));
@@ -263,7 +263,6 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         njt_destroy_pool(pool);
         return NULL;
     }
-
 
     conf.ctx = cycle->conf_ctx;
     conf.cycle = cycle;
@@ -342,7 +341,9 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                 goto failed;
             }
 
-            njt_delete_pidfile(old_cycle);
+            if (njt_process != NJT_PROCESS_HELPER) {
+                njt_delete_pidfile(old_cycle);
+            }
         }
     }
 
@@ -768,9 +769,17 @@ old_shm_zone_done:
                           file[i].name.data);
         }
     }
-
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    if (njt_sub_pool(conf.pool,conf.temp_pool) != NJT_OK){
+        njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
+                      "could not set sub_pool njt_temp_pool");
+        exit(1);
+    }
+#else
     njt_destroy_pool(conf.temp_pool);
-
+#endif
+    //end
     if (njt_process == NJT_PROCESS_MASTER || njt_is_init_cycle(old_cycle)) {
 
         njt_destroy_pool(old_cycle->pool);

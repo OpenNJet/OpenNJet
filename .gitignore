@@ -1,0 +1,7 @@
+auto/lib
+nginx/Makefile
+nginx/target
+build/
+*.swp
+./Makefile
+auto/lib/tassl/.openssl/

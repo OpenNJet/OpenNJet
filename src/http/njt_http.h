@@ -72,6 +72,18 @@ typedef struct {
     u_char              *end;
 } njt_http_status_t;
 
+typedef struct {
+    njt_array_t  *codes;        /* uintptr_t */
+
+    njt_uint_t    stack_size;
+
+    njt_flag_t    log;
+    njt_flag_t    uninitialized_variable_warn;
+	#if (NJT_HTTP_DYNAMIC_LOC)
+		 njt_array_t  var_names;  
+	#endif
+} njt_http_rewrite_loc_conf_t;
+
 
 #define njt_http_get_module_ctx(r, module)  (r)->ctx[module.ctx_index]
 #define njt_http_set_ctx(r, c, module)      r->ctx[module.ctx_index] = c;
@@ -115,6 +127,15 @@ void njt_http_split_args(njt_http_request_t *r, njt_str_t *uri,
 njt_int_t njt_http_parse_chunked(njt_http_request_t *r, njt_buf_t *b,
     njt_http_chunked_t *ctx);
 
+njt_int_t njt_http_init_new_locations(njt_conf_t *cf,
+    njt_http_core_srv_conf_t *cscf, njt_http_core_loc_conf_t *pclcf);
+
+njt_int_t njt_http_init_new_static_location_trees(njt_conf_t *cf,
+    njt_http_core_loc_conf_t *pclcf);
+
+char *njt_http_merge_servers(njt_conf_t *cf,
+    njt_http_core_main_conf_t *cmcf, njt_http_module_t *module,
+    njt_uint_t ctx_index);
 
 njt_http_request_t *njt_http_create_request(njt_connection_t *c);
 njt_int_t njt_http_process_request_uri(njt_http_request_t *r);
@@ -137,7 +158,9 @@ void njt_http_request_empty_handler(njt_http_request_t *r);
 
 njt_int_t njt_http_send_special(njt_http_request_t *r, njt_uint_t flags);
 
-
+char *njt_http_merge_locations(njt_conf_t *cf,
+    njt_queue_t *locations, void **loc_conf, njt_http_module_t *module,
+    njt_uint_t ctx_index);
 njt_int_t njt_http_read_client_request_body(njt_http_request_t *r,
     njt_http_client_body_handler_pt post_handler);
 njt_int_t njt_http_read_unbuffered_request_body(njt_http_request_t *r);

@@ -24,6 +24,11 @@ typedef struct {
 typedef struct {
     njt_hash_elt_t  **buckets;
     njt_uint_t        size;
+//by zyg
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t       *pool;
+#endif
+//end
 } njt_hash_t;
 
 
@@ -122,5 +127,11 @@ njt_int_t njt_hash_keys_array_init(njt_hash_keys_arrays_t *ha, njt_uint_t type);
 njt_int_t njt_hash_add_key(njt_hash_keys_arrays_t *ha, njt_str_t *key,
     void *value, njt_uint_t flags);
 
-
+//by zyg
+#if (NJT_HTTP_DYNAMIC_LOC)
+    void njt_hash_free(njt_hash_t *hash);
+//    njt_pool_t       *pool;
+//    u_char           *elts;
+#endif
+//end
 #endif /* _NJT_HASH_H_INCLUDED_ */

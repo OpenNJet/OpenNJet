@@ -33,6 +33,9 @@ typedef njt_int_t (*njt_http_get_variable_pt) (njt_http_request_t *r,
 #define NJT_HTTP_VAR_NOHASH       8
 #define NJT_HTTP_VAR_WEAK         16
 #define NJT_HTTP_VAR_PREFIX       32
+#define NJT_HTTP_DYN_VAR          64
+#define NJT_HTTP_DYN_DEL          128
+#define NJT_VAR_INIT_REF_COUNT    1
 
 
 struct njt_http_variable_s {
@@ -42,9 +45,15 @@ struct njt_http_variable_s {
     uintptr_t                     data;
     njt_uint_t                    flags;
     njt_uint_t                    index;
+	njt_uint_t                    ref_count;
 };
-
-#define njt_http_null_variable  { njt_null_string, NULL, NULL, 0, 0, 0 }
+#if (NJT_HTTP_DYNAMIC_LOC)
+typedef struct {
+    njt_http_variable_t           *v;
+    njt_int_t                     ref_count;
+} njt_http_dyn_variable_t;
+#endif
+#define njt_http_null_variable  { njt_null_string, NULL, NULL, 0, 0, 0, NJT_VAR_INIT_REF_COUNT}
 
 
 njt_http_variable_t *njt_http_add_variable(njt_conf_t *cf, njt_str_t *name,

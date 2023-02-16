@@ -379,60 +379,60 @@ static njt_http_variable_t  njt_http_upstream_vars[] = {
 
     { njt_string("upstream_addr"), NULL,
       njt_http_upstream_addr_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_status"), NULL,
       njt_http_upstream_status_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_connect_time"), NULL,
       njt_http_upstream_response_time_variable, 2,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_header_time"), NULL,
       njt_http_upstream_response_time_variable, 1,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_response_time"), NULL,
       njt_http_upstream_response_time_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_response_length"), NULL,
       njt_http_upstream_response_length_variable, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_bytes_received"), NULL,
       njt_http_upstream_response_length_variable, 1,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_bytes_sent"), NULL,
       njt_http_upstream_response_length_variable, 2,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
 #if (NJT_HTTP_CACHE)
 
     { njt_string("upstream_cache_status"), NULL,
       njt_http_upstream_cache_status, 0,
-      NJT_HTTP_VAR_NOCACHEABLE, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_cache_last_modified"), NULL,
       njt_http_upstream_cache_last_modified, 0,
-      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_cache_etag"), NULL,
       njt_http_upstream_cache_etag, 0,
-      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0 },
+      NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_NOHASH, 0, NJT_VAR_INIT_REF_COUNT },
 
 #endif
 
     { njt_string("upstream_http_"), NULL, njt_http_upstream_header_variable,
-      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_trailer_"), NULL, njt_http_upstream_trailer_variable,
-      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("upstream_cookie_"), NULL, njt_http_upstream_cookie_variable,
-      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0 },
+      0, NJT_HTTP_VAR_NOCACHEABLE|NJT_HTTP_VAR_PREFIX, 0, NJT_VAR_INIT_REF_COUNT },
 
       njt_http_null_variable
 };
@@ -6071,7 +6071,23 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (ctx->loc_conf == NULL) {
         return NJT_CONF_ERROR;
     }
+    // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_pool_t *old_pool,*new_pool,*old_temp_pool;
+    njt_int_t rc;
 
+    old_pool = cf->pool;
+    old_temp_pool = cf->temp_pool;
+    new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (new_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    if (rc != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
+#endif
+    //end
     for (m = 0; cf->cycle->modules[m]; m++) {
         if (cf->cycle->modules[m]->type != NJT_HTTP_MODULE) {
             continue;
@@ -6087,7 +6103,12 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
             ctx->srv_conf[cf->cycle->modules[m]->ctx_index] = mconf;
         }
-
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+        cf->pool = new_pool;
+        cf->temp_pool = new_pool;
+#endif
+        //end
         if (module->create_loc_conf) {
             mconf = module->create_loc_conf(cf);
             if (mconf == NULL) {
@@ -6096,6 +6117,12 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
             ctx->loc_conf[cf->cycle->modules[m]->ctx_index] = mconf;
         }
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+        cf->pool = old_pool;
+        cf->temp_pool = old_temp_pool;
+#endif
+        //end
     }
 
     uscf->servers = njt_array_create(cf->pool, 4,
