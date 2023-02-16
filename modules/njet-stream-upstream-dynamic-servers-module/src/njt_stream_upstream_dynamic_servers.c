@@ -68,6 +68,10 @@ njt_stream_upstream_zone_init_parent_peer(njt_stream_upstream_rr_peers_t *peers,
                                  njt_str_t *server,njt_stream_upstream_rr_peer_t *parent_node);
 static char *
 njt_stream_upstream_state(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+
+static char *njt_stream_upstream_check(njt_conf_t *cf, njt_command_t *cmd,
+                                   void *conf);
+
 static njt_command_t njt_stream_upstream_dynamic_servers_commands[] = {
     {
         njt_string("server"),
@@ -99,6 +103,14 @@ static njt_command_t njt_stream_upstream_dynamic_servers_commands[] = {
         njt_string("state"),
         NJT_STREAM_UPS_CONF | NJT_CONF_TAKE1,
         njt_stream_upstream_state,
+        0,
+        0,
+        NULL
+    },
+	 {
+        njt_string("health_check"),
+        NJT_STREAM_UPS_CONF | NJT_CONF_1MORE,
+        njt_stream_upstream_check,
         0,
         0,
         NULL
@@ -1806,5 +1818,41 @@ static void njt_stream_upstream_dynamic_server_delete_server(
     }
     return;
 }
+static char *njt_stream_upstream_check(njt_conf_t *cf, njt_command_t *cmd,
+                                   void *conf)
+{
+    njt_uint_t                         i;
+    njt_stream_upstream_srv_conf_t                  *uscf;
+    njt_str_t                   *value;
 
+	uscf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_upstream_module);
+	if(uscf == NULL){
+		njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "no find njt_http_upstream_module!");
+		return NJT_CONF_ERROR;
+	}
+	uscf->hc_type = 0;
+	value = cf->args->elts;
+	for (i = 1; i < cf->args->nelts; i++) {
+		if (njt_strncmp(value[i].data, "mandatory", 9) == 0) {
+		    uscf->mandatory = 1;
+		    continue;
+		}
+		if (njt_strncmp(value[i].data, "persistent", 10) == 0) {
+		    uscf->persistent = 1;
+		    continue;
+		}
+		return NJT_CONF_ERROR;
+	}
+	if(uscf->persistent == 1 && uscf->mandatory != 1) {
+		njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "persistent need mandatory seted !");
+	}
+	if(uscf->persistent == 1 && uscf->mandatory == 1){
+		uscf->hc_type = 2;
+	} else  if(uscf->mandatory == 1) {
+		uscf->hc_type = 1;
+	}
+  return NJT_CONF_OK;
+}
 
