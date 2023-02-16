@@ -131,7 +131,7 @@ static int njt_stream_lua_req_socket(lua_State *L);
 #endif
 
 
-#if !defined(LUA_DEFAULT_PATH) && (NJT_DEBUG)
+#if !defined(LUA_DEFAULT_PATH) 
 #define LUA_DEFAULT_PATH "/etc/njet/lualib/lib/?.lua;"                      
                          //"/etc/njet/lua-resty-lrucache/lib/?.lua"
 #endif
