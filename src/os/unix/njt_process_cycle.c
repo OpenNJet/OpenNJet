@@ -49,6 +49,7 @@ sig_atomic_t  njt_quit;
 sig_atomic_t  njt_debug_quit;
 njt_uint_t    njt_exiting;
 sig_atomic_t  njt_reconfigure;
+time_t        njt_reconfigure_time;
 sig_atomic_t  njt_reopen;
 sig_atomic_t  njt_reap_helper;
 
@@ -235,7 +236,11 @@ njt_master_process_cycle(njt_cycle_t *cycle)
                                            NJT_PROCESS_RESPAWN);
                 njt_start_cache_manager_processes(cycle, 0);
                 njt_noaccepting = 0;
+                continue;
+            }
 
+            if (njt_reconfigure_time>0 && njt_time()-njt_reconfigure_time<3) {
+                njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ignore reconfiguring");
                 continue;
             }
 
@@ -261,6 +266,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             live = 1;
             njt_signal_worker_processes(cycle,
                                         njt_signal_value(NJT_SHUTDOWN_SIGNAL));
+            njt_reconfigure_time = njt_time();
         }
 
         if (njt_restart) {
