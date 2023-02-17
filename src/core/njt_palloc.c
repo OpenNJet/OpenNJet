@@ -134,13 +134,14 @@ njt_destroy_pool(njt_pool_t *pool)
 #if (NJT_DYNAMIC_POOL)
     njt_pool_t          *sub_pool;
     njt_queue_t         *sub_queue;
-    if (!njt_queue_empty(&pool->parent_pool)){
+    if (pool->parent_pool.prev != NULL && pool->parent_pool.next != NULL && !njt_queue_empty(&pool->parent_pool)){
         njt_queue_remove(&pool->parent_pool);
     }
     for (sub_queue = njt_queue_head(&pool->sub_pools);
          sub_queue != njt_queue_sentinel(&pool->sub_pools); ){
         sub_pool = njt_queue_data(sub_queue,njt_pool_t,parent_pool);
         sub_queue = njt_queue_next(sub_queue);  // 先计算偏移防止节点被删除
+	sub_pool->log = pool->log;
         njt_destroy_pool(sub_pool);
     }
 #endif

@@ -147,6 +147,8 @@ typedef struct {
     unsigned                         set_keep_alive:1;
     unsigned                         hc_type:2;
     unsigned                         reload:1;
+    unsigned							  persistent:1;
+    unsigned							  mandatory:1;
 #endif
 };
 

@@ -4,6 +4,8 @@
 
 typedef int (*rpc_msg_handler)(int session_id, njt_str_t *msg, void *data);
 
+#include <njt_core.h>
+
 int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag);
 int dyn_rpc(njt_str_t *topic, njt_str_t *request, int session_id, rpc_msg_handler handler, void *data);
 
