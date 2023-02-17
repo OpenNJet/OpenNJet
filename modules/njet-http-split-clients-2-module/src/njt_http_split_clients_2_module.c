@@ -166,7 +166,7 @@ static njt_int_t split_client_2_init_worker(njt_cycle_t *cycle)
     {
         if (part[i].kv_key.len > 0)
         {
-            njt_reg_kv_change_handler(&part[i].kv_key, split_kv_change_handler, sc2cf);
+            njt_reg_kv_change_handler(&part[i].kv_key, split_kv_change_handler, NULL, sc2cf);
         }
     }
 

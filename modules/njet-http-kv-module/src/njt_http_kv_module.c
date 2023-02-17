@@ -11,12 +11,15 @@
 
 #define DYN_TOPIC_PREFIX "/dyn/"
 #define DYN_TOPIC_PREFIX_LEN 5
+#define RPC_TOPIC_PREFIX "/rpc/"
+#define RPC_TOPIC_PREFIX_LEN 5
 
 typedef struct
 {
     void *data;
     njt_str_t key;
     kv_change_handler handler;
+    kv_rpc_handler rpc_handler;
 } kv_change_handler_t;
 
 typedef struct
@@ -39,6 +42,7 @@ static void mqtt_register_outside_reader(njt_event_handler_pt h, struct mqtt_ctx
 static njt_int_t njt_http_kv_add_variables(njt_conf_t *cf);
 static void invoke_kv_change_handler(njt_str_t *key, njt_str_t *value);
 static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg_len);
+static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_len, int *len);
 static njt_int_t kv_init_worker(njt_cycle_t *cycle);
 static void kv_exit_worker(njt_cycle_t *cycle);
 static void *njt_http_kv_create_conf(njt_conf_t *cf);
@@ -280,7 +284,7 @@ static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx
     njt_add_timer(ev, interval);
 }
 
-static char *kv_rr_callback(const char *topic, int is_req, const char *msg, int msg_len, int session_id, int *out_len)
+static char *kv_rr_callback(const char *topic, int is_reply, const char *msg, int msg_len, int session_id, int *out_len)
 {
     njt_str_t topic_str, msg_str;
     topic_str.data = (u_char *)topic;
@@ -289,10 +293,7 @@ static char *kv_rr_callback(const char *topic, int is_req, const char *msg, int 
     msg_str.len = msg_len;
 
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "kv got rr msg, topic: %V, msg:%V, seesion_id: %d", &topic_str, &msg_str, session_id);
-    // TODO: need to add codes to handle different rpc msg
-
-    *out_len = msg_len;
-    return (char *)msg;
+    return (char *)invoke_rpc_handler(topic, msg, msg_len, out_len);
 }
 static int msg_callback(const char *topic, const char *msg, int msg_len, void *out_data)
 {
@@ -380,9 +381,9 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     njt_uint_t i;
     int ret;
     njt_mqconf_conf_t *mqconf = NULL;
-    char client_id[128];
-    char log[1024];
-    char localcfg[1024];
+    char client_id[128]={0};
+    char log[1024]={0};
+    char localcfg[1024]={0};
     // return when there is no http configuraton
     if (njt_http_kv_module.ctx_index == NJT_CONF_UNSET_UINT)
     {
@@ -592,7 +593,7 @@ njt_http_kv_add_variables(njt_conf_t *cf)
     return NJT_OK;
 }
 
-int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, void *data)
+int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, kv_rpc_handler rpc_handler, void *data)
 {
     if (kv_change_handler_fac == NULL)
         kv_change_handler_fac = njt_array_create(njt_cycle->pool, 4, sizeof(kv_change_handler_t));
@@ -605,6 +606,7 @@ int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, void *d
 
     kv_handle->data = data;
     kv_handle->handler = handler;
+    kv_handle->rpc_handler = rpc_handler;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add kv handler for key:%v", &kv_handle->key);
     return NJT_OK;
 }
@@ -659,6 +661,40 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
             }
         }
     }
+}
+
+static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_len, int *len)
+{
+    njt_uint_t i;
+    njt_str_t nstr_topic;
+    njt_uint_t topic_sf_len; // topic's second field length
+    njt_str_t nstr_msg;
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke rpc handler for topic:%s ", topic);
+    if (kv_change_handler_fac)
+    {
+        // found second field of topic's length,  for example: topic /rpc/detail/1 , second field is "detail" length is 5
+        for (i = RPC_TOPIC_PREFIX_LEN; i < strlen(topic); i++)
+        {
+            if (topic[i] == '/')
+                break;
+        }
+        topic_sf_len = i - RPC_TOPIC_PREFIX_LEN;
+        kv_change_handler_t *tm_handler = kv_change_handler_fac->elts;
+        for (i = 0; i < kv_change_handler_fac->nelts; i++)
+        {
+            if (tm_handler[i].rpc_handler &&
+                topic_sf_len == tm_handler[i].key.len &&
+                njt_strncmp(topic + RPC_TOPIC_PREFIX_LEN, tm_handler[i].key.data, tm_handler[i].key.len) == 0)
+            {
+                nstr_topic.data = (u_char *)topic;
+                nstr_topic.len = strlen(topic);
+                nstr_msg.data = (u_char *)msg;
+                nstr_msg.len = msg_len;
+                return tm_handler[i].rpc_handler(&nstr_topic, &nstr_msg, len, tm_handler[i].data);
+            }
+        }
+    }
+    return NULL;
 }
 
 int njt_db_kv_get(njt_str_t *key, njt_str_t *value)
