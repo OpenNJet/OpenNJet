@@ -48,7 +48,7 @@ static njt_int_t njt_http_sendmsg_init(njt_conf_t *cf);
 static njt_int_t njt_http_sendmsg_handler(njt_http_request_t *r);
 static void *njt_http_sendmsg_create_loc_conf(njt_conf_t *cf);
 static char *njt_dyn_kv_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
-static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void *data); static void invoke_rpc_msg_handler(int session_id, const char *msg, int msg_len);
+static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void *data); static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int msg_len);
 
 static njt_array_t *rpc_msg_handler_fac = NULL;
 static struct mqtt_ctx_t *sendmsg_mqtt_ctx;
@@ -481,11 +481,11 @@ static char *sendmsg_rr_callback(const char *topic, int is_reply, const char *ms
     msg_str.data = (u_char *)msg;
     msg_str.len = msg_len;
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "sendmsg got response msg, topic: %V, msg:%V, seesion_id: %d", &topic_str, &msg_str, session_id);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "sendmsg got msg, topic: %V, msg:%V, seesion_id: %d", &topic_str, &msg_str, session_id);
 
     if (is_reply)
     {
-        invoke_rpc_msg_handler(session_id, msg, msg_len);
+        invoke_rpc_msg_handler(RPC_RC_OK, session_id, msg, msg_len);
     }
 
     *out_len = 0;
@@ -654,7 +654,7 @@ int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
     return NJT_OK;
 }
 
-int dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_handler handler, void *data)
+int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_handler handler, void *data)
 {
     int ret;
     int qos = 0;
@@ -671,7 +671,8 @@ int dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_handle
     njt_reg_rpc_msg_handler(session_id, handler, data);
     ret = mqtt_client_sendmsg_rr((const char *)t, (const char *)content->data, (int)content->len, qos, session_id, 0, sendmsg_mqtt_ctx);
     njt_pfree(njt_cycle->pool, t);
-    // TODO: unreg msg handler
+    // TODO: need to handle timeout..
+  
     if (ret < 0)
     {
         return NJT_ERROR;
@@ -732,10 +733,11 @@ static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void
     return NJT_OK;
 }
 
-static void invoke_rpc_msg_handler(int session_id, const char *msg, int msg_len)
+static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int msg_len)
 {
     njt_uint_t i;
     njt_str_t nstr_msg;
+    njt_dyn_rpc_res_t res;
     if (rpc_msg_handler_fac)
     {
         rpc_msg_handler_t *tm_handler = rpc_msg_handler_fac->elts;
@@ -745,7 +747,10 @@ static void invoke_rpc_msg_handler(int session_id, const char *msg, int msg_len)
             {
                 nstr_msg.data = (u_char *)msg;
                 nstr_msg.len = msg_len;
-                tm_handler[i].handler(session_id, &nstr_msg, tm_handler[i].data);
+                res.session_id=session_id;
+                res.data=tm_handler[i].data;
+                res.rc=rc;
+                tm_handler[i].handler(&res, &nstr_msg);
                 break;
             }
         }
