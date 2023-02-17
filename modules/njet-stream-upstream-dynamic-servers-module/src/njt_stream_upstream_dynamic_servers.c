@@ -1635,7 +1635,9 @@ operation:
         name = ctx->name;
         port = dynamic_server->port;
 	hc_down = dynamic_server->parent_node->hc_down;
-		
+	  if(us->mandatory == 1) {  //zyg use upstream  hc_type
+          hc_down = 2;
+        }	
 
 		peers_data = (dynamic_server->server->backup > 0?peers->next:peers);
 
