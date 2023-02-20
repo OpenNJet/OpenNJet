@@ -256,6 +256,9 @@ njt_stream_upstream_zone_copy_peers(njt_slab_pool_t *shpool,
             return NULL;
         }
 
+	if(uscf->mandatory == 1) {
+	  peer->hc_down = 2; //checking	
+	}
         *peerp = peer;
     }
 

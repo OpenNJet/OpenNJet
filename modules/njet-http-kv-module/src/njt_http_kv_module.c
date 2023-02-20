@@ -11,12 +11,15 @@
 
 #define DYN_TOPIC_PREFIX "/dyn/"
 #define DYN_TOPIC_PREFIX_LEN 5
+#define RPC_TOPIC_PREFIX "/rpc/"
+#define RPC_TOPIC_PREFIX_LEN 5
 
 typedef struct
 {
     void *data;
     njt_str_t key;
     kv_change_handler handler;
+    kv_rpc_handler rpc_handler;
 } kv_change_handler_t;
 
 typedef struct
@@ -39,7 +42,9 @@ static void mqtt_register_outside_reader(njt_event_handler_pt h, struct mqtt_ctx
 static njt_int_t njt_http_kv_add_variables(njt_conf_t *cf);
 static void invoke_kv_change_handler(njt_str_t *key, njt_str_t *value);
 static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg_len);
+static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_len, int *len);
 static njt_int_t kv_init_worker(njt_cycle_t *cycle);
+static void kv_exit_worker(njt_cycle_t *cycle);
 static void *njt_http_kv_create_conf(njt_conf_t *cf);
 static char *njt_dyn_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
@@ -86,7 +91,7 @@ njt_module_t njt_http_kv_module = {
     kv_init_worker,          /* init process */
     NULL,                    /* init thread */
     NULL,                    /* exit thread */
-    NULL,                    /* exit process */
+    kv_exit_worker,          /* exit process */
     NULL,                    /* exit master */
     NJT_MODULE_V1_PADDING};
 
@@ -279,6 +284,18 @@ static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx
     c->data = ctx;
     njt_add_timer(ev, interval);
 }
+
+static char *kv_rr_callback(const char *topic, int is_reply, const char *msg, int msg_len, int session_id, int *out_len)
+{
+    njt_str_t topic_str, msg_str;
+    topic_str.data = (u_char *)topic;
+    topic_str.len = strlen(topic);
+    msg_str.data = (u_char *)msg;
+    msg_str.len = msg_len;
+
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "kv got rr msg, topic: %V, msg:%V, seesion_id: %d", &topic_str, &msg_str, session_id);
+    return (char *)invoke_rpc_handler(topic, msg, msg_len, out_len);
+}
 static int msg_callback(const char *topic, const char *msg, int msg_len, void *out_data)
 {
     njt_rbtree_node_t *node;
@@ -365,9 +382,9 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     njt_uint_t i;
     int ret;
     njt_mqconf_conf_t *mqconf = NULL;
-    char client_id[128];
-    char log[1024];
-    char localcfg[1024];
+    char client_id[128]={0};
+    char log[1024]={0};
+    char localcfg[1024]={0};
     // return when there is no http configuraton
     if (njt_http_kv_module.ctx_index == NJT_CONF_UNSET_UINT)
     {
@@ -418,7 +435,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     cluster_name.len = mqconf->cluster_name.len;
 
     njt_log_error(NJT_LOG_INFO, cycle->log, 0, "module http_kv init worker");
-    local_mqtt_ctx = mqtt_client_init(localcfg, NULL, msg_callback, client_id, log, cycle);
+    local_mqtt_ctx = mqtt_client_init(localcfg, kv_rr_callback, msg_callback, client_id, log, cycle);
 
     if (local_mqtt_ctx == NULL)
     {
@@ -439,6 +456,11 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
 
     return NJT_OK;
 };
+
+static void kv_exit_worker(njt_cycle_t *cycle)
+{
+    mqtt_client_exit(local_mqtt_ctx);
+}
 
 njt_int_t njt_http_kv_get(njt_http_request_t *r, njt_http_variable_value_t *v, uintptr_t data)
 {
@@ -572,7 +594,7 @@ njt_http_kv_add_variables(njt_conf_t *cf)
     return NJT_OK;
 }
 
-int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, void *data)
+int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, kv_rpc_handler rpc_handler, void *data)
 {
     if (kv_change_handler_fac == NULL)
         kv_change_handler_fac = njt_array_create(njt_cycle->pool, 4, sizeof(kv_change_handler_t));
@@ -585,6 +607,7 @@ int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, void *d
 
     kv_handle->data = data;
     kv_handle->handler = handler;
+    kv_handle->rpc_handler = rpc_handler;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add kv handler for key:%v", &kv_handle->key);
     return NJT_OK;
 }
@@ -617,7 +640,7 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke topic msg handler for topic:%s ", topic);
     if (kv_change_handler_fac)
     {
-        // found second field of topic's length,  for example: topic /dyn/loc/1 , second field is "loc", length is 3 
+        // found second field of topic's length,  for example: topic /dyn/loc/1 , second field is "loc", length is 3
         for (i = DYN_TOPIC_PREFIX_LEN; i < strlen(topic); i++)
         {
             if (topic[i] == '/')
@@ -639,6 +662,40 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
             }
         }
     }
+}
+
+static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_len, int *len)
+{
+    njt_uint_t i;
+    njt_str_t nstr_topic;
+    njt_uint_t topic_sf_len; // topic's second field length
+    njt_str_t nstr_msg;
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke rpc handler for topic:%s ", topic);
+    if (kv_change_handler_fac)
+    {
+        // found second field of topic's length,  for example: topic /rpc/detail/1 , second field is "detail" length is 5
+        for (i = RPC_TOPIC_PREFIX_LEN; i < strlen(topic); i++)
+        {
+            if (topic[i] == '/')
+                break;
+        }
+        topic_sf_len = i - RPC_TOPIC_PREFIX_LEN;
+        kv_change_handler_t *tm_handler = kv_change_handler_fac->elts;
+        for (i = 0; i < kv_change_handler_fac->nelts; i++)
+        {
+            if (tm_handler[i].rpc_handler &&
+                topic_sf_len == tm_handler[i].key.len &&
+                njt_strncmp(topic + RPC_TOPIC_PREFIX_LEN, tm_handler[i].key.data, tm_handler[i].key.len) == 0)
+            {
+                nstr_topic.data = (u_char *)topic;
+                nstr_topic.len = strlen(topic);
+                nstr_msg.data = (u_char *)msg;
+                nstr_msg.len = msg_len;
+                return tm_handler[i].rpc_handler(&nstr_topic, &nstr_msg, len, tm_handler[i].data);
+            }
+        }
+    }
+    return NULL;
 }
 
 int njt_db_kv_get(njt_str_t *key, njt_str_t *value)

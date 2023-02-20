@@ -321,7 +321,7 @@ static njt_int_t njt_helper_hc_agent_init_process(njt_cycle_t *cycle){
         return rc;
     }
     njt_str_t topic_key = njt_string("hc");    //注册时， /dyn/loc/... 主题的，只需要提供第二段的关键字  loc
-    njt_reg_kv_change_handler(&topic_key, njt_helper_kv_change_handler, NULL);
+    njt_reg_kv_change_handler(&topic_key, njt_helper_kv_change_handler, NULL, NULL);
     return NJT_OK;
 }
 static njt_int_t

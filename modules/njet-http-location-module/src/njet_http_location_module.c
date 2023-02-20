@@ -767,7 +767,7 @@ static njt_int_t
 njt_http_location_init_worker(njt_cycle_t *cycle) {
 
 	njt_str_t  key = njt_string("loc");
-	njt_reg_kv_change_handler(&key, topic_kv_change_handler, NULL);
+	njt_reg_kv_change_handler(&key, topic_kv_change_handler,NULL, NULL);
     return NJT_OK;
 }
 njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str) {
