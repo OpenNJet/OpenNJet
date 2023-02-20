@@ -22,6 +22,7 @@ typedef struct
 typedef struct
 {
     njt_http_split_clients_2_ctx_t *ctx;
+    njt_flag_t has_split_block;
 } njt_http_split_clients_2_conf_t;
 
 static int njt_sample(int ration);
@@ -159,6 +160,10 @@ static njt_int_t split_client_2_init_worker(njt_cycle_t *cycle)
     conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
     sc2cf = conf_ctx->main_conf[njt_http_split_clients_2_module.ctx_index];
 
+    if (!sc2cf->has_split_block) {
+         return NJT_OK;
+    }
+
     ctx = (njt_http_split_clients_2_ctx_t *)sc2cf->ctx;
     part = ctx->parts.elts;
 
@@ -239,6 +244,7 @@ njt_conf_split_clients_2_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     sc2_conf->ctx = ctx;
+    sc2_conf->has_split_block=1;
     value = cf->args->elts;
 
     name = value[1];
