@@ -25,11 +25,11 @@ njt_http_vhost_traffic_status_display_handler(njt_http_request_t *r)
     size_t                                     len;
     u_char                                    *p;
     njt_int_t                                  rc;
-    njt_http_vhost_traffic_status_ctx_t       *ctx;
 
-    ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
+    // njt_http_vhost_traffic_status_ctx_t       *ctx;
+    // ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
 
-    if (!ctx->enable) {
+    if (!njt_http_vts_enable) {// old !ctx->enable
         return NJT_HTTP_NOT_IMPLEMENTED;
     }
 
@@ -284,14 +284,16 @@ njt_http_vhost_traffic_status_display_handler_default(njt_http_request_t *r)
     njt_buf_t                                 *b;
     njt_chain_t                                out;
     njt_slab_pool_t                           *shpool;
-    njt_http_vhost_traffic_status_ctx_t       *ctx;
     njt_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
-    ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
+    // njt_http_vhost_traffic_status_ctx_t       *ctx;
+    // ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
 
+    njt_http_vtsp_module = njt_http_vtsdp_module;
     vtscf = njt_http_get_module_loc_conf(r, njt_http_vhost_traffic_status_module);
+    vtscf->shm_zone = njt_http_vts_shm_zone;
 
-    if (!ctx->enable) {
+    if (!njt_http_vts_enable) {//old !ctx->enable
         return NJT_HTTP_NOT_IMPLEMENTED;
     }
 

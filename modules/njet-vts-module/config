@@ -1,4 +1,4 @@
-njt_addon_name=njt_http_vhost_traffic_status_module
+njt_addon_name=njt_http_vts_module
 have=NJT_STAT_STUB . auto/have
 
 HTTP_VTS_SRCS=" \
@@ -33,17 +33,9 @@ HTTP_VTS_DEPS=" \
                  $njt_addon_dir/src/njt_http_vhost_traffic_status_dump.h               \
                  $njt_addon_dir/src/njt_http_vhost_traffic_status_module_html.h        \
                  "
-if test -n "$njt_module_link"; then
-    njt_module_type=HTTP
-    njt_module_name=$njt_addon_name
-    njt_module_srcs="$HTTP_VTS_SRCS"
-    njt_module_deps="$HTTP_VTS_DEPS"
-
-    . auto/module
-else
+if [ $HTTP != NO ]; then
     HTTP_MODULES="$HTTP_MODULES $njt_addon_name"
     NJT_ADDON_SRCS="$NJT_ADDON_SRCS $HTTP_VTS_SRCS"
     NJT_ADDON_DEPS="$NJT_ADDON_DEPS $HTTP_VTS_DEPS"
+    CORE_INCS="$CORE_INCS $njt_addon_dir/src"
 fi
-
-# vi:set ft=sh ts=4 sw=4 et fdm=marker:

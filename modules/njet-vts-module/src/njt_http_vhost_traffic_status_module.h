@@ -306,7 +306,17 @@ njt_msec_t njt_http_vhost_traffic_status_current_msec(void);
 njt_msec_int_t njt_http_vhost_traffic_status_request_time(njt_http_request_t *r);
 njt_msec_int_t njt_http_vhost_traffic_status_upstream_response_time(njt_http_request_t *r);
 
-extern njt_module_t njt_http_vhost_traffic_status_module;
+
+extern njt_flag_t njt_http_vts_enable;
+extern njt_module_t *njt_http_vtsp_module;
+extern njt_module_t *njt_http_vtscp_module;
+extern njt_module_t *njt_http_vtsdp_module;
+extern njt_shm_zone_t *njt_http_vts_shm_zone;
+extern njt_rbtree_t *njt_http_vts_rbtree;
+extern njt_str_t njt_http_vts_shm_name;
+extern ssize_t njt_http_vts_shm_size;
+
+#define njt_http_vhost_traffic_status_module    (*njt_http_vtsp_module)
 
 
 #endif /* _NJT_HTTP_VTS_MODULE_H_INCLUDED_ */

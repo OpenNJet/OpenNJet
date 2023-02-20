@@ -71,11 +71,12 @@ njt_http_vhost_traffic_status_shm_info(njt_http_request_t *r,
     njt_http_vhost_traffic_status_ctx_t  *ctx;
 
     ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
+    ctx->rbtree = njt_http_vts_rbtree;
 
     njt_memzero(shm_info, sizeof(njt_http_vhost_traffic_status_shm_info_t));
 
-    shm_info->name = &ctx->shm_name;
-    shm_info->max_size = ctx->shm_size;
+    shm_info->name = &njt_http_vts_shm_name;//&ctx->shm_name;
+    shm_info->max_size = njt_http_vts_shm_size;//ctx->shm_size;
 
     njt_http_vhost_traffic_status_shm_info_node(r, shm_info, ctx->rbtree->root);
 }
