@@ -21,6 +21,7 @@ typedef struct
 typedef struct
 {
     njt_str_t conf_file;
+    njt_msec_t rpc_timeout;
     njt_flag_t kv_api_enabled;
 } njt_http_sendmsg_conf_t;
 
@@ -55,7 +56,6 @@ static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void
 static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int msg_len);
 
 static njt_array_t *rpc_msg_handler_fac = NULL;
-static njt_msec_t sendmsg_rpc_timeout;
 static struct mqtt_ctx_t *sendmsg_mqtt_ctx;
 
 static njt_http_module_t njt_http_sendmsg_module_ctx = {
@@ -590,7 +590,7 @@ njt_http_sendmsg_create_conf(njt_conf_t *cf)
 
     conf->conf_file.data = NULL;
     conf->conf_file.len = 0;
-    sendmsg_rpc_timeout = RPC_DEFAULT_TIMEOUT_MS;
+    conf->rpc_timeout = RPC_DEFAULT_TIMEOUT_MS;
     return conf;
 }
 
@@ -614,6 +614,8 @@ static char *njt_dyn_sendmsg_rpc_timeout_set(njt_conf_t *cf, njt_command_t *cmd,
 {
     njt_str_t *value;
     njt_msec_t ms;
+    njt_http_sendmsg_conf_t *smcf;
+    smcf = (njt_http_sendmsg_conf_t *)conf;
 
     value = cf->args->elts;
 
@@ -623,7 +625,7 @@ static char *njt_dyn_sendmsg_rpc_timeout_set(njt_conf_t *cf, njt_command_t *cmd,
         return NJT_CONF_ERROR;
     }
 
-    sendmsg_rpc_timeout = ms;
+    smcf->rpc_timeout = ms;
     return NJT_CONF_OK;
 }
 
@@ -719,13 +721,16 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_ha
     rpc_timer_ev->handler = njt_sendmsg_rpc_timer_fired;
     rpc_timer_ev->log = njt_cycle->log;
     rpc_timer_ev->data = rpc_data;
-    if (sendmsg_rpc_timeout == 0)
+
+    njt_http_conf_ctx_t * conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);
+    njt_http_sendmsg_conf_t *smcf = conf_ctx->main_conf[njt_http_sendmsg_module.ctx_index];
+    if (!smcf || smcf->rpc_timeout == 0)
     {
         njt_add_timer(rpc_timer_ev, RPC_DEFAULT_TIMEOUT_MS);
     }
     else
     {
-        njt_add_timer(rpc_timer_ev, sendmsg_rpc_timeout);
+        njt_add_timer(rpc_timer_ev, smcf->rpc_timeout);
     }
 
     njt_reg_rpc_msg_handler(session_id, handler, data, rpc_timer_ev);
