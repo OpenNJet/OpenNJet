@@ -477,7 +477,7 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
 				} else if (ctx != NULL){
 					if((ctx->port_mode.len == strict.len && njt_strncmp(ctx->port_mode.data,strict.data,strict.len) == 0) ||
                                          (ctx->port_mode.len == both.len && njt_strncmp(ctx->port_mode.data,both.data,both.len) == 0)) {
-                                                return NJT_OK;
+                                                //return NJT_OK;
                                         } else {
                                                 return NJT_ERROR;
                                         }
