@@ -1,0 +1,5 @@
+njt_module_type=HTTP
+njt_module_name="njt_dynlog_module"
+njt_module_srcs="$njt_addon_dir/src/njt_dynlog_module.c"
+ have=NJT_HTTP_DYNAMIC_LOC . auto/have
+. auto/module
