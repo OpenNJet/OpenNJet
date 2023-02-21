@@ -31,10 +31,6 @@ static njt_conf_enum_t  njt_http_vtsd_display_format[] = {
 };
 
 
-
-extern char *
-njt_conf_set_enum_slot_vtsformat(njt_conf_t *cf, njt_command_t *cmd, void *conf);
-
 static njt_command_t njt_http_vtsd_commands[] = {
 
     { njt_string("vhost_traffic_status_display"),
@@ -46,7 +42,7 @@ static njt_command_t njt_http_vtsd_commands[] = {
 
     { njt_string("vhost_traffic_status_display_format"),
       NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
-      njt_conf_set_enum_slot_vtsformat,
+      njt_conf_set_enum_slot,
       NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(njt_http_vhost_traffic_status_loc_conf_t, format),
       &njt_http_vtsd_display_format },

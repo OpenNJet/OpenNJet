@@ -3,6 +3,8 @@
 #include <unistd.h>
 
 
+#define NJT_KEEP_MASTER_CYCLE   1
+
 #define NJT_HELPER_CMD_NO       0
 #define NJT_HELPER_CMD_STOP     1
 #define NJT_HELPER_CMD_RESTART  2
@@ -20,22 +22,38 @@ typedef struct {
 } helper_param;
 
 
+#if (NJT_KEEP_MASTER_CYCLE)
+    njt_cycle_t *njet_master_cycle = NULL;
+#endif
+
+
 void 
 njt_helper_run(helper_param param)
 {
     unsigned int cmd;
-    char confname[128];
     njt_cycle_t *cycle;
 
-    printf("helper ctrl started\n");
+#if (NJT_KEEP_MASTER_CYCLE)
+    njt_cycle_t    init_cycle;
 
-    memset(confname, 0, sizeof(confname));
-    memcpy(confname, param.conf_fn.data, param.conf_fn.len);
+    njet_master_cycle = param.cycle;
+    njt_memzero(&init_cycle, sizeof(njt_cycle_t));
+    init_cycle.prefix = njet_master_cycle->prefix;
+    init_cycle.log = njet_master_cycle->log;
+    init_cycle.pool = njt_create_pool(1024,  njet_master_cycle->log);
+    if (init_cycle.pool == NULL) {
+        return ;
+    }
 
-    njt_reconfigure = 1;
-    cycle = param.cycle;
+    cycle = &init_cycle;
+#else
+    cycle =  param.cycle;
+#endif
+
     cycle->conf_file.data = param.conf_fullfn.data;
     cycle->conf_file.len = param.conf_fullfn.len;
+    njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper ctrl started");
+    njt_reconfigure = 1;
 
     for ( ;; ) {
         if (njt_reconfigure) {
@@ -46,19 +64,21 @@ njt_helper_run(helper_param param)
             if (cycle == NULL) {
                 cycle = (njt_cycle_t *) njt_cycle;
                 njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ctrl reconfiguring continue");
-                continue;
+                return;
             }
-
+#if (NJT_KEEP_MASTER_CYCLE)
+            cycle->old_cycle = njet_master_cycle;
+#endif
             njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ctrl reconfiguring done");
-
             njt_cycle = cycle;
-
 
             njt_uint_t  i;
             for (i = 0; cycle->modules[i]; i++) {
                 if (cycle->modules[i]->init_process) {
                     if (cycle->modules[i]->init_process(cycle) == NJT_ERROR) {
                         /* fatal */
+                        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "ctrl fatal error");
+                        njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "ctrl fatal error");
                         exit(2);
                     }
                 }
@@ -74,7 +94,7 @@ njt_helper_run(helper_param param)
         }
 
         if (cmd == NJT_HELPER_CMD_STOP) {
-            printf("helper ctrl stop\n");
+            njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper ctrl stop");
             break;            
         }
 

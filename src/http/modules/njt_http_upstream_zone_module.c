@@ -256,7 +256,10 @@ njt_http_upstream_zone_copy_peers(njt_slab_pool_t *shpool,
         if (peer == NULL) {
             return NULL;
         }
-
+	
+	if(uscf->mandatory == 1) {
+	  peer->hc_down = 2;
+	}
         *peerp = peer;
     }
 
