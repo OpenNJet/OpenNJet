@@ -38,6 +38,7 @@ njt_helper_run(helper_param param)
 
     njet_master_cycle = param.cycle;
     njt_memzero(&init_cycle, sizeof(njt_cycle_t));
+    init_cycle.prefix = njet_master_cycle->prefix;
     init_cycle.log = njet_master_cycle->log;
     init_cycle.pool = njt_create_pool(1024,  njet_master_cycle->log);
     if (init_cycle.pool == NULL) {
