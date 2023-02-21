@@ -9,6 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
+#include "njt_http_dyn_module.h"
 
 #if (NJT_ZLIB)
 #include <zlib.h>
@@ -72,16 +73,16 @@ typedef struct {
     njt_http_complex_value_t   *filter;
 } njt_http_log_t;
 
-
-typedef struct {
-    njt_array_t                *logs;       /* array of njt_http_log_t */
-
-    njt_open_file_cache_t      *open_file_cache;
-    time_t                      open_file_cache_valid;
-    njt_uint_t                  open_file_cache_min_uses;
-
-    njt_uint_t                  off;        /* unsigned  off:1 */
-} njt_http_log_loc_conf_t;
+// 动态模块提取至njt_http_dyn_module.h by chengxu
+//typedef struct {
+//    njt_array_t                *logs;       /* array of njt_http_log_t */
+//
+//    njt_open_file_cache_t      *open_file_cache;
+//    time_t                      open_file_cache_valid;
+//    njt_uint_t                  open_file_cache_min_uses;
+//
+//    njt_uint_t                  off;        /* unsigned  off:1 */
+//} njt_http_log_loc_conf_t;
 
 
 typedef struct {
