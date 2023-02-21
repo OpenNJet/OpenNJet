@@ -241,7 +241,7 @@ static njt_int_t njt_dynlog_get_listens_by_server(njt_array_t *array,njt_http_co
         port = ls[i].servers;
         addr = port->addrs;
         for (j = 0; j < port->naddrs ; ++j) {
-            addr_conf = &addr[i].conf;
+            addr_conf = &addr[j].conf;
             if(addr_conf->default_server == cscf){
                 listen  = njt_array_push(array);
                 if(listen == NULL){
@@ -377,7 +377,7 @@ static u_char* njt_agent_dynlog_rpc_handler(njt_str_t *topic, njt_str_t *request
     u_char *buf;
 
     cycle = (njt_cycle_t*) njt_cycle;
-
+    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " rpc handler time : %M",njt_current_msec);
     *len = 0 ;
     njt_pool_t *pool = NULL;
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
@@ -395,6 +395,9 @@ static u_char* njt_agent_dynlog_rpc_handler(njt_str_t *topic, njt_str_t *request
     }
     njt_log_error(NJT_LOG_INFO, pool->log, 0, "send json : %V",&msg);
     njt_memcpy(buf,msg.data,msg.len);
+    njt_time_update();
+    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " rpc handler time : %M",njt_current_msec);
+
     return buf;
 }
 
