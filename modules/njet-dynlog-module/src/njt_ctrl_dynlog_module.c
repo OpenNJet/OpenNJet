@@ -107,36 +107,39 @@ static int njt_ctrl_dynlog_rpc_msg_handler(njt_dyn_rpc_res_t* res, njt_str_t *ms
     njt_ctrl_dynlog_rpc_ctx_t *ctx;
     njt_http_request_t *req;
 
+    njt_str_t err_msg = njt_string("{\n"
+                                   "  \"code\": 500,\n"
+                                   "  \"msg\": \"rpc timeout\"\n"
+                                   "}");
     ctx = res->data;
     njt_log_error(NJT_LOG_INFO,njt_cycle->log, 0, "hand rpc time : %M",njt_current_msec);
     if( ctx->dlmcf->size > ctx->index && ctx->dlmcf->reqs[ctx->index] == ctx->req){
         req =  ctx->req;
-        --req->main->count;
         if(res->rc == RPC_RC_OK){
             njt_ctrl_dynlog_request_output(req,NJT_OK,msg);
         }
         if(res->rc == RPC_RC_TIMEOUT){
-            njt_str_t err_msg = njt_string("{\n"
-                                           "  \"code\": 500,\n"
-                                           "  \"msg\": \"rpc timeout\"\n"
-                                           "}");
             njt_ctrl_dynlog_request_output(req,NJT_ERROR,&err_msg);
         }
+        njt_http_finalize_request(req,NJT_DONE);
     }
     return NJT_OK;
 }
 
 static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *msg){
     njt_ctrl_dynlog_main_cf_t *dlmcf;
-    njt_int_t index,rc;
+    njt_int_t index;
+    njt_int_t rc;
     njt_ctrl_dynlog_rpc_ctx_t *ctx;
-    njt_http_cleanup_t *cleanup;
+    njt_pool_cleanup_t *cleanup;
 
     dlmcf = njt_http_get_module_main_conf(r,njt_ctrl_dynlog_module);
     index = njt_ctrl_dynlog_get_free_index(dlmcf);
     if(index == -1 ){
         njt_log_error(NJT_LOG_ERR, r->pool->log, 0, "not find request free index ");
         goto err;
+    } else {
+        njt_log_error(NJT_LOG_INFO, r->pool->log, 0, "use index :%i ",index);
     }
     ctx = njt_pcalloc(r->pool, sizeof(njt_ctrl_dynlog_rpc_ctx_t));
     if(ctx == NULL){
@@ -147,7 +150,7 @@ static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *msg){
     ctx->index = index;
     ctx->req = r;
     ctx->dlmcf = dlmcf;
-    cleanup = njt_http_cleanup_add(r,0);
+    cleanup = njt_pool_cleanup_add(r->pool,0);
     if(cleanup == NULL){
         njt_log_error(NJT_LOG_ERR, r->pool->log, 0, "request cleanup error ");
         goto err;
@@ -294,7 +297,7 @@ static njt_int_t   njt_ctrl_dynlog_postconfiguration(njt_conf_t *cf){
     if(dlmcf->size == NJT_CONF_UNSET){
         dlmcf->size = 500;
     }
-    dlmcf->reqs = njt_pcalloc(cf->pool, sizeof(njt_http_request_t*));
+    dlmcf->reqs = njt_pcalloc(cf->pool, sizeof(njt_http_request_t*)*dlmcf->size);
     if(dlmcf->reqs == NULL){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_ctrl_dynlog_postconfiguration alloc mem error");
         return NJT_ERROR;

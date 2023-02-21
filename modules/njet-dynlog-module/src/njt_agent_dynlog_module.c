@@ -328,7 +328,7 @@ static njt_str_t njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
         for(j = 0 ; j < array->nelts ; ++j ){
             index = njt_snprintf(index, end - index  , "\"%V\",",&tmp_str[j]);
         }
-        if(*index == ','){
+        if(*(index-1) == ','){
             --index;
         }
         index = njt_snprintf(index, end - index  , "],serverNames:[" );
@@ -336,7 +336,7 @@ static njt_str_t njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
         for(j = 0 ; j < cscfp[i]->server_names.nelts ; ++j ){
             index = njt_snprintf(index, end - index  , "\"%V\",",&tmp_str[j]);
         }
-        if(*index == ','){
+        if(*(index-1) == ','){
             --index;
         }
         index = njt_snprintf(index, end - index  , "]" );
@@ -358,12 +358,12 @@ static njt_str_t njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
                 index = njt_snprintf(index, end - index  , "\"logOff\": false},",&clcf->full_name);
             }
         }
-        if(*index == ','){
+        if(*(index-1) == ','){
             --index;
         }
         index = njt_snprintf(index, end - index  , "]}," );
     }
-    if(*index == ','){
+    if(*(index-1) == ','){
         --index;
     }
     index = njt_snprintf(index, end - index  , "]}" );
@@ -385,7 +385,6 @@ static u_char* njt_agent_dynlog_rpc_handler(njt_str_t *topic, njt_str_t *request
         njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_agent_dynlog_change_handler create pool error");
         return NJT_OK;
     }
-
     msg = njt_dynlog_dump_log_conf(cycle,pool);
     *len = msg.len;
     buf = njt_calloc(msg.len,cycle->log);
