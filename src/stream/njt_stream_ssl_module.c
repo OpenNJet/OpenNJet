@@ -470,15 +470,19 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
 				if (ctx != NULL && ctx->ssl == 0) {
 					if((ctx->port_mode.len == disable.len && njt_strncmp(ctx->port_mode.data,disable.data,disable.len) == 0) ||
 					 (ctx->port_mode.len == both.len && njt_strncmp(ctx->port_mode.data,both.data,both.len) == 0)) {
+					        njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "sidecar: not ssl port_mode %V,ok!",&ctx->port_mode);
 						return NJT_OK;
 					} else {
+					        njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "sidecar: not ssl port_mode %V,reject!",&ctx->port_mode);
 						return NJT_ERROR;
 					}
 				} else if (ctx != NULL){
 					if((ctx->port_mode.len == strict.len && njt_strncmp(ctx->port_mode.data,strict.data,strict.len) == 0) ||
                                          (ctx->port_mode.len == both.len && njt_strncmp(ctx->port_mode.data,both.data,both.len) == 0)) {
                                                 //return NJT_OK;
+					        njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "sidecar:ssl port_mode %V,ok!",&ctx->port_mode);
                                         } else {
+					        njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "sidecar: ssl port_mode %V,reject!",&ctx->port_mode);
                                                 return NJT_ERROR;
                                         }
 				}
