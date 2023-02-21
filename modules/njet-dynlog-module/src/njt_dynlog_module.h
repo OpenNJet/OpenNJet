@@ -21,22 +21,10 @@
 #include <njt_json_api.h>
 #include "njt_json_util.h"
 #include "njt_dynlog_module.h"
+#include "njt_http_dyn_module.h"
 
 extern njt_cycle_t *njet_master_cycle;
 extern njt_module_t njt_ctrl_dynlog_module;
-
-typedef struct {
-    njt_array_t                *logs;       /* array of njt_http_log_t */
-
-    njt_open_file_cache_t      *open_file_cache;
-    time_t                      open_file_cache_valid;
-    njt_uint_t                  open_file_cache_min_uses;
-
-    njt_uint_t                  off;        /* unsigned  off:1 */
-} njt_http_log_loc_conf_t;
-
-extern njt_module_t  njt_http_log_module;
-
 
 typedef struct {
     njt_str_t full_name;
