@@ -266,7 +266,7 @@ static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
 			p  = njt_sprintf(p,":%d",port);
 			ctx->dest.len = p - ctx->dest.data;
 			ctx->dest_port.len = p - ctx->dest_port.data;
-			njt_str_set(&ctx->port_mode,"PERMISSIVE");
+			njt_str_set(&ctx->port_mode,"none");
 			 if(sscf->proto_ports != NULL) {
 			 	kv = sscf->proto_ports->elts;
 				 nelts = sscf->proto_ports->nelts;	
