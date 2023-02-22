@@ -47,6 +47,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle);
 static void kv_exit_worker(njt_cycle_t *cycle);
 static void *njt_http_kv_create_conf(njt_conf_t *cf);
 static char *njt_dyn_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+static u_char *njt_http_kv_module_rpc_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data);
 
 static njt_rbtree_t kv_tree;
 static njt_rbtree_node_t kv_sentinel;
@@ -375,6 +376,48 @@ static int msg_callback(const char *topic, const char *msg, int msg_len, void *o
     return 1;
 }
 
+static u_char *njt_http_kv_module_rpc_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data)
+{
+    njt_uint_t i;
+    njt_uint_t str_len = 0;
+
+    str_len++; // [
+    if (kv_change_handler_fac)
+    {
+        kv_change_handler_t *handler = kv_change_handler_fac->elts;
+        for (i = 0; i < kv_change_handler_fac->nelts; i++)
+        {
+            if (handler[i].rpc_handler)
+            {
+                str_len += handler[i].key.len + 3; // "KEY_NAME",
+            }
+        }
+    }
+
+    u_char *msg, *pmsg;
+    msg = njt_calloc(str_len, njt_cycle->log);
+    pmsg = msg;
+    msg[0] = '[';
+    msg++;
+    if (kv_change_handler_fac)
+    {
+        kv_change_handler_t *handler = kv_change_handler_fac->elts;
+        for (i = 0; i < kv_change_handler_fac->nelts; i++)
+        {
+            if (handler[i].rpc_handler)
+            {
+                *msg++='"';
+                msg = njt_snprintf(msg, handler[i].key.len , "%s", handler[i].key.data);
+                *msg++='"';
+                *msg++=',';
+            }
+        }
+    }
+    pmsg[str_len - 1] = ']';
+    *len = str_len;
+    return pmsg;
+}
+
 static njt_int_t kv_init_worker(njt_cycle_t *cycle)
 {
     njt_http_conf_ctx_t *conf_ctx;
@@ -382,9 +425,9 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     njt_uint_t i;
     int ret;
     njt_mqconf_conf_t *mqconf = NULL;
-    char client_id[128]={0};
-    char log[1024]={0};
-    char localcfg[1024]={0};
+    char client_id[128] = {0};
+    char log[1024] = {0};
+    char localcfg[1024] = {0};
     // return when there is no http configuraton
     if (njt_http_kv_module.ctx_index == NJT_CONF_UNSET_UINT)
     {
@@ -417,6 +460,16 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     {
         njt_log_error(NJT_LOG_INFO, cycle->log, 0, "dyn_kv_conf directive not found, dyn_kv module is not loaded");
         return NJT_OK;
+    }
+
+    njt_str_t rhk = njt_string("njt_http_kv_module");
+
+    ret = njt_reg_kv_change_handler(&rhk, NULL, njt_http_kv_module_rpc_handler, NULL);
+
+    if (ret != NJT_OK)
+    {
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "can't reg rpc handler for kv module");
+        return NJT_ERROR;
     }
 
     memcpy(client_id, mqconf->node_name.data, mqconf->node_name.len);
@@ -596,6 +649,7 @@ njt_http_kv_add_variables(njt_conf_t *cf)
 
 int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, kv_rpc_handler rpc_handler, void *data)
 {
+    // TODO: need to change to use hashmap data structure
     if (kv_change_handler_fac == NULL)
         kv_change_handler_fac = njt_array_create(njt_cycle->pool, 4, sizeof(kv_change_handler_t));
 
