@@ -103,6 +103,7 @@ njt_http_vtsd_create_main_conf(njt_conf_t *cf)
 
     njt_http_vtsp_module = &njt_http_vtsd_module;
     njt_http_vtsdp_module = &njt_http_vtsd_module;
+    njt_http_vtsp_cycle = njet_master_cycle;
 
     ctx = njt_pcalloc(cf->pool, sizeof(njt_http_vhost_traffic_status_ctx_t));
     if (ctx == NULL) {

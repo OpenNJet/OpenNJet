@@ -482,7 +482,7 @@ njt_http_vhost_traffic_status_display_get_upstream_nelts(njt_http_request_t *r)
     njt_http_upstream_srv_conf_t   *uscf, **uscfp;
     njt_http_upstream_main_conf_t  *umcf;
 
-    umcf = njt_http_get_module_main_conf(r, njt_http_upstream_module);
+    umcf = njt_http_cycle_get_module_main_conf(njt_http_vtsp_cycle, njt_http_upstream_module);
     uscfp = umcf->upstreams.elts;
 
     for (i = 0, j = 0, n = 0; i < umcf->upstreams.nelts; i++) {

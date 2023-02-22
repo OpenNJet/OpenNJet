@@ -50,7 +50,7 @@ njt_http_vhost_traffic_status_node_upstream_lookup(
     njt_http_upstream_srv_conf_t   *uscf, **uscfp;
     njt_http_upstream_main_conf_t  *umcf;
 
-    umcf = njt_http_get_module_main_conf(control->r, njt_http_upstream_module);
+    umcf = njt_http_cycle_get_module_main_conf(njt_http_vtsp_cycle, njt_http_upstream_module);
     uscfp = umcf->upstreams.elts;
 
     key = *control->zone;

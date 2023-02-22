@@ -535,7 +535,7 @@ njt_http_vhost_traffic_status_display_set_upstream_group(njt_http_request_t *r,
     njt_http_vhost_traffic_status_node_t  *vtsn;
 
     ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
-    umcf = njt_http_get_module_main_conf(r, njt_http_upstream_module);
+    umcf = njt_http_cycle_get_module_main_conf(njt_http_vtsp_cycle, njt_http_upstream_module);
     uscfp = umcf->upstreams.elts;
 
     len = 0;

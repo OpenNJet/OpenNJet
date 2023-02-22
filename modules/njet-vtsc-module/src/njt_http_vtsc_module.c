@@ -217,6 +217,7 @@ njt_http_vtsc_handler(njt_http_request_t *r)
     njt_http_vhost_traffic_status_loc_conf_t  *vtscf;
 
     njt_http_vtsp_module = &njt_http_vtsc_module;
+    njt_http_vtsp_cycle = (njt_cycle_t *)njt_cycle;
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http vts handler");

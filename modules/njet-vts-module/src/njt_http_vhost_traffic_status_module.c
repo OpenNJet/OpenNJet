@@ -113,3 +113,4 @@ njt_shm_zone_t *njt_http_vts_shm_zone = NULL;
 njt_rbtree_t *njt_http_vts_rbtree = NULL;
 njt_str_t njt_http_vts_shm_name;
 ssize_t njt_http_vts_shm_size;
+njt_cycle_t *njt_http_vtsp_cycle;

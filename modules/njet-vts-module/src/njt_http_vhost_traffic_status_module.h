@@ -315,6 +315,9 @@ extern njt_shm_zone_t *njt_http_vts_shm_zone;
 extern njt_rbtree_t *njt_http_vts_rbtree;
 extern njt_str_t njt_http_vts_shm_name;
 extern ssize_t njt_http_vts_shm_size;
+extern njt_cycle_t *njt_http_vtsp_cycle;
+extern njt_cycle_t *njet_master_cycle;
+extern njt_cycle_t *njet_cycle;
 
 #define njt_http_vhost_traffic_status_module    (*njt_http_vtsp_module)
 

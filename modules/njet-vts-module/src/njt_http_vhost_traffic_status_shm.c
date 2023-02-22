@@ -454,7 +454,7 @@ njt_http_vhost_traffic_status_shm_add_upstream(njt_http_request_t *r)
     } else {
         host = &u->resolved->host;
 
-        umcf = njt_http_get_module_main_conf(r, njt_http_upstream_module);
+        umcf = njt_http_cycle_get_module_main_conf(njt_http_vtsp_cycle, njt_http_upstream_module);
 
         uscfp = umcf->upstreams.elts;
 
