@@ -24,6 +24,7 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *elemen
         njt_array_init(array,pool,element->sudata->nelts,def->size);
         for (i = 0; i < element->sudata->nelts; ++i ) {
             p = njt_array_push(array);
+            njt_memzero(p,def->size);
             rc = njt_json_parse_json_element(pool,&sub[i],def,p);
             if(rc != NJT_OK){
                 return rc;
