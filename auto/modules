@@ -81,7 +81,8 @@ if [ $HTTP = YES ]; then
                          src/http/njt_http_variables.h \
                          src/http/njt_http_script.h \
                          src/http/njt_http_upstream.h \
-                         src/http/njt_http_upstream_round_robin.h"
+                         src/http/njt_http_upstream_round_robin.h \
+                         src/http/modules/njt_http_dyn_module.h "
         njt_module_srcs="src/http/njt_http.c \
                          src/http/njt_http_core_module.c \
                          src/http/njt_http_special_response.c \
