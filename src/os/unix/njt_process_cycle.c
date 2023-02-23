@@ -53,7 +53,6 @@ sig_atomic_t  njt_noaccept;
 njt_uint_t    njt_noaccepting;
 njt_uint_t    njt_restart;
 
-
 static u_char  master_process[] = "master process";
 
 
@@ -353,11 +352,12 @@ njt_start_worker_processes(njt_cycle_t *cycle, njt_int_t n, njt_int_t type)
 static void
 njt_start_cache_manager_processes(njt_cycle_t *cycle, njt_uint_t respawn)
 {
-    njt_uint_t    i, manager, loader;
+    njt_uint_t    i, manager, loader,purger;
     njt_path_t  **path;
 
     manager = 0;
     loader = 0;
+    purger = 0;
 
     path = njt_cycle->paths.elts;
     for (i = 0; i < njt_cycle->paths.nelts; i++) {
@@ -369,9 +369,13 @@ njt_start_cache_manager_processes(njt_cycle_t *cycle, njt_uint_t respawn)
         if (path[i]->loader) {
             loader = 1;
         }
+
+        if (path[i]->purger) {
+            purger = 1;
+        }
     }
 
-    if (manager == 0) {
+    if (manager == 0 && purger == 0) {
         return;
     }
 
@@ -1157,7 +1161,11 @@ njt_cache_manager_process_handler(njt_event_t *ev)
 
     path = njt_cycle->paths.elts;
     for (i = 0; i < njt_cycle->paths.nelts; i++) {
-
+        if (path[i]->purger) {
+            n = path[i]->purger(path[i]->data);
+            next = (n <= next) ? n : next;
+            njt_time_update();
+        }
         if (path[i]->manager) {
             n = path[i]->manager(path[i]->data);
 

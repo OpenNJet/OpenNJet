@@ -95,6 +95,7 @@ typedef struct {
 
 #if (NJT_HTTP_CACHE)
     njt_http_complex_value_t       cache_key;
+    njt_http_complex_value_t       cache_file_key;
 #endif
 
     njt_http_proxy_vars_t          vars;
