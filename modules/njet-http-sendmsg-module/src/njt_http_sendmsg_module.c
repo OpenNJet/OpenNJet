@@ -39,6 +39,8 @@ typedef struct
     njt_int_t code;
 } njt_http_sendmsg_post_data_t;
 
+//sendmsg module is running in ctrl panel, should be able to get njet_master_cycle from njet_helper_ctrl_module
+extern njt_cycle_t *njet_master_cycle;
 static void mqtt_connect_timeout(njt_event_t *ev);
 static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx_t *ctx);
 static void mqtt_loop_mqtt(njt_event_t *ev);
@@ -518,11 +520,16 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
     {
         return NJT_OK;
     }
-    for (i = 0; i < cycle->modules_n; i++)
+    njt_cycle_t *mq_cycle=cycle;
+    if (njet_master_cycle) {
+        mq_cycle=njet_master_cycle;
+    }
+    for (i = 0; i < mq_cycle->modules_n; i++)
     {
-        if (njt_strcmp(cycle->modules[i]->name, "njt_mqconf_module") != 0)
+        if (njt_strcmp(mq_cycle->modules[i]->name, "njt_mqconf_module") != 0)
             continue;
-        mqconf = (njt_mqconf_conf_t *)(cycle->conf_ctx[cycle->modules[i]->index]);
+        mqconf = (njt_mqconf_conf_t *)(mq_cycle->conf_ctx[mq_cycle->modules[i]->index]);
+        break;
     }
     if (!mqconf || !mqconf->cluster_name.data || !mqconf->node_name.data)
     {
