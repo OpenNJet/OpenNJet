@@ -2,14 +2,18 @@
 #include <njt_core.h>
 #include <njt_http.h>
 #include <njt_http_kv_module.h>
+#include <njt_json_util.h>
 
 #define DYN_TOPIC_PREFIX "/dyn/"
 #define DYN_TOPIC_PREFIX_LEN 5
+#define DYN_TOPIC_REG_KEY "njt_http_split_clients_2_module"
+#define DYN_TOPIC_REG_KEY_LEN 31
 
 typedef struct
 {
     uint32_t percent;
     njt_http_variable_value_t value;
+    bool last;        // last part configued as  *
     njt_str_t kv_key; // for dynamic split client, use kv store
 } njt_http_split_clients_2_part_t;
 
@@ -25,6 +29,7 @@ typedef struct
     njt_flag_t has_split_block;
 } njt_http_split_clients_2_conf_t;
 
+static u_char *split_rpc_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data);
 static int njt_sample(int ration);
 static njt_int_t split_client_2_init_worker(njt_cycle_t *cycle);
 static char *njt_conf_split_clients_2_block(njt_conf_t *cf, njt_command_t *cmd,
@@ -92,7 +97,10 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
     njt_http_split_clients_2_conf_t *sc2cf = (njt_http_split_clients_2_conf_t *)data;
     njt_http_split_clients_2_ctx_t *ctx;
     njt_http_split_clients_2_part_t *part;
-    njt_uint_t i, offset, k_l;
+    njt_uint_t i, j, offset, k_l;
+    njt_json_manager json_manager;
+    njt_pool_t *tmp_pool;
+    njt_int_t rc;
 
     ctx = (njt_http_split_clients_2_ctx_t *)sc2cf->ctx;
     part = ctx->parts.elts;
@@ -112,14 +120,77 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
         k_l = i - DYN_TOPIC_PREFIX_LEN;
     }
 
+    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "split client 2 callback %v: %v", key, value);
+
+    if (k_l == DYN_TOPIC_REG_KEY_LEN &&
+        njt_strncmp(key->data + offset, DYN_TOPIC_REG_KEY, k_l) == 0)
+    {
+        tmp_pool = njt_create_pool(NJT_DEFAULT_POOL_SIZE, njt_cycle->log);
+        if (tmp_pool == NULL)
+        {
+            return NJT_ERROR;
+        }
+
+        rc = njt_json_2_structure(value, &json_manager, tmp_pool);
+        if (rc != NJT_OK)
+        {
+            njt_destroy_pool(tmp_pool);
+            return NJT_ERROR;
+        }
+
+        njt_str_t sk;
+        njt_str_set(&sk, "http");
+        njt_json_element *out_element;
+        rc = njt_struct_top_find(&json_manager, &sk, &out_element);
+        if (rc == NJT_OK)
+        {
+            njt_str_set(&sk, "split_clients_2");
+            njt_json_element *tmp_element;
+            rc = njt_struct_find(out_element, &sk, &tmp_element);
+            if (rc == NJT_OK && tmp_element->type == NJT_JSON_OBJ)
+            {
+                njt_json_element *kvs = tmp_element->sudata->elts;
+                njt_uint_t sum = 0;
+                for (i = 0; i < tmp_element->sudata->nelts; i++)
+                {
+                    if (kvs[i].type == NJT_JSON_INT)
+                    {
+                        sum += kvs[i].intval;
+                    }
+                }
+                if (sum > 100)
+                {
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "split clients 2 set error: total percentage greater than 100");
+                }
+                else
+                {
+                    for (i = 0; i < ctx->parts.nelts; i++)
+                    {
+                        for (j = 0; j < tmp_element->sudata->nelts; j++)
+                        {
+                            if (kvs[j].type == NJT_JSON_INT &&
+                                kvs[j].key.len == part[i].value.len &&
+                                njt_strncmp(part[i].value.data, kvs[j].key.data, kvs[j].key.len) == 0)
+                            {
+                                part[i].percent = kvs[j].intval*100;
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        njt_destroy_pool(tmp_pool);
+        return NJT_OK;
+    }
+
     for (i = 0; i < ctx->parts.nelts; i++)
     {
         if (part[i].kv_key.len > 0)
         {
             if (njt_strncmp(key->data + offset, part[i].kv_key.data, k_l) == 0)
             {
-                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "kv change callback %v:%v", key, value);
-
                 size_t vl = value->len;
                 if (value->data[value->len - 1] == '%')
                 {
@@ -138,6 +209,73 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
         }
     }
     return NJT_OK;
+}
+
+static u_char *split_rpc_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data)
+{
+    njt_http_conf_ctx_t *conf_ctx;
+    njt_http_split_clients_2_conf_t *sc2cf;
+    njt_http_split_clients_2_ctx_t *ctx;
+    njt_http_split_clients_2_part_t *part;
+    njt_uint_t i;
+    njt_uint_t ret_len;
+
+    njt_str_t json_h = njt_string("{\"http\":{\"split_clients_2\":{");
+    njt_str_t json_t = njt_string("}}}");
+
+    ret_len = json_h.len + json_t.len;
+
+    conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);
+    sc2cf = conf_ctx->main_conf[njt_http_split_clients_2_module.ctx_index];
+
+    u_char *msg, *pmsg;
+    if (!sc2cf->has_split_block)
+    {
+        msg = njt_calloc(2, njt_cycle->log);
+        memcpy(msg, "{}", 2);
+        *len = 2;
+        return msg;
+    }
+
+    ctx = (njt_http_split_clients_2_ctx_t *)sc2cf->ctx;
+    part = ctx->parts.elts;
+
+    u_char p_s[4] = {0};
+    for (i = 0; i < ctx->parts.nelts; i++)
+    {
+
+        ret_len += part[i].value.len;
+        njt_snprintf(p_s, 3, "%d", part[i].percent / 100);
+        ret_len += (njt_uint_t)strlen((const char *)p_s);
+        ret_len += 4; //"":,
+        if (part[i].last)
+        {
+            ret_len += strlen("(default)");
+        }
+    }
+
+    msg = njt_calloc(ret_len - 1, njt_cycle->log);
+    pmsg = msg;
+    msg = njt_snprintf(msg, json_h.len, "%s", json_h.data);
+    for (i = 0; i < ctx->parts.nelts; i++)
+    {
+
+        *msg++ = '"';
+        msg = njt_snprintf(msg, part[i].value.len, "%s", part[i].value.data);
+        if (part[i].last)
+        {
+            msg = njt_snprintf(msg, 9, "%s", "(default)");
+        }
+        *msg++ = '"';
+        *msg++ = ':';
+        msg = njt_snprintf(msg, 3, "%d", part[i].percent / 100);
+        *msg++ = ',';
+    }
+    msg--;
+    msg = njt_snprintf(msg, json_t.len, "%s", json_t.data);
+    *len = ret_len - 1;
+
+    return pmsg;
 }
 
 static njt_int_t split_client_2_init_worker(njt_cycle_t *cycle)
@@ -160,8 +298,9 @@ static njt_int_t split_client_2_init_worker(njt_cycle_t *cycle)
     conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
     sc2cf = conf_ctx->main_conf[njt_http_split_clients_2_module.ctx_index];
 
-    if (!sc2cf->has_split_block) {
-         return NJT_OK;
+    if (!sc2cf->has_split_block)
+    {
+        return NJT_OK;
     }
 
     ctx = (njt_http_split_clients_2_ctx_t *)sc2cf->ctx;
@@ -174,6 +313,9 @@ static njt_int_t split_client_2_init_worker(njt_cycle_t *cycle)
             njt_reg_kv_change_handler(&part[i].kv_key, split_kv_change_handler, NULL, sc2cf);
         }
     }
+
+    njt_str_t rpc_key = njt_string(DYN_TOPIC_REG_KEY);
+    njt_reg_kv_change_handler(&rpc_key, split_kv_change_handler, split_rpc_handler, sc2cf);
 
     return NJT_OK;
 }
@@ -244,7 +386,7 @@ njt_conf_split_clients_2_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     sc2_conf->ctx = ctx;
-    sc2_conf->has_split_block=1;
+    sc2_conf->has_split_block = 1;
     value = cf->args->elts;
 
     name = value[1];
@@ -293,7 +435,7 @@ njt_conf_split_clients_2_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     for (i = 0; i < ctx->parts.nelts; i++)
     {
-        sum = part[i].percent ? sum + part[i].percent : 10000;
+        sum += part[i].percent; // if use kv_http_ as percent, percentage is 0
         if (sum > 10000)
         {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
@@ -326,10 +468,12 @@ njt_http_split_clients_2(njt_conf_t *cf, njt_command_t *dummy, void *conf)
 
     if (value[0].len == 1 && value[0].data[0] == '*')
     {
+        part->last = true;
         part->percent = 0;
     }
     else
     {
+        part->last = false;
         // if use dynamic split client , first field is key in kvstore, such as $kv_http_var1
         if (value[0].len > 0 && value[0].data[0] == '$')
         {
