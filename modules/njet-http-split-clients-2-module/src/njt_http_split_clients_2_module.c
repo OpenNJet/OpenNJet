@@ -120,8 +120,6 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
         k_l = i - DYN_TOPIC_PREFIX_LEN;
     }
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "split client 2 callback %v: %v", key, value);
-
     if (k_l == DYN_TOPIC_REG_KEY_LEN &&
         njt_strncmp(key->data + offset, DYN_TOPIC_REG_KEY, k_l) == 0)
     {
