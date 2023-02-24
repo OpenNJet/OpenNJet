@@ -166,11 +166,12 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
                     {
                         for (j = 0; j < tmp_element->sudata->nelts; j++)
                         {
-                            if (kvs[j].type == NJT_JSON_INT &&
+                            if (!part[i].last &&
+                                kvs[j].type == NJT_JSON_INT &&
                                 kvs[j].key.len == part[i].value.len &&
                                 njt_strncmp(part[i].value.data, kvs[j].key.data, kvs[j].key.len) == 0)
                             {
-                                part[i].percent = kvs[j].intval*100;
+                                part[i].percent = kvs[j].intval;
                                 continue;
                             }
                         }
@@ -194,7 +195,7 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
                 {
                     vl--;
                 }
-                njt_int_t n = njt_atofp(value->data, vl, 2);
+                njt_int_t n = njt_atoi(value->data, vl);
                 if (n > 0)
                 {
                     part[i].percent = (uint32_t)n;
@@ -239,17 +240,21 @@ static u_char *split_rpc_handler(njt_str_t *topic, njt_str_t *request, int *len,
     part = ctx->parts.elts;
 
     u_char p_s[4] = {0};
+    njt_uint_t sum = 0;
     for (i = 0; i < ctx->parts.nelts; i++)
     {
-
+        sum += part[i].percent;
         ret_len += part[i].value.len;
-        njt_snprintf(p_s, 3, "%d", part[i].percent / 100);
-        ret_len += (njt_uint_t)strlen((const char *)p_s);
-        ret_len += 4; //"":,
         if (part[i].last)
         {
-            ret_len += strlen("(default)");
+            njt_snprintf(p_s, 3, "%d", 100 - sum);
         }
+        else
+        {
+            njt_snprintf(p_s, 3, "%d", part[i].percent);
+        }
+        ret_len += (njt_uint_t)strlen((const char *)p_s);
+        ret_len += 4; //"":,
     }
 
     msg = njt_calloc(ret_len - 1, njt_cycle->log);
@@ -260,13 +265,16 @@ static u_char *split_rpc_handler(njt_str_t *topic, njt_str_t *request, int *len,
 
         *msg++ = '"';
         msg = njt_snprintf(msg, part[i].value.len, "%s", part[i].value.data);
-        if (part[i].last)
-        {
-            msg = njt_snprintf(msg, 9, "%s", "(default)");
-        }
         *msg++ = '"';
         *msg++ = ':';
-        msg = njt_snprintf(msg, 3, "%d", part[i].percent / 100);
+        if (part[i].last)
+        {
+            msg = njt_snprintf(msg, 3, "%d", 100 - sum);
+        }
+        else
+        {
+            msg = njt_snprintf(msg, 3, "%d", part[i].percent);
+        }
         *msg++ = ',';
     }
     msg--;
@@ -348,7 +356,7 @@ njt_http_split_clients_2_variable(njt_http_request_t *r,
 
     for (i = 0; i < ctx->parts.nelts; i++)
     {
-        percent = part[i].percent / 100;
+        percent = part[i].percent;
         if (part[i].kv_key.len > 0 && percent == 0)
         {
             continue;
@@ -431,10 +439,17 @@ njt_conf_split_clients_2_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     sum = 0;
     part = ctx->parts.elts;
 
+    if (ctx->parts.nelts != 2)
+    {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "split clients 2 should be configured with 2 lines only");
+        return NJT_CONF_ERROR;
+    }
+
     for (i = 0; i < ctx->parts.nelts; i++)
     {
         sum += part[i].percent; // if use kv_http_ as percent, percentage is 0
-        if (sum > 10000)
+        if (sum > 100)
         {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "percent total is greater than 100%%");
@@ -486,8 +501,12 @@ njt_http_split_clients_2(njt_conf_t *cf, njt_command_t *dummy, void *conf)
                 goto invalid;
             }
 
-            n = njt_atofp(value[0].data, value[0].len - 1, 2);
-            if (n == NJT_ERROR || n == 0)
+            if (value[0].data[0] == '0' && value[0].len == 2)
+            {
+                part->percent = 0;
+            }
+            n = njt_atoi(value[0].data, value[0].len - 1);
+            if (n == NJT_ERROR)
             {
                 goto invalid;
             }
@@ -507,6 +526,6 @@ njt_http_split_clients_2(njt_conf_t *cf, njt_command_t *dummy, void *conf)
 invalid:
 
     njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                       "invalid percent value \"%V\"", &value[0]);
+                       "percentage should be an integer, invalid percent value \"%V\", ", &value[0]);
     return NJT_CONF_ERROR;
 }
