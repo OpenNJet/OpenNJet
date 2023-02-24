@@ -95,6 +95,8 @@ struct njt_stream_upstream_srv_conf_s {
     time_t                    valid;
     unsigned                         hc_type:2;
     unsigned                         reload:1;
+    unsigned                         persistent:1;
+    unsigned                         mandatory:1;
 #endif
 };
 

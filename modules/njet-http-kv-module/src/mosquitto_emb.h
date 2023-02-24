@@ -13,7 +13,7 @@ int mqtt_reload_cfg();
 
 struct mqtt_ctx_t;
 
-typedef void (*msg_resp_pt)(const char *topic, const char *msg, int msg_len, int session_id);
+typedef char* (*msg_resp_pt) (const char* topic, int is_reply,const char* msg, int msg_len, int session_id,int* out_len);
 typedef int (*msg_pt)(const char *topic, const char *msg, int msg_len, void *out_data);
 
 struct mqtt_ctx_t *mqtt_client_init(const char *cfg_file, msg_resp_pt resp_pt, msg_pt msg_callback, const char *id, const char *iot_log, void *out_data);
