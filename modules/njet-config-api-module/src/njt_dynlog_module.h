@@ -30,7 +30,7 @@ typedef struct njt_http_dyn_access_api_loc_s njt_http_dyn_access_api_loc_t;
 
 struct njt_http_dyn_access_api_loc_s {
     njt_str_t full_name;
-    bool log_off;
+    bool log_on;
     njt_array_t locs;
 };
 
