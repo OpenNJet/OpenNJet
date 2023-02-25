@@ -24,6 +24,7 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *elemen
         njt_array_init(array,pool,element->sudata->nelts,def->size);
         for (i = 0; i < element->sudata->nelts; ++i ) {
             p = njt_array_push(array);
+            njt_memzero(p,def->size);
             rc = njt_json_parse_json_element(pool,&sub[i],def,p);
             if(rc != NJT_OK){
                 return rc;
@@ -97,28 +98,46 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *elemen
 njt_int_t njt_json_parse_data(njt_pool_t *pool,njt_str_t *str,njt_json_define_t *def,void *data){
     njt_json_manager json_body;
     njt_int_t rc;
-    njt_json_element  *items;
-    njt_uint_t i, j;
-    char  *p ;
+    njt_json_element  *items,*sub;
+    njt_array_t *array;
+    void *p;
+    njt_uint_t i;
+    njt_json_define_t obj_def={
+            njt_null_string,
+            0,
+            0,
+            NJT_JSON_OBJ,
+            def,
+            NULL,
+    };
 
     rc = njt_json_2_structure(str, &json_body,pool);
     if (rc != NJT_OK) {
         njt_log_error(NJT_LOG_EMERG, pool->log, 0, "structure json body mem malloc error !!");
         return rc;
     }
+    if(json_body.json_keyval->nelts != 1){
+        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "json root len error");
+        return NJT_OK;
+    }
     items = json_body.json_keyval->elts;
-    for (i = 0; i < json_body.json_keyval->nelts; ++i ) {
-        for( j = 0 ; def[j].name.len != 0 ; ++j ){
-            if(items[i].key.len == def[j].name.len &&
-               njt_strncmp(items[i].key.data, def[j].name.data, def[j].name.len) == 0){
-                p = data;
-                p += def[j].offset;
-                rc = njt_json_parse_json_element(pool,&items[i],&def[j],data);
-                if(rc != NJT_OK){
-                    return rc;
-                }
+    if(items->type== NJT_JSON_OBJ){
+        rc = njt_json_parse_json_element(pool,items,&obj_def,data);
+        if(rc != NJT_OK){
+            return rc;
+        }
+    }
+    array = data;
+    if(items->type== NJT_JSON_ARRAY){
+        p = njt_array_push(array);
+        sub = items->sudata->elts;
+        for( i =0; i < items->sudata->nelts; ++i){
+            rc = njt_json_parse_json_element(pool,&sub[i],def,p);
+            if(rc != NJT_OK){
+                return rc;
             }
         }
     }
+
     return NJT_OK;
 }
