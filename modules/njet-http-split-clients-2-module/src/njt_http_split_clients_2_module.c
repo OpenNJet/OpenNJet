@@ -6,8 +6,8 @@
 
 #define DYN_TOPIC_PREFIX "/dyn/"
 #define DYN_TOPIC_PREFIX_LEN 5
-#define DYN_TOPIC_REG_KEY "njt_http_split_clients_2_module"
-#define DYN_TOPIC_REG_KEY_LEN 31
+#define DYN_TOPIC_REG_KEY "http_split_clients_2"
+#define DYN_TOPIC_REG_KEY_LEN 20
 
 typedef struct
 {
