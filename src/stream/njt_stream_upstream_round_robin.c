@@ -75,7 +75,7 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
                 t += server[i].naddrs;
             }
         }
-
+	/* zyg
         if (n == 0) {
             njt_log_error(NJT_LOG_EMERG, cf->log, 0,
                           "no servers in upstream \"%V\" in %s:%ui",
@@ -87,7 +87,7 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
         peer = njt_pcalloc(cf->pool, sizeof(njt_stream_upstream_rr_peer_t) * n);
         if (peer == NULL) {
             return NJT_ERROR;
-        }
+        }*/
 
         peers->single = (n == 1);
         peers->number = n;
@@ -95,7 +95,11 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
         peers->total_weight = w;
         peers->tries = t;
         peers->name = &us->host;
-
+	if(n > 0) {
+	peer = njt_pcalloc(cf->pool, sizeof(njt_stream_upstream_rr_peer_t) * n);
+        if (peer == NULL) {
+            return NJT_ERROR;
+        }
         n = 0;
         peerp = &peers->peer;
 
@@ -125,7 +129,7 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
                 n++;
             }
         }
-
+	}
         us->peer.data = peers;
 
         /* backup servers */
