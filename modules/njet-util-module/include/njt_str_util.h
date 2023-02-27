@@ -35,5 +35,6 @@
     njt_memcpy(desc.data+front.len,after.data,after.len);         \
     desc.len = front.len+after.len;
 
+njt_int_t njt_str_split(njt_str_t *src, njt_array_t *array, char sign);
 
 #endif //NJET_MAIN_NJT_STR_UTIL_H
