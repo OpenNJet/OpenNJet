@@ -67,7 +67,7 @@ static njt_json_define_t njt_http_dyn_bwlist_access_ipv4_json_dt[] = {
 
 static njt_json_define_t njt_http_dyn_bwlist_loc_json_dt[] = {
     {
-        njt_string("fullName"),
+        njt_string("location"),
         offsetof(njt_http_dyn_bwlist_loc_t, full_name),
         0,
         NJT_JSON_STR,
@@ -360,6 +360,10 @@ static njt_int_t njt_dyn_bwlist_update_locs(njt_array_t *locs, njt_queue_t *q)
                     for (i = 0; i < daal[j].access_ipv4.nelts; i++)
                     {
                         in_addr_t addr = njt_inet_addr(access[i].addr.data, access[i].addr.len);
+                        if (addr==INADDR_NONE) {
+                            njt_log_error(NJT_LOG_ERR, njt_cycle->log , 0, "skipping wrong ipv4 addr: %v ", &access[i].addr);
+                            continue;
+                        }
                         in_addr_t mask = njt_inet_addr(access[i].mask.data, access[i].mask.len);
                         njt_uint_t deny = 1;
                         if (access[i].rule.len == 5 && njt_strncmp(access[i].rule.data, "allow", 5) == 0)
@@ -440,7 +444,7 @@ static njt_json_element *njt_dyn_bwlist_dump_locs_json(njt_pool_t *pool, njt_que
             return NULL;
         }
 
-        sub = njt_json_str_element(pool, njt_json_fast_key("fullName"), &clcf->full_name);
+        sub = njt_json_str_element(pool, njt_json_fast_key("location"), &clcf->full_name);
         if (sub == NULL)
         {
             return NULL;
