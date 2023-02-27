@@ -20,7 +20,7 @@
 #include <njt_core.h>
 
 #define njt_str_copy_pool(pool, desc, src, err)    \
-    desc.data = njt_pstrdup(cf->pool, &src);      \
+    desc.data = njt_pstrdup(pool, &src);      \
         if(desc.data == NULL){                  \
             err ;                               \
         }                                       \
