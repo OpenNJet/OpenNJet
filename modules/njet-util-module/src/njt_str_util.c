@@ -14,6 +14,7 @@
 // Created by Administrator on 2023/2/16/016.
 //
 
+#include <njt_str_util.h>
 
 njt_int_t njt_str_split(njt_str_t *src,njt_array_t *array,char sign){
     u_char              *p, *last, *end;
