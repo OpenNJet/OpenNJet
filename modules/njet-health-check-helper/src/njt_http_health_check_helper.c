@@ -3389,51 +3389,158 @@ njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path) {
     return NJT_OK;
 }
 
-static char njt_helper_hcs_resp_item[] = "{\n"
-                                         "  \"upstream\": \"%V\",\n"
-                                         "  \"type\": \"%V\"\n"
-                                         "},";
 
-static njt_buf_t *njt_hc_confs_to_json(njt_pool_t *pool, njt_helper_main_conf_t *hmcf) {
 
-    njt_uint_t buf_len;
+#define njt_json_fast_key(key) (u_char*)key,sizeof(key)-1
+#define njt_json_null_key NULL,0
+
+static njt_json_element* njt_json_int_element(njt_pool_t *pool,u_char *key,njt_uint_t len,njt_int_t value){
+    njt_json_element *element;
+
+    element = NULL;
+    element = njt_pcalloc(pool,sizeof (njt_json_element));
+    if(element == NULL ){
+        goto end;
+    }
+    element->type = NJT_JSON_INT;
+    if(key != NULL){
+        element->key.data = key;
+        element->key.len = len;
+    }
+    element->intval = value;
+    end:
+    return element;
+}
+
+static njt_json_element* njt_json_str_element(njt_pool_t *pool,u_char *key,njt_uint_t len,njt_str_t *value){
+    njt_json_element *element;
+
+    element = NULL;
+    element = njt_pcalloc(pool,sizeof (njt_json_element));
+    if(element == NULL ){
+        goto end;
+    }
+    element->type = NJT_JSON_STR;
+    if(key != NULL){
+        element->key.data = key;
+        element->key.len = len;
+    }
+    if(value != NULL){
+        element->strval = *value;
+    }
+    end:
+    return element;
+}
+static njt_json_element* njt_json_bool_element(njt_pool_t *pool, u_char *key,njt_uint_t len,bool value){
+    njt_json_element *element;
+
+    element = NULL;
+    element = njt_pcalloc(pool,sizeof (njt_json_element));
+    if(element == NULL ){
+        goto end;
+    }
+    element->type = NJT_JSON_BOOL;
+    if(key != NULL){
+        element->key.data = key;
+        element->key.len = len;
+    }
+    element->bval = value;
+
+    end:
+    return element;
+}
+
+static njt_json_element* njt_json_obj_element(njt_pool_t *pool,u_char *key,njt_uint_t len){
+    njt_json_element *element;
+
+    element = NULL;
+    element = njt_pcalloc(pool,sizeof (njt_json_element));
+    if(element == NULL ){
+        goto end;
+    }
+    element->type = NJT_JSON_OBJ;
+    if(key != NULL){
+        element->key.data = key;
+        element->key.len = len;
+    }
+    end:
+    return element;
+}
+
+static njt_json_element* njt_json_arr_element(njt_pool_t *pool,u_char *key,njt_uint_t len){
+    njt_json_element *element;
+
+    element = NULL;
+    element = njt_pcalloc(pool,sizeof (njt_json_element));
+    if(element == NULL ){
+        goto end;
+    }
+    element->type = NJT_JSON_ARRAY;
+    if(key != NULL){
+        element->key.data = key;
+        element->key.len = len;
+    }
+    end:
+    return element;
+}
+
+
+static njt_str_t njt_hc_confs_to_json(njt_pool_t *pool, njt_helper_main_conf_t *hmcf) {
     njt_helper_health_check_conf_t *hhccf;
     njt_queue_t *q;
     njt_http_health_check_conf_ctx_t *cf_ctx;
-    njt_buf_t *buf;
+    njt_str_t json;
+    njt_json_manager json_manager;
+    njt_json_element *root,*hc,*item;
+
+    njt_str_null(&json);
+
+    json_manager.json_keyval = njt_array_create(pool,1,sizeof (njt_json_element));
+    if(json_manager.json_keyval == NULL ){
+        goto err;
+    }
+    root = njt_array_push(json_manager.json_keyval);
+    if(root == NULL ){
+        goto err;
+    }
+    njt_memzero(root, sizeof(njt_json_element));
+    root->type = NJT_JSON_ARRAY;
+    root->sudata = njt_array_create(pool, 4, sizeof(njt_json_element));
+    if(root->sudata == NULL){
+        goto err;
+    }
 
     q = njt_queue_head(&hmcf->hc_queue);
-    buf_len = 1;
     for (; q != njt_queue_sentinel(&hmcf->hc_queue); q = njt_queue_next(q)) {
         hhccf = njt_queue_data(q, njt_helper_health_check_conf_t, queue);
-        buf_len += sizeof(njt_helper_hcs_resp_item);
-        buf_len += hhccf->upstream_name.len;
+
+        hc =  njt_json_obj_element(pool,njt_json_null_key);
+        if(hc == NULL ){
+            goto err;
+        }
+        item =  njt_json_str_element(pool,njt_json_fast_key("upstream"),&hhccf->upstream_name);
+        if(item == NULL ){
+            goto err;
+        }
+        njt_struct_add(hc,item,pool);
         if (hhccf->type == NJT_HTTP_MODULE) {
             cf_ctx = hhccf->ctx;
-            buf_len += cf_ctx->checker->name.len;
+            item =  njt_json_str_element(pool,njt_json_fast_key("type"),&cf_ctx->checker->name);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(hc,item,pool);
         }
+        njt_struct_add(root,hc,pool);
     }
-    buf = njt_create_temp_buf(pool, buf_len);
-    if (buf == NULL) {
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "create temp buf error in function %s", __func__);
-        return NULL;
-    }
-    q = njt_queue_head(&hmcf->hc_queue);
-    *buf->last = '[';
-    ++buf->last;
-    for (; q != njt_queue_sentinel(&hmcf->hc_queue); q = njt_queue_next(q)) {
-        hhccf = njt_queue_data(q, njt_helper_health_check_conf_t, queue);
-        if (hhccf->type == NJT_HTTP_MODULE) {
-            cf_ctx = hhccf->ctx;
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, njt_helper_hcs_resp_item,
-                                     &hhccf->upstream_name, &cf_ctx->checker->name);
-        }
-    }
-    if (buf->last - buf->pos == 1) {
-        ++buf->last;
-    }
-    *(buf->last - 1) = ']';
-    return buf;
+
+    njt_memzero(&json, sizeof(njt_str_t));
+    njt_structure_2_json(&json_manager, &json, pool);
+    return json;
+
+    err:
+    njt_str_null(&json);
+    return json;
 }
 
 
@@ -3443,6 +3550,7 @@ static njt_int_t njt_hc_api_get_hcs(njt_http_request_t *r) {
     njt_helper_main_conf_t *hmcf;
     njt_buf_t *buf;
     njt_chain_t out;
+    njt_str_t json;
 
     rc = njt_http_discard_request_body(r);
     if (rc == NJT_ERROR || rc >= NJT_HTTP_SPECIAL_RESPONSE) {
@@ -3450,10 +3558,17 @@ static njt_int_t njt_hc_api_get_hcs(njt_http_request_t *r) {
     }
     cycle = (njt_cycle_t *) njt_cycle;
     hmcf = (njt_helper_main_conf_t *) njt_get_conf(cycle->conf_ctx, njt_helper_health_check_module);
-    buf = njt_hc_confs_to_json(r->pool, hmcf);
-    if (buf == NULL) {
+    json = njt_hc_confs_to_json(r->pool, hmcf);
+    if (json.len == 0) {
         return HC_SERVER_ERROR;
     }
+    buf = njt_create_temp_buf(r->pool, json.len);
+    if(buf == NULL){
+        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "njt_create_temp_buf error , size :%ui" ,json.len);
+        return HC_SERVER_ERROR;
+    }
+    buf->last = buf->pos + json.len;
+    njt_memcpy(buf->pos,json.data,json.len);
     r->headers_out.status = NJT_HTTP_OK;
     njt_str_t type = njt_string("application/json");
     r->headers_out.content_type = type;
@@ -3519,116 +3634,226 @@ static njt_int_t njt_hc_api_delete_conf(njt_http_request_t *r, njt_helper_hc_api
     return HC_SUCCESS;
 }
 
-static char njt_helper_hc_common_info[] = "{\n"
-                                          "  \"interval\": \"%uis\",\n"
-                                          "  \"jitter\": \"%uis\",\n"
-                                          "  \"timeout\":\"%uis\",\n"
-                                          "  \"passes\": %ui,\n"
-                                          "  \"fails\": %ui,";
+static char njt_hc_time_second_format[] ="%uis";
 
-static njt_buf_t *njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_check_conf_t *hhccf) {
-    njt_buf_t *buf;
+static njt_str_t njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_check_conf_t *hhccf) {
     njt_http_health_check_conf_ctx_t *cf_ctx;
-    njt_str_t *header;
+    njt_str_t *header,json,val;
     njt_uint_t i;
+    njt_json_manager json_manager;
+    njt_json_element *root,*http,*headers,*ssl,*item;
+    u_char *str_buf,*last;
 
-    buf = njt_create_temp_buf(pool, njt_pagesize);
-    if (buf == NULL) {
-        return NULL;
+
+    json_manager.json_keyval = njt_array_create(pool,1,sizeof (njt_json_element));
+    if(json_manager.json_keyval == NULL ){
+        goto err;
     }
-    buf->last = njt_snprintf(buf->last, buf->end - buf->last, njt_helper_hc_common_info,
-                             hhccf->interval / 1000, hhccf->jitter / 1000, hhccf->timeout / 1000,
-                             hhccf->passes, hhccf->fails);
+    root = njt_array_push(json_manager.json_keyval);
+    if(root == NULL ){
+        goto err;
+    }
+    njt_memzero(root, sizeof(njt_json_element));
+    root->type = NJT_JSON_OBJ;
+
+    str_buf = njt_pcalloc(pool,njt_pagesize);
+    if(root == NULL ){
+        goto err;
+    }
+    last = str_buf + njt_pagesize;
+    val.data = str_buf;
+    str_buf = njt_snprintf(val.data,last - val.data,njt_hc_time_second_format,hhccf->interval/ 1000);
+    val.len = str_buf - val.data;
+    item =njt_json_str_element(pool,njt_json_fast_key("interval"),&val);
+    if(item == NULL ){
+        goto err;
+    }
+    njt_struct_add(root,item,pool);
+    val.data = str_buf;
+    str_buf = njt_snprintf(val.data,last - val.data,njt_hc_time_second_format,hhccf->jitter / 1000);
+    val.len = str_buf - val.data;
+    item =njt_json_str_element(pool,njt_json_fast_key("jitter"),&val);
+    if(item == NULL ){
+        goto err;
+    }
+    njt_struct_add(root,item,pool);
+    val.data = str_buf;
+    str_buf = njt_snprintf(val.data,last - val.data,njt_hc_time_second_format,hhccf->timeout/ 1000);
+    val.len = str_buf - val.data;
+    item =njt_json_str_element(pool,njt_json_fast_key("timeout"),&val);
+    if(item == NULL ){
+        goto err;
+    }
+    njt_struct_add(root,item,pool);
+    item =njt_json_int_element(pool,njt_json_fast_key("passes"),hhccf->passes);
+    if(item == NULL ){
+        goto err;
+    }
+    njt_struct_add(root,item,pool);
+    item =njt_json_int_element(pool,njt_json_fast_key("fails"),hhccf->fails);
+    if(item == NULL ){
+        goto err;
+    }
+    njt_struct_add(root,item,pool);
+
     if (hhccf->port > 0) {
-        buf->last = njt_snprintf(buf->last, buf->end - buf->last,
-                                 "  \"port\":%ui,\n", hhccf->port);
+        item =njt_json_int_element(pool,njt_json_fast_key("port"), hhccf->port);
+        if(item == NULL ){
+            goto err;
+        }
+        njt_struct_add(root,item,pool);
     }
     if (hhccf->type == NJT_HTTP_MODULE) {
         cf_ctx = hhccf->ctx;
-        buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"http\":{");
+        http =njt_json_obj_element(pool,njt_json_fast_key("http"));
+        if(http == NULL ){
+            goto err;
+        }
         if (cf_ctx->uri.len > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"uri\":\"%V\",", &cf_ctx->uri);
+            item =njt_json_str_element(pool,njt_json_fast_key("uri"),&cf_ctx->uri);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(http,item,pool);
         }
         if (cf_ctx->gsvc.len > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"grpcService\":\"%V\",", &cf_ctx->gsvc);
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"grpcStatus\":\"%u\",", &cf_ctx->gstatus);
+            item =njt_json_str_element(pool,njt_json_fast_key("grpcService"),&cf_ctx->gsvc);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(http,item,pool);
+            item =njt_json_int_element(pool,njt_json_fast_key("grpcStatus"),cf_ctx->gstatus);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(http,item,pool);
         }
         if (cf_ctx->status.len > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"status\":\"%V\",", &cf_ctx->status);
+            item =njt_json_str_element(pool,njt_json_fast_key("status"),&cf_ctx->status);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(http,item,pool);
         }
         if (cf_ctx->body.len > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"body\":\"%V\",", &cf_ctx->body);
+            item =njt_json_str_element(pool,njt_json_fast_key("body"),&cf_ctx->body);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(http,item,pool);
         }
         if (cf_ctx->headers.nelts > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"header\":[", &cf_ctx->body);
+            headers = njt_json_arr_element(pool,njt_json_fast_key("header"));
+            if(headers == NULL ){
+                goto err;
+            }
             header = cf_ctx->headers.elts;
             for (i = 0; i < cf_ctx->headers.nelts; ++i) {
-                buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"%V\",", &header[i]);
+                item =njt_json_str_element(pool,njt_json_null_key,&header[i]);
+                if(item == NULL ){
+                    goto err;
+                }
+                njt_struct_add(headers,item,pool);
             }
-            --buf->last;
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "],", &cf_ctx->body);
+            njt_struct_add(http,headers,pool);
         }
-        --buf->last;
-        buf->last = njt_snprintf(buf->last, buf->end - buf->last, "},");
+        njt_struct_add(root,http,pool);
     }
 #if (NJT_OPENSSL)
     if (hhccf->ssl.ssl_enable) {
-        buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"ssl\":{\n\"enable\": true,");
-        if (hhccf->ssl.ssl_session_reuse) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"sessionReuse\": true,");
-        } else {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"sessionReuse\": false,");
+        ssl =njt_json_obj_element(pool,njt_json_fast_key("ssl"));
+        if(ssl == NULL ){
+            goto err;
         }
-        if (hhccf->ssl.ssl_name.len > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"name\": %V,", &hhccf->ssl.ssl_name);
+        item =njt_json_bool_element(pool,njt_json_fast_key("enable"),1);
+        if(item == NULL ){
+            goto err;
         }
-        if (hhccf->ssl.ssl_server_name) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"serverName\": true,");
-        } else {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"serverName\": false,");
+        njt_struct_add(ssl,item,pool);
+        item =njt_json_bool_element(pool,njt_json_fast_key("sessionReuse"),hhccf->ssl.ssl_session_reuse);
+        if(item == NULL ){
+            goto err;
         }
-        if (hhccf->ssl.ssl_verify) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"verify\": true,");
-        } else {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last, "\"verify\": false,");
+        njt_struct_add(ssl,item,pool);
+        item =njt_json_str_element(pool,njt_json_fast_key("name"), &hhccf->ssl.ssl_name);
+        if(item == NULL ){
+            goto err;
         }
+        njt_struct_add(ssl,item,pool);
+
+        item =njt_json_bool_element(pool,njt_json_fast_key("serverName"),hhccf->ssl.ssl_server_name);
+        if(item == NULL ){
+            goto err;
+        }
+        njt_struct_add(ssl,item,pool);
+
+        item =njt_json_bool_element(pool,njt_json_fast_key("verify"),hhccf->ssl.ssl_verify);
+        if(item == NULL ){
+            goto err;
+        }
+        njt_struct_add(ssl,item,pool);
         if (hhccf->ssl.ssl_verify_depth > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last,
-                                     "\"verifyDepth\": %u,", hhccf->ssl.ssl_verify_depth);
+            item =njt_json_int_element(pool,njt_json_fast_key("verifyDepth"),hhccf->ssl.ssl_verify_depth);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(ssl,item,pool);
         }
         if (hhccf->ssl.ssl_trusted_certificate.len > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last,
-                                     "\"trustedCertificate\": %V,", &hhccf->ssl.ssl_trusted_certificate);
+            item =njt_json_str_element(pool,njt_json_fast_key("trustedCertificate"), &hhccf->ssl.ssl_trusted_certificate);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(ssl,item,pool);
         }
         if (hhccf->ssl.ssl_crl.len > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last,
-                                     "\"crl\": %V,", &hhccf->ssl.ssl_crl);
+            item =njt_json_str_element(pool,njt_json_fast_key("crl"),  &hhccf->ssl.ssl_crl);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(ssl,item,pool);
         }
         if (hhccf->ssl.ssl_certificate.len > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last,
-                                     "\"certificate\": %V,", &hhccf->ssl.ssl_certificate);
+            item =njt_json_str_element(pool,njt_json_fast_key("certificate"), &hhccf->ssl.ssl_certificate);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(ssl,item,pool);
         }
         if (hhccf->ssl.ssl_certificate_key.len > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last,
-                                     "\"certificateKey\": %V,", &hhccf->ssl.ssl_certificate_key);
+            item =njt_json_str_element(pool,njt_json_fast_key("certificateKey"), &hhccf->ssl.ssl_certificate_key);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(ssl,item,pool);
         }
         if (hhccf->ssl.ssl_ciphers.len > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last,
-                                     "\"ciphers\": %V,", &hhccf->ssl.ssl_ciphers);
+            item =njt_json_str_element(pool,njt_json_fast_key("ciphers"), &hhccf->ssl.ssl_ciphers);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(ssl,item,pool);
         }
         if (hhccf->ssl.ssl_protocol_str.len > 0) {
-            buf->last = njt_snprintf(buf->last, buf->end - buf->last,
-                                     "\"protocols\": %V,", &hhccf->ssl.ssl_protocol_str);
+            item =njt_json_str_element(pool,njt_json_fast_key("protocols"), &hhccf->ssl.ssl_protocol_str);
+            if(item == NULL ){
+                goto err;
+            }
+            njt_struct_add(ssl,item,pool);
         }
-        --buf->last;
-        buf->last = njt_snprintf(buf->last, buf->end - buf->last, "},");
+        njt_struct_add(root,ssl,pool);
     }
 #endif
-    --buf->last;
-    buf->last = njt_snprintf(buf->last, buf->end - buf->last, "}");
-    return buf;
-}
 
+    njt_memzero(&json, sizeof(njt_str_t));
+    njt_structure_2_json(&json_manager, &json, pool);
+    return json;
+
+    err:
+
+    njt_str_null(&json);
+    return json;
+}
 
 static njt_int_t njt_hc_api_get_conf_info(njt_http_request_t *r, njt_helper_hc_api_data_t *api_data) {
     njt_cycle_t *cycle;
@@ -3636,6 +3861,7 @@ static njt_int_t njt_hc_api_get_conf_info(njt_http_request_t *r, njt_helper_hc_a
     njt_buf_t *buf;
     njt_chain_t out;
     njt_int_t rc;
+    njt_str_t json;
 
 
     cycle = (njt_cycle_t *) njt_cycle;
@@ -3648,10 +3874,18 @@ static njt_int_t njt_hc_api_get_conf_info(njt_http_request_t *r, njt_helper_hc_a
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "not find upstream %V hc", &api_data->upstream_name);
         return HC_NOT_FOUND;
     }
-    buf = njt_hc_conf_info_to_json(r->pool, hhccf);
-    if (buf == NULL) {
-        return HC_NOT_FOUND;
+    json = njt_hc_conf_info_to_json(r->pool, hhccf);
+    if (json.len == 0 ) {
+        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "njt_hc_conf_info_to_json error");
+        return HC_SERVER_ERROR;
     }
+    buf = njt_create_temp_buf(r->pool, json.len);
+    if(buf == NULL){
+        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "njt_create_temp_buf error , size :%ui" ,json.len);
+        return HC_SERVER_ERROR;
+    }
+    buf->last = buf->pos + json.len;
+    njt_memcpy(buf->pos,json.data,json.len);
     r->headers_out.status = NJT_HTTP_OK;
     njt_str_t type = njt_string("application/json");
     r->headers_out.content_type = type;
@@ -3888,7 +4122,6 @@ static njt_int_t njt_health_check_helper_init_process(njt_cycle_t *cycle) {
 
 static void njt_hc_kv_flush_confs(njt_helper_main_conf_t *hmcf) {
     njt_pool_t *pool;
-    njt_buf_t *buf;
     njt_str_t msg;
     njt_str_t key = njt_string(HTTP_HEALTH_CHECK_CONFS);
 
@@ -3897,12 +4130,10 @@ static void njt_hc_kv_flush_confs(njt_helper_main_conf_t *hmcf) {
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "create pool error in function %s", __func__);
         return;
     }
-    buf = njt_hc_confs_to_json(pool, hmcf);
-    if (buf == NULL) {
+    msg = njt_hc_confs_to_json(pool, hmcf);
+    if (msg.len == 0) {
         goto end;
     }
-    msg.data = buf->pos;
-    msg.len = buf->last - buf->pos;
     njt_dyn_kv_set(&key, &msg);
 
     end:
@@ -3911,7 +4142,6 @@ static void njt_hc_kv_flush_confs(njt_helper_main_conf_t *hmcf) {
 
 static void njt_hc_kv_flush_conf_info(njt_helper_health_check_conf_t *hhccf) {
     njt_pool_t *pool;
-    njt_buf_t *buf;
     njt_str_t msg, tkey1, tkey2;
     njt_str_t key_pre = njt_string(HTTP_HEALTH_CHECK_CONF_INFO);
     njt_str_t key_separator = njt_string(HTTP_HEALTH_CHECK_SEPARATOR);
@@ -3924,12 +4154,11 @@ static void njt_hc_kv_flush_conf_info(njt_helper_health_check_conf_t *hhccf) {
     njt_str_concat(pool, tkey1, key_pre, hhccf->type_str, goto end);
     njt_str_concat(pool, tkey2, tkey1, key_separator, goto end);
     njt_str_concat(pool, tkey1, tkey2, hhccf->upstream_name, goto end);
-    buf = njt_hc_conf_info_to_json(pool, hhccf);
-    if (buf == NULL) {
+    msg = njt_hc_conf_info_to_json(pool, hhccf);
+    if (msg.len == 0 ) {
+        njt_log_error(NJT_LOG_ERR, pool->log, 0, "njt_hc_conf_info_to_json error");
         goto end;
     }
-    msg.data = buf->pos;
-    msg.len = buf->last - buf->pos;
     njt_dyn_kv_set(&tkey1, &msg);
     end:
     njt_destroy_pool(pool);
