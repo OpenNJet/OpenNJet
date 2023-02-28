@@ -33,6 +33,7 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-sendmsg-mod
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-split-clients-2-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-health-check-helper"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-config-api-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-bwlist-module"
 #NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
 LIB_SRC_PATH=" --with-openssl=auto/lib/tassl --with-pcre=auto/lib/pcre-8.45"

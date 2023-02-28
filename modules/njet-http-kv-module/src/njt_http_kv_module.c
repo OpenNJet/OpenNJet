@@ -206,7 +206,7 @@ static void mqtt_loop_mqtt(njt_event_t *ev)
 
     if (!njt_exiting)
     {
-        njt_add_timer(ev, 1000);
+        njt_add_timer(ev, 50);
     }
 }
 static void mqtt_connect_timeout(njt_event_t *ev)

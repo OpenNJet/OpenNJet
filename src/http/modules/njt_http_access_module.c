@@ -9,42 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
-
-
-typedef struct {
-    in_addr_t         mask;
-    in_addr_t         addr;
-    njt_uint_t        deny;      /* unsigned  deny:1; */
-} njt_http_access_rule_t;
-
-#if (NJT_HAVE_INET6)
-
-typedef struct {
-    struct in6_addr   addr;
-    struct in6_addr   mask;
-    njt_uint_t        deny;      /* unsigned  deny:1; */
-} njt_http_access_rule6_t;
-
-#endif
-
-#if (NJT_HAVE_UNIX_DOMAIN)
-
-typedef struct {
-    njt_uint_t        deny;      /* unsigned  deny:1; */
-} njt_http_access_rule_un_t;
-
-#endif
-
-typedef struct {
-    njt_array_t      *rules;     /* array of njt_http_access_rule_t */
-#if (NJT_HAVE_INET6)
-    njt_array_t      *rules6;    /* array of njt_http_access_rule6_t */
-#endif
-#if (NJT_HAVE_UNIX_DOMAIN)
-    njt_array_t      *rules_un;  /* array of njt_http_access_rule_un_t */
-#endif
-} njt_http_access_loc_conf_t;
-
+#include <njt_http_dyn_module.h>
 
 static njt_int_t njt_http_access_handler(njt_http_request_t *r);
 static njt_int_t njt_http_access_inet(njt_http_request_t *r,
