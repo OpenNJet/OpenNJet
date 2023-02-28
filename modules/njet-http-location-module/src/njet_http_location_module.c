@@ -1173,11 +1173,21 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
     data = njt_pcalloc(location_info->pool, 10240);
     if (data != NULL) {
 		if(location_info->location_rule.len == 0 || location_info->location_rule.data == NULL) {
+			if(location_info->proxy_pass.len > 0) {
 			p = njt_snprintf(data, 10240, "location %V {\n%V\nproxy_pass %V;\n}\n", &location_info->location,
 							 &location_info->location_body, &location_info->proxy_pass);
+			} else {
+				 p = njt_snprintf(data, 10240, "location %V {\n%V\n}\n", &location_info->location,
+                                                         &location_info->location_body);
+			}
 		} else{
+			if (location_info->proxy_pass.len > 0) {
 			p = njt_snprintf(data, 10240, "location %V%V {\n%V\nproxy_pass %V;\n}\n", &location_info->location_rule,&location_info->location,
 							 &location_info->location_body, &location_info->proxy_pass);
+			} else {
+				p = njt_snprintf(data, 10240, "location %V%V {\n%V\n}\n", &location_info->location_rule,&location_info->location,
+                                                         &location_info->location_body);
+			}
 		}
         rlen = njt_write_fd(fd, data, p - data);
     }

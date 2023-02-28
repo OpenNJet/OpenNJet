@@ -245,7 +245,7 @@ njt_stream_upstream_get_random_peer(njt_peer_connection_t *pc, void *data)
         }
 
         njt_stream_upstream_rr_peer_lock(peers, peer);
-
+	/*
         if (peer->down) {
             njt_stream_upstream_rr_peer_unlock(peers, peer);
             goto next;
@@ -260,6 +260,10 @@ njt_stream_upstream_get_random_peer(njt_peer_connection_t *pc, void *data)
         }
 
         if (peer->max_conns && peer->conns >= peer->max_conns) {
+            njt_stream_upstream_rr_peer_unlock(peers, peer);
+            goto next;
+        }*/
+	if (njt_stream_upstream_pre_handle_peer(peer) == NJT_ERROR) {
             njt_stream_upstream_rr_peer_unlock(peers, peer);
             goto next;
         }
@@ -285,7 +289,7 @@ njt_stream_upstream_get_random_peer(njt_peer_connection_t *pc, void *data)
     pc->name = &peer->name;
 
     peer->conns++;
-
+    peer->requests++;
     njt_stream_upstream_rr_peer_unlock(peers, peer);
     njt_stream_upstream_rr_peers_unlock(peers);
 
@@ -347,7 +351,7 @@ njt_stream_upstream_get_random2_peer(njt_peer_connection_t *pc, void *data)
         if (rrp->tried[n] & m) {
             goto next;
         }
-
+	/*
         if (peer->down) {
             goto next;
         }
@@ -360,6 +364,9 @@ njt_stream_upstream_get_random2_peer(njt_peer_connection_t *pc, void *data)
         }
 
         if (peer->max_conns && peer->conns >= peer->max_conns) {
+            goto next;
+        }*/
+	if (njt_stream_upstream_pre_handle_peer(peer) == NJT_ERROR) {
             goto next;
         }
 
@@ -395,7 +402,7 @@ njt_stream_upstream_get_random2_peer(njt_peer_connection_t *pc, void *data)
     pc->name = &peer->name;
 
     peer->conns++;
-
+    peer->requests++;
     njt_stream_upstream_rr_peers_unlock(peers);
 
     rrp->tried[n] |= m;

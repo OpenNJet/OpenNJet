@@ -176,5 +176,6 @@ void njt_stream_upstream_free_round_robin_peer(njt_peer_connection_t *pc,
     void *data, njt_uint_t state);
  void
 njt_stream_upstream_del_round_robin_peer(njt_slab_pool_t *pool, njt_stream_upstream_rr_peer_t *peer);
-
+njt_int_t
+njt_stream_upstream_pre_handle_peer(njt_stream_upstream_rr_peer_t   *peer);
 #endif /* _NJT_STREAM_UPSTREAM_ROUND_ROBIN_H_INCLUDED_ */
