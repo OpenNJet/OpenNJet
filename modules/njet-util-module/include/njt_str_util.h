@@ -20,7 +20,7 @@
 #include <njt_core.h>
 
 #define njt_str_copy_pool(pool, desc, src, err)    \
-    desc.data = njt_pstrdup(cf->pool, &src);      \
+    desc.data = njt_pstrdup(pool, &src);      \
         if(desc.data == NULL){                  \
             err ;                               \
         }                                       \
@@ -35,5 +35,6 @@
     njt_memcpy(desc.data+front.len,after.data,after.len);         \
     desc.len = front.len+after.len;
 
+njt_int_t njt_str_split(njt_str_t *src, njt_array_t *array, char sign);
 
 #endif //NJET_MAIN_NJT_STR_UTIL_H
