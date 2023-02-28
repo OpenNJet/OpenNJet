@@ -90,7 +90,6 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
         peers->tries = t;
         peers->name = &us->host;
 
-        n = 0;
         peerp = &peers->peer;
 	if(n > 0) {
 	   peer = njt_pcalloc(cf->pool, sizeof(njt_http_upstream_rr_peer_t) * n);
