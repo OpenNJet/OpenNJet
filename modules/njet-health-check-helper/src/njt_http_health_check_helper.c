@@ -2702,13 +2702,13 @@ njt_http_match_parse_dheaders(njt_array_t *arr, njt_http_match_t *match, njt_hel
 
 
 static njt_int_t njt_http_match(njt_helper_hc_api_data_t *api_data, njt_helper_health_check_conf_t *hhccf) {
-    njt_str_t args, tmp;
+    njt_str_t *args;
     njt_http_match_code_t *code, tmp_code;
-    njt_uint_t i, diff;
+    njt_uint_t i;
     njt_int_t rc;
     njt_http_match_t *match;
-    u_char *end;
     njt_conf_t cf;
+    njt_array_t *array;
 
     njt_http_health_check_conf_ctx_t *hhccc = hhccf->ctx;
     match = hhccc->match;
@@ -2717,28 +2717,20 @@ static njt_int_t njt_http_match(njt_helper_hc_api_data_t *api_data, njt_helper_h
 
     if (api_data->http.status.len > 0) {
         i = 0;
-        args = api_data->http.status;
-        if (njt_strncmp(args.data, "!", 1) == 0) {
+        array = njt_array_create(hhccf->pool,4, sizeof(njt_str_t));
+        njt_str_split(&api_data->http.status,array,' ');
+        if(array->nelts < 1 ){
+            njt_log_error(NJT_LOG_ERR, hhccf->log, 0, "code array create error.");
+            return NJT_ERROR;
+        }
+        args = array->elts;
+        if (njt_strncmp(args[0].data, "!", 1) == 0) {
             match->status.not_operation = 1;
             i++;
         }
-        if (i >= args.len) {
-            njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "Too many parameters  for status.");
-            return NJT_ERROR;
-        }
-
-        for (; i < args.len;) {
-            tmp.data = args.data + i;
-            end = njt_strlchr(args.data + i, args.data + args.len - i, ' ');
-            if (end == NULL) {
-                tmp.len = (size_t) args.len - i;
-            } else {
-                diff = end - tmp.data;
-                tmp.len = (size_t) diff;
-            }
-            i += tmp.len;
+        for (; i < array->nelts;++i) {
             njt_memzero(&tmp_code, sizeof(njt_http_match_code_t));
-            rc = njt_http_match_parse_code(&tmp, &tmp_code);
+            rc = njt_http_match_parse_code(&args[i], &tmp_code);
             if (rc == NJT_ERROR) {
                 continue;
             }
@@ -2762,32 +2754,34 @@ static njt_int_t njt_http_match(njt_helper_hc_api_data_t *api_data, njt_helper_h
         }
     }
     if (api_data->http.body.len > 0) {
-        args = api_data->http.body;
-        if (args.len < 2) {
+        array = njt_array_create(hhccf->pool,4, sizeof(njt_str_t));
+        njt_str_split(&api_data->http.body,array,' ');
+        if(array->nelts < 1 ){
+            njt_log_error(NJT_LOG_ERR, hhccf->log, 0, "code array create error.");
+            return NJT_ERROR;
+        }
+        args = array->elts;
+        if (array->nelts < 2) {
             njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "body parameter number error.");
             return NJT_ERROR;
         }
 
-        if (njt_strncmp(args.data, "!~", 2) == 0) {
-            diff = 2;
+        if (njt_strncmp(args[0].data, "!~", 2) == 0) {
             match->body.operation = NJT_HTTP_MATCH_NOT_REG_MATCH;
-        } else if (njt_strncmp(args.data, "~", 1) == 0) {
-            diff = 1;
+        } else if (njt_strncmp(args[0].data, "~", 1) == 0) {
             match->body.operation = NJT_HTTP_MATCH_REG_MATCH;
         } else {
             /*log the case*/
-            njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "body operation %V isn't supported error.", &args);
+            njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "body operation %V isn't supported error.", &args[0]);
             return NJT_ERROR;
         }
-        tmp.data = args.data + diff;
-        tmp.len = args.len - diff;
         cf.pool = hhccf->pool;
-        match->body.regex = njt_http_match_regex_value(&cf, &tmp);
+        match->body.regex = njt_http_match_regex_value(&cf, &args[1]);
         if (match->body.regex == NULL) {
-            njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "body regex %V parse error.", &args);
+            njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "body regex %V parse error.",&args[0]);
             return NJT_ERROR;
         }
-        match->body.value = tmp;
+        match->body.value = args[1];
     }
 
     return NJT_OK;
