@@ -35,7 +35,7 @@ njt_int_t parseJson(njt_array_t *json_array, njt_json_val *key,
         json_element->key.len  = len;
         njt_memcpy(json_element->key.data, pData, len);
         njt_memzero(buffer, sizeof(buffer));
-        njt_memcpy(buffer, pData, len);
+        njt_memcpy(buffer, pData, njt_min(len,sizeof(buffer)-1));
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                        "key: %s", buffer);
 
@@ -100,7 +100,7 @@ njt_int_t parseJson(njt_array_t *json_array, njt_json_val *key,
             json_element->strval.len  = len;
             njt_memcpy(json_element->strval.data, pData, len);
             njt_memzero(buffer, sizeof(buffer));
-            njt_memcpy(buffer, pData, len);
+            njt_memcpy(buffer, pData, njt_min(len,sizeof(buffer)-1));
             njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                            "string val is: %s", buffer);
         }
@@ -206,13 +206,13 @@ njt_int_t njt_json_2_structure(njt_str_t *json,
 
     pjson_manager->free = njt_json_manager_free;
 
-    json_buf = njt_pnalloc(pool, json->len+njt_pagesize);
+    json_buf = njt_pnalloc(pool, 2 * json->len+njt_pagesize);
     if (json_buf == NULL) {
         goto cleanup;
     }
 
 
-    njt_json_alc_pool_init(&alc, json_buf, json->len +njt_pagesize);
+    njt_json_alc_pool_init(&alc, json_buf, 2 * json->len +njt_pagesize);
 
     //doc = njt_json_read((const char*)json->data,json->len, 0);
     doc = njt_json_read_opts((char *)json->data, json->len, 0, &alc, NULL);
