@@ -35,7 +35,7 @@ njt_int_t parseJson(njt_array_t *json_array, njt_json_val *key,
         json_element->key.len  = len;
         njt_memcpy(json_element->key.data, pData, len);
         njt_memzero(buffer, sizeof(buffer));
-        njt_memcpy(buffer, pData, len);
+        njt_memcpy(buffer, pData, njt_min(len,sizeof(buffer)-1));
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                        "key: %s", buffer);
 
@@ -100,7 +100,7 @@ njt_int_t parseJson(njt_array_t *json_array, njt_json_val *key,
             json_element->strval.len  = len;
             njt_memcpy(json_element->strval.data, pData, len);
             njt_memzero(buffer, sizeof(buffer));
-            njt_memcpy(buffer, pData, len);
+            njt_memcpy(buffer, pData, njt_min(len,sizeof(buffer)-1));
             njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                            "string val is: %s", buffer);
         }
@@ -206,13 +206,13 @@ njt_int_t njt_json_2_structure(njt_str_t *json,
 
     pjson_manager->free = njt_json_manager_free;
 
-    json_buf = njt_pnalloc(pool, json->len+njt_pagesize);
+    json_buf = njt_pnalloc(pool, 2 * json->len+njt_pagesize);
     if (json_buf == NULL) {
         goto cleanup;
     }
 
 
-    njt_json_alc_pool_init(&alc, json_buf, json->len +njt_pagesize);
+    njt_json_alc_pool_init(&alc, json_buf, 2 * json->len +njt_pagesize);
 
     //doc = njt_json_read((const char*)json->data,json->len, 0);
     doc = njt_json_read_opts((char *)json->data, json->len, 0, &alc, NULL);
@@ -268,7 +268,7 @@ njt_int_t njt_struct_2_json_callback(njt_json_alc *alc, njt_array_t *json_array,
     njt_json_element *items;
     njt_json_mut_val *msg_key, *msg;
     njt_uint_t i;
-    
+
 
     items = json_array->elts;
     for (i = 0; i < json_array->nelts; i++)
@@ -276,7 +276,7 @@ njt_int_t njt_struct_2_json_callback(njt_json_alc *alc, njt_array_t *json_array,
         switch (items[i].type)
         {
 
-            case NJT_JSON_STR:            
+            case NJT_JSON_STR:
                 msg = njt_json_mut_strncpy(doc, (const char*)items[i].strval.data, items[i].strval.len);
                 break;
             case NJT_JSON_BOOL:
@@ -312,7 +312,7 @@ njt_int_t njt_struct_2_json_callback(njt_json_alc *alc, njt_array_t *json_array,
                 }else if(val_type == NJT_JSON_ARRAY){
                     njt_json_mut_arr_append(val, msg);
                 }
-               
+
                 rc = njt_struct_2_json_callback(alc, items[i].sudata, doc, msg, NJT_JSON_OBJ);
                 if(rc != NJT_OK){
                     return rc;
@@ -362,7 +362,7 @@ njt_int_t njt_structure_2_json(njt_json_manager *pjson_manager,
     int8_t  root_type;
     njt_json_element *items;
 
-    if (pjson_manager == NULL || pjson_manager->json_keyval == NULL 
+    if (pjson_manager == NULL || pjson_manager->json_keyval == NULL
         || pjson_manager->json_keyval->nelts < 1)
     {
         return NJT_ERROR;
@@ -398,7 +398,7 @@ njt_int_t njt_structure_2_json(njt_json_manager *pjson_manager,
     }else{
         goto cleanup;
     }
-    
+
     if(root == NULL){
         goto cleanup;
     }
@@ -435,7 +435,7 @@ cleanup:
 
 /**
  * @brief find out_elemetn in in_element by key
- * 
+ *
  * @param in_element    input element
  * @param key           search key string
  * @param out_element   output element
@@ -477,7 +477,7 @@ njt_int_t njt_struct_find(njt_json_element *in_element,
             return NJT_OK;
         }
     }
- 
+
     return rc;
 }
 
@@ -485,7 +485,7 @@ njt_int_t njt_struct_find(njt_json_element *in_element,
 /**
  * @brief find element from json manger which is top level
  *          top level only NJT_JSON_ARRAY or NJT_JSON_OBJ type
- * 
+ *
  * @param pjson_manager     input json manger object
  * @param key               search key string
  * @param out_element       output element
@@ -529,14 +529,14 @@ njt_int_t njt_struct_top_find(njt_json_manager *pjson_manager,
 
         return NJT_OK;
     }
- 
-    return rc;  
+
+    return rc;
 }
 
 
 /**
  * @brief insert element to parent_element, root_element only is NJT_JSON_OBJ or NJT_JSON_ARRAY
- * 
+ *
  * @param parent_element   parent element
  * @param element        add element
  * @return njt_int_t     result status NJT_ERROR or NJT_OK
@@ -547,7 +547,7 @@ njt_int_t njt_struct_add(njt_json_element *parent_element,
     njt_int_t rc = NJT_OK;
     njt_json_element *json_element;
     njt_json_element *items;
- 
+
     if(parent_element == NULL || element == NULL){
         return NJT_ERROR;
     }
@@ -601,8 +601,8 @@ njt_int_t njt_struct_add(njt_json_element *parent_element,
 
 /**
  * @brief free element
- * 
- * @param pjson_manager  
+ *
+ * @param pjson_manager
  * @return njt_int_t  result status NJT_ERROR or NJT_OK
  */
 njt_int_t njt_struct_element_destroy(njt_json_element *element,
@@ -622,8 +622,8 @@ njt_int_t njt_struct_element_destroy(njt_json_element *element,
 /**
  * @brief free json manager object memory
  *           now just return because array has no free interface
- *        todo when use dynamic array 
- * @param pjson_manager  
+ *        todo when use dynamic array
+ * @param pjson_manager
  * @return njt_int_t  result status NJT_ERROR or NJT_OK
  */
 njt_int_t njt_struct_destroy(njt_json_manager *pjson_manager){
