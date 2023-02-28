@@ -506,7 +506,7 @@ njt_http_upstream_get_round_robin_peer(njt_peer_connection_t *pc, void *data)
     pc->name = &peer->name;
 
     peer->conns++;
-
+    peer->requests++;
     njt_http_upstream_rr_peers_unlock(peers);
 
     return NJT_OK;

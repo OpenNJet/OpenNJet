@@ -139,7 +139,7 @@ njt_stream_upstream_get_least_conn_peer(njt_peer_connection_t *pc, void *data)
         if (rrp->tried[n] & m) {
             continue;
         }
-
+	/*
         if (peer->down) {
             continue;
         }
@@ -153,7 +153,9 @@ njt_stream_upstream_get_least_conn_peer(njt_peer_connection_t *pc, void *data)
 
         if (peer->max_conns && peer->conns >= peer->max_conns) {
             continue;
-        }
+        }*/
+	if(njt_stream_upstream_pre_handle_peer(peer) == NJT_ERROR)
+                continue;
 
         /*
          * select peer with least number of connections; if there are
@@ -194,7 +196,7 @@ njt_stream_upstream_get_least_conn_peer(njt_peer_connection_t *pc, void *data)
             if (rrp->tried[n] & m) {
                 continue;
             }
-
+	    /*
             if (peer->down) {
                 continue;
             }
@@ -212,7 +214,9 @@ njt_stream_upstream_get_least_conn_peer(njt_peer_connection_t *pc, void *data)
 
             if (peer->max_conns && peer->conns >= peer->max_conns) {
                 continue;
-            }
+            }*/
+	     if(njt_stream_upstream_pre_handle_peer(peer) == NJT_ERROR)
+                continue;
 
             peer->current_weight += peer->effective_weight;
             total += peer->effective_weight;
@@ -239,7 +243,7 @@ njt_stream_upstream_get_least_conn_peer(njt_peer_connection_t *pc, void *data)
     pc->name = &best->name;
 
     best->conns++;
-
+    best->requests++;
     rrp->current = best;
 
     n = p / (8 * sizeof(uintptr_t));
