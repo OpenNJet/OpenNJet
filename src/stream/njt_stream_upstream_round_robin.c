@@ -95,13 +95,14 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
         peers->total_weight = w;
         peers->tries = t;
         peers->name = &us->host;
+        peerp = &peers->peer;
+
 	if(n > 0) {
 	peer = njt_pcalloc(cf->pool, sizeof(njt_stream_upstream_rr_peer_t) * n);
         if (peer == NULL) {
             return NJT_ERROR;
         }
         n = 0;
-        peerp = &peers->peer;
 
         for (i = 0; i < us->servers->nelts; i++) {
             if (server[i].backup) {
