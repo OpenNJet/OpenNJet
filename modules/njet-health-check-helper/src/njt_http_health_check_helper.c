@@ -3611,8 +3611,10 @@ static njt_helper_health_check_conf_t *njt_http_find_helper_hc(njt_cycle_t *cycl
 static njt_int_t njt_hc_api_delete_conf(njt_http_request_t *r, njt_helper_hc_api_data_t *api_data) {
     njt_cycle_t *cycle;
     njt_helper_health_check_conf_t *hhccf;
+    njt_helper_main_conf_t *hmcf;
 
     cycle = (njt_cycle_t *) njt_cycle;
+    hmcf = (njt_helper_main_conf_t *) njt_get_conf(cycle->conf_ctx, njt_helper_health_check_module);
 
     if (api_data->hc_type.len == 0 || api_data->upstream_name.len == 0) {
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0, " type and upstream must be set !!");
@@ -3625,6 +3627,7 @@ static njt_int_t njt_hc_api_delete_conf(njt_http_request_t *r, njt_helper_hc_api
     }
     njt_queue_remove(&hhccf->queue);
     hhccf->disable = 1;
+    njt_hc_kv_flush_confs(hmcf);
     return HC_SUCCESS;
 }
 
