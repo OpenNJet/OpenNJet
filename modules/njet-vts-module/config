@@ -1,5 +1,6 @@
 njt_addon_name=njt_http_vts_module
 have=NJT_STAT_STUB . auto/have
+have=NJT_HTTP_VTS_DYNCONF . auto/have
 
 HTTP_VTS_SRCS=" \
                  $njt_addon_dir/src/njt_http_vhost_traffic_status_module.c             \

@@ -234,6 +234,10 @@ typedef struct {
 
     /* array of njt_http_vhost_traffic_status_filter_t */
     njt_array_t                            *filter_keys;
+#if (NJT_HTTP_VTS_DYNCONF)
+    njt_array_t                            *filter_keys_dyn;
+    njt_pool_t                             *dyn_pool;
+#endif
 
     /* array of njt_http_vhost_traffic_status_limit_t */
     njt_array_t                            *limit_traffics;

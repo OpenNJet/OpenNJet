@@ -976,7 +976,11 @@ njt_http_vtsc_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
     return NJT_CONF_OK;
 }
 
+
+#if (NJT_HTTP_VTS_DYNCONF)
 static njt_int_t njt_agent_vts_init_process(njt_cycle_t* cycle);
+#endif
+
 
 static njt_int_t
 njt_http_vtsc_init_worker(njt_cycle_t *cycle)
@@ -985,7 +989,9 @@ njt_http_vtsc_init_worker(njt_cycle_t *cycle)
     njt_http_vhost_traffic_status_ctx_t  *ctx;
 
     njt_http_vtsp_module = &njt_http_vtsc_module;
+#if (NJT_HTTP_VTS_DYNCONF)
     njt_agent_vts_init_process(cycle);
+#endif
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, cycle->log, 0,
                    "http vts init worker");
@@ -1051,6 +1057,8 @@ njt_http_vtsc_exit_worker(njt_cycle_t *cycle)
 }
 
 
+#if (NJT_HTTP_VTS_DYNCONF)
+
 #define njt_json_fast_key(key) (u_char*)key,sizeof(key)-1
 #define njt_json_null_key NULL,0
 
@@ -1070,6 +1078,7 @@ typedef struct {
 
 
 typedef struct {
+    njt_str_t   filter;
     njt_array_t servers;
     njt_int_t rc;
     unsigned success:1;
@@ -1078,7 +1087,7 @@ typedef struct {
 
 static njt_json_define_t njt_http_dyn_vts_api_loc_json_dt[] ={
     {
-        njt_string("fullName"),
+        njt_string("location"),
         offsetof(njt_http_dyn_vts_api_loc_t, full_name),
         0,
         NJT_JSON_STR,
@@ -1141,6 +1150,15 @@ static njt_json_define_t njt_http_dyn_vts_api_srv_json_dt[] ={
 
 
 static njt_json_define_t njt_http_dyn_vts_api_main_json_dt[] ={
+    {
+        njt_string("vhost_traffic_status_filter_by_set_key"),
+        offsetof(njt_http_dyn_vts_api_main_t, filter),
+        0,
+        NJT_JSON_STR,
+        NULL,
+        NULL,
+    },
+
     {
         njt_string("servers"),
         offsetof(njt_http_dyn_vts_api_main_t, servers),
@@ -1280,7 +1298,7 @@ static njt_json_element* njt_dynvts_dump_locs_json(njt_pool_t *pool, njt_queue_t
             return NULL;
         }
 
-        sub = njt_json_str_element(pool, njt_json_fast_key("fullName"), &clcf->full_name);
+        sub = njt_json_str_element(pool, njt_json_fast_key("location"), &clcf->full_name);
         if(sub == NULL){
             return NULL;
         }
@@ -1306,7 +1324,7 @@ static njt_json_element* njt_dynvts_dump_locs_json(njt_pool_t *pool, njt_queue_t
 }
 
 
-static njt_int_t njt_dynlog_get_listens_by_server(njt_array_t *array, njt_http_core_srv_conf_t  *cscf) 
+static njt_int_t njt_dynvts_get_listens_by_server(njt_array_t *array, njt_http_core_srv_conf_t  *cscf)
 {
     njt_hash_elt_t         **elt;
     njt_listening_t         *ls;
@@ -1389,6 +1407,53 @@ static njt_int_t njt_dynlog_get_listens_by_server(njt_array_t *array, njt_http_c
 }
 
 
+static void njt_dynvts_dump_vts_filter_conf(njt_cycle_t *cycle, njt_json_element *root, njt_pool_t *pool)
+{
+    njt_json_element                        *filter;
+    njt_http_vhost_traffic_status_ctx_t     *ctx;
+    njt_array_t                             *filter_keys;
+    njt_http_vhost_traffic_status_filter_t  *key;
+    njt_str_t                                vtsfilter;
+    njt_uint_t                               i;
+    u_char                                  *data;
+
+    ctx = njt_http_cycle_get_module_main_conf(cycle, njt_http_vhost_traffic_status_module);
+    if (ctx == NULL) {
+        return;
+    }
+
+    filter_keys = ctx->filter_keys_dyn;
+    if (filter_keys == NULL) {
+        filter_keys = ctx->filter_keys;
+        if (filter_keys == NULL) {
+            return;
+        }
+    }
+
+    key = filter_keys->elts;
+    for (i=0; i<filter_keys->nelts; i++) {
+        data = njt_pcalloc(pool, key[i].filter_key.value.len + key[i].filter_name.value.len + 16);
+
+        vtsfilter.data = data;
+        data = njt_snprintf(data, key[i].filter_key.value.len+2, "\"%s\"", key[i].filter_key.value.data);
+
+        if (key[i].filter_name.value.len > 0) {
+            *data++=' ';
+            data = njt_snprintf(data, key[i].filter_name.value.len+2, "\"%s\"", key[i].filter_name.value.data);
+        }
+
+        vtsfilter.len = data - vtsfilter.data;
+
+        filter = njt_json_str_element(pool, njt_json_fast_key("vhost_traffic_status_filter_by_set_key"), &vtsfilter);
+        if(filter == NULL ){
+            return;
+        }
+
+        njt_struct_add(root, filter, pool);
+    }
+}
+
+
 static njt_str_t njt_dynvts_dump_vts_conf(njt_cycle_t *cycle, njt_pool_t *pool)
 {
     njt_http_core_loc_conf_t    *clcf;
@@ -1415,7 +1480,9 @@ static njt_str_t njt_dynvts_dump_vts_conf(njt_cycle_t *cycle, njt_pool_t *pool)
     njt_memzero(root, sizeof(njt_json_element));
     root->type = NJT_JSON_OBJ;
 
-    srvs =  njt_json_arr_element(pool,njt_json_fast_key("servers"));
+    njt_dynvts_dump_vts_filter_conf(cycle, root, pool);
+
+    srvs =  njt_json_arr_element(pool, njt_json_fast_key("servers"));
     if(srvs == NULL ){
         goto err;
     }
@@ -1423,7 +1490,7 @@ static njt_str_t njt_dynvts_dump_vts_conf(njt_cycle_t *cycle, njt_pool_t *pool)
     cscfp = hcmcf->servers.elts;
     for( i = 0; i < hcmcf->servers.nelts; i++){
         array = njt_array_create(pool,4, sizeof(njt_str_t));
-        njt_dynlog_get_listens_by_server(array,cscfp[i]);
+        njt_dynvts_get_listens_by_server(array,cscfp[i]);
 
         srv =  njt_json_obj_element(pool, njt_json_null_key);
         if(srv == NULL ){
@@ -1620,7 +1687,139 @@ static njt_http_core_srv_conf_t* njt_dynvts_get_srv_by_port(njt_cycle_t *cycle, 
 }
 
 
-static njt_int_t njt_dynvts_update_access_log(njt_pool_t *pool, njt_http_dyn_vts_api_main_t *api_data)
+static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_http_dyn_vts_api_main_t *dynconf)
+{
+    njt_http_vhost_traffic_status_ctx_t     *ctx;
+    njt_array_t                             *filter_keys;
+    njt_http_vhost_traffic_status_filter_t  *filter;
+    njt_http_compile_complex_value_t         ccv;
+    njt_str_t                                first, second;
+    u_char                                  *data;
+    njt_conf_t                               conf;
+    njt_pool_t                              *dyn_pool;
+    u_char                                  *filter_data;
+    size_t                                   len;
+
+    ctx = njt_http_cycle_get_module_main_conf(cycle, njt_http_vhost_traffic_status_module);
+    if (ctx == NULL) {
+        goto FAIL;
+    }
+
+    if (ctx->dyn_pool != NULL) {
+        njt_destroy_pool(ctx->dyn_pool);
+    }
+
+    ctx->filter_keys_dyn = NULL;
+    ctx->dyn_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, cycle->log);
+    if(ctx->dyn_pool == NULL) {
+        goto FAIL;
+    }
+    dyn_pool = ctx->dyn_pool;
+
+    filter_keys = njt_array_create(dyn_pool, 1,
+                                   sizeof(njt_http_vhost_traffic_status_filter_t));
+    if (filter_keys == NULL) {
+        goto FAIL;
+    }
+
+    filter = njt_array_push(filter_keys);
+    if (filter == NULL) {
+        goto FAIL;
+    }
+
+    njt_memzero(&ccv, sizeof(njt_http_compile_complex_value_t));
+    njt_memzero(&first, sizeof(njt_str_t));
+    njt_memzero(&second, sizeof(njt_str_t));
+
+    len = dynconf->filter.len;
+    filter_data = njt_pcalloc(dyn_pool, len+1);
+    njt_memcpy(filter_data, dynconf->filter.data, len);
+
+    /* first argument */
+    data = filter_data;
+    while (data < filter_data + len) {
+        if (*data++ == '\"') {
+            break;
+        }
+    }
+    if (data < filter_data + len) {
+        first.data = data;
+    }
+
+    while (data < filter_data + len) {
+        if (*data++ == '\"') {
+            break;
+        }
+    }
+    if (data < filter_data + len) {
+        first.len = data - first.data - 1;
+    }
+
+    /* second argument */
+    while (data <= filter_data + len) {
+        if (*data++ == '\"') {
+            break;
+        }
+    }
+    if (data < filter_data + len) {
+        second.data = data;
+    }
+
+    while (data < filter_data + len) {
+        if (*data++ == '\"') {
+            break;
+        }
+    }
+    if (data <= filter_data + len) {
+        second.len = data - second.data - 1;
+    }
+
+    njt_log_error(NJT_LOG_INFO, cycle->pool->log, 0, "filter first: %V", &first);
+    njt_log_error(NJT_LOG_INFO, cycle->pool->log, 0, "filter second: %V", &second);
+
+    njt_memzero(&conf, sizeof(njt_conf_t));
+    conf.args = njt_array_create(dyn_pool, 10, sizeof(njt_str_t));
+    if (conf.args == NULL) {
+        goto FAIL;
+    }
+
+    conf.temp_pool = dyn_pool;
+    conf.ctx = (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
+    conf.cycle = cycle;
+    conf.pool = dyn_pool;
+    conf.log = cycle->log;
+    conf.module_type = NJT_HTTP_MODULE;
+    conf.cmd_type = NJT_HTTP_MAIN_CONF;
+    conf.dynamic = 1;
+
+    /* first argument process */
+    ccv.cf = &conf;
+    ccv.value = &first;
+    ccv.complex_value = &filter->filter_key;
+
+    if (njt_http_compile_complex_value(&ccv) != NJT_OK) {
+        goto FAIL;
+    }
+
+    /* second argument process */
+    ccv.value = &second;
+    ccv.complex_value = &filter->filter_name;
+
+    if (njt_http_compile_complex_value(&ccv) != NJT_OK) {
+        goto FAIL;
+    }
+
+    ctx->filter_keys_dyn = filter_keys;
+    njt_http_variables_init_vars(&conf);
+    return;
+
+FAIL:
+    njt_log_error(NJT_LOG_INFO, cycle->pool->log, 0, "failed to update vts filter: %V", &dynconf->filter);
+    return;
+}
+
+
+static njt_int_t njt_dynvts_update(njt_pool_t *pool, njt_http_dyn_vts_api_main_t *dynconf)
 {
     njt_cycle_t                 *cycle,*new_cycle;
     njt_http_core_srv_conf_t    *cscf;
@@ -1635,8 +1834,10 @@ static njt_int_t njt_dynvts_update_access_log(njt_pool_t *pool, njt_http_dyn_vts
         cycle = (njt_cycle_t*)njt_cycle;
     }
 
-    daas = api_data->servers.elts;
-    for(i = 0; i < api_data->servers.nelts; ++i){
+    njt_dynvts_update_filter(cycle, dynconf);
+
+    daas = dynconf->servers.elts;
+    for(i = 0; i < dynconf->servers.nelts; ++i) {
         cscf = njt_dynvts_get_srv_by_port(cycle, pool, (njt_str_t*)daas[i].listens.elts, (njt_str_t*)daas[i].server_names.elts);
         if(cscf == NULL){
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
@@ -1691,10 +1892,10 @@ out:
 static int  njt_agent_vts_change_handler(njt_str_t *key, njt_str_t *value, void *data)
 {
     njt_int_t                    rc;
-    njt_http_dyn_vts_api_main_t *api_data = NULL;
+    njt_http_dyn_vts_api_main_t *dynconf = NULL;
     njt_pool_t                  *pool = NULL;
 
-    if(value->len < 2 ){
+    if (value->len < 2) {
         return NJT_OK;
     }
 
@@ -1704,16 +1905,16 @@ static int  njt_agent_vts_change_handler(njt_str_t *key, njt_str_t *value, void 
         return NJT_OK;
     }
 
-    api_data = njt_pcalloc(pool,sizeof (njt_http_dyn_vts_api_main_t));
-    if(api_data == NULL){
+    dynconf = njt_pcalloc(pool,sizeof (njt_http_dyn_vts_api_main_t));
+    if(dynconf == NULL){
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, pool->log, 0,
                        "could not alloc buffer in function %s", __func__);
         goto out;
     }
 
-    rc =njt_json_parse_data(pool,value, njt_http_dyn_vts_api_main_json_dt, api_data);
-    if(rc == NJT_OK ){
-        njt_dynvts_update_access_log(pool, api_data);
+    rc = njt_json_parse_data(pool, value, njt_http_dyn_vts_api_main_json_dt, dynconf);
+    if (rc == NJT_OK) {
+        njt_dynvts_update(pool, dynconf);
     }
 
 out:
@@ -1733,3 +1934,5 @@ static njt_int_t njt_agent_vts_init_process(njt_cycle_t* cycle)
 
     return NJT_OK;
 }
+
+#endif

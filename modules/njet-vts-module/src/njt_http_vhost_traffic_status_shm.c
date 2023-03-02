@@ -398,6 +398,7 @@ njt_http_vhost_traffic_status_shm_add_filter(njt_http_request_t *r)
     njt_int_t                                  rc;
     njt_http_vhost_traffic_status_ctx_t       *ctx;
     njt_http_vhost_traffic_status_loc_conf_t  *vtscf;
+    njt_array_t                               *filter_keys;
 
     ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
 
@@ -407,8 +408,23 @@ njt_http_vhost_traffic_status_shm_add_filter(njt_http_request_t *r)
         return NJT_OK;
     }
 
-    if (ctx->filter_keys != NULL) {
-        rc = njt_http_vhost_traffic_status_shm_add_filter_node(r, ctx->filter_keys);
+#if (NJT_HTTP_VTS_DYNCONF)
+    filter_keys = ctx->filter_keys_dyn;
+    if (filter_keys == NULL) {
+        filter_keys = ctx->filter_keys;
+        if (filter_keys == NULL) {
+            return NJT_OK;
+        }
+    }
+#else
+    filter_keys = ctx->filter_keys;
+    if (filter_keys == NULL) {
+        return NJT_OK;
+    }
+#endif
+
+    if (filter_keys != NULL) {
+        rc = njt_http_vhost_traffic_status_shm_add_filter_node(r, filter_keys);
         if (rc != NJT_OK) {
             njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
                           "shm_add_filter::shm_add_filter_node(\"http\") failed");
