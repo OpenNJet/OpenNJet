@@ -1751,7 +1751,7 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_http_dyn_vts_api_ma
             break;
         }
     }
-    if (data < filter_data + len) {
+    if (data <= filter_data + len) {
         first.len = data - first.data - 1;
     }
 
@@ -1774,8 +1774,8 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_http_dyn_vts_api_ma
         second.len = data - second.data - 1;
     }
 
-    njt_log_error(NJT_LOG_INFO, cycle->pool->log, 0, "filter first: %V", &first);
-    njt_log_error(NJT_LOG_INFO, cycle->pool->log, 0, "filter second: %V", &second);
+    // njt_log_error(NJT_LOG_INFO, cycle->pool->log, 0, "filter first: %V", &first);
+    // njt_log_error(NJT_LOG_INFO, cycle->pool->log, 0, "filter second: %V", &second);
 
     njt_memzero(&conf, sizeof(njt_conf_t));
     conf.args = njt_array_create(dyn_pool, 10, sizeof(njt_str_t));
