@@ -15,7 +15,7 @@ chmod +x ./configure ./auto/lib/pcre-8.45/configure ./auto/lib/tassl/Configure
 #--with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 #--with-cc-opt=-I'auto/lib/tassl/include' --with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-proto-module"
-NJET_MODULES="$NJET_MODULES --add-module=src/ext/lua/kit  --add-module=src/ext/lua/http --add-module=src/ext/lua/stream" 
+NJET_MODULES="$NJET_MODULES --add-module=src/ext/lua/kit" 
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-upstream-dynamic-servers-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-upstream-dynamic-servers-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-match-module"
@@ -32,6 +32,8 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-kv-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-sendmsg-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-split-clients-2-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-health-check-helper"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./src/ext/lua/http"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./src/ext/lua/stream"
 #NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
 LIB_SRC_PATH=" --with-openssl=auto/lib/tassl --with-pcre=auto/lib/pcre-8.45"
