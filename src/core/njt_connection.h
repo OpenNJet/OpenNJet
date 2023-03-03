@@ -13,6 +13,9 @@
 #include <njt_config.h>
 #include <njt_core.h>
 
+#define NJT_HTTP_SERVER_TYPE 1
+#define NJT_STREAM_SERVER_TYPE 2
+#define NJT_MAIL_SERVER_TYPE 2
 
 typedef struct njt_listening_s  njt_listening_t;
 
@@ -24,7 +27,7 @@ struct njt_listening_s {
     size_t              addr_text_max_len;
     njt_str_t           addr_text;
 
-    int                 type;
+    int                 type;   //socket type
 
     int                 backlog;
     int                 rcvbuf;
@@ -39,7 +42,7 @@ struct njt_listening_s {
     njt_connection_handler_pt   handler;
 
     void               *servers;  /* array of njt_http_in_addr_t, for example */
-
+    int                 server_type; // server 类型
     njt_log_t           log;
     njt_log_t          *logp;
 

@@ -1835,6 +1835,7 @@ njt_http_init_listening(njt_conf_t *cf, njt_http_conf_port_t *port) {
         }
 
         ls->servers = hport;
+        ls->server_type = NJT_HTTP_SERVER_TYPE;
 
         hport->naddrs = i + 1;
 

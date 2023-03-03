@@ -43,7 +43,7 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *elemen
         }
         return rc;
     }
-    if(def->type == NJT_JSON_OBJ && def->sub != NULL){
+    if(def->type == NJT_JSON_OBJ && def->sub != NULL && element->sudata != NULL){
         sub = element->sudata->elts;
         for (i = 0; i < element->sudata->nelts; ++i ) {
             for( j = 0 ; def->sub[j].name.len != 0 ; ++j ) {
@@ -132,7 +132,7 @@ njt_int_t njt_json_parse_data(njt_pool_t *pool,njt_str_t *str,njt_json_define_t 
         p = njt_array_push(array);
         sub = items->sudata->elts;
         for( i =0; i < items->sudata->nelts; ++i){
-            rc = njt_json_parse_json_element(pool,&sub[i],def,p);
+            rc = njt_json_parse_json_element(pool,&sub[i],&obj_def,p);
             if(rc != NJT_OK){
                 return rc;
             }
