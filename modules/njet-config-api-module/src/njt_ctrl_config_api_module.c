@@ -41,7 +41,7 @@ typedef struct {
 }njt_ctrl_dynlog_request_err_ctx_t;
 
 
-extern njt_module_t njt_ctrl_dynlog_module;
+extern njt_module_t njt_ctrl_config_api_module;
 
 static njt_int_t njt_ctrl_dynlog_get_free_index(njt_ctrl_dynlog_main_cf_t *dlmcf){
     njt_int_t i;
@@ -135,7 +135,7 @@ static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *modul
     njt_ctrl_dynlog_rpc_ctx_t *ctx;
     njt_pool_cleanup_t *cleanup;
 
-    dlmcf = njt_http_get_module_main_conf(r,njt_ctrl_dynlog_module);
+    dlmcf = njt_http_get_module_main_conf(r,njt_ctrl_config_api_module);
     index = njt_ctrl_dynlog_get_free_index(dlmcf);
     if(index == -1 ){
         njt_log_error(NJT_LOG_ERR, r->pool->log, 0, "not find request free index ");
@@ -296,7 +296,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     err_ctx = njt_pcalloc(r->pool, sizeof(njt_ctrl_dynlog_request_err_ctx_t));
     err_ctx->success = 0;
     err_ctx->code = rc;
-    njt_http_set_ctx(r, err_ctx, njt_ctrl_dynlog_module);
+    njt_http_set_ctx(r, err_ctx, njt_ctrl_config_api_module);
 
     return;
 }
@@ -336,7 +336,7 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
         if (rc == NJT_OK) {
             njt_http_finalize_request(r, NJT_DONE);
         }
-        api_data = njt_http_get_module_ctx(r, njt_ctrl_dynlog_module);
+        api_data = njt_http_get_module_ctx(r, njt_ctrl_config_api_module);
         if (api_data != NULL && !api_data->success) {
             njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "get api %ui ",api_data->servers.nelts);
             goto err;
@@ -386,15 +386,15 @@ static char *njt_dynlog_http_handler_conf(njt_conf_t *cf, njt_command_t *cmd, vo
 
 static njt_command_t njt_dynlog_module_commands[] = {
         {
-                njt_string("dynlog"),
-                NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF | NJT_CONF_NOARGS,
+                njt_string("config_api"),
+                NJT_HTTP_LOC_CONF | NJT_CONF_NOARGS,
                 njt_dynlog_http_handler_conf,
                 NJT_HTTP_LOC_CONF_OFFSET,
                 0,
                 NULL
         },
         {
-                njt_string("dynlog_req_pool_size"),
+                njt_string("config_req_pool_size"),
                 NJT_HTTP_MAIN_CONF| NJT_CONF_TAKE1,
                 njt_conf_set_num_slot,
                 NJT_HTTP_MAIN_CONF_OFFSET,
@@ -407,7 +407,7 @@ static njt_command_t njt_dynlog_module_commands[] = {
 static njt_int_t   njt_ctrl_dynlog_postconfiguration(njt_conf_t *cf){
     njt_ctrl_dynlog_main_cf_t *dlmcf;
 
-    dlmcf = njt_http_conf_get_module_main_conf(cf,njt_ctrl_dynlog_module);
+    dlmcf = njt_http_conf_get_module_main_conf(cf,njt_ctrl_config_api_module);
     if(dlmcf->size == NJT_CONF_UNSET){
         dlmcf->size = 500;
     }
@@ -443,7 +443,7 @@ static njt_http_module_t njt_ctrl_dynlog_module_ctx = {
         NULL                                    /* merge location configuration */
 };
 
-njt_module_t njt_ctrl_dynlog_module = {
+njt_module_t njt_ctrl_config_api_module = {
         NJT_MODULE_V1,
         &njt_ctrl_dynlog_module_ctx,        /* module context */
         njt_dynlog_module_commands,          /* module directives */

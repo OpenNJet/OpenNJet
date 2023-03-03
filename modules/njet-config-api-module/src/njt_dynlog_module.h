@@ -24,13 +24,13 @@
 #include "njt_http_dyn_module.h"
 
 extern njt_cycle_t *njet_master_cycle;
-extern njt_module_t njt_ctrl_dynlog_module;
+extern njt_module_t njt_ctrl_config_api_module;
 
 typedef struct njt_http_dyn_access_api_loc_s njt_http_dyn_access_api_loc_t;
 
 struct njt_http_dyn_access_api_loc_s {
     njt_str_t full_name;
-    bool log_off;
+    bool log_on;
     njt_array_t locs;
 };
 
