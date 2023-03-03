@@ -551,7 +551,7 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t *pool, njt_http_dy
     daas = api_data->servers.elts;
     for (i = 0; i < api_data->servers.nelts; ++i)
     {
-        cscf = njt_http_get_srv_by_port(cycle, pool, (njt_str_t *)daas[i].listens.elts, (njt_str_t *)daas[i].server_names.elts);
+        cscf = njt_http_get_srv_by_port(cycle, (njt_str_t *)daas[i].listens.elts, (njt_str_t *)daas[i].server_names.elts);
         if (cscf == NULL)
         {
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
