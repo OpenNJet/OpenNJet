@@ -124,25 +124,20 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q){
 
 static njt_int_t njt_dynlog_update_access_log(njt_pool_t *pool,njt_http_dyn_access_api_main_t *api_data){
 
-    njt_cycle_t *cycle,*new_cycle;
+    njt_cycle_t *cycle;
     njt_http_core_srv_conf_t  *cscf;
     njt_http_core_loc_conf_t  *clcf;
     njt_http_dyn_access_api_srv_t *daas;
     njt_uint_t i;
 
-    if (njt_process == NJT_PROCESS_HELPER){
-        new_cycle = (njt_cycle_t*)njt_cycle;
-        cycle = new_cycle->old_cycle;
-    } else{
-        cycle = (njt_cycle_t*)njt_cycle;
-    }
+    cycle = (njt_cycle_t*)njt_cycle;
 
     daas = api_data->servers.elts;
     for(i = 0; i < api_data->servers.nelts; ++i){
-        cscf = njt_http_get_srv_by_port(cycle,pool,(njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
+        cscf = njt_http_get_srv_by_port(cycle,(njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
         if(cscf == NULL){
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
-                          (njt_str_t*)daas[i].listens.nelts,(njt_str_t*)daas[i].server_names.nelts);
+                          (njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
             continue;
         }
         clcf = njt_http_get_module_loc_conf(cscf->ctx,njt_http_core_module);
@@ -290,6 +285,7 @@ static njt_str_t njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
     njt_uint_t i,j;
     njt_array_t *array;
     njt_str_t json,*tmp_str;
+    njt_http_server_name_t *server_name;
     njt_json_manager json_manager;
     njt_json_element *root,*srvs,*srv,*subs,*sub;
 
@@ -339,9 +335,9 @@ static njt_str_t njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
         if(subs == NULL ){
             goto err;
         }
-        tmp_str = cscfp[i]->server_names.elts;
+        server_name = cscfp[i]->server_names.elts;
         for(j = 0 ; j < cscfp[i]->server_names.nelts ; ++j ){
-            sub =  njt_json_str_element(pool,njt_json_null_key,&tmp_str[j]);
+            sub =  njt_json_str_element(pool,njt_json_null_key,&server_name[j].name);
             if(sub == NULL ){
                 goto err;
             }
