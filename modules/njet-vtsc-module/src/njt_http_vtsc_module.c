@@ -1834,7 +1834,9 @@ static njt_int_t njt_dynvts_update(njt_pool_t *pool, njt_http_dyn_vts_api_main_t
         cycle = (njt_cycle_t*)njt_cycle;
     }
 
-    njt_dynvts_update_filter(cycle, dynconf);
+    if (dynconf->filter.len > 0) {
+        njt_dynvts_update_filter(cycle, dynconf);
+    }
 
     daas = dynconf->servers.elts;
     for(i = 0; i < dynconf->servers.nelts; ++i) {
