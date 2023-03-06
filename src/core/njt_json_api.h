@@ -13,6 +13,23 @@
 #define NJT_JSON_DOUBLE  5
 #define NJT_JSON_BOOL  6
 
+
+
+#define NJT_JSON_ELEM_SIZE_PUNCTUATION  5
+#define NJT_JSON_ELEM_SIZE_BOOL         5
+#define NJT_JSON_ELEM_SIZE_INT          20
+#define NJT_JSON_ELEM_SIZE_DOUBLE       100
+#define NJT_JSON_ELEM_SIZE_ARRAY        5
+#define NJT_JSON_ELEM_SIZE_OBJ          5
+#define NJT_JSON_ELEM_SIZE_NULL         4
+
+
+//use for obj hash data
+typedef struct {
+    njt_lvlhsh_t *lvlhsh;   //hash struct, main for insert/find/update
+    njt_queue_t  datas;     //main for loop use
+} njt_json_lvlhsh_t;
+
 typedef struct {
     njt_str_t key;
     int8_t  type;
@@ -22,12 +39,17 @@ typedef struct {
         int64_t  intval;
         double   doubleval;
         njt_str_t strval;
-        njt_array_t *sudata;
+        njt_json_lvlhsh_t objdata; //just for object
+        njt_queue_t  arrdata;      //just for array
     };
+    njt_queue_t      ele_queue;
 } njt_json_element;
 
+
 struct njt_json_manager_s {
-    njt_array_t        *json_keyval;
+    //top element, type only NJT_JSON_OBJ or NJT_JSON_ARRAY
+    njt_json_element   *json_val;
+    int64_t            total_size;
     njt_pool_t         *pool;
     void (*free)(struct njt_json_manager_s *pt);
 };
@@ -36,23 +58,100 @@ typedef struct  njt_json_manager_s njt_json_manager;
 
 typedef void (*njt_json_manager_free_pt)(njt_json_manager *pt);
 
+int64_t njt_calc_element_size(njt_json_element *element, bool contain_key);
+
+
+/**
+ * @brief transfer json str to json manager
+ * 
+ * @param json           input json str
+ * @param pjson_manager  ouput json manager
+ * @param init_pool      input required  pool
+ * @return njt_int_t     result status NJT_ERROR or NJT_OK
+ */
 njt_int_t njt_json_2_structure(njt_str_t *json,
-                               njt_json_manager *pjson_manager, njt_pool_t *init_pool);
+                njt_json_manager *pjson_manager, njt_pool_t *init_pool);
 
 
+/**
+ * @brief transfer json manager to json str
+ * 
+ * @param pjson_manager   input json manager
+ * @param json            output json str
+ * @param init_pool       input required  pool
+ * @return njt_int_t      result status NJT_ERROR or NJT_OK
+ */
 njt_int_t njt_structure_2_json(njt_json_manager *pjson_manager,
-                               njt_str_t *json, njt_pool_t *init_pool);
+                njt_str_t *json, njt_pool_t *init_pool);
+
+
+/**
+ * @brief find element from json manager by key
+ *        not support array element find, because array element has no key
+ * @param pjson_manager     input json manager
+ * @param key               input key
+ * @param out_element       output element
+ * @return njt_int_t        result status NJT_ERROR or NJT_OK
+ */
 njt_int_t njt_struct_top_find(njt_json_manager *pjson_manager,
                         njt_str_t *key, njt_json_element **out_element);
-njt_int_t njt_struct_find(njt_json_element *in_element,
+
+
+/**
+ * @brief find element from parent element by key
+ *        not support array element find, because array element has no key
+ * @param parent_element    input parent_element
+ * @param key               input key
+ * @param out_element       output element
+ * @return njt_int_t        result status NJT_ERROR or NJT_OK
+ */
+njt_int_t njt_struct_find(njt_json_element *parent_element,
                         njt_str_t *key, njt_json_element **out_element);
 
+
+/**
+ * @brief add element to json manager (top level)
+ * 
+ * @param pjson_manager     input json manager
+ * @param element           input element
+ * @param root_type         input root_type, must NJT_JSON_ARRAY or NJT_JSON_OBJ
+ * @param pool              input pool
+ * @return njt_int_t        result status NJT_ERROR or NJT_OK
+ */
+njt_int_t njt_struct_top_add(njt_json_manager *pjson_manager,
+        njt_json_element *element, int8_t  root_type, njt_pool_t *pool);
+
+
+/**
+ * @brief add element to parent element
+ * 
+ * @param parent_element    input parent element
+ * @param element           input element
+ * @param pool              input pool
+ * @return njt_int_t        result status NJT_ERROR or NJT_OK
+ */
 njt_int_t njt_struct_add(njt_json_element *parent_element,
                         njt_json_element *element, njt_pool_t *pool);
 
-njt_int_t njt_struct_element_destroy(njt_json_element *element,
-                njt_pool_t *pool);
 
-njt_int_t njt_struct_destroy(njt_json_manager *pjson_manager);
+/**
+ * @brief   delete element from parent element
+ *          just support delete NJT_JSON_OBJ's element which must has key
+ *     
+ * @param parent_element    input parent_element
+ * @param key               input key
+ * @return njt_int_t        because array element has no key
+ */
+njt_int_t njt_struct_object_delete(njt_json_element *parent_element,
+                        njt_str_t *key);
+
+
+/**
+ * @brief   delete element from array element
+ *     
+ * @param element           input element
+ * @return njt_int_t        result status NJT_ERROR or NJT_OK
+ */
+njt_int_t njt_struct_array_delete(njt_json_element *element);
 
 #endif
