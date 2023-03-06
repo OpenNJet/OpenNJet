@@ -562,7 +562,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     char *rv;
     njt_http_core_loc_conf_t *clcf;
     njt_pool_t *location_pool = NULL; 
-	njt_http_location_queue_t *lq;
+    //njt_http_location_queue_t *lq;
 
     njt_str_t location_path; // = njt_string("./conf/add_location.txt");
 
@@ -595,12 +595,12 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
         goto out;
     }
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
-
+	/* zyg
 	lq = njt_http_find_location(location_info->location, clcf->old_locations);
     if (lq != NULL) {  
          rc = NJT_ERROR;
         goto out;
-    }
+    }*/
 
     njt_memzero(&conf, sizeof(njt_conf_t));
     conf.args = njt_array_create(location_info->pool, 10, sizeof(njt_str_t));
@@ -835,21 +835,6 @@ njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str) {
 	} else {
 		location_info->type = items->strval;
 	}
-
-	njt_str_set(&key,"location_body");
-	rc = njt_struct_top_find(&json_body, &key, &items);
-	if((location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0)) {
-		if(rc != NJT_OK || items->type != NJT_JSON_STR){
-		 location_info->code = 5; //location_body error
-		 goto end;
-		} else {
-			location_info->location_body = items->strval;
-		}
-	} else if(rc == NJT_OK && items->type == NJT_JSON_STR) {
-		 location_info->location_body = items->strval;
-	}
-	
-
 	njt_str_set(&key,"proxy_pass");
 	rc = njt_struct_top_find(&json_body, &key, &items);
 	if(rc == NJT_OK ){
@@ -859,6 +844,25 @@ njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str) {
             }
 		location_info->proxy_pass = items->strval;
 	} 
+
+	njt_str_set(&key,"location_body");
+	rc = njt_struct_top_find(&json_body, &key, &items);
+	if((location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0)) {
+		if(rc != NJT_OK || items->type != NJT_JSON_STR){
+		 if(location_info->proxy_pass.len == 0) {
+		 	location_info->code = 5; //location_body error
+		 	goto end;
+		  } else {
+			njt_str_set(&location_info->location_body," ");
+		  }
+		} else {
+			location_info->location_body = items->strval;
+		}
+	} else if(rc == NJT_OK && items->type == NJT_JSON_STR) {
+		 location_info->location_body = items->strval;
+	}
+	
+
 	njt_str_set(&key,"server_name");
 	rc = njt_struct_top_find(&json_body, &key, &items);
 	if(rc == NJT_OK ){
@@ -1158,7 +1162,7 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
         location_path.data = njt_cycle->error_log.data;
 
         //todo
-        njt_str_set(&location_path, "/tmp/");
+        //njt_str_set(&location_path, "/tmp/");
         location_full_file.len = location_path.len + location_file.len + 10;//  workid_add_location.txt
         location_full_file.data = njt_pcalloc(location_info->pool, location_full_file.len);
         p = njt_snprintf(location_full_file.data, location_full_file.len, "%V%d_%V", &location_path, njt_worker,
@@ -1173,11 +1177,21 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
     data = njt_pcalloc(location_info->pool, 10240);
     if (data != NULL) {
 		if(location_info->location_rule.len == 0 || location_info->location_rule.data == NULL) {
+			if(location_info->proxy_pass.len > 0) {
 			p = njt_snprintf(data, 10240, "location %V {\n%V\nproxy_pass %V;\n}\n", &location_info->location,
 							 &location_info->location_body, &location_info->proxy_pass);
+			} else {
+				 p = njt_snprintf(data, 10240, "location %V {\n%V\n}\n", &location_info->location,
+                                                         &location_info->location_body);
+			}
 		} else{
+			if (location_info->proxy_pass.len > 0) {
 			p = njt_snprintf(data, 10240, "location %V%V {\n%V\nproxy_pass %V;\n}\n", &location_info->location_rule,&location_info->location,
 							 &location_info->location_body, &location_info->proxy_pass);
+			} else {
+				p = njt_snprintf(data, 10240, "location %V%V {\n%V\n}\n", &location_info->location_rule,&location_info->location,
+                                                         &location_info->location_body);
+			}
 		}
         rlen = njt_write_fd(fd, data, p - data);
     }

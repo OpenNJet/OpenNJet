@@ -6039,7 +6039,8 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
                                          |NJT_HTTP_UPSTREAM_MAX_FAILS
                                          |NJT_HTTP_UPSTREAM_FAIL_TIMEOUT
                                          |NJT_HTTP_UPSTREAM_DOWN
-                                         |NJT_HTTP_UPSTREAM_BACKUP);
+                                         |NJT_HTTP_UPSTREAM_BACKUP
+					 |NJT_HTTP_UPSTREAM_SLOW_START);
     if (uscf == NULL) {
         return NJT_CONF_ERROR;
     }
@@ -6145,12 +6146,12 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (rv != NJT_CONF_OK) {
         return rv;
     }
-
+   /*
     if (uscf->servers->nelts == 0) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "no servers are inside upstream");
         return NJT_CONF_ERROR;
-    }
+    }*/
 
     return rv;
 }
