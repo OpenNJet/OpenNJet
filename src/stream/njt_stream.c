@@ -525,7 +525,7 @@ njt_stream_optimize_servers(njt_conf_t *cf, njt_array_t *ports)
             }
 
             ls->servers = stport;
-
+            ls->server_type = NJT_STREAM_SERVER_TYPE;
             stport->naddrs = i + 1;
 
             switch (ls->sockaddr->sa_family) {
