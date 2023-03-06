@@ -1443,7 +1443,9 @@ njt_http_core_find_location(njt_http_request_t *r)
 
 #if (NJT_PCRE)
         clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
-
+	if(clcf == NULL) {
+	   return NJT_DECLINED;
+	}
         noregex = clcf->noregex;
 #endif
 
