@@ -22,7 +22,7 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
     njt_http_core_srv_conf_t* cscf;
     njt_listening_t *ls, *target_ls;
     njt_uint_t i,j,k;
-    njt_str_t  *name;
+    njt_http_server_name_t  *name;
     njt_http_port_t *port;
     njt_http_in_addr_t *addr;
     njt_http_in6_addr_t *addr6;
@@ -70,8 +70,8 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
             cscf = addr_conf->default_server;
             name = cscf->server_names.elts;
             for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
-                if(name[j].len == server_name->len
-                && njt_strncmp(name[j].data,server_name->data,server_name->len) == 0){
+                if(name[j].name.len == server_name->len
+                && njt_strncmp(name[j].name.data,server_name->data,server_name->len) == 0){
                     return cscf;
                 }
             }
@@ -85,8 +85,8 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
                         cscf = elt[k]->value;
                         name = cscf->server_names.elts;
                         for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
-                            if(name[j].len == server_name->len
-                               && njt_strncmp(name[j].data,server_name->data,server_name->len) == 0){
+                            if(name[j].name.len == server_name->len
+                               && njt_strncmp(name[j].name.data,server_name->data,server_name->len) == 0){
                                 return cscf;
                             }
                         }
@@ -101,8 +101,8 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
                             cscf = elt[k]->value;
                             name = cscf->server_names.elts;
                             for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
-                                if(name[j].len == server_name->len
-                                   && njt_strncmp(name[j].data,server_name->data,server_name->len) == 0){
+                                if(name[j].name.len == server_name->len
+                                   && njt_strncmp(name[j].name.data,server_name->data,server_name->len) == 0){
                                     return cscf;
                                 }
                             }
@@ -119,8 +119,8 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
                             cscf = elt[k]->value;
                             name = cscf->server_names.elts;
                             for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
-                                if(name[j].len == server_name->len
-                                   && njt_strncmp(name[j].data,server_name->data,server_name->len) == 0){
+                                if(name[j].name.len == server_name->len
+                                   && njt_strncmp(name[j].name.data,server_name->data,server_name->len) == 0){
                                     return cscf;
                                 }
                             }
