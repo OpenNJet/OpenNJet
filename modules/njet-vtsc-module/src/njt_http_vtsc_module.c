@@ -1190,6 +1190,7 @@ static njt_json_element* njt_json_make_element_array(njt_pool_t *pool, u_char *k
     if(key != NULL){
         element->key.data = key;
         element->key.len = len;
+        njt_queue_init(&element->arrdata);
     }
 
 out:
@@ -1211,6 +1212,9 @@ static njt_json_element* njt_json_make_element_obj(njt_pool_t *pool, u_char *key
     if(key != NULL){
         element->key.data = key;
         element->key.len = len;
+
+        element->objdata.lvlhsh = NULL;
+        njt_queue_init(&element->objdata.datas);
     }
 
 out:
@@ -1407,7 +1411,7 @@ static njt_int_t njt_vts_dynapi_get_listens_by_server(njt_array_t *array, njt_ht
 }
 
 
-static void njt_vts_dynapi_dump_vts_filter_conf(njt_cycle_t *cycle, njt_json_element *root, njt_pool_t *pool)
+static void njt_vts_dynapi_dump_vts_filter_conf(njt_cycle_t *cycle, njt_json_manager *json_manager, njt_pool_t *pool)
 {
     njt_json_element                        *filter;
     njt_http_vhost_traffic_status_ctx_t     *ctx;
@@ -1416,6 +1420,7 @@ static void njt_vts_dynapi_dump_vts_filter_conf(njt_cycle_t *cycle, njt_json_ele
     njt_str_t                                vtsfilter;
     njt_uint_t                               i;
     u_char                                  *data;
+    njt_int_t                                rc;
 
     ctx = njt_http_cycle_get_module_main_conf(cycle, njt_http_vhost_traffic_status_module);
     if (ctx == NULL) {
@@ -1449,7 +1454,11 @@ static void njt_vts_dynapi_dump_vts_filter_conf(njt_cycle_t *cycle, njt_json_ele
             return;
         }
 
-        njt_struct_add(root, filter, pool);
+        rc = njt_struct_top_add(json_manager, filter, NJT_JSON_OBJ, pool);
+        if(rc != NJT_OK){
+            njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno,
+                        "njt_struct_top_add error");
+        }
     }
 }
 
@@ -1464,24 +1473,13 @@ static njt_str_t njt_vts_dynapi_dump_vts_conf(njt_cycle_t *cycle, njt_pool_t *po
     njt_str_t                    json,*tmp_str;
     njt_http_server_name_t      *server_name;
     njt_json_manager             json_manager;
-    njt_json_element            *root,*srvs,*srv,*subs,*sub;
+    njt_json_element            *srvs,*srv,*subs,*sub;
+    njt_int_t rc;
 
     hcmcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_core_module);
 
-    json_manager.json_keyval = njt_array_create(pool,1,sizeof (njt_json_element));
-    if(json_manager.json_keyval == NULL ){
-        goto err;
-    }
-
-    root = njt_array_push(json_manager.json_keyval);
-    if(root == NULL ){
-        goto err;
-    }
-
-    njt_memzero(root, sizeof(njt_json_element));
-    root->type = NJT_JSON_OBJ;
-
-    njt_vts_dynapi_dump_vts_filter_conf(cycle, root, pool);
+    njt_memzero(&json_manager, sizeof(njt_json_manager));
+    njt_vts_dynapi_dump_vts_filter_conf(cycle, &json_manager, pool);
 
     srvs =  njt_json_make_element_array(pool, njt_json_fast_key("servers"));
     if(srvs == NULL ){
@@ -1498,7 +1496,7 @@ static njt_str_t njt_vts_dynapi_dump_vts_conf(njt_cycle_t *cycle, njt_pool_t *po
             goto err;
         }
 
-        subs =  njt_json_make_element_array(pool,njt_json_fast_key("listens"));
+        subs =  njt_json_make_element_array(pool, njt_json_fast_key("listens"));
         if(subs == NULL ){
             goto err;
         }
@@ -1509,7 +1507,7 @@ static njt_str_t njt_vts_dynapi_dump_vts_conf(njt_cycle_t *cycle, njt_pool_t *po
             if(sub == NULL ){
                 goto err;
             }
-            njt_struct_add(subs,sub,pool);
+            njt_struct_add(subs, sub, pool);
         }
         njt_struct_add(srv,subs,pool);
         subs =  njt_json_make_element_array(pool, njt_json_fast_key("serverNames"));
@@ -1531,13 +1529,19 @@ static njt_str_t njt_vts_dynapi_dump_vts_conf(njt_cycle_t *cycle, njt_pool_t *po
         subs = njt_vts_dynapi_dump_locs_json(pool, clcf->old_locations);
 
         if(subs != NULL){
-            njt_struct_add(srv,subs,pool);
+            njt_struct_add(srv, subs, pool);
         }
 
-        njt_struct_add(srvs,srv,pool);
+        njt_struct_add(srvs, srv, pool);
     }
 
-    njt_struct_add(root,srvs, pool);//top layer
+    rc = njt_struct_top_add(&json_manager, srvs, NJT_JSON_OBJ, pool);
+    if(rc != NJT_OK){
+        njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno,
+                      "njt_struct_top_add error");
+    }
+
+
     njt_memzero(&json, sizeof(njt_str_t));
     njt_structure_2_json(&json_manager, &json, pool);
 
@@ -1885,11 +1889,11 @@ static u_char* njt_agent_vts_rpc_handler(njt_str_t *topic, njt_str_t *request, i
     }
 
     njt_log_error(NJT_LOG_INFO, pool->log, 0, "send json : %V",&msg);
-    njt_memcpy(buf,msg.data,msg.len);
+    njt_memcpy(buf, msg.data, msg.len);
     *len = msg.len;
 
 out:
-    if(pool != NULL){
+    if(pool != NULL) {
         njt_destroy_pool(pool);
     }
 
