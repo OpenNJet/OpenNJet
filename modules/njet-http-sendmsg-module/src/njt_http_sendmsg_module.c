@@ -9,6 +9,7 @@
 #define RPC_TOPIC_PREFIX "/dyn/"
 #define RPC_TOPIC_PREFIX_LEN 5
 #define RPC_DEFAULT_TIMEOUT_MS 2000
+#define RETAIN_MSG_QOS 16
 
 typedef struct
 {
@@ -520,9 +521,10 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
     {
         return NJT_OK;
     }
-    njt_cycle_t *mq_cycle=cycle;
-    if (njet_master_cycle) {
-        mq_cycle=njet_master_cycle;
+    njt_cycle_t *mq_cycle = cycle;
+    if (njet_master_cycle)
+    {
+        mq_cycle = njet_master_cycle;
     }
     for (i = 0; i < mq_cycle->modules_n; i++)
     {
@@ -673,23 +675,35 @@ int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
     int ret;
     int qos = 0;
     if (retain_flag)
-        qos = 16;
+        qos = RETAIN_MSG_QOS;
 
     u_char *t;
-    t = njt_pcalloc(njt_cycle->pool, topic->len + 1);
+    t = njt_calloc(topic->len + 1, njt_cycle->log);
     if (t == NULL)
     {
         return NJT_ERROR;
     }
     njt_memcpy(t, topic->data, topic->len);
     t[topic->len] = '\0';
-    ret = mqtt_client_sendmsg((const char *)t, (const char *)content->data, (int)content->len, qos, sendmsg_mqtt_ctx);
-    njt_pfree(njt_cycle->pool, t);
+    // if it is a normal message, send zero length retain msg to same topic to delete it
+    if (!retain_flag)
+    {
+        ret = mqtt_client_sendmsg((const char *)t, "", 0, RETAIN_MSG_QOS, sendmsg_mqtt_ctx);
+    }
     if (ret < 0)
     {
-        return NJT_ERROR;
+        goto error;
     }
+    ret = mqtt_client_sendmsg((const char *)t, (const char *)content->data, (int)content->len, qos, sendmsg_mqtt_ctx);
+    if (ret < 0)
+    {
+        goto error;
+    }
+    njt_free(t);
     return NJT_OK;
+error:
+    njt_free(t);
+    return NJT_ERROR;
 }
 
 static void njt_sendmsg_rpc_timer_fired(njt_event_t *ev)
@@ -699,8 +713,8 @@ static void njt_sendmsg_rpc_timer_fired(njt_event_t *ev)
     {
         h = (rpc_msg_handler_t *)ev->data;
         invoke_rpc_msg_handler(RPC_RC_TIMEOUT, h->session_id, "", 0);
-        njt_pfree(njt_cycle->pool, ev->data);
-        njt_pfree(njt_cycle->pool, ev);
+        njt_free(ev->data);
+        njt_free(ev);
     }
 }
 
@@ -711,7 +725,7 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_ha
     njt_event_t *rpc_timer_ev;
     rpc_msg_handler_t *rpc_data;
     u_char *t;
-    t = njt_pcalloc(njt_cycle->pool, topic->len + 1);
+    t = njt_calloc(topic->len + 1, njt_cycle->log);
     if (t == NULL)
     {
         return NJT_ERROR;
@@ -720,10 +734,10 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_ha
     t[topic->len] = '\0';
 
     ret = mqtt_client_sendmsg_rr((const char *)t, (const char *)content->data, (int)content->len, qos, session_id, 0, sendmsg_mqtt_ctx);
-    njt_pfree(njt_cycle->pool, t);
+    njt_free(t);
     // add timer
-    rpc_timer_ev = njt_pcalloc(njt_cycle->pool, sizeof(njt_event_t));
-    rpc_data = njt_pcalloc(njt_cycle->pool, sizeof(rpc_msg_handler_t));
+    rpc_timer_ev = njt_calloc(sizeof(njt_event_t), njt_cycle->log);
+    rpc_data = njt_calloc(sizeof(rpc_msg_handler_t), njt_cycle->log);
     rpc_data->session_id = session_id;
     rpc_timer_ev->handler = njt_sendmsg_rpc_timer_fired;
     rpc_timer_ev->log = njt_cycle->log;
@@ -828,9 +842,9 @@ static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int 
                 ev = tm_handler[i].ev;
                 if (ev->timer_set)
                 {
-                    njt_pfree(njt_cycle->pool, ev->data);
+                    njt_free(ev->data);
                     njt_del_timer(ev);
-                    njt_pfree(njt_cycle->pool, ev);
+                    njt_free(ev);
                 }
                 break;
             }
