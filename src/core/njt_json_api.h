@@ -24,6 +24,10 @@
 #define NJT_JSON_ELEM_SIZE_NULL         4
 
 
+#define njt_json_fast_key(key) (u_char*)key,sizeof(key)-1
+#define njt_json_null_key NULL,0
+
+
 //use for obj hash data
 typedef struct {
     njt_lvlhsh_t *lvlhsh;   //hash struct, main for insert/find/update
