@@ -9,6 +9,7 @@
 #define RPC_TOPIC_PREFIX "/dyn/"
 #define RPC_TOPIC_PREFIX_LEN 5
 #define RPC_DEFAULT_TIMEOUT_MS 2000
+#define RETAIN_MSG_QOS 16
 
 typedef struct
 {
@@ -39,6 +40,8 @@ typedef struct
     njt_int_t code;
 } njt_http_sendmsg_post_data_t;
 
+// sendmsg module is running in ctrl panel, should be able to get njet_master_cycle from njet_helper_ctrl_module
+extern njt_cycle_t *njet_master_cycle;
 static void mqtt_connect_timeout(njt_event_t *ev);
 static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx_t *ctx);
 static void mqtt_loop_mqtt(njt_event_t *ev);
@@ -137,7 +140,7 @@ static void mqtt_loop_mqtt(njt_event_t *ev)
 
     if (!njt_exiting)
     {
-        njt_add_timer(ev, 1000);
+        njt_add_timer(ev, 50);
     }
 }
 static void mqtt_connect_timeout(njt_event_t *ev)
@@ -310,8 +313,6 @@ static njt_http_sendmsg_post_data_t *njt_http_parser_sendmsg_data(njt_str_t json
     njt_pool_t *sendmsg_pool;
     njt_http_sendmsg_post_data_t *postdata;
     njt_int_t rc;
-    njt_uint_t i;
-    njt_json_element *items;
 
     sendmsg_pool = njt_create_pool(NJT_DEFAULT_POOL_SIZE, njt_cycle->log);
     if (sendmsg_pool == NULL)
@@ -331,49 +332,51 @@ static njt_http_sendmsg_post_data_t *njt_http_parser_sendmsg_data(njt_str_t json
     {
         njt_destroy_pool(sendmsg_pool);
         return NULL;
-        ;
     }
 
     postdata->pool = sendmsg_pool;
     postdata->code = 0;
 
-    items = json_body.json_keyval->elts;
-    for (i = 0; i < json_body.json_keyval->nelts; i++)
+    njt_str_t key;
+    njt_str_set(&key, "key");
+    njt_json_element *out_element;
+    rc = njt_struct_top_find(&json_body, &key, &out_element);
+    if (rc != NJT_OK)
     {
-        if (njt_strncmp(items[i].key.data, "key", 3) == 0 && items[i].key.len == 3)
-        {
-
-            if (items[i].type != NJT_JSON_STR)
-            {
-                postdata->code = 1; // key error
-                break;
-            }
-
-            postdata->key = items[i].strval;
-
-            continue;
-        }
-        else if (njt_strncmp(items[i].key.data, "value", 5) == 0 && items[i].key.len == 5)
-        {
-
-            if (items[i].type != NJT_JSON_STR)
-            {
-                postdata->code = 2; // value error
-                break;
-            }
-
-            postdata->value = items[i].strval;
-            continue;
-        }
+        njt_destroy_pool(sendmsg_pool);
+        return NULL;
     }
-    if (postdata->key.len == 0)
+
+    if (out_element->type != NJT_JSON_STR)
     {
         postdata->code = 1; // key error
     }
-    else if (postdata->value.len == 0)
+    else
     {
-        postdata->code = 2; // value error
+        postdata->key = out_element->strval;
     }
+
+    // find value
+    njt_str_set(&key, "value");
+
+    rc = njt_struct_top_find(&json_body, &key, &out_element);
+    if (rc != NJT_OK)
+    {
+        njt_destroy_pool(sendmsg_pool);
+        return NULL;
+    }
+    else
+    {
+        if (out_element->type != NJT_JSON_STR)
+        {
+            postdata->code = 2; // value error
+        }
+        else
+        {
+            postdata->value = out_element->strval;
+        }
+    }
+
     return postdata;
 }
 
@@ -518,11 +521,17 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
     {
         return NJT_OK;
     }
-    for (i = 0; i < cycle->modules_n; i++)
+    njt_cycle_t *mq_cycle = cycle;
+    if (njet_master_cycle)
     {
-        if (njt_strcmp(cycle->modules[i]->name, "njt_mqconf_module") != 0)
+        mq_cycle = njet_master_cycle;
+    }
+    for (i = 0; i < mq_cycle->modules_n; i++)
+    {
+        if (njt_strcmp(mq_cycle->modules[i]->name, "njt_mqconf_module") != 0)
             continue;
-        mqconf = (njt_mqconf_conf_t *)(cycle->conf_ctx[cycle->modules[i]->index]);
+        mqconf = (njt_mqconf_conf_t *)(mq_cycle->conf_ctx[mq_cycle->modules[i]->index]);
+        break;
     }
     if (!mqconf || !mqconf->cluster_name.data || !mqconf->node_name.data)
     {
@@ -666,23 +675,35 @@ int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
     int ret;
     int qos = 0;
     if (retain_flag)
-        qos = 16;
+        qos = RETAIN_MSG_QOS;
 
     u_char *t;
-    t = njt_pcalloc(njt_cycle->pool, topic->len + 1);
+    t = njt_calloc(topic->len + 1, njt_cycle->log);
     if (t == NULL)
     {
         return NJT_ERROR;
     }
     njt_memcpy(t, topic->data, topic->len);
     t[topic->len] = '\0';
-    ret = mqtt_client_sendmsg((const char *)t, (const char *)content->data, (int)content->len, qos, sendmsg_mqtt_ctx);
-    njt_pfree(njt_cycle->pool, t);
+    // if it is a normal message, send zero length retain msg to same topic to delete it
+    if (!retain_flag)
+    {
+        ret = mqtt_client_sendmsg((const char *)t, "", 0, RETAIN_MSG_QOS, sendmsg_mqtt_ctx);
+    }
     if (ret < 0)
     {
-        return NJT_ERROR;
+        goto error;
     }
+    ret = mqtt_client_sendmsg((const char *)t, (const char *)content->data, (int)content->len, qos, sendmsg_mqtt_ctx);
+    if (ret < 0)
+    {
+        goto error;
+    }
+    njt_free(t);
     return NJT_OK;
+error:
+    njt_free(t);
+    return NJT_ERROR;
 }
 
 static void njt_sendmsg_rpc_timer_fired(njt_event_t *ev)
@@ -692,8 +713,8 @@ static void njt_sendmsg_rpc_timer_fired(njt_event_t *ev)
     {
         h = (rpc_msg_handler_t *)ev->data;
         invoke_rpc_msg_handler(RPC_RC_TIMEOUT, h->session_id, "", 0);
-        njt_pfree(njt_cycle->pool, ev->data);
-        njt_pfree(njt_cycle->pool, ev);
+        njt_free(ev->data);
+        njt_free(ev);
     }
 }
 
@@ -704,7 +725,7 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_ha
     njt_event_t *rpc_timer_ev;
     rpc_msg_handler_t *rpc_data;
     u_char *t;
-    t = njt_pcalloc(njt_cycle->pool, topic->len + 1);
+    t = njt_calloc(topic->len + 1, njt_cycle->log);
     if (t == NULL)
     {
         return NJT_ERROR;
@@ -713,16 +734,16 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_ha
     t[topic->len] = '\0';
 
     ret = mqtt_client_sendmsg_rr((const char *)t, (const char *)content->data, (int)content->len, qos, session_id, 0, sendmsg_mqtt_ctx);
-    njt_pfree(njt_cycle->pool, t);
+    njt_free(t);
     // add timer
-    rpc_timer_ev = njt_pcalloc(njt_cycle->pool, sizeof(njt_event_t));
-    rpc_data = njt_pcalloc(njt_cycle->pool, sizeof(rpc_msg_handler_t));
+    rpc_timer_ev = njt_calloc(sizeof(njt_event_t), njt_cycle->log);
+    rpc_data = njt_calloc(sizeof(rpc_msg_handler_t), njt_cycle->log);
     rpc_data->session_id = session_id;
     rpc_timer_ev->handler = njt_sendmsg_rpc_timer_fired;
     rpc_timer_ev->log = njt_cycle->log;
     rpc_timer_ev->data = rpc_data;
 
-    njt_http_conf_ctx_t * conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);
+    njt_http_conf_ctx_t *conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);
     njt_http_sendmsg_conf_t *smcf = conf_ctx->main_conf[njt_http_sendmsg_module.ctx_index];
     if (!smcf || smcf->rpc_timeout == 0)
     {
@@ -821,9 +842,9 @@ static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int 
                 ev = tm_handler[i].ev;
                 if (ev->timer_set)
                 {
-                    njt_pfree(njt_cycle->pool, ev->data);
+                    njt_free(ev->data);
                     njt_del_timer(ev);
-                    njt_pfree(njt_cycle->pool, ev);
+                    njt_free(ev);
                 }
                 break;
             }

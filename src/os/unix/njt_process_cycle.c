@@ -482,7 +482,7 @@ njt_helper_preprocess_cycle(njt_cycle_t *cycle, void *data)
     ctx->start_time_bef =  ctx->start_time;
     ctx->start_time = njt_time();
 
-    if (!ctx->handle) {
+    if (ctx->handle) {
         njt_dlclose(ctx->handle);
     }
 
@@ -596,13 +596,6 @@ njt_start_helper_processes(njt_cycle_t *cycle, njt_uint_t respawn)
                             &helpers[i], "copilot process",
                             respawn ? NJT_PROCESS_JUST_RESPAWN : NJT_PROCESS_RESPAWN, njt_helper_preprocess_cycle);
             }
-
-            // if (mqcf->admin_server.data)
-            //     njt_start_iot_processes(cycle, 0,mqcf->admin_server);
-            // if (mqcf->admin_client.data)
-            //     njt_start_iot_client_processes(cycle, mqcf->worker_cnt,mqcf->admin_client,mqcf->cluster_name,mqcf->node_name);
-            // if (mqcf->dyn_conf.data)
-            //     njt_start_dyn_processes(cycle,0,mqcf->dyn_conf);
 
             njt_pass_open_channel(cycle);
         }
