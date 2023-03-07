@@ -332,6 +332,7 @@ static njt_http_sendmsg_post_data_t *njt_http_parser_sendmsg_data(njt_str_t json
     {
         njt_destroy_pool(sendmsg_pool);
         return NULL;
+        ;
     }
 
     postdata->pool = sendmsg_pool;

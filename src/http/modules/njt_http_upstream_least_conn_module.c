@@ -247,7 +247,7 @@ njt_http_upstream_get_least_conn_peer(njt_peer_connection_t *pc, void *data)
     pc->name = &best->name;
 
     best->conns++;
-
+    best->requests++;
     rrp->current = best;
 
     n = p / (8 * sizeof(uintptr_t));

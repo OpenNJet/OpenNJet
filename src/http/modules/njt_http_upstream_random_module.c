@@ -289,7 +289,7 @@ njt_http_upstream_get_random_peer(njt_peer_connection_t *pc, void *data)
     pc->name = &peer->name;
 
     peer->conns++;
-
+    peer->requests++;
     njt_http_upstream_rr_peer_unlock(peers, peer);
     njt_http_upstream_rr_peers_unlock(peers);
 
@@ -401,7 +401,7 @@ njt_http_upstream_get_random2_peer(njt_peer_connection_t *pc, void *data)
     pc->name = &peer->name;
 
     peer->conns++;
-
+    peer->requests++;
     njt_http_upstream_rr_peers_unlock(peers);
 
     rrp->tried[n] |= m;

@@ -604,7 +604,7 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
                 }
 
                 njt_memzero(dynamic_server, sizeof(njt_stream_upstream_dynamic_server_conf_t));
-				//us->dynamic = 1;
+		us->dynamic = 1;
                 dynamic_server->server = us;
                 dynamic_server->upstream_conf = uscf;
 
