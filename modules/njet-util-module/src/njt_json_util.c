@@ -13,7 +13,7 @@
 njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *element,njt_json_define_t *def,void *data){
     njt_int_t rc;
     njt_json_element  *sub,*target;
-    njt_uint_t i, j;
+    njt_uint_t  j;
     njt_array_t *array;
     njt_queue_t *q;
     char  *p ;
@@ -99,7 +99,6 @@ njt_int_t njt_json_parse_data(njt_pool_t *pool,njt_str_t *str,njt_json_define_t 
     njt_json_element  *items,*sub;
     njt_array_t *array;
     void *p;
-    njt_uint_t i;
     njt_queue_t *q;
 
     njt_json_define_t obj_def={
