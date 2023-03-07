@@ -354,7 +354,7 @@ njt_mail_optimize_servers(njt_conf_t *cf, njt_array_t *ports)
             }
 
             ls->servers = mport;
-
+            ls->server_type = NJT_MAIL_SERVER_TYPE;
             mport->naddrs = i + 1;
 
             switch (ls->sockaddr->sa_family) {
