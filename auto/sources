@@ -16,6 +16,7 @@ CORE_DEPS="src/core/njet.h \
            src/core/njt_array.h \
            src/core/njt_list.h \
            src/core/njt_hash.h \
+           src/core/njt_lvlhsh.h \
            src/core/njt_buf.h \
            src/core/njt_queue.h \
            src/core/njt_string.h \
@@ -52,6 +53,7 @@ CORE_SRCS="src/core/njet.c \
            src/core/njt_array.c \
            src/core/njt_list.c \
            src/core/njt_hash.c \
+           src/core/njt_lvlhsh.c \
            src/core/njt_buf.c \
            src/core/njt_queue.c \
            src/core/njt_output_chain.c \

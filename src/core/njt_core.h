@@ -66,6 +66,7 @@ typedef void (*njt_connection_handler_pt)(njt_connection_t *c);
 #include <njt_array.h>
 #include <njt_list.h>
 #include <njt_hash.h>
+#include <njt_lvlhsh.h>
 #include <njt_file.h>
 #include <njt_crc.h>
 #include <njt_crc32.h>
