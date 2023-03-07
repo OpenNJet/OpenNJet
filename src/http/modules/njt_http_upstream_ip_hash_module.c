@@ -242,7 +242,7 @@ njt_http_upstream_get_ip_hash_peer(njt_peer_connection_t *pc, void *data)
     pc->name = &peer->name;
 
     peer->conns++;
-
+    peer->requests++;
     if (now - peer->checked > peer->fail_timeout) {
         peer->checked = now;
     }

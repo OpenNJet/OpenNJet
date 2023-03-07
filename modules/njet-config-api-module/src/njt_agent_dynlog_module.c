@@ -287,20 +287,10 @@ static njt_str_t njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
     njt_str_t json,*tmp_str;
     njt_http_server_name_t *server_name;
     njt_json_manager json_manager;
-    njt_json_element *root,*srvs,*srv,*subs,*sub;
+    njt_json_element *srvs,*srv,*subs,*sub;
+    njt_int_t rc;
 
     hcmcf = njt_http_cycle_get_module_main_conf(cycle,njt_http_core_module);
-
-    json_manager.json_keyval = njt_array_create(pool,1,sizeof (njt_json_element));
-    if(json_manager.json_keyval == NULL ){
-        goto err;
-    }
-    root = njt_array_push(json_manager.json_keyval);
-    if(root == NULL ){
-        goto err;
-    }
-    njt_memzero(root, sizeof(njt_json_element));
-    root->type = NJT_JSON_OBJ;
 
     srvs =  njt_json_arr_element(pool,njt_json_fast_key("servers"));
     if(srvs == NULL ){
@@ -352,7 +342,11 @@ static njt_str_t njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
         njt_struct_add(srvs,srv,pool);
     }
 
-    njt_struct_add(root,srvs,pool);// 顶层
+    rc = njt_struct_top_add(&json_manager, srvs, NJT_JSON_OBJ, pool);
+    if(rc != NJT_OK){
+        njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno,
+                      "njt_struct_top_add error");
+    }
     njt_memzero(&json, sizeof(njt_str_t));
     njt_structure_2_json(&json_manager, &json, pool);
 

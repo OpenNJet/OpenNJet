@@ -40,7 +40,7 @@ typedef struct
     njt_int_t code;
 } njt_http_sendmsg_post_data_t;
 
-// sendmsg module is running in ctrl panel, should be able to get njet_master_cycle from njet_helper_ctrl_module
+//sendmsg module is running in ctrl panel, should be able to get njet_master_cycle from njet_helper_ctrl_module
 extern njt_cycle_t *njet_master_cycle;
 static void mqtt_connect_timeout(njt_event_t *ev);
 static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx_t *ctx);
@@ -332,6 +332,7 @@ static njt_http_sendmsg_post_data_t *njt_http_parser_sendmsg_data(njt_str_t json
     {
         njt_destroy_pool(sendmsg_pool);
         return NULL;
+        ;
     }
 
     postdata->pool = sendmsg_pool;
