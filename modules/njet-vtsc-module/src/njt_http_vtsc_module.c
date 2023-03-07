@@ -1190,8 +1190,8 @@ static njt_json_element* njt_json_make_element_array(njt_pool_t *pool, u_char *k
     if(key != NULL){
         element->key.data = key;
         element->key.len = len;
-        njt_queue_init(&element->arrdata);
     }
+    njt_queue_init(&element->arrdata);
 
 out:
     return element;
@@ -1212,10 +1212,10 @@ static njt_json_element* njt_json_make_element_obj(njt_pool_t *pool, u_char *key
     if(key != NULL){
         element->key.data = key;
         element->key.len = len;
-
-        element->objdata.lvlhsh = NULL;
-        njt_queue_init(&element->objdata.datas);
     }
+
+    element->objdata.lvlhsh = NULL;
+    njt_queue_init(&element->objdata.datas);
 
 out:
     return element;
