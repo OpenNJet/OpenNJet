@@ -367,6 +367,7 @@ static njt_str_t njt_dyn_bwlist_dump_access_conf(njt_cycle_t *cycle, njt_pool_t 
     njt_json_manager json_manager;
     njt_json_element *srvs, *srv, *subs, *sub;
 
+    njt_memzero(&json_manager, sizeof(njt_json_manager));
     hcmcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_core_module);
 
     srvs = njt_json_arr_element(pool, njt_json_fast_key("servers"));
