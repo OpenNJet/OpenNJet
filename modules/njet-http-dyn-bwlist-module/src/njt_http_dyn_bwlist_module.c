@@ -7,9 +7,6 @@
 
 extern njt_module_t njt_http_access_module;
 
-#define njt_json_fast_key(key) (u_char *)key, sizeof(key) - 1
-#define njt_json_null_key NULL, 0
-
 typedef struct
 {
     njt_str_t rule;
@@ -140,78 +137,6 @@ static njt_json_define_t njt_http_dyn_bwlist_main_json_dt[] = {
 };
 
 njt_str_t dyn_bwlist_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
-
-static njt_json_element *njt_json_arr_element(njt_pool_t *pool, u_char *key, njt_uint_t len)
-{
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool, sizeof(njt_json_element));
-    if (element == NULL)
-    {
-        goto out;
-    }
-
-    element->type = NJT_JSON_ARRAY;
-    if (key != NULL)
-    {
-        element->key.data = key;
-        element->key.len = len;
-    }
-
-out:
-    return element;
-}
-
-static njt_json_element *njt_json_obj_element(njt_pool_t *pool, u_char *key, njt_uint_t len)
-{
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool, sizeof(njt_json_element));
-    if (element == NULL)
-    {
-        goto out;
-    }
-
-    element->type = NJT_JSON_OBJ;
-    if (key != NULL)
-    {
-        element->key.data = key;
-        element->key.len = len;
-    }
-
-out:
-    return element;
-}
-
-static njt_json_element *njt_json_str_element(njt_pool_t *pool, u_char *key, njt_uint_t len, njt_str_t *value)
-{
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool, sizeof(njt_json_element));
-    if (element == NULL)
-    {
-        goto out;
-    }
-
-    element->type = NJT_JSON_STR;
-    if (key != NULL)
-    {
-        element->key.data = key;
-        element->key.len = len;
-    }
-
-    if (value != NULL)
-    {
-        element->strval.data = value->data;
-        element->strval.len = value->len;
-    }
-
-out:
-    return element;
-}
 
 static njt_int_t njt_dyn_bwlist_update_locs(njt_array_t *locs, njt_queue_t *q)
 {
