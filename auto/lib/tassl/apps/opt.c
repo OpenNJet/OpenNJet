@@ -371,8 +371,7 @@ int opt_long(const char *value, long *result)
     return 1;
 }
 
-#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L && \
-    defined(INTMAX_MAX) && defined(UINTMAX_MAX)
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 
 /* Parse an intmax_t, put it into *result; return 0 on failure, else 1. */
 int opt_imax(const char *value, intmax_t *result)
