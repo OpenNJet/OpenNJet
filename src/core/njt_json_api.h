@@ -154,4 +154,15 @@ njt_int_t njt_struct_object_delete(njt_json_element *parent_element,
  */
 njt_int_t njt_struct_array_delete(njt_json_element *element);
 
+
+
+njt_json_element* njt_json_str_element(njt_pool_t *pool,u_char *key,njt_uint_t len,njt_str_t *value);
+njt_json_element* njt_json_bool_element(njt_pool_t *pool, u_char *key,njt_uint_t len,bool value);
+njt_json_element* njt_json_arr_element(njt_pool_t *pool,u_char *key,njt_uint_t len);
+njt_json_element* njt_json_obj_element(njt_pool_t *pool,u_char *key, njt_uint_t len);
+njt_json_element* njt_json_int_element(njt_pool_t *pool,u_char *key, njt_uint_t len, int64_t intval);
+njt_json_element* njt_json_double_element(njt_pool_t *pool,u_char *key, njt_uint_t len, double doubleval);
+njt_json_element* njt_json_null_element(njt_pool_t *pool,u_char *key, njt_uint_t len);
+
+
 #endif
