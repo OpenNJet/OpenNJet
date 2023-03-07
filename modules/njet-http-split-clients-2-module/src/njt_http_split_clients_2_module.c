@@ -101,7 +101,7 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
     njt_json_manager json_manager;
     njt_pool_t *tmp_pool;
     njt_int_t rc;
-    njt_queue_t values, *q;
+    njt_queue_t *values, *q;
     njt_json_element *f;
 
     ctx = (njt_http_split_clients_2_ctx_t *)sc2cf->ctx;
@@ -150,11 +150,11 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
             if (rc == NJT_OK && tmp_element->type == NJT_JSON_OBJ)
             {
 
-                values = tmp_element->objdata.datas;
+                values = &tmp_element->objdata.datas;
                 njt_uint_t sum = 0;
-                for (q = njt_queue_head(&values);
-                     q != njt_queue_sentinel(&values);
-                     q = njt_queue_next(q))
+                for (q = njt_queue_head(values);
+                     q != njt_queue_sentinel(values);
+                     q = njt_queue_next(q)) ////
                 {
                     f = njt_queue_data(q, njt_json_element, ele_queue);
                     if (f->type == NJT_JSON_INT)
@@ -170,9 +170,8 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
                 {
                     for (i = 0; i < ctx->parts.nelts; i++)
                     {
-                        values = tmp_element->objdata.datas;
-                        for (q = njt_queue_head(&values);
-                             q != njt_queue_sentinel(&values);
+                        for (q = njt_queue_head(values);
+                             q != njt_queue_sentinel(values);
                              q = njt_queue_next(q))
                         {
                             f = njt_queue_data(q, njt_json_element, ele_queue);
