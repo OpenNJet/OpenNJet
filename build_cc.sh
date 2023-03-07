@@ -49,6 +49,7 @@ cdir=`cd $(dirname $0); pwd`
             conf*)
 		if [ ! -d /etc/njet/luajit ]; then
 		   cd luajit;make;make install;cd -;
+	 	   cp -fr /etc/njet/luajit/lib/libluajit-5.1.so.2    /usr/local/lib/
 		fi
 		if [ ! -d /etc/njet/lualib ]; then
 		   cp -fr lualib /etc/njet/lualib
