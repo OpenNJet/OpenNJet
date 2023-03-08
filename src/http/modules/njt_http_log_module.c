@@ -1298,28 +1298,6 @@ njt_http_log_set_log(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                            "invalid parameter \"%V\"", &value[2]);
         return NJT_CONF_ERROR;
     }
-//#if (NJT_HTTP_DYN_LOG)
-//    njt_pool_t *old_pool, *new_pool,*old_temp_pool;
-//    njt_int_t rc;
-//
-//    old_pool = cf->pool;
-//    old_temp_pool = cf->temp_pool;
-//    if(llcf->logs == NULL ){
-//        new_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-//        if (new_pool == NULL) {
-//            return NJT_CONF_ERROR;
-//        }
-//        rc = njt_sub_pool(cf->cycle->pool,new_pool);
-//        if (rc != NJT_OK) {
-//            return NJT_CONF_ERROR;
-//        }
-//    } else{
-//        new_pool = llcf->logs->pool;
-//    }
-//
-//    cf->pool = new_pool;
-//    cf->temp_pool = new_pool;
-//#endif
     if (llcf->logs == NULL) {
         llcf->logs = njt_array_create(cf->pool, 2, sizeof(njt_http_log_t));
         if (llcf->logs == NULL) {
@@ -1583,10 +1561,6 @@ process_formats:
         log->file->flush = njt_http_log_flush;
         log->file->data = buffer;
     }
-//#if (NJT_HTTP_DYN_LOG)
-//    cf->pool = old_pool ;
-//    cf->temp_pool = old_temp_pool;
-//#endif
     return NJT_CONF_OK;
 }
 

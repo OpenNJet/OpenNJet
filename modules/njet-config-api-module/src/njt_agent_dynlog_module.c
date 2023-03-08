@@ -166,7 +166,6 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
     njt_http_dyn_access_api_loc_t *daal;
     njt_uint_t j;
     njt_queue_t *tq;
-//    njt_http_log_loc_conf_t *llcf;
     njt_int_t rc;
 
     if(q == NULL){
@@ -180,7 +179,6 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
             njt_str_t name = daal[j].full_name;
             if (name.len == clcf->full_name.len && njt_strncmp(name.data, clcf->full_name.data, name.len) == 0) {
-//                llcf = njt_http_get_module_loc_conf(clcf, njt_http_log_module);
                 ctx->loc_conf = clcf->loc_conf;
                 njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
                 if (pool == NULL) {
@@ -195,8 +193,6 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
                     njt_log_error(NJT_LOG_ERR, pool->log, 0,"njt_http_log_dyn_set_log error free pool");
                     njt_destroy_pool(pool);
                 }
-//                llcf->off = daal[j].log_on?0:1;
-//                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "change location %V log to %i",&daal[j].full_name,daal[j].log_on);
             }
             if(daal[j].locs.nelts > 0){
                 njt_dynlog_update_locs_log(&daal[j].locs,clcf->old_locations,ctx);
