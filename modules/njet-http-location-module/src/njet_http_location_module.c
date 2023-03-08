@@ -262,14 +262,14 @@ njt_http_upstream_api_insert_out_str(njt_http_request_t *r,
         return NJT_OK;
     }
     if (str == NULL || str->data == NULL) {
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+        njt_log_error(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "parameter error in function %s", __func__);
         return NJT_ERROR;
     }
 
     b = njt_http_upstream_api_get_out_buf(r, str->len, out);
     if (b == NULL) {
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+        njt_log_error(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "could not alloc buffer in function %s", __func__);
         return NJT_ERROR;
     }
@@ -320,6 +320,7 @@ static void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
     njt_http_location_cleanup(clcf);
     clcf->disable = 1;
     if (clcf->ref_count == 0 && clcf->pool != NULL) {
+    	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_destroy_pool clcf=%p",clcf);
         njt_destroy_pool(clcf->pool);
     }
 }
@@ -351,7 +352,7 @@ njt_http_refresh_location(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf, njt_ht
     njt_int_t rc = NJT_OK;
     njt_http_location_queue_t *tmp_queue;
 
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0, "new_locations njt_palloc start +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "new_locations njt_palloc start +++++++++++++++");
     //dump old_location to a new_location
     if (clcf->new_locations == NULL) {
         clcf->new_locations = njt_palloc(clcf->pool,
@@ -366,9 +367,9 @@ njt_http_refresh_location(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf, njt_ht
         tmp_queue->parent_pool = clcf->pool;
         njt_queue_init(clcf->new_locations);
     }
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0, "new_locations njt_palloc end +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "new_locations njt_palloc end +++++++++++++++");
 
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0, "free new_locations start +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "free new_locations start +++++++++++++++");
 
     for (x = njt_queue_head(clcf->new_locations);
          x != njt_queue_sentinel(clcf->new_locations);) {
@@ -377,9 +378,9 @@ njt_http_refresh_location(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf, njt_ht
         njt_queue_remove(&lq->queue);
         njt_pfree(lq->parent_pool, lq);
     }
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0, "free new_locations end +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "free new_locations end +++++++++++++++");
 
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0, "copy old_locations start +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "copy old_locations start +++++++++++++++");
 
     for (x = njt_queue_head(clcf->old_locations);
          x != njt_queue_sentinel(clcf->old_locations);
@@ -398,18 +399,18 @@ njt_http_refresh_location(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf, njt_ht
         njt_queue_init(&lq->list);
         njt_queue_insert_tail(clcf->new_locations, &lq->queue);
     }
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0, "copy old_locations end +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "copy old_locations end +++++++++++++++");
 
     if (njt_http_init_new_locations(cf, cscf, clcf) != NJT_OK) {
         return NJT_ERROR;
     }
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0, "init_new_static_location_trees start +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "init_new_static_location_trees start +++++++++++++++");
     clcf->new_static_locations = NULL;
     if (njt_http_init_new_static_location_trees(cf, clcf) != NJT_OK) {
         return NJT_ERROR;
     }
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0, "init_new_static_location_trees end +++++++++++++++");
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0, "free old location start +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "init_new_static_location_trees end +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "free old location start +++++++++++++++");
 
 //save last locations
     saved_static_locations = clcf->static_locations;
@@ -419,7 +420,7 @@ njt_http_refresh_location(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf, njt_ht
     //free old static_locations tree node
     //now just delete dynamic tree(clcf->pool), initial static tree not delete(cf->pool)
     free_static_tree_momery(saved_static_locations);
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, cf->log, 0, "free old location end +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "free old location end +++++++++++++++");
     return rc;
 }
 
@@ -564,7 +565,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     njt_conf_t conf;
     njt_int_t rc = NJT_OK;
     njt_http_core_srv_conf_t *cscf;
-    char *rv;
+    char *rv = NULL;
     njt_http_core_loc_conf_t *clcf;
     njt_pool_t *location_pool = NULL; 
     njt_str_t location_name;
@@ -573,19 +574,22 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 
     njt_str_t location_path; // = njt_string("./conf/add_location.txt");
 
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->log, 0, "add location start +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add location start +++++++++++++++");
 
 
 
     if (location_info->file.len != 0) {
         location_path = location_info->file;
     }
+	
 	if(location_info->proxy_pass.len > 0) {
 		rc = njt_http_check_upstream_exist(location_info->pool, &location_info->proxy_pass);
 		if (rc != NJT_OK) {
-			goto out;
+			//goto out;
+		    rc = NJT_OK;
 		}
 	}
+
     if (location_path.len == 0) {
         rc = NJT_ERROR;
         goto out;
@@ -637,23 +641,24 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     conf.dynamic = 1;
 
     //clcf->locations = NULL; // clcf->old_locations;
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "njt_conf_parse start +++++++++++++++");
-    conf.pool = location_info->pool;
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
+    //conf.pool = location_info->pool;
     rv = njt_conf_parse(&conf, &location_path);
-    conf.pool = clcf->pool;
+    //conf.pool = clcf->pool;
     if (rv != NULL) {
+	
         njt_http_location_clear_dirty_data(clcf);
         rc = NJT_ERROR;
         goto out;
     }
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "njt_conf_parse end +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");
     njt_http_variables_init_vars(&conf);
 
 
     //merge servers
     njt_http_module_t *module;
     njt_uint_t mi, m;
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "merge start +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge start +++++++++++++++");
     for (m = 0; conf.cycle->modules[m]; m++) {
         if (conf.cycle->modules[m]->type != NJT_HTTP_MODULE) {
             continue;
@@ -674,14 +679,19 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
             }
         }
     }
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "merge end +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge end +++++++++++++++");
 
     rc = njt_http_refresh_location(&conf, cscf, clcf);
     if (rc != NJT_OK) {
         goto out;
     }
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC,njt_cycle->pool->log, 0, "add location end +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "add location end +++++++++++++++");
 out:
+    if(rc != NJT_OK) {
+    	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add  location[%V] error:%s",&location_name,rv);
+    } else {
+	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add  location[%V] succ!",&location_name);
+    }
     return rc;
 }
 
@@ -707,13 +717,13 @@ njt_http_location_handler(njt_http_request_t *r) {
     }
 
 
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "1 read_client_request_body start +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, r->pool->log, 0, "1 read_client_request_body start +++++++++++++++");
     rc = njt_http_read_client_request_body(r, njt_http_location_read_data);
 	location_info = njt_http_get_module_ctx(r, njt_http_location_module);
     if (rc == NJT_OK) {
         njt_http_finalize_request(r, NJT_DONE);
     }
-    njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "2 read_client_request_body end +++++++++++++++");
+    njt_log_error(NJT_LOG_DEBUG, r->pool->log, 0, "2 read_client_request_body end +++++++++++++++");
     if (location_info == NULL || location_info->file.len == 0 || location_info->file.data == NULL) {
         rc = NJT_ERROR;
         goto out;
@@ -1063,7 +1073,7 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
     njt_str_t  dport;
     njt_fd_t fd;
     njt_uint_t i, len;
-    njt_int_t rlen, idx;
+    njt_int_t rlen = 0, idx;
     u_char *last;
     
     //njt_str_t          proxy_pass;
@@ -1358,7 +1368,7 @@ njt_http_refresh_variables_keys(){
 	u_char *pdata;
 	njt_hash_keys_arrays_t    *old_variables_keys;
 
-njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "zyg begin");
+njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 
    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
    key = cmcf->variables_keys->keys.elts;
@@ -1436,10 +1446,10 @@ njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "zyg begin");
 
 		if(old_pool){
 		   njt_destroy_pool(old_pool);
-		   njt_log_debug2(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "zyg njt_destroy_pool pool:%p, remain:%p",old_pool,new_pool);
+		   njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg njt_destroy_pool pool:%p, remain:%p",old_pool,new_pool);
 		}
-		njt_log_debug0(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "zyg end");
-		 //njt_log_debug2(NJT_LOG_DEBUG_ALLOC, njt_cycle->pool->log, 0, "zyg all:%d, remain:%d",count,num);
+		njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg end");
+		 //njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg all:%d, remain:%d",count,num);
 		
 }
 
