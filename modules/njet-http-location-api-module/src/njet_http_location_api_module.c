@@ -446,7 +446,7 @@ njt_http_location_read_data(njt_http_request_t *r){
         return;
     }
 	
-	p = njt_snprintf(topic_name.data,topic_len,"/dyn/loc/l_%d",crc32);
+	p = njt_snprintf(topic_name.data,topic_len,"/dyn/loc/l_%ui",crc32);
 	topic_name.len = p - topic_name.data;
 	if(location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0 ){
 		njt_dyn_sendmsg(&topic_name,&json_str,0);
