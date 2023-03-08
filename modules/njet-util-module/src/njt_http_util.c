@@ -20,7 +20,7 @@
 
 njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
     njt_http_core_srv_conf_t* cscf;
-    njt_listening_t *ls, *target_ls;
+    njt_listening_t *ls, *target_ls = NULL;
     njt_uint_t i,j,k;
     njt_http_server_name_t  *name;
     njt_http_port_t *port;
