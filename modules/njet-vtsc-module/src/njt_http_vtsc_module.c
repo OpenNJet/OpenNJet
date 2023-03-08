@@ -1176,100 +1176,6 @@ static njt_json_define_t njt_http_vts_dynapi_main_jsondef[] ={
 static njt_str_t njt_http_vts_dynapi_update_svr_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
 
-static njt_json_element* njt_json_make_element_array(njt_pool_t *pool, u_char *key, njt_uint_t len)
-{
-    njt_json_element    *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool, sizeof (njt_json_element));
-    if(element == NULL ){
-        goto out;
-    }
-
-    element->type = NJT_JSON_ARRAY;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    njt_queue_init(&element->arrdata);
-
-out:
-    return element;
-}
-
-
-static njt_json_element* njt_json_make_element_obj(njt_pool_t *pool, u_char *key, njt_uint_t len)
-{
-    njt_json_element    *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto out;
-    }
-
-    element->type = NJT_JSON_OBJ;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-
-    element->objdata.lvlhsh = NULL;
-    njt_queue_init(&element->objdata.datas);
-
-out:
-    return element;
-}
-
-
-static njt_json_element* njt_json_make_element_str(njt_pool_t *pool,u_char *key,njt_uint_t len, njt_str_t *value)
-{
-    njt_json_element    *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto out;
-    }
-
-    element->type = NJT_JSON_STR;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-
-    if(value != NULL){
-        element->strval = *value;
-    }
-
-out:
-    return element;
-}
-
-
-static njt_json_element* njt_json_make_element_bool(njt_pool_t *pool, u_char *key, njt_uint_t len,bool value)
-{
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto out;
-    }
-
-    element->type = NJT_JSON_BOOL;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-
-    element->bval = value;
-
-out:
-    return element;
-}
-
-
 static njt_json_element* njt_vts_dynapi_dump_locs_json(njt_pool_t *pool, njt_queue_t *locations)
 {
     njt_http_core_loc_conf_t                 *clcf;
@@ -1289,7 +1195,7 @@ static njt_json_element* njt_vts_dynapi_dump_locs_json(njt_pool_t *pool, njt_que
     }
 
     tq = njt_queue_head(q);
-    locs = njt_json_make_element_array(pool, njt_json_fast_key("locations"));
+    locs = njt_json_arr_element(pool, njt_json_fast_key("locations"));
     if (locs == NULL) {
         return NULL;
     }
@@ -1299,18 +1205,18 @@ static njt_json_element* njt_vts_dynapi_dump_locs_json(njt_pool_t *pool, njt_que
         clcf = locq->exact == NULL ? locq->inclusive : locq->exact;
         llcf = njt_http_get_module_loc_conf(clcf, njt_http_vtsc_module);
 
-        item = njt_json_make_element_obj(pool, njt_json_null_key);
+        item = njt_json_obj_element(pool, njt_json_null_key);
         if(item == NULL){
             return NULL;
         }
 
-        sub = njt_json_make_element_str(pool, njt_json_fast_key("location"), &clcf->full_name);
+        sub = njt_json_str_element(pool, njt_json_fast_key("location"), &clcf->full_name);
         if(sub == NULL){
             return NULL;
         }
         njt_struct_add(item, sub, pool);
 
-        sub = njt_json_make_element_bool(pool, njt_json_fast_key("vhost_traffic_status"), llcf->enable);
+        sub = njt_json_bool_element(pool, njt_json_fast_key("vhost_traffic_status"), llcf->enable);
         if(sub == NULL){
             return NULL;
         }
@@ -1325,89 +1231,6 @@ static njt_json_element* njt_vts_dynapi_dump_locs_json(njt_pool_t *pool, njt_que
     }
 
     return locs;
-}
-
-
-static njt_int_t njt_vts_dynapi_get_listens_by_server(njt_array_t *array, njt_http_core_srv_conf_t *cscf)
-{
-    njt_hash_elt_t         **elt;
-    njt_listening_t         *ls;
-    njt_uint_t               i,j,k;
-    njt_http_port_t         *port;
-    njt_http_in_addr_t      *addr;
-    njt_http_addr_conf_t    *addr_conf;
-    njt_str_t               *listen;
-
-    ls = njt_cycle->listening.elts;
-
-    for (i = 0; i < njt_cycle->listening.nelts; ++i) {
-        port = ls[i].servers;
-        addr = port->addrs;
-
-        for (j = 0; j < port->naddrs ; ++j) {
-            addr_conf = &addr[j].conf;
-            if(addr_conf->default_server == cscf){
-                listen  = njt_array_push(array);
-                if(listen == NULL){
-                    return NJT_ERROR_ERR;
-                }
-
-                *listen = ls[i].addr_text;
-            }
-
-            if(addr_conf->virtual_names == NULL ){
-                continue;
-            }
-
-            elt = addr_conf->virtual_names->names.hash.buckets;
-            for(k = 0 ; k < addr_conf->virtual_names->names.hash.size;++k){
-                if(elt[k] != NULL ){
-                    if(elt[k]->value == cscf ){
-                        listen  = njt_array_push(array);
-                        if(listen == NULL){
-                            return NJT_ERROR_ERR;
-                        }
-
-                        *listen = ls[i].addr_text;
-                    }
-                }
-            }
-
-            if(addr_conf->virtual_names->names.wc_head != NULL){
-                elt = addr_conf->virtual_names->names.wc_head->hash.buckets;
-                for(k = 0 ; k < addr_conf->virtual_names->names.wc_head->hash.size;++k){
-                    if(elt[k] != NULL ){
-                        if(elt[k]->value == cscf ){
-                            listen  = njt_array_push(array);
-                            if(listen == NULL){
-                                return NJT_ERROR_ERR;
-                            }
-
-                            *listen = ls[i].addr_text;
-                        }
-                    }
-                }
-            }
-
-            if(addr_conf->virtual_names->names.wc_tail != NULL){
-                elt = addr_conf->virtual_names->names.wc_tail->hash.buckets;
-                for(k = 0 ; k < addr_conf->virtual_names->names.wc_tail->hash.size;++k){
-                    if(elt[k] != NULL ){
-                        if(elt[k]->value == cscf ){
-                            listen  = njt_array_push(array);
-                            if(listen == NULL){
-                                return NJT_ERROR_ERR;
-                            }
-
-                            *listen = ls[i].addr_text;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return NJT_OK;
 }
 
 
@@ -1449,7 +1272,7 @@ static void njt_vts_dynapi_dump_vts_filter_conf(njt_cycle_t *cycle, njt_json_man
 
         vtsfilter.len = data - vtsfilter.data;
 
-        filter = njt_json_make_element_str(pool, njt_json_fast_key("vhost_traffic_status_filter_by_set_key"), &vtsfilter);
+        filter = njt_json_str_element(pool, njt_json_fast_key("vhost_traffic_status_filter_by_set_key"), &vtsfilter);
         if(filter == NULL ){
             return;
         }
@@ -1481,43 +1304,43 @@ static njt_str_t njt_vts_dynapi_dump_vts_conf(njt_cycle_t *cycle, njt_pool_t *po
     njt_memzero(&json_manager, sizeof(njt_json_manager));
     njt_vts_dynapi_dump_vts_filter_conf(cycle, &json_manager, pool);
 
-    srvs =  njt_json_make_element_array(pool, njt_json_fast_key("servers"));
+    srvs =  njt_json_arr_element(pool, njt_json_fast_key("servers"));
     if(srvs == NULL ){
         goto err;
     }
 
     cscfp = hcmcf->servers.elts;
     for( i = 0; i < hcmcf->servers.nelts; i++){
-        array = njt_array_create(pool,4, sizeof(njt_str_t));
-        njt_vts_dynapi_get_listens_by_server(array, cscfp[i]);
+        array = njt_array_create(pool, 4, sizeof(njt_str_t));
+        njt_http_get_listens_by_server(array, cscfp[i]);
 
-        srv =  njt_json_make_element_obj(pool, njt_json_null_key);
+        srv =  njt_json_obj_element(pool, njt_json_null_key);
         if(srv == NULL ){
             goto err;
         }
 
-        subs =  njt_json_make_element_array(pool, njt_json_fast_key("listens"));
+        subs =  njt_json_arr_element(pool, njt_json_fast_key("listens"));
         if(subs == NULL ){
             goto err;
         }
 
         tmp_str = array->elts;
         for(j = 0 ; j < array->nelts ; ++j ){
-            sub =  njt_json_make_element_str(pool, njt_json_null_key, &tmp_str[j]);
+            sub =  njt_json_str_element(pool, njt_json_null_key, &tmp_str[j]);
             if(sub == NULL ){
                 goto err;
             }
             njt_struct_add(subs, sub, pool);
         }
         njt_struct_add(srv,subs,pool);
-        subs =  njt_json_make_element_array(pool, njt_json_fast_key("serverNames"));
+        subs =  njt_json_arr_element(pool, njt_json_fast_key("serverNames"));
         if(subs == NULL ){
             goto err;
         }
 
         server_name = cscfp[i]->server_names.elts;
         for(j = 0; j < cscfp[i]->server_names.nelts ; ++j ){
-            sub =  njt_json_make_element_str(pool, njt_json_null_key, &server_name[j].name);
+            sub =  njt_json_str_element(pool, njt_json_null_key, &server_name[j].name);
             if(sub == NULL ){
                 goto err;
             }
@@ -1587,108 +1410,6 @@ static njt_int_t njt_dynvts_update_locs(njt_array_t *locs, njt_queue_t *q)
     }
 
     return NJT_OK;
-}
-
-
-static njt_http_core_srv_conf_t* njt_dynvts_get_srv_by_port(njt_cycle_t *cycle, njt_pool_t *pool, njt_str_t *addr_port, njt_str_t *server_name)
-{
-    njt_http_core_srv_conf_t        *cscf;
-    njt_listening_t                 *ls, *target_ls;
-    njt_uint_t                       i, len;
-    u_char                          *last;
-    u_char                          *p;
-    njt_str_t                        dport;
-    njt_str_t                        wide_addr = njt_string("0.0.0.0");
-    njt_http_port_t                 *port;
-    njt_url_t                        u;
-    struct sockaddr                  local_sockaddr;
-    struct sockaddr_in              *sin;
-    njt_http_in_addr_t              *addr;
-    njt_http_connection_t            hc;
-    njt_http_virtual_names_t        *virtual_names;
-    njt_str_t                        sport;
-
-    cscf = NULL;
-    if (addr_port->len > 0) {
-        ls = cycle->listening.elts;
-        for (i = 0; i < cycle->listening.nelts; i++) {
-            if (ls[i].addr_text.len == addr_port->len &&
-                njt_strncmp(ls[i].addr_text.data, addr_port->data, addr_port->len) == 0) {
-                target_ls = &ls[i];
-                break;
-            } else {
-                njt_memzero(&sport , sizeof(njt_str_t));
-                last = addr_port->data + addr_port->len;
-                p = njt_strlchr(addr_port->data, last, ':');
-                if(p != NULL){
-                    sport.data = p+1;
-                    sport.len = last - sport.data;
-                }
-
-                last = ls[i].addr_text.data + ls[i].addr_text.len;
-                p = njt_strlchr(ls[i].addr_text.data, last, ':');
-                if (p != NULL) {
-                    dport.data = p + 1;
-                    dport.len = last - dport.data;
-                    len = p - ls[i].addr_text.data;
-
-                    if (dport.len == sport.len && njt_strncmp(dport.data, sport.data, dport.len) == 0
-                        && wide_addr.len == len
-                        && njt_strncmp(wide_addr.data, ls[i].addr_text.data, wide_addr.len) == 0) {
-                        target_ls = &ls[i];
-                        break;
-                    }
-                }
-            }
-        }
-
-        if (target_ls == NULL) {
-            return NULL;
-        }
-
-        port = target_ls->servers;
-        if (port->naddrs > 1) {
-            njt_memzero(&u, sizeof(njt_url_t));
-            u.url = *addr_port;
-            u.default_port = 80;
-            njt_parse_url(pool, &u);
-            njt_memcpy(&local_sockaddr, &u.sockaddr, u.socklen);
-            sin = (struct sockaddr_in *) &local_sockaddr;
-
-            addr = port->addrs;
-            for (i = 0; i < port->naddrs - 1; i++) {
-                if (addr[i].addr == sin->sin_addr.s_addr) {
-                    break;
-                }
-            }
-
-            hc.addr_conf = &addr[i].conf;
-        } else {
-            addr = port->addrs;
-            hc.addr_conf = &addr[0].conf;
-        }
-
-        hc.conf_ctx = hc.addr_conf->default_server->ctx;
-        virtual_names = hc.addr_conf->virtual_names;
-        if (virtual_names != NULL) {
-            cscf = njt_hash_find_combined(&virtual_names->names,
-                                          njt_hash_key(server_name->data, server_name->len),
-                                          server_name->data, server_name->len);
-        }
-
-        if(cscf == NULL && virtual_names != NULL && server_name->len > 0 && server_name->data != NULL) {
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "no find server add_port=%V,server_name=%V",&addr_port,&server_name);
-            return NULL;
-        }
-
-        if (cscf == NULL) {
-            cscf = njt_http_get_module_srv_conf(hc.conf_ctx, njt_http_core_module);
-        }
-    } else {
-        cscf = NULL;
-    }
-
-    return cscf;
 }
 
 
@@ -1831,7 +1552,6 @@ static njt_int_t njt_dynvts_update(njt_pool_t *pool, njt_http_vts_dynapi_main_t 
     njt_http_core_loc_conf_t    *clcf;
     njt_http_vts_dynapi_svr_t   *svr;
     njt_uint_t                   i;
-    njt_uint_t                   util = 1;
 
     if (njt_process == NJT_PROCESS_HELPER){
         new_cycle = (njt_cycle_t*)njt_cycle;
@@ -1846,11 +1566,7 @@ static njt_int_t njt_dynvts_update(njt_pool_t *pool, njt_http_vts_dynapi_main_t 
 
     svr = dynconf->servers.elts;
     for(i = 0; i < dynconf->servers.nelts; ++i) {
-        if (!util) {
-        cscf = njt_dynvts_get_srv_by_port(cycle, pool, (njt_str_t*)svr[i].listens.elts, (njt_str_t*)svr[i].server_names.elts);
-        } else {
         cscf = njt_http_get_srv_by_port(cycle,(njt_str_t*)svr[i].listens.elts, (njt_str_t*)svr[i].server_names.elts);
-        }
         if(cscf == NULL){
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
                           (njt_str_t*)svr[i].listens.elts, (njt_str_t*)svr[i].server_names.elts);
