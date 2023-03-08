@@ -406,10 +406,10 @@ static u_char *njt_http_kv_module_rpc_handler(njt_str_t *topic, njt_str_t *reque
         {
             if (handler[i].rpc_handler)
             {
-                *msg++='"';
-                msg = njt_snprintf(msg, handler[i].key.len , "%s", handler[i].key.data);
-                *msg++='"';
-                *msg++=',';
+                *msg++ = '"';
+                msg = njt_snprintf(msg, handler[i].key.len, "%s", handler[i].key.data);
+                *msg++ = '"';
+                *msg++ = ',';
             }
         }
     }
@@ -669,6 +669,10 @@ int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, kv_rpc_
 static void invoke_kv_change_handler(njt_str_t *key, njt_str_t *value)
 {
     njt_uint_t i;
+    if (value == NULL || value->len == 0)
+    {
+        return;
+    }
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke kv change for key:%v value:%v", key, value);
     if (kv_change_handler_fac)
     {
@@ -691,6 +695,11 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
     njt_str_t nstr_topic;
     njt_uint_t topic_sf_len; // topic's second field length
     njt_str_t nstr_msg;
+    // a zero length msg is sent to clear retained message, so skip zero length msg
+    if (msg == NULL || msg_len == 0)
+    {
+        return;
+    }
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke topic msg handler for topic:%s ", topic);
     if (kv_change_handler_fac)
     {

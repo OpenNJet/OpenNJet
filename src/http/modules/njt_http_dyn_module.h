@@ -17,6 +17,11 @@
 #ifndef NJET_MAIN_NJT_HTTP_DYN_MODULE_H
 #define NJET_MAIN_NJT_HTTP_DYN_MODULE_H
 
+#include "njt_core.h"
+#include "njt_json_util.h"
+#include "njt_json_api.h"
+
+#define NJT_HTTP_DYN_LOG 1
 
 typedef struct {
     njt_array_t                *logs;       /* array of njt_http_log_t */
@@ -27,6 +32,35 @@ typedef struct {
 
     njt_uint_t                  off;        /* unsigned  off:1 */
 } njt_http_log_loc_conf_t;
+
+
+typedef struct {
+    njt_str_t                   name;
+    njt_array_t                *flushes;
+    njt_array_t                *ops;        /* array of njt_http_log_op_t */
+#if (NJT_HTTP_DYN_LOG)
+    njt_int_t                   ref_count; //引用计数
+    njt_pool_t                  *pool;     //
+#endif
+
+} njt_http_log_fmt_t;
+
+typedef struct {
+    njt_array_t                *lengths;
+    njt_array_t                *values;
+} njt_http_log_script_t;
+
+typedef struct {
+    njt_open_file_t            *file;
+    njt_http_log_script_t      *script;
+    time_t                      disk_full_time;
+    time_t                      error_log_time;
+    njt_syslog_peer_t          *syslog_peer;
+    njt_http_log_fmt_t         *format;
+    njt_http_complex_value_t   *filter;
+} njt_http_log_t;
+
+
 
 extern njt_module_t  njt_http_log_module;
 
@@ -63,5 +97,24 @@ typedef struct {
     njt_array_t      *rules_un;  /* array of njt_http_access_rule_un_t */
 #endif
 } njt_http_access_loc_conf_t;
+
+
+typedef struct njt_http_dyn_access_api_loc_s njt_http_dyn_access_api_loc_t;
+
+struct njt_http_dyn_access_api_loc_s {
+    njt_str_t full_name;
+    bool log_on;
+    njt_array_t logs;
+    njt_array_t locs;
+};
+
+typedef struct njt_http_dyn_access_log_conf_s njt_http_dyn_access_log_conf_t;
+
+struct njt_http_dyn_access_log_conf_s {
+    njt_str_t format;
+    njt_str_t path;
+};
+
+njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc_t *data,njt_http_conf_ctx_t* ctx);
 
 #endif //NJET_MAIN_NJT_HTTP_DYN_MODULE_H

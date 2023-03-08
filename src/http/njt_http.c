@@ -785,6 +785,13 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         njt_queue_split(locations, q, &tail);
     }
 
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+        if (cscf != NULL && cscf->named_locations != NULL) {
+            njt_pfree(cscf->named_parent_pool, cscf->named_locations);
+        }
+#endif
+        //end
     if (named) {
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
@@ -801,13 +808,6 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         if (clcfp == NULL) {
             return NJT_ERROR;
         }
-        // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
-        if (cscf->named_locations != NULL) {
-            njt_pfree(cscf->named_parent_pool, cscf->named_locations);
-        }
-#endif
-        //end
         cscf->named_locations = clcfp;
 
         for (q = named;
@@ -834,6 +834,14 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 
 #if (NJT_PCRE)
 
+        // by ChengXu
+#if (NJT_HTTP_DYNAMIC_LOC)
+        if (pclcf->regex_locations!= NULL){
+            njt_pfree(pclcf->pool,pclcf->regex_locations);
+            pclcf->regex_locations= NULL;
+        }
+#endif
+        // end
     if (regex) {
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
@@ -848,14 +856,6 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         if (clcfp == NULL) {
             return NJT_ERROR;
         }
-        // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
-        if (pclcf->regex_locations!= NULL){
-            njt_pfree(pclcf->pool,pclcf->regex_locations);
-            pclcf->regex_locations= NULL;
-        }
-#endif
-        // end
         pclcf->regex_locations = clcfp;
 
         for (q = regex;
