@@ -647,22 +647,28 @@ njt_dyn_sendmsg_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
     njt_str_t *value;
     njt_http_sendmsg_conf_t *smcf;
-
+    njt_str_t dst;
+    u_char *p;
+    
     value = cf->args->elts;
     smcf = (njt_http_sendmsg_conf_t *)conf;
 
-    u_char *dst;
-    size_t vl = value[1].len + njt_cycle->prefix.len;
-    dst = njt_pnalloc(cf->pool, vl);
-    if (dst == NULL)
+    dst.data = njt_pnalloc(cf->pool, value[1].len + 1);
+    if (dst.data == NULL)
     {
         return NJT_CONF_ERROR;
     }
-    njt_memcpy(dst, njt_cycle->prefix.data, njt_cycle->prefix.len);
-    njt_memcpy(dst + njt_cycle->prefix.len, value[1].data, value[1].len);
+    dst.len = value[1].len;
+    p = njt_copy(dst.data, value[1].data, value[1].len);
+    *p = '\0';
 
-    smcf->conf_file.data = dst;
-    smcf->conf_file.len = vl;
+    if (njt_get_full_name(cf->pool, (njt_str_t *)&njt_cycle->prefix, &dst) != NJT_OK)
+    {
+        return NJT_CONF_ERROR;
+    }
+
+    smcf->conf_file.data = dst.data;
+    smcf->conf_file.len = dst.len;
     return NJT_CONF_OK;
 }
 
@@ -860,14 +866,14 @@ static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void
         return NJT_ERROR;
     }
 
-    njt_lvlhsh_map_put(rpc_msg_handler_hashmap, &rpc_handler->key, (intptr_t)rpc_handler, (intptr_t*)&old_handler);
-    //if handler existed with the same key in the hashmap
+    njt_lvlhsh_map_put(rpc_msg_handler_hashmap, &rpc_handler->key, (intptr_t)rpc_handler, (intptr_t *)&old_handler);
+    // if handler existed with the same key in the hashmap
     if (old_handler && old_handler != rpc_handler)
     {
         ev = old_handler->ev;
         if (ev && ev->timer_set)
         {
-            njt_free( ev->data);
+            njt_free(ev->data);
             njt_del_timer(ev);
             njt_free(ev);
         }
@@ -911,7 +917,7 @@ static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int 
             {
                 njt_free(ev->data);
                 njt_del_timer(ev);
-                njt_free( ev);
+                njt_free(ev);
             }
             // remove session_id from hash map
             njt_lvlhsh_map_remove(rpc_msg_handler_hashmap, &nstr_key);

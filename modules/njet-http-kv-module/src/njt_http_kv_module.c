@@ -416,7 +416,7 @@ static u_char *njt_http_kv_module_rpc_handler(njt_str_t *topic, njt_str_t *reque
             if (handler->rpc_handler)
             {
                 *msg++ = '"';
-                njt_memcpy(msg,handler->key.data, handler->key.len);
+                njt_memcpy(msg, handler->key.data, handler->key.len);
                 msg += handler->key.len;
                 *msg++ = '"';
                 *msg++ = ',';
@@ -614,22 +614,27 @@ njt_dyn_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
     njt_str_t *value;
     njt_http_kv_conf_t *kvcf;
-
+    njt_str_t dst;
+    u_char *p;
     value = cf->args->elts;
     kvcf = (njt_http_kv_conf_t *)conf;
 
-    u_char *dst;
-    size_t vl = value[1].len + njt_cycle->prefix.len;
-    dst = njt_pnalloc(cf->pool, vl);
-    if (dst == NULL)
+    dst.data = njt_pnalloc(cf->pool, value[1].len + 1);
+    if (dst.data == NULL)
     {
         return NJT_CONF_ERROR;
     }
-    njt_memcpy(dst, njt_cycle->prefix.data, njt_cycle->prefix.len);
-    njt_memcpy(dst + njt_cycle->prefix.len, value[1].data, value[1].len);
+    dst.len = value[1].len;
+    p = njt_copy(dst.data, value[1].data, value[1].len);
+    *p = '\0';
 
-    kvcf->conf_file.data = dst;
-    kvcf->conf_file.len = vl;
+    if (njt_get_full_name(cf->pool, (njt_str_t *)&njt_cycle->prefix, &dst) != NJT_OK)
+    {
+        return NJT_CONF_ERROR;
+    }
+
+    kvcf->conf_file.data = dst.data;
+    kvcf->conf_file.len = dst.len;
     return NJT_CONF_OK;
 }
 
@@ -686,7 +691,7 @@ int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, kv_rpc_
     kv_handler->handler = handler;
     kv_handler->rpc_handler = rpc_handler;
     njt_queue_insert_tail(&kv_handler_queue, &kv_handler->queue);
-    njt_lvlhsh_map_put(kv_handler_hashmap, &kv_handler->key, (intptr_t)kv_handler,(intptr_t*)&old_handler);
+    njt_lvlhsh_map_put(kv_handler_hashmap, &kv_handler->key, (intptr_t)kv_handler, (intptr_t *)&old_handler);
     // if handler existed with the same key in the hashmap
     if (old_handler && old_handler != kv_handler)
     {
