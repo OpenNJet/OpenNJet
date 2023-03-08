@@ -821,7 +821,7 @@ static char * njt_get_http_down_status_name(njt_http_upstream_rr_peer_t *peer)
   return "up";
   
 }
-//{\"processing\":3,\"requests\":8,\"responses\":{\"1xx\":0,\"2xx\":4,\"3xx\":4,\"4xx\":0,\"5xx\":0,\"codes\":{\"200\":4,\"301\":0,\"404\":0,\"503\":0},\"total\":8},\"discarded\":0,\"received\":3828,\"sent\":88036}
+/*
 static njt_int_t
 njt_http_upstream_api_get_peer_from_json(njt_json_manager *json_manager,
                                   njt_http_upstream_peer_code_t *json_peer
@@ -969,7 +969,6 @@ njt_http_upstream_api_get_peer_from_json(njt_json_manager *json_manager,
             continue;
         } 
 
-        /*unknown parameters*/
 	
         rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
         return rc;
@@ -977,7 +976,7 @@ njt_http_upstream_api_get_peer_from_json(njt_json_manager *json_manager,
     }
 
     return rc;
-}
+}*/
 
 
 static njt_int_t
@@ -1122,7 +1121,7 @@ njt_http_upstream_api_compose_one_server(njt_http_request_t *r,
 				json_str.data = v->data;
 				rc = njt_json_2_structure(&json_str, &json_body, r->pool);
 				if(rc == NJT_OK) {
-				  njt_http_upstream_api_get_peer_from_json(&json_body,&peer_code);
+				  //njt_http_upstream_api_get_peer_from_json(&json_body,&peer_code);
 				  if(peer_code.codes && peer_code.codes->nelts > 0) {
 						pele = peer_code.codes->elts;
 						for(i=0; i < peer_code.codes->nelts; i++) {

@@ -3384,125 +3384,18 @@ njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path) {
 }
 
 
-
-#define njt_json_fast_key(key) (u_char*)key,sizeof(key)-1
-#define njt_json_null_key NULL,0
-
-static njt_json_element* njt_json_int_element(njt_pool_t *pool,u_char *key,njt_uint_t len,njt_int_t value){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_INT;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    element->intval = value;
-    end:
-    return element;
-}
-
-static njt_json_element* njt_json_str_element(njt_pool_t *pool,u_char *key,njt_uint_t len,njt_str_t *value){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_STR;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    if(value != NULL){
-        element->strval = *value;
-    }
-    end:
-    return element;
-}
-static njt_json_element* njt_json_bool_element(njt_pool_t *pool, u_char *key,njt_uint_t len,bool value){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_BOOL;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    element->bval = value;
-
-    end:
-    return element;
-}
-
-static njt_json_element* njt_json_obj_element(njt_pool_t *pool,u_char *key,njt_uint_t len){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_OBJ;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    end:
-    return element;
-}
-
-static njt_json_element* njt_json_arr_element(njt_pool_t *pool,u_char *key,njt_uint_t len){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_ARRAY;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    end:
-    return element;
-}
-
-
 static njt_str_t njt_hc_confs_to_json(njt_pool_t *pool, njt_helper_main_conf_t *hmcf) {
     njt_helper_health_check_conf_t *hhccf;
     njt_queue_t *q;
     njt_http_health_check_conf_ctx_t *cf_ctx;
     njt_str_t json;
     njt_json_manager json_manager;
-    njt_json_element *root,*hc,*item;
+    njt_json_element *hc,*item;
+    njt_int_t rc;
 
+    njt_memzero(&json_manager, sizeof(njt_json_manager));
     njt_str_null(&json);
 
-    json_manager.json_keyval = njt_array_create(pool,1,sizeof (njt_json_element));
-    if(json_manager.json_keyval == NULL ){
-        goto err;
-    }
-    root = njt_array_push(json_manager.json_keyval);
-    if(root == NULL ){
-        goto err;
-    }
-    njt_memzero(root, sizeof(njt_json_element));
-    root->type = NJT_JSON_ARRAY;
-    root->sudata = njt_array_create(pool, 4, sizeof(njt_json_element));
-    if(root->sudata == NULL){
-        goto err;
-    }
 
     q = njt_queue_head(&hmcf->hc_queue);
     for (; q != njt_queue_sentinel(&hmcf->hc_queue); q = njt_queue_next(q)) {
@@ -3525,7 +3418,12 @@ static njt_str_t njt_hc_confs_to_json(njt_pool_t *pool, njt_helper_main_conf_t *
             }
             njt_struct_add(hc,item,pool);
         }
-        njt_struct_add(root,hc,pool);
+        rc = njt_struct_top_add(&json_manager, hc, NJT_JSON_ARRAY, pool);
+        if(rc != NJT_OK){
+            njt_log_error(NJT_LOG_ERR, pool->log, 0,
+                          "====njt_struct_top_add error");
+        }
+
     }
 
     njt_memzero(&json, sizeof(njt_str_t));
@@ -3640,21 +3538,16 @@ static njt_str_t njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_ch
     njt_json_manager json_manager;
     njt_json_element *root,*http,*headers,*ssl,*item;
     u_char *str_buf,*last;
+    njt_memzero(&json_manager, sizeof(njt_json_manager));
 
-
-    json_manager.json_keyval = njt_array_create(pool,1,sizeof (njt_json_element));
-    if(json_manager.json_keyval == NULL ){
-        goto err;
-    }
-    root = njt_array_push(json_manager.json_keyval);
+    root = njt_json_obj_element(pool,njt_json_null_key);
     if(root == NULL ){
         goto err;
     }
-    njt_memzero(root, sizeof(njt_json_element));
-    root->type = NJT_JSON_OBJ;
+    json_manager.json_val = root;
 
     str_buf = njt_pcalloc(pool,njt_pagesize);
-    if(root == NULL ){
+    if(str_buf == NULL ){
         goto err;
     }
     last = str_buf + njt_pagesize;
