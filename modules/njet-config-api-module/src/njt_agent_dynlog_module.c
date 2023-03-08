@@ -20,7 +20,27 @@
 #include <njt_http_util.h>
 #include "njt_dynlog_module.h"
 
+#define NJT_HTTP_DYN_LOG 1
 
+static njt_json_define_t njt_http_dyn_access_log_conf_json_dt[] = {
+        {
+                njt_string("formatName"),
+                offsetof(njt_http_dyn_access_log_conf_t, format),
+                0,
+                NJT_JSON_STR,
+                NULL,
+                NULL,
+        },
+        {
+                njt_string("path"),
+                offsetof(njt_http_dyn_access_log_conf_t, path),
+                0,
+                NJT_JSON_STR,
+                NULL,
+                NULL,
+        },
+        njt_json_define_null,
+};
 
 static njt_json_define_t njt_http_dyn_access_api_loc_json_dt[] ={
         {
@@ -37,6 +57,14 @@ static njt_json_define_t njt_http_dyn_access_api_loc_json_dt[] ={
                 0,
                 NJT_JSON_BOOL,
                 NULL,
+                NULL,
+        },
+        {
+                njt_string("accessLogs"),
+                offsetof(njt_http_dyn_access_api_loc_t, logs),
+                sizeof(njt_http_dyn_access_log_conf_t),
+                NJT_JSON_OBJ,
+                njt_http_dyn_access_log_conf_json_dt,
                 NULL,
         },
         {
@@ -77,6 +105,36 @@ static njt_json_define_t njt_http_dyn_access_api_srv_json_dt[] ={
         },
         njt_json_define_null,
 };
+#if (NJT_HTTP_DYN_LOG)
+
+static njt_json_define_t njt_http_dyn_access_log_format_json_dt[] ={
+        {
+                njt_string("name"),
+                offsetof(njt_http_dyn_access_log_format_t, name),
+                0,
+                NJT_JSON_STR,
+                NULL,
+                NULL,
+        },
+        {
+                njt_string("format"),
+                offsetof(njt_http_dyn_access_log_format_t, format),
+                0,
+                NJT_JSON_STR,
+                NULL,
+                NULL,
+        },
+        {
+                njt_string("escape"),
+                offsetof(njt_http_dyn_access_log_format_t, escape),
+                0,
+                NJT_JSON_STR,
+                NULL,
+                NULL,
+        },
+        njt_json_define_null,
+};
+#endif
 
 static njt_json_define_t njt_http_dyn_access_api_main_json_dt[] ={
         {
@@ -87,17 +145,29 @@ static njt_json_define_t njt_http_dyn_access_api_main_json_dt[] ={
                 njt_http_dyn_access_api_srv_json_dt,
                 NULL,
         },
+#if (NJT_HTTP_DYN_LOG)
+
+        {
+                njt_string("accessLogFormat"),
+                offsetof(njt_http_dyn_access_api_main_t, log_formats),
+                sizeof(njt_http_dyn_access_log_format_t),
+                NJT_JSON_OBJ,
+                njt_http_dyn_access_log_format_json_dt,
+                NULL,
+        },
+#endif
         njt_json_define_null,
 };
 
 
-static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q){
+static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt_http_conf_ctx_t *ctx){
     njt_http_core_loc_conf_t  *clcf;
     njt_http_location_queue_t *hlq;
     njt_http_dyn_access_api_loc_t *daal;
     njt_uint_t j;
     njt_queue_t *tq;
-    njt_http_log_loc_conf_t *llcf;
+//    njt_http_log_loc_conf_t *llcf;
+    njt_int_t rc;
 
     if(q == NULL){
         return NJT_OK;
@@ -108,14 +178,28 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q){
         for (;tq!= njt_queue_sentinel(q);tq = njt_queue_next(tq)) {
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
+
             njt_str_t name = daal[j].full_name;
             if (name.len == clcf->full_name.len && njt_strncmp(name.data, clcf->full_name.data, name.len) == 0) {
-                llcf = njt_http_get_module_loc_conf(clcf, njt_http_log_module);
-                llcf->off = daal[j].log_on?0:1;
-                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "change location %V log to %i",&daal[j].full_name,daal[j].log_on);
+//                llcf = njt_http_get_module_loc_conf(clcf, njt_http_log_module);
+                ctx->loc_conf = clcf->loc_conf;
+                njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+                if (pool == NULL) {
+                    return NJT_ERROR;
+                }
+                rc = njt_sub_pool(njt_cycle->pool,pool);
+                if (rc != NJT_OK) {
+                    return NJT_ERROR;
+                }
+                rc = njt_http_log_dyn_set_log(pool, &daal[j],ctx);
+                if(rc != NJT_OK){
+                    njt_destroy_pool(pool);
+                }
+//                llcf->off = daal[j].log_on?0:1;
+//                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "change location %V log to %i",&daal[j].full_name,daal[j].log_on);
             }
             if(daal[j].locs.nelts > 0){
-                njt_dynlog_update_locs_log(&daal[j].locs,clcf->old_locations);
+                njt_dynlog_update_locs_log(&daal[j].locs,clcf->old_locations,ctx);
             }
         }
     }
@@ -140,8 +224,9 @@ static njt_int_t njt_dynlog_update_access_log(njt_pool_t *pool,njt_http_dyn_acce
                           (njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
             continue;
         }
+        njt_http_conf_ctx_t ctx = *cscf->ctx;
         clcf = njt_http_get_module_loc_conf(cscf->ctx,njt_http_core_module);
-        njt_dynlog_update_locs_log(&daas[i].locs,clcf->old_locations);
+        njt_dynlog_update_locs_log(&daas[i].locs,clcf->old_locations,&ctx);
 
     }
     return NJT_OK;
@@ -223,12 +308,55 @@ static njt_json_element* njt_json_arr_element(njt_pool_t *pool,u_char *key,njt_u
     return element;
 }
 
+static njt_json_element* njt_dynlog_dump_log_cf_json(njt_pool_t *pool,njt_array_t *logs) {
+    njt_uint_t i;
+    njt_http_log_t *log;
+    njt_json_element *arr,*path,*format;
+
+    if(logs == NULL || logs->nelts < 1){
+        return NULL;
+    }
+
+    arr = njt_json_arr_element(pool, njt_json_fast_key("accessLogs"));
+    if(arr == NULL){
+        return NULL;
+    }
+    log = logs->elts;
+    for(i = 0 ; i < logs->nelts ; ++i ){
+
+        if(log[i].syslog_peer != NULL){
+
+        }else if(log[i].file != NULL){
+            path = njt_json_str_element(pool, njt_json_fast_key("path"),&log[i].file->name);
+            if(path == NULL){
+                continue;
+            }
+            njt_struct_add(arr,path,pool);
+        }
+//        else if(log[i].script != NULL){
+//            path = njt_json_str_element(pool, njt_json_fast_key("path"),&log[i].script->values);
+//            if(path == NULL){
+//                continue;
+//            }
+//            njt_struct_add(arr,path,pool);
+//        }
+
+        if(log[i].format != NULL){
+            format = njt_json_str_element(pool, njt_json_fast_key("formatName"),&log[i].format->name);
+            if(format == NULL){
+                continue;
+            }
+            njt_struct_add(arr,format,pool);
+        }
+    }
+    return arr;
+}
+
 static njt_json_element* njt_dynlog_dump_locs_json(njt_pool_t *pool,njt_queue_t *locations){
     njt_http_core_loc_conf_t  *clcf;
     njt_http_location_queue_t *hlq;
     njt_queue_t *q,*tq;
     njt_http_log_loc_conf_t *llcf;
-
     njt_json_element *locs,*item,*sub;
 
     if(locations == NULL){
@@ -265,7 +393,12 @@ static njt_json_element* njt_dynlog_dump_locs_json(njt_pool_t *pool,njt_queue_t 
             return NULL;
         }
         njt_struct_add(item,sub,pool);
-
+        if(!llcf->off){
+            sub = njt_dynlog_dump_log_cf_json(pool,llcf->logs);
+            if(sub != NULL){
+                njt_struct_add(item,sub,pool);
+            }
+        }
         sub = njt_dynlog_dump_locs_json(pool,clcf->old_locations);
         if(sub != NULL){
             njt_struct_add(item,sub,pool);
