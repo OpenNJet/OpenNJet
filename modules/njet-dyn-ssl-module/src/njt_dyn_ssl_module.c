@@ -193,7 +193,7 @@ static njt_str_t njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool)
     njt_str_t json,*tmp_str;
     njt_http_server_name_t *server_name;
     njt_json_manager json_manager;
-    njt_json_element *root,*srvs,*srv,*subs,*sub,*item;
+    njt_json_element *srvs,*srv,*subs,*sub,*item;
     njt_str_t *key,*cert;
     njt_http_complex_value_t *var_key,*var_cert;
 
@@ -305,7 +305,6 @@ static njt_str_t njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool)
     }
 
     njt_struct_top_add(&json_manager,srvs,NJT_JSON_OBJ,pool);
-    njt_struct_add(root,srvs,pool);// 顶层
     njt_memzero(&json, sizeof(njt_str_t));
     njt_structure_2_json(&json_manager, &json, pool);
 
