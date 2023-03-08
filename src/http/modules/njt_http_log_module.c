@@ -1298,23 +1298,28 @@ njt_http_log_set_log(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                            "invalid parameter \"%V\"", &value[2]);
         return NJT_CONF_ERROR;
     }
-#if (NJT_HTTP_DYN_LOG)
-    njt_pool_t *old_pool, *new_pool,*old_temp_pool;
-    njt_int_t rc;
-
-    old_pool = cf->pool;
-    old_temp_pool = cf->temp_pool;
-    new_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-    if (new_pool == NULL) {
-        return NJT_CONF_ERROR;
-    }
-    rc = njt_sub_pool(cf->cycle->pool,new_pool);
-    if (rc != NJT_OK) {
-        return NJT_CONF_ERROR;
-    }
-    cf->pool = new_pool;
-    cf->temp_pool = new_pool;
-#endif
+//#if (NJT_HTTP_DYN_LOG)
+//    njt_pool_t *old_pool, *new_pool,*old_temp_pool;
+//    njt_int_t rc;
+//
+//    old_pool = cf->pool;
+//    old_temp_pool = cf->temp_pool;
+//    if(llcf->logs == NULL ){
+//        new_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+//        if (new_pool == NULL) {
+//            return NJT_CONF_ERROR;
+//        }
+//        rc = njt_sub_pool(cf->cycle->pool,new_pool);
+//        if (rc != NJT_OK) {
+//            return NJT_CONF_ERROR;
+//        }
+//    } else{
+//        new_pool = llcf->logs->pool;
+//    }
+//
+//    cf->pool = new_pool;
+//    cf->temp_pool = new_pool;
+//#endif
     if (llcf->logs == NULL) {
         llcf->logs = njt_array_create(cf->pool, 2, sizeof(njt_http_log_t));
         if (llcf->logs == NULL) {
@@ -1578,10 +1583,10 @@ process_formats:
         log->file->flush = njt_http_log_flush;
         log->file->data = buffer;
     }
-#if (NJT_HTTP_DYN_LOG)
-    cf->pool = old_pool ;
-    cf->temp_pool = old_temp_pool;
-#endif
+//#if (NJT_HTTP_DYN_LOG)
+//    cf->pool = old_pool ;
+//    cf->temp_pool = old_temp_pool;
+//#endif
     return NJT_CONF_OK;
 }
 
@@ -2105,7 +2110,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
             .temp_pool = pool,
             .cycle = (njt_cycle_t*)njt_cycle,
             .log = pool->log,
-            .ctx = &ctx,
+            .ctx = ctx,
     };
     cf = &cf_data;
 
@@ -2129,7 +2134,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
 
     llcf->logs = njt_array_create(cf->pool, 2, sizeof(njt_http_log_t));
     if (llcf->logs == NULL) {
-        return NJT_ERROR;
+        goto error ;
     }
     lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_log_module);
 
@@ -2137,27 +2142,27 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
     for(j = 0 ; j < data->logs.nelts ; ++j ){
         log = njt_array_push(llcf->logs); // 动态释放log
         if (log == NULL) {
-            return NJT_ERROR;
+            goto error ;
         }
         njt_memzero(log, sizeof(njt_http_log_t));
         if (log_cf[j].path.len > 7 && njt_strncmp(log_cf[j].path.data, "syslog:", 7) == 0) {
 
             peer = njt_pcalloc(cf->pool, sizeof(njt_syslog_peer_t));
             if (peer == NULL) {
-                return NJT_ERROR;
+                goto error ;
             }
             cf->args = njt_array_create(cf->pool,2, sizeof(njt_str_t));
             if (cf->args == NULL) {
-                return NJT_ERROR;
+                goto error ;
             }
             s = njt_array_push(cf->args);
             if (s == NULL) {
-                return NJT_ERROR;
+                goto error ;
             }
             njt_str_null(s);
             s = njt_array_push(cf->args);
             if (s == NULL) {
-                return NJT_ERROR;
+                goto error ;
             }
             njt_str_copy_pool(pool,(*s),log_cf[j].path,return NJT_ERROR);
 
@@ -2204,22 +2209,16 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
 
         process_formats:
 
-        if (cf->args->nelts >= 3) {
+        if (log_cf[j].format.len > 0) {
             name = log_cf[j].format;
-
-            if (njt_strcmp(name.data, "combined") == 0) {
-                lmcf->combined_used = 1;
-            }
-
         } else {
             njt_str_set(&name, "combined");
-            lmcf->combined_used = 1;
         }
 
         fmt = lmcf->formats.elts;
         for (i = 0; i < lmcf->formats.nelts; i++) {
             if (fmt[i].name.len == name.len
-                && njt_strcasecmp(fmt[i].name.data, name.data) == 0)
+                && njt_strncasecmp(fmt[i].name.data, name.data,name.len) == 0)
             {
                 log->format = &fmt[i];
                 break;
@@ -2235,9 +2234,13 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
 
     // 成功释放原始资源
     if( old_cf.logs != NULL ){
-        njt_destroy_pool(old_cf.logs->pool);
+        if(old_cf.logs->pool != njt_cycle->pool){
+            njt_destroy_pool(old_cf.logs->pool);
+        }
+        old_cf.logs = NULL;
     }
     return NJT_OK;
+
     error:
     // 失败还原配置
     *llcf = old_cf;
