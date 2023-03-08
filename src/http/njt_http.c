@@ -787,7 +787,7 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
-        if (cscf->named_locations != NULL) {
+        if (cscf != NULL && cscf->named_locations != NULL) {
             njt_pfree(cscf->named_parent_pool, cscf->named_locations);
         }
 #endif
