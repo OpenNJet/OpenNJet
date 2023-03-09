@@ -3306,7 +3306,7 @@ njt_http_proxy_create_loc_conf(njt_conf_t *cf)
     conf->upstream.ssl_name = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_server_name = NJT_CONF_UNSET;
     conf->upstream.ssl_verify = NJT_CONF_UNSET;
-    conf->ssl_gm = NJT_CONF_UNSET
+    conf->ssl_gm = NJT_CONF_UNSET;
     conf->upstream.ssl_certificate = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_certificate_key = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_certificate_enc = NJT_CONF_UNSET_PTR;
