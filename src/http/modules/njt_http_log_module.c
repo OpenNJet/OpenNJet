@@ -2101,6 +2101,10 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
     lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_log_module);
 
     log_cf = data->logs.elts;
+    if(data->logs.nelts < 1){
+        njt_log_error(NJT_LOG_ERR, pool->log, 0,"set enable access log,but accessLogs is NULL",&clcf->full_name,data->log_on);
+        goto error ;
+    }
     for(j = 0 ; j < data->logs.nelts ; ++j ){
         log = njt_array_push(llcf->logs); // 动态释放log
         if (log == NULL) {
