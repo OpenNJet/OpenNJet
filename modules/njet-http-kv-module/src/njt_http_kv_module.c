@@ -195,41 +195,44 @@ static void mqtt_loop_mqtt(njt_event_t *ev)
     switch (ret)
     {
     case 0:
-        break;
-    case 4:  // lost connection
+        njt_add_timer(ev, 50);
+        return;
+    case 4:  // no connection
     case 19: // lost keepalive
-    case 7:
+    case 7:  // lost connection
+        njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt_client run ret:%d, ev: %p, ev timeouted %d", ret, ev, ev->timedout);
         mqtt_set_timer(mqtt_connect_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
         break;
     default:
+        njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt client run:%d, what todo ?", ret);
         mqtt_set_timer(mqtt_connect_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
-        njt_log_error(NJT_LOG_ERR, ev->log, 0, "mqtt client run:%d, what todo ?", ret);
     }
-
-    if (!njt_exiting)
-    {
-        njt_add_timer(ev, 50);
-    }
+    return;
 }
 static void mqtt_connect_timeout(njt_event_t *ev)
 {
     njt_connection_t *c = (njt_connection_t *)ev->data;
     struct mqtt_ctx_t *ctx = (struct mqtt_ctx_t *)c->data;
     int ret;
-    njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "Event fired!,try connect again");
+    njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "Event fired!,try connect again, %p ", ev);
     if (ev->timedout)
     {
         ret = mqtt_client_connect(3, 5, ctx);
         if (ret != 0)
         {
-            njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "connect iot failed:%d", ret);
+            if (ret == -5)
+            {
+                njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "client is connecting or has connected");
+                return;
+            }
+            njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect to broker failed:%d", ret);
             njt_add_timer(ev, 1000);
         }
         else
         {
-            njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "connect:%d, registe io", ret);
+            njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect ok, register io");
             mqtt_register_outside_reader(mqtt_loop_mqtt, ctx);
         }
     }
@@ -280,7 +283,7 @@ static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx
 
     ev = njt_palloc(njt_cycle->pool, sizeof(njt_event_t));
     njt_memzero(ev, sizeof(njt_event_t));
-
+    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "in mqtt set timer, ev addr: %p", ev);
     ev->log = njt_cycle->log;
     ev->handler = h;
     ev->cancelable = 1;
