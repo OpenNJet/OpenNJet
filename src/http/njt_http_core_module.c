@@ -965,6 +965,15 @@ njt_http_core_find_config_phase(njt_http_request_t *r,
     r->content_handler = NULL;
     r->uri_changed = 0;
 
+//add by clb
+#if (NJT_HTTP_PROXY_CONNECT)
+    if (r->method == NJT_HTTP_CONNECT) {
+        njt_http_update_location_config(r);
+        r->phase_handler++;
+        return NJT_AGAIN;
+    }
+#endif
+
     rc = njt_http_core_find_location(r);
 
     if (rc == NJT_ERROR) {
