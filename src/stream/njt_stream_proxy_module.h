@@ -38,11 +38,14 @@ typedef struct {
     njt_flag_t                       ssl_server_name;
 
     njt_flag_t                       ssl_verify;
+    njt_flag_t                       ssl_gm;
     njt_uint_t                       ssl_verify_depth;
     njt_str_t                        ssl_trusted_certificate;
     njt_str_t                        ssl_crl;
     njt_stream_complex_value_t      *ssl_certificate;
     njt_stream_complex_value_t      *ssl_certificate_key;
+    njt_stream_complex_value_t      *ssl_certificate_enc;
+    njt_stream_complex_value_t      *ssl_certificate_enc_key;
     njt_array_t                     *ssl_passwords;
     njt_array_t                     *ssl_conf_commands;
     njt_ssl_t                       *ssl;

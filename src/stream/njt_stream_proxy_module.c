@@ -257,6 +257,13 @@ static njt_command_t  njt_stream_proxy_commands[] = {
       offsetof(njt_stream_proxy_srv_conf_t, ssl_verify),
       NULL },
 
+    { njt_string("proxy_ssl_gm"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_proxy_srv_conf_t, ssl_gm),
+      NULL },
+
     { njt_string("proxy_ssl_verify_depth"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_num_slot,
@@ -290,6 +297,20 @@ static njt_command_t  njt_stream_proxy_commands[] = {
       njt_stream_set_complex_value_zero_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(njt_stream_proxy_srv_conf_t, ssl_certificate_key),
+      NULL },
+
+    { njt_string("proxy_ssl_enc_certificate"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
+      njt_stream_set_complex_value_zero_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_proxy_srv_conf_t, ssl_certificate_enc),
+      NULL },
+
+    { njt_string("proxy_ssl_enc_certificate_key"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
+      njt_stream_set_complex_value_zero_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_proxy_srv_conf_t, ssl_certificate_enc_key),
       NULL },
 
     { njt_string("proxy_ssl_password_file"),
@@ -2051,6 +2072,9 @@ njt_stream_proxy_create_srv_conf(njt_conf_t *cf)
     conf->ssl_verify_depth = NJT_CONF_UNSET_UINT;
     conf->ssl_certificate = NJT_CONF_UNSET_PTR;
     conf->ssl_certificate_key = NJT_CONF_UNSET_PTR;
+    conf->ssl_certificate_enc = NJT_CONF_UNSET_PTR;
+    conf->ssl_certificate_enc_key = NJT_CONF_UNSET_PTR;
+    conf->ssl_gm = NJT_CONF_UNSET;
     conf->ssl_passwords = NJT_CONF_UNSET_PTR;
     conf->ssl_conf_commands = NJT_CONF_UNSET_PTR;
 #endif
@@ -2124,6 +2148,8 @@ njt_stream_proxy_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 
     njt_conf_merge_value(conf->ssl_verify, prev->ssl_verify, 0);
 
+    njt_conf_merge_value(conf->ssl_gm, prev->ssl_gm, 0);
+
     njt_conf_merge_uint_value(conf->ssl_verify_depth,
                               prev->ssl_verify_depth, 1);
 
@@ -2137,6 +2163,12 @@ njt_stream_proxy_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 
     njt_conf_merge_ptr_value(conf->ssl_certificate_key,
                               prev->ssl_certificate_key, NULL);
+
+    njt_conf_merge_ptr_value(conf->ssl_certificate_enc,
+                              prev->ssl_certificate_enc, NULL);
+
+    njt_conf_merge_ptr_value(conf->ssl_certificate_enc_key,
+                              prev->ssl_certificate_enc_key, NULL);
 
     njt_conf_merge_ptr_value(conf->ssl_passwords, prev->ssl_passwords, NULL);
 
@@ -2213,8 +2245,14 @@ njt_stream_proxy_set_ssl(njt_conf_t *cf, njt_stream_proxy_srv_conf_t *pscf)
         return NJT_OK;
     }
 
-    if (njt_ssl_create(pscf->ssl, pscf->ssl_protocols, NULL) != NJT_OK) {
-        return NJT_ERROR;
+    if (pscf->ssl_gm == 1) {
+        if (njt_ssl_gm_create(pscf->ssl, pscf->ssl_protocols, NULL) != NJT_OK) {
+            return NJT_ERROR;
+        }           
+    } else {
+        if (njt_ssl_create(pscf->ssl, pscf->ssl_protocols, NULL) != NJT_OK) {
+            return NJT_ERROR;
+        }        
     }
 
     cln = njt_pool_cleanup_add(cf->pool, 0);
@@ -2254,6 +2292,8 @@ njt_stream_proxy_set_ssl(njt_conf_t *cf, njt_stream_proxy_srv_conf_t *pscf)
             if (njt_ssl_certificate(cf, pscf->ssl,
                                     &pscf->ssl_certificate->value,
                                     &pscf->ssl_certificate_key->value,
+                                    &pscf->ssl_certificate_enc->value,
+                                    &pscf->ssl_certificate_enc_key->value,
                                     pscf->ssl_passwords)
                 != NJT_OK)
             {
