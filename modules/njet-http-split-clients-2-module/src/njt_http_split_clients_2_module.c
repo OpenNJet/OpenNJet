@@ -154,7 +154,7 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
                 njt_uint_t sum = 0;
                 for (q = njt_queue_head(values);
                      q != njt_queue_sentinel(values);
-                     q = njt_queue_next(q)) ////
+                     q = njt_queue_next(q))
                 {
                     f = njt_queue_data(q, njt_json_element, ele_queue);
                     if (f->type == NJT_JSON_INT)
@@ -366,11 +366,11 @@ njt_http_split_clients_2_variable(njt_http_request_t *r,
     for (i = 0; i < ctx->parts.nelts; i++)
     {
         percent = part[i].percent;
-        if (part[i].kv_key.len > 0 && percent == 0)
+        if (percent == 0 && !part[i].last)
         {
             continue;
         }
-        if (njt_sample(percent) || percent == 0)
+        if (njt_sample(percent) || part[i].last)
         {
             *v = part[i].value;
             return NJT_OK;
@@ -451,7 +451,14 @@ njt_conf_split_clients_2_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (ctx->parts.nelts != 2)
     {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "split clients 2 should be configured with 2 lines only");
+                           "split clients 2 should be configured with 2 groups, check if there are more than 2 lines");
+        return NJT_CONF_ERROR;
+    }
+
+    if (part[0].last || !part[1].last)
+    {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "split clients 2 should be configured with 2 groups only, and second line should be started with * ");
         return NJT_CONF_ERROR;
     }
 
@@ -488,6 +495,13 @@ njt_http_split_clients_2(njt_conf_t *cf, njt_command_t *dummy, void *conf)
     part->kv_key.data = NULL;
     part->kv_key.len = 0;
 
+    if (cf->args->nelts > 2)
+    {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "split_clients_2 config error, comma is missing", &value[0]);
+
+        return NJT_CONF_ERROR;
+    }
     if (value[0].len == 1 && value[0].data[0] == '*')
     {
         part->last = true;
