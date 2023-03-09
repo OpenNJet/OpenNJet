@@ -148,7 +148,7 @@ static njt_json_define_t njt_http_dyn_access_api_main_json_dt[] ={
 #if (NJT_HTTP_DYN_LOG)
 
         {
-                njt_string("accessLogFormat"),
+                njt_string("accessLogFormats"),
                 offsetof(njt_http_dyn_access_api_main_t, log_formats),
                 sizeof(njt_http_dyn_access_log_format_t),
                 NJT_JSON_OBJ,
@@ -408,7 +408,7 @@ static njt_str_t njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
     if(rc != NJT_OK){
         njt_log_error(NJT_LOG_ALERT, cycle->log, 0,"njt_struct_top_add error");
     }
-    fmts =  njt_json_arr_element(pool,njt_json_fast_key("accessLogFormat"));
+    fmts =  njt_json_arr_element(pool,njt_json_fast_key("accessLogFormats"));
     if(fmts == NULL ){
         goto err;
     }
