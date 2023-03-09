@@ -32,11 +32,6 @@ typedef struct {
     njt_array_t locs;
 }njt_http_dyn_access_api_srv_t;
 
-typedef struct {
-    njt_str_t name;
-    njt_str_t format;
-    njt_str_t escape;
-}njt_http_dyn_access_log_format_t;
 
 typedef struct {
     njt_array_t servers;
