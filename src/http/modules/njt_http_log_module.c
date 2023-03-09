@@ -2118,17 +2118,17 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
             if (cf->args == NULL) {
                 goto error ;
             }
-            s = njt_array_push(cf->args);
+            s = njt_array_push_n(cf->args,2);
             if (s == NULL) {
                 goto error ;
             }
             njt_str_null(s);
-            s = njt_array_push(cf->args);
-            if (s == NULL) {
-                goto error ;
-            }
+            ++s;
+            ++log_cf[j].path.len;
             njt_str_copy_pool(pool,(*s),log_cf[j].path,return NJT_ERROR);
-
+            --log_cf[j].path.len;
+            --s->len;
+            s->data[s->len]='\0';
             if (njt_syslog_process_conf(cf, peer) != NJT_CONF_OK) {
                 goto error ;
             }
@@ -2309,7 +2309,7 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
         return NJT_ERROR;
     }
 
-    rs=njt_http_log_compile_format(cf, fmt->flushes, fmt->ops, cf->args, 0);
+    rs=njt_http_log_compile_format(cf, fmt->flushes, fmt->ops, cf->args, 1);
     if(rs == NJT_CONF_ERROR){
         goto err;
     }
