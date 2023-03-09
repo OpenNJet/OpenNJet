@@ -97,64 +97,6 @@ static njt_json_define_t njt_http_dyn_ssl_api_main_json_dt[] ={
         njt_json_define_null,
 };
 
-#define njt_json_fast_key(key) (u_char*)key,sizeof(key)-1
-#define njt_json_null_key NULL,0
-
-
-
-static njt_json_element* njt_json_str_element(njt_pool_t *pool,u_char *key,njt_uint_t len,njt_str_t *value){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_STR;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    if(value != NULL){
-        element->strval = *value;
-    }
-    end:
-    return element;
-}
-
-static njt_json_element* njt_json_obj_element(njt_pool_t *pool,u_char *key,njt_uint_t len){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_OBJ;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    end:
-    return element;
-}
-
-static njt_json_element* njt_json_arr_element(njt_pool_t *pool,u_char *key,njt_uint_t len){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_ARRAY;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    end:
-    return element;
-}
 
 
 static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool,njt_http_dyn_ssl_api_main_t *api_data){
@@ -251,34 +193,18 @@ static njt_str_t njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool)
     njt_str_t json,*tmp_str;
     njt_http_server_name_t *server_name;
     njt_json_manager json_manager;
-    njt_json_element *root,*srvs,*srv,*subs,*sub,*item;
+    njt_json_element *srvs,*srv,*subs,*sub,*item;
     njt_str_t *key,*cert;
     njt_http_complex_value_t *var_key,*var_cert;
 
     hcmcf = njt_http_cycle_get_module_main_conf(cycle,njt_http_core_module);
 
-    json_manager.json_keyval = njt_array_create(pool,1,sizeof (njt_json_element));
-    if(json_manager.json_keyval == NULL ){
-        goto err;
-    }
-    root = njt_array_push(json_manager.json_keyval);
-    if(root == NULL ){
-        goto err;
-    }
-    njt_memzero(root, sizeof(njt_json_element));
-    root->type = NJT_JSON_OBJ;
+    njt_memzero(&json_manager, sizeof(njt_json_manager));
 
     srvs =  njt_json_arr_element(pool,njt_json_fast_key("servers"));
     if(srvs == NULL ){
         goto err;
     }
-
-    srvs->sudata = njt_array_create(pool,4, sizeof(njt_json_element));
-    if(srvs->sudata == NULL ){
-        goto err;
-    }
-
-
     cscfp = hcmcf->servers.elts;
     for( i = 0; i < hcmcf->servers.nelts; i++){
         array = njt_array_create(pool,4, sizeof(njt_str_t));
@@ -378,7 +304,7 @@ static njt_str_t njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool)
         njt_struct_add(srvs,srv,pool);
     }
 
-    njt_struct_add(root,srvs,pool);// 顶层
+    njt_struct_top_add(&json_manager,srvs,NJT_JSON_OBJ,pool);
     njt_memzero(&json, sizeof(njt_str_t));
     njt_structure_2_json(&json_manager, &json, pool);
 

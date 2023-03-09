@@ -97,10 +97,12 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
     njt_http_split_clients_2_conf_t *sc2cf = (njt_http_split_clients_2_conf_t *)data;
     njt_http_split_clients_2_ctx_t *ctx;
     njt_http_split_clients_2_part_t *part;
-    njt_uint_t i, j, offset, k_l;
+    njt_uint_t i, offset, k_l;
     njt_json_manager json_manager;
     njt_pool_t *tmp_pool;
     njt_int_t rc;
+    njt_queue_t *values, *q;
+    njt_json_element *f;
 
     ctx = (njt_http_split_clients_2_ctx_t *)sc2cf->ctx;
     part = ctx->parts.elts;
@@ -147,13 +149,17 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
             rc = njt_struct_find(out_element, &sk, &tmp_element);
             if (rc == NJT_OK && tmp_element->type == NJT_JSON_OBJ)
             {
-                njt_json_element *kvs = tmp_element->sudata->elts;
+
+                values = &tmp_element->objdata.datas;
                 njt_uint_t sum = 0;
-                for (i = 0; i < tmp_element->sudata->nelts; i++)
+                for (q = njt_queue_head(values);
+                     q != njt_queue_sentinel(values);
+                     q = njt_queue_next(q)) ////
                 {
-                    if (kvs[i].type == NJT_JSON_INT)
+                    f = njt_queue_data(q, njt_json_element, ele_queue);
+                    if (f->type == NJT_JSON_INT)
                     {
-                        sum += kvs[i].intval;
+                        sum += f->intval;
                     }
                 }
                 if (sum > 100)
@@ -164,14 +170,17 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
                 {
                     for (i = 0; i < ctx->parts.nelts; i++)
                     {
-                        for (j = 0; j < tmp_element->sudata->nelts; j++)
+                        for (q = njt_queue_head(values);
+                             q != njt_queue_sentinel(values);
+                             q = njt_queue_next(q))
                         {
+                            f = njt_queue_data(q, njt_json_element, ele_queue);
                             if (!part[i].last &&
-                                kvs[j].type == NJT_JSON_INT &&
-                                kvs[j].key.len == part[i].value.len &&
-                                njt_strncmp(part[i].value.data, kvs[j].key.data, kvs[j].key.len) == 0)
+                                f->type == NJT_JSON_INT &&
+                                f->key.len == part[i].value.len &&
+                                njt_strncmp(part[i].value.data, f->key.data, f->key.len) == 0)
                             {
-                                part[i].percent = kvs[j].intval;
+                                part[i].percent = f->intval;
                                 continue;
                             }
                         }

@@ -26,25 +26,24 @@
 extern njt_cycle_t *njet_master_cycle;
 extern njt_module_t njt_ctrl_config_api_module;
 
-typedef struct njt_http_dyn_access_api_loc_s njt_http_dyn_access_api_loc_t;
-
-struct njt_http_dyn_access_api_loc_s {
-    njt_str_t full_name;
-    bool log_on;
-    njt_array_t locs;
-};
-
 typedef struct {
     njt_array_t listens;
     njt_array_t server_names;
     njt_array_t locs;
 }njt_http_dyn_access_api_srv_t;
+
+typedef struct {
+    njt_str_t name;
+    njt_str_t format;
+    njt_str_t escape;
+}njt_http_dyn_access_log_format_t;
+
 typedef struct {
     njt_array_t servers;
+    njt_array_t log_formats;
     njt_int_t rc;
     unsigned success:1;
 }njt_http_dyn_access_api_main_t;
-
 
 
 #endif //NJET_MAIN_NJT_DYNLOG_MODULE_H
