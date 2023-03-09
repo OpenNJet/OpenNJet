@@ -598,7 +598,6 @@ njt_http_log_script_write(njt_http_request_t *r, njt_http_log_script_t *script,
 
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http log #%d", of.fd);
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log,0,"write fd :%d , file name: %V", of.fd,&log);
     n = njt_write_fd(of.fd, buf, len);
 
     return n;
