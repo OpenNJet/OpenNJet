@@ -1131,8 +1131,10 @@ njt_json_element* njt_json_str_element(njt_pool_t *pool,u_char *key,njt_uint_t l
         element->key.data = key;
         element->key.len = len;
     }
-    if(value != NULL){
+    if(value != NULL && value->len > 0){
         element->strval = *value;
+    }else{
+        njt_str_set(&element->strval, "");
     }
 
     end:
