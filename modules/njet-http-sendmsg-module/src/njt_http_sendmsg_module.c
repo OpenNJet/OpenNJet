@@ -5,6 +5,7 @@
 #include "mosquitto_emb.h"
 #include "njt_http_sendmsg_module.h"
 #include <njt_mqconf_module.h>
+#include <njt_hash_util.h>
 
 #define RPC_TOPIC_PREFIX "/dyn/"
 #define RPC_TOPIC_PREFIX_LEN 5
@@ -15,6 +16,7 @@ typedef struct
 {
     void *data;
     int session_id;
+    njt_str_t key;
     rpc_msg_handler handler;
     njt_event_t *ev;
 } rpc_msg_handler_t;
@@ -57,8 +59,9 @@ static void *njt_http_sendmsg_create_loc_conf(njt_conf_t *cf);
 static char *njt_dyn_kv_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void *data, njt_event_t *ev);
 static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int msg_len);
+static void sendmsg_get_session_id_str(int session_id, njt_str_t *sk);
 
-static njt_array_t *rpc_msg_handler_fac = NULL;
+static njt_lvlhash_map_t *rpc_msg_handler_hashmap = NULL;
 static struct mqtt_ctx_t *sendmsg_mqtt_ctx;
 
 static njt_http_module_t njt_http_sendmsg_module_ctx = {
@@ -125,41 +128,44 @@ static void mqtt_loop_mqtt(njt_event_t *ev)
     switch (ret)
     {
     case 0:
-        break;
-    case 4:  // lost connection
+        njt_add_timer(ev, 50);
+        return;
+    case 4:  // no connection
     case 19: // lost keepalive
-    case 7:
+    case 7:  // lost connection
+        njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt_client run ret:%d, ev: %p, ev timeouted %d", ret, ev, ev->timedout);
         mqtt_set_timer(mqtt_connect_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
         break;
     default:
+        njt_log_error(NJT_LOG_ERR, ev->log, 0, "mqtt client run:%d, what todo ?", ret);
         mqtt_set_timer(mqtt_connect_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
-        njt_log_error(NJT_LOG_ERR, ev->log, 0, "mqtt client run:%d, what todo ?", ret);
     }
-
-    if (!njt_exiting)
-    {
-        njt_add_timer(ev, 50);
-    }
+    return;
 }
 static void mqtt_connect_timeout(njt_event_t *ev)
 {
     njt_connection_t *c = (njt_connection_t *)ev->data;
     struct mqtt_ctx_t *ctx = (struct mqtt_ctx_t *)c->data;
     int ret;
-    njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "Event fired!,try connect again");
+    njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "Event fired!,try connect again, %p ", ev);
     if (ev->timedout)
     {
         ret = mqtt_client_connect(3, 5, ctx);
         if (ret != 0)
         {
-            njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "connect iot failed:%d", ret);
+            if (ret == -5)
+            {
+                njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "client is connecting or has connected");
+                return;
+            }
+            njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect to broker failed:%d", ret);
             njt_add_timer(ev, 1000);
         }
         else
         {
-            njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "connect:%d, registe io", ret);
+            njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect ok, register io");
             mqtt_register_outside_reader(mqtt_loop_mqtt, ctx);
         }
     }
@@ -211,7 +217,7 @@ static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx
 
     ev = njt_palloc(njt_cycle->pool, sizeof(njt_event_t));
     njt_memzero(ev, sizeof(njt_event_t));
-
+    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "in mqtt set timer, ev addr: %p", ev);
     ev->log = njt_cycle->log;
     ev->handler = h;
     ev->cancelable = 1;
@@ -644,22 +650,28 @@ njt_dyn_sendmsg_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
     njt_str_t *value;
     njt_http_sendmsg_conf_t *smcf;
+    njt_str_t dst;
+    u_char *p;
 
     value = cf->args->elts;
     smcf = (njt_http_sendmsg_conf_t *)conf;
 
-    u_char *dst;
-    size_t vl = value[1].len + njt_cycle->prefix.len;
-    dst = njt_pnalloc(cf->pool, vl);
-    if (dst == NULL)
+    dst.data = njt_pnalloc(cf->pool, value[1].len + 1);
+    if (dst.data == NULL)
     {
         return NJT_CONF_ERROR;
     }
-    njt_memcpy(dst, njt_cycle->prefix.data, njt_cycle->prefix.len);
-    njt_memcpy(dst + njt_cycle->prefix.len, value[1].data, value[1].len);
+    dst.len = value[1].len;
+    p = njt_copy(dst.data, value[1].data, value[1].len);
+    *p = '\0';
 
-    smcf->conf_file.data = dst;
-    smcf->conf_file.len = vl;
+    if (njt_get_full_name(cf->pool, (njt_str_t *)&njt_cycle->prefix, &dst) != NJT_OK)
+    {
+        return NJT_CONF_ERROR;
+    }
+
+    smcf->conf_file.data = dst.data;
+    smcf->conf_file.len = dst.len;
     return NJT_CONF_OK;
 }
 
@@ -709,11 +721,31 @@ error:
 
 static void njt_sendmsg_rpc_timer_fired(njt_event_t *ev)
 {
-    rpc_msg_handler_t *h;
+    rpc_msg_handler_t *h, *rpc_handler;
+    njt_int_t rc;
+    njt_str_t nstr_key;
     if (ev->timedout)
     {
         h = (rpc_msg_handler_t *)ev->data;
         invoke_rpc_msg_handler(RPC_RC_TIMEOUT, h->session_id, "", 0);
+
+        sendmsg_get_session_id_str(h->session_id, &nstr_key);
+
+        if (nstr_key.data == NULL)
+        {
+            goto end;
+        }
+
+        rc = njt_lvlhsh_map_get(rpc_msg_handler_hashmap, &nstr_key, (intptr_t *)&rpc_handler);
+        if (rc == NJT_OK)
+        {
+            // remove session_id from hash map
+            njt_lvlhsh_map_remove(rpc_msg_handler_hashmap, &nstr_key);
+            njt_free(rpc_handler->key.data);
+            njt_free(rpc_handler);
+        }
+        njt_free(nstr_key.data);
+    end:
         njt_free(ev->data);
         njt_free(ev);
     }
@@ -793,62 +825,108 @@ int njt_dyn_kv_set(njt_str_t *key, njt_str_t *value)
     return NJT_OK;
 }
 
+static void sendmsg_get_session_id_str(int session_id, njt_str_t *sk)
+{
+    njt_uint_t sess_len;
+    u_char sess_str[24] = {0};
+    u_char *end;
+    end = njt_snprintf(sess_str, 24, "%d", session_id);
+    sess_len = end - sess_str;
+    sk->len = sess_len;
+    sk->data = njt_calloc(sess_len, njt_cycle->log);
+    if (sk->data != NULL)
+    {
+        njt_memcpy(sk->data, sess_str, sess_len);
+    }
+    return;
+}
+
 static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void *data, njt_event_t *ev)
 {
-    njt_uint_t i;
-    if (rpc_msg_handler_fac == NULL)
-        rpc_msg_handler_fac = njt_array_create(njt_cycle->pool, 4, sizeof(rpc_msg_handler_t));
-
-    rpc_msg_handler_t *tm_handler = rpc_msg_handler_fac->elts;
-    for (i = 0; i < rpc_msg_handler_fac->nelts; i++)
+    rpc_msg_handler_t *rpc_handler, *old_handler;
+    if (rpc_msg_handler_hashmap == NULL)
     {
-        if (tm_handler[i].session_id == session_id)
-        {
-            tm_handler[i].handler = handler;
-            tm_handler[i].data = data;
-            tm_handler[i].ev = ev;
-            return NJT_OK;
-        }
+        rpc_msg_handler_hashmap = njt_calloc(sizeof(njt_lvlhash_map_t), njt_cycle->log);
     }
 
-    rpc_msg_handler_t *rpc_handle = njt_array_push(rpc_msg_handler_fac);
-    rpc_handle->session_id = session_id;
-    rpc_handle->data = data;
-    rpc_handle->handler = handler;
-    rpc_handle->ev = ev;
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add rpc handler for session_id:%d", &session_id);
+    rpc_handler = njt_calloc(sizeof(rpc_msg_handler_t), njt_cycle->log);
+
+    if (rpc_handler == NULL)
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg rpc handler for sessio_id :%d", session_id);
+        return NJT_ERROR;
+    }
+
+    rpc_handler->session_id = session_id;
+    rpc_handler->data = data;
+    rpc_handler->handler = handler;
+    rpc_handler->ev = ev;
+
+    sendmsg_get_session_id_str(session_id, &rpc_handler->key);
+    if (rpc_handler->key.data == NULL)
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg rpc handler for sessio_id :%d", session_id);
+        return NJT_ERROR;
+    }
+
+    njt_lvlhsh_map_put(rpc_msg_handler_hashmap, &rpc_handler->key, (intptr_t)rpc_handler, (intptr_t *)&old_handler);
+    // if handler existed with the same key in the hashmap
+    if (old_handler && old_handler != rpc_handler)
+    {
+        ev = old_handler->ev;
+        if (ev && ev->timer_set)
+        {
+            njt_free(ev->data);
+            njt_del_timer(ev);
+            njt_free(ev);
+        }
+        njt_free(old_handler->key.data);
+        njt_free(old_handler);
+    }
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add rpc handler %p for session_id %d : %v", rpc_handler, session_id, &rpc_handler->key);
     return NJT_OK;
 }
 
 static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int msg_len)
 {
-    njt_uint_t i;
-    njt_str_t nstr_msg;
+    njt_int_t hash_rc;
+    njt_str_t nstr_msg, nstr_key;
     njt_dyn_rpc_res_t res;
     njt_event_t *ev;
-    if (rpc_msg_handler_fac)
+    rpc_msg_handler_t *rpc_handler;
+
+    if (rpc_msg_handler_hashmap)
     {
-        rpc_msg_handler_t *tm_handler = rpc_msg_handler_fac->elts;
-        for (i = 0; i < rpc_msg_handler_fac->nelts; i++)
+        sendmsg_get_session_id_str(session_id, &nstr_key);
+        if (nstr_key.data == NULL)
         {
-            if (tm_handler[i].session_id == session_id)
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg rpc handler for sessio_id :%d", session_id);
+            return;
+        }
+
+        hash_rc = njt_lvlhsh_map_get(rpc_msg_handler_hashmap, &nstr_key, (intptr_t *)&rpc_handler);
+        if (hash_rc == NJT_OK)
+        {
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got rpc handler : %p for session_id %d", rpc_handler, session_id);
+            nstr_msg.data = (u_char *)msg;
+            nstr_msg.len = msg_len;
+            res.session_id = session_id;
+            res.data = rpc_handler->data;
+            res.rc = rc;
+            rpc_handler->handler(&res, &nstr_msg);
+            // remove timer
+            ev = rpc_handler->ev;
+            if (ev && ev->timer_set)
             {
-                nstr_msg.data = (u_char *)msg;
-                nstr_msg.len = msg_len;
-                res.session_id = session_id;
-                res.data = tm_handler[i].data;
-                res.rc = rc;
-                tm_handler[i].handler(&res, &nstr_msg);
-                // remove timer
-                ev = tm_handler[i].ev;
-                if (ev->timer_set)
-                {
-                    njt_free(ev->data);
-                    njt_del_timer(ev);
-                    njt_free(ev);
-                }
-                break;
+                njt_free(ev->data);
+                njt_del_timer(ev);
+                njt_free(ev);
             }
+            // remove session_id from hash map
+            njt_lvlhsh_map_remove(rpc_msg_handler_hashmap, &nstr_key);
+            njt_free(rpc_handler->key.data);
+            njt_free(rpc_handler);
         }
     }
+    njt_free(nstr_key.data);
 }

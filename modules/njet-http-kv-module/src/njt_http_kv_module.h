@@ -2,8 +2,6 @@
 #define NJT_HTTP_KV_MODULE_H_
 #include <njt_core.h>
 
-#include <njt_core.h>
-
 typedef int (*kv_change_handler)(njt_str_t *key, njt_str_t *value, void *data);
 
 //u_char is malloc in handler and free by caller, returned string length should set in len 
