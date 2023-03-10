@@ -1022,6 +1022,13 @@ njt_int_t njt_struct_top_add(njt_json_manager *pjson_manager,
         }
 
         pjson_manager->json_val->type = root_type;
+
+        if(root_type == NJT_JSON_ARRAY){
+            njt_queue_init(&pjson_manager->json_val->arrdata);
+        }else if(root_type == NJT_JSON_OBJ){
+            pjson_manager->json_val->objdata.lvlhsh = NULL;
+            njt_queue_init(&pjson_manager->json_val->objdata.datas);
+        }
     }
 
     if(pjson_manager->json_val->type != NJT_JSON_ARRAY && 
@@ -1106,4 +1113,166 @@ njt_int_t njt_struct_array_delete(njt_json_element *element)
     njt_queue_remove(&element->ele_queue);
 
     return NJT_OK;
+}
+
+
+njt_json_element* njt_json_str_element(njt_pool_t *pool,u_char *key,njt_uint_t len,njt_str_t *value)
+{
+    njt_json_element *element;
+
+    element = NULL;
+    element = njt_pcalloc(pool,sizeof (njt_json_element));
+    if(element == NULL ){
+        goto end;
+    }
+    element->type = NJT_JSON_STR;
+    element->key.len = 0;
+    if(key != NULL){
+        element->key.data = key;
+        element->key.len = len;
+    }
+    if(value != NULL && value->len > 0){
+        element->strval = *value;
+    }else{
+        njt_str_set(&element->strval, "");
+    }
+
+    end:
+    return element;
+}
+
+
+njt_json_element* njt_json_bool_element(njt_pool_t *pool, u_char *key,njt_uint_t len,bool value)
+{
+    njt_json_element *element;
+
+    element = NULL;
+    element = njt_pcalloc(pool,sizeof (njt_json_element));
+    if(element == NULL ){
+        goto end;
+    }
+    element->type = NJT_JSON_BOOL;
+    element->key.len = 0;
+    if(key != NULL){
+        element->key.data = key;
+        element->key.len = len;
+    }
+    element->bval = value;
+
+    end:
+    return element;
+}
+
+
+njt_json_element* njt_json_arr_element(njt_pool_t *pool,u_char *key,njt_uint_t len)
+{
+    njt_json_element *element;
+
+    element = NULL;
+    element = njt_pcalloc(pool,sizeof (njt_json_element));
+    if(element == NULL ){
+        goto end;
+    }
+    element->type = NJT_JSON_ARRAY;
+    element->key.len = 0;
+    if(key != NULL){
+        element->key.data = key;
+        element->key.len = len;
+    }
+
+    njt_queue_init(&element->arrdata);
+
+    end:
+    return element;
+}
+
+
+njt_json_element* njt_json_obj_element(njt_pool_t *pool,u_char *key, njt_uint_t len)
+{
+    njt_json_element *element;
+
+    element = NULL;
+    element = njt_pcalloc(pool,sizeof (njt_json_element));
+    if(element == NULL ){
+        goto end;
+    }
+    element->type = NJT_JSON_OBJ;
+    element->key.len = 0;
+    if(key != NULL){
+        element->key.data = key;
+        element->key.len = len;
+    }
+
+    element->objdata.lvlhsh = NULL;
+    njt_queue_init(&element->objdata.datas);
+
+    end:
+    return element;
+
+}
+
+
+njt_json_element* njt_json_int_element(njt_pool_t *pool,u_char *key, njt_uint_t len, int64_t intval)
+{
+    njt_json_element *element;
+    
+    element = NULL;
+    element = njt_pcalloc(pool,sizeof (njt_json_element));
+    if(element == NULL ){
+        goto end;
+    }
+    element->type = NJT_JSON_INT;
+    element->key.len = 0;
+    if(key != NULL){
+        element->key.data = key;
+        element->key.len = len;
+    }
+    
+    element->intval = intval;
+    
+    end:
+    return element;
+}
+
+
+njt_json_element* njt_json_double_element(njt_pool_t *pool,u_char *key, njt_uint_t len, double doubleval)
+{
+    njt_json_element *element;
+
+    element = NULL;
+    element = njt_pcalloc(pool,sizeof (njt_json_element));
+    if(element == NULL ){
+        goto end;
+    }
+    element->type = NJT_JSON_DOUBLE;
+    element->key.len = 0;
+    if(key != NULL){
+        element->key.data = key;
+        element->key.len = len;
+    }
+    element->doubleval = doubleval;
+
+    end:
+    return element;
+}
+
+
+njt_json_element* njt_json_null_element(njt_pool_t *pool,u_char *key, njt_uint_t len)
+{
+    njt_json_element *element;
+
+    element = NULL;
+    element = njt_pcalloc(pool,sizeof (njt_json_element));
+    if(element == NULL ){
+        goto end;
+    }
+    element->type = NJT_JSON_NULL;
+    element->key.len = 0;
+    if(key != NULL){
+        element->key.data = key;
+        element->key.len = len;
+    }
+
+    end:
+    return element;
 }

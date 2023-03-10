@@ -5,6 +5,7 @@
 #include "mosquitto_emb.h"
 #include "njt_http_kv_module.h"
 #include <njt_mqconf_module.h>
+#include <njt_hash_util.h>
 
 #define IOT_HELPER_NAME "iot"
 #define IOT_HELPER_NAME_LEN 3
@@ -20,6 +21,7 @@ typedef struct
     njt_str_t key;
     kv_change_handler handler;
     kv_rpc_handler rpc_handler;
+    njt_queue_t queue;
 } kv_change_handler_t;
 
 typedef struct
@@ -55,7 +57,9 @@ static njt_rbtree_node_t kv_sentinel;
 static struct mqtt_ctx_t *local_mqtt_ctx;
 static char mqtt_kv_topic[128];
 static njt_str_t cluster_name;
-static njt_array_t *kv_change_handler_fac = NULL;
+
+static njt_lvlhash_map_t *kv_handler_hashmap = NULL;
+static njt_queue_t kv_handler_queue;
 
 static njt_http_module_t njt_http_kv_module_ctx = {
     njt_http_kv_add_variables, /* preconfiguration */
@@ -191,41 +195,44 @@ static void mqtt_loop_mqtt(njt_event_t *ev)
     switch (ret)
     {
     case 0:
-        break;
-    case 4:  // lost connection
+        njt_add_timer(ev, 50);
+        return;
+    case 4:  // no connection
     case 19: // lost keepalive
-    case 7:
+    case 7:  // lost connection
+        njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt_client run ret:%d, ev: %p, ev timeouted %d", ret, ev, ev->timedout);
         mqtt_set_timer(mqtt_connect_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
         break;
     default:
+        njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt client run:%d, what todo ?", ret);
         mqtt_set_timer(mqtt_connect_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
-        njt_log_error(NJT_LOG_ERR, ev->log, 0, "mqtt client run:%d, what todo ?", ret);
     }
-
-    if (!njt_exiting)
-    {
-        njt_add_timer(ev, 50);
-    }
+    return;
 }
 static void mqtt_connect_timeout(njt_event_t *ev)
 {
     njt_connection_t *c = (njt_connection_t *)ev->data;
     struct mqtt_ctx_t *ctx = (struct mqtt_ctx_t *)c->data;
     int ret;
-    njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "Event fired!,try connect again");
+    njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "Event fired!,try connect again, %p ", ev);
     if (ev->timedout)
     {
         ret = mqtt_client_connect(3, 5, ctx);
         if (ret != 0)
         {
-            njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "connect iot failed:%d", ret);
+            if (ret == -5)
+            {
+                njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "client is connecting or has connected");
+                return;
+            }
+            njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect to broker failed:%d", ret);
             njt_add_timer(ev, 1000);
         }
         else
         {
-            njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "connect:%d, registe io", ret);
+            njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect ok, register io");
             mqtt_register_outside_reader(mqtt_loop_mqtt, ctx);
         }
     }
@@ -276,7 +283,7 @@ static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx
 
     ev = njt_palloc(njt_cycle->pool, sizeof(njt_event_t));
     njt_memzero(ev, sizeof(njt_event_t));
-
+    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "in mqtt set timer, ev addr: %p", ev);
     ev->log = njt_cycle->log;
     ev->handler = h;
     ev->cancelable = 1;
@@ -378,18 +385,21 @@ static int msg_callback(const char *topic, const char *msg, int msg_len, void *o
 
 static u_char *njt_http_kv_module_rpc_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data)
 {
-    njt_uint_t i;
     njt_uint_t str_len = 0;
+    njt_queue_t *q;
+    kv_change_handler_t *handler;
 
     str_len++; // [
-    if (kv_change_handler_fac)
+    if (kv_handler_hashmap)
     {
-        kv_change_handler_t *handler = kv_change_handler_fac->elts;
-        for (i = 0; i < kv_change_handler_fac->nelts; i++)
+        for (q = njt_queue_head(&kv_handler_queue);
+             q != njt_queue_sentinel(&kv_handler_queue);
+             q = njt_queue_next(q))
         {
-            if (handler[i].rpc_handler)
+            handler = njt_queue_data(q, kv_change_handler_t, queue);
+            if (handler->rpc_handler)
             {
-                str_len += handler[i].key.len + 3; // "KEY_NAME",
+                str_len += handler->key.len + 3; // "KEY_NAME",
             }
         }
     }
@@ -399,15 +409,18 @@ static u_char *njt_http_kv_module_rpc_handler(njt_str_t *topic, njt_str_t *reque
     pmsg = msg;
     msg[0] = '[';
     msg++;
-    if (kv_change_handler_fac)
+    if (kv_handler_hashmap)
     {
-        kv_change_handler_t *handler = kv_change_handler_fac->elts;
-        for (i = 0; i < kv_change_handler_fac->nelts; i++)
+        for (q = njt_queue_head(&kv_handler_queue);
+             q != njt_queue_sentinel(&kv_handler_queue);
+             q = njt_queue_next(q))
         {
-            if (handler[i].rpc_handler)
+            handler = njt_queue_data(q, kv_change_handler_t, queue);
+            if (handler->rpc_handler)
             {
                 *msg++ = '"';
-                msg = njt_snprintf(msg, handler[i].key.len, "%s", handler[i].key.data);
+                njt_memcpy(msg, handler->key.data, handler->key.len);
+                msg += handler->key.len;
                 *msg++ = '"';
                 *msg++ = ',';
             }
@@ -604,22 +617,27 @@ njt_dyn_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
     njt_str_t *value;
     njt_http_kv_conf_t *kvcf;
-
+    njt_str_t dst;
+    u_char *p;
     value = cf->args->elts;
     kvcf = (njt_http_kv_conf_t *)conf;
 
-    u_char *dst;
-    size_t vl = value[1].len + njt_cycle->prefix.len;
-    dst = njt_pnalloc(cf->pool, vl);
-    if (dst == NULL)
+    dst.data = njt_pnalloc(cf->pool, value[1].len + 1);
+    if (dst.data == NULL)
     {
         return NJT_CONF_ERROR;
     }
-    njt_memcpy(dst, njt_cycle->prefix.data, njt_cycle->prefix.len);
-    njt_memcpy(dst + njt_cycle->prefix.len, value[1].data, value[1].len);
+    dst.len = value[1].len;
+    p = njt_copy(dst.data, value[1].data, value[1].len);
+    *p = '\0';
 
-    kvcf->conf_file.data = dst;
-    kvcf->conf_file.len = vl;
+    if (njt_get_full_name(cf->pool, (njt_str_t *)&njt_cycle->prefix, &dst) != NJT_OK)
+    {
+        return NJT_CONF_ERROR;
+    }
+
+    kvcf->conf_file.data = dst.data;
+    kvcf->conf_file.len = dst.len;
     return NJT_CONF_OK;
 }
 
@@ -649,42 +667,61 @@ njt_http_kv_add_variables(njt_conf_t *cf)
 
 int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, kv_rpc_handler rpc_handler, void *data)
 {
-    // TODO: need to change to use hashmap data structure
-    if (kv_change_handler_fac == NULL)
-        kv_change_handler_fac = njt_array_create(njt_cycle->pool, 4, sizeof(kv_change_handler_t));
+    kv_change_handler_t *kv_handler, *old_handler;
+    if (kv_handler_hashmap == NULL)
+    {
+        kv_handler_hashmap = njt_calloc(sizeof(njt_lvlhash_map_t), njt_cycle->log);
+        njt_queue_init(&kv_handler_queue);
+    }
+    kv_handler = njt_calloc(sizeof(kv_change_handler_t), njt_cycle->log);
 
-    kv_change_handler_t *kv_handle = njt_array_push(kv_change_handler_fac);
+    if (kv_handler == NULL)
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg kv handler for key :%v ", key);
+        return NJT_ERROR;
+    }
 
-    kv_handle->key.data = (u_char *)njt_pcalloc(njt_cycle->pool, key->len);
-    njt_memcpy(kv_handle->key.data, key->data, key->len);
-    kv_handle->key.len = key->len;
+    kv_handler->key.data = (u_char *)njt_calloc(key->len, njt_cycle->log);
+    if (kv_handler->key.data == NULL)
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler key's memory while reg kv handler for key :%v ", key);
+        return NJT_ERROR;
+    }
+    njt_memcpy(kv_handler->key.data, key->data, key->len);
+    kv_handler->key.len = key->len;
 
-    kv_handle->data = data;
-    kv_handle->handler = handler;
-    kv_handle->rpc_handler = rpc_handler;
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add kv handler for key:%v", &kv_handle->key);
+    kv_handler->data = data;
+    kv_handler->handler = handler;
+    kv_handler->rpc_handler = rpc_handler;
+    njt_queue_insert_tail(&kv_handler_queue, &kv_handler->queue);
+    njt_lvlhsh_map_put(kv_handler_hashmap, &kv_handler->key, (intptr_t)kv_handler, (intptr_t *)&old_handler);
+    // if handler existed with the same key in the hashmap
+    if (old_handler && old_handler != kv_handler)
+    {
+        njt_free(old_handler->key.data);
+        njt_free(old_handler);
+    }
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "set  kv handler into hash: %p: %v", kv_handler, &kv_handler->key);
     return NJT_OK;
 }
 
 static void invoke_kv_change_handler(njt_str_t *key, njt_str_t *value)
 {
-    njt_uint_t i;
+    njt_int_t rc;
+    kv_change_handler_t *kv_handler;
     if (value == NULL || value->len == 0)
     {
         return;
     }
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke kv change for key:%v value:%v", key, value);
-    if (kv_change_handler_fac)
+
+    if (kv_handler_hashmap)
     {
-        kv_change_handler_t *kv_handle = kv_change_handler_fac->elts;
-        for (i = 0; i < kv_change_handler_fac->nelts; i++)
+        rc = njt_lvlhsh_map_get(kv_handler_hashmap, key, (intptr_t *)&kv_handler);
+        if (rc == NJT_OK)
         {
-            // key and handler key are the same, "kv_http_"
-            if (kv_handle[i].handler &&
-                njt_strncmp(key->data, kv_handle[i].key.data, kv_handle[i].key.len) == 0)
-            {
-                kv_handle[i].handler(&kv_handle[i].key, value, kv_handle[i].data);
-            }
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "got kv handler : %p for key %v", kv_handler, key);
+            kv_handler->handler(key, value, kv_handler->data);
         }
     }
 }
@@ -693,15 +730,17 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
 {
     njt_uint_t i;
     njt_str_t nstr_topic;
-    njt_uint_t topic_sf_len; // topic's second field length
     njt_str_t nstr_msg;
+    njt_str_t hash_key;
+    njt_int_t rc;
+    kv_change_handler_t *tm_handler;
     // a zero length msg is sent to clear retained message, so skip zero length msg
     if (msg == NULL || msg_len == 0)
     {
         return;
     }
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke topic msg handler for topic:%s ", topic);
-    if (kv_change_handler_fac)
+    if (kv_handler_hashmap)
     {
         // found second field of topic's length,  for example: topic /dyn/loc/1 , second field is "loc", length is 3
         for (i = DYN_TOPIC_PREFIX_LEN; i < strlen(topic); i++)
@@ -709,20 +748,17 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
             if (topic[i] == '/')
                 break;
         }
-        topic_sf_len = i - DYN_TOPIC_PREFIX_LEN;
-        kv_change_handler_t *tm_handler = kv_change_handler_fac->elts;
-        for (i = 0; i < kv_change_handler_fac->nelts; i++)
+        hash_key.len = i - DYN_TOPIC_PREFIX_LEN;
+        hash_key.data = (u_char *)topic + DYN_TOPIC_PREFIX_LEN;
+        rc = njt_lvlhsh_map_get(kv_handler_hashmap, &hash_key, (intptr_t *)&tm_handler);
+        if (rc == NJT_OK)
         {
-            if (tm_handler[i].handler &&
-                topic_sf_len == tm_handler[i].key.len &&
-                njt_strncmp(topic + DYN_TOPIC_PREFIX_LEN, tm_handler[i].key.data, tm_handler[i].key.len) == 0)
-            {
-                nstr_topic.data = (u_char *)topic;
-                nstr_topic.len = strlen(topic);
-                nstr_msg.data = (u_char *)msg;
-                nstr_msg.len = msg_len;
-                tm_handler[i].handler(&nstr_topic, &nstr_msg, tm_handler[i].data);
-            }
+            nstr_topic.data = (u_char *)topic;
+            nstr_topic.len = strlen(topic);
+            nstr_msg.data = (u_char *)msg;
+            nstr_msg.len = msg_len;
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got kv handler : %p, %v", tm_handler, &tm_handler->key);
+            tm_handler->handler(&nstr_topic, &nstr_msg, tm_handler->data);
         }
     }
 }
@@ -731,10 +767,12 @@ static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_le
 {
     njt_uint_t i;
     njt_str_t nstr_topic;
-    njt_uint_t topic_sf_len; // topic's second field length
+    njt_str_t hash_key;
     njt_str_t nstr_msg;
+    njt_int_t rc;
+    kv_change_handler_t *kv_handler;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke rpc handler for topic:%s ", topic);
-    if (kv_change_handler_fac)
+    if (kv_handler_hashmap)
     {
         // found second field of topic's length,  for example: topic /rpc/detail/1 , second field is "detail" length is 5
         for (i = RPC_TOPIC_PREFIX_LEN; i < strlen(topic); i++)
@@ -742,20 +780,16 @@ static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_le
             if (topic[i] == '/')
                 break;
         }
-        topic_sf_len = i - RPC_TOPIC_PREFIX_LEN;
-        kv_change_handler_t *tm_handler = kv_change_handler_fac->elts;
-        for (i = 0; i < kv_change_handler_fac->nelts; i++)
+        hash_key.len = i - RPC_TOPIC_PREFIX_LEN;
+        hash_key.data = (u_char *)topic + RPC_TOPIC_PREFIX_LEN;
+        rc = njt_lvlhsh_map_get(kv_handler_hashmap, &hash_key, (intptr_t *)&kv_handler);
+        if (rc == NJT_OK)
         {
-            if (tm_handler[i].rpc_handler &&
-                topic_sf_len == tm_handler[i].key.len &&
-                njt_strncmp(topic + RPC_TOPIC_PREFIX_LEN, tm_handler[i].key.data, tm_handler[i].key.len) == 0)
-            {
-                nstr_topic.data = (u_char *)topic;
-                nstr_topic.len = strlen(topic);
-                nstr_msg.data = (u_char *)msg;
-                nstr_msg.len = msg_len;
-                return tm_handler[i].rpc_handler(&nstr_topic, &nstr_msg, len, tm_handler[i].data);
-            }
+            nstr_topic.data = (u_char *)topic;
+            nstr_topic.len = strlen(topic);
+            nstr_msg.data = (u_char *)msg;
+            nstr_msg.len = msg_len;
+            return kv_handler->rpc_handler(&nstr_topic, &nstr_msg, len, kv_handler->data);
         }
     }
     return NULL;
