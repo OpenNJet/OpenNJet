@@ -33,6 +33,7 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-kv-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-sendmsg-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-split-clients-2-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-health-check-helper"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-doc-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./src/ext/lua/http"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./src/ext/lua/stream"
 #NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"
@@ -43,6 +44,32 @@ flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --with-debug --build=NJT1.0_$git_
 #CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan"
 LD_OPT="-L./3rd_lib -ldl"
 CC_OPT="-O0 -ggdb"
+
+#api doc make tar file 
+doctar=doc.tar
+
+if [ -f $doctar ]
+then
+   rm $doctar
+fi
+
+if [ -f $doctar.gz ]
+then
+   rm $doctar.gz
+fi
+tar cvf $doctar doc
+gzip $doctar
+xxd -i $doctar.gz > src/http/njt_doc_gz.h
+if [ -f $doctar ]
+then
+   rm $doctar
+fi
+
+if [ -f $doctar.gz ]
+then
+   rm $doctar.gz
+fi
+
 cdir=`cd $(dirname $0); pwd`
 (
     cd $cdir
