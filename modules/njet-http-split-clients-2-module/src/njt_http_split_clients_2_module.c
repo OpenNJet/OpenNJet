@@ -498,7 +498,7 @@ njt_http_split_clients_2(njt_conf_t *cf, njt_command_t *dummy, void *conf)
     if (cf->args->nelts > 2)
     {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "split_clients_2 config error, comma is missing", &value[0]);
+                           "split_clients_2 config error, semicolon is missing", &value[0]);
 
         return NJT_CONF_ERROR;
     }
