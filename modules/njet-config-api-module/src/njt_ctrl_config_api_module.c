@@ -1,6 +1,6 @@
 /*************************************************************************************
  Copyright (C), 2021-2023, TMLake(Beijing) Technology Ltd.,
- File name    : njt_dynlog_module.c
+ File name    : njt_ctrl_config_api_module.c
  Version      : 1.0
  Author       : ChengXu
  Date         : 2023/2/13/013 
@@ -288,7 +288,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
 
     njt_str_t  key_prf = njt_string("/dyn/");
     njt_str_concat(r->pool,topic,key_prf,uri[2],return );
-    rc = njt_dyn_sendmsg(&topic,&json_str,0);
+    rc = njt_dyn_sendmsg(&topic,&json_str,1);
     if(rc == NJT_OK){
         return;
     }
