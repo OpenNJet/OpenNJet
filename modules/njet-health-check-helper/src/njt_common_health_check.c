@@ -147,7 +147,7 @@ njt_int_t njt_helper_hc_set_ssl(njt_helper_health_check_conf_t *hhccf, njt_helpe
 
 //仅使用pool
         if (njt_ssl_certificate(&cf, hcscf->ssl,&hcscf->ssl_certificate,
-                                &hcscf->ssl_certificate_key,
+                                &hcscf->ssl_certificate_key,NULL,NULL,
                                 hcscf->ssl_passwords)
             != NJT_OK)
         {
