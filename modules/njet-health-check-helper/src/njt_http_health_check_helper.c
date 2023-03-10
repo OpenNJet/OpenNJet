@@ -3384,101 +3384,6 @@ njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path) {
 }
 
 
-
-#define njt_json_fast_key(key) (u_char*)key,sizeof(key)-1
-#define njt_json_null_key NULL,0
-
-static njt_json_element* njt_json_int_element(njt_pool_t *pool,u_char *key,njt_uint_t len,njt_int_t value){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_INT;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    element->intval = value;
-    end:
-    return element;
-}
-
-static njt_json_element* njt_json_str_element(njt_pool_t *pool,u_char *key,njt_uint_t len,njt_str_t *value){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_STR;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    if(value != NULL){
-        element->strval = *value;
-    }
-    end:
-    return element;
-}
-static njt_json_element* njt_json_bool_element(njt_pool_t *pool, u_char *key,njt_uint_t len,bool value){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_BOOL;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    element->bval = value;
-
-    end:
-    return element;
-}
-
-static njt_json_element* njt_json_obj_element(njt_pool_t *pool,u_char *key,njt_uint_t len){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_OBJ;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    end:
-    return element;
-}
-
-static njt_json_element* njt_json_arr_element(njt_pool_t *pool,u_char *key,njt_uint_t len){
-    njt_json_element *element;
-
-    element = NULL;
-    element = njt_pcalloc(pool,sizeof (njt_json_element));
-    if(element == NULL ){
-        goto end;
-    }
-    element->type = NJT_JSON_ARRAY;
-    if(key != NULL){
-        element->key.data = key;
-        element->key.len = len;
-    }
-    end:
-    return element;
-}
-
-
 static njt_str_t njt_hc_confs_to_json(njt_pool_t *pool, njt_helper_main_conf_t *hmcf) {
     njt_helper_health_check_conf_t *hhccf;
     njt_queue_t *q;
@@ -3488,6 +3393,7 @@ static njt_str_t njt_hc_confs_to_json(njt_pool_t *pool, njt_helper_main_conf_t *
     njt_json_element *hc,*item;
     njt_int_t rc;
 
+    njt_memzero(&json_manager, sizeof(njt_json_manager));
     njt_str_null(&json);
 
 
@@ -3633,7 +3539,7 @@ static njt_str_t njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_ch
     njt_json_element *root,*http,*headers,*ssl,*item;
     u_char *str_buf,*last;
 
-
+    njt_memzero(&json_manager, sizeof(njt_json_manager));
     root = njt_json_obj_element(pool,njt_json_null_key);
     if(root == NULL ){
         goto err;
