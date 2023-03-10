@@ -1,0 +1,276 @@
+openapi: 3.0.3
+info:
+  title: njet-api
+  description: njet-api
+  version: 1.0.0
+servers:
+  - url: '/api/1'
+paths:
+  /hc/:
+    get:
+      tags:
+        - Health Check
+      summary: Returns a list of health check
+      description: Returns a list of health check.
+      operationId: getHealthCheckUpstreams
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+  /hc/{typeName}/{upstreamName}:
+    parameters:
+      - name: typeName
+        type: string
+        in: path
+        description: 健康检查的类型.
+        required: true
+        example: HTTP
+        enum:
+          - HTTP
+
+      - name: upstreamName
+        type: string
+        in: path
+        description: upstream 名称.
+        required: true
+        example: demo
+    get:
+      tags:
+        - Health Check
+      summary: 查询健康检查详细配置
+      description: 查询健康检查详细配置
+      operationId: getHealthCheckConf
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckConf'
+        '404':
+          description: upstream 或者 type 未找到
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+    post:
+      tags:
+        - Health Check
+      summary: 创建健康检查
+      description: 创建健康检查
+      operationId: postHealthCheck
+      parameters:
+        - in: body
+          name: postHealthCheck
+          description: 创建新的健康检查
+          required: true
+          schema:
+            $ref: '#/components/schemas/HealthCheckConf'
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+        '400':
+          description: 请求body 错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+        '404':
+          description: 健康检查类型或upstream 未找到
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+        '409':
+          description: 健康检查已经定义过
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+        '500':
+          description: 服务器内部错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+    delete:
+      tags:
+        - Health Check
+      summary: 删除健康检查
+      description: 删除健康检查
+      operationId: deleteHealthCheck
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+        '404':
+          description: 健康检查不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+        ###DEFINITIONS
+components:
+  schemas:
+    HealthCheckItem:
+      type: object
+      properties:
+        upstream:
+          type: string
+          description: name of upstream.
+        type:
+          type: string
+          description: type of health check.
+    HealthCheck:
+      title: healthCheck
+      description: health Check 简易信息
+      type: array
+      items:
+        $ref: '#/components/schemas/HealthCheckItem'
+
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+        msg:
+          type: string
+
+    HealthCheckConf:
+      title: healthCheckConf
+      description: health Check 完整配置
+      type: object
+      properties:
+        interval:
+          type: string
+          description: 健康检查间隔
+          default: 5s
+          example: 5s
+        jitter:
+          type: string
+          description: 健康检查间隔
+          default: 0s
+          example: 1s
+        timeout:
+          type: string
+          description: 健康检查超时时间
+          default: 5s
+          example: 5s
+        port:
+          type: number
+          description: 健康检查的端口
+          example: 80
+          minimum: 1
+          maximum: 65535
+        passes:
+          type: number
+          description: 健康检查转变为健康，需要检查连续通过的次数
+          minimum: 1
+          default: 1
+        fails:
+          type: number
+          description: 健康检查转变为不健康，需要健康检查连续不通过的次数
+          minimum: 1
+          default: 1
+        http:
+          type: object
+          description: HTTP upstream 健康检查相关配置
+          properties:
+            grpcService:
+              type: string
+              description: grpc健康检查请求的 service 名称
+              default: demo
+            grpcStatus:
+              type: number
+              default: 13
+              description: grpc健康检查标记为通过的状态码
+            uri:
+              type: string
+              description: http 健康检查请请求的uri
+              default: /
+            header:
+              type: array
+              description: http 健康检查校验的header
+              items:
+                type: string
+                description:
+            body:
+              type: string
+              description: http 健康检查检查body的内容是否满足表达式
+            status:
+              type: string
+              description: http 健康检查检查返回状态码是否满足
+        ssl:
+          type: object
+          description: ssl客户端相关配置
+          properties:
+            enable:
+              type: boolean
+              description: 是否开启https 健康检查
+              default: false
+            protocols:
+              type: string
+              description: 指定健康检查使用的ssl协议版本，支持的版本：[SSLv2] [SSLv3] [TLSv1] [TLSv1.1] [TLSv1.2] [TLSv1.3]
+              default: TLSv1 TLSv1.1 TLSv1.2
+            ciphers:
+              type: string
+              description: 对健康检查请求开启 ciphers，ciphers以openssl 标准格式配置。"openssl ciphers" 指令可以查看ciphers列表
+              default: DEFAULT
+            name:
+              type: string
+              description: 设置健康检查请求时携带的Host header
+              default: upstream name
+            serverName:
+              type: boolean
+              description: 启用或禁用通过TLS服务器名称指示扩展（SNI，RFC 6066）传递服务器名称。
+              default: false
+            verify:
+              type: boolean
+              description: 启用或禁用对连接的HTTPS服务器证书的验证。(需配置trustedCertificate)
+              default: false
+            verifyDepth:
+              type: number
+              description: HTTPS服务器证书链中设置验证深度。
+              default: 1
+              minimum: 1
+            trustedCertificate:
+              type: string
+              description: 指定一个具有PEM格式的受信任CA证书，用于验证指定HTTPS服务器的证书。
+            crl:
+              type: string
+              description: 以PEM格式指定具有撤销证书（CRL）的文件，用于验证代理HTTPS服务器的证书。
+            certificate:
+              type: string
+              description: 指定一个带有PEM格式证书的文件，用于对HTTPS服务器进行身份验证(客户端证书)。
+            certificateKey:
+              type: string
+              description: 指定一个带有PEM格式的密钥的文件，用于对HTTPS服务器进行身份验证(客户端证书key)。
+
