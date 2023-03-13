@@ -474,7 +474,7 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t *pool, njt_http_dy
         if (cscf == NULL)
         {
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
-                          (njt_str_t *)daas[i].listens.nelts, (njt_str_t *)daas[i].server_names.nelts);
+                          (njt_str_t *)daas[i].listens.elts, (njt_str_t *)daas[i].server_names.elts);
             continue;
         }
         clcf = njt_http_get_module_loc_conf(cscf->ctx, njt_http_core_module);
