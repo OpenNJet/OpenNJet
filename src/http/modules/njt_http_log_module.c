@@ -1963,6 +1963,9 @@ static void njt_http_log_dyn_unused_file(void *data){
     file = data;
     --file->ref_count;
 
+    if(njt_cycle->conf_ctx == NULL){
+        return;
+    }
     lmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_log_module);
     if(lmcf == NULL){
         return;
