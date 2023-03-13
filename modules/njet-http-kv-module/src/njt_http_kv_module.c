@@ -14,6 +14,7 @@
 #define DYN_TOPIC_PREFIX_LEN 5
 #define RPC_TOPIC_PREFIX "/rpc/"
 #define RPC_TOPIC_PREFIX_LEN 5
+#define RETAIN_MSG_QOS 16
 
 typedef struct
 {
@@ -793,6 +794,42 @@ static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_le
         }
     }
     return NULL;
+}
+
+int njt_kv_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
+{
+    int ret = 0;
+    int qos = 0;
+    if (retain_flag)
+        qos = RETAIN_MSG_QOS;
+
+    u_char *t;
+    t = njt_calloc(topic->len + 1, njt_cycle->log);
+    if (t == NULL)
+    {
+        return NJT_ERROR;
+    }
+    njt_memcpy(t, topic->data, topic->len);
+    t[topic->len] = '\0';
+    // if it is a normal message, send zero length retain msg to same topic to delete it
+    if (!retain_flag)
+    {
+        ret = mqtt_client_sendmsg((const char *)t, "", 0, RETAIN_MSG_QOS, local_mqtt_ctx);
+    }
+    if (ret < 0)
+    {
+        goto error;
+    }
+    ret = mqtt_client_sendmsg((const char *)t, (const char *)content->data, (int)content->len, qos, local_mqtt_ctx);
+    if (ret < 0)
+    {
+        goto error;
+    }
+    njt_free(t);
+    return NJT_OK;
+error:
+    njt_free(t);
+    return NJT_ERROR;
 }
 
 int njt_db_kv_get(njt_str_t *key, njt_str_t *value)
