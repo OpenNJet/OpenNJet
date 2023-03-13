@@ -20,7 +20,7 @@
 #define NJT_VER_BUILD    NJT_VER
 #endif
 
-#define NJT_VAR          "NGINX"
+#define NJT_VAR          "NJET"
 #define NJT_OLDPID_EXT     ".oldbin"
 
 
