@@ -685,7 +685,7 @@ njt_dyn_kv_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
 {
-    int ret;
+    int ret = 0;
     int qos = 0;
     if (retain_flag)
         qos = RETAIN_MSG_QOS;

@@ -3206,8 +3206,8 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     }
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
-    cf->pool = old_pool;
-    cf->temp_pool = old_temp_pool;
+    //cf->pool = old_pool;  //zyg
+    //cf->temp_pool = old_temp_pool;
 #endif
     //end
     clcf = ctx->loc_conf[njt_http_core_module.ctx_index];
