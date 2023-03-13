@@ -483,20 +483,19 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     dclcf = lq->exact ? lq->exact : lq->inclusive;
 
     njt_http_location_delete_dyn_var(dclcf);
-    njt_http_location_destroy(dclcf);
     njt_queue_remove(&lq->queue);
-    //njt_pfree(lq->parent_pool, lq);
+    njt_pfree(lq->parent_pool, lq);
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "find && free old location end +++++++++++++++");
 
     njt_http_refresh_location(&cf, cscf, clcf);
 
+    njt_http_location_destroy(dclcf);
     //note: delete queue memory, which delete when remove queue 
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "delete end  %V+++++++++++++++",&location_name);
     return NJT_OK;
 }
 
 static void free_static_tree_momery(njt_http_location_tree_node_t *static_tree) {
-	return ;
     if (static_tree == NULL) {
         return;
     }
