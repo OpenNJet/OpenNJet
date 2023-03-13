@@ -2110,6 +2110,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
             goto error ;
         }
         if(log_cf[j].path.len < 1){
+            njt_log_error(NJT_LOG_INFO, pool->log, 0,"access log path not conf continue");
             continue;
         }
         njt_memzero(log, sizeof(njt_http_log_t));
