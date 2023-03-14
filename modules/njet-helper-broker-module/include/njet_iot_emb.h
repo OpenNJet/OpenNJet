@@ -25,5 +25,6 @@ int njet_iot_client_kv_set(const void *key, u_int32_t ken_len, const void *val, 
 int njet_iot_client_kv_get(void *key, u_int32_t ken_len, void **val, u_int32_t *val_len, struct evt_ctx_t *ctx);
 int njet_iot_client_sendmsg_rr(const char *topic, const void *msg, int l, int qos, int session_id, int is_reply, struct evt_ctx_t *ctx);
 int njet_iot_client_pub_kv(const u_char *cluster, u_int32_t c_l, const u_char *key, u_int32_t key_l, const u_char *val, u_int32_t val_l, struct evt_ctx_t *ctx);
+int njet_iot_client_add_topic(struct evt_ctx_t *ctx, char *topic);
 
 #endif

@@ -501,7 +501,11 @@ int njet_iot_client_kv_set(const void *key, u_int32_t key_len, const void *val, 
 	}
 	return 0;
 }
-const char *njet_iot_client_get_ipc_path(struct evt_ctx_t *ctx)
-{
-	return ctx->cfg->unix_pipe;
+
+int njet_iot_client_add_topic(struct evt_ctx_t *ctx, char *topic){
+	if (ctx==NULL) {
+		return -1;
+	}
+	cfg_add_topic(ctx->cfg, CLIENT_SUB, topic, "-t");
+	return 0;	
 }

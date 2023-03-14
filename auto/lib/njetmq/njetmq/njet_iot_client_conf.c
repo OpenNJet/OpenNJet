@@ -136,12 +136,10 @@ int client_config__read_file_core(struct mosq_config *cfg, bool reload, int leve
 	cfg->no_retain = true;
 	cfg->sub_opts |= MQTT_SUB_OPT_NO_LOCAL;
 	cfg->remove_retained = true;
-	// cfg_add_topic(cfg,CLIENT_SUB,"/broker/#","-t");
-	// tips:subscript to /custer/kv_set/#, so got all messages ,and could easily omit by apply /cluster/kv_set/id
-	// cfg_add_topic(cfg,CLIENT_SUB,"/cluster/kv_set/#","-t");  	//rpc
-	// cfg_add_topic(cfg,CLIENT_SUB,"/cluster/query/#","-t");  	//rpc
-	// cfg_add_topic(cfg,CLIENT_SUB,"/cluster/status","-t");
-	// cfg_add_topic(cfg,CLIENT_SUB,"$SYS/broker/clients/connected","-t");   --no needed anymore
+        
+        //default subscribed topics
+        //cfg_add_topic(cfg,CLIENT_SUB,"/cluster/+/kv_set/#","-t");  	
+
 	if (cfg->id != NULL)
 	{
 		snprintf(topic_buf, 128, "%s_rcp_resp", cfg->id);
@@ -377,25 +375,29 @@ static void client_config__set_default(struct mosq_config *cfg)
 {
 	char *prefix = cfg->prefix;
 	char *broker_addr, *kv_store_dir, *tmp_pchar;
+        int prefix_len=strlen(prefix);
+        if (prefix[prefix_len-1]=='/') {
+           prefix_len--;
+        }
 	// set default values
 	if (!cfg->brokers)
 	{
-		broker_addr = malloc(strlen(prefix) + 25 + 1); // unix: $prefix/data/mosquitto.sock
+		broker_addr = malloc(prefix_len + 25 + 1); // unix: $prefix/data/mosquitto.sock
 		tmp_pchar = broker_addr;
 		memcpy(tmp_pchar, "unix:", 5);
-		memcpy(tmp_pchar + 5, prefix, strlen(prefix));
-		memcpy(tmp_pchar + 5 + strlen(prefix), "/data/mosquitto.sock", 20);
-		tmp_pchar[strlen(prefix) + 25] = '\0';
+		memcpy(tmp_pchar + 5, prefix, prefix_len);
+		memcpy(tmp_pchar + 5 + prefix_len, "/data/mosquitto.sock", 20);
+		tmp_pchar[prefix_len + 25] = '\0';
 		client_config__set_broker(cfg, broker_addr);
 	}
 
 	if (!cfg->kv_store)
 	{
-		kv_store_dir = malloc(strlen(prefix) + 5 + 1); // $prefix/data
+		kv_store_dir = malloc(prefix_len + 5 + 1); // $prefix/data
 		tmp_pchar = kv_store_dir;
-		memcpy(tmp_pchar, prefix, strlen(prefix));
-		memcpy(tmp_pchar + strlen(prefix), "/data", 5);
-		tmp_pchar[strlen(prefix) + 5] = '\0';
+		memcpy(tmp_pchar, prefix, prefix_len);
+		memcpy(tmp_pchar + prefix_len, "/data", 5);
+		tmp_pchar[prefix_len + 5] = '\0';
 		cfg->kv_store = kv_store_dir;
 	}
 	if (!cfg->keepalive)

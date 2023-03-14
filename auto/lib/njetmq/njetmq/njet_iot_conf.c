@@ -711,11 +711,16 @@ int config__read(struct mosquitto__config *config, bool reload)
 		mosquitto__free(config->persistence_filepath);
 		if (!config->persistence_location || strlen(config->persistence_location) == 0)
 		{
-			p_location = malloc(strlen(prefix) + 5 + 1); // $prefix/data
+			int prefix_len = strlen(prefix);
+			if (prefix[prefix_len - 1] == '/')
+			{
+				prefix_len--;
+			}
+			p_location = malloc(prefix_len + 5 + 1); // $prefix/data
 			tmp_pchar = p_location;
-			memcpy(tmp_pchar, prefix, strlen(prefix));
-			memcpy(tmp_pchar + strlen(prefix), "/data", 5);
-			tmp_pchar[strlen(prefix) + 5] = '\0';
+			memcpy(tmp_pchar, prefix, prefix_len);
+			memcpy(tmp_pchar + prefix_len, "/data", 5);
+			tmp_pchar[prefix_len + 5] = '\0';
 			config->persistence_location = p_location;
 		}
 		if (config->persistence_location && strlen(config->persistence_location))
@@ -787,12 +792,18 @@ int config__read(struct mosquitto__config *config, bool reload)
 	{
 		config->log_dest = MQTT3_LOG_FILE;
 
-		p_log_file = malloc(strlen(prefix) + 19 + 1); // $prefix/logs/mosquitto.log";
+		int prefix_len = strlen(prefix);
+		if (prefix[prefix_len - 1] == '/')
+		{
+			prefix_len--;
+		}
+
+		p_log_file = malloc(prefix_len + 19 + 1); // $prefix/logs/mosquitto.log";
 		tmp_pchar = p_log_file;
-		memcpy(tmp_pchar, prefix, strlen(prefix));
-		memcpy(tmp_pchar + strlen(prefix), "/logs/mosquitto.log", 19);
-		tmp_pchar[strlen(prefix) + 19] = '\0';
-		config->log_file =p_log_file ;
+		memcpy(tmp_pchar, prefix, prefix_len);
+		memcpy(tmp_pchar + prefix_len, "/logs/mosquitto.log", 19);
+		tmp_pchar[prefix_len + 19] = '\0';
+		config->log_file = p_log_file;
 	}
 	if (db.verbose)
 	{
