@@ -1774,7 +1774,7 @@ typedef struct njt_http_grpc_hc_peer_s njt_http_grpc_hc_peer_t;
 static void
 njt_http_hc_grpc_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstream_rr_peer_t *peer) {
     njt_int_t rc;
-    njt_http_grpc_hc_peer_t *hc_peer;
+    njt_http_grpc_hc_peer_t *hc_peer = NULL;
     njt_http_request_t *r;
     njt_http_upstream_t *u;
     njt_http_upstream_state_t *state;
