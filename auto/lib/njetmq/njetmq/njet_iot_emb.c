@@ -144,12 +144,10 @@ int listeners__add_local(const char *host, uint16_t port)
 		{
 			return MOSQ_ERR_NOMEM;
 		}
-		else
+#else
+		iot_log__printf(NULL, MOSQ_LOG_ERR, " unix sockets support should be compiled into code");
+		return MOSQ_ERR_NOT_SUPPORTED;
 #endif
-		{
-			iot_log__printf(NULL, MOSQ_LOG_ERR, " unix sockets support should be compiled into code");
-			return MOSQ_ERR_NOT_SUPPORTED;
-		}
 	}
 	else
 	{
