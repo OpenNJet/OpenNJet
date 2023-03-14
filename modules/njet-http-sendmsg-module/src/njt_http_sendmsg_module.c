@@ -565,9 +565,9 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
     localcfg[smcf->conf_file.len] = '\0';
 
     char *prefix;
-    prefix =njt_calloc(cycle->prefix.len+1, cycle->log);
-    njt_memcpy(prefix,cycle->prefix.data, cycle->prefix.len);
-    prefix[cycle->prefix.len]='\0';
+    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
+    njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
+    prefix[cycle->prefix.len] = '\0';
     njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "module http_sendmsg init worker");
     sendmsg_mqtt_ctx = njet_iot_client_init(prefix, localcfg, sendmsg_rr_callback, NULL, client_id, log, cycle);
     njt_free(prefix);
@@ -698,6 +698,7 @@ int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
     t = njt_calloc(topic->len + 1, njt_cycle->log);
     if (t == NULL)
     {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "in njt_dyn_sendmsg, can't alloc memory");
         return NJT_ERROR;
     }
     njt_memcpy(t, topic->data, topic->len);
@@ -709,11 +710,14 @@ int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
     }
     if (ret < 0)
     {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "in njt_dyn_sendmsg, error when sending zero len retain msg");
         goto error;
     }
     ret = njet_iot_client_sendmsg((const char *)t, (const char *)content->data, (int)content->len, qos, sendmsg_mqtt_ctx);
     if (ret < 0)
     {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "in njt_dyn_sendmsg, error when sending msg");
+
         goto error;
     }
     njt_free(t);
