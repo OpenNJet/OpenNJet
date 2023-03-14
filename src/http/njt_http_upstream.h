@@ -253,6 +253,8 @@ typedef struct {
 
     njt_http_complex_value_t        *ssl_certificate;
     njt_http_complex_value_t        *ssl_certificate_key;
+    njt_http_complex_value_t        *ssl_certificate_enc;
+    njt_http_complex_value_t        *ssl_certificate_enc_key;
     njt_array_t                     *ssl_passwords;
 #endif
 

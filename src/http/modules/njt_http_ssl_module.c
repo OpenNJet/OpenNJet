@@ -786,7 +786,7 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         /* configure certificates */
 
         if (njt_ssl_certificates(cf, &conf->ssl, conf->certificates,
-                                 conf->certificate_keys, conf->passwords)
+                                 conf->certificate_keys, NULL, NULL, conf->passwords)
             != NJT_OK)
         {
             return NJT_CONF_ERROR;
