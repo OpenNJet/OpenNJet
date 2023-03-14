@@ -29,7 +29,7 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
     njt_http_addr_conf_t *addr_conf;
     njt_hash_elt_t  **elt;
 
-
+    target_ls = NULL;
     cscf = NULL;
     if (addr_port->len > 0) {
         ls = cycle->listening.elts;
