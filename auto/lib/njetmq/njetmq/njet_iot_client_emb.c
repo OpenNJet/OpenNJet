@@ -115,8 +115,6 @@ void my_log_callback(struct mosquitto *mosq, void *obj, int level, const char *s
 		fprintf(cfg->log_fptr, "%s\n", log_line);
 }
 
-// tips: message process sequence:
-// s1 message callback, s2 when msg callback returned 1, eval lua on_msg
 void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message, const mosquitto_property *properties)
 {
 	int i, identifier;
@@ -164,7 +162,6 @@ void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquit
 				int out_len;
 				char *rr_reply =
 					ctx->resp_callback(message->topic, 0, message->payload, message->payloadlen, session_id, &out_len);
-				// TODO: if rr_reply is null and len is 0, how to handle it properly
 				if (rr_reply)
 				{
 					njet_iot_client_sendmsg_rr(resp_topic, rr_reply, out_len, 0, session_id, 1, ctx);
@@ -189,7 +186,6 @@ void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquit
 		log__printf(ctx->mosq, MOSQ_LOG_ERR, "callback process msg of topic:%s, %d", message->topic, callback_ret);
 		if (callback_ret != 1)
 		{
-			// tips: 0 means consumed, 1 means continue, other code means failed
 			if (callback_ret != 0)
 				log__printf(ctx->mosq, MOSQ_LOG_ERR, "callback process msg of topic:%s failed:%d", message->topic, callback_ret);
 			return;
@@ -341,6 +337,8 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 	if (log_file)
 		cfg->log_file = strdup(log_file);
 
+	cfg->prefix=(char *)prefix;
+    
 	ret = client_config_load(cfg, CLIENT_SUB, cfg_file);
 	// todo: free cfg on error
 	if (ret != MOSQ_ERR_SUCCESS)

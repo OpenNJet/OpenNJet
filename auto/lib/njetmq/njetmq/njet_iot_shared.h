@@ -47,6 +47,7 @@ struct broker_config
 };
 struct mosq_config
 {
+        char *prefix; //path prefix
 	char *id;
 	char *id_prefix;
 	int protocol_version;

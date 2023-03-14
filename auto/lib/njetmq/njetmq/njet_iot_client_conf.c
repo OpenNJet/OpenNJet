@@ -52,6 +52,65 @@ struct config_recurse
 	int log_type_set;
 };
 
+void client_config__set_broker(struct mosq_config *cfg, char *broker_addr)
+{
+	char *tmp_str = broker_addr;
+	char *save, *broker;
+	int broker_cnt = 0;
+	cfg->brokers = malloc(10 * sizeof(struct broker_config));
+	memset(cfg->brokers, '\0', 10 * sizeof(struct broker_config));
+	char *buf = malloc(strlen(tmp_str) + 1);
+	buf[strlen(tmp_str)] = '\0';
+	strcpy(buf, tmp_str);
+	broker = strtok_r(buf, ",", &save);
+	while (broker != NULL)
+	{
+		if (!strncasecmp(broker, "mqtts://", 8))
+		{
+			char *save2, *host, *port;
+			char *h = broker;
+			h += 8;
+			host = strtok_r(h, ":", &save2);
+			port = strtok_r(NULL, ":", &save2);
+			if (host)
+			{
+				strcpy(cfg->brokers[broker_cnt].host, host);
+				if (port)
+					cfg->brokers[broker_cnt].port = atoi(port);
+				else
+					cfg->brokers[broker_cnt].port = 8883;
+				cfg->tls_use_os_certs = true;
+			}
+		}
+		else if (!strncasecmp(broker, "mqtt://", 7))
+		{
+			char *save2, *host, *port;
+			char *h = broker + 7;
+			host = strtok_r(h, ":", &save2);
+			port = strtok_r(NULL, ":", &save2);
+			if (host)
+			{
+				strcpy(cfg->brokers[broker_cnt].host, host);
+				if (port)
+					cfg->brokers[broker_cnt].port = atoi(port);
+				else
+					cfg->brokers[broker_cnt].port = 1883;
+				cfg->tls_use_os_certs = false;
+			}
+		}
+		else if (!strncasecmp(broker, "unix:", 5))
+		{
+			strcpy(cfg->brokers[broker_cnt].host, broker + 5);
+			cfg->brokers[broker_cnt].port = 0;
+			cfg->tls_use_os_certs = false;
+		}
+		broker_cnt++;
+		broker = strtok_r(NULL, ",", &save);
+	}
+	free(tmp_str);
+	free(buf);
+}
+
 int client_config__read_file_core(struct mosq_config *cfg, bool reload, int level, int *lineno, FILE *fptr, char **buf, int *buflen)
 {
 	int rc;
@@ -299,62 +358,9 @@ int client_config__read_file_core(struct mosq_config *cfg, bool reload, int leve
 						else if (!strcmp(token, "broker_addr"))
 						{
 							char *tmp_str = NULL;
-							char *save, *broker;
-							int broker_cnt = 0;
 							if (conf__parse_string(&token, "broker_addr", &tmp_str, saveptr))
 								return MOSQ_ERR_INVAL;
-							cfg->brokers = malloc(10 * sizeof(struct broker_config));
-							memset(cfg->brokers, '\0', 10 * sizeof(struct broker_config));
-							char *buf = malloc(strlen(tmp_str) + 1);
-							buf[strlen(tmp_str)] = '\0';
-							strcpy(buf, tmp_str);
-							broker = strtok_r(buf, ",", &save);
-							while (broker != NULL)
-							{
-								if (!strncasecmp(broker, "mqtts://", 8))
-								{
-									char *save2, *host, *port;
-									char *h = broker;
-									h += 8;
-									host = strtok_r(h, ":", &save2);
-									port = strtok_r(NULL, ":", &save2);
-									if (host)
-									{
-										strcpy(cfg->brokers[broker_cnt].host, host);
-										if (port)
-											cfg->brokers[broker_cnt].port = atoi(port);
-										else
-											cfg->brokers[broker_cnt].port = 8883;
-										cfg->tls_use_os_certs = true;
-									}
-								}
-								else if (!strncasecmp(broker, "mqtt://", 7))
-								{
-									char *save2, *host, *port;
-									char *h = broker + 7;
-									host = strtok_r(h, ":", &save2);
-									port = strtok_r(NULL, ":", &save2);
-									if (host)
-									{
-										strcpy(cfg->brokers[broker_cnt].host, host);
-										if (port)
-											cfg->brokers[broker_cnt].port = atoi(port);
-										else
-											cfg->brokers[broker_cnt].port = 1883;
-										cfg->tls_use_os_certs = false;
-									}
-								}
-								else if (!strncasecmp(broker, "unix:", 5))
-								{
-									strcpy(cfg->brokers[broker_cnt].host, broker + 5);
-									cfg->brokers[broker_cnt].port = 0;
-									cfg->tls_use_os_certs = false;
-								}
-								broker_cnt++;
-								broker = strtok_r(NULL, ",", &save);
-							}
-							free(tmp_str);
-							free(buf);
+							client_config__set_broker(cfg, tmp_str);
 						}
 						else if (!strcmp(token, "verbose"))
 						{
@@ -363,7 +369,43 @@ int client_config__read_file_core(struct mosq_config *cfg, bool reload, int leve
 			}
 		}
 	}
+
 	return MOSQ_ERR_SUCCESS;
+}
+
+static void client_config__set_default(struct mosq_config *cfg)
+{
+	char *prefix = cfg->prefix;
+	char *broker_addr, *kv_store_dir, *tmp_pchar;
+	// set default values
+	if (!cfg->brokers)
+	{
+		broker_addr = malloc(strlen(prefix) + 25 + 1); // unix: $prefix/data/mosquitto.sock
+		tmp_pchar = broker_addr;
+		memcpy(tmp_pchar, "unix:", 5);
+		memcpy(tmp_pchar + 5, prefix, strlen(prefix));
+		memcpy(tmp_pchar + 5 + strlen(prefix), "/data/mosquitto.sock", 20);
+		tmp_pchar[strlen(prefix) + 25] = '\0';
+		client_config__set_broker(cfg, broker_addr);
+	}
+
+	if (!cfg->kv_store)
+	{
+		kv_store_dir = malloc(strlen(prefix) + 5 + 1); // $prefix/data
+		tmp_pchar = kv_store_dir;
+		memcpy(tmp_pchar, prefix, strlen(prefix));
+		memcpy(tmp_pchar + strlen(prefix), "/data", 5);
+		tmp_pchar[strlen(prefix) + 5] = '\0';
+		cfg->kv_store = kv_store_dir;
+	}
+	if (!cfg->keepalive)
+	{
+		cfg->keepalive = 30;
+	}
+	if (!cfg->protocol_version)
+	{
+		cfg->protocol_version = MQTT_PROTOCOL_V5;
+	}
 }
 
 int client_config__read_file(struct mosq_config *config, bool reload, const char *file, int level, int *lineno)
@@ -403,6 +445,7 @@ int client_config__read_file(struct mosq_config *config, bool reload, const char
 	fclose(fptr);
 	if (rc != MOSQ_ERR_SUCCESS)
 		return rc;
+	client_config__set_default(config);
 	if (config->log_file)
 	{
 		config->log_fptr = mosquitto__fopen(config->log_file, "at", false);
@@ -419,5 +462,6 @@ int client_config__read_file(struct mosq_config *config, bool reload, const char
 			return MOSQ_ERR_INVAL;
 		}
 	}
+
 	return MOSQ_ERR_SUCCESS;
 }

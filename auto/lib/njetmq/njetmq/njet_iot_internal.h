@@ -445,6 +445,7 @@ typedef struct mosquitto_plugin_id_t
 
 struct mosquitto__config
 {
+	char *prefix; // path prefix
 	bool allow_duplicate_messages;
 	int autosave_interval;
 	bool autosave_on_changes;

@@ -135,10 +135,29 @@ int listeners__add_local(const char *host, uint16_t port)
 	listener__set_defaults(&listeners[db.config->listener_count]);
 	listeners[db.config->listener_count].security_options.allow_anonymous = true;
 	listeners[db.config->listener_count].port = port;
-	listeners[db.config->listener_count].host = mosquitto__strdup(host);
-	if (listeners[db.config->listener_count].host == NULL)
+	if (port == 0)
 	{
-		return MOSQ_ERR_NOMEM;
+#ifdef WITH_UNIX_SOCKETS
+		listeners[db.config->listener_count].host = NULL;
+		listeners[db.config->listener_count].unix_socket_path = mosquitto__strdup(host);
+		if (listeners[db.config->listener_count].unix_socket_path == NULL)
+		{
+			return MOSQ_ERR_NOMEM;
+		}
+		else
+#endif
+		{
+			iot_log__printf(NULL, MOSQ_LOG_ERR, " unix sockets support should be compiled into code");
+			return MOSQ_ERR_NOT_SUPPORTED;
+		}
+	}
+	else
+	{
+		listeners[db.config->listener_count].host = mosquitto__strdup(host);
+		if (listeners[db.config->listener_count].host == NULL)
+		{
+			return MOSQ_ERR_NOMEM;
+		}
 	}
 	if (listeners__start_single_mqtt(&listeners[db.config->listener_count]))
 	{
@@ -152,7 +171,7 @@ int listeners__add_local(const char *host, uint16_t port)
 
 int listeners__start_local_only(void)
 {
-	/* Attempt to open listeners bound to 127.0.0.1 and ::1 only */
+	/* Attempt to open listeners locally */
 	int i;
 	int rc;
 	struct mosquitto__listener *listeners;
@@ -166,14 +185,20 @@ int listeners__start_local_only(void)
 	db.config->listener_count = 0;
 	db.config->listeners = listeners;
 
-	iot_log__printf(NULL, MOSQ_LOG_WARNING, "Starting in local only mode. Connections will only be possible from clients running on this machine.");
-	iot_log__printf(NULL, MOSQ_LOG_WARNING, "Create a configuration file which defines a listener to allow remote access.");
+	iot_log__printf(NULL, MOSQ_LOG_DEBUG, "Starting in local only mode. Connections will only be possible from clients running on this machine.");
+	iot_log__printf(NULL, MOSQ_LOG_DEBUG, "Create a configuration file which defines a listener to allow remote access.");
 	if (db.config->cmd_port_count == 0)
 	{
-		rc = listeners__add_local("127.0.0.1", 1883);
-		if (rc == MOSQ_ERR_NOMEM)
-			return MOSQ_ERR_NOMEM;
-		rc = listeners__add_local("::1", 1883);
+		char *prefix = db.config->prefix;
+		char *tmp_pchar;
+
+		char *unix_sock_file = malloc(strlen(prefix) + 20 + 1); // $prefix/data/mosquitto.sock";
+		tmp_pchar = unix_sock_file;
+		memcpy(tmp_pchar, prefix, strlen(prefix));
+		memcpy(tmp_pchar + strlen(prefix), "/data/mosquitto.sock", 20);
+		tmp_pchar[strlen(prefix) + 20] = '\0';
+
+		rc = listeners__add_local(unix_sock_file, 0);
 		if (rc == MOSQ_ERR_NOMEM)
 			return MOSQ_ERR_NOMEM;
 	}
@@ -301,6 +326,7 @@ int njet_iot_init(const char *prefix, const char *config_file)
 	db.config = config;
 	net__iot_init();
 	config__init(config);
+	config->prefix = (char *)prefix;
 
 	rc = config__parse_args(config, argc, argv);
 	if (rc != MOSQ_ERR_SUCCESS)
