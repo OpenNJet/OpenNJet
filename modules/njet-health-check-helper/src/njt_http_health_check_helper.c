@@ -1774,7 +1774,7 @@ typedef struct njt_http_grpc_hc_peer_s njt_http_grpc_hc_peer_t;
 static void
 njt_http_hc_grpc_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstream_rr_peer_t *peer) {
     njt_int_t rc;
-    njt_http_grpc_hc_peer_t *hc_peer;
+    njt_http_grpc_hc_peer_t *hc_peer = NULL;
     njt_http_request_t *r;
     njt_http_upstream_t *u;
     njt_http_upstream_state_t *state;
@@ -3538,8 +3538,8 @@ static njt_str_t njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_ch
     njt_json_manager json_manager;
     njt_json_element *root,*http,*headers,*ssl,*item;
     u_char *str_buf,*last;
-    njt_memzero(&json_manager, sizeof(njt_json_manager));
 
+    njt_memzero(&json_manager, sizeof(njt_json_manager));
     root = njt_json_obj_element(pool,njt_json_null_key);
     if(root == NULL ){
         goto err;
