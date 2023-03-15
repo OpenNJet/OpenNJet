@@ -188,7 +188,7 @@ static void config__init_reload(struct mosquitto__config *config)
 	}
 	else
 	{
-		config->log_type = MOSQ_LOG_ERR | MOSQ_LOG_WARNING | MOSQ_LOG_NOTICE | MOSQ_LOG_INFO;
+		config->log_type = MOSQ_LOG_ERR | MOSQ_LOG_WARNING ;
 	}
 #endif
 	config->log_timestamp = true;

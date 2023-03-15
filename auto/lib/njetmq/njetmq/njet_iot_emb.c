@@ -306,13 +306,12 @@ int njet_iot_init(const char *prefix, const char *config_file)
 	struct mosquitto__config *config;
 	struct timeval tv;
 	int rc;
-	int argc = 4;
-	char *argv[4];
+	int argc = 3;
+	char *argv[3];
 
 	argv[0] = "emb_mqtt";
 	argv[1] = "-c";
 	argv[2] = (char *)config_file;
-	argv[3] = "-v";
 
 	gettimeofday(&tv, NULL);
 	srand((unsigned int)(tv.tv_sec + tv.tv_usec));
