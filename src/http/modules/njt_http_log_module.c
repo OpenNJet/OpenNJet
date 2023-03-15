@@ -1963,6 +1963,9 @@ static void njt_http_log_dyn_unused_file(void *data){
     file = data;
     --file->ref_count;
 
+    if(njt_cycle->conf_ctx == NULL){
+        return;
+    }
     lmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_log_module);
     if(lmcf == NULL){
         return;
@@ -2109,6 +2112,10 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         if (log == NULL) {
             goto error ;
         }
+        if(log_cf[j].path.len < 1){
+            njt_log_error(NJT_LOG_INFO, pool->log, 0,"access log path not conf continue");
+            continue;
+        }
         njt_memzero(log, sizeof(njt_http_log_t));
         njt_str_copy_pool(pool,log->path,log_cf[j].path,goto error);
         if (log_cf[j].path.len > 7 && njt_strncmp(log_cf[j].path.data, "syslog:", 7) == 0) {
@@ -2143,7 +2150,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         n = njt_http_script_variables_count(&log_cf[j].path);
 
         full_name = log_cf[j].path;
-        if (njt_conf_full_name(cf->cycle, &log_cf[j].path, 0) != NJT_OK) {
+        if (njt_conf_full_name(cf->cycle, &full_name, 0) != NJT_OK) {
             goto error ;
         }
         if (n == 0) {
