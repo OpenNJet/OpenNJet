@@ -132,7 +132,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool,njt_http_dyn_ssl_ap
         cert =  daas[i].certificates.elts;
         for(j = 0 ; j < daas[i].certificates.nelts; ++j ){
             //todo 此处内存泄露
-            if (njt_ssl_certificate(&cf, &hsscf->ssl, &cert[j].certificate, &cert[j].certificate_key, NULL)
+            if (njt_ssl_certificate(&cf, &hsscf->ssl, &cert[j].certificate, &cert[j].certificate_key,NULL,NULL, NULL)
                 != NJT_OK)
             {
                 njt_log_error(NJT_LOG_EMERG, pool->log, 0,"njt_ssl_certificate error");
