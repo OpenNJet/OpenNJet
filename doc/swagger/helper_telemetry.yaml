@@ -5,7 +5,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: '/api/1'
+  - url: '/config/1'
 paths:
   /config/:
     get:

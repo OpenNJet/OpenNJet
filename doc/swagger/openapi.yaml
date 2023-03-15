@@ -4,7 +4,7 @@ info:
   description: njet-api
   version: 1.0.0
 servers:
-  - url: '/api/1'
+  - url: '/hc/1'
 paths:
   /hc/:
     get:
