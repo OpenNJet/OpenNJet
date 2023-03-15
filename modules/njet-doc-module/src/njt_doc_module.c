@@ -1,6 +1,6 @@
 #include <njt_config.h>
 #include <njt_core.h>
-
+#include <njt_http.h>
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <windows.h>
@@ -19,15 +19,19 @@ static FILE * njt_doc_create_file(char *pathname, int mode);
 static int njt_doc_verify_checksum(const char *p);
 static void njt_doc_untar(unsigned char* in, unsigned long in_len, const char *base);
 
-static void *njt_doc_create_conf(njt_cycle_t *cycle);
-static char *njt_doc_init_conf(njt_cycle_t *cycle, void *conf);
-
+static njt_int_t njt_doc_module_init(njt_cycle_t *cycle);
+static njt_int_t njt_doc_module_create_conf(njt_cycle_t *cycle);
+static void njt_doc_module_exit(njt_cycle_t *cycle);
+/*
+static void *njt_doc_create_main_conf(njt_conf_t *cf);
+static char *njt_doc_init_main_conf(njt_conf_t *cf, void *conf);
+*/
 static char *njt_doc_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 static njt_command_t njt_doc_commands[] = {
 
     {njt_string("doc_api"),
-     NJT_MAIN_CONF |NJT_DIRECT_CONF| NJT_CONF_TAKE1,
+     NJT_HTTP_LOC_CONF | NJT_CONF_NOARGS,
      njt_doc_api_set,
      0,     
      0,
@@ -37,10 +41,18 @@ static njt_command_t njt_doc_commands[] = {
 };
 
 /* The module context. */
-static njt_core_module_t njt_doc_module_ctx = {
-    njt_string("doc_api"),
-    njt_doc_create_conf,
-    njt_doc_init_conf
+static njt_http_module_t njt_doc_module_ctx = {
+	NULL,                                   /* preconfiguration */
+	NULL,                                   /* postconfiguration */
+
+	NULL,                                   /* create main configuration */
+	NULL,                                   /* init main configuration */
+
+	NULL,                                  /* create server configuration */
+	NULL,                                  /* merge server configuration */
+
+	NULL,                                   /* create location configuration */
+	NULL                                    /* merge location configuration */
 };
 
 
@@ -49,16 +61,77 @@ njt_module_t  njt_doc_module = {
     NJT_MODULE_V1,
     &njt_doc_module_ctx, /* module context */
     njt_doc_commands,    /* module directives */
-    NJT_CORE_MODULE,        /* module type */
+    NJT_HTTP_MODULE,        /* module type */
     NULL,                                  /* init master */
-    NULL,                                  /* init module */
+    njt_doc_module_init,                   /* init module */
     NULL,                                  /* init process */
     NULL,                                  /* init thread */
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
-    NULL,                                  /* exit master */
+    njt_doc_module_exit,                   /* exit master */
     NJT_MODULE_V1_PADDING
 };
+
+static njt_int_t njt_doc_module_init(njt_cycle_t *cycle){
+
+    return NJT_OK;
+}
+
+static njt_int_t njt_doc_module_create_conf(njt_cycle_t *cycle) {
+	njt_doc_conf_t *conf;
+	u_char *dst;
+	u_char *p;
+	size_t len;
+    njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module init start ");
+    conf = njt_pcalloc(cycle->pool, sizeof(njt_doc_conf_t));
+    if (conf == NULL)
+    {
+		njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module alloc main conf error ");
+        return NJT_ERROR;
+    }
+
+    //create ramdom dir on /dev/shm/
+	njt_uint_t rand_index = njt_random() % 100;
+
+    len = 100;
+    dst = njt_pnalloc(cycle->pool, len);
+    if (dst == NULL)
+    {
+		njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module alloc dst dir error ");
+        return NJT_ERROR;
+    }
+
+	p = njt_snprintf(dst, len, "/dev/shm/njt_doc_%d", rand_index);
+	dst[p-dst] = '\0';
+
+    conf->untar_dir.data = dst;
+    conf->untar_dir.len = p - dst;
+	
+	cycle->conf_ctx[njt_doc_module.index] = (void *) conf;
+
+	// njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module init start end, index:%d  cycle->conf_ctx:%d  dir:%V",
+	                    // njt_doc_module.index, cycle->conf_ctx, conf->untar_dir);
+
+    return NJT_OK;
+}
+
+static void njt_doc_module_exit(njt_cycle_t *cycle) {
+	njt_doc_conf_t *conf;
+	// u_char *dst;
+	// u_char *p;
+	// size_t len;
+
+	conf = (njt_doc_conf_t *)njt_get_conf(cycle->conf_ctx, njt_doc_module);
+	// cycle->conf_ctx[njt_doc_module.index];
+	
+    //remove dir conf->untar_dir
+	if (njt_delete_dir(conf->untar_dir.data) == NJT_FILE_ERROR) {
+		njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module remove dir:%V error ", conf->untar_dir);
+	}
+
+
+    return;
+}
 
 static char* njt_doc_gunzip(unsigned char* src, unsigned long  src_len, unsigned long* out_len)
 {
@@ -298,48 +371,142 @@ static void njt_doc_untar(unsigned char* in, unsigned long in_len,const char *ba
 static char *
 njt_doc_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
-    njt_str_t *value;
-    njt_doc_conf_t *fmcf;
+    // njt_str_t *value;
     unsigned long out_len;
     char* un_data;
+	njt_http_core_loc_conf_t *clcf;
+    // njt_int_t                   alias;
+    // njt_uint_t                  n;
+    // njt_http_script_compile_t   sc;
+	njt_doc_conf_t              *fconf;
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "=============test0 %V",
+                           &cmd->name);
 
-    value = cf->args->elts;
-    fmcf = (njt_doc_conf_t *)conf;
-
-    u_char *dst;
-    size_t vl = value[1].len + 1;
-    dst = njt_pnalloc(cf->pool, vl);
-    if (dst == NULL)
-    {
-        return NJT_CONF_ERROR;
-    }
-
-    njt_memcpy(dst, value[1].data, value[1].len);
-    dst[vl-1] = '\0';
-
-    fmcf->untar_dir.data = dst;
-    fmcf->untar_dir.len = vl;
-
+	njt_doc_module_create_conf(cf->cycle);
+	fconf = (njt_doc_conf_t *)njt_get_conf(cf->cycle->conf_ctx, njt_doc_module);
+	    // cf->cycle->conf_ctx[njt_doc_module.index];
     //untar
-    
 	un_data = njt_doc_gunzip(doc_tar_gz,doc_tar_gz_len,&out_len);
 	if (un_data) {
-		njt_doc_untar((unsigned char *)un_data, out_len, (char *)fmcf->untar_dir.data);
+		njt_doc_untar((unsigned char *)un_data, out_len, (char *)fconf->untar_dir.data);
 		njt_free(un_data);
 	}else{
         njt_conf_log_error(NJT_LOG_ERR, cf, 0,
                     "doc_untar fail");
     }
 
+    //set root dir
+    clcf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
+
+    clcf->alias = 0;
+    clcf->root = fconf->untar_dir;
+
+    if (clcf->root.len > 0
+        && clcf->root.data[clcf->root.len - 1] == '/')
+    {
+        clcf->root.len--;
+    }
+
+    if (clcf->root.data[0] != '$') {
+        if (njt_conf_full_name(cf->cycle, &clcf->root, 0) != NJT_OK) {
+            return NJT_CONF_ERROR;
+        }
+    }
+
+
+/*
+    if (clcf->root.data) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "\"%V\" directive is duplicate, ",
+                           &cmd->name);
+
+        return NJT_CONF_ERROR;
+    }
+
+    if (clcf->named) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "the \"alias\" directive cannot be used "
+                           "inside the named location");
+
+        return NJT_CONF_ERROR;
+    }
+
+    if (njt_strstr(value[1].data, "$document_root")
+        || njt_strstr(value[1].data, "${document_root}"))
+    {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "the $document_root variable cannot be used "
+                           "in the \"%V\" directive",
+                           &cmd->name);
+
+        return NJT_CONF_ERROR;
+    }
+
+    if (njt_strstr(value[1].data, "$realpath_root")
+        || njt_strstr(value[1].data, "${realpath_root}"))
+    {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "the $realpath_root variable cannot be used "
+                           "in the \"%V\" directive",
+                           &cmd->name);
+
+        return NJT_CONF_ERROR;
+    }
+
+	alias = 0;
+    clcf->alias = alias;
+    clcf->root = value[1];
+
+    if (!alias && clcf->root.len > 0
+        && clcf->root.data[clcf->root.len - 1] == '/')
+    {
+        clcf->root.len--;
+    }
+
+    if (clcf->root.data[0] != '$') {
+        if (njt_conf_full_name(cf->cycle, &clcf->root, 0) != NJT_OK) {
+            return NJT_CONF_ERROR;
+        }
+    }
+
+    n = njt_http_script_variables_count(&clcf->root);
+
+    njt_memzero(&sc, sizeof(njt_http_script_compile_t));
+    sc.variables = n;
+
+#if (NJT_PCRE)
+    if (alias && clcf->regex) {
+        clcf->alias = NJT_MAX_SIZE_T_VALUE;
+        n = 1;
+    }
+#endif
+
+    if (n) {
+        sc.cf = cf;
+        sc.source = &clcf->root;
+        sc.lengths = &clcf->root_lengths;
+        sc.values = &clcf->root_values;
+        sc.complete_lengths = 1;
+        sc.complete_values = 1;
+
+        if (njt_http_script_compile(&sc) != NJT_OK) {
+            return NJT_CONF_ERROR;
+        }
+    }
+	*/
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "=============test %V",
+                           &cmd->name);
     return NJT_CONF_OK;
 }
 
-
-static void *njt_doc_create_conf(njt_cycle_t *cycle) 
+/*
+static void *njt_doc_create_main_conf(njt_conf_t *cf) 
 {
     njt_doc_conf_t *conf;
 
-    conf = njt_pcalloc(cycle->pool, sizeof(njt_doc_conf_t));
+    conf = njt_pcalloc(cf->pool, sizeof(njt_doc_conf_t));
     if (conf == NULL)
     {
         return NULL;
@@ -351,8 +518,8 @@ static void *njt_doc_create_conf(njt_cycle_t *cycle)
     return conf;
 }
 
-static char *njt_doc_init_conf(njt_cycle_t *cycle, void *cf)
+static char *njt_doc_init_main_conf(njt_conf_t *cf, void *conf)
 {
     return NJT_CONF_OK;
 }
-
+*/
