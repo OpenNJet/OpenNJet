@@ -32,10 +32,8 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-helper-broker-mo
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-kv-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-config-api-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-sendmsg-module"
-NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-config-api-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-bwlist-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-split-clients-2-module"
-NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-bwlist-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-health-check-helper"
 #NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
@@ -44,7 +42,7 @@ flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --with-debug --build=NJT1.0_$git_
 #LD_OPT="-fsanitize=address -static-libgcc -static-libasan -L./3rd_lib -ldl"
 #CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan"
 LD_OPT="-L./3rd_lib -ldl"
-CC_OPT="-O0 -ggdb"
+CC_OPT="-O0 -ggdb" 
 cdir=`cd $(dirname $0); pwd`
 (
     cd $cdir
