@@ -1,7 +1,7 @@
 include_directories(../../tassl/include ${mosquitto_SOURCE_DIR} ${mosquitto_SOURCE_DIR}/src
 		${mosquitto_SOURCE_DIR}/include ${mosquitto_SOURCE_DIR}/lib
-		${OPENSSL_INCLUDE_DIR} ${STDBOOL_H_PATH} ${STDINT_H_PATH} )
-link_directories(../tassl)
+		${STDBOOL_H_PATH} ${STDINT_H_PATH} )
+link_directories(../../tassl)
 
 set (MOSQ_SRCS
 	../lib/mosquitto_internal.h
