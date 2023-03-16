@@ -821,162 +821,6 @@ static char * njt_get_http_down_status_name(njt_http_upstream_rr_peer_t *peer)
   return "up";
   
 }
-/*
-static njt_int_t
-njt_http_upstream_api_get_peer_from_json(njt_json_manager *json_manager,
-                                  njt_http_upstream_peer_code_t *json_peer
-                                  )
-{
-    njt_int_t          rc;
-    njt_uint_t         i,j;
-    njt_json_element  *items;
-	njt_json_element  *items_rsp;
-    
-
-    rc = NJT_OK;
-
-	 items = json_manager->json_keyval->elts;
-    for (i = 0; i < json_manager->json_keyval->nelts; i ++) {
-
-        if (njt_strncmp(items[i].key.data, "processing", 10) == 0) {
-
-            if (items[i].type != NJT_JSON_INT) {
-                rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-                return rc;
-            }
-
-            json_peer->processing = items[i].intval;
-            continue;
-        } else if (njt_strncmp(items[i].key.data, "requests", 8) == 0) {
-
-            if (items[i].type != NJT_JSON_INT) {
-                rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-                return rc;
-            }
-
-            json_peer->requests = items[i].intval;
-            continue;
-        } else if (njt_strncmp(items[i].key.data, "discarded", 9) == 0) {
-
-            if (items[i].type != NJT_JSON_INT) {
-                rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-                return rc;
-            }
-
-            json_peer->discarded = items[i].intval;
-            continue;
-        } else if (njt_strncmp(items[i].key.data, "received", 8) == 0) {
-
-            if (items[i].type != NJT_JSON_INT) {
-                rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-                return rc;
-            }
-
-            json_peer->received = items[i].intval;
-            continue;
-        } else if (njt_strncmp(items[i].key.data, "sent", 4) == 0) {
-
-            if (items[i].type != NJT_JSON_INT) {
-                rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-                return rc;
-            }
-
-            json_peer->sent = items[i].intval;
-            continue;
-        } else if (njt_strncmp(items[i].key.data, "total", 5) == 0) {
-
-            if (items[i].type != NJT_JSON_INT) {
-                rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-                return rc;
-            }
-
-            json_peer->total = items[i].intval;
-            continue;
-        } else if (njt_strncmp(items[i].key.data, "responses", 9) == 0) {
-
-            if (items[i].type != NJT_JSON_OBJ) {
-                rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-                return rc;
-            }
-
-            items_rsp = items[i].sudata->elts;  //sudata
-			for (j = 0; j < items[i].sudata->nelts; j ++) {
-				if (njt_strncmp(items_rsp[j].key.data, "1xx", 3) == 0) {
-
-					if (items_rsp[j].type != NJT_JSON_INT) {
-						rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-						return rc;
-					}
-
-					json_peer->one = items_rsp[j].intval;
-					continue;
-				} else if (njt_strncmp(items_rsp[j].key.data, "2xx", 3) == 0) {
-
-					if (items_rsp[j].type != NJT_JSON_INT) {
-						rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-						return rc;
-					}
-
-					json_peer->two = items_rsp[j].intval;
-					continue;
-				} else if (njt_strncmp(items_rsp[j].key.data, "3xx", 3) == 0) {
-
-					if (items_rsp[j].type != NJT_JSON_INT) {
-						rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-						return rc;
-					}
-
-					json_peer->three = items_rsp[j].intval;
-					continue;
-				} else if (njt_strncmp(items_rsp[j].key.data, "4xx", 3) == 0) {
-
-					if (items_rsp[j].type != NJT_JSON_INT) {
-						rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-						return rc;
-					}
-
-					json_peer->four = items_rsp[j].intval;
-					continue;
-				} else if (njt_strncmp(items_rsp[j].key.data, "5xx", 3) == 0) {
-
-					if (items_rsp[j].type != NJT_JSON_INT) {
-						rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-						return rc;
-					}
-
-					json_peer->five = items_rsp[j].intval;
-					continue;
-				} else if (njt_strncmp(items_rsp[j].key.data, "total", 5) == 0) {
-
-					if (items_rsp[j].type != NJT_JSON_INT) {
-						rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-						return rc;
-					}
-
-					json_peer->total = items_rsp[j].intval;
-					continue;
-				} else if (njt_strncmp(items_rsp[j].key.data, "codes", 5) == 0) {
-
-					if (items_rsp[j].type != NJT_JSON_OBJ) {
-						rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-						return rc;
-					}
-
-					json_peer->codes = items_rsp[j].sudata;
-					continue;
-				}
-			}
-            continue;
-        } 
-
-	
-        rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
-        return rc;
-
-    }
-
-    return rc;
-}*/
 
 
 static njt_int_t
@@ -1850,7 +1694,7 @@ njt_http_upstream_api_process_get(njt_http_request_t *r,
 
 static njt_int_t
 njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
-                                  njt_http_upstream_api_peer_t *json_peer,
+                                  njt_http_upstream_api_peer_t *api_peer,
                                   njt_flag_t  server_flag,njt_http_request_t *r,njt_flag_t proto) //proto  0 http,1 stream
 {
     njt_int_t          rc;
@@ -1869,25 +1713,25 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
 			 rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
 			 return rc;
 		}
-		json_peer->server = items->strval;
+		api_peer->server = items->strval;
 	}
 	njt_str_set(&key,"weight");
 	rc = njt_struct_top_find(json_manager, &key, &items);
 	if(rc == NJT_OK){
 		if (items->type == NJT_JSON_INT) {
-				json_peer->weight = items->intval;
+				api_peer->weight = items->intval;
             }  else if (items->type == NJT_JSON_STR) {
                 value = njt_atoi(items->strval.data, items->strval.len);
                 if (value < 0) {
-					 json_peer->msg = items->strval;
+					 api_peer->msg = items->strval;
                      rc = NJT_HTTP_UPS_API_WEIGHT_ERROR;
                      return rc;
                 }
 
-                json_peer->weight = value;
+                api_peer->weight = value;
 
             } else {
-				json_peer->msg = items->strval;
+				api_peer->msg = items->strval;
                 rc = NJT_HTTP_UPS_API_WEIGHT_ERROR;
                 return rc;
             } 
@@ -1896,7 +1740,7 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
 	rc = njt_struct_top_find(json_manager, &key, &items);
 	if(rc == NJT_OK){
 		if (items->type == NJT_JSON_INT) {
-				json_peer->max_conns = items->intval;
+				api_peer->max_conns = items->intval;
             }  else if (items->type == NJT_JSON_STR) {
                 value = njt_atoi(items->strval.data, items->strval.len);
                 if (value < 0) {
@@ -1904,7 +1748,7 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
                      return rc;
                 }
 
-                json_peer->max_conns = value;
+                api_peer->max_conns = value;
 
             } else {
                 rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
@@ -1915,7 +1759,7 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
 	rc = njt_struct_top_find(json_manager, &key, &items);
 	if(rc == NJT_OK){
 		if (items->type == NJT_JSON_INT) {
-				json_peer->max_fails = items->intval;
+				api_peer->max_fails = items->intval;
             }  else if (items->type == NJT_JSON_STR) {
                 value = njt_atoi(items->strval.data, items->strval.len);
                 if (value < 0) {
@@ -1923,7 +1767,7 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
                      return rc;
                 }
 
-                json_peer->max_fails = value;
+                api_peer->max_fails = value;
 
             } else {
                 rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
@@ -1934,14 +1778,14 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
 	rc = njt_struct_top_find(json_manager, &key, &items);
 	if(rc == NJT_OK){
 		if (items->type == NJT_JSON_BOOL) {
-				 json_peer->down = items->bval;
+				 api_peer->down = items->bval;
             }  else if (items->type == NJT_JSON_STR) {
                 if (njt_strncmp(items->strval.data, "false", 5) == 0) {
 
-                    json_peer->down = 0;
+                    api_peer->down = 0;
                 } else if (njt_strncmp(items->strval.data, "true", 4) == 0) {
 
-                    json_peer->down = 1;
+                    api_peer->down = 1;
                 } else {
 
                     rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
@@ -1957,14 +1801,14 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
 	rc = njt_struct_top_find(json_manager, &key, &items);
 	if(rc == NJT_OK){
 		if (items->type == NJT_JSON_BOOL) {
-				 json_peer->backup = items->bval;
+				 api_peer->backup = items->bval;
             }  else if (items->type == NJT_JSON_STR) {
                 if (njt_strncmp(items->strval.data, "false", 5) == 0) {
 
-                    json_peer->backup = 0;
+                    api_peer->backup = 0;
                 } else if (njt_strncmp(items->strval.data, "true", 4) == 0) {
 
-                    json_peer->backup = 1;
+                    api_peer->backup = 1;
                 } else {
 
                     rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
@@ -1980,14 +1824,14 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
 	rc = njt_struct_top_find(json_manager, &key, &items);
 	if(rc == NJT_OK){
 		if (items->type == NJT_JSON_BOOL) {
-				 json_peer->drain = items->bval;
+				 api_peer->drain = items->bval;
             }  else if (items->type == NJT_JSON_STR) {
                 if (njt_strncmp(items->strval.data, "false", 5) == 0) {
 
-                    json_peer->drain = 0;
+                    api_peer->drain = 0;
                 } else if (njt_strncmp(items->strval.data, "true", 4) == 0) {
 
-                    json_peer->drain = 1;
+                    api_peer->drain = 1;
                 } else {
 
                     rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
@@ -2004,11 +1848,11 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
 	 if (rc == NJT_OK) {
 
             if (items->type == NJT_JSON_INT) {
-                json_peer->fail_timeout = items->intval;
+                api_peer->fail_timeout = items->intval;
 
             } else if (items->type == NJT_JSON_STR) {
 
-				json_peer->fail_timeout = njt_parse_time(&items->strval, 1);
+				api_peer->fail_timeout = njt_parse_time(&items->strval, 1);
 
             } else {
                 rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
@@ -2019,11 +1863,11 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
 	rc = njt_struct_top_find(json_manager, &key, &items);
         if (rc == NJT_OK) {
 			   if (items->type == NJT_JSON_INT) {
-                json_peer->slow_start = items->intval;
+                api_peer->slow_start = items->intval;
 
             } else if (items->type == NJT_JSON_STR) {
 
-				json_peer->slow_start = njt_parse_time(&items->strval, 1);
+				api_peer->slow_start = njt_parse_time(&items->strval, 1);
 
             } else {
                 rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
@@ -2036,8 +1880,8 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
 
          if (rc == NJT_OK) {  //rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
 			 if (items->type == NJT_JSON_STR) {
-                json_peer->route = items->strval;
-				if(json_peer->route.len > 32) {
+                api_peer->route = items->strval;
+				if(api_peer->route.len > 32) {
 					 rc = NJT_HTTP_UPS_API_ROUTE_INVALID_LEN;
 					 return rc;
 				}
@@ -2049,7 +1893,7 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
 					 return rc;
 				}
 				data.len = njt_snprintf(data.data,data.len,"%d",items->intval) - data.data;
-				json_peer->route = data;
+				api_peer->route = data;
             } else {
 				rc = NJT_HTTP_UPS_API_INVALID_JSON_BODY;
                 return rc;
@@ -2064,13 +1908,13 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
     /*For post*/
     if (server_flag) {
 
-        if (json_peer->server.data == NULL || json_peer->server.len == 0) {
+        if (api_peer->server.data == NULL || api_peer->server.len == 0) {
             rc = NJT_HTTP_UPS_API_MISS_SRV;
         }
 
     } else {
 
-        if (json_peer->server.data || json_peer->server.len) {
+        if (api_peer->server.data || api_peer->server.len) {
           //  rc = NJT_HTTP_UPS_API_MODIFY_SRV;
         }
     }
