@@ -9,8 +9,7 @@
 #include <njet_http_location_module.h>
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
-
-
+extern njt_cycle_t *njet_master_cycle;
 
 static void
 njt_http_location_read_data(njt_http_request_t *r);
@@ -341,30 +340,17 @@ njt_http_location_handler(njt_http_request_t *r) {
 		location_info->code = 5; //location_body error
 	}*/
 	
-    if (location_info != NULL && location_info->code == 0) {
+    if (location_info != NULL && location_info->msg.len ==  0) {
         njt_str_set(&insert, "Success");
     } else {
 		if(location_info == NULL) {
 			njt_str_set(&insert, "json parser error!");
-		} else if(location_info->code == 1){
-			njt_str_set(&insert, "sport error!!!");
-		}else if(location_info->code == 2){
-			njt_str_set(&insert, "location error!!!");
-		}else if(location_info->code == 3){
-			njt_str_set(&insert, "proxy_pass error!!!");
-		}else if(location_info->code == 4){
-			njt_str_set(&insert, "server_name error!!!");
-		}else if(location_info->code == 5){
-			njt_str_set(&insert, "location_body error!!!");
-		}else if(location_info->code == 6){
-			njt_str_set(&insert, "type error!!!");
+		} else {
+			insert = location_info->msg;
 		}
         
     }
 
-	if(location_info != NULL) {
-		njt_destroy_pool(location_info->pool);
-	}
 
     r->headers_out.content_type_len = sizeof("text/plain") - 1;
     njt_str_set(&r->headers_out.content_type, "text/plain");
@@ -378,6 +364,11 @@ njt_http_location_handler(njt_http_request_t *r) {
         r->headers_out.content_length = NULL;
     }
     rc = njt_http_send_header(r);
+   
+    if(location_info != NULL) {
+                njt_destroy_pool(location_info->pool);
+    }
+
     return njt_http_output_filter(r, &out);
 }
 
@@ -393,7 +384,7 @@ static void
 njt_http_location_read_data(njt_http_request_t *r){
 	njt_str_t json_str;
     njt_chain_t *body_chain;
-    //njt_int_t rc;
+    njt_int_t rc;
     u_char *p;
     njt_http_location_info_t *location_info;
 	 uint32_t                                      crc32;
@@ -423,7 +414,14 @@ njt_http_location_read_data(njt_http_request_t *r){
 		return;
 	}
 	njt_http_set_ctx(r, location_info, njt_http_location_api_module);
-	if(location_info->code != 0) {
+	if(location_info->proxy_pass.len > 0) {
+		rc = njt_http_check_upstream_exist(njet_master_cycle,r->pool,&location_info->proxy_pass);
+		if(rc != NJT_OK) {
+			njt_str_set(&location_info->msg, "proxy_pass upstream  no defined!");
+			return;
+		}
+	}
+	if(location_info->msg.len != 0) {
 		return;
 	}
 
