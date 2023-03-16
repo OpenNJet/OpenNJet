@@ -701,9 +701,13 @@ njt_http_merge_locations(njt_conf_t *cf, njt_queue_t *locations,
         if (rv != NJT_CONF_OK) {
             return rv;
         }
-
+	if(cf->dynamic == 0) {
         rv = njt_http_merge_locations(cf, clcf->locations, clcf->loc_conf,
                                       module, ctx_index);
+	} else {
+		rv = njt_http_merge_locations(cf, clcf->old_locations, clcf->loc_conf,
+                                      module, ctx_index);
+	}
         if (rv != NJT_CONF_OK) {
             return rv;
         }
