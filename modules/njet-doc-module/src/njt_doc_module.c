@@ -1,6 +1,6 @@
 #include <njt_config.h>
 #include <njt_core.h>
-
+#include <njt_http.h>
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <windows.h>
@@ -19,15 +19,21 @@ static FILE * njt_doc_create_file(char *pathname, int mode);
 static int njt_doc_verify_checksum(const char *p);
 static void njt_doc_untar(unsigned char* in, unsigned long in_len, const char *base);
 
-static void *njt_doc_create_conf(njt_cycle_t *cycle);
-static char *njt_doc_init_conf(njt_cycle_t *cycle, void *conf);
+int njt_doc_delete_dir(const char *path);
 
+static njt_int_t njt_doc_module_init(njt_cycle_t *cycle);
+static njt_int_t njt_doc_module_create_conf(njt_cycle_t *cycle);
+static void njt_doc_module_exit(njt_cycle_t *cycle);
+/*
+static void *njt_doc_create_main_conf(njt_conf_t *cf);
+static char *njt_doc_init_main_conf(njt_conf_t *cf, void *conf);
+*/
 static char *njt_doc_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 static njt_command_t njt_doc_commands[] = {
 
     {njt_string("doc_api"),
-     NJT_MAIN_CONF |NJT_DIRECT_CONF| NJT_CONF_TAKE1,
+     NJT_HTTP_LOC_CONF | NJT_CONF_NOARGS,
      njt_doc_api_set,
      0,     
      0,
@@ -37,10 +43,18 @@ static njt_command_t njt_doc_commands[] = {
 };
 
 /* The module context. */
-static njt_core_module_t njt_doc_module_ctx = {
-    njt_string("doc_api"),
-    njt_doc_create_conf,
-    njt_doc_init_conf
+static njt_http_module_t njt_doc_module_ctx = {
+	NULL,                                   /* preconfiguration */
+	NULL,                                   /* postconfiguration */
+
+	NULL,                                   /* create main configuration */
+	NULL,                                   /* init main configuration */
+
+	NULL,                                  /* create server configuration */
+	NULL,                                  /* merge server configuration */
+
+	NULL,                                   /* create location configuration */
+	NULL                                    /* merge location configuration */
 };
 
 
@@ -49,16 +63,130 @@ njt_module_t  njt_doc_module = {
     NJT_MODULE_V1,
     &njt_doc_module_ctx, /* module context */
     njt_doc_commands,    /* module directives */
-    NJT_CORE_MODULE,        /* module type */
+    NJT_HTTP_MODULE,        /* module type */
     NULL,                                  /* init master */
-    NULL,                                  /* init module */
+    njt_doc_module_init,                   /* init module */
     NULL,                                  /* init process */
     NULL,                                  /* init thread */
     NULL,                                  /* exit thread */
-    NULL,                                  /* exit process */
+    njt_doc_module_exit,                   /* exit process */
     NULL,                                  /* exit master */
     NJT_MODULE_V1_PADDING
 };
+
+static njt_int_t njt_doc_module_init(njt_cycle_t *cycle){
+
+    return NJT_OK;
+}
+
+static njt_int_t njt_doc_module_create_conf(njt_cycle_t *cycle) {
+	njt_doc_conf_t *conf;
+	u_char *dst;
+	u_char *p;
+	size_t len;
+    njt_uint_t rand_index;
+
+    njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module init start ");
+    conf = njt_pcalloc(cycle->pool, sizeof(njt_doc_conf_t));
+    if (conf == NULL)
+    {
+		njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module alloc main conf error ");
+        return NJT_ERROR;
+    }
+
+    //create ramdom dir on /dev/shm/
+	// rand_index = njt_random() % 1000;
+	// now just use a fixed value
+	rand_index = 30;
+
+    len = 100;
+    dst = njt_pnalloc(cycle->pool, len);
+    if (dst == NULL)
+    {
+		njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module alloc dst dir error ");
+        return NJT_ERROR;
+    }
+
+	p = njt_snprintf(dst, len, "/dev/shm/njt_doc_%d", rand_index);
+	dst[p-dst] = '\0';
+
+    conf->untar_dir.data = dst;
+    conf->untar_dir.len = p - dst;
+	
+	cycle->conf_ctx[njt_doc_module.index] = (void *) conf;
+
+	// njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module init start end, index:%d  cycle->conf_ctx:%d  dir:%V",
+	                    // njt_doc_module.index, cycle->conf_ctx, conf->untar_dir);
+
+    return NJT_OK;
+}
+
+static void njt_doc_module_exit(njt_cycle_t *cycle) {
+	njt_doc_conf_t *conf;
+fprintf(stderr,"njt doc exit start++++++++++++++++++++++ \r\n");
+	conf = (njt_doc_conf_t *)njt_get_conf(cycle->conf_ctx, njt_doc_module);
+	sleep(10);
+    //remove dir conf->untar_dir
+	if (njt_doc_delete_dir((char *)conf->untar_dir.data) == NJT_FILE_ERROR) {
+		njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module remove dir:%s error ", conf->untar_dir);
+	}
+	sleep(10);
+	njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module remove dir:%s error ", conf->untar_dir);
+fprintf(stderr,"njt doc exit end++++++++++++++++++++++ \r\n");
+    return;
+}
+
+
+int njt_doc_delete_dir(const char *path)
+{
+	
+    DIR *d = opendir(path);
+    size_t path_len = strlen(path);
+    int r = -1;
+    if (d)
+    {
+        struct dirent *p;
+        r = 0;
+        while (!r && (p = readdir(d)))
+        {
+            int r2 = -1;
+            char *buf;
+            size_t len;
+            /* Skip the names "." and ".." as we don't want to recurse on them. */
+            if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+            {
+                continue;
+            }
+            len = path_len + strlen(p->d_name) + 2;
+            buf = malloc(len);
+            if (buf)
+            {
+                struct stat statbuf;
+                snprintf(buf, len, "%s/%s", path, p->d_name);
+                if (!stat(buf, &statbuf))
+                {
+                    if (S_ISDIR(statbuf.st_mode))
+                    {
+                        r2 = njt_doc_delete_dir(buf);
+                    }
+                    else
+                    {
+                        r2 = unlink(buf);
+                    }
+                }
+                free(buf);
+            }
+            r = r2;
+        }
+        closedir(d);
+    }
+    if (!r)
+    {
+        r = rmdir(path);
+    }
+    return r;
+}
+
 
 static char* njt_doc_gunzip(unsigned char* src, unsigned long  src_len, unsigned long* out_len)
 {
@@ -264,7 +392,8 @@ static void njt_doc_untar(unsigned char* in, unsigned long in_len,const char *ba
 			break;
 		default:
 			printf(" Extracting file %s\n", buff);
-			full_dir=malloc(strlen(base)+1+strlen(buff));
+			full_dir=malloc(strlen(base)+2+strlen(buff));
+			njt_memzero(full_dir, strlen(base)+2+strlen(buff));
 
 			sprintf(full_dir,"%s/%s",base,buff);
 			f = njt_doc_create_file(full_dir, njt_doc_parseoct(buff + 100, 8));
@@ -298,61 +427,54 @@ static void njt_doc_untar(unsigned char* in, unsigned long in_len,const char *ba
 static char *
 njt_doc_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
-    njt_str_t *value;
-    njt_doc_conf_t *fmcf;
+    // njt_str_t *value;
     unsigned long out_len;
     char* un_data;
+	njt_http_core_loc_conf_t *clcf;
+    // njt_int_t                   alias;
+    // njt_uint_t                  n;
+    // njt_http_script_compile_t   sc;
+	njt_doc_conf_t              *fconf;
 
-    value = cf->args->elts;
-    fmcf = (njt_doc_conf_t *)conf;
+	njt_doc_module_create_conf(cf->cycle);
+	fconf = (njt_doc_conf_t *)njt_get_conf(cf->cycle->conf_ctx, njt_doc_module);
 
-    u_char *dst;
-    size_t vl = value[1].len + 1;
-    dst = njt_pnalloc(cf->pool, vl);
-    if (dst == NULL)
-    {
-        return NJT_CONF_ERROR;
-    }
-
-    njt_memcpy(dst, value[1].data, value[1].len);
-    dst[vl-1] = '\0';
-
-    fmcf->untar_dir.data = dst;
-    fmcf->untar_dir.len = vl;
+    //check dir exist, if exist, delete first
+	if(access((char *)fconf->untar_dir.data, 0) != -1){
+        if (njt_doc_delete_dir((char *)fconf->untar_dir.data) == NJT_FILE_ERROR) {
+            njt_log_error(NJT_LOG_EMERG, cf->cycle->log, 0, "doc module remove dir:%s error ", fconf->untar_dir);
+	    }
+	}
 
     //untar
-    
 	un_data = njt_doc_gunzip(doc_tar_gz,doc_tar_gz_len,&out_len);
 	if (un_data) {
-		njt_doc_untar((unsigned char *)un_data, out_len, (char *)fmcf->untar_dir.data);
+		njt_doc_untar((unsigned char *)un_data, out_len, (char *)fconf->untar_dir.data);
 		njt_free(un_data);
 	}else{
         njt_conf_log_error(NJT_LOG_ERR, cf, 0,
                     "doc_untar fail");
     }
 
-    return NJT_CONF_OK;
-}
+    //set root dir
+    clcf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
 
+    clcf->alias = 0;
+    clcf->root = fconf->untar_dir;
 
-static void *njt_doc_create_conf(njt_cycle_t *cycle) 
-{
-    njt_doc_conf_t *conf;
-
-    conf = njt_pcalloc(cycle->pool, sizeof(njt_doc_conf_t));
-    if (conf == NULL)
+    if (clcf->root.len > 0
+        && clcf->root.data[clcf->root.len - 1] == '/')
     {
-        return NULL;
+        clcf->root.len--;
     }
 
-    conf->untar_dir.data = NULL;
-    conf->untar_dir.len = 0;
+    if (clcf->root.data[0] != '$') {
+        if (njt_conf_full_name(cf->cycle, &clcf->root, 0) != NJT_OK) {
+            return NJT_CONF_ERROR;
+        }
+    }
 
-    return conf;
-}
 
-static char *njt_doc_init_conf(njt_cycle_t *cycle, void *cf)
-{
+
     return NJT_CONF_OK;
 }
-

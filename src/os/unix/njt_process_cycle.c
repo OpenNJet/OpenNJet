@@ -997,6 +997,7 @@ static void
 njt_master_process_exit(njt_cycle_t *cycle)
 {
     njt_uint_t  i;
+
     njt_delete_pidfile(cycle);
 
     njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exit");
@@ -1694,7 +1695,11 @@ njt_cache_manager_process_handler(njt_event_t *ev)
 
     path = njt_cycle->paths.elts;
     for (i = 0; i < njt_cycle->paths.nelts; i++) {
-
+        if (path[i]->purger) {
+            n = path[i]->purger(path[i]->data);
+            next = (n <= next) ? n : next;
+            njt_time_update();
+        }
         if (path[i]->manager) {
             n = path[i]->manager(path[i]->data);
 

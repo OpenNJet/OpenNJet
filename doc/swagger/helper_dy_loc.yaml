@@ -1,0 +1,95 @@
+openapi: 3.0.3
+info:
+  title: njet-api
+  description: njet-api
+  version: 1.0.0
+servers:
+  - url: '/'
+paths:
+  /dyn_loc:
+    put:
+      tags:
+        - dyn_loc
+      summary: Delete a dynamic location from server
+      description: Delete a dynamic location from server.
+      operationId: delLocation
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/del_location'
+    post:
+      tags:
+        - dyn_loc
+      summary: Add a dynamic location to server
+      description: Add a dynamic location to server.
+      operationId: addLocation
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/add_location'
+###DEFINITIONS
+components:
+  schemas:
+    del_location:
+      title: dyn_loc
+      description: delete dynamic location from server
+      type: object
+      properties:
+        type:
+          type: string
+          description: fix value "del".
+          example: del
+        addr_port:
+          type: string
+          description: addr and port of server.
+          example: 192.168.40.203:8081
+        server_name:
+          type: string
+          description:  server name .
+          example: cluster.tmlake.com
+        location_rule:
+          type: string
+          description:  Regular Expression.
+          example: =
+        location_name:
+          type: string
+          description:  the name of location.
+          example: /clb
+    add_location:
+      title: dyn_loc
+      description: add dynamic location to server
+      type: object
+      properties:
+        type:
+          type: string
+          example: add
+        addr_port:
+          type: string
+          description: addr and port of server.
+          example: 192.168.40.203:8081
+        server_name:
+          type: string
+          description:  server name .
+          example: cluster.tmlake.com
+        location_rule:
+          type: string
+          description:  Regular Expression.
+          example: =
+        location_name:
+          type: string
+          description:  the name of location.
+          example: /clb
+        location_body:
+          type: string
+          description:  the body content of location .
+          example: api write=off;
+        proxy_pass:
+          type: string
+          description:  the proxy_pass info .
+          example: $dest_upstream;
