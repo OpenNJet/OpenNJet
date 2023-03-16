@@ -344,7 +344,7 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
         goto out;
     }
     if(r->method == NJT_HTTP_GET){
-        njt_str_t msg = njt_string("{\"method\":\"GET\"}");
+        njt_str_t smsg = njt_string("{\"method\":\"GET\"}");
         if(path->nelts == 2){
             njt_str_t  key = njt_string("njt_http_kv_module");
             njt_str_concat(r->pool,topic,rpc_pre,key, goto err);
@@ -352,7 +352,7 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
         if(path->nelts == 3){
             njt_str_concat(r->pool,topic,rpc_pre,uri[2], goto err);
         }
-        rc = njt_ctrl_dynlog_rpc_send(r,&topic,&msg);
+        rc = njt_ctrl_dynlog_rpc_send(r,&topic,&smsg);
         if(rc != NJT_OK){
             goto err;
         }

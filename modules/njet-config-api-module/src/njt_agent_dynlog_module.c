@@ -148,7 +148,7 @@ static njt_json_define_t njt_http_dyn_access_api_main_json_dt[] ={
 #if (NJT_HTTP_DYN_LOG)
 
         {
-                njt_string("accessLogFormat"),
+                njt_string("accessLogFormats"),
                 offsetof(njt_http_dyn_access_api_main_t, log_formats),
                 sizeof(njt_http_dyn_access_log_format_t),
                 NJT_JSON_OBJ,
@@ -208,10 +208,16 @@ static njt_int_t njt_dynlog_update_access_log(njt_pool_t *pool,njt_http_dyn_acce
     njt_http_core_srv_conf_t  *cscf;
     njt_http_core_loc_conf_t  *clcf;
     njt_http_dyn_access_api_srv_t *daas;
+    njt_http_dyn_access_log_format_t *fmt;
     njt_uint_t i;
 
     cycle = (njt_cycle_t*)njt_cycle;
 
+
+    fmt = api_data->log_formats.elts;
+    for(i = 0; i < api_data->log_formats.nelts; ++i){
+        njt_http_log_dyn_set_format(&fmt[i]);
+    }
     daas = api_data->servers.elts;
     for(i = 0; i < api_data->servers.nelts; ++i){
         cscf = njt_http_get_srv_by_port(cycle,(njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
@@ -225,6 +231,8 @@ static njt_int_t njt_dynlog_update_access_log(njt_pool_t *pool,njt_http_dyn_acce
         njt_dynlog_update_locs_log(&daas[i].locs,clcf->old_locations,&ctx);
 
     }
+
+
     return NJT_OK;
 }
 
@@ -249,23 +257,13 @@ static njt_json_element* njt_dynlog_dump_log_cf_json(njt_pool_t *pool,njt_array_
         if(path == NULL){
             continue;
         }
-        if(log[i].syslog_peer != NULL){
-
-        }else if(log[i].file != NULL){
-            path = njt_json_str_element(pool, njt_json_fast_key("path"),&log[i].file->name);
+        if( log[i].path.len > 0){
+            path = njt_json_str_element(pool, njt_json_fast_key("path"),&log[i].path);
             if(path == NULL){
                 continue;
             }
             njt_struct_add(obj,path,pool);
         }
-//        else if(log[i].script != NULL){
-//            path = njt_json_str_element(pool, njt_json_fast_key("path"),&log[i].script->values);
-//            if(path == NULL){
-//                continue;
-//            }
-//            njt_struct_add(arr,path,pool);
-//        }
-
         if(log[i].format != NULL){
             format = njt_json_str_element(pool, njt_json_fast_key("formatName"),&log[i].format->name);
             if(format == NULL){
@@ -341,16 +339,20 @@ static njt_str_t njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
     njt_http_core_loc_conf_t  *clcf;
     njt_http_core_main_conf_t *hcmcf;
     njt_http_core_srv_conf_t  **cscfp;
+    njt_http_log_main_conf_t *lmcf;
+    njt_http_log_fmt_t  *fmt;
+
     njt_uint_t i,j;
     njt_array_t *array;
     njt_str_t json,*tmp_str;
     njt_http_server_name_t *server_name;
     njt_json_manager json_manager;
-    njt_json_element *srvs,*srv,*subs,*sub;
+    njt_json_element *srvs,*srv,*subs,*sub,*fmts;
     njt_int_t rc;
 
     njt_memzero(&json_manager, sizeof(njt_json_manager));
     hcmcf = njt_http_cycle_get_module_main_conf(cycle,njt_http_core_module);
+    lmcf = njt_http_cycle_get_module_main_conf(cycle,njt_http_log_module);
 
     srvs =  njt_json_arr_element(pool,njt_json_fast_key("servers"));
     if(srvs == NULL ){
@@ -404,8 +406,45 @@ static njt_str_t njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
 
     rc = njt_struct_top_add(&json_manager, srvs, NJT_JSON_OBJ, pool);
     if(rc != NJT_OK){
-        njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno,
-                      "njt_struct_top_add error");
+        njt_log_error(NJT_LOG_ALERT, cycle->log, 0,"njt_struct_top_add error");
+    }
+    fmts =  njt_json_arr_element(pool,njt_json_fast_key("accessLogFormats"));
+    if(fmts == NULL ){
+        goto err;
+    }
+    fmt = lmcf->formats.elts;
+    for( i = 0; i < lmcf->formats.nelts; i++){
+        subs =  njt_json_obj_element(pool,njt_json_null_key);
+        if(subs == NULL ){
+            goto err;
+        }
+        if( fmt[i].name.len > 0 ) {
+            sub = njt_json_str_element(pool, njt_json_fast_key("name"), &fmt[i].name);
+            if (sub == NULL) {
+                goto err;
+            }
+            njt_struct_add(subs, sub, pool);
+        }
+        if( fmt[i].escape.len > 0 ){
+            sub = njt_json_str_element(pool, njt_json_fast_key("escape"),&fmt[i].escape);
+            if(sub == NULL ){
+                goto err;
+            }
+            njt_struct_add(subs,sub,pool);
+        }
+        if(fmt[i].format.len){
+            sub = njt_json_str_element(pool, njt_json_fast_key("format"),&fmt[i].format);
+            if(sub == NULL ){
+                goto err;
+            }
+            njt_struct_add(subs,sub,pool);
+        }
+
+        njt_struct_add(fmts,subs,pool);
+    }
+    rc = njt_struct_top_add(&json_manager, fmts, NJT_JSON_OBJ, pool);
+    if(rc != NJT_OK){
+        njt_log_error(NJT_LOG_ALERT, cycle->log, 0,"njt_struct_top_add error");
     }
     njt_memzero(&json, sizeof(njt_str_t));
     njt_structure_2_json(&json_manager, &json, pool);
