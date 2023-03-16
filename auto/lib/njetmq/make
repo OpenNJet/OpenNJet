@@ -28,18 +28,17 @@ END
 
     *)
 
-    CMAKE="cmake"
-     if command -v cmake3 > /dev/null; then
-        CMAKE="cmake3"
-     fi
-
+         CMAKE="cmake"
+         if command -v cmake3 > /dev/null; then
+            CMAKE="cmake3"
+         fi
+        echo "cmake use $CMAKE "
         cat << END                                            >> $NJT_MAKEFILE
 
 $NJETMQ/njetmq/njet_iot_emb.h:	$OPENSSL/.openssl/include/openssl/ssl.h
-	cd $NJETMQ \\
-	&&  mkdir -p $NJETMQ/build \\
+	mkdir -p $NJETMQ/build \\
 	&&  cd  $NJETMQ/build \\
-	&& \$(CMAKE) ../ \\
+	&& $CMAKE ../ \\
 	&& \$(MAKE)
 
 END
