@@ -257,7 +257,7 @@ if (WITH_WEBSOCKETS)
 	endif (STATIC_WEBSOCKETS)
 endif (WITH_WEBSOCKETS)
 
-add_library(njetmq SHARED ${MOSQ_SRCS})
+add_library(njetmq STATIC ${MOSQ_SRCS})
 #add_executable(mosquitto ${MOSQ_SRCS})
 target_link_libraries(njetmq ${MOSQ_LIBS})
 

@@ -57,11 +57,7 @@ cdir=`cd $(dirname $0); pwd`
 		if [ ! -d /etc/njet/lualib ]; then
 		   cp -fr lualib /etc/njet/lualib
 		fi
-		if [  -d ./auto/lib/njetmq ]; then
-		   mkdir -p ./auto/lib/njetmq/build;cd  ./auto/lib/njetmq/build; cmake3 ../; make; cd -
-		   cp ./auto/lib/njetmq/build/njetmq/libnjetmq.so  ./3rd_lib/
-		   cp -fr ./3rd_lib/*    /usr/local/lib/
-		fi
+
                 ./configure $flags --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
                 ;;
             make)

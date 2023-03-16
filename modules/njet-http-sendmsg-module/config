@@ -7,7 +7,5 @@ njt_module_deps=" \
 njt_module_srcs=" \
   $njt_addon_dir/src/njt_http_sendmsg_module.c \
 "
-njt_module_libs=" -lnjetmq"
-
 CORE_INCS="$CORE_INCS $njt_addon_dir/src"
 . auto/module
