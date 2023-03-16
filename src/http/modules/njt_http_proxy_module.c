@@ -644,6 +644,27 @@ static njt_command_t  njt_http_proxy_commands[] = {
       offsetof(njt_http_proxy_loc_conf_t, upstream.ssl_certificate_key),
       NULL },
 
+    { njt_string("proxy_ssl_gm"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_proxy_loc_conf_t, ssl_gm),
+      NULL },
+
+    { njt_string("proxy_ssl_enc_certificate"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_http_set_complex_value_zero_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_proxy_loc_conf_t, upstream.ssl_certificate_enc),
+      NULL },
+
+    { njt_string("proxy_ssl_enc_certificate_key"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_http_set_complex_value_zero_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_proxy_loc_conf_t, upstream.ssl_certificate_enc_key),
+      NULL },
+
     { njt_string("proxy_ssl_password_file"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       njt_http_proxy_ssl_password_file,
@@ -3380,8 +3401,11 @@ njt_http_proxy_create_loc_conf(njt_conf_t *cf)
     conf->upstream.ssl_name = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_server_name = NJT_CONF_UNSET;
     conf->upstream.ssl_verify = NJT_CONF_UNSET;
+    conf->ssl_gm = NJT_CONF_UNSET;
     conf->upstream.ssl_certificate = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_certificate_key = NJT_CONF_UNSET_PTR;
+    conf->upstream.ssl_certificate_enc = NJT_CONF_UNSET_PTR;
+    conf->upstream.ssl_certificate_enc_key = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_passwords = NJT_CONF_UNSET_PTR;
     conf->ssl_verify_depth = NJT_CONF_UNSET_UINT;
     conf->ssl_conf_commands = NJT_CONF_UNSET_PTR;
@@ -3734,6 +3758,10 @@ njt_http_proxy_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->upstream.ssl_certificate, NULL);
     njt_conf_merge_ptr_value(conf->upstream.ssl_certificate_key,
                               prev->upstream.ssl_certificate_key, NULL);
+    njt_conf_merge_ptr_value(conf->upstream.ssl_certificate_enc,
+                              prev->upstream.ssl_certificate_enc, NULL);
+    njt_conf_merge_ptr_value(conf->upstream.ssl_certificate_enc_key,
+                              prev->upstream.ssl_certificate_enc_key, NULL);
     njt_conf_merge_ptr_value(conf->upstream.ssl_passwords,
                               prev->upstream.ssl_passwords, NULL);
 
@@ -4992,10 +5020,18 @@ njt_http_proxy_set_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *plcf)
         return NJT_OK;
     }
 
-    if (njt_ssl_create(plcf->upstream.ssl, plcf->ssl_protocols, NULL)
-        != NJT_OK)
-    {
-        return NJT_ERROR;
+    if (plcf->ssl_gm == 1) {
+        if (njt_ssl_gm_create(plcf->upstream.ssl, plcf->ssl_protocols, NULL)
+            != NJT_OK)
+        {
+            return NJT_ERROR;
+        }
+    } else {
+        if (njt_ssl_create(plcf->upstream.ssl, plcf->ssl_protocols, NULL)
+            != NJT_OK)
+        {
+            return NJT_ERROR;
+        }
     }
 
     cln = njt_pool_cleanup_add(cf->pool, 0);
@@ -5024,6 +5060,17 @@ njt_http_proxy_set_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *plcf)
             return NJT_ERROR;
         }
 
+        if (plcf->upstream.ssl_certificate_enc
+            && plcf->upstream.ssl_certificate_enc->value.len) {
+            if (plcf->upstream.ssl_certificate_enc_key == NULL) {
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                            "no \"proxy_ssl_enc_certificate_key\" is defined "
+                            "for certificate \"%V\"",
+                            &plcf->upstream.ssl_certificate_enc->value);
+                return NJT_ERROR;
+            }
+        }
+
         if (plcf->upstream.ssl_certificate->lengths
             || plcf->upstream.ssl_certificate_key->lengths)
         {
@@ -5037,6 +5084,8 @@ njt_http_proxy_set_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *plcf)
             if (njt_ssl_certificate(cf, plcf->upstream.ssl,
                                     &plcf->upstream.ssl_certificate->value,
                                     &plcf->upstream.ssl_certificate_key->value,
+                                    &plcf->upstream.ssl_certificate_enc->value,
+                                    &plcf->upstream.ssl_certificate_enc_key->value,
                                     plcf->upstream.ssl_passwords)
                 != NJT_OK)
             {

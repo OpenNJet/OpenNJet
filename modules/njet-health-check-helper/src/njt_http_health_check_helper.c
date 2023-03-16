@@ -293,6 +293,14 @@ static njt_json_define_t njt_helper_hc_api_data_ssl_json_dt[] = {
                 NULL,
         },
         {
+                njt_string("ntls"),
+                offsetof(njt_helper_hc_ssl_add_data_t, ntls_enable),
+                0,
+                NJT_JSON_BOOL,
+                NULL,
+                NULL,
+        },
+        {
                 njt_string("sessionReuse"),
                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_session_reuse),
                 0,
@@ -375,6 +383,22 @@ static njt_json_define_t njt_helper_hc_api_data_ssl_json_dt[] = {
         {
                 njt_string("certificateKey"),
                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_certificate_key),
+                0,
+                NJT_JSON_STR,
+                NULL,
+                NULL,
+        },
+        {
+                njt_string("ssl_enc_certificate"),
+                offsetof(njt_helper_hc_ssl_add_data_t, ssl_enc_certificate),
+                0,
+                NJT_JSON_STR,
+                NULL,
+                NULL,
+        },
+        {
+                njt_string("ssl_enc_certificate_key"),
+                offsetof(njt_helper_hc_ssl_add_data_t, ssl_enc_certificate_key),
                 0,
                 NJT_JSON_STR,
                 NULL,
@@ -2313,6 +2337,10 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
 static njt_int_t njy_hc_api_data2_ssl_cf(njt_helper_hc_api_data_t *api_data, njt_helper_health_check_conf_t *hhccf) {
 
     hhccf->ssl.ssl_enable = api_data->ssl.ssl_enable ? 1 : 0;
+    if(api_data->ssl.ntls_enable){
+        hhccf->ssl.ssl_enable = 1;
+    }
+    hhccf->ssl.ntls_enable = api_data->ssl.ntls_enable ? 1 : 0;
     hhccf->ssl.ssl_session_reuse = api_data->ssl.ssl_session_reuse ? 1 : 0;
     hhccf->ssl.ssl_protocols = api_data->ssl.ssl_protocols == 0 ?
                                (NJT_CONF_BITMASK_SET | NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1 | NJT_SSL_TLSv1_2)
@@ -2333,6 +2361,9 @@ static njt_int_t njy_hc_api_data2_ssl_cf(njt_helper_hc_api_data_t *api_data, njt
     njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_crl, api_data->ssl.ssl_crl, return HC_SERVER_ERROR);
     njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_certificate, api_data->ssl.ssl_certificate, return HC_SERVER_ERROR);
     njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_certificate_key, api_data->ssl.ssl_certificate_key,
+                      return HC_SERVER_ERROR);
+    njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_enc_certificate, api_data->ssl.ssl_enc_certificate, return HC_SERVER_ERROR);
+    njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_enc_certificate_key, api_data->ssl.ssl_enc_certificate_key,
                       return HC_SERVER_ERROR);
 //    njt_array_t *ssl_passwords;
 //    njt_array_t *ssl_conf_commands;
