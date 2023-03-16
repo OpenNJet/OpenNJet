@@ -29,7 +29,7 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-upstream-ap
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-mqconf-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-helper-ctrl-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-helper-broker-module"
-NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-kv-module"
+NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-kv-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-sendmsg-module"
 #NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-split-clients-2-module"
 #NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-health-check-helper"
