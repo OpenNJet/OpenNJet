@@ -45,7 +45,7 @@ flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --with-debug --build=NJT1.0_$git_
 LD_OPT="-L./3rd_lib -ldl"
 CC_OPT="-O0 -ggdb"
 
-#api doc make tar file 
+#api doc make tar file
 doctar=doc.tar
 
 if [ -f $doctar ]
