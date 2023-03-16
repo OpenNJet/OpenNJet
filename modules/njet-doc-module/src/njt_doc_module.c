@@ -442,7 +442,7 @@ njt_doc_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     //check dir exist, if exist, delete first
 	if(access((char *)fconf->untar_dir.data, 0) != -1){
         if (njt_doc_delete_dir((char *)fconf->untar_dir.data) == NJT_FILE_ERROR) {
-            njt_log_error(NJT_LOG_EMERG, cf->cycle->log, 0, "doc module remove dir:%s error ", fconf->untar_dir);
+            njt_log_error(NJT_LOG_EMERG, cf->cycle->log, 0, "doc module remove dir:%s error ", fconf->untar_dir.data);
 	    }
 	}
 
