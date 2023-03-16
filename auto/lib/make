@@ -10,6 +10,7 @@ fi
 
 if [ $OPENSSL != NONE -a $OPENSSL != NO -a $OPENSSL != YES ]; then
     . auto/lib/openssl/make
+    . auto/lib/njetmq/make
 fi
 
 if [ $ZLIB != NONE -a $ZLIB != NO -a $ZLIB != YES ]; then

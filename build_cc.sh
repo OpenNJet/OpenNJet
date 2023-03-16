@@ -28,7 +28,7 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-location-ap
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-upstream-api-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-mqconf-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-helper-ctrl-module"
-NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-helper-broker-module"
+NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-helper-broker-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-kv-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-config-api-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-sendmsg-module"
@@ -57,6 +57,7 @@ cdir=`cd $(dirname $0); pwd`
 		if [ ! -d /etc/njet/lualib ]; then
 		   cp -fr lualib /etc/njet/lualib
 		fi
+
                 ./configure $flags --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
                 ;;
             make)
