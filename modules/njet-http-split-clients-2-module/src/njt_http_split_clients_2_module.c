@@ -248,10 +248,11 @@ static u_char *split_rpc_handler(njt_str_t *topic, njt_str_t *request, int *len,
     ctx = (njt_http_split_clients_2_ctx_t *)sc2cf->ctx;
     part = ctx->parts.elts;
 
-    u_char p_s[4] = {0};
+    u_char p_s[4];
     njt_uint_t sum = 0;
     for (i = 0; i < ctx->parts.nelts; i++)
     {
+        njt_memzero(p_s,4);
         sum += part[i].percent;
         ret_len += part[i].value.len;
         if (part[i].last)
