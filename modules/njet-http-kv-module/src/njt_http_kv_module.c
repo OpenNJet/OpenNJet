@@ -2,7 +2,7 @@
 #include <njt_config.h>
 #include <njt_http.h>
 
-#include "mosquitto_emb.h"
+#include "njet_iot_emb.h"
 #include "njt_http_kv_module.h"
 #include <njt_mqconf_module.h>
 #include <njt_hash_util.h>
@@ -38,10 +38,10 @@ typedef struct
     njt_str_t conf_file;
 } njt_http_kv_conf_t;
 
-static void mqtt_connect_timeout(njt_event_t *ev);
-static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx_t *ctx);
-static void mqtt_loop_mqtt(njt_event_t *ev);
-static void mqtt_register_outside_reader(njt_event_handler_pt h, struct mqtt_ctx_t *ctx);
+static void njt_http_kv_iot_conn_timeout(njt_event_t *ev);
+static void njt_http_kv_iot_set_timer(njt_event_handler_pt h, int interval, struct evt_ctx_t *ctx);
+static void njt_http_kv_loop_mqtt(njt_event_t *ev);
+static void njt_http_kv_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx);
 static njt_int_t njt_http_kv_add_variables(njt_conf_t *cf);
 static void invoke_kv_change_handler(njt_str_t *key, njt_str_t *value);
 static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg_len);
@@ -55,7 +55,7 @@ static u_char *njt_http_kv_module_rpc_handler(njt_str_t *topic, njt_str_t *reque
 static njt_rbtree_t kv_tree;
 static njt_rbtree_node_t kv_sentinel;
 
-static struct mqtt_ctx_t *local_mqtt_ctx;
+static struct evt_ctx_t *kv_evt_ctx;
 static char mqtt_kv_topic[128];
 static njt_str_t cluster_name;
 
@@ -183,16 +183,16 @@ njt_http_kv_rbtree_lookup(njt_rbtree_t *rbtree, njt_str_t *key, uint32_t hash)
     return NULL;
 }
 
-static void mqtt_loop_mqtt(njt_event_t *ev)
+static void njt_http_kv_loop_mqtt(njt_event_t *ev)
 {
     int ret;
     njt_connection_t *c = (njt_connection_t *)ev->data;
-    struct mqtt_ctx_t *ctx = (struct mqtt_ctx_t *)c->data;
+    struct evt_ctx_t *ctx = (struct evt_ctx_t *)c->data;
     if (ev->timer_set)
     {
         njt_del_timer(ev);
     }
-    ret = mqtt_client_run(ctx);
+    ret = njet_iot_client_run(ctx);
     switch (ret)
     {
     case 0:
@@ -201,31 +201,31 @@ static void mqtt_loop_mqtt(njt_event_t *ev)
     case 4:  // no connection
     case 19: // lost keepalive
     case 7:  // lost connection
-        njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt_client run ret:%d, ev: %p, ev timeouted %d", ret, ev, ev->timedout);
-        mqtt_set_timer(mqtt_connect_timeout, 10, ctx);
+        njt_log_error(NJT_LOG_ERR, ev->log, 0, "mqtt_client run ret:%d, ev: %p, ev timeouted %d", ret, ev, ev->timedout);
+        njt_http_kv_iot_set_timer(njt_http_kv_iot_conn_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
         break;
     default:
-        njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt client run:%d, what todo ?", ret);
-        mqtt_set_timer(mqtt_connect_timeout, 10, ctx);
+        njt_log_error(NJT_LOG_ERR, ev->log, 0, "mqtt client run:%d, what todo ?", ret);
+        njt_http_kv_iot_set_timer(njt_http_kv_iot_conn_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
     }
     return;
 }
-static void mqtt_connect_timeout(njt_event_t *ev)
+static void njt_http_kv_iot_conn_timeout(njt_event_t *ev)
 {
     njt_connection_t *c = (njt_connection_t *)ev->data;
-    struct mqtt_ctx_t *ctx = (struct mqtt_ctx_t *)c->data;
+    struct evt_ctx_t *ctx = (struct evt_ctx_t *)c->data;
     int ret;
-    njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "Event fired!,try connect again, %p ", ev);
+    njt_log_error(NJT_LOG_ERR, ev->log, 0, "Event fired!,try connect again, %p ", ev);
     if (ev->timedout)
     {
-        ret = mqtt_client_connect(3, 5, ctx);
+        ret = njet_iot_client_connect(3, 5, ctx);
         if (ret != 0)
         {
             if (ret == -5)
             {
-                njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "client is connecting or has connected");
+                njt_log_error(NJT_LOG_ERR, ev->log, 0, "client is connecting or has connected");
                 return;
             }
             njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect to broker failed:%d", ret);
@@ -234,16 +234,16 @@ static void mqtt_connect_timeout(njt_event_t *ev)
         else
         {
             njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect ok, register io");
-            mqtt_register_outside_reader(mqtt_loop_mqtt, ctx);
+            njt_http_kv_iot_register_outside_reader(njt_http_kv_loop_mqtt, ctx);
         }
     }
 }
 
-static void mqtt_register_outside_reader(njt_event_handler_pt h, struct mqtt_ctx_t *ctx)
+static void njt_http_kv_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx)
 {
     int fd;
     njt_event_t *rev, *wev;
-    fd = mqtt_client_socket(ctx);
+    fd = njet_iot_client_socket(ctx);
     njt_connection_t *c = njt_palloc(njt_cycle->pool, sizeof(njt_connection_t));
     njt_memzero(c, sizeof(njt_connection_t));
 
@@ -276,7 +276,7 @@ static void mqtt_register_outside_reader(njt_event_handler_pt h, struct mqtt_ctx
     njt_add_timer(rev, 1000); // tips: trigger every 1s at least, to process misc things like ping/pong
 }
 
-static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx_t *ctx)
+static void njt_http_kv_iot_set_timer(njt_event_handler_pt h, int interval, struct evt_ctx_t *ctx)
 {
     njt_event_t *ev;
     njt_connection_t *c = njt_palloc(njt_cycle->pool, sizeof(njt_connection_t));
@@ -501,24 +501,32 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     cluster_name.data = njt_pstrdup(cycle->pool, &mqconf->cluster_name);
     cluster_name.len = mqconf->cluster_name.len;
 
+    char *prefix;
+    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
+    njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
+    prefix[cycle->prefix.len] = '\0';
     njt_log_error(NJT_LOG_INFO, cycle->log, 0, "module http_kv init worker");
-    local_mqtt_ctx = mqtt_client_init(localcfg, kv_rr_callback, msg_callback, client_id, log, cycle);
-
-    if (local_mqtt_ctx == NULL)
+    kv_evt_ctx = njet_iot_client_init(prefix, localcfg, kv_rr_callback, msg_callback, client_id, log, cycle);
+    njt_free(prefix);
+    if (kv_evt_ctx == NULL)
     {
         njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "init local mqtt client failed, exiting");
-        mqtt_client_exit(local_mqtt_ctx);
+        njet_iot_client_exit(kv_evt_ctx);
         return NJT_ERROR;
     };
-    ret = mqtt_client_connect(3, 5, local_mqtt_ctx);
+    //add default subscribed topics
+    njet_iot_client_add_topic(kv_evt_ctx, "/cluster/+/kv_set/#");
+    njet_iot_client_add_topic(kv_evt_ctx, "/dyn/#");
+    njet_iot_client_add_topic(kv_evt_ctx, "$share/njet//rpc/#");
+    ret = njet_iot_client_connect(3, 5, kv_evt_ctx);
     if (0 != ret)
     {
         njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "worker mqtt client connect failed, schedule:%d", ret);
-        mqtt_set_timer(mqtt_connect_timeout, 2000, local_mqtt_ctx);
+        njt_http_kv_iot_set_timer(njt_http_kv_iot_conn_timeout, 2000, kv_evt_ctx);
     }
     else
     {
-        mqtt_register_outside_reader(mqtt_loop_mqtt, local_mqtt_ctx);
+        njt_http_kv_iot_register_outside_reader(njt_http_kv_loop_mqtt, kv_evt_ctx);
     };
 
     return NJT_OK;
@@ -526,7 +534,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
 
 static void kv_exit_worker(njt_cycle_t *cycle)
 {
-    mqtt_client_exit(local_mqtt_ctx);
+    njet_iot_client_exit(kv_evt_ctx);
 }
 
 njt_int_t njt_http_kv_get(njt_http_request_t *r, njt_http_variable_value_t *v, uintptr_t data)
@@ -537,7 +545,7 @@ njt_int_t njt_http_kv_get(njt_http_request_t *r, njt_http_variable_value_t *v, u
     njt_str_t *var;
     njt_str_t dbm_val;
 
-    if (local_mqtt_ctx == NULL)
+    if (kv_evt_ctx == NULL)
     {
         v->not_found = 1;
         return NJT_OK;
@@ -562,7 +570,7 @@ njt_int_t njt_http_kv_get(njt_http_request_t *r, njt_http_variable_value_t *v, u
         memcpy(mdb_key.data + cluster_name.len + 1, var->data + 8, var->len - 8);
 
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "get keyin db:%V", &mdb_key);
-        int ret = mqtt_client_kv_get(mdb_key.data, mdb_key.len, (void **)&dbm_val.data, &ret_len, local_mqtt_ctx);
+        int ret = njet_iot_client_kv_get(mdb_key.data, mdb_key.len, (void **)&dbm_val.data, &ret_len, kv_evt_ctx);
         dbm_val.len = ret_len;
         if (ret != 0)
         {
@@ -814,13 +822,13 @@ int njt_kv_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
     // if it is a normal message, send zero length retain msg to same topic to delete it
     if (!retain_flag)
     {
-        ret = mqtt_client_sendmsg((const char *)t, "", 0, RETAIN_MSG_QOS, local_mqtt_ctx);
+        ret = njet_iot_client_sendmsg((const char *)t, "", 0, RETAIN_MSG_QOS, kv_evt_ctx);
     }
     if (ret < 0)
     {
         goto error;
     }
-    ret = mqtt_client_sendmsg((const char *)t, (const char *)content->data, (int)content->len, qos, local_mqtt_ctx);
+    ret = njet_iot_client_sendmsg((const char *)t, (const char *)content->data, (int)content->len, qos, kv_evt_ctx);
     if (ret < 0)
     {
         goto error;
@@ -839,7 +847,7 @@ int njt_db_kv_get(njt_str_t *key, njt_str_t *value)
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_db_kv_get got wrong key:value data");
         return NJT_ERROR;
     }
-    int ret = mqtt_client_kv_get((void *)key->data, key->len, (void **)&value->data, (uint32_t *)&value->len, local_mqtt_ctx);
+    int ret = njet_iot_client_kv_get((void *)key->data, key->len, (void **)&value->data, (uint32_t *)&value->len, kv_evt_ctx);
     if (ret < 0)
     {
         return NJT_ERROR;
@@ -853,7 +861,7 @@ int njt_db_kv_set(njt_str_t *key, njt_str_t *value)
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_db_kv_set got wrong key:value data");
         return NJT_ERROR;
     }
-    int ret = mqtt_client_kv_set(key->data, key->len, value->data, value->len, NULL, local_mqtt_ctx);
+    int ret = njet_iot_client_kv_set(key->data, key->len, value->data, value->len, NULL, kv_evt_ctx);
     if (ret < 0)
     {
         return NJT_ERROR;
