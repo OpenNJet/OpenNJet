@@ -2,7 +2,7 @@
 #include <njt_http.h>
 #include <njt_json_api.h>
 
-#include "mosquitto_emb.h"
+#include "njet_iot_emb.h"
 #include "njt_http_sendmsg_module.h"
 #include <njt_mqconf_module.h>
 #include <njt_hash_util.h>
@@ -44,10 +44,10 @@ typedef struct
 
 //sendmsg module is running in ctrl panel, should be able to get njet_master_cycle from njet_helper_ctrl_module
 extern njt_cycle_t *njet_master_cycle;
-static void mqtt_connect_timeout(njt_event_t *ev);
-static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx_t *ctx);
-static void mqtt_loop_mqtt(njt_event_t *ev);
-static void mqtt_register_outside_reader(njt_event_handler_pt h, struct mqtt_ctx_t *ctx);
+static void njt_http_sendmsg_iot_conn_timeout(njt_event_t *ev);
+static void njt_http_sendmsg_iot_set_timer(njt_event_handler_pt h, int interval, struct evt_ctx_t *ctx);
+static void njt_http_sendmsg_loop_mqtt(njt_event_t *ev);
+static void njt_http_sendmsg_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx);
 static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle);
 static void sendmsg_exit_worker(njt_cycle_t *cycle);
 static void *njt_http_sendmsg_create_conf(njt_conf_t *cf);
@@ -62,7 +62,7 @@ static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int 
 static void sendmsg_get_session_id_str(int session_id, njt_str_t *sk);
 
 static njt_lvlhash_map_t *rpc_msg_handler_hashmap = NULL;
-static struct mqtt_ctx_t *sendmsg_mqtt_ctx;
+static struct evt_ctx_t *sendmsg_mqtt_ctx;
 
 static njt_http_module_t njt_http_sendmsg_module_ctx = {
     NULL,                  /* preconfiguration */
@@ -115,16 +115,16 @@ njt_module_t njt_http_sendmsg_module = {
     NULL,                         /* exit master */
     NJT_MODULE_V1_PADDING};
 
-static void mqtt_loop_mqtt(njt_event_t *ev)
+static void njt_http_sendmsg_loop_mqtt(njt_event_t *ev)
 {
     int ret;
     njt_connection_t *c = (njt_connection_t *)ev->data;
-    struct mqtt_ctx_t *ctx = (struct mqtt_ctx_t *)c->data;
+    struct evt_ctx_t *ctx = (struct evt_ctx_t *)c->data;
     if (ev->timer_set)
     {
         njt_del_timer(ev);
     }
-    ret = mqtt_client_run(ctx);
+    ret = njet_iot_client_run(ctx);
     switch (ret)
     {
     case 0:
@@ -134,25 +134,25 @@ static void mqtt_loop_mqtt(njt_event_t *ev)
     case 19: // lost keepalive
     case 7:  // lost connection
         njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt_client run ret:%d, ev: %p, ev timeouted %d", ret, ev, ev->timedout);
-        mqtt_set_timer(mqtt_connect_timeout, 10, ctx);
+        njt_http_sendmsg_iot_set_timer(njt_http_sendmsg_iot_conn_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
         break;
     default:
         njt_log_error(NJT_LOG_ERR, ev->log, 0, "mqtt client run:%d, what todo ?", ret);
-        mqtt_set_timer(mqtt_connect_timeout, 10, ctx);
+        njt_http_sendmsg_iot_set_timer(njt_http_sendmsg_iot_conn_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
     }
     return;
 }
-static void mqtt_connect_timeout(njt_event_t *ev)
+static void njt_http_sendmsg_iot_conn_timeout(njt_event_t *ev)
 {
     njt_connection_t *c = (njt_connection_t *)ev->data;
-    struct mqtt_ctx_t *ctx = (struct mqtt_ctx_t *)c->data;
+    struct evt_ctx_t *ctx = (struct evt_ctx_t *)c->data;
     int ret;
     njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "Event fired!,try connect again, %p ", ev);
     if (ev->timedout)
     {
-        ret = mqtt_client_connect(3, 5, ctx);
+        ret = njet_iot_client_connect(3, 5, ctx);
         if (ret != 0)
         {
             if (ret == -5)
@@ -166,16 +166,16 @@ static void mqtt_connect_timeout(njt_event_t *ev)
         else
         {
             njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect ok, register io");
-            mqtt_register_outside_reader(mqtt_loop_mqtt, ctx);
+            njt_http_sendmsg_iot_register_outside_reader(njt_http_sendmsg_loop_mqtt, ctx);
         }
     }
 }
 
-static void mqtt_register_outside_reader(njt_event_handler_pt h, struct mqtt_ctx_t *ctx)
+static void njt_http_sendmsg_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx)
 {
     int fd;
     njt_event_t *rev, *wev;
-    fd = mqtt_client_socket(ctx);
+    fd = njet_iot_client_socket(ctx);
     njt_connection_t *c = njt_palloc(njt_cycle->pool, sizeof(njt_connection_t));
     njt_memzero(c, sizeof(njt_connection_t));
 
@@ -209,7 +209,7 @@ static void mqtt_register_outside_reader(njt_event_handler_pt h, struct mqtt_ctx
     njt_add_timer(rev, 1000); // tips: trigger every 1s at least, to process misc things like ping/pong
 }
 
-static void mqtt_set_timer(njt_event_handler_pt h, int interval, struct mqtt_ctx_t *ctx)
+static void njt_http_sendmsg_iot_set_timer(njt_event_handler_pt h, int interval, struct evt_ctx_t *ctx)
 {
     njt_event_t *ev;
     njt_connection_t *c = njt_palloc(njt_cycle->pool, sizeof(njt_connection_t));
@@ -564,24 +564,28 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
     memcpy(localcfg, smcf->conf_file.data, smcf->conf_file.len);
     localcfg[smcf->conf_file.len] = '\0';
 
+    char *prefix;
+    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
+    njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
+    prefix[cycle->prefix.len] = '\0';
     njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "module http_sendmsg init worker");
-    sendmsg_mqtt_ctx = mqtt_client_init(localcfg, sendmsg_rr_callback, NULL, client_id, log, cycle);
-
+    sendmsg_mqtt_ctx = njet_iot_client_init(prefix, localcfg, sendmsg_rr_callback, NULL, client_id, log, cycle);
+    njt_free(prefix);
     if (sendmsg_mqtt_ctx == NULL)
     {
         njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "init local mqtt client failed, exiting");
-        mqtt_client_exit(sendmsg_mqtt_ctx);
+        njet_iot_client_exit(sendmsg_mqtt_ctx);
         return NJT_ERROR;
     };
-    ret = mqtt_client_connect(3, 5, sendmsg_mqtt_ctx);
+    ret = njet_iot_client_connect(3, 5, sendmsg_mqtt_ctx);
     if (0 != ret)
     {
         njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "worker mqtt client connect failed, schedule:%d", ret);
-        mqtt_set_timer(mqtt_connect_timeout, 2000, sendmsg_mqtt_ctx);
+        njt_http_sendmsg_iot_set_timer(njt_http_sendmsg_iot_conn_timeout, 2000, sendmsg_mqtt_ctx);
     }
     else
     {
-        mqtt_register_outside_reader(mqtt_loop_mqtt, sendmsg_mqtt_ctx);
+        njt_http_sendmsg_iot_register_outside_reader(njt_http_sendmsg_loop_mqtt, sendmsg_mqtt_ctx);
     };
 
     return NJT_OK;
@@ -589,7 +593,7 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
 
 static void sendmsg_exit_worker(njt_cycle_t *cycle)
 {
-    mqtt_client_exit(sendmsg_mqtt_ctx);
+    njet_iot_client_exit(sendmsg_mqtt_ctx);
 }
 
 static void *
@@ -685,7 +689,7 @@ njt_dyn_kv_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
 {
-    int ret;
+    int ret = 0;
     int qos = 0;
     if (retain_flag)
         qos = RETAIN_MSG_QOS;
@@ -694,6 +698,7 @@ int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
     t = njt_calloc(topic->len + 1, njt_cycle->log);
     if (t == NULL)
     {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "in njt_dyn_sendmsg, can't alloc memory");
         return NJT_ERROR;
     }
     njt_memcpy(t, topic->data, topic->len);
@@ -701,15 +706,18 @@ int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag)
     // if it is a normal message, send zero length retain msg to same topic to delete it
     if (!retain_flag)
     {
-        ret = mqtt_client_sendmsg((const char *)t, "", 0, RETAIN_MSG_QOS, sendmsg_mqtt_ctx);
+        ret = njet_iot_client_sendmsg((const char *)t, "", 0, RETAIN_MSG_QOS, sendmsg_mqtt_ctx);
     }
     if (ret < 0)
     {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "in njt_dyn_sendmsg, error when sending zero len retain msg");
         goto error;
     }
-    ret = mqtt_client_sendmsg((const char *)t, (const char *)content->data, (int)content->len, qos, sendmsg_mqtt_ctx);
+    ret = njet_iot_client_sendmsg((const char *)t, (const char *)content->data, (int)content->len, qos, sendmsg_mqtt_ctx);
     if (ret < 0)
     {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "in njt_dyn_sendmsg, error when sending msg");
+
         goto error;
     }
     njt_free(t);
@@ -766,7 +774,7 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_ha
     njt_memcpy(t, topic->data, topic->len);
     t[topic->len] = '\0';
 
-    ret = mqtt_client_sendmsg_rr((const char *)t, (const char *)content->data, (int)content->len, qos, session_id, 0, sendmsg_mqtt_ctx);
+    ret = njet_iot_client_sendmsg_rr((const char *)t, (const char *)content->data, (int)content->len, qos, session_id, 0, sendmsg_mqtt_ctx);
     njt_free(t);
     // add timer
     rpc_timer_ev = njt_calloc(sizeof(njt_event_t), njt_cycle->log);
@@ -803,7 +811,7 @@ int njt_dyn_kv_get(njt_str_t *key, njt_str_t *value)
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_dyn_kv_get got wrong key:value data");
         return NJT_ERROR;
     }
-    int ret = mqtt_client_kv_get((void *)key->data, key->len, (void **)&value->data, (uint32_t *)&value->len, sendmsg_mqtt_ctx);
+    int ret = njet_iot_client_kv_get((void *)key->data, key->len, (void **)&value->data, (uint32_t *)&value->len, sendmsg_mqtt_ctx);
     if (ret < 0)
     {
         return NJT_ERROR;
@@ -817,7 +825,7 @@ int njt_dyn_kv_set(njt_str_t *key, njt_str_t *value)
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_dyn_kv_set got wrong key:value data");
         return NJT_ERROR;
     }
-    int ret = mqtt_client_kv_set(key->data, key->len, value->data, value->len, NULL, sendmsg_mqtt_ctx);
+    int ret = njet_iot_client_kv_set(key->data, key->len, value->data, value->len, NULL, sendmsg_mqtt_ctx);
     if (ret < 0)
     {
         return NJT_ERROR;
@@ -876,8 +884,8 @@ static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void
         ev = old_handler->ev;
         if (ev && ev->timer_set)
         {
-            njt_free(ev->data);
             njt_del_timer(ev);
+            njt_free(ev->data);
             njt_free(ev);
         }
         njt_free(old_handler->key.data);
@@ -918,8 +926,8 @@ static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int 
             ev = rpc_handler->ev;
             if (ev && ev->timer_set)
             {
-                njt_free(ev->data);
                 njt_del_timer(ev);
+                njt_free(ev->data);
                 njt_free(ev);
             }
             // remove session_id from hash map

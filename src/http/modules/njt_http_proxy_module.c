@@ -644,6 +644,27 @@ static njt_command_t  njt_http_proxy_commands[] = {
       offsetof(njt_http_proxy_loc_conf_t, upstream.ssl_certificate_key),
       NULL },
 
+    { njt_string("proxy_ssl_gm"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_proxy_loc_conf_t, ssl_gm),
+      NULL },
+
+    { njt_string("proxy_ssl_enc_certificate"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_http_set_complex_value_zero_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_proxy_loc_conf_t, upstream.ssl_certificate_enc),
+      NULL },
+
+    { njt_string("proxy_ssl_enc_certificate_key"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_http_set_complex_value_zero_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_proxy_loc_conf_t, upstream.ssl_certificate_enc_key),
+      NULL },
+
     { njt_string("proxy_ssl_password_file"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       njt_http_proxy_ssl_password_file,
@@ -1015,6 +1036,99 @@ njt_http_proxy_eval(njt_http_request_t *r, njt_http_proxy_ctx_t *ctx,
 #if (NJT_HTTP_CACHE)
 
 static njt_int_t
+njt_http_proxy_create_file_key(njt_http_request_t *r)
+{
+    size_t                      len, loc_len;
+    u_char                     *p;
+    uintptr_t                   escape;
+    njt_str_t                  *key;
+    njt_http_upstream_t        *u;
+    njt_http_proxy_ctx_t       *ctx;
+    njt_http_proxy_loc_conf_t  *plcf;
+
+    u = r->upstream;
+
+    plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
+
+    ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    key = njt_array_push(&r->cache->file_keys);
+    if (key == NULL) {
+        return NJT_ERROR;
+    }
+
+    if (plcf->cache_file_key.value.data) {
+        if (njt_http_complex_value(r, &plcf->cache_file_key, key) != NJT_OK) {
+            return NJT_ERROR;
+        }
+        return NJT_OK;
+    }
+    *key = ctx->vars.key_start;
+
+    key = njt_array_push(&r->cache->file_keys);
+    if (key == NULL) {
+        return NJT_ERROR;
+    }
+
+    if (plcf->proxy_lengths && ctx->vars.uri.len) {
+
+        *key = ctx->vars.uri;
+        u->uri = ctx->vars.uri;
+
+        return NJT_OK;
+
+    } else if (ctx->vars.uri.len == 0 && r->valid_unparsed_uri) {
+        *key = r->unparsed_uri;
+        u->uri = r->unparsed_uri;
+
+        return NJT_OK;
+    }
+
+    loc_len = (r->valid_location && ctx->vars.uri.len) ? plcf->location.len : 0;
+
+    if (r->quoted_uri || r->internal) {
+        escape = 2 * njt_escape_uri(NULL, r->uri.data + loc_len,
+                                    r->uri.len - loc_len, NJT_ESCAPE_URI);
+    } else {
+        escape = 0;
+    }
+
+    len = ctx->vars.uri.len + r->uri.len - loc_len + escape
+          + sizeof("?") - 1 + r->args.len;
+
+    p = njt_pnalloc(r->pool, len);
+    if (p == NULL) {
+        return NJT_ERROR;
+    }
+
+    key->data = p;
+
+    if (r->valid_location) {
+        p = njt_copy(p, ctx->vars.uri.data, ctx->vars.uri.len);
+    }
+
+    if (escape) {
+        njt_escape_uri(p, r->uri.data + loc_len,
+                       r->uri.len - loc_len, NJT_ESCAPE_URI);
+        p += r->uri.len - loc_len + escape;
+
+    } else {
+        p = njt_copy(p, r->uri.data + loc_len, r->uri.len - loc_len);
+    }
+
+    if (r->args.len > 0) {
+        *p++ = '?';
+        p = njt_copy(p, r->args.data, r->args.len);
+    }
+
+    key->len = p - key->data;
+    u->uri = *key;
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
 njt_http_proxy_create_key(njt_http_request_t *r)
 {
     size_t                      len, loc_len;
@@ -1030,6 +1144,8 @@ njt_http_proxy_create_key(njt_http_request_t *r)
     plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
 
     ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
+
+    njt_http_proxy_create_file_key(r);
 
     key = njt_array_push(&r->cache->keys);
     if (key == NULL) {
@@ -3285,8 +3401,11 @@ njt_http_proxy_create_loc_conf(njt_conf_t *cf)
     conf->upstream.ssl_name = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_server_name = NJT_CONF_UNSET;
     conf->upstream.ssl_verify = NJT_CONF_UNSET;
+    conf->ssl_gm = NJT_CONF_UNSET;
     conf->upstream.ssl_certificate = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_certificate_key = NJT_CONF_UNSET_PTR;
+    conf->upstream.ssl_certificate_enc = NJT_CONF_UNSET_PTR;
+    conf->upstream.ssl_certificate_enc_key = NJT_CONF_UNSET_PTR;
     conf->upstream.ssl_passwords = NJT_CONF_UNSET_PTR;
     conf->ssl_verify_depth = NJT_CONF_UNSET_UINT;
     conf->ssl_conf_commands = NJT_CONF_UNSET_PTR;
@@ -3575,6 +3694,9 @@ njt_http_proxy_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
     if (conf->cache_key.value.data == NULL) {
         conf->cache_key = prev->cache_key;
     }
+    if (conf->cache_file_key.value.data == NULL) {
+        conf->cache_file_key = prev->cache_file_key;
+    }
 
     njt_conf_merge_value(conf->upstream.cache_lock,
                               prev->upstream.cache_lock, 0);
@@ -3636,6 +3758,10 @@ njt_http_proxy_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->upstream.ssl_certificate, NULL);
     njt_conf_merge_ptr_value(conf->upstream.ssl_certificate_key,
                               prev->upstream.ssl_certificate_key, NULL);
+    njt_conf_merge_ptr_value(conf->upstream.ssl_certificate_enc,
+                              prev->upstream.ssl_certificate_enc, NULL);
+    njt_conf_merge_ptr_value(conf->upstream.ssl_certificate_enc_key,
+                              prev->upstream.ssl_certificate_enc_key, NULL);
     njt_conf_merge_ptr_value(conf->upstream.ssl_passwords,
                               prev->upstream.ssl_passwords, NULL);
 
@@ -4712,9 +4838,9 @@ static char *
 njt_http_proxy_cache_key(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
     njt_http_proxy_loc_conf_t *plcf = conf;
-
-    njt_str_t                         *value;
-    njt_http_compile_complex_value_t   ccv;
+    njt_str_t                  key,old_key,*value;
+    njt_http_compile_complex_value_t   ccv,file_cvv;
+    u_char                     *file_key=NULL,*index,*start;
 
     value = cf->args->elts;
 
@@ -4723,12 +4849,41 @@ njt_http_proxy_cache_key(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     njt_memzero(&ccv, sizeof(njt_http_compile_complex_value_t));
+    njt_memzero(&file_cvv, sizeof(njt_http_compile_complex_value_t));
 
     ccv.cf = cf;
     ccv.value = &value[1];
     ccv.complex_value = &plcf->cache_key;
 
+    file_cvv = ccv;
+    file_cvv.complex_value = &plcf->cache_file_key;
+
     if (njt_http_compile_complex_value(&ccv) != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
+    old_key =value[1];
+    index = njt_strnstr(old_key.data, "$slice_range", old_key.len);
+    if ( old_key.data != NULL &&  old_key.len > 0 ) {
+        file_key = njt_pcalloc(cf->pool,old_key.len);
+        if(file_key == NULL){
+            return NJT_CONF_ERROR;
+        }
+    }
+    start = old_key.data;
+    key.len = 0;
+    while (index != NULL && file_key != NULL){
+        njt_memcpy(file_key + key.len,start,index-start);
+        key.len += index-start;
+        start = index + njt_strlen("$slice_range");
+        index = njt_strnstr(start, "$slice_range", old_key.len - (start - plcf->cache_key.value.data));
+    }
+    if(old_key.len - (start - plcf->cache_key.value.data) > 0 ){
+        njt_memcpy(file_key+key.len,start,old_key.len - (start - plcf->cache_key.value.data) );
+        key.len += old_key.len - (start - plcf->cache_key.value.data);
+    }
+    key.data = file_key;
+    file_cvv.value = &key;
+    if (njt_http_compile_complex_value(&file_cvv) != NJT_OK) {
         return NJT_CONF_ERROR;
     }
 
@@ -4865,10 +5020,18 @@ njt_http_proxy_set_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *plcf)
         return NJT_OK;
     }
 
-    if (njt_ssl_create(plcf->upstream.ssl, plcf->ssl_protocols, NULL)
-        != NJT_OK)
-    {
-        return NJT_ERROR;
+    if (plcf->ssl_gm == 1) {
+        if (njt_ssl_gm_create(plcf->upstream.ssl, plcf->ssl_protocols, NULL)
+            != NJT_OK)
+        {
+            return NJT_ERROR;
+        }
+    } else {
+        if (njt_ssl_create(plcf->upstream.ssl, plcf->ssl_protocols, NULL)
+            != NJT_OK)
+        {
+            return NJT_ERROR;
+        }
     }
 
     cln = njt_pool_cleanup_add(cf->pool, 0);
@@ -4897,6 +5060,17 @@ njt_http_proxy_set_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *plcf)
             return NJT_ERROR;
         }
 
+        if (plcf->upstream.ssl_certificate_enc
+            && plcf->upstream.ssl_certificate_enc->value.len) {
+            if (plcf->upstream.ssl_certificate_enc_key == NULL) {
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                            "no \"proxy_ssl_enc_certificate_key\" is defined "
+                            "for certificate \"%V\"",
+                            &plcf->upstream.ssl_certificate_enc->value);
+                return NJT_ERROR;
+            }
+        }
+
         if (plcf->upstream.ssl_certificate->lengths
             || plcf->upstream.ssl_certificate_key->lengths)
         {
@@ -4910,6 +5084,8 @@ njt_http_proxy_set_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *plcf)
             if (njt_ssl_certificate(cf, plcf->upstream.ssl,
                                     &plcf->upstream.ssl_certificate->value,
                                     &plcf->upstream.ssl_certificate_key->value,
+                                    &plcf->upstream.ssl_certificate_enc->value,
+                                    &plcf->upstream.ssl_certificate_enc_key->value,
                                     plcf->upstream.ssl_passwords)
                 != NJT_OK)
             {

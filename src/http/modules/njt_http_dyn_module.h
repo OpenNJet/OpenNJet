@@ -96,6 +96,7 @@ typedef struct {
 #if (NJT_HAVE_UNIX_DOMAIN)
     njt_array_t      *rules_un;  /* array of njt_http_access_rule_un_t */
 #endif
+    njt_int_t        dynamic;
 } njt_http_access_loc_conf_t;
 
 

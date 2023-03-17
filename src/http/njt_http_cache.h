@@ -35,10 +35,24 @@ typedef struct {
     njt_uint_t                       status;
     time_t                           valid;
 } njt_http_cache_valid_t;
-
-
+//by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+//分片过滤器部分的代码
+typedef struct {
+    size_t               size;
+} njt_http_slice_loc_conf_t;
+extern njt_module_t  njt_http_slice_filter_module;
+#endif
+// end
 typedef struct {
     njt_rbtree_node_t                node;
+    //by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    //增加请求key
+    njt_str_t                        request_key;
+    njt_str_t                        file_key;
+#endif
+    // end
     njt_queue_t                      queue;
 
     u_char                           key[NJT_HTTP_CACHE_KEY_LEN
@@ -69,7 +83,13 @@ struct njt_http_cache_s {
     uint32_t                         crc32;
     u_char                           key[NJT_HTTP_CACHE_KEY_LEN];
     u_char                           main[NJT_HTTP_CACHE_KEY_LEN];
-
+    // by chengxu
+#if (NJT_HTTP_CACHE)
+    //增加请求key
+    njt_str_t                       request_key;
+    njt_array_t                      file_keys;
+#endif
+    //end
     njt_file_uniq_t                  uniq;
     time_t                           valid_sec;
     time_t                           updating_sec;
@@ -181,6 +201,14 @@ struct njt_http_file_cache_s {
     njt_msec_t                       manager_sleep;
     njt_msec_t                       manager_threshold;
 
+    // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+    njt_uint_t                       purger_files;
+    njt_msec_t                       purger_sleep;
+    njt_msec_t                       purger_threshold;
+#endif
+    //end
+
     njt_shm_zone_t                  *shm_zone;
 
     njt_uint_t                       use_temp_path;
@@ -206,6 +234,17 @@ char *njt_http_file_cache_valid_set_slot(njt_conf_t *cf, njt_command_t *cmd,
 
 
 extern njt_str_t  njt_http_cache_status[];
-
+// by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+// 删除所有文件缓存
+njt_int_t njt_http_file_cache_purge_one_cache_files(njt_http_file_cache_t *cache);
+//删除指定文件
+njt_int_t njt_http_file_cache_purge_one_file(njt_http_request_t *r);
+//清理指定路径缓存文件
+njt_int_t njt_http_file_cache_purge_one_path(njt_http_request_t *r);
+//生成request_key
+njt_int_t njt_http_file_cache_set_request_key(njt_http_request_t *r);
+#endif
+//end
 
 #endif /* _NJT_HTTP_CACHE_H_INCLUDED_ */

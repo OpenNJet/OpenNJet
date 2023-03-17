@@ -10,10 +10,15 @@
 #include <njt_core.h>
 #include <njt_http.h>
 
-
+//by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+#else
 typedef struct {
     size_t               size;
 } njt_http_slice_loc_conf_t;
+#endif
+// end
+
 
 
 typedef struct {
