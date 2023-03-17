@@ -1932,7 +1932,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
     njt_str_t                          json_str;
     njt_chain_t                        *body_chain;
     njt_chain_t                        out;
-    njt_int_t                          rc;
+    njt_int_t                          rc,pre_rc;
     ssize_t                            len;
 	njt_url_t                          u;
     njt_stream_upstream_rr_peer_t        *peer;// *prev;
@@ -1958,6 +1958,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
     }
 
     rc = NJT_OK;
+    pre_rc = NJT_OK;
 
     body_chain = r->request_body->bufs;
     if (body_chain && body_chain->next) {
@@ -2024,12 +2025,12 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 		u.default_port = 80;
 
 		if (njt_parse_url(r->pool, &u) != NJT_OK) {
-			rc = NJT_HTTP_UPS_API_INVALID_SRV_ARG;
-			if (u.err) {
-				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-							  "%s in upstream \"%V\"", u.err, &u.url);
-			}
-			goto out;
+			//rc = NJT_HTTP_UPS_API_INVALID_SRV_ARG;
+			//if (u.err) {
+			//	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+			//				  "%s in upstream \"%V\"", u.err, &u.url);
+			//}
+			//goto out;
 		}
 		if(u.naddrs == 1 && json_peer.server.len <= u.addrs[0].name.len && njt_strncmp(json_peer.server.data,u.addrs[0].name.data,json_peer.server.len) == 0){
 		  json_peer.domain = 0;  //ip
@@ -2038,8 +2039,8 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 		}
 
 		if(json_peer.domain == 1) {
-			rc = NJT_HTTP_UPS_API_INVALID_SRV_ARG;
-			goto out;
+			pre_rc = NJT_HTTP_UPS_API_INVALID_SRV_ARG;
+			//goto out;
 		} else {
 			last = json_peer.server.data + json_peer.server.len;
 			port = njt_strlchr(json_peer.server.data, last, ':');
@@ -2091,6 +2092,11 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 		njt_stream_upstream_rr_peers_unlock(peers);
 		rc = NJT_HTTP_UPS_API_NOT_MODIFY_SRV_NAME;
         goto out;
+	}
+	if(pre_rc != NJT_OK) {
+		njt_stream_upstream_rr_peers_unlock(peers);
+		rc = pre_rc;
+		goto out;
 	}
     
     if (json_peer.max_fails != -1) {
@@ -2258,7 +2264,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
     njt_str_t                          json_str;
     njt_chain_t                        *body_chain;
     njt_chain_t                        out;
-    njt_int_t                          rc;
+    njt_int_t                          rc,pre_rc;
     ssize_t                            len;
 	njt_url_t                          u;
     njt_http_upstream_rr_peer_t        *peer;// *prev;
@@ -2284,7 +2290,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
     }
 
     rc = NJT_OK;
-
+    pre_rc = NJT_OK;
     body_chain = r->request_body->bufs;
     if (body_chain && body_chain->next) {
         /*The post body is too large*/
@@ -2345,12 +2351,12 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 		u.default_port = 80;
 
 		if (njt_parse_url(r->pool, &u) != NJT_OK) {
-			rc = NJT_HTTP_UPS_API_INVALID_SRV_ARG;
-			if (u.err) {
-				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-							  "%s in upstream \"%V\"", u.err, &u.url);
-			}
-			goto out;
+			//rc = NJT_HTTP_UPS_API_INVALID_SRV_ARG;
+			//if (u.err) {
+			//	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+				//			  "%s in upstream \"%V\"", u.err, &u.url);
+			//}
+			//goto out;
 		}
 		if(u.naddrs == 1 && json_peer.server.len <= u.addrs[0].name.len && njt_strncmp(json_peer.server.data,u.addrs[0].name.data,json_peer.server.len) == 0){
 		  json_peer.domain = 0;  //ip
@@ -2359,8 +2365,8 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 		}
 
 		if(json_peer.domain == 1) {
-			rc = NJT_HTTP_UPS_API_INVALID_SRV_ARG;
-			goto out;
+			pre_rc = NJT_HTTP_UPS_API_INVALID_SRV_ARG;
+			//goto out;
 		} else {
 			last = json_peer.server.data + json_peer.server.len;
 			port = njt_strlchr(json_peer.server.data, last, ':');
@@ -2418,7 +2424,12 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 	if(peer->parent_id != -1 && json_peer.server.len > 0) {
 		njt_http_upstream_rr_peers_unlock(peers);
 		rc = NJT_HTTP_UPS_API_NOT_MODIFY_SRV_NAME;
-        goto out;
+        	goto out;
+	}
+	if(pre_rc != NJT_OK) {
+		njt_http_upstream_rr_peers_unlock(peers);
+		rc = pre_rc;
+		goto out;
 	}
     
     if (json_peer.max_fails != -1) {
