@@ -884,8 +884,8 @@ static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void
         ev = old_handler->ev;
         if (ev && ev->timer_set)
         {
-            njt_free(ev->data);
             njt_del_timer(ev);
+            njt_free(ev->data);
             njt_free(ev);
         }
         njt_free(old_handler->key.data);
@@ -926,8 +926,8 @@ static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int 
             ev = rpc_handler->ev;
             if (ev && ev->timer_set)
             {
-                njt_free(ev->data);
                 njt_del_timer(ev);
+                njt_free(ev->data);
                 njt_free(ev);
             }
             // remove session_id from hash map
