@@ -160,14 +160,11 @@ static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, njt_http_dyn_bwlist_
         return NJT_ERROR;
     }
 
-    old_cf = *alcf; 
+    old_cf = *alcf;
     alcf->dynamic = 1;
+    alcf->rules = NULL;
 
-    if (data->access_ipv4.nelts == 0)
-    {
-        alcf->rules=NULL;
-    }
-    else
+    if (data->access_ipv4.nelts > 0)
     {
         njt_http_dyn_bwlist_access_ipv4_t *access = data->access_ipv4.elts;
 
@@ -186,8 +183,11 @@ static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, njt_http_dyn_bwlist_
                 deny = 0;
             }
 
-            alcf->rules = njt_array_create(cf->pool, 4,
-                                           sizeof(njt_http_access_rule_t));
+            if (alcf->rules == NULL)
+            {
+                alcf->rules = njt_array_create(cf->pool, 4,
+                                               sizeof(njt_http_access_rule_t));
+            }
             if (alcf->rules == NULL)
             {
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't create access rule arrays ");
@@ -216,7 +216,7 @@ static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, njt_http_dyn_bwlist_
     }
     return NJT_OK;
 
-error: 
+error:
     *alcf = old_cf;
     return NJT_ERROR;
 }
