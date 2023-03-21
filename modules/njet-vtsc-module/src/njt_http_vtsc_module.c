@@ -1556,7 +1556,7 @@ static njt_int_t njt_dynvts_update(njt_pool_t *pool, njt_http_vts_dynapi_main_t 
     if (njt_process == NJT_PROCESS_HELPER){
         new_cycle = (njt_cycle_t*)njt_cycle;
         cycle = new_cycle->old_cycle;
-    } else{
+    } else {
         cycle = (njt_cycle_t*)njt_cycle;
     }
 
@@ -1565,8 +1565,13 @@ static njt_int_t njt_dynvts_update(njt_pool_t *pool, njt_http_vts_dynapi_main_t 
     }
 
     svr = dynconf->servers.elts;
-    for(i = 0; i < dynconf->servers.nelts; ++i) {
-        cscf = njt_http_get_srv_by_port(cycle,(njt_str_t*)svr[i].listens.elts, (njt_str_t*)svr[i].server_names.elts);
+    for (i = 0; i < dynconf->servers.nelts; ++i) {
+        if ((njt_str_t*)svr[i].listens.elts == NULL || (njt_str_t*)svr[i].server_names.elts == NULL) {
+            njt_log_error(NJT_LOG_INFO, pool->log, 0, "listen or server_name is NULL, just continue");
+            continue;
+        }
+
+        cscf = njt_http_get_srv_by_port(cycle, (njt_str_t*)svr[i].listens.elts, (njt_str_t*)svr[i].server_names.elts);
         if(cscf == NULL){
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
                           (njt_str_t*)svr[i].listens.elts, (njt_str_t*)svr[i].server_names.elts);
