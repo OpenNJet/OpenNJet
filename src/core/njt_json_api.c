@@ -771,6 +771,7 @@ njt_int_t njt_structure_2_json(njt_json_manager *pjson_manager,
     //calc struct size
     pjson_manager->total_size = njt_calc_element_size(pjson_manager->json_val, false);
     pjson_manager->total_size += njt_pagesize;
+    pjson_manager->total_size *= 2;
    
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                        "============struct2json size: %d", pjson_manager->total_size);
