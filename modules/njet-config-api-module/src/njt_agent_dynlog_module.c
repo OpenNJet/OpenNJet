@@ -362,8 +362,10 @@ static njt_str_t njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
     cscfp = hcmcf->servers.elts;
     for( i = 0; i < hcmcf->servers.nelts; i++){
         array = njt_array_create(pool,4, sizeof(njt_str_t));
-        njt_http_get_listens_by_server(array,cscfp[i]);
-
+        rc = njt_http_get_listens_by_server(array,cscfp[i]);
+        if(rc != NJT_OK){
+            goto err;
+        }
         srv =  njt_json_obj_element(pool,njt_json_null_key);
         if(srv == NULL ){
             goto err;

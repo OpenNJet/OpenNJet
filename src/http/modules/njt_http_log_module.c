@@ -2304,7 +2304,7 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     fmt->name= value[0];
     index = 1;
     if(data->escape.len > 0 ){
-        fmt->escape = value[index];
+        njt_str_copy_pool(pool,fmt->escape, data->escape, goto err);
         ++index;
     }
     fmt->format= value[index];
