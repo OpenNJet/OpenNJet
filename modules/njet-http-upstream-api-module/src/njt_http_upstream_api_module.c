@@ -418,15 +418,21 @@ njt_upstream_api_get_params(njt_array_t *path, njt_str_t *upstream,
 	*upstream_type = 0;
     if (njt_strncmp(item[1].data, "http", 4) == 0) {
        *upstream_type = 1;
+	if(item[1].len != 4) {
+	  return NJT_HTTP_UPS_API_PATH_NOT_FOUND;
+	}
     } 
 	if (njt_strncmp(item[1].data, "stream", 6) == 0) {
         *upstream_type = 2;
+	if(item[1].len != 6) {
+          return NJT_HTTP_UPS_API_PATH_NOT_FOUND;
+        }
     } 
 
 	if(*upstream_type == 0) {
 		return NJT_HTTP_UPS_API_PATH_NOT_FOUND;
 	}
-    if (njt_strncmp(item[2].data, "upstreams", 9) != 0) {
+    if (item[2].len != 9 ||  njt_strncmp(item[2].data, "upstreams", 9) != 0) {
         return NJT_HTTP_UPS_API_PATH_NOT_FOUND;
     }
 
@@ -436,7 +442,7 @@ njt_upstream_api_get_params(njt_array_t *path, njt_str_t *upstream,
     }
 
     if (length >= 5) {
-        if (njt_strncmp(item[4].data, "servers", 7) != 0) {
+        if (item[4].len != 7 ||  njt_strncmp(item[4].data, "servers", 7) != 0) {
             return NJT_HTTP_UPS_API_PATH_NOT_FOUND;
         }
     }

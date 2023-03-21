@@ -385,11 +385,13 @@ njt_http_location_read_data(njt_http_request_t *r){
 	njt_str_t json_str;
     njt_chain_t *body_chain;
     njt_int_t rc;
+	njt_uint_t  i;
+	njt_http_sub_location_info_t  *sub_location, *loc;
     u_char *p;
     njt_http_location_info_t *location_info;
 	 uint32_t                                      crc32;
 	 uint32_t									   topic_len = NJT_INT64_LEN  + 2;
-	 njt_str_t									   topic_name;
+	 njt_str_t									   topic_name,location_rule,location;
 	njt_str_t  add = njt_string("add");
 	njt_str_t  del = njt_string("del");
    
@@ -414,26 +416,41 @@ njt_http_location_read_data(njt_http_request_t *r){
 		return;
 	}
 	njt_http_set_ctx(r, location_info, njt_http_location_api_module);
-	if(location_info->proxy_pass.len > 0) {
-		rc = njt_http_check_upstream_exist(njet_master_cycle,r->pool,&location_info->proxy_pass);
-		if(rc != NJT_OK) {
-			njt_str_set(&location_info->msg, "proxy_pass upstream  no defined!");
-			return;
-		}
-	}
+
+
 	if(location_info->msg.len != 0) {
 		return;
 	}
+	if(location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0 ) {
+		sub_location = location_info->location_array->elts;
+		for(i = 0; i < location_info->location_array->nelts; i++) {
+			loc = &sub_location[i];
+			rc = njt_http_check_upstream_exist((njt_cycle_t  *)njet_master_cycle,location_info->pool, &loc->proxy_pass);
+			if (rc != NJT_OK) {
+				njt_str_set(&location_info->msg, "proxy_pass upstream  no defined!");
+				return;
+			}
+		}
+		loc = &sub_location[0];
+		location_rule = loc->location_rule;
+		location = loc->location;
+	} else {
+		location_rule = location_info->location_rule;
+		location = location_info->location;
+	}
+
+
+	
 
 	njt_crc32_init(crc32);
 	njt_crc32_update(&crc32,location_info->addr_port.data,location_info->addr_port.len);
 	if (location_info->server_name.len > 0) {
 		njt_crc32_update(&crc32,location_info->server_name.data,location_info->server_name.len);
 	}
-	if (location_info->location_rule.len > 0) {
-		njt_crc32_update(&crc32,location_info->location_rule.data,location_info->location_rule.len);
+	if (location_rule.len > 0) {
+		njt_crc32_update(&crc32,location_rule.data,location_rule.len);
 	}
-	njt_crc32_update(&crc32,location_info->location.data,location_info->location.len);
+	njt_crc32_update(&crc32,location.data,location.len);
 	njt_crc32_final(crc32);
 
    
