@@ -676,7 +676,7 @@ njt_http_upstream_api_get_out_buf(njt_http_request_t *r, ssize_t len,
     if ((njt_uint_t)len > njt_pagesize) {
         /*The string len is larger than one buf*/
 
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "buffer size is beyond one pagesize.");
         return NULL;
     }
@@ -695,7 +695,7 @@ njt_http_upstream_api_get_out_buf(njt_http_request_t *r, ssize_t len,
 
         b = njt_create_temp_buf(r->pool, njt_pagesize);
         if (b == NULL) {
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                           "couldn't allocate the temp buffer.");
             return NULL;
         }
@@ -716,14 +716,14 @@ njt_http_upstream_api_get_out_buf(njt_http_request_t *r, ssize_t len,
 
         new_chain = njt_pcalloc(r->pool, sizeof(njt_chain_t));
         if (new_chain == NULL) {
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                           "couldn't allocate the chain.");
             return NULL;
         }
 
         b = njt_create_temp_buf(r->pool, njt_pagesize);
         if (b == NULL) {
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                           "couldn't allocate temp buffer.");
             return NULL;
         }
@@ -754,14 +754,14 @@ njt_http_upstream_api_insert_out_str(njt_http_request_t *r,
 		return NJT_OK;
 	}
     if (str == NULL || str->data == NULL)  {
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                        "parameter error in function %s", __func__);
         return NJT_ERROR;
     }
 
     b = njt_http_upstream_api_get_out_buf(r, str->len, out);
     if (b == NULL) {
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                        "could not alloc buffer in function %s", __func__);
         return NJT_ERROR;
     }
@@ -1254,7 +1254,7 @@ njt_stream_upstream_api_compose_one_upstream(njt_str_t zone_name,njt_http_reques
         if (id >= 0) {
             if (peer->id == (njt_uint_t)id) {
 				
-                njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0, "find the server %u",
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "find the server %ui",
                                id);
 				peer_node = peer;
 				rc = njt_stream_upstream_api_compose_one_server(r, peer_node, detailed, 0, 0, out,0,*peers->name);
@@ -1285,8 +1285,8 @@ njt_stream_upstream_api_compose_one_upstream(njt_str_t zone_name,njt_http_reques
             /*only compose one server*/
             if (id >= 0) {
                 if (peer->id == (njt_uint_t)id ) {
-                    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                                   "find the backup server %u", id);
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                                   "find the backup server %ui", id);
 				
 					peer_node = peer;
                     rc = njt_stream_upstream_api_compose_one_server(r, peer_node, detailed, 0, 1, out,0,*peers->name);
@@ -1320,8 +1320,8 @@ njt_stream_upstream_api_compose_one_upstream(njt_str_t zone_name,njt_http_reques
 				/*only compose one server*/
 				if (id >= 0) {
 					if (peer->id == (njt_uint_t)id || peer->parent_id == (njt_int_t)id) {
-						njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-									   "find the backup server %u", id);
+						njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+									   "find the backup server %ui", id);
 						
 						
 						rc = njt_stream_upstream_api_compose_one_server(r, peer_node, detailed, 0, peer_node->set_backup, out,1,*peers->name);
@@ -1460,7 +1460,7 @@ njt_http_upstream_api_compose_one_upstream(njt_flag_t keep_alive,njt_str_t zone_
         if (id >= 0) {
             if (peer->id == (njt_uint_t)id) {
 				
-                njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0, "find the server %u",
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "find the server %ui",
                                id);
 				peer_node = peer;
 				rc = njt_http_upstream_api_compose_one_server(r, peer_node, detailed, 0, 0, out,0,*peers->name);
@@ -1491,8 +1491,8 @@ njt_http_upstream_api_compose_one_upstream(njt_flag_t keep_alive,njt_str_t zone_
             /*only compose one server*/
             if (id >= 0) {
                 if (peer->id == (njt_uint_t)id ) {
-                    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                                   "find the backup server %u", id);
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                                   "find the backup server %ui", id);
 				
 					peer_node = peer;
                     rc = njt_http_upstream_api_compose_one_server(r, peer_node, detailed, 0, 1, out,0,*peers->name);
@@ -1525,8 +1525,8 @@ njt_http_upstream_api_compose_one_upstream(njt_flag_t keep_alive,njt_str_t zone_
 				/*only compose one server*/
 				if (id >= 0) {
 					if (peer->id == (njt_uint_t)id || peer->parent_id == (njt_int_t)id) {
-						njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-									   "find the backup server %u", id);
+						njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+									   "find the backup server %ui", id);
 						
 						
 						rc = njt_http_upstream_api_compose_one_server(r, peer_node, detailed, 0, peer_node->set_backup, out,1,*peers->name);
@@ -2101,14 +2101,14 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
     ctx = njt_stream_get_module_ctx(r, njt_http_upstream_api_module);
     if (ctx == NULL) {
 
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "ctx is missing %s",
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "ctx is missing %s",
                       __func__);
         goto error;
     }
 
     peers = ctx->peers;
     if (peers == NULL) {
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "peers is missing %s",
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "peers is missing %s",
                       __func__);
         goto error;
     }
@@ -2171,7 +2171,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
 			
-			njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "url data allocate error.");
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "url data allocate error.");
 			goto out;
 		}
 
@@ -2182,7 +2182,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 		if (njt_parse_url(r->pool, &u) != NJT_OK) {
 			rc = NJT_HTTP_UPS_API_INVALID_SRV_ARG;
 			if (u.err) {
-				njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
 							  "%s in upstream \"%V\"", u.err, &u.url);
 			}
 			goto out;
@@ -2211,7 +2211,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
     target_peers = peers;
 	 for (peer = peers->peer; peer != NULL;  peer = peer->next) {
         if (peer->id == (njt_uint_t)server_id ) {
-            njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0, "find the server %u",
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "find the server %ui",
                            server_id);
 
             break;
@@ -2222,8 +2222,8 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
         target_peers = backup;
         for (peer = backup->peer; peer;  peer = peer->next) {
             if (peer->id == (njt_uint_t)server_id) {
-                njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                               "find the backup server %u", server_id);
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                               "find the backup server %ui", server_id);
                 break;
             }
         }
@@ -2287,7 +2287,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
 			njt_stream_upstream_rr_peers_unlock(peers);
-			njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
 						  "peer sockaddr allocate error.");
 			goto out;
 		}
@@ -2296,7 +2296,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
 			njt_stream_upstream_rr_peers_unlock(peers);
-			njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
 						  "name data allocate error.");
 
 			goto out;
@@ -2427,14 +2427,14 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
     ctx = njt_http_get_module_ctx(r, njt_http_upstream_api_module);
     if (ctx == NULL) {
 
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "ctx is missing %s",
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "ctx is missing %s",
                       __func__);
         goto error;
     }
 
     peers = ctx->peers;
     if (peers == NULL) {
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "peers is missing %s",
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "peers is missing %s",
                       __func__);
         goto error;
     }
@@ -2492,7 +2492,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
 			
-			njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "url data allocate error.");
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "url data allocate error.");
 			goto out;
 		}
 
@@ -2503,7 +2503,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 		if (njt_parse_url(r->pool, &u) != NJT_OK) {
 			rc = NJT_HTTP_UPS_API_INVALID_SRV_ARG;
 			if (u.err) {
-				njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
 							  "%s in upstream \"%V\"", u.err, &u.url);
 			}
 			goto out;
@@ -2539,7 +2539,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
     target_peers = peers;
 	 for (peer = peers->peer; peer != NULL;  peer = peer->next) {
         if (peer->id == (njt_uint_t)server_id ) {
-            njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0, "find the server %u",
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "find the server %ui",
                            server_id);
 
             break;
@@ -2550,8 +2550,8 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
         target_peers = backup;
         for (peer = backup->peer; peer;  peer = peer->next) {
             if (peer->id == (njt_uint_t)server_id) {
-                njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                               "find the backup server %u", server_id);
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                               "find the backup server %ui", server_id);
                 break;
             }
         }
@@ -2631,7 +2631,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
 			njt_http_upstream_rr_peers_unlock(peers);
-			njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
 						  "peer sockaddr allocate error.");
 			goto out;
 		}
@@ -2640,7 +2640,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 
 			rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
 			njt_http_upstream_rr_peers_unlock(peers);
-			njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
 						  "name data allocate error.");
 
 			goto out;
@@ -2940,7 +2940,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 
     if (u.url.data == NULL) {
         rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "url data allocate error.");
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "url data allocate error.");
         goto out;
     }
     njt_cpystrn(u.url.data, json_peer.server.data, json_peer.server.len + 1);
@@ -2951,7 +2951,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_NOT_SUPPORTED_SRV;
         if (u.err) {
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                           "%s in upstream \"%V\"", u.err, &u.url);
         }
         //goto out;
@@ -3028,7 +3028,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
         njt_stream_upstream_rr_peers_unlock(peers);
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "peer allocate error.");
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "peer allocate error.");
 
         goto out;
     }
@@ -3038,7 +3038,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
         njt_stream_upstream_rr_peers_unlock(peers);
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "server data allocate error.");
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "server data allocate error.");
 
         goto out;
     }
@@ -3052,7 +3052,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
         njt_stream_upstream_rr_peers_unlock(peers);
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "name data allocate error.");
 
         goto out;
@@ -3068,7 +3068,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
         njt_stream_upstream_rr_peers_unlock(peers);
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "peer sockaddr allocate error.");
         goto out;
     }
@@ -3103,7 +3103,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
             if (backup == NULL) {
                 rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
                 njt_stream_upstream_rr_peers_unlock(peers);
-                njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                               "backup peers allocate error.");
 
                 goto out;
@@ -3113,7 +3113,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
             if (peers_name == NULL) {
                 rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
                 njt_stream_upstream_rr_peers_unlock(peers);
-                njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                               "peers_name allocate error.");
 
                 goto out;
@@ -3123,7 +3123,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
             if (peers_name->data == NULL) {
                 rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
                 njt_stream_upstream_rr_peers_unlock(peers);
-                njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                               "peers_name data allocate error.");
 
                 goto out;
@@ -3309,7 +3309,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
     if (u.url.data == NULL) {
         rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "url data allocate error.");
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "url data allocate error.");
         goto out;
     }
     njt_cpystrn(u.url.data, json_peer.server.data, json_peer.server.len + 1);
@@ -3320,7 +3320,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_NOT_SUPPORTED_SRV;
         if (u.err) {
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                           "%s in upstream \"%V\"", u.err, &u.url);
         }
         //goto out;
@@ -3398,7 +3398,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
 				rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
 				njt_http_upstream_rr_peers_unlock(peers);
-				njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
 							  "peer route allocate error.");
 				goto out;
 			}
@@ -3417,7 +3417,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
         njt_http_upstream_rr_peers_unlock(peers);
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "peer allocate error.");
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "peer allocate error.");
 
         goto out;
     }
@@ -3427,7 +3427,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
         njt_http_upstream_rr_peers_unlock(peers);
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "server data allocate error.");
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "server data allocate error.");
 
         goto out;
     }
@@ -3441,7 +3441,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
         njt_http_upstream_rr_peers_unlock(peers);
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "name data allocate error.");
 
         goto out;
@@ -3457,7 +3457,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
         njt_http_upstream_rr_peers_unlock(peers);
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "peer sockaddr allocate error.");
         goto out;
     }
@@ -3485,7 +3485,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
         njt_http_upstream_rr_peers_unlock(peers);
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "peer route allocate error.");
         goto out;
     }
@@ -3503,7 +3503,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
             if (backup == NULL) {
                 rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
                 njt_http_upstream_rr_peers_unlock(peers);
-                njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                               "backup peers allocate error.");
 
                 goto out;
@@ -3513,7 +3513,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
             if (peers_name == NULL) {
                 rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
                 njt_http_upstream_rr_peers_unlock(peers);
-                njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                               "peers_name allocate error.");
 
                 goto out;
@@ -3523,7 +3523,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
             if (peers_name->data == NULL) {
                 rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
                 njt_http_upstream_rr_peers_unlock(peers);
-                njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                               "peers_name data allocate error.");
 
                 goto out;
@@ -3637,7 +3637,7 @@ njt_stream_upstream_api_process_patch(njt_http_request_t *r,
 
     ctx = njt_pcalloc(r->pool, sizeof(njt_stream_upstream_api_ctx_t));
     if (ctx == NULL) {
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "upstream api ctx allocate error.");
         return NJT_HTTP_UPS_API_INTERNAL_ERROR;
     }
@@ -3668,7 +3668,7 @@ njt_http_upstream_api_process_patch(njt_http_request_t *r,
 
     ctx = njt_pcalloc(r->pool, sizeof(njt_http_upstream_api_ctx_t));
     if (ctx == NULL) {
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "upstream api ctx allocate error.");
         return NJT_HTTP_UPS_API_INTERNAL_ERROR;
     }
@@ -3697,7 +3697,7 @@ njt_stream_upstream_api_process_post(njt_http_request_t *r,
 
     ctx = njt_pcalloc(r->pool, sizeof(njt_stream_upstream_api_ctx_t));
     if (ctx == NULL) {
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "upstream api ctx allocate error.");
         return NJT_HTTP_UPS_API_INTERNAL_ERROR;
     }
@@ -3726,7 +3726,7 @@ njt_http_upstream_api_process_post(njt_http_request_t *r,
 
     ctx = njt_pcalloc(r->pool, sizeof(njt_http_upstream_api_ctx_t));
     if (ctx == NULL) {
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "upstream api ctx allocate error.");
         return NJT_HTTP_UPS_API_INTERNAL_ERROR;
     }
@@ -3993,7 +3993,7 @@ njt_stream_upstream_api_process_delete(njt_http_request_t *r,
 
 				ctx = njt_pcalloc(r->pool, sizeof(njt_stream_upstream_api_ctx_t));
 				if (ctx == NULL) {
-					njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+					njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
 								  "upstream api ctx allocate error.");
 					return NJT_HTTP_UPS_API_INTERNAL_ERROR;
 				}
@@ -4150,7 +4150,7 @@ njt_http_upstream_api_process_delete(njt_http_request_t *r,
 
 				ctx = njt_pcalloc(r->pool, sizeof(njt_http_upstream_api_ctx_t));
 				if (ctx == NULL) {
-					njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+					njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
 								  "upstream api ctx allocate error.");
 					return NJT_HTTP_UPS_API_INTERNAL_ERROR;
 				}
@@ -4215,7 +4215,7 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
     fd = njt_open_file(state_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR,
                        NJT_FILE_TRUNCATE, 0);
     if (fd == NJT_INVALID_FILE ) {
-		njt_log_error(NJT_LOG_CRIT, r->connection->log, njt_errno,
+		njt_log_error(NJT_LOG_CRIT, njt_cycle->log, njt_errno,
                       njt_open_file_n " \"%V\" failed", &state_file);
 
 		njt_stream_upstream_rr_peers_unlock(peers);
@@ -4225,7 +4225,7 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
     /*TODO refine the length 512 for malloc*/
     server_info = njt_pcalloc(r->pool, 512);
     if (server_info == NULL) {
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "failed to allocate memory from r->pool %s:%d",
                       __FUNCTION__,
                       __LINE__);
@@ -4253,7 +4253,7 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
 
 			len = njt_write_fd(fd, server_info, njt_strlen(server_info));
 			if (len == -1) {
-				njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
+				njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
 							  njt_write_fd_n " write file error %V",
 							  &state_file);
 				njt_stream_upstream_rr_peers_unlock(peers);
@@ -4285,7 +4285,7 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
 
 			len = njt_write_fd(fd, server_info, njt_strlen(server_info));
 			if (len == -1) {
-				njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
+				njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
 							  njt_write_fd_n " write file error %V",
 							  &state_file);
 				njt_stream_upstream_rr_peers_unlock(peers);
@@ -4314,7 +4314,7 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
 
 		len = njt_write_fd(fd, server_info, njt_strlen(server_info));
 		if (len == -1) {
-			njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
+			njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
 						  njt_write_fd_n " write file error %V",
 						  &state_file);
 			njt_stream_upstream_rr_peers_unlock(peers);
@@ -4332,7 +4332,7 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
 		 
 		len = njt_write_fd(fd, server_info, njt_strlen(server_info));
         if (len == -1) {
-            njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
+            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
                           njt_write_fd_n " write file error %V",
                           &state_file);
             goto failed;
@@ -4349,7 +4349,7 @@ failed:
     if (fd != NJT_INVALID_FILE) {
 
         if (njt_close_file(fd) == NJT_FILE_ERROR) {
-            njt_log_error(NJT_LOG_ALERT, r->connection->log, njt_errno,
+            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_errno,
                           njt_close_file_n " \"%V\" failed", &state_file);
         }
     }
@@ -4385,7 +4385,7 @@ njt_http_upstream_state_save(njt_http_request_t *r,
     fd = njt_open_file(state_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR,
                        NJT_FILE_TRUNCATE, 0);
     if (fd == NJT_INVALID_FILE ) {
-		njt_log_error(NJT_LOG_CRIT, r->connection->log, njt_errno,
+		njt_log_error(NJT_LOG_CRIT, njt_cycle->log, njt_errno,
                       njt_open_file_n " \"%V\" failed", &state_file);
 		njt_http_upstream_rr_peers_unlock(peers);
 		goto failed;
@@ -4394,7 +4394,7 @@ njt_http_upstream_state_save(njt_http_request_t *r,
     /*TODO refine the length 512 for malloc*/
     server_info = njt_pcalloc(r->pool, 512);
     if (server_info == NULL) {
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "failed to allocate memory from r->pool %s:%d",
                       __FUNCTION__,
                       __LINE__);
@@ -4427,7 +4427,7 @@ njt_http_upstream_state_save(njt_http_request_t *r,
 
 			len = njt_write_fd(fd, server_info, njt_strlen(server_info));
 			if (len == -1) {
-				njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
+				njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
 							  njt_write_fd_n " write file error %V",
 							  &state_file);
 				njt_http_upstream_rr_peers_unlock(peers);
@@ -4465,7 +4465,7 @@ njt_http_upstream_state_save(njt_http_request_t *r,
 
 			len = njt_write_fd(fd, server_info, njt_strlen(server_info));
 			if (len == -1) {
-				njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
+				njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
 							  njt_write_fd_n " write file error %V",
 							  &state_file);
 				njt_http_upstream_rr_peers_unlock(peers);
@@ -4500,7 +4500,7 @@ njt_http_upstream_state_save(njt_http_request_t *r,
 
 		len = njt_write_fd(fd, server_info, njt_strlen(server_info));
 		if (len == -1) {
-			njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
+			njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
 						  njt_write_fd_n " write file error %V",
 						  &state_file);
 			njt_http_upstream_rr_peers_unlock(peers);
@@ -4525,7 +4525,7 @@ njt_http_upstream_state_save(njt_http_request_t *r,
 		 }
 		len = njt_write_fd(fd, server_info, njt_strlen(server_info));
         if (len == -1) {
-            njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
+            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
                           njt_write_fd_n " write file error %V",
                           &state_file);
             goto failed;
@@ -4542,7 +4542,7 @@ failed:
     if (fd != NJT_INVALID_FILE) {
 
         if (njt_close_file(fd) == NJT_FILE_ERROR) {
-            njt_log_error(NJT_LOG_ALERT, r->connection->log, njt_errno,
+            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_errno,
                           njt_close_file_n " \"%V\" failed", &state_file);
         }
     }
@@ -4865,7 +4865,7 @@ njt_upstream_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 
         item = njt_array_push(path);
         if (item == NULL) {
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                           "array item of path push error.");
             return NJT_ERROR;
         }
@@ -5245,7 +5245,7 @@ njt_http_upstream_api_handler(njt_http_request_t *r)
     }
 
     if (njt_array_init(&path, r->pool, 8, sizeof(njt_str_t)) != NJT_OK) {
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "array init of upstream api error.");
         rc = NJT_HTTP_UPS_API_INTERNAL_ERROR;
         goto out;

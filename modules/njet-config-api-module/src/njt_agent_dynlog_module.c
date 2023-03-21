@@ -264,7 +264,7 @@ static njt_json_element* njt_dynlog_dump_log_cf_json(njt_pool_t *pool,njt_array_
             }
             njt_struct_add(obj,path,pool);
         }
-        if(log[i].format != NULL){
+        if(log[i].format != NULL && log[i].format->name.len > 0 ){
             format = njt_json_str_element(pool, njt_json_fast_key("formatName"),&log[i].format->name);
             if(format == NULL){
                 continue;

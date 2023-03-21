@@ -1255,7 +1255,7 @@ njt_http_log_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
     if (log->file == NULL) {
         return NJT_CONF_ERROR;
     }
-
+    log->path = njt_http_access_log;
     lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_log_module);
     fmt = lmcf->formats.elts;
 

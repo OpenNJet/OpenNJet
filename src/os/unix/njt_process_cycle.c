@@ -289,7 +289,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             njt_change_binary = 0;
             njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "changing binary");
             njt_signal_helper_processes(cycle,
-                                        njt_signal_value(NJT_SHUTDOWN_SIGNAL));            
+                                        njt_signal_value(NJT_SHUTDOWN_SIGNAL));
             njt_new_binary = njt_exec_new_binary(cycle, njt_argv);
         }
 
@@ -380,11 +380,12 @@ njt_start_worker_processes(njt_cycle_t *cycle, njt_int_t n, njt_int_t type)
 static void
 njt_start_cache_manager_processes(njt_cycle_t *cycle, njt_uint_t respawn)
 {
-    njt_uint_t    i, manager, loader;
+    njt_uint_t    i, manager, loader,purger;
     njt_path_t  **path;
 
     manager = 0;
     loader = 0;
+    purger = 0;
 
     path = njt_cycle->paths.elts;
     for (i = 0; i < njt_cycle->paths.nelts; i++) {
@@ -396,9 +397,13 @@ njt_start_cache_manager_processes(njt_cycle_t *cycle, njt_uint_t respawn)
         if (path[i]->loader) {
             loader = 1;
         }
+
+        if (path[i]->purger) {
+            purger = 1;
+        }
     }
 
-    if (manager == 0) {
+    if (manager == 0 && purger == 0) {
         return;
     }
 
@@ -491,7 +496,7 @@ njt_helper_preprocess_cycle(njt_cycle_t *cycle, void *data)
     ctx->handle = njt_dlopen(ctx->file.data);
     if (ctx->handle == NULL) {
         njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, njt_dlopen_n " \"%s\" failed (%s)",
-                           ctx->file.data, njt_dlerror()); 
+                           ctx->file.data, njt_dlerror());
         return;
     }
 
@@ -538,7 +543,7 @@ njt_helper_process_cycle(njt_cycle_t *cycle, void *data)
     cycle->connection_n = 512;
 
     njt_helper_process_init(cycle, -1);
-    
+
     njt_memzero(&ev, sizeof(njt_event_t));
     //ev.handler = ctx->handler;
     ev.handler = njt_helper_process_handler;
@@ -992,7 +997,7 @@ static void
 njt_master_process_exit(njt_cycle_t *cycle)
 {
     njt_uint_t  i;
-    fprintf(stderr,"njt exit start++++++++++++++++++++++ \r\n");
+
     njt_delete_pidfile(cycle);
 
     njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exit");
@@ -1026,7 +1031,7 @@ njt_master_process_exit(njt_cycle_t *cycle)
     njt_cycle = &njt_exit_cycle;
 
     njt_destroy_pool(cycle->pool);
-    fprintf(stderr,"njt exit end++++++++++++++++++++++ \r\n");
+
     exit(0);
 }
 
@@ -1484,9 +1489,7 @@ njt_worker_process_exit(njt_cycle_t *cycle)
 {
     njt_uint_t         i;
     njt_connection_t  *c;
-    // by chengxu
-    fprintf(stderr,"njt exit start++++++++++++++++++++++ \r\n");
-    //end
+
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->exit_process) {
             cycle->modules[i]->exit_process(cycle);
@@ -1535,9 +1538,7 @@ njt_worker_process_exit(njt_cycle_t *cycle)
     njt_cycle = &njt_exit_cycle;
 
     njt_destroy_pool(cycle->pool);
-    // by chengxu
-    fprintf(stderr,"njt exit end++++++++++++++++++++++ \r\n");
-    // end
+
     njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "exit");
 
     exit(0);
