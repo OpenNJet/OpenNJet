@@ -39,6 +39,7 @@ typedef struct {
 #if (NJT_OPENSSL)
 typedef struct njt_helper_hc_ssl_conf_s {
     njt_flag_t ssl_enable;
+    njt_flag_t ntls_enable;
     njt_flag_t ssl_session_reuse;
     njt_uint_t ssl_protocols;
     njt_str_t ssl_protocol_str;
@@ -51,6 +52,8 @@ typedef struct njt_helper_hc_ssl_conf_s {
     njt_str_t ssl_crl;
     njt_str_t ssl_certificate;
     njt_str_t ssl_certificate_key;
+    njt_str_t ssl_enc_certificate;
+    njt_str_t ssl_enc_certificate_key;
     njt_array_t *ssl_passwords;
     njt_array_t *ssl_conf_commands;
     njt_ssl_t *ssl;
@@ -100,6 +103,7 @@ typedef struct {
 #if (NJT_OPENSSL)
 typedef struct {
     bool ssl_enable;
+    bool ntls_enable;
     bool ssl_session_reuse;
     njt_int_t ssl_protocols;
     njt_str_t ssl_protocols_str;
@@ -112,6 +116,8 @@ typedef struct {
     njt_str_t ssl_crl;
     njt_str_t ssl_certificate;
     njt_str_t ssl_certificate_key;
+    njt_str_t ssl_enc_certificate;
+    njt_str_t ssl_enc_certificate_key;
     njt_str_t ssl_passwords;
     njt_str_t ssl_conf_commands;
 } njt_helper_hc_ssl_add_data_t;

@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: sendmsg kv api
+  description: sendmsg 模块设置kv 值
+  version: 1.0.0
+
+servers:
+  - url: '/'
+paths:
+  /kv:
+    post:
+      tags:
+        - sendmsg kv
+      summary: kvstore key set
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/kvdata'
+          required: true
+      responses:
+        '200':
+          description: Success
+        '500':
+          description: Internal Server Error
+    get:
+      tags:
+        - sendmsg kv
+      summary: get value from kvstore 
+      parameters:
+        - in: query
+          name: key
+          schema:
+            type: string
+            example: 'test_key'
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'test msg'
+        '404':
+          description: Not Found 
+        '500':
+          description: Internal Server Error
+components:
+  schemas:
+    kvdata:
+      title: kv post data
+      type: object
+      properties:
+        key:
+          type: string 
+          example: 'test_key'
+        value: 
+          type: string 
+          example: 'test msg'
+                              
+

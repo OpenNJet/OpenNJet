@@ -1,0 +1,15 @@
+njt_addon_name=njt_doc_module
+njt_module_type=HTTP
+njt_module_name=$njt_addon_name
+njt_module_deps=" \
+$njt_addon_dir/src/njt_doc_module.h \
+"
+njt_module_srcs=" \
+  $njt_addon_dir/src/njt_doc_module.c \
+"
+njt_module_incs=""
+njt_module_libs=""
+
+ have=NJT_DOC_LOC . auto/have
+CORE_INCS="$CORE_INCS $njt_addon_dir/src"
+. auto/module

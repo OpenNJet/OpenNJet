@@ -1,0 +1,116 @@
+openapi: 3.0.3
+info:
+  title: dyn config api
+  description: 动态config 开关
+  version: 1.0.0
+
+servers:
+  - url: '/config/1'
+paths:
+  /config/:
+    get:
+      tags:
+        - dyn config module
+      summary: Returns a list of allow dynamic conf module
+      description: Returns a list of allow dynamic conf module
+      operationId: getDynConfModuleList
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleList'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+  /config/http_split_clients_2:
+    put:
+      tags:
+        - dyn split clients 2 config
+      summary: set module conf
+      description: set module conf
+      operationId: setDynModuleConf
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/SplitConf'
+          required: true
+      responses:
+        '204':
+          description: Success
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+    get:
+      tags:
+        - dyn split clients 2 config 
+      summary: return dynamic module conf
+      description: get module conf
+      operationId: getDynModuleConf
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SplitConf'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+
+    ModuleList:
+      title: module list
+      description: 支持动态配置的模块列表
+      type: array
+      items:
+        type: string
+
+    SplitConf:
+      title: Split Clients 2 Conf
+      description: 动态Split Clients 2 配置
+      type: object
+      properties:
+        http:
+          type: object 
+          properties:
+            split_clients_2: 
+              type: object 
+              properties:
+                ${backend_name1}: 
+                  type: integer
+                  example: 20
+                  minimum: 0
+                  maximum: 100
+                ${backend_name2}: 
+                  type: integer
+                  example: 80
+                  minimum: 0
+                  maximum: 100
+                              
+
