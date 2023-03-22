@@ -504,6 +504,7 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t *pool, njt_http_dy
     njt_http_core_srv_conf_t *cscf;
     njt_http_core_loc_conf_t *clcf;
     njt_http_dyn_bwlist_srv_t *daas;
+    njt_str_t *p_port, *p_sname;
     njt_uint_t i;
     if (njt_process == NJT_PROCESS_HELPER)
     {
@@ -518,11 +519,18 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t *pool, njt_http_dy
     daas = api_data->servers.elts;
     for (i = 0; i < api_data->servers.nelts; ++i)
     {
-        cscf = njt_http_get_srv_by_port(cycle, (njt_str_t *)daas[i].listens.elts, (njt_str_t *)daas[i].server_names.elts);
+        p_port = (njt_str_t *)daas[i].listens.elts;
+        p_sname = (njt_str_t *)daas[i].server_names.elts;
+        if (p_port == NULL || p_sname == NULL)
+        {
+            njt_log_error(NJT_LOG_INFO, pool->log, 0, "listen or server_name is NULL, just continue");
+            continue;
+        }
+        cscf = njt_http_get_srv_by_port(cycle, p_port, p_sname);
         if (cscf == NULL)
         {
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
-                          (njt_str_t *)daas[i].listens.elts, (njt_str_t *)daas[i].server_names.elts);
+                          p_port, p_sname);
             continue;
         }
         njt_http_conf_ctx_t ctx = *cscf->ctx;

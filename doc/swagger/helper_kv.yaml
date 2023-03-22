@@ -41,6 +41,8 @@ paths:
               schema:
                 type: string
                 example: 'test msg'
+        '404':
+          description: Not Found 
         '500':
           description: Internal Server Error
 components:

@@ -701,9 +701,13 @@ njt_http_merge_locations(njt_conf_t *cf, njt_queue_t *locations,
         if (rv != NJT_CONF_OK) {
             return rv;
         }
-
+	if(cf->dynamic == 0) {
         rv = njt_http_merge_locations(cf, clcf->locations, clcf->loc_conf,
                                       module, ctx_index);
+	} else {
+		rv = njt_http_merge_locations(cf, clcf->old_locations, clcf->loc_conf,
+                                      module, ctx_index);
+	}
         if (rv != NJT_CONF_OK) {
             return rv;
         }
@@ -887,7 +891,11 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 njt_int_t
 njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
                         njt_http_core_loc_conf_t *pclcf) {
-    return njt_http_init_locations_common(cf, cscf,pclcf,pclcf->locations);
+    if(cf->dynamic == 1) {
+	 return njt_http_init_locations_common(cf, cscf,pclcf,pclcf->old_locations);
+    } else {
+    	return njt_http_init_locations_common(cf, cscf,pclcf,pclcf->locations);
+    }
 }
 
 //add by clb
@@ -942,7 +950,11 @@ njt_http_init_static_location_trees_common(njt_conf_t *cf,njt_http_core_loc_conf
 njt_int_t
 njt_http_init_static_location_trees(njt_conf_t *cf,
                                     njt_http_core_loc_conf_t *pclcf) {
-    return njt_http_init_static_location_trees_common(cf,pclcf,pclcf->locations,&pclcf->static_locations);
+    if(cf->dynamic == 1) {
+    	return njt_http_init_static_location_trees_common(cf,pclcf,pclcf->old_locations,&pclcf->static_locations);
+    } else {
+    	return njt_http_init_static_location_trees_common(cf,pclcf,pclcf->locations,&pclcf->static_locations);
+    }
 }
 //add by clb
 njt_int_t
