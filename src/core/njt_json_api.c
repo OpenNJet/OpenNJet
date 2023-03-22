@@ -542,7 +542,8 @@ njt_int_t njt_json_2_structure(njt_str_t *json,
     pool = init_pool;
     pjson_manager->pool = pool;
     pjson_manager->free = njt_json_manager_free;
-    pjson_manager->total_size = json->len + njt_pagesize;
+    pjson_manager->total_size = json->len * 6 + njt_pagesize;
+    pjson_manager->total_size *= 2;
 
     json_buf = njt_pnalloc(pool, pjson_manager->total_size);
     if (json_buf == NULL) {
