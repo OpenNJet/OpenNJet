@@ -526,8 +526,10 @@ static int  njt_agent_dynlog_change_handler(njt_str_t *key, njt_str_t *value, vo
 }
 
 static njt_int_t njt_agent_dynlog_init_process(njt_cycle_t* cycle){
-    njt_str_t  rpc_key = njt_string("http_log");
-    njt_reg_kv_change_handler(&rpc_key, njt_agent_dynlog_change_handler,njt_agent_dynlog_rpc_handler, NULL);
+    if (njt_process == NJT_PROCESS_WORKER) {
+        njt_str_t  rpc_key = njt_string("http_log");
+        njt_reg_kv_change_handler(&rpc_key, njt_agent_dynlog_change_handler,njt_agent_dynlog_rpc_handler, NULL);
+    }
     return NJT_OK;
 }
 

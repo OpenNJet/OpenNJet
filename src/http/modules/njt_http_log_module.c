@@ -1164,6 +1164,7 @@ njt_http_log_create_main_conf(njt_conf_t *cf)
     if (new_pool == NULL) {
         return NULL;
     }
+    njt_sub_pool(cf->cycle->pool ,new_pool);
     conf->pool = new_pool;
 #endif
 
@@ -1989,12 +1990,13 @@ static void njt_http_log_dyn_using_file(njt_pool_t *pool,njt_http_dyn_log_file_t
     cln->data = file;
     cln->handler = njt_http_log_dyn_unused_file;
 }
+// 未使用需检查文件引用计数，此处不会随lmcf.pool 自动释放
 static njt_http_dyn_log_file_t * njt_http_log_dyn_open_file(njt_http_log_main_conf_t *lmcf,njt_str_t *path){
     njt_queue_t *q;
     njt_http_dyn_log_file_t *node;
     njt_open_file_t *file;
-    njt_pool_cleanup_t *cln;
-    njt_pool_cleanup_file_t        *clnf;
+//    njt_pool_cleanup_t *cln;
+//    njt_pool_cleanup_file_t        *clnf;
     njt_pool_t *pool;
 
     pool = lmcf->pool;
@@ -2018,10 +2020,10 @@ static njt_http_dyn_log_file_t * njt_http_log_dyn_open_file(njt_http_log_main_co
     file->flush = NULL;
     file->data = NULL;
 
-    cln = njt_pool_cleanup_add(pool, sizeof(njt_pool_cleanup_file_t));
-    if (cln == NULL) {
-        return NULL;
-    }
+//    cln = njt_pool_cleanup_add(pool, sizeof(njt_pool_cleanup_file_t)); // 处理无使用场景下，文件句柄关闭的问题，存在double free 问题，暂由代码逻辑保证
+//    if (cln == NULL) {
+//        return NULL;
+//    }
 
     file->fd = njt_open_file(file->name.data,NJT_FILE_APPEND,
                                NJT_FILE_CREATE_OR_OPEN,NJT_FILE_DEFAULT_ACCESS);
@@ -2041,12 +2043,12 @@ static njt_http_dyn_log_file_t * njt_http_log_dyn_open_file(njt_http_log_main_co
         return  NULL;
     }
 #endif
-    cln->handler = njt_pool_cleanup_file;
-    clnf = cln->data;
-
-    clnf->fd = file->fd;
-    clnf->name = file->name.data;
-    clnf->log = pool->log;
+//    cln->handler = njt_pool_cleanup_file;
+//    clnf = cln->data;
+//
+//    clnf->fd = file->fd;
+//    clnf->name = file->name.data;
+//    clnf->log = pool->log;
 
     njt_queue_insert_head(&lmcf->file_queue,&node->queue);
 
