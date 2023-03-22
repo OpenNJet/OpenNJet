@@ -89,7 +89,8 @@ int64_t njt_calc_element_size(njt_json_element *element, bool contain_key)
     switch (element->type)
     {
         case NJT_JSON_STR:
-            size += element->strval.len;
+            size += NJT_JSON_ELEM_SIZE_STR;
+            size += element->strval.len * 6;
             break;
         case NJT_JSON_BOOL:
             size += NJT_JSON_ELEM_SIZE_BOOL;
@@ -618,7 +619,7 @@ njt_int_t njt_struct_2_json_callback(njt_json_alc *alc,
 {
     njt_int_t rc = NJT_OK;
     njt_json_element *item;
-    njt_json_mut_val *msg_key, *msg;
+    njt_json_mut_val *msg_key, *msg = NULL;
     njt_queue_t *datas;
     njt_queue_t *q;
 
