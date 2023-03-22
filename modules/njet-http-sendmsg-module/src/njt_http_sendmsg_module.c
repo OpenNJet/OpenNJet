@@ -304,7 +304,7 @@ static njt_int_t sendmsg_api_get_handler(njt_http_request_t *r)
     {
         b->pos = (u_char *)not_found;
         b->last = (u_char *)(not_found + strlen(not_found));
-        r->headers_out.status = NJT_HTTP_OK;
+        r->headers_out.status = NJT_HTTP_NOT_FOUND;
         r->headers_out.content_length_n = strlen(not_found);
     }
 

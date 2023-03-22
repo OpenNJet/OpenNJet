@@ -1022,8 +1022,9 @@ static void njt_http_upstream_modify_dynamic_server(njt_http_upstream_srv_conf_t
 
 	 udsmcf = njt_http_cycle_get_module_main_conf(njt_cycle,
              njt_http_upstream_dynamic_servers_module);
-	  //dynamic_server = udsmcf->dynamic_servers.elts;
-
+	 if(udsmcf == NULL) {
+	   return;
+	 }
 	
 	  part = &udsmcf->dynamic_servers->part;
 	  dynamic_server = (njt_http_upstream_dynamic_server_conf_t       *)part->elts;
@@ -1088,7 +1089,9 @@ static void njt_http_upstream_free_dynamic_server(njt_http_upstream_srv_conf_t *
 	njt_list_part_t *part;
 	 udsmcf = njt_http_cycle_get_module_main_conf(njt_cycle,
              njt_http_upstream_dynamic_servers_module);
-
+	 if(udsmcf == NULL) {
+		return;
+	 }
 	 part = &udsmcf->dynamic_servers->part;
 	 dynamic_server = (njt_http_upstream_dynamic_server_conf_t       *)part->elts;
 
@@ -1132,7 +1135,9 @@ static njt_http_upstream_dynamic_server_conf_t * njt_http_upstream_allocate_dyna
 	njt_list_part_t *part;
 	 udsmcf = njt_http_cycle_get_module_main_conf(njt_cycle,
              njt_http_upstream_dynamic_servers_module);
-
+	  if(udsmcf == NULL) {
+		return NULL;
+	  }
 	  part = &udsmcf->dynamic_servers->part;
 	  dynamic_server = (njt_http_upstream_dynamic_server_conf_t       *)part->elts;
 	
@@ -1176,7 +1181,9 @@ static void njt_http_upstream_check_dynamic_server(njt_event_t *ev)
 	njt_uint_t                                    refresh_in;
 	 udsmcf = njt_http_cycle_get_module_main_conf(njt_cycle,
              njt_http_upstream_dynamic_servers_module);
-
+	if(udsmcf == NULL){
+	   return;
+	}
 	 //upstream_conf = ev->data;
      //peers = upstream_conf->peer.data;
 	 if(udsmcf->peers != NULL) {

@@ -402,8 +402,8 @@ njt_pmemalign(njt_pool_t *pool, size_t size, size_t alignment)
 njt_int_t
 njt_pfree(njt_pool_t *pool, void *p)
 {
-    njt_pool_large_t  **l;
-
+    njt_pool_large_t  **l; 
+    pool->log = njt_cycle->log;
     for (l = &pool->large; *l; ) {
         // by ChengXu
 

@@ -102,6 +102,7 @@ static int njt_ctrl_dynlog_request_output(njt_http_request_t *r,njt_int_t code, 
     out.next = NULL;
     return njt_http_output_filter(r, &out);
 
+
 }
 
 static int njt_ctrl_dynlog_rpc_msg_handler(njt_dyn_rpc_res_t* res, njt_str_t *msg){
@@ -243,25 +244,25 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     path = njt_array_create( r->pool, 4, sizeof(njt_str_t));
     if (path == NULL) {
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0,"array init of path error.");
-        return;
+        goto err;
     }
     rc = njt_http_api_parse_path(r,path);
     if(rc != NJT_OK || path->nelts != 3 ){
-        return;
+        goto err;
     }
     uri = path->elts;
 
 
    body_chain = r->request_body->bufs;
     if(body_chain == NULL){
-        return;
+        goto err;
     }
     /*check the sanity of the json body*/
     json_str.data = body_chain->buf->pos;
     json_str.len = body_chain->buf->last - body_chain->buf->pos;
 
     if(json_str.len < 2 ){
-        return;
+        goto err;
     }
 
     len = 0 ;
@@ -275,7 +276,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     if(json_str.data == NULL){
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "could not alloc buffer in function %s", __func__);
-        return;
+        goto err;
     }
     len = 0;
     tmp_chain = r->request_body->bufs;
@@ -290,14 +291,22 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     njt_str_concat(r->pool,topic,key_prf,uri[2],return );
     rc = njt_dyn_sendmsg(&topic,&json_str,1);
     if(rc == NJT_OK){
-        return;
+        njt_ctrl_dynlog_request_output(r,NJT_OK,NULL);
+        goto out;
     }
 
+    err:
     err_ctx = njt_pcalloc(r->pool, sizeof(njt_ctrl_dynlog_request_err_ctx_t));
     err_ctx->success = 0;
     err_ctx->code = rc;
     njt_http_set_ctx(r, err_ctx, njt_ctrl_config_api_module);
 
+    njt_str_t bad_req = njt_string("{\"code\":400,\"msg\":\"read body error\"}");
+    rc= NJT_HTTP_BAD_REQUEST;
+    njt_ctrl_dynlog_request_output(r,NJT_HTTP_BAD_REQUEST,&bad_req);
+
+    out:
+    njt_http_finalize_request(r, rc);
     return;
 }
 
@@ -306,7 +315,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
 // /api/1/config/{module_name}
 static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
     njt_int_t rc;
-    njt_http_dyn_access_api_main_t *api_data;
+//    njt_http_dyn_access_api_main_t *api_data;
     njt_array_t *path;
     njt_str_t msg,*uri,topic;
 
@@ -333,15 +342,13 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
     }
     if(r->method == NJT_HTTP_PUT && path->nelts == 3 ){
         rc = njt_http_read_client_request_body(r, njt_ctrl_dyn_access_log_read_body);
-        if (rc == NJT_OK) {
-            njt_http_finalize_request(r, NJT_DONE);
+        if (rc == NJT_ERROR || rc >= NJT_HTTP_SPECIAL_RESPONSE) {
+            return rc;
         }
-        api_data = njt_http_get_module_ctx(r, njt_ctrl_config_api_module);
-        if (api_data != NULL && !api_data->success) {
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "get api %ui ",api_data->servers.nelts);
-            goto err;
+
+        if (rc == NJT_AGAIN || rc == NJT_OK) {
+            return NJT_DONE;
         }
-        goto out;
     }
     if(r->method == NJT_HTTP_GET){
         njt_str_t smsg = njt_string("{\"method\":\"GET\"}");
