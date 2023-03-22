@@ -119,6 +119,9 @@ njt_http_location_init(njt_conf_t *cf) {
     njt_http_core_main_conf_t *cmcf;
     njt_http_handler_pt *h;
     cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
+	if(cmcf == NULL) {
+		return NJT_ERROR;
+	}
     //njt_http_location_handler
     h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
     if (h == NULL) {

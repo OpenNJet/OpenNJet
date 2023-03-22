@@ -37,7 +37,8 @@
 
 #define NJT_GET_CHAR_NUM_C(n)  (n.len)   //char
 #define NJT_GET_CHAR_NUM_B(n)  (n>0?4:5)   //bool
-#define NJT_GET_CHAR_NUM_S(n)  (n>0?16:16)   //up,down
+//#define NJT_GET_CHAR_NUM_S(n)  (n>0?16:16)   //up,down
+#define NJT_GET_CHAR_NUM_S(n)  (16)   //up,down
 
 extern njt_cycle_t *njet_master_cycle;
 static njt_int_t

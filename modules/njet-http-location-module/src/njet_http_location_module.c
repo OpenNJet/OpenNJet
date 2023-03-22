@@ -132,6 +132,10 @@ njt_http_location_init(njt_conf_t *cf) {
     njt_http_core_main_conf_t *cmcf;
     njt_http_handler_pt *h;
     cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
+	if(cmcf == NULL) {
+		return NJT_ERROR;
+	}
+
     h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
     if (h == NULL) {
         return NJT_ERROR;
@@ -1381,6 +1385,9 @@ njt_http_set_del_variable_flag( njt_str_t *name)
   
 
     cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module); //variables  动态pool 上申请，格位重复使用。 内存释放
+	if(cmcf == NULL) {
+		return;
+	}
 
     v = cmcf->variables.elts;
 
@@ -1412,7 +1419,10 @@ njt_http_set_del_variables_keys_flag( njt_str_t *name)
 
   
 
-    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
+   cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
+   if(cmcf == NULL) {
+		return;
+	}
 
    key = cmcf->variables_keys->keys.elts;
 
@@ -1454,6 +1464,10 @@ njt_http_refresh_variables_keys(){
 njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 
    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
+   if(cmcf == NULL) {
+		return;
+	}
+
    key = cmcf->variables_keys->keys.elts;
    count = cmcf->variables_keys->keys.nelts;
 	  old_pool = cmcf->variables_keys->pool;
