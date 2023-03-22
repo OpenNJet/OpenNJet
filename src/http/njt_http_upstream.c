@@ -33,7 +33,7 @@ static njt_int_t njt_http_upstream_cache_last_modified(njt_http_request_t *r,
 static njt_int_t njt_http_upstream_cache_etag(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 #endif
-
+extern njt_int_t njt_http_proxy_create_request(njt_http_request_t *r);
 static void njt_http_upstream_init_request(njt_http_request_t *r);
 static void njt_http_upstream_resolve_handler(njt_resolver_ctx_t *ctx);
 static void njt_http_upstream_rd_check_broken_connection(njt_http_request_t *r);
@@ -628,11 +628,11 @@ njt_http_upstream_init_request(njt_http_request_t *r)
     if (r->request_body) {
         u->request_bufs = r->request_body->bufs;
     }
-
+	/*
     if (u->create_request(r) != NJT_OK) {
         njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
         return;
-    }
+    }*/
 
     if (njt_http_upstream_set_local(r, u, u->conf->local) != NJT_OK) {
         njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
@@ -1577,6 +1577,7 @@ njt_http_upstream_connect(njt_http_request_t *r, njt_http_upstream_t *u)
     njt_connection_t          *c;
     njt_http_core_loc_conf_t  *clcf;
 
+	
     r->connection->log->action = "connecting to upstream";
 
     if (u->state && u->state->response_time == (njt_msec_t) -1) {
@@ -1599,7 +1600,7 @@ njt_http_upstream_connect(njt_http_request_t *r, njt_http_upstream_t *u)
     u->state->header_time = (njt_msec_t) -1;
 
     rc = njt_event_connect_peer(&u->peer);
-
+	
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "http upstream connect: %i", rc);
 
@@ -1623,7 +1624,11 @@ njt_http_upstream_connect(njt_http_request_t *r, njt_http_upstream_t *u)
     }
 
     /* rc == NJT_OK || rc == NJT_AGAIN || rc == NJT_DONE */
-
+	
+    if (u->create_request(r) != NJT_OK) {
+        njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
+        return;
+    }
     c = u->peer.connection;
 
     c->requests++;

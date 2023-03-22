@@ -450,8 +450,8 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
 
     njt_str_t  strict = njt_string("STRICT");
     njt_str_t  disable = njt_string("DISABLE");
-    njt_str_t  both = njt_string("BOTH");
-	
+    njt_str_t  both = njt_string("PERMISSIVE");
+    njt_str_t  none = njt_string("none");	
 	njt_stream_proto_ctx_t *ctx;
 	njt_stream_proto_srv_conf_t  *cf;
 
@@ -467,18 +467,25 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
 			} else if( rc == NJT_OK) {
 				c->buffer = NULL;
 				ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
-				if (ctx != NULL && ctx->ssl == 0) {
+				if (ctx != NULL && (ctx->port_mode.len == none.len && njt_strncmp(ctx->port_mode.data,none.data,none.len) == 0)) {
+                                   return NJT_OK;
+                                }
+				else if (ctx != NULL && ctx->ssl == 0) {
 					if((ctx->port_mode.len == disable.len && njt_strncmp(ctx->port_mode.data,disable.data,disable.len) == 0) ||
 					 (ctx->port_mode.len == both.len && njt_strncmp(ctx->port_mode.data,both.data,both.len) == 0)) {
+					        njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "sidecar: not ssl port_mode %V,ok!",&ctx->port_mode);
 						return NJT_OK;
 					} else {
+					        njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "sidecar: not ssl port_mode %V,reject!",&ctx->port_mode);
 						return NJT_ERROR;
 					}
 				} else if (ctx != NULL){
 					if((ctx->port_mode.len == strict.len && njt_strncmp(ctx->port_mode.data,strict.data,strict.len) == 0) ||
                                          (ctx->port_mode.len == both.len && njt_strncmp(ctx->port_mode.data,both.data,both.len) == 0)) {
-                                                return NJT_OK;
+                                                //return NJT_OK;
+					        njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "sidecar:ssl port_mode %V,ok!",&ctx->port_mode);
                                         } else {
+					        njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "sidecar: ssl port_mode %V,reject!",&ctx->port_mode);
                                                 return NJT_ERROR;
                                         }
 				}
