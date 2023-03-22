@@ -2158,7 +2158,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         if (n == 0) {
             file = njt_http_log_dyn_open_file(lmcf,&full_name);
             if (file == NULL) {
-                return NJT_ERROR;
+                goto error ;
             }
             njt_http_log_dyn_using_file(cf->pool,file);
             log->file = &file->file;
@@ -2166,7 +2166,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         } else {
             log->script = njt_pcalloc(cf->pool, sizeof(njt_http_log_script_t));
             if (log->script == NULL) {
-                return NJT_ERROR;
+                goto error ;
             }
 
             njt_memzero(&sc, sizeof(njt_http_script_compile_t));
