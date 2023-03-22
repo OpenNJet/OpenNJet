@@ -220,10 +220,16 @@ static njt_int_t njt_dynlog_update_access_log(njt_pool_t *pool,njt_http_dyn_acce
     }
     daas = api_data->servers.elts;
     for(i = 0; i < api_data->servers.nelts; ++i){
+        if( daas[i].listens.nelts < 1 && daas[i].server_names.nelts < 1 ){
+            continue;
+        }
         cscf = njt_http_get_srv_by_port(cycle,(njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
         if(cscf == NULL){
-            njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
-                          (njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
+            if(daas[i].listens.elts != NULL && daas[i].server_names.elts != NULL ){
+                njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
+                              (njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
+            }
+
             continue;
         }
         njt_http_conf_ctx_t ctx = *cscf->ctx;
