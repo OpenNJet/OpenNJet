@@ -31,7 +31,7 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 
     target_ls = NULL;
     cscf = NULL;
-    if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 && server_name->len > 0) {
+    if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 ) {
         ls = cycle->listening.elts;
         for (i = 0; i < cycle->listening.nelts; i++) {
             if(ls[i].server_type != NJT_HTTP_SERVER_TYPE){
