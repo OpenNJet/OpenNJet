@@ -76,13 +76,12 @@ paths:
       summary: 创建健康检查
       description: 创建健康检查
       operationId: postHealthCheck
-      parameters:
-        - in: body
-          name: postHealthCheck
-          description: 创建新的健康检查
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckConf'
           required: true
-          schema:
-            $ref: '#/components/schemas/HealthCheckConf'
       responses:
         '200':
           description: Success
