@@ -27,11 +27,11 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
     njt_http_in_addr_t *addr;
     njt_http_in6_addr_t *addr6;
     njt_http_addr_conf_t *addr_conf;
-    njt_hash_elt_t  **elt;
+    njt_http_server_name_t *sn;
 
     target_ls = NULL;
     cscf = NULL;
-    if (addr_port->len > 0) {
+    if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 ) {
         ls = cycle->listening.elts;
         for (i = 0; i < cycle->listening.nelts; i++) {
             if(ls[i].server_type != NJT_HTTP_SERVER_TYPE){
@@ -78,54 +78,17 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
             if (addr_conf->virtual_names == NULL) {
                 return NULL;
             }
-            elt = addr_conf->virtual_names->names.hash.buckets;
-            if (elt != NULL) {
-                for (k = 0; k < addr_conf->virtual_names->names.hash.size; ++k) {
-                    if (elt[k] != NULL) {
-                        cscf = elt[k]->value;
-                        name = cscf->server_names.elts;
-                        for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
-                            if(name[j].name.len == server_name->len
-                               && njt_strncmp(name[j].name.data,server_name->data,server_name->len) == 0){
-                                return cscf;
-                            }
-                        }
-                    }
-                }
+            cscf = njt_hash_find_combined(&addr_conf->virtual_names->names,
+                                           njt_hash_key(server_name->data, server_name->len),
+                                           server_name->data, server_name->len);
+            if(cscf != NULL){
+                return cscf;
             }
-            if (addr_conf->virtual_names->names.wc_head != NULL) {
-                elt = addr_conf->virtual_names->names.wc_head->hash.buckets;
-                if (elt != NULL) {
-                    for (k = 0; k < addr_conf->virtual_names->names.wc_head->hash.size; ++k) {
-                        if (elt[k] != NULL) {
-                            cscf = elt[k]->value;
-                            name = cscf->server_names.elts;
-                            for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
-                                if(name[j].name.len == server_name->len
-                                   && njt_strncmp(name[j].name.data,server_name->data,server_name->len) == 0){
-                                    return cscf;
-                                }
-                            }
-                        }
-                    }
-                }
-
-            }
-            if (addr_conf->virtual_names->names.wc_tail != NULL) {
-                elt = addr_conf->virtual_names->names.wc_tail->hash.buckets;
-                if (elt != NULL) {
-                    for (k = 0; k < addr_conf->virtual_names->names.wc_tail->hash.size; ++k) {
-                        if (elt[k] != NULL) {
-                            cscf = elt[k]->value;
-                            name = cscf->server_names.elts;
-                            for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
-                                if(name[j].name.len == server_name->len
-                                   && njt_strncmp(name[j].name.data,server_name->data,server_name->len) == 0){
-                                    return cscf;
-                                }
-                            }
-                        }
-                    }
+            sn = addr_conf->virtual_names->regex;
+            for (k = 0; k <  addr_conf->virtual_names->nregex; ++k) {
+                if(sn[i].name.len == server_name->len &&
+                njt_strncasecmp(sn[i].name.data,server_name->data,server_name->len)==0){
+                    return sn[i].server;
                 }
             }
         }
@@ -135,7 +98,7 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 
 // 获取server的listen 字符串列表
 njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_conf_t  *cscf){
-    njt_hash_elt_t  **elt;
+//    njt_hash_elt_t  **elt;
     njt_listening_t *ls;
     njt_uint_t i,j,k;
     njt_http_port_t *port;
@@ -143,6 +106,8 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
     njt_http_in6_addr_t *addr6;
     njt_http_addr_conf_t             *addr_conf;
     njt_str_t *listen;
+    njt_http_server_name_t *sn;
+    njt_http_core_srv_conf_t  *tcscf;
 
     ls = njt_cycle->listening.elts;
     for (i = 0; i < njt_cycle->listening.nelts; ++i) {
@@ -178,63 +143,35 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
                 *listen = ls[i].addr_text;
                 continue;
             }
-            if(addr_conf->virtual_names == NULL ){
-                continue;
-            }
-            elt = addr_conf->virtual_names->names.hash.buckets;
-            if(elt != NULL ){
-                for(k = 0 ; k < addr_conf->virtual_names->names.hash.size;++k){
-                    if(elt[k] != NULL ){
-                        if(elt[k]->value == cscf ){
-                            listen  = njt_array_push(array);
-                            if(listen == NULL){
-                                return NJT_ERROR_ERR;
-                            }
-                            *listen = ls[i].addr_text;
-                            continue;
-                        }
-                    }
-                }
-            }
+
             if(listen != NULL){
                 continue;
             }
 
-            if(addr_conf->virtual_names->names.wc_head != NULL){
-                elt = addr_conf->virtual_names->names.wc_head->hash.buckets;
-                if(elt != NULL ){
-                    for(k = 0 ; k < addr_conf->virtual_names->names.wc_head->hash.size;++k){
-                        if(elt[k] != NULL ){
-                            if(elt[k]->value == cscf ){
-                                listen  = njt_array_push(array);
-                                if(listen == NULL){
-                                    return NJT_ERROR_ERR;
-                                }
-                                *listen = ls[i].addr_text;
-                                continue;
-                            }
-                        }
+            if (addr_conf->virtual_names != NULL) {
+                tcscf = njt_hash_find_combined(&addr_conf->virtual_names->names,
+                                              njt_hash_key(cscf->server_name.data, cscf->server_name.len),
+                                              cscf->server_name.data, cscf->server_name.len);
+                if(cscf == tcscf){
+                    listen  = njt_array_push(array);
+                    if(listen == NULL){
+                        return NJT_ERROR_ERR;
                     }
+                    *listen = ls[i].addr_text;
+                    continue;
                 }
-
-            }
-            if(listen != NULL){
-                continue;
-            }
-            if(addr_conf->virtual_names->names.wc_tail != NULL){
-                elt = addr_conf->virtual_names->names.wc_tail->hash.buckets;
-                if(elt != NULL ){
-                    for(k = 0 ; k < addr_conf->virtual_names->names.wc_tail->hash.size;++k){
-                        if(elt[k] != NULL ){
-                            if(elt[k]->value == cscf ){
-                                listen  = njt_array_push(array);
-                                if(listen == NULL){
-                                    return NJT_ERROR_ERR;
-                                }
-                                *listen = ls[i].addr_text;
-                                continue;
-                            }
+                if(listen != NULL){
+                    continue;
+                }
+                sn = addr_conf->virtual_names->regex;
+                for (k = 0; k <  addr_conf->virtual_names->nregex; ++k) {
+                    if(sn[i].server == cscf){
+                        listen  = njt_array_push(array);
+                        if(listen == NULL){
+                            return NJT_ERROR_ERR;
                         }
+                        *listen = ls[i].addr_text;
+                        continue;
                     }
                 }
             }
