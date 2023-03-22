@@ -1,7 +1,7 @@
 #include <njt_http.h>
 #include <stdio.h>
 #include <unistd.h>
-#include "mosquitto_emb.h"
+#include "njet_iot_emb.h"
 #include <njt_mqconf_module.h>
 
 void njt_helper_run(helper_param param)
@@ -11,13 +11,18 @@ void njt_helper_run(helper_param param)
 
     cycle = param.cycle;
 
-    if (0 != mqtt_init((const char *)param.conf_fullfn.data))
+    char *prefix;
+    prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
+    memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
+    prefix[cycle->prefix.len] = '\0';
+    if (0 != njet_iot_init((const char *)prefix, (const char *)param.conf_fullfn.data))
     {
+        njt_free(prefix);
         njt_log_error(NJT_LOG_ERR, cycle->log, 0,
-                      "mqtt init error\n");
+                      "njt iot init error\n");
         exit(2);
     };
-
+    njt_free(prefix);
     for (;;)
     {
 
@@ -26,7 +31,7 @@ void njt_helper_run(helper_param param)
         {
             njt_log_error(NJT_LOG_INFO, cycle->log, 0,
                           "helper broker stop\n");
-            mqtt_exit();
+            njet_iot_exit();
             return;
         }
 
@@ -34,11 +39,11 @@ void njt_helper_run(helper_param param)
         {
             njt_log_error(NJT_LOG_INFO, cycle->log, 0,
                           "helper broker restart\n");
-            mqtt_exit();
+            njet_iot_exit();
         }
 
         int ret;
-        ret = mqtt_run();
+        ret = njet_iot_run();
         if (ret == -8888)
             break;
     }

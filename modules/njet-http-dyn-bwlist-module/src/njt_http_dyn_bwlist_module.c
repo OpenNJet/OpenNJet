@@ -138,22 +138,104 @@ static njt_json_define_t njt_http_dyn_bwlist_main_json_dt[] = {
 
 njt_str_t dyn_bwlist_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
-static njt_int_t njt_dyn_bwlist_update_locs(njt_array_t *locs, njt_queue_t *q)
+static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, njt_http_dyn_bwlist_loc_t *data, njt_http_conf_ctx_t *ctx)
+{
+    njt_http_access_loc_conf_t *alcf, old_cf;
+    njt_http_access_rule_t *rule;
+    njt_uint_t i;
+    njt_conf_t *cf;
+
+    njt_conf_t cf_data = {
+        .pool = pool,
+        .temp_pool = pool,
+        .cycle = (njt_cycle_t *)njt_cycle,
+        .log = pool->log,
+        .ctx = ctx,
+    };
+    cf = &cf_data;
+
+    alcf = njt_http_conf_get_module_loc_conf(cf, njt_http_access_module);
+    if (alcf == NULL)
+    {
+        return NJT_ERROR;
+    }
+
+    old_cf = *alcf;
+    alcf->dynamic = 1;
+    alcf->rules = NULL;
+
+    if (data->access_ipv4.nelts > 0)
+    {
+        njt_http_dyn_bwlist_access_ipv4_t *access = data->access_ipv4.elts;
+
+        for (i = 0; i < data->access_ipv4.nelts; i++)
+        {
+            in_addr_t addr = njt_inet_addr(access[i].addr.data, access[i].addr.len);
+            if (addr == INADDR_NONE)
+            {
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "skipping wrong ipv4 addr: %v ", &access[i].addr);
+                continue;
+            }
+            in_addr_t mask = njt_inet_addr(access[i].mask.data, access[i].mask.len);
+            njt_uint_t deny = 1;
+            if (access[i].rule.len == 5 && njt_strncmp(access[i].rule.data, "allow", 5) == 0)
+            {
+                deny = 0;
+            }
+
+            if (alcf->rules == NULL)
+            {
+                alcf->rules = njt_array_create(cf->pool, 4,
+                                               sizeof(njt_http_access_rule_t));
+            }
+            if (alcf->rules == NULL)
+            {
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't create access rule arrays ");
+                goto error;
+            }
+
+            rule = njt_array_push(alcf->rules);
+            if (rule == NULL)
+            {
+                goto error;
+            }
+
+            rule->mask = mask;
+            rule->addr = addr;
+            rule->deny = deny;
+        }
+    }
+
+    if (old_cf.rules != NULL)
+    {
+        if (old_cf.dynamic && old_cf.rules)
+        {
+            njt_destroy_pool(old_cf.rules->pool);
+        }
+        old_cf.rules = NULL;
+    }
+    return NJT_OK;
+
+error:
+    *alcf = old_cf;
+    return NJT_ERROR;
+}
+
+static njt_int_t njt_dyn_bwlist_update_locs(njt_array_t *locs, njt_queue_t *q, njt_http_conf_ctx_t *ctx)
 {
     njt_http_core_loc_conf_t *clcf;
     njt_http_location_queue_t *hlq;
-    njt_http_dyn_bwlist_loc_t *daal;
-    njt_uint_t i, j;
+    njt_http_dyn_bwlist_loc_t *dbwl;
+    njt_uint_t j;
     njt_queue_t *tq;
-    njt_http_access_loc_conf_t *llcf;
-    njt_http_access_rule_t *rule;
+    njt_int_t rc;
 
     if (q == NULL)
     {
         return NJT_OK;
     }
 
-    daal = locs->elts;
+    dbwl = locs->elts;
 
     for (j = 0; j < locs->nelts; ++j)
     {
@@ -163,65 +245,31 @@ static njt_int_t njt_dyn_bwlist_update_locs(njt_array_t *locs, njt_queue_t *q)
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
 
-            njt_str_t name = daal[j].full_name;
+            njt_str_t name = dbwl[j].full_name;
             if (name.len == clcf->full_name.len && njt_strncmp(name.data, clcf->full_name.data, name.len) == 0)
             {
-                llcf = njt_http_get_module_loc_conf(clcf, njt_http_access_module);
-
-                if (daal[j].access_ipv4.nelts > 0)
+                ctx->loc_conf = clcf->loc_conf;
+                njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+                if (pool == NULL)
                 {
-                    njt_http_dyn_bwlist_access_ipv4_t *access = daal[j].access_ipv4.elts;
-
-                    if (llcf->rules)
-                    {
-                        njt_pool_t *pool = llcf->rules->pool;
-                        rule = llcf->rules->elts;
-                        for (i = 0; i < llcf->rules->nelts; i++)
-                        {
-                            njt_pfree(pool, rule + i);
-                        }
-                        llcf->rules = NULL;
-                    }
-                    for (i = 0; i < daal[j].access_ipv4.nelts; i++)
-                    {
-                        in_addr_t addr = njt_inet_addr(access[i].addr.data, access[i].addr.len);
-                        if (addr == INADDR_NONE)
-                        {
-                            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "skipping wrong ipv4 addr: %v ", &access[i].addr);
-                            continue;
-                        }
-                        in_addr_t mask = njt_inet_addr(access[i].mask.data, access[i].mask.len);
-                        njt_uint_t deny = 1;
-                        if (access[i].rule.len == 5 && njt_strncmp(access[i].rule.data, "allow", 5) == 0)
-                        {
-                            deny = 0;
-                        }
-                        if (llcf->rules == NULL)
-                        {
-                            llcf->rules = njt_array_create(njt_cycle->pool, 4,
-                                                           sizeof(njt_http_access_rule_t));
-                            if (llcf->rules == NULL)
-                            {
-                                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't create access rule arrays");
-                                return NJT_ERROR;
-                            }
-                        }
-                        rule = njt_array_push(llcf->rules);
-                        if (rule == NULL)
-                        {
-                            return NJT_ERROR;
-                        }
-
-                        rule->mask = mask;
-                        rule->addr = addr;
-                        rule->deny = deny;
-                    }
+                    return NJT_ERROR;
+                }
+                rc = njt_sub_pool(njt_cycle->pool, pool);
+                if (rc != NJT_OK)
+                {
+                    return NJT_ERROR;
+                }
+                njt_dyn_bwlist_set_rules(pool, &dbwl[j], ctx);
+                if (rc != NJT_OK)
+                {
+                    njt_log_error(NJT_LOG_ERR, pool->log, 0, " error in njt_dyn_bwlist_set_rules free pool");
+                    njt_destroy_pool(pool);
                 }
             }
 
-            if (daal[j].locs.nelts > 0)
+            if (dbwl[j].locs.nelts > 0)
             {
-                njt_dyn_bwlist_update_locs(&daal[j].locs, clcf->old_locations);
+                njt_dyn_bwlist_update_locs(&dbwl[j].locs, clcf->old_locations, ctx);
             }
         }
     }
@@ -234,7 +282,7 @@ static njt_json_element *njt_dyn_bwlist_dump_locs_json(njt_pool_t *pool, njt_que
     njt_http_core_loc_conf_t *clcf;
     njt_http_location_queue_t *hlq;
     njt_queue_t *q, *tq;
-    njt_http_access_loc_conf_t *llcf;
+    njt_http_access_loc_conf_t *alcf;
     njt_json_element *locs, *item, *sub, *access_ipv4, *access;
     njt_http_access_rule_t *rule;
     njt_uint_t i;
@@ -262,7 +310,7 @@ static njt_json_element *njt_dyn_bwlist_dump_locs_json(njt_pool_t *pool, njt_que
     {
         hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
         clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
-        llcf = njt_http_get_module_loc_conf(clcf, njt_http_access_module);
+        alcf = njt_http_get_module_loc_conf(clcf, njt_http_access_module);
 
         item = njt_json_obj_element(pool, njt_json_null_key);
         if (item == NULL)
@@ -278,7 +326,7 @@ static njt_json_element *njt_dyn_bwlist_dump_locs_json(njt_pool_t *pool, njt_que
 
         njt_struct_add(item, sub, pool);
 
-        if (llcf->rules)
+        if (alcf->rules)
         {
             njt_str_t allow_str = njt_string("allow");
             njt_str_t deny_str = njt_string("deny");
@@ -289,9 +337,9 @@ static njt_json_element *njt_dyn_bwlist_dump_locs_json(njt_pool_t *pool, njt_que
                 return NULL;
             }
 
-            rule = llcf->rules->elts;
+            rule = alcf->rules->elts;
             // iterate ipv4 access rules
-            for (i = 0; i < llcf->rules->nelts; i++)
+            for (i = 0; i < alcf->rules->nelts; i++)
             {
                 access = njt_json_obj_element(pool, njt_json_null_key);
                 if (access == NULL)
@@ -474,11 +522,12 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t *pool, njt_http_dy
         if (cscf == NULL)
         {
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
-                          (njt_str_t *)daas[i].listens.nelts, (njt_str_t *)daas[i].server_names.nelts);
+                          (njt_str_t *)daas[i].listens.elts, (njt_str_t *)daas[i].server_names.elts);
             continue;
         }
+        njt_http_conf_ctx_t ctx = *cscf->ctx;
         clcf = njt_http_get_module_loc_conf(cscf->ctx, njt_http_core_module);
-        njt_dyn_bwlist_update_locs(&daas[i].locs, clcf->old_locations);
+        njt_dyn_bwlist_update_locs(&daas[i].locs, clcf->old_locations, &ctx);
     }
 
     return NJT_OK;

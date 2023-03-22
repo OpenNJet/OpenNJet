@@ -1,0 +1,1174 @@
+actions.c:	if(mosq->protocol != mosq_p_mqtt5 && properties) return MOSQ_ERR_NOT_SUPPORTED;
+actions.c:	if(qos > mosq->max_qos) return MOSQ_ERR_QOS_NOT_SUPPORTED;
+actions.c:	if(!mosq->retain_available){
+actions.c:		if(mosq->protocol == mosq_p_mqtt5){
+actions.c:	if(mosq->maximum_packet_size > 0){
+actions.c:		pthread_mutex_lock(&mosq->msgs_out.mutex);
+actions.c:		pthread_mutex_unlock(&mosq->msgs_out.mutex);
+actions.c:	if(mosq->protocol != mosq_p_mqtt5 && properties) return MOSQ_ERR_NOT_SUPPORTED;
+actions.c:	if(mosq->sock == INVALID_SOCKET) return MOSQ_ERR_NO_CONN;
+actions.c:	if(mosq->maximum_packet_size > 0){
+actions.c:	if(mosq->protocol == mosq_p_mqtt311 || mosq->protocol == mosq_p_mqtt31){
+actions.c:	if(mosq->protocol != mosq_p_mqtt5 && properties) return MOSQ_ERR_NOT_SUPPORTED;
+actions.c:	if(mosq->sock == INVALID_SOCKET) return MOSQ_ERR_NO_CONN;
+actions.c:	if(mosq->maximum_packet_size > 0){
+alias_mosq.c:	for(i=0; i<mosq->alias_count; i++){
+alias_mosq.c:		if(mosq->aliases[i].alias == alias){
+alias_mosq.c:			mosquitto__free(mosq->aliases[i].topic);
+alias_mosq.c:			mosq->aliases[i].topic = mosquitto__strdup(topic);
+alias_mosq.c:			if(mosq->aliases[i].topic){
+alias_mosq.c:	aliases = mosquitto__realloc(mosq->aliases, sizeof(struct mosquitto__alias)*(size_t)(mosq->alias_count+1));
+alias_mosq.c:	mosq->aliases = aliases;
+alias_mosq.c:	mosq->aliases[mosq->alias_count].alias = alias;
+alias_mosq.c:	mosq->aliases[mosq->alias_count].topic = mosquitto__strdup(topic);
+alias_mosq.c:	if(!mosq->aliases[mosq->alias_count].topic){
+alias_mosq.c:	mosq->alias_count++;
+alias_mosq.c:	for(i=0; i<mosq->alias_count; i++){
+alias_mosq.c:		if(mosq->aliases[i].alias == alias){
+alias_mosq.c:			*topic = mosquitto__strdup(mosq->aliases[i].topic);
+alias_mosq.c:	for(i=0; i<mosq->alias_count; i++){
+alias_mosq.c:		mosquitto__free(mosq->aliases[i].topic);
+alias_mosq.c:	mosquitto__free(mosq->aliases);
+alias_mosq.c:	mosq->aliases = NULL;
+alias_mosq.c:	mosq->alias_count = 0;
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_connect = on_connect;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_connect_with_flags = on_connect;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_connect_v5 = on_connect;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_disconnect = on_disconnect;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_disconnect_v5 = on_disconnect;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_publish = on_publish;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_publish_v5 = on_publish;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_message = on_message;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_message_v5 = on_message;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_subscribe = on_subscribe;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_subscribe_v5 = on_subscribe;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_unsubscribe = on_unsubscribe;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->callback_mutex);
+callbacks.c:	mosq->on_unsubscribe_v5 = on_unsubscribe;
+callbacks.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+callbacks.c:	pthread_mutex_lock(&mosq->log_callback_mutex);
+callbacks.c:	mosq->on_log = on_log;
+callbacks.c:	pthread_mutex_unlock(&mosq->log_callback_mutex);
+connect.c:	if(mosq->id == NULL && (mosq->protocol == mosq_p_mqtt31)){
+connect.c:		mosq->id = (char *)mosquitto__calloc(24, sizeof(char));
+connect.c:		if(!mosq->id){
+connect.c:		mosq->id[0] = 'm';
+connect.c:		mosq->id[1] = 'o';
+connect.c:		mosq->id[2] = 's';
+connect.c:		mosq->id[3] = 'q';
+connect.c:		mosq->id[4] = '-';
+connect.c:		rc = util__random_bytes(&mosq->id[5], 18);
+connect.c:			mosq->id[i] = alphanum[(mosq->id[i]&0x7F)%(sizeof(alphanum)-1)];
+connect.c:	mosquitto__free(mosq->host);
+connect.c:	mosq->host = mosquitto__strdup(host);
+connect.c:	if(!mosq->host) return MOSQ_ERR_NOMEM;
+connect.c:	mosq->port = (uint16_t)port;
+connect.c:	mosq->keepalive = (uint16_t)keepalive;
+connect.c:	mosq->msgs_in.inflight_quota = mosq->msgs_in.inflight_maximum;
+connect.c:	mosq->msgs_out.inflight_quota = mosq->msgs_out.inflight_maximum;
+connect.c:	mosq->retain_available = 1;
+connect.c:	mosquitto_property_free_all(&mosq->connect_properties);
+connect.c:		rc = mosquitto_property_copy_all(&mosq->connect_properties, properties);
+connect.c:		mosq->connect_properties->client_generated = true;
+connect.c:	if(!mosq->host) return MOSQ_ERR_INVAL;
+connect.c:	if(mosq->connect_properties){
+connect.c:		if(mosq->protocol != mosq_p_mqtt5) return MOSQ_ERR_NOT_SUPPORTED;
+connect.c:		if(mosq->connect_properties->client_generated){
+connect.c:			outgoing_properties = mosq->connect_properties;
+connect.c:			memcpy(&local_property, mosq->connect_properties, sizeof(mosquitto_property));
+connect.c:	pthread_mutex_lock(&mosq->msgtime_mutex);
+connect.c:	mosq->last_msg_in = mosquitto_time();
+connect.c:	mosq->next_msg_out = mosq->last_msg_in + mosq->keepalive;
+connect.c:	pthread_mutex_unlock(&mosq->msgtime_mutex);
+connect.c:	mosq->ping_t = 0;
+connect.c:	packet__cleanup(&mosq->in_packet);
+connect.c:	if(mosq->sock != INVALID_SOCKET){
+connect.c:	if(mosq->socks5_host){
+connect.c:		rc = net__socket_connect(mosq, mosq->socks5_host, mosq->socks5_port, mosq->bind_address, blocking);
+connect.c:		rc = net__socket_connect(mosq, mosq->host, mosq->port, mosq->bind_address, blocking);
+connect.c:	if(mosq->socks5_host){
+connect.c:		rc = send__connect(mosq, mosq->keepalive, mosq->clean_start, outgoing_properties);
+connect.c:	if(mosq->protocol != mosq_p_mqtt5 && properties) return MOSQ_ERR_NOT_SUPPORTED;
+connect.c:	if(mosq->sock == INVALID_SOCKET){
+connect.c:	pthread_mutex_lock(&mosq->out_packet_mutex);
+connect.c:	mosq->current_out_packet = mosq->out_packet;
+connect.c:	if(mosq->out_packet){
+connect.c:		mosq->out_packet = mosq->out_packet->next;
+connect.c:		if(!mosq->out_packet){
+connect.c:			mosq->out_packet_last = NULL;
+connect.c:	pthread_mutex_unlock(&mosq->out_packet_mutex);
+connect.c:	pthread_mutex_lock(&mosq->msgtime_mutex);
+connect.c:	mosq->next_msg_out = mosquitto_time() + mosq->keepalive;
+connect.c:	pthread_mutex_unlock(&mosq->msgtime_mutex);
+connect.c:	pthread_mutex_lock(&mosq->callback_mutex);
+connect.c:	if(mosq->on_disconnect){
+connect.c:		mosq->in_callback = true;
+connect.c:		mosq->on_disconnect(mosq, mosq->userdata, reason_code);
+connect.c:		mosq->in_callback = false;
+connect.c:	if(mosq->on_disconnect_v5){
+connect.c:		mosq->in_callback = true;
+connect.c:		mosq->on_disconnect_v5(mosq, mosq->userdata, reason_code, properties);
+connect.c:		mosq->in_callback = false;
+connect.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+connect.c:	pthread_mutex_unlock(&mosq->current_out_packet_mutex);
+handle_auth.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s received AUTH", mosq->id);
+handle_auth.c:	if(mosq->protocol != mosq_p_mqtt5){
+handle_auth.c:	if(packet__read_byte(&mosq->in_packet, &reason_code)) return 1;
+handle_auth.c:	rc = property__read_all(CMD_AUTH, &mosq->in_packet, &properties);
+handle_connack.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s received CONNACK (%d)", mosq->id, reason_code);
+handle_connack.c:		mosq->reconnects = 0;
+handle_connack.c:	pthread_mutex_lock(&mosq->callback_mutex);
+handle_connack.c:	if(mosq->on_connect){
+handle_connack.c:		mosq->in_callback = true;
+handle_connack.c:		mosq->on_connect(mosq, mosq->userdata, reason_code);
+handle_connack.c:		mosq->in_callback = false;
+handle_connack.c:	if(mosq->on_connect_with_flags){
+handle_connack.c:		mosq->in_callback = true;
+handle_connack.c:		mosq->on_connect_with_flags(mosq, mosq->userdata, reason_code, connect_flags);
+handle_connack.c:		mosq->in_callback = false;
+handle_connack.c:	if(mosq->on_connect_v5){
+handle_connack.c:		mosq->in_callback = true;
+handle_connack.c:		mosq->on_connect_v5(mosq, mosq->userdata, reason_code, connect_flags, properties);
+handle_connack.c:		mosq->in_callback = false;
+handle_connack.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+handle_connack.c:	rc = packet__read_byte(&mosq->in_packet, &connect_flags);
+handle_connack.c:	rc = packet__read_byte(&mosq->in_packet, &reason_code);
+handle_connack.c:	if(mosq->protocol == mosq_p_mqtt5){
+handle_connack.c:		rc = property__read_all(CMD_CONNACK, &mosq->in_packet, &properties);
+handle_connack.c:		if(mosq->id){
+handle_connack.c:			mosq->id = clientid;
+handle_connack.c:	mosquitto_property_read_byte(properties, MQTT_PROP_RETAIN_AVAILABLE, &mosq->retain_available, false);
+handle_connack.c:	mosquitto_property_read_byte(properties, MQTT_PROP_MAXIMUM_QOS, &mosq->max_qos, false);
+handle_connack.c:	mosquitto_property_read_int16(properties, MQTT_PROP_RECEIVE_MAXIMUM, &mosq->msgs_out.inflight_maximum, false);
+handle_connack.c:	mosquitto_property_read_int16(properties, MQTT_PROP_SERVER_KEEP_ALIVE, &mosq->keepalive, false);
+handle_connack.c:	mosquitto_property_read_int32(properties, MQTT_PROP_MAXIMUM_PACKET_SIZE, &mosq->maximum_packet_size, false);
+handle_connack.c:	mosq->msgs_out.inflight_quota = mosq->msgs_out.inflight_maximum;
+handle_connack.c:			pthread_mutex_lock(&mosq->state_mutex);
+handle_connack.c:			if(mosq->state != mosq_cs_disconnecting){
+handle_connack.c:				mosq->state = mosq_cs_active;
+handle_connack.c:			pthread_mutex_unlock(&mosq->state_mutex);
+handle_disconnect.c:	if(mosq->protocol != mosq_p_mqtt5){
+handle_disconnect.c:	rc = packet__read_byte(&mosq->in_packet, &reason_code);
+handle_disconnect.c:	if(mosq->in_packet.remaining_length > 2){
+handle_disconnect.c:		rc = property__read_all(CMD_DISCONNECT, &mosq->in_packet, &properties);
+handle_ping.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Received PINGREQ from %s", mosq->id);
+handle_ping.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s received PINGREQ", mosq->id);
+handle_ping.c:	mosq->ping_t = 0; /* No longer waiting for a PINGRESP. */
+handle_ping.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Received PINGRESP from %s", mosq->id);
+handle_ping.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s received PINGRESP", mosq->id);
+handle_pubackcomp.c:	pthread_mutex_lock(&mosq->msgs_out.mutex);
+handle_pubackcomp.c:	pthread_mutex_unlock(&mosq->msgs_out.mutex);
+handle_pubackcomp.c:	rc = packet__read_uint16(&mosq->in_packet, &mid);
+handle_pubackcomp.c:	if(mosq->protocol == mosq_p_mqtt5 && mosq->in_packet.remaining_length > 2){
+handle_pubackcomp.c:		rc = packet__read_byte(&mosq->in_packet, &reason_code);
+handle_pubackcomp.c:		if(mosq->in_packet.remaining_length > 3){
+handle_pubackcomp.c:			rc = property__read_all(CMD_PUBACK, &mosq->in_packet, &properties);
+handle_pubackcomp.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Received %s from %s (Mid: %d, RC:%d)", type, mosq->id, mid, reason_code);
+handle_pubackcomp.c:		log__printf(mosq, MOSQ_LOG_WARNING, "Warning: Received %s from %s for an unknown packet identifier %d.", type, mosq->id, mid);
+handle_pubackcomp.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s received %s (Mid: %d, RC:%d)", mosq->id, type, mid, reason_code);
+handle_pubackcomp.c:		pthread_mutex_lock(&mosq->callback_mutex);
+handle_pubackcomp.c:		if(mosq->on_publish){
+handle_pubackcomp.c:			mosq->in_callback = true;
+handle_pubackcomp.c:			mosq->on_publish(mosq, mosq->userdata, mid);
+handle_pubackcomp.c:			mosq->in_callback = false;
+handle_pubackcomp.c:		if(mosq->on_publish_v5){
+handle_pubackcomp.c:			mosq->in_callback = true;
+handle_pubackcomp.c:			mosq->on_publish_v5(mosq, mosq->userdata, mid, reason_code, properties);
+handle_pubackcomp.c:			mosq->in_callback = false;
+handle_pubackcomp.c:		pthread_mutex_unlock(&mosq->callback_mutex);
+handle_pubackcomp.c:	pthread_mutex_lock(&mosq->msgs_out.mutex);
+handle_pubackcomp.c:	pthread_mutex_unlock(&mosq->msgs_out.mutex);
+handle_publish.c:	header = mosq->in_packet.command;
+handle_publish.c:	rc = packet__read_string(&mosq->in_packet, &message->msg.topic, &slen);
+handle_publish.c:		if(mosq->protocol == mosq_p_mqtt5){
+handle_publish.c:			if(mosq->msgs_in.inflight_quota == 0){
+handle_publish.c:		rc = packet__read_uint16(&mosq->in_packet, &mid);
+handle_publish.c:	if(mosq->protocol == mosq_p_mqtt5){
+handle_publish.c:		rc = property__read_all(CMD_PUBLISH, &mosq->in_packet, &properties);
+handle_publish.c:	message->msg.payloadlen = (int)(mosq->in_packet.remaining_length - mosq->in_packet.pos);
+handle_publish.c:		rc = packet__read_bytes(&mosq->in_packet, message->msg.payload, (uint32_t)message->msg.payloadlen);
+handle_publish.c:			mosq->id, message->dup, message->msg.qos, message->msg.retain,
+handle_publish.c:			pthread_mutex_lock(&mosq->callback_mutex);
+handle_publish.c:			if(mosq->on_message){
+handle_publish.c:				mosq->in_callback = true;
+handle_publish.c:				mosq->on_message(mosq, mosq->userdata, &message->msg);
+handle_publish.c:				mosq->in_callback = false;
+handle_publish.c:			if(mosq->on_message_v5){
+handle_publish.c:				mosq->in_callback = true;
+handle_publish.c:				mosq->on_message_v5(mosq, mosq->userdata, &message->msg, properties);
+handle_publish.c:				mosq->in_callback = false;
+handle_publish.c:			pthread_mutex_unlock(&mosq->callback_mutex);
+handle_publish.c:			pthread_mutex_lock(&mosq->callback_mutex);
+handle_publish.c:			if(mosq->on_message){
+handle_publish.c:				mosq->in_callback = true;
+handle_publish.c:				mosq->on_message(mosq, mosq->userdata, &message->msg);
+handle_publish.c:				mosq->in_callback = false;
+handle_publish.c:			if(mosq->on_message_v5){
+handle_publish.c:				mosq->in_callback = true;
+handle_publish.c:				mosq->on_message_v5(mosq, mosq->userdata, &message->msg, properties);
+handle_publish.c:				mosq->in_callback = false;
+handle_publish.c:			pthread_mutex_unlock(&mosq->callback_mutex);
+handle_publish.c:			pthread_mutex_lock(&mosq->msgs_in.mutex);
+handle_publish.c:			pthread_mutex_unlock(&mosq->msgs_in.mutex);
+handle_pubrec.c:	rc = packet__read_uint16(&mosq->in_packet, &mid);
+handle_pubrec.c:	if(mosq->protocol == mosq_p_mqtt5 && mosq->in_packet.remaining_length > 2){
+handle_pubrec.c:		rc = packet__read_byte(&mosq->in_packet, &reason_code);
+handle_pubrec.c:		if(mosq->in_packet.remaining_length > 3){
+handle_pubrec.c:			rc = property__read_all(CMD_PUBREC, &mosq->in_packet, &properties);
+handle_pubrec.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Received PUBREC from %s (Mid: %d)", mosq->id, mid);
+handle_pubrec.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s received PUBREC (Mid: %d)", mosq->id, mid);
+handle_pubrec.c:	if(reason_code < 0x80 || mosq->protocol != mosq_p_mqtt5){
+handle_pubrec.c:			pthread_mutex_lock(&mosq->callback_mutex);
+handle_pubrec.c:			if(mosq->on_publish_v5){
+handle_pubrec.c:				mosq->in_callback = true;
+handle_pubrec.c:				mosq->on_publish_v5(mosq, mosq->userdata, mid, reason_code, properties);
+handle_pubrec.c:				mosq->in_callback = false;
+handle_pubrec.c:			pthread_mutex_unlock(&mosq->callback_mutex);
+handle_pubrec.c:		pthread_mutex_lock(&mosq->msgs_out.mutex);
+handle_pubrec.c:		pthread_mutex_unlock(&mosq->msgs_out.mutex);
+handle_pubrec.c:		log__printf(mosq, MOSQ_LOG_WARNING, "Warning: Received PUBREC from %s for an unknown packet identifier %d.", mosq->id, mid);
+handle_pubrel.c:	if(mosq->protocol != mosq_p_mqtt31){
+handle_pubrel.c:		if((mosq->in_packet.command&0x0F) != 0x02){
+handle_pubrel.c:	rc = packet__read_uint16(&mosq->in_packet, &mid);
+handle_pubrel.c:	if(mosq->protocol == mosq_p_mqtt5 && mosq->in_packet.remaining_length > 2){
+handle_pubrel.c:		rc = packet__read_byte(&mosq->in_packet, &reason_code);
+handle_pubrel.c:		if(mosq->in_packet.remaining_length > 3){
+handle_pubrel.c:			rc = property__read_all(CMD_PUBREL, &mosq->in_packet, &properties);
+handle_pubrel.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Received PUBREL from %s (Mid: %d)", mosq->id, mid);
+handle_pubrel.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s received PUBREL (Mid: %d)", mosq->id, mid);
+handle_pubrel.c:		pthread_mutex_lock(&mosq->callback_mutex);
+handle_pubrel.c:		if(mosq->on_message){
+handle_pubrel.c:			mosq->in_callback = true;
+handle_pubrel.c:			mosq->on_message(mosq, mosq->userdata, &message->msg);
+handle_pubrel.c:			mosq->in_callback = false;
+handle_pubrel.c:		if(mosq->on_message_v5){
+handle_pubrel.c:			mosq->in_callback = true;
+handle_pubrel.c:			mosq->on_message_v5(mosq, mosq->userdata, &message->msg, message->properties);
+handle_pubrel.c:			mosq->in_callback = false;
+handle_pubrel.c:		pthread_mutex_unlock(&mosq->callback_mutex);
+handle_suback.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Received SUBACK from %s", mosq->id);
+handle_suback.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s received SUBACK", mosq->id);
+handle_suback.c:	rc = packet__read_uint16(&mosq->in_packet, &mid);
+handle_suback.c:	if(mosq->protocol == mosq_p_mqtt5){
+handle_suback.c:		rc = property__read_all(CMD_SUBACK, &mosq->in_packet, &properties);
+handle_suback.c:	qos_count = (int)(mosq->in_packet.remaining_length - mosq->in_packet.pos);
+handle_suback.c:	while(mosq->in_packet.pos < mosq->in_packet.remaining_length){
+handle_suback.c:		rc = packet__read_byte(&mosq->in_packet, &qos);
+handle_suback.c:	pthread_mutex_lock(&mosq->callback_mutex);
+handle_suback.c:	if(mosq->on_subscribe){
+handle_suback.c:		mosq->in_callback = true;
+handle_suback.c:		mosq->on_subscribe(mosq, mosq->userdata, mid, qos_count, granted_qos);
+handle_suback.c:		mosq->in_callback = false;
+handle_suback.c:	if(mosq->on_subscribe_v5){
+handle_suback.c:		mosq->in_callback = true;
+handle_suback.c:		mosq->on_subscribe_v5(mosq, mosq->userdata, mid, qos_count, granted_qos, properties);
+handle_suback.c:		mosq->in_callback = false;
+handle_suback.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+handle_unsuback.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Received UNSUBACK from %s", mosq->id);
+handle_unsuback.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s received UNSUBACK", mosq->id);
+handle_unsuback.c:	rc = packet__read_uint16(&mosq->in_packet, &mid);
+handle_unsuback.c:	if(mosq->protocol == mosq_p_mqtt5){
+handle_unsuback.c:		rc = property__read_all(CMD_UNSUBACK, &mosq->in_packet, &properties);
+handle_unsuback.c:	pthread_mutex_lock(&mosq->callback_mutex);
+handle_unsuback.c:	if(mosq->on_unsubscribe){
+handle_unsuback.c:		mosq->in_callback = true;
+handle_unsuback.c:		mosq->on_unsubscribe(mosq, mosq->userdata, mid);
+handle_unsuback.c:		mosq->in_callback = false;
+handle_unsuback.c:	if(mosq->on_unsubscribe_v5){
+handle_unsuback.c:		mosq->in_callback = true;
+handle_unsuback.c:		mosq->on_unsubscribe_v5(mosq, mosq->userdata, mid, properties);
+handle_unsuback.c:		mosq->in_callback = false;
+handle_unsuback.c:	pthread_mutex_unlock(&mosq->callback_mutex);
+logging_mosq.c:	pthread_mutex_lock(&mosq->log_callback_mutex);
+logging_mosq.c:	if(mosq->on_log){
+logging_mosq.c:			pthread_mutex_unlock(&mosq->log_callback_mutex);
+logging_mosq.c:		mosq->on_log(mosq, mosq->userdata, priority, s);
+logging_mosq.c:	pthread_mutex_unlock(&mosq->log_callback_mutex);
+loop.c:	if(mosq->sock >= FD_SETSIZE || mosq->sockpairR >= FD_SETSIZE){
+loop.c:	if(mosq->sock != INVALID_SOCKET){
+loop.c:		maxfd = mosq->sock;
+loop.c:		FD_SET(mosq->sock, &readfds);
+loop.c:		pthread_mutex_lock(&mosq->current_out_packet_mutex);
+loop.c:		pthread_mutex_lock(&mosq->out_packet_mutex);
+loop.c:		if(mosq->out_packet || mosq->current_out_packet){
+loop.c:			FD_SET(mosq->sock, &writefds);
+loop.c:		if(mosq->ssl){
+loop.c:			if(mosq->want_write){
+loop.c:				FD_SET(mosq->sock, &writefds);
+loop.c:			}else if(mosq->want_connect){
+loop.c:				FD_CLR(mosq->sock, &writefds);
+loop.c:		pthread_mutex_unlock(&mosq->out_packet_mutex);
+loop.c:		pthread_mutex_unlock(&mosq->current_out_packet_mutex);
+loop.c:		if(mosq->achan){
+loop.c:				rc = ares_fds(mosq->achan, &readfds, &writefds);
+loop.c:	if(mosq->sockpairR != INVALID_SOCKET){
+loop.c:		FD_SET(mosq->sockpairR, &readfds);
+loop.c:		if((int)mosq->sockpairR > maxfd){
+loop.c:			maxfd = mosq->sockpairR;
+loop.c:	if(mosq->next_msg_out && now + timeout_ms/1000 > mosq->next_msg_out){
+loop.c:		timeout_ms = (mosq->next_msg_out - now)*1000;
+loop.c:		if(mosq->sock != INVALID_SOCKET){
+loop.c:			if(FD_ISSET(mosq->sock, &readfds)){
+loop.c:				if(rc || mosq->sock == INVALID_SOCKET){
+loop.c:			if(mosq->sockpairR != INVALID_SOCKET && FD_ISSET(mosq->sockpairR, &readfds)){
+loop.c:				if(read(mosq->sockpairR, &pairbuf, 1) == 0){
+loop.c:				recv(mosq->sockpairR, &pairbuf, 1, 0);
+loop.c:				if(mosq->sock != INVALID_SOCKET)
+loop.c:					FD_SET(mosq->sock, &writefds);
+loop.c:			if(mosq->sock != INVALID_SOCKET && FD_ISSET(mosq->sock, &writefds)){
+loop.c:				if(mosq->want_connect){
+loop.c:					if(rc || mosq->sock == INVALID_SOCKET){
+loop.c:		if(mosq->achan){
+loop.c:			ares_process(mosq->achan, &readfds, &writefds);
+loop.c:	if(read(mosq->sockpairR, &pairbuf, 1) == 0){
+loop.c:	recv(mosq->sockpairR, &pairbuf, 1, 0);
+loop.c:	if(mosq->sockpairR != INVALID_SOCKET){
+loop.c:		FD_SET(mosq->sockpairR, &readfds);
+loop.c:		maxfd = mosq->sockpairR;
+loop.c:	}else if(mosq->sockpairR != INVALID_SOCKET && FD_ISSET(mosq->sockpairR, &readfds)){
+loop.c:		if(read(mosq->sockpairR, &pairbuf, 1) == 0){
+loop.c:		recv(mosq->sockpairR, &pairbuf, 1, 0);
+loop.c:	mosq->reconnects = 0;
+loop.c:				if(mosq->reconnect_delay_max > mosq->reconnect_delay){
+loop.c:					if(mosq->reconnect_exponential_backoff){
+loop.c:						reconnect_delay = mosq->reconnect_delay*(mosq->reconnects+1)*(mosq->reconnects+1);
+loop.c:						reconnect_delay = mosq->reconnect_delay*(mosq->reconnects+1);
+loop.c:					reconnect_delay = mosq->reconnect_delay;
+loop.c:				if(reconnect_delay > mosq->reconnect_delay_max){
+loop.c:					reconnect_delay = mosq->reconnect_delay_max;
+loop.c:					mosq->reconnects++;
+loop.c:	if(mosq->sock == INVALID_SOCKET) return MOSQ_ERR_NO_CONN;
+loop.c:		pthread_mutex_lock(&mosq->callback_mutex);
+loop.c:		if(mosq->on_disconnect){
+loop.c:			mosq->in_callback = true;
+loop.c:			mosq->on_disconnect(mosq, mosq->userdata, rc);
+loop.c:			mosq->in_callback = false;
+loop.c:		if(mosq->on_disconnect_v5){
+loop.c:			mosq->in_callback = true;
+loop.c:			mosq->on_disconnect_v5(mosq, mosq->userdata, rc, NULL);
+loop.c:			mosq->in_callback = false;
+loop.c:		pthread_mutex_unlock(&mosq->callback_mutex);
+loop.c:	if(mosq->want_connect){
+loop.c:	pthread_mutex_lock(&mosq->msgs_out.mutex);
+loop.c:	max_packets = mosq->msgs_out.queue_len;
+loop.c:	pthread_mutex_unlock(&mosq->msgs_out.mutex);
+loop.c:	pthread_mutex_lock(&mosq->msgs_in.mutex);
+loop.c:	max_packets += mosq->msgs_in.queue_len;
+loop.c:	pthread_mutex_unlock(&mosq->msgs_in.mutex);
+loop.c:		if(mosq->socks5_host){
+messages_mosq.c:	DL_FOREACH_SAFE(mosq->msgs_in.inflight, tail, tmp){
+messages_mosq.c:		DL_DELETE(mosq->msgs_in.inflight, tail);
+messages_mosq.c:	DL_FOREACH_SAFE(mosq->msgs_out.inflight, tail, tmp){
+messages_mosq.c:		DL_DELETE(mosq->msgs_out.inflight, tail);
+messages_mosq.c:	/* mosq->*_message_mutex should be locked before entering this function */
+messages_mosq.c:		DL_APPEND(mosq->msgs_out.inflight, message);
+messages_mosq.c:		mosq->msgs_out.queue_len++;
+messages_mosq.c:		DL_APPEND(mosq->msgs_in.inflight, message);
+messages_mosq.c:		mosq->msgs_in.queue_len++;
+messages_mosq.c:	pthread_mutex_lock(&mosq->msgs_in.mutex);
+messages_mosq.c:	mosq->msgs_in.inflight_quota = mosq->msgs_in.inflight_maximum;
+messages_mosq.c:	mosq->msgs_in.queue_len = 0;
+messages_mosq.c:	DL_FOREACH_SAFE(mosq->msgs_in.inflight, message, tmp){
+messages_mosq.c:		mosq->msgs_in.queue_len++;
+messages_mosq.c:			DL_DELETE(mosq->msgs_in.inflight, message);
+messages_mosq.c:	pthread_mutex_unlock(&mosq->msgs_in.mutex);
+messages_mosq.c:	pthread_mutex_lock(&mosq->msgs_out.mutex);
+messages_mosq.c:	mosq->msgs_out.inflight_quota = mosq->msgs_out.inflight_maximum;
+messages_mosq.c:	mosq->msgs_out.queue_len = 0;
+messages_mosq.c:	DL_FOREACH_SAFE(mosq->msgs_out.inflight, message, tmp){
+messages_mosq.c:		mosq->msgs_out.queue_len++;
+messages_mosq.c:		if(mosq->msgs_out.inflight_quota != 0){
+messages_mosq.c:	pthread_mutex_unlock(&mosq->msgs_out.mutex);
+messages_mosq.c:	/* mosq->*_message_mutex should be locked before entering this function */
+messages_mosq.c:		DL_FOREACH_SAFE(mosq->msgs_out.inflight, cur, tmp){
+messages_mosq.c:			if(mosq->msgs_out.inflight_quota > 0){
+messages_mosq.c:		pthread_mutex_lock(&mosq->msgs_out.mutex);
+messages_mosq.c:		DL_FOREACH_SAFE(mosq->msgs_out.inflight, cur, tmp){
+messages_mosq.c:					pthread_mutex_unlock(&mosq->msgs_out.mutex);
+messages_mosq.c:				DL_DELETE(mosq->msgs_out.inflight, cur);
+messages_mosq.c:				mosq->msgs_out.queue_len--;
+messages_mosq.c:		pthread_mutex_unlock(&mosq->msgs_out.mutex);
+messages_mosq.c:		pthread_mutex_lock(&mosq->msgs_in.mutex);
+messages_mosq.c:		DL_FOREACH_SAFE(mosq->msgs_in.inflight, cur, tmp){
+messages_mosq.c:					pthread_mutex_unlock(&mosq->msgs_in.mutex);
+messages_mosq.c:				DL_DELETE(mosq->msgs_in.inflight, cur);
+messages_mosq.c:				mosq->msgs_in.queue_len--;
+messages_mosq.c:		pthread_mutex_unlock(&mosq->msgs_in.mutex);
+messages_mosq.c:	pthread_mutex_lock(&mosq->msgs_out.mutex);
+messages_mosq.c:	DL_FOREACH(mosq->msgs_out.inflight, msg){
+messages_mosq.c:	pthread_mutex_unlock(&mosq->msgs_out.mutex);
+messages_mosq.c:	pthread_mutex_lock(&mosq->msgs_out.mutex);
+messages_mosq.c:	DL_FOREACH_SAFE(mosq->msgs_out.inflight, message, tmp){
+messages_mosq.c:				pthread_mutex_unlock(&mosq->msgs_out.mutex);
+messages_mosq.c:			pthread_mutex_unlock(&mosq->msgs_out.mutex);
+messages_mosq.c:	pthread_mutex_unlock(&mosq->msgs_out.mutex);
+mosquitto.c:		mosq->sock = INVALID_SOCKET;
+mosquitto.c:		mosq->thread_id = pthread_self();
+mosquitto.c:		mosq->sockpairR = INVALID_SOCKET;
+mosquitto.c:		mosq->sockpairW = INVALID_SOCKET;
+mosquitto.c:		mosq->userdata = userdata;
+mosquitto.c:		mosq->userdata = mosq;
+mosquitto.c:	mosq->protocol = mosq_p_mqtt311;
+mosquitto.c:	mosq->sock = INVALID_SOCKET;
+mosquitto.c:	mosq->keepalive = 60;
+mosquitto.c:	mosq->clean_start = clean_start;
+mosquitto.c:		mosq->id = mosquitto__strdup(id);
+mosquitto.c:	mosq->in_packet.payload = NULL;
+mosquitto.c:	packet__cleanup(&mosq->in_packet);
+mosquitto.c:	mosq->out_packet = NULL;
+mosquitto.c:	mosq->current_out_packet = NULL;
+mosquitto.c:	mosq->last_msg_in = mosquitto_time();
+mosquitto.c:	mosq->next_msg_out = mosquitto_time() + mosq->keepalive;
+mosquitto.c:	mosq->ping_t = 0;
+mosquitto.c:	mosq->last_mid = 0;
+mosquitto.c:	mosq->state = mosq_cs_new;
+mosquitto.c:	mosq->max_qos = 2;
+mosquitto.c:	mosq->msgs_in.inflight_maximum = 20;
+mosquitto.c:	mosq->msgs_out.inflight_maximum = 20;
+mosquitto.c:	mosq->msgs_in.inflight_quota = 20;
+mosquitto.c:	mosq->msgs_out.inflight_quota = 20;
+mosquitto.c:	mosq->will = NULL;
+mosquitto.c:	mosq->on_connect = NULL;
+mosquitto.c:	mosq->on_publish = NULL;
+mosquitto.c:	mosq->on_message = NULL;
+mosquitto.c:	mosq->on_subscribe = NULL;
+mosquitto.c:	mosq->on_unsubscribe = NULL;
+mosquitto.c:	mosq->host = NULL;
+mosquitto.c:	mosq->port = 1883;
+mosquitto.c:	mosq->in_callback = false;
+mosquitto.c:	mosq->reconnect_delay = 1;
+mosquitto.c:	mosq->reconnect_delay_max = 1;
+mosquitto.c:	mosq->reconnect_exponential_backoff = false;
+mosquitto.c:	mosq->threaded = mosq_ts_none;
+mosquitto.c:	mosq->ssl = NULL;
+mosquitto.c:	mosq->ssl_ctx = NULL;
+mosquitto.c:	mosq->ssl_ctx_defaults = true;
+mosquitto.c:	mosq->tls_cert_reqs = SSL_VERIFY_PEER;
+mosquitto.c:	mosq->tls_insecure = false;
+mosquitto.c:	mosq->want_write = false;
+mosquitto.c:	mosq->tls_ocsp_required = false;
+mosquitto.c:	pthread_mutex_init(&mosq->callback_mutex, NULL);
+mosquitto.c:	pthread_mutex_init(&mosq->log_callback_mutex, NULL);
+mosquitto.c:	pthread_mutex_init(&mosq->state_mutex, NULL);
+mosquitto.c:	pthread_mutex_init(&mosq->out_packet_mutex, NULL);
+mosquitto.c:	pthread_mutex_init(&mosq->current_out_packet_mutex, NULL);
+mosquitto.c:	pthread_mutex_init(&mosq->msgtime_mutex, NULL);
+mosquitto.c:	pthread_mutex_init(&mosq->msgs_in.mutex, NULL);
+mosquitto.c:	pthread_mutex_init(&mosq->msgs_out.mutex, NULL);
+mosquitto.c:	pthread_mutex_init(&mosq->mid_mutex, NULL);
+mosquitto.c:	mosq->thread_id = pthread_self();
+mosquitto.c:	if(net__socketpair(&mosq->sockpairR, &mosq->sockpairW)){
+mosquitto.c:	if(mosq->threaded == mosq_ts_self && !pthread_equal(mosq->thread_id, pthread_self())){
+mosquitto.c:		pthread_cancel(mosq->thread_id);
+mosquitto.c:		pthread_join(mosq->thread_id, NULL);
+mosquitto.c:		mosq->threaded = mosq_ts_none;
+mosquitto.c:	if(mosq->id){
+mosquitto.c:		/* If mosq->id is not NULL then the client has already been initialised
+mosquitto.c:		 * and so the mutexes need destroying. If mosq->id is NULL, the mutexes
+mosquitto.c:		pthread_mutex_destroy(&mosq->callback_mutex);
+mosquitto.c:		pthread_mutex_destroy(&mosq->log_callback_mutex);
+mosquitto.c:		pthread_mutex_destroy(&mosq->state_mutex);
+mosquitto.c:		pthread_mutex_destroy(&mosq->out_packet_mutex);
+mosquitto.c:		pthread_mutex_destroy(&mosq->current_out_packet_mutex);
+mosquitto.c:		pthread_mutex_destroy(&mosq->msgtime_mutex);
+mosquitto.c:		pthread_mutex_destroy(&mosq->msgs_in.mutex);
+mosquitto.c:		pthread_mutex_destroy(&mosq->msgs_out.mutex);
+mosquitto.c:		pthread_mutex_destroy(&mosq->mid_mutex);
+mosquitto.c:	if(mosq->sock != INVALID_SOCKET){
+mosquitto.c:	if(mosq->ssl){
+mosquitto.c:		SSL_free(mosq->ssl);
+mosquitto.c:	if(mosq->ssl_ctx){
+mosquitto.c:		SSL_CTX_free(mosq->ssl_ctx);
+mosquitto.c:	mosquitto__free(mosq->tls_cafile);
+mosquitto.c:	mosquitto__free(mosq->tls_capath);
+mosquitto.c:	mosquitto__free(mosq->tls_certfile);
+mosquitto.c:	mosquitto__free(mosq->tls_keyfile);
+mosquitto.c:	if(mosq->tls_pw_callback) mosq->tls_pw_callback = NULL;
+mosquitto.c:	mosquitto__free(mosq->tls_version);
+mosquitto.c:	mosquitto__free(mosq->tls_ciphers);
+mosquitto.c:	mosquitto__free(mosq->tls_psk);
+mosquitto.c:	mosquitto__free(mosq->tls_psk_identity);
+mosquitto.c:	mosquitto__free(mosq->tls_alpn);
+mosquitto.c:	mosquitto__free(mosq->address);
+mosquitto.c:	mosq->address = NULL;
+mosquitto.c:	mosquitto__free(mosq->id);
+mosquitto.c:	mosq->id = NULL;
+mosquitto.c:	mosquitto__free(mosq->username);
+mosquitto.c:	mosq->username = NULL;
+mosquitto.c:	mosquitto__free(mosq->password);
+mosquitto.c:	mosq->password = NULL;
+mosquitto.c:	mosquitto__free(mosq->host);
+mosquitto.c:	mosq->host = NULL;
+mosquitto.c:	mosquitto__free(mosq->bind_address);
+mosquitto.c:	mosq->bind_address = NULL;
+mosquitto.c:	mosquitto_property_free_all(&mosq->connect_properties);
+mosquitto.c:	packet__cleanup(&mosq->in_packet);
+mosquitto.c:	if(mosq->sockpairR != INVALID_SOCKET){
+mosquitto.c:		COMPAT_CLOSE(mosq->sockpairR);
+mosquitto.c:		mosq->sockpairR = INVALID_SOCKET;
+mosquitto.c:	if(mosq->sockpairW != INVALID_SOCKET){
+mosquitto.c:		COMPAT_CLOSE(mosq->sockpairW);
+mosquitto.c:		mosq->sockpairW = INVALID_SOCKET;
+mosquitto.c:	return mosq->sock;
+mosquitto.c:	if(mosq->out_packet || mosq->current_out_packet){
+mosquitto.c:	if(mosq->ssl){
+mosquitto.c:		if (mosq->want_write) {
+mosquitto.c:		}else if(mosq->want_connect){
+net_mosq.c:	if(!mosq->wsi)
+net_mosq.c:		if(mosq->ssl){
+net_mosq.c:			if(!SSL_in_init(mosq->ssl)){
+net_mosq.c:				SSL_shutdown(mosq->ssl);
+net_mosq.c:			SSL_free(mosq->ssl);
+net_mosq.c:			mosq->ssl = NULL;
+net_mosq.c:	if(mosq->wsi)
+net_mosq.c:		if(mosq->state != mosq_cs_disconnecting){
+net_mosq.c:		lws_callback_on_writable(mosq->wsi);
+net_mosq.c:		if(mosq->sock != INVALID_SOCKET){
+net_mosq.c:			HASH_FIND(hh_sock, db.contexts_by_sock, &mosq->sock, sizeof(mosq->sock), mosq_found);
+net_mosq.c:			rc = COMPAT_CLOSE(mosq->sock);
+net_mosq.c:			mosq->sock = INVALID_SOCKET;
+net_mosq.c:	if(mosq->listener){
+net_mosq.c:		mosq->listener->client_count--;
+net_mosq.c:	snprintf(identity, max_identity_len, "%s", mosq->tls_psk_identity);
+net_mosq.c:	len = mosquitto__hex2bin(mosq->tls_psk, psk, (int)max_psk_len);
+net_mosq.c:	if(mosq->adns){
+net_mosq.c:		gai_cancel(mosq->adns);
+net_mosq.c:		mosquitto__free((struct addrinfo *)mosq->adns->ar_request);
+net_mosq.c:		mosquitto__free(mosq->adns);
+net_mosq.c:	mosq->adns = mosquitto__calloc(1, sizeof(struct gaicb));
+net_mosq.c:	if(!mosq->adns){
+net_mosq.c:		mosquitto__free(mosq->adns);
+net_mosq.c:		mosq->adns = NULL;
+net_mosq.c:	mosq->adns->ar_name = host;
+net_mosq.c:	mosq->adns->ar_request = hints;
+net_mosq.c:	s = getaddrinfo_a(GAI_NOWAIT, &mosq->adns, 1, sevp);
+net_mosq.c:		if(mosq->adns){
+net_mosq.c:			mosquitto__free((struct addrinfo *)mosq->adns->ar_request);
+net_mosq.c:			mosquitto__free(mosq->adns);
+net_mosq.c:			mosq->adns = NULL;
+net_mosq.c:	ainfo = mosq->adns->ar_result;
+net_mosq.c:	freeaddrinfo(mosq->adns->ar_result);
+net_mosq.c:	mosq->adns->ar_result = NULL;
+net_mosq.c:	mosquitto__free((struct addrinfo *)mosq->adns->ar_request);
+net_mosq.c:	mosquitto__free(mosq->adns);
+net_mosq.c:	mosq->adns = NULL;
+net_mosq.c:	if (mosq->tls_ocsp_required) {
+net_mosq.c:		if ((res=SSL_set_tlsext_status_type(mosq->ssl, TLSEXT_STATUSTYPE_ocsp)) != 1) {
+net_mosq.c:		if ((res=SSL_CTX_set_tlsext_status_cb(mosq->ssl_ctx, mosquitto__verify_ocsp_status_cb)) != 1) {
+net_mosq.c:		if ((res=SSL_CTX_set_tlsext_status_arg(mosq->ssl_ctx, mosq)) != 1) {
+net_mosq.c:	ret = SSL_connect(mosq->ssl);
+net_mosq.c:		err = SSL_get_error(mosq->ssl, ret);
+net_mosq.c:			mosq->want_connect = true;
+net_mosq.c:			mosq->want_connect = true;
+net_mosq.c:			mosq->want_write = true;
+net_mosq.c:			mosq->want_connect = true;
+net_mosq.c:			COMPAT_CLOSE(mosq->sock);
+net_mosq.c:			mosq->sock = INVALID_SOCKET;
+net_mosq.c:		mosq->want_connect = false;
+net_mosq.c:	if(mosq->tls_use_os_certs){
+net_mosq.c:		SSL_CTX_set_default_verify_paths(mosq->ssl_ctx);
+net_mosq.c:	if(mosq->tls_cafile || mosq->tls_capath){
+net_mosq.c:		ret = SSL_CTX_load_verify_locations(mosq->ssl_ctx, mosq->tls_cafile, mosq->tls_capath);
+net_mosq.c:			if(mosq->tls_cafile && mosq->tls_capath){
+net_mosq.c:				log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load CA certificates, check bridge_cafile \"%s\" and bridge_capath \"%s\".", mosq->tls_cafile, mosq->tls_capath);
+net_mosq.c:			}else if(mosq->tls_cafile){
+net_mosq.c:				log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load CA certificates, check bridge_cafile \"%s\".", mosq->tls_cafile);
+net_mosq.c:				log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load CA certificates, check bridge_capath \"%s\".", mosq->tls_capath);
+net_mosq.c:			if(mosq->tls_cafile && mosq->tls_capath){
+net_mosq.c:				log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load CA certificates, check cafile \"%s\" and capath \"%s\".", mosq->tls_cafile, mosq->tls_capath);
+net_mosq.c:			}else if(mosq->tls_cafile){
+net_mosq.c:				log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load CA certificates, check cafile \"%s\".", mosq->tls_cafile);
+net_mosq.c:				log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load CA certificates, check capath \"%s\".", mosq->tls_capath);
+net_mosq.c:	if(mosq->tls_cafile){
+net_mosq.c:		ret = SSL_CTX_load_verify_file(mosq->ssl_ctx, mosq->tls_cafile);
+net_mosq.c:			log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load CA certificates, check bridge_cafile \"%s\".", mosq->tls_cafile);
+net_mosq.c:			log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load CA certificates, check cafile \"%s\".", mosq->tls_cafile);
+net_mosq.c:	if(mosq->tls_capath){
+net_mosq.c:		ret = SSL_CTX_load_verify_dir(mosq->ssl_ctx, mosq->tls_capath);
+net_mosq.c:			log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load CA certificates, check bridge_capath \"%s\".", mosq->tls_capath);
+net_mosq.c:			log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load CA certificates, check capath \"%s\".", mosq->tls_capath);
+net_mosq.c:	if(mosq->ssl_ctx){
+net_mosq.c:		if(!mosq->ssl_ctx_defaults){
+net_mosq.c:		}else if(!mosq->tls_cafile && !mosq->tls_capath && !mosq->tls_psk){
+net_mosq.c:	if(mosq->tls_cafile || mosq->tls_capath || mosq->tls_psk || mosq->tls_use_os_certs){
+net_mosq.c:		if(!mosq->ssl_ctx){
+net_mosq.c:			mosq->ssl_ctx = SSL_CTX_new(SSLv23_client_method());
+net_mosq.c:			mosq->ssl_ctx = SSL_CTX_new(TLS_client_method());
+net_mosq.c:			if(!mosq->ssl_ctx){
+net_mosq.c:		if(!mosq->tls_version){
+net_mosq.c:			SSL_CTX_set_options(mosq->ssl_ctx, SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+net_mosq.c:		}else if(!strcmp(mosq->tls_version, "tlsv1.3")){
+net_mosq.c:			SSL_CTX_set_options(mosq->ssl_ctx, SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2);
+net_mosq.c:		}else if(!strcmp(mosq->tls_version, "tlsv1.2")){
+net_mosq.c:			SSL_CTX_set_options(mosq->ssl_ctx, SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1);
+net_mosq.c:		}else if(!strcmp(mosq->tls_version, "tlsv1.1")){
+net_mosq.c:			SSL_CTX_set_options(mosq->ssl_ctx, SSL_OP_NO_SSLv3 | SSL_OP_NO_TLSv1);
+net_mosq.c:			log__printf(mosq, MOSQ_LOG_ERR, "Error: Protocol %s not supported.", mosq->tls_version);
+net_mosq.c:		SSL_CTX_set_dh_auto(mosq->ssl_ctx, 1);
+net_mosq.c:		SSL_CTX_set_options(mosq->ssl_ctx, SSL_OP_NO_COMPRESSION);
+net_mosq.c:		if(mosq->tls_alpn) {
+net_mosq.c:			tls_alpn_len = (uint8_t) strnlen(mosq->tls_alpn, 254);
+net_mosq.c:			memcpy(tls_alpn_wire + 1, mosq->tls_alpn, tls_alpn_len);
+net_mosq.c:			SSL_CTX_set_alpn_protos(mosq->ssl_ctx, tls_alpn_wire, tls_alpn_len + 1U);
+net_mosq.c:			SSL_CTX_set_mode(mosq->ssl_ctx, SSL_MODE_RELEASE_BUFFERS);
+net_mosq.c:		if(mosq->tls_engine){
+net_mosq.c:			engine = ENGINE_by_id(mosq->tls_engine);
+net_mosq.c:				log__printf(mosq, MOSQ_LOG_ERR, "Error loading %s engine\n", mosq->tls_engine);
+net_mosq.c:		if(mosq->tls_ciphers){
+net_mosq.c:			ret = SSL_CTX_set_cipher_list(mosq->ssl_ctx, mosq->tls_ciphers);
+net_mosq.c:				log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to set TLS ciphers. Check cipher list \"%s\".", mosq->tls_ciphers);
+net_mosq.c:		if(mosq->tls_cafile || mosq->tls_capath || mosq->tls_use_os_certs){
+net_mosq.c:			if(mosq->tls_cert_reqs == 0){
+net_mosq.c:				SSL_CTX_set_verify(mosq->ssl_ctx, SSL_VERIFY_NONE, NULL);
+net_mosq.c:				SSL_CTX_set_verify(mosq->ssl_ctx, SSL_VERIFY_PEER, mosquitto__server_certificate_verify);
+net_mosq.c:			if(mosq->tls_pw_callback){
+net_mosq.c:				SSL_CTX_set_default_passwd_cb(mosq->ssl_ctx, mosq->tls_pw_callback);
+net_mosq.c:				SSL_CTX_set_default_passwd_cb_userdata(mosq->ssl_ctx, mosq);
+net_mosq.c:			if(mosq->tls_certfile){
+net_mosq.c:				ret = SSL_CTX_use_certificate_chain_file(mosq->ssl_ctx, mosq->tls_certfile);
+net_mosq.c:					log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load client certificate, check bridge_certfile \"%s\".", mosq->tls_certfile);
+net_mosq.c:					log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load client certificate \"%s\".", mosq->tls_certfile);
+net_mosq.c:			if(mosq->tls_keyfile){
+net_mosq.c:				if(mosq->tls_keyform == mosq_k_engine){
+net_mosq.c:					if(mosq->tls_engine_kpass_sha1){
+net_mosq.c:						if(!ENGINE_ctrl_cmd(engine, ENGINE_PIN, 0, mosq->tls_engine_kpass_sha1, NULL, 0)){
+net_mosq.c:					pkey = ENGINE_load_private_key(engine, mosq->tls_keyfile, ui_method, NULL);
+net_mosq.c:						log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load engine private key file \"%s\".", mosq->tls_keyfile);
+net_mosq.c:					if(SSL_CTX_use_PrivateKey(mosq->ssl_ctx, pkey) <= 0){
+net_mosq.c:						log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to use engine private key file \"%s\".", mosq->tls_keyfile);
+net_mosq.c:					ret = SSL_CTX_use_PrivateKey_file(mosq->ssl_ctx, mosq->tls_keyfile, SSL_FILETYPE_PEM);
+net_mosq.c:						log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load client key file, check bridge_keyfile \"%s\".", mosq->tls_keyfile);
+net_mosq.c:						log__printf(mosq, MOSQ_LOG_ERR, "Error: Unable to load client key file \"%s\".", mosq->tls_keyfile);
+net_mosq.c:				ret = SSL_CTX_check_private_key(mosq->ssl_ctx);
+net_mosq.c:		}else if(mosq->tls_psk){
+net_mosq.c:			SSL_CTX_set_psk_client_callback(mosq->ssl_ctx, psk_client_callback);
+net_mosq.c:	if(mosq->ssl_ctx){
+net_mosq.c:		if(mosq->ssl){
+net_mosq.c:			SSL_free(mosq->ssl);
+net_mosq.c:		mosq->ssl = SSL_new(mosq->ssl_ctx);
+net_mosq.c:		if(!mosq->ssl){
+net_mosq.c:		SSL_set_ex_data(mosq->ssl, tls_ex_index_mosq, mosq);
+net_mosq.c:		bio = BIO_new_socket(mosq->sock, BIO_NOCLOSE);
+net_mosq.c:		SSL_set_bio(mosq->ssl, bio, bio);
+net_mosq.c:		if(SSL_set_tlsext_host_name(mosq->ssl, host) != 1) {
+net_mosq.c:	mosq->sock = sock;
+net_mosq.c:	if(mosq->tcp_nodelay){
+net_mosq.c:		if(setsockopt(mosq->sock, IPPROTO_TCP, TCP_NODELAY, (const void*)&flag, sizeof(int)) != 0){
+net_mosq.c:	if(!mosq->socks5_host)
+net_mosq.c:	if(mosq->ssl){
+net_mosq.c:		ret = SSL_read(mosq->ssl, buf, (int)count);
+net_mosq.c:			err = SSL_get_error(mosq->ssl, ret);
+net_mosq.c:				mosq->want_write = true;
+net_mosq.c:	return read(mosq->sock, buf, count);
+net_mosq.c:	return recv(mosq->sock, buf, count, 0);
+net_mosq.c:	if(mosq->ssl){
+net_mosq.c:		mosq->want_write = false;
+net_mosq.c:		ret = SSL_write(mosq->ssl, buf, (int)count);
+net_mosq.c:			err = SSL_get_error(mosq->ssl, ret);
+net_mosq.c:				mosq->want_write = true;
+net_mosq.c:	return write(mosq->sock, buf, count);
+net_mosq.c:	return send(mosq->sock, buf, count, 0);
+net_mosq.c:	return mosq->ssl;
+net_mosq_ocsp.c:	long len = SSL_get_tlsext_status_ocsp_resp(mosq->ssl, &p);
+net_mosq_ocsp.c:	ch = SSL_get_peer_cert_chain(mosq->ssl);
+net_mosq_ocsp.c:	st = SSL_CTX_get_cert_store(mosq->ssl_ctx);
+options.c:	if(mosq->protocol == mosq_p_mqtt311 || mosq->protocol == mosq_p_mqtt31){
+options.c:	mosquitto__free(mosq->username);
+options.c:	mosq->username = NULL;
+options.c:	mosquitto__free(mosq->password);
+options.c:	mosq->password = NULL;
+options.c:		mosq->username = mosquitto__strdup(username);
+options.c:		if(!mosq->username) return MOSQ_ERR_NOMEM;
+options.c:		mosq->password = mosquitto__strdup(password);
+options.c:		if(!mosq->password){
+options.c:			mosquitto__free(mosq->username);
+options.c:			mosq->username = NULL;
+options.c:	mosq->reconnect_delay = reconnect_delay;
+options.c:	mosq->reconnect_delay_max = reconnect_delay_max;
+options.c:	mosq->reconnect_exponential_backoff = reconnect_exponential_backoff;
+options.c:	mosquitto__free(mosq->tls_cafile);
+options.c:	mosq->tls_cafile = NULL;
+options.c:		mosq->tls_cafile = mosquitto__strdup(cafile);
+options.c:		if(!mosq->tls_cafile){
+options.c:	mosquitto__free(mosq->tls_capath);
+options.c:	mosq->tls_capath = NULL;
+options.c:		mosq->tls_capath = mosquitto__strdup(capath);
+options.c:		if(!mosq->tls_capath){
+options.c:	mosquitto__free(mosq->tls_certfile);
+options.c:	mosq->tls_certfile = NULL;
+options.c:			mosquitto__free(mosq->tls_cafile);
+options.c:			mosq->tls_cafile = NULL;
+options.c:			mosquitto__free(mosq->tls_capath);
+options.c:			mosq->tls_capath = NULL;
+options.c:		mosq->tls_certfile = mosquitto__strdup(certfile);
+options.c:		if(!mosq->tls_certfile){
+options.c:	mosquitto__free(mosq->tls_keyfile);
+options.c:	mosq->tls_keyfile = NULL;
+options.c:			mosquitto__free(mosq->tls_cafile);
+options.c:			mosq->tls_cafile = NULL;
+options.c:			mosquitto__free(mosq->tls_capath);
+options.c:			mosq->tls_capath = NULL;
+options.c:			mosquitto__free(mosq->tls_certfile);
+options.c:			mosq->tls_certfile = NULL;
+options.c:		mosq->tls_keyfile = mosquitto__strdup(keyfile);
+options.c:		if(!mosq->tls_keyfile){
+options.c:	mosq->tls_pw_callback = pw_callback;
+options.c:	mosq->tls_cert_reqs = cert_reqs;
+options.c:			mosq->tls_version = mosquitto__strdup(tls_version);
+options.c:			if(!mosq->tls_version) return MOSQ_ERR_NOMEM;
+options.c:		mosq->tls_version = mosquitto__strdup("tlsv1.2");
+options.c:		if(!mosq->tls_version) return MOSQ_ERR_NOMEM;
+options.c:		mosq->tls_ciphers = mosquitto__strdup(ciphers);
+options.c:		if(!mosq->tls_ciphers) return MOSQ_ERR_NOMEM;
+options.c:		mosq->tls_ciphers = NULL;
+options.c:	mosq->tls_insecure = value;
+options.c:			mosq->tls_engine = mosquitto__strdup(value);
+options.c:			if(!mosq->tls_engine){
+options.c:				mosq->tls_keyform = mosq_k_pem;
+options.c:				mosq->tls_keyform = mosq_k_engine;
+options.c:			mosq->tls_engine_kpass_sha1 = str;
+options.c:			mosq->tls_alpn = mosquitto__strdup(value);
+options.c:			if(!mosq->tls_alpn){
+options.c:			mosquitto__free(mosq->bind_address);
+options.c:				mosq->bind_address = mosquitto__strdup(value);
+options.c:				if(mosq->bind_address){
+options.c:	mosq->tls_psk = mosquitto__strdup(psk);
+options.c:	if(!mosq->tls_psk) return MOSQ_ERR_NOMEM;
+options.c:	mosq->tls_psk_identity = mosquitto__strdup(identity);
+options.c:	if(!mosq->tls_psk_identity){
+options.c:		mosquitto__free(mosq->tls_psk);
+options.c:		mosq->tls_ciphers = mosquitto__strdup(ciphers);
+options.c:		if(!mosq->tls_ciphers) return MOSQ_ERR_NOMEM;
+options.c:		mosq->tls_ciphers = NULL;
+options.c:			mosq->ssl_ctx = (SSL_CTX *)value;
+options.c:			if(mosq->ssl_ctx){
+options.c:				SSL_CTX_up_ref(mosq->ssl_ctx);
+options.c:				CRYPTO_add(&(mosq->ssl_ctx)->references, 1, CRYPTO_LOCK_SSL_CTX);
+options.c:				mosq->protocol = mosq_p_mqtt31;
+options.c:				mosq->protocol = mosq_p_mqtt311;
+options.c:				mosq->protocol = mosq_p_mqtt5;
+options.c:				mosq->msgs_in.inflight_maximum = UINT16_MAX;
+options.c:				mosq->msgs_in.inflight_maximum = (uint16_t)value;
+options.c:				mosq->msgs_out.inflight_maximum = UINT16_MAX;
+options.c:				mosq->msgs_out.inflight_maximum = (uint16_t)value;
+options.c:				mosq->ssl_ctx_defaults = true;
+options.c:				mosq->ssl_ctx_defaults = false;
+options.c:				mosq->tls_use_os_certs = true;
+options.c:				mosq->tls_use_os_certs = false;
+options.c:			mosq->tls_ocsp_required = (bool)value;
+options.c:			mosq->tcp_nodelay = (bool)value;
+options.c:			mosq->ssl_ctx = (SSL_CTX *)value;
+options.c:			if(mosq->ssl_ctx){
+options.c:				SSL_CTX_up_ref(mosq->ssl_ctx);
+options.c:				CRYPTO_add(&(mosq->ssl_ctx)->references, 1, CRYPTO_LOCK_SSL_CTX);
+options.c:		mosq->userdata = userdata;
+options.c:	return mosq->userdata;
+packet_mosq.c:	if(mosq->out_packet && !mosq->current_out_packet){
+packet_mosq.c:		mosq->current_out_packet = mosq->out_packet;
+packet_mosq.c:		mosq->out_packet = mosq->out_packet->next;
+packet_mosq.c:	while(mosq->current_out_packet){
+packet_mosq.c:		packet = mosq->current_out_packet;
+packet_mosq.c:		mosq->current_out_packet = mosq->out_packet;
+packet_mosq.c:		if(mosq->out_packet){
+packet_mosq.c:			mosq->out_packet = mosq->out_packet->next;
+packet_mosq.c:	packet__cleanup(&mosq->in_packet);
+packet_mosq.c:	pthread_mutex_lock(&mosq->current_out_packet_mutex);
+packet_mosq.c:	pthread_mutex_lock(&mosq->out_packet_mutex);
+packet_mosq.c:	pthread_mutex_unlock(&mosq->out_packet_mutex);
+packet_mosq.c:	pthread_mutex_unlock(&mosq->current_out_packet_mutex);
+packet_mosq.c:	pthread_mutex_lock(&mosq->out_packet_mutex);
+packet_mosq.c:	if(mosq->out_packet){
+packet_mosq.c:		mosq->out_packet_last->next = packet;
+packet_mosq.c:		mosq->out_packet = packet;
+packet_mosq.c:	mosq->out_packet_last = packet;
+packet_mosq.c:	pthread_mutex_unlock(&mosq->out_packet_mutex);
+packet_mosq.c:	if(mosq->wsi){
+packet_mosq.c:		lws_callback_on_writable(mosq->wsi);
+packet_mosq.c:	if(mosq->sockpairW != INVALID_SOCKET){
+packet_mosq.c:		if(write(mosq->sockpairW, &sockpair_data, 1)){
+packet_mosq.c:		send(mosq->sockpairW, &sockpair_data, 1, 0);
+packet_mosq.c:	if(mosq->in_callback == false && mosq->threaded == mosq_ts_none){
+packet_mosq.c:	if(mosq->maximum_packet_size == 0) return MOSQ_ERR_SUCCESS;
+packet_mosq.c:	if(len > mosq->maximum_packet_size){
+packet_mosq.c:	if(mosq->sock == INVALID_SOCKET) return MOSQ_ERR_NO_CONN;
+packet_mosq.c:	pthread_mutex_lock(&mosq->current_out_packet_mutex);
+packet_mosq.c:	pthread_mutex_lock(&mosq->out_packet_mutex);
+packet_mosq.c:	if(mosq->out_packet && !mosq->current_out_packet){
+packet_mosq.c:		mosq->current_out_packet = mosq->out_packet;
+packet_mosq.c:		mosq->out_packet = mosq->out_packet->next;
+packet_mosq.c:		if(!mosq->out_packet){
+packet_mosq.c:			mosq->out_packet_last = NULL;
+packet_mosq.c:	pthread_mutex_unlock(&mosq->out_packet_mutex);
+packet_mosq.c:	if(mosq->current_out_packet){
+packet_mosq.c:	if(state == mosq_cs_connect_pending || mosq->want_connect){
+packet_mosq.c:		pthread_mutex_unlock(&mosq->current_out_packet_mutex);
+packet_mosq.c:	while(mosq->current_out_packet){
+packet_mosq.c:		packet = mosq->current_out_packet;
+packet_mosq.c:					pthread_mutex_unlock(&mosq->current_out_packet_mutex);
+packet_mosq.c:					pthread_mutex_unlock(&mosq->current_out_packet_mutex);
+packet_mosq.c:			pthread_mutex_lock(&mosq->callback_mutex);
+packet_mosq.c:			if(mosq->on_publish){
+packet_mosq.c:				mosq->in_callback = true;
+packet_mosq.c:				mosq->on_publish(mosq, mosq->userdata, packet->mid);
+packet_mosq.c:				mosq->in_callback = false;
+packet_mosq.c:			if(mosq->on_publish_v5){
+packet_mosq.c:				mosq->in_callback = true;
+packet_mosq.c:				mosq->on_publish_v5(mosq, mosq->userdata, packet->mid, 0, NULL);
+packet_mosq.c:				mosq->in_callback = false;
+packet_mosq.c:			pthread_mutex_unlock(&mosq->callback_mutex);
+packet_mosq.c:		pthread_mutex_lock(&mosq->out_packet_mutex);
+packet_mosq.c:		mosq->current_out_packet = mosq->out_packet;
+packet_mosq.c:		if(mosq->out_packet){
+packet_mosq.c:			mosq->out_packet = mosq->out_packet->next;
+packet_mosq.c:			if(!mosq->out_packet){
+packet_mosq.c:				mosq->out_packet_last = NULL;
+packet_mosq.c:		pthread_mutex_unlock(&mosq->out_packet_mutex);
+packet_mosq.c:		mosq->next_msg_out = db.now_s + mosq->keepalive;
+packet_mosq.c:		if(mosq->current_out_packet == NULL){
+packet_mosq.c:		pthread_mutex_lock(&mosq->msgtime_mutex);
+packet_mosq.c:		mosq->next_msg_out = mosquitto_time() + mosq->keepalive;
+packet_mosq.c:		pthread_mutex_unlock(&mosq->msgtime_mutex);
+packet_mosq.c:	pthread_mutex_unlock(&mosq->current_out_packet_mutex);
+packet_mosq.c:	if(mosq->sock == INVALID_SOCKET){
+packet_mosq.c:	if(!mosq->in_packet.command){
+packet_mosq.c:			mosq->in_packet.command = byte;
+packet_mosq.c:			if(!(mosq->bridge) && state == mosq_cs_connected && (byte&0xF0) != CMD_CONNECT){
+packet_mosq.c:	if(mosq->in_packet.remaining_count <= 0){
+packet_mosq.c:				mosq->in_packet.remaining_count--;
+packet_mosq.c:				if(mosq->in_packet.remaining_count < -4){
+packet_mosq.c:				mosq->in_packet.remaining_length += (byte & 127) * mosq->in_packet.remaining_mult;
+packet_mosq.c:				mosq->in_packet.remaining_mult *= 128;
+packet_mosq.c:		mosq->in_packet.remaining_count = (int8_t)(mosq->in_packet.remaining_count * -1);
+packet_mosq.c:		if(db.config->max_packet_size > 0 && mosq->in_packet.remaining_length+1 > db.config->max_packet_size){
+packet_mosq.c:			if(mosq->protocol == mosq_p_mqtt5){
+packet_mosq.c:		if(mosq->in_packet.remaining_length > 0){
+packet_mosq.c:			mosq->in_packet.payload = mosquitto__malloc(mosq->in_packet.remaining_length*sizeof(uint8_t));
+packet_mosq.c:			if(!mosq->in_packet.payload){
+packet_mosq.c:			mosq->in_packet.to_process = mosq->in_packet.remaining_length;
+packet_mosq.c:	while(mosq->in_packet.to_process>0){
+packet_mosq.c:		read_length = net__read(mosq, &(mosq->in_packet.payload[mosq->in_packet.pos]), mosq->in_packet.to_process);
+packet_mosq.c:			mosq->in_packet.to_process -= (uint32_t)read_length;
+packet_mosq.c:			mosq->in_packet.pos += (uint32_t)read_length;
+packet_mosq.c:				if(mosq->in_packet.to_process > 1000){
+packet_mosq.c:					pthread_mutex_lock(&mosq->msgtime_mutex);
+packet_mosq.c:					mosq->last_msg_in = mosquitto_time();
+packet_mosq.c:					pthread_mutex_unlock(&mosq->msgtime_mutex);
+packet_mosq.c:	mosq->in_packet.pos = 0;
+packet_mosq.c:	if(((mosq->in_packet.command)&0xF5) == CMD_PUBLISH){
+packet_mosq.c:	packet__cleanup(&mosq->in_packet);
+packet_mosq.c:	pthread_mutex_lock(&mosq->msgtime_mutex);
+packet_mosq.c:	mosq->last_msg_in = mosquitto_time();
+packet_mosq.c:	pthread_mutex_unlock(&mosq->msgtime_mutex);
+read_handle.c:	switch((mosq->in_packet.command)&0xF0){
+read_handle.c:			log__printf(mosq, MOSQ_LOG_ERR, "Error: Unrecognised command %d\n", (mosq->in_packet.command)&0xF0);
+send_connect.c:	if(mosq->protocol == mosq_p_mqtt31 && !mosq->id) return MOSQ_ERR_PROTOCOL;
+send_connect.c:	if(mosq->bridge){
+send_connect.c:		clientid = mosq->bridge->remote_clientid;
+send_connect.c:		username = mosq->bridge->remote_username;
+send_connect.c:		password = mosq->bridge->remote_password;
+send_connect.c:		clientid = mosq->id;
+send_connect.c:		username = mosq->username;
+send_connect.c:		password = mosq->password;
+send_connect.c:	clientid = mosq->id;
+send_connect.c:	username = mosq->username;
+send_connect.c:	password = mosq->password;
+send_connect.c:	if(mosq->protocol == mosq_p_mqtt5){
+send_connect.c:			rc = mosquitto_property_add_int16(&local_props, MQTT_PROP_RECEIVE_MAXIMUM, mosq->msgs_in.inflight_maximum);
+send_connect.c:			mosq->msgs_in.inflight_maximum = receive_maximum;
+send_connect.c:			mosq->msgs_in.inflight_quota = receive_maximum;
+send_connect.c:	}else if(mosq->protocol == mosq_p_mqtt311){
+send_connect.c:	}else if(mosq->protocol == mosq_p_mqtt31){
+send_connect.c:	if(mosq->will && (mosq->bridge == NULL || mosq->bridge->notifications_local_only == false)){
+send_connect.c:	if(mosq->will){
+send_connect.c:		assert(mosq->will->msg.topic);
+send_connect.c:		payloadlen += (uint32_t)(2+strlen(mosq->will->msg.topic) + 2+(uint32_t)mosq->will->msg.payloadlen);
+send_connect.c:		if(mosq->protocol == mosq_p_mqtt5){
+send_connect.c:			payloadlen += property__get_remaining_length(mosq->will->properties);
+send_connect.c:	if(mosq->protocol == mosq_p_mqtt31 || mosq->protocol == mosq_p_mqtt311){
+send_connect.c:	if(mosq->bridge && mosq->bridge->protocol_version != mosq_p_mqtt5 && mosq->bridge->try_private && mosq->bridge->try_private_accepted){
+send_connect.c:		byte = byte | (uint8_t)(((mosq->will->msg.qos&0x3)<<3) | ((will&0x1)<<2));
+send_connect.c:		if(mosq->retain_available){
+send_connect.c:			byte |= (uint8_t)((mosq->will->msg.retain&0x1)<<5);
+send_connect.c:	if(mosq->password){
+send_connect.c:	if(mosq->protocol == mosq_p_mqtt5){
+send_connect.c:		if(mosq->protocol == mosq_p_mqtt5){
+send_connect.c:			property__write_all(packet, mosq->will->properties, true);
+send_connect.c:		packet__write_string(packet, mosq->will->msg.topic, (uint16_t)strlen(mosq->will->msg.topic));
+send_connect.c:		packet__write_string(packet, (const char *)mosq->will->msg.payload, (uint16_t)mosq->will->msg.payloadlen);
+send_connect.c:	mosq->keepalive = keepalive;
+send_disconnect.c:	if(mosq->bridge){
+send_disconnect.c:		log__printf(mosq, MOSQ_LOG_DEBUG, "Bridge %s sending DISCONNECT", mosq->id);
+send_disconnect.c:		log__printf(mosq, MOSQ_LOG_DEBUG, "Sending DISCONNECT to %s (rc%d)", mosq->id, reason_code);
+send_disconnect.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s sending DISCONNECT", mosq->id);
+send_disconnect.c:	if(mosq->protocol == mosq_p_mqtt5 && (reason_code != 0 || properties)){
+send_disconnect.c:	if(mosq->protocol == mosq_p_mqtt5 && (reason_code != 0 || properties)){
+send_mosq.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Sending PINGREQ to %s", mosq->id);
+send_mosq.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s sending PINGREQ", mosq->id);
+send_mosq.c:		mosq->ping_t = mosquitto_time();
+send_mosq.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Sending PINGRESP to %s", mosq->id);
+send_mosq.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s sending PINGRESP", mosq->id);
+send_mosq.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Sending PUBACK to %s (m%d, rc%d)", mosq->id, mid, reason_code);
+send_mosq.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s sending PUBACK (m%d, rc%d)", mosq->id, mid, reason_code);
+send_mosq.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Sending PUBCOMP to %s (m%d)", mosq->id, mid);
+send_mosq.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s sending PUBCOMP (m%d)", mosq->id, mid);
+send_mosq.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Sending PUBREC to %s (m%d, rc%d)", mosq->id, mid, reason_code);
+send_mosq.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s sending PUBREC (m%d, rc%d)", mosq->id, mid, reason_code);
+send_mosq.c:	if(reason_code >= 0x80 && mosq->protocol == mosq_p_mqtt5){
+send_mosq.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Sending PUBREL to %s (m%d)", mosq->id, mid);
+send_mosq.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s sending PUBREL (m%d)", mosq->id, mid);
+send_mosq.c:	if(mosq->protocol == mosq_p_mqtt5){
+send_mosq.c:	if(mosq->protocol == mosq_p_mqtt5){
+send_publish.c:	if(mosq->sock == INVALID_SOCKET && !mosq->wsi) return MOSQ_ERR_NO_CONN;
+send_publish.c:	if(mosq->sock == INVALID_SOCKET) return MOSQ_ERR_NO_CONN;
+send_publish.c:	if(!mosq->retain_available){
+send_publish.c:	if(mosq->bridge && mosq->bridge->topics && mosq->bridge->topic_remapping){
+send_publish.c:		for(i=0; i<mosq->bridge->topic_count; i++){
+send_publish.c:			cur_topic = &mosq->bridge->topics[i];
+send_publish.c:					log__printf(NULL, MOSQ_LOG_DEBUG, "Sending PUBLISH to %s (d%d, q%d, r%d, m%d, '%s', ... (%ld bytes))", mosq->id, dup, qos, retain, mid, mapped_topic, (long)payloadlen);
+send_publish.c:	log__printf(NULL, MOSQ_LOG_DEBUG, "Sending PUBLISH to %s (d%d, q%d, r%d, m%d, '%s', ... (%ld bytes))", mosq->id, dup, qos, retain, mid, topic, (long)payloadlen);
+send_publish.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s sending PUBLISH (d%d, q%d, r%d, m%d, '%s', ... (%ld bytes))", mosq->id, dup, qos, retain, mid, topic, (long)payloadlen);
+send_publish.c:	if(mosq->protocol == mosq_p_mqtt5){
+send_publish.c:		log__printf(NULL, MOSQ_LOG_NOTICE, "Dropping too large outgoing PUBLISH for %s (%d bytes)", mosq->id, packetlen);
+send_publish.c:	if(mosq->protocol == mosq_p_mqtt5){
+send_subscribe.c:	if(mosq->protocol == mosq_p_mqtt5){
+send_subscribe.c:	if(mosq->protocol == mosq_p_mqtt5){
+send_subscribe.c:	log__printf(mosq, MOSQ_LOG_DEBUG, "Bridge %s sending SUBSCRIBE (Mid: %d, Topic: %s, QoS: %d, Options: 0x%02x)", mosq->id, local_mid, topic[0], topic_qos&0x03, topic_qos&0xFC);
+send_subscribe.c:		log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s sending SUBSCRIBE (Mid: %d, Topic: %s, QoS: %d, Options: 0x%02x)", mosq->id, local_mid, topic[i], topic_qos&0x03, topic_qos&0xFC);
+send_unsubscribe.c:	if(mosq->protocol == mosq_p_mqtt5){
+send_unsubscribe.c:	if(mosq->protocol == mosq_p_mqtt5){
+send_unsubscribe.c:		log__printf(mosq, MOSQ_LOG_DEBUG, "Bridge %s sending UNSUBSCRIBE (Mid: %d, Topic: %s)", mosq->id, local_mid, topic[i]);
+send_unsubscribe.c:		log__printf(mosq, MOSQ_LOG_DEBUG, "Client %s sending UNSUBSCRIBE (Mid: %d, Topic: %s)", mosq->id, local_mid, topic[i]);
+socks_mosq.c:	mosquitto__free(mosq->socks5_host);
+socks_mosq.c:	mosq->socks5_host = NULL;
+socks_mosq.c:	mosq->socks5_host = mosquitto__strdup(host);
+socks_mosq.c:	if(!mosq->socks5_host){
+socks_mosq.c:	mosq->socks5_port = (uint16_t)port;
+socks_mosq.c:	mosquitto__free(mosq->socks5_username);
+socks_mosq.c:	mosq->socks5_username = NULL;
+socks_mosq.c:	mosquitto__free(mosq->socks5_password);
+socks_mosq.c:	mosq->socks5_password = NULL;
+socks_mosq.c:		mosq->socks5_username = mosquitto__strdup(username);
+socks_mosq.c:		if(!mosq->socks5_username){
+socks_mosq.c:			mosq->socks5_password = mosquitto__strdup(password);
+socks_mosq.c:			if(!mosq->socks5_password){
+socks_mosq.c:				mosquitto__free(mosq->socks5_username);
+socks_mosq.c:		if(mosq->socks5_username){
+socks_mosq.c:		if(mosq->socks5_username){
+socks_mosq.c:		mosq->in_packet.pos = 0;
+socks_mosq.c:		mosq->in_packet.packet_length = 2;
+socks_mosq.c:		mosq->in_packet.to_process = 2;
+socks_mosq.c:		mosq->in_packet.payload = mosquitto__malloc(sizeof(uint8_t)*2);
+socks_mosq.c:		if(!mosq->in_packet.payload){
+socks_mosq.c:		ipv4_pton_result = inet_pton(AF_INET, mosq->host, &addr_ipv4);
+socks_mosq.c:		ipv6_pton_result = inet_pton(AF_INET6, mosq->host, &addr_ipv6);
+socks_mosq.c:			packet->payload[4+4] = MOSQ_MSB(mosq->port);
+socks_mosq.c:			packet->payload[4+4+1] = MOSQ_LSB(mosq->port);
+socks_mosq.c:			packet->payload[4+16] = MOSQ_MSB(mosq->port);
+socks_mosq.c:			packet->payload[4+16+1] = MOSQ_LSB(mosq->port);
+socks_mosq.c:			slen = strlen(mosq->host);
+socks_mosq.c:			memcpy(&(packet->payload[5]), mosq->host, slen);
+socks_mosq.c:			packet->payload[5+slen] = MOSQ_MSB(mosq->port);
+socks_mosq.c:			packet->payload[6+slen] = MOSQ_LSB(mosq->port);
+socks_mosq.c:		mosq->in_packet.pos = 0;
+socks_mosq.c:		mosq->in_packet.packet_length = 5;
+socks_mosq.c:		mosq->in_packet.to_process = 5;
+socks_mosq.c:		mosq->in_packet.payload = mosquitto__malloc(sizeof(uint8_t)*5);
+socks_mosq.c:		if(!mosq->in_packet.payload){
+socks_mosq.c:		ulen = (uint8_t)strlen(mosq->socks5_username);
+socks_mosq.c:		plen = (uint8_t)strlen(mosq->socks5_password);
+socks_mosq.c:		memcpy(&(packet->payload[2]), mosq->socks5_username, ulen);
+socks_mosq.c:		memcpy(&(packet->payload[3+ulen]), mosq->socks5_password, plen);
+socks_mosq.c:		mosq->in_packet.pos = 0;
+socks_mosq.c:		mosq->in_packet.packet_length = 2;
+socks_mosq.c:		mosq->in_packet.to_process = 2;
+socks_mosq.c:		mosq->in_packet.payload = mosquitto__malloc(sizeof(uint8_t)*2);
+socks_mosq.c:		if(!mosq->in_packet.payload){
+socks_mosq.c:		while(mosq->in_packet.to_process > 0){
+socks_mosq.c:			len = net__read(mosq, &(mosq->in_packet.payload[mosq->in_packet.pos]), mosq->in_packet.to_process);
+socks_mosq.c:				mosq->in_packet.pos += (uint32_t)len;
+socks_mosq.c:				mosq->in_packet.to_process -= (uint32_t)len;
+socks_mosq.c:					packet__cleanup(&mosq->in_packet);
+socks_mosq.c:		if(mosq->in_packet.payload[0] != 5){
+socks_mosq.c:			packet__cleanup(&mosq->in_packet);
+socks_mosq.c:		switch(mosq->in_packet.payload[1]){
+socks_mosq.c:				packet__cleanup(&mosq->in_packet);
+socks_mosq.c:				packet__cleanup(&mosq->in_packet);
+socks_mosq.c:				packet__cleanup(&mosq->in_packet);
+socks_mosq.c:		while(mosq->in_packet.to_process > 0){
+socks_mosq.c:			len = net__read(mosq, &(mosq->in_packet.payload[mosq->in_packet.pos]), mosq->in_packet.to_process);
+socks_mosq.c:				mosq->in_packet.pos += (uint32_t)len;
+socks_mosq.c:				mosq->in_packet.to_process -= (uint32_t)len;
+socks_mosq.c:					packet__cleanup(&mosq->in_packet);
+socks_mosq.c:		if(mosq->in_packet.payload[0] != 1){
+socks_mosq.c:			packet__cleanup(&mosq->in_packet);
+socks_mosq.c:		if(mosq->in_packet.payload[1] == 0){
+socks_mosq.c:			packet__cleanup(&mosq->in_packet);
+socks_mosq.c:			i = mosq->in_packet.payload[1];
+socks_mosq.c:			packet__cleanup(&mosq->in_packet);
+socks_mosq.c:		while(mosq->in_packet.to_process > 0){
+socks_mosq.c:			len = net__read(mosq, &(mosq->in_packet.payload[mosq->in_packet.pos]), mosq->in_packet.to_process);
+socks_mosq.c:				mosq->in_packet.pos += (uint32_t)len;
+socks_mosq.c:				mosq->in_packet.to_process -= (uint32_t)len;
+socks_mosq.c:					packet__cleanup(&mosq->in_packet);
+socks_mosq.c:		if(mosq->in_packet.packet_length == 5){
+socks_mosq.c:			if(mosq->in_packet.payload[3] == SOCKS_ATYPE_IP_V4){
+socks_mosq.c:				mosq->in_packet.to_process += 4+2-1; /* 4 bytes IPv4, 2 bytes port, -1 byte because we've already read the first byte */
+socks_mosq.c:				mosq->in_packet.packet_length += 4+2-1;
+socks_mosq.c:			}else if(mosq->in_packet.payload[3] == SOCKS_ATYPE_IP_V6){
+socks_mosq.c:				mosq->in_packet.to_process += 16+2-1; /* 16 bytes IPv6, 2 bytes port, -1 byte because we've already read the first byte */
+socks_mosq.c:				mosq->in_packet.packet_length += 16+2-1;
+socks_mosq.c:			}else if(mosq->in_packet.payload[3] == SOCKS_ATYPE_DOMAINNAME){
+socks_mosq.c:				if(mosq->in_packet.payload[4] > 0){
+socks_mosq.c:					mosq->in_packet.to_process += mosq->in_packet.payload[4];
+socks_mosq.c:					mosq->in_packet.packet_length += mosq->in_packet.payload[4];
+socks_mosq.c:				packet__cleanup(&mosq->in_packet);
+socks_mosq.c:			payload = mosquitto__realloc(mosq->in_packet.payload, mosq->in_packet.packet_length);
+socks_mosq.c:				mosq->in_packet.payload = payload;
+socks_mosq.c:				packet__cleanup(&mosq->in_packet);
+socks_mosq.c:		if(mosq->in_packet.payload[0] != 5){
+socks_mosq.c:			packet__cleanup(&mosq->in_packet);
+socks_mosq.c:		if(mosq->in_packet.payload[1] == 0){
+socks_mosq.c:			packet__cleanup(&mosq->in_packet);
+socks_mosq.c:			if(mosq->socks5_host){
+socks_mosq.c:				int rc = net__socket_connect_step3(mosq, mosq->host);
+socks_mosq.c:			return send__connect(mosq, mosq->keepalive, mosq->clean_start, NULL);
+socks_mosq.c:			i = mosq->in_packet.payload[1];
+socks_mosq.c:			packet__cleanup(&mosq->in_packet);
+srv_mosq.c:			mosquitto_connect(mosq, reply->host, reply->port, mosq->keepalive);
+srv_mosq.c:		pthread_mutex_lock(&mosq->callback_mutex);
+srv_mosq.c:		if(mosq->on_disconnect){
+srv_mosq.c:			mosq->in_callback = true;
+srv_mosq.c:			mosq->on_disconnect(mosq, mosq->userdata, MOSQ_ERR_LOOKUP);
+srv_mosq.c:			mosq->in_callback = false;
+srv_mosq.c:		if(mosq->on_disconnect_v5){
+srv_mosq.c:			mosq->in_callback = true;
+srv_mosq.c:			mosq->on_disconnect_v5(mosq, mosq->userdata, MOSQ_ERR_LOOKUP, NULL);
+srv_mosq.c:			mosq->in_callback = false;
+srv_mosq.c:		pthread_mutex_unlock(&mosq->callback_mutex);
+srv_mosq.c:	rc = ares_init(&mosq->achan);
+srv_mosq.c:		if(mosq->tls_cafile || mosq->tls_capath || mosq->tls_psk){
+srv_mosq.c:		ares_search(mosq->achan, h, ns_c_in, ns_t_srv, srv_callback, mosq);
+srv_mosq.c:	mosq->keepalive = (uint16_t)keepalive;
+thread_mosq.c:	if(!mosq || mosq->threaded != mosq_ts_none) return MOSQ_ERR_INVAL;
+thread_mosq.c:	mosq->threaded = mosq_ts_self;
+thread_mosq.c:	if(!pthread_create(&mosq->thread_id, NULL, mosquitto__thread_main, mosq)){
+thread_mosq.c:		pthread_setname_np(mosq->thread_id, "mosquitto loop");
+thread_mosq.c:		pthread_setname_np(mosq->thread_id, "%s", "mosquitto loop");
+thread_mosq.c:		pthread_set_name_np(mosq->thread_id, "mosquitto loop");
+thread_mosq.c:	if(!mosq || mosq->threaded != mosq_ts_self) return MOSQ_ERR_INVAL;
+thread_mosq.c:	if(mosq->sockpairW != INVALID_SOCKET){
+thread_mosq.c:		if(write(mosq->sockpairW, &sockpair_data, 1)){
+thread_mosq.c:		send(mosq->sockpairW, &sockpair_data, 1, 0);
+thread_mosq.c:		pthread_cancel(mosq->thread_id);
+thread_mosq.c:	pthread_join(mosq->thread_id, NULL);
+thread_mosq.c:	mosq->thread_id = pthread_self();
+thread_mosq.c:	mosq->threaded = mosq_ts_none;
+thread_mosq.c:	if(!mosq->keepalive){
+thread_mosq.c:		mosquitto_loop_forever(mosq, mosq->keepalive*1000, 1);
+thread_mosq.c:		mosq->threaded = mosq_ts_external;
+thread_mosq.c:		mosq->threaded = mosq_ts_none;
+tls_mosq.c:	if(mosq->tls_insecure == false
+tls_mosq.c:			&& mosq->port != 0 /* no hostname checking for unix sockets */
+tls_mosq.c:			preverify_ok = mosquitto__verify_certificate_hostname(cert, mosq->bridge->addresses[mosq->bridge->cur_address].address);
+tls_mosq.c:			preverify_ok = mosquitto__verify_certificate_hostname(cert, mosq->host);
+util_mosq.c:	if(mosq->bridge && mosq->bridge->start_type == bst_lazy
+util_mosq.c:				&& mosq->sock != INVALID_SOCKET
+util_mosq.c:				&& now - mosq->next_msg_out - mosq->keepalive >= mosq->bridge->idle_timeout){
+util_mosq.c:		log__printf(NULL, MOSQ_LOG_NOTICE, "Bridge connection %s has exceeded idle timeout, disconnecting.", mosq->id);
+util_mosq.c:	pthread_mutex_lock(&mosq->msgtime_mutex);
+util_mosq.c:	next_msg_out = mosq->next_msg_out;
+util_mosq.c:	last_msg_in = mosq->last_msg_in;
+util_mosq.c:	pthread_mutex_unlock(&mosq->msgtime_mutex);
+util_mosq.c:	if(mosq->keepalive && mosq->sock != INVALID_SOCKET &&
+util_mosq.c:			(now >= next_msg_out || now - last_msg_in >= mosq->keepalive)){
+util_mosq.c:		if(state == mosq_cs_active && mosq->ping_t == 0){
+util_mosq.c:			pthread_mutex_lock(&mosq->msgtime_mutex);
+util_mosq.c:			mosq->last_msg_in = now;
+util_mosq.c:			mosq->next_msg_out = now + mosq->keepalive;
+util_mosq.c:			pthread_mutex_unlock(&mosq->msgtime_mutex);
+util_mosq.c:			pthread_mutex_lock(&mosq->callback_mutex);
+util_mosq.c:			if(mosq->on_disconnect){
+util_mosq.c:				mosq->in_callback = true;
+util_mosq.c:				mosq->on_disconnect(mosq, mosq->userdata, rc);
+util_mosq.c:				mosq->in_callback = false;
+util_mosq.c:			if(mosq->on_disconnect_v5){
+util_mosq.c:				mosq->in_callback = true;
+util_mosq.c:				mosq->on_disconnect_v5(mosq, mosq->userdata, rc, NULL);
+util_mosq.c:				mosq->in_callback = false;
+util_mosq.c:			pthread_mutex_unlock(&mosq->callback_mutex);
+util_mosq.c:	pthread_mutex_lock(&mosq->mid_mutex);
+util_mosq.c:	mosq->last_mid++;
+util_mosq.c:	if(mosq->last_mid == 0) mosq->last_mid++;
+util_mosq.c:	mid = mosq->last_mid;
+util_mosq.c:	pthread_mutex_unlock(&mosq->mid_mutex);
+util_mosq.c:	if(mosq->msgs_in.inflight_quota < mosq->msgs_in.inflight_maximum){
+util_mosq.c:		mosq->msgs_in.inflight_quota++;
+util_mosq.c:	if(mosq->msgs_out.inflight_quota < mosq->msgs_out.inflight_maximum){
+util_mosq.c:		mosq->msgs_out.inflight_quota++;
+util_mosq.c:	if(mosq->msgs_in.inflight_quota > 0){
+util_mosq.c:		mosq->msgs_in.inflight_quota--;
+util_mosq.c:	if(mosq->msgs_out.inflight_quota > 0){
+util_mosq.c:		mosq->msgs_out.inflight_quota--;
+util_mosq.c:	pthread_mutex_lock(&mosq->state_mutex);
+util_mosq.c:	if(mosq->state != mosq_cs_disused)
+util_mosq.c:		mosq->state = state;
+util_mosq.c:	pthread_mutex_unlock(&mosq->state_mutex);
+util_mosq.c:	pthread_mutex_lock(&mosq->state_mutex);
+util_mosq.c:	state = mosq->state;
+util_mosq.c:	pthread_mutex_unlock(&mosq->state_mutex);
+will_mosq.c:		if(mosq->protocol != mosq_p_mqtt5){
+will_mosq.c:	if(mosq->will){
+will_mosq.c:		mosquitto__free(mosq->will->msg.topic);
+will_mosq.c:		mosquitto__free(mosq->will->msg.payload);
+will_mosq.c:		mosquitto_property_free_all(&mosq->will->properties);
+will_mosq.c:		mosquitto__free(mosq->will);
+will_mosq.c:	mosq->will = mosquitto__calloc(1, sizeof(struct mosquitto_message_all));
+will_mosq.c:	if(!mosq->will) return MOSQ_ERR_NOMEM;
+will_mosq.c:	mosq->will->msg.topic = mosquitto__strdup(topic);
+will_mosq.c:	if(!mosq->will->msg.topic){
+will_mosq.c:	mosq->will->msg.payloadlen = payloadlen;
+will_mosq.c:	if(mosq->will->msg.payloadlen > 0){
+will_mosq.c:		mosq->will->msg.payload = mosquitto__malloc(sizeof(char)*(unsigned int)mosq->will->msg.payloadlen);
+will_mosq.c:		if(!mosq->will->msg.payload){
+will_mosq.c:		memcpy(mosq->will->msg.payload, payload, (unsigned int)payloadlen);
+will_mosq.c:	mosq->will->msg.qos = qos;
+will_mosq.c:	mosq->will->msg.retain = retain;
+will_mosq.c:	mosq->will->properties = properties;
+will_mosq.c:	if(mosq->will){
+will_mosq.c:		mosquitto__free(mosq->will->msg.topic);
+will_mosq.c:		mosquitto__free(mosq->will->msg.payload);
+will_mosq.c:		mosquitto__free(mosq->will);
+will_mosq.c:		mosq->will = NULL;
+will_mosq.c:	if(!mosq->will) return MOSQ_ERR_SUCCESS;
+will_mosq.c:	mosquitto__free(mosq->will->msg.topic);
+will_mosq.c:	mosq->will->msg.topic = NULL;
+will_mosq.c:	mosquitto__free(mosq->will->msg.payload);
+will_mosq.c:	mosq->will->msg.payload = NULL;
+will_mosq.c:	mosquitto_property_free_all(&mosq->will->properties);
+will_mosq.c:	mosquitto__free(mosq->will);
+will_mosq.c:	mosq->will = NULL;
+will_mosq.c:	mosq->will_delay_interval = 0;
