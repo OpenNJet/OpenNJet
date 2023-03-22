@@ -2281,7 +2281,11 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     index =1;
     if(data->escape.len > 0 ){
         njt_str_t prefix = njt_string("escape=");
+        data->escape.len++;
         njt_str_concat(pool,value[index],prefix, data->escape,goto err);
+        data->escape.len--;
+        value[index].len--;
+        value[index].data[value[index].len]='\0';
         ++index;
     }
     njt_str_copy_pool(pool,value[index],data->format, goto err);
@@ -2299,7 +2303,7 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     if(!update){
         fmt = njt_array_push(&lmcf->formats);
         if (fmt == NULL) {
-            return NJT_ERROR;
+            goto err;
         }
     }
     njt_memzero(fmt, sizeof(njt_http_log_fmt_t));
@@ -2314,12 +2318,12 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
 
     fmt->flushes = njt_array_create(cf->pool, 4, sizeof(njt_int_t));
     if (fmt->flushes == NULL) {
-        return NJT_ERROR;
+        goto err;
     }
 
     fmt->ops = njt_array_create(cf->pool, 16, sizeof(njt_http_log_op_t));
     if (fmt->ops == NULL) {
-        return NJT_ERROR;
+        goto err;
     }
 
     rs=njt_http_log_compile_format(cf, fmt->flushes, fmt->ops, cf->args, 1);
