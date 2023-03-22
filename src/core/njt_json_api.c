@@ -89,7 +89,8 @@ int64_t njt_calc_element_size(njt_json_element *element, bool contain_key)
     switch (element->type)
     {
         case NJT_JSON_STR:
-            size += element->strval.len;
+            size += NJT_JSON_ELEM_SIZE_STR;
+            size += element->strval.len * 6;
             break;
         case NJT_JSON_BOOL:
             size += NJT_JSON_ELEM_SIZE_BOOL;

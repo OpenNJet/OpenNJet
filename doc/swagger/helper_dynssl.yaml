@@ -36,13 +36,12 @@ paths:
       summary: set http server ssl conf
       description: set http server ssl conf
       operationId: setDynHttpServerSsl
-      parameters:
-        - in: body
-          name:  http server ssl conf
-          description:  http server ssl conf 单条配置
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
           required: true
-          schema:
-            $ref: '#/components/schemas/MainConf'
       responses:
         '204':
           description: Success
