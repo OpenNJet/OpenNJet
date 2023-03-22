@@ -1313,7 +1313,8 @@ njt_http_log_set_log(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     njt_memzero(log, sizeof(njt_http_log_t));
-    log->path = value[1];
+    njt_str_copy_pool(cf->pool,log->path,value[1],return NJT_CONF_ERROR);
+
 
     if (njt_strncmp(value[1].data, "syslog:", 7) == 0) {
 
