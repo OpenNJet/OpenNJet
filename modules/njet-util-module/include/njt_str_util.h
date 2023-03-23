@@ -20,10 +20,11 @@
 #include <njt_core.h>
 
 #define njt_str_copy_pool(pool, desc, src, err)    \
-    desc.data = njt_pstrdup(pool, &src);      \
-        if(desc.data == NULL){                  \
-            err ;                               \
-        }                                       \
+    desc.data = njt_pcalloc(pool,src.len+1); \
+    if(desc.data == NULL){                              \
+        err;                                            \
+    }                                                   \
+    njt_memcpy(desc.data,src.data,src.len);         \
     desc.len = src.len
 
 #define njt_str_concat(pool, desc, front, after, err) \
