@@ -538,7 +538,7 @@ njt_stream_upstream_get_round_robin_peer(njt_peer_connection_t *pc, void *data)
 
 failed:
 
-    if (peers->next) {
+    if (peers->next && peers->next->number > 0) {
 
         njt_log_debug0(NJT_LOG_DEBUG_STREAM, pc->log, 0, "backup servers");
 
