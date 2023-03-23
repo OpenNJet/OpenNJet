@@ -160,7 +160,7 @@ njt_stream_match_expect(njt_conf_t *cf, njt_command_t *cmd,void *conf)
     njt_uint_t                          size;
     u_char                              *data;
     njt_str_t                           *arg_str,*regular_str;
-    njt_int_t                           rc;
+    njt_int_t                           ret;
 
     value = cf->args->elts;
 
@@ -227,8 +227,8 @@ njt_stream_match_expect(njt_conf_t *cf, njt_command_t *cmd,void *conf)
             njt_conf_log_error(NJT_LOG_ERR, cf, 0,"cann`t get ucmcf in match block ");
             return NJT_CONF_ERROR;
         }
-        rc = njt_stream_hex2char(value[1].data,data,value[1].len);
-        if(rc !=NJT_OK){
+        ret = njt_stream_hex2char(value[1].data,data,value[1].len);
+        if(ret !=NJT_OK){
             njt_conf_log_error(NJT_LOG_ERR, cf, 0,"match send hex str error");
             return NJT_CONF_ERROR;
         }
