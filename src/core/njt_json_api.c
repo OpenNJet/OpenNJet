@@ -119,7 +119,8 @@ int64_t njt_calc_element_size(njt_json_element *element, bool contain_key)
     size += NJT_JSON_ELEM_SIZE_PUNCTUATION;
 
     if(contain_key){
-        size += element->key.len;
+        size += element->key.len * 6;
+        size += NJT_JSON_ELEM_SIZE_STR;
         size += NJT_JSON_ELEM_SIZE_PUNCTUATION;
     }
 
