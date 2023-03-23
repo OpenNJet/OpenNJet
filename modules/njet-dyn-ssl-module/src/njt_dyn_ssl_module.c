@@ -129,6 +129,9 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool,njt_http_dyn_ssl_ap
         if(hsscf == NULL){
             continue;
         }
+        if(hsscf->ssl.ctx == NULL){
+            continue;
+        }
         cert =  daas[i].certificates.elts;
         for(j = 0 ; j < daas[i].certificates.nelts; ++j ){
             //todo 此处内存泄露
