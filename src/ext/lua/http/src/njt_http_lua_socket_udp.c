@@ -490,7 +490,7 @@ njt_http_lua_socket_resolve_handler(njt_resolver_ctx_t *ctx)
     {
         u_char      text[NJT_SOCKADDR_STRLEN];
         njt_str_t   addr;
-        njt_uint_t  i;
+        //by zyg njt_uint_t  i;
 
         addr.data = text;
 

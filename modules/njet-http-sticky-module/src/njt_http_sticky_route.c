@@ -227,6 +227,9 @@ njt_int_t njt_http_sticky_route_get_peer(njt_peer_connection_t *pc,
 		}
 	}*/
     rrp = &sp->rrp;
+    if(rrp == NULL) {
+	return NJT_ERROR;
+    }
     njt_http_upstream_rr_peers_rlock(rrp->peers);
 
     if (sp->tries > 1 || rrp->peers->single || route.len == 0) {

@@ -89,7 +89,8 @@ int64_t njt_calc_element_size(njt_json_element *element, bool contain_key)
     switch (element->type)
     {
         case NJT_JSON_STR:
-            size += element->strval.len;
+            size += NJT_JSON_ELEM_SIZE_STR;
+            size += element->strval.len * 6;
             break;
         case NJT_JSON_BOOL:
             size += NJT_JSON_ELEM_SIZE_BOOL;
@@ -541,7 +542,8 @@ njt_int_t njt_json_2_structure(njt_str_t *json,
     pool = init_pool;
     pjson_manager->pool = pool;
     pjson_manager->free = njt_json_manager_free;
-    pjson_manager->total_size = json->len + njt_pagesize;
+    pjson_manager->total_size = json->len * 6 + njt_pagesize;
+    pjson_manager->total_size *= 2;
 
     json_buf = njt_pnalloc(pool, pjson_manager->total_size);
     if (json_buf == NULL) {
@@ -771,6 +773,7 @@ njt_int_t njt_structure_2_json(njt_json_manager *pjson_manager,
     //calc struct size
     pjson_manager->total_size = njt_calc_element_size(pjson_manager->json_val, false);
     pjson_manager->total_size += njt_pagesize;
+    pjson_manager->total_size *= 2;
    
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                        "============struct2json size: %d", pjson_manager->total_size);

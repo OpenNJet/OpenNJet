@@ -15,13 +15,14 @@
 
 
 
-#define NJT_JSON_ELEM_SIZE_PUNCTUATION  5
-#define NJT_JSON_ELEM_SIZE_BOOL         5
-#define NJT_JSON_ELEM_SIZE_INT          20
+#define NJT_JSON_ELEM_SIZE_PUNCTUATION  10
+#define NJT_JSON_ELEM_SIZE_BOOL         16
+#define NJT_JSON_ELEM_SIZE_INT          32
+#define NJT_JSON_ELEM_SIZE_STR          16
 #define NJT_JSON_ELEM_SIZE_DOUBLE       100
-#define NJT_JSON_ELEM_SIZE_ARRAY        5
-#define NJT_JSON_ELEM_SIZE_OBJ          5
-#define NJT_JSON_ELEM_SIZE_NULL         4
+#define NJT_JSON_ELEM_SIZE_ARRAY        16
+#define NJT_JSON_ELEM_SIZE_OBJ          16
+#define NJT_JSON_ELEM_SIZE_NULL         16
 
 
 #define njt_json_fast_key(key) (u_char*)key,sizeof(key)-1

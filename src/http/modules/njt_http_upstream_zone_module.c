@@ -262,17 +262,18 @@ njt_http_upstream_zone_copy_peers(njt_slab_pool_t *shpool,
 	}
         *peerp = peer;
     }
-
-    if (peers->next == NULL) {
-        goto done;
-    }
+    //by zyg
+    //if (peers->next == NULL) {
+      //  goto done;
+    //}
 
     backup = njt_slab_alloc(shpool, sizeof(njt_http_upstream_rr_peers_t));
     if (backup == NULL) {
         return NULL;
     }
-
-    njt_memcpy(backup, peers->next, sizeof(njt_http_upstream_rr_peers_t));
+    if(peers->next != NULL) {
+    	njt_memcpy(backup, peers->next, sizeof(njt_http_upstream_rr_peers_t));
+    }
 
     backup->name = name;
 
@@ -290,7 +291,7 @@ njt_http_upstream_zone_copy_peers(njt_slab_pool_t *shpool,
 
     peers->next = backup;
 
-done:
+//done:
 
     uscf->peer.data = peers;
 

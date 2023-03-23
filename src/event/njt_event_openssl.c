@@ -566,7 +566,7 @@ njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
             }
         } else {
             BIO     *bio;
-            X509    *x509;
+            X509    *x;
             int ret = 0;
 
             bio = BIO_new_mem_buf(enc_cert->data + sizeof("data:") - 1,
@@ -577,16 +577,16 @@ njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
                 return NJT_ERROR;
             }
 
-            x509 = PEM_read_bio_X509(bio, NULL, NULL, NULL);
-            if (x509 == NULL) {
+            x = PEM_read_bio_X509(bio, NULL, NULL, NULL);
+            if (x == NULL) {
                 njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
                             "cannot load enc certificate: PEM_read_bio_X509 failed");
                 BIO_free(bio);
                 return NJT_ERROR;
             }
 
-            ret = SSL_CTX_use_enc_certificate(ssl->ctx, x509);
-            X509_free(x509);
+            ret = SSL_CTX_use_enc_certificate(ssl->ctx, x);
+            X509_free(x);
             BIO_free(bio);
             if (ret == 0) {
                 njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0, "SSL_CTX_use_enc_certificate load enc cert failed");
