@@ -39,7 +39,7 @@ paths:
           in: query
           type: string
           description: Limits which fields of upstream server groups will be output.
-            If the ¡°<literal>fields</literal>¡± value is empty,
+            If the ï¿½ï¿½<literal>fields</literal>ï¿½ï¿½ value is empty,
             only names of upstreams will be output.
       responses:
         '200':
@@ -156,16 +156,12 @@ paths:
       operationId: postHttpUpstreamServer
       produces:
         - application/json
-      parameters:
-        - in: body
-          name: postHttpUpstreamServer
-          description: Address of a new server and other optional parameters
-            in the JSON format.
-            The ¡°*ID*¡±, ¡°*backup*¡±, and ¡°*service*¡± parameters
-            cannot be changed.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/NginxHTTPUpstreamConfServer'
           required: true
-          schema:
-            $ref: '#/definitions/NginxHTTPUpstreamConfServer'
       responses:
         '201':
           description: Created
@@ -174,24 +170,24 @@ paths:
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
-            invalid ¡°**parameter**¡± value (*UpstreamConfFormatError*),
-            missing ¡°*server*¡± argument (*UpstreamConfFormatError*),
-            unknown parameter ¡°**name**¡± (*UpstreamConfFormatError*),
+            invalid ï¿½ï¿½**parameter**ï¿½ï¿½ value (*UpstreamConfFormatError*),
+            missing ï¿½ï¿½*server*ï¿½ï¿½ argument (*UpstreamConfFormatError*),
+            unknown parameter ï¿½ï¿½**name**ï¿½ï¿½ (*UpstreamConfFormatError*),
             nested object or list (*UpstreamConfFormatError*),
-            ¡°*error*¡± while parsing (*UpstreamBadAddress*),
-            service upstream ¡°*host*¡± may not have port (*UpstreamBadAddress*),
-            service upstream ¡°*host*¡± requires domain name (*UpstreamBadAddress*),
-            invalid ¡°*weight*¡± (*UpstreamBadWeight*),
-            invalid ¡°*max_conns*¡± (*UpstreamBadMaxConns*),
-            invalid ¡°*max_fails*¡± (*UpstreamBadMaxFails*),
-            invalid ¡°*fail_timeout*¡± (*UpstreamBadFailTimeout*),
-            invalid ¡°*slow_start*¡± (*UpstreamBadSlowStart*),
+            ï¿½ï¿½*error*ï¿½ï¿½ while parsing (*UpstreamBadAddress*),
+            service upstream ï¿½ï¿½*host*ï¿½ï¿½ may not have port (*UpstreamBadAddress*),
+            service upstream ï¿½ï¿½*host*ï¿½ï¿½ requires domain name (*UpstreamBadAddress*),
+            invalid ï¿½ï¿½*weight*ï¿½ï¿½ (*UpstreamBadWeight*),
+            invalid ï¿½ï¿½*max_conns*ï¿½ï¿½ (*UpstreamBadMaxConns*),
+            invalid ï¿½ï¿½*max_fails*ï¿½ï¿½ (*UpstreamBadMaxFails*),
+            invalid ï¿½ï¿½*fail_timeout*ï¿½ï¿½ (*UpstreamBadFailTimeout*),
+            invalid ï¿½ï¿½*slow_start*ï¿½ï¿½ (*UpstreamBadSlowStart*),
             reading request body failed *BodyReadError*),
             route is too long (*UpstreamBadRoute*),
-            ¡°*service*¡± is empty (*UpstreamBadService*),
+            ï¿½ï¿½*service*ï¿½ï¿½ is empty (*UpstreamBadService*),
             no resolver defined to resolve (*UpstreamConfNoResolver*),
-            upstream ¡°**name**¡± has no backup (*UpstreamNoBackup*),
-            upstream ¡°**name**¡± memory exhausted (*UpstreamOutOfMemory*)
+            upstream ï¿½ï¿½**name**ï¿½ï¿½ has no backup (*UpstreamNoBackup*),
+            upstream ï¿½ï¿½**name**ï¿½ï¿½ memory exhausted (*UpstreamOutOfMemory*)
           schema:
             $ref: '#/definitions/NginxError'
         '404':
@@ -247,7 +243,7 @@ paths:
             $ref: '#/definitions/NginxError'
         '404':
           description: |
-            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
+            Server with ID ï¿½ï¿½**id**ï¿½ï¿½ does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
@@ -263,15 +259,12 @@ paths:
       operationId: patchHttpUpstreamPeer
       produces:
         - application/json
-      parameters:
-        - in: body
-          name: patchHttpUpstreamServer
-          description: Server parameters, specified in the JSON format.
-            The ¡°*ID*¡±, ¡°*backup*¡±, and ¡°*service*¡± parameters
-            cannot be changed.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/definitions/NginxHTTPUpstreamConfServer'
           required: true
-          schema:
-            $ref: '#/definitions/NginxHTTPUpstreamConfServer'
       responses:
         '200':
           description: Success
@@ -280,28 +273,28 @@ paths:
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
-            invalid ¡°**parameter**¡± value (*UpstreamConfFormatError*),
-            unknown parameter ¡°**name**¡± (*UpstreamConfFormatError*),
+            invalid ï¿½ï¿½**parameter**ï¿½ï¿½ value (*UpstreamConfFormatError*),
+            unknown parameter ï¿½ï¿½**name**ï¿½ï¿½ (*UpstreamConfFormatError*),
             nested object or list (*UpstreamConfFormatError*),
-            ¡°*error*¡± while parsing (*UpstreamBadAddress*),
-            invalid ¡°*server*¡± argument (*UpstreamBadAddress*),
+            ï¿½ï¿½*error*ï¿½ï¿½ while parsing (*UpstreamBadAddress*),
+            invalid ï¿½ï¿½*server*ï¿½ï¿½ argument (*UpstreamBadAddress*),
             invalid server ID (*UpstreamBadServerId*),
-            invalid ¡°*weight*¡± (*UpstreamBadWeight*),
-            invalid ¡°*max_conns*¡± (*UpstreamBadMaxConns*),
-            invalid ¡°*max_fails*¡± (*UpstreamBadMaxFails*),
-            invalid ¡°*fail_timeout*¡± (*UpstreamBadFailTimeout*),
-            invalid ¡°*slow_start*¡± (*UpstreamBadSlowStart*),
+            invalid ï¿½ï¿½*weight*ï¿½ï¿½ (*UpstreamBadWeight*),
+            invalid ï¿½ï¿½*max_conns*ï¿½ï¿½ (*UpstreamBadMaxConns*),
+            invalid ï¿½ï¿½*max_fails*ï¿½ï¿½ (*UpstreamBadMaxFails*),
+            invalid ï¿½ï¿½*fail_timeout*ï¿½ï¿½ (*UpstreamBadFailTimeout*),
+            invalid ï¿½ï¿½*slow_start*ï¿½ï¿½ (*UpstreamBadSlowStart*),
             reading request body failed *BodyReadError*),
             route is too long (*UpstreamBadRoute*),
-            ¡°*service*¡± is empty (*UpstreamBadService*),
-            server ¡°**ID**¡± address is immutable (*UpstreamServerImmutable*),
-            server ¡°*ID*¡± weight is immutable (*UpstreamServerWeightImmutable*),
-            upstream ¡°*name*¡± memory exhausted (*UpstreamOutOfMemory*)
+            ï¿½ï¿½*service*ï¿½ï¿½ is empty (*UpstreamBadService*),
+            server ï¿½ï¿½**ID**ï¿½ï¿½ address is immutable (*UpstreamServerImmutable*),
+            server ï¿½ï¿½*ID*ï¿½ï¿½ weight is immutable (*UpstreamServerWeightImmutable*),
+            upstream ï¿½ï¿½*name*ï¿½ï¿½ memory exhausted (*UpstreamOutOfMemory*)
           schema:
             $ref: '#/definitions/NginxError'
         '404':
           description: |
-            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
+            Server with ID ï¿½ï¿½**id**ï¿½ï¿½ does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
@@ -332,12 +325,12 @@ paths:
           description: |
             Upstream is static (*UpstreamStatic*),
             invalid server ID (*UpstreamBadServerId*),
-            server ¡°**id**¡± not removable (*UpstreamServerImmutable*)
+            server ï¿½ï¿½**id**ï¿½ï¿½ not removable (*UpstreamServerImmutable*)
           schema:
             $ref: '#/definitions/NginxError'
         '404':
           description: |
-            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
+            Server with ID ï¿½ï¿½**id**ï¿½ï¿½ does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
@@ -362,7 +355,7 @@ paths:
           in: query
           type: string
           description: Limits which fields of upstream server groups will be output.
-            If the ¡°<literal>fields</literal>¡± value is empty,
+            If the ï¿½ï¿½<literal>fields</literal>ï¿½ï¿½ value is empty,
             only names of upstreams will be output.
       responses:
         '200':
@@ -479,16 +472,12 @@ paths:
       operationId: postStreamUpstreamServer
       produces:
         - application/json
-      parameters:
-        - in: body
-          name: postStreamUpstreamServer
-          description: Address of a new server and other optional parameters
-            in the JSON format.
-            The ¡°*ID*¡±, ¡°*backup*¡±, and ¡°*service*¡± parameters
-            cannot be changed.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/definitions/NginxStreamUpstreamConfServer'
           required: true
-          schema:
-            $ref: '#/definitions/NginxStreamUpstreamConfServer'
       responses:
         '201':
           description: Created
@@ -497,23 +486,23 @@ paths:
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
-            invalid ¡°**parameter**¡± value (*UpstreamConfFormatError*),
-            missing ¡°*server*¡± argument (*UpstreamConfFormatError*),
-            unknown parameter ¡°**name**¡± (*UpstreamConfFormatError*),
+            invalid ï¿½ï¿½**parameter**ï¿½ï¿½ value (*UpstreamConfFormatError*),
+            missing ï¿½ï¿½*server*ï¿½ï¿½ argument (*UpstreamConfFormatError*),
+            unknown parameter ï¿½ï¿½**name**ï¿½ï¿½ (*UpstreamConfFormatError*),
             nested object or list (*UpstreamConfFormatError*),
-            ¡°*error*¡± while parsing (*UpstreamBadAddress*),
-            no port in server ¡°*host*¡± (*UpstreamBadAddress*),
-            service upstream ¡°*host*¡± may not have port (*UpstreamBadAddress*),
-            service upstream ¡°*host*¡± requires domain name (*UpstreamBadAddress*),
-            invalid ¡°*weight*¡± (*UpstreamBadWeight*),
-            invalid ¡°*max_conns*¡± (*UpstreamBadMaxConns*),
-            invalid ¡°*max_fails*¡± (*UpstreamBadMaxFails*),
-            invalid ¡°*fail_timeout*¡± (*UpstreamBadFailTimeout*),
-            invalid ¡°*slow_start*¡± (*UpstreamBadSlowStart*),
-            ¡°*service*¡± is empty (*UpstreamBadService*),
+            ï¿½ï¿½*error*ï¿½ï¿½ while parsing (*UpstreamBadAddress*),
+            no port in server ï¿½ï¿½*host*ï¿½ï¿½ (*UpstreamBadAddress*),
+            service upstream ï¿½ï¿½*host*ï¿½ï¿½ may not have port (*UpstreamBadAddress*),
+            service upstream ï¿½ï¿½*host*ï¿½ï¿½ requires domain name (*UpstreamBadAddress*),
+            invalid ï¿½ï¿½*weight*ï¿½ï¿½ (*UpstreamBadWeight*),
+            invalid ï¿½ï¿½*max_conns*ï¿½ï¿½ (*UpstreamBadMaxConns*),
+            invalid ï¿½ï¿½*max_fails*ï¿½ï¿½ (*UpstreamBadMaxFails*),
+            invalid ï¿½ï¿½*fail_timeout*ï¿½ï¿½ (*UpstreamBadFailTimeout*),
+            invalid ï¿½ï¿½*slow_start*ï¿½ï¿½ (*UpstreamBadSlowStart*),
+            ï¿½ï¿½*service*ï¿½ï¿½ is empty (*UpstreamBadService*),
             no resolver defined to resolve (*UpstreamConfNoResolver*),
-            upstream ¡°**name**¡± has no backup (*UpstreamNoBackup*),
-            upstream ¡°**name**¡± memory exhausted (*UpstreamOutOfMemory*),
+            upstream ï¿½ï¿½**name**ï¿½ï¿½ has no backup (*UpstreamNoBackup*),
+            upstream ï¿½ï¿½**name**ï¿½ï¿½ memory exhausted (*UpstreamOutOfMemory*),
             reading request body failed *BodyReadError*)
           schema:
             $ref: '#/definitions/NginxError'
@@ -572,7 +561,7 @@ paths:
           description: |
             Unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*),
-            server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*)
+            server with ID ï¿½ï¿½**id**ï¿½ï¿½ does not exist (*UpstreamServerNotFound*)
           schema:
             $ref: '#/definitions/NginxError'
     patch:
@@ -586,15 +575,12 @@ paths:
       operationId: patchStreamUpstreamServer
       produces:
         - application/json
-      parameters:
-        - in: body
-          name: patchStreamUpstreamServer
-          description: Server parameters, specified in the JSON format.
-            The ¡°*ID*¡±, ¡°*backup*¡±, and ¡°*service*¡± parameters
-            cannot be changed.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/definitions/NginxStreamUpstreamConfServer'
           required: true
-          schema:
-            $ref: '#/definitions/NginxStreamUpstreamConfServer'
       responses:
         '200':
           description: Success
@@ -603,28 +589,28 @@ paths:
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
-            invalid ¡°**parameter**¡± value (*UpstreamConfFormatError*),
-            unknown parameter ¡°**name**¡± (*UpstreamConfFormatError*),
+            invalid ï¿½ï¿½**parameter**ï¿½ï¿½ value (*UpstreamConfFormatError*),
+            unknown parameter ï¿½ï¿½**name**ï¿½ï¿½ (*UpstreamConfFormatError*),
             nested object or list (*UpstreamConfFormatError*),
-            ¡°*error*¡± while parsing (*UpstreamBadAddress*),
-            invalid ¡°*server*¡± argument (*UpstreamBadAddress*),
-            no port in server ¡°*host*¡± (*UpstreamBadAddress*),
+            ï¿½ï¿½*error*ï¿½ï¿½ while parsing (*UpstreamBadAddress*),
+            invalid ï¿½ï¿½*server*ï¿½ï¿½ argument (*UpstreamBadAddress*),
+            no port in server ï¿½ï¿½*host*ï¿½ï¿½ (*UpstreamBadAddress*),
             invalid server ID (*UpstreamBadServerId*),
-            invalid ¡°*weight*¡± (*UpstreamBadWeight*),
-            invalid ¡°*max_conns*¡± (*UpstreamBadMaxConns*),
-            invalid ¡°*max_fails*¡± (*UpstreamBadMaxFails*),
-            invalid ¡°*fail_timeout*¡± (*UpstreamBadFailTimeout*),
-            invalid ¡°*slow_start*¡± (*UpstreamBadSlowStart*),
+            invalid ï¿½ï¿½*weight*ï¿½ï¿½ (*UpstreamBadWeight*),
+            invalid ï¿½ï¿½*max_conns*ï¿½ï¿½ (*UpstreamBadMaxConns*),
+            invalid ï¿½ï¿½*max_fails*ï¿½ï¿½ (*UpstreamBadMaxFails*),
+            invalid ï¿½ï¿½*fail_timeout*ï¿½ï¿½ (*UpstreamBadFailTimeout*),
+            invalid ï¿½ï¿½*slow_start*ï¿½ï¿½ (*UpstreamBadSlowStart*),
             reading request body failed *BodyReadError*),
-            ¡°*service*¡± is empty (*UpstreamBadService*),
-            server ¡°**ID**¡± address is immutable (*UpstreamServerImmutable*),
-            server ¡°**ID**¡± weight is immutable (*UpstreamServerWeightImmutable*),
-            upstream ¡°*name*¡± memory exhausted (*UpstreamOutOfMemory*)
+            ï¿½ï¿½*service*ï¿½ï¿½ is empty (*UpstreamBadService*),
+            server ï¿½ï¿½**ID**ï¿½ï¿½ address is immutable (*UpstreamServerImmutable*),
+            server ï¿½ï¿½**ID**ï¿½ï¿½ weight is immutable (*UpstreamServerWeightImmutable*),
+            upstream ï¿½ï¿½*name*ï¿½ï¿½ memory exhausted (*UpstreamOutOfMemory*)
           schema:
             $ref: '#/definitions/NginxError'
         '404':
           description: |
-            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
+            Server with ID ï¿½ï¿½**id**ï¿½ï¿½ does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
@@ -655,12 +641,12 @@ paths:
           description: |
             Upstream is static (*UpstreamStatic*),
             invalid server ID (*UpstreamBadServerId*),
-            server ¡°**id**¡± not removable (*UpstreamServerImmutable*)
+            server ï¿½ï¿½**id**ï¿½ï¿½ not removable (*UpstreamServerImmutable*)
           schema:
             $ref: '#/definitions/NginxError'
         '404':
           description: |
-            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
+            Server with ID ï¿½ï¿½**id**ï¿½ï¿½ does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
@@ -865,7 +851,7 @@ definitions:
         type: string
         description: The name of the shared memory
           <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#zone">zone</a>
-          that keeps the group¡¯s configuration and run-time state.
+          that keeps the groupï¿½ï¿½s configuration and run-time state.
       queue:
         type: object
         description: >
@@ -1016,9 +1002,9 @@ definitions:
           - checking
           - unhealthy
         description: Current state, which may be one of
-          ¡°<code>up</code>¡±, ¡°<code>draining</code>¡±, ¡°<code>down</code>¡±,
-          ¡°<code>unavail</code>¡±, ¡°<code>checking</code>¡±,
-          and ¡°<code>unhealthy</code>¡±.
+          ï¿½ï¿½<code>up</code>ï¿½ï¿½, ï¿½ï¿½<code>draining</code>ï¿½ï¿½, ï¿½ï¿½<code>down</code>ï¿½ï¿½,
+          ï¿½ï¿½<code>unavail</code>ï¿½ï¿½, ï¿½ï¿½<code>checking</code>ï¿½ï¿½,
+          and ï¿½ï¿½<code>unhealthy</code>ï¿½ï¿½.
       active:
         type: integer
         description: The current number of active connections.
@@ -1084,23 +1070,23 @@ definitions:
         properties:
           1xx:
             type: integer
-            description: The number of responses with ¡°<code>1xx</code>¡± status codes.
+            description: The number of responses with ï¿½ï¿½<code>1xx</code>ï¿½ï¿½ status codes.
             readOnly: true
           2xx:
             type: integer
-            description: The number of responses with ¡°<code>2xx</code>¡± status codes.
+            description: The number of responses with ï¿½ï¿½<code>2xx</code>ï¿½ï¿½ status codes.
             readOnly: true
           3xx:
            type: integer
-           description: The number of responses with ¡°<code>3xx</code>¡± status codes.
+           description: The number of responses with ï¿½ï¿½<code>3xx</code>ï¿½ï¿½ status codes.
            readOnly: true
           4xx:
             type: integer
-            description: The number of responses with ¡°<code>4xx</code>¡± status codes.
+            description: The number of responses with ï¿½ï¿½<code>4xx</code>ï¿½ï¿½ status codes.
             readOnly: true
           5xx:
             type: integer
-            description: The number of responses with ¡°<code>5xx</code>¡± status codes.
+            description: The number of responses with ï¿½ï¿½<code>5xx</code>ï¿½ï¿½ status codes.
             readOnly: true
           codes:
             type: object
@@ -1131,7 +1117,7 @@ definitions:
       unavail:
         type: integer
         description: How many times the server became unavailable for client requests
-          (state ¡°<code>unavail</code>¡±) due to the number of unsuccessful
+          (state ï¿½ï¿½<code>unavail</code>ï¿½ï¿½) due to the number of unsuccessful
           attempts reaching the
           <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_fails">max_fails</a>
           threshold.
@@ -1151,7 +1137,7 @@ definitions:
           unhealthy:
             type: integer
             description: How many times the server became unhealthy
-              (state ¡°<code>unhealthy</code>¡±).
+              (state ï¿½ï¿½<code>unhealthy</code>ï¿½ï¿½).
           last_passed:
             type: boolean
             description: Boolean indicating if the last health check request was successful
@@ -1160,15 +1146,15 @@ definitions:
       downtime:
         type: integer
         readOnly: true
-        description: Total time the server was in the ¡°<code>unavail</code>¡±,
-          ¡°<code>checking</code>¡±, and ¡°<code>unhealthy</code>¡± states.
+        description: Total time the server was in the ï¿½ï¿½<code>unavail</code>ï¿½ï¿½,
+          ï¿½ï¿½<code>checking</code>ï¿½ï¿½, and ï¿½ï¿½<code>unhealthy</code>ï¿½ï¿½ states.
       downstart:
         type: string
         format: date-time
         readOnly: true
         description: The time when the server became
-          ¡°<code>unavail</code>¡±, ¡°<code>checking</code>¡±,
-          or ¡°<code>unhealthy</code>¡±,
+          ï¿½ï¿½<code>unavail</code>ï¿½ï¿½, ï¿½ï¿½<code>checking</code>ï¿½ï¿½,
+          or ï¿½ï¿½<code>unhealthy</code>ï¿½ï¿½,
           in the ISO 8601 format with millisecond resolution.
       selected:
         type: string
@@ -1239,7 +1225,7 @@ definitions:
           without the need of restarting njet.
           This requires the
           <a href="https://njet.org/en/docs/http/ngx_http_core_module.html#resolver">resolver</a>
-          directive in the ¡°<code>http</code>¡± block.
+          directive in the ï¿½ï¿½<code>http</code>ï¿½ï¿½ block.
           See also the
           <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#resolve">resolve</a>
           parameter of the HTTP upstream server.
@@ -1455,7 +1441,7 @@ definitions:
         type: string
         description: The name of the shared memory
           <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#zone">zone</a>
-          that keeps the group¡¯s configuration and run-time state.
+          that keeps the groupï¿½ï¿½s configuration and run-time state.
     example:
       dns:
         peers:
@@ -1567,8 +1553,8 @@ definitions:
           - checking
           - unhealthy
         description: Current state, which may be one of
-          ¡°<code>up</code>¡±, ¡°<code>down</code>¡±, ¡°<code>unavail</code>¡±,
-          ¡°<code>checking</code>¡±, or ¡°<code>unhealthy</code>¡±.
+          ï¿½ï¿½<code>up</code>ï¿½ï¿½, ï¿½ï¿½<code>down</code>ï¿½ï¿½, ï¿½ï¿½<code>unavail</code>ï¿½ï¿½,
+          ï¿½ï¿½<code>checking</code>ï¿½ï¿½, or ï¿½ï¿½<code>unhealthy</code>ï¿½ï¿½.
       active:
         type: integer
         description: The current number of connections.
@@ -1656,7 +1642,7 @@ definitions:
       unavail:
         type: integer
         description: How many times the server became unavailable for client connections
-          (state ¡°<code>unavail</code>¡±) due to the number of unsuccessful
+          (state ï¿½ï¿½<code>unavail</code>ï¿½ï¿½) due to the number of unsuccessful
           attempts reaching the
           <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_fails">max_fails</a>
           threshold.
@@ -1678,7 +1664,7 @@ definitions:
           unhealthy:
             type: integer
             description: How many times the server became unhealthy
-              (state ¡°<code>unhealthy</code>¡±).
+              (state ï¿½ï¿½<code>unhealthy</code>ï¿½ï¿½).
             readOnly: true
           last_passed:
             type: boolean
@@ -1689,15 +1675,15 @@ definitions:
       downtime:
         type: integer
         description: Total time the server was in the
-          ¡°<code>unavail</code>¡±, ¡°<code>checking</code>¡±,
-          and ¡°<code>unhealthy</code>¡± states.
+          ï¿½ï¿½<code>unavail</code>ï¿½ï¿½, ï¿½ï¿½<code>checking</code>ï¿½ï¿½,
+          and ï¿½ï¿½<code>unhealthy</code>ï¿½ï¿½ states.
         readOnly: true
       downstart:
         type: string
         format: date-time
         description: The time when the server became
-          ¡°<code>unavail</code>¡±, ¡°<code>checking</code>¡±,
-          or ¡°<code>unhealthy</code>¡±,
+          ï¿½ï¿½<code>unavail</code>ï¿½ï¿½, ï¿½ï¿½<code>checking</code>ï¿½ï¿½,
+          or ï¿½ï¿½<code>unhealthy</code>ï¿½ï¿½,
           in the ISO 8601 format with millisecond resolution.
         readOnly: true
       selected:
@@ -1757,7 +1743,7 @@ definitions:
           without the need of restarting njet.
           This requires the
           <a href="https://njet.org/en/docs/stream/ngx_stream_core_module.html#resolver">resolver</a>
-          directive in the ¡°<code>stream</code>¡± block.
+          directive in the ï¿½ï¿½<code>stream</code>ï¿½ï¿½ block.
           See also the
           <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#resolve">resolve</a>
           parameter of the stream upstream server.
