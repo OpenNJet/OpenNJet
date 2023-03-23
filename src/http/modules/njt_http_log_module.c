@@ -2137,11 +2137,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
             }
             njt_str_null(s);
             ++s;
-            ++log_cf[j].path.len;
             njt_str_copy_pool(pool,(*s),log_cf[j].path,return NJT_ERROR);
-            --log_cf[j].path.len;
-            --s->len;
-            s->data[s->len]='\0';
             if (njt_syslog_process_conf(cf, peer) != NJT_CONF_OK) {
                 goto error ;
             }
