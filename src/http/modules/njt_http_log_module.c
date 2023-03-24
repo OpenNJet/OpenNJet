@@ -1935,6 +1935,7 @@ njt_http_log_init(njt_conf_t *cf)
         *value = njt_http_combined_fmt;
         fmt = lmcf->formats.elts;
         fmt->format = njt_http_combined_fmt;
+        fmt->dynamic = 0;
         if (njt_http_log_compile_format(cf, NULL, fmt->ops, &a, 0)
             != NJT_CONF_OK)
         {
@@ -2287,6 +2288,7 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     njt_str_copy_pool(pool,value[index],data->format, goto err);
     value = cf->args->elts;
 
+    njt_memzero(&old_fmt, sizeof(njt_http_log_fmt_t));
     fmt = lmcf->formats.elts;
     for (i = 0; i < lmcf->formats.nelts; i++) {
         if (fmt[i].name.len == data->name.len
@@ -2294,6 +2296,7 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
             update =1;
             fmt = &fmt[i];
             old_fmt = *fmt;
+            break;
         }
     }
     if(!update){
