@@ -164,6 +164,10 @@ njt_http_upstream_get_ip_hash_peer(njt_peer_connection_t *pc, void *data)
 
     njt_http_upstream_rr_peers_rlock(iphp->rrp.peers);
 
+    if(iphp->rrp.peers->number == 0) {
+	njt_http_upstream_rr_peers_unlock(iphp->rrp.peers);
+	return NJT_BUSY;
+    }
     if (iphp->tries > 20 || iphp->rrp.peers->single) {
         njt_http_upstream_rr_peers_unlock(iphp->rrp.peers);
         return iphp->get_rr_peer(pc, &iphp->rrp);

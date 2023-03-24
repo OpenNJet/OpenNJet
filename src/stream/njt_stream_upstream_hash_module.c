@@ -178,7 +178,11 @@ njt_stream_upstream_get_hash_peer(njt_peer_connection_t *pc, void *data)
                    "get hash peer, try: %ui", pc->tries);
 
     njt_stream_upstream_rr_peers_rlock(hp->rrp.peers);
-
+    
+    if(hp->rrp.peers->number == 0) {
+        njt_stream_upstream_rr_peers_unlock(hp->rrp.peers);
+        return NJT_BUSY;
+    }
     if (hp->tries > 20 || hp->rrp.peers->single || hp->key.len == 0) {
         njt_stream_upstream_rr_peers_unlock(hp->rrp.peers);
         return hp->get_rr_peer(pc, &hp->rrp);

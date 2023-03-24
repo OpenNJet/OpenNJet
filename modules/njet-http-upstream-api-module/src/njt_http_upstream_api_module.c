@@ -75,6 +75,8 @@ njt_http_upstream_api_init(njt_conf_t *cf);
 
 static njt_shm_zone_t *
 njt_shared_memory_get(njt_cycle_t *cycle, njt_str_t *name, size_t size, void *tag);
+static njt_int_t
+njt_http_upstream_api_read_json(njt_http_request_t *r,njt_str_t *json_str);
 
 
 typedef njt_int_t (*njt_upstream_api_process_get_pt)(njt_http_request_t *r,
@@ -1937,7 +1939,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
     njt_stream_upstream_api_ctx_t       *ctx;
     njt_json_manager                   json_body;
     njt_str_t                          json_str;
-    njt_chain_t                        *body_chain;
+    //njt_chain_t                        *body_chain;
     njt_chain_t                        out;
     njt_int_t                          rc,pre_rc;
     ssize_t                            len;
@@ -1967,19 +1969,16 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
     rc = NJT_OK;
     pre_rc = NJT_OK;
 
-    body_chain = r->request_body->bufs;
-    if (body_chain && body_chain->next) {
-        /*The post body is too large*/
-        rc = NJT_HTTP_UPS_API_TOO_LARGE_BODY;
-        goto out;
-    }
+
 
     out.next = NULL;
     out.buf = NULL;
 
-    /*check the sanity of the json body*/
-    json_str.data = body_chain->buf->pos;
-    json_str.len = body_chain->buf->last - body_chain->buf->pos;
+    rc = njt_http_upstream_api_read_json(r,&json_str);
+	if(rc == NJT_ERROR) {
+		rc = NJT_HTTP_UPS_API_INVALID_JSON_PARSE;
+		goto out;
+	}
 
     rc = njt_json_2_structure(&json_str, &json_body, r->pool);
     if (rc != NJT_OK) {
@@ -2308,9 +2307,11 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
     out.next = NULL;
     out.buf = NULL;
 
-    /*check the sanity of the json body*/
-    json_str.data = body_chain->buf->pos;
-    json_str.len = body_chain->buf->last - body_chain->buf->pos;
+    rc = njt_http_upstream_api_read_json(r,&json_str);
+	if(rc == NJT_ERROR) {
+		rc = NJT_HTTP_UPS_API_INVALID_JSON_PARSE;
+		goto out;
+	}
 
     rc = njt_json_2_structure(&json_str, &json_body, r->pool);
     if (rc != NJT_OK) {
@@ -2757,9 +2758,11 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
     out.next = NULL;
     out.buf = NULL;
 
-    /*check the sanity of the json body*/
-    json_str.data = body_chain->buf->pos;
-    json_str.len = body_chain->buf->last - body_chain->buf->pos;
+    rc = njt_http_upstream_api_read_json(r,&json_str);
+	if(rc == NJT_ERROR) {
+		rc = NJT_HTTP_UPS_API_INVALID_JSON_PARSE;
+		goto out;
+	}
 
     rc = njt_json_2_structure(&json_str, &json_body, r->pool);
     if (rc != NJT_OK) {
@@ -3132,9 +3135,11 @@ njt_http_upstream_api_post(njt_http_request_t *r)
     out.next = NULL;
     out.buf = NULL;
 
-    /*check the sanity of the json body*/
-    json_str.data = body_chain->buf->pos;
-    json_str.len = body_chain->buf->last - body_chain->buf->pos;
+     rc = njt_http_upstream_api_read_json(r,&json_str);
+	if(rc == NJT_ERROR) {
+		rc = NJT_HTTP_UPS_API_INVALID_JSON_PARSE;
+		goto out;
+	}
 
     rc = njt_json_2_structure(&json_str, &json_body, r->pool);
     if (rc != NJT_OK) {
@@ -5299,3 +5304,49 @@ njt_http_upstream_api_init_worker(njt_cycle_t *cycle)
     return NJT_OK;
 }
 
+
+static njt_int_t
+njt_http_upstream_api_read_json(njt_http_request_t *r,njt_str_t *json_str){
+
+	njt_chain_t *body_chain,*tmp_chain;
+    //njt_int_t rc;
+	njt_uint_t len,size;
+
+	body_chain = r->request_body->bufs;
+    body_chain = r->request_body->bufs;
+    if(body_chain == NULL){
+        return NJT_ERROR;
+    }
+
+
+	
+    /*check the sanity of the json body*/
+    json_str->data = body_chain->buf->pos;
+    json_str->len = body_chain->buf->last - body_chain->buf->pos;
+	if(json_str->len < 2 ){
+       return NJT_ERROR;
+    }
+
+	len = 0 ;
+    tmp_chain = body_chain;
+    while (tmp_chain!= NULL){
+        len += tmp_chain->buf->last - tmp_chain->buf->pos;
+        tmp_chain = tmp_chain->next;
+    }
+    json_str->len = len;
+    json_str->data = njt_pcalloc(r->pool,len);
+    if(json_str->data == NULL){
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "could not alloc buffer in function %s", __func__);
+        return NJT_ERROR;
+    }
+    len = 0;
+    tmp_chain = r->request_body->bufs;
+    while (tmp_chain!= NULL){
+        size = tmp_chain->buf->last-tmp_chain->buf->pos;
+        njt_memcpy(json_str->data + len,tmp_chain->buf->pos,size);
+        tmp_chain = tmp_chain->next;
+        len += size;
+    }
+	return NJT_OK;
+}

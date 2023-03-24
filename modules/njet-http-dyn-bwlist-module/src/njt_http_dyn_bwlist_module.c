@@ -412,6 +412,7 @@ static njt_str_t njt_dyn_bwlist_dump_access_conf(njt_cycle_t *cycle, njt_pool_t 
     njt_int_t rc;
     njt_array_t *array;
     njt_str_t json, *tmp_str;
+    njt_http_server_name_t *server_name;
     njt_json_manager json_manager;
     njt_json_element *srvs, *srv, *subs, *sub;
 
@@ -459,10 +460,10 @@ static njt_str_t njt_dyn_bwlist_dump_access_conf(njt_cycle_t *cycle, njt_pool_t 
             goto err;
         }
 
-        tmp_str = cscfp[i]->server_names.elts;
+        server_name = cscfp[i]->server_names.elts;
         for (j = 0; j < cscfp[i]->server_names.nelts; ++j)
         {
-            sub = njt_json_str_element(pool, njt_json_null_key, &tmp_str[j]);
+            sub = njt_json_str_element(pool, njt_json_null_key, &server_name[j].name);
             if (sub == NULL)
             {
                 goto err;
