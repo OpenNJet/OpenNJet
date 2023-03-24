@@ -538,7 +538,7 @@ njt_stream_upstream_get_round_robin_peer(njt_peer_connection_t *pc, void *data)
 
 failed:
 
-    if (peers->next) {
+    if (peers->next && peers->next->number > 0) {
 
         njt_log_debug0(NJT_LOG_DEBUG_STREAM, pc->log, 0, "backup servers");
 
@@ -600,7 +600,7 @@ njt_stream_upstream_get_peer(njt_stream_upstream_rr_peer_data_t *rrp)
         if (rrp->tried[n] & m) {
             continue;
         }
-	/*
+	
         if (peer->down) {
             continue;
         }
@@ -614,9 +614,9 @@ njt_stream_upstream_get_peer(njt_stream_upstream_rr_peer_data_t *rrp)
 
         if (peer->max_conns && peer->conns >= peer->max_conns) {
             continue;
-        }*/
+        }
 	if (njt_stream_upstream_pre_handle_peer(peer) == NJT_ERROR) {
-            continue;
+            //continue;
         }
 	peer->current_weight += peer->effective_weight;
         total += peer->effective_weight;
@@ -653,7 +653,7 @@ njt_stream_upstream_get_peer(njt_stream_upstream_rr_peer_data_t *rrp)
             peer->effective_weight++;
         }
 
-        if (best == NULL || peer_slow_weight > best_slow_weight) {
+        if (best == NULL || (peer->slow_start>0?peer_slow_weight:peer->current_weight) > (best->slow_start>0?best_slow_weight:best->current_weight)) {
             best = peer;
             p = i;
         }

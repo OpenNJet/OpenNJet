@@ -119,7 +119,8 @@ int64_t njt_calc_element_size(njt_json_element *element, bool contain_key)
     size += NJT_JSON_ELEM_SIZE_PUNCTUATION;
 
     if(contain_key){
-        size += element->key.len;
+        size += element->key.len * 6;
+        size += NJT_JSON_ELEM_SIZE_STR;
         size += NJT_JSON_ELEM_SIZE_PUNCTUATION;
     }
 
@@ -528,8 +529,8 @@ njt_int_t njt_json_2_structure(njt_str_t *json,
     njt_pool_t *pool = NULL;
     njt_json_doc *doc;
     njt_json_val *root;
-    u_char     *json_buf;
-    njt_json_alc alc;
+    // u_char     *json_buf;
+    // njt_json_alc alc;
     njt_json_element *json_val;
 
     if (json == NULL || pjson_manager == NULL || init_pool == NULL)
@@ -542,22 +543,27 @@ njt_int_t njt_json_2_structure(njt_str_t *json,
     pool = init_pool;
     pjson_manager->pool = pool;
     pjson_manager->free = njt_json_manager_free;
-    pjson_manager->total_size = json->len * 6 + njt_pagesize;
-    pjson_manager->total_size *= 2;
+    // pjson_manager->total_size = json->len * 6 + njt_pagesize;
+    // pjson_manager->total_size *= 2;
 
-    json_buf = njt_pnalloc(pool, pjson_manager->total_size);
-    if (json_buf == NULL) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                 "njt_json_2_structure json buf alloc fail");
-        goto cleanup;
-    }
+    // json_buf = njt_pnalloc(pool, pjson_manager->total_size);
+    // if (json_buf == NULL) {
+    //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+    //              "njt_json_2_structure json buf alloc fail");
+    //     goto cleanup;
+    // }
     
-    njt_json_alc_pool_init(&alc, json_buf, pjson_manager->total_size);
+    // njt_json_alc_pool_init(&alc, json_buf, pjson_manager->total_size);
 
-    //doc = njt_json_read((const char*)json->data,json->len, 0);
-    doc = njt_json_read_opts((char *)json->data, json->len, 0, &alc, NULL);
+    // doc = njt_json_read_opts((char *)json->data, json->len, 0, &alc, NULL);
+    doc = njt_json_read_opts((char *)json->data, json->len, 0, NULL, NULL);
+    if (doc == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                 "njt_json_2_structure get doc fail");
+        return NJT_ERROR;
+    }
+
     root = njt_json_doc_get_root(doc);
-
     if (root == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                  "njt_json_2_structure get root fail");
@@ -605,10 +611,11 @@ njt_int_t njt_json_2_structure(njt_str_t *json,
         goto cleanup;
     }
 
+    njt_json_doc_free(doc);
     return NJT_OK;
 
 cleanup:
-    //pjson_manager->free(pjson_manager);
+    njt_json_doc_free(doc);
     return NJT_ERROR;
 }
 
