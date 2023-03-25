@@ -935,19 +935,9 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 				}
 				rc = njt_http_parser_sub_location_data(location_info,sub_location->sub_location_array,out_items);
 				if(rc != NJT_OK ) {
+					njt_str_set(&location_info->msg, "locations field error!");
 					return NJT_ERROR;
-				} else {
-					njt_uint_t i;
-					njt_http_sub_location_info_t *loc,*loc_array;
-					loc_array  = location_info->location_array->elts;
-					for(i=0; i < location_info->location_array->nelts; i++) {
-						loc = &loc_array[i];
-						if(loc) {
-							printf("123");
-						}
-
-					}
-				}
+				} 
 			}
 	}
 
@@ -1037,6 +1027,10 @@ njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str) {
 	} else {
 		rc = njt_http_parser_sub_location_data(location_info,location_info->location_array,items);
 		if(rc != NJT_OK ) {
+			goto end;
+		}
+		if(location_info->location_array->nelts == 0) {
+			njt_str_set(&location_info->msg, "locations []  error!!!");
 			goto end;
 		}
 	}
@@ -1207,14 +1201,9 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 
 			if(loc->sub_location_array != NULL && loc->sub_location_array->nelts > 0 ){
 				njt_http_sub_location_write_data(fd,location_info,loc->sub_location_array,1);
-				if(write_endtag == 1) {
-					rlen = njt_write_fd(fd, tag.data, tag.len);
-					if(rlen < 0) {
-						return NJT_ERROR;
-					}
-				}
 
-			} else {
+			}
+			if(i != 0){
 				rlen = njt_write_fd(fd, tag.data, tag.len);
 				if(rlen < 0) {
 					return NJT_ERROR;
@@ -1226,6 +1215,12 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 			
 		}
 	}
+	if (location_array->nelts > 0) {
+		rlen = njt_write_fd(fd, tag.data, tag.len);
+                                if(rlen < 0) {
+                                        return NJT_ERROR;
+                                }
+	}
 	return NJT_OK;
 
 }
@@ -1236,6 +1231,7 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
     njt_fd_t fd;
     njt_int_t  rc; 
     njt_int_t idx;
+    //njt_uint_t i;
     
     u_char *p; // *data;
     njt_http_core_srv_conf_t *cscf;
@@ -1243,7 +1239,7 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
     njt_str_t location_file = njt_string("add_location.txt");
     njt_str_t location_path;
     njt_str_t location_full_file;
-	njt_str_t  tag = njt_string("\n}\n");
+	//njt_str_t  tag = njt_string("\n}\n");
 	int32_t  rlen;
 	//njt_http_sub_location_info_t **loc_array;
     
@@ -1284,8 +1280,8 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
 			}
 		}
 	rc = njt_http_sub_location_write_data(fd,location_info,location_info->location_array,0);
-	if(location_info->location_array->nelts > 1) {
-		rlen = njt_write_fd(fd, tag.data, tag.len);
+	if (location_info->location_array->nelts > 1) {
+		rlen = 1; //njt_write_fd(fd, tag.data, tag.len);
 					if(rlen < 0) {
 						return;
 					}
