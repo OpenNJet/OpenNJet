@@ -1,0 +1,181 @@
+openapi: 3.0.3
+info:
+  title: dyn config api
+  description: 动态config 开关
+  version: 1.0.0
+
+servers:
+  - url: '/config/1'
+paths:
+  /config/:
+    get:
+      tags:
+        - dyn config module
+      summary: Returns a list of allow dynamic conf module
+      description: Returns a list of allow dynamic conf module
+      operationId: getDynConfModuleList
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleList'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+  /config/http_log:
+    put:
+      tags:
+        - dyn log config
+      summary: set module conf
+      description: set module conf
+      operationId: setDynModuleConf
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+          required: true
+      responses:
+        '204':
+          description: Success
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+    get:
+      tags:
+        - dyn log config
+      summary: return dynamic module conf
+      description: get module conf
+      operationId: getDynModuleConf
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+
+
+        ###DEFINITIONS
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+
+    ModuleList:
+      title: module list
+      description: 支持动态配置的模块列表
+      type: array
+      items:
+        type: string
+
+    MainConf:
+      title: main Conf
+      description: 动态access log main 级别配置
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServerConf'
+        accessLogFormats:
+          type: array
+          items:
+            $ref: '#/components/schemas/FormatConf'
+
+    FormatConf:
+      title: FormatConf
+      description: 动态access format 配置
+      type: object
+      properties:
+        name:
+          type: string
+          description: access log format 名称
+          example: test
+        format:
+          type: string
+          description: access log 格式字符串
+          example: $remote_addr - $remote_user [$time_local] \"$request\" $status $body_bytes_sent \"$http_referer\" \"$http_user_agent\"
+        escape:
+          type: string
+          description:  access log 转义格式
+          example: default
+
+
+    ServerConf:
+      title:     ServerConf
+      description: 动态access log server 级别配置
+      type: object
+      properties:
+        listens:
+          type: array
+          description: server listen 端口列表
+          items:
+            type: string
+        serverNames:
+          type: array
+          description: server Name 列表.
+          items:
+            type: string
+        locations:
+          $ref: '#/components/schemas/LocationLogConf'
+    AccessLogConf:
+      title:     AccessLogConf
+      description: access log 配置
+      type: object
+      properties:
+        path:
+          type: string
+          description: access log 写入的位置
+        formatName:
+          type: string
+          description: access log 格式名称
+
+
+    LocationLogConf:
+      title: LocationLogConf
+      description: location 级别 access log 配置开关信息
+      type: object
+      properties:
+        location:
+          type: string
+          description: location 名称 .
+          example: /demo
+        accessLogOn:
+          type: boolean
+          description: access log 开关状态 .
+          example: false
+        accessLogs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessLogConf'
+        locations:
+          $ref: '#/components/schemas/LocationLogConf'
+

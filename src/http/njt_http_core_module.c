@@ -1452,7 +1452,9 @@ njt_http_core_find_location(njt_http_request_t *r)
 
 #if (NJT_PCRE)
         clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
-
+	if(clcf == NULL) {
+	   return NJT_DECLINED;
+	}
         noregex = clcf->noregex;
 #endif
 
@@ -3213,8 +3215,8 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     }
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
-    cf->pool = old_pool;
-    cf->temp_pool = old_temp_pool;
+    //cf->pool = old_pool;  //zyg
+    //cf->temp_pool = old_temp_pool;
 #endif
     //end
     clcf = ctx->loc_conf[njt_http_core_module.ctx_index];

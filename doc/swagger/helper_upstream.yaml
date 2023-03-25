@@ -1,0 +1,1839 @@
+swagger: '2.0'
+info:
+  version: '8.0'
+  title: NJET REST API
+  description: NJET REST
+    [API](https://njet.org/en/docs/http/ngx_http_api_module.html)
+    provides access to NJET status information,
+    on-the-fly configuration of upstream servers and
+    key-value pairs management for
+    [http](https://njet.org/en/docs/http/ngx_http_keyval_module.html) and
+    [stream](https://njet.org/en/docs/stream/ngx_stream_keyval_module.html).
+basePath: /api/8
+servers:
+  - url: 'http://192.168.40.140//api/8'
+tags:
+  - name: HTTP Upstreams
+  - name: Stream Upstreams
+  - name: Method GET
+  - name: Method POST
+  - name: Method PATCH
+  - name: Method DELETE
+schemes:
+  - http
+  - https
+paths:
+  /http/upstreams/:
+    get:
+      tags:
+        - HTTP Upstreams
+        - Method GET
+      summary: Return status of all HTTP upstream server groups
+      description: Returns status of each HTTP upstream server group
+        and its servers.
+      operationId: getHttpUpstreams
+      produces:
+        - application/json
+      parameters:
+        - name: fields
+          in: query
+          type: string
+          description: Limits which fields of upstream server groups will be output.
+            If the ��<literal>fields</literal>�� value is empty,
+            only names of upstreams will be output.
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NginxHTTPUpstreamMap'
+        '404':
+          description: Unknown version (*UnknownVersion*)
+          schema:
+            $ref: '#/definitions/NginxError'
+  '/http/upstreams/{httpUpstreamName}/':
+    parameters:
+    - name: httpUpstreamName
+      in: path
+      description: The name of an HTTP upstream server group.
+      required: true
+      type: string
+    get:
+      tags:
+        - HTTP Upstreams
+        - Method GET
+      summary: Return status of an HTTP upstream server group
+      description: Returns status of a particular HTTP upstream server group
+        and its servers.
+      operationId: getHttpUpstreamName
+      produces:
+        - application/json
+      parameters:
+        - name: fields
+          in: query
+          type: string
+          description: Limits which fields of the upstream server group will be output.
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NginxHTTPUpstream'
+        '400':
+          description: Upstream is static (*UpstreamStatic*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+    delete:
+      tags:
+        - HTTP Upstreams
+        - Method DELETE
+      summary: Reset statistics of an HTTP upstream server group
+      description: Resets the statistics for each upstream server
+        in an upstream server group and queue statistics.
+      operationId: deleteHttpUpstreamStat
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: Success
+        '400':
+          description: Upstream is static (*UpstreamStatic*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '405':
+          description: Method disabled (*MethodDisabled*)
+          schema:
+            $ref: '#/definitions/NginxError'
+  '/http/upstreams/{httpUpstreamName}/servers/':
+    parameters:
+      - name: httpUpstreamName
+        in: path
+        description: The name of an upstream server group.
+        required: true
+        type: string
+    get:
+      tags:
+        - HTTP Upstreams
+        - Method GET
+      summary: Return configuration of all servers in an HTTP upstream server group
+      description: Returns configuration of each server
+        in a particular HTTP upstream server group.
+      operationId: getHttpUpstreamServers
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NginxHTTPUpstreamConfServerMap'
+        '400':
+          description: Upstream is static (*UpstreamStatic*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+    post:
+      tags:
+        - HTTP Upstreams
+        - Method POST
+      summary: Add a server to an HTTP upstream server group
+      description: Adds a new server to an HTTP upstream server group.
+        Server parameters are specified in the JSON format.
+      operationId: postHttpUpstreamServer
+      produces:
+        - application/json
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/definitions/NginxHTTPUpstreamConfServer'
+          required: true
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/NginxHTTPUpstreamConfServer'
+        '400':
+          description: |
+            Upstream is static (*UpstreamStatic*),
+            invalid ��**parameter**�� value (*UpstreamConfFormatError*),
+            missing ��*server*�� argument (*UpstreamConfFormatError*),
+            unknown parameter ��**name**�� (*UpstreamConfFormatError*),
+            nested object or list (*UpstreamConfFormatError*),
+            ��*error*�� while parsing (*UpstreamBadAddress*),
+            service upstream ��*host*�� may not have port (*UpstreamBadAddress*),
+            service upstream ��*host*�� requires domain name (*UpstreamBadAddress*),
+            invalid ��*weight*�� (*UpstreamBadWeight*),
+            invalid ��*max_conns*�� (*UpstreamBadMaxConns*),
+            invalid ��*max_fails*�� (*UpstreamBadMaxFails*),
+            invalid ��*fail_timeout*�� (*UpstreamBadFailTimeout*),
+            invalid ��*slow_start*�� (*UpstreamBadSlowStart*),
+            reading request body failed *BodyReadError*),
+            route is too long (*UpstreamBadRoute*),
+            ��*service*�� is empty (*UpstreamBadService*),
+            no resolver defined to resolve (*UpstreamConfNoResolver*),
+            upstream ��**name**�� has no backup (*UpstreamNoBackup*),
+            upstream ��**name**�� memory exhausted (*UpstreamOutOfMemory*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '405':
+          description: Method disabled (*MethodDisabled*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '409':
+          description: Entry exists (*EntryExists*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '415':
+          description: JSON error (*JsonError*)
+          schema:
+            $ref: '#/definitions/NginxError'
+  '/http/upstreams/{httpUpstreamName}/servers/{httpUpstreamServerId}':
+    parameters:
+      - name: httpUpstreamName
+        in: path
+        description: The name of the upstream server group.
+        required: true
+        type: string
+      - name: httpUpstreamServerId
+        in: path
+        description: The ID of the server.
+        required: true
+        type: string
+    get:
+      tags:
+        - HTTP Upstreams
+        - Method GET
+      summary: Return configuration of a server in an HTTP upstream server group
+      description: Returns configuration of a particular server
+        in the HTTP upstream server group.
+      operationId: getHttpUpstreamPeer
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NginxHTTPUpstreamConfServer'
+        '400':
+          description: |
+            Upstream is static (*UpstreamStatic*),
+            invalid server ID (*UpstreamBadServerId*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Server with ID ��**id**�� does not exist (*UpstreamServerNotFound*),
+            unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+    patch:
+      tags:
+        - HTTP Upstreams
+        - Method PATCH
+      summary: Modify a server in an HTTP upstream server group
+      description: Modifies settings of a particular server
+        in an HTTP upstream server group.
+        Server parameters are specified in the JSON format.
+      operationId: patchHttpUpstreamPeer
+      produces:
+        - application/json
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/definitions/NginxHTTPUpstreamConfServer'
+          required: true
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NginxHTTPUpstreamConfServer'
+        '400':
+          description: |
+            Upstream is static (*UpstreamStatic*),
+            invalid ��**parameter**�� value (*UpstreamConfFormatError*),
+            unknown parameter ��**name**�� (*UpstreamConfFormatError*),
+            nested object or list (*UpstreamConfFormatError*),
+            ��*error*�� while parsing (*UpstreamBadAddress*),
+            invalid ��*server*�� argument (*UpstreamBadAddress*),
+            invalid server ID (*UpstreamBadServerId*),
+            invalid ��*weight*�� (*UpstreamBadWeight*),
+            invalid ��*max_conns*�� (*UpstreamBadMaxConns*),
+            invalid ��*max_fails*�� (*UpstreamBadMaxFails*),
+            invalid ��*fail_timeout*�� (*UpstreamBadFailTimeout*),
+            invalid ��*slow_start*�� (*UpstreamBadSlowStart*),
+            reading request body failed *BodyReadError*),
+            route is too long (*UpstreamBadRoute*),
+            ��*service*�� is empty (*UpstreamBadService*),
+            server ��**ID**�� address is immutable (*UpstreamServerImmutable*),
+            server ��*ID*�� weight is immutable (*UpstreamServerWeightImmutable*),
+            upstream ��*name*�� memory exhausted (*UpstreamOutOfMemory*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Server with ID ��**id**�� does not exist (*UpstreamServerNotFound*),
+            unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '405':
+          description: Method disabled (*MethodDisabled*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '415':
+          description: JSON error (*JsonError*)
+          schema:
+            $ref: '#/definitions/NginxError'
+    delete:
+      tags:
+        - HTTP Upstreams
+        - Method DELETE
+      summary: Remove a server from an HTTP upstream server group
+      description: Removes a server from an HTTP upstream server group.
+      operationId: deleteHttpUpstreamServer
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NginxHTTPUpstreamConfServerMap'
+        '400':
+          description: |
+            Upstream is static (*UpstreamStatic*),
+            invalid server ID (*UpstreamBadServerId*),
+            server ��**id**�� not removable (*UpstreamServerImmutable*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Server with ID ��**id**�� does not exist (*UpstreamServerNotFound*),
+            unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '405':
+          description: Method disabled (*MethodDisabled*)
+          schema:
+            $ref: '#/definitions/NginxError'
+  /stream/upstreams/:
+    get:
+      tags:
+        - Stream Upstreams
+        - Method GET
+      summary: Return status of all stream upstream server groups
+      description: Returns status of each stream upstream server group
+        and its servers.
+      operationId: getStreamUpstreams
+      produces:
+        - application/json
+      parameters:
+        - name: fields
+          in: query
+          type: string
+          description: Limits which fields of upstream server groups will be output.
+            If the ��<literal>fields</literal>�� value is empty,
+            only names of upstreams will be output.
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NginxStreamUpstreamMap'
+        '404':
+          description: Unknown version (*UnknownVersion*)
+          schema:
+            $ref: '#/definitions/NginxError'
+  '/stream/upstreams/{streamUpstreamName}/':
+    parameters:
+    - name: streamUpstreamName
+      in: path
+      description: The name of a stream upstream server group.
+      required: true
+      type: string
+    get:
+      tags:
+        - Stream Upstreams
+        - Method GET
+      summary: Return status of a stream upstream server group
+      description: Returns status of a particular stream upstream server group
+        and its servers.
+      operationId: getStreamUpstream
+      produces:
+        - application/json
+      parameters:
+        - name: fields
+          in: query
+          type: string
+          description: Limits which fields of the upstream server group will be output.
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NginxStreamUpstream'
+        '400':
+          description: Upstream is static (*UpstreamStatic*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+    delete:
+      tags:
+        - Stream Upstreams
+        - Method DELETE
+      summary: Reset statistics of a stream upstream server group
+      description: Resets the statistics for each upstream server
+        in an upstream server group.
+      operationId: deleteStreamUpstreamStat
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: Success
+        '400':
+          description: Upstream is static (*UpstreamStatic*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '405':
+          description: Method disabled (*MethodDisabled*)
+          schema:
+            $ref: '#/definitions/NginxError'
+  '/stream/upstreams/{streamUpstreamName}/servers/':
+    parameters:
+      - name: streamUpstreamName
+        in: path
+        description: The name of an upstream server group.
+        required: true
+        type: string
+    get:
+      tags:
+        - Stream Upstreams
+        - Method GET
+      summary: Return configuration of all servers in a stream upstream server group
+      description: Returns configuration of each server
+        in a particular stream upstream server group.
+      operationId: getStreamUpstreamServers
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NginxStreamUpstreamConfServerMap'
+        '400':
+          description: Upstream is static (*UpstreamStatic*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+    post:
+      tags:
+        - Stream Upstreams
+        - Method POST
+      summary: Add a server to a stream upstream server group
+      description: Adds a new server to a stream upstream server group.
+        Server parameters are specified in the JSON format.
+      operationId: postStreamUpstreamServer
+      produces:
+        - application/json
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/definitions/NginxStreamUpstreamConfServer'
+          required: true
+      responses:
+        '201':
+          description: Created
+          schema:
+            $ref: '#/definitions/NginxStreamUpstreamConfServer'
+        '400':
+          description: |
+            Upstream is static (*UpstreamStatic*),
+            invalid ��**parameter**�� value (*UpstreamConfFormatError*),
+            missing ��*server*�� argument (*UpstreamConfFormatError*),
+            unknown parameter ��**name**�� (*UpstreamConfFormatError*),
+            nested object or list (*UpstreamConfFormatError*),
+            ��*error*�� while parsing (*UpstreamBadAddress*),
+            no port in server ��*host*�� (*UpstreamBadAddress*),
+            service upstream ��*host*�� may not have port (*UpstreamBadAddress*),
+            service upstream ��*host*�� requires domain name (*UpstreamBadAddress*),
+            invalid ��*weight*�� (*UpstreamBadWeight*),
+            invalid ��*max_conns*�� (*UpstreamBadMaxConns*),
+            invalid ��*max_fails*�� (*UpstreamBadMaxFails*),
+            invalid ��*fail_timeout*�� (*UpstreamBadFailTimeout*),
+            invalid ��*slow_start*�� (*UpstreamBadSlowStart*),
+            ��*service*�� is empty (*UpstreamBadService*),
+            no resolver defined to resolve (*UpstreamConfNoResolver*),
+            upstream ��**name**�� has no backup (*UpstreamNoBackup*),
+            upstream ��**name**�� memory exhausted (*UpstreamOutOfMemory*),
+            reading request body failed *BodyReadError*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '405':
+          description: Method disabled (*MethodDisabled*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '409':
+          description: Entry exists (*EntryExists*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '415':
+          description: JSON error (*JsonError*)
+          schema:
+            $ref: '#/definitions/NginxError'
+  '/stream/upstreams/{streamUpstreamName}/servers/{streamUpstreamServerId}':
+    parameters:
+      - name: streamUpstreamName
+        in: path
+        description: The name of the upstream server group.
+        required: true
+        type: string
+      - name: streamUpstreamServerId
+        in: path
+        description: The ID of the server.
+        required: true
+        type: string
+    get:
+      tags:
+        - Stream Upstreams
+        - Method GET
+      summary: Return configuration of a server in a stream upstream server group
+      description: Returns configuration of a particular server
+        in the stream upstream server group.
+      operationId: getStreamUpstreamServer
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NginxStreamUpstreamConfServer'
+        '400':
+          description: |
+            Upstream is static (*UpstreamStatic*),
+            invalid server ID (*UpstreamBadServerId*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*),
+            server with ID ��**id**�� does not exist (*UpstreamServerNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+    patch:
+      tags:
+        - Stream Upstreams
+        - Method PATCH
+      summary: Modify a server in a stream upstream server group
+      description: Modifies settings of a particular server
+        in a stream upstream server group.
+        Server parameters are specified in the JSON format.
+      operationId: patchStreamUpstreamServer
+      produces:
+        - application/json
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/definitions/NginxStreamUpstreamConfServer'
+          required: true
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NginxStreamUpstreamConfServer'
+        '400':
+          description: |
+            Upstream is static (*UpstreamStatic*),
+            invalid ��**parameter**�� value (*UpstreamConfFormatError*),
+            unknown parameter ��**name**�� (*UpstreamConfFormatError*),
+            nested object or list (*UpstreamConfFormatError*),
+            ��*error*�� while parsing (*UpstreamBadAddress*),
+            invalid ��*server*�� argument (*UpstreamBadAddress*),
+            no port in server ��*host*�� (*UpstreamBadAddress*),
+            invalid server ID (*UpstreamBadServerId*),
+            invalid ��*weight*�� (*UpstreamBadWeight*),
+            invalid ��*max_conns*�� (*UpstreamBadMaxConns*),
+            invalid ��*max_fails*�� (*UpstreamBadMaxFails*),
+            invalid ��*fail_timeout*�� (*UpstreamBadFailTimeout*),
+            invalid ��*slow_start*�� (*UpstreamBadSlowStart*),
+            reading request body failed *BodyReadError*),
+            ��*service*�� is empty (*UpstreamBadService*),
+            server ��**ID**�� address is immutable (*UpstreamServerImmutable*),
+            server ��**ID**�� weight is immutable (*UpstreamServerWeightImmutable*),
+            upstream ��*name*�� memory exhausted (*UpstreamOutOfMemory*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Server with ID ��**id**�� does not exist (*UpstreamServerNotFound*),
+            unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '405':
+          description: Method disabled (*MethodDisabled*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '415':
+          description: JSON error (*JsonError*)
+          schema:
+            $ref: '#/definitions/NginxError'
+    delete:
+      tags:
+        - Stream Upstreams
+        - Method DELETE
+      summary: Remove a server from a stream upstream server group
+      description: Removes a server from a stream server group.
+      operationId: deleteStreamUpstreamServer
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/NginxStreamUpstreamConfServerMap'
+        '400':
+          description: |
+            Upstream is static (*UpstreamStatic*),
+            invalid server ID (*UpstreamBadServerId*),
+            server ��**id**�� not removable (*UpstreamServerImmutable*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '404':
+          description: |
+            Server with ID ��**id**�� does not exist (*UpstreamServerNotFound*),
+            unknown version (*UnknownVersion*),
+            upstream not found (*UpstreamNotFound*)
+          schema:
+            $ref: '#/definitions/NginxError'
+        '405':
+          description: Method disabled (*MethodDisabled*)
+          schema:
+            $ref: '#/definitions/NginxError'
+###
+###DEFINITIONS
+###
+definitions:
+  ArrayOfStrings:
+    title: Array
+    description: |
+      An array of strings.
+    type: array
+    items:
+      type: string
+  NginxHTTPUpstreamMap:
+    title: HTTP Upstreams
+    description: |
+      Status information of all HTTP
+      <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#zone">dynamically configurable</a>
+      <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#upstream">groups</a>.
+    type: object
+    additionalProperties:
+      $ref: '#/definitions/NginxHTTPUpstream'
+    example:
+      trac-backend:
+        peers:
+          - id: 0
+            server: 10.0.0.1:8088
+            name: 10.0.0.1:8088
+            backup: false
+            weight: 5
+            state: up
+            active: 0
+            ssl:
+              handshakes: 620311
+              handshakes_failed: 3432
+              session_reuses: 36442
+              no_common_protocol: 4
+              handshake_timeout: 0
+              peer_rejected_cert: 0
+              verify_failures:
+                expired_cert: 2
+                revoked_cert: 1
+                hostname_mismatch: 2
+                other: 1
+            requests: 667231
+            header_time: 20
+            response_time: 36
+            responses:
+              1xx: 0
+              2xx: 666310
+              3xx: 0
+              4xx: 915
+              5xx: 6
+              codes:
+                200: 666310
+                404: 915
+                503: 6
+              total: 667231
+            sent: 251946292
+            received: 19222475454
+            fails: 0
+            unavail: 0
+            health_checks:
+              checks: 26214
+              fails: 0
+              unhealthy: 0
+              last_passed: true
+            downtime: 0
+            downstart: 2022-06-28T11:09:21.602Z
+            selected: 2022-06-28T15:01:25Z
+          - id: 1
+            server: 10.0.0.1:8089
+            name: 10.0.0.1:8089
+            backup: true
+            weight: 1
+            state: unhealthy
+            active: 0
+            requests: 0
+            responses:
+              1xx: 0
+              2xx: 0
+              3xx: 0
+              4xx: 0
+              5xx: 0
+              codes: {}
+              total: 0
+            sent: 0
+            received: 0
+            fails: 0
+            unavail: 0
+            health_checks:
+              checks: 26284
+              fails: 26284
+              unhealthy: 1
+              last_passed: false
+            downtime: 262925617
+            downstart: 2022-06-28T11:09:21.602Z
+            selected: 2022-06-28T15:01:25Z
+        keepalive: 0
+        zombies: 0
+        zone: trac-backend
+      hg-backend:
+        peers:
+          - id: 0
+            server: 10.0.0.1:8088
+            name: 10.0.0.1:8088
+            backup: false
+            weight: 5
+            state: up
+            active: 0
+            ssl:
+              handshakes: 620311
+              handshakes_failed: 3432
+              session_reuses: 36442
+              no_common_protocol: 4
+              handshake_timeout: 0
+              peer_rejected_cert: 0
+              verify_failures:
+                expired_cert: 2
+                revoked_cert: 1
+                hostname_mismatch: 2
+                other: 1
+            requests: 667231
+            header_time: 20
+            response_time: 36
+            responses:
+              1xx: 0
+              2xx: 666310
+              3xx: 0
+              4xx: 915
+              5xx: 6
+              codes:
+                200: 666310
+                404: 915
+                503: 6
+              total: 667231
+            sent: 251946292
+            received: 19222475454
+            fails: 0
+            unavail: 0
+            health_checks:
+              checks: 26214
+              fails: 0
+              unhealthy: 0
+              last_passed: true
+            downtime: 0
+            downstart: 2022-06-28T11:09:21.602Z
+            selected: 2022-06-28T15:01:25Z
+          - id: 1
+            server: 10.0.0.1:8089
+            name: 10.0.0.1:8089
+            backup: true
+            weight: 1
+            state: unhealthy
+            active: 0
+            requests: 0
+            responses:
+              1xx: 0
+              2xx: 0
+              3xx: 0
+              4xx: 0
+              5xx: 0
+              codes: {}
+              total: 0
+            sent: 0
+            received: 0
+            fails: 0
+            unavail: 0
+            health_checks:
+              checks: 26284
+              fails: 26284
+              unhealthy: 1
+              last_passed: false
+            downtime: 262925617
+            downstart: 2022-06-28T11:09:21.602Z
+            selected: 2022-06-28T15:01:25Z
+        keepalive: 0
+        zombies: 0
+        zone: hg-backend
+  NginxHTTPUpstream:
+    title: HTTP Upstream
+    type: object
+    properties:
+      peers:
+        $ref: '#/definitions/NginxHTTPUpstreamPeerMap'
+      keepalive:
+        type: integer
+        description: The current number of idle
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#keepalive">keepalive</a>
+          connections.
+      zombies:
+        type: integer
+        description: The current number of servers removed
+          from the group but still processing active client requests.
+      zone:
+        type: string
+        description: The name of the shared memory
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#zone">zone</a>
+          that keeps the group��s configuration and run-time state.
+      queue:
+        type: object
+        description: >
+          For the requests
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#queue">queue</a>,
+          the following data are provided:
+        properties:
+          size:
+            type: integer
+            description: The current number of requests in the queue.
+          max_size:
+            type: integer
+            description: The maximum number of requests that can be in the queue
+              at the same time.
+          overflows:
+            type: integer
+            description: The total number of requests rejected due to the queue overflow.
+    example:
+      upstream_backend:
+        peers:
+          - id: 0
+            server: 10.0.0.1:8088
+            name: 10.0.0.1:8088
+            backup: false
+            weight: 5
+            state: up
+            active: 0
+            ssl:
+              handshakes: 620311
+              handshakes_failed: 3432
+              session_reuses: 36442
+              no_common_protocol: 4
+              handshake_timeout: 0
+              peer_rejected_cert: 0
+              verify_failures:
+                expired_cert: 2
+                revoked_cert: 1
+                hostname_mismatch: 2
+                other: 1
+            max_conns: 20
+            requests: 667231
+            header_time: 20
+            response_time: 36
+            responses:
+              1xx: 0
+              2xx: 666310
+              3xx: 0
+              4xx: 915
+              5xx: 6
+              codes:
+                200: 666310
+                404: 915
+                503: 6
+              total: 667231
+            sent: 251946292
+            received: 19222475454
+            fails: 0
+            unavail: 0
+            health_checks:
+              checks: 26214
+              fails: 0
+              unhealthy: 0
+              last_passed: true
+            downtime: 0
+            downstart: 2022-06-28T11:09:21.602Z
+            selected: 2022-06-28T15:01:25Z
+          - id: 1
+            server: 10.0.0.1:8089
+            name: 10.0.0.1:8089
+            backup: true
+            weight: 1
+            state: unhealthy
+            active: 0
+            max_conns: 20
+            requests: 0
+            responses:
+              1xx: 0
+              2xx: 0
+              3xx: 0
+              4xx: 0
+              5xx: 0
+              codes: {}
+              total: 0
+            sent: 0
+            received: 0
+            fails: 0
+            unavail: 0
+            health_checks:
+              checks: 26284
+              fails: 26284
+              unhealthy: 1
+              last_passed: false
+            downtime: 262925617
+            downstart: 2022-06-28T11:09:21.602Z
+            selected: 2022-06-28T15:01:25Z
+        keepalive: 0
+        zombies: 0
+        zone: upstream_backend
+  NginxHTTPUpstreamPeerMap:
+    title: HTTP Upstream Servers
+    description: |
+      An array of HTTP
+      <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#upstream">upstream servers</a>.
+    type: array
+    items:
+      $ref: '#/definitions/NginxHTTPUpstreamPeer'
+  NginxHTTPUpstreamPeer:
+    title: HTTP Upstream Server
+    type: object
+    properties:
+      id:
+        type: integer
+        description: The ID of the server.
+        readOnly: true
+      server:
+        type: string
+        description: An  <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#server">address</a>
+          of the server.
+      service:
+        type: string
+        description: The
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#service">service</a>
+          parameter value of the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#server">server</a>
+          directive.
+      name:
+        type: string
+        description: The name of the server specified in the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#server">server</a>
+          directive.
+        readOnly: true
+      backup:
+        type: boolean
+        description: A boolean value indicating whether the server is a
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#backup">backup</a>
+          server.
+      weight:
+        type: integer
+        description: <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#weight">Weight</a>
+          of the server.
+      state:
+        type: string
+        enum:
+          - up
+          - draining
+          - down
+          - unavail
+          - checking
+          - unhealthy
+        description: Current state, which may be one of
+          ��<code>up</code>��, ��<code>draining</code>��, ��<code>down</code>��,
+          ��<code>unavail</code>��, ��<code>checking</code>��,
+          and ��<code>unhealthy</code>��.
+      active:
+        type: integer
+        description: The current number of active connections.
+        readOnly: true
+      ssl:
+        type: object
+        readOnly: true
+        properties:
+          handshakes:
+            type: integer
+            description: The total number of successful SSL handshakes.
+            readOnly: true
+          handshakes_failed:
+            type: integer
+            description: The total number of failed SSL handshakes.
+            readOnly: true
+          session_reuses:
+            type: integer
+            description: The total number of session reuses during SSL handshake.
+            readOnly: true
+          no_common_protocol:
+            type: integer
+            description: The number of SSL handshakes failed
+              because of no common protocol.
+          handshake_timeout:
+            type: integer
+            description: The number of SSL handshakes failed
+              because of a timeout.
+          peer_rejected_cert:
+            type: integer
+            description: The number of failed SSL handshakes
+              when njet presented the certificate to the upstream server
+              but it was rejected with a corresponding alert message.
+          verify_failures:
+            type: object
+            description: SSL certificate verification errors
+            properties:
+              expired_cert:
+                type: integer
+                description: An expired or not yet valid certificate
+                  was presented by an upstream server.
+              revoked_cert:
+                type: integer
+                description: A revoked certificate was presented by an upstream server.
+              hostname_mismatch:
+                type: integer
+                description: Server's certificate doesn't match the hostname.
+              other:
+                type: integer
+                description: Other SSL certificate verification errors.
+      max_conns:
+        type: integer
+        description: The
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_conns">max_conns</a>
+          limit for the server.
+      requests:
+        type: integer
+        description: The total number of client requests forwarded to this server.
+        readOnly: true
+      responses:
+        type: object
+        readOnly: true
+        properties:
+          1xx:
+            type: integer
+            description: The number of responses with ��<code>1xx</code>�� status codes.
+            readOnly: true
+          2xx:
+            type: integer
+            description: The number of responses with ��<code>2xx</code>�� status codes.
+            readOnly: true
+          3xx:
+           type: integer
+           description: The number of responses with ��<code>3xx</code>�� status codes.
+           readOnly: true
+          4xx:
+            type: integer
+            description: The number of responses with ��<code>4xx</code>�� status codes.
+            readOnly: true
+          5xx:
+            type: integer
+            description: The number of responses with ��<code>5xx</code>�� status codes.
+            readOnly: true
+          codes:
+            type: object
+            description: The number of responses per each status code.
+            readOnly: true
+            properties:
+              codeNumber:
+                type: integer
+                description: The number of responses with this particular status code.
+                readOnly: true
+          total:
+            type: integer
+            description: The total number of responses obtained from this server.
+            readOnly: true
+      sent:
+        type: integer
+        description: The total number of bytes sent to this server.
+        readOnly: true
+      received:
+        type: integer
+        description: The total number of bytes received from this server.
+        readOnly: true
+      fails:
+        type: integer
+        description: The total number of unsuccessful attempts
+          to communicate with the server.
+        readOnly: true
+      unavail:
+        type: integer
+        description: How many times the server became unavailable for client requests
+          (state ��<code>unavail</code>��) due to the number of unsuccessful
+          attempts reaching the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_fails">max_fails</a>
+          threshold.
+        readOnly: true
+      health_checks:
+        type: object
+        readOnly: true
+        properties:
+          checks:
+            type: integer
+            description: The total number of
+              <a href="https://njet.org/en/docs/http/ngx_http_upstream_hc_module.html#health_check">health check</a>
+              requests made.
+          fails:
+            type: integer
+            description: The number of failed health checks.
+          unhealthy:
+            type: integer
+            description: How many times the server became unhealthy
+              (state ��<code>unhealthy</code>��).
+          last_passed:
+            type: boolean
+            description: Boolean indicating if the last health check request was successful
+              and passed
+              <a href="https://njet.org/en/docs/http/ngx_http_upstream_hc_module.html#match">tests</a>.
+      downtime:
+        type: integer
+        readOnly: true
+        description: Total time the server was in the ��<code>unavail</code>��,
+          ��<code>checking</code>��, and ��<code>unhealthy</code>�� states.
+      downstart:
+        type: string
+        format: date-time
+        readOnly: true
+        description: The time when the server became
+          ��<code>unavail</code>��, ��<code>checking</code>��,
+          or ��<code>unhealthy</code>��,
+          in the ISO 8601 format with millisecond resolution.
+      selected:
+        type: string
+        format: date-time
+        readOnly: true
+        description: The time when the server was last selected to process a request,
+          in the ISO 8601 format with millisecond resolution.
+      header_time:
+        type: integer
+        readOnly: true
+        description: The average time to get the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#var_upstream_header_time">response header</a>
+          from the server.
+      response_time:
+        type: integer
+        readOnly: true
+        description: The average time to get the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#var_upstream_response_time">full response</a>
+          from the server.
+  NginxHTTPUpstreamConfServerMap:
+    title: HTTP Upstream Servers
+    description: An array of HTTP upstream servers for dynamic configuration.
+    type: array
+    items:
+      $ref: '#/definitions/NginxHTTPUpstreamConfServer'
+    example:
+      - id: 0
+        server: 10.0.0.1:8088
+        weight: 1
+        max_conns: 0
+        max_fails: 0
+        fail_timeout: 10s
+        slow_start: 10s
+        route: ''
+        backup: false
+        down: false
+      - id: 1
+        server: 10.0.0.1:8089
+        weight: 4
+        max_conns: 0
+        max_fails: 0
+        fail_timeout: 10s
+        slow_start: 10s
+        route: ''
+        backup: true
+        down: true
+  NginxHTTPUpstreamConfServer:
+    title: HTTP Upstream Server
+    description: |
+      Dynamically configurable parameters of an HTTP upstream
+      <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#server">server</a>:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: The ID of the HTTP upstream server.
+          The ID is assigned automatically and cannot be changed.
+        readOnly: true
+      server:
+        type: string
+        description: Same as the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#address">address</a>
+          parameter of the HTTP upstream server.
+          When adding a server, it is possible to specify it as a domain name.
+          In this case, changes of the IP addresses
+          that correspond to a domain name will be monitored and automatically
+          applied to the upstream configuration
+          without the need of restarting njet.
+          This requires the
+          <a href="https://njet.org/en/docs/http/ngx_http_core_module.html#resolver">resolver</a>
+          directive in the ��<code>http</code>�� block.
+          See also the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#resolve">resolve</a>
+          parameter of the HTTP upstream server.
+      service:
+        type: string
+        description: Same as the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#service">service</a>
+          parameter of the HTTP upstream server.
+          This parameter cannot be changed.
+        readOnly: true
+      weight:
+        type: integer
+        description: Same as the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#weight">weight</a>
+          parameter of the HTTP upstream server.
+      max_conns:
+        type: integer
+        description: Same as the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_conns">max_conns</a>
+          parameter of the HTTP upstream server.
+      max_fails:
+        type: integer
+        description: Same as the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_fails">max_fails</a>
+          parameter of the HTTP upstream server.
+      fail_timeout:
+        type: string
+        description: Same as the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#fail_timeout">fail_timeout</a>
+          parameter of the HTTP upstream server.
+      slow_start:
+        type: string
+        description: Same as the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#slow_start">slow_start</a>
+          parameter of the HTTP upstream server.
+      route:
+        type: string
+        description: Same as the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#route">route</a>
+          parameter of the HTTP upstream server.
+      backup:
+        type: boolean
+        description: When <code>true</code>, adds a
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#backup">backup</a>
+          server.
+          This parameter cannot be changed.
+        readOnly: true
+      down:
+        type: boolean
+        description: Same as the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#down">down</a>
+          parameter of the HTTP upstream server.
+      drain:
+        type: boolean
+        description: Same as the
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#drain">drain</a>
+          parameter of the HTTP upstream server.
+      parent:
+        type: string
+        description: Parent server ID of the resolved server.
+          The ID is assigned automatically and cannot be changed.
+        readOnly: true
+      host:
+        type: string
+        description: Hostname of the resolved server.
+          The hostname is assigned automatically and cannot be changed.
+        readOnly: true
+    example:
+      id: 1
+      server: 10.0.0.1:8089
+      weight: 4
+      max_conns: 0
+      max_fails: 0
+      fail_timeout: 10s
+      slow_start: 10s
+      route: ''
+      backup: true
+      down: true
+  NginxStreamUpstreamMap:
+    title: Stream Upstreams
+    description: Status information of stream upstream server groups.
+    type: object
+    additionalProperties:
+      $ref: '#/definitions/NginxStreamUpstream'
+    example:
+      mysql_backends:
+        peers:
+          - id: 0
+            server: 10.0.0.1:12345
+            name: 10.0.0.1:12345
+            backup: false
+            weight: 5
+            state: up
+            active: 0
+            ssl:
+              handshakes: 1045
+              handshakes_failed: 89
+              session_reuses: 321
+              no_common_protocol: 4
+              handshake_timeout: 0
+              peer_rejected_cert: 0
+              verify_failures:
+                expired_cert: 2
+                revoked_cert: 1
+                hostname_mismatch: 2
+                other: 1
+            max_conns: 30
+            connecions: 1231
+            sent: 251946292
+            received: 19222475454
+            fails: 0
+            unavail: 0
+            health_checks:
+              checks: 26214
+              fails: 0
+              unhealthy: 0
+              last_passed: true
+            downtime: 0
+            downstart: 2022-06-28T11:09:21.602Z
+            selected: 2022-06-28T15:01:25Z
+          - id: 1
+            server: 10.0.0.1:12346
+            name: 10.0.0.1:12346
+            backup: true
+            weight: 1
+            state: unhealthy
+            active: 0
+            max_conns: 30
+            connections: 0
+            sent: 0
+            received: 0
+            fails: 0
+            unavail: 0
+            health_checks:
+              checks: 26284
+              fails: 26284
+              unhealthy: 1
+              last_passed: false
+            downtime: 262925617
+            downstart: 2022-06-28T11:09:21.602Z
+            selected: 2022-06-28T15:01:25Z
+        zombies: 0
+        zone: mysql_backends
+      dns:
+        peers:
+          - id: 0
+            server: 10.0.0.1:12347
+            name: 10.0.0.1:12347
+            backup: false
+            weight: 5
+            state: up
+            active: 0
+            ssl:
+              handshakes: 5268
+              handshakes_failed: 121
+              session_reuses: 854
+              no_common_protocol: 4
+              handshake_timeout: 0
+              peer_rejected_cert: 0
+              verify_failures:
+                expired_cert: 2
+                revoked_cert: 1
+                hostname_mismatch: 2
+                other: 1
+            max_conns: 30
+            connections: 667231
+            sent: 251946292
+            received: 19222475454
+            fails: 0
+            unavail: 0
+            health_checks:
+              checks: 26214
+              fails: 0
+              unhealthy: 0
+              last_passed: true
+            downtime: 0
+            downstart: 2022-06-28T11:09:21.602Z
+            selected: 2022-06-28T15:01:25Z
+          - id: 1
+            server: 10.0.0.1:12348
+            name: 10.0.0.1:12348
+            backup: true
+            weight: 1
+            state: unhealthy
+            active: 0
+            connections: 0
+            max_conns: 30
+            sent: 0
+            received: 0
+            fails: 0
+            unavail: 0
+            health_checks:
+              checks: 26284
+              fails: 26284
+              unhealthy: 1
+              last_passed: false
+            downtime: 262925617
+            downstart: 2022-06-28T11:09:21.602Z
+            selected: 2022-06-28T15:01:25Z
+        zombies: 0
+        zone: dns
+  NginxStreamUpstream:
+    title: Stream Upstream
+    type: object
+    properties:
+      peers:
+        $ref: '#/definitions/NginxStreamUpstreamPeerMap'
+      zombies:
+        type: integer
+        description: The current number of servers removed from the group
+          but still processing active client connections.
+      zone:
+        type: string
+        description: The name of the shared memory
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#zone">zone</a>
+          that keeps the group��s configuration and run-time state.
+    example:
+      dns:
+        peers:
+          - id: 0
+            server: 10.0.0.1:12347
+            name: 10.0.0.1:12347
+            backup: false
+            weight: 5
+            state: up
+            active: 0
+            ssl:
+              handshakes: 200
+              handshakes_failed: 4
+              session_reuses: 189
+              no_common_protocol: 4
+              handshake_timeout: 0
+              peer_rejected_cert: 0
+              verify_failures:
+                expired_cert: 2
+                revoked_cert: 1
+                hostname_mismatch: 2
+                other: 1
+            max_conns: 50
+            connections: 667231
+            sent: 251946292
+            received: 19222475454
+            fails: 0
+            unavail: 0
+            health_checks:
+              checks: 26214
+              fails: 0
+              unhealthy: 0
+              last_passed: true
+            downtime: 0
+            downstart: 2022-06-28T11:09:21.602Z
+            selected: 2022-06-28T15:01:25Z
+          - id: 1
+            server: 10.0.0.1:12348
+            name: 10.0.0.1:12348
+            backup: true
+            weight: 1
+            state: unhealthy
+            active: 0
+            max_conns: 50
+            connections: 0
+            sent: 0
+            received: 0
+            fails: 0
+            unavail: 0
+            health_checks:
+              checks: 26284
+              fails: 26284
+              unhealthy: 1
+              last_passed: false
+            downtime: 262925617
+            downstart: 2022-06-28T11:09:21.602Z
+            selected: 2022-06-28T15:01:25Z
+        zombies: 0
+        zone: dns
+  NginxStreamUpstreamPeerMap:
+    title: Stream Upstream Servers
+    description: Array of stream upstream servers.
+    type: array
+    items:
+      $ref: '#/definitions/NginxStreamUpstreamPeer'
+  NginxStreamUpstreamPeer:
+    title: Stream Upstream Server
+    type: object
+    properties:
+      id:
+        type: integer
+        description: The ID of the server.
+        readOnly: true
+      server:
+        type: string
+        description: An
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">address</a>
+          of the server.
+      service:
+        type: string
+        description: The
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#service">service</a>
+          parameter value of the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">server</a>
+          directive.
+      name:
+        type: string
+        format: hostname
+        description: The name of the server specified in the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">server</a>
+          directive.
+        readOnly: true
+      backup:
+        type: boolean
+        description: A boolean value indicating whether the server is a
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#backup">backup</a>
+          server.
+      weight:
+        type: integer
+        description: <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#weight">Weight</a>
+          of the server.
+      state:
+        type: string
+        readOnly: true
+        enum:
+          - up
+          - down
+          - unavail
+          - checking
+          - unhealthy
+        description: Current state, which may be one of
+          ��<code>up</code>��, ��<code>down</code>��, ��<code>unavail</code>��,
+          ��<code>checking</code>��, or ��<code>unhealthy</code>��.
+      active:
+        type: integer
+        description: The current number of connections.
+        readOnly: true
+      ssl:
+        type: object
+        readOnly: true
+        properties:
+          handshakes:
+            type: integer
+            description: The total number of successful SSL handshakes.
+            readOnly: true
+          handshakes_failed:
+            type: integer
+            description: The total number of failed SSL handshakes.
+            readOnly: true
+          session_reuses:
+            type: integer
+            description: The total number of session reuses during SSL handshake.
+            readOnly: true
+          no_common_protocol:
+            type: integer
+            description: The number of SSL handshakes failed
+              because of no common protocol.
+          handshake_timeout:
+            type: integer
+            description: The number of SSL handshakes failed
+              because of a timeout.
+          peer_rejected_cert:
+            type: integer
+            description: The number of failed SSL handshakes
+              when njet presented the certificate to the upstream server
+              but it was rejected with a corresponding alert message.
+          verify_failures:
+            type: object
+            description: SSL certificate verification errors
+            properties:
+              expired_cert:
+                type: integer
+                description: An expired or not yet valid certificate
+                  was presented by an upstream server.
+              revoked_cert:
+                type: integer
+                description: A revoked certificate was presented by an upstream server.
+              hostname_mismatch:
+                type: integer
+                description: Server's certificate doesn't match the hostname.
+              other:
+                type: integer
+                description: Other SSL certificate verification errors.
+      max_conns:
+        type: integer
+        description: The
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_conns">max_conns</a>
+          limit for the server.
+      connections:
+        type: integer
+        description: The total number of client connections forwarded to this server.
+        readOnly: true
+      connect_time:
+        type: integer
+        description: The average time to connect to the upstream server.
+        readOnly: true
+      first_byte_time:
+        type: integer
+        description: The average time to receive the first byte of data.
+        readOnly: true
+      response_time:
+        type: integer
+        description: The average time to receive the last byte of data.
+        readOnly: true
+      sent:
+        type: integer
+        description: The total number of bytes sent to this server.
+        readOnly: true
+      received:
+        type: integer
+        description: The total number of bytes received from this server.
+        readOnly: true
+      fails:
+        type: integer
+        description: The total number of unsuccessful attempts
+          to communicate with the server.
+        readOnly: true
+      unavail:
+        type: integer
+        description: How many times the server became unavailable for client connections
+          (state ��<code>unavail</code>��) due to the number of unsuccessful
+          attempts reaching the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_fails">max_fails</a>
+          threshold.
+        readOnly: true
+      health_checks:
+        type: object
+        readOnly: true
+        properties:
+          checks:
+            type: integer
+            description: The total number of
+              <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_hc_module.html#health_check">health check</a>
+              requests made.
+            readOnly: true
+          fails:
+            type: integer
+            description: The number of failed health checks.
+            readOnly: true
+          unhealthy:
+            type: integer
+            description: How many times the server became unhealthy
+              (state ��<code>unhealthy</code>��).
+            readOnly: true
+          last_passed:
+            type: boolean
+            description: Boolean indicating whether the last health check request
+              was successful and passed
+              <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_hc_module.html#match">tests</a>.
+            readOnly: true
+      downtime:
+        type: integer
+        description: Total time the server was in the
+          ��<code>unavail</code>��, ��<code>checking</code>��,
+          and ��<code>unhealthy</code>�� states.
+        readOnly: true
+      downstart:
+        type: string
+        format: date-time
+        description: The time when the server became
+          ��<code>unavail</code>��, ��<code>checking</code>��,
+          or ��<code>unhealthy</code>��,
+          in the ISO 8601 format with millisecond resolution.
+        readOnly: true
+      selected:
+        type: string
+        format: date-time
+        description: The time when the server was last selected
+          to process a connection,
+          in the ISO 8601 format with millisecond resolution.
+        readOnly: true
+  NginxStreamUpstreamConfServerMap:
+    title: Stream Upstream Servers
+    description: |
+      An array of stream upstream servers for dynamic configuration.
+    type: array
+    items:
+      $ref: '#/definitions/NginxStreamUpstreamConfServer'
+    example:
+      - id: 0
+        server: 10.0.0.1:12348
+        weight: 1
+        max_conns: 0
+        max_fails: 1
+        fail_timeout: 10s
+        slow_start: 0
+        backup: false
+        down: false
+      - id: 1
+        server: 10.0.0.1:12349
+        weight: 1
+        max_conns: 0
+        max_fails: 1
+        fail_timeout: 10s
+        slow_start: 0
+        backup: false
+        down: false
+  NginxStreamUpstreamConfServer:
+    title: Stream Upstream Server
+    description: |
+      Dynamically configurable parameters of a stream upstream
+      <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">server</a>:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: The ID of the stream upstream server.
+          The ID is assigned automatically and cannot be changed.
+        readOnly: true
+      server:
+        type: string
+        description: Same as the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">address</a>
+          parameter of the stream upstream server.
+          When adding a server, it is possible to specify it as a domain name.
+          In this case, changes of the IP addresses
+          that correspond to a domain name will be monitored and automatically
+          applied to the upstream configuration
+          without the need of restarting njet.
+          This requires the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_core_module.html#resolver">resolver</a>
+          directive in the ��<code>stream</code>�� block.
+          See also the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#resolve">resolve</a>
+          parameter of the stream upstream server.
+      service:
+        type: string
+        description: Same as the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#service">service</a>
+          parameter of the stream upstream server.
+          This parameter cannot be changed.
+        readOnly: true
+      weight:
+        type: integer
+        description: Same as the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#weight">weight</a>
+          parameter of the stream upstream server.
+      max_conns:
+        type: integer
+        description: Same as the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_conns">max_conns</a>
+          parameter of the stream upstream server.
+      max_fails:
+        type: integer
+        description: Same as the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_fails">max_fails</a>
+          parameter of the stream upstream server.
+      fail_timeout:
+        type: string
+        description: Same as the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#fail_timeout">fail_timeout</a>
+          parameter of the stream upstream server.
+      slow_start:
+        type: string
+        description: Same as the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#slow_start">slow_start</a>
+          parameter of the stream upstream server.
+      backup:
+        type: boolean
+        description: When <code>true</code>, adds a
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#backup">backup</a>
+          server.
+          This parameter cannot be changed.
+        readOnly: true
+      down:
+        type: boolean
+        description: Same as the
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#down">down</a>
+          parameter of the stream upstream server.
+      parent:
+        type: string
+        description: Parent server ID of the resolved server.
+          The ID is assigned automatically and cannot be changed.
+        readOnly: true
+      host:
+        type: string
+        description: Hostname of the resolved server.
+          The hostname is assigned automatically and cannot be changed.
+        readOnly: true
+    example:
+      id: 0
+      server: 10.0.0.1:12348
+      weight: 1
+      max_conns: 0
+      max_fails: 1
+      fail_timeout: 10s
+      slow_start: 0
+      backup: false
+      down: false
+  NginxError:
+    title: Error
+    description: |
+      njet error object.
+    type: object
+    properties:
+      error:
+        type: object
+        properties:
+          status:
+            type: integer
+            description: HTTP error code.
+          text:
+            type: string
+            description: Error description.
+          code:
+            type: string
+            description: Internal njet error code.
+      request_id:
+        type: string
+        description: The ID of the request, equals the value of the
+          <a href="https://njet.org/en/docs/http/ngx_http_core_module.html#var_request_id">$request_id</a>
+          variable.
+      href:
+        type: string
+        description: Link to reference documentation.

@@ -11,12 +11,10 @@ build_bin:
   script:
     - sudo chmod +x ./build_cc.sh ./configure
     - sudo ./build_cc.sh conf $CI_COMMIT_SHA
-    - sudo rm -rf /etc/njet/luajit/lib/*.so     # 使用lua静态库
     - sudo make -j `nproc`
     - sudo mkdir -p work/etc/njet/lualib/ work/usr/local/lib/ work/etc/njet/logs/ logs/  # 创建文件包目录
     - sudo cp -R /etc/njet/* work/etc/njet/
     - sudo cp -R /etc/njet/luajit/lib/* work/usr/local/lib/
-    - sudo cp -R 3rd_lib/* work/usr/local/lib/
   artifacts:
     paths:     # 需要打包的文件
       - objs/njet

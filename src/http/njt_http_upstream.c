@@ -9,7 +9,11 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
-
+// by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+#include <njt_cache_purge.h>
+#endif
+// end
 
 #if (NJT_HTTP_CACHE)
 static njt_int_t njt_http_upstream_cache(njt_http_request_t *r,
@@ -813,7 +817,6 @@ found:
     njt_http_upstream_connect(r, u);
 }
 
-
 #if (NJT_HTTP_CACHE)
 
 static njt_int_t
@@ -826,7 +829,67 @@ njt_http_upstream_cache(njt_http_request_t *r, njt_http_upstream_t *u)
     c = r->cache;
 
     if (c == NULL) {
+        
+        // by chengxu
+#if (NJT_HTTP_CACHE_PURGE)
+        njt_http_cache_t       *old_c;
+        
+        old_c = c = r->cache;
+        rc = njt_http_upstream_cache_get(r, u, &cache);
 
+        if (rc != NJT_OK) {
+            return rc;
+        }
+
+        if (r->method == NJT_HTTP_HEAD && u->conf->cache_convert_head) {
+            u->method = njt_http_core_get_method;
+        }
+
+        if (njt_http_file_cache_new(r) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        //生成key
+        if (u->create_key(r) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        njt_http_file_cache_create_key(r);
+        njt_http_file_cache_set_request_key(r);
+
+        if (r->cache->header_start + 256 > u->conf->buffer_size) {
+            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                          "%V_buffer_size %uz is not enough for cache key, "
+                          "it should be increased to at least %uz",
+                          &u->conf->module, u->conf->buffer_size,
+                          njt_align(r->cache->header_start + 256, 1024));
+
+            r->cache = NULL;
+            return NJT_DECLINED;
+        }
+        // cx修改该赋值流程，解决置purged状态位的问题
+        c = r->cache;
+
+        c->body_start = u->conf->buffer_size;
+        c->min_uses = u->conf->cache_min_uses;
+        c->file_cache = cache;
+        // end
+
+        rc = njt_http_cache_purge_filter(r);
+        if (rc != NJT_OK){
+            if(rc == NJT_DONE){
+                return rc;
+            }
+            return NJT_ERROR;
+        }
+        // cx修改该判断流程，非purge后检查请求方式是否合法
+        if(old_c == NULL) {
+            if (!(r->method & u->conf->cache_methods)) {
+                return NJT_DECLINED;
+            }
+        }
+        u->cacheable = 1;
+#else
         if (!(r->method & u->conf->cache_methods)) {
             return NJT_DECLINED;
         }
@@ -871,6 +934,8 @@ njt_http_upstream_cache(njt_http_request_t *r, njt_http_upstream_t *u)
         c->body_start = u->conf->buffer_size;
         c->min_uses = u->conf->cache_min_uses;
         c->file_cache = cache;
+#endif
+        // end
 
         switch (njt_http_test_predicates(r, u->conf->cache_bypass)) {
 
@@ -6039,7 +6104,8 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
                                          |NJT_HTTP_UPSTREAM_MAX_FAILS
                                          |NJT_HTTP_UPSTREAM_FAIL_TIMEOUT
                                          |NJT_HTTP_UPSTREAM_DOWN
-                                         |NJT_HTTP_UPSTREAM_BACKUP);
+                                         |NJT_HTTP_UPSTREAM_BACKUP
+					 |NJT_HTTP_UPSTREAM_SLOW_START);
     if (uscf == NULL) {
         return NJT_CONF_ERROR;
     }
@@ -6145,12 +6211,12 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (rv != NJT_CONF_OK) {
         return rv;
     }
-
+   /*
     if (uscf->servers->nelts == 0) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "no servers are inside upstream");
         return NJT_CONF_ERROR;
-    }
+    }*/
 
     return rv;
 }

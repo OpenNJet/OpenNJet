@@ -178,7 +178,11 @@ njt_stream_upstream_get_hash_peer(njt_peer_connection_t *pc, void *data)
                    "get hash peer, try: %ui", pc->tries);
 
     njt_stream_upstream_rr_peers_rlock(hp->rrp.peers);
-
+    
+    if(hp->rrp.peers->number == 0) {
+        njt_stream_upstream_rr_peers_unlock(hp->rrp.peers);
+        return NJT_BUSY;
+    }
     if (hp->tries > 20 || hp->rrp.peers->single || hp->key.len == 0) {
         njt_stream_upstream_rr_peers_unlock(hp->rrp.peers);
         return hp->get_rr_peer(pc, &hp->rrp);
@@ -232,7 +236,7 @@ njt_stream_upstream_get_hash_peer(njt_peer_connection_t *pc, void *data)
 
         njt_log_debug2(NJT_LOG_DEBUG_STREAM, pc->log, 0,
                        "get hash peer, value:%uD, peer:%ui", hp->hash, p);
-
+	/*
         if (peer->down) {
             njt_stream_upstream_rr_peer_unlock(hp->rrp.peers, peer);
             goto next;
@@ -247,6 +251,10 @@ njt_stream_upstream_get_hash_peer(njt_peer_connection_t *pc, void *data)
         }
 
         if (peer->max_conns && peer->conns >= peer->max_conns) {
+            njt_stream_upstream_rr_peer_unlock(hp->rrp.peers, peer);
+            goto next;
+        }*/
+	if (njt_stream_upstream_pre_handle_peer(peer) == NJT_ERROR) {
             njt_stream_upstream_rr_peer_unlock(hp->rrp.peers, peer);
             goto next;
         }
@@ -268,7 +276,7 @@ njt_stream_upstream_get_hash_peer(njt_peer_connection_t *pc, void *data)
     pc->name = &peer->name;
 
     peer->conns++;
-
+    peer->requests++;
     if (now - peer->checked > peer->fail_timeout) {
         peer->checked = now;
     }
@@ -546,7 +554,7 @@ njt_stream_upstream_get_chash_peer(njt_peer_connection_t *pc, void *data)
             if (hp->rrp.tried[n] & m) {
                 continue;
             }
-
+	    /*
             if (peer->down) {
                 continue;
             }
@@ -560,7 +568,9 @@ njt_stream_upstream_get_chash_peer(njt_peer_connection_t *pc, void *data)
 
             if (peer->max_conns && peer->conns >= peer->max_conns) {
                 continue;
-            }
+            }*/
+	     if(njt_stream_upstream_pre_handle_peer(peer) == NJT_ERROR)
+                continue;
 
             if (peer->server.len != server->len
                 || njt_strncmp(peer->server.data, server->data, server->len)
@@ -603,7 +613,7 @@ njt_stream_upstream_get_chash_peer(njt_peer_connection_t *pc, void *data)
     pc->name = &best->name;
 
     best->conns++;
-
+    best->requests++;
     if (now - best->checked > best->fail_timeout) {
         best->checked = now;
     }

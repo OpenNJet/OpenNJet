@@ -69,7 +69,7 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
                 t += server[i].naddrs;
             }
         }
-
+	/* zyg
         if (n == 0) {
             njt_log_error(NJT_LOG_EMERG, cf->log, 0,
                           "no servers in upstream \"%V\" in %s:%ui",
@@ -81,7 +81,7 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
         peer = njt_pcalloc(cf->pool, sizeof(njt_http_upstream_rr_peer_t) * n);
         if (peer == NULL) {
             return NJT_ERROR;
-        }
+        }*/
 
         peers->single = (n == 1);
         peers->number = n;
@@ -90,10 +90,14 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
         peers->tries = t;
         peers->name = &us->host;
 
-        n = 0;
         peerp = &peers->peer;
-
-        for (i = 0; i < us->servers->nelts; i++) {
+	if(n > 0) {
+	   peer = njt_pcalloc(cf->pool, sizeof(njt_http_upstream_rr_peer_t) * n);
+            if (peer == NULL) {
+                return NJT_ERROR;
+            }
+	   n = 0;
+       	   for (i = 0; i < us->servers->nelts; i++) {
             if (server[i].backup) {
                 continue;
             }
@@ -121,6 +125,7 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
                 n++;
             }
         }
+	}
 
         us->peer.data = peers;
 
@@ -500,14 +505,14 @@ njt_http_upstream_get_round_robin_peer(njt_peer_connection_t *pc, void *data)
     pc->name = &peer->name;
 
     peer->conns++;
-
+    peer->requests++;
     njt_http_upstream_rr_peers_unlock(peers);
 
     return NJT_OK;
 
 failed:
 
-    if (peers->next) {
+    if (peers->next && peers->next->number > 0) { //by zyg
 
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, pc->log, 0, "backup servers");
 
