@@ -1695,7 +1695,11 @@ njt_cache_manager_process_handler(njt_event_t *ev)
 
     path = njt_cycle->paths.elts;
     for (i = 0; i < njt_cycle->paths.nelts; i++) {
-
+        if (path[i]->purger) {
+            n = path[i]->purger(path[i]->data);
+            next = (n <= next) ? n : next;
+            njt_time_update();
+        }
         if (path[i]->manager) {
             n = path[i]->manager(path[i]->data);
 
