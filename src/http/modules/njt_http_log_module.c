@@ -2062,8 +2062,10 @@ njt_int_t
 njt_http_check_variable_index(njt_conf_t *cf, njt_str_t *name)
 {
     njt_uint_t                  i;
-    njt_http_variable_t        *v;
     njt_http_core_main_conf_t  *cmcf;
+    njt_hash_key_t             *key;
+    njt_hash_init_t             hash;
+    njt_http_variable_t        *v, *pv;
 
     if (name->len == 0) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
@@ -2076,6 +2078,24 @@ njt_http_check_variable_index(njt_conf_t *cf, njt_str_t *name)
         return NJT_ERROR;
     } else {
         v = cmcf->variables.elts;
+        key = cmcf->variables_keys->keys.elts;
+        pv = cmcf->prefix_variables.elts;
+        for (i = 0; i < cmcf->variables_keys->keys.nelts; i++) {
+            if(name->len == key[i].key.len
+                && njt_strncmp(name->data, key[i].key.data,name->len)
+                   == 0)
+            {
+                return NJT_OK;
+            }
+        }
+        for (i = 0; i < cmcf->prefix_variables.nelts; i++) {
+            if (name->len >= pv[i].name.len
+                && njt_strncmp(name->data, pv[i].name.data, pv[i].name.len)
+                   == 0)
+            {
+                return NJT_OK;
+            }
+        }
         for (i = 0; i < cmcf->variables.nelts; i++) {
             if (name->len != v[i].name.len
                 || njt_strncasecmp(name->data, v[i].name.data, name->len) != 0)
