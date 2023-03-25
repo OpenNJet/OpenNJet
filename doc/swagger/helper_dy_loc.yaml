@@ -77,19 +77,36 @@ components:
           type: string
           description:  server name .
           example: cluster.tmlake.com
-        location_rule:
-          type: string
-          description:  Regular Expression.
-          example: =
-        location_name:
-          type: string
-          description:  the name of location.
-          example: /clb
-        location_body:
-          type: string
-          description:  the body content of location .
-          example: api write=off;
-        proxy_pass:
-          type: string
-          description:  the proxy_pass info .
-          example: $dest_upstream;
+        locations:
+          type: array
+          items:
+           $ref: '#/components/schemas/loction_array'
+          example:
+           - location_rule: ""
+             location_name: /
+             location_body: api write=off;
+             proxy_pass:  $dest_upstream;
+           - location_rule: ""
+             location_name: /test3
+             location_body: "set $test 1;"
+             proxy_pass:  $dest_upstream;
+      loction_array:
+        title: location object 
+        type: object
+        properties:
+          location_rule:
+            type: string
+            description:  Regular Expression.
+            example:
+          location_name:
+              type: string
+              description:  the name of location.
+              example: /clb
+          location_body:
+              type: string
+              description:  the body content of location .
+              example: api write=off;
+          proxy_pass:
+              type: string
+              description:  the proxy_pass info .
+              example: $dest_upstream;
