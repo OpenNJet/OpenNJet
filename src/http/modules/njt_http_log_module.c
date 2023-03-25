@@ -2064,7 +2064,6 @@ njt_http_check_variable_index(njt_conf_t *cf, njt_str_t *name)
     njt_uint_t                  i;
     njt_http_core_main_conf_t  *cmcf;
     njt_hash_key_t             *key;
-    njt_hash_init_t             hash;
     njt_http_variable_t        *v, *pv;
 
     if (name->len == 0) {
