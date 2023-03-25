@@ -2058,6 +2058,160 @@ static njt_http_dyn_log_file_t * njt_http_log_dyn_open_file(njt_http_log_main_co
 
 }
 
+njt_int_t
+njt_http_check_variable_index(njt_conf_t *cf, njt_str_t *name)
+{
+    njt_uint_t                  i;
+    njt_http_variable_t        *v;
+    njt_http_core_main_conf_t  *cmcf;
+
+    if (name->len == 0) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "invalid variable name \"$\"");
+        return NJT_ERROR;
+    }
+
+    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
+    if (cmcf == NULL || cmcf->variables.nelts < 1  || cmcf->variables.elts == NULL) {
+        return NJT_ERROR;
+    } else {
+        v = cmcf->variables.elts;
+        for (i = 0; i < cmcf->variables.nelts; i++) {
+            if (name->len != v[i].name.len
+                || njt_strncasecmp(name->data, v[i].name.data, name->len) != 0)
+            {
+                continue;
+            }
+
+            return i;
+        }
+    }
+    return NJT_ERROR;
+}
+
+
+static njt_int_t
+njt_http_log_variable_check(njt_conf_t *cf,njt_str_t *value)
+{
+    njt_int_t  index;
+
+    index = njt_http_check_variable_index(cf, value);
+    if (index == NJT_ERROR) {
+        njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0,"not found var \"%V\"",value);
+        return NJT_ERROR;
+    }
+    return NJT_OK;
+}
+
+static char *
+njt_http_log_check_format(njt_conf_t *cf, njt_array_t *flushes,
+                            njt_array_t *ops, njt_array_t *args, njt_uint_t s)
+{
+    u_char              *data, ch;
+    size_t               i;
+    njt_str_t           *value, var;
+    njt_uint_t           bracket;
+    njt_http_log_var_t  *v;
+
+    value = args->elts;
+
+    if (s < args->nelts && njt_strncmp(value[s].data, "escape=", 7) == 0) {
+        data = value[s].data + 7;
+        s++;
+    }
+    for ( /* void */ ; s < args->nelts; s++) {
+        i = 0;
+        while (i < value[s].len) {
+            data = &value[s].data[i];
+
+            if (value[s].data[i] == '$') {
+
+                if (++i == value[s].len) {
+                    goto invalid;
+                }
+
+                if (value[s].data[i] == '{') {
+                    bracket = 1;
+
+                    if (++i == value[s].len) {
+                        goto invalid;
+                    }
+
+                    var.data = &value[s].data[i];
+
+                } else {
+                    bracket = 0;
+                    var.data = &value[s].data[i];
+                }
+
+                for (var.len = 0; i < value[s].len; i++, var.len++) {
+                    ch = value[s].data[i];
+
+                    if (ch == '}' && bracket) {
+                        i++;
+                        bracket = 0;
+                        break;
+                    }
+
+                    if ((ch >= 'A' && ch <= 'Z')
+                        || (ch >= 'a' && ch <= 'z')
+                        || (ch >= '0' && ch <= '9')
+                        || ch == '_')
+                    {
+                        continue;
+                    }
+
+                    break;
+                }
+
+                if (bracket) {
+                    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                       "the closing bracket in \"%V\" "
+                                       "variable is missing", &var);
+                    return NJT_CONF_ERROR;
+                }
+
+                if (var.len == 0) {
+                    goto invalid;
+                }
+
+                for (v = njt_http_log_vars; v->name.len; v++) {
+
+                    if (v->name.len == var.len
+                        && njt_strncmp(v->name.data, var.data, var.len) == 0)
+                    {
+                        goto found;
+                    }
+                }
+
+                if (njt_http_log_variable_check(cf, &var)!= NJT_OK){
+                    return NJT_CONF_ERROR;
+                }
+
+                found:
+
+                continue;
+            }
+
+            i++;
+
+            while (i < value[s].len && value[s].data[i] != '$') {
+                i++;
+            }
+        }
+    }
+
+    return NJT_CONF_OK;
+
+    invalid:
+
+    njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "invalid parameter \"%s\"", data);
+
+    return NJT_CONF_ERROR;
+}
+
+
+
 njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc_t *data,njt_http_conf_ctx_t* ctx)
 {
     njt_http_log_loc_conf_t *llcf,old_cf;
@@ -2325,7 +2479,9 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
         goto err;
     }
 
-    // todo check
+    if(njt_http_log_check_format(cf, fmt->flushes, fmt->ops, cf->args, 1) != NJT_OK){
+        goto err;
+    }
     rs=njt_http_log_compile_format(cf, fmt->flushes, fmt->ops, cf->args, 1);
     if(rs == NJT_CONF_ERROR){
         goto err;
