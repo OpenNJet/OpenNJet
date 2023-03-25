@@ -1425,6 +1425,49 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_http_vts_dynapi_mai
     njt_pool_t                              *dyn_pool;
     u_char                                  *filter_data;
     size_t                                   len;
+    njt_uint_t                               flag;
+    njt_uint_t                               i;
+    njt_http_core_main_conf_t               *cmcf;
+    njt_hash_key_t                          *key;
+    njt_str_t                                flt;
+    njt_str_t                                fk;
+
+    flt.data = dynconf->filter.data;
+    flt.len = dynconf->filter.len;
+    cmcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_core_module);
+    key = cmcf->variables_keys->keys.elts;
+
+    while (flt.len > 0) {
+        while (flt.len>0  && *flt.data!='$') {
+            flt.len--;
+            flt.data++;
+        }
+
+        if (flt.len>0  && *flt.data=='$') {
+            fk.data = flt.data;
+            fk.len = 0;
+        } else {
+            continue;
+        }
+
+        while (flt.len>0  && *flt.data!=' ' && *flt.data!='\"') {
+            flt.len--;
+            flt.data++;
+            fk.len++;
+        }
+
+        flag = 0;
+        for (i = 0; i < cmcf->variables_keys->keys.nelts; i++) {
+            if (fk.len-1 == key[i].key.len && njt_strncasecmp(fk.data+1, key[i].key.data, fk.len-1) == 0) {
+                flag = 1;
+            }
+        }
+
+        if (!flag) {
+            njt_log_error(NJT_LOG_INFO, cycle->pool->log, 0, "found unknown var %V", &fk);
+            return;
+        }
+    }
 
     ctx = njt_http_cycle_get_module_main_conf(cycle, njt_http_vhost_traffic_status_module);
     if (ctx == NULL) {
