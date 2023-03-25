@@ -593,10 +593,14 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
 
             njt_memzero(&u, sizeof(njt_url_t));
             u.url = value[1];
-            u.default_port = 80;
             u.no_resolve = 1;
             no_resolve = 1;
             njt_parse_url(cf->pool, &u);
+	    if (u.no_port) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "no port in upstream \"%V\"", &u.url);
+                return NJT_CONF_ERROR;
+            }
             if (!u.addrs || !u.addrs[0].sockaddr) {
                 dynamic_server = njt_list_push(&udsmcf->dy_servers);
                 if (dynamic_server == NULL) {
@@ -623,7 +627,6 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
     njt_memzero(&u, sizeof(njt_url_t));
 	
 	u.url = value[1];
-    u.default_port = 80;
     /* BEGIN CUSTOMIZATION: differs from default "server" implementation*/
     if (no_resolve == 0 && njt_parse_url(cf->pool, &u) != NJT_OK) {
         if (u.err && !no_resolve) {
@@ -631,7 +634,11 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
                                "%s in upstream \"%V\"", u.err, &u.url);
             return NJT_CONF_ERROR;
         }
-
+	if (u.no_port) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "no port in upstream \"%V\"", &u.url);
+                return NJT_CONF_ERROR;
+            }
         /* If the domain fails to resolve on start up, mark this server as down,
          and assign a static IP that should never route. This is to account for
          various things inside nginx that seem to expect a server to always have
@@ -651,6 +658,11 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
         }
         //us->fake = 1;
     }
+    if (u.no_port) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "no port in upstream \"%V\"", &u.url);
+                return NJT_CONF_ERROR;
+            }
     /* END CUSTOMIZATION */
 	
 	us->max_conns = max_conns;
