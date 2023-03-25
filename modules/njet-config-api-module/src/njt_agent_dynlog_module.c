@@ -190,7 +190,7 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
                 }
                 rc = njt_http_log_dyn_set_log(pool, &daal[j],ctx);
                 if(rc != NJT_OK){
-                    njt_log_error(NJT_LOG_ERR, pool->log, 0,"njt_http_log_dyn_set_log error free pool");
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"njt_http_log_dyn_set_log error free pool");
                     njt_destroy_pool(pool);
                 }
             }
@@ -226,7 +226,7 @@ static njt_int_t njt_dynlog_update_access_log(njt_pool_t *pool,njt_http_dyn_acce
         cscf = njt_http_get_srv_by_port(cycle,(njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
         if(cscf == NULL){
             if(daas[i].listens.elts != NULL && daas[i].server_names.elts != NULL ){
-                njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
+                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "can`t find server by listen:%V server_name:%V ",
                               (njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
             }
 
@@ -474,7 +474,7 @@ static u_char* njt_agent_dynlog_rpc_handler(njt_str_t *topic, njt_str_t *request
     njt_pool_t *pool = NULL;
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_agent_dynlog_change_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_agent_dynlog_change_handler create pool error");
         goto end;
     }
     msg = njt_dynlog_dump_log_conf(cycle,pool);
@@ -482,7 +482,7 @@ static u_char* njt_agent_dynlog_rpc_handler(njt_str_t *topic, njt_str_t *request
     if(buf == NULL){
         goto end;
     }
-    njt_log_error(NJT_LOG_INFO, pool->log, 0, "send json : %V",&msg);
+    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "send json : %V",&msg);
     njt_memcpy(buf,msg.data,msg.len);
     *len = msg.len;
 
@@ -503,12 +503,12 @@ static int  njt_agent_dynlog_change_handler(njt_str_t *key, njt_str_t *value, vo
     }
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_agent_dynlog_change_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_agent_dynlog_change_handler create pool error");
         return NJT_OK;
     }
     api_data = njt_pcalloc(pool,sizeof (njt_http_dyn_access_api_main_t));
     if(api_data == NULL){
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, pool->log, 0,
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                        "could not alloc buffer in function %s", __func__);
         goto end;
     }

@@ -718,7 +718,7 @@ njt_http_log_gzip_alloc(void *opaque, u_int items, u_int size)
 {
     njt_pool_t *pool = opaque;
 
-    njt_log_debug2(NJT_LOG_DEBUG_HTTP, pool->log, 0,
+    njt_log_debug2(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                    "gzip alloc: n:%ud s:%ud", items, size);
 
     return njt_palloc(pool, items * size);
@@ -1160,7 +1160,7 @@ njt_http_log_create_main_conf(njt_conf_t *cf)
 #if (NJT_HTTP_DYN_LOG)
     njt_queue_init(&conf->file_queue);
     conf->combined_used =1;
-    njt_pool_t *new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    njt_pool_t *new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, cf->pool->log);
     if (new_pool == NULL) {
         return NULL;
     }
@@ -1975,7 +1975,7 @@ static void njt_http_log_dyn_unused_file(void *data){
     }
     if(file->ref_count == 0 ){
         if (njt_close_file(file->file.fd) == NJT_FILE_ERROR) {
-            njt_log_error(NJT_LOG_ERR, lmcf->pool->log, 0,njt_close_file_n " \"%V\" failed", &file->file.name);
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,njt_close_file_n " \"%V\" failed", &file->file.name);
         }
         njt_queue_remove(&file->queue);
         njt_pfree(lmcf->pool,file);
@@ -2013,7 +2013,7 @@ static njt_http_dyn_log_file_t * njt_http_log_dyn_open_file(njt_http_log_main_co
 
     node = njt_pcalloc(pool, sizeof(njt_http_dyn_log_file_t));
     if(node == NULL){
-        njt_log_error(NJT_LOG_ERR, pool->log, 0,"njt_http_log_dyn_open_file alloc mem error");
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"njt_http_log_dyn_open_file alloc mem error");
         return NULL;
     }
     node->ref_count = 0;
@@ -2031,7 +2031,7 @@ static njt_http_dyn_log_file_t * njt_http_log_dyn_open_file(njt_http_log_main_co
                                NJT_FILE_CREATE_OR_OPEN,NJT_FILE_DEFAULT_ACCESS);
 
     if (file->fd == NJT_INVALID_FILE) {
-        njt_log_error(NJT_LOG_ERR, pool->log, njt_errno,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, njt_errno,
                       njt_open_file_n " \"%V\" failed",
                       &file->name);
         return  NULL;
@@ -2039,7 +2039,7 @@ static njt_http_dyn_log_file_t * njt_http_log_dyn_open_file(njt_http_log_main_co
 
 #if !(NJT_WIN32)
     if (fcntl(file->fd, F_SETFD, FD_CLOEXEC) == -1) {
-        njt_log_error(NJT_LOG_ERR, pool->log, njt_errno,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, njt_errno,
                       "fcntl(FD_CLOEXEC) \"%V\" failed",
                       &file->name);
         return  NULL;
@@ -2077,7 +2077,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
             .pool = pool,
             .temp_pool = pool,
             .cycle = (njt_cycle_t*)njt_cycle,
-            .log = pool->log,
+            .log = njt_cycle->log,
             .ctx = ctx,
     };
     cf = &cf_data;
@@ -2095,7 +2095,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
     }
 
     llcf->off = data->log_on?0:1;
-    njt_log_error(NJT_LOG_DEBUG, pool->log, 0,"set %V access log to %ui",&clcf->full_name,data->log_on);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"set %V access log to %ui",&clcf->full_name,data->log_on);
     if(!data->log_on){
         return NJT_OK;
     }
@@ -2108,7 +2108,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
 
     log_cf = data->logs.elts;
     if(data->logs.nelts < 1){
-        njt_log_error(NJT_LOG_ERR, pool->log, 0,"set enable access log,but accessLogs is NULL",&clcf->full_name,data->log_on);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"set enable access log,but accessLogs is NULL",&clcf->full_name,data->log_on);
         goto error ;
     }
     for(j = 0 ; j < data->logs.nelts ; ++j ){
@@ -2117,7 +2117,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
             goto error ;
         }
         if(log_cf[j].path.len < 1){
-            njt_log_error(NJT_LOG_INFO, pool->log, 0,"access log path not conf continue");
+            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"access log path not conf continue");
             continue;
         }
         njt_memzero(log, sizeof(njt_http_log_t));
@@ -2325,6 +2325,7 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
         goto err;
     }
 
+    // todo check
     rs=njt_http_log_compile_format(cf, fmt->flushes, fmt->ops, cf->args, 1);
     if(rs == NJT_CONF_ERROR){
         goto err;
