@@ -1,14 +1,14 @@
 swagger: '2.0'
 info:
   version: '7.0'
-  title: NJET REST API
-  description: NJET REST
-    [API](https://njet.org/en/docs/http/njt_http_api_module.html)
-    provides access to NJET status information,
+  title: NGINX Plus REST API
+  description: NGINX Plus REST
+    [API](https://njet.org/en/docs/http/ngx_http_api_module.html)
+    provides access to NGINX Plus status information,
     on-the-fly configuration of upstream servers and
     key-value pairs management for
-    [http](https://njet.org/en/docs/http/njt_http_keyval_module.html) and
-    [stream](https://njet.org/en/docs/stream/njt_stream_keyval_module.html).
+    [http](https://njet.org/en/docs/http/ngx_http_keyval_module.html) and
+    [stream](https://njet.org/en/docs/stream/ngx_stream_keyval_module.html).
 basePath: /api/7
 tags:
   - name: HTTP Upstreams
@@ -37,17 +37,17 @@ paths:
           in: query
           type: string
           description: Limits which fields of upstream server groups will be output.
-            If the éˆ¥ï¿½<literal>fields</literal>éˆ¥ï¿½ value is empty,
+            If the ¡°<literal>fields</literal>¡± value is empty,
             only names of upstreams will be output.
       responses:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/njetHTTPUpstreamMap'
+            $ref: '#/definitions/NjetHTTPUpstreamMap'
         '404':
           description: Unknown version (*UnknownVersion*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
   '/http/upstreams/{httpUpstreamName}/':
     parameters:
     - name: httpUpstreamName
@@ -74,17 +74,17 @@ paths:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/njetHTTPUpstream'
+            $ref: '#/definitions/NjetHTTPUpstream'
         '400':
           description: Upstream is static (*UpstreamStatic*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
             Unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
     delete:
       tags:
         - HTTP Upstreams
@@ -101,17 +101,17 @@ paths:
         '400':
           description: Upstream is static (*UpstreamStatic*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
             Unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '405':
           description: Method disabled (*MethodDisabled*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
   '/http/upstreams/{httpUpstreamName}/servers/':
     parameters:
       - name: httpUpstreamName
@@ -133,17 +133,17 @@ paths:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/njetHTTPUpstreamConfServerMap'
+            $ref: '#/definitions/NjetHTTPUpstreamConfServerMap'
         '400':
           description: Upstream is static (*UpstreamStatic*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
             Unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
     post:
       tags:
         - HTTP Upstreams
@@ -159,57 +159,57 @@ paths:
           name: postHttpUpstreamServer
           description: Address of a new server and other optional parameters
             in the JSON format.
-            The éˆ¥ï¿½*ID*éˆ¥ï¿½, éˆ¥ï¿½*backup*éˆ¥ï¿½, and éˆ¥ï¿½*service*éˆ¥ï¿½ parameters
+            The ¡°*ID*¡±, ¡°*backup*¡±, and ¡°*service*¡± parameters
             cannot be changed.
           required: true
           schema:
-            $ref: '#/definitions/njetHTTPUpstreamConfServer'
+            $ref: '#/definitions/NjetHTTPUpstreamConfServer'
       responses:
         '201':
           description: Created
           schema:
-            $ref: '#/definitions/njetHTTPUpstreamConfServer'
+            $ref: '#/definitions/NjetHTTPUpstreamConfServer'
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
-            invalid éˆ¥ï¿½**parameter**éˆ¥ï¿½ value (*UpstreamConfFormatError*),
-            missing éˆ¥ï¿½*server*éˆ¥ï¿½ argument (*UpstreamConfFormatError*),
-            unknown parameter éˆ¥ï¿½**name**éˆ¥ï¿½ (*UpstreamConfFormatError*),
+            invalid ¡°**parameter**¡± value (*UpstreamConfFormatError*),
+            missing ¡°*server*¡± argument (*UpstreamConfFormatError*),
+            unknown parameter ¡°**name**¡± (*UpstreamConfFormatError*),
             nested object or list (*UpstreamConfFormatError*),
-            éˆ¥ï¿½*error*éˆ¥ï¿½ while parsing (*UpstreamBadAddress*),
-            service upstream éˆ¥ï¿½*host*éˆ¥ï¿½ may not have port (*UpstreamBadAddress*),
-            service upstream éˆ¥ï¿½*host*éˆ¥ï¿½ requires domain name (*UpstreamBadAddress*),
-            invalid éˆ¥ï¿½*weight*éˆ¥ï¿½ (*UpstreamBadWeight*),
-            invalid éˆ¥ï¿½*max_conns*éˆ¥ï¿½ (*UpstreamBadMaxConns*),
-            invalid éˆ¥ï¿½*max_fails*éˆ¥ï¿½ (*UpstreamBadMaxFails*),
-            invalid éˆ¥ï¿½*fail_timeout*éˆ¥ï¿½ (*UpstreamBadFailTimeout*),
-            invalid éˆ¥ï¿½*slow_start*éˆ¥ï¿½ (*UpstreamBadSlowStart*),
+            ¡°*error*¡± while parsing (*UpstreamBadAddress*),
+            service upstream ¡°*host*¡± may not have port (*UpstreamBadAddress*),
+            service upstream ¡°*host*¡± requires domain name (*UpstreamBadAddress*),
+            invalid ¡°*weight*¡± (*UpstreamBadWeight*),
+            invalid ¡°*max_conns*¡± (*UpstreamBadMaxConns*),
+            invalid ¡°*max_fails*¡± (*UpstreamBadMaxFails*),
+            invalid ¡°*fail_timeout*¡± (*UpstreamBadFailTimeout*),
+            invalid ¡°*slow_start*¡± (*UpstreamBadSlowStart*),
             reading request body failed *BodyReadError*),
             route is too long (*UpstreamBadRoute*),
-            éˆ¥ï¿½*service*éˆ¥ï¿½ is empty (*UpstreamBadService*),
+            ¡°*service*¡± is empty (*UpstreamBadService*),
             no resolver defined to resolve (*UpstreamConfNoResolver*),
-            upstream éˆ¥ï¿½**name**éˆ¥ï¿½ has no backup (*UpstreamNoBackup*),
-            upstream éˆ¥ï¿½**name**éˆ¥ï¿½ memory exhausted (*UpstreamOutOfMemory*)
+            upstream ¡°**name**¡± has no backup (*UpstreamNoBackup*),
+            upstream ¡°**name**¡± memory exhausted (*UpstreamOutOfMemory*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
             Unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '405':
           description: Method disabled (*MethodDisabled*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '409':
           description: Entry exists (*EntryExists*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '415':
           description: JSON error (*JsonError*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
   '/http/upstreams/{httpUpstreamName}/servers/{httpUpstreamServerId}':
     parameters:
       - name: httpUpstreamName
@@ -236,20 +236,20 @@ paths:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/njetHTTPUpstreamConfServer'
+            $ref: '#/definitions/NjetHTTPUpstreamConfServer'
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
             invalid server ID (*UpstreamBadServerId*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
-            Server with ID éˆ¥ï¿½**id**éˆ¥ï¿½ does not exist (*UpstreamServerNotFound*),
+            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
     patch:
       tags:
         - HTTP Upstreams
@@ -265,53 +265,53 @@ paths:
         - in: body
           name: patchHttpUpstreamServer
           description: Server parameters, specified in the JSON format.
-            The éˆ¥ï¿½*ID*éˆ¥ï¿½, éˆ¥ï¿½*backup*éˆ¥ï¿½, and éˆ¥ï¿½*service*éˆ¥ï¿½ parameters
+            The ¡°*ID*¡±, ¡°*backup*¡±, and ¡°*service*¡± parameters
             cannot be changed.
           required: true
           schema:
-            $ref: '#/definitions/njetHTTPUpstreamConfServer'
+            $ref: '#/definitions/NjetHTTPUpstreamConfServer'
       responses:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/njetHTTPUpstreamConfServer'
+            $ref: '#/definitions/NjetHTTPUpstreamConfServer'
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
-            invalid éˆ¥ï¿½**parameter**éˆ¥ï¿½ value (*UpstreamConfFormatError*),
-            unknown parameter éˆ¥ï¿½**name**éˆ¥ï¿½ (*UpstreamConfFormatError*),
+            invalid ¡°**parameter**¡± value (*UpstreamConfFormatError*),
+            unknown parameter ¡°**name**¡± (*UpstreamConfFormatError*),
             nested object or list (*UpstreamConfFormatError*),
-            éˆ¥ï¿½*error*éˆ¥ï¿½ while parsing (*UpstreamBadAddress*),
-            invalid éˆ¥ï¿½*server*éˆ¥ï¿½ argument (*UpstreamBadAddress*),
+            ¡°*error*¡± while parsing (*UpstreamBadAddress*),
+            invalid ¡°*server*¡± argument (*UpstreamBadAddress*),
             invalid server ID (*UpstreamBadServerId*),
-            invalid éˆ¥ï¿½*weight*éˆ¥ï¿½ (*UpstreamBadWeight*),
-            invalid éˆ¥ï¿½*max_conns*éˆ¥ï¿½ (*UpstreamBadMaxConns*),
-            invalid éˆ¥ï¿½*max_fails*éˆ¥ï¿½ (*UpstreamBadMaxFails*),
-            invalid éˆ¥ï¿½*fail_timeout*éˆ¥ï¿½ (*UpstreamBadFailTimeout*),
-            invalid éˆ¥ï¿½*slow_start*éˆ¥ï¿½ (*UpstreamBadSlowStart*),
+            invalid ¡°*weight*¡± (*UpstreamBadWeight*),
+            invalid ¡°*max_conns*¡± (*UpstreamBadMaxConns*),
+            invalid ¡°*max_fails*¡± (*UpstreamBadMaxFails*),
+            invalid ¡°*fail_timeout*¡± (*UpstreamBadFailTimeout*),
+            invalid ¡°*slow_start*¡± (*UpstreamBadSlowStart*),
             reading request body failed *BodyReadError*),
             route is too long (*UpstreamBadRoute*),
-            éˆ¥ï¿½*service*éˆ¥ï¿½ is empty (*UpstreamBadService*),
-            server éˆ¥ï¿½**ID**éˆ¥ï¿½ address is immutable (*UpstreamServerImmutable*),
-            server éˆ¥ï¿½*ID*éˆ¥ï¿½ weight is immutable (*UpstreamServerWeightImmutable*),
-            upstream éˆ¥ï¿½*name*éˆ¥ï¿½ memory exhausted (*UpstreamOutOfMemory*)
+            ¡°*service*¡± is empty (*UpstreamBadService*),
+            server ¡°**ID**¡± address is immutable (*UpstreamServerImmutable*),
+            server ¡°*ID*¡± weight is immutable (*UpstreamServerWeightImmutable*),
+            upstream ¡°*name*¡± memory exhausted (*UpstreamOutOfMemory*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
-            Server with ID éˆ¥ï¿½**id**éˆ¥ï¿½ does not exist (*UpstreamServerNotFound*),
+            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '405':
           description: Method disabled (*MethodDisabled*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '415':
           description: JSON error (*JsonError*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
     delete:
       tags:
         - HTTP Upstreams
@@ -325,25 +325,25 @@ paths:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/njetHTTPUpstreamConfServerMap'
+            $ref: '#/definitions/NjetHTTPUpstreamConfServerMap'
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
             invalid server ID (*UpstreamBadServerId*),
-            server éˆ¥ï¿½**id**éˆ¥ï¿½ not removable (*UpstreamServerImmutable*)
+            server ¡°**id**¡± not removable (*UpstreamServerImmutable*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
-            Server with ID éˆ¥ï¿½**id**éˆ¥ï¿½ does not exist (*UpstreamServerNotFound*),
+            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '405':
           description: Method disabled (*MethodDisabled*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
   /stream/upstreams/:
     get:
       tags:
@@ -360,17 +360,17 @@ paths:
           in: query
           type: string
           description: Limits which fields of upstream server groups will be output.
-            If the éˆ¥ï¿½<literal>fields</literal>éˆ¥ï¿½ value is empty,
+            If the ¡°<literal>fields</literal>¡± value is empty,
             only names of upstreams will be output.
       responses:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/njetStreamUpstreamMap'
+            $ref: '#/definitions/NjetStreamUpstreamMap'
         '404':
           description: Unknown version (*UnknownVersion*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
   '/stream/upstreams/{streamUpstreamName}/':
     parameters:
     - name: streamUpstreamName
@@ -397,17 +397,17 @@ paths:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/njetStreamUpstream'
+            $ref: '#/definitions/NjetStreamUpstream'
         '400':
           description: Upstream is static (*UpstreamStatic*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
             Unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
     delete:
       tags:
         - Stream Upstreams
@@ -424,17 +424,17 @@ paths:
         '400':
           description: Upstream is static (*UpstreamStatic*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
             Unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '405':
           description: Method disabled (*MethodDisabled*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
   '/stream/upstreams/{streamUpstreamName}/servers/':
     parameters:
       - name: streamUpstreamName
@@ -456,17 +456,17 @@ paths:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/njetStreamUpstreamConfServerMap'
+            $ref: '#/definitions/NjetStreamUpstreamConfServerMap'
         '400':
           description: Upstream is static (*UpstreamStatic*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
             Unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
     post:
       tags:
         - Stream Upstreams
@@ -482,57 +482,57 @@ paths:
           name: postStreamUpstreamServer
           description: Address of a new server and other optional parameters
             in the JSON format.
-            The éˆ¥ï¿½*ID*éˆ¥ï¿½, éˆ¥ï¿½*backup*éˆ¥ï¿½, and éˆ¥ï¿½*service*éˆ¥ï¿½ parameters
+            The ¡°*ID*¡±, ¡°*backup*¡±, and ¡°*service*¡± parameters
             cannot be changed.
           required: true
           schema:
-            $ref: '#/definitions/njetStreamUpstreamConfServer'
+            $ref: '#/definitions/NjetStreamUpstreamConfServer'
       responses:
         '201':
           description: Created
           schema:
-            $ref: '#/definitions/njetStreamUpstreamConfServer'
+            $ref: '#/definitions/NjetStreamUpstreamConfServer'
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
-            invalid éˆ¥ï¿½**parameter**éˆ¥ï¿½ value (*UpstreamConfFormatError*),
-            missing éˆ¥ï¿½*server*éˆ¥ï¿½ argument (*UpstreamConfFormatError*),
-            unknown parameter éˆ¥ï¿½**name**éˆ¥ï¿½ (*UpstreamConfFormatError*),
+            invalid ¡°**parameter**¡± value (*UpstreamConfFormatError*),
+            missing ¡°*server*¡± argument (*UpstreamConfFormatError*),
+            unknown parameter ¡°**name**¡± (*UpstreamConfFormatError*),
             nested object or list (*UpstreamConfFormatError*),
-            éˆ¥ï¿½*error*éˆ¥ï¿½ while parsing (*UpstreamBadAddress*),
-            no port in server éˆ¥ï¿½*host*éˆ¥ï¿½ (*UpstreamBadAddress*),
-            service upstream éˆ¥ï¿½*host*éˆ¥ï¿½ may not have port (*UpstreamBadAddress*),
-            service upstream éˆ¥ï¿½*host*éˆ¥ï¿½ requires domain name (*UpstreamBadAddress*),
-            invalid éˆ¥ï¿½*weight*éˆ¥ï¿½ (*UpstreamBadWeight*),
-            invalid éˆ¥ï¿½*max_conns*éˆ¥ï¿½ (*UpstreamBadMaxConns*),
-            invalid éˆ¥ï¿½*max_fails*éˆ¥ï¿½ (*UpstreamBadMaxFails*),
-            invalid éˆ¥ï¿½*fail_timeout*éˆ¥ï¿½ (*UpstreamBadFailTimeout*),
-            invalid éˆ¥ï¿½*slow_start*éˆ¥ï¿½ (*UpstreamBadSlowStart*),
-            éˆ¥ï¿½*service*éˆ¥ï¿½ is empty (*UpstreamBadService*),
+            ¡°*error*¡± while parsing (*UpstreamBadAddress*),
+            no port in server ¡°*host*¡± (*UpstreamBadAddress*),
+            service upstream ¡°*host*¡± may not have port (*UpstreamBadAddress*),
+            service upstream ¡°*host*¡± requires domain name (*UpstreamBadAddress*),
+            invalid ¡°*weight*¡± (*UpstreamBadWeight*),
+            invalid ¡°*max_conns*¡± (*UpstreamBadMaxConns*),
+            invalid ¡°*max_fails*¡± (*UpstreamBadMaxFails*),
+            invalid ¡°*fail_timeout*¡± (*UpstreamBadFailTimeout*),
+            invalid ¡°*slow_start*¡± (*UpstreamBadSlowStart*),
+            ¡°*service*¡± is empty (*UpstreamBadService*),
             no resolver defined to resolve (*UpstreamConfNoResolver*),
-            upstream éˆ¥ï¿½**name**éˆ¥ï¿½ has no backup (*UpstreamNoBackup*),
-            upstream éˆ¥ï¿½**name**éˆ¥ï¿½ memory exhausted (*UpstreamOutOfMemory*),
+            upstream ¡°**name**¡± has no backup (*UpstreamNoBackup*),
+            upstream ¡°**name**¡± memory exhausted (*UpstreamOutOfMemory*),
             reading request body failed *BodyReadError*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
             Unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '405':
           description: Method disabled (*MethodDisabled*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '409':
           description: Entry exists (*EntryExists*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '415':
           description: JSON error (*JsonError*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
   '/stream/upstreams/{streamUpstreamName}/servers/{streamUpstreamServerId}':
     parameters:
       - name: streamUpstreamName
@@ -559,20 +559,20 @@ paths:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/njetStreamUpstreamConfServer'
+            $ref: '#/definitions/NjetStreamUpstreamConfServer'
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
             invalid server ID (*UpstreamBadServerId*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
             Unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*),
-            server with ID éˆ¥ï¿½**id**éˆ¥ï¿½ does not exist (*UpstreamServerNotFound*)
+            server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
     patch:
       tags:
         - Stream Upstreams
@@ -588,53 +588,53 @@ paths:
         - in: body
           name: patchStreamUpstreamServer
           description: Server parameters, specified in the JSON format.
-            The éˆ¥ï¿½*ID*éˆ¥ï¿½, éˆ¥ï¿½*backup*éˆ¥ï¿½, and éˆ¥ï¿½*service*éˆ¥ï¿½ parameters
+            The ¡°*ID*¡±, ¡°*backup*¡±, and ¡°*service*¡± parameters
             cannot be changed.
           required: true
           schema:
-            $ref: '#/definitions/njetStreamUpstreamConfServer'
+            $ref: '#/definitions/NjetStreamUpstreamConfServer'
       responses:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/njetStreamUpstreamConfServer'
+            $ref: '#/definitions/NjetStreamUpstreamConfServer'
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
-            invalid éˆ¥ï¿½**parameter**éˆ¥ï¿½ value (*UpstreamConfFormatError*),
-            unknown parameter éˆ¥ï¿½**name**éˆ¥ï¿½ (*UpstreamConfFormatError*),
+            invalid ¡°**parameter**¡± value (*UpstreamConfFormatError*),
+            unknown parameter ¡°**name**¡± (*UpstreamConfFormatError*),
             nested object or list (*UpstreamConfFormatError*),
-            éˆ¥ï¿½*error*éˆ¥ï¿½ while parsing (*UpstreamBadAddress*),
-            invalid éˆ¥ï¿½*server*éˆ¥ï¿½ argument (*UpstreamBadAddress*),
-            no port in server éˆ¥ï¿½*host*éˆ¥ï¿½ (*UpstreamBadAddress*),
+            ¡°*error*¡± while parsing (*UpstreamBadAddress*),
+            invalid ¡°*server*¡± argument (*UpstreamBadAddress*),
+            no port in server ¡°*host*¡± (*UpstreamBadAddress*),
             invalid server ID (*UpstreamBadServerId*),
-            invalid éˆ¥ï¿½*weight*éˆ¥ï¿½ (*UpstreamBadWeight*),
-            invalid éˆ¥ï¿½*max_conns*éˆ¥ï¿½ (*UpstreamBadMaxConns*),
-            invalid éˆ¥ï¿½*max_fails*éˆ¥ï¿½ (*UpstreamBadMaxFails*),
-            invalid éˆ¥ï¿½*fail_timeout*éˆ¥ï¿½ (*UpstreamBadFailTimeout*),
-            invalid éˆ¥ï¿½*slow_start*éˆ¥ï¿½ (*UpstreamBadSlowStart*),
+            invalid ¡°*weight*¡± (*UpstreamBadWeight*),
+            invalid ¡°*max_conns*¡± (*UpstreamBadMaxConns*),
+            invalid ¡°*max_fails*¡± (*UpstreamBadMaxFails*),
+            invalid ¡°*fail_timeout*¡± (*UpstreamBadFailTimeout*),
+            invalid ¡°*slow_start*¡± (*UpstreamBadSlowStart*),
             reading request body failed *BodyReadError*),
-            éˆ¥ï¿½*service*éˆ¥ï¿½ is empty (*UpstreamBadService*),
-            server éˆ¥ï¿½**ID**éˆ¥ï¿½ address is immutable (*UpstreamServerImmutable*),
-            server éˆ¥ï¿½**ID**éˆ¥ï¿½ weight is immutable (*UpstreamServerWeightImmutable*),
-            upstream éˆ¥ï¿½*name*éˆ¥ï¿½ memory exhausted (*UpstreamOutOfMemory*)
+            ¡°*service*¡± is empty (*UpstreamBadService*),
+            server ¡°**ID**¡± address is immutable (*UpstreamServerImmutable*),
+            server ¡°**ID**¡± weight is immutable (*UpstreamServerWeightImmutable*),
+            upstream ¡°*name*¡± memory exhausted (*UpstreamOutOfMemory*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
-            Server with ID éˆ¥ï¿½**id**éˆ¥ï¿½ does not exist (*UpstreamServerNotFound*),
+            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '405':
           description: Method disabled (*MethodDisabled*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '415':
           description: JSON error (*JsonError*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
     delete:
       tags:
         - Stream Upstreams
@@ -648,25 +648,25 @@ paths:
         '200':
           description: Success
           schema:
-            $ref: '#/definitions/njetStreamUpstreamConfServerMap'
+            $ref: '#/definitions/NjetStreamUpstreamConfServerMap'
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
             invalid server ID (*UpstreamBadServerId*),
-            server éˆ¥ï¿½**id**éˆ¥ï¿½ not removable (*UpstreamServerImmutable*)
+            server ¡°**id**¡± not removable (*UpstreamServerImmutable*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '404':
           description: |
-            Server with ID éˆ¥ï¿½**id**éˆ¥ï¿½ does not exist (*UpstreamServerNotFound*),
+            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
         '405':
           description: Method disabled (*MethodDisabled*)
           schema:
-            $ref: '#/definitions/njetError'
+            $ref: '#/definitions/NjetError'
 ###
 ###DEFINITIONS
 ###
@@ -678,15 +678,232 @@ definitions:
     type: array
     items:
       type: string
-  njetHTTPUpstreamMap:
+  NjetHTTPServerZonesMap:
+    title: HTTP Server Zones
+    description: |
+      Status data for all HTTP
+      <a href="https://njet.org/en/docs/http/ngx_http_api_module.html#status_zone">status zones</a>.
+    type: object
+    additionalProperties:
+      $ref: '#/definitions/NjetHTTPServerZone'
+    example:
+      site1:
+        processing: 2
+        requests: 736395
+        responses:
+          1xx: 0
+          2xx: 727290
+          3xx: 4614
+          4xx: 934
+          5xx: 1535
+          codes:
+            200: 727270
+            301: 4614
+            404: 930
+            503: 1535
+          total: 734373
+        discarded: 2020
+        received: 180157219
+        sent: 20183175459
+        ssl:
+          handshakes: 65432
+          handshakes_failed: 421
+          session_reuses: 4645
+          no_common_protocol: 4
+          no_common_cipher: 2
+          handshake_timeout: 0
+          peer_rejected_cert: 0
+          verify_failures:
+            no_cert: 0
+            expired_cert: 2
+            revoked_cert: 1
+            hostname_mismatch: 2
+            other: 1
+      site2:
+        processing: 1
+        requests: 185307
+        responses:
+          1xx: 0
+          2xx: 112674
+          3xx: 45383
+          4xx: 2504
+          5xx: 4419
+          codes:
+            200: 112674
+            301: 45383
+            404: 2504
+            503: 4419
+          total: 164980
+        discarded: 20326
+        received: 51575327
+        sent: 2983241510
+        ssl:
+          handshakes: 104303
+          handshakes_failed: 1421
+          session_reuses: 54645
+          no_common_protocol: 4
+          no_common_cipher: 2
+          handshake_timeout: 0
+          peer_rejected_cert: 0
+          verify_failures:
+            no_cert: 0
+            expired_cert: 2
+            revoked_cert: 1
+            hostname_mismatch: 2
+            other: 1
+  NjetHTTPServerZone:
+    title: HTTP Server Zone
+    type: object
+    properties:
+      processing:
+        type: integer
+        description: The number of client requests
+          that are currently being processed.
+      requests:
+        type: integer
+        description: The total number of client requests received from clients.
+      responses:
+        description: The total number of responses sent to clients, the
+          number of responses with status codes
+          ¡°<code>1xx</code>¡±, ¡°<code>2xx</code>¡±, ¡°<code>3xx</code>¡±,
+          ¡°<code>4xx</code>¡±, and ¡°<code>5xx</code>¡±, and
+          the number of responses per each status code.
+        type: object
+        readOnly: true
+        properties:
+          1xx:
+            type: integer
+            description: The number of responses with ¡°<code>1xx</code>¡± status codes.
+            readOnly: true
+          2xx:
+            type: integer
+            description: The number of responses with ¡°<code>2xx</code>¡± status codes.
+            readOnly: true
+          3xx:
+           type: integer
+           description: The number of responses with ¡°<code>3xx</code>¡± status codes.
+           readOnly: true
+          4xx:
+            type: integer
+            description: The number of responses with ¡°<code>4xx</code>¡± status codes.
+            readOnly: true
+          5xx:
+            type: integer
+            description: The number of responses with ¡°<code>5xx</code>¡± status codes.
+            readOnly: true
+          codes:
+            type: object
+            description: The number of responses per each status code.
+            readOnly: true
+            properties:
+              codeNumber:
+                type: integer
+                description: The number of responses with this particular status code.
+                readOnly: true
+          total:
+            type: integer
+            description: The total number of responses sent to clients.
+            readOnly: true
+      discarded:
+        type: integer
+        description: The total number of
+          requests completed without sending a response.
+      received:
+        type: integer
+        description: The total number of bytes received from clients.
+      sent:
+        type: integer
+        description: The total number of bytes sent to clients.
+      ssl:
+        type: object
+        readOnly: true
+        properties:
+          handshakes:
+            type: integer
+            description: The total number of successful SSL handshakes.
+            readOnly: true
+          handshakes_failed:
+            type: integer
+            description: The total number of failed SSL handshakes.
+            readOnly: true
+          session_reuses:
+            type: integer
+            description: The total number of session reuses during SSL handshake.
+            readOnly: true
+          no_common_protocol:
+            type: integer
+            description: The number of SSL handshakes failed
+              because of no common protocol.
+          no_common_cipher:
+            type: integer
+            description: The number of SSL handshakes failed
+              because of no shared cipher.
+          handshake_timeout:
+            type: integer
+            description: The number of SSL handshakes failed
+              because of a timeout.
+          peer_rejected_cert:
+            type: integer
+            description: The number of failed SSL handshakes
+              when njet presented the certificate to the client
+              but it was rejected with a corresponding alert message.
+          verify_failures:
+            type: object
+            description: SSL certificate verification errors
+            properties:
+              no_cert:
+                type: integer
+                description: A client did not provide the required certificate.
+              expired_cert:
+                type: integer
+                description: An expired or not yet valid certificate
+                  was presented by a client.
+              revoked_cert:
+                type: integer
+                description: A revoked certificate was presented by a client.
+              other:
+                type: integer
+                description: Other SSL certificate verification errors.
+    example:
+      processing: 1
+      requests: 706690
+      responses:
+        1xx: 0
+        2xx: 699482
+        3xx: 4522
+        4xx: 907
+        5xx: 266
+        codes:
+          200: 699482
+          301: 4522
+          404: 907
+          503: 266
+        total: 705177
+      discarded: 1513
+      received: 172711587
+      sent: 19415530115
+      ssl:
+        handshakes: 104303
+        handshakes_failed: 1421
+        session_reuses: 54645
+        no_common_protocol: 4
+        no_common_cipher: 2
+        handshake_timeout: 0
+        peer_rejected_cert: 0
+        verify_failures:
+          no_cert: 0
+          expired_cert: 2
+          revoked_cert: 1
+          other: 1
+  NjetHTTPUpstreamMap:
     title: HTTP Upstreams
     description: |
       Status information of all HTTP
-      <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#zone">dynamically configurable</a>
-      <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#upstream">groups</a>.
+      <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#zone">dynamically configurable</a>
+      <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#upstream">groups</a>.
     type: object
     additionalProperties:
-      $ref: '#/definitions/njetHTTPUpstream'
+      $ref: '#/definitions/NjetHTTPUpstream'
     example:
       trac-backend:
         peers:
@@ -844,16 +1061,16 @@ definitions:
         keepalive: 0
         zombies: 0
         zone: hg-backend
-  njetHTTPUpstream:
+  NjetHTTPUpstream:
     title: HTTP Upstream
     type: object
     properties:
       peers:
-        $ref: '#/definitions/njetHTTPUpstreamPeerMap'
+        $ref: '#/definitions/NjetHTTPUpstreamPeerMap'
       keepalive:
         type: integer
         description: The current number of idle
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#keepalive">keepalive</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#keepalive">keepalive</a>
           connections.
       zombies:
         type: integer
@@ -862,13 +1079,13 @@ definitions:
       zone:
         type: string
         description: The name of the shared memory
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#zone">zone</a>
-          that keeps the groupéˆ¥æªš configuration and run-time state.
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#zone">zone</a>
+          that keeps the group¡¯s configuration and run-time state.
       queue:
         type: object
         description: >
           For the requests
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#queue">queue</a>,
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#queue">queue</a>,
           the following data are provided:
         properties:
           size:
@@ -962,15 +1179,15 @@ definitions:
         keepalive: 0
         zombies: 0
         zone: upstream_backend
-  njetHTTPUpstreamPeerMap:
+  NjetHTTPUpstreamPeerMap:
     title: HTTP Upstream Servers
     description: |
       An array of HTTP
-      <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#upstream">upstream servers</a>.
+      <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#upstream">upstream servers</a>.
     type: array
     items:
-      $ref: '#/definitions/njetHTTPUpstreamPeer'
-  njetHTTPUpstreamPeer:
+      $ref: '#/definitions/NjetHTTPUpstreamPeer'
+  NjetHTTPUpstreamPeer:
     title: HTTP Upstream Server
     type: object
     properties:
@@ -980,29 +1197,29 @@ definitions:
         readOnly: true
       server:
         type: string
-        description: An  <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#server">address</a>
+        description: An  <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#server">address</a>
           of the server.
       service:
         type: string
         description: The
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#service">service</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#service">service</a>
           parameter value of the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#server">server</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#server">server</a>
           directive.
       name:
         type: string
         description: The name of the server specified in the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#server">server</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#server">server</a>
           directive.
         readOnly: true
       backup:
         type: boolean
         description: A boolean value indicating whether the server is a
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#backup">backup</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#backup">backup</a>
           server.
       weight:
         type: integer
-        description: <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#weight">Weight</a>
+        description: <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#weight">Weight</a>
           of the server.
       state:
         type: string
@@ -1014,9 +1231,9 @@ definitions:
           - checking
           - unhealthy
         description: Current state, which may be one of
-          éˆ¥ï¿½<code>up</code>éˆ¥ï¿½, éˆ¥ï¿½<code>draining</code>éˆ¥ï¿½, éˆ¥ï¿½<code>down</code>éˆ¥ï¿½,
-          éˆ¥ï¿½<code>unavail</code>éˆ¥ï¿½, éˆ¥ï¿½<code>checking</code>éˆ¥ï¿½,
-          and éˆ¥ï¿½<code>unhealthy</code>éˆ¥ï¿½.
+          ¡°<code>up</code>¡±, ¡°<code>draining</code>¡±, ¡°<code>down</code>¡±,
+          ¡°<code>unavail</code>¡±, ¡°<code>checking</code>¡±,
+          and ¡°<code>unhealthy</code>¡±.
       active:
         type: integer
         description: The current number of active connections.
@@ -1070,7 +1287,7 @@ definitions:
       max_conns:
         type: integer
         description: The
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#max_conns">max_conns</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_conns">max_conns</a>
           limit for the server.
       requests:
         type: integer
@@ -1082,23 +1299,23 @@ definitions:
         properties:
           1xx:
             type: integer
-            description: The number of responses with éˆ¥ï¿½<code>1xx</code>éˆ¥ï¿½ status codes.
+            description: The number of responses with ¡°<code>1xx</code>¡± status codes.
             readOnly: true
           2xx:
             type: integer
-            description: The number of responses with éˆ¥ï¿½<code>2xx</code>éˆ¥ï¿½ status codes.
+            description: The number of responses with ¡°<code>2xx</code>¡± status codes.
             readOnly: true
           3xx:
            type: integer
-           description: The number of responses with éˆ¥ï¿½<code>3xx</code>éˆ¥ï¿½ status codes.
+           description: The number of responses with ¡°<code>3xx</code>¡± status codes.
            readOnly: true
           4xx:
             type: integer
-            description: The number of responses with éˆ¥ï¿½<code>4xx</code>éˆ¥ï¿½ status codes.
+            description: The number of responses with ¡°<code>4xx</code>¡± status codes.
             readOnly: true
           5xx:
             type: integer
-            description: The number of responses with éˆ¥ï¿½<code>5xx</code>éˆ¥ï¿½ status codes.
+            description: The number of responses with ¡°<code>5xx</code>¡± status codes.
             readOnly: true
           codes:
             type: object
@@ -1129,9 +1346,9 @@ definitions:
       unavail:
         type: integer
         description: How many times the server became unavailable for client requests
-          (state éˆ¥ï¿½<code>unavail</code>éˆ¥ï¿½) due to the number of unsuccessful
+          (state ¡°<code>unavail</code>¡±) due to the number of unsuccessful
           attempts reaching the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#max_fails">max_fails</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_fails">max_fails</a>
           threshold.
         readOnly: true
       health_checks:
@@ -1141,7 +1358,7 @@ definitions:
           checks:
             type: integer
             description: The total number of
-              <a href="https://njet.org/en/docs/http/njt_http_upstream_hc_module.html#health_check">health check</a>
+              <a href="https://njet.org/en/docs/http/ngx_http_upstream_hc_module.html#health_check">health check</a>
               requests made.
           fails:
             type: integer
@@ -1149,24 +1366,24 @@ definitions:
           unhealthy:
             type: integer
             description: How many times the server became unhealthy
-              (state éˆ¥ï¿½<code>unhealthy</code>éˆ¥ï¿½).
+              (state ¡°<code>unhealthy</code>¡±).
           last_passed:
             type: boolean
             description: Boolean indicating if the last health check request was successful
               and passed
-              <a href="https://njet.org/en/docs/http/njt_http_upstream_hc_module.html#match">tests</a>.
+              <a href="https://njet.org/en/docs/http/ngx_http_upstream_hc_module.html#match">tests</a>.
       downtime:
         type: integer
         readOnly: true
-        description: Total time the server was in the éˆ¥ï¿½<code>unavail</code>éˆ¥ï¿½,
-          éˆ¥ï¿½<code>checking</code>éˆ¥ï¿½, and éˆ¥ï¿½<code>unhealthy</code>éˆ¥ï¿½ states.
+        description: Total time the server was in the ¡°<code>unavail</code>¡±,
+          ¡°<code>checking</code>¡±, and ¡°<code>unhealthy</code>¡± states.
       downstart:
         type: string
         format: date-time
         readOnly: true
         description: The time when the server became
-          éˆ¥ï¿½<code>unavail</code>éˆ¥ï¿½, éˆ¥ï¿½<code>checking</code>éˆ¥ï¿½,
-          or éˆ¥ï¿½<code>unhealthy</code>éˆ¥ï¿½,
+          ¡°<code>unavail</code>¡±, ¡°<code>checking</code>¡±,
+          or ¡°<code>unhealthy</code>¡±,
           in the ISO 8601 format with millisecond resolution.
       selected:
         type: string
@@ -1178,20 +1395,20 @@ definitions:
         type: integer
         readOnly: true
         description: The average time to get the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#var_upstream_header_time">response header</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#var_upstream_header_time">response header</a>
           from the server.
       response_time:
         type: integer
         readOnly: true
         description: The average time to get the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#var_upstream_response_time">full response</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#var_upstream_response_time">full response</a>
           from the server.
-  njetHTTPUpstreamConfServerMap:
+  NjetHTTPUpstreamConfServerMap:
     title: HTTP Upstream Servers
     description: An array of HTTP upstream servers for dynamic configuration.
     type: array
     items:
-      $ref: '#/definitions/njetHTTPUpstreamConfServer'
+      $ref: '#/definitions/NjetHTTPUpstreamConfServer'
     example:
       - id: 0
         server: 10.0.0.1:8088
@@ -1213,11 +1430,11 @@ definitions:
         route: ''
         backup: true
         down: true
-  njetHTTPUpstreamConfServer:
+  NjetHTTPUpstreamConfServer:
     title: HTTP Upstream Server
     description: |
       Dynamically configurable parameters of an HTTP upstream
-      <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#server">server</a>:
+      <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#server">server</a>:
     type: object
     properties:
       id:
@@ -1228,7 +1445,7 @@ definitions:
       server:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#address">address</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#address">address</a>
           parameter of the HTTP upstream server.
           When adding a server, it is possible to specify it as a domain name.
           In this case, changes of the IP addresses
@@ -1236,64 +1453,64 @@ definitions:
           applied to the upstream configuration
           without the need of restarting njet.
           This requires the
-          <a href="https://njet.org/en/docs/http/njt_http_core_module.html#resolver">resolver</a>
-          directive in the éˆ¥ï¿½<code>http</code>éˆ¥ï¿½ block.
+          <a href="https://njet.org/en/docs/http/ngx_http_core_module.html#resolver">resolver</a>
+          directive in the ¡°<code>http</code>¡± block.
           See also the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#resolve">resolve</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#resolve">resolve</a>
           parameter of the HTTP upstream server.
       service:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#service">service</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#service">service</a>
           parameter of the HTTP upstream server.
           This parameter cannot be changed.
         readOnly: true
       weight:
         type: integer
         description: Same as the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#weight">weight</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#weight">weight</a>
           parameter of the HTTP upstream server.
       max_conns:
         type: integer
         description: Same as the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#max_conns">max_conns</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_conns">max_conns</a>
           parameter of the HTTP upstream server.
       max_fails:
         type: integer
         description: Same as the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#max_fails">max_fails</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_fails">max_fails</a>
           parameter of the HTTP upstream server.
       fail_timeout:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#fail_timeout">fail_timeout</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#fail_timeout">fail_timeout</a>
           parameter of the HTTP upstream server.
       slow_start:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#slow_start">slow_start</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#slow_start">slow_start</a>
           parameter of the HTTP upstream server.
       route:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#route">route</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#route">route</a>
           parameter of the HTTP upstream server.
       backup:
         type: boolean
         description: When <code>true</code>, adds a
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#backup">backup</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#backup">backup</a>
           server.
           This parameter cannot be changed.
         readOnly: true
       down:
         type: boolean
         description: Same as the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#down">down</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#down">down</a>
           parameter of the HTTP upstream server.
       drain:
         type: boolean
         description: Same as the
-          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#drain">drain</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#drain">drain</a>
           parameter of the HTTP upstream server.
       parent:
         type: string
@@ -1316,12 +1533,189 @@ definitions:
       route: ''
       backup: true
       down: true
-  njetStreamUpstreamMap:
+  NjetStreamServerZonesMap:
+    title: Stream Server Zones
+    description: |
+      Status information for all stream
+      <a href="https://njet.org/en/docs/http/ngx_http_api_module.html#status_zone">status zones</a>.
+    type: object
+    additionalProperties:
+      $ref: '#/definitions/NjetStreamServerZone'
+    example:
+      mysql-frontend:
+        processing: 2
+        connections: 270925
+        sessions:
+          2xx: 155564
+          4xx: 0
+          5xx: 0
+          total: 270925
+        discarded: 0
+        received: 28988975
+        sent: 3879346317
+        ssl:
+          handshakes: 76455
+          handshakes_failed: 432
+          session_reuses: 28770
+          no_common_protocol: 4
+          no_common_cipher: 2
+          handshake_timeout: 0
+          peer_rejected_cert: 0
+          verify_failures:
+            no_cert: 0
+            expired_cert: 2
+            revoked_cert: 1
+            other: 1
+      dns:
+        processing: 1
+        connections: 155569
+        sessions:
+          2xx: 155564
+          4xx: 0
+          5xx: 0
+          total: 155569
+        discarded: 0
+        received: 4200363
+        sent: 20489184
+        ssl:
+          handshakes: 2040
+          handshakes_failed: 23
+          session_reuses: 65
+          no_common_protocol: 4
+          no_common_cipher: 2
+          handshake_timeout: 0
+          peer_rejected_cert: 0
+          verify_failures:
+            no_cert: 0
+            expired_cert: 2
+            revoked_cert: 1
+            other: 1
+  NjetStreamServerZone:
+    title: Stream Server Zone
+    type: object
+    properties:
+      processing:
+        type: integer
+        description: The number of client connections
+          that are currently being processed.
+      connections:
+        type: integer
+        description: The total number of connections accepted from clients.
+      sessions:
+        type: object
+        description: The total number of completed sessions,
+          and the number of sessions completed with status codes
+          ¡°<code>2xx</code>¡±, ¡°<code>4xx</code>¡±, or ¡°<code>5xx</code>¡±.
+        properties:
+          2xx:
+            type: integer
+            description: The total number of sessions completed with
+              <a href="https://njet.org/en/docs/stream/ngx_stream_core_module.html#var_status">status codes</a>
+              ¡°<code>2xx</code>¡±.
+          4xx:
+            type: integer
+            description: The total number of sessions completed with
+              <a href="https://njet.org/en/docs/stream/ngx_stream_core_module.html#var_status">status codes</a>
+              ¡°<code>4xx</code>¡±.
+          5xx:
+            type: integer
+            description: The total number of sessions completed with
+              <a href="https://njet.org/en/docs/stream/ngx_stream_core_module.html#var_status">status codes</a>
+              ¡°<code>5xx</code>¡±.
+          total:
+            type: integer
+            description: The total number of completed client sessions.
+      discarded:
+        type: integer
+        description: The total number of
+          connections completed without creating a session.
+      received:
+        type: integer
+        description: The total number of bytes received from clients.
+      sent:
+        type: integer
+        description: The total number of bytes sent to clients.
+      ssl:
+        type: object
+        readOnly: true
+        properties:
+          handshakes:
+            type: integer
+            description: The total number of successful SSL handshakes.
+            readOnly: true
+          handshakes_failed:
+            type: integer
+            description: The total number of failed SSL handshakes.
+            readOnly: true
+          session_reuses:
+            type: integer
+            description: The total number of session reuses during SSL handshake.
+            readOnly: true
+          no_common_protocol:
+            type: integer
+            description: The number of SSL handshakes failed
+              because of no common protocol.
+          no_common_cipher:
+            type: integer
+            description: The number of SSL handshakes failed
+              because of no shared cipher.
+          handshake_timeout:
+            type: integer
+            description: The number of SSL handshakes failed
+              because of a timeout.
+          peer_rejected_cert:
+            type: integer
+            description: The number of failed SSL handshakes
+              when njet presented the certificate to the client
+              but it was rejected with a corresponding alert message.
+          verify_failures:
+            type: object
+            description: SSL certificate verification errors
+            properties:
+              no_cert:
+                type: integer
+                description: A client did not provide the required certificate.
+              expired_cert:
+                type: integer
+                description: An expired or not yet valid certificate
+                  was presented by a client.
+              revoked_cert:
+                type: integer
+                description: A revoked certificate was presented by a client.
+              other:
+                type: integer
+                description: Other SSL certificate verification errors.
+    example:
+      dns:
+        processing: 1
+        connections: 155569
+        sessions:
+          2xx: 155564
+          4xx: 0
+          5xx: 0
+          total: 155569
+        discarded: 0
+        received: 4200363
+        sent: 20489184
+        ssl:
+          handshakes: 76455
+          handshakes_failed: 432
+          session_reuses: 28770
+          no_common_protocol: 4
+          no_common_cipher: 2
+          handshake_timeout: 0
+          peer_rejected_cert: 0
+          verify_failures:
+            no_cert: 0
+            expired_cert: 2
+            revoked_cert: 1
+            other: 1
+  NjetStreamUpstreamMap:
     title: Stream Upstreams
     description: Status information of stream upstream server groups.
     type: object
     additionalProperties:
-      $ref: '#/definitions/njetStreamUpstream'
+      $ref: '#/definitions/NjetStreamUpstream'
     example:
       mysql_backends:
         peers:
@@ -1439,12 +1833,12 @@ definitions:
             selected: 2022-06-28T15:01:25Z
         zombies: 0
         zone: dns
-  njetStreamUpstream:
+  NjetStreamUpstream:
     title: Stream Upstream
     type: object
     properties:
       peers:
-        $ref: '#/definitions/njetStreamUpstreamPeerMap'
+        $ref: '#/definitions/NjetStreamUpstreamPeerMap'
       zombies:
         type: integer
         description: The current number of servers removed from the group
@@ -1452,8 +1846,8 @@ definitions:
       zone:
         type: string
         description: The name of the shared memory
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#zone">zone</a>
-          that keeps the groupéˆ¥æªš configuration and run-time state.
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#zone">zone</a>
+          that keeps the group¡¯s configuration and run-time state.
     example:
       dns:
         peers:
@@ -1513,13 +1907,13 @@ definitions:
             selected: 2022-06-28T15:01:25Z
         zombies: 0
         zone: dns
-  njetStreamUpstreamPeerMap:
+  NjetStreamUpstreamPeerMap:
     title: Stream Upstream Servers
     description: Array of stream upstream servers.
     type: array
     items:
-      $ref: '#/definitions/njetStreamUpstreamPeer'
-  njetStreamUpstreamPeer:
+      $ref: '#/definitions/NjetStreamUpstreamPeer'
+  NjetStreamUpstreamPeer:
     title: Stream Upstream Server
     type: object
     properties:
@@ -1530,30 +1924,30 @@ definitions:
       server:
         type: string
         description: An
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#server">address</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">address</a>
           of the server.
       service:
         type: string
         description: The
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#service">service</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#service">service</a>
           parameter value of the
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#server">server</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">server</a>
           directive.
       name:
         type: string
         format: hostname
         description: The name of the server specified in the
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#server">server</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">server</a>
           directive.
         readOnly: true
       backup:
         type: boolean
         description: A boolean value indicating whether the server is a
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#backup">backup</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#backup">backup</a>
           server.
       weight:
         type: integer
-        description: <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#weight">Weight</a>
+        description: <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#weight">Weight</a>
           of the server.
       state:
         type: string
@@ -1565,8 +1959,8 @@ definitions:
           - checking
           - unhealthy
         description: Current state, which may be one of
-          éˆ¥ï¿½<code>up</code>éˆ¥ï¿½, éˆ¥ï¿½<code>down</code>éˆ¥ï¿½, éˆ¥ï¿½<code>unavail</code>éˆ¥ï¿½,
-          éˆ¥ï¿½<code>checking</code>éˆ¥ï¿½, or éˆ¥ï¿½<code>unhealthy</code>éˆ¥ï¿½.
+          ¡°<code>up</code>¡±, ¡°<code>down</code>¡±, ¡°<code>unavail</code>¡±,
+          ¡°<code>checking</code>¡±, or ¡°<code>unhealthy</code>¡±.
       active:
         type: integer
         description: The current number of connections.
@@ -1620,7 +2014,7 @@ definitions:
       max_conns:
         type: integer
         description: The
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#max_conns">max_conns</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_conns">max_conns</a>
           limit for the server.
       connections:
         type: integer
@@ -1654,9 +2048,9 @@ definitions:
       unavail:
         type: integer
         description: How many times the server became unavailable for client connections
-          (state éˆ¥ï¿½<code>unavail</code>éˆ¥ï¿½) due to the number of unsuccessful
+          (state ¡°<code>unavail</code>¡±) due to the number of unsuccessful
           attempts reaching the
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#max_fails">max_fails</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_fails">max_fails</a>
           threshold.
         readOnly: true
       health_checks:
@@ -1666,7 +2060,7 @@ definitions:
           checks:
             type: integer
             description: The total number of
-              <a href="https://njet.org/en/docs/stream/njt_stream_upstream_hc_module.html#health_check">health check</a>
+              <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_hc_module.html#health_check">health check</a>
               requests made.
             readOnly: true
           fails:
@@ -1676,26 +2070,26 @@ definitions:
           unhealthy:
             type: integer
             description: How many times the server became unhealthy
-              (state éˆ¥ï¿½<code>unhealthy</code>éˆ¥ï¿½).
+              (state ¡°<code>unhealthy</code>¡±).
             readOnly: true
           last_passed:
             type: boolean
             description: Boolean indicating whether the last health check request
               was successful and passed
-              <a href="https://njet.org/en/docs/stream/njt_stream_upstream_hc_module.html#match">tests</a>.
+              <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_hc_module.html#match">tests</a>.
             readOnly: true
       downtime:
         type: integer
         description: Total time the server was in the
-          éˆ¥ï¿½<code>unavail</code>éˆ¥ï¿½, éˆ¥ï¿½<code>checking</code>éˆ¥ï¿½,
-          and éˆ¥ï¿½<code>unhealthy</code>éˆ¥ï¿½ states.
+          ¡°<code>unavail</code>¡±, ¡°<code>checking</code>¡±,
+          and ¡°<code>unhealthy</code>¡± states.
         readOnly: true
       downstart:
         type: string
         format: date-time
         description: The time when the server became
-          éˆ¥ï¿½<code>unavail</code>éˆ¥ï¿½, éˆ¥ï¿½<code>checking</code>éˆ¥ï¿½,
-          or éˆ¥ï¿½<code>unhealthy</code>éˆ¥ï¿½,
+          ¡°<code>unavail</code>¡±, ¡°<code>checking</code>¡±,
+          or ¡°<code>unhealthy</code>¡±,
           in the ISO 8601 format with millisecond resolution.
         readOnly: true
       selected:
@@ -1705,13 +2099,13 @@ definitions:
           to process a connection,
           in the ISO 8601 format with millisecond resolution.
         readOnly: true
-  njetStreamUpstreamConfServerMap:
+  NjetStreamUpstreamConfServerMap:
     title: Stream Upstream Servers
     description: |
       An array of stream upstream servers for dynamic configuration.
     type: array
     items:
-      $ref: '#/definitions/njetStreamUpstreamConfServer'
+      $ref: '#/definitions/NjetStreamUpstreamConfServer'
     example:
       - id: 0
         server: 10.0.0.1:12348
@@ -1731,11 +2125,11 @@ definitions:
         slow_start: 0
         backup: false
         down: false
-  njetStreamUpstreamConfServer:
+  NjetStreamUpstreamConfServer:
     title: Stream Upstream Server
     description: |
       Dynamically configurable parameters of a stream upstream
-      <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#server">server</a>:
+      <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">server</a>:
     type: object
     properties:
       id:
@@ -1746,7 +2140,7 @@ definitions:
       server:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#server">address</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">address</a>
           parameter of the stream upstream server.
           When adding a server, it is possible to specify it as a domain name.
           In this case, changes of the IP addresses
@@ -1754,54 +2148,54 @@ definitions:
           applied to the upstream configuration
           without the need of restarting njet.
           This requires the
-          <a href="https://njet.org/en/docs/stream/njt_stream_core_module.html#resolver">resolver</a>
-          directive in the éˆ¥ï¿½<code>stream</code>éˆ¥ï¿½ block.
+          <a href="https://njet.org/en/docs/stream/ngx_stream_core_module.html#resolver">resolver</a>
+          directive in the ¡°<code>stream</code>¡± block.
           See also the
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#resolve">resolve</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#resolve">resolve</a>
           parameter of the stream upstream server.
       service:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#service">service</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#service">service</a>
           parameter of the stream upstream server.
           This parameter cannot be changed.
         readOnly: true
       weight:
         type: integer
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#weight">weight</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#weight">weight</a>
           parameter of the stream upstream server.
       max_conns:
         type: integer
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#max_conns">max_conns</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_conns">max_conns</a>
           parameter of the stream upstream server.
       max_fails:
         type: integer
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#max_fails">max_fails</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_fails">max_fails</a>
           parameter of the stream upstream server.
       fail_timeout:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#fail_timeout">fail_timeout</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#fail_timeout">fail_timeout</a>
           parameter of the stream upstream server.
       slow_start:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#slow_start">slow_start</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#slow_start">slow_start</a>
           parameter of the stream upstream server.
       backup:
         type: boolean
         description: When <code>true</code>, adds a
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#backup">backup</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#backup">backup</a>
           server.
           This parameter cannot be changed.
         readOnly: true
       down:
         type: boolean
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#down">down</a>
+          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#down">down</a>
           parameter of the stream upstream server.
       parent:
         type: string
@@ -1823,7 +2217,7 @@ definitions:
       slow_start: 0
       backup: false
       down: false
-  njetError:
+  NjetError:
     title: Error
     description: |
       njet error object.
@@ -1844,7 +2238,7 @@ definitions:
       request_id:
         type: string
         description: The ID of the request, equals the value of the
-          <a href="https://njet.org/en/docs/http/njt_http_core_module.html#var_request_id">$request_id</a>
+          <a href="https://njet.org/en/docs/http/ngx_http_core_module.html#var_request_id">$request_id</a>
           variable.
       href:
         type: string
