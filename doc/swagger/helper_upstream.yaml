@@ -1,14 +1,14 @@
 swagger: '2.0'
 info:
   version: '7.0'
-  title: NGINX Plus REST API
-  description: NGINX Plus REST
-    [API](https://njet.org/en/docs/http/ngx_http_api_module.html)
-    provides access to NGINX Plus status information,
+  title: NJET REST API
+  description: NJET REST
+    [API](https://njet.org/en/docs/http/njt_http_api_module.html)
+    provides access to NJET status information,
     on-the-fly configuration of upstream servers and
     key-value pairs management for
-    [http](https://njet.org/en/docs/http/ngx_http_keyval_module.html) and
-    [stream](https://njet.org/en/docs/stream/ngx_stream_keyval_module.html).
+    [http](https://njet.org/en/docs/http/njt_http_keyval_module.html) and
+    [stream](https://njet.org/en/docs/stream/njt_stream_keyval_module.html).
 basePath: /api/7
 tags:
   - name: HTTP Upstreams
@@ -682,7 +682,7 @@ definitions:
     title: HTTP Server Zones
     description: |
       Status data for all HTTP
-      <a href="https://njet.org/en/docs/http/ngx_http_api_module.html#status_zone">status zones</a>.
+      <a href="https://njet.org/en/docs/http/njt_http_api_module.html#status_zone">status zones</a>.
     type: object
     additionalProperties:
       $ref: '#/definitions/NjetHTTPServerZone'
@@ -899,8 +899,8 @@ definitions:
     title: HTTP Upstreams
     description: |
       Status information of all HTTP
-      <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#zone">dynamically configurable</a>
-      <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#upstream">groups</a>.
+      <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#zone">dynamically configurable</a>
+      <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#upstream">groups</a>.
     type: object
     additionalProperties:
       $ref: '#/definitions/NjetHTTPUpstream'
@@ -1070,7 +1070,7 @@ definitions:
       keepalive:
         type: integer
         description: The current number of idle
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#keepalive">keepalive</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#keepalive">keepalive</a>
           connections.
       zombies:
         type: integer
@@ -1079,13 +1079,13 @@ definitions:
       zone:
         type: string
         description: The name of the shared memory
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#zone">zone</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#zone">zone</a>
           that keeps the group¡¯s configuration and run-time state.
       queue:
         type: object
         description: >
           For the requests
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#queue">queue</a>,
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#queue">queue</a>,
           the following data are provided:
         properties:
           size:
@@ -1183,7 +1183,7 @@ definitions:
     title: HTTP Upstream Servers
     description: |
       An array of HTTP
-      <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#upstream">upstream servers</a>.
+      <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#upstream">upstream servers</a>.
     type: array
     items:
       $ref: '#/definitions/NjetHTTPUpstreamPeer'
@@ -1197,29 +1197,29 @@ definitions:
         readOnly: true
       server:
         type: string
-        description: An  <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#server">address</a>
+        description: An  <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#server">address</a>
           of the server.
       service:
         type: string
         description: The
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#service">service</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#service">service</a>
           parameter value of the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#server">server</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#server">server</a>
           directive.
       name:
         type: string
         description: The name of the server specified in the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#server">server</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#server">server</a>
           directive.
         readOnly: true
       backup:
         type: boolean
         description: A boolean value indicating whether the server is a
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#backup">backup</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#backup">backup</a>
           server.
       weight:
         type: integer
-        description: <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#weight">Weight</a>
+        description: <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#weight">Weight</a>
           of the server.
       state:
         type: string
@@ -1287,7 +1287,7 @@ definitions:
       max_conns:
         type: integer
         description: The
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_conns">max_conns</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#max_conns">max_conns</a>
           limit for the server.
       requests:
         type: integer
@@ -1348,7 +1348,7 @@ definitions:
         description: How many times the server became unavailable for client requests
           (state ¡°<code>unavail</code>¡±) due to the number of unsuccessful
           attempts reaching the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_fails">max_fails</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#max_fails">max_fails</a>
           threshold.
         readOnly: true
       health_checks:
@@ -1358,7 +1358,7 @@ definitions:
           checks:
             type: integer
             description: The total number of
-              <a href="https://njet.org/en/docs/http/ngx_http_upstream_hc_module.html#health_check">health check</a>
+              <a href="https://njet.org/en/docs/http/njt_http_upstream_hc_module.html#health_check">health check</a>
               requests made.
           fails:
             type: integer
@@ -1371,7 +1371,7 @@ definitions:
             type: boolean
             description: Boolean indicating if the last health check request was successful
               and passed
-              <a href="https://njet.org/en/docs/http/ngx_http_upstream_hc_module.html#match">tests</a>.
+              <a href="https://njet.org/en/docs/http/njt_http_upstream_hc_module.html#match">tests</a>.
       downtime:
         type: integer
         readOnly: true
@@ -1395,13 +1395,13 @@ definitions:
         type: integer
         readOnly: true
         description: The average time to get the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#var_upstream_header_time">response header</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#var_upstream_header_time">response header</a>
           from the server.
       response_time:
         type: integer
         readOnly: true
         description: The average time to get the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#var_upstream_response_time">full response</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#var_upstream_response_time">full response</a>
           from the server.
   NjetHTTPUpstreamConfServerMap:
     title: HTTP Upstream Servers
@@ -1434,7 +1434,7 @@ definitions:
     title: HTTP Upstream Server
     description: |
       Dynamically configurable parameters of an HTTP upstream
-      <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#server">server</a>:
+      <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#server">server</a>:
     type: object
     properties:
       id:
@@ -1445,7 +1445,7 @@ definitions:
       server:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#address">address</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#address">address</a>
           parameter of the HTTP upstream server.
           When adding a server, it is possible to specify it as a domain name.
           In this case, changes of the IP addresses
@@ -1453,64 +1453,64 @@ definitions:
           applied to the upstream configuration
           without the need of restarting njet.
           This requires the
-          <a href="https://njet.org/en/docs/http/ngx_http_core_module.html#resolver">resolver</a>
+          <a href="https://njet.org/en/docs/http/njt_http_core_module.html#resolver">resolver</a>
           directive in the ¡°<code>http</code>¡± block.
           See also the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#resolve">resolve</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#resolve">resolve</a>
           parameter of the HTTP upstream server.
       service:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#service">service</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#service">service</a>
           parameter of the HTTP upstream server.
           This parameter cannot be changed.
         readOnly: true
       weight:
         type: integer
         description: Same as the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#weight">weight</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#weight">weight</a>
           parameter of the HTTP upstream server.
       max_conns:
         type: integer
         description: Same as the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_conns">max_conns</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#max_conns">max_conns</a>
           parameter of the HTTP upstream server.
       max_fails:
         type: integer
         description: Same as the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#max_fails">max_fails</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#max_fails">max_fails</a>
           parameter of the HTTP upstream server.
       fail_timeout:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#fail_timeout">fail_timeout</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#fail_timeout">fail_timeout</a>
           parameter of the HTTP upstream server.
       slow_start:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#slow_start">slow_start</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#slow_start">slow_start</a>
           parameter of the HTTP upstream server.
       route:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#route">route</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#route">route</a>
           parameter of the HTTP upstream server.
       backup:
         type: boolean
         description: When <code>true</code>, adds a
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#backup">backup</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#backup">backup</a>
           server.
           This parameter cannot be changed.
         readOnly: true
       down:
         type: boolean
         description: Same as the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#down">down</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#down">down</a>
           parameter of the HTTP upstream server.
       drain:
         type: boolean
         description: Same as the
-          <a href="https://njet.org/en/docs/http/ngx_http_upstream_module.html#drain">drain</a>
+          <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#drain">drain</a>
           parameter of the HTTP upstream server.
       parent:
         type: string
@@ -1537,7 +1537,7 @@ definitions:
     title: Stream Server Zones
     description: |
       Status information for all stream
-      <a href="https://njet.org/en/docs/http/ngx_http_api_module.html#status_zone">status zones</a>.
+      <a href="https://njet.org/en/docs/http/njt_http_api_module.html#status_zone">status zones</a>.
     type: object
     additionalProperties:
       $ref: '#/definitions/NjetStreamServerZone'
@@ -1610,17 +1610,17 @@ definitions:
           2xx:
             type: integer
             description: The total number of sessions completed with
-              <a href="https://njet.org/en/docs/stream/ngx_stream_core_module.html#var_status">status codes</a>
+              <a href="https://njet.org/en/docs/stream/njt_stream_core_module.html#var_status">status codes</a>
               ¡°<code>2xx</code>¡±.
           4xx:
             type: integer
             description: The total number of sessions completed with
-              <a href="https://njet.org/en/docs/stream/ngx_stream_core_module.html#var_status">status codes</a>
+              <a href="https://njet.org/en/docs/stream/njt_stream_core_module.html#var_status">status codes</a>
               ¡°<code>4xx</code>¡±.
           5xx:
             type: integer
             description: The total number of sessions completed with
-              <a href="https://njet.org/en/docs/stream/ngx_stream_core_module.html#var_status">status codes</a>
+              <a href="https://njet.org/en/docs/stream/njt_stream_core_module.html#var_status">status codes</a>
               ¡°<code>5xx</code>¡±.
           total:
             type: integer
@@ -1846,7 +1846,7 @@ definitions:
       zone:
         type: string
         description: The name of the shared memory
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#zone">zone</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#zone">zone</a>
           that keeps the group¡¯s configuration and run-time state.
     example:
       dns:
@@ -1924,30 +1924,30 @@ definitions:
       server:
         type: string
         description: An
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">address</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#server">address</a>
           of the server.
       service:
         type: string
         description: The
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#service">service</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#service">service</a>
           parameter value of the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">server</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#server">server</a>
           directive.
       name:
         type: string
         format: hostname
         description: The name of the server specified in the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">server</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#server">server</a>
           directive.
         readOnly: true
       backup:
         type: boolean
         description: A boolean value indicating whether the server is a
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#backup">backup</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#backup">backup</a>
           server.
       weight:
         type: integer
-        description: <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#weight">Weight</a>
+        description: <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#weight">Weight</a>
           of the server.
       state:
         type: string
@@ -2014,7 +2014,7 @@ definitions:
       max_conns:
         type: integer
         description: The
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_conns">max_conns</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#max_conns">max_conns</a>
           limit for the server.
       connections:
         type: integer
@@ -2050,7 +2050,7 @@ definitions:
         description: How many times the server became unavailable for client connections
           (state ¡°<code>unavail</code>¡±) due to the number of unsuccessful
           attempts reaching the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_fails">max_fails</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#max_fails">max_fails</a>
           threshold.
         readOnly: true
       health_checks:
@@ -2060,7 +2060,7 @@ definitions:
           checks:
             type: integer
             description: The total number of
-              <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_hc_module.html#health_check">health check</a>
+              <a href="https://njet.org/en/docs/stream/njt_stream_upstream_hc_module.html#health_check">health check</a>
               requests made.
             readOnly: true
           fails:
@@ -2076,7 +2076,7 @@ definitions:
             type: boolean
             description: Boolean indicating whether the last health check request
               was successful and passed
-              <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_hc_module.html#match">tests</a>.
+              <a href="https://njet.org/en/docs/stream/njt_stream_upstream_hc_module.html#match">tests</a>.
             readOnly: true
       downtime:
         type: integer
@@ -2129,7 +2129,7 @@ definitions:
     title: Stream Upstream Server
     description: |
       Dynamically configurable parameters of a stream upstream
-      <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">server</a>:
+      <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#server">server</a>:
     type: object
     properties:
       id:
@@ -2140,7 +2140,7 @@ definitions:
       server:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#server">address</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#server">address</a>
           parameter of the stream upstream server.
           When adding a server, it is possible to specify it as a domain name.
           In this case, changes of the IP addresses
@@ -2148,54 +2148,54 @@ definitions:
           applied to the upstream configuration
           without the need of restarting njet.
           This requires the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_core_module.html#resolver">resolver</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_core_module.html#resolver">resolver</a>
           directive in the ¡°<code>stream</code>¡± block.
           See also the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#resolve">resolve</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#resolve">resolve</a>
           parameter of the stream upstream server.
       service:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#service">service</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#service">service</a>
           parameter of the stream upstream server.
           This parameter cannot be changed.
         readOnly: true
       weight:
         type: integer
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#weight">weight</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#weight">weight</a>
           parameter of the stream upstream server.
       max_conns:
         type: integer
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_conns">max_conns</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#max_conns">max_conns</a>
           parameter of the stream upstream server.
       max_fails:
         type: integer
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#max_fails">max_fails</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#max_fails">max_fails</a>
           parameter of the stream upstream server.
       fail_timeout:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#fail_timeout">fail_timeout</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#fail_timeout">fail_timeout</a>
           parameter of the stream upstream server.
       slow_start:
         type: string
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#slow_start">slow_start</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#slow_start">slow_start</a>
           parameter of the stream upstream server.
       backup:
         type: boolean
         description: When <code>true</code>, adds a
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#backup">backup</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#backup">backup</a>
           server.
           This parameter cannot be changed.
         readOnly: true
       down:
         type: boolean
         description: Same as the
-          <a href="https://njet.org/en/docs/stream/ngx_stream_upstream_module.html#down">down</a>
+          <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#down">down</a>
           parameter of the stream upstream server.
       parent:
         type: string
@@ -2238,7 +2238,7 @@ definitions:
       request_id:
         type: string
         description: The ID of the request, equals the value of the
-          <a href="https://njet.org/en/docs/http/ngx_http_core_module.html#var_request_id">$request_id</a>
+          <a href="https://njet.org/en/docs/http/njt_http_core_module.html#var_request_id">$request_id</a>
           variable.
       href:
         type: string
