@@ -1,0 +1,28 @@
+# CentOS-CR.repo
+#
+# The Continuous Release ( CR )  repository contains rpms that are due in the next
+# release for a specific CentOS Version ( eg. next release in CentOS-7 ); these rpms
+# are far less tested, with no integration checking or update path testing having
+# taken place. They are still built from the upstream sources, but might not map 
+# to an exact upstream distro release.
+#
+# These packages are made available soon after they are built, for people willing 
+# to test their environments, provide feedback on content for the next release, and
+# for people looking for early-access to next release content.
+#
+# The CR repo is shipped in a disabled state by default; its important that users 
+# understand the implications of turning this on. 
+#
+# NOTE: We do not use a mirrorlist for the CR repos, to ensure content is available
+#       to everyone as soon as possible, and not need to wait for the external
+#       mirror network to seed first. However, many local mirrors will carry CR repos
+#       and if desired you can use one of these local mirrors by editing the baseurl
+#       line in the repo config below.
+#
+
+[cr]
+name=CentOS-$releasever - cr
+baseurl=http://mirror.centos.org/centos/$releasever/cr/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
