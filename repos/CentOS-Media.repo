@@ -1,0 +1,22 @@
+# CentOS-Media.repo
+#
+#  This repo can be used with mounted DVD media, verify the mount point for
+#  CentOS-7.  You can use this repo and yum to install items directly off the
+#  DVD ISO that we release.
+#
+# To use this repo, put in your DVD and use it with the other repos too:
+#  yum --enablerepo=c7-media [command]
+#  
+# or for ONLY the media repo, do this:
+#
+#  yum --disablerepo=\* --enablerepo=c7-media [command]
+
+[c7-media]
+name=CentOS-$releasever - Media
+baseurl=file:///media/CentOS/
+        file:///media/cdrom/
+        file:///media/cdrecorder/
+gpgcheck=0
+enabled=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
