@@ -1,0 +1,326 @@
+# CentOS Vault contains rpms from older releases in the CentOS-7
+# tree.
+
+# C7.0.1406
+[C7.0.1406-base]
+name=CentOS-7.0.1406 - Base
+baseurl=http://vault.centos.org/7.0.1406/os/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.0.1406-updates]
+name=CentOS-7.0.1406 - Updates
+baseurl=http://vault.centos.org/7.0.1406/updates/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.0.1406-extras]
+name=CentOS-7.0.1406 - Extras
+baseurl=http://vault.centos.org/7.0.1406/extras/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.0.1406-centosplus]
+name=CentOS-7.0.1406 - CentOSPlus
+baseurl=http://vault.centos.org/7.0.1406/centosplus/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.0.1406-fasttrack]
+name=CentOS-7.0.1406 - Fasttrack
+baseurl=http://vault.centos.org/7.0.1406/fasttrack/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+# C7.1.1503
+[C7.1.1503-base]
+name=CentOS-7.1.1503 - Base
+baseurl=http://vault.centos.org/7.1.1503/os/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.1.1503-updates]
+name=CentOS-7.1.1503 - Updates
+baseurl=http://vault.centos.org/7.1.1503/updates/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.1.1503-extras]
+name=CentOS-7.1.1503 - Extras
+baseurl=http://vault.centos.org/7.1.1503/extras/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.1.1503-centosplus]
+name=CentOS-7.1.1503 - CentOSPlus
+baseurl=http://vault.centos.org/7.1.1503/centosplus/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.1.1503-fasttrack]
+name=CentOS-7.1.1503 - Fasttrack
+baseurl=http://vault.centos.org/7.1.1503/fasttrack/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+# C7.2.1511
+[C7.2.1511-base]
+name=CentOS-7.2.1511 - Base
+baseurl=http://vault.centos.org/7.2.1511/os/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.2.1511-updates]
+name=CentOS-7.2.1511 - Updates
+baseurl=http://vault.centos.org/7.2.1511/updates/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.2.1511-extras]
+name=CentOS-7.2.1511 - Extras
+baseurl=http://vault.centos.org/7.2.1511/extras/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.2.1511-centosplus]
+name=CentOS-7.2.1511 - CentOSPlus
+baseurl=http://vault.centos.org/7.2.1511/centosplus/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.2.1511-fasttrack]
+name=CentOS-7.2.1511 - Fasttrack
+baseurl=http://vault.centos.org/7.2.1511/fasttrack/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+# C7.3.1611
+[C7.3.1611-base]
+name=CentOS-7.3.1611 - Base
+baseurl=http://vault.centos.org/7.3.1611/os/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.3.1611-updates]
+name=CentOS-7.3.1611 - Updates
+baseurl=http://vault.centos.org/7.3.1611/updates/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.3.1611-extras]
+name=CentOS-7.3.1611 - Extras
+baseurl=http://vault.centos.org/7.3.1611/extras/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.3.1611-centosplus]
+name=CentOS-7.3.1611 - CentOSPlus
+baseurl=http://vault.centos.org/7.3.1611/centosplus/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.3.1611-fasttrack]
+name=CentOS-7.3.1611 - Fasttrack
+baseurl=http://vault.centos.org/7.3.1611/fasttrack/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+# C7.4.1708
+[C7.4.1708-base]
+name=CentOS-7.4.1708 - Base
+baseurl=http://vault.centos.org/7.4.1708/os/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.4.1708-updates]
+name=CentOS-7.4.1708 - Updates
+baseurl=http://vault.centos.org/7.4.1708/updates/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.4.1708-extras]
+name=CentOS-7.4.1708 - Extras
+baseurl=http://vault.centos.org/7.4.1708/extras/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.4.1708-centosplus]
+name=CentOS-7.4.1708 - CentOSPlus
+baseurl=http://vault.centos.org/7.4.1708/centosplus/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.4.1708-fasttrack]
+name=CentOS-7.4.1708 - Fasttrack
+baseurl=http://vault.centos.org/7.4.1708/fasttrack/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+# C7.5.1804
+[C7.5.1804-base]
+name=CentOS-7.5.1804 - Base
+baseurl=http://vault.centos.org/7.5.1804/os/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.5.1804-updates]
+name=CentOS-7.5.1804 - Updates
+baseurl=http://vault.centos.org/7.5.1804/updates/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.5.1804-extras]
+name=CentOS-7.5.1804 - Extras
+baseurl=http://vault.centos.org/7.5.1804/extras/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.5.1804-centosplus]
+name=CentOS-7.5.1804 - CentOSPlus
+baseurl=http://vault.centos.org/7.5.1804/centosplus/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.5.1804-fasttrack]
+name=CentOS-7.5.1804 - Fasttrack
+baseurl=http://vault.centos.org/7.5.1804/fasttrack/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+# C7.6.1810
+[C7.6.1810-base]
+name=CentOS-7.6.1810 - Base
+baseurl=http://vault.centos.org/7.6.1810/os/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.6.1810-updates]
+name=CentOS-7.6.1810 - Updates
+baseurl=http://vault.centos.org/7.6.1810/updates/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.6.1810-extras]
+name=CentOS-7.6.1810 - Extras
+baseurl=http://vault.centos.org/7.6.1810/extras/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.6.1810-centosplus]
+name=CentOS-7.6.1810 - CentOSPlus
+baseurl=http://vault.centos.org/7.6.1810/centosplus/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.6.1810-fasttrack]
+name=CentOS-7.6.1810 - Fasttrack
+baseurl=http://vault.centos.org/7.6.1810/fasttrack/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+# C7.7.1908
+[C7.7.1908-base]
+name=CentOS-7.7.1908 - Base
+baseurl=http://vault.centos.org/7.7.1908/os/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.7.1908-updates]
+name=CentOS-7.7.1908 - Updates
+baseurl=http://vault.centos.org/7.7.1908/updates/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.7.1908-extras]
+name=CentOS-7.7.1908 - Extras
+baseurl=http://vault.centos.org/7.7.1908/extras/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.7.1908-centosplus]
+name=CentOS-7.7.1908 - CentOSPlus
+baseurl=http://vault.centos.org/7.7.1908/centosplus/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.7.1908-fasttrack]
+name=CentOS-7.7.1908 - Fasttrack
+baseurl=http://vault.centos.org/7.7.1908/fasttrack/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+# C7.8.2003
+[C7.8.2003-base]
+name=CentOS-7.8.2003 - Base
+baseurl=http://vault.centos.org/7.8.2003/os/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.8.2003-updates]
+name=CentOS-7.8.2003 - Updates
+baseurl=http://vault.centos.org/7.8.2003/updates/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.8.2003-extras]
+name=CentOS-7.8.2003 - Extras
+baseurl=http://vault.centos.org/7.8.2003/extras/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.8.2003-centosplus]
+name=CentOS-7.8.2003 - CentOSPlus
+baseurl=http://vault.centos.org/7.8.2003/centosplus/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
+
+[C7.8.2003-fasttrack]
+name=CentOS-7.8.2003 - Fasttrack
+baseurl=http://vault.centos.org/7.8.2003/fasttrack/$basearch/
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+enabled=0
