@@ -3807,6 +3807,11 @@ static njt_str_t njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_ch
             goto err;
         }
         njt_struct_add(ssl,item,pool);
+        item =njt_json_bool_element(pool,njt_json_fast_key("ntls"),hhccf->ssl.ntls_enable);
+        if(item == NULL ){
+            goto err;
+        }
+        njt_struct_add(ssl,item,pool);
         item =njt_json_bool_element(pool,njt_json_fast_key("sessionReuse"),hhccf->ssl.ssl_session_reuse);
         if(item == NULL ){
             goto err;
