@@ -1876,7 +1876,6 @@ skip_add:
 
 end:
 
-    njt_resolve_name_done(ctx);
 
     refresh_in = 1000;
     if (ctx->valid) {
@@ -1894,6 +1893,7 @@ end:
 		//njt_http_upstream_free_dynamic_server(dynamic_server->upstream_conf,dynamic_server->server->name,dynamic_server->parent_node->id);
 		
 	}
+    njt_resolve_name_done(ctx);
 
     return;
 }
