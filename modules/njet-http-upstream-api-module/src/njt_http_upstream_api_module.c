@@ -415,7 +415,7 @@ njt_upstream_api_get_params(njt_array_t *path, njt_str_t *upstream,
 
     version = njt_atoi(item[0].data, item[0].len);
 
-    if (version < 1 || version > 7) {
+    if (version < 1 || version > 8) {
         return NJT_HTTP_UPS_API_UNKNOWN_VERSION;
     }
 	*upstream_type = 0;
