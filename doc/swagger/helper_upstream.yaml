@@ -159,7 +159,7 @@ paths:
           name: postHttpUpstreamServer
           description: Address of a new server and other optional parameters
             in the JSON format.
-            The ¡°*ID*¡±, ¡°*backup*¡±, and ¡°*service*¡± parameters
+            The "ID", "backup", and "service" parameters
             cannot be changed.
           required: true
           schema:
@@ -172,24 +172,24 @@ paths:
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
-            invalid ¡°**parameter**¡± value (*UpstreamConfFormatError*),
-            missing ¡°*server*¡± argument (*UpstreamConfFormatError*),
-            unknown parameter ¡°**name**¡± (*UpstreamConfFormatError*),
+            invalid "parameter" value (*UpstreamConfFormatError*),
+            missing "server" argument (*UpstreamConfFormatError*),
+            unknown parameter "name" (*UpstreamConfFormatError*),
             nested object or list (*UpstreamConfFormatError*),
-            ¡°*error*¡± while parsing (*UpstreamBadAddress*),
-            service upstream ¡°*host*¡± may not have port (*UpstreamBadAddress*),
-            service upstream ¡°*host*¡± requires domain name (*UpstreamBadAddress*),
-            invalid ¡°*weight*¡± (*UpstreamBadWeight*),
-            invalid ¡°*max_conns*¡± (*UpstreamBadMaxConns*),
-            invalid ¡°*max_fails*¡± (*UpstreamBadMaxFails*),
-            invalid ¡°*fail_timeout*¡± (*UpstreamBadFailTimeout*),
-            invalid ¡°*slow_start*¡± (*UpstreamBadSlowStart*),
+            "error" while parsing (*UpstreamBadAddress*),
+            service upstream "host" may not have port (*UpstreamBadAddress*),
+            service upstream "host" requires domain name (*UpstreamBadAddress*),
+            invalid "weight" (*UpstreamBadWeight*),
+            invalid "max_conns" (*UpstreamBadMaxConns*),
+            invalid "max_fails" (*UpstreamBadMaxFails*),
+            invalid "fail_timeout" (*UpstreamBadFailTimeout*),
+            invalid "slow_start" (*UpstreamBadSlowStart*),
             reading request body failed *BodyReadError*),
             route is too long (*UpstreamBadRoute*),
-            ¡°*service*¡± is empty (*UpstreamBadService*),
+            "service" is empty (*UpstreamBadService*),
             no resolver defined to resolve (*UpstreamConfNoResolver*),
-            upstream ¡°**name**¡± has no backup (*UpstreamNoBackup*),
-            upstream ¡°**name**¡± memory exhausted (*UpstreamOutOfMemory*)
+            upstream "name" has no backup (*UpstreamNoBackup*),
+            upstream "name" memory exhausted (*UpstreamOutOfMemory*)
           schema:
             $ref: '#/definitions/NjetError'
         '404':
@@ -245,7 +245,7 @@ paths:
             $ref: '#/definitions/NjetError'
         '404':
           description: |
-            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
+            Server with ID "id" does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
@@ -265,7 +265,7 @@ paths:
         - in: body
           name: patchHttpUpstreamServer
           description: Server parameters, specified in the JSON format.
-            The ¡°*ID*¡±, ¡°*backup*¡±, and ¡°*service*¡± parameters
+            The "ID", "backup", and "service" parameters
             cannot be changed.
           required: true
           schema:
@@ -278,28 +278,28 @@ paths:
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
-            invalid ¡°**parameter**¡± value (*UpstreamConfFormatError*),
-            unknown parameter ¡°**name**¡± (*UpstreamConfFormatError*),
+            invalid "parameter" value (*UpstreamConfFormatError*),
+            unknown parameter "name" (*UpstreamConfFormatError*),
             nested object or list (*UpstreamConfFormatError*),
-            ¡°*error*¡± while parsing (*UpstreamBadAddress*),
-            invalid ¡°*server*¡± argument (*UpstreamBadAddress*),
+            "error" while parsing (*UpstreamBadAddress*),
+            invalid "server" argument (*UpstreamBadAddress*),
             invalid server ID (*UpstreamBadServerId*),
-            invalid ¡°*weight*¡± (*UpstreamBadWeight*),
-            invalid ¡°*max_conns*¡± (*UpstreamBadMaxConns*),
-            invalid ¡°*max_fails*¡± (*UpstreamBadMaxFails*),
-            invalid ¡°*fail_timeout*¡± (*UpstreamBadFailTimeout*),
-            invalid ¡°*slow_start*¡± (*UpstreamBadSlowStart*),
+            invalid "weight" (*UpstreamBadWeight*),
+            invalid "max_conns" (*UpstreamBadMaxConns*),
+            invalid "max_fails" (*UpstreamBadMaxFails*),
+            invalid "fail_timeout" (*UpstreamBadFailTimeout*),
+            invalid "slow_start" (*UpstreamBadSlowStart*),
             reading request body failed *BodyReadError*),
             route is too long (*UpstreamBadRoute*),
-            ¡°*service*¡± is empty (*UpstreamBadService*),
-            server ¡°**ID**¡± address is immutable (*UpstreamServerImmutable*),
-            server ¡°*ID*¡± weight is immutable (*UpstreamServerWeightImmutable*),
-            upstream ¡°*name*¡± memory exhausted (*UpstreamOutOfMemory*)
+            "service" is empty (*UpstreamBadService*),
+            server "ID" address is immutable (*UpstreamServerImmutable*),
+            server "ID" weight is immutable (*UpstreamServerWeightImmutable*),
+            upstream "name" memory exhausted (*UpstreamOutOfMemory*)
           schema:
             $ref: '#/definitions/NjetError'
         '404':
           description: |
-            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
+            Server with ID "id" does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
@@ -330,12 +330,12 @@ paths:
           description: |
             Upstream is static (*UpstreamStatic*),
             invalid server ID (*UpstreamBadServerId*),
-            server ¡°**id**¡± not removable (*UpstreamServerImmutable*)
+            server "id" not removable (*UpstreamServerImmutable*)
           schema:
             $ref: '#/definitions/NjetError'
         '404':
           description: |
-            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
+            Server with ID "id" does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
@@ -482,7 +482,7 @@ paths:
           name: postStreamUpstreamServer
           description: Address of a new server and other optional parameters
             in the JSON format.
-            The ¡°*ID*¡±, ¡°*backup*¡±, and ¡°*service*¡± parameters
+            The "ID", "backup", and "service" parameters
             cannot be changed.
           required: true
           schema:
@@ -495,23 +495,23 @@ paths:
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
-            invalid ¡°**parameter**¡± value (*UpstreamConfFormatError*),
-            missing ¡°*server*¡± argument (*UpstreamConfFormatError*),
-            unknown parameter ¡°**name**¡± (*UpstreamConfFormatError*),
+            invalid "parameter" value (*UpstreamConfFormatError*),
+            missing "server" argument (*UpstreamConfFormatError*),
+            unknown parameter "name" (*UpstreamConfFormatError*),
             nested object or list (*UpstreamConfFormatError*),
-            ¡°*error*¡± while parsing (*UpstreamBadAddress*),
-            no port in server ¡°*host*¡± (*UpstreamBadAddress*),
-            service upstream ¡°*host*¡± may not have port (*UpstreamBadAddress*),
-            service upstream ¡°*host*¡± requires domain name (*UpstreamBadAddress*),
-            invalid ¡°*weight*¡± (*UpstreamBadWeight*),
-            invalid ¡°*max_conns*¡± (*UpstreamBadMaxConns*),
-            invalid ¡°*max_fails*¡± (*UpstreamBadMaxFails*),
-            invalid ¡°*fail_timeout*¡± (*UpstreamBadFailTimeout*),
-            invalid ¡°*slow_start*¡± (*UpstreamBadSlowStart*),
-            ¡°*service*¡± is empty (*UpstreamBadService*),
+            "error" while parsing (*UpstreamBadAddress*),
+            no port in server "host" (*UpstreamBadAddress*),
+            service upstream "host" may not have port (*UpstreamBadAddress*),
+            service upstream "host" requires domain name (*UpstreamBadAddress*),
+            invalid "weight" (*UpstreamBadWeight*),
+            invalid "max_conns" (*UpstreamBadMaxConns*),
+            invalid "max_fails" (*UpstreamBadMaxFails*),
+            invalid "fail_timeout" (*UpstreamBadFailTimeout*),
+            invalid "slow_start" (*UpstreamBadSlowStart*),
+            "service" is empty (*UpstreamBadService*),
             no resolver defined to resolve (*UpstreamConfNoResolver*),
-            upstream ¡°**name**¡± has no backup (*UpstreamNoBackup*),
-            upstream ¡°**name**¡± memory exhausted (*UpstreamOutOfMemory*),
+            upstream "name" has no backup (*UpstreamNoBackup*),
+            upstream "name" memory exhausted (*UpstreamOutOfMemory*),
             reading request body failed *BodyReadError*)
           schema:
             $ref: '#/definitions/NjetError'
@@ -570,7 +570,7 @@ paths:
           description: |
             Unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*),
-            server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*)
+            server with ID "id" does not exist (*UpstreamServerNotFound*)
           schema:
             $ref: '#/definitions/NjetError'
     patch:
@@ -588,7 +588,7 @@ paths:
         - in: body
           name: patchStreamUpstreamServer
           description: Server parameters, specified in the JSON format.
-            The ¡°*ID*¡±, ¡°*backup*¡±, and ¡°*service*¡± parameters
+            The "ID", "backup", and "service" parameters
             cannot be changed.
           required: true
           schema:
@@ -601,28 +601,28 @@ paths:
         '400':
           description: |
             Upstream is static (*UpstreamStatic*),
-            invalid ¡°**parameter**¡± value (*UpstreamConfFormatError*),
-            unknown parameter ¡°**name**¡± (*UpstreamConfFormatError*),
+            invalid "parameter" value (*UpstreamConfFormatError*),
+            unknown parameter "name" (*UpstreamConfFormatError*),
             nested object or list (*UpstreamConfFormatError*),
-            ¡°*error*¡± while parsing (*UpstreamBadAddress*),
-            invalid ¡°*server*¡± argument (*UpstreamBadAddress*),
-            no port in server ¡°*host*¡± (*UpstreamBadAddress*),
+            "error" while parsing (*UpstreamBadAddress*),
+            invalid "server" argument (*UpstreamBadAddress*),
+            no port in server "host" (*UpstreamBadAddress*),
             invalid server ID (*UpstreamBadServerId*),
-            invalid ¡°*weight*¡± (*UpstreamBadWeight*),
-            invalid ¡°*max_conns*¡± (*UpstreamBadMaxConns*),
-            invalid ¡°*max_fails*¡± (*UpstreamBadMaxFails*),
-            invalid ¡°*fail_timeout*¡± (*UpstreamBadFailTimeout*),
-            invalid ¡°*slow_start*¡± (*UpstreamBadSlowStart*),
+            invalid "weight" (*UpstreamBadWeight*),
+            invalid "max_conns" (*UpstreamBadMaxConns*),
+            invalid "max_fails" (*UpstreamBadMaxFails*),
+            invalid "fail_timeout" (*UpstreamBadFailTimeout*),
+            invalid "slow_start" (*UpstreamBadSlowStart*),
             reading request body failed *BodyReadError*),
-            ¡°*service*¡± is empty (*UpstreamBadService*),
-            server ¡°**ID**¡± address is immutable (*UpstreamServerImmutable*),
-            server ¡°**ID**¡± weight is immutable (*UpstreamServerWeightImmutable*),
-            upstream ¡°*name*¡± memory exhausted (*UpstreamOutOfMemory*)
+            "service" is empty (*UpstreamBadService*),
+            server "ID" address is immutable (*UpstreamServerImmutable*),
+            server "ID" weight is immutable (*UpstreamServerWeightImmutable*),
+            upstream "name" memory exhausted (*UpstreamOutOfMemory*)
           schema:
             $ref: '#/definitions/NjetError'
         '404':
           description: |
-            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
+            Server with ID "id" does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
@@ -653,12 +653,12 @@ paths:
           description: |
             Upstream is static (*UpstreamStatic*),
             invalid server ID (*UpstreamBadServerId*),
-            server ¡°**id**¡± not removable (*UpstreamServerImmutable*)
+            server "id" not removable (*UpstreamServerImmutable*)
           schema:
             $ref: '#/definitions/NjetError'
         '404':
           description: |
-            Server with ID ¡°**id**¡± does not exist (*UpstreamServerNotFound*),
+            Server with ID "id" does not exist (*UpstreamServerNotFound*),
             unknown version (*UnknownVersion*),
             upstream not found (*UpstreamNotFound*)
           schema:
