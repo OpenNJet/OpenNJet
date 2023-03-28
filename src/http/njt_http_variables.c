@@ -727,7 +727,7 @@ njt_http_get_indexed_variable(njt_http_request_t *r, njt_uint_t index)
 
     njt_http_variable_depth--;
 
-    if (v[index].get_handler(r, &r->variables[index], v[index].data)
+    if (v[index].get_handler && v[index].get_handler(r, &r->variables[index], v[index].data)
         == NJT_OK)
     {
         njt_http_variable_depth++;

@@ -140,8 +140,12 @@ int njt_doc_delete_dir(njt_pool_t *pool, const char *path)
     {
         struct dirent *p;
         r = 0;
-        while (!r && (p = readdir(d)))
+        while (!r)
         {
+			p = readdir(d);
+			if(p == NULL){
+				break;
+			}
             int r2 = -1;
             char *buf;
             size_t len;
