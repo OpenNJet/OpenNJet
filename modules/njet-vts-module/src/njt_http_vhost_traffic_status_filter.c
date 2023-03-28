@@ -122,6 +122,10 @@ njt_http_vhost_traffic_status_filter_unique(njt_pool_t *pool, njt_array_t **keys
 
     }
 
+    if (filter_keys == NULL) {
+        return NJT_ERROR;
+    }
+
     if ((*keys)->nelts != filter_keys->nelts) {
         *keys = filter_keys;
     }
