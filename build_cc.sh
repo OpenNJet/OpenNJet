@@ -20,8 +20,6 @@ NJET_MODULES="$NJET_MODULES --add-module=src/ext/lua/kit  --add-module=src/ext/l
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-upstream-dynamic-servers-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-upstream-dynamic-servers-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-match-module"
-NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-health-check-module"
-NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-health-check-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-sticky-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-location-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-location-api-module"
