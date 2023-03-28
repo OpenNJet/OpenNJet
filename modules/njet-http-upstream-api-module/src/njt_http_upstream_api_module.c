@@ -4065,10 +4065,11 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
     njt_str_t                      state_file;
     u_char                        *server_info;
     ssize_t                        len;
-	njt_stream_upstream_srv_conf_t *uscf = cf;
+    njt_stream_upstream_srv_conf_t *uscf = cf;
 
-	//parent_list = njt_array_create(r->pool, 4, sizeof(njt_http_upstream_rr_peer_t *));
-
+   if(uscf == NULL){
+	return NJT_OK;
+    }
     rc = NJT_ERROR;
     state_file = uscf->state_file;
 	
@@ -4235,9 +4236,10 @@ njt_http_upstream_state_save(njt_http_request_t *r,
     njt_str_t                      state_file;
     u_char                        *server_info;
     ssize_t                        len;
-	njt_http_upstream_srv_conf_t *uscf = cf;
-
-	//parent_list = njt_array_create(r->pool, 4, sizeof(njt_http_upstream_rr_peer_t *));
+    njt_http_upstream_srv_conf_t *uscf = cf;
+    if(uscf == NULL) {
+	return NJT_OK;
+    }
 
     rc = NJT_ERROR;
     state_file = uscf->state_file;
@@ -5023,7 +5025,6 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
 		r->headers_out.status = 204;
 		r->header_only = 1;
 		return NJT_OK;
-		break;
 	case NJT_HTTP_UPS_API_INVALID_ERROR:
 		 r->headers_out.status = 400;
 		 rc = njt_http_upstream_api_insert_out_str(r, out, msg);

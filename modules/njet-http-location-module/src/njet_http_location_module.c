@@ -12,14 +12,10 @@ extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 
 
-static void
-njt_http_location_read_data(njt_http_request_t *r);
 
 static void
 free_static_tree_momery(njt_http_location_tree_node_t *static_tree);
 
-static njt_int_t
-njt_http_location_handler(njt_http_request_t *r);
 
 
 static njt_int_t
@@ -34,8 +30,6 @@ static char *njt_http_location_merge_loc_conf(njt_conf_t *cf,
 static void *
 njt_http_location_create_main_conf(njt_conf_t *cf);
 
-static njt_int_t
-njt_http_location_init(njt_conf_t *cf);
 
 extern njt_int_t
 njt_http_init_static_location_trees(njt_conf_t *cf,
@@ -88,7 +82,7 @@ static njt_command_t njt_http_location_commands[] = {
 
 static njt_http_module_t njt_http_location_module_ctx = {
         NULL,                              /* preconfiguration */
-        njt_http_location_init,                              /* postconfiguration */
+        NULL,                              /* postconfiguration */
 
         njt_http_location_create_main_conf,                              /* create main configuration */
         NULL,                              /* init main configuration */
@@ -123,27 +117,6 @@ njt_http_location_api(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
 
     clcf->dyn_location_enable = 1;
     return NJT_CONF_OK;
-}
-
-
-static njt_int_t
-njt_http_location_init(njt_conf_t *cf) {
-	
-    njt_http_core_main_conf_t *cmcf;
-    njt_http_handler_pt *h;
-    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
-	if(cmcf == NULL) {
-		return NJT_ERROR;
-	}
-
-    h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
-    if (h == NULL) {
-        return NJT_ERROR;
-    }
-
-    *h = njt_http_location_handler;
-	
-    return NJT_OK;
 }
 
 
@@ -182,124 +155,8 @@ static char *njt_http_location_merge_loc_conf(njt_conf_t *cf,
     return NJT_CONF_OK;
 }
 
-static njt_buf_t *
-njt_http_upstream_api_get_out_buf(njt_http_request_t *r, ssize_t len,
-                                  njt_chain_t *out) {
-    njt_buf_t *b;
-    njt_chain_t *last_chain, *new_chain;
 
 
-    if ((njt_uint_t) len > njt_pagesize) {
-        /*The string len is larger than one buf*/
-
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                      "buffer size is beyond one pagesize.");
-        return NULL;
-    }
-
-    last_chain = out;
-    while (out->next) {
-        out->buf->last_buf = 0;
-        out->buf->last_in_chain = 0;
-
-        last_chain = out->next;
-        out = out->next;
-    }
-
-    b = last_chain->buf;
-    if (b == NULL) {
-
-        b = njt_create_temp_buf(r->pool, njt_pagesize);
-        if (b == NULL) {
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                          "couldn't allocate the temp buffer.");
-            return NULL;
-        }
-
-        last_chain->buf = b;
-        last_chain->next = NULL;
-
-        b->last_buf = 1;
-        b->last_in_chain = 1;
-        b->memory = 1;
-
-        return b;
-    }
-
-    /*if the buf's left size is big enough to hold one server*/
-
-    if ((b->end - b->last) < len) {
-
-        new_chain = njt_pcalloc(r->pool, sizeof(njt_chain_t));
-        if (new_chain == NULL) {
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                          "couldn't allocate the chain.");
-            return NULL;
-        }
-
-        b = njt_create_temp_buf(r->pool, njt_pagesize);
-        if (b == NULL) {
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                          "couldn't allocate temp buffer.");
-            return NULL;
-        }
-        new_chain->buf = b;
-        new_chain->next = NULL;
-
-        last_chain->buf->last_buf = 0;
-        last_chain->buf->last_in_chain = 0;
-
-        new_chain->buf->last_buf = 1;
-        new_chain->buf->last_in_chain = 1;
-
-        last_chain->next = new_chain;
-    }
-
-    return b;
-}
-
-static njt_int_t
-njt_http_upstream_api_insert_out_str(njt_http_request_t *r,
-                                     njt_chain_t *out, njt_str_t *str) {
-    njt_buf_t *b;
-
-    if (str->len == 0) {
-        return NJT_OK;
-    }
-    if (str == NULL || str->data == NULL) {
-        njt_log_error(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "parameter error in function %s", __func__);
-        return NJT_ERROR;
-    }
-
-    b = njt_http_upstream_api_get_out_buf(r, str->len, out);
-    if (b == NULL) {
-        njt_log_error(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "could not alloc buffer in function %s", __func__);
-        return NJT_ERROR;
-    }
-
-    b->last = njt_snprintf(b->last, str->len, "%V", str);
-
-    return NJT_OK;
-}
-
-static ssize_t
-njt_http_upstream_api_out_len(njt_chain_t *out) {
-    ssize_t len;
-
-    len = 0;
-    while (out) {
-
-        if (out->buf) {
-            len += out->buf->last - out->buf->pos;
-        }
-
-        out = out->next;
-    }
-
-    return len;
-}
 
 static void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
     njt_queue_t *locations;
@@ -593,7 +450,8 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
         rc = NJT_ERROR;
         goto out;
     }
-
+    location_path.len = 0;
+    location_path.data = NULL;
     if (location_info->file.len != 0) {
         location_path = location_info->file;
     }
@@ -729,73 +587,6 @@ out:
 }
 
 
-static njt_int_t
-njt_http_location_handler(njt_http_request_t *r) {
-    njt_int_t rc = NJT_OK;
-    njt_chain_t out;
-    njt_str_t insert;
-    njt_conf_t conf;
-    njt_http_location_loc_conf_t *loc;
-    njt_http_location_info_t *location_info;
-
-    //njt_str_t location_req = njt_string("/add_location");
-
-    out.next = NULL;
-    out.buf = NULL;
-    njt_memzero(&conf, sizeof(njt_conf_t));
-    loc = njt_http_get_module_loc_conf(r, njt_http_location_module);
-    if (loc && loc->dyn_location_enable) {
-    } else {
-        return NJT_DECLINED;
-    }
-
-
-    njt_log_error(NJT_LOG_DEBUG, r->pool->log, 0, "1 read_client_request_body start +++++++++++++++");
-    rc = njt_http_read_client_request_body(r, njt_http_location_read_data);
-	location_info = njt_http_get_module_ctx(r, njt_http_location_module);
-    if (rc == NJT_OK) {
-        njt_http_finalize_request(r, NJT_DONE);
-    }
-    njt_log_error(NJT_LOG_DEBUG, r->pool->log, 0, "2 read_client_request_body end +++++++++++++++");
-    if (location_info == NULL || location_info->file.len == 0 || location_info->file.data == NULL) {
-        rc = NJT_ERROR;
-        goto out;
-    }
-
-    if (r->method == NJT_HTTP_PUT) {
-        rc = njt_http_location_delete_handler(location_info);
-    } else if (r->method == NJT_HTTP_POST) {
-        rc = njt_http_add_location_handler(location_info);
-    } else {
-        rc = NJT_ERROR;
-        goto out;
-    }
-
-
-out:
-	if(location_info != NULL) {
-		njt_destroy_pool(location_info->pool);
-	}
-    if (rc == NJT_OK) {
-        njt_str_set(&insert, "ok");
-    } else {
-        njt_str_set(&insert, "error:add location!!!");
-    }
-
-    r->headers_out.content_type_len = sizeof("text/plain") - 1;
-    njt_str_set(&r->headers_out.content_type, "text/plain");
-    r->headers_out.content_type_lowcase = NULL;
-    r->headers_out.status = NJT_HTTP_OK;
-    rc = njt_http_upstream_api_insert_out_str(r, &out, &insert);
-    int len = njt_http_upstream_api_out_len(&out);
-    r->headers_out.content_length_n = len;
-    if (r->headers_out.content_length) {
-        r->headers_out.content_length->hash = 0;
-        r->headers_out.content_length = NULL;
-    }
-    rc = njt_http_send_header(r);
-    return njt_http_output_filter(r, &out);
-}
 
 
 
@@ -1080,74 +871,6 @@ end:
 
 }
 
-static void
-njt_http_location_read_data(njt_http_request_t *r){
-	njt_str_t json_str;
-    njt_chain_t *body_chain;
-    //njt_int_t rc;
-    u_char *p;
-    njt_http_location_info_t *location_info;
-	 uint32_t                                      crc32;
-	 uint32_t									   topic_len = NJT_INT64_LEN  + 2;
-	 njt_str_t									   topic_name;
-     njt_str_t  add = njt_string("add");
-	njt_str_t  del = njt_string("del");
-
-    //rc = NJT_OK;
-	 //njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-       //               "2 njt_http_location_read_data njt_pcalloc error.");
-
-    body_chain = r->request_body->bufs;
-    if (body_chain && body_chain->next) {
-        /*The post body is too large*/
-        //rc = NJT_ERROR;
-		 njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                      "njt_http_location_read_data njt_pcalloc error.");
-        return;
-    }
-
-	
-    /*check the sanity of the json body*/
-    json_str.data = body_chain->buf->pos;
-    json_str.len = body_chain->buf->last - body_chain->buf->pos;
-	location_info = njt_http_parser_location_data(json_str);
-	if(location_info == NULL) {
-		return;
-	}
-	njt_http_set_ctx(r, location_info, njt_http_location_module);
-
-	njt_crc32_init(crc32);
-	njt_crc32_update(&crc32,location_info->addr_port.data,location_info->addr_port.len);
-	if (location_info->server_name.len > 0) {
-		njt_crc32_update(&crc32,location_info->server_name.data,location_info->server_name.len);
-	}
-	if (location_info->location_rule.len > 0) {
-		njt_crc32_update(&crc32,location_info->location_rule.data,location_info->location_rule.len);
-	}
-	njt_crc32_update(&crc32,location_info->location.data,location_info->location.len);
-	njt_crc32_final(crc32);
-
-   
-	topic_name.data = njt_pcalloc(r->pool,topic_len);
-	 if (topic_name.data == NULL) {
-		 njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                      "topic_name njt_pcalloc error.");
-        return;
-    }
-	
-	p = njt_snprintf(topic_name.data,topic_len,"/dyn/loc/l_%ui",crc32);
-	topic_name.len = p - topic_name.data;
-	if(location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0 ){
-		//njt_dyn_sendmsg(&topic_name,&json_str,0);
-	} else  if(location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0 ){
-		//njt_dyn_sendmsg(&topic_name,&json_str,1);
-	}
-
-	njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "1 send topic key=%V,value=%V",&topic_name,&json_str);
-
-	njt_http_location_write_data(location_info);
-
-}
 
 
 static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_info_t *location_info,njt_array_t *location_array,njt_flag_t write_endtag) {
@@ -1433,16 +1156,15 @@ njt_http_set_del_variables_keys_flag( njt_str_t *name)
         }
 
         v = key[i].value;
-		if(v){
-			//printf("12");
-		}
-		njt_pfree(cmcf->dyn_var_pool,v->name.data);
-		v->name.data = NULL;
-		v->name.len = 0;
-		break;
- 
-		}
+	if(v != NULL && v->name.data != NULL) {
+	   njt_pfree(cmcf->dyn_var_pool,v->name.data);
+	   v->name.data = NULL;
+	   v->name.len = 0;
 	}
+	break;
+
+       }
+    }
 }
 
 
@@ -1471,7 +1193,7 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 
 	  njt_pool_t *new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
 	   if(new_pool == NULL) {
-		   exit(0);
+		   njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys create pool error!");
 		   return ;
 	   }
 
@@ -1481,7 +1203,7 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 		if (cmcf->variables_keys == NULL) {
 			cmcf->variables_keys = old_variables_keys; //失败时，继续使用旧的。
 			njt_destroy_pool(new_pool);
-			exit(0);
+			njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys create variables_keys error!");
 			return ;
 		}
 
@@ -1495,7 +1217,7 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 		{
 			cmcf->variables_keys = old_variables_keys; //失败时，继续使用旧的。
 			njt_destroy_pool(new_pool);
-			exit(0);
+			njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys njt_hash_keys_array_init  error!");
 			return;
 		}
  
@@ -1521,9 +1243,9 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 
 			//num++;
 			if (newv->name.data == NULL) {
-				exit(0); //todo
 				cmcf->variables_keys = old_variables_keys; //失败时，继续使用旧的。
 				 njt_destroy_pool(new_pool);
+				 njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys name alloc  error!");
 				return;
 			}
 

@@ -342,22 +342,22 @@ njt_http_location_read_data(njt_http_request_t *r){
 	njt_str_t json_str;
     njt_chain_t *body_chain,*tmp_chain;
     njt_int_t rc;
-	njt_uint_t len,size;
-	 njt_chain_t out;
+    njt_uint_t len,size;
+    njt_chain_t out;
     njt_str_t insert;
-   njt_http_location_info_t *location_info;
+    njt_http_location_info_t *location_info;
 
-	njt_uint_t  i;
-	njt_http_sub_location_info_t  *sub_location, *loc;
+    njt_uint_t  i;
+    njt_http_sub_location_info_t  *sub_location, *loc;
     u_char *p;
-	 uint32_t                                      crc32;
-	 uint32_t									   topic_len = NJT_INT64_LEN  + 2;
-	 njt_str_t									   topic_name,location_rule,location;
-	njt_str_t  add = njt_string("add");
-	njt_str_t  del = njt_string("del");
+    uint32_t                                      crc32;
+    uint32_t									   topic_len = NJT_INT64_LEN  + 2 + 256; ///dyn/loc/l_
+    njt_str_t									   topic_name,location_rule,location;
+    njt_str_t  add = njt_string("add");
+    njt_str_t  del = njt_string("del");
    
-
-	if (r->request_body == NULL) {
+    location_info = NULL;
+    if (r->request_body == NULL) {
          goto err;
     }
 

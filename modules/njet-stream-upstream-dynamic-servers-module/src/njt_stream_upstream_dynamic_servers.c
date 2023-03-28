@@ -818,7 +818,7 @@ static njt_int_t njt_stream_upstream_dynamic_servers_cache_server(njt_cycle_t *c
              njt_stream_upstream_dynamic_servers_module);
 	
 	have = 0;
-	if(umcf == NULL)
+	if(umcf == NULL || udsmcf == NULL)
 		return have;
 	uscfp = umcf->upstreams.elts;
 	
