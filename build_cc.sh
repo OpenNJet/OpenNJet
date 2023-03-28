@@ -37,6 +37,7 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-config-api-modul
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-sendmsg-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-bwlist-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-split-clients-2-module"
+NJET_MODULES="$NJET_MODULES --add-module=./modules/njt-http-proxy-connect-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-health-check-helper"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-doc-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-dyn-ssl-module"

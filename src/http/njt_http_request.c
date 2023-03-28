@@ -1101,6 +1101,56 @@ njt_http_process_request_line(njt_event_t *rev)
                 r->http_protocol.len = r->request_end - r->http_protocol.data;
             }
 
+//add by clb
+#if (NJT_HTTP_PROXY_CONNECT)
+
+            if (r->connect_host_start && r->connect_host_end) {
+
+                host.len = r->connect_host_end - r->connect_host_start;
+                host.data = r->connect_host_start;
+                rc = njt_http_validate_host(&host, r->pool, 0);
+
+                if (rc == NJT_DECLINED) {
+                    njt_log_error(NJT_LOG_INFO, c->log, 0,
+                                  "client sent invalid host in request line");
+                    njt_http_finalize_request(r, NJT_HTTP_BAD_REQUEST);
+                    return;
+                }
+
+                if (rc == NJT_ERROR) {
+                    njt_http_close_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
+                    return;
+                }
+
+                r->connect_host = host;
+
+                if (!r->connect_port_end) {
+                   njt_log_error(NJT_LOG_INFO, c->log, 0,
+                                  "client sent no port in request line");
+                    njt_http_finalize_request(r, NJT_HTTP_BAD_REQUEST);
+                    return;
+                }
+
+                r->connect_port.data = r->connect_host_end + 1;
+                r->connect_port.len = r->connect_port_end
+                                      - r->connect_host_end - 1;
+
+                njt_int_t port;
+
+                port = njt_atoi(r->connect_port.data, r->connect_port.len);
+                if (port == NJT_ERROR || port < 1 || port > 65535) {
+                    njt_log_error(NJT_LOG_INFO, c->log, 0,
+                                  "client sent invalid port in request line");
+                    njt_http_finalize_request(r, NJT_HTTP_BAD_REQUEST);
+                    return;
+                }
+
+                r->connect_port_n = port;
+
+                /* skip processing request uri */
+            } else
+#endif
+
             if (njt_http_process_request_uri(r) != NJT_OK) {
                 break;
             }
@@ -1696,6 +1746,20 @@ njt_http_alloc_large_header_buffer(njt_http_request_t *r,
             r->schema_end = new + (r->schema_end - old);
         }
 
+//add by clb
+#if (NJT_HTTP_PROXY_CONNECT)
+        if (r->connect_host_start) {
+            r->connect_host_start = new + (r->connect_host_start - old);
+            if (r->connect_host_end) {
+                r->connect_host_end = new + (r->connect_host_end - old);
+            }
+
+            if (r->connect_port_end) {
+                r->connect_port_end = new + (r->connect_port_end - old);
+            }
+        }
+#endif
+
         if (r->host_start) {
             r->host_start = new + (r->host_start - old);
             if (r->host_end) {
@@ -1986,12 +2050,17 @@ njt_http_process_request_header(njt_http_request_t *r)
         }
     }
 
+//mod by clb, for add proxy_connect
+#if (NJT_HTTP_PROXY_CONNECT)
+
+#else
     if (r->method == NJT_HTTP_CONNECT) {
         njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
                       "client sent CONNECT method");
         njt_http_finalize_request(r, NJT_HTTP_NOT_ALLOWED);
         return NJT_ERROR;
     }
+#endif
 
     if (r->method == NJT_HTTP_TRACE) {
         njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
