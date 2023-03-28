@@ -865,7 +865,7 @@ njt_http_file_cache_read(njt_http_request_t *r, njt_http_cache_t *c)
 
         njt_shmtx_lock(&cache->shpool->mutex);
 
-        if (c->node->updating) {
+        if (c->node && c->node->updating) {
             rc = NJT_HTTP_CACHE_UPDATING;
 
         } else {
