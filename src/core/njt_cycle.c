@@ -37,7 +37,7 @@ njt_uint_t             njt_quiet_mode;
 static njt_connection_t  dumb;
 /* STUB */
 
-void
+static void
 njt_replace_pool_log(njt_pool_t *pool, njt_log_t *old_log, njt_log_t *new_log)
 {
     // by Clb
