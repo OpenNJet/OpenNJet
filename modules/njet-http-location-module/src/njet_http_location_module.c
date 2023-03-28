@@ -513,6 +513,8 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     njt_memzero(&conf, sizeof(njt_conf_t));
     conf.args = njt_array_create(location_info->pool, 10, sizeof(njt_str_t));
     if (conf.args == NULL) {
+	rc = NJT_ERROR;
+	goto out;
     }
 
     conf.pool = location_info->pool;

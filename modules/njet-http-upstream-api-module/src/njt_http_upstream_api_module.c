@@ -1438,7 +1438,14 @@ njt_http_upstream_api_compose_one_upstream(njt_flag_t keep_alive,njt_str_t zone_
 			}
 			njt_str_set(&insert, ",\"zombies\":");
 			rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
+			
+			if (rc != NJT_OK) {
+				return NJT_HTTP_UPS_API_INTERNAL_ERROR;
+			}
 			rc = njt_http_upstream_api_insert_out_str(r, out, &buf);
+			if (rc != NJT_OK) {
+				return NJT_HTTP_UPS_API_INTERNAL_ERROR;
+			}
 		}
 		//rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
 
@@ -4906,6 +4913,9 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
 			rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
 
 			//njt_str_set(&insert,msg);
+			if (rc != NJT_OK) {
+				return rc;
+			}
 			rc = njt_http_upstream_api_insert_out_str(r, out, msg);
 
 			njt_str_set(&insert,
@@ -4965,8 +4975,15 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
 		r->headers_out.status = 400;
 		njt_str_set(&insert,
                     "400,\"text\":\"no resolver defined to resolve "); //,\"code\":\"JsonError\"}");
-        rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
+          rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
+	 if (rc != NJT_OK) {
+                        return rc;
+                }
 		rc = njt_http_upstream_api_insert_out_str(r, out, &json_peer.server);
+		
+		if (rc != NJT_OK) {
+			return rc;
+		}
 		njt_str_set(&insert,
                     "\",\"code\":\"UpstreamConfNoResolver\"}");
 		rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
@@ -4980,6 +4997,10 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
 		njt_str_set(&insert,
                     "400,\"text\":\"invalid weight \\\""); //,\"code\":\"JsonError\"}");
         rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
+	        
+		if (rc != NJT_OK) {
+			return rc;
+		}
 		rc = njt_http_upstream_api_insert_out_str(r, out, msg);
 		njt_str_set(&insert,
                     "\\\"\",\"code\":\"UpstreamBadWeight\"}");
@@ -4994,7 +5015,14 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
 		njt_str_set(&insert,
                     "400,\"text\":\"no port in server\\\""); //,\"code\":\"JsonError\"}");
         rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
+		
+		if (rc != NJT_OK) {
+			return rc;
+		}
 		rc = njt_http_upstream_api_insert_out_str(r, out, msg);
+		if (rc != NJT_OK) {
+			return rc;
+		}
 		njt_str_set(&insert,
                     "\\\"\",\"code\":\"UpstreamBadAddress\"}");
 		rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
@@ -5057,9 +5085,15 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
 		njt_str_set(&insert,
                 ",\"request_id\":\"");
 		rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
+		if (rc != NJT_OK) {
+			return rc;
+		}
 		insert.data = value->data;
 		insert.len = value->len;
 		rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
+		if (rc != NJT_OK) {
+			return rc;
+		}
 		njt_str_set(&insert,
                 "\",\"href\":\"https://nginx.org/en/docs/http/njt_http_api_module.html\"}");
 		rc = njt_http_upstream_api_insert_out_str(r, out, &insert);

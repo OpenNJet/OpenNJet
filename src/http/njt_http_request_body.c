@@ -1335,7 +1335,7 @@ njt_http_request_body_save_filter(njt_http_request_t *r, njt_chain_t *in)
             return NJT_HTTP_INTERNAL_SERVER_ERROR;
         }
 
-        if (rb->temp_file->file.offset != 0) {
+        if (rb->temp_file != NULL && rb->temp_file->file.offset != 0) {
 
             cl = njt_chain_get_free_buf(r->pool, &rb->free);
             if (cl == NULL) {

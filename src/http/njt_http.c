@@ -735,6 +735,9 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     if (locations == NULL) {
         return NJT_OK;
     }
+    if (cscf == NULL || pclcf == NULL){
+	return NJT_ERROR;
+    }
 
     njt_queue_sort(locations, njt_http_cmp_locations);
 
