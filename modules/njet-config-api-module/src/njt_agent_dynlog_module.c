@@ -260,7 +260,7 @@ static njt_json_element* njt_dynlog_dump_log_cf_json(njt_pool_t *pool,njt_array_
     for(i = 0 ; i < logs->nelts ; ++i ){
 
         obj = njt_json_obj_element(pool,njt_json_null_key);
-        if(path == NULL){
+        if(obj == NULL){
             continue;
         }
         if( log[i].path.len > 0){
