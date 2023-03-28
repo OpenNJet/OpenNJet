@@ -2652,7 +2652,7 @@ njt_http_match_parse_dheaders(njt_array_t *arr, njt_http_match_t *match, njt_hel
     njt_memzero(header, sizeof(njt_http_match_header_t));
 
     /*header ! abc;*/
-    if (njt_strncmp(args[i].data, "!", 1) == 0) {
+    if (args[i].data != NULL && njt_strncmp(args[i].data, "!", 1) == 0) {
         header->operation = NJT_HTTP_MATCH_NOT_CONTAIN;
         i++;
         if (nelts != 2) {
@@ -2780,8 +2780,14 @@ static njt_int_t njt_http_match(njt_helper_hc_api_data_t *api_data, njt_helper_h
         tmp = api_data->http.headers.elts;
         for (i = 0; i < api_data->http.headers.nelts; i++) {
             arr = njt_array_create(hhccf->pool, 4, sizeof(njt_str_t));
+            if(arr == NULL ){
+                njt_log_error(NJT_LOG_ERR, hhccf->log, 0, "header array create error.");
+                return NJT_ERROR;
+            }
             njt_str_split(&tmp[i], arr, ' ');
-            njt_http_match_parse_dheaders(arr, match, hhccf);
+            if(arr->nelts > 0 ){
+                njt_http_match_parse_dheaders(arr, match, hhccf);
+            }
         }
     }
     if (api_data->http.body.len > 0) {
