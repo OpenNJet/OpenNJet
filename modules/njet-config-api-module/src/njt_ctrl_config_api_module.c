@@ -317,7 +317,6 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
 // /api/1/config/{module_name}
 static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
     njt_int_t rc;
-//    njt_http_dyn_access_api_main_t *api_data;
     njt_array_t *path;
     njt_str_t msg,*uri,topic;
 
@@ -334,6 +333,7 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
     }
     rc = njt_http_api_parse_path(r,path);
     if(rc != NJT_OK || path->nelts <= 0 ){
+        rc = NJT_HTTP_NOT_FOUND;
         goto out;
     }
     uri = path->elts;
