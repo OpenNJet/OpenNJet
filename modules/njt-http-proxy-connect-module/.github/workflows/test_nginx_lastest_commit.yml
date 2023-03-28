@@ -1,0 +1,94 @@
+name: test nginx latest commit
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  test-nginx:
+    strategy:
+       fail-fast: false
+       matrix:
+          compiler:
+            - { compiler: LLVM, CC: clang, CXX: clang++}
+    runs-on: "ubuntu-20.04"
+    env:
+       CC: ${{ matrix.compiler.CC }}
+       CXX: ${{ matrix.compiler.CXX }}
+    steps:
+    - uses: actions/checkout@v3
+    - name: get dependencies
+      run: |
+         sudo apt update
+         sudo apt remove nginx libgd3
+         sudo apt install -y libgd-dev libgeoip-dev libxslt1-dev libperl-dev
+         sudo apt install -y libpcre3 libpcre3-dev
+         sudo apt-get install libnet-dns-perl
+         sudo cpan -T -i Test::More
+    - name: 'checkout luajit2'
+      uses: actions/checkout@v3
+      with:
+        repository: openresty/luajit2
+        path: luajit2
+    - name: install luajit
+      working-directory: luajit2
+      run: |
+         make -j
+         sudo make install
+         ls /usr/local/lib/ |grep lua
+    - name: get lua-nginx-module source
+      run: |
+          git clone https://github.com/openresty/lua-nginx-module.git
+          cd lua-nginx-module
+          git checkout b754786bb507ab76f8bfae2fc88aa59a959908a1
+    - name: get nginx source
+      run: |
+         pwd
+         git clone https://github.com/nginx/nginx.git
+    - name: build
+      run: |
+         pwd
+         cd nginx
+         patch -p1 < ../patch/proxy_connect_rewrite_102101.patch
+         export LUAJIT_LIB=/usr/local/lib
+         export LUAJIT_INC=/usr/local/include/luajit-2.1
+         ./auto/configure --prefix=/opt/nginx --with-ld-opt="-lpcre" --add-module=../ --add-module=../lua-nginx-module
+         make -j
+         sudo make install
+    - name: install lua-resty-core
+      run: |
+         pwd
+         git clone https://github.com/openresty/lua-resty-core.git
+         cd lua-resty-core
+         git checkout d2179dbcb3d6d77127462cadd40cca103d89a52a
+         sudo make install PREFIX=/opt/nginx
+         cd ..
+         git clone https://github.com/openresty/lua-resty-lrucache.git
+         cd lua-resty-lrucache
+         sudo make install PREFIX=/opt/nginx
+         ls /opt/nginx/lib/lua
+    - name: check nginx binary
+      run: |
+         cd nginx
+         ls -l objs/nginx /opt/nginx/sbin/nginx
+         ldd objs/nginx|grep -i lua
+         echo "Is there nginx worker?"; ps aux|grep nginx
+         echo "LD PATH: $LD_LIBRARY_PATH"
+         export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+         objs/nginx -V
+    - name: get nginx-tests
+      run:  git clone https://github.com/nginx/nginx-tests
+    - name: test
+      run: |
+         pwd
+         cd nginx
+         #sed -i -e "s+#LUA_PACKAGE_PATH+lua_package_path \"/opt/nginx/lib/lua/?.lua;;\";+" ../t/*.t
+         #grep -i lua_package_path ../t/*.t
+         export TEST_NGINX_GLOBALS_HTTP='lua_package_path "/opt/nginx/lib/lua/?.lua;;";'
+         nginx_tests_lib_path=../nginx-tests/lib
+         proxy_connect_test_cases=../t/
+         export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
+         TEST_NGINX_UNSAFE=yes TEST_NGINX_BINARY=$(pwd)/objs/nginx prove -v -I $nginx_tests_lib_path  $proxy_connect_test_cases
+
