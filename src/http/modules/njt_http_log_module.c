@@ -2285,13 +2285,14 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         goto error ;
     }
     for(j = 0 ; j < data->logs.nelts ; ++j ){
-        log = njt_array_push(llcf->logs); // 动态释放log
-        if (log == NULL) {
-            goto error ;
-        }
+
         if(log_cf[j].path.len < 1){
             njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"access log path not conf continue");
             continue;
+        }
+        log = njt_array_push(llcf->logs); // 动态释放log
+        if (log == NULL) {
+            goto error ;
         }
         njt_memzero(log, sizeof(njt_http_log_t));
         njt_str_copy_pool(pool,log->path,log_cf[j].path,goto error);
