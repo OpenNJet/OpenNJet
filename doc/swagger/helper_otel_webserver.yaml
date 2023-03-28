@@ -135,7 +135,7 @@ components:
           type: string
           description: location 名称 .
           example: /demo
-        nginxModuleEnabled:
+        NjetModuleEnabled:
           type: boolean
           description: telemetry webserver 开关状态 .
           example: false
