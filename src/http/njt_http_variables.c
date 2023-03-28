@@ -165,6 +165,16 @@ static njt_int_t njt_http_variable_get_uri_key(njt_http_request_t *r,
  */
 
 static njt_http_variable_t  njt_http_core_variables[] = {
+//add by clb
+#if (NJT_HTTP_PROXY_CONNECT)
+    { njt_string("connect_host"), NULL, njt_http_variable_request,
+      offsetof(njt_http_request_t, connect_host), 0, 0,
+      NJT_VAR_INIT_REF_COUNT },
+
+    { njt_string("connect_port"), NULL, njt_http_variable_request,
+      offsetof(njt_http_request_t, connect_port), 0, 0,
+      NJT_VAR_INIT_REF_COUNT },
+#endif
 
     { njt_string("http_host"), NULL, njt_http_variable_header,
       offsetof(njt_http_request_t, headers_in.host), 0, 0, NJT_VAR_INIT_REF_COUNT },

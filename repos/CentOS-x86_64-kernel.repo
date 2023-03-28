@@ -1,0 +1,16 @@
+[centos-kernel]
+name=CentOS LTS Kernels for $basearch
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=kernel&infra=$infra
+#baseurl=http://mirror.centos.org/altarch/7/kernel/$basearch/
+enabled=0
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
+[centos-kernel-experimental]
+name=CentOS Experimental Kernels for $basearch
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=experimental&infra=$infra
+#baseurl=http://mirror.centos.org/altarch/7/experimental/$basearch/
+enabled=0
+gpgcheck=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+
