@@ -1428,7 +1428,7 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_http_vts_dynapi_mai
     njt_uint_t                               flag;
     njt_uint_t                               i;
     njt_http_core_main_conf_t               *cmcf;
-    njt_hash_key_t                          *key;
+    njt_hash_key_t                          *key, *pkey;
     njt_str_t                                flt;
     njt_str_t                                fk;
 
@@ -1436,6 +1436,7 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_http_vts_dynapi_mai
     flt.len = dynconf->filter.len;
     cmcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_core_module);
     key = cmcf->variables_keys->keys.elts;
+    pkey = cmcf->prefix_variables.elts;
 
     while (flt.len > 0) {
         while (flt.len>0  && *flt.data!='$') {
@@ -1459,6 +1460,12 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_http_vts_dynapi_mai
         flag = 0;
         for (i = 0; i < cmcf->variables_keys->keys.nelts; i++) {
             if (fk.len-1 == key[i].key.len && njt_strncasecmp(fk.data+1, key[i].key.data, fk.len-1) == 0) {
+                flag = 1;
+            }
+        }
+
+        for (i = 0; i < cmcf->prefix_variables.nelts; i++) {
+            if (pkey[i].key.len > 0 && pkey[i].key.len < fk.len-1 && njt_strncasecmp(fk.data+1, pkey[i].key.data, pkey[i].key.len) == 0) {
                 flag = 1;
             }
         }
@@ -1579,7 +1586,7 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_http_vts_dynapi_mai
     }
 
     ctx->filter_keys_dyn = filter_keys;
-    njt_http_variables_init_vars(&conf);
+    njt_http_variables_init_vars_dyn(&conf);
     return;
 
 FAIL:

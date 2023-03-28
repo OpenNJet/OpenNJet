@@ -690,7 +690,7 @@ njt_http_get_variable_index(njt_conf_t *cf, njt_str_t *name)
 	if(free_v != v) {
 		v->index = cmcf->variables.nelts - 1;
 	} else {
-		v->index = free_v->index; // zyg 使用旧的。
+		v->index = free_v->index; // zyg 使锟矫旧的★拷
 	}
     
 
@@ -2837,8 +2837,8 @@ njt_http_variables_add_core_vars(njt_conf_t *cf)
 }
 
 
-njt_int_t
-njt_http_variables_init_vars(njt_conf_t *cf)
+static njt_int_t
+njt_http_variables_init_vars_proc(njt_conf_t *cf, njt_uint_t dyn)
 {
     size_t                      len;
     njt_uint_t                  i, n;
@@ -2908,8 +2908,9 @@ njt_http_variables_init_vars(njt_conf_t *cf)
         if (v[i].get_handler == NULL) {
             njt_log_error(NJT_LOG_EMERG, cf->log, 0,
                           "unknown \"%V\" variable", &v[i].name);
-
-            return NJT_ERROR;
+            if (!dyn) {
+                return NJT_ERROR;
+            }
         }
 
     next:
@@ -2967,3 +2968,14 @@ njt_http_variables_init_vars(njt_conf_t *cf)
     return NJT_OK;
 }
 
+njt_int_t
+njt_http_variables_init_vars(njt_conf_t *cf)
+{
+    return njt_http_variables_init_vars_proc(cf, 0);
+}
+
+njt_int_t
+njt_http_variables_init_vars_dyn(njt_conf_t *cf)
+{
+    return njt_http_variables_init_vars_proc(cf, 1);
+}

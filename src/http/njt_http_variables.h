@@ -118,6 +118,7 @@ void *njt_http_map_find(njt_http_request_t *r, njt_http_map_t *map,
 
 njt_int_t njt_http_variables_add_core_vars(njt_conf_t *cf);
 njt_int_t njt_http_variables_init_vars(njt_conf_t *cf);
+njt_int_t njt_http_variables_init_vars_dyn(njt_conf_t *cf);
 
 
 extern njt_http_variable_value_t  njt_http_variable_null_value;

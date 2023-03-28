@@ -466,6 +466,10 @@ njt_http_vhost_traffic_status_limit_traffic_unique(njt_pool_t *pool, njt_array_t
 
     }
 
+    if (traffic_keys == NULL) {
+        return NJT_ERROR;
+    }
+
     if ((*keys)->nelts != traffic_keys->nelts) {
         *keys = traffic_keys;
     }
