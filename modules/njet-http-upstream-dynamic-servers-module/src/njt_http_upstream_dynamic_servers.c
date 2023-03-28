@@ -1857,7 +1857,7 @@ skip_del:
 				peers_data->total_weight += weight;
 				//peers_data->empty = (peers_data->number == 0);
 				if(peers_data->peer == NULL) {
-					*(&peers_data->peer) = peer;
+					peers_data->peer = peer;
 				} else {
 					for(tail_peer = peers_data->peer;tail_peer->next != NULL; tail_peer = tail_peer->next);
 					tail_peer->next = peer;
