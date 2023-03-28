@@ -1,0 +1,14 @@
+njt_addon_name=njt_http_proxy_connect_module
+
+if test -n "$njt_module_link"; then
+    njt_module_type=HTTP
+    njt_module_name=njt_http_proxy_connect_module
+    njt_module_srcs="$njt_addon_dir/njt_http_proxy_connect_module.c"
+
+    . auto/module
+else
+    HTTP_MODULES="$HTTP_MODULES njt_http_proxy_connect_module"
+    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_addon_dir/njt_http_proxy_connect_module.c"
+fi
+
+have=NJT_HTTP_PROXY_CONNECT . auto/have

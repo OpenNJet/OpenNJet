@@ -12,27 +12,29 @@ paths:
         - dyn_loc
       summary: Delete a dynamic location from server
       description: Delete a dynamic location from server.
-      operationId: delLocation
-      responses:
-        '200':
-          description: Success
+      requestBody:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/del_location'
+                  $ref: '#/components/schemas/del_location'
+          required: true
+      responses:
+        '200':
+          description: result info
     post:
       tags:
         - dyn_loc
       summary: Add a dynamic location to server
       description: Add a dynamic location to server.
-      operationId: addLocation
-      responses:
-        '200':
-          description: Success
+      requestBody:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/add_location'
+                  $ref: '#/components/schemas/add_location'
+          required: true
+      responses:
+       '200':
+          description: result info
 ###DEFINITIONS
 components:
   schemas:
@@ -77,19 +79,15 @@ components:
           type: string
           description:  server name .
           example: cluster.tmlake.com
-        location_rule:
-          type: string
-          description:  Regular Expression.
-          example: =
-        location_name:
-          type: string
-          description:  the name of location.
-          example: /clb
-        location_body:
-          type: string
-          description:  the body content of location .
-          example: api write=off;
-        proxy_pass:
-          type: string
-          description:  the proxy_pass info .
-          example: $dest_upstream;
+        locations:
+          type: array
+          example:
+           - location_rule: ""
+             location_name: /
+             location_body: api write=off;
+             proxy_pass:  $dest_upstream;
+           - location_rule: ""
+             location_name: /test3
+             location_body: "set $test 1;"
+             proxy_pass:  $dest_upstream;
+    
