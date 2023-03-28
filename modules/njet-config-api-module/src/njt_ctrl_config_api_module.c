@@ -88,7 +88,7 @@ static int njt_ctrl_dynlog_request_output(njt_http_request_t *r,njt_int_t code, 
         r->headers_out.content_length = NULL;
     }
     rc = njt_http_send_header(r);
-    if(rc == NJT_ERROR || rc > NJT_OK || r->header_only){
+    if(rc == NJT_ERROR || rc > NJT_OK || r->header_only || msg == NULL ||msg->len < 1 ){
         return rc;
     }
     buf = njt_create_temp_buf(r->pool,msg->len);
@@ -110,6 +110,7 @@ static int njt_ctrl_dynlog_rpc_msg_handler(njt_dyn_rpc_res_t* res, njt_str_t *ms
     njt_http_request_t *req;
     njt_int_t rc;
 
+    rc = NJT_ERROR;
     njt_str_t err_msg = njt_string("{\n"
                                    "  \"code\": 500,\n"
                                    "  \"msg\": \"rpc timeout\"\n"
@@ -241,6 +242,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     njt_array_t *path;
     njt_str_t *uri,topic;
 
+    rc = NJT_ERROR;
     path = njt_array_create( r->pool, 4, sizeof(njt_str_t));
     if (path == NULL) {
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0,"array init of path error.");
