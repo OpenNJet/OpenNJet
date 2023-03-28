@@ -388,6 +388,7 @@ int njet_iot_init(const char *prefix, const char *config_file)
 #endif
 
 	iot_log__printf(NULL, MOSQ_LOG_INFO, "mosquitto version %s running", VERSION);
+	return 0;
 }
 
 int njet_iot_run()
@@ -399,7 +400,7 @@ int njet_iot_run()
 
 int njet_iot_exit()
 {
-	int i, rc;
+	int i, rc=0;
 	iot_mux__cleanup();
 	iot_log__printf(NULL, MOSQ_LOG_INFO, "mosquitto version %s terminating", VERSION);
 	HASH_ITER(hh_id, db.contexts_by_id, ctx, ctx_tmp)
