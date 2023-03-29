@@ -1753,6 +1753,7 @@ skip_add:
 		} 
 
         peers_data->single = (peers_data->number == 1);
+	peers->single = ((peers->number + peers->next->number) == 1);
         njt_stream_upstream_rr_peers_unlock(peers);
     }
 
@@ -1827,7 +1828,8 @@ static void njt_stream_upstream_dynamic_server_delete_server(
                 njt_shmtx_unlock(&peers->shpool->mutex);
             }
         }
-        peers->single = (peers->number == 1);
+        //peers->single = (peers->number == 1);
+        peers->single = ((peers->number + peers->next->number) == 1);
         njt_stream_upstream_rr_peers_unlock(peers);
     }
     return;

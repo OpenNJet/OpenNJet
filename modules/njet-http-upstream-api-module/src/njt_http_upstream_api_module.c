@@ -3029,8 +3029,8 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
         peers->tries ++;
     }
 
-
     target_peers->single = (target_peers->number == 1);
+    peers->single = ((peers->number + peers->next->number) == 1);
     //target_peers->empty = (target_peers->number == 0);
 	njt_stream_upstream_rr_peers_unlock(peers);
 	}
@@ -3431,8 +3431,8 @@ njt_http_upstream_api_post(njt_http_request_t *r)
         peers->tries ++;
     }
 
-
     target_peers->single = (target_peers->number == 1);
+    peers->single = ((peers->number + peers->next->number) == 1);
     //target_peers->empty = (target_peers->number == 0);
 	njt_http_upstream_rr_peers_unlock(peers);
 	}
@@ -3890,7 +3890,7 @@ out:
         njt_stream_upstream_rr_peers_unlock(peers);
         return rc;
     }
-
+    peers->single = ((peers->number + peers->next->number) == 1);
     njt_stream_upstream_rr_peers_unlock(peers);
 
     /*Output the servers*/
@@ -4048,7 +4048,7 @@ out:
         njt_http_upstream_rr_peers_unlock(peers);
         return rc;
     }
-
+    peers->single = ((peers->number + peers->next->number) == 1);
     njt_http_upstream_rr_peers_unlock(peers);
 
     /*Output the servers*/
