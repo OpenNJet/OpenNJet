@@ -8,30 +8,26 @@ NJet最早是基于NGINX1.19基础，fork并独立演进的开源应用引擎，
 
 功能特性
 ========
-继承 nginx-1.23.1 所有功能， 并且100%兼容nginx。
 ```
+继承 nginx-1.23.1 所有功能， 并且100%兼容nginx。
 
 Copilot框架
    支持动态加载不同的外部copilot模块
    支持外部模块异常退出的自动重启
 
-
 KV模块
   支持键值的查询及设置
   支持键值的持久化
-
 
 动态配置框架
   支持控制平面的消息发送
   支持RPC消息、组播消息
   支持消息持久化
 
-
 Cache-purge
   支持缓存清理
   支持按指定前缀清理缓存
   开启分片后修改源文件不会造成下载失败
-
 
 health_check
   支持单独在helper进程开启健康检查，不影响数据面业务
@@ -42,11 +38,9 @@ health_check
   支持https健康检查
   支持国密https健康检查
 
-
 Split-clients-2
   支持蓝绿发布
   支持运行时动态调整流量比例
-
 
 黑白名单
   支持黑名单方式进行访问IP的限制
@@ -58,15 +52,12 @@ doc模块
   支持通过swagger 页面实现对各功能opentapi的访问
   支持通过gui页面实现对动态模块配置修改的能力
 
-
 telemetry（外部编译模块）
   支持http请求在不同server间的服务追踪
   支持动态开关控制调用链的生成
 
-
 正向代理（支持http/https）
   实现了HTTP CONNECT 方法支持http/https正向代理访问
-
 
 vts模块
   支持server的request、response、traffic、cache信息的统计，其中server的response可以按照response code进行分类统计，分类统计使用的response code为1xx、2xx、3xx、4xx、5xx；
@@ -75,13 +66,11 @@ vts模块
   支持通过Prometheus、grafana进行统计信息的展示；
   支持动态配置server的location统计开关，支持动态配置server的filter key；
 
-
 国密支持
   支持server中使用国密；
   支持反向代理中使用国密；
   支持国密双证证书；
   动态（国密）证书更新
-
 
 动态access log
   支持运行中动态关闭access log功能
@@ -91,12 +80,10 @@ vts模块
   支持运行时增加日志format
   支持运行时修改日志format
 
-
 声明式API
   支持感知声明式模块注册
   支持查询声明式模块查询
   支持PUT方式更新声明式配置
-
 
 边车支持
   支持流量劫持，兼容istio 规则
@@ -104,11 +91,9 @@ vts模块
   支持代理http1.1
   支持 istio 的双向认证(service-to-service mTLS)
 
-
 动态location 支持
   支持通过api 向vs 添加 location
   支持通过api 从vs中删除已经添加的location
-
 
 动态upstream api 支持
   支持通过api，对http 或stream 中的upstream 信息进行查询
@@ -116,11 +101,9 @@ vts模块
   支持通过api，对http 或stream 中的upstream 的统计信息进行重置
   支持post 添加的upstream server 持久化或非持久化 
 
-
 动态域名upstream server
   支持静态配置upstream server 域名的reslove 属性，定时解析域名，根据域名对应的ip 增减结果，同步更新到upstream server 列表中
   支持通过upstream api  post接口，添加server 域名，并定时解析域名。
-
 
 Http 会话保持支持
   支持cookie 会话保持
