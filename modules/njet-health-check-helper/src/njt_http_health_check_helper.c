@@ -3592,6 +3592,8 @@ static void njt_http_hc_api_read_data(njt_http_request_t *r){
     api_data->rc = rc;
     if (rc != NJT_OK) {
         api_data->success = 0;
+        hrc = HC_BODY_ERROR;
+        goto out;
     } else {
         api_data->success = 1;
     }
@@ -3978,19 +3980,7 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
         if (rc == NJT_ERROR || rc >= NJT_HTTP_SPECIAL_RESPONSE) {
             return rc;
         }
-
-        if (rc == NJT_AGAIN || rc == NJT_OK) {
-            return NJT_DONE;
-        }
         return NJT_DONE;
-//        if (rc == NJT_OK) {
-//            njt_http_finalize_request(r, NJT_DONE);
-//        }
-//        api_data = njt_http_get_module_ctx(r, njt_helper_health_check_module);
-//        if (api_data == NULL || !api_data->success) {
-//            hrc = HC_BODY_ERROR;
-//            goto out;
-//        }
     }
 
     //put (delete location)
