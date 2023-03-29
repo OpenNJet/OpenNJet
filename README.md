@@ -9,7 +9,7 @@ NJet最早是基于NGINX1.19基础，fork并独立演进的开源应用引擎，
 功能特性
 ========
 ```
-继承 nginx-1.23.1 所有功能， 并且100%兼容nginx。
+继承 nginx-1.23.1 所有功能， 并且100%兼容nginx
 
 Copilot框架
    支持动态加载不同的外部copilot模块
@@ -60,16 +60,16 @@ telemetry（外部编译模块）
   实现了HTTP CONNECT 方法支持http/https正向代理访问
 
 vts模块
-  支持server的request、response、traffic、cache信息的统计，其中server的response可以按照response code进行分类统计，分类统计使用的response code为1xx、2xx、3xx、4xx、5xx；
-  支持upstream和cache信息的统计；
-  支持通过内嵌的html页面进行统计信息的展示；
-  支持通过Prometheus、grafana进行统计信息的展示；
-  支持动态配置server的location统计开关，支持动态配置server的filter key；
+  支持server的request、response、traffic、cache信息的统计，其中server的response可以按照response code进行分类统计，分类统计使用的response code为1xx、2xx、3xx、4xx、5xx
+  支持upstream和cache信息的统计
+  支持通过内嵌的html页面进行统计信息的展示
+  支持通过Prometheus、grafana进行统计信息的展示
+  支持动态配置server的location统计开关，支持动态配置server的filter key
 
 国密支持
-  支持server中使用国密；
-  支持反向代理中使用国密；
-  支持国密双证证书；
+  支持server中使用国密
+  支持反向代理中使用国密
+  支持国密双证证书
   动态（国密）证书更新
 
 动态access log
@@ -103,7 +103,7 @@ vts模块
 
 动态域名upstream server
   支持静态配置upstream server 域名的reslove 属性，定时解析域名，根据域名对应的ip 增减结果，同步更新到upstream server 列表中
-  支持通过upstream api  post接口，添加server 域名，并定时解析域名。
+  支持通过upstream api  post接口，添加server 域名，并定时解析域名
 
 Http 会话保持支持
   支持cookie 会话保持
