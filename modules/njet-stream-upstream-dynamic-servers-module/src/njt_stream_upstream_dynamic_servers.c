@@ -407,11 +407,11 @@ static char *njt_stream_upstream_resolver_directive(njt_conf_t *cf,
     return NJT_CONF_OK;
 }
 
-/*Overwrite the nginx "server" directive based on its
+/*Overwrite the njet "server" directive based on its
  implementation of "njt_stream_upstream_server" from
- src/stream/njt_stream_upstream.c (nginx version 1.7.7), and should be kept in
- sync with nginx's source code. Customizations noted in comments.
- This make possible use the same syntax of nginx comercial version.*/
+ src/stream/njt_stream_upstream.c (njet version 1.7.7), and should be kept in
+ sync with njet's source code. Customizations noted in comments.
+ This make possible use the same syntax of njet comercial version.*/
 
 static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
         njt_command_t *cmd, void *conf)
@@ -641,7 +641,7 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
             }
         /* If the domain fails to resolve on start up, mark this server as down,
          and assign a static IP that should never route. This is to account for
-         various things inside nginx that seem to expect a server to always have
+         various things inside njet that seem to expect a server to always have
          at least 1 IP.*/
         //us->down = 1;
 		

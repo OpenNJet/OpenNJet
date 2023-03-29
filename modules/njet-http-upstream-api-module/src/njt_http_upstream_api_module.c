@@ -5079,7 +5079,7 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
 	value = njt_http_get_variable(r, &insert, key);
 	 if (value == NULL || value->not_found || value->len == 0) {
         njt_str_set(&insert,
-                ",\"request_id\":\"N/A\",\"href\":\"https://nginx.org/en/docs/http/njt_http_api_module.html\"}");
+                ",\"request_id\":\"N/A\",\"href\":\"https://njet.org/en/docs/http/njt_http_api_module.html\"}");
 		rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
     } else {
 		njt_str_set(&insert,
@@ -5095,7 +5095,7 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
 			return rc;
 		}
 		njt_str_set(&insert,
-                "\",\"href\":\"https://nginx.org/en/docs/http/njt_http_api_module.html\"}");
+                "\",\"href\":\"https://njet.org/en/docs/http/njt_http_api_module.html\"}");
 		rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
 	}
     return rc;
