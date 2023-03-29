@@ -266,7 +266,7 @@ static njt_int_t njt_stream_upstream_api_create_dynamic_server(njt_http_request_
 
 		
 		//uclcf->peers->peer = new_peer;
-		uclcf->peers_stream->number++;
+		//uclcf->peers_stream->number++;
 		} else {
 			njt_slab_free_locked(shpool,new_peer);
 		}
@@ -338,7 +338,7 @@ static njt_int_t njt_http_upstream_api_create_dynamic_server(njt_http_request_t 
 
 		
 		//uclcf->peers->peer = new_peer;
-		uclcf->peers_http->number++;
+		//uclcf->peers_http->number++;
 		} else {
 			njt_slab_free_locked(shpool,new_peer);
 		}
