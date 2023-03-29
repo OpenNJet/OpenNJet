@@ -133,4 +133,4 @@ quic start:
 
 文档
 =============
-请参考NJET使用手册
+请参考NJET使用手册 https://e.gitee.com/tmlake/projects/507055/repos/tmlake/njet/wiki?sub_id=7950548
