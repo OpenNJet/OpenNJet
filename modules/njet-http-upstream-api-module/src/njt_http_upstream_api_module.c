@@ -2823,8 +2823,8 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_NOT_SUPPORTED_SRV;
         if (u.err) {
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                          "%s in upstream \"%V\"", u.err, &u.url);
+             njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                          "api post stream domain: \"%V\"",&u.url);
         }
         //goto out;
     }
@@ -2867,7 +2867,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 
 /////////////////////////////////////////////////////////////
 	if(parent_id != -1)  {
-		njt_http_upstream_rr_peers_unlock(peers);
+		njt_stream_upstream_rr_peers_unlock(peers);
 
 		server.data = njt_pcalloc(r->pool, json_peer.server.len + 1);
 		njt_cpystrn(server.data, json_peer.server.data, json_peer.server.len + 1);
@@ -3030,7 +3030,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
     }
 
     target_peers->single = (target_peers->number == 1);
-    peers->single = ((peers->number + peers->next->number) == 1);
+    peers->single = (peers->number == 1 && peers->next->number == 0);
     //target_peers->empty = (target_peers->number == 0);
 	njt_stream_upstream_rr_peers_unlock(peers);
 	}
@@ -3194,8 +3194,8 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
         rc = NJT_HTTP_UPS_API_NOT_SUPPORTED_SRV;
         if (u.err) {
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                          "%s in upstream \"%V\"", u.err, &u.url);
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                          "api post http domain: \"%V\"",&u.url);
         }
         //goto out;
     }
@@ -3432,7 +3432,8 @@ njt_http_upstream_api_post(njt_http_request_t *r)
     }
 
     target_peers->single = (target_peers->number == 1);
-    peers->single = ((peers->number + peers->next->number) == 1);
+    //peers->single = ((peers->number + peers->next->number) == 1);
+    peers->single = (peers->number == 1 && peers->next->number == 0);
     //target_peers->empty = (target_peers->number == 0);
 	njt_http_upstream_rr_peers_unlock(peers);
 	}
@@ -3518,7 +3519,7 @@ njt_stream_upstream_api_process_patch(njt_http_request_t *r,
 
     ctx->peers = peers;
     ctx->id = id;
-
+    ctx->resolver = uscf->resolver;
     njt_stream_set_ctx(r, ctx, njt_http_upstream_api_module);
 
     rc = njt_http_read_client_request_body(r, njt_stream_upstream_api_patch);
@@ -3546,7 +3547,7 @@ njt_http_upstream_api_process_patch(njt_http_request_t *r,
                       "upstream api ctx allocate error.");
         return NJT_HTTP_UPS_API_INTERNAL_ERROR;
     }
-
+    ctx->resolver = uscf->resolver;
     ctx->peers = peers;
     ctx->id = id;
 	ctx->keep_alive = uscf->set_keep_alive;
@@ -3871,6 +3872,7 @@ njt_stream_upstream_api_process_delete(njt_http_request_t *r,
 								  "upstream api ctx allocate error.");
 					return NJT_HTTP_UPS_API_INTERNAL_ERROR;
 				}
+				ctx->resolver = uscf->resolver;
 				ctx->peers = peers;
 				ctx->id = id;
 				njt_stream_set_ctx(r, ctx, njt_http_upstream_api_module);
@@ -3890,7 +3892,8 @@ out:
         njt_stream_upstream_rr_peers_unlock(peers);
         return rc;
     }
-    peers->single = ((peers->number + peers->next->number) == 1);
+   // peers->single = ((peers->number + peers->next->number) == 1);
+    peers->single = (peers->number == 1 && peers->next->number == 0);
     njt_stream_upstream_rr_peers_unlock(peers);
 
     /*Output the servers*/
@@ -4028,6 +4031,7 @@ njt_http_upstream_api_process_delete(njt_http_request_t *r,
 								  "upstream api ctx allocate error.");
 					return NJT_HTTP_UPS_API_INTERNAL_ERROR;
 				}
+				ctx->resolver = uscf->resolver;
 				ctx->peers = peers;
 				ctx->id = id;
 				ctx->keep_alive = uscf->set_keep_alive;
@@ -4048,7 +4052,8 @@ out:
         njt_http_upstream_rr_peers_unlock(peers);
         return rc;
     }
-    peers->single = ((peers->number + peers->next->number) == 1);
+    //peers->single = ((peers->number + peers->next->number) == 1);
+    peers->single = (peers->number == 1 && peers->next->number == 0);
     njt_http_upstream_rr_peers_unlock(peers);
 
     /*Output the servers*/

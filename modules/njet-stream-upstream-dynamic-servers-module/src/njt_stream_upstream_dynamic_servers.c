@@ -1163,16 +1163,16 @@ static void njt_stream_upstream_check_dynamic_server(njt_event_t *ev)
 					if(us->name.data == NULL) {
 						break;
 					}
+					njt_memcpy(us->name.data, peer->server.data, peer->server.len);
 
 					njt_memzero(&u, sizeof(njt_url_t));
-					u.url = peer->server;
+					u.url = us->name;
 					u.default_port = 80;
 					u.no_resolve = 1;
 					u.naddrs = 0;
 					u.addrs = NULL;
 					njt_parse_url(njt_cycle->pool, &u);
 
-					njt_memcpy(us->name.data, peer->server.data, peer->server.len);
 					us->addrs = NULL;// u.addrs;
 					us->naddrs =  0; //u.naddrs;
 					us->weight = peer->weight;
@@ -1614,17 +1614,15 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
     njt_crc32_final(crc32);
     njt_free(sockaddr);
 
-    if (dynamic_server->count == naddrs) {
         /*further compare the value*/
-        if (dynamic_server->crc32 == crc32) {
-            njt_log_error(NJT_LOG_ALERT, ctx->resolver->log, 0,
-                          "upstream-dynamic-servers: DNS result isn't changed '%V'", &ctx->name);
+        if (dynamic_server->count == naddrs && dynamic_server->crc32 == crc32) {
+            //njt_log_error(NJT_LOG_ALERT, ctx->resolver->log, 0,
+              //            "upstream-dynamic-servers: DNS result isn't changed '%V'", &ctx->name);
             goto end;
         } else {
-            njt_log_error(NJT_LOG_ALERT, ctx->resolver->log, 0,
-                          "upstream-dynamic-servers: DNS result is changed '%V'", &ctx->name);
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                          "upstream-dynamic-servers: DNS result is changed '%V' num=%d", &ctx->name,naddrs);
         }
-    }
 
     dynamic_server->count = naddrs;
     dynamic_server->crc32 = crc32;
@@ -1753,7 +1751,8 @@ skip_add:
 		} 
 
         peers_data->single = (peers_data->number == 1);
-	peers->single = ((peers->number + peers->next->number) == 1);
+	//peers->single = ((peers->number + peers->next->number) == 1);
+	peers->single = (peers->number == 1 && peers->next->number == 0);
         njt_stream_upstream_rr_peers_unlock(peers);
     }
 
@@ -1829,7 +1828,8 @@ static void njt_stream_upstream_dynamic_server_delete_server(
             }
         }
         //peers->single = (peers->number == 1);
-        peers->single = ((peers->number + peers->next->number) == 1);
+        //peers->single = ((peers->number + peers->next->number) == 1);
+        peers->single = (peers->number == 1 && peers->next->number == 0);
         njt_stream_upstream_rr_peers_unlock(peers);
     }
     return;

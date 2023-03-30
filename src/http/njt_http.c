@@ -735,7 +735,8 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     if (locations == NULL) {
         return NJT_OK;
     }
-    if (cscf == NULL || pclcf == NULL){
+    if (pclcf == NULL){
+	njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0,"njt_http_init_locations_common pclcf null!");
 	return NJT_ERROR;
     }
 
@@ -799,7 +800,7 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         }
 #endif
         //end
-    if (named) {
+    if (named && cscf != NULL) {
         // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
         if (cscf->named_parent_pool == NULL) {
