@@ -19,6 +19,12 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *elemen
     char  *p ;
 
     rc = NJT_OK;
+
+    if (element->type != def->type){
+        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "%V type not matching",&element->key);
+        return NJT_ERROR;
+    }
+
     if (element->type == NJT_JSON_ARRAY){
         q = njt_queue_head(&element->arrdata) ;
         array = data;
@@ -27,6 +33,7 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *elemen
             p = njt_array_push(array);
             njt_memzero(p,def->size);
             sub = njt_queue_data(q,njt_json_element ,ele_queue);
+            def->type = sub->type;
             rc = njt_json_parse_json_element(pool,sub,def,p);
             if(rc != NJT_OK){
                 return rc;
@@ -34,10 +41,7 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *elemen
         }
         return rc;
     }
-    if (element->type != def->type){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "%V type not matching",&element->key);
-        return NJT_ERROR;
-    }
+
     if(def->parse){
         rc = def->parse(element,def,data);
         if(rc != NJT_OK){
@@ -105,7 +109,7 @@ njt_int_t njt_json_parse_data(njt_pool_t *pool,njt_str_t *str,njt_json_define_t 
             njt_null_string,
             0,
             0,
-            NJT_JSON_OBJ,
+            def->type,
             def,
             NULL,
     };
@@ -117,6 +121,12 @@ njt_int_t njt_json_parse_data(njt_pool_t *pool,njt_str_t *str,njt_json_define_t 
     }
 
     items = json_body.json_val;
+
+    if (items->type != def->type){
+        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "root type not matching");
+        return NJT_ERROR;
+    }
+
     if(items->type== NJT_JSON_OBJ){
         rc = njt_json_parse_json_element(pool,items,&obj_def,data);
         if(rc != NJT_OK){
