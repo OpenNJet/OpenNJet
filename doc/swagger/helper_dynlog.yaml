@@ -145,7 +145,10 @@ components:
           items:
             type: string
         locations:
-          $ref: '#/components/schemas/LocationLogConf'
+          type: array
+          description: locations 列表
+          items:
+            $ref: '#/components/schemas/LocationLogConf'
     AccessLogConf:
       title:     AccessLogConf
       description: access log 配置
@@ -177,5 +180,8 @@ components:
           items:
             $ref: '#/components/schemas/AccessLogConf'
         locations:
-          $ref: '#/components/schemas/LocationLogConf'
+          type: array
+          description: locations 列表
+          items:
+            $ref: '#/components/schemas/LocationLogConf'
 
