@@ -303,6 +303,14 @@ njt_int_t njt_http_sticky_set_cookie(njt_http_request_t *r,
     njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0,
                   "zhaoqin: Enter njt_http_sticky_set_cookie");
 
+    if (!cookie_conf || !cookie_conf->path.len || r->uri.len < cookie_conf->path.len
+        || njt_strncmp(cookie_conf->path.data, r->uri.data, cookie_conf->path.len)
+        || (r->uri.len > cookie_conf->path.len
+            && cookie_conf->path.data[cookie_conf->path.len-1] != '/'
+            && r->uri.data[cookie_conf->path.len] != '/')) {
+            return NJT_ERROR;
+    }
+
     /* Calculate the length */
     /* name=value */
     len = cookie_conf->cookie_name.len + 1 + md5->len;
