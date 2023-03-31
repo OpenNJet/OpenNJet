@@ -108,7 +108,7 @@ vts模块
 Http 会话保持支持
   支持cookie 会话保持
   支持route 会话保持
-  支持lear 会话保持  
+  支持learn 会话保持  
 
 ```
 
