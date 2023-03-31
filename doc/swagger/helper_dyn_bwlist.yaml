@@ -118,7 +118,10 @@ components:
           items:
             type: string
         locations:
-          $ref: '#/components/schemas/LocationConf'
+          type: array
+          description: locations 列表
+          items:
+            $ref: '#/components/schemas/LocationConf'
 
 
     LocationConf:
@@ -131,18 +134,23 @@ components:
           description: location 名称 .
           example: /demo
         accessIpv4:
-          type: object
-          description: access 黑白名单
-          properties:
-            rule: 
-              type: string
-              enum: [allow, deny]
-            addr: 
-               type: string
-               example: "192.168.1.0"
-            mask: 
-               type: string
-               example: "255.255.255.0"
+          type: array
+          items:
+            type: object
+            description: access 黑白名单
+            properties:
+              rule: 
+                type: string
+                enum: [allow, deny]
+              addr: 
+                type: string
+                example: "192.168.1.0"
+              mask: 
+                type: string
+                example: "255.255.255.0"
         locations:
-          $ref: '#/components/schemas/LocationConf'         
+          type: array
+          description: locations 列表
+          items:
+            $ref: '#/components/schemas/LocationConf'
 
