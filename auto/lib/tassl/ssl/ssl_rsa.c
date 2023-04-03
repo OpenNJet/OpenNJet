@@ -384,6 +384,8 @@ static int ssl_set_cert(CERT *c, X509 *x)
     X509_up_ref(x);
     c->pkeys[i].x509 = x;
     c->key = &(c->pkeys[i]);
+    EVP_PKEY_free(c->pkeys[i].privatekey);
+    c->pkeys[i].privatekey = NULL;
 
     return 1;
 }

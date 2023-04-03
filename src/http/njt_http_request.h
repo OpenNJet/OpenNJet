@@ -418,6 +418,15 @@ struct njt_http_request_s {
     njt_str_t                         exten;
     njt_str_t                         tmp_location_name;     //add by clb
     njt_str_t                         unparsed_uri;
+//add by clb
+#if (NJT_HTTP_PROXY_CONNECT)
+    njt_str_t                         connect_host;
+    njt_str_t                         connect_port;
+    in_port_t                         connect_port_n;
+    u_char                           *connect_host_start;
+    u_char                           *connect_host_end;
+    u_char                           *connect_port_end;
+#endif
 
     njt_str_t                         method_name;
     njt_str_t                         http_protocol;

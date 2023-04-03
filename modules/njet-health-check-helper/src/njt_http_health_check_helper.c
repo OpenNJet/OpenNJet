@@ -2652,7 +2652,7 @@ njt_http_match_parse_dheaders(njt_array_t *arr, njt_http_match_t *match, njt_hel
     njt_memzero(header, sizeof(njt_http_match_header_t));
 
     /*header ! abc;*/
-    if (njt_strncmp(args[i].data, "!", 1) == 0) {
+    if (args[i].data != NULL && njt_strncmp(args[i].data, "!", 1) == 0) {
         header->operation = NJT_HTTP_MATCH_NOT_CONTAIN;
         i++;
         if (nelts != 2) {
@@ -2780,8 +2780,14 @@ static njt_int_t njt_http_match(njt_helper_hc_api_data_t *api_data, njt_helper_h
         tmp = api_data->http.headers.elts;
         for (i = 0; i < api_data->http.headers.nelts; i++) {
             arr = njt_array_create(hhccf->pool, 4, sizeof(njt_str_t));
+            if(arr == NULL ){
+                njt_log_error(NJT_LOG_ERR, hhccf->log, 0, "header array create error.");
+                return NJT_ERROR;
+            }
             njt_str_split(&tmp[i], arr, ' ');
-            njt_http_match_parse_dheaders(arr, match, hhccf);
+            if(arr->nelts > 0 ){
+                njt_http_match_parse_dheaders(arr, match, hhccf);
+            }
         }
     }
     if (api_data->http.body.len > 0) {
@@ -3239,7 +3245,7 @@ static void njt_health_check_recovery_conf_info(njt_pool_t *pool, njt_str_t *msg
 }
 
 
-static void njt_health_check_recovery_confs() {
+static void njt_health_check_recovery_confs(){
     njt_helper_main_conf_t *hmcf;
     njt_str_t msg;
     njt_str_t tkey1, tkey2;
@@ -3297,61 +3303,68 @@ static void njt_health_check_recovery_confs() {
 
 }
 
-/**
- * 它读取请求体并将其解析为 njt_helper_hc_api_data_t 结构
- *
- * @param r http 请求对象
- */
-static void njt_http_hc_api_read_data(njt_http_request_t *r) {
-    njt_str_t json_str;
-    njt_chain_t *body_chain, *tmp_chain;
-    njt_int_t rc;
-    njt_helper_hc_api_data_t *api_data = NULL;
-    njt_uint_t len, size;
 
-    body_chain = r->request_body->bufs;
-    /*check the sanity of the json body*/
-    json_str.data = body_chain->buf->pos;
-    json_str.len = body_chain->buf->last - body_chain->buf->pos;
+static char njt_hc_resp_body[] = "{\n  \"code\": %d,\n   \"msg\": \"%V\"\n }";
 
-    api_data = njt_pcalloc(r->pool, sizeof(njt_helper_hc_api_data_t));
-    if (api_data == NULL) {
+static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, njt_int_t rc) {
+    njt_uint_t buf_len;
+    njt_buf_t *buf;
+    njt_chain_t out;
+
+    switch (rc) {
+        case HC_SUCCESS:
+            r->headers_out.status = NJT_HTTP_OK;
+            break;
+        case HC_TYPE_NOT_FOUND:
+        case HC_UPSTREAM_NOT_FOUND:
+        case HC_VERSION_NOT_SUPPORT:
+        case HC_PATH_NOT_FOUND:
+        case HC_NOT_FOUND:
+            r->headers_out.status = NJT_HTTP_NOT_FOUND;
+            break;
+        case HC_METHOD_NOT_ALLOW:
+            r->headers_out.status = NJT_HTTP_NOT_ALLOWED;
+            break;
+        case HC_CA_NOT_CONF:
+        case HC_CERTIFICATE_NOT_CONF:
+        case HC_CERTIFICATE_KEY_NOT_CONF:
+        case HC_BODY_ERROR:
+            r->headers_out.status = NJT_HTTP_BAD_REQUEST;
+            break;
+        case HC_DOUBLE_SET:
+            r->headers_out.status = NJT_HTTP_CONFLICT;
+            break;
+        case HC_SERVER_ERROR:
+        default:
+            r->headers_out.status = NJT_HTTP_INTERNAL_SERVER_ERROR;
+            break;
+    }
+    buf_len = sizeof(njt_hc_resp_body) - 1 + 9 + njt_hc_error_msg[rc].len;
+    buf = njt_create_temp_buf(r->pool, buf_len);
+    if (buf == NULL) {
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "could not alloc buffer in function %s", __func__);
-        return;
+        return NJT_ERROR;
     }
-    len = 0;
-    tmp_chain = body_chain;
-    while (tmp_chain != NULL) {
-        len += tmp_chain->buf->last - tmp_chain->buf->pos;
-        tmp_chain = tmp_chain->next;
+    buf->last = njt_snprintf(buf->last, buf_len, njt_hc_resp_body, rc, njt_hc_error_msg + rc);
+    njt_str_t type = njt_string("application/json");
+    r->headers_out.content_type = type;
+    r->headers_out.content_length_n = buf->last - buf->pos;
+    if (r->headers_out.content_length) {
+        r->headers_out.content_length->hash = 0;
+        r->headers_out.content_length = NULL;
     }
-    json_str.len = len;
-    json_str.data = njt_pcalloc(r->pool, len);
-    if (json_str.data == NULL) {
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "could not alloc buffer in function %s", __func__);
-        return;
-    }
-    len = 0;
-    tmp_chain = r->request_body->bufs;
-    while (tmp_chain != NULL) {
-        size = tmp_chain->buf->last - tmp_chain->buf->pos;
-        njt_memcpy(json_str.data + len, tmp_chain->buf->pos, size);
-        tmp_chain = tmp_chain->next;
-        len += size;
-    }
+    rc = njt_http_send_header(r);
 
-    njt_array_init(&api_data->http.headers, r->pool, 4, sizeof(njt_str_t));
-    rc = njt_json_parse_data(r->pool, &json_str, njt_helper_hc_api_data_json_dt, api_data);
-    api_data->rc = rc;
-    if (rc != NJT_OK) {
-        api_data->success = 0;
-    } else {
-        api_data->success = 1;
+    if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
+        return rc;
     }
-    njt_http_set_ctx(r, api_data, njt_helper_health_check_module);
+    buf->last_buf = 1;
+    out.buf = buf;
+    out.next = NULL;
+    return njt_http_output_filter(r, &out);
 }
+
 
 
 /*!
@@ -3415,6 +3428,7 @@ njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path) {
 }
 
 
+
 static njt_str_t njt_hc_confs_to_json(njt_pool_t *pool, njt_helper_main_conf_t *hmcf) {
     njt_helper_health_check_conf_t *hhccf;
     njt_queue_t *q;
@@ -3427,6 +3441,15 @@ static njt_str_t njt_hc_confs_to_json(njt_pool_t *pool, njt_helper_main_conf_t *
     njt_memzero(&json_manager, sizeof(njt_json_manager));
     njt_str_null(&json);
 
+    json_manager.json_val = njt_pnalloc(pool, sizeof(njt_json_element));
+    if (json_manager.json_val == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                      "njt_struct_top_add json alloc fail");
+        goto err;
+    }
+
+    json_manager.json_val->type = NJT_JSON_ARRAY;
+    njt_queue_init(&json_manager.json_val->arrdata);
 
     q = njt_queue_head(&hmcf->hc_queue);
     for (; q != njt_queue_sentinel(&hmcf->hc_queue); q = njt_queue_next(q)) {
@@ -3465,7 +3488,6 @@ static njt_str_t njt_hc_confs_to_json(njt_pool_t *pool, njt_helper_main_conf_t *
     njt_str_null(&json);
     return json;
 }
-
 
 static njt_int_t njt_hc_api_get_hcs(njt_http_request_t *r) {
     njt_cycle_t *cycle;
@@ -3514,7 +3536,109 @@ static njt_int_t njt_hc_api_get_hcs(njt_http_request_t *r) {
     return HC_SERVER_ERROR;
 }
 
-static njt_helper_health_check_conf_t *njt_http_find_helper_hc(njt_cycle_t *cycle, njt_helper_hc_api_data_t *api_data) {
+
+/**
+ * 它读取请求体并将其解析为 njt_helper_hc_api_data_t 结构
+ *
+ * @param r http 请求对象
+ */
+static void njt_http_hc_api_read_data(njt_http_request_t *r){
+    njt_str_t json_str;
+    njt_int_t hrc;
+    njt_chain_t *body_chain, *tmp_chain;
+    njt_int_t rc;
+    njt_helper_hc_api_data_t *api_data = NULL;
+    njt_uint_t len, size;
+    njt_str_t *uri;
+    njt_array_t *path;
+
+    body_chain = r->request_body->bufs;
+    /*check the sanity of the json body*/
+    json_str.data = body_chain->buf->pos;
+    json_str.len = body_chain->buf->last - body_chain->buf->pos;
+
+    api_data = njt_pcalloc(r->pool, sizeof(njt_helper_hc_api_data_t));
+    if (api_data == NULL) {
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "could not alloc buffer in function %s", __func__);
+        hrc = HC_SERVER_ERROR;
+        goto out;
+    }
+    len = 0;
+    tmp_chain = body_chain;
+    while (tmp_chain != NULL) {
+        len += tmp_chain->buf->last - tmp_chain->buf->pos;
+        tmp_chain = tmp_chain->next;
+    }
+    json_str.len = len;
+    json_str.data = njt_pcalloc(r->pool, len);
+    if (json_str.data == NULL) {
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "could not alloc buffer in function %s", __func__);
+        hrc = HC_SERVER_ERROR;
+        goto out;
+    }
+    len = 0;
+    tmp_chain = r->request_body->bufs;
+    while (tmp_chain != NULL) {
+        size = tmp_chain->buf->last - tmp_chain->buf->pos;
+        njt_memcpy(json_str.data + len, tmp_chain->buf->pos, size);
+        tmp_chain = tmp_chain->next;
+        len += size;
+    }
+
+    njt_array_init(&api_data->http.headers, r->pool, 4, sizeof(njt_str_t));
+    rc = njt_json_parse_data(r->pool, &json_str, njt_helper_hc_api_data_json_dt, api_data);
+    api_data->rc = rc;
+    if (rc != NJT_OK) {
+        api_data->success = 0;
+        hrc = HC_BODY_ERROR;
+        goto out;
+    } else {
+        api_data->success = 1;
+    }
+    njt_http_set_ctx(r, api_data, njt_helper_health_check_module);
+
+    path = njt_array_create(r->pool, 4, sizeof(njt_str_t));
+    if (path == NULL) {
+        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "array init of path error.");
+        hrc = HC_SERVER_ERROR;
+        goto out;
+    }
+    rc = njt_http_api_parse_path(r, path);
+    if (rc != HC_SUCCESS || path->nelts <= 0) {
+        hrc = HC_PATH_NOT_FOUND;
+        goto out;
+    }
+    uri = path->elts;
+    if (path->nelts < 2 || (uri[0].len != 1 || uri[0].data[0] != '1')
+        || (uri[1].len != 2 || njt_strncmp(uri[1].data, "hc", 2) != 0)) {
+        hrc = HC_PATH_NOT_FOUND;
+        goto out;
+    }
+    hrc = HC_PATH_NOT_FOUND;
+    if (path->nelts == 4) {
+        api_data->hc_type = uri[2];
+        api_data->upstream_name = uri[3];
+    }
+
+    if (r->method == NJT_HTTP_POST) {
+        hrc = njt_hc_api_add_conf(r->pool, api_data, 1);
+    }
+    if (hrc == HC_RESP_DONE) {
+        rc = NJT_OK;
+        goto end;
+    }
+
+    out:
+    rc = njt_http_health_check_conf_out_handler(r, hrc);
+
+    end:
+    njt_http_finalize_request(r, rc);
+}
+
+
+static njt_helper_health_check_conf_t *njt_http_find_helper_hc(njt_cycle_t *cycle, njt_helper_hc_api_data_t *api_data){
     njt_helper_main_conf_t *hmcf;
     njt_health_checker_t *checker;
     njt_helper_health_check_conf_t *hhccf;
@@ -3691,6 +3815,11 @@ static njt_str_t njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_ch
             goto err;
         }
         njt_struct_add(ssl,item,pool);
+        item =njt_json_bool_element(pool,njt_json_fast_key("ntls"),hhccf->ssl.ntls_enable);
+        if(item == NULL ){
+            goto err;
+        }
+        njt_struct_add(ssl,item,pool);
         item =njt_json_bool_element(pool,njt_json_fast_key("sessionReuse"),hhccf->ssl.ssl_session_reuse);
         if(item == NULL ){
             goto err;
@@ -3829,67 +3958,6 @@ static njt_int_t njt_hc_api_get_conf_info(njt_http_request_t *r, njt_helper_hc_a
     return HC_SERVER_ERROR;
 }
 
-static char njt_hc_resp_body[] = "{\n  \"code\": %d,\n   \"msg\": \"%V\"\n }";
-
-static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, njt_int_t rc) {
-    njt_uint_t buf_len;
-    njt_buf_t *buf;
-    njt_chain_t out;
-
-    switch (rc) {
-        case HC_SUCCESS:
-            r->headers_out.status = NJT_HTTP_OK;
-            break;
-        case HC_TYPE_NOT_FOUND:
-        case HC_UPSTREAM_NOT_FOUND:
-        case HC_VERSION_NOT_SUPPORT:
-        case HC_PATH_NOT_FOUND:
-        case HC_NOT_FOUND:
-            r->headers_out.status = NJT_HTTP_NOT_FOUND;
-            break;
-        case HC_METHOD_NOT_ALLOW:
-            r->headers_out.status = NJT_HTTP_NOT_ALLOWED;
-            break;
-        case HC_CA_NOT_CONF:
-        case HC_CERTIFICATE_NOT_CONF:
-        case HC_CERTIFICATE_KEY_NOT_CONF:
-        case HC_BODY_ERROR:
-            r->headers_out.status = NJT_HTTP_BAD_REQUEST;
-            break;
-        case HC_DOUBLE_SET:
-            r->headers_out.status = NJT_HTTP_CONFLICT;
-            break;
-        case HC_SERVER_ERROR:
-        default:
-            r->headers_out.status = NJT_HTTP_INTERNAL_SERVER_ERROR;
-            break;
-    }
-    buf_len = sizeof(njt_hc_resp_body) - 1 + 9 + njt_hc_error_msg[rc].len;
-    buf = njt_create_temp_buf(r->pool, buf_len);
-    if (buf == NULL) {
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "could not alloc buffer in function %s", __func__);
-        return NJT_ERROR;
-    }
-    buf->last = njt_snprintf(buf->last, buf_len, njt_hc_resp_body, rc, njt_hc_error_msg + rc);
-    njt_str_t type = njt_string("application/json");
-    r->headers_out.content_type = type;
-    r->headers_out.content_length_n = buf->last - buf->pos;
-    if (r->headers_out.content_length) {
-        r->headers_out.content_length->hash = 0;
-        r->headers_out.content_length = NULL;
-    }
-    rc = njt_http_send_header(r);
-
-    if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
-        return rc;
-    }
-    buf->last_buf = 1;
-    out.buf = buf;
-    out.next = NULL;
-    return njt_http_output_filter(r, &out);
-}
-
 
 static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
     njt_int_t rc;
@@ -3908,14 +3976,11 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
         }
     } else {
         rc = njt_http_read_client_request_body(r, njt_http_hc_api_read_data);
-        if (rc == NJT_OK) {
-            njt_http_finalize_request(r, NJT_DONE);
+
+        if (rc == NJT_ERROR || rc >= NJT_HTTP_SPECIAL_RESPONSE) {
+            return rc;
         }
-        api_data = njt_http_get_module_ctx(r, njt_helper_health_check_module);
-        if (api_data == NULL || !api_data->success) {
-            hrc = HC_BODY_ERROR;
-            goto out;
-        }
+        return NJT_DONE;
     }
 
     //put (delete location)
@@ -3949,9 +4014,9 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
         if (r->method == NJT_HTTP_GET) {
             hrc = njt_hc_api_get_conf_info(r, api_data);
         }
-        if (r->method == NJT_HTTP_POST) {
-            hrc = njt_hc_api_add_conf(r->pool, api_data, 1);
-        }
+//        if (r->method == NJT_HTTP_POST) {
+//            hrc = njt_hc_api_add_conf(r->pool, api_data, 1);
+//        }
     }
 
 

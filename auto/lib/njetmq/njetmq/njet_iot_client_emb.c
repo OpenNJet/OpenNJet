@@ -119,7 +119,7 @@ void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquit
 {
 	int i, identifier;
 	bool res;
-	int session_id;
+	int session_id = 0;
 	const mosquitto_property *prop;
 	char *resp_topic = NULL;
 
@@ -191,9 +191,9 @@ void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquit
 			return;
 		}
 	}
-      if (resp_topic)
-	free(resp_topic);
-      return;
+	if (resp_topic)
+		free(resp_topic);
+	return;
 }
 
 void my_publish_callback(struct mosquitto *mosq, void *obj, int mid, int reason_code, const mosquitto_property *properties)
@@ -337,8 +337,8 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 	if (log_file)
 		cfg->log_file = strdup(log_file);
 
-	cfg->prefix=(char *)prefix;
-    
+	cfg->prefix = (char *)prefix;
+
 	ret = client_config_load(cfg, CLIENT_SUB, cfg_file);
 	// todo: free cfg on error
 	if (ret != MOSQ_ERR_SUCCESS)
@@ -502,10 +502,12 @@ int njet_iot_client_kv_set(const void *key, u_int32_t key_len, const void *val, 
 	return 0;
 }
 
-int njet_iot_client_add_topic(struct evt_ctx_t *ctx, char *topic){
-	if (ctx==NULL) {
+int njet_iot_client_add_topic(struct evt_ctx_t *ctx, char *topic)
+{
+	if (ctx == NULL)
+	{
 		return -1;
 	}
 	cfg_add_topic(ctx->cfg, CLIENT_SUB, topic, "-t");
-	return 0;	
+	return 0;
 }

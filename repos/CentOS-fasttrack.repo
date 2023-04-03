@@ -1,0 +1,10 @@
+#CentOS-fasttrack.repo
+
+[fasttrack]
+name=CentOS-7 - fasttrack
+mirrorlist=http://mirrorlist.centos.org/?release=$releasever&arch=$basearch&repo=fasttrack&infra=$infra
+#baseurl=http://mirror.centos.org/centos/$releasever/fasttrack/$basearch/
+gpgcheck=0
+enabled=0
+gpgkey=file:///etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-7
+

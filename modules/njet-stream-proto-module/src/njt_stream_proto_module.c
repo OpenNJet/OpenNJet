@@ -779,7 +779,7 @@ njt_stream_preread_parse_record(njt_stream_proto_ctx_t *ctx,
             njt_log_debug1(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                            "ssl preread: ALPN protocols \"%V\"", &ctx->alpn);
 
-            if (ext) {
+            if (ext && ctx != NULL && ctx->alpn.data != NULL) {
                 ctx->alpn.data[ctx->alpn.len++] = ',';
 
                 state = sw_alpn_proto_len;

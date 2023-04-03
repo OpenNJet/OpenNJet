@@ -113,34 +113,6 @@ endif()
 # Include projects
 # ========================================
 
-option(WITH_PLUGINS "Build plugins?" ON)
 option(DOCUMENTATION "Build documentation?" ON)
 
 add_subdirectory(njetmq)
-#add_subdirectory(lib)
-#add_subdirectory(lib-emb)
-
-
-
-if (WITH_PLUGINS)
-	add_subdirectory(plugins)
-endif (WITH_PLUGINS)
-
-
-# ========================================
-# Install config file
-# ========================================
-
-
-# ========================================
-# Install pkg-config files
-# ========================================
-
-configure_file(libmosquitto.pc.in libmosquitto.pc @ONLY)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libmosquitto.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
-configure_file(libmosquittopp.pc.in libmosquittopp.pc @ONLY)
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libmosquittopp.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
-
-# ========================================
-# Testing
-# ========================================

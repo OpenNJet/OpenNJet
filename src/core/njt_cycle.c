@@ -17,6 +17,8 @@ static njt_int_t njt_init_zone_pool(njt_cycle_t *cycle,
 static njt_int_t njt_test_lockfile(u_char *file, njt_log_t *log);
 static void njt_clean_old_cycles(njt_event_t *ev);
 static void njt_shutdown_timer_handler(njt_event_t *ev);
+static void njt_replace_pool_log(njt_pool_t *pool, 
+    njt_log_t *old_log, njt_log_t *new_log);
 
 
 volatile njt_cycle_t  *njt_cycle;
@@ -35,6 +37,26 @@ njt_uint_t             njt_quiet_mode;
 static njt_connection_t  dumb;
 /* STUB */
 
+static void
+njt_replace_pool_log(njt_pool_t *pool, njt_log_t *old_log, njt_log_t *new_log)
+{
+    // by Clb
+#if (NJT_DYNAMIC_POOL)
+    njt_pool_t          *sub_pool;
+    njt_queue_t         *sub_queue;
+
+    if(pool->log == old_log){
+        pool->log = new_log;
+    } 
+ 
+    for (sub_queue = njt_queue_head(&pool->sub_pools);
+         sub_queue != njt_queue_sentinel(&pool->sub_pools); ){
+        sub_pool = njt_queue_data(sub_queue,njt_pool_t,parent_pool);
+        sub_queue = njt_queue_next(sub_queue);  // 先计算偏移防止节点被删除
+        njt_replace_pool_log(sub_pool, old_log, new_log);
+    }
+#endif
+}
 
 njt_cycle_t *
 njt_init_cycle(njt_cycle_t *old_cycle)
@@ -53,6 +75,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     njt_listening_t     *ls, *nls;
     njt_core_conf_t     *ccf, *old_ccf;
     njt_core_module_t   *module;
+    njt_log_t           *old_log;
     char                 hostname[NJT_MAXHOSTNAMELEN];
 
     njt_timezone_update();
@@ -408,9 +431,14 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 #endif
     }
 
+    //save old log
+    old_log = cycle->log;
+
     cycle->log = &cycle->new_log;
     pool->log = &cycle->new_log;
 
+    //foreach
+    njt_replace_pool_log(conf.pool, old_log, pool->log);
 
     /* create shared memory */
 

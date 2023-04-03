@@ -936,7 +936,7 @@ static int net__socket_listen_unix(struct mosquitto__listener *listener)
 	}
 	listener->socks[listener->sock_count - 1] = sock;
 
-	old_mask = umask(0007);
+	old_mask = umask(0000);
 	rc = bind(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr_un));
 	umask(old_mask);
 

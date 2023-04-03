@@ -207,7 +207,7 @@ njt_int_t njt_http_sticky_cookie_get_peer(njt_peer_connection_t *pc,
 	   rc = NJT_DECLINED;
 	   njt_log_error(NJT_LOG_DEBUG, pc->log, 0,
                           "conf cookie path:%V.", &conf->cookie_cf->path);
-	   if(conf->cookie_cf->path.len == r->uri.len && njt_strncmp(conf->cookie_cf->path.data, r->uri.data,r->uri.len) == 0) {
+	    if(r->uri.len >= conf->cookie_cf->path.len && njt_strncmp(conf->cookie_cf->path.data, r->uri.data, conf->cookie_cf->path.len) == 0) {
 		rc = NJT_OK;
 	   } else   {
 		len = (r->uri.len > conf->cookie_cf->path.len ?conf->cookie_cf->path.len:r->uri.len);
@@ -302,6 +302,14 @@ njt_int_t njt_http_sticky_set_cookie(njt_http_request_t *r,
 
     njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0,
                   "zhaoqin: Enter njt_http_sticky_set_cookie");
+
+    if (!cookie_conf || !cookie_conf->path.len || r->uri.len < cookie_conf->path.len
+        || njt_strncmp(cookie_conf->path.data, r->uri.data, cookie_conf->path.len)
+        || (r->uri.len > cookie_conf->path.len
+            && cookie_conf->path.data[cookie_conf->path.len-1] != '/'
+            && r->uri.data[cookie_conf->path.len] != '/')) {
+            return NJT_ERROR;
+    }
 
     /* Calculate the length */
     /* name=value */

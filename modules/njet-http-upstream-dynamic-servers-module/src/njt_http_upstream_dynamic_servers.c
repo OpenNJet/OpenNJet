@@ -396,11 +396,11 @@ static char *njt_http_upstream_resolver_directive(njt_conf_t *cf,
     return NJT_CONF_OK;
 }
 
-/*Overwrite the nginx "server" directive based on its
+/*Overwrite the njet "server" directive based on its
  implementation of "njt_http_upstream_server" from
- src/http/njt_http_upstream.c (nginx version 1.7.7), and should be kept in
- sync with nginx's source code. Customizations noted in comments.
- This make possible use the same syntax of nginx comercial version.*/
+ src/http/njt_http_upstream.c (njet version 1.7.7), and should be kept in
+ sync with njet's source code. Customizations noted in comments.
+ This make possible use the same syntax of njet comercial version.*/
 
 static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
         njt_command_t *cmd, void *conf)
@@ -634,13 +634,13 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
     if (no_resolve == 0 && njt_parse_url(cf->pool, &u) != NJT_OK) {
         if (u.err && !no_resolve) {
             njt_conf_log_error(NJT_LOG_ERR, cf, 0,
-                               "%s in upstream \"%V\"", u.err, &u.url);
+                               "zyg1 %s in upstream \"%V\"", u.err, &u.url);
             return NJT_CONF_ERROR;
         }
 
         /* If the domain fails to resolve on start up, mark this server as down,
          and assign a static IP that should never route. This is to account for
-         various things inside nginx that seem to expect a server to always have
+         various things inside njet that seem to expect a server to always have
          at least 1 IP.*/
         //us->down = 1;
 		
@@ -651,7 +651,7 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
         if (njt_parse_url(cf->pool, &u) != NJT_OK) {
             if (u.err && !no_resolve) {
                 njt_conf_log_error(NJT_LOG_ERR, cf, 0,
-                                   "%s in upstream \"%V\"", u.err, &u.url);
+                                   "zyg 2 %s in upstream \"%V\"", u.err, &u.url);
             }
             return NJT_CONF_ERROR;
         }
@@ -874,7 +874,7 @@ static njt_int_t njt_http_upstream_dynamic_servers_cache_server(njt_cycle_t *cyc
              njt_http_upstream_dynamic_servers_module);
 	
 	have = 0;
-	if(umcf == NULL)
+	if(umcf == NULL || udsmcf == NULL)
 		return have;
 
 	uscfp = umcf->upstreams.elts;
@@ -1118,6 +1118,11 @@ static void njt_http_upstream_free_dynamic_server(njt_http_upstream_srv_conf_t *
 					p->server->name.len = 0;
 					p->server->name.data = 0;
 				}
+				if(p->server->route.len > 0) {
+					njt_pfree(njt_cycle->pool,p->server->route.data);
+					p->server->route.len = 0;
+					p->server->route.data = 0;
+				}
 				p->upstream_conf  = NULL;
 				p->parent_node->id = -1; 
 				p->parent_node->parent_id = -1; 
@@ -1213,7 +1218,7 @@ static void njt_http_upstream_check_dynamic_server(njt_event_t *ev)
 					pre = peer;
 					continue; //
 				}
-				 njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
+				 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                       "get a domain message id=%d,parent_id=%d,name=%V,zone=%V!",peer->id,peer->parent_id,&peer->server,&peer->name);
 				if(peer->parent_id == (njt_int_t)peer->id && peer->server.data == 0) {  //patch
 					njt_http_upstream_modify_dynamic_server(upstream_conf,peer);
@@ -1251,17 +1256,17 @@ static void njt_http_upstream_check_dynamic_server(njt_event_t *ev)
 						pre = peer;
 						continue;
 					}
+					njt_memcpy(us->name.data, peer->server.data, peer->server.len);
+					njt_memcpy(us->route.data, peer->route.data, peer->route.len);
 
 					njt_memzero(&u, sizeof(njt_url_t));
-					u.url = peer->server;
+					u.url = us->name;
 					u.default_port = 80;
 					u.no_resolve = 1;
 					u.naddrs = 0;
 					u.addrs = NULL;
 					njt_parse_url(njt_cycle->pool, &u);
 
-					njt_memcpy(us->route.data, peer->route.data, peer->route.len);
-					njt_memcpy(us->name.data, peer->server.data, peer->server.len);
 					us->addrs = NULL;// u.addrs;
 					us->naddrs =  0; //u.naddrs;
 					us->weight = peer->weight;
@@ -1731,17 +1736,15 @@ static void njt_http_upstream_dynamic_server_resolve_handler(
     njt_crc32_final(crc32);
     njt_free(sockaddr);
 
-    if (dynamic_server->count == naddrs) {
         /*further compare the value*/
-        if (dynamic_server->crc32 == crc32) {
-            njt_log_error(NJT_LOG_ALERT, ctx->resolver->log, 0,
-                          "upstream-dynamic-servers: DNS result isn't changed '%V'", &ctx->name);
+        if (dynamic_server->count == naddrs && dynamic_server->crc32 == crc32) {
+            //njt_log_error(NJT_LOG_ALERT, ctx->resolver->log, 0,
+              //            "upstream-dynamic-servers: DNS result isn't changed '%V'", &ctx->name);
             goto end;
         } else {
-            njt_log_error(NJT_LOG_ALERT, ctx->resolver->log, 0,
-                          "upstream-dynamic-servers: DNS result is changed '%V'", &ctx->name);
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                          "upstream-dynamic-servers: DNS result is changed '%V' num=%d", &ctx->name,naddrs);
         }
-    }
 
     dynamic_server->count = naddrs;
     dynamic_server->crc32 = crc32;
@@ -1857,7 +1860,7 @@ skip_del:
 				peers_data->total_weight += weight;
 				//peers_data->empty = (peers_data->number == 0);
 				if(peers_data->peer == NULL) {
-					*(&peers_data->peer) = peer;
+					peers_data->peer = peer;
 				} else {
 					for(tail_peer = peers_data->peer;tail_peer->next != NULL; tail_peer = tail_peer->next);
 					tail_peer->next = peer;
@@ -1871,6 +1874,8 @@ skip_add:
 		} 
 
         peers_data->single = (peers_data->number == 1);
+//	peers->single = ((peers->number + peers->next->number) == 1);
+	peers->single = (peers->number == 1 && peers->next->number == 0);
         njt_http_upstream_rr_peers_unlock(peers);
     }
 
@@ -1945,7 +1950,9 @@ static void njt_http_upstream_dynamic_server_delete_server(
                 njt_shmtx_unlock(&peers->shpool->mutex);
             }
         }
-        peers->single = (peers->number == 1);
+        //peers->single = (peers->number == 1);
+        //peers->single = ((peers->number + peers->next->number) == 1);
+        peers->single = (peers->number == 1 && peers->next->number == 0);
         njt_http_upstream_rr_peers_unlock(peers);
     }
     return;

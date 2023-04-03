@@ -76,13 +76,12 @@ paths:
       summary: 创建健康检查
       description: 创建健康检查
       operationId: postHealthCheck
-      parameters:
-        - in: body
-          name: postHealthCheck
-          description: 创建新的健康检查
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckConf'
           required: true
-          schema:
-            $ref: '#/components/schemas/HealthCheckConf'
       responses:
         '200':
           description: Success
@@ -235,6 +234,10 @@ components:
             enable:
               type: boolean
               description: 是否开启https 健康检查
+              default: false
+            ntls:
+              type: boolean
+              description: 是否是国密服务端
               default: false
             protocols:
               type: string

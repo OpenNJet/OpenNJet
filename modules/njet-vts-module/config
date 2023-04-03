@@ -1,0 +1,42 @@
+njt_addon_name=njt_http_vts_module
+have=NJT_STAT_STUB . auto/have
+have=NJT_HTTP_VTS_DYNCONF . auto/have
+
+HTTP_VTS_SRCS=" \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_module.c             \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_variables.c          \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_string.c             \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_shm.c                \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_node.c               \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_filter.c             \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_control.c            \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_limit.c              \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_display.c            \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_display_json.c       \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_display_prometheus.c \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_set.c                \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_dump.c               \
+                 "
+
+HTTP_VTS_DEPS=" \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_module.h             \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_variables.h          \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_string.h             \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_shm.h                \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_node.h               \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_filter.h             \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_control.h            \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_limit.h              \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_display.h            \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_display_json.h       \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_display_prometheus.h \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_set.h                \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_dump.h               \
+                 $njt_addon_dir/src/njt_http_vhost_traffic_status_module_html.h        \
+                 "
+if [ $HTTP != NO ]; then
+    HTTP_MODULES="$HTTP_MODULES $njt_addon_name"
+    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $HTTP_VTS_SRCS"
+    NJT_ADDON_DEPS="$NJT_ADDON_DEPS $HTTP_VTS_DEPS"
+    CORE_INCS="$CORE_INCS $njt_addon_dir/src"
+fi

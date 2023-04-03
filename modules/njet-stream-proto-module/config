@@ -21,7 +21,7 @@ if [ $njt_found = yes ]; then
     NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_check_src"
 else
     cat << END
-    $0: error: the nginx-stream-proto-module addon error.
+    $0: error: the njet-stream-proto-module addon error.
 END
     exit 1
 fi

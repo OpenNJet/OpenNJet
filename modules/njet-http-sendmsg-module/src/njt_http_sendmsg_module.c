@@ -935,6 +935,6 @@ static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int 
             njt_free(rpc_handler->key.data);
             njt_free(rpc_handler);
         }
+        njt_free(nstr_key.data);
     }
-    njt_free(nstr_key.data);
 }

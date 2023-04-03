@@ -165,6 +165,16 @@ static njt_int_t njt_http_variable_get_uri_key(njt_http_request_t *r,
  */
 
 static njt_http_variable_t  njt_http_core_variables[] = {
+//add by clb
+#if (NJT_HTTP_PROXY_CONNECT)
+    { njt_string("connect_host"), NULL, njt_http_variable_request,
+      offsetof(njt_http_request_t, connect_host), 0, 0,
+      NJT_VAR_INIT_REF_COUNT },
+
+    { njt_string("connect_port"), NULL, njt_http_variable_request,
+      offsetof(njt_http_request_t, connect_port), 0, 0,
+      NJT_VAR_INIT_REF_COUNT },
+#endif
 
     { njt_string("http_host"), NULL, njt_http_variable_header,
       offsetof(njt_http_request_t, headers_in.host), 0, 0, NJT_VAR_INIT_REF_COUNT },
@@ -680,7 +690,7 @@ njt_http_get_variable_index(njt_conf_t *cf, njt_str_t *name)
 	if(free_v != v) {
 		v->index = cmcf->variables.nelts - 1;
 	} else {
-		v->index = free_v->index; // zyg 使用旧的。
+		v->index = free_v->index; // zyg 使锟矫旧的★拷
 	}
     
 
@@ -717,7 +727,7 @@ njt_http_get_indexed_variable(njt_http_request_t *r, njt_uint_t index)
 
     njt_http_variable_depth--;
 
-    if (v[index].get_handler(r, &r->variables[index], v[index].data)
+    if (v[index].get_handler && v[index].get_handler(r, &r->variables[index], v[index].data)
         == NJT_OK)
     {
         njt_http_variable_depth++;
@@ -2827,8 +2837,8 @@ njt_http_variables_add_core_vars(njt_conf_t *cf)
 }
 
 
-njt_int_t
-njt_http_variables_init_vars(njt_conf_t *cf)
+static njt_int_t
+njt_http_variables_init_vars_proc(njt_conf_t *cf, njt_uint_t dyn)
 {
     size_t                      len;
     njt_uint_t                  i, n;
@@ -2898,8 +2908,9 @@ njt_http_variables_init_vars(njt_conf_t *cf)
         if (v[i].get_handler == NULL) {
             njt_log_error(NJT_LOG_EMERG, cf->log, 0,
                           "unknown \"%V\" variable", &v[i].name);
-
-            return NJT_ERROR;
+            if (!dyn) {
+                return NJT_ERROR;
+            }
         }
 
     next:
@@ -2957,3 +2968,14 @@ njt_http_variables_init_vars(njt_conf_t *cf)
     return NJT_OK;
 }
 
+njt_int_t
+njt_http_variables_init_vars(njt_conf_t *cf)
+{
+    return njt_http_variables_init_vars_proc(cf, 0);
+}
+
+njt_int_t
+njt_http_variables_init_vars_dyn(njt_conf_t *cf)
+{
+    return njt_http_variables_init_vars_proc(cf, 1);
+}
