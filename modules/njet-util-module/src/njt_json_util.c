@@ -21,7 +21,9 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *elemen
     rc = NJT_OK;
 
     if (element->type != def->type){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "%V type not matching",&element->key);
+        njt_log_error(NJT_LOG_EMERG, pool->log, 0, 
+              "json type %d not matching def type %d, key:%V type not matching",
+              element->type, def->type, &element->key);
         return NJT_ERROR;
     }
 
@@ -33,11 +35,17 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *elemen
             p = njt_array_push(array);
             njt_memzero(p,def->size);
             sub = njt_queue_data(q,njt_json_element ,ele_queue);
-            def->type = sub->type;
+            if(sub->type != def->eletype){
+                njt_log_error(NJT_LOG_EMERG, pool->log, 0, 
+                          "json type %d not matching def type %d", sub->type, def->eletype);
+                return NJT_ERROR;
+            }
+
+            def->type = def->eletype;
             rc = njt_json_parse_json_element(pool,sub,def,p);
             if(rc != NJT_OK){
                 return rc;
-            }
+            } 
         }
         return rc;
     }
@@ -109,32 +117,29 @@ njt_int_t njt_json_parse_data(njt_pool_t *pool,njt_str_t *str,njt_json_define_t 
             njt_null_string,
             0,
             0,
-            def->type,
+            NJT_JSON_OBJ,
+            0,
             def,
             NULL,
     };
 
     rc = njt_json_2_structure(str, &json_body,pool);
     if (rc != NJT_OK) {
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "structure json body mem malloc error !!");
+        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "json to structure transfer error !!");
         return rc;
     }
 
     items = json_body.json_val;
 
-    if (items->type != def->type){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "root type not matching");
-        return NJT_ERROR;
-    }
-
-    if(items->type== NJT_JSON_OBJ){
+    if(items->type == NJT_JSON_OBJ){
         rc = njt_json_parse_json_element(pool,items,&obj_def,data);
         if(rc != NJT_OK){
             return rc;
         }
     }
-    array = data;
+
     if(items->type== NJT_JSON_ARRAY){
+        array = data;
         p = njt_array_push(array);
         q = njt_queue_head(&items->arrdata);
         for(; q == njt_queue_sentinel(&items->arrdata); q = njt_queue_next(q)){
