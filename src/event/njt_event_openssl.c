@@ -4676,7 +4676,7 @@ njt_ssl_check_host(njt_connection_t *c, njt_str_t *name)
             if (njt_ssl_check_name(name, str) == NJT_OK) {
                // njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0,
                //                "SSL subjectAltName: match");
-                //GENERAL_NAMES_free(altnames);
+                GENERAL_NAMES_free(altnames);
                 goto found;
             }
         }
