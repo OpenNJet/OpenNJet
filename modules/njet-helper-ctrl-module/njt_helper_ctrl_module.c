@@ -26,6 +26,7 @@ typedef struct {
     njt_cycle_t *njet_master_cycle = NULL;
 #endif
 
+extern void njt_helper_process_exit(njt_cycle_t *cycle);
 
 void 
 njt_helper_run(helper_param param)
@@ -95,7 +96,8 @@ njt_helper_run(helper_param param)
         }
 
         if (cmd == NJT_HELPER_CMD_STOP) {
-            njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper ctrl stop");
+            njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "helper ctrl exit");
+            njt_helper_process_exit(cycle);
             break;            
         }
 
