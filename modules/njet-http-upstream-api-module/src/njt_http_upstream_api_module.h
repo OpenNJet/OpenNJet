@@ -28,6 +28,7 @@
 #define NJT_HTTP_UPS_API_RESET                    721
 #define NJT_HTTP_UPS_API_NO_SRV_PORT              722
 #define NJT_HTTP_UPS_API_INVALID_ERROR            723
+#define NJT_HTTP_UPS_API_HAS_NO_BACKUP            724
 
 
 #endif /* NJT_DYNAMIC_UPSTEAM_H */

@@ -187,6 +187,10 @@ njt_http_upstream_init_random_peer(njt_http_request_t *r,
     njt_http_upstream_rr_peers_rlock(rp->rrp.peers);
 
 #if (NJT_HTTP_UPSTREAM_ZONE)
+    if (rp->rrp.peers->shpool && rcf->ranges != NULL) {
+	njt_free(rcf->ranges);
+	rcf->ranges = NULL;
+    }
     if (rp->rrp.peers->shpool && rcf->ranges == NULL) {
         if (njt_http_upstream_update_random(NULL, us) != NJT_OK) {
             njt_http_upstream_rr_peers_unlock(rp->rrp.peers);
