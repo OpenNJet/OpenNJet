@@ -2213,7 +2213,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
         peer->weight = json_peer.weight;
         peer->effective_weight = json_peer.weight;
     }
-
+    peers->update_id++;
     njt_stream_upstream_rr_peers_unlock(peers);
 
 out:
@@ -2565,7 +2565,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
         peer->weight = json_peer.weight;
         peer->effective_weight = json_peer.weight;
     }
-
+    peers->update_id++;
     njt_http_upstream_rr_peers_unlock(peers);
 
 out:
@@ -3039,6 +3039,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 
     target_peers->single = (target_peers->number <= 1);
     peers->single = (peers->number + peers->next->number <= 1);
+    peers->update_id++;	
 	njt_stream_upstream_rr_peers_unlock(peers);
 	}
 
@@ -3443,6 +3444,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
     target_peers->single = (target_peers->number <= 1);
     peers->single = (peers->number + peers->next->number <= 1);
+    peers->update_id++;	
 	njt_http_upstream_rr_peers_unlock(peers);
 	}
 
@@ -3905,6 +3907,7 @@ out:
         return rc;
     }
     peers->single = (peers->number + peers->next->number <= 1);
+    peers->update_id++;	
     njt_stream_upstream_rr_peers_unlock(peers);
 
     /*Output the servers*/
@@ -4065,6 +4068,7 @@ out:
         return rc;
     }
     peers->single = (peers->number + peers->next->number <= 1);
+    peers->update_id++;	
     njt_http_upstream_rr_peers_unlock(peers);
 
     /*Output the servers*/

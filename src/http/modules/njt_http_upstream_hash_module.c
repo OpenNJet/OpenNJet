@@ -308,7 +308,7 @@ njt_http_upstream_init_chash(njt_conf_t *cf, njt_http_upstream_srv_conf_t *us)
     }
 
     us->peer.init = njt_http_upstream_init_chash_peer;
-
+    us->update_id = NJT_CONF_UNSET_UINT;
     peers = us->peer.data;
     npoints = peers->total_weight * 160;
 
@@ -433,6 +433,14 @@ njt_http_upstream_update_chash(njt_http_upstream_srv_conf_t *us)
 
 
     peers = us->peer.data;
+    if(us->update_id == peers->update_id && us->update_id != NJT_CONF_UNSET_UINT){
+        return NJT_OK;
+    }
+    if(us->update_id == NJT_CONF_UNSET_UINT){
+        us->update_id = 0;
+    } else {
+       us->update_id = peers->update_id;
+    }
     npoints = peers->total_weight * 160;
 
     size = sizeof(njt_http_upstream_chash_points_t)

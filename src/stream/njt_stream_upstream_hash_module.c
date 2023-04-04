@@ -312,7 +312,7 @@ njt_stream_upstream_init_chash(njt_conf_t *cf,
     }
 
     us->peer.init = njt_stream_upstream_init_chash_peer;
-
+    us->update_id = NJT_CONF_UNSET_UINT;
     peers = us->peer.data;
     npoints = peers->total_weight * 160;
 
@@ -436,6 +436,14 @@ njt_stream_upstream_update_chash( njt_stream_upstream_srv_conf_t *us)
 
 
     peers = us->peer.data;
+    if(us->update_id == peers->update_id && us->update_id != NJT_CONF_UNSET_UINT){
+	return NJT_OK;
+    } 
+    if(us->update_id == NJT_CONF_UNSET_UINT){
+	us->update_id = 0;
+    } else {
+       us->update_id = peers->update_id;
+    }
     npoints = peers->total_weight * 160;
 
     size = sizeof(njt_stream_upstream_chash_points_t)
@@ -443,7 +451,6 @@ njt_stream_upstream_update_chash( njt_stream_upstream_srv_conf_t *us)
 
      hcf = njt_stream_conf_upstream_srv_conf(us,
                                             njt_stream_upstream_hash_module);
-
     if(hcf != NULL && hcf->points != NULL){
         njt_free(hcf->points);
 	hcf->points = NULL;
