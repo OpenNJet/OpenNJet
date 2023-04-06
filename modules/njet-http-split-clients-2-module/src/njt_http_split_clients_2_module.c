@@ -29,7 +29,28 @@ typedef struct
     njt_flag_t has_split_block;
 } njt_http_split_clients_2_conf_t;
 
-static u_char *split_rpc_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data);
+enum
+{
+    SC2_SUCCESS = 0,
+    SC2_ERR_GENERAL,
+    SC2_ERR_POOL_CREATION,
+    SC2_ERR_JSON,
+    SC2_ERR_TOTAL_PERCENTAGE
+} NJT_HTTP_SPLIT_CLIENTS_2_ERROR;
+
+static njt_str_t njt_http_split_clients_2_error_msg[] = {
+    njt_string("success"),
+    njt_string("error occuried"),
+    njt_string("can't create memory pool"),
+    njt_string("json is not valid"),
+    njt_string("total percenage is more than 100%"),
+};
+
+#define NJT_HTTP_SPLIT_CLIENTS_2_ERROR_SIZE 5
+
+static u_char *split_rpc_get_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data);
+static u_char *split_rpc_put_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data);
+
 static int njt_sample(int ration);
 static njt_int_t split_client_2_init_worker(njt_cycle_t *cycle);
 static char *njt_conf_split_clients_2_block(njt_conf_t *cf, njt_command_t *cmd,
@@ -128,14 +149,14 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
         tmp_pool = njt_create_pool(NJT_DEFAULT_POOL_SIZE, njt_cycle->log);
         if (tmp_pool == NULL)
         {
-            return NJT_ERROR;
+            return SC2_ERR_POOL_CREATION;
         }
 
         rc = njt_json_2_structure(value, &json_manager, tmp_pool);
         if (rc != NJT_OK)
         {
             njt_destroy_pool(tmp_pool);
-            return NJT_ERROR;
+            return SC2_ERR_JSON;
         }
 
         njt_str_t sk;
@@ -165,6 +186,8 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
                 if (sum > 100)
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "split clients 2 set error: total percentage greater than 100");
+                    njt_destroy_pool(tmp_pool);
+                    return SC2_ERR_TOTAL_PERCENTAGE;
                 }
                 else
                 {
@@ -219,7 +242,38 @@ static int split_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data)
     return NJT_OK;
 }
 
-static u_char *split_rpc_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data)
+static u_char *split_rpc_put_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data)
+{
+    njt_int_t rc;
+    njt_str_t *ret_msg_str;
+    u_char *ret_msg = NULL;
+    const char *ret_msg_tpl = "{\"code\":%d, \"msg\":\"%V\"}";
+    u_char *p;
+
+    rc = split_kv_change_handler(topic, request, data);
+
+    if (rc >= 0 && rc < NJT_HTTP_SPLIT_CLIENTS_2_ERROR_SIZE)
+    {
+        ret_msg_str = &njt_http_split_clients_2_error_msg[rc];
+    }
+    else
+    {
+        // if rc not in enum, return generic error
+        ret_msg_str = &njt_http_split_clients_2_error_msg[1];
+    }
+    size_t max_len = ret_msg_str->len + 2 + strlen(ret_msg_tpl) + 1; // rc code max len 2
+    ret_msg = njt_calloc(max_len, njt_cycle->log);
+    if (ret_msg == NULL)
+    {
+        *len = 0;
+        return NULL;
+    }
+    p = njt_snprintf(ret_msg, max_len, ret_msg_tpl, rc, ret_msg_str);
+    *len = p - ret_msg;
+    return ret_msg;
+}
+
+static u_char *split_rpc_get_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data)
 {
     njt_http_conf_ctx_t *conf_ctx;
     njt_http_split_clients_2_conf_t *sc2cf;
@@ -252,7 +306,7 @@ static u_char *split_rpc_handler(njt_str_t *topic, njt_str_t *request, int *len,
     njt_uint_t sum = 0;
     for (i = 0; i < ctx->parts.nelts; i++)
     {
-        njt_memzero(p_s,4);
+        njt_memzero(p_s, 4);
         sum += part[i].percent;
         ret_len += part[i].value.len;
         if (part[i].last)
@@ -331,8 +385,8 @@ static njt_int_t split_client_2_init_worker(njt_cycle_t *cycle)
     }
 
     njt_str_t rpc_key = njt_string(DYN_TOPIC_REG_KEY);
-    njt_reg_kv_change_handler(&rpc_key, split_kv_change_handler, split_rpc_handler, sc2cf);
-
+    //    njt_reg_kv_change_handler(&rpc_key, split_kv_change_handler, split_rpc_get_handler, sc2cf);
+    njt_reg_kv_msg_handler(&rpc_key, split_kv_change_handler, split_rpc_put_handler, split_rpc_get_handler, sc2cf);
     return NJT_OK;
 }
 

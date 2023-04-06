@@ -14,6 +14,7 @@
 #define DYN_TOPIC_PREFIX_LEN 5
 #define RPC_TOPIC_PREFIX "/rpc/"
 #define RPC_TOPIC_PREFIX_LEN 5
+#define RPC_HANDLER_TOPIC_PREFIX_LEN 5 // rpc handler topic start with /rpc/ or /dyn/
 #define RETAIN_MSG_QOS 16
 
 typedef struct
@@ -21,7 +22,8 @@ typedef struct
     void *data;
     njt_str_t key;
     kv_change_handler handler;
-    kv_rpc_handler rpc_handler;
+    kv_rpc_handler rpc_get_handler;
+    kv_rpc_handler rpc_put_handler;
     njt_queue_t queue;
 } kv_change_handler_t;
 
@@ -398,7 +400,7 @@ static u_char *njt_http_kv_module_rpc_handler(njt_str_t *topic, njt_str_t *reque
              q = njt_queue_next(q))
         {
             handler = njt_queue_data(q, kv_change_handler_t, queue);
-            if (handler->rpc_handler)
+            if (handler->rpc_get_handler)
             {
                 str_len += handler->key.len + 3; // "KEY_NAME",
             }
@@ -417,7 +419,7 @@ static u_char *njt_http_kv_module_rpc_handler(njt_str_t *topic, njt_str_t *reque
              q = njt_queue_next(q))
         {
             handler = njt_queue_data(q, kv_change_handler_t, queue);
-            if (handler->rpc_handler)
+            if (handler->rpc_get_handler)
             {
                 *msg++ = '"';
                 njt_memcpy(msg, handler->key.data, handler->key.len);
@@ -514,7 +516,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         njet_iot_client_exit(kv_evt_ctx);
         return NJT_ERROR;
     };
-    //add default subscribed topics
+    // add default subscribed topics
     njet_iot_client_add_topic(kv_evt_ctx, "/cluster/+/kv_set/#");
     njet_iot_client_add_topic(kv_evt_ctx, "/dyn/#");
     njet_iot_client_add_topic(kv_evt_ctx, "$share/njet//rpc/#");
@@ -674,7 +676,7 @@ njt_http_kv_add_variables(njt_conf_t *cf)
     return NJT_OK;
 }
 
-int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, kv_rpc_handler rpc_handler, void *data)
+static int njt_reg_handler_internal(njt_str_t *key, kv_change_handler handler, kv_rpc_handler put_handler, kv_rpc_handler get_handler, void *data)
 {
     kv_change_handler_t *kv_handler, *old_handler;
     if (kv_handler_hashmap == NULL)
@@ -701,7 +703,8 @@ int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, kv_rpc_
 
     kv_handler->data = data;
     kv_handler->handler = handler;
-    kv_handler->rpc_handler = rpc_handler;
+    kv_handler->rpc_get_handler = get_handler;
+    kv_handler->rpc_put_handler = put_handler;
     njt_queue_insert_tail(&kv_handler_queue, &kv_handler->queue);
     njt_lvlhsh_map_put(kv_handler_hashmap, &kv_handler->key, (intptr_t)kv_handler, (intptr_t *)&old_handler);
     // if handler existed with the same key in the hashmap
@@ -712,6 +715,15 @@ int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, kv_rpc_
     }
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "set  kv handler into hash: %p: %v", kv_handler, &kv_handler->key);
     return NJT_OK;
+}
+
+int njt_reg_kv_change_handler(njt_str_t *key, kv_change_handler handler, kv_rpc_handler rpc_get_handler, void *data)
+{
+    return njt_reg_handler_internal(key, handler, NULL, rpc_get_handler, data);
+}
+int njt_reg_kv_msg_handler(njt_str_t *key, kv_change_handler handler, kv_rpc_handler put_handler, kv_rpc_handler get_handler, void *data)
+{
+    return njt_reg_handler_internal(key, handler, put_handler, get_handler, data);
 }
 
 static void invoke_kv_change_handler(njt_str_t *key, njt_str_t *value)
@@ -767,7 +779,14 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
             nstr_msg.data = (u_char *)msg;
             nstr_msg.len = msg_len;
             njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got kv handler : %p, %v", tm_handler, &tm_handler->key);
-            tm_handler->handler(&nstr_topic, &nstr_msg, tm_handler->data);
+            if (tm_handler->handler)
+            {
+                tm_handler->handler(&nstr_topic, &nstr_msg, tm_handler->data);
+            }
+            else
+            {
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "no handler register for key: %v", &hash_key);
+            }
         }
     }
 }
@@ -781,16 +800,22 @@ static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_le
     njt_int_t rc;
     kv_change_handler_t *kv_handler;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke rpc handler for topic:%s ", topic);
+    if (strlen(topic) <= 5)
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "in njt_http_kv_module, got wrong topic:%s ", topic);
+        *len = 0;
+        return NULL;
+    }
     if (kv_handler_hashmap)
     {
         // found second field of topic's length,  for example: topic /rpc/detail/1 , second field is "detail" length is 5
-        for (i = RPC_TOPIC_PREFIX_LEN; i < strlen(topic); i++)
+        for (i = RPC_HANDLER_TOPIC_PREFIX_LEN; i < strlen(topic); i++)
         {
             if (topic[i] == '/')
                 break;
         }
-        hash_key.len = i - RPC_TOPIC_PREFIX_LEN;
-        hash_key.data = (u_char *)topic + RPC_TOPIC_PREFIX_LEN;
+        hash_key.len = i - RPC_HANDLER_TOPIC_PREFIX_LEN;
+        hash_key.data = (u_char *)topic + RPC_HANDLER_TOPIC_PREFIX_LEN;
         rc = njt_lvlhsh_map_get(kv_handler_hashmap, &hash_key, (intptr_t *)&kv_handler);
         if (rc == NJT_OK)
         {
@@ -798,9 +823,18 @@ static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_le
             nstr_topic.len = strlen(topic);
             nstr_msg.data = (u_char *)msg;
             nstr_msg.len = msg_len;
-            return kv_handler->rpc_handler(&nstr_topic, &nstr_msg, len, kv_handler->data);
+            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "in njt_http_kv_module, invoke rpc handler topic:%V, msg: %V ", &nstr_topic, &nstr_msg);
+            if (njt_strncmp(topic, RPC_TOPIC_PREFIX, RPC_TOPIC_PREFIX_LEN) == 0 && kv_handler->rpc_get_handler)
+            {
+                return kv_handler->rpc_get_handler(&nstr_topic, &nstr_msg, len, kv_handler->data);
+            }
+            else if (njt_strncmp(topic, DYN_TOPIC_PREFIX, DYN_TOPIC_PREFIX_LEN) == 0 && kv_handler->rpc_put_handler)
+            {
+                return kv_handler->rpc_put_handler(&nstr_topic, &nstr_msg, len, kv_handler->data);
+            }
         }
     }
+    *len = 0;
     return NULL;
 }
 
