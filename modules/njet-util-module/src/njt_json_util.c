@@ -1,3 +1,9 @@
+
+/*
+ * Copyright (C), 2021-2023, TMLake(Beijing) Technology Co., Ltd.
+ */
+
+
 /**
  * > 函数用于将json字符串解析成用户定义的数据结构
  *

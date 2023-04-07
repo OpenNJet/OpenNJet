@@ -1,18 +1,8 @@
-/*************************************************************************************
- Copyright (C), 2021-2023, TMLake(Beijing) Technology Ltd.,
- File name    : njt_http_json.h
- Version      : 1.0
- Author       : ChengXu
- Date         : 2023/2/27/027 
- Description  : 
- Other        :
- History      :
- <author>       <time>          <version >      <desc>
- ChengXu        2023/2/27/027       1.1             
-***********************************************************************************/
-//
-// Created by Administrator on 2023/2/27/027.
-//
+
+/*
+ * Copyright (C), 2021-2023, TMLake(Beijing) Technology Co., Ltd.
+ */
+
 
 #ifndef NJET_MAIN_NJT_HTTP_JSON_H
 #define NJET_MAIN_NJT_HTTP_JSON_H

@@ -1,3 +1,8 @@
+
+/*
+ * Copyright (C), 2021-2023, TMLake(Beijing) Technology Co., Ltd.
+ */
+
 #include <njt_hash_util.h>
 
 static njt_int_t
