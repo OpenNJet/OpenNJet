@@ -89,7 +89,7 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
             return NJT_ERROR;
         }*/
 
-        peers->single = (n == 1);
+        peers->single = (n <= 1);
         peers->number = n;
         peers->weighted = (w != n);
         peers->total_weight = w;
@@ -170,7 +170,6 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
             return NJT_ERROR;
         }
 
-        peers->single = 0;
         backup->single = 0;
         backup->number = n;
         backup->weighted = (w != n);
@@ -206,6 +205,7 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
         }
 
         peers->next = backup;
+        peers->single = (peers->number + peers->next->number == 1);
 
         return NJT_OK;
     }
@@ -247,7 +247,7 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
         return NJT_ERROR;
     }
 
-    peers->single = (n == 1);
+    peers->single = (n <= 1);
     peers->number = n;
     peers->weighted = 0;
     peers->total_weight = n;
@@ -372,7 +372,7 @@ njt_stream_upstream_create_round_robin_peer(njt_stream_session_t *s,
         return NJT_ERROR;
     }
 
-    peers->single = (ur->naddrs == 1);
+    peers->single = (ur->naddrs <= 1);
     peers->number = ur->naddrs;
     peers->tries = ur->naddrs;
     peers->name = &ur->host;
@@ -498,7 +498,7 @@ njt_stream_upstream_get_round_robin_peer(njt_peer_connection_t *pc, void *data)
     peers = rrp->peers;
     njt_stream_upstream_rr_peers_wlock(peers);
 
-    if (peers->single) {
+    if (peers->single && peers->number != 0) {
         peer = peers->peer;
 
         if (peer->down) {

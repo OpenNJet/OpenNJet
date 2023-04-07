@@ -240,10 +240,10 @@ njt_master_process_cycle(njt_cycle_t *cycle)
                 continue;
             }
 
-            if (njt_reconfigure_time>0 && njt_time()-njt_reconfigure_time<3) {
-                njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ignore reconfiguring");
-                continue;
-            }
+            // if (njt_reconfigure_time>0 && njt_time()-njt_reconfigure_time<3) {
+            //     njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ignore reconfiguring");
+            //     continue;
+            // }
 
             njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "reconfiguring");
 

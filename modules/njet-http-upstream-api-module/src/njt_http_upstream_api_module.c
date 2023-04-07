@@ -102,6 +102,7 @@ typedef struct njt_http_upstream_api_ctx_s {
 	njt_resolver_t                 *resolver;
 	njt_flag_t                     keep_alive;
 	njt_int_t                      hc_type;
+	void                           *uscf;
 } njt_http_upstream_api_ctx_t,njt_stream_upstream_api_ctx_t;
 
 typedef struct njt_http_upstream_api_loc_conf_s {
@@ -2212,7 +2213,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
         peer->weight = json_peer.weight;
         peer->effective_weight = json_peer.weight;
     }
-
+    peers->update_id++;
     njt_stream_upstream_rr_peers_unlock(peers);
 
 out:
@@ -2564,7 +2565,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
         peer->weight = json_peer.weight;
         peer->effective_weight = json_peer.weight;
     }
-
+    peers->update_id++;
     njt_http_upstream_rr_peers_unlock(peers);
 
 out:
@@ -2739,6 +2740,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
     njt_url_t                          u;
     njt_str_t                          name, server;
     njt_str_t                          *peers_name;
+	njt_stream_upstream_srv_conf_t  *uscf;
 	//njt_str_t                           zone_name = njt_string("");
     peer = NULL;
 
@@ -2791,6 +2793,12 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 		//rc = NJT_HTTP_UPS_API_INVALID_JSON_PARSE;
         goto out;
     }
+
+	uscf = ctx->uscf;
+	if(json_peer.backup == 1 && uscf != NULL && (!(uscf->flags & NJT_STREAM_UPSTREAM_BACKUP))) {
+		 rc = NJT_HTTP_UPS_API_HAS_NO_BACKUP;
+		 goto out;
+	}
 
 
 	if(json_peer.route.data != NULL) {
@@ -3029,9 +3037,9 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
         peers->tries ++;
     }
 
-    target_peers->single = (target_peers->number == 1);
-    peers->single = (peers->number == 1 && peers->next->number == 0);
-    //target_peers->empty = (target_peers->number == 0);
+    target_peers->single = (target_peers->number <= 1);
+    peers->single = (peers->number + peers->next->number <= 1);
+    peers->update_id++;	
 	njt_stream_upstream_rr_peers_unlock(peers);
 	}
 
@@ -3116,6 +3124,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
     njt_url_t                          u;
     njt_str_t                          name, server;
     njt_str_t                          *peers_name;
+	njt_http_upstream_srv_conf_t  *uscf;
 	//njt_str_t                           zone_name = njt_string("");
     peer = NULL;
 
@@ -3169,6 +3178,11 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 		//rc = NJT_HTTP_UPS_API_INVALID_JSON_PARSE;
         goto out;
     }
+	uscf = ctx->uscf;
+	if(json_peer.backup == 1 && uscf != NULL && (!(uscf->flags & NJT_STREAM_UPSTREAM_BACKUP))) {
+		 rc = NJT_HTTP_UPS_API_HAS_NO_BACKUP;
+		 goto out;
+	}
 
     /*perform the insert*/
     shpool = peers->shpool;
@@ -3205,9 +3219,6 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 	njt_http_upstream_rr_peers_wlock(peers);
 	njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
                       "njt_http_upstream_api_post!");
-
-	
-	//peers_data = (json_peer.backup > 0?peers->next : peers);
 	json_peer.domain = 0;  //ip
 	parent_id = -1;
 	if(u.naddrs == 1 && json_peer.server.len <= u.addrs[0].name.len && njt_strncmp(json_peer.server.data,u.addrs[0].name.data,json_peer.server.len) == 0){
@@ -3431,10 +3442,9 @@ njt_http_upstream_api_post(njt_http_request_t *r)
         peers->tries ++;
     }
 
-    target_peers->single = (target_peers->number == 1);
-    //peers->single = ((peers->number + peers->next->number) == 1);
-    peers->single = (peers->number == 1 && peers->next->number == 0);
-    //target_peers->empty = (target_peers->number == 0);
+    target_peers->single = (target_peers->number <= 1);
+    peers->single = (peers->number + peers->next->number <= 1);
+    peers->update_id++;	
 	njt_http_upstream_rr_peers_unlock(peers);
 	}
 
@@ -3519,6 +3529,7 @@ njt_stream_upstream_api_process_patch(njt_http_request_t *r,
 
     ctx->peers = peers;
     ctx->id = id;
+	ctx->uscf  = uscf;
     ctx->resolver = uscf->resolver;
     njt_stream_set_ctx(r, ctx, njt_http_upstream_api_module);
 
@@ -3548,6 +3559,7 @@ njt_http_upstream_api_process_patch(njt_http_request_t *r,
         return NJT_HTTP_UPS_API_INTERNAL_ERROR;
     }
     ctx->resolver = uscf->resolver;
+	ctx->uscf  = uscf;
     ctx->peers = peers;
     ctx->id = id;
 	ctx->keep_alive = uscf->set_keep_alive;
@@ -3578,6 +3590,7 @@ njt_stream_upstream_api_process_post(njt_http_request_t *r,
     }
 
     ctx->peers = peers;
+	ctx->uscf  = uscf;
 	ctx->resolver = uscf->resolver;
 	ctx->hc_type  = (uscf->hc_type == 0 ?0:2);
     njt_http_set_ctx(r, ctx, njt_http_upstream_api_module);
@@ -3607,6 +3620,7 @@ njt_http_upstream_api_process_post(njt_http_request_t *r,
     }
 
     ctx->peers = peers;
+	ctx->uscf  = uscf;
 	ctx->resolver = uscf->resolver;
 	ctx->keep_alive = uscf->set_keep_alive;
 	ctx->hc_type  = (uscf->hc_type == 0 ?0:2);
@@ -3788,7 +3802,7 @@ njt_stream_upstream_api_process_delete(njt_http_request_t *r,
             target_peers->number--;
 			
 			target_peers->total_weight -= peer->weight;
-			target_peers->single = (target_peers->number == 1);
+			target_peers->single = (target_peers->number <= 1);
 			//target_peers->empty = (target_peers->number == 0);
 			target_peers->weighted = (target_peers->total_weight != target_peers->number);
 			 if (peer->down == 0) {
@@ -3834,8 +3848,7 @@ njt_stream_upstream_api_process_delete(njt_http_request_t *r,
 					}
 					target_peers->number--;
 					target_peers->total_weight -= peer->weight;
-					target_peers->single = (target_peers->number == 1);
-					//target_peers->empty = (target_peers->number == 0);
+					target_peers->single = (target_peers->number <= 1);
 					target_peers->weighted = (target_peers->total_weight != target_peers->number);
 					 
 					del_peer = peer;
@@ -3874,6 +3887,7 @@ njt_stream_upstream_api_process_delete(njt_http_request_t *r,
 				}
 				ctx->resolver = uscf->resolver;
 				ctx->peers = peers;
+				ctx->uscf  = uscf;
 				ctx->id = id;
 				njt_stream_set_ctx(r, ctx, njt_http_upstream_api_module);
 				peer->parent_id = -1;
@@ -3892,8 +3906,8 @@ out:
         njt_stream_upstream_rr_peers_unlock(peers);
         return rc;
     }
-   // peers->single = ((peers->number + peers->next->number) == 1);
-    peers->single = (peers->number == 1 && peers->next->number == 0);
+    peers->single = (peers->number + peers->next->number <= 1);
+    peers->update_id++;	
     njt_stream_upstream_rr_peers_unlock(peers);
 
     /*Output the servers*/
@@ -3947,7 +3961,7 @@ njt_http_upstream_api_process_delete(njt_http_request_t *r,
             target_peers->number--;
 			
 			target_peers->total_weight -= peer->weight;
-			target_peers->single = (target_peers->number == 1);
+			target_peers->single = (target_peers->number <= 1);
 			//target_peers->empty = (target_peers->number == 0);
 			target_peers->weighted = (target_peers->total_weight != target_peers->number);
 			 if (peer->down == 0) {
@@ -3993,7 +4007,7 @@ njt_http_upstream_api_process_delete(njt_http_request_t *r,
 					}
 					target_peers->number--;
 					target_peers->total_weight -= peer->weight;
-					target_peers->single = (target_peers->number == 1);
+					target_peers->single = (target_peers->number <= 1);
 					//target_peers->empty = (target_peers->number == 0);
 					target_peers->weighted = (target_peers->total_weight != target_peers->number);
 					 
@@ -4032,6 +4046,7 @@ njt_http_upstream_api_process_delete(njt_http_request_t *r,
 					return NJT_HTTP_UPS_API_INTERNAL_ERROR;
 				}
 				ctx->resolver = uscf->resolver;
+				ctx->uscf  = uscf;
 				ctx->peers = peers;
 				ctx->id = id;
 				ctx->keep_alive = uscf->set_keep_alive;
@@ -4052,8 +4067,8 @@ out:
         njt_http_upstream_rr_peers_unlock(peers);
         return rc;
     }
-    //peers->single = ((peers->number + peers->next->number) == 1);
-    peers->single = (peers->number == 1 && peers->next->number == 0);
+    peers->single = (peers->number + peers->next->number <= 1);
+    peers->update_id++;	
     njt_http_upstream_rr_peers_unlock(peers);
 
     /*Output the servers*/
@@ -5053,7 +5068,16 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
         if (rc != NJT_OK) {
             return rc;
         }
-		break;
+		break;  //
+	case NJT_HTTP_UPS_API_HAS_NO_BACKUP:
+		r->headers_out.status = 400;
+		njt_str_set(&insert,
+                    "400,\"text\":\"upstream has no backup\",\"code\":\"UpstreamNoBackup\"}");
+        rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
+        if (rc != NJT_OK) {
+            return rc;
+        }
+		break;  
 	case NJT_HTTP_UPS_API_RESET:
 		r->headers_out.status = 204;
 		r->header_only = 1;

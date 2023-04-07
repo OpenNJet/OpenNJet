@@ -187,6 +187,10 @@ njt_stream_upstream_init_random_peer(njt_stream_session_t *s,
     njt_stream_upstream_rr_peers_rlock(rp->rrp.peers);
 
 #if (NJT_STREAM_UPSTREAM_ZONE)
+    if(rp->rrp.peers->shpool && rcf->ranges != NULL) {
+	njt_free(rcf->ranges);	
+	rcf->ranges = NULL;
+    }
     if (rp->rrp.peers->shpool && rcf->ranges == NULL) {
         if (njt_stream_upstream_update_random(NULL, us) != NJT_OK) {
             njt_stream_upstream_rr_peers_unlock(rp->rrp.peers);

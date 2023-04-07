@@ -138,6 +138,7 @@ typedef struct {
 
 #if (NJT_HTTP_UPSTREAM_ZONE)
     njt_shm_zone_t                  *shm_zone;
+    njt_uint_t                       update_id;
 #endif
 #if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
     njt_str_t                       state_file;
