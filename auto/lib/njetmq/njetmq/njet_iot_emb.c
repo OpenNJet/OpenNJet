@@ -1,4 +1,6 @@
-
+/*
+ * Copyright (C), 2021-2023, TMLake(Beijing) Technology Co., Ltd.
+ */
 #include "config.h"
 
 #ifndef WIN32

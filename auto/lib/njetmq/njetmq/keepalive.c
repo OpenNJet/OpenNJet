@@ -1,6 +1,5 @@
 /*
 Copyright (c) 2009-2020 Roger Light <roger@atchoo.org>
-Copyright (C) TMLake, Inc.
 
 All rights reserved. This program and the accompanying materials
 are made available under the terms of the Eclipse Public License 2.0
