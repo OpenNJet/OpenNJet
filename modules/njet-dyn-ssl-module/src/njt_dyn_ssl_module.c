@@ -1,18 +1,8 @@
-/*************************************************************************************
- Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
- File name    : njt_dyn_ssl_module.c
- Version      : 1.0
- Author       : ChengXu
- Date         : 2023/3/2/002 
- Description  : 
- Other        :
- History      :
- <author>       <time>          <version >      <desc>
- ChengXu        2023/3/2/002       1.1             
-***********************************************************************************/
-//
-// Created by Administrator on 2023/3/2/002.
-//
+/*
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>

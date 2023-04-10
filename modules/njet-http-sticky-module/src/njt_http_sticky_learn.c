@@ -1,10 +1,8 @@
 /*
- * Copyright (C) 2002-2021 Igor Sysoev
- * Copyright (C) 2011-2021 Nginx, Inc.
- * Copyright (C) 2022, by 通明智云（北京）科技有限公司
- * All rights reserved.
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
-
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>

@@ -1,7 +1,7 @@
 /
 / Copyright (C) Igor Sysoev
 / Copyright (C) Nginx, Inc.
- * Copyright (C) TMLake, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
 /
 
 / njt_atomic_uint_t njt_atomic_cmp_set(njt_atomic_t *lock,

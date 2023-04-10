@@ -1,16 +1,8 @@
-/**
- * @file   njt_http_sticky_module.c
- * @author Qin Zhao <qzhao@f5.com>
- * @date   Thu 08 Apr 2021 11:23:28 AM CST
- *
- * @brief  An HTTP sticky module for Nginx.
- *
- * @section LICENSE
- *
- * Copyright (C) 2021 Qin Zhao <qzhao@f5.com>
- *
+/*
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
-
 #include "njt_http_sticky_module.h"
 #include "njt_http_sticky_route.h"
 #include "njt_http_sticky_cookie.h"

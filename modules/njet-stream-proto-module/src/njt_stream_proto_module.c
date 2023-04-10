@@ -1,14 +1,7 @@
-/**
- * @file   njt_stream_proto_module.c
- * @author Sehyo Chang <sehyo@nginx.com>
- * @date   Nov 6, 2017
- *
- * @brief  Nginx stream dest module for Nginx.
- *
- * @section LICENSE
- *
- * Copyright (C) 2017 by Nginx
- * Copyright (C) TMLake, Inc.
+/*
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 #include <njt_config.h>
 #include <njt_core.h>
