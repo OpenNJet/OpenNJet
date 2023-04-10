@@ -246,6 +246,7 @@ static njt_int_t njt_stream_upstream_api_create_dynamic_server(njt_http_request_
 			new_peer->parent_id = peer->parent_id; 
 			new_peer->server.len = peer->server.len;
 			njt_cpystrn(new_peer->server.data, peer->server.data, peer->server.len+1);
+    			new_peer->hc_upstart =  njt_time();
 			new_peer->weight    = peer->weight;
 			new_peer->max_conns = peer->max_conns;
 			new_peer->max_fails = peer->max_fails;
@@ -312,6 +313,7 @@ static njt_int_t njt_http_upstream_api_create_dynamic_server(njt_http_request_t 
 			new_peer->parent_id = peer->parent_id; 
 			new_peer->server.len = peer->server.len;
 			njt_cpystrn(new_peer->server.data, peer->server.data, peer->server.len+1);
+    			peer->hc_upstart =  njt_time();
 			new_peer->weight    = peer->weight;
 			new_peer->max_conns = peer->max_conns;
 			new_peer->max_fails = peer->max_fails;
@@ -2962,7 +2964,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 	
 	peer->id = peers->next_order++;
 	peer->parent_id = parent_id;
-
+    peer->hc_upstart =  njt_time();
     peer->weight = json_peer.weight;
     peer->effective_weight = json_peer.weight;
     peer->current_weight = 0;
@@ -3357,6 +3359,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 	peer->id = peers->next_order++;
 	peer->parent_id = parent_id;
 
+    peer->hc_upstart =  njt_time();
     peer->weight = json_peer.weight;
     peer->effective_weight = json_peer.weight;
     peer->current_weight = 0;

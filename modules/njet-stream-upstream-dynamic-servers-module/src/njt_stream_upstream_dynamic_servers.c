@@ -1556,7 +1556,8 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
     njt_stream_upstream_rr_peer_t                   *peer, *next, *prev,*tail_peer;
     njt_stream_upstream_rr_peers_t                  *peers,*peers_data;
     uint32_t                                      crc32;
-	njt_int_t									   rc = NJT_OK;
+    njt_int_t									   rc = NJT_OK;
+    njt_msec_t now_time;
 
     if (njt_quit || njt_exiting || njt_terminate) {
         njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
@@ -1707,7 +1708,7 @@ skip_del:
         }
 		if( rc != NJT_ERROR && dynamic_server->parent_node->parent_id != -1) {
 
-
+			now_time = njt_time();
 			
 			for (i = 0; i < naddrs; ++i) {
 				for (peer = peers_data->peer; peer; peer = peer->next) {
@@ -1735,6 +1736,7 @@ skip_del:
 				peer->down = down;
 				//peer->set_down = down;
 				peer->hc_down = hc_down;
+				peer->hc_upstart = now_time;
 				peer->next = NULL;
 				//peer->parent_node = dynamic_server->parent_node;
 				peer->parent_id = dynamic_server->parent_node->id;

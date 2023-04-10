@@ -37,7 +37,7 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
     njt_http_upstream_server_t    *server;
     njt_http_upstream_rr_peer_t   *peer, **peerp;
     njt_http_upstream_rr_peers_t  *peers, *backup;
-
+    njt_msec_t now_time = njt_time();
     us->peer.init = njt_http_upstream_init_round_robin_peer;
 
     if (us->servers) {
@@ -114,6 +114,7 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
                 peer[n].fail_timeout = server[i].fail_timeout;
                 peer[n].down = server[i].down;
                 peer[n].server = server[i].name;
+		peer[n].hc_upstart = now_time;
 		//zyg
 		peer[n].route = server[i].route;
 		peer[n].slow_start = server[i].slow_start;
@@ -194,6 +195,7 @@ njt_http_upstream_init_round_robin(njt_conf_t *cf,
                 peer[n].fail_timeout = server[i].fail_timeout;
                 peer[n].down = server[i].down;
                 peer[n].server = server[i].name;
+		peer[n].hc_upstart = now_time;
 		//zyg
 		peer[n].route = server[i].route;
 		peer[n].slow_start = server[i].slow_start;
@@ -949,8 +951,14 @@ njt_http_upstream_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer)
             && peer->fails >= peer->max_fails
             && now - peer->checked <= peer->fail_timeout) {
             peer->unavail++;
+	    peer->hc_upstart = 0;
             return NJT_ERROR;
         }
+        if (peer->max_fails
+            && peer->slow_start > 0 && peer->hc_upstart == 0) {
+            peer->hc_upstart =  njt_time();
+        }
+	
 #endif
         return NJT_OK;
 }
