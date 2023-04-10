@@ -1,6 +1,6 @@
-//
-// Created by Administrator on 2022/11/2/002.
-//
+/*
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
 
 #ifndef YUNKE_SLB_V2_1_NG1_20_1_NGX_CACHE_PURGE_H
 #define YUNKE_SLB_V2_1_NG1_20_1_NGX_CACHE_PURGE_H

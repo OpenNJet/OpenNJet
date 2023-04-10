@@ -1,5 +1,5 @@
 /*************************************************************************************
- Copyright (C), 2021-2023, TMLake(Beijing) Technology Ltd.,
+ Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  File name    : njt_http_health_check_helper.c
  Version      : 1.0
  Author       : ChengXu
