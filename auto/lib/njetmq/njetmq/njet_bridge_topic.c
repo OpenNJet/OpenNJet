@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2009-2019 Roger Light <roger@atchoo.org>
-Copyright (C), 2021-2023, TMLake(Beijing) Technology Co., Ltd.
+Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
 
 All rights reserved. This program and the accompanying materials
 are made available under the terms of the Eclipse Public License 2.0

@@ -1,5 +1,5 @@
 /*
- * Copyright (C), 2021-2023, TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
  */
 #ifndef MOSQUITTO_EMB_H_
 #define MOSQUITTO_EMB_H_
