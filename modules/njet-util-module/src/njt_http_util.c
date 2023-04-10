@@ -1,5 +1,5 @@
 /*************************************************************************************
- Copyright (C), 2021-2023, TMLake(Beijing) Technology Ltd.,
+ Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  File name    : njt_http_util.c
  Version      : 1.0
  Author       : ChengXu
