@@ -38,6 +38,7 @@ struct evt_ctx_t
 // static struct mosq_config cfg;
 
 static int njet_iot_client_instances = 0;
+static const char empty_client_conf_file[] = "/tmp/njetmq-client-XXXXXX";
 
 void my_connect_callback(struct mosquitto *mosq, void *obj, int result, int flags, const mosquitto_property *properties)
 {
@@ -306,6 +307,7 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 	int ret;
 	int i;
 	char *cfg_dir, *tmp_name;
+	char nameBuff[32];
 	MDB_envinfo info;
 	struct evt_ctx_t *ctx;
 	struct mosq_config *cfg;
@@ -339,7 +341,19 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 
 	cfg->prefix = (char *)prefix;
 
+	if (cfg_file == NULL || strlen(cfg_file) == 0)
+	{
+		strncpy(nameBuff, empty_client_conf_file, 26);
+		ret = mkstemp((char *)nameBuff);
+		if (ret == -1)
+		{
+			fprintf(stderr, "can't create tmp file \"%s\" e\n", nameBuff);
+			return NULL;
+		}
+		cfg_file = nameBuff;
+	}
 	ret = client_config_load(cfg, CLIENT_SUB, cfg_file);
+	unlink(nameBuff);
 	// todo: free cfg on error
 	if (ret != MOSQ_ERR_SUCCESS)
 		return NULL;

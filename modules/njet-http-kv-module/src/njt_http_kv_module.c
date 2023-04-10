@@ -81,7 +81,7 @@ static njt_http_module_t njt_http_kv_module_ctx = {
 static njt_command_t njt_kv_commands[] = {
 
     {njt_string("dyn_kv_conf"),
-     NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE1,
+     NJT_HTTP_MAIN_CONF | NJT_CONF_NOARGS | NJT_CONF_TAKE1,
      njt_dyn_conf_set,
      0,
      0,
@@ -472,12 +472,6 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
     kvcf = conf_ctx->main_conf[njt_http_kv_module.ctx_index];
 
-    if (kvcf->conf_file.len == 0)
-    {
-        njt_log_error(NJT_LOG_INFO, cycle->log, 0, "dyn_kv_conf directive not found, dyn_kv module is not loaded");
-        return NJT_OK;
-    }
-
     njt_str_t rhk = njt_string("njt_http_kv_module");
 
     ret = njt_reg_kv_change_handler(&rhk, NULL, njt_http_kv_module_rpc_handler, NULL);
@@ -632,6 +626,13 @@ njt_dyn_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     u_char *p;
     value = cf->args->elts;
     kvcf = (njt_http_kv_conf_t *)conf;
+
+    if (cf->args->nelts <= 1)
+    {
+        kvcf->conf_file.data = NULL;
+        kvcf->conf_file.len = 0;
+        return NJT_CONF_OK;
+    }
 
     dst.data = njt_pnalloc(cf->pool, value[1].len + 1);
     if (dst.data == NULL)

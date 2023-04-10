@@ -42,7 +42,7 @@ typedef struct
     njt_int_t code;
 } njt_http_sendmsg_post_data_t;
 
-//sendmsg module is running in ctrl panel, should be able to get njet_master_cycle from njet_helper_ctrl_module
+// sendmsg module is running in ctrl panel, should be able to get njet_master_cycle from njet_helper_ctrl_module
 extern njt_cycle_t *njet_master_cycle;
 static void njt_http_sendmsg_iot_conn_timeout(njt_event_t *ev);
 static void njt_http_sendmsg_iot_set_timer(njt_event_handler_pt h, int interval, struct evt_ctx_t *ctx);
@@ -81,7 +81,7 @@ static njt_http_module_t njt_http_sendmsg_module_ctx = {
 static njt_command_t njt_sendmsg_commands[] = {
 
     {njt_string("dyn_sendmsg_conf"),
-     NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE1,
+     NJT_HTTP_MAIN_CONF | NJT_CONF_NOARGS | NJT_CONF_TAKE1,
      njt_dyn_sendmsg_conf_set,
      0,
      0,
@@ -549,12 +549,6 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
     conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
     smcf = conf_ctx->main_conf[njt_http_sendmsg_module.ctx_index];
 
-    if (smcf->conf_file.len == 0)
-    {
-        njt_log_error(NJT_LOG_INFO, cycle->log, 0, "dyn_sendmsg_conf directive not found, sendmsg module is not loaded");
-        return NJT_OK;
-    }
-
     memcpy(client_id, mqconf->node_name.data, mqconf->node_name.len);
     sprintf(client_id + mqconf->node_name.len, "_msg_%d", njt_pid);
 
@@ -659,6 +653,13 @@ njt_dyn_sendmsg_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     value = cf->args->elts;
     smcf = (njt_http_sendmsg_conf_t *)conf;
+
+    if (cf->args->nelts <= 1)
+    {
+        smcf->conf_file.data = NULL;
+        smcf->conf_file.len = 0;
+        return NJT_CONF_OK;
+    }
 
     dst.data = njt_pnalloc(cf->pool, value[1].len + 1);
     if (dst.data == NULL)
