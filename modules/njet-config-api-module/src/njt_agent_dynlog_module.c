@@ -1,18 +1,8 @@
-/*************************************************************************************
- Copyright (C), 2021-2023, TMLake(Beijing) Technology Ltd.,
- File name    : njt_agent_dynlog_module.c
- Version      : 1.0
- Author       : ChengXu
- Date         : 2023/2/20/020 
- Description  : 
- Other        :
- History      :
- <author>       <time>          <version >      <desc>
- ChengXu        2023/2/20/020       1.1             
-***********************************************************************************/
-//
-// Created by Administrator on 2023/2/20/020.
-//
+/*
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
 #include <njt_core.h>
 #include <njt_http_kv_module.h>
 #include <njt_http.h>
@@ -28,6 +18,7 @@ static njt_json_define_t njt_http_dyn_access_log_conf_json_dt[] = {
                 offsetof(njt_http_dyn_access_log_conf_t, format),
                 0,
                 NJT_JSON_STR,
+                0,
                 NULL,
                 NULL,
         },
@@ -36,6 +27,7 @@ static njt_json_define_t njt_http_dyn_access_log_conf_json_dt[] = {
                 offsetof(njt_http_dyn_access_log_conf_t, path),
                 0,
                 NJT_JSON_STR,
+                0,
                 NULL,
                 NULL,
         },
@@ -48,6 +40,7 @@ static njt_json_define_t njt_http_dyn_access_api_loc_json_dt[] ={
                 offsetof(njt_http_dyn_access_api_loc_t, full_name),
                 0,
                 NJT_JSON_STR,
+                0,
                 NULL,
                 NULL,
         },
@@ -56,6 +49,7 @@ static njt_json_define_t njt_http_dyn_access_api_loc_json_dt[] ={
                 offsetof(njt_http_dyn_access_api_loc_t, log_on),
                 0,
                 NJT_JSON_BOOL,
+                0,
                 NULL,
                 NULL,
         },
@@ -63,6 +57,7 @@ static njt_json_define_t njt_http_dyn_access_api_loc_json_dt[] ={
                 njt_string("accessLogs"),
                 offsetof(njt_http_dyn_access_api_loc_t, logs),
                 sizeof(njt_http_dyn_access_log_conf_t),
+                NJT_JSON_ARRAY,
                 NJT_JSON_OBJ,
                 njt_http_dyn_access_log_conf_json_dt,
                 NULL,
@@ -71,6 +66,7 @@ static njt_json_define_t njt_http_dyn_access_api_loc_json_dt[] ={
                 njt_string("locations"),
                 offsetof(njt_http_dyn_access_api_loc_t, locs),
                 sizeof(njt_http_dyn_access_api_loc_t),
+                NJT_JSON_ARRAY,
                 NJT_JSON_OBJ,
                 njt_http_dyn_access_api_loc_json_dt,
                 NULL,
@@ -83,6 +79,7 @@ static njt_json_define_t njt_http_dyn_access_api_srv_json_dt[] ={
                 njt_string("listens"),
                 offsetof(njt_http_dyn_access_api_srv_t, listens),
                 sizeof(njt_str_t),
+                NJT_JSON_ARRAY,
                 NJT_JSON_STR,
                 NULL,
                 NULL,
@@ -91,6 +88,7 @@ static njt_json_define_t njt_http_dyn_access_api_srv_json_dt[] ={
                 njt_string("serverNames"),
                 offsetof(njt_http_dyn_access_api_srv_t, server_names),
                 sizeof(njt_str_t),
+                NJT_JSON_ARRAY,
                 NJT_JSON_STR,
                 NULL,
                 NULL,
@@ -99,6 +97,7 @@ static njt_json_define_t njt_http_dyn_access_api_srv_json_dt[] ={
                 njt_string("locations"),
                 offsetof(njt_http_dyn_access_api_srv_t, locs),
                 sizeof(njt_http_dyn_access_api_loc_t),
+                NJT_JSON_ARRAY,
                 NJT_JSON_OBJ,
                 njt_http_dyn_access_api_loc_json_dt,
                 NULL,
@@ -113,6 +112,7 @@ static njt_json_define_t njt_http_dyn_access_log_format_json_dt[] ={
                 offsetof(njt_http_dyn_access_log_format_t, name),
                 0,
                 NJT_JSON_STR,
+                0,
                 NULL,
                 NULL,
         },
@@ -121,6 +121,7 @@ static njt_json_define_t njt_http_dyn_access_log_format_json_dt[] ={
                 offsetof(njt_http_dyn_access_log_format_t, format),
                 0,
                 NJT_JSON_STR,
+                0,
                 NULL,
                 NULL,
         },
@@ -129,6 +130,7 @@ static njt_json_define_t njt_http_dyn_access_log_format_json_dt[] ={
                 offsetof(njt_http_dyn_access_log_format_t, escape),
                 0,
                 NJT_JSON_STR,
+                0,
                 NULL,
                 NULL,
         },
@@ -141,6 +143,7 @@ static njt_json_define_t njt_http_dyn_access_api_main_json_dt[] ={
                 njt_string("servers"),
                 offsetof(njt_http_dyn_access_api_main_t, servers),
                 sizeof(njt_http_dyn_access_api_srv_t),
+                NJT_JSON_ARRAY,
                 NJT_JSON_OBJ,
                 njt_http_dyn_access_api_srv_json_dt,
                 NULL,
@@ -151,6 +154,7 @@ static njt_json_define_t njt_http_dyn_access_api_main_json_dt[] ={
                 njt_string("accessLogFormats"),
                 offsetof(njt_http_dyn_access_api_main_t, log_formats),
                 sizeof(njt_http_dyn_access_log_format_t),
+                NJT_JSON_ARRAY,
                 NJT_JSON_OBJ,
                 njt_http_dyn_access_log_format_json_dt,
                 NULL,

@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
+ */
 #ifndef _CONF_BASE_H_
 #define _CONF_BASE_H_
 

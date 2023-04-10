@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Roman Arutyunyan
  * Copyright (C) Nginx, Inc.
- * Copyright (C) TMLake, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
 
@@ -289,7 +289,6 @@ njt_stream_upstream_get_hash_peer(njt_peer_connection_t *pc, void *data)
     return NJT_OK;
 }
 
-
 static njt_int_t
 njt_stream_upstream_init_chash(njt_conf_t *cf,
     njt_stream_upstream_srv_conf_t *us)
@@ -313,14 +312,15 @@ njt_stream_upstream_init_chash(njt_conf_t *cf,
     }
 
     us->peer.init = njt_stream_upstream_init_chash_peer;
-
+    us->update_id = NJT_CONF_UNSET_UINT;
     peers = us->peer.data;
     npoints = peers->total_weight * 160;
 
     size = sizeof(njt_stream_upstream_chash_points_t)
            + sizeof(njt_stream_upstream_chash_point_t) * (npoints - 1);
 
-    points = njt_palloc(cf->pool, size);
+    //by zyg points = njt_palloc(cf->pool, size);
+    points = njt_alloc(size, njt_cycle->log);
     if (points == NULL) {
         return NJT_ERROR;
     }
@@ -417,6 +417,144 @@ njt_stream_upstream_init_chash(njt_conf_t *cf,
     return NJT_OK;
 }
 
+static njt_int_t
+njt_stream_upstream_update_chash( njt_stream_upstream_srv_conf_t *us)
+{
+    u_char                               *host, *port, c;
+    size_t                                host_len, port_len, size;
+    uint32_t                              hash, base_hash;
+    njt_str_t                            *server;
+    njt_uint_t                            npoints, i, j;
+    njt_stream_upstream_rr_peer_t        *peer;
+    njt_stream_upstream_rr_peers_t       *peers;
+    njt_stream_upstream_chash_points_t   *points;
+    njt_stream_upstream_hash_srv_conf_t  *hcf;
+    union {
+        uint32_t                          value;
+        u_char                            byte[4];
+    } prev_hash;
+
+
+    peers = us->peer.data;
+    if(us->update_id == peers->update_id && us->update_id != NJT_CONF_UNSET_UINT){
+	return NJT_OK;
+    } 
+    if(us->update_id == NJT_CONF_UNSET_UINT){
+	us->update_id = 0;
+    } else {
+       us->update_id = peers->update_id;
+    }
+    npoints = peers->total_weight * 160;
+
+    size = sizeof(njt_stream_upstream_chash_points_t)
+           + sizeof(njt_stream_upstream_chash_point_t) * (npoints - 1);
+
+     hcf = njt_stream_conf_upstream_srv_conf(us,
+                                            njt_stream_upstream_hash_module);
+    if(hcf != NULL && hcf->points != NULL){
+        njt_free(hcf->points);
+	hcf->points = NULL;
+    }
+    points = njt_alloc(size, njt_cycle->log);
+    if (points == NULL) {
+        return NJT_ERROR;
+    }
+    hcf->points = points;
+    points->number = 0;
+
+    if(peers->number <= 0){
+        return NJT_OK;
+    }
+    for (peer = peers->peer; peer; peer = peer->next) {
+        server = &peer->server;
+
+        /*
+         * Hash expression is compatible with Cache::Memcached::Fast:
+         * crc32(HOST \0 PORT PREV_HASH).
+         */
+
+        if (server->len >= 5
+            && njt_strncasecmp(server->data, (u_char *) "unix:", 5) == 0)
+        {
+            host = server->data + 5;
+            host_len = server->len - 5;
+            port = NULL;
+            port_len = 0;
+            goto done;
+        }
+
+        for (j = 0; j < server->len; j++) {
+            c = server->data[server->len - j - 1];
+
+            if (c == ':') {
+                host = server->data;
+                host_len = server->len - j - 1;
+                port = server->data + server->len - j;
+                port_len = j;
+                goto done;
+            }
+
+            if (c < '0' || c > '9') {
+                break;
+            }
+        }
+
+        host = server->data;
+        host_len = server->len;
+        port = NULL;
+        port_len = 0;
+
+    done:
+
+        njt_crc32_init(base_hash);
+        njt_crc32_update(&base_hash, host, host_len);
+        njt_crc32_update(&base_hash, (u_char *) "", 1);
+        njt_crc32_update(&base_hash, port, port_len);
+
+        prev_hash.value = 0;
+        npoints = peer->weight * 160;
+
+        for (j = 0; j < npoints; j++) {
+            hash = base_hash;
+
+            njt_crc32_update(&hash, prev_hash.byte, 4);
+            njt_crc32_final(hash);
+
+            points->point[points->number].hash = hash;
+            points->point[points->number].server = server;
+            points->number++;
+
+#if (NJT_HAVE_LITTLE_ENDIAN)
+            prev_hash.value = hash;
+#else
+            prev_hash.byte[0] = (u_char) (hash & 0xff);
+            prev_hash.byte[1] = (u_char) ((hash >> 8) & 0xff);
+            prev_hash.byte[2] = (u_char) ((hash >> 16) & 0xff);
+            prev_hash.byte[3] = (u_char) ((hash >> 24) & 0xff);
+#endif
+        }
+    }
+
+    njt_qsort(points->point,
+              points->number,
+              sizeof(njt_stream_upstream_chash_point_t),
+              njt_stream_upstream_chash_cmp_points);
+
+    for (i = 0, j = 1; j < points->number; j++) {
+        if (points->point[i].hash != points->point[j].hash) {
+            points->point[++i] = points->point[j];
+        }
+    }
+
+    points->number = i + 1;
+
+    //hcf = njt_stream_conf_upstream_srv_conf(us,
+      //                                      njt_stream_upstream_hash_module);
+    hcf->points = points;
+
+    return NJT_OK;
+}
+
 
 static int njt_libc_cdecl
 njt_stream_upstream_chash_cmp_points(const void *one, const void *two)
@@ -444,6 +582,9 @@ njt_stream_upstream_find_chash_point(njt_stream_upstream_chash_points_t *points,
 {
     njt_uint_t                          i, j, k;
     njt_stream_upstream_chash_point_t  *point;
+     if(points->number == 0){
+        return 0;
+    }
 
     /* find first point >= hash */
 
@@ -475,6 +616,7 @@ njt_stream_upstream_init_chash_peer(njt_stream_session_t *s,
     njt_stream_upstream_srv_conf_t *us)
 {
     uint32_t                               hash;
+    int32_t                                rc;
     njt_stream_upstream_hash_srv_conf_t   *hcf;
     njt_stream_upstream_hash_peer_data_t  *hp;
 
@@ -491,7 +633,11 @@ njt_stream_upstream_init_chash_peer(njt_stream_session_t *s,
     hash = njt_crc32_long(hp->key.data, hp->key.len);
 
     njt_stream_upstream_rr_peers_rlock(hp->rrp.peers);
-
+    rc = njt_stream_upstream_update_chash(us);
+    if(rc != NJT_OK){
+        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                   "njt_stream_upstream_init_chash_peer error!");
+    }
     hp->hash = njt_stream_upstream_find_chash_point(hcf->points, hash);
 
     njt_stream_upstream_rr_peers_unlock(hp->rrp.peers);

@@ -1,15 +1,8 @@
-/*************************************************************************************
- Copyright (C), 2021-2023, TMLake(Beijing) Technology Ltd.,
- File name    : njt_http_health_check_helper.c
- Version      : 1.0
- Author       : ChengXu
- Date         : 2023/2/24/024
- Description  :
- Other        :
- History      :
- <author>       <time>          <version >      <desc>
- ChengXu        2023/2/24/024       1.1
-***********************************************************************************/
+/*
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
 #ifndef __NJT_HTTP_MATCH_MODULE_H__
 #define __NJT_HTTP_MATCH_MODULE_H__
 

@@ -1,7 +1,7 @@
 
 /*
  * Copyright (C) YoungJoo Kim (vozlt)
- * Copyright (C) TMLake, Inc.
+ * Copyright (C), 2021-2023, TMLake(Beijing) Technology Co., Ltd.
  */
 
 
@@ -1092,6 +1092,7 @@ static njt_json_define_t njt_http_vts_dynapi_loc_item_jsondef[] = {
         offsetof(njt_http_vts_dynapi_loc_item_t, location),
         0,
         NJT_JSON_STR,
+        0,
         NULL,
         NULL,
     },
@@ -1101,6 +1102,7 @@ static njt_json_define_t njt_http_vts_dynapi_loc_item_jsondef[] = {
         offsetof(njt_http_vts_dynapi_loc_item_t, vhost_traffic_status_enable),
         0,
         NJT_JSON_BOOL,
+        0,
         NULL,
         NULL,
     },
@@ -1109,6 +1111,7 @@ static njt_json_define_t njt_http_vts_dynapi_loc_item_jsondef[] = {
         njt_string("locations"),
         offsetof(njt_http_vts_dynapi_loc_item_t, locations),
         sizeof(njt_http_vts_dynapi_loc_item_t),
+        NJT_JSON_ARRAY,
         NJT_JSON_OBJ,
         njt_http_vts_dynapi_loc_item_jsondef,
         NULL,
@@ -1123,6 +1126,7 @@ static njt_json_define_t njt_http_vts_dynapi_svr_jsondef[] ={
         njt_string("listens"),
         offsetof(njt_http_vts_dynapi_svr_t, listens),
         sizeof(njt_str_t),
+        NJT_JSON_ARRAY,
         NJT_JSON_STR,
         NULL,
         NULL,
@@ -1132,6 +1136,7 @@ static njt_json_define_t njt_http_vts_dynapi_svr_jsondef[] ={
         njt_string("serverNames"),
         offsetof(njt_http_vts_dynapi_svr_t, server_names),
         sizeof(njt_str_t),
+        NJT_JSON_ARRAY,
         NJT_JSON_STR,
         NULL,
         NULL,
@@ -1141,6 +1146,7 @@ static njt_json_define_t njt_http_vts_dynapi_svr_jsondef[] ={
         njt_string("locations"),
         offsetof(njt_http_vts_dynapi_svr_t, locations),
         sizeof(njt_http_vts_dynapi_loc_item_t),
+        NJT_JSON_ARRAY,
         NJT_JSON_OBJ,
         njt_http_vts_dynapi_loc_item_jsondef,
         NULL,
@@ -1156,6 +1162,7 @@ static njt_json_define_t njt_http_vts_dynapi_main_jsondef[] ={
         offsetof(njt_http_vts_dynapi_main_t, filter),
         0,
         NJT_JSON_STR,
+        0,
         NULL,
         NULL,
     },
@@ -1164,6 +1171,7 @@ static njt_json_define_t njt_http_vts_dynapi_main_jsondef[] ={
         njt_string("servers"),
         offsetof(njt_http_vts_dynapi_main_t, servers),
         sizeof(njt_http_vts_dynapi_svr_t),
+        NJT_JSON_ARRAY,
         NJT_JSON_OBJ,
         njt_http_vts_dynapi_svr_jsondef,
         NULL,

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
- * Copyright (C) TMLake, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
 
@@ -90,6 +90,7 @@ struct njt_http_upstream_rr_peers_s {
     njt_slab_pool_t                *shpool;
     njt_atomic_t                    rwlock;
     njt_http_upstream_rr_peers_t   *zone_next;
+    njt_uint_t                      update_id;
 #endif
 
     njt_uint_t                      total_weight;

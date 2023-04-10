@@ -1,3 +1,8 @@
+/*
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
@@ -1873,9 +1878,9 @@ skip_add:
 			}
 		} 
 
-        peers_data->single = (peers_data->number == 1);
-//	peers->single = ((peers->number + peers->next->number) == 1);
-	peers->single = (peers->number == 1 && peers->next->number == 0);
+        peers_data->single = (peers_data->number <= 1);
+	peers->single = (peers->number + peers->next->number <= 1);
+    	peers->update_id++;	
         njt_http_upstream_rr_peers_unlock(peers);
     }
 
@@ -1950,9 +1955,8 @@ static void njt_http_upstream_dynamic_server_delete_server(
                 njt_shmtx_unlock(&peers->shpool->mutex);
             }
         }
-        //peers->single = (peers->number == 1);
-        //peers->single = ((peers->number + peers->next->number) == 1);
-        peers->single = (peers->number == 1 && peers->next->number == 0);
+        peers->single = (peers->number + peers->next->number <= 1);
+    	peers->update_id++;	
         njt_http_upstream_rr_peers_unlock(peers);
     }
     return;

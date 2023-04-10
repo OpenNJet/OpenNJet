@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
- * Copyright (C) TMLake, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
 
@@ -30,6 +30,7 @@ static void njt_worker_process_cycle(njt_cycle_t *cycle, void *data);
 static void njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker);
 static void njt_helper_process_init(njt_cycle_t *cycle, njt_int_t worker);
 static void njt_worker_process_exit(njt_cycle_t *cycle);
+void njt_helper_process_exit(njt_cycle_t *cycle);
 static void njt_channel_handler(njt_event_t *ev);
 static void njt_cache_manager_process_cycle(njt_cycle_t *cycle, void *data);
 static void njt_cache_manager_process_handler(njt_event_t *ev);
@@ -239,10 +240,10 @@ njt_master_process_cycle(njt_cycle_t *cycle)
                 continue;
             }
 
-            if (njt_reconfigure_time>0 && njt_time()-njt_reconfigure_time<3) {
-                njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ignore reconfiguring");
-                continue;
-            }
+            // if (njt_reconfigure_time>0 && njt_time()-njt_reconfigure_time<3) {
+            //     njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "ignore reconfiguring");
+            //     continue;
+            // }
 
             njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "reconfiguring");
 
@@ -1517,6 +1518,46 @@ njt_worker_process_exit(njt_cycle_t *cycle)
             njt_debug_point();
         }
     }
+
+    /*
+     * Copy njt_cycle->log related data to the special static exit cycle,
+     * log, and log file structures enough to allow a signal handler to log.
+     * The handler may be called when standard njt_cycle->log allocated from
+     * njt_cycle->pool is already destroyed.
+     */
+
+    njt_exit_log = *njt_log_get_file_log(njt_cycle->log);
+
+    njt_exit_log_file.fd = njt_exit_log.file->fd;
+    njt_exit_log.file = &njt_exit_log_file;
+    njt_exit_log.next = NULL;
+    njt_exit_log.writer = NULL;
+
+    njt_exit_cycle.log = &njt_exit_log;
+    njt_exit_cycle.files = njt_cycle->files;
+    njt_exit_cycle.files_n = njt_cycle->files_n;
+    njt_cycle = &njt_exit_cycle;
+
+    njt_destroy_pool(cycle->pool);
+
+    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "exit");
+
+    exit(0);
+}
+
+
+void
+njt_helper_process_exit(njt_cycle_t *cycle)
+{
+    njt_uint_t         i;
+
+    for (i = 0; cycle->modules[i]; i++) {
+        if (cycle->modules[i]->exit_process) {
+            cycle->modules[i]->exit_process(cycle);
+        }
+    }
+
+    njt_close_listening_sockets(cycle);
 
     /*
      * Copy njt_cycle->log related data to the special static exit cycle,

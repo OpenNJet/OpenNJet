@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Igor Sysoev
  * Copyright (C) Nginx, Inc.
- * Copyright (C) TMLake, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
 
@@ -87,6 +87,7 @@ struct njt_stream_upstream_srv_conf_s {
 
 #if (NJT_STREAM_UPSTREAM_ZONE)
     njt_shm_zone_t                    *shm_zone;
+    njt_uint_t                        update_id;
 #endif
 #if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
     njt_str_t                       state_file;
