@@ -1,3 +1,9 @@
+
+/*
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
+
+
 /**
  * > 函数用于将json字符串解析成用户定义的数据结构
  *
@@ -19,6 +25,25 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *elemen
     char  *p ;
 
     rc = NJT_OK;
+
+    if (element->type != def->type){
+        njt_log_error(NJT_LOG_EMERG, pool->log, 0, 
+              "json type %d not matching def type %d, key:%V type not matching",
+              element->type, def->type, &element->key);
+        return NJT_ERROR;
+    }
+
+
+    njt_json_define_t obj_def = {
+            njt_null_string,
+            0,
+            0,
+            NJT_JSON_OBJ,
+            0,
+            def,
+            NULL,
+    };
+
     if (element->type == NJT_JSON_ARRAY){
         q = njt_queue_head(&element->arrdata) ;
         array = data;
@@ -27,17 +52,22 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *elemen
             p = njt_array_push(array);
             njt_memzero(p,def->size);
             sub = njt_queue_data(q,njt_json_element ,ele_queue);
-            rc = njt_json_parse_json_element(pool,sub,def,p);
+            if(sub->type != def->eletype){
+                njt_log_error(NJT_LOG_EMERG, pool->log, 0, 
+                          "json type %d not matching def type %d", sub->type, def->eletype);
+                return NJT_ERROR;
+            }
+
+            obj_def = *def;
+            obj_def.type = def->eletype;
+            rc = njt_json_parse_json_element(pool,sub,&obj_def,p);
             if(rc != NJT_OK){
                 return rc;
-            }
+            } 
         }
         return rc;
     }
-    if (element->type != def->type){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "%V type not matching",&element->key);
-        return NJT_ERROR;
-    }
+
     if(def->parse){
         rc = def->parse(element,def,data);
         if(rc != NJT_OK){
@@ -106,25 +136,28 @@ njt_int_t njt_json_parse_data(njt_pool_t *pool,njt_str_t *str,njt_json_define_t 
             0,
             0,
             NJT_JSON_OBJ,
+            0,
             def,
             NULL,
     };
 
     rc = njt_json_2_structure(str, &json_body,pool);
     if (rc != NJT_OK) {
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "structure json body mem malloc error !!");
+        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "json to structure transfer error !!");
         return rc;
     }
 
     items = json_body.json_val;
-    if(items->type== NJT_JSON_OBJ){
+
+    if(items->type == NJT_JSON_OBJ){
         rc = njt_json_parse_json_element(pool,items,&obj_def,data);
         if(rc != NJT_OK){
             return rc;
         }
     }
-    array = data;
+
     if(items->type== NJT_JSON_ARRAY){
+        array = data;
         p = njt_array_push(array);
         q = njt_queue_head(&items->arrdata);
         for(; q == njt_queue_sentinel(&items->arrdata); q = njt_queue_next(q)){

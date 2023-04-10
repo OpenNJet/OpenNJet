@@ -1,18 +1,8 @@
-/*************************************************************************************
- Copyright (C), 2021-2023, TMLake(Beijing) Technology Ltd.,
- File name    : njt_dyn_ssl_module.c
- Version      : 1.0
- Author       : ChengXu
- Date         : 2023/3/2/002 
- Description  : 
- Other        :
- History      :
- <author>       <time>          <version >      <desc>
- ChengXu        2023/3/2/002       1.1             
-***********************************************************************************/
-//
-// Created by Administrator on 2023/3/2/002.
-//
+/*
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
@@ -43,6 +33,7 @@ static njt_json_define_t njt_http_dyn_ssl_cert_group_json_dt[] ={
                 offsetof(njt_http_dyn_ssl_cert_group_t, certificate),
                 0,
                 NJT_JSON_STR,
+                0,
                 NULL,
                 NULL,
         },
@@ -51,6 +42,7 @@ static njt_json_define_t njt_http_dyn_ssl_cert_group_json_dt[] ={
                 offsetof(njt_http_dyn_ssl_cert_group_t, certificate_key),
                 0,
                 NJT_JSON_STR,
+                0,
                 NULL,
                 NULL,
         },
@@ -62,6 +54,7 @@ static njt_json_define_t njt_http_dyn_ssl_api_srv_json_dt[] ={
                 njt_string("listens"),
                 offsetof(njt_http_dyn_ssl_api_srv_t, listens),
                 sizeof(njt_str_t),
+                NJT_JSON_ARRAY,
                 NJT_JSON_STR,
                 NULL,
                 NULL,
@@ -70,6 +63,7 @@ static njt_json_define_t njt_http_dyn_ssl_api_srv_json_dt[] ={
                 njt_string("serverNames"),
                 offsetof(njt_http_dyn_ssl_api_srv_t, server_names),
                 sizeof(njt_str_t),
+                NJT_JSON_ARRAY,
                 NJT_JSON_STR,
                 NULL,
                 NULL,
@@ -78,6 +72,7 @@ static njt_json_define_t njt_http_dyn_ssl_api_srv_json_dt[] ={
                 njt_string("certificates"),
                 offsetof(njt_http_dyn_ssl_api_srv_t, certificates),
                 sizeof(njt_http_dyn_ssl_cert_group_t),
+                NJT_JSON_ARRAY,
                 NJT_JSON_OBJ,
                 njt_http_dyn_ssl_cert_group_json_dt,
                 NULL,
@@ -90,6 +85,7 @@ static njt_json_define_t njt_http_dyn_ssl_api_main_json_dt[] ={
                 njt_string("servers"),
                 offsetof(njt_http_dyn_ssl_api_main_t, servers),
                 sizeof(njt_http_dyn_ssl_api_srv_t),
+                NJT_JSON_ARRAY,
                 NJT_JSON_OBJ,
                 njt_http_dyn_ssl_api_srv_json_dt,
                 NULL,
@@ -135,6 +131,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool,njt_http_dyn_ssl_ap
         cert =  daas[i].certificates.elts;
         for(j = 0 ; j < daas[i].certificates.nelts; ++j ){
             //todo 此处内存泄露
+            hsscf->ssl.log = njt_cycle->log;
             if (njt_ssl_certificate(&cf, &hsscf->ssl, &cert[j].certificate, &cert[j].certificate_key,NULL,NULL, NULL)
                 != NJT_OK)
             {

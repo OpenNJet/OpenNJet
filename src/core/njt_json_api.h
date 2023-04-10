@@ -1,3 +1,9 @@
+
+/*
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
+
+
 #ifndef _NJT_JSON_API_H_INCLUDED_
 #define _NJT_JSON_API_H_INCLUDED_
 

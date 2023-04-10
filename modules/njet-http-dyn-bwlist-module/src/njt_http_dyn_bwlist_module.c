@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
+ */
 #include <njt_core.h>
 #include <njt_http_kv_module.h>
 #include <njt_http.h>
@@ -42,6 +45,7 @@ static njt_json_define_t njt_http_dyn_bwlist_access_ipv4_json_dt[] = {
         offsetof(njt_http_dyn_bwlist_access_ipv4_t, rule),
         0,
         NJT_JSON_STR,
+        0,
         NULL,
         NULL,
     },
@@ -50,6 +54,7 @@ static njt_json_define_t njt_http_dyn_bwlist_access_ipv4_json_dt[] = {
         offsetof(njt_http_dyn_bwlist_access_ipv4_t, addr),
         0,
         NJT_JSON_STR,
+        0,
         NULL,
         NULL,
     },
@@ -58,6 +63,7 @@ static njt_json_define_t njt_http_dyn_bwlist_access_ipv4_json_dt[] = {
         offsetof(njt_http_dyn_bwlist_access_ipv4_t, mask),
         0,
         NJT_JSON_STR,
+        0,
         NULL,
         NULL,
     },
@@ -69,6 +75,7 @@ static njt_json_define_t njt_http_dyn_bwlist_loc_json_dt[] = {
         offsetof(njt_http_dyn_bwlist_loc_t, full_name),
         0,
         NJT_JSON_STR,
+        0,
         NULL,
         NULL,
     },
@@ -76,6 +83,7 @@ static njt_json_define_t njt_http_dyn_bwlist_loc_json_dt[] = {
         njt_string("accessIpv4"),
         offsetof(njt_http_dyn_bwlist_loc_t, access_ipv4),
         sizeof(njt_http_dyn_bwlist_access_ipv4_t),
+        NJT_JSON_ARRAY,
         NJT_JSON_OBJ,
         njt_http_dyn_bwlist_access_ipv4_json_dt,
         NULL,
@@ -84,6 +92,7 @@ static njt_json_define_t njt_http_dyn_bwlist_loc_json_dt[] = {
         njt_string("locations"),
         offsetof(njt_http_dyn_bwlist_loc_t, locs),
         sizeof(njt_http_dyn_bwlist_loc_t),
+        NJT_JSON_ARRAY,
         NJT_JSON_OBJ,
         njt_http_dyn_bwlist_loc_json_dt,
         NULL,
@@ -97,6 +106,7 @@ static njt_json_define_t njt_http_dyn_bwlist_srv_json_dt[] = {
         njt_string("listens"),
         offsetof(njt_http_dyn_bwlist_srv_t, listens),
         sizeof(njt_str_t),
+        NJT_JSON_ARRAY,
         NJT_JSON_STR,
         NULL,
         NULL,
@@ -106,6 +116,7 @@ static njt_json_define_t njt_http_dyn_bwlist_srv_json_dt[] = {
         njt_string("serverNames"),
         offsetof(njt_http_dyn_bwlist_srv_t, server_names),
         sizeof(njt_str_t),
+        NJT_JSON_ARRAY,
         NJT_JSON_STR,
         NULL,
         NULL,
@@ -115,6 +126,7 @@ static njt_json_define_t njt_http_dyn_bwlist_srv_json_dt[] = {
         njt_string("locations"),
         offsetof(njt_http_dyn_bwlist_srv_t, locs),
         sizeof(njt_http_dyn_bwlist_loc_t),
+        NJT_JSON_ARRAY,
         NJT_JSON_OBJ,
         njt_http_dyn_bwlist_loc_json_dt,
         NULL,
@@ -128,6 +140,7 @@ static njt_json_define_t njt_http_dyn_bwlist_main_json_dt[] = {
         njt_string("servers"),
         offsetof(njt_http_dyn_bwlist_main_t, servers),
         sizeof(njt_http_dyn_bwlist_srv_t),
+        NJT_JSON_ARRAY,
         NJT_JSON_OBJ,
         njt_http_dyn_bwlist_srv_json_dt,
         NULL,

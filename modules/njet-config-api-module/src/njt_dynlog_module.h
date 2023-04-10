@@ -1,19 +1,8 @@
-/*************************************************************************************
- Copyright (C), 2021-2023, TMLake(Beijing) Technology Ltd.,
- File name    : njt_dynlog_module.h
- Version      : 1.0
- Author       : ChengXu
- Date         : 2023/2/20/020 
- Description  : 
- Other        :
- History      :
- <author>       <time>          <version >      <desc>
- ChengXu        2023/2/20/020       1.1             
-***********************************************************************************/
-//
-// Created by Administrator on 2023/2/20/020.
-//
-
+/*
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
 #ifndef NJET_MAIN_NJT_DYNLOG_MODULE_H
 #define NJET_MAIN_NJT_DYNLOG_MODULE_H
 

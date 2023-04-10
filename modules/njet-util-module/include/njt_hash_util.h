@@ -1,3 +1,9 @@
+
+/*
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
+
+
 #ifndef NJET_MAIN_NJT_HASH_UTIL_H
 #define NJET_MAIN_NJT_HASH_UTIL_H
 

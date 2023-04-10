@@ -1,3 +1,9 @@
+
+/*
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
+
+
 #ifndef NJT_DOC_MODULE_H_
 #define NJT_DOC_MODULE_H_
 #include <njt_core.h>

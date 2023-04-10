@@ -1,3 +1,9 @@
+
+/*
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
+
+
 #include "njt_json_api.h"
 
 njt_int_t njt_json_hsh_callback(njt_json_element *json_val,

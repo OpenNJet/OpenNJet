@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
+ */
 #ifndef NJT_HTTP_KV_MODULE_H_
 #define NJT_HTTP_KV_MODULE_H_
 #include <njt_core.h>
