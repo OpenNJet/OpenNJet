@@ -8,7 +8,7 @@
 
 /*
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) TMLake, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  *
  * WARNING: DO NOT EVER EDIT THIS FILE!!
  *
