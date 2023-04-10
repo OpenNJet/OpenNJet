@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2010-2013 Alibaba Group Holding Limited
- * Copyright (C), 2021-2023, TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
 
