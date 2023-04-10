@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
  */
 
 #ifndef YUNKE_SLB_V2_1_NG1_20_1_NGX_CACHE_PURGE_H
