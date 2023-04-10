@@ -903,16 +903,16 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 		if(loc) {
 			njt_memzero(data,buffer_len);
 			p = data;
-			p = njt_snprintf(p, remain, "location");
+			p = njt_snprintf(p, remain, "location ");
 			remain = data + buffer_len - p;
 
 			if(loc->location_rule.len != 0 && loc->location_rule.data != NULL){
-				p = njt_snprintf(p, remain, " %V ",&loc->location_rule);
+				p = njt_snprintf(p, remain, "%V",&loc->location_rule);
 				remain = data + buffer_len - p;
 			}
 			if(loc->location.len != 0 && loc->location.data != NULL){
 				
-				p = njt_snprintf(p, remain, " %V {\n",&loc->location);
+				p = njt_snprintf(p, remain, "%V {\n",&loc->location);
 				remain = data + buffer_len - p;
 			}
 			if(loc->location_body.len != 0 && loc->location_body.data != NULL){
