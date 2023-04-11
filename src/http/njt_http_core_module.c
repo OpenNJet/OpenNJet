@@ -3285,7 +3285,9 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
                 return NJT_CONF_ERROR;
             }
 
-        } else {
+        } else if (mod[0] == '(') {
+		clcf->if_loc = 1;
+	} else {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid location modifier \"%V\"", &value[1]);
             return NJT_CONF_ERROR;
@@ -3407,15 +3409,15 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
         if (njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
             return NJT_CONF_ERROR;
         }
-		if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
-			return NJT_CONF_ERROR;
-		}
     } else {
 		 clcf->dynamic_status = 1;  // 1 
-		 if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
-			return NJT_CONF_ERROR;
-		}
 	}
+    if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
+	    return NJT_CONF_ERROR;
+    }
+    if (clcf->if_loc == 1 && njt_http_add_location(cf, &pclcf->if_locations, clcf) != NJT_OK) {
+	    return NJT_CONF_ERROR;
+      }
 
    
     save = *cf;

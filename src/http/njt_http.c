@@ -2246,3 +2246,9 @@ njt_http_set_default_types(njt_conf_t *cf, njt_array_t **types,
 
     return NJT_OK;
 }
+
+njt_int_t
+njt_http_add_if_location(njt_conf_t *cf, njt_queue_t **locations,
+                      njt_http_core_loc_conf_t *clcf) {
+  return NJT_OK;
+}

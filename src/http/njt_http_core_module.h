@@ -325,6 +325,7 @@ struct njt_http_core_loc_conf_s {
     unsigned      noname:1;   /* "if () {}" block or limit_except */
     unsigned      lmt_excpt:1;
     unsigned      named:1;
+    unsigned      if_loc:1;
 
     unsigned      exact_match:1;
     unsigned      noregex:1;
@@ -466,6 +467,7 @@ struct njt_http_core_loc_conf_s {
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_queue_t  *old_locations; //zyg
+    njt_queue_t  *if_locations; //zyg
     njt_queue_t  *new_locations;    //clb
     njt_pool_t   *pool;          //cx 处理上下文内存释放
     njt_http_location_destroy_t *destroy_locs; //cx 处理上下文内存释放,按照链表顺序释放

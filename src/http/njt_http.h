@@ -186,6 +186,9 @@ char *njt_http_merge_types(njt_conf_t *cf, njt_array_t **keys,
 njt_int_t njt_http_set_default_types(njt_conf_t *cf, njt_array_t **types,
     njt_str_t *default_type);
 
+njt_int_t
+njt_http_add_if_location(njt_conf_t *cf, njt_queue_t **locations,
+                      njt_http_core_loc_conf_t *clcf);
 #if (NJT_HTTP_DEGRADATION)
 njt_uint_t  njt_http_degraded(njt_http_request_t *);
 #endif
