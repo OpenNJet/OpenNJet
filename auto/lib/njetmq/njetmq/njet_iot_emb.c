@@ -48,7 +48,7 @@ static int listensock_count = 0;
 static int listensock_index = 0;
 static struct mosq_iot *ctx = NULL;
 static struct mosq_iot *ctx_tmp = NULL;
-static const char empty_server_conf_file[] = "/tmp/njetmq-server-XXXXXX";
+static const char empty_server_conf_file[] = "/dev/shm/njetmq-server-XXXXXX";
 
 static int quit_flag = 0;
 #ifdef WITH_PERSISTENCE
@@ -318,7 +318,7 @@ int njet_iot_init(const char *prefix, const char *config_file)
 	argv[2] = (char *)config_file;
 	if (config_file == NULL || strlen(config_file) == 0)
 	{
-		strncpy(nameBuff, empty_server_conf_file, 26);
+		strncpy(nameBuff, empty_server_conf_file, 30);
 		rc = mkstemp((char *)nameBuff);
 		if (rc == -1)
 		{

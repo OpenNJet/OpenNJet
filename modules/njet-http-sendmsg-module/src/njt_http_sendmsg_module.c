@@ -27,6 +27,7 @@ typedef struct
 typedef struct
 {
     njt_str_t conf_file;
+    njt_uint_t off;
     njt_msec_t rpc_timeout;
     njt_flag_t kv_api_enabled;
 } njt_http_sendmsg_conf_t;
@@ -551,7 +552,10 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
 
     conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
     smcf = conf_ctx->main_conf[njt_http_sendmsg_module.ctx_index];
-
+    if (smcf->off) {
+        njt_log_error(NJT_LOG_INFO, cycle->log, 0, "sendmsg module is configured as off");
+        return NJT_OK;  
+    }
     memcpy(client_id, mqconf->node_name.data, mqconf->node_name.len);
     sprintf(client_id + mqconf->node_name.len, "_msg_%d", njt_pid);
 
@@ -657,13 +661,20 @@ njt_dyn_sendmsg_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     value = cf->args->elts;
     smcf = (njt_http_sendmsg_conf_t *)conf;
 
+    sendmsg_mqtt_ctx = NULL;
     if (cf->args->nelts <= 1)
     {
+        smcf->off = 0;
         smcf->conf_file.data = NULL;
         smcf->conf_file.len = 0;
         return NJT_CONF_OK;
     }
+    if (njt_strcmp(value[1].data, "off") == 0) {
+        smcf->off = 1;
+        return NJT_CONF_OK;
+    }
 
+    smcf->off = 0;
     dst.data = njt_pnalloc(cf->pool, value[1].len + 1);
     if (dst.data == NULL)
     {

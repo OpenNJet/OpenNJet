@@ -40,6 +40,7 @@ typedef struct
 typedef struct
 {
     njt_str_t conf_file;
+    njt_uint_t off;
 } njt_http_kv_conf_t;
 
 static void njt_http_kv_iot_conn_timeout(njt_event_t *ev);
@@ -474,6 +475,11 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
     kvcf = conf_ctx->main_conf[njt_http_kv_module.ctx_index];
 
+    if (kvcf->off) {
+        njt_log_error(NJT_LOG_INFO, cycle->log, 0, "kv module is configured as off");
+        return NJT_OK;  
+    }
+
     njt_str_t rhk = njt_string("njt_http_kv_module");
 
     ret = njt_reg_kv_change_handler(&rhk, NULL, njt_http_kv_module_rpc_handler, NULL);
@@ -629,13 +635,21 @@ njt_dyn_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     value = cf->args->elts;
     kvcf = (njt_http_kv_conf_t *)conf;
 
+    kv_evt_ctx = NULL;
     if (cf->args->nelts <= 1)
     {
+        kvcf->off = 0;
         kvcf->conf_file.data = NULL;
         kvcf->conf_file.len = 0;
         return NJT_CONF_OK;
     }
+    
+    if (njt_strcmp(value[1].data, "off") == 0) {
+        kvcf->off = 1;
+        return NJT_CONF_OK;
+    }
 
+    kvcf->off = 0;
     dst.data = njt_pnalloc(cf->pool, value[1].len + 1);
     if (dst.data == NULL)
     {
