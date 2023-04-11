@@ -1,6 +1,9 @@
-//
-// Created by Administrator on 2022/7/18/018.
-//
+/*
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ */
+
 
 #ifndef NJT_STREAM_UPSTREAM_HC_MODULE_H
 #define NJT_STREAM_UPSTREAM_HC_MODULE_H

@@ -3,7 +3,7 @@
  * Copyright (C) Igor Sysoev
  * Copyright (C) Maxim Dounin
  * Copyright (C) Nginx, Inc.
- * Copyright (C) TMLake, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
 

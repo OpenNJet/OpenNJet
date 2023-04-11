@@ -1,7 +1,10 @@
 
 /*
- * Copyright  Jikui Pei
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
+
 
 
 #include <njt_config.h>
