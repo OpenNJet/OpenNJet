@@ -716,7 +716,7 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 				 sub_location->location_body = out_items->strval;
 			}
 			if(sub_location->location_body.len > 0 && sub_location->location_body.data != NULL) {
-				if(njt_strstr(sub_location->location_body.data,"proxy_pass") != NULL) {
+				if(njt_strstr(sub_location->location_body.data,"proxy_pass ") != NULL) {
 					njt_str_set(&location_info->msg, "directive is not allowed here in location_body");
 					return NJT_ERROR;
 				}
