@@ -837,7 +837,7 @@ OpenNJet 主库地址：
 
 # ♻️ 代码仓地址
 
-https://gitee.com/tmlake/njet?_from=gitee_search
+https://gitee.com/njet-rd/njet
 
 
 
