@@ -275,7 +275,7 @@ static njt_command_t  njt_http_core_commands[] = {
       NULL },
 
     { njt_string("location"),
-      NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_BLOCK|NJT_CONF_TAKE12,
+      NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_BLOCK|NJT_CONF_ANY,
       njt_http_core_location,
       NJT_HTTP_SRV_CONF_OFFSET,
       0,
@@ -1436,6 +1436,8 @@ njt_http_core_find_location(njt_http_request_t *r)
 {
     njt_int_t                  rc;
     njt_http_core_loc_conf_t  *pclcf;
+    njt_http_location_queue_t *lq;
+     njt_queue_t *q;
 #if (NJT_PCRE)
     njt_int_t                  n;
     njt_uint_t                 noregex;
@@ -1445,6 +1447,21 @@ njt_http_core_find_location(njt_http_request_t *r)
 #endif
 
     pclcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
+
+
+    if (njt_queue_empty(pclcf->if_locations) == 0) {
+    
+    for (q = njt_queue_head(pclcf->if_locations);
+         q != njt_queue_sentinel(pclcf->if_locations);
+         q = njt_queue_next(q)) {
+        lq = (njt_http_location_queue_t *) q;
+
+        clcf = lq->exact ? lq->exact : lq->inclusive;
+	clcf->error_log = njt_cycle->log;
+	 r->loc_conf = clcf->loc_conf;
+	return NJT_OK;
+    }
+    }
 
     rc = njt_http_core_find_static_location(r, pclcf->static_locations);
 
@@ -3287,6 +3304,8 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
         } else if (mod[0] == '(') {
 		clcf->if_loc = 1;
+	        clcf->exact_match = 1;
+		clcf->internal = 0;
 	} else {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid location modifier \"%V\"", &value[1]);
@@ -3341,7 +3360,11 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
                 }
             }
 
-        } else {
+        } else if (name->data[0] == '(') {
+                clcf->if_loc = 1;
+                clcf->exact_match = 1;
+                clcf->internal = 0;
+        }  else {
 
             clcf->name = *name;
 
