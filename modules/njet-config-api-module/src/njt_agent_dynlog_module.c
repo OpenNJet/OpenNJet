@@ -466,7 +466,6 @@ static njt_str_t njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
     err:
     return dynlog_update_srv_err_msg;
 }
-
 static u_char* njt_agent_dynlog_rpc_handler(njt_str_t *topic, njt_str_t *request, int* len, void *data){
     njt_cycle_t *cycle;
     njt_str_t msg;
@@ -519,20 +518,44 @@ static int  njt_agent_dynlog_change_handler(njt_str_t *key, njt_str_t *value, vo
 
     rc =njt_json_parse_data(pool,value,njt_http_dyn_access_api_main_json_dt,api_data);
     if(rc == NJT_OK ){
-        njt_dynlog_update_access_log(pool,api_data);
+        rc = njt_dynlog_update_access_log(pool,api_data);
     }
 
     end:
     if(pool != NULL){
         njt_destroy_pool(pool);
     }
-    return NJT_OK;
+    return rc;
 }
 
+static u_char* njt_agent_dynlog_put_handler(njt_str_t *topic, njt_str_t *request, int* len, void *data) {
+    njt_cycle_t *cycle;
+    u_char *buf;
+    njt_int_t rc;
+//    njt_str_t *ret_msg_str;
+//    u_char *ret_msg = NULL;
+//    const char *ret_msg_tpl = "{\"code\":%d, \"msg\":\"%V\"}";
+    cycle = (njt_cycle_t*) njt_cycle;
+
+    *len = 5;
+    buf = njt_calloc(6,cycle->log);
+
+    njt_json
+
+    rc = njt_agent_dynlog_change_handler(topic,request,data);
+    if(rc == NJT_OK){
+        njt_memcpy(buf,"succe",6);
+    } else {
+        njt_memcpy(buf,"failu",6);
+    }
+    return buf;
+
+}
 static njt_int_t njt_agent_dynlog_init_process(njt_cycle_t* cycle){
     if (njt_process == NJT_PROCESS_WORKER) {
         njt_str_t  rpc_key = njt_string("http_log");
-        njt_reg_kv_change_handler(&rpc_key, njt_agent_dynlog_change_handler,njt_agent_dynlog_rpc_handler, NULL);
+//        njt_reg_kv_change_handler(&rpc_key, njt_agent_dynlog_change_handler,njt_agent_dynlog_rpc_handler, NULL);
+        njt_reg_kv_msg_handler(&rpc_key, njt_agent_dynlog_change_handler, njt_agent_dynlog_put_handler, njt_agent_dynlog_rpc_handler, NULL);
     }
     return NJT_OK;
 }
