@@ -197,7 +197,7 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
                 peer[n].fail_timeout = server[i].fail_timeout;
                 peer[n].down = server[i].down;
                 peer[n].server = server[i].name;
-
+		peer[n].parent_id = server[i].parent_id;
                 *peerp = &peer[n];
                 peerp = &peer[n].next;
                 n++;
