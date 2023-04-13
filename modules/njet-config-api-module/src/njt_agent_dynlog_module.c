@@ -7,6 +7,7 @@
 #include <njt_http_kv_module.h>
 #include <njt_http.h>
 #include <njt_json_util.h>
+#include <njt_rpc_result_util.h>
 #include <njt_http_util.h>
 #include "njt_dynlog_module.h"
 
@@ -105,6 +106,7 @@ static njt_json_define_t njt_http_dyn_access_api_srv_json_dt[] ={
         njt_json_define_null,
 };
 #if (NJT_HTTP_DYN_LOG)
+
 
 static njt_json_define_t njt_http_dyn_access_log_format_json_dt[] ={
         {
@@ -497,7 +499,7 @@ static u_char* njt_agent_dynlog_rpc_handler(njt_str_t *topic, njt_str_t *request
     return buf;
 }
 
-static int  njt_agent_dynlog_change_handler(njt_str_t *key, njt_str_t *value, void *data){
+static int  njt_agent_dynlog_change_handler_internal(njt_str_t *key, njt_str_t *value, void *data,njt_str_t *outMsg){
     njt_int_t rc;
     njt_http_dyn_access_api_main_t *api_data = NULL;
     njt_pool_t *pool = NULL;
@@ -528,27 +530,20 @@ static int  njt_agent_dynlog_change_handler(njt_str_t *key, njt_str_t *value, vo
     return rc;
 }
 
-static u_char* njt_agent_dynlog_put_handler(njt_str_t *topic, njt_str_t *request, int* len, void *data) {
-    njt_cycle_t *cycle;
-    u_char *buf;
+static int  njt_agent_dynlog_change_handler(njt_str_t *key, njt_str_t *value, void *data){
+    njt_str_t ret;
     njt_int_t rc;
-//    njt_str_t *ret_msg_str;
-//    u_char *ret_msg = NULL;
-//    const char *ret_msg_tpl = "{\"code\":%d, \"msg\":\"%V\"}";
-    cycle = (njt_cycle_t*) njt_cycle;
-
-    *len = 5;
-    buf = njt_calloc(6,cycle->log);
-
-    njt_json
-
-    rc = njt_agent_dynlog_change_handler(topic,request,data);
-    if(rc == NJT_OK){
-        njt_memcpy(buf,"succe",6);
-    } else {
-        njt_memcpy(buf,"failu",6);
+    rc = njt_agent_dynlog_change_handler_internal(key,value,data,&ret);
+    if(ret.data){
+        njt_free(ret.data);
     }
-    return buf;
+    return rc;
+}
+static u_char* njt_agent_dynlog_put_handler(njt_str_t *topic, njt_str_t *request, int* len, void *data) {
+    njt_str_t err_json_msd;
+    njt_agent_dynlog_change_handler_internal(topic,request,data,&err_json_msd);
+    *len = err_json_msd.len;
+    return err_json_msd.data;
 
 }
 static njt_int_t njt_agent_dynlog_init_process(njt_cycle_t* cycle){

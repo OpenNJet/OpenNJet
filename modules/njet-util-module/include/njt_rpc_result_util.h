@@ -7,18 +7,36 @@
 #include <njt_json_api.h>
 #include <njt_core.h>
 
-typedef njt_json_manager * rpc_result_pt;
-rpc_result_pt rpc_result_init();
+// 通用错误码定义
+enum
+{
+    NJT_RPC_RSP_SUCCESS = 0,
+    NJT_RPC_RSP_ERR_GENERAL,
+    NJT_RPC_RSP_ERR_POOL_CREATION,
+    NJT_RPC_RSP_ERR_JSON,
+    NJT_RPC_RSP_ERR_TOTAL_PERCENTAGE
+} NJT_HTTP_RSP_ERROR;
 
-void rpc_result_set_code(rpc_result_pt rpc_result,njt_int_t code);
+struct njt_rpc_result_s{
+    // njt_str_t[]
+    njt_int_t code;
+    u_char *msg;
+    njt_array_t *data;
+    njt_pool_t * pool;
+};
 
-void rpc_result_set_msg(rpc_result_pt rpc_result,njt_str_t msg);
+typedef struct njt_rpc_result_s njt_rpc_result_t;
 
-void rpc_result_add_loc(rpc_result_pt rpc_result,njt_loc_ msg);
+njt_rpc_result_t * njt_rpc_result_create();
 
-void rpc_result_add_loc(rpc_result_pt rpc_result,njt_loc_ msg);
+void  njt_rpc_result_set_code(njt_rpc_result_t * rpc_result,njt_int_t code);
 
+void njt_rpc_result_set_msg(njt_rpc_result_t * rpc_result,u_char * msg);
 
-void rpc_result_free(rpc_result_pt rpc_result);
+//void njt_rpc_result_add_err_data(njt_rpc_result_t * rpc_result,u_char * msg);
+
+int njt_rpc_result_to_json_str(njt_rpc_result_t * rpc_result,njt_str_t *json_str);
+
+void njt_rpc_result_destroy(njt_rpc_result_t * rpc_result);
 
 #endif //NJET_MAIN_RPC_RESULT_UTIL_H
