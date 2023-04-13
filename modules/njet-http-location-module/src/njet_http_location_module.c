@@ -716,7 +716,7 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 				 sub_location->location_body = out_items->strval;
 			}
 			if(sub_location->location_body.len > 0 && sub_location->location_body.data != NULL) {
-				if(njt_strstr(sub_location->location_body.data,"proxy_pass") != NULL) {
+				if(njt_strstr(sub_location->location_body.data,"proxy_pass ") != NULL) {
 					njt_str_set(&location_info->msg, "directive is not allowed here in location_body");
 					return NJT_ERROR;
 				}
@@ -960,7 +960,6 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
     //njt_str_t  dport;
     njt_fd_t fd;
     njt_int_t  rc; 
-    njt_int_t idx;
     //njt_uint_t i;
     
     u_char *p; // *data;
@@ -977,23 +976,15 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
     cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&location_info->addr_port,&location_info->server_name);	
     (*location_info).cscf = cscf;
 
-    for (idx = njt_cycle->error_log.len - 1; idx >= 0; idx--) {
-        if (njt_cycle->error_log.data[idx] == '/') {
-            break;
-        }
-    }
-    if (idx >= 0) {
-        location_path.len = idx + 1;
-        location_path.data = njt_cycle->error_log.data;
+        location_path = njt_cycle->prefix;
 
         //todo
         //njt_str_set(&location_path, "/tmp/");
         location_full_file.len = location_path.len + location_file.len + 10;//  workid_add_location.txt
         location_full_file.data = njt_pcalloc(location_info->pool, location_full_file.len);
-        p = njt_snprintf(location_full_file.data, location_full_file.len, "%V%d_%V", &location_path, njt_worker,
+        p = njt_snprintf(location_full_file.data, location_full_file.len, "%Vlogs/%d_%V", &location_path, njt_worker,
                          &location_file);
         location_full_file.len = p - location_full_file.data;
-    }
     fd = njt_open_file(location_full_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE,
                        NJT_FILE_DEFAULT_ACCESS);
     if (fd == NJT_INVALID_FILE) {
