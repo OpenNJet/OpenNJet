@@ -1,0 +1,45 @@
+OpenNJet
+Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
+
+产品第三方开源代码引入情况
+
+Nginx
+http://www.nginx.org
+Copyright (C) Igor Sysoev
+Copyright (C) Nginx, Inc.
+Licensed under 2-clause BSD-like license
+源代码修改之后引入
+
+OpenResty
+https://openresty.org
+Copyright (C) 2009-2015, by Yichun "agentzh" Zhang, OpenResty Inc.
+Copyright (C) 2009-2014, by Xiaozhe Wang (chaoslawful) <chaoslawful@gmail.com>.
+Copyright (C) 2010-2014, by FRiCKLE Piotr Sikora <info@frickle.com>.
+Copyright (C) 2015, by Shuxin Yang.
+Copyright (c) 2010, 2011, Jiale "calio" Zhi <vipcalio@gmail.com>.
+Copyright (C) Guanlan Dai
+Copyright (c) 2010, Marcus Clyne, Simpl (simpl.it)
+Licensed under the 2-clause BSD license
+源代码修改之后引入
+
+PCRE
+http://www.pcre.org
+Copyright (c) 1997-2021 University of Cambridge
+Copyright (c) 2010-2021 Zoltan Herczeg
+Copyright (c) 2009-2021 Zoltan Herczeg
+Copyright (c) 2007-2012, Google Inc.
+Licensed under BSD
+整体引入
+
+TaSSL
+Copyright (c) 2016 - 2021 Beijing JN TASS Technology Co., Ltd. 
+Copyright (c) 1998-2019 The OpenSSL Project.
+Copyright (c) 1995-1998 Eric Young (eay@cryptsoft.com)
+The TaSSL toolkit stays under a triple license, i.e. both the conditions of the TaSSL License, the OpenSSL License and the original SSLeay license apply to the toolkit.
+整体引入
+
+Mosquitto
+https://mosquitto.org/
+Copyright (c) 2020 Roger Light <roger@atchoo.org>
+Dual licensed under the Eclipse Public License 2.0 and the Eclipse Distribution License 1.0 
+源代码修改之后引入

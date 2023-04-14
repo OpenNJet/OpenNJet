@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2009-2014, FRiCKLE <info@frickle.com>
  * Copyright (c) 2009-2014, Piotr Sikora <piotr.sikora@frickle.com>
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
  * All rights reserved.
  *
  * This project was fully funded by yo.se.

@@ -1,5 +1,5 @@
 /*
- * Copyright (C), 2021-2023, TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
  */
 #include <njt_http.h>
 #include <stdio.h>
