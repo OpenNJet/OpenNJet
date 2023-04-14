@@ -21,7 +21,7 @@ extern njt_module_t  njt_http_rewrite_module;
 static void
 free_static_tree_momery(njt_http_location_tree_node_t *static_tree);
 
-
+njt_str_t njt_del_headtail_space(njt_str_t src);
 
 static njt_int_t
 njt_http_location_init_worker(njt_cycle_t *cycle);
@@ -677,7 +677,9 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 				njt_str_set(&location_info->msg, "location_rule error!");
 					   return NJT_ERROR;
 					}
-				sub_location->location_rule = out_items->strval;
+				sub_location->location_rule = njt_del_headtail_space(out_items->strval);
+				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "location_rule[%V,%V]",&out_items->strval,&sub_location->location_rule);
+				
 			} 
 
 			njt_str_set(&key,"location_name");
@@ -686,7 +688,8 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 				njt_str_set(&location_info->msg, "location_name error!!!");
 				return NJT_ERROR;
 			} else {
-				sub_location->location = out_items->strval;
+				sub_location->location = njt_del_headtail_space(out_items->strval);
+				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "location_name[%V,%V]",&out_items->strval,&sub_location->location);
 			}
 			
 			njt_str_set(&key,"proxy_pass");
@@ -840,7 +843,8 @@ njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str) {
 	   	njt_str_set(&location_info->msg, "location_rule error!");
 			   goto end;
           	}
-		location_info->location_rule = items->strval;
+		location_info->location_rule = njt_del_headtail_space(items->strval);
+		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "location_rule[%V,%V]",&items->strval,&location_info->location_rule);
 	} 
 	njt_str_set(&key,"location_name");
 	rc = njt_struct_top_find(&json_body, &key, &items);
@@ -849,7 +853,8 @@ njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str) {
 	   	njt_str_set(&location_info->msg, "location_name error!");
 			   goto end;
           	}
-		location_info->location = items->strval;
+		location_info->location = njt_del_headtail_space(items->strval);
+				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "location_rule[%V,%V]",&items->strval,&location_info->location);
 	}else {
 		if( location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0) {
 		    njt_str_set(&location_info->msg, "location_name is null!");
@@ -1265,4 +1270,31 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 		 //njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg all:%d, remain:%d",count,num);
 		
 }
-
+njt_str_t njt_del_headtail_space(njt_str_t src){
+  
+  njt_uint_t i,j;
+  njt_str_t  dst;
+  if(src.len == 0){
+     return src;
+  }
+  i=0;
+  for(; i < src.len; i++) {
+          if(src.data[i] != '\0' && src.data[i] != '\n' && src.data[i] != '\t' && src.data[i] != ' ' && src.data[i] != '\r'){
+                break;
+          }
+  }
+  if(i == src.len){
+	njt_str_set(&dst,"");
+	return dst;
+  }
+  dst.data = src.data + i;
+  j = src.len - 1;
+  for(; j > i; j--) {
+          if(src.data[j] == '\0' || src.data[j] == '\n' || src.data[j] == '\t' || src.data[j] == ' ' || src.data[j] == '\r'){
+                continue;
+          }
+	  break;
+  }
+  dst.len = j-i+1;
+  return dst;
+}
