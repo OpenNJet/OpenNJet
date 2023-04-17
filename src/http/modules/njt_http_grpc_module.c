@@ -4983,7 +4983,6 @@ njt_http_grpc_set_ssl(njt_conf_t *cf, njt_http_grpc_loc_conf_t *glcf)
             if (njt_ssl_certificate(cf, glcf->upstream.ssl,
                                     &glcf->upstream.ssl_certificate->value,
                                     &glcf->upstream.ssl_certificate_key->value,
-                                    NULL, NULL,
                                     glcf->upstream.ssl_passwords)
                 != NJT_OK)
             {

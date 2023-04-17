@@ -193,17 +193,17 @@ err:
 
 static int ec_elgamal_test(int curve_id)
 {
-    TEST_info("Testing encrypt/descrypt of EC-ElGamal for curve_id: %d\n", curve_id);
-
     int ret = 0;
     FILE *f;
     EC_KEY *eckey = NULL, *ec_pub_key = NULL, *ec_pri_key = NULL;
-    //uint32_t p1 = 2000000021, p2 = 500, m = 800, r;
+    /*uint32_t p1 = 2000000021, p2 = 500, m = 800, r;*/
     int32_t p1 = 111111, p2 = 555555, m = 3, r;
     unsigned char *buf = NULL, *buf1 = NULL, *buf2 = NULL;
     size_t size, size1, size2;
     EC_ELGAMAL_CTX *ectx = NULL, *dctx = NULL;
     EC_ELGAMAL_DECRYPT_TABLE *dtable = NULL;
+
+    TEST_info("Testing encrypt/descrypt of EC-ElGamal for curve_id: %d\n", curve_id);
 
     if (!TEST_ptr(eckey = EC_KEY_new_by_curve_name(curve_id)))
         goto err;

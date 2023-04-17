@@ -192,6 +192,8 @@ static njt_int_t njt_http_upstream_ssl_name(njt_http_request_t *r,
     njt_http_upstream_t *u, njt_connection_t *c);
 static njt_int_t njt_http_upstream_ssl_certificate(njt_http_request_t *r,
     njt_http_upstream_t *u, njt_connection_t *c);
+static njt_int_t njt_http_upstream_ssl_certificates(njt_http_request_t *r,
+    njt_http_upstream_t *u, njt_connection_t *c);
 #endif
 
 
@@ -1739,6 +1741,16 @@ njt_http_upstream_ssl_init_connection(njt_http_request_t *r,
         return;
     }
 
+#if (NJT_HAVE_NTLS)
+    if (u->conf->ssl_ntls) {
+
+        SSL_CTX_set_ssl_version(u->conf->ssl->ctx, NTLS_method());
+        SSL_CTX_set_cipher_list(u->conf->ssl->ctx,
+                                (char *) u->conf->ssl_ciphers.data);
+        SSL_CTX_enable_ntls(u->conf->ssl->ctx);
+    }
+#endif
+
     if (njt_ssl_create_connection(u->conf->ssl, c,
                                   NJT_SSL_BUFFER|NJT_SSL_CLIENT)
         != NJT_OK)
@@ -1756,7 +1768,14 @@ njt_http_upstream_ssl_init_connection(njt_http_request_t *r,
         }
     }
 
-    if (u->conf->ssl_certificate
+    if (u->conf->ssl_certificate_values) {
+        if (njt_http_upstream_ssl_certificates(r, u, c) != NJT_OK) {
+            njt_http_upstream_finalize_request(r, u,
+                                               NJT_HTTP_INTERNAL_SERVER_ERROR);
+            return;
+        }
+
+    } else if (u->conf->ssl_certificate
         && u->conf->ssl_certificate->value.len
         && (u->conf->ssl_certificate->lengths
             || u->conf->ssl_certificate_key->lengths))
@@ -2031,6 +2050,67 @@ njt_http_upstream_ssl_certificate(njt_http_request_t *r,
         != NJT_OK)
     {
         return NJT_ERROR;
+    }
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
+njt_http_upstream_ssl_certificates(njt_http_request_t *r,
+    njt_http_upstream_t *u, njt_connection_t *c)
+{
+    njt_str_t                 *certp, *keyp, cert, key;
+    njt_uint_t                 i, nelts;
+    njt_http_complex_value_t  *certs, *keys;
+#if (NJT_HAVE_NTLS)
+    njt_str_t                  tcert, tkey;
+#endif
+
+    nelts = u->conf->ssl_certificate_values->nelts;
+    certs = u->conf->ssl_certificate_values->elts;
+    keys = u->conf->ssl_certificate_key_values->elts;
+
+    for (i = 0; i < nelts; i++) {
+        certp = &cert;
+        keyp = &key;
+
+        if (njt_http_complex_value(r, &certs[i], certp) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+#if (NJT_HAVE_NTLS)
+        tcert = *certp;
+        njt_ssl_ntls_prefix_strip(&tcert);
+        certp = &cert;
+#endif
+
+        if (*certp->data == 0) {
+            continue;
+        }
+
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
+                       "http upstream ssl cert: \"%s\"", certp->data);
+
+        if (njt_http_complex_value(r, &keys[i], keyp) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+#if (NJT_HAVE_NTLS)
+        tkey = *keyp;
+        njt_ssl_ntls_prefix_strip(&tkey);
+        keyp = &tkey;
+#endif
+
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
+                       "http upstream ssl key: \"%s\"", keyp->data);
+
+        if (njt_ssl_connection_certificate(c, r->pool, certp, keyp,
+                                           u->conf->ssl_passwords)
+            != NJT_OK)
+        {
+            return NJT_ERROR;
+        }
     }
 
     return NJT_OK;

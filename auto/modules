@@ -1291,6 +1291,11 @@ if [ $USE_PCRE = YES ]; then
 fi
 
 
+if [ $USE_NTLS = YES ]; then
+    have=NJT_HAVE_NTLS . auto/have
+fi
+
+
 modules="$CORE_MODULES $EVENT_MODULES"
 
 

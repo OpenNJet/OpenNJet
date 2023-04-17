@@ -37,9 +37,6 @@ static void *njt_http_ssl_create_srv_conf(njt_conf_t *cf);
 static char *njt_http_ssl_merge_srv_conf(njt_conf_t *cf,
     void *parent, void *child);
 
-static njt_int_t njt_http_ssl_compile_certificates(njt_conf_t *cf,
-    njt_http_ssl_srv_conf_t *conf);
-
 static char *njt_http_ssl_enable(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 static char *njt_http_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd,
@@ -102,15 +99,15 @@ static njt_command_t  njt_http_ssl_commands[] = {
       &njt_http_ssl_deprecated },
 
     { njt_string("ssl_certificate"),
-      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
-      njt_conf_set_str_array_slot,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE12,
+      njt_http_ssl_certificate_slot,
       NJT_HTTP_SRV_CONF_OFFSET,
       offsetof(njt_http_ssl_srv_conf_t, certificates),
       NULL },
 
     { njt_string("ssl_certificate_key"),
-      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
-      njt_conf_set_str_array_slot,
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE12,
+      njt_http_ssl_certificate_slot,
       NJT_HTTP_SRV_CONF_OFFSET,
       offsetof(njt_http_ssl_srv_conf_t, certificate_keys),
       NULL },
@@ -296,6 +293,15 @@ static njt_command_t  njt_http_ssl_commands[] = {
       NJT_HTTP_SRV_CONF_OFFSET,
       offsetof(njt_http_ssl_srv_conf_t, reject_handshake),
       NULL },
+
+#if (NJT_HAVE_NTLS)
+    { njt_string("ssl_ntls"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_HTTP_SRV_CONF_OFFSET,
+      offsetof(njt_http_ssl_srv_conf_t, ntls),
+      NULL },
+#endif
 
       njt_null_command
 };
@@ -599,6 +605,9 @@ njt_http_ssl_create_srv_conf(njt_conf_t *cf)
     sscf->ocsp_cache_zone = NJT_CONF_UNSET_PTR;
     sscf->stapling = NJT_CONF_UNSET;
     sscf->stapling_verify = NJT_CONF_UNSET;
+#if (NJT_HAVE_NTLS)
+    sscf->ntls = NJT_CONF_UNSET;
+#endif
 
     return sscf;
 }
@@ -673,6 +682,10 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_conf_merge_str_value(conf->stapling_file, prev->stapling_file, "");
     njt_conf_merge_str_value(conf->stapling_responder,
                          prev->stapling_responder, "");
+
+#if (NJT_HAVE_NTLS)
+    njt_conf_merge_value(conf->ntls, prev->ntls, 0);
+#endif
 
     conf->ssl.log = cf->log;
 
@@ -786,7 +799,7 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         /* configure certificates */
 
         if (njt_ssl_certificates(cf, &conf->ssl, conf->certificates,
-                                 conf->certificate_keys, NULL, NULL, conf->passwords)
+                                 conf->certificate_keys, conf->passwords)
             != NJT_OK)
         {
             return NJT_CONF_ERROR;
@@ -904,7 +917,7 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 }
 
 
-static njt_int_t
+njt_int_t
 njt_http_ssl_compile_certificates(njt_conf_t *cf,
     njt_http_ssl_srv_conf_t *conf)
 {
@@ -1009,6 +1022,81 @@ njt_http_ssl_enable(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     sscf->line = cf->conf_file->line;
 
     return NJT_CONF_OK;
+}
+
+
+char *
+njt_http_ssl_certificate_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    char  *p = conf;
+
+    njt_str_t    *value, *s;
+    njt_array_t  **a;
+#if (NJT_HAVE_NTLS)
+    u_char       *data;
+#endif
+
+    a = (njt_array_t **) (p + cmd->offset);
+
+    if (*a == NJT_CONF_UNSET_PTR) {
+
+        *a = njt_array_create(cf->pool, 4, sizeof(njt_str_t));
+        if (*a == NULL) {
+            return NJT_CONF_ERROR;
+        }
+    }
+
+    s = njt_array_push(*a);
+    if (s == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    value = cf->args->elts;
+
+    if (cf->args->nelts == 2) {
+        *s = value[1];
+        return NJT_CONF_OK;
+    }
+
+#if (NJT_HAVE_NTLS)
+
+    /* prefix certificate paths with 'sign:' and 'enc:', null-terminate */
+
+    s->len = sizeof("sign:") - 1 + value[1].len;
+
+    s->data = njt_pcalloc(cf->pool, s->len + 1);
+    if (s->data == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    data = njt_cpymem(s->data, "sign:", sizeof("sign:") - 1);
+    njt_memcpy(data, value[1].data, value[1].len);
+
+    s = njt_array_push(*a);
+    if (s == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    s->len = sizeof("enc:") - 1 + value[1].len;
+
+    s->data = njt_pcalloc(cf->pool, s->len + 1);
+    if (s->data == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    data = njt_cpymem(s->data, "enc:", sizeof("enc:") - 1);
+    njt_memcpy(data, value[2].data, value[2].len);
+
+    return NJT_CONF_OK;
+
+#else
+
+    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                       "NTLS support is not enabled, dual certs not supported");
+
+    return NJT_CONF_ERROR;
+
+#endif
 }
 
 
