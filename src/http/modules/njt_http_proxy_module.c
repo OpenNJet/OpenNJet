@@ -3751,6 +3751,10 @@ njt_http_proxy_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->upstream.ssl_certificates, NULL);
     njt_conf_merge_ptr_value(conf->upstream.ssl_certificate_keys,
                               prev->upstream.ssl_certificate_keys, NULL);
+    njt_conf_merge_ptr_value(conf->upstream.ssl_certificate,
+                              prev->upstream.ssl_certificate, NULL);
+    njt_conf_merge_ptr_value(conf->upstream.ssl_certificate_key,
+                              prev->upstream.ssl_certificate_key, NULL);
     njt_conf_merge_ptr_value(conf->upstream.ssl_passwords,
                               prev->upstream.ssl_passwords, NULL);
 
