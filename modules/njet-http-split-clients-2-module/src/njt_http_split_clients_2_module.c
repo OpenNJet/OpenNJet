@@ -35,7 +35,6 @@ typedef struct
 enum
 {
     NJT_HTTP_SPLIT_CLIENT_2_ERR_TOTAL = 500,
-    NJT_HTTP_SPLIT_CLIENT_2_PARTIAL_UPDATE = 501,
 } NJT_HTTP_SPLIT_CLIENTS_2_ERROR;
 
 static int njt_http_split_kv_change_handler_internal(njt_str_t* key, njt_str_t* value, void* data, njt_str_t* out_msg);
@@ -160,9 +159,8 @@ static int njt_http_split_kv_change_handler_internal(njt_str_t* key, njt_str_t* 
                     sum += f->intval;
                 }
                 else {
-                    rc = NJT_HTTP_SPLIT_CLIENT_2_PARTIAL_UPDATE;
-                    njt_rpc_result_set_code(rpc_result, NJT_HTTP_SPLIT_CLIENT_2_PARTIAL_UPDATE);
-                    njt_rpc_result_set_msg(rpc_result, (u_char*)"patial update");
+                    rc = NJT_RPC_RSP_PARTIAL_SUCCESS;
+                    njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
                     char* data_fmt_err = " percentage is not valid";
                     tmp_err_str.data = njt_pcalloc(tmp_pool, f->key.len + strlen(data_fmt_err));
                     njt_memcpy(tmp_err_str.data, f->key.data, f->key.len);
