@@ -585,8 +585,7 @@ njt_stream_upstream_get_peer(njt_stream_upstream_rr_peer_data_t *rrp)
     njt_int_t                       total;
     njt_uint_t                      i, n, p;
     njt_stream_upstream_rr_peer_t  *peer, *best;
-    njt_int_t                     peer_slow_weight,best_slow_weight;
-    njt_int_t                     power = 1;
+    njt_int_t                     peer_slow_weight;
 
     now = njt_time();
 
@@ -628,39 +627,27 @@ njt_stream_upstream_get_peer(njt_stream_upstream_rr_peer_data_t *rrp)
 	peer->current_weight += peer->effective_weight;
         total += peer->effective_weight;
 
-                peer_slow_weight = peer->current_weight;
-                best_slow_weight = 0;
-                if(best != NULL) {
-                        peer_slow_weight = peer->weight * power;
-                        if(peer->slow_start > 0  && now - best->hc_upstart && peer->hc_upstart + peer->slow_start > (njt_msec_t)now) { //limit slow_start
-                                if(peer_slow_weight > 0) {
-                                        peer_slow_weight =  peer_slow_weight/(peer->slow_start/(now - peer->hc_upstart ));
-                                } else {
-                                        peer_slow_weight = peer_slow_weight + (peer_slow_weight/(peer->slow_start/(now - peer->hc_upstart )));
-                                }
-                                peer->effective_weight = peer_slow_weight;
+	 /////zyg/////////////
+         peer_slow_weight = peer->weight;
+         if(peer->slow_start > 0) { //limit slow_start
+                 if(peer->hc_upstart + peer->slow_start > (njt_msec_t)now) {
+                    peer_slow_weight = ((now - peer->hc_upstart )*peer_slow_weight)/peer->slow_start;
+                    if (peer->effective_weight > peer_slow_weight) {
+                               peer->effective_weight = peer_slow_weight;
+                    }
+                   njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "00 ip=%V,slow_start=%d,time=%d",&peer->server,peer->slow_start,(now - peer->hc_upstart ));
+                 }
+         }
 
-                        }
-                        best_slow_weight = best->weight * power;
-                        if(best->slow_start > 0 &&  now - best->hc_upstart > 0 && best->hc_upstart + best->slow_start > (njt_msec_t)now) { //limit slow_start
+        ////////////////////
 
-                                if(best_slow_weight > 0) {
-                                        best_slow_weight =  best_slow_weight/(best->slow_start/(now - best->hc_upstart ));
-                                } else {
-                                        best_slow_weight = best_slow_weight + (best_slow_weight/(best->slow_start/(now - best->hc_upstart )));
-                                }
-                                best->effective_weight = best_slow_weight;
-
-                        }
-
-                }
-
-
-        if (peer->effective_weight < peer->weight) {
+        if (peer->effective_weight < peer_slow_weight) {
             peer->effective_weight++;
         }
-
-        if (best == NULL || (peer->slow_start>0?peer_slow_weight:peer->current_weight) > (best->slow_start>0?best_slow_weight:best->current_weight)) {
+	 if(peer != NULL) {
+           njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "peer ip=%V,current_weight=%d,effective_weight=%d,peer_slow_weight=%d",&peer->server,peer->current_weight,peer->effective_weight,peer_slow_weight);
+        }
+        if (best == NULL || peer->current_weight > best->current_weight) {
             best = peer;
             p = i;
         }

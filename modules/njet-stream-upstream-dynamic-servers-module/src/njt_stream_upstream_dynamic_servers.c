@@ -674,7 +674,7 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
 	us->name = u.url;
 	us->addrs = u.addrs;
 	us->naddrs = u.naddrs;
-    us->weight = weight;
+    us->weight = weight * 100;
     us->max_fails = max_fails;
     us->fail_timeout = fail_timeout;
 	us->slow_start = slow_start;

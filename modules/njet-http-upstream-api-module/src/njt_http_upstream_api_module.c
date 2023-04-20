@@ -39,6 +39,8 @@
 	(num > num2?num:num2);      \
 })
 
+#define NJT_WEIGHT_POWER      100
+#define NJT_GET_WEIGHT(n)      ((n)<(NJT_WEIGHT_POWER)?(n):(n/(NJT_WEIGHT_POWER)))
 
 #define NJT_GET_CHAR_NUM_C(n)  (n.len)   //char
 #define NJT_GET_CHAR_NUM_B(n)  (n>0?4:5)   //bool
@@ -900,7 +902,7 @@ njt_stream_upstream_api_compose_one_server(njt_http_request_t *r,
 		 b->last = njt_snprintf(b->last, len,
                                "%s{\"id\":%d,\"server\":\"%V\",\"name\":\"%V\",\"backup\":%s,\"weight\":%d," \
                                "\"state\":\"%s\",\"active\":%d%s,\"connecions\":%d%s%s%s,\"sent\": %d,\"received\": %d,\"fails\": %d,\"unavail\": %d,\"health_checks\":{\"checks\":%d,\"fails\":%d,\"unhealthy\":%d%s},\"downtime\": %d%s%s}",  //\"parent\": %d
-                               comma ? "," : "", id,pname, &peer->server,backup ? "true" : "false", peer->weight,
+                               comma ? "," : "", id,pname, &peer->server,backup ? "true" : "false", NJT_GET_WEIGHT(peer->weight),
                                njt_get_stream_down_status_name(peer),peer->conns,max_conns,peer->requests,conn_time,first_time,response_time,
 			 peer->sent,peer->received,peer->fails,peer->unavail,peer->hc_checks, peer->hc_fails,peer->hc_unhealthy,last_passed,down_time,buf,timebuf);
        
@@ -918,7 +920,7 @@ njt_stream_upstream_api_compose_one_server(njt_http_request_t *r,
 								   "%s{\"id\":%d,\"server\":\"%V\",\"weight\":%d,\"max_conns\": %d,"
 								   "\"max_fails\":%d,\"fail_timeout\":\"%ds\",\"slow_start\":\"%ds\","
 								   "\"backup\":%s,\"down\":%s%s}", comma ? "," : "",
-								   id,pname, peer->weight, peer->max_conns,
+								   id,pname, NJT_GET_WEIGHT(peer->weight), peer->max_conns,
 								   peer->max_fails, peer->fail_timeout,peer->slow_start,backup ? "true" : "false",
 								   (peer->down == 1) ? "true":"false",buf);
 		
@@ -1046,7 +1048,7 @@ njt_http_upstream_api_compose_one_server(njt_http_request_t *r,
                                "%s{\"id\":%d,\"server\":\"%V\",\"name\":\"%V\",\"backup\":%s,\"weight\":%d," \
                                "\"state\":\"%s\",\"active\":%d%s,\"requests\":%d%s%s,\"responses\": {\"1xx\": %d,\"2xx\": %d,\"3xx\": %d,\"4xx\": %d,\"5xx\": %d,\"codes\": %s,\"total\": %d" \
               "},\"sent\": %d,\"received\": %d,\"fails\": %d,\"unavail\": %d,\"health_checks\":{\"checks\":%d,\"fails\":%d,\"unhealthy\":%d%s},\"downtime\": %d%s%s}",  //\"parent\": %d
-                               comma ? "," : "", id,pname, &peer->server,backup ? "true" : "false", peer->weight,
+                               comma ? "," : "", id,pname, &peer->server,backup ? "true" : "false", NJT_GET_WEIGHT(peer->weight),
                                njt_get_http_down_status_name(peer),peer->conns,max_conns,peer->requests,header,response, peer_code.one,peer_code.two,peer_code.three,peer_code.four,peer_code.five,strcodes.data,peer_code.total,
 			 peer_code.sent,peer_code.received,peer->fails,peer->unavail,peer->hc_checks, peer->hc_fails,peer->hc_unhealthy,last_passed,down_time,buf,timebuf);
        
@@ -1066,7 +1068,7 @@ njt_http_upstream_api_compose_one_server(njt_http_request_t *r,
 								   "%s{\"id\":%d,\"server\":\"%V\",\"weight\":%d,\"max_conns\": %d,"
 								   "\"max_fails\":%d,\"fail_timeout\":\"%ds\",\"slow_start\":\"%ds\",\"route\":\"%V\","
 								   "\"backup\":%s,\"down\":%s%s%s}", comma ? "," : "",
-								   id, pname, peer->weight, peer->max_conns,
+								   id, pname, NJT_GET_WEIGHT(peer->weight), peer->max_conns,
 								   peer->max_fails, peer->fail_timeout,peer->slow_start,&peer->route,backup ? "true" : "false",
 								   (peer->down == 1) ? "true":"false",buf,peer->hc_down/100 == 1?",\"drain\":true":"");
 		
@@ -1752,13 +1754,14 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
                      return rc;
                 }
 
-                api_peer->weight = value;
+                api_peer->weight = (value);
 
             } else {
 				api_peer->msg = items->strval;
                 rc = NJT_HTTP_UPS_API_WEIGHT_ERROR;
                 return rc;
             } 
+	    api_peer->weight = (api_peer->weight * NJT_WEIGHT_POWER);
 	}
 	njt_str_set(&key,"max_conns");
 	rc = njt_struct_top_find(json_manager, &key, &items);
@@ -2133,6 +2136,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
     }
 	 if (json_peer.slow_start != -1) {  //zyg
         peer->slow_start = json_peer.slow_start;
+	peer->hc_upstart =  njt_time(); //patch
      }
 	 
 	if(json_peer.drain == 1) { //patch
@@ -2468,6 +2472,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
     }
 	 if (json_peer.slow_start != -1) {  //zyg
         peer->slow_start = json_peer.slow_start;
+	peer->hc_upstart =  njt_time(); //patch
      }
 	  //patch
 		if(json_peer.drain == 1) {
@@ -2790,7 +2795,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
     njt_memzero(&json_peer, sizeof(njt_http_upstream_api_peer_t));
 
     /*initialize the jason peer. Other items other than the following are all zero*/
-    json_peer.weight = 1;
+    json_peer.weight = 1*NJT_WEIGHT_POWER;
     json_peer.max_fails = 1;
     json_peer.fail_timeout = 10;
 	json_peer.drain = -1;
@@ -2964,7 +2969,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 	
 	peer->id = peers->next_order++;
 	peer->parent_id = parent_id;
-    peer->hc_upstart =  njt_time();
+    peer->hc_upstart =  njt_time(); //post
     peer->weight = json_peer.weight;
     peer->effective_weight = json_peer.weight;
     peer->current_weight = 0;
@@ -3174,7 +3179,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
     njt_memzero(&json_peer, sizeof(njt_http_upstream_api_peer_t));
 
     /*initialize the jason peer. Other items other than the following are all zero*/
-    json_peer.weight = 1;
+    json_peer.weight = 1*NJT_WEIGHT_POWER;
     json_peer.max_fails = 1;
     json_peer.fail_timeout = 10;
 	json_peer.drain = -1;
@@ -3359,7 +3364,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 	peer->id = peers->next_order++;
 	peer->parent_id = parent_id;
 
-    peer->hc_upstart =  njt_time();
+    peer->hc_upstart =  njt_time(); //post
     peer->weight = json_peer.weight;
     peer->effective_weight = json_peer.weight;
     peer->current_weight = 0;
