@@ -346,8 +346,7 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
         if(path->nelts == 2){
             njt_str_t  key = njt_string("njt_http_kv_module");
             njt_str_concat(r->pool,topic,rpc_pre,key, goto err);
-        }
-        if(path->nelts == 3){
+        } else if(path->nelts == 3){
             njt_str_concat(r->pool,topic,rpc_pre,uri[2], goto err);
         } else {
             rc = NJT_HTTP_NOT_FOUND;
