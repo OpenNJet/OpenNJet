@@ -175,6 +175,8 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
     u_char * end;
     njt_queue_t *tq;
     njt_int_t rc;
+    njt_str_t name;
+    bool loc_found ;
     njt_str_t rpc_data_str;
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
@@ -184,11 +186,13 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
     daal = locs->elts;
     for( j = 0; j < locs->nelts ; ++j ){
         tq = njt_queue_head(q);
+        loc_found = false;
+        name = daal[j].full_name;
         for (;tq!= njt_queue_sentinel(q);tq = njt_queue_next(tq)) {
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
-            njt_str_t name = daal[j].full_name;
             if (name.len == clcf->full_name.len && njt_strncmp(name.data, clcf->full_name.data, name.len) == 0) {
+                loc_found = true;
                 ctx->loc_conf = clcf->loc_conf;
                 njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
                 if (pool == NULL) {
@@ -209,7 +213,7 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"njt_http_log_dyn_set_log error free pool");
 
                     if(rpc_result){
-                        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,"njt_http_log_dyn_set_log error[%V];",&name);
+                        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,"njt_http_log_dyn_set_log error[%V];",&daal[j].full_name);
                         rpc_data_str.len = end - data_buf;
                         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                         njt_rpc_result_set_code(rpc_result, rc);
@@ -220,6 +224,13 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
             if(daal[j].locs.nelts > 0){
                 njt_dynlog_update_locs_log(&daal[j].locs,clcf->old_locations,ctx,rpc_result);
             }
+        }
+
+        if (!loc_found && rpc_result) {
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "loc [%V] not found;", &name);
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+            njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
         }
     }
     return NJT_OK;
