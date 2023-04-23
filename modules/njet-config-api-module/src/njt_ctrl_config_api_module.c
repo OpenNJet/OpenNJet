@@ -230,7 +230,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     njt_ctrl_dynlog_request_err_ctx_t *err_ctx;
     njt_array_t *path;
     njt_str_t *uri,topic;
-
+    njt_json_manager json_manager;
     rc = NJT_ERROR;
     path = njt_array_create( r->pool, 4, sizeof(njt_str_t));
     if (path == NULL) {
@@ -276,6 +276,12 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
         njt_memcpy(json_str.data + len,tmp_chain->buf->pos,size);
         tmp_chain = tmp_chain->next;
         len += size;
+    }
+
+    // 添加json_str校验逻辑
+    rc = njt_json_2_structure(&json_str,&json_manager,r->pool);
+    if(rc!=NJT_OK){
+        goto err;
     }
 
     njt_str_t  key_prf = njt_string("/dyn/");
