@@ -72,7 +72,7 @@ struct njt_http_upstream_rr_peer_s {
     njt_msec_t                      selected_time;
     njt_atomic_t                    total_header_time;
     njt_atomic_t                    total_response_time;
-    
+    njt_uint_t                      total_fails;
 #endif
     njt_http_upstream_rr_peer_t    *next;
 
