@@ -593,7 +593,6 @@ njt_http_upstream_get_peer(njt_http_upstream_rr_peer_data_t *rrp)
                 continue;
 
         peer->current_weight += peer->effective_weight;
-        total += peer->effective_weight;
 	/////zyg/////////////
 	 peer_slow_weight = peer->weight;
 	 if(peer->slow_start > 0) { //limit slow_start
@@ -605,6 +604,7 @@ njt_http_upstream_get_peer(njt_http_upstream_rr_peer_data_t *rrp)
 		 }
 	   	   njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "00 ip=%V,name=%V,slow_start=%d,time=%d",&peer->server,&peer->name,peer->slow_start,(now - peer->hc_upstart ));
 	 } 
+        total += peer->effective_weight;
 	 
 	////////////////////
         if (peer->effective_weight < peer_slow_weight) {
@@ -648,6 +648,7 @@ njt_http_upstream_free_round_robin_peer(njt_peer_connection_t *pc, void *data,
     njt_http_upstream_rr_peer_data_t  *rrp = data;
 
     time_t                       now;
+    njt_uint_t                   old_weight;
     njt_http_upstream_rr_peer_t  *peer;
 
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, pc->log, 0,
@@ -675,11 +676,19 @@ njt_http_upstream_free_round_robin_peer(njt_peer_connection_t *pc, void *data,
         now = njt_time();
 
         peer->fails++;
+	if(peer->fails == peer->max_fails){
+                peer->unavail++;
+        }
+
+	peer->total_fails++;
         peer->accessed = now;
         peer->checked = now;
 
         if (peer->max_fails) {
-            peer->effective_weight -= peer->weight / peer->max_fails;
+	    old_weight = peer->weight >= NJT_WEIGHT_POWER ?(peer->weight/NJT_WEIGHT_POWER):(peer->weight);
+            peer->effective_weight -= old_weight / peer->max_fails;
+	   njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "fails peer ip=%V,name=%V,current_weight=%d,effective_weight=%d",&peer->server,&peer->name,peer->current_weight,peer->effective_weight);
+
 
             if (peer->fails >= peer->max_fails) {
                 njt_log_error(NJT_LOG_WARN, pc->log, 0,
@@ -937,7 +946,6 @@ njt_http_upstream_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer)
         if (peer->max_fails
             && peer->fails >= peer->max_fails
             && now - peer->checked <= peer->fail_timeout) {
-            peer->unavail++;
 	    peer->hc_upstart = 0;
             return NJT_ERROR;
         }

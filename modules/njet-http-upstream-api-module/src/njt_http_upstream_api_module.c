@@ -39,7 +39,6 @@
 	(num > num2?num:num2);      \
 })
 
-#define NJT_WEIGHT_POWER      100
 #define NJT_GET_WEIGHT(n)      ((n)<(NJT_WEIGHT_POWER)?(n):(n/(NJT_WEIGHT_POWER)))
 
 #define NJT_GET_CHAR_NUM_C(n)  (n.len)   //char
@@ -793,8 +792,6 @@ njt_http_upstream_api_insert_out_str(njt_http_request_t *r,
 static char * njt_get_stream_down_status_name(njt_stream_upstream_rr_peer_t *peer)
 {
 
-  time_t                        now;
-  now = njt_time();
  if(peer->down == 1) {
 	  return "down";
   }
@@ -807,8 +804,7 @@ static char * njt_get_stream_down_status_name(njt_stream_upstream_rr_peer_t *pee
   else if(peer->hc_down%100 == 2 ) {
 	  return "checking";
   } else if (peer->max_fails
-            && peer->fails >= peer->max_fails
-            && now - peer->checked <= peer->fail_timeout){
+            && peer->fails >= peer->max_fails){
 	  return "unavail";
   }
   
@@ -3669,6 +3665,7 @@ njt_stream_upstream_api_process_reset(njt_http_request_t *r,
 		peer->sent = 0;
 		peer->received = 0;
 		peer->selected_time = 0;
+		peer->unavail = 0;
     }
 	backup = peers->next;
 
@@ -3685,6 +3682,7 @@ njt_stream_upstream_api_process_reset(njt_http_request_t *r,
 			peer->received = 0;
 			peer->selected_time = 0;
         		peer->total_fails = 0;
+			peer->unavail = 0;
 		}
 	}
     
@@ -3731,6 +3729,7 @@ njt_http_upstream_api_process_reset(njt_http_request_t *r,
 		peer->total_header_time = 0;
 		peer->total_response_time = 0;
 		peer->selected_time = 0;
+		peer->unavail = 0;
 
 		njt_memzero(peer_name.data, peer_name.len);
 		peer_name.len = njt_snprintf(peer_name.data,peer_name.len,"upstream_status_%V_%d_%V",peers->name,peer->id,&peer->name) - peer_name.data;
@@ -3752,6 +3751,7 @@ njt_http_upstream_api_process_reset(njt_http_request_t *r,
 			peer->total_response_time = 0;
 			peer->selected_time = 0;
         		peer->total_fails = 0;
+			peer->unavail = 0;
 
 
 			njt_memzero(peer_name.data, peer_name.len);
