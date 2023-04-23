@@ -152,12 +152,17 @@ static njt_json_define_t njt_http_dyn_bwlist_main_json_dt[] = {
 
 njt_str_t dyn_bwlist_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
-static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t* pool, njt_http_dyn_bwlist_loc_t* data, njt_http_conf_ctx_t* ctx)
+static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t* pool, njt_http_dyn_bwlist_loc_t* data, njt_http_conf_ctx_t* ctx, njt_rpc_result_t* rpc_result)
 {
     njt_http_access_loc_conf_t* alcf, old_cf;
     njt_http_access_rule_t* rule;
     njt_uint_t i;
     njt_conf_t* cf;
+    u_char data_buf[1024];
+    u_char* end;
+    njt_str_t rpc_data_str;
+    rpc_data_str.data = data_buf;
+    rpc_data_str.len = 0;
 
     njt_conf_t cf_data = {
         .pool = pool,
@@ -183,7 +188,13 @@ static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t* pool, njt_http_dyn_bwlist_
         for (i = 0; i < data->access_ipv4.nelts; i++) {
             in_addr_t addr = njt_inet_addr(access[i].addr.data, access[i].addr.len);
             if (addr == INADDR_NONE) {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "skipping wrong ipv4 addr: %v ", &access[i].addr);
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "skipping wrong ipv4 addr: %V ", &access[i].addr);
+                if (rpc_result) {
+                    end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "wrong ipv4 addr[%V];", &access[i].addr);
+                    rpc_data_str.len = end - data_buf;
+                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                    njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
+                }
                 continue;
             }
             in_addr_t mask = njt_inet_addr(access[i].mask.data, access[i].mask.len);
@@ -259,7 +270,7 @@ static njt_int_t njt_dyn_bwlist_update_locs(njt_array_t* locs, njt_queue_t* q, n
                 njt_pool_t* pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
                 if (pool == NULL) {
                     if (rpc_result) {
-                        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "create pool error while set location[%V]", &name);
+                        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "create pool error while set location[%V];", &name);
                         rpc_data_str.len = end - data_buf;
                         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
@@ -271,9 +282,9 @@ static njt_int_t njt_dyn_bwlist_update_locs(njt_array_t* locs, njt_queue_t* q, n
                     njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
                     return NJT_ERROR;
                 }
-                njt_dyn_bwlist_set_rules(pool, &dbwl[j], ctx);
+                njt_dyn_bwlist_set_rules(pool, &dbwl[j], ctx, rpc_result);
                 if (rc != NJT_OK) {
-                    njt_log_error(NJT_LOG_ERR, pool->log, 0, " error in njt_dyn_bwlist_set_rules free pool");
+                    njt_log_error(NJT_LOG_ERR, pool->log, 0, " error in njt_dyn_bwlist_set_rules");
                     if (rpc_result) {
                         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "njt_dyn_bwlist_set_rules error[%V];", &name);
                         rpc_data_str.len = end - data_buf;
@@ -522,7 +533,7 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t* pool, njt_http_dy
         if (daas[i].listens.nelts < 1 && daas[i].server_names.nelts < 1) {
             // listens 与server_names都为空
             if (rpc_result) {
-                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "server[%u] err", i);
+                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "server[%u] err;", i);
                 rpc_data_str.len = end - data_buf;
                 njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                 njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
@@ -532,11 +543,11 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t* pool, njt_http_dy
         cscf = njt_http_get_srv_by_port(cycle, p_port, p_sname);
         if (cscf == NULL) {
             if (daas[i].listens.elts != NULL && daas[i].server_names.elts != NULL) {
-                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "can`t find server by listen:%V server_name:%V ",
+                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "can`t find server by listen:%V server_name:%V;",
                     (njt_str_t*)daas[i].listens.elts, (njt_str_t*)daas[i].server_names.elts);
 
                 if (rpc_result) {
-                    end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "can`t find server by listen:%V server_name:%V ",
+                    end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "can`t find server by listen:%V server_name:%V;",
                         (njt_str_t*)daas[i].listens.elts, (njt_str_t*)daas[i].server_names.elts);
                     rpc_data_str.len = end - data_buf;
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
