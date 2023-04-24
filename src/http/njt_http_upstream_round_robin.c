@@ -572,6 +572,7 @@ njt_http_upstream_get_peer(njt_http_upstream_rr_peer_data_t *rrp)
         m = (uintptr_t) 1 << i % (8 * sizeof(uintptr_t));
 
         if (rrp->tried[n] & m) {
+	   	   njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "tried continue  ip=%V",&peer->server);
             continue;
         }
 	/*
@@ -623,6 +624,7 @@ njt_http_upstream_get_peer(njt_http_upstream_rr_peer_data_t *rrp)
     if (best == NULL) {
         return NULL;
     }
+	   njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "best ip=%V,name=%V,current_weight=%d,effective_weight=%d,peer_slow_weight=%d",&best->server,&best->name,best->current_weight,best->effective_weight,peer_slow_weight);
     ///zyg
     best->selected_time = ((njt_timeofday())->sec)*1000 + (njt_uint_t)((njt_timeofday())->msec);
     rrp->current = best;
@@ -935,23 +937,28 @@ njt_http_upstream_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer)
         time_t                        now;
         now = njt_time();
         if (peer->down) {
+	   	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "down  ip=%V",&peer->server);
                 return NJT_ERROR;
         }
         if (peer->hc_down > 0) {
+	    //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "hc_down  ip=%V",&peer->server);
             return NJT_ERROR;
     }
         if (peer->max_conns && peer->conns >= peer->max_conns) {
+	   	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "conns >max_conns   ip=%V",&peer->server);
                 return NJT_ERROR;
         }
         if (peer->max_fails
             && peer->fails >= peer->max_fails
             && now - peer->checked <= peer->fail_timeout) {
 	    peer->hc_upstart = 0;
+	    //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "fails > max_fails   ip=%V",&peer->server);
             return NJT_ERROR;
         }
         if (peer->max_fails
             && peer->slow_start > 0 && peer->hc_upstart == 0) {
             peer->hc_upstart =  njt_time();
+	    peer->fails = 0;
         }
 	
 #endif

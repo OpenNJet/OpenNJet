@@ -481,6 +481,7 @@ njt_stream_upstream_pre_handle_peer(njt_stream_upstream_rr_peer_t   *peer)
 	if (peer->max_fails
             && peer->slow_start > 0 && peer->hc_upstart == 0) {
             peer->hc_upstart =  njt_time();
+	    peer->fails = 0;
         }
 #endif
         return NJT_OK;

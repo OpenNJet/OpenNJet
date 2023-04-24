@@ -1693,6 +1693,9 @@ operation:
             }
 
             peers_data->number--;
+	    if(peer->down == 0 && peers_data->tries > 0){
+		peers_data->tries--;
+	    }
             peers_data->total_weight -= weight;
             /*The IP is not exists, down or free this peer.*/
             if (peer->conns > 0) {
@@ -1741,6 +1744,9 @@ skip_del:
 				//peer->parent_node = dynamic_server->parent_node;
 				peer->parent_id = dynamic_server->parent_node->id;
 				peers_data->number++;
+				if(peer->down == 0 ){
+             			   peers_data->tries++;
+            			}
 				peers_data->total_weight += weight;
 				//peers_data->empty = (peers_data->number == 0);
 				if(peers_data->peer == NULL) {
@@ -1823,6 +1829,10 @@ static void njt_stream_upstream_dynamic_server_delete_server(
             }
 
             peers->number--;
+	    if(peer->down == 0 && peers->tries > 0){
+                peers->tries--;
+            }
+
             peers->total_weight -= dynamic_server->server->weight;
             /*The IP is not exists, down or free this peer.*/
             if (peer->conns > 0) {
