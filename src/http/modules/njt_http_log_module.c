@@ -1168,7 +1168,8 @@ njt_http_log_create_main_conf(njt_conf_t *cf)
     conf->pool = new_pool;
 #endif
 
-    if (njt_array_init(&conf->formats, cf->pool, 4, sizeof(njt_http_log_fmt_t))
+    // www: up to 16 formats
+    if (njt_array_init(&conf->formats, cf->pool, 16, sizeof(njt_http_log_fmt_t))
         != NJT_OK)
     {
         return NULL;
@@ -2475,6 +2476,12 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
         }
     }
     if(!update){
+        if(lmcf->formats.nelts == lmcf->formats.nalloc){
+            // www: insufficient capacity
+            njt_log_error(NJT_LOG_ERR, cf->log, 0,"add format error, insufficient capacity. Up to %ud formats",lmcf->formats.nalloc);
+            goto err;
+        }
+
         fmt = &new_format;
     }
     njt_memzero(fmt, sizeof(njt_http_log_fmt_t));
