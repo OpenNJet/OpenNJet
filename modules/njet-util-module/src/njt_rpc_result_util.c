@@ -117,11 +117,14 @@ njt_int_t njt_rpc_result_to_json_str(njt_rpc_result_t * rpc_result,njt_str_t *js
         }
     }
 
-    rc = njt_struct_top_add(&json_manager, data_element, NJT_JSON_OBJ,init_pool);
-    if(rc != NJT_OK){
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                      "====njt_struct_add msg error");
-        goto out;
+    // add data if not empty
+    if(rpc_result->data->nelts > 0){
+        rc = njt_struct_top_add(&json_manager, data_element, NJT_JSON_OBJ,init_pool);
+        if(rc != NJT_OK){
+            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                          "====njt_struct_add msg error");
+            goto out;
+        }
     }
 
     // 转string
@@ -147,6 +150,7 @@ void njt_rpc_result_destroy(njt_rpc_result_t * rpc_result){
         njt_destroy_pool(rpc_result->pool);
     }
 }
+
 
 static u_char *njt_rpc_result_strerror(njt_int_t err_code) {
     switch(err_code){
