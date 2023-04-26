@@ -280,10 +280,16 @@ int njet_iot_client_sendmsg_rr(const char *topic, const void *msg, int l, int qo
 {
 	int mid = 0;
 	int rc;
+	int retained = 0;
 	mosquitto_property *proplist = NULL;
 	if (!ctx)
 	{
 		return MOSQ_ERR_INVAL;
+	}
+	if (qos >= 16)
+	{
+		qos = qos - 16;
+		retained = 1;
 	}
 	struct mosq_config *cfg = ctx->cfg;
 	char resp_topic[128] = {0};
@@ -304,7 +310,7 @@ int njet_iot_client_sendmsg_rr(const char *topic, const void *msg, int l, int qo
 		log__printf(ctx->mosq, MOSQ_LOG_ERR, "err add MQTT_PROP_CORRELATION_DATA:%d", rc);
 		goto cleanup;
 	}
-	rc = mosquitto_publish_v5(ctx->mosq, &mid, topic, l, msg, qos, 0, proplist);
+	rc = mosquitto_publish_v5(ctx->mosq, &mid, topic, l, msg, qos, retained, proplist);
 	// log__printf(ctx.mosq,MOSQ_LOG_ERR,"publish v5:%s,%d",resp_topic,rc);
 cleanup:
 	mosquitto_property_free_all(&proplist);

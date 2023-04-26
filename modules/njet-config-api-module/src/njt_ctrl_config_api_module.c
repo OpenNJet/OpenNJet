@@ -119,7 +119,7 @@ static int njt_ctrl_dynlog_rpc_msg_handler(njt_dyn_rpc_res_t* res, njt_str_t *ms
     return NJT_OK;
 }
 
-static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *module_name,njt_str_t *msg){
+static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *module_name,njt_str_t *msg, int retain){
     njt_ctrl_dynlog_main_cf_t *dlmcf;
     njt_int_t index;
     njt_int_t rc;
@@ -151,7 +151,7 @@ static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *modul
     cleanup->handler = njt_ctrl_dynlog_cleanup_handler;
     cleanup->data = ctx;
     njt_log_error(NJT_LOG_INFO, r->pool->log, 0, "send rpc time : %M",njt_current_msec);
-    rc = njt_dyn_rpc(module_name,msg, index, njt_ctrl_dynlog_rpc_msg_handler, ctx);
+    rc = njt_dyn_rpc(module_name,msg, retain, index, njt_ctrl_dynlog_rpc_msg_handler, ctx);
     if(rc == NJT_OK){
         dlmcf->reqs[index] = r;
     }
@@ -290,7 +290,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     if(uri[0].data[0] == '1'){
         rc = njt_dyn_sendmsg(&topic,&json_str,1);
     } else if(uri[0].data[0] == '2') {
-        rc = njt_ctrl_dynlog_rpc_send(r,&topic,&json_str);
+        rc = njt_ctrl_dynlog_rpc_send(r,&topic,&json_str, 1);
     } else {
         rc = NJT_HTTP_NOT_FOUND;
     }
@@ -374,7 +374,7 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
             njt_log_error(NJT_LOG_ERR, r->connection->log, 0,"%V not found.",&r->uri);
             goto out;
         }
-        rc = njt_ctrl_dynlog_rpc_send(r,&topic,&smsg);
+        rc = njt_ctrl_dynlog_rpc_send(r,&topic,&smsg, 0);
         if(rc != NJT_OK){
             goto err;
         }

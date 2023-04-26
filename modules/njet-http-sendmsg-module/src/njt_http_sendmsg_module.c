@@ -774,13 +774,15 @@ static void njt_sendmsg_rpc_timer_fired(njt_event_t *ev)
     }
 }
 
-int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_handler handler, void *data)
+int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int retain_flag, int session_id, rpc_msg_handler handler, void *data)
 {
-    int ret;
+    int ret=0;
     int qos = 0;
     njt_event_t *rpc_timer_ev;
     rpc_msg_handler_t *rpc_data;
     u_char *t;
+    if (retain_flag)
+        qos = RETAIN_MSG_QOS;
     t = njt_calloc(topic->len + 1, njt_cycle->log);
     if (t == NULL)
     {
@@ -789,8 +791,16 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_ha
     njt_memcpy(t, topic->data, topic->len);
     t[topic->len] = '\0';
 
+    if (!retain_flag)
+    {
+        ret = njet_iot_client_sendmsg((const char *)t, "", 0, RETAIN_MSG_QOS, sendmsg_mqtt_ctx);
+    }
+    if (ret < 0)
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "in njt_dyn_sendmsg, error when sending zero len retain msg");
+        goto error;
+    }
     ret = njet_iot_client_sendmsg_rr((const char *)t, (const char *)content->data, (int)content->len, qos, session_id, 0, sendmsg_mqtt_ctx);
-    njt_free(t);
     // add timer
     rpc_timer_ev = njt_calloc(sizeof(njt_event_t), njt_cycle->log);
     rpc_data = njt_calloc(sizeof(rpc_msg_handler_t), njt_cycle->log);
@@ -811,12 +821,12 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_ha
     }
 
     njt_reg_rpc_msg_handler(session_id, handler, data, rpc_timer_ev);
-
-    if (ret < 0)
-    {
-        return NJT_ERROR;
-    }
+    
     return NJT_OK;
+
+error:
+    njt_free(t);
+    return NJT_ERROR;
 }
 
 int njt_dyn_kv_get(njt_str_t *key, njt_str_t *value)
