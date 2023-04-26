@@ -17,7 +17,6 @@
 
 static njt_http_upstream_rr_peer_t *njt_http_upstream_get_peer(
     njt_http_upstream_rr_peer_data_t *rrp);
-
 #if (NJT_HTTP_SSL)
 
 static njt_int_t njt_http_upstream_empty_set_session(njt_peer_connection_t *pc,
@@ -712,6 +711,9 @@ njt_http_upstream_free_round_robin_peer(njt_peer_connection_t *pc, void *data,
 
         if (peer->accessed < peer->checked) {
             peer->fails = 0;
+	     if (peer->max_fails && peer->slow_start > 0 && peer->hc_upstart == 0) {
+	         peer->hc_upstart =  njt_time();
+	     }
         }
     }
 
@@ -951,15 +953,19 @@ njt_http_upstream_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer)
         if (peer->max_fails
             && peer->fails >= peer->max_fails
             && now - peer->checked <= peer->fail_timeout) {
-	    peer->hc_upstart = 0;
 	    //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "fails > max_fails   ip=%V",&peer->server);
             return NJT_ERROR;
         }
         if (peer->max_fails
-            && peer->slow_start > 0 && peer->hc_upstart == 0) {
-            peer->hc_upstart =  njt_time();
-	    peer->fails = 0;
+            && peer->fails >= peer->max_fails
+            && now - peer->checked > peer->fail_timeout) {
+	    peer->hc_upstart = 0;
+	    //peer->fails = 0;
         }
+        //if (peer->max_fails
+        //    && peer->slow_start > 0 && peer->hc_upstart == 0) {
+        //    peer->hc_upstart =  njt_time();
+        //}
 	
 #endif
         return NJT_OK;
