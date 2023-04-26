@@ -3,6 +3,7 @@
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
+
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njet.h>
@@ -10,6 +11,7 @@
 #include <njt_json_api.h>
 #include <njt_json_util.h>
 #include <njt_http.h>
+#include <njt_stream.h>   /* by zhaokang */
 
 #include "njt_common_health_check.h"
 
@@ -216,3 +218,26 @@ njt_http_upstream_srv_conf_t* njt_http_find_upstream_by_name(njt_cycle_t *cycle,
     }
     return NULL;
 }
+
+// by zhaokang
+njt_stream_upstream_srv_conf_t *njt_stream_find_upstream_by_name(njt_cycle_t *cycle, njt_str_t *name) {
+    njt_stream_upstream_srv_conf_t   **uscfp;
+    njt_stream_upstream_main_conf_t   *umcf;
+    njt_uint_t                         i;
+
+    umcf = njt_stream_cycle_get_module_main_conf(njet_master_cycle, njt_stream_upstream_module);
+
+    uscfp = umcf->upstreams.elts;
+    for (i = 0; i < umcf->upstreams.nelts; i++) {
+        if (uscfp[i]->host.len != name->len
+                || njt_strncasecmp(uscfp[i]->host.data, name->data, name->len) != 0) {
+            
+            continue;
+        }
+
+        return uscfp[i];
+    }
+
+    return NULL;
+}
+
