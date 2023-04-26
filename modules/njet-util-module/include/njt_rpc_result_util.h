@@ -15,6 +15,7 @@ enum
     NJT_RPC_RSP_PARTIAL_SUCCESS,
     NJT_RPC_RSP_ERR_MEM_ALLOC,
     NJT_RPC_RSP_ERR_JSON,
+    NJT_RPC_RSP_ERR,
 
     NJT_RPC_RSP_ERROR_END
 } NJT_HTTP_RSP_ERROR;
@@ -22,7 +23,10 @@ enum
 struct njt_rpc_result_s{
     // njt_str_t[]
     njt_int_t code;
+    njt_int_t success_count;
+    njt_int_t fail_count;
     njt_str_t msg;
+    njt_str_t conf_path;
     njt_array_t *data;
     njt_pool_t * pool;
 };
@@ -31,6 +35,9 @@ typedef struct njt_rpc_result_s njt_rpc_result_t;
 
 njt_rpc_result_t * njt_rpc_result_create();
 
+void  njt_rpc_result_add_success_count(njt_rpc_result_t * rpc_result);
+
+void  njt_rpc_result_update_code(njt_rpc_result_t * rpc_result);
 void  njt_rpc_result_set_code(njt_rpc_result_t * rpc_result,njt_int_t code);
 
 void njt_rpc_result_set_msg(njt_rpc_result_t * rpc_result,u_char * msg);
@@ -38,6 +45,10 @@ void njt_rpc_result_set_msg(njt_rpc_result_t * rpc_result,u_char * msg);
 void njt_rpc_result_add_error_data(njt_rpc_result_t * rpc_result,njt_str_t * msg);
 
 njt_int_t njt_rpc_result_to_json_str(njt_rpc_result_t * rpc_result,njt_str_t *json_str);
+
+void njt_rpc_result_set_conf_path(njt_rpc_result_t * rpc_result,njt_str_t *json_str);
+
+void njt_rpc_result_append_conf_path(njt_rpc_result_t * rpc_result,njt_str_t *json_str);
 
 void njt_rpc_result_destroy(njt_rpc_result_t * rpc_result);
 

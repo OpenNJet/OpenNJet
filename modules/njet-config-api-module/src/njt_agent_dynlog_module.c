@@ -10,6 +10,7 @@
 #include <njt_rpc_result_util.h>
 #include <njt_http_util.h>
 #include "njt_dynlog_module.h"
+#include "njt_str_util.h"
 
 #define NJT_HTTP_DYN_LOG 1
 
@@ -176,6 +177,8 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
     njt_queue_t *tq;
     njt_int_t rc;
     njt_str_t name;
+    njt_str_t conf_path;
+    njt_str_t parent_conf_path;
     bool loc_found ;
     njt_str_t rpc_data_str;
     rpc_data_str.data = data_buf;
@@ -184,10 +187,25 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
         return NJT_OK;
     }
     daal = locs->elts;
+    if(rpc_result){
+        parent_conf_path = rpc_result->conf_path;
+    }
+
     for( j = 0; j < locs->nelts ; ++j ){
         tq = njt_queue_head(q);
         loc_found = false;
         name = daal[j].full_name;
+
+        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,".locations[%V]",&name);
+        rpc_data_str.len = end - data_buf;
+
+        if(rpc_result){
+            rpc_result->conf_path = parent_conf_path;
+        }
+
+        njt_rpc_result_append_conf_path(rpc_result, &rpc_data_str);
+
+
         for (;tq!= njt_queue_sentinel(q);tq = njt_queue_next(tq)) {
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
@@ -195,42 +213,47 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
                 loc_found = true;
                 ctx->loc_conf = clcf->loc_conf;
                 njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-                if (pool == NULL) {
-                    if(rpc_result){
-                        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,"create pool error while set location[%V]",&name);
-                        rpc_data_str.len = end - data_buf;
-                        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-                        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
-                    }
+                if (NULL == pool || NJT_OK != njt_sub_pool(njt_cycle->pool, pool)) {
+                    end = njt_snprintf(data_buf,sizeof(data_buf) - 1," create pool error");
+                    rpc_data_str.len = end - data_buf;
+                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
                     return NJT_ERROR;
                 }
-                rc = njt_sub_pool(njt_cycle->pool,pool);
-                if (rc != NJT_OK) {
-                    return NJT_ERROR;
-                }
-                rc = njt_http_log_dyn_set_log(pool, &daal[j],ctx);
+//                rc = njt_sub_pool(njt_cycle->pool,pool);
+//                if (rc != NJT_OK) {
+//                    return NJT_ERROR;
+//                }
+                rpc_data_str.len = 0;
+                rc = njt_http_log_dyn_set_log(pool, &daal[j],ctx,&rpc_data_str,sizeof(data_buf));
                 if(rc != NJT_OK){
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"njt_http_log_dyn_set_log error free pool");
-
-                    if(rpc_result){
-                        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,"njt_http_log_dyn_set_log error[%V];",&daal[j].full_name);
+                    if(0 == rpc_data_str.len){
+                        end = njt_snprintf(data_buf,sizeof(data_buf) - 1," set dyn log error[%V];",&daal[j].full_name);
                         rpc_data_str.len = end - data_buf;
-                        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-                        njt_rpc_result_set_code(rpc_result, rc);
                     }
+                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
                     njt_destroy_pool(pool);
+                } else {
+                    njt_rpc_result_add_success_count(rpc_result);
                 }
             }
             if(daal[j].locs.nelts > 0){
+                if(rpc_result){
+                    conf_path = rpc_result->conf_path;
+                }
                 njt_dynlog_update_locs_log(&daal[j].locs,clcf->old_locations,ctx,rpc_result);
+                if(rpc_result){
+                    rpc_result->conf_path = conf_path;
+                }
             }
         }
 
-        if (!loc_found && rpc_result) {
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "loc [%V] not found;", &name);
+        if (!loc_found) {
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " location not found");
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-            njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
         }
     }
     return NJT_OK;
@@ -246,6 +269,8 @@ njt_dynlog_update_access_log(njt_pool_t *pool, njt_http_dyn_access_api_main_t *a
     njt_http_dyn_access_log_format_t *fmt;
     u_char data_buf[1024];
     u_char * end;
+    njt_int_t rc;
+
     njt_str_t rpc_data_str;
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
@@ -256,44 +281,64 @@ njt_dynlog_update_access_log(njt_pool_t *pool, njt_http_dyn_access_api_main_t *a
 
     fmt = api_data->log_formats.elts;
     for(i = 0; i < api_data->log_formats.nelts; ++i){
-        njt_http_log_dyn_set_format(&fmt[i]);
+        // 设置当前路径
+        end = njt_snprintf(data_buf,sizeof(data_buf) - 1," accessLogFormats[%V]",&fmt[i].name);
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_set_conf_path(rpc_result,&rpc_data_str);
+
+        rc = njt_http_log_dyn_set_format(&fmt[i]);
+
+
+        if(rc != NJT_OK) {
+            end = njt_snprintf(data_buf,sizeof(data_buf) - 1," set format error");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        } else {
+            njt_rpc_result_add_success_count(rpc_result);
+        }
     }
+
+    // empty path
+    rpc_data_str.len = 0;
+    njt_rpc_result_set_conf_path(rpc_result,&rpc_data_str);
+
+
     daas = api_data->servers.elts;
     for(i = 0; i < api_data->servers.nelts; ++i){
         if( daas[i].listens.nelts < 1 && daas[i].server_names.nelts < 1 ){
             // listens 与server_names都为空
-            if(rpc_result){
-                end = njt_snprintf(data_buf,sizeof(data_buf) - 1,"server[%u] err",i);
-                rpc_data_str.len = end - data_buf;
-                njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-                njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
-            }
+            end = njt_snprintf(data_buf,sizeof(data_buf) - 1," server parameters error, listens or serverNames is empty,at position %u",i);
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             continue;
         }
+        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,"servers[%V,%V]",(njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_set_conf_path(rpc_result,&rpc_data_str);
+
         cscf = njt_http_get_srv_by_port(cycle,(njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
         if(cscf == NULL){
             if(daas[i].listens.elts != NULL && daas[i].server_names.elts != NULL ){
                 njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "can`t find server by listen:%V server_name:%V ",
                               (njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
 
-                if(rpc_result){
-                    end = njt_snprintf(data_buf,sizeof(data_buf) - 1,"can`t find server by listen:%V server_name:%V ",
-                                 (njt_str_t*)daas[i].listens.elts,(njt_str_t*)daas[i].server_names.elts);
-                    rpc_data_str.len = end - data_buf;
-                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-                    njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
-                }
+                end = njt_snprintf(data_buf,sizeof(data_buf) - 1,"can not find server.");
+                rpc_data_str.len = end - data_buf;
+                njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             }
 
             continue;
         }
         njt_http_conf_ctx_t ctx = *cscf->ctx;
         clcf = njt_http_get_module_loc_conf(cscf->ctx,njt_http_core_module);
-        njt_dynlog_update_locs_log(&daas[i].locs,clcf->old_locations,&ctx,rpc_result);
+        rc = njt_dynlog_update_locs_log(&daas[i].locs,clcf->old_locations,&ctx,rpc_result);
+
+        if (rc == NJT_OK) {
+            njt_rpc_result_add_success_count(rpc_result);
+        }
 
     }
-
-
+    njt_rpc_result_update_code(rpc_result);
     return NJT_OK;
 }
 

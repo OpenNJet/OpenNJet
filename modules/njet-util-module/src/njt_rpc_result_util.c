@@ -2,6 +2,7 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 #include <njt_rpc_result_util.h>
+#include "njt_str_util.h"
 
 static u_char * njt_rpc_result_strerror(njt_int_t err_code);
 njt_rpc_result_t * njt_rpc_result_create(){
@@ -18,8 +19,34 @@ njt_rpc_result_t * njt_rpc_result_create(){
     }
     rpc_result->pool = pool;
     rpc_result->data = njt_array_create(pool,4,sizeof(njt_str_t));
+    njt_str_null(&rpc_result->conf_path);
+    rpc_result->success_count = 0;
+    rpc_result->fail_count = 0;
     return rpc_result;
 }
+
+void  njt_rpc_result_add_success_count(njt_rpc_result_t * rpc_result){
+    if(rpc_result){
+        rpc_result->success_count++;
+    }
+}
+void  njt_rpc_result_add_fail_count(njt_rpc_result_t * rpc_result){
+    if(rpc_result){
+        rpc_result->fail_count++;
+    }
+}
+
+void  njt_rpc_result_update_code(njt_rpc_result_t * rpc_result){
+    if(!rpc_result){
+        return;
+    }
+    if(rpc_result->fail_count==0){
+        njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
+    } else {
+        njt_rpc_result_set_code(rpc_result,rpc_result->success_count>0?NJT_RPC_RSP_PARTIAL_SUCCESS:NJT_RPC_RSP_ERR);
+    }
+}
+
 
 void njt_rpc_result_set_code(njt_rpc_result_t * rpc_result,njt_int_t code){
     if(rpc_result){
@@ -30,7 +57,7 @@ void njt_rpc_result_set_code(njt_rpc_result_t * rpc_result,njt_int_t code){
     }
 }
 void njt_rpc_result_set_msg(njt_rpc_result_t * rpc_result,u_char * msg){
-    size_t len = 0;
+    size_t len;
     njt_str_t tmp_msg;
     if(!rpc_result) {
         return;
@@ -44,16 +71,40 @@ void njt_rpc_result_set_msg(njt_rpc_result_t * rpc_result,u_char * msg){
         rpc_result->msg.data=njt_pstrdup(rpc_result->pool,&tmp_msg);
     }
 }
+void njt_rpc_result_set_conf_path(njt_rpc_result_t * rpc_result,njt_str_t *json_str){
+    if(!rpc_result || !json_str){
+        return;
+    }
+    if(json_str->len>0){
+        njt_str_copy_pool(rpc_result->pool,rpc_result->conf_path,(*json_str),return);
+    } else {
+        njt_str_null(&rpc_result->conf_path);
+    }
+    // copy
+}
 
+void njt_rpc_result_append_conf_path(njt_rpc_result_t * rpc_result,njt_str_t *json_str){
+    njt_str_t old_path;
+    if(!rpc_result || !json_str || json_str->len == 0){
+        return;
+    }
+    old_path = rpc_result->conf_path;
+    // append
+    njt_str_concat(rpc_result->pool,rpc_result->conf_path,old_path,(*json_str),return);
+}
 void njt_rpc_result_add_error_data(njt_rpc_result_t * rpc_result,njt_str_t * msg) {
     njt_str_t * str_msg;
     if(!rpc_result || !msg || msg->len == 0){
         return;
     }
-
+    rpc_result->fail_count++;
     str_msg = (njt_str_t * )njt_array_push(rpc_result->data);
-    str_msg->data = njt_pstrdup(rpc_result->pool,msg);
-    str_msg->len = msg->len;
+    if(rpc_result->conf_path.len>0){
+        njt_str_concat(rpc_result->pool,(*str_msg),rpc_result->conf_path, (*msg), return)
+    }
+    else{
+        njt_str_copy_pool(rpc_result->pool,(*str_msg),(*msg),return);
+    }
 }
 
 njt_int_t njt_rpc_result_to_json_str(njt_rpc_result_t * rpc_result,njt_str_t *json_str) {
@@ -162,6 +213,8 @@ static u_char *njt_rpc_result_strerror(njt_int_t err_code) {
             return (u_char *)"mem alloc error happened.";
         case NJT_RPC_RSP_ERR_JSON:
             return (u_char *)"invalid json format.";
+        case NJT_RPC_RSP_ERR:
+            return (u_char *)"update dyn conf error.";
         default:
             return (u_char *)"other errors.";
     }
