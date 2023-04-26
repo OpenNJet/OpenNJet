@@ -3666,6 +3666,7 @@ njt_stream_upstream_api_process_reset(njt_http_request_t *r,
 		peer->received = 0;
 		peer->selected_time = 0;
 		peer->unavail = 0;
+		peer->fails = 0;
     }
 	backup = peers->next;
 
@@ -3683,6 +3684,7 @@ njt_stream_upstream_api_process_reset(njt_http_request_t *r,
 			peer->selected_time = 0;
         		peer->total_fails = 0;
 			peer->unavail = 0;
+			peer->fails = 0;
 		}
 	}
     
@@ -3730,6 +3732,7 @@ njt_http_upstream_api_process_reset(njt_http_request_t *r,
 		peer->total_response_time = 0;
 		peer->selected_time = 0;
 		peer->unavail = 0;
+		peer->fails = 0;
 
 		njt_memzero(peer_name.data, peer_name.len);
 		peer_name.len = njt_snprintf(peer_name.data,peer_name.len,"upstream_status_%V_%d_%V",peers->name,peer->id,&peer->name) - peer_name.data;
@@ -3752,6 +3755,7 @@ njt_http_upstream_api_process_reset(njt_http_request_t *r,
 			peer->selected_time = 0;
         		peer->total_fails = 0;
 			peer->unavail = 0;
+			peer->fails = 0;
 
 
 			njt_memzero(peer_name.data, peer_name.len);
