@@ -9,11 +9,14 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
+#include <njt_http_dyn_module.h>
 
 
 #define NJT_HTTP_LIMIT_CONN_PASSED            1
 #define NJT_HTTP_LIMIT_CONN_REJECTED          2
 #define NJT_HTTP_LIMIT_CONN_REJECTED_DRY_RUN  3
+
+
 
 
 typedef struct {
@@ -43,20 +46,6 @@ typedef struct {
 } njt_http_limit_conn_ctx_t;
 
 
-typedef struct {
-    njt_shm_zone_t               *shm_zone;
-    njt_uint_t                    conn;
-} njt_http_limit_conn_limit_t;
-
-
-typedef struct {
-    njt_array_t                   limits;
-    njt_uint_t                    log_level;
-    njt_uint_t                    status_code;
-    njt_flag_t                    dry_run;
-} njt_http_limit_conn_conf_t;
-
-
 static njt_rbtree_node_t *njt_http_limit_conn_lookup(njt_rbtree_t *rbtree,
     njt_str_t *key, uint32_t hash);
 static void njt_http_limit_conn_cleanup(void *data);
@@ -82,7 +71,6 @@ static njt_conf_enum_t  njt_http_limit_conn_log_levels[] = {
     { njt_string("error"), NJT_LOG_ERR },
     { njt_null_string, 0 }
 };
-
 
 static njt_conf_num_bounds_t  njt_http_limit_conn_status_bounds = {
     njt_conf_check_num_bounds, 400, 599

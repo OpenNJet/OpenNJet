@@ -1,0 +1,200 @@
+openapi: 3.0.3
+info:
+  title: dyn config api
+  description: 动态limit限流
+  version: 1.0.0
+
+servers:
+  - url: '/config/1'
+paths:
+  /config/:
+    get:
+      tags:
+        - dyn config module
+      summary: Returns a list of allow dynamic conf module
+      description: Returns a list of allow dynamic conf module
+      operationId: getDynConfModuleList
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleList'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+  /config/http_dyn_limit:
+    put:
+      tags:
+        - dyn limit config
+      summary: set module conf
+      description: set module conf
+      operationId: setDynModuleConf
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/MainConf'
+          required: true
+      responses:
+        '204':
+          description: Success
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+    get:
+      tags:
+        - dyn limit config
+      summary: return dynamic module conf
+      description: get module conf
+      operationId: getDynModuleConf
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+
+    ModuleList:
+      title: module list
+      description: 支持动态配置的模块列表
+      type: array
+      items:
+        type: string
+
+    MainConf:
+      title: main Conf
+      description: 动态 main 级别配置
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServerConf'
+
+    ServerConf:
+      title:     ServerConf
+      description: 动态 server 级别配置
+      type: object
+      properties:
+        listens:
+          type: array
+          description: server listen 端口列表
+          items:
+            type: string
+
+        serverNames:
+          type: array
+          description: server Name 列表.
+          items:
+            type: string
+        locations:
+          type: array
+          description: locations 列表
+          items:
+            $ref: '#/components/schemas/LocationConf'
+
+
+    LocationConf:
+      title: LocationConf
+      description: location 级别 limit 配置信息
+      type: object
+      properties:
+        location:
+          type: string
+          description: location 名称 .
+          example: /demo
+        limit_rate:
+          type: string
+          description: limit_rate 速率 .
+          example: 1k
+        limit_rate_after:
+          type: string
+          description: 超过该值后开始限速 .
+          example: 5k
+        limit_conns:
+          type: array
+          items:
+            type: object
+            description: tcp连接数限制, conn_number > 0, 如果设置为0, 则保持原值,不修改
+            properties:
+              zone: 
+                type: string
+                example: perip
+              conn_number: 
+                type: int
+                example: 10
+        limit_conn_dry_run:
+          type: string
+          description: dry_run 开关 .
+          enum: [on, off]
+        limit_conn_log_level:
+          type: string
+          description: 超过连接限制后日志打印级别 .
+          enum: [info, notice, warn, error]
+        limit_conn_status:
+          type: int
+          description:  超过连接限制后返回码,范围[400, 599], 包含400和599.
+          example: 503
+        limit_reqs:
+          type: array
+          items:
+            type: object
+            description: http请求数限制, burst以及delay,  delay可为正整数或者nodelay
+            properties:
+              zone: 
+                type: string
+                example: req_perip
+              burst: 
+                type: int
+                example: 10
+              delay: 
+                type: string
+                example: nodelay
+        limit_req_dry_run:
+          type: string
+          description: dry_run 开关 .
+          enum: [on, off]
+        limit_req_log_level:
+          type: string
+          description: 超过连接限制后日志打印级别 .
+          enum: [info, notice, warn, error]
+        limit_req_status:
+          type: int
+          description:  超过连接限制后返回码,范围[400, 599], 包含400和599.
+          example: 503
+        locations:
+          type: array
+          description: locations 列表
+          items:
+            $ref: '#/components/schemas/LocationConf'
+
