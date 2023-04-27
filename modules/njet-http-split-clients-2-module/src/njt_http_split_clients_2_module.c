@@ -196,7 +196,7 @@ static int njt_http_split_kv_change_handler_internal(njt_str_t* key, njt_str_t* 
         else {
             rc = NJT_RPC_RSP_ERR_JSON;
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
-            njt_rpc_result_set_msg(rpc_result, (u_char*)"split_client_2 field is required");
+            njt_rpc_result_set_msg(rpc_result, (u_char*)"split_clients_2 field is required");
             goto rpc_msg;
         }
     }
