@@ -145,12 +145,12 @@ components:
           type: array
           items:
             type: object
-            description: tcp连接数限制, conn_number > 0, 如果设置为0, 则保持原值,不修改
+            description: tcp连接数限制, conn > 0, 如果设置为0, 则保持原值,不修改
             properties:
               zone: 
                 type: string
                 example: perip
-              conn_number: 
+              conn: 
                 type: int
                 example: 10
         limit_conn_dry_run:
