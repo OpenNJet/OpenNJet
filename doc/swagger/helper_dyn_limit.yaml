@@ -145,7 +145,7 @@ components:
           type: array
           items:
             type: object
-            description: tcp连接数限制, conn > 0, 如果设置为0, 则保持原值,不修改
+            description: tcp连接数限制
             properties:
               zone: 
                 type: string
