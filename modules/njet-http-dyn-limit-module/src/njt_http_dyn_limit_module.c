@@ -62,8 +62,8 @@ static njt_json_define_t njt_http_dyn_limit_conn_json_dt[] = {
         NULL,
     },
     {
-        njt_string("conn_number"),
-        offsetof(njt_http_dyn_limit_conn_t, conn_number),
+        njt_string("conn"),
+        offsetof(njt_http_dyn_limit_conn_t, conn),
         0,
         NJT_JSON_INT,
         0,
@@ -454,7 +454,7 @@ static njt_int_t njt_dyn_limit_set_limit_conns(njt_http_dyn_limit_loc_t *data, n
             continue;
         }
 
-        if(data_limits[i].conn_number <= 0 || data_limits[i].conn_number > 65535){
+        if(data_limits[i].conn <= 0 || data_limits[i].conn > 65535){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
                  "njt_dyn_limit_set_limit_conns zone:%V conn number is invalid, should >0 and <= 65535",
                  &data_limits[i].zone);
@@ -476,7 +476,7 @@ static njt_int_t njt_dyn_limit_set_limit_conns(njt_http_dyn_limit_loc_t *data, n
                 //found
                 found = true;
                 //update
-                limits[j].conn = data_limits[i].conn_number;
+                limits[j].conn = data_limits[i].conn;
                 break;
             }
         }
@@ -505,7 +505,7 @@ static njt_int_t njt_dyn_limit_set_limit_conns(njt_http_dyn_limit_loc_t *data, n
                 return NJT_ERROR;
             }
 
-            limit->conn = data_limits[i].conn_number;
+            limit->conn = data_limits[i].conn;
             limit->shm_zone = shm_zone;
         }
     }
@@ -1232,20 +1232,20 @@ static njt_int_t njt_dyn_limit_update_locs(njt_array_t *locs, njt_queue_t *q, nj
             if (name.len == clcf->full_name.len && njt_strncmp(name.data, clcf->full_name.data, name.len) == 0)
             {
                 ctx->loc_conf = clcf->loc_conf;
-                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " start set location:%V", &clcf->full_name);
+                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "dynlimit start set location:%V", &clcf->full_name);
                 
                 //set limit_conns
                 rc = njt_dyn_limit_set_limit_conns(&dbwl[j], ctx);
                 if (rc != NJT_OK)
                 {
-                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_limit_set_limit_conns");
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "error in njt_dyn_limit_set_limit_conns");
                 }
 
                 //set limit_reqs
                 rc = njt_dyn_limit_set_limit_reqs(&dbwl[j], ctx);
                 if (rc != NJT_OK)
                 {
-                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_limit_set_limit_reqs");
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "error in njt_dyn_limit_set_limit_reqs");
                 }
                 
                 //set limit_rate
@@ -1323,7 +1323,7 @@ static njt_json_element *njt_dyn_limit_dump_locs_json(njt_pool_t *pool, njt_queu
     njt_http_limit_conn_conf_t    *lccf;
     njt_http_limit_req_conf_t     *lrcf;
     njt_json_element              *locs, *item, *sub;
-    njt_json_element              *limit_conn, *zone, *conn_number;
+    njt_json_element              *limit_conn, *zone, *conn;
     njt_str_t                      tmpstr;
     njt_conf_enum_t               *e;
     njt_uint_t                     i;
@@ -1427,11 +1427,11 @@ static njt_json_element *njt_dyn_limit_dump_locs_json(njt_pool_t *pool, njt_queu
                     }
                     njt_struct_add(limit_conn,zone,pool);
 
-                    conn_number = njt_json_int_element(pool, njt_json_fast_key("conn_number"), conn_limits[i].conn);
+                    conn = njt_json_int_element(pool, njt_json_fast_key("conn"), conn_limits[i].conn);
                     if(sub == NULL){
                         return NULL;
                     }
-                    njt_struct_add(limit_conn,conn_number,pool);
+                    njt_struct_add(limit_conn,conn,pool);
                 }
             }
 
@@ -1788,7 +1788,7 @@ static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, njt_http_dyn_
             continue;
         }
 
-        njt_log_error(NJT_LOG_INFO, pool->log, 0, "start update listen:%V server_name:%V",
+        njt_log_error(NJT_LOG_INFO, pool->log, 0, "dynlimit start update listen:%V server_name:%V",
                 p_port, p_sname);
         njt_http_conf_ctx_t ctx = *cscf->ctx;
         clcf = njt_http_get_module_loc_conf(cscf->ctx, njt_http_core_module);

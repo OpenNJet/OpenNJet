@@ -21,7 +21,7 @@ typedef struct
 typedef struct
 {
     njt_str_t   zone;
-    njt_int_t   conn_number;
+    njt_int_t   conn;
 } njt_http_dyn_limit_conn_t;
 
 
