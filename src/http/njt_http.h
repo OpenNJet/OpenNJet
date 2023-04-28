@@ -74,13 +74,15 @@ typedef struct {
 
 typedef struct {
     njt_array_t  *codes;        /* uintptr_t */
-
+    
     njt_uint_t    stack_size;
 
     njt_flag_t    log;
     njt_flag_t    uninitialized_variable_warn;
 	#if (NJT_HTTP_DYNAMIC_LOC)
 		 njt_array_t  var_names;  
+		 njt_flag_t   codes_op;
+    		 njt_array_t  *r_codes;        /* uintptr_t */
 	#endif
 } njt_http_rewrite_loc_conf_t;
 
@@ -211,5 +213,6 @@ extern njt_http_output_header_filter_pt  njt_http_top_header_filter;
 extern njt_http_output_body_filter_pt    njt_http_top_body_filter;
 extern njt_http_request_body_filter_pt   njt_http_top_request_body_filter;
 
-
+char *
+njt_http_rewrite_if_condition(njt_conf_t *cf, njt_http_rewrite_loc_conf_t *lcf);
 #endif /* _NJT_HTTP_H_INCLUDED_ */

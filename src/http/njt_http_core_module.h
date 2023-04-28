@@ -478,6 +478,7 @@ struct njt_http_core_loc_conf_s {
     unsigned     clean_end:1;
 	unsigned     dynamic_status:2; // 1 init, 2 nomal
     njt_http_location_tree_node_t   *new_static_locations;//add by clb
+	njt_array_t  *mul_conditions; 
 #endif
     //end
 

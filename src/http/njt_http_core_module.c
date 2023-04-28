@@ -20,6 +20,8 @@ typedef struct {
 #define NJT_HTTP_REQUEST_BODY_FILE_OFF    0
 #define NJT_HTTP_REQUEST_BODY_FILE_ON     1
 #define NJT_HTTP_REQUEST_BODY_FILE_CLEAN  2
+#define  LEFT   -1
+#define  RIGHT   1
 
 
 static njt_int_t njt_http_core_auth_delay(njt_http_request_t *r);
@@ -91,6 +93,11 @@ static char *njt_http_disable_symlinks(njt_conf_t *cf, njt_command_t *cmd,
 
 static char *njt_http_core_lowat_check(njt_conf_t *cf, void *post, void *data);
 static char *njt_http_core_pool_size(njt_conf_t *cf, void *post, void *data);
+static char *
+njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir);
+
+
+extern njt_module_t  njt_http_rewrite_module;
 
 static njt_conf_post_t  njt_http_core_lowat_post =
     { njt_http_core_lowat_check };
@@ -3306,6 +3313,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 		clcf->if_loc = 1;
 	        clcf->exact_match = 1;
 		clcf->internal = 0;
+		njt_http_core_if_location_array(cf, value,clcf,0,0,0);
 	} else {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid location modifier \"%V\"", &value[1]);
@@ -3361,6 +3369,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
             }
 
         } else if (name->data[0] == '(') {
+			njt_http_core_if_location_array(cf, &clcf->full_name,clcf,0,0,0);
                 clcf->if_loc = 1;
                 clcf->exact_match = 1;
                 clcf->internal = 0;
@@ -5551,4 +5560,178 @@ njt_http_core_pool_size(njt_conf_t *cf, void *post, void *data)
     }
 
     return NJT_CONF_OK;
+}
+
+//(  ((a=1 && b=1)|| c=1) && (d=1 || c=1) || d=1 )
+//(  ((a=1 && b=1)|| c=1) || d=1)
+//( a=b && (c=d))
+
+
+//a=b && (c=d)
+
+njt_int_t njt_http_core_if_location(njt_conf_t *cf, njt_str_t * command,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir){
+
+
+	njt_http_script_if_code_t    *if_code;
+	 njt_http_rewrite_loc_conf_t  *nlcf;
+	// u_char                       *elts;
+	njt_http_rewrite_loc_conf_t  *lcf  = njt_pcalloc(cf->pool, sizeof(njt_http_rewrite_loc_conf_t));
+    if (lcf == NULL) {
+        return NJT_ERROR;
+    }
+
+    lcf->stack_size = NJT_CONF_UNSET_UINT;
+    lcf->log = NJT_CONF_UNSET;
+    lcf->uninitialized_variable_warn = NJT_CONF_UNSET;
+
+	
+
+
+    if (njt_http_rewrite_if_condition(cf, lcf) != NJT_CONF_OK) {
+        return NJT_ERROR;
+    }
+
+    if_code = njt_array_push_n(lcf->codes, sizeof(njt_http_script_if_code_t));
+    if (if_code == NULL) {
+        return NJT_ERROR;
+    }
+
+    if_code->code = njt_http_script_if_code;
+
+    //elts = lcf->codes->elts;
+
+
+    /* the inner directives must be compiled to the same code array */
+
+    nlcf = pclcf->loc_conf[njt_http_rewrite_module.ctx_index]; //存放到loc 上。
+	nlcf->codes_op = oper;
+	if(dir == LEFT) {
+       nlcf->codes = lcf->codes;
+	} else {
+		 nlcf->r_codes = lcf->codes;
+	}
+
+	return NJT_OK;
+}
+
+static char *
+njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir){  // -1, 0 与，1 或
+  
+
+
+  njt_int_t nleft  = 0;
+  //njt_int_t nright = 0;
+  u_char   *p1,*p2,*pbegin,*plast;
+  njt_uint_t  i;
+  njt_str_t  new_str,src;
+  njt_str_t  str_tmp = *command;
+  njt_uint_t  falg;
+  njt_int_t step_oper;
+  njt_http_core_loc_conf_t **ploc;
+ 
+   ///todo 去掉首尾();
+   
+   p1 = NULL;
+   p2 = NULL;
+   falg = 0;
+
+   for(i=0; i < str_tmp.len; i++){
+      if (str_tmp.data[i] == ' ' || str_tmp.data[i] == '\t' || str_tmp.data[i] == '\r' || str_tmp.data[i] == '\n') {
+		  continue;
+	  } if(str_tmp.data[i] == '('){
+		  p1 = str_tmp.data + i;
+	  } 
+	  break;
+	  
+   }
+   for(i= str_tmp.len -1; i > 0; i--){
+     
+	   if (str_tmp.data[i] == ' ' || str_tmp.data[i] == '\t' || str_tmp.data[i] == '\r' || str_tmp.data[i] == '\n') {
+		  continue;
+	  } 
+	   if(str_tmp.data[i] == ')'){
+		  p2 = str_tmp.data + i;
+	   }
+	   break;
+   }
+   if(p1 != NULL && p2 != NULL ){
+	   src.data = p1 +1;
+	   src.len = p2 - src.data;
+	   falg = 1;
+   } else {
+	   src = str_tmp;
+	   new_str = src;
+
+   }
+   pbegin = src.data;
+   plast = src.data + src.len;
+  
+  
+  
+//  (  ((a=1 && b=1)|| c=1) && (d=1 || c=1) || d=1 )
+//(  ((a=1 && b=1)|| c=1) || d=1)
+//( a=b && (c=d))
+
+  
+
+   if(njt_strnstr(src.data,"&&",src.len) == NULL && njt_strnstr(src.data,"||",src.len) == NULL && njt_strnstr(src.data,"(",src.len) == NULL) {
+		 njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "1 njt_http_core_if_location_array step=%d, %V",step,&new_str);
+		 //todo oper
+		 njt_http_core_if_location(cf,&src,pclcf,step,oper,dir);
+		  
+   } else {
+		 njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "1 show njt_http_core_if_location_array step=%d, %V",step,&str_tmp);
+
+		  if (pclcf->mul_conditions == NULL) {
+			pclcf->mul_conditions = njt_array_create(cf->pool, 1, sizeof(njt_http_core_loc_conf_t *));  //todo
+			if (pclcf->mul_conditions == NULL) {
+				return NJT_CONF_ERROR;
+			}
+		   }
+
+        for(i=0; i < src.len; i++ ){
+			if(src.data[i] == '(') {
+				nleft += LEFT;
+	
+			} else if(src.data[i] == ')') {
+				nleft += RIGHT;
+			}
+
+			step_oper = -1;
+			if(src.data[i] == '&' && i < src.len - 2 && src.data[i+1] == '&' ){
+				 step_oper = 0;
+			} else if(src.data[i] == '|' && i < src.len - 2 && src.data[i+1] == '|' ) {
+				step_oper = 1;
+			}
+			if(step_oper != -1) {
+				if(nleft == 0) {
+					 new_str.data = pbegin;
+					 new_str.len = src.data + i - pbegin;
+					 pbegin = src.data + i + 2;
+					 step_oper = 0;
+					 // njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "&& tmp njt_http_core_if_location_array step=%d, %V",step+1,&new_str);
+					 njt_http_core_loc_conf_t  *clcf  = njt_pcalloc(cf->pool, sizeof(njt_http_core_loc_conf_t));
+					  ploc = njt_array_push(pclcf->mul_conditions);
+					   *ploc = clcf;
+
+					 njt_http_core_if_location_array(cf,&new_str,clcf,step+falg,step_oper,LEFT);
+				}
+			}
+	
+
+			}
+
+			if(pbegin) {
+				 new_str.data = pbegin;
+				 new_str.len = plast - pbegin;
+				 njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "2 show njt_http_core_if_location_array step=%d, %V",step+1,&new_str);
+				 njt_http_core_if_location_array(cf,&new_str,pclcf,step+falg,step_oper,RIGHT);
+
+			}
+		
+			}
+			
+   
+		 return NJT_CONF_OK;
+
 }
