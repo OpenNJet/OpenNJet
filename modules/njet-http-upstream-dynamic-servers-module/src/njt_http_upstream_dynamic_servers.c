@@ -1986,6 +1986,8 @@ static char *njt_http_upstream_check(njt_conf_t *cf, njt_command_t *cmd,
 		    uscf->persistent = 1;
 		    continue;
 		}
+		 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "invalid parameter: %V", &value[i]);
 		return NJT_CONF_ERROR;
 	}
 	if(uscf->persistent == 1 && uscf->mandatory != 1) {
