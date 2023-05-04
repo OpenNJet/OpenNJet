@@ -5148,17 +5148,6 @@ skip:
             return NJT_ERROR;
         }
 
-        if (plcf->upstream.ssl_certificate_enc
-            && plcf->upstream.ssl_certificate_enc->value.len) {
-            if (plcf->upstream.ssl_certificate_enc_key == NULL) {
-                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                            "no \"proxy_ssl_enc_certificate_key\" is defined "
-                            "for certificate \"%V\"",
-                            &plcf->upstream.ssl_certificate_enc->value);
-                return NJT_ERROR;
-            }
-        }
-
         if (plcf->upstream.ssl_certificate->lengths
             || plcf->upstream.ssl_certificate_key->lengths)
         {
@@ -5172,8 +5161,6 @@ skip:
             if (njt_ssl_certificate(cf, plcf->upstream.ssl,
                                     &plcf->upstream.ssl_certificate->value,
                                     &plcf->upstream.ssl_certificate_key->value,
-                                    &plcf->upstream.ssl_certificate_enc->value,
-                                    &plcf->upstream.ssl_certificate_enc_key->value,
                                     plcf->upstream.ssl_passwords)
                 != NJT_OK)
             {

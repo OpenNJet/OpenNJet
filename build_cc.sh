@@ -90,7 +90,6 @@ cdir=`cd $(dirname $0); pwd`
 		   cp -fr lualib /etc/njet/lualib
 		fi
 
-                ./configure $flags --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
                 ./configure --with-openssl=auto/lib/tongsuo $flags --with-openssl-opt='--strict-warnings enable-ntls' --with-ntls --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
                 ;;
             make)
