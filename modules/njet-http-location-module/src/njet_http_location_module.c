@@ -546,8 +546,9 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     conf.pool = clcf->pool; 
     new_clcf = njt_http_location_find_new_location(clcf);
     if(new_clcf != NULL && new_clcf->pool != NULL){
-	conf.pool = new_clcf->pool;  //zyg new add location  pool.  used by merge
-    }   
+	//conf.pool = new_clcf->pool;  //zyg new add location  pool.  used by merge
+    }
+   
     njt_http_variables_init_vars(&conf);
 
 
