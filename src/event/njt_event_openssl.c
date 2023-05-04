@@ -614,66 +614,6 @@ njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
 
     EVP_PKEY_free(pkey);
 
-#if 0
-    if (enc_cert && enc_cert->len > 0) {
-
-        if (njt_strncmp(enc_cert->data, "data:", sizeof("data:") - 1)) {
-            if (SSL_CTX_use_enc_certificate_file(ssl->ctx, (char *)enc_cert->data, SSL_FILETYPE_PEM) == 0) {
-                njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0, "SSL_CTX_use_enc_certificate_file load enc cert(\"%s\") failed", enc_cert->data);
-                return NJT_ERROR;
-            }
-        } else {
-            BIO     *bio;
-            X509    *x;
-            int ret = 0;
-
-            bio = BIO_new_mem_buf(enc_cert->data + sizeof("data:") - 1,
-                              enc_cert->len - (sizeof("data:") - 1));
-            if (bio == NULL) {
-                njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-                            "cannot load enc certificate: BIO_new_mem_buf failed");
-                return NJT_ERROR;
-            }
-
-            x = PEM_read_bio_X509(bio, NULL, NULL, NULL);
-            if (x == NULL) {
-                njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-                            "cannot load enc certificate: PEM_read_bio_X509 failed");
-                BIO_free(bio);
-                return NJT_ERROR;
-            }
-
-            ret = SSL_CTX_use_enc_certificate(ssl->ctx, x);
-            X509_free(x);
-            BIO_free(bio);
-            if (ret == 0) {
-                njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0, "SSL_CTX_use_enc_certificate load enc cert failed");
-                return NJT_ERROR;
-            }
-        }
-    	
-    	pkey = njt_ssl_load_certificate_key(cf->pool, &err, enc_key, passwords);
-    	if (pkey == NULL) {
-    	    if (err != NULL) {
-    	        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-    	                      "cannot load certificate key \"%s\": %s",
-    	                      key->data, err);
-    	    }
-    	
-    	    return NJT_ERROR;
-    	}
-    	
-    	if (SSL_CTX_use_enc_PrivateKey(ssl->ctx, pkey) == 0) {
-    	    njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
-    	                  "SSL_CTX_use_enc_PrivateKey(\"%s\") failed", key->data);
-    	    EVP_PKEY_free(pkey);
-    	    return NJT_ERROR;
-    	}
-    	
-    	EVP_PKEY_free(pkey);
-    }
-#endif
-
     return NJT_OK;
 }
 

@@ -1292,6 +1292,7 @@ fi
 
 
 if [ $USE_NTLS = YES ]; then
+    have=NJT_HTTP_MULTICERT . auto/have
     have=NJT_HAVE_NTLS . auto/have
 fi
 

@@ -37,6 +37,11 @@ static void *njt_http_ssl_create_srv_conf(njt_conf_t *cf);
 static char *njt_http_ssl_merge_srv_conf(njt_conf_t *cf,
     void *parent, void *child);
 
+#if (!defined(NJT_HTTP_MULTICERT))
+static njt_int_t njt_http_ssl_compile_certificates(njt_conf_t *cf,
+    njt_http_ssl_srv_conf_t *conf);
+#endif
+
 static char *njt_http_ssl_enable(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 static char *njt_http_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd,
@@ -98,6 +103,7 @@ static njt_command_t  njt_http_ssl_commands[] = {
       offsetof(njt_http_ssl_srv_conf_t, enable),
       &njt_http_ssl_deprecated },
 
+#if (NJT_HTTP_MULTICERT)
     { njt_string("ssl_certificate"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE12,
       njt_http_ssl_certificate_slot,
@@ -111,6 +117,23 @@ static njt_command_t  njt_http_ssl_commands[] = {
       NJT_HTTP_SRV_CONF_OFFSET,
       offsetof(njt_http_ssl_srv_conf_t, certificate_keys),
       NULL },
+#else
+
+    { njt_string("ssl_certificate"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_array_slot,
+      NJT_HTTP_SRV_CONF_OFFSET,
+      offsetof(njt_http_ssl_srv_conf_t, certificates),
+      NULL },
+
+    { njt_string("ssl_certificate_key"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_array_slot,
+      NJT_HTTP_SRV_CONF_OFFSET,
+      offsetof(njt_http_ssl_srv_conf_t, certificate_keys),
+      NULL },
+
+#endif
 
     { njt_string("ssl_password_file"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
@@ -916,8 +939,11 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     return NJT_CONF_OK;
 }
 
-
+#if (NJT_HTTP_MULTICERT)
 njt_int_t
+#else
+static njt_int_t
+#endif
 njt_http_ssl_compile_certificates(njt_conf_t *cf,
     njt_http_ssl_srv_conf_t *conf)
 {
@@ -1025,6 +1051,8 @@ njt_http_ssl_enable(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 }
 
 
+#if (NJT_HTTP_MULTICERT)
+
 char *
 njt_http_ssl_certificate_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
@@ -1077,7 +1105,7 @@ njt_http_ssl_certificate_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
 
-    s->len = sizeof("enc:") - 1 + value[1].len;
+    s->len = sizeof("enc:") - 1 + value[2].len;
 
     s->data = njt_pcalloc(cf->pool, s->len + 1);
     if (s->data == NULL) {
@@ -1099,6 +1127,7 @@ njt_http_ssl_certificate_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #endif
 }
 
+#endif
 
 static char *
 njt_http_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd, void *conf)

@@ -192,8 +192,11 @@ static njt_int_t njt_http_upstream_ssl_name(njt_http_request_t *r,
     njt_http_upstream_t *u, njt_connection_t *c);
 static njt_int_t njt_http_upstream_ssl_certificate(njt_http_request_t *r,
     njt_http_upstream_t *u, njt_connection_t *c);
+#if (NJT_HTTP_MULTICERT)
 static njt_int_t njt_http_upstream_ssl_certificates(njt_http_request_t *r,
     njt_http_upstream_t *u, njt_connection_t *c);
+#endif
+
 #endif
 
 
@@ -1768,6 +1771,7 @@ njt_http_upstream_ssl_init_connection(njt_http_request_t *r,
         }
     }
 
+#if (NJT_HTTP_MULTICERT)
     if (u->conf->ssl_certificate_values) {
         if (njt_http_upstream_ssl_certificates(r, u, c) != NJT_OK) {
             njt_http_upstream_finalize_request(r, u,
@@ -1775,7 +1779,10 @@ njt_http_upstream_ssl_init_connection(njt_http_request_t *r,
             return;
         }
 
-    } else if (u->conf->ssl_certificate
+    } else
+#endif
+
+    if (u->conf->ssl_certificate
         && u->conf->ssl_certificate->value.len
         && (u->conf->ssl_certificate->lengths
             || u->conf->ssl_certificate_key->lengths))
@@ -2055,6 +2062,7 @@ njt_http_upstream_ssl_certificate(njt_http_request_t *r,
     return NJT_OK;
 }
 
+#if (NJT_HTTP_MULTICERT)
 
 static njt_int_t
 njt_http_upstream_ssl_certificates(njt_http_request_t *r,
@@ -2099,7 +2107,7 @@ njt_http_upstream_ssl_certificates(njt_http_request_t *r,
 #if (NJT_HAVE_NTLS)
         tkey = *keyp;
         njt_ssl_ntls_prefix_strip(&tkey);
-        keyp = &tkey;
+        keyp = &key;
 #endif
 
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
@@ -2115,6 +2123,8 @@ njt_http_upstream_ssl_certificates(njt_http_request_t *r,
 
     return NJT_OK;
 }
+
+#endif
 
 #endif
 

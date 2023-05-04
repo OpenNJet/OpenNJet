@@ -252,23 +252,23 @@ typedef struct {
     njt_flag_t                       ssl_server_name;
     njt_flag_t                       ssl_verify;
 
-    /* *s/cgi and grpc without multi cert support */
     njt_http_complex_value_t        *ssl_certificate;
     njt_http_complex_value_t        *ssl_certificate_key;
+    njt_array_t                     *ssl_passwords;
 
-    /* proxy module: multiple certificates support */
+#if (NJT_HTTP_MULTICERT)
     njt_array_t                     *ssl_certificates;
     njt_array_t                     *ssl_certificate_keys;
 
     njt_array_t                     *ssl_certificate_values;
     njt_array_t                     *ssl_certificate_key_values;
-
-    njt_array_t                     *ssl_passwords;
+#endif
 
 #if (NJT_HAVE_NTLS)
     njt_flag_t                      ssl_ntls;
     njt_str_t                       ssl_ciphers;
-#endif    
+#endif
+
 #endif
 
     njt_str_t                        module;
