@@ -201,7 +201,7 @@ njt_stream_upstream_init_round_robin(njt_conf_t *cf,
                 peer[n].server = server[i].name;
 		peer[n].slow_start = server[i].slow_start;
 		peer[n].hc_upstart = now_time;
-	        
+	        peer[n].id = peers->next_order++;
                 *peerp = &peer[n];
                 peerp = &peer[n].next;
                 n++;
