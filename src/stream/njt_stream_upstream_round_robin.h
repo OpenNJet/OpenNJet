@@ -75,6 +75,7 @@ struct njt_stream_upstream_rr_peer_s {
     njt_atomic_t                    total_first_byte_time;	
     njt_atomic_t                    total_response_time;
     njt_atomic_t                    total_connect_time;
+    njt_uint_t                      total_fails;
 #endif
     NJT_COMPAT_BEGIN(25)
     NJT_COMPAT_END
