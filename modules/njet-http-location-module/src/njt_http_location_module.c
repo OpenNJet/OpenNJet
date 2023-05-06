@@ -489,10 +489,12 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	sub_location = location_info->location_array->elts;
 	for(i = 0; i < location_info->location_array->nelts; i++) {
 		loc = &sub_location[i];
-		rc = njt_http_check_upstream_exist((njt_cycle_t  *)njt_cycle,location_info->pool, &loc->proxy_pass);
-		if (rc != NJT_OK) {
-			goto out;
-		    rc = NJT_OK;
+		if(loc->proxy_pass.len > 0) {
+			rc = njt_http_check_upstream_exist((njt_cycle_t  *)njt_cycle,location_info->pool, &loc->proxy_pass);
+			if (rc != NJT_OK) {
+				goto out;
+			    rc = NJT_OK;
+			}
 		}
 	}
 
@@ -700,7 +702,7 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 				 njt_str_set(&location_info->msg, "proxy_pass error!!!");
 					  return NJT_ERROR;
 					}
-				sub_location->proxy_pass = out_items->strval;
+				sub_location->proxy_pass = njt_del_headtail_space(out_items->strval);
 			} 
 
 			njt_str_set(&key,"location_body");

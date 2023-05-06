@@ -421,10 +421,12 @@ njt_http_location_read_data(njt_http_request_t *r){
 		sub_location = location_info->location_array->elts;
 		for(i = 0; i < location_info->location_array->nelts; i++) {
 			loc = &sub_location[i];
-			rc = njt_http_check_upstream_exist((njt_cycle_t  *)njet_master_cycle,location_info->pool, &loc->proxy_pass);
-			if (rc != NJT_OK) {
-				njt_str_set(&location_info->msg, "proxy_pass upstream  no defined!");
-				 goto err;
+			if(loc->proxy_pass.len > 0 ){
+				rc = njt_http_check_upstream_exist((njt_cycle_t  *)njet_master_cycle,location_info->pool, &loc->proxy_pass);
+				if (rc != NJT_OK) {
+					njt_str_set(&location_info->msg, "proxy_pass upstream  no defined!");
+					 goto err;
+				}
 			}
 		}
 		loc = &sub_location[0];
