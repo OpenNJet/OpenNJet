@@ -12,7 +12,7 @@
 #include <njt_http_kv_module.h>
 #include <njt_http_util.h>
 #include <njt_http_sendmsg_module.h>
-#include <njet_http_location_module.h>
+#include <njt_http_location_module.h>
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 
@@ -197,7 +197,7 @@ static njt_http_location_queue_t *njt_http_find_location(njt_str_t name, njt_que
     njt_http_location_queue_t *lq;
     njt_http_core_loc_conf_t *clcf;
 
-    for (x = njt_queue_next(locations);
+    for (x = njt_queue_head(locations);
          x != njt_queue_sentinel(locations);
          x = njt_queue_next(x)) {
         lq = (njt_http_location_queue_t *) x;

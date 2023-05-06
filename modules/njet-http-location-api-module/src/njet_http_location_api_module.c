@@ -11,7 +11,7 @@
 #include <math.h>
 #include <njt_http_kv_module.h>
 #include <njt_http_sendmsg_module.h>
-#include <njet_http_location_module.h>
+#include <njt_http_location_module.h>
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 extern njt_cycle_t *njet_master_cycle;
