@@ -1,0 +1,5 @@
+This file is now deprecated. Please refer to doc/man/man5/keepalived.conf.5
+for full documentation support. If you just dont want to install manpage but
+just looking for a nice formatted output, following can make the job :
+
+  groff -t -e -mandoc -Tascii keepalived.conf.5 | col -bx

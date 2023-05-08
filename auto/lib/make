@@ -11,6 +11,9 @@ fi
 if [ $OPENSSL != NONE -a $OPENSSL != NO -a $OPENSSL != YES ]; then
     . auto/lib/openssl/make
     . auto/lib/njetmq/make
+    if [ "$NJT_HELPER_HA" = "YES" ]; then
+     . auto/lib/keepalived/make
+    fi
 fi
 
 if [ $ZLIB != NONE -a $ZLIB != NO -a $ZLIB != YES ]; then

@@ -1,0 +1,81 @@
+
+                           Note on using VRRP with Virtual MAC address
+                          =============================================
+                                       Alexandre Cassen
+                                        July 11th 2012
+
+					latest update
+                                       April 20th 2019
+
+To reduce takeover impact, some networking environment would require using
+VRRP with VMAC address. To reach that goal Keepalived VRRP framework implements
+VMAC support by the invocation of 'use_vmac' keyword in configuration file.
+
+Internally, Keepalived code will bring up virtual interfaces, each interface
+dedicated to a specific virtual_router. Keepalived uses Linux kernel macvlan
+driver to defines thoses interfaces. It is then mandatory to use kernel
+compiled with macvlan support.
+
+In addition we can mention that VRRP VMAC will work only with kernel including
+the following patch (include in Linux from v3.2):
+
+http://git.kernel.org/?p=linux/kernel/git/torvalds/linux.git;a=commitdiff;h=729e72a10930ef765c11a5a35031ba47f18221c4
+
+By default MACVLAN interface are in VEPA mode which filters out received
+packets whose MAC source address matches that of the MACVLAN interface. Setting
+MACVLAN interface in private mode will not filter based on source MAC address.
+
+Alternatively, you can specify 'vmac_xmit_base' which will cause the VRRP
+messages to be transmitted and received on the underlying interface whilst ARP
+will happen from the the VMAC interface.
+
+keepalived now sets the necessary interface configuration options, but if the
+settings in net.ipv4.conf.all are non-standard, then these may override the
+specific settings for the interface. Source file keepalived/vrrp/vrrp_if_config.c
+documents what interface parameters are set for both the VMAC interface and its
+parent interface. Kernel source file doc/Documentation/networking/ip-sysctl.txt
+documents how the conf.all settings can override the specific settings for
+individual interfaces. If using MACVLAN interfaces is not working as you expect,
+check the interface settings, include the conf.all settings and compare it with
+the documentation.
+
+VMAC interface
+
+consider the following VRRP configuration :
+
+vrrp_instance instance1 {
+	state BACKUP
+	interface eth0
+	virtual_router_id 250
+	use_vmac
+	vmac_xmit_base         # Transmit VRRP adverts over physical interface
+	priority 150
+	advert_int 1
+	virtual_ipaddress {
+		10.0.0.254
+	}
+}
+
+The 'use_vmac' keyword will drive keepalived code to create a macvlan interface
+named 'vrrp.250' (default internal paradigm is vrrp.{virtual_router_id}, you can
+override this naming by giving an argument to 'use_vmac' keyword, eg: use_vmac
+vrrp250).
+
+If you need to change interface configuration settings, you can create notify_master
+script to automate this configuration step for you. You may also need to use a
+notify_backup script to set interface settings to apply before becoming master.
+
+vrrp_instance instance1 {
+	state BACKUP
+	interface eth0
+	virtual_router_id 250
+	use_vmac
+	priority 150
+	advert_int 1
+	virtual_ipaddress {
+		10.0.0.254
+	}
+	notify_master "/usr/local/bin/vmac_tweak.sh vrrp.250"
+}
+
+
