@@ -81,13 +81,31 @@ components:
           example: cluster.tmlake.com
         locations:
           type: array
-          example:
-           - location_rule: ""
-             location_name: /
-             location_body: api write=off;
-             proxy_pass:  $dest_upstream;
-           - location_rule: ""
-             location_name: /test3
-             location_body: "set $test 1;"
-             proxy_pass:  $dest_upstream;
+          items:
+            $ref: '#/components/schemas/nest_location'
+    nest_location:
+      title: dyn_loc
+      description: delete dynamic location from server
+      type: object
+      properties:
+        location_rule:
+          type: string
+          description:  Regular Expression.
+          example: "="
+        location_name:
+          type: string
+          description:  the name of location.
+          example: "/clb"
+        location_body:
+          type: string
+          description:  the body of location.
+          example: "return 200 body;"
+        location_pass:
+          type: string
+          description:  the pass of location.
+          example: "$dest_upstream_1"
+        locations:
+          type: array
+          items:
+            $ref: '#/components/schemas/nest_location'
     
