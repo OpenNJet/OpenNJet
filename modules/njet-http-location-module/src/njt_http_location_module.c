@@ -187,7 +187,7 @@ static void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
     }
     njt_http_location_cleanup(clcf);
     clcf->disable = 1;
-    if (clcf->ref_count == 0 && clcf->pool != NULL) {
+    if (clcf->ref_count == 0 && clcf->pool != NULL && clcf->dynamic_status != 0) {
     	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_destroy_pool clcf=%p",clcf);
         njt_destroy_pool(clcf->pool);
     }
@@ -407,10 +407,10 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 
 
     dclcf = lq->exact ? lq->exact : lq->inclusive;
-    if(dclcf->dynamic_status == 0) {
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "static  location=%V not allow delete!",&location_name);
-	return NJT_OK;
-    }
+    //if(dclcf->dynamic_status == 0) {
+    //    njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "static  location=%V not allow delete!",&location_name);
+    //	return NJT_OK;
+    //}
 
     njt_http_location_delete_dyn_var(dclcf);
     njt_queue_remove(&lq->queue);
