@@ -1263,6 +1263,8 @@ unset LIBS
 $PKG_CONFIG --exists openssl
 if test $? -eq 0; then
   add_pkg_config([openssl], [OPENSSL])
+  add_to_var_ind_unique([KA_CFLAGS], [`$PKG_CONFIG --cflags-only-I openssl`])
+  add_to_var_ind_unique([KA_LDFLAGS], [`$PKG_CONFIG --libs-only-L openssl`])
 else
   OPENSSL_LIBS="-lssl -lcrypto"
 fi

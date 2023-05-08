@@ -10,7 +10,7 @@ AM_LDFLAGS		= $(KA_LDFLAGS) $(DEBUG_LDFLAGS)
 
 #noinst_LIBRARIES	= libha_emb.a
 lib_LTLIBRARIES =libha_emb.la
-noinst_PROGRAMS	= HA_test
+#noinst_PROGRAMS	= HA_test
 noinst_bindir = .
 
 #libha_emb_a_SOURCES 
@@ -68,8 +68,8 @@ libha_emb_la_SOURCES	+=  $(BASE_SOURCES)
 #libha_emb_la_LIBADD =   
 #libha_emb_la_DEPENDENCIES=  ../../lib/liblib.a 
 
-HA_test_SOURCES = vrrp_emb_test.c 
-HA_test_DEPENDENCIES=libha_emb.la
-HA_test_LDADD	= libha_emb.la  -lcrypto
+#HA_test_SOURCES = vrrp_emb_test.c 
+#HA_test_DEPENDENCIES=libha_emb.la
+#HA_test_LDADD	= libha_emb.la  -lcrypto
 
 MAINTAINERCLEANFILES	= @MAINTAINERCLEANFILES@
