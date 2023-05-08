@@ -71,8 +71,9 @@ typedef struct njt_helper_health_check_conf_s {
 #endif
     njt_event_t hc_timer;
     void *ctx;    // http 或stream 特异化字段
+    njt_int_t ref_count;
 //    unsigned persistent: 1;
-//    unsigned mandatory: 1;
+    unsigned mandatory: 1;
     unsigned disable: 1;
 } njt_helper_health_check_conf_t;
 
