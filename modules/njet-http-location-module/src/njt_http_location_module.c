@@ -407,6 +407,10 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 
 
     dclcf = lq->exact ? lq->exact : lq->inclusive;
+    if(dclcf->dynamic_status == 0) {
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "static  location=%V not allow delete!",&location_name);
+	return NJT_OK;
+    }
 
     njt_http_location_delete_dyn_var(dclcf);
     njt_queue_remove(&lq->queue);
