@@ -573,7 +573,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	if(clcf->old_locations) {
 	    lq = njt_http_find_location(location_name, clcf->old_locations);
 	    if (lq != NULL) {  
-    		 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add location error:location exist!");
+    		 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add location error:location exist!");
 		 rc = NJT_OK;
 		goto out;
 	    }
@@ -638,7 +638,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
                                           module, mi);
             if (rv != NJT_CONF_OK) {
                 rc = NJT_ERROR;
-    		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add location error:merge_locations!");
+    		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add location error:merge_locations!");
                 goto out;
             }
         }
@@ -647,13 +647,13 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 
     rc = njt_http_refresh_location(&conf, cscf, clcf);
     if (rc != NJT_OK) {
-	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add location error:njt_http_refresh_location!");
+	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add location error:njt_http_refresh_location!");
         goto out;
     }
     njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "add location end +++++++++++++++");
 out:
     if(rc != NJT_OK) {
-    	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add  location[%V] error",&location_name);
+    	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  location[%V] error",&location_name);
     } else {
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add  location[%V] succ!",&location_name);
     }
