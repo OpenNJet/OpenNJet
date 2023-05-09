@@ -241,3 +241,37 @@ njt_stream_upstream_srv_conf_t *njt_stream_find_upstream_by_name(njt_cycle_t *cy
     return NULL;
 }
 
+
+void njt_http_upstream_traver(void *ctx,void (*item_handle)(void *ctx,njt_http_upstream_srv_conf_t *)){
+    njt_http_upstream_main_conf_t  *umcf;
+    njt_http_upstream_srv_conf_t   **uscfp;
+    njt_uint_t i;
+
+    if(!item_handle) {
+        return;
+    }
+    umcf = njt_http_cycle_get_module_main_conf(njet_master_cycle, njt_http_upstream_module);
+    uscfp = umcf->upstreams.elts;
+
+    for (i = 0; i < umcf->upstreams.nelts; i++) {
+        item_handle(ctx,uscfp[i]);
+    }
+}
+
+
+void njt_stream_upstream_traver(void *ctx,void (*item_handle)(void *ctx,njt_stream_upstream_srv_conf_t *)){
+
+    njt_stream_upstream_srv_conf_t   **uscfp;
+    njt_stream_upstream_main_conf_t   *umcf;
+    njt_uint_t                         i;
+
+    if(!item_handle) {
+        return;
+    }
+    umcf = njt_stream_cycle_get_module_main_conf(njet_master_cycle, njt_stream_upstream_module);
+
+    uscfp = umcf->upstreams.elts;
+    for (i = 0; i < umcf->upstreams.nelts; i++) {
+        item_handle(ctx,uscfp[i]);
+    }
+}
