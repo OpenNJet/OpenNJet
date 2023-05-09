@@ -26,6 +26,14 @@
 #include <openssl/engine.h>
 #endif
 #include <openssl/evp.h>
+#if (NJT_QUIC)
+#ifdef OPENSSL_IS_BORINGSSL
+#include <openssl/hkdf.h>
+#include <openssl/chacha.h>
+#else
+#include <openssl/kdf.h>
+#endif
+#endif
 #include <openssl/hmac.h>
 #ifndef OPENSSL_NO_OCSP
 #include <openssl/ocsp.h>
@@ -304,6 +312,9 @@ njt_int_t njt_ssl_get_client_v_remain(njt_connection_t *c, njt_pool_t *pool,
 
 
 njt_int_t njt_ssl_handshake(njt_connection_t *c);
+#if (NJT_QUIC)
+void njt_ssl_handshake_log(njt_connection_t *c);
+#endif
 ssize_t njt_ssl_recv(njt_connection_t *c, u_char *buf, size_t size);
 ssize_t njt_ssl_write(njt_connection_t *c, u_char *data, size_t size);
 ssize_t njt_ssl_recv_chain(njt_connection_t *c, njt_chain_t *cl, off_t limit);

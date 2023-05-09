@@ -10,6 +10,10 @@
 #include <njt_core.h>
 #include <njt_stream.h>
 
+#if (NJT_QUIC_OPENSSL_COMPAT)
+#include <njt_event_quic_openssl_compat.h>
+#endif
+
 extern njt_module_t njt_stream_proto_module;
 typedef njt_int_t (*njt_ssl_variable_handler_pt)(njt_connection_t *c,
     njt_pool_t *pool, njt_str_t *s);
@@ -1342,7 +1346,10 @@ njt_stream_ssl_conf_command_check(njt_conf_t *cf, void *post, void *data)
 static njt_int_t
 njt_stream_ssl_init(njt_conf_t *cf)
 {
+    njt_uint_t                    i;
+    njt_stream_listen_t          *listen;
     njt_stream_handler_pt        *h;
+    njt_stream_ssl_conf_t        *scf;
     njt_stream_core_main_conf_t  *cmcf;
 
     cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
@@ -1353,6 +1360,30 @@ njt_stream_ssl_init(njt_conf_t *cf)
     }
 
     *h = njt_stream_ssl_handler;
+
+    listen = cmcf->listen.elts;
+
+    for (i = 0; i < cmcf->listen.nelts; i++) {
+        if (!listen[i].quic) {
+            continue;
+        }
+
+        scf = listen[i].ctx->srv_conf[ngx_stream_ssl_module.ctx_index];
+
+#if (NJT_QUIC_OPENSSL_COMPAT)
+        if (njt_quic_compat_init(cf, scf->ssl.ctx) != NJT_OK) {
+            return NJT_ERROR;
+        }
+#endif
+
+        if (scf->certificates && !(scf->protocols & NJT_SSL_TLSv1_3)) {
+            njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                          "\"ssl_protocols\" must enable TLSv1.3 for "
+                          "the \"listen ... quic\" directive in %s:%ui",
+                          scf->file, scf->line);
+            return NJT_ERROR;
+        }
+    }
 
     return NJT_OK;
 }

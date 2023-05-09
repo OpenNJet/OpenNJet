@@ -234,6 +234,50 @@ njt_feature_test="struct crypt_data  cd;
 njt_include="sys/vfs.h";     . auto/include
 
 
+# BPF sockhash
+
+njt_feature="BPF sockhash"
+njt_feature_name="NJT_HAVE_BPF"
+njt_feature_run=no
+njt_feature_incs="#include <linux/bpf.h>
+                  #include <sys/syscall.h>"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="union bpf_attr attr = { 0 };
+
+                  attr.map_flags = 0;
+                  attr.map_type = BPF_MAP_TYPE_SOCKHASH;
+
+                  syscall(__NR_bpf, 0, &attr, 0);"
+. auto/feature
+
+if [ $njt_found = yes ]; then
+    CORE_SRCS="$CORE_SRCS src/core/njt_bpf.c"
+    CORE_DEPS="$CORE_DEPS src/core/njt_bpf.h"
+
+    if [ $QUIC_BPF != NONE ]; then
+        QUIC_BPF=YES
+    fi
+fi
+
+
+njt_feature="SO_COOKIE"
+njt_feature_name="NJT_HAVE_SO_COOKIE"
+njt_feature_run=no
+njt_feature_incs="#include <sys/socket.h>
+                  $NJT_INCLUDE_INTTYPES_H"
+njt_feature_path=
+njt_feature_libs=
+njt_feature_test="socklen_t optlen = sizeof(uint64_t);
+                  uint64_t cookie;
+                  getsockopt(0, SOL_SOCKET, SO_COOKIE, &cookie, &optlen)"
+. auto/feature
+
+if [ $njt_found = yes ]; then
+    SO_COOKIE_FOUND=YES
+fi
+
+
 # UDP segmentation offloading
 
 njt_feature="UDP_SEGMENT"

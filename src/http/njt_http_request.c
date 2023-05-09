@@ -30,10 +30,6 @@ static njt_int_t njt_http_process_connection(njt_http_request_t *r,
 static njt_int_t njt_http_process_user_agent(njt_http_request_t *r,
     njt_table_elt_t *h, njt_uint_t offset);
 
-static njt_int_t njt_http_validate_host(njt_str_t *host, njt_pool_t *pool,
-    njt_uint_t alloc);
-static njt_int_t njt_http_set_virtual_server(njt_http_request_t *r,
-    njt_str_t *host);
 static njt_int_t njt_http_find_virtual_server(njt_connection_t *c,
     njt_http_virtual_names_t *virtual_names, njt_str_t *host,
     njt_http_request_t *r, njt_http_core_srv_conf_t **cscfp);
@@ -51,7 +47,6 @@ static void njt_http_keepalive_handler(njt_event_t *ev);
 static void njt_http_set_lingering_close(njt_connection_t *c);
 static void njt_http_lingering_close_handler(njt_event_t *ev);
 static njt_int_t njt_http_post_action(njt_http_request_t *r);
-static void njt_http_close_request(njt_http_request_t *r, njt_int_t error);
 static void njt_http_log_request(njt_http_request_t *r);
 
 static u_char *njt_http_log_error(njt_log_t *log, u_char *buf, size_t len);
@@ -327,6 +322,13 @@ njt_http_init_connection(njt_connection_t *c)
 #if (NJT_HTTP_V2)
     if (hc->addr_conf->http2) {
         rev->handler = njt_http_v2_init;
+    }
+#endif
+
+#if (NJT_HTTP_V3)
+    if (hc->addr_conf->quic) {
+        njt_http_v3_init_stream(c);
+        return;
     }
 #endif
 
@@ -958,6 +960,14 @@ njt_http_ssl_servername(njt_ssl_conn_t *ssl_conn, int *ad, void *arg)
         SSL_set_options(ssl_conn, SSL_OP_NO_RENEGOTIATION);
 #endif
     }
+
+#ifdef SSL_OP_ENABLE_MIDDLEBOX_COMPAT
+#if (NJT_HTTP_V3)
+        if (c->listening->quic) {
+            SSL_clear_options(ssl_conn, SSL_OP_ENABLE_MIDDLEBOX_COMPAT);
+        }
+#endif
+#endif
 
 done:
 
@@ -2171,7 +2181,7 @@ njt_http_process_request(njt_http_request_t *r)
 }
 
 
-static njt_int_t
+njt_int_t
 njt_http_validate_host(njt_str_t *host, njt_pool_t *pool, njt_uint_t alloc)
 {
     u_char  *h, ch;
@@ -2263,7 +2273,7 @@ njt_http_validate_host(njt_str_t *host, njt_pool_t *pool, njt_uint_t alloc)
 }
 
 
-static njt_int_t
+njt_int_t
 njt_http_set_virtual_server(njt_http_request_t *r, njt_str_t *host)
 {
     njt_int_t                  rc;
@@ -2786,6 +2796,13 @@ njt_http_finalize_connection(njt_http_request_t *r)
     }
 #endif
 
+#if (NJT_HTTP_V3)
+    if (r->connection->quic) {
+        njt_http_close_request(r, 0);
+        return;
+    }
+#endif
+
     clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
 
     if (r->main->count != 1) {
@@ -2991,6 +3008,20 @@ njt_http_test_reading(njt_http_request_t *r)
 
     if (r->stream) {
         if (c->error) {
+            err = 0;
+            goto closed;
+        }
+
+        return;
+    }
+
+#endif
+
+#if (NJT_HTTP_V3)
+
+    if (c->quic) {
+        if (rev->error) {
+            c->error = 1;
             err = 0;
             goto closed;
         }
@@ -3664,7 +3695,7 @@ njt_http_post_action(njt_http_request_t *r)
 }
 
 
-static void
+void
 njt_http_close_request(njt_http_request_t *r, njt_int_t rc)
 {
     njt_connection_t  *c;
@@ -3751,7 +3782,12 @@ njt_http_free_request(njt_http_request_t *r, njt_int_t rc)
 
     log->action = "closing request";
 
-    if (r->connection->timedout) {
+    if (r->connection->timedout
+#if (NJT_HTTP_V3)
+        && r->connection->quic == NULL
+#endif
+       )
+    {
         clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
 
         if (clcf->reset_timedout_connection) {
@@ -3833,6 +3869,12 @@ njt_http_close_connection(njt_connection_t *c)
         }
     }
 
+#endif
+
+#if (NJT_HTTP_V3)
+    if (c->quic) {
+        njt_http_v3_reset_stream(c);
+    }
 #endif
 
 #if (NJT_STAT_STUB)

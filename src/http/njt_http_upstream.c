@@ -531,6 +531,13 @@ njt_http_upstream_init(njt_http_request_t *r)
     }
 #endif
 
+#if (NJT_HTTP_V3)
+    if (c->quic) {
+        njt_http_upstream_init_request(r);
+        return;
+    }
+#endif
+
     if (c->read->timer_set) {
         njt_del_timer(c->read);
     }
@@ -1423,6 +1430,19 @@ njt_http_upstream_check_broken_connection(njt_http_request_t *r,
     if (r->stream) {
         return;
     }
+#endif
+
+#if (NJT_HTTP_V3)
+
+    if (c->quic) {
+        if (c->write->error) {
+            njt_http_upstream_finalize_request(r, u,
+                                               NJT_HTTP_CLIENT_CLOSED_REQUEST);
+        }
+
+        return;
+    }
+
 #endif
 
 #if (NJT_HAVE_KQUEUE)

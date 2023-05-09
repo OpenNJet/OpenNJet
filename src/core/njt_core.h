@@ -28,6 +28,7 @@ typedef struct njt_connection_s      njt_connection_t;
 typedef struct njt_thread_task_s     njt_thread_task_t;
 typedef struct njt_ssl_s             njt_ssl_t;
 typedef struct njt_proxy_protocol_s  njt_proxy_protocol_t;
+typedef struct njt_quic_stream_s     njt_quic_stream_t;
 typedef struct njt_ssl_connection_s  njt_ssl_connection_t;
 typedef struct njt_udp_connection_s  njt_udp_connection_t;
 
@@ -84,6 +85,9 @@ typedef void (*njt_connection_handler_pt)(njt_connection_t *c);
 #include <njt_resolver.h>
 #if (NJT_OPENSSL)
 #include <njt_event_openssl.h>
+#if (NJT_QUIC)
+#include <njt_event_quic.h>
+#endif
 #endif
 #include <njt_process_cycle.h>
 #include <njt_conf_file.h>
@@ -93,6 +97,9 @@ typedef void (*njt_connection_handler_pt)(njt_connection_t *c);
 #include <njt_connection.h>
 #include <njt_syslog.h>
 #include <njt_proxy_protocol.h>
+#if (NJT_HAVE_BPF)
+#include <njt_bpf.h>
+#endif
 
 
 #define LF     (u_char) '\n'

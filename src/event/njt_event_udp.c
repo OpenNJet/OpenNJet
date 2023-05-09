@@ -13,13 +13,6 @@
 
 #if !(NJT_WIN32)
 
-struct njt_udp_connection_s {
-    njt_rbtree_node_t   node;
-    njt_connection_t   *connection;
-    njt_buf_t          *buffer;
-};
-
-
 static void njt_close_accepted_udp_connection(njt_connection_t *c);
 static ssize_t njt_udp_shared_recv(njt_connection_t *c, u_char *buf,
     size_t size);

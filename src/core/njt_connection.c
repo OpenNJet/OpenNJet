@@ -73,10 +73,6 @@ njt_create_listening(njt_conf_t *cf, struct sockaddr *sockaddr,
 
     njt_memcpy(ls->addr_text.data, text, len);
 
-#if !(NJT_WIN32)
-    njt_rbtree_init(&ls->rbtree, &ls->sentinel, njt_udp_rbtree_insert_value);
-#endif
-
     ls->fd = (njt_socket_t) -1;
     ls->type = SOCK_STREAM;
 
@@ -1039,6 +1035,12 @@ njt_close_listening_sockets(njt_cycle_t *cycle)
     for (i = 0; i < cycle->listening.nelts; i++) {
 
         c = ls[i].connection;
+
+#if (NJT_QUIC)
+        if (ls[i].quic) {
+            continue;
+        }
+#endif
 
         if (c) {
             if (c->read->active) {

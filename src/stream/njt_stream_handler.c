@@ -130,6 +130,10 @@ njt_stream_init_connection(njt_connection_t *c)
     s->ssl = addr_conf->ssl;
 #endif
 
+#if (NJT_STREAM_QUIC)
+    s->ssl |= addr_conf->quic;
+#endif
+
     if (c->buffer) {
         s->received += c->buffer->last - c->buffer->pos;
     }
@@ -173,6 +177,21 @@ njt_stream_init_connection(njt_connection_t *c)
     tp = njt_timeofday();
     s->start_sec = tp->sec;
     s->start_msec = tp->msec;
+
+#if (NJT_STREAM_QUIC)
+
+    if (addr_conf->quic) {
+        njt_quic_conf_t  *qcf;
+
+        if (c->quic == NULL) {
+            qcf = njt_stream_get_module_srv_conf(addr_conf->ctx,
+                                                 njt_stream_quic_module);
+            njt_quic_run(c, qcf);
+            return;
+        }
+    }
+
+#endif
 
     rev = c->read;
     rev->handler = njt_stream_session_handler;

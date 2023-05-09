@@ -76,6 +76,8 @@ typedef struct {
     unsigned                   wildcard:1;
     unsigned                   ssl:1;
     unsigned                   http2:1;
+    unsigned                   http3:1;
+    unsigned                   quic:1;
 #if (NJT_HAVE_INET6)
     unsigned                   ipv6only:1;
 #endif
@@ -87,6 +89,7 @@ typedef struct {
     int                        backlog;
     int                        rcvbuf;
     int                        sndbuf;
+    int                        type;
 #if (NJT_HAVE_SETFIB)
     int                        setfib;
 #endif
@@ -246,6 +249,8 @@ struct njt_http_addr_conf_s {
 
     unsigned                   ssl:1;
     unsigned                   http2:1;
+    unsigned                   http3:1;
+    unsigned                   quic:1;
     unsigned                   proxy_protocol:1;
 };
 
@@ -275,6 +280,7 @@ typedef struct {
 
 typedef struct {
     njt_int_t                  family;
+    njt_int_t                  type;
     in_port_t                  port;
     njt_array_t                addrs;     /* array of njt_http_conf_addr_t */
 } njt_http_conf_port_t;

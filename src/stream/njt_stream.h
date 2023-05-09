@@ -17,6 +17,10 @@
 #include <njt_stream_ssl_module.h>
 #endif
 
+#if (NJT_STREAM_QUIC)
+#include <njt_stream_quic_module.h>
+#endif
+
 
 typedef struct njt_stream_session_s  njt_stream_session_t;
 
@@ -52,6 +56,7 @@ typedef struct {
     unsigned                       bind:1;
     unsigned                       wildcard:1;
     unsigned                       ssl:1;
+    unsigned                       quic:1;
 #if (NJT_HAVE_INET6)
     unsigned                       ipv6only:1;
 #endif
@@ -77,6 +82,7 @@ typedef struct {
     njt_stream_conf_ctx_t         *ctx;
     njt_str_t                      addr_text;
     unsigned                       ssl:1;
+    unsigned                       quic:1;
     unsigned                       proxy_protocol:1;
 } njt_stream_addr_conf_t;
 

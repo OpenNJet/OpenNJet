@@ -1722,6 +1722,21 @@ njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
         if (dst->type == SOCK_STREAM && pscf->half_close
             && src->read->eof && !u->half_closed && !dst->buffered)
         {
+
+#if (NJT_STREAM_QUIC)
+            if (dst->quic) {
+
+                if (njt_quic_shutdown_stream(dst, NJT_WRITE_SHUTDOWN)
+                    != NJT_OK)
+                {
+                    njt_stream_proxy_finalize(s,
+                                             NJT_STREAM_INTERNAL_SERVER_ERROR);
+                    return;
+                }
+
+            } else
+#endif
+
             if (njt_shutdown_socket(dst->fd, NJT_WRITE_SHUTDOWN) == -1) {
                 njt_connection_error(c, njt_socket_errno,
                                      njt_shutdown_socket_n " failed");

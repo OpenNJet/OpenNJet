@@ -46,6 +46,8 @@ USE_THREADS=NO
 
 NJT_FILE_AIO=NO
 
+QUIC_BPF=NO
+
 DYNAMIC_POOL=YES
 
 HTTP=YES
@@ -62,6 +64,7 @@ HTTP_CHARSET=YES
 HTTP_GZIP=YES
 HTTP_SSL=NO
 HTTP_V2=NO
+HTTP_V3=NO
 HTTP_SSI=YES
 HTTP_REALIP=NO
 HTTP_XSLT=NO
@@ -119,6 +122,7 @@ MAIL_SMTP=YES
 
 STREAM=NO
 STREAM_SSL=NO
+STREAM_QUIC=NO
 STREAM_REALIP=NO
 STREAM_LIMIT_CONN=YES
 STREAM_ACCESS=YES
@@ -154,6 +158,7 @@ PCRE_JIT=NO
 PCRE2=YES
 
 USE_OPENSSL=NO
+USE_OPENSSL_QUIC=NO
 OPENSSL=NONE
 
 USE_ZLIB=NO
@@ -170,6 +175,8 @@ USE_GEOIP=NO
 
 NJT_GOOGLE_PERFTOOLS=NO
 NJT_CPP_TEST=NO
+
+SO_COOKIE_FOUND=NO
 
 NJT_LIBATOMIC=NO
 
@@ -216,6 +223,8 @@ do
 
         --with-file-aio)                 NJT_FILE_AIO=YES           ;;
 
+        --without-quic_bpf_module)       QUIC_BPF=NONE              ;;
+
         --with-ipv6)
             NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
 $0: warning: the \"--with-ipv6\" option is deprecated"
@@ -234,6 +243,7 @@ $0: warning: the \"--with-ipv6\" option is deprecated"
 
         --with-http_ssl_module)          HTTP_SSL=YES               ;;
         --with-http_v2_module)           HTTP_V2=YES                ;;
+        --with-http_v3_module)           HTTP_V3=YES                ;;
         --with-http_realip_module)       HTTP_REALIP=YES            ;;
         --with-http_addition_module)     HTTP_ADDITION=YES          ;;
         --with-http_xslt_module)         HTTP_XSLT=YES              ;;
@@ -320,6 +330,7 @@ use the \"--with-mail_ssl_module\" option instead"
         --with-stream)                   STREAM=YES                 ;;
         --with-stream=dynamic)           STREAM=DYNAMIC             ;;
         --with-stream_ssl_module)        STREAM_SSL=YES             ;;
+        --with-stream_quic_module)       STREAM_QUIC=YES            ;;
         --with-stream_realip_module)     STREAM_REALIP=YES          ;;
         --with-stream_geoip_module)      STREAM_GEOIP=YES           ;;
         --with-stream_geoip_module=dynamic)
@@ -451,10 +462,13 @@ cat << END
 
   --with-file-aio                    enable file AIO support
 
+  --without-quic_bpf_module          disable njt_quic_bpf_module
+
   --without-dynamic-pool             disable njet dynamic pool usage
 
   --with-http_ssl_module             enable njt_http_ssl_module
   --with-http_v2_module              enable njt_http_v2_module
+  --with-http_v3_module              enable njt_http_v3_module
   --with-http_realip_module          enable njt_http_realip_module
   --with-http_addition_module        enable njt_http_addition_module
   --with-http_xslt_module            enable njt_http_xslt_module
@@ -543,6 +557,7 @@ cat << END
   --with-stream                      enable TCP/UDP proxy module
   --with-stream=dynamic              enable dynamic TCP/UDP proxy module
   --with-stream_ssl_module           enable njt_stream_ssl_module
+  --with-stream_quic_module          enable njt_stream_quic_module
   --with-stream_realip_module        enable njt_stream_realip_module
   --with-stream_geoip_module         enable njt_stream_geoip_module
   --with-stream_geoip_module=dynamic enable dynamic njt_stream_geoip_module

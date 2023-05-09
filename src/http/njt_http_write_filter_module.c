@@ -241,6 +241,10 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
             r->out = NULL;
             c->buffered &= ~NJT_HTTP_WRITE_BUFFERED;
 
+            if (last) {
+                r->response_sent = 1;
+            }
+
             return NJT_OK;
         }
 
@@ -346,6 +350,10 @@ njt_http_write_filter(njt_http_request_t *r, njt_chain_t *in)
     }
 
     c->buffered &= ~NJT_HTTP_WRITE_BUFFERED;
+
+    if (last) {
+        r->response_sent = 1;
+    }
 
     if ((c->buffered & NJT_LOWLEVEL_BUFFERED) && r->postponed == NULL) {
         return NJT_AGAIN;
