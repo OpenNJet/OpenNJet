@@ -478,7 +478,9 @@ err:
 	
     if (location_info != NULL && location_info->msg.len ==  0) {
         njt_str_set(&insert, "Success");
+    	r->headers_out.status = NJT_HTTP_OK;
     } else {
+		r->headers_out.status = 400;
 		if(location_info == NULL) {
 			njt_str_set(&insert, "json parser error!");
 		} else {
@@ -490,7 +492,6 @@ err:
     r->headers_out.content_type_len = sizeof("text/plain") - 1;
     njt_str_set(&r->headers_out.content_type, "text/plain");
     r->headers_out.content_type_lowcase = NULL;
-    r->headers_out.status = NJT_HTTP_OK;
     rc = njt_http_upstream_api_insert_out_str(r, &out, &insert);
     len = njt_http_upstream_api_out_len(&out);
     r->headers_out.content_length_n = len;
