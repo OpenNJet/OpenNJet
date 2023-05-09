@@ -20,7 +20,6 @@
 extern int njt_start_vrrp_child2(void);
 extern void njt_vrrp_add_stop_event(void);
 void njt_read_config_file(bool write_config_copy);
-void njt_start_reload(thread_ref_t thread);
 
 static char *override_namespace;
 
@@ -136,7 +135,7 @@ static void njt_do_reload(void)
         num_reloading++;
 }
 
-void njt_start_reload(thread_ref_t thread)
+void start_reload(thread_ref_t thread)
 {
     UNUSED(thread);
     if (!global_data->reload_check_config) {
