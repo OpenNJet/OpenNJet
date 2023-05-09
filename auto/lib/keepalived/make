@@ -30,7 +30,7 @@ END
 
         cat << END                                            >> $NJT_MAKEFILE
 
-$KEEPALIVED/keepalived/emb/vrrp_emb.h:	$OPENSSL/.openssl/include/openssl/ssl.h
+$KEEPALIVED/keepalived/emb/njt_vrrp_emb.h:	$OPENSSL/.openssl/include/openssl/ssl.h
 	export PKG_CONFIG_PATH=`pwd`/$OPENSSL \\
 	&& cd  $KEEPALIVED \\
         && if [ ! -f Makefile ]; then libtoolize --automake --copy --debug --force && ./autogen.sh && ./configure  --disable-lvs --disable-routes --disable-iptables --disable-libipset-dynamic --disable-track-process --disable-systemd --disable-linkbeat  --enable-log-file --disable-vrrp-auth ; fi \\

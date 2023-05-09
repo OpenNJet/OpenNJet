@@ -92,18 +92,15 @@
 #include "config_notify.h"
 #endif
 
-
 /* Global variables */
 bool non_existent_interface_specified;
 const char * const igmp_link_local_mcast_reports = "/proc/sys/net/ipv4/igmp_link_local_mcast_reports";
 
-int start_vrrp_child2(void);
-
 /* Forward declarations */
 #ifndef _ONE_PROCESS_DEBUG_
-static void print_vrrp_data(thread_ref_t);
-static void print_vrrp_stats(thread_ref_t);
-static void reload_vrrp_thread(thread_ref_t);
+static void njt_print_vrrp_data(thread_ref_t);
+static void njt_print_vrrp_stats(thread_ref_t);
+static void njt_reload_vrrp_thread(thread_ref_t);
 #ifdef _WITH_JSON_
 static void print_vrrp_json(thread_ref_t);
 #endif
@@ -111,6 +108,13 @@ static void print_vrrp_json(thread_ref_t);
 #ifdef _WITH_PERF_
 perf_t perf_run = PERF_NONE;
 #endif
+void njt_stop_vrrp_emb(int status);
+void njt_start_vrrp_emb(data_t *prev_global_data);
+void njt_vrrp_add_stop_event(void);
+void njt_vrrp_signal_init2(void);
+void njt_vrrp_respawn_thread(thread_ref_t thread);
+int njt_start_vrrp_child2(void);
+
 
 /* local variables */
 static const char *vrrp_syslog_ident;
@@ -481,7 +485,7 @@ start_vrrp_termination_thread(__attribute__((unused)) thread_ref_t thread)
 
 /* Daemon stop sequence */
 void
-stop_vrrp_emb(int status)
+njt_stop_vrrp_emb(int status)
 {
 	if (__test_bit(CONFIG_TEST_BIT, &debug))
 		return;
@@ -497,7 +501,7 @@ stop_vrrp_emb(int status)
 
 /* Daemon init sequence */
 void
-start_vrrp_emb(data_t *prev_global_data)
+njt_start_vrrp_emb(data_t *prev_global_data)
 {
 	/* Clear the flags used for optimising performance */
 	clear_summary_flags();
@@ -512,7 +516,7 @@ start_vrrp_emb(data_t *prev_global_data)
 	/* Parse configuration file */
 	vrrp_data = alloc_vrrp_data();
 	if (!vrrp_data) {
-		stop_vrrp_emb(KEEPALIVED_EXIT_FATAL);
+		njt_stop_vrrp_emb(KEEPALIVED_EXIT_FATAL);
 		return;
 	}
 
@@ -527,7 +531,7 @@ start_vrrp_emb(data_t *prev_global_data)
 
 	if (non_existent_interface_specified) {
 		report_config_error(CONFIG_BAD_IF, "Non-existent interface specified in configuration");
-		stop_vrrp_emb(KEEPALIVED_EXIT_CONFIG);
+		njt_stop_vrrp_emb(KEEPALIVED_EXIT_CONFIG);
 		return;
 	}
 
@@ -564,7 +568,7 @@ start_vrrp_emb(data_t *prev_global_data)
 		if (vrrp_ipvs_needed()) {
 			/* Initialize ipvs related */
 			if (ipvs_start() != IPVS_SUCCESS) {
-				stop_vrrp_emb(KEEPALIVED_EXIT_FATAL);
+				njt_stop_vrrp_emb(KEEPALIVED_EXIT_FATAL);
 				return;
 			}
 		}
@@ -609,7 +613,7 @@ start_vrrp_emb(data_t *prev_global_data)
 	    || (global_data->reload_check_config && get_config_status() != CONFIG_OK)
 #endif
 	    			 ) {
-		stop_vrrp_emb(KEEPALIVED_EXIT_CONFIG);
+		njt_stop_vrrp_emb(KEEPALIVED_EXIT_CONFIG);
 		return;
 	}
 
@@ -620,13 +624,13 @@ start_vrrp_emb(data_t *prev_global_data)
 	/* Start or stop gratuitous arp/ndisc as appropriate */
 	if (have_ipv4_instance) {
 		if (!gratuitous_arp_init())
-			stop_vrrp_emb(KEEPALIVED_EXIT_MISSING_PERMISSION);
+			njt_stop_vrrp_emb(KEEPALIVED_EXIT_MISSING_PERMISSION);
 	} else
 		gratuitous_arp_close();
 	log_message(LOG_INFO, "gratuitous_arp_init end");
 	if (have_ipv6_instance) {
 		if (!ndisc_init())
-			stop_vrrp_emb(KEEPALIVED_EXIT_MISSING_PERMISSION);
+			njt_stop_vrrp_emb(KEEPALIVED_EXIT_MISSING_PERMISSION);
 	} else
 		ndisc_close();
 
@@ -695,7 +699,7 @@ send_reload_advert_thread(thread_ref_t thread)
 	/* If this is the last vrrp instance to send an advert, schedule the
 	 * actual reload. */
 	if (THREAD_VAL(thread))
-		thread_add_event(master, reload_vrrp_thread, NULL, 0);
+		thread_add_event(master, njt_reload_vrrp_thread, NULL, 0);
 }
 
 static void
@@ -722,7 +726,7 @@ sigreload_vrrp(__attribute__((unused)) void *v, __attribute__((unused)) int sig)
 	}
 
 	if (num_master_inst == 0)
-		thread_add_event(master, reload_vrrp_thread, NULL, 0);
+		thread_add_event(master, njt_reload_vrrp_thread, NULL, 0);
 }
 
 static void
@@ -730,7 +734,7 @@ sigusr1_vrrp(__attribute__((unused)) void *v, __attribute__((unused)) int sig)
 {
 	log_message(LOG_INFO, "Printing VRRP data for process(%d) on signal",
 		    getpid());
-	thread_add_event(master, print_vrrp_data, NULL, 0);
+	thread_add_event(master, njt_print_vrrp_data, NULL, 0);
 }
 
 static void
@@ -738,7 +742,7 @@ sigusr2_vrrp(__attribute__((unused)) void *v, int sig)
 {
 	log_message(LOG_INFO, "Printing %sVRRP stats for process(%d) on signal",
 		    sig == SIGSTATS_CLEAR ? "and clearing " : "", getpid());
-	thread_add_event(master, print_vrrp_stats, NULL, sig);
+	thread_add_event(master, njt_print_vrrp_stats, NULL, sig);
 }
 
 #ifdef _WITH_JSON_
@@ -759,7 +763,7 @@ sigend_vrrp(__attribute__((unused)) void *v, __attribute__((unused)) int sig)
 	if (master)
 		thread_add_start_terminate_event(master, start_vrrp_termination_thread);
 }
-void vrrp_add_stop_event(void)
+void njt_vrrp_add_stop_event(void)
 {
 	if (master)
 		thread_add_start_terminate_event(master, start_vrrp_termination_thread);
@@ -767,7 +771,7 @@ void vrrp_add_stop_event(void)
 
 /* VRRP Child signal handling */
 void
-vrrp_signal_init2(void)
+njt_vrrp_signal_init2(void)
 {
 	fprintf(stderr,"reg signals in %d\n",getpid());
 	signal_set(SIGHUP, sigreload_vrrp, NULL);
@@ -787,7 +791,7 @@ vrrp_signal_init2(void)
 
 /* Reload thread */
 static void
-reload_vrrp_thread(__attribute__((unused)) thread_ref_t thread)
+njt_reload_vrrp_thread(__attribute__((unused)) thread_ref_t thread)
 {
 	bool with_snmp = false;
 #ifdef _WITH_LVS_
@@ -857,7 +861,7 @@ reload_vrrp_thread(__attribute__((unused)) thread_ref_t thread)
 	reset_next_rule_priority();
 
 	/* Reload the conf */
-	start_vrrp_emb(old_global_data);
+	njt_start_vrrp_emb(old_global_data);
 
 #ifdef _WITH_LVS_
 	if (vrrp_ipvs_needed()) {
@@ -889,13 +893,13 @@ reload_vrrp_thread(__attribute__((unused)) thread_ref_t thread)
 }
 
 static void
-print_vrrp_data(__attribute__((unused)) thread_ref_t thread)
+njt_print_vrrp_data(__attribute__((unused)) thread_ref_t thread)
 {
 	vrrp_print_data();
 }
 
 static void
-print_vrrp_stats(thread_ref_t thread)
+njt_print_vrrp_stats(thread_ref_t thread)
 {
 	vrrp_print_stats(thread->u.val == SIGSTATS_CLEAR);
 }
@@ -912,12 +916,12 @@ print_vrrp_json(__attribute__((unused)) thread_ref_t thread)
 static void
 delayed_restart_vrrp_child_thread(__attribute__((unused)) thread_ref_t thread)
 {
-	start_vrrp_child2();
+	njt_start_vrrp_child2();
 }
 
 /* VRRP Child respawning thread. This function runs in the parent process. */
-static void
-vrrp_respawn_thread(thread_ref_t thread)
+void
+njt_vrrp_respawn_thread(thread_ref_t thread)
 {
 	unsigned restart_delay;
 	int ret;
@@ -932,7 +936,7 @@ vrrp_respawn_thread(thread_ref_t thread)
 
 		restart_delay = calc_restart_delay(&vrrp_start_time, &vrrp_next_restart_delay, "VRRP");
 		if (!restart_delay)
-			start_vrrp_child2();
+			njt_start_vrrp_child2();
 		else
 			thread_add_timer(thread->master, delayed_restart_vrrp_child_thread, NULL, restart_delay * TIMER_HZ);
 	} else {
@@ -971,9 +975,9 @@ register_vrrp_thread_addresses(void)
 #endif
 
 #ifndef _ONE_PROCESS_DEBUG_
-	register_thread_address("print_vrrp_data", print_vrrp_data);
-	register_thread_address("print_vrrp_stats", print_vrrp_stats);
-	register_thread_address("reload_vrrp_thread", reload_vrrp_thread);
+	register_thread_address("njt_print_vrrp_data", njt_print_vrrp_data);
+	register_thread_address("njt_print_vrrp_stats", njt_print_vrrp_stats);
+	register_thread_address("njt_reload_vrrp_thread", njt_reload_vrrp_thread);
 	register_thread_address("start_vrrp_termination_thread", start_vrrp_termination_thread);
 	register_thread_address("send_reload_advert_thread", send_reload_advert_thread);
 #endif
@@ -994,7 +998,7 @@ register_vrrp_thread_addresses(void)
 
 /* Register VRRP thread */
 int
-start_vrrp_child2(void)
+njt_start_vrrp_child2(void)
 {
 #ifndef _ONE_PROCESS_DEBUG_
 	//pid_t pid;
@@ -1019,7 +1023,7 @@ start_vrrp_child2(void)
 		log_message(LOG_INFO, "Starting VRRP child process, pid=%d"
 			       , pid);
 
-		thread_add_child(master, vrrp_respawn_thread, NULL,
+		thread_add_child(master, njt_vrrp_respawn_thread, NULL,
 				 pid, TIMER_NEVER);
 
 		return 0;
@@ -1106,14 +1110,14 @@ start_vrrp_child2(void)
 
 #ifndef _ONE_PROCESS_DEBUG_
 	/* Signal handling initialization */
-	//vrrp_signal_init2();
+	//njt_vrrp_signal_init2();
 
 	/* Register emergency shutdown function */
-	register_shutdown_function(stop_vrrp_emb);
+	register_shutdown_function(njt_stop_vrrp_emb);
 #endif
 
 	/* Start VRRP daemon */
-	start_vrrp_emb(NULL);
+	njt_start_vrrp_emb(NULL);
 
 #ifdef _ONE_PROCESS_DEBUG_
 	return 0;
@@ -1152,7 +1156,7 @@ start_vrrp_child2(void)
 void
 vrrp_validate_config(void)
 {
-	start_vrrp_emb(NULL);
+	njt_start_vrrp_emb(NULL);
 }
 
 #ifdef THREAD_DUMP
@@ -1160,7 +1164,7 @@ void
 register_vrrp_parent_addresses(void)
 {
 #ifndef _ONE_PROCESS_DEBUG_
-	register_thread_address("vrrp_respawn_thread", vrrp_respawn_thread);
+	register_thread_address("njt_vrrp_respawn_thread", njt_vrrp_respawn_thread);
 	register_thread_address("delayed_restart_vrrp_child_thread", delayed_restart_vrrp_child_thread);
 #endif
 }

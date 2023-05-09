@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "vrrp_emb.h"
+#include "njt_vrrp_emb.h"
 #include "vrrp_daemon.h"
 #include "main.h"
 #include "logger.h"
@@ -17,8 +17,10 @@
 #include "reload_monitor.h"
 
 
-extern int start_vrrp_child2(void);
-extern void vrrp_add_stop_event(void);
+extern int njt_start_vrrp_child2(void);
+extern void njt_vrrp_add_stop_event(void);
+void njt_read_config_file(bool write_config_copy);
+void njt_start_reload(thread_ref_t thread);
 
 static char *override_namespace;
 
@@ -33,23 +35,23 @@ const char * vrrp_pidfile;
 unsigned num_reloading;
 unsigned long daemon_mode;
 
-static const vector_t * global_init_keywords(void)
+static const vector_t * njt_global_init_keywords(void)
 {
     init_global_keywords(true);
     init_vrrp_keywords(false);
     add_track_file_keywords(false);
     return keywords;
 }
-static void
-read_config_file(bool write_config_copy)
+void
+njt_read_config_file(bool write_config_copy)
 {
     //if (write_config_copy)
         //create_reload_file();
-    init_data(conf_file, global_init_keywords, write_config_copy);
+    init_data(conf_file, njt_global_init_keywords, write_config_copy);
     //if (write_config_copy)
         //remove_reload_file();
 }
-static bool reload_config(void)
+static bool njt_reload_config(void)
 {
     bool unsupported_change = false;
     log_message(LOG_INFO, "Reloading ...");
@@ -62,7 +64,7 @@ static bool reload_config(void)
     global_data = NULL;
     global_data = alloc_global_data();
 	
-	//read_config_file(!old_global_data->reload_check_config);
+	//njt_read_config_file(!old_global_data->reload_check_config);
 
     init_global_data(global_data, old_global_data, false);
 
@@ -124,30 +126,28 @@ if (global_data->reload_time_file)
 
 	
 }
-static void
-do_reload(void)
+static void njt_do_reload(void)
 {
 
-    if (!reload_config())
+    if (!njt_reload_config())
         return;
     //propagate_signal(NULL, SIGHUP);
     if (vrrp_child > 0)
         num_reloading++;
 }
 
-void
-start_reload(thread_ref_t thread)
+void njt_start_reload(thread_ref_t thread)
 {
-
+    UNUSED(thread);
     if (!global_data->reload_check_config) {
-        do_reload();
+        njt_do_reload();
         return;
     }
     //start_validate_reload_conf_child();
 }
 
 
-int vrrp_emb_init(const char* cfg,const char* log)
+int njt_vrrp_emb_init(const char* cfg,const char* log)
 {
 	conf_file=cfg;
 	prog_type = PROG_TYPE_PARENT;
@@ -156,7 +156,7 @@ int vrrp_emb_init(const char* cfg,const char* log)
 		return -1;
 	}
 	global_data = alloc_global_data();
-	init_data(conf_file, global_init_keywords, true);
+	init_data(conf_file, njt_global_init_keywords, true);
 
     if (had_config_file_error()) {
 		return -2;
@@ -178,10 +178,10 @@ int vrrp_emb_init(const char* cfg,const char* log)
 	
 	return 0;
 }
-void vrrp_emb_run(void){
-	start_vrrp_child2();
+void njt_vrrp_emb_run(void){
+	njt_start_vrrp_child2();
 	//launch_thread_scheduler(master);
 }
-void vrrp_emb_stop(void){
-	vrrp_add_stop_event();
+void njt_vrrp_emb_stop(void){
+	njt_vrrp_add_stop_event();
 }

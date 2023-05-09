@@ -4,13 +4,13 @@
 #include <njt_http.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <vrrp_emb.h>
+#include <njt_vrrp_emb.h>
 #include <njt_mqconf_module.h>
 #include <pthread.h>
 
 void *njt_helper_emb_run(void *p)
 {
-    vrrp_emb_run();
+    njt_vrrp_emb_run();
     return NULL;
 }
 
@@ -30,7 +30,7 @@ void njt_helper_run(helper_param param)
     p = njt_cpymem(vrrp_log, cycle->prefix.data, cycle->prefix.len);
     p = njt_cpymem(p, "logs/njet.log", 13);
     *p = '\0';
-    if (0 != (vrrp_emb_init((const char *)param.conf_fullfn.data, vrrp_log))) {
+    if (0 != (njt_vrrp_emb_init((const char *)param.conf_fullfn.data, vrrp_log))) {
         njt_free(vrrp_log);
         njt_log_error(NJT_LOG_ERR, cycle->log, 0,
             "njt vrrp init error\n");
@@ -48,13 +48,13 @@ void njt_helper_run(helper_param param)
         if (cmd == NJT_HELPER_CMD_STOP) {
             njt_log_error(NJT_LOG_INFO, cycle->log, 0,
                 "helper ha stop\n");
-            vrrp_emb_stop();
+            njt_vrrp_emb_stop();
             goto exit;
         }
         if (cmd == NJT_HELPER_CMD_RESTART) {
             njt_log_error(NJT_LOG_INFO, cycle->log, 0,
                 "helper ha restart\n");
-            vrrp_emb_stop();
+            njt_vrrp_emb_stop();
             goto exit;
         }
     }

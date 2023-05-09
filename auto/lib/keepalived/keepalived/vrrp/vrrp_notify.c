@@ -194,68 +194,14 @@ notify_script_exec(notify_script_t* script, const char *type, int state_num, con
 static void
 vrrp_smtp_notifier(vrrp_t * vrrp)
 {
-	/* by stdanley
-	if (vrrp->smtp_alert &&
-	    (!global_data->no_email_faults || vrrp->state != VRRP_STATE_FAULT) &&
-	    vrrp->last_email_state != vrrp->state) {
-		if (vrrp->state == VRRP_STATE_MAST)
-			smtp_alert(SMTP_MSG_VRRP, vrrp,
-				   "Entering MASTER state",
-				   "=> VRRP Instance is now owning VRRP VIPs <=");
-		else if (vrrp->state == VRRP_STATE_BACK)
-			smtp_alert(SMTP_MSG_VRRP, vrrp,
-				   "Entering BACKUP state",
-				   "=> VRRP Instance is no longer owning VRRP VIPs <=");
-		else if (vrrp->state == VRRP_STATE_FAULT)
-			smtp_alert(SMTP_MSG_VRRP, vrrp,
-				   "Entering FAULT state",
-				   "=> VRRP Instance is no longer owning VRRP VIPs <=");
-		else if (vrrp->state == VRRP_STATE_STOP)
-			smtp_alert(SMTP_MSG_VRRP, vrrp,
-				   "Stopping",
-				   "=> VRRP Instance stopping <=");
-		else if (vrrp->state == VRRP_STATE_DELETED)
-			smtp_alert(SMTP_MSG_VRRP, vrrp,
-				   "Deleted",
-				   "=> VRRP Deleted at reload <=");
-		else
-			return;
-
-		vrrp->last_email_state = vrrp->state;
-	}
-	*/
+	UNUSED(vrrp);
 }
 
 /* SMTP alert group notifier */
 static void
 vrrp_sync_smtp_notifier(vrrp_sgroup_t *vgroup)
 {
-/*
-	if (vgroup->smtp_alert &&
-	    (!global_data->no_email_faults || vgroup->state != VRRP_STATE_FAULT) &&
-	    vgroup->last_email_state != vgroup->state) {
-		if (vgroup->state == VRRP_STATE_MAST)
-			smtp_alert(SMTP_MSG_VGROUP, vgroup,
-				   "Entering MASTER state",
-				   "=> All VRRP group instances are now in MASTER state <=");
-		else if (vgroup->state == VRRP_STATE_BACK)
-			smtp_alert(SMTP_MSG_VGROUP, vgroup,
-				   "Entering BACKUP state",
-				   "=> All VRRP group instances are now in BACKUP state <=");
-		else if (vgroup->state == VRRP_STATE_FAULT)
-			smtp_alert(SMTP_MSG_VGROUP, vgroup,
-				   "Entering FAULT state",
-				   "=> All VRRP group instances are now in FAULT state <=");
-		else if (vgroup->state == VRRP_STATE_STOP)
-			smtp_alert(SMTP_MSG_VGROUP, vgroup,
-				   "Stopping",
-				   "=> All VRRP group instances are now stopping <=");
-		else
-			return;
-
-		vgroup->last_email_state = vgroup->state;
-	}
-	*/
+	UNUSED(vgroup);
 }
 
 void

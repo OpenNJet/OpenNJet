@@ -8,10 +8,7 @@ AM_CPPFLAGS		+= $(KA_CPPFLAGS) $(DEBUG_CPPFLAGS)
 AM_CFLAGS		= $(KA_CFLAGS) $(DEBUG_CFLAGS)
 AM_LDFLAGS		= $(KA_LDFLAGS) $(DEBUG_LDFLAGS)
 
-#noinst_LIBRARIES	= libha_emb.a
 lib_LTLIBRARIES =libha_emb.la
-#noinst_PROGRAMS	= HA_test
-noinst_bindir = .
 
 #libha_emb_a_SOURCES 
 #    ../vrrp/vrrp_daemon.c 
@@ -49,7 +46,7 @@ BASE_SOURCES = \
 			  ../../lib/rttables.c ../../lib/rttables.h \
 			  ../../lib/assert.c
 libha_emb_la_SOURCES	= \
-	vrrp_emb.c vrrp_daemon2.c \
+	njt_vrrp_emb.c njt_vrrp_daemon.c \
 	../core/global_data.c \
 	../core/keepalived_netlink.c \
 	../core/layer4.c \
@@ -63,13 +60,5 @@ libha_emb_la_SOURCES	+= ../include/vrrp_daemon.h
 libha_emb_la_SOURCES	+=  $(VRRP_SOURCES)
 libha_emb_la_SOURCES	+=  $(TRACK_SOURCES)
 libha_emb_la_SOURCES	+=  $(BASE_SOURCES)
-#libha_emb_a_LDFLAGS = -g
-
-#libha_emb_la_LIBADD =   
-#libha_emb_la_DEPENDENCIES=  ../../lib/liblib.a 
-
-#HA_test_SOURCES = vrrp_emb_test.c 
-#HA_test_DEPENDENCIES=libha_emb.la
-#HA_test_LDADD	= libha_emb.la  -lcrypto
 
 MAINTAINERCLEANFILES	= @MAINTAINERCLEANFILES@
