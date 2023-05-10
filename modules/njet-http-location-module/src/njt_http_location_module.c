@@ -59,6 +59,7 @@ njt_http_refresh_variables_keys();
 static char *
 njt_http_location_api(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
+static void njt_update_static_location_clcf(njt_http_location_tree_node_t *node);
 
 static void njt_http_location_write_data(njt_http_location_info_t *location_info);
 typedef struct njt_http_location_ctx_s {
@@ -179,9 +180,7 @@ static void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
                 njt_http_location_destroy(clcf);
             } else if (lq->inclusive != NULL) {
                 clcf = lq->inclusive;
-		if(clcf) {
-                	njt_http_location_destroy(clcf);
-		}
+               // njt_http_location_destroy(clcf);  zyg
             }
         }
     }
@@ -336,6 +335,8 @@ njt_http_refresh_location(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf, njt_ht
     if (njt_http_init_new_static_location_trees(cf, clcf) != NJT_OK) {
         return NJT_ERROR;
     }
+
+    njt_update_static_location_clcf(clcf->new_static_locations);
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "init_new_static_location_trees end +++++++++++++++");
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "free old location start +++++++++++++++");
 
@@ -1336,4 +1337,25 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 		njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg end");
 		 //njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg all:%d, remain:%d",count,num);
 		
+}
+static void njt_update_static_location_clcf(njt_http_location_tree_node_t *node){
+    if (node == NULL){
+        return;
+    }
+
+    if(node->exact){
+	//njt_log_error(NJT_LOG_EMERG, njt_cycle->pool->log, 0, "exact  njt_update_static_location_clcf:%V",&node->inclusive->name);
+        node->exact->loc_conf[njt_http_core_module.ctx_index] = node->exact;
+	njt_update_static_location_clcf(node->exact->static_locations);
+    }
+    if(node->inclusive){
+	//njt_log_error(NJT_LOG_EMERG, njt_cycle->pool->log, 0, " inclusive  njt_update_static_location_clcf:%V",&node->inclusive->name);
+        node->inclusive->loc_conf[njt_http_core_module.ctx_index] = node->inclusive;
+	njt_update_static_location_clcf(node->inclusive->static_locations);
+    }
+
+    njt_update_static_location_clcf(node->left);
+    njt_update_static_location_clcf(node->right);
+    njt_update_static_location_clcf(node->tree);
+
 }
