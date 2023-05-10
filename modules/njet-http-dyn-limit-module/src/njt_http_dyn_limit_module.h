@@ -30,12 +30,20 @@ struct njt_http_dyn_limit_loc_s
     njt_str_t          full_name;
     
     //limit req
+    /*up_share: from up(server or http level for share)
+              not support modify, just read
+    location: location use, can modify */
+    njt_str_t          limit_reqs_scope;         
     njt_array_t        limit_reqs;
     njt_str_t          limit_req_dry_run;
     njt_str_t          limit_req_log_level;
     njt_uint_t         limit_req_status;
 
     //limit conn
+    /*up_share: from up(server or http level for share)
+              not support modify, just read
+    location: location use, can modify */
+    njt_str_t          limit_conns_scope;
     njt_array_t        limit_conns;
     njt_str_t          limit_conn_dry_run;
     njt_str_t          limit_conn_log_level;

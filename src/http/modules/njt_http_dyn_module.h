@@ -68,6 +68,7 @@ typedef struct {
     njt_uint_t                   delay_log_level;
     njt_uint_t                   status_code;
     njt_flag_t                   dry_run;
+    njt_flag_t                   from_up;
 } njt_http_limit_req_conf_t;
 
 
@@ -82,6 +83,10 @@ typedef struct {
     njt_uint_t                    log_level;
     njt_uint_t                    status_code;
     njt_flag_t                    dry_run;
+//add by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_flag_t                    from_up;
+#endif
 } njt_http_limit_conn_conf_t;
 
 

@@ -522,6 +522,7 @@ njt_http_limit_conn_create_conf(njt_conf_t *cf)
     conf->log_level = NJT_CONF_UNSET_UINT;
     conf->status_code = NJT_CONF_UNSET_UINT;
     conf->dry_run = NJT_CONF_UNSET;
+    conf->from_up = 0;
 
     return conf;
 }
@@ -535,6 +536,7 @@ njt_http_limit_conn_merge_conf(njt_conf_t *cf, void *parent, void *child)
 
     if (conf->limits.elts == NULL) {
         conf->limits = prev->limits;
+        conf->from_up = 1;
     }
 
     njt_conf_merge_uint_value(conf->log_level, prev->log_level, NJT_LOG_ERR);

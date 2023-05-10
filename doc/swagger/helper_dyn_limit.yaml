@@ -141,6 +141,10 @@ components:
           type: string
           description: 超过该值后开始限速 .
           example: 5k
+        limit_conns_scope:
+          type: string
+          description: 连接限制数来源， up_share表示来自于上一层， location表示当前location的连接限制数
+          example: up_share
         limit_conns:
           type: array
           items:
@@ -165,6 +169,10 @@ components:
           type: int
           description:  超过连接限制后返回码,范围[400, 599], 包含400和599.
           example: 503
+        limit_reqs_scope:
+          type: string
+          description: 连接限制数来源， up_share表示来自于上一层， location表示当前location的连接限制数
+          example: up_share
         limit_reqs:
           type: array
           items:

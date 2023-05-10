@@ -138,6 +138,15 @@ static njt_json_define_t njt_http_dyn_limit_loc_json_dt[] = {
         NULL,
     },
     {
+        njt_string("limit_reqs_scope"),
+        offsetof(njt_http_dyn_limit_loc_t, limit_reqs_scope),
+        sizeof(njt_http_dyn_limit_conn_t),
+        NJT_JSON_STR,
+        0,
+        njt_http_dyn_limit_conn_json_dt,
+        NULL,
+    },
+    {
         njt_string("limit_reqs"),
         offsetof(njt_http_dyn_limit_loc_t, limit_reqs),
         sizeof(njt_http_dyn_limit_req_t),
@@ -171,6 +180,15 @@ static njt_json_define_t njt_http_dyn_limit_loc_json_dt[] = {
         NJT_JSON_INT,
         0,
         NULL,
+        NULL,
+    },
+    {
+        njt_string("limit_conns_scope"),
+        offsetof(njt_http_dyn_limit_loc_t, limit_conns_scope),
+        sizeof(njt_http_dyn_limit_conn_t),
+        NJT_JSON_STR,
+        0,
+        njt_http_dyn_limit_conn_json_dt,
         NULL,
     },
     {
@@ -422,6 +440,13 @@ static njt_int_t njt_dyn_limit_set_limit_conns(njt_http_dyn_limit_loc_t *data, n
         return NJT_OK;
     }
 
+    if(data->limit_conns_scope.len != 8 ||
+        njt_strncasecmp(data->limit_conns_scope.data, (u_char *) "location", 8) !=0){
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
+                 "dyn limit conn not location level, so not update");
+        return NJT_OK;
+    }
+
     njt_conf_t cf_data = {
         .cycle = (njt_cycle_t *)njt_cycle,
         .log = njt_cycle->log,
@@ -435,6 +460,11 @@ static njt_int_t njt_dyn_limit_set_limit_conns(njt_http_dyn_limit_loc_t *data, n
             "njt_dyn_limit_set_limit_conns get module config error");
 		return NJT_ERROR;
 	}
+
+    if(lccf->from_up == 1){
+        lccf->limits.elts = NULL;
+        lccf->from_up = 0;
+    }
 
     limits = lccf->limits.elts;
     if (limits == NULL) {
@@ -531,6 +561,13 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(njt_http_dyn_limit_loc_t *data, nj
         return NJT_OK;
     }
 
+    if(data->limit_reqs_scope.len != 8 ||
+        njt_strncasecmp(data->limit_reqs_scope.data, (u_char *) "location", 8) !=0){
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
+                 "dyn limit req not location level, so not update");
+        return NJT_OK;
+    } 
+
     njt_conf_t cf_data = {
         .cycle = (njt_cycle_t *)njt_cycle,
         .log = njt_cycle->log,
@@ -544,6 +581,11 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(njt_http_dyn_limit_loc_t *data, nj
             "njt_dyn_limit_set_limit_reqs get module config error");
 		return NJT_ERROR;
 	}
+
+    if(lrcf->from_up == 1){
+        lrcf->limits.elts = NULL;
+        lrcf->from_up = 0;
+    }
 
     limits = lrcf->limits.elts;
     if (limits == NULL) {
@@ -1406,6 +1448,18 @@ static njt_json_element *njt_dyn_limit_dump_locs_json(njt_pool_t *pool, njt_queu
 
         if(lccf != NULL)
         {
+            if(lccf->from_up == 1){
+                njt_str_set(&tmpstr, "up_share");
+            }else{
+                njt_str_set(&tmpstr, "location");
+            }
+            
+            sub = njt_json_str_element(pool, njt_json_fast_key("limit_conns_scope"), &tmpstr);
+            if(sub == NULL){
+                return NULL;
+            }
+            njt_struct_add(item,sub,pool);
+
             sub = njt_json_arr_element(pool, njt_json_fast_key("limit_conns"));
             if(sub == NULL){
                 return NULL;
@@ -1470,6 +1524,18 @@ static njt_json_element *njt_dyn_limit_dump_locs_json(njt_pool_t *pool, njt_queu
 
         if(lrcf != NULL)
         {
+            if(lrcf->from_up == 1){
+                njt_str_set(&tmpstr, "up_share");
+            }else{
+                njt_str_set(&tmpstr, "location");
+            }
+            
+            sub = njt_json_str_element(pool, njt_json_fast_key("limit_reqs_scope"), &tmpstr);
+            if(sub == NULL){
+                return NULL;
+            }
+            njt_struct_add(item,sub,pool);
+
             sub = njt_json_arr_element(pool, njt_json_fast_key("limit_reqs"));
             if(sub == NULL){
                 return NULL;
