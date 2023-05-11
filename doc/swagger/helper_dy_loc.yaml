@@ -99,7 +99,7 @@ components:
         location_body:
           type: string
           description:  the body of location.
-          example: "return 200 body;"
+          example: "return 200 body"
         location_pass:
           type: string
           description:  the pass of location.
