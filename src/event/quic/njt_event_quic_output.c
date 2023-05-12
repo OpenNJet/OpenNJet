@@ -914,7 +914,7 @@ njt_quic_send_cc(njt_connection_t *c)
 
     qc->last_cc = njt_current_msec;
 
-    return ngx_quic_frame_sendto(c, &frame, 0, qc->path);
+    return njt_quic_frame_sendto(c, &frame, 0, qc->path);
 }
 
 

@@ -19,10 +19,10 @@
  * 
  * QUIC flags in first byte
  */
-#define NJT_QUIC_PKT_LONG       0x00  /* header form */
+#define NJT_QUIC_PKT_LONG       0x80  /* header form */
 #define NJT_QUIC_PKT_FIXED_BIT  0x40
 #define NJT_QUIC_PKT_TYPE       0x30   /* in long packet */
-#define NJT_QUIC_PKT_KPHASE     0x30   /* in short packet */
+#define NJT_QUIC_PKT_KPHASE     0x04   /* in short packet */
 
 #define njt_quic_long_pkt(flags)  ((flags) & NJT_QUIC_PKT_LONG)
 #define njt_quic_short_pkt(flags)  (((flags) & NJT_QUIC_PKT_LONG) == 0)
@@ -384,7 +384,7 @@ ssize_t njt_quic_create_frame(u_char *p, njt_quic_frame_t *f);
 
 ssize_t njt_quic_parse_ack_range(njt_log_t *log, u_char *start,
     u_char *end, uint64_t *gap, uint64_t *range);
-size_t njt_quic_create_ack_range(u_char *p, uint64_t *gap, uint64_t *range);
+size_t njt_quic_create_ack_range(u_char *p, uint64_t gap, uint64_t range);
 
 njt_int_t njt_quic_init_transport_params(njt_quic_tp_t *tp,
     njt_quic_conf_t *qcf);

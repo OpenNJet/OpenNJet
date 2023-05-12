@@ -1,13 +1,9 @@
 
 /*
- * Copyright (C) Igor Sysoev
+ * Copyright (C) Roman Arutyunyan
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
-
-
-#ifndef _NJT_HTTP_CACHE_H_INCLUDED_
-#define _NJT_HTTP_CACHE_H_INCLUDED_
 
 
 #include <njt_config.h>
@@ -15,197 +11,295 @@
 #include <njt_http.h>
 
 
-#define NJT_HTTP_CACHE_MISS          1
-#define NJT_HTTP_CACHE_BYPASS        2
-#define NJT_HTTP_CACHE_EXPIRED       3
-#define NJT_HTTP_CACHE_STALE         4
-#define NJT_HTTP_CACHE_UPDATING      5
-#define NJT_HTTP_CACHE_REVALIDATED   6
-#define NJT_HTTP_CACHE_HIT           7
-#define NJT_HTTP_CACHE_SCARCE        8
+uintptr_t
+njt_http_v3_encode_varlen_int(u_char *p, uint64_t value)
+{
+    if (value <= 63) {
+        if (p == NULL) {
+            return 1;
+        }
 
-#define NJT_HTTP_CACHE_KEY_LEN       16
-#define NJT_HTTP_CACHE_ETAG_LEN      128
-#define NJT_HTTP_CACHE_VARY_LEN      128
+        *p++ = value;
+        return (uintptr_t) p;
+    }
 
-#define NJT_HTTP_CACHE_VERSION       5
+    if (value <= 16383) {
+        if (p == NULL) {
+            return 2;
+        }
 
+        *p++ = 0x40 | (value >> 8);
+        *p++ = value;
+        return (uintptr_t) p;
+    }
 
-typedef struct {
-    njt_uint_t                       status;
-    time_t                           valid;
-} njt_http_cache_valid_t;
+    if (value <= 1073741823) {
+        if (p == NULL) {
+            return 4;
+        }
 
+        *p++ = 0x80 | (value >> 24);
+        *p++ = (value >> 16);
+        *p++ = (value >> 8);
+        *p++ = value;
+        return (uintptr_t) p;
+    }
 
-typedef struct {
-    njt_rbtree_node_t                node;
-    njt_queue_t                      queue;
+    if (p == NULL) {
+        return 8;
+    }
 
-    u_char                           key[NJT_HTTP_CACHE_KEY_LEN
-                                         - sizeof(njt_rbtree_key_t)];
-
-    unsigned                         count:20;
-    unsigned                         uses:10;
-    unsigned                         valid_msec:10;
-    unsigned                         error:10;
-    unsigned                         exists:1;
-    unsigned                         updating:1;
-    unsigned                         deleting:1;
-    unsigned                         purged:1;
-                                     /* 10 unused bits */
-
-    njt_file_uniq_t                  uniq;
-    time_t                           expire;
-    time_t                           valid_sec;
-    size_t                           body_start;
-    off_t                            fs_size;
-    njt_msec_t                       lock_time;
-} njt_http_file_cache_node_t;
-
-
-struct njt_http_cache_s {
-    njt_file_t                       file;
-    njt_array_t                      keys;
-    uint32_t                         crc32;
-    u_char                           key[NJT_HTTP_CACHE_KEY_LEN];
-    u_char                           main[NJT_HTTP_CACHE_KEY_LEN];
-
-    njt_file_uniq_t                  uniq;
-    time_t                           valid_sec;
-    time_t                           updating_sec;
-    time_t                           error_sec;
-    time_t                           last_modified;
-    time_t                           date;
-
-    njt_str_t                        etag;
-    njt_str_t                        vary;
-    u_char                           variant[NJT_HTTP_CACHE_KEY_LEN];
-
-    size_t                           buffer_size;
-    size_t                           header_start;
-    size_t                           body_start;
-    off_t                            length;
-    off_t                            fs_size;
-
-    njt_uint_t                       min_uses;
-    njt_uint_t                       error;
-    njt_uint_t                       valid_msec;
-    njt_uint_t                       vary_tag;
-
-    njt_buf_t                       *buf;
-
-    njt_http_file_cache_t           *file_cache;
-    njt_http_file_cache_node_t      *node;
-
-#if (NJT_THREADS || NJT_COMPAT)
-    njt_thread_task_t               *thread_task;
-#endif
-
-    njt_msec_t                       lock_timeout;
-    njt_msec_t                       lock_age;
-    njt_msec_t                       lock_time;
-    njt_msec_t                       wait_time;
-
-    njt_event_t                      wait_event;
-
-    unsigned                         lock:1;
-    unsigned                         waiting:1;
-
-    unsigned                         updated:1;
-    unsigned                         updating:1;
-    unsigned                         exists:1;
-    unsigned                         temp_file:1;
-    unsigned                         purged:1;
-    unsigned                         reading:1;
-    unsigned                         secondary:1;
-    unsigned                         update_variant:1;
-    unsigned                         background:1;
-
-    unsigned                         stale_updating:1;
-    unsigned                         stale_error:1;
-};
+    *p++ = 0xc0 | (value >> 56);
+    *p++ = (value >> 48);
+    *p++ = (value >> 40);
+    *p++ = (value >> 32);
+    *p++ = (value >> 24);
+    *p++ = (value >> 16);
+    *p++ = (value >> 8);
+    *p++ = value;
+    return (uintptr_t) p;
+}
 
 
-typedef struct {
-    njt_uint_t                       version;
-    time_t                           valid_sec;
-    time_t                           updating_sec;
-    time_t                           error_sec;
-    time_t                           last_modified;
-    time_t                           date;
-    uint32_t                         crc32;
-    u_short                          valid_msec;
-    u_short                          header_start;
-    u_short                          body_start;
-    u_char                           etag_len;
-    u_char                           etag[NJT_HTTP_CACHE_ETAG_LEN];
-    u_char                           vary_len;
-    u_char                           vary[NJT_HTTP_CACHE_VARY_LEN];
-    u_char                           variant[NJT_HTTP_CACHE_KEY_LEN];
-} njt_http_file_cache_header_t;
+uintptr_t
+njt_http_v3_encode_prefix_int(u_char *p, uint64_t value, njt_uint_t prefix)
+{
+    njt_uint_t  thresh, n;
+
+    thresh = (1 << prefix) - 1;
+
+    if (value < thresh) {
+        if (p == NULL) {
+            return 1;
+        }
+
+        *p++ |= value;
+        return (uintptr_t) p;
+    }
+
+    value -= thresh;
+
+    if (p == NULL) {
+        for (n = 2; value >= 128; n++) {
+            value >>= 7;
+        }
+
+        return n;
+    }
+
+    *p++ |= thresh;
+
+    while (value >= 128) {
+        *p++ = 0x80 | value;
+        value >>= 7;
+    }
+
+    *p++ = value;
+
+    return (uintptr_t) p;
+}
 
 
-typedef struct {
-    njt_rbtree_t                     rbtree;
-    njt_rbtree_node_t                sentinel;
-    njt_queue_t                      queue;
-    njt_atomic_t                     cold;
-    njt_atomic_t                     loading;
-    off_t                            size;
-    njt_uint_t                       count;
-    njt_uint_t                       watermark;
-} njt_http_file_cache_sh_t;
+uintptr_t
+njt_http_v3_encode_field_section_prefix(u_char *p, njt_uint_t insert_count,
+    njt_uint_t sign, njt_uint_t delta_base)
+{
+    if (p == NULL) {
+        return njt_http_v3_encode_prefix_int(NULL, insert_count, 8)
+               + njt_http_v3_encode_prefix_int(NULL, delta_base, 7);
+    }
+
+    *p = 0;
+    p = (u_char *) njt_http_v3_encode_prefix_int(p, insert_count, 8);
+
+    *p = sign ? 0x80 : 0;
+    p = (u_char *) njt_http_v3_encode_prefix_int(p, delta_base, 7);
+
+    return (uintptr_t) p;
+}
 
 
-struct njt_http_file_cache_s {
-    njt_http_file_cache_sh_t        *sh;
-    njt_slab_pool_t                 *shpool;
+uintptr_t
+njt_http_v3_encode_field_ri(u_char *p, njt_uint_t dynamic, njt_uint_t index)
+{
+    /* Indexed Field Line */
 
-    njt_path_t                      *path;
+    if (p == NULL) {
+        return njt_http_v3_encode_prefix_int(NULL, index, 6);
+    }
 
-    off_t                            min_free;
-    off_t                            max_size;
-    size_t                           bsize;
+    *p = dynamic ? 0x80 : 0xc0;
 
-    time_t                           inactive;
-
-    time_t                           fail_time;
-
-    njt_uint_t                       files;
-    njt_uint_t                       loader_files;
-    njt_msec_t                       last;
-    njt_msec_t                       loader_sleep;
-    njt_msec_t                       loader_threshold;
-
-    njt_uint_t                       manager_files;
-    njt_msec_t                       manager_sleep;
-    njt_msec_t                       manager_threshold;
-
-    njt_shm_zone_t                  *shm_zone;
-
-    njt_uint_t                       use_temp_path;
-                                     /* unsigned use_temp_path:1 */
-};
+    return njt_http_v3_encode_prefix_int(p, index, 6);
+}
 
 
-njt_int_t njt_http_file_cache_new(njt_http_request_t *r);
-njt_int_t njt_http_file_cache_create(njt_http_request_t *r);
-void njt_http_file_cache_create_key(njt_http_request_t *r);
-njt_int_t njt_http_file_cache_open(njt_http_request_t *r);
-njt_int_t njt_http_file_cache_set_header(njt_http_request_t *r, u_char *buf);
-void njt_http_file_cache_update(njt_http_request_t *r, njt_temp_file_t *tf);
-void njt_http_file_cache_update_header(njt_http_request_t *r);
-njt_int_t njt_http_cache_send(njt_http_request_t *);
-void njt_http_file_cache_free(njt_http_cache_t *c, njt_temp_file_t *tf);
-time_t njt_http_file_cache_valid(njt_array_t *cache_valid, njt_uint_t status);
+uintptr_t
+njt_http_v3_encode_field_lri(u_char *p, njt_uint_t dynamic, njt_uint_t index,
+    u_char *data, size_t len)
+{
+    size_t   hlen;
+    u_char  *p1, *p2;
 
-char *njt_http_file_cache_set_slot(njt_conf_t *cf, njt_command_t *cmd,
-    void *conf);
-char *njt_http_file_cache_valid_set_slot(njt_conf_t *cf, njt_command_t *cmd,
-    void *conf);
+    /* Literal Field Line With Name Reference */
+
+    if (p == NULL) {
+        return njt_http_v3_encode_prefix_int(NULL, index, 4)
+               + njt_http_v3_encode_prefix_int(NULL, len, 7)
+               + len;
+    }
+
+    *p = dynamic ? 0x40 : 0x50;
+    p = (u_char *) njt_http_v3_encode_prefix_int(p, index, 4);
+
+    p1 = p;
+    *p = 0;
+    p = (u_char *) njt_http_v3_encode_prefix_int(p, len, 7);
+
+    if (data) {
+        p2 = p;
+        hlen = njt_http_huff_encode(data, len, p, 0);
+
+        if (hlen) {
+            p = p1;
+            *p = 0x80;
+            p = (u_char *) njt_http_v3_encode_prefix_int(p, hlen, 7);
+
+            if (p != p2) {
+                njt_memmove(p, p2, hlen);
+            }
+
+            p += hlen;
+
+        } else {
+            p = njt_cpymem(p, data, len);
+        }
+    }
+
+    return (uintptr_t) p;
+}
 
 
-extern njt_str_t  njt_http_cache_status[];
+uintptr_t
+njt_http_v3_encode_field_l(u_char *p, njt_str_t *name, njt_str_t *value)
+{
+    size_t   hlen;
+    u_char  *p1, *p2;
+
+    /* Literal Field Line With Literal Name */
+
+    if (p == NULL) {
+        return njt_http_v3_encode_prefix_int(NULL, name->len, 3)
+               + name->len
+               + njt_http_v3_encode_prefix_int(NULL, value->len, 7)
+               + value->len;
+    }
+
+    p1 = p;
+    *p = 0x20;
+    p = (u_char *) njt_http_v3_encode_prefix_int(p, name->len, 3);
+
+    p2 = p;
+    hlen = njt_http_huff_encode(name->data, name->len, p, 1);
+
+    if (hlen) {
+        p = p1;
+        *p = 0x28;
+        p = (u_char *) njt_http_v3_encode_prefix_int(p, hlen, 3);
+
+        if (p != p2) {
+            njt_memmove(p, p2, hlen);
+        }
+
+        p += hlen;
+
+    } else {
+        njt_strlow(p, name->data, name->len);
+        p += name->len;
+    }
+
+    p1 = p;
+    *p = 0;
+    p = (u_char *) njt_http_v3_encode_prefix_int(p, value->len, 7);
+
+    p2 = p;
+    hlen = njt_http_huff_encode(value->data, value->len, p, 0);
+
+    if (hlen) {
+        p = p1;
+        *p = 0x80;
+        p = (u_char *) njt_http_v3_encode_prefix_int(p, hlen, 7);
+
+        if (p != p2) {
+            njt_memmove(p, p2, hlen);
+        }
+
+        p += hlen;
+
+    } else {
+        p = njt_cpymem(p, value->data, value->len);
+    }
+
+    return (uintptr_t) p;
+}
 
 
-#endif /* _NJT_HTTP_CACHE_H_INCLUDED_ */
+uintptr_t
+njt_http_v3_encode_field_pbi(u_char *p, njt_uint_t index)
+{
+    /* Indexed Field Line With Post-Base Index */
+
+    if (p == NULL) {
+        return njt_http_v3_encode_prefix_int(NULL, index, 4);
+    }
+
+    *p = 0x10;
+
+    return njt_http_v3_encode_prefix_int(p, index, 4);
+}
+
+
+uintptr_t
+njt_http_v3_encode_field_lpbi(u_char *p, njt_uint_t index, u_char *data,
+    size_t len)
+{
+    size_t   hlen;
+    u_char  *p1, *p2;
+
+    /* Literal Field Line With Post-Base Name Reference */
+
+    if (p == NULL) {
+        return njt_http_v3_encode_prefix_int(NULL, index, 3)
+               + njt_http_v3_encode_prefix_int(NULL, len, 7)
+               + len;
+    }
+
+    *p = 0;
+    p = (u_char *) njt_http_v3_encode_prefix_int(p, index, 3);
+
+    p1 = p;
+    *p = 0;
+    p = (u_char *) njt_http_v3_encode_prefix_int(p, len, 7);
+
+    if (data) {
+        p2 = p;
+        hlen = njt_http_huff_encode(data, len, p, 0);
+
+        if (hlen) {
+            p = p1;
+            *p = 0x80;
+            p = (u_char *) njt_http_v3_encode_prefix_int(p, hlen, 7);
+
+            if (p != p2) {
+                njt_memmove(p, p2, hlen);
+            }
+
+            p += hlen;
+
+        } else {
+            p = njt_cpymem(p, data, len);
+        }
+    }
+
+    return (uintptr_t) p;
+}

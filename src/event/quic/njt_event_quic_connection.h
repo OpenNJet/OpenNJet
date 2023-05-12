@@ -27,11 +27,11 @@ typedef struct njt_quic_path_s        njt_quic_path_t;
 typedef struct njt_quic_keys_s        njt_quic_keys_t;
 
 #if (NJT_QUIC_OPENSSL_COMPAT)
-#include <ngx_event_quic_openssl_compat.h>
+#include <njt_event_quic_openssl_compat.h>
 #endif
 #include <njt_event_quic_transport.h>
 #include <njt_event_quic_protection.h>
-#include <njt_event_quic_frame.h>
+#include <njt_event_quic_frames.h>
 #include <njt_event_quic_migration.h>
 #include <njt_event_quic_connid.h>
 #include <njt_event_quic_streams.h>

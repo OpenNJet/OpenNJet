@@ -152,9 +152,10 @@ njt_module_t  njt_http_v3_module = {
 };
 
 
+
 static njt_http_variable_t  njt_http_v3_vars[] = {
 
-    { njt_string("http3"), NULL, njt_http_v3_variable, 0, 0, 0 },
+    { njt_string("http3"), NULL, njt_http_v3_variable, 0, 0, 0, 0 },
 
       njt_http_null_variable
 };

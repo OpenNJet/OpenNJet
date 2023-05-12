@@ -312,7 +312,7 @@ njt_int_t njt_ssl_get_client_v_remain(njt_connection_t *c, njt_pool_t *pool,
 
 
 njt_int_t njt_ssl_handshake(njt_connection_t *c);
-#if (NJT_QUIC)
+#if (NJT_DEBUG)
 void njt_ssl_handshake_log(njt_connection_t *c);
 #endif
 ssize_t njt_ssl_recv(njt_connection_t *c, u_char *buf, size_t size);

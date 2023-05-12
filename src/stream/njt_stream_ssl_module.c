@@ -1368,7 +1368,7 @@ njt_stream_ssl_init(njt_conf_t *cf)
             continue;
         }
 
-        scf = listen[i].ctx->srv_conf[ngx_stream_ssl_module.ctx_index];
+        scf = listen[i].ctx->srv_conf[njt_stream_ssl_module.ctx_index];
 
 #if (NJT_QUIC_OPENSSL_COMPAT)
         if (njt_quic_compat_init(cf, scf->ssl.ctx) != NJT_OK) {

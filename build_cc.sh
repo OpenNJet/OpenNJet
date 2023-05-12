@@ -43,12 +43,13 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./src/ext/lua/http"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./src/ext/lua/stream"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
-LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo --with-pcre=auto/lib/pcre-8.45"
-flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --with-debug --build=NJT1.0_$git_tag --with-stream --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module  --with-cc=/usr/bin/cc"
-LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm -lpcre  "
+#LIB_SRC_PATH=" --with-openssl=/root/download/Tongsuo-8.3.2 --with-pcre=auto/lib/pcre-8.45"
+LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo --with-pcre=auto/lib/pcre-8.45 "
+flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --with-debug --build=NJT1.0_$git_tag --with-stream --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-http_v3_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_quic_module  --with-stream_ssl_preread_module  --with-cc=/usr/bin/cc"
+LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm -lpcre " 
 # LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm -lpcre  -L/home/ubuntu/src/github.com/google/boringssl/build/ssl -L//home/ubuntu/src/github.com/google/boringssl/build/crypto"
 # CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow -I/home/ubuntu/src/github.com/google/boringssl/include"
-CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
+CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow "
 #LD_OPT="-ldl -lm  -lpcre "
 #CC_OPT="-O0 -ggdb"
 
@@ -92,6 +93,7 @@ cdir=`cd $(dirname $0); pwd`
 		   cp -fr lualib /etc/njet/lualib
 		fi
 
+                # ./configure --with-openssl=/root/download/openssl-openssl-3.0.8-quic1  $flags --with-openssl-opt='--strict-warnings' --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
                 ./configure --with-openssl=auto/lib/tongsuo $flags --with-openssl-opt='--strict-warnings enable-ntls' --with-ntls --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
                 ;;
             make)

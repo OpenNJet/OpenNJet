@@ -53,7 +53,7 @@ char _license[] SEC("license") = LICENSE;
     data = start + offset - 1;
 
 
-#define ngx_quic_parse_uint64(p)                                              \
+#define njt_quic_parse_uint64(p)                                              \
     (((__u64)(p)[0] << 56) |                                                  \
      ((__u64)(p)[1] << 48) |                                                  \
      ((__u64)(p)[2] << 40) |                                                  \
@@ -67,11 +67,11 @@ char _license[] SEC("license") = LICENSE;
  * actual map object is created by the "bpf" system call,
  * all pointers to this variable are replaced by the bpf loader
  */
-struct bpf_map_def SEC("maps") ngx_quic_sockmap;
+struct bpf_map_def SEC("maps") njt_quic_sockmap;
 
 
 SEC(PROGNAME)
-int ngx_quic_select_socket_by_dcid(struct sk_reuseport_md *ctx)
+int njt_quic_select_socket_by_dcid(struct sk_reuseport_md *ctx)
 {
     int             rc;
     __u64           key;
@@ -109,9 +109,9 @@ int ngx_quic_select_socket_by_dcid(struct sk_reuseport_md *ctx)
         goto failed;
     }
 
-    key = ngx_quic_parse_uint64(dcid);
+    key = njt_quic_parse_uint64(dcid);
 
-    rc = bpf_sk_select_reuseport(ctx, &ngx_quic_sockmap, &key, 0);
+    rc = bpf_sk_select_reuseport(ctx, &njt_quic_sockmap, &key, 0);
 
     switch (rc) {
     case 0:

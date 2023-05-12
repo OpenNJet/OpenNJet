@@ -1380,7 +1380,7 @@ njt_http_add_listen(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     }
 
     port->family = sa->sa_family;
-    port->type = lsopt->type
+    port->type = lsopt->type;
     port->port = p;
     port->addrs.elts = NULL;
 
@@ -1477,6 +1477,11 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 #if (NJT_HTTP_V2)
         addr[i].opt.http2 = http2;
 #endif
+#if (NJT_HTTP_V3)
+        addr[i].opt.http3 = http3;
+        addr[i].opt.quic = quic;
+#endif
+
 
         return NJT_OK;
     }
