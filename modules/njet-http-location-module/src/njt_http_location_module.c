@@ -543,7 +543,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 		loc = &sub_location[0];
 
         location_name.data = njt_pcalloc(location_info->pool, 1024);
-        if(location_info->location_rule.len > 0) {
+        if(loc->location_rule.len > 0) {
                 p = njt_snprintf(location_name.data, 1024, "%V%V", &loc->location_rule,
                                                                  &loc->location);
         } else {
