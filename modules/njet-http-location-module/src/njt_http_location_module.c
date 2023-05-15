@@ -705,6 +705,60 @@ njt_http_location_init_worker(njt_cycle_t *cycle) {
 }
 
 
+
+njt_int_t njt_http_check_sub_location(njt_json_element *in_items,njt_http_location_info_t *location_info) {
+ 
+	njt_json_element  *items;
+	njt_str_t   str;
+	njt_str_t   error = njt_string("invalid parameter:");
+	njt_queue_t   *q;
+	if(in_items->type != NJT_JSON_OBJ) {
+		njt_str_set(&location_info->msg, "json error!!!");
+		return NJT_ERROR;
+	}
+
+        for (q = njt_queue_head(&in_items->objdata.datas);
+         q != njt_queue_sentinel(&in_items->objdata.datas);
+         q = njt_queue_next(q)) {
+
+		items = njt_queue_data(q, njt_json_element, ele_queue);
+		if(items == NULL){
+			break;
+		}
+	  njt_str_set(&str,"location_rule");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"location_name");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"location_body");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"proxy_pass");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"locations");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  str.len = error.len + items->key.len + 1;
+	  str.data = njt_pcalloc(location_info->pool,str.len);
+	  if(str.data != NULL) {
+	     njt_snprintf(str.data,str.len,"%V%V!",&error,&items->key);	
+	     location_info->msg = str;
+	  } else {
+		njt_str_set(&location_info->msg, "json error!!!");
+	  }
+	}
+	if(location_info->msg.len > 0){
+	  return NJT_ERROR;
+	}
+	return NJT_OK;
+}
 static njt_int_t
 njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_array_t *location_array,njt_json_element *in_items) {
 
@@ -731,7 +785,10 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
             break;
         }
 
-
+		rc = njt_http_check_sub_location(items,location_info);
+	        if(rc == NJT_ERROR) {
+		   return NJT_ERROR;
+		}
 		sub_location = njt_array_push(location_array);
 		if(sub_location == NULL) {
 			return NJT_ERROR;
@@ -813,6 +870,64 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 
    return NJT_OK;
 }
+
+njt_int_t njt_http_check_top_location( njt_json_manager *json_body,njt_http_location_info_t *location_info) {
+ 
+	njt_json_element  *items;
+	njt_str_t   str;
+	njt_queue_t   *q;
+	njt_str_t   error = njt_string("invalid parameter:");
+	if(json_body->json_val == NULL || json_body->json_val->type != NJT_JSON_OBJ) {
+		njt_str_set(&location_info->msg, "json error!!!");
+		return NJT_ERROR;
+	}
+
+        for (q = njt_queue_head(&json_body->json_val->objdata.datas);
+         q != njt_queue_sentinel(&json_body->json_val->objdata.datas);
+         q = njt_queue_next(q)) {
+
+		items = njt_queue_data(q, njt_json_element, ele_queue);
+		if(items == NULL){
+			break;
+		}
+	  njt_str_set(&str,"type");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"addr_port");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"server_name");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"locations");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"location_rule");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"location_name");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  str.len = error.len + items->key.len + 1;
+	  str.data = njt_pcalloc(location_info->pool,str.len);
+	  if(str.data != NULL) {
+	     njt_snprintf(str.data,str.len,"%V%V!",&error,&items->key);	
+	     location_info->msg = str;
+	  } else {
+		njt_str_set(&location_info->msg, "json error!!!");
+	  }
+	}
+	if(location_info->msg.len > 0){
+	  return NJT_ERROR;
+	}
+	return NJT_OK;
+}
 njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str) {
 	 njt_json_manager json_body;
 	 njt_pool_t  *location_pool;
@@ -841,11 +956,16 @@ njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str) {
 	location_info = njt_pcalloc(location_pool, sizeof(njt_http_location_info_t));
     if (location_info == NULL) {
 		njt_destroy_pool(location_pool);
-        return NULL;;
+        return NULL;
     }
+
 	//location_info->type = -1;
 	location_info->pool = location_pool;
 
+	rc = njt_http_check_top_location(&json_body,location_info);
+	if(rc == NJT_ERROR) {
+	   goto end;
+	}
 	if(location_info->location_array == NULL) {
 		location_info->location_array = njt_array_create(location_info->pool, 1, sizeof(njt_http_sub_location_info_t));
 		if(location_info->location_array == NULL){
