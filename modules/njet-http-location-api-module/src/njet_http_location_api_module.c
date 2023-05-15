@@ -57,8 +57,18 @@ typedef struct njt_http_location_ctx_s {
 } njt_http_location_ctx_t, njt_stream_http_location_ctx_t;
 
 
-typedef struct njt_http_location_main_conf_s {
+typedef struct njt_http_location_main_conf_s {  //njt_http_location_main_cf_t
+	njt_http_request_t **reqs;
+    njt_int_t size;
 } njt_http_location_main_conf_t;
+
+
+
+typedef struct {
+    njt_http_request_t *req;
+    njt_int_t index;
+    njt_http_location_main_conf_t *dlmcf;
+}njt_http_location_rpc_ctx_t;
 
 
 
@@ -341,6 +351,139 @@ njt_http_location_init_worker(njt_cycle_t *cycle) {
     return NJT_OK;
 }
 
+static njt_int_t njt_http_location_get_free_index(njt_http_location_main_conf_t *dlmcf){
+    njt_int_t i;
+
+    for(i = 0 ; i < dlmcf->size; ++i ){
+        if(dlmcf->reqs[i] == NULL){
+            return i;
+        }
+    }
+    return -1;
+}
+
+static void njt_http_location_cleanup_handler(void *data){
+    njt_http_location_rpc_ctx_t *ctx;
+
+    ctx = data;
+    if(ctx->dlmcf->size > ctx->index && ctx->dlmcf->reqs[ctx->index] == ctx->req){
+        ctx->dlmcf->reqs[ctx->index] = NULL;
+    }
+}
+
+static int njt_http_location_request_output(njt_http_request_t *r,njt_int_t code, njt_str_t *msg){
+    njt_int_t rc;
+    njt_buf_t *buf;
+    njt_chain_t out;
+
+
+    if(code == NJT_OK){
+        if(msg == NULL || msg->len == 0){
+            r->headers_out.status = NJT_HTTP_NO_CONTENT;
+        } else{
+            r->headers_out.status = NJT_HTTP_OK;
+        }
+    }else{
+        r->headers_out.status = code;
+    }
+    r->headers_out.content_length_n = 0;
+    if(msg != NULL && msg->len > 0){
+        njt_str_t type=njt_string("application/json");
+        r->headers_out.content_type = type;
+        r->headers_out.content_length_n = msg->len;
+    }
+    if (r->headers_out.content_length) {
+        r->headers_out.content_length->hash = 0;
+        r->headers_out.content_length = NULL;
+    }
+    rc = njt_http_send_header(r);
+    if(rc == NJT_ERROR || rc > NJT_OK || r->header_only || msg == NULL ||msg->len < 1 ){
+        return rc;
+    }
+    buf = njt_create_temp_buf(r->pool,msg->len);
+    if(buf == NULL){
+        return NJT_ERROR;
+    }
+    njt_memcpy(buf->pos,msg->data, msg->len);
+    buf->last = buf->pos + msg->len;
+    buf->last_buf = 1;
+    out.buf = buf;
+    out.next = NULL;
+    return njt_http_output_filter(r, &out);
+
+
+}
+
+
+
+static int njt_http_location_rpc_msg_handler(njt_dyn_rpc_res_t* res, njt_str_t *msg){
+    njt_http_location_rpc_ctx_t *ctx;
+    njt_http_request_t *req;
+    njt_int_t rc;
+
+    rc = NJT_ERROR;
+    njt_str_t err_msg = njt_string("{\n"
+                                   "  \"code\": 500,\n"
+                                   "  \"msg\": \"rpc timeout\"\n"
+                                   "}");
+    ctx = res->data;
+    njt_log_error(NJT_LOG_INFO,njt_cycle->log, 0, "hand rpc time : %M",njt_current_msec);
+    if( ctx->dlmcf->size > ctx->index && ctx->dlmcf->reqs[ctx->index] == ctx->req){
+        req =  ctx->req;
+        if(res->rc == RPC_RC_OK){
+            rc = njt_http_location_request_output(req,NJT_OK,msg);
+        }
+        if(res->rc == RPC_RC_TIMEOUT){
+            rc = njt_http_location_request_output(req,NJT_HTTP_INTERNAL_SERVER_ERROR,&err_msg);
+        }
+        njt_http_finalize_request(req,rc);
+    }
+    return NJT_OK;
+}
+
+
+static njt_int_t njt_http_location_rpc_send(njt_http_request_t *r,njt_str_t *module_name,njt_str_t *msg, int retain){
+    njt_http_location_main_conf_t *dlmcf;
+    njt_int_t index;
+    njt_int_t rc;
+    njt_http_location_rpc_ctx_t *ctx;
+    njt_pool_cleanup_t *cleanup;
+
+    dlmcf = njt_http_get_module_main_conf(r,njt_http_location_api_module);
+    index = njt_http_location_get_free_index(dlmcf);
+    if(index == -1 ){
+        njt_log_error(NJT_LOG_ERR, r->pool->log, 0, "not find request free index ");
+        goto err;
+    } else {
+        njt_log_error(NJT_LOG_INFO, r->pool->log, 0, "use index :%i ",index);
+    }
+    ctx = njt_pcalloc(r->pool, sizeof(njt_http_location_rpc_ctx_t));
+    if(ctx == NULL){
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "could not alloc mem in function %s", __func__);
+        goto err;
+    }
+    ctx->index = index;
+    ctx->req = r;
+    ctx->dlmcf = dlmcf;
+    cleanup = njt_pool_cleanup_add(r->pool,0);
+    if(cleanup == NULL){
+        njt_log_error(NJT_LOG_ERR, r->pool->log, 0, "request cleanup error ");
+        goto err;
+    }
+    cleanup->handler = njt_http_location_cleanup_handler;
+    cleanup->data = ctx;
+    njt_log_error(NJT_LOG_INFO, r->pool->log, 0, "send rpc time : %M",njt_current_msec);
+    rc = njt_dyn_rpc(module_name,msg, retain, index, njt_http_location_rpc_msg_handler, ctx);
+    if(rc == NJT_OK){
+        dlmcf->reqs[index] = r;
+    }
+    return NJT_OK;
+
+    err:
+    return NJT_ERROR;
+}
+
 
 static void
 njt_http_location_read_data(njt_http_request_t *r){
@@ -459,15 +602,15 @@ njt_http_location_read_data(njt_http_request_t *r){
         goto err;
     }
 	
-	p = njt_snprintf(topic_name.data,topic_len,"/dyn/loc/l_%ui",crc32);
-	topic_name.len = p - topic_name.data;
-	if(location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0 ){
-		njt_dyn_sendmsg(&topic_name,&json_str,0);
-	} else  if(location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0 ){
-		njt_dyn_sendmsg(&topic_name,&json_str,1);
-	}
 	
-
+	if(location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0 ){
+		p = njt_snprintf(topic_name.data,topic_len,"/dyn/loc/l_%ui",crc32);
+	} else  if(location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0 ){
+		p = njt_snprintf(topic_name.data,topic_len,"/worker_0/dyn/loc/l_%ui",crc32);
+	}
+	topic_name.len = p - topic_name.data;
+	njt_http_location_rpc_send(r,&topic_name,&json_str,0);
+	
 	njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "1 send topic retain_flag=%V, key=%V,value=%V",&location_info->type,&topic_name,&json_str);
 
 	
