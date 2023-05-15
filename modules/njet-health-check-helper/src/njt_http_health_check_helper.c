@@ -777,7 +777,7 @@ static njt_health_checker_t njt_health_checks[] = {
 
         {    
                 NJT_STREAM_MODULE,
-                0,   
+                SOCK_DGRAM,
                 njt_string("sudp"),
                 0,   
                 njt_stream_health_check_send_handler,
@@ -791,6 +791,18 @@ static njt_health_checker_t njt_health_checks[] = {
                 NJT_STREAM_MODULE,
                 0,
                 njt_string("tcp"),
+                1,
+                njt_http_health_check_tcp_handler,
+                njt_http_health_check_tcp_handler,
+                NULL,
+                NULL,
+                NULL
+        },
+
+        {
+                NJT_STREAM_MODULE,
+                SOCK_DGRAM,
+                njt_string("udp"),
                 1,
                 njt_http_health_check_tcp_handler,
                 njt_http_health_check_tcp_handler,
@@ -861,11 +873,12 @@ njt_stream_health_check_update_wo_lock(njt_helper_health_check_conf_t *hhccf,
 
 static njt_int_t
 njt_http_health_check_peek_one_byte(njt_connection_t *c) {
-    char buf[1];
+    u_char buf[1];
     njt_int_t n;
     njt_err_t err;
 
-    n = recv(c->fd, buf, 1, MSG_PEEK);
+    n = c->recv(c,buf,1);
+
     err = njt_socket_errno;
 
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, err,
@@ -3989,6 +4002,7 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
 
             njt_log_debug1(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
                                "health check connect to peer of %V.", &peer->name);
+            hc_peer->peer.type = hhccf->protocol;
             rc = njt_event_connect_peer(&hc_peer->peer);
 
             if (rc == NJT_ERROR || rc == NJT_DECLINED || rc == NJT_BUSY) {
