@@ -41,6 +41,7 @@ struct evt_ctx_t
 // static struct mosq_config cfg;
 
 static int njet_iot_client_instances = 0;
+static const char empty_client_conf_file[] = "/dev/shm/njetmq-client-XXXXXX";
 
 void my_connect_callback(struct mosquitto *mosq, void *obj, int result, int flags, const mosquitto_property *properties)
 {
@@ -260,6 +261,10 @@ int njet_iot_client_sendmsg(const char *topic, const void *msg, int l, int qos, 
 {
 	int mid = 0;
 	int retained = 0;
+	if (!ctx)
+	{
+		return MOSQ_ERR_INVAL;
+	}
 	if (qos >= 16)
 	{
 		qos = qos - 16;
@@ -275,7 +280,17 @@ int njet_iot_client_sendmsg_rr(const char *topic, const void *msg, int l, int qo
 {
 	int mid = 0;
 	int rc;
+	int retained = 0;
 	mosquitto_property *proplist = NULL;
+	if (!ctx)
+	{
+		return MOSQ_ERR_INVAL;
+	}
+	if (qos >= 16)
+	{
+		qos = qos - 16;
+		retained = 1;
+	}
 	struct mosq_config *cfg = ctx->cfg;
 	char resp_topic[128] = {0};
 	if (is_reply == 1)
@@ -295,7 +310,7 @@ int njet_iot_client_sendmsg_rr(const char *topic, const void *msg, int l, int qo
 		log__printf(ctx->mosq, MOSQ_LOG_ERR, "err add MQTT_PROP_CORRELATION_DATA:%d", rc);
 		goto cleanup;
 	}
-	rc = mosquitto_publish_v5(ctx->mosq, &mid, topic, l, msg, qos, 0, proplist);
+	rc = mosquitto_publish_v5(ctx->mosq, &mid, topic, l, msg, qos, retained, proplist);
 	// log__printf(ctx.mosq,MOSQ_LOG_ERR,"publish v5:%s,%d",resp_topic,rc);
 cleanup:
 	mosquitto_property_free_all(&proplist);
@@ -309,6 +324,7 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 	int ret;
 	int i;
 	char *cfg_dir, *tmp_name;
+	char nameBuff[32];
 	MDB_envinfo info;
 	struct evt_ctx_t *ctx;
 	struct mosq_config *cfg;
@@ -342,7 +358,19 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 
 	cfg->prefix = (char *)prefix;
 
+	if (cfg_file == NULL || strlen(cfg_file) == 0)
+	{
+		strncpy(nameBuff, empty_client_conf_file, 30);
+		ret = mkstemp((char *)nameBuff);
+		if (ret == -1)
+		{
+			fprintf(stderr, "can't create tmp file \"%s\" e\n", nameBuff);
+			return NULL;
+		}
+		cfg_file = nameBuff;
+	}
 	ret = client_config_load(cfg, CLIENT_SUB, cfg_file);
+	unlink(nameBuff);
 	// todo: free cfg on error
 	if (ret != MOSQ_ERR_SUCCESS)
 		return NULL;
@@ -435,6 +463,10 @@ int njet_iot_client_kv_get(void *key, u_int32_t key_len, void **val, u_int32_t *
 	MDB_txn *txn;
 	MDB_dbi dbi;
 	MDB_val mk, mv;
+	if (!ctx)
+	{
+		return MOSQ_ERR_INVAL;
+	}
 	int ret = mdb_txn_begin(ctx->kv_env, NULL, MDB_RDONLY, &txn);
 	if (ret != 0)
 	{
@@ -470,6 +502,10 @@ int njet_iot_client_kv_set(const void *key, u_int32_t key_len, const void *val, 
 	MDB_txn *txn;
 	MDB_dbi dbi;
 	MDB_val mk, mv;
+	if (!ctx)
+	{
+		return MOSQ_ERR_INVAL;
+	}
 	// log__printf(ctx.mosq,MOSQ_LOG_INFO,"kv set begin");
 	int ret = mdb_txn_begin(ctx->kv_env, NULL, 0, &txn);
 	if (ret != 0)
