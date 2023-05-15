@@ -12,7 +12,7 @@
  * @param def 要解析的结构的定义。
  * @param data 要解析的数据结构
  *
- * @return 一个字符串。
+ * @return njt_int_t  status code
  */
 
 #include <njt_json_util.h>
@@ -114,14 +114,14 @@ njt_int_t njt_json_parse_json_element(njt_pool_t *pool,njt_json_element  *elemen
 
 
 /**
- * > 函数用来将json字符串解析成结构体的，不支持array类型。
+ * > 函数用来将json字符串解析成结构体的。
  *
  * @param pool 内存池
  * @param str 要解析的json字符串
  * @param def json结构的定义，定义方式如下：
  * @param data 要解析的数据
  *
- * @return njt_str_t 状态码
+ * @return njt_int_t 状态码
  */
 njt_int_t njt_json_parse_data(njt_pool_t *pool,njt_str_t *str,njt_json_define_t *def,void *data){
     njt_json_manager json_body;
@@ -160,7 +160,7 @@ njt_int_t njt_json_parse_data(njt_pool_t *pool,njt_str_t *str,njt_json_define_t 
         array = data;
         p = njt_array_push(array);
         q = njt_queue_head(&items->arrdata);
-        for(; q == njt_queue_sentinel(&items->arrdata); q = njt_queue_next(q)){
+        for(; q != njt_queue_sentinel(&items->arrdata); q = njt_queue_next(q)){
             sub = njt_queue_data(q,njt_json_element,ele_queue);
             rc = njt_json_parse_json_element(pool,sub,&obj_def,p);
             if(rc != NJT_OK){
