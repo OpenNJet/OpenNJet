@@ -17,6 +17,8 @@
 #define RPC_TOPIC_PREFIX "/rpc/"
 #define RPC_TOPIC_PREFIX_LEN 5
 #define RPC_HANDLER_TOPIC_PREFIX_LEN 5 // rpc handler topic start with /rpc/ or /dyn/
+#define WORKER_TOPIC_PREFIX "/worker_"
+#define WORKER_TOPIC_PREFIX_LEN 8
 #define RETAIN_MSG_QOS 16
 
 typedef struct
@@ -362,10 +364,8 @@ static int msg_callback(const char* topic, const char* msg, int msg_len, void* o
         njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "worker write kv in local kv tree:%s,%V", key, &kv_key);
         return 0;
     }
-    else if (strlen(topic) > DYN_TOPIC_PREFIX_LEN && njt_strncmp(topic, DYN_TOPIC_PREFIX, DYN_TOPIC_PREFIX_LEN) == 0) {
-        invoke_topic_msg_handler(topic, msg, msg_len);
-    }
-
+    
+    invoke_topic_msg_handler(topic, msg, msg_len);
     return 1;
 }
 
@@ -421,6 +421,7 @@ static njt_int_t kv_init_worker(njt_cycle_t* cycle)
     char client_id[128] = { 0 };
     char log[1024] = { 0 };
     char localcfg[1024] = { 0 };
+    char worker_topic[32] = { 0 };
     // return when there is no http configuraton
     if (njt_http_kv_module.ctx_index == NJT_CONF_UNSET_UINT) {
         return NJT_OK;
@@ -489,6 +490,8 @@ static njt_int_t kv_init_worker(njt_cycle_t* cycle)
     njet_iot_client_add_topic(kv_evt_ctx, "/cluster/+/kv_set/#");
     njet_iot_client_add_topic(kv_evt_ctx, "/dyn/#");
     njet_iot_client_add_topic(kv_evt_ctx, "$share/njet//rpc/#");
+    snprintf(worker_topic, 31, "/worker_%d/#", (int)njt_worker);
+    njet_iot_client_add_topic(kv_evt_ctx, worker_topic);
     ret = njet_iot_client_connect(3, 5, kv_evt_ctx);
     if (0 != ret) {
         njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "worker mqtt client connect failed, schedule:%d", ret);
@@ -713,43 +716,71 @@ static void invoke_kv_change_handler(njt_str_t* key, njt_str_t* value)
     }
 }
 
-static void invoke_topic_msg_handler(const char* topic, const char* msg, int msg_len)
+static njt_int_t njt_kv_get_hashkey_from_topic(const char *topic, njt_str_t *hash_key)
 {
-    njt_uint_t i;
+    njt_uint_t i, s;
+    njt_uint_t index[5]={0};  //max 5 level in topic
+    if (strlen(topic) > DYN_TOPIC_PREFIX_LEN && njt_strncmp(topic, DYN_TOPIC_PREFIX, DYN_TOPIC_PREFIX_LEN) == 0) {
+        // found second field of topic's length,  for example: topic /dyn/loc/l_12323 , second field is "loc", length is 3
+        for (i = DYN_TOPIC_PREFIX_LEN; i < strlen(topic); i++) {
+            if (topic[i] == '/')
+                break;
+        }
+        hash_key->len = i - DYN_TOPIC_PREFIX_LEN;
+        hash_key->data = (u_char *)topic + DYN_TOPIC_PREFIX_LEN;
+        return NJT_OK;
+    }
+    if (njt_strncmp(topic, WORKER_TOPIC_PREFIX, WORKER_TOPIC_PREFIX_LEN) == 0) {
+        //  found third filed, /worker_n/dyn/loc/l_12323, third  field is "loc", length is 3
+        s=1;
+        for (i = WORKER_TOPIC_PREFIX_LEN; i < strlen(topic); i++) {
+            if (topic[i] == '/')  {
+                index[s]=i;
+                s++;
+            }
+            if (s==4) break;
+        }
+        if (s<=2) {
+            return NJT_ERROR;
+        }
+
+        hash_key->len = i - index[2] - 1;
+        hash_key->data = (u_char *)topic + index[2] + 1;
+        return NJT_OK;
+    }
+
+    return NJT_ERROR;
+}
+
+static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg_len)
+{
     njt_str_t nstr_topic;
     njt_str_t nstr_msg;
     njt_str_t hash_key;
     njt_int_t rc;
-    kv_change_handler_t* tm_handler;
+    kv_change_handler_t *tm_handler;
     // a zero length msg is sent to clear retained message, so skip zero length msg
     if (msg == NULL || msg_len == 0) {
         return;
     }
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke topic msg handler for topic:%s ", topic);
     if (kv_handler_hashmap) {
-        // found second field of topic's length,  for example: topic /dyn/loc/1 , second field is "loc", length is 3
-        for (i = DYN_TOPIC_PREFIX_LEN; i < strlen(topic); i++) {
-            if (topic[i] == '/')
-                break;
-        }
-        hash_key.len = i - DYN_TOPIC_PREFIX_LEN;
-        hash_key.data = (u_char*)topic + DYN_TOPIC_PREFIX_LEN;
-        rc = njt_lvlhsh_map_get(kv_handler_hashmap, &hash_key, (intptr_t*)&tm_handler);
+        rc = njt_kv_get_hashkey_from_topic(topic, &hash_key);
         if (rc == NJT_OK) {
-            nstr_topic.data = (u_char*)topic;
-            nstr_topic.len = strlen(topic);
-            nstr_msg.data = (u_char*)msg;
-            nstr_msg.len = msg_len;
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got kv handler : %p, %v", tm_handler, &tm_handler->key);
-            if (tm_handler->handler) {
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "hash key is :%V in worker %d", &hash_key, njt_worker);
+            rc = njt_lvlhsh_map_get(kv_handler_hashmap, &hash_key, (intptr_t *)&tm_handler);
+            if (rc == NJT_OK) {
+                nstr_topic.data = (u_char *)topic;
+                nstr_topic.len = strlen(topic);
+                nstr_msg.data = (u_char *)msg;
+                nstr_msg.len = msg_len;
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got kv handler : %p, %V", tm_handler, &tm_handler->key);
                 tm_handler->handler(&nstr_topic, &nstr_msg, tm_handler->data);
-            }
-            else {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "no handler register for key: %v", &hash_key);
             }
         }
     }
 }
+
 
 static u_char* invoke_rpc_handler(const char* topic, const char* msg, int msg_len, int* len)
 {
