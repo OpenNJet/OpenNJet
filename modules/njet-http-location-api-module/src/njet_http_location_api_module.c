@@ -11,7 +11,7 @@
 #include <math.h>
 #include <njt_http_kv_module.h>
 #include <njt_http_sendmsg_module.h>
-#include <njet_http_location_module.h>
+#include <njt_http_location_module.h>
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 extern njt_cycle_t *njet_master_cycle;
@@ -421,10 +421,12 @@ njt_http_location_read_data(njt_http_request_t *r){
 		sub_location = location_info->location_array->elts;
 		for(i = 0; i < location_info->location_array->nelts; i++) {
 			loc = &sub_location[i];
-			rc = njt_http_check_upstream_exist((njt_cycle_t  *)njet_master_cycle,location_info->pool, &loc->proxy_pass);
-			if (rc != NJT_OK) {
-				njt_str_set(&location_info->msg, "proxy_pass upstream  no defined!");
-				 goto err;
+			if(loc->proxy_pass.len > 0 ){
+				rc = njt_http_check_upstream_exist((njt_cycle_t  *)njet_master_cycle,location_info->pool, &loc->proxy_pass);
+				if (rc != NJT_OK) {
+					njt_str_set(&location_info->msg, "proxy_pass upstream  no defined!");
+					 goto err;
+				}
 			}
 		}
 		loc = &sub_location[0];
@@ -476,7 +478,9 @@ err:
 	
     if (location_info != NULL && location_info->msg.len ==  0) {
         njt_str_set(&insert, "Success");
+    	r->headers_out.status = NJT_HTTP_OK;
     } else {
+		r->headers_out.status = 400;
 		if(location_info == NULL) {
 			njt_str_set(&insert, "json parser error!");
 		} else {
@@ -488,7 +492,6 @@ err:
     r->headers_out.content_type_len = sizeof("text/plain") - 1;
     njt_str_set(&r->headers_out.content_type, "text/plain");
     r->headers_out.content_type_lowcase = NULL;
-    r->headers_out.status = NJT_HTTP_OK;
     rc = njt_http_upstream_api_insert_out_str(r, &out, &insert);
     len = njt_http_upstream_api_out_len(&out);
     r->headers_out.content_length_n = len;
