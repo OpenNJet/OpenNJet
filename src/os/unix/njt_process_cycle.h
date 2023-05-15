@@ -58,5 +58,6 @@ extern sig_atomic_t    njt_reconfigure;
 extern sig_atomic_t    njt_reopen;
 extern sig_atomic_t    njt_change_binary;
 extern sig_atomic_t    njt_reap_helper;
+extern sig_atomic_t    njt_rtc;
 
 #endif /* _NJT_PROCESS_CYCLE_H_INCLUDED_ */
