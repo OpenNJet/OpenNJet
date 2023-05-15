@@ -133,6 +133,20 @@ static njt_int_t
 njt_http_location_init(njt_conf_t *cf) {
     njt_http_core_main_conf_t *cmcf;
     njt_http_handler_pt *h;
+
+	 njt_http_location_main_conf_t *dlmcf;
+
+    dlmcf = njt_http_conf_get_module_main_conf(cf,njt_http_location_api_module);
+    if(dlmcf->size == NJT_CONF_UNSET){
+        dlmcf->size = 500;
+    }
+    dlmcf->reqs = njt_pcalloc(cf->pool, sizeof(njt_http_request_t*)*dlmcf->size);
+    if(dlmcf->reqs == NULL){
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_location_postconfiguration alloc mem error");
+        return NJT_ERROR;
+    }
+
+
     cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
 	if(cmcf == NULL) {
 		return NJT_ERROR;
@@ -176,6 +190,7 @@ njt_http_location_create_main_conf(njt_conf_t *cf) {
         njt_log_error(NJT_LOG_ERR, cf->log, 0, "malloc njt_http_location_main_conf_t eror");
         return NULL;
     }
+	uclcf->size = NJT_CONF_UNSET;
     return uclcf;
 }
 
@@ -609,9 +624,12 @@ njt_http_location_read_data(njt_http_request_t *r){
 		p = njt_snprintf(topic_name.data,topic_len,"/worker_0/dyn/loc/l_%ui",crc32);
 	}
 	topic_name.len = p - topic_name.data;
-	njt_http_location_rpc_send(r,&topic_name,&json_str,0);
-	
+	rc = njt_http_location_rpc_send(r,&topic_name,&json_str,0);
+	if(rc == NJT_OK) {
+		++r->main->count;
+	}
 	njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "1 send topic retain_flag=%V, key=%V,value=%V",&location_info->type,&topic_name,&json_str);
+	goto out;
 
 	
 err:
@@ -654,6 +672,10 @@ err:
    
     rc = njt_http_output_filter(r, &out);
 	njt_http_finalize_request(r, rc);
+
+out:
+	njt_http_finalize_request(r, rc);
+    return;
 
 }
 
