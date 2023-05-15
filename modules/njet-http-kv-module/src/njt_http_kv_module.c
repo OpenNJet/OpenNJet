@@ -730,6 +730,15 @@ static njt_int_t njt_kv_get_hashkey_from_topic(const char *topic, njt_str_t *has
         hash_key->data = (u_char *)topic + DYN_TOPIC_PREFIX_LEN;
         return NJT_OK;
     }
+    if (strlen(topic) > RPC_TOPIC_PREFIX_LEN && njt_strncmp(topic, RPC_TOPIC_PREFIX, RPC_TOPIC_PREFIX_LEN) == 0) {
+         for (i = RPC_TOPIC_PREFIX_LEN; i < strlen(topic); i++) {
+            if (topic[i] == '/')
+                break;
+        }
+        hash_key->len = i - RPC_TOPIC_PREFIX_LEN;
+        hash_key->data = (u_char *)topic + RPC_TOPIC_PREFIX_LEN;
+        return NJT_OK;
+    }
     if (njt_strncmp(topic, WORKER_TOPIC_PREFIX, WORKER_TOPIC_PREFIX_LEN) == 0) {
         //  found third filed, /worker_n/dyn/loc/l_12323, third  field is "loc", length is 3
         s=1;
@@ -784,7 +793,6 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
 
 static u_char* invoke_rpc_handler(const char* topic, const char* msg, int msg_len, int* len)
 {
-    njt_uint_t i;
     njt_str_t nstr_topic;
     njt_str_t hash_key;
     njt_str_t nstr_msg;
@@ -797,25 +805,22 @@ static u_char* invoke_rpc_handler(const char* topic, const char* msg, int msg_le
         return NULL;
     }
     if (kv_handler_hashmap) {
-        // found second field of topic's length,  for example: topic /rpc/detail/1 , second field is "detail" length is 5
-        for (i = RPC_HANDLER_TOPIC_PREFIX_LEN; i < strlen(topic); i++) {
-            if (topic[i] == '/')
-                break;
-        }
-        hash_key.len = i - RPC_HANDLER_TOPIC_PREFIX_LEN;
-        hash_key.data = (u_char*)topic + RPC_HANDLER_TOPIC_PREFIX_LEN;
-        rc = njt_lvlhsh_map_get(kv_handler_hashmap, &hash_key, (intptr_t*)&kv_handler);
+        rc = njt_kv_get_hashkey_from_topic(topic, &hash_key);
         if (rc == NJT_OK) {
-            nstr_topic.data = (u_char*)topic;
-            nstr_topic.len = strlen(topic);
-            nstr_msg.data = (u_char*)msg;
-            nstr_msg.len = msg_len;
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "in njt_http_kv_module, invoke rpc handler topic:%V, msg: %V ", &nstr_topic, &nstr_msg);
-            if (njt_strncmp(topic, RPC_TOPIC_PREFIX, RPC_TOPIC_PREFIX_LEN) == 0 && kv_handler->rpc_get_handler) {
-                return kv_handler->rpc_get_handler(&nstr_topic, &nstr_msg, len, kv_handler->data);
-            }
-            else if (njt_strncmp(topic, DYN_TOPIC_PREFIX, DYN_TOPIC_PREFIX_LEN) == 0 && kv_handler->rpc_put_handler) {
-                return kv_handler->rpc_put_handler(&nstr_topic, &nstr_msg, len, kv_handler->data);
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "hash key is :%V in worker %d", &hash_key, njt_worker);
+            rc = njt_lvlhsh_map_get(kv_handler_hashmap, &hash_key, (intptr_t*)&kv_handler);
+            if (rc == NJT_OK) {
+                nstr_topic.data = (u_char*)topic;
+                nstr_topic.len = strlen(topic);
+                nstr_msg.data = (u_char*)msg;
+                nstr_msg.len = msg_len;
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "in njt_http_kv_module, invoke rpc handler topic:%V, msg: %V ", &nstr_topic, &nstr_msg);
+                if (njt_strncmp(topic, RPC_TOPIC_PREFIX, RPC_TOPIC_PREFIX_LEN) == 0 
+                    && kv_handler->rpc_get_handler) {
+                    return kv_handler->rpc_get_handler(&nstr_topic, &nstr_msg, len, kv_handler->data);
+                } else if (kv_handler->rpc_put_handler) {
+                    return kv_handler->rpc_put_handler(&nstr_topic, &nstr_msg, len, kv_handler->data);
+                }
             }
         }
     }
