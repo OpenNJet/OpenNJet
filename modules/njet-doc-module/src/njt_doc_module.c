@@ -100,9 +100,9 @@ static njt_int_t njt_doc_module_create_conf(njt_cycle_t *cycle) {
     }
 
     //create ramdom dir on /dev/shm/
-	rand_index = njt_random() % 1000;
+	// rand_index = njt_random() % 1000;
 	// now just use a fixed value
-	// rand_index = 30;
+	rand_index = 1;
 
     len = 100;
     dst = njt_pnalloc(cycle->pool, len);
@@ -124,20 +124,20 @@ static njt_int_t njt_doc_module_create_conf(njt_cycle_t *cycle) {
 }
 
 static void njt_doc_module_exit(njt_cycle_t *cycle) {
-	njt_doc_conf_t *conf;
+	// njt_doc_conf_t *conf;
 
-	conf = (njt_doc_conf_t *)njt_get_conf(cycle->conf_ctx, njt_doc_module);
-    if(conf == NULL){
-		njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc_api get module conf error");
-		return ;
-	}
+	// conf = (njt_doc_conf_t *)njt_get_conf(cycle->conf_ctx, njt_doc_module);
+    // if(conf == NULL){
+	// 	njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc_api get module conf error");
+	// 	return ;
+	// }
 
-    //check dir exist, if exist, delete first
-	if(access((char *)conf->untar_dir.data, 0) != -1){
-        if (njt_doc_delete_dir(cycle->pool, (char *)conf->untar_dir.data) == NJT_FILE_ERROR) {
-            njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module remove dir:%s error ", conf->untar_dir.data);
-	    }
-	}
+    // //check dir exist, if exist, delete first
+	// if(access((char *)conf->untar_dir.data, 0) != -1){
+    //     if (njt_doc_delete_dir(cycle->pool, (char *)conf->untar_dir.data) == NJT_FILE_ERROR) {
+    //         njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "doc module remove dir:%s error ", conf->untar_dir.data);
+	//     }
+	// }
 
     return;
 }
@@ -484,7 +484,8 @@ njt_doc_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 	njt_http_core_loc_conf_t *clcf;
 	njt_doc_conf_t           *fconf;
 	njt_int_t                rc;
-
+	
+	njt_log_error(NJT_LOG_NOTICE, cf->cycle->log, 0, "doc_api doc start");
     rc = njt_doc_module_create_conf(cf->cycle);
 	if(rc != NJT_OK){
 		njt_log_error(NJT_LOG_EMERG, cf->cycle->log, 0, "doc_api create conf error");
@@ -499,9 +500,13 @@ njt_doc_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     //check dir exist, if exist, delete first
 	if(access((char *)fconf->untar_dir.data, 0) != -1){
-        if (njt_doc_delete_dir(cf->pool, (char *)fconf->untar_dir.data) == NJT_FILE_ERROR) {
-            njt_log_error(NJT_LOG_EMERG, cf->cycle->log, 0, "doc module remove dir:%s error ", fconf->untar_dir.data);
-	    }
+		//if exist do nothing
+		njt_log_error(NJT_LOG_NOTICE, cf->cycle->log, 0, "doc_api doc end, exist");
+		return NJT_CONF_OK;
+
+        // if (njt_doc_delete_dir(cf->pool, (char *)fconf->untar_dir.data) == NJT_FILE_ERROR) {
+        //     njt_log_error(NJT_LOG_EMERG, cf->cycle->log, 0, "doc module remove dir:%s error ", fconf->untar_dir.data);
+	    // }
 	}
 
     //untar
