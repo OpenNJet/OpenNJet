@@ -1154,7 +1154,11 @@ njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str) {
 			   goto end;
           	}
 		location_info->location = njt_del_headtail_space(items->strval);
-				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "location_rule[%V,%V]",&items->strval,&location_info->location);
+		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "location_rule[%V,%V]",&items->strval,&location_info->location);
+		if(location_info->location.len == 0) {
+                                   njt_str_set(&location_info->msg, "location_name is null!");
+                                   goto end;
+                                }
 	}else {
 		if( location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0) {
 		    njt_str_set(&location_info->msg, "location_name is null!");
