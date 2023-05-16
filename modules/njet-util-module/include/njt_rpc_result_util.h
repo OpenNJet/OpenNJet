@@ -43,6 +43,8 @@ void  njt_rpc_result_set_code(njt_rpc_result_t * rpc_result,njt_int_t code);
 
 void njt_rpc_result_set_msg(njt_rpc_result_t * rpc_result,u_char * msg);
 
+void njt_rpc_result_set_msg2(njt_rpc_result_t * rpc_result,njt_str_t * msg);
+
 void njt_rpc_result_add_error_data(njt_rpc_result_t * rpc_result,njt_str_t * msg);
 
 njt_int_t njt_rpc_result_to_json_str(njt_rpc_result_t * rpc_result,njt_str_t *json_str);
