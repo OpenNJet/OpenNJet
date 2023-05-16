@@ -194,12 +194,16 @@ int listeners__start_local_only(void)
 		char *tmp_pchar;
 
 		char *unix_sock_file = malloc(strlen(prefix) + 20 + 1); // $prefix/data/mosquitto.sock";
+		if (!unix_sock_file) {
+			return MOSQ_ERR_NOMEM;
+		}
 		tmp_pchar = unix_sock_file;
 		memcpy(tmp_pchar, prefix, strlen(prefix));
 		memcpy(tmp_pchar + strlen(prefix), "/data/mosquitto.sock", 20);
 		tmp_pchar[strlen(prefix) + 20] = '\0';
 
 		rc = listeners__add_local(unix_sock_file, 0);
+		free(unix_sock_file);
 		if (rc == MOSQ_ERR_NOMEM)
 			return MOSQ_ERR_NOMEM;
 	}
