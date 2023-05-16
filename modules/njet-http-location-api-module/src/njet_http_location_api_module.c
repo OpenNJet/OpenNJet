@@ -649,13 +649,14 @@ err:
 	njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
     	r->headers_out.status = NJT_HTTP_OK;
     } else {
+		 njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_ERR);
 		r->headers_out.status = 400;
 		if(location_info == NULL) {
 		   njt_str_set(&insert, "json parser error!");
 		} else {
 			insert = location_info->msg;
 		}
-		njt_rpc_result_add_error_data(rpc_result,&insert);
+		njt_rpc_result_set_msg2(rpc_result,&insert);
         
     }
     njt_rpc_result_to_json_str(rpc_result,&insert);
