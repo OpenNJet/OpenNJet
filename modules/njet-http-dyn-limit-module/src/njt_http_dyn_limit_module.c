@@ -438,7 +438,7 @@ njt_int_t njt_dyn_limit_check_zone(njt_conf_t *cf, njt_str_t *name, void *tag, n
 
     end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
             " zone \"%V\" is not exist",
-            &name);
+            name);
     rpc_data_str.len = end - data_buf;
     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
@@ -1618,10 +1618,10 @@ static njt_int_t njt_dyn_limit_update_rps(njt_cycle_t *cycle, njt_http_dyn_limit
 
     rate = njt_atoi(rps_date->rate.data, len);
     if (rate <= 0) {
-        njt_log_error(NJT_LOG_ERR, cycle->log, 0, " update rps zone:%V  rate error", &rps_date->zone);
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, " update rps zone:%V  rate invalid", &rps_date->zone);
         
         end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
-            " update rps zone:%V  rate error", 
+            " update rps zone:%V  rate invalid", 
             &rps_date->zone);
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
@@ -2311,6 +2311,11 @@ static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, njt_http_dyn_
 
         njt_log_error(NJT_LOG_INFO, pool->log, 0, "dynlimit start update listen:%V server_name:%V",
                 p_port, p_sname);
+
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "listen[%V] server_name[%V]", p_port, p_sname);
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
+                
         njt_http_conf_ctx_t ctx = *cscf->ctx;
         clcf = njt_http_get_module_loc_conf(cscf->ctx, njt_http_core_module);
         rc = njt_dyn_limit_update_locs(&daas[i].locs, clcf->old_locations, &ctx, rpc_result);
