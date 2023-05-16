@@ -12,6 +12,7 @@
 #include <njt_http_kv_module.h>
 #include <njt_http_sendmsg_module.h>
 #include <njt_http_location_module.h>
+#include <njt_rpc_result_util.h>
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 extern njt_cycle_t *njet_master_cycle;
@@ -346,7 +347,7 @@ njt_http_location_handler(njt_http_request_t *r) {
     njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "1 read_client_request_body start +++++++++++++++");
     rc = njt_http_read_client_request_body(r, njt_http_location_read_data);
 	//location_info = njt_http_get_module_ctx(r, njt_http_location_api_module);
-	njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "2 read_client_request_body end +++++++++++++++");
+	// zyg  error: njt_log_debug0(NJT_LOG_DEBUG_ALLOC, r->pool->log, 0, "2 read_client_request_body end +++++++++++++++");
 
 	 if (rc >= NJT_HTTP_SPECIAL_RESPONSE) {
         /* error */
@@ -509,6 +510,7 @@ njt_http_location_read_data(njt_http_request_t *r){
     njt_chain_t out;
     njt_str_t insert;
     njt_http_location_info_t *location_info;
+    njt_rpc_result_t * rpc_result;
 
     njt_uint_t  i;
     njt_http_sub_location_info_t  *sub_location, *loc;
@@ -520,6 +522,7 @@ njt_http_location_read_data(njt_http_request_t *r){
     njt_str_t  del = njt_string("del");
    
     location_info = NULL;
+    rpc_result = NULL;
     if (r->request_body == NULL) {
          goto err;
     }
@@ -633,22 +636,29 @@ njt_http_location_read_data(njt_http_request_t *r){
 
 	
 err:
-	out.next = NULL;
+    out.next = NULL;
     out.buf = NULL;
-   
+     rpc_result = njt_rpc_result_create();
+    if(rpc_result == NULL){
+       njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rpc_result allocate null");
+       goto out;
+    }
 	
     if (location_info != NULL && location_info->msg.len ==  0) {
-        njt_str_set(&insert, "Success");
+        //njt_str_set(&insert, "Success");
+	njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
     	r->headers_out.status = NJT_HTTP_OK;
     } else {
 		r->headers_out.status = 400;
 		if(location_info == NULL) {
-			njt_str_set(&insert, "json parser error!");
+		   njt_str_set(&insert, "json parser error!");
 		} else {
 			insert = location_info->msg;
 		}
+		njt_rpc_result_add_error_data(rpc_result,&insert);
         
     }
+    njt_rpc_result_to_json_str(rpc_result,&insert);
 
     r->headers_out.content_type_len = sizeof("text/plain") - 1;
     njt_str_set(&r->headers_out.content_type, "text/plain");
@@ -671,10 +681,12 @@ err:
     }
    
     rc = njt_http_output_filter(r, &out);
-	njt_http_finalize_request(r, rc);
 
 out:
 	njt_http_finalize_request(r, rc);
+    if(rpc_result){
+        njt_rpc_result_destroy(rpc_result);
+    }
     return;
 
 }

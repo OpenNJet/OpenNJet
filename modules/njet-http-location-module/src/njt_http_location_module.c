@@ -583,7 +583,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	    if (lq != NULL) {  
 		  njt_str_set(&location_info->msg,"location exist!");
     	 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  location[%V] error location exist!",&location_name);
-		 rc = NJT_OK;
+		 rc = NJT_ERROR;
 		goto out;
 	    }
 	}
