@@ -915,6 +915,10 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 			} else {
 				sub_location->location = njt_del_headtail_space(out_items->strval);
 				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "location_name[%V,%V]",&out_items->strval,&sub_location->location);
+				if(sub_location->location.len == 0) {
+				   njt_str_set(&location_info->msg, "location_name is null!");
+				   return NJT_ERROR;
+				}
 			}
 			
 			njt_str_set(&key,"proxy_pass");
