@@ -899,6 +899,10 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 				  }
 				} else {
 					sub_location->location_body = njt_del_headtail_space(out_items->strval);
+					if(sub_location->location_body.len == 0 && sub_location->proxy_pass.len == 0) {
+					  njt_str_set(&location_info->msg, "location_body null");
+					  return NJT_ERROR;
+					}
 				}
 			} else if(rc == NJT_OK && out_items->type == NJT_JSON_STR) {
 				 sub_location->location_body = njt_del_headtail_space(out_items->strval);
