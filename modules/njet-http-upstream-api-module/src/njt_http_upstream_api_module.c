@@ -2656,7 +2656,7 @@ njt_stream_upstream_api_add_server_retrun(njt_http_request_t *r,
 						   "%s{\"id\":%d,\"server\":\"%V\",\"weight\":%d,\"max_conns\": %d,"
 						   "\"max_fails\":%d,\"fail_timeout\":\"%ds\",\"slow_start\":\"%ds\","
 						   "\"backup\":%s,\"down\":%s}", comma ? "," : "",
-						   peer->id, &peer->name, peer->weight, peer->max_conns,
+						   peer->id, &peer->name, NJT_GET_WEIGHT(peer->weight), peer->max_conns,
 						   peer->max_fails, peer->fail_timeout,peer->slow_start,backup ? "true" : "false",
 						   peer->down ? "true" : "false");
 	} else {
@@ -2666,7 +2666,7 @@ njt_stream_upstream_api_add_server_retrun(njt_http_request_t *r,
 						   "%s{\"id\":%d,\"server\":\"%V\",\"weight\":%d,\"max_conns\": %d,"
 						   "\"max_fails\":%d,\"fail_timeout\":\"%ds\",\"slow_start\":\"%ds\","
 						   "\"backup\":%s,\"down\":%s}", comma ? "," : "",
-						   id, pname, peer->weight, peer->max_conns,
+						   id, pname, NJT_GET_WEIGHT(peer->weight), peer->max_conns,
 						   peer->max_fails, peer->fail_timeout,peer->slow_start,backup ? "true" : "false",
 						   peer->down ? "true" : "false");
 	}
@@ -2705,7 +2705,7 @@ njt_http_upstream_api_add_server_retrun(njt_http_request_t *r,
 						   "%s{\"id\":%d,\"server\":\"%V\",\"weight\":%d,\"max_conns\": %d,"
 						   "\"max_fails\":%d,\"fail_timeout\":\"%ds\",\"slow_start\":\"%ds\",\"route\":\"%V\","
 						   "\"backup\":%s,\"down\":%s}", comma ? "," : "",
-						   peer->id, &peer->name, peer->weight, peer->max_conns,
+						   peer->id, &peer->name, NJT_GET_WEIGHT(peer->weight), peer->max_conns,
 						   peer->max_fails, peer->fail_timeout,peer->slow_start,&peer->route,backup ? "true" : "false",
 						   peer->down ? "true" : "false");
 	} else {
@@ -2715,7 +2715,7 @@ njt_http_upstream_api_add_server_retrun(njt_http_request_t *r,
 						   "%s{\"id\":%d,\"server\":\"%V\",\"weight\":%d,\"max_conns\": %d,"
 						   "\"max_fails\":%d,\"fail_timeout\":\"%ds\",\"slow_start\":\"%ds\",\"route\":\"%V\","
 						   "\"backup\":%s,\"down\":%s}", comma ? "," : "",
-						   id, pname, peer->weight, peer->max_conns,
+						   id, pname, NJT_GET_WEIGHT(peer->weight), peer->max_conns,
 						   peer->max_fails, peer->fail_timeout,peer->slow_start,&peer->route,backup ? "true" : "false",
 						   peer->down ? "true" : "false");
 	}
