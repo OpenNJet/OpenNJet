@@ -2715,6 +2715,11 @@ static void njt_update_peer(njt_http_upstream_srv_conf_t *uscf,
                             njt_int_t status, njt_uint_t passes, njt_uint_t fails) {
     peer->hc_check_in_process = 0;
     peer->hc_checks++;
+    // 如果是持久化，并且是reload后第一次进入不做。  如果peer已经down状态也不做
+    if((uscf->mandatory == 1 && uscf->reload == 1 &&  uscf->persistent == 1 &&  peer->hc_checks == 1) || peer->down == 1 ) {
+        return;
+    }
+
     if (status == NJT_OK || status == NJT_DONE) {
 
         peer->hc_consecutive_fails = 0;
@@ -2735,12 +2740,12 @@ static void njt_update_peer(njt_http_upstream_srv_conf_t *uscf,
             peer->hc_downstart = 0;//(njt_timeofday())->sec;
 
         }
-        if (uscf->mandatory == 1 && uscf->reload != 1 &&
-            peer->hc_checks == 1) {  //hclcf->plcf->upstream.upstream->reload
-            if (peer->down == 0) {
-                peer->hc_down = (peer->hc_down / 100 * 100);
-            }
-        }
+//        if (uscf->mandatory == 1 && uscf->reload != 1 &&
+//            peer->hc_checks == 1) {  //hclcf->plcf->upstream.upstream->reload
+//            if (peer->down == 0) {
+//                peer->hc_down = (peer->hc_down / 100 * 100);
+//            }
+//        }
 
 
     } else {
@@ -2760,13 +2765,6 @@ static void njt_update_peer(njt_http_upstream_srv_conf_t *uscf,
                                  (njt_uint_t) ((njt_timeofday())->msec); //(peer->hc_downstart == 0 ?(njt_current_msec):(peer->hc_downstart));
         }
         peer->hc_last_passed = 0;
-        if (uscf->mandatory == 1 && uscf->reload != 1 && peer->hc_checks == 1) {
-            if (peer->down == 0) {
-                peer->hc_down = (peer->hc_down / 100 * 100) + 1;
-                peer->hc_downstart = (njt_uint_t) ((njt_timeofday())->sec) * 1000 +
-                                     (njt_uint_t) ((njt_timeofday())->msec); //(peer->hc_downstart == 0 ?(njt_current_msec):(peer->hc_downstart));
-            }
-        }
 
     }
 
@@ -2779,6 +2777,12 @@ static void njt_stream_update_peer(njt_stream_upstream_srv_conf_t *uscf,
                             njt_int_t status, njt_uint_t passes, njt_uint_t fails) {
     peer->hc_check_in_process = 0;
     peer->hc_checks++;
+
+    // 如果是持久化，并且是reload后第一次进入不做。  如果peer已经down状态也不做
+    if((uscf->mandatory == 1 && uscf->reload == 1 &&  uscf->persistent == 1 &&  peer->hc_checks == 1) || peer->down == 1 ) {
+        return;
+    }
+
     if (status == NJT_OK || status == NJT_DONE) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
             "enable check peer: %V ",
@@ -2802,12 +2806,12 @@ static void njt_stream_update_peer(njt_stream_upstream_srv_conf_t *uscf,
             peer->hc_downstart = 0;//(njt_timeofday())->sec;
 
         }
-        if (uscf->mandatory == 1 && uscf->reload != 1 &&
-            peer->hc_checks == 1) {  //hclcf->plcf->upstream.upstream->reload
-            if (peer->down == 0) {
-                peer->hc_down = (peer->hc_down / 100 * 100);
-            }
-        }
+//        if (uscf->mandatory == 1 && uscf->reload != 1 &&
+//            peer->hc_checks == 1) {  //hclcf->plcf->upstream.upstream->reload
+//            if (peer->down == 0) {
+//                peer->hc_down = (peer->hc_down / 100 * 100);
+//            }
+//        }
 
 
     } else {
@@ -2830,13 +2834,6 @@ static void njt_stream_update_peer(njt_stream_upstream_srv_conf_t *uscf,
                                  (njt_uint_t) ((njt_timeofday())->msec); //(peer->hc_downstart == 0 ?(njt_current_msec):(peer->hc_downstart));
         }
         peer->hc_last_passed = 0;
-        if (uscf->mandatory == 1 && uscf->reload != 1 && peer->hc_checks == 1) {
-            if (peer->down == 0) {
-                peer->hc_down = (peer->hc_down / 100 * 100) + 1;
-                peer->hc_downstart = (njt_uint_t) ((njt_timeofday())->sec) * 1000 +
-                                     (njt_uint_t) ((njt_timeofday())->msec); //(peer->hc_downstart == 0 ?(njt_current_msec):(peer->hc_downstart));
-            }
-        }
 
     }
 
