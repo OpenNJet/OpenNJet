@@ -1443,7 +1443,7 @@ static njt_int_t njt_dynvts_update_locs(njt_array_t *locs, njt_queue_t *q, njt_r
         }
 
         if (!loc_found) {
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " location not found");
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " can not be found");
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         }
@@ -1510,14 +1510,19 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_http_vts_dynapi_mai
             }
         }
 
-        for (i = 0; i < cmcf->prefix_variables.nelts; i++) {
-            if (pkey[i].key.len > 0 && pkey[i].key.len < fk.len-1 && njt_strncasecmp(fk.data+1, pkey[i].key.data, pkey[i].key.len) == 0) {
-                flag = 1;
+        if (!flag) {
+            for (i = 0; i < cmcf->prefix_variables.nelts; i++) {
+                if (pkey[i].key.len > 0 && pkey[i].key.len < fk.len-1 && njt_strncasecmp(fk.data+1, pkey[i].key.data, pkey[i].key.len) == 0) {
+                    flag = 1;
+                }
             }
         }
 
         if (!flag) {
-            njt_log_error(NJT_LOG_INFO, cycle->pool->log, 0, "found unknown var %V", &fk);
+            njt_log_error(NJT_LOG_INFO, cycle->pool->log, 0, "found unknown var %V in filter key", &fk);
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " found unknown var %V in filter key", &fk);
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             return;
         }
     }
@@ -1608,8 +1613,21 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_http_vts_dynapi_mai
         second.len = data - second.data - 1;
     }
 
-    // njt_log_error(NJT_LOG_INFO, cycle->pool->log, 0, "filter first: %V", &first);
-    // njt_log_error(NJT_LOG_INFO, cycle->pool->log, 0, "filter second: %V", &second);
+    flag = 0;
+
+    while (data < filter_data + len) {
+        if (*data++ != ' ') {
+            flag = 1;
+            break;
+        }
+    }
+
+    if (flag) {
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " found too much data in filter key");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        goto FAIL;
+    }
 
     njt_memzero(&conf, sizeof(njt_conf_t));
     conf.args = njt_array_create(dyn_pool, 10, sizeof(njt_str_t));
@@ -1707,7 +1725,7 @@ static njt_int_t njt_dynvts_update(njt_pool_t *pool, njt_http_vts_dynapi_main_t 
         if(cscf == NULL){
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
                           (njt_str_t*)svr[i].listens.elts, (njt_str_t*)svr[i].server_names.elts);
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "can not find server.");
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " can not be found");
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             continue;
