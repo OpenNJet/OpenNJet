@@ -871,6 +871,9 @@ https://gitee.com/njet-rd/njet
 [OpenNJet遗留问题](OpenNJet遗留问题.pdf)
 
 
+# 📝**其他资料**
+[云原生应用引擎技术发展白皮书](云原生应用引擎技术发展白皮书.pdf) 
+
 
 # FAQ
 
