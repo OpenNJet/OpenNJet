@@ -82,7 +82,7 @@ typedef struct {
 	#if (NJT_HTTP_DYNAMIC_LOC)
 		 njt_array_t  var_names;  
 		 njt_flag_t   codes_op;
-    		 njt_array_t  *r_codes;        /* uintptr_t */
+    		 njt_array_t  *mul_codes;        /* uintptr_t */
 	#endif
 } njt_http_rewrite_loc_conf_t;
 
