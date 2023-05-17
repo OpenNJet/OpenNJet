@@ -245,7 +245,7 @@ njt_module_t  njt_http_log_module = {
 
 static njt_str_t  njt_http_access_log = njt_string(NJT_HTTP_LOG_PATH);
 
-
+static njt_str_t njt_http_escape_default = njt_string("default");
 static njt_str_t  njt_http_combined_fmt =
     njt_string("$remote_addr - $remote_user [$time_local] "
                "\"$request\" $status $body_bytes_sent "
@@ -1934,6 +1934,8 @@ njt_http_log_init(njt_conf_t *cf)
         *value = njt_http_combined_fmt;
         fmt = lmcf->formats.elts;
         fmt->format = njt_http_combined_fmt;
+        njt_str_copy_pool(cf->pool,fmt->escape, njt_http_escape_default,return NJT_ERROR);
+        fmt->escape.len = njt_http_escape_default.len;
         fmt->dynamic = 0;
         if (njt_http_log_compile_format(cf, NULL, fmt->ops, &a, 0)
             != NJT_CONF_OK)
