@@ -833,10 +833,6 @@ OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，随着 NGINX �
 
 OpenNJet 主库地址：
 
-
-
-# ♻️ 代码仓地址
-
 https://gitee.com/njet-rd/njet
 
 
@@ -874,6 +870,9 @@ https://gitee.com/njet-rd/njet
 [OpenNJet快速上手](OpenNJet快速上手.pdf)  
 [OpenNJet遗留问题](OpenNJet遗留问题.pdf)
 
+
+# 📝**其他资料**
+[云原生应用引擎技术发展白皮书](云原生应用引擎技术发展白皮书.pdf) 
 
 
 # FAQ
