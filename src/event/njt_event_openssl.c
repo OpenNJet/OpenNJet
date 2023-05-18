@@ -12,23 +12,11 @@
 
 #define NJT_SSL_PASSWORD_BUFFER_SIZE  4096
 
-#if (NJT_HAVE_NTLS)
-
-#define NJT_SSL_NTLS_CERT_REGULAR     0
-#define NJT_SSL_NTLS_CERT_SIGN        1
-#define NJT_SSL_NTLS_CERT_ENC         2
-
-#endif
-
-
 typedef struct {
     njt_uint_t  engine;   /* unsigned  engine:1; */
 } njt_openssl_conf_t;
 
 
-#if (NJT_HAVE_NTLS)
-static njt_uint_t njt_ssl_ntls_type(njt_str_t *s);
-#endif
 static X509 *njt_ssl_load_certificate(njt_pool_t *pool, char **err,
     njt_str_t *cert, STACK_OF(X509) **chain);
 static EVP_PKEY *njt_ssl_load_certificate_key(njt_pool_t *pool, char **err,
@@ -621,7 +609,7 @@ njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
 
 #if (NJT_HAVE_NTLS)
 
-static njt_uint_t
+njt_uint_t
 njt_ssl_ntls_type(njt_str_t *s)
 {
     if (njt_strncmp(s->data, "sign:", sizeof("sign:") - 1) == 0) {
