@@ -305,9 +305,9 @@ njt_dynlog_update_access_log(njt_pool_t *pool, njt_http_dyn_access_api_main_t *a
 
     daas = api_data->servers.elts;
     for(i = 0; i < api_data->servers.nelts; ++i){
-        if( daas[i].listens.nelts < 1 && daas[i].server_names.nelts < 1 ){
+        if( daas[i].listens.nelts < 1 || daas[i].server_names.nelts < 1 ){
             // listens 与server_names都为空
-            end = njt_snprintf(data_buf,sizeof(data_buf) - 1," server parameters error, listens or serverNames is empty,at position %u",i);
+            end = njt_snprintf(data_buf,sizeof(data_buf) - 1," server parameters error, listens or serverNames is empty,at position %ui",i);
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             continue;
