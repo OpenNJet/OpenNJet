@@ -1715,7 +1715,7 @@ static njt_int_t njt_dynvts_update(njt_pool_t *pool, njt_http_vts_dynapi_main_t 
     for (i = 0; i < dynconf->servers.nelts; ++i) {
         if ((njt_str_t*)svr[i].listens.elts == NULL || (njt_str_t*)svr[i].server_names.elts == NULL) {
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "listen or server_name is NULL, just continue");
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " server parameters error, listens or serverNames is empty,at position %u", i);
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " server parameters error, listens or serverNames is empty,at position %ui", i);
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             continue;
