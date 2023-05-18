@@ -506,7 +506,20 @@ static njt_int_t kv_init_worker(njt_cycle_t* cycle)
 
 static void kv_exit_worker(njt_cycle_t* cycle)
 {
+    njt_queue_t *q;
+    kv_change_handler_t *handler;
     njet_iot_client_exit(kv_evt_ctx);
+    if (kv_handler_hashmap) {
+        q = njt_queue_head(&kv_handler_queue);
+        while (q != njt_queue_sentinel(&kv_handler_queue)) {
+            handler = njt_queue_data(q, kv_change_handler_t, queue);
+            q = njt_queue_next(q);
+            njt_lvlhsh_map_remove(kv_handler_hashmap, &handler->key);
+            njt_free(handler->key.data);
+            njt_free(handler);
+        }
+        njt_free(kv_handler_hashmap);
+    }
 }
 
 njt_int_t njt_http_kv_get(njt_http_request_t* r, njt_http_variable_value_t* v, uintptr_t data)

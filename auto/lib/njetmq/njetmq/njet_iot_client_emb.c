@@ -453,6 +453,7 @@ void njet_iot_client_exit(struct evt_ctx_t *ctx)
 	if (njet_iot_client_instances <= 0)
 		mosquitto_lib_cleanup();
 	client_config_cleanup(ctx->cfg);
+	free(ctx);
 };
 int njet_iot_client_socket(struct evt_ctx_t *ctx)
 {
