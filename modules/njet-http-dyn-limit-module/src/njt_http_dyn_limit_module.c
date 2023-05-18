@@ -2292,7 +2292,15 @@ static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, njt_http_dyn_
         if (p_port == NULL || p_sname == NULL)
         {
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "listen or server_name is NULL, just continue");
-            end = njt_snprintf(data_buf,sizeof(data_buf) - 1," listen[%V] or server_name[%V] is NULL", p_port, p_sname);
+            
+            if(p_port != NULL){
+                end = njt_snprintf(data_buf,sizeof(data_buf) - 1," listen[%V] server_name is NULL", p_port);
+            }else if(p_sname != NULL){
+                end = njt_snprintf(data_buf,sizeof(data_buf) - 1," server_name[%V] listen ipport is NULL", p_sname);
+            }else{
+                end = njt_snprintf(data_buf,sizeof(data_buf) - 1," listen server_name all NULL");
+            }            
+
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             
