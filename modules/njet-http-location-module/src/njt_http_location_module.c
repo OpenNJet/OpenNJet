@@ -367,14 +367,18 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 
     cscf = location_info->cscf;
     if (cscf == NULL || location_info->location.len == 0) {
-	    if(msg.data != NULL){
-		    p = njt_snprintf(msg.data, 1024, "error:host[%V],no find server [%V]!", &location_info->addr_port,&location_info->server_name);
-		    msg.len = p - msg.data;
-		    location_info->msg = msg;
-	    } else {
-		njt_str_set(&location_info->msg,"no find server!");
-	    }
-	njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "no find server!");
+	if(msg.data != NULL && cscf == NULL){
+                    p = njt_snprintf(msg.data, 1024, "error:host[%V],no find server [%V]!", &location_info->addr_port,&location_info->server_name);
+                    msg.len = p - msg.data;
+                    location_info->msg = msg;
+                    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "host[%V],no find server [%V]!",&location_info->addr_port,&location_info->server_name);
+            } else if(cscf != NULL){
+                    njt_str_set(&location_info->msg,"error:location is null!");
+                    njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "error:location is null!");
+            } else {
+                njt_str_set(&location_info->msg,"no find server!");
+                njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "host[%V],no find server [%V]!",&location_info->addr_port,&location_info->server_name);
+            }
         return NJT_ERROR;
     }
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
@@ -1220,7 +1224,7 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 			remain = data + buffer_len - p;
 
 			if(loc->location_rule.len != 0 && loc->location_rule.data != NULL){
-				p = njt_snprintf(p, remain, "%V",&loc->location_rule);
+				p = njt_snprintf(p, remain, "%V ",&loc->location_rule);
 				remain = data + buffer_len - p;
 			}
 			if(loc->location.len != 0 && loc->location.data != NULL){
