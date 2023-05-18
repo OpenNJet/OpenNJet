@@ -44,7 +44,7 @@ static njt_command_t njt_mqconf_commands[] = {
      NULL},
 
     { njt_string("helper"),
-      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE3,
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE23,
       njt_helper,
       0,
       0,
@@ -202,11 +202,13 @@ njt_helper(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     label = value[1];
 
     file = value[2];
-    cfile = value[3];
-    cffile = value[3];
 
-    if (njt_conf_full_name(cf->cycle, &cffile, 0) != NJT_OK) {
-        return NJT_CONF_ERROR;
+    if (cf->args->nelts == 4) {
+        cfile = value[3];
+        cffile = value[3];
+        if (njt_conf_full_name(cf->cycle, &cffile, 0) != NJT_OK) {
+            return NJT_CONF_ERROR;
+        }
     }
 
     if (njt_conf_full_name(cf->cycle, &file, 0) != NJT_OK) {
@@ -250,10 +252,17 @@ njt_helper(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
 
-    helper->param.conf_fn.data = cfile.data;
-    helper->param.conf_fn.len = cfile.len;
-    helper->param.conf_fullfn.data =  cffile.data;
-    helper->param.conf_fullfn.len = cffile.len;
+    if (cf->args->nelts == 4) {
+        helper->param.conf_fn.data = cfile.data;
+        helper->param.conf_fn.len = cfile.len;
+        helper->param.conf_fullfn.data =  cffile.data;
+        helper->param.conf_fullfn.len = cffile.len;
+    } else {
+        helper->param.conf_fn.data = NULL;
+        helper->param.conf_fn.len = 0;
+        helper->param.conf_fullfn.data =  NULL;
+        helper->param.conf_fullfn.len = 0;
+    }
     helper->param.check_cmd_fp = NULL;
     helper->param.ctx = NULL;
     helper->param.cycle = cf->cycle;
