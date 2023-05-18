@@ -7,8 +7,8 @@ module_core_src="$module_core_src $njt_addon_dir/src/njt_json_util.c"
 module_core_src="$module_core_src $njt_addon_dir/src/njt_http_util.c"
 module_core_src="$module_core_src $njt_addon_dir/src/njt_str_util.c"
 module_core_src="$module_core_src $njt_addon_dir/src/njt_hash_util.c"
+module_core_src="$module_core_src $njt_addon_dir/src/hints.c"
 module_core_src="$module_core_src $njt_addon_dir/src/msgpuck.c"
-]module_core_src="$module_core_src $njt_addon_dir/src/hints.c"
 
 # module_core_src="\
 # $module_core_src \
