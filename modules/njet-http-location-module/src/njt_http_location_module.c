@@ -525,7 +525,7 @@ njt_int_t njt_http_check_upstream_exist(njt_cycle_t *cycle,njt_pool_t *pool, njt
 
 
 
-static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *location_info,njt_uint_t *repeate) {
+static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *location_info,njt_uint_t from_api_add) {
     njt_conf_t conf;
     njt_int_t rc = NJT_OK;
 	njt_uint_t  i,msg_len;
@@ -618,8 +618,12 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 			 msg.len = p - msg.data;
 			 location_info->msg = msg;
 		 }
-    	 	 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "error:location[%V] exist!",&location_name);
-		 *repeate = 1;
+		 if(from_api_add == 0) {
+		 	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "location[%V] exist!",&location_name);
+			rc = NJT_OK;
+			return rc;
+		 }
+		 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "error:location[%V] exist!",&location_name);
 		 rc = NJT_ERROR;
 		goto out;
 	    }
@@ -709,9 +713,9 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "add location end +++++++++++++++");
 out:
     if(rc != NJT_OK) {
-    	njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  location [%V] error!",&location_name);
+    	  njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  location [%V] error!",&location_name);
     } else {
-		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  location [%V] succ!",&location_name);
+	    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  location [%V] succ!",&location_name);
     }
     return rc;
 }
@@ -727,7 +731,7 @@ static int njt_agent_location_change_handler_internal(njt_str_t *key, njt_str_t 
 	njt_str_t  worker_str = njt_string("/worker_0");
 	njt_str_t  new_key;
 	njt_rpc_result_t * rpc_result;
-	njt_uint_t repeate = 0;
+	njt_uint_t from_api_add = 0;
 
 	njt_int_t rc = NJT_OK;
 	njt_http_location_info_t *location_info;
@@ -746,14 +750,14 @@ static int njt_agent_location_change_handler_internal(njt_str_t *key, njt_str_t 
 
 	if(location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0 ) {
 		njt_http_location_write_data(location_info);
-		rc = njt_http_add_location_handler(location_info,&repeate);  //njt_http_location_delete_handler
+		if(key->len > worker_str.len && njt_strncmp(key->data,worker_str.data,worker_str.len) == 0) {
+			from_api_add = 1;
+		} 
+		rc = njt_http_add_location_handler(location_info,from_api_add);  //njt_http_location_delete_handler
 		if(rc != NJT_OK) {
-			if(key->len > worker_str.len && njt_strncmp(key->data,worker_str.data,worker_str.len) == 0) {
-			
-			} else {
-				if(repeate != 1){
-					njt_kv_sendmsg(key,&del_topic,0);
-				}
+			if(from_api_add == 0){
+				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V",key,value);
+				njt_kv_sendmsg(key,&del_topic,0);
 			}
 			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V",key,value);
 		} else {
