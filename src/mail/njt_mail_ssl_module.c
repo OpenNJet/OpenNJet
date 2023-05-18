@@ -461,7 +461,7 @@ njt_mail_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
     }
 
     if (njt_ssl_certificates(cf, &conf->ssl, conf->certificates,
-                             conf->certificate_keys, NULL, NULL, conf->passwords)
+                             conf->certificate_keys, conf->passwords)
         != NJT_OK)
     {
         return NJT_CONF_ERROR;

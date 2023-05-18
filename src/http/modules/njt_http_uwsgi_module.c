@@ -2564,7 +2564,6 @@ njt_http_uwsgi_set_ssl(njt_conf_t *cf, njt_http_uwsgi_loc_conf_t *uwcf)
             if (njt_ssl_certificate(cf, uwcf->upstream.ssl,
                                     &uwcf->upstream.ssl_certificate->value,
                                     &uwcf->upstream.ssl_certificate_key->value,
-                                    NULL, NULL,
                                     uwcf->upstream.ssl_passwords)
                 != NJT_OK)
             {

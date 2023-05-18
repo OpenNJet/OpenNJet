@@ -23,8 +23,8 @@ fi
 
 
 if [ $USE_OPENSSL = YES ]; then
-    . auto/lib/openssl/conf
     . auto/lib/njetmq/conf
+    . auto/lib/openssl/conf
 fi
 
 if [ $USE_ZLIB = YES ]; then
