@@ -106,18 +106,10 @@ njt_int_t njt_helper_hc_set_ssl(njt_helper_health_check_conf_t *hhccf, njt_helpe
         return NJT_OK;
     }
 
-    if (hhccf->ssl.ntls_enable ) {
-        if (njt_ssl_gm_create(hcscf->ssl, hcscf->ssl_protocols, NULL)
-            != NJT_OK)
-        {
-            return NJT_ERROR;
-        }
-    } else {
-        if (njt_ssl_create(hcscf->ssl, hcscf->ssl_protocols, NULL)
-            != NJT_OK)
-        {
-            return NJT_ERROR;
-        }
+    if (njt_ssl_create(hcscf->ssl, hcscf->ssl_protocols, NULL)
+        != NJT_OK)
+    {
+        return NJT_ERROR;
     }
     cln = njt_pool_cleanup_add(cf.pool, 0);
     if (cln == NULL) {
@@ -145,8 +137,7 @@ njt_int_t njt_helper_hc_set_ssl(njt_helper_health_check_conf_t *hhccf, njt_helpe
 
 //仅使用pool
         if (njt_ssl_certificate(&cf, hcscf->ssl,&hcscf->ssl_certificate,
-                                &hcscf->ssl_certificate_key,&hcscf->ssl_enc_certificate,
-                                &hcscf->ssl_enc_certificate_key,hcscf->ssl_passwords)
+                                &hcscf->ssl_certificate_key,hcscf->ssl_passwords)
             != NJT_OK)
         {
             return NJT_ERROR;

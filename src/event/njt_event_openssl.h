@@ -183,14 +183,16 @@ typedef struct {
 
 njt_int_t njt_ssl_init(njt_log_t *log);
 njt_int_t njt_ssl_create(njt_ssl_t *ssl, njt_uint_t protocols, void *data);
-njt_int_t njt_ssl_gm_create(njt_ssl_t *ssl, njt_uint_t protocols, void *data);
 
 njt_int_t njt_ssl_certificates(njt_conf_t *cf, njt_ssl_t *ssl,
-    njt_array_t *certs, njt_array_t *keys, njt_str_t *enc_certs, njt_str_t *enc_keys, njt_array_t *passwords);
+    njt_array_t *certs, njt_array_t *keys, njt_array_t *passwords);
 njt_int_t njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl,
-    njt_str_t *cert, njt_str_t *key, njt_str_t *enc_certs, njt_str_t *enc_keys, njt_array_t *passwords);
+    njt_str_t *cert, njt_str_t *key, njt_array_t *passwords);
 njt_int_t njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
     njt_str_t *cert, njt_str_t *key, njt_array_t *passwords);
+#if (NJT_HAVE_NTLS)
+void njt_ssl_ntls_prefix_strip(njt_str_t *s);
+#endif
 
 njt_int_t njt_ssl_ciphers(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *ciphers,
     njt_uint_t prefer_server_ciphers);
