@@ -990,6 +990,10 @@ njt_http_vtsc_init_worker(njt_cycle_t *cycle)
     njt_event_t                          *dump_event;
     njt_http_vhost_traffic_status_ctx_t  *ctx;
 
+    if (njt_process != NJT_PROCESS_WORKER) {
+        return NJT_OK;
+    }
+
     njt_http_vtsp_module = &njt_http_vtsc_module;
 #if (NJT_HTTP_VTS_DYNCONF)
     njt_agent_vts_init_process(cycle);
