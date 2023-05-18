@@ -114,7 +114,6 @@ typedef struct {
     njt_uint_t                     ssl_verify_depth;
     njt_str_t                      ssl_trusted_certificate;
     njt_str_t                      ssl_crl;
-    njt_flag_t                     ssl_gm;
     njt_array_t                   *ssl_conf_commands;
 #endif
 } njt_http_proxy_loc_conf_t;
