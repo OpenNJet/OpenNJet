@@ -1111,6 +1111,7 @@ njt_http_script_regex_start_code(njt_http_script_engine_t *e)
         } else {
             e->sp->len = 1;
             e->sp->data = (u_char *) "1";
+	    e->ret = 1;
         }
 
         e->sp++;
@@ -1568,14 +1569,15 @@ njt_http_script_equal_code(njt_http_script_engine_t *e)
 
     if (val->len == res->len
         && njt_strncmp(val->data, res->data, res->len) == 0)
-    {
+    {	
+	e->ret = 1;//by zyg
         *res = njt_http_variable_true_value;
         return;
     }
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, e->request->connection->log, 0,
                    "http script equal: no");
-
+     e->ret = 0;//by zyg
     *res = njt_http_variable_null_value;
 }
 

@@ -3319,7 +3319,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 		clcf->if_loc = 1;
 	        clcf->exact_match = 1;
 		clcf->internal = 0;
-		njt_http_core_if_location_array(cf, value,clcf,0,0,0);
+		njt_http_core_if_location_array(cf, value,clcf,0,-1,0);
 	} else {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid location modifier \"%V\"", &value[1]);
@@ -3375,7 +3375,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
             }
 
         } else if (name->data[0] == '(') {
-			njt_http_core_if_location_array(cf, &clcf->full_name,clcf,0,0,0);
+			njt_http_core_if_location_array(cf, &clcf->full_name,clcf,0,-1,0);
                 clcf->if_loc = 1;
                 clcf->exact_match = 1;
                 clcf->internal = 0;
@@ -3444,10 +3444,11 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 	// njt_queue_init(pclcf->old_locations);
     // }
     if (clcf->if_loc == 1 ) {
+	     clcf->name = clcf->full_name;
 	     if (njt_http_add_location(cf, &pclcf->if_locations, clcf) != NJT_OK) {
 		    return NJT_CONF_ERROR;
 	      }
-     } else {
+     } 
 	    if(cf->dynamic != 1){
 		if (njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
 		    return NJT_CONF_ERROR;
@@ -3458,7 +3459,6 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 	    if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
 		    return NJT_CONF_ERROR;
 	    }
-    }
 
    
     save = *cf;
@@ -5683,7 +5683,7 @@ njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_cor
       if (str_tmp.data[i] == ' ' || str_tmp.data[i] == '\t' || str_tmp.data[i] == '\r' || str_tmp.data[i] == '\n') {
 		  continue;
 	  } if(str_tmp.data[i] == '('){
-		  p1 = str_tmp.data + i;
+		  p1 = str_tmp.data + i + 1;
 	  } 
 	  break;
 	  
@@ -5694,13 +5694,13 @@ njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_cor
 		  continue;
 	  } 
 	   if(str_tmp.data[i] == ')'){
-		  p2 = str_tmp.data + i;
+		  p2 = str_tmp.data + i -1;
 	   }
 	   break;
    }
    if(p1 != NULL && p2 != NULL ){
-	   src.data = p1 +1;
-	   src.len = p2 - src.data - 1;
+	   src.data = p1;
+	   src.len = p2 - src.data + 1;
 	   falg = 1;
    } else {
 	   src = str_tmp;
@@ -5719,7 +5719,7 @@ njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_cor
   
 
    if(njt_strnstr(src.data,"&&",src.len) == NULL && njt_strnstr(src.data,"||",src.len) == NULL && njt_strnstr(src.data,"(",src.len) == NULL) {
-		 njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "1 njt_http_core_if_location_array step=%d, %V",step,&new_str);
+		 njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "1 njt_http_core_if_location_array step=%d,oper=%d, %V",step,oper,&new_str);
 		 //todo oper
 		 new_src.len = src.len + 6;
 		 new_src.data = njt_pcalloc(cf->pool,new_src.len);
@@ -5728,7 +5728,7 @@ njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_cor
 		 njt_http_core_if_location(cf,&new_src,pclcf,step,oper,dir);
 		  
    } else {
-		 njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "1 show njt_http_core_if_location_array step=%d, %V",step,&str_tmp);
+		 njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "1 show njt_http_core_if_location_array step=%d,oper=%d %V",step,oper,&str_tmp);
 
 		  if (pclcf->mul_conditions == NULL) {
 			pclcf->mul_conditions = njt_array_create(cf->pool, 1, sizeof(njt_http_core_loc_conf_t *));  //todo
@@ -5756,7 +5756,7 @@ njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_cor
 					 new_str.data = pbegin;
 					 new_str.len = src.data + i - pbegin;
 					 pbegin = src.data + i + 2;
-					 step_oper = 0;
+					 oper = step_oper;
 					 // njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "&& tmp njt_http_core_if_location_array step=%d, %V",step+1,&new_str);
 					 //njt_http_core_loc_conf_t  *clcf  = njt_pcalloc(cf->pool, sizeof(njt_http_core_loc_conf_t));
 					 // ploc = njt_array_push(pclcf->mul_conditions);
@@ -5773,8 +5773,8 @@ njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_cor
 			if(pbegin) {
 				 new_str.data = pbegin;
 				 new_str.len = plast - pbegin;
-				 njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "2 show njt_http_core_if_location_array step=%d, %V",step+1,&new_str);
-				 njt_http_core_if_location_array(cf,&new_str,pclcf,step+falg,step_oper,RIGHT);
+				 njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "2 show njt_http_core_if_location_array step=%d, oper=%d, %V",step+1,oper,&new_str);
+				 njt_http_core_if_location_array(cf,&new_str,pclcf,step+falg,oper,RIGHT);
 
 			}
 		
@@ -6036,7 +6036,8 @@ njt_http_core_run_location(njt_http_request_t *r,njt_http_core_loc_conf_t     *c
     //njt_http_core_main_conf_t    *cmcf;
     njt_http_rewrite_loc_conf_t  *plcf,*lcf;
     njt_http_rewrite_loc_conf_t  **new_lcf;
-    njt_int_t                     ret;
+    njt_uint_t                     ret;
+    njt_http_variable_value_t     *pbuf;
 
     //cmcf = njt_http_get_module_main_conf(r, njt_http_core_module);
     //cscf = njt_http_get_module_srv_conf(r, njt_http_core_module);
@@ -6065,22 +6066,37 @@ njt_http_core_run_location(njt_http_request_t *r,njt_http_core_loc_conf_t     *c
         return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
     ret = 0;
+    pbuf = e->sp;
     new_lcf = plcf->mul_codes->elts;
     for(i=0; i < plcf->mul_codes->nelts;i++){
 	    lcf = new_lcf[i];
+	    njt_memzero(e,sizeof(njt_http_script_engine_t));
+	    njt_memzero(pbuf,plcf->stack_size * sizeof(njt_http_variable_value_t));
+	    e->sp = pbuf;
 	    e->ip = lcf->codes->elts;
 	    e->request = r;
 	    e->quote = 1;
 	    e->log = plcf->log;
 	    e->status = NJT_DECLINED;
-
+	    e->ret = NJT_DECLINED;
 	    while (*(uintptr_t *) e->ip) {
 		code = *(njt_http_script_code_pt *) e->ip;
 		code(e);
 	    }
-
-	    ret = ret +  e->status;
+	    lcf->ret = e->ret;
+	    if(lcf->codes_op == 0) {
+	    	ret = ret +  e->ret;
+		if(e->ret == 0){
+		  //break;
+		}
+	    } else {
+		if(e->ret == 1)
+		{
+			ret = plcf->mul_codes->nelts;
+		  	break;
+		}
+	    }
     }
-    return ret;
+    return (ret == plcf->mul_codes->nelts?NJT_OK:NJT_ERROR);
 }
 

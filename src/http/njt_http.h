@@ -83,6 +83,7 @@ typedef struct {
 		 njt_array_t  var_names;  
 		 njt_flag_t   codes_op;
     		 njt_array_t  *mul_codes;        /* uintptr_t */
+		 njt_int_t    ret;
 	#endif
 } njt_http_rewrite_loc_conf_t;
 
