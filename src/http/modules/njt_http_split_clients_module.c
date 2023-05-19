@@ -245,9 +245,9 @@ static int njt_http_split_client_change_handler_internal(njt_str_t *key,
                         continue;
                     }
 
-                    if (f->type == NJT_JSON_INT) {
+                    if (f->type == NJT_JSON_INT && f->intval >=0 ) {
                         sum += f->intval;
-                    } else if (f->type == NJT_JSON_DOUBLE) {
+                    } else if (f->type == NJT_JSON_DOUBLE  && f->doubleval >=0) {
                         sum += f->doubleval;
                     } else {
                         rc = NJT_RPC_RSP_ERR_JSON;
