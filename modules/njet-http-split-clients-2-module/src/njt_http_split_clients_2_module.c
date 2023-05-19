@@ -168,7 +168,7 @@ static int njt_http_split_kv_change_handler_internal(njt_str_t *key, njt_str_t *
                     } else {
                         continue;
                     }
-                    if (f->type == NJT_JSON_INT) {
+                    if (f->type == NJT_JSON_INT && f->intval>=0) {
                         sum += f->intval;
                     } else {
                         rc = NJT_RPC_RSP_ERR_JSON;
