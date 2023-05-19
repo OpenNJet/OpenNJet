@@ -111,6 +111,14 @@ njt_int_t njt_helper_hc_set_ssl(njt_helper_health_check_conf_t *hhccf, njt_helpe
     {
         return NJT_ERROR;
     }
+#if (NJT_HAVE_NTLS)
+    if (1 == hhccf->ssl.ntls_enable) {
+        SSL_CTX_set_ssl_version(hcscf->ssl->ctx,NTLS_method());
+        SSL_CTX_set_cipher_list(hcscf->ssl->ctx,(const char *)hhccf->ssl.ssl_ciphers.data);
+        SSL_CTX_enable_ntls(hcscf->ssl->ctx);
+    }
+#endif
+
     cln = njt_pool_cleanup_add(cf.pool, 0);
     if (cln == NULL) {
         njt_ssl_cleanup_ctx(hcscf->ssl);
@@ -138,6 +146,13 @@ njt_int_t njt_helper_hc_set_ssl(njt_helper_health_check_conf_t *hhccf, njt_helpe
 //仅使用pool
         if (njt_ssl_certificate(&cf, hcscf->ssl,&hcscf->ssl_certificate,
                                 &hcscf->ssl_certificate_key,hcscf->ssl_passwords)
+            != NJT_OK)
+        {
+            return NJT_ERROR;
+        }
+
+        if (njt_ssl_certificate(&cf, hcscf->ssl,&hcscf->ssl_enc_certificate,
+                                &hcscf->ssl_enc_certificate_key,hcscf->ssl_passwords)
             != NJT_OK)
         {
             return NJT_ERROR;

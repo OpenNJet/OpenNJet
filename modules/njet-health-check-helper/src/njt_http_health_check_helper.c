@@ -2431,7 +2431,9 @@ static void njt_free_peer_resource(njt_http_health_check_peer_t *hc_peer) {
         njt_close_connection(hc_peer->peer.connection);
     }
 
-    --(hc_peer->hhccf->ref_count);
+    if(hc_peer->hhccf->ref_count>0){
+        --(hc_peer->hhccf->ref_count);
+    }
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                   "free peer pool : upstream = %V   ref_count = %d",hc_peer->peer.name,hc_peer->hhccf->ref_count);
 //    if (hc_peer->hhccf->disable) {
@@ -3704,7 +3706,7 @@ njt_http_hc_ssl_handshake(njt_connection_t *c, njt_http_health_check_peer_t *hc_
                 goto failed;
             }
         }
-
+        hhccf->ref_count++;
         hc_peer->peer.connection->write->handler = njt_http_health_check_write_handler;
         hc_peer->peer.connection->read->handler = njt_http_health_check_read_handler;
 
