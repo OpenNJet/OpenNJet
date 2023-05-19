@@ -496,6 +496,39 @@ njt_open_listening_sockets(njt_cycle_t *cycle)
                 return NJT_ERROR;
             }
 
+            //by clb
+            if (ls[i].type == SOCK_DGRAM
+            && ls[i].sockaddr->sa_family == AF_INET ) 
+            {    
+                    struct sockaddr_in* sin=(struct sockaddr_in*) ls[i].sockaddr;
+                    uint32_t address = ntohl(sin->sin_addr.s_addr);
+                    if ((address & 0xF0000000) == 0xE0000000 ) {
+                        ngx_log_error(NGX_LOG_INFO, log, ngx_socket_errno,
+                                        "found multcast address %V ",
+                                        &ls[i].addr_text);
+                        struct ip_mreq mreq;
+                        bzero(&mreq, sizeof(struct ip_mreq));
+                        //bcopy((void *)sin->sin_addr.s_addr, &mreq.imr_multiaddr.s_addr, sizeof(struct in_addr));
+                        mreq.imr_multiaddr.s_addr=sin->sin_addr.s_addr;
+                        mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+                        if (setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq,
+                                sizeof(struct ip_mreq)) == -1) {
+                                ngx_log_error(NGX_LOG_EMERG, log, ngx_socket_errno,
+                                        "setsockopt(ADD_MEMBERSHIP) %V failed",
+                                        &ls[i].addr_text);
+                                if (ngx_close_socket(s) == -1) {
+                                        ngx_log_error(NGX_LOG_EMERG, log, ngx_socket_errno,
+                                                ngx_close_socket_n " %V failed",
+                                        &ls[i].addr_text);
+                                }
+                                return NGX_ERROR;
+                        }
+                    }
+
+            }
+            //end
+
+
             if (ls[i].type != SOCK_DGRAM || !njt_test_config) {
 
                 if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
