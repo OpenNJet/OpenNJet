@@ -995,9 +995,6 @@ njt_http_vtsc_init_worker(njt_cycle_t *cycle)
     }
 
     njt_http_vtsp_module = &njt_http_vtsc_module;
-#if (NJT_HTTP_VTS_DYNCONF)
-    njt_agent_vts_init_process(cycle);
-#endif
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, cycle->log, 0,
                    "http vts init worker");
@@ -1009,6 +1006,12 @@ njt_http_vtsc_init_worker(njt_cycle_t *cycle)
                        "vts::init_worker(): is bypassed due to no http block in configure file");
         return NJT_OK;
     }
+
+#if (NJT_HTTP_VTS_DYNCONF)
+    if (ctx->enable) {
+        njt_agent_vts_init_process(cycle);
+    }
+#endif
 
     if (!(ctx->enable & ctx->dump) || ctx->rbtree == NULL) {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, cycle->log, 0,
@@ -1496,12 +1499,17 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_http_vts_dynapi_mai
 
         if (flt.len>0  && *flt.data=='$') {
             fk.data = flt.data;
-            fk.len = 0;
+            fk.len = 1;
+            flt.len--;
+            flt.data++;
         } else {
             continue;
         }
 
-        while (flt.len>0  && *flt.data!=' ' && *flt.data!='\"') {
+        while (flt.len>0  && ((*flt.data >= 'A' && *flt.data <= 'Z')
+                    || (*flt.data >= 'a' && *flt.data <= 'z')
+                    || (*flt.data >= '0' && *flt.data <= '9')
+                    || *flt.data == '_')) {
             flt.len--;
             flt.data++;
             fk.len++;
