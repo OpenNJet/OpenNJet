@@ -568,7 +568,7 @@ njt_http_location_read_data(njt_http_request_t *r){
 
 
 
-	location_info = njt_http_parser_location_data(json_str);
+	location_info = njt_http_parser_location_data(json_str,r->method);
 	if(location_info == NULL) {
 		 goto err;
 	}
