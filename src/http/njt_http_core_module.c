@@ -1460,7 +1460,7 @@ njt_http_core_find_location(njt_http_request_t *r)
     pclcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
 
 
-    if (njt_queue_empty(pclcf->if_locations) == 0) {
+    if (pclcf->if_locations != NULL && njt_queue_empty(pclcf->if_locations) == 0) {
     
     for (q = njt_queue_head(pclcf->if_locations);
          q != njt_queue_sentinel(pclcf->if_locations);
