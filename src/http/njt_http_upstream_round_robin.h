@@ -55,7 +55,8 @@ struct njt_http_upstream_rr_peer_s {
     unsigned                        hc_last_passed:1;
     unsigned                        hc_check_in_process:1;
     unsigned                        set_backup:1;
- 
+    unsigned                        set_first_check:1;
+
     njt_uint_t                      requests;   
     njt_str_t                       route;
     njt_int_t                       parent_id;
@@ -72,7 +73,7 @@ struct njt_http_upstream_rr_peer_s {
     njt_msec_t                      selected_time;
     njt_atomic_t                    total_header_time;
     njt_atomic_t                    total_response_time;
-    
+    njt_uint_t                      total_fails;
 #endif
     njt_http_upstream_rr_peer_t    *next;
 

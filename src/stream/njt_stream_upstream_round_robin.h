@@ -57,6 +57,7 @@ struct njt_stream_upstream_rr_peer_s {
    unsigned                        del_pending:1;
    unsigned                        hc_check_in_process:1;
    unsigned                        set_backup:1;
+   unsigned                        set_first_check:1;
    unsigned                        hc_last_passed;
    njt_int_t                       parent_id;
     njt_uint_t                       requests;
@@ -75,6 +76,7 @@ struct njt_stream_upstream_rr_peer_s {
     njt_atomic_t                    total_first_byte_time;	
     njt_atomic_t                    total_response_time;
     njt_atomic_t                    total_connect_time;
+    njt_uint_t                      total_fails;
 #endif
     NJT_COMPAT_BEGIN(25)
     NJT_COMPAT_END

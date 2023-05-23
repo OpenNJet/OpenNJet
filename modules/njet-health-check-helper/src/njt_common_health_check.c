@@ -3,6 +3,7 @@
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
+
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njet.h>
@@ -10,6 +11,7 @@
 #include <njt_json_api.h>
 #include <njt_json_util.h>
 #include <njt_http.h>
+#include <njt_stream.h>   /* by zhaokang */
 
 #include "njt_common_health_check.h"
 
@@ -104,19 +106,19 @@ njt_int_t njt_helper_hc_set_ssl(njt_helper_health_check_conf_t *hhccf, njt_helpe
         return NJT_OK;
     }
 
-    if (hhccf->ssl.ntls_enable ) {
-        if (njt_ssl_gm_create(hcscf->ssl, hcscf->ssl_protocols, NULL)
-            != NJT_OK)
-        {
-            return NJT_ERROR;
-        }
-    } else {
-        if (njt_ssl_create(hcscf->ssl, hcscf->ssl_protocols, NULL)
-            != NJT_OK)
-        {
-            return NJT_ERROR;
-        }
+    if (njt_ssl_create(hcscf->ssl, hcscf->ssl_protocols, NULL)
+        != NJT_OK)
+    {
+        return NJT_ERROR;
     }
+#if (NJT_HAVE_NTLS)
+    if (1 == hhccf->ssl.ntls_enable) {
+        SSL_CTX_set_ssl_version(hcscf->ssl->ctx,NTLS_method());
+        SSL_CTX_set_cipher_list(hcscf->ssl->ctx,(const char *)hhccf->ssl.ssl_ciphers.data);
+        SSL_CTX_enable_ntls(hcscf->ssl->ctx);
+    }
+#endif
+
     cln = njt_pool_cleanup_add(cf.pool, 0);
     if (cln == NULL) {
         njt_ssl_cleanup_ctx(hcscf->ssl);
@@ -143,7 +145,13 @@ njt_int_t njt_helper_hc_set_ssl(njt_helper_health_check_conf_t *hhccf, njt_helpe
 
 //仅使用pool
         if (njt_ssl_certificate(&cf, hcscf->ssl,&hcscf->ssl_certificate,
-                                &hcscf->ssl_certificate_key,&hcscf->ssl_enc_certificate,
+                                &hcscf->ssl_certificate_key,hcscf->ssl_passwords)
+            != NJT_OK)
+        {
+            return NJT_ERROR;
+        }
+
+        if (njt_ssl_certificate(&cf, hcscf->ssl,&hcscf->ssl_enc_certificate,
                                 &hcscf->ssl_enc_certificate_key,hcscf->ssl_passwords)
             != NJT_OK)
         {
@@ -215,4 +223,72 @@ njt_http_upstream_srv_conf_t* njt_http_find_upstream_by_name(njt_cycle_t *cycle,
         return uscfp[i];
     }
     return NULL;
+}
+
+// by zhaokang
+njt_stream_upstream_srv_conf_t *njt_stream_find_upstream_by_name(njt_cycle_t *cycle, njt_str_t *name) {
+    njt_stream_upstream_srv_conf_t   **uscfp;
+    njt_stream_upstream_main_conf_t   *umcf;
+    njt_uint_t                         i;
+
+    umcf = njt_stream_cycle_get_module_main_conf(njet_master_cycle, njt_stream_upstream_module);
+
+    uscfp = umcf->upstreams.elts;
+    for (i = 0; i < umcf->upstreams.nelts; i++) {
+        if (uscfp[i]->host.len != name->len
+                || njt_strncasecmp(uscfp[i]->host.data, name->data, name->len) != 0) {
+            
+            continue;
+        }
+
+        return uscfp[i];
+    }
+
+    return NULL;
+}
+
+
+void njt_http_upstream_traver(void *ctx,njt_int_t (*item_handle)(void *ctx,njt_http_upstream_srv_conf_t *)){
+    njt_http_upstream_main_conf_t  *umcf;
+    njt_http_upstream_srv_conf_t   **uscfp;
+    njt_uint_t i;
+
+    if(!item_handle) {
+        return;
+    }
+    umcf = njt_http_cycle_get_module_main_conf(njet_master_cycle, njt_http_upstream_module);
+
+    if(NULL == umcf){
+        return;
+    }
+    uscfp = umcf->upstreams.elts;
+
+    for (i = 0; i < umcf->upstreams.nelts; i++) {
+        if(0 != item_handle(ctx,uscfp[i])){
+            break;
+        }
+    }
+}
+
+
+void njt_stream_upstream_traver(void *ctx,njt_int_t (*item_handle)(void *ctx,njt_stream_upstream_srv_conf_t *)){
+
+    njt_stream_upstream_srv_conf_t   **uscfp;
+    njt_stream_upstream_main_conf_t   *umcf;
+    njt_uint_t                         i;
+
+    if(!item_handle) {
+        return;
+    }
+    umcf = njt_stream_cycle_get_module_main_conf(njet_master_cycle, njt_stream_upstream_module);
+
+    if(NULL == umcf){
+        return;
+    }
+    uscfp = umcf->upstreams.elts;
+    for (i = 0; i < umcf->upstreams.nelts; i++) {
+        if(0 != item_handle(ctx,uscfp[i])){
+            break;
+        }
+    }
 }

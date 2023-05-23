@@ -961,7 +961,7 @@ njt_http_rewrite_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #if (NJT_HTTP_DYNAMIC_LOC)
 	if(lcf->var_names.pool == NULL) {
 			if (njt_array_init(&lcf->var_names, cf->pool, 4,
-                           sizeof(njt_http_dyn_variable_t))
+                           sizeof(njt_http_dyn_variable_t *))
             != NJT_OK)
 			{
 				return NULL;

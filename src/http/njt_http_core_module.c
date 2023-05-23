@@ -3258,7 +3258,8 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     u_char* index;
     len =0;
     for(i = 1; i < cf->args->nelts; i++){
-        len += value[i].len+1;
+        //len += value[i].len+1;
+        len += value[i].len;
     }
     index = njt_pcalloc(clcf->pool,len);
     if (index == NULL){
@@ -3268,10 +3269,10 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     for(i = 1; i < cf->args->nelts; i++){
         njt_memcpy(index,value[i].data,value[i].len);
         index += value[i].len;
-        *index = (u_char)' ';
-        ++index;
+        //*index = (u_char)' ';
+        //++index;
     }
-    clcf->full_name.len = len-1;
+    clcf->full_name.len = len;
 #endif
     //end
     if (cf->args->nelts == 3) {

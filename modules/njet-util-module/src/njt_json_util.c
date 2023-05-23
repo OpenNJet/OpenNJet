@@ -160,7 +160,7 @@ njt_int_t njt_json_parse_data(njt_pool_t *pool,njt_str_t *str,njt_json_define_t 
         array = data;
         p = njt_array_push(array);
         q = njt_queue_head(&items->arrdata);
-        for(; q == njt_queue_sentinel(&items->arrdata); q = njt_queue_next(q)){
+        for(; q != njt_queue_sentinel(&items->arrdata); q = njt_queue_next(q)){
             sub = njt_queue_data(q,njt_json_element,ele_queue);
             rc = njt_json_parse_json_element(pool,sub,&obj_def,p);
             if(rc != NJT_OK){

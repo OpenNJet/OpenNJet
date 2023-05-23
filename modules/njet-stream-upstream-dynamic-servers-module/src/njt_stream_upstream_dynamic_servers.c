@@ -674,7 +674,7 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
 	us->name = u.url;
 	us->addrs = u.addrs;
 	us->naddrs = u.naddrs;
-    us->weight = weight;
+    us->weight = weight * NJT_WEIGHT_POWER;
     us->max_fails = max_fails;
     us->fail_timeout = fail_timeout;
 	us->slow_start = slow_start;
@@ -1556,7 +1556,8 @@ static void njt_stream_upstream_dynamic_server_resolve_handler(
     njt_stream_upstream_rr_peer_t                   *peer, *next, *prev,*tail_peer;
     njt_stream_upstream_rr_peers_t                  *peers,*peers_data;
     uint32_t                                      crc32;
-	njt_int_t									   rc = NJT_OK;
+    njt_int_t									   rc = NJT_OK;
+    njt_msec_t now_time;
 
     if (njt_quit || njt_exiting || njt_terminate) {
         njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,
@@ -1692,6 +1693,9 @@ operation:
             }
 
             peers_data->number--;
+	    if(peer->down == 0 && peers_data->tries > 0){
+		peers_data->tries--;
+	    }
             peers_data->total_weight -= weight;
             /*The IP is not exists, down or free this peer.*/
             if (peer->conns > 0) {
@@ -1707,7 +1711,7 @@ skip_del:
         }
 		if( rc != NJT_ERROR && dynamic_server->parent_node->parent_id != -1) {
 
-
+			now_time = njt_time();
 			
 			for (i = 0; i < naddrs; ++i) {
 				for (peer = peers_data->peer; peer; peer = peer->next) {
@@ -1735,10 +1739,14 @@ skip_del:
 				peer->down = down;
 				//peer->set_down = down;
 				peer->hc_down = hc_down;
+				peer->hc_upstart = now_time;
 				peer->next = NULL;
 				//peer->parent_node = dynamic_server->parent_node;
 				peer->parent_id = dynamic_server->parent_node->id;
 				peers_data->number++;
+				if(peer->down == 0 ){
+             			   peers_data->tries++;
+            			}
 				peers_data->total_weight += weight;
 				//peers_data->empty = (peers_data->number == 0);
 				if(peers_data->peer == NULL) {
@@ -1821,6 +1829,10 @@ static void njt_stream_upstream_dynamic_server_delete_server(
             }
 
             peers->number--;
+	    if(peer->down == 0 && peers->tries > 0){
+                peers->tries--;
+            }
+
             peers->total_weight -= dynamic_server->server->weight;
             /*The IP is not exists, down or free this peer.*/
             if (peer->conns > 0) {
@@ -1862,6 +1874,8 @@ static char *njt_stream_upstream_check(njt_conf_t *cf, njt_command_t *cmd,
 		    uscf->persistent = 1;
 		    continue;
 		}
+		 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                       "\"%V\" directive is not allowed here", &value[i]);
 		return NJT_CONF_ERROR;
 	}
 	if(uscf->persistent == 1 && uscf->mandatory != 1) {

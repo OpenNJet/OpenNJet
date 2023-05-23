@@ -621,6 +621,7 @@ njt_http_get_variable_index(njt_conf_t *cf, njt_str_t *name)
 			if (new_pool == NULL) {
 				return NJT_ERROR;
 			}
+			njt_sub_pool(cf->pool,new_pool);
 			cmcf->variables.free = 1;
 			if (njt_array_init(&cmcf->variables, new_pool, 4,
                            sizeof(njt_http_variable_t))
@@ -2783,10 +2784,14 @@ njt_http_variables_add_core_vars(njt_conf_t *cf)
     cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
 
 #if (NJT_HTTP_DYNAMIC_LOC)
+       //if(cmcf->variables_keys != NULL && cmcf->variables_keys->pool != NULL) {
+       //	 njt_destroy_pool(cmcf->variables_keys->pool);
+       //}
        njt_pool_t *new_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
 	   if(new_pool == NULL) {
 		   return NJT_ERROR;
 	   }
+	   njt_sub_pool(cf->pool,new_pool);  //by zyg njt_cycle destroy old_cycle->pool
 	   cmcf->variables_keys = njt_pcalloc(new_pool,
                                        sizeof(njt_hash_keys_arrays_t));
 		if (cmcf->variables_keys == NULL) {
@@ -2820,9 +2825,12 @@ njt_http_variables_add_core_vars(njt_conf_t *cf)
         return NJT_ERROR;
     }
 #if (NJT_HTTP_DYNAMIC_LOC)
-         if (cmcf->dyn_var_pool == NULL) {
-        cmcf->dyn_var_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-    }
+	 cmcf->dyn_var_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+	 if(cmcf->dyn_var_pool == NULL){
+	    njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "dyn_var_pool  alloc  error!");
+	    return NJT_ERROR;
+	 }
+	 njt_sub_pool(cf->pool,cmcf->dyn_var_pool);
 #endif
     for (cv = njt_http_core_variables; cv->name.len; cv++) {
         v = njt_http_add_variable(cf, &cv->name, cv->flags);
@@ -2846,7 +2854,7 @@ njt_http_variables_init_vars_proc(njt_conf_t *cf, njt_uint_t dyn)
     njt_hash_init_t             hash;
     njt_http_variable_t        *v, *av, *pv;
     njt_http_core_main_conf_t  *cmcf;
-	njt_int_t rc;
+    njt_int_t rc;
 
     /* set the handlers for the indexed http variables */
 
@@ -2940,7 +2948,7 @@ njt_http_variables_init_vars_proc(njt_conf_t *cf, njt_uint_t dyn)
         return NJT_ERROR;
     }
     hash.hash->pool = new_pool;
-    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    rc = njt_sub_pool(cf->pool,new_pool);
     if (rc != NJT_OK) {
         return NJT_ERROR;
     }

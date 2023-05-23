@@ -132,6 +132,7 @@ struct njt_conf_s {
 
     njt_conf_handler_pt   handler;
     void                 *handler_conf;
+    njt_str_t *errstr;  //by zyg
 };
 
 
