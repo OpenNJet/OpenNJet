@@ -2716,12 +2716,13 @@ static void njt_update_peer(njt_http_upstream_srv_conf_t *uscf,
                             njt_http_upstream_rr_peer_t *peer,
                             njt_int_t status, njt_uint_t passes, njt_uint_t fails) {
     peer->hc_check_in_process = 0;
-    peer->hc_checks++;
     // 如果是持久化，并且是reload后第一次进入不做。  如果peer已经down状态也不做
-    if((uscf->mandatory == 1 && uscf->reload == 1 &&  uscf->persistent == 1 &&  peer->hc_checks == 1) || peer->down == 1 ) {
+    if((uscf->mandatory == 1 && uscf->reload == 1 &&  uscf->persistent == 1 &&  peer->set_first_check == 0) || peer->down == 1 ) {
+        peer->set_first_check = 1;
         return;
     }
 
+    peer->hc_checks++;
     if (status == NJT_OK || status == NJT_DONE) {
 
         peer->hc_consecutive_fails = 0;
@@ -2778,12 +2779,13 @@ static void njt_stream_update_peer(njt_stream_upstream_srv_conf_t *uscf,
                             njt_stream_upstream_rr_peer_t *peer,
                             njt_int_t status, njt_uint_t passes, njt_uint_t fails) {
     peer->hc_check_in_process = 0;
-    peer->hc_checks++;
 
     // 如果是持久化，并且是reload后第一次进入不做。  如果peer已经down状态也不做
-    if((uscf->mandatory == 1 && uscf->reload == 1 &&  uscf->persistent == 1 &&  peer->hc_checks == 1) || peer->down == 1 ) {
+    if((uscf->mandatory == 1 && uscf->reload == 1 &&  uscf->persistent == 1 &&  peer->set_first_check == 0 ) || peer->down == 1 ) {
+        peer->set_first_check = 1;
         return;
     }
+    peer->hc_checks++;
 
     if (status == NJT_OK || status == NJT_DONE) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
