@@ -379,4 +379,7 @@ njt_stream_upstream_zone_inherit_peer_status (njt_stream_upstream_rr_peers_t *pe
                 }
 
         }
+	 if(peers->next != NULL && src_peers->next != NULL) {
+          njt_stream_upstream_zone_inherit_peer_status(peers->next,src_peers->next);
+        }
 }
