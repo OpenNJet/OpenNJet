@@ -483,7 +483,7 @@ njt_stream_upstream_pre_handle_peer(njt_stream_upstream_rr_peer_t   *peer)
 	 if (peer->max_fails
             && peer->fails >= peer->max_fails
             && now - peer->checked > peer->fail_timeout) {
-            peer->hc_upstart = 0;
+            //peer->hc_upstart = now;
         }
         //if (peer->max_fails
         //    && peer->slow_start > 0 && peer->hc_upstart == 0) {
@@ -742,9 +742,9 @@ njt_stream_upstream_free_round_robin_peer(njt_peer_connection_t *pc, void *data,
 
         if (peer->accessed < peer->checked) {
             peer->fails = 0;
-        }
-	if (peer->max_fails && peer->slow_start > 0 && peer->hc_upstart == 0) {
-                 peer->hc_upstart =  njt_time();
+	    if (peer->max_fails && peer->slow_start > 0 && peer->fails >= peer->max_fails) {
+		    peer->hc_upstart =  njt_time();
+	    }
         }
     }
 
