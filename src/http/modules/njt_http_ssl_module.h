@@ -68,10 +68,20 @@ typedef struct {
 
     u_char                         *file;
     njt_uint_t                      line;
+
+#if (NJT_HAVE_NTLS)
+    njt_flag_t                      ntls;
+#endif
 } njt_http_ssl_srv_conf_t;
 
 
 extern njt_module_t  njt_http_ssl_module;
 
+#if (NJT_HTTP_MULTICERT)
+char *njt_http_ssl_certificate_slot(njt_conf_t *cf,
+    njt_command_t *cmd, void *conf);
+njt_int_t njt_http_ssl_compile_certificates(njt_conf_t *cf,
+    njt_http_ssl_srv_conf_t *conf);
+#endif
 
 #endif /* _NJT_HTTP_SSL_H_INCLUDED_ */

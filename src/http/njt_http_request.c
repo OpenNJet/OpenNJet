@@ -753,6 +753,12 @@ njt_http_ssl_handshake(njt_event_t *rev)
                 return;
             }
 
+#if (NJT_HAVE_NTLS)
+            if (sscf->ntls) {
+                SSL_enable_ntls(c->ssl->connection);
+            }
+#endif
+
             njt_reusable_connection(c, 0);
 
             rc = njt_ssl_handshake(c);

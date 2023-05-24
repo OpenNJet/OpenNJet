@@ -256,7 +256,7 @@ njt_stream_upstream_zone_copy_peers(njt_slab_pool_t *shpool,
             return NULL;
         }
 
-	if(uscf->mandatory == 1) {
+	if(uscf->mandatory == 1 && uscf->persistent == 0) {
 	  peer->hc_down = 2; //checking	
 	}
         *peerp = peer;
@@ -283,7 +283,9 @@ njt_stream_upstream_zone_copy_peers(njt_slab_pool_t *shpool,
         if (peer == NULL) {
             return NULL;
         }
-
+	if(uscf->mandatory == 1 && uscf->persistent == 0) {
+          peer->hc_down = 2; //checking 
+        }
         *peerp = peer;
     }
 
@@ -378,5 +380,8 @@ njt_stream_upstream_zone_inherit_peer_status (njt_stream_upstream_rr_peers_t *pe
                         }
                 }
 
+        }
+	 if(peers->next != NULL && src_peers->next != NULL) {
+          njt_stream_upstream_zone_inherit_peer_status(peers->next,src_peers->next);
         }
 }

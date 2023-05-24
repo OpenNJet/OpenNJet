@@ -71,6 +71,19 @@ void njt_rpc_result_set_msg(njt_rpc_result_t * rpc_result,u_char * msg){
         rpc_result->msg.data=njt_pstrdup(rpc_result->pool,&tmp_msg);
     }
 }
+
+
+void njt_rpc_result_set_msg2(njt_rpc_result_t * rpc_result,njt_str_t * msg){
+    if(!rpc_result) {
+        return;
+    }
+    if(msg && msg->len>0){
+        rpc_result->msg.len = msg->len;
+        rpc_result->msg.data=njt_pstrdup(rpc_result->pool,msg);
+    } else {
+        rpc_result->msg.len = 0;
+    }
+}
 void njt_rpc_result_set_conf_path(njt_rpc_result_t * rpc_result,njt_str_t *json_str){
     if(!rpc_result || !json_str){
         return;

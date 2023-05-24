@@ -3,6 +3,7 @@
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
+
 #ifndef NJET_MAIN_NJT_COMMON_HEALTH_CHECK_H
 #define NJET_MAIN_NJT_COMMON_HEALTH_CHECK_H
 
@@ -70,8 +71,9 @@ typedef struct njt_helper_health_check_conf_s {
 #endif
     njt_event_t hc_timer;
     void *ctx;    // http 或stream 特异化字段
-//    unsigned persistent: 1;
-//    unsigned mandatory: 1;
+    njt_int_t ref_count;
+    unsigned persistent: 1;
+    unsigned mandatory: 1;
     unsigned disable: 1;
 } njt_helper_health_check_conf_t;
 
@@ -137,11 +139,25 @@ typedef struct {
     njt_str_t hc_type;
 } njt_helper_hc_list_item_t;
 
+/* by zhaokang */
+typedef struct {
+    njt_array_t    *list; /* njt_helper_hc_list_item_t */
+} njt_helper_hc_list_t;
+
 #define HTTP_HEALTH_CHECK_SEPARATOR "$"
 #define HTTP_UPSTREAM_KEYS "helper_hc_http_upstreams"
 #define UPSTREAM_NAME_PREFIX "helper_hc_http_upstream" HTTP_HEALTH_CHECK_SEPARATOR
 #define HTTP_HEALTH_CHECK_CONFS "helper_hc_confs"
 #define HTTP_HEALTH_CHECK_CONF_INFO "helper_hc_conf_info" HTTP_HEALTH_CHECK_SEPARATOR
+
+/* by zhaokang */
+#define STREAM_HEALTH_CHECK_SEPARATOR     "$"
+#define STREAM_UPSTREAM_KEYS              "stream_helper_hc_stream_upstreams"
+#define STREAM_UPSTREAM_NAME_PREFIX       "stream_helper_hc_stream_upstream"     STREAM_HEALTH_CHECK_SEPARATOR
+#define STREAM_HEALTH_CHECK_CONFS         "stream_helper_hc_confs"
+#define STREAM_HEALTH_CHECK_CONF_INFO     "stream_helper_hc_conf_info"             STREAM_HEALTH_CHECK_SEPARATOR
+
+
 
 njt_int_t njt_json_parse_msec(njt_json_element *el, njt_json_define_t *def, void *data);
 
