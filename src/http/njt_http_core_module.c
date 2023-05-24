@@ -96,10 +96,11 @@ static char *njt_http_core_pool_size(njt_conf_t *cf, void *post, void *data);
 static char *
 njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir);
 
+static char *
+njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir);
+
 static njt_int_t
 njt_http_core_run_location(njt_http_request_t *r,njt_http_core_loc_conf_t  *clcf);
-static njt_int_t
-njt_conf_read_memory_token(njt_conf_t *cf,njt_str_t data);
 
 extern njt_module_t  njt_http_rewrite_module;
 
@@ -3320,7 +3321,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 		clcf->if_loc = 1;
 	        clcf->exact_match = 1;
 		clcf->internal = 0;
-		njt_http_core_if_location_array(cf, value,clcf,0,-1,0);
+		njt_http_core_if_location_parse(cf,clcf,0,-1,0);
 	} else {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid location modifier \"%V\"", &value[1]);
@@ -3376,7 +3377,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
             }
 
         } else if (name->data[0] == '(') {
-			njt_http_core_if_location_array(cf, &clcf->full_name,clcf,0,-1,0);
+		njt_http_core_if_location_parse(cf,clcf,0,-1,0);
                 clcf->if_loc = 1;
                 clcf->exact_match = 1;
                 clcf->internal = 0;
@@ -5660,6 +5661,32 @@ static njt_int_t njt_http_core_split_if(njt_conf_t *cf,njt_str_t src){
 }
 
 static char *
+njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir){
+#if (NJT_HTTP_DYNAMIC_LOC)
+    u_char* index;
+    njt_uint_t len =0,i;
+    njt_str_t  command,*value;
+
+    value = cf->args->elts;
+    for(i = 1; i < cf->args->nelts; i++){
+        len += value[i].len+1;
+    }
+    index = njt_pcalloc(pclcf->pool,len);
+    if (index == NULL){
+        return NJT_CONF_ERROR;
+    }
+    command.data = index;
+    for(i = 1; i < cf->args->nelts; i++){
+        njt_memcpy(index,value[i].data,value[i].len);
+        index += value[i].len;
+        *index = (u_char)' ';
+        ++index;
+    }
+    command.len = len;
+    return njt_http_core_if_location_array(cf,&command,pclcf,step,oper,dir);
+#endif
+}
+static char *
 njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir){  // -1, 0 与，1 或
   
 
@@ -5784,247 +5811,6 @@ njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_cor
    
 		 return NJT_CONF_OK;
 
-}
-static njt_int_t
-njt_conf_read_memory_token(njt_conf_t *cf,njt_str_t data)
-{
-    u_char      *start, ch, *src, *dst;
-    size_t       len;
-    njt_uint_t   found, need_space, last_space, sharp_comment, variable;
-    njt_uint_t   quoted, s_quoted, d_quoted;
-    njt_str_t   *word;
-    njt_buf_t   *b,  new_buf;
-
-    found = 0;
-    need_space = 0;
-    last_space = 1;
-    sharp_comment = 0;
-    variable = 0;
-    quoted = 0;
-    s_quoted = 0;
-    d_quoted = 0;
-
-    cf->args->nelts = 0;
-    njt_memzero(&new_buf,sizeof(new_buf));
-
-    b = &new_buf;
-    new_buf.start = data.data;
-    new_buf.end = data.data + data.len;
-
-    new_buf.pos = new_buf.start;
-    new_buf.last = new_buf.end;
-    start = b->pos;
-
-
-    for ( ;; ) {
-
-        if (b->pos >= b->last) {
-	    break;
-        }
-
-        ch = *b->pos++;
-
-        if (ch == LF) {
-            cf->conf_file->line++;
-
-            if (sharp_comment) {
-                sharp_comment = 0;
-            }
-        }
-
-        if (sharp_comment) {
-            continue;
-        }
-
-        if (quoted) {
-            quoted = 0;
-            continue;
-        }
-
-        if (need_space) {
-            if (ch == ' ' || ch == '\t' || ch == CR || ch == LF) {
-                last_space = 1;
-                need_space = 0;
-                continue;
-            }
-
-            if (ch == ';') {
-                return NJT_OK;
-            }
-
-            if (ch == '{') {
-                return NJT_CONF_BLOCK_START;
-            }
-
-            if (ch == ')') {
-                last_space = 1;
-                need_space = 0;
-
-            } else {
-                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                   "unexpected \"%c\"", ch);
-                return NJT_ERROR;
-            }
-        }
-
-        if (last_space) {
-
-            start = b->pos - 1;
-
-            if (ch == ' ' || ch == '\t' || ch == CR || ch == LF) {
-                continue;
-            }
-
-            switch (ch) {
-
-            case ';':
-            case '{':
-                if (cf->args->nelts == 0) {
-                    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                       "unexpected \"%c\"", ch);
-                    return NJT_ERROR;
-                }
-
-                if (ch == '{') {
-                    return NJT_CONF_BLOCK_START;
-                }
-
-                return NJT_OK;
-
-            case '}':
-                if (cf->args->nelts != 0) {
-                    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                       "unexpected \"}\"");
-                    return NJT_ERROR;
-                }
-
-                return NJT_CONF_BLOCK_DONE;
-
-            case '#':
-                sharp_comment = 1;
-                continue;
-
-            case '\\':
-                quoted = 1;
-                last_space = 0;
-                continue;
-
-            case '"':
-                start++;
-                d_quoted = 1;
-                last_space = 0;
-                continue;
-
-            case '\'':
-                start++;
-                s_quoted = 1;
-                last_space = 0;
-                continue;
-
-            case '$':
-                variable = 1;
-                last_space = 0;
-                continue;
-
-            default:
-                last_space = 0;
-            }
-
-        } else {
-            if (ch == '{' && variable) {
-                continue;
-            }
-
-            variable = 0;
-
-            if (ch == '\\') {
-                quoted = 1;
-                continue;
-            }
-
-            if (ch == '$') {
-                variable = 1;
-                continue;
-            }
-
-            if (d_quoted) {
-                if (ch == '"') {
-                    d_quoted = 0;
-                    need_space = 1;
-                    found = 1;
-                }
-
-            } else if (s_quoted) {
-                if (ch == '\'') {
-                    s_quoted = 0;
-                    need_space = 1;
-                    found = 1;
-                }
-
-            } else if (ch == ' ' || ch == '\t' || ch == CR || ch == LF
-                       || ch == ';' || ch == '{')
-            {
-                last_space = 1;
-                found = 1;
-            }
-
-            if (found) {
-                word = njt_array_push(cf->args);
-                if (word == NULL) {
-                    return NJT_ERROR;
-                }
-                word->data = njt_pnalloc(cf->pool, b->pos - 1 - start + 1);
-                if (word->data == NULL) {
-                    return NJT_ERROR;
-                }
-
-                for (dst = word->data, src = start, len = 0;
-                     src < b->pos - 1;
-                     len++)
-                {
-                    if (*src == '\\') {
-                        switch (src[1]) {
-                        case '"':
-                        case '\'':
-                        case '\\':
-                            src++;
-                            break;
-
-                        case 't':
-                            *dst++ = '\t';
-                            src += 2;
-                            continue;
-
-                        case 'r':
-                            *dst++ = '\r';
-                            src += 2;
-                            continue;
-
-                        case 'n':
-                            *dst++ = '\n';
-                            src += 2;
-                            continue;
-                        }
-
-                    }
-                    *dst++ = *src++;
-                }
-                *dst = '\0';
-                word->len = len;
-
-                if (ch == ';') {
-                    return NJT_OK;
-                }
-
-                if (ch == '{') {
-                    return NJT_CONF_BLOCK_START;
-                }
-
-                found = 0;
-            }
-        }
-    }
-  return NJT_OK;
 }
 static njt_int_t
 njt_http_core_run_location(njt_http_request_t *r,njt_http_core_loc_conf_t     *clcf)

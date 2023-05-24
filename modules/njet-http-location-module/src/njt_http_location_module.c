@@ -61,6 +61,7 @@ njt_http_refresh_variables_keys();
 static char *
 njt_http_location_api(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static void njt_update_static_location_clcf(njt_http_location_tree_node_t *node);
+static njt_str_t njt_http_location_get_full_name(njt_pool_t *pool,njt_str_t src);
 
 static void njt_http_location_write_data(njt_http_location_info_t *location_info);
 typedef struct njt_http_location_ctx_s {
@@ -357,9 +358,9 @@ static njt_int_t
 njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     njt_http_core_srv_conf_t *cscf;
     njt_http_core_loc_conf_t *clcf, *dclcf;
-    njt_http_location_queue_t *lq;
+    njt_http_location_queue_t *lq,*if_lq;
 	u_char *p;
-	njt_str_t location_name,msg;
+	njt_str_t location_name,msg,location_name_key;
 
     
     msg.len = 1024;
@@ -415,12 +416,13 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 		p = njt_snprintf(location_name.data, 1024, "%V", &location_info->location);
 	}
 	location_name.len = p - location_name.data;
+	location_name_key = njt_http_location_get_full_name(location_info->pool,location_name);
 
     if(clcf->old_locations == NULL) {
 	 njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "not find  location [%V] old_locations is null!",&location_name);
 	 return NJT_OK;
     }
-    lq = njt_http_find_location(location_name, clcf->old_locations);
+    lq = njt_http_find_location(location_name_key, clcf->old_locations);
     if (lq == NULL) {
 	njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "not find  location [%V]!",&location_name);
 	if(msg.data != NULL){
@@ -440,7 +442,12 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     //    njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "static  location=%V not allow delete!",&location_name);
     //	return NJT_OK;
     //}
-
+    if(dclcf->if_loc == 1) {
+	if_lq = njt_http_find_location(location_name_key, clcf->if_locations);
+	if(if_lq != NULL) {
+	  njt_queue_remove(&if_lq->queue);
+	}
+    }
     njt_http_location_delete_dyn_var(dclcf);
     njt_queue_remove(&lq->queue);
     njt_pfree(lq->parent_pool, lq);
@@ -532,7 +539,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     njt_http_core_srv_conf_t *cscf;
     char *rv = NULL;
     njt_http_core_loc_conf_t *clcf,*new_clcf;
-    njt_str_t location_name,msg;
+    njt_str_t location_name,msg,location_name_key;
     u_char *p;
 	njt_http_sub_location_info_t  *sub_location, *loc;
     njt_http_location_queue_t *lq;
@@ -610,7 +617,8 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     }
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
 	if(clcf->old_locations) {
-	    lq = njt_http_find_location(location_name, clcf->old_locations);
+	    location_name_key = njt_http_location_get_full_name(location_info->pool,location_name);
+	    lq = njt_http_find_location(location_name_key, clcf->old_locations);
 	    if (lq != NULL) {  
 		 njt_str_set(&location_info->msg,"location exist!");
 		 if(msg.data != NULL){
@@ -1614,4 +1622,42 @@ static void njt_update_static_location_clcf(njt_http_location_tree_node_t *node)
     njt_update_static_location_clcf(node->right);
     njt_update_static_location_clcf(node->tree);
 
+}
+
+static njt_str_t njt_http_location_get_full_name(njt_pool_t *pool,njt_str_t src) {
+  njt_conf_t cf;
+  njt_str_t full_name,*value;
+  u_char* index;
+  njt_uint_t len,i;
+  full_name.len = 0;
+  full_name.data = NULL;
+  njt_memzero(&cf, sizeof(njt_conf_t));
+  cf.pool = pool;
+  cf.temp_pool = pool;
+
+  cf.args = njt_array_create(cf.pool, 10, sizeof(njt_str_t));
+    if (cf.args == NULL) {
+        return full_name;
+    }
+   njt_conf_read_memory_token(&cf,src);
+   len =0;
+   value = cf.args->elts;
+    for(i = 0; i < cf.args->nelts; i++){
+        //len += value[i].len+1;
+        len += value[i].len;
+    }
+    index = njt_pcalloc(pool,len);
+    if (index == NULL){
+        return full_name;
+    }
+    full_name.data = index;
+    for(i = 0; i < cf.args->nelts; i++){
+        njt_memcpy(index,value[i].data,value[i].len);
+        index += value[i].len;
+        //*index = (u_char)' ';
+        //++index;
+    }
+    full_name.len = len;
+    return full_name;
+ 
 }
