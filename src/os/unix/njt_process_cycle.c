@@ -102,7 +102,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
     njt_core_conf_t *ccf;
     njt_str_t          worker_k = njt_string("kv_http___master:worker_count");
     njt_str_t          worker_v;
-    njt_uint_t         worker_c;
+    njt_int_t          worker_c;
     njt_int_t          rc;
     u_char             s_tmp[24] = { 0 };
     u_char *end;
