@@ -101,6 +101,26 @@ components:
           items:
             $ref: '#/components/schemas/ServerConf'
 
+        limit_rps:
+          type: array
+          items:
+            $ref: '#/components/schemas/LimitRpsConf'
+
+    LimitRpsConf:
+      title:     LimitRpsConf
+      description: 动态 limit rps配置
+      type: object
+      properties:
+        zone:
+          type: string
+          description: zone 名称 .
+          example: conn_zone_name
+
+        rate:
+          type: string
+          description: rate 配置 .
+          example: 20r/s
+
     ServerConf:
       title:     ServerConf
       description: 动态 server 级别配置
