@@ -289,7 +289,7 @@ njt_event_pipe_read_upstream(njt_event_pipe_t *p)
                 }
 
                 chain = p->free_raw_bufs;
-                if (p->single_buf) {
+                if (p->single_buf && p->free_raw_bufs != NULL) {
                     p->free_raw_bufs = p->free_raw_bufs->next;
                     chain->next = NULL;
                 } else {
