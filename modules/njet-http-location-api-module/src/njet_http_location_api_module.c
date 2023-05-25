@@ -625,6 +625,9 @@ njt_http_location_read_data(njt_http_request_t *r){
 		p = njt_snprintf(topic_name.data,topic_len,"/dyn/loc/l_%ui",crc32);
 	} else  if(location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0 ){
 		p = njt_snprintf(topic_name.data,topic_len,"/worker_0/dyn/loc/l_%ui",crc32);
+	} else {
+		njt_str_set(&location_info->msg, "type error!!!");
+		goto err;
 	}
 	topic_name.len = p - topic_name.data;
 	rc = njt_http_location_rpc_send(r,&topic_name,&json_str,0);
@@ -641,6 +644,7 @@ err:
      rpc_result = njt_rpc_result_create();
     if(rpc_result == NULL){
        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rpc_result allocate null");
+       rc = NJT_ERROR;
        goto out;
     }
 	
