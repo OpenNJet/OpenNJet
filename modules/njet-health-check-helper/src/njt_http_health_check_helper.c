@@ -4266,6 +4266,9 @@ static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, n
     rc = njt_http_send_header(r);
 
     if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
+        if(rc == NJT_OK){
+            njt_http_finalize_request(r, rc);
+        }
         return rc;
     }
     buf->last_buf = 1;
@@ -4478,6 +4481,10 @@ static void njt_http_hc_api_read_data(njt_http_request_t *r){
 
     body_chain = r->request_body->bufs;
     /*check the sanity of the json body*/
+    if(NULL == body_chain){
+        hrc = HC_SERVER_ERROR;
+        goto out;
+    }
     json_str.data = body_chain->buf->pos;
     json_str.len = body_chain->buf->last - body_chain->buf->pos;
 
@@ -4941,13 +4948,16 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
             hrc = HC_SERVER_ERROR;
             goto out;
         }
-    } else {
+    } else if (r->method == NJT_HTTP_POST) {
         rc = njt_http_read_client_request_body(r, njt_http_hc_api_read_data);
 
         if (rc == NJT_ERROR || rc >= NJT_HTTP_SPECIAL_RESPONSE) {
             return rc;
         }
         return NJT_DONE;
+    } else {
+        hrc = HC_METHOD_NOT_ALLOW;
+        goto out;
     }
 
     //put (delete location)
