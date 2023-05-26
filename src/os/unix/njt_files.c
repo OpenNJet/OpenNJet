@@ -364,7 +364,7 @@ njt_chain_to_iovec(njt_iovec_t *vec, njt_chain_t *cl)
 
         size = cl->buf->last - cl->buf->pos;
 
-        if (prev == cl->buf->pos) {
+        if (prev == cl->buf->pos && iov != NULL) {
             iov->iov_len += size;
 
         } else {

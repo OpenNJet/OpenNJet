@@ -401,7 +401,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool,njt_http_dyn_ssl_ap
 
 
 static int  njt_http_ssl_update_handler(njt_str_t *key, njt_str_t *value, void *data, njt_str_t *out_msg){
-    njt_int_t                            rc;
+    njt_int_t                            rc = NJT_OK;
     njt_http_dyn_ssl_api_main_t         *api_data = NULL;
     njt_pool_t                          *pool = NULL;
     njt_rpc_result_t                    *rpc_result = NULL;
@@ -441,6 +441,8 @@ static int  njt_http_ssl_update_handler(njt_str_t *key, njt_str_t *value, void *
                        "could not alloc buffer in function %s", __func__);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
         njt_rpc_result_set_msg(rpc_result, (u_char *)" api_data malloc error");
+        rc = NJT_ERROR;
+ 
         goto end;
     }
 

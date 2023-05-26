@@ -257,6 +257,10 @@ void njt_http_upstream_traver(void *ctx,njt_int_t (*item_handle)(void *ctx,njt_h
         return;
     }
     umcf = njt_http_cycle_get_module_main_conf(njet_master_cycle, njt_http_upstream_module);
+
+    if(NULL == umcf){
+        return;
+    }
     uscfp = umcf->upstreams.elts;
 
     for (i = 0; i < umcf->upstreams.nelts; i++) {
@@ -278,6 +282,9 @@ void njt_stream_upstream_traver(void *ctx,njt_int_t (*item_handle)(void *ctx,njt
     }
     umcf = njt_stream_cycle_get_module_main_conf(njet_master_cycle, njt_stream_upstream_module);
 
+    if(NULL == umcf){
+        return;
+    }
     uscfp = umcf->upstreams.elts;
     for (i = 0; i < umcf->upstreams.nelts; i++) {
         if(0 != item_handle(ctx,uscfp[i])){

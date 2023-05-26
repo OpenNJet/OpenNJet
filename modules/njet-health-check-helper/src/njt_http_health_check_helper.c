@@ -1098,7 +1098,7 @@ njt_stream_health_check_match_all(njt_connection_t *c){
         return rc;
     }
 
-    for (;;) {
+//    {
         b = hc_peer->recv_buf;
         size = b->end - b->last;
         n = c->recv(c, b->last, size);
@@ -1124,8 +1124,8 @@ njt_stream_health_check_match_all(njt_connection_t *c){
             njt_log_debug0(NJT_LOG_ERR, njt_cycle->log, 0,"read error for health check");
             return NJT_ERROR;
         }
-        break;
-    }
+//        break;
+//    }
     return NJT_ERROR;
 }
 
@@ -2716,12 +2716,13 @@ static void njt_update_peer(njt_http_upstream_srv_conf_t *uscf,
                             njt_http_upstream_rr_peer_t *peer,
                             njt_int_t status, njt_uint_t passes, njt_uint_t fails) {
     peer->hc_check_in_process = 0;
-    peer->hc_checks++;
     // 如果是持久化，并且是reload后第一次进入不做。  如果peer已经down状态也不做
-    if((uscf->mandatory == 1 && uscf->reload == 1 &&  uscf->persistent == 1 &&  peer->hc_checks == 1) || peer->down == 1 ) {
+    if((uscf->mandatory == 1 && uscf->reload == 1 &&  uscf->persistent == 1 &&  peer->set_first_check == 0) || peer->down == 1 ) {
+        peer->set_first_check = 1;
         return;
     }
 
+    peer->hc_checks++;
     if (status == NJT_OK || status == NJT_DONE) {
 
         peer->hc_consecutive_fails = 0;
@@ -2778,12 +2779,13 @@ static void njt_stream_update_peer(njt_stream_upstream_srv_conf_t *uscf,
                             njt_stream_upstream_rr_peer_t *peer,
                             njt_int_t status, njt_uint_t passes, njt_uint_t fails) {
     peer->hc_check_in_process = 0;
-    peer->hc_checks++;
 
     // 如果是持久化，并且是reload后第一次进入不做。  如果peer已经down状态也不做
-    if((uscf->mandatory == 1 && uscf->reload == 1 &&  uscf->persistent == 1 &&  peer->hc_checks == 1) || peer->down == 1 ) {
+    if((uscf->mandatory == 1 && uscf->reload == 1 &&  uscf->persistent == 1 &&  peer->set_first_check == 0 ) || peer->down == 1 ) {
+        peer->set_first_check = 1;
         return;
     }
+    peer->hc_checks++;
 
     if (status == NJT_OK || status == NJT_DONE) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
@@ -4264,6 +4266,9 @@ static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, n
     rc = njt_http_send_header(r);
 
     if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
+        if(rc == NJT_OK){
+            njt_http_finalize_request(r, rc);
+        }
         return rc;
     }
     buf->last_buf = 1;
@@ -4476,6 +4481,10 @@ static void njt_http_hc_api_read_data(njt_http_request_t *r){
 
     body_chain = r->request_body->bufs;
     /*check the sanity of the json body*/
+    if(NULL == body_chain){
+        hrc = HC_SERVER_ERROR;
+        goto out;
+    }
     json_str.data = body_chain->buf->pos;
     json_str.len = body_chain->buf->last - body_chain->buf->pos;
 
@@ -4939,13 +4948,16 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
             hrc = HC_SERVER_ERROR;
             goto out;
         }
-    } else {
+    } else if (r->method == NJT_HTTP_POST) {
         rc = njt_http_read_client_request_body(r, njt_http_hc_api_read_data);
 
         if (rc == NJT_ERROR || rc >= NJT_HTTP_SPECIAL_RESPONSE) {
             return rc;
         }
         return NJT_DONE;
+    } else {
+        hrc = HC_METHOD_NOT_ALLOW;
+        goto out;
     }
 
     //put (delete location)
