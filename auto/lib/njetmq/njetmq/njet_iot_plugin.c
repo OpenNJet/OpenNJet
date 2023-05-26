@@ -27,7 +27,7 @@ Contributors:
 #include "send_mosq.h"
 #include "util_mosq.h"
 #include "utlist.h"
-#include "lib_load.h"
+#include "njet_iot_lib_load.h"
 
 static bool check_callback_exists(struct mosquitto__callback *cb_base, MOSQ_FUNC_generic_callback cb_func)
 {
