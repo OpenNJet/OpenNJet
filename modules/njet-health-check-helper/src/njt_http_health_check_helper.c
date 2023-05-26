@@ -4215,12 +4215,13 @@ end:
 
 static char njt_hc_resp_body[] = "{\n  \"code\": %d,\n   \"msg\": \"%V\"\n }";
 
-static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, njt_int_t rc) {
+static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, njt_int_t hrc) {
     njt_uint_t buf_len;
     njt_buf_t *buf;
     njt_chain_t out;
+    njt_int_t rc;
 
-    switch (rc) {
+    switch (hrc) {
         case HC_SUCCESS:
             r->headers_out.status = NJT_HTTP_OK;
             break;
@@ -4248,14 +4249,14 @@ static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, n
             r->headers_out.status = NJT_HTTP_INTERNAL_SERVER_ERROR;
             break;
     }
-    buf_len = sizeof(njt_hc_resp_body) - 1 + 9 + njt_hc_error_msg[rc].len;
+    buf_len = sizeof(njt_hc_resp_body) - 1 + 9 + njt_hc_error_msg[hrc].len;
     buf = njt_create_temp_buf(r->pool, buf_len);
     if (buf == NULL) {
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "could not alloc buffer in function %s", __func__);
         return NJT_ERROR;
     }
-    buf->last = njt_snprintf(buf->last, buf_len, njt_hc_resp_body, rc, njt_hc_error_msg + rc);
+    buf->last = njt_snprintf(buf->last, buf_len, njt_hc_resp_body, hrc, njt_hc_error_msg + hrc);
     njt_str_t type = njt_string("application/json");
     r->headers_out.content_type = type;
     r->headers_out.content_length_n = buf->last - buf->pos;
@@ -4265,10 +4266,8 @@ static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, n
     }
     rc = njt_http_send_header(r);
 
-    if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
-        if(rc == NJT_OK){
-            njt_http_finalize_request(r, rc);
-        }
+    // r->header_only  when method is HEAD ,header_only is set.
+    if (rc == NJT_ERROR || rc > NJT_OK) {
         return rc;
     }
     buf->last_buf = 1;
