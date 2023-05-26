@@ -366,10 +366,10 @@ njt_stream_log_write(njt_stream_session_t *s, njt_stream_log_t *log,
 #endif
 
     if (log->script == NULL) {
-	name = NULL;
-	if(log->file != NULL) {
-        	name = log->file->name.data;
+	if(log->file == NULL) {
+		return;
 	}
+	name = log->file->name.data;
 
 #if (NJT_ZLIB)
         buffer = log->file->data;

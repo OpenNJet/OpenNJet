@@ -323,7 +323,11 @@ njt_event_pipe_read_upstream(njt_event_pipe_t *p)
 
             if (n == NJT_AGAIN) {
                 if (p->single_buf) {
-                    njt_event_pipe_remove_shadow_links(chain->buf);
+		    if(chain != NULL) {
+                    	njt_event_pipe_remove_shadow_links(chain->buf);
+		    } else {
+			njt_log_error(NJT_LOG_ERR, p->log,0,"njt_event_pipe_remove_shadow_links  chain is null");
+		    }
                 }
 
                 break;

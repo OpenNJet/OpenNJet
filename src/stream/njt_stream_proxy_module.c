@@ -1709,10 +1709,12 @@ njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
     if (njt_stream_proxy_test_finalize(s, from_upstream) == NJT_OK) {
         return;
     }
-    flags = 0;
-    if(src != NULL) {
-    	flags = src->read->eof ? NJT_CLOSE_EVENT : 0;
-    } 
+    if(src == NULL || src->read == NULL) {
+	njt_log_error(NJT_LOG_ERR, s->connection->log, 0,
+                      "src or src->read is null");
+	return;
+    }
+    flags = src->read->eof ? NJT_CLOSE_EVENT : 0;
 
     if (njt_handle_read_event(src->read, flags) != NJT_OK) {
         njt_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);

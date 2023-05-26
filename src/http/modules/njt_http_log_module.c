@@ -438,10 +438,10 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
 #endif
 
     if (log->script == NULL) {
-        name = NULL;
-        if(log->file != NULL) {
-                name = log->file->name.data;
+        if(log->file == NULL) {
+		return;
         }
+	name = log->file->name.data;
 
 #if (NJT_ZLIB)
         buffer = log->file->data;
