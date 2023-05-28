@@ -324,6 +324,10 @@ void njt_cdecl njt_ssl_error(njt_uint_t level, njt_log_t *log, njt_err_t err,
     char *fmt, ...);
 void njt_ssl_cleanup_ctx(void *data);
 
+#if (NJT_HTTP_MULTICERT || NJT_STREAM_MULTICERT)
+char *njt_ssl_certificate_slot(njt_conf_t *cf, njt_command_t *cmd,
+    void *conf);
+#endif
 
 extern int  njt_ssl_connection_index;
 extern int  njt_ssl_server_conf_index;

@@ -57,10 +57,21 @@ typedef struct {
 
     u_char          *file;
     njt_uint_t       line;
+
+#if (NJT_HAVE_NTLS)
+    njt_flag_t       ntls;
+#endif
+
 } njt_stream_ssl_conf_t;
 
 
 extern njt_module_t  njt_stream_ssl_module;
 
+#if (NJT_STREAM_MULTICERT)
+char *njt_stream_ssl_certificate_slot(njt_conf_t *cf,
+    njt_command_t *cmd, void *conf);
+njt_int_t njt_stream_ssl_compile_certificates(njt_conf_t *cf,
+    njt_stream_ssl_conf_t *conf);
+#endif
 
 #endif /* _NJT_STREAM_SSL_H_INCLUDED_ */
