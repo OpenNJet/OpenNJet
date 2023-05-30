@@ -9,13 +9,21 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
-
+#include <loc_eval.h>
+#include "loc_parse.tab.h"
+#include "lex.yy.h"
 
 typedef struct {
     u_char    *name;
     uint32_t   method;
 } njt_http_method_name_t;
 
+typedef struct {
+    njt_http_request_t               *r;
+    njt_http_core_loc_conf_t         *clcf;
+    njt_http_script_engine_t     *e;
+    njt_uint_t stack_size;
+}njt_http_if_location_request;
 
 #define NJT_HTTP_REQUEST_BODY_FILE_OFF    0
 #define NJT_HTTP_REQUEST_BODY_FILE_ON     1
@@ -93,14 +101,23 @@ static char *njt_http_disable_symlinks(njt_conf_t *cf, njt_command_t *cmd,
 
 static char *njt_http_core_lowat_check(njt_conf_t *cf, void *post, void *data);
 static char *njt_http_core_pool_size(njt_conf_t *cf, void *post, void *data);
+
 static char *
-njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir);
+njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir);
 
 static char *
 njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir);
 
 static njt_int_t
 njt_http_core_run_location(njt_http_request_t *r,njt_http_core_loc_conf_t  *clcf);
+
+ int
+njt_http_core_run_location_callback(void *ctx,void *pdata);
+
+njt_int_t njt_http_core_cp_loc_parse_tree(loc_parse_node_t * root, njt_pool_t   *pool,loc_parse_node_t ** new_root);
+loc_parse_ctx_t*
+njt_http_core_loc_parse_tree_ctx(loc_parse_node_t *root,njt_pool_t   *pool);
+
 
 extern njt_module_t  njt_http_rewrite_module;
 
@@ -5670,7 +5687,10 @@ njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf,
     u_char* index;
     njt_uint_t len =0,i;
     njt_str_t  command,*value;
-
+    loc_parse_ctx_t* ctx;
+    loc_parse_node_t *loc_exp_dyn_parse_tree, *root;
+    njt_int_t rc;
+    njt_int_t   r;
     value = cf->args->elts;
     for(i = 1; i < cf->args->nelts; i++){
         len += value[i].len+1;
@@ -5687,220 +5707,236 @@ njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf,
         ++index;
     }
     command.len = len;
-    return njt_http_core_if_location_array(cf,&command,pclcf,step,oper,dir);
+    yy_scan_string((char *)command.data);
+    r = yyparse(&root);
+    if(r != NJT_OK || root == NULL) {
+	return NJT_CONF_ERROR;
+    }
+    rc = njt_http_core_cp_loc_parse_tree(root,pclcf->pool,&loc_exp_dyn_parse_tree);  
+    if(rc != NJT_OK || loc_exp_dyn_parse_tree == NULL) {
+	return NJT_CONF_ERROR;
+    }
+    free_tree(root);
+    ctx = njt_http_core_loc_parse_tree_ctx(loc_exp_dyn_parse_tree,pclcf->pool);
+    if(ctx == NULL){
+	return NJT_CONF_ERROR;
+    }
+    pclcf->if_location_root = ctx;
+    return njt_http_core_if_location_array_new(cf,ctx,pclcf,step,oper,dir);
+    //return njt_http_core_if_location_array(cf,&command,pclcf,step,oper,dir);
 #endif
 }
+
+
 static char *
-njt_http_core_if_location_array(njt_conf_t *cf, njt_str_t * command,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir){  // -1, 0 与，1 或
+njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir){  // -1, 0 与，1 或
   
 
 
-  njt_int_t nleft  = 0;
-  //njt_int_t nright = 0;
-  u_char   *p1,*p2,*pbegin,*plast;
-  njt_uint_t  i;
-  njt_str_t  new_str,src;
-  njt_str_t  str_tmp = *command;
-  njt_uint_t  falg;
-  njt_int_t step_oper;
+  njt_int_t  i;
   //njt_http_core_loc_conf_t **ploc;
   njt_str_t  new_src;
   njt_int_t rc;
-   ///todo 去掉首尾();
-   
-   p1 = NULL;
-   p2 = NULL;
-   falg = 0;
-
-   for(i=0; i < str_tmp.len; i++){
-      if (str_tmp.data[i] == ' ' || str_tmp.data[i] == '\t' || str_tmp.data[i] == '\r' || str_tmp.data[i] == '\n') {
-		  continue;
-	  } if(str_tmp.data[i] == '('){
-		  p1 = str_tmp.data + i + 1;
-	  } 
-	  break;
-	  
-   }
-   for(i= str_tmp.len -1; i > 0; i--){
-     
-	   if (str_tmp.data[i] == ' ' || str_tmp.data[i] == '\t' || str_tmp.data[i] == '\r' || str_tmp.data[i] == '\n') {
-		  continue;
-	  } 
-	   if(str_tmp.data[i] == ')'){
-		  p2 = str_tmp.data + i -1;
-	   }
-	   break;
-   }
-   if(p1 != NULL && p2 != NULL ){
-	   src.data = p1;
-	   src.len = p2 - src.data + 1;
-	   falg = 1;
-   } else if(p1 != NULL && p2 == NULL ) {
-	njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "\")\" expected!");
-	return NJT_CONF_ERROR;
-   } else if (p1 == NULL && p2 != NULL ) {
-	njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "\"(\" expected!");
-	return NJT_CONF_ERROR;
-   } else {
-	   src = str_tmp;
-
-   }
-   if(src.len == 0) {
-	njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "subscript string len = 0");
-	return NJT_CONF_ERROR;
-   }
-   new_str = src;
-   pbegin = src.data;
-   plast = src.data + src.len;
-  
-  
-  
-//  (  ((a=1 && b=1)|| c=1) && (d=1 || c=1) || d=1 )
-//(  ((a=1 && b=1)|| c=1) || d=1)
-//( a=b && (c=d))
+  char *pdata;
 
   
-
-   if(njt_strnstr(src.data,"&&",src.len) == NULL && njt_strnstr(src.data,"||",src.len) == NULL && njt_strnstr(src.data,"(",src.len) == NULL) {
-		 njt_conf_log_error(NJT_LOG_DEBUG, cf, 0, "1 njt_http_core_if_location_array step=%d,oper=%d, %V",step,oper,&new_str);
-		 //todo oper
-		 new_src.len = src.len + 6;
-		 new_src.data = njt_pcalloc(cf->pool,new_src.len);
-		 njt_snprintf(new_src.data,new_src.len,"if (%V){",&src);
-		 njt_http_core_split_if(cf,new_src);
-		 rc = njt_http_core_if_location(cf,&new_src,pclcf,step,oper,dir);
-		 if (rc  != NJT_OK) {
-			return NJT_CONF_ERROR;
-		 } 
-   } else {
-		 njt_conf_log_error(NJT_LOG_DEBUG, cf, 0, "1 show njt_http_core_if_location_array step=%d,oper=%d %V",step,oper,&str_tmp);
-
-		  if (pclcf->mul_conditions == NULL) {
-			pclcf->mul_conditions = njt_array_create(cf->pool, 1, sizeof(njt_http_core_loc_conf_t *));  //todo
-			if (pclcf->mul_conditions == NULL) {
-				return NJT_CONF_ERROR;
-			}
-		   }
-
-        for(i=0; i < src.len; i++ ){
-			if(src.data[i] == '(') {
-				nleft += LEFT;
+   for(i=0; i < parse_ctx->count; i++) {
+	pdata = parse_ctx->exps[i];
+	new_src.len = njt_strlen(pdata) + 6;
+	new_src.data = njt_pcalloc(cf->pool,new_src.len);
 	
-			} else if(src.data[i] == ')') {
-				nleft += RIGHT;
-			}
-
-			step_oper = -1;
-			if(src.data[i] == '&' && i < src.len - 2 && src.data[i+1] == '&' ){
-				 step_oper = 0;
-			} else if(src.data[i] == '|' && i < src.len - 2 && src.data[i+1] == '|' ) {
-				step_oper = 1;
-			}
-			if(step_oper != -1) {
-				if(nleft == 0) {
-					 new_str.data = pbegin;
-					 new_str.len = src.data + i - pbegin;
-					 pbegin = src.data + i + 2;
-					 oper = step_oper;
-					 // njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "&& tmp njt_http_core_if_location_array step=%d, %V",step+1,&new_str);
-					 //njt_http_core_loc_conf_t  *clcf  = njt_pcalloc(cf->pool, sizeof(njt_http_core_loc_conf_t));
-					 // ploc = njt_array_push(pclcf->mul_conditions);
-					  //todo  dynamic error
-					   //*ploc = clcf;
-
-					 njt_http_core_if_location_array(cf,&new_str,pclcf,step+falg,step_oper,LEFT);
-				}
-			}
-	
-
-			}
-
-			if(pbegin) {
-				 new_str.data = pbegin;
-				 new_str.len = plast - pbegin;
-				 njt_conf_log_error(NJT_LOG_DEBUG, cf, 0, "2 show njt_http_core_if_location_array step=%d, oper=%d, %V",step+1,oper,&new_str);
-				 njt_http_core_if_location_array(cf,&new_str,pclcf,step+falg,oper,RIGHT);
-
-			}
-		
-			}
-			
-   
-		 return NJT_CONF_OK;
+	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_run_location idx=%d, %s",i,pdata);
+	njt_snprintf(new_src.data,new_src.len,"if (%s){",pdata);
+	njt_http_core_split_if(cf,new_src);
+	rc = njt_http_core_if_location(cf,&new_src,pclcf,step,oper,dir);
+	if (rc  != NJT_OK) {
+		return NJT_CONF_ERROR;
+	}
+   }
+   return NJT_CONF_OK;
 
 }
+
+
 static njt_int_t
-njt_http_core_run_location(njt_http_request_t *r,njt_http_core_loc_conf_t     *clcf)
+njt_http_core_run_location(njt_http_request_t *r,njt_http_core_loc_conf_t     *clcf){
+
+  njt_int_t ret;
+  njt_http_if_location_request req;
+  njt_uint_t stack_size = 10;
+  loc_parse_ctx_t* ctx = clcf->if_location_root;
+  req.r = r;
+  req.stack_size = stack_size;
+  req.clcf = clcf;
+
+
+    req.e = njt_pcalloc(r->pool, sizeof(njt_http_script_engine_t));
+    if (req.e == NULL) {
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+    req.e->sp = njt_pcalloc(r->pool,
+                        stack_size * sizeof(njt_http_variable_value_t));
+    if (req.e->sp == NULL) {
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
+    }
+
+  ret = eval_loc_parse_tree((loc_parse_node_t *)ctx->root,njt_http_core_run_location_callback,&req);
+  return (ret == 1?NJT_OK:NJT_ERROR);
+}
+ int
+njt_http_core_run_location_callback(void *ctx,void *pdata)
 {
-    //njt_int_t                     index;
     njt_uint_t                    i;
     njt_http_script_code_pt       code;
-    njt_http_script_engine_t     *e;
-    //njt_http_core_srv_conf_t     *cscf;
-    //njt_http_core_main_conf_t    *cmcf;
     njt_http_rewrite_loc_conf_t  *plcf,*lcf;
     njt_http_rewrite_loc_conf_t  **new_lcf;
-    njt_uint_t                     ret;
+    //njt_uint_t                     ret;
     njt_http_variable_value_t     *pbuf;
+    loc_exp_t *exp  = ctx;
 
-    //cmcf = njt_http_get_module_main_conf(r, njt_http_core_module);
-    //cscf = njt_http_get_module_srv_conf(r, njt_http_core_module);
-    //index = cmcf->phase_engine.location_rewrite_index;
+    njt_http_if_location_request  *request = pdata;
+    njt_http_request_t *r = request->r;
+    njt_http_core_loc_conf_t     *clcf =  request->clcf;
+    
+    i = exp->idx;
 
 
     plcf = clcf->loc_conf[njt_http_rewrite_module.ctx_index];
-
-    
+    plcf->uninitialized_variable_warn = 1;
+    plcf->log = NJT_CONF_UNSET;   
     if (plcf->mul_codes == NULL) {
         return NJT_DECLINED;
     }
      //zyg todo
-    plcf->stack_size = 10;
-    plcf->log = NJT_CONF_UNSET;
-    plcf->uninitialized_variable_warn = 1;
-
-    e = njt_pcalloc(r->pool, sizeof(njt_http_script_engine_t));
-    if (e == NULL) {
-        return NJT_HTTP_INTERNAL_SERVER_ERROR;
-    }
-
-    e->sp = njt_pcalloc(r->pool,
-                        plcf->stack_size * sizeof(njt_http_variable_value_t));
-    if (e->sp == NULL) {
-        return NJT_HTTP_INTERNAL_SERVER_ERROR;
-    }
-    ret = 0;
-    pbuf = e->sp;
+    //ret = 0;
+    pbuf = request->e->sp;
     new_lcf = plcf->mul_codes->elts;
-    for(i=0; i < plcf->mul_codes->nelts;i++){
+    if(plcf->mul_codes->nelts > i){
 	    lcf = new_lcf[i];
-	    njt_memzero(e,sizeof(njt_http_script_engine_t));
-	    njt_memzero(pbuf,plcf->stack_size * sizeof(njt_http_variable_value_t));
-	    e->sp = pbuf;
-	    e->ip = lcf->codes->elts;
-	    e->request = r;
-	    e->quote = 1;
-	    e->log = plcf->log;
-	    e->status = NJT_DECLINED;
-	    e->ret = NJT_DECLINED;
-	    while (*(uintptr_t *) e->ip) {
-		code = *(njt_http_script_code_pt *) e->ip;
-		code(e);
+	    njt_memzero(request->e,sizeof(njt_http_script_engine_t));
+	    njt_memzero(pbuf,request->stack_size * sizeof(njt_http_variable_value_t));
+	    request->e->sp = pbuf;
+	    request->e->ip = lcf->codes->elts;
+	    request->e->request = r;
+	    request->e->quote = 1;
+	    request->e->log = plcf->log;
+	    request->e->status = NJT_DECLINED;
+	    request->e->ret = NJT_DECLINED;
+	    while (*(uintptr_t *) request->e->ip) {
+		code = *(njt_http_script_code_pt *) request->e->ip;
+		code(request->e);
 	    }
-	    lcf->ret = e->ret;
-	    if(lcf->codes_op == 0) {
-	    	ret = ret +  e->ret;
-		if(e->ret == 0){
-		  //break;
-		}
-	    } else {
-		if(e->ret == 1)
-		{
-			ret = plcf->mul_codes->nelts;
-		  	break;
-		}
-	    }
+	    lcf->ret = request->e->ret;
+	    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_run_location_callback idx=%d, %s,ret=%d",exp->idx,exp->exp,lcf->ret);
+	    return lcf->ret;
     }
-    return (ret == plcf->mul_codes->nelts?NJT_OK:NJT_ERROR);
+    return NJT_DECLINED;
 }
 
+njt_int_t njt_http_core_cp_loc_parse_tree(loc_parse_node_t * root, njt_pool_t   *pool,loc_parse_node_t ** new_root)
+{
+   loc_parse_node_t *new_node;
+   loc_exp_t               *loc_exp;
+   njt_int_t  rc;
+   if(root == NULL) {
+	*new_root = NULL;
+	return NJT_OK;
+    }
+    new_node = njt_pcalloc(pool, sizeof(loc_parse_node_t));
+    if(new_node == NULL) {
+	return NJT_ERROR;
+    }
+    new_node->node_type = root->node_type;
+    *new_root = new_node;
+    switch (root->node_type)
+    {
+    case LOC_EXPRESSION:
+         loc_exp = njt_pcalloc(pool, sizeof(loc_exp_t));
+	 if(loc_exp == NULL) {
+        	return NJT_ERROR;
+    	 }
+	 loc_exp->idx = root->loc_exp->idx;
+	 loc_exp->exp = njt_pcalloc(pool,njt_strlen(root->loc_exp->exp));
+	 if(loc_exp->exp == NULL) {
+		return NJT_ERROR;
+	 }
+	 njt_memcpy(loc_exp->exp,root->loc_exp->exp,njt_strlen(root->loc_exp->exp));
+	 new_node->loc_exp = loc_exp;
+         return NJT_OK;
+    case BOOL_OP_OR:
+    case BOOL_OP_AND:
+          rc = njt_http_core_cp_loc_parse_tree(root->left,pool,&new_node->left);
+	  if(rc != NJT_OK) {
+		return rc;
+	  }
+          rc = njt_http_core_cp_loc_parse_tree(root->right,pool,&new_node->right);
+	  if(rc != NJT_OK) {
+                return rc;
+          }
+	  return NJT_OK;
+        break;
+    default:
+        break;
+    }
+    return NJT_ERROR;
+}
+loc_parse_ctx_t*
+njt_http_core_loc_parse_tree_ctx(loc_parse_node_t *root,njt_pool_t   *pool){
+    char** exps;
+    loc_parse_ctx_t* ctx;
+    int idx = 0;
+    int count = 0;
+    loc_parse_node_t** stack;
+
+    // get exp count in ast tree;
+    count = get_exp_counts(root);
+    exps = njt_pcalloc(pool,sizeof(char *)*count);
+    if (!exps) {
+        return NULL;
+    }
+    ctx = njt_pcalloc(pool,sizeof(loc_parse_ctx_t));
+    if (!ctx) {
+        return NULL;
+    }
+    stack = njt_alloc(sizeof(loc_parse_node_t*)*count,njt_cycle->log); //malloc(sizeof(loc_parse_node_t*)*count);
+    if (!stack) {
+        return NULL;
+    }
+
+    loc_parse_node_t* current = root;
+    int stack_size = 0;
+
+    printf("count: %d \n", count);
+    // printf("start traverse tree \n");
+    while (current != NULL || stack_size != 0) {
+        if (current != NULL) {
+            stack[stack_size] = current;
+            stack_size++;
+            // printf("stack_size: %d\n", stack_size);
+            current = current->left;
+        } else {
+            current = stack[stack_size-1];
+            stack_size--;
+            // printf("stack_size: %d\n", stack_size);
+            // printf("type: %d\n", current->node_type);
+            if (current->node_type == LOC_EXPRESSION) {
+                if(idx != current->loc_exp->idx) {
+                    printf("idx: %d,  idx_exp: %d \n", idx, current->loc_exp->idx);
+                }
+                // printf("correct: idx: %d,  idx_exp: %d \n", idx, current->loc_exp->idx);
+                exps[idx] = current->loc_exp->exp;
+                idx++;
+            }
+            current = current->right;
+        }
+    }
+
+    free(stack);
+
+    ctx->root = root;
+    ctx->exps = exps;
+    ctx->count = count;
+
+    return ctx;
+}

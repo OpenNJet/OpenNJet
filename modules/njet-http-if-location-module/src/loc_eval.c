@@ -123,20 +123,24 @@ int get_exp_counts(loc_parse_node_t* root) {
 }
 
 int
-eval_loc_parse_tree(loc_parse_node_t * root)
+eval_loc_parse_tree(loc_parse_node_t * root, loc_parse_cb_ptr handler, void * data)
 {
     switch (root->node_type)
     {
     case LOC_EXPRESSION:
-        return eval_loc_exp(root->loc_exp);
+        if(handler){
+            return handler(root->loc_exp, data);
+        } else {      
+            return eval_loc_exp(root->loc_exp, data);
+        }
         break;
     case BOOL_OP_OR:
-        return   eval_loc_parse_tree(root->left) 
-               ? 1 : eval_loc_parse_tree(root->right);
+        return   eval_loc_parse_tree(root->left, handler, data) 
+               ? 1 : eval_loc_parse_tree(root->right, handler, data);
         break;
     case BOOL_OP_AND:
-        return   eval_loc_parse_tree(root->left) 
-               ? eval_loc_parse_tree(root->right) : 0;
+        return   eval_loc_parse_tree(root->left, handler, data) 
+               ? eval_loc_parse_tree(root->right, handler, data) : 0;
         break;
     default:
         // yyerror()
@@ -147,7 +151,7 @@ eval_loc_parse_tree(loc_parse_node_t * root)
 
 
 int
-eval_loc_exp(loc_exp_t *exp){
+eval_loc_exp(loc_exp_t *exp, void* data){
     if (!exp) {
         //yyerror()
         return 0;
@@ -234,17 +238,22 @@ free_ctx(loc_parse_ctx_t* ctx) {
 }
 
 
+extern int loc_exp_dyn_eval_result; // eval result
+extern loc_parse_node_t *loc_exp_dyn_parse_tree; // binary bool expression tree
 void parse_dyn_loc(char* dyn_loc) {
     int r;
     loc_parse_ctx_t* ctx;
+    loc_parse_node_t* tree_root;
     yy_scan_string(dyn_loc);
-    r = yyparse();
+    r = yyparse(&tree_root);
     if (r) {
         // error in parsing
         return;
     }
     ctx = new_loc_parse_ctx(loc_exp_dyn_parse_tree);
+    eval_loc_parse_tree(loc_exp_dyn_parse_tree, NULL, (void*)&r);
     dump_tree(loc_exp_dyn_parse_tree, 0);
+    dump_tree(tree_root, 0);
     free_tree(loc_exp_dyn_parse_tree);
     free_ctx(ctx);
 }

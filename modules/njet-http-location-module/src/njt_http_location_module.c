@@ -14,7 +14,7 @@
 #include <njt_http_sendmsg_module.h>
 #include <njt_http_location_module.h>
 #include <njt_rpc_result_util.h>
-
+#include <loc_eval.h>
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 
@@ -359,8 +359,8 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     njt_http_core_srv_conf_t *cscf;
     njt_http_core_loc_conf_t *clcf, *dclcf;
     njt_http_location_queue_t *lq,*if_lq;
-	u_char *p;
-	njt_str_t location_name,msg,location_name_key;
+    u_char *p;
+    njt_str_t location_name,msg,location_name_key;
 
     
     msg.len = 1024;

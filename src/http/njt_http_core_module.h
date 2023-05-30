@@ -346,6 +346,7 @@ struct njt_http_core_loc_conf_s {
 //    njt_pool_t                     *regex_parent_pool;
 //    njt_http_core_loc_conf_t       **new_regex_locations;
 //    njt_pool_t                     *new_regex_parent_pool;
+      void                           *if_location_root;
 #endif
     //end
 #endif
@@ -478,7 +479,6 @@ struct njt_http_core_loc_conf_s {
     unsigned     clean_end:1;
 	unsigned     dynamic_status:2; // 1 init, 2 nomal
     njt_http_location_tree_node_t   *new_static_locations;//add by clb
-	njt_array_t  *mul_conditions; 
 #endif
     //end
 

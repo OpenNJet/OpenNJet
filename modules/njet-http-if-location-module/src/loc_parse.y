@@ -1,11 +1,9 @@
-/* calculator with AST */
-
 %{
 #  include <stdio.h>
 #  include <stdlib.h>
 #  include "loc_eval.h"
 int yylex();
-int yyerror(char const * s);
+void yyerror(loc_parse_node_t **tree_root,  const char * s);
 
 int loc_exp_dyn_eval_result;
 loc_parse_node_t *loc_exp_dyn_parse_tree;
@@ -17,6 +15,8 @@ loc_parse_node_t *loc_exp_dyn_parse_tree;
 }
 
 
+
+%parse-param { loc_parse_node_t **tree_root }
 /* declare tokens */
 %token <loc_exp> LOC_EXP
 %token EOL
@@ -43,8 +43,9 @@ exp:  LOC_EXP {  printf("BISON: LOC_EXP\n"); $$ = new_loc_parse_exp_node($1); }
 eval_tree: /* nothing */
   | eval_tree exp EOL {
     dump_tree($2, 0);
-    loc_exp_dyn_eval_result = eval_loc_parse_tree($2);
+    // loc_exp_dyn_eval_result = eval_loc_parse_tree($2);
     loc_exp_dyn_parse_tree = $2;
+    *tree_root = $2;
     printf("= %d\n> ", loc_exp_dyn_eval_result);
     // free_tree($2);
     // free($2);

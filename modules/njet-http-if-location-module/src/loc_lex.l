@@ -3,7 +3,7 @@
 #include "loc_eval.h"
 #include "loc_parse.tab.h"
 // void yyerror(char *s, ...);
-void yyerror(const char *msg);
+void yyerror(loc_parse_node_t **tree_root, const char *msg);
 int paren_count = 0; 
 int inside_paren_count = 0; // count for () within $http  =   [^ab]c.()()$$$
 char _parsed_buf[4096]; // temp value for [^ab]c.()()$$$
@@ -27,7 +27,7 @@ int idx = 0;
     return '(';
 };
 \) {
-    if (closed == 1) { yyerror("already closed"); return ERROR; }
+    if (closed == 1) { yyerror(NULL, "already closed"); return ERROR; }
     if (paren_count == 0) {
         printf("MEET EOL, finished \n");
         closed = 1;
@@ -82,7 +82,7 @@ int idx = 0;
     } else {
         printf("inside_paren_count: %d\n", inside_paren_count);
         printf("loc_exp: %s \n", _parsed_buf);
-        yyerror("mismatch parenthese in exp");
+        yyerror(NULL, "mismatch parenthese in exp");
         return ERROR;
     }
 };
@@ -101,7 +101,7 @@ int idx = 0;
 
 \\\n    printf("c> "); /* ignore line continuation */
 [ \t\n]   /* ignore white space or newline */
-<*>.   { printf("LAST rule \n"); yyerror(yytext); return ERROR; };
+<*>.   { printf("LAST rule \n"); yyerror(NULL, yytext); return ERROR; };
 
 %%
 
@@ -132,6 +132,6 @@ int idx = 0;
        return 0;
 }; */
 
-void yyerror(const char *msg) {
+void yyerror(loc_parse_node_t **tree_root, const char *msg) {
     printf("Syntax error: %s\n", msg);
 }; 

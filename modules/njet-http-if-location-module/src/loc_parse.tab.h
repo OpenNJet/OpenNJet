@@ -67,6 +67,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
+#line 12 "loc_parse.y"
 
   loc_parse_node_t *node;
   loc_exp_t *loc_exp;
@@ -83,7 +84,7 @@ typedef union YYSTYPE YYSTYPE;
 extern YYSTYPE yylval;
 
 
-int yyparse (void);
+int yyparse (loc_parse_node_t **tree_root);
 
 
 #endif /* !YY_YY_LOC_PARSE_TAB_H_INCLUDED  */
