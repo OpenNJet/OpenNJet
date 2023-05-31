@@ -22,8 +22,10 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, njt_http_dyn_ssl_p
     njt_http_core_srv_conf_t        *cscf;
     njt_http_ssl_srv_conf_t         *hsscf;
     njt_http_dyn_ssl_cert_group_t   *cert;
-    njt_str_t                        cert_str;
-    njt_str_t                        key_str;
+    njt_str_t                        cert_sign_str;
+    njt_str_t                        key_sign_str;
+    njt_str_t                        cert_enc_str;
+    njt_str_t                        key_enc_str;
     njt_str_t                       *tmp_str;
     njt_conf_t                       cf;
     u_char                          *data;
@@ -129,7 +131,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, njt_http_dyn_ssl_p
         }
 
         //update sign
-        tmp_str = &cert_str;                
+        tmp_str = &cert_sign_str;                
         tmp_str->len = sizeof("sign:") - 1 + cert->certificate.len;
         tmp_str->data = njt_pcalloc(hsscf->certificates->pool, tmp_str->len + 1);
         if (tmp_str->data == NULL) {
@@ -144,7 +146,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, njt_http_dyn_ssl_p
         data = njt_cpymem(tmp_str->data, "sign:", sizeof("sign:") - 1);
         njt_memcpy(data, cert->certificate.data, cert->certificate.len);
 
-        tmp_str = &key_str;                
+        tmp_str = &key_sign_str;                
         tmp_str->len = sizeof("sign:") - 1 + cert->certificate_key.len;
         tmp_str->data = njt_pcalloc(hsscf->certificate_keys->pool, tmp_str->len + 1);
         if (tmp_str->data == NULL) {
@@ -159,7 +161,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, njt_http_dyn_ssl_p
         data = njt_cpymem(tmp_str->data, "sign:", sizeof("sign:") - 1);
         njt_memcpy(data, cert->certificate_key.data, cert->certificate_key.len);
 
-        if (njt_ssl_certificate(&cf, &hsscf->ssl, &cert_str, &key_str, NULL)
+        if (njt_ssl_certificate(&cf, &hsscf->ssl, &cert_sign_str, &key_sign_str, NULL)
             != NJT_OK)
         {
             njt_log_error(NJT_LOG_EMERG, pool->log, 0,"dyn ssl, sign certificate error");
@@ -170,34 +172,10 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, njt_http_dyn_ssl_p
             return NJT_ERROR;
         }
 
-        tmp_str =njt_array_push(hsscf->certificates);
-        if(tmp_str != NULL){
-            njt_str_copy_pool(hsscf->certificates->pool,(*tmp_str),cert_str, return NJT_ERROR;);
-        }else{
-            njt_log_error(NJT_LOG_EMERG, pool->log, 0,
-                "dyn ssl, njt_ssl_certificate cert sign arrary push error");
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-                "dyn ssl, njt_ssl_certificate cert sign arrary push error");
-            rpc_data_str.len = end - data_buf;
-            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);    
-            return NJT_ERROR;
-        }
-
-        tmp_str =njt_array_push(hsscf->certificate_keys);
-        if(tmp_str != NULL){
-            njt_str_copy_pool(hsscf->certificate_keys->pool,(*tmp_str),key_str, return NJT_ERROR;);
-        }else{
-            njt_log_error(NJT_LOG_EMERG, pool->log, 0,
-                "dyn ssl, njt_ssl_certificate key sign arrary push error");
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-                "dyn ssl, njt_ssl_certificate key sign arrary push error");
-            rpc_data_str.len = end - data_buf;
-            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);       
-            return NJT_ERROR;
-        }
+        
 
         //update enc
-        tmp_str = &cert_str;                
+        tmp_str = &cert_enc_str;                
         tmp_str->len = sizeof("enc:") - 1 + cert->certificate_enc.len;
         tmp_str->data = njt_pcalloc(hsscf->certificates->pool, tmp_str->len + 1);
         if (tmp_str->data == NULL) {
@@ -212,7 +190,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, njt_http_dyn_ssl_p
         data = njt_cpymem(tmp_str->data, "enc:", sizeof("enc:") - 1);
         njt_memcpy(data, cert->certificate_enc.data, cert->certificate_enc.len);
 
-        tmp_str = &key_str;                
+        tmp_str = &key_enc_str;                
         tmp_str->len = sizeof("enc:") - 1 + cert->certificate_key_enc.len;
         tmp_str->data = njt_pcalloc(hsscf->certificate_keys->pool, tmp_str->len + 1);
         if (tmp_str->data == NULL) {
@@ -227,7 +205,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, njt_http_dyn_ssl_p
         data = njt_cpymem(tmp_str->data, "enc:", sizeof("enc:") - 1);
         njt_memcpy(data, cert->certificate_key_enc.data, cert->certificate_key_enc.len);
 
-        if (njt_ssl_certificate(&cf, &hsscf->ssl, &cert_str, &key_str, NULL)
+        if (njt_ssl_certificate(&cf, &hsscf->ssl, &cert_enc_str, &key_enc_str, NULL)
             != NJT_OK)
         {
             njt_log_error(NJT_LOG_EMERG, pool->log, 0,"dyn ssl, enc certificate error");
@@ -240,7 +218,34 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, njt_http_dyn_ssl_p
 
         tmp_str =njt_array_push(hsscf->certificates);
         if(tmp_str != NULL){
-            njt_str_copy_pool(hsscf->certificates->pool,(*tmp_str),cert_str, return NJT_ERROR;);
+            njt_str_copy_pool(hsscf->certificates->pool,(*tmp_str),cert_sign_str, return NJT_ERROR;);
+        }else{
+            njt_log_error(NJT_LOG_EMERG, pool->log, 0,
+                "dyn ssl, njt_ssl_certificate cert sign arrary push error");
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                "dyn ssl, njt_ssl_certificate cert sign arrary push error");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);    
+            return NJT_ERROR;
+        }
+
+        tmp_str =njt_array_push(hsscf->certificate_keys);
+        if(tmp_str != NULL){
+            njt_str_copy_pool(hsscf->certificate_keys->pool,(*tmp_str),key_sign_str, return NJT_ERROR;);
+        }else{
+            njt_log_error(NJT_LOG_EMERG, pool->log, 0,
+                "dyn ssl, njt_ssl_certificate key sign arrary push error");
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                "dyn ssl, njt_ssl_certificate key sign arrary push error");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);       
+            return NJT_ERROR;
+        }
+
+
+        tmp_str =njt_array_push(hsscf->certificates);
+        if(tmp_str != NULL){
+            njt_str_copy_pool(hsscf->certificates->pool,(*tmp_str),cert_enc_str, return NJT_ERROR;);
         }else{
             njt_log_error(NJT_LOG_EMERG, pool->log, 0,
                 "dyn ssl, njt_ssl_certificate cert enc arrary push error");
@@ -253,7 +258,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, njt_http_dyn_ssl_p
 
         tmp_str =njt_array_push(hsscf->certificate_keys);
         if(tmp_str != NULL){
-            njt_str_copy_pool(hsscf->certificate_keys->pool,(*tmp_str),key_str, return NJT_ERROR;);
+            njt_str_copy_pool(hsscf->certificate_keys->pool,(*tmp_str),key_enc_str, return NJT_ERROR;);
         }else{
             njt_log_error(NJT_LOG_EMERG, pool->log, 0,
                 "dyn ssl, njt_ssl_certificate key enc arrary push error");
@@ -263,7 +268,6 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, njt_http_dyn_ssl_p
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);    
             return NJT_ERROR;
         }
-
 #else
 
     njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
