@@ -87,6 +87,7 @@ int idx = 0;
     }
 };
 
+<in_str>\/ { *string_buf_ptr++ ='/'; };
 <in_str>\| { *string_buf_ptr++ ='|'; };
 <in_str>& { *string_buf_ptr++ ='&'; };
 <in_str>\\ { *string_buf_ptr++ ='\\'; };
@@ -94,7 +95,7 @@ int idx = 0;
 <in_str>\\t { *string_buf_ptr++ ='\t'; };
 <in_str>\\\" { *string_buf_ptr++ ='"'; };
 
- <in_str>[^\(\)&|\\\n\"\t]+  {
+ <in_str>[^\(\)&|\\\n\t\/]+  {
     char *yptr = yytext;
     while ( *yptr ) {*string_buf_ptr++ = *yptr++;};
  };
