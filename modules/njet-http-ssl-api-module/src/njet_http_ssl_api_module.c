@@ -748,6 +748,7 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
 	}
 
 	njt_crc32_init(crc32);
+    njt_crc32_update(&crc32, api_data->cert_info.cert_type.data,api_data->cert_info.cert_type.len);
 	njt_crc32_update(&crc32, api_data->cert_info.certificate.data,api_data->cert_info.certificate.len);
     njt_crc32_update(&crc32, api_data->cert_info.certificate_key.data,api_data->cert_info.certificate_key.len);
 	if (api_data->server_names.nelts > 0) {
