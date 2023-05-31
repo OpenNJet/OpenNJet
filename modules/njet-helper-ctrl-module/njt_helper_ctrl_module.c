@@ -49,7 +49,7 @@ njt_helper_run(helper_param param)
 
     cycle = &init_cycle;
 #else
-    cycle =  param.cycle;
+    cycle = param.cycle;
 #endif
 
     cycle->conf_file.data = param.conf_fullfn.data;
