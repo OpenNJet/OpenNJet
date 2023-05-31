@@ -9,9 +9,9 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
-#include <loc_eval.h>
-#include "loc_parse.tab.h"
-#include "lex.yy.h"
+#include <njt_http_if_location_api.h>
+#include <njt_http_if_location_parse.h>
+#include <njt_http_if_location_lex.h>
 
 typedef struct {
     u_char    *name;
@@ -3334,14 +3334,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
                 return NJT_CONF_ERROR;
             }
 
-        } else if (mod[0] == '(') {
-		clcf->if_loc = 1;
-	        clcf->exact_match = 1;
-		clcf->internal = 0;
-		if (njt_http_core_if_location_parse(cf,clcf,0,-1,0) != NJT_CONF_OK){
-		  return NJT_CONF_ERROR;
-		}
-	} else {
+        } else {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid location modifier \"%V\"", &value[1]);
             return NJT_CONF_ERROR;
@@ -3397,6 +3390,8 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
         } else if (name->data[0] == '(') {
 		 if (njt_http_core_if_location_parse(cf,clcf,0,-1,0) != NJT_CONF_OK){
+		   njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                               "invalid location modifier \"%V\"", &value[1]);
                   return NJT_CONF_ERROR;
                 }
                 clcf->if_loc = 1;
@@ -5606,6 +5601,7 @@ njt_int_t njt_http_core_if_location(njt_conf_t *cf, njt_str_t * command,njt_http
 
 	njt_http_script_if_code_t    *if_code;
 	 njt_http_rewrite_loc_conf_t  *nlcf, **rlcf;
+	
 	// u_char                       *elts;
 	njt_http_rewrite_loc_conf_t  *lcf  = njt_pcalloc(cf->pool, sizeof(njt_http_rewrite_loc_conf_t));
     if (lcf == NULL) {
@@ -5629,7 +5625,7 @@ njt_int_t njt_http_core_if_location(njt_conf_t *cf, njt_str_t * command,njt_http
     }
 
     if_code->code = njt_http_script_if_code;
-
+    if_code->next = 0;
     //elts = lcf->codes->elts;
 
 
@@ -5708,6 +5704,7 @@ njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf,
     }
     command.len = len;
     yy_scan_string((char *)command.data);
+    root = NULL;
     r = yyparse(&root);
     if(r != NJT_OK || root == NULL) {
 	return NJT_CONF_ERROR;
@@ -5794,6 +5791,7 @@ njt_http_core_run_location_callback(void *ctx,void *pdata)
     //njt_uint_t                     ret;
     njt_http_variable_value_t     *pbuf;
     loc_exp_t *exp  = ctx;
+    u_char *o_ip;
 
     njt_http_if_location_request  *request = pdata;
     njt_http_request_t *r = request->r;
@@ -5822,8 +5820,10 @@ njt_http_core_run_location_callback(void *ctx,void *pdata)
 	    request->e->quote = 1;
 	    request->e->log = plcf->log;
 	    request->e->status = NJT_DECLINED;
-	    request->e->ret = NJT_DECLINED;
-	    while (*(uintptr_t *) request->e->ip) {
+	    request->e->ret = 1;
+	    o_ip = NULL;
+	    while (*(uintptr_t *) request->e->ip && o_ip != request->e->ip) {
+		o_ip = request->e->ip;
 		code = *(njt_http_script_code_pt *) request->e->ip;
 		code(request->e);
 	    }

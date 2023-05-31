@@ -1,17 +1,17 @@
 all: lexer
 
 
-lexer: lex.yy.c loc_parse.tab.c loc_eval.c
+lexer: njt_http_if_location_lex.c njt_http_if_location_parse.c njt_http_if_location_api.c
 #       $(CC)  -Wall -W -Os -g -o  cli cli_demo.o -L. -lcli_int -ldl
-	$(CC) -ggdb -fsanitize=address -fno-omit-frame-pointer -Wno-comment -Wno-unused-function -static-libgcc -static-libasan -Wall -W -Os -g -o  lexer lex.yy.c loc_parse.tab.c loc_eval.c
+	$(CC) -Og -ggdb -fsanitize=address -fno-omit-frame-pointer -Wno-comment -Wno-unused-function -static-libgcc -static-libasan -Wall -W -Os -g -o  lexer njt_http_if_location_lex.c njt_http_if_location_parse.c  njt_http_if_location_api.c
 
-loc_parse.tab.h loc_parse.tab.c: loc_parse.y
+njt_http_if_location_parse.h njt_http_if_location_parse.c: loc_parse.y
 	bison -d loc_parse.y
 
-lex.yy.h lex.yy.c:loc_lex.l
-	flex --header-file=lex.yy.h loc_lex.l
+njt_http_if_location_lex.h njt_http_if_location_lex.c:loc_lex.l
+	flex -d --header-file=njt_http_if_location_lex.h  loc_lex.l
 
-loc_eval.c:
+njt_http_if_location_api.c:
 
 clean:
-	rm -f lexer ./*.o  lex.yy.c lex.yy.h loc_parse.tab.c loc_parse.tab.h
+	rm -f lexer ./*.o  njt_http_if_location_lex.c njt_http_if_location_lex.h njt_http_if_location_parse.c njt_http_if_location_parse.h
