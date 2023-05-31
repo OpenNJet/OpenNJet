@@ -18,7 +18,8 @@
 typedef struct
 {
     void *data;
-    int session_id;
+    int session_id;  //mqtt session_id
+    int invoker_session_id; //dyn rpc method invoker session_id
     njt_str_t key;
     rpc_msg_handler handler;
     njt_event_t *ev;
@@ -61,7 +62,7 @@ static njt_int_t njt_http_sendmsg_init(njt_conf_t *cf);
 static njt_int_t njt_http_sendmsg_handler(njt_http_request_t *r);
 static void *njt_http_sendmsg_create_loc_conf(njt_conf_t *cf);
 static char *njt_dyn_kv_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
-static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void *data, njt_event_t *ev);
+static int njt_reg_rpc_msg_handler(int msg_session_id, int invoker_session_id, rpc_msg_handler handler, void *data, njt_event_t *ev);
 static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int msg_len);
 static void sendmsg_get_session_id_str(int session_id, njt_str_t *sk);
 
@@ -776,11 +777,13 @@ static void njt_sendmsg_rpc_timer_fired(njt_event_t *ev)
 
 int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int retain_flag, int session_id, rpc_msg_handler handler, void *data)
 {
+    static njt_int_t  njt_sendmsg_rr_session_id = 1;
     int ret=0;
     int qos = 0;
     njt_event_t *rpc_timer_ev;
     rpc_msg_handler_t *rpc_data;
     u_char *t;
+
     if (retain_flag)
         qos = RETAIN_MSG_QOS;
     t = njt_calloc(topic->len + 1, njt_cycle->log);
@@ -800,11 +803,14 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int retain_flag, int sessi
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "in njt_dyn_sendmsg, error when sending zero len retain msg");
         goto error;
     }
-    ret = njet_iot_client_sendmsg_rr((const char *)t, (const char *)content->data, (int)content->len, qos, session_id, 0, sendmsg_mqtt_ctx);
+
+    njt_sendmsg_rr_session_id++;
+    ret = njet_iot_client_sendmsg_rr((const char *)t, (const char *)content->data, (int)content->len, qos, njt_sendmsg_rr_session_id, 0, sendmsg_mqtt_ctx);
     // add timer
     rpc_timer_ev = njt_calloc(sizeof(njt_event_t), njt_cycle->log);
     rpc_data = njt_calloc(sizeof(rpc_msg_handler_t), njt_cycle->log);
     rpc_data->session_id = session_id;
+    rpc_data->invoker_session_id = session_id;
     rpc_timer_ev->handler = njt_sendmsg_rpc_timer_fired;
     rpc_timer_ev->log = njt_cycle->log;
     rpc_timer_ev->data = rpc_data;
@@ -820,7 +826,7 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int retain_flag, int sessi
         njt_add_timer(rpc_timer_ev, smcf->rpc_timeout);
     }
 
-    njt_reg_rpc_msg_handler(session_id, handler, data, rpc_timer_ev);
+    njt_reg_rpc_msg_handler(njt_sendmsg_rr_session_id, session_id, handler, data, rpc_timer_ev);
     
     return NJT_OK;
 
@@ -874,7 +880,7 @@ static void sendmsg_get_session_id_str(int session_id, njt_str_t *sk)
     return;
 }
 
-static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void *data, njt_event_t *ev)
+static int njt_reg_rpc_msg_handler(int msg_session_id, int invoker_session_id, rpc_msg_handler handler, void *data, njt_event_t *ev)
 {
     rpc_msg_handler_t *rpc_handler, *old_handler;
     if (rpc_msg_handler_hashmap == NULL)
@@ -886,19 +892,20 @@ static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void
 
     if (rpc_handler == NULL)
     {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg rpc handler for sessio_id :%d", session_id);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg rpc handler for sessio_id :%d", msg_session_id);
         return NJT_ERROR;
     }
 
-    rpc_handler->session_id = session_id;
+    rpc_handler->session_id = msg_session_id;
+    rpc_handler->invoker_session_id = invoker_session_id;
     rpc_handler->data = data;
     rpc_handler->handler = handler;
     rpc_handler->ev = ev;
 
-    sendmsg_get_session_id_str(session_id, &rpc_handler->key);
+    sendmsg_get_session_id_str(msg_session_id, &rpc_handler->key);
     if (rpc_handler->key.data == NULL)
     {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg rpc handler for sessio_id :%d", session_id);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg rpc handler for sessio_id :%d", msg_session_id);
         return NJT_ERROR;
     }
 
@@ -916,7 +923,7 @@ static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void
         njt_free(old_handler->key.data);
         njt_free(old_handler);
     }
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add rpc handler %p for session_id %d : %v", rpc_handler, session_id, &rpc_handler->key);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add rpc handler %p for session_id %d : %v", rpc_handler, msg_session_id, &rpc_handler->key);
     return NJT_OK;
 }
 
@@ -943,7 +950,7 @@ static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int 
             njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got rpc handler : %p for session_id %d", rpc_handler, session_id);
             nstr_msg.data = (u_char *)msg;
             nstr_msg.len = msg_len;
-            res.session_id = session_id;
+            res.session_id = rpc_handler->invoker_session_id;
             res.data = rpc_handler->data;
             res.rc = rc;
             rpc_handler->handler(&res, &nstr_msg);
