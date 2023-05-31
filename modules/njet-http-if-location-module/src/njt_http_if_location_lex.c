@@ -1,21 +1,6 @@
+#line 1 "njt_http_if_location_lex.c"
 
-/* warning suppress begin */
-#if defined(__clang__)
-#   pragma clang diagnostic push
-#   pragma clang diagnostic ignored "-Wunused-function"
-#   pragma clang diagnostic ignored "-Wunused-parameter"
-#elif defined(__GNUC__)
-#   if (__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
-#   pragma GCC diagnostic push
-#   endif
-#   pragma GCC diagnostic ignored "-Wunused-function"
-#   pragma GCC diagnostic ignored "-Wunused-parameter"  
-#elif defined(_MSC_VER)
-#   pragma warning(push)
-#   pragma warning(disable:4800) /* 'int': forcing value to 'true' or 'false' */
-#endif
-
-#line 2 "lex.yy.c"
+#line 3 "njt_http_if_location_lex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -563,8 +548,8 @@ static const flex_int16_t yy_rule_linenum[19] =
 #define YY_RESTORE_YY_MORE_OFFSET
 char *yytext;
 #include <stdio.h>
-#include "loc_eval.h"
-#include "loc_parse.tab.h"
+#include "njt_http_if_location_api.h"
+#include "njt_http_if_location_parse.h"
 // void yyerror(char *s, ...);
 void yyerror(loc_parse_node_t **tree_root, const char *msg);
 int paren_count = 0; 
@@ -573,9 +558,9 @@ char _parsed_buf[4096]; // temp value for [^ab]c.()()$$$
 char* string_buf_ptr; 
 int closed = 0;
 int idx = 0;
-#line 562 "lex.yy.c"
+#line 563 "njt_http_if_location_lex.c"
 
-#line 564 "lex.yy.c"
+#line 565 "njt_http_if_location_lex.c"
 
 #define INITIAL 0
 #define in_str 1
@@ -860,7 +845,7 @@ YY_DECL
 
 
 
-#line 850 "lex.yy.c"
+#line 851 "njt_http_if_location_lex.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1076,7 +1061,7 @@ case 19:
 YY_RULE_SETUP
 ECHO;
 	YY_BREAK
-#line 1085 "lex.yy.c"
+#line 1086 "njt_http_if_location_lex.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(in_str):
 	yyterminate();

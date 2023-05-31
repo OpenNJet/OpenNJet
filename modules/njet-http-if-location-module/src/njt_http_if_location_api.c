@@ -5,11 +5,21 @@
 #include <stdio.h>
 #include "njt_http_if_location_parse.h"
 
+int get_exp_counts(loc_parse_node_t *root);
 void parse_dyn_loc(char* dyn_loc);
 loc_malloc_cb_ptr loc_malloc_handler = NULL;
 void*             loc_malloc_ctx = NULL; // pool
+void* loc_malloc(size_t size);
 
 
+void*
+loc_malloc(size_t size){
+    if (loc_malloc_handler) {
+        return (loc_malloc_handler(size, loc_malloc_ctx));
+    } else {
+        return malloc(size);
+    }
+}
 
 loc_exp_t* 
 new_loc_exp(char *exp, int idx)
@@ -215,7 +225,7 @@ void
 free_tree(loc_parse_node_t* root)
 {
 
-    if (!root || root->node_type == INVALID) return;
+    if (!root) return;
     // if (root->loc_exp) free_exp(root->loc_exp);
     // if (root->left) free_tree(root->left);
     // if (root->right) free_tree(root->right);

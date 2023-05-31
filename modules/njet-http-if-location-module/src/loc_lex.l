@@ -1,7 +1,7 @@
 %{
 #include <stdio.h>
-#include "loc_eval.h"
-#include "loc_parse.tab.h"
+#include "njt_http_if_location_api.h"
+#include "njt_http_if_location_parse.h"
 // void yyerror(char *s, ...);
 void yyerror(loc_parse_node_t **tree_root, const char *msg);
 int paren_count = 0; 

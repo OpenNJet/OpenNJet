@@ -1,7 +1,14 @@
 // define base datatype used in parser
-#ifndef _LOC_EVAL_H
-#define _LOC_EVAL_H
+#ifndef _NJT_HTTP_IF_LOCATION_API_H
+#define _NJT_HTTP_IF_LOCATION_API_H
 // #include <loc_parse.tab.h>
+#ifdef __GNUC__
+# pragma GCC diagnostic ignored "-Wunused-function"
+#endif
+#ifdef __clang__
+# pragma clang diagnostic ignored "-Wunused-function"
+#endif
+
 typedef int request_t;
 typedef enum {
     INVALID = 0,
@@ -10,7 +17,7 @@ typedef enum {
     BOOL_OP_AND
 } loc_parse_node_type;
 
-typedef void* (*loc_malloc_cb_ptr)(size_t* len, void* ctx) ;
+typedef void* (*loc_malloc_cb_ptr)(size_t len, void* ctx) ;
 
 typedef struct {
     char   *exp;
@@ -49,4 +56,4 @@ void free_ctx(loc_parse_ctx_t* ctx);
 int get_exp_counts(loc_parse_node_t *root);
 
 
-#endif // _LOC_EVAL_H
+#endif //  _NJT_HTTP_IF_LOCATION_API_H

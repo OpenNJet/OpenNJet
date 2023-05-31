@@ -35,8 +35,8 @@
    especially those whose name start with YY_ or yy_.  They are
    private implementation details that can be changed or removed.  */
 
-#ifndef YY_YY_LOC_PARSE_TAB_H_INCLUDED
-# define YY_YY_LOC_PARSE_TAB_H_INCLUDED
+#ifndef YY_YY_NJT_HTTP_IF_LOCATION_PARSE_H_INCLUDED
+# define YY_YY_NJT_HTTP_IF_LOCATION_PARSE_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -72,7 +72,7 @@ union YYSTYPE
   loc_parse_node_t *node;
   loc_exp_t *loc_exp;
 
-#line 76 "loc_parse.tab.h"
+#line 76 "njt_http_if_location_parse.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -101,4 +101,4 @@ extern YYLTYPE yylloc;
 int yyparse (loc_parse_node_t **tree_root);
 
 
-#endif /* !YY_YY_LOC_PARSE_TAB_H_INCLUDED  */
+#endif /* !YY_YY_NJT_HTTP_IF_LOCATION_PARSE_H_INCLUDED  */
