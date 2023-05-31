@@ -79,7 +79,7 @@ njt_http_vhost_traffic_status_limit_handler_traffic(njt_http_request_t *r,
 
     shpool = (njt_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
-    njt_shmtx_lock(&shpool->mutex);
+    njt_shrwlock_rdlock(&shpool->rwlock);
 
     limits = traffics->elts;
     n = traffics->nelts;
@@ -122,7 +122,8 @@ njt_http_vhost_traffic_status_limit_handler_traffic(njt_http_request_t *r,
 
             vtscf->node_caches[type] = node;
 
-            vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+            vtsn = njt_http_vhost_traffic_status_get_node(node);
+            njt_http_vhost_traffic_status_sum_node(vtsn, vtscf);
 
             traffic_used = (njt_atomic_t) njt_http_vhost_traffic_status_node_member(vtsn, &variable);
 
@@ -144,7 +145,8 @@ njt_http_vhost_traffic_status_limit_handler_traffic(njt_http_request_t *r,
 
             vtscf->node_caches[type] = node;
 
-            vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+            vtsn = njt_http_vhost_traffic_status_get_node(node);
+            njt_http_vhost_traffic_status_sum_node(vtsn, vtscf);
 
             traffic_used = (njt_atomic_t) njt_http_vhost_traffic_status_node_member(vtsn, &variable);
         }
@@ -157,7 +159,7 @@ njt_http_vhost_traffic_status_limit_handler_traffic(njt_http_request_t *r,
 
 done:
 
-    njt_shmtx_unlock(&shpool->mutex);
+    njt_shrwlock_unlock(&shpool->rwlock);
 
     return rc;
 }

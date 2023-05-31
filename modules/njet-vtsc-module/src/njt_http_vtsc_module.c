@@ -290,8 +290,8 @@ njt_http_vtsc_rbtree_insert_value(njt_rbtree_node_t *temp,
 
         } else { /* node->key == temp->key */
 
-            vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
-            vtsnt = (njt_http_vhost_traffic_status_node_t *) &temp->color;
+            vtsn = njt_http_vhost_traffic_status_get_node(node);
+            vtsnt = njt_http_vhost_traffic_status_get_node(temp);
 
             p = (njt_memn2cmp(vtsn->data, vtsnt->data, vtsn->len, vtsnt->len) < 0)
                 ? &temp->left
@@ -364,6 +364,8 @@ njt_http_vtsc_init_zone(njt_shm_zone_t *shm_zone, void *data)
     njt_http_vts_rbtree = ctx->rbtree;
     njt_sprintf(shpool->log_ctx, " in vhost_traffic_status_zone \"%V\"%Z",
                 &shm_zone->shm.name);
+    
+    njt_shrwlock_create(&shpool->rwlock, &shpool->lock, NULL);
 
     return NJT_OK;
 }

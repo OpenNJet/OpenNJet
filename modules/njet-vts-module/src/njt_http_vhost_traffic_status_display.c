@@ -225,7 +225,7 @@ njt_http_vhost_traffic_status_display_handler_control(njt_http_request_t *r)
 
     shpool = (njt_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
-    njt_shmtx_lock(&shpool->mutex);
+    njt_shrwlock_rdlock(&shpool->rwlock);
 
     switch (control->command) {
 
@@ -250,7 +250,7 @@ njt_http_vhost_traffic_status_display_handler_control(njt_http_request_t *r)
         break;
     }
 
-    njt_shmtx_unlock(&shpool->mutex);
+    njt_shrwlock_unlock(&shpool->rwlock);
 
     if (b->last == b->pos) {
         b->last = njt_sprintf(b->last, "{}");
@@ -404,9 +404,9 @@ njt_http_vhost_traffic_status_display_handler_default(njt_http_request_t *r)
 
     if (format == NJT_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSON) {
         shpool = (njt_slab_pool_t *) vtscf->shm_zone->shm.addr;
-        njt_shmtx_lock(&shpool->mutex);
+        njt_shrwlock_rdlock(&shpool->rwlock);
         b->last = njt_http_vhost_traffic_status_display_set(r, b->last);
-        njt_shmtx_unlock(&shpool->mutex);
+        njt_shrwlock_unlock(&shpool->rwlock);
 
         if (b->last == b->pos) {
             b->last = njt_sprintf(b->last, "{}");
@@ -414,18 +414,18 @@ njt_http_vhost_traffic_status_display_handler_default(njt_http_request_t *r)
 
     } else if (format == NJT_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_JSONP) {
         shpool = (njt_slab_pool_t *) vtscf->shm_zone->shm.addr;
-        njt_shmtx_lock(&shpool->mutex);
+        njt_shrwlock_rdlock(&shpool->rwlock);
         b->last = njt_sprintf(b->last, "%V", &vtscf->jsonp);
         b->last = njt_sprintf(b->last, "(");
         b->last = njt_http_vhost_traffic_status_display_set(r, b->last);
         b->last = njt_sprintf(b->last, ")");
-        njt_shmtx_unlock(&shpool->mutex);
+        njt_shrwlock_unlock(&shpool->rwlock);
 
     } else if (format == NJT_HTTP_VHOST_TRAFFIC_STATUS_FORMAT_PROMETHEUS) {
         shpool = (njt_slab_pool_t *) vtscf->shm_zone->shm.addr;
-        njt_shmtx_lock(&shpool->mutex);
+        njt_shrwlock_rdlock(&shpool->rwlock);
         b->last = njt_http_vhost_traffic_status_display_prometheus_set(r, b->last);
-        njt_shmtx_unlock(&shpool->mutex);
+        njt_shrwlock_unlock(&shpool->rwlock);
 
         if (b->last == b->pos) {
             b->last = njt_sprintf(b->last, "#");
@@ -540,11 +540,11 @@ njt_http_vhost_traffic_status_display_get_size(njt_http_request_t *r,
     }
 
     /* Caveat: Do not use duplicate njt_shmtx_lock() before this function. */
-    njt_shmtx_lock(&shpool->mutex);
+    njt_shrwlock_rdlock(&shpool->rwlock);
 
     njt_http_vhost_traffic_status_shm_info(r, shm_info);
 
-    njt_shmtx_unlock(&shpool->mutex);
+    njt_shrwlock_unlock(&shpool->rwlock);
 
     /* allocate memory for the upstream groups even if upstream node not exists */
     un = shm_info->used_node

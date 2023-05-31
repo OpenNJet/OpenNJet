@@ -197,6 +197,123 @@ njt_shmtx_wakeup(njt_shmtx_t *mtx)
 }
 
 
+#define NJT_RWLOCK_SPIN         2048
+#define NJT_RWLOCK_WLOCK        ((njt_atomic_uint_t) -1)
+#define NJT_RWLOCK_LOCK_BASE    0x100000000
+
+njt_int_t njt_shrwlock_create(njt_shrwlock_t *rwlock, njt_shmtx_sh_t *addr,
+    u_char *name)
+{
+    rwlock->lock = &addr->lock;
+
+    if (njt_atomic_cmp_set(rwlock->lock, 0, NJT_RWLOCK_LOCK_BASE)) {
+        /* ok */
+    } else {
+        /* there is sth wrong */
+    }
+
+    return NJT_OK; 
+}
+
+
+void njt_shrwlock_destroy(njt_shrwlock_t *rwlock)
+{
+    /* do nothing */
+}
+
+
+void njt_shrwlock_rdlock(njt_shrwlock_t *rwlock)
+{
+    njt_uint_t         i, n;
+    njt_atomic_uint_t  readers;
+
+    for ( ;; ) {
+        readers = *rwlock->lock;
+
+        if (readers != NJT_RWLOCK_WLOCK
+            && njt_atomic_cmp_set(rwlock->lock, readers, readers + 1))
+        {
+            return;
+        }
+
+        if (njt_ncpu > 1) {
+
+            for (n = 1; n < NJT_RWLOCK_SPIN; n <<= 1) {
+
+                for (i = 0; i < n; i++) {
+                    njt_cpu_pause();
+                }
+
+                readers = *rwlock->lock;
+
+                if (readers != NJT_RWLOCK_WLOCK
+                    && njt_atomic_cmp_set(rwlock->lock, readers, readers + 1))
+                {
+                    return;
+                }
+            }
+        }
+
+        njt_sched_yield();
+    }
+}
+
+
+void njt_shrwlock_wrlock(njt_shrwlock_t *rwlock)
+{
+    njt_uint_t  i, n;
+
+    for ( ;; ) {
+
+        if (*rwlock->lock == NJT_RWLOCK_LOCK_BASE && njt_atomic_cmp_set(rwlock->lock, NJT_RWLOCK_LOCK_BASE, NJT_RWLOCK_WLOCK)) {
+            return;
+        }
+
+        if (njt_ncpu > 1) {
+
+            for (n = 1; n < NJT_RWLOCK_SPIN; n <<= 1) {
+
+                for (i = 0; i < n; i++) {
+                    njt_cpu_pause();
+                }
+
+                if (*rwlock->lock == 0
+                    && njt_atomic_cmp_set(rwlock->lock, NJT_RWLOCK_LOCK_BASE, NJT_RWLOCK_WLOCK))
+                {
+                    return;
+                }
+            }
+        }
+
+        njt_sched_yield();
+    }
+}
+
+
+void njt_shrwlock_unlock(njt_shrwlock_t *rwlock)
+{
+    if (*rwlock->lock == NJT_RWLOCK_WLOCK) {
+        (void) njt_atomic_cmp_set(rwlock->lock, NJT_RWLOCK_WLOCK, NJT_RWLOCK_LOCK_BASE);
+    } else {
+        (void) njt_atomic_fetch_add(rwlock->lock, -1);
+    }
+}
+
+
+void njt_shrwlock_rd2wrlock(njt_shrwlock_t *rwlock)
+{
+    njt_shrwlock_unlock(rwlock);
+    njt_shrwlock_wrlock(rwlock);
+}
+
+
+void njt_shrwlock_wr2rdlock(njt_shrwlock_t *rwlock)
+{
+    njt_shrwlock_unlock(rwlock);
+    njt_shrwlock_rdlock(rwlock);
+}
+
+
 #else
 
 

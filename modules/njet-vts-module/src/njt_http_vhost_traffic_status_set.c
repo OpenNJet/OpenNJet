@@ -337,7 +337,7 @@ njt_http_vhost_traffic_status_set_by_filter_node(
         return NJT_ERROR;
     }
 
-    vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+    vtsn = njt_http_vhost_traffic_status_get_node(node);
 
     p = njt_pnalloc(r->pool, NJT_ATOMIC_T_LEN);
     if (p == NULL) {

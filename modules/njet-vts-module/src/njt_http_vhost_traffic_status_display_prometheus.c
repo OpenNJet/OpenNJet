@@ -135,7 +135,8 @@ njt_http_vhost_traffic_status_display_prometheus_set_server(njt_http_request_t *
     vtscf = njt_http_get_module_loc_conf(r, njt_http_vhost_traffic_status_module);
 
     if (node != ctx->rbtree->sentinel) {
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+        vtsn = njt_http_vhost_traffic_status_get_node(node);
+        njt_http_vhost_traffic_status_sum_node(vtsn, vtscf);
 
         if (vtsn->stat_upstream.type == NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO) {
             key.data = vtsn->data;
@@ -275,7 +276,7 @@ njt_http_vhost_traffic_status_display_prometheus_set_filter(njt_http_request_t *
     ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
 
     if (node != ctx->rbtree->sentinel) {
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+        vtsn = njt_http_vhost_traffic_status_get_node(node);
 
         if (vtsn->stat_upstream.type == NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG) {
             key.data = vtsn->data;
@@ -395,7 +396,7 @@ njt_http_vhost_traffic_status_display_prometheus_set_upstream(njt_http_request_t
     ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
 
     if (node != ctx->rbtree->sentinel) {
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+        vtsn = njt_http_vhost_traffic_status_get_node(node);
 
         if (vtsn->stat_upstream.type == NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG
             || vtsn->stat_upstream.type == NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA)
@@ -458,7 +459,7 @@ njt_http_vhost_traffic_status_display_prometheus_set_cache(njt_http_request_t *r
     ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
 
     if (node != ctx->rbtree->sentinel) {
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+        vtsn = njt_http_vhost_traffic_status_get_node(node);
 
         if (vtsn->stat_upstream.type == NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC) {
             key.data = vtsn->data;
