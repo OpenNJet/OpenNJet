@@ -4161,7 +4161,7 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
 		
 		njt_snprintf(server_info, 511,
 					 "server %V %s weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d;\r\n",
-					 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),peer_data->weight, peer_data->max_conns,
+					 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),NJT_GET_WEIGHT(peer_data->weight), peer_data->max_conns,
 					 peer_data->down ? "down" : "",
 					 peer_data->max_fails, peer_data->fail_timeout,peer_data->slow_start);
 			
@@ -4193,7 +4193,7 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
 			
 				njt_snprintf(server_info, 511,
 							 "server %V %s weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d backup;\r\n",
-							 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),peer_data->weight, peer_data->max_conns,
+							 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),NJT_GET_WEIGHT(peer_data->weight), peer_data->max_conns,
 							 peer_data->down ? "down" : "",
 							 peer_data->max_fails, peer_data->fail_timeout,peer_data->slow_start);
 			
@@ -4222,7 +4222,7 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
 	
 		njt_snprintf(server_info, 511,
 					 "server %V %s weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d %s;\r\n",
-					 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),peer_data->weight, peer_data->max_conns,
+					 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),NJT_GET_WEIGHT(peer_data->weight), peer_data->max_conns,
 					 peer_data->down ? "down" : "",
 					 peer_data->max_fails, peer_data->fail_timeout,peer_data->slow_start,peer_data->set_backup > 0? "backup" : "");
 		
@@ -4241,7 +4241,7 @@ njt_stream_upstream_state_save(njt_http_request_t *r,
 		 njt_memzero(server_info, 512);
 		njt_snprintf(server_info, 511,
 					 "server %V resolve weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d %s;\r\n",
-					 &json_peer.server, json_peer.weight, json_peer.max_conns,
+					 &json_peer.server, NJT_GET_WEIGHT(json_peer.weight), json_peer.max_conns,
 					 json_peer.down ? "down" : "",
 					 json_peer.max_fails, json_peer.fail_timeout,json_peer.slow_start,json_peer.backup > 0? "backup" : "");
 		 
@@ -4330,13 +4330,13 @@ njt_http_upstream_state_save(njt_http_request_t *r,
 			if(peer_data && peer_data->route.len > 0) {
 				njt_snprintf(server_info, 511,
 							 "server %V %s weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d route=%V;\r\n",
-							 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),peer_data->weight, peer_data->max_conns,
+							 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),NJT_GET_WEIGHT(peer_data->weight), peer_data->max_conns,
 							 peer_data->down ? "down" : "",
 							 peer_data->max_fails, peer_data->fail_timeout,peer_data->slow_start,&peer_data->route);
 			} else {
 				njt_snprintf(server_info, 511,
 							 "server %V %s weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d;\r\n",
-							 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),peer_data->weight, peer_data->max_conns,
+							 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),NJT_GET_WEIGHT(peer_data->weight), peer_data->max_conns,
 							 peer_data->down ? "down" : "",
 							 peer_data->max_fails, peer_data->fail_timeout,peer_data->slow_start);
 			}
@@ -4368,13 +4368,13 @@ njt_http_upstream_state_save(njt_http_request_t *r,
 			if(peer_data && peer_data->route.len > 0) {
 				njt_snprintf(server_info, 511,
 							 "server %V %s weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d route=%V backup;\r\n",
-							 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),peer_data->weight, peer_data->max_conns,
+							 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),NJT_GET_WEIGHT(peer_data->weight), peer_data->max_conns,
 							 peer_data->down ? "down" : "",
 							 peer_data->max_fails, peer_data->fail_timeout,peer_data->slow_start,&peer_data->route);
 			} else {
 				njt_snprintf(server_info, 511,
 							 "server %V %s weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d backup;\r\n",
-							 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),peer_data->weight, peer_data->max_conns,
+							 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),NJT_GET_WEIGHT(peer_data->weight), peer_data->max_conns,
 							 peer_data->down ? "down" : "",
 							 peer_data->max_fails, peer_data->fail_timeout,peer_data->slow_start);
 			}
@@ -4403,13 +4403,13 @@ njt_http_upstream_state_save(njt_http_request_t *r,
 		if(peer_data && peer_data->route.len > 0) {
 			njt_snprintf(server_info, 511,
 						 "server %V %s weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d route=%V %s;\r\n",
-						 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),peer_data->weight, peer_data->max_conns,
+						 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),NJT_GET_WEIGHT(peer_data->weight), peer_data->max_conns,
 						 peer_data->down ? "down" : "",
 						 peer_data->max_fails, peer_data->fail_timeout,peer_data->slow_start,&peer_data->route,peer_data->set_backup > 0? "backup" : "");
 		} else {
 			njt_snprintf(server_info, 511,
 						 "server %V %s weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d %s;\r\n",
-						 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),peer_data->weight, peer_data->max_conns,
+						 &peer_data->server, (peer_data->parent_id != -1?"resolve" : ""),NJT_GET_WEIGHT(peer_data->weight), peer_data->max_conns,
 						 peer_data->down ? "down" : "",
 						 peer_data->max_fails, peer_data->fail_timeout,peer_data->slow_start,peer_data->set_backup > 0? "backup" : "");
 		}
@@ -4429,13 +4429,13 @@ njt_http_upstream_state_save(njt_http_request_t *r,
 		 if(json_peer.route.len > 0) {
 			 njt_snprintf(server_info, 511,
 							 "server %V resolve weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d route=%V %s;\r\n",
-							 &json_peer.server, json_peer.weight, json_peer.max_conns,
+							 &json_peer.server, NJT_GET_WEIGHT(json_peer.weight), json_peer.max_conns,
 							 json_peer.down ? "down" : "",
 							 json_peer.max_fails, json_peer.fail_timeout,json_peer.slow_start,&json_peer.route,json_peer.backup > 0? "backup" : "");
 		 } else {
 				njt_snprintf(server_info, 511,
 							 "server %V resolve weight=%d max_conns=%d %s max_fails=%d fail_timeout=%d slow_start=%d %s;\r\n",
-							 &json_peer.server, json_peer.weight, json_peer.max_conns,
+							 &json_peer.server, NJT_GET_WEIGHT(json_peer.weight), json_peer.max_conns,
 							 json_peer.down ? "down" : "",
 							 json_peer.max_fails, json_peer.fail_timeout,json_peer.slow_start,json_peer.backup > 0? "backup" : "");
 		 }

@@ -19,7 +19,7 @@
 #define NJT_CMD_QUIT           3
 #define NJT_CMD_TERMINATE      4
 #define NJT_CMD_REOPEN         5
-
+#define NJT_CMD_RESTART        6
 
 #define NJT_PROCESS_SINGLE     0
 #define NJT_PROCESS_MASTER     1

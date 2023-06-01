@@ -1624,7 +1624,7 @@ njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
 
         size = b->end - b->last;
 
-        if (size && src->read->ready && !src->read->delayed
+        if (size && src != NULL && src->read->ready && !src->read->delayed
             && !src->read->error)
         {
             if (limit_rate) {
@@ -1709,7 +1709,11 @@ njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
     if (njt_stream_proxy_test_finalize(s, from_upstream) == NJT_OK) {
         return;
     }
-
+    if(src == NULL || src->read == NULL) {
+	njt_log_error(NJT_LOG_ERR, s->connection->log, 0,
+                      "src or src->read is null");
+	return;
+    }
     flags = src->read->eof ? NJT_CLOSE_EVENT : 0;
 
     if (njt_handle_read_event(src->read, flags) != NJT_OK) {
@@ -1720,7 +1724,7 @@ njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
     if (dst) {
 
         if (dst->type == SOCK_STREAM && pscf->half_close
-            && src->read->eof && !u->half_closed && !dst->buffered)
+            && src != NULL &&  src->read->eof && !u->half_closed && !dst->buffered)
         {
             if (njt_shutdown_socket(dst->fd, NJT_WRITE_SHUTDOWN) == -1) {
                 njt_connection_error(c, njt_socket_errno,

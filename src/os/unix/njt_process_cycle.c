@@ -12,7 +12,7 @@
 #include <njt_channel.h>
 #include <njt_mqconf_module.h>
 #include <njet_iot_emb.h>
-
+#include <njt_md5.h>
 
 static void njt_start_worker_processes(njt_cycle_t *cycle, njt_int_t n,
     njt_int_t type);
@@ -24,6 +24,7 @@ static njt_uint_t njt_restart_helper_processes(njt_cycle_t *cycle,
     njt_uint_t respawn);
 static void njt_pass_open_channel(njt_cycle_t *cycle);
 static void njt_signal_worker_processes(njt_cycle_t *cycle, int signo);
+static void njt_cmd_worker_processes(njt_cycle_t *cycle, njt_uint_t cmd);
 static void njt_signal_helper_processes(njt_cycle_t *cycle, int signo);
 static njt_uint_t njt_reap_children(njt_cycle_t *cycle);
 static void njt_master_process_exit(njt_cycle_t *cycle);
@@ -285,8 +286,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
 
             njt_reap_helper = 1;
             live = 1;
-            njt_signal_worker_processes(cycle,
-                njt_signal_value(NJT_SHUTDOWN_SIGNAL));
+            njt_cmd_worker_processes(cycle, NJT_CMD_RESTART);
             njt_reconfigure_time = njt_time();
         }
 
@@ -498,12 +498,12 @@ unsigned int njt_helper_check_cmd(void *cctx)
     if (njt_terminate || njt_quit) {
         // njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exiting");
         if (njt_terminate) {
-            printf("helper found njt_terminate\n");
+            // printf("helper found njt_terminate\n");
             return NJT_HELPER_CMD_STOP;
         }
 
         if (njt_quit) {
-            printf("helper found njt_quit\n");
+            // printf("helper found njt_quit\n");
             return NJT_HELPER_CMD_STOP;
         }
     }
@@ -540,11 +540,13 @@ njt_helper_process_handler(njt_event_t *ev)
 
 
 static void
-njt_helper_preprocess_cycle(njt_cycle_t *cycle, void *data)
+njt_helper_preprocess_cycle(njt_cycle_t *cycle, void *data, njt_int_t *reload, void *proc)
 {
-    njt_helper_check_ver_fp  fp = NULL;
+    njt_helper_check_fp   fp = NULL;
     njt_helper_ctx *ctx = data;
-    unsigned int         result;
+    unsigned int          result;
+    njt_md5_t             md5;
+    njt_process_t        *process = (njt_process_t *)proc;
     // struct timeval   tv;
 
     // njt_gettimeofday(&tv);
@@ -577,11 +579,18 @@ njt_helper_preprocess_cycle(njt_cycle_t *cycle, void *data)
         return;
     }
 
+    *reload = ctx->reload;
+
     ctx->run_fp = njt_dlsym(ctx->handle, "njt_helper_run");
     if (ctx->run_fp == NULL) {
         njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, njt_dlsym_n " \"%V\", \"%s\" failed (%s)",
             ctx->file.data, "njt_helper_run", njt_dlerror());
     }
+
+    njt_md5_init(&md5);
+    njt_md5_update(&md5, ctx->file.data, ctx->file.len);
+    njt_md5_update(&md5, ctx->param.conf_fn.data, ctx->param.conf_fn.len);
+    njt_md5_final(process->param_md5, &md5);
 }
 
 
@@ -660,6 +669,7 @@ njt_start_helper_processes(njt_cycle_t *cycle, njt_uint_t respawn)
         if (mqcf) {
             helpers = mqcf->helper.elts;
             nelts = mqcf->helper.nelts;
+
             for (i = 0; i < nelts; i++) {
                 njt_spawn_process(cycle, njt_helper_process_cycle,
                     &helpers[i], "copilot process",
@@ -680,16 +690,65 @@ njt_start_helper_processes(njt_cycle_t *cycle, njt_uint_t respawn)
 static njt_uint_t
 njt_restart_helper_processes(njt_cycle_t *cycle, njt_uint_t respawn)
 {
-    njt_int_t         i;
+    njt_int_t             id;
+    njt_helper_ctx       *helpers;
+    njt_uint_t            i;
+    njt_mqconf_conf_t    *mqcf;
+    njt_uint_t            nelts = 0;
+    njt_md5_t             md5;
+    u_char                param_md5[16];
 
-    for (i = 0; i < njt_last_process; i++) {
-        if ((njt_processes[i].pid != -1) && (njt_processes[i].preproc)) {
-            njt_reap_helper = 1;
-            return 1;
+    for (id = 0; id < njt_last_process; id++) {
+        if ((njt_processes[id].pid != -1) && (njt_processes[id].preproc)) {
+            if (njt_processes[id].reload) {
+                njt_reap_helper = 1;
+                return 1;
+            } else {
+                njt_processes[id].data = NULL;
+            }
         }
     }
 
-    return njt_start_helper_processes(cycle, respawn);
+    for (i=0; i<cycle->modules_n; i++) {
+        if (njt_strcmp(cycle->modules[i]->name, "njt_mqconf_module") != 0) continue;
+        mqcf= (njt_mqconf_conf_t *) (cycle->conf_ctx[cycle->modules[i]->index]);
+        if (mqcf) {
+            helpers = mqcf->helper.elts;
+            nelts = mqcf->helper.nelts;
+            for (i = 0; i < nelts; i++) {
+                if (!helpers[i].reload) {
+                    njt_md5_init(&md5);
+                    njt_md5_update(&md5, helpers[i].file.data, helpers[i].file.len);
+                    njt_md5_update(&md5, helpers[i].param.conf_fn.data, helpers[i].param.conf_fn.len);
+                    njt_md5_final(param_md5, &md5);
+
+                    for (id = 0; id < njt_last_process; id++) {
+                        if ((njt_processes[id].pid != -1) && (njt_processes[id].preproc) && !njt_processes[id].reload && !memcmp(param_md5, njt_processes[id].param_md5, 16)) {
+                            njt_log_error(NJT_LOG_CRIT, cycle->log, 0, "njt_processes[%i].data=0x%p <- &helpers[%i]=0x%p when reloading", id, njt_processes[id].data, i, &helpers[i]);
+                            njt_processes[id].data = (void *)&helpers[i];
+                        }
+                    }
+                    continue;
+                }
+
+                njt_spawn_process(cycle, njt_helper_process_cycle,
+                            &helpers[i], "copilot process",
+                            respawn ? NJT_PROCESS_JUST_RESPAWN : NJT_PROCESS_RESPAWN, njt_helper_preprocess_cycle);
+            }
+
+            njt_pass_open_channel(cycle);
+        }
+        break;
+    }
+
+    for (id = 0; id < njt_last_process; id++) {
+        if ((njt_processes[id].pid != -1) && (njt_processes[id].preproc) && !njt_processes[id].reload && !njt_processes[id].data) {
+            njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "Wrong helper directive!");
+            break;
+        }
+    }
+
+    return nelts;
 }
 
 
@@ -811,6 +870,103 @@ njt_signal_worker_processes(njt_cycle_t *cycle, int signo)
             err = njt_errno;
             njt_log_error(NJT_LOG_ALERT, cycle->log, err,
                 "kill(%P, %d) failed", njt_processes[i].pid, signo);
+
+            if (err == NJT_ESRCH) {
+                njt_processes[i].exited = 1;
+                njt_processes[i].exiting = 0;
+                njt_reap = 1;
+            }
+
+            continue;
+        }
+
+        if (signo != njt_signal_value(NJT_REOPEN_SIGNAL)) {
+            njt_processes[i].exiting = 1;
+        }
+    }
+}
+
+
+static void
+njt_cmd_worker_processes(njt_cycle_t *cycle, njt_uint_t cmd)
+{
+    if (cmd != NJT_CMD_RESTART) {
+        // Not support othter commands just now
+        return;
+    }
+
+    int signo = njt_signal_value(NJT_SHUTDOWN_SIGNAL);
+    njt_int_t      i;
+    njt_err_t      err;
+    njt_channel_t  ch;
+
+    njt_memzero(&ch, sizeof(njt_channel_t));
+    ch.command = NJT_CMD_QUIT;
+    ch.fd = -1;
+
+    for (i = 0; i < njt_last_process; i++) {
+
+        njt_log_debug7(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
+                       "child: %i %P e:%d t:%d d:%d r:%d j:%d",
+                       i,
+                       njt_processes[i].pid,
+                       njt_processes[i].exiting,
+                       njt_processes[i].exited,
+                       njt_processes[i].detached,
+                       njt_processes[i].respawn,
+                       njt_processes[i].just_spawn);
+
+        if (njt_processes[i].detached || njt_processes[i].pid == -1) {
+            continue;
+        }
+
+        if (njt_processes[i].just_spawn) {
+            njt_processes[i].just_spawn = 0;
+            continue;
+        }
+
+        if (njt_processes[i].exiting
+            && signo == njt_signal_value(NJT_SHUTDOWN_SIGNAL))
+        {
+            continue;
+        }
+
+        if (njt_processes[i].preproc) {
+            // ch.command = NJT_CMD_RESTART;
+
+            if (!njt_processes[i].reload) {
+                continue;
+            }
+
+            if (njt_write_channel(njt_processes[i].channel[0],
+                                &ch, sizeof(njt_channel_t), cycle->log)
+                == NJT_OK)
+            {
+                njt_processes[i].exiting = 1;  
+            }
+
+            continue;
+        } else {
+            // ch.command = NJT_CMD_QUIT;
+            if (njt_write_channel(njt_processes[i].channel[0],
+                                &ch, sizeof(njt_channel_t), cycle->log)
+                == NJT_OK)
+            {
+                if (signo != njt_signal_value(NJT_REOPEN_SIGNAL)) {
+                    njt_processes[i].exiting = 1;
+                }
+
+                continue;
+            }
+        }
+
+        njt_log_debug2(NJT_LOG_DEBUG_CORE, cycle->log, 0,
+                       "kill (%P, %d)", njt_processes[i].pid, signo);
+
+        if (kill(njt_processes[i].pid, signo) == -1) {
+            err = njt_errno;
+            njt_log_error(NJT_LOG_ALERT, cycle->log, err,
+                          "kill(%P, %d) failed", njt_processes[i].pid, signo);
 
             if (err == NJT_ESRCH) {
                 njt_processes[i].exited = 1;

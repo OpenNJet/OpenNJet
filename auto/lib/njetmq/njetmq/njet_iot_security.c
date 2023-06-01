@@ -26,7 +26,7 @@ Contributors:
 #include "njet_iot_internal.h"
 #include "mosquitto_plugin.h"
 #include "memory_mosq.h"
-#include "lib_load.h"
+#include "njet_iot_lib_load.h"
 #include "utlist.h"
 
 typedef int (*FUNC_auth_plugin_version)(void);

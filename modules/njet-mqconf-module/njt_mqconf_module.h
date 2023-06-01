@@ -37,12 +37,13 @@ typedef struct {
     void                *handle;
     njt_str_t            file;
     njt_str_t            label;
+    njt_int_t            reload;
     time_t               start_time;
     time_t               start_time_bef;
 } njt_helper_ctx;
 
 
-typedef unsigned int (*njt_helper_check_ver_fp)(void);
+typedef unsigned int (*njt_helper_check_fp)(void);
 
 #define NJT_HELPER_VER          1
 

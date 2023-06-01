@@ -162,7 +162,7 @@ njt_udp_output_chain_to_iovec(njt_iovec_t *vec, njt_chain_t *in, njt_log_t *log)
 
         size = in->buf->last - in->buf->pos;
 
-        if (prev == in->buf->pos) {
+        if (prev == in->buf->pos && iov != NULL) {
             iov->iov_len += size;
 
         } else {

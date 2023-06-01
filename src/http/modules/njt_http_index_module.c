@@ -173,7 +173,9 @@ njt_http_index_handler(njt_http_request_t *r)
         if (index[i].values == NULL) {
 
             /* index[i].name.len includes the terminating '\0' */
-
+	    if (name == NULL) {
+                return NJT_HTTP_INTERNAL_SERVER_ERROR;
+            }
             njt_memcpy(name, index[i].name.data, index[i].name.len);
 
             path.len = (name + index[i].name.len - 1) - path.data;
@@ -185,6 +187,9 @@ njt_http_index_handler(njt_http_request_t *r)
             while (*(uintptr_t *) e.ip) {
                 code = *(njt_http_script_code_pt *) e.ip;
                 code((njt_http_script_engine_t *) &e);
+            }
+	    if (name == NULL) {
+                return NJT_HTTP_INTERNAL_SERVER_ERROR;
             }
 
             if (*name == '/') {
@@ -289,7 +294,6 @@ njt_http_index_test_dir(njt_http_request_t *r, njt_http_core_loc_conf_t *clcf,
     u_char                c;
     njt_str_t             dir;
     njt_open_file_info_t  of;
-
     c = *last;
     if (c != '/' || path == last) {
         /* "alias" without trailing slash */
