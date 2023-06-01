@@ -43,6 +43,7 @@ typedef void (*njt_connection_handler_pt)(njt_connection_t *c);
 #define  NJT_DECLINED   -5
 #define  NJT_ABORT      -6
 
+#define NJT_WEIGHT_POWER      100
 
 #include <njt_errno.h>
 #include <njt_atomic.h>

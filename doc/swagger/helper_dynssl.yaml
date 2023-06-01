@@ -5,7 +5,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: '/config/1'
+  - url: '/config/2'
 paths:
   /config/:
     get:
@@ -130,12 +130,24 @@ components:
       description: 证书组配置信息
       type: object
       properties:
+        cert_type:
+          type: string
+          description: 证书类型 regular:标准证书   ntls:国密证书 国密需要都配置，其他证书不配置enc相关字段
+          example: ntls
         certificate:
           type: string
-          description: 证书文件内容base64(注意需要配置'data:')
-          example: "data:-----BEGIN CERTIFICATE-----\r\nMIIEITCCAwmgAwIBAgIUK6l+HK4KR\/hLosx2XqNTaHLUkO0wDQYJKoZIhvcNAQEL\r\nBQAwZTELMAkGA1UEBhMCQ04xEDAOBgNVBAgTB0JlaUppbmcxEDAOBgNVBAcTB0Jl\r\naUppbmcxDjAMBgNVBAoTBW5naW54MQ8wDQYDVQQLEwZ0bWxha2UxETAPBgNVBAMT\r\nCG5naW54LWNhMCAXDTIyMDgwOTA5NDEwMFoYDzIxMjIwNzE2MDk0MTAwWjBiMQsw\r\nCQYDVQQGEwJDTjEQMA4GA1UECBMHQmVpSmluZzEQMA4GA1UEBxMHQmVpSmluZzEO\r\nMAwGA1UEChMFbmdpbngxDzANBgNVBAsTBnRtbGFrZTEOMAwGA1UEAxMFbmdpbngw\r\nggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC0hs5E8ZZT+ZU\/DvvIRrSL\r\nokk6OE5EA4URo6zawqguKRlTc1USgfMdZFwR2znCxjFcsk7W\/FSWqA5k5zyePYL8\r\n\/0lhn3i\/GQGczfa9dMZZEtN9EMD6TPOiDI\/CaWAFc3U7qE+SYckUHLu\/lMX8LshR\r\ndNkGecq41Ck5Sftm3xwy4cmpcCIyMpNumHrjJyxkp3S\/QGewgZRQypntG9R34EKj\r\nQNFnovsn39TeeG+DBjS5m1+roth0JJ6DbemB47hy\/uaEwAQpobN1etx20wCwxRO7\r\n7Huuh4kmWXjUol0nvzXM3ZZX2QnHn4jIg\/ALS7O6p86z+m4vEHK4hRfWf52xGjMv\r\nAgMBAAGjgckwgcYwDgYDVR0PAQH\/BAQDAgWgMB0GA1UdJQQWMBQGCCsGAQUFBwMB\r\nBggrBgEFBQcDAjAMBgNVHRMBAf8EAjAAMB0GA1UdDgQWBBQz6z5AIFRrP+KD1gBt\r\nW6j5NEMzwDAfBgNVHSMEGDAWgBQ64+C++PsR6pDZoQ7EORozSJ8d9DBHBgNVHREE\r\nQDA+ggkxOTIuMTY4LiqCDiouY2x1c3RlcjEuY29tgg0qLmNsdXN0ZXIuY29tggwq\r\nLnRtbGFrZS5jb22HBH8AAAEwDQYJKoZIhvcNAQELBQADggEBADouKA9fFflNAs2u\r\nu7yj4cGNG+sC8r1wDWyGiXGDzvaB7C\/sPTZiCgh8hI5gxzOSC+Se51kNFYymN9g4\r\nBPfB\/\/SZ+CxO60BOt5eFF4PxIW7+d8gGFJr7Yx55QGA9DrvGi\/LEiwjV3bQaezjN\r\noXUkfFgyKv79AfNFShkUPiHCklnfyqcCF+GEKxNC1q4wyClUt2EGtwfiO4YR85s0\r\n7jQ2BKJOsw3LLd8pZSvOXYu\/I9DoO5w3gM5TgjnJlQPq+bmgqJ7bfWbSpFo70cdF\r\nFLfE9MLpwhDjVQEJ6DOmZqU1dVdNtwLrUrm0\/8xkkmac0\/8BaEYyPy1SNMGJTMGE\r\nW8psxto=\r\n-----END CERTIFICATE-----\r\n"
+          description: cert证书文件内容base64(注意需要配置'data:')
+          example: "data:-----BEGIN CERTIFICATE-----\r\nMIICJjCCAcygAwIBAgIUWzTw8i+wQJSx7s4Rv9IX/RjzcAcwCgYIKoEcz1UBg3Uw\r\ngYIxCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJCSjEQMA4GA1UEBwwHSGFpRGlhbjEl\r\nMCMGA1UECgwcQmVpamluZyBKTlRBIFRlY2hub2xvZ3kgTFRELjEVMBMGA1UECwwM\r\nU09SQiBvZiBUQVNTMRYwFAYDVQQDDA1UZXN0IENBIChTTTIpMB4XDTIyMTIwNjA3\r\nMjI1NVoXDTI3MDExNDA3MjI1NVowgYYxCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJC\r\nSjEQMA4GA1UEBwwHSGFpRGlhbjElMCMGA1UECgwcQmVpamluZyBKTlRBIFRlY2hu\r\nb2xvZ3kgTFRELjEVMBMGA1UECwwMQlNSQyBvZiBUQVNTMRowGAYDVQQDDBFzZXJ2\r\nZXIgc2lnbiAoU00yKTBZMBMGByqGSM49AgEGCCqBHM9VAYItA0IABKWvwarEtpHK\r\nckfCaWTcqhzO8e3z02Q2+NOyUr94WgvuQFuJjdLMoHCDxDuMrhXaxUXhXE/rZsG7\r\nZ4XWyd7K/n+jGjAYMAkGA1UdEwQCMAAwCwYDVR0PBAQDAgbAMAoGCCqBHM9VAYN1\r\nA0gAMEUCIQDXyNeZN0iqy2cxDYytWtWLayYdSmdnuPg8VOhXUWWb+QIgEwj6Y2xg\r\n38xlatqML8aO89O4movtgOxPZG2YYTaDon8=\r\n-----END CERTIFICATE-----\r\n"
         certificateKey:
           type: string
           description: 证书key文件内容base64(注意需要配置'data:')
-          example: "data:-----BEGIN RSA PRIVATE KEY-----\r\nMIIEogIBAAKCAQEAtIbORPGWU\/mVPw77yEa0i6JJOjhORAOFEaOs2sKoLikZU3NV\r\nEoHzHWRcEds5wsYxXLJO1vxUlqgOZOc8nj2C\/P9JYZ94vxkBnM32vXTGWRLTfRDA\r\n+kzzogyPwmlgBXN1O6hPkmHJFBy7v5TF\/C7IUXTZBnnKuNQpOUn7Zt8cMuHJqXAi\r\nMjKTbph64ycsZKd0v0BnsIGUUMqZ7RvUd+BCo0DRZ6L7J9\/U3nhvgwY0uZtfq6LY\r\ndCSeg23pgeO4cv7mhMAEKaGzdXrcdtMAsMUTu+x7roeJJll41KJdJ781zN2WV9kJ\r\nx5+IyIPwC0uzuqfOs\/puLxByuIUX1n+dsRozLwIDAQABAoIBAFh+VJLbUnOrvwuA\r\nTtBoSIzCat8NRuB0UUDKWSuLjGHEZ9POj39ZEFHyJmfibTgba4sjJR6h5t1LWHMC\r\nH2b6hEF86v3d7JTQr0esdy18FtcHMYD3O4H3Qt7HBZmpihZh+K\/b29XH9YfUZfyN\r\n81ehnzS+8LwJ6+QarHKW35QX\/ny5+pCw+G97cjdE7sClZnryd1KseWubAXDLSgmQ\r\nJcjXMMkwjtd2x\/w23ZT97WMEcToL1wMw4hF\/tHtu9u3UHMhzLHgrfrkW4QmACbLF\r\n8MJR94wzscJrUEviz5fV+3ZTmK+lujGmO\/KkOpNAPGf8QAeBfa\/qyBTQCQgCdxRo\r\n8hrDT4ECgYEA5vLsDDWiAROvvPaRkCv0y0UWkdgyBxv2T6pjDJZzMxb0yKZ48E6l\r\nh0PI9bfn0KbI1ZZviiZg20oZ\/Keo2wLYa+W00rZhWljWUh0Ivd\/5vTPHBmpsXl6+\r\nRK49aNVkfqlleherhfrYUkHKKDeg4lKVY3fwAlAQeg\/y4Ds\/8k3HUuECgYEAyBu8\r\ns7KuO7sAaJVj+QFfRrR6u2eJD48HPB4UoeDYMaKAuPTiM5\/AUjH\/YdD4E2lGAyJJ\r\nJVN413yu3Dk9UIAivgqCROepAcnnZ1BwE2qI\/gfr2GD95o8JQSphze0pC\/6WS\/jG\r\niBR+j7MGWIkHJHEIUjOrf8eqtVLAywjxz9rPWA8CgYBTkuzgrjfl893Qn9mlNoLr\r\nXCECvh28fN3xjlMxpvAhONl0EuoI7CzyehEq+lYlJ3Xd9QaAE8tRD8u\/plxwhOMU\r\niJea+OzZ6PQF2wPi0j5pvWb0Z2a378kiyXrniPFI9LwIJrCnV1MY0T36t8a8n+33\r\nhNuRuq97vHHDuy003fiXgQKBgGKzM6cauc+iU\/hBvzbBk4HnYSXwUm1HKdVgLOMP\r\naPNKaN1RhATchdrE6GcR0FqasTq4fYWYn2ECEalz3idHnFtKCaj87qKAOM\/\/n9gj\r\n0wAhXhWy+WjwIitvQSB2Gqnc37sHML1MBoTQU4\/1vn0d93G8JJn5HN0kvQ0oE0Vn\r\ncp\/HAoGAGCxpM24rHBK0HmlABZd8ZfLW\/sW4Y7bMsQmrOVuPZcTWcO5HzkkiGzTc\r\n8DCDDeGdfJUC9NaM0DnVuMwp8\/f5uZv4dTS7Hzf8Ie5vR9oQx\/z73iakiKUIpDQc\r\n0\/sUJSKijOQRT1xZQmkw5+QClmbjLLS3ZXn9kMt0bbxZRPkcV2A=\r\n-----END RSA PRIVATE KEY-----\r\n"
+          example: "data:-----BEGIN EC PARAMETERS-----\r\nBggqgRzPVQGCLQ==\r\n-----END EC PARAMETERS-----\r\n-----BEGIN EC PRIVATE KEY-----\r\nMHcCAQEEIPunrzGM/F+w/64DaLg5RLn2ZUoqYEzwsgxUkeKWF6jmoAoGCCqBHM9V\r\nAYItoUQDQgAEpa/BqsS2kcpyR8JpZNyqHM7x7fPTZDb407JSv3haC+5AW4mN0syg\r\ncIPEO4yuFdrFReFcT+tmwbtnhdbJ3sr+fw==\r\n-----END EC PRIVATE KEY-----\r\n"
+        certificateEnc:
+          type: string
+          description: cert证书文件enc内容base64(注意需要配置'data:')
+          example: "data:-----BEGIN CERTIFICATE-----\r\nMIICJTCCAcugAwIBAgIUWzTw8i+wQJSx7s4Rv9IX/RjzcAgwCgYIKoEcz1UBg3Uw\r\ngYIxCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJCSjEQMA4GA1UEBwwHSGFpRGlhbjEl\r\nMCMGA1UECgwcQmVpamluZyBKTlRBIFRlY2hub2xvZ3kgTFRELjEVMBMGA1UECwwM\r\nU09SQiBvZiBUQVNTMRYwFAYDVQQDDA1UZXN0IENBIChTTTIpMB4XDTIyMTIwNjA3\r\nMjI1NVoXDTI3MDExNDA3MjI1NVowgYUxCzAJBgNVBAYTAkNOMQswCQYDVQQIDAJC\r\nSjEQMA4GA1UEBwwHSGFpRGlhbjElMCMGA1UECgwcQmVpamluZyBKTlRBIFRlY2hu\r\nb2xvZ3kgTFRELjEVMBMGA1UECwwMQlNSQyBvZiBUQVNTMRkwFwYDVQQDDBBzZXJ2\r\nZXIgZW5jIChTTTIpMFkwEwYHKoZIzj0CAQYIKoEcz1UBgi0DQgAEdGUnMh317JO6\r\nePSKfs4f4xfQXReq/GWQKqL1vBnla3F22OSbNsaAwMC16wze1n3JjSIqIMf7ielE\r\nePXi4G1dsKMaMBgwCQYDVR0TBAIwADALBgNVHQ8EBAMCAzgwCgYIKoEcz1UBg3UD\r\nSAAwRQIhANC8B9M4Mo0GDWDgSeJ5M4wlF0QgWMlY29GYB1/bGxq6AiAb4IlVTwnZ\r\nV0/PP3zuNjJjp7blkvsaCGsXtb9pk2rQYw==\r\n-----END CERTIFICATE-----\r\n"
+        certificateKeyEnc:
+          type: string
+          description: 证书key文件enc内容base64(注意需要配置'data:')
+          example: "data:-----BEGIN EC PARAMETERS-----\r\nBggqgRzPVQGCLQ==\r\n-----END EC PARAMETERS-----\r\n-----BEGIN EC PRIVATE KEY-----\r\nMHcCAQEEIJH/qG2bKhybB1uUSnQbKiNueeLneQVioS+0kLMygYCVoAoGCCqBHM9V\r\nAYItoUQDQgAEdGUnMh317JO6ePSKfs4f4xfQXReq/GWQKqL1vBnla3F22OSbNsaA\r\nwMC16wze1n3JjSIqIMf7ielEePXi4G1dsA==\r\n-----END EC PRIVATE KEY-----\r\n"
 

@@ -41,3 +41,31 @@ njt_int_t njt_str_split(njt_str_t *src,njt_array_t *array,char sign){
     }
     return NJT_OK;
 }
+njt_str_t njt_del_headtail_space(njt_str_t src){
+
+  njt_uint_t i,j;
+  njt_str_t  dst;
+  if(src.len == 0){
+     return src;
+  }
+  i=0;
+  for(; i < src.len; i++) {
+          if(src.data[i] != '\0' && src.data[i] != '\n' && src.data[i] != '\t' && src.data[i] != ' ' && src.data[i] != '\r'){
+                break;
+          }
+  }
+  if(i == src.len){
+        njt_str_set(&dst,"");
+        return dst;
+  }
+  dst.data = src.data + i;
+  j = src.len - 1;
+  for(; j > i; j--) {
+          if(src.data[j] == '\0' || src.data[j] == '\n' || src.data[j] == '\t' || src.data[j] == ' ' || src.data[j] == '\r'){
+                continue;
+          }
+          break;
+  }
+  dst.len = j-i+1;
+  return dst;
+}

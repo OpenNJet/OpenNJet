@@ -180,6 +180,14 @@ typedef struct {
 
 #define NJT_SSL_BUFSIZE  16384
 
+#if (NJT_HAVE_NTLS)
+
+#define NJT_SSL_NTLS_CERT_REGULAR     0
+#define NJT_SSL_NTLS_CERT_SIGN        1
+#define NJT_SSL_NTLS_CERT_ENC         2
+
+#endif
+
 
 njt_int_t njt_ssl_init(njt_log_t *log);
 njt_int_t njt_ssl_create(njt_ssl_t *ssl, njt_uint_t protocols, void *data);
@@ -192,6 +200,7 @@ njt_int_t njt_ssl_connection_certificate(njt_connection_t *c, njt_pool_t *pool,
     njt_str_t *cert, njt_str_t *key, njt_array_t *passwords);
 #if (NJT_HAVE_NTLS)
 void njt_ssl_ntls_prefix_strip(njt_str_t *s);
+njt_uint_t njt_ssl_ntls_type(njt_str_t *s);
 #endif
 
 njt_int_t njt_ssl_ciphers(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *ciphers,

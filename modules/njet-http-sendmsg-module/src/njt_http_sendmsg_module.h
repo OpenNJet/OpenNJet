@@ -18,7 +18,7 @@ typedef struct njt_dyn_rpc_res_s njt_dyn_rpc_res_t;
 
 typedef int (*rpc_msg_handler)(njt_dyn_rpc_res_t* res, njt_str_t *msg);
 
-int njt_dyn_rpc(njt_str_t *topic, njt_str_t *request, int session_id, rpc_msg_handler handler, void *data);
+int njt_dyn_rpc(njt_str_t *topic, njt_str_t *request, int retain_flag, int session_id, rpc_msg_handler handler, void *data);
 
 int njt_dyn_sendmsg(njt_str_t *topic, njt_str_t *content, int retain_flag);
 int njt_dyn_kv_get(njt_str_t *key, njt_str_t *value);

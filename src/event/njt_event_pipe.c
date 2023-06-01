@@ -289,7 +289,7 @@ njt_event_pipe_read_upstream(njt_event_pipe_t *p)
                 }
 
                 chain = p->free_raw_bufs;
-                if (p->single_buf) {
+                if (p->single_buf && p->free_raw_bufs != NULL) {
                     p->free_raw_bufs = p->free_raw_bufs->next;
                     chain->next = NULL;
                 } else {
@@ -323,7 +323,11 @@ njt_event_pipe_read_upstream(njt_event_pipe_t *p)
 
             if (n == NJT_AGAIN) {
                 if (p->single_buf) {
-                    njt_event_pipe_remove_shadow_links(chain->buf);
+		    if(chain != NULL) {
+                    	njt_event_pipe_remove_shadow_links(chain->buf);
+		    } else {
+			njt_log_error(NJT_LOG_ERR, p->log,0,"njt_event_pipe_remove_shadow_links  chain is null");
+		    }
                 }
 
                 break;

@@ -576,6 +576,10 @@ njt_log_set_log(njt_conf_t *cf, njt_log_t **head)
 
     if (njt_strcmp(value[1].data, "stderr") == 0) {
         njt_str_null(&name);
+	if(cf->cycle == NULL) {
+	   njt_conf_log_error(NJT_LOG_EMERG, cf, 0,"cf->cycle is null");
+	   return NJT_CONF_ERROR;
+	}
         cf->cycle->log_use_stderr = 1;
 
         new_log->file = njt_conf_open_file(cf->cycle, &name);
