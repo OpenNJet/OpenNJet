@@ -97,7 +97,7 @@ njt_readv_chain(njt_connection_t *c, njt_chain_t *chain, off_t limit)
             }
         }
 
-        if (prev == chain->buf->last) {
+        if (prev == chain->buf->last && iov != NULL) {
             iov->iov_len += n;
 
         } else {

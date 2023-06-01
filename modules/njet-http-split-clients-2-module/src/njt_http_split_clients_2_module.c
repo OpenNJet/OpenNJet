@@ -125,6 +125,7 @@ static int njt_http_split_kv_change_handler_internal(njt_str_t *key, njt_str_t *
     rpc_result = njt_rpc_result_create();
     if (!rpc_result) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't create rpc result");
+        rc = NJT_ERROR;
         goto end;
     }
     njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_SUCCESS);
@@ -132,6 +133,7 @@ static int njt_http_split_kv_change_handler_internal(njt_str_t *key, njt_str_t *
     tmp_pool = njt_create_pool(NJT_DEFAULT_POOL_SIZE, njt_cycle->log);
     if (tmp_pool == NULL) {
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
+        rc = NJT_ERROR;
         goto rpc_msg;
     }
 
@@ -168,7 +170,7 @@ static int njt_http_split_kv_change_handler_internal(njt_str_t *key, njt_str_t *
                     } else {
                         continue;
                     }
-                    if (f->type == NJT_JSON_INT) {
+                    if (f->type == NJT_JSON_INT && f->intval>=0) {
                         sum += f->intval;
                     } else {
                         rc = NJT_RPC_RSP_ERR_JSON;

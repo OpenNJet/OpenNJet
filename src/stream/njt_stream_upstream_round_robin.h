@@ -57,6 +57,7 @@ struct njt_stream_upstream_rr_peer_s {
    unsigned                        del_pending:1;
    unsigned                        hc_check_in_process:1;
    unsigned                        set_backup:1;
+   unsigned                        set_first_check:1;
    unsigned                        hc_last_passed;
    njt_int_t                       parent_id;
     njt_uint_t                       requests;

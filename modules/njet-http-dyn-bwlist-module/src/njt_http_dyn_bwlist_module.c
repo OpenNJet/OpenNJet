@@ -631,6 +631,7 @@ static int njt_dyn_bwlist_change_handler_internal(njt_str_t *key, njt_str_t *val
     rpc_result = njt_rpc_result_create();
     if (!rpc_result) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't create rpc result");
+        rc = NJT_ERROR;
         goto end;
     }
     njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_SUCCESS);
@@ -638,6 +639,7 @@ static int njt_dyn_bwlist_change_handler_internal(njt_str_t *key, njt_str_t *val
     if (pool == NULL) {
         njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_dyn_bwlist_change_handler create pool error");
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
+        rc = NJT_ERROR;
         goto rpc_msg;
     }
 
@@ -646,6 +648,7 @@ static int njt_dyn_bwlist_change_handler_internal(njt_str_t *key, njt_str_t *val
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, pool->log, 0,
             "could not alloc buffer in function %s", __func__);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
+        rc = NJT_ERROR;
         goto rpc_msg;
     }
 
@@ -669,9 +672,8 @@ end:
     if (rpc_result) {
         njt_rpc_result_destroy(rpc_result);
     }
+    
     return rc;
-
-    return NJT_OK;
 }
 
 static int njt_dyn_bwlist_change_handler(njt_str_t *key, njt_str_t *value, void *data)
