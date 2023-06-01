@@ -1827,6 +1827,8 @@ static int  njt_agent_vts_change_handler_internal(njt_str_t *key, njt_str_t *val
     if (rc == NJT_OK) {
         njt_dynvts_update(pool, dynconf, rpc_result);
     } else {
+        njt_str_t msg = njt_string("");
+        njt_kv_sendmsg(key, &msg, 0);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
         goto rpc_msg;
     }
