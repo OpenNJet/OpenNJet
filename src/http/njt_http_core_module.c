@@ -3412,6 +3412,9 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (cf->cmd_type == NJT_HTTP_LOC_CONF) {
 
         /* nested location */
+	if (clcf->if_loc == 1 ){
+	  clcf->name = clcf->full_name;
+	}
 
 #if 0
         clcf->prev_location = pclcf;
@@ -3445,9 +3448,9 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
 #if (NJT_PCRE)
         if (clcf->regex == NULL
-            && njt_filename_cmp(clcf->name.data, pclcf->name.data, len) != 0)
+            && njt_filename_cmp(clcf->name.data, pclcf->name.data, len) != 0 && clcf->if_loc != 1)
 #else
-        if (njt_filename_cmp(clcf->name.data, pclcf->name.data, len) != 0)
+        if (njt_filename_cmp(clcf->name.data, pclcf->name.data, len) != 0 && clcf->if_loc != 1)
 #endif
         {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
@@ -5625,7 +5628,8 @@ njt_int_t njt_http_core_if_location(njt_conf_t *cf, njt_str_t * command,njt_http
     }
 
     if_code->code = njt_http_script_if_code;
-    if_code->next = 0;
+    if_code->next = (u_char *) lcf->codes->elts + lcf->codes->nelts
+                                                - (u_char *) if_code;
     //elts = lcf->codes->elts;
 
 
@@ -5791,7 +5795,7 @@ njt_http_core_run_location_callback(void *ctx,void *pdata)
     //njt_uint_t                     ret;
     njt_http_variable_value_t     *pbuf;
     loc_exp_t *exp  = ctx;
-    u_char *o_ip;
+    //u_char *o_ip;
 
     njt_http_if_location_request  *request = pdata;
     njt_http_request_t *r = request->r;
@@ -5821,9 +5825,10 @@ njt_http_core_run_location_callback(void *ctx,void *pdata)
 	    request->e->log = plcf->log;
 	    request->e->status = NJT_DECLINED;
 	    request->e->ret = 1;
-	    o_ip = NULL;
-	    while (*(uintptr_t *) request->e->ip && o_ip != request->e->ip) {
-		o_ip = request->e->ip;
+	    //o_ip = NULL;
+	    //while (*(uintptr_t *) request->e->ip && o_ip != request->e->ip) {
+	    while (*(uintptr_t *) request->e->ip) {
+	//	o_ip = request->e->ip;
 		code = *(njt_http_script_code_pt *) request->e->ip;
 		code(request->e);
 	    }

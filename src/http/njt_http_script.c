@@ -1601,11 +1601,11 @@ njt_http_script_not_equal_code(njt_http_script_engine_t *e)
     {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, e->request->connection->log, 0,
                        "http script not equal: no");
-
+	e->ret = 0;//by zyg
         *res = njt_http_variable_null_value;
         return;
     }
-
+    e->ret = 1;//by zyg
     *res = njt_http_variable_true_value;
 }
 
