@@ -69,4 +69,9 @@ unsigned int njt_helper_check_version(void)
     return NJT_HELPER_VER;
 }
 
+unsigned int njt_helper_ignore_reload(void)
+{
+    return 1;
+}
+
 njt_module_t njt_helper_ha_module = { 0 };
