@@ -5691,7 +5691,7 @@ njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf,
     for(i = 1; i < cf->args->nelts; i++){
         len += value[i].len+1;
     }
-    index = njt_pcalloc(pclcf->pool,len);
+    index = njt_pcalloc(pclcf->pool,len+1);
     if (index == NULL){
         return NJT_CONF_ERROR;
     }
@@ -5702,7 +5702,7 @@ njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf,
         *index = (u_char)' ';
         ++index;
     }
-    command.len = len;
+    command.len = len + 1;
     yy_scan_string((char *)command.data);
     root = NULL;
     r = yyparse(&root);
@@ -5857,7 +5857,7 @@ njt_int_t njt_http_core_cp_loc_parse_tree(loc_parse_node_t * root, njt_pool_t   
         	return NJT_ERROR;
     	 }
 	 loc_exp->idx = root->loc_exp->idx;
-	 loc_exp->exp = njt_pcalloc(pool,njt_strlen(root->loc_exp->exp));
+	 loc_exp->exp = njt_pcalloc(pool,njt_strlen(root->loc_exp->exp) + 1);
 	 if(loc_exp->exp == NULL) {
 		return NJT_ERROR;
 	 }

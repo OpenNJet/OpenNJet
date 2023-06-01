@@ -1,6 +1,4 @@
-#line 1 "njt_http_if_location_lex.c"
 
-#line 3 "njt_http_if_location_lex.c"
 
 #define  YY_INT_ALIGNED short int
 
@@ -558,9 +556,7 @@ char _parsed_buf[4096]; // temp value for [^ab]c.()()$$$
 char* string_buf_ptr; 
 int closed = 0;
 int idx = 0;
-#line 563 "njt_http_if_location_lex.c"
 
-#line 565 "njt_http_if_location_lex.c"
 
 #define INITIAL 0
 #define in_str 1
@@ -845,7 +841,6 @@ YY_DECL
 
 
 
-#line 851 "njt_http_if_location_lex.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -1061,7 +1056,6 @@ case 19:
 YY_RULE_SETUP
 ECHO;
 	YY_BREAK
-#line 1086 "njt_http_if_location_lex.c"
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(in_str):
 	yyterminate();
@@ -1931,8 +1925,8 @@ YY_BUFFER_STATE yy_scan_buffer  (char * base, yy_size_t  size )
  */
 YY_BUFFER_STATE yy_scan_string (const char * yystr )
 {
-    
-	return yy_scan_bytes( yystr, (int) strlen(yystr) );
+        int len = strlen(yystr);
+	return yy_scan_bytes( yystr, len );
 }
 /* %endif */
 

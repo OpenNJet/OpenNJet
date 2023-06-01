@@ -67,7 +67,6 @@
 
 
 /* First part of user prologue.  */
-#line 1 "loc_parse.y"
 
 #  include <stdio.h>
 #  include <stdlib.h>
@@ -78,7 +77,6 @@ void yyerror(loc_parse_node_t **tree_root,  const char * s);
 int loc_exp_dyn_eval_result;
 loc_parse_node_t *loc_exp_dyn_parse_tree;
 
-#line 82 "njt_http_if_location_parse.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -905,39 +903,27 @@ yydestruct (const char *yymsg,
   switch (yykind)
     {
     case YYSYMBOL_EOL: /* EOL  */
-#line 38 "loc_parse.y"
             {  printf ("Discarding symbol: EOL at line %d\n", (*yylocationp).first_line); }
-#line 911 "njt_http_if_location_parse.c"
         break;
 
     case YYSYMBOL_OR: /* OR  */
-#line 36 "loc_parse.y"
             {  printf ("Discarding symbol: OR at line %d\n", (*yylocationp).first_line); }
-#line 917 "njt_http_if_location_parse.c"
         break;
 
     case YYSYMBOL_AND: /* AND  */
-#line 37 "loc_parse.y"
             {  printf ("Discarding symbol: AND at line %d\n", (*yylocationp).first_line); }
-#line 923 "njt_http_if_location_parse.c"
         break;
 
     case YYSYMBOL_ERROR: /* ERROR  */
-#line 39 "loc_parse.y"
             {  printf ("Discarding symbol: ERROR at line %d\n", (*yylocationp).first_line); }
-#line 929 "njt_http_if_location_parse.c"
         break;
 
     case YYSYMBOL_exp: /* exp  */
-#line 40 "loc_parse.y"
             { if(((*yyvaluep).node)) { free_tree (((*yyvaluep).node)); printf ("Discarding symbol: exp at line %d\n", (*yylocationp).first_line); free(((*yyvaluep).node));} }
-#line 935 "njt_http_if_location_parse.c"
         break;
 
     case YYSYMBOL_eval_tree: /* eval_tree  */
-#line 41 "loc_parse.y"
             { if(((*yyvaluep).node)) { free_tree (((*yyvaluep).node)); printf ("Discarding symbol: eval_tree at line %d\n", (*yylocationp).first_line); free(((*yyvaluep).node));} }
-#line 941 "njt_http_if_location_parse.c"
         break;
 
       default:
@@ -1230,43 +1216,30 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* exp: %empty  */
-#line 46 "loc_parse.y"
        {printf("BISON NULL_EXP: \n"); (yyval.node)=NULL; YYABORT;}
-#line 1236 "njt_http_if_location_parse.c"
     break;
 
   case 3: /* exp: LOC_EXP  */
-#line 47 "loc_parse.y"
              {  printf("BISON: LOC_EXP\n"); (yyval.node) = new_loc_parse_exp_node((yyvsp[0].loc_exp)); }
-#line 1242 "njt_http_if_location_parse.c"
     break;
 
   case 4: /* exp: '(' exp ')'  */
-#line 48 "loc_parse.y"
                           { printf("BISON: (EXP) \n"); (yyval.node) = (yyvsp[-1].node); }
-#line 1248 "njt_http_if_location_parse.c"
     break;
 
   case 5: /* exp: exp OR exp  */
-#line 49 "loc_parse.y"
                           { printf("BISON: OR \n"); (yyval.node) = new_loc_parse_op_node(BOOL_OP_OR, (yyvsp[-2].node),(yyvsp[0].node)); }
-#line 1254 "njt_http_if_location_parse.c"
     break;
 
   case 6: /* exp: exp AND exp  */
-#line 50 "loc_parse.y"
                           { printf("BISON: AND \n");(yyval.node) = new_loc_parse_op_node(BOOL_OP_AND, (yyvsp[-2].node),(yyvsp[0].node));}
-#line 1260 "njt_http_if_location_parse.c"
     break;
 
   case 7: /* eval_tree: %empty  */
-#line 52 "loc_parse.y"
            {(yyval.node) = NULL; }
-#line 1266 "njt_http_if_location_parse.c"
     break;
 
   case 8: /* eval_tree: eval_tree exp EOL  */
-#line 53 "loc_parse.y"
                       {
     dump_tree((yyvsp[-1].node), 0);
     // loc_exp_dyn_eval_result = eval_loc_parse_tree($2);
@@ -1277,29 +1250,21 @@ yyreduce:
     // free($2);
     return 0;
     }
-#line 1281 "njt_http_if_location_parse.c"
     break;
 
   case 9: /* eval_tree: eval_tree error EOL  */
-#line 63 "loc_parse.y"
                         { YYABORT; }
-#line 1287 "njt_http_if_location_parse.c"
     break;
 
   case 10: /* eval_tree: eval_tree ERROR  */
-#line 64 "loc_parse.y"
                     { YYABORT; }
-#line 1293 "njt_http_if_location_parse.c"
     break;
 
   case 11: /* eval_tree: eval_tree error  */
-#line 65 "loc_parse.y"
                     { YYABORT; }
-#line 1299 "njt_http_if_location_parse.c"
     break;
 
 
-#line 1303 "njt_http_if_location_parse.c"
 
       default: break;
     }
@@ -1497,5 +1462,4 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 68 "loc_parse.y"
 
