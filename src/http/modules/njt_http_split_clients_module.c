@@ -331,6 +331,10 @@ static int njt_http_split_client_change_handler_internal(njt_str_t *key,
         goto rpc_msg;
     }
 rpc_msg:
+    if (rc != NJT_OK) {
+        njt_str_t msg = njt_string("");
+        njt_kv_sendmsg(key,&msg,0);
+    }
     if (out_msg) {
         njt_rpc_result_to_json_str(rpc_result, out_msg);
     }
