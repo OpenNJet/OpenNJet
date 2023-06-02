@@ -12,7 +12,7 @@
 
 #include "njt_gossip_module.h"
 
-#include "msgpack.h"
+// #include "msgpack.h"
 
 #define  GOSSIP_HEARTBEAT_INT 10000
 
@@ -134,6 +134,9 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 	gscf->req_ctx=njt_pcalloc(cf->cycle->pool, sizeof(njt_gossip_req_ctx_t));
 	gscf->req_ctx->shpool=NULL;
 	gscf->req_ctx->sh=NULL;
+
+	gscf->heartbeat_timeout = GOSSIP_HEARTBEAT_INT;
+	gscf->nodeclean_timeout = 2 * gscf->heartbeat_timeout;
 	
 	cscf=njt_stream_conf_get_module_srv_conf(cf,njt_stream_core_module);
 	cmcf=njt_stream_conf_get_module_main_conf(cf,njt_stream_core_module);
@@ -201,8 +204,16 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 			gscf->heartbeat_timeout = njt_parse_time(&tmp_str, 0);
 			if (gscf->heartbeat_timeout == (njt_msec_t) NJT_ERROR) {
 				njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-					"invalid heartbeat_timeout:\"%V\"", &tmp_str);
+					" gossip, invalid heartbeat_timeout:\"%V\"", &tmp_str);
 				return NJT_CONF_ERROR;
+			}
+
+			if (gscf->heartbeat_timeout < 1000) {
+				njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+					" gossip heartbeat_timeout should not less than 1s, default 10s, config:\"%V\", now use default", &tmp_str);
+				
+				gscf->heartbeat_timeout = GOSSIP_HEARTBEAT_INT;
+				// return NJT_CONF_ERROR;
 			}
 		} else if (njt_strncmp(value[i].data, "nodeclean_timeout=", 18) == 0){
 			tmp_str.data = value[i].data + 18;
@@ -213,11 +224,23 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 					"invalid nodeclean_timeout:\"%V\"", &tmp_str);
 				return NJT_CONF_ERROR;
 			}
+
+			if (gscf->nodeclean_timeout < 1000) {
+				njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+					" gossip nodeclean_timeout should not less than 1s, default 20s, config:\"%V\", now use default", &tmp_str);
+				
+				gscf->nodeclean_timeout = 2 * GOSSIP_HEARTBEAT_INT;
+				// return NJT_CONF_ERROR;
+			}
 		} else {
 			njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
 				"invalid gossip param \"%V\", format is zone={zone_name}:{size}M [heartbeat_timeout={timeout}] [nodeclean_timeout={timeout}]", &value[i]);
 			return NJT_CONF_ERROR;
 		}
+	}
+
+	if(gscf->nodeclean_timeout < (2 * gscf->heartbeat_timeout)){
+		gscf->nodeclean_timeout = 2 * gscf->heartbeat_timeout;
 	}
 
 	if(!has_zone){
@@ -549,7 +572,6 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 				}
 			}
 		break;
-		case GOSSIP_MSG_SYN_DATA:
 		default:
 			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:%d", &n_name, &n_pid, msg_type);
 			{
@@ -1067,6 +1089,9 @@ int  njt_gossip_reg_app_handler( gossip_app_pt app_msg_handler, gossip_app_node_
 	app_handle->app_magic=app_magic;
 	app_handle->handler=app_msg_handler;
 	app_handle->node_handler=app_node_handler;
+
+    // njt_log_error(NJT_LOG_INFO,njt_cycle->log,0," ===========reg app_magic:%u", app_magic);
+
 	return NJT_OK;
 }
 void njt_gossip_send_app_msg_buf (void) 

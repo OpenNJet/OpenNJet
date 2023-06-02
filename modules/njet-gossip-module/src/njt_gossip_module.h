@@ -21,9 +21,6 @@
 //crc of msgsync
 #define GOSSIP_MSG_SYN 0xEF7CCE4F
 
-//crc of syncdata
-#define GOSSIP_MSG_SYN_DATA 0x8B1D797A
-
 //todo:
 
 enum node_state {
