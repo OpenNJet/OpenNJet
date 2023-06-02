@@ -14,6 +14,8 @@
 #include <njet_iot_emb.h>
 #include <njt_md5.h>
 
+#define MAX_DYN_WORKER_C 512
+
 static void njt_start_worker_processes(njt_cycle_t *cycle, njt_int_t n,
     njt_int_t type);
 static void njt_start_cache_manager_processes(njt_cycle_t *cycle,
@@ -101,7 +103,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
     njt_uint_t         live;
     njt_msec_t         delay;
     njt_core_conf_t *ccf;
-    njt_str_t          worker_k = njt_string("kv_http___master:worker_count");
+    njt_str_t          worker_k = njt_string("kv_http___master_worker_count");
     njt_str_t          worker_v;
     njt_int_t          worker_c;
     njt_int_t          rc;
@@ -327,8 +329,8 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             rc = njet_iot_client_kv_get((void *)worker_k.data, worker_k.len, (void **)&worker_v.data, (uint32_t *)&worker_v.len, master_evt_ctx);;
             if (rc == NJT_OK) {
                 worker_c = njt_atoi(worker_v.data, worker_v.len);
-                if (worker_c <= 0) {
-                    njt_log_error(NJT_LOG_INFO, cycle->log, 0, "woker processes count (%V) is not valid", &worker_v);
+                if (worker_c <= 0 || worker_c > MAX_DYN_WORKER_C) {
+                    njt_log_error(NJT_LOG_INFO, cycle->log, 0, "woker processes count (%V) is not valid, it should be within (0, %d])", &worker_v, MAX_DYN_WORKER_C);
                 } else {
                     njt_update_worker_processes(cycle, ccf, worker_c);
                 }

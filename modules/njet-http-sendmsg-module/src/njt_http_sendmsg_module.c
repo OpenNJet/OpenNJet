@@ -454,7 +454,7 @@ static void sendmsg_api_post_handler(njt_http_request_t *r)
 
     njt_dyn_sendmsg(&topic_name, &postdata->value, 1);
     njt_dyn_kv_set(&lmdb_name, &postdata->value);
-    if (njt_strncmp(postdata->key.data, "__master:", 9)==0) {
+    if (njt_strncmp(postdata->key.data, "__master_", 9)==0) {
         kill(njt_parent, SIGCONF);
     }
 
