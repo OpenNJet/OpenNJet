@@ -847,7 +847,9 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
             lq = (njt_http_location_queue_t *) q;
             q = njt_queue_next(q);
             *(clcfp++) = lq->exact;
-	   lq->exact->loc_conf[njt_http_core_module.ctx_index] = lq->exact;
+	   if(lq->exact != NULL) {
+	   	lq->exact->loc_conf[njt_http_core_module.ctx_index] = lq->exact;
+	   }
             // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
             njt_queue_remove(&lq->queue);
@@ -896,7 +898,9 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
             lq = (njt_http_location_queue_t *) q;
             q = njt_queue_next(q);
             *(clcfp++) = lq->exact;
-	   lq->exact->loc_conf[njt_http_core_module.ctx_index] = lq->exact;
+	   if(lq->exact != NULL) {
+	   	lq->exact->loc_conf[njt_http_core_module.ctx_index] = lq->exact;
+	   }
             // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
             njt_queue_remove(&lq->queue);

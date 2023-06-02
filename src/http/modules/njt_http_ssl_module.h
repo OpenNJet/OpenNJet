@@ -78,8 +78,6 @@ typedef struct {
 extern njt_module_t  njt_http_ssl_module;
 
 #if (NJT_HTTP_MULTICERT)
-char *njt_http_ssl_certificate_slot(njt_conf_t *cf,
-    njt_command_t *cmd, void *conf);
 njt_int_t njt_http_ssl_compile_certificates(njt_conf_t *cf,
     njt_http_ssl_srv_conf_t *conf);
 #endif

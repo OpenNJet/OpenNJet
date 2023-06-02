@@ -1788,7 +1788,7 @@ out:
 
 static int  njt_agent_vts_change_handler_internal(njt_str_t *key, njt_str_t *value, void *data, njt_str_t *out_msg)
 {
-    njt_int_t                    rc;
+    njt_int_t                    rc = NJT_ERROR;
     njt_http_vts_dynapi_main_t *dynconf = NULL;
     njt_pool_t                  *pool = NULL;
     njt_json_manager             json_manager;

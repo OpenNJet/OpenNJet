@@ -1098,7 +1098,7 @@ njt_stream_health_check_match_all(njt_connection_t *c){
         return rc;
     }
 
-    for (;;) {
+//    {
         b = hc_peer->recv_buf;
         size = b->end - b->last;
         n = c->recv(c, b->last, size);
@@ -1124,8 +1124,8 @@ njt_stream_health_check_match_all(njt_connection_t *c){
             njt_log_debug0(NJT_LOG_ERR, njt_cycle->log, 0,"read error for health check");
             return NJT_ERROR;
         }
-        break;
-    }
+//        break;
+//    }
     return NJT_ERROR;
 }
 
@@ -4215,12 +4215,13 @@ end:
 
 static char njt_hc_resp_body[] = "{\n  \"code\": %d,\n   \"msg\": \"%V\"\n }";
 
-static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, njt_int_t rc) {
+static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, njt_int_t hrc) {
     njt_uint_t buf_len;
     njt_buf_t *buf;
     njt_chain_t out;
+    njt_int_t rc;
 
-    switch (rc) {
+    switch (hrc) {
         case HC_SUCCESS:
             r->headers_out.status = NJT_HTTP_OK;
             break;
@@ -4248,14 +4249,14 @@ static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, n
             r->headers_out.status = NJT_HTTP_INTERNAL_SERVER_ERROR;
             break;
     }
-    buf_len = sizeof(njt_hc_resp_body) - 1 + 9 + njt_hc_error_msg[rc].len;
+    buf_len = sizeof(njt_hc_resp_body) - 1 + 9 + njt_hc_error_msg[hrc].len;
     buf = njt_create_temp_buf(r->pool, buf_len);
     if (buf == NULL) {
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "could not alloc buffer in function %s", __func__);
         return NJT_ERROR;
     }
-    buf->last = njt_snprintf(buf->last, buf_len, njt_hc_resp_body, rc, njt_hc_error_msg + rc);
+    buf->last = njt_snprintf(buf->last, buf_len, njt_hc_resp_body, hrc, njt_hc_error_msg + hrc);
     njt_str_t type = njt_string("application/json");
     r->headers_out.content_type = type;
     r->headers_out.content_length_n = buf->last - buf->pos;
@@ -4265,7 +4266,8 @@ static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, n
     }
     rc = njt_http_send_header(r);
 
-    if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
+    // r->header_only  when method is HEAD ,header_only is set.
+    if (rc == NJT_ERROR || rc > NJT_OK) {
         return rc;
     }
     buf->last_buf = 1;
@@ -4478,6 +4480,10 @@ static void njt_http_hc_api_read_data(njt_http_request_t *r){
 
     body_chain = r->request_body->bufs;
     /*check the sanity of the json body*/
+    if(NULL == body_chain){
+        hrc = HC_SERVER_ERROR;
+        goto out;
+    }
     json_str.data = body_chain->buf->pos;
     json_str.len = body_chain->buf->last - body_chain->buf->pos;
 
@@ -4941,13 +4947,16 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
             hrc = HC_SERVER_ERROR;
             goto out;
         }
-    } else {
+    } else if (r->method == NJT_HTTP_POST) {
         rc = njt_http_read_client_request_body(r, njt_http_hc_api_read_data);
 
         if (rc == NJT_ERROR || rc >= NJT_HTTP_SPECIAL_RESPONSE) {
             return rc;
         }
         return NJT_DONE;
+    } else {
+        hrc = HC_METHOD_NOT_ALLOW;
+        goto out;
     }
 
     //put (delete location)

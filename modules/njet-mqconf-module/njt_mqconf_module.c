@@ -190,7 +190,7 @@ njt_helper(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #if (NJT_HAVE_DLOPEN)
     void                *handle;
     njt_str_t           *value, label, file, cfile, cffile;
-    njt_helper_check_ver_fp  fp = NULL;
+    njt_helper_check_fp  fp = NULL;
     njt_helper_run_fp    run_fp = NULL;
     unsigned int         result;
     njt_helper_ctx      *helper;
@@ -272,6 +272,13 @@ njt_helper(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     helper->file.data = file.data;
     helper->file.len = file.len;
     helper->label = label;
+
+    fp = njt_dlsym(handle, "njt_helper_ignore_reload");
+    if (fp && fp()) {
+        helper->reload = 0;
+    } else {
+        helper->reload = 1;
+    }
 
     helper->start_time = 0;
     helper->start_time_bef = 0;
