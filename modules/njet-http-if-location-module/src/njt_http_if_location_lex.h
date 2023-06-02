@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
+ */
+
 #ifndef yyHEADER_H
 #define yyHEADER_H 1
 #define yyIN_HEADER 1

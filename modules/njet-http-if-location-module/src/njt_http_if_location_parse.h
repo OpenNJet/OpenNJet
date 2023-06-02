@@ -1,3 +1,7 @@
+/*
+ * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
+ */
+
 /* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison interface for Yacc-like parsers in C

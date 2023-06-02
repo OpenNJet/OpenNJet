@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
+ */
 // define base datatype used in parser
 #ifndef _NJT_HTTP_IF_LOCATION_API_H
 #define _NJT_HTTP_IF_LOCATION_API_H

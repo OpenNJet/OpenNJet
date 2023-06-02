@@ -1,3 +1,6 @@
+/*
+ * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
+ */
 #include "njt_http_if_location_lex.h"
 #include "njt_http_if_location_api.h"
 #include <string.h>
