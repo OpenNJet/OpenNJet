@@ -247,6 +247,11 @@ free_tree(loc_parse_node_t* root)
         break;
     }
 }
+void free_bison_tree(loc_parse_node_t* root){
+     if (!root) return;
+     free_tree(root);
+     free(root);
+}
 
 void
 free_ctx(loc_parse_ctx_t* ctx) {

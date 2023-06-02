@@ -5707,6 +5707,7 @@ njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf,
         ++index;
     }
     command.len = len + 1;
+    yylex_destroy();
     yy_scan_string((char *)command.data);
     root = NULL;
     r = yyparse(&root);
@@ -5717,7 +5718,7 @@ njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf,
     if(rc != NJT_OK || loc_exp_dyn_parse_tree == NULL) {
 	return NJT_CONF_ERROR;
     }
-    free_tree(root);
+    free_bison_tree(root);
     ctx = njt_http_core_loc_parse_tree_ctx(loc_exp_dyn_parse_tree,pclcf->pool);
     if(ctx == NULL){
 	return NJT_CONF_ERROR;

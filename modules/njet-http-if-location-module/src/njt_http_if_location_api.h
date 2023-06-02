@@ -52,8 +52,7 @@ int eval_loc_parse_tree(loc_parse_node_t * root, loc_parse_cb_ptr handler, void*
 int eval_loc_exp(loc_exp_t *exp, void* data);
 void dump_tree(loc_parse_node_t* root, int level);
 void free_tree(loc_parse_node_t* root);
-void free_ctx(loc_parse_ctx_t* ctx);
 int get_exp_counts(loc_parse_node_t *root);
-
+void free_bison_tree(loc_parse_node_t* root);
 
 #endif //  _NJT_HTTP_IF_LOCATION_API_H
