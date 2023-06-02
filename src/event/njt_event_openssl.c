@@ -5823,6 +5823,85 @@ njt_ssl_parse_time(
 }
 
 
+#if (NJT_HTTP_MULTICERT || NJT_STREAM_MULTICERT)
+
+char *
+njt_ssl_certificate_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+    char  *p = conf;
+
+    njt_str_t    *value, *s;
+    njt_array_t  **a;
+#if (NJT_HAVE_NTLS)
+    u_char       *data;
+#endif
+
+    a = (njt_array_t **) (p + cmd->offset);
+
+    if (*a == NJT_CONF_UNSET_PTR) {
+
+        *a = njt_array_create(cf->pool, 4, sizeof(njt_str_t));
+        if (*a == NULL) {
+            return NJT_CONF_ERROR;
+        }
+    }
+
+    s = njt_array_push(*a);
+    if (s == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    value = cf->args->elts;
+
+    if (cf->args->nelts == 2) {
+        *s = value[1];
+        return NJT_CONF_OK;
+    }
+
+#if (NJT_HAVE_NTLS)
+
+    /* prefix certificate paths with 'sign:' and 'enc:', null-terminate */
+
+    s->len = sizeof("sign:") - 1 + value[1].len;
+
+    s->data = njt_pcalloc(cf->pool, s->len + 1);
+    if (s->data == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    data = njt_cpymem(s->data, "sign:", sizeof("sign:") - 1);
+    njt_memcpy(data, value[1].data, value[1].len);
+
+    s = njt_array_push(*a);
+    if (s == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    s->len = sizeof("enc:") - 1 + value[2].len;
+
+    s->data = njt_pcalloc(cf->pool, s->len + 1);
+    if (s->data == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    data = njt_cpymem(s->data, "enc:", sizeof("enc:") - 1);
+    njt_memcpy(data, value[2].data, value[2].len);
+
+    return NJT_CONF_OK;
+
+#else
+
+    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                       "NTLS support is not enabled, dual certs not supported");
+
+    return NJT_CONF_ERROR;
+
+#endif
+}
+
+#endif
+
+
 static void *
 njt_openssl_create_conf(njt_cycle_t *cycle)
 {

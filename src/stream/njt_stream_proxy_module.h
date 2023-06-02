@@ -41,11 +41,26 @@ typedef struct {
     njt_uint_t                       ssl_verify_depth;
     njt_str_t                        ssl_trusted_certificate;
     njt_str_t                        ssl_crl;
+
+#if (NJT_STREAM_MULTICERT)
+    njt_array_t                     *ssl_certificates;
+    njt_array_t                     *ssl_certificate_keys;
+
+    njt_array_t                     *ssl_certificate_values;
+    njt_array_t                     *ssl_certificate_key_values;
+#else
     njt_stream_complex_value_t      *ssl_certificate;
     njt_stream_complex_value_t      *ssl_certificate_key;
+#endif
+
     njt_array_t                     *ssl_passwords;
     njt_array_t                     *ssl_conf_commands;
     njt_ssl_t                       *ssl;
+
+#if (NJT_HAVE_NTLS)
+    njt_flag_t                       ssl_ntls;
+#endif
+
 #endif
 
     njt_stream_upstream_srv_conf_t  *upstream;
