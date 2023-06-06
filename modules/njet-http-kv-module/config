@@ -7,5 +7,6 @@ njt_module_deps=" \
 njt_module_srcs=" \
   $njt_addon_dir/src/njt_http_kv_module.c \
 "
+have=NJT_HTTP_KV_MODULE . auto/have
 CORE_INCS="$CORE_INCS $njt_addon_dir/src"
 . auto/module
