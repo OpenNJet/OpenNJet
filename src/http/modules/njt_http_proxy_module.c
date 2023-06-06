@@ -634,14 +634,14 @@ static njt_command_t  njt_http_proxy_commands[] = {
 
     { njt_string("proxy_ssl_certificate"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE12,
-      njt_http_ssl_certificate_slot,
+      njt_ssl_certificate_slot,
       NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(njt_http_proxy_loc_conf_t, upstream.ssl_certificates),
       NULL },
 
     { njt_string("proxy_ssl_certificate_key"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE12,
-      njt_http_ssl_certificate_slot,
+      njt_ssl_certificate_slot,
       NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(njt_http_proxy_loc_conf_t, upstream.ssl_certificate_keys),
       NULL },
