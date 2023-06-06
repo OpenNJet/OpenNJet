@@ -40,6 +40,7 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-health-check-hel
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-doc-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-ssl-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-ssl-api-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-limit-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./src/ext/lua/http"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./src/ext/lua/stream"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"

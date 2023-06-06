@@ -562,10 +562,12 @@ njt_int_t njt_json_2_structure(njt_str_t *json,
     // njt_json_alc_pool_init(&alc, json_buf, pjson_manager->total_size);
 
     // doc = njt_json_read_opts((char *)json->data, json->len, 0, &alc, NULL);
-    doc = njt_json_read_opts((char *)json->data, json->len, 0, NULL, NULL);
+    njt_json_read_err err;
+    doc = njt_json_read_opts((char *)json->data, json->len, 0, NULL, &err);
     if (doc == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                 "njt_json_2_structure get doc fail");
+                 "njt_json_2_structure get doc fail, code:%d  msg:%s pos:%d",
+                 err.code, err.msg, err.pos);
         return NJT_ERROR;
     }
 
