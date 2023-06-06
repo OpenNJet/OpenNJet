@@ -43,3 +43,9 @@ https://mosquitto.org/
 Copyright (c) 2020 Roger Light <roger@atchoo.org>
 Dual licensed under the Eclipse Public License 2.0 and the Eclipse Distribution License 1.0 
 源代码修改之后引入
+
+Keepalived
+https://keepalived.org/
+Copyright (C) 2001-2017 Alexandre Cassen, <acassen@gmail.com>
+GNU GPLv2
+源代码修改之后引入

@@ -1,0 +1,188 @@
+keepalived uses kernel features that have been introduced over time,
+but in order to still allow keepalived to be built and run on older
+kernel versions it has many checks of what kernel features are available.
+
+Set out below in chronological order are the features that have been added
+to Linux that keepalived makes use of if they are available.
+
+If in doubt about features, grep the source tree searching for "Linux". The
+source (including configure.ac) attempts to document which kernel version
+introduced features that are used conditionally.
+
+At the end of this file is a list of kernel configure options that affect
+functionality that keepalived uses.
+
+=============================================================================
+
+The oldest kernel version currently supported is Linux 3.10
+-----------------------------------------------------------
+
+dnl ----[Check have IPV4_DEVCONF defines - since Linux 3.11]----
+
+./keepalived/check/check_parser.c:#ifdef IP_VS_SVC_F_SCHED1		/* From Linux 3.11 */
+
+Support for open(..., O_TMPFILE,...) added	-- Linux 3.11	/* Backported into RHEL7 linux-3.10 somewhere between 3.10.0-229 and 3.10.0-1160 */
+
+dnl --RTAX_QUICKACK		dnl -- Linux 3.11
+dnl --FRA_SUPPRESS_PREFIXLEN	dnl -- Linux 3.12
+dnl --FRA_SUPPRESS_IFGROUP	dnl -- Linux 3.12
+
+./keepalived/include/global_data.h:	bool				namespace_with_ipsets;	/* override for namespaces with ipsets on Linux < 3.13 */
+
+./keepalived/vrrp/vrrp_iptables_calls.c:#if defined IP_SET_OP_GET_FNAME		/* Since Linux 3.13 */
+
+./keepalived/vrrp/vrrp_ipset.c:	 * than Linux 3.13, since ipsets didn't understand namespaces prior to that. */
+
+dnl - Introduced in Linux 3.14
+AC_CHECK_DECLS([IFA_FLAGS], [], [], [[#include <linux/if_addr.h>]])
+
+./keepalived/vrrp/vrrp_ipaddress.c:#ifdef IFA_F_MANAGETEMPADDR		/* Linux 3.14 */
+./keepalived/vrrp/vrrp_ipaddress.c:#ifdef IFA_F_NOPREFIXROUTE		/* Linux 3.14 */
+
+./keepalived/vrrp/vrrp_ipaddress.c:#ifdef IFA_F_MANAGETEMPADDR		/* Linux 3.14 */
+./keepalived/vrrp/vrrp_ipaddress.c:#ifdef IFA_F_NOPREFIXROUTE		/* Linux 3.14 */
+
+dnl ----[ Checks for kernel IFLA_INET6_ADDR_GEN_MODE support ]----
+  # Introduced in Linux 3.17
+
+memfd_create - introduced in Linux 3.17 and glibc 2.27		/* Backported into RHEL7 linux-3.10 somewhere between 3.10.0-229 and 3.10.0-1160 */
+
+dnl -- Since Linux 3.18
+AC_CHECK_DECLS([IPVS_DEST_ATTR_ADDR_FAMILY], [add_system_opt([IPVS_DEST_ATTR_ADDR_FAMILY])], [], [#include <linux/ip_vs.h>])
+
+dnl -- xt_set_info_match_v4 declared since Linux 3.19
+
+./lib/rttables.c:#ifdef RTPROT_BABEL		/* Since Linux 3.19 */
+
+dnl --RTAX_CC_ALGO		dnl -- Linux 4.0
+
+./keepalived/vrrp/vrrp_ipaddress.c:#ifdef IFA_F_MCAUTOJOIN			/* Linux 4.1 */
+
+dnl -- Since Linux 4.1
+IPVS_SVC_ATTR_STATS64,
+IPVS_DEST_ATTR_STATS64], [],
+
+dnl --RTA_VIA			dnl -- Linux 4.1
+dnl --RTA_NEWDST		dnl -- Linux 4.1
+dnl --RTA_PREF			dnl -- Linux 4.1
+
+./keepalived/include/ip_vs.h:/* Prior to Linux 4.2 have to include linux/in.h and linux/in6.h
+
+./keepalived/include/vrrp_iproute.h:#if HAVE_DECL_RTA_ENCAP	/* Since Linux 4.3 */
+
+dnl -- Since Linux 4.3
+AC_CHECK_DECLS([
+IPVS_DAEMON_ATTR_SYNC_MAXLEN,
+IPVS_DAEMON_ATTR_MCAST_GROUP,
+IPVS_DAEMON_ATTR_MCAST_GROUP6,
+IPVS_DAEMON_ATTR_MCAST_PORT,
+IPVS_DAEMON_ATTR_MCAST_TTL], [],
+
+dnl -- Since Linux 4.3
+AC_DEFINE([_HAVE_IPVS_SYNCD_ATTRIBUTES_], [ 1 ], [Define to 1 if have IPVS syncd attributes])
+
+dnl --FRA_TUN_ID		dnl -- Linux 4.3
+dnl --RTA_ENCAP			dnl -- Linux 4.3
+
+dnl ----[ Checks for kernel IFLA_VRF_... support ]----
+  # Introduced in Linux 4.3
+
+MCL_ONFAULT			-- Linux 4.4
+dnl --RTEXT_FILTER_SKIP_STATS	dnl -- Linux 4.4
+dnl --RTA_EXPIRES		dnl -- Linux 4.5
+
+./keepalived/vrrp/vrrp_iptables.c:/* Linux 4.5 introduced a namespace collision when including
+./keepalived/vrrp/vrrp_iptables_calls.c:/* Linux 4.5 introduced a namespace collision when including
+
+# Linux 4.5 to 4.5.4 has <libiptc/libiptc.h> indirectly including <net/if.h>
+# and <linux/if.h> which causes a namespace collision.
+
+dnl --FRA_L3MDEV		dnl -- Linux 4.8
+
+dnl --IPVLAN_MODE_L3S		dnl -- Linux 4.9
+
+dnl --FRA_UID_RANGE		dnl -- Linux 4.10
+
+/* CORENAME_MAX_SIZE in kernel source include/linux/binfmts.h defines
+ * the maximum string length, * see core_pattern[CORENAME_MAX_SIZE] in
+ * fs/coredump.c. Currently (Linux 4.10) defines it to be 128, but the
+ * definition is not exposed to user-space. */
+
+dnl --RTA_TTL_PROPAGATE		dnl -- Linux 4.12
+IFLA_IPVLAN_FLAGS, IPVLAN_MODE_PRIVATE, IPVLAN_MODE_VEPA - Linux 4.15
+dnl --RTAX_FASTOPEN_NO_COOKIE	dnl -- Linux 4.15
+dnl --FRA_PROTOCOL		dnl -- Linux 4.17
+dnl --FRA_IP_PROTO		dnl -- Linux 4.17
+dnl --FRA_SPORT_RANGE		dnl -- Linux 4.17
+dnl --FRA_DPORT_RANGE		dnl -- Linux 4.17
+
+./lib/rbtree.c:/* This is updated to Linux v4.18.10 lib/rbtree.c
+
+IPV6_MULTICAST_ALL since Linux v4.20
+
+dnl -- Linux/errqueue.h need sys/time.h before Linux < v5.1
+
+dnl -- Since Linux 5.1
+NFT_META_OIFKIND
+
+dnl -- Since Linux 5.2
+IPVS_DEST_ATTR_TUN_TYPE
+
+dnl -- Since Linux 5.3
+IP_VS_TUNNEL_ENCAP_FLAG_NOCSUM
+IP_VS_CONN_F_TUNNEL_TYPE_GRE
+
+??? dnl -- RedHat backported ENCAP_IP and ENCAP_IP6 without MPLS and ILA
+
+dnl -- Since Linux 5.6 and libnftnl 1.1.6, nft 0.9.4
+NFTNL_SET_DESC_CONCAT
+NFTNL_SET_ELEM_KEY_END
+
+dnl -- Since Linux 5.7
+NFT_SET_CONCAT
+NFTNL_SET_EXPR also libnftnl 1.1.7, nft 0.9.5
+
+dnl ----[ Is HTTP_GET regex checking wanted? ]----
+$PKG_CONFIG --exists libpcre2-8
+
+/* Defined in kernel source file include/linux/sched.h but
+ * not currently (Linux v5.10.12) exposed to userspace.
+ * Also not currently exposed by glibc (v2.32). */
+#define TASK_COMM_LEN 16
+
+=============================================================================
+
+Package versions
+================
+
+dnl -- RLIMIT_RTTIME - not defined in musl libc until v1.2.0
+
+libipset v6.38	Used by Debian Buster, EOL ~2022
+	 v6.29	Used by Ubuntu 16.04, EOL 04/21
+
+=============================================================================
+
+Kernel configuration requirements
+---------------------------------
+The following list is probably incomplete, and will be updated as other
+options become known.
+
+BPF
+EPOLL
+SIGNALFD
+TIMERFD
+SYSCTL
+PROC_FS
+INET
+IP_MULTICAST
+IPV6
+IP_VS (unless --disable-lvs is specified)
+  IP_VS suboptions to match the real_server/virtual_server configuration
+NETFILTER_XTABLES - if strict_mode or no_accept.
+  NETFILTER_XT options and IP_SET
+IP_ADVANCED_ROUTER and various associated options if static/dynamic routes specified
+FIB_RULES if static or dynamic rules are specified
+NFTABLES
+CN_PROC for vrrp track_process
+MACVLAN
+IPVLAN
