@@ -178,7 +178,7 @@ OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，随着 NGINX �
   </td>
  </tr>
  <tr style="mso-yfti-irow:12;height:34.0pt">
-  <td width="203" nowrap="" rowspan="7" style="width:152.15pt;border:solid windowtext 1.0pt;
+  <td width="203" nowrap="" rowspan="8" style="width:152.15pt;border:solid windowtext 1.0pt;
   border-top:none;mso-border-left-alt:solid windowtext .5pt;mso-border-bottom-alt:
   solid windowtext .5pt;mso-border-right-alt:solid windowtext .5pt;padding:
   0cm 5.4pt 0cm 5.4pt;height:34.0pt">
@@ -245,6 +245,16 @@ OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，随着 NGINX �
   <p class="MsoNormal" align="left" style="text-align:left;mso-pagination:widow-orphan"><span style="font-size:12.0pt;mso-ascii-font-family:DengXian;mso-fareast-font-family:
   DengXian;mso-hansi-font-family:DengXian;mso-bidi-font-family:宋体;color:black;
   mso-font-kerning:0pt">支持<span lang="EN-US">https</span>健康检查<span lang="EN-US"><o:p></o:p></span></span></p>
+  </td>
+ </tr>
+ <tr style="mso-yfti-irow:17;height:17.0pt">
+  <td width="322" style="width:241.85pt;border-top:none;border-left:none;
+  border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  mso-border-bottom-alt:solid windowtext .5pt;mso-border-right-alt:solid windowtext .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:17.0pt">
+  <p class="MsoNormal" align="left" style="text-align:left;mso-pagination:widow-orphan"><span style="font-size:12.0pt;mso-ascii-font-family:DengXian;mso-fareast-font-family:
+  DengXian;mso-hansi-font-family:DengXian;mso-bidi-font-family:宋体;color:black;
+  mso-font-kerning:0pt">支持强制健康检查，以及持久化功能<span lang="EN-US"><o:p></o:p></span></span></p>
   </td>
  </tr>
  <tr style="mso-yfti-irow:18;height:17.0pt">
@@ -825,6 +835,24 @@ OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，随着 NGINX �
   mso-font-kerning:0pt">支持<span class="SpellE"><span lang="EN-US">lear</span></span><span lang="EN-US"> </span>会话保持 <span lang="EN-US"><o:p></o:p></span></span></p>
   </td>
  </tr>
+ <tr style="mso-yfti-irow:60;height:17.0pt">
+  <td width="203" nowrap="" rowspan="4" style="width:152.15pt;border:solid windowtext 1.0pt;
+  border-top:none;mso-border-left-alt:solid windowtext .5pt;mso-border-bottom-alt:
+  solid windowtext .5pt;mso-border-right-alt:solid windowtext .5pt;padding:
+  0cm 5.4pt 0cm 5.4pt;height:17.0pt">
+  <p class="MsoNormal" align="center" style="text-align:center;mso-pagination:widow-orphan"><span style="font-size:12.0pt;mso-ascii-font-family:DengXian;mso-fareast-font-family:
+  DengXian;mso-hansi-font-family:DengXian;mso-bidi-font-family:宋体;color:black;
+  mso-font-kerning:0pt">负载均衡<span lang="EN-US"><o:p></o:p></span></span></p>
+  </td>
+  <td width="322" style="width:241.85pt;border-top:none;border-left:none;
+  border-bottom:solid windowtext 1.0pt;border-right:solid windowtext 1.0pt;
+  mso-border-bottom-alt:solid windowtext .5pt;mso-border-right-alt:solid windowtext .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt;height:17.0pt">
+  <p class="MsoNormal" align="left" style="text-align:left;mso-pagination:widow-orphan"><span style="font-size:12.0pt;mso-ascii-font-family:DengXian;mso-fareast-font-family:
+  DengXian;mso-hansi-font-family:DengXian;mso-bidi-font-family:宋体;color:black;
+  mso-font-kerning:0pt"><span lang="EN-US">slow_start </span>慢启动功能,针对轮询算法，实现<span lang="EN-US">server</span>新增或故障转正常后，业务的流量在指定时间，缓慢增长<span lang="EN-US"><o:p></o:p></span></span></p>
+  </td>
+ </tr>
 </tbody></table>
 
 
@@ -870,6 +898,9 @@ https://gitee.com/njet-rd/njet
 [OpenNJet快速上手](OpenNJet快速上手.pdf)  
 [OpenNJet遗留问题](OpenNJet遗留问题.pdf)
 
+
+# 📝**其他资料**
+[云原生应用引擎技术发展白皮书](云原生应用引擎技术发展白皮书.pdf) 
 
 
 # FAQ

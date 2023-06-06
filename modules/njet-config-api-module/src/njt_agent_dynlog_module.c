@@ -305,9 +305,9 @@ njt_dynlog_update_access_log(njt_pool_t *pool, njt_http_dyn_access_api_main_t *a
 
     daas = api_data->servers.elts;
     for(i = 0; i < api_data->servers.nelts; ++i){
-        if( daas[i].listens.nelts < 1 && daas[i].server_names.nelts < 1 ){
+        if( daas[i].listens.nelts < 1 || daas[i].server_names.nelts < 1 ){
             // listens 与server_names都为空
-            end = njt_snprintf(data_buf,sizeof(data_buf) - 1," server parameters error, listens or serverNames is empty,at position %u",i);
+            end = njt_snprintf(data_buf,sizeof(data_buf) - 1," server parameters error, listens or serverNames is empty,at position %ui",i);
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             continue;
@@ -594,10 +594,10 @@ static u_char* njt_agent_dynlog_rpc_handler(njt_str_t *topic, njt_str_t *request
 }
 
 static int  njt_agent_dynlog_change_handler_internal(njt_str_t *key, njt_str_t *value, void *data,njt_str_t *out_msg){
-    njt_int_t rc;
+    njt_int_t rc = NJT_OK;
     njt_http_dyn_access_api_main_t *api_data = NULL;
     njt_pool_t *pool = NULL;
-    njt_rpc_result_t * rpc_result;
+    njt_rpc_result_t * rpc_result = NULL;
     if(value->len < 2 ){
         return NJT_OK;
     }
@@ -610,6 +610,7 @@ static int  njt_agent_dynlog_change_handler_internal(njt_str_t *key, njt_str_t *
     if(api_data == NULL){
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                        "could not alloc buffer in function %s", __func__);
+        rc = NJT_ERROR;
         goto end;
     }
     rpc_result = njt_rpc_result_create();

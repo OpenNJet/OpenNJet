@@ -639,7 +639,7 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
     if (no_resolve == 0 && njt_parse_url(cf->pool, &u) != NJT_OK) {
         if (u.err && !no_resolve) {
             njt_conf_log_error(NJT_LOG_ERR, cf, 0,
-                               "zyg1 %s in upstream \"%V\"", u.err, &u.url);
+                               " %s in upstream \"%V\"", u.err, &u.url);
             return NJT_CONF_ERROR;
         }
 
@@ -656,7 +656,7 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
         if (njt_parse_url(cf->pool, &u) != NJT_OK) {
             if (u.err && !no_resolve) {
                 njt_conf_log_error(NJT_LOG_ERR, cf, 0,
-                                   "zyg 2 %s in upstream \"%V\"", u.err, &u.url);
+                                   " %s in upstream \"%V\"", u.err, &u.url);
             }
             return NJT_CONF_ERROR;
         }
@@ -1997,7 +1997,7 @@ static char *njt_http_upstream_check(njt_conf_t *cf, njt_command_t *cmd,
 		    continue;
 		}
 		 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                       "\"%V\" directive is not allowed here", &value[i]);
+                                   "invalid parameter: %V", &value[i]);
 		return NJT_CONF_ERROR;
 	}
 	if(uscf->persistent == 1 && uscf->mandatory != 1) {

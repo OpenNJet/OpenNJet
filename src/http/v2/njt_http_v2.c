@@ -3401,7 +3401,7 @@ njt_http_v2_get_closed_node(njt_http_v2_connection_t *h2c)
     }
 
     parent = node->parent;
-
+    weight = (weight != 0?weight:1); //by zyg
     for (q = njt_queue_head(&node->children);
          q != njt_queue_sentinel(&node->children);
          q = njt_queue_next(q))

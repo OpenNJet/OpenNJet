@@ -544,13 +544,14 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t *pool, njt_http_dy
     for (i = 0; i < api_data->servers.nelts; ++i) {
         p_port = (njt_str_t *)daas[i].listens.elts;
         p_sname = (njt_str_t *)daas[i].server_names.elts;
-        if (daas[i].listens.nelts < 1 && daas[i].server_names.nelts < 1) {
-            // listens 与server_names都为空
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " server parameters error, listens or serverNames is empty,at position %u", i);
+        if (daas[i].listens.nelts < 1 || daas[i].server_names.nelts < 1) {
+            // listens or server_names is empty
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " server parameters error, listens or serverNames is empty,at position %d", i);
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             continue;
         }
+
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "servers[%V,%V]", (njt_str_t *)daas[i].listens.elts, (njt_str_t *)daas[i].server_names.elts);
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
@@ -567,6 +568,7 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t *pool, njt_http_dy
             }
             continue;
         }
+
         njt_http_conf_ctx_t ctx = *cscf->ctx;
         clcf = njt_http_get_module_loc_conf(cscf->ctx, njt_http_core_module);
         rc = njt_dyn_bwlist_update_locs(&daas[i].locs, clcf->old_locations, &ctx, rpc_result);
@@ -601,7 +603,6 @@ static u_char *njt_dyn_bwlist_rpc_get_handler(njt_str_t *topic, njt_str_t *reque
         goto out;
     }
 
-    njt_log_error(NJT_LOG_INFO, pool->log, 0, "send json : %V", &msg);
     njt_memcpy(buf, msg.data, msg.len);
     *len = msg.len;
 
@@ -612,8 +613,6 @@ out:
 
     return buf;
 }
-
-
 
 static int njt_dyn_bwlist_change_handler_internal(njt_str_t *key, njt_str_t *value, void *data, njt_str_t *out_msg)
 {
@@ -632,6 +631,7 @@ static int njt_dyn_bwlist_change_handler_internal(njt_str_t *key, njt_str_t *val
     rpc_result = njt_rpc_result_create();
     if (!rpc_result) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't create rpc result");
+        rc = NJT_ERROR;
         goto end;
     }
     njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_SUCCESS);
@@ -639,6 +639,7 @@ static int njt_dyn_bwlist_change_handler_internal(njt_str_t *key, njt_str_t *val
     if (pool == NULL) {
         njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_dyn_bwlist_change_handler create pool error");
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
+        rc = NJT_ERROR;
         goto rpc_msg;
     }
 
@@ -647,6 +648,7 @@ static int njt_dyn_bwlist_change_handler_internal(njt_str_t *key, njt_str_t *val
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, pool->log, 0,
             "could not alloc buffer in function %s", __func__);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
+        rc = NJT_ERROR;
         goto rpc_msg;
     }
 
@@ -670,9 +672,8 @@ end:
     if (rpc_result) {
         njt_rpc_result_destroy(rpc_result);
     }
+    
     return rc;
-
-    return NJT_OK;
 }
 
 static int njt_dyn_bwlist_change_handler(njt_str_t *key, njt_str_t *value, void *data)
@@ -691,8 +692,11 @@ static u_char *njt_dyn_bwlist_rpc_put_handler(njt_str_t *topic, njt_str_t *reque
 
 static njt_int_t njt_http_dyn_bwlist_module_init_process(njt_cycle_t *cycle)
 {
-    njt_str_t bwlist_rpc_key = njt_string("http_dyn_bwlist");
+    if (njt_process != NJT_PROCESS_WORKER) {
+        return NJT_OK;
+    }
 
+    njt_str_t bwlist_rpc_key = njt_string("http_dyn_bwlist");
     njt_reg_kv_msg_handler(&bwlist_rpc_key, njt_dyn_bwlist_change_handler, njt_dyn_bwlist_rpc_put_handler, njt_dyn_bwlist_rpc_get_handler, NULL);
 
     return NJT_OK;

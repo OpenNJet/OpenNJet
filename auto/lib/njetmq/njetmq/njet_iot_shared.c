@@ -311,6 +311,10 @@ void client_config_cleanup(struct mosq_config *cfg)
 	{
 		fclose(cfg->log_fptr);
 	}
+	if (cfg->kv_store) {
+		free(cfg->kv_store);
+	}
+	free(cfg);
 }
 
 int client_config_load(struct mosq_config *cfg, int pub_or_sub, const char *cfg_file)

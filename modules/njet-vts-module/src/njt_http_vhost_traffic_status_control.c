@@ -94,6 +94,11 @@ njt_http_vhost_traffic_status_node_upstream_lookup(
             continue;
         }
 
+        /* to avoid warning a dereference of a null pointer */
+        if (uscf->servers == NULL) {
+            continue;
+        }
+
         us = uscf->servers->elts;
 
         if (uscf->host.len == usg.len) {

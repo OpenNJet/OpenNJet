@@ -142,9 +142,13 @@ void my_message_callback(struct mosquitto *mosq, void *obj, const struct mosquit
 			free(cor_id);
 		}
 		mosquitto_property_read_string(properties, MQTT_PROP_RESPONSE_TOPIC, &resp_topic, false);
+                if (resp_topic == NULL) 
+                {
+                  log__printf(ctx->mosq, MOSQ_LOG_ERR, "received a message with properties but can't get resp topic from it");
+                  return; 
+                }
 
-		if (resp_topic &&
-			strlen(resp_topic) == strlen(message->topic) &&
+		if (strlen(resp_topic) == strlen(message->topic) &&
 			memcmp(resp_topic, message->topic, strlen(message->topic)) == 0)
 		{
 			if (ctx->resp_callback)
@@ -336,12 +340,11 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 		njet_iot_client_instances++;
 	}
 	ctx = malloc(sizeof(struct evt_ctx_t));
+	if (ctx==NULL) return NULL;
 	memset(ctx, 0, sizeof(struct evt_ctx_t));
 	ctx->data = out_data;
-	if (resp_pt != NULL)
-		ctx->resp_callback = resp_pt;
-	if (msg_callback != NULL)
-		ctx->msg_callback = msg_callback;
+        ctx->resp_callback = resp_pt;
+	ctx->msg_callback = msg_callback;
 
 	ret = mdb_env_create(&ctx->kv_env);
 	if (ret != 0)
@@ -349,6 +352,10 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 	mdb_env_set_mapsize(ctx->kv_env, 1024 * 1024 * 4);
 
 	cfg = malloc(sizeof(struct mosq_config));
+	if (cfg==NULL) {
+		free(ctx);
+		return NULL;
+	}
 	memset(cfg, 0, sizeof(*cfg));
 
 	if (client_id)
@@ -365,15 +372,14 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 		if (ret == -1)
 		{
 			fprintf(stderr, "can't create tmp file \"%s\" e\n", nameBuff);
-			return NULL;
+			goto INIT_ERR;
 		}
 		cfg_file = nameBuff;
 	}
 	ret = client_config_load(cfg, CLIENT_SUB, cfg_file);
 	unlink(nameBuff);
-	// todo: free cfg on error
 	if (ret != MOSQ_ERR_SUCCESS)
-		return NULL;
+		goto INIT_ERR;
 	ctx->cfg = cfg;
 	if (cfg->kv_store)
 	{
@@ -381,18 +387,18 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 		if (ret != 0)
 		{
 			fprintf(stderr, "mdb directory \"%s\" open error, check config file\n", cfg->kv_store);
-			return NULL;
+			goto INIT_ERR;
 		}
 	}
 
 	if (client_id_generate(cfg))
 	{
-		return NULL;
+		goto INIT_ERR;
 	}
 	ctx->mosq = mosquitto_new(cfg->id, false, ctx);
 	if (ctx->mosq == NULL)
 	{
-		return NULL;
+		goto INIT_ERR;
 	}
 	mosquitto_log_callback_set(ctx->mosq, my_log_callback);
 
@@ -403,9 +409,13 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 
 	if (client_opts_set(ctx->mosq, ctx->cfg))
 	{
-		return NULL;
+		goto INIT_ERR;
 	}
 	return ctx;
+INIT_ERR:
+	free(ctx);
+	free(cfg);
+        return NULL;
 };
 int njet_iot_client_connect(int retries, int interval, struct evt_ctx_t *ctx)
 {
@@ -453,6 +463,7 @@ void njet_iot_client_exit(struct evt_ctx_t *ctx)
 	if (njet_iot_client_instances <= 0)
 		mosquitto_lib_cleanup();
 	client_config_cleanup(ctx->cfg);
+	free(ctx);
 };
 int njet_iot_client_socket(struct evt_ctx_t *ctx)
 {
@@ -550,3 +561,4 @@ int njet_iot_client_add_topic(struct evt_ctx_t *ctx, char *topic)
 	cfg_add_topic(ctx->cfg, CLIENT_SUB, topic, "-t");
 	return 0;
 }
+

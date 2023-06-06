@@ -143,11 +143,17 @@ njt_int_t njt_json_parse_data(njt_pool_t *pool,njt_str_t *str,njt_json_define_t 
 
     rc = njt_json_2_structure(str, &json_body,pool);
     if (rc != NJT_OK) {
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "json to structure transfer error !!");
+        njt_log_error(NJT_LOG_ERR, pool->log, 0, "json to structure transfer error !!");
         return rc;
     }
 
     items = json_body.json_val;
+    
+    //only support top level is object
+    if(items->type != NJT_JSON_OBJ){
+        njt_log_error(NJT_LOG_ERR, pool->log, 0, " json str top level only support object");
+        return NJT_ERROR;
+    }
 
     if(items->type == NJT_JSON_OBJ){
         rc = njt_json_parse_json_element(pool,items,&obj_def,data);

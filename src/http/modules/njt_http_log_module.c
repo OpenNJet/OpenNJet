@@ -245,7 +245,7 @@ njt_module_t  njt_http_log_module = {
 
 static njt_str_t  njt_http_access_log = njt_string(NJT_HTTP_LOG_PATH);
 
-
+static njt_str_t njt_http_escape_default = njt_string("default");
 static njt_str_t  njt_http_combined_fmt =
     njt_string("$remote_addr - $remote_user [$time_local] "
                "\"$request\" $status $body_bytes_sent "
@@ -432,12 +432,16 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
     time_t               now;
     ssize_t              n;
     njt_err_t            err;
+    njt_str_t              def = njt_string("null file");
 #if (NJT_ZLIB)
     njt_http_log_buf_t  *buffer;
 #endif
 
     if (log->script == NULL) {
-        name = log->file->name.data;
+        if(log->file == NULL) {
+		return;
+        }
+	name = log->file->name.data;
 
 #if (NJT_ZLIB)
         buffer = log->file->data;
@@ -471,6 +475,7 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
         }
 
         if (now - log->error_log_time > 59) {
+	    name = (name != NULL ?name:def.data);
             njt_log_error(NJT_LOG_ALERT, r->connection->log, err,
                           njt_write_fd_n " to \"%s\" failed", name);
 
@@ -481,6 +486,7 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
     }
 
     if (now - log->error_log_time > 59) {
+	name = (name != NULL ?name:def.data);
         njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
                       njt_write_fd_n " to \"%s\" was incomplete: %z of %uz",
                       name, n, len);
@@ -1934,6 +1940,8 @@ njt_http_log_init(njt_conf_t *cf)
         *value = njt_http_combined_fmt;
         fmt = lmcf->formats.elts;
         fmt->format = njt_http_combined_fmt;
+        njt_str_copy_pool(cf->pool,fmt->escape, njt_http_escape_default,return NJT_ERROR);
+        fmt->escape.len = njt_http_escape_default.len;
         fmt->dynamic = 0;
         if (njt_http_log_compile_format(cf, NULL, fmt->ops, &a, 0)
             != NJT_CONF_OK)
