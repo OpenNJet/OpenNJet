@@ -289,7 +289,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     err_ctx->code = rc;
     njt_http_set_ctx(r, err_ctx, njt_ctrl_config_api_module);
 
-    njt_str_t bad_req = njt_string("{\"code\":400,\"msg\":\"read body error\"}");
+    njt_str_t bad_req = njt_string("{\"code\":400,\"msg\":\"Request body should be a valid JSON object and less than 5MB\"}");
     rc= NJT_HTTP_BAD_REQUEST;
     njt_ctrl_dynlog_request_output(r,NJT_HTTP_BAD_REQUEST,&bad_req);
 
