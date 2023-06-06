@@ -80,6 +80,8 @@ njt_signal_t  signals[] = {
 
     { SIGPIPE, "SIGPIPE, SIG_IGN", "", NULL },
 
+    { SIGCONF, "SIGCONF", "", njt_signal_handler},
+
     { 0, NULL, "", NULL }
 };
 
@@ -411,6 +413,10 @@ njt_signal_handler(int signo, siginfo_t *siginfo, void *ucontext)
 
         case SIGCHLD:
             njt_reap = 1;
+            break;
+
+        case SIGCONF:
+            njt_rtc = 1;
             break;
         }
 

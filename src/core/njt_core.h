@@ -113,4 +113,6 @@ void njt_cpuinfo(void);
 #define NJT_DISABLE_SYMLINKS_NOTOWNER   2
 #endif
 
+#define SIGCONF 37
+
 #endif /* _NJT_CORE_H_INCLUDED_ */
