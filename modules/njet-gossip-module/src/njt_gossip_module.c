@@ -1008,7 +1008,7 @@ static void njt_gossip_send_handler(njt_event_t *ev)
 		ev->timedout = 0;
 		if(gossip_udp_ctx->need_syn){
 			gossip_udp_ctx->need_syn = false;
-			njt_log_error(NJT_LOG_INFO, ctx->log, 0, " has no other node online, so not need syn");
+			// njt_log_error(NJT_LOG_INFO, ctx->log, 0, " has no other node online, so not need syn");
 			njt_gossip_set_syn_state(false);
 		}
 
