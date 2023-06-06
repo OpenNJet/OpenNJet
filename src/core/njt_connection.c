@@ -1157,7 +1157,7 @@ njt_get_connection(njt_socket_t s, njt_log_t *log)
 
     njt_cycle->free_connections = c->data;
     njt_cycle->free_connection_n--;
-
+    njt_log_error(NJT_LOG_ALERT, log, 0, "=================get connection");
     if (njt_cycle->files && njt_cycle->files[s] == NULL) {
         njt_cycle->files[s] = c;
     }
@@ -1198,7 +1198,7 @@ njt_free_connection(njt_connection_t *c)
     c->data = njt_cycle->free_connections;
     njt_cycle->free_connections = c;
     njt_cycle->free_connection_n++;
-
+    njt_log_error(NJT_LOG_ALERT, c->log, 0, "=================free connection");
     if (njt_cycle->files && njt_cycle->files[c->fd] == c) {
         njt_cycle->files[c->fd] = NULL;
     }
