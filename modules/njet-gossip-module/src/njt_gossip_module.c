@@ -64,8 +64,8 @@ static njt_stream_module_t njt_gossip_module_ctx = {
     njt_gossip_merge_srv_conf 
 };
 
-static njt_gossip_udp_ctx_t  *gossip_udp_ctx=NULL;	
-static njt_array_t *gossip_app_handle_fac=NULL;
+static njt_gossip_udp_ctx_t  *gossip_udp_ctx = NULL;	
+static njt_array_t *gossip_app_handle_fac = NULL;
 
 /* Module definition. */
 njt_module_t  njt_gossip_module = {
@@ -576,15 +576,18 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:%d", &n_name, &n_pid, msg_type);
 			{
 				uint32_t i;
-				gossip_app_msg_handle_t *app_handle = gossip_app_handle_fac->elts;
-				for (i=0;i<gossip_app_handle_fac->nelts;i++) {
-					if ( app_handle[i].app_magic == msg_type && app_handle[i].handler)  {
-						njt_log_error(NJT_LOG_DEBUG, log, 0, "gossip_app procs %d msg", msg_type);
-						app_handle[i].handler(r,app_handle[i].data);
-						return NJT_OK;
+				if(gossip_app_handle_fac){
+					gossip_app_msg_handle_t *app_handle = gossip_app_handle_fac->elts;
+					for (i=0;i<gossip_app_handle_fac->nelts;i++) {
+						if ( app_handle[i].app_magic == msg_type && app_handle[i].handler)  {
+							njt_log_error(NJT_LOG_DEBUG, log, 0, "gossip_app procs %d msg", msg_type);
+							app_handle[i].handler(r,app_handle[i].data);
+							return NJT_OK;
+						}
 					}
 				}
 			}
+			
 		njt_log_error(NJT_LOG_WARN, log, 0, "unknonw msg:%d", msg_type);
 	}
 
@@ -1081,8 +1084,8 @@ static void   gossip_stop(njt_cycle_t *cycle)
 }
 int  njt_gossip_reg_app_handler( gossip_app_pt app_msg_handler, gossip_app_node_pt app_node_handler, uint32_t app_magic, void* data)
 {
-	if (gossip_app_handle_fac ==NULL)
-		gossip_app_handle_fac= njt_array_create(njt_cycle->pool, 4, sizeof(gossip_app_msg_handle_t));
+	if (gossip_app_handle_fac == NULL)
+		gossip_app_handle_fac = njt_array_create(njt_cycle->pool, 4, sizeof(gossip_app_msg_handle_t));
 
 	gossip_app_msg_handle_t *app_handle = njt_array_push(gossip_app_handle_fac);
 	app_handle->data=data;
