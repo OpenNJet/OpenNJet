@@ -309,8 +309,10 @@ static void njt_gossip_handler(njt_stream_session_t *s)
     c = s->connection;
     c->log->action = "gossip receive";
     c->read->handler=gossip_read_handler;
-	
+	// njt_add_timer(c->read, gossip_udp_ctx->nodeclean_timeout);
+
     gossip_read_handler(c->read);
+
 }
 static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt_msec_t uptime
 			, njt_str_t *node_name, njt_str_t *pid)
@@ -602,7 +604,15 @@ static void gossip_read_handler(njt_event_t *ev)
 	u_char 						buf[2048];
     c = ev->data;
     s = c->data;
-	
+
+	// if(ev)
+	// njt_stream_close_connection(c)
+    if (ev->timedout) {
+        njt_log_error(NJT_LOG_INFO, c->log, NJT_ETIMEDOUT, "client timed out");
+        njt_stream_finalize_session(s, NJT_STREAM_OK);
+        return;
+    }
+
 	if (s->received) {
     	njt_log_error(NJT_LOG_DEBUG, c->log,0, "preread data:%d",s->received);
 		njt_memcpy(buf, c->buffer->pos, s->received);
@@ -621,6 +631,9 @@ static void gossip_read_handler(njt_event_t *ev)
 			//todo: update nodes pool	,close connection
 		}
     }
+
+	ev->timedout = 0;
+	njt_add_timer(ev, gossip_udp_ctx->nodeclean_timeout);
 }
 //tips: why we need merge from child to parent?
 // because nginx creagte conf multi times, when parse config, 

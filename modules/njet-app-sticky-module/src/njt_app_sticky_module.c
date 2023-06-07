@@ -408,7 +408,7 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
 	}
 
 	ascf->ttl = APP_STICKY_EXPIRE_INT * 1000;
-	if(cf->args->nelts > 3){
+	if(cf->args->nelts == 3){
 		if (njt_strncmp(value[3].data, "ttl:", 4) == 0) {
 			tmp_str.data = value[3].data + 4;
 			tmp_str.len = value[3].len - 4;
@@ -420,6 +420,10 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
 			}
 
 			ascf->ttl = tmp_ttl;
+		}else {
+			njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+									" invalid key\"%V\", must be ttl", &value[3]);
+			return NJT_CONF_ERROR;
 		}
 	}
 
@@ -441,6 +445,16 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
     if (shm_zone == NULL) {
         return NJT_CONF_ERROR;
     }
+
+    if (shm_zone->data) {
+        ascf->ctx = shm_zone->data;
+
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                           "%V \"%V\" is already bound to other, please use a new zone",
+                           &cmd->name, &shm_name);
+        return NJT_CONF_ERROR;
+    }
+
 
     shm_zone->init = njt_app_sticky_init_zone;
     shm_zone->data = ascf->ctx;
@@ -691,11 +705,11 @@ static void app_sticky_sync_data( njt_app_sticky_ctx_t* ctx, njt_str_t* zone, nj
 
 		buf_size  = buf_size - (tail - head);
 		head = tail;
-		if (buf_size < 255 + 20 + APP_STICKY_MAX_ZONE + 10) {
+		if (msg_cnt ==15 || buf_size < 255 + 20 + APP_STICKY_MAX_ZONE + 10) {
 			njt_gossip_app_close_msg_buf(tail);
 			//if (msg_cnt>=10) {
 				mp_encode_array(buf, msg_cnt);
-				njt_log_error(NJT_LOG_INFO,ctx->log,0,"sync pack:%d",msg_cnt);
+				njt_log_error(NJT_LOG_INFO,ctx->log,0," large sync pack:%d",msg_cnt);
 				njt_gossip_send_app_msg_buf();
 				msg_cnt= 0;
 				head=NULL;
@@ -767,6 +781,21 @@ static int njt_app_sticky_recv_data(const char* msg, void* data)
 	const char 					*r = msg;
 	// njt_app_sticky_ctx_t 		*ctx = (njt_app_sticky_ctx_t *)data;
 	njt_app_sticky_ctx_t 		*ctx = NULL;
+	// static bool aa = false;
+	// if(!aa){
+	// njt_fd_t fd = njt_open_file("/root/bug/njet1.0/data.txt", NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE,
+    //     NJT_FILE_DEFAULT_ACCESS);
+	
+	// 	int32_t  rlen = njt_write_fd(fd, (char *)msg, strlen(msg));
+	// 	if(rlen < 0) {
+	// 		return NJT_ERROR;
+	// 	}
+
+	// if (njt_close_file(fd) == NJT_FILE_ERROR) {
+
+	// }
+	// }
+njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"=========data:%s\n", msg);
 
 	pack_cnt = mp_decode_array(&r);
 	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"%d packages received", pack_cnt);
@@ -776,12 +805,20 @@ static int njt_app_sticky_recv_data(const char* msg, void* data)
 			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"warn: invalid package , a package need include 4 elements:%d", arr_cnt);
 			return NJT_ERROR;
 		}
+		// aa = true;
 		key.data = (u_char *)mp_decode_str(&r, &len);
     	key.len=len;
+		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0," recv data index:%d key:%V",
+			i, &key);
+
 		val.data = (u_char *)mp_decode_str(&r, &len);
     	val.len=len;
+		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0," recv data index:%d val:%V",
+			i, &val);
 		zone.data = (u_char *)mp_decode_str(&r, &len);
     	zone.len=len;
+		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0," recv data index:%d zone:%V",
+			i, &zone);
 		ttl = mp_decode_uint(&r);
 
 		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0," recv data index:%d key:%V val:%V zone:%V ttl:%M",
@@ -793,6 +830,7 @@ static int njt_app_sticky_recv_data(const char* msg, void* data)
 			continue;
 		}
 
+		// aa = false;
 		njt_app_sticky_update_node(ctx, key, val, ttl);
 	}
 	return NJT_OK;
@@ -983,7 +1021,6 @@ njt_app_sticky_header_filter(njt_http_request_t *r)
 		njt_log_error(NJT_LOG_INFO,r->connection->log,0,"process header:%d", ret);
 		return ret;
 	}
-
 
 	njt_app_sticky_srv_conf_t *ascf = req_ctx->srv_conf;
 	if (ascf->is_cookie == 0) {
