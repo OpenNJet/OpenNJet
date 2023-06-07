@@ -5283,7 +5283,7 @@ static njt_int_t njt_traver_stream_upstream_item_handle(void *ctx,njt_stream_ups
 
     njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "http_upstream_item: %V,mandatory:%ud,persistent:%ud",&uscfp->host,uscfp->mandatory,uscfp->persistent);
     if(uscfp->mandatory == 1) {
-        njt_str_set(&item.hc_type,"tcp");
+        njt_str_set(&item.hc_type,"stcp");
         njt_str_set(&msg,"{\n"
                          "\"interval\": \"10s\",\n"
                          "\"jitter\": \"1s\",\n"
@@ -5292,8 +5292,8 @@ static njt_int_t njt_traver_stream_upstream_item_handle(void *ctx,njt_stream_ups
                          "\"fails\": 1,\n"
                          "\"mandatory\": true,\n"
                          "\"stream\": {\n"
-                         "\t\"send\":\"1\",\n"
-                         "\t\"expect\": \"1\"\n"
+                         "\t\"send\":\"\",\n"
+                         "\t\"expect\": \"\"\n"
                          "}\n"
                          "}");
         item.upstream_name.data = uscfp->host.data;
