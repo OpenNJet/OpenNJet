@@ -777,7 +777,7 @@ static njt_health_checker_t njt_health_checks[] = {
 
         {    
                 NJT_STREAM_MODULE,
-                SOCK_DGRAM,
+                1,
                 njt_string("sudp"),
                 0,   
                 njt_stream_health_check_send_handler,
@@ -798,18 +798,18 @@ static njt_health_checker_t njt_health_checks[] = {
                 NULL,
                 NULL
         },
-
-        {
-                NJT_STREAM_MODULE,
-                SOCK_DGRAM,
-                njt_string("udp"),
-                1,
-                njt_http_health_check_tcp_handler,
-                njt_http_health_check_tcp_handler,
-                NULL,
-                NULL,
-                NULL
-        },
+//
+//        {
+//                NJT_STREAM_MODULE,
+//                SOCK_DGRAM,
+//                njt_string("udp"),
+//                1,
+//                njt_http_health_check_tcp_handler,
+//                njt_http_health_check_tcp_handler,
+//                NULL,
+//                NULL,
+//                NULL
+//        },
         {
                 NJT_HTTP_MODULE,
                 0,
@@ -982,7 +982,7 @@ njt_stream_health_check_dummy_handler(njt_event_t *ev) {
     njt_log_debug0(NJT_LOG_DEBUG_EVENT, ev->log, 0,
                         "stream health check dummy handler");
 }
-
+static u_char* test_str=(u_char*)"nginx health check";
 static njt_int_t
 njt_stream_health_check_send_handler(njt_event_t *wev) {
     njt_connection_t                    *c;
@@ -1002,9 +1002,9 @@ njt_stream_health_check_send_handler(njt_event_t *wev) {
     hhccf = hc_peer->hhccf;
     shccc = hhccf->ctx;
     match = shccc->match;
-/*
-    if(  hc_peer->hcscf->match == NULL || hc_peer->hcscf->match->send.len == 0){
-        if(hc_peer->hcscf->protocol == 1){
+
+    if(  match == NULL || match->send.len == 0){
+        if(hhccf->protocol == 1){
             n = c->send(c,test_str,18);
             if(n<=0){
                 rc = NJT_ERROR;
@@ -1012,8 +1012,10 @@ njt_stream_health_check_send_handler(njt_event_t *wev) {
         }
         return rc;
     }
-*/
 
+
+    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                   "$$$ njt_stream_health_check_send_handler ... ");
     if (hc_peer->send_buf == NULL) {
         hc_peer->send_buf = njt_pcalloc(hc_peer->pool, sizeof(njt_buf_t));
         if (hc_peer->send_buf == NULL) {
@@ -1133,8 +1135,27 @@ static njt_int_t
 njt_stream_health_check_recv_handler(njt_event_t *rev) {
        njt_connection_t                    *c;
 
+//    njt_int_t                           rc;
+    njt_stream_health_check_peer_t        *hc_peer;
+//    u_char buf[4];
+//    njt_int_t size;
+    njt_stream_health_check_conf_ctx_t    *shccc;
+    njt_helper_health_check_conf_t        *hhccf;
+    njt_stream_match_t                    *match;
+
     c = rev->data;
-          
+    hc_peer = c->data;
+    hhccf = hc_peer->hhccf;
+    shccc = hhccf->ctx;
+    match = shccc->match;
+    if( match == NULL || match->expect.len == 0 ) {
+        return njt_http_health_check_peek_one_byte(c);
+    }
+
+    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                   "### njt_stream_health_check_recv_handler ...");
+
+
     return njt_stream_health_check_match_all(c);
 }
 
@@ -2579,6 +2600,7 @@ static void njt_stream_health_check_write_handler(njt_event_t *wev) {
     }
 
     rc = cf_ctx->checker->write_handler(wev);
+    wev->handler = njt_stream_health_check_dummy_handler;
     if (rc == NJT_ERROR) {
 
         /*log the case and update the peer status.*/
@@ -2587,10 +2609,22 @@ static void njt_stream_health_check_write_handler(njt_event_t *wev) {
         njt_stream_health_check_update_status(hc_peer, NJT_ERROR);
         return;
     } else if (rc == NJT_DONE || rc == NJT_OK) {
-        if (cf_ctx->checker->one_side) {
+        if ((cf_ctx->match == NULL || cf_ctx->match->expect.len == 0)
+            && hhccf->protocol == 0   //udp 等待接收 icmp
+                ) {
             njt_stream_health_check_update_status(hc_peer, rc);
             return;
+        }else{
+            if(!c->read->timer_set){
+                njt_event_add_timer(c->read,hhccf->timeout);
+            }
+
         }
+
+//        if (cf_ctx->checker->one_side) {
+//            njt_stream_health_check_update_status(hc_peer, rc);
+//            return;
+//        }
     } else {
         /*AGAIN*/
     }
@@ -2674,11 +2708,16 @@ static void njt_stream_health_check_read_handler(njt_event_t *rev) {
     cf_ctx = hhccf->ctx;
 
     if (rev->timedout) {
+        if(hhccf->protocol == 1 && (cf_ctx->match == NULL || cf_ctx->match->expect.len == 0)){
+            rc = NJT_OK;
+        } else {
+            rc = NJT_ERROR;
+        }
 
         /*log the case and update the peer status.*/
         njt_log_debug0(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
                        "read action for health check timeout");
-        njt_stream_health_check_update_status(hc_peer, NJT_ERROR);
+        njt_stream_health_check_update_status(hc_peer, rc);
         return;
     }
     if (hc_peer->hhccf->disable) {
@@ -3189,12 +3228,13 @@ static njt_int_t njt_http_match_block(njt_helper_hc_api_data_t *api_data, njt_he
         "expect" : "yyy"
     }
 */
+char* njt_hex2bin(njt_str_t *d, njt_str_t *s, int count);
 static njt_int_t 
 njt_stream_match_block(njt_helper_hc_api_data_t *api_data, njt_helper_health_check_conf_t *hhccf) {
     njt_stream_health_check_conf_ctx_t *shccc; 
     njt_stream_match_t                 *match;
-    njt_str_t                          *val;    
-
+    njt_str_t                          *val;
+    char *p = NULL;
     /* stream health check context */
     shccc = hhccf->ctx;
 
@@ -3208,28 +3248,63 @@ njt_stream_match_block(njt_helper_hc_api_data_t *api_data, njt_helper_health_che
 
     val = &api_data->stream.send;
     if (val->len == 0) {
-        njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "stream->send value is null");
-        return HC_BODY_ERROR;
+//        njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "stream->send value is null");
+//        return HC_BODY_ERROR;
+        njt_str_null(&match->send);
+        njt_str_null(&shccc->send);
+    } else {
+        shccc->send.data = njt_pcalloc(hhccf->pool, val->len);
+        shccc->send.len  = val->len;
+        njt_memcpy(shccc->send.data, val->data, val->len);
+
+        match->send.data = njt_pcalloc(hhccf->pool, val->len);
+        match->send.len  = val->len;
+        p = njt_hex2bin(&match->send, &shccc->send, val->len);
+        if(NULL ==p) {
+            njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "stream->send value is invalid");
+            return HC_BODY_ERROR;
+        }
+        match->send.len = p - (char *)match->send.data;
     }
 
-    match->send.data = njt_pcalloc(hhccf->pool, val->len);
-    match->send.len  = val->len;
-    
-    njt_memcpy(match->send.data, val->data, val->len);
 
     val = &api_data->stream.expect;
-    if (val->len == 0) {
-        njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "stream->expect value is null");
-        return HC_BODY_ERROR;
-    }
-        
-    match->expect.data = njt_pcalloc(hhccf->pool, val->len);
-    match->expect.len  = val->len;
-    
-    njt_memcpy(match->expect.data, val->data, val->len);
 
-    shccc->send   = match->send;
-    shccc->expect = match->expect;
+
+    if (val->len == 0) {
+//        njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "stream->send value is null");
+//        return HC_BODY_ERROR;
+        njt_str_null(&match->expect);
+        njt_str_null(&shccc->expect);
+    } else {
+        shccc->expect.data = njt_pcalloc(hhccf->pool, val->len);
+        shccc->expect.len  = val->len;
+        njt_memcpy(shccc->expect.data, val->data, val->len);
+
+        match->expect.data = njt_pcalloc(hhccf->pool, val->len);
+        match->expect.len  = val->len;
+        p = njt_hex2bin(&match->expect, &shccc->expect, val->len);
+        if(NULL ==p) {
+            njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "stream->send value is invalid");
+            return HC_BODY_ERROR;
+        }
+        match->expect.len = p - (char *)match->expect.data;
+    }
+
+
+
+//    if (val->len == 0) {
+//        njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "stream->expect value is null");
+//        return HC_BODY_ERROR;
+//    }
+//
+//    match->expect.data = njt_pcalloc(hhccf->pool, val->len);
+//    match->expect.len  = val->len;
+//
+//    njt_memcpy(match->expect.data, val->data, val->len);
+//
+//    shccc->send   = match->send;
+//    shccc->expect = match->expect;
 
     return HC_SUCCESS;
 }
@@ -3325,6 +3400,7 @@ njt_http_match_regex_value(njt_conf_t *cf, njt_str_t *regex) {
     u_char errstr[NJT_MAX_CONF_ERRSTR];
 
     njt_memzero(&rc, sizeof(njt_regex_compile_t));
+
 
     rc.pattern = *regex;
     rc.err.len = NJT_MAX_CONF_ERRSTR;
@@ -3510,7 +3586,7 @@ static njt_int_t njt_http_match(njt_helper_hc_api_data_t *api_data, njt_helper_h
     }
     if (api_data->http.body.len > 0) {
         array = njt_array_create(hhccf->pool,4, sizeof(njt_str_t));
-        njt_str_split(&api_data->http.body,array,' ');
+        njt_str_split(&hhccc->body,array,' ');
         if(array->nelts < 1 ){
             njt_log_error(NJT_LOG_ERR, hhccf->log, 0, "code array create error.");
             return NJT_ERROR;
@@ -3531,10 +3607,10 @@ static njt_int_t njt_http_match(njt_helper_hc_api_data_t *api_data, njt_helper_h
             return NJT_ERROR;
         }
         cf.pool = hhccf->pool;
-        njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "body regex %V parse error.",args+1);
+//        njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "body regex %V parse error.",args+1);
         match->body.regex = njt_http_match_regex_value(&cf, &args[1]);
         if (match->body.regex == NULL) {
-            njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "body regex %V parse error.",&args[0]);
+            njt_log_error(NJT_LOG_EMERG, hhccf->log, 0, "body regex %V parse error.",&args[1]);
             return NJT_ERROR;
         }
         match->body.value = args[1];
@@ -4003,7 +4079,7 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
 
             njt_log_debug1(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
                                "health check connect to peer of %V.", &peer->name);
-            hc_peer->peer.type = hhccf->protocol;
+            if(1==hhccf->protocol) hc_peer->peer.type = SOCK_DGRAM;
             rc = njt_event_connect_peer(&hc_peer->peer);
 
             if (rc == NJT_ERROR || rc == NJT_DECLINED || rc == NJT_BUSY) {
