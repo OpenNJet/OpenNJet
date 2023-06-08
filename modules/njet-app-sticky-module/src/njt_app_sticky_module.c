@@ -408,7 +408,7 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
 	}
 
 	ascf->ttl = APP_STICKY_EXPIRE_INT * 1000;
-	if(cf->args->nelts == 3){
+	if(cf->args->nelts == 4){
 		if (njt_strncmp(value[3].data, "ttl:", 4) == 0) {
 			tmp_str.data = value[3].data + 4;
 			tmp_str.len = value[3].len - 4;
@@ -779,23 +779,7 @@ static int njt_app_sticky_recv_data(const char* msg, void* data)
 	uint32_t 					pack_cnt, arr_cnt, i, len;
 	njt_msec_t					ttl;
 	const char 					*r = msg;
-	// njt_app_sticky_ctx_t 		*ctx = (njt_app_sticky_ctx_t *)data;
 	njt_app_sticky_ctx_t 		*ctx = NULL;
-	// static bool aa = false;
-	// if(!aa){
-	// njt_fd_t fd = njt_open_file("/root/bug/njet1.0/data.txt", NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE,
-    //     NJT_FILE_DEFAULT_ACCESS);
-	
-	// 	int32_t  rlen = njt_write_fd(fd, (char *)msg, strlen(msg));
-	// 	if(rlen < 0) {
-	// 		return NJT_ERROR;
-	// 	}
-
-	// if (njt_close_file(fd) == NJT_FILE_ERROR) {
-
-	// }
-	// }
-njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"=========data:%s\n", msg);
 
 	pack_cnt = mp_decode_array(&r);
 	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"%d packages received", pack_cnt);
@@ -925,7 +909,7 @@ static njt_int_t njt_app_sticky_init_worker(njt_cycle_t *cycle)
 			ascf, sticky_ctxes->nelts, ((njt_app_sticky_srv_conf_t **)sticky_ctxes->elts)[0], &ascf->zone_name);
 	}
 
-	njt_gossip_reg_app_handler (njt_app_sticky_recv_data,njt_app_sticky_on_node_on, GOSSIP_APP_APP_STICKY, sticky_ctxes);
+	njt_gossip_reg_app_handler(njt_app_sticky_recv_data,njt_app_sticky_on_node_on, GOSSIP_APP_APP_STICKY, sticky_ctxes);
 	//only the first worker do broadcast job
 	if (njt_worker == 0)  {
 		njt_event_t *ev = njt_palloc(cycle->pool, sizeof(njt_event_t));
@@ -953,7 +937,7 @@ static njt_int_t njt_app_sticky_update_node(njt_app_sticky_ctx_t *ctx, njt_str_t
 
     njt_shmtx_lock(&ctx->shpool->mutex);
     node = njt_app_sticky_lookup(&ctx->sh->rbtree, &key, hash);
-	if (node !=NULL ) {
+	if (node != NULL ) {
 		njt_log_error(NJT_LOG_INFO,ctx->log,0, "found node according to:%V",&key);
 		lr= (njt_app_sticky_rb_node_t *) &node->color;
 		//tips: if the node exist, but last_seen is old in tree, then update, else omit
@@ -963,8 +947,13 @@ static njt_int_t njt_app_sticky_update_node(njt_app_sticky_ctx_t *ctx, njt_str_t
 
 			njt_slab_free_locked(ctx->shpool, lr->up_name.data);
 
-			lr->up_name.data= njt_slab_alloc_locked(ctx->shpool, value.len);
-			lr->up_name.len= value.len;
+			lr->up_name.data = njt_slab_alloc_locked(ctx->shpool, value.len);
+			if (lr->up_name.data == NULL) {
+				njt_log_error(NJT_LOG_CRIT,ctx->log,0, "malloc failed in app_sticky init tree, pos1");
+				njt_shmtx_unlock(&ctx->shpool->mutex);
+				return NJT_ERROR;
+			} 			
+			lr->up_name.len = value.len;
 			memcpy(lr->up_name.data, value.data, value.len);
 
 			njt_queue_remove(&lr->queue);
@@ -982,7 +971,7 @@ static njt_int_t njt_app_sticky_update_node(njt_app_sticky_ctx_t *ctx, njt_str_t
 
    	node = njt_slab_alloc_locked(ctx->shpool, n);
 	if (node == NULL) {
-       	njt_log_error(NJT_LOG_CRIT,ctx->log,0, "malloc failed in app_sticky init tree");
+       	njt_log_error(NJT_LOG_CRIT,ctx->log,0, "malloc failed in app_sticky init tree, pos2");
     	njt_shmtx_unlock(&ctx->shpool->mutex);
 		return NJT_ERROR;
    	} 
@@ -992,7 +981,12 @@ static njt_int_t njt_app_sticky_update_node(njt_app_sticky_ctx_t *ctx, njt_str_t
     lr->len = (u_short) key.len;
 	lr->last_seen = njt_current_msec - ttl;
 
-	lr->up_name.data= njt_slab_alloc_locked(ctx->shpool, value.len);
+	lr->up_name.data = njt_slab_alloc_locked(ctx->shpool, value.len);
+	if (lr->up_name.data == NULL) {
+       	njt_log_error(NJT_LOG_CRIT,ctx->log,0, "malloc failed in app_sticky init tree, pos3");
+    	njt_shmtx_unlock(&ctx->shpool->mutex);
+		return NJT_ERROR;
+   	} 	
 	lr->up_name.len= value.len;
 	memcpy(lr->up_name.data, value.data, value.len);
 
