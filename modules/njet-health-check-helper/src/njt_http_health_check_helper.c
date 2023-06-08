@@ -1014,8 +1014,8 @@ njt_stream_health_check_send_handler(njt_event_t *wev) {
     }
 
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                   "$$$ njt_stream_health_check_send_handler ... ");
+//    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+//                   "$$$ njt_stream_health_check_send_handler ... ");
     if (hc_peer->send_buf == NULL) {
         hc_peer->send_buf = njt_pcalloc(hc_peer->pool, sizeof(njt_buf_t));
         if (hc_peer->send_buf == NULL) {
@@ -1152,8 +1152,8 @@ njt_stream_health_check_recv_handler(njt_event_t *rev) {
         return njt_http_health_check_peek_one_byte(c);
     }
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                   "### njt_stream_health_check_recv_handler ...");
+//    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+//                   "### njt_stream_health_check_recv_handler ...");
 
 
     return njt_stream_health_check_match_all(c);
@@ -2827,9 +2827,9 @@ static void njt_stream_update_peer(njt_stream_upstream_srv_conf_t *uscf,
     peer->hc_checks++;
 
     if (status == NJT_OK || status == NJT_DONE) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
-            "enable check peer: %V ",
-            &peer->name);
+//        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+//            "enable check peer: %V ",
+//            &peer->name);
 
         peer->hc_consecutive_fails = 0;
         peer->hc_last_passed = 1; //zyg
