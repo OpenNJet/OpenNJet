@@ -41,9 +41,6 @@ njt_http_location_create_main_conf(njt_conf_t *cf);
 static njt_int_t
 njt_http_location_init(njt_conf_t *cf);
 
-extern njt_int_t
-njt_http_init_static_location_trees(njt_conf_t *cf,
-                                    njt_http_core_loc_conf_t *pclcf);
 
 extern njt_int_t njt_http_init_locations(njt_conf_t *cf,
                                          njt_http_core_srv_conf_t *cscf, njt_http_core_loc_conf_t *pclcf);
