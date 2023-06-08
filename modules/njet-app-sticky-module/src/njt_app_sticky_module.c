@@ -917,7 +917,6 @@ static njt_int_t njt_app_sticky_init_worker(njt_cycle_t *cycle)
 		ev->timer_set =0;
 		ev->cancelable = 1;
 		ev->handler = app_sticky_sync;
-		ev->data = ascf->ctx;
 		njt_add_timer(ev,APP_STICKY_SYNC_INT);	
 	}
 
