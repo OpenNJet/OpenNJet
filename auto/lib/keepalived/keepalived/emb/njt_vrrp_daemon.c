@@ -114,7 +114,7 @@ void njt_vrrp_add_stop_event(void);
 void njt_vrrp_signal_init2(void);
 void njt_vrrp_respawn_thread(thread_ref_t thread);
 int njt_start_vrrp_child2(void);
-
+void sigreload_vrrp(__attribute__((unused)) void *v, __attribute__((unused)) int sig);
 
 /* local variables */
 static const char *vrrp_syslog_ident;
@@ -702,8 +702,7 @@ send_reload_advert_thread(thread_ref_t thread)
 		thread_add_event(master, njt_reload_vrrp_thread, NULL, 0);
 }
 
-static void
-sigreload_vrrp(__attribute__((unused)) void *v, __attribute__((unused)) int sig)
+void sigreload_vrrp(__attribute__((unused)) void *v, __attribute__((unused)) int sig)
 {
 	vrrp_t *vrrp;
 	int num_master_inst = 0;

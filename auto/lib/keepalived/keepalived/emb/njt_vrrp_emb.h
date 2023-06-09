@@ -13,4 +13,6 @@ int njt_vrrp_emb_init(const char *cfg,const char* log);
 void njt_vrrp_emb_run(void);
 
 void njt_vrrp_emb_stop(void);
+
+void njt_vrrp_reload_config(void);
 #endif   /* ----- #ifndef NJT_VRRP_EMB_INC  ----- */
