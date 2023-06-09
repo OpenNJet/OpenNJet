@@ -49,6 +49,7 @@ enum {
     HC_METHOD_NOT_ALLOW,
     HC_NOT_FOUND,
     PORT_NOT_ALLOW,
+    UDP_NOT_SUPPORT_TLS,
     HC_RESP_DONE
 } NJT_HTTP_API_HC_ERROR;
 
@@ -66,13 +67,14 @@ static njt_str_t njt_hc_error_msg[] = {
         njt_string("Trusted CA certificate must be configured"),
         njt_string("Certificate must be configured"),
         njt_string("Certificate key must be configured"),
-        njt_string("Server unknown error , please look error log "),
+        njt_string("Unknown server error, please check the error log"),
         njt_string("The health check already configured "),
         njt_string("The request body parse error "),
         njt_string("The request uri not found "),
         njt_string("The request method not allow "),
         njt_string("Not found health check "),
         njt_string("port only allowed in 1-65535"),
+        njt_string("UDP does not support tls"),
         njt_string("")
 };
 
@@ -2479,7 +2481,9 @@ static void njt_stream_free_peer_resource(njt_stream_health_check_peer_t *hc_pee
     if (hc_peer->peer.connection) {
         njt_close_connection(hc_peer->peer.connection);
     }
-    hc_peer->hhccf->ref_count--;
+    if(hc_peer->hhccf->ref_count>0){
+        --(hc_peer->hhccf->ref_count);
+    }
 //    if (hc_peer->hhccf->disable) {
 //        njt_destroy_pool(hc_peer->hhccf->pool);
 //    }
@@ -2983,6 +2987,10 @@ end:
 
 static njt_int_t njy_hc_api_data2_ssl_cf(njt_helper_hc_api_data_t *api_data, njt_helper_health_check_conf_t *hhccf) {
 
+    if(api_data->hc_type.len == njt_sudp_ck_type.len
+       && njt_strncmp(api_data->hc_type.data, njt_sudp_ck_type.data, njt_sudp_ck_type.len) == 0 && 1 == api_data->ssl.ssl_enable) {
+        return UDP_NOT_SUPPORT_TLS;
+    }
     hhccf->ssl.ssl_enable = api_data->ssl.ssl_enable ? 1 : 0;
     if(api_data->ssl.ntls_enable){
         hhccf->ssl.ssl_enable = 1;
@@ -3178,7 +3186,8 @@ static njt_int_t njt_hc_api_add_conf(njt_log_t *log, njt_helper_hc_api_data_t *a
 
     rc = njt_hc_api_data2_common_cf(api_data, hhccf);
     if (rc != HC_SUCCESS) {
-        rc = HC_BODY_ERROR;
+        if(rc != UDP_NOT_SUPPORT_TLS )
+            rc = HC_BODY_ERROR;
         goto err;
     }
     njt_http_health_check_add(hhccf, sync);
@@ -3679,6 +3688,202 @@ static njt_int_t njt_http_hc_test_connect(njt_connection_t *c) {
 }
 
 
+#if (NJT_STREAM_SSL)
+
+static njt_int_t
+njt_stream_hc_ssl_name(njt_connection_t *c, njt_stream_health_check_peer_t *hc_peer) {
+    u_char *p, *last;
+    njt_str_t name;
+    njt_stream_health_check_conf_ctx_t *cf_ctx;
+    njt_helper_health_check_conf_t *hhccf;
+
+    hhccf = hc_peer->hhccf;
+    cf_ctx = hhccf->ctx;
+
+    if (hhccf->ssl.ssl_name.len) {
+        name = hhccf->ssl.ssl_name;
+    } else {
+        name = cf_ctx->upstream->host;
+    }
+    if (name.len == 0) {
+        goto done;
+    }
+
+    /*
+     * ssl name here may contain port, notably if derived from $proxy_host
+     * or $http_host; we have to strip it
+     */
+
+    p = name.data;
+    last = name.data + name.len;
+
+    if (*p == '[') {
+        p = njt_strlchr(p, last, ']');
+
+        if (p == NULL) {
+            p = name.data;
+        }
+    }
+
+    p = njt_strlchr(p, last, ':');
+
+    if (p != NULL) {
+        name.len = p - name.data;
+    }
+
+    if (!hhccf->ssl.ssl_server_name) {
+        goto done;
+    }
+
+#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
+
+    /* as per RFC 6066, literal IPv4 and IPv6 addresses are not permitted */
+
+    if (name.len == 0 || *name.data == '[') {
+        goto done;
+    }
+
+    if (njt_inet_addr(name.data, name.len) != INADDR_NONE) {
+        goto done;
+    }
+
+    /*
+     * SSL_set_tlsext_host_name() needs a null-terminated string,
+     * hence we explicitly null-terminate name here
+     */
+
+    p = njt_pnalloc(c->pool, name.len + 1);
+    if (p == NULL) {
+        return NJT_ERROR;
+    }
+
+    (void) njt_cpystrn(p, name.data, name.len + 1);
+
+    name.data = p;
+
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0, "upstream SSL server name: \"%s\"", name.data);
+
+    if (SSL_set_tlsext_host_name(c->ssl->connection,
+                                 (char *) name.data)
+        == 0) {
+        njt_ssl_error(NJT_LOG_ERR, c->log, 0,
+                      "SSL_set_tlsext_host_name(\"%s\") failed", name.data);
+        return NJT_ERROR;
+    }
+
+#endif
+
+    done:
+
+    hc_peer->ssl_name = name;
+
+    return NJT_OK;
+}
+static njt_int_t
+njt_stream_hc_ssl_handshake(njt_connection_t *c, njt_stream_health_check_peer_t *hc_peer) {
+    long rc;
+    njt_helper_health_check_conf_t *hhccf;
+
+    hhccf = hc_peer->hhccf;
+
+    if (c->ssl->handshaked) {
+
+        if (hhccf->ssl.ssl_verify) {
+            rc = SSL_get_verify_result(c->ssl->connection);
+            if (rc != X509_V_OK) {
+                njt_log_error(NJT_LOG_ERR, c->log, 0,
+                              "upstream SSL certificate verify error: (%l:%s)",
+                              rc, X509_verify_cert_error_string(rc));
+                goto failed;
+            }
+
+            if (njt_ssl_check_host(c, &hc_peer->ssl_name) != NJT_OK) {
+                njt_log_error(NJT_LOG_ERR, c->log, 0,
+                              "hc SSL certificate does not match \"%V\"",
+                              &hc_peer->ssl_name);
+                goto failed;
+            }
+        }
+        hhccf->ref_count++;
+        hc_peer->peer.connection->write->handler = njt_stream_health_check_write_handler;
+        hc_peer->peer.connection->read->handler = njt_stream_health_check_read_handler;
+
+        /*NJT_AGAIN or NJT_OK*/
+        if (hhccf->timeout) {
+            njt_add_timer(hc_peer->peer.connection->write, hhccf->timeout);
+            njt_add_timer(hc_peer->peer.connection->read, hhccf->timeout);
+        }
+        return NJT_OK;
+    }
+
+    if (c->write->timedout) {
+//        njt_stream_health_check_update_status(hc_peer, NJT_ERROR);
+        return NJT_ERROR;
+    }
+
+    failed:
+
+//    njt_stream_health_check_update_status(hc_peer, NJT_ERROR);
+    return NJT_ERROR;
+}
+static void
+njt_stream_hc_ssl_handshake_handler(njt_connection_t *c) {
+    njt_stream_health_check_peer_t *hc_peer;
+    njt_int_t rc;
+
+    hc_peer = c->data;
+
+    rc = njt_stream_hc_ssl_handshake(c, hc_peer);
+    if (rc != NJT_OK) {
+        njt_stream_health_check_update_status(hc_peer, NJT_ERROR);
+    }
+}
+
+static njt_int_t
+njt_stream_hc_ssl_init_connection(njt_connection_t *c, njt_stream_health_check_peer_t *hc_peer) {
+    njt_int_t rc;
+    njt_helper_health_check_conf_t *hhccf;
+
+    hhccf = hc_peer->hhccf;
+
+    if (njt_http_hc_test_connect(c) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    if (njt_ssl_create_connection(hhccf->ssl.ssl, c,
+                                  NJT_SSL_BUFFER | NJT_SSL_CLIENT) != NJT_OK) {
+        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "ssl init create connection for health check error ");
+        return NJT_ERROR;
+    }
+
+    c->sendfile = 0;
+
+    if (hhccf->ssl.ssl_server_name || hhccf->ssl.ssl_verify) {
+        if (njt_stream_hc_ssl_name(c, hc_peer) != NJT_OK) {
+            njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "ssl init check ssl name for health check error ");
+            return NJT_ERROR;
+        }
+    }
+
+    c->log->action = "SSL handshaking to hc";
+
+    rc = njt_ssl_handshake(c);
+
+    if (rc == NJT_AGAIN) {
+
+        if (!c->write->timer_set) {
+            njt_add_timer(c->write, hhccf->timeout);
+        }
+
+        c->ssl->handler = njt_stream_hc_ssl_handshake_handler;
+        return NJT_OK;
+    }
+
+    return njt_stream_hc_ssl_handshake(c, hc_peer);
+//    return NJT_OK;
+}
+#endif
+
 #if (NJT_HTTP_SSL)
 
 
@@ -3994,8 +4199,8 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
 #endif
 
                 hhccf->ref_count++;
-                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-                              "ref_count increased. current value:%d",hhccf->ref_count);
+//                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+//                              "ref_count increased. current value:%d",hhccf->ref_count);
                 hc_peer->peer.connection->write->handler = njt_http_health_check_write_handler;
                 hc_peer->peer.connection->read->handler = njt_http_health_check_read_handler;
 
@@ -4104,13 +4309,27 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
                 njt_stream_upstream_rr_peers_wlock(peers);
                 continue;
              }
-
              hc_peer->peer.connection->data = hc_peer;
              hc_peer->peer.connection->pool = hc_peer->pool;
 
+#if (NJT_STREAM_SSL)
+
+            if (hhccf->ssl.ssl_enable && hhccf->ssl.ssl->ctx &&
+                hc_peer->peer.connection->ssl == NULL) { //zyg
+                rc = njt_stream_hc_ssl_init_connection(hc_peer->peer.connection, hc_peer);
+                if (rc == NJT_ERROR) {
+                    njt_stream_upstream_rr_peers_unlock(peers);
+                    njt_stream_health_check_update_wo_lock(hhccf, hc_peer, peer, NJT_ERROR);
+                    njt_stream_upstream_rr_peers_wlock(peers);
+                }
+                continue;
+            }
+
+#endif
+
+             hhccf->ref_count++;
              hc_peer->peer.connection->write->handler = njt_stream_health_check_write_handler;
              hc_peer->peer.connection->read->handler = njt_stream_health_check_read_handler;
-             hc_peer->hhccf->ref_count ++;
              /*NJT_AGAIN or NJT_OK*/
              if (hhccf->timeout) {
                  njt_add_timer(hc_peer->peer.connection->write, hhccf->timeout);
@@ -4882,6 +5101,7 @@ static njt_str_t njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_ch
             goto err;
         }
         njt_struct_add(ssl,item,pool);
+#if 0
         item =njt_json_bool_element(pool,njt_json_fast_key("sessionReuse"),hhccf->ssl.ssl_session_reuse);
         if(item == NULL ){
             goto err;
@@ -4939,6 +5159,7 @@ static njt_str_t njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_ch
             }
             njt_struct_add(ssl,item,pool);
         }
+#endif
         if (hhccf->ssl.ssl_ciphers.len > 0) {
             item =njt_json_str_element(pool,njt_json_fast_key("ciphers"), &hhccf->ssl.ssl_ciphers);
             if(item == NULL ){
@@ -4946,6 +5167,7 @@ static njt_str_t njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_ch
             }
             njt_struct_add(ssl,item,pool);
         }
+#if 0
         if (hhccf->ssl.ssl_protocol_str.len > 0) {
             item =njt_json_str_element(pool,njt_json_fast_key("protocols"), &hhccf->ssl.ssl_protocol_str);
             if(item == NULL ){
@@ -4953,6 +5175,7 @@ static njt_str_t njt_hc_conf_info_to_json(njt_pool_t *pool, njt_helper_health_ch
             }
             njt_struct_add(ssl,item,pool);
         }
+#endif
         njt_struct_add(root,ssl,pool);
     }
 #endif
