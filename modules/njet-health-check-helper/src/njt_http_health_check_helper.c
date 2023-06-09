@@ -82,7 +82,9 @@ static njt_http_v2_header_t njt_http_grpc_hc_headers[] = {
         {njt_string("content-type"),   njt_string("application/grpc")},
         {njt_string("user-agent"),     njt_string("njet (health check grpc)")},
 };
-
+static njt_str_t njt_stcp_ck_type = njt_string("stcp");
+static njt_str_t njt_sudp_ck_type = njt_string("sudp");
+//static njt_str_t njt_http_ck_type = njt_string("http");
 /**
  *This module provided directive: health_check url interval=100 timeout=300 port=8080 type=TCP.
  **/
@@ -264,7 +266,7 @@ static njt_health_checker_t *njt_http_get_health_check_type(njt_str_t *str);
 /*TCP type of checker related functions.*/
 static njt_int_t njt_http_health_check_peek_one_byte(njt_connection_t *c);
 
-static njt_int_t njt_http_health_check_tcp_handler(njt_event_t *wev);
+//static njt_int_t njt_http_health_check_tcp_handler(njt_event_t *wev);
 
 
 /*HTTP type of checker related functions*/
@@ -787,17 +789,17 @@ static njt_health_checker_t njt_health_checks[] = {
                 NULL
         },  
 
-        {
-                NJT_STREAM_MODULE,
-                0,
-                njt_string("tcp"),
-                1,
-                njt_http_health_check_tcp_handler,
-                njt_http_health_check_tcp_handler,
-                NULL,
-                NULL,
-                NULL
-        },
+//        {
+//                NJT_STREAM_MODULE,
+//                0,
+//                njt_string("tcp"),
+//                1,
+//                njt_http_health_check_tcp_handler,
+//                njt_http_health_check_tcp_handler,
+//                NULL,
+//                NULL,
+//                NULL
+//        },
 //
 //        {
 //                NJT_STREAM_MODULE,
@@ -892,16 +894,16 @@ njt_http_health_check_peek_one_byte(njt_connection_t *c) {
     return NJT_ERROR;
 }
 
-static njt_int_t njt_http_health_check_tcp_handler(njt_event_t *ev) {
-    njt_connection_t *c;
-    njt_int_t rc;
-
-    c = ev->data;
-
-    rc = njt_http_health_check_peek_one_byte(c);
-
-    return rc;
-}
+//static njt_int_t njt_http_health_check_tcp_handler(njt_event_t *ev) {
+//    njt_connection_t *c;
+//    njt_int_t rc;
+//
+//    c = ev->data;
+//
+//    rc = njt_http_health_check_peek_one_byte(c);
+//
+//    return rc;
+//}
 
 static void
 njt_http_health_check_dummy_handler(njt_event_t *ev) {
@@ -3085,6 +3087,17 @@ static njt_int_t njt_hc_api_add_conf(njt_log_t *log, njt_helper_hc_api_data_t *a
         return PORT_NOT_ALLOW;
     }
     hhccf = njt_http_find_helper_hc(cycle, api_data);
+    if (hhccf != NULL) {
+        njt_log_error(NJT_LOG_ERR, log, 0, "find upstream %V hc, double set", &api_data->upstream_name);
+        return HC_DOUBLE_SET;
+    }
+    if(api_data->hc_type.len == njt_stcp_ck_type.len
+       && njt_strncmp(api_data->hc_type.data, njt_stcp_ck_type.data, njt_stcp_ck_type.len) == 0) {
+        hhccf = njt_http_find_helper_hc_by_name_and_type(cycle,&njt_sudp_ck_type,&api_data->upstream_name);
+    } else if(api_data->hc_type.len == njt_sudp_ck_type.len
+              && njt_strncmp(api_data->hc_type.data, njt_sudp_ck_type.data, njt_sudp_ck_type.len) == 0) {
+        hhccf = njt_http_find_helper_hc_by_name_and_type(cycle,&njt_stcp_ck_type,&api_data->upstream_name);
+    }
     if (hhccf != NULL) {
         njt_log_error(NJT_LOG_ERR, log, 0, "find upstream %V hc, double set", &api_data->upstream_name);
         return HC_DOUBLE_SET;
