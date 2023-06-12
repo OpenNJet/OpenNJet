@@ -170,7 +170,7 @@ static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *modul
 static njt_int_t
 njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 {
-    u_char                              *p, *sub_p;
+    u_char                              *p,*end, *sub_p;
     njt_uint_t                          len;
     njt_str_t                           *item;
     njt_http_core_loc_conf_t            *clcf;
@@ -184,6 +184,7 @@ njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 
     uri = r->uri;
     p = uri.data + clcf->name.len;
+    end = uri.data + uri.len;
     len = uri.len - clcf->name.len;
 
     if (len != 0 && *p != '/') {
@@ -203,7 +204,7 @@ njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path)
         }
 
         item->data = p;
-        sub_p = (u_char *)njt_strchr(p, '/');
+        sub_p = (u_char *)njt_strlchr(p, end, '/');
 
         if (sub_p == NULL || (njt_uint_t)(sub_p - uri.data) > uri.len) {
             item->len = uri.data + uri.len - p;
