@@ -106,7 +106,7 @@ static void *njt_gossip_create_srv_conf(njt_conf_t *cf)
 static char *
 njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
-	njt_mqconf_conf_t 			*mqconf ;
+	njt_mqconf_conf_t 			*mqconf;
 	njt_stream_core_srv_conf_t 	*cscf;
 	njt_stream_core_main_conf_t *cmcf;
 	njt_shm_zone_t          	*shm_zone;
@@ -125,7 +125,7 @@ njt_stream_gossip_cmd(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 	mqconf = (njt_mqconf_conf_t*)njt_get_conf(cf->cycle->conf_ctx,njt_mqconf_module);
 	if (!mqconf || !mqconf->cluster_name.data || !mqconf->node_name.data)
 	{
-		njt_log_error(NJT_LOG_INFO, cf->log, 0, "no mqconf module or not set cluster_name or node_name");
+		njt_log_error(NJT_LOG_EMERG, cf->log, 0, "no mqconf module or not set cluster_name or node_name");
         return NJT_CONF_ERROR;
 	} 
 
@@ -544,7 +544,7 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 		break;
 		case GOSSIP_HEARTBEAT: 
 			uptime=mp_decode_uint(&r);
-			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:heartbeat uptime:%d", &n_name, &n_pid, uptime);
+			njt_log_error(NJT_LOG_DEBUG, log, 0, "node:%V pid:%V msg_type:heartbeat uptime:%d", &n_name, &n_pid, uptime);
 			njt_gossip_upd_member(s,GOSSIP_HEARTBEAT,uptime,&n_name, &n_pid);
 			
 			if(gossip_udp_ctx->need_syn){ 
@@ -555,7 +555,7 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 		break;
 		case GOSSIP_MSG_SYN:
 			uptime=mp_decode_uint(&r);
-			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:syn_msg uptime:%d", &n_name, &n_pid, uptime);
+			njt_log_error(NJT_LOG_DEBUG, log, 0, "node:%V pid:%V msg_type:syn_msg uptime:%d", &n_name, &n_pid, uptime);
 			if (target_name.len==gscf->node_name->len && memcmp(target_name.data, gscf->node_name->data, target_name.len)==0)
 			{
 				njt_log_error(NJT_LOG_INFO, log, 0, 
@@ -608,7 +608,13 @@ static void gossip_read_handler(njt_event_t *ev)
 	// if(ev)
 	// njt_stream_close_connection(c)
     if (ev->timedout) {
-        njt_log_error(NJT_LOG_INFO, c->log, NJT_ETIMEDOUT, "client timed out");
+        njt_log_error(NJT_LOG_DEBUG, c->log, NJT_ETIMEDOUT, "client timed out");
+        njt_stream_finalize_session(s, NJT_STREAM_OK);
+        return;
+    }
+
+	if (c->close) {
+        njt_log_error(NJT_LOG_DEBUG, c->log, NJT_ETIMEDOUT, "client close");
         njt_stream_finalize_session(s, NJT_STREAM_OK);
         return;
     }
@@ -633,6 +639,7 @@ static void gossip_read_handler(njt_event_t *ev)
     }
 
 	ev->timedout = 0;
+	ev->cancelable = 1;
 	njt_add_timer(ev, gossip_udp_ctx->nodeclean_timeout);
 }
 //tips: why we need merge from child to parent?
@@ -730,8 +737,8 @@ static njt_int_t gossip_start(njt_cycle_t *cycle)
 		gossip_udp_ctx->pid->data = njt_pcalloc(cycle->pool, len);
 		njt_memcpy(gossip_udp_ctx->pid->data, pid, len);
 		gossip_udp_ctx->pid->len = len;
-		njt_log_error(NJT_LOG_ERR, cycle->log, 0, 
-			"===============pid:%V getpid:%P   nodeclean_timeout:%M heartbeat_timeout:%M", 
+		njt_log_error(NJT_LOG_INFO, cycle->log, 0, 
+			" gossip pid:%V getpid:%P   nodeclean_timeout:%M heartbeat_timeout:%M", 
 			gossip_udp_ctx->pid, njt_getpid(), gscf->nodeclean_timeout, gscf->heartbeat_timeout);
 
 		//add self to memeberslist
@@ -801,7 +808,7 @@ static njt_int_t add_self_to_memberslist()
 	njt_shmtx_lock(&shared_ctx->shpool->mutex);
 	p_member = shared_ctx->sh->members;
 	if(p_member == NULL){
-		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "===============add_self_to_memberslist work[%d] pid:[%V]",
+		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, " gossip add_self_to_memberslist work[%d] pid:[%V]",
 			njt_worker, gossip_udp_ctx->pid);
 		p_member = njt_slab_alloc_locked(shared_ctx->shpool, sizeof(njt_gossip_member_list_t));
 		p_member->next = NULL;
@@ -816,7 +823,7 @@ static njt_int_t add_self_to_memberslist()
 
 		shared_ctx->sh->members = p_member;
 	}else{
-		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "===============add_self_to_memberslist exist update work[%d] pid:[%V]",
+		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "gossip add_self_to_memberslist exist update work[%d] pid:[%V]",
 			njt_worker, gossip_udp_ctx->pid);
 		njt_slab_free_locked(shared_ctx->shpool, p_member->pid.data);
 		p_member->pid.data = njt_slab_alloc_locked(shared_ctx->shpool,gossip_udp_ctx->pid->len);

@@ -699,17 +699,17 @@ static void app_sticky_sync_data( njt_app_sticky_ctx_t* ctx, njt_str_t* zone, nj
 		njt_str_t tmpkey;
 		tmpkey.data = lr->data;
 		tmpkey.len = lr->len;
-		njt_log_error(NJT_LOG_INFO, ctx->log, 0," send data msg_index:%d key:%V val:%V zone:%V ttl:%M",
+		njt_log_error(NJT_LOG_DEBUG, ctx->log, 0," send data msg_index:%d key:%V val:%V zone:%V ttl:%M",
 			msg_cnt, &tmpkey, &lr->up_name, zone, njt_current_msec - lr->last_seen);
 
 
 		buf_size  = buf_size - (tail - head);
 		head = tail;
-		if (msg_cnt ==15 || buf_size < 255 + 20 + APP_STICKY_MAX_ZONE + 10) {
+		if (msg_cnt == 15 || buf_size < 255 + 20 + APP_STICKY_MAX_ZONE + 10) {
 			njt_gossip_app_close_msg_buf(tail);
 			//if (msg_cnt>=10) {
 				mp_encode_array(buf, msg_cnt);
-				njt_log_error(NJT_LOG_INFO,ctx->log,0," large sync pack:%d",msg_cnt);
+				njt_log_error(NJT_LOG_DEBUG,ctx->log,0," large sync pack:%d",msg_cnt);
 				njt_gossip_send_app_msg_buf();
 				msg_cnt= 0;
 				head=NULL;
@@ -722,7 +722,7 @@ static void app_sticky_sync_data( njt_app_sticky_ctx_t* ctx, njt_str_t* zone, nj
 	}
 	if (msg_cnt >0) {
 		mp_encode_array(buf,msg_cnt);
-		njt_log_error(NJT_LOG_INFO,ctx->log,0,"sync pack:%d",msg_cnt);
+		njt_log_error(NJT_LOG_DEBUG,ctx->log,0,"sync pack:%d",msg_cnt);
 		njt_gossip_send_app_msg_buf();
 	}
 	app_sticky_expire_node(ctx, checkpoint_stamp - ctx->ttl);
@@ -782,7 +782,7 @@ static int njt_app_sticky_recv_data(const char* msg, void* data)
 	njt_app_sticky_ctx_t 		*ctx = NULL;
 
 	pack_cnt = mp_decode_array(&r);
-	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"%d packages received", pack_cnt);
+	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"%d packages received", pack_cnt);
 	for (i=0;i<pack_cnt;i++) {
 		arr_cnt = mp_decode_array(&r);
 		if (arr_cnt != APP_STICKY_DATA_CNT) {
@@ -792,20 +792,16 @@ static int njt_app_sticky_recv_data(const char* msg, void* data)
 		// aa = true;
 		key.data = (u_char *)mp_decode_str(&r, &len);
     	key.len=len;
-		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0," recv data index:%d key:%V",
-			i, &key);
 
 		val.data = (u_char *)mp_decode_str(&r, &len);
     	val.len=len;
-		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0," recv data index:%d val:%V",
-			i, &val);
+
 		zone.data = (u_char *)mp_decode_str(&r, &len);
     	zone.len=len;
-		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0," recv data index:%d zone:%V",
-			i, &zone);
+
 		ttl = mp_decode_uint(&r);
 
-		njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0," recv data index:%d key:%V val:%V zone:%V ttl:%M",
+		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0," recv data index:%d key:%V val:%V zone:%V ttl:%M",
 			i, &key, &val, &zone, ttl);
 
 		ctx = njt_app_sticky_get_ctx_by_zone(&zone);
@@ -828,13 +824,11 @@ static int  njt_app_sticky_on_node_on(njt_str_t* node, njt_str_t* node_pid, void
 	njt_uint_t                      i;
 	njt_app_sticky_srv_conf_t		*ascf = NULL;
 
-	njt_log_error(NJT_LOG_INFO, njt_cycle->log,0,
-			"=============sticky_ctxes count:%d", sticky_ctxes->nelts);
 	zone_ctxes = sticky_ctxes->elts;
 	for(i = 0; i < sticky_ctxes->nelts; i++){
 		if(zone_ctxes[i] == NULL || zone_ctxes[i]->ctx == NULL){
 			njt_log_error(NJT_LOG_INFO, zone_ctxes[i]->ctx->log,0,
-				"=============sticky_ctxes[%d] is null", i);
+				"sticky_ctxes[%d] is null", i);
 			continue;
 		}
 		ascf =(njt_app_sticky_srv_conf_t*) zone_ctxes[i]->ctx->data;
@@ -869,13 +863,12 @@ static njt_int_t njt_app_sticky_init_worker(njt_cycle_t *cycle)
 	//find all app sticky upstream config
 	umcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_upstream_module);
 	if(umcf == NULL){
-		njt_log_error(NJT_LOG_INFO, cycle->log,0," app sticky, get upstrem module config error");
+		njt_log_error(NJT_LOG_ERR, cycle->log,0," app sticky, get upstrem module config error");
 		return NJT_ERROR;
 	}
 
 
 	if(sticky_ctxes == NULL){
-		njt_log_error(NJT_LOG_INFO, cycle->log,0,"============= create sticky array");
 		sticky_ctxes = njt_array_create(cycle->pool, 8, sizeof(njt_app_sticky_srv_conf_t *));
 	}
 
@@ -885,27 +878,27 @@ static njt_int_t njt_app_sticky_init_worker(njt_cycle_t *cycle)
 		uscf = uscfp[i];
 		if (uscf == NULL ) {
 			//means not configure upstream {}
-			njt_log_error(NJT_LOG_ERR, cycle->log,0," =========app sticky get uscf config error");
+			njt_log_error(NJT_LOG_ERR, cycle->log,0," app sticky get uscf config error");
 			return NJT_ERROR;
 		}
 
 		ascf = njt_http_conf_upstream_srv_conf(uscf, njt_app_sticky_module);
 		//tips: ascf->ctx is null means not confiugre app_sticky cmd
 		if (ascf == NULL || ascf->ctx ==NULL){
-			njt_log_error(NJT_LOG_INFO, cycle->log,0,"==============ascf null return");
+			njt_log_error(NJT_LOG_DEBUG, cycle->log,0," app sticky ascf null return");
 			continue;
 		}  
 
         zone_ctx = njt_array_push(sticky_ctxes);
 		if(zone_ctx == NULL){
-			njt_log_error(NJT_LOG_ERR, cycle->log,0," ============app sticky array push error");
+			njt_log_error(NJT_LOG_ERR, cycle->log,0," app sticky array push error");
 			return NJT_ERROR;
 		}
 
 		*zone_ctx = ascf;
 
 		njt_log_error(NJT_LOG_INFO, cycle->log, 0,
-			"============= push sticky ascf:%p  sticky_ctxes count:%d sticky_ctxes[0]:%p  zone_name:%V", 
+			"push sticky ascf:%p  sticky_ctxes count:%d sticky_ctxes[0]:%p  zone_name:%V", 
 			ascf, sticky_ctxes->nelts, ((njt_app_sticky_srv_conf_t **)sticky_ctxes->elts)[0], &ascf->zone_name);
 	}
 
@@ -928,8 +921,6 @@ static njt_int_t njt_app_sticky_update_node(njt_app_sticky_ctx_t *ctx, njt_str_t
   	njt_app_sticky_rb_node_t *lr;
 	njt_rbtree_node_t *node;
 
-	njt_log_error(NJT_LOG_INFO,njt_cycle->log,0, "update node:%p",ctx);
-
 	if (ttl > ctx->ttl) return  NJT_OK;	
 
 	uint32_t hash = njt_crc32_short(key.data, key.len);
@@ -937,7 +928,7 @@ static njt_int_t njt_app_sticky_update_node(njt_app_sticky_ctx_t *ctx, njt_str_t
     njt_shmtx_lock(&ctx->shpool->mutex);
     node = njt_app_sticky_lookup(&ctx->sh->rbtree, &key, hash);
 	if (node != NULL ) {
-		njt_log_error(NJT_LOG_INFO,ctx->log,0, "found node according to:%V",&key);
+		njt_log_error(NJT_LOG_DEBUG,ctx->log,0, "found node according to:%V",&key);
 		lr= (njt_app_sticky_rb_node_t *) &node->color;
 		//tips: if the node exist, but last_seen is old in tree, then update, else omit
 		if ( (njt_current_msec- ttl) > lr->last_seen  ) {
@@ -962,7 +953,7 @@ static njt_int_t njt_app_sticky_update_node(njt_app_sticky_ctx_t *ctx, njt_str_t
     	njt_shmtx_unlock(&ctx->shpool->mutex);
 		return NJT_OK;
 	}
-	njt_log_error(NJT_LOG_INFO,ctx->log,0, "no node according to:%V,create:%V ",&key,&value);
+	njt_log_error(NJT_LOG_DEBUG,ctx->log,0, "no node according to:%V,create:%V ",&key,&value);
 
 	uint32_t n = offsetof(njt_rbtree_node_t, color)
         + offsetof(njt_app_sticky_rb_node_t, data)
@@ -1005,7 +996,7 @@ njt_app_sticky_header_filter(njt_http_request_t *r)
 	njt_int_t ret;
 	njt_app_sticky_req_ctx_t  *req_ctx = njt_http_get_module_ctx(r,njt_app_sticky_module);
 
-	njt_log_error(NJT_LOG_INFO,r->connection->log,0,"appsticky process header,using ctx:%p",req_ctx);
+	njt_log_error(NJT_LOG_DEBUG,r->connection->log,0,"appsticky process header,using ctx:%p",req_ctx);
 
 	if (req_ctx ==NULL ) return NJT_ERROR;
 	
