@@ -5630,6 +5630,7 @@ njt_int_t njt_http_core_if_location(njt_conf_t *cf, njt_str_t * command,njt_http
     if_code->code = njt_http_script_if_code;
     if_code->next = (u_char *) lcf->codes->elts + lcf->codes->nelts
                                                 - (u_char *) if_code;
+    if_code->loc_conf = NULL; 
     //elts = lcf->codes->elts;
 
 
