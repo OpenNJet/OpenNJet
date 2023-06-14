@@ -279,6 +279,7 @@ njt_http_vhost_traffic_status_display_handler_default(njt_http_request_t *r)
 {
     size_t                                     len;
     u_char                                    *o, *s, *p;
+    size_t                                     olen;
     njt_str_t                                  uri, euri, type;
     njt_int_t                                  size, format, rc;
     njt_buf_t                                 *b;
@@ -312,6 +313,7 @@ njt_http_vhost_traffic_status_display_handler_default(njt_http_request_t *r)
     }
 
     o = (u_char *) r->uri.data;
+    olen =  r->uri.len;
     s = o;
 
     len = r->uri.len;
@@ -344,7 +346,7 @@ njt_http_vhost_traffic_status_display_handler_default(njt_http_request_t *r)
             }
         }
 
-        if ((s = (u_char *) njt_strchr(++s, '/')) == NULL) {
+        if ((s = (u_char *) njt_strlchr(++s, o + olen, '/')) == NULL) {
             break;
         }
 

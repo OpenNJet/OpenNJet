@@ -403,7 +403,7 @@ njt_http_vtsc_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
             name.data = value[i].data + 7;
 
-            p = (u_char *) njt_strchr(name.data, ':');
+            p = (u_char *) njt_strlchr(name.data, name.data + name.len, ':');
             if (p == NULL) {
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid shared size \"%V\"", &value[i]);

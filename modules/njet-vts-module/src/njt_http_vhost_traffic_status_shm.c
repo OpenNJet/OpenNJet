@@ -121,6 +121,7 @@ njt_http_vhost_traffic_status_shm_add_node(njt_http_request_t *r,
     njt_slab_pool_t                           *shpool;
     njt_rbtree_node_t                         *node, *lrun;
     njt_http_vhost_traffic_status_ctx_t       *ctx;
+    njt_http_vhost_traffic_status_node_t      *vtsnd;
     njt_http_vhost_traffic_status_node_t      *vtsn;
     njt_http_vhost_traffic_status_loc_conf_t  *vtscf;
     njt_http_vhost_traffic_status_shm_info_t  *shm_info;
@@ -182,32 +183,32 @@ njt_http_vhost_traffic_status_shm_add_node(njt_http_request_t *r,
                 goto OUT;
             }
 
-            vtsn = njt_http_vhost_traffic_status_get_node(node);
+            vtsnd = njt_http_vhost_traffic_status_get_node(node);
 
             node->key = hash;
-            vtsn->len = (u_short) key->len;
-            njt_http_vhost_traffic_status_nodes_init(r, vtsn);
-            vtsn->stat_upstream.type = type;
-            njt_memcpy(vtsn->data, key->data, key->len);
+            vtsnd->len = (u_short) key->len;
+            njt_http_vhost_traffic_status_nodes_init(r, vtsnd);
+            vtsnd->stat_upstream.type = type;
+            njt_memcpy(vtsnd->data, key->data, key->len);
 
             njt_rbtree_insert(ctx->rbtree, node);
             njt_shrwlock_wr2rdlock(&shpool->rwlock);
 
-            vtsn = njt_http_vhost_traffic_status_map_node(shpool, vtsn);
+            vtsn = njt_http_vhost_traffic_status_map_node(shpool, vtsnd);
             njt_rwlock_wlock(&vtsn->lock);
             njt_http_vhost_traffic_status_node_init_update(r, vtsn);
         } else {
             init = NJT_HTTP_VHOST_TRAFFIC_STATUS_NODE_FIND;
-            vtsn = njt_http_vhost_traffic_status_get_node(node);
+            vtsnd = njt_http_vhost_traffic_status_get_node(node);
             njt_shrwlock_wr2rdlock(&shpool->rwlock);
-            vtsn = njt_http_vhost_traffic_status_map_node(shpool, vtsn);
+            vtsn = njt_http_vhost_traffic_status_map_node(shpool, vtsnd);
             njt_rwlock_wlock(&vtsn->lock);
             njt_http_vhost_traffic_status_node_set(r, vtsn);
         }
     } else {
         init = NJT_HTTP_VHOST_TRAFFIC_STATUS_NODE_FIND;
-        vtsn = njt_http_vhost_traffic_status_get_node(node);
-        vtsn = njt_http_vhost_traffic_status_map_node(shpool, vtsn);
+        vtsnd = njt_http_vhost_traffic_status_get_node(node);
+        vtsn = njt_http_vhost_traffic_status_map_node(shpool, vtsnd);
         njt_rwlock_wlock(&vtsn->lock);
         njt_http_vhost_traffic_status_node_set(r, vtsn);
     }
@@ -224,7 +225,9 @@ njt_http_vhost_traffic_status_shm_add_node(njt_http_request_t *r,
 
 #if (NJT_HTTP_CACHE)
     case NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC:
-        (void) njt_http_vhost_traffic_status_shm_add_node_cache(r, vtsn, init);
+        njt_rwlock_wlock(&vtsnd->lock);
+        (void) njt_http_vhost_traffic_status_shm_add_node_cache(r, vtsnd, init);
+        njt_rwlock_unlock(&vtsnd->lock);
         break;
 #endif
 
