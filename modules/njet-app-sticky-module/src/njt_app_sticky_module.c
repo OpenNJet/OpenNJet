@@ -1008,7 +1008,7 @@ njt_app_sticky_header_filter(njt_http_request_t *r)
 
 	njt_app_sticky_srv_conf_t *ascf = req_ctx->srv_conf;
 	if (ascf->is_cookie == 0) {
-		njt_table_elt_t* header_val=njt_app_sticky_search_header(r,ascf->var.data,ascf->var.len,1);
+		njt_table_elt_t* header_val = njt_app_sticky_search_header(r,ascf->var.data,ascf->var.len,1);
 		if (header_val !=NULL ) {
 			njt_log_error(NJT_LOG_DEBUG,r->connection->log,0,"found header, will update in rb %V:%V", &header_val->value,&req_ctx->up_name);
 			njt_app_sticky_update_node(req_ctx->ctx, header_val->value, req_ctx->up_name,1);

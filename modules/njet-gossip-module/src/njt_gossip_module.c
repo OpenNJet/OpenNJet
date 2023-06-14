@@ -469,7 +469,7 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 {
 	njt_gossip_srv_conf_t 	*gscf=njt_stream_get_module_srv_conf(s,njt_gossip_module);
 	uint32_t 				arr_cnt ,len;
-	uint64_t  				magic, msg_type;
+	uint32_t  				magic, msg_type;
 	njt_str_t 				c_name, n_name, n_pid, target_name;
 	// njt_str_t				target_pid;
 	njt_msec_t 				uptime;
@@ -567,7 +567,7 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 					gossip_app_msg_handle_t *app_handle=gossip_app_handle_fac->elts;
 					for (i=0;i<gossip_app_handle_fac->nelts;i++) {
 						if (  app_handle[i].node_handler)  {
-							njt_log_error(NJT_LOG_INFO,log,0,"invoke node startup handler:%d",app_handle[i].app_magic);
+							njt_log_error(NJT_LOG_DEBUG,log,0,"invoke node startup handler:%d",app_handle[i].app_magic);
 							app_handle[i].node_handler(&n_name, &n_pid, app_handle[i].data);
 						}
 					}
@@ -575,7 +575,7 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 			}
 		break;
 		default:
-			njt_log_error(NJT_LOG_INFO, log, 0, "node:%V pid:%V msg_type:%d", &n_name, &n_pid, msg_type);
+			njt_log_error(NJT_LOG_DEBUG, log, 0, "node:%V pid:%V msg_type:%d", &n_name, &n_pid, msg_type);
 			{
 				uint32_t i;
 				if(gossip_app_handle_fac){
@@ -1113,7 +1113,7 @@ int  njt_gossip_reg_app_handler( gossip_app_pt app_msg_handler, gossip_app_node_
 	app_handle->handler=app_msg_handler;
 	app_handle->node_handler=app_node_handler;
 
-    // njt_log_error(NJT_LOG_INFO,njt_cycle->log,0," ===========reg app_magic:%u", app_magic);
+    njt_log_error(NJT_LOG_INFO,njt_cycle->log,0," ===========reg app_magic:%d", app_magic);
 
 	return NJT_OK;
 }
