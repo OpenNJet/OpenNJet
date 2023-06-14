@@ -211,7 +211,7 @@ static njt_http_location_queue_t *njt_http_find_location(njt_str_t name, njt_que
     }
     return NULL;
 }
-/*
+
 static njt_http_core_loc_conf_t*  njt_http_location_copy_location (njt_http_core_loc_conf_t *pclcf,njt_http_core_loc_conf_t *clcf,njt_pool_t *pool){
  
  njt_queue_t *x;
@@ -258,7 +258,7 @@ static njt_http_core_loc_conf_t*  njt_http_location_copy_location (njt_http_core
   }
 
   return loc_q;
-}*/
+}
 
 
 static njt_int_t
@@ -279,6 +279,7 @@ njt_http_refresh_location(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf, njt_ht
 		old_new_locations_pool = clcf->new_locations_pool;
 		if(old_new_locations_pool != NULL) {
 		njt_destroy_pool(old_new_locations_pool);
+		//njt_reset_pool(old_new_locations_pool);
 		}
 		clcf->new_locations = NULL;
 	}
@@ -332,9 +333,9 @@ njt_http_refresh_location(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf, njt_ht
         lq->parent_pool = clcf->new_locations_pool;
 
 	if(lx->exact != NULL) {
-	   //lq->exact = njt_http_location_copy_location(clcf,lx->exact,clcf->new_locations_pool);
+	   lq->exact = njt_http_location_copy_location(clcf,lx->exact,clcf->new_locations_pool);
 	} else if (lx->inclusive != NULL){
-	  // lq->inclusive = njt_http_location_copy_location(clcf,lx->inclusive,clcf->new_locations_pool);
+	   lq->inclusive = njt_http_location_copy_location(clcf,lx->inclusive,clcf->new_locations_pool);
 	}
         njt_queue_init(&lq->list);
         njt_queue_insert_tail(clcf->new_locations, &lq->queue);
