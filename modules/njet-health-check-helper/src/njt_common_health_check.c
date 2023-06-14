@@ -213,6 +213,10 @@ njt_http_upstream_srv_conf_t* njt_http_find_upstream_by_name(njt_cycle_t *cycle,
     njt_uint_t i;
 
     umcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_upstream_module);
+    if(umcf == NULL){
+        return NULL;
+    }
+
     uscfp = umcf->upstreams.elts;
 
     for (i = 0; i < umcf->upstreams.nelts; i++) {
@@ -232,6 +236,10 @@ njt_stream_upstream_srv_conf_t *njt_stream_find_upstream_by_name(njt_cycle_t *cy
     njt_uint_t                         i;
 
     umcf = njt_stream_cycle_get_module_main_conf(njet_master_cycle, njt_stream_upstream_module);
+
+    if(umcf == NULL){
+        return NULL;
+    }
 
     uscfp = umcf->upstreams.elts;
     for (i = 0; i < umcf->upstreams.nelts; i++) {
