@@ -5602,7 +5602,7 @@ njt_http_core_pool_size(njt_conf_t *cf, void *post, void *data)
 njt_int_t njt_http_core_if_location(njt_conf_t *cf, njt_str_t * command,njt_http_core_loc_conf_t  *pclcf,njt_uint_t step,njt_int_t oper,njt_int_t dir){
 
 
-	njt_http_script_if_code_t    *if_code;
+	njt_http_script_if_code_t    *if_code,*if_end_code;
 	 njt_http_rewrite_loc_conf_t  *nlcf, **rlcf;
 	
 	// u_char                       *elts;
@@ -5622,16 +5622,17 @@ njt_int_t njt_http_core_if_location(njt_conf_t *cf, njt_str_t * command,njt_http
         return NJT_ERROR;
     }
 
-    if_code = njt_array_push_n(lcf->codes, sizeof(njt_http_script_if_code_t));
+    if_code = njt_array_push_n(lcf->codes, sizeof(njt_http_script_if_code_t)*2); //by zyg,add end code
     if (if_code == NULL) {
         return NJT_ERROR;
     }
 
     if_code->code = njt_http_script_if_code;
-    if_code->next = (u_char *) lcf->codes->elts + lcf->codes->nelts
-                                                - (u_char *) if_code;
+    if_code->next = sizeof(njt_http_script_if_code_t);
+    if_end_code = if_code + 1;
+    njt_memzero(if_end_code,sizeof(njt_http_script_if_code_t));
+
     if_code->loc_conf = NULL; 
-    //elts = lcf->codes->elts;
 
 
     /* the inner directives must be compiled to the same code array */
