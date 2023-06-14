@@ -278,18 +278,22 @@ njt_http_refresh_location(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf, njt_ht
 	if (clcf->new_locations != NULL) {
 		old_new_locations_pool = clcf->new_locations_pool;
 		if(old_new_locations_pool != NULL) {
-		njt_destroy_pool(old_new_locations_pool);
-		//njt_reset_pool(old_new_locations_pool);
+		 //njt_destroy_pool(old_new_locations_pool);
+		 njt_reset_pool(old_new_locations_pool);
 		}
 		clcf->new_locations = NULL;
 	}
     if (clcf->new_locations == NULL) {
-		 clcf->new_locations_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-		  if (clcf->new_locations_pool == NULL) {
+	    if(old_new_locations_pool != NULL) {
+		clcf->new_locations_pool = old_new_locations_pool;
+	    } else {
+	    	clcf->new_locations_pool = njt_create_pool(1024, njt_cycle->log);
+		njt_sub_pool(cf->cycle->pool ,clcf->new_locations_pool);
+	    }
+	    if (clcf->new_locations_pool == NULL) {
             rc = NJT_ERROR;
             return rc;
         }
-		njt_sub_pool(cf->cycle->pool ,clcf->new_locations_pool);
         clcf->new_locations = njt_palloc(clcf->new_locations_pool,
                                          sizeof(njt_http_location_queue_t));
         if (clcf->new_locations == NULL) {
