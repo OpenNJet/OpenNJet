@@ -555,8 +555,12 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
     }
 
     conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
+    if (!conf_ctx) {
+        njt_log_error(NJT_LOG_INFO, cycle->log, 0, "http section not found, sendmsg module is configured as off");
+        return NJT_OK;
+    }
     smcf = conf_ctx->main_conf[njt_http_sendmsg_module.ctx_index];
-    if (smcf->off) {
+    if (!smcf || smcf->off) {
         njt_log_error(NJT_LOG_INFO, cycle->log, 0, "sendmsg module is configured as off");
         return NJT_OK;  
     }
@@ -812,7 +816,7 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int retain_flag, int sessi
     // add timer
     rpc_timer_ev = njt_calloc(sizeof(njt_event_t), njt_cycle->log);
     rpc_data = njt_calloc(sizeof(rpc_msg_handler_t), njt_cycle->log);
-    rpc_data->session_id = session_id;
+    rpc_data->session_id = njt_sendmsg_rr_session_id;
     rpc_data->invoker_session_id = session_id;
     rpc_timer_ev->handler = njt_sendmsg_rpc_timer_fired;
     rpc_timer_ev->log = njt_cycle->log;
