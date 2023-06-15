@@ -168,7 +168,7 @@ static void njt_http_cluster_limit_conn_sync(njt_event_t *ev)
 		zone_ctxes = clconn_ctxes->elts;
 		for(i = 0; i < clconn_ctxes->nelts; i++){
 			if(zone_ctxes[i] == NULL){
-				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0," cluster_limit_conn_sync sitckey[%d] is null", i);
+				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0," cluster_limit_conn_sync index[%d] is null", i);
 				continue;
 			}
 		
@@ -197,7 +197,10 @@ static void njt_cluster_limit_conn_update_conn(njt_str_t key_in, int other_conn,
     node = njt_http_cluster_limit_conn_lookup(&ctx->sh->rbtree, &key_in, hash);
     if (node == NULL)
     {
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "need create new tree node, receive:%d,%V", other_conn, &sibling_node);
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+            " cluster_limit_conn need create new tree node, receive:%d,%V",
+            other_conn, &sibling_node);
+
         n = offsetof(njt_rbtree_node_t, color) + offsetof(njt_http_cluster_limit_conn_node_t, data) + key_in.len;
         node = njt_slab_alloc_locked(ctx->shpool, n);
         if (node == NULL)
@@ -226,13 +229,16 @@ static void njt_cluster_limit_conn_update_conn(njt_str_t key_in, int other_conn,
 
         njt_memcpy(lc->data, key_in.data, key_in.len);
         njt_rbtree_insert(&ctx->sh->rbtree, node);
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "new node:%d", lc->conn);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " cluster_limit_conn new node:%d", lc->conn);
         njt_shmtx_unlock(&ctx->shpool->mutex);
     }
     else
     {
         lc = (njt_http_cluster_limit_conn_node_t *)&node->color;
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "found tree node:%d, receive:%d,%V", lc->conn, other_conn, &sibling_node);
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+            " cluster_limit_conn found tree node:%d, receive:%d,%V", 
+            lc->conn, other_conn, &sibling_node);
+
         for (i = 0; i < SIBLING_MAX; i++)
         {
             v = &lc->sibling[i];
@@ -247,7 +253,10 @@ static void njt_cluster_limit_conn_update_conn(njt_str_t key_in, int other_conn,
             }
             else
             {
-                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "%s,%d,check %V update sibling:%d", v->sibling_item.data, v->sibling_item.len, &sibling_node, other_conn);
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
+                    " cluster_limit_conn %s,%d,check %V update sibling:%d",
+                    v->sibling_item.data, v->sibling_item.len, &sibling_node, other_conn);
+
                 if (sibling_node.len == v->sibling_item.len && njt_memcmp(v->sibling_item.data, sibling_node.data, sibling_node.len) == 0)
                 {
                     //found ,so update;
@@ -259,7 +268,9 @@ static void njt_cluster_limit_conn_update_conn(njt_str_t key_in, int other_conn,
             }
         }
 
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "overflow in array, found:%d, receive:%d,%V", lc->conn, other_conn, &sibling_node);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+            " cluster_limit_conn overflow in array, found:%d, receive:%d,%V",
+            lc->conn, other_conn, &sibling_node);
     }
 }
 
@@ -276,7 +287,8 @@ static int njt_cluster_limit_conn_recv_data(const char* msg, void* data)
     if (size != 3)
     {
         //todo
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "udp decode failed, maybe not for us", size);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+            " cluster_limit_conn udp decode failed, maybe not for us", size);
         return NJT_ERROR;
     }
 
@@ -284,7 +296,8 @@ static int njt_cluster_limit_conn_recv_data(const char* msg, void* data)
     key.len = len;
     if (njt_memcmp(key.data, "node", key.len) != 0)
     {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " key is not nodeid:%V", &key);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+            " cluster_limit_conn key is not nodeid:%V", &key);
         return NJT_ERROR;
     }
 
@@ -295,7 +308,7 @@ static int njt_cluster_limit_conn_recv_data(const char* msg, void* data)
     key.len = len;
     if (njt_memcmp(key.data, "zone", key.len) != 0)
     {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " key is not zone:%V", &key);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " cluster_limit_conn key is not zone:%V", &key);
         return NJT_ERROR;
     }
 
@@ -305,7 +318,7 @@ static int njt_cluster_limit_conn_recv_data(const char* msg, void* data)
     //get ctx by zone
     ctx = njt_http_cluster_limit_conn_get_ctx_by_zone(&zone_val);
     if(ctx == NULL){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " not found ctx by zone:%V", &zone_val);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " cluster_limit_conn not found ctx by zone:%V", &zone_val);
         return NJT_ERROR;
     }
 
@@ -313,7 +326,7 @@ static int njt_cluster_limit_conn_recv_data(const char* msg, void* data)
         && njt_memcmp(sibling_node.data, ctx->node_name->data, sibling_node.len) == 0)
     {
         //todo: from own, so drop it
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "send from:%V, skip", &sibling_node);
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, " cluster_limit_conn send from:%V, skip", &sibling_node);
         return NJT_ERROR;
     }
 
@@ -325,7 +338,7 @@ static int njt_cluster_limit_conn_recv_data(const char* msg, void* data)
         key.len = len;
         if (key.len != 3 || njt_memcmp(key.data, "idx", key.len) != 0)
         {
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "not idx:%V", &key);
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " cluster_limit_conn not idx:%V", &key);
             return NJT_ERROR;
         }
 
@@ -336,7 +349,7 @@ static int njt_cluster_limit_conn_recv_data(const char* msg, void* data)
         key.len = len;
         if (key.len != 3 || njt_memcmp(key.data, "now", key.len) != 0)
         {
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "not now:%V", &key);
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " cluster_limit_conn not now:%V", &key);
             return NJT_ERROR;
         }
 
@@ -391,7 +404,7 @@ static njt_int_t cluster_limit_conn_init_first_worker(njt_cycle_t *cycle)
     // }
 
 	if(clconn_ctxes == NULL){
-		njt_log_error(NJT_LOG_INFO, cycle->log,0,"create cluster_limit_conn_ctx array2");
+		njt_log_error(NJT_LOG_INFO, cycle->log,0," create cluster_limit_conn_ctx array2");
 		clconn_ctxes = njt_array_create(cycle->pool, 8, sizeof(njt_http_cluster_limit_conn_ctx_t *));
 	}
 
@@ -438,7 +451,8 @@ void njt_http_udp_send_handler(njt_http_cluster_limit_conn_ctx_t *ctx, njt_str_t
     {
         if (client == client->next)
         {
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "client:%p,%p", client, client->next);
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+                " cluster_limit_conn client:%p,%p", client, client->next);
             break;
         }
         //todo: can array be over the max elements?
@@ -454,7 +468,7 @@ void njt_http_udp_send_handler(njt_http_cluster_limit_conn_ctx_t *ctx, njt_str_t
         //todo: force the key less than 128 bytes
         if (item == NULL)
         {
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "push error");
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " cluster_limit_conn push item error");
         }
         /*
         memcpy(item->data,client->q_item.sibling_item.data,client->q_item.sibling_item.len);
@@ -477,7 +491,7 @@ void njt_http_udp_send_handler(njt_http_cluster_limit_conn_ctx_t *ctx, njt_str_t
 		if (head == NULL ) {
 			buf = njt_gossip_app_get_msg_buf(GOSSIP_APP_CLUSTER_LIMIT_CONN, *target, *target_pid, &buf_size);
 			if (buf_size <=0 || buf == NULL) {
-				njt_log_error(NJT_LOG_ERR,njt_cycle->log,0,"apply buffer failed");
+				njt_log_error(NJT_LOG_ERR,njt_cycle->log,0," cluster_limit_conn apply buffer failed");
     			njt_shmtx_unlock(&ctx->shpool->mutex);
 				return;
 			}
@@ -741,16 +755,16 @@ njt_http_cluster_limit_conn_handler(njt_http_request_t *r)
                     ctx->sh->clients = client;
                 }
                 lc->snap = client;
-                njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "init snap:%p,next:%p,%p", client, client->next, client->prev);
+                njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, " cluster_limit_conn init snap:%p,next:%p,%p", client, client->next, client->prev);
             
                 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-                          " ============snap is null, key:%V conn:%d last_changed:%M",
+                          " cluster_limit_conn snap is null, key:%V conn:%d last_changed:%M",
                           &key, lc->conn, now);
             }
             else
             {
                 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-                          " ============snap is not null, key:%V conn:%d last_changed:%M",
+                          " cluster_limit_conn snap is not null, key:%V conn:%d last_changed:%M",
                           &key, lc->conn, now);
                 lc->snap->q_item.sibling_item.conn = lc->conn;
                 lc->snap->q_item.last_changed = now;
@@ -774,7 +788,8 @@ njt_http_cluster_limit_conn_handler(njt_http_request_t *r)
 
         lccln->shm_zone = limits[i].shm_zone;
         lccln->node = node;
-        njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "set node to cleanup:%p,%p", node, &node->color);
+        njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, 
+            " cluster_limit_conn set node to cleanup:%p,%p", node, &node->color);
         lccln->key.data = njt_pstrdup(r->pool, &key);
         lccln->key.len = key.len;
     }
@@ -883,12 +898,13 @@ njt_http_cluster_limit_conn_cleanup(void *data)
 
     lc = (njt_http_cluster_limit_conn_node_t *)&node->color;
 
-    njt_log_error(NJT_LOG_DEBUG, lccln->shm_zone->shm.log, 0, "node in cleanup:%p,%p", node, lc);
+    njt_log_error(NJT_LOG_DEBUG, lccln->shm_zone->shm.log, 0,
+        " cluster_limit_conn node in cleanup:%p,%p", node, lc);
 
     njt_shmtx_lock(&ctx->shpool->mutex);
 
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, lccln->shm_zone->shm.log, 0,
-                   "limit conn cleanup: %08Xi %d", node->key, lc->conn);
+                   " cluster_limit_conn limit conn cleanup: %08Xi %d", node->key, lc->conn);
     lc->conn--;
     lc->snap->q_item.sibling_item.conn = lc->conn;
     lc->snap->q_item.last_changed = njt_current_msec;
