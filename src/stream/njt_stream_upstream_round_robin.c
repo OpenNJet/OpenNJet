@@ -480,15 +480,23 @@ njt_stream_upstream_pre_handle_peer(njt_stream_upstream_rr_peer_t   *peer)
             && now - peer->checked <= peer->fail_timeout) {
             return NJT_ERROR;
         }
-	 if (peer->max_fails
-            && peer->fails >= peer->max_fails
-            && now - peer->checked > peer->fail_timeout) {
-            //peer->hc_upstart = now;
+#endif
+        return NJT_OK;
+}
+
+static njt_int_t
+njt_stream_upstream_single_pre_handle_peer(njt_stream_upstream_rr_peer_t   *peer)
+{
+#if (NJT_HTTP_UPSTREAM_API || NJT_STREAM_UPSTREAM_DYNAMIC_SERVER)
+        if (peer->down) {
+                return NJT_ERROR;
         }
-        //if (peer->max_fails
-        //    && peer->slow_start > 0 && peer->hc_upstart == 0) {
-        //    peer->hc_upstart =  njt_time();
-        //}
+        if (peer->hc_down > 0) {
+            return NJT_ERROR;
+    }
+        if (peer->max_conns && peer->conns >= peer->max_conns) {
+                return NJT_ERROR;
+        }
 #endif
         return NJT_OK;
 }
@@ -513,15 +521,17 @@ njt_stream_upstream_get_round_robin_peer(njt_peer_connection_t *pc, void *data)
 
     if (peers->single && peers->number != 0) {
         peer = peers->peer;
-
+	/*
         if (peer->down) {
             goto failed;
         }
 
         if (peer->max_conns && peer->conns >= peer->max_conns) {
             goto failed;
-        }
-
+        }*/
+	if (njt_stream_upstream_single_pre_handle_peer(peer) == NJT_ERROR) {
+	  goto failed;
+	}
         rrp->current = peer;
 
     } else {
@@ -628,7 +638,7 @@ njt_stream_upstream_get_peer(njt_stream_upstream_rr_peer_data_t *rrp)
             continue;
         }
 	if (njt_stream_upstream_pre_handle_peer(peer) == NJT_ERROR) {
-            //continue;
+            continue;
         }
 	peer->current_weight += peer->effective_weight;
 

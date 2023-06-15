@@ -1028,10 +1028,13 @@ njt_http_core_find_config_phase(njt_http_request_t *r,
     njt_http_core_loc_conf_t  *temp;
     njt_http_cleanup_t   **cln,*end;
 //    njt_pool_cleanup_t  **cln,*end;
+	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "ref_count used_ref=%i",r->used_ref);
     if (r->used_ref == 0 ){
         r->used_ref =1;
         temp = njt_http_get_module_loc_conf(r,njt_http_core_module);
         ++temp->ref_count;
+
+	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "ref_count clcf=%p",temp);
         cln = &r->main->cleanup;
         end = njt_pcalloc(r->pool, sizeof(njt_http_cleanup_t));
 //        cln = &r->pool->cleanup;
@@ -3459,11 +3462,6 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
             return NJT_CONF_ERROR;
         }
     }
-    // if(pclcf->old_locations == NULL) {
-	// pclcf->old_locations = njt_palloc(cf->temp_pool,
-    //                             sizeof(njt_http_location_queue_t));
-	// njt_queue_init(pclcf->old_locations);
-    // }
     if (clcf->if_loc == 1 ) {
 	     clcf->name = clcf->full_name;
 	     if (njt_http_add_location(cf, &pclcf->if_locations, clcf) != NJT_OK) {
@@ -3481,7 +3479,6 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 		    return NJT_CONF_ERROR;
 	    }
 
-   
     save = *cf;
     cf->ctx = ctx;
     cf->cmd_type = NJT_HTTP_LOC_CONF;

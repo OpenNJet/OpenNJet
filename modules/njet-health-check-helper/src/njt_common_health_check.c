@@ -213,6 +213,10 @@ njt_http_upstream_srv_conf_t* njt_http_find_upstream_by_name(njt_cycle_t *cycle,
     njt_uint_t i;
 
     umcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_upstream_module);
+    if(umcf == NULL){
+        return NULL;
+    }
+
     uscfp = umcf->upstreams.elts;
 
     for (i = 0; i < umcf->upstreams.nelts; i++) {
@@ -232,6 +236,10 @@ njt_stream_upstream_srv_conf_t *njt_stream_find_upstream_by_name(njt_cycle_t *cy
     njt_uint_t                         i;
 
     umcf = njt_stream_cycle_get_module_main_conf(njet_master_cycle, njt_stream_upstream_module);
+
+    if(umcf == NULL){
+        return NULL;
+    }
 
     uscfp = umcf->upstreams.elts;
     for (i = 0; i < umcf->upstreams.nelts; i++) {
@@ -291,4 +299,64 @@ void njt_stream_upstream_traver(void *ctx,njt_int_t (*item_handle)(void *ctx,njt
             break;
         }
     }
+}
+
+/* Convert "hello\xae\x00" hex string to binary, no more than COUNT bytes */
+char* njt_hex2bin(njt_str_t *d, njt_str_t *s, int count)
+{
+    int hex = 0;
+    const char *str = (char *)s->data;
+    const char * end = (char *)(s->data+s->len);
+    char *dst = (char *)d->data;
+    //
+    while (str<end && count>0) {
+        if(0==hex && str[0]=='\\' && (str+1)<end && (str[1] | 0x20) == 'x'){
+            hex = 1;
+            str+=2;
+            continue;
+        }
+
+        if(0==hex && str[0]=='\\' && (str+1)<end && str[1]  == '\\'){
+            str+=2;
+            *dst++ = '\\';
+            continue;
+        }
+        if(0==hex){
+            *dst++ = *str++;
+            count--;
+            continue;
+        }
+        unsigned char val;
+        unsigned char c = *str++;
+        if (isdigit(c))
+            val = c - '0';
+        else if ((c|0x20) >= 'a' && (c|0x20) <= 'f')
+            val = (c|0x20) - ('a' - 10);
+        else
+            return NULL;
+        if(str==end){
+            *dst++ = val;
+            count--;
+            hex = 0;
+            continue;
+        }
+        val <<= 4;
+        c = *str;
+        if (isdigit(c)) {
+            val |= c - '0';
+            str++;
+        }
+        else if ((c|0x20) >= 'a' && (c|0x20) <= 'f'){
+            val |= (c|0x20) - ('a' - 10);
+            str++;
+        }
+        else {
+            val >>= 4;
+        }
+
+        *dst++ = val;
+        count--;
+        hex = 0;
+    }
+    return dst;
 }

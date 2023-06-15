@@ -8,7 +8,10 @@
 #include "njt_dynlog_module.h"
 #include "njt_http_sendmsg_module.h"
 #include <njt_str_util.h>
+#include <njt_http_util.h>
 
+#define MIN_CONFIG_BODY_LEN 2
+#define MAX_CONFIG_BODY_LEN 5242880
 
 typedef struct {
     njt_http_request_t **reqs;
@@ -167,7 +170,7 @@ static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *modul
 static njt_int_t
 njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 {
-    u_char                              *p, *sub_p;
+    u_char                              *p,*end, *sub_p;
     njt_uint_t                          len;
     njt_str_t                           *item;
     njt_http_core_loc_conf_t            *clcf;
@@ -181,6 +184,7 @@ njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 
     uri = r->uri;
     p = uri.data + clcf->name.len;
+    end = uri.data + uri.len;
     len = uri.len - clcf->name.len;
 
     if (len != 0 && *p != '/') {
@@ -200,7 +204,7 @@ njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path)
         }
 
         item->data = p;
-        sub_p = (u_char *)njt_strchr(p, '/');
+        sub_p = (u_char *)njt_strlchr(p, end, '/');
 
         if (sub_p == NULL || (njt_uint_t)(sub_p - uri.data) > uri.len) {
             item->len = uri.data + uri.len - p;
@@ -224,8 +228,7 @@ njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 
 static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     njt_str_t json_str;
-    njt_chain_t *body_chain,*tmp_chain;
-    njt_uint_t len,size;
+    njt_chain_t *body_chain;
     njt_int_t rc;
     njt_ctrl_dynlog_request_err_ctx_t *err_ctx;
     njt_array_t *path;
@@ -248,34 +251,10 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     if(body_chain == NULL){
         goto err;
     }
-    /*check the sanity of the json body*/
-    json_str.data = body_chain->buf->pos;
-    json_str.len = body_chain->buf->last - body_chain->buf->pos;
-
-    if(json_str.len < 2 ){
+   
+    rc = njt_http_util_read_request_body(r, &json_str, MIN_CONFIG_BODY_LEN, MAX_CONFIG_BODY_LEN);
+    if(rc!=NJT_OK){
         goto err;
-    }
-
-    len = 0 ;
-    tmp_chain = body_chain;
-    while (tmp_chain!= NULL){
-        len += tmp_chain->buf->last - tmp_chain->buf->pos;
-        tmp_chain = tmp_chain->next;
-    }
-    json_str.len = len;
-    json_str.data = njt_pcalloc(r->pool,len);
-    if(json_str.data == NULL){
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "could not alloc buffer in function %s", __func__);
-        goto err;
-    }
-    len = 0;
-    tmp_chain = r->request_body->bufs;
-    while (tmp_chain!= NULL){
-        size = tmp_chain->buf->last-tmp_chain->buf->pos;
-        njt_memcpy(json_str.data + len,tmp_chain->buf->pos,size);
-        tmp_chain = tmp_chain->next;
-        len += size;
     }
 
     // 添加json_str校验逻辑
@@ -311,7 +290,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     err_ctx->code = rc;
     njt_http_set_ctx(r, err_ctx, njt_ctrl_config_api_module);
 
-    njt_str_t bad_req = njt_string("{\"code\":400,\"msg\":\"read body error\"}");
+    njt_str_t bad_req = njt_string("{\"code\":400,\"msg\":\"Request body should be a valid JSON object and less than 5MB\"}");
     rc= NJT_HTTP_BAD_REQUEST;
     njt_ctrl_dynlog_request_output(r,NJT_HTTP_BAD_REQUEST,&bad_req);
 

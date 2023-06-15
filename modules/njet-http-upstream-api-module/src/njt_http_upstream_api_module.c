@@ -1712,6 +1712,80 @@ njt_http_upstream_api_process_get(njt_http_request_t *r,
     return NJT_OK;
 }
 
+static njt_int_t njt_http_upstream_api_check_server_info( njt_json_manager *json_manager,njt_http_upstream_api_peer_t *api_peer) {
+
+
+
+
+	njt_json_element  *items;
+	njt_str_t   str;
+	njt_queue_t   *q;
+
+	if(json_manager->json_val == NULL || json_manager->json_val->type != NJT_JSON_OBJ) {
+		return NJT_ERROR;
+	}
+
+        for (q = njt_queue_head(&json_manager->json_val->objdata.datas);
+         q != njt_queue_sentinel(&json_manager->json_val->objdata.datas);
+         q = njt_queue_next(q)) {
+
+		items = njt_queue_data(q, njt_json_element, ele_queue);
+		if(items == NULL){
+			break;
+		}
+	  njt_str_set(&str,"server");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"weight");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"max_conns");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"max_fails");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"down");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"backup");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	   njt_str_set(&str,"drain");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	   njt_str_set(&str,"fail_timeout");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"slow_start");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	  njt_str_set(&str,"route");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
+	
+	   api_peer->msg = items->key;
+	   break;
+	  
+	}
+	if(api_peer->msg.len > 0){
+	  return NJT_HTTP_UPS_API_INVALID_JSON_BODY;
+	}
+	return NJT_OK;
+
+
+}
+
 
 static njt_int_t
 njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
@@ -1726,6 +1800,10 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
 	njt_str_t  key;
 
     //items = json_manager->json_keyval->elts;
+	rc = njt_http_upstream_api_check_server_info(json_manager,api_peer);
+	if(rc != NJT_OK) {
+		 return rc;
+	}
 
 	njt_str_set(&key,"server");
 	rc = njt_struct_top_find(json_manager, &key, &items);
@@ -4756,7 +4834,7 @@ static njt_int_t
 njt_upstream_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 {
 
-    u_char                              *p, *sub_p;
+    u_char                              *p, *sub_p,*last;
     njt_uint_t                          len;
     njt_str_t                           *item;
     njt_http_core_loc_conf_t            *clcf;
@@ -4771,6 +4849,7 @@ njt_upstream_api_parse_path(njt_http_request_t *r, njt_array_t *path)
     uri = r->uri;
     p = uri.data + clcf->name.len;
     len = uri.len - clcf->name.len;
+    last = uri.data + uri.len;
 
     if (*p == '/') {
         len --;
@@ -4787,7 +4866,7 @@ njt_upstream_api_parse_path(njt_http_request_t *r, njt_array_t *path)
         }
 
         item->data = p;
-        sub_p = (u_char *)njt_strchr(p, '/');
+        sub_p = (u_char *)njt_strlchr(p,last,'/');
 
         if (sub_p == NULL || (njt_uint_t)(sub_p - uri.data) > uri.len) {
             item->len = uri.data + uri.len - p;
@@ -5074,7 +5153,7 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
 	case NJT_HTTP_UPS_API_NOT_MODIFY_SRV_NAME:
 		r->headers_out.status = 400;
 		njt_str_set(&insert,
-                    "400,\"text\":\"server address is immutable\",\"code\":\"UpstramServerImmutable\"}");
+                    "400,\"text\":\"server address is immutable\",\"code\":\"UpstreamServer Immutable\"}");
         rc = njt_http_upstream_api_insert_out_str(r, out, &insert);
         if (rc != NJT_OK) {
             return rc;

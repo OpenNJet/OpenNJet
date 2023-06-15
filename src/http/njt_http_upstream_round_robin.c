@@ -17,6 +17,9 @@
 
 static njt_http_upstream_rr_peer_t *njt_http_upstream_get_peer(
     njt_http_upstream_rr_peer_data_t *rrp);
+static njt_int_t
+njt_http_upstream_single_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer);
+
 #if (NJT_HTTP_SSL)
 
 static njt_int_t njt_http_upstream_empty_set_session(njt_peer_connection_t *pc,
@@ -475,14 +478,17 @@ njt_http_upstream_get_round_robin_peer(njt_peer_connection_t *pc, void *data)
 
     if (peers->single && peers->number != 0) {
         peer = peers->peer;
-
+	/*
         if (peer->down) {
             goto failed;
         }
 
         if (peer->max_conns && peer->conns >= peer->max_conns) {
             goto failed;
-        }
+        }*/
+	if(njt_http_upstream_single_pre_handle_peer(peer) == NJT_ERROR) {
+                goto failed;
+	}
 
         rrp->current = peer;
 
@@ -956,16 +962,26 @@ njt_http_upstream_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer)
 	    //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "fails > max_fails   ip=%V",&peer->server);
             return NJT_ERROR;
         }
-        if (peer->max_fails
-            && peer->fails >= peer->max_fails
-            && now - peer->checked > peer->fail_timeout) {
-		//peer->hc_upstart = now;
-	    //peer->fails = 0;
+	
+#endif
+        return NJT_OK;
+}
+static njt_int_t
+njt_http_upstream_single_pre_handle_peer(njt_http_upstream_rr_peer_t   *peer)
+{
+#if (NJT_HTTP_UPSTREAM_API || NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
+        if (peer->down) {
+	   	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "down  ip=%V",&peer->server);
+                return NJT_ERROR;
         }
-        //if (peer->max_fails
-        //    && peer->slow_start > 0 && peer->hc_upstart == 0) {
-        //    peer->hc_upstart =  njt_time();
-        //}
+        if (peer->hc_down > 0) {
+	    //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "hc_down  ip=%V",&peer->server);
+            return NJT_ERROR;
+    	}
+        if (peer->max_conns && peer->conns >= peer->max_conns) {
+	   	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "conns >max_conns   ip=%V",&peer->server);
+                return NJT_ERROR;
+        }
 	
 #endif
         return NJT_OK;

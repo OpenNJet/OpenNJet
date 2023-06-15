@@ -74,6 +74,12 @@ typedef struct {
     union {
         size_t                  size;
     } u;
+
+//add by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_uint_t                  dynamic;
+    njt_pool_t                  *pool;
+#endif
 } njt_http_complex_value_t;
 
 

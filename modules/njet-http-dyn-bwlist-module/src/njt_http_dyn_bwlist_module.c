@@ -654,9 +654,12 @@ static int njt_dyn_bwlist_change_handler_internal(njt_str_t *key, njt_str_t *val
 
     rc = njt_json_parse_data(pool, value, njt_http_dyn_bwlist_main_json_dt, api_data);
     if (rc == NJT_OK) {
+        //when json is valid, the following method always return NJT_OK and different msg set to rpc_result
         njt_dyn_bwlist_update_access_conf(pool, api_data, rpc_result);
     }
     else {
+        njt_str_t msg = njt_string("");
+        njt_kv_sendmsg(key,&msg,0);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
         goto rpc_msg;
     }
