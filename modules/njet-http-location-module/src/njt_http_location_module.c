@@ -419,7 +419,6 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
             NULL,
             njt_cycle->log,
             1,
-	    NULL,
             &cf_ctx,
             NJT_HTTP_MODULE,
             NJT_CONF_BLOCK,
@@ -667,7 +666,6 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	conf.errstr = &location_info->msg;
     }
 	
-	conf.parent_pool = clcf->pool;
     conf.pool = location_info->pool; 
     conf.temp_pool = location_info->pool;
     conf.ctx = cscf->ctx;
