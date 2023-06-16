@@ -172,7 +172,7 @@ njt_http_vhost_traffic_status_find_lru_node(njt_http_request_t *r,
     ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
 
     if (b != ctx->rbtree->sentinel) {
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &b->color;
+        vtsn = njt_http_vhost_traffic_status_get_node(b);
 
         if (vtsn->stat_upstream.type == NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG) {
             filter.data = vtsn->data;
@@ -205,8 +205,8 @@ njt_http_vhost_traffic_status_find_lru_node_cmp(njt_http_request_t *r,
         return b;
     }
 
-    avtsn = (njt_http_vhost_traffic_status_node_t *) &a->color;
-    bvtsn = (njt_http_vhost_traffic_status_node_t *) &b->color;
+    avtsn = njt_http_vhost_traffic_status_get_node(a);
+    bvtsn = njt_http_vhost_traffic_status_get_node(b);
 
     aq = &avtsn->stat_request_times;
     bq = &bvtsn->stat_request_times;
@@ -251,7 +251,7 @@ njt_http_vhost_traffic_status_node_lookup(njt_rbtree_t *rbtree, njt_str_t *key,
 
         /* hash == node->key */
 
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+        vtsn = njt_http_vhost_traffic_status_get_node(node);
 
         rc = njt_memn2cmp(key->data, vtsn->data, key->len, (size_t) vtsn->len);
         if (rc == 0) {
@@ -316,6 +316,19 @@ njt_http_vhost_traffic_status_node_zero(njt_http_vhost_traffic_status_node_t *vt
 }
 
 
+void
+njt_http_vhost_traffic_status_nodes_zero(njt_http_vhost_traffic_status_node_t *vtsn)
+{
+    int                 i;
+
+    njt_http_vhost_traffic_status_node_zero(vtsn);
+    for (i=0; i<njt_ncpu; i++) {
+        vtsn--;
+        njt_http_vhost_traffic_status_node_zero(vtsn);
+    }
+}
+
+
 /*
    Initialize the node and update it with the first request.
    Set the `stat_request_time` to the time of the first request.
@@ -324,8 +337,6 @@ void
 njt_http_vhost_traffic_status_node_init(njt_http_request_t *r,
     njt_http_vhost_traffic_status_node_t *vtsn)
 {
-    njt_msec_int_t  ms;
-
     /* init serverZone */
     njt_http_vhost_traffic_status_node_zero(vtsn);
     njt_http_vhost_traffic_status_node_time_queue_init(&vtsn->stat_request_times);
@@ -338,6 +349,14 @@ njt_http_vhost_traffic_status_node_init(njt_http_request_t *r,
     njt_http_vhost_traffic_status_node_time_queue_init(&vtsn->stat_upstream.response_times);
     njt_http_vhost_traffic_status_node_histogram_bucket_init(r,
         &vtsn->stat_upstream.response_buckets);
+}
+
+
+void
+njt_http_vhost_traffic_status_node_init_update(njt_http_request_t *r,
+    njt_http_vhost_traffic_status_node_t *vtsn)
+{
+    njt_msec_int_t  ms;
 
     /* set serverZone */
     ms = njt_http_vhost_traffic_status_request_time(r);
@@ -345,6 +364,21 @@ njt_http_vhost_traffic_status_node_init(njt_http_request_t *r,
 
     njt_http_vhost_traffic_status_node_update(r, vtsn, ms);
 }
+
+
+void
+njt_http_vhost_traffic_status_nodes_init(njt_http_request_t *r,
+    njt_http_vhost_traffic_status_node_t *vtsn)
+{
+    int             i;
+
+    njt_http_vhost_traffic_status_node_init(r, vtsn);
+    for (i=0; i<njt_ncpu; i++) {
+        vtsn--;
+        njt_http_vhost_traffic_status_node_init(r, vtsn);
+    }
+}
+
 
 
 /*

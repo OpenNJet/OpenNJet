@@ -79,7 +79,7 @@ njt_http_vhost_traffic_status_limit_handler_traffic(njt_http_request_t *r,
 
     shpool = (njt_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
-    njt_shmtx_lock(&shpool->mutex);
+    njt_shrwlock_rdlock(&shpool->rwlock);
 
     limits = traffics->elts;
     n = traffics->nelts;
@@ -122,7 +122,8 @@ njt_http_vhost_traffic_status_limit_handler_traffic(njt_http_request_t *r,
 
             vtscf->node_caches[type] = node;
 
-            vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+            vtsn = njt_http_vhost_traffic_status_get_node(node);
+            njt_http_vhost_traffic_status_sum_node(vtsn, vtscf);
 
             traffic_used = (njt_atomic_t) njt_http_vhost_traffic_status_node_member(vtsn, &variable);
 
@@ -144,7 +145,8 @@ njt_http_vhost_traffic_status_limit_handler_traffic(njt_http_request_t *r,
 
             vtscf->node_caches[type] = node;
 
-            vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+            vtsn = njt_http_vhost_traffic_status_get_node(node);
+            njt_http_vhost_traffic_status_sum_node(vtsn, vtscf);
 
             traffic_used = (njt_atomic_t) njt_http_vhost_traffic_status_node_member(vtsn, &variable);
         }
@@ -157,7 +159,7 @@ njt_http_vhost_traffic_status_limit_handler_traffic(njt_http_request_t *r,
 
 done:
 
-    njt_shmtx_unlock(&shpool->mutex);
+    njt_shrwlock_unlock(&shpool->rwlock);
 
     return rc;
 }
@@ -193,7 +195,7 @@ njt_http_vhost_traffic_status_limit_traffic(njt_conf_t *cf, njt_command_t *cmd,
         return NJT_CONF_ERROR;
     }
 
-    p = (u_char *) njt_strchr(value[1].data, ':');
+    p = (u_char *) njt_strlchr(value[1].data, value[1].data + value[1].len, ':');
     if (p == NULL) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "limit_traffic() empty size pattern");
         return NJT_CONF_ERROR;
@@ -294,7 +296,7 @@ njt_http_vhost_traffic_status_limit_traffic_by_set_key(njt_conf_t *cf, njt_comma
         return NJT_CONF_ERROR;
     }
 
-    p = (u_char *) njt_strchr(value[2].data, ':');
+    p = (u_char *) njt_strlchr(value[2].data, value[2].data + value[2].len, ':');
     if (p == NULL) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "limit_traffic_by_set_key() empty size pattern");
         return NJT_CONF_ERROR;

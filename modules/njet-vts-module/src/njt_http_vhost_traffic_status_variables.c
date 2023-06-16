@@ -137,7 +137,7 @@ njt_http_vhost_traffic_status_node_variable(njt_http_request_t *r,
 
     shpool = (njt_slab_pool_t *) vtscf->shm_zone->shm.addr;
 
-    njt_shmtx_lock(&shpool->mutex);
+    njt_shrwlock_rdlock(&shpool->rwlock);
 
     node = njt_http_vhost_traffic_status_find_node(r, &key, type, 0);
 
@@ -150,7 +150,7 @@ njt_http_vhost_traffic_status_node_variable(njt_http_request_t *r,
         goto not_found;
     }
 
-    vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+    vtsn = njt_http_vhost_traffic_status_get_node(node);
 
     v->len = njt_sprintf(p, "%uA", *((njt_atomic_t *) ((char *) vtsn + data))) - p;
     v->valid = 1;
@@ -168,7 +168,7 @@ done:
 
     vtscf->node_caches[type] = node;
 
-    njt_shmtx_unlock(&shpool->mutex);
+    njt_shrwlock_unlock(&shpool->rwlock);
 
     return NJT_OK;
 }

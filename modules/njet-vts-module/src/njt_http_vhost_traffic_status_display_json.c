@@ -178,6 +178,65 @@ njt_http_vhost_traffic_status_display_set_server_node(
 }
 
 
+void
+njt_http_vhost_traffic_status_sum_node(njt_http_vhost_traffic_status_node_t *vtsn, 
+    njt_http_vhost_traffic_status_loc_conf_t  *vtscf)
+{
+    njt_http_vhost_traffic_status_node_t *sum;
+    int                                   i;
+
+    sum = vtsn;
+    njt_rwlock_wlock(&sum->lock);
+    njt_http_vhost_traffic_status_node_zero(sum);
+
+    for (i=0; i<njt_ncpu; i++) {
+        vtsn--;
+        sum->stat_request_counter += vtsn->stat_request_counter;
+        sum->stat_in_bytes += vtsn->stat_in_bytes;
+        sum->stat_out_bytes += vtsn->stat_out_bytes;
+        sum->stat_1xx_counter += vtsn->stat_1xx_counter;
+        sum->stat_2xx_counter += vtsn->stat_2xx_counter;
+        sum->stat_3xx_counter += vtsn->stat_3xx_counter;
+        sum->stat_4xx_counter += vtsn->stat_4xx_counter;
+        sum->stat_5xx_counter += vtsn->stat_5xx_counter;
+        sum->stat_request_time_counter += vtsn->stat_request_time_counter;
+        njt_http_vhost_traffic_status_node_time_queue_merge(
+                &sum->stat_request_times,
+                &vtsn->stat_request_times, vtscf->average_period);
+        sum->stat_request_counter_oc += vtsn->stat_request_counter_oc;
+        sum->stat_in_bytes_oc += vtsn->stat_in_bytes_oc;
+        sum->stat_out_bytes_oc += vtsn->stat_out_bytes_oc;
+        sum->stat_1xx_counter_oc += vtsn->stat_1xx_counter_oc;
+        sum->stat_2xx_counter_oc += vtsn->stat_2xx_counter_oc;
+        sum->stat_3xx_counter_oc += vtsn->stat_3xx_counter_oc;
+        sum->stat_4xx_counter_oc += vtsn->stat_4xx_counter_oc;
+        sum->stat_5xx_counter_oc += vtsn->stat_5xx_counter_oc;
+        sum->stat_request_time_counter_oc += vtsn->stat_request_time_counter_oc;
+
+#if (NJT_HTTP_CACHE)
+        sum->stat_cache_miss_counter += vtsn->stat_cache_miss_counter;
+        sum->stat_cache_bypass_counter += vtsn->stat_cache_bypass_counter;
+        sum->stat_cache_expired_counter += vtsn->stat_cache_expired_counter;
+        sum->stat_cache_stale_counter += vtsn->stat_cache_stale_counter;
+        sum->stat_cache_updating_counter += vtsn->stat_cache_updating_counter;
+        sum->stat_cache_revalidated_counter += vtsn->stat_cache_revalidated_counter;
+        sum->stat_cache_hit_counter += vtsn->stat_cache_hit_counter;
+        sum->stat_cache_scarce_counter += vtsn->stat_cache_scarce_counter;
+
+        sum->stat_cache_miss_counter_oc += vtsn->stat_cache_miss_counter_oc;
+        sum->stat_cache_bypass_counter_oc += vtsn->stat_cache_bypass_counter_oc;
+        sum->stat_cache_expired_counter_oc += vtsn->stat_cache_expired_counter_oc;
+        sum->stat_cache_stale_counter_oc += vtsn->stat_cache_stale_counter_oc;
+        sum->stat_cache_updating_counter_oc += vtsn->stat_cache_updating_counter_oc;
+        sum->stat_cache_revalidated_counter_oc += vtsn->stat_cache_revalidated_counter_oc;
+        sum->stat_cache_hit_counter_oc += vtsn->stat_cache_hit_counter_oc;
+        sum->stat_cache_scarce_counter_oc += vtsn->stat_cache_scarce_counter_oc;
+#endif
+    }
+    njt_rwlock_unlock(&sum->lock);
+}
+
+
 u_char *
 njt_http_vhost_traffic_status_display_set_server(njt_http_request_t *r,
     u_char *buf, njt_rbtree_node_t *node)
@@ -192,7 +251,8 @@ njt_http_vhost_traffic_status_display_set_server(njt_http_request_t *r,
     vtscf = njt_http_get_module_loc_conf(r, njt_http_vhost_traffic_status_module);
 
     if (node != ctx->rbtree->sentinel) {
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+        vtsn = njt_http_vhost_traffic_status_get_node(node);
+        njt_http_vhost_traffic_status_sum_node(vtsn, vtscf);
 
         if (vtsn->stat_upstream.type == NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_NO) {
             key.data = vtsn->data;
@@ -480,7 +540,7 @@ njt_http_vhost_traffic_status_display_set_upstream_alone(njt_http_request_t *r,
     type = NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UA;
 
     if (node != ctx->rbtree->sentinel) {
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+        vtsn = njt_http_vhost_traffic_status_get_node(node);
 
         if (vtsn->stat_upstream.type == type) {
             key.len = vtsn->len;
@@ -617,7 +677,7 @@ njt_http_vhost_traffic_status_display_set_upstream_group(njt_http_request_t *r,
 #endif
 
                 if (node != NULL) {
-                    vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+                     vtsn = njt_http_vhost_traffic_status_get_node(node);
 #if njet_version > 1007001
                     buf = njt_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn);
 #else
@@ -669,7 +729,7 @@ not_supported:
 #endif
 
                     if (node != NULL) {
-                        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+                        vtsn = njt_http_vhost_traffic_status_get_node(node);
 #if njet_version > 1007001
                         buf = njt_http_vhost_traffic_status_display_set_upstream_node(r, buf, &usn, vtsn);
 #else
@@ -788,7 +848,7 @@ njt_http_vhost_traffic_status_display_set_cache(njt_http_request_t *r,
     ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
 
     if (node != ctx->rbtree->sentinel) {
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+        vtsn = njt_http_vhost_traffic_status_get_node(node);
 
         if (vtsn->stat_upstream.type == NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_CC) {
             buf = njt_http_vhost_traffic_status_display_set_cache_node(r, buf, vtsn);

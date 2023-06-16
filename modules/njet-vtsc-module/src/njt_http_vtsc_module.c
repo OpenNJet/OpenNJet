@@ -290,8 +290,8 @@ njt_http_vtsc_rbtree_insert_value(njt_rbtree_node_t *temp,
 
         } else { /* node->key == temp->key */
 
-            vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
-            vtsnt = (njt_http_vhost_traffic_status_node_t *) &temp->color;
+            vtsn = njt_http_vhost_traffic_status_get_node(node);
+            vtsnt = njt_http_vhost_traffic_status_get_node(temp);
 
             p = (njt_memn2cmp(vtsn->data, vtsnt->data, vtsn->len, vtsnt->len) < 0)
                 ? &temp->left
@@ -364,6 +364,8 @@ njt_http_vtsc_init_zone(njt_shm_zone_t *shm_zone, void *data)
     njt_http_vts_rbtree = ctx->rbtree;
     njt_sprintf(shpool->log_ctx, " in vhost_traffic_status_zone \"%V\"%Z",
                 &shm_zone->shm.name);
+    
+    njt_shrwlock_create(&shpool->rwlock, &shpool->lock, NULL);
 
     return NJT_OK;
 }
@@ -401,7 +403,7 @@ njt_http_vtsc_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
             name.data = value[i].data + 7;
 
-            p = (u_char *) njt_strchr(name.data, ':');
+            p = (u_char *) njt_strlchr(name.data, name.data + name.len, ':');
             if (p == NULL) {
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid shared size \"%V\"", &value[i]);
@@ -1825,6 +1827,8 @@ static int  njt_agent_vts_change_handler_internal(njt_str_t *key, njt_str_t *val
     if (rc == NJT_OK) {
         njt_dynvts_update(pool, dynconf, rpc_result);
     } else {
+        njt_str_t msg = njt_string("");
+        njt_kv_sendmsg(key, &msg, 0);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
         goto rpc_msg;
     }
