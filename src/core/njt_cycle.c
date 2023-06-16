@@ -1383,7 +1383,11 @@ njt_shared_memory_add(njt_conf_t *cf, njt_str_t *name, size_t size, void *tag)
 
         return &shm_zone[i];
     }
-
+    if(cf->dynamic == 1) {  //by zyg
+	 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                            "unsupported create dynamic shared memory zone \"%V\"" ,name);
+	 return NULL;
+    }
     shm_zone = njt_list_push(&cf->cycle->shared_memory);
 
     if (shm_zone == NULL) {
