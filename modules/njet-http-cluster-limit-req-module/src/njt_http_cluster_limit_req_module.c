@@ -981,14 +981,14 @@ njt_http_cluster_limit_req(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             if (n <= 0)
             {
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                "invalid number of connections \"%V\"", &value[i]);
+                                "invalid number of rate \"%V\"", &value[i]);
                 return NJT_CONF_ERROR;
             }
 
             if (n > 65535)
             {
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                "connection limit must be less 65536");
+                                "rate limit must be less 65536");
                 return NJT_CONF_ERROR;
             }
 
@@ -1006,7 +1006,7 @@ njt_http_cluster_limit_req(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     if(n < 1){
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "conn must set and must > 0",
+                           "rate must set and must > 0",
                            &cmd->name);
         return NJT_CONF_ERROR;    
     }
