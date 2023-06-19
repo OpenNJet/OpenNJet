@@ -1003,7 +1003,7 @@ njt_http_add_location(njt_conf_t *cf, njt_queue_t **locations,
         //add by clb
 #if (NJT_HTTP_DYNAMIC_LOC)
         tmp_queue = (njt_http_location_queue_t *)*locations;
-        tmp_queue->parent_pool = cf->temp_pool;
+        tmp_queue->parent_pool = parent_pool;
 #endif
         //end
         njt_queue_init(*locations);
