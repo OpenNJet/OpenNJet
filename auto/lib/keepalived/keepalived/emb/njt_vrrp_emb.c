@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "signals.h"
 
 #include "njt_vrrp_emb.h"
 #include "vrrp_daemon.h"
@@ -19,6 +20,7 @@
 
 extern int njt_start_vrrp_child2(void);
 extern void njt_vrrp_add_stop_event(void);
+extern void sigreload_vrrp(__attribute__((unused)) void *v, __attribute__((unused)) int sig);
 void njt_read_config_file(bool write_config_copy);
 
 static char *override_namespace;
@@ -145,6 +147,10 @@ void start_reload(thread_ref_t thread)
     //start_validate_reload_conf_child();
 }
 
+void njt_vrrp_reload_config(void) 
+{
+    sigreload_vrrp(NULL,SIGHUP);
+}
 
 int njt_vrrp_emb_init(const char* cfg,const char* log)
 {
@@ -155,7 +161,7 @@ int njt_vrrp_emb_init(const char* cfg,const char* log)
 		return -1;
 	}
 	global_data = alloc_global_data();
-	init_data(conf_file, njt_global_init_keywords, true);
+	init_data(conf_file, njt_global_init_keywords, false);
 
     if (had_config_file_error()) {
 		return -2;
