@@ -81,7 +81,6 @@ typedef struct {
     njt_flag_t    uninitialized_variable_warn;
 	#if (NJT_HTTP_DYNAMIC_LOC)
 		 njt_array_t  var_names;  
-		 njt_flag_t   codes_op;
     		 njt_array_t  *mul_codes;        /* uintptr_t */
 		 njt_int_t    ret;
 	#endif

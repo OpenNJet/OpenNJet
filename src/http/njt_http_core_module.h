@@ -592,7 +592,7 @@ njt_int_t njt_http_get_forwarded_addr(njt_http_request_t *r, njt_addr_t *addr,
     int recursive);
 
 njt_int_t njt_http_link_multi_headers(njt_http_request_t *r);
-
+njt_http_location_queue_t *njt_http_find_location(njt_str_t name, njt_queue_t *locations);
 
 extern njt_module_t  njt_http_core_module;
 

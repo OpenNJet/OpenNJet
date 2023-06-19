@@ -190,24 +190,6 @@ static void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
 }
 
 
-static njt_http_location_queue_t *njt_http_find_location(njt_str_t name, njt_queue_t *locations) {
-    njt_queue_t *x;
-    njt_http_location_queue_t *lq;
-    njt_http_core_loc_conf_t *clcf;
-
-    for (x = njt_queue_head(locations);
-         x != njt_queue_sentinel(locations);
-         x = njt_queue_next(x)) {
-        lq = (njt_http_location_queue_t *) x;
-        clcf = lq->exact ? lq->exact : lq->inclusive;
-        if (name.len == clcf->full_name.len) {
-            if (njt_strncmp(name.data, clcf->full_name.data, name.len) == 0) {
-                return lq;
-            }
-        }
-    }
-    return NULL;
-}
 
 static njt_http_core_loc_conf_t*  njt_http_location_copy_location (njt_http_core_loc_conf_t *pclcf,njt_http_core_loc_conf_t *clcf,njt_pool_t *pool){
  
