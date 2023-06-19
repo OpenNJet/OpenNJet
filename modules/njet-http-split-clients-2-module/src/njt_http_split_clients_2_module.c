@@ -353,9 +353,12 @@ static njt_int_t njt_http_split_client_2_init_worker(njt_cycle_t *cycle)
         return NJT_OK;
     }
     conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
+    if (!conf_ctx) {
+        return NJT_OK;
+    }
     sc2cf = conf_ctx->main_conf[njt_http_split_clients_2_module.ctx_index];
 
-    if (!sc2cf->has_split_block) {
+    if (!sc2cf || !sc2cf->has_split_block) {
         return NJT_OK;
     }
 
