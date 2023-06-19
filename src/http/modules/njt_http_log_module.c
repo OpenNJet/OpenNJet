@@ -2460,6 +2460,11 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     cfd.cycle = (njt_cycle_t*)njt_cycle;
     cfd.log = njt_cycle->log;
     cmcf = njt_http_cycle_get_module_main_conf(njt_cycle,njt_http_core_module);
+    if(!cmcf || cmcf->servers.nelts == 0){
+        // 不存在server
+        njt_log_error(NJT_LOG_ERR, cf->log, 0,"servers is empty");
+        return NJT_ERROR;
+    }
     cscfp = cmcf->servers.elts;
     if(cscfp == NULL){
         njt_log_error(NJT_LOG_ERR, cf->log, 0,"not find server in http{}");
@@ -2469,7 +2474,11 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     cfd.ctx = &ctx;
 
     lmcf = njt_http_cycle_get_module_main_conf(njt_cycle,njt_http_log_module);
-
+    if(!lmcf){
+        // 未加载log_module
+        njt_log_error(NJT_LOG_ERR, cf->log, 0,"unload njt_http_log_module");
+        return NJT_ERROR;
+    }
     cf->args = njt_array_create(cf->pool,3, sizeof(njt_str_t));
     if(cf->args == NULL){
         goto err;
