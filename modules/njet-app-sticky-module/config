@@ -1,0 +1,14 @@
+
+njt_addon_name=njt_app_sticky_module
+njt_module_type=HTTP
+njt_module_name=$njt_addon_name
+njt_module_deps=" \
+"
+njt_module_srcs=" \
+  $njt_addon_dir/src/njt_app_sticky_module.c \
+"
+njt_module_incs="$njt_addon_dir/../njt_gossip_module/src"
+njt_module_libs=""
+njt_module_order="$njt_module_name njt_gossip_module"
+
+. auto/module
