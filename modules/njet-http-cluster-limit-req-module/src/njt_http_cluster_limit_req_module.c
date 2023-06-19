@@ -427,6 +427,10 @@ njt_http_cluster_limit_req_handler(njt_http_request_t *r)
     }
 
     lccf = njt_http_get_module_loc_conf(r, njt_http_cluster_limit_req_module);
+    if(lccf == NULL){
+        return NJT_DECLINED;
+    }
+
     limits = lccf->limits.elts;
 
     for (i = 0; i < lccf->limits.nelts; i++)
@@ -1369,6 +1373,9 @@ njt_http_cluster_limit_req_init(njt_conf_t *cf)
     njt_http_core_main_conf_t *cmcf;
 
     cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
+    if(cmcf == NULL){
+        return NJT_OK;
+    }
 
     h = njt_array_push(&cmcf->phases[NJT_HTTP_PREACCESS_PHASE].handlers);
     if (h == NULL)

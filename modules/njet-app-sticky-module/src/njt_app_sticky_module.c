@@ -161,7 +161,7 @@ static njt_int_t njt_app_sticky_init_peer(njt_http_request_t *r,
 
 	njt_app_sticky_srv_conf_t *ascf = njt_http_conf_upstream_srv_conf(us, njt_app_sticky_module);
 
-	aspd=njt_palloc(r->pool, sizeof(njt_app_sticky_peer_data_t));
+	aspd = njt_palloc(r->pool, sizeof(njt_app_sticky_peer_data_t));
 
 	if (aspd==NULL) {
 		njt_log_error(NJT_LOG_ERR,r->connection->log,0,"init app_sticky failed,malloc failure");
@@ -178,24 +178,27 @@ static njt_int_t njt_app_sticky_init_peer(njt_http_request_t *r,
     if (njt_http_upstream_init_round_robin_peer(r, us) != NJT_OK) {
         return NJT_ERROR;
     }
-	if (ascf->is_cookie ==0) {
-		njt_table_elt_t* header_val=njt_app_sticky_search_header(r,ascf->var.data,ascf->var.len,0);
-		if (header_val !=NULL ) {
-			aspd->key.data = njt_pstrdup(r->pool, &header_val->value);
-			aspd->key.len =header_val->value.len;
-			njt_log_error(NJT_LOG_DEBUG,r->connection->log,0, "found header:\"%V :%V\"  in request",&ascf->var, &aspd->key);
-		} else aspd->key.len =0;
-	} else {
-		njt_str_t cookie_value;
-		if (njt_http_parse_multi_header_lines(r, r->headers_in.cookie, &ascf->var, &cookie_value) 
-			!= NULL) {
-			// warn: aspd->key= &cookie_value; wrong usage
-			aspd->key.data = njt_pstrdup(r->pool, &cookie_value);
-			aspd->key.len =cookie_value.len;
-			njt_log_error(NJT_LOG_DEBUG,r->connection->log,0, "found cookie:\"%V :%V\"  in request",
-				&ascf->var, &aspd->key);
-		} else aspd->key.len =0;
 
+	if(ascf != NULL){
+		if (ascf->is_cookie ==0) {
+			njt_table_elt_t* header_val=njt_app_sticky_search_header(r,ascf->var.data,ascf->var.len,0);
+			if (header_val !=NULL ) {
+				aspd->key.data = njt_pstrdup(r->pool, &header_val->value);
+				aspd->key.len =header_val->value.len;
+				njt_log_error(NJT_LOG_DEBUG,r->connection->log,0, "found header:\"%V :%V\"  in request",&ascf->var, &aspd->key);
+			} else aspd->key.len =0;
+		} else {
+			njt_str_t cookie_value;
+			if (njt_http_parse_multi_header_lines(r, r->headers_in.cookie, &ascf->var, &cookie_value) 
+				!= NULL) {
+				// warn: aspd->key= &cookie_value; wrong usage
+				aspd->key.data = njt_pstrdup(r->pool, &cookie_value);
+				aspd->key.len =cookie_value.len;
+				njt_log_error(NJT_LOG_DEBUG,r->connection->log,0, "found cookie:\"%V :%V\"  in request",
+					&ascf->var, &aspd->key);
+			} else aspd->key.len =0;
+
+		}
 	}
     r->upstream->peer.get = njt_app_sticky_get_peer;
 
@@ -245,6 +248,11 @@ static njt_int_t njt_app_sticky_get_peer(njt_peer_connection_t *pc, void *data){
 	njt_uint_t i;
 	njt_app_sticky_ctx_t *ctx;
 	njt_app_sticky_peer_data_t * aspd=(njt_app_sticky_peer_data_t*)data;
+
+	if(aspd == NULL){
+		njt_log_error(NJT_LOG_DEBUG, aspd->request->connection->log, 0, "no app_sticky key, use rr");
+		goto use_rr;
+	}
 
 	ctx=aspd->srv_conf->ctx;
 
@@ -350,6 +358,11 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
 	njt_msec_t						tmp_ttl;
 
     uscf = njt_http_conf_get_module_srv_conf(cf, njt_http_upstream_module);
+	if(uscf == NULL){
+		njt_conf_log_error(NJT_LOG_WARN, cf, 0,
+                           " app sticky has not updatem module");
+		return NJT_CONF_ERROR;
+	}
 
     if (uscf->peer.init_upstream) {
         njt_conf_log_error(NJT_LOG_WARN, cf, 0,
@@ -392,6 +405,11 @@ static char *njt_app_sticky_cmd(njt_conf_t *cf, njt_command_t *cmd,
     }
 	
 	ascf = njt_http_conf_upstream_srv_conf(uscf, njt_app_sticky_module);
+	if(ascf == NULL){
+		njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                   "app_sticky has no app_sticky_module");
+        return NJT_CONF_ERROR;
+	}
 
 	if (njt_strncmp(value[2].data, "cookie:", 7) == 0) {
 		ascf->is_cookie =1;
@@ -832,6 +850,12 @@ static int  njt_app_sticky_on_node_on(njt_str_t* node, njt_str_t* node_pid, void
 			continue;
 		}
 		ascf =(njt_app_sticky_srv_conf_t*) zone_ctxes[i]->ctx->data;
+		if(ascf == NULL){
+			njt_log_error(NJT_LOG_INFO, zone_ctxes[i]->ctx->log,0,
+				"sticky_ctxes[%d] ascf is null", i);
+			continue;
+		}
+
 		njt_log_error(NJT_LOG_INFO, zone_ctxes[i]->ctx->log,0,
 			"node:%V online zone:%V, begin sync sticky session,%d",
 			node, &zone_ctxes[i]->zone_name, ascf->ttl);
