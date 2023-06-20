@@ -3470,6 +3470,10 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
             return NJT_CONF_ERROR;
         }
     }
+    clcf->parent_pool = NULL;
+    if(cf->dynamic == 1) {
+	clcf->parent_pool = pclcf->pool;
+    }
     if (clcf->if_loc == 1 ) {
 	     //clcf->name = clcf->full_name;
 	     if (njt_http_add_location(cf, &pclcf->if_locations, clcf) != NJT_OK) {

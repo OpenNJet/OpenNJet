@@ -167,8 +167,8 @@ static void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
              q != njt_queue_sentinel(locations);
              ) {
             lq = (njt_http_location_queue_t *) q;
-			q = njt_queue_next(q);
-			njt_queue_remove(&lq->queue);
+	    q = njt_queue_next(q);
+	    njt_queue_remove(&lq->queue);
             if (lq->exact != NULL) {
                 new_clcf = lq->exact;
                 njt_http_location_destroy(new_clcf);
@@ -1332,6 +1332,8 @@ static void njt_http_location_clear_dirty_data(njt_http_core_loc_conf_t *clcf) {
     njt_queue_t *x, *q;
     njt_http_location_queue_t *lx;
     njt_http_core_loc_conf_t *dclcf;
+
+    if(clcf->old_locations != NULL) {
     q = njt_queue_head(clcf->old_locations);
 
     while (q != njt_queue_sentinel(clcf->old_locations)) {
@@ -1343,6 +1345,7 @@ static void njt_http_location_clear_dirty_data(njt_http_core_loc_conf_t *clcf) {
 	    njt_http_location_destroy(dclcf);
         }
         q = x;
+    }
     }
 
 }
