@@ -645,7 +645,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "new add location[%V],new_clcf=%p!",&location_name,new_clcf);
     }
    
-    njt_http_variables_init_vars(&conf);
+    njt_http_variables_init_vars_dyn(&conf);
 
 
     //merge servers

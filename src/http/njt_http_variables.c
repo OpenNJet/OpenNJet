@@ -2948,7 +2948,7 @@ njt_http_variables_init_vars_proc(njt_conf_t *cf, njt_uint_t dyn)
         return NJT_ERROR;
     }
     hash.hash->pool = new_pool;
-    if(cf->dynamic == 0) {
+    if(dyn == 0) {
     	rc = njt_sub_pool(cf->pool,new_pool);
     } else {
 	rc = njt_sub_pool(njt_cycle->pool,new_pool);
