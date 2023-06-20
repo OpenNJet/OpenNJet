@@ -1005,11 +1005,7 @@ njt_http_add_location(njt_conf_t *cf, njt_queue_t **locations,
     njt_http_location_queue_t *tmp_queue;
     njt_pool_t *parent_pool;	
     if (*locations == NULL) {
-	//parent_pool = cf->parent_pool;
-	parent_pool = (clcf->parent_pool == NULL?cf->cycle->pool:clcf->parent_pool);
-	//if(cf->cmd_type == NJT_HTTP_SRV_CONF){
-	//	parent_pool = cf->cycle->pool;
-	//}
+	parent_pool = cf->cycle->pool;
         *locations = njt_palloc(parent_pool,sizeof(njt_http_location_queue_t));
         if (*locations == NULL) {
             return NJT_ERROR;

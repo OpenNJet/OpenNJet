@@ -117,7 +117,7 @@ njt_http_core_run_location_callback(void *ctx,void *pdata);
 njt_int_t njt_http_core_cp_loc_parse_tree(loc_parse_node_t * root, njt_pool_t   *pool,loc_parse_node_t ** new_root);
 loc_parse_ctx_t*
 njt_http_core_loc_parse_tree_ctx(loc_parse_node_t *root,njt_pool_t   *pool);
-
+static njt_int_t njt_http_add_location_pre_process(njt_conf_t *cf,njt_queue_t **locations,njt_pool_t *pool);
 
 extern njt_module_t  njt_http_rewrite_module;
 
@@ -3470,24 +3470,19 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
             return NJT_CONF_ERROR;
         }
     }
-    clcf->parent_pool = NULL;
-    if(cf->dynamic == 1) {
-	clcf->parent_pool = pclcf->pool;
-    }
     if (clcf->if_loc == 1 ) {
-	     //clcf->name = clcf->full_name;
-	     if (njt_http_add_location(cf, &pclcf->if_locations, clcf) != NJT_OK) {
+	     if (njt_http_add_location_pre_process(cf,&pclcf->if_locations,pclcf->pool) != NJT_OK || njt_http_add_location(cf, &pclcf->if_locations, clcf) != NJT_OK) {
 		    return NJT_CONF_ERROR;
 	      }
      } 
 	    if(cf->dynamic != 1){
-		if (njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
+		if (njt_http_add_location_pre_process(cf,&pclcf->locations,pclcf->pool) != NJT_OK || njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
 		    return NJT_CONF_ERROR;
 		}
 	    } else {
 			 clcf->dynamic_status = 1;  // 1 
 		}
-	    if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
+	    if (njt_http_add_location_pre_process(cf,&pclcf->old_locations,pclcf->pool) != NJT_OK || njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
 		    return NJT_CONF_ERROR;
 	    }
 
@@ -5975,4 +5970,28 @@ njt_http_location_queue_t *njt_http_find_location(njt_str_t name, njt_queue_t *l
 	    }
     }
     return NULL;
+}
+static njt_int_t njt_http_add_location_pre_process(njt_conf_t *cf,njt_queue_t **locations,njt_pool_t *pool){
+ 
+    njt_http_location_queue_t *tmp_queue;
+    if (*locations != NULL) {
+	return NJT_OK;
+    }
+	if(pool == NULL) {
+	   pool = cf->cycle->pool;
+	}
+        *locations = njt_palloc(pool,                        //cf->temp_pool  by zyg 
+                                sizeof(njt_http_location_queue_t));
+        if (*locations == NULL) {
+            return NJT_ERROR;
+        }
+
+        //add by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+        tmp_queue = (njt_http_location_queue_t *)*locations;
+        tmp_queue->parent_pool = pool;
+#endif
+        //end
+        njt_queue_init(*locations);
+	return NJT_OK;
 }
