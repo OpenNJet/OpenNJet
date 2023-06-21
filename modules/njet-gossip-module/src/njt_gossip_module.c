@@ -276,7 +276,7 @@ static njt_int_t njt_gossip_init_zone(njt_shm_zone_t *shm_zone, void *data)
         return NJT_OK;
     }
 
-	 ctx->shpool = (njt_slab_pool_t *) shm_zone->shm.addr;
+	ctx->shpool = (njt_slab_pool_t *) shm_zone->shm.addr;
     if (shm_zone->shm.exists) {
         ctx->sh = ctx->shpool->data;
         return NJT_OK;
@@ -323,9 +323,26 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
     c = s->connection;
     c->log->action = "gossip upd member";
 	njt_gossip_srv_conf_t *gscf	=njt_stream_get_module_srv_conf(s,njt_gossip_module);
-	njt_gossip_req_ctx_t  *shared_ctx= gscf->req_ctx;
+	if(gscf == NULL){
+		njt_log_error(NJT_LOG_NOTICE, c->log, 0, 
+			" has no gossip module config");
+		return;
+	}
 
-	njt_gossip_member_list_t *p_member=shared_ctx->sh->members;
+	njt_gossip_req_ctx_t  *shared_ctx = gscf->req_ctx;
+	if(shared_ctx == NULL){
+		njt_log_error(NJT_LOG_NOTICE, c->log, 0, 
+			" gossip module has no shared zone ctx");
+		return;
+	}
+
+	njt_gossip_member_list_t *p_member = shared_ctx->sh->members;
+	if(p_member == NULL){
+		njt_log_error(NJT_LOG_NOTICE, c->log, 0, 
+			" gossip module has no member list");
+		return;
+	}
+
 	njt_gossip_member_list_t *prev=NULL;
 	//  njt_gossip_member_list_t *elder=NULL;
 	njt_msec_t update_stamp = njt_current_msec;
@@ -412,6 +429,14 @@ static int	njt_gossip_reply_status(void)
 {
 	njt_str_t target_node = njt_string("all");
 	njt_str_t target_pid = njt_string("0");
+
+	if(gossip_udp_ctx == NULL){
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+			" has no gossip module config");
+
+		return NJT_OK;	
+	}
+
 	njt_gossip_build_member_msg(GOSSIP_HEARTBEAT, &target_node, &target_pid, njt_current_msec- gossip_udp_ctx->boot_timestamp);
 	njt_gossip_send_handler(gossip_udp_ctx->udp->write);
 	return NJT_OK;
@@ -424,6 +449,13 @@ static bool njt_gossip_set_syn_state(bool state){
 	njt_gossip_req_ctx_t  			*shared_ctx;
 	njt_gossip_member_list_t 		*p_member;
 	bool 						     need_syn = false;
+
+	if(gossip_udp_ctx == NULL){
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+			" in syn state, has no gossip module config");
+
+		return false;	
+	}
 
 	shared_ctx = gossip_udp_ctx->req_ctx;
 
@@ -458,6 +490,13 @@ static int	njt_gossip_upd_syn_state(njt_str_t *node, njt_str_t *pid)
 
 static int	njt_gossip_syn_data_request(njt_str_t *node, njt_str_t *pid)
 {
+	if(gossip_udp_ctx == NULL){
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+			" in syn data request, has no gossip module config");
+
+		return NJT_OK;	
+	}
+
 	njt_gossip_build_member_msg(GOSSIP_MSG_SYN, node, pid, njt_current_msec - gossip_udp_ctx->boot_timestamp);
 	njt_gossip_send_handler(gossip_udp_ctx->udp->write);
 
@@ -473,6 +512,13 @@ static int njt_gossip_proc_package(const u_char *begin,const u_char* end, njt_lo
 	njt_str_t 				c_name, n_name, n_pid, target_name;
 	// njt_str_t				target_pid;
 	njt_msec_t 				uptime;
+
+	if(gscf == NULL){
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+			" in proc packet, has no gossip module config");
+
+		return NJT_OK;
+	}
 
 
 	const char *r = (const char*)begin;
@@ -688,7 +734,7 @@ static njt_int_t gossip_start(njt_cycle_t *cycle)
 	njt_log_error(NJT_LOG_INFO,cycle->log, 0,"gossip worker start:%d",njt_worker);
 	conf_ctx =(njt_stream_conf_ctx_t *)cycle->conf_ctx[njt_stream_module.index];
 	if (conf_ctx) 
-		gscf=conf_ctx->srv_conf[njt_gossip_module.ctx_index];
+		gscf = conf_ctx->srv_conf[njt_gossip_module.ctx_index];
 	else {
 		return NJT_OK;
 	}
@@ -769,6 +815,12 @@ static njt_int_t njt_get_work0_pid(){
 	njt_gossip_req_ctx_t  			*shared_ctx;
 	njt_gossip_member_list_t 		*p_member;
 
+	if(gossip_udp_ctx == NULL){
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+			" in proc packet, has no gossip module config");
+
+		return NJT_OK;
+	}
 
 	shared_ctx = gossip_udp_ctx->req_ctx;
 
@@ -802,6 +854,12 @@ static njt_int_t add_self_to_memberslist()
 	njt_gossip_req_ctx_t  			*shared_ctx;
 	njt_gossip_member_list_t 		*p_member;
 
+	if(gossip_udp_ctx == NULL){
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+			" in proc packet, has no gossip module config");
+
+		return NJT_OK;
+	}
 
 	shared_ctx = gossip_udp_ctx->req_ctx;
 
@@ -863,7 +921,7 @@ njt_int_t  njt_gossip_send_app_msg(void )
 void njt_gossip_app_close_msg_buf(char *end)
 {
 	njt_gossip_udp_ctx_t *ctx=gossip_udp_ctx;
-	if (ctx->requests) {
+	if (ctx && ctx->requests) {
 		ctx->requests->buf->last=(u_char*)end;
 	}
 }
@@ -872,6 +930,14 @@ char* njt_gossip_app_get_msg_buf(uint32_t msg_type, njt_str_t target, njt_str_t 
 	char *head, *w;
 	njt_chain_t *chain_head;
 	njt_gossip_udp_ctx_t *ctx = gossip_udp_ctx;
+
+	if(gossip_udp_ctx == NULL){
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+			" in proc packet, has no gossip module config");
+
+		return NULL;
+	}
+
 
 	if (ctx->requests==NULL) {
 		ctx->requests = njt_alloc_chain_link(ctx->pool);
@@ -1005,6 +1071,13 @@ static void njt_gossip_send_handler(njt_event_t *ev)
     c = ev->data;
     ctx = (njt_gossip_udp_ctx_t *)c->data;
 
+	if(ctx == NULL || gossip_udp_ctx == NULL){
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+			" in proc packet, has no gossip module config");
+
+		return;
+	}
+
 	if (ctx->requests ) {
 		chain_head = ctx->requests;
 		chain = njt_send_chain(ctx->udp,chain_head, 0);
@@ -1050,6 +1123,13 @@ static void njt_gossip_node_clean_handler(njt_event_t *ev)
 	njt_gossip_member_list_t 		*p_member;
 	njt_msec_t 						current_stamp, diff_time; 
 	njt_gossip_member_list_t 		*prev = NULL;
+
+	if(gossip_udp_ctx == NULL){
+		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+			" in proc packet, has no gossip module config");
+
+		return;
+	}
 
 	shared_ctx = gossip_udp_ctx->req_ctx;
 
@@ -1117,7 +1197,7 @@ int  njt_gossip_reg_app_handler( gossip_app_pt app_msg_handler, gossip_app_node_
 
 	return NJT_OK;
 }
-void njt_gossip_send_app_msg_buf (void) 
+void njt_gossip_send_app_msg_buf(void) 
 {
 	if (gossip_udp_ctx) {
 		njt_gossip_send_handler(gossip_udp_ctx->udp->write);
