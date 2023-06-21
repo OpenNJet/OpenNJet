@@ -621,7 +621,11 @@ njt_http_get_variable_index(njt_conf_t *cf, njt_str_t *name)
 			if (new_pool == NULL) {
 				return NJT_ERROR;
 			}
-			njt_sub_pool(cf->pool,new_pool);
+			if(cf->dynamic == 0) {
+				njt_sub_pool(cf->pool,new_pool);
+			} else {
+				 njt_sub_pool(njt_cycle->pool,new_pool);
+			}
 			cmcf->variables.free = 1;
 			if (njt_array_init(&cmcf->variables, new_pool, 4,
                            sizeof(njt_http_variable_t))
@@ -2791,7 +2795,11 @@ njt_http_variables_add_core_vars(njt_conf_t *cf)
 	   if(new_pool == NULL) {
 		   return NJT_ERROR;
 	   }
-	   njt_sub_pool(cf->pool,new_pool);  //by zyg njt_cycle destroy old_cycle->pool
+	   if(cf->dynamic == 0) {
+		   njt_sub_pool(cf->pool,new_pool);
+	   } else {
+		   njt_sub_pool(njt_cycle->pool,new_pool);
+	   }
 	   cmcf->variables_keys = njt_pcalloc(new_pool,
                                        sizeof(njt_hash_keys_arrays_t));
 		if (cmcf->variables_keys == NULL) {
@@ -2830,7 +2838,13 @@ njt_http_variables_add_core_vars(njt_conf_t *cf)
 	    njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "dyn_var_pool  alloc  error!");
 	    return NJT_ERROR;
 	 }
-	 njt_sub_pool(cf->pool,cmcf->dyn_var_pool);
+	 //njt_sub_pool(cf->pool,cmcf->dyn_var_pool);
+	 if(cf->dynamic == 0) {
+		 njt_sub_pool(cf->pool,cmcf->dyn_var_pool);
+	 } else {
+		 njt_sub_pool(njt_cycle->pool,cmcf->dyn_var_pool);
+	 }
+
 #endif
     for (cv = njt_http_core_variables; cv->name.len; cv++) {
         v = njt_http_add_variable(cf, &cv->name, cv->flags);
