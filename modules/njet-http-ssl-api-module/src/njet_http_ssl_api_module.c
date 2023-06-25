@@ -146,6 +146,10 @@ njt_http_dyn_ssl_init(njt_conf_t *cf) {
 	 njt_http_dyn_ssl_main_conf_t *dlmcf;
 
     dlmcf = njt_http_conf_get_module_main_conf(cf,njt_http_ssl_api_module);
+    if(dlmcf == NULL){
+        return NJT_ERROR;
+    }
+
     if(dlmcf->size == NJT_CONF_UNSET){
         dlmcf->size = 500;
     }
@@ -570,6 +574,9 @@ static njt_int_t njt_http_dyn_ssl_rpc_send(njt_http_request_t *r,njt_str_t *modu
     njt_pool_cleanup_t              *cleanup;
 
     dlmcf = njt_http_get_module_main_conf(r,njt_http_ssl_api_module);
+    if(dlmcf == NULL){
+        goto err;
+    }
     index = njt_http_dyn_ssl_get_free_index(dlmcf);
     if(index == -1 ){
         njt_log_error(NJT_LOG_ERR, r->pool->log, 0, "not find request free index ");

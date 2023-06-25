@@ -350,6 +350,9 @@ njt_int_t njt_dyn_limit_check_var(njt_conf_t *cf, njt_str_t *var){
     }
 
     cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
+    if(cmcf == NULL){
+        return NJT_ERROR;
+    }
     v = cmcf->variables.elts;
     var_len = var->len - 1;
     for (i = 0; i < cmcf->variables.nelts; i++) {
@@ -2080,6 +2083,9 @@ static njt_str_t njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *p
 
     njt_memzero(&json_manager, sizeof(njt_json_manager));
     hcmcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_core_module);
+    if(hcmcf == NULL){
+        goto err;
+    }
 
     srvs = njt_json_arr_element(pool, njt_json_fast_key("servers"));
     if (srvs == NULL)
@@ -2135,11 +2141,13 @@ static njt_str_t njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *p
 
         njt_struct_add(srv, subs, pool);
         clcf = njt_http_get_module_loc_conf(cscfp[i]->ctx, njt_http_core_module);
-        subs = njt_dyn_limit_dump_locs_json(pool, clcf->old_locations);
+        if(clcf != NULL){
+            subs = njt_dyn_limit_dump_locs_json(pool, clcf->old_locations);
 
-        if (subs != NULL)
-        {
-            njt_struct_add(srv, subs, pool);
+            if (subs != NULL)
+            {
+                njt_struct_add(srv, subs, pool);
+            }
         }
 
         njt_struct_add(srvs, srv, pool);
@@ -2326,6 +2334,15 @@ static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, njt_http_dyn_
                 
         njt_http_conf_ctx_t ctx = *cscf->ctx;
         clcf = njt_http_get_module_loc_conf(cscf->ctx, njt_http_core_module);
+        if(clcf == NULL){
+            njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find location config by listen:%V server_name:%V ",
+                          p_port, p_sname);
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " can`t find location config by listen[%V] server_name[%V]", p_port, p_sname);
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+            continue;
+        }
+
         rc = njt_dyn_limit_update_locs(&daas[i].locs, clcf->old_locations, &ctx, rpc_result);
         if(rc != NJT_OK){
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "update limit error, listen:%V server_name:%V",
