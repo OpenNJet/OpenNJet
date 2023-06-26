@@ -397,7 +397,7 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     if(clcf->old_locations == NULL) {
 	   lq = NULL;
     } else {
-		lq = njt_http_find_location(location_name, clcf->old_locations);
+		lq = njt_http_find_location(location_name_key, clcf->old_locations);
 	}
     if (lq == NULL) {
 	njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "not find  location [%V]!",&location_name);
