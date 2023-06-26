@@ -4237,7 +4237,10 @@ njt_http_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_proxy_set_vars(&u, &plcf->vars);
 
     plcf->location = clcf->name;
-
+    
+    if(clcf->if_loc == 1) {
+	njt_str_null(&plcf->location);
+    }
     if (clcf->named
 #if (NJT_PCRE)
         || clcf->regex
