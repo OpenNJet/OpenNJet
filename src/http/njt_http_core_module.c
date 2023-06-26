@@ -3407,7 +3407,6 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 		 }
                 clcf->if_loc = 1;
                 clcf->exact_match = 1;
-                clcf->internal = 0;
 	  	clcf->name = clcf->full_name;
         }  else {
 
