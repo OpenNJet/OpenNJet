@@ -325,6 +325,7 @@ struct njt_http_core_loc_conf_s {
     unsigned      noname:1;   /* "if () {}" block or limit_except */
     unsigned      lmt_excpt:1;
     unsigned      named:1;
+    unsigned      if_loc:1;
 
     unsigned      exact_match:1;
     unsigned      noregex:1;
@@ -345,6 +346,7 @@ struct njt_http_core_loc_conf_s {
 //    njt_pool_t                     *regex_parent_pool;
 //    njt_http_core_loc_conf_t       **new_regex_locations;
 //    njt_pool_t                     *new_regex_parent_pool;
+      void                           *if_location_root;
 #endif
     //end
 #endif
@@ -466,7 +468,9 @@ struct njt_http_core_loc_conf_s {
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_queue_t  *old_locations; //zyg
+    njt_queue_t  *if_locations; //zyg
     njt_queue_t  *new_locations;    //clb
+    njt_pool_t   *new_locations_pool;    //zyg
     njt_pool_t   *pool;          //cx 处理上下文内存释放
     njt_http_location_destroy_t *destroy_locs; //cx 处理上下文内存释放,按照链表顺序释放
     njt_str_t    full_name;       // cx 查找location
@@ -588,7 +592,7 @@ njt_int_t njt_http_get_forwarded_addr(njt_http_request_t *r, njt_addr_t *addr,
     int recursive);
 
 njt_int_t njt_http_link_multi_headers(njt_http_request_t *r);
-
+njt_http_location_queue_t *njt_http_find_location(njt_str_t name, njt_queue_t *locations);
 
 extern njt_module_t  njt_http_core_module;
 
