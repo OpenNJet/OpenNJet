@@ -213,7 +213,8 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
                 loc_found = true;
                 ctx->loc_conf = clcf->loc_conf;
                 njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-                if (NULL == pool || NJT_OK != njt_sub_pool(njt_cycle->pool, pool)) {
+                if (NULL == pool) {
+//                if (NULL == pool || NJT_OK != njt_sub_pool(njt_cycle->pool, pool)) {
                     end = njt_snprintf(data_buf,sizeof(data_buf) - 1," create pool error");
                     rpc_data_str.len = end - data_buf;
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);

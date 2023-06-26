@@ -2254,6 +2254,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
     njt_http_dyn_log_file_t *file;
     njt_http_dyn_access_log_conf_t *log_cf;
 
+    njt_int_t rc;
     njt_conf_t cf_data = {
             .pool = pool,
             .temp_pool = pool,
@@ -2278,6 +2279,15 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         return NJT_ERROR;
     }
 
+
+    rc = njt_sub_pool(clcf->pool,pool);
+
+    if(clcf == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"sub pool err happened");
+        end = njt_snprintf(msg->data,msg_capacity-1," ub pool err happened");
+        msg->len = end - msg->data;
+        return NJT_ERROR;
+    }
     llcf->off = data->log_on?0:1;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"set %V access log to %ui",&clcf->full_name,data->log_on);
     llcf->logs = njt_array_create(cf->pool, 2, sizeof(njt_http_log_t));
@@ -2421,7 +2431,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         }
     }
 
-    njt_int_t rc = njt_http_variables_init_vars_dyn(cf);
+    rc = njt_http_variables_init_vars_dyn(cf);
     if(rc!=NJT_OK) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "init vars error");
         end = njt_snprintf(msg->data,msg_capacity-1,"init vars error");
@@ -2568,7 +2578,11 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     if(rs == NJT_CONF_ERROR){
         goto err;
     }
-    njt_http_variables_init_vars(cf);
+    rc = njt_http_variables_init_vars_dyn(cf);
+    if(rc!=NJT_OK) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "init vars error");
+        goto err ;
+    }
     if(update){
         if(old_fmt.dynamic){
             njt_destroy_pool(old_fmt.ops->pool);
