@@ -152,7 +152,7 @@ static njt_int_t njt_http_split_client_update_sc_key(njt_http_split_clients_ctx_
         goto error;
     }
 
-    njt_http_variables_init_vars(cf);
+    njt_http_variables_init_vars_dyn(cf);
 
     if (old_ctx.dynamic && old_ctx.pool) {
         njt_destroy_pool(old_ctx.pool);

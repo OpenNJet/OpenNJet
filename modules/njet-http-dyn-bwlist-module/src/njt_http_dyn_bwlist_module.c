@@ -285,7 +285,7 @@ static njt_int_t njt_dyn_bwlist_update_locs(njt_array_t *locs, njt_queue_t *q, n
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                     return NJT_ERROR;
                 }
-                rc = njt_sub_pool(njt_cycle->pool, pool);
+                rc = njt_sub_pool(clcf->pool, pool);
                 if (rc != NJT_OK) {
                     end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
                     rpc_data_str.len = end - data_buf;
