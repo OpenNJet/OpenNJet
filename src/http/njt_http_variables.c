@@ -3000,6 +3000,10 @@ njt_http_variables_init_vars(njt_conf_t *cf)
     return njt_http_variables_init_vars_proc(cf, 0);
 }
 
+/*
+ * New init vars API used in dynamic configuration.
+ * Here cf->pool do not and will not have sub pools.
+ */
 njt_int_t
 njt_http_variables_init_vars_dyn(njt_conf_t *cf)
 {
