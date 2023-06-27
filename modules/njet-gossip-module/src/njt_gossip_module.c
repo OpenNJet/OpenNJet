@@ -731,7 +731,7 @@ static njt_int_t gossip_start(njt_cycle_t *cycle)
     if (njt_process == NJT_PROCESS_HELPER ) {
         return NJT_OK;
     }
-	njt_log_error(NJT_LOG_INFO,cycle->log, 0,"gossip worker start:%d",njt_worker);
+	
 	conf_ctx =(njt_stream_conf_ctx_t *)cycle->conf_ctx[njt_stream_module.index];
 	if (conf_ctx) 
 		gscf = conf_ctx->srv_conf[njt_gossip_module.ctx_index];
@@ -740,9 +740,10 @@ static njt_int_t gossip_start(njt_cycle_t *cycle)
 	}
 	if (!gscf) return NJT_ERROR;
 	if (!gscf->sockaddr || !gscf->cluster_name || !gscf->node_name) {
-		njt_log_error(NJT_LOG_ERR,cycle->log, 0,"gossip cant init, no listen address , or cluster_name, node_name configured");
+		njt_log_error(NJT_LOG_INFO,cycle->log, 0,"gossip cant init, no listen address , or cluster_name, node_name configured");
 		return NJT_OK;
 	}
+	njt_log_error(NJT_LOG_INFO,cycle->log, 0,"gossip worker start:%d",njt_worker);
 
 	gossip_udp_ctx = njt_pcalloc(cycle->pool, sizeof(njt_gossip_udp_ctx_t));
     if (gossip_udp_ctx == NULL) {
