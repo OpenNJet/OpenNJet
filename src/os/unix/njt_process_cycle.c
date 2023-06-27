@@ -688,6 +688,62 @@ njt_start_helper_processes(njt_cycle_t *cycle, njt_uint_t respawn)
     return nelts;
 }
 
+char *
+njt_conf_parse_post_helper(njt_cycle_t *cycle)
+{
+    njt_int_t             id;
+    njt_helper_ctx       *helpers;
+    njt_uint_t            i;
+    njt_mqconf_conf_t    *mqcf;
+    njt_uint_t            nelts = 0;
+    njt_md5_t             md5;
+    u_char                param_md5[16];
+
+	if (njt_process == NJT_PROCESS_HELPER ) {
+        return NJT_OK;
+    }
+
+    for (id = 0; id < njt_last_process; id++) {
+        if ((njt_processes[id].pid != -1) && (njt_processes[id].preproc)) {
+            if (!njt_processes[id].reload) {
+                njt_processes[id].confed = 0;
+            }
+        }
+    }
+
+    for (i=0; i<cycle->modules_n; i++) {
+        if (njt_strcmp(cycle->modules[i]->name, "njt_mqconf_module") != 0) continue;
+        mqcf= (njt_mqconf_conf_t *) (cycle->conf_ctx[cycle->modules[i]->index]);
+        if (mqcf) {
+            helpers = mqcf->helper.elts;
+            nelts = mqcf->helper.nelts;
+            for (i = 0; i < nelts; i++) {
+                if (!helpers[i].reload) {
+                    njt_md5_init(&md5);
+                    njt_md5_update(&md5, helpers[i].file.data, helpers[i].file.len);
+                    njt_md5_update(&md5, helpers[i].param.conf_fn.data, helpers[i].param.conf_fn.len);
+                    njt_md5_final(param_md5, &md5);
+
+                    for (id = 0; id < njt_last_process; id++) {
+                        if ((njt_processes[id].pid != -1) && (njt_processes[id].preproc) && !njt_processes[id].reload && !memcmp(param_md5, njt_processes[id].param_md5, 16)) {
+                            njt_processes[id].confed = 1;
+                        }
+                    }
+                }
+            }
+        }
+        break;
+    }
+
+    for (id = 0; id < njt_last_process; id++) {
+        if ((njt_processes[id].pid != -1) && (njt_processes[id].preproc) && !njt_processes[id].reload && !njt_processes[id].confed) {
+            njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "Need to keep original non-reloadable helper directive!");
+            return NJT_CONF_ERROR;
+        }
+    }
+
+    return NJT_CONF_OK;
+}
 
 static njt_uint_t
 njt_restart_helper_processes(njt_cycle_t *cycle, njt_uint_t respawn)
