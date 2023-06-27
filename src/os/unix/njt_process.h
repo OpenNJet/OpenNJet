@@ -37,6 +37,7 @@ typedef struct {
     unsigned            exiting:1;
     unsigned            exited:1;
     unsigned            reload:1;
+    unsigned            confed:1;
 } njt_process_t;
 
 

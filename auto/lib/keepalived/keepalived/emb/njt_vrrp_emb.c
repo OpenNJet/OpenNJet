@@ -18,6 +18,7 @@
 #include "reload_monitor.h"
 
 
+extern void set_tmp_dir(void);
 extern int njt_start_vrrp_child2(void);
 extern void njt_vrrp_add_stop_event(void);
 extern void sigreload_vrrp(__attribute__((unused)) void *v, __attribute__((unused)) int sig);
@@ -184,6 +185,9 @@ int njt_vrrp_emb_init(const char* cfg,const char* log)
 	return 0;
 }
 void njt_vrrp_emb_run(void){
+    /* Is there a TMPDIR override? */
+	set_tmp_dir();
+
 	njt_start_vrrp_child2();
 	//launch_thread_scheduler(master);
 }
