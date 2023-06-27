@@ -1053,11 +1053,11 @@ njt_http_proxy_create_file_key(njt_http_request_t *r)
     njt_http_upstream_t        *u;
     njt_http_proxy_ctx_t       *ctx;
     njt_http_proxy_loc_conf_t  *plcf;
-
+    njt_http_core_loc_conf_t    *clcf;
     u = r->upstream;
 
     plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
-
+    clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
     ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
 
     key = njt_array_push(&r->cache->file_keys);
@@ -1093,6 +1093,12 @@ njt_http_proxy_create_file_key(njt_http_request_t *r)
     }
 
     loc_len = (r->valid_location && ctx->vars.uri.len) ? plcf->location.len : 0;
+#if (NJT_HTTP_DYNAMIC_LOC)
+	if(clcf->if_loc == 1) {  //by zyg
+	  loc_len = (r->valid_location && ctx->vars.uri.len) ?
+                      r->uri.len : 0;
+	}
+#endif
 
     if (r->quoted_uri || r->internal) {
         escape = 2 * njt_escape_uri(NULL, r->uri.data + loc_len,
@@ -1146,11 +1152,11 @@ njt_http_proxy_create_key(njt_http_request_t *r)
     njt_http_upstream_t        *u;
     njt_http_proxy_ctx_t       *ctx;
     njt_http_proxy_loc_conf_t  *plcf;
-
+    njt_http_core_loc_conf_t    *clcf;
     u = r->upstream;
 
     plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
-
+    clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
     ctx = njt_http_get_module_ctx(r, njt_http_proxy_module);
 
     njt_http_proxy_create_file_key(r);
@@ -1191,6 +1197,12 @@ njt_http_proxy_create_key(njt_http_request_t *r)
     }
 
     loc_len = (r->valid_location && ctx->vars.uri.len) ? plcf->location.len : 0;
+#if (NJT_HTTP_DYNAMIC_LOC)
+	if(clcf->if_loc == 1) {  //by zyg
+	  loc_len = (r->valid_location && ctx->vars.uri.len) ?
+                      r->uri.len : 0;
+	}
+#endif
 
     if (r->quoted_uri || r->internal) {
         escape = 2 * njt_escape_uri(NULL, r->uri.data + loc_len,
@@ -1255,10 +1267,12 @@ njt_http_proxy_create_request(njt_http_request_t *r)
     njt_http_script_engine_t      e, le;
     njt_http_proxy_loc_conf_t    *plcf;
     njt_http_script_len_code_pt   lcode;
+    njt_http_core_loc_conf_t    *clcf;
 
     u = r->upstream;
 
     plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
+    clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
 
 #if (NJT_HTTP_CACHE)
     headers = u->cacheable ? &plcf->headers_cache : &plcf->headers;
@@ -1304,7 +1318,12 @@ njt_http_proxy_create_request(njt_http_request_t *r)
     } else {
         loc_len = (r->valid_location && ctx->vars.uri.len) ?
                       plcf->location.len : 0;
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+	if(clcf->if_loc == 1) {  //by zyg
+	  loc_len = (r->valid_location && ctx->vars.uri.len) ?
+                      r->uri.len : 0;
+	}
+#endif
         if (r->quoted_uri || r->internal) {
             escape = 2 * njt_escape_uri(NULL, r->uri.data + loc_len,
                                         r->uri.len - loc_len, NJT_ESCAPE_URI);
@@ -4238,9 +4257,6 @@ njt_http_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     plcf->location = clcf->name;
     
-    if(clcf->if_loc == 1) {
-	njt_str_null(&plcf->location);
-    }
     if (clcf->named
 #if (NJT_PCRE)
         || clcf->regex
