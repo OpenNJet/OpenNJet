@@ -2391,7 +2391,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
 
             njt_memzero(&sc, sizeof(njt_http_script_compile_t));
             sc.cf = cf;
-            sc.source = &log_cf[j].path;
+            sc.source = &full_name;
             sc.lengths = &log->script->lengths;
             sc.values = &log->script->values;
             sc.variables = n;
