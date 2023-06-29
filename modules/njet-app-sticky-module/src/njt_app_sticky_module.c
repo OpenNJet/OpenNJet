@@ -705,8 +705,18 @@ static void app_sticky_sync_data( njt_app_sticky_ctx_t* ctx, njt_str_t* zone, nj
 		char *tail = head;
 		tail= mp_encode_array(tail,arr_cnt);
 
-		tail= mp_encode_str(tail,(char *)lr->data,lr->len);	//header value	//max 255
-		tail= mp_encode_str(tail,(char *)lr->up_name.data,lr->up_name.len);	//backend name like 127.0.0.1:8080
+		if(lr->len > 255){
+			tail = mp_encode_str(tail,(char *)lr->data,255);	//header value	//max 255
+		}else{
+			tail = mp_encode_str(tail,(char *)lr->data,lr->len);	//header value	//max 255
+		}
+		
+		if(lr->up_name.len > 255){
+			tail = mp_encode_str(tail,(char *)lr->up_name.data,255);	//backend name like 127.0.0.1:8080
+		}else{
+			tail = mp_encode_str(tail,(char *)lr->up_name.data,lr->up_name.len);	//backend name like 127.0.0.1:8080
+		}
+		
 		tmp_zone_len = zone->len;
 		if(zone->len > APP_STICKY_MAX_ZONE){
 			tmp_zone_len = APP_STICKY_MAX_ZONE;

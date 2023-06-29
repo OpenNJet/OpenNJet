@@ -526,7 +526,11 @@ void njt_http_udp_send_handler(njt_http_cluster_limit_conn_ctx_t *ctx, njt_str_t
             msg_cnt++;
             tail = mp_encode_map(tail, 2);
             tail = mp_encode_str(tail, "idx", 3);
-            tail = mp_encode_bin(tail, (const char *)item->data, item->len);
+            if(item->len > 255){
+                tail = mp_encode_bin(tail, (const char *)item->data, 255);
+            }else{
+                tail = mp_encode_bin(tail, (const char *)item->data, item->len);
+            }
 
             tail = mp_encode_str(tail, "now", 3);
             tail = mp_encode_uint(tail, item->conn);
