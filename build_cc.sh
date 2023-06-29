@@ -106,6 +106,8 @@ cdir=`cd $(dirname $0); pwd`
                 ;;
             install)
                 make install
+		mkdir /etc/njet/data
+		chmod 777 -R /etc/njet/data  /etc/njet/logs
                 ;;
             clean)
                 make clean
