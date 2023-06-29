@@ -278,6 +278,8 @@ void njt_http_udp_send_handler(njt_http_cluster_limit_req_ctx_t *ctx, njt_str_t*
         if (item == NULL)
         {
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " cluster limit req push item error");
+            njt_shmtx_unlock(&ctx->shpool->mutex);
+            return;
         }
         /*
         memcpy(item->data,client->q_item.sibling_item.data,client->q_item.sibling_item.len);
