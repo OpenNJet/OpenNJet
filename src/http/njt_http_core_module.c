@@ -304,7 +304,7 @@ static njt_command_t  njt_http_core_commands[] = {
       NULL },
 
     { njt_string("location"),
-      NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_BLOCK|NJT_CONF_ANY,
+      NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_BLOCK|NJT_CONF_1MORE,
       njt_http_core_location,
       NJT_HTTP_SRV_CONF_OFFSET,
       0,
