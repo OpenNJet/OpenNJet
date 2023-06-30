@@ -906,10 +906,16 @@ static njt_int_t njt_app_sticky_init_worker(njt_cycle_t *cycle)
 	for (i = 0; i < umcf->upstreams.nelts; i++)
 	{
 		uscf = uscfp[i];
-		if (uscf == NULL ) {
+		if (uscf == NULL) {
 			//means not configure upstream {}
 			njt_log_error(NJT_LOG_ERR, cycle->log,0," app sticky get uscf config error");
 			return NJT_ERROR;
+		}
+
+		if (uscf->srv_conf == NULL) {
+			//means not configure upstream {}
+			njt_log_error(NJT_LOG_DEBUG, cycle->log,0," upstream server has no srv_conf");
+			continue;
 		}
 
 		ascf = njt_http_conf_upstream_srv_conf(uscf, njt_app_sticky_module);
