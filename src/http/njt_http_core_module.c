@@ -3339,8 +3339,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
                 return NJT_CONF_ERROR;
             }
 
-        } 
-	if (mod[0] == '(') {
+        } else if (mod[0] == '(') {
 		if (njt_http_core_if_location_parse(cf,clcf) != NJT_CONF_OK){
 			njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
 					"invalid location modifier \"%V\"", &value[1]);
