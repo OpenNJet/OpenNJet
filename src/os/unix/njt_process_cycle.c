@@ -412,7 +412,8 @@ static void njt_update_worker_processes(njt_cycle_t *cycle, njt_core_conf_t *ccf
             j=ccf->worker_processes-worker_c;
             for (i= njt_last_process-1; i>=0; i--) {
                 if ( strlen(njt_processes[i].name)==strlen("worker process") 
-                    && njt_strncmp(njt_processes[i].name, "worker process",14) ==0) {
+                    && njt_strncmp(njt_processes[i].name, "worker process",14) ==0 
+                    &&  njt_processes[i].pid!=-1) {
                     tmp_pid=njt_processes[i].pid;
                     njt_processes[i].pid=-1;
                     kill(tmp_pid, SIGQUIT);
@@ -420,7 +421,12 @@ static void njt_update_worker_processes(njt_cycle_t *cycle, njt_core_conf_t *ccf
                     if (j==0) break;
                 }
             }
-            njt_last_process-=(ccf->worker_processes-worker_c);
+            for (i= njt_last_process-1; i>=0; i--) {
+                if (njt_processes[i].pid!=-1) {
+                    njt_last_process=i+1;
+                    break;
+                }
+            }
         }
         ccf->worker_processes = worker_c;
     }
