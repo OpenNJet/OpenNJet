@@ -631,6 +631,10 @@ njt_http_location_read_data(njt_http_request_t *r){
 	if(rc == NJT_OK) {
 		++r->main->count;
 	}
+	if(location_info != NULL) {
+                njt_destroy_pool(location_info->pool);
+    }
+
 	njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "1 send topic retain_flag=%V, key=%V,value=%V",&location_info->type,&topic_name,&json_str);
 	goto out;
 
@@ -640,6 +644,9 @@ err:
     out.buf = NULL;
      rpc_result = njt_rpc_result_create();
     if(rpc_result == NULL){
+		if(location_info != NULL) {
+                njt_destroy_pool(location_info->pool);
+		}
        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rpc_result allocate null");
        rc = NJT_ERROR;
        goto out;
