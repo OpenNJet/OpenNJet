@@ -3409,6 +3409,11 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
                 clcf->exact_match = 1;
 	  	clcf->name = clcf->full_name;
         }  else {
+	     if (cf->args->nelts != 2) {
+		 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                               "invalid location modifier \"%V\"", &value[1]);
+            	return NJT_CONF_ERROR;
+	     }    
 
             clcf->name = *name;
 
