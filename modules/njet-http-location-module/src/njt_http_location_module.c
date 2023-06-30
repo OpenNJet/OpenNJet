@@ -1172,7 +1172,7 @@ njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str,njt_
           	}
 		location_info->server_name = njt_del_headtail_space(items->strval);
 		if(location_info->server_name.len == 0) {
-		  njt_str_set(&location_info->msg, "server_name is null!");
+		  //njt_str_set(&location_info->msg, "server_name is null!");
 		  goto end;
 		}
 	} else {
