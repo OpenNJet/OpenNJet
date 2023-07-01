@@ -399,7 +399,7 @@ njt_single_process_cycle(njt_cycle_t *cycle)
 
 static void njt_update_worker_processes(njt_cycle_t *cycle, njt_core_conf_t *ccf, njt_int_t worker_c)
 {
-    njt_int_t  i,j;
+    njt_int_t  i,j,k;
     njt_pid_t  tmp_pid;
     if (ccf->worker_processes != worker_c) {
         if (worker_c > ccf->worker_processes) {
@@ -409,18 +409,22 @@ static void njt_update_worker_processes(njt_cycle_t *cycle, njt_core_conf_t *ccf
                 njt_pass_open_channel(cycle);
             }
         } else {
+            k=0;
             j=ccf->worker_processes-worker_c;
             for (i= njt_last_process-1; i>=0; i--) {
                 if ( strlen(njt_processes[i].name)==strlen("worker process") 
                     && njt_strncmp(njt_processes[i].name, "worker process",14) ==0 
                     &&  njt_processes[i].pid!=-1) {
                     tmp_pid=njt_processes[i].pid;
-                    njt_processes[i].pid=-1;
+                    njt_shrink_processes[k] = njt_processes[i];
+                    k++;
+                    njt_processes[i].pid = -1;
                     kill(tmp_pid, SIGQUIT);
                     j--;
                     if (j==0) break;
                 }
             }
+            njt_shrink_count = k;
             for (i= njt_last_process-1; i>=0; i--) {
                 if (njt_processes[i].pid!=-1) {
                     njt_last_process=i+1;
