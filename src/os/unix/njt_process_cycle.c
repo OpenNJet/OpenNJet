@@ -401,6 +401,10 @@ static void njt_update_worker_processes(njt_cycle_t *cycle, njt_core_conf_t *ccf
 {
     njt_int_t  i,j,k;
     njt_pid_t  tmp_pid;
+    if (njt_shrink_count != njt_shrink_finish_count) {
+        njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "previous worker processes change not finish yet, ignore current change");
+        return;
+    }
     if (ccf->worker_processes != worker_c) {
         if (worker_c > ccf->worker_processes) {
             for (i = ccf->worker_processes; i < worker_c; i++) {
@@ -424,6 +428,7 @@ static void njt_update_worker_processes(njt_cycle_t *cycle, njt_core_conf_t *ccf
                     if (j==0) break;
                 }
             }
+            njt_shrink_finish_count=0;
             njt_shrink_count = k;
             for (i= njt_last_process-1; i>=0; i--) {
                 if (njt_processes[i].pid!=-1) {

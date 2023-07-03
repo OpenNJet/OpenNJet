@@ -92,5 +92,6 @@ extern njt_int_t      njt_last_process;
 extern njt_process_t  njt_processes[NJT_MAX_PROCESSES];
 extern njt_process_t  njt_shrink_processes[NJT_MAX_PROCESSES];
 extern njt_int_t      njt_shrink_count;
+extern njt_int_t      njt_shrink_finish_count;
 
 #endif /* _NJT_PROCESS_H_INCLUDED_ */
