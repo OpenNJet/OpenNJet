@@ -35,7 +35,8 @@ njt_int_t        njt_process_slot;
 njt_socket_t     njt_channel;
 njt_int_t        njt_last_process;
 njt_process_t    njt_processes[NJT_MAX_PROCESSES];
-
+njt_process_t    njt_shrink_processes[NJT_MAX_PROCESSES]; //for dyn worker change, keep process info in this array
+njt_int_t        njt_shrink_count=0;  
 
 njt_signal_t  signals[] = {
     { njt_signal_value(NJT_RECONFIGURE_SIGNAL),
@@ -491,7 +492,7 @@ njt_process_get_status(void)
     char            *process;
     njt_pid_t        pid;
     njt_err_t        err;
-    njt_int_t        i;
+    njt_int_t        i,j;
     njt_uint_t       one;
 
     one = 0;
@@ -544,6 +545,21 @@ njt_process_get_status(void)
                 njt_processes[i].exited = 1;
                 process = njt_processes[i].name;
                 break;
+            }
+        }
+
+        //if dyn change worker process, get the process info from njt_shrink_processes and close channel
+        if (i == njt_last_process) {
+            for (j = 0; j < njt_shrink_count; j++) {
+                if (njt_shrink_processes[j].pid == pid) {
+                    process = njt_shrink_processes[j].name;
+                    if (!njt_shrink_processes[j].detached) {
+                        njt_close_channel(njt_shrink_processes[j].channel, njt_cycle->log);
+                        njt_shrink_processes[j].channel[0] = -1;
+                        njt_shrink_processes[j].channel[1] = -1;
+                    }
+                    break;
+                }
             }
         }
 
