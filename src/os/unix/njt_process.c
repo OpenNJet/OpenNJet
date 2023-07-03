@@ -37,6 +37,7 @@ njt_int_t        njt_last_process;
 njt_process_t    njt_processes[NJT_MAX_PROCESSES];
 njt_process_t    njt_shrink_processes[NJT_MAX_PROCESSES]; //for dyn worker change, keep process info in this array
 njt_int_t        njt_shrink_count=0;  
+njt_int_t        njt_shrink_finish_count=0;  
 
 njt_signal_t  signals[] = {
     { njt_signal_value(NJT_RECONFIGURE_SIGNAL),
@@ -558,6 +559,7 @@ njt_process_get_status(void)
                         njt_shrink_processes[j].channel[0] = -1;
                         njt_shrink_processes[j].channel[1] = -1;
                     }
+                    njt_shrink_finish_count++;
                     break;
                 }
             }
