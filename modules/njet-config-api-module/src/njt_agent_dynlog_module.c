@@ -213,7 +213,8 @@ static njt_int_t njt_dynlog_update_locs_log(njt_array_t *locs,njt_queue_t *q,njt
                 loc_found = true;
                 ctx->loc_conf = clcf->loc_conf;
                 njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-                if (NULL == pool || NJT_OK != njt_sub_pool(njt_cycle->pool, pool)) {
+                if (NULL == pool) {
+//                if (NULL == pool || NJT_OK != njt_sub_pool(njt_cycle->pool, pool)) {
                     end = njt_snprintf(data_buf,sizeof(data_buf) - 1," create pool error");
                     rpc_data_str.len = end - data_buf;
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
@@ -597,6 +598,7 @@ static int  njt_agent_dynlog_change_handler_internal(njt_str_t *key, njt_str_t *
     njt_int_t rc = NJT_OK;
     njt_http_dyn_access_api_main_t *api_data = NULL;
     njt_pool_t *pool = NULL;
+    njt_str_t  empty_msg = njt_string("");
     njt_rpc_result_t * rpc_result = NULL;
     if(value->len < 2 ){
         return NJT_OK;
@@ -624,6 +626,9 @@ static int  njt_agent_dynlog_change_handler_internal(njt_str_t *key, njt_str_t *
     } else {
         // 解析json失败
         njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_ERR_JSON);
+    }
+    if(rpc_result->success_count == 0){
+        njt_kv_sendmsg(key,&empty_msg,0);
     }
     if(out_msg){
         njt_rpc_result_to_json_str(rpc_result,out_msg);

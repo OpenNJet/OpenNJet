@@ -8,12 +8,19 @@
 #include <njt_mqconf_module.h>
 #include <pthread.h>
 
+static int njt_helper_ha_reopening=0;
+
+static void
+njt_helper_ha_sigal_handler(int signo, siginfo_t *siginfo, void *ucontext)
+{
+    njt_helper_ha_reopening=1;
+}
+
 void *njt_helper_emb_run(void *p)
 {
     njt_vrrp_emb_run();
     return NULL;
 }
-
 
 void njt_helper_run(helper_param param)
 {
@@ -23,6 +30,7 @@ void njt_helper_run(helper_param param)
     pthread_t thread1;
     int  iret1;
     unsigned int cmd;
+    struct sigaction   sa;
 
     cycle = param.cycle;
 
@@ -43,6 +51,17 @@ void njt_helper_run(helper_param param)
             "njt vrrp init error\n");
         exit(2);
     }
+    pthread_setname_np(thread1, "vrrp main");
+
+    njt_memzero(&sa, sizeof(struct sigaction));
+    sigemptyset(&sa.sa_mask);
+    sa.sa_sigaction = njt_helper_ha_sigal_handler;
+    sa.sa_flags = SA_SIGINFO;
+    if (sigaction(SIGHUP, &sa, NULL) == -1) {
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0,
+            "njt add vrrp signal handler error\n");
+    }
+
     for (;;) {
         cmd = param.check_cmd_fp(cycle);
         if (cmd == NJT_HELPER_CMD_STOP) {
@@ -56,6 +75,10 @@ void njt_helper_run(helper_param param)
                 "helper ha restart\n");
             njt_vrrp_emb_stop();
             goto exit;
+        }
+        if (njt_helper_ha_reopening) {
+            njt_helper_ha_reopening=0;
+            njt_vrrp_reload_config();
         }
     }
 exit:

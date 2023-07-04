@@ -152,7 +152,7 @@ static njt_int_t njt_http_split_client_update_sc_key(njt_http_split_clients_ctx_
         goto error;
     }
 
-    njt_http_variables_init_vars(cf);
+    njt_http_variables_init_vars_dyn(cf);
 
     if (old_ctx.dynamic && old_ctx.pool) {
         njt_destroy_pool(old_ctx.pool);
@@ -466,9 +466,12 @@ static njt_int_t njt_http_split_clients_init_worker(njt_cycle_t *cycle)
     }
     conf_ctx =
         (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
+    if (!conf_ctx) {
+        return NJT_OK;
+    }
     sccf = conf_ctx->main_conf[njt_http_split_clients_module.ctx_index];
 
-    if (!sccf->has_split_block) {
+    if (!sccf || !sccf->has_split_block) {
         return NJT_OK;
     }
     njt_str_t rpc_key = njt_string(DYN_TOPIC_REG_KEY);

@@ -5484,7 +5484,7 @@ static njt_int_t njt_traver_http_upstream_item_handle(void *ctx,njt_http_upstrea
 
     cycle = (njt_cycle_t *)njt_cycle;
 
-    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "http_upstream_item: %V,mandatory:%ud,persistent:%ud",&uscfp->host,uscfp->mandatory,uscfp->persistent);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "http_upstream_item: %V,mandatory:%ud,persistent:%ud",&uscfp->host,uscfp->mandatory,uscfp->persistent);
     if(uscfp->mandatory == 1) {
         njt_str_set(&item.hc_type,"http");
         njt_str_set(&msg,"{\"interval\": \"10s\",\n"
@@ -5518,7 +5518,7 @@ static njt_int_t njt_traver_stream_upstream_item_handle(void *ctx,njt_stream_ups
 
     cycle = (njt_cycle_t *)njt_cycle;
 
-    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "http_upstream_item: %V,mandatory:%ud,persistent:%ud",&uscfp->host,uscfp->mandatory,uscfp->persistent);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "http_upstream_item: %V,mandatory:%ud,persistent:%ud",&uscfp->host,uscfp->mandatory,uscfp->persistent);
     if(uscfp->mandatory == 1) {
         njt_str_set(&item.hc_type,"stcp");
         njt_str_set(&msg,"{\n"

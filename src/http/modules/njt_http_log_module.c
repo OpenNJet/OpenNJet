@@ -2254,6 +2254,8 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
     njt_http_dyn_log_file_t *file;
     njt_http_dyn_access_log_conf_t *log_cf;
 
+    njt_int_t rc;
+    njt_int_t var_count = 0;
     njt_conf_t cf_data = {
             .pool = pool,
             .temp_pool = pool,
@@ -2265,38 +2267,55 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
 
     llcf = njt_http_conf_get_module_loc_conf( cf ,njt_http_log_module);
     if(llcf == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"location module conf was not found.");
         end = njt_snprintf(msg->data,msg_capacity-1," location module conf was not found.");
         msg->len = end - msg->data;
         return NJT_ERROR;
     }
 
     old_cf = *llcf; //备份原始配置
-    llcf->dynamic = 1;
     clcf = njt_http_conf_get_module_loc_conf( cf ,njt_http_core_module);
     if(clcf == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"core module conf was not found.");
         end = njt_snprintf(msg->data,msg_capacity-1," core module conf was not found.");
         msg->len = end - msg->data;
         return NJT_ERROR;
     }
 
+
+    rc = njt_sub_pool(clcf->pool,pool);
+
+    if(NJT_OK != rc){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"sub pool err happened");
+        end = njt_snprintf(msg->data,msg_capacity-1," sub pool err happened");
+        msg->len = end - msg->data;
+        return NJT_ERROR;
+    }
     llcf->off = data->log_on?0:1;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"set %V access log to %ui",&clcf->full_name,data->log_on);
-    if(!data->log_on){
-        return NJT_OK;
-    }
-
     llcf->logs = njt_array_create(cf->pool, 2, sizeof(njt_http_log_t));
     if (llcf->logs == NULL) {
         end = njt_snprintf(msg->data,msg_capacity-1," create array error.");
         msg->len = end - msg->data;
         goto error ;
     }
+
+    llcf->dynamic = 1;
+    if(!data->log_on){
+        // 成功释放原始资源
+        if( old_cf.logs != NULL ){
+            if(old_cf.dynamic){
+                njt_destroy_pool(old_cf.logs->pool);
+            }
+        }
+        return NJT_OK;
+    }
     lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_log_module);
 
     log_cf = data->logs.elts;
     if(data->logs.nelts < 1){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"set enable access log,but accessLogs is NULL",&clcf->full_name,data->log_on);
-        end = njt_snprintf(msg->data,msg_capacity-1," set enable access log,but accessLogs is NULL",&clcf->full_name,data->log_on);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"set enable access log,but accessLogs is NULL");
+        end = njt_snprintf(msg->data,msg_capacity-1," set enable access log,but accessLogs is NULL");
         msg->len = end - msg->data;
         goto error ;
     }
@@ -2348,9 +2367,12 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         }
 
         n = njt_http_script_variables_count(&log_cf[j].path);
-
+        var_count += n;
         full_name = log_cf[j].path;
-        if (njt_conf_full_name(cf->cycle, &full_name, 0) != NJT_OK) {
+
+        njt_str_t  *prefix = &cf->cycle->prefix;
+
+        if (njt_get_full_name(cf->pool, prefix, &full_name) != NJT_OK) {
             end = njt_snprintf(msg->data,msg_capacity-1," %V: conf full name error.",&log_cf[j].path);
             msg->len = end - msg->data;
             goto error ;
@@ -2375,7 +2397,7 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
 
             njt_memzero(&sc, sizeof(njt_http_script_compile_t));
             sc.cf = cf;
-            sc.source = &log_cf[j].path;
+            sc.source = &full_name;
             sc.lengths = &log->script->lengths;
             sc.values = &log->script->values;
             sc.variables = n;
@@ -2415,13 +2437,21 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         }
     }
 
-    njt_http_variables_init_vars(cf);
+    if(var_count>0){
+        rc = njt_http_variables_init_vars_dyn(cf);
+        if(rc!=NJT_OK) {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "init vars error");
+            end = njt_snprintf(msg->data,msg_capacity-1,"init vars error");
+            msg->len = end - msg->data;
+            goto error ;
+        }
+    }
     // 成功释放原始资源
     if( old_cf.logs != NULL ){
         if(old_cf.dynamic){
             njt_destroy_pool(old_cf.logs->pool);
         }
-        old_cf.logs = NULL;
+//        old_cf.logs = NULL;
     }
     return NJT_OK;
 
@@ -2460,6 +2490,11 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     cfd.cycle = (njt_cycle_t*)njt_cycle;
     cfd.log = njt_cycle->log;
     cmcf = njt_http_cycle_get_module_main_conf(njt_cycle,njt_http_core_module);
+    if(!cmcf || cmcf->servers.nelts == 0){
+        // 不存在server
+        njt_log_error(NJT_LOG_ERR, cf->log, 0,"servers is empty");
+        return NJT_ERROR;
+    }
     cscfp = cmcf->servers.elts;
     if(cscfp == NULL){
         njt_log_error(NJT_LOG_ERR, cf->log, 0,"not find server in http{}");
@@ -2469,7 +2504,11 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     cfd.ctx = &ctx;
 
     lmcf = njt_http_cycle_get_module_main_conf(njt_cycle,njt_http_log_module);
-
+    if(!lmcf){
+        // 未加载log_module
+        njt_log_error(NJT_LOG_ERR, cf->log, 0,"unload njt_http_log_module");
+        return NJT_ERROR;
+    }
     cf->args = njt_array_create(cf->pool,3, sizeof(njt_str_t));
     if(cf->args == NULL){
         goto err;
@@ -2546,7 +2585,11 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     if(rs == NJT_CONF_ERROR){
         goto err;
     }
-    njt_http_variables_init_vars(cf);
+    rc = njt_http_variables_init_vars_dyn(cf);
+    if(rc!=NJT_OK) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "init vars error");
+        goto err ;
+    }
     if(update){
         if(old_fmt.dynamic){
             njt_destroy_pool(old_fmt.ops->pool);

@@ -2335,7 +2335,6 @@ send:
         r->headers_out.content_length->hash = 0;
         r->headers_out.content_length = NULL;
     }
-
     rc = njt_http_send_header(r);
 
     if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
@@ -2554,7 +2553,9 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 	 
 	 if (json_peer.route.len  > 0) {
 		 if(peer->route.len < json_peer.route.len) {
-			 njt_slab_free_locked(peers->shpool,peer->route.data);
+			 if(peer->route.len != 0) {
+			 	njt_slab_free_locked(peers->shpool,peer->route.data);
+			 }
 
 			  peer->route.data = njt_slab_calloc_locked(peers->shpool, json_peer.route.len);
 			   if (peer->route.data == NULL) {
@@ -4834,7 +4835,7 @@ static njt_int_t
 njt_upstream_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 {
 
-    u_char                              *p, *sub_p;
+    u_char                              *p, *sub_p,*last;
     njt_uint_t                          len;
     njt_str_t                           *item;
     njt_http_core_loc_conf_t            *clcf;
@@ -4849,6 +4850,7 @@ njt_upstream_api_parse_path(njt_http_request_t *r, njt_array_t *path)
     uri = r->uri;
     p = uri.data + clcf->name.len;
     len = uri.len - clcf->name.len;
+    last = uri.data + uri.len;
 
     if (*p == '/') {
         len --;
@@ -4865,7 +4867,7 @@ njt_upstream_api_parse_path(njt_http_request_t *r, njt_array_t *path)
         }
 
         item->data = p;
-        sub_p = (u_char *)njt_strchr(p, '/');
+        sub_p = (u_char *)njt_strlchr(p,last,'/');
 
         if (sub_p == NULL || (njt_uint_t)(sub_p - uri.data) > uri.len) {
             item->len = uri.data + uri.len - p;
@@ -5294,6 +5296,9 @@ njt_http_upstream_api_handler(njt_http_request_t *r)
     out.next = NULL;
     out.buf = NULL;
     rc = njt_upstream_api_process_request(r, &path, &out);
+   if (r->method & (NJT_HTTP_POST | NJT_HTTP_PATCH)){
+	return rc;
+   }
 
 out:
     /*find in the error message*/
@@ -5319,7 +5324,6 @@ out:
         r->headers_out.content_length->hash = 0;
         r->headers_out.content_length = NULL;
     }
-
     rc = njt_http_send_header(r);
 
     if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {

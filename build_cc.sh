@@ -15,7 +15,8 @@ chmod +x ./configure ./auto/lib/pcre-8.45/configure ./auto/lib/tassl/Configure
 #--with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 #--with-cc-opt=-I'auto/lib/tassl/include' --with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-proto-module"
-NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-util-module"
+NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-util-module"  #njet-http-if-location-module
+NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-if-location-module"  #njet-http-if-location-module
 NJET_MODULES="$NJET_MODULES --add-module=src/ext/lua/kit"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-upstream-dynamic-servers-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-upstream-dynamic-servers-module"
@@ -44,6 +45,11 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-ssl-api-mod
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-limit-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./src/ext/lua/http"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./src/ext/lua/stream"
+NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-gossip-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-app-sticky-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-cluster-limit-conn-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-cluster-limit-req-module"
+# NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-test_multicast-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
 LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo --with-pcre=auto/lib/pcre-8.45"
@@ -100,6 +106,8 @@ cdir=`cd $(dirname $0); pwd`
                 ;;
             install)
                 make install
+		mkdir /etc/njet/data
+		chmod 777 -R /etc/njet/data  /etc/njet/logs
                 ;;
             clean)
                 make clean

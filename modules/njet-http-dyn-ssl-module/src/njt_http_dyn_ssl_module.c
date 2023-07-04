@@ -414,6 +414,9 @@ static njt_str_t njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool)
     njt_str_t                       trip_str;
 
     hcmcf = njt_http_cycle_get_module_main_conf(cycle,njt_http_core_module);
+    if(hcmcf == NULL){
+        goto err;
+    }
 
     njt_memzero(&json_manager, sizeof(njt_json_manager));
 

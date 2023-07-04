@@ -34,6 +34,7 @@ typedef struct {
 
     njt_int_t                   status;
     njt_http_request_t         *request;
+    njt_int_t                   ret;
 } njt_http_script_engine_t;
 
 

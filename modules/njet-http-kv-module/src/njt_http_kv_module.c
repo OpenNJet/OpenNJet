@@ -435,7 +435,7 @@ static njt_int_t kv_init_worker(njt_cycle_t* cycle)
         mqconf = (njt_mqconf_conf_t*)(cycle->conf_ctx[cycle->modules[i]->index]);
     }
     if (!mqconf || !mqconf->cluster_name.data || !mqconf->node_name.data) {
-        njt_log_error(NJT_LOG_INFO, cycle->log, 0, "mqconf check failed, dyn_kv module is not loade");
+        njt_log_error(NJT_LOG_INFO, cycle->log, 0, "mqconf check failed, dyn_kv module is not loaded");
         return NJT_OK;
     }
     else if (mqconf->cluster_name.len >= 4 && 0 == memcmp(mqconf->cluster_name.data, "CTRL", 4)) {
@@ -443,9 +443,12 @@ static njt_int_t kv_init_worker(njt_cycle_t* cycle)
         return NJT_OK;
     }
     conf_ctx = (njt_http_conf_ctx_t*)njt_get_conf(cycle->conf_ctx, njt_http_module);
+    if (!conf_ctx) {
+        njt_log_error(NJT_LOG_INFO, cycle->log, 0, "http section not found, kv module is configured as off");
+        return NJT_OK;
+    }
     kvcf = conf_ctx->main_conf[njt_http_kv_module.ctx_index];
-
-    if (kvcf->off) {
+    if (!kvcf || kvcf->off) {
         njt_log_error(NJT_LOG_INFO, cycle->log, 0, "kv module is configured as off");
         return NJT_OK;
     }
@@ -667,6 +670,10 @@ njt_http_kv_add_variables(njt_conf_t* cf)
 
 static int njt_reg_handler_internal(njt_str_t* key, kv_change_handler handler, kv_rpc_handler put_handler, kv_rpc_handler get_handler, void* data)
 {
+    if (njt_process == NJT_PROCESS_HELPER) {
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "Not in worker process, skip kv handler registering for key :%v ", key);
+        return NJT_OK;
+    }
     kv_change_handler_t* kv_handler, * old_handler;
     if (kv_handler_hashmap == NULL) {
         kv_handler_hashmap = njt_calloc(sizeof(njt_lvlhash_map_t), njt_cycle->log);
