@@ -400,6 +400,7 @@ struct njt_http_upstream_s {
                                          njt_table_elt_t *h);
 
     njt_msec_t                       start_time;
+    njt_msec_t                       req_delay;
 
     njt_http_upstream_state_t       *state;
 
