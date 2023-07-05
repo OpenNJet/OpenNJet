@@ -767,7 +767,7 @@ static int njt_agent_location_change_handler_internal(njt_str_t *key, njt_str_t 
 static u_char* njt_agent_location_put_handler(njt_str_t *topic, njt_str_t *request, int* len, void *data) {
     njt_str_t err_json_msg;
     njt_str_null(&err_json_msg);
-    // ĞÂÔö×Ö·û´®²ÎÊıerr_json_msgÓÃÓÚ·µ»Øµ½¿Í»§¶Ë¡£
+    // ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½err_json_msgï¿½ï¿½ï¿½Ú·ï¿½ï¿½Øµï¿½ï¿½Í»ï¿½ï¿½Ë¡ï¿½
     njt_agent_location_change_handler_internal(topic,request,data,&err_json_msg);
     *len = err_json_msg.len;
     return err_json_msg.data;
@@ -782,13 +782,18 @@ static njt_int_t
 njt_http_location_init_worker(njt_cycle_t *cycle) {
 
 	njt_str_t  key = njt_string("loc");
-	//njt_reg_kv_msg_handler(&key, topic_kv_change_handler,NULL, NULL);
-	 if (njt_process != NJT_PROCESS_WORKER && njt_process != NJT_PROCESS_SINGLE) {
-        /*only works in the worker 0 prcess.*/
-       		 return NJT_OK;
-    	}
-	njt_reg_kv_msg_handler(&key, topic_kv_change_handler, njt_agent_location_put_handler, NULL, NULL);
-    
+	if (njt_process != NJT_PROCESS_WORKER && njt_process != NJT_PROCESS_SINGLE) {
+		/*only works in the worker 0 prcess.*/
+		return NJT_OK;
+	}
+    njt_kv_reg_handler_t h;
+    njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+    h.key = &key;
+    h.rpc_put_handler = njt_agent_location_put_handler;
+    h.handler = topic_kv_change_handler;
+    h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
+    njt_kv_reg_handler(&h);
+
     return NJT_OK;
 }
 
@@ -1383,7 +1388,7 @@ static void njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf) {
 	
 	ip = rlcf->var_names.elts;
 
-	for(i=0; i < rlcf->var_names.nelts; i++) {   //var_names£¬location ÉÏÄÚ´æ²»ĞèÒªÊÍ·Å¡£
+	for(i=0; i < rlcf->var_names.nelts; i++) {   //var_namesï¿½ï¿½location ï¿½ï¿½ï¿½Ú´æ²»ï¿½ï¿½Òªï¿½Í·Å¡ï¿½
 		ip[i]->ref_count--;
 		//printf("%s",ip[i]->name.data);
 		if( (ip[i]->ref_count == 0 && ip[i]->flags &  NJT_HTTP_DYN_VAR) ){
@@ -1411,7 +1416,7 @@ njt_http_set_del_variable_flag( njt_str_t *name)
     njt_http_core_main_conf_t  *cmcf;
 
   
-    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module); //variables  ¶¯Ì¬pool ÉÏÉêÇë£¬¸ñÎ»ÖØ¸´Ê¹ÓÃ¡£ ÄÚ´æÊÍ·Å
+    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module); //variables  ï¿½ï¿½Ì¬pool ï¿½ï¿½ï¿½ï¿½ï¿½ë£¬ï¿½ï¿½Î»ï¿½Ø¸ï¿½Ê¹ï¿½Ã¡ï¿½ ï¿½Ú´ï¿½ï¿½Í·ï¿½
 	if(cmcf == NULL) {
 		return;
 	}
@@ -1509,7 +1514,7 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 	   cmcf->variables_keys = njt_pcalloc(new_pool,
                                        sizeof(njt_hash_keys_arrays_t));
 		if (cmcf->variables_keys == NULL) {
-			cmcf->variables_keys = old_variables_keys; //Ê§°ÜÊ±£¬¼ÌĞøÊ¹ÓÃ¾ÉµÄ¡£
+			cmcf->variables_keys = old_variables_keys; //Ê§ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½Ã¾ÉµÄ¡ï¿½
 			njt_destroy_pool(new_pool);
 			njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys create variables_keys error!");
 			return ;
@@ -1523,7 +1528,7 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 
 		if (njt_hash_keys_array_init(cmcf->variables_keys, NJT_HASH_SMALL) != NJT_OK)
 		{
-			cmcf->variables_keys = old_variables_keys; //Ê§°ÜÊ±£¬¼ÌĞøÊ¹ÓÃ¾ÉµÄ¡£
+			cmcf->variables_keys = old_variables_keys; //Ê§ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½Ã¾ÉµÄ¡ï¿½
 			njt_destroy_pool(new_pool);
 			njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys njt_hash_keys_array_init  error!");
 			return;
@@ -1551,7 +1556,7 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 
 			//num++;
 			if (newv->name.data == NULL) {
-				cmcf->variables_keys = old_variables_keys; //Ê§°ÜÊ±£¬¼ÌĞøÊ¹ÓÃ¾ÉµÄ¡£
+				cmcf->variables_keys = old_variables_keys; //Ê§ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½Ã¾ÉµÄ¡ï¿½
 				 njt_destroy_pool(new_pool);
 				 njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys name alloc  error!");
 				return;

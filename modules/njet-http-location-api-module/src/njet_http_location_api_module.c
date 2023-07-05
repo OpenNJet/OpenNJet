@@ -513,7 +513,7 @@ njt_http_location_read_data(njt_http_request_t *r){
     njt_http_sub_location_info_t  *sub_location, *loc;
     u_char *p;
     uint32_t                                      crc32;
-    uint32_t									   topic_len = NJT_INT64_LEN  + 2 + 256; ///dyn/loc/l_
+    uint32_t									   topic_len = NJT_INT64_LEN  + 2 + 256; ///ins/loc/l_
     njt_str_t									   topic_name,location_rule,location;
     njt_str_t  add = njt_string("add");
     njt_str_t  del = njt_string("del");
@@ -619,9 +619,9 @@ njt_http_location_read_data(njt_http_request_t *r){
 	
 	
 	if(location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0 ){
-		p = njt_snprintf(topic_name.data,topic_len,"/dyn/loc/l_%ui",crc32);
+		p = njt_snprintf(topic_name.data,topic_len,"/ins/loc/l_%ui",crc32);
 	} else  if(location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0 ){
-		p = njt_snprintf(topic_name.data,topic_len,"/worker_0/dyn/loc/l_%ui",crc32);
+		p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/loc/l_%ui",crc32);
 	} else {
 		njt_str_set(&location_info->msg, "type error!!!");
 		goto err;

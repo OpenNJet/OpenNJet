@@ -825,12 +825,16 @@ static u_char* njt_http_ssl_put_handler(njt_str_t *topic, njt_str_t *request, in
     return err_json_msg.data;
 }
 
-
-
 static njt_int_t njt_http_dyn_ssl_init_process(njt_cycle_t* cycle){
     njt_str_t  rpc_key = njt_string("ssl");
-    // njt_reg_kv_change_handler(&rpc_key, njt_http_ssl_change_handler,njt_http_dyn_ssl_rpc_handler, NULL);
-    njt_reg_kv_msg_handler(&rpc_key, njt_http_ssl_change_handler, njt_http_ssl_put_handler, njt_http_dyn_ssl_rpc_handler, NULL);
+    njt_kv_reg_handler_t h;
+    njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+    h.key = &rpc_key;
+    h.rpc_get_handler = njt_http_dyn_ssl_rpc_handler;
+    h.rpc_put_handler = njt_http_ssl_put_handler;
+    h.handler = njt_http_ssl_change_handler;
+    h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
+    njt_kv_reg_handler(&h);
 
     return NJT_OK;
 }
