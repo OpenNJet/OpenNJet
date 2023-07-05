@@ -14,7 +14,7 @@ OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，随着 NGINX �
 
 # ✨ **功能特性**   
 
-
+[OpenNJet功能特性](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E5%8A%9F%E8%83%BD%E7%89%B9%E6%80%A7.md)
 
 
 # 💥源码下载
