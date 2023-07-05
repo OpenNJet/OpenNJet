@@ -570,7 +570,7 @@ njt_http_upstream_init_request(njt_http_request_t *r)
     }
 
     u = r->upstream;
-
+    njt_time_update();
     tp = njt_timeofday();
     ms = (njt_msec_int_t) ((tp->sec - r->start_sec) * 1000 + (tp->msec - r->start_msec));
     u->req_delay = njt_max(ms, 0);

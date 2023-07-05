@@ -1546,7 +1546,6 @@ bool njt_http_vts_hdr_record(njt_int_t value)
     printf("record %d\n", (int)value);
 
     b = hdr_record_value(njt_http_vts_hdr, value);
-    njt_http_vts_hdr_get();
     return b;
 }
 
