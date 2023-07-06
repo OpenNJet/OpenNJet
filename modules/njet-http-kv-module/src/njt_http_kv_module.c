@@ -489,7 +489,9 @@ static njt_int_t kv_init_worker(njt_cycle_t* cycle)
         njet_iot_client_exit(kv_evt_ctx);
         return NJT_ERROR;
     };
-    // add default subscribed topics
+    // add default subscribed topics, the ordering of subscribed topic list is important.
+    // when restarting njet instance, all the retained message received from broker will be in this order
+    // /ins/# is for instructional api, it should be before /dyn/# 
     njet_iot_client_add_topic(kv_evt_ctx, "/cluster/+/kv_set/#");
     njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
     njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");

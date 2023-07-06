@@ -767,7 +767,7 @@ static int njt_agent_location_change_handler_internal(njt_str_t *key, njt_str_t 
 static u_char* njt_agent_location_put_handler(njt_str_t *topic, njt_str_t *request, int* len, void *data) {
     njt_str_t err_json_msg;
     njt_str_null(&err_json_msg);
-    // �����ַ�������err_json_msg���ڷ��ص��ͻ��ˡ�
+    // 新增字符串参数err_json_msg用于返回到客户端。
     njt_agent_location_change_handler_internal(topic,request,data,&err_json_msg);
     *len = err_json_msg.len;
     return err_json_msg.data;
@@ -1388,7 +1388,7 @@ static void njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf) {
 	
 	ip = rlcf->var_names.elts;
 
-	for(i=0; i < rlcf->var_names.nelts; i++) {   //var_names��location ���ڴ治��Ҫ�ͷš�
+	for(i=0; i < rlcf->var_names.nelts; i++) {   //var_names，location 上内存不需要释放。
 		ip[i]->ref_count--;
 		//printf("%s",ip[i]->name.data);
 		if( (ip[i]->ref_count == 0 && ip[i]->flags &  NJT_HTTP_DYN_VAR) ){
@@ -1416,7 +1416,7 @@ njt_http_set_del_variable_flag( njt_str_t *name)
     njt_http_core_main_conf_t  *cmcf;
 
   
-    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module); //variables  ��̬pool �����룬��λ�ظ�ʹ�á� �ڴ��ͷ�
+    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module); //variables  动态pool 上申请，格位重复使用。 内存释放
 	if(cmcf == NULL) {
 		return;
 	}
@@ -1514,7 +1514,7 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 	   cmcf->variables_keys = njt_pcalloc(new_pool,
                                        sizeof(njt_hash_keys_arrays_t));
 		if (cmcf->variables_keys == NULL) {
-			cmcf->variables_keys = old_variables_keys; //ʧ��ʱ������ʹ�þɵġ�
+			cmcf->variables_keys = old_variables_keys;//失败时，继续使用旧的。
 			njt_destroy_pool(new_pool);
 			njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys create variables_keys error!");
 			return ;
@@ -1528,7 +1528,7 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 
 		if (njt_hash_keys_array_init(cmcf->variables_keys, NJT_HASH_SMALL) != NJT_OK)
 		{
-			cmcf->variables_keys = old_variables_keys; //ʧ��ʱ������ʹ�þɵġ�
+			cmcf->variables_keys = old_variables_keys; //失败时，继续使用旧的。
 			njt_destroy_pool(new_pool);
 			njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys njt_hash_keys_array_init  error!");
 			return;
@@ -1556,7 +1556,7 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 
 			//num++;
 			if (newv->name.data == NULL) {
-				cmcf->variables_keys = old_variables_keys; //ʧ��ʱ������ʹ�þɵġ�
+				cmcf->variables_keys = old_variables_keys; //失败时，继续使用旧的。
 				 njt_destroy_pool(new_pool);
 				 njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys name alloc  error!");
 				return;
