@@ -618,7 +618,7 @@ found:
         type = NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_UG;
     }
 
-    njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "dst[last] = %V", &dst);
+    // njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "dst[last] = %V", &dst);
 
     rc = njt_http_vhost_traffic_status_node_generate_key(r->pool, &key, &dst, type);
     if (rc != NJT_OK) {
