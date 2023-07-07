@@ -93,11 +93,11 @@ njt_http_vhost_traffic_status_get_node(njt_rbtree_node_t *node)
     return vtsn;
 }
 
+static njt_int_t    njt_cpu_id = -1;
 
 njt_http_vhost_traffic_status_node_t *
 njt_http_vhost_traffic_status_map_node(njt_slab_pool_t *shpool, njt_http_vhost_traffic_status_node_t *vtsn)
 {
-    static njt_int_t    njt_cpu_id = -1;
     njt_atomic_uint_t   n;
 
     if (njt_cpu_id == -1) {
@@ -743,7 +743,9 @@ struct hdr_histogram
     double conversion_ratio;
     int32_t counts_len;
     njt_atomic_t total_count;
+    njt_atomic_t* total_counts;
     njt_atomic_t* counts;
+    njt_atomic_t* count0s;
 };
 
 
@@ -848,8 +850,18 @@ static void counts_inc_normalised(
     struct hdr_histogram* h, int32_t index, int64_t value)
 {
     int32_t normalised_index = normalize_index(h, index);
-    njt_atomic_fetch_add(&h->counts[normalised_index], value);
-    njt_atomic_fetch_add(&h->total_count, value);
+
+    if ((njt_cpu_id != -1) || normalised_index) {
+        njt_atomic_fetch_add(&h->counts[normalised_index], value);
+    } else {
+        njt_atomic_fetch_add(&h->count0s[njt_cpu_id], value);
+    }
+
+    if (njt_cpu_id != -1) {
+        njt_atomic_fetch_add(&h->total_counts[njt_cpu_id], value);
+    } else {
+        njt_atomic_fetch_add(&h->total_count, value);
+    }
 }
 
 static void update_min(struct hdr_histogram* h, uint64_t value)
@@ -1149,7 +1161,7 @@ int hdr_init(
         return r;
     }
 
-    counts = (njt_atomic_t*) njt_slab_calloc(shpool, (size_t) cfg.counts_len *sizeof(njt_atomic_t));
+    counts = (njt_atomic_t*) njt_slab_calloc(shpool, ((size_t) cfg.counts_len + njt_ncpu * 2)*sizeof(njt_atomic_t));
     if (!counts)
     {
         return ENOMEM;
@@ -1164,6 +1176,8 @@ int hdr_init(
     }
 
     histogram->counts = counts;
+    histogram->total_counts = counts + cfg.counts_len;
+    histogram->count0s = histogram->total_counts + njt_ncpu;
 
     hdr_init_preallocated(histogram, &cfg);
     *result = histogram;
@@ -1182,10 +1196,17 @@ void hdr_close(njt_slab_pool_t *shpool, struct hdr_histogram* h)
 /* reset a histogram to zero. */
 void hdr_reset(struct hdr_histogram *h)
 {
-     h->total_count=0;
-     h->min_value = INT64_MAX;
-     h->max_value = 0;
-     memset((void *)h->counts, 0, (sizeof(njt_atomic_t) * h->counts_len));
+    int i;
+
+    h->total_count=0;
+    h->min_value = INT64_MAX;
+    h->max_value = 0;
+    memset((void *)h->counts, 0, (sizeof(njt_atomic_t) * h->counts_len));
+
+    for (i=0; i<njt_ncpu; i++) {
+        h->total_counts[i] = 0;
+        h->count0s[i] = 0;
+    }
 }
 
 /* ##     ## ########  ########     ###    ######## ########  ######  */
@@ -1296,17 +1317,37 @@ void hdr_iter_init(struct hdr_iter* iter, const struct hdr_histogram* h);
 
 
 
-int hdr_value_at_percentiles(const struct hdr_histogram *h, const double *percentiles, int64_t *values, size_t length)
+int hdr_value_at_percentiles(struct hdr_histogram *h, const double *percentiles, int64_t *values, size_t length)
 {
-    size_t i;
+    struct hdr_iter iter;
+    int64_t total_count = 0, total;
+    size_t  at_pos = 0;
+    size_t  i;
+    int     id;
 
     if (NULL == percentiles || NULL == values)
     {
         return EINVAL;
     }
 
-    struct hdr_iter iter;
-    const int64_t total_count = h->total_count;
+    for (id=0; id<njt_ncpu; id++) {
+        total = h->count0s[id];
+        total_count += total;
+        total *= -1;
+        njt_atomic_fetch_add(&h->count0s[id], total);
+    }
+    njt_atomic_fetch_add(&h->counts[0], total_count);
+
+
+    total_count = h->total_count;
+    for (id=0; id<njt_ncpu; id++) {
+        total = h->total_counts[id];
+        total_count += total;
+        total *= -1;
+        njt_atomic_fetch_add(&h->total_counts[id], total);
+    }
+    h->total_count = total_count;
+
     // to avoid allocations we use the values array for intermediate computation
     // i.e. to store the expected cumulative count at each percentile
     for (i = 0; i < length; i++)
@@ -1318,8 +1359,8 @@ int hdr_value_at_percentiles(const struct hdr_histogram *h, const double *percen
     }
 
     hdr_iter_init(&iter, h);
-    int64_t total = 0;
-    size_t at_pos = 0;
+    total = 0;
+
     while (hdr_iter_next(&iter) && at_pos < length)
     {
         total += iter.count;
@@ -1331,7 +1372,6 @@ int hdr_value_at_percentiles(const struct hdr_histogram *h, const double *percen
     }
     return 0;
 }
-
 
 
 double hdr_mean(const struct hdr_histogram* h)
@@ -1441,7 +1481,6 @@ void hdr_iter_init(struct hdr_iter* iter, const struct hdr_histogram* h)
 }
 
 
-
 size_t hdr_get_memory_size(struct hdr_histogram *h)
 {
     return sizeof(struct hdr_histogram) + h->counts_len * sizeof(int64_t);
@@ -1543,7 +1582,7 @@ njt_int_t njt_http_vts_hdr_get(void)
 bool njt_http_vts_hdr_record(njt_int_t value)
 {
     bool b;
-    printf("record %d\n", (int)value);
+    // printf("record %d\n", (int)value);
 
     b = hdr_record_value(njt_http_vts_hdr, value);
     return b;
