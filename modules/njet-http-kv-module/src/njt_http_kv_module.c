@@ -193,7 +193,7 @@ static void njt_http_kv_loop_mqtt(njt_event_t* ev)
     case 4:  // no connection
     case 19: // lost keepalive
     case 7:  // lost connection
-        njt_log_error(NJT_LOG_ERR, ev->log, 0, "mqtt_client run ret:%d, ev: %p, ev timeouted %d", ret, ev, ev->timedout);
+        njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt_client run ret:%d, ev: %p, ev timeouted %d", ret, ev, ev->timedout);
         njt_http_kv_iot_set_timer(njt_http_kv_iot_conn_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
         break;
@@ -209,12 +209,12 @@ static void njt_http_kv_iot_conn_timeout(njt_event_t* ev)
     njt_connection_t* c = (njt_connection_t*)ev->data;
     struct evt_ctx_t* ctx = (struct evt_ctx_t*)c->data;
     int ret;
-    njt_log_error(NJT_LOG_ERR, ev->log, 0, "Event fired!,try connect again, %p ", ev);
+    njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "Event fired!,try connect again, %p ", ev);
     if (ev->timedout) {
         ret = njet_iot_client_connect(3, 5, ctx);
         if (ret != 0) {
             if (ret == -5) {
-                njt_log_error(NJT_LOG_ERR, ev->log, 0, "client is connecting or has connected");
+                njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "client is connecting or has connected");
                 return;
             }
             njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect to broker failed:%d", ret);
