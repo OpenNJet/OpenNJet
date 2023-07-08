@@ -79,9 +79,9 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
             }
             sn = addr_conf->virtual_names->regex;
             for (k = 0; k <  addr_conf->virtual_names->nregex; ++k) {
-                if(sn[i].name.len == server_name->len &&
-                njt_strncasecmp(sn[i].name.data,server_name->data,server_name->len)==0){
-                    return sn[i].server;
+                if(sn[k].name.len == server_name->len &&
+                njt_strncasecmp(sn[k].name.data,server_name->data,server_name->len)==0){
+                    return sn[k].server;
                 }
             }
         }
