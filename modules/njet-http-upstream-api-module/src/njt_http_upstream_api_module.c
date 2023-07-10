@@ -4803,7 +4803,7 @@ njt_upstream_api_process_request(njt_http_request_t *r, njt_array_t *path,
 
 out:
     /*try to save the upstream servers into the stat file*/
-    if (rc == NJT_OK && r->method != NJT_HTTP_GET) {
+    if ((rc == NJT_OK || rc == NJT_DONE) &&  r->method != NJT_HTTP_GET) {
 			njt_upstream_state_save(r, uscf);
        
     }
