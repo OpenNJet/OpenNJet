@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
- */
-
 /* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison interface for Yacc-like parsers in C
@@ -59,10 +55,9 @@ extern int yydebug;
     YYerror = 256,                 /* error  */
     YYUNDEF = 257,                 /* "invalid token"  */
     LOC_EXP = 258,                 /* LOC_EXP  */
-    EOL = 259,                     /* EOL  */
-    OR = 260,                      /* OR  */
-    AND = 261,                     /* AND  */
-    ERROR = 262                    /* ERROR  */
+    OR = 259,                      /* OR  */
+    AND = 260,                     /* AND  */
+    ERROR = 261                    /* ERROR  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -76,7 +71,7 @@ union YYSTYPE
   loc_parse_node_t *node;
   loc_exp_t *loc_exp;
 
-#line 76 "njt_http_if_location_parse.h"
+#line 75 "njt_http_if_location_parse.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

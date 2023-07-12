@@ -19,7 +19,7 @@ loc_parse_node_t *loc_exp_dyn_parse_tree;
 %parse-param { loc_parse_node_t **tree_root }
 /* declare tokens */
 %token <loc_exp> LOC_EXP
-%token EOL
+/* %oken EOL */
 %token OR AND
 %token ERROR
 
@@ -35,7 +35,7 @@ loc_parse_node_t *loc_exp_dyn_parse_tree;
 /* %destructor {free_tree($$);} <node> */
 %destructor {  printf ("Discarding symbol: OR at line %d\n", @$.first_line); } OR
 %destructor {  printf ("Discarding symbol: AND at line %d\n", @$.first_line); } AND
-%destructor {  printf ("Discarding symbol: EOL at line %d\n", @$.first_line); } EOL 
+/* %destructor {  printf ("Discarding symbol: EOL at line %d\n", @$.first_line); } EOL */
 %destructor {  printf ("Discarding symbol: ERROR at line %d\n", @$.first_line); } ERROR 
 %destructor { if($$) { free_tree ($$); printf ("Discarding symbol: exp at line %d\n", @$.first_line); free($$);} } exp
 %destructor { if($$) { free_tree ($$); printf ("Discarding symbol: eval_tree at line %d\n", @$.first_line); free($$);} } eval_tree
@@ -50,7 +50,7 @@ exp:   {printf("BISON NULL_EXP: \n"); $$=NULL; YYABORT;}
    | exp AND exp          { printf("BISON: AND \n");$$ = new_loc_parse_op_node(BOOL_OP_AND, $1,$3);}
 
 eval_tree: {$$ = NULL; }/* nothing */
-  | eval_tree exp EOL {
+  | eval_tree exp YYEOF {
     dump_tree($2, 0);
     // loc_exp_dyn_eval_result = eval_loc_parse_tree($2);
     loc_exp_dyn_parse_tree = $2;
@@ -60,7 +60,7 @@ eval_tree: {$$ = NULL; }/* nothing */
     // free($2);
     return 0;
     }
-  | eval_tree error EOL { YYABORT; }
+  // | eval_tree error EOL { YYABORT; }
   | eval_tree ERROR { YYABORT; }
   | eval_tree error { YYABORT; }
  ;

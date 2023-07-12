@@ -22,16 +22,16 @@ int idx = 0;
 
 
 \( {
-    if (paren_count == 0) { printf("Outermost Opening Parenthesis\n"); closed = 0; idx=0; }
+    if (paren_count == 0) { printf("Outermost Opening Parenthesis\n"); closed = 0; idx=0; BEGIN(INITIAL); }
     ++paren_count; printf("Parenthese count is %d\n", paren_count);
     return '(';
 };
 \) {
-    if (closed == 1) { yyerror(NULL, "already closed"); return ERROR; }
+    printf("closed = %d\n", closed);
+    if (closed == 1) { printf("error"); yyerror(NULL, "already closed"); return ERROR; }
     if (paren_count == 0) {
-        printf("MEET EOL, finished \n");
+        printf("finished \n");
         closed = 1;
-        return EOL; 
     } else {
         --paren_count;
         printf("Parenthese count is %d\n", paren_count);
@@ -41,6 +41,7 @@ int idx = 0;
         }
         return ')';
     }
+    printf("closed = %d\n", closed);
 };
 
 \|\| { printf("OR \n"); return OR; };
@@ -87,15 +88,15 @@ int idx = 0;
     }
 };
 
-<in_str>\/ { *string_buf_ptr++ ='/'; };
 <in_str>\| { *string_buf_ptr++ ='|'; };
 <in_str>& { *string_buf_ptr++ ='&'; };
 <in_str>\\ { *string_buf_ptr++ ='\\'; };
 <in_str>\\n { *string_buf_ptr++ ='\n'; };
 <in_str>\\t { *string_buf_ptr++ ='\t'; };
+<in_str>\" { *string_buf_ptr++ ='"'; };
 <in_str>\\\" { *string_buf_ptr++ ='"'; };
 
- <in_str>[^\(\)&|\\\n\t\/]+  {
+ <in_str>[^\(\)&|\\\n\t\"]+  {
     char *yptr = yytext;
     while ( *yptr ) {*string_buf_ptr++ = *yptr++;};
  };
@@ -107,6 +108,8 @@ int idx = 0;
 %%
 
 /*
+<in_str>\\\( { *string_buf_ptr++ ='('; };
+<in_str>\\\) { *string_buf_ptr++ =')'; };
  <in_str>[^ ^\t=~\(\)\n&|][^\(\)\n&|]* {
 /* str should not start with ~| |\t|^|(|) *//* 
     ECHO;
