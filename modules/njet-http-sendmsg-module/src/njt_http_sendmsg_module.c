@@ -602,6 +602,9 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
 
 static void sendmsg_exit_worker(njt_cycle_t *cycle)
 {
+    if(rpc_msg_handler_hashmap) {
+       njt_free(rpc_msg_handler_hashmap);
+    }
     njet_iot_client_exit(sendmsg_mqtt_ctx);
 }
 
@@ -834,7 +837,7 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int retain_flag, int sessi
     }
 
     njt_reg_rpc_msg_handler(njt_sendmsg_rr_session_id, session_id, handler, data, rpc_timer_ev);
-    
+    njt_free(t);
     return NJT_OK;
 
 error:
