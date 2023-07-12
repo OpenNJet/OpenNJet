@@ -616,6 +616,12 @@ struct njt_http_request_s {
     unsigned                          used_ref;
 #endif
     //end
+
+    //add by clb
+#if (NJT_HTTP_FAULT_INJECT)
+      //used for fault inject of delay
+    njt_event_t                       *delay_timer;
+#endif
 };
 
 

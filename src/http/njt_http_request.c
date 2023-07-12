@@ -2537,6 +2537,11 @@ njt_http_finalize_request(njt_http_request_t *r, njt_int_t rc)
     njt_log_debug5(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "http finalize request: %i, \"%V?%V\" a:%d, c:%d",
                    rc, &r->uri, &r->args, r == c->data, r->main->count);
+#if (NJT_HTTP_FAULT_INJECT)
+    if (r->delay_timer && r->delay_timer->timer_set) {
+        njt_del_timer(r->delay_timer);
+    }
+#endif    
 
     if (rc == NJT_DONE) {
         njt_http_finalize_connection(r);
