@@ -114,7 +114,7 @@ njt_http_vhost_traffic_status_dump_node_write(njt_event_t *ev, njt_file_t *file,
     ctx = ev->data;
 
     if (node != ctx->rbtree->sentinel) {
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+        vtsn = njt_http_vhost_traffic_status_get_node(node);
 
         (void) njt_write_fd(file->fd, vtsn, sizeof(njt_http_vhost_traffic_status_node_t));
         (void) njt_write_fd(file->fd, vtsn->data, vtsn->len);
@@ -264,6 +264,7 @@ njt_http_vhost_traffic_status_dump_restore_add_node(njt_event_t *ev,
     njt_rbtree_node_t                     *node;
     njt_http_vhost_traffic_status_ctx_t   *ctx;
     njt_http_vhost_traffic_status_node_t  *vtsn;
+    njt_int_t                              ret = NJT_OK;
 
     ctx = ev->data;
 
@@ -273,7 +274,7 @@ njt_http_vhost_traffic_status_dump_restore_add_node(njt_event_t *ev,
 
     shpool = (njt_slab_pool_t *) ctx->shm_zone->shm.addr;
 
-    njt_shmtx_lock(&shpool->mutex);
+    njt_shrwlock_rdlock(&shpool->rwlock);
 
     /* find node */
     hash = njt_crc32_short(key->data, key->len);
@@ -283,32 +284,35 @@ njt_http_vhost_traffic_status_dump_restore_add_node(njt_event_t *ev,
     /* copy node */
     if (node == NULL) {
         size = offsetof(njt_rbtree_node_t, color)
-               + offsetof(njt_http_vhost_traffic_status_node_t, data)
+               + offsetof(njt_http_vhost_traffic_status_node_t, data) * (1 + njt_ncpu)
                + key->len;
 
+        njt_shrwlock_rd2wrlock(&shpool->rwlock);
         node = njt_slab_alloc_locked(shpool, size);
-        if (node == NULL) {
+
+        if (node != NULL) {
+            vtsn = njt_http_vhost_traffic_status_get_node(node);
+
+            node->key = hash;
+
+            *vtsn = *ovtsn;
+
+            njt_memcpy(vtsn->data, key->data, key->len);
+
+            njt_rbtree_insert(ctx->rbtree, node);
+        } else {
             njt_log_error(NJT_LOG_ALERT, ev->log, 0,
                           "dump_restore_add_node::njt_slab_alloc_locked() failed");
 
-            njt_shmtx_unlock(&shpool->mutex);
-            return NJT_ERROR;
+            ret = NJT_ERROR;
         }
 
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
-
-        node->key = hash;
-
-        *vtsn = *ovtsn;
-
-        njt_memcpy(vtsn->data, key->data, key->len);
-
-        njt_rbtree_insert(ctx->rbtree, node);
+        njt_shrwlock_wr2rdlock(&shpool->rwlock);
     }
 
-    njt_shmtx_unlock(&shpool->mutex);
+    njt_shrwlock_unlock(&shpool->rwlock);
 
-    return NJT_OK;
+    return ret;
 }
 
 

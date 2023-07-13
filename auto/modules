@@ -1291,6 +1291,12 @@ if [ $USE_PCRE = YES ]; then
 fi
 
 
+if [ $USE_NTLS = YES ]; then
+    have=NJT_HTTP_MULTICERT . auto/have
+    have=NJT_HAVE_NTLS . auto/have
+fi
+
+
 modules="$CORE_MODULES $EVENT_MODULES"
 
 
@@ -1329,6 +1335,10 @@ fi
 
 
 if [ $STREAM != NO ]; then
+
+    if [ $USE_NTLS = YES ]; then
+        have=NJT_STREAM_MULTICERT . auto/have
+    fi
 
     if [ $STREAM = YES ]; then
         modules="$modules $STREAM_MODULES"

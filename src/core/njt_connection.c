@@ -496,6 +496,38 @@ njt_open_listening_sockets(njt_cycle_t *cycle)
                 return NJT_ERROR;
             }
 
+            //by clb
+            if (ls[i].type == SOCK_DGRAM
+                && ls[i].sockaddr->sa_family == AF_INET ) 
+            {    
+                struct sockaddr_in* sin=(struct sockaddr_in*) ls[i].sockaddr;
+                uint32_t address = ntohl(sin->sin_addr.s_addr);
+                if ((address & 0xF0000000) == 0xE0000000 ) {
+                    njt_log_error(NJT_LOG_INFO, log, njt_socket_errno,
+                                    "found multcast address %V ",
+                                    &ls[i].addr_text);
+                    struct ip_mreq mreq;
+                    bzero(&mreq, sizeof(struct ip_mreq));
+                    //bcopy((void *)sin->sin_addr.s_addr, &mreq.imr_multiaddr.s_addr, sizeof(struct in_addr));
+                    mreq.imr_multiaddr.s_addr=sin->sin_addr.s_addr;
+                    mreq.imr_interface.s_addr = htonl(INADDR_ANY);
+                    if (setsockopt(s, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq,
+                            sizeof(struct ip_mreq)) == -1) {
+                            njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                    "setsockopt(ADD_MEMBERSHIP) %V failed",
+                                    &ls[i].addr_text);
+                            if (njt_close_socket(s) == -1) {
+                                    njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                            njt_close_socket_n " %V failed",
+                                    &ls[i].addr_text);
+                            }
+                            return NJT_ERROR;
+                    }
+                }
+            }
+            //end
+
+
             if (ls[i].type != SOCK_DGRAM || !njt_test_config) {
 
                 if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR,
@@ -1125,7 +1157,6 @@ njt_get_connection(njt_socket_t s, njt_log_t *log)
 
     njt_cycle->free_connections = c->data;
     njt_cycle->free_connection_n--;
-
     if (njt_cycle->files && njt_cycle->files[s] == NULL) {
         njt_cycle->files[s] = c;
     }
@@ -1139,7 +1170,6 @@ njt_get_connection(njt_socket_t s, njt_log_t *log)
     c->write = wev;
     c->fd = s;
     c->log = log;
-
     instance = rev->instance;
 
     njt_memzero(rev, sizeof(njt_event_t));

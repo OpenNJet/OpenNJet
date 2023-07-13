@@ -19,7 +19,7 @@
 #define NJT_CMD_QUIT           3
 #define NJT_CMD_TERMINATE      4
 #define NJT_CMD_REOPEN         5
-
+#define NJT_CMD_RESTART        6
 
 #define NJT_PROCESS_SINGLE     0
 #define NJT_PROCESS_MASTER     1
@@ -58,5 +58,6 @@ extern sig_atomic_t    njt_reconfigure;
 extern sig_atomic_t    njt_reopen;
 extern sig_atomic_t    njt_change_binary;
 extern sig_atomic_t    njt_reap_helper;
+extern sig_atomic_t    njt_rtc;
 
 #endif /* _NJT_PROCESS_CYCLE_H_INCLUDED_ */

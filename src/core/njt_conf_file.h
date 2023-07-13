@@ -125,13 +125,13 @@ struct njt_conf_s {
     njt_log_t            *log;
 
     njt_uint_t           dynamic;   //add by clb
-
     void                 *ctx;
     njt_uint_t            module_type;
     njt_uint_t            cmd_type;
 
     njt_conf_handler_pt   handler;
     void                 *handler_conf;
+    njt_str_t *errstr;  //by zyg
 };
 
 
@@ -293,6 +293,6 @@ char *njt_conf_set_sec_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 char *njt_conf_set_bufs_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 char *njt_conf_set_enum_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 char *njt_conf_set_bitmask_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf);
-
+njt_int_t njt_conf_read_memory_token(njt_conf_t *cf,njt_str_t data);
 
 #endif /* _NJT_CONF_FILE_H_INCLUDED_ */

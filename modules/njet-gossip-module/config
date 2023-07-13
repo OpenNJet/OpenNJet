@@ -1,0 +1,12 @@
+njt_addon_name=njt_gossip_module
+njt_module_type=STREAM
+njt_module_name=$njt_addon_name
+njt_module_deps=""
+njt_module_srcs=" \
+  $njt_addon_dir/src/njt_gossip_module.c \
+"
+njt_module_incs=""
+
+CORE_INCS="$CORE_INCS $njt_addon_dir/src"
+
+. auto/module

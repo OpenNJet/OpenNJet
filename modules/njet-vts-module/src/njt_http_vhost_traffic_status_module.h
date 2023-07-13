@@ -309,7 +309,10 @@ typedef struct {
 njt_msec_t njt_http_vhost_traffic_status_current_msec(void);
 njt_msec_int_t njt_http_vhost_traffic_status_request_time(njt_http_request_t *r);
 njt_msec_int_t njt_http_vhost_traffic_status_upstream_response_time(njt_http_request_t *r);
-
+njt_http_vhost_traffic_status_node_t *
+    njt_http_vhost_traffic_status_get_node(njt_rbtree_node_t *node);
+void njt_http_vhost_traffic_status_sum_node(njt_http_vhost_traffic_status_node_t *vtsn,
+    njt_http_vhost_traffic_status_loc_conf_t  *vtscf);
 
 extern njt_flag_t njt_http_vts_enable;
 extern njt_module_t *njt_http_vtsp_module;

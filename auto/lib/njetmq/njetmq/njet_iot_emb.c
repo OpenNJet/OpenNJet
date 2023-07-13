@@ -48,6 +48,7 @@ static int listensock_count = 0;
 static int listensock_index = 0;
 static struct mosq_iot *ctx = NULL;
 static struct mosq_iot *ctx_tmp = NULL;
+static const char empty_server_conf_file[] = "/dev/shm/njetmq-server-XXXXXX";
 
 static int quit_flag = 0;
 #ifdef WITH_PERSISTENCE
@@ -193,12 +194,16 @@ int listeners__start_local_only(void)
 		char *tmp_pchar;
 
 		char *unix_sock_file = malloc(strlen(prefix) + 20 + 1); // $prefix/data/mosquitto.sock";
+		if (!unix_sock_file) {
+			return MOSQ_ERR_NOMEM;
+		}
 		tmp_pchar = unix_sock_file;
 		memcpy(tmp_pchar, prefix, strlen(prefix));
 		memcpy(tmp_pchar + strlen(prefix), "/data/mosquitto.sock", 20);
 		tmp_pchar[strlen(prefix) + 20] = '\0';
 
 		rc = listeners__add_local(unix_sock_file, 0);
+		free(unix_sock_file);
 		if (rc == MOSQ_ERR_NOMEM)
 			return MOSQ_ERR_NOMEM;
 	}
@@ -307,6 +312,7 @@ int njet_iot_init(const char *prefix, const char *config_file)
 {
 	struct mosquitto__config *config;
 	struct timeval tv;
+	char nameBuff[32];
 	int rc;
 	int argc = 3;
 	char *argv[3];
@@ -314,6 +320,17 @@ int njet_iot_init(const char *prefix, const char *config_file)
 	argv[0] = "emb_mqtt";
 	argv[1] = "-c";
 	argv[2] = (char *)config_file;
+	if (config_file == NULL || strlen(config_file) == 0)
+	{
+		strncpy(nameBuff, empty_server_conf_file, 30);
+		rc = mkstemp((char *)nameBuff);
+		if (rc == -1)
+		{
+			fprintf(stderr, "can't create tmp file \"%s\" e\n", nameBuff);
+			return 1;
+		}
+		argv[2] = nameBuff;
+	}
 
 	gettimeofday(&tv, NULL);
 	srand((unsigned int)(tv.tv_sec + tv.tv_usec));
@@ -328,6 +345,7 @@ int njet_iot_init(const char *prefix, const char *config_file)
 	config->prefix = (char *)prefix;
 
 	rc = config__parse_args(config, argc, argv);
+	unlink(nameBuff);
 	if (rc != MOSQ_ERR_SUCCESS)
 		return rc;
 
@@ -402,7 +420,7 @@ int njet_iot_run()
 
 int njet_iot_exit()
 {
-	int i, rc=0;
+	int i, rc = 0;
 	iot_mux__cleanup();
 	iot_log__printf(NULL, MOSQ_LOG_INFO, "mosquitto version %s terminating", VERSION);
 	HASH_ITER(hh_id, db.contexts_by_id, ctx, ctx_tmp)

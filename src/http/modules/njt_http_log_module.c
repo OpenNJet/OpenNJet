@@ -1,9 +1,7 @@
 
-/*
- * Copyright (C) Igor Sysoev
- * Copyright (C) Nginx, Inc.
- * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
- */
+// /*
+//  * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
+//  *
 
 
 #include <njt_config.h>
@@ -247,7 +245,7 @@ njt_module_t  njt_http_log_module = {
 
 static njt_str_t  njt_http_access_log = njt_string(NJT_HTTP_LOG_PATH);
 
-
+static njt_str_t njt_http_escape_default = njt_string("default");
 static njt_str_t  njt_http_combined_fmt =
     njt_string("$remote_addr - $remote_user [$time_local] "
                "\"$request\" $status $body_bytes_sent "
@@ -434,12 +432,16 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
     time_t               now;
     ssize_t              n;
     njt_err_t            err;
+    njt_str_t              def = njt_string("null file");
 #if (NJT_ZLIB)
     njt_http_log_buf_t  *buffer;
 #endif
 
     if (log->script == NULL) {
-        name = log->file->name.data;
+        if(log->file == NULL) {
+		return;
+        }
+	name = log->file->name.data;
 
 #if (NJT_ZLIB)
         buffer = log->file->data;
@@ -473,6 +475,7 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
         }
 
         if (now - log->error_log_time > 59) {
+	    name = (name != NULL ?name:def.data);
             njt_log_error(NJT_LOG_ALERT, r->connection->log, err,
                           njt_write_fd_n " to \"%s\" failed", name);
 
@@ -483,6 +486,7 @@ njt_http_log_write(njt_http_request_t *r, njt_http_log_t *log, u_char *buf,
     }
 
     if (now - log->error_log_time > 59) {
+	name = (name != NULL ?name:def.data);
         njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
                       njt_write_fd_n " to \"%s\" was incomplete: %z of %uz",
                       name, n, len);
@@ -1168,7 +1172,8 @@ njt_http_log_create_main_conf(njt_conf_t *cf)
     conf->pool = new_pool;
 #endif
 
-    if (njt_array_init(&conf->formats, cf->pool, 4, sizeof(njt_http_log_fmt_t))
+    // www: up to 16 formats
+    if (njt_array_init(&conf->formats, cf->pool, 16, sizeof(njt_http_log_fmt_t))
         != NJT_OK)
     {
         return NULL;
@@ -1935,6 +1940,8 @@ njt_http_log_init(njt_conf_t *cf)
         *value = njt_http_combined_fmt;
         fmt = lmcf->formats.elts;
         fmt->format = njt_http_combined_fmt;
+        njt_str_copy_pool(cf->pool,fmt->escape, njt_http_escape_default,return NJT_ERROR);
+        fmt->escape.len = njt_http_escape_default.len;
         fmt->dynamic = 0;
         if (njt_http_log_compile_format(cf, NULL, fmt->ops, &a, 0)
             != NJT_CONF_OK)
@@ -2231,7 +2238,7 @@ njt_http_log_check_format(njt_conf_t *cf, njt_array_t *flushes,
 
 
 
-njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc_t *data,njt_http_conf_ctx_t* ctx)
+njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc_t *data,njt_http_conf_ctx_t* ctx,njt_str_t * msg,njt_uint_t msg_capacity)
 {
     njt_http_log_loc_conf_t *llcf,old_cf;
     njt_http_core_loc_conf_t *clcf;
@@ -2242,10 +2249,13 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
     njt_http_log_fmt_t                *fmt;
     njt_http_log_main_conf_t          *lmcf;
     njt_http_script_compile_t          sc;
+    u_char * end;
     njt_conf_t *cf;
     njt_http_dyn_log_file_t *file;
     njt_http_dyn_access_log_conf_t *log_cf;
 
+    njt_int_t rc;
+    njt_int_t var_count = 0;
     njt_conf_t cf_data = {
             .pool = pool,
             .temp_pool = pool,
@@ -2257,31 +2267,56 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
 
     llcf = njt_http_conf_get_module_loc_conf( cf ,njt_http_log_module);
     if(llcf == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"location module conf was not found.");
+        end = njt_snprintf(msg->data,msg_capacity-1," location module conf was not found.");
+        msg->len = end - msg->data;
         return NJT_ERROR;
     }
 
     old_cf = *llcf; //备份原始配置
-    llcf->dynamic = 1;
     clcf = njt_http_conf_get_module_loc_conf( cf ,njt_http_core_module);
     if(clcf == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"core module conf was not found.");
+        end = njt_snprintf(msg->data,msg_capacity-1," core module conf was not found.");
+        msg->len = end - msg->data;
         return NJT_ERROR;
     }
 
+
+    rc = njt_sub_pool(clcf->pool,pool);
+
+    if(NJT_OK != rc){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"sub pool err happened");
+        end = njt_snprintf(msg->data,msg_capacity-1," sub pool err happened");
+        msg->len = end - msg->data;
+        return NJT_ERROR;
+    }
     llcf->off = data->log_on?0:1;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"set %V access log to %ui",&clcf->full_name,data->log_on);
-    if(!data->log_on){
-        return NJT_OK;
-    }
-
     llcf->logs = njt_array_create(cf->pool, 2, sizeof(njt_http_log_t));
     if (llcf->logs == NULL) {
+        end = njt_snprintf(msg->data,msg_capacity-1," create array error.");
+        msg->len = end - msg->data;
         goto error ;
+    }
+
+    llcf->dynamic = 1;
+    if(!data->log_on){
+        // 成功释放原始资源
+        if( old_cf.logs != NULL ){
+            if(old_cf.dynamic){
+                njt_destroy_pool(old_cf.logs->pool);
+            }
+        }
+        return NJT_OK;
     }
     lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_log_module);
 
     log_cf = data->logs.elts;
     if(data->logs.nelts < 1){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"set enable access log,but accessLogs is NULL",&clcf->full_name,data->log_on);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"set enable access log,but accessLogs is NULL");
+        end = njt_snprintf(msg->data,msg_capacity-1," set enable access log,but accessLogs is NULL");
+        msg->len = end - msg->data;
         goto error ;
     }
     for(j = 0 ; j < data->logs.nelts ; ++j ){
@@ -2292,6 +2327,8 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         }
         log = njt_array_push(llcf->logs); // 动态释放log
         if (log == NULL) {
+            end = njt_snprintf(msg->data,msg_capacity-1," push log error");
+            msg->len = end - msg->data;
             goto error ;
         }
         njt_memzero(log, sizeof(njt_http_log_t));
@@ -2300,20 +2337,28 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
 
             peer = njt_pcalloc(cf->pool, sizeof(njt_syslog_peer_t));
             if (peer == NULL) {
+                end = njt_snprintf(msg->data,msg_capacity-1," syslog：alloc error.");
+                msg->len = end - msg->data;
                 goto error ;
             }
             cf->args = njt_array_create(cf->pool,2, sizeof(njt_str_t));
             if (cf->args == NULL) {
+                end = njt_snprintf(msg->data,msg_capacity-1," %V：create args error.", &log_cf[j].path);
+                msg->len = end - msg->data;
                 goto error ;
             }
             s = njt_array_push_n(cf->args,2);
             if (s == NULL) {
+                end = njt_snprintf(msg->data,msg_capacity-1," %V: create args error2.",&log_cf[j].path);
+                msg->len = end - msg->data;
                 goto error ;
             }
             njt_str_null(s);
             ++s;
             njt_str_copy_pool(pool,(*s),log_cf[j].path,return NJT_ERROR);
             if (njt_syslog_process_conf(cf, peer) != NJT_CONF_OK) {
+                end = njt_snprintf(msg->data,msg_capacity-1," %V:create args error.",&log_cf[j].path);
+                msg->len = end - msg->data;
                 goto error ;
             }
 
@@ -2322,14 +2367,21 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         }
 
         n = njt_http_script_variables_count(&log_cf[j].path);
-
+        var_count += n;
         full_name = log_cf[j].path;
-        if (njt_conf_full_name(cf->cycle, &full_name, 0) != NJT_OK) {
+
+        njt_str_t  *prefix = &cf->cycle->prefix;
+
+        if (njt_get_full_name(cf->pool, prefix, &full_name) != NJT_OK) {
+            end = njt_snprintf(msg->data,msg_capacity-1," %V: conf full name error.",&log_cf[j].path);
+            msg->len = end - msg->data;
             goto error ;
         }
         if (n == 0) {
             file = njt_http_log_dyn_open_file(lmcf,&full_name);
             if (file == NULL) {
+                end = njt_snprintf(msg->data,msg_capacity-1," %V: open file error.",&log_cf[j].path);
+                msg->len = end - msg->data;
                 goto error ;
             }
             njt_http_log_dyn_using_file(cf->pool,file);
@@ -2338,18 +2390,22 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         } else {
             log->script = njt_pcalloc(cf->pool, sizeof(njt_http_log_script_t));
             if (log->script == NULL) {
+                end = njt_snprintf(msg->data,msg_capacity-1," %V: alloc error.", &full_name);
+                msg->len = end - msg->data;
                 goto error ;
             }
 
             njt_memzero(&sc, sizeof(njt_http_script_compile_t));
             sc.cf = cf;
-            sc.source = &log_cf[j].path;
+            sc.source = &full_name;
             sc.lengths = &log->script->lengths;
             sc.values = &log->script->values;
             sc.variables = n;
             sc.complete_lengths = 1;
             sc.complete_values = 1;
             if (njt_http_script_compile(&sc) != NJT_OK) {
+                end = njt_snprintf(msg->data,msg_capacity-1," compile script error.");
+                msg->len = end - msg->data;
                 goto error ;
             }
         }
@@ -2375,17 +2431,27 @@ njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc
         if (log->format == NULL) {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "unknown log format \"%V\"", &name);
+            end = njt_snprintf(msg->data,msg_capacity-1, " unknown log format \"%V\"", &name);
+            msg->len = end - msg->data;
             goto error ;
         }
     }
 
-    njt_http_variables_init_vars(cf);
+    if(var_count>0){
+        rc = njt_http_variables_init_vars_dyn(cf);
+        if(rc!=NJT_OK) {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "init vars error");
+            end = njt_snprintf(msg->data,msg_capacity-1,"init vars error");
+            msg->len = end - msg->data;
+            goto error ;
+        }
+    }
     // 成功释放原始资源
     if( old_cf.logs != NULL ){
         if(old_cf.dynamic){
             njt_destroy_pool(old_cf.logs->pool);
         }
-        old_cf.logs = NULL;
+//        old_cf.logs = NULL;
     }
     return NJT_OK;
 
@@ -2424,6 +2490,11 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     cfd.cycle = (njt_cycle_t*)njt_cycle;
     cfd.log = njt_cycle->log;
     cmcf = njt_http_cycle_get_module_main_conf(njt_cycle,njt_http_core_module);
+    if(!cmcf || cmcf->servers.nelts == 0){
+        // 不存在server
+        njt_log_error(NJT_LOG_ERR, cf->log, 0,"servers is empty");
+        return NJT_ERROR;
+    }
     cscfp = cmcf->servers.elts;
     if(cscfp == NULL){
         njt_log_error(NJT_LOG_ERR, cf->log, 0,"not find server in http{}");
@@ -2433,7 +2504,11 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     cfd.ctx = &ctx;
 
     lmcf = njt_http_cycle_get_module_main_conf(njt_cycle,njt_http_log_module);
-
+    if(!lmcf){
+        // 未加载log_module
+        njt_log_error(NJT_LOG_ERR, cf->log, 0,"unload njt_http_log_module");
+        return NJT_ERROR;
+    }
     cf->args = njt_array_create(cf->pool,3, sizeof(njt_str_t));
     if(cf->args == NULL){
         goto err;
@@ -2475,6 +2550,12 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
         }
     }
     if(!update){
+        if(lmcf->formats.nelts == lmcf->formats.nalloc){
+            // www: insufficient capacity
+            njt_log_error(NJT_LOG_ERR, cf->log, 0,"add format error, insufficient capacity. Up to %ud formats",lmcf->formats.nalloc);
+            goto err;
+        }
+
         fmt = &new_format;
     }
     njt_memzero(fmt, sizeof(njt_http_log_fmt_t));
@@ -2504,7 +2585,11 @@ njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data)
     if(rs == NJT_CONF_ERROR){
         goto err;
     }
-    njt_http_variables_init_vars(cf);
+    rc = njt_http_variables_init_vars_dyn(cf);
+    if(rc!=NJT_OK) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "init vars error");
+        goto err ;
+    }
     if(update){
         if(old_fmt.dynamic){
             njt_destroy_pool(old_fmt.ops->pool);

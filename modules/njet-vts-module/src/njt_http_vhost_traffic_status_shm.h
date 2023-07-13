@@ -32,6 +32,8 @@ void njt_http_vhost_traffic_status_shm_info_node(njt_http_request_t *r,
     njt_http_vhost_traffic_status_shm_info_t *shm_info, njt_rbtree_node_t *node);
 void njt_http_vhost_traffic_status_shm_info(njt_http_request_t *r,
     njt_http_vhost_traffic_status_shm_info_t *shm_info);
+njt_http_vhost_traffic_status_node_t *
+    njt_http_vhost_traffic_status_map_node(njt_slab_pool_t *shpool, njt_http_vhost_traffic_status_node_t *vtsn);
 
 
 #endif /* _NJT_HTTP_VTS_SHM_H_INCLUDED_ */

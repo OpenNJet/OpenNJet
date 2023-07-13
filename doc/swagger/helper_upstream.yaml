@@ -1523,7 +1523,6 @@ definitions:
           The hostname is assigned automatically and cannot be changed.
         readOnly: true
     example:
-      id: 1
       server: 10.0.0.1:8089
       weight: 4
       max_conns: 0

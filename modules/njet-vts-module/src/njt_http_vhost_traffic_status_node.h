@@ -102,7 +102,8 @@ typedef struct {
 
     njt_http_vhost_traffic_status_node_upstream_t          stat_upstream;
     u_short                                                len;
-    u_char                                                 data[1];
+    njt_atomic_t                                           lock;
+    u_char                                                 data[0];
 } njt_http_vhost_traffic_status_node_t;
 
 
@@ -115,7 +116,13 @@ njt_rbtree_node_t *njt_http_vhost_traffic_status_node_lookup(
     njt_rbtree_t *rbtree, njt_str_t *key, uint32_t hash);
 void njt_http_vhost_traffic_status_node_zero(
     njt_http_vhost_traffic_status_node_t *vtsn);
+void njt_http_vhost_traffic_status_nodes_zero(
+    njt_http_vhost_traffic_status_node_t *vtsn);
 void njt_http_vhost_traffic_status_node_init(njt_http_request_t *r,
+    njt_http_vhost_traffic_status_node_t *vtsn);
+void njt_http_vhost_traffic_status_node_init_update(njt_http_request_t *r,
+    njt_http_vhost_traffic_status_node_t *vtsn);
+void njt_http_vhost_traffic_status_nodes_init(njt_http_request_t *r,
     njt_http_vhost_traffic_status_node_t *vtsn);
 void njt_http_vhost_traffic_status_node_set(njt_http_request_t *r,
     njt_http_vhost_traffic_status_node_t *vtsn);

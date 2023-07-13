@@ -743,7 +743,7 @@ njt_http_scgi_create_request(njt_http_request_t *r)
             }
 
             for (n = 0; n < header_params; n++) {
-                if (&header[i] == ignored[n]) {
+                if (ignored != NULL  && &header[i] == ignored[n]) {
                     goto next_length;
                 }
             }
@@ -773,7 +773,7 @@ njt_http_scgi_create_request(njt_http_request_t *r)
                     lowcase_key[n] = ch;
                 }
 
-                if (njt_hash_find(&params->hash, hash, lowcase_key, n)) {
+                if (njt_hash_find(&params->hash, hash, lowcase_key, n) && ignored != NULL) {
                     ignored[header_params++] = &header[i];
                     continue;
                 }
@@ -784,7 +784,9 @@ njt_http_scgi_create_request(njt_http_request_t *r)
 
             for (hn = header[i].next; hn; hn = hn->next) {
                 len += hn->value.len + 2;
-                ignored[header_params++] = hn;
+		if(ignored != NULL) {
+               		 ignored[header_params++] = hn;
+		}
             }
 
         next_length:

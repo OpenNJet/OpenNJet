@@ -174,7 +174,7 @@ njt_http_compile_complex_value(njt_http_compile_complex_value_t *ccv)
     ccv->complex_value->value = *v;
     ccv->complex_value->flushes = NULL;
     ccv->complex_value->lengths = NULL;
-    ccv->complex_value->values = NULL;
+    ccv->complex_value->values = NULL;  
 
     if (nv == 0 && nc == 0) {
         return NJT_OK;
@@ -259,6 +259,14 @@ njt_http_set_complex_value_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (*cv == NULL) {
         return NJT_CONF_ERROR;
     }
+
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_memzero(*cv, sizeof(njt_http_complex_value_t));
+    if(cf->dynamic == 1){
+        (*cv)->dynamic = 1;
+        (*cv)->pool = cf->pool;
+    }
+#endif
 
     value = cf->args->elts;
 
@@ -1111,6 +1119,7 @@ njt_http_script_regex_start_code(njt_http_script_engine_t *e)
         } else {
             e->sp->len = 1;
             e->sp->data = (u_char *) "1";
+	    //e->ret = 1;
         }
 
         e->sp++;
@@ -1540,14 +1549,14 @@ njt_http_script_if_code(njt_http_script_engine_t *e)
             e->request->loc_conf = code->loc_conf;
             njt_http_update_location_config(e->request);
         }
-
+	e->ret = 1;
         e->ip += sizeof(njt_http_script_if_code_t);
         return;
     }
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, e->request->connection->log, 0,
                    "http script if: false");
-
+    e->ret = 0;
     e->ip += code->next;
 }
 
@@ -1568,14 +1577,15 @@ njt_http_script_equal_code(njt_http_script_engine_t *e)
 
     if (val->len == res->len
         && njt_strncmp(val->data, res->data, res->len) == 0)
-    {
+    {	
+	//e->ret = 1;//by zyg
         *res = njt_http_variable_true_value;
         return;
     }
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, e->request->connection->log, 0,
                    "http script equal: no");
-
+     //e->ret = 0;//by zyg
     *res = njt_http_variable_null_value;
 }
 
@@ -1599,11 +1609,11 @@ njt_http_script_not_equal_code(njt_http_script_engine_t *e)
     {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, e->request->connection->log, 0,
                        "http script not equal: no");
-
+	e->ret = 0;//by zyg
         *res = njt_http_variable_null_value;
         return;
     }
-
+    //e->ret = 1;//by zyg
     *res = njt_http_variable_true_value;
 }
 

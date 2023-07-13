@@ -21,10 +21,12 @@ END
     fi
 fi
 
-
 if [ $USE_OPENSSL = YES ]; then
-    . auto/lib/openssl/conf
     . auto/lib/njetmq/conf
+    if [ "$NJT_HELPER_HA" = "YES" ]; then
+      . auto/lib/keepalived/conf
+    fi
+    . auto/lib/openssl/conf
 fi
 
 if [ $USE_ZLIB = YES ]; then
