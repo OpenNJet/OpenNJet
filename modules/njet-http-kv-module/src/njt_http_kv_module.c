@@ -23,11 +23,7 @@
 
 typedef struct
 {
-    void* data;
-    njt_str_t key;
-    kv_change_handler handler;
-    kv_rpc_handler rpc_get_handler;
-    kv_rpc_handler rpc_put_handler;
+    njt_kv_reg_handler_t callbacks;
     njt_queue_t queue;
 } kv_change_handler_t;
 
@@ -197,7 +193,7 @@ static void njt_http_kv_loop_mqtt(njt_event_t* ev)
     case 4:  // no connection
     case 19: // lost keepalive
     case 7:  // lost connection
-        njt_log_error(NJT_LOG_ERR, ev->log, 0, "mqtt_client run ret:%d, ev: %p, ev timeouted %d", ret, ev, ev->timedout);
+        njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt_client run ret:%d, ev: %p, ev timeouted %d", ret, ev, ev->timedout);
         njt_http_kv_iot_set_timer(njt_http_kv_iot_conn_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
         break;
@@ -213,12 +209,12 @@ static void njt_http_kv_iot_conn_timeout(njt_event_t* ev)
     njt_connection_t* c = (njt_connection_t*)ev->data;
     struct evt_ctx_t* ctx = (struct evt_ctx_t*)c->data;
     int ret;
-    njt_log_error(NJT_LOG_ERR, ev->log, 0, "Event fired!,try connect again, %p ", ev);
+    njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "Event fired!,try connect again, %p ", ev);
     if (ev->timedout) {
         ret = njet_iot_client_connect(3, 5, ctx);
         if (ret != 0) {
             if (ret == -5) {
-                njt_log_error(NJT_LOG_ERR, ev->log, 0, "client is connecting or has connected");
+                njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "client is connecting or has connected");
                 return;
             }
             njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect to broker failed:%d", ret);
@@ -364,7 +360,7 @@ static int msg_callback(const char* topic, const char* msg, int msg_len, void* o
         njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "worker write kv in local kv tree:%s,%V", key, &kv_key);
         return 0;
     }
-    
+
     invoke_topic_msg_handler(topic, msg, msg_len);
     return 1;
 }
@@ -381,8 +377,8 @@ static u_char* njt_http_kv_module_rpc_handler(njt_str_t* topic, njt_str_t* reque
             q != njt_queue_sentinel(&kv_handler_queue);
             q = njt_queue_next(q)) {
             handler = njt_queue_data(q, kv_change_handler_t, queue);
-            if (handler->rpc_get_handler) {
-                str_len += handler->key.len + 3; // "KEY_NAME",
+            if (handler->callbacks.rpc_get_handler && handler->callbacks.api_type==NJT_KV_API_TYPE_DECLATIVE) {
+                str_len += handler->callbacks.key->len + 3; // "KEY_NAME",
             }
         }
     }
@@ -397,10 +393,10 @@ static u_char* njt_http_kv_module_rpc_handler(njt_str_t* topic, njt_str_t* reque
             q != njt_queue_sentinel(&kv_handler_queue);
             q = njt_queue_next(q)) {
             handler = njt_queue_data(q, kv_change_handler_t, queue);
-            if (handler->rpc_get_handler) {
+            if (handler->callbacks.rpc_get_handler && handler->callbacks.api_type==NJT_KV_API_TYPE_DECLATIVE) {
                 *msg++ = '"';
-                njt_memcpy(msg, handler->key.data, handler->key.len);
-                msg += handler->key.len;
+                njt_memcpy(msg, handler->callbacks.key->data, handler->callbacks.key->len);
+                msg += handler->callbacks.key->len;
                 *msg++ = '"';
                 *msg++ = ',';
             }
@@ -454,8 +450,12 @@ static njt_int_t kv_init_worker(njt_cycle_t* cycle)
     }
 
     njt_str_t rhk = njt_string("njt_http_kv_module");
-
-    ret = njt_reg_kv_change_handler(&rhk, NULL, njt_http_kv_module_rpc_handler, NULL);
+    njt_kv_reg_handler_t h;
+    njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+    h.key = &rhk;
+    h.rpc_get_handler=njt_http_kv_module_rpc_handler;
+    h.api_type=NJT_KV_API_TYPE_DECLATIVE;
+    ret = njt_kv_reg_handler(&h);
 
     if (ret != NJT_OK) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "can't reg rpc handler for kv module");
@@ -481,7 +481,7 @@ static njt_int_t kv_init_worker(njt_cycle_t* cycle)
     prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
     njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
     prefix[cycle->prefix.len] = '\0';
-    njt_log_error(NJT_LOG_INFO, cycle->log, 0, "module http_kv init worker");
+    njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "module http_kv init worker");
     kv_evt_ctx = njet_iot_client_init(prefix, localcfg, kv_rr_callback, msg_callback, client_id, log, cycle);
     njt_free(prefix);
     if (kv_evt_ctx == NULL) {
@@ -489,8 +489,13 @@ static njt_int_t kv_init_worker(njt_cycle_t* cycle)
         njet_iot_client_exit(kv_evt_ctx);
         return NJT_ERROR;
     };
-    // add default subscribed topics
+    // add default subscribed topics, the ordering of subscribed topic list is important.
+    // when restarting njet instance, all the retained message received from broker will be in this order
+    // /ins/# is for instructional api, it should be before /dyn/# 
     njet_iot_client_add_topic(kv_evt_ctx, "/cluster/+/kv_set/#");
+    njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
+    njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
+    njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
     njet_iot_client_add_topic(kv_evt_ctx, "/dyn/#");
     njet_iot_client_add_topic(kv_evt_ctx, "$share/njet//rpc/#");
     snprintf(worker_topic, 31, "/worker_%d/#", (int)njt_worker);
@@ -517,8 +522,9 @@ static void kv_exit_worker(njt_cycle_t* cycle)
         while (q != njt_queue_sentinel(&kv_handler_queue)) {
             handler = njt_queue_data(q, kv_change_handler_t, queue);
             q = njt_queue_next(q);
-            njt_lvlhsh_map_remove(kv_handler_hashmap, &handler->key);
-            njt_free(handler->key.data);
+            njt_lvlhsh_map_remove(kv_handler_hashmap, handler->callbacks.key);
+            njt_free(handler->callbacks.key->data);
+            njt_free(handler->callbacks.key);
             njt_free(handler);
         }
         njt_free(kv_handler_hashmap);
@@ -540,7 +546,7 @@ njt_int_t njt_http_kv_get(njt_http_request_t* r, njt_http_variable_value_t* v, u
     // todo: assume data is variable name:
     var = (njt_str_t*)data;
     hash = njt_crc32_short(var->data, var->len);
-    njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "get key:%V", var);
+    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "get key:%V", var);
     node = njt_http_kv_rbtree_lookup(&kv_tree, var, hash);
     if (node == NULL) {
         // tips:lookup in dbm, in rbtree map is kv_http_{var}: {val}, while in mdb, map is {cluster_name}_{var}:{val}
@@ -555,7 +561,7 @@ njt_int_t njt_http_kv_get(njt_http_request_t* r, njt_http_variable_value_t* v, u
         mdb_key.data[cluster_name.len] = '_';
         memcpy(mdb_key.data + cluster_name.len + 1, var->data + 8, var->len - 8);
 
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "get keyin db:%V", &mdb_key);
+        njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "get keyin db:%V", &mdb_key);
         int ret = njet_iot_client_kv_get(mdb_key.data, mdb_key.len, (void**)&dbm_val.data, &ret_len, kv_evt_ctx);
         dbm_val.len = ret_len;
         if (ret != 0) {
@@ -668,10 +674,14 @@ njt_http_kv_add_variables(njt_conf_t* cf)
     return NJT_OK;
 }
 
-static int njt_reg_handler_internal(njt_str_t* key, kv_change_handler handler, kv_rpc_handler put_handler, kv_rpc_handler get_handler, void* data)
+int njt_kv_reg_handler(njt_kv_reg_handler_t *h)
 {
+    if (!h || !h->key || h->key->len==0) {
+       njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "kv handler registering key is empty");
+        return NJT_OK; 
+    }
     if (njt_process == NJT_PROCESS_HELPER) {
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "Not in worker process, skip kv handler registering for key :%v ", key);
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "Not in worker process, skip kv handler registering for key :%V ", h->key);
         return NJT_OK;
     }
     kv_change_handler_t* kv_handler, * old_handler;
@@ -682,40 +692,37 @@ static int njt_reg_handler_internal(njt_str_t* key, kv_change_handler handler, k
     kv_handler = njt_calloc(sizeof(kv_change_handler_t), njt_cycle->log);
 
     if (kv_handler == NULL) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg kv handler for key :%v ", key);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg kv handler for key :%V ", h->key);
         return NJT_ERROR;
     }
-
-    kv_handler->key.data = (u_char*)njt_calloc(key->len, njt_cycle->log);
-    if (kv_handler->key.data == NULL) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler key's memory while reg kv handler for key :%v ", key);
+    kv_handler->callbacks.api_type = h->api_type;
+    kv_handler->callbacks.key = njt_calloc(sizeof(njt_str_t), njt_cycle->log);
+    if (kv_handler->callbacks.key == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler key's memory while reg kv handler for key :%V ",  h->key);
         return NJT_ERROR;
     }
-    njt_memcpy(kv_handler->key.data, key->data, key->len);
-    kv_handler->key.len = key->len;
+    kv_handler->callbacks.key->data = (u_char*)njt_calloc(h->key->len, njt_cycle->log);
+    if (kv_handler->callbacks.key->data == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler key's memory while reg kv handler for key :%V ",  h->key);
+        return NJT_ERROR;
+    }
+    njt_memcpy(kv_handler->callbacks.key->data, h->key->data, h->key->len);
+    kv_handler->callbacks.key->len = h->key->len;
 
-    kv_handler->data = data;
-    kv_handler->handler = handler;
-    kv_handler->rpc_get_handler = get_handler;
-    kv_handler->rpc_put_handler = put_handler;
+    kv_handler->callbacks.data = h->data;
+    kv_handler->callbacks.handler = h->handler;
+    kv_handler->callbacks.rpc_get_handler = h->rpc_get_handler;
+    kv_handler->callbacks.rpc_put_handler = h->rpc_put_handler;
     njt_queue_insert_tail(&kv_handler_queue, &kv_handler->queue);
-    njt_lvlhsh_map_put(kv_handler_hashmap, &kv_handler->key, (intptr_t)kv_handler, (intptr_t*)&old_handler);
+    njt_lvlhsh_map_put(kv_handler_hashmap, kv_handler->callbacks.key, (intptr_t)kv_handler, (intptr_t*)&old_handler);
     // if handler existed with the same key in the hashmap
     if (old_handler && old_handler != kv_handler) {
-        njt_free(old_handler->key.data);
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "Key :%V has been registered, please double check",  h->key);
+        njt_free(old_handler->callbacks.key->data);
         njt_free(old_handler);
     }
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "set  kv handler into hash: %p: %v", kv_handler, &kv_handler->key);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "set  kv handler into hash: %p: %v", kv_handler, &kv_handler->callbacks.key);
     return NJT_OK;
-}
-
-int njt_reg_kv_change_handler(njt_str_t* key, kv_change_handler handler, kv_rpc_handler rpc_get_handler, void* data)
-{
-    return njt_reg_handler_internal(key, handler, NULL, rpc_get_handler, data);
-}
-int njt_reg_kv_msg_handler(njt_str_t* key, kv_change_handler handler, kv_rpc_handler put_handler, kv_rpc_handler get_handler, void* data)
-{
-    return njt_reg_handler_internal(key, handler, put_handler, get_handler, data);
 }
 
 static void invoke_kv_change_handler(njt_str_t* key, njt_str_t* value)
@@ -731,7 +738,7 @@ static void invoke_kv_change_handler(njt_str_t* key, njt_str_t* value)
         rc = njt_lvlhsh_map_get(kv_handler_hashmap, key, (intptr_t*)&kv_handler);
         if (rc == NJT_OK) {
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "got kv handler : %p for key %v", kv_handler, key);
-            kv_handler->handler(key, value, kv_handler->data);
+            kv_handler->callbacks.handler(key, value, kv_handler->callbacks.data);
         }
     }
 }
@@ -740,27 +747,8 @@ static njt_int_t njt_kv_get_hashkey_from_topic(const char *topic, njt_str_t *has
 {
     njt_uint_t i, s;
     njt_uint_t index[5]={0};  //max 5 level in topic
-    if (strlen(topic) > DYN_TOPIC_PREFIX_LEN && njt_strncmp(topic, DYN_TOPIC_PREFIX, DYN_TOPIC_PREFIX_LEN) == 0) {
-        // found second field of topic's length,  for example: topic /dyn/loc/l_12323 , second field is "loc", length is 3
-        for (i = DYN_TOPIC_PREFIX_LEN; i < strlen(topic); i++) {
-            if (topic[i] == '/')
-                break;
-        }
-        hash_key->len = i - DYN_TOPIC_PREFIX_LEN;
-        hash_key->data = (u_char *)topic + DYN_TOPIC_PREFIX_LEN;
-        return NJT_OK;
-    }
-    if (strlen(topic) > RPC_TOPIC_PREFIX_LEN && njt_strncmp(topic, RPC_TOPIC_PREFIX, RPC_TOPIC_PREFIX_LEN) == 0) {
-         for (i = RPC_TOPIC_PREFIX_LEN; i < strlen(topic); i++) {
-            if (topic[i] == '/')
-                break;
-        }
-        hash_key->len = i - RPC_TOPIC_PREFIX_LEN;
-        hash_key->data = (u_char *)topic + RPC_TOPIC_PREFIX_LEN;
-        return NJT_OK;
-    }
     if (njt_strncmp(topic, WORKER_TOPIC_PREFIX, WORKER_TOPIC_PREFIX_LEN) == 0) {
-        //  found third filed, /worker_n/dyn/loc/l_12323, third  field is "loc", length is 3
+        //  found third field, /worker_n/dyn/loc/l_12323, third  field is "loc", length is 3
         s=1;
         for (i = WORKER_TOPIC_PREFIX_LEN; i < strlen(topic); i++) {
             if (topic[i] == '/')  {
@@ -776,6 +764,24 @@ static njt_int_t njt_kv_get_hashkey_from_topic(const char *topic, njt_str_t *has
         hash_key->len = i - index[2] - 1;
         hash_key->data = (u_char *)topic + index[2] + 1;
         return NJT_OK;
+    }
+    if (strlen(topic) > DYN_TOPIC_PREFIX_LEN && njt_strncmp(topic, "/", 1) == 0 ) {
+        //  found second field, /prefix/log, second  field is "log", length is 3
+        s=1;
+        for (i = 1; i < strlen(topic); i++) {
+            if (topic[i] == '/')  {
+                index[s]=i;
+                s++;
+            }
+            if (s==3) break;
+        }
+        if (s<=1) {
+            return NJT_ERROR;
+        }
+
+        hash_key->len = i - index[1] - 1;
+        hash_key->data = (u_char *)topic + index[1] + 1;
+        return NJT_OK; 
     }
 
     return NJT_ERROR;
@@ -803,13 +809,12 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
                 nstr_topic.len = strlen(topic);
                 nstr_msg.data = (u_char *)msg;
                 nstr_msg.len = msg_len;
-                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got kv handler : %p, %V", tm_handler, &tm_handler->key);
-                tm_handler->handler(&nstr_topic, &nstr_msg, tm_handler->data);
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got kv handler : %p, %V", tm_handler, &tm_handler->callbacks.key);
+                tm_handler->callbacks.handler(&nstr_topic, &nstr_msg, tm_handler->callbacks.data);
             }
         }
     }
 }
-
 
 static u_char* invoke_rpc_handler(const char* topic, const char* msg, int msg_len, int* len)
 {
@@ -836,10 +841,10 @@ static u_char* invoke_rpc_handler(const char* topic, const char* msg, int msg_le
                 nstr_msg.len = msg_len;
                 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "in njt_http_kv_module, invoke rpc handler topic:%V, msg: %V ", &nstr_topic, &nstr_msg);
                 if (njt_strncmp(topic, RPC_TOPIC_PREFIX, RPC_TOPIC_PREFIX_LEN) == 0 
-                    && kv_handler->rpc_get_handler) {
-                    return kv_handler->rpc_get_handler(&nstr_topic, &nstr_msg, len, kv_handler->data);
-                } else if (kv_handler->rpc_put_handler) {
-                    return kv_handler->rpc_put_handler(&nstr_topic, &nstr_msg, len, kv_handler->data);
+                    && kv_handler->callbacks.rpc_get_handler) {
+                    return kv_handler->callbacks.rpc_get_handler(&nstr_topic, &nstr_msg, len, kv_handler->callbacks.data);
+                } else if (kv_handler->callbacks.rpc_put_handler) {
+                    return kv_handler->callbacks.rpc_put_handler(&nstr_topic, &nstr_msg, len, kv_handler->callbacks.data);
                 }
             }
         }
@@ -886,7 +891,7 @@ error:
 
 int njt_db_kv_get(njt_str_t* key, njt_str_t* value)
 {
-    if (key->data == NULL) {
+    if (key == NULL || key->data == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_db_kv_get got wrong key:value data");
         return NJT_ERROR;
     }
@@ -898,7 +903,7 @@ int njt_db_kv_get(njt_str_t* key, njt_str_t* value)
 }
 int njt_db_kv_set(njt_str_t* key, njt_str_t* value)
 {
-    if (key->data == NULL || value->data == NULL) {
+    if (key == NULL || value == NULL || key->data == NULL || value->data == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_db_kv_set got wrong key:value data");
         return NJT_ERROR;
     }

@@ -1866,9 +1866,14 @@ static u_char* njt_agent_vts_rpc_put_handler(njt_str_t *topic, njt_str_t *reques
 static njt_int_t njt_agent_vts_init_process(njt_cycle_t* cycle)
 {
     njt_str_t  vts_rpc_key = njt_string("http_vts");
-
-    njt_reg_kv_msg_handler(&vts_rpc_key, njt_agent_vts_change_handler, njt_agent_vts_rpc_put_handler, njt_agent_vts_rpc_get_handler, NULL);
-
+    njt_kv_reg_handler_t h;
+    njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+    h.key = &vts_rpc_key;
+    h.rpc_get_handler = njt_agent_vts_rpc_get_handler;
+    h.rpc_put_handler = njt_agent_vts_rpc_put_handler;
+    h.handler = njt_agent_vts_change_handler;
+    h.api_type = NJT_KV_API_TYPE_DECLATIVE;
+    njt_kv_reg_handler(&h);
     return NJT_OK;
 }
 
