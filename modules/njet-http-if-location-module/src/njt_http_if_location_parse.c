@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
- */
 /* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison implementation for Yacc-like parsers in C
@@ -111,15 +108,14 @@ enum yysymbol_kind_t
   YYSYMBOL_YYerror = 1,                    /* error  */
   YYSYMBOL_YYUNDEF = 2,                    /* "invalid token"  */
   YYSYMBOL_LOC_EXP = 3,                    /* LOC_EXP  */
-  YYSYMBOL_EOL = 4,                        /* EOL  */
-  YYSYMBOL_OR = 5,                         /* OR  */
-  YYSYMBOL_AND = 6,                        /* AND  */
-  YYSYMBOL_ERROR = 7,                      /* ERROR  */
-  YYSYMBOL_8_ = 8,                         /* '('  */
-  YYSYMBOL_9_ = 9,                         /* ')'  */
-  YYSYMBOL_YYACCEPT = 10,                  /* $accept  */
-  YYSYMBOL_exp = 11,                       /* exp  */
-  YYSYMBOL_eval_tree = 12                  /* eval_tree  */
+  YYSYMBOL_OR = 4,                         /* OR  */
+  YYSYMBOL_AND = 5,                        /* AND  */
+  YYSYMBOL_ERROR = 6,                      /* ERROR  */
+  YYSYMBOL_7_ = 7,                         /* '('  */
+  YYSYMBOL_8_ = 8,                         /* ')'  */
+  YYSYMBOL_YYACCEPT = 9,                   /* $accept  */
+  YYSYMBOL_exp = 10,                       /* exp  */
+  YYSYMBOL_eval_tree = 11                  /* eval_tree  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -450,19 +446,19 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  2
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   24
+#define YYLAST   22
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  10
+#define YYNTOKENS  9
 /* YYNNTS -- Number of nonterminals.  */
 #define YYNNTS  3
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  11
+#define YYNRULES  10
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  16
+#define YYNSTATES  15
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   262
+#define YYMAXUTOK   261
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -480,7 +476,7 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
-       8,     9,     2,     2,     2,     2,     2,     2,     2,     2,
+       7,     8,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
@@ -502,15 +498,15 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
-       5,     6,     7
+       5,     6
 };
 
 #if YYDEBUG
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int8 yyrline[] =
 {
-       0,    46,    46,    47,    48,    49,    50,    52,    53,    63,
-      64,    65
+       0,    46,    46,    47,    48,    49,    50,    52,    53,    64,
+      65
 };
 #endif
 
@@ -526,8 +522,8 @@ static const char *yysymbol_name (yysymbol_kind_t yysymbol) YY_ATTRIBUTE_UNUSED;
    First, the terminals, then, starting at YYNTOKENS, nonterminals.  */
 static const char *const yytname[] =
 {
-  "\"end of file\"", "error", "\"invalid token\"", "LOC_EXP", "EOL", "OR",
-  "AND", "ERROR", "'('", "')'", "$accept", "exp", "eval_tree", YY_NULLPTR
+  "\"end of file\"", "error", "\"invalid token\"", "LOC_EXP", "OR", "AND",
+  "ERROR", "'('", "')'", "$accept", "exp", "eval_tree", YY_NULLPTR
 };
 
 static const char *
@@ -537,7 +533,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-3)
+#define YYPACT_NINF (-4)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -551,8 +547,8 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      -3,     0,    -3,    -2,    -3,    -3,     8,    18,    -3,    12,
-      -3,     8,     8,    -3,     4,    -3
+      -4,     0,    -4,    -4,    -4,    -4,    15,     8,    12,    -4,
+      15,    15,    -4,    -3,    -4
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -560,14 +556,14 @@ static const yytype_int8 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       7,     0,     1,    11,     3,    10,     2,     0,     9,     0,
-       8,     2,     2,     4,     5,     6
+       7,     0,     1,    10,     3,     9,     2,     0,     0,     8,
+       2,     2,     4,     5,     6
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-      -3,     3,    -3
+      -4,     4,    -4
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
@@ -581,38 +577,38 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-       2,     3,     8,     4,    -2,    -2,    -2,     5,     6,     9,
-      12,     4,     0,     0,    14,    15,     6,    11,    12,     0,
-       0,    13,    10,    11,    12
+       2,     3,    11,     4,    -2,    -2,     5,     6,     9,     0,
+       8,     0,    10,    11,    13,    14,    10,    11,     4,     0,
+      12,     0,     6
 };
 
 static const yytype_int8 yycheck[] =
 {
-       0,     1,     4,     3,     4,     5,     6,     7,     8,     6,
-       6,     3,    -1,    -1,    11,    12,     8,     5,     6,    -1,
-      -1,     9,     4,     5,     6
+       0,     1,     5,     3,     4,     5,     6,     7,     0,    -1,
+       6,    -1,     4,     5,    10,    11,     4,     5,     3,    -1,
+       8,    -1,     7
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,    12,     0,     1,     3,     7,     8,    11,     4,    11,
-       4,     5,     6,     9,    11,    11
+       0,    11,     0,     1,     3,     6,     7,    10,    10,     0,
+       4,     5,     8,    10,    10
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    10,    11,    11,    11,    11,    11,    12,    12,    12,
-      12,    12
+       0,     9,    10,    10,    10,    10,    10,    11,    11,    11,
+      11
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     0,     1,     3,     3,     3,     0,     3,     3,
-       2,     2
+       0,     2,     0,     1,     3,     3,     3,     0,     3,     2,
+       2
 };
 
 
@@ -905,10 +901,6 @@ yydestruct (const char *yymsg,
   YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
   switch (yykind)
     {
-    case YYSYMBOL_EOL: /* EOL  */
-            {  printf ("Discarding symbol: EOL at line %d\n", (*yylocationp).first_line); }
-        break;
-
     case YYSYMBOL_OR: /* OR  */
             {  printf ("Discarding symbol: OR at line %d\n", (*yylocationp).first_line); }
         break;
@@ -922,11 +914,11 @@ yydestruct (const char *yymsg,
         break;
 
     case YYSYMBOL_exp: /* exp  */
-            { if(((*yyvaluep).node)) { free_tree (((*yyvaluep).node)); printf ("Discarding symbol: exp at line %d\n", (*yylocationp).first_line); free(((*yyvaluep).node));} }
+            { if(((*yyvaluep).node)) { free_tree (((*yyvaluep).node)); printf ("Discarding symbol: exp at line %d\n", (*yylocationp).first_line);} }
         break;
 
     case YYSYMBOL_eval_tree: /* eval_tree  */
-            { if(((*yyvaluep).node)) { free_tree (((*yyvaluep).node)); printf ("Discarding symbol: eval_tree at line %d\n", (*yylocationp).first_line); free(((*yyvaluep).node));} }
+            { if(((*yyvaluep).node)) { free_tree (((*yyvaluep).node)); printf ("Discarding symbol: eval_tree at line %d\n", (*yylocationp).first_line);} }
         break;
 
       default:
@@ -1242,8 +1234,8 @@ yyreduce:
            {(yyval.node) = NULL; }
     break;
 
-  case 8: /* eval_tree: eval_tree exp EOL  */
-                      {
+  case 8: /* eval_tree: eval_tree exp $end  */
+                        {
     dump_tree((yyvsp[-1].node), 0);
     // loc_exp_dyn_eval_result = eval_loc_parse_tree($2);
     loc_exp_dyn_parse_tree = (yyvsp[-1].node);
@@ -1255,15 +1247,11 @@ yyreduce:
     }
     break;
 
-  case 9: /* eval_tree: eval_tree error EOL  */
-                        { YYABORT; }
-    break;
-
-  case 10: /* eval_tree: eval_tree ERROR  */
+  case 9: /* eval_tree: eval_tree ERROR  */
                     { YYABORT; }
     break;
 
-  case 11: /* eval_tree: eval_tree error  */
+  case 10: /* eval_tree: eval_tree error  */
                     { YYABORT; }
     break;
 
