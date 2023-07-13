@@ -262,7 +262,7 @@ njt_http_set_complex_value_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_memzero(*cv, sizeof(njt_http_complex_value_t));
-    if(cf->dynamic == 1){
+    if(cf->limit_dynamic == 1){
         (*cv)->dynamic = 1;
         (*cv)->pool = cf->pool;
     }
