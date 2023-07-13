@@ -374,6 +374,7 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
             NULL,
             njt_cycle->log,
             1,
+			0,
             cscf->ctx,
             NJT_HTTP_MODULE,
             NJT_HTTP_SRV_CONF,
