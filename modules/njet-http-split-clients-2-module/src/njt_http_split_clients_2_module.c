@@ -8,8 +8,6 @@
 #include <njt_json_util.h>
 #include <njt_rpc_result_util.h>
 
-#define DYN_TOPIC_PREFIX "/dyn/"
-#define DYN_TOPIC_PREFIX_LEN 5
 #define DYN_TOPIC_REG_KEY "http_split_clients_2"
 #define DYN_TOPIC_REG_KEY_LEN 20
 
@@ -363,7 +361,16 @@ static njt_int_t njt_http_split_client_2_init_worker(njt_cycle_t *cycle)
     }
 
     njt_str_t rpc_key = njt_string(DYN_TOPIC_REG_KEY);
-    njt_reg_kv_msg_handler(&rpc_key, split_kv_change_handler, njt_http_split_clients_2_rpc_put_handler, njt_http_split_clients_2_rpc_get_handler, sc2cf);
+    njt_kv_reg_handler_t h;
+    njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+    h.key = &rpc_key;
+    h.rpc_get_handler = njt_http_split_clients_2_rpc_get_handler;
+    h.rpc_put_handler = njt_http_split_clients_2_rpc_put_handler;
+    h.handler = split_kv_change_handler;
+    h.data=sc2cf;
+    h.api_type = NJT_KV_API_TYPE_DECLATIVE;
+    njt_kv_reg_handler(&h);
+    
     return NJT_OK;
 }
 

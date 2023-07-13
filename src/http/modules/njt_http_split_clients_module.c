@@ -475,9 +475,15 @@ static njt_int_t njt_http_split_clients_init_worker(njt_cycle_t *cycle)
         return NJT_OK;
     }
     njt_str_t rpc_key = njt_string(DYN_TOPIC_REG_KEY);
-    njt_reg_kv_msg_handler(&rpc_key, njt_http_split_client_change_handler,
-        njt_http_split_client_rpc_put_handler,
-        njt_http_split_client_rpc_get_handler, sccf);
+    njt_kv_reg_handler_t h;
+    njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+    h.key = &rpc_key;
+    h.rpc_get_handler = njt_http_split_client_rpc_get_handler;
+    h.rpc_put_handler = njt_http_split_client_rpc_put_handler;
+    h.handler = njt_http_split_client_change_handler;
+    h.data=sccf;
+    h.api_type = NJT_KV_API_TYPE_DECLATIVE;
+    njt_kv_reg_handler(&h);
 
 #endif
     return NJT_OK;
