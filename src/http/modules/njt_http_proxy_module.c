@@ -936,7 +936,7 @@ njt_http_proxy_handler(njt_http_request_t *r)
 // rc = njt_http_read_client_request_body(r, njt_http_upstream_init);
     //add by clb
 #if (NJT_HTTP_FAULT_INJECT)
-    rc = njt_http_read_client_request_body(r, njt_http_faut_inject);
+    rc = njt_http_read_client_request_body(r, njt_http_fault_inject_handler);
 #else
     rc = njt_http_read_client_request_body(r, njt_http_upstream_init);
 #endif
