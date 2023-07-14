@@ -211,6 +211,7 @@ njt_http_vhost_traffic_status_sum_node(njt_http_vhost_traffic_status_node_t *vts
         sum->stat_3xx_counter_oc += vtsn->stat_3xx_counter_oc;
         sum->stat_4xx_counter_oc += vtsn->stat_4xx_counter_oc;
         sum->stat_5xx_counter_oc += vtsn->stat_5xx_counter_oc;
+        sum->stat_timeo_counter_oc += vtsn->stat_timeo_counter_oc;
         sum->stat_request_time_counter_oc += vtsn->stat_request_time_counter_oc;
 
 #if (NJT_HTTP_CACHE)
@@ -458,7 +459,7 @@ njt_http_vhost_traffic_status_display_set_upstream_node(njt_http_request_t *r,
                 vtsn->stat_in_bytes, vtsn->stat_out_bytes,
                 vtsn->stat_1xx_counter, vtsn->stat_2xx_counter,
                 vtsn->stat_3xx_counter, vtsn->stat_4xx_counter,
-                vtsn->stat_5xx_counter,
+                vtsn->stat_5xx_counter, vtsn->stat_timeo_counter_oc,
                 vtsn->stat_request_time_counter,
                 njt_http_vhost_traffic_status_node_time_queue_average(
                     &vtsn->stat_request_times, vtscf->average_method,
@@ -493,14 +494,13 @@ njt_http_vhost_traffic_status_display_set_upstream_node(njt_http_request_t *r,
                 vtsn->stat_2xx_counter_oc, vtsn->stat_3xx_counter_oc,
                 vtsn->stat_4xx_counter_oc, vtsn->stat_5xx_counter_oc,
                 vtsn->stat_request_time_counter_oc, vtsn->stat_response_time_counter_oc);
-
     } else {
         buf = njt_sprintf(buf, NJT_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_UPSTREAM,
                 &key, (njt_atomic_uint_t) 0,
                 (njt_atomic_uint_t) 0, (njt_atomic_uint_t) 0,
                 (njt_atomic_uint_t) 0, (njt_atomic_uint_t) 0,
                 (njt_atomic_uint_t) 0, (njt_atomic_uint_t) 0,
-                (njt_atomic_uint_t) 0,
+                (njt_atomic_uint_t) 0, (njt_atomic_uint_t) 0,
                 (njt_atomic_uint_t) 0,
                 (njt_msec_t) 0,
                 (u_char *) "", (u_char *) "",
@@ -922,6 +922,16 @@ njt_http_vhost_traffic_status_display_set(njt_http_request_t *r,
     o = buf;
 
     buf = njt_sprintf(buf, NJT_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_UPSTREAM_S);
+
+    extern njt_int_t njt_http_vts_hdr_values[5];
+    extern njt_int_t njt_http_vts_hdr_get(void);
+    njt_http_vts_hdr_get();
+    buf = njt_sprintf(buf, NJT_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_UPSTREAM_REQDELAY,
+                njt_http_vts_hdr_values[0],
+                njt_http_vts_hdr_values[1],
+                njt_http_vts_hdr_values[2],
+                njt_http_vts_hdr_values[3],
+                njt_http_vts_hdr_values[4]);
 
     s = buf;
 

@@ -327,6 +327,7 @@ njt_http_vhost_traffic_status_display_prometheus_set_upstream_node(
                       &upstream, &upstream_server, vtsn->stat_3xx_counter,
                       &upstream, &upstream_server, vtsn->stat_4xx_counter,
                       &upstream, &upstream_server, vtsn->stat_5xx_counter,
+                      &upstream, &upstream_server, vtsn->stat_timeo_counter_oc,
                       &upstream, &upstream_server, (double) vtsn->stat_request_time_counter / 1000,
                       &upstream, &upstream_server,
                       (double) njt_http_vhost_traffic_status_node_time_queue_average(
@@ -534,6 +535,16 @@ njt_http_vhost_traffic_status_display_prometheus_set(njt_http_request_t *r,
     buf = njt_sprintf(buf, NJT_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_S);
 
     s = buf;
+
+    extern njt_int_t njt_http_vts_hdr_values[5];
+    extern njt_int_t njt_http_vts_hdr_get(void);
+    njt_http_vts_hdr_get();
+    buf = njt_sprintf(buf, NJT_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HDR,
+                njt_http_vts_hdr_values[0],
+                njt_http_vts_hdr_values[1],
+                njt_http_vts_hdr_values[2],
+                njt_http_vts_hdr_values[3],
+                njt_http_vts_hdr_values[4]);
 
     buf = njt_http_vhost_traffic_status_display_prometheus_set_upstream(r, buf, node);
 

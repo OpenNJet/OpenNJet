@@ -74,6 +74,7 @@ typedef struct {
     njt_atomic_t                                           stat_3xx_counter_oc;
     njt_atomic_t                                           stat_4xx_counter_oc;
     njt_atomic_t                                           stat_5xx_counter_oc;
+    njt_atomic_t                                           stat_timeo_counter_oc;
     njt_atomic_t                                           stat_request_time_counter_oc;
     njt_atomic_t                                           stat_response_time_counter_oc;
 
