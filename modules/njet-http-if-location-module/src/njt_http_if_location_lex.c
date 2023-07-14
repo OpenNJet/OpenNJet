@@ -1,6 +1,4 @@
-/*
- * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
- */
+
 
 #define  YY_INT_ALIGNED short int
 
@@ -434,8 +432,8 @@ static void yynoreturn yy_fatal_error ( const char* msg  );
 /* %% [3.0] code to copy yytext_ptr to yytext[] goes here, if %array \ */\
 	(yy_c_buf_p) = yy_cp;
 /* %% [4.0] data tables for the DFA and the user's section 1 definitions go here */
-#define YY_NUM_RULES 19
-#define YY_END_OF_BUFFER 20
+#define YY_NUM_RULES 20
+#define YY_END_OF_BUFFER 21
 /* This struct is not used in this scanner,
    but its presence is necessary. */
 struct yy_trans_info
@@ -443,12 +441,12 @@ struct yy_trans_info
 	flex_int32_t yy_verify;
 	flex_int32_t yy_nxt;
 	};
-static const flex_int16_t yy_accept[33] =
+static const flex_int16_t yy_accept[34] =
     {   0,
-        0,    0,    0,    0,   20,   18,   17,   17,   18,   18,
-        1,    2,   18,   18,   15,   19,   10,    6,    7,   11,
-        9,    5,    4,   16,    3,   15,    8,   14,   12,   13,
-        5,    0
+        0,    0,    0,    0,   21,   19,   18,   18,   19,   19,
+        1,    2,   19,   19,   16,   20,   14,   10,    6,    7,
+       11,    9,    5,    4,   17,    3,   16,    8,   15,   12,
+       13,    5,    0
     } ;
 
 static const YY_CHAR yy_ec[256] =
@@ -489,31 +487,31 @@ static const YY_CHAR yy_meta[16] =
         4,    2,    4,    4,    2
     } ;
 
-static const flex_int16_t yy_base[36] =
+static const flex_int16_t yy_base[37] =
     {   0,
         0,    0,   15,    0,   38,   47,   47,   47,    0,   30,
-       47,   47,   33,   20,    0,   47,   27,   47,   47,   26,
-       18,    0,   47,   47,   47,    0,   47,   47,   47,   47,
-        0,   47,   28,   40,   42
+       47,   47,   33,   20,    0,   47,   47,   27,   47,   47,
+       26,   18,    0,   47,   47,   47,    0,   47,   47,   47,
+       47,    0,   47,   28,   40,   42
     } ;
 
-static const flex_int16_t yy_def[36] =
+static const flex_int16_t yy_def[37] =
     {   0,
-       32,    1,   32,    3,   32,   32,   32,   32,   33,   32,
-       32,   32,   32,   32,   34,   32,   32,   32,   32,   32,
-       32,   35,   32,   32,   32,   34,   32,   32,   32,   32,
-       35,    0,   32,   32,   32
+       33,    1,   33,    3,   33,   33,   33,   33,   34,   33,
+       33,   33,   33,   33,   35,   33,   33,   33,   33,   33,
+       33,   33,   36,   33,   33,   33,   35,   33,   33,   33,
+       33,   36,    0,   33,   33,   33
     } ;
 
 static const flex_int16_t yy_nxt[63] =
     {   0,
         6,    7,    8,    7,    6,    9,   10,   11,   12,    6,
-        6,   13,    6,    6,   14,   15,    6,   16,   15,    6,
-       15,   17,   18,   19,   15,   15,   20,   15,   15,   21,
-       28,   22,   27,   27,   25,   24,   23,   32,   29,   30,
-       26,   32,   26,   26,   31,   31,    5,   32,   32,   32,
-       32,   32,   32,   32,   32,   32,   32,   32,   32,   32,
-       32,   32
+        6,   13,    6,    6,   14,   15,    6,   16,   15,   17,
+       15,   18,   19,   20,   15,   15,   21,   15,   15,   22,
+       29,   23,   28,   28,   26,   25,   24,   33,   30,   31,
+       27,   33,   27,   27,   32,   32,    5,   33,   33,   33,
+       33,   33,   33,   33,   33,   33,   33,   33,   33,   33,
+       33,   33
     } ;
 
 static const flex_int16_t yy_chk[63] =
@@ -521,10 +519,10 @@ static const flex_int16_t yy_chk[63] =
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
         1,    1,    1,    1,    1,    3,    3,    3,    3,    3,
         3,    3,    3,    3,    3,    3,    3,    3,    3,    3,
-       20,   33,   21,   17,   14,   13,   10,    5,   20,   20,
-       34,    0,   34,   34,   35,   35,   32,   32,   32,   32,
-       32,   32,   32,   32,   32,   32,   32,   32,   32,   32,
-       32,   32
+       21,   34,   22,   18,   14,   13,   10,    5,   21,   21,
+       35,    0,   35,   35,   36,   36,   33,   33,   33,   33,
+       33,   33,   33,   33,   33,   33,   33,   33,   33,   33,
+       33,   33
     } ;
 
 static yy_state_type yy_last_accepting_state;
@@ -533,10 +531,10 @@ static char *yy_last_accepting_cpos;
 extern int yy_flex_debug;
 int yy_flex_debug = 1;
 
-static const flex_int16_t yy_rule_linenum[19] =
+static const flex_int16_t yy_rule_linenum[20] =
     {   0,
-       24,   29,   46,   47,   49,   54,   59,   74,   90,   91,
-       92,   93,   94,   95,   97,  102,  103,  104
+       24,   29,   47,   48,   50,   55,   60,   75,   91,   92,
+       93,   94,   95,   96,   97,   99,  104,  105,  106
     } ;
 
 /* The intent behind this definition is that it'll catch
@@ -871,7 +869,7 @@ yy_match:
 			while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 				{
 				yy_current_state = (int) yy_def[yy_current_state];
-				if ( yy_current_state >= 33 )
+				if ( yy_current_state >= 34 )
 					yy_c = yy_meta[yy_c];
 				}
 			yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
@@ -900,13 +898,13 @@ do_action:	/* This label is used only to access EOF actions. */
 			{
 			if ( yy_act == 0 )
 				fprintf( stderr, "--scanner backing up\n" );
-			else if ( yy_act < 19 )
+			else if ( yy_act < 20 )
 				fprintf( stderr, "--accepting rule at line %ld (\"%s\")\n",
 				         (long)yy_rule_linenum[yy_act], yytext );
-			else if ( yy_act == 19 )
+			else if ( yy_act == 20 )
 				fprintf( stderr, "--accepting default rule (\"%s\")\n",
 				         yytext );
-			else if ( yy_act == 20 )
+			else if ( yy_act == 21 )
 				fprintf( stderr, "--(end of buffer or a NUL)\n" );
 			else
 				fprintf( stderr, "--EOF (start condition %d)\n", YY_START );
@@ -925,7 +923,7 @@ do_action:	/* This label is used only to access EOF actions. */
 case 1:
 YY_RULE_SETUP
 {
-    if (paren_count == 0) { printf("Outermost Opening Parenthesis\n"); closed = 0; idx=0; }
+    if (paren_count == 0) { printf("Outermost Opening Parenthesis\n"); closed = 0; idx=0; BEGIN(INITIAL); }
     ++paren_count; printf("Parenthese count is %d\n", paren_count);
     return '(';
 };
@@ -933,11 +931,11 @@ YY_RULE_SETUP
 case 2:
 YY_RULE_SETUP
 {
-    if (closed == 1) { yyerror(NULL, "already closed"); return ERROR; }
+    printf("closed = %d\n", closed);
+    if (closed == 1) { printf("error"); yyerror(NULL, "already closed"); return ERROR; }
     if (paren_count == 0) {
-        printf("MEET EOL, finished \n");
+        printf("finished \n");
         closed = 1;
-        return EOL; 
     } else {
         --paren_count;
         printf("Parenthese count is %d\n", paren_count);
@@ -947,6 +945,7 @@ YY_RULE_SETUP
         }
         return ')';
     }
+    printf("closed = %d\n", closed);
 };
 	YY_BREAK
 case 3:
@@ -1035,26 +1034,30 @@ YY_RULE_SETUP
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
+{ *string_buf_ptr++ ='"'; };
+	YY_BREAK
+case 16:
+YY_RULE_SETUP
 {
     char *yptr = yytext;
     while ( *yptr ) {*string_buf_ptr++ = *yptr++;};
  };
 	YY_BREAK
-case 16:
-/* rule 16 can match eol */
-YY_RULE_SETUP
-printf("c> "); /* ignore line continuation */
-	YY_BREAK
 case 17:
 /* rule 17 can match eol */
 YY_RULE_SETUP
-/* ignore white space or newline */
+printf("c> "); /* ignore line continuation */
 	YY_BREAK
 case 18:
+/* rule 18 can match eol */
+YY_RULE_SETUP
+/* ignore white space or newline */
+	YY_BREAK
+case 19:
 YY_RULE_SETUP
 { printf("LAST rule \n"); yyerror(NULL, yytext); return ERROR; };
 	YY_BREAK
-case 19:
+case 20:
 YY_RULE_SETUP
 ECHO;
 	YY_BREAK
@@ -1378,7 +1381,7 @@ static int yy_get_next_buffer (void)
 		while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 			{
 			yy_current_state = (int) yy_def[yy_current_state];
-			if ( yy_current_state >= 33 )
+			if ( yy_current_state >= 34 )
 				yy_c = yy_meta[yy_c];
 			}
 		yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
@@ -1411,11 +1414,11 @@ static int yy_get_next_buffer (void)
 	while ( yy_chk[yy_base[yy_current_state] + yy_c] != yy_current_state )
 		{
 		yy_current_state = (int) yy_def[yy_current_state];
-		if ( yy_current_state >= 33 )
+		if ( yy_current_state >= 34 )
 			yy_c = yy_meta[yy_c];
 		}
 	yy_current_state = yy_nxt[yy_base[yy_current_state] + yy_c];
-	yy_is_jam = (yy_current_state == 32);
+	yy_is_jam = (yy_current_state == 33);
 
 		return yy_is_jam ? 0 : yy_current_state;
 }
@@ -1927,8 +1930,8 @@ YY_BUFFER_STATE yy_scan_buffer  (char * base, yy_size_t  size )
  */
 YY_BUFFER_STATE yy_scan_string (const char * yystr )
 {
-        int len = strlen(yystr);
-	return yy_scan_bytes( yystr, len );
+    
+	return yy_scan_bytes( yystr, (int) strlen(yystr) );
 }
 /* %endif */
 
@@ -2213,3 +2216,4 @@ void yyfree (void * ptr )
 void yyerror(loc_parse_node_t **tree_root, const char *msg) {
     printf("Syntax error: %s\n", msg);
 }; 
+

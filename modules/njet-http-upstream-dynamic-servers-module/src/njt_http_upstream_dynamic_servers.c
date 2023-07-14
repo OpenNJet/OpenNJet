@@ -450,7 +450,10 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
     max_conns = 0;
     max_fails = 1;
     fail_timeout = 10;
-	slow_start = 0;
+    slow_start = 0;
+    njt_memzero(&u, sizeof(njt_url_t));
+    u.url = value[1];
+    u.default_port = 80;
 
     for (i = 2; i < cf->args->nelts; i++) {
 
@@ -585,13 +588,10 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
                will we add this to the list of dynamic servers that we will resolve again.*/
 
 	    us->dynamic = 1;  //zyg
-            njt_memzero(&u, sizeof(njt_url_t));
-            u.url = value[1];
-            u.default_port = 80;
-            u.no_resolve = 1;
+            //u.no_resolve = 1;
             no_resolve = 1;
             njt_parse_url(cf->pool, &u);
-            if (!u.addrs || !u.addrs[0].sockaddr) {
+            //if (!u.addrs || !u.addrs[0].sockaddr) {
                 dynamic_server = njt_list_push(&udsmcf->dy_servers);
                 if (dynamic_server == NULL) {
                     return NJT_CONF_ERROR;
@@ -603,7 +603,7 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
 
                 dynamic_server->host = u.host;
                 dynamic_server->port = (in_port_t)(u.no_port ? u.default_port : u.port);
-            }
+           // }
 
             continue;
         }
@@ -631,10 +631,6 @@ static char *njt_http_upstream_dynamic_server_directive(njt_conf_t *cf,
         goto invalid;
     }
 
-    njt_memzero(&u, sizeof(njt_url_t));
-	
-	u.url = value[1];
-    u.default_port = 80;
     /* BEGIN CUSTOMIZATION: differs from default "server" implementation*/
     if (no_resolve == 0 && njt_parse_url(cf->pool, &u) != NJT_OK) {
         if (u.err && !no_resolve) {

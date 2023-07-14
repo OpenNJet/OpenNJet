@@ -625,7 +625,7 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     u_char                              *p;
     njt_pool_t                          *pool = NULL;
     uint32_t                            crc32;
-    uint32_t						    topic_len = NJT_INT64_LEN  + 2 + 256; ///dyn/ssl/l_
+    uint32_t						    topic_len = NJT_INT64_LEN  + 2 + 256; ///ins/ssl/l_
     njt_str_t							topic_name;
     njt_http_ssl_request_err_ctx_t      *err_ctx;
 
@@ -788,7 +788,7 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
                       " ===========type:[%V]  crc32:%ui", &api_data->type, crc32);    
 
 	if(njt_strncmp(api_data->type.data, "del", 3) == 0 ){
-		p = njt_snprintf(topic_name.data,topic_len,"/dyn/ssl/l_%ui",crc32);
+		p = njt_snprintf(topic_name.data,topic_len,"/ins/ssl/l_%ui",crc32);
         topic_name.len = p - topic_name.data;
 
         //just delete from broker or db
@@ -803,8 +803,8 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
 
         goto out;
 	} else {
-		// p = njt_snprintf(topic_name.data,topic_len,"/worker_0/dyn/ssl/l_%ui",crc32);
-        p = njt_snprintf(topic_name.data,topic_len,"/dyn/ssl/l_%ui",crc32);
+		// p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/ssl/l_%ui",crc32);
+        p = njt_snprintf(topic_name.data,topic_len,"/ins/ssl/l_%ui",crc32);
 	}
 
 	topic_name.len = p - topic_name.data;

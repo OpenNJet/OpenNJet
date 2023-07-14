@@ -56,7 +56,7 @@ https://gitee.com/njet-rd/njet
 
 [快速上手](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B.md)
 
-[使用手册](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8C.md)
+[使用手册](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8Cv1.1.1.md)
 
 [OpenNJet编码规范以及新手指引](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E7%BC%96%E7%A0%81%E8%A7%84%E8%8C%83%E4%BB%A5%E5%8F%8A%E6%96%B0%E6%89%8B%E6%8C%87%E5%BC%95.md)
 

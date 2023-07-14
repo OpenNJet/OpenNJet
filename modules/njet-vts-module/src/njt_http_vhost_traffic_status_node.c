@@ -276,6 +276,7 @@ njt_http_vhost_traffic_status_node_zero(njt_http_vhost_traffic_status_node_t *vt
     vtsn->stat_3xx_counter = 0;
     vtsn->stat_4xx_counter = 0;
     vtsn->stat_5xx_counter = 0;
+    vtsn->stat_timeo_counter_oc = 0;
 
     vtsn->stat_request_time_counter = 0;
     vtsn->stat_request_time = 0;

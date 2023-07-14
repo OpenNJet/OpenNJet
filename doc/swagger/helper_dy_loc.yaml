@@ -50,11 +50,11 @@ components:
         addr_port:
           type: string
           description: addr and port of server.
-          example: 192.168.40.203:8081
+          example: 0.0.0.0:90
         server_name:
           type: string
           description:  server name .
-          example: cluster.tmlake.com
+          example: server-90
         location_rule:
           type: string
           description:  Regular Expression.
@@ -74,11 +74,11 @@ components:
         addr_port:
           type: string
           description: addr and port of server.
-          example: 192.168.40.203:8081
+          example: 0.0.0.0:90
         server_name:
           type: string
           description:  server name .
-          example: cluster.tmlake.com
+          example: server-90
         locations:
           type: array
           items:
@@ -99,13 +99,13 @@ components:
         location_body:
           type: string
           description:  the body of location.
-          example: "return 200 body"
-        location_pass:
+          example: "return 200 ok"
+        proxy_pass:
           type: string
           description:  the pass of location.
-          example: "$dest_upstream_1"
-        locations:
-          type: array
-          items:
-            $ref: '#/components/schemas/nest_location'
+          example: "http://backend1"
+        #locations:
+         # type: array
+          #items:
+           # $ref: '#/components/schemas/nest_location'
     
