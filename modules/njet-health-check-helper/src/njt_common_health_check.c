@@ -221,7 +221,7 @@ njt_http_upstream_srv_conf_t* njt_http_find_upstream_by_name(njt_cycle_t *cycle,
 
     for (i = 0; i < umcf->upstreams.nelts; i++) {
         if (uscfp[i]->host.len != name->len
-            || njt_strncasecmp(uscfp[i]->host.data, name->data, name->len) != 0) {
+            || njt_strncasecmp(uscfp[i]->host.data, name->data, name->len) != 0 || uscfp[i]->srv_conf == NULL ) {
             continue;
         }
         return uscfp[i];

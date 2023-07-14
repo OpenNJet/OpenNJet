@@ -705,8 +705,14 @@ static void app_sticky_sync_data( njt_app_sticky_ctx_t* ctx, njt_str_t* zone, nj
 		char *tail = head;
 		tail= mp_encode_array(tail,arr_cnt);
 
-		tail= mp_encode_str(tail,(char *)lr->data,lr->len);	//header value	//max 255
-		tail= mp_encode_str(tail,(char *)lr->up_name.data,lr->up_name.len);	//backend name like 127.0.0.1:8080
+		tail = mp_encode_str(tail,(char *)lr->data,lr->len);	//header value	//max 255
+		
+		if(lr->up_name.len > 255){
+			tail = mp_encode_str(tail,(char *)lr->up_name.data,255);	//backend name like 127.0.0.1:8080
+		}else{
+			tail = mp_encode_str(tail,(char *)lr->up_name.data,lr->up_name.len);	//backend name like 127.0.0.1:8080
+		}
+		
 		tmp_zone_len = zone->len;
 		if(zone->len > APP_STICKY_MAX_ZONE){
 			tmp_zone_len = APP_STICKY_MAX_ZONE;
@@ -900,10 +906,16 @@ static njt_int_t njt_app_sticky_init_worker(njt_cycle_t *cycle)
 	for (i = 0; i < umcf->upstreams.nelts; i++)
 	{
 		uscf = uscfp[i];
-		if (uscf == NULL ) {
+		if (uscf == NULL) {
 			//means not configure upstream {}
 			njt_log_error(NJT_LOG_ERR, cycle->log,0," app sticky get uscf config error");
 			return NJT_ERROR;
+		}
+
+		if (uscf->srv_conf == NULL) {
+			//means not configure upstream {}
+			njt_log_error(NJT_LOG_DEBUG, cycle->log,0," upstream server has no srv_conf");
+			continue;
 		}
 
 		ascf = njt_http_conf_upstream_srv_conf(uscf, njt_app_sticky_module);

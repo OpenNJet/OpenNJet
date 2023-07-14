@@ -8,7 +8,7 @@
 #include <njt_core.h>
 
 // 通用错误码定义
-enum
+enum NJT_HTTP_RSP_ERROR
 {
     NJT_RPC_RSP_ERROR_START=0,
     NJT_RPC_RSP_SUCCESS = 0,
@@ -20,7 +20,7 @@ enum
 
     //self
     NJT_RPC_RSP_ERR_INPUT_PARAM = 10
-} NJT_HTTP_RSP_ERROR;
+};
 #define NJT_IS_PUBLIC_ERROR(rc) ((rc)>=NJT_RPC_RSP_ERROR_START && rc<NJT_RPC_RSP_ERROR_END)
 struct njt_rpc_result_s{
     // njt_str_t[]

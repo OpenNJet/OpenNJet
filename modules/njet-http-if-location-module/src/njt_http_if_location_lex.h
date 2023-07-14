@@ -1,7 +1,3 @@
-/*
- * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
- */
-
 #ifndef yyHEADER_H
 #define yyHEADER_H 1
 #define yyIN_HEADER 1
@@ -585,7 +581,7 @@ extern int yylex (void);
 #undef yyTABLES_NAME
 #endif
 
-#line 106 "loc_lex.l"
+#line 108 "loc_lex.l"
 
 
 #line 587 "njt_http_if_location_lex.h"

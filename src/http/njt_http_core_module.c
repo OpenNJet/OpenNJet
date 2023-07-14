@@ -304,7 +304,7 @@ static njt_command_t  njt_http_core_commands[] = {
       NULL },
 
     { njt_string("location"),
-      NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_BLOCK|NJT_CONF_ANY,
+      NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_BLOCK|NJT_CONF_1MORE,
       njt_http_core_location,
       NJT_HTTP_SRV_CONF_OFFSET,
       0,
@@ -3339,6 +3339,21 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
                 return NJT_CONF_ERROR;
             }
 
+        } else if (mod[0] == '(') {
+		if (njt_http_core_if_location_parse(cf,clcf) != NJT_CONF_OK){
+			njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+					"invalid location modifier \"%V\"", &value[1]);
+			return NJT_CONF_ERROR;
+		}
+		lq = njt_http_find_location(clcf->full_name,pclcf->if_locations);
+		if(lq != NULL && clcf->full_name.data != NULL){
+			njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+					"duplicate location \"%V\"", &clcf->full_name);
+			return NJT_CONF_ERROR;
+		}
+		clcf->if_loc = 1;
+		clcf->exact_match = 1;
+		clcf->name = clcf->full_name;
         } else {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "invalid location modifier \"%V\"", &value[1]);
@@ -3360,62 +3375,67 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
         name = &value[1];
 #endif
         //end
+	if (name->data[0] == '(') {
+		if (njt_http_core_if_location_parse(cf,clcf) != NJT_CONF_OK){
+			njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+					"invalid location modifier \"%V\"", &value[1]);
+			return NJT_CONF_ERROR;
+		}
+		lq = njt_http_find_location(clcf->full_name,pclcf->if_locations);
+		if(lq != NULL && clcf->full_name.data != NULL){
+			njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+					"duplicate location \"%V\"", &clcf->full_name);
+			return NJT_CONF_ERROR;
+		}
+		clcf->if_loc = 1;
+		clcf->exact_match = 1;
+		clcf->name = clcf->full_name;
+        } else {
+			if (cf->args->nelts != 2) {
+				 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+						   "invalid location modifier \"%V\"", &value[1]);
+				return NJT_CONF_ERROR;
+			}
+			if (name->data[0] == '=') {
 
-        if (name->data[0] == '=') {
+				clcf->name.len = name->len - 1;
+				clcf->name.data = name->data + 1;
+				clcf->exact_match = 1;
 
-            clcf->name.len = name->len - 1;
-            clcf->name.data = name->data + 1;
-            clcf->exact_match = 1;
+			} else if (name->data[0] == '^' && name->data[1] == '~') {
 
-        } else if (name->data[0] == '^' && name->data[1] == '~') {
+				clcf->name.len = name->len - 2;
+				clcf->name.data = name->data + 2;
+				clcf->noregex = 1;
 
-            clcf->name.len = name->len - 2;
-            clcf->name.data = name->data + 2;
-            clcf->noregex = 1;
+			} else if (name->data[0] == '~') {
 
-        } else if (name->data[0] == '~') {
+				name->len--;
+				name->data++;
 
-            name->len--;
-            name->data++;
+				if (name->data[0] == '*') {
 
-            if (name->data[0] == '*') {
+					name->len--;
+					name->data++;
 
-                name->len--;
-                name->data++;
+					if (njt_http_core_regex_location(cf, clcf, name, 1) != NJT_OK) {
+						return NJT_CONF_ERROR;
+					}
 
-                if (njt_http_core_regex_location(cf, clcf, name, 1) != NJT_OK) {
-                    return NJT_CONF_ERROR;
-                }
+				} else {
+					if (njt_http_core_regex_location(cf, clcf, name, 0) != NJT_OK) {
+						return NJT_CONF_ERROR;
+					}
+				}
 
-            } else {
-                if (njt_http_core_regex_location(cf, clcf, name, 0) != NJT_OK) {
-                    return NJT_CONF_ERROR;
-                }
-            }
+			} else {
+				clcf->name = *name;
 
-        } else if (name->data[0] == '(') {
-		 if (njt_http_core_if_location_parse(cf,clcf) != NJT_CONF_OK){
-		   njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                               "invalid location modifier \"%V\"", &value[1]);
-                  return NJT_CONF_ERROR;
-                }
-		 lq = njt_http_find_location(clcf->full_name,pclcf->if_locations);
-		 if(lq != NULL && clcf->full_name.data != NULL){
-			 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                               "duplicate location \"%V\"", &clcf->full_name);
-			 return NJT_CONF_ERROR;
-		 }
-                clcf->if_loc = 1;
-                clcf->exact_match = 1;
-	  	clcf->name = clcf->full_name;
-        }  else {
-
-            clcf->name = *name;
-
-            if (name->data[0] == '@') {
-                clcf->named = 1;
-            }
-        }
+				if (name->data[0] == '@') {
+					clcf->named = 1;
+				}
+			}
+		}
     }
 
 

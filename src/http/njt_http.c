@@ -925,11 +925,7 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 njt_int_t
 njt_http_init_locations(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
                         njt_http_core_loc_conf_t *pclcf) {
-    if(cf->dynamic == 1) {
 	 return njt_http_init_locations_common(cf, cscf,pclcf,pclcf->locations);
-    } else {
-    	return njt_http_init_locations_common(cf, cscf,pclcf,pclcf->locations);
-    }
 }
 
 //add by clb

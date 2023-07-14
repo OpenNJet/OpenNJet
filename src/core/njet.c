@@ -202,7 +202,9 @@ main(int argc, char *const *argv)
     njt_cycle_t      *cycle, init_cycle;
     njt_conf_dump_t  *cd;
     njt_core_conf_t  *ccf;
-
+#if (NJT_DEBUG)
+    njt_int_t  rc;
+#endif
     njt_debug_init();
 
     if (njt_strerror_init() != NJT_OK) {
@@ -327,7 +329,13 @@ main(int argc, char *const *argv)
     }
 
     if (njt_signal) {
-        return njt_signal_process(cycle, njt_signal);
+#if (NJT_DEBUG)
+        rc = njt_signal_process(cycle, njt_signal);
+    	njt_destroy_pool(init_cycle.pool);
+	return rc;
+#else
+	return njt_signal_process(cycle, njt_signal);
+#endif
     }
 
     njt_os_status(cycle->log);

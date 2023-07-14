@@ -2335,17 +2335,16 @@ send:
         r->headers_out.content_length->hash = 0;
         r->headers_out.content_length = NULL;
     }
-
     rc = njt_http_send_header(r);
 
     if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
-        goto error;
+    	njt_http_finalize_request(r, rc);
+        return;
     }
 
     rc = njt_http_output_filter(r, &out);
-    if (rc == NJT_OK) {
-        return;
-    }
+    njt_http_finalize_request(r, rc);
+    return;
 
 error:
     njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
@@ -2554,7 +2553,9 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 	 
 	 if (json_peer.route.len  > 0) {
 		 if(peer->route.len < json_peer.route.len) {
-			 njt_slab_free_locked(peers->shpool,peer->route.data);
+			 if(peer->route.len != 0) {
+			 	njt_slab_free_locked(peers->shpool,peer->route.data);
+			 }
 
 			  peer->route.data = njt_slab_calloc_locked(peers->shpool, json_peer.route.len);
 			   if (peer->route.data == NULL) {
@@ -2692,13 +2693,14 @@ send:
     rc = njt_http_send_header(r);
 
     if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
-        goto error;
+         njt_http_finalize_request(r, rc);
+        return;
     }
 
     rc = njt_http_output_filter(r, &out);
-    if (rc == NJT_OK) {
-        return;
-    }
+    njt_http_finalize_request(r, rc);
+    return;
+
 
 error:
     njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
@@ -3171,18 +3173,15 @@ send:
 
     rc = njt_http_send_header(r);
     if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
-        goto error;
-    }
-
-    rc = njt_http_output_filter(r, &out);
-
-error:
-
-    /*free the malloced memory for u*/
-    if (rc == NJT_OK) {
+	njt_http_finalize_request(r, rc);
         return;
     }
 
+    rc = njt_http_output_filter(r, &out);
+    njt_http_finalize_request(r, rc);
+    return;
+
+error:
     njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
     return;
 }
@@ -3577,18 +3576,15 @@ send:
 
     rc = njt_http_send_header(r);
     if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
-        goto error;
-    }
-
-    rc = njt_http_output_filter(r, &out);
-
-error:
-
-    /*free the malloced memory for u*/
-    if (rc == NJT_OK) {
+        njt_http_finalize_request(r, rc);
         return;
     }
 
+    rc = njt_http_output_filter(r, &out);
+    njt_http_finalize_request(r, rc);
+    return;
+
+error:
     njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
     return;
 }
@@ -3608,9 +3604,10 @@ njt_stream_upstream_api_process_patch(njt_http_request_t *r,
 
     ctx = njt_pcalloc(r->pool, sizeof(njt_stream_upstream_api_ctx_t));
     if (ctx == NULL) {
+		njt_http_discard_request_body(r);
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "upstream api ctx allocate error.");
-        return NJT_HTTP_UPS_API_INTERNAL_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ctx->peers = peers;
@@ -3620,8 +3617,11 @@ njt_stream_upstream_api_process_patch(njt_http_request_t *r,
     njt_stream_set_ctx(r, ctx, njt_http_upstream_api_module);
 
     rc = njt_http_read_client_request_body(r, njt_stream_upstream_api_patch);
-
-    return rc;
+    if (rc >= NJT_HTTP_SPECIAL_RESPONSE) {
+        /* error */
+        return rc;
+    }
+    return NJT_DONE;
 }
 
 
@@ -3640,9 +3640,10 @@ njt_http_upstream_api_process_patch(njt_http_request_t *r,
 
     ctx = njt_pcalloc(r->pool, sizeof(njt_http_upstream_api_ctx_t));
     if (ctx == NULL) {
+		njt_http_discard_request_body(r);
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "upstream api ctx allocate error.");
-        return NJT_HTTP_UPS_API_INTERNAL_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
     ctx->resolver = uscf->resolver;
 	ctx->uscf  = uscf;
@@ -3652,8 +3653,11 @@ njt_http_upstream_api_process_patch(njt_http_request_t *r,
     njt_http_set_ctx(r, ctx, njt_http_upstream_api_module);
 
     rc = njt_http_read_client_request_body(r, njt_http_upstream_api_patch);
-
-    return rc;
+    if (rc >= NJT_HTTP_SPECIAL_RESPONSE) {
+        /* error */
+        return rc;
+    }
+    return NJT_DONE;
 }
 
 static njt_int_t
@@ -3670,9 +3674,10 @@ njt_stream_upstream_api_process_post(njt_http_request_t *r,
 
     ctx = njt_pcalloc(r->pool, sizeof(njt_stream_upstream_api_ctx_t));
     if (ctx == NULL) {
+		njt_http_discard_request_body(r);
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "upstream api ctx allocate error.");
-        return NJT_HTTP_UPS_API_INTERNAL_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ctx->peers = peers;
@@ -3683,7 +3688,11 @@ njt_stream_upstream_api_process_post(njt_http_request_t *r,
 
     rc = njt_http_read_client_request_body(r, njt_stream_upstream_api_post);
 
-    return rc;
+     if (rc >= NJT_HTTP_SPECIAL_RESPONSE) {
+        /* error */
+        return rc;
+    }
+    return NJT_DONE;
 }
 
 static njt_int_t
@@ -3700,9 +3709,10 @@ njt_http_upstream_api_process_post(njt_http_request_t *r,
 
     ctx = njt_pcalloc(r->pool, sizeof(njt_http_upstream_api_ctx_t));
     if (ctx == NULL) {
+		njt_http_discard_request_body(r);
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "upstream api ctx allocate error.");
-        return NJT_HTTP_UPS_API_INTERNAL_ERROR;
+        return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
 
     ctx->peers = peers;
@@ -3713,8 +3723,11 @@ njt_http_upstream_api_process_post(njt_http_request_t *r,
     njt_http_set_ctx(r, ctx, njt_http_upstream_api_module);
 
     rc = njt_http_read_client_request_body(r, njt_http_upstream_api_post);
-
-    return rc;
+    if (rc >= NJT_HTTP_SPECIAL_RESPONSE) {
+        /* error */
+        return rc;
+    }
+    return NJT_DONE;
 }
 static njt_int_t
 njt_stream_upstream_api_process_reset(njt_http_request_t *r,
@@ -4679,7 +4692,7 @@ njt_http_upstream_api_versions(njt_http_request_t *r, njt_chain_t *out)
 /*out holds the content needs to be sent out if any.*/
 static njt_int_t
 njt_upstream_api_process_request(njt_http_request_t *r, njt_array_t *path,
-                                 njt_chain_t *out)
+                                 njt_chain_t *out,njt_int_t *if_send)
 {
 
     njt_int_t                     rc;
@@ -4703,18 +4716,21 @@ njt_upstream_api_process_request(njt_http_request_t *r, njt_array_t *path,
     /*pure api request . return [1,2,3,4,5,6,7]*/
     if (path->nelts == 0) {
         rc = njt_http_upstream_api_versions(r, out);
+		njt_http_discard_request_body(r);
         return rc;
     }
 
     rc = njt_upstream_api_get_params(path, &upstream, &id,&upstream_type);
     if (rc != NJT_OK) {
         /*PATH not found*/
+		njt_http_discard_request_body(r);
         return rc;
     }
 
     rc = njt_upstream_api_params_check(path,r, &upstream, &id, (void **)&uscf, &server_id,upstream_type);
     if (rc != NJT_OK) {
         /*PATH not found*/
+		njt_http_discard_request_body(r);
         return rc;
     }
 	njt_upstream_api_process_get   = njt_http_upstream_api_process_get;
@@ -4746,12 +4762,6 @@ njt_upstream_api_process_request(njt_http_request_t *r, njt_array_t *path,
         }
 
         detailed = (path->nelts >= 5) ? 0 : 1;
-		/*
-		if(upstream_type == 1) {
-			rc = njt_http_upstream_api_process_get(r, uscf, server_id, detailed, out);
-		} else {
-			rc = njt_stream_upstream_api_process_get(r, uscf, server_id, detailed, out);
-		}*/
 		rc = njt_upstream_api_process_get(r, uscf, server_id, detailed, out);
         break;
 
@@ -4762,45 +4772,23 @@ njt_upstream_api_process_request(njt_http_request_t *r, njt_array_t *path,
             goto out;
         }
 		if(path->nelts == 4) { //reset statistics
-			/*
-			if(upstream_type == 1) {
-				rc = njt_http_upstream_api_process_reset(r, uscf, out);
-			} else {
-				rc = njt_stream_upstream_api_process_reset(r, uscf, out);
-			}*/
 			rc = njt_upstream_api_process_reset(r, uscf, out);
 
 		} else {
-			/*
-			if(upstream_type == 1) {
-				rc = njt_http_upstream_api_process_delete(r, uscf, server_id, out);
-			}else {
-				rc = njt_stream_upstream_api_process_delete(r, uscf, server_id, out);
-			}*/
 			rc = njt_upstream_api_process_delete(r, uscf, server_id, out);
 		}
 
         break;
 
     case NJT_HTTP_PATCH:
-		/*
-		if(upstream_type == 1) {
-				 rc = njt_http_upstream_api_process_patch(r, uscf, server_id);
-			}else {
-				 rc = njt_stream_upstream_api_process_patch(r, uscf, server_id);
-			}*/
         rc = njt_upstream_api_process_patch(r, uscf, server_id);
+		*if_send = 0;
         break;
 
     case NJT_HTTP_POST:
 		if(path->nelts >=5) {
-			/*
-			if(upstream_type == 1) {
-				rc = njt_http_upstream_api_process_post(r, uscf);
-			}else {
-				rc = njt_stream_upstream_api_process_post(r, uscf);
-			}*/
 			rc = njt_upstream_api_process_post(r, uscf);
+			*if_send = 0;
 		} else {
 			rc = NJT_HTTP_UPS_API_PERM_NOT_ALLOWED;
 		}
@@ -4815,13 +4803,7 @@ njt_upstream_api_process_request(njt_http_request_t *r, njt_array_t *path,
 
 out:
     /*try to save the upstream servers into the stat file*/
-    if (rc == NJT_OK && r->method != NJT_HTTP_GET) {
-		/*
-		if(upstream_type == 1) {
-				 njt_http_upstream_state_save(r, uscf);
-			} else {
-				 njt_stream_upstream_state_save(r, uscf);
-			}*/
+    if ((rc == NJT_OK || rc == NJT_DONE) &&  r->method != NJT_HTTP_GET) {
 			njt_upstream_state_save(r, uscf);
        
     }
@@ -5255,6 +5237,7 @@ njt_http_upstream_api_handler(njt_http_request_t *r)
     njt_chain_t                        out;
     njt_http_upstream_api_loc_conf_t *uclcf;
     ssize_t                            len;
+	njt_int_t                          if_send;
    // njt_http_upstream_api_main_conf_t *mcf;
     //njt_http_core_loc_conf_t          *clcf;
 
@@ -5262,6 +5245,8 @@ njt_http_upstream_api_handler(njt_http_request_t *r)
      * check of the permission according to the configure.
      */
     //mcf = njt_http_get_module_main_conf(r, njt_http_upstream_api_module);
+
+	if_send = 1;
     uclcf = njt_http_get_module_loc_conf(r, njt_http_upstream_api_module);
     if(uclcf == NULL  || uclcf->enable == NJT_CONF_UNSET_UINT || uclcf->enable == 0){
 	return NJT_DECLINED;
@@ -5294,7 +5279,10 @@ njt_http_upstream_api_handler(njt_http_request_t *r)
 
     out.next = NULL;
     out.buf = NULL;
-    rc = njt_upstream_api_process_request(r, &path, &out);
+    rc = njt_upstream_api_process_request(r, &path, &out,&if_send);
+   if (if_send == 0){
+	return rc;
+   }
 
 out:
     /*find in the error message*/
@@ -5320,7 +5308,6 @@ out:
         r->headers_out.content_length->hash = 0;
         r->headers_out.content_length = NULL;
     }
-
     rc = njt_http_send_header(r);
 
     if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {

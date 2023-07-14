@@ -399,8 +399,12 @@ njt_single_process_cycle(njt_cycle_t *cycle)
 
 static void njt_update_worker_processes(njt_cycle_t *cycle, njt_core_conf_t *ccf, njt_int_t worker_c)
 {
-    njt_int_t  i,j;
+    njt_int_t  i,j,k;
     njt_pid_t  tmp_pid;
+    if (njt_shrink_count != njt_shrink_finish_count) {
+        njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "previous worker processes change not finish yet, ignore current change");
+        return;
+    }
     if (ccf->worker_processes != worker_c) {
         if (worker_c > ccf->worker_processes) {
             for (i = ccf->worker_processes; i < worker_c; i++) {
@@ -409,18 +413,29 @@ static void njt_update_worker_processes(njt_cycle_t *cycle, njt_core_conf_t *ccf
                 njt_pass_open_channel(cycle);
             }
         } else {
+            k=0;
             j=ccf->worker_processes-worker_c;
             for (i= njt_last_process-1; i>=0; i--) {
                 if ( strlen(njt_processes[i].name)==strlen("worker process") 
-                    && njt_strncmp(njt_processes[i].name, "worker process",14) ==0) {
+                    && njt_strncmp(njt_processes[i].name, "worker process",14) ==0 
+                    &&  njt_processes[i].pid!=-1) {
                     tmp_pid=njt_processes[i].pid;
-                    njt_processes[i].pid=-1;
+                    njt_shrink_processes[k] = njt_processes[i];
+                    k++;
+                    njt_processes[i].pid = -1;
                     kill(tmp_pid, SIGQUIT);
                     j--;
                     if (j==0) break;
                 }
             }
-            njt_last_process-=(ccf->worker_processes-worker_c);
+            njt_shrink_finish_count=0;
+            njt_shrink_count = k;
+            for (i= njt_last_process-1; i>=0; i--) {
+                if (njt_processes[i].pid!=-1) {
+                    njt_last_process=i+1;
+                    break;
+                }
+            }
         }
         ccf->worker_processes = worker_c;
     }
@@ -1817,7 +1832,9 @@ void
 njt_helper_process_exit(njt_cycle_t *cycle)
 {
     njt_uint_t         i;
-
+#if (NJT_DEBUG)
+    njt_connection_t    **c;
+#endif
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->exit_process) {
             cycle->modules[i]->exit_process(cycle);
@@ -1844,7 +1861,26 @@ njt_helper_process_exit(njt_cycle_t *cycle)
     njt_exit_cycle.files = njt_cycle->files;
     njt_exit_cycle.files_n = njt_cycle->files_n;
     njt_cycle = &njt_exit_cycle;
+#if (NJT_DEBUG)
+     c = cycle->files;
+    if(cycle->files) {
+        i = cycle->files_n;
+        do {
+                i--;
+                if(c[i]->pool != NULL) {
+                        njt_destroy_pool(c[i]->pool);
+                }
 
+        } while (i);
+    }
+
+    if(cycle->connections)
+        njt_free(cycle->connections);
+    if(cycle->read_events)
+        njt_free(cycle->read_events);
+    if(cycle->write_events)
+        njt_free(cycle->write_events);
+#endif
     njt_destroy_pool(cycle->pool);
 
     njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "exit");
