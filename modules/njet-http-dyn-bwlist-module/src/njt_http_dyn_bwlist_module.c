@@ -58,8 +58,8 @@ static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, dynbwlist_servers_it
             accessIpv4 = get_locationDef_accessIpv4_item(data->accessIpv4, i);
             in_addr_t addr = njt_inet_addr(accessIpv4.addr->data, accessIpv4.addr->len);
             if (addr == INADDR_NONE) {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "skipping wrong ipv4 addr: %V ", &accessIpv4.addr);
-                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " wrong ipv4 addr: %V", &accessIpv4.addr);
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "skipping wrong ipv4 addr: %V ", accessIpv4.addr);
+                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " wrong ipv4 addr: %V", accessIpv4.addr);
                 rpc_data_str.len = end - data_buf;
                 njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                 njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
