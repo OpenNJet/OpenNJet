@@ -5803,7 +5803,7 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
    njt_str_null(&value);
    for(i=0; i < parse_ctx->count; i++) {
 	pdata = (u_char *)parse_ctx->exps[i];
-	old.len = njt_strlen(pdata);
+	old.len = njt_strlen(pdata) -1;
 	old.data = pdata;
 
 	new_src.len = old.len + 10;
