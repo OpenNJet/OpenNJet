@@ -16,6 +16,7 @@
 typedef struct {
     njt_http_request_t **reqs;
     njt_int_t size;
+    njt_uint_t config_api_enabled;
 }njt_ctrl_dynlog_main_cf_t;
 
 
@@ -315,6 +316,10 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
     njt_str_t srv_err = njt_string("{\"code\":500,\"msg\":\"server error\"}");
     njt_str_t not_found_err = njt_string("{\"code\":404,\"msg\":\"not found error\"}");
     njt_str_t rpc_pre = njt_string("/rpc/");
+    njt_ctrl_dynlog_main_cf_t * uclcf = njt_http_get_module_loc_conf(r, njt_ctrl_config_api_module);
+    if(uclcf == NULL  || uclcf->config_api_enabled == NJT_CONF_UNSET_UINT || uclcf->config_api_enabled == 0){
+        return NJT_DECLINED;
+    }
     path = njt_array_create( r->pool, 4, sizeof(njt_str_t));
     if (path == NULL) {
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0,"array init of path error.");
@@ -377,9 +382,13 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
     return njt_ctrl_dynlog_request_output(r,NJT_HTTP_INTERNAL_SERVER_ERROR,&srv_err);
 }
 static char *njt_dynlog_http_handler_conf(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
-    njt_http_core_loc_conf_t *clcf;
-    clcf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
-    clcf->handler = njt_dynlog_http_handler;
+//    njt_http_core_loc_conf_t *clcf;
+//    clcf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
+//    clcf->handler = njt_dynlog_http_handler;
+
+    njt_ctrl_dynlog_main_cf_t *dlmcf;
+    dlmcf = njt_http_conf_get_module_loc_conf(cf, njt_ctrl_config_api_module);
+    dlmcf->config_api_enabled = 1;
     return NJT_CONF_OK;
 }
 
@@ -417,9 +426,35 @@ static njt_int_t   njt_ctrl_dynlog_postconfiguration(njt_conf_t *cf){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_ctrl_dynlog_postconfiguration alloc mem error");
         return NJT_ERROR;
     }
+
+    njt_http_core_main_conf_t  *cmcf;
+    njt_http_handler_pt        *h;
+    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
+    //njt_http_upstream_api_handler
+    h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
+    if (h == NULL) {
+        return NJT_ERROR;
+    }
+
+    *h = njt_dynlog_http_handler;
     return NJT_OK;
 }
 
+static void * njt_http_dynlog_loc_conf(njt_conf_t *cf){
+    njt_ctrl_dynlog_main_cf_t *conf;
+    conf = njt_palloc(cf->pool,sizeof(njt_ctrl_dynlog_main_cf_t));
+    if(!conf) return NULL;
+    conf->config_api_enabled = NJT_CONF_UNSET_UINT;
+    return conf;
+
+}
+static char * njt_http_dynlog_merge_loc_conf(njt_conf_t *cf, void *parent, void *child){
+    njt_ctrl_dynlog_main_cf_t *prev = parent;
+    njt_ctrl_dynlog_main_cf_t *conf = child;
+
+    njt_conf_merge_uint_value(conf->config_api_enabled, prev->config_api_enabled, 0);
+    return NJT_CONF_OK;
+}
 static void * njt_ctrl_dynlog_create_main_conf(njt_conf_t *cf){
     njt_ctrl_dynlog_main_cf_t *dlmcf;
     dlmcf = njt_pcalloc(cf->pool,sizeof (njt_ctrl_dynlog_main_cf_t));
@@ -440,8 +475,8 @@ static njt_http_module_t njt_ctrl_dynlog_module_ctx = {
         NULL,                                  /* create server configuration */
         NULL,                                  /* merge server configuration */
 
-        NULL,                                   /* create location configuration */
-        NULL                                    /* merge location configuration */
+        njt_http_dynlog_loc_conf,                                   /* create location configuration */
+        njt_http_dynlog_merge_loc_conf                                    /* merge location configuration */
 };
 
 njt_module_t njt_ctrl_config_api_module = {
