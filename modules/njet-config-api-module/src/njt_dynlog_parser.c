@@ -9,7 +9,6 @@
 /* ========================== Generated parsers ========================== */
 
 static bool parse_accessLog(njt_pool_t *pool, parse_state_t *parse_state, accessLog_t *out, njt_str_t* err_str); //forward decl for public definition
-static void marshal_accessLog(accessLog_t *out, njt_int_t flags); //forward decl for public definition
 static void get_json_length_accessLog(accessLog_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
 static void to_oneline_json_accessLog(accessLog_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
@@ -47,7 +46,6 @@ static bool parse_accessLog(njt_pool_t *pool, parse_state_t *parse_state, access
             if (out->path == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            printf("parse string -- current string: %s \n", CURRENT_STRING(parse_state));
             // first get str len from TOKEN_STRING
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
             (out->path) = njt_palloc(pool, sizeof(njt_str_t));
@@ -78,7 +76,6 @@ static bool parse_accessLog(njt_pool_t *pool, parse_state_t *parse_state, access
             if (out->formatName == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            printf("parse string -- current string: %s \n", CURRENT_STRING(parse_state));
             // first get str len from TOKEN_STRING
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
             (out->formatName) = njt_palloc(pool, sizeof(njt_str_t));
@@ -115,55 +112,6 @@ static bool parse_accessLog(njt_pool_t *pool, parse_state_t *parse_state, access
     return false;
 }
 
-// BEGIN JSON MARSHAL
-
-static void marshal_accessLog_path(accessLog_path_t *out, njt_int_t flags) {
-    char *buf = malloc((*out)->len + 1);
-    njt_memcpy(buf, (*out)->data, (*out)->len);
-    printf("\"%s\"", (*out)->data);
-    free(buf);
-}
-
-static void marshal_accessLog_formatName(accessLog_formatName_t *out, njt_int_t flags) {
-    char *buf = malloc((*out)->len + 1);
-    njt_memcpy(buf, (*out)->data, (*out)->len);
-    printf("\"%s\"", (*out)->data);
-    free(buf);
-}
-
-static void marshal_accessLog(accessLog_t *out, njt_int_t flags) {
-    njt_int_t omit;
-    njt_int_t count = 0;
-    if (out == NULL) {
-        printf("null");
-        return;
-    }
-    printf("{");
-    omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->path) == NULL) {
-        omit = 1;
-    }
-    if (omit == 0) {
-        printf("\"path\":");
-        marshal_accessLog_path((&out->path), flags);
-        printf(",");
-        count++;
-    }
-    omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->formatName) == NULL) {
-        omit = 1;
-    }
-    if (omit == 0) {
-        printf("\"formatName\":");
-        marshal_accessLog_formatName((&out->formatName), flags);
-        printf(",");
-        count++;
-    }
-    if (count != 0) {
-        printf("\b");
-    }
-    printf("}");
-}
 
 static void get_json_length_accessLog_path(accessLog_path_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
@@ -292,7 +240,6 @@ static void to_oneline_json_accessLog(accessLog_t *out, njt_str_t* buf, njt_int_
     cur ++;
 }
 static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, locationDef_t *out, njt_str_t* err_str); //forward decl for public definition
-static void marshal_locationDef(locationDef_t *out, njt_int_t flags); //forward decl for public definition
 static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
 static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
@@ -306,8 +253,6 @@ static bool parse_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_s
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        printf("current i %d, n = %d\n", i, parse_state->tokens[parse_state->current_token].size);
-        printf("alloctate elts ((locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(locationDef_t));\n");
         ((locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(locationDef_t));
         if (parse_locationDef(pool, parse_state, ((locationDef_locations_item_t**)out->elts)[i], err_str)) {
             return true;
@@ -328,8 +273,6 @@ static bool parse_locationDef_accessLogs(njt_pool_t *pool, parse_state_t *parse_
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        printf("current i %d, n = %d\n", i, parse_state->tokens[parse_state->current_token].size);
-        printf("alloctate elts ((locationDef_accessLogs_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(accessLog_t));\n");
         ((locationDef_accessLogs_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(accessLog_t));
         if (parse_accessLog(pool, parse_state, ((locationDef_accessLogs_item_t**)out->elts)[i], err_str)) {
             return true;
@@ -376,7 +319,6 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             if (out->location == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            printf("parse string -- current string: %s \n", CURRENT_STRING(parse_state));
             // first get str len from TOKEN_STRING
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
             (out->location) = njt_palloc(pool, sizeof(njt_str_t));
@@ -407,7 +349,6 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             if (out->locations == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            printf("parse array -- current string: %s \n", CURRENT_STRING(parse_state));
             if (parse_locationDef_locations(pool, parse_state, (out->locations), err_str)) {
                 return true;
             }
@@ -421,7 +362,6 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "accessLogOn";
-            printf("parse bool -- current string: %s \n", CURRENT_STRING(parse_state));
             if (builtin_parse_bool(pool, parse_state, (&out->accessLogOn), err_str)) {
                 return true;
             }
@@ -439,7 +379,6 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             if (out->accessLogs == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            printf("parse array -- current string: %s \n", CURRENT_STRING(parse_state));
             if (parse_locationDef_accessLogs(pool, parse_state, (out->accessLogs), err_str)) {
                 return true;
             }
@@ -455,151 +394,24 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
         LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': location", parse_state->current_key)
         return true;
     }
-    if (!seen_accessLogOn) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': accessLogOn", parse_state->current_key)
-        return true;
-    }
     // HAHB
     if (!seen_locations) {
-        out->locations = NULL;
+        out->locations = njt_palloc(pool, sizeof(njt_array_t));
+        memset(out->locations, 0, sizeof(njt_array_t));
+    }
+    // HAHB
+    if (!seen_accessLogOn) {
+        out->accessLogOn = false;
     }
     // HAHB
     if (!seen_accessLogs) {
-        out->accessLogs = NULL;
+        out->accessLogs = njt_palloc(pool, sizeof(njt_array_t));
+        memset(out->accessLogs, 0, sizeof(njt_array_t));
     }
     parse_state->current_token = saved_current_token;
     return false;
 }
 
-// BEGIN JSON MARSHAL
-
-static void marshal_locationDef_location(locationDef_location_t *out, njt_int_t flags) {
-    char *buf = malloc((*out)->len + 1);
-    njt_memcpy(buf, (*out)->data, (*out)->len);
-    printf("\"%s\"", (*out)->data);
-    free(buf);
-}
-// MARSHAL_REF
-
-static void marshal_locationDef_locations_item(locationDef_locations_item_t *out, njt_int_t flags) {
-    marshal_locationDef(out, flags);
-}
-
-static void marshal_locationDef_locations(locationDef_locations_t *out, njt_int_t flags) {
-    njt_uint_t i;
-    njt_int_t count = 0;
-    njt_int_t omit;
-    if (out == NULL) {
-        printf("[]");
-        return;
-    }
-    printf("[");
-    for (i = 0; i < out->nelts; ++i) {
-        omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_locations_item_t**)out->elts)[i] == NULL) {
-            omit = 1;
-        }
-        if (omit == 0) {
-            marshal_locationDef_locations_item(((locationDef_locations_item_t**)out->elts)[i], flags);
-            printf(",");
-            count++;
-        }
-    }
-    if (count != 0) {
-        printf("\b");
-    }
-    printf("]");
-}
-
-static void marshal_locationDef_accessLogOn(locationDef_accessLogOn_t *out, njt_int_t flags) {
-    if (*out) {
-        printf("true");
-    } else {
-        printf("false");
-    }
-}
-// MARSHAL_REF
-
-static void marshal_locationDef_accessLogs_item(locationDef_accessLogs_item_t *out, njt_int_t flags) {
-    marshal_accessLog(out, flags);
-}
-
-static void marshal_locationDef_accessLogs(locationDef_accessLogs_t *out, njt_int_t flags) {
-    njt_uint_t i;
-    njt_int_t count = 0;
-    njt_int_t omit;
-    if (out == NULL) {
-        printf("[]");
-        return;
-    }
-    printf("[");
-    for (i = 0; i < out->nelts; ++i) {
-        omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_accessLogs_item_t**)out->elts)[i] == NULL) {
-            omit = 1;
-        }
-        if (omit == 0) {
-            marshal_locationDef_accessLogs_item(((locationDef_accessLogs_item_t**)out->elts)[i], flags);
-            printf(",");
-            count++;
-        }
-    }
-    if (count != 0) {
-        printf("\b");
-    }
-    printf("]");
-}
-
-static void marshal_locationDef(locationDef_t *out, njt_int_t flags) {
-    njt_int_t omit;
-    njt_int_t count = 0;
-    if (out == NULL) {
-        printf("null");
-        return;
-    }
-    printf("{");
-    omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->location) == NULL) {
-        omit = 1;
-    }
-    if (omit == 0) {
-        printf("\"location\":");
-        marshal_locationDef_location((&out->location), flags);
-        printf(",");
-        count++;
-    }
-    omit = 0;
-    if ((flags & OMIT_NULL_ARRAY) && (out->locations) == NULL) {
-        omit = 1;
-    }
-    if (omit == 0) {
-        printf("\"locations\":");
-        marshal_locationDef_locations((out->locations), flags);
-        printf(",");
-        count++;
-    }
-    omit = 0;
-    if (omit == 0) {
-        printf("\"accessLogOn\":");
-        marshal_locationDef_accessLogOn((&out->accessLogOn), flags);
-        printf(",");
-        count++;
-    }
-    omit = 0;
-    if ((flags & OMIT_NULL_ARRAY) && (out->accessLogs) == NULL) {
-        omit = 1;
-    }
-    if (omit == 0) {
-        printf("\"accessLogs\":");
-        marshal_locationDef_accessLogs((out->accessLogs), flags);
-        printf(",");
-        count++;
-    }
-    if (count != 0) {
-        printf("\b");
-    }
-    printf("}");
-}
 
 static void get_json_length_locationDef_location(locationDef_location_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
@@ -839,7 +651,6 @@ static void to_oneline_json_locationDef_locations(locationDef_locations_t *out, 
 }
 
 static void to_oneline_json_locationDef_accessLogOn(locationDef_accessLogOn_t *out, njt_str_t *buf, njt_int_t flags) {
-    // int len;
     char* cur = (char *)buf->data + buf->len;
     if (*out) {
         sprintf(cur, "true");
@@ -970,7 +781,6 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     cur ++;
 }
 static bool parse_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, accessLogFormat_t *out, njt_str_t* err_str); //forward decl for public definition
-//static void marshal_accessLogFormat(accessLogFormat_t *out, njt_int_t flags); //forward decl for public definition
 static void get_json_length_accessLogFormat(accessLogFormat_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
 static void to_oneline_json_accessLogFormat(accessLogFormat_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
@@ -1028,7 +838,6 @@ static bool parse_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, 
             if (out->name == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            printf("parse string -- current string: %s \n", CURRENT_STRING(parse_state));
             // first get str len from TOKEN_STRING
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
             (out->name) = njt_palloc(pool, sizeof(njt_str_t));
@@ -1055,7 +864,6 @@ static bool parse_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, 
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "escape";
-            printf("parse enum -- current string: %s", CURRENT_STRING(parse_state));
             if (parse_accessLogFormat_escape(pool, parse_state, (&out->escape), err_str)) {
                 return true;
             }
@@ -1073,7 +881,6 @@ static bool parse_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, 
             if (out->format == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            printf("parse string -- current string: %s \n", CURRENT_STRING(parse_state));
             // first get str len from TOKEN_STRING
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
             (out->format) = njt_palloc(pool, sizeof(njt_str_t));
@@ -1102,90 +909,18 @@ static bool parse_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, 
         LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': name", parse_state->current_key)
         return true;
     }
-    if (!seen_escape) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': escape", parse_state->current_key)
-        return true;
-    }
     if (!seen_format) {
         LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': format", parse_state->current_key)
         return true;
+    }
+    // HAHB
+    if (!seen_escape) {
+        out->escape = ACCESSLOGFORMAT_ESCAPE_DEFAULT;
     }
     parse_state->current_token = saved_current_token;
     return false;
 }
 
-// BEGIN JSON MARSHAL
-//
-//static void marshal_accessLogFormat_name(accessLogFormat_name_t *out, njt_int_t flags) {
-//    char *buf = malloc((*out)->len + 1);
-//    njt_memcpy(buf, (*out)->data, (*out)->len);
-//    printf("\"%s\"", (*out)->data);
-//    free(buf);
-//}
-//// BEGIN JSON MARSHAL ENUM
-//
-//static void marshal_accessLogFormat_escape(accessLogFormat_escape_t *out, njt_int_t flags) {
-//    if (*out == ACCESSLOGFORMAT_ESCAPE_DEFAULT) {
-//        printf("\"default\"");
-//        return;
-//    }
-//    if (*out == ACCESSLOGFORMAT_ESCAPE_JSON) {
-//        printf("\"json\"");
-//        return;
-//    }
-//    if (*out == ACCESSLOGFORMAT_ESCAPE_NONE) {
-//        printf("\"none\"");
-//        return;
-//    }
-//}
-//
-//static void marshal_accessLogFormat_format(accessLogFormat_format_t *out, njt_int_t flags) {
-//    char *buf = malloc((*out)->len + 1);
-//    njt_memcpy(buf, (*out)->data, (*out)->len);
-//    printf("\"%s\"", (*out)->data);
-//    free(buf);
-//}
-//
-//static void marshal_accessLogFormat(accessLogFormat_t *out, njt_int_t flags) {
-//    njt_int_t omit;
-//    njt_int_t count = 0;
-//    if (out == NULL) {
-//        printf("null");
-//        return;
-//    }
-//    printf("{");
-//    omit = 0;
-//    if ((flags & OMIT_NULL_STR) && (out->name) == NULL) {
-//        omit = 1;
-//    }
-//    if (omit == 0) {
-//        printf("\"name\":");
-//        marshal_accessLogFormat_name((&out->name), flags);
-//        printf(",");
-//        count++;
-//    }
-//    omit = 0;
-//    if (omit == 0) {
-//        printf("\"escape\":");
-//        marshal_accessLogFormat_escape((&out->escape), flags);
-//        printf(",");
-//        count++;
-//    }
-//    omit = 0;
-//    if ((flags & OMIT_NULL_STR) && (out->format) == NULL) {
-//        omit = 1;
-//    }
-//    if (omit == 0) {
-//        printf("\"format\":");
-//        marshal_accessLogFormat_format((&out->format), flags);
-//        printf(",");
-//        count++;
-//    }
-//    if (count != 0) {
-//        printf("\b");
-//    }
-//    printf("}");
-//}
 
 static void get_json_length_accessLogFormat_name(accessLogFormat_name_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
@@ -1392,10 +1127,7 @@ static bool parse_dynlog_servers_item_listens(njt_pool_t *pool, parse_state_t *p
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        printf("current i %d, n = %d\n", i, parse_state->tokens[parse_state->current_token].size);
-        printf("alloctate elts ((dynlog_servers_item_listens_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(njt_str_t));\n");
         ((dynlog_servers_item_listens_item_t*)out->elts)[i] = njt_palloc(pool, sizeof(njt_str_t));
-        printf("parse string -- current string: %s \n", CURRENT_STRING(parse_state));
         // first get str len from TOKEN_STRING
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
         ((dynlog_servers_item_listens_item_t*)out->elts)[i] = njt_palloc(pool, sizeof(njt_str_t));
@@ -1428,10 +1160,7 @@ static bool parse_dynlog_servers_item_serverNames(njt_pool_t *pool, parse_state_
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        printf("current i %d, n = %d\n", i, parse_state->tokens[parse_state->current_token].size);
-        printf("alloctate elts ((dynlog_servers_item_serverNames_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(njt_str_t));\n");
         ((dynlog_servers_item_serverNames_item_t*)out->elts)[i] = njt_palloc(pool, sizeof(njt_str_t));
-        printf("parse string -- current string: %s \n", CURRENT_STRING(parse_state));
         // first get str len from TOKEN_STRING
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
         ((dynlog_servers_item_serverNames_item_t*)out->elts)[i] = njt_palloc(pool, sizeof(njt_str_t));
@@ -1464,8 +1193,6 @@ static bool parse_dynlog_servers_item_locations(njt_pool_t *pool, parse_state_t 
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        printf("current i %d, n = %d\n", i, parse_state->tokens[parse_state->current_token].size);
-        printf("alloctate elts ((dynlog_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(locationDef_t));\n");
         ((dynlog_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(locationDef_t));
         if (parse_locationDef(pool, parse_state, ((dynlog_servers_item_locations_item_t**)out->elts)[i], err_str)) {
             return true;
@@ -1511,7 +1238,6 @@ static bool parse_dynlog_servers_item(njt_pool_t *pool, parse_state_t *parse_sta
             if (out->listens == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            printf("parse array -- current string: %s \n", CURRENT_STRING(parse_state));
             if (parse_dynlog_servers_item_listens(pool, parse_state, (out->listens), err_str)) {
                 return true;
             }
@@ -1529,7 +1255,6 @@ static bool parse_dynlog_servers_item(njt_pool_t *pool, parse_state_t *parse_sta
             if (out->serverNames == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            printf("parse array -- current string: %s \n", CURRENT_STRING(parse_state));
             if (parse_dynlog_servers_item_serverNames(pool, parse_state, (out->serverNames), err_str)) {
                 return true;
             }
@@ -1547,7 +1272,6 @@ static bool parse_dynlog_servers_item(njt_pool_t *pool, parse_state_t *parse_sta
             if (out->locations == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            printf("parse array -- current string: %s \n", CURRENT_STRING(parse_state));
             if (parse_dynlog_servers_item_locations(pool, parse_state, (out->locations), err_str)) {
                 return true;
             }
@@ -1563,13 +1287,13 @@ static bool parse_dynlog_servers_item(njt_pool_t *pool, parse_state_t *parse_sta
         LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': listens", parse_state->current_key)
         return true;
     }
-    // HAHB
     if (!seen_serverNames) {
-        out->serverNames = NULL;
+        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': serverNames", parse_state->current_key)
+        return true;
     }
-    // HAHB
     if (!seen_locations) {
-        out->locations = NULL;
+        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': locations", parse_state->current_key)
+        return true;
     }
     parse_state->current_token = saved_current_token;
     return false;
@@ -1586,10 +1310,7 @@ static bool parse_dynlog_servers(njt_pool_t *pool, parse_state_t *parse_state, d
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        printf("current i %d, n = %d\n", i, parse_state->tokens[parse_state->current_token].size);
-        printf("alloctate elts ((dynlog_servers_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_servers_item_t));\n");
         ((dynlog_servers_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_servers_item_t));
-        printf("parse object -- current string: %s \n", CURRENT_STRING(parse_state));
         if (parse_dynlog_servers_item(pool, parse_state, ((dynlog_servers_item_t**)out->elts)[i], err_str)) {
             return true;
         }
@@ -1609,8 +1330,6 @@ static bool parse_dynlog_accessLogFormats(njt_pool_t *pool, parse_state_t *parse
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        printf("current i %d, n = %d\n", i, parse_state->tokens[parse_state->current_token].size);
-        printf("alloctate elts ((dynlog_accessLogFormats_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(accessLogFormat_t));\n");
         ((dynlog_accessLogFormats_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(accessLogFormat_t));
         if (parse_accessLogFormat(pool, parse_state, ((dynlog_accessLogFormats_item_t**)out->elts)[i], err_str)) {
             return true;
@@ -1655,7 +1374,6 @@ static bool parse_dynlog(njt_pool_t *pool, parse_state_t *parse_state, dynlog_t 
             if (out->servers == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            printf("parse array -- current string: %s \n", CURRENT_STRING(parse_state));
             if (parse_dynlog_servers(pool, parse_state, (out->servers), err_str)) {
                 return true;
             }
@@ -1673,7 +1391,6 @@ static bool parse_dynlog(njt_pool_t *pool, parse_state_t *parse_state, dynlog_t 
             if (out->accessLogFormats == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            printf("parse array -- current string: %s \n", CURRENT_STRING(parse_state));
             if (parse_dynlog_accessLogFormats(pool, parse_state, (out->accessLogFormats), err_str)) {
                 return true;
             }
@@ -1685,252 +1402,19 @@ static bool parse_dynlog(njt_pool_t *pool, parse_state_t *parse_state, dynlog_t 
     }
     const int saved_current_token = parse_state->current_token;
     parse_state->current_token = object_start_token;
-    // HAHB
     if (!seen_servers) {
-        out->servers = NULL;
+        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': servers", parse_state->current_key)
+        return true;
     }
     // HAHB
     if (!seen_accessLogFormats) {
-        out->accessLogFormats = NULL;
+        out->accessLogFormats = njt_palloc(pool, sizeof(njt_array_t));
+        memset(out->accessLogFormats, 0, sizeof(njt_array_t));
     }
     parse_state->current_token = saved_current_token;
     return false;
 }
 
-// BEGIN JSON MARSHAL
-// BEGIN JSON MARSHAL
-//
-//static void marshal_dynlog_servers_item_listens_item(dynlog_servers_item_listens_item_t *out, njt_int_t flags) {
-//    char *buf = malloc((*out)->len + 1);
-//    njt_memcpy(buf, (*out)->data, (*out)->len);
-//    printf("\"%s\"", (*out)->data);
-//    free(buf);
-//}
-//
-//static void marshal_dynlog_servers_item_listens(dynlog_servers_item_listens_t *out, njt_int_t flags) {
-//    njt_uint_t i;
-//    njt_int_t count = 0;
-//    njt_int_t omit;
-//    if (out == NULL) {
-//        printf("[]");
-//        return;
-//    }
-//    printf("[");
-//    for (i = 0; i < out->nelts; ++i) {
-//        omit = 0;
-//        if ((flags & OMIT_NULL_STR) && ((dynlog_servers_item_listens_item_t*)out->elts)[i] == NULL) {
-//            omit = 1;
-//        }
-//        if (omit == 0) {
-//            marshal_dynlog_servers_item_listens_item((&((dynlog_servers_item_listens_item_t*)out->elts)[i]), flags);
-//            printf(",");
-//            count++;
-//        }
-//    }
-//    if (count != 0) {
-//        printf("\b");
-//    }
-//    printf("]");
-//}
-//
-//static void marshal_dynlog_servers_item_serverNames_item(dynlog_servers_item_serverNames_item_t *out, njt_int_t flags) {
-//    char *buf = malloc((*out)->len + 1);
-//    njt_memcpy(buf, (*out)->data, (*out)->len);
-//    printf("\"%s\"", (*out)->data);
-//    free(buf);
-//}
-//
-//static void marshal_dynlog_servers_item_serverNames(dynlog_servers_item_serverNames_t *out, njt_int_t flags) {
-//    njt_uint_t i;
-//    njt_int_t count = 0;
-//    njt_int_t omit;
-//    if (out == NULL) {
-//        printf("[]");
-//        return;
-//    }
-//    printf("[");
-//    for (i = 0; i < out->nelts; ++i) {
-//        omit = 0;
-//        if ((flags & OMIT_NULL_STR) && ((dynlog_servers_item_serverNames_item_t*)out->elts)[i] == NULL) {
-//            omit = 1;
-//        }
-//        if (omit == 0) {
-//            marshal_dynlog_servers_item_serverNames_item((&((dynlog_servers_item_serverNames_item_t*)out->elts)[i]), flags);
-//            printf(",");
-//            count++;
-//        }
-//    }
-//    if (count != 0) {
-//        printf("\b");
-//    }
-//    printf("]");
-//}
-//// MARSHAL_REF
-//
-//static void marshal_dynlog_servers_item_locations_item(dynlog_servers_item_locations_item_t *out, njt_int_t flags) {
-//    marshal_locationDef(out, flags);
-//}
-//
-//static void marshal_dynlog_servers_item_locations(dynlog_servers_item_locations_t *out, njt_int_t flags) {
-//    njt_uint_t i;
-//    njt_int_t count = 0;
-//    njt_int_t omit;
-//    if (out == NULL) {
-//        printf("[]");
-//        return;
-//    }
-//    printf("[");
-//    for (i = 0; i < out->nelts; ++i) {
-//        omit = 0;
-//        if ((flags & OMIT_NULL_OBJ) && ((dynlog_servers_item_locations_item_t**)out->elts)[i] == NULL) {
-//            omit = 1;
-//        }
-//        if (omit == 0) {
-//            marshal_dynlog_servers_item_locations_item(((dynlog_servers_item_locations_item_t**)out->elts)[i], flags);
-//            printf(",");
-//            count++;
-//        }
-//    }
-//    if (count != 0) {
-//        printf("\b");
-//    }
-//    printf("]");
-//}
-
-//static void marshal_dynlog_servers_item(dynlog_servers_item_t *out, njt_int_t flags) {
-//    njt_int_t omit;
-//    njt_int_t count = 0;
-//    if (out == NULL) {
-//        printf("null");
-//        return;
-//    }
-//    printf("{");
-//    omit = 0;
-//    if ((flags & OMIT_NULL_ARRAY) && (out->listens) == NULL) {
-//        omit = 1;
-//    }
-//    if (omit == 0) {
-//        printf("\"listens\":");
-//        marshal_dynlog_servers_item_listens((out->listens), flags);
-//        printf(",");
-//        count++;
-//    }
-//    omit = 0;
-//    if ((flags & OMIT_NULL_ARRAY) && (out->serverNames) == NULL) {
-//        omit = 1;
-//    }
-//    if (omit == 0) {
-//        printf("\"serverNames\":");
-//        marshal_dynlog_servers_item_serverNames((out->serverNames), flags);
-//        printf(",");
-//        count++;
-//    }
-//    omit = 0;
-//    if ((flags & OMIT_NULL_ARRAY) && (out->locations) == NULL) {
-//        omit = 1;
-//    }
-//    if (omit == 0) {
-//        printf("\"locations\":");
-//        marshal_dynlog_servers_item_locations((out->locations), flags);
-//        printf(",");
-//        count++;
-//    }
-//    if (count != 0) {
-//        printf("\b");
-//    }
-//    printf("}");
-//}
-
-//static void marshal_dynlog_servers(dynlog_servers_t *out, njt_int_t flags) {
-//    njt_uint_t i;
-//    njt_int_t count = 0;
-//    njt_int_t omit;
-//    if (out == NULL) {
-//        printf("[]");
-//        return;
-//    }
-//    printf("[");
-//    for (i = 0; i < out->nelts; ++i) {
-//        omit = 0;
-//        if ((flags & OMIT_NULL_OBJ) && ((dynlog_servers_item_t**)out->elts)[i] == NULL) {
-//            omit = 1;
-//        }
-//        if (omit == 0) {
-//            marshal_dynlog_servers_item(((dynlog_servers_item_t**)out->elts)[i], flags);
-//            printf(",");
-//            count++;
-//        }
-//    }
-//    if (count != 0) {
-//        printf("\b");
-//    }
-//    printf("]");
-//}
-// MARSHAL_REF
-//
-//static void marshal_dynlog_accessLogFormats_item(dynlog_accessLogFormats_item_t *out, njt_int_t flags) {
-//    marshal_accessLogFormat(out, flags);
-//}
-
-//static void marshal_dynlog_accessLogFormats(dynlog_accessLogFormats_t *out, njt_int_t flags) {
-//    njt_uint_t i;
-//    njt_int_t count = 0;
-//    njt_int_t omit;
-//    if (out == NULL) {
-//        printf("[]");
-//        return;
-//    }
-//    printf("[");
-//    for (i = 0; i < out->nelts; ++i) {
-//        omit = 0;
-//        if ((flags & OMIT_NULL_OBJ) && ((dynlog_accessLogFormats_item_t**)out->elts)[i] == NULL) {
-//            omit = 1;
-//        }
-//        if (omit == 0) {
-//            marshal_dynlog_accessLogFormats_item(((dynlog_accessLogFormats_item_t**)out->elts)[i], flags);
-//            printf(",");
-//            count++;
-//        }
-//    }
-//    if (count != 0) {
-//        printf("\b");
-//    }
-//    printf("]");
-//}
-
-//static void marshal_dynlog(dynlog_t *out, njt_int_t flags) {
-//    njt_int_t omit;
-//    njt_int_t count = 0;
-//    if (out == NULL) {
-//        printf("null");
-//        return;
-//    }
-//    printf("{");
-//    omit = 0;
-//    if ((flags & OMIT_NULL_ARRAY) && (out->servers) == NULL) {
-//        omit = 1;
-//    }
-//    if (omit == 0) {
-//        printf("\"servers\":");
-//        marshal_dynlog_servers((out->servers), flags);
-//        printf(",");
-//        count++;
-//    }
-//    omit = 0;
-//    if ((flags & OMIT_NULL_ARRAY) && (out->accessLogFormats) == NULL) {
-//        omit = 1;
-//    }
-//    if (omit == 0) {
-//        printf("\"accessLogFormats\":");
-//        marshal_dynlog_accessLogFormats((out->accessLogFormats), flags);
-//        printf(",");
-//        count++;
-//    }
-//    if (count != 0) {
-//        printf("\b");
-//    }
-//    printf("}");
-//}
 
 static void get_json_length_dynlog_servers_item_listens_item(dynlog_servers_item_listens_item_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 

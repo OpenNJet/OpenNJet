@@ -382,7 +382,7 @@ njt_dynlog_update_access_log(njt_pool_t *pool, dynlog_t *api_data, njt_rpc_resul
             server_item = get_dynlog_servers_item(servers,i);
             dynlog_servers_item_listens_t *listens = get_dynlog_servers_item_listens(&server_item);
             dynlog_servers_item_serverNames_t *server_names = get_dynlog_servers_item_serverNames(&server_item);
-            if( listens->nelts < 1 || server_names->nelts < 1 ){
+            if( !listens || listens->nelts < 1 || !server_names || server_names->nelts < 1 ){
                 // listens 与server_names都为空
                 end = njt_snprintf(data_buf,sizeof(data_buf) - 1," server parameters error, listens or serverNames is empty,at position %ui",i);
                 rpc_data_str.len = end - data_buf;
@@ -412,7 +412,11 @@ njt_dynlog_update_access_log(njt_pool_t *pool, dynlog_t *api_data, njt_rpc_resul
             clcf = njt_http_get_module_loc_conf(cscf->ctx,njt_http_core_module);
 
             dynlog_servers_item_locations_t *locations = get_dynlog_servers_item_locations(&server_item);
-            rc = njt_dynlog_update_locs_log(locations,clcf->old_locations,&ctx,rpc_result);
+            if(locations && locations->nelts>0){
+                rc = njt_dynlog_update_locs_log(locations,clcf->old_locations,&ctx,rpc_result);
+            } else {
+                rc = NJT_OK;
+            }
 
             if (rc == NJT_OK) {
                 njt_rpc_result_add_success_count(rpc_result);
