@@ -234,7 +234,7 @@ static void njt_http_fault_inject_delay_handler(njt_event_t *ev){
 
     r = ev->data;
 
-    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, " ===============delay");
+    njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " fault njet delay success");
 
     ficf = njt_http_get_module_loc_conf(r, njt_http_fault_inject_module);
     if(ficf == NULL || ficf->fault_inject_type == NJT_HTTP_FAULT_INJECT_NONE
@@ -266,9 +266,8 @@ static void
 njt_http_fault_inject_timer_cleanup(void *data)
 {
     njt_http_request_t *r = data;
-    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, " =========in finallize");
+    njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " fault inject delay timer clean");
     if (r->delay_timer && r->delay_timer->timer_set) {
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, " =========rm delay timer");
         njt_del_timer(r->delay_timer);
     }
 
@@ -306,7 +305,6 @@ void njt_http_fault_inject_delay_request(njt_http_request_t *r){
     delay_timer->cancelable = 1;
 
     njt_add_timer(delay_timer, ficf->duration);
-    // njt_add_timer(delay_timer, 10);
 
     // add clean handler
     cln = njt_http_cleanup_add(r, 0);
@@ -317,7 +315,7 @@ void njt_http_fault_inject_delay_request(njt_http_request_t *r){
 
     cln->handler = njt_http_fault_inject_timer_cleanup;
     cln->data = r;
-    njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " ========start deleay");
+    njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " fault inject start deleay");
     //need close read timeout event to downstream
 #if (NJT_HTTP_V2)
     if (r->stream) {
@@ -343,6 +341,7 @@ static void njt_http_fault_inject_abort_request(njt_http_request_t *r){
         return;
     }
 
+    njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " fault injet abort %d", ficf->status_code);
     njt_http_finalize_request(r, ficf->status_code);
 }
 
