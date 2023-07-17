@@ -11,7 +11,6 @@ then
 fi
 export LUAJIT_INC='/etc/njet/luajit/include/luajit-2.1'
 export LUAJIT_LIB='/etc/njet/luajit/lib'
-chmod +x ./configure ./auto/lib/pcre-8.45/configure ./auto/lib/tassl/Configure
 #--with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 #--with-cc-opt=-I'auto/lib/tassl/include' --with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-proto-module"
@@ -52,7 +51,7 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-cluster-lim
 # NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-test_multicast-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
-LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo --with-pcre=auto/lib/pcre-8.45"
+LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo"
 flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --with-debug --build=NJT1.0_$git_tag --with-stream --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module  --with-cc=/usr/bin/cc"
 LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm -lpcre"
 CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
