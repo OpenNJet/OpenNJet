@@ -440,7 +440,7 @@ static njt_int_t   njt_ctrl_dynlog_postconfiguration(njt_conf_t *cf){
     return NJT_OK;
 }
 
-static void * njt_http_dynlog_loc_conf(njt_conf_t *cf){
+static void * njt_http_dynlog_create_loc_conf(njt_conf_t *cf){
     njt_ctrl_dynlog_main_cf_t *conf;
     conf = njt_palloc(cf->pool,sizeof(njt_ctrl_dynlog_main_cf_t));
     if(!conf) return NULL;
@@ -475,7 +475,7 @@ static njt_http_module_t njt_ctrl_dynlog_module_ctx = {
         NULL,                                  /* create server configuration */
         NULL,                                  /* merge server configuration */
 
-        njt_http_dynlog_loc_conf,                                   /* create location configuration */
+        njt_http_dynlog_create_loc_conf,                                   /* create location configuration */
         njt_http_dynlog_merge_loc_conf                                    /* merge location configuration */
 };
 
