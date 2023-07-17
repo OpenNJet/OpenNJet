@@ -5769,6 +5769,7 @@ njt_http_core_if_location_get_args(njt_str_t old,njt_str_t *name,njt_str_t *oper
  
   space_num = 0;
   name->data = old.data;
+  name->len  = old.len;
   for(i=0; i < old.len; i++){
     if(old.data[i] == ' ') {
 	space_num++;
@@ -5810,7 +5811,7 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
 	
 	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_run_location idx=%d, %s",i,pdata);
 	num = njt_http_core_if_location_get_args(old,&name,&oper,&value);
-	if(num == 1) {
+	if(num <= 1) {
 		njt_snprintf(new_src.data,new_src.len,"if (%V){",&name);
 	} else if(num == 2) {
 		njt_snprintf(new_src.data,new_src.len,"if (%V %V \"%V\"){",&name,&oper,&value);
