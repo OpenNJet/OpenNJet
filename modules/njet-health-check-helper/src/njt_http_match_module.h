@@ -3,6 +3,7 @@
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
+
 #ifndef __NJT_HTTP_MATCH_MODULE_H__
 #define __NJT_HTTP_MATCH_MODULE_H__
 
@@ -55,5 +56,14 @@ typedef struct njt_http_match_s {
     njt_array_t               headers;
     njt_http_match_body_t     body;
 } njt_http_match_t;
+
+/*
+    by zhaokang
+    stream match rule
+*/
+typedef struct njt_stream_match_s {
+    njt_str_t                  send;      /* content need to send */
+    njt_str_t                  expect;    /* expect string or binary */
+} njt_stream_match_t;
 
 #endif

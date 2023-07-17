@@ -48,7 +48,10 @@ typedef struct {
     u_char           *start;
     u_char           *end;
 
-    njt_shmtx_t       mutex;
+    union {
+        njt_shmtx_t       mutex;
+        njt_shrwlock_t    rwlock;
+    };
 
     u_char           *log_ctx;
     u_char            zero;

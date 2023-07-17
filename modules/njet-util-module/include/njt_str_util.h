@@ -27,5 +27,5 @@
     desc.len = front.len+after.len;
 
 njt_int_t njt_str_split(njt_str_t *src, njt_array_t *array, char sign);
-
+njt_str_t njt_del_headtail_space(njt_str_t src);
 #endif //NJET_MAIN_NJT_STR_UTIL_H

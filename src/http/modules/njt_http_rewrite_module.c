@@ -25,7 +25,7 @@ static char *njt_http_rewrite_break(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 static char *njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
-static char * njt_http_rewrite_if_condition(njt_conf_t *cf,
+char * njt_http_rewrite_if_condition(njt_conf_t *cf,
     njt_http_rewrite_loc_conf_t *lcf);
 static char *njt_http_rewrite_variable(njt_conf_t *cf,
     njt_http_rewrite_loc_conf_t *lcf, njt_str_t *value);
@@ -673,7 +673,7 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 }
 
 
-static char *
+ char *
 njt_http_rewrite_if_condition(njt_conf_t *cf, njt_http_rewrite_loc_conf_t *lcf)
 {
     u_char                        *p;
@@ -961,7 +961,7 @@ njt_http_rewrite_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #if (NJT_HTTP_DYNAMIC_LOC)
 	if(lcf->var_names.pool == NULL) {
 			if (njt_array_init(&lcf->var_names, cf->pool, 4,
-                           sizeof(njt_http_dyn_variable_t))
+                           sizeof(njt_http_dyn_variable_t *))
             != NJT_OK)
 			{
 				return NULL;

@@ -936,9 +936,12 @@ njt_http_fastcgi_create_request(njt_http_request_t *r)
             }
 
             for (n = 0; n < header_params; n++) {
-                if (&header[i] == ignored[n]) {
+                if (ignored != NULL && &header[i] == ignored[n]) {
                     goto next_length;
-                }
+                } else if(ignored == NULL) {
+		   njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
+                      "fastcgi request ignored is null");	
+		}
             }
 
             if (params->number) {
@@ -965,9 +968,13 @@ njt_http_fastcgi_create_request(njt_http_request_t *r)
                     hash = njt_hash(hash, ch);
                     lowcase_key[n] = ch;
                 }
-
                 if (njt_hash_find(&params->hash, hash, lowcase_key, n)) {
-                    ignored[header_params++] = &header[i];
+		    if(ignored != NULL) {
+                    	ignored[header_params++] = &header[i];
+		    } else {
+			 njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
+                      "fastcgi request ignored is null");
+		    }
                     continue;
                 }
             }

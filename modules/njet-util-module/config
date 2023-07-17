@@ -7,5 +7,21 @@ module_core_src="$module_core_src $njt_addon_dir/src/njt_json_util.c"
 module_core_src="$module_core_src $njt_addon_dir/src/njt_http_util.c"
 module_core_src="$module_core_src $njt_addon_dir/src/njt_str_util.c"
 module_core_src="$module_core_src $njt_addon_dir/src/njt_hash_util.c"
+module_core_src="$module_core_src $njt_addon_dir/src/njt_rpc_result_util.c"
+
+module_core_src="$module_core_src $njt_addon_dir/src/hints.c"
+module_core_src="$module_core_src $njt_addon_dir/src/msgpuck.c"
+
+# module_core_src="\
+# $module_core_src \
+# $njt_addon_dir/src/zone.c \
+# $njt_addon_dir/src/vrefbuffer.c \
+# $njt_addon_dir/src/version.c \
+# $njt_addon_dir/src/unpack.c \
+# $njt_addon_dir/src/objectc.c \
+# $njt_addon_dir/src/njt_json.c \
+# "
+
 CORE_INCS="$CORE_INCS $njt_addon_dir/include"
+# CORE_INCS="$CORE_INCS $njt_addon_dir/include/msgpack"
 NJT_ADDON_SRCS="$NJT_ADDON_SRCS $module_core_src"

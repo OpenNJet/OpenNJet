@@ -1,0 +1,44 @@
+FROM ubuntu:18.04
+RUN apt update \
+    && apt install curl net-tools dnsutils iputils-ping iptables tcpdump vim -y \
+    sudo \
+    && apt-get clean \
+    && mkdir /njet_main \
+    && rm -rf  /var/log/*log /var/lib/apt/lists/* /var/log/apt/* /var/lib/dpkg/*-old /var/cache/debconf/*-old
+
+COPY . /njet_main
+
+WORKDIR /njet_main
+
+ENV NJT_HELPER_HA="YES"
+RUN apt-get update \
+    && apt-get install gcc g++ make cmake unzip libtool  m4 automake -y \
+    && apt-get install libpcre3-dev libssl-dev zlib1g-dev perl -y \
+    && apt-get clean \
+    && rm -rf  /var/log/*log /var/lib/apt/lists/* /var/log/apt/* /var/lib/dpkg/*-old /var/cache/debconf/*-old \
+    && cd /njet_main \
+    && sh build_njet.sh \
+    && sh build_cc.sh install \
+    && apt-get autoremove gcc g++ make cmake perl unzip -y \
+    && rm -rf /njet_main 
+
+# environment variables
+ENV LUA_PATH="/usr/local/share/luajit-2.1.0-beta3/?.lua;/usr/local/share/lua/5.1/?.lua;/usr/local/lib/lua/?.lua;;"
+ENV LUA_CPATH="/usr/local/lib/lua/?/?.so;/usr/local/lib/lua/?.so;;"
+ENV PATH=$WORKPATH/:$PATH
+
+#log level set
+#support "ERROR", "error", "WARNING", "warning", "INFO", "info"
+ENV API_GATEWAY_LOG_SEVERITY_LEVEL=error
+#debug greater than 2 and GRPC_GO_LOG_SEVERITY_LEVEL=info
+#ENV API_GATEWAY_LOG_VERBOSITY_LEVEL=90
+ENV GRPC_GO_LOG_SEVERITY_LEVEL=info
+
+WORKDIR /etc/njet
+
+#ENTRYPOINT /usr/sbin/njet
+
+CMD ["/usr/sbin/njet"]
+#CMD ["/bin/ping", "127.0.0.1"]
+
+

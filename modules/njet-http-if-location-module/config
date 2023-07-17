@@ -1,0 +1,11 @@
+njt_addon_name="njt_http_if_location_module"
+
+njt_module_type=CORE
+njt_module_name="njt_http_if_location_module"
+module_core_src=""
+module_core_src="$module_core_src $njt_addon_dir/src/njt_http_if_location_lex.c"
+module_core_src="$module_core_src $njt_addon_dir/src/njt_http_if_location_parse.c"
+module_core_src="$module_core_src $njt_addon_dir/src/njt_http_if_location_api.c"
+CORE_INCS="$CORE_INCS $njt_addon_dir/src"
+NJT_ADDON_SRCS="$NJT_ADDON_SRCS $module_core_src"
+

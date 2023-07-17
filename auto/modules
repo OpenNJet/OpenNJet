@@ -1447,6 +1447,10 @@ fi
 
 if [ $STREAM != NO ]; then
 
+    if [ $USE_NTLS = YES ]; then
+        have=NJT_STREAM_MULTICERT . auto/have
+    fi
+
     if [ $STREAM = YES ]; then
         modules="$modules $STREAM_MODULES"
 

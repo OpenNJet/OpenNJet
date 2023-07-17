@@ -147,7 +147,7 @@ njt_http_vhost_traffic_status_filter_get_keys(njt_http_request_t *r,
     ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
 
     if (node != ctx->rbtree->sentinel) {
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+        vtsn = njt_http_vhost_traffic_status_get_node(node);
 
         if (vtsn->stat_upstream.type == NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG) {
             key.data = vtsn->data;
@@ -216,7 +216,7 @@ njt_http_vhost_traffic_status_filter_get_nodes(njt_http_request_t *r,
     ctx = njt_http_get_module_main_conf(r, njt_http_vhost_traffic_status_module);
 
     if (node != ctx->rbtree->sentinel) {
-        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
+        vtsn = njt_http_vhost_traffic_status_get_node(node);
 
         if (vtsn->stat_upstream.type == NJT_HTTP_VHOST_TRAFFIC_STATUS_UPSTREAM_FG) {
             key.data = vtsn->data;

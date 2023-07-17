@@ -18,7 +18,8 @@
 typedef struct
 {
     void *data;
-    int session_id;
+    int session_id;  //mqtt session_id
+    int invoker_session_id; //dyn rpc method invoker session_id
     njt_str_t key;
     rpc_msg_handler handler;
     njt_event_t *ev;
@@ -27,6 +28,7 @@ typedef struct
 typedef struct
 {
     njt_str_t conf_file;
+    njt_uint_t off;
     njt_msec_t rpc_timeout;
     njt_flag_t kv_api_enabled;
 } njt_http_sendmsg_conf_t;
@@ -45,7 +47,7 @@ typedef struct
     njt_int_t code;
 } njt_http_sendmsg_post_data_t;
 
-//sendmsg module is running in ctrl panel, should be able to get njet_master_cycle from njet_helper_ctrl_module
+// sendmsg module is running in ctrl panel, should be able to get njet_master_cycle from njet_helper_ctrl_module
 extern njt_cycle_t *njet_master_cycle;
 static void njt_http_sendmsg_iot_conn_timeout(njt_event_t *ev);
 static void njt_http_sendmsg_iot_set_timer(njt_event_handler_pt h, int interval, struct evt_ctx_t *ctx);
@@ -60,7 +62,7 @@ static njt_int_t njt_http_sendmsg_init(njt_conf_t *cf);
 static njt_int_t njt_http_sendmsg_handler(njt_http_request_t *r);
 static void *njt_http_sendmsg_create_loc_conf(njt_conf_t *cf);
 static char *njt_dyn_kv_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
-static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void *data, njt_event_t *ev);
+static int njt_reg_rpc_msg_handler(int msg_session_id, int invoker_session_id, rpc_msg_handler handler, void *data, njt_event_t *ev);
 static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int msg_len);
 static void sendmsg_get_session_id_str(int session_id, njt_str_t *sk);
 
@@ -84,7 +86,7 @@ static njt_http_module_t njt_http_sendmsg_module_ctx = {
 static njt_command_t njt_sendmsg_commands[] = {
 
     {njt_string("dyn_sendmsg_conf"),
-     NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE1,
+     NJT_HTTP_MAIN_CONF | NJT_CONF_NOARGS | NJT_CONF_TAKE1,
      njt_dyn_sendmsg_conf_set,
      0,
      0,
@@ -453,6 +455,9 @@ static void sendmsg_api_post_handler(njt_http_request_t *r)
 
     njt_dyn_sendmsg(&topic_name, &postdata->value, 1);
     njt_dyn_kv_set(&lmdb_name, &postdata->value);
+    if (njt_strncmp(postdata->key.data, "__master_", 9)==0) {
+        kill(njt_parent, SIGCONF);
+    }
 
     njt_destroy_pool(postdata->pool);
     status = NJT_HTTP_OK;
@@ -550,14 +555,15 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
     }
 
     conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
-    smcf = conf_ctx->main_conf[njt_http_sendmsg_module.ctx_index];
-
-    if (smcf->conf_file.len == 0)
-    {
-        njt_log_error(NJT_LOG_INFO, cycle->log, 0, "dyn_sendmsg_conf directive not found, sendmsg module is not loaded");
+    if (!conf_ctx) {
+        njt_log_error(NJT_LOG_INFO, cycle->log, 0, "http section not found, sendmsg module is configured as off");
         return NJT_OK;
     }
-
+    smcf = conf_ctx->main_conf[njt_http_sendmsg_module.ctx_index];
+    if (!smcf || smcf->off) {
+        njt_log_error(NJT_LOG_INFO, cycle->log, 0, "sendmsg module is configured as off");
+        return NJT_OK;  
+    }
     memcpy(client_id, mqconf->node_name.data, mqconf->node_name.len);
     sprintf(client_id + mqconf->node_name.len, "_msg_%d", njt_pid);
 
@@ -663,6 +669,20 @@ njt_dyn_sendmsg_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     value = cf->args->elts;
     smcf = (njt_http_sendmsg_conf_t *)conf;
 
+    sendmsg_mqtt_ctx = NULL;
+    if (cf->args->nelts <= 1)
+    {
+        smcf->off = 0;
+        smcf->conf_file.data = NULL;
+        smcf->conf_file.len = 0;
+        return NJT_CONF_OK;
+    }
+    if (njt_strcmp(value[1].data, "off") == 0) {
+        smcf->off = 1;
+        return NJT_CONF_OK;
+    }
+
+    smcf->off = 0;
     dst.data = njt_pnalloc(cf->pool, value[1].len + 1);
     if (dst.data == NULL)
     {
@@ -762,13 +782,17 @@ static void njt_sendmsg_rpc_timer_fired(njt_event_t *ev)
     }
 }
 
-int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_handler handler, void *data)
+int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int retain_flag, int session_id, rpc_msg_handler handler, void *data)
 {
-    int ret;
+    static njt_int_t  njt_sendmsg_rr_session_id = 1;
+    int ret=0;
     int qos = 0;
     njt_event_t *rpc_timer_ev;
     rpc_msg_handler_t *rpc_data;
     u_char *t;
+
+    if (retain_flag)
+        qos = RETAIN_MSG_QOS;
     t = njt_calloc(topic->len + 1, njt_cycle->log);
     if (t == NULL)
     {
@@ -777,12 +801,23 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_ha
     njt_memcpy(t, topic->data, topic->len);
     t[topic->len] = '\0';
 
-    ret = njet_iot_client_sendmsg_rr((const char *)t, (const char *)content->data, (int)content->len, qos, session_id, 0, sendmsg_mqtt_ctx);
-    njt_free(t);
+    if (!retain_flag)
+    {
+        ret = njet_iot_client_sendmsg((const char *)t, "", 0, RETAIN_MSG_QOS, sendmsg_mqtt_ctx);
+    }
+    if (ret < 0)
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "in njt_dyn_sendmsg, error when sending zero len retain msg");
+        goto error;
+    }
+
+    njt_sendmsg_rr_session_id++;
+    ret = njet_iot_client_sendmsg_rr((const char *)t, (const char *)content->data, (int)content->len, qos, njt_sendmsg_rr_session_id, 0, sendmsg_mqtt_ctx);
     // add timer
     rpc_timer_ev = njt_calloc(sizeof(njt_event_t), njt_cycle->log);
     rpc_data = njt_calloc(sizeof(rpc_msg_handler_t), njt_cycle->log);
-    rpc_data->session_id = session_id;
+    rpc_data->session_id = njt_sendmsg_rr_session_id;
+    rpc_data->invoker_session_id = session_id;
     rpc_timer_ev->handler = njt_sendmsg_rpc_timer_fired;
     rpc_timer_ev->log = njt_cycle->log;
     rpc_timer_ev->data = rpc_data;
@@ -798,13 +833,13 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int session_id, rpc_msg_ha
         njt_add_timer(rpc_timer_ev, smcf->rpc_timeout);
     }
 
-    njt_reg_rpc_msg_handler(session_id, handler, data, rpc_timer_ev);
-
-    if (ret < 0)
-    {
-        return NJT_ERROR;
-    }
+    njt_reg_rpc_msg_handler(njt_sendmsg_rr_session_id, session_id, handler, data, rpc_timer_ev);
+    
     return NJT_OK;
+
+error:
+    njt_free(t);
+    return NJT_ERROR;
 }
 
 int njt_dyn_kv_get(njt_str_t *key, njt_str_t *value)
@@ -852,7 +887,7 @@ static void sendmsg_get_session_id_str(int session_id, njt_str_t *sk)
     return;
 }
 
-static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void *data, njt_event_t *ev)
+static int njt_reg_rpc_msg_handler(int msg_session_id, int invoker_session_id, rpc_msg_handler handler, void *data, njt_event_t *ev)
 {
     rpc_msg_handler_t *rpc_handler, *old_handler;
     if (rpc_msg_handler_hashmap == NULL)
@@ -864,19 +899,20 @@ static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void
 
     if (rpc_handler == NULL)
     {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg rpc handler for sessio_id :%d", session_id);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg rpc handler for sessio_id :%d", msg_session_id);
         return NJT_ERROR;
     }
 
-    rpc_handler->session_id = session_id;
+    rpc_handler->session_id = msg_session_id;
+    rpc_handler->invoker_session_id = invoker_session_id;
     rpc_handler->data = data;
     rpc_handler->handler = handler;
     rpc_handler->ev = ev;
 
-    sendmsg_get_session_id_str(session_id, &rpc_handler->key);
+    sendmsg_get_session_id_str(msg_session_id, &rpc_handler->key);
     if (rpc_handler->key.data == NULL)
     {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg rpc handler for sessio_id :%d", session_id);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't not malloc handler's memory while reg rpc handler for sessio_id :%d", msg_session_id);
         return NJT_ERROR;
     }
 
@@ -894,7 +930,7 @@ static int njt_reg_rpc_msg_handler(int session_id, rpc_msg_handler handler, void
         njt_free(old_handler->key.data);
         njt_free(old_handler);
     }
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add rpc handler %p for session_id %d : %v", rpc_handler, session_id, &rpc_handler->key);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add rpc handler %p for session_id %d : %v", rpc_handler, msg_session_id, &rpc_handler->key);
     return NJT_OK;
 }
 
@@ -921,7 +957,7 @@ static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int 
             njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got rpc handler : %p for session_id %d", rpc_handler, session_id);
             nstr_msg.data = (u_char *)msg;
             nstr_msg.len = msg_len;
-            res.session_id = session_id;
+            res.session_id = rpc_handler->invoker_session_id;
             res.data = rpc_handler->data;
             res.rc = rc;
             rpc_handler->handler(&res, &nstr_msg);

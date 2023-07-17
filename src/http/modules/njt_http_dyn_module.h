@@ -24,6 +24,73 @@
 #define NJT_HTTP_DYN_LOG 1
 
 typedef struct {
+    njt_rbtree_t                  rbtree;
+    njt_rbtree_node_t             sentinel;
+    njt_queue_t                   queue;
+} njt_http_limit_req_shctx_t;
+
+typedef struct {
+    u_char                       color;
+    u_char                       dummy;
+    u_short                      len;
+    njt_queue_t                  queue;
+    njt_msec_t                   last;
+    /* integer value, 1 corresponds to 0.001 r/s */
+    njt_uint_t                   excess;
+    njt_uint_t                   count;
+    u_char                       data[1];
+} njt_http_limit_req_node_t;
+
+typedef struct {
+    njt_http_limit_req_shctx_t  *sh;
+    njt_slab_pool_t             *shpool;
+    /* integer value, 1 corresponds to 0.001 r/s */
+    njt_uint_t                   rate;
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_int_t                    scale;
+    njt_uint_t                   ori_rate;
+#endif
+    njt_http_complex_value_t     key;
+    njt_http_limit_req_node_t   *node;
+} njt_http_limit_req_ctx_t;
+
+typedef struct {
+    njt_shm_zone_t              *shm_zone;
+    /* integer value, 1 corresponds to 0.001 r/s */
+    njt_uint_t                   burst;
+    njt_uint_t                   delay;
+} njt_http_limit_req_limit_t;
+
+
+typedef struct {
+    njt_array_t                  limits;
+    njt_uint_t                   limit_log_level;
+    njt_uint_t                   delay_log_level;
+    njt_uint_t                   status_code;
+    njt_flag_t                   dry_run;
+    njt_flag_t                   from_up;
+} njt_http_limit_req_conf_t;
+
+
+
+typedef struct {
+    njt_shm_zone_t               *shm_zone;
+    njt_uint_t                    conn;
+} njt_http_limit_conn_limit_t;
+
+typedef struct {
+    njt_array_t                   limits;
+    njt_uint_t                    log_level;
+    njt_uint_t                    status_code;
+    njt_flag_t                    dry_run;
+//add by clb
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_flag_t                    from_up;
+#endif
+} njt_http_limit_conn_conf_t;
+
+
+typedef struct {
     njt_array_t                *logs;       /* array of njt_http_log_t */
 
     njt_open_file_cache_t      *open_file_cache;
@@ -131,7 +198,7 @@ typedef struct {
 #endif
 } njt_http_log_main_conf_t;
 
-njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc_t *data,njt_http_conf_ctx_t* ctx);
+njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc_t *data,njt_http_conf_ctx_t* ctx,njt_str_t * msg,njt_uint_t msg_capacity);
 
 njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data);
 

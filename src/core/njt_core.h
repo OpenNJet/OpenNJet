@@ -44,6 +44,7 @@ typedef void (*njt_connection_handler_pt)(njt_connection_t *c);
 #define  NJT_DECLINED   -5
 #define  NJT_ABORT      -6
 
+#define NJT_WEIGHT_POWER      100
 
 #include <njt_errno.h>
 #include <njt_atomic.h>
@@ -118,5 +119,7 @@ void njt_cpuinfo(void);
 #define NJT_DISABLE_SYMLINKS_ON         1
 #define NJT_DISABLE_SYMLINKS_NOTOWNER   2
 #endif
+
+#define SIGCONF 37
 
 #endif /* _NJT_CORE_H_INCLUDED_ */

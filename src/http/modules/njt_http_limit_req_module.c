@@ -9,6 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
+#include <njt_http_dyn_module.h>
 
 
 #define NJT_HTTP_LIMIT_REQ_PASSED            1
@@ -17,52 +18,6 @@
 #define NJT_HTTP_LIMIT_REQ_DELAYED_DRY_RUN   4
 #define NJT_HTTP_LIMIT_REQ_REJECTED_DRY_RUN  5
 
-
-typedef struct {
-    u_char                       color;
-    u_char                       dummy;
-    u_short                      len;
-    njt_queue_t                  queue;
-    njt_msec_t                   last;
-    /* integer value, 1 corresponds to 0.001 r/s */
-    njt_uint_t                   excess;
-    njt_uint_t                   count;
-    u_char                       data[1];
-} njt_http_limit_req_node_t;
-
-
-typedef struct {
-    njt_rbtree_t                  rbtree;
-    njt_rbtree_node_t             sentinel;
-    njt_queue_t                   queue;
-} njt_http_limit_req_shctx_t;
-
-
-typedef struct {
-    njt_http_limit_req_shctx_t  *sh;
-    njt_slab_pool_t             *shpool;
-    /* integer value, 1 corresponds to 0.001 r/s */
-    njt_uint_t                   rate;
-    njt_http_complex_value_t     key;
-    njt_http_limit_req_node_t   *node;
-} njt_http_limit_req_ctx_t;
-
-
-typedef struct {
-    njt_shm_zone_t              *shm_zone;
-    /* integer value, 1 corresponds to 0.001 r/s */
-    njt_uint_t                   burst;
-    njt_uint_t                   delay;
-} njt_http_limit_req_limit_t;
-
-
-typedef struct {
-    njt_array_t                  limits;
-    njt_uint_t                   limit_log_level;
-    njt_uint_t                   delay_log_level;
-    njt_uint_t                   status_code;
-    njt_flag_t                   dry_run;
-} njt_http_limit_req_conf_t;
 
 
 static void njt_http_limit_req_delay(njt_http_request_t *r);
@@ -86,6 +41,7 @@ static char *njt_http_limit_req(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 static njt_int_t njt_http_limit_req_add_variables(njt_conf_t *cf);
 static njt_int_t njt_http_limit_req_init(njt_conf_t *cf);
+
 
 
 static njt_conf_enum_t  njt_http_limit_req_log_levels[] = {
@@ -800,6 +756,7 @@ njt_http_limit_req_create_conf(njt_conf_t *cf)
     conf->limit_log_level = NJT_CONF_UNSET_UINT;
     conf->status_code = NJT_CONF_UNSET_UINT;
     conf->dry_run = NJT_CONF_UNSET;
+    conf->from_up = 0;
 
     return conf;
 }
@@ -813,6 +770,7 @@ njt_http_limit_req_merge_conf(njt_conf_t *cf, void *parent, void *child)
 
     if (conf->limits.elts == NULL) {
         conf->limits = prev->limits;
+        conf->from_up = 1;
     }
 
     njt_conf_merge_uint_value(conf->limit_log_level, prev->limit_log_level,
@@ -938,6 +896,10 @@ njt_http_limit_req_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     ctx->rate = rate * 1000 / scale;
+#if (NJT_HTTP_DYNAMIC_LOC)
+    ctx->scale = scale;
+    ctx->ori_rate = rate;
+#endif
 
     shm_zone = njt_shared_memory_add(cf, &name, size,
                                      &njt_http_limit_req_module);

@@ -79,13 +79,15 @@ typedef struct {
 
 typedef struct {
     njt_array_t  *codes;        /* uintptr_t */
-
+    
     njt_uint_t    stack_size;
 
     njt_flag_t    log;
     njt_flag_t    uninitialized_variable_warn;
 	#if (NJT_HTTP_DYNAMIC_LOC)
 		 njt_array_t  var_names;  
+    		 njt_array_t  *mul_codes;        /* uintptr_t */
+		 njt_int_t    ret;
 	#endif
 } njt_http_rewrite_loc_conf_t;
 
@@ -196,6 +198,9 @@ char *njt_http_merge_types(njt_conf_t *cf, njt_array_t **keys,
 njt_int_t njt_http_set_default_types(njt_conf_t *cf, njt_array_t **types,
     njt_str_t *default_type);
 
+njt_int_t
+njt_http_add_if_location(njt_conf_t *cf, njt_queue_t **locations,
+                      njt_http_core_loc_conf_t *clcf);
 #if (NJT_HTTP_DEGRADATION)
 njt_uint_t  njt_http_degraded(njt_http_request_t *);
 #endif
@@ -218,5 +223,6 @@ extern njt_http_output_header_filter_pt  njt_http_top_header_filter;
 extern njt_http_output_body_filter_pt    njt_http_top_body_filter;
 extern njt_http_request_body_filter_pt   njt_http_top_request_body_filter;
 
-
+char *
+njt_http_rewrite_if_condition(njt_conf_t *cf, njt_http_rewrite_loc_conf_t *lcf);
 #endif /* _NJT_HTTP_H_INCLUDED_ */

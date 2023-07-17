@@ -8,7 +8,10 @@
 #include "njt_dynlog_module.h"
 #include "njt_http_sendmsg_module.h"
 #include <njt_str_util.h>
+#include <njt_http_util.h>
 
+#define MIN_CONFIG_BODY_LEN 2
+#define MAX_CONFIG_BODY_LEN 5242880
 
 typedef struct {
     njt_http_request_t **reqs;
@@ -119,7 +122,7 @@ static int njt_ctrl_dynlog_rpc_msg_handler(njt_dyn_rpc_res_t* res, njt_str_t *ms
     return NJT_OK;
 }
 
-static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *module_name,njt_str_t *msg){
+static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *module_name,njt_str_t *msg, int retain){
     njt_ctrl_dynlog_main_cf_t *dlmcf;
     njt_int_t index;
     njt_int_t rc;
@@ -151,7 +154,7 @@ static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *modul
     cleanup->handler = njt_ctrl_dynlog_cleanup_handler;
     cleanup->data = ctx;
     njt_log_error(NJT_LOG_INFO, r->pool->log, 0, "send rpc time : %M",njt_current_msec);
-    rc = njt_dyn_rpc(module_name,msg, index, njt_ctrl_dynlog_rpc_msg_handler, ctx);
+    rc = njt_dyn_rpc(module_name,msg, retain, index, njt_ctrl_dynlog_rpc_msg_handler, ctx);
     if(rc == NJT_OK){
         dlmcf->reqs[index] = r;
     }
@@ -167,7 +170,7 @@ static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *modul
 static njt_int_t
 njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 {
-    u_char                              *p, *sub_p;
+    u_char                              *p,*end, *sub_p;
     njt_uint_t                          len;
     njt_str_t                           *item;
     njt_http_core_loc_conf_t            *clcf;
@@ -181,6 +184,7 @@ njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 
     uri = r->uri;
     p = uri.data + clcf->name.len;
+    end = uri.data + uri.len;
     len = uri.len - clcf->name.len;
 
     if (len != 0 && *p != '/') {
@@ -200,7 +204,7 @@ njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path)
         }
 
         item->data = p;
-        sub_p = (u_char *)njt_strchr(p, '/');
+        sub_p = (u_char *)njt_strlchr(p, end, '/');
 
         if (sub_p == NULL || (njt_uint_t)(sub_p - uri.data) > uri.len) {
             item->len = uri.data + uri.len - p;
@@ -224,13 +228,12 @@ njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 
 static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     njt_str_t json_str;
-    njt_chain_t *body_chain,*tmp_chain;
-    njt_uint_t len,size;
+    njt_chain_t *body_chain;
     njt_int_t rc;
     njt_ctrl_dynlog_request_err_ctx_t *err_ctx;
     njt_array_t *path;
     njt_str_t *uri,topic;
-
+    njt_json_manager json_manager;
     rc = NJT_ERROR;
     path = njt_array_create( r->pool, 4, sizeof(njt_str_t));
     if (path == NULL) {
@@ -248,41 +251,36 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     if(body_chain == NULL){
         goto err;
     }
-    /*check the sanity of the json body*/
-    json_str.data = body_chain->buf->pos;
-    json_str.len = body_chain->buf->last - body_chain->buf->pos;
-
-    if(json_str.len < 2 ){
+   
+    rc = njt_http_util_read_request_body(r, &json_str, MIN_CONFIG_BODY_LEN, MAX_CONFIG_BODY_LEN);
+    if(rc!=NJT_OK){
         goto err;
     }
 
-    len = 0 ;
-    tmp_chain = body_chain;
-    while (tmp_chain!= NULL){
-        len += tmp_chain->buf->last - tmp_chain->buf->pos;
-        tmp_chain = tmp_chain->next;
-    }
-    json_str.len = len;
-    json_str.data = njt_pcalloc(r->pool,len);
-    if(json_str.data == NULL){
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "could not alloc buffer in function %s", __func__);
+    // 添加json_str校验逻辑
+    rc = njt_json_2_structure(&json_str,&json_manager,r->pool);
+    if(rc!=NJT_OK){
         goto err;
-    }
-    len = 0;
-    tmp_chain = r->request_body->bufs;
-    while (tmp_chain!= NULL){
-        size = tmp_chain->buf->last-tmp_chain->buf->pos;
-        njt_memcpy(json_str.data + len,tmp_chain->buf->pos,size);
-        tmp_chain = tmp_chain->next;
-        len += size;
     }
 
     njt_str_t  key_prf = njt_string("/dyn/");
     njt_str_concat(r->pool,topic,key_prf,uri[2],return );
-    rc = njt_dyn_sendmsg(&topic,&json_str,1);
+
+    if(uri[0].data[0] == '1'){
+        rc = njt_dyn_sendmsg(&topic,&json_str,1);
+    } else if(uri[0].data[0] == '2') {
+        rc = njt_ctrl_dynlog_rpc_send(r,&topic,&json_str, 1);
+    } else {
+        rc = NJT_HTTP_NOT_FOUND;
+    }
     if(rc == NJT_OK){
-        njt_ctrl_dynlog_request_output(r,NJT_OK,NULL);
+        if(uri[0].data[0] == '1'){
+            njt_ctrl_dynlog_request_output(r,NJT_OK,NULL);
+        } else if(uri[0].data[0] == '2') {
+            // 在回调中返回
+            ++r->main->count;
+//            njt_ctrl_dynlog_request_output(r,NJT_OK,&smsg);
+        }
         goto out;
     }
 
@@ -292,7 +290,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     err_ctx->code = rc;
     njt_http_set_ctx(r, err_ctx, njt_ctrl_config_api_module);
 
-    njt_str_t bad_req = njt_string("{\"code\":400,\"msg\":\"read body error\"}");
+    njt_str_t bad_req = njt_string("{\"code\":400,\"msg\":\"Request body should be a valid JSON object and less than 5MB\"}");
     rc= NJT_HTTP_BAD_REQUEST;
     njt_ctrl_dynlog_request_output(r,NJT_HTTP_BAD_REQUEST,&bad_req);
 
@@ -301,7 +299,9 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     return;
 }
 
-
+// 增加版本2  www
+#define valid_path_version(ver_uri) (ver_uri.len == 1 && (ver_uri.data[0] == '1' || ver_uri.data[0] == '2'))
+#define valid_path_config(cnf_uri)  (cnf_uri.len == 6 && njt_strncmp(cnf_uri.data,"config",6) ==0)
 
 // /api/1/config/{module_name}
 static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
@@ -326,12 +326,12 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
         goto out;
     }
     uri = path->elts;
-    if(path->nelts < 2 || (uri[0].len != 1 || uri[0].data[0] != '1' )
-       || (uri[1].len != 6 || njt_strncmp(uri[1].data,"config",6) !=0) ){
+    // 增加版本2  www
+    if(path->nelts < 2 || !valid_path_version(uri[0]) || !valid_path_config(uri[1])){
         rc = NJT_HTTP_NOT_FOUND;
         goto out;
     }
-    if(r->method == NJT_HTTP_PUT && path->nelts == 3 ){
+    if(r->method == NJT_HTTP_PUT && path->nelts == 3){
         rc = njt_http_read_client_request_body(r, njt_ctrl_dyn_access_log_read_body);
         if (rc == NJT_ERROR || rc >= NJT_HTTP_SPECIAL_RESPONSE) {
             return rc;
@@ -346,11 +346,14 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
         if(path->nelts == 2){
             njt_str_t  key = njt_string("njt_http_kv_module");
             njt_str_concat(r->pool,topic,rpc_pre,key, goto err);
-        }
-        if(path->nelts == 3){
+        } else if(path->nelts == 3){
             njt_str_concat(r->pool,topic,rpc_pre,uri[2], goto err);
+        } else {
+            rc = NJT_HTTP_NOT_FOUND;
+            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,"%V not found.",&r->uri);
+            goto out;
         }
-        rc = njt_ctrl_dynlog_rpc_send(r,&topic,&smsg);
+        rc = njt_ctrl_dynlog_rpc_send(r,&topic,&smsg, 0);
         if(rc != NJT_OK){
             goto err;
         }

@@ -58,6 +58,15 @@ njt_replace_pool_log(njt_pool_t *pool, njt_log_t *old_log, njt_log_t *new_log)
 #endif
 }
 
+extern char *
+njt_conf_parse_post_helper(njt_cycle_t *cycle);
+
+static char *
+njt_conf_parse_post(njt_cycle_t *cycle)
+{
+    return njt_conf_parse_post_helper(cycle);
+}
+
 njt_cycle_t *
 njt_init_cycle(njt_cycle_t *old_cycle)
 {
@@ -305,6 +314,12 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     }
 
     if (njt_conf_parse(&conf, &cycle->conf_file) != NJT_CONF_OK) {
+        environ = senv;
+        njt_destroy_cycle_pools(&conf);
+        return NULL;
+    }
+
+    if (njt_conf_parse_post(cycle) != NJT_CONF_OK) {
         environ = senv;
         njt_destroy_cycle_pools(&conf);
         return NULL;
@@ -1383,7 +1398,11 @@ njt_shared_memory_add(njt_conf_t *cf, njt_str_t *name, size_t size, void *tag)
 
         return &shm_zone[i];
     }
-
+    if(cf->dynamic == 1) {  //by zyg
+	 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                            "unsupported create dynamic shared memory zone \"%V\"" ,name);
+	 return NULL;
+    }
     shm_zone = njt_list_push(&cf->cycle->shared_memory);
 
     if (shm_zone == NULL) {

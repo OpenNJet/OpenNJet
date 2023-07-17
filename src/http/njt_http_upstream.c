@@ -4756,8 +4756,9 @@ njt_http_upstream_finalize_request(njt_http_request_t *r,
                 }
             }
         }
-
-        njt_http_file_cache_free(r->cache, u->pipe->temp_file);
+	if(u->pipe != NULL) {
+        	njt_http_file_cache_free(r->cache, u->pipe->temp_file);
+	}
     }
 
 #endif
