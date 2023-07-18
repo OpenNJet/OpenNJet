@@ -5718,7 +5718,7 @@ njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf)
 
     value = cf->args->elts;
     for(i = 1; i < cf->args->nelts; i++){
-        len += value[i].len+1 + 2;
+        len += value[i].len+1;
     }
     index = njt_pcalloc(pclcf->pool,len+1);
     if (index == NULL){
@@ -5726,16 +5726,8 @@ njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf)
     }
     command.data = index;
     for(i = 1; i < cf->args->nelts; i++){
-	/*if((value[i-1].len == 1 && value[i-1].data[0] == '~') || (value[i-1].len == 2 && value[i-1].data[0] == '~' && value[i-1].data[1] == '*')) {
-	  *index = (u_char)'"';
-	  ++index;
-	}*/
         njt_memcpy(index,value[i].data,value[i].len);
         index += value[i].len;
-	/*if((value[i-1].len == 1 && value[i-1].data[0] == '~') || (value[i-1].len == 2 && value[i-1].data[0] == '~' && value[i-1].data[1] == '*')) {
-          *index = (u_char)'"';
-          ++index;
-        }*/
         *index = (u_char)' ';
         ++index;
     }
