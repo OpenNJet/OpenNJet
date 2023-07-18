@@ -195,7 +195,7 @@ static njt_int_t njt_dyn_bwlist_update_locs(dynbwlist_servers_item_locations_t *
                     return NJT_ERROR;
                 }
                 rpc_data_str.len = 0;
-                njt_dyn_bwlist_set_rules(pool, &dbwl, ctx, rpc_result);
+                rc = njt_dyn_bwlist_set_rules(pool, &dbwl, ctx, rpc_result);
                 if (rc != NJT_OK) {
                     njt_log_error(NJT_LOG_ERR, pool->log, 0, " error in njt_dyn_bwlist_set_rules");
                     if (0 == rpc_data_str.len) {
