@@ -6483,7 +6483,9 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     njt_http_upstream_server_t     *us;
     njt_http_upstream_srv_conf_t   *uscf, **uscfp;
     njt_http_upstream_main_conf_t  *umcf;
-
+#if (NJT_HTTP_DYNAMIC_LOC)
+    njt_http_upstream_init_pt       init;    
+#endif
     if (!(flags & NJT_HTTP_UPSTREAM_CREATE)) {
 
         if (njt_parse_url(cf->pool, u) != NJT_OK) {
@@ -6582,6 +6584,14 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     }
 
     *uscfp = uscf;
+#if (NJT_HTTP_DYNAMIC_LOC)
+   if(cf->dynamic == 1) {
+   init = njt_http_upstream_init_round_robin;
+    if (init(cf,uscf) != NJT_OK) {
+            return NULL;
+    } 
+   }
+#endif
 
     return uscf;
 }
