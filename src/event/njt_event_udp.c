@@ -418,8 +418,8 @@ njt_udp_rbtree_insert_value(njt_rbtree_node_t *temp,
             udpt = (njt_udp_connection_t *) temp;
             ct = udpt->connection;
 
-            rc = njt_cmp_sockaddr(c->sockaddr, c->socklen,
-                                  ct->sockaddr, ct->socklen, 1);
+            rc = njt_memn2cmp(udp->key.data, udpt->key.data,
+                              udp->key.len, udpt->key.len);
 
             if (rc == 0 && c->listening->wildcard) {
                 rc = njt_cmp_sockaddr(c->local_sockaddr, c->local_socklen,
@@ -472,6 +472,8 @@ njt_insert_udp_connection(njt_connection_t *c)
     njt_crc32_final(hash);
 
     udp->node.key = hash;
+    udp->key.data = (u_char *) c->sockaddr;
+    udp->key.len = c->socklen;
 
     cln = njt_pool_cleanup_add(c->pool, 0);
     if (cln == NULL) {

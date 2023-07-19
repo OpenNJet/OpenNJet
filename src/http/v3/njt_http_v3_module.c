@@ -17,18 +17,8 @@ static njt_int_t njt_http_v3_add_variables(njt_conf_t *cf);
 static void *njt_http_v3_create_srv_conf(njt_conf_t *cf);
 static char *njt_http_v3_merge_srv_conf(njt_conf_t *cf, void *parent,
     void *child);
-static char *njt_http_quic_mtu(njt_conf_t *cf, void *post,
-    void *data);
 static char *njt_http_quic_host_key(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
-static void *njt_http_v3_create_loc_conf(njt_conf_t *cf);
-static char *njt_http_v3_merge_loc_conf(njt_conf_t *cf, void *parent,
-    void *child);
-static char *njt_http_v3_push(njt_conf_t *cf, njt_command_t *cmd, void *conf);
-
-
-static njt_conf_post_t  njt_http_quic_mtu_post =
-    { njt_http_quic_mtu };
 
 
 static njt_command_t  njt_http_v3_commands[] = {
@@ -47,32 +37,11 @@ static njt_command_t  njt_http_v3_commands[] = {
       offsetof(njt_http_v3_srv_conf_t, enable_hq),
       NULL },
 
-    { njt_string("http3_max_concurrent_pushes"),
-      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
-      njt_conf_set_num_slot,
-      NJT_HTTP_SRV_CONF_OFFSET,
-      offsetof(njt_http_v3_srv_conf_t, max_concurrent_pushes),
-      NULL },
-
     { njt_string("http3_max_concurrent_streams"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_num_slot,
       NJT_HTTP_SRV_CONF_OFFSET,
       offsetof(njt_http_v3_srv_conf_t, max_concurrent_streams),
-      NULL },
-
-    { njt_string("http3_push"),
-      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
-      njt_http_v3_push,
-      NJT_HTTP_LOC_CONF_OFFSET,
-      0,
-      NULL },
-
-    { njt_string("http3_push_preload"),
-      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
-      njt_conf_set_flag_slot,
-      NJT_HTTP_LOC_CONF_OFFSET,
-      offsetof(njt_http_v3_loc_conf_t, push_preload),
       NULL },
 
     { njt_string("http3_stream_buffer_size"),
@@ -95,13 +64,6 @@ static njt_command_t  njt_http_v3_commands[] = {
       NJT_HTTP_SRV_CONF_OFFSET,
       offsetof(njt_http_v3_srv_conf_t, quic.gso_enabled),
       NULL },
-
-    { njt_string("quic_mtu"),
-      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
-      njt_conf_set_size_slot,
-      NJT_HTTP_SRV_CONF_OFFSET,
-      offsetof(njt_http_v3_srv_conf_t, quic.mtu),
-      &njt_http_quic_mtu_post },
 
     { njt_string("quic_host_key"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
@@ -131,8 +93,8 @@ static njt_http_module_t  njt_http_v3_module_ctx = {
     njt_http_v3_create_srv_conf,           /* create server configuration */
     njt_http_v3_merge_srv_conf,            /* merge server configuration */
 
-    njt_http_v3_create_loc_conf,           /* create location configuration */
-    njt_http_v3_merge_loc_conf             /* merge location configuration */
+    NULL,
+    NULL
 };
 
 
@@ -239,10 +201,8 @@ njt_http_v3_create_srv_conf(njt_conf_t *cf)
     h3scf->enable = NJT_CONF_UNSET;
     h3scf->enable_hq = NJT_CONF_UNSET;
     h3scf->max_table_capacity = NJT_HTTP_V3_MAX_TABLE_CAPACITY;
-    h3scf->max_concurrent_pushes = NJT_CONF_UNSET_UINT;
     h3scf->max_concurrent_streams = NJT_CONF_UNSET_UINT;
 
-    h3scf->quic.mtu = NJT_CONF_UNSET_SIZE;
     h3scf->quic.stream_buffer_size = NJT_CONF_UNSET_SIZE;
     h3scf->quic.max_concurrent_streams_bidi = NJT_CONF_UNSET_UINT;
     h3scf->quic.max_concurrent_streams_uni = NJT_HTTP_V3_MAX_UNI_STREAMS;
@@ -271,16 +231,10 @@ njt_http_v3_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 
     njt_conf_merge_value(conf->enable_hq, prev->enable_hq, 0);
 
-    njt_conf_merge_uint_value(conf->max_concurrent_pushes,
-                              prev->max_concurrent_pushes, 10);
-
     njt_conf_merge_uint_value(conf->max_concurrent_streams,
                               prev->max_concurrent_streams, 128);
 
     conf->max_blocked_streams = conf->max_concurrent_streams;
-
-    njt_conf_merge_size_value(conf->quic.mtu, prev->quic.mtu,
-                              NJT_QUIC_MAX_UDP_PAYLOAD_SIZE);
 
     njt_conf_merge_size_value(conf->quic.stream_buffer_size,
                               prev->quic.stream_buffer_size,
@@ -331,26 +285,6 @@ njt_http_v3_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 
     sscf = njt_http_conf_get_module_srv_conf(cf, njt_http_ssl_module);
     conf->quic.ssl = &sscf->ssl;
-
-    return NJT_CONF_OK;
-}
-
-
-static char *
-njt_http_quic_mtu(njt_conf_t *cf, void *post, void *data)
-{
-    size_t *sp = data;
-
-    if (*sp < NJT_QUIC_MIN_INITIAL_SIZE
-        || *sp > NJT_QUIC_MAX_UDP_PAYLOAD_SIZE)
-    {
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "\"quic_mtu\" must be between %d and %d",
-                           NJT_QUIC_MIN_INITIAL_SIZE,
-                           NJT_QUIC_MAX_UDP_PAYLOAD_SIZE);
-
-        return NJT_CONF_ERROR;
-    }
 
     return NJT_CONF_OK;
 }
@@ -454,103 +388,4 @@ failed:
     }
 
     return NJT_CONF_ERROR;
-}
-
-
-static void *
-njt_http_v3_create_loc_conf(njt_conf_t *cf)
-{
-    njt_http_v3_loc_conf_t  *h3lcf;
-
-    h3lcf = njt_pcalloc(cf->pool, sizeof(njt_http_v3_loc_conf_t));
-    if (h3lcf == NULL) {
-        return NULL;
-    }
-
-    /*
-     * set by njt_pcalloc():
-     *
-     *     h3lcf->pushes = NULL;
-     */
-
-    h3lcf->push_preload = NJT_CONF_UNSET;
-    h3lcf->push = NJT_CONF_UNSET;
-
-    return h3lcf;
-}
-
-
-static char *
-njt_http_v3_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
-{
-    njt_http_v3_loc_conf_t *prev = parent;
-    njt_http_v3_loc_conf_t *conf = child;
-
-    njt_conf_merge_value(conf->push, prev->push, 1);
-
-    if (conf->push && conf->pushes == NULL) {
-        conf->pushes = prev->pushes;
-    }
-
-    njt_conf_merge_value(conf->push_preload, prev->push_preload, 0);
-
-    return NJT_CONF_OK;
-}
-
-
-static char *
-njt_http_v3_push(njt_conf_t *cf, njt_command_t *cmd, void *conf)
-{
-    njt_http_v3_loc_conf_t *h3lcf = conf;
-
-    njt_str_t                         *value;
-    njt_http_complex_value_t          *cv;
-    njt_http_compile_complex_value_t   ccv;
-
-    value = cf->args->elts;
-
-    if (njt_strcmp(value[1].data, "off") == 0) {
-
-        if (h3lcf->pushes) {
-            return "\"off\" parameter cannot be used with URI";
-        }
-
-        if (h3lcf->push == 0) {
-            return "is duplicate";
-        }
-
-        h3lcf->push = 0;
-        return NJT_CONF_OK;
-    }
-
-    if (h3lcf->push == 0) {
-        return "URI cannot be used with \"off\" parameter";
-    }
-
-    h3lcf->push = 1;
-
-    if (h3lcf->pushes == NULL) {
-        h3lcf->pushes = njt_array_create(cf->pool, 1,
-                                         sizeof(njt_http_complex_value_t));
-        if (h3lcf->pushes == NULL) {
-            return NJT_CONF_ERROR;
-        }
-    }
-
-    cv = njt_array_push(h3lcf->pushes);
-    if (cv == NULL) {
-        return NJT_CONF_ERROR;
-    }
-
-    njt_memzero(&ccv, sizeof(njt_http_compile_complex_value_t));
-
-    ccv.cf = cf;
-    ccv.value = &value[1];
-    ccv.complex_value = cv;
-
-    if (njt_http_compile_complex_value(&ccv) != NJT_OK) {
-        return NJT_CONF_ERROR;
-    }
-
-    return NJT_CONF_OK;
 }

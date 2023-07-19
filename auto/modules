@@ -1080,20 +1080,6 @@ if [ $STREAM != NO ]; then
 
     njt_module_incs=
 
-    if [ $STREAM_QUIC = YES ]; then
-        USE_OPENSSL_QUIC=YES
-        have=NJT_STREAM_QUIC . auto/have
-        STREAM_SSL=YES
-
-        njt_module_name=njt_stream_quic_module
-        njt_module_deps=src/stream/njt_stream_quic_module.h
-        njt_module_srcs=src/stream/njt_stream_quic_module.c
-        njt_module_libs=
-        njt_module_link=$STREAM_QUIC
-
-        . auto/module
-    fi
-
     if [ $STREAM_SSL = YES ]; then
         USE_OPENSSL=YES
         have=NJT_STREAM_SSL . auto/have

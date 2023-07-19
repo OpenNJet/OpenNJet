@@ -761,29 +761,6 @@ njt_stream_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #endif
         }
 
-        if (njt_strcmp(value[i].data, "quic") == 0) {
-#if (NJT_STREAM_QUIC)
-            njt_stream_ssl_conf_t  *sslcf;
-
-            sslcf = njt_stream_conf_get_module_srv_conf(cf,
-                                                        njt_stream_ssl_module);
-
-            sslcf->listen = 1;
-            sslcf->file = cf->conf_file->file.name.data;
-            sslcf->line = cf->conf_file->line;
-
-            ls->quic = 1;
-            ls->type = SOCK_DGRAM;
-
-            continue;
-#else
-            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                               "the \"quic\" parameter requires "
-                               "njt_stream_quic_module");
-            return NJT_CONF_ERROR;
-#endif
-        }
-
         if (njt_strncmp(value[i].data, "so_keepalive=", 13) == 0) {
 
             if (njt_strcmp(&value[i].data[13], "on") == 0) {
@@ -892,12 +869,6 @@ njt_stream_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #if (NJT_STREAM_SSL)
         if (ls->ssl) {
             return "\"ssl\" parameter is incompatible with \"udp\"";
-        }
-#endif
-
-#if (NJT_STREAM_SSL && NJT_STREAM_QUIC)
-        if (ls->ssl && ls->quic) {
-            return "\"ssl\" parameter is incompatible with \"quic\"";
         }
 #endif
 

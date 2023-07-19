@@ -35,7 +35,7 @@ njt_quic_recvmsg(njt_event_t *ev)
     njt_event_conf_t   *ecf;
     njt_connection_t   *c, *lc;
     njt_quic_socket_t  *qsock;
-    static u_char       buffer[65535];
+    static u_char       buffer[NJT_QUIC_MAX_UDP_PAYLOAD_SIZE];
 
 #if (NJT_HAVE_ADDRINFO_CMSG)
     u_char             msg_control[CMSG_SPACE(sizeof(njt_addrinfo_t))];
@@ -184,7 +184,7 @@ njt_quic_recvmsg(njt_event_t *ev)
 
             qsock = njt_quic_get_socket(c);
 
-            njt_memcpy(&qsock->sockaddr.sockaddr, sockaddr, socklen);
+            njt_memcpy(&qsock->sockaddr, sockaddr, socklen);
             qsock->socklen = socklen;
 
             c->udp->buffer = &buf;
@@ -363,59 +363,6 @@ njt_quic_close_accepted_connection(njt_connection_t *c)
 #if (NJT_STAT_STUB)
     (void) njt_atomic_fetch_add(njt_stat_active, -1);
 #endif
-}
-
-
-void
-njt_quic_rbtree_insert_value(njt_rbtree_node_t *temp,
-    njt_rbtree_node_t *node, njt_rbtree_node_t *sentinel)
-{
-    njt_int_t            rc;
-    njt_connection_t    *c, *ct;
-    njt_rbtree_node_t  **p;
-    njt_quic_socket_t   *qsock, *qsockt;
-
-    for ( ;; ) {
-
-        if (node->key < temp->key) {
-
-            p = &temp->left;
-
-        } else if (node->key > temp->key) {
-
-            p = &temp->right;
-
-        } else { /* node->key == temp->key */
-
-            qsock = (njt_quic_socket_t *) node;
-            c = qsock->udp.connection;
-
-            qsockt = (njt_quic_socket_t *) temp;
-            ct = qsockt->udp.connection;
-
-            rc = njt_memn2cmp(qsock->sid.id, qsockt->sid.id,
-                              qsock->sid.len, qsockt->sid.len);
-
-            if (rc == 0 && c->listening->wildcard) {
-                rc = njt_cmp_sockaddr(c->local_sockaddr, c->local_socklen,
-                                      ct->local_sockaddr, ct->local_socklen, 1);
-            }
-
-            p = (rc < 0) ? &temp->left : &temp->right;
-        }
-
-        if (*p == sentinel) {
-            break;
-        }
-
-        temp = *p;
-    }
-
-    *p = node;
-    node->parent = temp;
-    node->left = sentinel;
-    node->right = sentinel;
-    njt_rbt_red(node);
 }
 
 

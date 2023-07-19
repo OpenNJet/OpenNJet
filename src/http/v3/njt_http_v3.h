@@ -86,11 +86,11 @@
 #define njt_http_v3_get_session(c)  njt_http_quic_get_connection(c)->v3_session
 
 #define njt_http_v3_get_module_loc_conf(c, module)                            \
-    njt_http_get_module_loc_conf(njt_http_quic_get_connection(c)->conf_ctx,     \
+    njt_http_get_module_loc_conf(njt_http_quic_get_connection(c)->conf_ctx,   \
                                  module)
 
 #define njt_http_v3_get_module_srv_conf(c, module)                            \
-    njt_http_get_module_srv_conf(njt_http_quic_get_connection(c)->conf_ctx,     \
+    njt_http_get_module_srv_conf(njt_http_quic_get_connection(c)->conf_ctx,   \
                                  module)
 
 #define njt_http_v3_finalize_connection(c, code, reason)                      \
@@ -107,17 +107,9 @@ typedef struct {
     njt_flag_t                    enable_hq;
     size_t                        max_table_capacity;
     njt_uint_t                    max_blocked_streams;
-    njt_uint_t                    max_concurrent_pushes;
     njt_uint_t                    max_concurrent_streams;
     njt_quic_conf_t               quic;
 } njt_http_v3_srv_conf_t;
-
-
-typedef struct {
-    njt_flag_t                    push_preload;
-    njt_flag_t                    push;
-    njt_array_t                  *pushes;
-} njt_http_v3_loc_conf_t;
 
 
 struct njt_http_v3_parse_s {
@@ -137,11 +129,6 @@ struct njt_http_v3_session_s {
     njt_queue_t                   blocked;
     njt_uint_t                    nblocked;
 
-    njt_queue_t                   pushing;
-    njt_uint_t                    npushing;
-    uint64_t                      next_push_id;
-    uint64_t                      max_push_id;
-    uint64_t                      goaway_push_id;
     uint64_t                      next_request_id;
 
     off_t                         total_bytes;

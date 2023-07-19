@@ -17,6 +17,7 @@ static njt_int_t njt_quic_validate_path(njt_connection_t *c,
     njt_quic_path_t *path);
 static njt_int_t njt_quic_send_path_challenge(njt_connection_t *c,
     njt_quic_path_t *path);
+static void njt_quic_set_path_timer(njt_connection_t *c);
 static njt_quic_path_t *njt_quic_get_path(njt_connection_t *c, njt_uint_t tag);
 
 
@@ -169,6 +170,8 @@ valid:
     path->validated = 1;
     path->validating = 0;
     path->limited = 0;
+
+    njt_quic_set_path_timer(c);
 
     return NJT_OK;
 }
@@ -385,16 +388,13 @@ njt_quic_free_path(njt_connection_t *c, njt_quic_path_t *path)
 static void
 njt_quic_set_connection_path(njt_connection_t *c, njt_quic_path_t *path)
 {
-    size_t  len;
-
     njt_memcpy(c->sockaddr, path->sockaddr, path->socklen);
     c->socklen = path->socklen;
 
     if (c->addr_text.data) {
-        len = njt_min(c->addr_text.len, path->addr_text.len);
-
-        njt_memcpy(c->addr_text.data, path->addr_text.data, len);
-        c->addr_text.len = len;
+        c->addr_text.len = njt_sock_ntop(c->sockaddr, c->socklen,
+                                         c->addr_text.data,
+                                         c->listening->addr_text_max_len, 0);
     }
 
     njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
@@ -497,6 +497,7 @@ njt_quic_validate_path(njt_connection_t *c, njt_quic_path_t *path)
                    "quic initiated validation of path seq:%uL", path->seqnum);
 
     path->validating = 1;
+    path->tries = 0;
 
     if (RAND_bytes(path->challenge1, 8) != 1) {
         return NJT_ERROR;
@@ -511,14 +512,11 @@ njt_quic_validate_path(njt_connection_t *c, njt_quic_path_t *path)
     }
 
     ctx = njt_quic_get_send_ctx(qc, ssl_encryption_application);
-    pto = njt_quic_pto(c, ctx);
+    pto = njt_max(njt_quic_pto(c, ctx), 1000);
 
     path->expires = njt_current_msec + pto;
-    path->tries = NJT_QUIC_PATH_RETRIES;
 
-    if (!qc->path_validation.timer_set) {
-        njt_add_timer(&qc->path_validation, pto);
-    }
+    njt_quic_set_path_timer(c);
 
     return NJT_OK;
 }
@@ -563,6 +561,46 @@ njt_quic_send_path_challenge(njt_connection_t *c, njt_quic_path_t *path)
     return NJT_OK;
 }
 
+static void
+njt_quic_set_path_timer(njt_connection_t *c)
+{
+    njt_msec_t              now;
+    njt_queue_t            *q;
+    njt_msec_int_t          left, next;
+    njt_quic_path_t        *path;
+    njt_quic_connection_t  *qc;
+
+    qc = njt_quic_get_connection(c);
+
+    now = njt_current_msec;
+    next = -1;
+
+    for (q = njt_queue_head(&qc->paths);
+         q != njt_queue_sentinel(&qc->paths);
+         q = njt_queue_next(q))
+    {
+        path = njt_queue_data(q, njt_quic_path_t, queue);
+
+        if (!path->validating) {
+            continue;
+        }
+
+        left = path->expires - now;
+        left = njt_max(left, 1);
+
+        if (next == -1 || left < next) {
+            next = left;
+        }
+    }
+
+    if (next != -1) {
+        njt_add_timer(&qc->path_validation, next);
+
+    } else if (qc->path_validation.timer_set) {
+        njt_del_timer(&qc->path_validation);
+    }
+}
+
 
 void
 njt_quic_path_validation_handler(njt_event_t *ev)
@@ -579,7 +617,6 @@ njt_quic_path_validation_handler(njt_event_t *ev)
     qc = njt_quic_get_connection(c);
 
     ctx = njt_quic_get_send_ctx(qc, ssl_encryption_application);
-    pto = njt_quic_pto(c, ctx);
 
     next = -1;
     now = njt_current_msec;
@@ -606,7 +643,8 @@ njt_quic_path_validation_handler(njt_event_t *ev)
             continue;
         }
 
-        if (--path->tries) {
+        if (++path->tries < NJT_QUIC_PATH_RETRIES) {
+            pto = njt_max(njt_quic_pto(c, ctx), 1000) << path->tries;
             path->expires = njt_current_msec + pto;
 
             if (next == -1 || pto < next) {

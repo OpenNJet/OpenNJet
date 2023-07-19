@@ -1998,14 +1998,7 @@ njt_http_add_listening(njt_conf_t *cf, njt_http_conf_addr_t *addr) {
     ls->wildcard = addr->opt.wildcard;
 
 #if (NJT_HTTP_V3)
-
     ls->quic = addr->opt.quic;
-
-    if (ls->quic) {
-        njt_rbtree_init(&ls->rbtree, &ls->sentinel,
-                        njt_quic_rbtree_insert_value);
-    }
-
 #endif
 
     return ls;

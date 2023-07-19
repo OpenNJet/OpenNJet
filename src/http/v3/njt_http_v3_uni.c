@@ -17,19 +17,12 @@ typedef struct {
 } njt_http_v3_uni_stream_t;
 
 
-typedef struct {
-    njt_queue_t                     queue;
-    uint64_t                        id;
-    njt_connection_t               *connection;
-    njt_uint_t                     *npushing;
-} njt_http_v3_push_t;
 
 
 static void njt_http_v3_close_uni_stream(njt_connection_t *c);
 static void njt_http_v3_uni_read_handler(njt_event_t *rev);
 static void njt_http_v3_uni_dummy_read_handler(njt_event_t *wev);
 static void njt_http_v3_uni_dummy_write_handler(njt_event_t *wev);
-static void njt_http_v3_push_cleanup(void *data);
 static njt_connection_t *njt_http_v3_get_uni_stream(njt_connection_t *c,
     njt_uint_t type);
 
@@ -314,78 +307,6 @@ njt_http_v3_uni_dummy_write_handler(njt_event_t *wev)
                                         NULL);
         njt_http_v3_close_uni_stream(c);
     }
-}
-
-
-njt_connection_t *
-njt_http_v3_create_push_stream(njt_connection_t *c, uint64_t push_id)
-{
-    u_char                 *p, buf[NJT_HTTP_V3_VARLEN_INT_LEN * 2];
-    size_t                  n;
-    njt_connection_t       *sc;
-    njt_pool_cleanup_t     *cln;
-    njt_http_v3_push_t     *push;
-    njt_http_v3_session_t  *h3c;
-
-    njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
-                   "http3 create push stream id:%uL", push_id);
-
-    sc = njt_quic_open_stream(c, 0);
-    if (sc == NULL) {
-        goto failed;
-    }
-
-    p = buf;
-    p = (u_char *) njt_http_v3_encode_varlen_int(p, NJT_HTTP_V3_STREAM_PUSH);
-    p = (u_char *) njt_http_v3_encode_varlen_int(p, push_id);
-    n = p - buf;
-
-    h3c = njt_http_v3_get_session(c);
-    h3c->total_bytes += n;
-
-    if (sc->send(sc, buf, n) != (ssize_t) n) {
-        goto failed;
-    }
-
-    cln = njt_pool_cleanup_add(sc->pool, sizeof(njt_http_v3_push_t));
-    if (cln == NULL) {
-        goto failed;
-    }
-
-    h3c->npushing++;
-
-    cln->handler = njt_http_v3_push_cleanup;
-
-    push = cln->data;
-    push->id = push_id;
-    push->connection = sc;
-    push->npushing = &h3c->npushing;
-
-    njt_queue_insert_tail(&h3c->pushing, &push->queue);
-
-    return sc;
-
-failed:
-
-    njt_log_error(NJT_LOG_ERR, c->log, 0, "failed to create push stream");
-
-    njt_http_v3_finalize_connection(c, NJT_HTTP_V3_ERR_STREAM_CREATION_ERROR,
-                                    "failed to create push stream");
-    if (sc) {
-        njt_http_v3_close_uni_stream(sc);
-    }
-
-    return NULL;
-}
-
-
-static void
-njt_http_v3_push_cleanup(void *data)
-{
-    njt_http_v3_push_t  *push = data;
-
-    njt_queue_remove(&push->queue);
-    (*push->npushing)--;
 }
 
 
@@ -691,82 +612,6 @@ failed:
     njt_http_v3_close_uni_stream(dc);
 
     return NJT_ERROR;
-}
-
-
-njt_int_t
-njt_http_v3_set_max_push_id(njt_connection_t *c, uint64_t max_push_id)
-{
-    njt_http_v3_session_t  *h3c;
-
-    h3c = njt_http_v3_get_session(c);
-
-    njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
-                   "http3 MAX_PUSH_ID:%uL", max_push_id);
-
-    if (h3c->max_push_id != (uint64_t) -1 && max_push_id < h3c->max_push_id) {
-        return NJT_HTTP_V3_ERR_ID_ERROR;
-    }
-
-    h3c->max_push_id = max_push_id;
-
-    return NJT_OK;
-}
-
-
-njt_int_t
-njt_http_v3_goaway(njt_connection_t *c, uint64_t push_id)
-{
-    njt_http_v3_session_t  *h3c;
-
-    h3c = njt_http_v3_get_session(c);
-
-    njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0, "http3 GOAWAY:%uL", push_id);
-
-    h3c->goaway_push_id = push_id;
-
-    return NJT_OK;
-}
-
-
-njt_int_t
-njt_http_v3_cancel_push(njt_connection_t *c, uint64_t push_id)
-{
-    njt_queue_t            *q;
-    njt_http_request_t     *r;
-    njt_http_v3_push_t     *push;
-    njt_http_v3_session_t  *h3c;
-
-    h3c = njt_http_v3_get_session(c);
-
-    njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
-                   "http3 CANCEL_PUSH:%uL", push_id);
-
-    if (push_id >= h3c->next_push_id) {
-        return NJT_HTTP_V3_ERR_ID_ERROR;
-    }
-
-    for (q = njt_queue_head(&h3c->pushing);
-         q != njt_queue_sentinel(&h3c->pushing);
-         q = njt_queue_next(q))
-    {
-        push = (njt_http_v3_push_t *) q;
-
-        if (push->id != push_id) {
-            continue;
-        }
-
-        r = push->connection->data;
-
-        njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "http3 cancel push");
-
-        njt_http_finalize_request(r, NJT_HTTP_CLOSE);
-
-        break;
-    }
-
-    return NJT_OK;
 }
 
 

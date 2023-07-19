@@ -180,6 +180,7 @@ njt_quic_listen(njt_connection_t *c, njt_quic_connection_t *qc,
 
     qsock->udp.connection = c;
     qsock->udp.node.key = njt_crc32_long(id.data, id.len);
+    qsock->udp.key = id;
 
     njt_rbtree_insert(&c->listening->rbtree, &qsock->udp.node);
 

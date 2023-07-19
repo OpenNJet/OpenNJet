@@ -638,10 +638,12 @@ njt_quic_do_init_streams(njt_connection_t *c)
 static njt_quic_stream_t *
 njt_quic_create_stream(njt_connection_t *c, uint64_t id)
 {
+    njt_str_t               addr_text;
     njt_log_t              *log;
     njt_pool_t             *pool;
     njt_uint_t              reusable;
     njt_queue_t            *q;
+    struct sockaddr        *sockaddr;
     njt_connection_t       *sc;
     njt_quic_stream_t      *qs;
     njt_pool_cleanup_t     *cln;
@@ -693,6 +695,32 @@ njt_quic_create_stream(njt_connection_t *c, uint64_t id)
     *log = *c->log;
     pool->log = log;
 
+    sockaddr = njt_palloc(pool, c->socklen);
+    if (sockaddr == NULL) {
+        njt_destroy_pool(pool);
+        njt_queue_insert_tail(&qc->streams.free, &qs->queue);
+        return NULL;
+    }
+
+    njt_memcpy(sockaddr, c->sockaddr, c->socklen);
+
+    if (c->addr_text.data) {
+        addr_text.data = njt_pnalloc(pool, c->addr_text.len);
+        if (addr_text.data == NULL) {
+            njt_destroy_pool(pool);
+            njt_queue_insert_tail(&qc->streams.free, &qs->queue);
+            return NULL;
+        }
+
+        njt_memcpy(addr_text.data, c->addr_text.data, c->addr_text.len);
+        addr_text.len = c->addr_text.len;
+
+    } else {
+        addr_text.len = 0;
+        addr_text.data = NULL;
+    }
+
+
     reusable = c->reusable;
     njt_reusable_connection(c, 0);
 
@@ -711,9 +739,10 @@ njt_quic_create_stream(njt_connection_t *c, uint64_t id)
     sc->type = SOCK_STREAM;
     sc->pool = pool;
     sc->ssl = c->ssl;
-    sc->sockaddr = c->sockaddr;
+    sc->sockaddr = sockaddr;
+    sc->socklen = c->socklen;
     sc->listening = c->listening;
-    sc->addr_text = c->addr_text;
+    sc->addr_text = addr_text;
     sc->local_sockaddr = c->local_sockaddr;
     sc->local_socklen = c->local_socklen;
     sc->number = njt_atomic_fetch_add(njt_connection_counter, 1);
@@ -1057,7 +1086,8 @@ njt_quic_stream_cleanup_handler(void *data)
 {
     njt_connection_t *c = data;
 
-    njt_quic_stream_t  *qs;
+    njt_quic_stream_t      *qs;
+    njt_quic_connection_t  *qc;
 
     qs = c->quic;
 
@@ -1065,16 +1095,23 @@ njt_quic_stream_cleanup_handler(void *data)
                    "quic stream id:0x%xL cleanup", qs->id);
 
     if (njt_quic_shutdown_stream(c, NJT_RDWR_SHUTDOWN) != NJT_OK) {
-        njt_quic_close_connection(c, NJT_ERROR);
-        return;
+        goto failed;
     }
 
     qs->connection = NULL;
 
     if (njt_quic_close_stream(qs) != NJT_OK) {
-        njt_quic_close_connection(c, NJT_ERROR);
-        return;
+        goto failed;
     }
+
+    return;
+
+failed:
+
+    qc = njt_quic_get_connection(qs->parent);
+    qc->error = NJT_QUIC_ERR_INTERNAL_ERROR;
+
+    njt_post_event(&qc->close, &njt_posted_events);
 }
 
 

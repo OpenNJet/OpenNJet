@@ -737,7 +737,8 @@ njt_quic_set_lost_timer(njt_connection_t *c)
 
         q = njt_queue_last(&ctx->sent);
         f = njt_queue_data(q, njt_quic_frame_t, queue);
-        w = (njt_msec_int_t) (f->last + njt_quic_pto(c, ctx) - now);
+        w = (njt_msec_int_t) (f->last + (njt_quic_pto(c, ctx) << qc->pto_count)
+                              - now);
 
         if (w < 0) {
             w = 0;
@@ -783,17 +784,12 @@ njt_quic_pto(njt_connection_t *c, njt_quic_send_ctx_t *ctx)
     qc = njt_quic_get_connection(c);
 
     /* RFC 9002, Appendix A.8.  Setting the Loss Detection Timer */
+
     duration = qc->avg_rtt;
-
     duration += njt_max(4 * qc->rttvar, NJT_QUIC_TIME_GRANULARITY);
-    duration <<= qc->pto_count;
-
-    if (qc->congestion.in_flight == 0) { /* no in-flight packets */
-        return duration;
-    }
 
     if (ctx->level == ssl_encryption_application && c->ssl->handshaked) {
-        duration += qc->ctp.max_ack_delay << qc->pto_count;
+        duration += qc->ctp.max_ack_delay;
     }
 
     return duration;
@@ -811,6 +807,7 @@ void njt_quic_lost_handler(njt_event_t *ev)
 
     if (njt_quic_detect_lost(c, NULL) != NJT_OK) {
         njt_quic_close_connection(c, NJT_ERROR);
+        return;
     }
 
     njt_quic_connstate_dbg(c);
@@ -851,7 +848,9 @@ njt_quic_pto_handler(njt_event_t *ev)
             continue;
         }
 
-        if ((njt_msec_int_t) (f->last + njt_quic_pto(c, ctx) - now) > 0) {
+        if ((njt_msec_int_t) (f->last + (njt_quic_pto(c, ctx) << qc->pto_count)
+                              - now) > 0) 
+        {
             continue;
         }
 

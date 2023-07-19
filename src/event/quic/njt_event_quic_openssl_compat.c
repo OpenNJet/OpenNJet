@@ -446,7 +446,7 @@ SSL_provide_quic_data(SSL *ssl, enum ssl_encryption_level_t level,
     u_char                     in[NJT_QUIC_COMPAT_RECORD_SIZE + 1];
     u_char                     out[NJT_QUIC_COMPAT_RECORD_SIZE + 1
                                    + SSL3_RT_HEADER_LENGTH
-                                   + EVP_GCM_TLS_TAG_LEN];
+                                   + NJT_QUIC_TAG_LEN];
 
     c = njt_ssl_get_connection(ssl);
 
@@ -464,6 +464,7 @@ SSL_provide_quic_data(SSL *ssl, enum ssl_encryption_level_t level,
         rec.log = c->log;
         rec.number = com->read_record++;
         rec.keys = &com->keys;
+        rec.level = level;
 
         if (level == ssl_encryption_initial) {
             n = njt_min(len, 65535);
@@ -528,7 +529,7 @@ njt_quic_compat_create_header(njt_quic_compat_record_t *rec, u_char *out,
 
     } else {
         type = SSL3_RT_APPLICATION_DATA;
-        len += EVP_GCM_TLS_TAG_LEN;
+        len += NJT_QUIC_TAG_LEN;
     }
 
     out[0] = type;
@@ -552,7 +553,7 @@ njt_quic_compat_create_record(njt_quic_compat_record_t *rec, njt_str_t *res)
     ad.data = res->data;
     ad.len = njt_quic_compat_create_header(rec, ad.data, 0);
 
-    out.len = rec->payload.len + EVP_GCM_TLS_TAG_LEN;
+    out.len = rec->payload.len + NJT_QUIC_TAG_LEN;
     out.data = res->data + ad.len;
 
 #ifdef NJT_QUIC_DEBUG_CRYPTO

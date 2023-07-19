@@ -519,24 +519,6 @@ njt_stream_optimize_servers(njt_conf_t *cf, njt_array_t *ports)
             ls->reuseport = addr[i].opt.reuseport;
 #endif
 
-#if (NJT_STREAM_QUIC)
-
-            ls->quic = addr[i].opt.quic;
-
-            if (ls->quic) {
-                njt_rbtree_init(&ls->rbtree, &ls->sentinel,
-                                njt_quic_rbtree_insert_value);
-            }
-
-#endif
-
-#if !(NJT_WIN32)
-            if (!ls->quic) {
-                njt_rbtree_init(&ls->rbtree, &ls->sentinel,
-                                njt_udp_rbtree_insert_value);
-            }
-#endif
-
             stport = njt_palloc(cf->pool, sizeof(njt_stream_port_t));
             if (stport == NULL) {
                 return NJT_CONF_ERROR;
@@ -570,7 +552,7 @@ njt_stream_optimize_servers(njt_conf_t *cf, njt_array_t *ports)
 }
 
 
-static njt_int_t
+njt_int_t
 njt_stream_add_addrs(njt_conf_t *cf, njt_stream_port_t *stport,
     njt_stream_conf_addr_t *addr)
 {
@@ -594,9 +576,6 @@ njt_stream_add_addrs(njt_conf_t *cf, njt_stream_port_t *stport,
         addrs[i].conf.ctx = addr[i].opt.ctx;
 #if (NJT_STREAM_SSL)
         addrs[i].conf.ssl = addr[i].opt.ssl;
-#endif
-#if (NJT_STREAM_QUIC)
-        addrs[i].conf.quic = addr[i].opt.quic;
 #endif
         addrs[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
         addrs[i].conf.addr_text = addr[i].opt.addr_text;
@@ -632,9 +611,6 @@ njt_stream_add_addrs6(njt_conf_t *cf, njt_stream_port_t *stport,
         addrs6[i].conf.ctx = addr[i].opt.ctx;
 #if (NJT_STREAM_SSL)
         addrs6[i].conf.ssl = addr[i].opt.ssl;
-#endif
-#if (NJT_STREAM_QUIC)
-        addrs6[i].conf.quic = addr[i].opt.quic;
 #endif
         addrs6[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
         addrs6[i].conf.addr_text = addr[i].opt.addr_text;

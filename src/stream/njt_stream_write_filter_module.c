@@ -278,12 +278,7 @@ njt_stream_write_filter(njt_stream_session_t *s, njt_chain_t *in,
     *out = chain;
 
     if (chain) {
-        if (c->shared
-#if (NJT_STREAM_QUIC)
-            && c->quic == NULL
-#endif
-           )
-        {
+        if (c->shared) {
             njt_log_error(NJT_LOG_ALERT, c->log, 0,
                           "shared connection is busy");
             return NJT_ERROR;

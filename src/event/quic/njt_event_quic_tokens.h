@@ -16,13 +16,11 @@
 #define NJT_QUIC_MAX_TOKEN_SIZE              64
     /* SHA-1(addr)=20 + sizeof(time_t) + retry(1) + odcid.len(1) + odcid */
 
-/* RFC 3602, 2.1 and 2.4 for AES-CBC block size and IV length */
-#define NJT_QUIC_AES_256_CBC_IV_LEN          16
-#define NJT_QUIC_AES_256_CBC_BLOCK_SIZE      16
-
-#define NJT_QUIC_TOKEN_BUF_SIZE             (NJT_QUIC_AES_256_CBC_IV_LEN      \
+#define NJT_QUIC_AES_256_GCM_IV_LEN          12
+#define NJT_QUIC_AES_256_GCM_TAG_LEN         16
+#define NJT_QUIC_TOKEN_BUF_SIZE             (NJT_QUIC_AES_256_GCM_IV_LEN      \
                                              + NJT_QUIC_MAX_TOKEN_SIZE        \
-                                             + NJT_QUIC_AES_256_CBC_BLOCK_SIZE)
+                                             + NJT_QUIC_AES_256_GCM_TAG_LEN)
 
 
 njt_int_t njt_quic_new_sr_token(njt_connection_t *c, njt_str_t *cid,

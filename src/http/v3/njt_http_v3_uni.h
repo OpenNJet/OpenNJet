@@ -18,12 +18,6 @@
 void njt_http_v3_init_uni_stream(njt_connection_t *c);
 njt_int_t njt_http_v3_register_uni_stream(njt_connection_t *c, uint64_t type);
 
-njt_connection_t *njt_http_v3_create_push_stream(njt_connection_t *c,
-    uint64_t push_id);
-njt_int_t njt_http_v3_set_max_push_id(njt_connection_t *c,
-    uint64_t max_push_id);
-njt_int_t njt_http_v3_goaway(njt_connection_t *c, uint64_t push_id);
-njt_int_t njt_http_v3_cancel_push(njt_connection_t *c, uint64_t push_id);
 njt_int_t njt_http_v3_cancel_stream(njt_connection_t *c, njt_uint_t stream_id);
 
 njt_int_t njt_http_v3_send_settings(njt_connection_t *c);

@@ -70,7 +70,6 @@ typedef struct {
     njt_flag_t                     disable_active_migration;
     njt_msec_t                     timeout;
     njt_str_t                      host_key;
-    size_t                         mtu;
     size_t                         stream_buffer_size;
     njt_uint_t                     max_concurrent_streams_bidi;
     njt_uint_t                     max_concurrent_streams_uni;
@@ -113,8 +112,6 @@ struct njt_quic_stream_s {
 
 
 void njt_quic_recvmsg(njt_event_t *ev);
-void njt_quic_rbtree_insert_value(njt_rbtree_node_t *temp,
-    njt_rbtree_node_t *node, njt_rbtree_node_t *sentinel);
 void njt_quic_run(njt_connection_t *c, njt_quic_conf_t *conf);
 njt_connection_t *njt_quic_open_stream(njt_connection_t *c, njt_uint_t bidi);
 void njt_quic_finalize_connection(njt_connection_t *c, njt_uint_t err,

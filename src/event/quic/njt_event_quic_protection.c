@@ -16,13 +16,6 @@
 
 #define NJT_QUIC_AES_128_KEY_LEN      16
 
-#ifndef TLS1_3_CK_AES_128_GCM_SHA256
-#define TLS1_3_CK_AES_128_GCM_SHA256  0x03001301
-#define TLS1_3_CK_AES_256_GCM_SHA384  0x03001302
-#define TLS1_3_CK_CHACHA20_POLY1305_SHA256                                   \
-                                      0x03001303
-#endif
-
 
 static njt_int_t njt_hkdf_expand(u_char *out_key, size_t out_len,
     const EVP_MD *digest, const u_char *prk, size_t prk_len,
@@ -94,6 +87,15 @@ njt_quic_ciphers(njt_uint_t id, njt_quic_ciphers_t *ciphers,
         ciphers->d = EVP_sha256();
         len = 32;
         break;
+
+#ifndef OPENSSL_IS_BORINGSSL
+    case TLS1_3_CK_AES_128_CCM_SHA256:
+        ciphers->c = EVP_aes_128_ccm();
+        ciphers->hp = EVP_aes_128_ctr();
+        ciphers->d = EVP_sha256();
+        len = 16;
+        break;
+#endif
 
     default:
         return NJT_ERROR;
@@ -344,8 +346,7 @@ failed:
 
 static njt_int_t
 njt_quic_tls_open(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
-    njt_str_t *out, u_char *nonce, njt_str_t *in, njt_str_t *ad,
-    njt_log_t *log)
+    njt_str_t *out, u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log)
 {
 
 #ifdef OPENSSL_IS_BORINGSSL
@@ -370,7 +371,6 @@ njt_quic_tls_open(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
     EVP_AEAD_CTX_free(ctx);
 #else
     int              len;
-    u_char          *tag;
     EVP_CIPHER_CTX  *ctx;
 
     ctx = EVP_CIPHER_CTX_new();
@@ -385,12 +385,24 @@ njt_quic_tls_open(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
         return NJT_ERROR;
     }
 
-    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, s->iv.len, NULL)
+    in->len -= NJT_QUIC_TAG_LEN;
+
+    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, NJT_QUIC_TAG_LEN, 
+                            in->data + in->len)
         == 0)
     {
         EVP_CIPHER_CTX_free(ctx);
         njt_ssl_error(NJT_LOG_INFO, log, 0,
-                      "EVP_CIPHER_CTX_ctrl(EVP_CTRL_GCM_SET_IVLEN) failed");
+                      "EVP_CIPHER_CTX_ctrl(EVP_CTRL_AEAD_SET_TAG) failed");
+        return NJT_ERROR;
+    }
+
+    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN, s->iv.len, NULL)
+        == 0)
+    {
+        EVP_CIPHER_CTX_free(ctx);
+        njt_ssl_error(NJT_LOG_INFO, log, 0,
+                      "EVP_CIPHER_CTX_ctrl(EVP_CTRL_AEAD_SET_IVLEN) failed");
         return NJT_ERROR;
     }
 
@@ -400,34 +412,29 @@ njt_quic_tls_open(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
         return NJT_ERROR;
     }
 
+    if (EVP_CIPHER_mode(cipher) == EVP_CIPH_CCM_MODE
+        && EVP_DecryptUpdate(ctx, NULL, &len, NULL, in->len) != 1)
+    {
+        EVP_CIPHER_CTX_free(ctx);
+        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_DecryptUpdate() failed");
+        return NJT_ERROR;
+    }
+
     if (EVP_DecryptUpdate(ctx, NULL, &len, ad->data, ad->len) != 1) {
         EVP_CIPHER_CTX_free(ctx);
         njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_DecryptUpdate() failed");
         return NJT_ERROR;
     }
 
-    if (EVP_DecryptUpdate(ctx, out->data, &len, in->data,
-                          in->len - EVP_GCM_TLS_TAG_LEN)
-        != 1)
-    {
+    if (EVP_DecryptUpdate(ctx, out->data, &len, in->data, in->len) != 1) {
         EVP_CIPHER_CTX_free(ctx);
         njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_DecryptUpdate() failed");
         return NJT_ERROR;
     }
 
     out->len = len;
-    tag = in->data + in->len - EVP_GCM_TLS_TAG_LEN;
 
-    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_TAG, EVP_GCM_TLS_TAG_LEN, tag)
-        == 0)
-    {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0,
-                      "EVP_CIPHER_CTX_ctrl(EVP_CTRL_GCM_SET_TAG) failed");
-        return NJT_ERROR;
-    }
-
-    if (EVP_DecryptFinal_ex(ctx, out->data + len, &len) <= 0) {
+    if (EVP_DecryptFinal_ex(ctx, out->data + out->len, &len) <= 0) {
         EVP_CIPHER_CTX_free(ctx);
         njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_DecryptFinal_ex failed");
         return NJT_ERROR;
@@ -483,18 +490,37 @@ njt_quic_tls_seal(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
         return NJT_ERROR;
     }
 
-    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, s->iv.len, NULL)
+    if (EVP_CIPHER_mode(cipher) == EVP_CIPH_CCM_MODE
+        && EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, NJT_QUIC_TAG_LEN,
+                               NULL)
+           == 0)
+    {
+        EVP_CIPHER_CTX_free(ctx);
+        njt_ssl_error(NJT_LOG_INFO, log, 0,
+                      "EVP_CIPHER_CTX_ctrl(EVP_CTRL_AEAD_SET_TAG) failed");
+        return NJT_ERROR;
+    }
+
+    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN, s->iv.len, NULL)
         == 0)
     {
         EVP_CIPHER_CTX_free(ctx);
         njt_ssl_error(NJT_LOG_INFO, log, 0,
-                      "EVP_CIPHER_CTX_ctrl(EVP_CTRL_GCM_SET_IVLEN) failed");
+                      "EVP_CIPHER_CTX_ctrl(EVP_CTRL_AEAD_SET_IVLEN) failed");
         return NJT_ERROR;
     }
 
     if (EVP_EncryptInit_ex(ctx, NULL, NULL, s->key.data, nonce) != 1) {
         EVP_CIPHER_CTX_free(ctx);
         njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_EncryptInit_ex() failed");
+        return NJT_ERROR;
+    }
+
+    if (EVP_CIPHER_mode(cipher) == EVP_CIPH_CCM_MODE
+        && EVP_EncryptUpdate(ctx, NULL, &len, NULL, in->len) != 1)
+    {
+        EVP_CIPHER_CTX_free(ctx);
+        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_EncryptUpdate() failed");
         return NJT_ERROR;
     }
 
@@ -520,19 +546,19 @@ njt_quic_tls_seal(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
 
     out->len += len;
 
-    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, EVP_GCM_TLS_TAG_LEN,
-                            out->data + in->len)
+    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, NJT_QUIC_TAG_LEN,
+                            out->data + out->len)
         == 0)
     {
         EVP_CIPHER_CTX_free(ctx);
         njt_ssl_error(NJT_LOG_INFO, log, 0,
-                      "EVP_CIPHER_CTX_ctrl(EVP_CTRL_GCM_GET_TAG) failed");
+                      "EVP_CIPHER_CTX_ctrl(EVP_CTRL_AEAD_GET_TAG) failed");
         return NJT_ERROR;
     }
 
-    EVP_CIPHER_CTX_free(ctx);
+    out->len += NJT_QUIC_TAG_LEN;
 
-    out->len += EVP_GCM_TLS_TAG_LEN;
+    EVP_CIPHER_CTX_free(ctx);
 #endif
     return NJT_OK;
 }
@@ -739,7 +765,7 @@ njt_quic_create_packet(njt_quic_header_t *pkt, njt_str_t *res)
     ad.data = res->data;
     ad.len = njt_quic_create_header(pkt, ad.data, &pnp);
 
-    out.len = pkt->payload.len + EVP_GCM_TLS_TAG_LEN;
+    out.len = pkt->payload.len + NJT_QUIC_TAG_LEN;
     out.data = res->data + ad.len;
 
 #ifdef NJT_QUIC_DEBUG_CRYPTO
@@ -803,7 +829,7 @@ njt_quic_create_retry_packet(njt_quic_header_t *pkt, njt_str_t *res)
     ad.len = njt_quic_create_retry_itag(pkt, ad.data, &start);
 
     itag.data = ad.data + ad.len;
-    itag.len = EVP_GCM_TLS_TAG_LEN;
+    itag.len = NJT_QUIC_TAG_LEN;
 
 #ifdef NJT_QUIC_DEBUG_CRYPTO
     njt_log_debug2(NJT_LOG_DEBUG_EVENT, pkt->log, 0,
@@ -980,7 +1006,7 @@ njt_quic_decrypt(njt_quic_header_t *pkt, uint64_t *largest_pn)
      * AES and ChaCha20 algorithms sample 16 bytes
      */
 
-    if (len < EVP_GCM_TLS_TAG_LEN + 4) {
+    if (len < NJT_QUIC_TAG_LEN + 4) {
         return NJT_DECLINED;
     }
 
@@ -1040,7 +1066,7 @@ njt_quic_decrypt(njt_quic_header_t *pkt, uint64_t *largest_pn)
                    "quic ad len:%uz %xV", ad.len, &ad);
 #endif
 
-    pkt->payload.len = in.len - EVP_GCM_TLS_TAG_LEN;
+    pkt->payload.len = in.len - NJT_QUIC_TAG_LEN;
     pkt->payload.data = pkt->plaintext + ad.len;
 
     rc = njt_quic_tls_open(ciphers.c, secret, &pkt->payload,

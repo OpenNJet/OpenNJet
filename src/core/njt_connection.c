@@ -73,6 +73,11 @@ njt_create_listening(njt_conf_t *cf, struct sockaddr *sockaddr,
 
     njt_memcpy(ls->addr_text.data, text, len);
 
+#if !(NJT_WIN32)
+    njt_rbtree_init(&ls->rbtree, &ls->sentinel, njt_udp_rbtree_insert_value);
+#endif
+
+
     ls->fd = (njt_socket_t) -1;
     ls->type = SOCK_STREAM;
 
@@ -1041,6 +1046,78 @@ njt_configure_listening_sockets(njt_cycle_t *cycle)
                               &ls[i].addr_text);
             }
         }
+
+#endif
+
+#if (NJT_HAVE_IP_MTU_DISCOVER)
+
+        if (ls[i].quic && ls[i].sockaddr->sa_family == AF_INET) {
+            value = IP_PMTUDISC_DO;
+
+            if (setsockopt(ls[i].fd, IPPROTO_IP, IP_MTU_DISCOVER,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(IP_MTU_DISCOVER) "
+                              "for %V failed, ignored",
+                              &ls[i].addr_text);
+            }
+        }
+
+#elif (NJT_HAVE_IP_DONTFRAG)
+
+        if (ls[i].quic && ls[i].sockaddr->sa_family == AF_INET) {
+            value = 1;
+
+            if (setsockopt(ls[i].fd, IPPROTO_IP, IP_DONTFRAG,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(IP_DONTFRAG) "
+                              "for %V failed, ignored",
+                              &ls[i].addr_text);
+            }
+        }
+
+#endif
+
+#if (NJT_HAVE_INET6)
+
+#if (NJT_HAVE_IPV6_MTU_DISCOVER)
+
+        if (ls[i].quic && ls[i].sockaddr->sa_family == AF_INET6) {
+            value = IPV6_PMTUDISC_DO;
+
+            if (setsockopt(ls[i].fd, IPPROTO_IPV6, IPV6_MTU_DISCOVER,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(IPV6_MTU_DISCOVER) "
+                              "for %V failed, ignored",
+                              &ls[i].addr_text);
+            }
+        }
+
+#elif (NJT_HAVE_IP_DONTFRAG)
+
+        if (ls[i].quic && ls[i].sockaddr->sa_family == AF_INET6) {
+            value = 1;
+
+            if (setsockopt(ls[i].fd, IPPROTO_IPV6, IPV6_DONTFRAG,
+                           (const void *) &value, sizeof(int))
+                == -1)
+            {
+                njt_log_error(NJT_LOG_ALERT, cycle->log, njt_socket_errno,
+                              "setsockopt(IPV6_DONTFRAG) "
+                              "for %V failed, ignored",
+                              &ls[i].addr_text);
+            }
+        }
+
+#endif
 
 #endif
     }

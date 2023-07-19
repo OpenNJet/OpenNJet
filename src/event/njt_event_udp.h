@@ -28,6 +28,7 @@ struct njt_udp_connection_s {
     njt_rbtree_node_t   node;
     njt_connection_t   *connection;
     njt_buf_t          *buffer;
+    njt_str_t           key;
 };
 
 
