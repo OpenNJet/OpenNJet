@@ -5796,7 +5796,10 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
    	njt_str_null(&value);
 
 	pdata = (u_char *)parse_ctx->exps[i];
-	old.len = njt_strlen(pdata) -1;
+	old.len = njt_strlen(pdata);
+	if(pdata[old.len - 1] == ' ') {
+		old.len--;
+	}
 	old.data = pdata;
 
 	new_src.len = old.len + 10;
