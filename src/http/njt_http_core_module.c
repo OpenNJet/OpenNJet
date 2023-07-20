@@ -3047,6 +3047,25 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     njt_http_listen_opt_t        lsopt;
     njt_http_core_srv_conf_t    *cscf, **cscfp;
     njt_http_core_main_conf_t   *cmcf;
+	njt_int_t rc;
+
+#if (NJT_HTTP_DYNAMIC_SERVER)
+    njt_pool_t *old_server_pool,*new_server_pool,*old_server_temp_pool;
+    
+
+    old_server_pool = cf->pool;
+    old_server_temp_pool = cf->temp_pool;
+    new_server_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (new_server_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    rc = njt_sub_pool(cf->cycle->pool,new_server_pool);
+    if (rc != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
+    cf->pool = new_server_pool;
+    cf->temp_pool = new_server_pool;
+#endif
 
     ctx = njt_pcalloc(cf->pool, sizeof(njt_http_conf_ctx_t));
     if (ctx == NULL) {
@@ -3072,7 +3091,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t *old_pool,*new_pool,*old_temp_pool;
-    njt_int_t rc;
+
 
     old_pool = cf->pool;
     old_temp_pool = cf->temp_pool;
@@ -3147,10 +3166,14 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     cf->cmd_type = NJT_HTTP_SRV_CONF;
 
     rv = njt_conf_parse(cf, NULL);
+#if (NJT_HTTP_DYNAMIC_SERVER)
+    cf->pool = old_server_pool;
+    cf->temp_pool = old_server_temp_pool;
+#endif
 
     *cf = pcf;
 
-    if (rv == NJT_CONF_OK && !cscf->listen) {
+    if (rv == NJT_CONF_OK && !cscf->listen && cf->dynamic == 0) {
         njt_memzero(&lsopt, sizeof(njt_http_listen_opt_t));
 
         p = njt_pcalloc(cf->pool, sizeof(struct sockaddr_in));
