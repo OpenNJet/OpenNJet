@@ -2538,6 +2538,26 @@ njt_http_finalize_request(njt_http_request_t *r, njt_int_t rc)
                    "http finalize request: %i, \"%V?%V\" a:%d, c:%d",
                    rc, &r->uri, &r->args, r == c->data, r->main->count);
   
+#if (NJT_HTTP_FAULT_INJECT)
+    if(r->abort_flag > 0){
+        r->abort_flag = 0;
+        if (r == r->main) {
+            if (c->read->timer_set) {
+                njt_del_timer(c->read);
+            }
+
+            if (c->write->timer_set) {
+                njt_del_timer(c->write);
+            }
+        }
+
+        c->read->handler = njt_http_request_handler;
+        c->write->handler = njt_http_request_handler;
+
+        njt_http_finalize_request(r, njt_http_special_response_handler(r, rc));
+        return;         
+    }
+#endif  
 
     if (rc == NJT_DONE) {
         njt_http_finalize_connection(r);
@@ -3647,7 +3667,6 @@ njt_http_post_action(njt_http_request_t *r)
                    "post action: \"%V\"", &clcf->post_action);
 
     r->main->count--;
-
     r->http_version = NJT_HTTP_VERSION_9;
     r->header_only = 1;
     r->post_action = 1;
@@ -3681,7 +3700,6 @@ njt_http_close_request(njt_http_request_t *r, njt_int_t rc)
     }
 
     r->count--;
-
     if (r->count || r->blocked) {
         return;
     }

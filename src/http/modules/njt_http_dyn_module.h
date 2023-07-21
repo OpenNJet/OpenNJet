@@ -198,6 +198,20 @@ typedef struct {
 #endif
 } njt_http_log_main_conf_t;
 
+
+typedef struct {
+    njt_uint_t                    fault_inject_type;     // type
+    njt_msec_t                    duration;              // delay time
+    njt_str_t                     str_duration;          // duration string
+    njt_uint_t                    status_code;           // abort status code
+    uint32_t                      delay_percent;         // delay percent, default 100
+    uint32_t                      abort_percent;         // abort percent, default 100   
+    
+    njt_uint_t                    dynamic;               // 
+    njt_pool_t                    *pool;
+} njt_http_fault_inject_conf_t;
+
+
 njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc_t *data,njt_http_conf_ctx_t* ctx,njt_str_t * msg,njt_uint_t msg_capacity);
 
 njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data);

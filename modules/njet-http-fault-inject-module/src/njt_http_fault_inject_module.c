@@ -7,6 +7,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 #include <njt_rand_util.h>
+#include <njt_http_dyn_module.h>
 
 #include "njt_http_fault_inject_module.h"
 
@@ -86,10 +87,12 @@ njt_http_fault_inject_create_conf(njt_conf_t *cf)
 
     conf->fault_inject_type = NJT_HTTP_FAULT_INJECT_NONE;
     conf->duration = NJT_CONF_UNSET_MSEC;
+    conf->str_duration.data = NULL;
+    conf->str_duration.len = 0;
     conf->dynamic = 0;
     conf->delay_percent = 100;
     conf->abort_percent = 100;
-    conf->status_code = NJT_CONF_UNSET_UINT;
+    conf->status_code = 200;
     conf->pool = NULL;
 
     return conf;
@@ -105,6 +108,7 @@ njt_http_fault_inject(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_fault_inject_conf_t        *ficf;
     size_t                              param_len;
     njt_str_t					        tmp_str;
+    bool                                status_code_set = false;
 
     value = cf->args->elts;
     ficf = (njt_http_fault_inject_conf_t *)conf;
@@ -143,7 +147,7 @@ njt_http_fault_inject(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 			ficf->duration = njt_parse_time(&tmp_str, 0);
 			if (ficf->duration == (njt_msec_t) NJT_ERROR) {
 				njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-					" fault inject, invalid delay_duration, should 1h/1m/1s/1ms");
+					" fault inject, invalid delay_duration, should 1h/1m/1s/1ms format");
 				return NJT_CONF_ERROR;
 			}
 
@@ -154,9 +158,20 @@ njt_http_fault_inject(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 				return NJT_CONF_ERROR;
 			}
 
+            ficf->str_duration.len = tmp_str.len;
+            ficf->str_duration.data = njt_pcalloc(cf->pool, tmp_str.len);
+            if(ficf->str_duration.data == NULL){
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+					" fault inject, delay_duration malloc error");
+
+				return NJT_CONF_ERROR;
+            }
+            njt_memcpy(ficf->str_duration.data, tmp_str.data, tmp_str.len);
+
             continue;
         }else if (njt_strncmp(value[i].data, "status_code=", 12) == 0)
         {
+            status_code_set = true;
             tmp_str.data = value[i].data + 12;
 			tmp_str.len = value[i].len - 12;
 
@@ -196,6 +211,10 @@ njt_http_fault_inject(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 			}
 
             continue;
+        }else{
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+					" fault inject, not support param:%V", &value[i]);
+			return NJT_CONF_ERROR;
         }
     }
 
@@ -218,7 +237,7 @@ njt_http_fault_inject(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     //if abort must has status_code
     if(NJT_HTTP_FAULT_INJECT_ABORT == ficf->fault_inject_type
         || NJT_HTTP_FAULT_INJECT_DELAY_ABORT == ficf->fault_inject_type){
-        if(NJT_CONF_UNSET_UINT == ficf->status_code){
+        if(!status_code_set){
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                 "fault injet, abort or delay_abort must has status_code param");
             return NJT_CONF_ERROR;
@@ -337,11 +356,16 @@ static void njt_http_fault_inject_abort_request(njt_http_request_t *r){
     if(ficf == NULL || ficf->fault_inject_type == NJT_HTTP_FAULT_INJECT_NONE
         || ficf->fault_inject_type == NJT_HTTP_FAULT_INJECT_DELAY){
         njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " fault inject config is null in abort inject");
+        
         njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
         return;
     }
 
     njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " fault injet abort %d", ficf->status_code);
+    
+    r->headers_out.status = ficf->status_code;
+    r->abort_flag = 1;
+    // njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
     njt_http_finalize_request(r, ficf->status_code);
 }
 
