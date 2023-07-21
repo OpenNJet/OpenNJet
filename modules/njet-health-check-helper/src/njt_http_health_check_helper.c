@@ -2453,16 +2453,16 @@ static void njt_free_peer_resource(njt_http_health_check_peer_t *hc_peer) {
 //    njt_pool_t *pool;
     njt_helper_health_check_conf_t *hhccf = hc_peer->hhccf;
 //    pool = hc_peer->pool;
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                  "free peer pool : upstream = %V   ref_count = %d",hc_peer->peer.name,hc_peer->hhccf->ref_count);
     if (hc_peer->peer.connection) {
         njt_http_close_connection(hc_peer->peer.connection);
 //        njt_close_connection(hc_peer->peer.connection);
     }
 
     if(hhccf->ref_count>0){
-        --(hc_peer->hhccf->ref_count);
+        --(hhccf->ref_count);
     }
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-                  "free peer pool : upstream = %V   ref_count = %d",hc_peer->peer.name,hc_peer->hhccf->ref_count);
 //    if (hc_peer->hhccf->disable) {
 ////        njt_destroy_pool(hc_peer->hhccf->pool);
 //        --(hc_peer->hhccf->ref_count);
