@@ -21,9 +21,9 @@ typedef njt_str_t* health_check_jitter_t;
 
 typedef njt_str_t* health_check_timeout_t;
 
-typedef double health_check_passes_t;
-typedef double health_check_fails_t;
-typedef double health_check_port_t;
+typedef int64_t health_check_passes_t;
+typedef int64_t health_check_fails_t;
+typedef int64_t health_check_port_t;
 typedef njt_str_t* health_check_stream_send_t;
 
 typedef njt_str_t* health_check_stream_expect_t;

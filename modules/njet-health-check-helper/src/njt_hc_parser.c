@@ -608,14 +608,16 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "passes";
-            if (builtin_parse_double(pool, parse_state, (&out->passes), err_str)) {
+            int64_t int_parse_tmp;
+            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_str)) {
                 return true;
             }
-            if (!((*(&out->passes)) >= 1)) {
+            if (!(int_parse_tmp >= 1)) {
                 parse_state->current_token -= 1;
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Floating point value %.15g in '%s' out of range. It must be >= 1.", (*(&out->passes)), parse_state->current_key)
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be >= 1.", int_parse_tmp, parse_state->current_key)
                 return true;
             }
+            *(&out->passes) = int_parse_tmp;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "fails")) {
             if (seen_fails) {
@@ -626,14 +628,16 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "fails";
-            if (builtin_parse_double(pool, parse_state, (&out->fails), err_str)) {
+            int64_t int_parse_tmp;
+            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_str)) {
                 return true;
             }
-            if (!((*(&out->fails)) >= 1)) {
+            if (!(int_parse_tmp >= 1)) {
                 parse_state->current_token -= 1;
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Floating point value %.15g in '%s' out of range. It must be >= 1.", (*(&out->fails)), parse_state->current_key)
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be >= 1.", int_parse_tmp, parse_state->current_key)
                 return true;
             }
+            *(&out->fails) = int_parse_tmp;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "port")) {
             if (seen_port) {
@@ -644,19 +648,21 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "port";
-            if (builtin_parse_double(pool, parse_state, (&out->port), err_str)) {
+            int64_t int_parse_tmp;
+            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_str)) {
                 return true;
             }
-            if (!((*(&out->port)) >= 1)) {
+            if (!(int_parse_tmp >= 1)) {
                 parse_state->current_token -= 1;
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Floating point value %.15g in '%s' out of range. It must be >= 1.", (*(&out->port)), parse_state->current_key)
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be >= 1.", int_parse_tmp, parse_state->current_key)
                 return true;
             }
-            if (!((*(&out->port)) <= 65535)) {
+            if (!(int_parse_tmp <= 65535)) {
                 parse_state->current_token -= 1;
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Floating point value %.15g in '%s' out of range. It must be <= 65535.", (*(&out->port)), parse_state->current_key)
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be <= 65535.", int_parse_tmp, parse_state->current_key)
                 return true;
             }
+            *(&out->port) = int_parse_tmp;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "stream")) {
             if (seen_stream) {
@@ -738,7 +744,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
     }
     // HAHB
     if (!seen_port) {
-        out->port = 0;
+        out->port = 0LL;
     }
     // HAHB
     if (!seen_stream) {
@@ -770,20 +776,20 @@ static void get_json_length_health_check_timeout(health_check_timeout_t *out, si
 }
 
 static void get_json_length_health_check_passes(health_check_passes_t *out, size_t *length, njt_int_t flags) {
-    u_char str[48], *cur;
-    cur = njt_sprintf(str, "%.4f", *out); // Convert float to string
+    u_char str[24], *cur;
+    cur = njt_sprintf(str, "%i", *out); // Convert integer to string
     *length += cur - str;
 }
 
 static void get_json_length_health_check_fails(health_check_fails_t *out, size_t *length, njt_int_t flags) {
-    u_char str[48], *cur;
-    cur = njt_sprintf(str, "%.4f", *out); // Convert float to string
+    u_char str[24], *cur;
+    cur = njt_sprintf(str, "%i", *out); // Convert integer to string
     *length += cur - str;
 }
 
 static void get_json_length_health_check_port(health_check_port_t *out, size_t *length, njt_int_t flags) {
-    u_char str[48], *cur;
-    cur = njt_sprintf(str, "%.4f", *out); // Convert float to string
+    u_char str[24], *cur;
+    cur = njt_sprintf(str, "%i", *out); // Convert integer to string
     *length += cur - str;
 }
 
@@ -1245,19 +1251,19 @@ static void to_oneline_json_health_check_timeout(health_check_timeout_t *out, nj
 
 static void to_oneline_json_health_check_passes(health_check_passes_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%.4f", *out);
+    cur = njt_sprintf(cur, "%i", *out);
     buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_health_check_fails(health_check_fails_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%.4f", *out);
+    cur = njt_sprintf(cur, "%i", *out);
     buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_health_check_port(health_check_port_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%.4f", *out);
+    cur = njt_sprintf(cur, "%i", *out);
     buf->len = cur - buf->data;
 }
 
