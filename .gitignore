@@ -1,7 +1,5 @@
 auto/lib
 src/http/njt_doc_gz.h
-nginx/Makefile
-nginx/target
 build/
 *.swp
 ./Makefile
