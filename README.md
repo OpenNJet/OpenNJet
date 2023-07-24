@@ -42,7 +42,7 @@ https://gitee.com/njet-rd/njet
 
 ​     docker build -t njet_main:v1.0 .
 
-​     docker run -v `pwd`:/njet_main njet_main:v1.0 /bin/bash -c "cd /njet_main && sh build_njet.sh"
+​     docker run -v &#96;pwd&#96;:/njet_main njet_main:v1.0 /bin/bash -c "cd /njet_main && sh build_njet.sh"
 
 3. 编译完后，在 objs 目录下，主要包含 njet 文件和相关的 so 文件
 
