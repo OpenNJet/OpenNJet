@@ -517,7 +517,7 @@ static njt_int_t njt_dyn_fault_inject_update_locs(njt_array_t *locs, njt_queue_t
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_fault_inject_set_conf");
                     if (0 == rpc_data_str.len) {
-                        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " njt_dyn_fault_inject_set_conf error[%V];", &name);
+                        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " njt_dyn_fault_inject_set_conf error[%V];", name);
                         rpc_data_str.len = end - data_buf;
                     }
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
@@ -527,10 +527,14 @@ static njt_int_t njt_dyn_fault_inject_update_locs(njt_array_t *locs, njt_queue_t
                     njt_rpc_result_add_success_count(rpc_result);
                 }
             }
+
+            if (dfil.locations && dfil.locations->nelts > 0) {
+                njt_dyn_fault_inject_update_locs(dfil.locations, clcf->old_locations, ctx, rpc_result);
+            }
         }
 
         if(!found){
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " location[%V] not found", &name);
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " location[%V] not found", name);
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         }
