@@ -268,7 +268,6 @@ njt_http_init_connection(njt_connection_t *c)
             sin = (struct sockaddr_in *) c->local_sockaddr;
 
             addr = port->addrs;
-
             /* the last address is "*" */
 
             for (i = 0; i < port->naddrs - 1; i++) {
@@ -278,6 +277,7 @@ njt_http_init_connection(njt_connection_t *c)
             }
 
             hc->addr_conf = &addr[i].conf;
+	     njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,"njt_http_init_connection listening=%p, port=%p, addr=%p,servers=%p,addr_conf=%p",c->listening,port,addr,c->listening->servers,hc->addr_conf);	
 
             break;
         }
@@ -298,6 +298,7 @@ njt_http_init_connection(njt_connection_t *c)
             hc->addr_conf = &addr[0].conf;
             break;
         }
+	njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,"2 njt_http_init_connection  listening=%p,port=%p,addr=%p,servers=%p,addr_conf=%p",c->listening,port,addr,c->listening->servers,hc->addr_conf);
     }
 
     /* the default server configuration for the address:port */
@@ -2298,7 +2299,7 @@ njt_http_set_virtual_server(njt_http_request_t *r, njt_str_t *host)
     }
 
 #endif
-
+   njt_log_error(NJT_LOG_INFO, r->connection->log, 0,"hc->addr_conf->virtual_names=%p,addr_conf=%p",hc->addr_conf->virtual_names,hc->addr_conf);
     rc = njt_http_find_virtual_server(r->connection,
                                       hc->addr_conf->virtual_names,
                                       host, r, &cscf);

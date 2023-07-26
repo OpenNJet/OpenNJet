@@ -16,7 +16,9 @@
 #include <njt_rpc_result_util.h>
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
-
+extern  njt_int_t
+njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
+                          njt_array_t *ports); 
 
 njt_str_t njt_del_headtail_space(njt_str_t src);
 
@@ -408,12 +410,13 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
     njt_conf_t conf;
     njt_int_t rc = NJT_OK;
 	njt_uint_t  msg_len;
-    //njt_http_core_srv_conf_t *cscf = NULL;
     char *rv = NULL;
+    njt_pool_t  *old_pool = NULL;
     njt_http_conf_ctx_t* http_ctx;
     njt_str_t server_name,msg;
     njt_str_t server_path; // = njt_string("./conf/add_server.txt");
      njt_http_core_main_conf_t *cmcf;
+    njt_http_core_srv_conf_t **cscfp;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
 
     msg_len = 1024;
@@ -470,7 +473,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
     conf.cycle = (njt_cycle_t *) njt_cycle;
     conf.log = njt_cycle->log;
     conf.module_type = NJT_HTTP_MODULE;
-    conf.cmd_type = NJT_HTTP_SRV_CONF;
+    conf.cmd_type = NJT_HTTP_MAIN_CONF;
     conf.dynamic = 1;
 
     //clcf->locations = NULL; // clcf->old_locations;
@@ -484,10 +487,19 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
         goto out;
     }
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");
-
-    conf.pool = njt_cycle->pool; 
    
     njt_http_variables_init_vars_dyn(&conf);
+
+    old_pool = cmcf->dyn_vs_pool;
+    cmcf->dyn_vs_pool = NULL;
+    cmcf->dyn_vs_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if(cmcf->dyn_vs_pool == NULL) {
+	    rc = NJT_ERROR;
+	    goto out;
+    } else {
+	    njt_sub_pool(conf.cycle->pool,cmcf->dyn_vs_pool);
+    }
+
 
 
     //merge servers
@@ -509,10 +521,29 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
                 goto out;
             }
     }
+    conf.pool = cmcf->dyn_vs_pool;
+    conf.temp_pool = cmcf->dyn_vs_pool;
+    conf.module_type = NJT_CORE_MODULE;
+    conf.cmd_type = NJT_MAIN_CONF;
+    conf.ctx = njt_cycle->conf_ctx;	
+    if (njt_http_optimize_servers(&conf, cmcf, cmcf->ports) != NJT_OK) {
+        rc = NJT_ERROR;
+	goto out;
+    }
+    
+    cscfp = cmcf->servers.elts;
+    conf.pool = cscfp[cmcf->servers.nelts - 1]->pool;  //todo check
+    conf.temp_pool = conf.pool;
+
+
+
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge end +++++++++++++++");
 
     njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "add server end +++++++++++++++");
 out:
+    if(old_pool != NULL) {
+	njt_destroy_pool(old_pool);
+    }
     if(rc != NJT_OK) {
     	  njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  server [%V] error!",&server_name);
     } else {
@@ -871,8 +902,10 @@ static njt_int_t njt_http_server_write_data(njt_fd_t fd,njt_http_dyn_server_info
 
 		if(server_info->server_body.len != 0 && server_info->server_body.data != NULL){
 			p = njt_snprintf(p, remain, " %V; \n}\n",&server_info->server_body);
-			remain = data + buffer_len - p;
+		} else {
+			p = njt_snprintf(p, remain, "}\n");
 		}
+		remain = data + buffer_len - p;
 
 		rlen = njt_write_fd(fd, data, p - data);
 		if(rlen < 0) {

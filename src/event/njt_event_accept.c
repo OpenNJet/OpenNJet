@@ -216,6 +216,7 @@ njt_event_accept(njt_event_t *ev)
 
         c->socklen = socklen;
         c->listening = ls;
+	njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,"accept  ls=%p",ls);
         c->local_sockaddr = ls->sockaddr;
         c->local_socklen = ls->socklen;
 

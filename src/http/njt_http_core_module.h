@@ -172,6 +172,7 @@ typedef struct {
     njt_hash_keys_arrays_t    *variables_keys;
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t		           *dyn_var_pool;
+    njt_pool_t		           *dyn_vs_pool;
 #endif
     njt_array_t               *ports;
 
@@ -212,8 +213,9 @@ typedef struct {
     //add by clb
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t                *named_parent_pool;
-//    njt_pool_t                *new_named_parent_pool;
-//    njt_http_core_loc_conf_t  **new_named_locations;
+#endif
+#if (NJT_HTTP_DYNAMIC_SERVER)
+    njt_pool_t                *pool;
 #endif
 } njt_http_core_srv_conf_t;
 
@@ -295,6 +297,9 @@ typedef struct {
     /* the default server configuration for this address:port */
     njt_http_core_srv_conf_t  *default_server;
     njt_array_t                servers;  /* array of njt_http_core_srv_conf_t */
+#if (NJT_HTTP_DYNAMIC_SERVER)
+    unsigned      if_bind:1;	
+#endif  
 } njt_http_conf_addr_t;
 
 

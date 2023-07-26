@@ -3167,6 +3167,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 
     rv = njt_conf_parse(cf, NULL);
 #if (NJT_HTTP_DYNAMIC_SERVER)
+    cscf->pool = new_server_pool;
     cf->pool = old_server_pool;
     cf->temp_pool = old_server_temp_pool;
 #endif
@@ -3863,7 +3864,7 @@ njt_http_core_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     if (conf->server_name.data == NULL) {
         return NJT_CONF_ERROR;
     }
-
+    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,"njt_http_core_merge_srv_conf server=%p,name=%V",conf,&conf->server_name);
     return NJT_CONF_OK;
 }
 
