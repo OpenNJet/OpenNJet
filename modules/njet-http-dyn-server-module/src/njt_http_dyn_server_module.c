@@ -416,7 +416,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
     njt_str_t server_name,msg;
     njt_str_t server_path; // = njt_string("./conf/add_server.txt");
      njt_http_core_main_conf_t *cmcf;
-    njt_http_core_srv_conf_t **cscfp;
+    njt_http_core_srv_conf_t *cscf;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
 
     msg_len = 1024;
@@ -488,17 +488,11 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
     }
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");
    
+    cscf = http_ctx->srv_conf[njt_http_core_module.ctx_index];
+    conf.pool = cscf->pool;
+    conf.temp_pool = cscf->pool;
     njt_http_variables_init_vars_dyn(&conf);
 
-    old_pool = cmcf->dyn_vs_pool;
-    cmcf->dyn_vs_pool = NULL;
-    cmcf->dyn_vs_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-    if(cmcf->dyn_vs_pool == NULL) {
-	    rc = NJT_ERROR;
-	    goto out;
-    } else {
-	    njt_sub_pool(conf.cycle->pool,cmcf->dyn_vs_pool);
-    }
 
 
 
@@ -521,6 +515,17 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
                 goto out;
             }
     }
+    
+
+    old_pool = cmcf->dyn_vs_pool;
+    cmcf->dyn_vs_pool = NULL;
+    cmcf->dyn_vs_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if(cmcf->dyn_vs_pool == NULL) {
+	    rc = NJT_ERROR;
+	    goto out;
+    } else {
+	    njt_sub_pool(conf.cycle->pool,cmcf->dyn_vs_pool);
+    }
     conf.pool = cmcf->dyn_vs_pool;
     conf.temp_pool = cmcf->dyn_vs_pool;
     conf.module_type = NJT_CORE_MODULE;
@@ -530,12 +535,6 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
         rc = NJT_ERROR;
 	goto out;
     }
-    
-    cscfp = cmcf->servers.elts;
-    conf.pool = cscfp[cmcf->servers.nelts - 1]->pool;  //todo check
-    conf.temp_pool = conf.pool;
-
-
 
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge end +++++++++++++++");
 

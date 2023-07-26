@@ -1601,8 +1601,8 @@ njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
     if (ports == NULL) {
         return NJT_OK;
     }
-    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,"====================");
-    njt_show_listening_sockets((njt_cycle_t *)cf->cycle);
+    njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0,"1 ====================");
+    //njt_show_listening_sockets((njt_cycle_t *)cf->cycle);
     port = ports->elts;
     for (p = 0; p < ports->nelts; p++) {
 
@@ -1613,10 +1613,10 @@ njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
          * check whether all name-based servers have the same
          * configuration as a default server for given address:port
          */
-
+	
         addr = port[p].addrs.elts;
         for (a = 0; a < port[p].addrs.nelts; a++) {
-	   njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,"ports=%p,port=%p,addr=%p,servers.nelts=%d",ports,&port[p],addr,addr[a].servers.nelts);
+	   njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0,"index=%d,ports=%p,port=%p,addr=%p,servers.nelts=%d",p,ports,&port[p],addr,addr[a].servers.nelts);
             if (addr[a].servers.nelts > 1
                 #if (NJT_PCRE)
                 || addr[a].default_server->captures
@@ -1631,8 +1631,8 @@ njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
             return NJT_ERROR;
         }
     }
-    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,"====================");
-    njt_show_listening_sockets((njt_cycle_t *)cf->cycle);
+    njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0,"2 ====================");
+    //njt_show_listening_sockets((njt_cycle_t *)cf->cycle);
 
     return NJT_OK;
 }

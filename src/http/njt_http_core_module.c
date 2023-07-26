@@ -3791,7 +3791,9 @@ njt_http_core_create_srv_conf(njt_conf_t *cf)
 
     cscf->file_name = cf->conf_file->file.name.data;
     cscf->line = cf->conf_file->line;
-
+#if (NJT_HTTP_DYNAMIC_SERVER)
+    cscf->pool=cf->pool;  // cx 澶勭悊鍐呭瓨閲婃斁
+#endif
     return cscf;
 }
 
