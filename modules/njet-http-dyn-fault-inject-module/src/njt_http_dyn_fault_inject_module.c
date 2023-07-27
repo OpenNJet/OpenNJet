@@ -564,7 +564,6 @@ static void njt_dyn_fault_inject_dump_locs(njt_pool_t *pool,
     }
 
     tq = njt_queue_head(q);
-
     for (; tq != njt_queue_sentinel(q); tq = njt_queue_next(tq))
     {
         hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
@@ -626,7 +625,7 @@ static njt_str_t *njt_dyn_fault_inject_dump_conf(njt_cycle_t *cycle, njt_pool_t 
     njt_array_t                     *array;
     njt_str_t                       *tmp_str;
     njt_http_server_name_t          *server_name;
-    dyn_fault_inject_t dynjson_obj;
+    dyn_fault_inject_t              dynjson_obj;
     dyn_fault_inject_servers_item_t *server_item;
 
     njt_memzero(&dynjson_obj, sizeof(dyn_fault_inject_t));
@@ -670,7 +669,9 @@ static njt_str_t *njt_dyn_fault_inject_dump_conf(njt_cycle_t *cycle, njt_pool_t 
             }
 
             clcf = njt_http_get_module_loc_conf(cscfp[i]->ctx, njt_http_core_module);
-            njt_dyn_fault_inject_dump_locs(pool, clcf->old_locations, server_item->locations);
+            if(clcf != NULL){
+                njt_dyn_fault_inject_dump_locs(pool, clcf->old_locations, server_item->locations);
+            }
 
             add_item_dyn_fault_inject_servers(dynjson_obj.servers, server_item);
         }

@@ -4,7 +4,7 @@
 #include <njt_core.h>
 #include <njt_http_kv_module.h>
 #include <njt_http.h>
-#include <njt_json_util.h>
+// #include <njt_json_util.h>
 #include <njt_http_util.h>
 #include <njt_http_dyn_module.h>
 
@@ -15,21 +15,21 @@ extern njt_module_t njt_http_limit_conn_module;
 extern njt_module_t njt_http_limit_req_module;
 
 
-static njt_conf_enum_t  njt_http_dyn_limit_conn_log_levels[] = {
-    { njt_string("info"), NJT_LOG_INFO },
-    { njt_string("notice"), NJT_LOG_NOTICE },
-    { njt_string("warn"), NJT_LOG_WARN },
-    { njt_string("error"), NJT_LOG_ERR },
-    { njt_null_string, 0 }
-};
+// static njt_conf_enum_t  njt_http_dyn_limit_conn_log_levels[] = {
+//     { njt_string("info"), NJT_LOG_INFO },
+//     { njt_string("notice"), NJT_LOG_NOTICE },
+//     { njt_string("warn"), NJT_LOG_WARN },
+//     { njt_string("error"), NJT_LOG_ERR },
+//     { njt_null_string, 0 }
+// };
 
-static njt_conf_enum_t  njt_http_dyn_limit_req_log_levels[] = {
-    { njt_string("info"), NJT_LOG_INFO },
-    { njt_string("notice"), NJT_LOG_NOTICE },
-    { njt_string("warn"), NJT_LOG_WARN },
-    { njt_string("error"), NJT_LOG_ERR },
-    { njt_null_string, 0 }
-};
+// static njt_conf_enum_t  njt_http_dyn_limit_req_log_levels[] = {
+//     { njt_string("info"), NJT_LOG_INFO },
+//     { njt_string("notice"), NJT_LOG_NOTICE },
+//     { njt_string("warn"), NJT_LOG_WARN },
+//     { njt_string("error"), NJT_LOG_ERR },
+//     { njt_null_string, 0 }
+// };
 
 static njt_command_t limit_rate_cmd = {
       njt_string("limit_rate"),
@@ -51,277 +51,6 @@ static njt_command_t limit_rate_after_cmd = {
       NULL
 };
 
-
-static njt_json_define_t njt_http_dyn_limit_conn_json_dt[] = {
-    {
-        njt_string("zone"),
-        offsetof(njt_http_dyn_limit_conn_t, zone),
-        0,
-        NJT_JSON_STR,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("conn"),
-        offsetof(njt_http_dyn_limit_conn_t, conn),
-        0,
-        NJT_JSON_INT,
-        0,
-        NULL,
-        NULL,
-    },
-
-    njt_json_define_null,
-};
-
-
-static njt_json_define_t njt_http_dyn_limit_req_json_dt[] = {
-    {
-        njt_string("zone"),
-        offsetof(njt_http_dyn_limit_req_t, zone),
-        0,
-        NJT_JSON_STR,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("burst"),
-        offsetof(njt_http_dyn_limit_req_t, burst),
-        0,
-        NJT_JSON_INT,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("delay"),
-        offsetof(njt_http_dyn_limit_req_t, delay),
-        0,
-        NJT_JSON_STR,
-        0,
-        NULL,
-        NULL,
-    },
-
-    njt_json_define_null,
-};
-
-
-
-static njt_json_define_t njt_http_dyn_limit_loc_json_dt[] = {
-    {
-        njt_string("location"),
-        offsetof(njt_http_dyn_limit_loc_t, full_name),
-        0,
-        NJT_JSON_STR,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("limit_rate"),
-        offsetof(njt_http_dyn_limit_loc_t, limit_rate),
-        0,
-        NJT_JSON_STR,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("limit_rate_after"),
-        offsetof(njt_http_dyn_limit_loc_t, limit_rate_after),
-        0,
-        NJT_JSON_STR,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("limit_reqs_scope"),
-        offsetof(njt_http_dyn_limit_loc_t, limit_reqs_scope),
-        sizeof(njt_http_dyn_limit_conn_t),
-        NJT_JSON_STR,
-        0,
-        njt_http_dyn_limit_conn_json_dt,
-        NULL,
-    },
-    {
-        njt_string("limit_reqs"),
-        offsetof(njt_http_dyn_limit_loc_t, limit_reqs),
-        sizeof(njt_http_dyn_limit_req_t),
-        NJT_JSON_ARRAY,
-        NJT_JSON_OBJ,
-        njt_http_dyn_limit_req_json_dt,
-        NULL,
-    },
-    {
-        njt_string("limit_req_dry_run"),
-        offsetof(njt_http_dyn_limit_loc_t, limit_req_dry_run),
-        0,
-        NJT_JSON_STR,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("limit_req_log_level"),
-        offsetof(njt_http_dyn_limit_loc_t, limit_req_log_level),
-        0,
-        NJT_JSON_STR,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("limit_req_status"),
-        offsetof(njt_http_dyn_limit_loc_t, limit_req_status),
-        0,
-        NJT_JSON_INT,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("limit_conns_scope"),
-        offsetof(njt_http_dyn_limit_loc_t, limit_conns_scope),
-        sizeof(njt_http_dyn_limit_conn_t),
-        NJT_JSON_STR,
-        0,
-        njt_http_dyn_limit_conn_json_dt,
-        NULL,
-    },
-    {
-        njt_string("limit_conns"),
-        offsetof(njt_http_dyn_limit_loc_t, limit_conns),
-        sizeof(njt_http_dyn_limit_conn_t),
-        NJT_JSON_ARRAY,
-        NJT_JSON_OBJ,
-        njt_http_dyn_limit_conn_json_dt,
-        NULL,
-    },
-    {
-        njt_string("limit_conn_dry_run"),
-        offsetof(njt_http_dyn_limit_loc_t, limit_conn_dry_run),
-        0,
-        NJT_JSON_STR,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("limit_conn_log_level"),
-        offsetof(njt_http_dyn_limit_loc_t, limit_conn_log_level),
-        0,
-        NJT_JSON_STR,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("limit_conn_status"),
-        offsetof(njt_http_dyn_limit_loc_t, limit_conn_status),
-        0,
-        NJT_JSON_INT,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("locations"),
-        offsetof(njt_http_dyn_limit_loc_t, locs),
-        sizeof(njt_http_dyn_limit_loc_t),
-        NJT_JSON_ARRAY,
-        NJT_JSON_OBJ,
-        njt_http_dyn_limit_loc_json_dt,
-        NULL,
-    },
-
-    njt_json_define_null,
-};
-
-
-static njt_json_define_t njt_http_dyn_limit_rps_json_dt[] = {
-    {
-        njt_string("zone"),
-        offsetof(njt_http_dyn_limit_rps_t, zone),
-        0,
-        NJT_JSON_STR,
-        0,
-        NULL,
-        NULL,
-    },
-    {
-        njt_string("rate"),
-        offsetof(njt_http_dyn_limit_rps_t, rate),
-        0,
-        NJT_JSON_STR,
-        0,
-        NULL,
-        NULL,
-    },
-
-    njt_json_define_null,
-};
-
-
-static njt_json_define_t njt_http_dyn_limit_srv_json_dt[] = {
-    {
-        njt_string("listens"),
-        offsetof(njt_http_dyn_limit_srv_t, listens),
-        sizeof(njt_str_t),
-        NJT_JSON_ARRAY,
-        NJT_JSON_STR,
-        NULL,
-        NULL,
-    },
-
-    {
-        njt_string("serverNames"),
-        offsetof(njt_http_dyn_limit_srv_t, server_names),
-        sizeof(njt_str_t),
-        NJT_JSON_ARRAY,
-        NJT_JSON_STR,
-        NULL,
-        NULL,
-    },
-
-    {
-        njt_string("locations"),
-        offsetof(njt_http_dyn_limit_srv_t, locs),
-        sizeof(njt_http_dyn_limit_loc_t),
-        NJT_JSON_ARRAY,
-        NJT_JSON_OBJ,
-        njt_http_dyn_limit_loc_json_dt,
-        NULL,
-    },
-
-    njt_json_define_null,
-};
-
-static njt_json_define_t njt_http_dyn_limit_main_json_dt[] = {
-    {
-        njt_string("servers"),
-        offsetof(njt_http_dyn_limit_main_t, servers),
-        sizeof(njt_http_dyn_limit_srv_t),
-        NJT_JSON_ARRAY,
-        NJT_JSON_OBJ,
-        njt_http_dyn_limit_srv_json_dt,
-        NULL,
-    },
-    {
-        njt_string("limit_rps"),
-        offsetof(njt_http_dyn_limit_main_t, limit_rps),
-        sizeof(njt_http_dyn_limit_rps_t),
-        NJT_JSON_ARRAY,
-        NJT_JSON_OBJ,
-        njt_http_dyn_limit_rps_json_dt,
-        NULL,
-    },
-
-    njt_json_define_null,
-};
 
 njt_str_t dyn_limit_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
@@ -463,6 +192,7 @@ static njt_int_t njt_dyn_limit_set_limit_conns(dyn_limit_servers_item_locations_
     u_char                               data_buf[1024];
     u_char                              *end;
     njt_str_t                            rpc_data_str;
+    locationDef_limit_conns_t           *limit_conns;
 
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
@@ -522,8 +252,9 @@ static njt_int_t njt_dyn_limit_set_limit_conns(dyn_limit_servers_item_locations_
         }
     }
 
+    limit_conns = get_locationDef_limit_conns(data);
     for (i = 0; i < data->limit_conns->nelts; i++) {
-        data_limit = get_locationDef_limit_conns_item(data, i);
+        data_limit = get_locationDef_limit_conns_item(limit_conns, i);
         if(data_limit.zone->len < 1){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
                  "njt_dyn_limit_set_limit_conns zone name is empty");
@@ -639,6 +370,7 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(dyn_limit_servers_item_locations_i
     u_char                       data_buf[1024];
     u_char                      *end;
     njt_str_t                    rpc_data_str;
+    locationDef_limit_reqs_t    *limit_reqs;
 
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
@@ -702,8 +434,10 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(dyn_limit_servers_item_locations_i
         }
     }
 
+    limit_reqs = get_locationDef_limit_reqs(data);
+
     for (i = 0; i < data->limit_reqs->nelts; i++) {
-        data_limit = get_locationDef_limit_reqs_item(data, i);
+        data_limit = get_locationDef_limit_reqs_item(limit_reqs, i);
         if(data_limit.zone->len < 1){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
                  "njt_dyn_limit_set_limit_reqs zone name is empty");
@@ -861,7 +595,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate(dyn_limit_servers_item_locations_i
     cf = &cf_data;
 
     //if variable, need check variable table
-    rc = njt_dyn_limit_check_var(cf, &data->limit_rate);
+    rc = njt_dyn_limit_check_var(cf, data->limit_rate);
     if(rc != NJT_OK){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
             "njt_dyn_limit_set_limit_rate var not exist or format error");
@@ -1016,7 +750,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate_after(dyn_limit_servers_item_locat
     cf = &cf_data;
 
     //if variable, need check variable table
-    rc = njt_dyn_limit_check_var(cf, &data->limit_rate_after);
+    rc = njt_dyn_limit_check_var(cf, data->limit_rate_after);
     if(rc != NJT_OK){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
             "njt_dyn_limit_set_limit_rate_after var not exist or format error");
@@ -1264,50 +998,12 @@ static njt_int_t njt_dyn_limit_set_limit_conn_log_level(dyn_limit_servers_item_l
 {
     njt_conf_t                  *cf;
     njt_http_limit_conn_conf_t  *lccf;
-    bool                         found = false;
-    njt_conf_enum_t             *e;
-    njt_uint_t                   i, index;
     u_char                       data_buf[1024];
     u_char                      *end;
     njt_str_t                    rpc_data_str;
 
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0; 
-
-    found = true;
-    index = 0;
-
-    switch (data->limit_conn_log_level)
-    {
-    case LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO:
-        index = 0;
-        break;
-    case LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE:
-        index = 1;
-        break;
-    case LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN:
-        index = 2;
-        break;
-    case LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR:
-        index = 3;
-        break;    
-    default:
-        found = false;
-        break;
-    }
-
-    e = njt_http_dyn_limit_conn_log_levels;
-
-    if(!found){
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_limit_set_limit_conn_log_level level invalid");
-        
-        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
-            " dyn limit conn_log_level level invalid");
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-        
-        return NJT_ERROR;
-    }
 
     njt_conf_t cf_data = {
         .cycle = (njt_cycle_t *)njt_cycle,
@@ -1327,10 +1023,26 @@ static njt_int_t njt_dyn_limit_set_limit_conn_log_level(dyn_limit_servers_item_l
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         return NJT_ERROR;
 	}
-
-    lccf->log_level = e[index].value;
-
  
+    switch (data->limit_conn_log_level)
+    {
+    case LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO:
+        lccf->log_level = NJT_LOG_INFO;
+        break;
+    case LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE:
+        lccf->log_level = NJT_LOG_NOTICE;
+        break;
+    case LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN:
+        lccf->log_level = NJT_LOG_WARN;
+        break;
+    case LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR:
+        lccf->log_level = NJT_LOG_ERR;
+        break;    
+    default:
+        lccf->log_level = NJT_LOG_INFO;
+        break;
+    }
+
     return NJT_OK;
 }
 
@@ -1341,50 +1053,12 @@ static njt_int_t njt_dyn_limit_set_limit_req_log_level(dyn_limit_servers_item_lo
 {
     njt_conf_t                  *cf;
     njt_http_limit_req_conf_t   *lrcf;
-    bool                         found = false;
-    njt_conf_enum_t             *e;
-    njt_uint_t                   i, index;
     u_char                       data_buf[1024];
     u_char                      *end;
     njt_str_t                    rpc_data_str;
 
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0; 
-
-    e = njt_http_dyn_limit_req_log_levels;
-
-    found = true;
-    index = 0;
-
-    switch (data->limit_req_log_level)
-    {
-    case LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO:
-        index = 0;
-        break;
-    case LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE:
-        index = 1;
-        break;
-    case LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN:
-        index = 2;
-        break;
-    case LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR:
-        index = 3;
-        break;    
-    default:
-        found = false;
-        break;
-    }
-
-    if(!found){
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_limit_set_limit_req_log_level level invalid");
-        
-        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
-            " dyn limit req_log_level level invalid");
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-        
-        return NJT_ERROR;
-    }
 
     njt_conf_t cf_data = {
         .cycle = (njt_cycle_t *)njt_cycle,
@@ -1405,7 +1079,24 @@ static njt_int_t njt_dyn_limit_set_limit_req_log_level(dyn_limit_servers_item_lo
         return NJT_ERROR;
 	}
 
-    lrcf->limit_log_level = e[index].value;
+    switch (data->limit_req_log_level)
+    {
+    case LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO:
+        lrcf->limit_log_level = NJT_LOG_INFO;
+        break;
+    case LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE:
+        lrcf->limit_log_level = NJT_LOG_NOTICE;
+        break;
+    case LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN:
+        lrcf->limit_log_level = NJT_LOG_WARN;
+        break;
+    case LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR:
+        lrcf->limit_log_level = NJT_LOG_ERR;
+        break;    
+    default:
+        lrcf->limit_log_level = NJT_LOG_INFO;
+        break;
+    }
 
     lrcf->delay_log_level = (lrcf->limit_log_level == NJT_LOG_INFO) ?
                                 NJT_LOG_INFO : lrcf->limit_log_level + 1;
@@ -1783,49 +1474,39 @@ static njt_int_t njt_dyn_limit_update_locs(njt_array_t *locs, njt_queue_t *q, nj
     return NJT_OK;
 }
 
-static njt_json_element *njt_dyn_limit_dump_locs_json(njt_pool_t *pool, njt_queue_t *locations)
+static void njt_dyn_limit_dump_locs_json(njt_pool_t *pool, 
+        njt_queue_t *locations, dyn_limit_servers_item_locations_t *loc_items)
 {
     njt_http_core_loc_conf_t      *clcf;
     njt_http_location_queue_t     *hlq;
     njt_queue_t                   *q, *tq;
     njt_http_limit_conn_conf_t    *lccf;
     njt_http_limit_req_conf_t     *lrcf;
-    njt_json_element              *locs, *item, *sub;
-    njt_json_element              *limit_conn, *zone, *conn;
-    njt_str_t                      tmpstr;
-    njt_conf_enum_t               *e;
     njt_uint_t                     i;
     njt_http_limit_conn_limit_t   *conn_limits;
     njt_http_limit_req_limit_t    *req_limits;
-    njt_json_element *             burst_ele;
-    njt_json_element *             delay_ele;
     njt_uint_t                     delay;
     njt_uint_t                     delay_max_comp;
-    njt_str_t                      delay_str;
+    njt_str_t                      *delay_str;
     u_char                        *p; 
     njt_int_t                      delay_max_len = 100;
+    dyn_limit_servers_item_locations_item_t *loc_item;
+    locationDef_limit_conns_item_t *limit_conn_item;
+    locationDef_limit_reqs_item_t  *limit_req_item;
 
     // njt_http_access_rule_t *rule;
-
     if (locations == NULL)
     {
-        return NULL;
+        return;
     }
 
-    locs = NULL;
     q = locations;
     if (njt_queue_empty(q))
     {
-        return NULL;
+        return;
     }
 
     tq = njt_queue_head(q);
-    locs = njt_json_arr_element(pool, njt_json_fast_key("locations"));
-    if (locs == NULL)
-    {
-        return NULL;
-    }
-
     for (; tq != njt_queue_sentinel(q); tq = njt_queue_next(tq))
     {
         hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
@@ -1837,327 +1518,235 @@ static njt_json_element *njt_dyn_limit_dump_locs_json(njt_pool_t *pool, njt_queu
         lccf = njt_http_get_module_loc_conf(clcf, njt_http_limit_conn_module);
         lrcf = njt_http_get_module_loc_conf(clcf, njt_http_limit_req_module);
 
-        item = njt_json_obj_element(pool, njt_json_null_key);
-        if (item == NULL)
-        {
-            return NULL;
+        loc_item = create_locationDef(pool);
+        if(loc_item == NULL){
+            continue;
         }
-
-        sub = njt_json_str_element(pool, njt_json_fast_key("location"), &clcf->full_name);
-        if (sub == NULL)
-        {
-            return NULL;
-        }
-        njt_struct_add(item, sub, pool);
+        set_locationDef_location(loc_item, &clcf->full_name);
 
         if(clcf->limit_rate){
-            sub = njt_json_str_element(pool, njt_json_fast_key("limit_rate"), &clcf->limit_rate->value);
-        }else{
-            sub = njt_json_str_element(pool, njt_json_fast_key("limit_rate"), NULL);
+            set_locationDef_limit_rate(loc_item, &clcf->limit_rate->value);
         }
-        if (sub == NULL)
-        {
-            return NULL;
-        }
-        njt_struct_add(item, sub, pool);
 
         if(clcf->limit_rate_after){
-            sub = njt_json_str_element(pool, njt_json_fast_key("limit_rate_after"), &clcf->limit_rate_after->value);
-        }else{
-            sub = njt_json_str_element(pool, njt_json_fast_key("limit_rate_after"), NULL);
+            set_locationDef_limit_rate_after(loc_item, &clcf->limit_rate_after->value);
         }
-        if (sub == NULL)
-        {
-            return NULL;
-        }
-        njt_struct_add(item, sub, pool);
 
         if(lccf != NULL)
         {
             if(lccf->from_up == 1){
-                njt_str_set(&tmpstr, "up_share");
+                loc_item->limit_conns_scope = LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE;
             }else{
-                njt_str_set(&tmpstr, "location");
+                loc_item->limit_conns_scope = LOCATIONDEF_LIMIT_CONNS_SCOPE_LOCATION;
             }
-            
-            sub = njt_json_str_element(pool, njt_json_fast_key("limit_conns_scope"), &tmpstr);
-            if(sub == NULL){
-                return NULL;
-            }
-            njt_struct_add(item,sub,pool);
 
-            sub = njt_json_arr_element(pool, njt_json_fast_key("limit_conns"));
-            if(sub == NULL){
-                return NULL;
+            loc_item->limit_conns = create_locationDef_limit_conns(pool, 4);
+            if(loc_item->limit_conns == NULL){
+                return;
             }
-            njt_struct_add(item,sub,pool);
 
             if(lccf->limits.nelts > 0){
                 conn_limits = lccf->limits.elts;
                 for (i = 0; i < lccf->limits.nelts; i++) {
-                    limit_conn = njt_json_obj_element(pool, njt_json_null_key);
-                    if(limit_conn == NULL){
-                        return NULL;
+                    limit_conn_item = create_locationDef_limit_conns_item(pool);
+                    if(limit_conn_item == NULL){
+                        return;
                     }
-                    njt_struct_add(sub,limit_conn,pool);
 
-                    zone = njt_json_str_element(pool, njt_json_fast_key("zone"), &conn_limits[i].shm_zone->shm.name);
-                    if(sub == NULL){
-                        return NULL;
-                    }
-                    njt_struct_add(limit_conn,zone,pool);
+                    set_locationDef_limit_conns_item_zone(limit_conn_item, &conn_limits[i].shm_zone->shm.name);
+                    limit_conn_item->conn = conn_limits[i].conn;
 
-                    conn = njt_json_int_element(pool, njt_json_fast_key("conn"), conn_limits[i].conn);
-                    if(sub == NULL){
-                        return NULL;
-                    }
-                    njt_struct_add(limit_conn,conn,pool);
+                    add_item_locationDef_limit_conns(loc_item->limit_conns, limit_conn_item);
                 }
             }
-
 
             if(lccf->dry_run == 1){
-                njt_str_set(&tmpstr, "on");
+                loc_item->limit_conn_dry_run = LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON;
             }else{
-                njt_str_set(&tmpstr, "off");      
-            }
-            sub = njt_json_str_element(pool, njt_json_fast_key("limit_conn_dry_run"), &tmpstr);
-
-            if(sub == NULL){
-                return NULL;
-            }
-            njt_struct_add(item,sub,pool);
-
-            e = njt_http_dyn_limit_conn_log_levels;
-            for (i = 0; e[i].name.len != 0; i++) {
-                if(lccf->log_level == e[i].value){
-                    tmpstr = e[i].name;
-                    sub = njt_json_str_element(pool, njt_json_fast_key("limit_conn_log_level"), &tmpstr);
-                    if(sub == NULL){
-                        return NULL;
-                    }
-                    njt_struct_add(item,sub,pool);
-                    break;
-                }
+                loc_item->limit_conn_dry_run = LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF;
             }
 
-            sub = njt_json_int_element(pool, njt_json_fast_key("limit_conn_status"), lccf->status_code);
-            if(sub == NULL){
-                return NULL;
+            switch (lccf->log_level)
+            {
+            case NJT_LOG_INFO:
+                loc_item->limit_conn_log_level = LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO;
+                break;
+            case NJT_LOG_NOTICE:
+                loc_item->limit_conn_log_level = LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE;
+                break;
+            case NJT_LOG_WARN:
+                loc_item->limit_conn_log_level = LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN;
+                break;
+            case NJT_LOG_ERR:
+                loc_item->limit_conn_log_level = LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR;
+                break;
+            default:
+                loc_item->limit_conn_log_level = LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO;
+                break;
             }
-            njt_struct_add(item,sub,pool);
+
+            loc_item->limit_conn_status = lccf->status_code;
         }
 
         if(lrcf != NULL)
         {
             if(lrcf->from_up == 1){
-                njt_str_set(&tmpstr, "up_share");
+                loc_item->limit_reqs_scope = LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE;
             }else{
-                njt_str_set(&tmpstr, "location");
+                loc_item->limit_reqs_scope = LOCATIONDEF_LIMIT_REQS_SCOPE_LOCATION;
             }
             
-            sub = njt_json_str_element(pool, njt_json_fast_key("limit_reqs_scope"), &tmpstr);
-            if(sub == NULL){
-                return NULL;
+            loc_item->limit_reqs = create_locationDef_limit_reqs(pool, 4);
+            if(loc_item->limit_reqs == NULL){
+                return;
             }
-            njt_struct_add(item,sub,pool);
-
-            sub = njt_json_arr_element(pool, njt_json_fast_key("limit_reqs"));
-            if(sub == NULL){
-                return NULL;
-            }
-            njt_struct_add(item,sub,pool);
 
             if(lrcf->limits.nelts > 0){
                 req_limits = lrcf->limits.elts;
                 for (i = 0; i < lrcf->limits.nelts; i++) {
-                    limit_conn = njt_json_obj_element(pool, njt_json_null_key);
-                    if(limit_conn == NULL){
-                        return NULL;
+                    limit_req_item = create_locationDef_limit_reqs_item(pool);
+                    if(limit_req_item == NULL){
+                        return;
                     }
-                    njt_struct_add(sub,limit_conn,pool);
 
-                    zone = njt_json_str_element(pool, njt_json_fast_key("zone"), &req_limits[i].shm_zone->shm.name);
-                    if(sub == NULL){
-                        return NULL;
-                    }
-                    njt_struct_add(limit_conn,zone,pool);
+                    set_locationDef_limit_reqs_item_zone(limit_req_item, &req_limits[i].shm_zone->shm.name);
+                    limit_req_item->burst = req_limits[i].burst / 1000;
 
-                    burst_ele = njt_json_int_element(pool, njt_json_fast_key("burst"), req_limits[i].burst / 1000);
-                    if(sub == NULL){
-                        return NULL;
-                    }
-                    njt_struct_add(limit_conn, burst_ele, pool);
-                   
                     delay_max_comp = NJT_MAX_INT_T_VALUE / 1000;
                     delay_max_comp *= 1000;
+
+                    delay_str = njt_palloc(pool, sizeof(njt_str_t));
+                    if(delay_str == NULL){
+                        return;
+                    }
+
+                    delay_str->data = njt_palloc(pool, delay_max_len);
+                    if(delay_str->data == NULL){
+                        return;
+                    }
+
+                    njt_memzero(delay_str->data, delay_max_len);
                     if(req_limits[i].delay == delay_max_comp){
-                        njt_str_set(&delay_str, "nodelay");
+                        delay_str->len = sizeof("nodelay");
+                        njt_memcpy(delay_str->data, "nodelay", delay_str->len);
                     }else{
                         delay = req_limits[i].delay / 1000;
-
-                        delay_str.data = njt_palloc(pool, delay_max_len);
-                        njt_memzero(delay_str.data, delay_max_len);
-                        p = njt_snprintf(delay_str.data, delay_max_len, "%d", delay);
-                        delay_str.len = p - delay_str.data;       
+                        
+                        p = njt_snprintf(delay_str->data, delay_max_len, "%d", delay);
+                        delay_str->len = p - delay_str->data;
                     }
+                    set_locationDef_limit_reqs_item_delay(limit_req_item, delay_str);
 
-                    delay_ele = njt_json_str_element(pool, njt_json_fast_key("delay"), &delay_str);
-                    if(sub == NULL){
-                        return NULL;
-                    }
-                    njt_struct_add(limit_conn, delay_ele, pool);
+                    add_item_locationDef_limit_reqs(loc_item->limit_reqs, limit_req_item);
                 }
             }
 
             if(lrcf->dry_run == 1){
-                njt_str_set(&tmpstr, "on");
-                
+                loc_item->limit_req_dry_run = LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON;
             }else{
-                njt_str_set(&tmpstr, "off");          
-            }
-            sub = njt_json_str_element(pool, njt_json_fast_key("limit_req_dry_run"), &tmpstr);
-            if(sub == NULL){
-                return NULL;
-            }
-            njt_struct_add(item,sub,pool);
-
-            e = njt_http_dyn_limit_req_log_levels;
-            for (i = 0; e[i].name.len != 0; i++) {
-                if(lrcf->limit_log_level == e[i].value){
-                    tmpstr = e[i].name;
-                    sub = njt_json_str_element(pool, njt_json_fast_key("limit_req_log_level"), &tmpstr);
-                    if(sub == NULL){
-                        return NULL;
-                    }
-                    njt_struct_add(item,sub,pool);
-                    break;
-                }
+                loc_item->limit_req_dry_run = LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF;
             }
 
-            sub = njt_json_int_element(pool, njt_json_fast_key("limit_req_status"), lrcf->status_code);
-            if(sub == NULL){
-                return NULL;
+            switch (lrcf->limit_log_level)
+            {
+            case NJT_LOG_INFO:
+                loc_item->limit_req_log_level = LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO;
+                break;
+            case NJT_LOG_NOTICE:
+                loc_item->limit_req_log_level = LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE;
+                break;
+            case NJT_LOG_WARN:
+                loc_item->limit_req_log_level = LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN;
+                break;
+            case NJT_LOG_ERR:
+                loc_item->limit_req_log_level = LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR;
+                break;
+            default:
+                loc_item->limit_req_log_level = LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO;
+                break;
             }
-            njt_struct_add(item,sub,pool);
+
+            loc_item->limit_req_status = lrcf->status_code;
         }
 
-        sub = njt_dyn_limit_dump_locs_json(pool, clcf->old_locations);
-        if (sub != NULL)
-        {
-            njt_struct_add(item, sub, pool);
+        if (clcf->old_locations) {
+            loc_item->locations = create_locationDef_locations(pool, sizeof(locationDef_locations_t));
+            njt_dyn_limit_dump_locs_json(pool, clcf->old_locations, loc_item->locations);
         }
 
-        njt_struct_add(locs, item, pool);
+        add_item_dyn_limit_servers_item_locations(loc_items, loc_item);
     }
-
-    return locs;
 }
 
-static njt_str_t njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *pool)
+static njt_str_t *njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *pool)
 {
-    njt_http_core_loc_conf_t *clcf;
-    njt_http_core_main_conf_t *hcmcf;
-    njt_http_core_srv_conf_t **cscfp;
-    njt_uint_t i, j;
-    njt_int_t rc;
-    njt_array_t *array;
-    njt_str_t json, *tmp_str, rate_str;
-    njt_http_server_name_t *server_name;
-    njt_json_manager json_manager;
-    njt_json_element *srvs, *srv, *subs, *sub;
-    njt_json_element *rpses, *rps;
-    njt_list_part_t  *part;
-    njt_int_t        tmp_rate;
-    njt_shm_zone_t   *shm_zone;
-    u_char           *p; 
-    njt_http_limit_req_ctx_t          *req_ctx;
-    void             *rps_tag = &njt_http_limit_req_module;
-    njt_int_t        rate_max_len = 100;
+    njt_http_core_loc_conf_t        *clcf;
+    njt_http_core_main_conf_t       *hcmcf;
+    njt_http_core_srv_conf_t        **cscfp;
+    njt_uint_t                      i, j;
+    njt_array_t                     *array;
+    njt_str_t                       *tmp_str, rate_str;
+    njt_http_server_name_t          *server_name;
+    njt_list_part_t                 *part;
+    njt_int_t                       tmp_rate;
+    njt_shm_zone_t                  *shm_zone;
+    u_char                          *p; 
+    njt_http_limit_req_ctx_t        *req_ctx;
+    void                            *rps_tag = &njt_http_limit_req_module;
+    njt_int_t                       rate_max_len = 100;
+    dyn_limit_t                     dynjson_obj;
+    dyn_limit_servers_item_t        *server_item;
+    dyn_limit_limit_rps_item_t      *rps_item;
 
-
-    njt_memzero(&json_manager, sizeof(njt_json_manager));
+    njt_memzero(&dynjson_obj, sizeof(dyn_limit_t));
     hcmcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_core_module);
     if(hcmcf == NULL){
         goto err;
     }
 
-    srvs = njt_json_arr_element(pool, njt_json_fast_key("servers"));
-    if (srvs == NULL)
-    {
+    dynjson_obj.servers = create_dyn_limit_servers(pool, 4);
+    if(dynjson_obj.servers == NULL){
         goto err;
     }
 
     cscfp = hcmcf->servers.elts;
     for (i = 0; i < hcmcf->servers.nelts; i++)
     {
+        server_item = njt_palloc(pool, sizeof(dyn_limit_servers_item_t));
+        if(server_item == NULL){
+            goto err;
+        }
+        server_item->listens = create_dyn_limit_servers_item_listens(pool, 4);
+        server_item->serverNames =create_dyn_limit_servers_item_serverNames(pool, 4);
+        server_item->locations = create_dyn_limit_servers_item_locations(pool, 4);
+
         array = njt_array_create(pool, 4, sizeof(njt_str_t));
+        if(array == NULL){
+            goto err;
+        }
         njt_http_get_listens_by_server(array, cscfp[i]);
 
-        srv = njt_json_obj_element(pool, njt_json_null_key);
-        if (srv == NULL)
-        {
-            goto err;
-        }
-
-        subs = njt_json_arr_element(pool, njt_json_fast_key("listens"));
-        if (subs == NULL)
-        {
-            goto err;
-        }
-
-        tmp_str = array->elts;
-        for (j = 0; j < array->nelts; ++j)
-        {
-            sub = njt_json_str_element(pool, njt_json_null_key, &tmp_str[j]);
-            if (sub == NULL)
-            {
-                goto err;
-            }
-            njt_struct_add(subs, sub, pool);
-        }
-        njt_struct_add(srv, subs, pool);
-        subs = njt_json_arr_element(pool, njt_json_fast_key("serverNames"));
-        if (subs == NULL)
-        {
-            goto err;
+        for (j = 0; j < array->nelts; ++j) {
+            tmp_str = (njt_str_t *)(array->elts)+ j;
+            add_item_dyn_limit_servers_item_listens(server_item->listens, tmp_str);
         }
 
         server_name = cscfp[i]->server_names.elts;
-        for (j = 0; j < cscfp[i]->server_names.nelts; ++j)
-        {
-            sub = njt_json_str_element(pool, njt_json_null_key, &server_name[j].name);
-            if (sub == NULL)
-            {
-                goto err;
-            }
-            njt_struct_add(subs, sub, pool);
+        for (j = 0; j < cscfp[i]->server_names.nelts; ++j) {
+            tmp_str = &server_name[j].name;
+            add_item_dyn_limit_servers_item_serverNames(server_item->serverNames,tmp_str);
         }
 
-        njt_struct_add(srv, subs, pool);
         clcf = njt_http_get_module_loc_conf(cscfp[i]->ctx, njt_http_core_module);
         if(clcf != NULL){
-            subs = njt_dyn_limit_dump_locs_json(pool, clcf->old_locations);
-
-            if (subs != NULL)
-            {
-                njt_struct_add(srv, subs, pool);
-            }
+            njt_dyn_limit_dump_locs_json(pool, clcf->old_locations, server_item->locations);
         }
 
-        njt_struct_add(srvs, srv, pool);
+        add_item_dyn_limit_servers(dynjson_obj.servers, server_item);
     }
 
-    rc = njt_struct_top_add(&json_manager, srvs, NJT_JSON_OBJ, pool);
-    if (rc != NJT_OK)
-    {
-        njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno,
-                      "njt_struct_top_add error");
-    }
-
-    rpses = njt_json_arr_element(pool, njt_json_fast_key("limit_rps"));
-    if (rpses == NULL)
-    {
+    dynjson_obj.limit_rps = create_dyn_limit_limit_rps(pool, 4);
+    if(dynjson_obj.limit_rps == NULL){
         goto err;
     }
 
@@ -2178,23 +1767,19 @@ static njt_str_t njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *p
             continue;
         }
 
-        rps = njt_json_obj_element(pool, njt_json_null_key);
-        if (rps == NULL)
+        rps_item = njt_palloc(pool, sizeof(dyn_limit_limit_rps_item_t));
+        if (rps_item == NULL)
         {
             goto err;
         }
-        njt_struct_add(rpses, rps, pool);
 
-        sub = njt_json_str_element(pool, njt_json_fast_key("zone"), &shm_zone[i].shm.name);
-        if (sub == NULL)
-        {
-            goto err;
-        }
-        njt_struct_add(rps, sub, pool);
+        set_dyn_limit_limit_rps_item_zone(rps_item, &shm_zone[i].shm.name);
 
         req_ctx = shm_zone[i].data;
         if(req_ctx == NULL){
-            njt_str_set(&rate_str, "0r/s");
+            rate_str.len = sizeof("0r/s");
+            rate_str.data = njt_palloc(pool, rate_str.len);
+            njt_memcpy(rate_str.data, "0r/s", rate_str.len);
         }else{
             tmp_rate = req_ctx->ori_rate;
             rate_str.data = njt_palloc(pool, rate_max_len);
@@ -2208,28 +1793,15 @@ static njt_str_t njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *p
             rate_str.len = p - rate_str.data;
         }
 
-        sub = njt_json_str_element(pool, njt_json_fast_key("rate"), &rate_str);
-        if (sub == NULL)
-        {
-            goto err;
-        }
-        njt_struct_add(rps, sub, pool);
+        set_dyn_limit_limit_rps_item_rate(rps_item, &rate_str);
+
+        add_item_dyn_limit_limit_rps(dynjson_obj.limit_rps, rps_item);
     }
 
-    rc = njt_struct_top_add(&json_manager, rpses, NJT_JSON_OBJ, pool);
-    if (rc != NJT_OK)
-    {
-        njt_log_error(NJT_LOG_ALERT, cycle->log, njt_errno,
-                    "njt_struct_top_add rpses error");
-    }
-
-    njt_memzero(&json, sizeof(njt_str_t));
-    njt_structure_2_json(&json_manager, &json, pool);
-
-    return json;
+    return to_json_dyn_limit(pool, &dynjson_obj, OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
 
 err:
-    return dyn_limit_update_srv_err_msg;
+    return &dyn_limit_update_srv_err_msg;
 }
 
 static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, dyn_limit_t *api_data,
@@ -2307,7 +1879,8 @@ static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, dyn_limit_t *
         {
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
                           port, serverName);
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " can`t find server by listen[%V] server_name[%V]", port, serverName);
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                " can`t find server by listen[%V] server_name[%V]", port, serverName);
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             continue;
@@ -2325,7 +1898,7 @@ static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, dyn_limit_t *
         if(clcf == NULL){
             njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find location config by listen:%V server_name:%V ",
                           port, serverName);
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " can`t find location config by listen[%V] server_name[%V]", p_port, p_sname);
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " can`t find location config by listen[%V] server_name[%V]", port, serverName);
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             continue;
@@ -2344,9 +1917,9 @@ static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, dyn_limit_t *
 static u_char *njt_dyn_limit_rpc_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data)
 {
     njt_cycle_t *cycle;
-    njt_str_t msg;
-    u_char *buf;
-    njt_pool_t *pool = NULL;
+    njt_str_t   *msg;
+    u_char      *buf;
+    njt_pool_t  *pool = NULL;
 
     buf = NULL;
     cycle = (njt_cycle_t *)njt_cycle;
@@ -2360,15 +1933,15 @@ static u_char *njt_dyn_limit_rpc_handler(njt_str_t *topic, njt_str_t *request, i
     }
 
     msg = njt_dyn_limit_dump_limit_conf(cycle, pool);
-    buf = njt_calloc(msg.len, cycle->log);
+    buf = njt_calloc(msg->len, cycle->log);
     if (buf == NULL)
     {
         goto out;
     }
 
-    njt_log_error(NJT_LOG_INFO, pool->log, 0, "send json : %V", &msg);
-    njt_memcpy(buf, msg.data, msg.len);
-    *len = msg.len;
+    njt_log_error(NJT_LOG_INFO, pool->log, 0, "send json : %V", msg);
+    njt_memcpy(buf, msg->data, msg->len);
+    *len = msg->len;
 
 out:
     if (pool != NULL)
@@ -2406,7 +1979,7 @@ static int njt_dyn_limit_update_handler(njt_str_t *key, njt_str_t *value, void *
         goto end;
     }
 
-    pool = njt_create_pool(njt_pagesize, njt_cycle->log);
+    pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
     if (pool == NULL)
     {
         njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_dyn_limit_change_handler create pool error");
@@ -2431,20 +2004,15 @@ static int njt_dyn_limit_update_handler(njt_str_t *key, njt_str_t *value, void *
     }
 
     njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
-    rc = njt_json_parse_data(pool, value, njt_http_dyn_limit_main_json_dt, api_data);
-    if (rc == NJT_OK)
-    {
-        rc = njt_dyn_limit_update_limit_conf(pool, api_data, rpc_result);
-        if(rc != NJT_OK){
-            njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_ERR);
-            njt_rpc_result_set_msg(rpc_result, (u_char *)" limit update fail");
-        }else{
-            if(rpc_result->data != NULL && rpc_result->data->nelts > 0){
-                njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
-            }
-        }
+
+    rc = njt_dyn_limit_update_limit_conf(pool, api_data, rpc_result);
+    if(rc != NJT_OK){
+        njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_ERR);
+        njt_rpc_result_set_msg(rpc_result, (u_char *)" limit update fail");
     }else{
-        njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_ERR_JSON);
+        if(rpc_result->data != NULL && rpc_result->data->nelts > 0){
+            njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
+        }
     }
 
     if (rc != NJT_OK) {
