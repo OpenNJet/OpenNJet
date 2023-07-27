@@ -40,7 +40,7 @@
 #endif
 
 #include "jsmn.h"
-#include <njt_core.h>
+#include "njt_core.h"
 
 // #ifndef LOG_ERROR
 // #define LOG_ERROR(position, ...) 
@@ -165,7 +165,9 @@ static inline bool builtin_parse_string(njt_pool_t *pool, parse_state_t *parse_s
     }
     const jsmntok_t *token = &CURRENT_TOKEN(parse_state);
     memcpy(out, parse_state->json_string + token->start, token->end - token->start);
-    out[token->end - token->start] = 0;
+    if (token->end > token->start) {
+        out[token->end - token->start] = 0;
+    }
     parse_state->current_token += 1;
     return false;
 }
