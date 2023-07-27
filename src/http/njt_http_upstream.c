@@ -562,12 +562,18 @@ njt_http_upstream_init_request(njt_http_request_t *r)
     njt_http_core_loc_conf_t       *clcf;
     njt_http_upstream_srv_conf_t   *uscf, **uscfp;
     njt_http_upstream_main_conf_t  *umcf;
+    njt_time_t                     *tp;
+    njt_msec_int_t                  ms;
 
     if (r->aio) {
         return;
     }
 
     u = r->upstream;
+    njt_time_update();
+    tp = njt_timeofday();
+    ms = (njt_msec_int_t) ((tp->sec - r->start_sec) * 1000 + (tp->msec - r->start_msec));
+    u->req_delay = njt_max(ms, 0);
 
 #if (NJT_HTTP_CACHE)
 

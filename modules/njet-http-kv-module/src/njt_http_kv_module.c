@@ -721,7 +721,7 @@ int njt_kv_reg_handler(njt_kv_reg_handler_t *h)
         njt_free(old_handler->callbacks.key->data);
         njt_free(old_handler);
     }
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "set  kv handler into hash: %p: %v", kv_handler, &kv_handler->callbacks.key);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "set  kv handler into hash: %p: %V", kv_handler, kv_handler->callbacks.key);
     return NJT_OK;
 }
 
@@ -732,12 +732,12 @@ static void invoke_kv_change_handler(njt_str_t* key, njt_str_t* value)
     if (value == NULL || value->len == 0) {
         return;
     }
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke kv change for key:%v value:%v", key, value);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke kv change for key:%V value:%V", key, value);
 
     if (kv_handler_hashmap) {
         rc = njt_lvlhsh_map_get(kv_handler_hashmap, key, (intptr_t*)&kv_handler);
         if (rc == NJT_OK) {
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "got kv handler : %p for key %v", kv_handler, key);
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got kv handler : %p for key %V", kv_handler, key);
             kv_handler->callbacks.handler(key, value, kv_handler->callbacks.data);
         }
     }
@@ -809,7 +809,7 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
                 nstr_topic.len = strlen(topic);
                 nstr_msg.data = (u_char *)msg;
                 nstr_msg.len = msg_len;
-                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got kv handler : %p, %V", tm_handler, &tm_handler->callbacks.key);
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got kv handler : %p, %V", tm_handler, tm_handler->callbacks.key);
                 tm_handler->callbacks.handler(&nstr_topic, &nstr_msg, tm_handler->callbacks.data);
             }
         }

@@ -364,6 +364,9 @@ njt_http_vtsc_init_zone(njt_shm_zone_t *shm_zone, void *data)
     njt_http_vts_rbtree = ctx->rbtree;
     njt_sprintf(shpool->log_ctx, " in vhost_traffic_status_zone \"%V\"%Z",
                 &shm_zone->shm.name);
+
+    int njt_http_vts_hdr_init(njt_slab_pool_t *shpool);
+    njt_http_vts_hdr_init(shpool);
     
     njt_shrwlock_create(&shpool->rwlock, &shpool->lock, NULL);
 
