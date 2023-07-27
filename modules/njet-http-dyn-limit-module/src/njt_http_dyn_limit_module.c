@@ -1979,7 +1979,7 @@ static int njt_dyn_limit_update_handler(njt_str_t *key, njt_str_t *value, void *
         goto end;
     }
 
-    pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    pool = njt_create_pool(njt_pagesize, njt_cycle->log);
     if (pool == NULL)
     {
         njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_dyn_limit_change_handler create pool error");
@@ -1996,7 +1996,7 @@ static int njt_dyn_limit_update_handler(njt_str_t *key, njt_str_t *value, void *
     {
         njt_log_error(NJT_LOG_ERR, pool->log, 0, 
                 "json_parse_dyn_limit err: %V",  &err_str);
-        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
+        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
         njt_rpc_result_set_msg2(rpc_result, &err_str);
 
         rc = NJT_ERROR;
