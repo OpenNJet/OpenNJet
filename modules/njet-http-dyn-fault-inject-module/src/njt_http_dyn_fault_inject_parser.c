@@ -102,7 +102,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->location))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->location))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->location))->len = token_size;
             if ((out->location)->len == 0) {
                 ((out->location))->data = NULL;
@@ -222,7 +222,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->delay_duration))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->delay_duration))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->delay_duration))->len = token_size;
             if ((out->delay_duration)->len == 0) {
                 ((out->delay_duration))->data = NULL;
@@ -286,7 +286,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             return true;
         }
         size_t token_size = strlen("");
-        (out->delay_duration)->data = njt_palloc(pool, token_size);
+        (out->delay_duration)->data = (u_char*)njt_palloc(pool, token_size);
         (out->delay_duration)->len = token_size;
         if (out->delay_duration->len == 0) {
             (out->delay_duration)->data = NULL;
@@ -507,8 +507,8 @@ int add_item_locationDef_locations(locationDef_locations_t *src, locationDef_loc
     return NJT_OK;
 }
 
-locationDef_locations_t* create_locationDef_locations(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(locationDef_locations_item_t*));
+locationDef_locations_t* create_locationDef_locations(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(locationDef_locations_item_t*));
 }
 void set_locationDef_locations(locationDef_t* obj, locationDef_locations_t* field) {
     obj->locations = field;
@@ -521,8 +521,8 @@ locationDef_t* create_locationDef(njt_pool_t *pool) {
 
 static void to_oneline_json_locationDef_location(locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_locationDef_fault_inject_type(locationDef_fault_inject_type_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -569,8 +569,8 @@ static void to_oneline_json_locationDef_status_code(locationDef_status_code_t *o
 
 static void to_oneline_json_locationDef_delay_duration(locationDef_delay_duration_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 // to_oneline_json_REF
 
@@ -721,7 +721,7 @@ static bool parse_dyn_fault_inject_servers_item_listens(njt_pool_t *pool, parse_
             // TODO LOG_ERROR
             return true;
         }
-        (((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i])->data = njt_palloc(pool, (size_t)(token_size));
+        (((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i])->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
         (((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i])->len = token_size;
         if (((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i]->len == 0) {
             (((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i])->data = NULL;
@@ -756,7 +756,7 @@ static bool parse_dyn_fault_inject_servers_item_serverNames(njt_pool_t *pool, pa
             // TODO LOG_ERROR
             return true;
         }
-        (((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i])->data = njt_palloc(pool, (size_t)(token_size));
+        (((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i])->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
         (((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i])->len = token_size;
         if (((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i]->len == 0) {
             (((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i])->data = NULL;
@@ -1188,8 +1188,8 @@ int add_item_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item
     return NJT_OK;
 }
 
-dyn_fault_inject_servers_item_listens_t* create_dyn_fault_inject_servers_item_listens(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dyn_fault_inject_servers_item_listens_item_t));
+dyn_fault_inject_servers_item_listens_t* create_dyn_fault_inject_servers_item_listens(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_fault_inject_servers_item_listens_item_t));
 }
 void set_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item_t* obj, dyn_fault_inject_servers_item_listens_t* field) {
     obj->listens = field;
@@ -1203,8 +1203,8 @@ int add_item_dyn_fault_inject_servers_item_serverNames(dyn_fault_inject_servers_
     return NJT_OK;
 }
 
-dyn_fault_inject_servers_item_serverNames_t* create_dyn_fault_inject_servers_item_serverNames(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dyn_fault_inject_servers_item_serverNames_item_t));
+dyn_fault_inject_servers_item_serverNames_t* create_dyn_fault_inject_servers_item_serverNames(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_fault_inject_servers_item_serverNames_item_t));
 }
 void set_dyn_fault_inject_servers_item_serverNames(dyn_fault_inject_servers_item_t* obj, dyn_fault_inject_servers_item_serverNames_t* field) {
     obj->serverNames = field;
@@ -1218,8 +1218,8 @@ int add_item_dyn_fault_inject_servers_item_locations(dyn_fault_inject_servers_it
     return NJT_OK;
 }
 
-dyn_fault_inject_servers_item_locations_t* create_dyn_fault_inject_servers_item_locations(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dyn_fault_inject_servers_item_locations_item_t*));
+dyn_fault_inject_servers_item_locations_t* create_dyn_fault_inject_servers_item_locations(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_fault_inject_servers_item_locations_item_t*));
 }
 void set_dyn_fault_inject_servers_item_locations(dyn_fault_inject_servers_item_t* obj, dyn_fault_inject_servers_item_locations_t* field) {
     obj->locations = field;
@@ -1238,8 +1238,8 @@ int add_item_dyn_fault_inject_servers(dyn_fault_inject_servers_t *src, dyn_fault
     return NJT_OK;
 }
 
-dyn_fault_inject_servers_t* create_dyn_fault_inject_servers(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dyn_fault_inject_servers_item_t*));
+dyn_fault_inject_servers_t* create_dyn_fault_inject_servers(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_fault_inject_servers_item_t*));
 }
 void set_dyn_fault_inject_servers(dyn_fault_inject_t* obj, dyn_fault_inject_servers_t* field) {
     obj->servers = field;
@@ -1252,8 +1252,8 @@ dyn_fault_inject_t* create_dyn_fault_inject(njt_pool_t *pool) {
 
 static void to_oneline_json_dyn_fault_inject_servers_item_listens_item(dyn_fault_inject_servers_item_listens_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item_listens_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1291,8 +1291,8 @@ static void to_oneline_json_dyn_fault_inject_servers_item_listens(dyn_fault_inje
 
 static void to_oneline_json_dyn_fault_inject_servers_item_serverNames_item(dyn_fault_inject_servers_item_serverNames_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_fault_inject_servers_item_serverNames(dyn_fault_inject_servers_item_serverNames_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1523,7 +1523,8 @@ njt_str_t* to_json_dyn_fault_inject(njt_pool_t *pool, dyn_fault_inject_t* out, n
     json_str = njt_palloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_dyn_fault_inject(out, &str_len, flags);
-    json_str->data = njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
+    // json_str->data = (u_char*)njt_palloc(pool, 10000);
     json_str->len = 0;
     to_oneline_json_dyn_fault_inject(out, json_str, flags);
     return json_str;

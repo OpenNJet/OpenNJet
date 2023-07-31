@@ -32,6 +32,9 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_none(
     u_char                      *end;
     njt_str_t                    rpc_data_str;
 
+    rpc_data_str.data = data_buf;
+    rpc_data_str.len = 0;
+
     njt_conf_t cf_data = {
         .cycle = (njt_cycle_t *)njt_cycle,
         .log = njt_cycle->log,
@@ -85,6 +88,9 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_delay(
     u_char                      *end;
     njt_str_t                    rpc_data_str;
 
+    rpc_data_str.data = data_buf;
+    rpc_data_str.len = 0;
+
     njt_conf_t cf_data = {
         .cycle = (njt_cycle_t *)njt_cycle,
         .log = njt_cycle->log,
@@ -94,7 +100,8 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_delay(
 
     ficf = njt_http_conf_get_module_loc_conf(cf, njt_http_fault_inject_module);
     if(ficf == NULL){
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_fault_inject_set_conf_by_delay get module config error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, 
+            "njt_dyn_fault_inject_set_conf_by_delay get module config error");
 		
         end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
             " dyn fault_inject delay type get module config error");
@@ -192,6 +199,9 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_abort(
     u_char                      *end;
     njt_str_t                    rpc_data_str;
 
+    rpc_data_str.data = data_buf;
+    rpc_data_str.len = 0;
+
     njt_conf_t cf_data = {
         .cycle = (njt_cycle_t *)njt_cycle,
         .log = njt_cycle->log,
@@ -273,6 +283,9 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_delay_abort(
     u_char                       data_buf[1024];
     u_char                      *end;
     njt_str_t                    rpc_data_str;
+
+    rpc_data_str.data = data_buf;
+    rpc_data_str.len = 0;
 
     njt_conf_t cf_data = {
         .cycle = (njt_cycle_t *)njt_cycle,
@@ -587,7 +600,14 @@ static void njt_dyn_fault_inject_dump_locs(njt_pool_t *pool,
         loc_item->abort_percentage = ficf->abort_percent;
         loc_item->delay_percentage = ficf->delay_percent;
         loc_item->status_code = ficf->status_code;
-        set_locationDef_delay_duration(loc_item, &ficf->str_duration);
+
+        if(ficf->str_duration.len > 0){
+            loc_item->delay_duration = njt_pcalloc(pool, sizeof(njt_str_t));
+            loc_item->delay_duration->data = njt_pcalloc(pool, ficf->str_duration.len);
+            njt_memcpy(loc_item->delay_duration->data, ficf->str_duration.data, ficf->str_duration.len);
+            loc_item->delay_duration->len = ficf->str_duration.len;
+        }
+        // set_locationDef_delay_duration(loc_item, &ficf->str_duration);
 
         switch (ficf->fault_inject_type)
         {
@@ -610,7 +630,7 @@ static void njt_dyn_fault_inject_dump_locs(njt_pool_t *pool,
         add_item_dyn_fault_inject_servers_item_locations(loc_items, loc_item);
 
         if (clcf->old_locations) {
-            loc_item->locations = create_locationDef_locations(pool, sizeof(locationDef_locations_t));
+            loc_item->locations = create_locationDef_locations(pool, 4);
             njt_dyn_fault_inject_dump_locs(pool, clcf->old_locations, loc_item->locations);
         }
     }

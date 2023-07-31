@@ -2450,26 +2450,28 @@ njt_http_get_health_check_type(njt_str_t *str) {
 }
 
 static void njt_free_peer_resource(njt_http_health_check_peer_t *hc_peer) {
-    njt_pool_t *pool;
-    pool = hc_peer->pool;
-    if (hc_peer->peer.connection) {
-        njt_close_connection(hc_peer->peer.connection);
-    }
-
-    if(hc_peer->hhccf->ref_count>0){
-        --(hc_peer->hhccf->ref_count);
-    }
+//    njt_pool_t *pool;
+    njt_helper_health_check_conf_t *hhccf = hc_peer->hhccf;
+//    pool = hc_peer->pool;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                   "free peer pool : upstream = %V   ref_count = %d",hc_peer->peer.name,hc_peer->hhccf->ref_count);
+    if (hc_peer->peer.connection) {
+        njt_http_close_connection(hc_peer->peer.connection);
+//        njt_close_connection(hc_peer->peer.connection);
+    }
+
+    if(hhccf->ref_count>0){
+        --(hhccf->ref_count);
+    }
 //    if (hc_peer->hhccf->disable) {
 ////        njt_destroy_pool(hc_peer->hhccf->pool);
 //        --(hc_peer->hhccf->ref_count);
 //    }
 
-    if (pool) {
-        njt_destroy_pool(pool);
-    }
-    return;
+//    if (pool) {
+//        njt_destroy_pool(pool);
+//    }
+//    return;
 }
 
 
@@ -2478,11 +2480,21 @@ static void njt_stream_free_peer_resource(njt_stream_health_check_peer_t *hc_pee
 
 
     pool = hc_peer->pool;
-    if (hc_peer->peer.connection) {
-        njt_close_connection(hc_peer->peer.connection);
+    njt_connection_t                *pc = hc_peer->peer.connection;
+    njt_helper_health_check_conf_t *hhccf = hc_peer->hhccf;
+    if (pc) {
+#if (NJT_STREAM_SSL)
+        if (pc->ssl) {
+            pc->ssl->no_wait_shutdown = 1;
+            pc->ssl->no_send_shutdown = 1;
+
+            (void) njt_ssl_shutdown(pc);
+        }
+#endif
+        njt_close_connection(pc);
     }
-    if(hc_peer->hhccf->ref_count>0){
-        --(hc_peer->hhccf->ref_count);
+    if(hhccf->ref_count>0){
+        --(hhccf->ref_count);
     }
 //    if (hc_peer->hhccf->disable) {
 //        njt_destroy_pool(hc_peer->hhccf->pool);

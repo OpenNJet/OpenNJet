@@ -56,7 +56,7 @@ enum {
 #ifndef LOG_ERROR_JSON_PARSE
 #define LOG_ERROR_JSON_PARSE(position, format, ...)  { \
     int len; \
-    err_str->data = njt_palloc(pool, 1024); \
+    err_str->data = (u_char *)njt_palloc(pool, 1024); \
     len = sprintf((char *)err_str->data, "pos: %d, ", position); \
     len += sprintf((char *)err_str->data + len, format, __VA_ARGS__); \
     err_str->len = len; \

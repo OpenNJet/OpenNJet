@@ -56,7 +56,7 @@ void set_locationDef_location(locationDef_t* obj, locationDef_location_t field);
 // INITIALIZATION IS NEEDED for string
 void set_locationDef_delay_duration(locationDef_t* obj, locationDef_delay_duration_t field);
 int add_item_locationDef_locations(locationDef_locations_t *src, locationDef_locations_item_t* items);
-locationDef_locations_t* create_locationDef_locations(njt_pool_t *pool, size_t length);
+locationDef_locations_t* create_locationDef_locations(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_locationDef_locations(locationDef_t* obj, locationDef_locations_t* field);
 locationDef_t* create_locationDef(njt_pool_t *pool);
@@ -92,20 +92,20 @@ dyn_fault_inject_servers_item_t get_dyn_fault_inject_servers_item(dyn_fault_inje
 // CHECK ARRAY not exceeding bounds before call this func
 dyn_fault_inject_servers_t* get_dyn_fault_inject_servers(dyn_fault_inject_t *out);
 int add_item_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item_listens_t *src, dyn_fault_inject_servers_item_listens_item_t items);
-dyn_fault_inject_servers_item_listens_t* create_dyn_fault_inject_servers_item_listens(njt_pool_t *pool, size_t length);
+dyn_fault_inject_servers_item_listens_t* create_dyn_fault_inject_servers_item_listens(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item_t* obj, dyn_fault_inject_servers_item_listens_t* field);
 int add_item_dyn_fault_inject_servers_item_serverNames(dyn_fault_inject_servers_item_serverNames_t *src, dyn_fault_inject_servers_item_serverNames_item_t items);
-dyn_fault_inject_servers_item_serverNames_t* create_dyn_fault_inject_servers_item_serverNames(njt_pool_t *pool, size_t length);
+dyn_fault_inject_servers_item_serverNames_t* create_dyn_fault_inject_servers_item_serverNames(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dyn_fault_inject_servers_item_serverNames(dyn_fault_inject_servers_item_t* obj, dyn_fault_inject_servers_item_serverNames_t* field);
 int add_item_dyn_fault_inject_servers_item_locations(dyn_fault_inject_servers_item_locations_t *src, dyn_fault_inject_servers_item_locations_item_t* items);
-dyn_fault_inject_servers_item_locations_t* create_dyn_fault_inject_servers_item_locations(njt_pool_t *pool, size_t length);
+dyn_fault_inject_servers_item_locations_t* create_dyn_fault_inject_servers_item_locations(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dyn_fault_inject_servers_item_locations(dyn_fault_inject_servers_item_t* obj, dyn_fault_inject_servers_item_locations_t* field);
 dyn_fault_inject_servers_item_t* create_dyn_fault_inject_servers_item(njt_pool_t *pool);
 int add_item_dyn_fault_inject_servers(dyn_fault_inject_servers_t *src, dyn_fault_inject_servers_item_t* items);
-dyn_fault_inject_servers_t* create_dyn_fault_inject_servers(njt_pool_t *pool, size_t length);
+dyn_fault_inject_servers_t* create_dyn_fault_inject_servers(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dyn_fault_inject_servers(dyn_fault_inject_t* obj, dyn_fault_inject_servers_t* field);
 dyn_fault_inject_t* create_dyn_fault_inject(njt_pool_t *pool);

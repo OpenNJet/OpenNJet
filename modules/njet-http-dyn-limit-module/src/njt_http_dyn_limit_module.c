@@ -1670,7 +1670,7 @@ static void njt_dyn_limit_dump_locs_json(njt_pool_t *pool,
         }
 
         if (clcf->old_locations) {
-            loc_item->locations = create_locationDef_locations(pool, sizeof(locationDef_locations_t));
+            loc_item->locations = create_locationDef_locations(pool, 4);
             njt_dyn_limit_dump_locs_json(pool, clcf->old_locations, loc_item->locations);
         }
 
