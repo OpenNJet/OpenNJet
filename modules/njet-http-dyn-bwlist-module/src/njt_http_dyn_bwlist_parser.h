@@ -6,109 +6,109 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
-#ifndef PARSER_H
-#define PARSER_H
+#ifndef PARSER_BWLIST_H
+#define PARSER_BWLIST_H
 #include <stdint.h>
 #include <stdbool.h>
 #include <njt_core.h>
 #include <js2c_njet_builtins.h>
 /* ===================== Generated type declarations ===================== */
-typedef struct locationDef_t_s locationDef_t; //forward decl for public definition
-typedef njt_str_t* locationDef_location_t;
+typedef struct dynbwlist_locationDef_t_s dynbwlist_locationDef_t; //forward decl for public definition
+typedef njt_str_t* dynbwlist_locationDef_location_t;
 
 // maybe use njt_str_t?? 
 
-typedef enum locationDef_accessIpv4_item_rule_t_e{
-    LOCATIONDEF_ACCESSIPV4_ITEM_RULE_ALLOW,
-    LOCATIONDEF_ACCESSIPV4_ITEM_RULE_DENY
-} locationDef_accessIpv4_item_rule_t;
+typedef enum dynbwlist_locationDef_accessIpv4_item_rule_t_e{
+    DYNBWLIST_LOCATIONDEF_ACCESSIPV4_ITEM_RULE_ALLOW,
+    DYNBWLIST_LOCATIONDEF_ACCESSIPV4_ITEM_RULE_DENY
+} dynbwlist_locationDef_accessIpv4_item_rule_t;
 
-typedef njt_str_t* locationDef_accessIpv4_item_addr_t;
+typedef njt_str_t* dynbwlist_locationDef_accessIpv4_item_addr_t;
 
-typedef njt_str_t* locationDef_accessIpv4_item_mask_t;
+typedef njt_str_t* dynbwlist_locationDef_accessIpv4_item_mask_t;
 
-typedef struct locationDef_accessIpv4_item_t_s {
-    locationDef_accessIpv4_item_rule_t rule;
-    locationDef_accessIpv4_item_addr_t addr;
-    locationDef_accessIpv4_item_mask_t mask;
-} locationDef_accessIpv4_item_t;
+typedef struct dynbwlist_locationDef_accessIpv4_item_t_s {
+    dynbwlist_locationDef_accessIpv4_item_rule_t rule;
+    dynbwlist_locationDef_accessIpv4_item_addr_t addr;
+    dynbwlist_locationDef_accessIpv4_item_mask_t mask;
+} dynbwlist_locationDef_accessIpv4_item_t;
 
-typedef njt_array_t  locationDef_accessIpv4_t;
+typedef njt_array_t  dynbwlist_locationDef_accessIpv4_t;
 // maybe use njt_str_t?? 
 
-typedef enum locationDef_accessIpv6_item_rule_t_e{
-    LOCATIONDEF_ACCESSIPV6_ITEM_RULE_ALLOW,
-    LOCATIONDEF_ACCESSIPV6_ITEM_RULE_DENY
-} locationDef_accessIpv6_item_rule_t;
+typedef enum dynbwlist_locationDef_accessIpv6_item_rule_t_e{
+    DYNBWLIST_LOCATIONDEF_ACCESSIPV6_ITEM_RULE_ALLOW,
+    DYNBWLIST_LOCATIONDEF_ACCESSIPV6_ITEM_RULE_DENY
+} dynbwlist_locationDef_accessIpv6_item_rule_t;
 
-typedef njt_str_t* locationDef_accessIpv6_item_addr_t;
+typedef njt_str_t* dynbwlist_locationDef_accessIpv6_item_addr_t;
 
-typedef njt_str_t* locationDef_accessIpv6_item_mask_t;
+typedef njt_str_t* dynbwlist_locationDef_accessIpv6_item_mask_t;
 
-typedef struct locationDef_accessIpv6_item_t_s {
-    locationDef_accessIpv6_item_rule_t rule;
-    locationDef_accessIpv6_item_addr_t addr;
-    locationDef_accessIpv6_item_mask_t mask;
-} locationDef_accessIpv6_item_t;
+typedef struct dynbwlist_locationDef_accessIpv6_item_t_s {
+    dynbwlist_locationDef_accessIpv6_item_rule_t rule;
+    dynbwlist_locationDef_accessIpv6_item_addr_t addr;
+    dynbwlist_locationDef_accessIpv6_item_mask_t mask;
+} dynbwlist_locationDef_accessIpv6_item_t;
 
-typedef njt_array_t  locationDef_accessIpv6_t;
-typedef locationDef_t locationDef_locations_item_t; //ref def
-typedef njt_array_t  locationDef_locations_t;
-typedef struct locationDef_t_s {
-    locationDef_location_t location;
-    locationDef_accessIpv4_t *accessIpv4;
-    locationDef_accessIpv6_t *accessIpv6;
-    locationDef_locations_t *locations;
-} locationDef_t;
+typedef njt_array_t  dynbwlist_locationDef_accessIpv6_t;
+typedef dynbwlist_locationDef_t dynbwlist_locationDef_locations_item_t; //ref def
+typedef njt_array_t  dynbwlist_locationDef_locations_t;
+typedef struct dynbwlist_locationDef_t_s {
+    dynbwlist_locationDef_location_t location;
+    dynbwlist_locationDef_accessIpv4_t *accessIpv4;
+    dynbwlist_locationDef_accessIpv6_t *accessIpv6;
+    dynbwlist_locationDef_locations_t *locations;
+} dynbwlist_locationDef_t;
 
-locationDef_accessIpv4_item_rule_t get_locationDef_accessIpv4_item_rule(locationDef_accessIpv4_item_t *out);
-locationDef_accessIpv4_item_addr_t get_locationDef_accessIpv4_item_addr(locationDef_accessIpv4_item_t *out);
-locationDef_accessIpv4_item_mask_t get_locationDef_accessIpv4_item_mask(locationDef_accessIpv4_item_t *out);
-locationDef_accessIpv4_item_t get_locationDef_accessIpv4_item(locationDef_accessIpv4_t *out, size_t idx);
-locationDef_accessIpv6_item_rule_t get_locationDef_accessIpv6_item_rule(locationDef_accessIpv6_item_t *out);
-locationDef_accessIpv6_item_addr_t get_locationDef_accessIpv6_item_addr(locationDef_accessIpv6_item_t *out);
-locationDef_accessIpv6_item_mask_t get_locationDef_accessIpv6_item_mask(locationDef_accessIpv6_item_t *out);
-locationDef_accessIpv6_item_t get_locationDef_accessIpv6_item(locationDef_accessIpv6_t *out, size_t idx);
-locationDef_locations_item_t get_locationDef_locations_item(locationDef_locations_t *out, size_t idx);
-locationDef_location_t get_locationDef_location(locationDef_t *out);
+dynbwlist_locationDef_accessIpv4_item_rule_t get_dynbwlist_locationDef_accessIpv4_item_rule(dynbwlist_locationDef_accessIpv4_item_t *out);
+dynbwlist_locationDef_accessIpv4_item_addr_t get_dynbwlist_locationDef_accessIpv4_item_addr(dynbwlist_locationDef_accessIpv4_item_t *out);
+dynbwlist_locationDef_accessIpv4_item_mask_t get_dynbwlist_locationDef_accessIpv4_item_mask(dynbwlist_locationDef_accessIpv4_item_t *out);
+dynbwlist_locationDef_accessIpv4_item_t get_dynbwlist_locationDef_accessIpv4_item(dynbwlist_locationDef_accessIpv4_t *out, size_t idx);
+dynbwlist_locationDef_accessIpv6_item_rule_t get_dynbwlist_locationDef_accessIpv6_item_rule(dynbwlist_locationDef_accessIpv6_item_t *out);
+dynbwlist_locationDef_accessIpv6_item_addr_t get_dynbwlist_locationDef_accessIpv6_item_addr(dynbwlist_locationDef_accessIpv6_item_t *out);
+dynbwlist_locationDef_accessIpv6_item_mask_t get_dynbwlist_locationDef_accessIpv6_item_mask(dynbwlist_locationDef_accessIpv6_item_t *out);
+dynbwlist_locationDef_accessIpv6_item_t get_dynbwlist_locationDef_accessIpv6_item(dynbwlist_locationDef_accessIpv6_t *out, size_t idx);
+dynbwlist_locationDef_locations_item_t get_dynbwlist_locationDef_locations_item(dynbwlist_locationDef_locations_t *out, size_t idx);
+dynbwlist_locationDef_location_t get_dynbwlist_locationDef_location(dynbwlist_locationDef_t *out);
 // CHECK ARRAY not exceeding bounds before call this func
-locationDef_accessIpv4_t* get_locationDef_accessIpv4(locationDef_t *out);
+dynbwlist_locationDef_accessIpv4_t* get_dynbwlist_locationDef_accessIpv4(dynbwlist_locationDef_t *out);
 // CHECK ARRAY not exceeding bounds before call this func
-locationDef_accessIpv6_t* get_locationDef_accessIpv6(locationDef_t *out);
+dynbwlist_locationDef_accessIpv6_t* get_dynbwlist_locationDef_accessIpv6(dynbwlist_locationDef_t *out);
 // CHECK ARRAY not exceeding bounds before call this func
-locationDef_locations_t* get_locationDef_locations(locationDef_t *out);
+dynbwlist_locationDef_locations_t* get_dynbwlist_locationDef_locations(dynbwlist_locationDef_t *out);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_location(locationDef_t* obj, locationDef_location_t field);
+void set_dynbwlist_locationDef_location(dynbwlist_locationDef_t* obj, dynbwlist_locationDef_location_t field);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_accessIpv4_item_addr(locationDef_accessIpv4_item_t* obj, locationDef_accessIpv4_item_addr_t field);
+void set_dynbwlist_locationDef_accessIpv4_item_addr(dynbwlist_locationDef_accessIpv4_item_t* obj, dynbwlist_locationDef_accessIpv4_item_addr_t field);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_accessIpv4_item_mask(locationDef_accessIpv4_item_t* obj, locationDef_accessIpv4_item_mask_t field);
-locationDef_accessIpv4_item_t* create_locationDef_accessIpv4_item(njt_pool_t *pool);
-int add_item_locationDef_accessIpv4(locationDef_accessIpv4_t *src, locationDef_accessIpv4_item_t* items);
-locationDef_accessIpv4_t* create_locationDef_accessIpv4(njt_pool_t *pool, size_t length);
+void set_dynbwlist_locationDef_accessIpv4_item_mask(dynbwlist_locationDef_accessIpv4_item_t* obj, dynbwlist_locationDef_accessIpv4_item_mask_t field);
+dynbwlist_locationDef_accessIpv4_item_t* create_dynbwlist_locationDef_accessIpv4_item(njt_pool_t *pool);
+int add_item_dynbwlist_locationDef_accessIpv4(dynbwlist_locationDef_accessIpv4_t *src, dynbwlist_locationDef_accessIpv4_item_t* items);
+dynbwlist_locationDef_accessIpv4_t* create_dynbwlist_locationDef_accessIpv4(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
-void set_locationDef_accessIpv4(locationDef_t* obj, locationDef_accessIpv4_t* field);
+void set_dynbwlist_locationDef_accessIpv4(dynbwlist_locationDef_t* obj, dynbwlist_locationDef_accessIpv4_t* field);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_accessIpv6_item_addr(locationDef_accessIpv6_item_t* obj, locationDef_accessIpv6_item_addr_t field);
+void set_dynbwlist_locationDef_accessIpv6_item_addr(dynbwlist_locationDef_accessIpv6_item_t* obj, dynbwlist_locationDef_accessIpv6_item_addr_t field);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_accessIpv6_item_mask(locationDef_accessIpv6_item_t* obj, locationDef_accessIpv6_item_mask_t field);
-locationDef_accessIpv6_item_t* create_locationDef_accessIpv6_item(njt_pool_t *pool);
-int add_item_locationDef_accessIpv6(locationDef_accessIpv6_t *src, locationDef_accessIpv6_item_t* items);
-locationDef_accessIpv6_t* create_locationDef_accessIpv6(njt_pool_t *pool, size_t length);
+void set_dynbwlist_locationDef_accessIpv6_item_mask(dynbwlist_locationDef_accessIpv6_item_t* obj, dynbwlist_locationDef_accessIpv6_item_mask_t field);
+dynbwlist_locationDef_accessIpv6_item_t* create_dynbwlist_locationDef_accessIpv6_item(njt_pool_t *pool);
+int add_item_dynbwlist_locationDef_accessIpv6(dynbwlist_locationDef_accessIpv6_t *src, dynbwlist_locationDef_accessIpv6_item_t* items);
+dynbwlist_locationDef_accessIpv6_t* create_dynbwlist_locationDef_accessIpv6(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
-void set_locationDef_accessIpv6(locationDef_t* obj, locationDef_accessIpv6_t* field);
-int add_item_locationDef_locations(locationDef_locations_t *src, locationDef_locations_item_t* items);
-locationDef_locations_t* create_locationDef_locations(njt_pool_t *pool, size_t length);
+void set_dynbwlist_locationDef_accessIpv6(dynbwlist_locationDef_t* obj, dynbwlist_locationDef_accessIpv6_t* field);
+int add_item_dynbwlist_locationDef_locations(dynbwlist_locationDef_locations_t *src, dynbwlist_locationDef_locations_item_t* items);
+dynbwlist_locationDef_locations_t* create_dynbwlist_locationDef_locations(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
-void set_locationDef_locations(locationDef_t* obj, locationDef_locations_t* field);
-locationDef_t* create_locationDef(njt_pool_t *pool);
+void set_dynbwlist_locationDef_locations(dynbwlist_locationDef_t* obj, dynbwlist_locationDef_locations_t* field);
+dynbwlist_locationDef_t* create_dynbwlist_locationDef(njt_pool_t *pool);
 typedef njt_str_t* dynbwlist_servers_item_listens_item_t;
 
 typedef njt_array_t  dynbwlist_servers_item_listens_t;
 typedef njt_str_t* dynbwlist_servers_item_serverNames_item_t;
 
 typedef njt_array_t  dynbwlist_servers_item_serverNames_t;
-typedef locationDef_t dynbwlist_servers_item_locations_item_t; //ref def
+typedef dynbwlist_locationDef_t dynbwlist_servers_item_locations_item_t; //ref def
 typedef njt_array_t  dynbwlist_servers_item_locations_t;
 typedef struct dynbwlist_servers_item_t_s {
     dynbwlist_servers_item_listens_t *listens;
@@ -134,23 +134,23 @@ dynbwlist_servers_item_t get_dynbwlist_servers_item(dynbwlist_servers_t *out, si
 // CHECK ARRAY not exceeding bounds before call this func
 dynbwlist_servers_t* get_dynbwlist_servers(dynbwlist_t *out);
 int add_item_dynbwlist_servers_item_listens(dynbwlist_servers_item_listens_t *src, dynbwlist_servers_item_listens_item_t items);
-dynbwlist_servers_item_listens_t* create_dynbwlist_servers_item_listens(njt_pool_t *pool, size_t length);
+dynbwlist_servers_item_listens_t* create_dynbwlist_servers_item_listens(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dynbwlist_servers_item_listens(dynbwlist_servers_item_t* obj, dynbwlist_servers_item_listens_t* field);
 int add_item_dynbwlist_servers_item_serverNames(dynbwlist_servers_item_serverNames_t *src, dynbwlist_servers_item_serverNames_item_t items);
-dynbwlist_servers_item_serverNames_t* create_dynbwlist_servers_item_serverNames(njt_pool_t *pool, size_t length);
+dynbwlist_servers_item_serverNames_t* create_dynbwlist_servers_item_serverNames(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dynbwlist_servers_item_serverNames(dynbwlist_servers_item_t* obj, dynbwlist_servers_item_serverNames_t* field);
 int add_item_dynbwlist_servers_item_locations(dynbwlist_servers_item_locations_t *src, dynbwlist_servers_item_locations_item_t* items);
-dynbwlist_servers_item_locations_t* create_dynbwlist_servers_item_locations(njt_pool_t *pool, size_t length);
+dynbwlist_servers_item_locations_t* create_dynbwlist_servers_item_locations(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dynbwlist_servers_item_locations(dynbwlist_servers_item_t* obj, dynbwlist_servers_item_locations_t* field);
 dynbwlist_servers_item_t* create_dynbwlist_servers_item(njt_pool_t *pool);
 int add_item_dynbwlist_servers(dynbwlist_servers_t *src, dynbwlist_servers_item_t* items);
-dynbwlist_servers_t* create_dynbwlist_servers(njt_pool_t *pool, size_t length);
+dynbwlist_servers_t* create_dynbwlist_servers(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dynbwlist_servers(dynbwlist_t* obj, dynbwlist_servers_t* field);
 dynbwlist_t* create_dynbwlist(njt_pool_t *pool);
 dynbwlist_t* json_parse_dynbwlist(njt_pool_t *pool, const njt_str_t *json_string, njt_str_t *err_str);
 njt_str_t* to_json_dynbwlist(njt_pool_t *pool, dynbwlist_t *out, njt_int_t flags);
-#endif /* PARSER_H */
+#endif /* PARSER_BWLIST_H */

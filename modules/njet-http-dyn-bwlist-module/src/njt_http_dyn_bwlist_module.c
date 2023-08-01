@@ -17,9 +17,9 @@ njt_str_t dyn_bwlist_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"se
 static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, dynbwlist_servers_item_locations_item_t *data, njt_http_conf_ctx_t *ctx, njt_rpc_result_t *rpc_result)
 {
     njt_http_access_loc_conf_t *alcf, old_cf;
-    locationDef_accessIpv4_item_t  accessIpv4;
+    dynbwlist_locationDef_accessIpv4_item_t  accessIpv4;
     njt_http_access_rule_t *rule;
-    locationDef_accessIpv6_item_t  accessIpv6;
+    dynbwlist_locationDef_accessIpv6_item_t  accessIpv6;
     njt_http_access_rule6_t *rule6;
     njt_int_t rc;
     njt_uint_t i;
@@ -55,7 +55,7 @@ static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, dynbwlist_servers_it
     alcf->rules6 = NULL;
     if (data->accessIpv4) {
         for (i = 0; i < data->accessIpv4->nelts; i++) {
-            accessIpv4 = get_locationDef_accessIpv4_item(data->accessIpv4, i);
+            accessIpv4 = get_dynbwlist_locationDef_accessIpv4_item(data->accessIpv4, i);
             in_addr_t addr = njt_inet_addr(accessIpv4.addr->data, accessIpv4.addr->len);
             if (addr == INADDR_NONE) {
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "skipping wrong ipv4 addr: %V ", accessIpv4.addr);
@@ -67,7 +67,7 @@ static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, dynbwlist_servers_it
             }
             in_addr_t mask = njt_inet_addr(accessIpv4.mask->data, accessIpv4.mask->len);
             njt_uint_t deny = 0;
-            if (accessIpv4.rule == LOCATIONDEF_ACCESSIPV4_ITEM_RULE_DENY) {
+            if (accessIpv4.rule == DYNBWLIST_LOCATIONDEF_ACCESSIPV4_ITEM_RULE_DENY) {
                 deny = 1;
             }
 
@@ -85,7 +85,7 @@ static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, dynbwlist_servers_it
 #if (NJT_HAVE_INET6)
     if (data->accessIpv6) {
         for (i = 0; i < data->accessIpv6->nelts; i++) {
-            accessIpv6 = get_locationDef_accessIpv6_item(data->accessIpv6, i);
+            accessIpv6 = get_dynbwlist_locationDef_accessIpv6_item(data->accessIpv6, i);
             struct in6_addr addr;
             rc = njt_inet6_addr(accessIpv6.addr->data, accessIpv6.addr->len, addr.s6_addr);
             if (rc != NJT_OK) {
@@ -99,7 +99,7 @@ static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, dynbwlist_servers_it
             struct in6_addr mask;
             rc = njt_inet6_addr(accessIpv6.mask->data, accessIpv6.mask->len, mask.s6_addr);
             njt_uint_t deny = 0;
-            if (accessIpv6.rule == LOCATIONDEF_ACCESSIPV6_ITEM_RULE_DENY) {
+            if (accessIpv6.rule == DYNBWLIST_LOCATIONDEF_ACCESSIPV6_ITEM_RULE_DENY) {
                 deny = 1;
             }
 
@@ -232,8 +232,8 @@ static njt_int_t njt_dyn_bwlist_update_locs(dynbwlist_servers_item_locations_t *
 static void njt_dyn_bwlist_dump_locs(njt_pool_t *pool, njt_queue_t *locations, dynbwlist_servers_item_locations_t *loc_items)
 {
     dynbwlist_servers_item_locations_item_t *loc_item;
-    locationDef_accessIpv4_item_t *ipv4_item;
-    locationDef_accessIpv6_item_t *ipv6_item;
+    dynbwlist_locationDef_accessIpv4_item_t *ipv4_item;
+    dynbwlist_locationDef_accessIpv6_item_t *ipv6_item;
     njt_http_core_loc_conf_t *clcf;
     njt_http_location_queue_t *hlq;
     njt_queue_t *q, *tq;
@@ -256,12 +256,12 @@ static void njt_dyn_bwlist_dump_locs(njt_pool_t *pool, njt_queue_t *locations, d
         clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
         alcf = njt_http_get_module_loc_conf(clcf, njt_http_access_module);
 
-        loc_item = create_locationDef(pool);
+        loc_item = create_dynbwlist_locationDef(pool);
         loc_item->location = &clcf->full_name;
         add_item_dynbwlist_servers_item_locations(loc_items, loc_item);
 
         if (alcf->rules) {
-            loc_item->accessIpv4 = create_locationDef_accessIpv4(pool, alcf->rules->nelts);
+            loc_item->accessIpv4 = create_dynbwlist_locationDef_accessIpv4(pool, alcf->rules->nelts);
             if (loc_item->accessIpv4 == NULL) {
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can`t create accessIpv4 rules array"
                 );
@@ -270,9 +270,9 @@ static void njt_dyn_bwlist_dump_locs(njt_pool_t *pool, njt_queue_t *locations, d
             rule = alcf->rules->elts;
             // iterate ipv4 access rules
             for (i = 0; i < alcf->rules->nelts; i++) {
-                ipv4_item = create_locationDef_accessIpv4_item(pool);
-                add_item_locationDef_accessIpv4(loc_item->accessIpv4, ipv4_item);
-                ipv4_item->rule = rule[i].deny ? LOCATIONDEF_ACCESSIPV4_ITEM_RULE_DENY : LOCATIONDEF_ACCESSIPV4_ITEM_RULE_ALLOW;
+                ipv4_item = create_dynbwlist_locationDef_accessIpv4_item(pool);
+                add_item_dynbwlist_locationDef_accessIpv4(loc_item->accessIpv4, ipv4_item);
+                ipv4_item->rule = rule[i].deny ? DYNBWLIST_LOCATIONDEF_ACCESSIPV4_ITEM_RULE_DENY : DYNBWLIST_LOCATIONDEF_ACCESSIPV4_ITEM_RULE_ALLOW;
 
                 ipv4_item->addr = njt_pcalloc(pool, sizeof(njt_str_t));
                 ipv4_item->addr->data = njt_pcalloc(pool, INET_ADDRSTRLEN);
@@ -291,7 +291,7 @@ static void njt_dyn_bwlist_dump_locs(njt_pool_t *pool, njt_queue_t *locations, d
         }
 #if (NJT_HAVE_INET6)
         if (alcf->rules6) {
-            loc_item->accessIpv6 = create_locationDef_accessIpv6(pool, alcf->rules6->nelts);
+            loc_item->accessIpv6 = create_dynbwlist_locationDef_accessIpv6(pool, alcf->rules6->nelts);
             if (loc_item->accessIpv6 == NULL) {
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can`t create accessIpv6 rules array"
                 );
@@ -300,9 +300,9 @@ static void njt_dyn_bwlist_dump_locs(njt_pool_t *pool, njt_queue_t *locations, d
             rule6 = alcf->rules6->elts;
             // iterate ipv6 access rules
             for (i = 0; i < alcf->rules6->nelts; i++) {
-                ipv6_item = create_locationDef_accessIpv6_item(pool);
-                add_item_locationDef_accessIpv6(loc_item->accessIpv6, ipv6_item);
-                ipv6_item->rule = rule6[i].deny ? LOCATIONDEF_ACCESSIPV6_ITEM_RULE_DENY : LOCATIONDEF_ACCESSIPV6_ITEM_RULE_ALLOW;
+                ipv6_item = create_dynbwlist_locationDef_accessIpv6_item(pool);
+                add_item_dynbwlist_locationDef_accessIpv6(loc_item->accessIpv6, ipv6_item);
+                ipv6_item->rule = rule6[i].deny ? DYNBWLIST_LOCATIONDEF_ACCESSIPV6_ITEM_RULE_DENY : DYNBWLIST_LOCATIONDEF_ACCESSIPV6_ITEM_RULE_ALLOW;
 
                 ipv6_item->addr = njt_pcalloc(pool, sizeof(njt_str_t));
                 ipv6_item->addr->data = njt_pcalloc(pool, INET6_ADDRSTRLEN);
@@ -322,7 +322,7 @@ static void njt_dyn_bwlist_dump_locs(njt_pool_t *pool, njt_queue_t *locations, d
 #endif
 
         if (clcf->old_locations) {
-            loc_item->locations = create_locationDef_locations(pool, 4);
+            loc_item->locations = create_dynbwlist_locationDef_locations(pool, 4);
             if (loc_item->locations == NULL) {
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can`t create sub location array"
                 );
