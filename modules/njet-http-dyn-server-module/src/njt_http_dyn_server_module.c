@@ -26,6 +26,8 @@ static njt_int_t
 njt_http_dyn_server_init_worker(njt_cycle_t *cycle);
 
 
+static njt_int_t
+njt_http_dyn_server_delete_configure_server();
 
 static void njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *server_info);
 typedef struct njt_http_dyn_server_ctx_s {
@@ -73,7 +75,7 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
     njt_http_core_srv_conf_t *cscf;
     u_char *p;
     njt_http_core_main_conf_t *cmcf;
-    njt_str_t server_name,msg;
+    njt_str_t msg;
     njt_pool_t *old_pool;
      njt_conf_t conf;
      njt_int_t rc = NJT_OK;
@@ -96,6 +98,8 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
             }
         return NJT_ERROR;
     }
+	njt_http_dyn_server_delete_configure_server(cscf,&server_info->server_name);
+
     cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
 
     old_pool = cmcf->dyn_vs_pool;
@@ -104,14 +108,14 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
     if(cmcf->dyn_vs_pool == NULL) {
             rc = NJT_ERROR;
             goto out;
-    } else {
-            njt_sub_pool(conf.cycle->pool,cmcf->dyn_vs_pool);
-    }
+    } 
     conf.pool = cmcf->dyn_vs_pool;
     conf.temp_pool = cmcf->dyn_vs_pool;
     conf.module_type = NJT_CORE_MODULE;
     conf.cmd_type = NJT_MAIN_CONF;
+	conf.cycle = (njt_cycle_t *) njt_cycle;
     conf.ctx = njt_cycle->conf_ctx;
+	conf.log = njt_cycle->log;
     if (njt_http_optimize_servers(&conf, cmcf, cmcf->ports) != NJT_OK) {
         rc = NJT_ERROR;
         goto out;
@@ -121,7 +125,7 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
 	njt_destroy_pool(old_pool);
     }
     //note: delete queue memory, which delete when remove queue 
-    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "delete  server [%V] succ!",&server_name);
+    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "delete  server [%V] succ!",&server_info->server_name);
     return NJT_OK;
 out:
     return rc;
@@ -188,6 +192,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
     njt_conf_t conf;
     njt_int_t rc = NJT_OK;
 	njt_uint_t  msg_len;
+	u_char *p;
     char *rv = NULL;
     njt_pool_t  *old_pool = NULL;
     njt_http_conf_ctx_t* http_ctx;
@@ -205,6 +210,23 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
     server_path.data = NULL;
     if (server_info->file.len != 0) {
         server_path = server_info->file;
+    }
+
+	cscf = server_info->cscf;
+	if (cscf == NULL ) {
+	if(msg.data != NULL && cscf == NULL){
+                    p = njt_snprintf(msg.data, 1024, "error:host[%V],no find server [%V]!", &server_info->addr_port,&server_info->server_name);
+                    msg.len = p - msg.data;
+                    server_info->msg = msg;
+                    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "host[%V],no find server [%V]!",&server_info->addr_port,&server_info->server_name);
+            } else if(cscf != NULL){
+                    njt_str_set(&server_info->msg,"error:server is null!");
+                    njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "error:server is null!");
+            } else {
+                njt_str_set(&server_info->msg,"no find server!");
+                njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "host[%V],no find server [%V]!",&server_info->addr_port,&server_info->server_name);
+            }
+        return NJT_ERROR;
     }
 	
 
@@ -680,7 +702,7 @@ static njt_int_t njt_http_server_write_data(njt_fd_t fd,njt_http_dyn_server_info
 		remain = data + buffer_len - p;
 
 		if(server_info->server_body.len != 0 && server_info->server_body.data != NULL){
-			p = njt_snprintf(p, remain, " %V; \n}\n",&server_info->server_body);
+			p = njt_snprintf(p, remain, " server_name %V;\n%V; \n}\n",&server_info->server_name,&server_info->server_body);
 		} else {
 			p = njt_snprintf(p, remain, "}\n");
 		}
@@ -752,3 +774,76 @@ static void njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *server_in
 }
 
 
+static njt_int_t
+njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_str_t *server_name)
+{
+    njt_uint_t             p, a,i,j;
+    njt_http_conf_port_t  *port;
+    njt_http_conf_addr_t  *addr;
+	njt_http_core_main_conf_t *cmcf;
+	njt_array_t *ports;
+	njt_http_core_srv_conf_t   **cscfp;
+	 njt_http_server_name_t  *name;
+	/*njt_conf_t conf;
+	njt_http_conf_ctx_t* http_ctx;
+
+	http_ctx = (njt_http_conf_ctx_t*)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);
+    conf.pool = njt_cycle->pool; 
+    conf.temp_pool = njt_cycle->pool;
+    conf.ctx = http_ctx;
+    conf.cycle = (njt_cycle_t *) njt_cycle;
+    conf.log = njt_cycle->log;
+    conf.module_type = NJT_HTTP_MODULE;
+    conf.cmd_type = NJT_HTTP_MAIN_CONF;
+    conf.dynamic = 1;
+	*/
+	cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
+	ports = cmcf->ports;
+    if (ports == NULL) {
+        return NJT_OK;
+    }
+
+    port = ports->elts;
+    for (p = 0; p < ports->nelts; p++) {
+
+        /*
+         * check whether all name-based servers have the same
+         * configuration as a default server for given address:port
+         */
+
+        addr = port[p].addrs.elts;
+        for (a = 0; a < port[p].addrs.nelts; a++) {
+
+			cscfp = addr[a].servers.elts;
+            for (i=0; i < addr[a].servers.nelts; i++)
+            {
+              if(cscfp[i] == cscf) {
+				  if(cscf->server_names.nelts == 1) {
+					  njt_array_delete_idx(&addr[a].servers,i);
+					  if(addr[a].servers.nelts <= 1) {
+						  addr[a].wc_head = NULL;
+						  addr[a].wc_tail = NULL;
+						  njt_memset(&addr[a].hash,0,sizeof(njt_hash_t));
+					  }
+					   return NJT_OK;
+				  } else {
+					   name = cscf->server_names.elts;
+					   for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
+						if(name[j].name.len == server_name->len
+						   && njt_strncmp(name[j].name.data,server_name->data,server_name->len) == 0){
+							njt_array_delete_idx(&cscf->server_names,j);
+							 return NJT_OK;
+							}
+							
+						}
+					}
+				  }
+			  }
+            }
+        }
+
+  
+    
+
+    return NJT_OK;
+}
