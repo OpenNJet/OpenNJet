@@ -459,6 +459,7 @@ int persist__backup(bool shutdown)
 	fsync(fileno(db_fptr));
 #endif
 	fclose(db_fptr);
+        db_fptr = NULL;
 
 #ifdef WIN32
 	if (remove(db.config->persistence_filepath) != 0)

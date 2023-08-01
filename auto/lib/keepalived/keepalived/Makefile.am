@@ -58,7 +58,7 @@ keepalived.service: $(srcdir)/keepalived.service.in
 keepalived-non-root.service: $(srcdir)/keepalived-non-root.service.in
 endif
 
-SUBDIRS			= core $(VRRP_SUBDIR) $(IPVS_SUBDIR) $(DBUS_SUBDIR) $(BFD_SUBDIR) $(TRACKER_SUBDIR) etc $(EMB_SUBDIR)
+SUBDIRS			= core $(VRRP_SUBDIR) $(IPVS_SUBDIR) $(DBUS_SUBDIR) $(BFD_SUBDIR) $(TRACKER_SUBDIR) $(EMB_SUBDIR)
 
 EXTRA_DIST		= keepalived.service.in keepalived-non-root.service.in
 

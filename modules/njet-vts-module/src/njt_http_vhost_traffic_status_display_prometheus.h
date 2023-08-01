@@ -185,6 +185,13 @@
     "only upstream response processing time\n"                                 \
     "# TYPE njet_vts_upstream_response_duration_seconds histogram\n"
 
+#define NJT_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HDR              \
+    "njet_vts_upstream_hdr{code=\"p50reqdelayMsecr\"} %uA\n"                   \
+    "njet_vts_upstream_hdr{code=\"p99reqdelayMsecr\"} %uA\n"                   \
+    "njet_vts_upstream_hdr{code=\"p999reqdelayMsecr\"} %uA\n"                  \
+    "njet_vts_upstream_hdr{code=\"p9999reqdelayMsecr\"} %uA\n"                 \
+    "njet_vts_upstream_hdr{code=\"p9999reqdelayMsecr\"} %uA\n"
+
 #define NJT_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM                  \
     "njet_vts_upstream_bytes_total{upstream=\"%V\",backend=\"%V\","           \
     "direction=\"in\"} %uA\n"                                                  \
@@ -200,6 +207,8 @@
     "code=\"4xx\"} %uA\n"                                                      \
     "njet_vts_upstream_requests_total{upstream=\"%V\",backend=\"%V\","        \
     "code=\"5xx\"} %uA\n"                                                      \
+    "njet_vts_upstream_requests_total{upstream=\"%V\",backend=\"%V\","        \
+    "code=\"timeout\"} %uA\n"                                                 \
     "njet_vts_upstream_request_seconds_total{upstream=\"%V\","                \
     "backend=\"%V\"} %.3f\n"                                                   \
     "njet_vts_upstream_request_seconds{upstream=\"%V\","                      \
