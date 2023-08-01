@@ -350,8 +350,8 @@ njt_http_v3_header_filter(njt_http_request_t *r)
             n = sizeof(NJT_VER_BUILD) - 1;
 
         } else {
-            p = (u_char *) "nginx";
-            n = sizeof("nginx") - 1;
+            p = (u_char *) "njet";
+            n = sizeof("njet") - 1;
         }
 
         njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
