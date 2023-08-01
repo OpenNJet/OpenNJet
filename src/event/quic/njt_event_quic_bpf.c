@@ -9,7 +9,7 @@
 #include <njt_core.h>
 
 
-#define NJT_QUIC_BPF_VARNAME  "NGINX_BPF_MAPS"
+#define NJT_QUIC_BPF_VARNAME  "NJET_BPF_MAPS"
 #define NJT_QUIC_BPF_VARSEP    ';'
 #define NJT_QUIC_BPF_ADDRSEP   '#'
 

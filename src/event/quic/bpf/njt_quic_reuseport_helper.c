@@ -40,8 +40,8 @@ char _license[] SEC("license") = LICENSE;
 
 /*****************************************************************************/
 
-#define NGX_QUIC_PKT_LONG        0x80  /* header form */
-#define NGX_QUIC_SERVER_CID_LEN  20
+#define NJT_QUIC_PKT_LONG        0x80  /* header form */
+#define NJT_QUIC_SERVER_CID_LEN  20
 
 
 #define advance_data(nbytes)                                                  \
@@ -85,7 +85,7 @@ int njt_quic_select_socket_by_dcid(struct sk_reuseport_md *ctx)
     advance_data(sizeof(struct udphdr)); /* data at UDP header */
     advance_data(1); /* data at QUIC flags */
 
-    if (data[0] & NGX_QUIC_PKT_LONG) {
+    if (data[0] & NJT_QUIC_PKT_LONG) {
 
         advance_data(4); /* data at QUIC version */
         advance_data(1); /* data at DCID len */
@@ -98,7 +98,7 @@ int njt_quic_select_socket_by_dcid(struct sk_reuseport_md *ctx)
         }
 
     } else {
-        len = NGX_QUIC_SERVER_CID_LEN;
+        len = NJT_QUIC_SERVER_CID_LEN;
     }
 
     dcid = &data[1];
