@@ -258,3 +258,135 @@ njt_int_t njt_http_util_read_request_body(njt_http_request_t *r, njt_str_t *req_
 
     return NJT_OK;
 }
+
+
+
+njt_http_core_srv_conf_t* njt_http_get_srv_by_addr_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
+    njt_http_core_srv_conf_t* cscf;
+    njt_listening_t *ls, *target_ls = NULL;
+    njt_uint_t i,j,k;
+    njt_http_server_name_t  *name;
+    njt_http_port_t *port;
+    njt_http_in_addr_t *addr = NULL;
+    njt_http_in6_addr_t *addr6 = NULL;
+    njt_http_addr_conf_t *addr_conf;
+    njt_http_server_name_t *sn;  //ngx_inet6_addr
+	//struct sockaddr_in       *sin;
+	in_port_t                nport = 0;
+#if (NJT_HAVE_INET6)
+    struct sockaddr_in6  saddr6, *paddr6;
+#endif
+	struct sockaddr_in  saddr, *paddr;
+	
+	njt_uint_t                family = 0;
+	in_port_t                 sport = 0;
+    target_ls = NULL;
+    cscf = NULL;
+
+	saddr.sin_addr.s_addr = njt_inet_addr(addr_port->data, addr_port->len);
+	if (saddr.sin_addr.s_addr != INADDR_NONE) {
+		family = AF_INET;
+		sport = ntohs(saddr.sin_port);
+#if (NJT_HAVE_INET6)
+	} else if (njt_inet6_addr(addr_port->data, addr_port->len, saddr6.sin6_addr.s6_addr) == NJT_OK) {
+		family = AF_INET6;
+		sport = ntohs(saddr6.sin6_port);
+#endif
+    } else {
+        return NULL;
+    }
+
+    if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 ) {
+        ls = cycle->listening.elts;
+        for (i = 0; i < cycle->listening.nelts; i++) {
+            if(ls[i].server_type != NJT_HTTP_SERVER_TYPE){
+                continue; // 非http listen
+            }
+            if (ls[i].addr_text.len == addr_port->len &&
+                njt_strncmp(ls[i].addr_text.data, addr_port->data, addr_port->len) == 0) {
+                target_ls = &ls[i];
+                break;
+            } else if(ls[i].wildcard == 1 && target_ls->sockaddr->sa_family == family) {
+			       switch (target_ls->sockaddr->sa_family) {
+		#if (NJT_HAVE_INET6)
+					case AF_INET6:
+						paddr6 = (struct sockaddr_in6*) ls[i].sockaddr;
+						nport = ntohs(paddr6->sin6_port);
+						break;
+		#endif
+					default: /* AF_INET */
+						paddr = (struct sockaddr_in*) ls[i].sockaddr;
+						nport = ntohs(paddr->sin_port);
+						break;
+				}
+				if(sport == nport && nport != 0){
+					target_ls = &ls[i];
+					break;
+				}
+			}
+        }
+		port = target_ls->servers;
+		 switch (target_ls->sockaddr->sa_family) {
+
+#if (NJT_HAVE_INET6)
+            case AF_INET6:
+                addr6 = port->addrs;
+                break;
+#endif
+            default: /* AF_INET */
+                addr = port->addrs;
+                break;
+        }
+
+        if (target_ls == NULL) {
+            njt_log_error(NJT_LOG_INFO, cycle->log, 0, "can`t find listen server %V",addr_port);
+            return NULL;
+        }
+        
+      
+
+        for (i = 0; i < port->naddrs ; ++i) {
+            if (addr6 != NULL) {
+                addr_conf = &addr6[i].conf;
+				if(saddr6.sin6_addr.s6_addr != addr6[i].addr6.s6_addr) {
+					continue;
+				}
+            } else {
+                addr_conf = &addr[i].conf;
+				if(saddr.sin_addr.s_addr != addr[i].addr) {
+					continue;
+				}
+            }
+            if(addr_conf == NULL){
+                continue;
+            }
+            cscf = addr_conf->default_server;
+            name = cscf->server_names.elts;
+            for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
+                if(name[j].name.len == server_name->len
+                   && njt_strncmp(name[j].name.data,server_name->data,server_name->len) == 0){
+                    return cscf;
+                }
+            }
+
+
+            if (addr_conf->virtual_names != NULL) {
+                     cscf = njt_hash_find_combined(&addr_conf->virtual_names->names,
+                                           njt_hash_key(server_name->data, server_name->len),
+                                           server_name->data, server_name->len);
+				if(cscf != NULL){
+					return cscf;
+				}
+				sn = addr_conf->virtual_names->regex;
+				for (k = 0; k <  addr_conf->virtual_names->nregex; ++k) {
+					if(sn[k].name.len == server_name->len &&
+					njt_strncasecmp(sn[k].name.data,server_name->data,server_name->len)==0){
+						return sn[k].server;
+					}
+				}
+            }
+       
+        }
+    }
+    return NULL;
+}

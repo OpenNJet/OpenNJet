@@ -15,4 +15,5 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_conf_t  *cscf);
 
 njt_int_t njt_http_util_read_request_body(njt_http_request_t *r, njt_str_t *req_body, size_t min_len, size_t max_len);
+njt_http_core_srv_conf_t* njt_http_get_srv_by_addr_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name);
 #endif //NJET_MAIN_NJT_HTTP_JSON_H

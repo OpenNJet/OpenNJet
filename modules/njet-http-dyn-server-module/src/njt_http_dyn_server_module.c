@@ -734,7 +734,7 @@ static void njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *server_in
 	//njt_http_sub_server_info_t **loc_array;
     
 
-    cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->server_name);	
+    cscf = njt_http_get_srv_by_addr_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->server_name);	
     (*server_info).cscf = cscf;
 
         server_path = njt_cycle->prefix;
