@@ -425,16 +425,16 @@ static njt_int_t njt_dyn_fault_inject_set_conf(njt_pool_t *pool,
     //check type
     switch (data->fault_inject_type)
     {
-    case LOCATIONDEF_FAULT_INJECT_TYPE_NONE:
+    case DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE:
         rc = njt_dyn_fault_inject_set_conf_by_none(pool, data, ctx, rpc_result);
         break;
-    case LOCATIONDEF_FAULT_INJECT_TYPE_DELAY:
+    case DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY:
         rc = njt_dyn_fault_inject_set_conf_by_delay(pool, data, ctx, rpc_result);
         break;
-    case LOCATIONDEF_FAULT_INJECT_TYPE_ABORT:
+    case DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_ABORT:
         rc = njt_dyn_fault_inject_set_conf_by_abort(pool, data, ctx, rpc_result);
         break;
-    case LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT:
+    case DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT:
         rc = njt_dyn_fault_inject_set_conf_by_delay_abort(pool, data, ctx, rpc_result);
         /* code */
         break;    
@@ -590,38 +590,39 @@ static void njt_dyn_fault_inject_dump_locs(njt_pool_t *pool,
             continue;
         }    
 
-        loc_item = create_locationDef(pool);
+        loc_item = create_dyn_fault_inject_locationDef(pool);
         if(loc_item == NULL){
             continue;
         }
-        set_locationDef_location(loc_item, &clcf->full_name);
+        
+        set_dyn_fault_inject_locationDef_location(loc_item, &clcf->full_name);
 
-        loc_item->fault_inject_type = LOCATIONDEF_FAULT_INJECT_TYPE_NONE;
+        loc_item->fault_inject_type = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE;
         loc_item->abort_percentage = ficf->abort_percent;
         loc_item->delay_percentage = ficf->delay_percent;
         loc_item->status_code = ficf->status_code;
 
-        if(ficf->str_duration.len > 0){
-            loc_item->delay_duration = njt_pcalloc(pool, sizeof(njt_str_t));
-            loc_item->delay_duration->data = njt_pcalloc(pool, ficf->str_duration.len);
-            njt_memcpy(loc_item->delay_duration->data, ficf->str_duration.data, ficf->str_duration.len);
-            loc_item->delay_duration->len = ficf->str_duration.len;
-        }
-        // set_locationDef_delay_duration(loc_item, &ficf->str_duration);
+        // if(ficf->str_duration.len > 0){
+        //     loc_item->delay_duration = njt_pcalloc(pool, sizeof(njt_str_t));
+        //     loc_item->delay_duration->data = njt_pcalloc(pool, ficf->str_duration.len);
+        //     njt_memcpy(loc_item->delay_duration->data, ficf->str_duration.data, ficf->str_duration.len);
+        //     loc_item->delay_duration->len = ficf->str_duration.len;
+        // }
+        set_dyn_fault_inject_locationDef_delay_duration(loc_item, &ficf->str_duration);
 
         switch (ficf->fault_inject_type)
         {
         case NJT_HTTP_FAULT_INJECT_NONE:
-            loc_item->fault_inject_type = LOCATIONDEF_FAULT_INJECT_TYPE_NONE;
+            loc_item->fault_inject_type = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE;
             break;
         case NJT_HTTP_FAULT_INJECT_DELAY:
-            loc_item->fault_inject_type = LOCATIONDEF_FAULT_INJECT_TYPE_DELAY;
+            loc_item->fault_inject_type = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY;
             break;
         case NJT_HTTP_FAULT_INJECT_ABORT:
-            loc_item->fault_inject_type = LOCATIONDEF_FAULT_INJECT_TYPE_ABORT;
+            loc_item->fault_inject_type = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_ABORT;
             break;
         case NJT_HTTP_FAULT_INJECT_DELAY_ABORT:
-            loc_item->fault_inject_type = LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT;
+            loc_item->fault_inject_type = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT;
             break;    
         default:
             break;
@@ -630,7 +631,7 @@ static void njt_dyn_fault_inject_dump_locs(njt_pool_t *pool,
         add_item_dyn_fault_inject_servers_item_locations(loc_items, loc_item);
 
         if (clcf->old_locations) {
-            loc_item->locations = create_locationDef_locations(pool, 4);
+            loc_item->locations = create_dyn_fault_inject_locationDef_locations(pool, 4);
             njt_dyn_fault_inject_dump_locs(pool, clcf->old_locations, loc_item->locations);
         }
     }

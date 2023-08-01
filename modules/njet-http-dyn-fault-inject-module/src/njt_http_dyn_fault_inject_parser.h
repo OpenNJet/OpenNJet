@@ -13,60 +13,60 @@
 #include "njt_core.h"
 #include "js2c_njet_builtins.h"
 /* ===================== Generated type declarations ===================== */
-typedef struct locationDef_t_s locationDef_t; //forward decl for public definition
-typedef njt_str_t* locationDef_location_t;
+typedef struct dyn_fault_inject_locationDef_t_s dyn_fault_inject_locationDef_t; //forward decl for public definition
+typedef njt_str_t* dyn_fault_inject_locationDef_location_t;
 
 // maybe use njt_str_t?? 
 
-typedef enum locationDef_fault_inject_type_t_e{
-    LOCATIONDEF_FAULT_INJECT_TYPE_NONE,
-    LOCATIONDEF_FAULT_INJECT_TYPE_DELAY,
-    LOCATIONDEF_FAULT_INJECT_TYPE_ABORT,
-    LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT
-} locationDef_fault_inject_type_t;
+typedef enum dyn_fault_inject_locationDef_fault_inject_type_t_e{
+    DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE,
+    DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY,
+    DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_ABORT,
+    DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT
+} dyn_fault_inject_locationDef_fault_inject_type_t;
 
-typedef int64_t locationDef_delay_percentage_t;
-typedef int64_t locationDef_abort_percentage_t;
-typedef int64_t locationDef_status_code_t;
-typedef njt_str_t* locationDef_delay_duration_t;
+typedef int64_t dyn_fault_inject_locationDef_delay_percentage_t;
+typedef int64_t dyn_fault_inject_locationDef_abort_percentage_t;
+typedef int64_t dyn_fault_inject_locationDef_status_code_t;
+typedef njt_str_t* dyn_fault_inject_locationDef_delay_duration_t;
 
-typedef locationDef_t locationDef_locations_item_t; //ref def
-typedef njt_array_t  locationDef_locations_t;
-typedef struct locationDef_t_s {
-    locationDef_location_t location;
-    locationDef_fault_inject_type_t fault_inject_type;
-    locationDef_delay_percentage_t delay_percentage;
-    locationDef_abort_percentage_t abort_percentage;
-    locationDef_status_code_t status_code;
-    locationDef_delay_duration_t delay_duration;
-    locationDef_locations_t *locations;
-} locationDef_t;
+typedef dyn_fault_inject_locationDef_t dyn_fault_inject_locationDef_locations_item_t; //ref def
+typedef njt_array_t  dyn_fault_inject_locationDef_locations_t;
+typedef struct dyn_fault_inject_locationDef_t_s {
+    dyn_fault_inject_locationDef_location_t location;
+    dyn_fault_inject_locationDef_fault_inject_type_t fault_inject_type;
+    dyn_fault_inject_locationDef_delay_percentage_t delay_percentage;
+    dyn_fault_inject_locationDef_abort_percentage_t abort_percentage;
+    dyn_fault_inject_locationDef_status_code_t status_code;
+    dyn_fault_inject_locationDef_delay_duration_t delay_duration;
+    dyn_fault_inject_locationDef_locations_t *locations;
+} dyn_fault_inject_locationDef_t;
 
-locationDef_locations_item_t get_locationDef_locations_item(locationDef_locations_t *out, size_t idx);
-locationDef_location_t get_locationDef_location(locationDef_t *out);
-locationDef_fault_inject_type_t get_locationDef_fault_inject_type(locationDef_t *out);
-locationDef_delay_percentage_t get_locationDef_delay_percentage(locationDef_t *out);
-locationDef_abort_percentage_t get_locationDef_abort_percentage(locationDef_t *out);
-locationDef_status_code_t get_locationDef_status_code(locationDef_t *out);
-locationDef_delay_duration_t get_locationDef_delay_duration(locationDef_t *out);
+dyn_fault_inject_locationDef_locations_item_t get_dyn_fault_inject_locationDef_locations_item(dyn_fault_inject_locationDef_locations_t *out, size_t idx);
+dyn_fault_inject_locationDef_location_t get_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_t *out);
+dyn_fault_inject_locationDef_fault_inject_type_t get_dyn_fault_inject_locationDef_fault_inject_type(dyn_fault_inject_locationDef_t *out);
+dyn_fault_inject_locationDef_delay_percentage_t get_dyn_fault_inject_locationDef_delay_percentage(dyn_fault_inject_locationDef_t *out);
+dyn_fault_inject_locationDef_abort_percentage_t get_dyn_fault_inject_locationDef_abort_percentage(dyn_fault_inject_locationDef_t *out);
+dyn_fault_inject_locationDef_status_code_t get_dyn_fault_inject_locationDef_status_code(dyn_fault_inject_locationDef_t *out);
+dyn_fault_inject_locationDef_delay_duration_t get_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_t *out);
 // CHECK ARRAY not exceeding bounds before call this func
-locationDef_locations_t* get_locationDef_locations(locationDef_t *out);
+dyn_fault_inject_locationDef_locations_t* get_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_t *out);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_location(locationDef_t* obj, locationDef_location_t field);
+void set_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_location_t field);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_delay_duration(locationDef_t* obj, locationDef_delay_duration_t field);
-int add_item_locationDef_locations(locationDef_locations_t *src, locationDef_locations_item_t* items);
-locationDef_locations_t* create_locationDef_locations(njt_pool_t *pool, size_t nelts);
+void set_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_delay_duration_t field);
+int add_item_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_locations_t *src, dyn_fault_inject_locationDef_locations_item_t* items);
+dyn_fault_inject_locationDef_locations_t* create_dyn_fault_inject_locationDef_locations(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
-void set_locationDef_locations(locationDef_t* obj, locationDef_locations_t* field);
-locationDef_t* create_locationDef(njt_pool_t *pool);
+void set_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_locations_t* field);
+dyn_fault_inject_locationDef_t* create_dyn_fault_inject_locationDef(njt_pool_t *pool);
 typedef njt_str_t* dyn_fault_inject_servers_item_listens_item_t;
 
 typedef njt_array_t  dyn_fault_inject_servers_item_listens_t;
 typedef njt_str_t* dyn_fault_inject_servers_item_serverNames_item_t;
 
 typedef njt_array_t  dyn_fault_inject_servers_item_serverNames_t;
-typedef locationDef_t dyn_fault_inject_servers_item_locations_item_t; //ref def
+typedef dyn_fault_inject_locationDef_t dyn_fault_inject_servers_item_locations_item_t; //ref def
 typedef njt_array_t  dyn_fault_inject_servers_item_locations_t;
 typedef struct dyn_fault_inject_servers_item_t_s {
     dyn_fault_inject_servers_item_listens_t *listens;

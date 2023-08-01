@@ -168,10 +168,10 @@
 
 
 
-static njt_http_dyn_access_api_loc_t * njt_api_loc_with_loc_item(njt_pool_t *pool,locationDef_t *loc_item){
+static njt_http_dyn_access_api_loc_t * njt_api_loc_with_loc_item(njt_pool_t *pool, dynlog_locationDef_t *loc_item){
     njt_http_dyn_access_api_loc_t * aal = NULL;
     njt_http_dyn_access_log_conf_t * lc = NULL;
-    accessLog_t log;
+    dynlog_accessLog_t log;
     njt_int_t rc;
     njt_uint_t i;
     if(!loc_item) return NULL;
@@ -179,16 +179,16 @@ static njt_http_dyn_access_api_loc_t * njt_api_loc_with_loc_item(njt_pool_t *poo
     if(!aal) return NULL;
     memset(aal,0,sizeof(njt_http_dyn_access_api_loc_t));
 
-    aal->full_name = *get_locationDef_location(loc_item);
-    aal->log_on = get_locationDef_accessLogOn(loc_item);
+    aal->full_name = *get_dynlog_locationDef_location(loc_item);
+    aal->log_on = get_dynlog_locationDef_accessLogOn(loc_item);
 
-    locationDef_accessLogs_t *logs = get_locationDef_accessLogs(loc_item);
+    dynlog_locationDef_accessLogs_t *logs = get_dynlog_locationDef_accessLogs(loc_item);
     if(logs && logs->nelts>0){
         rc = njt_array_init(&aal->logs,pool,sizeof(njt_http_dyn_access_api_loc_t),logs->nelts);
         if(rc != NJT_OK) return NULL;
         lc = njt_array_push_n(&aal->logs,logs->nelts);
         for(i=0;i<logs->nelts;i++){
-            log = get_locationDef_accessLogs_item(logs, i);
+            log = get_dynlog_locationDef_accessLogs_item(logs, i);
             lc[i].format = *log.formatName;
             lc[i].path = *log.path;
         }
@@ -203,7 +203,7 @@ static njt_int_t njt_dynlog_update_locs_log(dynlog_servers_item_locations_t *loc
     njt_http_core_loc_conf_t  *clcf;
     njt_http_location_queue_t *hlq;
     njt_http_dyn_access_api_loc_t * aal;
-    locationDef_t daal;
+    dynlog_locationDef_t daal;
     njt_uint_t j;
     u_char data_buf[1024];
     u_char * end;
@@ -227,7 +227,7 @@ static njt_int_t njt_dynlog_update_locs_log(dynlog_servers_item_locations_t *loc
         tq = njt_queue_head(q);
         loc_found = false;
         daal = get_dynlog_servers_item_locations_item(locs,j);
-        name = get_locationDef_location(&daal);
+        name = get_dynlog_locationDef_location(&daal);
 
         end = njt_snprintf(data_buf,sizeof(data_buf) - 1,".locations[%V]",name);
         rpc_data_str.len = end - data_buf;
@@ -269,7 +269,7 @@ static njt_int_t njt_dynlog_update_locs_log(dynlog_servers_item_locations_t *loc
                 if(rc != NJT_OK){
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"njt_http_log_dyn_set_log error free pool");
                     if(0 == rpc_data_str.len){
-                        locationDef_location_t loc = get_locationDef_location(&daal);
+                        dynlog_locationDef_location_t loc = get_dynlog_locationDef_location(&daal);
                         end = njt_snprintf(data_buf,sizeof(data_buf) - 1," set dyn log error[%V];",loc);
                         rpc_data_str.len = end - data_buf;
                     }
@@ -280,7 +280,7 @@ static njt_int_t njt_dynlog_update_locs_log(dynlog_servers_item_locations_t *loc
                     njt_rpc_result_add_success_count(rpc_result);
                 }
             }
-            locationDef_locations_t *localtions = get_locationDef_locations(&daal);
+            dynlog_locationDef_locations_t *localtions = get_dynlog_locationDef_locations(&daal);
             if(localtions && localtions->nelts > 0){
                 if(rpc_result){
                     conf_path = rpc_result->conf_path;
@@ -302,23 +302,23 @@ static njt_int_t njt_dynlog_update_locs_log(dynlog_servers_item_locations_t *loc
 }
 // Not using deep copy
 static njt_http_dyn_access_log_format_t *
-njt_log_format_with_accessLogFormat_t(njt_pool_t *pool,accessLogFormat_t *fmt){
+njt_log_format_with_accessLogFormat_t(njt_pool_t *pool, dynlog_accessLogFormat_t *fmt){
     njt_http_dyn_access_log_format_t * alf;
     alf = njt_palloc(pool,sizeof(njt_http_dyn_access_log_format_t));
     if(!alf) return NULL;
     memset(alf,0,sizeof(njt_http_dyn_access_log_format_t));
-    accessLogFormat_format_t format = get_accessLogFormat_format(fmt);
-    accessLogFormat_escape_t escape = get_accessLogFormat_escape(fmt);
-    accessLogFormat_name_t name = get_accessLogFormat_name(fmt);
+    dynlog_accessLogFormat_format_t format = get_dynlog_accessLogFormat_format(fmt);
+    dynlog_accessLogFormat_escape_t escape = get_dynlog_accessLogFormat_escape(fmt);
+    dynlog_accessLogFormat_name_t name = get_dynlog_accessLogFormat_name(fmt);
     alf->format = *format;
     switch (escape) {
-        case ACCESSLOGFORMAT_ESCAPE_DEFAULT:
+        case DYNLOG_ACCESSLOGFORMAT_ESCAPE_DEFAULT:
         njt_str_set(&alf->escape,"default");
             break;
-        case ACCESSLOGFORMAT_ESCAPE_JSON:
+        case DYNLOG_ACCESSLOGFORMAT_ESCAPE_JSON:
         njt_str_set(&alf->escape,"json");
             break;
-        case ACCESSLOGFORMAT_ESCAPE_NONE:
+        case DYNLOG_ACCESSLOGFORMAT_ESCAPE_NONE:
         njt_str_set(&alf->escape,"none");
             break;
     }
@@ -331,7 +331,7 @@ njt_dynlog_update_access_log(njt_pool_t *pool, dynlog_t *api_data, njt_rpc_resul
     njt_cycle_t *cycle;
     njt_http_core_srv_conf_t  *cscf;
     njt_http_core_loc_conf_t  *clcf;
-    accessLogFormat_t fmt;
+    dynlog_accessLogFormat_t fmt;
     dynlog_servers_item_t server_item;
     njt_http_dyn_access_log_format_t *alf = NULL;
     u_char data_buf[1024];
@@ -349,7 +349,7 @@ njt_dynlog_update_access_log(njt_pool_t *pool, dynlog_t *api_data, njt_rpc_resul
     if(formats){
         for(i = 0; i < formats->nelts; ++i){
             fmt = get_dynlog_accessLogFormats_item(formats,i);
-            accessLogFormat_name_t name = get_accessLogFormat_name(&fmt);
+            dynlog_accessLogFormat_name_t name = get_dynlog_accessLogFormat_name(&fmt);
             // 设置当前路径
             end = njt_snprintf(data_buf,sizeof(data_buf) - 1," accessLogFormats[%V]",name);
             rpc_data_str.len = end - data_buf;

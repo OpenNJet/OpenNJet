@@ -11,18 +11,18 @@
 #include "js2c_njet_builtins.h"
 /* ========================== Generated parsers ========================== */
 
-static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, locationDef_t *out, njt_str_t* err_str); //forward decl for public definition
-static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
-static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
+static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_t *out, njt_str_t* err_str); //forward decl for public definition
+static void get_json_length_dyn_limit_locationDef(dyn_limit_locationDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
+static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
-static bool parse_locationDef_limit_conns_scope(njt_pool_t *pool, parse_state_t *parse_state, locationDef_limit_conns_scope_t *out, njt_str_t *err_str) {
+static bool parse_dyn_limit_locationDef_limit_conns_scope(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_limit_conns_scope_t *out, njt_str_t *err_str) {
     if (check_type(pool, parse_state, JSMN_STRING, err_str)) {
         return true;
     }
     if (current_string_is(parse_state, "up_share")) {
-        *out = LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE;
     } else if (current_string_is(parse_state, "location")) {
-        *out = LOCATIONDEF_LIMIT_CONNS_SCOPE_LOCATION;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_LOCATION;
     } else {
         LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
         return true;
@@ -32,7 +32,7 @@ static bool parse_locationDef_limit_conns_scope(njt_pool_t *pool, parse_state_t 
 }
 
 
-static bool parse_locationDef_limit_conns_item(njt_pool_t *pool, parse_state_t *parse_state, locationDef_limit_conns_item_t *out, njt_str_t *err_str) {
+static bool parse_dyn_limit_locationDef_limit_conns_item(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_limit_conns_item_t *out, njt_str_t *err_str) {
     njt_uint_t i;
     // malloc pool for object first
 
@@ -73,7 +73,7 @@ static bool parse_locationDef_limit_conns_item(njt_pool_t *pool, parse_state_t *
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->zone))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->zone))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->zone))->len = token_size;
             if ((out->zone)->len == 0) {
                 ((out->zone))->data = NULL;
@@ -120,7 +120,7 @@ static bool parse_locationDef_limit_conns_item(njt_pool_t *pool, parse_state_t *
             return true;
         }
         size_t token_size = strlen("");
-        (out->zone)->data = njt_palloc(pool, token_size);
+        (out->zone)->data = (u_char*)njt_palloc(pool, token_size);
         (out->zone)->len = token_size;
         if (out->zone->len == 0) {
             (out->zone)->data = NULL;
@@ -141,7 +141,7 @@ static bool parse_locationDef_limit_conns_item(njt_pool_t *pool, parse_state_t *
 }
 
 
-static bool parse_locationDef_limit_conns(njt_pool_t *pool, parse_state_t *parse_state, locationDef_limit_conns_t *out, njt_str_t *err_str) {
+static bool parse_dyn_limit_locationDef_limit_conns(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_limit_conns_t *out, njt_str_t *err_str) {
     int i;
     if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
         return true;
@@ -151,8 +151,8 @@ static bool parse_locationDef_limit_conns(njt_pool_t *pool, parse_state_t *parse
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        ((locationDef_limit_conns_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(locationDef_limit_conns_item_t));
-        if (parse_locationDef_limit_conns_item(pool, parse_state, ((locationDef_limit_conns_item_t**)out->elts)[i], err_str)) {
+        ((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_locationDef_limit_conns_item_t));
+        if (parse_dyn_limit_locationDef_limit_conns_item(pool, parse_state, ((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i], err_str)) {
             return true;
         }
         out->nelts ++;
@@ -161,14 +161,14 @@ static bool parse_locationDef_limit_conns(njt_pool_t *pool, parse_state_t *parse
 }
 
 
-static bool parse_locationDef_limit_conn_dry_run(njt_pool_t *pool, parse_state_t *parse_state, locationDef_limit_conn_dry_run_t *out, njt_str_t *err_str) {
+static bool parse_dyn_limit_locationDef_limit_conn_dry_run(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_limit_conn_dry_run_t *out, njt_str_t *err_str) {
     if (check_type(pool, parse_state, JSMN_STRING, err_str)) {
         return true;
     }
     if (current_string_is(parse_state, "on")) {
-        *out = LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON;
     } else if (current_string_is(parse_state, "off")) {
-        *out = LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF;
     } else {
         LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
         return true;
@@ -178,18 +178,18 @@ static bool parse_locationDef_limit_conn_dry_run(njt_pool_t *pool, parse_state_t
 }
 
 
-static bool parse_locationDef_limit_conn_log_level(njt_pool_t *pool, parse_state_t *parse_state, locationDef_limit_conn_log_level_t *out, njt_str_t *err_str) {
+static bool parse_dyn_limit_locationDef_limit_conn_log_level(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_limit_conn_log_level_t *out, njt_str_t *err_str) {
     if (check_type(pool, parse_state, JSMN_STRING, err_str)) {
         return true;
     }
     if (current_string_is(parse_state, "info")) {
-        *out = LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO;
     } else if (current_string_is(parse_state, "notice")) {
-        *out = LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE;
     } else if (current_string_is(parse_state, "warn")) {
-        *out = LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN;
     } else if (current_string_is(parse_state, "error")) {
-        *out = LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR;
     } else {
         LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
         return true;
@@ -199,14 +199,14 @@ static bool parse_locationDef_limit_conn_log_level(njt_pool_t *pool, parse_state
 }
 
 
-static bool parse_locationDef_limit_reqs_scope(njt_pool_t *pool, parse_state_t *parse_state, locationDef_limit_reqs_scope_t *out, njt_str_t *err_str) {
+static bool parse_dyn_limit_locationDef_limit_reqs_scope(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_limit_reqs_scope_t *out, njt_str_t *err_str) {
     if (check_type(pool, parse_state, JSMN_STRING, err_str)) {
         return true;
     }
     if (current_string_is(parse_state, "up_share")) {
-        *out = LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE;
     } else if (current_string_is(parse_state, "location")) {
-        *out = LOCATIONDEF_LIMIT_REQS_SCOPE_LOCATION;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_LOCATION;
     } else {
         LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
         return true;
@@ -216,7 +216,7 @@ static bool parse_locationDef_limit_reqs_scope(njt_pool_t *pool, parse_state_t *
 }
 
 
-static bool parse_locationDef_limit_reqs_item(njt_pool_t *pool, parse_state_t *parse_state, locationDef_limit_reqs_item_t *out, njt_str_t *err_str) {
+static bool parse_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_limit_reqs_item_t *out, njt_str_t *err_str) {
     njt_uint_t i;
     // malloc pool for object first
 
@@ -258,7 +258,7 @@ static bool parse_locationDef_limit_reqs_item(njt_pool_t *pool, parse_state_t *p
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->zone))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->zone))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->zone))->len = token_size;
             if ((out->zone)->len == 0) {
                 ((out->zone))->data = NULL;
@@ -310,7 +310,7 @@ static bool parse_locationDef_limit_reqs_item(njt_pool_t *pool, parse_state_t *p
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->delay))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->delay))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->delay))->len = token_size;
             if ((out->delay)->len == 0) {
                 ((out->delay))->data = NULL;
@@ -337,7 +337,7 @@ static bool parse_locationDef_limit_reqs_item(njt_pool_t *pool, parse_state_t *p
             return true;
         }
         size_t token_size = strlen("");
-        (out->zone)->data = njt_palloc(pool, token_size);
+        (out->zone)->data = (u_char*)njt_palloc(pool, token_size);
         (out->zone)->len = token_size;
         if (out->zone->len == 0) {
             (out->zone)->data = NULL;
@@ -361,7 +361,7 @@ static bool parse_locationDef_limit_reqs_item(njt_pool_t *pool, parse_state_t *p
             return true;
         }
         size_t token_size = strlen("");
-        (out->delay)->data = njt_palloc(pool, token_size);
+        (out->delay)->data = (u_char*)njt_palloc(pool, token_size);
         (out->delay)->len = token_size;
         if (out->delay->len == 0) {
             (out->delay)->data = NULL;
@@ -378,7 +378,7 @@ static bool parse_locationDef_limit_reqs_item(njt_pool_t *pool, parse_state_t *p
 }
 
 
-static bool parse_locationDef_limit_reqs(njt_pool_t *pool, parse_state_t *parse_state, locationDef_limit_reqs_t *out, njt_str_t *err_str) {
+static bool parse_dyn_limit_locationDef_limit_reqs(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_limit_reqs_t *out, njt_str_t *err_str) {
     int i;
     if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
         return true;
@@ -388,8 +388,8 @@ static bool parse_locationDef_limit_reqs(njt_pool_t *pool, parse_state_t *parse_
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        ((locationDef_limit_reqs_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(locationDef_limit_reqs_item_t));
-        if (parse_locationDef_limit_reqs_item(pool, parse_state, ((locationDef_limit_reqs_item_t**)out->elts)[i], err_str)) {
+        ((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_locationDef_limit_reqs_item_t));
+        if (parse_dyn_limit_locationDef_limit_reqs_item(pool, parse_state, ((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i], err_str)) {
             return true;
         }
         out->nelts ++;
@@ -398,14 +398,14 @@ static bool parse_locationDef_limit_reqs(njt_pool_t *pool, parse_state_t *parse_
 }
 
 
-static bool parse_locationDef_limit_req_dry_run(njt_pool_t *pool, parse_state_t *parse_state, locationDef_limit_req_dry_run_t *out, njt_str_t *err_str) {
+static bool parse_dyn_limit_locationDef_limit_req_dry_run(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_limit_req_dry_run_t *out, njt_str_t *err_str) {
     if (check_type(pool, parse_state, JSMN_STRING, err_str)) {
         return true;
     }
     if (current_string_is(parse_state, "on")) {
-        *out = LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON;
     } else if (current_string_is(parse_state, "off")) {
-        *out = LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF;
     } else {
         LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
         return true;
@@ -415,18 +415,18 @@ static bool parse_locationDef_limit_req_dry_run(njt_pool_t *pool, parse_state_t 
 }
 
 
-static bool parse_locationDef_limit_req_log_level(njt_pool_t *pool, parse_state_t *parse_state, locationDef_limit_req_log_level_t *out, njt_str_t *err_str) {
+static bool parse_dyn_limit_locationDef_limit_req_log_level(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_limit_req_log_level_t *out, njt_str_t *err_str) {
     if (check_type(pool, parse_state, JSMN_STRING, err_str)) {
         return true;
     }
     if (current_string_is(parse_state, "info")) {
-        *out = LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO;
     } else if (current_string_is(parse_state, "notice")) {
-        *out = LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE;
     } else if (current_string_is(parse_state, "warn")) {
-        *out = LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN;
     } else if (current_string_is(parse_state, "error")) {
-        *out = LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR;
+        *out = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR;
     } else {
         LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
         return true;
@@ -436,7 +436,7 @@ static bool parse_locationDef_limit_req_log_level(njt_pool_t *pool, parse_state_
 }
 
 
-static bool parse_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_state, locationDef_locations_t *out, njt_str_t *err_str) {
+static bool parse_dyn_limit_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_locations_t *out, njt_str_t *err_str) {
     int i;
     if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
         return true;
@@ -446,8 +446,8 @@ static bool parse_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_s
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        ((locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(locationDef_t));
-        if (parse_locationDef(pool, parse_state, ((locationDef_locations_item_t**)out->elts)[i], err_str)) {
+        ((dyn_limit_locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_locationDef_t));
+        if (parse_dyn_limit_locationDef(pool, parse_state, ((dyn_limit_locationDef_locations_item_t**)out->elts)[i], err_str)) {
             return true;
         }
         out->nelts ++;
@@ -456,7 +456,7 @@ static bool parse_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_s
 }
 
 
-static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, locationDef_t *out, njt_str_t *err_str) {
+static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_t *out, njt_str_t *err_str) {
     njt_uint_t i;
     // malloc pool for object first
 
@@ -509,7 +509,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->location))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->location))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->location))->len = token_size;
             if ((out->location)->len == 0) {
                 ((out->location))->data = NULL;
@@ -541,7 +541,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->limit_rate))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->limit_rate))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->limit_rate))->len = token_size;
             if ((out->limit_rate)->len == 0) {
                 ((out->limit_rate))->data = NULL;
@@ -573,7 +573,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->limit_rate_after))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->limit_rate_after))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->limit_rate_after))->len = token_size;
             if ((out->limit_rate_after)->len == 0) {
                 ((out->limit_rate_after))->data = NULL;
@@ -594,7 +594,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "limit_conns_scope";
-            if (parse_locationDef_limit_conns_scope(pool, parse_state, (&out->limit_conns_scope), err_str)) {
+            if (parse_dyn_limit_locationDef_limit_conns_scope(pool, parse_state, (&out->limit_conns_scope), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -607,11 +607,11 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "limit_conns";
-            out->limit_conns = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(locationDef_limit_conns_item_t*));
+            out->limit_conns = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(dyn_limit_locationDef_limit_conns_item_t*));
             if (out->limit_conns == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            if (parse_locationDef_limit_conns(pool, parse_state, (out->limit_conns), err_str)) {
+            if (parse_dyn_limit_locationDef_limit_conns(pool, parse_state, (out->limit_conns), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -624,7 +624,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "limit_conn_dry_run";
-            if (parse_locationDef_limit_conn_dry_run(pool, parse_state, (&out->limit_conn_dry_run), err_str)) {
+            if (parse_dyn_limit_locationDef_limit_conn_dry_run(pool, parse_state, (&out->limit_conn_dry_run), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -637,7 +637,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "limit_conn_log_level";
-            if (parse_locationDef_limit_conn_log_level(pool, parse_state, (&out->limit_conn_log_level), err_str)) {
+            if (parse_dyn_limit_locationDef_limit_conn_log_level(pool, parse_state, (&out->limit_conn_log_level), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -675,7 +675,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "limit_reqs_scope";
-            if (parse_locationDef_limit_reqs_scope(pool, parse_state, (&out->limit_reqs_scope), err_str)) {
+            if (parse_dyn_limit_locationDef_limit_reqs_scope(pool, parse_state, (&out->limit_reqs_scope), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -688,11 +688,11 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "limit_reqs";
-            out->limit_reqs = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(locationDef_limit_reqs_item_t*));
+            out->limit_reqs = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(dyn_limit_locationDef_limit_reqs_item_t*));
             if (out->limit_reqs == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            if (parse_locationDef_limit_reqs(pool, parse_state, (out->limit_reqs), err_str)) {
+            if (parse_dyn_limit_locationDef_limit_reqs(pool, parse_state, (out->limit_reqs), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -705,7 +705,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "limit_req_dry_run";
-            if (parse_locationDef_limit_req_dry_run(pool, parse_state, (&out->limit_req_dry_run), err_str)) {
+            if (parse_dyn_limit_locationDef_limit_req_dry_run(pool, parse_state, (&out->limit_req_dry_run), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -718,7 +718,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "limit_req_log_level";
-            if (parse_locationDef_limit_req_log_level(pool, parse_state, (&out->limit_req_log_level), err_str)) {
+            if (parse_dyn_limit_locationDef_limit_req_log_level(pool, parse_state, (&out->limit_req_log_level), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -756,11 +756,11 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "locations";
-            out->locations = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(locationDef_locations_item_t*));
+            out->locations = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(dyn_limit_locationDef_locations_item_t*));
             if (out->locations == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            if (parse_locationDef_locations(pool, parse_state, (out->locations), err_str)) {
+            if (parse_dyn_limit_locationDef_locations(pool, parse_state, (out->locations), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -783,7 +783,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             return true;
         }
         size_t token_size = strlen("");
-        (out->limit_rate)->data = njt_palloc(pool, token_size);
+        (out->limit_rate)->data = (u_char*)njt_palloc(pool, token_size);
         (out->limit_rate)->len = token_size;
         if (out->limit_rate->len == 0) {
             (out->limit_rate)->data = NULL;
@@ -803,7 +803,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             return true;
         }
         size_t token_size = strlen("");
-        (out->limit_rate_after)->data = njt_palloc(pool, token_size);
+        (out->limit_rate_after)->data = (u_char*)njt_palloc(pool, token_size);
         (out->limit_rate_after)->len = token_size;
         if (out->limit_rate_after->len == 0) {
             (out->limit_rate_after)->data = NULL;
@@ -817,7 +817,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
     }
     // HAHB
     if (!seen_limit_conns_scope) {
-        out->limit_conns_scope = LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE;
+        out->limit_conns_scope = DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE;
     }
     // HAHB
     if (!seen_limit_conns) {
@@ -826,11 +826,11 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
     }
     // HAHB
     if (!seen_limit_conn_dry_run) {
-        out->limit_conn_dry_run = LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF;
+        out->limit_conn_dry_run = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF;
     }
     // HAHB
     if (!seen_limit_conn_log_level) {
-        out->limit_conn_log_level = LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN;
+        out->limit_conn_log_level = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN;
     }
     // HAHB
     if (!seen_limit_conn_status) {
@@ -838,7 +838,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
     }
     // HAHB
     if (!seen_limit_reqs_scope) {
-        out->limit_reqs_scope = LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE;
+        out->limit_reqs_scope = DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE;
     }
     // HAHB
     if (!seen_limit_reqs) {
@@ -847,11 +847,11 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
     }
     // HAHB
     if (!seen_limit_req_dry_run) {
-        out->limit_req_dry_run = LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF;
+        out->limit_req_dry_run = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF;
     }
     // HAHB
     if (!seen_limit_req_log_level) {
-        out->limit_req_log_level = LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN;
+        out->limit_req_log_level = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN;
     }
     // HAHB
     if (!seen_limit_req_status) {
@@ -867,43 +867,44 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
 }
 
 
-static void get_json_length_locationDef_location(locationDef_location_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_location(dyn_limit_locationDef_location_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 
-static void get_json_length_locationDef_limit_rate(locationDef_limit_rate_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_rate(dyn_limit_locationDef_limit_rate_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 
-static void get_json_length_locationDef_limit_rate_after(locationDef_limit_rate_after_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_rate_after(dyn_limit_locationDef_limit_rate_after_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_locationDef_limit_conns_scope(locationDef_limit_conns_scope_t *out, size_t *length, njt_int_t flags) {
-    if (*out == LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE) {
+static void get_json_length_dyn_limit_locationDef_limit_conns_scope(dyn_limit_locationDef_limit_conns_scope_t *out, size_t *length, njt_int_t flags) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE) {
         // "up_share"
         *length += 8 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_CONNS_SCOPE_LOCATION) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_LOCATION) {
         // "location"
         *length += 8 + 2;
         return;
     }
 }
 
-static void get_json_length_locationDef_limit_conns_item_zone(locationDef_limit_conns_item_zone_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_conns_item_zone(dyn_limit_locationDef_limit_conns_item_zone_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 
-static void get_json_length_locationDef_limit_conns_item_conn(locationDef_limit_conns_item_conn_t *out, size_t *length, njt_int_t flags) {
-    u_char str[24], *cur;
-    cur = njt_sprintf(str, "%i", *out); // Convert integer to string
+static void get_json_length_dyn_limit_locationDef_limit_conns_item_conn(dyn_limit_locationDef_limit_conns_item_conn_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
     *length += cur - str;
 }
 
-static void get_json_length_locationDef_limit_conns_item(locationDef_limit_conns_item_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_conns_item(dyn_limit_locationDef_limit_conns_item_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -917,14 +918,14 @@ static void get_json_length_locationDef_limit_conns_item(locationDef_limit_conns
     }
     if (omit == 0) {
         *length += (4 + 3); // "zone": 
-        get_json_length_locationDef_limit_conns_item_zone((&out->zone), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conns_item_zone((&out->zone), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (4 + 3); // "conn": 
-        get_json_length_locationDef_limit_conns_item_conn((&out->conn), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conns_item_conn((&out->conn), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -934,7 +935,7 @@ static void get_json_length_locationDef_limit_conns_item(locationDef_limit_conns
     *length += 1;
 }
 
-static void get_json_length_locationDef_limit_conns(locationDef_limit_conns_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_conns(dyn_limit_locationDef_limit_conns_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -945,11 +946,11 @@ static void get_json_length_locationDef_limit_conns(locationDef_limit_conns_t *o
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_limit_conns_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_OBJ) && ((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i] == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_locationDef_limit_conns_item(((locationDef_limit_conns_item_t**)out->elts)[i], length, flags);
+            get_json_length_dyn_limit_locationDef_limit_conns_item(((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -960,13 +961,13 @@ static void get_json_length_locationDef_limit_conns(locationDef_limit_conns_t *o
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_locationDef_limit_conn_dry_run(locationDef_limit_conn_dry_run_t *out, size_t *length, njt_int_t flags) {
-    if (*out == LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON) {
+static void get_json_length_dyn_limit_locationDef_limit_conn_dry_run(dyn_limit_locationDef_limit_conn_dry_run_t *out, size_t *length, njt_int_t flags) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON) {
         // "on"
         *length += 2 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF) {
         // "off"
         *length += 3 + 2;
         return;
@@ -974,64 +975,66 @@ static void get_json_length_locationDef_limit_conn_dry_run(locationDef_limit_con
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_locationDef_limit_conn_log_level(locationDef_limit_conn_log_level_t *out, size_t *length, njt_int_t flags) {
-    if (*out == LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO) {
+static void get_json_length_dyn_limit_locationDef_limit_conn_log_level(dyn_limit_locationDef_limit_conn_log_level_t *out, size_t *length, njt_int_t flags) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO) {
         // "info"
         *length += 4 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE) {
         // "notice"
         *length += 6 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN) {
         // "warn"
         *length += 4 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR) {
         // "error"
         *length += 5 + 2;
         return;
     }
 }
 
-static void get_json_length_locationDef_limit_conn_status(locationDef_limit_conn_status_t *out, size_t *length, njt_int_t flags) {
-    u_char str[24], *cur;
-    cur = njt_sprintf(str, "%i", *out); // Convert integer to string
+static void get_json_length_dyn_limit_locationDef_limit_conn_status(dyn_limit_locationDef_limit_conn_status_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
     *length += cur - str;
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_locationDef_limit_reqs_scope(locationDef_limit_reqs_scope_t *out, size_t *length, njt_int_t flags) {
-    if (*out == LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE) {
+static void get_json_length_dyn_limit_locationDef_limit_reqs_scope(dyn_limit_locationDef_limit_reqs_scope_t *out, size_t *length, njt_int_t flags) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE) {
         // "up_share"
         *length += 8 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_REQS_SCOPE_LOCATION) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_LOCATION) {
         // "location"
         *length += 8 + 2;
         return;
     }
 }
 
-static void get_json_length_locationDef_limit_reqs_item_zone(locationDef_limit_reqs_item_zone_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_reqs_item_zone(dyn_limit_locationDef_limit_reqs_item_zone_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 
-static void get_json_length_locationDef_limit_reqs_item_burst(locationDef_limit_reqs_item_burst_t *out, size_t *length, njt_int_t flags) {
-    u_char str[24], *cur;
-    cur = njt_sprintf(str, "%i", *out); // Convert integer to string
+static void get_json_length_dyn_limit_locationDef_limit_reqs_item_burst(dyn_limit_locationDef_limit_reqs_item_burst_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
     *length += cur - str;
 }
 
-static void get_json_length_locationDef_limit_reqs_item_delay(locationDef_limit_reqs_item_delay_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_reqs_item_delay(dyn_limit_locationDef_limit_reqs_item_delay_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 
-static void get_json_length_locationDef_limit_reqs_item(locationDef_limit_reqs_item_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_reqs_item(dyn_limit_locationDef_limit_reqs_item_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -1045,14 +1048,14 @@ static void get_json_length_locationDef_limit_reqs_item(locationDef_limit_reqs_i
     }
     if (omit == 0) {
         *length += (4 + 3); // "zone": 
-        get_json_length_locationDef_limit_reqs_item_zone((&out->zone), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_reqs_item_zone((&out->zone), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (5 + 3); // "burst": 
-        get_json_length_locationDef_limit_reqs_item_burst((&out->burst), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_reqs_item_burst((&out->burst), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1062,7 +1065,7 @@ static void get_json_length_locationDef_limit_reqs_item(locationDef_limit_reqs_i
     }
     if (omit == 0) {
         *length += (5 + 3); // "delay": 
-        get_json_length_locationDef_limit_reqs_item_delay((&out->delay), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_reqs_item_delay((&out->delay), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1072,7 +1075,7 @@ static void get_json_length_locationDef_limit_reqs_item(locationDef_limit_reqs_i
     *length += 1;
 }
 
-static void get_json_length_locationDef_limit_reqs(locationDef_limit_reqs_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_reqs(dyn_limit_locationDef_limit_reqs_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -1083,11 +1086,11 @@ static void get_json_length_locationDef_limit_reqs(locationDef_limit_reqs_t *out
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_limit_reqs_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_OBJ) && ((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i] == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_locationDef_limit_reqs_item(((locationDef_limit_reqs_item_t**)out->elts)[i], length, flags);
+            get_json_length_dyn_limit_locationDef_limit_reqs_item(((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -1098,13 +1101,13 @@ static void get_json_length_locationDef_limit_reqs(locationDef_limit_reqs_t *out
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_locationDef_limit_req_dry_run(locationDef_limit_req_dry_run_t *out, size_t *length, njt_int_t flags) {
-    if (*out == LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON) {
+static void get_json_length_dyn_limit_locationDef_limit_req_dry_run(dyn_limit_locationDef_limit_req_dry_run_t *out, size_t *length, njt_int_t flags) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON) {
         // "on"
         *length += 2 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF) {
         // "off"
         *length += 3 + 2;
         return;
@@ -1112,41 +1115,42 @@ static void get_json_length_locationDef_limit_req_dry_run(locationDef_limit_req_
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_locationDef_limit_req_log_level(locationDef_limit_req_log_level_t *out, size_t *length, njt_int_t flags) {
-    if (*out == LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO) {
+static void get_json_length_dyn_limit_locationDef_limit_req_log_level(dyn_limit_locationDef_limit_req_log_level_t *out, size_t *length, njt_int_t flags) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO) {
         // "info"
         *length += 4 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE) {
         // "notice"
         *length += 6 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN) {
         // "warn"
         *length += 4 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR) {
         // "error"
         *length += 5 + 2;
         return;
     }
 }
 
-static void get_json_length_locationDef_limit_req_status(locationDef_limit_req_status_t *out, size_t *length, njt_int_t flags) {
-    u_char str[24], *cur;
-    cur = njt_sprintf(str, "%i", *out); // Convert integer to string
+static void get_json_length_dyn_limit_locationDef_limit_req_status(dyn_limit_locationDef_limit_req_status_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
     *length += cur - str;
 }
 // GET_JSON_LENGTH_REF
 
-static void get_json_length_locationDef_locations_item(locationDef_locations_item_t *out, size_t *length, njt_int_t flags) {
-    get_json_length_locationDef(out, length, flags);
+static void get_json_length_dyn_limit_locationDef_locations_item(dyn_limit_locationDef_locations_item_t *out, size_t *length, njt_int_t flags) {
+    get_json_length_dyn_limit_locationDef(out, length, flags);
 }
 
-static void get_json_length_locationDef_locations(locationDef_locations_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_locations(dyn_limit_locationDef_locations_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -1157,11 +1161,11 @@ static void get_json_length_locationDef_locations(locationDef_locations_t *out, 
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_locations_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_OBJ) && ((dyn_limit_locationDef_locations_item_t**)out->elts)[i] == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_locationDef_locations_item(((locationDef_locations_item_t**)out->elts)[i], length, flags);
+            get_json_length_dyn_limit_locationDef_locations_item(((dyn_limit_locationDef_locations_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -1171,7 +1175,7 @@ static void get_json_length_locationDef_locations(locationDef_locations_t *out, 
     }
 }
 
-static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef(dyn_limit_locationDef_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -1185,7 +1189,7 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     }
     if (omit == 0) {
         *length += (8 + 3); // "location": 
-        get_json_length_locationDef_location((&out->location), length, flags);
+        get_json_length_dyn_limit_locationDef_location((&out->location), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1195,7 +1199,7 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     }
     if (omit == 0) {
         *length += (10 + 3); // "limit_rate": 
-        get_json_length_locationDef_limit_rate((&out->limit_rate), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_rate((&out->limit_rate), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1205,14 +1209,14 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     }
     if (omit == 0) {
         *length += (16 + 3); // "limit_rate_after": 
-        get_json_length_locationDef_limit_rate_after((&out->limit_rate_after), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_rate_after((&out->limit_rate_after), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (17 + 3); // "limit_conns_scope": 
-        get_json_length_locationDef_limit_conns_scope((&out->limit_conns_scope), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conns_scope((&out->limit_conns_scope), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1222,35 +1226,35 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     }
     if (omit == 0) {
         *length += (11 + 3); // "limit_conns": 
-        get_json_length_locationDef_limit_conns((out->limit_conns), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conns((out->limit_conns), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (18 + 3); // "limit_conn_dry_run": 
-        get_json_length_locationDef_limit_conn_dry_run((&out->limit_conn_dry_run), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conn_dry_run((&out->limit_conn_dry_run), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (20 + 3); // "limit_conn_log_level": 
-        get_json_length_locationDef_limit_conn_log_level((&out->limit_conn_log_level), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conn_log_level((&out->limit_conn_log_level), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (17 + 3); // "limit_conn_status": 
-        get_json_length_locationDef_limit_conn_status((&out->limit_conn_status), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conn_status((&out->limit_conn_status), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (16 + 3); // "limit_reqs_scope": 
-        get_json_length_locationDef_limit_reqs_scope((&out->limit_reqs_scope), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_reqs_scope((&out->limit_reqs_scope), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1260,28 +1264,28 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     }
     if (omit == 0) {
         *length += (10 + 3); // "limit_reqs": 
-        get_json_length_locationDef_limit_reqs((out->limit_reqs), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_reqs((out->limit_reqs), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (17 + 3); // "limit_req_dry_run": 
-        get_json_length_locationDef_limit_req_dry_run((&out->limit_req_dry_run), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_req_dry_run((&out->limit_req_dry_run), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (19 + 3); // "limit_req_log_level": 
-        get_json_length_locationDef_limit_req_log_level((&out->limit_req_log_level), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_req_log_level((&out->limit_req_log_level), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (16 + 3); // "limit_req_status": 
-        get_json_length_locationDef_limit_req_status((&out->limit_req_status), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_req_status((&out->limit_req_status), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1291,7 +1295,7 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     }
     if (omit == 0) {
         *length += (9 + 3); // "locations": 
-        get_json_length_locationDef_locations((out->locations), length, flags);
+        get_json_length_dyn_limit_locationDef_locations((out->locations), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1301,114 +1305,114 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     *length += 1;
 }
 
-locationDef_limit_conns_item_zone_t get_locationDef_limit_conns_item_zone(locationDef_limit_conns_item_t *out) {
+dyn_limit_locationDef_limit_conns_item_zone_t get_dyn_limit_locationDef_limit_conns_item_zone(dyn_limit_locationDef_limit_conns_item_t *out) {
     return out->zone;
 }
 
-locationDef_limit_conns_item_conn_t get_locationDef_limit_conns_item_conn(locationDef_limit_conns_item_t *out) {
+dyn_limit_locationDef_limit_conns_item_conn_t get_dyn_limit_locationDef_limit_conns_item_conn(dyn_limit_locationDef_limit_conns_item_t *out) {
     return out->conn;
 }
 // CHECK ARRAY not exceeding bounds before call this func
 
-locationDef_limit_conns_item_t get_locationDef_limit_conns_item(locationDef_limit_conns_t *out, size_t idx) {
-    return *((locationDef_limit_conns_item_t**)out->elts)[idx];
+dyn_limit_locationDef_limit_conns_item_t get_dyn_limit_locationDef_limit_conns_item(dyn_limit_locationDef_limit_conns_t *out, size_t idx) {
+    return *((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[idx];
 }
 
-locationDef_limit_reqs_item_zone_t get_locationDef_limit_reqs_item_zone(locationDef_limit_reqs_item_t *out) {
+dyn_limit_locationDef_limit_reqs_item_zone_t get_dyn_limit_locationDef_limit_reqs_item_zone(dyn_limit_locationDef_limit_reqs_item_t *out) {
     return out->zone;
 }
 
-locationDef_limit_reqs_item_burst_t get_locationDef_limit_reqs_item_burst(locationDef_limit_reqs_item_t *out) {
+dyn_limit_locationDef_limit_reqs_item_burst_t get_dyn_limit_locationDef_limit_reqs_item_burst(dyn_limit_locationDef_limit_reqs_item_t *out) {
     return out->burst;
 }
 
-locationDef_limit_reqs_item_delay_t get_locationDef_limit_reqs_item_delay(locationDef_limit_reqs_item_t *out) {
+dyn_limit_locationDef_limit_reqs_item_delay_t get_dyn_limit_locationDef_limit_reqs_item_delay(dyn_limit_locationDef_limit_reqs_item_t *out) {
     return out->delay;
 }
 // CHECK ARRAY not exceeding bounds before call this func
 
-locationDef_limit_reqs_item_t get_locationDef_limit_reqs_item(locationDef_limit_reqs_t *out, size_t idx) {
-    return *((locationDef_limit_reqs_item_t**)out->elts)[idx];
+dyn_limit_locationDef_limit_reqs_item_t get_dyn_limit_locationDef_limit_reqs_item(dyn_limit_locationDef_limit_reqs_t *out, size_t idx) {
+    return *((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[idx];
 }
 // CHECK ARRAY not exceeding bounds before call this func
 
-locationDef_locations_item_t get_locationDef_locations_item(locationDef_locations_t *out, size_t idx) {
-    return *((locationDef_locations_item_t**)out->elts)[idx];
+dyn_limit_locationDef_locations_item_t get_dyn_limit_locationDef_locations_item(dyn_limit_locationDef_locations_t *out, size_t idx) {
+    return *((dyn_limit_locationDef_locations_item_t**)out->elts)[idx];
 }
 
-locationDef_location_t get_locationDef_location(locationDef_t *out) {
+dyn_limit_locationDef_location_t get_dyn_limit_locationDef_location(dyn_limit_locationDef_t *out) {
     return out->location;
 }
 
-locationDef_limit_rate_t get_locationDef_limit_rate(locationDef_t *out) {
+dyn_limit_locationDef_limit_rate_t get_dyn_limit_locationDef_limit_rate(dyn_limit_locationDef_t *out) {
     return out->limit_rate;
 }
 
-locationDef_limit_rate_after_t get_locationDef_limit_rate_after(locationDef_t *out) {
+dyn_limit_locationDef_limit_rate_after_t get_dyn_limit_locationDef_limit_rate_after(dyn_limit_locationDef_t *out) {
     return out->limit_rate_after;
 }
 
-locationDef_limit_conns_scope_t get_locationDef_limit_conns_scope(locationDef_t *out) {
+dyn_limit_locationDef_limit_conns_scope_t get_dyn_limit_locationDef_limit_conns_scope(dyn_limit_locationDef_t *out) {
     return out->limit_conns_scope;
 }
 
-locationDef_limit_conns_t* get_locationDef_limit_conns(locationDef_t *out) {
+dyn_limit_locationDef_limit_conns_t* get_dyn_limit_locationDef_limit_conns(dyn_limit_locationDef_t *out) {
     return out->limit_conns;
 }
 
-locationDef_limit_conn_dry_run_t get_locationDef_limit_conn_dry_run(locationDef_t *out) {
+dyn_limit_locationDef_limit_conn_dry_run_t get_dyn_limit_locationDef_limit_conn_dry_run(dyn_limit_locationDef_t *out) {
     return out->limit_conn_dry_run;
 }
 
-locationDef_limit_conn_log_level_t get_locationDef_limit_conn_log_level(locationDef_t *out) {
+dyn_limit_locationDef_limit_conn_log_level_t get_dyn_limit_locationDef_limit_conn_log_level(dyn_limit_locationDef_t *out) {
     return out->limit_conn_log_level;
 }
 
-locationDef_limit_conn_status_t get_locationDef_limit_conn_status(locationDef_t *out) {
+dyn_limit_locationDef_limit_conn_status_t get_dyn_limit_locationDef_limit_conn_status(dyn_limit_locationDef_t *out) {
     return out->limit_conn_status;
 }
 
-locationDef_limit_reqs_scope_t get_locationDef_limit_reqs_scope(locationDef_t *out) {
+dyn_limit_locationDef_limit_reqs_scope_t get_dyn_limit_locationDef_limit_reqs_scope(dyn_limit_locationDef_t *out) {
     return out->limit_reqs_scope;
 }
 
-locationDef_limit_reqs_t* get_locationDef_limit_reqs(locationDef_t *out) {
+dyn_limit_locationDef_limit_reqs_t* get_dyn_limit_locationDef_limit_reqs(dyn_limit_locationDef_t *out) {
     return out->limit_reqs;
 }
 
-locationDef_limit_req_dry_run_t get_locationDef_limit_req_dry_run(locationDef_t *out) {
+dyn_limit_locationDef_limit_req_dry_run_t get_dyn_limit_locationDef_limit_req_dry_run(dyn_limit_locationDef_t *out) {
     return out->limit_req_dry_run;
 }
 
-locationDef_limit_req_log_level_t get_locationDef_limit_req_log_level(locationDef_t *out) {
+dyn_limit_locationDef_limit_req_log_level_t get_dyn_limit_locationDef_limit_req_log_level(dyn_limit_locationDef_t *out) {
     return out->limit_req_log_level;
 }
 
-locationDef_limit_req_status_t get_locationDef_limit_req_status(locationDef_t *out) {
+dyn_limit_locationDef_limit_req_status_t get_dyn_limit_locationDef_limit_req_status(dyn_limit_locationDef_t *out) {
     return out->limit_req_status;
 }
 
-locationDef_locations_t* get_locationDef_locations(locationDef_t *out) {
+dyn_limit_locationDef_locations_t* get_dyn_limit_locationDef_locations(dyn_limit_locationDef_t *out) {
     return out->locations;
 }
-void set_locationDef_location(locationDef_t* obj, locationDef_location_t field) {
+void set_dyn_limit_locationDef_location(dyn_limit_locationDef_t* obj, dyn_limit_locationDef_location_t field) {
     obj->location = field;
 }
-void set_locationDef_limit_rate(locationDef_t* obj, locationDef_limit_rate_t field) {
+void set_dyn_limit_locationDef_limit_rate(dyn_limit_locationDef_t* obj, dyn_limit_locationDef_limit_rate_t field) {
     obj->limit_rate = field;
 }
-void set_locationDef_limit_rate_after(locationDef_t* obj, locationDef_limit_rate_after_t field) {
+void set_dyn_limit_locationDef_limit_rate_after(dyn_limit_locationDef_t* obj, dyn_limit_locationDef_limit_rate_after_t field) {
     obj->limit_rate_after = field;
 }
-void set_locationDef_limit_conns_item_zone(locationDef_limit_conns_item_t* obj, locationDef_limit_conns_item_zone_t field) {
+void set_dyn_limit_locationDef_limit_conns_item_zone(dyn_limit_locationDef_limit_conns_item_t* obj, dyn_limit_locationDef_limit_conns_item_zone_t field) {
     obj->zone = field;
 }
-locationDef_limit_conns_item_t* create_locationDef_limit_conns_item(njt_pool_t *pool) {
-    locationDef_limit_conns_item_t* out = njt_palloc(pool, sizeof(locationDef_limit_conns_item_t));
-    memset(out, 0, sizeof(locationDef_limit_conns_item_t));
+dyn_limit_locationDef_limit_conns_item_t* create_dyn_limit_locationDef_limit_conns_item(njt_pool_t *pool) {
+    dyn_limit_locationDef_limit_conns_item_t* out = njt_palloc(pool, sizeof(dyn_limit_locationDef_limit_conns_item_t));
+    memset(out, 0, sizeof(dyn_limit_locationDef_limit_conns_item_t));
     return out;
 }
-int add_item_locationDef_limit_conns(locationDef_limit_conns_t *src, locationDef_limit_conns_item_t* item) {
+int add_item_dyn_limit_locationDef_limit_conns(dyn_limit_locationDef_limit_conns_t *src, dyn_limit_locationDef_limit_conns_item_t* item) {
     void *new = njt_array_push(src);
     if (new == NULL) {
         return NJT_ERROR;
@@ -1417,24 +1421,24 @@ int add_item_locationDef_limit_conns(locationDef_limit_conns_t *src, locationDef
     return NJT_OK;
 }
 
-locationDef_limit_conns_t* create_locationDef_limit_conns(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(locationDef_limit_conns_item_t*));
+dyn_limit_locationDef_limit_conns_t* create_dyn_limit_locationDef_limit_conns(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_limit_locationDef_limit_conns_item_t*));
 }
-void set_locationDef_limit_conns(locationDef_t* obj, locationDef_limit_conns_t* field) {
+void set_dyn_limit_locationDef_limit_conns(dyn_limit_locationDef_t* obj, dyn_limit_locationDef_limit_conns_t* field) {
     obj->limit_conns = field;
 }
-void set_locationDef_limit_reqs_item_zone(locationDef_limit_reqs_item_t* obj, locationDef_limit_reqs_item_zone_t field) {
+void set_dyn_limit_locationDef_limit_reqs_item_zone(dyn_limit_locationDef_limit_reqs_item_t* obj, dyn_limit_locationDef_limit_reqs_item_zone_t field) {
     obj->zone = field;
 }
-void set_locationDef_limit_reqs_item_delay(locationDef_limit_reqs_item_t* obj, locationDef_limit_reqs_item_delay_t field) {
+void set_dyn_limit_locationDef_limit_reqs_item_delay(dyn_limit_locationDef_limit_reqs_item_t* obj, dyn_limit_locationDef_limit_reqs_item_delay_t field) {
     obj->delay = field;
 }
-locationDef_limit_reqs_item_t* create_locationDef_limit_reqs_item(njt_pool_t *pool) {
-    locationDef_limit_reqs_item_t* out = njt_palloc(pool, sizeof(locationDef_limit_reqs_item_t));
-    memset(out, 0, sizeof(locationDef_limit_reqs_item_t));
+dyn_limit_locationDef_limit_reqs_item_t* create_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool) {
+    dyn_limit_locationDef_limit_reqs_item_t* out = njt_palloc(pool, sizeof(dyn_limit_locationDef_limit_reqs_item_t));
+    memset(out, 0, sizeof(dyn_limit_locationDef_limit_reqs_item_t));
     return out;
 }
-int add_item_locationDef_limit_reqs(locationDef_limit_reqs_t *src, locationDef_limit_reqs_item_t* item) {
+int add_item_dyn_limit_locationDef_limit_reqs(dyn_limit_locationDef_limit_reqs_t *src, dyn_limit_locationDef_limit_reqs_item_t* item) {
     void *new = njt_array_push(src);
     if (new == NULL) {
         return NJT_ERROR;
@@ -1443,13 +1447,13 @@ int add_item_locationDef_limit_reqs(locationDef_limit_reqs_t *src, locationDef_l
     return NJT_OK;
 }
 
-locationDef_limit_reqs_t* create_locationDef_limit_reqs(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(locationDef_limit_reqs_item_t*));
+dyn_limit_locationDef_limit_reqs_t* create_dyn_limit_locationDef_limit_reqs(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_limit_locationDef_limit_reqs_item_t*));
 }
-void set_locationDef_limit_reqs(locationDef_t* obj, locationDef_limit_reqs_t* field) {
+void set_dyn_limit_locationDef_limit_reqs(dyn_limit_locationDef_t* obj, dyn_limit_locationDef_limit_reqs_t* field) {
     obj->limit_reqs = field;
 }
-int add_item_locationDef_locations(locationDef_locations_t *src, locationDef_locations_item_t* item) {
+int add_item_dyn_limit_locationDef_locations(dyn_limit_locationDef_locations_t *src, dyn_limit_locationDef_locations_item_t* item) {
     void *new = njt_array_push(src);
     if (new == NULL) {
         return NJT_ERROR;
@@ -1458,63 +1462,63 @@ int add_item_locationDef_locations(locationDef_locations_t *src, locationDef_loc
     return NJT_OK;
 }
 
-locationDef_locations_t* create_locationDef_locations(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(locationDef_locations_item_t*));
+dyn_limit_locationDef_locations_t* create_dyn_limit_locationDef_locations(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_limit_locationDef_locations_item_t*));
 }
-void set_locationDef_locations(locationDef_t* obj, locationDef_locations_t* field) {
+void set_dyn_limit_locationDef_locations(dyn_limit_locationDef_t* obj, dyn_limit_locationDef_locations_t* field) {
     obj->locations = field;
 }
-locationDef_t* create_locationDef(njt_pool_t *pool) {
-    locationDef_t* out = njt_palloc(pool, sizeof(locationDef_t));
-    memset(out, 0, sizeof(locationDef_t));
+dyn_limit_locationDef_t* create_dyn_limit_locationDef(njt_pool_t *pool) {
+    dyn_limit_locationDef_t* out = njt_palloc(pool, sizeof(dyn_limit_locationDef_t));
+    memset(out, 0, sizeof(dyn_limit_locationDef_t));
     return out;
 }
 
-static void to_oneline_json_locationDef_location(locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_location(dyn_limit_locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_locationDef_limit_rate(locationDef_limit_rate_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_rate(dyn_limit_locationDef_limit_rate_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_locationDef_limit_rate_after(locationDef_limit_rate_after_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_rate_after(dyn_limit_locationDef_limit_rate_after_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_locationDef_limit_conns_scope(locationDef_limit_conns_scope_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conns_scope(dyn_limit_locationDef_limit_conns_scope_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    if (*out == LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE) {
         cur = njt_sprintf(cur, "\"up_share\"");
         buf->len += 8 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_CONNS_SCOPE_LOCATION) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_LOCATION) {
         cur = njt_sprintf(cur, "\"location\"");
         buf->len += 8 + 2;
         return;
     }
 }
 
-static void to_oneline_json_locationDef_limit_conns_item_zone(locationDef_limit_conns_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conns_item_zone(dyn_limit_locationDef_limit_conns_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
-}
-
-static void to_oneline_json_locationDef_limit_conns_item_conn(locationDef_limit_conns_item_conn_t *out, njt_str_t* buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%i", *out);
+    cur = njt_sprintf(cur, "\"%V\"", *out);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_locationDef_limit_conns_item(locationDef_limit_conns_item_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conns_item_conn(dyn_limit_locationDef_limit_conns_item_conn_t *out, njt_str_t* buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_dyn_limit_locationDef_limit_conns_item(dyn_limit_locationDef_limit_conns_item_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -1531,7 +1535,7 @@ static void to_oneline_json_locationDef_limit_conns_item(locationDef_limit_conns
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"zone\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_conns_item_zone((&out->zone), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conns_item_zone((&out->zone), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1540,7 +1544,7 @@ static void to_oneline_json_locationDef_limit_conns_item(locationDef_limit_conns
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"conn\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_conns_item_conn((&out->conn), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conns_item_conn((&out->conn), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1555,7 +1559,7 @@ static void to_oneline_json_locationDef_limit_conns_item(locationDef_limit_conns
     buf->len ++;
 }
 
-static void to_oneline_json_locationDef_limit_conns(locationDef_limit_conns_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conns(dyn_limit_locationDef_limit_conns_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -1568,11 +1572,11 @@ static void to_oneline_json_locationDef_limit_conns(locationDef_limit_conns_t *o
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_limit_conns_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_OBJ) && ((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i] == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_locationDef_limit_conns_item(((locationDef_limit_conns_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_dyn_limit_locationDef_limit_conns_item(((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -1588,83 +1592,83 @@ static void to_oneline_json_locationDef_limit_conns(locationDef_limit_conns_t *o
     buf->len ++;
 }
 
-static void to_oneline_json_locationDef_limit_conn_dry_run(locationDef_limit_conn_dry_run_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conn_dry_run(dyn_limit_locationDef_limit_conn_dry_run_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    if (*out == LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON) {
         cur = njt_sprintf(cur, "\"on\"");
         buf->len += 2 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF) {
         cur = njt_sprintf(cur, "\"off\"");
         buf->len += 3 + 2;
         return;
     }
 }
 
-static void to_oneline_json_locationDef_limit_conn_log_level(locationDef_limit_conn_log_level_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conn_log_level(dyn_limit_locationDef_limit_conn_log_level_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    if (*out == LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO) {
         cur = njt_sprintf(cur, "\"info\"");
         buf->len += 4 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE) {
         cur = njt_sprintf(cur, "\"notice\"");
         buf->len += 6 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN) {
         cur = njt_sprintf(cur, "\"warn\"");
         buf->len += 4 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR) {
         cur = njt_sprintf(cur, "\"error\"");
         buf->len += 5 + 2;
         return;
     }
 }
 
-static void to_oneline_json_locationDef_limit_conn_status(locationDef_limit_conn_status_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conn_status(dyn_limit_locationDef_limit_conn_status_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%i", *out);
+    cur = njt_sprintf(cur, "%L", *out);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_locationDef_limit_reqs_scope(locationDef_limit_reqs_scope_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_reqs_scope(dyn_limit_locationDef_limit_reqs_scope_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    if (*out == LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE) {
         cur = njt_sprintf(cur, "\"up_share\"");
         buf->len += 8 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_REQS_SCOPE_LOCATION) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_LOCATION) {
         cur = njt_sprintf(cur, "\"location\"");
         buf->len += 8 + 2;
         return;
     }
 }
 
-static void to_oneline_json_locationDef_limit_reqs_item_zone(locationDef_limit_reqs_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item_zone(dyn_limit_locationDef_limit_reqs_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
-}
-
-static void to_oneline_json_locationDef_limit_reqs_item_burst(locationDef_limit_reqs_item_burst_t *out, njt_str_t* buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%i", *out);
+    cur = njt_sprintf(cur, "\"%V\"", *out);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_locationDef_limit_reqs_item_delay(locationDef_limit_reqs_item_delay_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item_burst(dyn_limit_locationDef_limit_reqs_item_burst_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_locationDef_limit_reqs_item(locationDef_limit_reqs_item_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item_delay(dyn_limit_locationDef_limit_reqs_item_delay_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item(dyn_limit_locationDef_limit_reqs_item_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -1681,7 +1685,7 @@ static void to_oneline_json_locationDef_limit_reqs_item(locationDef_limit_reqs_i
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"zone\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_reqs_item_zone((&out->zone), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_reqs_item_zone((&out->zone), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1690,7 +1694,7 @@ static void to_oneline_json_locationDef_limit_reqs_item(locationDef_limit_reqs_i
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"burst\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_reqs_item_burst((&out->burst), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_reqs_item_burst((&out->burst), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1702,7 +1706,7 @@ static void to_oneline_json_locationDef_limit_reqs_item(locationDef_limit_reqs_i
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"delay\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_reqs_item_delay((&out->delay), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_reqs_item_delay((&out->delay), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1717,7 +1721,7 @@ static void to_oneline_json_locationDef_limit_reqs_item(locationDef_limit_reqs_i
     buf->len ++;
 }
 
-static void to_oneline_json_locationDef_limit_reqs(locationDef_limit_reqs_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_reqs(dyn_limit_locationDef_limit_reqs_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -1730,11 +1734,11 @@ static void to_oneline_json_locationDef_limit_reqs(locationDef_limit_reqs_t *out
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_limit_reqs_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_OBJ) && ((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i] == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_locationDef_limit_reqs_item(((locationDef_limit_reqs_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_dyn_limit_locationDef_limit_reqs_item(((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -1750,56 +1754,56 @@ static void to_oneline_json_locationDef_limit_reqs(locationDef_limit_reqs_t *out
     buf->len ++;
 }
 
-static void to_oneline_json_locationDef_limit_req_dry_run(locationDef_limit_req_dry_run_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_req_dry_run(dyn_limit_locationDef_limit_req_dry_run_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    if (*out == LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON) {
         cur = njt_sprintf(cur, "\"on\"");
         buf->len += 2 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF) {
         cur = njt_sprintf(cur, "\"off\"");
         buf->len += 3 + 2;
         return;
     }
 }
 
-static void to_oneline_json_locationDef_limit_req_log_level(locationDef_limit_req_log_level_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_req_log_level(dyn_limit_locationDef_limit_req_log_level_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    if (*out == LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO) {
         cur = njt_sprintf(cur, "\"info\"");
         buf->len += 4 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE) {
         cur = njt_sprintf(cur, "\"notice\"");
         buf->len += 6 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN) {
         cur = njt_sprintf(cur, "\"warn\"");
         buf->len += 4 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR) {
+    if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR) {
         cur = njt_sprintf(cur, "\"error\"");
         buf->len += 5 + 2;
         return;
     }
 }
 
-static void to_oneline_json_locationDef_limit_req_status(locationDef_limit_req_status_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_req_status(dyn_limit_locationDef_limit_req_status_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%i", *out);
+    cur = njt_sprintf(cur, "%L", *out);
     buf->len = cur - buf->data;
 }
 // to_oneline_json_REF
 
-static void to_oneline_json_locationDef_locations_item(locationDef_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
-    to_oneline_json_locationDef(out, buf, flags);
+static void to_oneline_json_dyn_limit_locationDef_locations_item(dyn_limit_locationDef_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
+    to_oneline_json_dyn_limit_locationDef(out, buf, flags);
 }
 
-static void to_oneline_json_locationDef_locations(locationDef_locations_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_locations(dyn_limit_locationDef_locations_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -1812,11 +1816,11 @@ static void to_oneline_json_locationDef_locations(locationDef_locations_t *out, 
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_locations_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_OBJ) && ((dyn_limit_locationDef_locations_item_t**)out->elts)[i] == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_locationDef_locations_item(((locationDef_locations_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_dyn_limit_locationDef_locations_item(((dyn_limit_locationDef_locations_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -1832,7 +1836,7 @@ static void to_oneline_json_locationDef_locations(locationDef_locations_t *out, 
     buf->len ++;
 }
 
-static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -1849,7 +1853,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"location\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_location((&out->location), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_location((&out->location), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1861,7 +1865,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_rate\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_rate((&out->limit_rate), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_rate((&out->limit_rate), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1873,7 +1877,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_rate_after\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_rate_after((&out->limit_rate_after), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_rate_after((&out->limit_rate_after), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1882,7 +1886,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_conns_scope\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_conns_scope((&out->limit_conns_scope), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conns_scope((&out->limit_conns_scope), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1894,7 +1898,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_conns\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_conns((out->limit_conns), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conns((out->limit_conns), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1903,7 +1907,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_conn_dry_run\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_conn_dry_run((&out->limit_conn_dry_run), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conn_dry_run((&out->limit_conn_dry_run), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1912,7 +1916,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_conn_log_level\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_conn_log_level((&out->limit_conn_log_level), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conn_log_level((&out->limit_conn_log_level), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1921,7 +1925,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_conn_status\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_conn_status((&out->limit_conn_status), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conn_status((&out->limit_conn_status), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1930,7 +1934,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_reqs_scope\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_reqs_scope((&out->limit_reqs_scope), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_reqs_scope((&out->limit_reqs_scope), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1942,7 +1946,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_reqs\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_reqs((out->limit_reqs), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_reqs((out->limit_reqs), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1951,7 +1955,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_req_dry_run\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_req_dry_run((&out->limit_req_dry_run), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_req_dry_run((&out->limit_req_dry_run), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1960,7 +1964,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_req_log_level\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_req_log_level((&out->limit_req_log_level), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_req_log_level((&out->limit_req_log_level), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1969,7 +1973,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_req_status\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_limit_req_status((&out->limit_req_status), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_req_status((&out->limit_req_status), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1981,7 +1985,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"locations\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_locations((out->locations), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_locations((out->locations), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -2014,7 +2018,7 @@ static bool parse_dyn_limit_servers_item_listens(njt_pool_t *pool, parse_state_t
             // TODO LOG_ERROR
             return true;
         }
-        (((dyn_limit_servers_item_listens_item_t*)out->elts)[i])->data = njt_palloc(pool, (size_t)(token_size));
+        (((dyn_limit_servers_item_listens_item_t*)out->elts)[i])->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
         (((dyn_limit_servers_item_listens_item_t*)out->elts)[i])->len = token_size;
         if (((dyn_limit_servers_item_listens_item_t*)out->elts)[i]->len == 0) {
             (((dyn_limit_servers_item_listens_item_t*)out->elts)[i])->data = NULL;
@@ -2049,7 +2053,7 @@ static bool parse_dyn_limit_servers_item_serverNames(njt_pool_t *pool, parse_sta
             // TODO LOG_ERROR
             return true;
         }
-        (((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i])->data = njt_palloc(pool, (size_t)(token_size));
+        (((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i])->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
         (((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i])->len = token_size;
         if (((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i]->len == 0) {
             (((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i])->data = NULL;
@@ -2076,8 +2080,8 @@ static bool parse_dyn_limit_servers_item_locations(njt_pool_t *pool, parse_state
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        ((dyn_limit_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(locationDef_t));
-        if (parse_locationDef(pool, parse_state, ((dyn_limit_servers_item_locations_item_t**)out->elts)[i], err_str)) {
+        ((dyn_limit_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_locationDef_t));
+        if (parse_dyn_limit_locationDef(pool, parse_state, ((dyn_limit_servers_item_locations_item_t**)out->elts)[i], err_str)) {
             return true;
         }
         out->nelts ++;
@@ -2244,7 +2248,7 @@ static bool parse_dyn_limit_limit_rps_item(njt_pool_t *pool, parse_state_t *pars
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->zone))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->zone))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->zone))->len = token_size;
             if ((out->zone)->len == 0) {
                 ((out->zone))->data = NULL;
@@ -2276,7 +2280,7 @@ static bool parse_dyn_limit_limit_rps_item(njt_pool_t *pool, parse_state_t *pars
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->rate))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->rate))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->rate))->len = token_size;
             if ((out->rate)->len == 0) {
                 ((out->rate))->data = NULL;
@@ -2303,7 +2307,7 @@ static bool parse_dyn_limit_limit_rps_item(njt_pool_t *pool, parse_state_t *pars
             return true;
         }
         size_t token_size = strlen("");
-        (out->zone)->data = njt_palloc(pool, token_size);
+        (out->zone)->data = (u_char*)njt_palloc(pool, token_size);
         (out->zone)->len = token_size;
         if (out->zone->len == 0) {
             (out->zone)->data = NULL;
@@ -2323,7 +2327,7 @@ static bool parse_dyn_limit_limit_rps_item(njt_pool_t *pool, parse_state_t *pars
             return true;
         }
         size_t token_size = strlen("");
-        (out->rate)->data = njt_palloc(pool, token_size);
+        (out->rate)->data = (u_char*)njt_palloc(pool, token_size);
         (out->rate)->len = token_size;
         if (out->rate->len == 0) {
             (out->rate)->data = NULL;
@@ -2496,7 +2500,7 @@ static void get_json_length_dyn_limit_servers_item_serverNames(dyn_limit_servers
 // GET_JSON_LENGTH_REF
 
 static void get_json_length_dyn_limit_servers_item_locations_item(dyn_limit_servers_item_locations_item_t *out, size_t *length, njt_int_t flags) {
-    get_json_length_locationDef(out, length, flags);
+    get_json_length_dyn_limit_locationDef(out, length, flags);
 }
 
 static void get_json_length_dyn_limit_servers_item_locations(dyn_limit_servers_item_locations_t *out, size_t *length, njt_int_t flags) {
@@ -2755,8 +2759,8 @@ int add_item_dyn_limit_servers_item_listens(dyn_limit_servers_item_listens_t *sr
     return NJT_OK;
 }
 
-dyn_limit_servers_item_listens_t* create_dyn_limit_servers_item_listens(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dyn_limit_servers_item_listens_item_t));
+dyn_limit_servers_item_listens_t* create_dyn_limit_servers_item_listens(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_limit_servers_item_listens_item_t));
 }
 void set_dyn_limit_servers_item_listens(dyn_limit_servers_item_t* obj, dyn_limit_servers_item_listens_t* field) {
     obj->listens = field;
@@ -2770,8 +2774,8 @@ int add_item_dyn_limit_servers_item_serverNames(dyn_limit_servers_item_serverNam
     return NJT_OK;
 }
 
-dyn_limit_servers_item_serverNames_t* create_dyn_limit_servers_item_serverNames(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dyn_limit_servers_item_serverNames_item_t));
+dyn_limit_servers_item_serverNames_t* create_dyn_limit_servers_item_serverNames(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_limit_servers_item_serverNames_item_t));
 }
 void set_dyn_limit_servers_item_serverNames(dyn_limit_servers_item_t* obj, dyn_limit_servers_item_serverNames_t* field) {
     obj->serverNames = field;
@@ -2785,8 +2789,8 @@ int add_item_dyn_limit_servers_item_locations(dyn_limit_servers_item_locations_t
     return NJT_OK;
 }
 
-dyn_limit_servers_item_locations_t* create_dyn_limit_servers_item_locations(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dyn_limit_servers_item_locations_item_t*));
+dyn_limit_servers_item_locations_t* create_dyn_limit_servers_item_locations(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_limit_servers_item_locations_item_t*));
 }
 void set_dyn_limit_servers_item_locations(dyn_limit_servers_item_t* obj, dyn_limit_servers_item_locations_t* field) {
     obj->locations = field;
@@ -2805,8 +2809,8 @@ int add_item_dyn_limit_servers(dyn_limit_servers_t *src, dyn_limit_servers_item_
     return NJT_OK;
 }
 
-dyn_limit_servers_t* create_dyn_limit_servers(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dyn_limit_servers_item_t*));
+dyn_limit_servers_t* create_dyn_limit_servers(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_limit_servers_item_t*));
 }
 void set_dyn_limit_servers(dyn_limit_t* obj, dyn_limit_servers_t* field) {
     obj->servers = field;
@@ -2831,8 +2835,8 @@ int add_item_dyn_limit_limit_rps(dyn_limit_limit_rps_t *src, dyn_limit_limit_rps
     return NJT_OK;
 }
 
-dyn_limit_limit_rps_t* create_dyn_limit_limit_rps(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dyn_limit_limit_rps_item_t*));
+dyn_limit_limit_rps_t* create_dyn_limit_limit_rps(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_limit_limit_rps_item_t*));
 }
 void set_dyn_limit_limit_rps(dyn_limit_t* obj, dyn_limit_limit_rps_t* field) {
     obj->limit_rps = field;
@@ -2845,8 +2849,8 @@ dyn_limit_t* create_dyn_limit(njt_pool_t *pool) {
 
 static void to_oneline_json_dyn_limit_servers_item_listens_item(dyn_limit_servers_item_listens_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_servers_item_listens(dyn_limit_servers_item_listens_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -2884,8 +2888,8 @@ static void to_oneline_json_dyn_limit_servers_item_listens(dyn_limit_servers_ite
 
 static void to_oneline_json_dyn_limit_servers_item_serverNames_item(dyn_limit_servers_item_serverNames_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_servers_item_serverNames(dyn_limit_servers_item_serverNames_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -2923,7 +2927,7 @@ static void to_oneline_json_dyn_limit_servers_item_serverNames(dyn_limit_servers
 // to_oneline_json_REF
 
 static void to_oneline_json_dyn_limit_servers_item_locations_item(dyn_limit_servers_item_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
-    to_oneline_json_locationDef(out, buf, flags);
+    to_oneline_json_dyn_limit_locationDef(out, buf, flags);
 }
 
 static void to_oneline_json_dyn_limit_servers_item_locations(dyn_limit_servers_item_locations_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -3050,14 +3054,14 @@ static void to_oneline_json_dyn_limit_servers(dyn_limit_servers_t *out, njt_str_
 
 static void to_oneline_json_dyn_limit_limit_rps_item_zone(dyn_limit_limit_rps_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_limit_rps_item_rate(dyn_limit_limit_rps_item_rate_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_limit_rps_item(dyn_limit_limit_rps_item_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -3217,7 +3221,7 @@ njt_str_t* to_json_dyn_limit(njt_pool_t *pool, dyn_limit_t* out, njt_int_t flags
     json_str = njt_palloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_dyn_limit(out, &str_len, flags);
-    json_str->data = njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_dyn_limit(out, json_str, flags);
     return json_str;

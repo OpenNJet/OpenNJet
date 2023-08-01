@@ -11,22 +11,22 @@
 #include "js2c_njet_builtins.h"
 /* ========================== Generated parsers ========================== */
 
-static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, locationDef_t *out, njt_str_t* err_str); //forward decl for public definition
-static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
-static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
+static bool parse_dyn_fault_inject_locationDef(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_locationDef_t *out, njt_str_t* err_str); //forward decl for public definition
+static void get_json_length_dyn_fault_inject_locationDef(dyn_fault_inject_locationDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
+static void to_oneline_json_dyn_fault_inject_locationDef(dyn_fault_inject_locationDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
-static bool parse_locationDef_fault_inject_type(njt_pool_t *pool, parse_state_t *parse_state, locationDef_fault_inject_type_t *out, njt_str_t *err_str) {
+static bool parse_dyn_fault_inject_locationDef_fault_inject_type(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_locationDef_fault_inject_type_t *out, njt_str_t *err_str) {
     if (check_type(pool, parse_state, JSMN_STRING, err_str)) {
         return true;
     }
     if (current_string_is(parse_state, "none")) {
-        *out = LOCATIONDEF_FAULT_INJECT_TYPE_NONE;
+        *out = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE;
     } else if (current_string_is(parse_state, "delay")) {
-        *out = LOCATIONDEF_FAULT_INJECT_TYPE_DELAY;
+        *out = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY;
     } else if (current_string_is(parse_state, "abort")) {
-        *out = LOCATIONDEF_FAULT_INJECT_TYPE_ABORT;
+        *out = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_ABORT;
     } else if (current_string_is(parse_state, "delay_abort")) {
-        *out = LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT;
+        *out = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT;
     } else {
         LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
         return true;
@@ -36,7 +36,7 @@ static bool parse_locationDef_fault_inject_type(njt_pool_t *pool, parse_state_t 
 }
 
 
-static bool parse_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_state, locationDef_locations_t *out, njt_str_t *err_str) {
+static bool parse_dyn_fault_inject_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_locationDef_locations_t *out, njt_str_t *err_str) {
     int i;
     if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
         return true;
@@ -46,8 +46,8 @@ static bool parse_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_s
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        ((locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(locationDef_t));
-        if (parse_locationDef(pool, parse_state, ((locationDef_locations_item_t**)out->elts)[i], err_str)) {
+        ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_fault_inject_locationDef_t));
+        if (parse_dyn_fault_inject_locationDef(pool, parse_state, ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i], err_str)) {
             return true;
         }
         out->nelts ++;
@@ -56,7 +56,7 @@ static bool parse_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_s
 }
 
 
-static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, locationDef_t *out, njt_str_t *err_str) {
+static bool parse_dyn_fault_inject_locationDef(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_locationDef_t *out, njt_str_t *err_str) {
     njt_uint_t i;
     // malloc pool for object first
 
@@ -123,7 +123,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "fault_inject_type";
-            if (parse_locationDef_fault_inject_type(pool, parse_state, (&out->fault_inject_type), err_str)) {
+            if (parse_dyn_fault_inject_locationDef_fault_inject_type(pool, parse_state, (&out->fault_inject_type), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -243,11 +243,11 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "locations";
-            out->locations = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(locationDef_locations_item_t*));
+            out->locations = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(dyn_fault_inject_locationDef_locations_item_t*));
             if (out->locations == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            if (parse_locationDef_locations(pool, parse_state, (out->locations), err_str)) {
+            if (parse_dyn_fault_inject_locationDef_locations(pool, parse_state, (out->locations), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -308,62 +308,65 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
 }
 
 
-static void get_json_length_locationDef_location(locationDef_location_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_location_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_locationDef_fault_inject_type(locationDef_fault_inject_type_t *out, size_t *length, njt_int_t flags) {
-    if (*out == LOCATIONDEF_FAULT_INJECT_TYPE_NONE) {
+static void get_json_length_dyn_fault_inject_locationDef_fault_inject_type(dyn_fault_inject_locationDef_fault_inject_type_t *out, size_t *length, njt_int_t flags) {
+    if (*out == DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE) {
         // "none"
         *length += 4 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_FAULT_INJECT_TYPE_DELAY) {
+    if (*out == DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY) {
         // "delay"
         *length += 5 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_FAULT_INJECT_TYPE_ABORT) {
+    if (*out == DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_ABORT) {
         // "abort"
         *length += 5 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT) {
+    if (*out == DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT) {
         // "delay_abort"
         *length += 11 + 2;
         return;
     }
 }
 
-static void get_json_length_locationDef_delay_percentage(locationDef_delay_percentage_t *out, size_t *length, njt_int_t flags) {
-    u_char str[24], *cur;
-    cur = njt_sprintf(str, "%i", *out); // Convert integer to string
+static void get_json_length_dyn_fault_inject_locationDef_delay_percentage(dyn_fault_inject_locationDef_delay_percentage_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
     *length += cur - str;
 }
 
-static void get_json_length_locationDef_abort_percentage(locationDef_abort_percentage_t *out, size_t *length, njt_int_t flags) {
-    u_char str[24], *cur;
-    cur = njt_sprintf(str, "%i", *out); // Convert integer to string
+static void get_json_length_dyn_fault_inject_locationDef_abort_percentage(dyn_fault_inject_locationDef_abort_percentage_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
     *length += cur - str;
 }
 
-static void get_json_length_locationDef_status_code(locationDef_status_code_t *out, size_t *length, njt_int_t flags) {
-    u_char str[24], *cur;
-    cur = njt_sprintf(str, "%i", *out); // Convert integer to string
+static void get_json_length_dyn_fault_inject_locationDef_status_code(dyn_fault_inject_locationDef_status_code_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
     *length += cur - str;
 }
 
-static void get_json_length_locationDef_delay_duration(locationDef_delay_duration_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_delay_duration_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 // GET_JSON_LENGTH_REF
 
-static void get_json_length_locationDef_locations_item(locationDef_locations_item_t *out, size_t *length, njt_int_t flags) {
-    get_json_length_locationDef(out, length, flags);
+static void get_json_length_dyn_fault_inject_locationDef_locations_item(dyn_fault_inject_locationDef_locations_item_t *out, size_t *length, njt_int_t flags) {
+    get_json_length_dyn_fault_inject_locationDef(out, length, flags);
 }
 
-static void get_json_length_locationDef_locations(locationDef_locations_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_locations_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -374,11 +377,11 @@ static void get_json_length_locationDef_locations(locationDef_locations_t *out, 
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_locations_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i] == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_locationDef_locations_item(((locationDef_locations_item_t**)out->elts)[i], length, flags);
+            get_json_length_dyn_fault_inject_locationDef_locations_item(((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -388,7 +391,7 @@ static void get_json_length_locationDef_locations(locationDef_locations_t *out, 
     }
 }
 
-static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_fault_inject_locationDef(dyn_fault_inject_locationDef_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -402,35 +405,35 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     }
     if (omit == 0) {
         *length += (8 + 3); // "location": 
-        get_json_length_locationDef_location((&out->location), length, flags);
+        get_json_length_dyn_fault_inject_locationDef_location((&out->location), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (17 + 3); // "fault_inject_type": 
-        get_json_length_locationDef_fault_inject_type((&out->fault_inject_type), length, flags);
+        get_json_length_dyn_fault_inject_locationDef_fault_inject_type((&out->fault_inject_type), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (16 + 3); // "delay_percentage": 
-        get_json_length_locationDef_delay_percentage((&out->delay_percentage), length, flags);
+        get_json_length_dyn_fault_inject_locationDef_delay_percentage((&out->delay_percentage), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (16 + 3); // "abort_percentage": 
-        get_json_length_locationDef_abort_percentage((&out->abort_percentage), length, flags);
+        get_json_length_dyn_fault_inject_locationDef_abort_percentage((&out->abort_percentage), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (11 + 3); // "status_code": 
-        get_json_length_locationDef_status_code((&out->status_code), length, flags);
+        get_json_length_dyn_fault_inject_locationDef_status_code((&out->status_code), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -440,7 +443,7 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     }
     if (omit == 0) {
         *length += (14 + 3); // "delay_duration": 
-        get_json_length_locationDef_delay_duration((&out->delay_duration), length, flags);
+        get_json_length_dyn_fault_inject_locationDef_delay_duration((&out->delay_duration), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -450,7 +453,7 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     }
     if (omit == 0) {
         *length += (9 + 3); // "locations": 
-        get_json_length_locationDef_locations((out->locations), length, flags);
+        get_json_length_dyn_fault_inject_locationDef_locations((out->locations), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -461,44 +464,44 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
 }
 // CHECK ARRAY not exceeding bounds before call this func
 
-locationDef_locations_item_t get_locationDef_locations_item(locationDef_locations_t *out, size_t idx) {
-    return *((locationDef_locations_item_t**)out->elts)[idx];
+dyn_fault_inject_locationDef_locations_item_t get_dyn_fault_inject_locationDef_locations_item(dyn_fault_inject_locationDef_locations_t *out, size_t idx) {
+    return *((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[idx];
 }
 
-locationDef_location_t get_locationDef_location(locationDef_t *out) {
+dyn_fault_inject_locationDef_location_t get_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_t *out) {
     return out->location;
 }
 
-locationDef_fault_inject_type_t get_locationDef_fault_inject_type(locationDef_t *out) {
+dyn_fault_inject_locationDef_fault_inject_type_t get_dyn_fault_inject_locationDef_fault_inject_type(dyn_fault_inject_locationDef_t *out) {
     return out->fault_inject_type;
 }
 
-locationDef_delay_percentage_t get_locationDef_delay_percentage(locationDef_t *out) {
+dyn_fault_inject_locationDef_delay_percentage_t get_dyn_fault_inject_locationDef_delay_percentage(dyn_fault_inject_locationDef_t *out) {
     return out->delay_percentage;
 }
 
-locationDef_abort_percentage_t get_locationDef_abort_percentage(locationDef_t *out) {
+dyn_fault_inject_locationDef_abort_percentage_t get_dyn_fault_inject_locationDef_abort_percentage(dyn_fault_inject_locationDef_t *out) {
     return out->abort_percentage;
 }
 
-locationDef_status_code_t get_locationDef_status_code(locationDef_t *out) {
+dyn_fault_inject_locationDef_status_code_t get_dyn_fault_inject_locationDef_status_code(dyn_fault_inject_locationDef_t *out) {
     return out->status_code;
 }
 
-locationDef_delay_duration_t get_locationDef_delay_duration(locationDef_t *out) {
+dyn_fault_inject_locationDef_delay_duration_t get_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_t *out) {
     return out->delay_duration;
 }
 
-locationDef_locations_t* get_locationDef_locations(locationDef_t *out) {
+dyn_fault_inject_locationDef_locations_t* get_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_t *out) {
     return out->locations;
 }
-void set_locationDef_location(locationDef_t* obj, locationDef_location_t field) {
+void set_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_location_t field) {
     obj->location = field;
 }
-void set_locationDef_delay_duration(locationDef_t* obj, locationDef_delay_duration_t field) {
+void set_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_delay_duration_t field) {
     obj->delay_duration = field;
 }
-int add_item_locationDef_locations(locationDef_locations_t *src, locationDef_locations_item_t* item) {
+int add_item_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_locations_t *src, dyn_fault_inject_locationDef_locations_item_t* item) {
     void *new = njt_array_push(src);
     if (new == NULL) {
         return NJT_ERROR;
@@ -507,78 +510,78 @@ int add_item_locationDef_locations(locationDef_locations_t *src, locationDef_loc
     return NJT_OK;
 }
 
-locationDef_locations_t* create_locationDef_locations(njt_pool_t *pool, size_t nelts) {
-    return njt_array_create(pool, nelts, sizeof(locationDef_locations_item_t*));
+dyn_fault_inject_locationDef_locations_t* create_dyn_fault_inject_locationDef_locations(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dyn_fault_inject_locationDef_locations_item_t*));
 }
-void set_locationDef_locations(locationDef_t* obj, locationDef_locations_t* field) {
+void set_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_locations_t* field) {
     obj->locations = field;
 }
-locationDef_t* create_locationDef(njt_pool_t *pool) {
-    locationDef_t* out = njt_palloc(pool, sizeof(locationDef_t));
-    memset(out, 0, sizeof(locationDef_t));
+dyn_fault_inject_locationDef_t* create_dyn_fault_inject_locationDef(njt_pool_t *pool) {
+    dyn_fault_inject_locationDef_t* out = njt_palloc(pool, sizeof(dyn_fault_inject_locationDef_t));
+    memset(out, 0, sizeof(dyn_fault_inject_locationDef_t));
     return out;
 }
 
-static void to_oneline_json_locationDef_location(locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     cur = njt_sprintf(cur, "\"%V\"", *out);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_locationDef_fault_inject_type(locationDef_fault_inject_type_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_fault_inject_locationDef_fault_inject_type(dyn_fault_inject_locationDef_fault_inject_type_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    if (*out == LOCATIONDEF_FAULT_INJECT_TYPE_NONE) {
+    if (*out == DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE) {
         cur = njt_sprintf(cur, "\"none\"");
         buf->len += 4 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_FAULT_INJECT_TYPE_DELAY) {
+    if (*out == DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY) {
         cur = njt_sprintf(cur, "\"delay\"");
         buf->len += 5 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_FAULT_INJECT_TYPE_ABORT) {
+    if (*out == DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_ABORT) {
         cur = njt_sprintf(cur, "\"abort\"");
         buf->len += 5 + 2;
         return;
     }
-    if (*out == LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT) {
+    if (*out == DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT) {
         cur = njt_sprintf(cur, "\"delay_abort\"");
         buf->len += 11 + 2;
         return;
     }
 }
 
-static void to_oneline_json_locationDef_delay_percentage(locationDef_delay_percentage_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_fault_inject_locationDef_delay_percentage(dyn_fault_inject_locationDef_delay_percentage_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%i", *out);
+    cur = njt_sprintf(cur, "%L", *out);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_locationDef_abort_percentage(locationDef_abort_percentage_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_fault_inject_locationDef_abort_percentage(dyn_fault_inject_locationDef_abort_percentage_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%i", *out);
+    cur = njt_sprintf(cur, "%L", *out);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_locationDef_status_code(locationDef_status_code_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_fault_inject_locationDef_status_code(dyn_fault_inject_locationDef_status_code_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%i", *out);
+    cur = njt_sprintf(cur, "%L", *out);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_locationDef_delay_duration(locationDef_delay_duration_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_delay_duration_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     cur = njt_sprintf(cur, "\"%V\"", *out);
     buf->len = cur - buf->data;
 }
 // to_oneline_json_REF
 
-static void to_oneline_json_locationDef_locations_item(locationDef_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
-    to_oneline_json_locationDef(out, buf, flags);
+static void to_oneline_json_dyn_fault_inject_locationDef_locations_item(dyn_fault_inject_locationDef_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
+    to_oneline_json_dyn_fault_inject_locationDef(out, buf, flags);
 }
 
-static void to_oneline_json_locationDef_locations(locationDef_locations_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_locations_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -591,11 +594,11 @@ static void to_oneline_json_locationDef_locations(locationDef_locations_t *out, 
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_locations_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i] == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_locationDef_locations_item(((locationDef_locations_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_dyn_fault_inject_locationDef_locations_item(((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -611,7 +614,7 @@ static void to_oneline_json_locationDef_locations(locationDef_locations_t *out, 
     buf->len ++;
 }
 
-static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_fault_inject_locationDef(dyn_fault_inject_locationDef_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -628,7 +631,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"location\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_location((&out->location), buf, flags);
+        to_oneline_json_dyn_fault_inject_locationDef_location((&out->location), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -637,7 +640,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"fault_inject_type\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_fault_inject_type((&out->fault_inject_type), buf, flags);
+        to_oneline_json_dyn_fault_inject_locationDef_fault_inject_type((&out->fault_inject_type), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -646,7 +649,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"delay_percentage\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_delay_percentage((&out->delay_percentage), buf, flags);
+        to_oneline_json_dyn_fault_inject_locationDef_delay_percentage((&out->delay_percentage), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -655,7 +658,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"abort_percentage\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_abort_percentage((&out->abort_percentage), buf, flags);
+        to_oneline_json_dyn_fault_inject_locationDef_abort_percentage((&out->abort_percentage), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -664,7 +667,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"status_code\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_status_code((&out->status_code), buf, flags);
+        to_oneline_json_dyn_fault_inject_locationDef_status_code((&out->status_code), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -676,7 +679,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"delay_duration\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_delay_duration((&out->delay_duration), buf, flags);
+        to_oneline_json_dyn_fault_inject_locationDef_delay_duration((&out->delay_duration), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -688,7 +691,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"locations\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_locations((out->locations), buf, flags);
+        to_oneline_json_dyn_fault_inject_locationDef_locations((out->locations), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -783,8 +786,8 @@ static bool parse_dyn_fault_inject_servers_item_locations(njt_pool_t *pool, pars
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(locationDef_t));
-        if (parse_locationDef(pool, parse_state, ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i], err_str)) {
+        ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_fault_inject_locationDef_t));
+        if (parse_dyn_fault_inject_locationDef(pool, parse_state, ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i], err_str)) {
             return true;
         }
         out->nelts ++;
@@ -1023,7 +1026,7 @@ static void get_json_length_dyn_fault_inject_servers_item_serverNames(dyn_fault_
 // GET_JSON_LENGTH_REF
 
 static void get_json_length_dyn_fault_inject_servers_item_locations_item(dyn_fault_inject_servers_item_locations_item_t *out, size_t *length, njt_int_t flags) {
-    get_json_length_locationDef(out, length, flags);
+    get_json_length_dyn_fault_inject_locationDef(out, length, flags);
 }
 
 static void get_json_length_dyn_fault_inject_servers_item_locations(dyn_fault_inject_servers_item_locations_t *out, size_t *length, njt_int_t flags) {
@@ -1330,7 +1333,7 @@ static void to_oneline_json_dyn_fault_inject_servers_item_serverNames(dyn_fault_
 // to_oneline_json_REF
 
 static void to_oneline_json_dyn_fault_inject_servers_item_locations_item(dyn_fault_inject_servers_item_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
-    to_oneline_json_locationDef(out, buf, flags);
+    to_oneline_json_dyn_fault_inject_locationDef(out, buf, flags);
 }
 
 static void to_oneline_json_dyn_fault_inject_servers_item_locations(dyn_fault_inject_servers_item_locations_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1524,7 +1527,6 @@ njt_str_t* to_json_dyn_fault_inject(njt_pool_t *pool, dyn_fault_inject_t* out, n
     size_t str_len = 0;
     get_json_length_dyn_fault_inject(out, &str_len, flags);
     json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
-    // json_str->data = (u_char*)njt_palloc(pool, 10000);
     json_str->len = 0;
     to_oneline_json_dyn_fault_inject(out, json_str, flags);
     return json_str;

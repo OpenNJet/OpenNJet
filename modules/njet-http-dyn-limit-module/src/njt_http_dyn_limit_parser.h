@@ -13,160 +13,160 @@
 #include "njt_core.h"
 #include "js2c_njet_builtins.h"
 /* ===================== Generated type declarations ===================== */
-typedef struct locationDef_t_s locationDef_t; //forward decl for public definition
-typedef njt_str_t* locationDef_location_t;
+typedef struct dyn_limit_locationDef_t_s dyn_limit_locationDef_t; //forward decl for public definition
+typedef njt_str_t* dyn_limit_locationDef_location_t;
 
-typedef njt_str_t* locationDef_limit_rate_t;
+typedef njt_str_t* dyn_limit_locationDef_limit_rate_t;
 
-typedef njt_str_t* locationDef_limit_rate_after_t;
-
-// maybe use njt_str_t?? 
-
-typedef enum locationDef_limit_conns_scope_t_e{
-    LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE,
-    LOCATIONDEF_LIMIT_CONNS_SCOPE_LOCATION
-} locationDef_limit_conns_scope_t;
-
-typedef njt_str_t* locationDef_limit_conns_item_zone_t;
-
-typedef int64_t locationDef_limit_conns_item_conn_t;
-typedef struct locationDef_limit_conns_item_t_s {
-    locationDef_limit_conns_item_zone_t zone;
-    locationDef_limit_conns_item_conn_t conn;
-} locationDef_limit_conns_item_t;
-
-typedef njt_array_t  locationDef_limit_conns_t;
-// maybe use njt_str_t?? 
-
-typedef enum locationDef_limit_conn_dry_run_t_e{
-    LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON,
-    LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF
-} locationDef_limit_conn_dry_run_t;
+typedef njt_str_t* dyn_limit_locationDef_limit_rate_after_t;
 
 // maybe use njt_str_t?? 
 
-typedef enum locationDef_limit_conn_log_level_t_e{
-    LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO,
-    LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE,
-    LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN,
-    LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR
-} locationDef_limit_conn_log_level_t;
+typedef enum dyn_limit_locationDef_limit_conns_scope_t_e{
+    DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE,
+    DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_LOCATION
+} dyn_limit_locationDef_limit_conns_scope_t;
 
-typedef int64_t locationDef_limit_conn_status_t;
+typedef njt_str_t* dyn_limit_locationDef_limit_conns_item_zone_t;
+
+typedef int64_t dyn_limit_locationDef_limit_conns_item_conn_t;
+typedef struct dyn_limit_locationDef_limit_conns_item_t_s {
+    dyn_limit_locationDef_limit_conns_item_zone_t zone;
+    dyn_limit_locationDef_limit_conns_item_conn_t conn;
+} dyn_limit_locationDef_limit_conns_item_t;
+
+typedef njt_array_t  dyn_limit_locationDef_limit_conns_t;
 // maybe use njt_str_t?? 
 
-typedef enum locationDef_limit_reqs_scope_t_e{
-    LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE,
-    LOCATIONDEF_LIMIT_REQS_SCOPE_LOCATION
-} locationDef_limit_reqs_scope_t;
-
-typedef njt_str_t* locationDef_limit_reqs_item_zone_t;
-
-typedef int64_t locationDef_limit_reqs_item_burst_t;
-typedef njt_str_t* locationDef_limit_reqs_item_delay_t;
-
-typedef struct locationDef_limit_reqs_item_t_s {
-    locationDef_limit_reqs_item_zone_t zone;
-    locationDef_limit_reqs_item_burst_t burst;
-    locationDef_limit_reqs_item_delay_t delay;
-} locationDef_limit_reqs_item_t;
-
-typedef njt_array_t  locationDef_limit_reqs_t;
-// maybe use njt_str_t?? 
-
-typedef enum locationDef_limit_req_dry_run_t_e{
-    LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON,
-    LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF
-} locationDef_limit_req_dry_run_t;
+typedef enum dyn_limit_locationDef_limit_conn_dry_run_t_e{
+    DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON,
+    DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF
+} dyn_limit_locationDef_limit_conn_dry_run_t;
 
 // maybe use njt_str_t?? 
 
-typedef enum locationDef_limit_req_log_level_t_e{
-    LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO,
-    LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE,
-    LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN,
-    LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR
-} locationDef_limit_req_log_level_t;
+typedef enum dyn_limit_locationDef_limit_conn_log_level_t_e{
+    DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO,
+    DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE,
+    DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN,
+    DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR
+} dyn_limit_locationDef_limit_conn_log_level_t;
 
-typedef int64_t locationDef_limit_req_status_t;
-typedef locationDef_t locationDef_locations_item_t; //ref def
-typedef njt_array_t  locationDef_locations_t;
-typedef struct locationDef_t_s {
-    locationDef_location_t location;
-    locationDef_limit_rate_t limit_rate;
-    locationDef_limit_rate_after_t limit_rate_after;
-    locationDef_limit_conns_scope_t limit_conns_scope;
-    locationDef_limit_conns_t *limit_conns;
-    locationDef_limit_conn_dry_run_t limit_conn_dry_run;
-    locationDef_limit_conn_log_level_t limit_conn_log_level;
-    locationDef_limit_conn_status_t limit_conn_status;
-    locationDef_limit_reqs_scope_t limit_reqs_scope;
-    locationDef_limit_reqs_t *limit_reqs;
-    locationDef_limit_req_dry_run_t limit_req_dry_run;
-    locationDef_limit_req_log_level_t limit_req_log_level;
-    locationDef_limit_req_status_t limit_req_status;
-    locationDef_locations_t *locations;
-} locationDef_t;
+typedef int64_t dyn_limit_locationDef_limit_conn_status_t;
+// maybe use njt_str_t?? 
 
-locationDef_limit_conns_item_zone_t get_locationDef_limit_conns_item_zone(locationDef_limit_conns_item_t *out);
-locationDef_limit_conns_item_conn_t get_locationDef_limit_conns_item_conn(locationDef_limit_conns_item_t *out);
-locationDef_limit_conns_item_t get_locationDef_limit_conns_item(locationDef_limit_conns_t *out, size_t idx);
-locationDef_limit_reqs_item_zone_t get_locationDef_limit_reqs_item_zone(locationDef_limit_reqs_item_t *out);
-locationDef_limit_reqs_item_burst_t get_locationDef_limit_reqs_item_burst(locationDef_limit_reqs_item_t *out);
-locationDef_limit_reqs_item_delay_t get_locationDef_limit_reqs_item_delay(locationDef_limit_reqs_item_t *out);
-locationDef_limit_reqs_item_t get_locationDef_limit_reqs_item(locationDef_limit_reqs_t *out, size_t idx);
-locationDef_locations_item_t get_locationDef_locations_item(locationDef_locations_t *out, size_t idx);
-locationDef_location_t get_locationDef_location(locationDef_t *out);
-locationDef_limit_rate_t get_locationDef_limit_rate(locationDef_t *out);
-locationDef_limit_rate_after_t get_locationDef_limit_rate_after(locationDef_t *out);
-locationDef_limit_conns_scope_t get_locationDef_limit_conns_scope(locationDef_t *out);
+typedef enum dyn_limit_locationDef_limit_reqs_scope_t_e{
+    DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE,
+    DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_LOCATION
+} dyn_limit_locationDef_limit_reqs_scope_t;
+
+typedef njt_str_t* dyn_limit_locationDef_limit_reqs_item_zone_t;
+
+typedef int64_t dyn_limit_locationDef_limit_reqs_item_burst_t;
+typedef njt_str_t* dyn_limit_locationDef_limit_reqs_item_delay_t;
+
+typedef struct dyn_limit_locationDef_limit_reqs_item_t_s {
+    dyn_limit_locationDef_limit_reqs_item_zone_t zone;
+    dyn_limit_locationDef_limit_reqs_item_burst_t burst;
+    dyn_limit_locationDef_limit_reqs_item_delay_t delay;
+} dyn_limit_locationDef_limit_reqs_item_t;
+
+typedef njt_array_t  dyn_limit_locationDef_limit_reqs_t;
+// maybe use njt_str_t?? 
+
+typedef enum dyn_limit_locationDef_limit_req_dry_run_t_e{
+    DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON,
+    DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF
+} dyn_limit_locationDef_limit_req_dry_run_t;
+
+// maybe use njt_str_t?? 
+
+typedef enum dyn_limit_locationDef_limit_req_log_level_t_e{
+    DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO,
+    DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE,
+    DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN,
+    DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR
+} dyn_limit_locationDef_limit_req_log_level_t;
+
+typedef int64_t dyn_limit_locationDef_limit_req_status_t;
+typedef dyn_limit_locationDef_t dyn_limit_locationDef_locations_item_t; //ref def
+typedef njt_array_t  dyn_limit_locationDef_locations_t;
+typedef struct dyn_limit_locationDef_t_s {
+    dyn_limit_locationDef_location_t location;
+    dyn_limit_locationDef_limit_rate_t limit_rate;
+    dyn_limit_locationDef_limit_rate_after_t limit_rate_after;
+    dyn_limit_locationDef_limit_conns_scope_t limit_conns_scope;
+    dyn_limit_locationDef_limit_conns_t *limit_conns;
+    dyn_limit_locationDef_limit_conn_dry_run_t limit_conn_dry_run;
+    dyn_limit_locationDef_limit_conn_log_level_t limit_conn_log_level;
+    dyn_limit_locationDef_limit_conn_status_t limit_conn_status;
+    dyn_limit_locationDef_limit_reqs_scope_t limit_reqs_scope;
+    dyn_limit_locationDef_limit_reqs_t *limit_reqs;
+    dyn_limit_locationDef_limit_req_dry_run_t limit_req_dry_run;
+    dyn_limit_locationDef_limit_req_log_level_t limit_req_log_level;
+    dyn_limit_locationDef_limit_req_status_t limit_req_status;
+    dyn_limit_locationDef_locations_t *locations;
+} dyn_limit_locationDef_t;
+
+dyn_limit_locationDef_limit_conns_item_zone_t get_dyn_limit_locationDef_limit_conns_item_zone(dyn_limit_locationDef_limit_conns_item_t *out);
+dyn_limit_locationDef_limit_conns_item_conn_t get_dyn_limit_locationDef_limit_conns_item_conn(dyn_limit_locationDef_limit_conns_item_t *out);
+dyn_limit_locationDef_limit_conns_item_t get_dyn_limit_locationDef_limit_conns_item(dyn_limit_locationDef_limit_conns_t *out, size_t idx);
+dyn_limit_locationDef_limit_reqs_item_zone_t get_dyn_limit_locationDef_limit_reqs_item_zone(dyn_limit_locationDef_limit_reqs_item_t *out);
+dyn_limit_locationDef_limit_reqs_item_burst_t get_dyn_limit_locationDef_limit_reqs_item_burst(dyn_limit_locationDef_limit_reqs_item_t *out);
+dyn_limit_locationDef_limit_reqs_item_delay_t get_dyn_limit_locationDef_limit_reqs_item_delay(dyn_limit_locationDef_limit_reqs_item_t *out);
+dyn_limit_locationDef_limit_reqs_item_t get_dyn_limit_locationDef_limit_reqs_item(dyn_limit_locationDef_limit_reqs_t *out, size_t idx);
+dyn_limit_locationDef_locations_item_t get_dyn_limit_locationDef_locations_item(dyn_limit_locationDef_locations_t *out, size_t idx);
+dyn_limit_locationDef_location_t get_dyn_limit_locationDef_location(dyn_limit_locationDef_t *out);
+dyn_limit_locationDef_limit_rate_t get_dyn_limit_locationDef_limit_rate(dyn_limit_locationDef_t *out);
+dyn_limit_locationDef_limit_rate_after_t get_dyn_limit_locationDef_limit_rate_after(dyn_limit_locationDef_t *out);
+dyn_limit_locationDef_limit_conns_scope_t get_dyn_limit_locationDef_limit_conns_scope(dyn_limit_locationDef_t *out);
 // CHECK ARRAY not exceeding bounds before call this func
-locationDef_limit_conns_t* get_locationDef_limit_conns(locationDef_t *out);
-locationDef_limit_conn_dry_run_t get_locationDef_limit_conn_dry_run(locationDef_t *out);
-locationDef_limit_conn_log_level_t get_locationDef_limit_conn_log_level(locationDef_t *out);
-locationDef_limit_conn_status_t get_locationDef_limit_conn_status(locationDef_t *out);
-locationDef_limit_reqs_scope_t get_locationDef_limit_reqs_scope(locationDef_t *out);
+dyn_limit_locationDef_limit_conns_t* get_dyn_limit_locationDef_limit_conns(dyn_limit_locationDef_t *out);
+dyn_limit_locationDef_limit_conn_dry_run_t get_dyn_limit_locationDef_limit_conn_dry_run(dyn_limit_locationDef_t *out);
+dyn_limit_locationDef_limit_conn_log_level_t get_dyn_limit_locationDef_limit_conn_log_level(dyn_limit_locationDef_t *out);
+dyn_limit_locationDef_limit_conn_status_t get_dyn_limit_locationDef_limit_conn_status(dyn_limit_locationDef_t *out);
+dyn_limit_locationDef_limit_reqs_scope_t get_dyn_limit_locationDef_limit_reqs_scope(dyn_limit_locationDef_t *out);
 // CHECK ARRAY not exceeding bounds before call this func
-locationDef_limit_reqs_t* get_locationDef_limit_reqs(locationDef_t *out);
-locationDef_limit_req_dry_run_t get_locationDef_limit_req_dry_run(locationDef_t *out);
-locationDef_limit_req_log_level_t get_locationDef_limit_req_log_level(locationDef_t *out);
-locationDef_limit_req_status_t get_locationDef_limit_req_status(locationDef_t *out);
+dyn_limit_locationDef_limit_reqs_t* get_dyn_limit_locationDef_limit_reqs(dyn_limit_locationDef_t *out);
+dyn_limit_locationDef_limit_req_dry_run_t get_dyn_limit_locationDef_limit_req_dry_run(dyn_limit_locationDef_t *out);
+dyn_limit_locationDef_limit_req_log_level_t get_dyn_limit_locationDef_limit_req_log_level(dyn_limit_locationDef_t *out);
+dyn_limit_locationDef_limit_req_status_t get_dyn_limit_locationDef_limit_req_status(dyn_limit_locationDef_t *out);
 // CHECK ARRAY not exceeding bounds before call this func
-locationDef_locations_t* get_locationDef_locations(locationDef_t *out);
+dyn_limit_locationDef_locations_t* get_dyn_limit_locationDef_locations(dyn_limit_locationDef_t *out);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_location(locationDef_t* obj, locationDef_location_t field);
+void set_dyn_limit_locationDef_location(dyn_limit_locationDef_t* obj, dyn_limit_locationDef_location_t field);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_limit_rate(locationDef_t* obj, locationDef_limit_rate_t field);
+void set_dyn_limit_locationDef_limit_rate(dyn_limit_locationDef_t* obj, dyn_limit_locationDef_limit_rate_t field);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_limit_rate_after(locationDef_t* obj, locationDef_limit_rate_after_t field);
+void set_dyn_limit_locationDef_limit_rate_after(dyn_limit_locationDef_t* obj, dyn_limit_locationDef_limit_rate_after_t field);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_limit_conns_item_zone(locationDef_limit_conns_item_t* obj, locationDef_limit_conns_item_zone_t field);
-locationDef_limit_conns_item_t* create_locationDef_limit_conns_item(njt_pool_t *pool);
-int add_item_locationDef_limit_conns(locationDef_limit_conns_t *src, locationDef_limit_conns_item_t* items);
-locationDef_limit_conns_t* create_locationDef_limit_conns(njt_pool_t *pool, size_t length);
+void set_dyn_limit_locationDef_limit_conns_item_zone(dyn_limit_locationDef_limit_conns_item_t* obj, dyn_limit_locationDef_limit_conns_item_zone_t field);
+dyn_limit_locationDef_limit_conns_item_t* create_dyn_limit_locationDef_limit_conns_item(njt_pool_t *pool);
+int add_item_dyn_limit_locationDef_limit_conns(dyn_limit_locationDef_limit_conns_t *src, dyn_limit_locationDef_limit_conns_item_t* items);
+dyn_limit_locationDef_limit_conns_t* create_dyn_limit_locationDef_limit_conns(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
-void set_locationDef_limit_conns(locationDef_t* obj, locationDef_limit_conns_t* field);
+void set_dyn_limit_locationDef_limit_conns(dyn_limit_locationDef_t* obj, dyn_limit_locationDef_limit_conns_t* field);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_limit_reqs_item_zone(locationDef_limit_reqs_item_t* obj, locationDef_limit_reqs_item_zone_t field);
+void set_dyn_limit_locationDef_limit_reqs_item_zone(dyn_limit_locationDef_limit_reqs_item_t* obj, dyn_limit_locationDef_limit_reqs_item_zone_t field);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_limit_reqs_item_delay(locationDef_limit_reqs_item_t* obj, locationDef_limit_reqs_item_delay_t field);
-locationDef_limit_reqs_item_t* create_locationDef_limit_reqs_item(njt_pool_t *pool);
-int add_item_locationDef_limit_reqs(locationDef_limit_reqs_t *src, locationDef_limit_reqs_item_t* items);
-locationDef_limit_reqs_t* create_locationDef_limit_reqs(njt_pool_t *pool, size_t length);
+void set_dyn_limit_locationDef_limit_reqs_item_delay(dyn_limit_locationDef_limit_reqs_item_t* obj, dyn_limit_locationDef_limit_reqs_item_delay_t field);
+dyn_limit_locationDef_limit_reqs_item_t* create_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool);
+int add_item_dyn_limit_locationDef_limit_reqs(dyn_limit_locationDef_limit_reqs_t *src, dyn_limit_locationDef_limit_reqs_item_t* items);
+dyn_limit_locationDef_limit_reqs_t* create_dyn_limit_locationDef_limit_reqs(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
-void set_locationDef_limit_reqs(locationDef_t* obj, locationDef_limit_reqs_t* field);
-int add_item_locationDef_locations(locationDef_locations_t *src, locationDef_locations_item_t* items);
-locationDef_locations_t* create_locationDef_locations(njt_pool_t *pool, size_t length);
+void set_dyn_limit_locationDef_limit_reqs(dyn_limit_locationDef_t* obj, dyn_limit_locationDef_limit_reqs_t* field);
+int add_item_dyn_limit_locationDef_locations(dyn_limit_locationDef_locations_t *src, dyn_limit_locationDef_locations_item_t* items);
+dyn_limit_locationDef_locations_t* create_dyn_limit_locationDef_locations(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
-void set_locationDef_locations(locationDef_t* obj, locationDef_locations_t* field);
-locationDef_t* create_locationDef(njt_pool_t *pool);
+void set_dyn_limit_locationDef_locations(dyn_limit_locationDef_t* obj, dyn_limit_locationDef_locations_t* field);
+dyn_limit_locationDef_t* create_dyn_limit_locationDef(njt_pool_t *pool);
 typedef njt_str_t* dyn_limit_servers_item_listens_item_t;
 
 typedef njt_array_t  dyn_limit_servers_item_listens_t;
 typedef njt_str_t* dyn_limit_servers_item_serverNames_item_t;
 
 typedef njt_array_t  dyn_limit_servers_item_serverNames_t;
-typedef locationDef_t dyn_limit_servers_item_locations_item_t; //ref def
+typedef dyn_limit_locationDef_t dyn_limit_servers_item_locations_item_t; //ref def
 typedef njt_array_t  dyn_limit_servers_item_locations_t;
 typedef struct dyn_limit_servers_item_t_s {
     dyn_limit_servers_item_listens_t *listens;
@@ -208,20 +208,20 @@ dyn_limit_servers_t* get_dyn_limit_servers(dyn_limit_t *out);
 // CHECK ARRAY not exceeding bounds before call this func
 dyn_limit_limit_rps_t* get_dyn_limit_limit_rps(dyn_limit_t *out);
 int add_item_dyn_limit_servers_item_listens(dyn_limit_servers_item_listens_t *src, dyn_limit_servers_item_listens_item_t items);
-dyn_limit_servers_item_listens_t* create_dyn_limit_servers_item_listens(njt_pool_t *pool, size_t length);
+dyn_limit_servers_item_listens_t* create_dyn_limit_servers_item_listens(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dyn_limit_servers_item_listens(dyn_limit_servers_item_t* obj, dyn_limit_servers_item_listens_t* field);
 int add_item_dyn_limit_servers_item_serverNames(dyn_limit_servers_item_serverNames_t *src, dyn_limit_servers_item_serverNames_item_t items);
-dyn_limit_servers_item_serverNames_t* create_dyn_limit_servers_item_serverNames(njt_pool_t *pool, size_t length);
+dyn_limit_servers_item_serverNames_t* create_dyn_limit_servers_item_serverNames(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dyn_limit_servers_item_serverNames(dyn_limit_servers_item_t* obj, dyn_limit_servers_item_serverNames_t* field);
 int add_item_dyn_limit_servers_item_locations(dyn_limit_servers_item_locations_t *src, dyn_limit_servers_item_locations_item_t* items);
-dyn_limit_servers_item_locations_t* create_dyn_limit_servers_item_locations(njt_pool_t *pool, size_t length);
+dyn_limit_servers_item_locations_t* create_dyn_limit_servers_item_locations(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dyn_limit_servers_item_locations(dyn_limit_servers_item_t* obj, dyn_limit_servers_item_locations_t* field);
 dyn_limit_servers_item_t* create_dyn_limit_servers_item(njt_pool_t *pool);
 int add_item_dyn_limit_servers(dyn_limit_servers_t *src, dyn_limit_servers_item_t* items);
-dyn_limit_servers_t* create_dyn_limit_servers(njt_pool_t *pool, size_t length);
+dyn_limit_servers_t* create_dyn_limit_servers(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dyn_limit_servers(dyn_limit_t* obj, dyn_limit_servers_t* field);
 // INITIALIZATION IS NEEDED for string
@@ -230,7 +230,7 @@ void set_dyn_limit_limit_rps_item_zone(dyn_limit_limit_rps_item_t* obj, dyn_limi
 void set_dyn_limit_limit_rps_item_rate(dyn_limit_limit_rps_item_t* obj, dyn_limit_limit_rps_item_rate_t field);
 dyn_limit_limit_rps_item_t* create_dyn_limit_limit_rps_item(njt_pool_t *pool);
 int add_item_dyn_limit_limit_rps(dyn_limit_limit_rps_t *src, dyn_limit_limit_rps_item_t* items);
-dyn_limit_limit_rps_t* create_dyn_limit_limit_rps(njt_pool_t *pool, size_t length);
+dyn_limit_limit_rps_t* create_dyn_limit_limit_rps(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dyn_limit_limit_rps(dyn_limit_t* obj, dyn_limit_limit_rps_t* field);
 dyn_limit_t* create_dyn_limit(njt_pool_t *pool);

@@ -11,11 +11,11 @@
 #include "js2c_njet_builtins.h"
 /* ========================== Generated parsers ========================== */
 
-static bool parse_accessLog(njt_pool_t *pool, parse_state_t *parse_state, accessLog_t *out, njt_str_t* err_str); //forward decl for public definition
-static void get_json_length_accessLog(accessLog_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
-static void to_oneline_json_accessLog(accessLog_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
+static bool parse_dynlog_accessLog(njt_pool_t *pool, parse_state_t *parse_state, dynlog_accessLog_t *out, njt_str_t* err_str); //forward decl for public definition
+static void get_json_length_dynlog_accessLog(dynlog_accessLog_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
+static void to_oneline_json_dynlog_accessLog(dynlog_accessLog_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
-static bool parse_accessLog(njt_pool_t *pool, parse_state_t *parse_state, accessLog_t *out, njt_str_t *err_str) {
+static bool parse_dynlog_accessLog(njt_pool_t *pool, parse_state_t *parse_state, dynlog_accessLog_t *out, njt_str_t *err_str) {
     njt_uint_t i;
     // malloc pool for object first
 
@@ -56,7 +56,7 @@ static bool parse_accessLog(njt_pool_t *pool, parse_state_t *parse_state, access
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->path))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->path))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->path))->len = token_size;
             if ((out->path)->len == 0) {
                 ((out->path))->data = NULL;
@@ -88,7 +88,7 @@ static bool parse_accessLog(njt_pool_t *pool, parse_state_t *parse_state, access
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->formatName))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->formatName))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->formatName))->len = token_size;
             if ((out->formatName)->len == 0) {
                 ((out->formatName))->data = NULL;
@@ -120,15 +120,15 @@ static bool parse_accessLog(njt_pool_t *pool, parse_state_t *parse_state, access
 }
 
 
-static void get_json_length_accessLog_path(accessLog_path_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dynlog_accessLog_path(dynlog_accessLog_path_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 
-static void get_json_length_accessLog_formatName(accessLog_formatName_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dynlog_accessLog_formatName(dynlog_accessLog_formatName_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 
-static void get_json_length_accessLog(accessLog_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dynlog_accessLog(dynlog_accessLog_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -142,7 +142,7 @@ static void get_json_length_accessLog(accessLog_t *out, size_t *length, njt_int_
     }
     if (omit == 0) {
         *length += (4 + 3); // "path": 
-        get_json_length_accessLog_path((&out->path), length, flags);
+        get_json_length_dynlog_accessLog_path((&out->path), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -152,7 +152,7 @@ static void get_json_length_accessLog(accessLog_t *out, size_t *length, njt_int_
     }
     if (omit == 0) {
         *length += (10 + 3); // "formatName": 
-        get_json_length_accessLog_formatName((&out->formatName), length, flags);
+        get_json_length_dynlog_accessLog_formatName((&out->formatName), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -162,38 +162,38 @@ static void get_json_length_accessLog(accessLog_t *out, size_t *length, njt_int_
     *length += 1;
 }
 
-accessLog_path_t get_accessLog_path(accessLog_t *out) {
+dynlog_accessLog_path_t get_dynlog_accessLog_path(dynlog_accessLog_t *out) {
     return out->path;
 }
 
-accessLog_formatName_t get_accessLog_formatName(accessLog_t *out) {
+dynlog_accessLog_formatName_t get_dynlog_accessLog_formatName(dynlog_accessLog_t *out) {
     return out->formatName;
 }
-void set_accessLog_path(accessLog_t* obj, accessLog_path_t field) {
+void set_dynlog_accessLog_path(dynlog_accessLog_t* obj, dynlog_accessLog_path_t field) {
     obj->path = field;
 }
-void set_accessLog_formatName(accessLog_t* obj, accessLog_formatName_t field) {
+void set_dynlog_accessLog_formatName(dynlog_accessLog_t* obj, dynlog_accessLog_formatName_t field) {
     obj->formatName = field;
 }
-accessLog_t* create_accessLog(njt_pool_t *pool) {
-    accessLog_t* out = njt_palloc(pool, sizeof(accessLog_t));
-    memset(out, 0, sizeof(accessLog_t));
+dynlog_accessLog_t* create_dynlog_accessLog(njt_pool_t *pool) {
+    dynlog_accessLog_t* out = njt_palloc(pool, sizeof(dynlog_accessLog_t));
+    memset(out, 0, sizeof(dynlog_accessLog_t));
     return out;
 }
 
-static void to_oneline_json_accessLog_path(accessLog_path_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dynlog_accessLog_path(dynlog_accessLog_path_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_accessLog_formatName(accessLog_formatName_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dynlog_accessLog_formatName(dynlog_accessLog_formatName_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_accessLog(accessLog_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dynlog_accessLog(dynlog_accessLog_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -210,7 +210,7 @@ static void to_oneline_json_accessLog(accessLog_t *out, njt_str_t* buf, njt_int_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"path\":");
         buf->len = cur - buf->data;
-        to_oneline_json_accessLog_path((&out->path), buf, flags);
+        to_oneline_json_dynlog_accessLog_path((&out->path), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -222,7 +222,7 @@ static void to_oneline_json_accessLog(accessLog_t *out, njt_str_t* buf, njt_int_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"formatName\":");
         buf->len = cur - buf->data;
-        to_oneline_json_accessLog_formatName((&out->formatName), buf, flags);
+        to_oneline_json_dynlog_accessLog_formatName((&out->formatName), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -236,11 +236,11 @@ static void to_oneline_json_accessLog(accessLog_t *out, njt_str_t* buf, njt_int_
     cur = njt_sprintf(cur, "}");
     buf->len ++;
 }
-static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, locationDef_t *out, njt_str_t* err_str); //forward decl for public definition
-static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
-static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
+static bool parse_dynlog_locationDef(njt_pool_t *pool, parse_state_t *parse_state, dynlog_locationDef_t *out, njt_str_t* err_str); //forward decl for public definition
+static void get_json_length_dynlog_locationDef(dynlog_locationDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
+static void to_oneline_json_dynlog_locationDef(dynlog_locationDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
-static bool parse_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_state, locationDef_locations_t *out, njt_str_t *err_str) {
+static bool parse_dynlog_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_state, dynlog_locationDef_locations_t *out, njt_str_t *err_str) {
     int i;
     if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
         return true;
@@ -250,8 +250,8 @@ static bool parse_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_s
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        ((locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(locationDef_t));
-        if (parse_locationDef(pool, parse_state, ((locationDef_locations_item_t**)out->elts)[i], err_str)) {
+        ((dynlog_locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_locationDef_t));
+        if (parse_dynlog_locationDef(pool, parse_state, ((dynlog_locationDef_locations_item_t**)out->elts)[i], err_str)) {
             return true;
         }
         out->nelts ++;
@@ -260,7 +260,7 @@ static bool parse_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_s
 }
 
 
-static bool parse_locationDef_accessLogs(njt_pool_t *pool, parse_state_t *parse_state, locationDef_accessLogs_t *out, njt_str_t *err_str) {
+static bool parse_dynlog_locationDef_accessLogs(njt_pool_t *pool, parse_state_t *parse_state, dynlog_locationDef_accessLogs_t *out, njt_str_t *err_str) {
     int i;
     if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
         return true;
@@ -270,8 +270,8 @@ static bool parse_locationDef_accessLogs(njt_pool_t *pool, parse_state_t *parse_
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        ((locationDef_accessLogs_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(accessLog_t));
-        if (parse_accessLog(pool, parse_state, ((locationDef_accessLogs_item_t**)out->elts)[i], err_str)) {
+        ((dynlog_locationDef_accessLogs_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_accessLog_t));
+        if (parse_dynlog_accessLog(pool, parse_state, ((dynlog_locationDef_accessLogs_item_t**)out->elts)[i], err_str)) {
             return true;
         }
         out->nelts ++;
@@ -280,7 +280,7 @@ static bool parse_locationDef_accessLogs(njt_pool_t *pool, parse_state_t *parse_
 }
 
 
-static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, locationDef_t *out, njt_str_t *err_str) {
+static bool parse_dynlog_locationDef(njt_pool_t *pool, parse_state_t *parse_state, dynlog_locationDef_t *out, njt_str_t *err_str) {
     njt_uint_t i;
     // malloc pool for object first
 
@@ -323,7 +323,7 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->location))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->location))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->location))->len = token_size;
             if ((out->location)->len == 0) {
                 ((out->location))->data = NULL;
@@ -344,11 +344,11 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "locations";
-            out->locations = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(locationDef_locations_item_t*));
+            out->locations = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(dynlog_locationDef_locations_item_t*));
             if (out->locations == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            if (parse_locationDef_locations(pool, parse_state, (out->locations), err_str)) {
+            if (parse_dynlog_locationDef_locations(pool, parse_state, (out->locations), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -374,11 +374,11 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "accessLogs";
-            out->accessLogs = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(locationDef_accessLogs_item_t*));
+            out->accessLogs = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(dynlog_locationDef_accessLogs_item_t*));
             if (out->accessLogs == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
-            if (parse_locationDef_accessLogs(pool, parse_state, (out->accessLogs), err_str)) {
+            if (parse_dynlog_locationDef_accessLogs(pool, parse_state, (out->accessLogs), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -412,16 +412,16 @@ static bool parse_locationDef(njt_pool_t *pool, parse_state_t *parse_state, loca
 }
 
 
-static void get_json_length_locationDef_location(locationDef_location_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dynlog_locationDef_location(dynlog_locationDef_location_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 // GET_JSON_LENGTH_REF
 
-static void get_json_length_locationDef_locations_item(locationDef_locations_item_t *out, size_t *length, njt_int_t flags) {
-    get_json_length_locationDef(out, length, flags);
+static void get_json_length_dynlog_locationDef_locations_item(dynlog_locationDef_locations_item_t *out, size_t *length, njt_int_t flags) {
+    get_json_length_dynlog_locationDef(out, length, flags);
 }
 
-static void get_json_length_locationDef_locations(locationDef_locations_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dynlog_locationDef_locations(dynlog_locationDef_locations_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -432,11 +432,11 @@ static void get_json_length_locationDef_locations(locationDef_locations_t *out, 
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_locations_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_OBJ) && ((dynlog_locationDef_locations_item_t**)out->elts)[i] == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_locationDef_locations_item(((locationDef_locations_item_t**)out->elts)[i], length, flags);
+            get_json_length_dynlog_locationDef_locations_item(((dynlog_locationDef_locations_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -446,7 +446,7 @@ static void get_json_length_locationDef_locations(locationDef_locations_t *out, 
     }
 }
 
-static void get_json_length_locationDef_accessLogOn(locationDef_accessLogOn_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dynlog_locationDef_accessLogOn(dynlog_locationDef_accessLogOn_t *out, size_t *length, njt_int_t flags) {
     if (*out) {
         *length += 4; // "true"
     } else {
@@ -455,11 +455,11 @@ static void get_json_length_locationDef_accessLogOn(locationDef_accessLogOn_t *o
 }
 // GET_JSON_LENGTH_REF
 
-static void get_json_length_locationDef_accessLogs_item(locationDef_accessLogs_item_t *out, size_t *length, njt_int_t flags) {
-    get_json_length_accessLog(out, length, flags);
+static void get_json_length_dynlog_locationDef_accessLogs_item(dynlog_locationDef_accessLogs_item_t *out, size_t *length, njt_int_t flags) {
+    get_json_length_dynlog_accessLog(out, length, flags);
 }
 
-static void get_json_length_locationDef_accessLogs(locationDef_accessLogs_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dynlog_locationDef_accessLogs(dynlog_locationDef_accessLogs_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -470,11 +470,11 @@ static void get_json_length_locationDef_accessLogs(locationDef_accessLogs_t *out
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_accessLogs_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_OBJ) && ((dynlog_locationDef_accessLogs_item_t**)out->elts)[i] == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_locationDef_accessLogs_item(((locationDef_accessLogs_item_t**)out->elts)[i], length, flags);
+            get_json_length_dynlog_locationDef_accessLogs_item(((dynlog_locationDef_accessLogs_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -484,7 +484,7 @@ static void get_json_length_locationDef_accessLogs(locationDef_accessLogs_t *out
     }
 }
 
-static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dynlog_locationDef(dynlog_locationDef_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -498,7 +498,7 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     }
     if (omit == 0) {
         *length += (8 + 3); // "location": 
-        get_json_length_locationDef_location((&out->location), length, flags);
+        get_json_length_dynlog_locationDef_location((&out->location), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -508,14 +508,14 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     }
     if (omit == 0) {
         *length += (9 + 3); // "locations": 
-        get_json_length_locationDef_locations((out->locations), length, flags);
+        get_json_length_dynlog_locationDef_locations((out->locations), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (11 + 3); // "accessLogOn": 
-        get_json_length_locationDef_accessLogOn((&out->accessLogOn), length, flags);
+        get_json_length_dynlog_locationDef_accessLogOn((&out->accessLogOn), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -525,7 +525,7 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
     }
     if (omit == 0) {
         *length += (10 + 3); // "accessLogs": 
-        get_json_length_locationDef_accessLogs((out->accessLogs), length, flags);
+        get_json_length_dynlog_locationDef_accessLogs((out->accessLogs), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -536,34 +536,34 @@ static void get_json_length_locationDef(locationDef_t *out, size_t *length, njt_
 }
 // CHECK ARRAY not exceeding bounds before call this func
 
-locationDef_locations_item_t get_locationDef_locations_item(locationDef_locations_t *out, size_t idx) {
-    return *((locationDef_locations_item_t**)out->elts)[idx];
+dynlog_locationDef_locations_item_t get_dynlog_locationDef_locations_item(dynlog_locationDef_locations_t *out, size_t idx) {
+    return *((dynlog_locationDef_locations_item_t**)out->elts)[idx];
 }
 // CHECK ARRAY not exceeding bounds before call this func
 
-locationDef_accessLogs_item_t get_locationDef_accessLogs_item(locationDef_accessLogs_t *out, size_t idx) {
-    return *((locationDef_accessLogs_item_t**)out->elts)[idx];
+dynlog_locationDef_accessLogs_item_t get_dynlog_locationDef_accessLogs_item(dynlog_locationDef_accessLogs_t *out, size_t idx) {
+    return *((dynlog_locationDef_accessLogs_item_t**)out->elts)[idx];
 }
 
-locationDef_location_t get_locationDef_location(locationDef_t *out) {
+dynlog_locationDef_location_t get_dynlog_locationDef_location(dynlog_locationDef_t *out) {
     return out->location;
 }
 
-locationDef_locations_t* get_locationDef_locations(locationDef_t *out) {
+dynlog_locationDef_locations_t* get_dynlog_locationDef_locations(dynlog_locationDef_t *out) {
     return out->locations;
 }
 
-locationDef_accessLogOn_t get_locationDef_accessLogOn(locationDef_t *out) {
+dynlog_locationDef_accessLogOn_t get_dynlog_locationDef_accessLogOn(dynlog_locationDef_t *out) {
     return out->accessLogOn;
 }
 
-locationDef_accessLogs_t* get_locationDef_accessLogs(locationDef_t *out) {
+dynlog_locationDef_accessLogs_t* get_dynlog_locationDef_accessLogs(dynlog_locationDef_t *out) {
     return out->accessLogs;
 }
-void set_locationDef_location(locationDef_t* obj, locationDef_location_t field) {
+void set_dynlog_locationDef_location(dynlog_locationDef_t* obj, dynlog_locationDef_location_t field) {
     obj->location = field;
 }
-int add_item_locationDef_locations(locationDef_locations_t *src, locationDef_locations_item_t* item) {
+int add_item_dynlog_locationDef_locations(dynlog_locationDef_locations_t *src, dynlog_locationDef_locations_item_t* item) {
     void *new = njt_array_push(src);
     if (new == NULL) {
         return NJT_ERROR;
@@ -572,13 +572,13 @@ int add_item_locationDef_locations(locationDef_locations_t *src, locationDef_loc
     return NJT_OK;
 }
 
-locationDef_locations_t* create_locationDef_locations(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(locationDef_locations_item_t*));
+dynlog_locationDef_locations_t* create_dynlog_locationDef_locations(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dynlog_locationDef_locations_item_t*));
 }
-void set_locationDef_locations(locationDef_t* obj, locationDef_locations_t* field) {
+void set_dynlog_locationDef_locations(dynlog_locationDef_t* obj, dynlog_locationDef_locations_t* field) {
     obj->locations = field;
 }
-int add_item_locationDef_accessLogs(locationDef_accessLogs_t *src, locationDef_accessLogs_item_t* item) {
+int add_item_dynlog_locationDef_accessLogs(dynlog_locationDef_accessLogs_t *src, dynlog_locationDef_accessLogs_item_t* item) {
     void *new = njt_array_push(src);
     if (new == NULL) {
         return NJT_ERROR;
@@ -587,30 +587,30 @@ int add_item_locationDef_accessLogs(locationDef_accessLogs_t *src, locationDef_a
     return NJT_OK;
 }
 
-locationDef_accessLogs_t* create_locationDef_accessLogs(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(locationDef_accessLogs_item_t*));
+dynlog_locationDef_accessLogs_t* create_dynlog_locationDef_accessLogs(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dynlog_locationDef_accessLogs_item_t*));
 }
-void set_locationDef_accessLogs(locationDef_t* obj, locationDef_accessLogs_t* field) {
+void set_dynlog_locationDef_accessLogs(dynlog_locationDef_t* obj, dynlog_locationDef_accessLogs_t* field) {
     obj->accessLogs = field;
 }
-locationDef_t* create_locationDef(njt_pool_t *pool) {
-    locationDef_t* out = njt_palloc(pool, sizeof(locationDef_t));
-    memset(out, 0, sizeof(locationDef_t));
+dynlog_locationDef_t* create_dynlog_locationDef(njt_pool_t *pool) {
+    dynlog_locationDef_t* out = njt_palloc(pool, sizeof(dynlog_locationDef_t));
+    memset(out, 0, sizeof(dynlog_locationDef_t));
     return out;
 }
 
-static void to_oneline_json_locationDef_location(locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dynlog_locationDef_location(dynlog_locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 // to_oneline_json_REF
 
-static void to_oneline_json_locationDef_locations_item(locationDef_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
-    to_oneline_json_locationDef(out, buf, flags);
+static void to_oneline_json_dynlog_locationDef_locations_item(dynlog_locationDef_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
+    to_oneline_json_dynlog_locationDef(out, buf, flags);
 }
 
-static void to_oneline_json_locationDef_locations(locationDef_locations_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dynlog_locationDef_locations(dynlog_locationDef_locations_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -623,11 +623,11 @@ static void to_oneline_json_locationDef_locations(locationDef_locations_t *out, 
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_locations_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_OBJ) && ((dynlog_locationDef_locations_item_t**)out->elts)[i] == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_locationDef_locations_item(((locationDef_locations_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_dynlog_locationDef_locations_item(((dynlog_locationDef_locations_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -643,7 +643,7 @@ static void to_oneline_json_locationDef_locations(locationDef_locations_t *out, 
     buf->len ++;
 }
 
-static void to_oneline_json_locationDef_accessLogOn(locationDef_accessLogOn_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dynlog_locationDef_accessLogOn(dynlog_locationDef_accessLogOn_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     if (*out) {
         njt_sprintf(cur, "true");
@@ -655,11 +655,11 @@ static void to_oneline_json_locationDef_accessLogOn(locationDef_accessLogOn_t *o
 }
 // to_oneline_json_REF
 
-static void to_oneline_json_locationDef_accessLogs_item(locationDef_accessLogs_item_t *out, njt_str_t* buf, njt_int_t flags) {
-    to_oneline_json_accessLog(out, buf, flags);
+static void to_oneline_json_dynlog_locationDef_accessLogs_item(dynlog_locationDef_accessLogs_item_t *out, njt_str_t* buf, njt_int_t flags) {
+    to_oneline_json_dynlog_accessLog(out, buf, flags);
 }
 
-static void to_oneline_json_locationDef_accessLogs(locationDef_accessLogs_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dynlog_locationDef_accessLogs(dynlog_locationDef_accessLogs_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -672,11 +672,11 @@ static void to_oneline_json_locationDef_accessLogs(locationDef_accessLogs_t *out
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((locationDef_accessLogs_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_OBJ) && ((dynlog_locationDef_accessLogs_item_t**)out->elts)[i] == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_locationDef_accessLogs_item(((locationDef_accessLogs_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_dynlog_locationDef_accessLogs_item(((dynlog_locationDef_accessLogs_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -692,7 +692,7 @@ static void to_oneline_json_locationDef_accessLogs(locationDef_accessLogs_t *out
     buf->len ++;
 }
 
-static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dynlog_locationDef(dynlog_locationDef_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -709,7 +709,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"location\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_location((&out->location), buf, flags);
+        to_oneline_json_dynlog_locationDef_location((&out->location), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -721,7 +721,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"locations\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_locations((out->locations), buf, flags);
+        to_oneline_json_dynlog_locationDef_locations((out->locations), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -730,7 +730,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"accessLogOn\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_accessLogOn((&out->accessLogOn), buf, flags);
+        to_oneline_json_dynlog_locationDef_accessLogOn((&out->accessLogOn), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -742,7 +742,7 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"accessLogs\":");
         buf->len = cur - buf->data;
-        to_oneline_json_locationDef_accessLogs((out->accessLogs), buf, flags);
+        to_oneline_json_dynlog_locationDef_accessLogs((out->accessLogs), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -756,20 +756,20 @@ static void to_oneline_json_locationDef(locationDef_t *out, njt_str_t* buf, njt_
     cur = njt_sprintf(cur, "}");
     buf->len ++;
 }
-static bool parse_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, accessLogFormat_t *out, njt_str_t* err_str); //forward decl for public definition
-static void get_json_length_accessLogFormat(accessLogFormat_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
-static void to_oneline_json_accessLogFormat(accessLogFormat_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
+static bool parse_dynlog_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, dynlog_accessLogFormat_t *out, njt_str_t* err_str); //forward decl for public definition
+static void get_json_length_dynlog_accessLogFormat(dynlog_accessLogFormat_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
+static void to_oneline_json_dynlog_accessLogFormat(dynlog_accessLogFormat_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
-static bool parse_accessLogFormat_escape(njt_pool_t *pool, parse_state_t *parse_state, accessLogFormat_escape_t *out, njt_str_t *err_str) {
+static bool parse_dynlog_accessLogFormat_escape(njt_pool_t *pool, parse_state_t *parse_state, dynlog_accessLogFormat_escape_t *out, njt_str_t *err_str) {
     if (check_type(pool, parse_state, JSMN_STRING, err_str)) {
         return true;
     }
     if (current_string_is(parse_state, "default")) {
-        *out = ACCESSLOGFORMAT_ESCAPE_DEFAULT;
+        *out = DYNLOG_ACCESSLOGFORMAT_ESCAPE_DEFAULT;
     } else if (current_string_is(parse_state, "json")) {
-        *out = ACCESSLOGFORMAT_ESCAPE_JSON;
+        *out = DYNLOG_ACCESSLOGFORMAT_ESCAPE_JSON;
     } else if (current_string_is(parse_state, "none")) {
-        *out = ACCESSLOGFORMAT_ESCAPE_NONE;
+        *out = DYNLOG_ACCESSLOGFORMAT_ESCAPE_NONE;
     } else {
         LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
         return true;
@@ -779,7 +779,7 @@ static bool parse_accessLogFormat_escape(njt_pool_t *pool, parse_state_t *parse_
 }
 
 
-static bool parse_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, accessLogFormat_t *out, njt_str_t *err_str) {
+static bool parse_dynlog_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, dynlog_accessLogFormat_t *out, njt_str_t *err_str) {
     njt_uint_t i;
     // malloc pool for object first
 
@@ -821,7 +821,7 @@ static bool parse_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, 
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->name))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->name))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->name))->len = token_size;
             if ((out->name)->len == 0) {
                 ((out->name))->data = NULL;
@@ -842,7 +842,7 @@ static bool parse_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, 
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "escape";
-            if (parse_accessLogFormat_escape(pool, parse_state, (&out->escape), err_str)) {
+            if (parse_dynlog_accessLogFormat_escape(pool, parse_state, (&out->escape), err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -866,7 +866,7 @@ static bool parse_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, 
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->format))->data = njt_palloc(pool, (size_t)(token_size));
+            ((out->format))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
             ((out->format))->len = token_size;
             if ((out->format)->len == 0) {
                 ((out->format))->data = NULL;
@@ -895,41 +895,41 @@ static bool parse_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_state, 
     }
     // HAHB
     if (!seen_escape) {
-        out->escape = ACCESSLOGFORMAT_ESCAPE_DEFAULT;
+        out->escape = DYNLOG_ACCESSLOGFORMAT_ESCAPE_DEFAULT;
     }
     parse_state->current_token = saved_current_token;
     return false;
 }
 
 
-static void get_json_length_accessLogFormat_name(accessLogFormat_name_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dynlog_accessLogFormat_name(dynlog_accessLogFormat_name_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_accessLogFormat_escape(accessLogFormat_escape_t *out, size_t *length, njt_int_t flags) {
-    if (*out == ACCESSLOGFORMAT_ESCAPE_DEFAULT) {
+static void get_json_length_dynlog_accessLogFormat_escape(dynlog_accessLogFormat_escape_t *out, size_t *length, njt_int_t flags) {
+    if (*out == DYNLOG_ACCESSLOGFORMAT_ESCAPE_DEFAULT) {
         // "default"
         *length += 7 + 2;
         return;
     }
-    if (*out == ACCESSLOGFORMAT_ESCAPE_JSON) {
+    if (*out == DYNLOG_ACCESSLOGFORMAT_ESCAPE_JSON) {
         // "json"
         *length += 4 + 2;
         return;
     }
-    if (*out == ACCESSLOGFORMAT_ESCAPE_NONE) {
+    if (*out == DYNLOG_ACCESSLOGFORMAT_ESCAPE_NONE) {
         // "none"
         *length += 4 + 2;
         return;
     }
 }
 
-static void get_json_length_accessLogFormat_format(accessLogFormat_format_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dynlog_accessLogFormat_format(dynlog_accessLogFormat_format_t *out, size_t *length, njt_int_t flags) {
     *length += (*out)->len + 2; //  "str" 
 }
 
-static void get_json_length_accessLogFormat(accessLogFormat_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dynlog_accessLogFormat(dynlog_accessLogFormat_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -943,14 +943,14 @@ static void get_json_length_accessLogFormat(accessLogFormat_t *out, size_t *leng
     }
     if (omit == 0) {
         *length += (4 + 3); // "name": 
-        get_json_length_accessLogFormat_name((&out->name), length, flags);
+        get_json_length_dynlog_accessLogFormat_name((&out->name), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (6 + 3); // "escape": 
-        get_json_length_accessLogFormat_escape((&out->escape), length, flags);
+        get_json_length_dynlog_accessLogFormat_escape((&out->escape), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -960,7 +960,7 @@ static void get_json_length_accessLogFormat(accessLogFormat_t *out, size_t *leng
     }
     if (omit == 0) {
         *length += (6 + 3); // "format": 
-        get_json_length_accessLogFormat_format((&out->format), length, flags);
+        get_json_length_dynlog_accessLogFormat_format((&out->format), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -970,61 +970,61 @@ static void get_json_length_accessLogFormat(accessLogFormat_t *out, size_t *leng
     *length += 1;
 }
 
-accessLogFormat_name_t get_accessLogFormat_name(accessLogFormat_t *out) {
+dynlog_accessLogFormat_name_t get_dynlog_accessLogFormat_name(dynlog_accessLogFormat_t *out) {
     return out->name;
 }
 
-accessLogFormat_escape_t get_accessLogFormat_escape(accessLogFormat_t *out) {
+dynlog_accessLogFormat_escape_t get_dynlog_accessLogFormat_escape(dynlog_accessLogFormat_t *out) {
     return out->escape;
 }
 
-accessLogFormat_format_t get_accessLogFormat_format(accessLogFormat_t *out) {
+dynlog_accessLogFormat_format_t get_dynlog_accessLogFormat_format(dynlog_accessLogFormat_t *out) {
     return out->format;
 }
-void set_accessLogFormat_name(accessLogFormat_t* obj, accessLogFormat_name_t field) {
+void set_dynlog_accessLogFormat_name(dynlog_accessLogFormat_t* obj, dynlog_accessLogFormat_name_t field) {
     obj->name = field;
 }
-void set_accessLogFormat_format(accessLogFormat_t* obj, accessLogFormat_format_t field) {
+void set_dynlog_accessLogFormat_format(dynlog_accessLogFormat_t* obj, dynlog_accessLogFormat_format_t field) {
     obj->format = field;
 }
-accessLogFormat_t* create_accessLogFormat(njt_pool_t *pool) {
-    accessLogFormat_t* out = njt_palloc(pool, sizeof(accessLogFormat_t));
-    memset(out, 0, sizeof(accessLogFormat_t));
+dynlog_accessLogFormat_t* create_dynlog_accessLogFormat(njt_pool_t *pool) {
+    dynlog_accessLogFormat_t* out = njt_palloc(pool, sizeof(dynlog_accessLogFormat_t));
+    memset(out, 0, sizeof(dynlog_accessLogFormat_t));
     return out;
 }
 
-static void to_oneline_json_accessLogFormat_name(accessLogFormat_name_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dynlog_accessLogFormat_name(dynlog_accessLogFormat_name_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_accessLogFormat_escape(accessLogFormat_escape_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dynlog_accessLogFormat_escape(dynlog_accessLogFormat_escape_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    if (*out == ACCESSLOGFORMAT_ESCAPE_DEFAULT) {
+    if (*out == DYNLOG_ACCESSLOGFORMAT_ESCAPE_DEFAULT) {
         cur = njt_sprintf(cur, "\"default\"");
         buf->len += 7 + 2;
         return;
     }
-    if (*out == ACCESSLOGFORMAT_ESCAPE_JSON) {
+    if (*out == DYNLOG_ACCESSLOGFORMAT_ESCAPE_JSON) {
         cur = njt_sprintf(cur, "\"json\"");
         buf->len += 4 + 2;
         return;
     }
-    if (*out == ACCESSLOGFORMAT_ESCAPE_NONE) {
+    if (*out == DYNLOG_ACCESSLOGFORMAT_ESCAPE_NONE) {
         cur = njt_sprintf(cur, "\"none\"");
         buf->len += 4 + 2;
         return;
     }
 }
 
-static void to_oneline_json_accessLogFormat_format(accessLogFormat_format_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dynlog_accessLogFormat_format(dynlog_accessLogFormat_format_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_accessLogFormat(accessLogFormat_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dynlog_accessLogFormat(dynlog_accessLogFormat_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -1041,7 +1041,7 @@ static void to_oneline_json_accessLogFormat(accessLogFormat_t *out, njt_str_t* b
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"name\":");
         buf->len = cur - buf->data;
-        to_oneline_json_accessLogFormat_name((&out->name), buf, flags);
+        to_oneline_json_dynlog_accessLogFormat_name((&out->name), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1050,7 +1050,7 @@ static void to_oneline_json_accessLogFormat(accessLogFormat_t *out, njt_str_t* b
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"escape\":");
         buf->len = cur - buf->data;
-        to_oneline_json_accessLogFormat_escape((&out->escape), buf, flags);
+        to_oneline_json_dynlog_accessLogFormat_escape((&out->escape), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1062,7 +1062,7 @@ static void to_oneline_json_accessLogFormat(accessLogFormat_t *out, njt_str_t* b
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"format\":");
         buf->len = cur - buf->data;
-        to_oneline_json_accessLogFormat_format((&out->format), buf, flags);
+        to_oneline_json_dynlog_accessLogFormat_format((&out->format), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1099,7 +1099,7 @@ static bool parse_dynlog_servers_item_listens(njt_pool_t *pool, parse_state_t *p
             // TODO LOG_ERROR
             return true;
         }
-        (((dynlog_servers_item_listens_item_t*)out->elts)[i])->data = njt_palloc(pool, (size_t)(token_size));
+        (((dynlog_servers_item_listens_item_t*)out->elts)[i])->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
         (((dynlog_servers_item_listens_item_t*)out->elts)[i])->len = token_size;
         if (((dynlog_servers_item_listens_item_t*)out->elts)[i]->len == 0) {
             (((dynlog_servers_item_listens_item_t*)out->elts)[i])->data = NULL;
@@ -1134,7 +1134,7 @@ static bool parse_dynlog_servers_item_serverNames(njt_pool_t *pool, parse_state_
             // TODO LOG_ERROR
             return true;
         }
-        (((dynlog_servers_item_serverNames_item_t*)out->elts)[i])->data = njt_palloc(pool, (size_t)(token_size));
+        (((dynlog_servers_item_serverNames_item_t*)out->elts)[i])->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
         (((dynlog_servers_item_serverNames_item_t*)out->elts)[i])->len = token_size;
         if (((dynlog_servers_item_serverNames_item_t*)out->elts)[i]->len == 0) {
             (((dynlog_servers_item_serverNames_item_t*)out->elts)[i])->data = NULL;
@@ -1161,8 +1161,8 @@ static bool parse_dynlog_servers_item_locations(njt_pool_t *pool, parse_state_t 
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        ((dynlog_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(locationDef_t));
-        if (parse_locationDef(pool, parse_state, ((dynlog_servers_item_locations_item_t**)out->elts)[i], err_str)) {
+        ((dynlog_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_locationDef_t));
+        if (parse_dynlog_locationDef(pool, parse_state, ((dynlog_servers_item_locations_item_t**)out->elts)[i], err_str)) {
             return true;
         }
         out->nelts ++;
@@ -1298,8 +1298,8 @@ static bool parse_dynlog_accessLogFormats(njt_pool_t *pool, parse_state_t *parse
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        ((dynlog_accessLogFormats_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(accessLogFormat_t));
-        if (parse_accessLogFormat(pool, parse_state, ((dynlog_accessLogFormats_item_t**)out->elts)[i], err_str)) {
+        ((dynlog_accessLogFormats_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_accessLogFormat_t));
+        if (parse_dynlog_accessLogFormat(pool, parse_state, ((dynlog_accessLogFormats_item_t**)out->elts)[i], err_str)) {
             return true;
         }
         out->nelts ++;
@@ -1444,7 +1444,7 @@ static void get_json_length_dynlog_servers_item_serverNames(dynlog_servers_item_
 // GET_JSON_LENGTH_REF
 
 static void get_json_length_dynlog_servers_item_locations_item(dynlog_servers_item_locations_item_t *out, size_t *length, njt_int_t flags) {
-    get_json_length_locationDef(out, length, flags);
+    get_json_length_dynlog_locationDef(out, length, flags);
 }
 
 static void get_json_length_dynlog_servers_item_locations(dynlog_servers_item_locations_t *out, size_t *length, njt_int_t flags) {
@@ -1543,7 +1543,7 @@ static void get_json_length_dynlog_servers(dynlog_servers_t *out, size_t *length
 // GET_JSON_LENGTH_REF
 
 static void get_json_length_dynlog_accessLogFormats_item(dynlog_accessLogFormats_item_t *out, size_t *length, njt_int_t flags) {
-    get_json_length_accessLogFormat(out, length, flags);
+    get_json_length_dynlog_accessLogFormat(out, length, flags);
 }
 
 static void get_json_length_dynlog_accessLogFormats(dynlog_accessLogFormats_t *out, size_t *length, njt_int_t flags) {
@@ -1658,8 +1658,8 @@ int add_item_dynlog_servers_item_listens(dynlog_servers_item_listens_t *src, dyn
     return NJT_OK;
 }
 
-dynlog_servers_item_listens_t* create_dynlog_servers_item_listens(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dynlog_servers_item_listens_item_t));
+dynlog_servers_item_listens_t* create_dynlog_servers_item_listens(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dynlog_servers_item_listens_item_t));
 }
 void set_dynlog_servers_item_listens(dynlog_servers_item_t* obj, dynlog_servers_item_listens_t* field) {
     obj->listens = field;
@@ -1673,8 +1673,8 @@ int add_item_dynlog_servers_item_serverNames(dynlog_servers_item_serverNames_t *
     return NJT_OK;
 }
 
-dynlog_servers_item_serverNames_t* create_dynlog_servers_item_serverNames(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dynlog_servers_item_serverNames_item_t));
+dynlog_servers_item_serverNames_t* create_dynlog_servers_item_serverNames(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dynlog_servers_item_serverNames_item_t));
 }
 void set_dynlog_servers_item_serverNames(dynlog_servers_item_t* obj, dynlog_servers_item_serverNames_t* field) {
     obj->serverNames = field;
@@ -1688,8 +1688,8 @@ int add_item_dynlog_servers_item_locations(dynlog_servers_item_locations_t *src,
     return NJT_OK;
 }
 
-dynlog_servers_item_locations_t* create_dynlog_servers_item_locations(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dynlog_servers_item_locations_item_t*));
+dynlog_servers_item_locations_t* create_dynlog_servers_item_locations(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dynlog_servers_item_locations_item_t*));
 }
 void set_dynlog_servers_item_locations(dynlog_servers_item_t* obj, dynlog_servers_item_locations_t* field) {
     obj->locations = field;
@@ -1708,8 +1708,8 @@ int add_item_dynlog_servers(dynlog_servers_t *src, dynlog_servers_item_t* item) 
     return NJT_OK;
 }
 
-dynlog_servers_t* create_dynlog_servers(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dynlog_servers_item_t*));
+dynlog_servers_t* create_dynlog_servers(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dynlog_servers_item_t*));
 }
 void set_dynlog_servers(dynlog_t* obj, dynlog_servers_t* field) {
     obj->servers = field;
@@ -1723,8 +1723,8 @@ int add_item_dynlog_accessLogFormats(dynlog_accessLogFormats_t *src, dynlog_acce
     return NJT_OK;
 }
 
-dynlog_accessLogFormats_t* create_dynlog_accessLogFormats(njt_pool_t *pool, size_t length) {
-    return njt_array_create(pool, length, sizeof(dynlog_accessLogFormats_item_t*));
+dynlog_accessLogFormats_t* create_dynlog_accessLogFormats(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(dynlog_accessLogFormats_item_t*));
 }
 void set_dynlog_accessLogFormats(dynlog_t* obj, dynlog_accessLogFormats_t* field) {
     obj->accessLogFormats = field;
@@ -1737,8 +1737,8 @@ dynlog_t* create_dynlog(njt_pool_t *pool) {
 
 static void to_oneline_json_dynlog_servers_item_listens_item(dynlog_servers_item_listens_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynlog_servers_item_listens(dynlog_servers_item_listens_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1776,8 +1776,8 @@ static void to_oneline_json_dynlog_servers_item_listens(dynlog_servers_item_list
 
 static void to_oneline_json_dynlog_servers_item_serverNames_item(dynlog_servers_item_serverNames_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_sprintf(cur, "\"%V\"", *out);
-    buf->len += (*out)->len + 2;
+    cur = njt_sprintf(cur, "\"%V\"", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynlog_servers_item_serverNames(dynlog_servers_item_serverNames_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1815,7 +1815,7 @@ static void to_oneline_json_dynlog_servers_item_serverNames(dynlog_servers_item_
 // to_oneline_json_REF
 
 static void to_oneline_json_dynlog_servers_item_locations_item(dynlog_servers_item_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
-    to_oneline_json_locationDef(out, buf, flags);
+    to_oneline_json_dynlog_locationDef(out, buf, flags);
 }
 
 static void to_oneline_json_dynlog_servers_item_locations(dynlog_servers_item_locations_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1942,7 +1942,7 @@ static void to_oneline_json_dynlog_servers(dynlog_servers_t *out, njt_str_t* buf
 // to_oneline_json_REF
 
 static void to_oneline_json_dynlog_accessLogFormats_item(dynlog_accessLogFormats_item_t *out, njt_str_t* buf, njt_int_t flags) {
-    to_oneline_json_accessLogFormat(out, buf, flags);
+    to_oneline_json_dynlog_accessLogFormat(out, buf, flags);
 }
 
 static void to_oneline_json_dynlog_accessLogFormats(dynlog_accessLogFormats_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -2058,7 +2058,7 @@ njt_str_t* to_json_dynlog(njt_pool_t *pool, dynlog_t* out, njt_int_t flags) {
     json_str = njt_palloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_dynlog(out, &str_len, flags);
-    json_str->data = njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_dynlog(out, json_str, flags);
     return json_str;

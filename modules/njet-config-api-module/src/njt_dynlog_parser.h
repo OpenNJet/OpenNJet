@@ -13,91 +13,91 @@
 #include "njt_core.h"
 #include "js2c_njet_builtins.h"
 /* ===================== Generated type declarations ===================== */
-typedef struct accessLog_t_s accessLog_t; //forward decl for public definition
-typedef njt_str_t* accessLog_path_t;
+typedef struct dynlog_accessLog_t_s dynlog_accessLog_t; //forward decl for public definition
+typedef njt_str_t* dynlog_accessLog_path_t;
 
-typedef njt_str_t* accessLog_formatName_t;
+typedef njt_str_t* dynlog_accessLog_formatName_t;
 
-typedef struct accessLog_t_s {
-    accessLog_path_t path;
-    accessLog_formatName_t formatName;
-} accessLog_t;
+typedef struct dynlog_accessLog_t_s {
+    dynlog_accessLog_path_t path;
+    dynlog_accessLog_formatName_t formatName;
+} dynlog_accessLog_t;
 
-accessLog_path_t get_accessLog_path(accessLog_t *out);
-accessLog_formatName_t get_accessLog_formatName(accessLog_t *out);
+dynlog_accessLog_path_t get_dynlog_accessLog_path(dynlog_accessLog_t *out);
+dynlog_accessLog_formatName_t get_dynlog_accessLog_formatName(dynlog_accessLog_t *out);
 // INITIALIZATION IS NEEDED for string
-void set_accessLog_path(accessLog_t* obj, accessLog_path_t field);
+void set_dynlog_accessLog_path(dynlog_accessLog_t* obj, dynlog_accessLog_path_t field);
 // INITIALIZATION IS NEEDED for string
-void set_accessLog_formatName(accessLog_t* obj, accessLog_formatName_t field);
-accessLog_t* create_accessLog(njt_pool_t *pool);
-typedef struct locationDef_t_s locationDef_t; //forward decl for public definition
-typedef njt_str_t* locationDef_location_t;
+void set_dynlog_accessLog_formatName(dynlog_accessLog_t* obj, dynlog_accessLog_formatName_t field);
+dynlog_accessLog_t* create_dynlog_accessLog(njt_pool_t *pool);
+typedef struct dynlog_locationDef_t_s dynlog_locationDef_t; //forward decl for public definition
+typedef njt_str_t* dynlog_locationDef_location_t;
 
-typedef locationDef_t locationDef_locations_item_t; //ref def
-typedef njt_array_t  locationDef_locations_t;
-typedef bool locationDef_accessLogOn_t;
-typedef accessLog_t locationDef_accessLogs_item_t; //ref def
-typedef njt_array_t  locationDef_accessLogs_t;
-typedef struct locationDef_t_s {
-    locationDef_location_t location;
-    locationDef_locations_t *locations;
-    locationDef_accessLogOn_t accessLogOn;
-    locationDef_accessLogs_t *accessLogs;
-} locationDef_t;
+typedef dynlog_locationDef_t dynlog_locationDef_locations_item_t; //ref def
+typedef njt_array_t  dynlog_locationDef_locations_t;
+typedef bool dynlog_locationDef_accessLogOn_t;
+typedef dynlog_accessLog_t dynlog_locationDef_accessLogs_item_t; //ref def
+typedef njt_array_t  dynlog_locationDef_accessLogs_t;
+typedef struct dynlog_locationDef_t_s {
+    dynlog_locationDef_location_t location;
+    dynlog_locationDef_locations_t *locations;
+    dynlog_locationDef_accessLogOn_t accessLogOn;
+    dynlog_locationDef_accessLogs_t *accessLogs;
+} dynlog_locationDef_t;
 
-locationDef_locations_item_t get_locationDef_locations_item(locationDef_locations_t *out, size_t idx);
-locationDef_accessLogs_item_t get_locationDef_accessLogs_item(locationDef_accessLogs_t *out, size_t idx);
-locationDef_location_t get_locationDef_location(locationDef_t *out);
+dynlog_locationDef_locations_item_t get_dynlog_locationDef_locations_item(dynlog_locationDef_locations_t *out, size_t idx);
+dynlog_locationDef_accessLogs_item_t get_dynlog_locationDef_accessLogs_item(dynlog_locationDef_accessLogs_t *out, size_t idx);
+dynlog_locationDef_location_t get_dynlog_locationDef_location(dynlog_locationDef_t *out);
 // CHECK ARRAY not exceeding bounds before call this func
-locationDef_locations_t* get_locationDef_locations(locationDef_t *out);
-locationDef_accessLogOn_t get_locationDef_accessLogOn(locationDef_t *out);
+dynlog_locationDef_locations_t* get_dynlog_locationDef_locations(dynlog_locationDef_t *out);
+dynlog_locationDef_accessLogOn_t get_dynlog_locationDef_accessLogOn(dynlog_locationDef_t *out);
 // CHECK ARRAY not exceeding bounds before call this func
-locationDef_accessLogs_t* get_locationDef_accessLogs(locationDef_t *out);
+dynlog_locationDef_accessLogs_t* get_dynlog_locationDef_accessLogs(dynlog_locationDef_t *out);
 // INITIALIZATION IS NEEDED for string
-void set_locationDef_location(locationDef_t* obj, locationDef_location_t field);
-int add_item_locationDef_locations(locationDef_locations_t *src, locationDef_locations_item_t* items);
-locationDef_locations_t* create_locationDef_locations(njt_pool_t *pool, size_t length);
+void set_dynlog_locationDef_location(dynlog_locationDef_t* obj, dynlog_locationDef_location_t field);
+int add_item_dynlog_locationDef_locations(dynlog_locationDef_locations_t *src, dynlog_locationDef_locations_item_t* items);
+dynlog_locationDef_locations_t* create_dynlog_locationDef_locations(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
-void set_locationDef_locations(locationDef_t* obj, locationDef_locations_t* field);
-int add_item_locationDef_accessLogs(locationDef_accessLogs_t *src, locationDef_accessLogs_item_t* items);
-locationDef_accessLogs_t* create_locationDef_accessLogs(njt_pool_t *pool, size_t length);
+void set_dynlog_locationDef_locations(dynlog_locationDef_t* obj, dynlog_locationDef_locations_t* field);
+int add_item_dynlog_locationDef_accessLogs(dynlog_locationDef_accessLogs_t *src, dynlog_locationDef_accessLogs_item_t* items);
+dynlog_locationDef_accessLogs_t* create_dynlog_locationDef_accessLogs(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
-void set_locationDef_accessLogs(locationDef_t* obj, locationDef_accessLogs_t* field);
-locationDef_t* create_locationDef(njt_pool_t *pool);
-typedef struct accessLogFormat_t_s accessLogFormat_t; //forward decl for public definition
-typedef njt_str_t* accessLogFormat_name_t;
+void set_dynlog_locationDef_accessLogs(dynlog_locationDef_t* obj, dynlog_locationDef_accessLogs_t* field);
+dynlog_locationDef_t* create_dynlog_locationDef(njt_pool_t *pool);
+typedef struct dynlog_accessLogFormat_t_s dynlog_accessLogFormat_t; //forward decl for public definition
+typedef njt_str_t* dynlog_accessLogFormat_name_t;
 
 // maybe use njt_str_t?? 
 
-typedef enum accessLogFormat_escape_t_e{
-    ACCESSLOGFORMAT_ESCAPE_DEFAULT,
-    ACCESSLOGFORMAT_ESCAPE_JSON,
-    ACCESSLOGFORMAT_ESCAPE_NONE
-} accessLogFormat_escape_t;
+typedef enum dynlog_accessLogFormat_escape_t_e{
+    DYNLOG_ACCESSLOGFORMAT_ESCAPE_DEFAULT,
+    DYNLOG_ACCESSLOGFORMAT_ESCAPE_JSON,
+    DYNLOG_ACCESSLOGFORMAT_ESCAPE_NONE
+} dynlog_accessLogFormat_escape_t;
 
-typedef njt_str_t* accessLogFormat_format_t;
+typedef njt_str_t* dynlog_accessLogFormat_format_t;
 
-typedef struct accessLogFormat_t_s {
-    accessLogFormat_name_t name;
-    accessLogFormat_escape_t escape;
-    accessLogFormat_format_t format;
-} accessLogFormat_t;
+typedef struct dynlog_accessLogFormat_t_s {
+    dynlog_accessLogFormat_name_t name;
+    dynlog_accessLogFormat_escape_t escape;
+    dynlog_accessLogFormat_format_t format;
+} dynlog_accessLogFormat_t;
 
-accessLogFormat_name_t get_accessLogFormat_name(accessLogFormat_t *out);
-accessLogFormat_escape_t get_accessLogFormat_escape(accessLogFormat_t *out);
-accessLogFormat_format_t get_accessLogFormat_format(accessLogFormat_t *out);
+dynlog_accessLogFormat_name_t get_dynlog_accessLogFormat_name(dynlog_accessLogFormat_t *out);
+dynlog_accessLogFormat_escape_t get_dynlog_accessLogFormat_escape(dynlog_accessLogFormat_t *out);
+dynlog_accessLogFormat_format_t get_dynlog_accessLogFormat_format(dynlog_accessLogFormat_t *out);
 // INITIALIZATION IS NEEDED for string
-void set_accessLogFormat_name(accessLogFormat_t* obj, accessLogFormat_name_t field);
+void set_dynlog_accessLogFormat_name(dynlog_accessLogFormat_t* obj, dynlog_accessLogFormat_name_t field);
 // INITIALIZATION IS NEEDED for string
-void set_accessLogFormat_format(accessLogFormat_t* obj, accessLogFormat_format_t field);
-accessLogFormat_t* create_accessLogFormat(njt_pool_t *pool);
+void set_dynlog_accessLogFormat_format(dynlog_accessLogFormat_t* obj, dynlog_accessLogFormat_format_t field);
+dynlog_accessLogFormat_t* create_dynlog_accessLogFormat(njt_pool_t *pool);
 typedef njt_str_t* dynlog_servers_item_listens_item_t;
 
 typedef njt_array_t  dynlog_servers_item_listens_t;
 typedef njt_str_t* dynlog_servers_item_serverNames_item_t;
 
 typedef njt_array_t  dynlog_servers_item_serverNames_t;
-typedef locationDef_t dynlog_servers_item_locations_item_t; //ref def
+typedef dynlog_locationDef_t dynlog_servers_item_locations_item_t; //ref def
 typedef njt_array_t  dynlog_servers_item_locations_t;
 typedef struct dynlog_servers_item_t_s {
     dynlog_servers_item_listens_t *listens;
@@ -106,7 +106,7 @@ typedef struct dynlog_servers_item_t_s {
 } dynlog_servers_item_t;
 
 typedef njt_array_t  dynlog_servers_t;
-typedef accessLogFormat_t dynlog_accessLogFormats_item_t; //ref def
+typedef dynlog_accessLogFormat_t dynlog_accessLogFormats_item_t; //ref def
 typedef njt_array_t  dynlog_accessLogFormats_t;
 typedef struct dynlog_t_s {
     dynlog_servers_t *servers;
@@ -129,24 +129,24 @@ dynlog_servers_t* get_dynlog_servers(dynlog_t *out);
 // CHECK ARRAY not exceeding bounds before call this func
 dynlog_accessLogFormats_t* get_dynlog_accessLogFormats(dynlog_t *out);
 int add_item_dynlog_servers_item_listens(dynlog_servers_item_listens_t *src, dynlog_servers_item_listens_item_t items);
-dynlog_servers_item_listens_t* create_dynlog_servers_item_listens(njt_pool_t *pool, size_t length);
+dynlog_servers_item_listens_t* create_dynlog_servers_item_listens(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dynlog_servers_item_listens(dynlog_servers_item_t* obj, dynlog_servers_item_listens_t* field);
 int add_item_dynlog_servers_item_serverNames(dynlog_servers_item_serverNames_t *src, dynlog_servers_item_serverNames_item_t items);
-dynlog_servers_item_serverNames_t* create_dynlog_servers_item_serverNames(njt_pool_t *pool, size_t length);
+dynlog_servers_item_serverNames_t* create_dynlog_servers_item_serverNames(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dynlog_servers_item_serverNames(dynlog_servers_item_t* obj, dynlog_servers_item_serverNames_t* field);
 int add_item_dynlog_servers_item_locations(dynlog_servers_item_locations_t *src, dynlog_servers_item_locations_item_t* items);
-dynlog_servers_item_locations_t* create_dynlog_servers_item_locations(njt_pool_t *pool, size_t length);
+dynlog_servers_item_locations_t* create_dynlog_servers_item_locations(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dynlog_servers_item_locations(dynlog_servers_item_t* obj, dynlog_servers_item_locations_t* field);
 dynlog_servers_item_t* create_dynlog_servers_item(njt_pool_t *pool);
 int add_item_dynlog_servers(dynlog_servers_t *src, dynlog_servers_item_t* items);
-dynlog_servers_t* create_dynlog_servers(njt_pool_t *pool, size_t length);
+dynlog_servers_t* create_dynlog_servers(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dynlog_servers(dynlog_t* obj, dynlog_servers_t* field);
 int add_item_dynlog_accessLogFormats(dynlog_accessLogFormats_t *src, dynlog_accessLogFormats_item_t* items);
-dynlog_accessLogFormats_t* create_dynlog_accessLogFormats(njt_pool_t *pool, size_t length);
+dynlog_accessLogFormats_t* create_dynlog_accessLogFormats(njt_pool_t *pool, size_t nelts);
 // INITIALIZATION IS NEEDED for object or array
 void set_dynlog_accessLogFormats(dynlog_t* obj, dynlog_accessLogFormats_t* field);
 dynlog_t* create_dynlog(njt_pool_t *pool);
