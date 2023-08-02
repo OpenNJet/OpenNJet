@@ -1383,7 +1383,14 @@ static njt_int_t njt_dyn_limit_update_locs(njt_array_t *locs, njt_queue_t *q, nj
             }
             
             if (clcf != NULL && name->len == clcf->full_name.len && njt_strncmp(name->data, clcf->full_name.data, name->len) == 0)
-            {
+            {   
+                if(rpc_result){
+                    njt_rpc_result_set_conf_path(rpc_result, &parent_conf_path);
+                    end = njt_snprintf(data_buf,sizeof(data_buf) - 1, ".locations[%V]", &clcf->full_name);
+                    rpc_data_str.len = end - data_buf;
+                    njt_rpc_result_append_conf_path(rpc_result, &rpc_data_str);
+                }
+
                 ctx->loc_conf = clcf->loc_conf;
                 njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "dynlimit start set location:%V", &clcf->full_name);
                 
@@ -1457,10 +1464,10 @@ static njt_int_t njt_dyn_limit_update_locs(njt_array_t *locs, njt_queue_t *q, nj
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_limit_set_limit_req_status");
                 }
-            }
 
-            if (dlil.locations && dlil.locations->nelts > 0) {
-                njt_dyn_limit_update_locs(dlil.locations, clcf->old_locations, ctx, rpc_result);
+                if (dlil.locations && dlil.locations->nelts > 0) {
+                    njt_dyn_limit_update_locs(dlil.locations, clcf->old_locations, ctx, rpc_result);
+                }
             }
         }
 
