@@ -56,7 +56,7 @@ enum {
 #ifndef LOG_ERROR_JSON_PARSE
 #define LOG_ERROR_JSON_PARSE(position, format, ...)  { \
     int len; \
-    err_str->data = (u_char *)njt_palloc(pool, 1024); \
+    err_str->data = njt_palloc(pool, 1024); \
     len = sprintf((char *)err_str->data, "pos: %d, ", position); \
     len += sprintf((char *)err_str->data + len, format, __VA_ARGS__); \
     err_str->len = len; \
@@ -159,15 +159,93 @@ static inline bool builtin_check_current_string(njt_pool_t *pool, parse_state_t 
     return false;
 }
 
-static inline bool builtin_parse_string(njt_pool_t *pool, parse_state_t *parse_state, char *out, int min_len, int max_len, njt_str_t *err_str) {
+static inline void handle_escape_on_read(parse_state_t *state, njt_str_t *out) {
+    const char *src;
+    char* dst;
+    const jsmntok_t *token = &CURRENT_TOKEN(state);
+    src = state->json_string + token->start;
+    dst = (char *)out->data;
+    for(;src < state->json_string + token->end;) {
+        if (*src == '\\') {
+            out->len --;
+            switch (*++src) {
+                case '"':  *dst++ = '"';  src++; break;
+                case '\\': *dst++ = '\\'; src++; break;
+                case '/':  *dst++ = '/';  src++; break;
+                case 'b':  *dst++ = '\b'; src++; break;
+                case 'f':  *dst++ = '\f'; src++; break;
+                case 'n':  *dst++ = '\n'; src++; break;
+                case 'r':  *dst++ = '\r'; src++; break;
+                case 't':  *dst++ = '\t'; src++; break;
+                default:
+                break;
+                // unreachable, should get err in jsmn parse string
+                    // return_err(src, "invalid escaped character in string");
+            }
+        } else {
+            *dst++ = *src++;
+        }
+    }
+    
+    if (token->end > token->start) {
+        out->data[out->len] = 0;
+    }
+    // if (token->end > token->start) {
+    //     out->data[token->end - token->start] = 0;
+    // }
+}
+
+static inline njt_str_t* handle_escape_on_write(njt_pool_t *pool, njt_str_t *src) {
+    size_t i;
+    bool need_convert = false; 
+    char *cur = (char *)src->data;
+    for (i = 0; i < src->len && need_convert == false; i++, cur++) {
+        switch (*cur) {
+            case '"':  need_convert = true; break;
+            case '\\': need_convert = true; break;
+            // case '/':  need_convert = true; break;
+            case '\b':  need_convert = true; break;
+            case '\f':  need_convert = true; break;
+            case '\n':  need_convert = true; break;
+            case '\r':  need_convert = true; break;
+            case '\t':  need_convert = true; break;
+        default:
+            break;
+        }
+    }
+    if (need_convert == false) {
+        return src;
+    }
+    njt_str_t *out = njt_palloc(pool, sizeof(njt_str_t));
+    out->data = njt_palloc(pool, 2*src->len);
+    char *dst = (char *)out->data;
+    out->len = src->len;
+    cur = (char *)src->data;
+    for (i = 0; i < src->len; i++, cur++) {
+        switch (*cur) {
+            case '"':  *dst++ = '\\'; *dst++ = '"'; out->len++; break;
+            case '\\': *dst++ = '\\'; *dst++ = '\\'; out->len++; break;
+            // case '/':  *dst++ = '\\'; *dst++ = '/'; out->len++; break;
+            case '\b': *dst++ = '\\'; *dst++ = 'b'; out->len++; break;
+            case '\f': *dst++ = '\\'; *dst++ = 'f'; out->len++; break;
+            case '\n': *dst++ = '\\'; *dst++ = 'n'; out->len++; break;
+            case '\r': *dst++ = '\\'; *dst++ = 'r'; out->len++; break;
+            case '\t': *dst++ = '\\'; *dst++ = 't'; out->len++; break;
+        default:
+            *dst++ = *cur;
+        }
+    }
+
+    return out;
+}
+
+static inline bool builtin_parse_string(njt_pool_t *pool, parse_state_t *parse_state, njt_str_t *out, int min_len, int max_len, njt_str_t *err_str) {
     if (builtin_check_current_string(pool, parse_state, min_len, max_len, err_str)){
         return true;
     }
-    const jsmntok_t *token = &CURRENT_TOKEN(parse_state);
-    memcpy(out, parse_state->json_string + token->start, token->end - token->start);
-    if (token->end > token->start) {
-        out[token->end - token->start] = 0;
-    }
+    // const jsmntok_t *token = &CURRENT_TOKEN(parse_state);
+    // memcpy(out, parse_state->json_string + token->start, token->end - token->start);
+    handle_escape_on_read(parse_state, out);
     parse_state->current_token += 1;
     return false;
 }

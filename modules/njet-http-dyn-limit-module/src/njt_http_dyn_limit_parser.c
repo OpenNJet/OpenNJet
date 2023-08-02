@@ -12,8 +12,8 @@
 /* ========================== Generated parsers ========================== */
 
 static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_t *out, njt_str_t* err_str); //forward decl for public definition
-static void get_json_length_dyn_limit_locationDef(dyn_limit_locationDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
-static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
+static void get_json_length_dyn_limit_locationDef(njt_pool_t *pool, dyn_limit_locationDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
+static void to_oneline_json_dyn_limit_locationDef(njt_pool_t *pool, dyn_limit_locationDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
 static bool parse_dyn_limit_locationDef_limit_conns_scope(njt_pool_t *pool, parse_state_t *parse_state, dyn_limit_locationDef_limit_conns_scope_t *out, njt_str_t *err_str) {
     if (check_type(pool, parse_state, JSMN_STRING, err_str)) {
@@ -81,7 +81,7 @@ static bool parse_dyn_limit_locationDef_limit_conns_item(njt_pool_t *pool, parse
                 // TODO LOG_ERROR
                 return true;
             }
-            if (builtin_parse_string(pool, parse_state, (char *)((out->zone))->data, 0, ((out->zone))->len, err_str)) {
+            if (builtin_parse_string(pool, parse_state, (out->zone), 0, ((out->zone))->len, err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -266,7 +266,7 @@ static bool parse_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool, parse_
                 // TODO LOG_ERROR
                 return true;
             }
-            if (builtin_parse_string(pool, parse_state, (char *)((out->zone))->data, 0, ((out->zone))->len, err_str)) {
+            if (builtin_parse_string(pool, parse_state, (out->zone), 0, ((out->zone))->len, err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -318,7 +318,7 @@ static bool parse_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool, parse_
                 // TODO LOG_ERROR
                 return true;
             }
-            if (builtin_parse_string(pool, parse_state, (char *)((out->delay))->data, 0, ((out->delay))->len, err_str)) {
+            if (builtin_parse_string(pool, parse_state, (out->delay), 0, ((out->delay))->len, err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -517,7 +517,7 @@ static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_s
                 // TODO LOG_ERROR
                 return true;
             }
-            if (builtin_parse_string(pool, parse_state, (char *)((out->location))->data, 0, ((out->location))->len, err_str)) {
+            if (builtin_parse_string(pool, parse_state, (out->location), 0, ((out->location))->len, err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -549,7 +549,7 @@ static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_s
                 // TODO LOG_ERROR
                 return true;
             }
-            if (builtin_parse_string(pool, parse_state, (char *)((out->limit_rate))->data, 0, ((out->limit_rate))->len, err_str)) {
+            if (builtin_parse_string(pool, parse_state, (out->limit_rate), 0, ((out->limit_rate))->len, err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -581,7 +581,7 @@ static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_s
                 // TODO LOG_ERROR
                 return true;
             }
-            if (builtin_parse_string(pool, parse_state, (char *)((out->limit_rate_after))->data, 0, ((out->limit_rate_after))->len, err_str)) {
+            if (builtin_parse_string(pool, parse_state, (out->limit_rate_after), 0, ((out->limit_rate_after))->len, err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -867,20 +867,23 @@ static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_s
 }
 
 
-static void get_json_length_dyn_limit_locationDef_location(dyn_limit_locationDef_location_t *out, size_t *length, njt_int_t flags) {
-    *length += (*out)->len + 2; //  "str" 
+static void get_json_length_dyn_limit_locationDef_location(njt_pool_t *pool, dyn_limit_locationDef_location_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_rate(dyn_limit_locationDef_limit_rate_t *out, size_t *length, njt_int_t flags) {
-    *length += (*out)->len + 2; //  "str" 
+static void get_json_length_dyn_limit_locationDef_limit_rate(njt_pool_t *pool, dyn_limit_locationDef_limit_rate_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_rate_after(dyn_limit_locationDef_limit_rate_after_t *out, size_t *length, njt_int_t flags) {
-    *length += (*out)->len + 2; //  "str" 
+static void get_json_length_dyn_limit_locationDef_limit_rate_after(njt_pool_t *pool, dyn_limit_locationDef_limit_rate_after_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_dyn_limit_locationDef_limit_conns_scope(dyn_limit_locationDef_limit_conns_scope_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_conns_scope(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_scope_t *out, size_t *length, njt_int_t flags) {
     if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE) {
         // "up_share"
         *length += 8 + 2;
@@ -893,18 +896,19 @@ static void get_json_length_dyn_limit_locationDef_limit_conns_scope(dyn_limit_lo
     }
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_conns_item_zone(dyn_limit_locationDef_limit_conns_item_zone_t *out, size_t *length, njt_int_t flags) {
-    *length += (*out)->len + 2; //  "str" 
+static void get_json_length_dyn_limit_locationDef_limit_conns_item_zone(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_item_zone_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_conns_item_conn(dyn_limit_locationDef_limit_conns_item_conn_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_conns_item_conn(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_item_conn_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
-    u_char *cur;
-    cur = njt_sprintf(str, "%L", *out);
-    *length += cur - str;
+    int len;
+    len = sprintf((char *)str, "%ld", *out);
+    *length += len;
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_conns_item(dyn_limit_locationDef_limit_conns_item_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_conns_item(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_item_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -918,14 +922,14 @@ static void get_json_length_dyn_limit_locationDef_limit_conns_item(dyn_limit_loc
     }
     if (omit == 0) {
         *length += (4 + 3); // "zone": 
-        get_json_length_dyn_limit_locationDef_limit_conns_item_zone((&out->zone), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conns_item_zone(pool, (&out->zone), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (4 + 3); // "conn": 
-        get_json_length_dyn_limit_locationDef_limit_conns_item_conn((&out->conn), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conns_item_conn(pool, (&out->conn), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -935,7 +939,7 @@ static void get_json_length_dyn_limit_locationDef_limit_conns_item(dyn_limit_loc
     *length += 1;
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_conns(dyn_limit_locationDef_limit_conns_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_conns(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -950,7 +954,7 @@ static void get_json_length_dyn_limit_locationDef_limit_conns(dyn_limit_location
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_dyn_limit_locationDef_limit_conns_item(((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i], length, flags);
+            get_json_length_dyn_limit_locationDef_limit_conns_item(pool, ((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -961,7 +965,7 @@ static void get_json_length_dyn_limit_locationDef_limit_conns(dyn_limit_location
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_dyn_limit_locationDef_limit_conn_dry_run(dyn_limit_locationDef_limit_conn_dry_run_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_conn_dry_run(njt_pool_t *pool, dyn_limit_locationDef_limit_conn_dry_run_t *out, size_t *length, njt_int_t flags) {
     if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON) {
         // "on"
         *length += 2 + 2;
@@ -975,7 +979,7 @@ static void get_json_length_dyn_limit_locationDef_limit_conn_dry_run(dyn_limit_l
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_dyn_limit_locationDef_limit_conn_log_level(dyn_limit_locationDef_limit_conn_log_level_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_conn_log_level(njt_pool_t *pool, dyn_limit_locationDef_limit_conn_log_level_t *out, size_t *length, njt_int_t flags) {
     if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO) {
         // "info"
         *length += 4 + 2;
@@ -998,15 +1002,15 @@ static void get_json_length_dyn_limit_locationDef_limit_conn_log_level(dyn_limit
     }
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_conn_status(dyn_limit_locationDef_limit_conn_status_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_conn_status(njt_pool_t *pool, dyn_limit_locationDef_limit_conn_status_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
-    u_char *cur;
-    cur = njt_sprintf(str, "%L", *out);
-    *length += cur - str;
+    int len;
+    len = sprintf((char *)str, "%ld", *out);
+    *length += len;
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_dyn_limit_locationDef_limit_reqs_scope(dyn_limit_locationDef_limit_reqs_scope_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_reqs_scope(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_scope_t *out, size_t *length, njt_int_t flags) {
     if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE) {
         // "up_share"
         *length += 8 + 2;
@@ -1019,22 +1023,24 @@ static void get_json_length_dyn_limit_locationDef_limit_reqs_scope(dyn_limit_loc
     }
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_reqs_item_zone(dyn_limit_locationDef_limit_reqs_item_zone_t *out, size_t *length, njt_int_t flags) {
-    *length += (*out)->len + 2; //  "str" 
+static void get_json_length_dyn_limit_locationDef_limit_reqs_item_zone(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_zone_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_reqs_item_burst(dyn_limit_locationDef_limit_reqs_item_burst_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_reqs_item_burst(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_burst_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
-    u_char *cur;
-    cur = njt_sprintf(str, "%L", *out);
-    *length += cur - str;
+    int len;
+    len = sprintf((char *)str, "%ld", *out);
+    *length += len;
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_reqs_item_delay(dyn_limit_locationDef_limit_reqs_item_delay_t *out, size_t *length, njt_int_t flags) {
-    *length += (*out)->len + 2; //  "str" 
+static void get_json_length_dyn_limit_locationDef_limit_reqs_item_delay(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_delay_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_reqs_item(dyn_limit_locationDef_limit_reqs_item_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -1048,14 +1054,14 @@ static void get_json_length_dyn_limit_locationDef_limit_reqs_item(dyn_limit_loca
     }
     if (omit == 0) {
         *length += (4 + 3); // "zone": 
-        get_json_length_dyn_limit_locationDef_limit_reqs_item_zone((&out->zone), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_reqs_item_zone(pool, (&out->zone), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (5 + 3); // "burst": 
-        get_json_length_dyn_limit_locationDef_limit_reqs_item_burst((&out->burst), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_reqs_item_burst(pool, (&out->burst), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1065,7 +1071,7 @@ static void get_json_length_dyn_limit_locationDef_limit_reqs_item(dyn_limit_loca
     }
     if (omit == 0) {
         *length += (5 + 3); // "delay": 
-        get_json_length_dyn_limit_locationDef_limit_reqs_item_delay((&out->delay), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_reqs_item_delay(pool, (&out->delay), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1075,7 +1081,7 @@ static void get_json_length_dyn_limit_locationDef_limit_reqs_item(dyn_limit_loca
     *length += 1;
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_reqs(dyn_limit_locationDef_limit_reqs_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_reqs(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -1090,7 +1096,7 @@ static void get_json_length_dyn_limit_locationDef_limit_reqs(dyn_limit_locationD
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_dyn_limit_locationDef_limit_reqs_item(((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i], length, flags);
+            get_json_length_dyn_limit_locationDef_limit_reqs_item(pool, ((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -1101,7 +1107,7 @@ static void get_json_length_dyn_limit_locationDef_limit_reqs(dyn_limit_locationD
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_dyn_limit_locationDef_limit_req_dry_run(dyn_limit_locationDef_limit_req_dry_run_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_req_dry_run(njt_pool_t *pool, dyn_limit_locationDef_limit_req_dry_run_t *out, size_t *length, njt_int_t flags) {
     if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON) {
         // "on"
         *length += 2 + 2;
@@ -1115,7 +1121,7 @@ static void get_json_length_dyn_limit_locationDef_limit_req_dry_run(dyn_limit_lo
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_dyn_limit_locationDef_limit_req_log_level(dyn_limit_locationDef_limit_req_log_level_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_req_log_level(njt_pool_t *pool, dyn_limit_locationDef_limit_req_log_level_t *out, size_t *length, njt_int_t flags) {
     if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO) {
         // "info"
         *length += 4 + 2;
@@ -1138,19 +1144,19 @@ static void get_json_length_dyn_limit_locationDef_limit_req_log_level(dyn_limit_
     }
 }
 
-static void get_json_length_dyn_limit_locationDef_limit_req_status(dyn_limit_locationDef_limit_req_status_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_limit_req_status(njt_pool_t *pool, dyn_limit_locationDef_limit_req_status_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
-    u_char *cur;
-    cur = njt_sprintf(str, "%L", *out);
-    *length += cur - str;
+    int len;
+    len = sprintf((char *)str, "%ld", *out);
+    *length += len;
 }
 // GET_JSON_LENGTH_REF
 
-static void get_json_length_dyn_limit_locationDef_locations_item(dyn_limit_locationDef_locations_item_t *out, size_t *length, njt_int_t flags) {
-    get_json_length_dyn_limit_locationDef(out, length, flags);
+static void get_json_length_dyn_limit_locationDef_locations_item(njt_pool_t *pool, dyn_limit_locationDef_locations_item_t *out, size_t *length, njt_int_t flags) {
+    get_json_length_dyn_limit_locationDef(pool, out, length, flags);
 }
 
-static void get_json_length_dyn_limit_locationDef_locations(dyn_limit_locationDef_locations_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef_locations(njt_pool_t *pool, dyn_limit_locationDef_locations_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -1165,7 +1171,7 @@ static void get_json_length_dyn_limit_locationDef_locations(dyn_limit_locationDe
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_dyn_limit_locationDef_locations_item(((dyn_limit_locationDef_locations_item_t**)out->elts)[i], length, flags);
+            get_json_length_dyn_limit_locationDef_locations_item(pool, ((dyn_limit_locationDef_locations_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -1175,7 +1181,7 @@ static void get_json_length_dyn_limit_locationDef_locations(dyn_limit_locationDe
     }
 }
 
-static void get_json_length_dyn_limit_locationDef(dyn_limit_locationDef_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_locationDef(njt_pool_t *pool, dyn_limit_locationDef_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -1189,7 +1195,7 @@ static void get_json_length_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     }
     if (omit == 0) {
         *length += (8 + 3); // "location": 
-        get_json_length_dyn_limit_locationDef_location((&out->location), length, flags);
+        get_json_length_dyn_limit_locationDef_location(pool, (&out->location), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1199,7 +1205,7 @@ static void get_json_length_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     }
     if (omit == 0) {
         *length += (10 + 3); // "limit_rate": 
-        get_json_length_dyn_limit_locationDef_limit_rate((&out->limit_rate), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_rate(pool, (&out->limit_rate), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1209,14 +1215,14 @@ static void get_json_length_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     }
     if (omit == 0) {
         *length += (16 + 3); // "limit_rate_after": 
-        get_json_length_dyn_limit_locationDef_limit_rate_after((&out->limit_rate_after), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_rate_after(pool, (&out->limit_rate_after), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (17 + 3); // "limit_conns_scope": 
-        get_json_length_dyn_limit_locationDef_limit_conns_scope((&out->limit_conns_scope), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conns_scope(pool, (&out->limit_conns_scope), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1226,35 +1232,35 @@ static void get_json_length_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     }
     if (omit == 0) {
         *length += (11 + 3); // "limit_conns": 
-        get_json_length_dyn_limit_locationDef_limit_conns((out->limit_conns), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conns(pool, (out->limit_conns), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (18 + 3); // "limit_conn_dry_run": 
-        get_json_length_dyn_limit_locationDef_limit_conn_dry_run((&out->limit_conn_dry_run), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conn_dry_run(pool, (&out->limit_conn_dry_run), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (20 + 3); // "limit_conn_log_level": 
-        get_json_length_dyn_limit_locationDef_limit_conn_log_level((&out->limit_conn_log_level), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conn_log_level(pool, (&out->limit_conn_log_level), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (17 + 3); // "limit_conn_status": 
-        get_json_length_dyn_limit_locationDef_limit_conn_status((&out->limit_conn_status), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_conn_status(pool, (&out->limit_conn_status), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (16 + 3); // "limit_reqs_scope": 
-        get_json_length_dyn_limit_locationDef_limit_reqs_scope((&out->limit_reqs_scope), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_reqs_scope(pool, (&out->limit_reqs_scope), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1264,28 +1270,28 @@ static void get_json_length_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     }
     if (omit == 0) {
         *length += (10 + 3); // "limit_reqs": 
-        get_json_length_dyn_limit_locationDef_limit_reqs((out->limit_reqs), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_reqs(pool, (out->limit_reqs), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (17 + 3); // "limit_req_dry_run": 
-        get_json_length_dyn_limit_locationDef_limit_req_dry_run((&out->limit_req_dry_run), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_req_dry_run(pool, (&out->limit_req_dry_run), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (19 + 3); // "limit_req_log_level": 
-        get_json_length_dyn_limit_locationDef_limit_req_log_level((&out->limit_req_log_level), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_req_log_level(pool, (&out->limit_req_log_level), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
     if (omit == 0) {
         *length += (16 + 3); // "limit_req_status": 
-        get_json_length_dyn_limit_locationDef_limit_req_status((&out->limit_req_status), length, flags);
+        get_json_length_dyn_limit_locationDef_limit_req_status(pool, (&out->limit_req_status), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1295,7 +1301,7 @@ static void get_json_length_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     }
     if (omit == 0) {
         *length += (9 + 3); // "locations": 
-        get_json_length_dyn_limit_locationDef_locations((out->locations), length, flags);
+        get_json_length_dyn_limit_locationDef_locations(pool, (out->locations), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -1474,25 +1480,46 @@ dyn_limit_locationDef_t* create_dyn_limit_locationDef(njt_pool_t *pool) {
     return out;
 }
 
-static void to_oneline_json_dyn_limit_locationDef_location(dyn_limit_locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_location(njt_pool_t *pool, dyn_limit_locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "\"%V\"", *out);
-    buf->len = cur - buf->data;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    if (dst->len > 0) {
+        int len;
+        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
+        buf->len += len;
+    } else {
+        sprintf((char *)cur, "\"\"");
+        buf->len += 2;
+    }
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_rate(dyn_limit_locationDef_limit_rate_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_rate(njt_pool_t *pool, dyn_limit_locationDef_limit_rate_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "\"%V\"", *out);
-    buf->len = cur - buf->data;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    if (dst->len > 0) {
+        int len;
+        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
+        buf->len += len;
+    } else {
+        sprintf((char *)cur, "\"\"");
+        buf->len += 2;
+    }
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_rate_after(dyn_limit_locationDef_limit_rate_after_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_rate_after(njt_pool_t *pool, dyn_limit_locationDef_limit_rate_after_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "\"%V\"", *out);
-    buf->len = cur - buf->data;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    if (dst->len > 0) {
+        int len;
+        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
+        buf->len += len;
+    } else {
+        sprintf((char *)cur, "\"\"");
+        buf->len += 2;
+    }
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_conns_scope(dyn_limit_locationDef_limit_conns_scope_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conns_scope(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_scope_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE) {
         cur = njt_sprintf(cur, "\"up_share\"");
@@ -1506,19 +1533,27 @@ static void to_oneline_json_dyn_limit_locationDef_limit_conns_scope(dyn_limit_lo
     }
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_conns_item_zone(dyn_limit_locationDef_limit_conns_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conns_item_zone(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "\"%V\"", *out);
-    buf->len = cur - buf->data;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    if (dst->len > 0) {
+        int len;
+        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
+        buf->len += len;
+    } else {
+        sprintf((char *)cur, "\"\"");
+        buf->len += 2;
+    }
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_conns_item_conn(dyn_limit_locationDef_limit_conns_item_conn_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conns_item_conn(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_item_conn_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%L", *out);
-    buf->len = cur - buf->data;
+    int len;
+    len = sprintf((char *)cur, "%ld", *out);
+    buf->len += len;
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_conns_item(dyn_limit_locationDef_limit_conns_item_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conns_item(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_item_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -1535,7 +1570,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_conns_item(dyn_limit_loc
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"zone\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_conns_item_zone((&out->zone), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conns_item_zone(pool, (&out->zone), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1544,7 +1579,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_conns_item(dyn_limit_loc
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"conn\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_conns_item_conn((&out->conn), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conns_item_conn(pool, (&out->conn), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1559,7 +1594,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_conns_item(dyn_limit_loc
     buf->len ++;
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_conns(dyn_limit_locationDef_limit_conns_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conns(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -1576,7 +1611,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_conns(dyn_limit_location
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_dyn_limit_locationDef_limit_conns_item(((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_dyn_limit_locationDef_limit_conns_item(pool, ((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -1592,7 +1627,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_conns(dyn_limit_location
     buf->len ++;
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_conn_dry_run(dyn_limit_locationDef_limit_conn_dry_run_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conn_dry_run(njt_pool_t *pool, dyn_limit_locationDef_limit_conn_dry_run_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON) {
         cur = njt_sprintf(cur, "\"on\"");
@@ -1606,7 +1641,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_conn_dry_run(dyn_limit_l
     }
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_conn_log_level(dyn_limit_locationDef_limit_conn_log_level_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conn_log_level(njt_pool_t *pool, dyn_limit_locationDef_limit_conn_log_level_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO) {
         cur = njt_sprintf(cur, "\"info\"");
@@ -1630,13 +1665,14 @@ static void to_oneline_json_dyn_limit_locationDef_limit_conn_log_level(dyn_limit
     }
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_conn_status(dyn_limit_locationDef_limit_conn_status_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_conn_status(njt_pool_t *pool, dyn_limit_locationDef_limit_conn_status_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%L", *out);
-    buf->len = cur - buf->data;
+    int len;
+    len = sprintf((char *)cur, "%ld", *out);
+    buf->len += len;
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_reqs_scope(dyn_limit_locationDef_limit_reqs_scope_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_reqs_scope(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_scope_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE) {
         cur = njt_sprintf(cur, "\"up_share\"");
@@ -1650,25 +1686,40 @@ static void to_oneline_json_dyn_limit_locationDef_limit_reqs_scope(dyn_limit_loc
     }
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item_zone(dyn_limit_locationDef_limit_reqs_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item_zone(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "\"%V\"", *out);
-    buf->len = cur - buf->data;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    if (dst->len > 0) {
+        int len;
+        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
+        buf->len += len;
+    } else {
+        sprintf((char *)cur, "\"\"");
+        buf->len += 2;
+    }
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item_burst(dyn_limit_locationDef_limit_reqs_item_burst_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item_burst(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_burst_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%L", *out);
-    buf->len = cur - buf->data;
+    int len;
+    len = sprintf((char *)cur, "%ld", *out);
+    buf->len += len;
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item_delay(dyn_limit_locationDef_limit_reqs_item_delay_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item_delay(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_delay_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "\"%V\"", *out);
-    buf->len = cur - buf->data;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    if (dst->len > 0) {
+        int len;
+        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
+        buf->len += len;
+    } else {
+        sprintf((char *)cur, "\"\"");
+        buf->len += 2;
+    }
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item(dyn_limit_locationDef_limit_reqs_item_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -1685,7 +1736,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item(dyn_limit_loca
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"zone\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_reqs_item_zone((&out->zone), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_reqs_item_zone(pool, (&out->zone), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1694,7 +1745,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item(dyn_limit_loca
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"burst\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_reqs_item_burst((&out->burst), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_reqs_item_burst(pool, (&out->burst), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1706,7 +1757,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item(dyn_limit_loca
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"delay\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_reqs_item_delay((&out->delay), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_reqs_item_delay(pool, (&out->delay), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1721,7 +1772,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item(dyn_limit_loca
     buf->len ++;
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_reqs(dyn_limit_locationDef_limit_reqs_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_reqs(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -1738,7 +1789,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_reqs(dyn_limit_locationD
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_dyn_limit_locationDef_limit_reqs_item(((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_dyn_limit_locationDef_limit_reqs_item(pool, ((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -1754,7 +1805,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_reqs(dyn_limit_locationD
     buf->len ++;
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_req_dry_run(dyn_limit_locationDef_limit_req_dry_run_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_req_dry_run(njt_pool_t *pool, dyn_limit_locationDef_limit_req_dry_run_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON) {
         cur = njt_sprintf(cur, "\"on\"");
@@ -1768,7 +1819,7 @@ static void to_oneline_json_dyn_limit_locationDef_limit_req_dry_run(dyn_limit_lo
     }
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_req_log_level(dyn_limit_locationDef_limit_req_log_level_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_req_log_level(njt_pool_t *pool, dyn_limit_locationDef_limit_req_log_level_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     if (*out == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO) {
         cur = njt_sprintf(cur, "\"info\"");
@@ -1792,18 +1843,19 @@ static void to_oneline_json_dyn_limit_locationDef_limit_req_log_level(dyn_limit_
     }
 }
 
-static void to_oneline_json_dyn_limit_locationDef_limit_req_status(dyn_limit_locationDef_limit_req_status_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_limit_req_status(njt_pool_t *pool, dyn_limit_locationDef_limit_req_status_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%L", *out);
-    buf->len = cur - buf->data;
+    int len;
+    len = sprintf((char *)cur, "%ld", *out);
+    buf->len += len;
 }
 // to_oneline_json_REF
 
-static void to_oneline_json_dyn_limit_locationDef_locations_item(dyn_limit_locationDef_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
-    to_oneline_json_dyn_limit_locationDef(out, buf, flags);
+static void to_oneline_json_dyn_limit_locationDef_locations_item(njt_pool_t *pool, dyn_limit_locationDef_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
+    to_oneline_json_dyn_limit_locationDef(pool, out, buf, flags);
 }
 
-static void to_oneline_json_dyn_limit_locationDef_locations(dyn_limit_locationDef_locations_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef_locations(njt_pool_t *pool, dyn_limit_locationDef_locations_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -1820,7 +1872,7 @@ static void to_oneline_json_dyn_limit_locationDef_locations(dyn_limit_locationDe
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_dyn_limit_locationDef_locations_item(((dyn_limit_locationDef_locations_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_dyn_limit_locationDef_locations_item(pool, ((dyn_limit_locationDef_locations_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -1836,7 +1888,7 @@ static void to_oneline_json_dyn_limit_locationDef_locations(dyn_limit_locationDe
     buf->len ++;
 }
 
-static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_locationDef(njt_pool_t *pool, dyn_limit_locationDef_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -1853,7 +1905,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"location\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_location((&out->location), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_location(pool, (&out->location), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1865,7 +1917,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_rate\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_rate((&out->limit_rate), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_rate(pool, (&out->limit_rate), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1877,7 +1929,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_rate_after\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_rate_after((&out->limit_rate_after), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_rate_after(pool, (&out->limit_rate_after), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1886,7 +1938,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_conns_scope\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_conns_scope((&out->limit_conns_scope), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conns_scope(pool, (&out->limit_conns_scope), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1898,7 +1950,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_conns\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_conns((out->limit_conns), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conns(pool, (out->limit_conns), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1907,7 +1959,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_conn_dry_run\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_conn_dry_run((&out->limit_conn_dry_run), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conn_dry_run(pool, (&out->limit_conn_dry_run), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1916,7 +1968,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_conn_log_level\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_conn_log_level((&out->limit_conn_log_level), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conn_log_level(pool, (&out->limit_conn_log_level), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1925,7 +1977,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_conn_status\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_conn_status((&out->limit_conn_status), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_conn_status(pool, (&out->limit_conn_status), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1934,7 +1986,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_reqs_scope\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_reqs_scope((&out->limit_reqs_scope), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_reqs_scope(pool, (&out->limit_reqs_scope), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1946,7 +1998,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_reqs\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_reqs((out->limit_reqs), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_reqs(pool, (out->limit_reqs), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1955,7 +2007,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_req_dry_run\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_req_dry_run((&out->limit_req_dry_run), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_req_dry_run(pool, (&out->limit_req_dry_run), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1964,7 +2016,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_req_log_level\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_req_log_level((&out->limit_req_log_level), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_req_log_level(pool, (&out->limit_req_log_level), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1973,7 +2025,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_req_status\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_limit_req_status((&out->limit_req_status), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_limit_req_status(pool, (&out->limit_req_status), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -1985,7 +2037,7 @@ static void to_oneline_json_dyn_limit_locationDef(dyn_limit_locationDef_t *out, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"locations\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_locationDef_locations((out->locations), buf, flags);
+        to_oneline_json_dyn_limit_locationDef_locations(pool, (out->locations), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -2026,7 +2078,7 @@ static bool parse_dyn_limit_servers_item_listens(njt_pool_t *pool, parse_state_t
             // TODO LOG_ERROR
             return true;
         }
-        if (builtin_parse_string(pool, parse_state, (char *)(((dyn_limit_servers_item_listens_item_t*)out->elts)[i])->data, 1, (((dyn_limit_servers_item_listens_item_t*)out->elts)[i])->len, err_str)) {
+        if (builtin_parse_string(pool, parse_state, ((dyn_limit_servers_item_listens_item_t*)out->elts)[i], 1, (((dyn_limit_servers_item_listens_item_t*)out->elts)[i])->len, err_str)) {
             return true;
         }
         out->nelts ++;
@@ -2061,7 +2113,7 @@ static bool parse_dyn_limit_servers_item_serverNames(njt_pool_t *pool, parse_sta
             // TODO LOG_ERROR
             return true;
         }
-        if (builtin_parse_string(pool, parse_state, (char *)(((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i])->data, 0, (((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i])->len, err_str)) {
+        if (builtin_parse_string(pool, parse_state, ((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i], 0, (((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i])->len, err_str)) {
             return true;
         }
         out->nelts ++;
@@ -2256,7 +2308,7 @@ static bool parse_dyn_limit_limit_rps_item(njt_pool_t *pool, parse_state_t *pars
                 // TODO LOG_ERROR
                 return true;
             }
-            if (builtin_parse_string(pool, parse_state, (char *)((out->zone))->data, 0, ((out->zone))->len, err_str)) {
+            if (builtin_parse_string(pool, parse_state, (out->zone), 0, ((out->zone))->len, err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -2288,7 +2340,7 @@ static bool parse_dyn_limit_limit_rps_item(njt_pool_t *pool, parse_state_t *pars
                 // TODO LOG_ERROR
                 return true;
             }
-            if (builtin_parse_string(pool, parse_state, (char *)((out->rate))->data, 0, ((out->rate))->len, err_str)) {
+            if (builtin_parse_string(pool, parse_state, (out->rate), 0, ((out->rate))->len, err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -2440,11 +2492,12 @@ static bool parse_dyn_limit(njt_pool_t *pool, parse_state_t *parse_state, dyn_li
 }
 
 
-static void get_json_length_dyn_limit_servers_item_listens_item(dyn_limit_servers_item_listens_item_t *out, size_t *length, njt_int_t flags) {
-    *length += (*out)->len + 2; //  "str" 
+static void get_json_length_dyn_limit_servers_item_listens_item(njt_pool_t *pool, dyn_limit_servers_item_listens_item_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_dyn_limit_servers_item_listens(dyn_limit_servers_item_listens_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_servers_item_listens(njt_pool_t *pool, dyn_limit_servers_item_listens_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -2459,7 +2512,7 @@ static void get_json_length_dyn_limit_servers_item_listens(dyn_limit_servers_ite
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_dyn_limit_servers_item_listens_item((&((dyn_limit_servers_item_listens_item_t*)out->elts)[i]), length, flags);
+            get_json_length_dyn_limit_servers_item_listens_item(pool, (&((dyn_limit_servers_item_listens_item_t*)out->elts)[i]), length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -2469,11 +2522,12 @@ static void get_json_length_dyn_limit_servers_item_listens(dyn_limit_servers_ite
     }
 }
 
-static void get_json_length_dyn_limit_servers_item_serverNames_item(dyn_limit_servers_item_serverNames_item_t *out, size_t *length, njt_int_t flags) {
-    *length += (*out)->len + 2; //  "str" 
+static void get_json_length_dyn_limit_servers_item_serverNames_item(njt_pool_t *pool, dyn_limit_servers_item_serverNames_item_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_dyn_limit_servers_item_serverNames(dyn_limit_servers_item_serverNames_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_servers_item_serverNames(njt_pool_t *pool, dyn_limit_servers_item_serverNames_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -2488,7 +2542,7 @@ static void get_json_length_dyn_limit_servers_item_serverNames(dyn_limit_servers
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_dyn_limit_servers_item_serverNames_item((&((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i]), length, flags);
+            get_json_length_dyn_limit_servers_item_serverNames_item(pool, (&((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i]), length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -2499,11 +2553,11 @@ static void get_json_length_dyn_limit_servers_item_serverNames(dyn_limit_servers
 }
 // GET_JSON_LENGTH_REF
 
-static void get_json_length_dyn_limit_servers_item_locations_item(dyn_limit_servers_item_locations_item_t *out, size_t *length, njt_int_t flags) {
-    get_json_length_dyn_limit_locationDef(out, length, flags);
+static void get_json_length_dyn_limit_servers_item_locations_item(njt_pool_t *pool, dyn_limit_servers_item_locations_item_t *out, size_t *length, njt_int_t flags) {
+    get_json_length_dyn_limit_locationDef(pool, out, length, flags);
 }
 
-static void get_json_length_dyn_limit_servers_item_locations(dyn_limit_servers_item_locations_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_servers_item_locations(njt_pool_t *pool, dyn_limit_servers_item_locations_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -2518,7 +2572,7 @@ static void get_json_length_dyn_limit_servers_item_locations(dyn_limit_servers_i
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_dyn_limit_servers_item_locations_item(((dyn_limit_servers_item_locations_item_t**)out->elts)[i], length, flags);
+            get_json_length_dyn_limit_servers_item_locations_item(pool, ((dyn_limit_servers_item_locations_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -2528,7 +2582,7 @@ static void get_json_length_dyn_limit_servers_item_locations(dyn_limit_servers_i
     }
 }
 
-static void get_json_length_dyn_limit_servers_item(dyn_limit_servers_item_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_servers_item(njt_pool_t *pool, dyn_limit_servers_item_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -2542,7 +2596,7 @@ static void get_json_length_dyn_limit_servers_item(dyn_limit_servers_item_t *out
     }
     if (omit == 0) {
         *length += (7 + 3); // "listens": 
-        get_json_length_dyn_limit_servers_item_listens((out->listens), length, flags);
+        get_json_length_dyn_limit_servers_item_listens(pool, (out->listens), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -2552,7 +2606,7 @@ static void get_json_length_dyn_limit_servers_item(dyn_limit_servers_item_t *out
     }
     if (omit == 0) {
         *length += (11 + 3); // "serverNames": 
-        get_json_length_dyn_limit_servers_item_serverNames((out->serverNames), length, flags);
+        get_json_length_dyn_limit_servers_item_serverNames(pool, (out->serverNames), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -2562,7 +2616,7 @@ static void get_json_length_dyn_limit_servers_item(dyn_limit_servers_item_t *out
     }
     if (omit == 0) {
         *length += (9 + 3); // "locations": 
-        get_json_length_dyn_limit_servers_item_locations((out->locations), length, flags);
+        get_json_length_dyn_limit_servers_item_locations(pool, (out->locations), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -2572,7 +2626,7 @@ static void get_json_length_dyn_limit_servers_item(dyn_limit_servers_item_t *out
     *length += 1;
 }
 
-static void get_json_length_dyn_limit_servers(dyn_limit_servers_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_servers(njt_pool_t *pool, dyn_limit_servers_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -2587,7 +2641,7 @@ static void get_json_length_dyn_limit_servers(dyn_limit_servers_t *out, size_t *
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_dyn_limit_servers_item(((dyn_limit_servers_item_t**)out->elts)[i], length, flags);
+            get_json_length_dyn_limit_servers_item(pool, ((dyn_limit_servers_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -2597,15 +2651,17 @@ static void get_json_length_dyn_limit_servers(dyn_limit_servers_t *out, size_t *
     }
 }
 
-static void get_json_length_dyn_limit_limit_rps_item_zone(dyn_limit_limit_rps_item_zone_t *out, size_t *length, njt_int_t flags) {
-    *length += (*out)->len + 2; //  "str" 
+static void get_json_length_dyn_limit_limit_rps_item_zone(njt_pool_t *pool, dyn_limit_limit_rps_item_zone_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_dyn_limit_limit_rps_item_rate(dyn_limit_limit_rps_item_rate_t *out, size_t *length, njt_int_t flags) {
-    *length += (*out)->len + 2; //  "str" 
+static void get_json_length_dyn_limit_limit_rps_item_rate(njt_pool_t *pool, dyn_limit_limit_rps_item_rate_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_dyn_limit_limit_rps_item(dyn_limit_limit_rps_item_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_limit_rps_item(njt_pool_t *pool, dyn_limit_limit_rps_item_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -2619,7 +2675,7 @@ static void get_json_length_dyn_limit_limit_rps_item(dyn_limit_limit_rps_item_t 
     }
     if (omit == 0) {
         *length += (4 + 3); // "zone": 
-        get_json_length_dyn_limit_limit_rps_item_zone((&out->zone), length, flags);
+        get_json_length_dyn_limit_limit_rps_item_zone(pool, (&out->zone), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -2629,7 +2685,7 @@ static void get_json_length_dyn_limit_limit_rps_item(dyn_limit_limit_rps_item_t 
     }
     if (omit == 0) {
         *length += (4 + 3); // "rate": 
-        get_json_length_dyn_limit_limit_rps_item_rate((&out->rate), length, flags);
+        get_json_length_dyn_limit_limit_rps_item_rate(pool, (&out->rate), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -2639,7 +2695,7 @@ static void get_json_length_dyn_limit_limit_rps_item(dyn_limit_limit_rps_item_t 
     *length += 1;
 }
 
-static void get_json_length_dyn_limit_limit_rps(dyn_limit_limit_rps_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit_limit_rps(njt_pool_t *pool, dyn_limit_limit_rps_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -2654,7 +2710,7 @@ static void get_json_length_dyn_limit_limit_rps(dyn_limit_limit_rps_t *out, size
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_dyn_limit_limit_rps_item(((dyn_limit_limit_rps_item_t**)out->elts)[i], length, flags);
+            get_json_length_dyn_limit_limit_rps_item(pool, ((dyn_limit_limit_rps_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -2664,7 +2720,7 @@ static void get_json_length_dyn_limit_limit_rps(dyn_limit_limit_rps_t *out, size
     }
 }
 
-static void get_json_length_dyn_limit(dyn_limit_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_dyn_limit(njt_pool_t *pool, dyn_limit_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -2678,7 +2734,7 @@ static void get_json_length_dyn_limit(dyn_limit_t *out, size_t *length, njt_int_
     }
     if (omit == 0) {
         *length += (7 + 3); // "servers": 
-        get_json_length_dyn_limit_servers((out->servers), length, flags);
+        get_json_length_dyn_limit_servers(pool, (out->servers), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -2688,7 +2744,7 @@ static void get_json_length_dyn_limit(dyn_limit_t *out, size_t *length, njt_int_
     }
     if (omit == 0) {
         *length += (9 + 3); // "limit_rps": 
-        get_json_length_dyn_limit_limit_rps((out->limit_rps), length, flags);
+        get_json_length_dyn_limit_limit_rps(pool, (out->limit_rps), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -2847,13 +2903,20 @@ dyn_limit_t* create_dyn_limit(njt_pool_t *pool) {
     return out;
 }
 
-static void to_oneline_json_dyn_limit_servers_item_listens_item(dyn_limit_servers_item_listens_item_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_servers_item_listens_item(njt_pool_t *pool, dyn_limit_servers_item_listens_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "\"%V\"", *out);
-    buf->len = cur - buf->data;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    if (dst->len > 0) {
+        int len;
+        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
+        buf->len += len;
+    } else {
+        sprintf((char *)cur, "\"\"");
+        buf->len += 2;
+    }
 }
 
-static void to_oneline_json_dyn_limit_servers_item_listens(dyn_limit_servers_item_listens_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_servers_item_listens(njt_pool_t *pool, dyn_limit_servers_item_listens_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -2870,7 +2933,7 @@ static void to_oneline_json_dyn_limit_servers_item_listens(dyn_limit_servers_ite
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_dyn_limit_servers_item_listens_item((&((dyn_limit_servers_item_listens_item_t*)out->elts)[i]), buf, flags);
+            to_oneline_json_dyn_limit_servers_item_listens_item(pool, (&((dyn_limit_servers_item_listens_item_t*)out->elts)[i]), buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -2886,13 +2949,20 @@ static void to_oneline_json_dyn_limit_servers_item_listens(dyn_limit_servers_ite
     buf->len ++;
 }
 
-static void to_oneline_json_dyn_limit_servers_item_serverNames_item(dyn_limit_servers_item_serverNames_item_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_servers_item_serverNames_item(njt_pool_t *pool, dyn_limit_servers_item_serverNames_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "\"%V\"", *out);
-    buf->len = cur - buf->data;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    if (dst->len > 0) {
+        int len;
+        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
+        buf->len += len;
+    } else {
+        sprintf((char *)cur, "\"\"");
+        buf->len += 2;
+    }
 }
 
-static void to_oneline_json_dyn_limit_servers_item_serverNames(dyn_limit_servers_item_serverNames_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_servers_item_serverNames(njt_pool_t *pool, dyn_limit_servers_item_serverNames_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -2909,7 +2979,7 @@ static void to_oneline_json_dyn_limit_servers_item_serverNames(dyn_limit_servers
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_dyn_limit_servers_item_serverNames_item((&((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i]), buf, flags);
+            to_oneline_json_dyn_limit_servers_item_serverNames_item(pool, (&((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i]), buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -2926,11 +2996,11 @@ static void to_oneline_json_dyn_limit_servers_item_serverNames(dyn_limit_servers
 }
 // to_oneline_json_REF
 
-static void to_oneline_json_dyn_limit_servers_item_locations_item(dyn_limit_servers_item_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
-    to_oneline_json_dyn_limit_locationDef(out, buf, flags);
+static void to_oneline_json_dyn_limit_servers_item_locations_item(njt_pool_t *pool, dyn_limit_servers_item_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
+    to_oneline_json_dyn_limit_locationDef(pool, out, buf, flags);
 }
 
-static void to_oneline_json_dyn_limit_servers_item_locations(dyn_limit_servers_item_locations_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_servers_item_locations(njt_pool_t *pool, dyn_limit_servers_item_locations_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -2947,7 +3017,7 @@ static void to_oneline_json_dyn_limit_servers_item_locations(dyn_limit_servers_i
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_dyn_limit_servers_item_locations_item(((dyn_limit_servers_item_locations_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_dyn_limit_servers_item_locations_item(pool, ((dyn_limit_servers_item_locations_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -2963,7 +3033,7 @@ static void to_oneline_json_dyn_limit_servers_item_locations(dyn_limit_servers_i
     buf->len ++;
 }
 
-static void to_oneline_json_dyn_limit_servers_item(dyn_limit_servers_item_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_servers_item(njt_pool_t *pool, dyn_limit_servers_item_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -2980,7 +3050,7 @@ static void to_oneline_json_dyn_limit_servers_item(dyn_limit_servers_item_t *out
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"listens\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_servers_item_listens((out->listens), buf, flags);
+        to_oneline_json_dyn_limit_servers_item_listens(pool, (out->listens), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -2992,7 +3062,7 @@ static void to_oneline_json_dyn_limit_servers_item(dyn_limit_servers_item_t *out
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"serverNames\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_servers_item_serverNames((out->serverNames), buf, flags);
+        to_oneline_json_dyn_limit_servers_item_serverNames(pool, (out->serverNames), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -3004,7 +3074,7 @@ static void to_oneline_json_dyn_limit_servers_item(dyn_limit_servers_item_t *out
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"locations\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_servers_item_locations((out->locations), buf, flags);
+        to_oneline_json_dyn_limit_servers_item_locations(pool, (out->locations), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -3019,7 +3089,7 @@ static void to_oneline_json_dyn_limit_servers_item(dyn_limit_servers_item_t *out
     buf->len ++;
 }
 
-static void to_oneline_json_dyn_limit_servers(dyn_limit_servers_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_servers(njt_pool_t *pool, dyn_limit_servers_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -3036,7 +3106,7 @@ static void to_oneline_json_dyn_limit_servers(dyn_limit_servers_t *out, njt_str_
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_dyn_limit_servers_item(((dyn_limit_servers_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_dyn_limit_servers_item(pool, ((dyn_limit_servers_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -3052,19 +3122,33 @@ static void to_oneline_json_dyn_limit_servers(dyn_limit_servers_t *out, njt_str_
     buf->len ++;
 }
 
-static void to_oneline_json_dyn_limit_limit_rps_item_zone(dyn_limit_limit_rps_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_limit_rps_item_zone(njt_pool_t *pool, dyn_limit_limit_rps_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "\"%V\"", *out);
-    buf->len = cur - buf->data;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    if (dst->len > 0) {
+        int len;
+        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
+        buf->len += len;
+    } else {
+        sprintf((char *)cur, "\"\"");
+        buf->len += 2;
+    }
 }
 
-static void to_oneline_json_dyn_limit_limit_rps_item_rate(dyn_limit_limit_rps_item_rate_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_limit_rps_item_rate(njt_pool_t *pool, dyn_limit_limit_rps_item_rate_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "\"%V\"", *out);
-    buf->len = cur - buf->data;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    if (dst->len > 0) {
+        int len;
+        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
+        buf->len += len;
+    } else {
+        sprintf((char *)cur, "\"\"");
+        buf->len += 2;
+    }
 }
 
-static void to_oneline_json_dyn_limit_limit_rps_item(dyn_limit_limit_rps_item_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_limit_rps_item(njt_pool_t *pool, dyn_limit_limit_rps_item_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -3081,7 +3165,7 @@ static void to_oneline_json_dyn_limit_limit_rps_item(dyn_limit_limit_rps_item_t 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"zone\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_limit_rps_item_zone((&out->zone), buf, flags);
+        to_oneline_json_dyn_limit_limit_rps_item_zone(pool, (&out->zone), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -3093,7 +3177,7 @@ static void to_oneline_json_dyn_limit_limit_rps_item(dyn_limit_limit_rps_item_t 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"rate\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_limit_rps_item_rate((&out->rate), buf, flags);
+        to_oneline_json_dyn_limit_limit_rps_item_rate(pool, (&out->rate), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -3108,7 +3192,7 @@ static void to_oneline_json_dyn_limit_limit_rps_item(dyn_limit_limit_rps_item_t 
     buf->len ++;
 }
 
-static void to_oneline_json_dyn_limit_limit_rps(dyn_limit_limit_rps_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit_limit_rps(njt_pool_t *pool, dyn_limit_limit_rps_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -3125,7 +3209,7 @@ static void to_oneline_json_dyn_limit_limit_rps(dyn_limit_limit_rps_t *out, njt_
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_dyn_limit_limit_rps_item(((dyn_limit_limit_rps_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_dyn_limit_limit_rps_item(pool, ((dyn_limit_limit_rps_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -3141,7 +3225,7 @@ static void to_oneline_json_dyn_limit_limit_rps(dyn_limit_limit_rps_t *out, njt_
     buf->len ++;
 }
 
-static void to_oneline_json_dyn_limit(dyn_limit_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_dyn_limit(njt_pool_t *pool, dyn_limit_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -3158,7 +3242,7 @@ static void to_oneline_json_dyn_limit(dyn_limit_t *out, njt_str_t* buf, njt_int_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"servers\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_servers((out->servers), buf, flags);
+        to_oneline_json_dyn_limit_servers(pool, (out->servers), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -3170,7 +3254,7 @@ static void to_oneline_json_dyn_limit(dyn_limit_t *out, njt_str_t* buf, njt_int_
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"limit_rps\":");
         buf->len = cur - buf->data;
-        to_oneline_json_dyn_limit_limit_rps((out->limit_rps), buf, flags);
+        to_oneline_json_dyn_limit_limit_rps(pool, (out->limit_rps), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -3194,8 +3278,12 @@ dyn_limit_t* json_parse_dyn_limit(njt_pool_t *pool, const njt_str_t *json_string
     for ( ; /* parse unsuccessful */; ) {
         token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
         parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_str);
-        if (parse_result == JSMN_ERROR_INVAL || parse_result == JSMN_ERROR_PART) {
-            // njt_pfree(pool, token_buffer);
+        if (parse_result == JSMN_ERROR_INVAL) {
+            LOG_ERROR_JSON_PARSE(-1, "%s", "Invalid character inside JSON string");
+            return NULL;
+        }
+        if (parse_result == JSMN_ERROR_PART) {
+            LOG_ERROR_JSON_PARSE(-1, "%s", "The string is not a full JSON packet, more bytes expected");
             return NULL;
         }
         if (parse_result == JSMN_ERROR_NOMEM) {
@@ -3220,9 +3308,9 @@ njt_str_t* to_json_dyn_limit(njt_pool_t *pool, dyn_limit_t* out, njt_int_t flags
     njt_str_t *json_str;
     json_str = njt_palloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
-    get_json_length_dyn_limit(out, &str_len, flags);
+    get_json_length_dyn_limit(pool, out, &str_len, flags);
     json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
     json_str->len = 0;
-    to_oneline_json_dyn_limit(out, json_str, flags);
+    to_oneline_json_dyn_limit(pool, out, json_str, flags);
     return json_str;
 }

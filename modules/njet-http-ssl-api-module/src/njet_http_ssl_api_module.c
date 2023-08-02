@@ -14,7 +14,7 @@
 #include <njt_http_sendmsg_module.h>
 #include <njt_rpc_result_util.h>
 
-#include "njt_http_dyn_ssl_module.h"
+#include "njt_http_dyn_ssl_api_parser.h"
 
 
 extern njt_uint_t njt_worker;
@@ -618,16 +618,19 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     njt_chain_t                         *body_chain,*tmp_chain;
     njt_int_t                           rc;
     njt_uint_t                          len,size;
-    // njt_chain_t                         out;
-    // njt_str_t                           insert;
     njt_rpc_result_t                    *rpc_result = NULL;
-    njt_http_dyn_ssl_put_api_main_t     *api_data = NULL;
+    dyn_ssl_api_t                       *api_data = NULL;
     u_char                              *p;
+    njt_uint_t                           i;
     njt_pool_t                          *pool = NULL;
     uint32_t                            crc32;
     uint32_t						    topic_len = NJT_INT64_LEN  + 2 + 256; ///ins/ssl/l_
     njt_str_t							topic_name;
     njt_http_ssl_request_err_ctx_t      *err_ctx;
+    njt_str_t                           err_str;
+    njt_str_t                           *serverName;
+    njt_str_t                           *listen_str;
+    
 
    
     rpc_result = njt_rpc_result_create();
@@ -704,32 +707,21 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
         goto err;
     }
 
-    api_data = njt_pcalloc(pool, sizeof(njt_http_dyn_ssl_put_api_main_t));
-    if(api_data == NULL){
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, pool->log, 0,
-                       "could not alloc buffer in function %s", __func__);
-        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
-        njt_rpc_result_set_msg(rpc_result, (u_char *)" api_data malloc error");
-        rc = NJT_ERROR;
- 
-        goto err;
-    }
-
     njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
-    rc = njt_json_parse_data(pool, &json_str, njt_http_dyn_ssl_api_put_json_dt, api_data);
-    if(rc != NJT_OK ){
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, pool->log, 0,
-                       "api_data json parse erro in function %s", __func__);
-        njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_ERR_JSON);
-        njt_rpc_result_set_msg(rpc_result, (u_char *)" api_data json parse error");
+    api_data = json_parse_dyn_ssl_api(pool, &json_str, &err_str);
+    if (api_data == NULL)
+    {
+        njt_log_error(NJT_LOG_ERR, pool->log, 0, 
+                "json_parse_dyn_ssl err: %V",  &err_str);
+        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
+        njt_rpc_result_set_msg2(rpc_result, &err_str);
+
         rc = NJT_ERROR;
- 
         goto err;
     }
-
 
     //check format
-    if(api_data->cert_info.certificate.len < 1 || api_data->cert_info.certificate_key.len < 1){
+    if(api_data->cert_info->certificate->len < 1 || api_data->cert_info->certificateKey->len < 1){
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, pool->log, 0,
                        "cert or cert key is empty in function %s", __func__);
         njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_ERR_JSON);
@@ -739,36 +731,26 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
         goto err;
     }
 
-    //add
-	if(api_data->type.len == 3 && ( 
-            njt_strncmp(api_data->type.data, "add", 3) == 0
-            || njt_strncmp(api_data->type.data, "del", 3) == 0)
-    ) {
-	} else {
-		njt_log_debug1(NJT_LOG_DEBUG_HTTP, pool->log, 0,
-                       " dyn ssl type error in function %s", __func__);
-        njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_ERR_JSON);
-        njt_rpc_result_set_msg(rpc_result, (u_char *)" dyn ssl type error, support add or del");
-        rc = NJT_ERROR;
- 
-        goto err;
-	}
-
 	njt_crc32_init(crc32);
-    njt_crc32_update(&crc32, api_data->cert_info.cert_type.data,api_data->cert_info.cert_type.len);
-	njt_crc32_update(&crc32, api_data->cert_info.certificate.data,api_data->cert_info.certificate.len);
-    njt_crc32_update(&crc32, api_data->cert_info.certificate_key.data,api_data->cert_info.certificate_key.len);
-	if (api_data->server_names.nelts > 0) {
-        njt_str_t *tmp = api_data->server_names.elts;
-        if(tmp->len > 0){
-            njt_crc32_update(&crc32, tmp->data, tmp->len);
+    if(api_data->type == DYN_SSL_API_TYPE_ADD){
+        njt_crc32_update(&crc32, (u_char *)"add", 3);
+    }else{
+        njt_crc32_update(&crc32, (u_char *)"del", 3);
+    }
+    
+	njt_crc32_update(&crc32, api_data->cert_info->certificate->data,api_data->cert_info->certificate->len);
+    njt_crc32_update(&crc32, api_data->cert_info->certificateKey->data,api_data->cert_info->certificateKey->len);
+	for (i = 0; i < api_data->serverNames->nelts; i++){
+        serverName = get_dyn_ssl_api_serverNames_item(api_data->serverNames, i);
+        if(serverName->len > 0){
+            njt_crc32_update(&crc32, serverName->data, serverName->len);
         }
 	}
 
-	if (api_data->listens.nelts > 0) {
-        njt_str_t *tmp = api_data->listens.elts;
-        if(tmp->len > 0){
-            njt_crc32_update(&crc32, tmp->data, tmp->len);
+	for(i = 0; i < api_data->listens->nelts; i++){
+        listen_str = get_dyn_ssl_api_listens_item(api_data->listens, i);
+        if(listen_str->len > 0){
+            njt_crc32_update(&crc32, listen_str->data, listen_str->len);
         }
 	}
 
@@ -787,7 +769,7 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
 	njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
                       " ===========type:[%V]  crc32:%ui", &api_data->type, crc32);    
 
-	if(njt_strncmp(api_data->type.data, "del", 3) == 0 ){
+	if(api_data->type == DYN_SSL_API_TYPE_DEL){
 		p = njt_snprintf(topic_name.data,topic_len,"/ins/ssl/l_%ui",crc32);
         topic_name.len = p - topic_name.data;
 
