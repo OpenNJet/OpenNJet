@@ -167,7 +167,7 @@ njt_http_v3_header_filter(njt_http_request_t *r)
             n = sizeof(NJT_VER_BUILD) - 1;
 
         } else {
-            n = sizeof("nginx") - 1;
+            n = sizeof("njet") - 1;
         }
 
         len += njt_http_v3_encode_field_lri(NULL, 0,
