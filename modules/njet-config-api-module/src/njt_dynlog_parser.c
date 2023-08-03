@@ -186,27 +186,15 @@ dynlog_accessLog_t* create_dynlog_accessLog(njt_pool_t *pool) {
 static void to_oneline_json_dynlog_accessLog_path(njt_pool_t *pool, dynlog_accessLog_path_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynlog_accessLog_formatName(njt_pool_t *pool, dynlog_accessLog_formatName_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynlog_accessLog(njt_pool_t *pool, dynlog_accessLog_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -619,14 +607,8 @@ dynlog_locationDef_t* create_dynlog_locationDef(njt_pool_t *pool) {
 static void to_oneline_json_dynlog_locationDef_location(njt_pool_t *pool, dynlog_locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 // to_oneline_json_REF
 
@@ -1022,14 +1004,8 @@ dynlog_accessLogFormat_t* create_dynlog_accessLogFormat(njt_pool_t *pool) {
 static void to_oneline_json_dynlog_accessLogFormat_name(njt_pool_t *pool, dynlog_accessLogFormat_name_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynlog_accessLogFormat_escape(njt_pool_t *pool, dynlog_accessLogFormat_escape_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1054,14 +1030,8 @@ static void to_oneline_json_dynlog_accessLogFormat_escape(njt_pool_t *pool, dynl
 static void to_oneline_json_dynlog_accessLogFormat_format(njt_pool_t *pool, dynlog_accessLogFormat_format_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynlog_accessLogFormat(njt_pool_t *pool, dynlog_accessLogFormat_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1780,14 +1750,8 @@ dynlog_t* create_dynlog(njt_pool_t *pool) {
 static void to_oneline_json_dynlog_servers_item_listens_item(njt_pool_t *pool, dynlog_servers_item_listens_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynlog_servers_item_listens(njt_pool_t *pool, dynlog_servers_item_listens_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1826,14 +1790,8 @@ static void to_oneline_json_dynlog_servers_item_listens(njt_pool_t *pool, dynlog
 static void to_oneline_json_dynlog_servers_item_serverNames_item(njt_pool_t *pool, dynlog_servers_item_serverNames_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynlog_servers_item_serverNames(njt_pool_t *pool, dynlog_servers_item_serverNames_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -2097,7 +2055,6 @@ dynlog_t* json_parse_dynlog(njt_pool_t *pool, const njt_str_t *json_string, njt_
         }
         if (parse_result == JSMN_ERROR_NOMEM) {
             max_token_number += max_token_number;
-            printf("max_token_number: %ld\n", max_token_number);
             continue;
         }
         if (parse_result == 0) {

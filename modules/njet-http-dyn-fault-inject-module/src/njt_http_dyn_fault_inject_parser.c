@@ -339,23 +339,23 @@ static void get_json_length_dyn_fault_inject_locationDef_fault_inject_type(njt_p
 
 static void get_json_length_dyn_fault_inject_locationDef_delay_percentage(njt_pool_t *pool, dyn_fault_inject_locationDef_delay_percentage_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
-    int len;
-    len = sprintf((char *)str, "%ld", *out);
-    *length += len;
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
 }
 
 static void get_json_length_dyn_fault_inject_locationDef_abort_percentage(njt_pool_t *pool, dyn_fault_inject_locationDef_abort_percentage_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
-    int len;
-    len = sprintf((char *)str, "%ld", *out);
-    *length += len;
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
 }
 
 static void get_json_length_dyn_fault_inject_locationDef_status_code(njt_pool_t *pool, dyn_fault_inject_locationDef_status_code_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
-    int len;
-    len = sprintf((char *)str, "%ld", *out);
-    *length += len;
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
 }
 
 static void get_json_length_dyn_fault_inject_locationDef_delay_duration(njt_pool_t *pool, dyn_fault_inject_locationDef_delay_duration_t *out, size_t *length, njt_int_t flags) {
@@ -527,14 +527,8 @@ dyn_fault_inject_locationDef_t* create_dyn_fault_inject_locationDef(njt_pool_t *
 static void to_oneline_json_dyn_fault_inject_locationDef_location(njt_pool_t *pool, dyn_fault_inject_locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_fault_inject_locationDef_fault_inject_type(njt_pool_t *pool, dyn_fault_inject_locationDef_fault_inject_type_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -563,36 +557,27 @@ static void to_oneline_json_dyn_fault_inject_locationDef_fault_inject_type(njt_p
 
 static void to_oneline_json_dyn_fault_inject_locationDef_delay_percentage(njt_pool_t *pool, dyn_fault_inject_locationDef_delay_percentage_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    int len;
-    len = sprintf((char *)cur, "%ld", *out);
-    buf->len += len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_fault_inject_locationDef_abort_percentage(njt_pool_t *pool, dyn_fault_inject_locationDef_abort_percentage_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    int len;
-    len = sprintf((char *)cur, "%ld", *out);
-    buf->len += len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_fault_inject_locationDef_status_code(njt_pool_t *pool, dyn_fault_inject_locationDef_status_code_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    int len;
-    len = sprintf((char *)cur, "%ld", *out);
-    buf->len += len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_fault_inject_locationDef_delay_duration(njt_pool_t *pool, dyn_fault_inject_locationDef_delay_duration_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 // to_oneline_json_REF
 
@@ -1277,14 +1262,8 @@ dyn_fault_inject_t* create_dyn_fault_inject(njt_pool_t *pool) {
 static void to_oneline_json_dyn_fault_inject_servers_item_listens_item(njt_pool_t *pool, dyn_fault_inject_servers_item_listens_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_fault_inject_servers_item_listens(njt_pool_t *pool, dyn_fault_inject_servers_item_listens_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1323,14 +1302,8 @@ static void to_oneline_json_dyn_fault_inject_servers_item_listens(njt_pool_t *po
 static void to_oneline_json_dyn_fault_inject_servers_item_serverNames_item(njt_pool_t *pool, dyn_fault_inject_servers_item_serverNames_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_fault_inject_servers_item_serverNames(njt_pool_t *pool, dyn_fault_inject_servers_item_serverNames_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1544,7 +1517,6 @@ dyn_fault_inject_t* json_parse_dyn_fault_inject(njt_pool_t *pool, const njt_str_
         }
         if (parse_result == JSMN_ERROR_NOMEM) {
             max_token_number += max_token_number;
-            printf("max_token_number: %ld\n", max_token_number);
             continue;
         }
         if (parse_result == 0) {

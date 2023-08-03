@@ -938,14 +938,8 @@ dyn_ssl_t* create_dyn_ssl(njt_pool_t *pool) {
 static void to_oneline_json_dyn_ssl_servers_item_listens_item(njt_pool_t *pool, dyn_ssl_servers_item_listens_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_ssl_servers_item_listens(njt_pool_t *pool, dyn_ssl_servers_item_listens_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -984,14 +978,8 @@ static void to_oneline_json_dyn_ssl_servers_item_listens(njt_pool_t *pool, dyn_s
 static void to_oneline_json_dyn_ssl_servers_item_serverNames_item(njt_pool_t *pool, dyn_ssl_servers_item_serverNames_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_ssl_servers_item_serverNames(njt_pool_t *pool, dyn_ssl_servers_item_serverNames_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1044,53 +1032,29 @@ static void to_oneline_json_dyn_ssl_servers_item_certificates_item_cert_type(njt
 static void to_oneline_json_dyn_ssl_servers_item_certificates_item_certificate(njt_pool_t *pool, dyn_ssl_servers_item_certificates_item_certificate_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_ssl_servers_item_certificates_item_certificateKey(njt_pool_t *pool, dyn_ssl_servers_item_certificates_item_certificateKey_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_ssl_servers_item_certificates_item_certificateEnc(njt_pool_t *pool, dyn_ssl_servers_item_certificates_item_certificateEnc_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_ssl_servers_item_certificates_item_certificateKeyEnc(njt_pool_t *pool, dyn_ssl_servers_item_certificates_item_certificateKeyEnc_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_ssl_servers_item_certificates_item(njt_pool_t *pool, dyn_ssl_servers_item_certificates_item_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1343,7 +1307,6 @@ dyn_ssl_t* json_parse_dyn_ssl(njt_pool_t *pool, const njt_str_t *json_string, nj
         }
         if (parse_result == JSMN_ERROR_NOMEM) {
             max_token_number += max_token_number;
-            printf("max_token_number: %ld\n", max_token_number);
             continue;
         }
         if (parse_result == 0) {

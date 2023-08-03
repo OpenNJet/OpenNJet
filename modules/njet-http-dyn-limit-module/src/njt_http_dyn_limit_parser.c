@@ -903,9 +903,9 @@ static void get_json_length_dyn_limit_locationDef_limit_conns_item_zone(njt_pool
 
 static void get_json_length_dyn_limit_locationDef_limit_conns_item_conn(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_item_conn_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
-    int len;
-    len = sprintf((char *)str, "%ld", *out);
-    *length += len;
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
 }
 
 static void get_json_length_dyn_limit_locationDef_limit_conns_item(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_item_t *out, size_t *length, njt_int_t flags) {
@@ -1004,9 +1004,9 @@ static void get_json_length_dyn_limit_locationDef_limit_conn_log_level(njt_pool_
 
 static void get_json_length_dyn_limit_locationDef_limit_conn_status(njt_pool_t *pool, dyn_limit_locationDef_limit_conn_status_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
-    int len;
-    len = sprintf((char *)str, "%ld", *out);
-    *length += len;
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
 }
 // BEGIN GET_JSON_LENGTH ENUM
 
@@ -1030,9 +1030,9 @@ static void get_json_length_dyn_limit_locationDef_limit_reqs_item_zone(njt_pool_
 
 static void get_json_length_dyn_limit_locationDef_limit_reqs_item_burst(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_burst_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
-    int len;
-    len = sprintf((char *)str, "%ld", *out);
-    *length += len;
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
 }
 
 static void get_json_length_dyn_limit_locationDef_limit_reqs_item_delay(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_delay_t *out, size_t *length, njt_int_t flags) {
@@ -1146,9 +1146,9 @@ static void get_json_length_dyn_limit_locationDef_limit_req_log_level(njt_pool_t
 
 static void get_json_length_dyn_limit_locationDef_limit_req_status(njt_pool_t *pool, dyn_limit_locationDef_limit_req_status_t *out, size_t *length, njt_int_t flags) {
     u_char str[24];
-    int len;
-    len = sprintf((char *)str, "%ld", *out);
-    *length += len;
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
 }
 // GET_JSON_LENGTH_REF
 
@@ -1483,40 +1483,22 @@ dyn_limit_locationDef_t* create_dyn_limit_locationDef(njt_pool_t *pool) {
 static void to_oneline_json_dyn_limit_locationDef_location(njt_pool_t *pool, dyn_limit_locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_locationDef_limit_rate(njt_pool_t *pool, dyn_limit_locationDef_limit_rate_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_locationDef_limit_rate_after(njt_pool_t *pool, dyn_limit_locationDef_limit_rate_after_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_locationDef_limit_conns_scope(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_scope_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1536,21 +1518,14 @@ static void to_oneline_json_dyn_limit_locationDef_limit_conns_scope(njt_pool_t *
 static void to_oneline_json_dyn_limit_locationDef_limit_conns_item_zone(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_locationDef_limit_conns_item_conn(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_item_conn_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    int len;
-    len = sprintf((char *)cur, "%ld", *out);
-    buf->len += len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_locationDef_limit_conns_item(njt_pool_t *pool, dyn_limit_locationDef_limit_conns_item_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1667,9 +1642,8 @@ static void to_oneline_json_dyn_limit_locationDef_limit_conn_log_level(njt_pool_
 
 static void to_oneline_json_dyn_limit_locationDef_limit_conn_status(njt_pool_t *pool, dyn_limit_locationDef_limit_conn_status_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    int len;
-    len = sprintf((char *)cur, "%ld", *out);
-    buf->len += len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_locationDef_limit_reqs_scope(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_scope_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1689,34 +1663,21 @@ static void to_oneline_json_dyn_limit_locationDef_limit_reqs_scope(njt_pool_t *p
 static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item_zone(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item_burst(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_burst_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    int len;
-    len = sprintf((char *)cur, "%ld", *out);
-    buf->len += len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item_delay(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_delay_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool, dyn_limit_locationDef_limit_reqs_item_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1845,9 +1806,8 @@ static void to_oneline_json_dyn_limit_locationDef_limit_req_log_level(njt_pool_t
 
 static void to_oneline_json_dyn_limit_locationDef_limit_req_status(njt_pool_t *pool, dyn_limit_locationDef_limit_req_status_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    int len;
-    len = sprintf((char *)cur, "%ld", *out);
-    buf->len += len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
 }
 // to_oneline_json_REF
 
@@ -2906,14 +2866,8 @@ dyn_limit_t* create_dyn_limit(njt_pool_t *pool) {
 static void to_oneline_json_dyn_limit_servers_item_listens_item(njt_pool_t *pool, dyn_limit_servers_item_listens_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_servers_item_listens(njt_pool_t *pool, dyn_limit_servers_item_listens_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -2952,14 +2906,8 @@ static void to_oneline_json_dyn_limit_servers_item_listens(njt_pool_t *pool, dyn
 static void to_oneline_json_dyn_limit_servers_item_serverNames_item(njt_pool_t *pool, dyn_limit_servers_item_serverNames_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_servers_item_serverNames(njt_pool_t *pool, dyn_limit_servers_item_serverNames_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -3125,27 +3073,15 @@ static void to_oneline_json_dyn_limit_servers(njt_pool_t *pool, dyn_limit_server
 static void to_oneline_json_dyn_limit_limit_rps_item_zone(njt_pool_t *pool, dyn_limit_limit_rps_item_zone_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_limit_rps_item_rate(njt_pool_t *pool, dyn_limit_limit_rps_item_rate_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dyn_limit_limit_rps_item(njt_pool_t *pool, dyn_limit_limit_rps_item_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -3288,7 +3224,6 @@ dyn_limit_t* json_parse_dyn_limit(njt_pool_t *pool, const njt_str_t *json_string
         }
         if (parse_result == JSMN_ERROR_NOMEM) {
             max_token_number += max_token_number;
-            printf("max_token_number: %ld\n", max_token_number);
             continue;
         }
         if (parse_result == 0) {

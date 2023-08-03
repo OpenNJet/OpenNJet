@@ -245,27 +245,15 @@ health_checks_t* create_health_checks(njt_pool_t *pool, size_t nelts) {
 static void to_oneline_json_health_checks_item_hc_type(njt_pool_t *pool, health_checks_item_hc_type_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_health_checks_item_upstream_name(njt_pool_t *pool, health_checks_item_upstream_name_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_health_checks_item(njt_pool_t *pool, health_checks_item_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -364,7 +352,6 @@ health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *jso
         }
         if (parse_result == JSMN_ERROR_NOMEM) {
             max_token_number += max_token_number;
-            printf("max_token_number: %ld\n", max_token_number);
             continue;
         }
         if (parse_result == 0) {

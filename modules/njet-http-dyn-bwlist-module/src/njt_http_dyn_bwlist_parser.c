@@ -894,14 +894,8 @@ dynbwlist_locationDef_t* create_dynbwlist_locationDef(njt_pool_t *pool) {
 static void to_oneline_json_dynbwlist_locationDef_location(njt_pool_t *pool, dynbwlist_locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynbwlist_locationDef_accessIpv4_item_rule(njt_pool_t *pool, dynbwlist_locationDef_accessIpv4_item_rule_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -921,27 +915,15 @@ static void to_oneline_json_dynbwlist_locationDef_accessIpv4_item_rule(njt_pool_
 static void to_oneline_json_dynbwlist_locationDef_accessIpv4_item_addr(njt_pool_t *pool, dynbwlist_locationDef_accessIpv4_item_addr_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynbwlist_locationDef_accessIpv4_item_mask(njt_pool_t *pool, dynbwlist_locationDef_accessIpv4_item_mask_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynbwlist_locationDef_accessIpv4_item(njt_pool_t *pool, dynbwlist_locationDef_accessIpv4_item_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1047,27 +1029,15 @@ static void to_oneline_json_dynbwlist_locationDef_accessIpv6_item_rule(njt_pool_
 static void to_oneline_json_dynbwlist_locationDef_accessIpv6_item_addr(njt_pool_t *pool, dynbwlist_locationDef_accessIpv6_item_addr_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynbwlist_locationDef_accessIpv6_item_mask(njt_pool_t *pool, dynbwlist_locationDef_accessIpv6_item_mask_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynbwlist_locationDef_accessIpv6_item(njt_pool_t *pool, dynbwlist_locationDef_accessIpv6_item_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1814,14 +1784,8 @@ dynbwlist_t* create_dynbwlist(njt_pool_t *pool) {
 static void to_oneline_json_dynbwlist_servers_item_listens_item(njt_pool_t *pool, dynbwlist_servers_item_listens_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynbwlist_servers_item_listens(njt_pool_t *pool, dynbwlist_servers_item_listens_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -1860,14 +1824,8 @@ static void to_oneline_json_dynbwlist_servers_item_listens(njt_pool_t *pool, dyn
 static void to_oneline_json_dynbwlist_servers_item_serverNames_item(njt_pool_t *pool, dynbwlist_servers_item_serverNames_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
-    if (dst->len > 0) {
-        int len;
-        len = sprintf((char *)cur, "\"%s\"", (char *)(dst->data));
-        buf->len += len;
-    } else {
-        sprintf((char *)cur, "\"\"");
-        buf->len += 2;
-    }
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_dynbwlist_servers_item_serverNames(njt_pool_t *pool, dynbwlist_servers_item_serverNames_t *out, njt_str_t* buf, njt_int_t flags) {
@@ -2081,7 +2039,6 @@ dynbwlist_t* json_parse_dynbwlist(njt_pool_t *pool, const njt_str_t *json_string
         }
         if (parse_result == JSMN_ERROR_NOMEM) {
             max_token_number += max_token_number;
-            printf("max_token_number: %ld\n", max_token_number);
             continue;
         }
         if (parse_result == 0) {
