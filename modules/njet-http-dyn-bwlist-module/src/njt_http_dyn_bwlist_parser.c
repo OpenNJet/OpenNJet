@@ -2039,7 +2039,6 @@ dynbwlist_t* json_parse_dynbwlist(njt_pool_t *pool, const njt_str_t *json_string
         }
         if (parse_result == JSMN_ERROR_NOMEM) {
             max_token_number += max_token_number;
-            printf("max_token_number: %ld\n", max_token_number);
             continue;
         }
         if (parse_result == 0) {
