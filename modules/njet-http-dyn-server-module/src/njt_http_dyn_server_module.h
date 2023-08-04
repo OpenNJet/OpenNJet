@@ -27,8 +27,8 @@ typedef struct njt_http_dyn_server_info_s {
     njt_pool_t *pool;
     njt_http_core_srv_conf_t *cscf;
     njt_str_t     msg;
-    u_char *buffer;
-    int32_t buffer_len;
+    njt_str_t buffer;
+    njt_int_t   bind;
 } njt_http_dyn_server_info_t;
 
 typedef struct njt_http_dyn_server_loc_conf_s {

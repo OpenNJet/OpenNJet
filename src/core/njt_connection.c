@@ -1578,7 +1578,7 @@ njt_get_listening(njt_conf_t *cf, struct sockaddr *sockaddr,
     njt_listening_t   *ls;
     ls = cf->cycle->listening.elts;
     for (i = 0; i < cf->cycle->listening.nelts; i++) {
-	if(ls[i].socklen == socklen && njt_memcmp(sockaddr,ls->sockaddr,socklen) == 0){
+	if(ls[i].socklen == socklen && njt_memcmp(sockaddr,ls[i].sockaddr,socklen) == 0){
 	   return &ls[i];
 	}	
     }

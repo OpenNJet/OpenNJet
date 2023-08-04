@@ -215,6 +215,8 @@ typedef struct {
     njt_pool_t                *named_parent_pool;
 #endif
 #if (NJT_HTTP_DYNAMIC_SERVER)
+    unsigned		      dynamic:1;
+    njt_uint_t                listen_ref_num;
     njt_pool_t                *pool;
 #endif
 } njt_http_core_srv_conf_t;
