@@ -13,9 +13,13 @@
 #include <njt_http_kv_module.h>
 #include <njt_http_sendmsg_module.h>
 #include <njt_rpc_result_util.h>
+#include <njt_http_util.h>
 
 #include "njt_http_dyn_ssl_api_parser.h"
 
+
+#define MIN_CONFIG_BODY_LEN 2
+#define MAX_CONFIG_BODY_LEN 5242880
 
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
@@ -615,9 +619,7 @@ static njt_int_t njt_http_dyn_ssl_rpc_send(njt_http_request_t *r,njt_str_t *modu
 static void
 njt_http_dyn_ssl_read_data(njt_http_request_t *r){
 	njt_str_t                           json_str;
-    njt_chain_t                         *body_chain,*tmp_chain;
     njt_int_t                           rc;
-    njt_uint_t                          len,size;
     njt_rpc_result_t                    *rpc_result = NULL;
     dyn_ssl_api_t                       *api_data = NULL;
     u_char                              *p;
@@ -632,7 +634,6 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     njt_str_t                           *listen_str;
     
 
-   
     rpc_result = njt_rpc_result_create();
     if(rpc_result == NULL){
        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rpc_result allocate null");
@@ -640,29 +641,15 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
        goto out;
     }
 
-    if (r->request_body == NULL) {
+    rc = njt_http_util_read_request_body(r, &json_str, MIN_CONFIG_BODY_LEN, MAX_CONFIG_BODY_LEN);
+    if(rc!=NJT_OK){
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "request_body is null in function %s", __func__);
+                       "request_body error in function %s", __func__);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
-        njt_rpc_result_set_msg(rpc_result, (u_char *)" request_body is null");
-        rc = NJT_ERROR;
-         goto err;
-    }
-
-    body_chain = r->request_body->bufs;
-    body_chain = r->request_body->bufs;
-    if(body_chain == NULL){
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "body_chain is null in function %s", __func__);
-        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
-        njt_rpc_result_set_msg(rpc_result, (u_char *)" body_chain is null");
-        rc = NJT_ERROR;
+        njt_rpc_result_set_msg(rpc_result, (u_char *)" request_body error");
         goto err;
     }
 	
-    /*check the sanity of the json body*/
-    json_str.data = body_chain->buf->pos;
-    json_str.len = body_chain->buf->last - body_chain->buf->pos;
 	if(json_str.len < 2 ){
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "json len is too short in function %s", __func__);
@@ -672,30 +659,6 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
         goto err;
     }
 
-	len = 0 ;
-    tmp_chain = body_chain;
-    while (tmp_chain!= NULL){
-        len += tmp_chain->buf->last - tmp_chain->buf->pos;
-        tmp_chain = tmp_chain->next;
-    }
-    json_str.len = len;
-    json_str.data = njt_pcalloc(r->pool,len);
-    if(json_str.data == NULL){
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "could not alloc buffer in function %s", __func__);
-        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
-        njt_rpc_result_set_msg(rpc_result, (u_char *)" could not alloc buffer");
-        rc = NJT_ERROR;
-        goto err;
-    }
-    len = 0;
-    tmp_chain = r->request_body->bufs;
-    while (tmp_chain!= NULL){
-        size = tmp_chain->buf->last-tmp_chain->buf->pos;
-        njt_memcpy(json_str.data + len,tmp_chain->buf->pos,size);
-        tmp_chain = tmp_chain->next;
-        len += size;
-    }
 
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
     if(pool == NULL){
