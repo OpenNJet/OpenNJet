@@ -1593,7 +1593,7 @@ static njt_str_t njt_http_location_get_full_name(njt_pool_t *pool,njt_str_t src)
   njt_memzero(&cf, sizeof(njt_conf_t));
   cf.pool = pool;
   cf.temp_pool = pool;
-
+  cf.log = njt_cycle->log;
   cf.args = njt_array_create(cf.pool, 10, sizeof(njt_str_t));
     if (cf.args == NULL) {
         return full_name;

@@ -211,6 +211,7 @@ njt_regex_compile(njt_regex_compile_t *rc)
 
         elt->regex = rc->regex;
         elt->name = rc->pattern.data;
+	elt->dynamic = rc->pool.dynamic;
     }
 
     n = pcre2_pattern_info(re, PCRE2_INFO_CAPTURECOUNT, &rc->captures);
@@ -334,6 +335,7 @@ njt_regex_compile(njt_regex_compile_t *rc)
 
         elt->regex = rc->regex;
         elt->name = rc->pattern.data;
+	elt->dynamic = rc->pool->dynamic;
     }
 
     n = pcre_fullinfo(re, NULL, PCRE_INFO_CAPTURECOUNT, &rc->captures);
@@ -578,9 +580,11 @@ njt_regex_cleanup(void *data)
          */
 
 #if (NJT_PCRE2)
-        pcre2_code_free(elts[i].regex);
+	if(elts[i].dynamic == 0) {
+        	pcre2_code_free(elts[i].regex);
+	}
 #else
-        if (elts[i].regex->extra != NULL) {
+        if (elts[i].dynamic == 0 &&  elts[i].regex->extra != NULL) {
             pcre_free_study(elts[i].regex->extra);
         }
 #endif

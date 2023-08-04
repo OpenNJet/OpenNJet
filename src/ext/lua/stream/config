@@ -36,7 +36,7 @@ if [ -n "$LUAJIT_INC" -o -n "$LUAJIT_LIB" ]; then
         njt_feature_path="$LUAJIT_INC"
         njt_lua_opt_I="-I$LUAJIT_INC"
         njt_lua_opt_L="-L$LUAJIT_LIB"
-        luajit_ld_opt="-lm -ldl -lpcre"
+        luajit_ld_opt="-lm -ldl"
 
         # ensure that -I$LUAJIT_INC and -L$LUAJIT_LIB come first
         SAVED_CC_TEST_FLAGS="$CC_TEST_FLAGS"
@@ -128,7 +128,7 @@ else
         # Gentoo with LuaJIT-2.0, try with -ldl
         njt_feature="LuaJIT library in /usr/"
         njt_feature_path="/usr/include/luajit-2.0"
-        luajit_ld_opt="-lm -ldl -lpcre"
+        luajit_ld_opt="-lm -ldl"
         LUAJIT_LIB="/usr/lib"
         if [ $NJT_RPATH = YES ]; then
             njt_feature_libs="-R/usr/lib -L/usr/lib -lm -lluajit-5.1 -ldl"
