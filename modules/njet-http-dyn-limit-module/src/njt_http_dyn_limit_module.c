@@ -1375,12 +1375,6 @@ static njt_int_t njt_dyn_limit_update_locs(njt_array_t *locs, njt_queue_t *q, nj
         {
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
-            if(clcf != NULL && rpc_result){
-                njt_rpc_result_set_conf_path(rpc_result, &parent_conf_path);
-                end = njt_snprintf(data_buf,sizeof(data_buf) - 1, ".locations[%V]", &clcf->full_name);
-                rpc_data_str.len = end - data_buf;
-                njt_rpc_result_append_conf_path(rpc_result, &rpc_data_str);
-            }
             
             if (clcf != NULL && name->len == clcf->full_name.len && njt_strncmp(name->data, clcf->full_name.data, name->len) == 0)
             {   
