@@ -661,9 +661,10 @@ static bool parse_dyn_vts(njt_pool_t *pool, parse_state_t *parse_state, dyn_vts_
     }
     const int saved_current_token = parse_state->current_token;
     parse_state->current_token = object_start_token;
+    // HAHB
     if (!seen_servers) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': servers", parse_state->current_key)
-        return true;
+        out->servers = njt_palloc(pool, sizeof(njt_array_t));
+        memset(out->servers, 0, sizeof(njt_array_t));
     }
     // HAHB
     if (!seen_vhost_traffic_status_filter_by_set_key) {
