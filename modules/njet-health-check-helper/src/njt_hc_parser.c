@@ -12,15 +12,15 @@
 /* ========================== Generated parsers ========================== */
 
 
-static bool parse_health_checks_item(njt_pool_t *pool, parse_state_t *parse_state, health_checks_item_t *out, njt_str_t *err_str) {
+static bool parse_health_check_stream(njt_pool_t *pool, parse_state_t *parse_state, health_check_stream_t *out, njt_str_t *err_str) {
     njt_uint_t i;
     // malloc pool for object first
 
     if (check_type(pool, parse_state, JSMN_OBJECT, err_str)) {
         return true;
     }
-    bool seen_hc_type = false;
-    bool seen_upstream_name = false;
+    bool seen_send = false;
+    bool seen_expect = false;
     const int object_start_token = parse_state->current_token;
     const uint64_t n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
@@ -33,67 +33,67 @@ static bool parse_health_checks_item(njt_pool_t *pool, parse_state_t *parse_stat
             LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing value in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
             return true;
         }
-        if (current_string_is(parse_state, "hc_type")) {
-            if (seen_hc_type) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': hc_type", parse_state->current_key)
+        if (current_string_is(parse_state, "send")) {
+            if (seen_send) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': send", parse_state->current_key)
                 return true;
             }
-            seen_hc_type = true;
+            seen_send = true;
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "hc_type";
-            out->hc_type = njt_palloc(pool, sizeof(njt_str_t));
-            if (out->hc_type == NULL) {
+            parse_state->current_key = "send";
+            out->send = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->send == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
             // first get str len from TOKEN_STRING
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            (out->hc_type) = njt_palloc(pool, sizeof(njt_str_t));
-            if ((out->hc_type) == NULL) {
+            (out->send) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->send) == NULL) {
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->hc_type))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
-            ((out->hc_type))->len = token_size;
-            if ((out->hc_type)->len == 0) {
-                ((out->hc_type))->data = NULL;
-            } else if ((out->hc_type)->data == NULL) {
+            ((out->send))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->send))->len = token_size;
+            if ((out->send)->len == 0) {
+                ((out->send))->data = NULL;
+            } else if ((out->send)->data == NULL) {
                 // TODO LOG_ERROR
                 return true;
             }
-            if (builtin_parse_string(pool, parse_state, (out->hc_type), 0, ((out->hc_type))->len, err_str)) {
+            if (builtin_parse_string(pool, parse_state, (out->send), 0, ((out->send))->len, err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "upstream_name")) {
-            if (seen_upstream_name) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': upstream_name", parse_state->current_key)
+        } else if (current_string_is(parse_state, "expect")) {
+            if (seen_expect) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': expect", parse_state->current_key)
                 return true;
             }
-            seen_upstream_name = true;
+            seen_expect = true;
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "upstream_name";
-            out->upstream_name = njt_palloc(pool, sizeof(njt_str_t));
-            if (out->upstream_name == NULL) {
+            parse_state->current_key = "expect";
+            out->expect = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->expect == NULL) {
                 LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
             }
             // first get str len from TOKEN_STRING
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            (out->upstream_name) = njt_palloc(pool, sizeof(njt_str_t));
-            if ((out->upstream_name) == NULL) {
+            (out->expect) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->expect) == NULL) {
                 // TODO LOG_ERROR
                 return true;
             }
-            ((out->upstream_name))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
-            ((out->upstream_name))->len = token_size;
-            if ((out->upstream_name)->len == 0) {
-                ((out->upstream_name))->data = NULL;
-            } else if ((out->upstream_name)->data == NULL) {
+            ((out->expect))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->expect))->len = token_size;
+            if ((out->expect)->len == 0) {
+                ((out->expect))->data = NULL;
+            } else if ((out->expect)->data == NULL) {
                 // TODO LOG_ERROR
                 return true;
             }
-            if (builtin_parse_string(pool, parse_state, (out->upstream_name), 0, ((out->upstream_name))->len, err_str)) {
+            if (builtin_parse_string(pool, parse_state, (out->expect), 0, ((out->expect))->len, err_str)) {
                 return true;
             }
             parse_state->current_key = saved_key;
@@ -104,20 +104,52 @@ static bool parse_health_checks_item(njt_pool_t *pool, parse_state_t *parse_stat
     }
     const int saved_current_token = parse_state->current_token;
     parse_state->current_token = object_start_token;
-    if (!seen_hc_type) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': hc_type", parse_state->current_key)
-        return true;
+    // HAHB
+    if (!seen_send) {
+        out->send = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->send == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->send)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->send)->len = token_size;
+        if (out->send->len == 0) {
+            (out->send)->data = NULL;
+        } else if (out->send->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->send->len > 0) {
+            njt_memcpy(out->send->data, "", token_size);
+        }
     }
-    if (!seen_upstream_name) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': upstream_name", parse_state->current_key)
-        return true;
+    // HAHB
+    if (!seen_expect) {
+        out->expect = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->expect == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->expect)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->expect)->len = token_size;
+        if (out->expect->len == 0) {
+            (out->expect)->data = NULL;
+        } else if (out->expect->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->expect->len > 0) {
+            njt_memcpy(out->expect->data, "", token_size);
+        }
     }
     parse_state->current_token = saved_current_token;
     return false;
 }
 
 
-static bool parse_health_checks(njt_pool_t *pool, parse_state_t *parse_state, health_checks_t *out, njt_str_t *err_str) {
+static bool parse_health_check_http_header(njt_pool_t *pool, parse_state_t *parse_state, health_check_http_header_t *out, njt_str_t *err_str) {
     int i;
     if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
         return true;
@@ -127,8 +159,23 @@ static bool parse_health_checks(njt_pool_t *pool, parse_state_t *parse_state, he
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         // TODO CHECK write later
-        ((health_checks_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(health_checks_item_t));
-        if (parse_health_checks_item(pool, parse_state, ((health_checks_item_t**)out->elts)[i], err_str)) {
+        ((health_check_http_header_item_t*)out->elts)[i] = njt_palloc(pool, sizeof(njt_str_t));
+        // first get str len from TOKEN_STRING
+        int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+        ((health_check_http_header_item_t*)out->elts)[i] = njt_palloc(pool, sizeof(njt_str_t));
+        if (((health_check_http_header_item_t*)out->elts)[i] == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        (((health_check_http_header_item_t*)out->elts)[i])->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+        (((health_check_http_header_item_t*)out->elts)[i])->len = token_size;
+        if (((health_check_http_header_item_t*)out->elts)[i]->len == 0) {
+            (((health_check_http_header_item_t*)out->elts)[i])->data = NULL;
+        } else if (((health_check_http_header_item_t*)out->elts)[i]->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (builtin_parse_string(pool, parse_state, ((health_check_http_header_item_t*)out->elts)[i], 0, (((health_check_http_header_item_t*)out->elts)[i])->len, err_str)) {
             return true;
         }
         out->nelts ++;
@@ -137,17 +184,1361 @@ static bool parse_health_checks(njt_pool_t *pool, parse_state_t *parse_state, he
 }
 
 
-static void get_json_length_health_checks_item_hc_type(njt_pool_t *pool, health_checks_item_hc_type_t *out, size_t *length, njt_int_t flags) {
+static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state, health_check_http_t *out, njt_str_t *err_str) {
+    njt_uint_t i;
+    // malloc pool for object first
+
+    if (check_type(pool, parse_state, JSMN_OBJECT, err_str)) {
+        return true;
+    }
+    bool seen_uri = false;
+    bool seen_grpcService = false;
+    bool seen_grpcStatus = false;
+    bool seen_header = false;
+    bool seen_body = false;
+    bool seen_status = false;
+    const int object_start_token = parse_state->current_token;
+    const uint64_t n = parse_state->tokens[parse_state->current_token].size;
+    parse_state->current_token += 1;
+    for (i = 0; i < n; ++i) {
+        if (CURRENT_TOKEN(parse_state).size > 1) {
+            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing separator between values in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            return true;
+        }
+        if (CURRENT_TOKEN(parse_state).size < 1) {
+            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing value in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            return true;
+        }
+        if (current_string_is(parse_state, "uri")) {
+            if (seen_uri) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': uri", parse_state->current_key)
+                return true;
+            }
+            seen_uri = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "uri";
+            out->uri = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->uri == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->uri) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->uri) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->uri))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->uri))->len = token_size;
+            if ((out->uri)->len == 0) {
+                ((out->uri))->data = NULL;
+            } else if ((out->uri)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->uri), 0, ((out->uri))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "grpcService")) {
+            if (seen_grpcService) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': grpcService", parse_state->current_key)
+                return true;
+            }
+            seen_grpcService = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "grpcService";
+            out->grpcService = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->grpcService == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->grpcService) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->grpcService) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->grpcService))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->grpcService))->len = token_size;
+            if ((out->grpcService)->len == 0) {
+                ((out->grpcService))->data = NULL;
+            } else if ((out->grpcService)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->grpcService), 0, ((out->grpcService))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "grpcStatus")) {
+            if (seen_grpcStatus) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': grpcStatus", parse_state->current_key)
+                return true;
+            }
+            seen_grpcStatus = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "grpcStatus";
+            int64_t int_parse_tmp;
+            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_str)) {
+                return true;
+            }
+            if (!(int_parse_tmp >= 0)) {
+                parse_state->current_token -= 1;
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be >= 0.", int_parse_tmp, parse_state->current_key)
+                return true;
+            }
+            *(&out->grpcStatus) = int_parse_tmp;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "header")) {
+            if (seen_header) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': header", parse_state->current_key)
+                return true;
+            }
+            seen_header = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "header";
+            out->header = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(health_check_http_header_item_t*));
+            if (out->header == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            if (parse_health_check_http_header(pool, parse_state, (out->header), err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "body")) {
+            if (seen_body) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': body", parse_state->current_key)
+                return true;
+            }
+            seen_body = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "body";
+            out->body = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->body == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->body) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->body) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->body))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->body))->len = token_size;
+            if ((out->body)->len == 0) {
+                ((out->body))->data = NULL;
+            } else if ((out->body)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->body), 0, ((out->body))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "status")) {
+            if (seen_status) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': status", parse_state->current_key)
+                return true;
+            }
+            seen_status = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "status";
+            out->status = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->status == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->status) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->status) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->status))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->status))->len = token_size;
+            if ((out->status)->len == 0) {
+                ((out->status))->data = NULL;
+            } else if ((out->status)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->status), 0, ((out->status))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else {
+            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            return true;
+        }
+    }
+    const int saved_current_token = parse_state->current_token;
+    parse_state->current_token = object_start_token;
+    // HAHB
+    if (!seen_uri) {
+        out->uri = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->uri == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->uri)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->uri)->len = token_size;
+        if (out->uri->len == 0) {
+            (out->uri)->data = NULL;
+        } else if (out->uri->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->uri->len > 0) {
+            njt_memcpy(out->uri->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_grpcService) {
+        out->grpcService = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->grpcService == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->grpcService)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->grpcService)->len = token_size;
+        if (out->grpcService->len == 0) {
+            (out->grpcService)->data = NULL;
+        } else if (out->grpcService->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->grpcService->len > 0) {
+            njt_memcpy(out->grpcService->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_grpcStatus) {
+        out->grpcStatus = 0LL;
+    }
+    // HAHB
+    if (!seen_header) {
+        out->header = njt_palloc(pool, sizeof(njt_array_t));
+        memset(out->header, 0, sizeof(njt_array_t));
+    }
+    // HAHB
+    if (!seen_body) {
+        out->body = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->body == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->body)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->body)->len = token_size;
+        if (out->body->len == 0) {
+            (out->body)->data = NULL;
+        } else if (out->body->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->body->len > 0) {
+            njt_memcpy(out->body->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_status) {
+        out->status = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->status == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->status)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->status)->len = token_size;
+        if (out->status->len == 0) {
+            (out->status)->data = NULL;
+        } else if (out->status->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->status->len > 0) {
+            njt_memcpy(out->status->data, "", token_size);
+        }
+    }
+    parse_state->current_token = saved_current_token;
+    return false;
+}
+
+
+static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state, health_check_ssl_t *out, njt_str_t *err_str) {
+    njt_uint_t i;
+    // malloc pool for object first
+
+    if (check_type(pool, parse_state, JSMN_OBJECT, err_str)) {
+        return true;
+    }
+    bool seen_enable = false;
+    bool seen_ntls = false;
+    bool seen_session_reuse = false;
+    bool seen_name = false;
+    bool seen_protocols = false;
+    bool seen_serverName = false;
+    bool seen_verify = false;
+    bool seen_verifyDepth = false;
+    bool seen_trustedCertificate = false;
+    bool seen_crl = false;
+    bool seen_certificate = false;
+    bool seen_certificateKey = false;
+    bool seen_encCertificate = false;
+    bool seen_encCertificateKey = false;
+    bool seen_passwords = false;
+    bool seen_conf_commands = false;
+    bool seen_ciphers = false;
+    const int object_start_token = parse_state->current_token;
+    const uint64_t n = parse_state->tokens[parse_state->current_token].size;
+    parse_state->current_token += 1;
+    for (i = 0; i < n; ++i) {
+        if (CURRENT_TOKEN(parse_state).size > 1) {
+            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing separator between values in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            return true;
+        }
+        if (CURRENT_TOKEN(parse_state).size < 1) {
+            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing value in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            return true;
+        }
+        if (current_string_is(parse_state, "enable")) {
+            if (seen_enable) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': enable", parse_state->current_key)
+                return true;
+            }
+            seen_enable = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "enable";
+            if (builtin_parse_bool(pool, parse_state, (&out->enable), err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "ntls")) {
+            if (seen_ntls) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': ntls", parse_state->current_key)
+                return true;
+            }
+            seen_ntls = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "ntls";
+            if (builtin_parse_bool(pool, parse_state, (&out->ntls), err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "session_reuse")) {
+            if (seen_session_reuse) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': session_reuse", parse_state->current_key)
+                return true;
+            }
+            seen_session_reuse = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "session_reuse";
+            if (builtin_parse_bool(pool, parse_state, (&out->session_reuse), err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "name")) {
+            if (seen_name) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': name", parse_state->current_key)
+                return true;
+            }
+            seen_name = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "name";
+            out->name = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->name == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->name) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->name) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->name))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->name))->len = token_size;
+            if ((out->name)->len == 0) {
+                ((out->name))->data = NULL;
+            } else if ((out->name)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->name), 0, ((out->name))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "protocols")) {
+            if (seen_protocols) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': protocols", parse_state->current_key)
+                return true;
+            }
+            seen_protocols = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "protocols";
+            out->protocols = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->protocols == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->protocols) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->protocols) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->protocols))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->protocols))->len = token_size;
+            if ((out->protocols)->len == 0) {
+                ((out->protocols))->data = NULL;
+            } else if ((out->protocols)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->protocols), 0, ((out->protocols))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "serverName")) {
+            if (seen_serverName) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': serverName", parse_state->current_key)
+                return true;
+            }
+            seen_serverName = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "serverName";
+            if (builtin_parse_bool(pool, parse_state, (&out->serverName), err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "verify")) {
+            if (seen_verify) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': verify", parse_state->current_key)
+                return true;
+            }
+            seen_verify = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "verify";
+            if (builtin_parse_bool(pool, parse_state, (&out->verify), err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "verifyDepth")) {
+            if (seen_verifyDepth) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': verifyDepth", parse_state->current_key)
+                return true;
+            }
+            seen_verifyDepth = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "verifyDepth";
+            int64_t int_parse_tmp;
+            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_str)) {
+                return true;
+            }
+            if (!(int_parse_tmp >= 0)) {
+                parse_state->current_token -= 1;
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be >= 0.", int_parse_tmp, parse_state->current_key)
+                return true;
+            }
+            *(&out->verifyDepth) = int_parse_tmp;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "trustedCertificate")) {
+            if (seen_trustedCertificate) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': trustedCertificate", parse_state->current_key)
+                return true;
+            }
+            seen_trustedCertificate = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "trustedCertificate";
+            out->trustedCertificate = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->trustedCertificate == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->trustedCertificate) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->trustedCertificate) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->trustedCertificate))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->trustedCertificate))->len = token_size;
+            if ((out->trustedCertificate)->len == 0) {
+                ((out->trustedCertificate))->data = NULL;
+            } else if ((out->trustedCertificate)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->trustedCertificate), 0, ((out->trustedCertificate))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "crl")) {
+            if (seen_crl) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': crl", parse_state->current_key)
+                return true;
+            }
+            seen_crl = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "crl";
+            out->crl = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->crl == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->crl) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->crl) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->crl))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->crl))->len = token_size;
+            if ((out->crl)->len == 0) {
+                ((out->crl))->data = NULL;
+            } else if ((out->crl)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->crl), 0, ((out->crl))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "certificate")) {
+            if (seen_certificate) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': certificate", parse_state->current_key)
+                return true;
+            }
+            seen_certificate = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "certificate";
+            out->certificate = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->certificate == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->certificate) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->certificate) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->certificate))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->certificate))->len = token_size;
+            if ((out->certificate)->len == 0) {
+                ((out->certificate))->data = NULL;
+            } else if ((out->certificate)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->certificate), 0, ((out->certificate))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "certificateKey")) {
+            if (seen_certificateKey) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': certificateKey", parse_state->current_key)
+                return true;
+            }
+            seen_certificateKey = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "certificateKey";
+            out->certificateKey = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->certificateKey == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->certificateKey) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->certificateKey) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->certificateKey))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->certificateKey))->len = token_size;
+            if ((out->certificateKey)->len == 0) {
+                ((out->certificateKey))->data = NULL;
+            } else if ((out->certificateKey)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->certificateKey), 0, ((out->certificateKey))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "encCertificate")) {
+            if (seen_encCertificate) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': encCertificate", parse_state->current_key)
+                return true;
+            }
+            seen_encCertificate = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "encCertificate";
+            out->encCertificate = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->encCertificate == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->encCertificate) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->encCertificate) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->encCertificate))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->encCertificate))->len = token_size;
+            if ((out->encCertificate)->len == 0) {
+                ((out->encCertificate))->data = NULL;
+            } else if ((out->encCertificate)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->encCertificate), 0, ((out->encCertificate))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "encCertificateKey")) {
+            if (seen_encCertificateKey) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': encCertificateKey", parse_state->current_key)
+                return true;
+            }
+            seen_encCertificateKey = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "encCertificateKey";
+            out->encCertificateKey = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->encCertificateKey == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->encCertificateKey) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->encCertificateKey) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->encCertificateKey))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->encCertificateKey))->len = token_size;
+            if ((out->encCertificateKey)->len == 0) {
+                ((out->encCertificateKey))->data = NULL;
+            } else if ((out->encCertificateKey)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->encCertificateKey), 0, ((out->encCertificateKey))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "passwords")) {
+            if (seen_passwords) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': passwords", parse_state->current_key)
+                return true;
+            }
+            seen_passwords = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "passwords";
+            out->passwords = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->passwords == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->passwords) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->passwords) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->passwords))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->passwords))->len = token_size;
+            if ((out->passwords)->len == 0) {
+                ((out->passwords))->data = NULL;
+            } else if ((out->passwords)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->passwords), 0, ((out->passwords))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "conf_commands")) {
+            if (seen_conf_commands) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': conf_commands", parse_state->current_key)
+                return true;
+            }
+            seen_conf_commands = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "conf_commands";
+            out->conf_commands = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->conf_commands == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->conf_commands) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->conf_commands) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->conf_commands))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->conf_commands))->len = token_size;
+            if ((out->conf_commands)->len == 0) {
+                ((out->conf_commands))->data = NULL;
+            } else if ((out->conf_commands)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->conf_commands), 0, ((out->conf_commands))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "ciphers")) {
+            if (seen_ciphers) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': ciphers", parse_state->current_key)
+                return true;
+            }
+            seen_ciphers = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "ciphers";
+            out->ciphers = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->ciphers == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->ciphers) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->ciphers) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->ciphers))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->ciphers))->len = token_size;
+            if ((out->ciphers)->len == 0) {
+                ((out->ciphers))->data = NULL;
+            } else if ((out->ciphers)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->ciphers), 0, ((out->ciphers))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else {
+            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            return true;
+        }
+    }
+    const int saved_current_token = parse_state->current_token;
+    parse_state->current_token = object_start_token;
+    // HAHB
+    if (!seen_enable) {
+        out->enable = false;
+    }
+    // HAHB
+    if (!seen_ntls) {
+        out->ntls = false;
+    }
+    // HAHB
+    if (!seen_session_reuse) {
+        out->session_reuse = false;
+    }
+    // HAHB
+    if (!seen_name) {
+        out->name = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->name == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->name)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->name)->len = token_size;
+        if (out->name->len == 0) {
+            (out->name)->data = NULL;
+        } else if (out->name->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->name->len > 0) {
+            njt_memcpy(out->name->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_protocols) {
+        out->protocols = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->protocols == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->protocols)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->protocols)->len = token_size;
+        if (out->protocols->len == 0) {
+            (out->protocols)->data = NULL;
+        } else if (out->protocols->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->protocols->len > 0) {
+            njt_memcpy(out->protocols->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_serverName) {
+        out->serverName = false;
+    }
+    // HAHB
+    if (!seen_verify) {
+        out->verify = false;
+    }
+    // HAHB
+    if (!seen_verifyDepth) {
+        out->verifyDepth = 0LL;
+    }
+    // HAHB
+    if (!seen_trustedCertificate) {
+        out->trustedCertificate = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->trustedCertificate == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->trustedCertificate)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->trustedCertificate)->len = token_size;
+        if (out->trustedCertificate->len == 0) {
+            (out->trustedCertificate)->data = NULL;
+        } else if (out->trustedCertificate->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->trustedCertificate->len > 0) {
+            njt_memcpy(out->trustedCertificate->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_crl) {
+        out->crl = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->crl == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->crl)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->crl)->len = token_size;
+        if (out->crl->len == 0) {
+            (out->crl)->data = NULL;
+        } else if (out->crl->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->crl->len > 0) {
+            njt_memcpy(out->crl->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_certificate) {
+        out->certificate = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->certificate == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->certificate)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->certificate)->len = token_size;
+        if (out->certificate->len == 0) {
+            (out->certificate)->data = NULL;
+        } else if (out->certificate->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->certificate->len > 0) {
+            njt_memcpy(out->certificate->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_certificateKey) {
+        out->certificateKey = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->certificateKey == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->certificateKey)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->certificateKey)->len = token_size;
+        if (out->certificateKey->len == 0) {
+            (out->certificateKey)->data = NULL;
+        } else if (out->certificateKey->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->certificateKey->len > 0) {
+            njt_memcpy(out->certificateKey->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_encCertificate) {
+        out->encCertificate = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->encCertificate == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->encCertificate)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->encCertificate)->len = token_size;
+        if (out->encCertificate->len == 0) {
+            (out->encCertificate)->data = NULL;
+        } else if (out->encCertificate->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->encCertificate->len > 0) {
+            njt_memcpy(out->encCertificate->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_encCertificateKey) {
+        out->encCertificateKey = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->encCertificateKey == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->encCertificateKey)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->encCertificateKey)->len = token_size;
+        if (out->encCertificateKey->len == 0) {
+            (out->encCertificateKey)->data = NULL;
+        } else if (out->encCertificateKey->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->encCertificateKey->len > 0) {
+            njt_memcpy(out->encCertificateKey->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_passwords) {
+        out->passwords = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->passwords == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->passwords)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->passwords)->len = token_size;
+        if (out->passwords->len == 0) {
+            (out->passwords)->data = NULL;
+        } else if (out->passwords->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->passwords->len > 0) {
+            njt_memcpy(out->passwords->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_conf_commands) {
+        out->conf_commands = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->conf_commands == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("");
+        (out->conf_commands)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->conf_commands)->len = token_size;
+        if (out->conf_commands->len == 0) {
+            (out->conf_commands)->data = NULL;
+        } else if (out->conf_commands->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->conf_commands->len > 0) {
+            njt_memcpy(out->conf_commands->data, "", token_size);
+        }
+    }
+    // HAHB
+    if (!seen_ciphers) {
+        out->ciphers = njt_palloc(pool, sizeof(njt_str_t));
+        if (out->ciphers == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        size_t token_size = strlen("DEFAULT");
+        (out->ciphers)->data = (u_char*)njt_palloc(pool, token_size);
+        (out->ciphers)->len = token_size;
+        if (out->ciphers->len == 0) {
+            (out->ciphers)->data = NULL;
+        } else if (out->ciphers->data == NULL) {
+            // TODO LOG_ERROR
+            return true;
+        }
+        if (out->ciphers->len > 0) {
+            njt_memcpy(out->ciphers->data, "DEFAULT", token_size);
+        }
+    }
+    parse_state->current_token = saved_current_token;
+    return false;
+}
+
+
+static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, health_check_t *out, njt_str_t *err_str) {
+    njt_uint_t i;
+    // malloc pool for object first
+
+    if (check_type(pool, parse_state, JSMN_OBJECT, err_str)) {
+        return true;
+    }
+    bool seen_interval = false;
+    bool seen_jitter = false;
+    bool seen_timeout = false;
+    bool seen_passes = false;
+    bool seen_fails = false;
+    bool seen_port = false;
+    bool seen_stream = false;
+    bool seen_http = false;
+    bool seen_ssl = false;
+    const int object_start_token = parse_state->current_token;
+    const uint64_t n = parse_state->tokens[parse_state->current_token].size;
+    parse_state->current_token += 1;
+    for (i = 0; i < n; ++i) {
+        if (CURRENT_TOKEN(parse_state).size > 1) {
+            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing separator between values in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            return true;
+        }
+        if (CURRENT_TOKEN(parse_state).size < 1) {
+            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing value in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            return true;
+        }
+        if (current_string_is(parse_state, "interval")) {
+            if (seen_interval) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': interval", parse_state->current_key)
+                return true;
+            }
+            seen_interval = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "interval";
+            out->interval = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->interval == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->interval) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->interval) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->interval))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->interval))->len = token_size;
+            if ((out->interval)->len == 0) {
+                ((out->interval))->data = NULL;
+            } else if ((out->interval)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->interval), 0, ((out->interval))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "jitter")) {
+            if (seen_jitter) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': jitter", parse_state->current_key)
+                return true;
+            }
+            seen_jitter = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "jitter";
+            out->jitter = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->jitter == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->jitter) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->jitter) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->jitter))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->jitter))->len = token_size;
+            if ((out->jitter)->len == 0) {
+                ((out->jitter))->data = NULL;
+            } else if ((out->jitter)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->jitter), 0, ((out->jitter))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "timeout")) {
+            if (seen_timeout) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': timeout", parse_state->current_key)
+                return true;
+            }
+            seen_timeout = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "timeout";
+            out->timeout = njt_palloc(pool, sizeof(njt_str_t));
+            if (out->timeout == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            // first get str len from TOKEN_STRING
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            (out->timeout) = njt_palloc(pool, sizeof(njt_str_t));
+            if ((out->timeout) == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            ((out->timeout))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
+            ((out->timeout))->len = token_size;
+            if ((out->timeout)->len == 0) {
+                ((out->timeout))->data = NULL;
+            } else if ((out->timeout)->data == NULL) {
+                // TODO LOG_ERROR
+                return true;
+            }
+            if (builtin_parse_string(pool, parse_state, (out->timeout), 0, ((out->timeout))->len, err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "passes")) {
+            if (seen_passes) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': passes", parse_state->current_key)
+                return true;
+            }
+            seen_passes = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "passes";
+            int64_t int_parse_tmp;
+            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_str)) {
+                return true;
+            }
+            if (!(int_parse_tmp >= 1)) {
+                parse_state->current_token -= 1;
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be >= 1.", int_parse_tmp, parse_state->current_key)
+                return true;
+            }
+            *(&out->passes) = int_parse_tmp;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "fails")) {
+            if (seen_fails) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': fails", parse_state->current_key)
+                return true;
+            }
+            seen_fails = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "fails";
+            int64_t int_parse_tmp;
+            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_str)) {
+                return true;
+            }
+            if (!(int_parse_tmp >= 1)) {
+                parse_state->current_token -= 1;
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be >= 1.", int_parse_tmp, parse_state->current_key)
+                return true;
+            }
+            *(&out->fails) = int_parse_tmp;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "port")) {
+            if (seen_port) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': port", parse_state->current_key)
+                return true;
+            }
+            seen_port = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "port";
+            int64_t int_parse_tmp;
+            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_str)) {
+                return true;
+            }
+            if (!(int_parse_tmp >= 1)) {
+                parse_state->current_token -= 1;
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be >= 1.", int_parse_tmp, parse_state->current_key)
+                return true;
+            }
+            if (!(int_parse_tmp <= 65535)) {
+                parse_state->current_token -= 1;
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be <= 65535.", int_parse_tmp, parse_state->current_key)
+                return true;
+            }
+            *(&out->port) = int_parse_tmp;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "stream")) {
+            if (seen_stream) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': stream", parse_state->current_key)
+                return true;
+            }
+            seen_stream = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "stream";
+            out->stream = njt_palloc(pool, sizeof(health_check_stream_t));
+            if (out->stream == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            if (parse_health_check_stream(pool, parse_state, (out->stream), err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "http")) {
+            if (seen_http) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': http", parse_state->current_key)
+                return true;
+            }
+            seen_http = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "http";
+            out->http = njt_palloc(pool, sizeof(health_check_http_t));
+            if (out->http == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            if (parse_health_check_http(pool, parse_state, (out->http), err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "ssl")) {
+            if (seen_ssl) {
+                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': ssl", parse_state->current_key)
+                return true;
+            }
+            seen_ssl = true;
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "ssl";
+            out->ssl = njt_palloc(pool, sizeof(health_check_ssl_t));
+            if (out->ssl == NULL) {
+                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
+            }
+            if (parse_health_check_ssl(pool, parse_state, (out->ssl), err_str)) {
+                return true;
+            }
+            parse_state->current_key = saved_key;
+        } else {
+            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            return true;
+        }
+    }
+    const int saved_current_token = parse_state->current_token;
+    parse_state->current_token = object_start_token;
+    if (!seen_interval) {
+        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': interval", parse_state->current_key)
+        return true;
+    }
+    if (!seen_jitter) {
+        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': jitter", parse_state->current_key)
+        return true;
+    }
+    if (!seen_timeout) {
+        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': timeout", parse_state->current_key)
+        return true;
+    }
+    if (!seen_passes) {
+        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': passes", parse_state->current_key)
+        return true;
+    }
+    if (!seen_fails) {
+        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': fails", parse_state->current_key)
+        return true;
+    }
+    // HAHB
+    if (!seen_port) {
+        out->port = 0LL;
+    }
+    // HAHB
+    if (!seen_stream) {
+        out->stream = NULL;
+    }
+    // HAHB
+    if (!seen_http) {
+        out->http = NULL;
+    }
+    // HAHB
+    if (!seen_ssl) {
+        out->ssl = NULL;
+    }
+    parse_state->current_token = saved_current_token;
+    return false;
+}
+
+
+static void get_json_length_health_check_interval(njt_pool_t *pool, health_check_interval_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, *out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_health_checks_item_upstream_name(njt_pool_t *pool, health_checks_item_upstream_name_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_health_check_jitter(njt_pool_t *pool, health_check_jitter_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, *out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_health_checks_item(njt_pool_t *pool, health_checks_item_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_health_check_timeout(njt_pool_t *pool, health_check_timeout_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_passes(njt_pool_t *pool, health_check_passes_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
+}
+
+static void get_json_length_health_check_fails(njt_pool_t *pool, health_check_fails_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
+}
+
+static void get_json_length_health_check_port(njt_pool_t *pool, health_check_port_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
+}
+
+static void get_json_length_health_check_stream_send(njt_pool_t *pool, health_check_stream_send_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_stream_expect(njt_pool_t *pool, health_check_stream_expect_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_stream(njt_pool_t *pool, health_check_stream_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -156,22 +1547,22 @@ static void get_json_length_health_checks_item(njt_pool_t *pool, health_checks_i
     njt_int_t omit;
     njt_int_t count = 0;
     omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->hc_type) == NULL) {
+    if ((flags & OMIT_NULL_STR) && (out->send) == NULL) {
         omit = 1;
     }
     if (omit == 0) {
-        *length += (7 + 3); // "hc_type": 
-        get_json_length_health_checks_item_hc_type(pool, (&out->hc_type), length, flags);
+        *length += (4 + 3); // "send": 
+        get_json_length_health_check_stream_send(pool, (&out->send), length, flags);
         *length += 1; // ","
         count++;
     }
     omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->upstream_name) == NULL) {
+    if ((flags & OMIT_NULL_STR) && (out->expect) == NULL) {
         omit = 1;
     }
     if (omit == 0) {
-        *length += (13 + 3); // "upstream_name": 
-        get_json_length_health_checks_item_upstream_name(pool, (&out->upstream_name), length, flags);
+        *length += (6 + 3); // "expect": 
+        get_json_length_health_check_stream_expect(pool, (&out->expect), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -181,7 +1572,29 @@ static void get_json_length_health_checks_item(njt_pool_t *pool, health_checks_i
     *length += 1;
 }
 
-static void get_json_length_health_checks(njt_pool_t *pool, health_checks_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_health_check_http_uri(njt_pool_t *pool, health_check_http_uri_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_http_grpcService(njt_pool_t *pool, health_check_http_grpcService_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_http_grpcStatus(njt_pool_t *pool, health_check_http_grpcStatus_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
+}
+
+static void get_json_length_health_check_http_header_item(njt_pool_t *pool, health_check_http_header_item_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_http_header(njt_pool_t *pool, health_check_http_header_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -192,11 +1605,11 @@ static void get_json_length_health_checks(njt_pool_t *pool, health_checks_t *out
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((health_checks_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_STR) && (&((health_check_http_header_item_t*)out->elts)[i]) == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            get_json_length_health_checks_item(pool, ((health_checks_item_t**)out->elts)[i], length, flags);
+            get_json_length_health_check_http_header_item(pool, (&((health_check_http_header_item_t*)out->elts)[i]), length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -206,30 +1619,620 @@ static void get_json_length_health_checks(njt_pool_t *pool, health_checks_t *out
     }
 }
 
-health_checks_item_hc_type_t get_health_checks_item_hc_type(health_checks_item_t *out) {
-    return out->hc_type;
+static void get_json_length_health_check_http_body(njt_pool_t *pool, health_check_http_body_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
 }
 
-health_checks_item_upstream_name_t get_health_checks_item_upstream_name(health_checks_item_t *out) {
-    return out->upstream_name;
+static void get_json_length_health_check_http_status(njt_pool_t *pool, health_check_http_status_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_http(njt_pool_t *pool, health_check_http_t *out, size_t *length, njt_int_t flags) {
+    if (out == NULL) {
+        *length += 4; // null
+        return;
+    }
+    *length += 1;
+    njt_int_t omit;
+    njt_int_t count = 0;
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->uri) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (3 + 3); // "uri": 
+        get_json_length_health_check_http_uri(pool, (&out->uri), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->grpcService) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (11 + 3); // "grpcService": 
+        get_json_length_health_check_http_grpcService(pool, (&out->grpcService), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        *length += (10 + 3); // "grpcStatus": 
+        get_json_length_health_check_http_grpcStatus(pool, (&out->grpcStatus), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_ARRAY) && (out->header) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (6 + 3); // "header": 
+        get_json_length_health_check_http_header(pool, (out->header), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->body) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (4 + 3); // "body": 
+        get_json_length_health_check_http_body(pool, (&out->body), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->status) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (6 + 3); // "status": 
+        get_json_length_health_check_http_status(pool, (&out->status), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    if (count != 0) {
+        *length -= 1; // "\b"
+    }
+    *length += 1;
+}
+
+static void get_json_length_health_check_ssl_enable(njt_pool_t *pool, health_check_ssl_enable_t *out, size_t *length, njt_int_t flags) {
+    if (*out) {
+        *length += 4; // "true"
+    } else {
+        *length += 5; // "false"
+    }
+}
+
+static void get_json_length_health_check_ssl_ntls(njt_pool_t *pool, health_check_ssl_ntls_t *out, size_t *length, njt_int_t flags) {
+    if (*out) {
+        *length += 4; // "true"
+    } else {
+        *length += 5; // "false"
+    }
+}
+
+static void get_json_length_health_check_ssl_session_reuse(njt_pool_t *pool, health_check_ssl_session_reuse_t *out, size_t *length, njt_int_t flags) {
+    if (*out) {
+        *length += 4; // "true"
+    } else {
+        *length += 5; // "false"
+    }
+}
+
+static void get_json_length_health_check_ssl_name(njt_pool_t *pool, health_check_ssl_name_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_ssl_protocols(njt_pool_t *pool, health_check_ssl_protocols_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_ssl_serverName(njt_pool_t *pool, health_check_ssl_serverName_t *out, size_t *length, njt_int_t flags) {
+    if (*out) {
+        *length += 4; // "true"
+    } else {
+        *length += 5; // "false"
+    }
+}
+
+static void get_json_length_health_check_ssl_verify(njt_pool_t *pool, health_check_ssl_verify_t *out, size_t *length, njt_int_t flags) {
+    if (*out) {
+        *length += 4; // "true"
+    } else {
+        *length += 5; // "false"
+    }
+}
+
+static void get_json_length_health_check_ssl_verifyDepth(njt_pool_t *pool, health_check_ssl_verifyDepth_t *out, size_t *length, njt_int_t flags) {
+    u_char str[24];
+    u_char *cur;
+    cur = njt_sprintf(str, "%L", *out);
+    *length += cur - str;
+}
+
+static void get_json_length_health_check_ssl_trustedCertificate(njt_pool_t *pool, health_check_ssl_trustedCertificate_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_ssl_crl(njt_pool_t *pool, health_check_ssl_crl_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_ssl_certificate(njt_pool_t *pool, health_check_ssl_certificate_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_ssl_certificateKey(njt_pool_t *pool, health_check_ssl_certificateKey_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_ssl_encCertificate(njt_pool_t *pool, health_check_ssl_encCertificate_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_ssl_encCertificateKey(njt_pool_t *pool, health_check_ssl_encCertificateKey_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_ssl_passwords(njt_pool_t *pool, health_check_ssl_passwords_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_ssl_conf_commands(njt_pool_t *pool, health_check_ssl_conf_commands_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_ssl_ciphers(njt_pool_t *pool, health_check_ssl_ciphers_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_health_check_ssl(njt_pool_t *pool, health_check_ssl_t *out, size_t *length, njt_int_t flags) {
+    if (out == NULL) {
+        *length += 4; // null
+        return;
+    }
+    *length += 1;
+    njt_int_t omit;
+    njt_int_t count = 0;
+    omit = 0;
+    if (omit == 0) {
+        *length += (6 + 3); // "enable": 
+        get_json_length_health_check_ssl_enable(pool, (&out->enable), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        *length += (4 + 3); // "ntls": 
+        get_json_length_health_check_ssl_ntls(pool, (&out->ntls), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        *length += (13 + 3); // "session_reuse": 
+        get_json_length_health_check_ssl_session_reuse(pool, (&out->session_reuse), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->name) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (4 + 3); // "name": 
+        get_json_length_health_check_ssl_name(pool, (&out->name), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->protocols) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (9 + 3); // "protocols": 
+        get_json_length_health_check_ssl_protocols(pool, (&out->protocols), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        *length += (10 + 3); // "serverName": 
+        get_json_length_health_check_ssl_serverName(pool, (&out->serverName), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        *length += (6 + 3); // "verify": 
+        get_json_length_health_check_ssl_verify(pool, (&out->verify), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        *length += (11 + 3); // "verifyDepth": 
+        get_json_length_health_check_ssl_verifyDepth(pool, (&out->verifyDepth), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->trustedCertificate) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (18 + 3); // "trustedCertificate": 
+        get_json_length_health_check_ssl_trustedCertificate(pool, (&out->trustedCertificate), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->crl) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (3 + 3); // "crl": 
+        get_json_length_health_check_ssl_crl(pool, (&out->crl), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->certificate) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (11 + 3); // "certificate": 
+        get_json_length_health_check_ssl_certificate(pool, (&out->certificate), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->certificateKey) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (14 + 3); // "certificateKey": 
+        get_json_length_health_check_ssl_certificateKey(pool, (&out->certificateKey), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->encCertificate) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (14 + 3); // "encCertificate": 
+        get_json_length_health_check_ssl_encCertificate(pool, (&out->encCertificate), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->encCertificateKey) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (17 + 3); // "encCertificateKey": 
+        get_json_length_health_check_ssl_encCertificateKey(pool, (&out->encCertificateKey), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->passwords) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (9 + 3); // "passwords": 
+        get_json_length_health_check_ssl_passwords(pool, (&out->passwords), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->conf_commands) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (13 + 3); // "conf_commands": 
+        get_json_length_health_check_ssl_conf_commands(pool, (&out->conf_commands), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->ciphers) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (7 + 3); // "ciphers": 
+        get_json_length_health_check_ssl_ciphers(pool, (&out->ciphers), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    if (count != 0) {
+        *length -= 1; // "\b"
+    }
+    *length += 1;
+}
+
+static void get_json_length_health_check(njt_pool_t *pool, health_check_t *out, size_t *length, njt_int_t flags) {
+    if (out == NULL) {
+        *length += 4; // null
+        return;
+    }
+    *length += 1;
+    njt_int_t omit;
+    njt_int_t count = 0;
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->interval) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (8 + 3); // "interval": 
+        get_json_length_health_check_interval(pool, (&out->interval), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->jitter) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (6 + 3); // "jitter": 
+        get_json_length_health_check_jitter(pool, (&out->jitter), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->timeout) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (7 + 3); // "timeout": 
+        get_json_length_health_check_timeout(pool, (&out->timeout), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        *length += (6 + 3); // "passes": 
+        get_json_length_health_check_passes(pool, (&out->passes), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        *length += (5 + 3); // "fails": 
+        get_json_length_health_check_fails(pool, (&out->fails), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        *length += (4 + 3); // "port": 
+        get_json_length_health_check_port(pool, (&out->port), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_OBJ) && (out->stream) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (6 + 3); // "stream": 
+        get_json_length_health_check_stream(pool, (out->stream), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_OBJ) && (out->http) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (4 + 3); // "http": 
+        get_json_length_health_check_http(pool, (out->http), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_OBJ) && (out->ssl) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        *length += (3 + 3); // "ssl": 
+        get_json_length_health_check_ssl(pool, (out->ssl), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    if (count != 0) {
+        *length -= 1; // "\b"
+    }
+    *length += 1;
+}
+
+health_check_stream_send_t get_health_check_stream_send(health_check_stream_t *out) {
+    return out->send;
+}
+
+health_check_stream_expect_t get_health_check_stream_expect(health_check_stream_t *out) {
+    return out->expect;
 }
 // CHECK ARRAY not exceeding bounds before call this func
 
-health_checks_item_t get_health_checks_item(health_checks_t *out, size_t idx) {
-    return *((health_checks_item_t**)out->elts)[idx];
+health_check_http_header_item_t get_health_check_http_header_item(health_check_http_header_t *out, size_t idx) {
+    return ((health_check_http_header_item_t*)out->elts)[idx];
 }
-void set_health_checks_item_hc_type(health_checks_item_t* obj, health_checks_item_hc_type_t field) {
-    obj->hc_type = field;
+
+health_check_http_uri_t get_health_check_http_uri(health_check_http_t *out) {
+    return out->uri;
 }
-void set_health_checks_item_upstream_name(health_checks_item_t* obj, health_checks_item_upstream_name_t field) {
-    obj->upstream_name = field;
+
+health_check_http_grpcService_t get_health_check_http_grpcService(health_check_http_t *out) {
+    return out->grpcService;
 }
-health_checks_item_t* create_health_checks_item(njt_pool_t *pool) {
-    health_checks_item_t* out = njt_palloc(pool, sizeof(health_checks_item_t));
-    memset(out, 0, sizeof(health_checks_item_t));
+
+health_check_http_grpcStatus_t get_health_check_http_grpcStatus(health_check_http_t *out) {
+    return out->grpcStatus;
+}
+
+health_check_http_header_t* get_health_check_http_header(health_check_http_t *out) {
+    return out->header;
+}
+
+health_check_http_body_t get_health_check_http_body(health_check_http_t *out) {
+    return out->body;
+}
+
+health_check_http_status_t get_health_check_http_status(health_check_http_t *out) {
+    return out->status;
+}
+
+health_check_ssl_enable_t get_health_check_ssl_enable(health_check_ssl_t *out) {
+    return out->enable;
+}
+
+health_check_ssl_ntls_t get_health_check_ssl_ntls(health_check_ssl_t *out) {
+    return out->ntls;
+}
+
+health_check_ssl_session_reuse_t get_health_check_ssl_session_reuse(health_check_ssl_t *out) {
+    return out->session_reuse;
+}
+
+health_check_ssl_name_t get_health_check_ssl_name(health_check_ssl_t *out) {
+    return out->name;
+}
+
+health_check_ssl_protocols_t get_health_check_ssl_protocols(health_check_ssl_t *out) {
+    return out->protocols;
+}
+
+health_check_ssl_serverName_t get_health_check_ssl_serverName(health_check_ssl_t *out) {
+    return out->serverName;
+}
+
+health_check_ssl_verify_t get_health_check_ssl_verify(health_check_ssl_t *out) {
+    return out->verify;
+}
+
+health_check_ssl_verifyDepth_t get_health_check_ssl_verifyDepth(health_check_ssl_t *out) {
+    return out->verifyDepth;
+}
+
+health_check_ssl_trustedCertificate_t get_health_check_ssl_trustedCertificate(health_check_ssl_t *out) {
+    return out->trustedCertificate;
+}
+
+health_check_ssl_crl_t get_health_check_ssl_crl(health_check_ssl_t *out) {
+    return out->crl;
+}
+
+health_check_ssl_certificate_t get_health_check_ssl_certificate(health_check_ssl_t *out) {
+    return out->certificate;
+}
+
+health_check_ssl_certificateKey_t get_health_check_ssl_certificateKey(health_check_ssl_t *out) {
+    return out->certificateKey;
+}
+
+health_check_ssl_encCertificate_t get_health_check_ssl_encCertificate(health_check_ssl_t *out) {
+    return out->encCertificate;
+}
+
+health_check_ssl_encCertificateKey_t get_health_check_ssl_encCertificateKey(health_check_ssl_t *out) {
+    return out->encCertificateKey;
+}
+
+health_check_ssl_passwords_t get_health_check_ssl_passwords(health_check_ssl_t *out) {
+    return out->passwords;
+}
+
+health_check_ssl_conf_commands_t get_health_check_ssl_conf_commands(health_check_ssl_t *out) {
+    return out->conf_commands;
+}
+
+health_check_ssl_ciphers_t get_health_check_ssl_ciphers(health_check_ssl_t *out) {
+    return out->ciphers;
+}
+
+health_check_interval_t get_health_check_interval(health_check_t *out) {
+    return out->interval;
+}
+
+health_check_jitter_t get_health_check_jitter(health_check_t *out) {
+    return out->jitter;
+}
+
+health_check_timeout_t get_health_check_timeout(health_check_t *out) {
+    return out->timeout;
+}
+
+health_check_passes_t get_health_check_passes(health_check_t *out) {
+    return out->passes;
+}
+
+health_check_fails_t get_health_check_fails(health_check_t *out) {
+    return out->fails;
+}
+
+health_check_port_t get_health_check_port(health_check_t *out) {
+    return out->port;
+}
+
+health_check_stream_t* get_health_check_stream(health_check_t *out) {
+    return out->stream;
+}
+
+health_check_http_t* get_health_check_http(health_check_t *out) {
+    return out->http;
+}
+
+health_check_ssl_t* get_health_check_ssl(health_check_t *out) {
+    return out->ssl;
+}
+void set_health_check_interval(health_check_t* obj, health_check_interval_t field) {
+    obj->interval = field;
+}
+void set_health_check_jitter(health_check_t* obj, health_check_jitter_t field) {
+    obj->jitter = field;
+}
+void set_health_check_timeout(health_check_t* obj, health_check_timeout_t field) {
+    obj->timeout = field;
+}
+void set_health_check_stream_send(health_check_stream_t* obj, health_check_stream_send_t field) {
+    obj->send = field;
+}
+void set_health_check_stream_expect(health_check_stream_t* obj, health_check_stream_expect_t field) {
+    obj->expect = field;
+}
+health_check_stream_t* create_health_check_stream(njt_pool_t *pool) {
+    health_check_stream_t* out = njt_palloc(pool, sizeof(health_check_stream_t));
+    memset(out, 0, sizeof(health_check_stream_t));
     return out;
 }
-int add_item_health_checks(health_checks_t *src, health_checks_item_t* item) {
+void set_health_check_stream(health_check_t* obj, health_check_stream_t* field) {
+    obj->stream = field;
+}
+void set_health_check_http_uri(health_check_http_t* obj, health_check_http_uri_t field) {
+    obj->uri = field;
+}
+void set_health_check_http_grpcService(health_check_http_t* obj, health_check_http_grpcService_t field) {
+    obj->grpcService = field;
+}
+int add_item_health_check_http_header(health_check_http_header_t *src, health_check_http_header_item_t item) {
     void *new = njt_array_push(src);
     if (new == NULL) {
         return NJT_ERROR;
@@ -238,25 +2241,127 @@ int add_item_health_checks(health_checks_t *src, health_checks_item_t* item) {
     return NJT_OK;
 }
 
-health_checks_t* create_health_checks(njt_pool_t *pool, size_t nelts) {
-    return njt_array_create(pool, nelts, sizeof(health_checks_item_t*));
+health_check_http_header_t* create_health_check_http_header(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(health_check_http_header_item_t));
+}
+void set_health_check_http_header(health_check_http_t* obj, health_check_http_header_t* field) {
+    obj->header = field;
+}
+void set_health_check_http_body(health_check_http_t* obj, health_check_http_body_t field) {
+    obj->body = field;
+}
+void set_health_check_http_status(health_check_http_t* obj, health_check_http_status_t field) {
+    obj->status = field;
+}
+health_check_http_t* create_health_check_http(njt_pool_t *pool) {
+    health_check_http_t* out = njt_palloc(pool, sizeof(health_check_http_t));
+    memset(out, 0, sizeof(health_check_http_t));
+    return out;
+}
+void set_health_check_http(health_check_t* obj, health_check_http_t* field) {
+    obj->http = field;
+}
+void set_health_check_ssl_name(health_check_ssl_t* obj, health_check_ssl_name_t field) {
+    obj->name = field;
+}
+void set_health_check_ssl_protocols(health_check_ssl_t* obj, health_check_ssl_protocols_t field) {
+    obj->protocols = field;
+}
+void set_health_check_ssl_trustedCertificate(health_check_ssl_t* obj, health_check_ssl_trustedCertificate_t field) {
+    obj->trustedCertificate = field;
+}
+void set_health_check_ssl_crl(health_check_ssl_t* obj, health_check_ssl_crl_t field) {
+    obj->crl = field;
+}
+void set_health_check_ssl_certificate(health_check_ssl_t* obj, health_check_ssl_certificate_t field) {
+    obj->certificate = field;
+}
+void set_health_check_ssl_certificateKey(health_check_ssl_t* obj, health_check_ssl_certificateKey_t field) {
+    obj->certificateKey = field;
+}
+void set_health_check_ssl_encCertificate(health_check_ssl_t* obj, health_check_ssl_encCertificate_t field) {
+    obj->encCertificate = field;
+}
+void set_health_check_ssl_encCertificateKey(health_check_ssl_t* obj, health_check_ssl_encCertificateKey_t field) {
+    obj->encCertificateKey = field;
+}
+void set_health_check_ssl_passwords(health_check_ssl_t* obj, health_check_ssl_passwords_t field) {
+    obj->passwords = field;
+}
+void set_health_check_ssl_conf_commands(health_check_ssl_t* obj, health_check_ssl_conf_commands_t field) {
+    obj->conf_commands = field;
+}
+void set_health_check_ssl_ciphers(health_check_ssl_t* obj, health_check_ssl_ciphers_t field) {
+    obj->ciphers = field;
+}
+health_check_ssl_t* create_health_check_ssl(njt_pool_t *pool) {
+    health_check_ssl_t* out = njt_palloc(pool, sizeof(health_check_ssl_t));
+    memset(out, 0, sizeof(health_check_ssl_t));
+    return out;
+}
+void set_health_check_ssl(health_check_t* obj, health_check_ssl_t* field) {
+    obj->ssl = field;
+}
+health_check_t* create_health_check(njt_pool_t *pool) {
+    health_check_t* out = njt_palloc(pool, sizeof(health_check_t));
+    memset(out, 0, sizeof(health_check_t));
+    return out;
 }
 
-static void to_oneline_json_health_checks_item_hc_type(njt_pool_t *pool, health_checks_item_hc_type_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_health_check_interval(njt_pool_t *pool, health_check_interval_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_health_checks_item_upstream_name(njt_pool_t *pool, health_checks_item_upstream_name_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_health_check_jitter(njt_pool_t *pool, health_check_jitter_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, *out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_health_checks_item(njt_pool_t *pool, health_checks_item_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_health_check_timeout(njt_pool_t *pool, health_check_timeout_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_passes(njt_pool_t *pool, health_check_passes_t *out, njt_str_t* buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_fails(njt_pool_t *pool, health_check_fails_t *out, njt_str_t* buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_port(njt_pool_t *pool, health_check_port_t *out, njt_str_t* buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_stream_send(njt_pool_t *pool, health_check_stream_send_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_stream_expect(njt_pool_t *pool, health_check_stream_expect_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_stream(njt_pool_t *pool, health_check_stream_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -267,25 +2372,25 @@ static void to_oneline_json_health_checks_item(njt_pool_t *pool, health_checks_i
     cur = njt_sprintf(cur, "{");
     buf->len ++;
     omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->hc_type) == NULL) {
+    if ((flags & OMIT_NULL_STR) && (out->send) == NULL) {
         omit = 1;
     }
     if (omit == 0) {
-        cur = njt_sprintf(cur, "\"hc_type\":");
+        cur = njt_sprintf(cur, "\"send\":");
         buf->len = cur - buf->data;
-        to_oneline_json_health_checks_item_hc_type(pool, (&out->hc_type), buf, flags);
+        to_oneline_json_health_check_stream_send(pool, (&out->send), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
     }
     omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->upstream_name) == NULL) {
+    if ((flags & OMIT_NULL_STR) && (out->expect) == NULL) {
         omit = 1;
     }
     if (omit == 0) {
-        cur = njt_sprintf(cur, "\"upstream_name\":");
+        cur = njt_sprintf(cur, "\"expect\":");
         buf->len = cur - buf->data;
-        to_oneline_json_health_checks_item_upstream_name(pool, (&out->upstream_name), buf, flags);
+        to_oneline_json_health_check_stream_expect(pool, (&out->expect), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -300,7 +2405,34 @@ static void to_oneline_json_health_checks_item(njt_pool_t *pool, health_checks_i
     buf->len ++;
 }
 
-static void to_oneline_json_health_checks(njt_pool_t *pool, health_checks_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_health_check_http_uri(njt_pool_t *pool, health_check_http_uri_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_http_grpcService(njt_pool_t *pool, health_check_http_grpcService_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_http_grpcStatus(njt_pool_t *pool, health_check_http_grpcStatus_t *out, njt_str_t* buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_http_header_item(njt_pool_t *pool, health_check_http_header_item_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_http_header(njt_pool_t *pool, health_check_http_header_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -313,11 +2445,11 @@ static void to_oneline_json_health_checks(njt_pool_t *pool, health_checks_t *out
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((health_checks_item_t**)out->elts)[i] == NULL) {
+        if ((flags & OMIT_NULL_STR) && (&((health_check_http_header_item_t*)out->elts)[i]) == NULL) {
             omit = 1;
         }
         if (omit == 0) {
-            to_oneline_json_health_checks_item(pool, ((health_checks_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_health_check_http_header_item(pool, (&((health_check_http_header_item_t*)out->elts)[i]), buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -332,8 +2464,574 @@ static void to_oneline_json_health_checks(njt_pool_t *pool, health_checks_t *out
     cur = njt_sprintf(cur,  "]");
     buf->len ++;
 }
-health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *json_string, njt_str_t *err_str) {
-    health_checks_t* out;
+
+static void to_oneline_json_health_check_http_body(njt_pool_t *pool, health_check_http_body_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_http_status(njt_pool_t *pool, health_check_http_status_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_http(njt_pool_t *pool, health_check_http_t *out, njt_str_t* buf, njt_int_t flags) {
+    njt_int_t omit;
+    u_char* cur = buf->data + buf->len;
+    if (out == NULL) {
+        cur = njt_sprintf(cur, "null");
+        buf->len += 4;
+        return;
+    }
+    cur = njt_sprintf(cur, "{");
+    buf->len ++;
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->uri) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"uri\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_http_uri(pool, (&out->uri), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->grpcService) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"grpcService\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_http_grpcService(pool, (&out->grpcService), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"grpcStatus\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_http_grpcStatus(pool, (&out->grpcStatus), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_ARRAY) && (out->header) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"header\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_http_header(pool, (out->header), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->body) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"body\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_http_body(pool, (&out->body), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->status) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"status\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_http_status(pool, (&out->status), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    cur--;
+    if (cur[0] == ',') {
+        buf->len --;
+    } else {
+        cur ++;
+    }
+    cur = njt_sprintf(cur, "}");
+    buf->len ++;
+}
+
+static void to_oneline_json_health_check_ssl_enable(njt_pool_t *pool, health_check_ssl_enable_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    if (*out) {
+        njt_sprintf(cur, "true");
+        buf->len += 4;
+    } else {
+        njt_sprintf(cur, "false");
+        buf->len += 5;
+    }
+}
+
+static void to_oneline_json_health_check_ssl_ntls(njt_pool_t *pool, health_check_ssl_ntls_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    if (*out) {
+        njt_sprintf(cur, "true");
+        buf->len += 4;
+    } else {
+        njt_sprintf(cur, "false");
+        buf->len += 5;
+    }
+}
+
+static void to_oneline_json_health_check_ssl_session_reuse(njt_pool_t *pool, health_check_ssl_session_reuse_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    if (*out) {
+        njt_sprintf(cur, "true");
+        buf->len += 4;
+    } else {
+        njt_sprintf(cur, "false");
+        buf->len += 5;
+    }
+}
+
+static void to_oneline_json_health_check_ssl_name(njt_pool_t *pool, health_check_ssl_name_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_ssl_protocols(njt_pool_t *pool, health_check_ssl_protocols_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_ssl_serverName(njt_pool_t *pool, health_check_ssl_serverName_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    if (*out) {
+        njt_sprintf(cur, "true");
+        buf->len += 4;
+    } else {
+        njt_sprintf(cur, "false");
+        buf->len += 5;
+    }
+}
+
+static void to_oneline_json_health_check_ssl_verify(njt_pool_t *pool, health_check_ssl_verify_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    if (*out) {
+        njt_sprintf(cur, "true");
+        buf->len += 4;
+    } else {
+        njt_sprintf(cur, "false");
+        buf->len += 5;
+    }
+}
+
+static void to_oneline_json_health_check_ssl_verifyDepth(njt_pool_t *pool, health_check_ssl_verifyDepth_t *out, njt_str_t* buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    cur = njt_sprintf(cur, "%L", *out);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_ssl_trustedCertificate(njt_pool_t *pool, health_check_ssl_trustedCertificate_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_ssl_crl(njt_pool_t *pool, health_check_ssl_crl_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_ssl_certificate(njt_pool_t *pool, health_check_ssl_certificate_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_ssl_certificateKey(njt_pool_t *pool, health_check_ssl_certificateKey_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_ssl_encCertificate(njt_pool_t *pool, health_check_ssl_encCertificate_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_ssl_encCertificateKey(njt_pool_t *pool, health_check_ssl_encCertificateKey_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_ssl_passwords(njt_pool_t *pool, health_check_ssl_passwords_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_ssl_conf_commands(njt_pool_t *pool, health_check_ssl_conf_commands_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_ssl_ciphers(njt_pool_t *pool, health_check_ssl_ciphers_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_health_check_ssl(njt_pool_t *pool, health_check_ssl_t *out, njt_str_t* buf, njt_int_t flags) {
+    njt_int_t omit;
+    u_char* cur = buf->data + buf->len;
+    if (out == NULL) {
+        cur = njt_sprintf(cur, "null");
+        buf->len += 4;
+        return;
+    }
+    cur = njt_sprintf(cur, "{");
+    buf->len ++;
+    omit = 0;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"enable\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_enable(pool, (&out->enable), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"ntls\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_ntls(pool, (&out->ntls), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"session_reuse\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_session_reuse(pool, (&out->session_reuse), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->name) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"name\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_name(pool, (&out->name), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->protocols) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"protocols\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_protocols(pool, (&out->protocols), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"serverName\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_serverName(pool, (&out->serverName), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"verify\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_verify(pool, (&out->verify), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"verifyDepth\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_verifyDepth(pool, (&out->verifyDepth), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->trustedCertificate) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"trustedCertificate\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_trustedCertificate(pool, (&out->trustedCertificate), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->crl) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"crl\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_crl(pool, (&out->crl), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->certificate) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"certificate\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_certificate(pool, (&out->certificate), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->certificateKey) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"certificateKey\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_certificateKey(pool, (&out->certificateKey), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->encCertificate) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"encCertificate\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_encCertificate(pool, (&out->encCertificate), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->encCertificateKey) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"encCertificateKey\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_encCertificateKey(pool, (&out->encCertificateKey), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->passwords) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"passwords\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_passwords(pool, (&out->passwords), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->conf_commands) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"conf_commands\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_conf_commands(pool, (&out->conf_commands), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->ciphers) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"ciphers\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl_ciphers(pool, (&out->ciphers), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    cur--;
+    if (cur[0] == ',') {
+        buf->len --;
+    } else {
+        cur ++;
+    }
+    cur = njt_sprintf(cur, "}");
+    buf->len ++;
+}
+
+static void to_oneline_json_health_check(njt_pool_t *pool, health_check_t *out, njt_str_t* buf, njt_int_t flags) {
+    njt_int_t omit;
+    u_char* cur = buf->data + buf->len;
+    if (out == NULL) {
+        cur = njt_sprintf(cur, "null");
+        buf->len += 4;
+        return;
+    }
+    cur = njt_sprintf(cur, "{");
+    buf->len ++;
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->interval) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"interval\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_interval(pool, (&out->interval), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->jitter) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"jitter\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_jitter(pool, (&out->jitter), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_STR) && (out->timeout) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"timeout\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_timeout(pool, (&out->timeout), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"passes\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_passes(pool, (&out->passes), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"fails\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_fails(pool, (&out->fails), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"port\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_port(pool, (&out->port), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_OBJ) && (out->stream) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"stream\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_stream(pool, (out->stream), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_OBJ) && (out->http) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"http\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_http(pool, (out->http), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    if ((flags & OMIT_NULL_OBJ) && (out->ssl) == NULL) {
+        omit = 1;
+    }
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"ssl\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_health_check_ssl(pool, (out->ssl), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    cur--;
+    if (cur[0] == ',') {
+        buf->len --;
+    } else {
+        cur ++;
+    }
+    cur = njt_sprintf(cur, "}");
+    buf->len ++;
+}
+health_check_t* json_parse_health_check(njt_pool_t *pool, const njt_str_t *json_string, njt_str_t *err_str) {
+    health_check_t* out;
     parse_state_t parse_state_var;
     parse_state_t *parse_state = &parse_state_var;
     uint64_t max_token_number = 1024;
@@ -360,20 +3058,20 @@ health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *jso
         }
         break; // parse success
     }
-    out = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(health_checks_item_t*));;
-    if (parse_health_checks(pool, parse_state, out, err_str)) {
+    out = njt_palloc(pool, sizeof(health_check_t));;
+    if (parse_health_check(pool, parse_state, out, err_str)) {
         return NULL;
     }
     return out;
 }
 
-njt_str_t* to_json_health_checks(njt_pool_t *pool, health_checks_t* out, njt_int_t flags) {
+njt_str_t* to_json_health_check(njt_pool_t *pool, health_check_t* out, njt_int_t flags) {
     njt_str_t *json_str;
     json_str = njt_palloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
-    get_json_length_health_checks(pool, out, &str_len, flags);
+    get_json_length_health_check(pool, out, &str_len, flags);
     json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
     json_str->len = 0;
-    to_oneline_json_health_checks(pool, out, json_str, flags);
+    to_oneline_json_health_check(pool, out, json_str, flags);
     return json_str;
 }
