@@ -120,6 +120,10 @@ typedef struct {
 
 } njt_health_checker_t;
 
+typedef struct {
+    njt_uint_t hc_enabled;
+} njt_health_checker_conf_t;
+
 
 /* by zhaokang 
 typedef njt_int_t (*njt_stream_health_check_init_pt)(njt_stream_upstream_rr_peer_t *peer);
@@ -5252,6 +5256,10 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
     njt_helper_hc_api_data_t *api_data = NULL;
     njt_array_t *path;
 
+    njt_health_checker_conf_t * hc_flag = njt_http_get_module_loc_conf(r, njt_helper_health_check_module);
+    if(hc_flag == NULL  || hc_flag->hc_enabled == NJT_CONF_UNSET_UINT || hc_flag->hc_enabled == 0){
+        return NJT_DECLINED;
+    }
     hrc = HC_SUCCESS;
     if (r->method == NJT_HTTP_GET || r->method == NJT_HTTP_DELETE) {
         api_data = njt_pcalloc(r->pool, sizeof(njt_helper_hc_api_data_t));
@@ -5708,9 +5716,13 @@ end:
 }
 
 static char *njt_http_health_check_conf(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
-    njt_http_core_loc_conf_t *clcf;
-    clcf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
-    clcf->handler = njt_http_health_check_conf_handler;
+//    njt_http_core_loc_conf_t *clcf;
+//    clcf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
+//    clcf->handler = njt_http_health_check_conf_handler;
+
+    njt_health_checker_conf_t *hflag;
+    hflag = njt_http_conf_get_module_loc_conf(cf, njt_helper_health_check_module);
+    hflag->hc_enabled = 1;
     return NJT_CONF_OK;
 }
 
@@ -5727,9 +5739,40 @@ static njt_command_t njt_helper_health_check_module_commands[] = {
         njt_null_command
 };
 
+static njt_int_t   njt_ctrl_hc_postconfiguration(njt_conf_t *cf){
+    njt_http_core_main_conf_t  *cmcf;
+    njt_http_handler_pt        *h;
+    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
+    //njt_http_upstream_api_handler
+    h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
+    if (h == NULL) {
+        return NJT_ERROR;
+    }
+
+    *h = njt_http_health_check_conf_handler;
+
+    return NJT_OK;
+}
+
+static void * njt_ctrl_hc_create_loc_conf(njt_conf_t *cf){
+    njt_health_checker_conf_t *conf;
+    conf = njt_palloc(cf->pool,sizeof(njt_health_checker_conf_t));
+    if(!conf) return NULL;
+    conf->hc_enabled = NJT_CONF_UNSET_UINT;
+    return conf;
+
+}
+static char * njt_ctrl_hc_merge_loc_conf(njt_conf_t *cf, void *parent, void *child){
+    njt_health_checker_conf_t *prev = parent;
+    njt_health_checker_conf_t *conf = child;
+
+    njt_conf_merge_uint_value(conf->hc_enabled, prev->hc_enabled, 0);
+    return NJT_CONF_OK;
+}
+
 static njt_http_module_t njt_helper_health_check_module_ctx = {
         NULL,                                   /* preconfiguration */
-        NULL,                                   /* postconfiguration */
+        njt_ctrl_hc_postconfiguration,                                   /* postconfiguration */
 
         NULL,                                   /* create main configuration */
         NULL,                                  /* init main configuration */
@@ -5737,8 +5780,8 @@ static njt_http_module_t njt_helper_health_check_module_ctx = {
         NULL,                                  /* create server configuration */
         NULL,                                  /* merge server configuration */
 
-        NULL,                                   /* create location configuration */
-        NULL                                    /* merge location configuration */
+        njt_ctrl_hc_create_loc_conf,                                   /* create location configuration */
+        njt_ctrl_hc_merge_loc_conf                                    /* merge location configuration */
 };
 
 njt_module_t njt_helper_health_check_module = {
