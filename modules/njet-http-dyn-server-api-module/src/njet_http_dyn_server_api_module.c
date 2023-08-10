@@ -582,6 +582,9 @@ njt_http_dyn_server_read_data(njt_http_request_t *r){
 	if (server_info->server_name.len > 0) {
 		njt_crc32_update(&crc32,server_info->server_name.data,server_info->server_name.len);
 	}
+	if (server_info->listens.len > 0) {
+		njt_crc32_update(&crc32,server_info->listens.data,server_info->listens.len);
+	}
 	njt_crc32_final(crc32);
 
    
@@ -606,11 +609,11 @@ njt_http_dyn_server_read_data(njt_http_request_t *r){
 	if(rc == NJT_OK) {
 		++r->main->count;
 	}
+	njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "1 send topic retain_flag=%V, key=%V,value=%V",&server_info->type,&topic_name,&json_str);
 	if(server_info != NULL) {
                 njt_destroy_pool(server_info->pool);
-    }
+    	}
 
-	njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "1 send topic retain_flag=%V, key=%V,value=%V",&server_info->type,&topic_name,&json_str);
 	goto out;
 
 	

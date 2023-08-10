@@ -9,14 +9,6 @@
 #include <njt_core.h>
 #include <njt_http.h>
 
-typedef struct njt_http_sub_server_info_s {
-    
-	njt_str_t server_rule;
-    njt_str_t server;
-    njt_str_t proxy_pass;
-    njt_str_t server_body;
-	njt_array_t   *sub_server_array;
-} njt_http_sub_server_info_t;
 
 typedef struct njt_http_dyn_server_info_s {
     njt_str_t file;
@@ -24,11 +16,13 @@ typedef struct njt_http_dyn_server_info_s {
     njt_str_t addr_port;
     njt_str_t server_name;
     njt_str_t server_body;
+    njt_str_t listens;
     njt_pool_t *pool;
     njt_http_core_srv_conf_t *cscf;
     njt_str_t     msg;
     njt_str_t buffer;
     njt_int_t   bind;
+    njt_str_t del_addr_port;
 } njt_http_dyn_server_info_t;
 
 typedef struct njt_http_dyn_server_loc_conf_s {
