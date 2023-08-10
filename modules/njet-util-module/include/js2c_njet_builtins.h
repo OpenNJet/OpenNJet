@@ -56,7 +56,7 @@ enum {
 #ifndef LOG_ERROR_JSON_PARSE
 #define LOG_ERROR_JSON_PARSE(position, format, ...)  { \
     int len; \
-    err_str->data = njt_palloc(pool, 1024); \
+    err_str->data = (u_char *)njt_palloc(pool, 1024); \
     len = sprintf((char *)err_str->data, "pos: %d, ", position); \
     len += sprintf((char *)err_str->data + len, format, __VA_ARGS__); \
     err_str->len = len; \
@@ -216,8 +216,8 @@ static inline njt_str_t* handle_escape_on_write(njt_pool_t *pool, njt_str_t *src
     if (need_convert == false) {
         return src;
     }
-    njt_str_t *out = njt_palloc(pool, sizeof(njt_str_t));
-    out->data = njt_palloc(pool, 2*src->len);
+    njt_str_t *out = (njt_str_t *)njt_palloc(pool, sizeof(njt_str_t));
+    out->data = (u_char *)njt_palloc(pool, 2*src->len);
     char *dst = (char *)out->data;
     out->len = src->len;
     cur = (char *)src->data;
