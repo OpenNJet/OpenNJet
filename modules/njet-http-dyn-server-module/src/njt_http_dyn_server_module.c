@@ -221,21 +221,13 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
     }
 
 	cscf = server_info->cscf;
-	if (cscf == NULL ) {
-	if(msg.data != NULL && cscf == NULL){
-                    p = njt_snprintf(msg.data, msg.len, "error:host[%V],no find server [%V]!", &server_info->addr_port,&server_info->server_name);
-                    msg.len = p - msg.data;
-                    server_info->msg = msg;
-                    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "host[%V],no find server [%V]!",&server_info->addr_port,&server_info->server_name);
-            } else if(cscf != NULL){
-                    njt_str_set(&server_info->msg,"error:server is null!");
-                    njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "error:server is null!");
-            } else {
-                njt_str_set(&server_info->msg,"no find server!");
-                njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "host[%V],no find server [%V]!",&server_info->addr_port,&server_info->server_name);
-            }
-        return NJT_ERROR;
-    }
+        if(cscf != NULL){
+		    p = njt_snprintf(server_info->buffer.data,server_info->buffer.len,"error:[%V] server[%V] !",&server_info->addr_port,&server_info->server_name);
+		    msg.len = p - msg.data;
+		    server_info->msg = msg;		    
+                    njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "%V",&msg);
+        	    return NJT_ERROR;
+	} 
 	
 
     if (server_path.len == 0) {
