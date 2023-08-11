@@ -22,7 +22,6 @@ typedef struct njt_http_dyn_server_info_s {
     njt_str_t     msg;
     njt_str_t buffer;
     njt_int_t   bind;
-    njt_str_t del_addr_port;
 } njt_http_dyn_server_info_t;
 
 typedef struct njt_http_dyn_server_loc_conf_s {

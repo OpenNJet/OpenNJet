@@ -4301,7 +4301,6 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_listen_opt_t   lsopt;
 
     cscf->listen = 1;
-    cscf->listen_ref_num ++;
     value = cf->args->elts;
 
     njt_memzero(&u, sizeof(njt_url_t));

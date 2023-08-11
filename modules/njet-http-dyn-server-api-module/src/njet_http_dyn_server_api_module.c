@@ -582,9 +582,6 @@ njt_http_dyn_server_read_data(njt_http_request_t *r){
 	if (server_info->server_name.len > 0) {
 		njt_crc32_update(&crc32,server_info->server_name.data,server_info->server_name.len);
 	}
-	if (server_info->listens.len > 0) {
-		njt_crc32_update(&crc32,server_info->listens.data,server_info->listens.len);
-	}
 	njt_crc32_final(crc32);
 
    
