@@ -171,8 +171,6 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
             return NJT_ERROR;
         }
 
-        
-
         //update enc
         tmp_str = &cert_enc_str;                
         tmp_str->len = sizeof("enc:") - 1 + cert->certificateEnc->len;

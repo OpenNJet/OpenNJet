@@ -6,33 +6,202 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
-#ifndef PARSER_HEALTH_CHECK_H
-#define PARSER_HEALTH_CHECK_H
+#ifndef PARSER_HC_H
+#define PARSER_HC_H
 #include <stdint.h>
 #include <stdbool.h>
 #include "njt_core.h"
 #include "js2c_njet_builtins.h"
 /* ===================== Generated type declarations ===================== */
-typedef njt_str_t* health_checks_item_hc_type_t;
+typedef njt_str_t* health_check_interval_t;
 
-typedef njt_str_t* health_checks_item_upstream_name_t;
+typedef njt_str_t* health_check_jitter_t;
 
-typedef struct health_checks_item_t_s {
-    health_checks_item_hc_type_t hc_type;
-    health_checks_item_upstream_name_t upstream_name;
-} health_checks_item_t;
+typedef njt_str_t* health_check_timeout_t;
 
-typedef njt_array_t  health_checks_t;
-health_checks_item_hc_type_t get_health_checks_item_hc_type(health_checks_item_t *out);
-health_checks_item_upstream_name_t get_health_checks_item_upstream_name(health_checks_item_t *out);
-health_checks_item_t get_health_checks_item(health_checks_t *out, size_t idx);
+typedef int64_t health_check_passes_t;
+typedef int64_t health_check_fails_t;
+typedef int64_t health_check_port_t;
+typedef njt_str_t* health_check_stream_send_t;
+
+typedef njt_str_t* health_check_stream_expect_t;
+
+typedef struct health_check_stream_t_s {
+    health_check_stream_send_t send;
+    health_check_stream_expect_t expect;
+} health_check_stream_t;
+
+typedef njt_str_t* health_check_http_uri_t;
+
+typedef njt_str_t* health_check_http_grpcService_t;
+
+typedef int64_t health_check_http_grpcStatus_t;
+typedef njt_str_t* health_check_http_header_item_t;
+
+typedef njt_array_t  health_check_http_header_t;
+typedef njt_str_t* health_check_http_body_t;
+
+typedef njt_str_t* health_check_http_status_t;
+
+typedef struct health_check_http_t_s {
+    health_check_http_uri_t uri;
+    health_check_http_grpcService_t grpcService;
+    health_check_http_grpcStatus_t grpcStatus;
+    health_check_http_header_t *header;
+    health_check_http_body_t body;
+    health_check_http_status_t status;
+} health_check_http_t;
+
+typedef bool health_check_ssl_enable_t;
+typedef bool health_check_ssl_ntls_t;
+typedef bool health_check_ssl_session_reuse_t;
+typedef njt_str_t* health_check_ssl_name_t;
+
+typedef njt_str_t* health_check_ssl_protocols_t;
+
+typedef bool health_check_ssl_serverName_t;
+typedef bool health_check_ssl_verify_t;
+typedef int64_t health_check_ssl_verifyDepth_t;
+typedef njt_str_t* health_check_ssl_trustedCertificate_t;
+
+typedef njt_str_t* health_check_ssl_crl_t;
+
+typedef njt_str_t* health_check_ssl_certificate_t;
+
+typedef njt_str_t* health_check_ssl_certificateKey_t;
+
+typedef njt_str_t* health_check_ssl_encCertificate_t;
+
+typedef njt_str_t* health_check_ssl_encCertificateKey_t;
+
+typedef njt_str_t* health_check_ssl_passwords_t;
+
+typedef njt_str_t* health_check_ssl_conf_commands_t;
+
+typedef njt_str_t* health_check_ssl_ciphers_t;
+
+typedef struct health_check_ssl_t_s {
+    health_check_ssl_enable_t enable;
+    health_check_ssl_ntls_t ntls;
+    health_check_ssl_session_reuse_t session_reuse;
+    health_check_ssl_name_t name;
+    health_check_ssl_protocols_t protocols;
+    health_check_ssl_serverName_t serverName;
+    health_check_ssl_verify_t verify;
+    health_check_ssl_verifyDepth_t verifyDepth;
+    health_check_ssl_trustedCertificate_t trustedCertificate;
+    health_check_ssl_crl_t crl;
+    health_check_ssl_certificate_t certificate;
+    health_check_ssl_certificateKey_t certificateKey;
+    health_check_ssl_encCertificate_t encCertificate;
+    health_check_ssl_encCertificateKey_t encCertificateKey;
+    health_check_ssl_passwords_t passwords;
+    health_check_ssl_conf_commands_t conf_commands;
+    health_check_ssl_ciphers_t ciphers;
+} health_check_ssl_t;
+
+typedef struct health_check_t_s {
+    health_check_interval_t interval;
+    health_check_jitter_t jitter;
+    health_check_timeout_t timeout;
+    health_check_passes_t passes;
+    health_check_fails_t fails;
+    health_check_port_t port;
+    health_check_stream_t *stream;
+    health_check_http_t *http;
+    health_check_ssl_t *ssl;
+} health_check_t;
+
+health_check_stream_send_t get_health_check_stream_send(health_check_stream_t *out);
+health_check_stream_expect_t get_health_check_stream_expect(health_check_stream_t *out);
+health_check_http_header_item_t get_health_check_http_header_item(health_check_http_header_t *out, size_t idx);
+health_check_http_uri_t get_health_check_http_uri(health_check_http_t *out);
+health_check_http_grpcService_t get_health_check_http_grpcService(health_check_http_t *out);
+health_check_http_grpcStatus_t get_health_check_http_grpcStatus(health_check_http_t *out);
+// CHECK ARRAY not exceeding bounds before call this func
+health_check_http_header_t* get_health_check_http_header(health_check_http_t *out);
+health_check_http_body_t get_health_check_http_body(health_check_http_t *out);
+health_check_http_status_t get_health_check_http_status(health_check_http_t *out);
+health_check_ssl_enable_t get_health_check_ssl_enable(health_check_ssl_t *out);
+health_check_ssl_ntls_t get_health_check_ssl_ntls(health_check_ssl_t *out);
+health_check_ssl_session_reuse_t get_health_check_ssl_session_reuse(health_check_ssl_t *out);
+health_check_ssl_name_t get_health_check_ssl_name(health_check_ssl_t *out);
+health_check_ssl_protocols_t get_health_check_ssl_protocols(health_check_ssl_t *out);
+health_check_ssl_serverName_t get_health_check_ssl_serverName(health_check_ssl_t *out);
+health_check_ssl_verify_t get_health_check_ssl_verify(health_check_ssl_t *out);
+health_check_ssl_verifyDepth_t get_health_check_ssl_verifyDepth(health_check_ssl_t *out);
+health_check_ssl_trustedCertificate_t get_health_check_ssl_trustedCertificate(health_check_ssl_t *out);
+health_check_ssl_crl_t get_health_check_ssl_crl(health_check_ssl_t *out);
+health_check_ssl_certificate_t get_health_check_ssl_certificate(health_check_ssl_t *out);
+health_check_ssl_certificateKey_t get_health_check_ssl_certificateKey(health_check_ssl_t *out);
+health_check_ssl_encCertificate_t get_health_check_ssl_encCertificate(health_check_ssl_t *out);
+health_check_ssl_encCertificateKey_t get_health_check_ssl_encCertificateKey(health_check_ssl_t *out);
+health_check_ssl_passwords_t get_health_check_ssl_passwords(health_check_ssl_t *out);
+health_check_ssl_conf_commands_t get_health_check_ssl_conf_commands(health_check_ssl_t *out);
+health_check_ssl_ciphers_t get_health_check_ssl_ciphers(health_check_ssl_t *out);
+health_check_interval_t get_health_check_interval(health_check_t *out);
+health_check_jitter_t get_health_check_jitter(health_check_t *out);
+health_check_timeout_t get_health_check_timeout(health_check_t *out);
+health_check_passes_t get_health_check_passes(health_check_t *out);
+health_check_fails_t get_health_check_fails(health_check_t *out);
+health_check_port_t get_health_check_port(health_check_t *out);
+health_check_stream_t* get_health_check_stream(health_check_t *out);
+health_check_http_t* get_health_check_http(health_check_t *out);
+health_check_ssl_t* get_health_check_ssl(health_check_t *out);
 // INITIALIZATION IS NEEDED for string
-void set_health_checks_item_hc_type(health_checks_item_t* obj, health_checks_item_hc_type_t field);
+void set_health_check_interval(health_check_t* obj, health_check_interval_t field);
 // INITIALIZATION IS NEEDED for string
-void set_health_checks_item_upstream_name(health_checks_item_t* obj, health_checks_item_upstream_name_t field);
-health_checks_item_t* create_health_checks_item(njt_pool_t *pool);
-int add_item_health_checks(health_checks_t *src, health_checks_item_t* items);
-health_checks_t* create_health_checks(njt_pool_t *pool, size_t nelts);
-health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *json_string, njt_str_t *err_str);
-njt_str_t* to_json_health_checks(njt_pool_t *pool, health_checks_t *out, njt_int_t flags);
-#endif /* PARSER_HEALTH_CHECK_H */
+void set_health_check_jitter(health_check_t* obj, health_check_jitter_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_timeout(health_check_t* obj, health_check_timeout_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_stream_send(health_check_stream_t* obj, health_check_stream_send_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_stream_expect(health_check_stream_t* obj, health_check_stream_expect_t field);
+health_check_stream_t* create_health_check_stream(njt_pool_t *pool);
+// INITIALIZATION IS NEEDED for object or array
+void set_health_check_stream(health_check_t* obj, health_check_stream_t* field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_http_uri(health_check_http_t* obj, health_check_http_uri_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_http_grpcService(health_check_http_t* obj, health_check_http_grpcService_t field);
+int add_item_health_check_http_header(health_check_http_header_t *src, health_check_http_header_item_t items);
+health_check_http_header_t* create_health_check_http_header(njt_pool_t *pool, size_t nelts);
+// INITIALIZATION IS NEEDED for object or array
+void set_health_check_http_header(health_check_http_t* obj, health_check_http_header_t* field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_http_body(health_check_http_t* obj, health_check_http_body_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_http_status(health_check_http_t* obj, health_check_http_status_t field);
+health_check_http_t* create_health_check_http(njt_pool_t *pool);
+// INITIALIZATION IS NEEDED for object or array
+void set_health_check_http(health_check_t* obj, health_check_http_t* field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_ssl_name(health_check_ssl_t* obj, health_check_ssl_name_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_ssl_protocols(health_check_ssl_t* obj, health_check_ssl_protocols_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_ssl_trustedCertificate(health_check_ssl_t* obj, health_check_ssl_trustedCertificate_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_ssl_crl(health_check_ssl_t* obj, health_check_ssl_crl_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_ssl_certificate(health_check_ssl_t* obj, health_check_ssl_certificate_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_ssl_certificateKey(health_check_ssl_t* obj, health_check_ssl_certificateKey_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_ssl_encCertificate(health_check_ssl_t* obj, health_check_ssl_encCertificate_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_ssl_encCertificateKey(health_check_ssl_t* obj, health_check_ssl_encCertificateKey_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_ssl_passwords(health_check_ssl_t* obj, health_check_ssl_passwords_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_ssl_conf_commands(health_check_ssl_t* obj, health_check_ssl_conf_commands_t field);
+// INITIALIZATION IS NEEDED for string
+void set_health_check_ssl_ciphers(health_check_ssl_t* obj, health_check_ssl_ciphers_t field);
+health_check_ssl_t* create_health_check_ssl(njt_pool_t *pool);
+// INITIALIZATION IS NEEDED for object or array
+void set_health_check_ssl(health_check_t* obj, health_check_ssl_t* field);
+health_check_t* create_health_check(njt_pool_t *pool);
+health_check_t* json_parse_health_check(njt_pool_t *pool, const njt_str_t *json_string, njt_str_t *err_str);
+njt_str_t* to_json_health_check(njt_pool_t *pool, health_check_t *out, njt_int_t flags);
+#endif /* PARSER_HC_H */
