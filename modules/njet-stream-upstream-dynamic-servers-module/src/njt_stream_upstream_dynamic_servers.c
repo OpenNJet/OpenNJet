@@ -670,7 +670,7 @@ static char *njt_stream_upstream_dynamic_server_directive(njt_conf_t *cf,
 	us->name = u.url;
 	us->addrs = u.addrs;
 	us->naddrs = u.naddrs;
-    us->weight = weight * NJT_WEIGHT_POWER;
+    us->weight = weight;
     us->max_fails = max_fails;
     us->fail_timeout = fail_timeout;
 	us->slow_start = slow_start;
@@ -1731,7 +1731,9 @@ skip_del:
 				peer->id = peers->next_order ++;
 				peer->weight = weight;
 				peer->effective_weight = weight;
+				peer->rr_effective_weight = weight *NJT_WEIGHT_POWER;
 				peer->current_weight   = 0;
+				peer->rr_current_weight   = 0;
 				peer->down = down;
 				//peer->set_down = down;
 				peer->hc_down = hc_down;
