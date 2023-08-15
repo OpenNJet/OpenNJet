@@ -55,6 +55,7 @@ typedef int               njt_err_t;
 #define NJT_ENOMOREFILES  0
 #define NJT_ELOOP         ELOOP
 #define NJT_EBADF         EBADF
+#define NJT_EMSGSIZE      EMSGSIZE
 
 #if (NJT_HAVE_OPENAT)
 #define NJT_EMLINK        EMLINK

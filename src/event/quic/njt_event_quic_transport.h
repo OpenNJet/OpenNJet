@@ -272,7 +272,6 @@ struct njt_quic_frame_s {
     ssize_t                                          len;
     unsigned                                         need_ack:1;
     unsigned                                         pkt_need_ack:1;
-    unsigned                                         flush:1;
 
     njt_chain_t                                     *data;
     union {

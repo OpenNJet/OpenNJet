@@ -496,6 +496,8 @@ njt_quic_crypto_input(njt_connection_t *c, njt_chain_t *data)
      */
     njt_quic_discard_ctx(c, ssl_encryption_handshake);
 
+    njt_quic_discover_path_mtu(c, qc->path);
+
     /* start accepting clients on negotiated number of server ids */
     if (njt_quic_create_sockets(c) != NJT_OK) {
         return NJT_ERROR;

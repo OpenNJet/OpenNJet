@@ -13,8 +13,6 @@
 #include <njt_core.h>
 
 
-size_t njt_quic_max_udp_payload(njt_connection_t *c);
-
 njt_int_t njt_quic_output(njt_connection_t *c);
 
 njt_int_t njt_quic_negotiate_version(njt_connection_t *c,

@@ -83,7 +83,6 @@ njt_quic_open_sockets(njt_connection_t *c, njt_quic_connection_t *qc,
 
     if (pkt->validated) {
         qc->path->validated = 1;
-        qc->path->limited = 0;
     }
 
     njt_quic_path_dbg(c, "set active", qc->path);

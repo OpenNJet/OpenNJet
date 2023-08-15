@@ -58,6 +58,7 @@ typedef DWORD                      njt_err_t;
 #define NJT_EILSEQ                 ERROR_NO_UNICODE_TRANSLATION
 #define NJT_ELOOP                  0
 #define NJT_EBADF                  WSAEBADF
+#define NJT_EMSGSIZE               WSAEMSGSIZE
 
 #define NJT_EALREADY               WSAEALREADY
 #define NJT_EINVAL                 WSAEINVAL

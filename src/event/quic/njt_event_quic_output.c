@@ -11,9 +11,6 @@
 #include <njt_event_quic_connection.h>
 
 
-#define NJT_QUIC_MAX_UDP_PAYLOAD_OUT   1252
-#define NJT_QUIC_MAX_UDP_PAYLOAD_OUT6  1232
-
 #define NJT_QUIC_MAX_UDP_SEGMENT_BUF  65487 /* 65K - IPv6 header */
 #define NJT_QUIC_MAX_SEGMENTS            64 /* UDP_MAX_SEGMENTS */
 
@@ -60,21 +57,6 @@ static void njt_quic_set_packet_number(njt_quic_header_t *pkt,
     njt_quic_send_ctx_t *ctx);
 static size_t njt_quic_path_limit(njt_connection_t *c, njt_quic_path_t *path,
     size_t size);
-
-
-size_t
-njt_quic_max_udp_payload(njt_connection_t *c)
-{
-    /* TODO: path MTU discovery */
-
-#if (NJT_HAVE_INET6)
-    if (c->sockaddr->sa_family == AF_INET6) {
-        return NJT_QUIC_MAX_UDP_PAYLOAD_OUT6;
-    }
-#endif
-
-    return NJT_QUIC_MAX_UDP_PAYLOAD_OUT;
-}
 
 
 njt_int_t
@@ -143,10 +125,7 @@ njt_quic_create_datagrams(njt_connection_t *c)
 
         p = dst;
 
-        len = njt_min(qc->ctp.max_udp_payload_size,
-                      NJT_QUIC_MAX_UDP_PAYLOAD_SIZE);
-
-        len = njt_quic_path_limit(c, path, len);
+        len = njt_quic_path_limit(c, path, path->mtu);
 
         pad = njt_quic_get_padding_level(c);
 
@@ -282,7 +261,7 @@ njt_quic_allow_segmentation(njt_connection_t *c)
         return 0;
     }
 
-    if (qc->path->limited) {
+    if (!qc->path->validated) {
         /* don't even try to be faster on non-validated paths */
         return 0;
     }
@@ -300,9 +279,7 @@ njt_quic_allow_segmentation(njt_connection_t *c)
     ctx = njt_quic_get_send_ctx(qc, ssl_encryption_application);
 
     bytes = 0;
-
-    len = njt_min(qc->ctp.max_udp_payload_size,
-                  NJT_QUIC_MAX_UDP_SEGMENT_BUF);
+    len = njt_min(qc->path->mtu, NJT_QUIC_MAX_UDP_SEGMENT_BUF);
 
     for (q = njt_queue_head(&ctx->frames);
          q != njt_queue_sentinel(&ctx->frames);
@@ -346,8 +323,7 @@ njt_quic_create_segments(njt_connection_t *c)
         return NJT_ERROR;
     }
 
-    segsize = njt_min(qc->ctp.max_udp_payload_size,
-                      NJT_QUIC_MAX_UDP_SEGMENT_BUF);
+    segsize = njt_min(path->mtu, NJT_QUIC_MAX_UDP_SEGMENT_BUF);
     p = dst;
     end = dst + sizeof(dst);
 
@@ -359,7 +335,7 @@ njt_quic_create_segments(njt_connection_t *c)
 
         len = njt_min(segsize, (size_t) (end - p));
 
-        if (len && cg->in_flight < cg->window) {
+        if (len && cg->in_flight + (p-dst) < cg->window) {
 
             n = njt_quic_output_packet(c, ctx, p, len, len);
             if (n == NJT_ERROR) {
@@ -526,7 +502,7 @@ njt_quic_output_packet(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
     ssize_t                 flen;
     njt_str_t               res;
     njt_int_t               rc;
-    njt_uint_t              nframes, expand;
+    njt_uint_t              nframes;
     njt_msec_t              now;
     njt_queue_t            *q;
     njt_quic_frame_t       *f;
@@ -561,40 +537,12 @@ njt_quic_output_packet(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
     nframes = 0;
     p = src;
     len = 0;
-    expand = 0;
 
     for (q = njt_queue_head(&ctx->frames);
          q != njt_queue_sentinel(&ctx->frames);
          q = njt_queue_next(q))
     {
         f = njt_queue_data(q, njt_quic_frame_t, queue);
-
-        if (!expand && (f->type == NJT_QUIC_FT_PATH_RESPONSE
-                        || f->type == NJT_QUIC_FT_PATH_CHALLENGE))
-        {
-            /*
-             * RFC 9000, 8.2.1.  Initiating Path Validation
-             *
-             * An endpoint MUST expand datagrams that contain a
-             * PATH_CHALLENGE frame to at least the smallest allowed
-             * maximum datagram size of 1200 bytes...
-             *
-             * (same applies to PATH_RESPONSE frames)
-             */
-
-            if (max < 1200) {
-                /* expanded packet will not fit */
-                break;
-            }
-
-            if (min < 1200) {
-                min = 1200;
-
-                min_payload = njt_quic_payload_size(&pkt, min);
-            }
-
-            expand = 1;
-        }
 
         if (len >= max_payload) {
             break;
@@ -632,10 +580,6 @@ njt_quic_output_packet(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
         f->plen = 0;
 
         nframes++;
-
-        if (f->flush) {
-            break;
-        }
     }
 
     if (nframes == 0) {
@@ -1175,8 +1119,9 @@ njt_quic_send_ack(njt_connection_t *c, njt_quic_send_ctx_t *ctx)
     frame->u.ack.delay = ack_delay;
     frame->u.ack.range_count = ctx->nranges;
     frame->u.ack.first_range = ctx->first_range;
+    frame->len = njt_quic_create_frame(NULL, frame);
 
-    njt_quic_queue_frame(qc, frame);
+    njt_queue_insert_head(&ctx->frames, &frame->queue);
 
     return NJT_OK;
 }
@@ -1265,7 +1210,7 @@ njt_quic_frame_sendto(njt_connection_t *c, njt_quic_frame_t *frame,
 
     sent = njt_quic_send(c, res.data, res.len, path->sockaddr, path->socklen);
     if (sent < 0) {
-        return NJT_ERROR;
+        return sent;
     }
 
     path->sent += sent;
@@ -1279,7 +1224,7 @@ njt_quic_path_limit(njt_connection_t *c, njt_quic_path_t *path, size_t size)
 {
     off_t  max;
 
-    if (path->limited) {
+    if (!path->validated) {
         max = path->received * 3;
         max = (path->sent >= max) ? 0 : max - path->sent;
 

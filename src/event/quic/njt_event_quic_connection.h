@@ -66,6 +66,12 @@ typedef struct njt_quic_keys_s        njt_quic_keys_t;
 
 #define njt_quic_get_socket(c)               ((njt_quic_socket_t *)((c)->udp))
 
+typedef enum {
+    NJT_QUIC_PATH_IDLE = 0,
+    NJT_QUIC_PATH_VALIDATING,
+    NJT_QUIC_PATH_WAITING,
+    NJT_QUIC_PATH_MTUD
+} njt_quic_path_state_e;
 
 struct njt_quic_client_id_s {
     njt_queue_t                       queue;
@@ -90,19 +96,22 @@ struct njt_quic_path_s {
     njt_sockaddr_t                    sa;
     socklen_t                         socklen;
     njt_quic_client_id_t             *cid;
+    njt_quic_path_state_e             state;
     njt_msec_t                        expires;
     njt_uint_t                        tries;
     njt_uint_t                        tag;
+    size_t                            mtu;
+    size_t                            mtud;
+    size_t                            max_mtu;
     off_t                             sent;
     off_t                             received;
     u_char                            challenge1[8];
     u_char                            challenge2[8];
     uint64_t                          seqnum;
+    uint64_t                          mtu_pnum[NJT_QUIC_PATH_RETRIES];
     njt_str_t                         addr_text;
     u_char                            text[NJT_SOCKADDR_STRLEN];
-    unsigned                          validated:1;
-    unsigned                          validating:1;
-    unsigned                          limited:1;
+    njt_uint_t                        validated; /* unsigned validated:1; */
 };
 
 

@@ -230,6 +230,12 @@ njt_quic_handle_ack_frame_range(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
 
     qc = njt_quic_get_connection(c);
 
+    if (ctx->level == ssl_encryption_application) {
+        if (njt_quic_handle_path_mtu(c, qc->path, min, max) != NJT_OK) {
+            return NJT_ERROR;
+        }
+    }
+
     st->max_pn = NJT_TIMER_INFINITE;
     found = 0;
 
@@ -549,6 +555,7 @@ njt_quic_persistent_congestion(njt_connection_t *c)
 void
 njt_quic_resend_frames(njt_connection_t *c, njt_quic_send_ctx_t *ctx)
 {
+    uint64_t                pnum;
     njt_queue_t            *q;
     njt_quic_frame_t       *f, *start;
     njt_quic_stream_t      *qs;
@@ -557,6 +564,7 @@ njt_quic_resend_frames(njt_connection_t *c, njt_quic_send_ctx_t *ctx)
     qc = njt_quic_get_connection(c);
     q = njt_queue_head(&ctx->sent);
     start = njt_queue_data(q, njt_quic_frame_t, queue);
+    pnum = start->pnum;
 
     njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "quic resend packet pnum:%uL", start->pnum);
@@ -566,7 +574,7 @@ njt_quic_resend_frames(njt_connection_t *c, njt_quic_send_ctx_t *ctx)
     do {
         f = njt_queue_data(q, njt_quic_frame_t, queue);
 
-        if (f->pnum != start->pnum) {
+        if (f->pnum != pnum) {
             break;
         }
 
@@ -819,9 +827,9 @@ njt_quic_pto_handler(njt_event_t *ev)
 {
     njt_uint_t              i;
     njt_msec_t              now;
-    njt_queue_t            *q, *next;
+    njt_queue_t            *q;
     njt_connection_t       *c;
-    njt_quic_frame_t       *f;
+    njt_quic_frame_t       *f, frame;
     njt_quic_send_ctx_t    *ctx;
     njt_quic_connection_t  *qc;
 
@@ -839,7 +847,7 @@ njt_quic_pto_handler(njt_event_t *ev)
             continue;
         }
 
-        q = njt_queue_head(&ctx->sent);
+        q = njt_queue_last(&ctx->sent);
         f = njt_queue_data(q, njt_quic_frame_t, queue);
 
         if (f->pnum <= ctx->largest_ack
@@ -858,62 +866,21 @@ njt_quic_pto_handler(njt_event_t *ev)
                        "quic pto %s pto_count:%ui",
                        njt_quic_level_name(ctx->level), qc->pto_count);
 
-        for (q = njt_queue_head(&ctx->frames);
-             q != njt_queue_sentinel(&ctx->frames);
-             /* void */)
+        njt_memzero(&frame, sizeof(njt_quic_frame_t));
+        frame.level = ctx->level;
+        frame.type = NJT_QUIC_FT_PING;
+
+        if (njt_quic_frame_sendto(c, &frame, 0, qc->path) != NJT_OK
+            || njt_quic_frame_sendto(c, &frame, 0, qc->path) != NJT_OK)
         {
-            next = njt_queue_next(q);
-            f = njt_queue_data(q, njt_quic_frame_t, queue);
-
-            if (f->type == NJT_QUIC_FT_PING) {
-                njt_queue_remove(q);
-                njt_quic_free_frame(c, f);
-            }
-
-            q = next;
-        }
-
-        for (q = njt_queue_head(&ctx->sent);
-             q != njt_queue_sentinel(&ctx->sent);
-             /* void */)
-        {
-            next = njt_queue_next(q);
-            f = njt_queue_data(q, njt_quic_frame_t, queue);
-
-            if (f->type == NJT_QUIC_FT_PING) {
-                njt_quic_congestion_lost(c, f);
-                njt_queue_remove(q);
-                njt_quic_free_frame(c, f);
-            }
-
-            q = next;
-        }
-
-        /* enforce 2 udp datagrams */
-
-        f = njt_quic_alloc_frame(c);
-        if (f == NULL) {
-            break;
-        }
-
-        f->level = ctx->level;
-        f->type = NJT_QUIC_FT_PING;
-        f->flush = 1;
-
-        njt_quic_queue_frame(qc, f);
-
-        f = njt_quic_alloc_frame(c);
-        if (f == NULL) {
-            break;
-        }
-
-        f->level = ctx->level;
-        f->type = NJT_QUIC_FT_PING;
-
-        njt_quic_queue_frame(qc, f);
+            njt_quic_close_connection(c, NJT_ERROR);
+            return;
+         }
     }
 
     qc->pto_count++;
+
+    njt_quic_set_lost_timer(c);
 
     njt_quic_connstate_dbg(c);
 }
@@ -1172,7 +1139,8 @@ njt_quic_generate_ack(njt_connection_t *c, njt_quic_send_ctx_t *ctx)
         delay = njt_current_msec - ctx->ack_delay_start;
         qc = njt_quic_get_connection(c);
 
-        if (ctx->send_ack < NJT_QUIC_MAX_ACK_GAP
+        if (njt_queue_empty(&ctx->frames)
+            && ctx->send_ack < NJT_QUIC_MAX_ACK_GAP
             && delay < qc->tp.max_ack_delay)
         {
             if (!qc->push.timer_set && !qc->closing) {

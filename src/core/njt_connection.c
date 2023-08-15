@@ -1615,6 +1615,10 @@ njt_connection_error(njt_connection_t *c, njt_err_t err, char *text)
     }
 #endif
 
+    if (err == NJT_EMSGSIZE && c->log_error == NJT_ERROR_IGNORE_EMSGSIZE) {
+        return 0;
+    }
+
     if (err == 0
         || err == NJT_ECONNRESET
 #if (NJT_WIN32)
@@ -1632,6 +1636,7 @@ njt_connection_error(njt_connection_t *c, njt_err_t err, char *text)
     {
         switch (c->log_error) {
 
+        case NJT_ERROR_IGNORE_EMSGSIZE:
         case NJT_ERROR_IGNORE_EINVAL:
         case NJT_ERROR_IGNORE_ECONNRESET:
         case NJT_ERROR_INFO:

@@ -101,7 +101,8 @@ typedef enum {
     NJT_ERROR_ERR,
     NJT_ERROR_INFO,
     NJT_ERROR_IGNORE_ECONNRESET,
-    NJT_ERROR_IGNORE_EINVAL
+    NJT_ERROR_IGNORE_EINVAL,
+    NJT_ERROR_IGNORE_EMSGSIZE
 } njt_connection_log_error_e;
 
 
