@@ -695,11 +695,6 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     }
 
 	njt_crc32_init(crc32);
-    if(api_data->type == DYN_SSL_API_TYPE_ADD){
-        njt_crc32_update(&crc32, (u_char *)"add", 3);
-    }else{
-        njt_crc32_update(&crc32, (u_char *)"del", 3);
-    }
     
 	njt_crc32_update(&crc32, api_data->cert_info->certificate->data,api_data->cert_info->certificate->len);
     njt_crc32_update(&crc32, api_data->cert_info->certificateKey->data,api_data->cert_info->certificateKey->len);
