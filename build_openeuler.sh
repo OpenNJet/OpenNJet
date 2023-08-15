@@ -1,5 +1,4 @@
 #!/bin/bash
-#tgtdir=/Users/`whoami`/njet
 tgtdir=/etc/njet
 tgbindir=/usr/sbin/njet
 tglogdir=/var/log/njet/error.log
@@ -9,10 +8,8 @@ if [ $# -eq 2 ];
 then
   git_tag="$git_tag$2"
 fi
-export LUAJIT_INC='/etc/njet/luajit/include/luajit-2.1'
-export LUAJIT_LIB='/etc/njet/luajit/lib'
-#--with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
-#--with-cc-opt=-I'auto/lib/tassl/include' --with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
+export LUAJIT_INC="`pwd`/luajit/src"
+export LUAJIT_LIB="`pwd`/luajit/src"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-proto-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-util-module"  #njet-http-if-location-module
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-if-location-module"  #njet-http-if-location-module
@@ -50,14 +47,11 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-cluster-lim
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-cluster-limit-req-module"
 # NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-test_multicast-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"
-NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-jwt-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
 LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo"
-flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --with-debug --build=NJT1.0_$git_tag --with-stream --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module  --with-cc=/usr/bin/cc"
-LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm -lpcre"
-CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
-#LD_OPT="-ldl -lm -lpcre"
-#CC_OPT="-O0 -ggdb"
+flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --with-debug --build=NJT_$git_tag --with-stream --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module  --with-cc=/usr/bin/cc"
+LD_OPT="-ldl -lm -lpcre"
+CC_OPT="-O0 -ggdb"
 
 #api doc make tar file
 doctar=doc.tar
@@ -91,26 +85,24 @@ cdir=`cd $(dirname $0); pwd`
     for option; do
         case $option in
             conf*)
-		if [ ! -d /etc/njet/luajit ]; then
-		   cd luajit;make;make install;cd -;
-		   cp -fr /etc/njet/luajit/lib/libluajit-5.1.so.2    /usr/local/lib/
-		fi
-		if [ ! -d /etc/njet/lualib ]; then
-		   cp -fr lualib /etc/njet/lualib
-		fi
-
+                 cd luajit;make; cd -;
+                 cp luajit/src/libluajit.so luajit/src/libluajit-5.1.so
                 ./configure --with-openssl=auto/lib/tongsuo $flags --with-openssl-opt='--strict-warnings enable-ntls' --with-ntls --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
                 ;;
             make)
                 make
                 ;;
             install)
+		if [ ! -d /etc/njet/lualib ]; then
+		   cp -fr lualib /etc/njet/lualib
+		fi
+                cp luajit/src/libluajit-5.1.so /usr/local/lib
                 cd auto/lib/keepalived; make install; cd -;
                 make install
-		mkdir /etc/njet/data
+		mkdir -p /etc/njet/data
 		chmod 777 -R /etc/njet/data  /etc/njet/logs
                 ;;
-            clean)
+             clean)
                 rm -rf auto/lib/njetmq/build
                 rm auto/lib/keepalived/Makefile
                 make clean

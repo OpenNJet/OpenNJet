@@ -15,7 +15,7 @@ build_bin:
     - sudo mkdir -p work/etc/njet/lualib/ work/usr/local/lib/ work/etc/njet/logs/ logs/  # 创建文件包目录
     - sudo cp -R /etc/njet/* work/etc/njet/
     - sudo cp -R /etc/njet/luajit/lib/* work/usr/local/lib/
-    - sudo cp -a /usr/local/lib/libha_emb.* work/usr/local/lib/ 2>/dev/null
+    - sudo cp -a auto/lib/keepalived/keepalived/emb/.libs/libha_emb.so* work/usr/local/lib/ 2>/dev/null
   artifacts:
     paths:     # 需要打包的文件
       - objs/njet

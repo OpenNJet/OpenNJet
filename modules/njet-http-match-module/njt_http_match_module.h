@@ -1,7 +1,10 @@
 
 /*
- * Copyright  Jikui Pei
+ * Copyright (C) Igor Sysoev
+ * Copyright (C) Nginx, Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
+
 #ifndef __NJT_HTTP_MATCH_MODULE_H__
 #define __NJT_HTTP_MATCH_MODULE_H__
 
