@@ -29,7 +29,7 @@ static njt_str_t *njt_http_dyn_map_dump_maps(njt_cycle_t *cycle, njt_pool_t *poo
     njt_array_t *ori_conf;
 
     njt_memzero(&dynjson_obj, sizeof(httpmap_t));
-    dynjson_obj.maps = create_httpmap_maps(pool, 4);
+    set_httpmap_maps(&dynjson_obj, create_httpmap_maps(pool, 4));
     cmcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_core_module);
     if (cmcf == NULL) {
         goto out;
@@ -55,8 +55,8 @@ static njt_str_t *njt_http_dyn_map_dump_maps(njt_cycle_t *cycle, njt_pool_t *poo
                 njt_memcpy(keyTo->data + 1, v[i].name.data, v[i].name.len);
                 set_httpmap_maps_item_keyTo(item, keyTo);
                 set_httpmap_maps_item_keyFrom(item, &map->value.value);
-                item->isVolatile = v[i].flags & NJT_HTTP_VAR_NOCACHEABLE ? true : false;
-                item->hostnames = map->hostnames ? true : false;
+                set_httpmap_maps_item_isVolatile(item, v[i].flags & NJT_HTTP_VAR_NOCACHEABLE ? true : false);
+                set_httpmap_maps_item_hostnames(item, map->hostnames ? true : false);
                 values = create_httpmap_maps_item_values(pool, 4);
                 set_httpmap_maps_item_values(item, values);
                 ori_conf = var_hash_item->ori_conf;
@@ -124,9 +124,9 @@ static njt_int_t njt_http_map_create_ctx_from_apidata(njt_http_map_conf_t *mcf, 
     njt_http_compile_complex_value_t   ccv;
     njt_int_t rv;
     njt_str_t value[2];
-    httpmap_maps_item_values_item_t vi;
-    httpmap_maps_item_values_item_valueFrom_t from;
-    httpmap_maps_item_values_item_valueTo_t to;
+    httpmap_maps_item_values_item_t *vi;
+    httpmap_maps_item_values_item_valueFrom_t *from;
+    httpmap_maps_item_values_item_valueTo_t *to;
     njt_http_map_ori_conf_item_t *ori_conf_item;
     njt_str_t empty_string = njt_string("");
 
@@ -134,8 +134,8 @@ static njt_int_t njt_http_map_create_ctx_from_apidata(njt_http_map_conf_t *mcf, 
     ctx->hostnames = get_httpmap_maps_item_hostnames(item) ? 1 : 0;
     for (j = 0; j < item->values->nelts;j++) {
         vi = get_httpmap_maps_item_values_item(item->values, j);
-        from = get_httpmap_maps_item_values_item_valueFrom(&vi);
-        to = get_httpmap_maps_item_values_item_valueTo(&vi);
+        from = get_httpmap_maps_item_values_item_valueFrom(vi);
+        to = get_httpmap_maps_item_values_item_valueTo(vi);
         value[0] = *from;
         value[1] = *to;
         if (from->len == 0 && from->data == NULL) {
@@ -431,14 +431,14 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, httpmap_t *api
         }
         rpc_data_str.len = 0;
 
-        httpmap_maps_item_t item = get_httpmap_maps_item(api_data->maps, i);
-        njt_str_t *keyTo = (njt_str_t *)get_httpmap_maps_item_keyTo(&item);
+        httpmap_maps_item_t *item = get_httpmap_maps_item(api_data->maps, i);
+        njt_str_t *keyTo = (njt_str_t *)get_httpmap_maps_item_keyTo(item);
         if (keyTo->data[0] == '$') {
             keyTo->data++;
             keyTo->len--;
             rc = njt_lvlhsh_map_get(&mcf->var_hash, keyTo, (intptr_t *)&var_hash_item);
             if (rc == NJT_OK) {
-                rc = njt_http_dyn_map_update_existed_var(pool, temp_pool, conf_ctx, &item, mcf, var_hash_item, rpc_result);
+                rc = njt_http_dyn_map_update_existed_var(pool, temp_pool, conf_ctx, item, mcf, var_hash_item, rpc_result);
                 if (rc != NJT_OK) {
                     end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " njt_dyn_map_update_values error");
                     rpc_data_str.len = end - data_buf;
@@ -471,7 +471,7 @@ static int njt_http_dyn_map_put_handler_internal(njt_str_t *key, njt_str_t *valu
     njt_pool_t *temp_pool = NULL;
     njt_json_manager json_manager;
     njt_rpc_result_t *rpc_result;
-    njt_str_t err_str;
+    js2c_parse_error_t  err_info;
 
     if (value->len < 2) {
         return NJT_OK;
@@ -493,11 +493,11 @@ static int njt_http_dyn_map_put_handler_internal(njt_str_t *key, njt_str_t *valu
         goto rpc_msg;
     }
 
-    api_data = json_parse_httpmap(temp_pool, value, &err_str);
+    api_data = json_parse_httpmap(temp_pool, value, &err_info);
     if (api_data == NULL) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "http_dyn_map json parse error: %V", &err_str);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "http_dyn_map json parse error: %V", &err_info.err_str);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
-        njt_rpc_result_set_msg2(rpc_result, &err_str);
+        njt_rpc_result_set_msg2(rpc_result, &err_info.err_str);
         rc = NJT_ERROR;
         goto rpc_msg;
     }
