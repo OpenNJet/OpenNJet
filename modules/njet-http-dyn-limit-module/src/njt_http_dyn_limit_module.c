@@ -404,9 +404,9 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(dyn_limit_servers_item_locations_i
 
     if(data->limit_reqs_scope == DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE){
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
-                 "dyn limit req not location level, so not update");
+                 "dyn limit req is up_share scope, so not update");
 
-        end = njt_snprintf(data_buf,sizeof(data_buf) - 1," dyn limit req not location level, so not update");
+        end = njt_snprintf(data_buf,sizeof(data_buf) - 1," dyn limit req is up_share scope, so not update");
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 

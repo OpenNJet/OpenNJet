@@ -698,6 +698,18 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
 	njt_crc32_init(crc32);
 	njt_crc32_update(&crc32, api_data->cert_info->certificate.data,api_data->cert_info->certificate.len);
     njt_crc32_update(&crc32, api_data->cert_info->certificateKey.data,api_data->cert_info->certificateKey.len);
+    if(api_data->cert_info->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS){
+        njt_crc32_update(&crc32, (u_char*)"ntls", 4);
+        if(api_data->cert_info->certificateEnc.len > 0){
+            njt_crc32_update(&crc32, api_data->cert_info->certificateEnc.data, api_data->cert_info->certificateEnc.len);
+        }
+        if(api_data->cert_info->certificateKeyEnc.len > 0){
+            njt_crc32_update(&crc32, api_data->cert_info->certificateKeyEnc.data, api_data->cert_info->certificateKeyEnc.len);
+        }
+    }else{
+        njt_crc32_update(&crc32, (u_char *)"regular", 7);
+    }
+
 	for (i = 0; i < api_data->serverNames->nelts; i++){
         serverName = get_dyn_ssl_api_serverNames_item(api_data->serverNames, i);
         if(serverName->len > 0){

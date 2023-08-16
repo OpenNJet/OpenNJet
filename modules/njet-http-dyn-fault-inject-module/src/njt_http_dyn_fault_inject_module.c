@@ -58,6 +58,7 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_none(
     ficf->abort_percent = 100;
     ficf->delay_percent = 100;
     ficf->duration = 0;
+    njt_str_null(&ficf->str_duration);
     ficf->fault_inject_type = NJT_HTTP_FAULT_INJECT_NONE;
     ficf->status_code = 200;
 
@@ -115,8 +116,21 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_delay(
     new_ficf.abort_percent = 100;
     new_ficf.delay_percent = 100;
     new_ficf.duration = 0;
+    njt_str_null(&new_ficf.str_duration);
     new_ficf.fault_inject_type = NJT_HTTP_FAULT_INJECT_DELAY;
     new_ficf.status_code = 200;
+
+    if(!data->is_delay_duration_set){
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+            " dyn fault inject, delay_duration must set, should 1h/1m/1s/1ms format");
+
+        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
+            " dyn fault inject, delay_duration must set, should 1h/1m/1s/1ms format");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
+
+        return NJT_ERROR;
+    }
 
     //check delay_percent
     if (data->is_delay_percentage_set && (data->delay_percentage < 1 || data->delay_percentage > 100)) {
@@ -230,6 +244,7 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_abort(
     new_ficf.abort_percent = 100;
     new_ficf.delay_percent = 100;
     new_ficf.duration = 0;
+    njt_str_null(&new_ficf.str_duration);
     new_ficf.fault_inject_type = NJT_HTTP_FAULT_INJECT_ABORT;
     new_ficf.status_code = 200;
 
@@ -319,6 +334,7 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_delay_abort(
     new_ficf.abort_percent = 100;
     new_ficf.delay_percent = 100;
     new_ficf.duration = 0;
+    njt_str_null(&new_ficf.str_duration);
     new_ficf.fault_inject_type = NJT_HTTP_FAULT_INJECT_DELAY_ABORT;
     new_ficf.status_code = 200;
 
@@ -615,11 +631,6 @@ static void njt_dyn_fault_inject_dump_locs(njt_pool_t *pool,
         }
         
         set_dyn_fault_inject_locationDef_location(loc_item, &clcf->full_name);
-        set_dyn_fault_inject_locationDef_fault_inject_type(loc_item, DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE);
-        set_dyn_fault_inject_locationDef_abort_percentage(loc_item, ficf->abort_percent);
-        set_dyn_fault_inject_locationDef_delay_percentage(loc_item, ficf->delay_percent);
-        set_dyn_fault_inject_locationDef_status_code(loc_item, ficf->status_code);
-        set_dyn_fault_inject_locationDef_delay_duration(loc_item, &ficf->str_duration);
 
         switch (ficf->fault_inject_type)
         {
@@ -628,14 +639,23 @@ static void njt_dyn_fault_inject_dump_locs(njt_pool_t *pool,
             break;
         case NJT_HTTP_FAULT_INJECT_DELAY:
             set_dyn_fault_inject_locationDef_fault_inject_type(loc_item, DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY);
+            set_dyn_fault_inject_locationDef_delay_percentage(loc_item, ficf->delay_percent);
+            set_dyn_fault_inject_locationDef_delay_duration(loc_item, &ficf->str_duration);
             break;
         case NJT_HTTP_FAULT_INJECT_ABORT:
             set_dyn_fault_inject_locationDef_fault_inject_type(loc_item, DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_ABORT);
+            set_dyn_fault_inject_locationDef_abort_percentage(loc_item, ficf->abort_percent);
+            set_dyn_fault_inject_locationDef_status_code(loc_item, ficf->status_code);
             break;
         case NJT_HTTP_FAULT_INJECT_DELAY_ABORT:
             set_dyn_fault_inject_locationDef_fault_inject_type(loc_item, DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT);
+            set_dyn_fault_inject_locationDef_delay_percentage(loc_item, ficf->delay_percent);
+            set_dyn_fault_inject_locationDef_delay_duration(loc_item, &ficf->str_duration);
+            set_dyn_fault_inject_locationDef_abort_percentage(loc_item, ficf->abort_percent);
+            set_dyn_fault_inject_locationDef_status_code(loc_item, ficf->status_code);
             break;    
         default:
+            set_dyn_fault_inject_locationDef_fault_inject_type(loc_item, DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE);
             break;
         }
 

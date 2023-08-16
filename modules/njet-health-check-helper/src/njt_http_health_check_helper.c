@@ -3019,76 +3019,77 @@ static njt_int_t njy_hc_api_data2_ssl_cf(njt_helper_hc_api_data_t *api_data, njt
         return UDP_NOT_SUPPORT_TLS;
     }
 
-    if(api_data->hc_data->is_ssl_set){
-        if(api_data->hc_data->ssl->enable){
-            hhccf->ssl.ssl_enable = 1;
-        }
-    
-        if(api_data->hc_data->ssl->ntls){
-            hhccf->ssl.ssl_enable = 1;
-            hhccf->ssl.ntls_enable = 1;
-        }
-    
-        hhccf->ssl.ssl_session_reuse = api_data->hc_data->ssl->session_reuse ? 1 : 0;
+    if(!api_data->hc_data->is_ssl_set){
+        return HC_SUCCESS;
+    }
+    if(api_data->hc_data->ssl->enable){
+        hhccf->ssl.ssl_enable = 1;
+    }
 
-        if (api_data->hc_data->ssl->ciphers.len <= 0) {
-            njt_str_set(&hhccf->ssl.ssl_ciphers, "DEFAULT");
-        } else {
-            njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_ciphers, api_data->hc_data->ssl->ciphers, return HC_SERVER_ERROR);
-        }
+    if(api_data->hc_data->ssl->ntls){
+        hhccf->ssl.ssl_enable = 1;
+        hhccf->ssl.ntls_enable = 1;
+    }
 
-        if(api_data->hc_data->ssl->protocols.len > 0){
-            njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_protocol_str, api_data->hc_data->ssl->protocols,
-                        return HC_SERVER_ERROR);
-            
-            if(NJT_OK != njt_json_parse_ssl_protocols(api_data->hc_data->ssl->protocols, &hhccf->ssl.ssl_protocols)){
-                hhccf->ssl.ssl_protocols = (NJT_CONF_BITMASK_SET | NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1 | NJT_SSL_TLSv1_2);
-            }
-        }else{
+    hhccf->ssl.ssl_session_reuse = api_data->hc_data->ssl->session_reuse ? 1 : 0;
+
+    if (api_data->hc_data->ssl->ciphers.len <= 0) {
+        njt_str_set(&hhccf->ssl.ssl_ciphers, "DEFAULT");
+    } else {
+        njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_ciphers, api_data->hc_data->ssl->ciphers, return HC_SERVER_ERROR);
+    }
+
+    if(api_data->hc_data->ssl->protocols.len > 0){
+        njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_protocol_str, api_data->hc_data->ssl->protocols,
+                    return HC_SERVER_ERROR);
+        
+        if(NJT_OK != njt_json_parse_ssl_protocols(api_data->hc_data->ssl->protocols, &hhccf->ssl.ssl_protocols)){
             hhccf->ssl.ssl_protocols = (NJT_CONF_BITMASK_SET | NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1 | NJT_SSL_TLSv1_2);
         }
-    
-        if(api_data->hc_data->ssl->name.len > 0){
-            njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_name, api_data->hc_data->ssl->name, return HC_SERVER_ERROR);
-        }
-    
-        hhccf->ssl.ssl_server_name = api_data->hc_data->ssl->serverName ? 1 : 0;
-        hhccf->ssl.ssl_verify = api_data->hc_data->ssl->verify ? 1 : 0;
-        hhccf->ssl.ssl_verify_depth = api_data->hc_data->ssl->verifyDepth <= 0 ? 1 : api_data->hc_data->ssl->verifyDepth;
-        if(api_data->hc_data->ssl->trustedCertificate.len > 0){
-            tmp_str = api_data->hc_data->ssl->trustedCertificate;
-            njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_trusted_certificate, tmp_str, return HC_SERVER_ERROR);
-        }
-    
-        if(api_data->hc_data->ssl->crl.len > 0){
-            tmp_str = api_data->hc_data->ssl->crl;
-            njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_crl, tmp_str, return HC_SERVER_ERROR);
-        }
+    }else{
+        hhccf->ssl.ssl_protocols = (NJT_CONF_BITMASK_SET | NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1 | NJT_SSL_TLSv1_2);
+    }
 
-        if(api_data->hc_data->ssl->certificate.len > 0){
-            tmp_str = api_data->hc_data->ssl->certificate;
-            njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_certificate, tmp_str, return HC_SERVER_ERROR);
-        }
+    if(api_data->hc_data->ssl->name.len > 0){
+        njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_name, api_data->hc_data->ssl->name, return HC_SERVER_ERROR);
+    }
 
-        if(api_data->hc_data->ssl->certificateKey.len > 0){
-            tmp_str = api_data->hc_data->ssl->certificateKey;
-            njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_certificate_key, tmp_str, return HC_SERVER_ERROR);
-        }
-    
-        if(api_data->hc_data->ssl->encCertificate.len > 0){
-            tmp_str = api_data->hc_data->ssl->encCertificate;
-            njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_enc_certificate, tmp_str, return HC_SERVER_ERROR);
-        }
-    
-        if(api_data->hc_data->ssl->encCertificate.len > 0){
-            tmp_str = api_data->hc_data->ssl->encCertificate;
-            njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_enc_certificate, tmp_str, return HC_SERVER_ERROR);
-        }
+    hhccf->ssl.ssl_server_name = api_data->hc_data->ssl->serverName ? 1 : 0;
+    hhccf->ssl.ssl_verify = api_data->hc_data->ssl->verify ? 1 : 0;
+    hhccf->ssl.ssl_verify_depth = api_data->hc_data->ssl->verifyDepth <= 0 ? 1 : api_data->hc_data->ssl->verifyDepth;
+    if(api_data->hc_data->ssl->trustedCertificate.len > 0){
+        tmp_str = api_data->hc_data->ssl->trustedCertificate;
+        njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_trusted_certificate, tmp_str, return HC_SERVER_ERROR);
+    }
 
-        if(api_data->hc_data->ssl->encCertificateKey.len > 0){
-            tmp_str = api_data->hc_data->ssl->encCertificateKey;
-            njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_enc_certificate_key, tmp_str, return HC_SERVER_ERROR);
-        }
+    if(api_data->hc_data->ssl->crl.len > 0){
+        tmp_str = api_data->hc_data->ssl->crl;
+        njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_crl, tmp_str, return HC_SERVER_ERROR);
+    }
+
+    if(api_data->hc_data->ssl->certificate.len > 0){
+        tmp_str = api_data->hc_data->ssl->certificate;
+        njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_certificate, tmp_str, return HC_SERVER_ERROR);
+    }
+
+    if(api_data->hc_data->ssl->certificateKey.len > 0){
+        tmp_str = api_data->hc_data->ssl->certificateKey;
+        njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_certificate_key, tmp_str, return HC_SERVER_ERROR);
+    }
+
+    if(api_data->hc_data->ssl->encCertificate.len > 0){
+        tmp_str = api_data->hc_data->ssl->encCertificate;
+        njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_enc_certificate, tmp_str, return HC_SERVER_ERROR);
+    }
+
+    if(api_data->hc_data->ssl->encCertificate.len > 0){
+        tmp_str = api_data->hc_data->ssl->encCertificate;
+        njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_enc_certificate, tmp_str, return HC_SERVER_ERROR);
+    }
+
+    if(api_data->hc_data->ssl->encCertificateKey.len > 0){
+        tmp_str = api_data->hc_data->ssl->encCertificateKey;
+        njt_str_copy_pool(hhccf->pool, hhccf->ssl.ssl_enc_certificate_key, tmp_str, return HC_SERVER_ERROR);
     }
 //    njt_array_t *ssl_passwords;
 //    njt_array_t *ssl_conf_commands;
