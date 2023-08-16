@@ -14,9 +14,7 @@
 #include "js2c_njet_builtins.h"
 /* ===================== Generated type declarations ===================== */
 typedef struct dyn_fault_inject_locationDef_t_s dyn_fault_inject_locationDef_t; //forward decl for public definition
-typedef njt_str_t* dyn_fault_inject_locationDef_location_t;
-
-// maybe use njt_str_t?? 
+typedef njt_str_t dyn_fault_inject_locationDef_location_t;
 
 typedef enum dyn_fault_inject_locationDef_fault_inject_type_t_e{
     DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE,
@@ -28,7 +26,7 @@ typedef enum dyn_fault_inject_locationDef_fault_inject_type_t_e{
 typedef int64_t dyn_fault_inject_locationDef_delay_percentage_t;
 typedef int64_t dyn_fault_inject_locationDef_abort_percentage_t;
 typedef int64_t dyn_fault_inject_locationDef_status_code_t;
-typedef njt_str_t* dyn_fault_inject_locationDef_delay_duration_t;
+typedef njt_str_t dyn_fault_inject_locationDef_delay_duration_t;
 
 typedef dyn_fault_inject_locationDef_t dyn_fault_inject_locationDef_locations_item_t; //ref def
 typedef njt_array_t  dyn_fault_inject_locationDef_locations_t;
@@ -40,30 +38,38 @@ typedef struct dyn_fault_inject_locationDef_t_s {
     dyn_fault_inject_locationDef_status_code_t status_code;
     dyn_fault_inject_locationDef_delay_duration_t delay_duration;
     dyn_fault_inject_locationDef_locations_t *locations;
+    unsigned int is_location_set:1;
+    unsigned int is_fault_inject_type_set:1;
+    unsigned int is_delay_percentage_set:1;
+    unsigned int is_abort_percentage_set:1;
+    unsigned int is_status_code_set:1;
+    unsigned int is_delay_duration_set:1;
+    unsigned int is_locations_set:1;
 } dyn_fault_inject_locationDef_t;
 
-dyn_fault_inject_locationDef_locations_item_t get_dyn_fault_inject_locationDef_locations_item(dyn_fault_inject_locationDef_locations_t *out, size_t idx);
-dyn_fault_inject_locationDef_location_t get_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_t *out);
+dyn_fault_inject_locationDef_locations_item_t* get_dyn_fault_inject_locationDef_locations_item(dyn_fault_inject_locationDef_locations_t *out, size_t idx);
+dyn_fault_inject_locationDef_location_t* get_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_t *out);
 dyn_fault_inject_locationDef_fault_inject_type_t get_dyn_fault_inject_locationDef_fault_inject_type(dyn_fault_inject_locationDef_t *out);
 dyn_fault_inject_locationDef_delay_percentage_t get_dyn_fault_inject_locationDef_delay_percentage(dyn_fault_inject_locationDef_t *out);
 dyn_fault_inject_locationDef_abort_percentage_t get_dyn_fault_inject_locationDef_abort_percentage(dyn_fault_inject_locationDef_t *out);
 dyn_fault_inject_locationDef_status_code_t get_dyn_fault_inject_locationDef_status_code(dyn_fault_inject_locationDef_t *out);
-dyn_fault_inject_locationDef_delay_duration_t get_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_t *out);
-// CHECK ARRAY not exceeding bounds before call this func
+dyn_fault_inject_locationDef_delay_duration_t* get_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_t *out);
+// CHECK ARRAY not exceeding bounds before calling this func
 dyn_fault_inject_locationDef_locations_t* get_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_t *out);
-// INITIALIZATION IS NEEDED for string
-void set_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_location_t field);
-// INITIALIZATION IS NEEDED for string
-void set_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_delay_duration_t field);
+void set_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_location_t* field);
+void set_dyn_fault_inject_locationDef_fault_inject_type(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_fault_inject_type_t field);
+void set_dyn_fault_inject_locationDef_delay_percentage(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_delay_percentage_t field);
+void set_dyn_fault_inject_locationDef_abort_percentage(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_abort_percentage_t field);
+void set_dyn_fault_inject_locationDef_status_code(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_status_code_t field);
+void set_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_delay_duration_t* field);
 int add_item_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_locations_t *src, dyn_fault_inject_locationDef_locations_item_t* items);
 dyn_fault_inject_locationDef_locations_t* create_dyn_fault_inject_locationDef_locations(njt_pool_t *pool, size_t nelts);
-// INITIALIZATION IS NEEDED for object or array
 void set_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_locations_t* field);
 dyn_fault_inject_locationDef_t* create_dyn_fault_inject_locationDef(njt_pool_t *pool);
-typedef njt_str_t* dyn_fault_inject_servers_item_listens_item_t;
+typedef njt_str_t dyn_fault_inject_servers_item_listens_item_t;
 
 typedef njt_array_t  dyn_fault_inject_servers_item_listens_t;
-typedef njt_str_t* dyn_fault_inject_servers_item_serverNames_item_t;
+typedef njt_str_t dyn_fault_inject_servers_item_serverNames_item_t;
 
 typedef njt_array_t  dyn_fault_inject_servers_item_serverNames_t;
 typedef dyn_fault_inject_locationDef_t dyn_fault_inject_servers_item_locations_item_t; //ref def
@@ -72,43 +78,43 @@ typedef struct dyn_fault_inject_servers_item_t_s {
     dyn_fault_inject_servers_item_listens_t *listens;
     dyn_fault_inject_servers_item_serverNames_t *serverNames;
     dyn_fault_inject_servers_item_locations_t *locations;
+    unsigned int is_listens_set:1;
+    unsigned int is_serverNames_set:1;
+    unsigned int is_locations_set:1;
 } dyn_fault_inject_servers_item_t;
 
 typedef njt_array_t  dyn_fault_inject_servers_t;
 typedef struct dyn_fault_inject_t_s {
     dyn_fault_inject_servers_t *servers;
+    unsigned int is_servers_set:1;
 } dyn_fault_inject_t;
 
-dyn_fault_inject_servers_item_listens_item_t get_dyn_fault_inject_servers_item_listens_item(dyn_fault_inject_servers_item_listens_t *out, size_t idx);
-dyn_fault_inject_servers_item_serverNames_item_t get_dyn_fault_inject_servers_item_serverNames_item(dyn_fault_inject_servers_item_serverNames_t *out, size_t idx);
-dyn_fault_inject_servers_item_locations_item_t get_dyn_fault_inject_servers_item_locations_item(dyn_fault_inject_servers_item_locations_t *out, size_t idx);
-// CHECK ARRAY not exceeding bounds before call this func
+dyn_fault_inject_servers_item_listens_item_t* get_dyn_fault_inject_servers_item_listens_item(dyn_fault_inject_servers_item_listens_t *out, size_t idx);
+dyn_fault_inject_servers_item_serverNames_item_t* get_dyn_fault_inject_servers_item_serverNames_item(dyn_fault_inject_servers_item_serverNames_t *out, size_t idx);
+dyn_fault_inject_servers_item_locations_item_t* get_dyn_fault_inject_servers_item_locations_item(dyn_fault_inject_servers_item_locations_t *out, size_t idx);
+// CHECK ARRAY not exceeding bounds before calling this func
 dyn_fault_inject_servers_item_listens_t* get_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item_t *out);
-// CHECK ARRAY not exceeding bounds before call this func
+// CHECK ARRAY not exceeding bounds before calling this func
 dyn_fault_inject_servers_item_serverNames_t* get_dyn_fault_inject_servers_item_serverNames(dyn_fault_inject_servers_item_t *out);
-// CHECK ARRAY not exceeding bounds before call this func
+// CHECK ARRAY not exceeding bounds before calling this func
 dyn_fault_inject_servers_item_locations_t* get_dyn_fault_inject_servers_item_locations(dyn_fault_inject_servers_item_t *out);
-dyn_fault_inject_servers_item_t get_dyn_fault_inject_servers_item(dyn_fault_inject_servers_t *out, size_t idx);
-// CHECK ARRAY not exceeding bounds before call this func
+dyn_fault_inject_servers_item_t* get_dyn_fault_inject_servers_item(dyn_fault_inject_servers_t *out, size_t idx);
+// CHECK ARRAY not exceeding bounds before calling this func
 dyn_fault_inject_servers_t* get_dyn_fault_inject_servers(dyn_fault_inject_t *out);
-int add_item_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item_listens_t *src, dyn_fault_inject_servers_item_listens_item_t items);
+int add_item_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item_listens_t *src, dyn_fault_inject_servers_item_listens_item_t* items);
 dyn_fault_inject_servers_item_listens_t* create_dyn_fault_inject_servers_item_listens(njt_pool_t *pool, size_t nelts);
-// INITIALIZATION IS NEEDED for object or array
 void set_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item_t* obj, dyn_fault_inject_servers_item_listens_t* field);
-int add_item_dyn_fault_inject_servers_item_serverNames(dyn_fault_inject_servers_item_serverNames_t *src, dyn_fault_inject_servers_item_serverNames_item_t items);
+int add_item_dyn_fault_inject_servers_item_serverNames(dyn_fault_inject_servers_item_serverNames_t *src, dyn_fault_inject_servers_item_serverNames_item_t* items);
 dyn_fault_inject_servers_item_serverNames_t* create_dyn_fault_inject_servers_item_serverNames(njt_pool_t *pool, size_t nelts);
-// INITIALIZATION IS NEEDED for object or array
 void set_dyn_fault_inject_servers_item_serverNames(dyn_fault_inject_servers_item_t* obj, dyn_fault_inject_servers_item_serverNames_t* field);
 int add_item_dyn_fault_inject_servers_item_locations(dyn_fault_inject_servers_item_locations_t *src, dyn_fault_inject_servers_item_locations_item_t* items);
 dyn_fault_inject_servers_item_locations_t* create_dyn_fault_inject_servers_item_locations(njt_pool_t *pool, size_t nelts);
-// INITIALIZATION IS NEEDED for object or array
 void set_dyn_fault_inject_servers_item_locations(dyn_fault_inject_servers_item_t* obj, dyn_fault_inject_servers_item_locations_t* field);
 dyn_fault_inject_servers_item_t* create_dyn_fault_inject_servers_item(njt_pool_t *pool);
 int add_item_dyn_fault_inject_servers(dyn_fault_inject_servers_t *src, dyn_fault_inject_servers_item_t* items);
 dyn_fault_inject_servers_t* create_dyn_fault_inject_servers(njt_pool_t *pool, size_t nelts);
-// INITIALIZATION IS NEEDED for object or array
 void set_dyn_fault_inject_servers(dyn_fault_inject_t* obj, dyn_fault_inject_servers_t* field);
 dyn_fault_inject_t* create_dyn_fault_inject(njt_pool_t *pool);
-dyn_fault_inject_t* json_parse_dyn_fault_inject(njt_pool_t *pool, const njt_str_t *json_string, njt_str_t *err_str);
+dyn_fault_inject_t* json_parse_dyn_fault_inject(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret);
 njt_str_t* to_json_dyn_fault_inject(njt_pool_t *pool, dyn_fault_inject_t *out, njt_int_t flags);
 #endif /* PARSER_FAULT_INJECT_H */

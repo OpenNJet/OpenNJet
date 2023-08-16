@@ -629,7 +629,7 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     uint32_t						    topic_len = NJT_INT64_LEN  + 2 + 256; ///ins/ssl/l_
     njt_str_t							topic_name;
     njt_http_ssl_request_err_ctx_t      *err_ctx;
-    njt_str_t                           err_str;
+    js2c_parse_error_t                  err_info;
     njt_str_t                           *serverName;
     njt_str_t                           *listen_str;
     
@@ -671,20 +671,21 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     }
 
     njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
-    api_data = json_parse_dyn_ssl_api(pool, &json_str, &err_str);
+    api_data = json_parse_dyn_ssl_api(pool, &json_str, &err_info);
     if (api_data == NULL)
     {
         njt_log_error(NJT_LOG_ERR, pool->log, 0, 
-                "json_parse_dyn_ssl err: %V",  &err_str);
+                "json_parse_dyn_ssl err: %V",  &err_info.err_str);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
-        njt_rpc_result_set_msg2(rpc_result, &err_str);
+        njt_rpc_result_set_msg2(rpc_result, &err_info.err_str);
 
         rc = NJT_ERROR;
         goto err;
     }
 
     //check format
-    if(api_data->cert_info->certificate->len < 1 || api_data->cert_info->certificateKey->len < 1){
+    if(!api_data->is_cert_info_set || api_data->cert_info->certificate.len < 1 
+        || api_data->cert_info->certificateKey.len < 1){
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, pool->log, 0,
                        "cert or cert key is empty in function %s", __func__);
         njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_ERR_JSON);
@@ -695,14 +696,8 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     }
 
 	njt_crc32_init(crc32);
-    if(api_data->type == DYN_SSL_API_TYPE_ADD){
-        njt_crc32_update(&crc32, (u_char *)"add", 3);
-    }else{
-        njt_crc32_update(&crc32, (u_char *)"del", 3);
-    }
-    
-	njt_crc32_update(&crc32, api_data->cert_info->certificate->data,api_data->cert_info->certificate->len);
-    njt_crc32_update(&crc32, api_data->cert_info->certificateKey->data,api_data->cert_info->certificateKey->len);
+	njt_crc32_update(&crc32, api_data->cert_info->certificate.data,api_data->cert_info->certificate.len);
+    njt_crc32_update(&crc32, api_data->cert_info->certificateKey.data,api_data->cert_info->certificateKey.len);
 	for (i = 0; i < api_data->serverNames->nelts; i++){
         serverName = get_dyn_ssl_api_serverNames_item(api_data->serverNames, i);
         if(serverName->len > 0){

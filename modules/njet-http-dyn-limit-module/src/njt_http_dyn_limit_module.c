@@ -184,7 +184,7 @@ static njt_int_t njt_dyn_limit_set_limit_conns(dyn_limit_servers_item_locations_
     njt_conf_t                          *cf;
     njt_http_limit_conn_conf_t          *lccf;
     njt_http_limit_conn_limit_t         *limit, *limits;
-    dyn_limit_locationDef_limit_conns_item_t      data_limit;
+    dyn_limit_locationDef_limit_conns_item_t      *data_limit;
     njt_uint_t                           i, j;
     bool                                 found = false;
     njt_shm_zone_t                      *shm_zone;
@@ -198,15 +198,26 @@ static njt_int_t njt_dyn_limit_set_limit_conns(dyn_limit_servers_item_locations_
     rpc_data_str.len = 0;
 
 
-    if(data->limit_conns->nelts < 1){
+    if(!data->is_limit_conns_set || data->limit_conns->nelts < 1){
+        return NJT_OK;
+    }
+
+    if(!data->is_limit_conns_scope_set){
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
+                 "dyn limit conns not set scope, so not update");
+        
+        end = njt_snprintf(data_buf,sizeof(data_buf) - 1," dyn limit conn not set scope, so not update");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
         return NJT_OK;
     }
 
     if(data->limit_conns_scope == DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE){
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
-                 "dyn limit conn not location level, so not update");
+                 "dyn limit conn is up_share scope, so not update");
         
-        end = njt_snprintf(data_buf,sizeof(data_buf) - 1," dyn limit conn not location level, so not update");
+        end = njt_snprintf(data_buf,sizeof(data_buf) - 1," dyn limit conn is up_share scope, so not update");
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
@@ -255,7 +266,7 @@ static njt_int_t njt_dyn_limit_set_limit_conns(dyn_limit_servers_item_locations_
     limit_conns = get_dyn_limit_locationDef_limit_conns(data);
     for (i = 0; i < data->limit_conns->nelts; i++) {
         data_limit = get_dyn_limit_locationDef_limit_conns_item(limit_conns, i);
-        if(data_limit.zone->len < 1){
+        if(data_limit == NULL || !data_limit->is_zone_set || data_limit->zone.len < 1){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
                  "njt_dyn_limit_set_limit_conns zone name is empty");
 
@@ -266,14 +277,14 @@ static njt_int_t njt_dyn_limit_set_limit_conns(dyn_limit_servers_item_locations_
             continue;
         }
 
-        if(data_limit.conn <= 0 || data_limit.conn > 65535){
+        if(!data_limit->is_conn_set || data_limit->conn <= 0 || data_limit->conn > 65535){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
                  "njt_dyn_limit_set_limit_conns zone:%V conn number is invalid, should >0 and <= 65535",
-                 data_limit.zone);
+                 &data_limit->zone);
             
             end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
                     " zone:%V conn number is invalid, should >0 and <= 65535",
-                    data_limit.zone);
+                    &data_limit->zone);
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
@@ -296,35 +307,35 @@ static njt_int_t njt_dyn_limit_set_limit_conns(dyn_limit_servers_item_locations_
                 continue;
             }
             
-            if(data_limit.zone->len == limits[j].shm_zone->shm.name.len
-               && njt_strncmp(data_limit.zone->data, limits[j].shm_zone->shm.name.data, data_limit.zone->len) == 0){
+            if(data_limit->zone.len == limits[j].shm_zone->shm.name.len
+               && njt_strncmp(data_limit->zone.data, limits[j].shm_zone->shm.name.data, data_limit->zone.len) == 0){
                 //found
                 found = true;
                 //update
-                limits[j].conn = data_limit.conn;
+                limits[j].conn = data_limit->conn;
                 break;
             }
         }
 
         if(!found){
             //check zone whether exist
-            rc = njt_dyn_limit_check_zone(cf, data_limit.zone, &njt_http_limit_conn_module, rpc_result);
+            rc = njt_dyn_limit_check_zone(cf, &data_limit->zone, &njt_http_limit_conn_module, rpc_result);
             if(rc != NJT_OK){
                 njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
-                    "njt_dyn_limit_set_limit_conns zone:%V not valid", data_limit.zone);
+                    "njt_dyn_limit_set_limit_conns zone:%V not valid", &data_limit->zone);
 
                 continue;
             }
             //add
-            shm_zone = njt_shared_memory_add(cf, data_limit.zone, 0,
+            shm_zone = njt_shared_memory_add(cf, &data_limit->zone, 0,
                                      &njt_http_limit_conn_module);
             if (shm_zone == NULL) {
                 njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
-                  "njt_dyn_limit_set_limit_conns shared_memory_add error, zone:%V", data_limit.zone);
+                  "njt_dyn_limit_set_limit_conns shared_memory_add error, zone:%V", &data_limit->zone);
                 
                 end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
                     " shared_memory_add error, zone:%V",
-                    data_limit.zone);
+                    &data_limit->zone);
                 rpc_data_str.len = end - data_buf;
                 njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                 
@@ -338,14 +349,14 @@ static njt_int_t njt_dyn_limit_set_limit_conns(dyn_limit_servers_item_locations_
 
                 end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
                     " limit conn push error, zone:%V",
-                    data_limit.zone);
+                    &data_limit->zone);
                 rpc_data_str.len = end - data_buf;
                 njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
                 return NJT_ERROR;
             }
 
-            limit->conn = data_limit.conn;
+            limit->conn = data_limit->conn;
             limit->shm_zone = shm_zone;
         }
     }
@@ -360,7 +371,7 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(dyn_limit_servers_item_locations_i
     njt_conf_t                  *cf;
     njt_http_limit_req_conf_t   *lrcf;
     njt_http_limit_req_limit_t  *limit, *limits;
-    dyn_limit_locationDef_limit_reqs_item_t    data_limit;
+    dyn_limit_locationDef_limit_reqs_item_t    *data_limit;
     njt_uint_t                   i, j;
     bool                         found = false;
     njt_shm_zone_t              *shm_zone;
@@ -376,7 +387,18 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(dyn_limit_servers_item_locations_i
     rpc_data_str.len = 0;
 
 
-    if(data->limit_reqs->nelts < 1){
+    if(!data->is_limit_reqs_set || data->limit_reqs == NULL || data->limit_reqs->nelts < 1){
+        return NJT_OK;
+    }
+
+    if(!data->is_limit_reqs_scope_set){
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
+                 "dyn limit req scope is not set, so not update");
+
+        end = njt_snprintf(data_buf,sizeof(data_buf) - 1," dyn limit req scope is not set, so not update");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
         return NJT_OK;
     }
 
@@ -435,10 +457,9 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(dyn_limit_servers_item_locations_i
     }
 
     limit_reqs = get_dyn_limit_locationDef_limit_reqs(data);
-
     for (i = 0; i < data->limit_reqs->nelts; i++) {
         data_limit = get_dyn_limit_locationDef_limit_reqs_item(limit_reqs, i);
-        if(data_limit.zone->len < 1){
+        if(data_limit == NULL || !data_limit->is_zone_set || data_limit->zone.len < 1){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
                  "njt_dyn_limit_set_limit_reqs zone name is empty");
 
@@ -449,14 +470,15 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(dyn_limit_servers_item_locations_i
             continue;
         }
 
-        if(data_limit.burst < 0 || data_limit.delay->len < 1){
+        if((data_limit->is_burst_set && data_limit->burst < 0)
+            || (data_limit->is_delay_set && data_limit->delay.len < 1)){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
                  "njt_dyn_limit_set_limit_reqs zone:%V burst or delay shoud > 0 or nodelay",
-                 data_limit.zone);
+                 &data_limit->zone);
 
             end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
                 " dyn limit zone:%V burst or delay shoud > 0 or nodelay",
-                data_limit.zone);
+                &data_limit->zone);
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
@@ -465,23 +487,25 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(dyn_limit_servers_item_locations_i
 
         //check delay
         //nodelay len=7
-        if(data_limit.delay->len == 7
-            && njt_strncmp(data_limit.delay->data, "nodelay", 7) == 0){
-            delay = NJT_MAX_INT_T_VALUE / 1000;
-        }else{
-            tmp_delay = njt_atoi(data_limit.delay->data, data_limit.delay->len);
-            if (tmp_delay < 0) {
-                njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
-                    "njt_dyn_limit_set_limit_reqs zone:%V delay format invalid", data_limit.zone);
-                end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
-                    " dyn limit zone:%V delay format invalid",
-                    data_limit.zone);
-                rpc_data_str.len = end - data_buf;
-                njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        if(data_limit->is_delay_set){
+            if(data_limit->delay.len == 7
+                && njt_strncmp(data_limit->delay.data, "nodelay", 7) == 0){
+                delay = NJT_MAX_INT_T_VALUE / 1000;
+            }else{
+                tmp_delay = njt_atoi(data_limit->delay.data, data_limit->delay.len);
+                if (tmp_delay < 0) {
+                    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
+                        "njt_dyn_limit_set_limit_reqs zone:%V delay format invalid", &data_limit->zone);
+                    end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
+                        " dyn limit zone:%V delay format invalid",
+                        &data_limit->zone);
+                    rpc_data_str.len = end - data_buf;
+                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
-                continue;
+                    continue;
+                }
+                delay = tmp_delay;
             }
-            delay = tmp_delay;
         }
 
         found = false;
@@ -499,37 +523,41 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(dyn_limit_servers_item_locations_i
                 continue;
             }
             
-            if(data_limit.zone->len == limits[j].shm_zone->shm.name.len
-               && njt_strncmp(data_limit.zone->data, limits[j].shm_zone->shm.name.data, data_limit.zone->len) == 0){
+            if(data_limit->zone.len == limits[j].shm_zone->shm.name.len
+               && njt_strncmp(data_limit->zone.data, limits[j].shm_zone->shm.name.data, data_limit->zone.len) == 0){
                 //found
                 found = true;
                 //update
-                limits[j].burst = data_limit.burst * 1000;
-                limits[j].delay = delay * 1000;
+                if(data_limit->is_burst_set){
+                    limits[j].burst = data_limit->burst * 1000;
+                }
                 
+                if(data_limit->is_delay_set){
+                    limits[j].delay = delay * 1000;
+                }
                 break;
             }
         }
 
         if(!found){
             //check zone whether exist
-            rc = njt_dyn_limit_check_zone(cf, data_limit.zone, &njt_http_limit_req_module, rpc_result);
+            rc = njt_dyn_limit_check_zone(cf, &data_limit->zone, &njt_http_limit_req_module, rpc_result);
             if(rc != NJT_OK){
                 njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
-                    "njt_dyn_limit_set_limit_reqs zone:%V not valid", data_limit.zone);
+                    "njt_dyn_limit_set_limit_reqs zone:%V not valid", &data_limit->zone);
 
                 continue;
             }
             //add
-            shm_zone = njt_shared_memory_add(cf, data_limit.zone, 0,
+            shm_zone = njt_shared_memory_add(cf, &data_limit->zone, 0,
                                      &njt_http_limit_req_module);
             if (shm_zone == NULL) {
                 njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
-                  "njt_dyn_limit_set_limit_reqs shared_memory_add error, zone:%V", data_limit.zone);
+                  "njt_dyn_limit_set_limit_reqs shared_memory_add error, zone:%V", &data_limit->zone);
 
                 end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
                     " dyn limit req shared_memory_add error, zone:%V",
-                    data_limit.zone);
+                    &data_limit->zone);
                 rpc_data_str.len = end - data_buf;
                 njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
@@ -548,10 +576,14 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(dyn_limit_servers_item_locations_i
 
                 return NJT_ERROR;
             }
-
-            limit->burst = data_limit.burst * 1000;
-
-            limit->delay = delay * 1000;
+            if(data_limit->is_burst_set){
+                limit->burst = data_limit->burst * 1000;
+            }
+            
+            if(data_limit->is_delay_set){
+                limit->delay = delay * 1000;
+            }
+            
             limit->shm_zone = shm_zone;
         }
     }
@@ -583,7 +615,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate(dyn_limit_servers_item_locations_i
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
 
-    if(data->limit_rate->len < 1){
+    if(!data->is_limit_rate_set || data->limit_rate.len < 1){
         return NJT_OK;
     }
 
@@ -595,7 +627,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate(dyn_limit_servers_item_locations_i
     cf = &cf_data;
 
     //if variable, need check variable table
-    rc = njt_dyn_limit_check_var(cf, data->limit_rate);
+    rc = njt_dyn_limit_check_var(cf, &data->limit_rate);
     if(rc != NJT_OK){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
             "njt_dyn_limit_set_limit_rate var not exist or format error");
@@ -669,8 +701,8 @@ static njt_int_t njt_dyn_limit_set_limit_rate(dyn_limit_servers_item_locations_i
     njt_str_set(rate_name, "limit_rate");
 
     rate = njt_array_push(cf->args);
-    rate->len = data->limit_rate->len;
-    rate->data = njt_palloc(pool, data->limit_rate->len);
+    rate->len = data->limit_rate.len;
+    rate->data = njt_palloc(pool, data->limit_rate.len);
     if(rate->data == NULL){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_limit_set_limit_rate malloc error");
 
@@ -682,7 +714,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate(dyn_limit_servers_item_locations_i
         goto err;
     }
 
-    njt_memcpy(rate->data, data->limit_rate->data, data->limit_rate->len);
+    njt_memcpy(rate->data, data->limit_rate.data, data->limit_rate.len);
 
     cf->limit_dynamic = 1;
 
@@ -738,7 +770,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate_after(dyn_limit_servers_item_locat
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
 
-    if(data->limit_rate_after->len < 1){
+    if(!data->is_limit_rate_after_set || data->limit_rate_after.len < 1){
         return NJT_OK;
     }
 
@@ -750,7 +782,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate_after(dyn_limit_servers_item_locat
     cf = &cf_data;
 
     //if variable, need check variable table
-    rc = njt_dyn_limit_check_var(cf, data->limit_rate_after);
+    rc = njt_dyn_limit_check_var(cf, &data->limit_rate_after);
     if(rc != NJT_OK){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
             "njt_dyn_limit_set_limit_rate_after var not exist or format error");
@@ -828,8 +860,8 @@ static njt_int_t njt_dyn_limit_set_limit_rate_after(dyn_limit_servers_item_locat
     njt_str_set(rate_after_name, "limit_rate_after");
 
     rate_after = njt_array_push(cf->args);
-    rate_after->len = data->limit_rate_after->len;
-    rate_after->data = njt_palloc(pool, data->limit_rate_after->len);
+    rate_after->len = data->limit_rate_after.len;
+    rate_after->data = njt_palloc(pool, data->limit_rate_after.len);
     if(rate_after->data == NULL){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_limit_set_limit_rate_after palloc error");
         
@@ -840,7 +872,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate_after(dyn_limit_servers_item_locat
         goto err;
     }
 
-    njt_memcpy(rate_after->data, data->limit_rate_after->data, data->limit_rate_after->len);
+    njt_memcpy(rate_after->data, data->limit_rate_after.data, data->limit_rate_after.len);
 
     cf->limit_dynamic = 1;
 
@@ -884,6 +916,10 @@ static njt_int_t njt_dyn_limit_set_limit_conn_status(dyn_limit_servers_item_loca
     u_char                       data_buf[1024];
     u_char                      *end;
     njt_str_t                    rpc_data_str;
+
+    if(!data->is_limit_conn_status_set){
+        return NJT_OK;
+    }
 
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
@@ -942,6 +978,10 @@ static njt_int_t njt_dyn_limit_set_limit_req_status(dyn_limit_servers_item_locat
     u_char                       data_buf[1024];
     u_char                      *end;
     njt_str_t                    rpc_data_str;
+
+    if(!data->is_limit_req_status_set){
+        return NJT_OK;
+    }
 
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;    
@@ -1002,6 +1042,10 @@ static njt_int_t njt_dyn_limit_set_limit_conn_log_level(dyn_limit_servers_item_l
     u_char                      *end;
     njt_str_t                    rpc_data_str;
 
+    if(!data->is_limit_conn_log_level_set){
+        return NJT_OK;
+    }
+
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0; 
 
@@ -1056,6 +1100,10 @@ static njt_int_t njt_dyn_limit_set_limit_req_log_level(dyn_limit_servers_item_lo
     u_char                       data_buf[1024];
     u_char                      *end;
     njt_str_t                    rpc_data_str;
+
+    if(!data->is_limit_req_log_level_set){
+        return NJT_OK;
+    }
 
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0; 
@@ -1119,7 +1167,9 @@ static njt_int_t njt_dyn_limit_set_limit_conn_dry_run(dyn_limit_servers_item_loc
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0; 
 
-
+    if(!data->is_limit_conn_dry_run_set){
+        return NJT_OK;
+    }
 
     if(data->limit_conn_dry_run == DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON){
         dry_run = 1;
@@ -1175,6 +1225,9 @@ static njt_int_t njt_dyn_limit_set_limit_req_dry_run(dyn_limit_servers_item_loca
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0; 
 
+    if(!data->is_limit_req_dry_run_set){
+        return NJT_OK;
+    }
 
     if(data->limit_req_dry_run == DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON){
         dry_run = 1;
@@ -1249,11 +1302,11 @@ static njt_int_t njt_dyn_limit_update_rps(njt_cycle_t *cycle, dyn_limit_limit_rp
             i = 0;
         }
 
-        if (rps_date->zone->len != shm_zone[i].shm.name.len) {
+        if (rps_date->zone.len != shm_zone[i].shm.name.len) {
             continue;
         }
 
-        if (njt_strncmp(rps_date->zone->data, shm_zone[i].shm.name.data, rps_date->zone->len)
+        if (njt_strncmp(rps_date->zone.data, shm_zone[i].shm.name.data, rps_date->zone.len)
             != 0)
         {
             continue;
@@ -1270,11 +1323,11 @@ static njt_int_t njt_dyn_limit_update_rps(njt_cycle_t *cycle, dyn_limit_limit_rp
     }
 
     if(!found){
-        njt_log_error(NJT_LOG_ERR, cycle->log, 0, " update rps zone:%V  is not exist", rps_date->zone);
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, " update rps zone:%V  is not exist", &rps_date->zone);
         
         end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
             " update rps zone:%V  is not exist", 
-            rps_date->zone);
+            &rps_date->zone);
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);  
 
@@ -1282,11 +1335,11 @@ static njt_int_t njt_dyn_limit_update_rps(njt_cycle_t *cycle, dyn_limit_limit_rp
     }
 
     if(!tag_match){
-        njt_log_error(NJT_LOG_ERR, cycle->log, 0, " update rps zone:%V  tag error", rps_date->zone);
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, " update rps zone:%V  tag error", &rps_date->zone);
 
         end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
             " update rps zone:%V  tag error", 
-            rps_date->zone);
+            &rps_date->zone);
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         return NJT_ERROR;
@@ -1294,8 +1347,8 @@ static njt_int_t njt_dyn_limit_update_rps(njt_cycle_t *cycle, dyn_limit_limit_rp
 
     rate = 1;
     scale = 1;
-    len = rps_date->rate->len;
-    p = rps_date->rate->data + len - 3;
+    len = rps_date->rate.len;
+    p = rps_date->rate.data + len - 3;
     if (njt_strncmp(p, "r/s", 3) == 0) {
         scale = 1;
         len -= 3;
@@ -1305,13 +1358,13 @@ static njt_int_t njt_dyn_limit_update_rps(njt_cycle_t *cycle, dyn_limit_limit_rp
         len -= 3;
     }
 
-    rate = njt_atoi(rps_date->rate->data, len);
+    rate = njt_atoi(rps_date->rate.data, len);
     if (rate <= 0) {
-        njt_log_error(NJT_LOG_ERR, cycle->log, 0, " update rps zone:%V  rate invalid", rps_date->zone);
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, " update rps zone:%V  rate invalid", &rps_date->zone);
         
         end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
             " update rps zone:%V  rate invalid", 
-            rps_date->zone);
+            &rps_date->zone);
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         return NJT_ERROR;
@@ -1319,11 +1372,11 @@ static njt_int_t njt_dyn_limit_update_rps(njt_cycle_t *cycle, dyn_limit_limit_rp
 
     req_ctx = shm_zone[index].data;
     if(req_ctx == NULL){
-        njt_log_error(NJT_LOG_EMERG, cycle->log, 0, " update rps zone:%V  zone data is null", rps_date->zone);
+        njt_log_error(NJT_LOG_EMERG, cycle->log, 0, " update rps zone:%V  zone data is null", &rps_date->zone);
         
         end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
             " update rps zone:%V  zone data is null", 
-            rps_date->zone);
+            &rps_date->zone);
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         return NJT_ERROR;
@@ -1341,7 +1394,7 @@ static njt_int_t njt_dyn_limit_update_locs(njt_array_t *locs, njt_queue_t *q, nj
 {
     njt_http_core_loc_conf_t            *clcf;
     njt_http_location_queue_t           *hlq;
-    dyn_limit_servers_item_locations_item_t            dlil;
+    dyn_limit_servers_item_locations_item_t            *dlil;
     njt_uint_t                           j;
     njt_queue_t                         *tq;
     njt_int_t                            rc;
@@ -1367,7 +1420,14 @@ static njt_int_t njt_dyn_limit_update_locs(njt_array_t *locs, njt_queue_t *q, nj
     for (j = 0; j < locs->nelts; ++j)
     {
         dlil = get_dyn_limit_servers_item_locations_item(locs, j);
-        name = dlil.location;
+        if(dlil == NULL || !dlil->is_location_set){
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " index %d not set location name", j);
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+            continue;
+        }
+
+        name = get_dyn_limit_locationDef_location(dlil);
 
         tq = njt_queue_head(q);
         found = false;
@@ -1390,77 +1450,77 @@ static njt_int_t njt_dyn_limit_update_locs(njt_array_t *locs, njt_queue_t *q, nj
                 
                 found = true;
                 //set limit_conns
-                rc = njt_dyn_limit_set_limit_conns(&dlil, ctx, rpc_result);
+                rc = njt_dyn_limit_set_limit_conns(dlil, ctx, rpc_result);
                 if (rc != NJT_OK)
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "error in njt_dyn_limit_set_limit_conns");
                 }
 
                 //set limit_reqs
-                rc = njt_dyn_limit_set_limit_reqs(&dlil, ctx, rpc_result);
+                rc = njt_dyn_limit_set_limit_reqs(dlil, ctx, rpc_result);
                 if (rc != NJT_OK)
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "error in njt_dyn_limit_set_limit_reqs");
                 }
                 
                 //set limit_rate
-                rc = njt_dyn_limit_set_limit_rate(&dlil, ctx, rpc_result);
+                rc = njt_dyn_limit_set_limit_rate(dlil, ctx, rpc_result);
                 if (rc != NJT_OK)
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_limit_set_limit_rate");
                 }
 
                 //set limit_rate_after
-                rc = njt_dyn_limit_set_limit_rate_after(&dlil, ctx, rpc_result);
+                rc = njt_dyn_limit_set_limit_rate_after(dlil, ctx, rpc_result);
                 if (rc != NJT_OK)
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_limit_set_limit_rate_after");
                 }
 
                 //set limit_conn_dry_run
-                rc = njt_dyn_limit_set_limit_conn_dry_run(&dlil, ctx, rpc_result);
+                rc = njt_dyn_limit_set_limit_conn_dry_run(dlil, ctx, rpc_result);
                 if (rc != NJT_OK)
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_limit_set_limit_conn_dry_run");
                 }
 
                 //set limit_req_dry_run
-                rc = njt_dyn_limit_set_limit_req_dry_run(&dlil, ctx, rpc_result);
+                rc = njt_dyn_limit_set_limit_req_dry_run(dlil, ctx, rpc_result);
                 if (rc != NJT_OK)
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_limit_set_limit_req_dry_run");
                 }  
 
                 //set limit_conn_log_level
-                rc = njt_dyn_limit_set_limit_conn_log_level(&dlil, ctx, rpc_result);
+                rc = njt_dyn_limit_set_limit_conn_log_level(dlil, ctx, rpc_result);
                 if (rc != NJT_OK)
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_limit_set_limit_conn_log_level");
                 }
 
                 //set limit_req_log_level
-                rc = njt_dyn_limit_set_limit_req_log_level(&dlil, ctx, rpc_result);
+                rc = njt_dyn_limit_set_limit_req_log_level(dlil, ctx, rpc_result);
                 if (rc != NJT_OK)
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_limit_set_limit_req_log_level");
                 }
 
                 //set limit_conn_status
-                rc = njt_dyn_limit_set_limit_conn_status(&dlil, ctx, rpc_result);
+                rc = njt_dyn_limit_set_limit_conn_status(dlil, ctx, rpc_result);
                 if (rc != NJT_OK)
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_limit_set_limit_conn_status");
                 }
 
                 //set limit_req_status
-                rc = njt_dyn_limit_set_limit_req_status(&dlil, ctx, rpc_result);
+                rc = njt_dyn_limit_set_limit_req_status(dlil, ctx, rpc_result);
                 if (rc != NJT_OK)
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_limit_set_limit_req_status");
                 }
 
-                if (dlil.locations && dlil.locations->nelts > 0) {
-                    njt_dyn_limit_update_locs(dlil.locations, clcf->old_locations, ctx, rpc_result);
+                if (dlil->is_locations_set && dlil->locations && dlil->locations->nelts > 0) {
+                    njt_dyn_limit_update_locs(dlil->locations, clcf->old_locations, ctx, rpc_result);
                 }
             }
         }
@@ -1536,12 +1596,12 @@ static void njt_dyn_limit_dump_locs_json(njt_pool_t *pool,
         if(lccf != NULL)
         {
             if(lccf->from_up == 1){
-                loc_item->limit_conns_scope = DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE;
+                set_dyn_limit_locationDef_limit_conns_scope(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_UP_SHARE);
             }else{
-                loc_item->limit_conns_scope = DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_LOCATION;
+                set_dyn_limit_locationDef_limit_conns_scope(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_CONNS_SCOPE_LOCATION);
             }
 
-            loc_item->limit_conns = create_dyn_limit_locationDef_limit_conns(pool, 4);
+            set_dyn_limit_locationDef_limit_conns(loc_item, create_dyn_limit_locationDef_limit_conns(pool, 4));
             if(loc_item->limit_conns == NULL){
                 return;
             }
@@ -1555,49 +1615,49 @@ static void njt_dyn_limit_dump_locs_json(njt_pool_t *pool,
                     }
 
                     set_dyn_limit_locationDef_limit_conns_item_zone(limit_conn_item, &conn_limits[i].shm_zone->shm.name);
-                    limit_conn_item->conn = conn_limits[i].conn;
+                    set_dyn_limit_locationDef_limit_conns_item_conn(limit_conn_item, conn_limits[i].conn);
 
                     add_item_dyn_limit_locationDef_limit_conns(loc_item->limit_conns, limit_conn_item);
                 }
             }
 
             if(lccf->dry_run == 1){
-                loc_item->limit_conn_dry_run = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON;
+                set_dyn_limit_locationDef_limit_conn_dry_run(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_ON);
             }else{
-                loc_item->limit_conn_dry_run = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF;
+                set_dyn_limit_locationDef_limit_conn_dry_run(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_DRY_RUN_OFF);
             }
 
             switch (lccf->log_level)
             {
             case NJT_LOG_INFO:
-                loc_item->limit_conn_log_level = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO;
+                set_dyn_limit_locationDef_limit_conn_log_level(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO);
                 break;
             case NJT_LOG_NOTICE:
-                loc_item->limit_conn_log_level = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE;
+                set_dyn_limit_locationDef_limit_conn_log_level(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_NOTICE);
                 break;
             case NJT_LOG_WARN:
-                loc_item->limit_conn_log_level = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN;
+                set_dyn_limit_locationDef_limit_conn_log_level(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_WARN);
                 break;
             case NJT_LOG_ERR:
-                loc_item->limit_conn_log_level = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR;
+                set_dyn_limit_locationDef_limit_conn_log_level(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR);
                 break;
             default:
-                loc_item->limit_conn_log_level = DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO;
+                set_dyn_limit_locationDef_limit_conn_log_level(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_INFO);
                 break;
             }
 
-            loc_item->limit_conn_status = lccf->status_code;
+            set_dyn_limit_locationDef_limit_conn_status(loc_item, lccf->status_code);
         }
 
         if(lrcf != NULL)
         {
             if(lrcf->from_up == 1){
-                loc_item->limit_reqs_scope = DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE;
+                set_dyn_limit_locationDef_limit_reqs_scope(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_UP_SHARE);
             }else{
-                loc_item->limit_reqs_scope = DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_LOCATION;
+                set_dyn_limit_locationDef_limit_reqs_scope(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_REQS_SCOPE_LOCATION);
             }
             
-            loc_item->limit_reqs = create_dyn_limit_locationDef_limit_reqs(pool, 4);
+            set_dyn_limit_locationDef_limit_reqs(loc_item, create_dyn_limit_locationDef_limit_reqs(pool, 4));
             if(loc_item->limit_reqs == NULL){
                 return;
             }
@@ -1611,7 +1671,7 @@ static void njt_dyn_limit_dump_locs_json(njt_pool_t *pool,
                     }
 
                     set_dyn_limit_locationDef_limit_reqs_item_zone(limit_req_item, &req_limits[i].shm_zone->shm.name);
-                    limit_req_item->burst = req_limits[i].burst / 1000;
+                    set_dyn_limit_locationDef_limit_reqs_item_burst(limit_req_item, req_limits[i].burst / 1000);
 
                     delay_max_comp = NJT_MAX_INT_T_VALUE / 1000;
                     delay_max_comp *= 1000;
@@ -1643,36 +1703,38 @@ static void njt_dyn_limit_dump_locs_json(njt_pool_t *pool,
             }
 
             if(lrcf->dry_run == 1){
-                loc_item->limit_req_dry_run = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON;
+                set_dyn_limit_locationDef_limit_req_dry_run(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_ON);
             }else{
-                loc_item->limit_req_dry_run = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF;
+                set_dyn_limit_locationDef_limit_req_dry_run(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_DRY_RUN_OFF);
             }
 
             switch (lrcf->limit_log_level)
             {
             case NJT_LOG_INFO:
-                loc_item->limit_req_log_level = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO;
+                set_dyn_limit_locationDef_limit_req_log_level(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO);
                 break;
             case NJT_LOG_NOTICE:
-                loc_item->limit_req_log_level = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE;
+                set_dyn_limit_locationDef_limit_req_log_level(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_NOTICE);
                 break;
             case NJT_LOG_WARN:
-                loc_item->limit_req_log_level = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN;
+                set_dyn_limit_locationDef_limit_req_log_level(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_WARN);
                 break;
             case NJT_LOG_ERR:
-                loc_item->limit_req_log_level = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR;
+                set_dyn_limit_locationDef_limit_req_log_level(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR);
                 break;
             default:
-                loc_item->limit_req_log_level = DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO;
+                set_dyn_limit_locationDef_limit_req_log_level(loc_item, DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_INFO);
                 break;
             }
 
-            loc_item->limit_req_status = lrcf->status_code;
+            set_dyn_limit_locationDef_limit_req_status(loc_item, lrcf->status_code);
         }
 
         if (clcf->old_locations) {
-            loc_item->locations = create_dyn_limit_locationDef_locations(pool, 4);
-            njt_dyn_limit_dump_locs_json(pool, clcf->old_locations, loc_item->locations);
+            set_dyn_limit_locationDef_locations(loc_item, create_dyn_limit_locationDef_locations(pool, 4));
+            if(loc_item->locations != NULL){
+                njt_dyn_limit_dump_locs_json(pool, clcf->old_locations, loc_item->locations);
+            }
         }
 
         add_item_dyn_limit_servers_item_locations(loc_items, loc_item);
@@ -1705,7 +1767,7 @@ static njt_str_t *njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *
         goto err;
     }
 
-    dynjson_obj.servers = create_dyn_limit_servers(pool, 4);
+    set_dyn_limit_servers(&dynjson_obj, create_dyn_limit_servers(pool, 4));
     if(dynjson_obj.servers == NULL){
         goto err;
     }
@@ -1713,13 +1775,14 @@ static njt_str_t *njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *
     cscfp = hcmcf->servers.elts;
     for (i = 0; i < hcmcf->servers.nelts; i++)
     {
-        server_item = njt_palloc(pool, sizeof(dyn_limit_servers_item_t));
+        server_item = create_dyn_limit_servers_item(pool);
         if(server_item == NULL){
             goto err;
         }
-        server_item->listens = create_dyn_limit_servers_item_listens(pool, 4);
-        server_item->serverNames =create_dyn_limit_servers_item_serverNames(pool, 4);
-        server_item->locations = create_dyn_limit_servers_item_locations(pool, 4);
+
+        set_dyn_limit_servers_item_listens(server_item, create_dyn_limit_servers_item_listens(pool, 4));
+        set_dyn_limit_servers_item_serverNames(server_item, create_dyn_limit_servers_item_serverNames(pool, 4));
+        set_dyn_limit_servers_item_locations(server_item, create_dyn_limit_servers_item_locations(pool, 4));
 
         array = njt_array_create(pool, 4, sizeof(njt_str_t));
         if(array == NULL){
@@ -1735,7 +1798,7 @@ static njt_str_t *njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *
         server_name = cscfp[i]->server_names.elts;
         for (j = 0; j < cscfp[i]->server_names.nelts; ++j) {
             tmp_str = &server_name[j].name;
-            add_item_dyn_limit_servers_item_serverNames(server_item->serverNames,tmp_str);
+            add_item_dyn_limit_servers_item_serverNames(server_item->serverNames, tmp_str);
         }
 
         clcf = njt_http_get_module_loc_conf(cscfp[i]->ctx, njt_http_core_module);
@@ -1746,7 +1809,7 @@ static njt_str_t *njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *
         add_item_dyn_limit_servers(dynjson_obj.servers, server_item);
     }
 
-    dynjson_obj.limit_rps = create_dyn_limit_limit_rps(pool, 4);
+    set_dyn_limit_limit_rps(&dynjson_obj, create_dyn_limit_limit_rps(pool, 4));
     if(dynjson_obj.limit_rps == NULL){
         goto err;
     }
@@ -1768,7 +1831,7 @@ static njt_str_t *njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *
             continue;
         }
 
-        rps_item = njt_palloc(pool, sizeof(dyn_limit_limit_rps_item_t));
+        rps_item = create_dyn_limit_limit_rps_item(pool);
         if (rps_item == NULL)
         {
             goto err;
@@ -1811,8 +1874,8 @@ static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, dyn_limit_t *
     njt_cycle_t                         *cycle, *new_cycle;
     njt_http_core_srv_conf_t            *cscf;
     njt_http_core_loc_conf_t            *clcf;
-    dyn_limit_servers_item_t             dsi;
-    dyn_limit_limit_rps_item_t           rps_datas;
+    dyn_limit_servers_item_t            *dsi;
+    dyn_limit_limit_rps_item_t          *rps_datas;
     njt_str_t                           *port, *serverName;
     njt_uint_t                           i;
     njt_int_t                            rc;
@@ -1835,80 +1898,89 @@ static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, dyn_limit_t *
     }
 
     //update rps
-    for(i = 0; i < api_data->limit_rps->nelts; ++i){
-        rps_datas = get_dyn_limit_limit_rps_item(api_data->limit_rps, i);
-        njt_str_null(&rpc_result->conf_path);
+    if(api_data->is_limit_rps_set && api_data->limit_rps != NULL){
+        for(i = 0; i < api_data->limit_rps->nelts; ++i){
+            rps_datas = get_dyn_limit_limit_rps_item(api_data->limit_rps, i);
+            njt_str_null(&rpc_result->conf_path);
 
-        if(rps_datas.zone->len < 1 || rps_datas.rate->len < 3){
-            njt_log_error(NJT_LOG_INFO, pool->log, 0, 
-                "update limit rps error, format invalid, zone:%V  rate:%V",
-                rps_datas.zone, rps_datas.rate);
+            if(rps_datas == NULL || !rps_datas->is_zone_set 
+                || !rps_datas->is_rate_set || rps_datas->zone.len < 1 
+                || rps_datas->rate.len < 3){
+                njt_log_error(NJT_LOG_INFO, pool->log, 0, 
+                    "update limit rps error, format invalid, zone:%V  rate:%V",
+                    &rps_datas->zone, &rps_datas->rate);
 
-            end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
-                " update limit rps error, format invalid, zone:%V  rate:%V", 
-                rps_datas.zone, rps_datas.rate);
-            rpc_data_str.len = end - data_buf;
-            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);    
-            continue;
-        }
-        rc = njt_dyn_limit_update_rps(cycle, &rps_datas, rpc_result);
-        if(rc != NJT_OK){
-            njt_log_error(NJT_LOG_INFO, pool->log, 0, "update limit rps error, zone:%V",
-                rps_datas.zone);
+                end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
+                    " update limit rps error, format invalid, zone:%V  rate:%V", 
+                    &rps_datas->zone, &rps_datas->rate);
+                rpc_data_str.len = end - data_buf;
+                njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);    
+                continue;
+            }
+            rc = njt_dyn_limit_update_rps(cycle, rps_datas, rpc_result);
+            if(rc != NJT_OK){
+                njt_log_error(NJT_LOG_INFO, pool->log, 0, "update limit rps error, zone:%V",
+                    &rps_datas->zone);
+            }
         }
     }
 
-    for (i = 0; i < api_data->servers->nelts; ++i)
-    {
-        dsi = get_dyn_limit_servers_item(api_data->servers, i);
-        port = get_dyn_limit_servers_item_listens_item(dsi.listens, 0);
-        serverName = get_dyn_limit_servers_item_serverNames_item(dsi.serverNames, 0);
-
-        njt_str_null(&rpc_result->conf_path);
-
-        if (dsi.listens->nelts < 1 || dsi.serverNames->nelts < 1) {
-            // listens or server_names is empty
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-                " server parameters error, listens or serverNames is empty,at position %d", i);
-            rpc_data_str.len = end - data_buf;
-            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-            continue;
-        }
-
-        cscf = njt_http_get_srv_by_port(cycle, port, serverName);
-        if (cscf == NULL)
+    if(api_data->is_servers_set && api_data->servers != NULL){
+        for (i = 0; i < api_data->servers->nelts; ++i)
         {
-            njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
-                          port, serverName);
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-                " can`t find server by listen[%V] server_name[%V]", port, serverName);
+            dsi = get_dyn_limit_servers_item(api_data->servers, i);
+            if (dsi == NULL || !dsi->is_listens_set || !dsi->is_serverNames_set 
+                    || !dsi->is_locations_set || dsi->listens->nelts < 1 
+                    || dsi->serverNames->nelts < 1 || dsi->locations->nelts < 1) {
+                // listens or server_names is empty
+                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                    " server parameters error, listens or serverNames or locations is empty,at position %d", i);
+                rpc_data_str.len = end - data_buf;
+                njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                continue;
+            }
+
+            port = get_dyn_limit_servers_item_listens_item(dsi->listens, 0);
+            serverName = get_dyn_limit_servers_item_serverNames_item(dsi->serverNames, 0);
+            njt_str_null(&rpc_result->conf_path);
+
+            cscf = njt_http_get_srv_by_port(cycle, port, serverName);
+            if (cscf == NULL)
+            {
+                njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
+                            port, serverName);
+                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                    " can`t find server by listen[%V] server_name[%V]", port, serverName);
+                rpc_data_str.len = end - data_buf;
+                njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                continue;
+            }
+
+            njt_log_error(NJT_LOG_INFO, pool->log, 0, "dynlimit start update listen:%V server_name:%V",
+                    port, serverName);
+
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "listen[%V] server_name[%V]", port, serverName);
             rpc_data_str.len = end - data_buf;
-            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-            continue;
-        }
+            njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
+                    
+            njt_http_conf_ctx_t ctx = *cscf->ctx;
+            clcf = njt_http_get_module_loc_conf(cscf->ctx, njt_http_core_module);
+            if(clcf == NULL){
+                njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find location config by listen:%V server_name:%V ",
+                            port, serverName);
+                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " can`t find location config by listen[%V] server_name[%V]", port, serverName);
+                rpc_data_str.len = end - data_buf;
+                njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                continue;
+            }
 
-        njt_log_error(NJT_LOG_INFO, pool->log, 0, "dynlimit start update listen:%V server_name:%V",
-                port, serverName);
-
-        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "listen[%V] server_name[%V]", port, serverName);
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
-                
-        njt_http_conf_ctx_t ctx = *cscf->ctx;
-        clcf = njt_http_get_module_loc_conf(cscf->ctx, njt_http_core_module);
-        if(clcf == NULL){
-            njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find location config by listen:%V server_name:%V ",
-                          port, serverName);
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " can`t find location config by listen[%V] server_name[%V]", port, serverName);
-            rpc_data_str.len = end - data_buf;
-            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-            continue;
-        }
-
-        rc = njt_dyn_limit_update_locs(dsi.locations, clcf->old_locations, &ctx, rpc_result);
-        if(rc != NJT_OK){
-            njt_log_error(NJT_LOG_INFO, pool->log, 0, "update limit error, listen:%V server_name:%V",
-                port, serverName);
+            if(dsi->is_locations_set && dsi->locations->nelts > 0){
+                rc = njt_dyn_limit_update_locs(dsi->locations, clcf->old_locations, &ctx, rpc_result);
+                if(rc != NJT_OK){
+                    njt_log_error(NJT_LOG_INFO, pool->log, 0, "update limit error, listen:%V server_name:%V",
+                        port, serverName);
+                }
+            }
         }
     }
 
@@ -1959,7 +2031,7 @@ static int njt_dyn_limit_update_handler(njt_str_t *key, njt_str_t *value, void *
     dyn_limit_t                         *api_data = NULL;
     njt_pool_t                          *pool = NULL;
     njt_rpc_result_t                    *rpc_result = NULL;
-    njt_str_t                            err_str;
+    js2c_parse_error_t                  err_info;
 
     rpc_result = njt_rpc_result_create();
     if(!rpc_result){
@@ -1992,13 +2064,13 @@ static int njt_dyn_limit_update_handler(njt_str_t *key, njt_str_t *value, void *
         goto end;
     }
 
-    api_data = json_parse_dyn_limit(pool, value, &err_str);
+    api_data = json_parse_dyn_limit(pool, value, &err_info);
     if (api_data == NULL)
     {
         njt_log_error(NJT_LOG_ERR, pool->log, 0, 
-                "json_parse_dyn_limit err: %V",  &err_str);
+                "json_parse_dyn_limit err: %V",  &err_info.err_str);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
-        njt_rpc_result_set_msg2(rpc_result, &err_str);
+        njt_rpc_result_set_msg2(rpc_result, &err_info.err_str);
 
         rc = NJT_ERROR;
         goto end;

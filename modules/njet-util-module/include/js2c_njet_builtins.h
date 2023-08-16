@@ -52,16 +52,48 @@ enum {
     OMIT_NULL_STR   = 1 << 2
 };
 
+enum {
+    MISSING_SEPARATOR_BETWEEN_VALUES_ERR = 0,
+    MISSING_REQUIRED_FIELD_ERR,
+    UNKNOWN_FIELD_ERR,
+    DUPLICATE_FIELD_ERR,
+    MISSIGN_FIELD_VALUE_ERR,
+    ARRAY_SIZE_CHECK_ERR,
+    UNKNOWN_ENUM_VALUE_ERR,
+    NUMBER_RANGE_CHECK_ERR,
+    BOOL_VALUE_ERR,
+    PARSING_NUMBER_ERR,
+    PARSING_STR_ERR,
+    STRLENG_CHECK_ERR,
+    JSON_TYPE_ERR,
+    POOL_MALLOC_ERR,
+    INVALID_JSON_CHAR_ERR,
+    PARTIAL_JSON_ERR,
+    NULL_JSON_ERR
+};
+
+typedef struct j2sc_parse_error_s {
+    int         err_code;
+    njt_str_t   field_name;
+    int         pos;
+    njt_str_t   err_str;
+} js2c_parse_error_t;
 
 #ifndef LOG_ERROR_JSON_PARSE
-#define LOG_ERROR_JSON_PARSE(position, format, ...)  { \
+#define LOG_ERROR_JSON_PARSE(code, field, position, format, ...)  do { \
+    err_ret->err_code = code; \
+    err_ret->field_name.data = (u_char *)njt_palloc(pool, strlen(field) + 1); \
+    err_ret->field_name.len = sprintf((char *)err_ret->field_name.data, "%s", field); \
+    err_ret->pos = position; \
     int len; \
-    err_str->data = (u_char *)njt_palloc(pool, 1024); \
-    len = sprintf((char *)err_str->data, "pos: %d, ", position); \
-    len += sprintf((char *)err_str->data + len, format, __VA_ARGS__); \
-    err_str->len = len; \
-}
+    err_ret->err_str.data = (u_char *)njt_palloc(pool, 1024); \
+    len = sprintf((char *)err_ret->err_str.data, "pos: %d, ", position); \
+    len += sprintf((char *)err_ret->err_str.data + len, format, __VA_ARGS__); \
+    err_ret->err_str.len = len; \
+} while(0)
 #endif
+
+// #define LOG_POOL_MALLOC_ERR() LOG_ERROR_JSON_PARSE(-1, "%s", "njt_pool malloc error")
 
 typedef struct parse_state_s {
     const char *json_string;
@@ -75,6 +107,47 @@ typedef struct parse_state_s {
 #define CURRENT_STRING(parse_state) ((parse_state)->json_string + CURRENT_TOKEN(parse_state).start)
 #define CURRENT_STRING_LENGTH(parse_state) (CURRENT_TOKEN(parse_state).end - CURRENT_TOKEN(parse_state).start)
 #define CURRENT_STRING_FOR_ERROR(parse_state) CURRENT_STRING_LENGTH(parse_state), CURRENT_STRING(parse_state)
+
+#define js2c_key_children_check_for_obj() do { \
+        if (CURRENT_TOKEN(parse_state).size > 1) { \
+            LOG_ERROR_JSON_PARSE(MISSING_SEPARATOR_BETWEEN_VALUES_ERR, parse_state->current_key,  CURRENT_TOKEN(parse_state).start, "Missing separator between values in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state)); \
+            return true; \
+        } \
+        if (CURRENT_TOKEN(parse_state).size < 1) { \
+            LOG_ERROR_JSON_PARSE(MISSIGN_FIELD_VALUE_ERR,  parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing value in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state)); \
+            return true; \
+        } \
+} while(0)
+
+#define js2c_int_range_check_min(min) do { \
+        if (!(int_parse_tmp >= min)) { \
+            parse_state->current_token -= 1; \
+            LOG_ERROR_JSON_PARSE(NUMBER_RANGE_CHECK_ERR, parse_state->current_key,  CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be >= %lld.", int_parse_tmp, parse_state->current_key, min); \
+            return true; \
+        } \
+} while(0)
+
+#define js2c_int_range_check_max(max) do { \
+        if (!(int_parse_tmp <= max)) { \
+            parse_state->current_token -= 1; \
+            LOG_ERROR_JSON_PARSE(NUMBER_RANGE_CHECK_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be <= %lld.", int_parse_tmp, parse_state->current_key, max); \
+            return true; \
+        } \
+} while(0)
+
+#define js2c_malloc_check(var_ptr) do { \
+        if ((var_ptr) == NULL) { \
+            LOG_ERROR_JSON_PARSE(POOL_MALLOC_ERR, "", 0, "Failed to allocate memory from %s.", "pool"); \
+            return true; \
+        } \
+} while(0)
+
+#define js2c_null_check() do { \
+       if (current_string_is(parse_state, "null")) { \
+                parse_state->current_key = saved_key; \
+                continue; \
+       } \
+} while(0)
 
 static inline const char *token_type_as_string(jsmntype_t type) {
     switch (type) {
@@ -93,17 +166,6 @@ static inline const char *token_type_as_string(jsmntype_t type) {
     }
 }
 
-// static inline njt_str_t* set_parse_error(njt_pool_t* pool, int pos, const char* fmt, ...) {
-//     njt_str_t* err;
-//     err = njt_palloc(pool, sizeof(njt_str_t));
-//     if (err == NULL) return NULL;
-//     char buf[2048]; //如果不够，会报错
-//     char *cur = buf;
-//     int len;
-//     len = sprintf(buf, "pos: %d", pos);
-//     cur += len;
-//     sprint(cur, fmt, __VA_ARGS__); 
-// }
 
 static inline const char *jsmn_error_as_string(int err) {
     switch (err) {
@@ -118,15 +180,28 @@ static inline const char *jsmn_error_as_string(int err) {
     }
 }
 
-static inline bool check_type(njt_pool_t *pool, const parse_state_t *parse_state, jsmntype_t type, njt_str_t *err_str) {
+#define js2c_check_type(jsmn_type) do { \
+    if (check_type(pool, parse_state, jsmn_type, err_ret)) return true; \
+} while(0)
+
+#define js2c_check_field_set(obj_field_set) do { \
+    if (obj_field_set) { \
+        LOG_ERROR_JSON_PARSE(DUPLICATE_FIELD_ERR, CURRENT_STRING(parse_state), CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': conn", parse_state->current_key); \
+        return true; \
+    } \
+} while(0)
+
+static inline bool check_type(njt_pool_t *pool, const parse_state_t *parse_state, jsmntype_t type, js2c_parse_error_t *err_ret) {
     const jsmntok_t *token = &parse_state->tokens[parse_state->current_token];
     if (token->type != type) {
         LOG_ERROR_JSON_PARSE(
+            JSON_TYPE_ERR,
+            parse_state->current_key,
             token->start,
             "Unexpected token in '%s': %s instead of %s",
             parse_state->current_key,
             token_type_as_string(token->type),
-            token_type_as_string(type))
+            token_type_as_string(type));
         return true;
     }
     return false;
@@ -143,17 +218,29 @@ static inline bool current_string_is(const parse_state_t *parse_state, const cha
     return memcmp(parse_state->json_string + token->start, s, token->end - token->start) == 0;
 }
 
-static inline bool builtin_check_current_string(njt_pool_t *pool, parse_state_t *parse_state, int min_len, int max_len, njt_str_t *err_str) {
-    if (check_type(pool, parse_state, JSMN_STRING, err_str)) {
+// static inline bool next_string_is_null(const parse_state_t *parse_state) {
+//     static const char* null_str = "null";
+//     const jsmntok_t *token = &parse_state->tokens[parse_state->current_token + 1];
+//     if (token->type != JSMN_PRIMITIVE) {
+//         return false;
+//     }
+//     if (4 != (size_t)(token->end - token->start)) {
+//         return false;
+//     }
+//     return memcmp(parse_state->json_string + token->start, null_str, token->end - token->start) == 0;
+// }
+
+static inline bool builtin_check_current_string(njt_pool_t *pool, parse_state_t *parse_state, int min_len, int max_len, js2c_parse_error_t *err_ret) {
+    if (check_type(pool, parse_state, JSMN_STRING, err_ret)) {
         return true;
     }
     const jsmntok_t *token = &CURRENT_TOKEN(parse_state);
     if (token->end - token->start > max_len) {
-        LOG_ERROR_JSON_PARSE(token->start, "String too large in '%s'. Length: %i. Maximum length: %i.", parse_state->current_key, token->end - token->start, max_len);
+        LOG_ERROR_JSON_PARSE(STRLENG_CHECK_ERR, parse_state->current_key, token->start, "String too large in '%s'. Length: %i. Maximum length: %i.", parse_state->current_key, token->end - token->start, max_len);
         return true;
     }
     if (token->end - token->start < min_len) {
-        LOG_ERROR_JSON_PARSE(token->start, "String too short in '%s'. Length: %i. Minimum length: %i.", parse_state->current_key, token->end - token->start, min_len);
+        LOG_ERROR_JSON_PARSE(STRLENG_CHECK_ERR, parse_state->current_key, token->start, "String too short in '%s'. Length: %i. Minimum length: %i.", parse_state->current_key, token->end - token->start, min_len);
         return true;
     }
     return false;
@@ -239,8 +326,8 @@ static inline njt_str_t* handle_escape_on_write(njt_pool_t *pool, njt_str_t *src
     return out;
 }
 
-static inline bool builtin_parse_string(njt_pool_t *pool, parse_state_t *parse_state, njt_str_t *out, int min_len, int max_len, njt_str_t *err_str) {
-    if (builtin_check_current_string(pool, parse_state, min_len, max_len, err_str)){
+static inline bool builtin_parse_string(njt_pool_t *pool, parse_state_t *parse_state, njt_str_t *out, int min_len, int max_len, js2c_parse_error_t *err_ret) {
+    if (builtin_check_current_string(pool, parse_state, min_len, max_len, err_ret)){
         return true;
     }
     // const jsmntok_t *token = &CURRENT_TOKEN(parse_state);
@@ -250,14 +337,14 @@ static inline bool builtin_parse_string(njt_pool_t *pool, parse_state_t *parse_s
     return false;
 }
 
-static inline bool builtin_parse_bool(njt_pool_t *pool, parse_state_t *parse_state, bool *out, njt_str_t* err_str) {
-    if (check_type(pool, parse_state, JSMN_PRIMITIVE, err_str)) {
+static inline bool builtin_parse_bool(njt_pool_t *pool, parse_state_t *parse_state, bool *out, js2c_parse_error_t* err_ret) {
+    if (check_type(pool, parse_state, JSMN_PRIMITIVE, err_ret)) {
         return true;
     }
     const jsmntok_t *token = &parse_state->tokens[parse_state->current_token];
     const char first_char = parse_state->json_string[token->start];
     if (first_char != 't' && first_char != 'f') {
-        LOG_ERROR_JSON_PARSE(token->start, "Invalid boolean literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
+        LOG_ERROR_JSON_PARSE(BOOL_VALUE_ERR, parse_state->current_key , token->start, "Invalid boolean literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
         return true;
     }
     *out = first_char == 't';
@@ -272,11 +359,10 @@ static inline bool builtin_parse_signed(
     bool string_allowed,
     int radix,
     int64_t *out,
-    njt_str_t *err_str) {
+    js2c_parse_error_t *err_ret) {
     const jsmntok_t *token = &parse_state->tokens[parse_state->current_token];
     if (!((number_allowed && token->type == JSMN_PRIMITIVE) || (string_allowed && token->type == JSMN_STRING))) {
-        LOG_ERROR_JSON_PARSE(token->start, "Unexpected token in '%s': %s", parse_state->current_key, token_type_as_string(token->type))
-        return true;
+        LOG_ERROR_JSON_PARSE(PARSING_NUMBER_ERR, parse_state->current_key , token->start, "Unexpected token in '%s': %s", parse_state->current_key, token_type_as_string(token->type));
     }
     if (token->type == JSMN_PRIMITIVE) {
         radix = 10;
@@ -284,7 +370,7 @@ static inline bool builtin_parse_signed(
     char *end_char = NULL;
     *out = strtoll(parse_state->json_string + token->start, &end_char, radix);
     if (end_char != parse_state->json_string + token->end) {
-        LOG_ERROR_JSON_PARSE(token->start, "Invalid signed integer literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
+        LOG_ERROR_JSON_PARSE(PARSING_NUMBER_ERR, parse_state->current_key, token->start, "Invalid signed integer literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
         return true;
     }
     parse_state->current_token += 1;
@@ -298,11 +384,11 @@ static inline bool builtin_parse_unsigned(
     bool string_allowed,
     int radix,
     uint64_t *out,
-    njt_str_t *err_str
+    js2c_parse_error_t *err_ret
 ) {
     const jsmntok_t *token = &parse_state->tokens[parse_state->current_token];
     if (!((number_allowed && token->type == JSMN_PRIMITIVE) || (string_allowed && token->type == JSMN_STRING))) {
-        LOG_ERROR_JSON_PARSE(token->start, "Unexpected token in '%s': %s", parse_state->current_key, token_type_as_string(token->type))
+        LOG_ERROR_JSON_PARSE(PARSING_NUMBER_ERR, parse_state->current_key, token->start, "Unexpected token in '%s': %s", parse_state->current_key, token_type_as_string(token->type));
         return true;
     }
     if (token->type == JSMN_PRIMITIVE) {
@@ -311,35 +397,35 @@ static inline bool builtin_parse_unsigned(
     const char *start_char = parse_state->json_string + token->start;
     char *end_char = NULL;
     if (*start_char == '-') {
-        LOG_ERROR_JSON_PARSE(token->start, "Invalid unsigned integer literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
+        LOG_ERROR_JSON_PARSE(PARSING_NUMBER_ERR, parse_state->current_key, token->start, "Invalid unsigned integer literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
         return true;
     }
     *out = strtoull(start_char, &end_char, radix);
     if (end_char != parse_state->json_string + token->end) {
-        LOG_ERROR_JSON_PARSE(token->start, "Invalid unsigned integer literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
+        LOG_ERROR_JSON_PARSE(PARSING_NUMBER_ERR, parse_state->current_key, token->start, "Invalid unsigned integer literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
         return true;
     }
     parse_state->current_token += 1;
     return false;
 }
 
-static inline bool builtin_parse_double(njt_pool_t *pool, parse_state_t *parse_state, double *out, njt_str_t *err_str) {
+static inline bool builtin_parse_double(njt_pool_t *pool, parse_state_t *parse_state, double *out, js2c_parse_error_t *err_ret) {
     const jsmntok_t *token = &parse_state->tokens[parse_state->current_token];
-    if (check_type(pool, parse_state, JSMN_PRIMITIVE, err_str)) {
+    if (check_type(pool, parse_state, JSMN_PRIMITIVE, err_ret)) {
         return true;
     }
     const char *start_char = parse_state->json_string + token->start;
     if (token->end - token->start >= 2) {
         if (start_char[1] != '.' && start_char[1] != 'e' && start_char[1] != 'E' &&
             !(start_char[1] >= '0' && start_char[1] <= '9')) {
-            LOG_ERROR_JSON_PARSE(token->start, "Invalid floating point literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
+            LOG_ERROR_JSON_PARSE(PARSING_NUMBER_ERR, parse_state->current_key, token->start, "Invalid floating point literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
             return true;
         }
     }
     char *end_char = NULL;
     *out = strtod(start_char, &end_char);
     if (end_char != parse_state->json_string + token->end) {
-        LOG_ERROR_JSON_PARSE(token->start, "Invalid floating point literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
+        LOG_ERROR_JSON_PARSE(PARSING_NUMBER_ERR, parse_state->current_key, token->start, "Invalid floating point literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
         return true;
     }
     parse_state->current_token += 1;
@@ -376,7 +462,7 @@ static inline int builtin_parse_json_string(
     uint64_t token_buffer_size,
     const char *json_string,
     const size_t json_string_len,
-    njt_str_t *err_str
+    js2c_parse_error_t *err_ret
 ) {
     jsmn_parser parser = {0};
 

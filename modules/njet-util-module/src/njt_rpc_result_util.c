@@ -3,6 +3,7 @@
  */
 #include <njt_rpc_result_util.h>
 #include "njt_str_util.h"
+#include "njt_rpc_result_parser.h"
 
 static u_char * njt_rpc_result_strerror(njt_int_t err_code);
 njt_rpc_result_t * njt_rpc_result_create(){
@@ -121,89 +122,60 @@ void njt_rpc_result_add_error_data(njt_rpc_result_t * rpc_result,njt_str_t * msg
 }
 
 njt_int_t njt_rpc_result_to_json_str(njt_rpc_result_t * rpc_result,njt_str_t *json_str) {
-    njt_json_manager json_manager;
-    njt_int_t rc;
-    size_t i;
-    njt_pool_t *init_pool = NULL;
-    njt_str_t *p;
-    njt_str_t str_val;
-    njt_str_t out_json;
-    njt_json_element *element;
-    njt_json_element *data_element = NULL;
+    njt_int_t       rc = NJT_OK;
+    size_t          i;
+    njt_pool_t      *init_pool = NULL;
+    njt_str_t       *p;
+    njt_str_t       *out_json;
+    rpc_result_t     dynjson_obj;
+    rpc_result_data_t   *data;
+
     if(!rpc_result){
         rc = NJT_ERROR;
         goto out;
     }
 
-    njt_memzero(&json_manager, sizeof(njt_json_manager));
-    //创建 pool
+    njt_memzero(&dynjson_obj, sizeof(rpc_result_t));
     init_pool= rpc_result->pool;
     if (init_pool== NULL)
     {
         rc = NJT_ERROR;
         goto out;
     }
-    // 添加code
-    element = njt_json_int_element(init_pool, njt_json_fast_key("code"), rpc_result->code);
 
-    rc = njt_struct_top_add(&json_manager, element,NJT_JSON_OBJ,init_pool);
-    if(rc != NJT_OK){
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                      "====njt_struct_add code error");
-        goto out;
-    }
-    // 添加msg
-    str_val.data = rpc_result->msg.data;
-    str_val.len = rpc_result->msg.len;
-    element = njt_json_str_element(init_pool, njt_json_fast_key("msg"), &str_val);
+    //set code
+    set_rpc_result_code(&dynjson_obj, rpc_result->code);
 
-    rc = njt_struct_top_add(&json_manager, element,NJT_JSON_OBJ,init_pool);
-    if(rc != NJT_OK){
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                      "====njt_struct_add msg error");
-        goto out;
-    }
+    //set msg
+    set_rpc_result_msg(&dynjson_obj, &rpc_result->msg);
 
-    // 添加data
-    data_element = njt_json_arr_element(init_pool, njt_json_fast_key("data"));
-    p = rpc_result->data->elts;
-    for(i = 0; i < rpc_result->data->nelts; ++i) {
-        str_val.len = (p + i)->len;
-        str_val.data = (p + i)->data;
-        element = njt_json_str_element(init_pool, njt_json_null_key, &str_val);
-
-        rc = njt_struct_add(data_element, element, init_pool);
-        if(rc != NJT_OK){
-            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                          "====njt_struct_add data error");
-            goto out;
-
-        }
-    }
-
-    // add data if not empty
+    //set data
     if(rpc_result->data->nelts > 0){
-        rc = njt_struct_top_add(&json_manager, data_element, NJT_JSON_OBJ,init_pool);
-        if(rc != NJT_OK){
-            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                          "====njt_struct_add msg error");
+        data = create_rpc_result_data(init_pool, 4);
+        if(data == NULL){
+            rc = NJT_ERROR;
             goto out;
+        }
+
+        set_rpc_result_data(&dynjson_obj, data);
+
+        p = rpc_result->data->elts;
+        for(i = 0; i < rpc_result->data->nelts; ++i) {
+            add_item_rpc_result_data(data, &p[i]);
         }
     }
 
-    // 转string
-    //struct转json
-    njt_str_null(&out_json);
-    rc = njt_structure_2_json(&json_manager, &out_json, init_pool);
-    if(rc != NJT_OK){
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
-                      "====njt_structure_2_json error");
+    
+    out_json = to_json_rpc_result(init_pool, &dynjson_obj, OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
+    if(out_json == NULL || out_json->len < 1){
+        njt_str_null(json_str); 
+        rc = NJT_ERROR;
         goto out;
     }
-    // 重新分配内容， 不使用pool
-    json_str->len = out_json.len;
-    json_str->data = njt_calloc(out_json.len+1,njt_cycle->log);
-    njt_memcpy(json_str->data,out_json.data,out_json.len);
+
+    json_str->len = out_json->len;
+    json_str->data = njt_calloc(out_json->len + 1, njt_cycle->log);
+    njt_memcpy(json_str->data, out_json->data, out_json->len);
 
     out:
     //最后一定记得释放掉pool

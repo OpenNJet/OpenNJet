@@ -12,104 +12,56 @@
 /* ========================== Generated parsers ========================== */
 
 
-static bool parse_health_checks_item(njt_pool_t *pool, parse_state_t *parse_state, health_checks_item_t *out, njt_str_t *err_str) {
+static bool parse_health_checks_item(njt_pool_t *pool, parse_state_t *parse_state, health_checks_item_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
-    // malloc pool for object first
 
-    if (check_type(pool, parse_state, JSMN_OBJECT, err_str)) {
-        return true;
-    }
-    bool seen_hc_type = false;
-    bool seen_upstream_name = false;
+    js2c_check_type(JSMN_OBJECT);
     const int object_start_token = parse_state->current_token;
     const uint64_t n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        if (CURRENT_TOKEN(parse_state).size > 1) {
-            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing separator between values in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
-            return true;
-        }
-        if (CURRENT_TOKEN(parse_state).size < 1) {
-            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing value in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
-            return true;
-        }
+        js2c_key_children_check_for_obj();
         if (current_string_is(parse_state, "hc_type")) {
-            if (seen_hc_type) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': hc_type", parse_state->current_key)
-                return true;
-            }
-            seen_hc_type = true;
+            js2c_check_field_set(out->is_hc_type_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "hc_type";
-            out->hc_type = njt_palloc(pool, sizeof(njt_str_t));
-            if (out->hc_type == NULL) {
-                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
-            }
-            // first get str len from TOKEN_STRING
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            (out->hc_type) = njt_palloc(pool, sizeof(njt_str_t));
-            if ((out->hc_type) == NULL) {
-                // TODO LOG_ERROR
+            ((&out->hc_type))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->hc_type))->data);
+            ((&out->hc_type))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->hc_type), 0, ((&out->hc_type))->len, err_ret)) {
                 return true;
             }
-            ((out->hc_type))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
-            ((out->hc_type))->len = token_size;
-            if ((out->hc_type)->len == 0) {
-                ((out->hc_type))->data = NULL;
-            } else if ((out->hc_type)->data == NULL) {
-                // TODO LOG_ERROR
-                return true;
-            }
-            if (builtin_parse_string(pool, parse_state, (out->hc_type), 0, ((out->hc_type))->len, err_str)) {
-                return true;
-            }
+            out->is_hc_type_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "upstream_name")) {
-            if (seen_upstream_name) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': upstream_name", parse_state->current_key)
-                return true;
-            }
-            seen_upstream_name = true;
+            js2c_check_field_set(out->is_upstream_name_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "upstream_name";
-            out->upstream_name = njt_palloc(pool, sizeof(njt_str_t));
-            if (out->upstream_name == NULL) {
-                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
-            }
-            // first get str len from TOKEN_STRING
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            (out->upstream_name) = njt_palloc(pool, sizeof(njt_str_t));
-            if ((out->upstream_name) == NULL) {
-                // TODO LOG_ERROR
+            ((&out->upstream_name))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->upstream_name))->data);
+            ((&out->upstream_name))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->upstream_name), 0, ((&out->upstream_name))->len, err_ret)) {
                 return true;
             }
-            ((out->upstream_name))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
-            ((out->upstream_name))->len = token_size;
-            if ((out->upstream_name)->len == 0) {
-                ((out->upstream_name))->data = NULL;
-            } else if ((out->upstream_name)->data == NULL) {
-                // TODO LOG_ERROR
-                return true;
-            }
-            if (builtin_parse_string(pool, parse_state, (out->upstream_name), 0, ((out->upstream_name))->len, err_str)) {
-                return true;
-            }
+            out->is_upstream_name_set = 1;
             parse_state->current_key = saved_key;
         } else {
-            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            LOG_ERROR_JSON_PARSE(UNKNOWN_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
             return true;
         }
     }
     const int saved_current_token = parse_state->current_token;
     parse_state->current_token = object_start_token;
-    if (!seen_hc_type) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': hc_type", parse_state->current_key)
+    if (!out->is_hc_type_set) {
+        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': hc_type", parse_state->current_key);
         return true;
     }
-    if (!seen_upstream_name) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': upstream_name", parse_state->current_key)
+    if (!out->is_upstream_name_set) {
+        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': upstream_name", parse_state->current_key);
         return true;
     }
     parse_state->current_token = saved_current_token;
@@ -117,18 +69,14 @@ static bool parse_health_checks_item(njt_pool_t *pool, parse_state_t *parse_stat
 }
 
 
-static bool parse_health_checks(njt_pool_t *pool, parse_state_t *parse_state, health_checks_t *out, njt_str_t *err_str) {
+static bool parse_health_checks(njt_pool_t *pool, parse_state_t *parse_state, health_checks_t *out, js2c_parse_error_t *err_ret) {
     int i;
-    if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
-        return true;
-    }
+    js2c_check_type(JSMN_ARRAY);
     const int n = parse_state->tokens[parse_state->current_token].size;
-    // memory has been allocate in njt_array_create.
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        // TODO CHECK write later
         ((health_checks_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(health_checks_item_t));
-        if (parse_health_checks_item(pool, parse_state, ((health_checks_item_t**)out->elts)[i], err_str)) {
+        if (parse_health_checks_item(pool, parse_state, ((health_checks_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
         out->nelts ++;
@@ -138,12 +86,12 @@ static bool parse_health_checks(njt_pool_t *pool, parse_state_t *parse_state, he
 
 
 static void get_json_length_health_checks_item_hc_type(njt_pool_t *pool, health_checks_item_hc_type_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
 static void get_json_length_health_checks_item_upstream_name(njt_pool_t *pool, health_checks_item_upstream_name_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
@@ -156,9 +104,8 @@ static void get_json_length_health_checks_item(njt_pool_t *pool, health_checks_i
     njt_int_t omit;
     njt_int_t count = 0;
     omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->hc_type) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_hc_type_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->hc_type.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (7 + 3); // "hc_type": 
         get_json_length_health_checks_item_hc_type(pool, (&out->hc_type), length, flags);
@@ -166,9 +113,8 @@ static void get_json_length_health_checks_item(njt_pool_t *pool, health_checks_i
         count++;
     }
     omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->upstream_name) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_upstream_name_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->upstream_name.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (13 + 3); // "upstream_name": 
         get_json_length_health_checks_item_upstream_name(pool, (&out->upstream_name), length, flags);
@@ -192,9 +138,7 @@ static void get_json_length_health_checks(njt_pool_t *pool, health_checks_t *out
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((health_checks_item_t**)out->elts)[i] == NULL) {
-            omit = 1;
-        }
+        omit = ((flags & OMIT_NULL_OBJ) && ((health_checks_item_t**)out->elts)[i] == NULL) ? 1 : 0;
         if (omit == 0) {
             get_json_length_health_checks_item(pool, ((health_checks_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
@@ -206,23 +150,24 @@ static void get_json_length_health_checks(njt_pool_t *pool, health_checks_t *out
     }
 }
 
-health_checks_item_hc_type_t get_health_checks_item_hc_type(health_checks_item_t *out) {
-    return out->hc_type;
+health_checks_item_hc_type_t* get_health_checks_item_hc_type(health_checks_item_t *out) {
+    return &out->hc_type;
 }
 
-health_checks_item_upstream_name_t get_health_checks_item_upstream_name(health_checks_item_t *out) {
-    return out->upstream_name;
+health_checks_item_upstream_name_t* get_health_checks_item_upstream_name(health_checks_item_t *out) {
+    return &out->upstream_name;
 }
-// CHECK ARRAY not exceeding bounds before call this func
+health_checks_item_t* get_health_checks_item(health_checks_t *out, size_t idx) {
+    return ((health_checks_item_t**)out->elts)[idx];
 
-health_checks_item_t get_health_checks_item(health_checks_t *out, size_t idx) {
-    return *((health_checks_item_t**)out->elts)[idx];
 }
-void set_health_checks_item_hc_type(health_checks_item_t* obj, health_checks_item_hc_type_t field) {
-    obj->hc_type = field;
+void set_health_checks_item_hc_type(health_checks_item_t* obj, health_checks_item_hc_type_t* field) {
+    njt_memcpy(&obj->hc_type, field, sizeof(njt_str_t));
+    obj->is_hc_type_set = 1;
 }
-void set_health_checks_item_upstream_name(health_checks_item_t* obj, health_checks_item_upstream_name_t field) {
-    obj->upstream_name = field;
+void set_health_checks_item_upstream_name(health_checks_item_t* obj, health_checks_item_upstream_name_t* field) {
+    njt_memcpy(&obj->upstream_name, field, sizeof(njt_str_t));
+    obj->is_upstream_name_set = 1;
 }
 health_checks_item_t* create_health_checks_item(njt_pool_t *pool) {
     health_checks_item_t* out = njt_palloc(pool, sizeof(health_checks_item_t));
@@ -244,14 +189,14 @@ health_checks_t* create_health_checks(njt_pool_t *pool, size_t nelts) {
 
 static void to_oneline_json_health_checks_item_hc_type(njt_pool_t *pool, health_checks_item_hc_type_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
 static void to_oneline_json_health_checks_item_upstream_name(njt_pool_t *pool, health_checks_item_upstream_name_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
@@ -267,9 +212,8 @@ static void to_oneline_json_health_checks_item(njt_pool_t *pool, health_checks_i
     cur = njt_sprintf(cur, "{");
     buf->len ++;
     omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->hc_type) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_hc_type_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->hc_type.data) == NULL ? 1 : omit;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"hc_type\":");
         buf->len = cur - buf->data;
@@ -279,9 +223,8 @@ static void to_oneline_json_health_checks_item(njt_pool_t *pool, health_checks_i
         buf->len ++;
     }
     omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->upstream_name) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_upstream_name_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->upstream_name.data) == NULL ? 1 : omit;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"upstream_name\":");
         buf->len = cur - buf->data;
@@ -313,9 +256,7 @@ static void to_oneline_json_health_checks(njt_pool_t *pool, health_checks_t *out
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((health_checks_item_t**)out->elts)[i] == NULL) {
-            omit = 1;
-        }
+        omit = ((flags & OMIT_NULL_OBJ) && ((health_checks_item_t**)out->elts)[i] == NULL) ? 1 : 0;
         if (omit == 0) {
             to_oneline_json_health_checks_item(pool, ((health_checks_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
@@ -332,7 +273,7 @@ static void to_oneline_json_health_checks(njt_pool_t *pool, health_checks_t *out
     cur = njt_sprintf(cur,  "]");
     buf->len ++;
 }
-health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *json_string, njt_str_t *err_str) {
+health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret) {
     health_checks_t* out;
     parse_state_t parse_state_var;
     parse_state_t *parse_state = &parse_state_var;
@@ -341,13 +282,13 @@ health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *jso
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
         token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
-        parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_str);
+        parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
-            LOG_ERROR_JSON_PARSE(-1, "%s", "Invalid character inside JSON string");
+            LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
             return NULL;
         }
         if (parse_result == JSMN_ERROR_PART) {
-            LOG_ERROR_JSON_PARSE(-1, "%s", "The string is not a full JSON packet, more bytes expected");
+            LOG_ERROR_JSON_PARSE(PARTIAL_JSON_ERR, "", -1, "%s", "The string is not a full JSON packet, more bytes expected");
             return NULL;
         }
         if (parse_result == JSMN_ERROR_NOMEM) {
@@ -355,13 +296,13 @@ health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *jso
             continue;
         }
         if (parse_result == 0) {
-            LOG_ERROR_JSON_PARSE(0, "String did not contain %s JSON tokens", "any");
+            LOG_ERROR_JSON_PARSE(NULL_JSON_ERR, "", 0, "String did not contain %s JSON tokens", "any");
             return NULL;
         }
         break; // parse success
     }
     out = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(health_checks_item_t*));;
-    if (parse_health_checks(pool, parse_state, out, err_str)) {
+    if (parse_health_checks(pool, parse_state, out, err_ret)) {
         return NULL;
     }
     return out;

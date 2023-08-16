@@ -4,7 +4,7 @@
 
 #ifndef NJET_MAIN_RPC_RESULT_UTIL_H
 #define NJET_MAIN_RPC_RESULT_UTIL_H
-#include <njt_json_api.h>
+// #include <njt_json_api.h>
 #include <njt_core.h>
 
 // 通用错误码定义

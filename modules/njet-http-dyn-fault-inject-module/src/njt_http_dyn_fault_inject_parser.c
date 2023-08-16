@@ -11,14 +11,12 @@
 #include "js2c_njet_builtins.h"
 /* ========================== Generated parsers ========================== */
 
-static bool parse_dyn_fault_inject_locationDef(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_locationDef_t *out, njt_str_t* err_str); //forward decl for public definition
+static bool parse_dyn_fault_inject_locationDef(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_locationDef_t *out, js2c_parse_error_t *err_ret); //forward decl for public definition
 static void get_json_length_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_fault_inject_locationDef_t *out, size_t *length, njt_int_t flags); //forward decl for public definition
 static void to_oneline_json_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_fault_inject_locationDef_t *out, njt_str_t *buf, njt_int_t flags); //forward decl for public definition
 
-static bool parse_dyn_fault_inject_locationDef_fault_inject_type(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_locationDef_fault_inject_type_t *out, njt_str_t *err_str) {
-    if (check_type(pool, parse_state, JSMN_STRING, err_str)) {
-        return true;
-    }
+static bool parse_dyn_fault_inject_locationDef_fault_inject_type(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_locationDef_fault_inject_type_t *out, js2c_parse_error_t *err_ret) {
+    js2c_check_type(JSMN_STRING);
     if (current_string_is(parse_state, "none")) {
         *out = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE;
     } else if (current_string_is(parse_state, "delay")) {
@@ -28,7 +26,7 @@ static bool parse_dyn_fault_inject_locationDef_fault_inject_type(njt_pool_t *poo
     } else if (current_string_is(parse_state, "delay_abort")) {
         *out = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT;
     } else {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+        LOG_ERROR_JSON_PARSE(UNKNOWN_ENUM_VALUE_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
         return true;
     }
     parse_state->current_token += 1;
@@ -36,18 +34,14 @@ static bool parse_dyn_fault_inject_locationDef_fault_inject_type(njt_pool_t *poo
 }
 
 
-static bool parse_dyn_fault_inject_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_locationDef_locations_t *out, njt_str_t *err_str) {
+static bool parse_dyn_fault_inject_locationDef_locations(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_locationDef_locations_t *out, js2c_parse_error_t *err_ret) {
     int i;
-    if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
-        return true;
-    }
+    js2c_check_type(JSMN_ARRAY);
     const int n = parse_state->tokens[parse_state->current_token].size;
-    // memory has been allocate in njt_array_create.
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        // TODO CHECK write later
         ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_fault_inject_locationDef_t));
-        if (parse_dyn_fault_inject_locationDef(pool, parse_state, ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i], err_str)) {
+        if (parse_dyn_fault_inject_locationDef(pool, parse_state, ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
         out->nelts ++;
@@ -56,250 +50,155 @@ static bool parse_dyn_fault_inject_locationDef_locations(njt_pool_t *pool, parse
 }
 
 
-static bool parse_dyn_fault_inject_locationDef(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_locationDef_t *out, njt_str_t *err_str) {
+static bool parse_dyn_fault_inject_locationDef(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_locationDef_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
-    // malloc pool for object first
 
-    if (check_type(pool, parse_state, JSMN_OBJECT, err_str)) {
-        return true;
-    }
-    bool seen_location = false;
-    bool seen_fault_inject_type = false;
-    bool seen_delay_percentage = false;
-    bool seen_abort_percentage = false;
-    bool seen_status_code = false;
-    bool seen_delay_duration = false;
-    bool seen_locations = false;
+    js2c_check_type(JSMN_OBJECT);
     const int object_start_token = parse_state->current_token;
     const uint64_t n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        if (CURRENT_TOKEN(parse_state).size > 1) {
-            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing separator between values in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
-            return true;
-        }
-        if (CURRENT_TOKEN(parse_state).size < 1) {
-            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing value in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
-            return true;
-        }
+        js2c_key_children_check_for_obj();
         if (current_string_is(parse_state, "location")) {
-            if (seen_location) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': location", parse_state->current_key)
-                return true;
-            }
-            seen_location = true;
+            js2c_check_field_set(out->is_location_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "location";
-            out->location = njt_palloc(pool, sizeof(njt_str_t));
-            if (out->location == NULL) {
-                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
-            }
-            // first get str len from TOKEN_STRING
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            (out->location) = njt_palloc(pool, sizeof(njt_str_t));
-            if ((out->location) == NULL) {
-                // TODO LOG_ERROR
+            ((&out->location))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->location))->data);
+            ((&out->location))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->location), 0, ((&out->location))->len, err_ret)) {
                 return true;
             }
-            ((out->location))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
-            ((out->location))->len = token_size;
-            if ((out->location)->len == 0) {
-                ((out->location))->data = NULL;
-            } else if ((out->location)->data == NULL) {
-                // TODO LOG_ERROR
-                return true;
-            }
-            if (builtin_parse_string(pool, parse_state, (out->location), 0, ((out->location))->len, err_str)) {
-                return true;
-            }
+            out->is_location_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "fault_inject_type")) {
-            if (seen_fault_inject_type) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': fault_inject_type", parse_state->current_key)
-                return true;
-            }
-            seen_fault_inject_type = true;
+            js2c_check_field_set(out->is_fault_inject_type_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "fault_inject_type";
-            if (parse_dyn_fault_inject_locationDef_fault_inject_type(pool, parse_state, (&out->fault_inject_type), err_str)) {
+            if (parse_dyn_fault_inject_locationDef_fault_inject_type(pool, parse_state, (&out->fault_inject_type), err_ret)) {
                 return true;
             }
+            out->is_fault_inject_type_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "delay_percentage")) {
-            if (seen_delay_percentage) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': delay_percentage", parse_state->current_key)
-                return true;
-            }
-            seen_delay_percentage = true;
+            js2c_check_field_set(out->is_delay_percentage_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "delay_percentage";
+            js2c_null_check();
             int64_t int_parse_tmp;
-            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_str)) {
+            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_ret)) {
                 return true;
             }
-            if (!(int_parse_tmp >= 1)) {
-                parse_state->current_token -= 1;
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be >= 1.", int_parse_tmp, parse_state->current_key)
-                return true;
-            }
-            if (!(int_parse_tmp <= 100)) {
-                parse_state->current_token -= 1;
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be <= 100.", int_parse_tmp, parse_state->current_key)
-                return true;
-            }
+            js2c_int_range_check_min(1LL);
+            js2c_int_range_check_max(100LL);
             *(&out->delay_percentage) = int_parse_tmp;
+            out->is_delay_percentage_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "abort_percentage")) {
-            if (seen_abort_percentage) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': abort_percentage", parse_state->current_key)
-                return true;
-            }
-            seen_abort_percentage = true;
+            js2c_check_field_set(out->is_abort_percentage_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "abort_percentage";
+            js2c_null_check();
             int64_t int_parse_tmp;
-            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_str)) {
+            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_ret)) {
                 return true;
             }
-            if (!(int_parse_tmp >= 1)) {
-                parse_state->current_token -= 1;
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be >= 1.", int_parse_tmp, parse_state->current_key)
-                return true;
-            }
-            if (!(int_parse_tmp <= 100)) {
-                parse_state->current_token -= 1;
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be <= 100.", int_parse_tmp, parse_state->current_key)
-                return true;
-            }
+            js2c_int_range_check_min(1LL);
+            js2c_int_range_check_max(100LL);
             *(&out->abort_percentage) = int_parse_tmp;
+            out->is_abort_percentage_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "status_code")) {
-            if (seen_status_code) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': status_code", parse_state->current_key)
-                return true;
-            }
-            seen_status_code = true;
+            js2c_check_field_set(out->is_status_code_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "status_code";
+            js2c_null_check();
             int64_t int_parse_tmp;
-            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_str)) {
+            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_ret)) {
                 return true;
             }
-            if (!(int_parse_tmp >= 200)) {
-                parse_state->current_token -= 1;
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be >= 200.", int_parse_tmp, parse_state->current_key)
-                return true;
-            }
-            if (!(int_parse_tmp <= 600)) {
-                parse_state->current_token -= 1;
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Integer %" PRIi64 " in '%s' out of range. It must be <= 600.", int_parse_tmp, parse_state->current_key)
-                return true;
-            }
+            js2c_int_range_check_min(200LL);
+            js2c_int_range_check_max(600LL);
             *(&out->status_code) = int_parse_tmp;
+            out->is_status_code_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "delay_duration")) {
-            if (seen_delay_duration) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': delay_duration", parse_state->current_key)
-                return true;
-            }
-            seen_delay_duration = true;
+            js2c_check_field_set(out->is_delay_duration_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "delay_duration";
-            out->delay_duration = njt_palloc(pool, sizeof(njt_str_t));
-            if (out->delay_duration == NULL) {
-                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
-            }
-            // first get str len from TOKEN_STRING
+            js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            (out->delay_duration) = njt_palloc(pool, sizeof(njt_str_t));
-            if ((out->delay_duration) == NULL) {
-                // TODO LOG_ERROR
+            ((&out->delay_duration))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->delay_duration))->data);
+            ((&out->delay_duration))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->delay_duration), 0, ((&out->delay_duration))->len, err_ret)) {
                 return true;
             }
-            ((out->delay_duration))->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
-            ((out->delay_duration))->len = token_size;
-            if ((out->delay_duration)->len == 0) {
-                ((out->delay_duration))->data = NULL;
-            } else if ((out->delay_duration)->data == NULL) {
-                // TODO LOG_ERROR
-                return true;
-            }
-            if (builtin_parse_string(pool, parse_state, (out->delay_duration), 0, ((out->delay_duration))->len, err_str)) {
-                return true;
-            }
+            out->is_delay_duration_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "locations")) {
-            if (seen_locations) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': locations", parse_state->current_key)
-                return true;
-            }
-            seen_locations = true;
+            js2c_check_field_set(out->is_locations_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "locations";
+            js2c_null_check();
             out->locations = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(dyn_fault_inject_locationDef_locations_item_t*));
-            if (out->locations == NULL) {
-                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
-            }
-            if (parse_dyn_fault_inject_locationDef_locations(pool, parse_state, (out->locations), err_str)) {
+            js2c_malloc_check(out->locations);
+
+            if (parse_dyn_fault_inject_locationDef_locations(pool, parse_state, (out->locations), err_ret)) {
                 return true;
             }
+            out->is_locations_set = 1;
             parse_state->current_key = saved_key;
         } else {
-            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            LOG_ERROR_JSON_PARSE(UNKNOWN_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
             return true;
         }
     }
     const int saved_current_token = parse_state->current_token;
     parse_state->current_token = object_start_token;
-    if (!seen_location) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': location", parse_state->current_key)
+    if (!out->is_location_set) {
+        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': location", parse_state->current_key);
         return true;
     }
-    if (!seen_fault_inject_type) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': fault_inject_type", parse_state->current_key)
+    if (!out->is_fault_inject_type_set) {
+        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': fault_inject_type", parse_state->current_key);
         return true;
     }
-    // HAHB
-    if (!seen_delay_percentage) {
+    // set default
+    if (!out->is_delay_percentage_set) {
         out->delay_percentage = 100LL;
     }
-    // HAHB
-    if (!seen_abort_percentage) {
+    // set default
+    if (!out->is_abort_percentage_set) {
         out->abort_percentage = 100LL;
     }
-    // HAHB
-    if (!seen_status_code) {
+    // set default
+    if (!out->is_status_code_set) {
         out->status_code = 200LL;
     }
-    // HAHB
-    if (!seen_delay_duration) {
-        out->delay_duration = njt_palloc(pool, sizeof(njt_str_t));
-        if (out->delay_duration == NULL) {
-            // TODO LOG_ERROR
-            return true;
-        }
+    // set default
+    if (!out->is_delay_duration_set) {
         size_t token_size = strlen("");
-        (out->delay_duration)->data = (u_char*)njt_palloc(pool, token_size);
-        (out->delay_duration)->len = token_size;
-        if (out->delay_duration->len == 0) {
-            (out->delay_duration)->data = NULL;
-        } else if (out->delay_duration->data == NULL) {
-            // TODO LOG_ERROR
-            return true;
+        (out->delay_duration).data = (u_char*)njt_palloc(pool, token_size + 1);
+        js2c_malloc_check((out->delay_duration).data);
+        (out->delay_duration).len = token_size;
+        if (out->delay_duration.len == 0) {
+            (out->delay_duration).data[0] = 0;
         }
-        if (out->delay_duration->len > 0) {
-            njt_memcpy(out->delay_duration->data, "", token_size);
+        if (token_size > 0) {
+            njt_memcpy(out->delay_duration.data, "", token_size);
         }
     }
-    // HAHB
-    if (!seen_locations) {
+    // set default
+    if (!out->is_locations_set) {
         out->locations = njt_palloc(pool, sizeof(njt_array_t));
         memset(out->locations, 0, sizeof(njt_array_t));
     }
@@ -309,7 +208,7 @@ static bool parse_dyn_fault_inject_locationDef(njt_pool_t *pool, parse_state_t *
 
 
 static void get_json_length_dyn_fault_inject_locationDef_location(njt_pool_t *pool, dyn_fault_inject_locationDef_location_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 // BEGIN GET_JSON_LENGTH ENUM
@@ -359,10 +258,9 @@ static void get_json_length_dyn_fault_inject_locationDef_status_code(njt_pool_t 
 }
 
 static void get_json_length_dyn_fault_inject_locationDef_delay_duration(njt_pool_t *pool, dyn_fault_inject_locationDef_delay_duration_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
-// GET_JSON_LENGTH_REF
 
 static void get_json_length_dyn_fault_inject_locationDef_locations_item(njt_pool_t *pool, dyn_fault_inject_locationDef_locations_item_t *out, size_t *length, njt_int_t flags) {
     get_json_length_dyn_fault_inject_locationDef(pool, out, length, flags);
@@ -379,9 +277,7 @@ static void get_json_length_dyn_fault_inject_locationDef_locations(njt_pool_t *p
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i] == NULL) {
-            omit = 1;
-        }
+        omit = ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i] == NULL) ? 1 : 0;
         if (omit == 0) {
             get_json_length_dyn_fault_inject_locationDef_locations_item(pool, ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
@@ -402,9 +298,8 @@ static void get_json_length_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
     njt_int_t omit;
     njt_int_t count = 0;
     omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->location) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_location_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->location.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (8 + 3); // "location": 
         get_json_length_dyn_fault_inject_locationDef_location(pool, (&out->location), length, flags);
@@ -412,6 +307,7 @@ static void get_json_length_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
         count++;
     }
     omit = 0;
+    omit = out->is_fault_inject_type_set ? 0 : 1;
     if (omit == 0) {
         *length += (17 + 3); // "fault_inject_type": 
         get_json_length_dyn_fault_inject_locationDef_fault_inject_type(pool, (&out->fault_inject_type), length, flags);
@@ -419,6 +315,7 @@ static void get_json_length_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
         count++;
     }
     omit = 0;
+    omit = out->is_delay_percentage_set ? 0 : 1;
     if (omit == 0) {
         *length += (16 + 3); // "delay_percentage": 
         get_json_length_dyn_fault_inject_locationDef_delay_percentage(pool, (&out->delay_percentage), length, flags);
@@ -426,6 +323,7 @@ static void get_json_length_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
         count++;
     }
     omit = 0;
+    omit = out->is_abort_percentage_set ? 0 : 1;
     if (omit == 0) {
         *length += (16 + 3); // "abort_percentage": 
         get_json_length_dyn_fault_inject_locationDef_abort_percentage(pool, (&out->abort_percentage), length, flags);
@@ -433,6 +331,7 @@ static void get_json_length_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
         count++;
     }
     omit = 0;
+    omit = out->is_status_code_set ? 0 : 1;
     if (omit == 0) {
         *length += (11 + 3); // "status_code": 
         get_json_length_dyn_fault_inject_locationDef_status_code(pool, (&out->status_code), length, flags);
@@ -440,9 +339,8 @@ static void get_json_length_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
         count++;
     }
     omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->delay_duration) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_delay_duration_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->delay_duration.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (14 + 3); // "delay_duration": 
         get_json_length_dyn_fault_inject_locationDef_delay_duration(pool, (&out->delay_duration), length, flags);
@@ -450,9 +348,8 @@ static void get_json_length_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
         count++;
     }
     omit = 0;
-    if ((flags & OMIT_NULL_ARRAY) && (out->locations) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_locations_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_ARRAY) && (out->locations) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (9 + 3); // "locations": 
         get_json_length_dyn_fault_inject_locationDef_locations(pool, (out->locations), length, flags);
@@ -464,14 +361,13 @@ static void get_json_length_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
     }
     *length += 1;
 }
-// CHECK ARRAY not exceeding bounds before call this func
+dyn_fault_inject_locationDef_locations_item_t* get_dyn_fault_inject_locationDef_locations_item(dyn_fault_inject_locationDef_locations_t *out, size_t idx) {
+    return ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[idx];
 
-dyn_fault_inject_locationDef_locations_item_t get_dyn_fault_inject_locationDef_locations_item(dyn_fault_inject_locationDef_locations_t *out, size_t idx) {
-    return *((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[idx];
 }
 
-dyn_fault_inject_locationDef_location_t get_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_t *out) {
-    return out->location;
+dyn_fault_inject_locationDef_location_t* get_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_t *out) {
+    return &out->location;
 }
 
 dyn_fault_inject_locationDef_fault_inject_type_t get_dyn_fault_inject_locationDef_fault_inject_type(dyn_fault_inject_locationDef_t *out) {
@@ -490,18 +386,36 @@ dyn_fault_inject_locationDef_status_code_t get_dyn_fault_inject_locationDef_stat
     return out->status_code;
 }
 
-dyn_fault_inject_locationDef_delay_duration_t get_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_t *out) {
-    return out->delay_duration;
+dyn_fault_inject_locationDef_delay_duration_t* get_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_t *out) {
+    return &out->delay_duration;
 }
 
 dyn_fault_inject_locationDef_locations_t* get_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_t *out) {
     return out->locations;
 }
-void set_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_location_t field) {
-    obj->location = field;
+void set_dyn_fault_inject_locationDef_location(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_location_t* field) {
+    njt_memcpy(&obj->location, field, sizeof(njt_str_t));
+    obj->is_location_set = 1;
 }
-void set_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_delay_duration_t field) {
-    obj->delay_duration = field;
+void set_dyn_fault_inject_locationDef_fault_inject_type(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_fault_inject_type_t field) {
+    obj->fault_inject_type = field;
+    obj->is_fault_inject_type_set = 1;
+}
+void set_dyn_fault_inject_locationDef_delay_percentage(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_delay_percentage_t field) {
+    obj->delay_percentage = field;
+    obj->is_delay_percentage_set = 1;
+}
+void set_dyn_fault_inject_locationDef_abort_percentage(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_abort_percentage_t field) {
+    obj->abort_percentage = field;
+    obj->is_abort_percentage_set = 1;
+}
+void set_dyn_fault_inject_locationDef_status_code(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_status_code_t field) {
+    obj->status_code = field;
+    obj->is_status_code_set = 1;
+}
+void set_dyn_fault_inject_locationDef_delay_duration(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_delay_duration_t* field) {
+    njt_memcpy(&obj->delay_duration, field, sizeof(njt_str_t));
+    obj->is_delay_duration_set = 1;
 }
 int add_item_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_locations_t *src, dyn_fault_inject_locationDef_locations_item_t* item) {
     void *new = njt_array_push(src);
@@ -517,6 +431,7 @@ dyn_fault_inject_locationDef_locations_t* create_dyn_fault_inject_locationDef_lo
 }
 void set_dyn_fault_inject_locationDef_locations(dyn_fault_inject_locationDef_t* obj, dyn_fault_inject_locationDef_locations_t* field) {
     obj->locations = field;
+    obj->is_locations_set = 1;
 }
 dyn_fault_inject_locationDef_t* create_dyn_fault_inject_locationDef(njt_pool_t *pool) {
     dyn_fault_inject_locationDef_t* out = njt_palloc(pool, sizeof(dyn_fault_inject_locationDef_t));
@@ -526,7 +441,7 @@ dyn_fault_inject_locationDef_t* create_dyn_fault_inject_locationDef(njt_pool_t *
 
 static void to_oneline_json_dyn_fault_inject_locationDef_location(njt_pool_t *pool, dyn_fault_inject_locationDef_location_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
@@ -575,7 +490,7 @@ static void to_oneline_json_dyn_fault_inject_locationDef_status_code(njt_pool_t 
 
 static void to_oneline_json_dyn_fault_inject_locationDef_delay_duration(njt_pool_t *pool, dyn_fault_inject_locationDef_delay_duration_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
@@ -598,9 +513,7 @@ static void to_oneline_json_dyn_fault_inject_locationDef_locations(njt_pool_t *p
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i] == NULL) {
-            omit = 1;
-        }
+        omit = ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i] == NULL) ? 1 : 0;
         if (omit == 0) {
             to_oneline_json_dyn_fault_inject_locationDef_locations_item(pool, ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
@@ -629,9 +542,8 @@ static void to_oneline_json_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
     cur = njt_sprintf(cur, "{");
     buf->len ++;
     omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->location) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_location_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->location.data) == NULL ? 1 : omit;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"location\":");
         buf->len = cur - buf->data;
@@ -641,6 +553,7 @@ static void to_oneline_json_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
         buf->len ++;
     }
     omit = 0;
+    omit = out->is_fault_inject_type_set ? 0 : 1;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"fault_inject_type\":");
         buf->len = cur - buf->data;
@@ -650,6 +563,7 @@ static void to_oneline_json_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
         buf->len ++;
     }
     omit = 0;
+    omit = out->is_delay_percentage_set ? 0 : 1;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"delay_percentage\":");
         buf->len = cur - buf->data;
@@ -659,6 +573,7 @@ static void to_oneline_json_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
         buf->len ++;
     }
     omit = 0;
+    omit = out->is_abort_percentage_set ? 0 : 1;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"abort_percentage\":");
         buf->len = cur - buf->data;
@@ -668,6 +583,7 @@ static void to_oneline_json_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
         buf->len ++;
     }
     omit = 0;
+    omit = out->is_status_code_set ? 0 : 1;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"status_code\":");
         buf->len = cur - buf->data;
@@ -677,9 +593,8 @@ static void to_oneline_json_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
         buf->len ++;
     }
     omit = 0;
-    if ((flags & OMIT_NULL_STR) && (out->delay_duration) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_delay_duration_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->delay_duration.data) == NULL ? 1 : omit;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"delay_duration\":");
         buf->len = cur - buf->data;
@@ -689,9 +604,8 @@ static void to_oneline_json_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
         buf->len ++;
     }
     omit = 0;
-    if ((flags & OMIT_NULL_ARRAY) && (out->locations) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_locations_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_ARRAY) && (out->locations) == NULL ? 1 : omit;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"locations\":");
         buf->len = cur - buf->data;
@@ -710,33 +624,17 @@ static void to_oneline_json_dyn_fault_inject_locationDef(njt_pool_t *pool, dyn_f
     buf->len ++;
 }
 
-static bool parse_dyn_fault_inject_servers_item_listens(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_servers_item_listens_t *out, njt_str_t *err_str) {
+static bool parse_dyn_fault_inject_servers_item_listens(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_servers_item_listens_t *out, js2c_parse_error_t *err_ret) {
     int i;
-    if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
-        return true;
-    }
+    js2c_check_type(JSMN_ARRAY);
     const int n = parse_state->tokens[parse_state->current_token].size;
-    // memory has been allocate in njt_array_create.
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        // TODO CHECK write later
-        ((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i] = njt_palloc(pool, sizeof(njt_str_t));
-        // first get str len from TOKEN_STRING
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-        ((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i] = njt_palloc(pool, sizeof(njt_str_t));
-        if (((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i] == NULL) {
-            // TODO LOG_ERROR
-            return true;
-        }
-        (((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i])->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
-        (((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i])->len = token_size;
-        if (((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i]->len == 0) {
-            (((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i])->data = NULL;
-        } else if (((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i]->data == NULL) {
-            // TODO LOG_ERROR
-            return true;
-        }
-        if (builtin_parse_string(pool, parse_state, ((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i], 1, (((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i])->len, err_str)) {
+        ((&((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i]))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+        js2c_malloc_check(((&((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i]))->data);
+        ((&((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i]))->len = token_size;
+        if (builtin_parse_string(pool, parse_state, (&((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i]), 1, ((&((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i]))->len, err_ret)) {
             return true;
         }
         out->nelts ++;
@@ -745,33 +643,17 @@ static bool parse_dyn_fault_inject_servers_item_listens(njt_pool_t *pool, parse_
 }
 
 
-static bool parse_dyn_fault_inject_servers_item_serverNames(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_servers_item_serverNames_t *out, njt_str_t *err_str) {
+static bool parse_dyn_fault_inject_servers_item_serverNames(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_servers_item_serverNames_t *out, js2c_parse_error_t *err_ret) {
     int i;
-    if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
-        return true;
-    }
+    js2c_check_type(JSMN_ARRAY);
     const int n = parse_state->tokens[parse_state->current_token].size;
-    // memory has been allocate in njt_array_create.
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        // TODO CHECK write later
-        ((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i] = njt_palloc(pool, sizeof(njt_str_t));
-        // first get str len from TOKEN_STRING
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-        ((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i] = njt_palloc(pool, sizeof(njt_str_t));
-        if (((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i] == NULL) {
-            // TODO LOG_ERROR
-            return true;
-        }
-        (((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i])->data = (u_char*)njt_palloc(pool, (size_t)(token_size));
-        (((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i])->len = token_size;
-        if (((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i]->len == 0) {
-            (((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i])->data = NULL;
-        } else if (((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i]->data == NULL) {
-            // TODO LOG_ERROR
-            return true;
-        }
-        if (builtin_parse_string(pool, parse_state, ((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i], 0, (((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i])->len, err_str)) {
+        ((&((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i]))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+        js2c_malloc_check(((&((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i]))->data);
+        ((&((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i]))->len = token_size;
+        if (builtin_parse_string(pool, parse_state, (&((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i]), 0, ((&((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i]))->len, err_ret)) {
             return true;
         }
         out->nelts ++;
@@ -780,18 +662,14 @@ static bool parse_dyn_fault_inject_servers_item_serverNames(njt_pool_t *pool, pa
 }
 
 
-static bool parse_dyn_fault_inject_servers_item_locations(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_servers_item_locations_t *out, njt_str_t *err_str) {
+static bool parse_dyn_fault_inject_servers_item_locations(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_servers_item_locations_t *out, js2c_parse_error_t *err_ret) {
     int i;
-    if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
-        return true;
-    }
+    js2c_check_type(JSMN_ARRAY);
     const int n = parse_state->tokens[parse_state->current_token].size;
-    // memory has been allocate in njt_array_create.
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        // TODO CHECK write later
         ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_fault_inject_locationDef_t));
-        if (parse_dyn_fault_inject_locationDef(pool, parse_state, ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i], err_str)) {
+        if (parse_dyn_fault_inject_locationDef(pool, parse_state, ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
         out->nelts ++;
@@ -800,96 +678,71 @@ static bool parse_dyn_fault_inject_servers_item_locations(njt_pool_t *pool, pars
 }
 
 
-static bool parse_dyn_fault_inject_servers_item(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_servers_item_t *out, njt_str_t *err_str) {
+static bool parse_dyn_fault_inject_servers_item(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_servers_item_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
-    // malloc pool for object first
 
-    if (check_type(pool, parse_state, JSMN_OBJECT, err_str)) {
-        return true;
-    }
-    bool seen_listens = false;
-    bool seen_serverNames = false;
-    bool seen_locations = false;
+    js2c_check_type(JSMN_OBJECT);
     const int object_start_token = parse_state->current_token;
     const uint64_t n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        if (CURRENT_TOKEN(parse_state).size > 1) {
-            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing separator between values in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
-            return true;
-        }
-        if (CURRENT_TOKEN(parse_state).size < 1) {
-            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing value in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
-            return true;
-        }
+        js2c_key_children_check_for_obj();
         if (current_string_is(parse_state, "listens")) {
-            if (seen_listens) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': listens", parse_state->current_key)
-                return true;
-            }
-            seen_listens = true;
+            js2c_check_field_set(out->is_listens_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "listens";
-            out->listens = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(dyn_fault_inject_servers_item_listens_item_t*));
-            if (out->listens == NULL) {
-                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
-            }
-            if (parse_dyn_fault_inject_servers_item_listens(pool, parse_state, (out->listens), err_str)) {
+            out->listens = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(njt_str_t));
+            js2c_malloc_check(out->listens);
+
+            if (parse_dyn_fault_inject_servers_item_listens(pool, parse_state, (out->listens), err_ret)) {
                 return true;
             }
+            out->is_listens_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "serverNames")) {
-            if (seen_serverNames) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': serverNames", parse_state->current_key)
-                return true;
-            }
-            seen_serverNames = true;
+            js2c_check_field_set(out->is_serverNames_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "serverNames";
-            out->serverNames = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(dyn_fault_inject_servers_item_serverNames_item_t*));
-            if (out->serverNames == NULL) {
-                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
-            }
-            if (parse_dyn_fault_inject_servers_item_serverNames(pool, parse_state, (out->serverNames), err_str)) {
+            out->serverNames = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(njt_str_t));
+            js2c_malloc_check(out->serverNames);
+
+            if (parse_dyn_fault_inject_servers_item_serverNames(pool, parse_state, (out->serverNames), err_ret)) {
                 return true;
             }
+            out->is_serverNames_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "locations")) {
-            if (seen_locations) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': locations", parse_state->current_key)
-                return true;
-            }
-            seen_locations = true;
+            js2c_check_field_set(out->is_locations_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "locations";
             out->locations = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(dyn_fault_inject_servers_item_locations_item_t*));
-            if (out->locations == NULL) {
-                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
-            }
-            if (parse_dyn_fault_inject_servers_item_locations(pool, parse_state, (out->locations), err_str)) {
+            js2c_malloc_check(out->locations);
+
+            if (parse_dyn_fault_inject_servers_item_locations(pool, parse_state, (out->locations), err_ret)) {
                 return true;
             }
+            out->is_locations_set = 1;
             parse_state->current_key = saved_key;
         } else {
-            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            LOG_ERROR_JSON_PARSE(UNKNOWN_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
             return true;
         }
     }
     const int saved_current_token = parse_state->current_token;
     parse_state->current_token = object_start_token;
-    if (!seen_listens) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': listens", parse_state->current_key)
+    if (!out->is_listens_set) {
+        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': listens", parse_state->current_key);
         return true;
     }
-    if (!seen_serverNames) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': serverNames", parse_state->current_key)
+    if (!out->is_serverNames_set) {
+        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': serverNames", parse_state->current_key);
         return true;
     }
-    if (!seen_locations) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': locations", parse_state->current_key)
+    if (!out->is_locations_set) {
+        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': locations", parse_state->current_key);
         return true;
     }
     parse_state->current_token = saved_current_token;
@@ -897,18 +750,14 @@ static bool parse_dyn_fault_inject_servers_item(njt_pool_t *pool, parse_state_t 
 }
 
 
-static bool parse_dyn_fault_inject_servers(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_servers_t *out, njt_str_t *err_str) {
+static bool parse_dyn_fault_inject_servers(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_servers_t *out, js2c_parse_error_t *err_ret) {
     int i;
-    if (check_type(pool, parse_state, JSMN_ARRAY, err_str)) {
-        return true;
-    }
+    js2c_check_type(JSMN_ARRAY);
     const int n = parse_state->tokens[parse_state->current_token].size;
-    // memory has been allocate in njt_array_create.
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        // TODO CHECK write later
         ((dyn_fault_inject_servers_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_fault_inject_servers_item_t));
-        if (parse_dyn_fault_inject_servers_item(pool, parse_state, ((dyn_fault_inject_servers_item_t**)out->elts)[i], err_str)) {
+        if (parse_dyn_fault_inject_servers_item(pool, parse_state, ((dyn_fault_inject_servers_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
         out->nelts ++;
@@ -917,52 +766,37 @@ static bool parse_dyn_fault_inject_servers(njt_pool_t *pool, parse_state_t *pars
 }
 
 
-static bool parse_dyn_fault_inject(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_t *out, njt_str_t *err_str) {
+static bool parse_dyn_fault_inject(njt_pool_t *pool, parse_state_t *parse_state, dyn_fault_inject_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
-    // malloc pool for object first
 
-    if (check_type(pool, parse_state, JSMN_OBJECT, err_str)) {
-        return true;
-    }
-    bool seen_servers = false;
+    js2c_check_type(JSMN_OBJECT);
     const int object_start_token = parse_state->current_token;
     const uint64_t n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        if (CURRENT_TOKEN(parse_state).size > 1) {
-            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing separator between values in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
-            return true;
-        }
-        if (CURRENT_TOKEN(parse_state).size < 1) {
-            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing value in '%s', after key: %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
-            return true;
-        }
+        js2c_key_children_check_for_obj();
         if (current_string_is(parse_state, "servers")) {
-            if (seen_servers) {
-                LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': servers", parse_state->current_key)
-                return true;
-            }
-            seen_servers = true;
+            js2c_check_field_set(out->is_servers_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "servers";
             out->servers = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(dyn_fault_inject_servers_item_t*));
-            if (out->servers == NULL) {
-                LOG_ERROR_JSON_PARSE(0, "Failed to allocate memory from %s.", "pool")
-            }
-            if (parse_dyn_fault_inject_servers(pool, parse_state, (out->servers), err_str)) {
+            js2c_malloc_check(out->servers);
+
+            if (parse_dyn_fault_inject_servers(pool, parse_state, (out->servers), err_ret)) {
                 return true;
             }
+            out->is_servers_set = 1;
             parse_state->current_key = saved_key;
         } else {
-            LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state))
+            LOG_ERROR_JSON_PARSE(UNKNOWN_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
             return true;
         }
     }
     const int saved_current_token = parse_state->current_token;
     parse_state->current_token = object_start_token;
-    if (!seen_servers) {
-        LOG_ERROR_JSON_PARSE(CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': servers", parse_state->current_key)
+    if (!out->is_servers_set) {
+        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': servers", parse_state->current_key);
         return true;
     }
     parse_state->current_token = saved_current_token;
@@ -971,7 +805,7 @@ static bool parse_dyn_fault_inject(njt_pool_t *pool, parse_state_t *parse_state,
 
 
 static void get_json_length_dyn_fault_inject_servers_item_listens_item(njt_pool_t *pool, dyn_fault_inject_servers_item_listens_item_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
@@ -986,9 +820,7 @@ static void get_json_length_dyn_fault_inject_servers_item_listens(njt_pool_t *po
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_STR) && (&((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i]) == NULL) {
-            omit = 1;
-        }
+        omit = ((flags & OMIT_NULL_STR) && (&((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i])->data == NULL) ? 1 : 0;
         if (omit == 0) {
             get_json_length_dyn_fault_inject_servers_item_listens_item(pool, (&((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i]), length, flags);
             *length += 1; // ","
@@ -1001,7 +833,7 @@ static void get_json_length_dyn_fault_inject_servers_item_listens(njt_pool_t *po
 }
 
 static void get_json_length_dyn_fault_inject_servers_item_serverNames_item(njt_pool_t *pool, dyn_fault_inject_servers_item_serverNames_item_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
@@ -1016,9 +848,7 @@ static void get_json_length_dyn_fault_inject_servers_item_serverNames(njt_pool_t
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_STR) && (&((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i]) == NULL) {
-            omit = 1;
-        }
+        omit = ((flags & OMIT_NULL_STR) && (&((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i])->data == NULL) ? 1 : 0;
         if (omit == 0) {
             get_json_length_dyn_fault_inject_servers_item_serverNames_item(pool, (&((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i]), length, flags);
             *length += 1; // ","
@@ -1029,7 +859,6 @@ static void get_json_length_dyn_fault_inject_servers_item_serverNames(njt_pool_t
         *length -= 1; // "\b"
     }
 }
-// GET_JSON_LENGTH_REF
 
 static void get_json_length_dyn_fault_inject_servers_item_locations_item(njt_pool_t *pool, dyn_fault_inject_servers_item_locations_item_t *out, size_t *length, njt_int_t flags) {
     get_json_length_dyn_fault_inject_locationDef(pool, out, length, flags);
@@ -1046,9 +875,7 @@ static void get_json_length_dyn_fault_inject_servers_item_locations(njt_pool_t *
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i] == NULL) {
-            omit = 1;
-        }
+        omit = ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i] == NULL) ? 1 : 0;
         if (omit == 0) {
             get_json_length_dyn_fault_inject_servers_item_locations_item(pool, ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
@@ -1069,9 +896,8 @@ static void get_json_length_dyn_fault_inject_servers_item(njt_pool_t *pool, dyn_
     njt_int_t omit;
     njt_int_t count = 0;
     omit = 0;
-    if ((flags & OMIT_NULL_ARRAY) && (out->listens) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_listens_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_ARRAY) && (out->listens) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (7 + 3); // "listens": 
         get_json_length_dyn_fault_inject_servers_item_listens(pool, (out->listens), length, flags);
@@ -1079,9 +905,8 @@ static void get_json_length_dyn_fault_inject_servers_item(njt_pool_t *pool, dyn_
         count++;
     }
     omit = 0;
-    if ((flags & OMIT_NULL_ARRAY) && (out->serverNames) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_serverNames_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_ARRAY) && (out->serverNames) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (11 + 3); // "serverNames": 
         get_json_length_dyn_fault_inject_servers_item_serverNames(pool, (out->serverNames), length, flags);
@@ -1089,9 +914,8 @@ static void get_json_length_dyn_fault_inject_servers_item(njt_pool_t *pool, dyn_
         count++;
     }
     omit = 0;
-    if ((flags & OMIT_NULL_ARRAY) && (out->locations) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_locations_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_ARRAY) && (out->locations) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (9 + 3); // "locations": 
         get_json_length_dyn_fault_inject_servers_item_locations(pool, (out->locations), length, flags);
@@ -1115,9 +939,7 @@ static void get_json_length_dyn_fault_inject_servers(njt_pool_t *pool, dyn_fault
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_servers_item_t**)out->elts)[i] == NULL) {
-            omit = 1;
-        }
+        omit = ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_servers_item_t**)out->elts)[i] == NULL) ? 1 : 0;
         if (omit == 0) {
             get_json_length_dyn_fault_inject_servers_item(pool, ((dyn_fault_inject_servers_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
@@ -1138,9 +960,8 @@ static void get_json_length_dyn_fault_inject(njt_pool_t *pool, dyn_fault_inject_
     njt_int_t omit;
     njt_int_t count = 0;
     omit = 0;
-    if ((flags & OMIT_NULL_ARRAY) && (out->servers) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_servers_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_ARRAY) && (out->servers) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (7 + 3); // "servers": 
         get_json_length_dyn_fault_inject_servers(pool, (out->servers), length, flags);
@@ -1152,20 +973,17 @@ static void get_json_length_dyn_fault_inject(njt_pool_t *pool, dyn_fault_inject_
     }
     *length += 1;
 }
-// CHECK ARRAY not exceeding bounds before call this func
+dyn_fault_inject_servers_item_listens_item_t* get_dyn_fault_inject_servers_item_listens_item(dyn_fault_inject_servers_item_listens_t *out, size_t idx) {
+    return &((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[idx];
 
-dyn_fault_inject_servers_item_listens_item_t get_dyn_fault_inject_servers_item_listens_item(dyn_fault_inject_servers_item_listens_t *out, size_t idx) {
-    return ((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[idx];
 }
-// CHECK ARRAY not exceeding bounds before call this func
+dyn_fault_inject_servers_item_serverNames_item_t* get_dyn_fault_inject_servers_item_serverNames_item(dyn_fault_inject_servers_item_serverNames_t *out, size_t idx) {
+    return &((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[idx];
 
-dyn_fault_inject_servers_item_serverNames_item_t get_dyn_fault_inject_servers_item_serverNames_item(dyn_fault_inject_servers_item_serverNames_t *out, size_t idx) {
-    return ((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[idx];
 }
-// CHECK ARRAY not exceeding bounds before call this func
+dyn_fault_inject_servers_item_locations_item_t* get_dyn_fault_inject_servers_item_locations_item(dyn_fault_inject_servers_item_locations_t *out, size_t idx) {
+    return ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[idx];
 
-dyn_fault_inject_servers_item_locations_item_t get_dyn_fault_inject_servers_item_locations_item(dyn_fault_inject_servers_item_locations_t *out, size_t idx) {
-    return *((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[idx];
 }
 
 dyn_fault_inject_servers_item_listens_t* get_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item_t *out) {
@@ -1179,21 +997,20 @@ dyn_fault_inject_servers_item_serverNames_t* get_dyn_fault_inject_servers_item_s
 dyn_fault_inject_servers_item_locations_t* get_dyn_fault_inject_servers_item_locations(dyn_fault_inject_servers_item_t *out) {
     return out->locations;
 }
-// CHECK ARRAY not exceeding bounds before call this func
+dyn_fault_inject_servers_item_t* get_dyn_fault_inject_servers_item(dyn_fault_inject_servers_t *out, size_t idx) {
+    return ((dyn_fault_inject_servers_item_t**)out->elts)[idx];
 
-dyn_fault_inject_servers_item_t get_dyn_fault_inject_servers_item(dyn_fault_inject_servers_t *out, size_t idx) {
-    return *((dyn_fault_inject_servers_item_t**)out->elts)[idx];
 }
 
 dyn_fault_inject_servers_t* get_dyn_fault_inject_servers(dyn_fault_inject_t *out) {
     return out->servers;
 }
-int add_item_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item_listens_t *src, dyn_fault_inject_servers_item_listens_item_t item) {
+int add_item_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item_listens_t *src, dyn_fault_inject_servers_item_listens_item_t* item) {
     void *new = njt_array_push(src);
     if (new == NULL) {
         return NJT_ERROR;
     }
-    njt_memcpy(new, &item, src->size);
+    njt_memcpy(new, item, src->size);
     return NJT_OK;
 }
 
@@ -1202,13 +1019,14 @@ dyn_fault_inject_servers_item_listens_t* create_dyn_fault_inject_servers_item_li
 }
 void set_dyn_fault_inject_servers_item_listens(dyn_fault_inject_servers_item_t* obj, dyn_fault_inject_servers_item_listens_t* field) {
     obj->listens = field;
+    obj->is_listens_set = 1;
 }
-int add_item_dyn_fault_inject_servers_item_serverNames(dyn_fault_inject_servers_item_serverNames_t *src, dyn_fault_inject_servers_item_serverNames_item_t item) {
+int add_item_dyn_fault_inject_servers_item_serverNames(dyn_fault_inject_servers_item_serverNames_t *src, dyn_fault_inject_servers_item_serverNames_item_t* item) {
     void *new = njt_array_push(src);
     if (new == NULL) {
         return NJT_ERROR;
     }
-    njt_memcpy(new, &item, src->size);
+    njt_memcpy(new, item, src->size);
     return NJT_OK;
 }
 
@@ -1217,6 +1035,7 @@ dyn_fault_inject_servers_item_serverNames_t* create_dyn_fault_inject_servers_ite
 }
 void set_dyn_fault_inject_servers_item_serverNames(dyn_fault_inject_servers_item_t* obj, dyn_fault_inject_servers_item_serverNames_t* field) {
     obj->serverNames = field;
+    obj->is_serverNames_set = 1;
 }
 int add_item_dyn_fault_inject_servers_item_locations(dyn_fault_inject_servers_item_locations_t *src, dyn_fault_inject_servers_item_locations_item_t* item) {
     void *new = njt_array_push(src);
@@ -1232,6 +1051,7 @@ dyn_fault_inject_servers_item_locations_t* create_dyn_fault_inject_servers_item_
 }
 void set_dyn_fault_inject_servers_item_locations(dyn_fault_inject_servers_item_t* obj, dyn_fault_inject_servers_item_locations_t* field) {
     obj->locations = field;
+    obj->is_locations_set = 1;
 }
 dyn_fault_inject_servers_item_t* create_dyn_fault_inject_servers_item(njt_pool_t *pool) {
     dyn_fault_inject_servers_item_t* out = njt_palloc(pool, sizeof(dyn_fault_inject_servers_item_t));
@@ -1252,6 +1072,7 @@ dyn_fault_inject_servers_t* create_dyn_fault_inject_servers(njt_pool_t *pool, si
 }
 void set_dyn_fault_inject_servers(dyn_fault_inject_t* obj, dyn_fault_inject_servers_t* field) {
     obj->servers = field;
+    obj->is_servers_set = 1;
 }
 dyn_fault_inject_t* create_dyn_fault_inject(njt_pool_t *pool) {
     dyn_fault_inject_t* out = njt_palloc(pool, sizeof(dyn_fault_inject_t));
@@ -1261,7 +1082,7 @@ dyn_fault_inject_t* create_dyn_fault_inject(njt_pool_t *pool) {
 
 static void to_oneline_json_dyn_fault_inject_servers_item_listens_item(njt_pool_t *pool, dyn_fault_inject_servers_item_listens_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
@@ -1279,9 +1100,7 @@ static void to_oneline_json_dyn_fault_inject_servers_item_listens(njt_pool_t *po
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_STR) && (&((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i]) == NULL) {
-            omit = 1;
-        }
+        omit = ((flags & OMIT_NULL_STR) && (&((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i])->data == NULL) ? 1 : 0;
         if (omit == 0) {
             to_oneline_json_dyn_fault_inject_servers_item_listens_item(pool, (&((dyn_fault_inject_servers_item_listens_item_t*)out->elts)[i]), buf, flags);
             cur = buf->data + buf->len;
@@ -1301,7 +1120,7 @@ static void to_oneline_json_dyn_fault_inject_servers_item_listens(njt_pool_t *po
 
 static void to_oneline_json_dyn_fault_inject_servers_item_serverNames_item(njt_pool_t *pool, dyn_fault_inject_servers_item_serverNames_item_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, *out);
+    njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
@@ -1319,9 +1138,7 @@ static void to_oneline_json_dyn_fault_inject_servers_item_serverNames(njt_pool_t
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_STR) && (&((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i]) == NULL) {
-            omit = 1;
-        }
+        omit = ((flags & OMIT_NULL_STR) && (&((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i])->data == NULL) ? 1 : 0;
         if (omit == 0) {
             to_oneline_json_dyn_fault_inject_servers_item_serverNames_item(pool, (&((dyn_fault_inject_servers_item_serverNames_item_t*)out->elts)[i]), buf, flags);
             cur = buf->data + buf->len;
@@ -1357,9 +1174,7 @@ static void to_oneline_json_dyn_fault_inject_servers_item_locations(njt_pool_t *
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i] == NULL) {
-            omit = 1;
-        }
+        omit = ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i] == NULL) ? 1 : 0;
         if (omit == 0) {
             to_oneline_json_dyn_fault_inject_servers_item_locations_item(pool, ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
@@ -1388,9 +1203,8 @@ static void to_oneline_json_dyn_fault_inject_servers_item(njt_pool_t *pool, dyn_
     cur = njt_sprintf(cur, "{");
     buf->len ++;
     omit = 0;
-    if ((flags & OMIT_NULL_ARRAY) && (out->listens) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_listens_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_ARRAY) && (out->listens) == NULL ? 1 : omit;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"listens\":");
         buf->len = cur - buf->data;
@@ -1400,9 +1214,8 @@ static void to_oneline_json_dyn_fault_inject_servers_item(njt_pool_t *pool, dyn_
         buf->len ++;
     }
     omit = 0;
-    if ((flags & OMIT_NULL_ARRAY) && (out->serverNames) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_serverNames_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_ARRAY) && (out->serverNames) == NULL ? 1 : omit;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"serverNames\":");
         buf->len = cur - buf->data;
@@ -1412,9 +1225,8 @@ static void to_oneline_json_dyn_fault_inject_servers_item(njt_pool_t *pool, dyn_
         buf->len ++;
     }
     omit = 0;
-    if ((flags & OMIT_NULL_ARRAY) && (out->locations) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_locations_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_ARRAY) && (out->locations) == NULL ? 1 : omit;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"locations\":");
         buf->len = cur - buf->data;
@@ -1446,9 +1258,7 @@ static void to_oneline_json_dyn_fault_inject_servers(njt_pool_t *pool, dyn_fault
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        if ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_servers_item_t**)out->elts)[i] == NULL) {
-            omit = 1;
-        }
+        omit = ((flags & OMIT_NULL_OBJ) && ((dyn_fault_inject_servers_item_t**)out->elts)[i] == NULL) ? 1 : 0;
         if (omit == 0) {
             to_oneline_json_dyn_fault_inject_servers_item(pool, ((dyn_fault_inject_servers_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
@@ -1477,9 +1287,8 @@ static void to_oneline_json_dyn_fault_inject(njt_pool_t *pool, dyn_fault_inject_
     cur = njt_sprintf(cur, "{");
     buf->len ++;
     omit = 0;
-    if ((flags & OMIT_NULL_ARRAY) && (out->servers) == NULL) {
-        omit = 1;
-    }
+    omit = out->is_servers_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_ARRAY) && (out->servers) == NULL ? 1 : omit;
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"servers\":");
         buf->len = cur - buf->data;
@@ -1497,7 +1306,7 @@ static void to_oneline_json_dyn_fault_inject(njt_pool_t *pool, dyn_fault_inject_
     cur = njt_sprintf(cur, "}");
     buf->len ++;
 }
-dyn_fault_inject_t* json_parse_dyn_fault_inject(njt_pool_t *pool, const njt_str_t *json_string, njt_str_t *err_str) {
+dyn_fault_inject_t* json_parse_dyn_fault_inject(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret) {
     dyn_fault_inject_t* out;
     parse_state_t parse_state_var;
     parse_state_t *parse_state = &parse_state_var;
@@ -1506,13 +1315,13 @@ dyn_fault_inject_t* json_parse_dyn_fault_inject(njt_pool_t *pool, const njt_str_
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
         token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
-        parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_str);
+        parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
-            LOG_ERROR_JSON_PARSE(-1, "%s", "Invalid character inside JSON string");
+            LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
             return NULL;
         }
         if (parse_result == JSMN_ERROR_PART) {
-            LOG_ERROR_JSON_PARSE(-1, "%s", "The string is not a full JSON packet, more bytes expected");
+            LOG_ERROR_JSON_PARSE(PARTIAL_JSON_ERR, "", -1, "%s", "The string is not a full JSON packet, more bytes expected");
             return NULL;
         }
         if (parse_result == JSMN_ERROR_NOMEM) {
@@ -1520,13 +1329,13 @@ dyn_fault_inject_t* json_parse_dyn_fault_inject(njt_pool_t *pool, const njt_str_
             continue;
         }
         if (parse_result == 0) {
-            LOG_ERROR_JSON_PARSE(0, "String did not contain %s JSON tokens", "any");
+            LOG_ERROR_JSON_PARSE(NULL_JSON_ERR, "", 0, "String did not contain %s JSON tokens", "any");
             return NULL;
         }
         break; // parse success
     }
     out = njt_palloc(pool, sizeof(dyn_fault_inject_t));;
-    if (parse_dyn_fault_inject(pool, parse_state, out, err_str)) {
+    if (parse_dyn_fault_inject(pool, parse_state, out, err_ret)) {
         return NULL;
     }
     return out;

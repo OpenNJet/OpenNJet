@@ -119,7 +119,7 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_delay(
     new_ficf.status_code = 200;
 
     //check delay_percent
-    if (data->delay_percentage < 1 || data->delay_percentage > 100) {
+    if (data->is_delay_percentage_set && (data->delay_percentage < 1 || data->delay_percentage > 100)) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
             " dyn fault inject, invalid delay_percent, shoud [1,100]");
 
@@ -129,48 +129,53 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_delay(
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
         return NJT_ERROR;
 	}
-    new_ficf.delay_percent = data->delay_percentage;
 
-    //check duration
-    new_ficf.duration = njt_parse_time(data->delay_duration, 0);
-    if (new_ficf.duration == (njt_msec_t) NJT_ERROR) {
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-            " dyn fault inject, invalid delay_duration, should 1h/1m/1s/1ms format");
+    if(data->is_delay_percentage_set){
+        new_ficf.delay_percent = data->delay_percentage;
+    }  
 
-        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
-            " dyn fault inject, invalid delay_duration, should 1h/1m/1s/1ms format");
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
+    if(data->is_delay_duration_set){
+        //check duration
+        new_ficf.duration = njt_parse_time(&data->delay_duration, 0);
+        if (new_ficf.duration == (njt_msec_t) NJT_ERROR) {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                " dyn fault inject, invalid delay_duration, should 1h/1m/1s/1ms format");
 
-        return NJT_ERROR;
+            end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
+                " dyn fault inject, invalid delay_duration, should 1h/1m/1s/1ms format");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
+
+            return NJT_ERROR;
+        }
+
+        if (new_ficf.duration < 1) {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                " dyn fault inject, delay_duration should not less than 1ms");
+
+            end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
+                " dyn fault inject, delay_duration should not less than 1ms");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
+
+            return NJT_ERROR;
+        }
+
+        new_ficf.str_duration.len = data->delay_duration.len;
+        new_ficf.str_duration.data = njt_pcalloc(pool, data->delay_duration.len);
+        if(new_ficf.str_duration.data == NULL){
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                " dyn fault inject, duration malloc error");
+
+            end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
+                " dyn fault inject, duration malloc error");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
+
+            return NJT_ERROR;  
+        }
+        njt_memcpy(new_ficf.str_duration.data, data->delay_duration.data, data->delay_duration.len);
     }
-
-    if (new_ficf.duration < 1) {
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-            " dyn fault inject, delay_duration should not less than 1ms");
-
-        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
-            " dyn fault inject, delay_duration should not less than 1ms");
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
-
-        return NJT_ERROR;
-    }
-
-    new_ficf.str_duration.len = data->delay_duration->len;
-    new_ficf.str_duration.data = njt_pcalloc(pool, data->delay_duration->len);
-    if(new_ficf.str_duration.data == NULL){
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-            " dyn fault inject, duration malloc error");
-
-        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
-            " dyn fault inject, duration malloc error");
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
-
-        return NJT_ERROR;  
-    }
-    njt_memcpy(new_ficf.str_duration.data, data->delay_duration->data, data->delay_duration->len);
 
     if(ficf->dynamic){
         njt_destroy_pool(ficf->pool);
@@ -229,7 +234,7 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_abort(
     new_ficf.status_code = 200;
 
     //check abort_percent
-    if (data->abort_percentage < 1 || data->abort_percentage > 100) {
+    if (data->is_abort_percentage_set && (data->abort_percentage < 1 || data->abort_percentage > 100)) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
             " dyn fault inject, invalid abort_percent, shoud [1,100]");
 
@@ -240,9 +245,11 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_abort(
 
         return NJT_ERROR;
 	}
-    new_ficf.abort_percent = data->abort_percentage;
+    if (data->is_abort_percentage_set){
+        new_ficf.abort_percent = data->abort_percentage;
+    }
 
-    if (data->status_code < 200 || data->status_code > 600) {
+    if (data->is_status_code_set && (data->status_code < 200 || data->status_code > 600)) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
             " dyn fault inject, status_code should [200, 600]");
 
@@ -253,7 +260,9 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_abort(
 
         return NJT_ERROR;
     }
-    new_ficf.status_code = data->status_code;
+    if (data->is_status_code_set){
+        new_ficf.status_code = data->status_code;
+    }
 
     if(ficf->dynamic){
         njt_destroy_pool(ficf->pool);
@@ -314,7 +323,7 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_delay_abort(
     new_ficf.status_code = 200;
 
     //check delay_percent
-    if (data->delay_percentage < 1 || data->delay_percentage > 100) {
+    if (data->is_delay_percentage_set && (data->delay_percentage < 1 || data->delay_percentage > 100)) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
             " dyn fault inject, invalid delay_percent, shoud [1,100]");
 
@@ -324,52 +333,55 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_delay_abort(
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
         return NJT_ERROR;
 	}
-    new_ficf.delay_percent = data->delay_percentage;
-
-    //check duration
-    new_ficf.duration = njt_parse_time(data->delay_duration, 0);
-    if (new_ficf.duration == (njt_msec_t) NJT_ERROR) {
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-            " dyn fault inject, invalid delay_duration, should 1h/1m/1s/1ms format");
-
-        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
-            " dyn fault inject, invalid delay_duration, should 1h/1m/1s/1ms format");
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
-
-        return NJT_ERROR;
+    if (data->is_delay_percentage_set){
+        new_ficf.delay_percent = data->delay_percentage;
     }
 
-    if (new_ficf.duration < 1) {
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-            " dyn fault inject, delay_duration should not less than 1ms");
+    if(data->is_delay_duration_set){
+        //check duration
+        new_ficf.duration = njt_parse_time(&data->delay_duration, 0);
+        if (new_ficf.duration == (njt_msec_t) NJT_ERROR) {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                " dyn fault inject, invalid delay_duration, should 1h/1m/1s/1ms format");
 
-        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
-            " dyn fault inject, delay_duration should not less than 1ms");
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
+            end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
+                " dyn fault inject, invalid delay_duration, should 1h/1m/1s/1ms format");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
 
-        return NJT_ERROR;
+            return NJT_ERROR;
+        }
+
+        if (new_ficf.duration < 1) {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                " dyn fault inject, delay_duration should not less than 1ms");
+
+            end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
+                " dyn fault inject, delay_duration should not less than 1ms");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
+
+            return NJT_ERROR;
+        }
+
+        new_ficf.str_duration.len = data->delay_duration.len;
+        new_ficf.str_duration.data = njt_pcalloc(pool, data->delay_duration.len);
+        if(new_ficf.str_duration.data == NULL){
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                " dyn fault inject, duration malloc error");
+
+            end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
+                " dyn fault inject, duration malloc error");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
+
+            return NJT_ERROR;  
+        }
+        njt_memcpy(new_ficf.str_duration.data, data->delay_duration.data, data->delay_duration.len);
     }
-
-    new_ficf.str_duration.len = data->delay_duration->len;
-    new_ficf.str_duration.data = njt_pcalloc(pool, data->delay_duration->len);
-    if(new_ficf.str_duration.data == NULL){
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-            " dyn fault inject, duration malloc error");
-
-        end = njt_snprintf(data_buf,sizeof(data_buf) - 1,
-            " dyn fault inject, duration malloc error");
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str); 
-
-        return NJT_ERROR;  
-    }
-    njt_memcpy(new_ficf.str_duration.data, data->delay_duration->data, data->delay_duration->len);
-
 
     //check abort_percent
-    if (data->abort_percentage < 1 || data->abort_percentage > 100) {
+    if (data->is_abort_percentage_set && (data->abort_percentage < 1 || data->abort_percentage > 100)) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
             " dyn fault inject, invalid abort_percent, shoud [1,100]");
 
@@ -380,9 +392,11 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_delay_abort(
 
         return NJT_ERROR;
 	}
-    new_ficf.abort_percent = data->abort_percentage;
+    if (data->is_abort_percentage_set){
+        new_ficf.abort_percent = data->abort_percentage;
+    }
 
-    if (data->status_code < 200 || data->status_code > 600) {
+    if (data->is_status_code_set && (data->status_code < 200 || data->status_code > 600)) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
             " dyn fault inject, status_code should [200, 600]");
 
@@ -393,7 +407,9 @@ static njt_int_t njt_dyn_fault_inject_set_conf_by_delay_abort(
 
         return NJT_ERROR;
     }
-    new_ficf.status_code = data->status_code;
+    if (data->is_status_code_set){
+        new_ficf.status_code = data->status_code;
+    }
 
     if(ficf->dynamic){
         njt_destroy_pool(ficf->pool);
@@ -421,6 +437,10 @@ static njt_int_t njt_dyn_fault_inject_set_conf(njt_pool_t *pool,
 
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0; 
+
+    if(!data->is_fault_inject_type_set){
+        return NJT_OK;
+    }
 
     //check type
     switch (data->fault_inject_type)
@@ -459,7 +479,7 @@ static njt_int_t njt_dyn_fault_inject_update_locs(njt_array_t *locs, njt_queue_t
 {
     njt_http_core_loc_conf_t            *clcf;
     njt_http_location_queue_t           *hlq;
-    dyn_fault_inject_servers_item_locations_item_t dfil;
+    dyn_fault_inject_servers_item_locations_item_t *dfil;
     njt_uint_t                           j;
     njt_queue_t                         *tq;
     njt_int_t                            rc;
@@ -485,7 +505,14 @@ static njt_int_t njt_dyn_fault_inject_update_locs(njt_array_t *locs, njt_queue_t
     for (j = 0; j < locs->nelts; ++j)
     {
         dfil = get_dyn_fault_inject_servers_item_locations_item(locs, j);
-        name = dfil.location;
+        if(dfil == NULL || !dfil->is_location_set){
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " index %d not set location name", j);
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+            continue;
+        }
+
+        name = get_dyn_fault_inject_locationDef_location(dfil);
 
         tq = njt_queue_head(q);
         found = false;
@@ -523,7 +550,7 @@ static njt_int_t njt_dyn_fault_inject_update_locs(njt_array_t *locs, njt_queue_t
                 }
 
                 //set fault_inject_config
-                rc = njt_dyn_fault_inject_set_conf(pool, &dfil, ctx, rpc_result);
+                rc = njt_dyn_fault_inject_set_conf(pool, dfil, ctx, rpc_result);
                 if (rc != NJT_OK)
                 {
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_fault_inject_set_conf");
@@ -532,8 +559,8 @@ static njt_int_t njt_dyn_fault_inject_update_locs(njt_array_t *locs, njt_queue_t
                     njt_rpc_result_add_success_count(rpc_result);
                 }
 
-                if (dfil.locations && dfil.locations->nelts > 0) {
-                    njt_dyn_fault_inject_update_locs(dfil.locations, clcf->old_locations, ctx, rpc_result);
+                if (dfil->is_locations_set && dfil->locations && dfil->locations->nelts > 0) {
+                    njt_dyn_fault_inject_update_locs(dfil->locations, clcf->old_locations, ctx, rpc_result);
                 }
             }
         }
@@ -588,33 +615,25 @@ static void njt_dyn_fault_inject_dump_locs(njt_pool_t *pool,
         }
         
         set_dyn_fault_inject_locationDef_location(loc_item, &clcf->full_name);
-
-        loc_item->fault_inject_type = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE;
-        loc_item->abort_percentage = ficf->abort_percent;
-        loc_item->delay_percentage = ficf->delay_percent;
-        loc_item->status_code = ficf->status_code;
-
-        // if(ficf->str_duration.len > 0){
-        //     loc_item->delay_duration = njt_pcalloc(pool, sizeof(njt_str_t));
-        //     loc_item->delay_duration->data = njt_pcalloc(pool, ficf->str_duration.len);
-        //     njt_memcpy(loc_item->delay_duration->data, ficf->str_duration.data, ficf->str_duration.len);
-        //     loc_item->delay_duration->len = ficf->str_duration.len;
-        // }
+        set_dyn_fault_inject_locationDef_fault_inject_type(loc_item, DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE);
+        set_dyn_fault_inject_locationDef_abort_percentage(loc_item, ficf->abort_percent);
+        set_dyn_fault_inject_locationDef_delay_percentage(loc_item, ficf->delay_percent);
+        set_dyn_fault_inject_locationDef_status_code(loc_item, ficf->status_code);
         set_dyn_fault_inject_locationDef_delay_duration(loc_item, &ficf->str_duration);
 
         switch (ficf->fault_inject_type)
         {
         case NJT_HTTP_FAULT_INJECT_NONE:
-            loc_item->fault_inject_type = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE;
+            set_dyn_fault_inject_locationDef_fault_inject_type(loc_item, DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_NONE);
             break;
         case NJT_HTTP_FAULT_INJECT_DELAY:
-            loc_item->fault_inject_type = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY;
+            set_dyn_fault_inject_locationDef_fault_inject_type(loc_item, DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY);
             break;
         case NJT_HTTP_FAULT_INJECT_ABORT:
-            loc_item->fault_inject_type = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_ABORT;
+            set_dyn_fault_inject_locationDef_fault_inject_type(loc_item, DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_ABORT);
             break;
         case NJT_HTTP_FAULT_INJECT_DELAY_ABORT:
-            loc_item->fault_inject_type = DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT;
+            set_dyn_fault_inject_locationDef_fault_inject_type(loc_item, DYN_FAULT_INJECT_LOCATIONDEF_FAULT_INJECT_TYPE_DELAY_ABORT);
             break;    
         default:
             break;
@@ -623,8 +642,10 @@ static void njt_dyn_fault_inject_dump_locs(njt_pool_t *pool,
         add_item_dyn_fault_inject_servers_item_locations(loc_items, loc_item);
 
         if (clcf->old_locations) {
-            loc_item->locations = create_dyn_fault_inject_locationDef_locations(pool, 4);
-            njt_dyn_fault_inject_dump_locs(pool, clcf->old_locations, loc_item->locations);
+            set_dyn_fault_inject_locationDef_locations(loc_item, create_dyn_fault_inject_locationDef_locations(pool, 4));
+            if(loc_item->locations != NULL){
+                njt_dyn_fault_inject_dump_locs(pool, clcf->old_locations, loc_item->locations);
+            }
         }
     }
 }
@@ -648,7 +669,7 @@ static njt_str_t *njt_dyn_fault_inject_dump_conf(njt_cycle_t *cycle, njt_pool_t 
         goto err;
     }
 
-    dynjson_obj.servers = create_dyn_fault_inject_servers(pool, 4);
+    set_dyn_fault_inject_servers(&dynjson_obj, create_dyn_fault_inject_servers(pool, 4));
     if(dynjson_obj.servers == NULL){
         goto err;
     }
@@ -656,13 +677,14 @@ static njt_str_t *njt_dyn_fault_inject_dump_conf(njt_cycle_t *cycle, njt_pool_t 
     if (hcmcf && hcmcf->servers.nelts > 0) {
         cscfp = hcmcf->servers.elts;
         for (i = 0; i < hcmcf->servers.nelts; i++) {
-            server_item = njt_palloc(pool, sizeof(dyn_fault_inject_servers_item_t));
+            server_item = create_dyn_fault_inject_servers_item(pool);
             if(server_item == NULL){
                 goto err;
             }
-            server_item->listens = create_dyn_fault_inject_servers_item_listens(pool, 4);
-            server_item->serverNames =create_dyn_fault_inject_servers_item_serverNames(pool, 4);
-            server_item->locations = create_dyn_fault_inject_servers_item_locations(pool, 4);
+
+            set_dyn_fault_inject_servers_item_listens(server_item, create_dyn_fault_inject_servers_item_listens(pool, 4));
+            set_dyn_fault_inject_servers_item_serverNames(server_item, create_dyn_fault_inject_servers_item_serverNames(pool, 4));
+            set_dyn_fault_inject_servers_item_locations(server_item, create_dyn_fault_inject_servers_item_locations(pool, 4));
 
             array = njt_array_create(pool, 4, sizeof(njt_str_t));
             if(array == NULL){
@@ -702,7 +724,7 @@ static njt_int_t njt_dyn_fault_inject_update_conf(njt_pool_t *pool, dyn_fault_in
     njt_cycle_t                         *cycle, *new_cycle;
     njt_http_core_srv_conf_t            *cscf;
     njt_http_core_loc_conf_t            *clcf;
-    dyn_fault_inject_servers_item_t      dsi;
+    dyn_fault_inject_servers_item_t     *dsi;
     njt_str_t                           *port;
     njt_str_t                           *serverName;
     njt_uint_t                           i;
@@ -725,59 +747,62 @@ static njt_int_t njt_dyn_fault_inject_update_conf(njt_pool_t *pool, dyn_fault_in
         cycle = (njt_cycle_t *)njt_cycle;
     }
 
-    for (i = 0; i < api_data->servers->nelts; i++)
-    {
-        dsi = get_dyn_fault_inject_servers_item(api_data->servers, i);
-        port = get_dyn_fault_inject_servers_item_listens_item(dsi.listens, 0);
-        serverName = get_dyn_fault_inject_servers_item_serverNames_item(dsi.serverNames, 0);
-
-        njt_str_null(&rpc_result->conf_path);
-
-        if (dsi.listens->nelts < 1 || dsi.serverNames->nelts < 1) {
-            // listens or server_names is empty
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-                " server parameters error, listens or serverNames is empty,at position %d", i);
-            rpc_data_str.len = end - data_buf;
-            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-            continue;
-        }
-
-        cscf = njt_http_get_srv_by_port(cycle, port, serverName);
-        if (cscf == NULL)
+    if(api_data->is_servers_set && api_data->servers != NULL){
+        for (i = 0; i < api_data->servers->nelts; i++)
         {
-            njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
-                          port, serverName);
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " can`t find server by listen[%V] server_name[%V]", port, serverName);
+            dsi = get_dyn_fault_inject_servers_item(api_data->servers, i);
+            if (dsi == NULL || !dsi->is_listens_set || !dsi->is_serverNames_set 
+                    || !dsi->is_locations_set || dsi->listens->nelts < 1 
+                    || dsi->serverNames->nelts < 1 || dsi->locations->nelts < 1) {
+                // listens or server_names is empty
+                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                    " server parameters error, listens or serverNames or locations is empty,at position %d", i);
+                rpc_data_str.len = end - data_buf;
+                njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                continue;
+            }
+
+            port = get_dyn_fault_inject_servers_item_listens_item(dsi->listens, 0);
+            serverName = get_dyn_fault_inject_servers_item_serverNames_item(dsi->serverNames, 0);
+            njt_str_null(&rpc_result->conf_path);
+
+            cscf = njt_http_get_srv_by_port(cycle, port, serverName);
+            if (cscf == NULL)
+            {
+                njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
+                            port, serverName);
+                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " can`t find server by listen[%V] server_name[%V]", port, serverName);
+                rpc_data_str.len = end - data_buf;
+                njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                continue;
+            }
+
+            njt_log_error(NJT_LOG_INFO, pool->log, 0, "dynfault_inject start update listen:%V server_name:%V",
+                    port, serverName);
+
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "listen[%V] server_name[%V]", port, serverName);
             rpc_data_str.len = end - data_buf;
-            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-            continue;
-        }
+            njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
+                    
+            njt_http_conf_ctx_t ctx = *cscf->ctx;
+            clcf = njt_http_get_module_loc_conf(cscf->ctx, njt_http_core_module);
+            if(clcf == NULL){
+                njt_log_error(NJT_LOG_INFO, pool->log, 0, 
+                    "can`t find location config by listen:%V server_name:%V ",
+                    port, serverName);
+                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                        " can`t find location config by listen[%V] server_name[%V]", port, serverName);
+                rpc_data_str.len = end - data_buf;
+                njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                continue;
+            }
 
-        njt_log_error(NJT_LOG_INFO, pool->log, 0, "dynfault_inject start update listen:%V server_name:%V",
-                port, serverName);
-
-        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "listen[%V] server_name[%V]", port, serverName);
-        rpc_data_str.len = end - data_buf;
-        njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
-                
-        njt_http_conf_ctx_t ctx = *cscf->ctx;
-        clcf = njt_http_get_module_loc_conf(cscf->ctx, njt_http_core_module);
-        if(clcf == NULL){
-            njt_log_error(NJT_LOG_INFO, pool->log, 0, 
-                "can`t find location config by listen:%V server_name:%V ",
-                port, serverName);
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-                    " can`t find location config by listen[%V] server_name[%V]", port, serverName);
-            rpc_data_str.len = end - data_buf;
-            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-            continue;
-        }
-
-        rc = njt_dyn_fault_inject_update_locs(dsi.locations, clcf->old_locations, &ctx, rpc_result);
-        if(rc != NJT_OK){
-            njt_log_error(NJT_LOG_INFO, pool->log, 0, 
-                "update fault_inject error, listen:%V server_name:%V",
-                port, serverName);
+            rc = njt_dyn_fault_inject_update_locs(dsi->locations, clcf->old_locations, &ctx, rpc_result);
+            if(rc != NJT_OK){
+                njt_log_error(NJT_LOG_INFO, pool->log, 0, 
+                    "update fault_inject error, listen:%V server_name:%V",
+                    port, serverName);
+            }
         }
     }
 
@@ -828,7 +853,7 @@ static int njt_dyn_fault_inject_update_handler(njt_str_t *key, njt_str_t *value,
     dyn_fault_inject_t                  *api_data = NULL;
     njt_pool_t                          *pool = NULL;
     njt_rpc_result_t                    *rpc_result = NULL;
-    njt_str_t                            err_str;
+    js2c_parse_error_t                  err_info;
 
     rpc_result = njt_rpc_result_create();
     if(!rpc_result){
@@ -861,13 +886,13 @@ static int njt_dyn_fault_inject_update_handler(njt_str_t *key, njt_str_t *value,
         goto end;
     }
 
-    api_data = json_parse_dyn_fault_inject(pool, value, &err_str);
+    api_data = json_parse_dyn_fault_inject(pool, value, &err_info);
     if (api_data == NULL)
     {
         njt_log_error(NJT_LOG_ERR, pool->log, 0, 
-                "json_parse_dyn_fault_inject err: %V",  &err_str);
+                "json_parse_dyn_fault_inject err: %V",  &err_info.err_str);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
-        njt_rpc_result_set_msg2(rpc_result, &err_str);
+        njt_rpc_result_set_msg2(rpc_result, &err_info.err_str);
 
         rc = NJT_ERROR;
         goto end;

@@ -44,20 +44,21 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
     cf.cycle = (njt_cycle_t *)njt_cycle;
 
     cycle = (njt_cycle_t*)njt_cycle;
-
-    port = get_dyn_ssl_api_listens_item(api_data->listens, 0);
-    serverName = get_dyn_ssl_api_listens_item(api_data->serverNames, 0);
-
     njt_str_null(&rpc_result->conf_path);
 
-    if (api_data->listens->nelts < 1 || api_data->serverNames->nelts < 1) {
-        // listens or server_names is empty
+    if (!api_data->is_listens_set || !api_data->is_serverNames_set 
+        || !api_data->is_type_set || !api_data->is_cert_info_set
+        || api_data->listens->nelts < 1 || api_data->serverNames->nelts < 1) {
+        // params is empty
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-            " server parameters error, listens or serverNames is empty");
+            " server parameters error, listens or serverNames or type or cert_info is empty");
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         return NJT_ERROR;
     }
+
+    port = get_dyn_ssl_api_listens_item(api_data->listens, 0);
+    serverName = get_dyn_ssl_api_listens_item(api_data->serverNames, 0);
 
     cscf = njt_http_get_srv_by_port(cycle, port, serverName);
     if (cscf == NULL)
@@ -93,9 +94,19 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
     cert =  api_data->cert_info;
     //todo 此处内存泄露
     hsscf->ssl.log = njt_cycle->log;
+    if(!cert->is_cert_type_set){
+        cert->cert_type = DYN_SSL_API_CERT_INFO_CERT_TYPE_REGULAR;
+    }
     //check param is ntls or regular cert, if empty, default regular
     if(cert->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_REGULAR){
-        if (njt_ssl_certificate(&cf, &hsscf->ssl, cert->certificate, cert->certificateKey, NULL)
+        if(!cert->is_certificate_set || !cert->is_certificateKey_set){
+            njt_log_error(NJT_LOG_EMERG, pool->log, 0," cert or key is empty");
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " cert or key is empty");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+            return NJT_ERROR;
+        }
+        if (njt_ssl_certificate(&cf, &hsscf->ssl, &cert->certificate, &cert->certificateKey, NULL)
             != NJT_OK)
         {
             njt_log_error(NJT_LOG_EMERG, pool->log, 0,"njt_ssl_certificate error");
@@ -107,18 +118,19 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
 
         tmp_str =njt_array_push(hsscf->certificates);
         if(tmp_str != NULL){
-            njt_str_copy_pool(hsscf->certificates->pool, (*tmp_str), (*cert->certificate), return NJT_ERROR;);
+            njt_str_copy_pool(hsscf->certificates->pool, (*tmp_str), (cert->certificate), return NJT_ERROR;);
         }
         tmp_str =njt_array_push(hsscf->certificate_keys);
         if(tmp_str != NULL){
-            njt_str_copy_pool(hsscf->certificate_keys->pool,(*tmp_str), (*cert->certificateKey), return NJT_ERROR;);
+            njt_str_copy_pool(hsscf->certificate_keys->pool,(*tmp_str), (cert->certificateKey), return NJT_ERROR;);
         }
     }else if(cert->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS){
 #if (NJT_HAVE_NTLS)
         //check valid
-        if(cert->certificate->len < 1 || cert->certificateEnc == NULL
-            || cert->certificateEnc->len < 1 || cert->certificateKeyEnc == NULL
-            || cert->certificateKey->len < 1 || cert->certificateKeyEnc->len < 1){
+        if(!cert->is_certificate_set || !cert->is_certificateEnc_set
+            || !cert->is_certificateKey_set || !cert->is_certificateKeyEnc_set
+            || cert->certificate.len < 1 || cert->certificateEnc.len < 1 
+            || cert->certificateKey.len < 1 || cert->certificateKeyEnc.len < 1){
             njt_log_error(NJT_LOG_EMERG, pool->log, 0,
                 "dyn ssl, njt_ssl_certificate params size should > 0");
             end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
@@ -131,7 +143,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
 
         //update sign
         tmp_str = &cert_sign_str;                
-        tmp_str->len = sizeof("sign:") - 1 + cert->certificate->len;
+        tmp_str->len = sizeof("sign:") - 1 + cert->certificate.len;
         tmp_str->data = njt_pcalloc(hsscf->certificates->pool, tmp_str->len + 1);
         if (tmp_str->data == NULL) {
             njt_log_error(NJT_LOG_EMERG, pool->log, 0,
@@ -143,10 +155,10 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
             return NJT_ERROR;
         }
         data = njt_cpymem(tmp_str->data, "sign:", sizeof("sign:") - 1);
-        njt_memcpy(data, cert->certificate->data, cert->certificate->len);
+        njt_memcpy(data, cert->certificate.data, cert->certificate.len);
 
         tmp_str = &key_sign_str;                
-        tmp_str->len = sizeof("sign:") - 1 + cert->certificateKey->len;
+        tmp_str->len = sizeof("sign:") - 1 + cert->certificateKey.len;
         tmp_str->data = njt_pcalloc(hsscf->certificate_keys->pool, tmp_str->len + 1);
         if (tmp_str->data == NULL) {
             njt_log_error(NJT_LOG_EMERG, pool->log, 0,
@@ -158,7 +170,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
             return NJT_ERROR;
         }
         data = njt_cpymem(tmp_str->data, "sign:", sizeof("sign:") - 1);
-        njt_memcpy(data, cert->certificateKey->data, cert->certificateKey->len);
+        njt_memcpy(data, cert->certificateKey.data, cert->certificateKey.len);
 
         if (njt_ssl_certificate(&cf, &hsscf->ssl, &cert_sign_str, &key_sign_str, NULL)
             != NJT_OK)
@@ -173,7 +185,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
 
         //update enc
         tmp_str = &cert_enc_str;                
-        tmp_str->len = sizeof("enc:") - 1 + cert->certificateEnc->len;
+        tmp_str->len = sizeof("enc:") - 1 + cert->certificateEnc.len;
         tmp_str->data = njt_pcalloc(hsscf->certificates->pool, tmp_str->len + 1);
         if (tmp_str->data == NULL) {
             njt_log_error(NJT_LOG_EMERG, pool->log, 0,
@@ -185,10 +197,10 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
             return NJT_ERROR;
         }
         data = njt_cpymem(tmp_str->data, "enc:", sizeof("enc:") - 1);
-        njt_memcpy(data, cert->certificateEnc->data, cert->certificateEnc->len);
+        njt_memcpy(data, cert->certificateEnc.data, cert->certificateEnc.len);
 
         tmp_str = &key_enc_str;                
-        tmp_str->len = sizeof("enc:") - 1 + cert->certificateKeyEnc->len;
+        tmp_str->len = sizeof("enc:") - 1 + cert->certificateKeyEnc.len;
         tmp_str->data = njt_pcalloc(hsscf->certificate_keys->pool, tmp_str->len + 1);
         if (tmp_str->data == NULL) {
             njt_log_error(NJT_LOG_EMERG, pool->log, 0,
@@ -200,7 +212,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
             return NJT_ERROR;
         }
         data = njt_cpymem(tmp_str->data, "enc:", sizeof("enc:") - 1);
-        njt_memcpy(data, cert->certificateKeyEnc->data, cert->certificateKeyEnc->len);
+        njt_memcpy(data, cert->certificateKeyEnc.data, cert->certificateKeyEnc.len);
 
         if (njt_ssl_certificate(&cf, &hsscf->ssl, &cert_enc_str, &key_enc_str, NULL)
             != NJT_OK)
@@ -294,7 +306,7 @@ static int  njt_http_ssl_update_handler(njt_str_t *key, njt_str_t *value, void *
     dyn_ssl_api_t                       *api_data = NULL;
     njt_pool_t                          *pool = NULL;
     njt_rpc_result_t                    *rpc_result = NULL;
-    njt_str_t                            err_str;
+    js2c_parse_error_t                  err_info;
 
 
     rpc_result = njt_rpc_result_create();
@@ -326,13 +338,13 @@ static int  njt_http_ssl_update_handler(njt_str_t *key, njt_str_t *value, void *
         goto end;
     }
 
-    api_data = json_parse_dyn_ssl_api(pool, value, &err_str);
+    api_data = json_parse_dyn_ssl_api(pool, value, &err_info);
     if (api_data == NULL)
     {
         njt_log_error(NJT_LOG_ERR, pool->log, 0, 
-                "json_parse_dyn_ssl_api err: %V",  &err_str);
+                "json_parse_dyn_ssl_api err: %V",  &err_info.err_str);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
-        njt_rpc_result_set_msg2(rpc_result, &err_str);
+        njt_rpc_result_set_msg2(rpc_result, &err_info.err_str);
 
         rc = NJT_ERROR;
         goto end;
@@ -400,14 +412,12 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
     dyn_ssl_servers_item_certificates_item_t *cert_item;
 
     njt_memzero(&dynjson_obj, sizeof(dyn_ssl_t));
-
-
     hcmcf = njt_http_cycle_get_module_main_conf(cycle,njt_http_core_module);
     if(hcmcf == NULL){
         goto err;
     }
 
-    dynjson_obj.servers = create_dyn_ssl_servers(pool, 4);
+    set_dyn_ssl_servers(&dynjson_obj, create_dyn_ssl_servers(pool, 4));
     if(dynjson_obj.servers == NULL){
         goto err;
     }
@@ -418,8 +428,9 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
         if(server_item == NULL){
             goto err;
         }
-        server_item->listens = create_dyn_ssl_servers_item_listens(pool, 4);
-        server_item->serverNames =create_dyn_ssl_servers_item_serverNames(pool, 4);
+
+        set_dyn_ssl_servers_item_listens(server_item, create_dyn_ssl_servers_item_listens(pool, 4));
+        set_dyn_ssl_servers_item_serverNames(server_item, create_dyn_ssl_servers_item_serverNames(pool, 4));
 
         array = njt_array_create(pool, 4, sizeof(njt_str_t));
         if(array == NULL){
@@ -438,7 +449,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
             add_item_dyn_ssl_servers_item_serverNames(server_item->serverNames,tmp_str);
         }
 
-        hsscf = njt_http_get_module_srv_conf(cscfp[i]->ctx,njt_http_ssl_module);
+        hsscf = njt_http_get_module_srv_conf(cscfp[i]->ctx, njt_http_ssl_module);
         if(hsscf == NULL){
             goto next;
         }
@@ -447,10 +458,11 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
                 goto next;
             }
 
-            server_item->certificates = create_dyn_ssl_servers_item_certificates(pool, 4);
+            set_dyn_ssl_servers_item_certificates(server_item, create_dyn_ssl_servers_item_certificates(pool, 4));
             if(server_item->certificates == NULL ){
                 goto err;
             }
+
             cert = hsscf->certificates->elts;
             key = hsscf->certificate_keys->elts;
             for(j = 0 ; j < hsscf->certificates->nelts ; ++j ){
@@ -468,22 +480,15 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
                 // }
 
                 if (type == NJT_SSL_NTLS_CERT_SIGN) {
-                    cert_item->cert_type = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS;
+                    set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS);
 
                     trip_str = cert[j];
                     njt_ssl_ntls_prefix_strip(&trip_str);
-                    cert_item->certificate = njt_pcalloc(pool, sizeof(njt_str_t));
-                    cert_item->certificate->data = njt_pcalloc(pool, trip_str.len);
-                    njt_memcpy(cert_item->certificate->data, trip_str.data, trip_str.len);
-                    cert_item->certificate->len = trip_str.len;
+                    set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &trip_str);
                                     
                     trip_str = key[j];
                     njt_ssl_ntls_prefix_strip(&trip_str);
-                    cert_item->certificateKey = njt_pcalloc(pool, sizeof(njt_str_t));
-                    cert_item->certificateKey->data = njt_pcalloc(pool, trip_str.len);
-                    njt_memcpy(cert_item->certificateKey->data, trip_str.data, trip_str.len);
-                    cert_item->certificateKey->len = trip_str.len;
-
+                    set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &trip_str);
 
                     //next must be have and must be enc
                     if(j == (hsscf->certificates->nelts - 1)){
@@ -505,44 +510,31 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
 
                     trip_str = cert[j+1];
                     njt_ssl_ntls_prefix_strip(&trip_str);
-                    cert_item->certificateEnc = njt_pcalloc(pool, sizeof(njt_str_t));
-                    cert_item->certificateEnc->data = njt_pcalloc(pool, trip_str.len);
-                    njt_memcpy(cert_item->certificateEnc->data, trip_str.data, trip_str.len);
-                    cert_item->certificateEnc->len = trip_str.len;
+                    set_dyn_ssl_servers_item_certificates_item_certificateEnc(cert_item, &trip_str);
 
                     trip_str = key[j+1];
                     njt_ssl_ntls_prefix_strip(&trip_str);
-                    cert_item->certificateKeyEnc = njt_pcalloc(pool, sizeof(njt_str_t));
-                    cert_item->certificateKeyEnc->data = njt_pcalloc(pool, trip_str.len);
-                    njt_memcpy(cert_item->certificateKeyEnc->data, trip_str.data, trip_str.len);
-                    cert_item->certificateKeyEnc->len = trip_str.len;
+                    set_dyn_ssl_servers_item_certificates_item_certificateKeyEnc(cert_item, &trip_str);
 
                     add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
                     j++;
                 }else if (type == NJT_SSL_NTLS_CERT_ENC){
-                    cert_item->cert_type = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS;
+                    set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS);
 
                     trip_str = cert[j];
                     njt_ssl_ntls_prefix_strip(&trip_str);
-                    cert_item->certificateEnc = njt_pcalloc(pool, sizeof(njt_str_t));
-                    cert_item->certificateEnc->data = njt_pcalloc(pool, trip_str.len);
-                    njt_memcpy(cert_item->certificateEnc->data, trip_str.data, trip_str.len);
-                    cert_item->certificateEnc->len = trip_str.len;
-
+                    set_dyn_ssl_servers_item_certificates_item_certificateEnc(cert_item, &trip_str);
 
                     trip_str = key[j];
                     njt_ssl_ntls_prefix_strip(&trip_str);
-                    cert_item->certificateKeyEnc = njt_pcalloc(pool, sizeof(njt_str_t));
-                    cert_item->certificateKeyEnc->data = njt_pcalloc(pool, trip_str.len);
-                    njt_memcpy(cert_item->certificateKeyEnc->data, trip_str.data, trip_str.len);
-                    cert_item->certificateKeyEnc->len = trip_str.len;
+                    set_dyn_ssl_servers_item_certificates_item_certificateKeyEnc(cert_item, &trip_str);
 
                     add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
                     //should not get enc before sign
                     // njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "dyn ssl, error: should not get enc before sign");
                     continue;
                 }else{
-                    cert_item->cert_type = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR;
+                    set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR);
                     
                     set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &cert[j]);
                     set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &key[j]);
@@ -550,7 +542,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
                     add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
                 }
 #else
-                cert_item->cert_type = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR;
+                set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR);
 
                 set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &cert[j]);
                 set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &key[j]);
@@ -559,7 +551,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
 #endif
             }
         }else{
-            server_item->certificates = create_dyn_ssl_servers_item_certificates(pool, 4);
+            set_dyn_ssl_servers_item_certificates(server_item, create_dyn_ssl_servers_item_certificates(pool, 4));
             if(server_item->certificates == NULL ){
                 goto err;
             }
@@ -579,21 +571,15 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
                 // }
 
                 if (type == NJT_SSL_NTLS_CERT_SIGN) {
-                    cert_item->cert_type = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS;
+                    set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS);
 
                     trip_str = var_cert[j].value;
                     njt_ssl_ntls_prefix_strip(&trip_str);
-                    cert_item->certificate = njt_pcalloc(pool, sizeof(njt_str_t));
-                    cert_item->certificate->data = njt_pcalloc(pool, trip_str.len);
-                    njt_memcpy(cert_item->certificate->data, trip_str.data, trip_str.len);
-                    cert_item->certificate->len = trip_str.len;
+                    set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &trip_str);
 
                     trip_str = var_key[j].value;
                     njt_ssl_ntls_prefix_strip(&trip_str);
-                    cert_item->certificateKey = njt_pcalloc(pool, sizeof(njt_str_t));
-                    cert_item->certificateKey->data = njt_pcalloc(pool, trip_str.len);
-                    njt_memcpy(cert_item->certificateKey->data, trip_str.data, trip_str.len);
-                    cert_item->certificateKey->len = trip_str.len;
+                    set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &trip_str);
 
                     //next must be have and must be enc
                     if(j == (hsscf->certificates->nelts - 1)){
@@ -615,42 +601,30 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
 
                     trip_str = var_cert[j+1].value;
                     njt_ssl_ntls_prefix_strip(&trip_str);
-                    cert_item->certificateEnc = njt_pcalloc(pool, sizeof(njt_str_t));
-                    cert_item->certificateEnc->data = njt_pcalloc(pool, trip_str.len);
-                    njt_memcpy(cert_item->certificateEnc->data, trip_str.data, trip_str.len);
-                    cert_item->certificateEnc->len = trip_str.len;
+                    set_dyn_ssl_servers_item_certificates_item_certificateEnc(cert_item, &trip_str);
 
                     trip_str = var_key[j+1].value;
                     njt_ssl_ntls_prefix_strip(&trip_str);
-                    cert_item->certificateKeyEnc = njt_pcalloc(pool, sizeof(njt_str_t));
-                    cert_item->certificateKeyEnc->data = njt_pcalloc(pool, trip_str.len);
-                    njt_memcpy(cert_item->certificateKeyEnc->data, trip_str.data, trip_str.len);
-                    cert_item->certificateKeyEnc->len = trip_str.len;
+                    set_dyn_ssl_servers_item_certificates_item_certificateKeyEnc(cert_item, &trip_str);
 
                     add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
                     j++;
                 }else if (type == NJT_SSL_NTLS_CERT_ENC){
-                    cert_item->cert_type = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS;
+                    set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS);
 
                     trip_str = var_cert[j].value;
                     njt_ssl_ntls_prefix_strip(&trip_str);
-                    cert_item->certificateEnc = njt_pcalloc(pool, sizeof(njt_str_t));
-                    cert_item->certificateEnc->data = njt_pcalloc(pool, trip_str.len);
-                    njt_memcpy(cert_item->certificateEnc->data, trip_str.data, trip_str.len);
-                    cert_item->certificateEnc->len = trip_str.len;
+                    set_dyn_ssl_servers_item_certificates_item_certificateEnc(cert_item, &trip_str);
 
                     trip_str = var_key[j].value;
                     njt_ssl_ntls_prefix_strip(&trip_str);
-                    cert_item->certificateKeyEnc = njt_pcalloc(pool, sizeof(njt_str_t));
-                    cert_item->certificateKeyEnc->data = njt_pcalloc(pool, trip_str.len);
-                    njt_memcpy(cert_item->certificateKeyEnc->data, trip_str.data, trip_str.len);
-                    cert_item->certificateKeyEnc->len = trip_str.len;
+                    set_dyn_ssl_servers_item_certificates_item_certificateKeyEnc(cert_item, &trip_str);
 
                     add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
                     //should not get enc before sign
                     // njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "dyn ssl, error: should not get enc before sign");
                 }else{
-                    cert_item->cert_type = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR;
+                    set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR);
                     
                     set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &var_cert[j].value);
                     set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &var_key[j].value);
@@ -658,7 +632,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
                     add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
                 }
 #else
-                cert_item->cert_type = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR;
+                set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR);
                 set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &var_cert[j].value);
                 set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &var_key[j].value);
                 add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
