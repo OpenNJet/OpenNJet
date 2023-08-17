@@ -183,19 +183,20 @@ struct njt_health_check_http_parse_s {
 
 /*Main structure of the hc information of a peer*/
 struct njt_http_health_check_peer_s {
-    njt_uint_t peer_id;
-    njt_http_upstream_rr_peer_t *hu_peer;
-    njt_http_upstream_rr_peers_t *hu_peers;
-    njt_helper_health_check_conf_t *hhccf;
-    njt_pool_t *pool;
-    njt_peer_connection_t peer;
-    njt_buf_t *send_buf;
-    njt_buf_t *recv_buf;
-    njt_chain_t *recv_chain;
-    njt_chain_t *last_chain_node;
-    void *parser;
+    njt_uint_t                      peer_id;
+    njt_str_t                       *server;
+    njt_http_upstream_rr_peer_t     *hu_peer;
+    njt_http_upstream_rr_peers_t    *hu_peers;
+    njt_helper_health_check_conf_t  *hhccf;
+    njt_pool_t                      *pool;
+    njt_peer_connection_t           peer;
+    njt_buf_t                       *send_buf;
+    njt_buf_t                       *recv_buf;
+    njt_chain_t                     *recv_chain;
+    njt_chain_t                     *last_chain_node;
+    void                            *parser;
 #if (NJT_HTTP_SSL)
-    njt_str_t ssl_name;
+    njt_str_t                       ssl_name;
 #endif
 };
 
@@ -205,20 +206,21 @@ struct njt_http_health_check_peer_s {
 
 
 typedef struct njt_stream_health_check_peer_s {
-    njt_uint_t peer_id;
-    njt_stream_upstream_rr_peer_t *hu_peer;
-    njt_stream_upstream_rr_peers_t *hu_peers;
-    njt_helper_health_check_conf_t *hhccf;
-    njt_pool_t *pool;
-    njt_peer_connection_t peer;
-    njt_buf_t *send_buf;
-    njt_buf_t *recv_buf;
-    njt_chain_t *recv_chain;
-    njt_chain_t *last_chain_node;
-    void *parser;
+    njt_uint_t                      peer_id;
+    njt_str_t                       *server;
+    njt_stream_upstream_rr_peer_t   *hu_peer;
+    njt_stream_upstream_rr_peers_t  *hu_peers;
+    njt_helper_health_check_conf_t  *hhccf;
+    njt_pool_t                      *pool;
+    njt_peer_connection_t           peer;
+    njt_buf_t                       *send_buf;
+    njt_buf_t                       *recv_buf;
+    njt_chain_t                     *recv_chain;
+    njt_chain_t                     *last_chain_node;
+    void                            *parser;
 #if (NJT_STREAM_SSL)
-    njt_str_t                               ssl_name;
-    njt_stream_upstream_rr_peer_t          *rr_peer;
+    njt_str_t                       ssl_name;
+    njt_stream_upstream_rr_peer_t   *rr_peer;
 #endif
 } njt_stream_health_check_peer_t;
 
@@ -3272,6 +3274,7 @@ static njt_int_t njt_hc_api_add_conf(njt_log_t *log, njt_helper_hc_api_data_t *a
         hhccf->ctx = hhccc;
         hhccf->mandatory = uscf->mandatory;
         hhccf->persistent = uscf->persistent;
+        hhccf->update_id = uscf->update_id;
     }
 
     /*
@@ -3302,6 +3305,7 @@ static njt_int_t njt_hc_api_add_conf(njt_log_t *log, njt_helper_hc_api_data_t *a
         hhccf->ctx = shccc;
         hhccf->mandatory = suscf->mandatory;
         hhccf->persistent = suscf->persistent;
+        hhccf->update_id = suscf->update_id;
     }
 
     rc = njt_hc_api_data2_common_cf(api_data, hhccf);
@@ -4286,6 +4290,7 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
 
                 hc_peer->peer.socklen = peer->socklen;
                 hc_peer->peer.name = &peer->name;
+                hc_peer->server = &peer->server;   //real ip
                 hc_peer->peer.get = njt_event_get_peer;
                 hc_peer->peer.log = njt_cycle->log;
                 hc_peer->peer.log_error = NJT_ERROR_ERR;
@@ -4413,7 +4418,8 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
               }
 
             hc_peer->peer.socklen = peer->socklen;
-            hc_peer->peer.name = &peer->name;
+            hc_peer->peer.name = &peer->name;       //domain name
+            hc_peer->server = &peer->server;        //real ip
             hc_peer->peer.get = njt_event_get_peer;
             hc_peer->peer.log = njt_cycle->log;
             hc_peer->peer.log_error = NJT_ERROR_ERR;
@@ -5335,11 +5341,11 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
 
 /*define the status machine stage*/
 static void njt_http_health_check_timer_handler(njt_event_t *ev) {
-    njt_helper_health_check_conf_t *hhccf;
-    njt_http_upstream_srv_conf_t *uscf;
-    njt_http_upstream_rr_peers_t *peers;
-    njt_uint_t jitter;
-    njt_flag_t op = 0;
+    njt_helper_health_check_conf_t  *hhccf;
+    njt_http_upstream_srv_conf_t    *uscf;
+    njt_http_upstream_rr_peers_t    *peers;
+    njt_uint_t                      jitter;
+    njt_flag_t                      op = 0;
     njt_http_health_check_conf_ctx_t *cf_ctx;
     
     hhccf = ev->data;
