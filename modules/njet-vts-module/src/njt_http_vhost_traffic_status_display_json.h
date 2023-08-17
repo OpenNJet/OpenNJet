@@ -141,7 +141,8 @@
     "\"2xx\":%uA,"                                                             \
     "\"3xx\":%uA,"                                                             \
     "\"4xx\":%uA,"                                                             \
-    "\"5xx\":%uA"                                                              \
+    "\"5xx\":%uA,"                                                             \
+    "\"timeout\":%uA"                                                         \
     "},"                                                                       \
     "\"requestMsecCounter\":%uA,"                                              \
     "\"requestMsec\":%M,"                                                      \
@@ -182,6 +183,14 @@
     "\"responseMsecCounter\":%uA"                                              \
     "}"                                                                        \
     "},"
+
+#define NJT_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_UPSTREAM_REQDELAY               \
+    "\"p50reqdelayMsecr\":%uA, "                                               \
+    "\"p99reqdelayMsecr\":%uA, "                                               \
+    "\"p999reqdelayMsecr\":%uA, "                                              \
+    "\"p9999reqdelayMsecr\":%uA, "                                             \
+    "\"p99999reqdelayMsecr\":%uA, "
+
 
 #if (NJT_HTTP_CACHE)
 #define NJT_HTTP_VHOST_TRAFFIC_STATUS_JSON_FMT_CACHE_S "\"cacheZones\":{"

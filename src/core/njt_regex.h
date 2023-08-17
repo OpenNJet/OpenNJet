@@ -58,6 +58,7 @@ typedef struct {
 typedef struct {
     njt_regex_t  *regex;
     u_char       *name;
+    njt_uint_t           dynamic; 
 } njt_regex_elt_t;
 
 

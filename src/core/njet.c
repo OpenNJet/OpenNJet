@@ -298,7 +298,9 @@ main(int argc, char *const *argv)
             njt_log_stderr(0, "configuration file %s test failed",
                            init_cycle.conf_file.data);
         }
-
+#if (NJT_DEBUG)
+	njt_destroy_pool(init_cycle.pool);
+#endif
         return 1;
     }
 

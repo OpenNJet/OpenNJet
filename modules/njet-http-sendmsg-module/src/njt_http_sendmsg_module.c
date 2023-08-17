@@ -30,7 +30,7 @@ typedef struct
     njt_str_t conf_file;
     njt_uint_t off;
     njt_msec_t rpc_timeout;
-    njt_flag_t kv_api_enabled;
+    njt_uint_t kv_api_enabled;
 } njt_http_sendmsg_conf_t;
 
 typedef struct
@@ -56,6 +56,7 @@ static void njt_http_sendmsg_iot_register_outside_reader(njt_event_handler_pt h,
 static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle);
 static void sendmsg_exit_worker(njt_cycle_t *cycle);
 static void *njt_http_sendmsg_create_conf(njt_conf_t *cf);
+static char *njt_http_sendmsg_merge_loc_conf(njt_conf_t *cf, void *parent, void *child);
 static char *njt_dyn_sendmsg_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static char *njt_dyn_sendmsg_rpc_timeout_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static njt_int_t njt_http_sendmsg_init(njt_conf_t *cf);
@@ -80,7 +81,7 @@ static njt_http_module_t njt_http_sendmsg_module_ctx = {
     NULL, /* merge server configuration */
 
     njt_http_sendmsg_create_loc_conf, /* create location configuration */
-    NULL                              /* merge location configuration */
+    njt_http_sendmsg_merge_loc_conf   /* merge location configuration */
 };
 
 static njt_command_t njt_sendmsg_commands[] = {
@@ -602,6 +603,9 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
 
 static void sendmsg_exit_worker(njt_cycle_t *cycle)
 {
+    if(rpc_msg_handler_hashmap) {
+       njt_free(rpc_msg_handler_hashmap);
+    }
     njet_iot_client_exit(sendmsg_mqtt_ctx);
 }
 
@@ -635,8 +639,19 @@ njt_http_sendmsg_create_loc_conf(njt_conf_t *cf)
         return NULL;
     }
 
-    conf->kv_api_enabled = NJT_CONF_UNSET;
+    conf->kv_api_enabled = NJT_CONF_UNSET_UINT;
     return conf;
+}
+
+static char *njt_http_sendmsg_merge_loc_conf(njt_conf_t *cf,
+        void *parent, void *child)
+{
+    njt_http_sendmsg_conf_t *prev = parent;
+    njt_http_sendmsg_conf_t *conf = child;
+
+    njt_conf_merge_uint_value(conf->kv_api_enabled, prev->kv_api_enabled, 0);
+
+    return NJT_CONF_OK;
 }
 
 static char *njt_dyn_sendmsg_rpc_timeout_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
@@ -834,7 +849,7 @@ int njt_dyn_rpc(njt_str_t *topic, njt_str_t *content, int retain_flag, int sessi
     }
 
     njt_reg_rpc_msg_handler(njt_sendmsg_rr_session_id, session_id, handler, data, rpc_timer_ev);
-    
+    njt_free(t);
     return NJT_OK;
 
 error:

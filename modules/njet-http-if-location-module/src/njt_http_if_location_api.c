@@ -1,6 +1,3 @@
-/*
- * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
- */
 #include "njt_http_if_location_lex.h"
 #include "njt_http_if_location_api.h"
 #include <string.h>
@@ -8,7 +5,6 @@
 #include <stdio.h>
 #include "njt_http_if_location_parse.h"
 
-int get_exp_counts(loc_parse_node_t *root);
 void parse_dyn_loc(char* dyn_loc);
 loc_malloc_cb_ptr loc_malloc_handler = NULL;
 void*             loc_malloc_ctx = NULL; // pool
@@ -44,7 +40,6 @@ new_loc_parse_exp_node(loc_exp_t *exp)
 {
     loc_parse_node_t* node = malloc(sizeof(loc_parse_node_t));
     if (!node) {
-        // yyerror("")
         exit(0);
     }
     node->node_type = LOC_EXPRESSION;
@@ -134,6 +129,7 @@ new_loc_parse_ctx(loc_parse_node_t *root){
 }
 
 int get_exp_counts(loc_parse_node_t* root) {
+    if (!root) return 0;
     if (root->node_type == LOC_EXPRESSION) {
         return 1;
     } 
@@ -227,7 +223,6 @@ free_exp(loc_exp_t* exp) {
 void 
 free_tree(loc_parse_node_t* root)
 {
-
     if (!root) return;
     // if (root->loc_exp) free_exp(root->loc_exp);
     // if (root->left) free_tree(root->left);
@@ -241,21 +236,18 @@ free_tree(loc_parse_node_t* root)
         break;
     case BOOL_OP_AND: case BOOL_OP_OR:
         free_tree(root->left);
-        free(root->left);
         free_tree(root->right);
-        free(root->right);
         break;
     default:
         printf("internal error: free bad node %d\n", root->node_type);
         break;
     }
+    free(root);
 }
 void free_bison_tree(loc_parse_node_t* root){
      if (!root) return;
      free_tree(root);
-     free(root);
 }
-
 void
 free_ctx(loc_parse_ctx_t* ctx) {
     free(ctx->exps);
@@ -269,6 +261,7 @@ void parse_dyn_loc(char* dyn_loc) {
     int r;
     loc_parse_ctx_t* ctx;
     loc_parse_node_t* tree_root = NULL;
+    yylex_destroy();
     yy_scan_string(dyn_loc);
     r = yyparse(&tree_root);
     if (r) {
@@ -286,23 +279,3 @@ void parse_dyn_loc(char* dyn_loc) {
     free_ctx(ctx);
 }
 
-int mai1n() {
-    //int r;
-    // char* s = "($q = 1 && $b = 1 || ($p =c) || ($D = 12343352525safji()()()()(()) && $E = AASVS) || $F = f)";
-    // char* s = "($q = 1 && $b = 1 || ($p =c) || ($D = 12343352525safji()()()()(()) && $E = AASVS) || $F = f)";
-    // char* s = "(&&)";
-    char* s = "(  )";
-    // char* s = "($a = iababd &&())";
-    parse_dyn_loc(s);
-    // for (;;) {       // Call yyparse and process the result
-    //     r = yyparse();
-    //     printf("yyparse return %d\n", r);
-    //     if (r) break;
-    //     printf("the result is : %d\n",  loc_exp_dyn_eval_result ) ;
-    //     dump_tree(loc_exp_dyn_parse_tree, 0);
-    //     new_loc_parse_ctx(loc_exp_dyn_parse_tree);
-    //     free_tree(loc_exp_dyn_parse_tree);
-    // }
-
-    return 0;
-}
