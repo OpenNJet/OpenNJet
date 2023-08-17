@@ -271,6 +271,7 @@ JSMN_API int jsmn_parse(jsmn_parser *parser, const char *js, const size_t len,
   int i;
   jsmntok_t *token;
   int count = parser->toknext;
+  bool last_is_comma = false;
 
   for (; parser->pos < len && js[parser->pos] != '\0'; parser->pos++) {
     char c;
@@ -309,6 +310,9 @@ JSMN_API int jsmn_parse(jsmn_parser *parser, const char *js, const size_t len,
     case ']':
       if (tokens == NULL) {
         break;
+      }
+      if (last_is_comma) {
+        return JSMN_ERROR_INVAL; 
       }
       type = (c == '}' ? JSMN_OBJECT : JSMN_ARRAY);
 #ifdef JSMN_PARENT_LINKS
@@ -363,6 +367,7 @@ JSMN_API int jsmn_parse(jsmn_parser *parser, const char *js, const size_t len,
       if (r < 0) {
         return r;
       }
+      last_is_comma = false;
       count++;
       if (parser->toksuper != -1 && tokens != NULL) {
         tokens[parser->toksuper].size++;
@@ -377,6 +382,10 @@ JSMN_API int jsmn_parse(jsmn_parser *parser, const char *js, const size_t len,
       parser->toksuper = parser->toknext - 1;
       break;
     case ',':
+      if (last_is_comma) {
+        return JSMN_ERROR_INVAL; 
+      }
+      last_is_comma = true;
       if (tokens != NULL && parser->toksuper != -1 &&
           tokens[parser->toksuper].type != JSMN_ARRAY &&
           tokens[parser->toksuper].type != JSMN_OBJECT) {
@@ -426,6 +435,7 @@ JSMN_API int jsmn_parse(jsmn_parser *parser, const char *js, const size_t len,
       if (r < 0) {
         return r;
       }
+      last_is_comma = false;
       count++;
       if (parser->toksuper != -1 && tokens != NULL) {
         tokens[parser->toksuper].size++;
