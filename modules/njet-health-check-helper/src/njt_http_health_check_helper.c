@@ -81,6 +81,38 @@ static njt_str_t njt_hc_error_msg[] = {
 };
 
 
+static njt_int_t
+njt_hc_lvlhsh_test(njt_lvlhsh_query_t *lhq, void *data)
+{
+    njt_json_element *kv = data;
+
+    if (lhq->key.len == kv->key.len
+        && njt_memcmp(lhq->key.data, kv->key.data, lhq->key.len) == 0)
+    {
+        return NJT_OK;
+    }
+
+    return NJT_DECLINED;
+}
+
+const njt_lvlhsh_proto_t  njt_hc_lvlhsh_proto = {
+    NJT_LVLHSH_LARGE_MEMALIGN,
+    njt_hc_lvlhsh_test,
+    njt_lvlhsh_pool_alloc,
+    njt_lvlhsh_pool_free,
+};
+
+typedef struct {
+    njt_http_upstream_rr_peer_t *peer;
+    njt_queue_t      ele_queue;
+} njt_hc_http_peer_element;
+
+typedef struct {
+    njt_stream_upstream_rr_peer_t *peer;
+    njt_queue_t      ele_queue;
+} njt_hc_stream_peer_element;
+
+
 typedef struct {
     njt_str_t upstream_name;
     njt_str_t hc_type;
@@ -134,29 +166,6 @@ typedef struct {
 } njt_health_checker_t;
 
 
-/* by zhaokang 
-typedef njt_int_t (*njt_stream_health_check_init_pt)(njt_stream_upstream_rr_peer_t *peer);
-
-typedef njt_int_t (*njt_stream_health_check_process_pt)(njt_stream_health_check_peer_t *peer);
-
-typedef njt_int_t (*njt_stream_health_check_update_pt)(njt_stream_health_check_peer_t *hc_peer, njt_int_t status);
-
-typedef struct {
-    njt_uint_t type;
-    njt_uint_t protocol;
-    njt_str_t  name;
-    njt_flag_t one_side;
-    
-    njt_health_check_event_handler write_handler;
-    njt_health_check_event_handler read_handler;
-
-    njt_stream_health_check_init_pt init;
-    njt_stream_health_check_process_pt process;
-    njt_stream_health_check_update_pt update;
-
-} njt_stream_health_checker_t;
-*/
-
 /*Structure used for holding http parser internal info*/
 struct njt_health_check_http_parse_s {
     njt_uint_t state;
@@ -184,7 +193,7 @@ struct njt_health_check_http_parse_s {
 /*Main structure of the hc information of a peer*/
 struct njt_http_health_check_peer_s {
     njt_uint_t                      peer_id;
-    njt_str_t                       *server;
+    njt_str_t                       server;
     njt_http_upstream_rr_peer_t     *hu_peer;
     njt_http_upstream_rr_peers_t    *hu_peers;
     njt_helper_health_check_conf_t  *hhccf;
@@ -207,7 +216,7 @@ struct njt_http_health_check_peer_s {
 
 typedef struct njt_stream_health_check_peer_s {
     njt_uint_t                      peer_id;
-    njt_str_t                       *server;
+    njt_str_t                       server;
     njt_stream_upstream_rr_peer_t   *hu_peer;
     njt_stream_upstream_rr_peers_t  *hu_peers;
     njt_helper_health_check_conf_t  *hhccf;
@@ -265,13 +274,6 @@ static njt_int_t njt_http_health_check_common_update(njt_http_health_check_peer_
 
 /*Common framework functions of all types of checkers*/
 static njt_int_t njt_http_health_check_update_status(njt_http_health_check_peer_t *hc_peer, njt_int_t status);
-
-/*update the peer's status without lock*/
-static njt_int_t
-njt_http_health_check_update_wo_lock(njt_helper_health_check_conf_t *hhccf,
-                                     njt_http_health_check_peer_t *hc_peer,
-                                     njt_http_upstream_rr_peer_t *peer,
-                                     njt_int_t status);
 
 static void njt_http_health_check_write_handler(njt_event_t *event);
 
@@ -386,400 +388,6 @@ void njt_http_upstream_traver(void *ctx,njt_int_t (*item_handle)(void *ctx,njt_h
 
 void njt_stream_upstream_traver(void *ctx,njt_int_t (*item_handle)(void *ctx,njt_stream_upstream_srv_conf_t *));
 
-// #if (NJT_OPENSSL)
-// static njt_json_define_t njt_helper_hc_api_data_ssl_json_dt[] = {
-//         {
-//                 njt_string("enable"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_enable),
-//                 0,
-//                 NJT_JSON_BOOL,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("ntls"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ntls_enable),
-//                 0,
-//                 NJT_JSON_BOOL,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("sessionReuse"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_session_reuse),
-//                 0,
-//                 NJT_JSON_BOOL,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("protocols"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_protocols),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 njt_json_parse_ssl_protocols,
-//         },
-//         {
-//                 njt_string("ciphers"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_ciphers),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("name"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_name),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("serverName"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_server_name),
-//                 0,
-//                 NJT_JSON_BOOL,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("verify"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_verify),
-//                 0,
-//                 NJT_JSON_BOOL,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("verifyDepth"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_verify_depth),
-//                 0,
-//                 NJT_JSON_INT,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("trustedCertificate"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_trusted_certificate),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("crl"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_crl),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("certificate"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_certificate),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("certificateKey"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_certificate_key),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("ssl_enc_certificate"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_enc_certificate),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("ssl_enc_certificate_key"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_enc_certificate_key),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("passwords"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_passwords),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("confCommands"),
-//                 offsetof(njt_helper_hc_ssl_add_data_t, ssl_conf_commands),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         njt_json_define_null,
-// };
-// #endif
-// static njt_json_define_t njt_helper_hc_api_data_http_json_dt[] = {
-//         {
-//                 njt_string("uri"),
-//                 offsetof(njt_helper_hc_http_add_data_t, uri),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("header"),
-//                 offsetof(njt_helper_hc_http_add_data_t, headers),
-//                 sizeof(njt_str_t),
-//                 NJT_JSON_ARRAY,
-//                 NJT_JSON_STR,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("body"),
-//                 offsetof(njt_helper_hc_http_add_data_t, body),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("status"),
-//                 offsetof(njt_helper_hc_http_add_data_t, status),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("grpcService"),
-//                 offsetof(njt_helper_hc_http_add_data_t, grpc_service),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("grpcStatus"),
-//                 offsetof(njt_helper_hc_http_add_data_t, grpc_status),
-//                 0,
-//                 NJT_JSON_INT,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         njt_json_define_null,
-// };
-// static njt_json_define_t njt_helper_hc_api_data_stream_json_dt[] = {
-//         {
-//                 njt_string("send"),
-//                 offsetof(njt_helper_hc_stream_add_data_t, send),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("expect"),
-//                 offsetof(njt_helper_hc_stream_add_data_t, expect),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         njt_json_define_null,
-// };
-
-// static njt_json_define_t njt_helper_hc_api_data_json_dt[] = {
-//         {
-//                 njt_string("upstream"),
-//                 offsetof(njt_helper_hc_api_data_t, upstream_name),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("type"),
-//                 offsetof(njt_helper_hc_api_data_t, hc_type),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("interval"),
-//                 offsetof(njt_helper_hc_api_data_t, interval),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 njt_json_parse_msec,
-//         },
-//         {
-//                 njt_string("jitter"),
-//                 offsetof(njt_helper_hc_api_data_t, jitter),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 njt_json_parse_msec,
-//         },
-//         {
-//                 njt_string("timeout"),
-//                 offsetof(njt_helper_hc_api_data_t, timeout),
-//                 0,
-//                 NJT_JSON_STR,
-//                 0,
-//                 NULL,
-//                 njt_json_parse_msec,
-//         },
-//         {
-//                 njt_string("port"),
-//                 offsetof(njt_helper_hc_api_data_t, port),
-//                 0,
-//                 NJT_JSON_INT,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("passes"),
-//                 offsetof(njt_helper_hc_api_data_t, passes),
-//                 0,
-//                 NJT_JSON_INT,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("fails"),
-//                 offsetof(njt_helper_hc_api_data_t, fails),
-//                 0,
-//                 NJT_JSON_INT,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("persistent"),
-//                 offsetof(njt_helper_hc_api_data_t, persistent),
-//                 0,
-//                 NJT_JSON_BOOL,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("mandatory"),
-//                 offsetof(njt_helper_hc_api_data_t, mandatory),
-//                 0,
-//                 NJT_JSON_BOOL,
-//                 0,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("http"),
-//                 offsetof(njt_helper_hc_api_data_t, http),
-//                 0,
-//                 NJT_JSON_OBJ,
-//                 0,
-//                 njt_helper_hc_api_data_http_json_dt,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("stream"),
-//                 offsetof(njt_helper_hc_api_data_t, stream),
-//                 0,
-//                 NJT_JSON_OBJ,
-//                 0,
-//                 njt_helper_hc_api_data_stream_json_dt,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("ssl"),
-//                 offsetof(njt_helper_hc_api_data_t, ssl),
-//                 0,
-//                 NJT_JSON_OBJ,
-//                 0,
-//                 njt_helper_hc_api_data_ssl_json_dt,
-//                 NULL,
-//         },
-//         njt_json_define_null,
-// };
-
-// static njt_json_define_t njt_helper_hc_lists_json_dt[] = {
-//         {
-//                 njt_string("upstream"),
-//                 offsetof(njt_helper_hc_list_item_t, upstream_name),
-//                 0,
-//                 NJT_JSON_STR,
-//                 NJT_JSON_ARRAY,
-//                 NULL,
-//                 NULL,
-//         },
-//         {
-//                 njt_string("type"),
-//                 offsetof(njt_helper_hc_list_item_t, hc_type),
-//                 0,
-//                 NJT_JSON_STR,
-//                 NJT_JSON_ARRAY, 
-//                 NULL,
-//                 NULL,
-//         },
-//         njt_json_define_null,
-// };
-
-// /* by zhaokang */
-// static njt_json_define_t njt_helper_hc_lists_key_json_dt[] = {
-//         {
-//                 njt_string("list"),
-//                 0,                 
-//                 sizeof(njt_helper_hc_list_item_t),
-//                 NJT_JSON_ARRAY,
-//                 NJT_JSON_OBJ,
-//                 njt_helper_hc_lists_json_dt,
-//                 NULL,
-//         },
-
-//         njt_json_define_null,
-// };
 
 static njt_health_checker_t njt_health_checks[] = {
         {    
@@ -869,26 +477,6 @@ static njt_health_checker_t njt_health_checks[] = {
 
 extern njt_module_t njt_helper_health_check_module;
 
-
-static njt_int_t
-njt_http_health_check_update_wo_lock(njt_helper_health_check_conf_t *hhccf,
-                                     njt_http_health_check_peer_t *hc_peer,
-                                     njt_http_upstream_rr_peer_t *peer,
-                                     njt_int_t status) {
-   
-    njt_http_health_check_common_update(hc_peer, status);
-    return NJT_OK;
-}
-
-
-static njt_int_t
-njt_stream_health_check_update_wo_lock(njt_helper_health_check_conf_t *hhccf,
-                                     njt_stream_health_check_peer_t *hc_peer,
-                                     njt_stream_upstream_rr_peer_t *peer,
-                                     njt_int_t status) {
-    njt_stream_health_check_common_update(hc_peer, status);
-    return NJT_OK;
-}
 
 static njt_int_t
 njt_http_health_check_peek_one_byte(njt_connection_t *c) {
@@ -2366,7 +1954,7 @@ njt_http_hc_grpc_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstr
 
     OUT:
     /*release the memory and update the statistics*/
-    njt_http_health_check_update_wo_lock(hhccf, (njt_http_health_check_peer_t *) hc_peer, peer, NJT_ERROR);
+    njt_http_health_check_common_update((njt_http_health_check_peer_t *) hc_peer, NJT_ERROR);
     return;
 }
 
@@ -2542,14 +2130,6 @@ njt_http_health_check_update_status(njt_http_health_check_peer_t *hc_peer,
 }
 
 
-static njt_int_t
-njt_stream_health_check_update_status(njt_stream_health_check_peer_t *hc_peer,
-                                    njt_int_t status) {
-
-    return njt_stream_health_check_common_update(hc_peer, status);
-}
-
-
 static void njt_http_health_check_write_handler(njt_event_t *wev) {
     njt_connection_t *c;
     njt_http_health_check_peer_t *hc_peer;
@@ -2620,7 +2200,7 @@ static void njt_stream_health_check_write_handler(njt_event_t *wev) {
         /*log the case and update the peer status.*/
         njt_log_debug0(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
                        "write action for health check timeout");
-        njt_stream_health_check_update_status(hc_peer, NJT_ERROR);
+        njt_stream_health_check_common_update(hc_peer, NJT_ERROR);
         return;
     }
 
@@ -2639,13 +2219,13 @@ static void njt_stream_health_check_write_handler(njt_event_t *wev) {
         /*log the case and update the peer status.*/
         njt_log_debug0(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
                        "write action error for health check");
-        njt_stream_health_check_update_status(hc_peer, NJT_ERROR);
+        njt_stream_health_check_common_update(hc_peer, NJT_ERROR);
         return;
     } else if (rc == NJT_DONE || rc == NJT_OK) {
         if ((cf_ctx->match == NULL || cf_ctx->match->expect.len == 0)
             && hhccf->protocol == 0   //udp 等待接收 icmp
                 ) {
-            njt_stream_health_check_update_status(hc_peer, rc);
+            njt_stream_health_check_common_update(hc_peer, rc);
             return;
         }else{
             if(!c->read->timer_set){
@@ -2655,7 +2235,7 @@ static void njt_stream_health_check_write_handler(njt_event_t *wev) {
         }
 
 //        if (cf_ctx->checker->one_side) {
-//            njt_stream_health_check_update_status(hc_peer, rc);
+//            njt_stream_health_check_common_update(hc_peer, rc);
 //            return;
 //        }
     } else {
@@ -2750,7 +2330,7 @@ static void njt_stream_health_check_read_handler(njt_event_t *rev) {
         /*log the case and update the peer status.*/
         njt_log_debug0(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
                        "read action for health check timeout");
-        njt_stream_health_check_update_status(hc_peer, rc);
+        njt_stream_health_check_common_update(hc_peer, rc);
         return;
     }
     if (hc_peer->hhccf->disable) {
@@ -2767,10 +2347,10 @@ static void njt_stream_health_check_read_handler(njt_event_t *rev) {
         /*log the case and update the peer status.*/
         njt_log_debug0(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
                        "read action error for health check");
-        njt_stream_health_check_update_status(hc_peer, NJT_ERROR);
+        njt_stream_health_check_common_update(hc_peer, NJT_ERROR);
         return;
     } else if (rc == NJT_DONE || rc == NJT_OK) { //TODO
-        njt_stream_health_check_update_status(hc_peer, rc);
+        njt_stream_health_check_common_update(hc_peer, rc);
         return;
     } else {
         /*AGAIN*/
@@ -2920,14 +2500,19 @@ static njt_int_t
 njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
                                     njt_int_t status) {
 
-    njt_uint_t peer_id;
-    njt_http_upstream_srv_conf_t *uscf;
-    njt_http_upstream_rr_peers_t *peers;
-    njt_http_upstream_rr_peer_t *peer;
+    // njt_uint_t                      peer_id;
+    njt_http_upstream_srv_conf_t    *uscf;
+    njt_http_upstream_rr_peers_t    *peers;
+    njt_http_upstream_rr_peer_t     *peer;
+    njt_lvlhsh_query_t              lhq;
+    njt_uint_t                      rc;
+    njt_hc_http_same_peer_t         *http_lvlhsh_value;
+    njt_queue_t                     *q;
+    njt_hc_http_peer_element        *http_ele;
 
 
     /*Find the right peer and update it's status*/
-    peer_id = hc_peer->peer_id;
+    // peer_id = hc_peer->peer_id;
     uscf = njt_http_find_upstream_by_name(njet_master_cycle, &hc_peer->hhccf->upstream_name);
     if (uscf == NULL) {
         njt_log_error(NJT_LOG_ERR, hc_peer->pool->log, 0, "upstream %V isn't found", &hc_peer->hhccf->upstream_name);
@@ -2937,23 +2522,48 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
 
     njt_http_upstream_rr_peers_wlock(peers);
 
-    for (peer = peers->peer; peer != NULL; peer = peer->next) {
-        if (peer->id == peer_id) {
-            break;
-        }
-    }
-    if (peer == NULL && peers->next) {
-        for (peer = peers->next->peer; peer != NULL; peer = peer->next) {
-            if (peer->id == peer_id) {
-                break;
+    //compare update_id
+    if(hc_peer->hhccf->update_id == uscf->update_id){
+        //just use saved map for update
+        //get all peers of has same servername
+        lhq.key = hc_peer->server;
+        lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
+        lhq.proto = &njt_hc_lvlhsh_proto;
+
+        //find
+        rc = njt_lvlhsh_find(&hc_peer->hhccf->servername_to_peers, &lhq);
+        if(rc != NJT_OK){
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    "njt_http_health_check_common_update not found  from map");
+                return NJT_ERROR;
+        }else{
+            http_lvlhsh_value = lhq.value;
+            //update self
+            njt_update_peer(uscf, http_lvlhsh_value->peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
+
+            //update others
+            q = njt_queue_head(&http_lvlhsh_value->datas);
+            for (; q != njt_queue_sentinel(&http_lvlhsh_value->datas); q = njt_queue_next(q)) {
+                http_ele = njt_queue_data(q, njt_hc_http_peer_element, ele_queue);
+                njt_update_peer(uscf, http_ele->peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
             }
         }
-    }
-    if (peer) {
-        njt_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
-    } else {
-        /*LOG peer not found*/
-        njt_log_error(NJT_LOG_ERR, hc_peer->pool->log, 0, "peer %u isn't found", peer_id);
+    }else{
+        //list all peers of has same servername
+        for (peer = peers->peer; peer != NULL; peer = peer->next) {
+            if(peer->server.len == hc_peer->server.len
+                && njt_memcmp(peer->server.data, hc_peer->server.data, peer->server.len) == 0){
+                njt_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
+            }
+        }
+        if (peer == NULL && peers->next) {
+            for (peer = peers->next->peer; peer != NULL; peer = peer->next) {
+                if(peer->server.len == hc_peer->server.len
+                    && njt_memcmp(peer->server.data, hc_peer->server.data, peer->server.len) == 0){
+                    njt_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
+                }
+            }
+        }
     }
 
     njt_http_upstream_rr_peers_unlock(peers);
@@ -2968,14 +2578,19 @@ static njt_int_t
 njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
                                     njt_int_t status) {
 
-    njt_uint_t                      peer_id;
+    // njt_uint_t                      peer_id;
     njt_stream_upstream_srv_conf_t *uscf;
     njt_stream_upstream_rr_peers_t *peers;
     njt_stream_upstream_rr_peer_t  *peer;
+    njt_lvlhsh_query_t              lhq;
+    njt_uint_t                      rc;
+    njt_hc_stream_same_peer_t       *stream_lvlhsh_value;
+    njt_queue_t                     *q;
+    njt_hc_stream_peer_element      *stream_ele;
 
 
     /*Find the right peer and update it's status*/
-    peer_id = hc_peer->peer_id;
+    // peer_id = hc_peer->peer_id;
     uscf = njt_stream_find_upstream_by_name(njet_master_cycle, &hc_peer->hhccf->upstream_name);
     if (uscf == NULL) {
         njt_log_error(NJT_LOG_ERR, hc_peer->pool->log, 0, "upstream %V isn't found", &hc_peer->hhccf->upstream_name);
@@ -2985,24 +2600,48 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
     peers = (njt_stream_upstream_rr_peers_t *) uscf->peer.data;
 
     njt_stream_upstream_rr_peers_wlock(peers);
+    //compare update_id
+    if(hc_peer->hhccf->update_id == uscf->update_id){
+        //just use saved map for update
+        //get all peers of has same servername
+        lhq.key = hc_peer->server;
+        lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
+        lhq.proto = &njt_hc_lvlhsh_proto;
 
-    for (peer = peers->peer; peer != NULL; peer = peer->next) {
-        if (peer->id == peer_id) {
-            break;
-        }
-    }
-    if (peer == NULL && peers->next) {
-        for (peer = peers->next->peer; peer != NULL; peer = peer->next) {
-            if (peer->id == peer_id) {
-                break;
+        //find
+        rc = njt_lvlhsh_find(&hc_peer->hhccf->servername_to_peers, &lhq);
+        if(rc != NJT_OK){
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    "njt_stream_health_check_common_update not found  from map");
+                return NJT_ERROR;
+        }else{
+            stream_lvlhsh_value = lhq.value;
+            //update self
+            njt_stream_update_peer(uscf, stream_lvlhsh_value->peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
+
+            //update others
+            q = njt_queue_head(&stream_lvlhsh_value->datas);
+            for (; q != njt_queue_sentinel(&stream_lvlhsh_value->datas); q = njt_queue_next(q)) {
+                stream_ele = njt_queue_data(q, njt_hc_stream_peer_element, ele_queue);
+                njt_stream_update_peer(uscf, stream_ele->peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
             }
         }
-    }
-    if (peer) {
-        njt_stream_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
-    } else {
-        /*LOG peer not found*/
-        njt_log_error(NJT_LOG_ERR, hc_peer->pool->log, 0, "peer %u isn't found", peer_id);
+    }else{
+        //list all peers of has same servername
+        for (peer = peers->peer; peer != NULL; peer = peer->next) {
+            if(peer->server.len == hc_peer->server.len
+                && njt_memcmp(peer->server.data, hc_peer->server.data, peer->server.len) == 0){
+                njt_stream_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
+            }
+        }
+        if (peer == NULL && peers->next) {
+            for (peer = peers->next->peer; peer != NULL; peer = peer->next) {
+                if(peer->server.len == hc_peer->server.len
+                    && njt_memcmp(peer->server.data, hc_peer->server.data, peer->server.len) == 0){
+                    njt_stream_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
+                }
+            }
+        }
     }
 
     njt_stream_upstream_rr_peers_unlock(peers);
@@ -3125,7 +2764,7 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data, 
         njt_int_t i_interval;
         i_interval = njt_parse_time(&api_data->hc_data->interval, 0);
         if(NJT_ERROR == i_interval  || i_interval <= 0){
-            hhccf->interval = NJT_HTTP_HC_INTERVAL;
+            return HC_BODY_ERROR;
         }else{
             hhccf->interval = i_interval;
         }
@@ -3137,7 +2776,7 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data, 
         njt_int_t i_jitter;
         i_jitter = njt_parse_time(&api_data->hc_data->jitter, 0);
         if(NJT_ERROR == i_jitter  || i_jitter <= 0){
-            hhccf->jitter = 0;
+            return HC_BODY_ERROR;
         }else{
             hhccf->jitter = i_jitter;
         }
@@ -3149,7 +2788,7 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data, 
         njt_int_t i_timeout;
         i_timeout = njt_parse_time(&api_data->hc_data->timeout, 0);
         if(NJT_ERROR == i_timeout || i_timeout <= 0){
-            hhccf->timeout = NJT_HTTP_HC_CONNECT_TIMEOUT;
+            return HC_BODY_ERROR;
         }else{
             hhccf->timeout = i_timeout;
         }
@@ -3256,6 +2895,7 @@ static njt_int_t njt_hc_api_add_conf(njt_log_t *log, njt_helper_hc_api_data_t *a
     hhccf->type = checker->type;
     hhccf->type_str = checker->name;
     hhccf->protocol = checker->protocol;
+    hhccf->first = 1;
     if (checker->type == NJT_HTTP_MODULE) {
         uscf = njt_http_find_upstream_by_name(njet_master_cycle, &api_data->upstream_name);
         if (uscf == NULL) {
@@ -3944,13 +3584,13 @@ njt_stream_hc_ssl_handshake(njt_connection_t *c, njt_stream_health_check_peer_t 
     }
 
     if (c->write->timedout) {
-//        njt_stream_health_check_update_status(hc_peer, NJT_ERROR);
+//        njt_stream_health_check_common_update(hc_peer, NJT_ERROR);
         return NJT_ERROR;
     }
 
     failed:
 
-//    njt_stream_health_check_update_status(hc_peer, NJT_ERROR);
+//    njt_stream_health_check_common_update(hc_peer, NJT_ERROR);
     return NJT_ERROR;
 }
 static void
@@ -3962,7 +3602,7 @@ njt_stream_hc_ssl_handshake_handler(njt_connection_t *c) {
 
     rc = njt_stream_hc_ssl_handshake(c, hc_peer);
     if (rc != NJT_OK) {
-        njt_stream_health_check_update_status(hc_peer, NJT_ERROR);
+        njt_stream_health_check_common_update(hc_peer, NJT_ERROR);
     }
 }
 
@@ -4220,7 +3860,6 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
     njt_http_upstream_rr_peers_t *hu_peers;
     njt_pool_t *pool;
 
-    njt_http_upstream_rr_peers_wlock(peers);
     hu_peers = peers;
     if (backup == 1) {
         hu_peers = peers->next;
@@ -4290,7 +3929,9 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
 
                 hc_peer->peer.socklen = peer->socklen;
                 hc_peer->peer.name = &peer->name;
-                hc_peer->server = &peer->server;   //real ip
+                hc_peer->server.len = peer->server.len;
+                hc_peer->server.data = njt_pcalloc(pool, peer->server.len);
+                njt_memcpy(hc_peer->server.data, peer->server.data, peer->server.len);
                 hc_peer->peer.get = njt_event_get_peer;
                 hc_peer->peer.log = njt_cycle->log;
                 hc_peer->peer.log_error = NJT_ERROR_ERR;
@@ -4304,7 +3945,7 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
                                    "health check connect to peer of %V errror.", &peer->name);
                     /*release the memory and update the statistics*/
                     njt_http_upstream_rr_peers_unlock(peers);
-                    njt_http_health_check_update_wo_lock(hhccf, hc_peer, peer, NJT_ERROR);
+                    njt_http_health_check_common_update(hc_peer, NJT_ERROR);
                     njt_http_upstream_rr_peers_wlock(peers);
                     continue;
                 }
@@ -4318,7 +3959,7 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
                     rc = njt_http_hc_ssl_init_connection(hc_peer->peer.connection, hc_peer);
                     if (rc == NJT_ERROR) {
                         njt_http_upstream_rr_peers_unlock(peers);
-                        njt_http_health_check_update_wo_lock(hhccf, hc_peer, peer, NJT_ERROR);
+                        njt_http_health_check_common_update(hc_peer, NJT_ERROR);
                         njt_http_upstream_rr_peers_wlock(peers);
                     }
                     continue;
@@ -4340,8 +3981,6 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
             }
         }
     }
-
-    njt_http_upstream_rr_peers_unlock(peers);
 }
 
 void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stream_upstream_rr_peers_t *peers,
@@ -4352,7 +3991,6 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
     njt_stream_upstream_rr_peers_t *hu_peers;
     njt_pool_t                     *pool;
 
-    njt_stream_upstream_rr_peers_wlock(peers);
     hu_peers = peers;
     if (backup == 1) {
         hu_peers = peers->next;
@@ -4419,7 +4057,9 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
 
             hc_peer->peer.socklen = peer->socklen;
             hc_peer->peer.name = &peer->name;       //domain name
-            hc_peer->server = &peer->server;        //real ip
+            hc_peer->server.len = peer->server.len;
+            hc_peer->server.data = njt_pcalloc(pool, peer->server.len);
+            njt_memcpy(hc_peer->server.data, peer->server.data, peer->server.len);
             hc_peer->peer.get = njt_event_get_peer;
             hc_peer->peer.log = njt_cycle->log;
             hc_peer->peer.log_error = NJT_ERROR_ERR;
@@ -4434,7 +4074,7 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
                                    "health check connect to peer of %V error.", &peer->name);
                 /*release the memory and update the statistics*/
                 njt_stream_upstream_rr_peers_unlock(peers);
-                njt_stream_health_check_update_wo_lock(hhccf, hc_peer, peer, NJT_ERROR);
+                njt_stream_health_check_common_update(hc_peer, NJT_ERROR);
                 njt_stream_upstream_rr_peers_wlock(peers);
                 continue;
              }
@@ -4448,7 +4088,7 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
                 rc = njt_stream_hc_ssl_init_connection(hc_peer->peer.connection, hc_peer);
                 if (rc == NJT_ERROR) {
                     njt_stream_upstream_rr_peers_unlock(peers);
-                    njt_stream_health_check_update_wo_lock(hhccf, hc_peer, peer, NJT_ERROR);
+                    njt_stream_health_check_common_update(hc_peer, NJT_ERROR);
                     njt_stream_upstream_rr_peers_wlock(peers);
                 }
                 continue;
@@ -4466,8 +4106,6 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
              }
         }
     }
-
-    njt_stream_upstream_rr_peers_unlock(peers);
 }
 
 static njt_http_match_t *njt_helper_http_match_create(njt_helper_health_check_conf_t *hhccf) {
@@ -4679,8 +4317,8 @@ static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, n
         case HC_CA_NOT_CONF:
         case HC_CERTIFICATE_NOT_CONF:
         case HC_CERTIFICATE_KEY_NOT_CONF:
-        case HC_BODY_ERROR:
             r->headers_out.status = NJT_HTTP_BAD_REQUEST;
+        case HC_BODY_ERROR:
             break;
         case HC_DOUBLE_SET:
             r->headers_out.status = NJT_HTTP_CONFLICT;
@@ -5339,6 +4977,227 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
     return njt_http_health_check_conf_out_handler(r, hrc);
 }
 
+
+
+
+
+static void njt_create_peers_map_by_peer(njt_helper_health_check_conf_t *hhccf, void *from_peer){
+    njt_lvlhsh_query_t                  lhq;
+    // u_char                              sess_str[24] = {0};
+    // u_char                              *end;
+    njt_int_t                           rc, rc2;
+    njt_http_upstream_rr_peer_t         *peer;
+    njt_stream_upstream_rr_peer_t       *stream_peer;
+    njt_hc_http_same_peer_t             *http_lvlhsh_value;
+    njt_hc_stream_same_peer_t           *stream_lvlhsh_value;
+    njt_hc_http_peer_element            *http_ele;
+    njt_hc_stream_peer_element          *stream_ele;
+
+    if(hhccf->type == NJT_HTTP_MODULE){
+        peer = (njt_http_upstream_rr_peer_t *)from_peer;
+        for (; peer != NULL; peer = peer->next) {
+            if (peer->down == 1)
+            {
+                continue;
+            }
+
+            // //peer to servername
+            // end = njt_snprintf(sess_str, 24, "%d", peer->id);
+            // //insert
+            // lhq.key.data = sess_str;
+            // lhq.key.len = end - sess_str;
+            // lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
+            // lhq.proto = &njt_hc_lvlhsh_proto;
+            // lhq.pool = hhccf->map_pool;
+            // lhq.value = peer;
+
+            // //insert to hash
+            // rc = njt_lvlhsh_insert(&hhccf->peer_to_servername, &lhq);
+            // if(rc != NJT_OK){
+            //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+            //                 "njt_create_peers_map_by_peer lvlhash insert fail");
+            //     return;
+            // }
+
+            //servername to peers
+            lhq.key = peer->server;
+            lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
+            lhq.proto = &njt_hc_lvlhsh_proto;
+
+            //find
+            rc = njt_lvlhsh_find(&hhccf->servername_to_peers, &lhq);
+            if(rc != NJT_OK){
+                //if not exist, insert and update current peer
+                lhq.key = peer->server;
+                lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
+                lhq.proto = &njt_hc_lvlhsh_proto;
+                lhq.pool = hhccf->map_pool;
+
+                http_lvlhsh_value = njt_pcalloc(hhccf->map_pool, sizeof(njt_hc_http_same_peer_t));
+                if(http_lvlhsh_value == NULL){
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                                "njt_create_peers_map_by_peer malloc error");
+                    return;
+                }
+
+                http_lvlhsh_value->peer = peer;
+                njt_queue_init(&http_lvlhsh_value->datas);
+
+                lhq.value = http_lvlhsh_value;
+                rc2 = njt_lvlhsh_insert(&hhccf->servername_to_peers, &lhq);
+                if(rc2 != NJT_OK){
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                                "njt_create_peers_map_by_peer servername2peers lvlhash insert fail");
+                    return;
+                }
+            }else{
+                //if exist, update peers list
+                http_lvlhsh_value = lhq.value;
+                http_ele = njt_pcalloc(hhccf->map_pool, sizeof(njt_hc_http_peer_element));
+                if(http_ele == NULL){
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                                "njt_create_peers_map_by_peer http_ele malloc error");
+                    return;
+                }
+
+                http_ele->peer = peer;
+                njt_queue_insert_tail(&http_lvlhsh_value->datas, &http_ele->ele_queue);
+            }        
+        }
+    }else if(hhccf->type == NJT_STREAM_MODULE){
+        stream_peer = (njt_stream_upstream_rr_peer_t *)from_peer;
+        for (; stream_peer != NULL; stream_peer = stream_peer->next) {
+            if (stream_peer->down == 1)
+            {
+                continue;
+            }
+
+            // //peer to servername
+            // end = njt_snprintf(sess_str, 24, "%d", stream_peer->id);
+            // //insert
+            // lhq.key.data = sess_str;
+            // lhq.key.len = end - sess_str;
+            // lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
+            // lhq.proto = &njt_hc_lvlhsh_proto;
+            // lhq.pool = hhccf->map_pool;
+            // lhq.value = stream_peer;
+
+            // //insert to hash
+            // rc = njt_lvlhsh_insert(&hhccf->peer_to_servername, &lhq);
+            // if(rc != NJT_OK){
+            //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+            //                 "njt_create_peers_map_by_peer lvlhash insert fail");
+            //     return;
+            // }
+
+            //servername to peers
+            lhq.key = stream_peer->server;
+            lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
+            lhq.proto = &njt_hc_lvlhsh_proto;
+
+            //find
+            rc = njt_lvlhsh_find(&hhccf->servername_to_peers, &lhq);
+            if(rc != NJT_OK){
+                //if not exist, insert and update current peer
+                lhq.key = stream_peer->server;
+                lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
+                lhq.proto = &njt_hc_lvlhsh_proto;
+                lhq.pool = hhccf->map_pool;
+                
+                //if(hhccf->type == NJT_STREAM_MODULE){
+                stream_lvlhsh_value = njt_pcalloc(hhccf->map_pool, sizeof(njt_hc_stream_same_peer_t));
+                if(stream_lvlhsh_value == NULL){
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                                "njt_create_peers_map_by_peer malloc error");
+                    return;
+                }
+
+                stream_lvlhsh_value->peer = stream_peer;
+                njt_queue_init(&stream_lvlhsh_value->datas);
+
+                lhq.value = stream_lvlhsh_value;
+
+                rc2 = njt_lvlhsh_insert(&hhccf->servername_to_peers, &lhq);
+                if(rc2 != NJT_OK){
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                                "njt_create_peers_map_by_peer servername2peers lvlhash insert fail");
+                    return;
+                }
+            }else{
+                //if exist, update peers list
+                stream_lvlhsh_value = lhq.value;
+                stream_ele = njt_pcalloc(hhccf->map_pool, sizeof(njt_hc_stream_peer_element));
+                if(stream_ele == NULL){
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                                "njt_create_peers_map_by_peer stream_ele malloc error");
+                    return;
+                }
+
+                stream_ele->peer = stream_peer;
+                njt_queue_insert_tail(&stream_lvlhsh_value->datas, &stream_ele->ele_queue);
+            }        
+        }
+    }
+}
+
+static void njt_hc_create_http_peers_map(njt_helper_health_check_conf_t *hhccf,
+            njt_http_upstream_rr_peers_t    *peers){
+    njt_http_upstream_rr_peer_t *peer;
+
+    if(hhccf->map_pool){
+        njt_destroy_pool(hhccf->map_pool);
+        hhccf->map_pool = NULL;
+    }
+    
+    hhccf->map_pool = njt_create_pool(njt_pagesize, njt_cycle->log);
+    if (hhccf->map_pool == NULL) {
+        njt_log_error(NJT_LOG_DEBUG, hhccf->map_pool->log, 0, "njt_create_peer_map error");
+        return;
+    }
+
+    njt_http_upstream_rr_peers_wlock(peers);
+    if (peers->peer) {
+        peer = peers->peer;
+        njt_create_peers_map_by_peer(hhccf, peer);
+
+    }
+    if (peers->next) {
+        peer = peers->next->peer;
+        njt_create_peers_map_by_peer(hhccf, peer);
+    }
+    njt_http_upstream_rr_peers_unlock(peers);
+}
+
+
+static void njt_hc_create_stream_peers_map(njt_helper_health_check_conf_t *hhccf,
+            njt_stream_upstream_rr_peers_t    *peers){
+    njt_stream_upstream_rr_peer_t *peer;
+
+    if(hhccf->map_pool){
+        njt_destroy_pool(hhccf->map_pool);
+        hhccf->map_pool = NULL;
+    }
+    
+    hhccf->map_pool = njt_create_pool(njt_pagesize, njt_cycle->log);
+    if (hhccf->map_pool == NULL) {
+        njt_log_error(NJT_LOG_DEBUG, hhccf->map_pool->log, 0, "njt_create_peer_map error");
+        return;
+    }
+
+    
+    if (peers->peer) {
+        peer = peers->peer;
+        njt_create_peers_map_by_peer(hhccf, peer);
+
+    }
+    if (peers->next) {
+        peer = peers->next->peer;
+        njt_create_peers_map_by_peer(hhccf, peer);
+    }
+    
+}
+
+
 /*define the status machine stage*/
 static void njt_http_health_check_timer_handler(njt_event_t *ev) {
     njt_helper_health_check_conf_t  *hhccf;
@@ -5396,12 +5255,23 @@ static void njt_http_health_check_timer_handler(njt_event_t *ev) {
     }
 
     peers = uscf->peer.data;
+
+    njt_http_upstream_rr_peers_wlock(peers);
+    if(hhccf->first || hhccf->update_id != uscf->update_id){
+        hhccf->first = 0;
+        hhccf->update_id = uscf->update_id;
+        //todo create map
+        njt_hc_create_http_peers_map(hhccf, peers);
+    }
+
     if (peers->peer) {
         njt_http_health_loop_peer(hhccf, peers, 0, op);
     }
     if (peers->next) {
         njt_http_health_loop_peer(hhccf, peers, 1, op);
     }
+    njt_http_upstream_rr_peers_unlock(peers);
+
     jitter = 0;
     if (hhccf->jitter) {
         jitter = njt_random() % hhccf->jitter;
@@ -5455,9 +5325,6 @@ njt_stream_health_check_timer_handler(njt_event_t *ev) {
 
     shccc = hhccf->ctx;
     uscf = shccc->upstream;
-
-
-
     if (uscf == NULL) {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "no stream upstream data");
         return;
@@ -5482,12 +5349,22 @@ njt_stream_health_check_timer_handler(njt_event_t *ev) {
     }
 
     peers = uscf->peer.data;
+    njt_stream_upstream_rr_peers_wlock(peers);
+    if(hhccf->first || hhccf->update_id != uscf->update_id){
+        hhccf->first = 0;
+        hhccf->update_id = uscf->update_id;
+        //todo create map
+        njt_hc_create_stream_peers_map(hhccf, peers);
+    }
+
     if (peers->peer) {
         njt_stream_health_loop_peer(hhccf, peers, 0, op);
     }
     if (peers->next) {
         njt_stream_health_loop_peer(hhccf, peers, 1, op);
     }
+    njt_stream_upstream_rr_peers_unlock(peers);
+
     jitter = 0;
     if (hhccf->jitter) {
         jitter = njt_random() % hhccf->jitter;
