@@ -3135,7 +3135,7 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data, 
     if(api_data->hc_data->is_jitter_set && api_data->hc_data->jitter.len > 0){
         njt_int_t i_jitter;
         i_jitter = njt_parse_time(&api_data->hc_data->jitter, 0);
-        if(NJT_ERROR == i_jitter  || i_jitter <= 0){
+        if(NJT_ERROR == i_jitter  || i_jitter < 0){
             return HC_BODY_ERROR;
         }else{
             hhccf->jitter = i_jitter;
