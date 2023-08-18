@@ -1082,9 +1082,6 @@ static njt_int_t njt_dyn_limit_set_limit_conn_log_level(dyn_limit_servers_item_l
     case DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR:
         lccf->log_level = NJT_LOG_ERR;
         break;    
-    default:
-        lccf->log_level = NJT_LOG_INFO;
-        break;
     }
 
     return NJT_OK;
@@ -1140,9 +1137,6 @@ static njt_int_t njt_dyn_limit_set_limit_req_log_level(dyn_limit_servers_item_lo
         break;
     case DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR:
         lrcf->limit_log_level = NJT_LOG_ERR;
-        break;    
-    default:
-        lrcf->limit_log_level = NJT_LOG_INFO;
         break;
     }
 

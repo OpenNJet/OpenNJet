@@ -3015,7 +3015,7 @@ static njt_int_t njy_hc_api_data2_ssl_cf(njt_helper_hc_api_data_t *api_data, njt
 
     if(api_data->hc_type.len == njt_sudp_ck_type.len
        && njt_strncmp(api_data->hc_type.data, njt_sudp_ck_type.data, njt_sudp_ck_type.len) == 0 
-       && api_data->hc_data != NULL && api_data->hc_data->ssl != NULL && 1 == api_data->hc_data->ssl->enable) {
+       && api_data->hc_data->ssl != NULL && 1 == api_data->hc_data->ssl->enable) {
         return UDP_NOT_SUPPORT_TLS;
     }
 
@@ -3044,7 +3044,8 @@ static njt_int_t njy_hc_api_data2_ssl_cf(njt_helper_hc_api_data_t *api_data, njt
                     return HC_SERVER_ERROR);
         
         if(NJT_OK != njt_json_parse_ssl_protocols(api_data->hc_data->ssl->protocols, &hhccf->ssl.ssl_protocols)){
-            hhccf->ssl.ssl_protocols = (NJT_CONF_BITMASK_SET | NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1 | NJT_SSL_TLSv1_2);
+            return HC_BODY_ERROR;
+            // hhccf->ssl.ssl_protocols = (NJT_CONF_BITMASK_SET | NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1 | NJT_SSL_TLSv1_2);
         }
     }else{
         hhccf->ssl.ssl_protocols = (NJT_CONF_BITMASK_SET | NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1 | NJT_SSL_TLSv1_2);
@@ -3123,7 +3124,7 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data, 
         njt_int_t i_interval;
         i_interval = njt_parse_time(&api_data->hc_data->interval, 0);
         if(NJT_ERROR == i_interval  || i_interval <= 0){
-            hhccf->interval = NJT_HTTP_HC_INTERVAL;
+            return HC_BODY_ERROR;
         }else{
             hhccf->interval = i_interval;
         }
@@ -3135,7 +3136,7 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data, 
         njt_int_t i_jitter;
         i_jitter = njt_parse_time(&api_data->hc_data->jitter, 0);
         if(NJT_ERROR == i_jitter  || i_jitter <= 0){
-            hhccf->jitter = 0;
+            return HC_BODY_ERROR;
         }else{
             hhccf->jitter = i_jitter;
         }
@@ -3147,7 +3148,7 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data, 
         njt_int_t i_timeout;
         i_timeout = njt_parse_time(&api_data->hc_data->timeout, 0);
         if(NJT_ERROR == i_timeout || i_timeout <= 0){
-            hhccf->timeout = NJT_HTTP_HC_CONNECT_TIMEOUT;
+            return HC_BODY_ERROR;
         }else{
             hhccf->timeout = i_timeout;
         }
@@ -4992,8 +4993,6 @@ static njt_helper_health_check_conf_t *njt_http_find_helper_hc_by_name_and_type(
             && njt_strncmp(hhccf->upstream_name.data, upstream_name->data, hhccf->upstream_name.len) == 0) {
             return hhccf;
         }
-
-
     }
     return NULL;
 }
