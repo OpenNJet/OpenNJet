@@ -5631,24 +5631,8 @@ static void njt_stream_hc_kv_flush_confs(njt_helper_main_conf_t *hmcf) {
     if (msg == NULL || msg->len == 0) {
         goto end;
     }
-
-    char p[] = "{ \"list\" : ";
-    size_t len = sizeof(p) / sizeof(p[0]);
-
-    njt_str_t new;
-
-    new.len = len + msg->len;
-    new.data = njt_pcalloc(pool, len + msg->len + 1);
-    if (new.data == NULL) {
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "malloc mem error in function %s", __func__);
-        return;
-    }
     
-    njt_memcpy(new.data, p, len - 1);
-    njt_memcpy(new.data + len - 1, msg->data, msg->len);
-    njt_memcpy(new.data + len - 1 + msg->len, (u_char *) "}", 1);
-    
-    njt_dyn_kv_set(&key, &new);
+    njt_dyn_kv_set(&key, msg);
 
 end:
     njt_destroy_pool(pool);
