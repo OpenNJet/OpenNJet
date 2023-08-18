@@ -1082,9 +1082,6 @@ static njt_int_t njt_dyn_limit_set_limit_conn_log_level(dyn_limit_servers_item_l
     case DYN_LIMIT_LOCATIONDEF_LIMIT_CONN_LOG_LEVEL_ERROR:
         lccf->log_level = NJT_LOG_ERR;
         break;    
-    default:
-        lccf->log_level = NJT_LOG_INFO;
-        break;
     }
 
     return NJT_OK;
@@ -1140,9 +1137,6 @@ static njt_int_t njt_dyn_limit_set_limit_req_log_level(dyn_limit_servers_item_lo
         break;
     case DYN_LIMIT_LOCATIONDEF_LIMIT_REQ_LOG_LEVEL_ERROR:
         lrcf->limit_log_level = NJT_LOG_ERR;
-        break;    
-    default:
-        lrcf->limit_log_level = NJT_LOG_INFO;
         break;
     }
 
@@ -2073,7 +2067,7 @@ static int njt_dyn_limit_update_handler(njt_str_t *key, njt_str_t *value, void *
         njt_rpc_result_set_msg2(rpc_result, &err_info.err_str);
 
         rc = NJT_ERROR;
-        goto end;
+        goto err_msg;
     }
 
     njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
@@ -2088,6 +2082,7 @@ static int njt_dyn_limit_update_handler(njt_str_t *key, njt_str_t *value, void *
         }
     }
 
+err_msg:
     if (rc != NJT_OK) {
         njt_str_t msg=njt_string("");
         njt_kv_sendmsg(key,&msg, 0);

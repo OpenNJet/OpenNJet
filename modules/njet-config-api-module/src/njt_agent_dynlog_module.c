@@ -568,6 +568,7 @@ static int  njt_agent_dynlog_change_handler_internal(njt_str_t *key, njt_str_t *
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
         njt_rpc_result_set_msg2(rpc_result,  &err_info.err_str);
         rc = NJT_ERROR;
+        njt_kv_sendmsg(key,&empty_msg,0);
         goto rpc_msg;
     }
 //    rc =njt_json_parse_data(pool,value,njt_http_dyn_access_api_main_json_dt,api_data);

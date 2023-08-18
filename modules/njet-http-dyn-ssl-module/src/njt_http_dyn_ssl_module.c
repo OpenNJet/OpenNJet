@@ -412,6 +412,8 @@ static int  njt_http_ssl_update_handler(njt_str_t *key, njt_str_t *value, void *
         njt_rpc_result_set_msg2(rpc_result, &err_info.err_str);
 
         rc = NJT_ERROR;
+        njt_str_t msg = njt_string("");
+        njt_kv_sendmsg(key,&msg,0);
         goto end;
     }
 
