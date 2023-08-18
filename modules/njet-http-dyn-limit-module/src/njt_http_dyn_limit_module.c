@@ -2067,7 +2067,7 @@ static int njt_dyn_limit_update_handler(njt_str_t *key, njt_str_t *value, void *
         njt_rpc_result_set_msg2(rpc_result, &err_info.err_str);
 
         rc = NJT_ERROR;
-        goto end;
+        goto err_msg;
     }
 
     njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
@@ -2082,6 +2082,7 @@ static int njt_dyn_limit_update_handler(njt_str_t *key, njt_str_t *value, void *
         }
     }
 
+err_msg:
     if (rc != NJT_OK) {
         njt_str_t msg=njt_string("");
         njt_kv_sendmsg(key,&msg, 0);
