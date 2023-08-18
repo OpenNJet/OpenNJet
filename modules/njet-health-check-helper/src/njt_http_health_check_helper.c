@@ -2776,7 +2776,7 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data, 
     if(api_data->hc_data->is_jitter_set && api_data->hc_data->jitter.len > 0){
         njt_int_t i_jitter;
         i_jitter = njt_parse_time(&api_data->hc_data->jitter, 0);
-        if(NJT_ERROR == i_jitter  || i_jitter <= 0){
+        if(NJT_ERROR == i_jitter  || i_jitter < 0){
             return HC_BODY_ERROR;
         }else{
             hhccf->jitter = i_jitter;
@@ -5149,7 +5149,7 @@ static void njt_hc_create_http_peers_map(njt_helper_health_check_conf_t *hhccf,
     }
     
     hhccf->map_pool = njt_create_pool(njt_pagesize, njt_cycle->log);
-    if (hhccf->map_pool == NULL) {
+    if (hhccf->map_pool == NULL || NJT_OK != njt_sub_pool(njt_cycle->pool, hhccf->map_pool)) {
         njt_log_error(NJT_LOG_DEBUG, hhccf->map_pool->log, 0, "njt_create_peer_map error");
         return;
     }
@@ -5178,12 +5178,11 @@ static void njt_hc_create_stream_peers_map(njt_helper_health_check_conf_t *hhccf
     }
     
     hhccf->map_pool = njt_create_pool(njt_pagesize, njt_cycle->log);
-    if (hhccf->map_pool == NULL) {
+    if (hhccf->map_pool == NULL || NJT_OK != njt_sub_pool(njt_cycle->pool, hhccf->map_pool)) {
         njt_log_error(NJT_LOG_DEBUG, hhccf->map_pool->log, 0, "njt_create_peer_map error");
         return;
     }
 
-    
     if (peers->peer) {
         peer = peers->peer;
         njt_create_peers_map_by_peer(hhccf, peer);
