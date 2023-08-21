@@ -2527,7 +2527,7 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
     njt_http_upstream_rr_peers_wlock(peers);
 
     //compare update_id
-    if(hc_peer->hhccf->update_id == uscf->update_id){
+    if(hc_peer->hhccf->update_id == peers->update_id){
         //just use saved map for update
         //get all peers of has same servername
         lhq.key = hc_peer->server;
@@ -2617,7 +2617,7 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
 
     njt_stream_upstream_rr_peers_wlock(peers);
     //compare update_id
-    if(hc_peer->hhccf->update_id == uscf->update_id){
+    if(hc_peer->hhccf->update_id == peers->update_id){
         //just use saved map for update
         //get all peers of has same servername
         lhq.key = hc_peer->server;
@@ -2858,15 +2858,16 @@ static njt_int_t njt_hc_api_data2_common_cf(njt_helper_hc_api_data_t *api_data, 
 
 
 static njt_int_t njt_hc_api_add_conf(njt_log_t *log, njt_helper_hc_api_data_t *api_data, njt_int_t sync) {
-    njt_health_checker_t *checker;
-    njt_http_upstream_srv_conf_t *uscf;
-    njt_helper_health_check_conf_t *hhccf;
-    njt_cycle_t *cycle = (njt_cycle_t *) njt_cycle;
-    njt_pool_t *hc_pool;
-    njt_http_health_check_conf_ctx_t *hhccc;
-    njt_int_t rc;
+    njt_health_checker_t                    *checker;
+    njt_http_upstream_srv_conf_t            *uscf;
+    njt_helper_health_check_conf_t          *hhccf;
+    njt_cycle_t                             *cycle = (njt_cycle_t *) njt_cycle;
+    njt_pool_t                              *hc_pool;
+    njt_http_health_check_conf_ctx_t        *hhccc;
+    njt_http_upstream_rr_peers_t            *peers;
+    njt_stream_upstream_rr_peers_t          *stream_peers;
+    njt_int_t                               rc = HC_SUCCESS;
 
-    rc = HC_SUCCESS;
     if (api_data->hc_type.len == 0 || api_data->upstream_name.len == 0) {
         njt_log_error(NJT_LOG_ERR, log, 0, " type and upstream must be set !!");
         return HC_BODY_ERROR;
@@ -2941,7 +2942,8 @@ static njt_int_t njt_hc_api_add_conf(njt_log_t *log, njt_helper_hc_api_data_t *a
         hhccf->ctx = hhccc;
         hhccf->mandatory = uscf->mandatory;
         hhccf->persistent = uscf->persistent;
-        hhccf->update_id = uscf->update_id;
+        peers = uscf->peer.data;
+        hhccf->update_id = peers->update_id;
     }
 
     /*
@@ -2972,7 +2974,8 @@ static njt_int_t njt_hc_api_add_conf(njt_log_t *log, njt_helper_hc_api_data_t *a
         hhccf->ctx = shccc;
         hhccf->mandatory = suscf->mandatory;
         hhccf->persistent = suscf->persistent;
-        hhccf->update_id = suscf->update_id;
+        stream_peers = suscf->peer.data;
+        hhccf->update_id = stream_peers->update_id;
     }
 
     rc = njt_hc_api_data2_common_cf(api_data, hhccf);
@@ -3929,7 +3932,7 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
                 //if not check peer, just continue
                 if(!njt_hc_http_check_peer(hhccf, peer)){
                     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                            " not http check peer:%V peerid:%d just continue", &peer->server, peer->id);
+                            " http, not check peer:%V peerid:%d just continue", &peer->server, peer->id);
                     continue;
                 }
             }
@@ -5314,9 +5317,9 @@ static void njt_http_health_check_timer_handler(njt_event_t *ev) {
     peers = uscf->peer.data;
 
     njt_http_upstream_rr_peers_wlock(peers);
-    if(hhccf->first || hhccf->update_id != uscf->update_id){
+    if(hhccf->first || hhccf->update_id != peers->update_id){
         hhccf->first = 0;
-        hhccf->update_id = uscf->update_id;
+        hhccf->update_id = peers->update_id;
         //clear map
         njt_hc_clean_peers_map(hhccf);
         map_recreate = true;
@@ -5409,9 +5412,9 @@ njt_stream_health_check_timer_handler(njt_event_t *ev) {
 
     peers = uscf->peer.data;
     njt_stream_upstream_rr_peers_wlock(peers);
-    if(hhccf->first || hhccf->update_id != uscf->update_id){
+    if(hhccf->first || hhccf->update_id != peers->update_id){
         hhccf->first = 0;
-        hhccf->update_id = uscf->update_id;
+        hhccf->update_id = peers->update_id;
         //clear map
         njt_hc_clean_peers_map(hhccf);
         map_recreate = true;

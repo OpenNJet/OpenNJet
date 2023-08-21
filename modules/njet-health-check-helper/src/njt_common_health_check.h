@@ -90,7 +90,6 @@ typedef struct njt_helper_health_check_conf_s {
     unsigned first: 1;              //if first, need recreate map
 
     njt_lvlhsh_t    servername_to_peers; //1 vs more, key:servername value: peers which hash same servername
-    // njt_lvlhsh_t    peer_to_servername;  //1 vs 1, key:peer_id value:servername
     njt_uint_t      update_id;           //modified when upstream is modified
     njt_pool_t      *map_pool;           //used for map
 } njt_helper_health_check_conf_t;
