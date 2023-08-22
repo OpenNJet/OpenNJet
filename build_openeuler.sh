@@ -87,7 +87,7 @@ cdir=`cd $(dirname $0); pwd`
             conf*)
                  cd luajit;make; cd -;
                  cp luajit/src/libluajit.so luajit/src/libluajit-5.1.so
-                ./configure --with-openssl=auto/lib/tongsuo $flags --with-openssl-opt='--strict-warnings enable-ntls' --with-ntls --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
+                ./configure --with-openssl=auto/lib/tongsuo $flags --with-openssl-opt='enable-ntls' --with-ntls --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
                 ;;
             make)
                 make
