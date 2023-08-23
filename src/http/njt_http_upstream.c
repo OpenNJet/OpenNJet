@@ -646,11 +646,10 @@ njt_http_upstream_init_request(njt_http_request_t *r)
     if (r->request_body) {
         u->request_bufs = r->request_body->bufs;
     }
-	/*
     if (u->create_request(r) != NJT_OK) {
         njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
         return;
-    }*/
+    }
 
     if (njt_http_upstream_set_local(r, u, u->conf->local) != NJT_OK) {
         njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
@@ -1655,11 +1654,12 @@ njt_http_upstream_connect(njt_http_request_t *r, njt_http_upstream_t *u)
     }
 
     /* rc == NJT_OK || rc == NJT_AGAIN || rc == NJT_DONE */
-	
+	/*
     if (u->create_request(r) != NJT_OK) {
         njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
         return;
-    }
+    }*/
+
     c = u->peer.connection;
 
     c->requests++;
