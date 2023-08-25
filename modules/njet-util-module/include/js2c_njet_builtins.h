@@ -288,13 +288,13 @@ static inline njt_str_t* handle_escape_on_write(njt_pool_t *pool, njt_str_t *src
     char *cur = (char *)src->data;
     for (i = 0; i < src->len && need_convert == false; i++, cur++) {
         switch (*cur) {
-            case '"':  need_convert = true; break;
-            case '\\': need_convert = true; break;
+            case '"':  
+            case '\\': 
             // case '/':  need_convert = true; break;
-            case '\b':  need_convert = true; break;
-            case '\f':  need_convert = true; break;
-            case '\n':  need_convert = true; break;
-            case '\r':  need_convert = true; break;
+            case '\b':  
+            case '\f':  
+            case '\n':  
+            case '\r':  
             case '\t':  need_convert = true; break;
         default:
             break;
