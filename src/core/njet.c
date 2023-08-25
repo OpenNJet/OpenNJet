@@ -298,7 +298,9 @@ main(int argc, char *const *argv)
             njt_log_stderr(0, "configuration file %s test failed",
                            init_cycle.conf_file.data);
         }
-
+#if (NJT_DEBUG)
+	njt_destroy_pool(init_cycle.pool);
+#endif
         return 1;
     }
 
@@ -689,6 +691,9 @@ njt_exec_new_binary(njt_cycle_t *cycle, char *const *argv)
 
     ls = cycle->listening.elts;
     for (i = 0; i < cycle->listening.nelts; i++) {
+        if (ls[i].ignore) {
+            continue;
+        }
         p = njt_sprintf(p, "%ud;", ls[i].fd);
     }
 

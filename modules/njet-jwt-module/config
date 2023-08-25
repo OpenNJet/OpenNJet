@@ -1,0 +1,24 @@
+njt_addon_name=njt_http_auth_jwt_module
+CORE_INCS="$CORE_INCS $njt_addon_dir/include"
+njt_module_type=HTTP
+njt_module_name=njt_http_auth_jwt_module
+njt_module_srcs="$njt_addon_dir/src/njt_http_auth_jwt_module.c"
+
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/libjwt/base64.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/libjwt/jwt.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/libjwt/jwt-openssl.c"
+
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/jansson/dump.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/jansson/error.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/jansson/hashtable.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/jansson/hashtable_seed.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/jansson/load.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/jansson/memory.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/jansson/pack_unpack.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/jansson/strbuffer.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/jansson/strconv.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/jansson/utf.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/jansson/value.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/src/jansson/version.c"
+
+. auto/module

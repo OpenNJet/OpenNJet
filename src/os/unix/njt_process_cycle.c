@@ -691,9 +691,9 @@ njt_start_helper_processes(njt_cycle_t *cycle, njt_uint_t respawn)
                 njt_spawn_process(cycle, njt_helper_process_cycle,
                     &helpers[i], "copilot process",
                     respawn ? NJT_PROCESS_JUST_RESPAWN : NJT_PROCESS_RESPAWN, njt_helper_preprocess_cycle);
+                njt_pass_open_channel(cycle);
             }
 
-            njt_pass_open_channel(cycle);
 
             njt_master_init_mdb(cycle, "");
         }
@@ -807,9 +807,9 @@ njt_restart_helper_processes(njt_cycle_t *cycle, njt_uint_t respawn)
                 njt_spawn_process(cycle, njt_helper_process_cycle,
                             &helpers[i], "copilot process",
                             respawn ? NJT_PROCESS_JUST_RESPAWN : NJT_PROCESS_RESPAWN, njt_helper_preprocess_cycle);
+                njt_pass_open_channel(cycle);
             }
 
-            njt_pass_open_channel(cycle);
         }
         break;
     }

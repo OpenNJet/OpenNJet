@@ -25,6 +25,7 @@
 #define NJT_HTTP_VERSION_10                1000
 #define NJT_HTTP_VERSION_11                1001
 #define NJT_HTTP_VERSION_20                2000
+#define NJT_HTTP_VERSION_30                3000
 
 #define NJT_HTTP_UNKNOWN                   0x00000001
 #define NJT_HTTP_GET                       0x00000002
@@ -324,6 +325,10 @@ typedef struct {
 #endif
 #endif
 
+#if (NJT_HTTP_V3 || NJT_COMPAT)
+    njt_http_v3_session_t            *v3_session;
+#endif
+
     njt_chain_t                      *busy;
     njt_int_t                         nbusy;
 
@@ -463,6 +468,7 @@ struct njt_http_request_s {
 
     njt_http_connection_t            *http_connection;
     njt_http_v2_stream_t             *stream;
+    njt_http_v3_parse_t              *v3_parse;
 
     njt_http_log_handler_pt           log_handler;
 
@@ -555,6 +561,7 @@ struct njt_http_request_s {
     unsigned                          request_complete:1;
     unsigned                          request_output:1;
     unsigned                          header_sent:1;
+    unsigned                          response_sent:1;
     unsigned                          expect_tested:1;
     unsigned                          root_tested:1;
     unsigned                          done:1;
@@ -616,6 +623,13 @@ struct njt_http_request_s {
     unsigned                          used_ref;
 #endif
     //end
+
+    //add by clb
+#if (NJT_HTTP_FAULT_INJECT)
+      //used for fault inject of delay
+    njt_uint_t                        abort_flag;
+    njt_event_t                      *delay_timer;
+#endif
 };
 
 

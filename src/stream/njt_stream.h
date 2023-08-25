@@ -17,7 +17,6 @@
 #include <njt_stream_ssl_module.h>
 #endif
 
-
 typedef struct njt_stream_session_s  njt_stream_session_t;
 
 

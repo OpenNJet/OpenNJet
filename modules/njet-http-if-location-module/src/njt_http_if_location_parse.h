@@ -66,13 +66,8 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 12 "loc_parse.y"
-
   loc_parse_node_t *node;
   loc_exp_t *loc_exp;
-
-#line 75 "njt_http_if_location_parse.h"
-
 };
 typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1

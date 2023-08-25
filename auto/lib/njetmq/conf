@@ -24,6 +24,7 @@ case "$CC" in
         CORE_LIBS="$CORE_LIBS $NJETMQ/build/njetmq/libnjetmq.a"
         CORE_LIBS="$CORE_LIBS $NJT_LIBDL"
         CORE_LIBS="$CORE_LIBS $NJT_LIBPTHREAD"
+        CORE_LIBS="$CORE_LIBS -lm"
 
         if [ "$NJT_PLATFORM" = win32 ]; then
             CORE_LIBS="$CORE_LIBS -lnjetmq"
