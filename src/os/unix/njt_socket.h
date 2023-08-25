@@ -14,6 +14,8 @@
 
 
 #define NJT_WRITE_SHUTDOWN SHUT_WR
+#define NJT_READ_SHUTDOWN  SHUT_RD
+#define NJT_RDWR_SHUTDOWN  SHUT_RDWR
 
 typedef int  njt_socket_t;
 

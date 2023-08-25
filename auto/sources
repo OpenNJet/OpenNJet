@@ -89,7 +89,7 @@ CORE_SRCS="src/core/njet.c \
 
 EVENT_MODULES="njt_events_module njt_event_core_module"
 
-EVENT_INCS="src/event src/event/modules"
+EVENT_INCS="src/event src/event/modules src/event/quic"
 
 EVENT_DEPS="src/event/njt_event.h \
             src/event/njt_event_timer.h \

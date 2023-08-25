@@ -2,7 +2,7 @@
 
 # libtool - Provide generalized library-building support services.
 # Generated automatically by config.status (keepalived) 2.2.4
-# Libtool was configured on host 4166a28d786a:
+# Libtool was configured on host srv-sccmtest.digitalchina.com:
 # NOTE: Changes made to this file will be lost: look at ltmain.sh.
 #
 #   Copyright (C) 1996, 1997, 1998, 1999, 2000, 2001, 2003, 2004, 2005,
@@ -275,7 +275,7 @@ hardcode_into_libs=yes
 sys_lib_search_path_spec="/opt/rh/devtoolset-8/root/usr/lib/gcc/x86_64-redhat-linux/8 /opt/rh/devtoolset-8/root/usr/lib64 /lib64 /usr/lib64 "
 
 # Run-time system search path for libraries.
-sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib /usr/lib64/dyninst /usr/local/lib "
+sys_lib_dlsearch_path_spec="/lib64 /usr/lib64 /lib /usr/lib /usr/lib64//bind9-export/ /usr/lib64/dyninst /usr/lib64/iscsi /usr/lib64/mysql /usr/local/lib "
 
 # Whether dlopen is supported.
 dlopen_support=unknown

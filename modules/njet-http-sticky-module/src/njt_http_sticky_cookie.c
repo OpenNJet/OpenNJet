@@ -3,6 +3,7 @@
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
+
 #include "njt_http_sticky_cookie.h"
 
 static njt_int_t cookie_expires(char *str, size_t size, time_t t);

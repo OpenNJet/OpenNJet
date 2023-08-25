@@ -211,7 +211,7 @@ njt_regex_compile(njt_regex_compile_t *rc)
 
         elt->regex = rc->regex;
         elt->name = rc->pattern.data;
-	elt->dynamic = rc->pool.dynamic;
+	elt->dynamic = rc->pool->dynamic;
     }
 
     n = pcre2_pattern_info(re, PCRE2_INFO_CAPTURECOUNT, &rc->captures);
