@@ -980,11 +980,7 @@ njt_http_init_static_location_trees_common(njt_conf_t *cf,njt_http_core_loc_conf
 njt_int_t
 njt_http_init_static_location_trees(njt_conf_t *cf,
                                     njt_http_core_loc_conf_t *pclcf) {
-    if(cf->dynamic == 1) {
     	return njt_http_init_static_location_trees_common(cf,pclcf,pclcf->locations,&pclcf->static_locations);
-    } else {
-    	return njt_http_init_static_location_trees_common(cf,pclcf,pclcf->locations,&pclcf->static_locations);
-    }
 }
 //add by clb
 njt_int_t
