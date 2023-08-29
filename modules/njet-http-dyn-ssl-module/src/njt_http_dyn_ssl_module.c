@@ -111,7 +111,10 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
         if(cert->certificateKeyEnc.len > 0){
             njt_crc32_update(&crc32, cert->certificateKeyEnc.data, cert->certificateKeyEnc.len);
         }
+    }else if(cert->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_REGULAR){
+        njt_crc32_update(&crc32, (u_char*)"regular", 7);
     }else{
+        // njt_crc32_update(&crc32, (u_char*)"ecc", 3);
         njt_crc32_update(&crc32, (u_char*)"regular", 7);
     }
     njt_crc32_final(crc32);
@@ -372,6 +375,8 @@ static int  njt_http_ssl_update_handler(njt_str_t *key, njt_str_t *value, void *
     njt_pool_t                          *pool = NULL;
     njt_rpc_result_t                    *rpc_result = NULL;
     js2c_parse_error_t                  err_info;
+    njt_str_t                           worker_str = njt_string("/worker_0");
+    njt_str_t                           new_key;
 
 
     rpc_result = njt_rpc_result_create();
@@ -436,12 +441,11 @@ static int  njt_http_ssl_update_handler(njt_str_t *key, njt_str_t *value, void *
             njt_rpc_result_set_msg(rpc_result, (u_char *)" dyn ssl update fail");
         }
     }else{
-        // if(key->len > worker_str.len && njt_strncmp(key->data,worker_str.data,worker_str.len) == 0) {
-        // 	new_key.data = key->data + worker_str.len;
-        // 	new_key.len  = key->len - worker_str.len;
-        // 	njt_kv_sendmsg(&new_key,value,1);
-        // }
-        // njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V",key,value);
+        if(key->len > worker_str.len && njt_strncmp(key->data,worker_str.data,worker_str.len) == 0) {
+        	new_key.data = key->data + worker_str.len;
+        	new_key.len  = key->len - worker_str.len;
+        	njt_kv_sendmsg(&new_key,value,1);
+        }
 
         if(rpc_result->data != NULL && rpc_result->data->nelts > 0){
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);

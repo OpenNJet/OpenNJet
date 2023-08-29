@@ -632,6 +632,8 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     js2c_parse_error_t                  err_info;
     njt_str_t                           *serverName;
     njt_str_t                           *listen_str;
+    njt_str_t                           *port;
+    njt_str_t                           *serverName;
     
 
     rpc_result = njt_rpc_result_create();
@@ -696,20 +698,6 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     }
 
 	njt_crc32_init(crc32);
-	njt_crc32_update(&crc32, api_data->cert_info->certificate.data,api_data->cert_info->certificate.len);
-    njt_crc32_update(&crc32, api_data->cert_info->certificateKey.data,api_data->cert_info->certificateKey.len);
-    if(api_data->cert_info->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS){
-        njt_crc32_update(&crc32, (u_char*)"ntls", 4);
-        if(api_data->cert_info->certificateEnc.len > 0){
-            njt_crc32_update(&crc32, api_data->cert_info->certificateEnc.data, api_data->cert_info->certificateEnc.len);
-        }
-        if(api_data->cert_info->certificateKeyEnc.len > 0){
-            njt_crc32_update(&crc32, api_data->cert_info->certificateKeyEnc.data, api_data->cert_info->certificateKeyEnc.len);
-        }
-    }else{
-        njt_crc32_update(&crc32, (u_char *)"regular", 7);
-    }
-
 	for (i = 0; i < api_data->serverNames->nelts; i++){
         serverName = get_dyn_ssl_api_serverNames_item(api_data->serverNames, i);
         if(serverName->len > 0){
@@ -723,6 +711,21 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
             njt_crc32_update(&crc32, listen_str->data, listen_str->len);
         }
 	}
+
+    if(api_data->cert_info->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS){
+        njt_crc32_update(&crc32, (u_char*)"ntls", 4);
+    }else if(api_data->cert_info->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_REGULAR){
+        njt_crc32_update(&crc32, (u_char *)"regular", 7);
+    }else{
+        // njt_crc32_update(&crc32, (u_char *)"ecc", 7);
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, pool->log, 0,
+                "cert or cert key is empty in function %s", __func__);
+        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
+        njt_rpc_result_set_msg(rpc_result, (u_char *)" cert type only ntls or regular");
+        rc = NJT_ERROR;
+ 
+        goto err;
+    }
 
 	njt_crc32_final(crc32);
 
@@ -756,7 +759,7 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
         goto out;
 	} else {
 		// p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/ssl/l_%ui",crc32);
-        p = njt_snprintf(topic_name.data,topic_len,"/ins/ssl/l_%ui",crc32);
+        p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/ssl/l_%ui",crc32);
 	}
 
 	topic_name.len = p - topic_name.data;
