@@ -1715,11 +1715,11 @@ definitions:
   NjetStreamUpstreamMap:
     title: Stream Upstreams
     description: Status information of stream upstream server groups.
-    type: object
-    additionalProperties:
+    type: array
+    items:
       $ref: '#/definitions/NjetStreamUpstream'
     example:
-      mysql_backends:
+      - name: mysql_backends
         peers:
           - id: 0
             server: 10.0.0.1:12345
@@ -1777,7 +1777,7 @@ definitions:
             selected: 2022-06-28T15:01:25Z
         zombies: 0
         zone: mysql_backends
-      dns:
+      - name: dns
         peers:
           - id: 0
             server: 10.0.0.1:12347
@@ -1839,6 +1839,9 @@ definitions:
     title: Stream Upstream
     type: object
     properties:
+      name:
+       type: string
+       description: The name of the upstream
       peers:
         $ref: '#/definitions/NjetStreamUpstreamPeerMap'
       zombies:
@@ -1851,7 +1854,7 @@ definitions:
           <a href="https://njet.org/en/docs/stream/njt_stream_upstream_module.html#zone">zone</a>
           that keeps the group¡¯s configuration and run-time state.
     example:
-      dns:
+        name: dns
         peers:
           - id: 0
             server: 10.0.0.1:12347
