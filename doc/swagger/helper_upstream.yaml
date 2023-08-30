@@ -901,11 +901,11 @@ definitions:
       Status information of all HTTP
       <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#zone">dynamically configurable</a>
       <a href="https://njet.org/en/docs/http/njt_http_upstream_module.html#upstream">groups</a>.
-    type: object
-    additionalProperties:
+    type: array
+    items:
       $ref: '#/definitions/NjetHTTPUpstream'
     example:
-      trac-backend:
+      - name: trac-backend
         peers:
           - id: 0
             server: 10.0.0.1:8088
@@ -983,7 +983,7 @@ definitions:
         keepalive: 0
         zombies: 0
         zone: trac-backend
-      hg-backend:
+      - name: hg-backend
         peers:
           - id: 0
             server: 10.0.0.1:8088
@@ -1065,6 +1065,9 @@ definitions:
     title: HTTP Upstream
     type: object
     properties:
+      name:
+        type: string
+        description: The name of upstream
       peers:
         $ref: '#/definitions/NjetHTTPUpstreamPeerMap'
       keepalive:
@@ -1099,7 +1102,7 @@ definitions:
             type: integer
             description: The total number of requests rejected due to the queue overflow.
     example:
-      upstream_backend:
+        name: upstream_backend
         peers:
           - id: 0
             server: 10.0.0.1:8088
