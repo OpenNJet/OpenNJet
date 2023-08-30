@@ -2,6 +2,7 @@
  * MIT License
  *
  * Copyright (c) 2010 Serge Zaitsev
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +51,18 @@ typedef enum {
   JSMN_STRING = 3,
   JSMN_PRIMITIVE = 4
 } jsmntype_t;
+
+typedef enum {
+  JSMN_LAST_UNDEFINED = 0,
+  JSMN_LAST_OBJECT_START = 1,
+  JSMN_LAST_ARRAY_START = 2,
+  JSMN_LAST_STRING = 3,
+  JSMN_LAST_PRIMITIVE = 4,
+  JSMN_LAST_COMMA = 5,
+  JSMN_LAST_COLON = 6,
+  JSMN_LAST_OBJECT_END = 7,
+  JSMN_LAST_ARRAY_END = 8,
+} last_jsmntype_t;
 
 enum jsmnerr {
   /* Not enough tokens were provided */
@@ -271,6 +284,8 @@ JSMN_API int jsmn_parse(jsmn_parser *parser, const char *js, const size_t len,
   int i;
   jsmntok_t *token;
   int count = parser->toknext;
+  int seen_colon = 0;
+  last_jsmntype_t last_seen = JSMN_LAST_UNDEFINED;
 
   for (; parser->pos < len && js[parser->pos] != '\0'; parser->pos++) {
     char c;
@@ -302,6 +317,21 @@ JSMN_API int jsmn_parse(jsmn_parser *parser, const char *js, const size_t len,
 #endif
       }
       token->type = (c == '{' ? JSMN_OBJECT : JSMN_ARRAY);
+      switch (last_seen)
+      {
+      case JSMN_LAST_OBJECT_START:
+      case JSMN_LAST_ARRAY_END:
+      case JSMN_LAST_OBJECT_END:
+      case JSMN_LAST_STRING:
+      case JSMN_LAST_PRIMITIVE:
+        return JSMN_ERROR_INVAL;
+        break;
+      
+      default:
+        break;
+      }
+      last_seen =  (c == '{' ? JSMN_LAST_OBJECT_START : JSMN_LAST_ARRAY_START);
+      seen_colon = 0;
       token->start = parser->pos;
       parser->toksuper = parser->toknext - 1;
       break;
@@ -310,7 +340,26 @@ JSMN_API int jsmn_parse(jsmn_parser *parser, const char *js, const size_t len,
       if (tokens == NULL) {
         break;
       }
+      // if (last_is_comma) {
+      //   return JSMN_ERROR_INVAL; 
+      // }
       type = (c == '}' ? JSMN_OBJECT : JSMN_ARRAY);
+      switch (last_seen)
+      {
+      case JSMN_LAST_COLON:
+      case JSMN_LAST_COMMA:
+      case JSMN_LAST_UNDEFINED:
+        return JSMN_ERROR_INVAL;
+        break;
+      
+      default:
+        break;
+      }
+      last_seen =  (c == '}' ? JSMN_LAST_OBJECT_END : JSMN_LAST_ARRAY_END);
+      if (last_seen == JSMN_LAST_ARRAY_END && seen_colon) {
+        return JSMN_ERROR_INVAL;
+      }
+      seen_colon = 0;
 #ifdef JSMN_PARENT_LINKS
       if (parser->toknext < 1) {
         return JSMN_ERROR_INVAL;
@@ -363,6 +412,21 @@ JSMN_API int jsmn_parse(jsmn_parser *parser, const char *js, const size_t len,
       if (r < 0) {
         return r;
       }
+      
+      switch (last_seen)
+      {
+      case JSMN_LAST_ARRAY_END:
+      case JSMN_LAST_OBJECT_END:
+      case JSMN_LAST_STRING:
+      case JSMN_LAST_PRIMITIVE:
+      case JSMN_LAST_UNDEFINED:
+        return JSMN_ERROR_INVAL;
+        break;
+      
+      default:
+        break;
+      }
+      last_seen = JSMN_LAST_STRING;
       count++;
       if (parser->toksuper != -1 && tokens != NULL) {
         tokens[parser->toksuper].size++;
@@ -374,9 +438,34 @@ JSMN_API int jsmn_parse(jsmn_parser *parser, const char *js, const size_t len,
     case ' ':
       break;
     case ':':
+      switch (last_seen)
+      {
+      case JSMN_LAST_STRING:
+        break;
+      
+      default:
+        return JSMN_ERROR_INVAL;
+        break;
+      }
+      last_seen = JSMN_LAST_COLON;
+      seen_colon = 1;
       parser->toksuper = parser->toknext - 1;
       break;
     case ',':
+      switch (last_seen)
+      {
+      case JSMN_LAST_ARRAY_START:
+      case JSMN_LAST_OBJECT_START:
+      case JSMN_LAST_COLON:
+      case JSMN_LAST_COMMA:
+      case JSMN_LAST_UNDEFINED:
+        return JSMN_ERROR_INVAL;
+        break;
+      
+      default:
+        break;
+      }
+      last_seen = JSMN_LAST_COLON;
       if (tokens != NULL && parser->toksuper != -1 &&
           tokens[parser->toksuper].type != JSMN_ARRAY &&
           tokens[parser->toksuper].type != JSMN_OBJECT) {
@@ -422,6 +511,18 @@ JSMN_API int jsmn_parse(jsmn_parser *parser, const char *js, const size_t len,
     /* In non-strict mode every unquoted value is a primitive */
     default:
 #endif
+      switch (last_seen)
+      {
+      case JSMN_LAST_COLON:
+      case JSMN_LAST_COMMA:
+      case JSMN_LAST_ARRAY_START:
+        break;
+      
+      default:
+        return JSMN_ERROR_INVAL;
+        break;
+      }
+      last_seen = JSMN_LAST_PRIMITIVE;
       r = jsmn_parse_primitive(parser, js, len, tokens, num_tokens);
       if (r < 0) {
         return r;

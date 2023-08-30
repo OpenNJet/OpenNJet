@@ -32,9 +32,6 @@ static int njt_ssl_new_client_session(njt_ssl_conn_t *ssl_conn,
 #ifdef SSL_READ_EARLY_DATA_SUCCESS
 static njt_int_t njt_ssl_try_early_data(njt_connection_t *c);
 #endif
-#if (NJT_DEBUG)
-static void njt_ssl_handshake_log(njt_connection_t *c);
-#endif
 static void njt_ssl_handshake_handler(njt_event_t *ev);
 #ifdef SSL_READ_EARLY_DATA_SUCCESS
 static ssize_t njt_ssl_recv_early(njt_connection_t *c, u_char *buf,
@@ -2180,7 +2177,7 @@ njt_ssl_try_early_data(njt_connection_t *c)
 
 #if (NJT_DEBUG)
 
-static void
+void
 njt_ssl_handshake_log(njt_connection_t *c)
 {
     char         buf[129], *s, *d;
@@ -3324,6 +3321,13 @@ njt_ssl_shutdown(njt_connection_t *c)
     njt_int_t   rc;
     njt_err_t   err;
     njt_uint_t  tries;
+
+#if (NJT_QUIC)
+    if (c->quic) {
+        /* QUIC streams inherit SSL object */
+        return NJT_OK;
+    }
+#endif
 
     rc = NJT_OK;
 

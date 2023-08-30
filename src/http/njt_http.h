@@ -21,6 +21,8 @@ typedef struct njt_http_file_cache_s  njt_http_file_cache_t;
 typedef struct njt_http_log_ctx_s     njt_http_log_ctx_t;
 typedef struct njt_http_chunked_s     njt_http_chunked_t;
 typedef struct njt_http_v2_stream_s   njt_http_v2_stream_t;
+typedef struct njt_http_v3_parse_s    njt_http_v3_parse_t;
+typedef struct njt_http_v3_session_s  njt_http_v3_session_t;
 
 typedef njt_int_t (*njt_http_header_handler_pt)(njt_http_request_t *r,
     njt_table_elt_t *h, njt_uint_t offset);
@@ -38,6 +40,9 @@ typedef u_char *(*njt_http_log_handler_pt)(njt_http_request_t *r,
 
 #if (NJT_HTTP_V2)
 #include <njt_http_v2.h>
+#endif
+#if (NJT_HTTP_V3)
+#include <njt_http_v3.h>
 #endif
 #if (NJT_HTTP_CACHE)
 #include <njt_http_cache.h>
@@ -148,6 +153,11 @@ void njt_http_handler(njt_http_request_t *r);
 void njt_http_run_posted_requests(njt_connection_t *c);
 njt_int_t njt_http_post_request(njt_http_request_t *r,
     njt_http_posted_request_t *pr);
+njt_int_t njt_http_set_virtual_server(njt_http_request_t *r,
+    njt_str_t *host);
+njt_int_t njt_http_validate_host(njt_str_t *host, njt_pool_t *pool,
+    njt_uint_t alloc);
+void njt_http_close_request(njt_http_request_t *r, njt_int_t rc);
 void njt_http_finalize_request(njt_http_request_t *r, njt_int_t rc);
 void njt_http_free_request(njt_http_request_t *r, njt_int_t rc);
 
@@ -196,7 +206,7 @@ njt_uint_t  njt_http_degraded(njt_http_request_t *);
 #endif
 
 
-#if (NJT_HTTP_V2)
+#if (NJT_HTTP_V2 || NJT_HTTP_V3)
 njt_int_t njt_http_huff_decode(u_char *state, u_char *src, size_t len,
     u_char **dst, njt_uint_t last, njt_log_t *log);
 size_t njt_http_huff_encode(u_char *src, size_t len, u_char *dst,

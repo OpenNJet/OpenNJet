@@ -2256,7 +2256,7 @@ static void get_json_length_upstream_list_upstreamDef_zone(njt_pool_t *pool, ups
     *length += dst->len + 2; //  "str" 
 }
 
- void get_json_length_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, size_t *length, njt_int_t flags) {
+void get_json_length_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;

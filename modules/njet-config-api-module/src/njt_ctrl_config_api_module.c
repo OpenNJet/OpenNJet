@@ -234,7 +234,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     njt_ctrl_dynlog_request_err_ctx_t *err_ctx;
     njt_array_t *path;
     njt_str_t *uri,topic;
-    njt_json_manager json_manager;
+    // njt_json_manager json_manager;
     rc = NJT_ERROR;
     path = njt_array_create( r->pool, 4, sizeof(njt_str_t));
     if (path == NULL) {
@@ -258,19 +258,20 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
         goto err;
     }
 
-    // 添加json_str校验逻辑
-    rc = njt_json_2_structure(&json_str,&json_manager,r->pool);
-    if(rc!=NJT_OK){
-        goto err;
-    }
-
-    njt_str_t  key_prf = njt_string("/dyn/");
-    njt_str_concat(r->pool,topic,key_prf,uri[2],return );
+    // // 添加json_str校验逻辑
+    // rc = njt_json_2_structure(&json_str,&json_manager,r->pool);
+    // if(rc!=NJT_OK){
+    //     goto err;
+    // }
 
     if(uri[0].data[0] == '1'){
+        njt_str_t  key_prf_1 = njt_string("/dyn/");
+        njt_str_concat(r->pool,topic,key_prf_1,uri[2],return );
         rc = njt_dyn_sendmsg(&topic,&json_str,1);
     } else if(uri[0].data[0] == '2') {
-        rc = njt_ctrl_dynlog_rpc_send(r,&topic,&json_str, 1);
+        njt_str_t  key_prf_2 = njt_string("/worker_0/dyn/");
+        njt_str_concat(r->pool,topic,key_prf_2,uri[2],return );
+        rc = njt_ctrl_dynlog_rpc_send(r,&topic,&json_str, 0);
     } else {
         rc = NJT_HTTP_NOT_FOUND;
     }

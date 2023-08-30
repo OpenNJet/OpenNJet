@@ -938,28 +938,25 @@ YY_RULE_SETUP
         closed = 1;
     } else {
         --paren_count;
-        printf("Parenthese count is %d\n", paren_count);
         if (paren_count == 0) { 
-            printf("Outermost Closing Parenthesis\n"); 
             yyless(0);
         }
         return ')';
     }
-    printf("closed = %d\n", closed);
 };
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-{ printf("OR \n"); return OR; };
+{ return OR; };
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-{ printf("AND \n"); return AND; };
+{ return AND; };
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
 { 
-    printf("IN_STR \n"); BEGIN(in_str);
+    BEGIN(in_str);
     string_buf_ptr = _parsed_buf;
     char *yptr = yytext; while ( *yptr ) { *string_buf_ptr++ = *yptr++; };
 };
@@ -969,7 +966,6 @@ YY_RULE_SETUP
 {
     inside_paren_count++ ;
     *string_buf_ptr++ ='(';
-    printf("inside_paren_count: %d\n", inside_paren_count);
 };
 	YY_BREAK
 case 7:
@@ -978,7 +974,6 @@ YY_RULE_SETUP
     if (inside_paren_count == 0) {
         BEGIN(INITIAL);
         *string_buf_ptr ='\0';
-        printf("loc_exp: %s \n", _parsed_buf);
         yylval.loc_exp = new_loc_exp(strdup(_parsed_buf), idx++);
         inside_paren_count = 0;
         yyless(0); // reparse the ')', from the INITIAL start condition
@@ -986,7 +981,6 @@ YY_RULE_SETUP
     } else {
          inside_paren_count--;
          *string_buf_ptr++ =')';
-         printf("inside_paren_count: %d\n", inside_paren_count);
     }
 };
 	YY_BREAK
@@ -995,13 +989,11 @@ YY_RULE_SETUP
 { /* left part of bool op finished */
     if (inside_paren_count == 0) {
         *string_buf_ptr ='\0';
-        printf("loc_exp: %s \n", _parsed_buf);
         BEGIN(INITIAL);
         yylval.loc_exp = new_loc_exp(strdup(_parsed_buf), idx++);
         yyless(0);
         return LOC_EXP;
     } else {
-        printf("inside_paren_count: %d\n", inside_paren_count);
         printf("loc_exp: %s \n", _parsed_buf);
         yyerror(NULL, "mismatch parenthese in exp");
         return ERROR;

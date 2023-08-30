@@ -589,7 +589,17 @@ njt_http_lua_ffi_max_regex_cache_size(void)
 const char *
 njt_http_lua_ffi_pcre_version(void)
 {
+//  make campatable for both pcre and pcre2
+#if (NJT_PCRE2)
+    static char version[20];
+    if (pcre2_config(PCRE2_CONFIG_VERSION, version ) >= 0) {
+        return version;
+    }
+    else
+        return "pcre2-8";
+#else
     return pcre_version();
+#endif
 }
 
 

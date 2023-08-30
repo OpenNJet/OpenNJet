@@ -9,62 +9,34 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
-
-
-typedef struct {
-    njt_uint_t                  hash_max_size;
-    njt_uint_t                  hash_bucket_size;
-} njt_http_map_conf_t;
-
-
-typedef struct {
-    njt_hash_keys_arrays_t      keys;
-
-    njt_array_t                *values_hash;
-#if (NJT_PCRE)
-    njt_array_t                 regexes;
-#endif
-
-    njt_http_variable_value_t  *default_value;
-    njt_conf_t                 *cf;
-    unsigned                    hostnames:1;
-    unsigned                    no_cacheable:1;
-} njt_http_map_conf_ctx_t;
-
-
-typedef struct {
-    njt_http_map_t              map;
-    njt_http_complex_value_t    value;
-    njt_http_variable_value_t  *default_value;
-    njt_uint_t                  hostnames;      /* unsigned  hostnames:1 */
-} njt_http_map_ctx_t;
-
+#include <njt_http_dyn_module.h>
 
 static int njt_libc_cdecl njt_http_map_cmp_dns_wildcards(const void *one,
     const void *two);
 static void *njt_http_map_create_conf(njt_conf_t *cf);
 static char *njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static char *njt_http_map(njt_conf_t *cf, njt_command_t *dummy, void *conf);
-
+static njt_int_t njt_http_map_init_worker(njt_cycle_t *cycle);
+static void njt_http_map_exit_worker(njt_cycle_t *cycle);
 
 static njt_command_t  njt_http_map_commands[] = {
 
     { njt_string("map"),
-      NJT_HTTP_MAIN_CONF|NJT_CONF_BLOCK|NJT_CONF_TAKE2,
+      NJT_HTTP_MAIN_CONF | NJT_CONF_BLOCK | NJT_CONF_TAKE2,
       njt_http_map_block,
       NJT_HTTP_MAIN_CONF_OFFSET,
       0,
       NULL },
 
     { njt_string("map_hash_max_size"),
-      NJT_HTTP_MAIN_CONF|NJT_CONF_TAKE1,
+      NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE1,
       njt_conf_set_num_slot,
       NJT_HTTP_MAIN_CONF_OFFSET,
       offsetof(njt_http_map_conf_t, hash_max_size),
       NULL },
 
     { njt_string("map_hash_bucket_size"),
-      NJT_HTTP_MAIN_CONF|NJT_CONF_TAKE1,
+      NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE1,
       njt_conf_set_num_slot,
       NJT_HTTP_MAIN_CONF_OFFSET,
       offsetof(njt_http_map_conf_t, hash_bucket_size),
@@ -96,27 +68,65 @@ njt_module_t  njt_http_map_module = {
     NJT_HTTP_MODULE,                       /* module type */
     NULL,                                  /* init master */
     NULL,                                  /* init module */
-    NULL,                                  /* init process */
+    njt_http_map_init_worker,              /* init process */
     NULL,                                  /* init thread */
     NULL,                                  /* exit thread */
-    NULL,                                  /* exit process */
-    NULL,                                  /* exit master */
+    njt_http_map_exit_worker,              /* exit process */
+    NULL,                                 /* exit master */
     NJT_MODULE_V1_PADDING
 };
 
+static njt_int_t njt_http_map_init_worker(njt_cycle_t *cycle)
+{
+#if NJT_HTTP_DYN_MAP_MODULE
+    njt_uint_t i;
+    njt_http_map_conf_t *mcf;
+    if (njt_process != NJT_PROCESS_WORKER) {
+        return NJT_OK;
+    }
+    mcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_map_module);
+    if (mcf == NULL) {
+        return NJT_OK;
+    }
+    njt_http_map_var_hash_t *item = mcf->var_hash_items->elts;
+    njt_http_map_var_hash_t *old_var_hash_item;
+    for (i = 0;i < mcf->var_hash_items->nelts;i++) {
+        njt_lvlhsh_map_put(&mcf->var_hash, &item[i].name, (intptr_t)&item[i], (intptr_t *)&old_var_hash_item);
+    }
+    return NJT_OK;
+#else 
+    return NJT_OK;
+#endif
+}
+
+static void njt_http_map_exit_worker(njt_cycle_t *cycle)
+{
+#if NJT_HTTP_DYN_MAP_MODULE
+    njt_uint_t i;
+    njt_http_map_conf_t *mcf;
+    mcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_map_module);
+    if (mcf == NULL) {
+        return;
+    }
+    njt_http_map_var_hash_t *item = mcf->var_hash_items->elts;
+    for (i = 0;i < mcf->var_hash_items->nelts;i++) {
+        njt_lvlhsh_map_remove(&mcf->var_hash, &item[i].name);
+    }
+#endif
+}
 
 static njt_int_t
 njt_http_map_variable(njt_http_request_t *r, njt_http_variable_value_t *v,
     uintptr_t data)
 {
-    njt_http_map_ctx_t  *map = (njt_http_map_ctx_t *) data;
+    njt_http_map_ctx_t *map = (njt_http_map_ctx_t *)data;
 
     njt_str_t                   val, str;
-    njt_http_complex_value_t   *cv;
-    njt_http_variable_value_t  *value;
+    njt_http_complex_value_t *cv;
+    njt_http_variable_value_t *value;
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "http map started");
+        "http map started");
 
     if (njt_http_complex_value(r, &map->value, &val) != NJT_OK) {
         return NJT_ERROR;
@@ -133,7 +143,7 @@ njt_http_map_variable(njt_http_request_t *r, njt_http_variable_value_t *v,
     }
 
     if (!value->valid) {
-        cv = (njt_http_complex_value_t *) value->data;
+        cv = (njt_http_complex_value_t *)value->data;
 
         if (njt_http_complex_value(r, cv, &str) != NJT_OK) {
             return NJT_ERROR;
@@ -150,7 +160,7 @@ njt_http_map_variable(njt_http_request_t *r, njt_http_variable_value_t *v,
     }
 
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "http map: \"%V\" \"%v\"", &val, v);
+        "http map: \"%V\" \"%v\"", &val, v);
 
     return NJT_OK;
 }
@@ -159,34 +169,112 @@ njt_http_map_variable(njt_http_request_t *r, njt_http_variable_value_t *v,
 static void *
 njt_http_map_create_conf(njt_conf_t *cf)
 {
-    njt_http_map_conf_t  *mcf;
+    njt_http_map_conf_t *mcf;
 
-    mcf = njt_palloc(cf->pool, sizeof(njt_http_map_conf_t));
+    mcf = njt_pcalloc(cf->pool, sizeof(njt_http_map_conf_t));
     if (mcf == NULL) {
         return NULL;
     }
 
     mcf->hash_max_size = NJT_CONF_UNSET_UINT;
     mcf->hash_bucket_size = NJT_CONF_UNSET_UINT;
+#if NJT_HTTP_DYN_MAP_MODULE
+    mcf->var_hash_items = njt_array_create(cf->pool, 4, sizeof(njt_http_map_var_hash_t));
+    if (mcf->var_hash_items == NULL) {
+        return NULL;
+    }
+#endif
 
     return mcf;
 }
 
+njt_int_t
+njt_http_map_create_hash_from_ctx(njt_http_map_conf_t *mcf, njt_http_map_ctx_t *map, njt_http_map_conf_ctx_t *p_ctx, njt_pool_t *pool, njt_pool_t *temp_pool)
+{
+    njt_hash_init_t                    hash;
+    njt_http_map_conf_ctx_t  ctx = *p_ctx;
+    map->default_value = ctx.default_value ? ctx.default_value :
+        &njt_http_variable_null_value;
+
+    map->hostnames = ctx.hostnames;
+
+    hash.key = njt_hash_key_lc;
+    hash.max_size = mcf->hash_max_size;
+    hash.bucket_size = mcf->hash_bucket_size;
+    hash.name = "map_hash";
+    hash.pool = pool;
+
+    if (ctx.keys.keys.nelts) {
+        hash.hash = &map->map.hash.hash;
+        hash.temp_pool = NULL;
+
+        if (njt_hash_init(&hash, ctx.keys.keys.elts, ctx.keys.keys.nelts)
+            != NJT_OK) {
+            return NJT_ERROR;
+        }
+    }
+
+    if (ctx.keys.dns_wc_head.nelts) {
+
+        njt_qsort(ctx.keys.dns_wc_head.elts,
+            (size_t)ctx.keys.dns_wc_head.nelts,
+            sizeof(njt_hash_key_t), njt_http_map_cmp_dns_wildcards);
+
+        hash.hash = NULL;
+        hash.temp_pool = temp_pool;
+
+        if (njt_hash_wildcard_init(&hash, ctx.keys.dns_wc_head.elts,
+            ctx.keys.dns_wc_head.nelts)
+            != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        map->map.hash.wc_head = (njt_hash_wildcard_t *)hash.hash;
+    }
+
+    if (ctx.keys.dns_wc_tail.nelts) {
+
+        njt_qsort(ctx.keys.dns_wc_tail.elts,
+            (size_t)ctx.keys.dns_wc_tail.nelts,
+            sizeof(njt_hash_key_t), njt_http_map_cmp_dns_wildcards);
+
+        hash.hash = NULL;
+        hash.temp_pool = temp_pool;
+
+        if (njt_hash_wildcard_init(&hash, ctx.keys.dns_wc_tail.elts,
+            ctx.keys.dns_wc_tail.nelts)
+            != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        map->map.hash.wc_tail = (njt_hash_wildcard_t *)hash.hash;
+    }
+
+#if (NJT_PCRE)
+
+    if (ctx.regexes.nelts) {
+        map->map.regex = ctx.regexes.elts;
+        map->map.nregex = ctx.regexes.nelts;
+    }
+
+#endif
+    return NJT_OK;
+}
 
 static char *
 njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
-    njt_http_map_conf_t  *mcf = conf;
+    njt_http_map_conf_t *mcf = conf;
 
-    char                              *rv;
-    njt_str_t                         *value, name;
+    char *rv;
+    njt_str_t *value, name;
     njt_conf_t                         save;
-    njt_pool_t                        *pool;
-    njt_hash_init_t                    hash;
-    njt_http_map_ctx_t                *map;
-    njt_http_variable_t               *var;
+    njt_pool_t *pool;
+    njt_http_map_ctx_t *map;
+    njt_http_variable_t *var;
     njt_http_map_conf_ctx_t            ctx;
     njt_http_compile_complex_value_t   ccv;
+    njt_int_t rc;
 
     if (mcf->hash_max_size == NJT_CONF_UNSET_UINT) {
         mcf->hash_max_size = 2048;
@@ -197,7 +285,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     } else {
         mcf->hash_bucket_size = njt_align(mcf->hash_bucket_size,
-                                          njt_cacheline_size);
+            njt_cacheline_size);
     }
 
     map = njt_pcalloc(cf->pool, sizeof(njt_http_map_ctx_t));
@@ -221,7 +309,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     if (name.data[0] != '$') {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "invalid variable name \"%V\"", &name);
+            "invalid variable name \"%V\"", &name);
         return NJT_CONF_ERROR;
     }
 
@@ -234,7 +322,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     var->get_handler = njt_http_map_variable;
-    var->data = (uintptr_t) map;
+    var->data = (uintptr_t)map;
 
     pool = njt_create_pool(NJT_DEFAULT_POOL_SIZE, cf->log);
     if (pool == NULL) {
@@ -243,6 +331,13 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     ctx.keys.pool = cf->pool;
     ctx.keys.temp_pool = pool;
+#if NJT_HTTP_DYN_MAP_MODULE
+    ctx.ori_conf = njt_array_create(cf->pool, 10, sizeof(njt_http_map_ori_conf_item_t));
+    if (ctx.ori_conf == NULL) {
+        njt_conf_log_error(NJT_LOG_ERR, cf, 0, "malloc error in http map for ctx.ori_conf ");
+        return NJT_CONF_ERROR;
+    }
+#endif
 
     if (njt_hash_keys_array_init(&ctx.keys, NJT_HASH_LARGE) != NJT_OK) {
         njt_destroy_pool(pool);
@@ -257,8 +352,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
 #if (NJT_PCRE)
     if (njt_array_init(&ctx.regexes, cf->pool, 2, sizeof(njt_http_map_regex_t))
-        != NJT_OK)
-    {
+        != NJT_OK) {
         njt_destroy_pool(pool);
         return NJT_CONF_ERROR;
     }
@@ -288,77 +382,29 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         var->flags |= NJT_HTTP_VAR_NOCACHEABLE;
     }
 
-    map->default_value = ctx.default_value ? ctx.default_value:
-                                             &njt_http_variable_null_value;
-
-    map->hostnames = ctx.hostnames;
-
-    hash.key = njt_hash_key_lc;
-    hash.max_size = mcf->hash_max_size;
-    hash.bucket_size = mcf->hash_bucket_size;
-    hash.name = "map_hash";
-    hash.pool = cf->pool;
-
-    if (ctx.keys.keys.nelts) {
-        hash.hash = &map->map.hash.hash;
-        hash.temp_pool = NULL;
-
-        if (njt_hash_init(&hash, ctx.keys.keys.elts, ctx.keys.keys.nelts)
-            != NJT_OK)
-        {
-            njt_destroy_pool(pool);
-            return NJT_CONF_ERROR;
-        }
+    rc = njt_http_map_create_hash_from_ctx(mcf, map, &ctx, cf->pool, pool);
+    if (rc != NJT_OK) {
+        rv = NJT_CONF_ERROR;
+    }
+#if NJT_HTTP_DYN_MAP_MODULE
+    njt_http_map_var_hash_t *var_hash_item = njt_array_push(mcf->var_hash_items);
+    if (var_hash_item == NULL) {
+        njt_conf_log_error(NJT_LOG_ERR, cf, 0, "malloc error in http map for njt_http_map_var_hash_t ");
+        return NJT_CONF_ERROR;
     }
 
-    if (ctx.keys.dns_wc_head.nelts) {
-
-        njt_qsort(ctx.keys.dns_wc_head.elts,
-                  (size_t) ctx.keys.dns_wc_head.nelts,
-                  sizeof(njt_hash_key_t), njt_http_map_cmp_dns_wildcards);
-
-        hash.hash = NULL;
-        hash.temp_pool = pool;
-
-        if (njt_hash_wildcard_init(&hash, ctx.keys.dns_wc_head.elts,
-                                   ctx.keys.dns_wc_head.nelts)
-            != NJT_OK)
-        {
-            njt_destroy_pool(pool);
-            return NJT_CONF_ERROR;
-        }
-
-        map->map.hash.wc_head = (njt_hash_wildcard_t *) hash.hash;
+    var_hash_item->name.data = njt_pstrdup(cf->pool, &name);
+    if (var_hash_item->name.data == NULL) {
+        njt_conf_log_error(NJT_LOG_ERR, cf, 0, "malloc error in http map for njt_http_map_var_hash_t.name ");
+        return NJT_CONF_ERROR;
     }
-
-    if (ctx.keys.dns_wc_tail.nelts) {
-
-        njt_qsort(ctx.keys.dns_wc_tail.elts,
-                  (size_t) ctx.keys.dns_wc_tail.nelts,
-                  sizeof(njt_hash_key_t), njt_http_map_cmp_dns_wildcards);
-
-        hash.hash = NULL;
-        hash.temp_pool = pool;
-
-        if (njt_hash_wildcard_init(&hash, ctx.keys.dns_wc_tail.elts,
-                                   ctx.keys.dns_wc_tail.nelts)
-            != NJT_OK)
-        {
-            njt_destroy_pool(pool);
-            return NJT_CONF_ERROR;
-        }
-
-        map->map.hash.wc_tail = (njt_hash_wildcard_t *) hash.hash;
-    }
-
-#if (NJT_PCRE)
-
-    if (ctx.regexes.nelts) {
-        map->map.regex = ctx.regexes.elts;
-        map->map.nregex = ctx.regexes.nelts;
-    }
+    var_hash_item->name.len = name.len;
+    var_hash_item->map = map;
+    var_hash_item->ori_conf = ctx.ori_conf;
+    var_hash_item->dynamic = 0;;
 
 #endif
+
 
     njt_destroy_pool(pool);
 
@@ -369,10 +415,10 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 static int njt_libc_cdecl
 njt_http_map_cmp_dns_wildcards(const void *one, const void *two)
 {
-    njt_hash_key_t  *first, *second;
+    njt_hash_key_t *first, *second;
 
-    first = (njt_hash_key_t *) one;
-    second = (njt_hash_key_t *) two;
+    first = (njt_hash_key_t *)one;
+    second = (njt_hash_key_t *)two;
 
     return njt_dns_strcmp(first->key.data, second->key.data);
 }
@@ -381,14 +427,14 @@ njt_http_map_cmp_dns_wildcards(const void *one, const void *two)
 static char *
 njt_http_map(njt_conf_t *cf, njt_command_t *dummy, void *conf)
 {
-    u_char                            *data;
+    u_char *data;
     size_t                             len;
     njt_int_t                          rv;
-    njt_str_t                         *value, v;
+    njt_str_t *value, v;
     njt_uint_t                         i, key;
-    njt_http_map_conf_ctx_t           *ctx;
+    njt_http_map_conf_ctx_t *ctx;
     njt_http_complex_value_t           cv, *cvp;
-    njt_http_variable_value_t         *var, **vp;
+    njt_http_variable_value_t *var, **vp;
     njt_http_compile_complex_value_t   ccv;
 
     ctx = cf->ctx;
@@ -396,24 +442,35 @@ njt_http_map(njt_conf_t *cf, njt_command_t *dummy, void *conf)
     value = cf->args->elts;
 
     if (cf->args->nelts == 1
-        && njt_strcmp(value[0].data, "hostnames") == 0)
-    {
+        && njt_strcmp(value[0].data, "hostnames") == 0) {
         ctx->hostnames = 1;
         return NJT_CONF_OK;
     }
 
     if (cf->args->nelts == 1
-        && njt_strcmp(value[0].data, "volatile") == 0)
-    {
+        && njt_strcmp(value[0].data, "volatile") == 0) {
         ctx->no_cacheable = 1;
         return NJT_CONF_OK;
     }
 
     if (cf->args->nelts != 2) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "invalid number of the map parameters");
+            "invalid number of the map parameters");
         return NJT_CONF_ERROR;
     }
+
+#if NJT_HTTP_DYN_MAP_MODULE
+    njt_http_map_ori_conf_item_t *ori_conf_item = (njt_http_map_ori_conf_item_t *)njt_array_push(ctx->ori_conf);
+    if (ori_conf_item == NULL) {
+        njt_conf_log_error(NJT_LOG_ERR, cf, 0,
+            "can't create ori_conf_item in njt_http_map");
+        return NJT_CONF_ERROR;
+    }
+    ori_conf_item->v_from.len = value[0].len;
+    ori_conf_item->v_from.data = njt_pstrdup(ctx->keys.pool, &value[0]);
+    ori_conf_item->v_to.len = value[1].len;
+    ori_conf_item->v_to.data = njt_pstrdup(ctx->keys.pool, &value[1]);
+#endif
 
     if (njt_strcmp(value[0].data, "include") == 0) {
         return njt_conf_include(cf, dummy, conf);
@@ -437,7 +494,7 @@ njt_http_map(njt_conf_t *cf, njt_command_t *dummy, void *conf)
                 len = vp[i]->len;
 
             } else {
-                cvp = (njt_http_complex_value_t *) vp[i]->data;
+                cvp = (njt_http_complex_value_t *)vp[i]->data;
                 data = cvp->value.data;
                 len = cvp->value.len;
             }
@@ -454,9 +511,8 @@ njt_http_map(njt_conf_t *cf, njt_command_t *dummy, void *conf)
 
     } else {
         if (njt_array_init(&ctx->values_hash[key], cf->pool, 4,
-                           sizeof(njt_http_variable_value_t *))
-            != NJT_OK)
-        {
+            sizeof(njt_http_variable_value_t *))
+            != NJT_OK) {
             return NJT_CONF_ERROR;
         }
     }
@@ -491,7 +547,7 @@ njt_http_map(njt_conf_t *cf, njt_command_t *dummy, void *conf)
         *cvp = cv;
 
         var->len = 0;
-        var->data = (u_char *) cvp;
+        var->data = (u_char *)cvp;
         var->valid = 0;
 
     } else {
@@ -516,7 +572,7 @@ found:
 
         if (ctx->default_value) {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                               "duplicate default map parameter");
+                "duplicate default map parameter");
             return NJT_CONF_ERROR;
         }
 
@@ -529,7 +585,7 @@ found:
 
     if (value[0].len && value[0].data[0] == '~') {
         njt_regex_compile_t    rc;
-        njt_http_map_regex_t  *regex;
+        njt_http_map_regex_t *regex;
         u_char                 errstr[NJT_MAX_CONF_ERRSTR];
 
         regex = njt_array_push(&ctx->regexes);
@@ -570,7 +626,7 @@ found:
     }
 
     rv = njt_hash_add_key(&ctx->keys, &value[0], var,
-                          (ctx->hostnames) ? NJT_HASH_WILDCARD_KEY : 0);
+        (ctx->hostnames) ? NJT_HASH_WILDCARD_KEY : 0);
 
     if (rv == NJT_OK) {
         return NJT_CONF_OK;
@@ -578,12 +634,12 @@ found:
 
     if (rv == NJT_DECLINED) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "invalid hostname or wildcard \"%V\"", &value[0]);
+            "invalid hostname or wildcard \"%V\"", &value[0]);
     }
 
     if (rv == NJT_BUSY) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "conflicting parameter \"%V\"", &value[0]);
+            "conflicting parameter \"%V\"", &value[0]);
     }
 
     return NJT_CONF_ERROR;

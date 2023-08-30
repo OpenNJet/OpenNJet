@@ -531,6 +531,13 @@ njt_http_upstream_init(njt_http_request_t *r)
     }
 #endif
 
+#if (NJT_HTTP_V3)
+    if (c->quic) {
+        njt_http_upstream_init_request(r);
+        return;
+    }
+#endif
+
     if (c->read->timer_set) {
         njt_del_timer(c->read);
     }
@@ -639,11 +646,10 @@ njt_http_upstream_init_request(njt_http_request_t *r)
     if (r->request_body) {
         u->request_bufs = r->request_body->bufs;
     }
-	/*
     if (u->create_request(r) != NJT_OK) {
         njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
         return;
-    }*/
+    }
 
     if (njt_http_upstream_set_local(r, u, u->conf->local) != NJT_OK) {
         njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
@@ -1431,6 +1437,19 @@ njt_http_upstream_check_broken_connection(njt_http_request_t *r,
     }
 #endif
 
+#if (NJT_HTTP_V3)
+
+    if (c->quic) {
+        if (c->write->error) {
+            njt_http_upstream_finalize_request(r, u,
+                                               NJT_HTTP_CLIENT_CLOSED_REQUEST);
+        }
+
+        return;
+    }
+
+#endif
+
 #if (NJT_HAVE_KQUEUE)
 
     if (njt_event_flags & NJT_USE_KQUEUE_EVENT) {
@@ -1635,11 +1654,12 @@ njt_http_upstream_connect(njt_http_request_t *r, njt_http_upstream_t *u)
     }
 
     /* rc == NJT_OK || rc == NJT_AGAIN || rc == NJT_DONE */
-	
+	/*
     if (u->create_request(r) != NJT_OK) {
         njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
         return;
-    }
+    }*/
+
     c = u->peer.connection;
 
     c->requests++;

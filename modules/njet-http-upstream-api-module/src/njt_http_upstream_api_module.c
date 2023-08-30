@@ -1516,7 +1516,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 
 
 	}
-	if (json_peer.server.len  > 0) {
+	if (json_peer.server.len  > 0 && u.naddrs > 0 ) {
 		if(peer->server.len < json_peer.server.len) {
 			njt_slab_free_locked(peers->shpool,peer->server.data);
 			peer->server.data = njt_slab_calloc_locked(peers->shpool, json_peer.server.len);

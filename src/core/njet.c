@@ -691,6 +691,9 @@ njt_exec_new_binary(njt_cycle_t *cycle, char *const *argv)
 
     ls = cycle->listening.elts;
     for (i = 0; i < cycle->listening.nelts; i++) {
+        if (ls[i].ignore) {
+            continue;
+        }
         p = njt_sprintf(p, "%ud;", ls[i].fd);
     }
 

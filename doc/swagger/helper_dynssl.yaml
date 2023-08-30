@@ -140,7 +140,7 @@ components:
             type: string
         type:
           type: string
-          description: add or del, 添加或者删除动态证书
+          description: add or del, 添加或者删除动态证书(删除只是将动态记录从broker删除，不是实时生效，重启后生效)
           example: add
         cert_info:
           type: object

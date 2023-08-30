@@ -1,0 +1,161 @@
+openapi: 3.0.3
+info:
+  title: dyn config api
+  description: 动态fault inject限流
+  version: 1.0.0
+
+servers:
+  - url: '/config/2'
+paths:
+  /config/:
+    get:
+      tags:
+        - dyn config module
+      summary: Returns a list of allow dynamic conf module
+      description: Returns a list of allow dynamic conf module
+      operationId: getDynConfModuleList
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleList'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+  /config/http_dyn_fault_inject:
+    put:
+      tags:
+        - dyn fault inject config
+      summary: set module conf
+      description: set module conf
+      operationId: setDynModuleConf
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/MainConf'
+          required: true
+      responses:
+        '204':
+          description: Success
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+    get:
+      tags:
+        - dyn fault inject config
+      summary: return dynamic module conf
+      description: get module conf
+      operationId: getDynModuleConf
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+
+    ModuleList:
+      title: module list
+      description: 支持动态配置的模块列表
+      type: array
+      items:
+        type: string
+
+    MainConf:
+      title: main Conf
+      description: 动态 main 级别配置
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServerConf'
+
+    ServerConf:
+      title:     ServerConf
+      description: 动态 server 级别配置
+      type: object
+      properties:
+        listens:
+          type: array
+          description: server listen 端口列表
+          items:
+            type: string
+
+        serverNames:
+          type: array
+          description: server Name 列表.
+          items:
+            type: string
+        locations:
+          type: array
+          description: locations 列表
+          items:
+            $ref: '#/components/schemas/LocationConf'
+
+
+    LocationConf:
+      title: LocationConf
+      description: location 级别 fault inject 配置信息
+      type: object
+      properties:
+        location:
+          type: string
+          description: location 名称 .
+          example: /demo
+        fault_inject_type:
+          type: string
+          description: fault inject 类型 .
+          enum: [none, delay, abort, delay_abort]
+        delay_percentage:
+          type: int
+          description: 延迟百分比概率 .
+          example: 100
+        abort_percentage:
+          type: int
+          description: 中止百分比概率 .
+          example: 100
+        status_code:
+          type: int
+          description: 中止状态码 .
+          example: 500
+        delay_duration:
+          type: string
+          description: 延迟时间，格式 1h/1m/1s/1ms
+          example: 10s
+        locations:
+          type: array
+          description: locations 列表
+          items:
+            $ref: '#/components/schemas/LocationConf'
+
