@@ -632,8 +632,6 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     js2c_parse_error_t                  err_info;
     njt_str_t                           *serverName;
     njt_str_t                           *listen_str;
-    njt_str_t                           *port;
-    njt_str_t                           *serverName;
     
 
     rpc_result = njt_rpc_result_create();
@@ -763,7 +761,7 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
 	}
 
 	topic_name.len = p - topic_name.data;
-	rc = njt_http_dyn_ssl_rpc_send(r, &topic_name, &json_str, 1);
+	rc = njt_http_dyn_ssl_rpc_send(r, &topic_name, &json_str, 0);
 	if(rc == NJT_OK) {
 		++r->main->count;
 	}

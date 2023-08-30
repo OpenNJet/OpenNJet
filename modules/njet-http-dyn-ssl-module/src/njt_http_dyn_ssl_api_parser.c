@@ -71,8 +71,6 @@ static bool parse_dyn_ssl_api_cert_info_cert_type(njt_pool_t *pool, parse_state_
         *out = DYN_SSL_API_CERT_INFO_CERT_TYPE_REGULAR;
     } else if (current_string_is(parse_state, "ntls")) {
         *out = DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS;
-    } else if (current_string_is(parse_state, "ecc")) {
-        *out = DYN_SSL_API_CERT_INFO_CERT_TYPE_ECC;
     } else {
         LOG_ERROR_JSON_PARSE(UNKNOWN_ENUM_VALUE_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
         return true;
@@ -372,11 +370,6 @@ static void get_json_length_dyn_ssl_api_cert_info_cert_type(njt_pool_t *pool, dy
     if (*out == DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS) {
         // "ntls"
         *length += 4 + 2;
-        return;
-    }
-    if (*out == DYN_SSL_API_CERT_INFO_CERT_TYPE_ECC) {
-        // "ecc"
-        *length += 3 + 2;
         return;
     }
 }
@@ -722,11 +715,6 @@ static void to_oneline_json_dyn_ssl_api_cert_info_cert_type(njt_pool_t *pool, dy
     if (*out == DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS) {
         cur = njt_sprintf(cur, "\"ntls\"");
         buf->len += 4 + 2;
-        return;
-    }
-    if (*out == DYN_SSL_API_CERT_INFO_CERT_TYPE_ECC) {
-        cur = njt_sprintf(cur, "\"ecc\"");
-        buf->len += 3 + 2;
         return;
     }
 }

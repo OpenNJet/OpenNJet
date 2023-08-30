@@ -26,8 +26,7 @@ typedef enum dyn_ssl_api_type_t_e{
 
 typedef enum dyn_ssl_api_cert_info_cert_type_t_e{
     DYN_SSL_API_CERT_INFO_CERT_TYPE_REGULAR,
-    DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS,
-    DYN_SSL_API_CERT_INFO_CERT_TYPE_ECC
+    DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS
 } dyn_ssl_api_cert_info_cert_type_t;
 
 typedef njt_str_t dyn_ssl_api_cert_info_certificate_t;
