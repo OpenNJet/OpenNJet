@@ -186,6 +186,7 @@ struct njt_health_check_http_parse_s {
 /*Main structure of the hc information of a peer*/
 struct njt_http_health_check_peer_s {
     njt_uint_t                      peer_id;
+    njt_uint_t                      update_id;
     njt_str_t                       server;
     njt_http_upstream_rr_peer_t     *hu_peer;
     njt_http_upstream_rr_peers_t    *hu_peers;
@@ -209,6 +210,7 @@ struct njt_http_health_check_peer_s {
 
 typedef struct njt_stream_health_check_peer_s {
     njt_uint_t                      peer_id;
+    njt_uint_t                      update_id;
     njt_str_t                       server;
     njt_stream_upstream_rr_peer_t   *hu_peer;
     njt_stream_upstream_rr_peers_t  *hu_peers;
@@ -2527,7 +2529,7 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
     njt_http_upstream_rr_peers_wlock(peers);
 
     //compare update_id
-    if(hc_peer->hhccf->update_id == peers->update_id){
+    if(hc_peer->update_id == peers->update_id){
         //just use saved map for update
         //get all peers of has same servername
         lhq.key = hc_peer->server;
@@ -2539,6 +2541,8 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
         if(rc != NJT_OK){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                 "njt_http_health_check_common_update not found  from map");
+        
+            njt_http_upstream_rr_peers_unlock(peers);
             return NJT_ERROR;
         }else{
             http_lvlhsh_value = lhq.value;
@@ -2629,6 +2633,7 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
         if(rc != NJT_OK){
                 njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                     "njt_stream_health_check_common_update not found  from map");
+                njt_stream_upstream_rr_peers_unlock(peers);
                 return NJT_ERROR;
         }else{
             stream_lvlhsh_value = lhq.value;
@@ -3969,6 +3974,7 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
                 hc_peer->hu_peer = peer;
                 hc_peer->hu_peers = hu_peers;
                 hc_peer->hhccf = hhccf;
+                hc_peer->update_id = hhccf->update_id;
 
                 hc_peer->peer.sockaddr = njt_pcalloc(pool, sizeof(struct sockaddr));
                 if (hc_peer->peer.sockaddr == NULL) {
@@ -4126,6 +4132,7 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
             hc_peer->hu_peer = peer;
             hc_peer->hu_peers = hu_peers;
             hc_peer->hhccf = hhccf;
+            hc_peer->update_id = hhccf->update_id;
 
             hc_peer->peer.sockaddr = njt_pcalloc(pool, sizeof(struct sockaddr));
             if (hc_peer->peer.sockaddr == NULL) {
