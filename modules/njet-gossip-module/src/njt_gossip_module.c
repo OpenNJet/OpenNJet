@@ -1194,7 +1194,7 @@ int  njt_gossip_reg_app_handler( gossip_app_pt app_msg_handler, gossip_app_node_
 	app_handle->handler=app_msg_handler;
 	app_handle->node_handler=app_node_handler;
 
-    njt_log_error(NJT_LOG_INFO,njt_cycle->log,0," ===========reg app_magic:%d", app_magic);
+    njt_log_error(NJT_LOG_INFO,njt_cycle->log,0," gossip, reg app_magic:%d", app_magic);
 
 	return NJT_OK;
 }

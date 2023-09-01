@@ -3173,6 +3173,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
         lsopt.socklen = sizeof(struct sockaddr_in);
 
         lsopt.backlog = NJT_LISTEN_BACKLOG;
+	lsopt.type = SOCK_STREAM;
         lsopt.rcvbuf = -1;
         lsopt.sndbuf = -1;
 #if (NJT_HAVE_SETFIB)
@@ -4296,6 +4297,7 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_memzero(&lsopt, sizeof(njt_http_listen_opt_t));
 
     lsopt.backlog = NJT_LISTEN_BACKLOG;
+    lsopt.type = SOCK_STREAM;
     lsopt.rcvbuf = -1;
     lsopt.sndbuf = -1;
 #if (NJT_HAVE_SETFIB)
@@ -4494,6 +4496,36 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #endif
         }
 
+ 
+        if (njt_strcmp(value[n].data, "http3") == 0) {
+#if (NJT_HTTP_V3)
+            njt_conf_log_error(NJT_LOG_WARN, cf, 0,
+                               "the \"http3\" parameter is deprecated, "
+                               "use \"quic\" parameter instead");
+            lsopt.quic = 1;
+            lsopt.http3 = 1;
+            lsopt.type = SOCK_DGRAM;
+            continue;
+#else
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                               "the \"http3\" parameter requires "
+                               "njt_http_v3_module");
+            return NJT_CONF_ERROR;
+#endif
+        }
+
+        if (njt_strcmp(value[n].data, "quic") == 0) {
+#if (NJT_HTTP_V3)
+            lsopt.quic = 1;
+            lsopt.type = SOCK_DGRAM;
+            continue;
+#else
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                               "the \"quic\" parameter requires "
+                               "njt_http_v3_module");
+            return NJT_CONF_ERROR;
+#endif
+        }
         if (njt_strncmp(value[n].data, "so_keepalive=", 13) == 0) {
 
             if (njt_strcmp(&value[n].data[13], "on") == 0) {
@@ -4594,6 +4626,28 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                            "invalid parameter \"%V\"", &value[n]);
         return NJT_CONF_ERROR;
     }
+
+#if (NJT_HTTP_V3)
+
+    if (lsopt.quic) {
+#if (NJT_HTTP_SSL)
+        if (lsopt.ssl) {
+            return "\"ssl\" parameter is incompatible with \"quic\"";
+        }
+#endif
+
+#if (NJT_HTTP_V2)
+        if (lsopt.http2) {
+            return "\"http2\" parameter is incompatible with \"quic\"";
+        }
+#endif
+
+        if (lsopt.proxy_protocol) {
+            return "\"proxy_protocol\" parameter is incompatible with \"quic\"";
+        }
+    }
+
+#endif
 
     for (n = 0; n < u.naddrs; n++) {
         lsopt.sockaddr = u.addrs[n].sockaddr;

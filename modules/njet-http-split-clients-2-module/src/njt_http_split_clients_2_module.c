@@ -5,6 +5,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 #include <njt_http_kv_module.h>
+#include <njt_rand_util.h>
 #include <njt_json_util.h>
 #include <njt_rpc_result_util.h>
 
@@ -39,7 +40,6 @@ static int njt_http_split_kv_change_handler_internal(njt_str_t *key, njt_str_t *
 static u_char *njt_http_split_clients_2_rpc_get_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data);
 static u_char *njt_http_split_clients_2_rpc_put_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data);
 
-static int njt_http_split_client_2_sample(int ration);
 static njt_int_t njt_http_split_client_2_init_worker(njt_cycle_t *cycle);
 static char *njt_conf_split_clients_2_block(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
@@ -374,21 +374,6 @@ static njt_int_t njt_http_split_client_2_init_worker(njt_cycle_t *cycle)
     return NJT_OK;
 }
 
-/*
- * use random to do data sample
- * input: ration, sample ration, a integer between 0-100.
- * output: 1(true) means match, should be sampled, 0(false)
- * */
-static int njt_http_split_client_2_sample(int ration)
-{
-    long long r = random();
-    double r2 = r * 100.0;
-    double f = r2 / RAND_MAX;
-    if (f > (100 - ration))
-        return 1;
-    return 0;
-}
-
 static njt_int_t
 njt_http_split_clients_2_variable(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data)
@@ -407,7 +392,7 @@ njt_http_split_clients_2_variable(njt_http_request_t *r,
         if (percent == 0 && !part[i].last) {
             continue;
         }
-        if (njt_http_split_client_2_sample(percent) || part[i].last) {
+        if (njt_rand_percentage_sample(percent) || part[i].last) {
             *v = part[i].value;
             return NJT_OK;
         }

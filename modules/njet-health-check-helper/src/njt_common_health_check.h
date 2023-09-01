@@ -14,6 +14,7 @@
 #include <njt_json_api.h>
 #include <njt_json_util.h>
 #include <njt_http.h>
+// #include <njt_hc_parser.h>
 
 #define NJT_HC_HTTP_TYPE 0
 #define NJT_HC_STREAM_TYPE 1
@@ -114,35 +115,17 @@ typedef struct {
 } njt_helper_hc_ssl_add_data_t;
 #endif
 
-typedef struct {
-    njt_str_t upstream_name;
-    njt_str_t hc_type;
-    njt_msec_t interval;
-    njt_msec_t jitter;
-    njt_msec_t timeout;
-    njt_int_t port;
-    njt_int_t passes;
-    njt_int_t fails;
-    njt_helper_hc_http_add_data_t http;
-    njt_helper_hc_stream_add_data_t stream;
-#if (NJT_OPENSSL)
-    njt_helper_hc_ssl_add_data_t ssl;
-#endif
-    bool persistent;
-    bool mandatory;
-    unsigned success: 1;
-    njt_int_t rc;
-} njt_helper_hc_api_data_t;
 
-typedef struct {
-    njt_str_t upstream_name;
-    njt_str_t hc_type;
-} njt_helper_hc_list_item_t;
 
-/* by zhaokang */
-typedef struct {
-    njt_array_t    *list; /* njt_helper_hc_list_item_t */
-} njt_helper_hc_list_t;
+// typedef struct {
+//     njt_str_t upstream_name;
+//     njt_str_t hc_type;
+// } njt_helper_hc_list_item_t;
+
+// /* by zhaokang */
+// typedef struct {
+//     njt_array_t    *list; /* njt_helper_hc_list_item_t */
+// } njt_helper_hc_list_t;
 
 #define HTTP_HEALTH_CHECK_SEPARATOR "$"
 #define HTTP_UPSTREAM_KEYS "helper_hc_http_upstreams"
@@ -159,13 +142,13 @@ typedef struct {
 
 
 
-njt_int_t njt_json_parse_msec(njt_json_element *el, njt_json_define_t *def, void *data);
+// njt_int_t njt_json_parse_msec(njt_json_element *el, njt_json_define_t *def, void *data);
 
-njt_int_t njt_json_parse_data(njt_pool_t *pool, njt_str_t *str, njt_json_define_t *def, void *data);
+// njt_int_t njt_json_parse_data(njt_pool_t *pool, njt_str_t *str, njt_json_define_t *def, void *data);
 
 #if (NJT_OPENSSL)
 
-njt_int_t njt_json_parse_ssl_protocols(njt_json_element *el, njt_json_define_t *def, void *data);
+njt_int_t njt_json_parse_ssl_protocols(njt_str_t value, njt_uint_t *np);
 
 njt_int_t njt_helper_hc_set_ssl(njt_helper_health_check_conf_t *hhccf, njt_helper_hc_ssl_conf_t *hcscf);
 

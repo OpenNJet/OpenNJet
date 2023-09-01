@@ -257,12 +257,14 @@ free_ctx(loc_parse_ctx_t* ctx) {
 
 extern int loc_exp_dyn_eval_result; // eval result
 extern loc_parse_node_t *loc_exp_dyn_parse_tree; // binary bool expression tree
+extern int yy_flex_debug;
 void parse_dyn_loc(char* dyn_loc) {
     int r;
     loc_parse_ctx_t* ctx;
     loc_parse_node_t* tree_root = NULL;
     yylex_destroy();
     yy_scan_string(dyn_loc);
+    yy_flex_debug = 0;
     r = yyparse(&tree_root);
     if (r) {
         // error in parsing

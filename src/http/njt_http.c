@@ -980,11 +980,7 @@ njt_http_init_static_location_trees_common(njt_conf_t *cf,njt_http_core_loc_conf
 njt_int_t
 njt_http_init_static_location_trees(njt_conf_t *cf,
                                     njt_http_core_loc_conf_t *pclcf) {
-    if(cf->dynamic == 1) {
     	return njt_http_init_static_location_trees_common(cf,pclcf,pclcf->locations,&pclcf->static_locations);
-    } else {
-    	return njt_http_init_static_location_trees_common(cf,pclcf,pclcf->locations,&pclcf->static_locations);
-    }
 }
 //add by clb
 njt_int_t
@@ -1386,7 +1382,10 @@ njt_http_add_listen(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     port = cmcf->ports->elts;
     for (i = 0; i < cmcf->ports->nelts; i++) {
 
-        if (p != port[i].port || sa->sa_family != port[i].family) {
+        if (p != port[i].port
+            || lsopt->type != port[i].type
+            || sa->sa_family != port[i].family)
+        {
             continue;
         }
 
@@ -1403,6 +1402,7 @@ njt_http_add_listen(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     }
 
     port->family = sa->sa_family;
+    port->type = lsopt->type;
     port->port = p;
     port->addrs.elts = NULL;
 
@@ -1420,6 +1420,10 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 #endif
 #if (NJT_HTTP_V2)
     njt_uint_t http2;
+#endif
+#if (NJT_HTTP_V3)
+    njt_uint_t http3;
+    njt_uint_t quic;
 #endif
 
     /*
@@ -1454,6 +1458,10 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 #endif
 #if (NJT_HTTP_V2)
         http2 = lsopt->http2 || addr[i].opt.http2;
+#endif
+#if (NJT_HTTP_V3)
+        http3 = lsopt->http3 || addr[i].opt.http3;
+        quic = lsopt->quic || addr[i].opt.quic;
 #endif
 
         if (lsopt->set) {
@@ -1491,6 +1499,11 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 #if (NJT_HTTP_V2)
         addr[i].opt.http2 = http2;
 #endif
+#if (NJT_HTTP_V3)
+        addr[i].opt.http3 = http3;
+        addr[i].opt.quic = quic;
+#endif
+
 
         return NJT_OK;
     }
@@ -1942,6 +1955,7 @@ njt_http_add_listening(njt_conf_t *cf, njt_http_conf_addr_t *addr) {
     }
 #endif
 
+    ls->type = addr->opt.type;
     ls->backlog = addr->opt.backlog;
     ls->rcvbuf = addr->opt.rcvbuf;
     ls->sndbuf = addr->opt.sndbuf;
@@ -1977,6 +1991,12 @@ njt_http_add_listening(njt_conf_t *cf, njt_http_conf_addr_t *addr) {
     ls->reuseport = addr->opt.reuseport;
 #endif
 
+    ls->wildcard = addr->opt.wildcard;
+
+#if (NJT_HTTP_V3)
+    ls->quic = addr->opt.quic;
+#endif
+
     return ls;
 }
 
@@ -2007,6 +2027,10 @@ njt_http_add_addrs(njt_conf_t *cf, njt_http_port_t *hport,
 #endif
 #if (NJT_HTTP_V2)
         addrs[i].conf.http2 = addr[i].opt.http2;
+#endif
+#if (NJT_HTTP_V3)
+        addrs[i].conf.http3 = addr[i].opt.http3;
+        addrs[i].conf.quic = addr[i].opt.quic;
 #endif
         addrs[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
 
@@ -2070,6 +2094,10 @@ njt_http_add_addrs6(njt_conf_t *cf, njt_http_port_t *hport,
 #endif
 #if (NJT_HTTP_V2)
         addrs6[i].conf.http2 = addr[i].opt.http2;
+#endif
+#if (NJT_HTTP_V3)
+        addrs6[i].conf.http3 = addr[i].opt.http3;
+        addrs6[i].conf.quic = addr[i].opt.quic;
 #endif
         addrs6[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
 
