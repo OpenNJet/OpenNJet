@@ -2118,7 +2118,7 @@ definitions:
         max_conns: 0
         max_fails: 1
         fail_timeout: 10s
-        slow_start: 0
+        slow_start: 10s
         backup: false
         down: false
       - id: 1
@@ -2127,7 +2127,7 @@ definitions:
         max_conns: 0
         max_fails: 1
         fail_timeout: 10s
-        slow_start: 0
+        slow_start: 10s
         backup: false
         down: false
   NjetStreamUpstreamConfServer:
@@ -2219,7 +2219,7 @@ definitions:
       max_conns: 0
       max_fails: 1
       fail_timeout: 10s
-      slow_start: 0
+      slow_start: 10s
       backup: false
       down: false
   NjetError:
