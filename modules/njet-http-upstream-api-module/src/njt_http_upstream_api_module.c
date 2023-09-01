@@ -1148,7 +1148,10 @@ njt_http_upstream_api_process_get(njt_http_request_t *r,
 
 		} else {
 			if(server_id >= 0) {
-				njt_http_upstream_api_compose_one_server(r, peers, server_id,&server_one);
+				rc = njt_http_upstream_api_compose_one_server(r, peers, server_id,&server_one);
+				if (rc != NJT_OK) {
+					return rc;
+				}
 				to_json = to_json_one_serverDef(r->pool,server_one,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
 
 			} else {
@@ -1616,8 +1619,8 @@ out:
 
 
 	/*return the current servers*/
-	njt_http_upstream_api_compose_one_server(r, peers, peer->id,&server_one);
-	if (server_one == NULL) {
+	rc = njt_http_upstream_api_compose_one_server(r, peers, peer->id,&server_one);
+	if (rc != NJT_OK) {
 		goto error;
 	}
 	to_json = to_json_one_serverDef(r->pool,server_one,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
@@ -2031,7 +2034,10 @@ out:
 	if(parent_id != -1) {
 		peer = &new_peer;
 	}
-	njt_http_upstream_api_compose_one_server(r, peers, peer->id,&server_one);
+	rc = njt_http_upstream_api_compose_one_server(r, peers, peer->id,&server_one);
+	if (rc != NJT_OK) {
+			goto error;
+	}
 	to_json = to_json_one_serverDef(r->pool,server_one,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
 	njt_http_upstream_api_packet_out(r,to_json,&out);
 
