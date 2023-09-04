@@ -37,7 +37,7 @@ njt_http_lua_exit_worker(njt_cycle_t *cycle)
         || lmcf->exit_worker_handler == NULL
         || lmcf->lua == NULL
 #if !(NJT_WIN32)
-        || (njt_process == NJT_PROCESS_HELPER
+        || ((njt_process == NJT_PROCESS_HELPER && njt_is_privileged_helper != 1)
 #   ifdef HAVE_PRIVILEGED_PROCESS_PATCH
             && !njt_is_privileged_agent
 #   endif

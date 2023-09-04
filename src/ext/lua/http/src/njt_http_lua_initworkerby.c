@@ -50,7 +50,7 @@ njt_http_lua_init_worker(njt_cycle_t *cycle)
     /* lmcf != NULL && lmcf->lua != NULL */
 
 #if !(NJT_WIN32)
-    if (njt_process == NJT_PROCESS_HELPER
+    if ((njt_process == NJT_PROCESS_HELPER && njt_is_privileged_helper != 1)
 #   ifdef HAVE_PRIVILEGED_PROCESS_PATCH
         && !njt_is_privileged_agent
 #   endif
