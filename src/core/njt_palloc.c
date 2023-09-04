@@ -102,7 +102,7 @@ njt_dynamic_alloc(njt_pool_t *pool, size_t size)
     //njt_uint_t         n;
     njt_pool_large_t  *large;
 
-    njt_log_debug1(NJT_LOG_DEBUG_ALLOC,njt_cycle->log, 0,"dynamic_alloc: %p,", pool);
+    //njt_log_debug1(NJT_LOG_DEBUG_ALLOC,njt_cycle->log, 0,"dynamic_alloc: %p,", pool);
 
     p = njt_alloc(size + sizeof(njt_pool_large_t),njt_cycle->log);
     if (p == NULL) {
