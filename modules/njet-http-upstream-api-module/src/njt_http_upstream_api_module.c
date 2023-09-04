@@ -903,7 +903,7 @@ njt_http_upstream_api_compose_one_server(njt_http_request_t *r,
 				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "find the server %ui",
 						id);
 				peer_node = peer;
-				*server_one = njt_http_upstream_api_compose_one_server_schemo(r, peer_node, 1,0,*peers->name);
+				*server_one = njt_http_upstream_api_compose_one_server_schemo(r, peer_node, 0,0,*peers->name);
 				njt_http_upstream_rr_peers_unlock(peers);
 				if(*server_one == NULL) {
 					return NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -3086,9 +3086,6 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
 			r->headers_out.status = 415;
 
 			njt_str_set(&error_text,"json error");
-			if(msg != NULL) {
-				error_text = *msg;
-			}
 			njt_str_set(&error_code,"JsonError");
 			break;
 		case NJT_HTTP_UPS_API_NO_RESOLVER:
@@ -4499,7 +4496,7 @@ njt_stream_upstream_api_compose_one_server(njt_http_request_t *r,
 				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "find the server %ui",
 						id);
 				peer_node = peer;
-				*server_one = njt_stream_upstream_api_compose_one_server_schemo(r, peer_node, 1,0,*peers->name);
+				*server_one = njt_stream_upstream_api_compose_one_server_schemo(r, peer_node, 0,0,*peers->name);
 				njt_stream_upstream_rr_peers_unlock(peers);
 				if(*server_one == NULL) {
 					return NJT_HTTP_UPS_API_INTERNAL_ERROR;
