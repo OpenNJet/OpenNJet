@@ -1,10 +1,7 @@
 #include "njt_http_if_location_lex.h"
 #include "njt_http_if_location_api.h"
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include "njt_http_if_location_parse.h"
-
+#include "njt_core.h"
 void parse_dyn_loc(char* dyn_loc);
 loc_malloc_cb_ptr loc_malloc_handler = NULL;
 void*             loc_malloc_ctx = NULL; // pool
@@ -94,7 +91,7 @@ new_loc_parse_ctx(loc_parse_node_t *root){
     loc_parse_node_t* current = root;
     int stack_size = 0;
  
-    printf("count: %d \n", count);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"count: %d \n", count);
     // printf("start traverse tree \n");
     while (current != NULL || stack_size != 0) {
         if (current != NULL) {
@@ -189,18 +186,18 @@ dump_tree(loc_parse_node_t* root, int level)
 	}
 
 	for (i=0;i<level;i++) {
-        printf("\t");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"\t");
     }
     switch (root->node_type)
     {
     case LOC_EXPRESSION:
-        printf("%s, idx: %d\n", root->loc_exp->exp, root->loc_exp->idx);
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"%s, idx: %d", root->loc_exp->exp, root->loc_exp->idx);
         break;
     case BOOL_OP_OR:
-        printf("OR\n");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"OR");
         break;
     case BOOL_OP_AND:
-        printf("AND\n");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"AND\n");
         break;
     
     default:

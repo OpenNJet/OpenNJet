@@ -45,6 +45,10 @@
    define necessary library symbols; they are noted "INFRINGES ON
    USER NAME SPACE" below.  */
 
+
+#include <njt_config.h>
+#include <njt_http.h>
+
 /* Identify Bison output, and Bison version.  */
 #define YYBISON 30802
 
@@ -1211,23 +1215,23 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* exp: %empty  */
-       {printf("BISON NULL_EXP: \n"); (yyval.node)=NULL; YYABORT;}
+       {njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"BISON NULL_EXP:"); (yyval.node)=NULL; YYABORT;}
     break;
 
   case 3: /* exp: LOC_EXP  */
-             {  printf("BISON: LOC_EXP\n"); (yyval.node) = new_loc_parse_exp_node((yyvsp[0].loc_exp)); }
+             {  njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"BISON: LOC_EXP"); (yyval.node) = new_loc_parse_exp_node((yyvsp[0].loc_exp)); }
     break;
 
   case 4: /* exp: '(' exp ')'  */
-                          { printf("BISON: (EXP) \n"); (yyval.node) = (yyvsp[-1].node); }
+                          { njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"BISON: (EXP)"); (yyval.node) = (yyvsp[-1].node); }
     break;
 
   case 5: /* exp: exp OR exp  */
-                          { printf("BISON: OR \n"); (yyval.node) = new_loc_parse_op_node(BOOL_OP_OR, (yyvsp[-2].node),(yyvsp[0].node)); }
+                          { njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"BISON: OR"); (yyval.node) = new_loc_parse_op_node(BOOL_OP_OR, (yyvsp[-2].node),(yyvsp[0].node)); }
     break;
 
   case 6: /* exp: exp AND exp  */
-                          { printf("BISON: AND \n");(yyval.node) = new_loc_parse_op_node(BOOL_OP_AND, (yyvsp[-2].node),(yyvsp[0].node));}
+                          { njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"BISON: AND");(yyval.node) = new_loc_parse_op_node(BOOL_OP_AND, (yyvsp[-2].node),(yyvsp[0].node));}
     break;
 
   case 7: /* eval_tree: %empty  */
