@@ -1372,6 +1372,16 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 
 	/*conduct the perform*/
 	njt_memzero(&json_peer, sizeof(njt_http_upstream_api_peer_t));
+	json_peer.weight = -1;
+	json_peer.max_fails = -1;
+	json_peer.fail_timeout = -1;
+	json_peer.max_conns = -1;
+	json_peer.backup = -1;
+	json_peer.down = -1;
+	json_peer.slow_start = -1;
+	json_peer.drain = -1;
+	njt_str_null(&json_peer.route);
+	njt_str_null(&json_peer.server);
 
 	rc = njt_http_upstream_api_json_2_peer(json_body, &json_peer, 0,r,0);
 
@@ -1726,6 +1736,7 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 
 	/*conduct the perform*/
 	njt_memzero(&json_peer, sizeof(njt_http_upstream_api_peer_t));
+
 
 	/*initialize the jason peer. Other items other than the following are all zero*/
 	json_peer.weight = 1*NJT_WEIGHT_POWER;
@@ -4738,6 +4749,8 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 	json_peer.down = -1;
 	json_peer.slow_start = -1;
 	json_peer.drain = -1;
+	njt_str_null(&json_peer.route);
+	njt_str_null(&json_peer.server);
 
 	/*initialize the jason peer. Other items other than the following are all zero*/
 	rc = njt_http_upstream_api_json_2_peer(json_body, &json_peer, 0,r,1);
