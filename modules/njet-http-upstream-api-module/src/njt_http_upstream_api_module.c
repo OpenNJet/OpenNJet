@@ -3117,8 +3117,8 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
 		case NJT_HTTP_UPS_API_INVALID_SRV_ARG:
 			r->headers_out.status = 400;
 
-			njt_str_set(&error_text,"invalid \\\"server\\\" argument");
-			njt_str_set(&error_code,"UpstramBadAddress");
+			njt_str_set(&error_text,"invalid \"server\" argument");
+			njt_str_set(&error_code,"UpstreamBadAddress");
 			break;  //
 		case NJT_HTTP_UPS_API_HAS_NO_BACKUP:
 			r->headers_out.status = 400;
