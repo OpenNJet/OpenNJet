@@ -35,7 +35,9 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
     njt_str_t                       *port;
     njt_str_t                       *serverName;
     uint32_t                         crc32, *crc32_item;
-    njt_uint_t                       j;                      
+    njt_uint_t                       j;
+    njt_uint_t                       real_type;
+    dyn_ssl_api_cert_info_cert_type_t *cert_type_item;
     
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
@@ -97,7 +99,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
     hsscf->ssl.log = njt_cycle->log;
 
     if(!cert->is_cert_type_set){
-        cert->cert_type = DYN_SSL_API_CERT_INFO_CERT_TYPE_REGULAR;
+        cert->cert_type = DYN_SSL_API_CERT_INFO_CERT_TYPE_RSA;
     }
 
     njt_crc32_init(crc32);
@@ -111,11 +113,10 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
         if(cert->certificateKeyEnc.len > 0){
             njt_crc32_update(&crc32, cert->certificateKeyEnc.data, cert->certificateKeyEnc.len);
         }
-    }else if(cert->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_REGULAR){
-        njt_crc32_update(&crc32, (u_char*)"regular", 7);
+    }else if(cert->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_RSA){
+        njt_crc32_update(&crc32, (u_char*)"rsa", 3);
     }else{
-        // njt_crc32_update(&crc32, (u_char*)"ecc", 3);
-        njt_crc32_update(&crc32, (u_char*)"regular", 7);
+        njt_crc32_update(&crc32, (u_char*)"ecc", 3);
     }
     njt_crc32_final(crc32);
 
@@ -132,15 +133,100 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
         }
     }
 
-    //check param is ntls or regular cert, if empty, default regular
-    if(cert->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_REGULAR){
+    if(hsscf->cert_types == NULL){
+        hsscf->cert_types = njt_array_create(hsscf->certificates->pool, 4, sizeof(njt_uint_t));
+        if(hsscf->cert_types == NULL){
+            njt_log_error(NJT_LOG_EMERG, pool->log, 0,
+                " cert_type create error");
+
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                "dyn ssl, cert_type create error");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
+            return NJT_ERROR;
+        }
+    }
+
+
+    if(!cert->is_certificate_set || !cert->is_certificateKey_set){
+        njt_log_error(NJT_LOG_EMERG, pool->log, 0," cert or key is empty");
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " cert or key is empty");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
+        return NJT_ERROR;
+    }
+
+    if(cert->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_RSA ||
+        cert->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_ECC){
+        //get cert type
+        if(NJT_ERROR == njt_ssl_get_certificate_type(&cf, &hsscf->ssl, &cert->certificate, &cert->certificateKey, &real_type)){
+            njt_log_error(NJT_LOG_EMERG, pool->log, 0," get cert type error from certinfo");
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " get cert type error from certinfo");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
+            return NJT_ERROR;
+        }
+
+        switch (real_type)
+        {
+        case 0:
+            // RSA type
+            if(cert->cert_type != DYN_SSL_API_CERT_INFO_CERT_TYPE_RSA){
+                njt_log_error(NJT_LOG_EMERG, pool->log, 0,
+                    " certinfo shows real type is rsa, please check certinfo and type");
+
+                return NJT_ERROR;
+            }
+            
+            break;
+        // case 1:
+        //     // NTLS type
+        //     if(cert->cert_type != DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS){
+        //         njt_log_error(NJT_LOG_EMERG, pool->log, 0,
+        //             " certinfo shows real type is NTLS, so treat as ntls type");
+
+        //         cert->cert_type = DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS;
+        //     }
+            
+        //     break;
+        case 2:
+            // ECC type
+            if(cert->cert_type != DYN_SSL_API_CERT_INFO_CERT_TYPE_ECC){
+                njt_log_error(NJT_LOG_EMERG, pool->log, 0,
+                    " certinfo shows real type is ecc, please check certinfo and type");
+
+                return NJT_ERROR;
+            }
+            
+            break;
+        default:
+            /* unknown type */
+            njt_log_error(NJT_LOG_EMERG, pool->log, 0,
+                    " certinfo and type is not match, please check certinfo and type");
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                    " certinfo and type is not match, please check certinfo and type");
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+            
+            return NJT_ERROR;
+        }
+    }
+
+    //check param is ntls or rsa or ecc cert, if empty, default rsa
+    if(cert->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_RSA ||
+        cert->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_ECC){
         if(!cert->is_certificate_set || !cert->is_certificateKey_set){
             njt_log_error(NJT_LOG_EMERG, pool->log, 0," cert or key is empty");
             end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " cert or key is empty");
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
             return NJT_ERROR;
         }
+
         if (njt_ssl_certificate(&cf, &hsscf->ssl, &cert->certificate, &cert->certificateKey, NULL)
             != NJT_OK)
         {
@@ -159,6 +245,13 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
         if(tmp_str != NULL){
             njt_str_copy_pool(hsscf->certificate_keys->pool,(*tmp_str), (cert->certificateKey), return NJT_ERROR;);
         }
+
+        //udpate cert type
+        cert_type_item = njt_array_push(hsscf->cert_types);
+        if(cert_type_item != NULL){
+            *cert_type_item = cert->cert_type;
+        }
+
     }else if(cert->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS){
 #if (NJT_HAVE_NTLS)
         //check valid
@@ -312,6 +405,18 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);    
             return NJT_ERROR;
         }
+    
+        //udpate cert type
+        cert_type_item = njt_array_push(hsscf->cert_types);
+        if(cert_type_item != NULL){
+            *cert_type_item = cert->cert_type;
+        }
+
+        //udpate cert type
+        cert_type_item = njt_array_push(hsscf->cert_types);
+        if(cert_type_item != NULL){
+            *cert_type_item = cert->cert_type;
+        }
 #else
 
     njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
@@ -325,9 +430,9 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
 #endif
     }else{
         njt_log_error(NJT_LOG_EMERG, pool->log, 0,
-            "dyn ssl, njt_ssl_certificate cert_type not support, should ntls or regular");
+            "dyn ssl, njt_ssl_certificate cert_type not support, should ntls or rsa or ecc");
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-            "dyn ssl, njt_ssl_certificate cert_type not support, should ntls or regular");
+            "dyn ssl, njt_ssl_certificate cert_type not support, should ntls or rsa or ecc");
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
@@ -480,6 +585,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
     njt_str_t                      *tmp_str;
     njt_http_server_name_t         *server_name;
     njt_str_t                      *key,*cert;
+    njt_uint_t                     *cert_type;
     njt_http_complex_value_t       *var_key,*var_cert;
     njt_uint_t                      type;
     njt_str_t                       trip_str;
@@ -541,20 +647,14 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
 
             cert = hsscf->certificates->elts;
             key = hsscf->certificate_keys->elts;
+            cert_type = hsscf->cert_types->elts;
             for(j = 0 ; j < hsscf->certificates->nelts ; ++j ){
-
                 cert_item = create_dyn_ssl_servers_item_certificates_item(pool);
                 if(cert_item == NULL ){
                     goto err;
                 }
 #if (NJT_HAVE_NTLS)
                 type = njt_ssl_ntls_type(&cert[j]);
-                // key_type = njt_ssl_ntls_type(&key[j]);
-                // if(type != key_type){
-                //     njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "dyn ssl, error: cert type and key type not equal");
-                //     continue;
-                // }
-
                 if (type == NJT_SSL_NTLS_CERT_SIGN) {
                     set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS);
 
@@ -610,15 +710,15 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
                     // njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "dyn ssl, error: should not get enc before sign");
                     continue;
                 }else{
-                    set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR);
-                    
+                    // set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_RSA);
+                    set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, cert_type[j]);
                     set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &cert[j]);
                     set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &key[j]);
 
                     add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
                 }
 #else
-                set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR);
+                set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_RSA);
 
                 set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &cert[j]);
                 set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &key[j]);
@@ -633,6 +733,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
             }
             var_cert = hsscf->certificate_values->elts;
             var_key = hsscf->certificate_key_values->elts;
+            cert_type = hsscf->cert_types->elts;
             for(j = 0 ; j < hsscf->certificate_values->nelts ; ++j ){
                 cert_item = create_dyn_ssl_servers_item_certificates_item(pool);
                 if(cert_item == NULL ){
@@ -700,15 +801,16 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
                     //should not get enc before sign
                     // njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "dyn ssl, error: should not get enc before sign");
                 }else{
-                    set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR);
-                    
+                    // set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_RSA);
+                    set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, cert_type[j]);
+
                     set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &var_cert[j].value);
                     set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &var_key[j].value);
 
                     add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
                 }
 #else
-                set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR);
+                set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_RSA);
                 set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &var_cert[j].value);
                 set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &var_key[j].value);
                 add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
