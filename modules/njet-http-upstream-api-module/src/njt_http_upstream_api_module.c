@@ -2840,11 +2840,13 @@ njt_upstream_api_process_request(njt_http_request_t *r, njt_array_t *path,
 
 		case NJT_HTTP_PATCH:
 			rc = njt_upstream_api_process_patch(r, uscf, server_id);
+			*if_send = 0;
 			break;
 
 		case NJT_HTTP_POST:
 			if(path->nelts >=5) {
 				rc = njt_upstream_api_process_post(r, uscf);
+				*if_send = 0;
 			} 
 			break;
 
@@ -3229,7 +3231,7 @@ njt_http_upstream_api_handler(njt_http_request_t *r)
 	out.next = NULL;
 	out.buf = NULL;
 	rc = njt_upstream_api_process_request(r, &path, &out,&if_send);
-	if ((r->method == NJT_HTTP_POST || r->method == NJT_HTTP_PATCH)&&(rc >= NJT_HTTP_SPECIAL_RESPONSE || rc == NJT_DONE)){
+	if (if_send == 0){
 		return rc;
 	}
 
@@ -4671,7 +4673,7 @@ njt_stream_upstream_api_process_get(njt_http_request_t *r,
 			return rc;
 		}
 	}
-	to_json = to_json_upstream_list_upstreamDef(r->pool,upstream_one,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
+	to_json = to_json_upstream_list(r->pool,upstream_list,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
 	if(to_json){
 		njt_http_upstream_api_packet_out(r,to_json,out);
 	}
