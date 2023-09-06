@@ -2080,7 +2080,7 @@ static void njt_free_peer_resource(njt_http_health_check_peer_t *hc_peer) {
         hhccf->ref_count--;
     }
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                 "====http free peer check, peerid:%d ref_count=%d", local_peer_id, hhccf->ref_count); 
 //    if (hc_peer->hhccf->disable) {
 ////        njt_destroy_pool(hc_peer->hhccf->pool);
@@ -2118,7 +2118,7 @@ static void njt_stream_free_peer_resource(njt_stream_health_check_peer_t *hc_pee
         hhccf->ref_count--;
     }
 
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
             "====stream free peer check, peerid:%d ref_count=%d", local_peer_id, hhccf->ref_count);
 
 //    if (hc_peer->hhccf->disable) {
@@ -2292,10 +2292,10 @@ static void njt_http_health_check_read_handler(njt_event_t *rev) {
         /*log the case and update the peer status.*/
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                        "read action for health check timeout");
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                   "====timeout, hc_peerid:%d  ref_count:%d",hc_peer->peer_id, hhccf->ref_count);
         njt_http_health_check_update_status(hc_peer, NJT_ERROR);
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                   "====timeout, ref_count:%d",hhccf->ref_count);
         return;
     }
@@ -2494,7 +2494,7 @@ static void njt_stream_update_peer(njt_stream_upstream_srv_conf_t *uscf,
 
 
     } else {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, 
             "disable check peer: %V ",
             &peer->name);
 
@@ -2565,7 +2565,7 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
         }else{
             http_lvlhsh_value = lhq.value;
             //update self
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                     "hc check peer update status peer:%V peerid:%d status:%d",
                     &http_lvlhsh_value->peer->server, http_lvlhsh_value->peer->id, status);
             njt_update_peer(uscf, http_lvlhsh_value->peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
@@ -2574,7 +2574,7 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
             q = njt_queue_head(&http_lvlhsh_value->datas);
             for (; q != njt_queue_sentinel(&http_lvlhsh_value->datas); q = njt_queue_next(q)) {
                 http_ele = njt_queue_data(q, njt_hc_http_peer_element, ele_queue);
-                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                     "hc same peer update status peer:%V peerid:%d status:%d",
                     &http_ele->peer->server, http_ele->peer->id, status);
                 njt_update_peer(uscf, http_ele->peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
@@ -2586,7 +2586,7 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
             if(peer->server.len == hc_peer->server.len
                 && njt_memcmp(peer->server.data, hc_peer->server.data, peer->server.len) == 0){
                 njt_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
-                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                     "hc update peer update status peer:%V peerid:%d status:%d",
                     &peer->server, peer->id, status);
             }
@@ -2596,7 +2596,7 @@ njt_http_health_check_common_update(njt_http_health_check_peer_t *hc_peer,
                 if(peer->server.len == hc_peer->server.len
                     && njt_memcmp(peer->server.data, hc_peer->server.data, peer->server.len) == 0){
                     njt_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
-                    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                         "hc update peer update status peer:%V peerid:%d status:%d",
                         &peer->server, peer->id, status);
                 }
@@ -2656,7 +2656,7 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
         }else{
             stream_lvlhsh_value = lhq.value;
             //update self
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                 "hc stream check peer update status peer:%V peerid:%d status:%d",
                 &stream_lvlhsh_value->peer->server, stream_lvlhsh_value->peer->id, status);
             njt_stream_update_peer(uscf, stream_lvlhsh_value->peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
@@ -2665,7 +2665,7 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
             q = njt_queue_head(&stream_lvlhsh_value->datas);
             for (; q != njt_queue_sentinel(&stream_lvlhsh_value->datas); q = njt_queue_next(q)) {
                 stream_ele = njt_queue_data(q, njt_hc_stream_peer_element, ele_queue);
-                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                     "hc stream same peer update status peer:%V peerid:%d status:%d",
                     &stream_ele->peer->server, stream_ele->peer->id, status);
                 njt_stream_update_peer(uscf, stream_ele->peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
@@ -2677,7 +2677,7 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
             if(peer->server.len == hc_peer->server.len
                 && njt_memcmp(peer->server.data, hc_peer->server.data, peer->server.len) == 0){
                 njt_stream_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
-                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                     "hc stream update peer update status peer:%V peerid:%d status:%d", &peer->server, peer->id, status);
             }
         }
@@ -2686,7 +2686,7 @@ njt_stream_health_check_common_update(njt_stream_health_check_peer_t *hc_peer,
                 if(peer->server.len == hc_peer->server.len
                     && njt_memcmp(peer->server.data, hc_peer->server.data, peer->server.len) == 0){
                     njt_stream_update_peer(uscf, peer, status, hc_peer->hhccf->passes, hc_peer->hhccf->fails);
-                    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                         "hc stream update peer update status peer:%V peerid:%d status:%d", &peer->server, peer->id, status);
                 }
             }
@@ -3624,7 +3624,7 @@ njt_stream_hc_ssl_handshake(njt_connection_t *c, njt_stream_health_check_peer_t 
             }
         }
         hhccf->ref_count++;
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
             "====stream peer check ssl, peerid:%d ref_count=%d", hc_peer->peer_id, hhccf->ref_count);
         hc_peer->peer.connection->write->handler = njt_stream_health_check_write_handler;
         hc_peer->peer.connection->read->handler = njt_stream_health_check_read_handler;
@@ -3946,24 +3946,24 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
                             " add http peer:%V peerid:%d to map error", &peer->server, peer->id);
                     continue;
                 case NJT_DECLINED:
-                    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                             " same http peer:%V peerid:%d exist", &peer->server, peer->id);
                     continue;
                 case NJT_OK:
-                    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                             " add http peer:%V peerid:%d to map", &peer->server, peer->id);
                     break;
                 }
             }else{
                 //if not check peer, just continue
                 if(!njt_hc_http_check_peer(hhccf, peer)){
-                    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                             " http, not check peer:%V peerid:%d just continue", &peer->server, peer->id);
                     continue;
                 }
             }
 
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                     " http check peer:%V peerid:%d", &peer->server, peer->id);
 
             peer->hc_check_in_process = 1;
@@ -4053,7 +4053,7 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
 #endif
 
                 hhccf->ref_count++;
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
             "====http peer check, peerid:%d ref_count=%d", hc_peer->peer_id, hhccf->ref_count);
                 hc_peer->peer.connection->write->handler = njt_http_health_check_write_handler;
                 hc_peer->peer.connection->read->handler = njt_http_health_check_read_handler;
@@ -4107,24 +4107,24 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
                             " add stream peer:%V peerid:%d to map error", &peer->server, peer->id);
                     continue;
                 case NJT_DECLINED:
-                    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                             " same stream peer:%V peerid:%d exist", &peer->server, peer->id);
                     continue;
                 case NJT_OK:
-                    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                             " add stream peer:%V peerid:%d to map", &peer->server, peer->id);
                     break;
                 }
             }else{
                 //if not check peer, just continue
                 if(!njt_hc_stream_check_peer(hhccf, peer)){
-                    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                             " not stream check peer:%V peerid:%d just continue", &peer->server, peer->id);
                     continue;
                 }
             }
 
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                     " stream check peer:%V peerid:%d", &peer->server, peer->id);
 
             peer->hc_check_in_process = 1;
@@ -4210,7 +4210,7 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
 #endif
 
              hhccf->ref_count++;
-                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
             "====stream peer check, peerid:%d ref_count=%d", hc_peer->peer_id, hhccf->ref_count);
              hc_peer->peer.connection->write->handler = njt_stream_health_check_write_handler;
              hc_peer->peer.connection->read->handler = njt_stream_health_check_read_handler;
@@ -4310,7 +4310,7 @@ static void njt_health_check_recovery_confs(){
         goto end;
     }
 
-    njt_log_error(NJT_LOG_ERR, pool->log, 0, 
+    njt_log_error(NJT_LOG_INFO, pool->log, 0, 
                 "http json_parse_health_checks msg: %V",  &msg);
     hc_datas = json_parse_health_checks(pool, &msg, &err_info);
     if (hc_datas == NULL)
@@ -4376,7 +4376,7 @@ static void njt_stream_health_check_recovery_confs(){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "create pool error in function %s", __func__);
         goto end;
     }
-    njt_log_error(NJT_LOG_ERR, pool->log, 0, 
+    njt_log_error(NJT_LOG_INFO, pool->log, 0, 
                 "stream json_parse_health_checks msg: %V",  &msg);
     hc_datas = json_parse_health_checks(pool, &msg, &err_info);
     if (hc_datas == NULL)
