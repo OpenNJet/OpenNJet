@@ -51,6 +51,17 @@ typedef struct njt_helper_hc_ssl_conf_s {
 } njt_helper_hc_ssl_conf_t;
 #endif
 
+
+typedef struct {
+    njt_http_upstream_rr_peer_t *peer;   //current peer
+    njt_queue_t  datas;     //other peers which has same servername of the current peer
+} njt_hc_http_same_peer_t;
+
+typedef struct {
+    njt_stream_upstream_rr_peer_t *peer;   //current peer
+    njt_queue_t  datas;     //other peers which has same servername of the current peer
+} njt_hc_stream_same_peer_t;
+
 typedef struct njt_helper_health_check_conf_s {
     njt_pool_t *pool;
     njt_log_t *log;
@@ -76,6 +87,11 @@ typedef struct njt_helper_health_check_conf_s {
     unsigned persistent: 1;
     unsigned mandatory: 1;
     unsigned disable: 1;
+    unsigned first: 1;              //if first, need recreate map
+
+    njt_lvlhsh_t    servername_to_peers; //1 vs more, key:servername value: peers which hash same servername
+    njt_uint_t      update_id;           //modified when upstream is modified
+    njt_pool_t      *map_pool;           //used for map
 } njt_helper_health_check_conf_t;
 
 typedef struct {
