@@ -15,6 +15,8 @@
 
 
 #define NJT_WRITE_SHUTDOWN SD_SEND
+#define NJT_READ_SHUTDOWN  SD_RECEIVE
+#define NJT_RDWR_SHUTDOWN  SD_BOTH
 
 
 typedef SOCKET  njt_socket_t;

@@ -1,0 +1,15 @@
+
+njt_addon_name=njt_http_fault_inject_module
+njt_module_type=HTTP
+njt_module_name=$njt_addon_name
+njt_module_deps=" \
+$njt_addon_dir/src/njt_http_fault_inject_module.h \
+"
+njt_module_srcs=" \
+  $njt_addon_dir/src/njt_http_fault_inject_module.c \
+"
+njt_module_incs=""
+
+have=NJT_HTTP_FAULT_INJECT . auto/have
+CORE_INCS="$CORE_INCS $njt_addon_dir/src"
+. auto/module

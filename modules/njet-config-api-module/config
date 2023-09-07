@@ -5,5 +5,5 @@ njt_module_srcs="$njt_addon_dir/src/njt_ctrl_config_api_module.c"
 . auto/module
 njt_module_type=HTTP
 njt_module_name="njt_agent_dynlog_module"
-njt_module_srcs="$njt_addon_dir/src/njt_agent_dynlog_module.c"
+njt_module_srcs="$njt_addon_dir/src/njt_agent_dynlog_module.c $njt_addon_dir/src/njt_dynlog_parser.c"
 . auto/module

@@ -77,6 +77,7 @@ struct njt_listening_s {
     unsigned            reuseport:1;
     unsigned            add_reuseport:1;
     unsigned            keepalive:2;
+    unsigned            quic:1;
 
     unsigned            deferred_accept:1;
     unsigned            delete_deferred:1;
@@ -100,7 +101,8 @@ typedef enum {
     NJT_ERROR_ERR,
     NJT_ERROR_INFO,
     NJT_ERROR_IGNORE_ECONNRESET,
-    NJT_ERROR_IGNORE_EINVAL
+    NJT_ERROR_IGNORE_EINVAL,
+    NJT_ERROR_IGNORE_EMSGSIZE
 } njt_connection_log_error_e;
 
 
@@ -150,6 +152,10 @@ struct njt_connection_s {
     njt_str_t           addr_text;
 
     njt_proxy_protocol_t  *proxy_protocol;
+
+#if (NJT_QUIC || NJT_COMPAT)
+    njt_quic_stream_t     *quic;
+#endif
 
 #if (NJT_SSL || NJT_COMPAT)
     njt_ssl_connection_t  *ssl;

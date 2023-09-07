@@ -268,6 +268,18 @@ njt_process_events_and_timers(njt_cycle_t *cycle)
 njt_int_t
 njt_handle_read_event(njt_event_t *rev, njt_uint_t flags)
 {
+#if (NJT_QUIC)
+
+    njt_connection_t  *c;
+
+    c = rev->data;
+
+    if (c->quic) {
+        return NJT_OK;
+    }
+
+#endif
+
     if (njt_event_flags & NJT_USE_CLEAR_EVENT) {
 
         /* kqueue, epoll */
@@ -338,9 +350,15 @@ njt_handle_write_event(njt_event_t *wev, size_t lowat)
 {
     njt_connection_t  *c;
 
-    if (lowat) {
-        c = wev->data;
+    c = wev->data;
 
+#if (NJT_QUIC)
+    if (c->quic) {
+        return NJT_OK;
+    }
+#endif
+
+    if (lowat) {
         if (njt_send_lowat(c, lowat) == NJT_ERROR) {
             return NJT_ERROR;
         }
@@ -869,8 +887,16 @@ njt_event_process_init(njt_cycle_t *cycle)
 
 #else
 
-        rev->handler = (c->type == SOCK_STREAM) ? njt_event_accept
-                                                : njt_event_recvmsg;
+        if (c->type == SOCK_STREAM) {
+            rev->handler = njt_event_accept;
+
+#if (NJT_QUIC)
+        } else if (ls[i].quic) {
+            rev->handler = njt_quic_recvmsg;
+#endif
+        } else {
+            rev->handler = njt_event_recvmsg;
+        }
 
 #if (NJT_HAVE_REUSEPORT)
 

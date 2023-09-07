@@ -552,7 +552,7 @@ njt_stream_optimize_servers(njt_conf_t *cf, njt_array_t *ports)
 }
 
 
-static njt_int_t
+njt_int_t
 njt_stream_add_addrs(njt_conf_t *cf, njt_stream_port_t *stport,
     njt_stream_conf_addr_t *addr)
 {

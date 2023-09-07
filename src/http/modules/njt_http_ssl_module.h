@@ -41,6 +41,8 @@ typedef struct {
     njt_array_t                    *certificate_values;
     njt_array_t                    *certificate_key_values;
 
+    njt_array_t                    *dyn_cert_crc32;   //add by clb
+
     njt_str_t                       dhparam;
     njt_str_t                       ecdh_curve;
     njt_str_t                       client_certificate;

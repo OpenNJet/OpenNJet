@@ -1854,6 +1854,7 @@ njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
         if (dst->type == SOCK_STREAM && pscf->half_close
             && src != NULL &&  src->read->eof && !u->half_closed && !dst->buffered)
         {
+
             if (njt_shutdown_socket(dst->fd, NJT_WRITE_SHUTDOWN) == -1) {
                 njt_connection_error(c, njt_socket_errno,
                                      njt_shutdown_socket_n " failed");

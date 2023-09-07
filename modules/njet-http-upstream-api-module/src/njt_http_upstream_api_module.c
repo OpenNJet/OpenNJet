@@ -1834,7 +1834,8 @@ njt_http_upstream_api_json_2_peer(njt_json_manager *json_manager,
                 rc = NJT_HTTP_UPS_API_WEIGHT_ERROR;
                 return rc;
             } 
-	    api_peer->weight = (api_peer->weight * NJT_WEIGHT_POWER);
+	    //api_peer->weight = (api_peer->weight * NJT_WEIGHT_POWER);
+	    api_peer->weight = api_peer->weight;
 	}
 	njt_str_set(&key,"max_conns");
 	rc = njt_struct_top_find(json_manager, &key, &items);
@@ -2296,6 +2297,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 
         peer->weight = json_peer.weight;
         peer->effective_weight = json_peer.weight;
+        peer->rr_effective_weight = json_peer.weight *NJT_WEIGHT_POWER;
     }
     peers->update_id++;
     njt_stream_upstream_rr_peers_unlock(peers);
@@ -2569,7 +2571,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 
 		 
      }
-	 if (json_peer.server.len  > 0) {
+	 if (json_peer.server.len  > 0 && u.naddrs > 0 ) {
 		 if(peer->server.len < json_peer.server.len) {
 			 njt_slab_free_locked(peers->shpool,peer->server.data);
 			  peer->server.data = njt_slab_calloc_locked(peers->shpool, json_peer.server.len);
@@ -2650,6 +2652,7 @@ njt_http_upstream_api_patch(njt_http_request_t *r)
 
         peer->weight = json_peer.weight;
         peer->effective_weight = json_peer.weight;
+	peer->rr_effective_weight = json_peer.weight *NJT_WEIGHT_POWER;
     }
     peers->update_id++;
     njt_http_upstream_rr_peers_unlock(peers);
@@ -2870,7 +2873,8 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
     njt_memzero(&json_peer, sizeof(njt_http_upstream_api_peer_t));
 
     /*initialize the jason peer. Other items other than the following are all zero*/
-    json_peer.weight = 1*NJT_WEIGHT_POWER;
+    //json_peer.weight = 1*NJT_WEIGHT_POWER;
+    json_peer.weight = 1;
     json_peer.max_fails = 1;
     json_peer.fail_timeout = 10;
 	json_peer.drain = -1;
@@ -2972,7 +2976,9 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 		new_peer.parent_id = parent_id;
 		new_peer.weight = json_peer.weight;
 		new_peer.effective_weight = json_peer.weight;
+		new_peer.rr_effective_weight = json_peer.weight *NJT_WEIGHT_POWER;
 		new_peer.current_weight = 0;
+		new_peer.rr_current_weight = 0;
 		new_peer.max_fails = json_peer.max_fails;
 		new_peer.max_conns = json_peer.max_conns;
 		new_peer.fail_timeout = json_peer.fail_timeout;
@@ -3047,7 +3053,9 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
     peer->hc_upstart =  njt_time(); //post
     peer->weight = json_peer.weight;
     peer->effective_weight = json_peer.weight;
+    peer->rr_effective_weight = json_peer.weight *NJT_WEIGHT_POWER;
     peer->current_weight = 0;
+    peer->rr_current_weight = 0;
     peer->max_fails = json_peer.max_fails;
     peer->max_conns = json_peer.max_conns;
     peer->fail_timeout = json_peer.fail_timeout;
@@ -3251,7 +3259,8 @@ njt_http_upstream_api_post(njt_http_request_t *r)
     njt_memzero(&json_peer, sizeof(njt_http_upstream_api_peer_t));
 
     /*initialize the jason peer. Other items other than the following are all zero*/
-    json_peer.weight = 1*NJT_WEIGHT_POWER;
+    //json_peer.weight = 1*NJT_WEIGHT_POWER;
+    json_peer.weight = 1;
     json_peer.max_fails = 1;
     json_peer.fail_timeout = 10;
 	json_peer.drain = -1;
@@ -3349,7 +3358,9 @@ njt_http_upstream_api_post(njt_http_request_t *r)
 		new_peer.parent_id = parent_id;
 		new_peer.weight = json_peer.weight;
 		new_peer.effective_weight = json_peer.weight;
+		new_peer.rr_effective_weight = json_peer.weight *NJT_WEIGHT_POWER;
 		new_peer.current_weight = 0;
+		new_peer.rr_current_weight = 0;
 		new_peer.max_fails = json_peer.max_fails;
 		new_peer.max_conns = json_peer.max_conns;
 		new_peer.fail_timeout = json_peer.fail_timeout;
@@ -3439,7 +3450,9 @@ njt_http_upstream_api_post(njt_http_request_t *r)
     peer->hc_upstart =  njt_time(); //post
     peer->weight = json_peer.weight;
     peer->effective_weight = json_peer.weight;
+    peer->rr_effective_weight = json_peer.weight *NJT_WEIGHT_POWER;
     peer->current_weight = 0;
+    peer->rr_current_weight = 0;
     peer->max_fails = json_peer.max_fails;
     peer->max_conns = json_peer.max_conns;
     peer->fail_timeout = json_peer.fail_timeout;

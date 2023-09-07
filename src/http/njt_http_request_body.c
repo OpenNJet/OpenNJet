@@ -93,6 +93,13 @@ njt_http_read_client_request_body(njt_http_request_t *r,
     }
 #endif
 
+#if (NJT_HTTP_V3)
+    if (r->http_version == NJT_HTTP_VERSION_30) {
+        rc = njt_http_v3_read_request_body(r);
+        goto done;
+    }
+#endif
+
     preread = r->header_in->last - r->header_in->pos;
 
     if (preread) {
@@ -230,6 +237,18 @@ njt_http_read_unbuffered_request_body(njt_http_request_t *r)
 #if (NJT_HTTP_V2)
     if (r->stream) {
         rc = njt_http_v2_read_unbuffered_request_body(r);
+
+        if (rc == NJT_OK) {
+            r->reading_body = 0;
+        }
+
+        return rc;
+    }
+#endif
+
+#if (NJT_HTTP_V3)
+    if (r->http_version == NJT_HTTP_VERSION_30) {
+        rc = njt_http_v3_read_unbuffered_request_body(r);
 
         if (rc == NJT_OK) {
             r->reading_body = 0;
@@ -626,6 +645,12 @@ njt_http_discard_request_body(njt_http_request_t *r)
     }
 #endif
 
+#if (NJT_HTTP_V3)
+    if (r->http_version == NJT_HTTP_VERSION_30) {
+        return NJT_OK;
+    }
+#endif
+
     if (njt_http_test_expect(r) != NJT_OK) {
         return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
@@ -921,6 +946,9 @@ njt_http_test_expect(njt_http_request_t *r)
         || r->http_version < NJT_HTTP_VERSION_11
 #if (NJT_HTTP_V2)
         || r->stream != NULL
+#endif
+#if (NJT_HTTP_V3)
+        || r->connection->quic != NULL
 #endif
        )
     {

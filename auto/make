@@ -7,9 +7,10 @@
 echo "creating $NJT_MAKEFILE"
 
 mkdir -p $NJT_OBJS/src/core $NJT_OBJS/src/event $NJT_OBJS/src/event/modules \
+         $NJT_OBJS/src/event/quic \
          $NJT_OBJS/src/os/unix $NJT_OBJS/src/os/win32 \
-         $NJT_OBJS/src/http $NJT_OBJS/src/http/v2 $NJT_OBJS/src/http/modules \
-         $NJT_OBJS/src/http/modules/perl \
+         $NJT_OBJS/src/http $NJT_OBJS/src/http/v2 $NJT_OBJS/src/http/v3 \
+         $NJT_OBJS/src/http/modules $NJT_OBJS/src/http/modules/perl \
          $NJT_OBJS/src/mail \
          $NJT_OBJS/src/stream \
          $NJT_OBJS/src/misc
