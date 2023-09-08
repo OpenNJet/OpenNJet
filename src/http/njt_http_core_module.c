@@ -3166,6 +3166,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     cf->cmd_type = NJT_HTTP_SRV_CONF;
 
     rv = njt_conf_parse(cf, NULL);
+    *cf = pcf;
 #if (NJT_HTTP_DYNAMIC_SERVER)
     cscf->pool = new_server_pool;
     cf->pool = old_server_pool;
@@ -3173,7 +3174,6 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     cscf->dynamic = cf->dynamic;
 #endif
 
-    *cf = pcf;
 
     if (rv == NJT_CONF_OK && !cscf->listen && cf->dynamic == 0) {
         njt_memzero(&lsopt, sizeof(njt_http_listen_opt_t));
