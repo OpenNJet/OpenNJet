@@ -1431,8 +1431,8 @@ definitions:
         fail_timeout: 10s
         slow_start: 10s
         route: ''
-        backup: true
-        down: true
+        backup: false
+        down: false
   NjetHTTPUpstreamConfServer:
     title: HTTP Upstream Server
     description: |
@@ -1533,8 +1533,8 @@ definitions:
       fail_timeout: 10s
       slow_start: 10s
       route: ''
-      backup: true
-      down: true
+      backup: false
+      down: false
   NjetStreamServerZonesMap:
     title: Stream Server Zones
     description: |
