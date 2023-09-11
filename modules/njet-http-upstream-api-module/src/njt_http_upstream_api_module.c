@@ -488,7 +488,7 @@ njt_upstream_api_get_params(njt_array_t *path, njt_str_t *upstream,
 }
 
 	static u_char *
-njt_format_time(u_char *buf, const char *field,njt_uint_t nt)
+njt_format_time(u_char *buf,njt_uint_t nt)
 {
 	time_t t;
 	njt_uint_t mt;
@@ -514,77 +514,24 @@ njt_http_upstream_api_get_out_buf(njt_http_request_t *r, ssize_t len,
 		njt_chain_t *out)
 {
 	njt_buf_t                      *b;
-	njt_chain_t                    *last_chain, *new_chain;
 
 
-	if ((njt_uint_t)len > njt_pagesize) {
+	//if ((njt_uint_t)len > njt_pagesize) {
 		/*The string len is larger than one buf*/
 
-		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-				"buffer size is beyond one pagesize.");
-		return NULL;
-	}
-
-	last_chain = out;
-	while (out->next) {
-		out->buf->last_buf = 0;
-		out->buf->last_in_chain = 0;
-
-		last_chain = out->next;
-		out = out->next;
-	}
-
-	b = last_chain->buf;
-	if (b == NULL) {
-
-		b = njt_create_temp_buf(r->pool, njt_pagesize);
-		if (b == NULL) {
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-					"couldn't allocate the temp buffer.");
+		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+				"buffer size is beyond one pagesize. len=%d,njt_pagesize=%d",len,njt_pagesize);
+	//}
+	
+		b = njt_create_temp_buf(r->pool,len);
+		if(b == NULL){
 			return NULL;
 		}
-
-		last_chain->buf = b;
-		last_chain->next = NULL;
 
 		b->last_buf = 1;
-		b->last_in_chain = 1;
-		b->memory = 1;
-
+		out->buf = b;
+		out->next = NULL;
 		return b;
-	}
-
-	/*if the buf's left size is big enough to hold one server*/
-
-	if ((b->end - b->last) < len) {
-
-		new_chain = njt_pcalloc(r->pool, sizeof(njt_chain_t));
-		if (new_chain == NULL) {
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-					"couldn't allocate the chain.");
-			return NULL;
-		}
-
-		b = njt_create_temp_buf(r->pool, njt_pagesize);
-		if (b == NULL) {
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-					"couldn't allocate temp buffer.");
-			return NULL;
-		}
-
-		new_chain->buf = b;
-		new_chain->next = NULL;
-
-		last_chain->buf->last_buf = 0;
-		last_chain->buf->last_in_chain = 0;
-
-		new_chain->buf->last_buf = 1;
-		new_chain->buf->last_in_chain = 1;
-
-		last_chain->next = new_chain;
-	}
-
-	return b;
 }
 
 
@@ -646,8 +593,8 @@ njt_http_upstream_api_compose_one_detail_server(njt_http_request_t *r,
 	if(peer->hc_downstart != 0) {
 
 		down_time =  ((njt_uint_t)((njt_timeofday())->sec )*1000 + (njt_uint_t)((njt_timeofday())->msec) ) -  peer->hc_downstart + peer->hc_downtime;
-		njt_format_time(buf.data,"",peer->hc_downstart);
-		buf.len = njt_strlen(buf.data);
+		buf.len = njt_format_time(buf.data,peer->hc_downstart) - buf.data;
+		
 		set_upstream_list_peerDef_downstart(peerDef, &buf);
 	} else {
 		down_time = peer->hc_downtime;
@@ -656,7 +603,7 @@ njt_http_upstream_api_compose_one_detail_server(njt_http_request_t *r,
 
 	}
 	if(peer->selected_time != 0) {
-		njt_format_time(timebuf.data,"",peer->selected_time);
+		timebuf.len = njt_format_time(timebuf.data,peer->selected_time) - timebuf.data;
 		set_upstream_list_peerDef_selected(peerDef, &timebuf);
 
 	}
@@ -1168,7 +1115,7 @@ njt_http_upstream_api_process_get(njt_http_request_t *r,
 			}
 		}
 		if(to_json != NULL) {
-			njt_http_upstream_api_packet_out(r,to_json,out);
+	 	   rc = njt_http_upstream_api_packet_out(r,to_json,out);
 		}
 
 
@@ -1218,9 +1165,9 @@ njt_http_upstream_api_process_get(njt_http_request_t *r,
 	}
 	to_json = to_json_upstream_list(r->pool,upstream_list,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
 	if(to_json){
-		njt_http_upstream_api_packet_out(r,to_json,out);
+		rc = njt_http_upstream_api_packet_out(r,to_json,out);
 	}
-	return NJT_OK;
+	return rc;
 }
 
 
@@ -1643,7 +1590,10 @@ out:
 		goto error;
 	}
 	to_json = to_json_one_serverDef(r->pool,server_one,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
-	njt_http_upstream_api_packet_out(r,to_json,&out);
+	rc = njt_http_upstream_api_packet_out(r,to_json,&out);
+	if (rc != NJT_OK) {
+		goto error;
+	}
 
 
 
@@ -2059,7 +2009,10 @@ out:
 			goto error;
 	}
 	to_json = to_json_one_serverDef(r->pool,server_one,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
-	njt_http_upstream_api_packet_out(r,to_json,&out);
+	rc = njt_http_upstream_api_packet_out(r,to_json,&out);
+	if (rc != NJT_OK) {
+		goto error;
+	}
 
 
 
@@ -2428,7 +2381,7 @@ out:
 	}
 	to_json = to_json_upstream_list_upstreamDef(r->pool,upstream_one,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
 	if(to_json != NULL){
-		njt_http_upstream_api_packet_out(r,to_json,out);
+		rc = njt_http_upstream_api_packet_out(r,to_json,out);
 	}
 
 	return rc;
@@ -3181,7 +3134,7 @@ njt_http_upstream_api_err_out(njt_http_request_t *r, njt_int_t code,njt_str_t *m
 	set_upstream_error_msg_request_id(upstream_error_msg,&request_id);
 
 	to_json = to_json_upstream_error_msg(r->pool,upstream_error_msg,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
-	njt_http_upstream_api_packet_out(r,to_json,out);
+	rc = njt_http_upstream_api_packet_out(r,to_json,out);
 
 	return rc;
 }
@@ -3792,7 +3745,7 @@ out:
 	}
 	to_json = to_json_upstream_list_upstreamDef(r->pool,upstream_one,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
 	if(to_json){
-		njt_http_upstream_api_packet_out(r,to_json,out);
+		 rc = njt_http_upstream_api_packet_out(r,to_json,out);
 	}
 
 	return rc;
@@ -4244,7 +4197,10 @@ out:
 	
 	if(server_one) {
 		to_json = to_json_one_serverDef(r->pool,server_one,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
-		njt_http_upstream_api_packet_out(r,to_json,&out);
+		rc = njt_http_upstream_api_packet_out(r,to_json,&out);
+		if(rc != NJT_OK) {
+			goto error;
+		}
 	}
 
 send:
@@ -4305,8 +4261,7 @@ njt_stream_upstream_api_compose_one_detail_server(njt_http_request_t *r,
 	if(peer->hc_downstart != 0) {
 
 		down_time =  ((njt_uint_t)((njt_timeofday())->sec )*1000 + (njt_uint_t)((njt_timeofday())->msec) ) -  peer->hc_downstart + peer->hc_downtime;
-		njt_format_time(buf.data,"",peer->hc_downstart);
-		buf.len = njt_strlen(buf.data);
+		buf.len = njt_format_time(buf.data,peer->hc_downstart) - buf.data;
 		set_upstream_list_peerDef_downstart(peerDef, &buf);
 	} else {
 		down_time = peer->hc_downtime;
@@ -4315,7 +4270,7 @@ njt_stream_upstream_api_compose_one_detail_server(njt_http_request_t *r,
 
 	}
 	if(peer->selected_time != 0) {
-		njt_format_time(timebuf.data,"",peer->selected_time);
+		timebuf.len = njt_format_time(timebuf.data,peer->selected_time) - timebuf.data;
 		set_upstream_list_peerDef_selected(peerDef, &timebuf);
 
 	}
@@ -4667,7 +4622,7 @@ njt_stream_upstream_api_process_get(njt_http_request_t *r,
 
 			}
 		}
-		njt_http_upstream_api_packet_out(r,to_json,out);
+		rc = njt_http_upstream_api_packet_out(r,to_json,out);
 
 		return rc;
 	}
@@ -4707,9 +4662,9 @@ njt_stream_upstream_api_process_get(njt_http_request_t *r,
 	}
 	to_json = to_json_upstream_list(r->pool,upstream_list,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
 	if(to_json){
-		njt_http_upstream_api_packet_out(r,to_json,out);
+		 rc = njt_http_upstream_api_packet_out(r,to_json,out);
 	}
-	return NJT_OK;
+	return rc;
 }
 	static void
 njt_stream_upstream_api_patch(njt_http_request_t *r)
@@ -5011,7 +4966,10 @@ out:
 		goto error;
 	}
 	to_json = to_json_one_serverDef(r->pool,server_one,OMIT_NULL_ARRAY | OMIT_NULL_OBJ | OMIT_NULL_STR);
-	njt_http_upstream_api_packet_out(r,to_json,&out);
+	rc = njt_http_upstream_api_packet_out(r,to_json,&out);
+	if (rc != NJT_OK) {
+		goto error;
+	}
 
 send:
 	r->headers_out.content_type_len = sizeof("text/plain") - 1;
