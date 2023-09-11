@@ -40,7 +40,7 @@ static bool parse_upstream_error_msg_error(njt_pool_t *pool, parse_state_t *pars
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "text";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->text))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->text))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->text))->data);
             ((&out->text))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->text), 0, ((&out->text))->len, err_ret)) {
@@ -54,7 +54,7 @@ static bool parse_upstream_error_msg_error(njt_pool_t *pool, parse_state_t *pars
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "code";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->code))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->code))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->code))->data);
             ((&out->code))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->code), 0, ((&out->code))->len, err_ret)) {
@@ -88,7 +88,7 @@ static bool parse_upstream_error_msg(njt_pool_t *pool, parse_state_t *parse_stat
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "error";
-            out->error = njt_palloc(pool, sizeof(upstream_error_msg_error_t));
+            out->error = njt_pcalloc(pool, sizeof(upstream_error_msg_error_t));
             js2c_malloc_check(out->error);
             memset(out->error, 0, sizeof(upstream_error_msg_error_t));
 
@@ -103,7 +103,7 @@ static bool parse_upstream_error_msg(njt_pool_t *pool, parse_state_t *parse_stat
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "request_id";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->request_id))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->request_id))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->request_id))->data);
             ((&out->request_id))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->request_id), 0, ((&out->request_id))->len, err_ret)) {
@@ -117,7 +117,7 @@ static bool parse_upstream_error_msg(njt_pool_t *pool, parse_state_t *parse_stat
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "href";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->href))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->href))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->href))->data);
             ((&out->href))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->href), 0, ((&out->href))->len, err_ret)) {
@@ -285,8 +285,7 @@ void set_upstream_error_msg_error_code(upstream_error_msg_error_t* obj, upstream
     obj->is_code_set = 1;
 }
 upstream_error_msg_error_t* create_upstream_error_msg_error(njt_pool_t *pool) {
-    upstream_error_msg_error_t* out = njt_palloc(pool, sizeof(upstream_error_msg_error_t));
-    memset(out, 0, sizeof(upstream_error_msg_error_t));
+    upstream_error_msg_error_t* out = njt_pcalloc(pool, sizeof(upstream_error_msg_error_t));
     return out;
 }
 void set_upstream_error_msg_error(upstream_error_msg_t* obj, upstream_error_msg_error_t* field) {
@@ -302,8 +301,7 @@ void set_upstream_error_msg_href(upstream_error_msg_t* obj, upstream_error_msg_h
     obj->is_href_set = 1;
 }
 upstream_error_msg_t* create_upstream_error_msg(njt_pool_t *pool) {
-    upstream_error_msg_t* out = njt_palloc(pool, sizeof(upstream_error_msg_t));
-    memset(out, 0, sizeof(upstream_error_msg_t));
+    upstream_error_msg_t* out = njt_pcalloc(pool, sizeof(upstream_error_msg_t));
     return out;
 }
 
@@ -453,7 +451,7 @@ upstream_error_msg_t* json_parse_upstream_error_msg(njt_pool_t *pool, const njt_
     jsmntok_t *token_buffer;
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
-        token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
+        token_buffer = njt_pcalloc(pool, sizeof(jsmntok_t)*max_token_number);
         parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
             LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
@@ -473,7 +471,8 @@ upstream_error_msg_t* json_parse_upstream_error_msg(njt_pool_t *pool, const njt_
         }
         break; // parse success
     }
-    out = njt_palloc(pool, sizeof(upstream_error_msg_t));;
+    out = njt_pcalloc(pool, sizeof(upstream_error_msg_t));;
+    memset(out, 0, sizeof(upstream_error_msg_t));
     if (parse_upstream_error_msg(pool, parse_state, out, err_ret)) {
         return NULL;
     }
@@ -482,10 +481,10 @@ upstream_error_msg_t* json_parse_upstream_error_msg(njt_pool_t *pool, const njt_
 
 njt_str_t* to_json_upstream_error_msg(njt_pool_t *pool, upstream_error_msg_t* out, njt_int_t flags) {
     njt_str_t *json_str;
-    json_str = njt_palloc(pool, sizeof(njt_str_t));
+    json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_upstream_error_msg(pool, out, &str_len, flags);
-    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_upstream_error_msg(pool, out, json_str, flags);
     return json_str;

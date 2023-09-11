@@ -100,7 +100,7 @@ static bool parse_upstream_list_peerDef_responses(njt_pool_t *pool, parse_state_
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "codes";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->codes))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->codes))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->codes))->data);
             ((&out->codes))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->codes), 0, ((&out->codes))->len, err_ret)) {
@@ -256,7 +256,7 @@ static bool parse_upstream_list_peerDef(njt_pool_t *pool, parse_state_t *parse_s
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "server";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->server))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->server))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->server))->data);
             ((&out->server))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->server), 0, ((&out->server))->len, err_ret)) {
@@ -270,7 +270,7 @@ static bool parse_upstream_list_peerDef(njt_pool_t *pool, parse_state_t *parse_s
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "name";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->name))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->name))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->name))->data);
             ((&out->name))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->name), 0, ((&out->name))->len, err_ret)) {
@@ -307,7 +307,7 @@ static bool parse_upstream_list_peerDef(njt_pool_t *pool, parse_state_t *parse_s
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "state";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->state))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->state))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->state))->data);
             ((&out->state))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->state), 0, ((&out->state))->len, err_ret)) {
@@ -404,7 +404,7 @@ static bool parse_upstream_list_peerDef(njt_pool_t *pool, parse_state_t *parse_s
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "responses";
             js2c_null_check();
-            out->responses = njt_palloc(pool, sizeof(upstream_list_peerDef_responses_t));
+            out->responses = njt_pcalloc(pool, sizeof(upstream_list_peerDef_responses_t));
             js2c_malloc_check(out->responses);
             memset(out->responses, 0, sizeof(upstream_list_peerDef_responses_t));
 
@@ -475,7 +475,7 @@ static bool parse_upstream_list_peerDef(njt_pool_t *pool, parse_state_t *parse_s
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "health_checks";
             js2c_null_check();
-            out->health_checks = njt_palloc(pool, sizeof(upstream_list_peerDef_health_checks_t));
+            out->health_checks = njt_pcalloc(pool, sizeof(upstream_list_peerDef_health_checks_t));
             js2c_malloc_check(out->health_checks);
             memset(out->health_checks, 0, sizeof(upstream_list_peerDef_health_checks_t));
 
@@ -505,7 +505,7 @@ static bool parse_upstream_list_peerDef(njt_pool_t *pool, parse_state_t *parse_s
             parse_state->current_key = "downstart";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->downstart))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->downstart))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->downstart))->data);
             ((&out->downstart))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->downstart), 0, ((&out->downstart))->len, err_ret)) {
@@ -520,7 +520,7 @@ static bool parse_upstream_list_peerDef(njt_pool_t *pool, parse_state_t *parse_s
             parse_state->current_key = "selected";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->selected))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->selected))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->selected))->data);
             ((&out->selected))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->selected), 0, ((&out->selected))->len, err_ret)) {
@@ -614,7 +614,7 @@ static bool parse_upstream_list_peerDef(njt_pool_t *pool, parse_state_t *parse_s
     // set default
     if (!out->is_downstart_set) {
         size_t token_size = strlen("{}");
-        (out->downstart).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->downstart).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->downstart).data);
         (out->downstart).len = token_size;
         if (out->downstart.len == 0) {
@@ -627,7 +627,7 @@ static bool parse_upstream_list_peerDef(njt_pool_t *pool, parse_state_t *parse_s
     // set default
     if (!out->is_selected_set) {
         size_t token_size = strlen("{}");
-        (out->selected).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->selected).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->selected).data);
         (out->selected).len = token_size;
         if (out->selected.len == 0) {
@@ -1398,8 +1398,7 @@ void set_upstream_list_peerDef_responses_total(upstream_list_peerDef_responses_t
     obj->is_total_set = 1;
 }
 upstream_list_peerDef_responses_t* create_upstream_list_peerDef_responses(njt_pool_t *pool) {
-    upstream_list_peerDef_responses_t* out = njt_palloc(pool, sizeof(upstream_list_peerDef_responses_t));
-    memset(out, 0, sizeof(upstream_list_peerDef_responses_t));
+    upstream_list_peerDef_responses_t* out = njt_pcalloc(pool, sizeof(upstream_list_peerDef_responses_t));
     return out;
 }
 void set_upstream_list_peerDef_responses(upstream_list_peerDef_t* obj, upstream_list_peerDef_responses_t* field) {
@@ -1439,8 +1438,7 @@ void set_upstream_list_peerDef_health_checks_last_passed(upstream_list_peerDef_h
     obj->is_last_passed_set = 1;
 }
 upstream_list_peerDef_health_checks_t* create_upstream_list_peerDef_health_checks(njt_pool_t *pool) {
-    upstream_list_peerDef_health_checks_t* out = njt_palloc(pool, sizeof(upstream_list_peerDef_health_checks_t));
-    memset(out, 0, sizeof(upstream_list_peerDef_health_checks_t));
+    upstream_list_peerDef_health_checks_t* out = njt_pcalloc(pool, sizeof(upstream_list_peerDef_health_checks_t));
     return out;
 }
 void set_upstream_list_peerDef_health_checks(upstream_list_peerDef_t* obj, upstream_list_peerDef_health_checks_t* field) {
@@ -1468,8 +1466,7 @@ void set_upstream_list_peerDef_response_time(upstream_list_peerDef_t* obj, upstr
     obj->is_response_time_set = 1;
 }
 upstream_list_peerDef_t* create_upstream_list_peerDef(njt_pool_t *pool) {
-    upstream_list_peerDef_t* out = njt_palloc(pool, sizeof(upstream_list_peerDef_t));
-    memset(out, 0, sizeof(upstream_list_peerDef_t));
+    upstream_list_peerDef_t* out = njt_pcalloc(pool, sizeof(upstream_list_peerDef_t));
     return out;
 }
 
@@ -2098,7 +2095,8 @@ static bool parse_upstream_list_upstreamDef_peers(njt_pool_t *pool, parse_state_
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((upstream_list_upstreamDef_peers_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(upstream_list_peerDef_t));
+        ((upstream_list_upstreamDef_peers_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(upstream_list_peerDef_t));
+        memset(((upstream_list_upstreamDef_peers_item_t**)out->elts)[i], 0, sizeof(upstream_list_upstreamDef_peers_item_t));
         if (parse_upstream_list_peerDef(pool, parse_state, ((upstream_list_upstreamDef_peers_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -2123,7 +2121,7 @@ static bool parse_upstream_list_upstreamDef(njt_pool_t *pool, parse_state_t *par
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "name";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->name))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->name))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->name))->data);
             ((&out->name))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->name), 0, ((&out->name))->len, err_ret)) {
@@ -2177,7 +2175,7 @@ static bool parse_upstream_list_upstreamDef(njt_pool_t *pool, parse_state_t *par
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "zone";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->zone))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->zone))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->zone))->data);
             ((&out->zone))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->zone), 0, ((&out->zone))->len, err_ret)) {
@@ -2256,7 +2254,7 @@ static void get_json_length_upstream_list_upstreamDef_zone(njt_pool_t *pool, ups
     *length += dst->len + 2; //  "str" 
 }
 
-void get_json_length_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, size_t *length, njt_int_t flags) {
+ void get_json_length_upstream_list_upstreamDef(njt_pool_t *pool, upstream_list_upstreamDef_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -2369,8 +2367,7 @@ void set_upstream_list_upstreamDef_zone(upstream_list_upstreamDef_t* obj, upstre
     obj->is_zone_set = 1;
 }
 upstream_list_upstreamDef_t* create_upstream_list_upstreamDef(njt_pool_t *pool) {
-    upstream_list_upstreamDef_t* out = njt_palloc(pool, sizeof(upstream_list_upstreamDef_t));
-    memset(out, 0, sizeof(upstream_list_upstreamDef_t));
+    upstream_list_upstreamDef_t* out = njt_pcalloc(pool, sizeof(upstream_list_upstreamDef_t));
     return out;
 }
 
@@ -2515,7 +2512,8 @@ static bool parse_upstream_list(njt_pool_t *pool, parse_state_t *parse_state, up
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((upstream_list_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(upstream_list_upstreamDef_t));
+        ((upstream_list_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(upstream_list_upstreamDef_t));
+        memset(((upstream_list_item_t**)out->elts)[i], 0, sizeof(upstream_list_item_t));
         if (parse_upstream_list_upstreamDef(pool, parse_state, ((upstream_list_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -2611,7 +2609,7 @@ upstream_list_t* json_parse_upstream_list(njt_pool_t *pool, const njt_str_t *jso
     jsmntok_t *token_buffer;
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
-        token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
+        token_buffer = njt_pcalloc(pool, sizeof(jsmntok_t)*max_token_number);
         parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
             LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
@@ -2632,6 +2630,7 @@ upstream_list_t* json_parse_upstream_list(njt_pool_t *pool, const njt_str_t *jso
         break; // parse success
     }
     out = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(upstream_list_item_t*));;
+    memset(out, 0, sizeof(upstream_list_t));
     if (parse_upstream_list(pool, parse_state, out, err_ret)) {
         return NULL;
     }
@@ -2640,10 +2639,10 @@ upstream_list_t* json_parse_upstream_list(njt_pool_t *pool, const njt_str_t *jso
 
 njt_str_t* to_json_upstream_list(njt_pool_t *pool, upstream_list_t* out, njt_int_t flags) {
     njt_str_t *json_str;
-    json_str = njt_palloc(pool, sizeof(njt_str_t));
+    json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_upstream_list(pool, out, &str_len, flags);
-    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_upstream_list(pool, out, json_str, flags);
     return json_str;

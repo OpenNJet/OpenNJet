@@ -43,7 +43,7 @@
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "server";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->server))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->server))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->server))->data);
             ((&out->server))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->server), 0, ((&out->server))->len, err_ret)) {
@@ -57,7 +57,7 @@
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "name";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->name))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->name))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->name))->data);
             ((&out->name))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->name), 0, ((&out->name))->len, err_ret)) {
@@ -110,7 +110,7 @@
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "fail_timeout";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->fail_timeout))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->fail_timeout))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->fail_timeout))->data);
             ((&out->fail_timeout))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->fail_timeout), 0, ((&out->fail_timeout))->len, err_ret)) {
@@ -124,7 +124,7 @@
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "slow_start";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->slow_start))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->slow_start))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->slow_start))->data);
             ((&out->slow_start))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->slow_start), 0, ((&out->slow_start))->len, err_ret)) {
@@ -139,7 +139,7 @@
             parse_state->current_key = "route";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->route))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->route))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->route))->data);
             ((&out->route))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->route), 0, ((&out->route))->len, err_ret)) {
@@ -188,7 +188,7 @@
             parse_state->current_key = "host";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->host))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->host))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->host))->data);
             ((&out->host))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->host), 0, ((&out->host))->len, err_ret)) {
@@ -217,7 +217,7 @@
     // set default
     if (!out->is_route_set) {
         size_t token_size = strlen("");
-        (out->route).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->route).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->route).data);
         (out->route).len = token_size;
         if (out->route.len == 0) {
@@ -234,7 +234,7 @@
     // set default
     if (!out->is_host_set) {
         size_t token_size = strlen("");
-        (out->host).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->host).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->host).data);
         (out->host).len = token_size;
         if (out->host.len == 0) {
@@ -342,7 +342,7 @@ static void get_json_length_server_list_serverDef_drain(njt_pool_t *pool, server
     }
 }
 
-void get_json_length_server_list_serverDef(njt_pool_t *pool, server_list_serverDef_t *out, size_t *length, njt_int_t flags) {
+ void get_json_length_server_list_serverDef(njt_pool_t *pool, server_list_serverDef_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -586,8 +586,7 @@ void set_server_list_serverDef_drain(server_list_serverDef_t* obj, server_list_s
     obj->is_drain_set = 1;
 }
 server_list_serverDef_t* create_server_list_serverDef(njt_pool_t *pool) {
-    server_list_serverDef_t* out = njt_palloc(pool, sizeof(server_list_serverDef_t));
-    memset(out, 0, sizeof(server_list_serverDef_t));
+    server_list_serverDef_t* out = njt_pcalloc(pool, sizeof(server_list_serverDef_t));
     return out;
 }
 
@@ -868,7 +867,8 @@ static bool parse_server_list(njt_pool_t *pool, parse_state_t *parse_state, serv
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((server_list_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(server_list_serverDef_t));
+        ((server_list_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(server_list_serverDef_t));
+        memset(((server_list_item_t**)out->elts)[i], 0, sizeof(server_list_item_t));
         if (parse_server_list_serverDef(pool, parse_state, ((server_list_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -882,7 +882,7 @@ static void get_json_length_server_list_item(njt_pool_t *pool, server_list_item_
     get_json_length_server_list_serverDef(pool, out, length, flags);
 }
 
-void get_json_length_server_list(njt_pool_t *pool, server_list_t *out, size_t *length, njt_int_t flags) {
+ void get_json_length_server_list(njt_pool_t *pool, server_list_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -926,7 +926,7 @@ static void to_oneline_json_server_list_item(njt_pool_t *pool, server_list_item_
     to_oneline_json_server_list_serverDef(pool, out, buf, flags);
 }
 
- void to_oneline_json_server_list(njt_pool_t *pool, server_list_t *out, njt_str_t* buf, njt_int_t flags) {
+void to_oneline_json_server_list(njt_pool_t *pool, server_list_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -964,7 +964,7 @@ server_list_t* json_parse_server_list(njt_pool_t *pool, const njt_str_t *json_st
     jsmntok_t *token_buffer;
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
-        token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
+        token_buffer = njt_pcalloc(pool, sizeof(jsmntok_t)*max_token_number);
         parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
             LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
@@ -985,6 +985,7 @@ server_list_t* json_parse_server_list(njt_pool_t *pool, const njt_str_t *json_st
         break; // parse success
     }
     out = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(server_list_item_t*));;
+    memset(out, 0, sizeof(server_list_t));
     if (parse_server_list(pool, parse_state, out, err_ret)) {
         return NULL;
     }
@@ -993,10 +994,10 @@ server_list_t* json_parse_server_list(njt_pool_t *pool, const njt_str_t *json_st
 
 njt_str_t* to_json_server_list(njt_pool_t *pool, server_list_t* out, njt_int_t flags) {
     njt_str_t *json_str;
-    json_str = njt_palloc(pool, sizeof(njt_str_t));
+    json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_server_list(pool, out, &str_len, flags);
-    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_server_list(pool, out, json_str, flags);
     return json_str;
