@@ -19,7 +19,7 @@ static bool parse_dyn_ssl_servers_item_listens(njt_pool_t *pool, parse_state_t *
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-        ((&((dyn_ssl_servers_item_listens_item_t*)out->elts)[i]))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+        ((&((dyn_ssl_servers_item_listens_item_t*)out->elts)[i]))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
         js2c_malloc_check(((&((dyn_ssl_servers_item_listens_item_t*)out->elts)[i]))->data);
         ((&((dyn_ssl_servers_item_listens_item_t*)out->elts)[i]))->len = token_size;
         if (builtin_parse_string(pool, parse_state, (&((dyn_ssl_servers_item_listens_item_t*)out->elts)[i]), 1, ((&((dyn_ssl_servers_item_listens_item_t*)out->elts)[i]))->len, err_ret)) {
@@ -38,7 +38,7 @@ static bool parse_dyn_ssl_servers_item_serverNames(njt_pool_t *pool, parse_state
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-        ((&((dyn_ssl_servers_item_serverNames_item_t*)out->elts)[i]))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+        ((&((dyn_ssl_servers_item_serverNames_item_t*)out->elts)[i]))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
         js2c_malloc_check(((&((dyn_ssl_servers_item_serverNames_item_t*)out->elts)[i]))->data);
         ((&((dyn_ssl_servers_item_serverNames_item_t*)out->elts)[i]))->len = token_size;
         if (builtin_parse_string(pool, parse_state, (&((dyn_ssl_servers_item_serverNames_item_t*)out->elts)[i]), 0, ((&((dyn_ssl_servers_item_serverNames_item_t*)out->elts)[i]))->len, err_ret)) {
@@ -94,7 +94,7 @@ static bool parse_dyn_ssl_servers_item_certificates_item(njt_pool_t *pool, parse
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "certificate";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->certificate))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->certificate))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->certificate))->data);
             ((&out->certificate))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->certificate), 0, ((&out->certificate))->len, err_ret)) {
@@ -108,7 +108,7 @@ static bool parse_dyn_ssl_servers_item_certificates_item(njt_pool_t *pool, parse
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "certificateKey";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->certificateKey))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->certificateKey))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->certificateKey))->data);
             ((&out->certificateKey))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->certificateKey), 0, ((&out->certificateKey))->len, err_ret)) {
@@ -123,7 +123,7 @@ static bool parse_dyn_ssl_servers_item_certificates_item(njt_pool_t *pool, parse
             parse_state->current_key = "certificateEnc";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->certificateEnc))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->certificateEnc))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->certificateEnc))->data);
             ((&out->certificateEnc))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->certificateEnc), 0, ((&out->certificateEnc))->len, err_ret)) {
@@ -138,7 +138,7 @@ static bool parse_dyn_ssl_servers_item_certificates_item(njt_pool_t *pool, parse
             parse_state->current_key = "certificateKeyEnc";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->certificateKeyEnc))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->certificateKeyEnc))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->certificateKeyEnc))->data);
             ((&out->certificateKeyEnc))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->certificateKeyEnc), 0, ((&out->certificateKeyEnc))->len, err_ret)) {
@@ -164,7 +164,7 @@ static bool parse_dyn_ssl_servers_item_certificates_item(njt_pool_t *pool, parse
     // set default
     if (!out->is_certificateEnc_set) {
         size_t token_size = strlen("");
-        (out->certificateEnc).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->certificateEnc).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->certificateEnc).data);
         (out->certificateEnc).len = token_size;
         if (out->certificateEnc.len == 0) {
@@ -177,7 +177,7 @@ static bool parse_dyn_ssl_servers_item_certificates_item(njt_pool_t *pool, parse
     // set default
     if (!out->is_certificateKeyEnc_set) {
         size_t token_size = strlen("");
-        (out->certificateKeyEnc).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->certificateKeyEnc).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->certificateKeyEnc).data);
         (out->certificateKeyEnc).len = token_size;
         if (out->certificateKeyEnc.len == 0) {
@@ -198,7 +198,7 @@ static bool parse_dyn_ssl_servers_item_certificates(njt_pool_t *pool, parse_stat
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dyn_ssl_servers_item_certificates_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_ssl_servers_item_certificates_item_t));
+        ((dyn_ssl_servers_item_certificates_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dyn_ssl_servers_item_certificates_item_t));
         memset(((dyn_ssl_servers_item_certificates_item_t**)out->elts)[i], 0, sizeof(dyn_ssl_servers_item_certificates_item_t));
         if (parse_dyn_ssl_servers_item_certificates_item(pool, parse_state, ((dyn_ssl_servers_item_certificates_item_t**)out->elts)[i], err_ret)) {
             return true;
@@ -275,8 +275,7 @@ static bool parse_dyn_ssl_servers_item(njt_pool_t *pool, parse_state_t *parse_st
     }
     // set default
     if (!out->is_certificates_set) {
-        out->certificates = njt_palloc(pool, sizeof(njt_array_t));
-        memset(out->certificates, 0, sizeof(njt_array_t));
+        out->certificates = njt_pcalloc(pool, sizeof(njt_array_t));
     }
     parse_state->current_token = saved_current_token;
     return false;
@@ -289,7 +288,7 @@ static bool parse_dyn_ssl_servers(njt_pool_t *pool, parse_state_t *parse_state, 
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dyn_ssl_servers_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_ssl_servers_item_t));
+        ((dyn_ssl_servers_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dyn_ssl_servers_item_t));
         memset(((dyn_ssl_servers_item_t**)out->elts)[i], 0, sizeof(dyn_ssl_servers_item_t));
         if (parse_dyn_ssl_servers_item(pool, parse_state, ((dyn_ssl_servers_item_t**)out->elts)[i], err_ret)) {
             return true;
@@ -710,8 +709,7 @@ void set_dyn_ssl_servers_item_certificates_item_certificateKeyEnc(dyn_ssl_server
     obj->is_certificateKeyEnc_set = 1;
 }
 dyn_ssl_servers_item_certificates_item_t* create_dyn_ssl_servers_item_certificates_item(njt_pool_t *pool) {
-    dyn_ssl_servers_item_certificates_item_t* out = njt_palloc(pool, sizeof(dyn_ssl_servers_item_certificates_item_t));
-    memset(out, 0, sizeof(dyn_ssl_servers_item_certificates_item_t));
+    dyn_ssl_servers_item_certificates_item_t* out = njt_pcalloc(pool, sizeof(dyn_ssl_servers_item_certificates_item_t));
     return out;
 }
 int add_item_dyn_ssl_servers_item_certificates(dyn_ssl_servers_item_certificates_t *src, dyn_ssl_servers_item_certificates_item_t* item) {
@@ -731,8 +729,7 @@ void set_dyn_ssl_servers_item_certificates(dyn_ssl_servers_item_t* obj, dyn_ssl_
     obj->is_certificates_set = 1;
 }
 dyn_ssl_servers_item_t* create_dyn_ssl_servers_item(njt_pool_t *pool) {
-    dyn_ssl_servers_item_t* out = njt_palloc(pool, sizeof(dyn_ssl_servers_item_t));
-    memset(out, 0, sizeof(dyn_ssl_servers_item_t));
+    dyn_ssl_servers_item_t* out = njt_pcalloc(pool, sizeof(dyn_ssl_servers_item_t));
     return out;
 }
 int add_item_dyn_ssl_servers(dyn_ssl_servers_t *src, dyn_ssl_servers_item_t* item) {
@@ -752,8 +749,7 @@ void set_dyn_ssl_servers(dyn_ssl_t* obj, dyn_ssl_servers_t* field) {
     obj->is_servers_set = 1;
 }
 dyn_ssl_t* create_dyn_ssl(njt_pool_t *pool) {
-    dyn_ssl_t* out = njt_palloc(pool, sizeof(dyn_ssl_t));
-    memset(out, 0, sizeof(dyn_ssl_t));
+    dyn_ssl_t* out = njt_pcalloc(pool, sizeof(dyn_ssl_t));
     return out;
 }
 
@@ -1112,7 +1108,7 @@ dyn_ssl_t* json_parse_dyn_ssl(njt_pool_t *pool, const njt_str_t *json_string, js
     jsmntok_t *token_buffer;
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
-        token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
+        token_buffer = njt_pcalloc(pool, sizeof(jsmntok_t)*max_token_number);
         parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
             LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
@@ -1132,7 +1128,7 @@ dyn_ssl_t* json_parse_dyn_ssl(njt_pool_t *pool, const njt_str_t *json_string, js
         }
         break; // parse success
     }
-    out = njt_palloc(pool, sizeof(dyn_ssl_t));;
+    out = njt_pcalloc(pool, sizeof(dyn_ssl_t));;
     memset(out, 0, sizeof(dyn_ssl_t));
     if (parse_dyn_ssl(pool, parse_state, out, err_ret)) {
         return NULL;
@@ -1142,10 +1138,10 @@ dyn_ssl_t* json_parse_dyn_ssl(njt_pool_t *pool, const njt_str_t *json_string, js
 
 njt_str_t* to_json_dyn_ssl(njt_pool_t *pool, dyn_ssl_t* out, njt_int_t flags) {
     njt_str_t *json_str;
-    json_str = njt_palloc(pool, sizeof(njt_str_t));
+    json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_dyn_ssl(pool, out, &str_len, flags);
-    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_dyn_ssl(pool, out, json_str, flags);
     return json_str;

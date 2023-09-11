@@ -83,11 +83,11 @@ typedef struct j2sc_parse_error_s {
 #ifndef LOG_ERROR_JSON_PARSE
 #define LOG_ERROR_JSON_PARSE(code, field, position, format, ...)  do { \
     err_ret->err_code = code; \
-    err_ret->field_name.data = (u_char *)njt_palloc(pool, strlen(field) + 1); \
+    err_ret->field_name.data = (u_char *)njt_pcalloc(pool, strlen(field) + 1); \
     err_ret->field_name.len = sprintf((char *)err_ret->field_name.data, "%s", field); \
     err_ret->pos = position; \
     int len; \
-    err_ret->err_str.data = (u_char *)njt_palloc(pool, 1024); \
+    err_ret->err_str.data = (u_char *)njt_pcalloc(pool, 1024); \
     len = sprintf((char *)err_ret->err_str.data, "pos: %d, ", position); \
     len += sprintf((char *)err_ret->err_str.data + len, format, __VA_ARGS__); \
     err_ret->err_str.len = len; \
@@ -304,8 +304,8 @@ static inline njt_str_t* handle_escape_on_write(njt_pool_t *pool, njt_str_t *src
     if (need_convert == false) {
         return src;
     }
-    njt_str_t *out = (njt_str_t *)njt_palloc(pool, sizeof(njt_str_t));
-    out->data = (u_char *)njt_palloc(pool, 2*src->len);
+    njt_str_t *out = (njt_str_t *)njt_pcalloc(pool, sizeof(njt_str_t));
+    out->data = (u_char *)njt_pcalloc(pool, 2*src->len);
     char *dst = (char *)out->data;
     out->len = src->len;
     cur = (char *)src->data;

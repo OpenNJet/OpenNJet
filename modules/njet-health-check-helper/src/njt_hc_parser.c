@@ -28,7 +28,7 @@ static bool parse_health_check_stream(njt_pool_t *pool, parse_state_t *parse_sta
             parse_state->current_key = "send";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->send))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->send))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->send))->data);
             ((&out->send))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->send), 0, ((&out->send))->len, err_ret)) {
@@ -43,7 +43,7 @@ static bool parse_health_check_stream(njt_pool_t *pool, parse_state_t *parse_sta
             parse_state->current_key = "expect";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->expect))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->expect))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->expect))->data);
             ((&out->expect))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->expect), 0, ((&out->expect))->len, err_ret)) {
@@ -61,7 +61,7 @@ static bool parse_health_check_stream(njt_pool_t *pool, parse_state_t *parse_sta
     // set default
     if (!out->is_send_set) {
         size_t token_size = strlen("");
-        (out->send).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->send).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->send).data);
         (out->send).len = token_size;
         if (out->send.len == 0) {
@@ -74,7 +74,7 @@ static bool parse_health_check_stream(njt_pool_t *pool, parse_state_t *parse_sta
     // set default
     if (!out->is_expect_set) {
         size_t token_size = strlen("");
-        (out->expect).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->expect).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->expect).data);
         (out->expect).len = token_size;
         if (out->expect.len == 0) {
@@ -96,7 +96,7 @@ static bool parse_health_check_http_header(njt_pool_t *pool, parse_state_t *pars
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-        ((&((health_check_http_header_item_t*)out->elts)[i]))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+        ((&((health_check_http_header_item_t*)out->elts)[i]))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
         js2c_malloc_check(((&((health_check_http_header_item_t*)out->elts)[i]))->data);
         ((&((health_check_http_header_item_t*)out->elts)[i]))->len = token_size;
         if (builtin_parse_string(pool, parse_state, (&((health_check_http_header_item_t*)out->elts)[i]), 0, ((&((health_check_http_header_item_t*)out->elts)[i]))->len, err_ret)) {
@@ -124,7 +124,7 @@ static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state
             parse_state->current_key = "uri";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->uri))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->uri))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->uri))->data);
             ((&out->uri))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->uri), 0, ((&out->uri))->len, err_ret)) {
@@ -139,7 +139,7 @@ static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state
             parse_state->current_key = "grpcService";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->grpcService))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->grpcService))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->grpcService))->data);
             ((&out->grpcService))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->grpcService), 0, ((&out->grpcService))->len, err_ret)) {
@@ -182,7 +182,7 @@ static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state
             parse_state->current_key = "body";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->body))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->body))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->body))->data);
             ((&out->body))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->body), 0, ((&out->body))->len, err_ret)) {
@@ -197,7 +197,7 @@ static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state
             parse_state->current_key = "status";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->status))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->status))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->status))->data);
             ((&out->status))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->status), 0, ((&out->status))->len, err_ret)) {
@@ -215,7 +215,7 @@ static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state
     // set default
     if (!out->is_uri_set) {
         size_t token_size = strlen("");
-        (out->uri).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->uri).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->uri).data);
         (out->uri).len = token_size;
         if (out->uri.len == 0) {
@@ -228,7 +228,7 @@ static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state
     // set default
     if (!out->is_grpcService_set) {
         size_t token_size = strlen("");
-        (out->grpcService).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->grpcService).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->grpcService).data);
         (out->grpcService).len = token_size;
         if (out->grpcService.len == 0) {
@@ -244,13 +244,12 @@ static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state
     }
     // set default
     if (!out->is_header_set) {
-        out->header = njt_palloc(pool, sizeof(njt_array_t));
-        memset(out->header, 0, sizeof(njt_array_t));
+        out->header = njt_pcalloc(pool, sizeof(njt_array_t));
     }
     // set default
     if (!out->is_body_set) {
         size_t token_size = strlen("");
-        (out->body).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->body).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->body).data);
         (out->body).len = token_size;
         if (out->body.len == 0) {
@@ -263,7 +262,7 @@ static bool parse_health_check_http(njt_pool_t *pool, parse_state_t *parse_state
     // set default
     if (!out->is_status_set) {
         size_t token_size = strlen("");
-        (out->status).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->status).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->status).data);
         (out->status).len = token_size;
         if (out->status.len == 0) {
@@ -327,7 +326,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
             parse_state->current_key = "name";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->name))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->name))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->name))->data);
             ((&out->name))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->name), 0, ((&out->name))->len, err_ret)) {
@@ -342,7 +341,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
             parse_state->current_key = "protocols";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->protocols))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->protocols))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->protocols))->data);
             ((&out->protocols))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->protocols), 0, ((&out->protocols))->len, err_ret)) {
@@ -393,7 +392,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
             parse_state->current_key = "trustedCertificate";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->trustedCertificate))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->trustedCertificate))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->trustedCertificate))->data);
             ((&out->trustedCertificate))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->trustedCertificate), 0, ((&out->trustedCertificate))->len, err_ret)) {
@@ -408,7 +407,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
             parse_state->current_key = "crl";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->crl))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->crl))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->crl))->data);
             ((&out->crl))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->crl), 0, ((&out->crl))->len, err_ret)) {
@@ -423,7 +422,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
             parse_state->current_key = "certificate";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->certificate))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->certificate))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->certificate))->data);
             ((&out->certificate))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->certificate), 0, ((&out->certificate))->len, err_ret)) {
@@ -438,7 +437,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
             parse_state->current_key = "certificateKey";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->certificateKey))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->certificateKey))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->certificateKey))->data);
             ((&out->certificateKey))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->certificateKey), 0, ((&out->certificateKey))->len, err_ret)) {
@@ -453,7 +452,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
             parse_state->current_key = "encCertificate";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->encCertificate))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->encCertificate))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->encCertificate))->data);
             ((&out->encCertificate))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->encCertificate), 0, ((&out->encCertificate))->len, err_ret)) {
@@ -468,7 +467,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
             parse_state->current_key = "encCertificateKey";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->encCertificateKey))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->encCertificateKey))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->encCertificateKey))->data);
             ((&out->encCertificateKey))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->encCertificateKey), 0, ((&out->encCertificateKey))->len, err_ret)) {
@@ -483,7 +482,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
             parse_state->current_key = "passwords";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->passwords))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->passwords))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->passwords))->data);
             ((&out->passwords))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->passwords), 0, ((&out->passwords))->len, err_ret)) {
@@ -498,7 +497,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
             parse_state->current_key = "conf_commands";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->conf_commands))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->conf_commands))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->conf_commands))->data);
             ((&out->conf_commands))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->conf_commands), 0, ((&out->conf_commands))->len, err_ret)) {
@@ -513,7 +512,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
             parse_state->current_key = "ciphers";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->ciphers))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->ciphers))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->ciphers))->data);
             ((&out->ciphers))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->ciphers), 0, ((&out->ciphers))->len, err_ret)) {
@@ -543,7 +542,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
     // set default
     if (!out->is_name_set) {
         size_t token_size = strlen("");
-        (out->name).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->name).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->name).data);
         (out->name).len = token_size;
         if (out->name.len == 0) {
@@ -556,7 +555,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
     // set default
     if (!out->is_protocols_set) {
         size_t token_size = strlen("");
-        (out->protocols).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->protocols).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->protocols).data);
         (out->protocols).len = token_size;
         if (out->protocols.len == 0) {
@@ -581,7 +580,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
     // set default
     if (!out->is_trustedCertificate_set) {
         size_t token_size = strlen("");
-        (out->trustedCertificate).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->trustedCertificate).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->trustedCertificate).data);
         (out->trustedCertificate).len = token_size;
         if (out->trustedCertificate.len == 0) {
@@ -594,7 +593,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
     // set default
     if (!out->is_crl_set) {
         size_t token_size = strlen("");
-        (out->crl).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->crl).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->crl).data);
         (out->crl).len = token_size;
         if (out->crl.len == 0) {
@@ -607,7 +606,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
     // set default
     if (!out->is_certificate_set) {
         size_t token_size = strlen("");
-        (out->certificate).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->certificate).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->certificate).data);
         (out->certificate).len = token_size;
         if (out->certificate.len == 0) {
@@ -620,7 +619,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
     // set default
     if (!out->is_certificateKey_set) {
         size_t token_size = strlen("");
-        (out->certificateKey).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->certificateKey).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->certificateKey).data);
         (out->certificateKey).len = token_size;
         if (out->certificateKey.len == 0) {
@@ -633,7 +632,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
     // set default
     if (!out->is_encCertificate_set) {
         size_t token_size = strlen("");
-        (out->encCertificate).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->encCertificate).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->encCertificate).data);
         (out->encCertificate).len = token_size;
         if (out->encCertificate.len == 0) {
@@ -646,7 +645,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
     // set default
     if (!out->is_encCertificateKey_set) {
         size_t token_size = strlen("");
-        (out->encCertificateKey).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->encCertificateKey).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->encCertificateKey).data);
         (out->encCertificateKey).len = token_size;
         if (out->encCertificateKey.len == 0) {
@@ -659,7 +658,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
     // set default
     if (!out->is_passwords_set) {
         size_t token_size = strlen("");
-        (out->passwords).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->passwords).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->passwords).data);
         (out->passwords).len = token_size;
         if (out->passwords.len == 0) {
@@ -672,7 +671,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
     // set default
     if (!out->is_conf_commands_set) {
         size_t token_size = strlen("");
-        (out->conf_commands).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->conf_commands).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->conf_commands).data);
         (out->conf_commands).len = token_size;
         if (out->conf_commands.len == 0) {
@@ -685,7 +684,7 @@ static bool parse_health_check_ssl(njt_pool_t *pool, parse_state_t *parse_state,
     // set default
     if (!out->is_ciphers_set) {
         size_t token_size = strlen("DEFAULT");
-        (out->ciphers).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->ciphers).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->ciphers).data);
         (out->ciphers).len = token_size;
         if (out->ciphers.len == 0) {
@@ -715,7 +714,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "interval";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->interval))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->interval))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->interval))->data);
             ((&out->interval))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->interval), 0, ((&out->interval))->len, err_ret)) {
@@ -729,7 +728,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "jitter";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->jitter))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->jitter))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->jitter))->data);
             ((&out->jitter))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->jitter), 0, ((&out->jitter))->len, err_ret)) {
@@ -743,7 +742,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "timeout";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->timeout))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->timeout))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->timeout))->data);
             ((&out->timeout))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->timeout), 0, ((&out->timeout))->len, err_ret)) {
@@ -798,7 +797,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "stream";
             js2c_null_check();
-            out->stream = njt_palloc(pool, sizeof(health_check_stream_t));
+            out->stream = njt_pcalloc(pool, sizeof(health_check_stream_t));
             js2c_malloc_check(out->stream);
             memset(out->stream, 0, sizeof(health_check_stream_t));
 
@@ -813,7 +812,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "http";
             js2c_null_check();
-            out->http = njt_palloc(pool, sizeof(health_check_http_t));
+            out->http = njt_pcalloc(pool, sizeof(health_check_http_t));
             js2c_malloc_check(out->http);
             memset(out->http, 0, sizeof(health_check_http_t));
 
@@ -828,7 +827,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "ssl";
             js2c_null_check();
-            out->ssl = njt_palloc(pool, sizeof(health_check_ssl_t));
+            out->ssl = njt_pcalloc(pool, sizeof(health_check_ssl_t));
             js2c_malloc_check(out->ssl);
             memset(out->ssl, 0, sizeof(health_check_ssl_t));
 
@@ -870,12 +869,12 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
     }
     // set default
     if (!out->is_stream_set) {
-        out->stream = njt_palloc(pool, sizeof(health_check_stream_t));
+        out->stream = njt_pcalloc(pool, sizeof(health_check_stream_t));
         js2c_malloc_check(out->stream);
         memset(out->stream, 0, sizeof(health_check_stream_t));
  {
             size_t token_size = strlen("");
-            (out->stream->send).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->stream->send).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->stream->send).data);
             (out->stream->send).len = token_size;
             if (out->stream->send.len == 0) {
@@ -887,7 +886,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->stream->expect).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->stream->expect).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->stream->expect).data);
             (out->stream->expect).len = token_size;
             if (out->stream->expect.len == 0) {
@@ -900,12 +899,12 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
     }
     // set default
     if (!out->is_http_set) {
-        out->http = njt_palloc(pool, sizeof(health_check_http_t));
+        out->http = njt_pcalloc(pool, sizeof(health_check_http_t));
         js2c_malloc_check(out->http);
         memset(out->http, 0, sizeof(health_check_http_t));
  {
             size_t token_size = strlen("");
-            (out->http->uri).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->http->uri).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->http->uri).data);
             (out->http->uri).len = token_size;
             if (out->http->uri.len == 0) {
@@ -917,7 +916,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->http->grpcService).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->http->grpcService).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->http->grpcService).data);
             (out->http->grpcService).len = token_size;
             if (out->http->grpcService.len == 0) {
@@ -931,12 +930,11 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
             out->http->grpcStatus = 0LL;
         }
  {
-            out->http->header = njt_palloc(pool, sizeof(njt_array_t));
-            memset(out->http->header, 0, sizeof(njt_array_t));
+            out->http->header = njt_pcalloc(pool, sizeof(njt_array_t));
         }
  {
             size_t token_size = strlen("");
-            (out->http->body).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->http->body).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->http->body).data);
             (out->http->body).len = token_size;
             if (out->http->body.len == 0) {
@@ -948,7 +946,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->http->status).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->http->status).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->http->status).data);
             (out->http->status).len = token_size;
             if (out->http->status.len == 0) {
@@ -961,7 +959,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
     }
     // set default
     if (!out->is_ssl_set) {
-        out->ssl = njt_palloc(pool, sizeof(health_check_ssl_t));
+        out->ssl = njt_pcalloc(pool, sizeof(health_check_ssl_t));
         js2c_malloc_check(out->ssl);
         memset(out->ssl, 0, sizeof(health_check_ssl_t));
  {
@@ -975,7 +973,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->ssl->name).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->ssl->name).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->ssl->name).data);
             (out->ssl->name).len = token_size;
             if (out->ssl->name.len == 0) {
@@ -987,7 +985,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->ssl->protocols).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->ssl->protocols).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->ssl->protocols).data);
             (out->ssl->protocols).len = token_size;
             if (out->ssl->protocols.len == 0) {
@@ -1008,7 +1006,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->ssl->trustedCertificate).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->ssl->trustedCertificate).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->ssl->trustedCertificate).data);
             (out->ssl->trustedCertificate).len = token_size;
             if (out->ssl->trustedCertificate.len == 0) {
@@ -1020,7 +1018,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->ssl->crl).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->ssl->crl).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->ssl->crl).data);
             (out->ssl->crl).len = token_size;
             if (out->ssl->crl.len == 0) {
@@ -1032,7 +1030,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->ssl->certificate).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->ssl->certificate).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->ssl->certificate).data);
             (out->ssl->certificate).len = token_size;
             if (out->ssl->certificate.len == 0) {
@@ -1044,7 +1042,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->ssl->certificateKey).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->ssl->certificateKey).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->ssl->certificateKey).data);
             (out->ssl->certificateKey).len = token_size;
             if (out->ssl->certificateKey.len == 0) {
@@ -1056,7 +1054,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->ssl->encCertificate).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->ssl->encCertificate).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->ssl->encCertificate).data);
             (out->ssl->encCertificate).len = token_size;
             if (out->ssl->encCertificate.len == 0) {
@@ -1068,7 +1066,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->ssl->encCertificateKey).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->ssl->encCertificateKey).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->ssl->encCertificateKey).data);
             (out->ssl->encCertificateKey).len = token_size;
             if (out->ssl->encCertificateKey.len == 0) {
@@ -1080,7 +1078,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->ssl->passwords).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->ssl->passwords).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->ssl->passwords).data);
             (out->ssl->passwords).len = token_size;
             if (out->ssl->passwords.len == 0) {
@@ -1092,7 +1090,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("");
-            (out->ssl->conf_commands).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->ssl->conf_commands).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->ssl->conf_commands).data);
             (out->ssl->conf_commands).len = token_size;
             if (out->ssl->conf_commands.len == 0) {
@@ -1104,7 +1102,7 @@ static bool parse_health_check(njt_pool_t *pool, parse_state_t *parse_state, hea
         }
  {
             size_t token_size = strlen("DEFAULT");
-            (out->ssl->ciphers).data = (u_char*)njt_palloc(pool, token_size + 1);
+            (out->ssl->ciphers).data = (u_char*)njt_pcalloc(pool, token_size + 1);
             js2c_malloc_check((out->ssl->ciphers).data);
             (out->ssl->ciphers).len = token_size;
             if (out->ssl->ciphers.len == 0) {
@@ -1847,8 +1845,7 @@ void set_health_check_stream_expect(health_check_stream_t* obj, health_check_str
     obj->is_expect_set = 1;
 }
 health_check_stream_t* create_health_check_stream(njt_pool_t *pool) {
-    health_check_stream_t* out = njt_palloc(pool, sizeof(health_check_stream_t));
-    memset(out, 0, sizeof(health_check_stream_t));
+    health_check_stream_t* out = njt_pcalloc(pool, sizeof(health_check_stream_t));
     return out;
 }
 void set_health_check_stream(health_check_t* obj, health_check_stream_t* field) {
@@ -1892,8 +1889,7 @@ void set_health_check_http_status(health_check_http_t* obj, health_check_http_st
     obj->is_status_set = 1;
 }
 health_check_http_t* create_health_check_http(njt_pool_t *pool) {
-    health_check_http_t* out = njt_palloc(pool, sizeof(health_check_http_t));
-    memset(out, 0, sizeof(health_check_http_t));
+    health_check_http_t* out = njt_pcalloc(pool, sizeof(health_check_http_t));
     return out;
 }
 void set_health_check_http(health_check_t* obj, health_check_http_t* field) {
@@ -1969,8 +1965,7 @@ void set_health_check_ssl_ciphers(health_check_ssl_t* obj, health_check_ssl_ciph
     obj->is_ciphers_set = 1;
 }
 health_check_ssl_t* create_health_check_ssl(njt_pool_t *pool) {
-    health_check_ssl_t* out = njt_palloc(pool, sizeof(health_check_ssl_t));
-    memset(out, 0, sizeof(health_check_ssl_t));
+    health_check_ssl_t* out = njt_pcalloc(pool, sizeof(health_check_ssl_t));
     return out;
 }
 void set_health_check_ssl(health_check_t* obj, health_check_ssl_t* field) {
@@ -1978,8 +1973,7 @@ void set_health_check_ssl(health_check_t* obj, health_check_ssl_t* field) {
     obj->is_ssl_set = 1;
 }
 health_check_t* create_health_check(njt_pool_t *pool) {
-    health_check_t* out = njt_palloc(pool, sizeof(health_check_t));
-    memset(out, 0, sizeof(health_check_t));
+    health_check_t* out = njt_pcalloc(pool, sizeof(health_check_t));
     return out;
 }
 
@@ -2697,7 +2691,7 @@ health_check_t* json_parse_health_check(njt_pool_t *pool, const njt_str_t *json_
     jsmntok_t *token_buffer;
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
-        token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
+        token_buffer = njt_pcalloc(pool, sizeof(jsmntok_t)*max_token_number);
         parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
             LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
@@ -2717,7 +2711,7 @@ health_check_t* json_parse_health_check(njt_pool_t *pool, const njt_str_t *json_
         }
         break; // parse success
     }
-    out = njt_palloc(pool, sizeof(health_check_t));;
+    out = njt_pcalloc(pool, sizeof(health_check_t));;
     memset(out, 0, sizeof(health_check_t));
     if (parse_health_check(pool, parse_state, out, err_ret)) {
         return NULL;
@@ -2727,10 +2721,10 @@ health_check_t* json_parse_health_check(njt_pool_t *pool, const njt_str_t *json_
 
 njt_str_t* to_json_health_check(njt_pool_t *pool, health_check_t* out, njt_int_t flags) {
     njt_str_t *json_str;
-    json_str = njt_palloc(pool, sizeof(njt_str_t));
+    json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_health_check(pool, out, &str_len, flags);
-    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_health_check(pool, out, json_str, flags);
     return json_str;
