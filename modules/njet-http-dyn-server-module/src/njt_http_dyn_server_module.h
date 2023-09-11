@@ -14,6 +14,7 @@ typedef struct njt_http_dyn_server_info_s {
     njt_str_t file;
     njt_str_t type;
     njt_str_t addr_port;
+    njt_str_t listen_option;
     njt_str_t server_name;
     njt_str_t server_body;
     njt_str_t listens;

@@ -20,6 +20,7 @@ extern  njt_int_t
 njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
                           njt_array_t *ports); 
 
+
 njt_str_t njt_del_headtail_space(njt_str_t src);
 
 static njt_int_t
@@ -199,6 +200,7 @@ njt_int_t njt_http_check_upstream_exist(njt_cycle_t *cycle,njt_pool_t *pool, njt
 
 static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_info,njt_uint_t from_api_add) {
     njt_conf_t conf;
+    //njt_http_core_loc_conf_t *clcf;
     njt_int_t rc = NJT_OK;
 	u_char *p;
     char *rv = NULL;
@@ -334,7 +336,13 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
         rc = NJT_ERROR;
 	goto out;
     }
-
+    cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->server_name);
+    if(cscf != NULL) {
+	    //conf.pool = cscf->pool;
+    	    //conf.temp_pool = server_info->pool;
+	    //clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];  
+	    //njt_http_refresh_location(&conf, cscf, clcf);
+    }
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge end +++++++++++++++");
 
     njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "add server end +++++++++++++++");
@@ -534,6 +542,10 @@ njt_int_t njt_http_check_top_server( njt_json_manager *json_body,njt_http_dyn_se
 	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
 		continue;
 	  }
+	  njt_str_set(&str,"listen_option");
+	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
+		continue;
+	  }
 	  njt_str_set(&str,"server_name");
 	  if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
 		continue;
@@ -650,6 +662,17 @@ njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_
 		}
 	}
 
+	njt_str_set(&key,"listen_option");
+	rc = njt_struct_top_find(&json_body, &key, &items);
+	if(rc == NJT_OK ){
+		 if (items->type != NJT_JSON_STR) {
+	   	njt_str_set(&server_info->msg, "listen_option error!");
+			   goto end;
+          	}
+		server_info->listen_option = njt_del_headtail_space(items->strval);
+		if(server_info->listen_option.len == 0) {
+		}
+	} 
 	
 	njt_str_set(&key,"server_body");
 	rc = njt_struct_top_find(&json_body, &key, &items);
@@ -660,6 +683,7 @@ njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_
           	}
 		server_info->server_body = njt_del_headtail_space(items->strval);
 		if(server_info->server_body.len == 0) {
+		  njt_str_set(&server_info->msg, "server_body is null!");
 		  goto end;
 		}
 	} else {
@@ -694,9 +718,9 @@ static njt_int_t njt_http_server_write_data(njt_fd_t fd,njt_http_dyn_server_info
 		remain = data + buffer_len - p;
 
 		if(server_info->server_name.len != 0 && server_info->server_body.len != 0 ){
-			p = njt_snprintf(p, remain, "listen %V;\nserver_name %V;\n%V; \n}\n",&server_info->addr_port,&server_info->server_name,&server_info->server_body);
+			p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V;\n%V \n}\n",&server_info->addr_port,&server_info->listen_option,&server_info->server_name,&server_info->server_body);
 		} else {
-			p = njt_snprintf(p, remain, "listen %V;\nserver_name %V;\n}\n",&server_info->addr_port,&server_info->server_name);
+			p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V \n}\n",&server_info->addr_port,&server_info->listen_option,&server_info->server_name);
 		}
 		remain = data + buffer_len - p;
 
