@@ -27,7 +27,7 @@ static bool parse_httpmap_maps_item_values_item(njt_pool_t *pool, parse_state_t 
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "valueFrom";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->valueFrom))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->valueFrom))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->valueFrom))->data);
             ((&out->valueFrom))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->valueFrom), 0, ((&out->valueFrom))->len, err_ret)) {
@@ -41,7 +41,7 @@ static bool parse_httpmap_maps_item_values_item(njt_pool_t *pool, parse_state_t 
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "valueTo";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->valueTo))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->valueTo))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->valueTo))->data);
             ((&out->valueTo))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->valueTo), 0, ((&out->valueTo))->len, err_ret)) {
@@ -75,7 +75,8 @@ static bool parse_httpmap_maps_item_values(njt_pool_t *pool, parse_state_t *pars
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((httpmap_maps_item_values_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(httpmap_maps_item_values_item_t));
+        ((httpmap_maps_item_values_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(httpmap_maps_item_values_item_t));
+        memset(((httpmap_maps_item_values_item_t**)out->elts)[i], 0, sizeof(httpmap_maps_item_values_item_t));
         if (parse_httpmap_maps_item_values_item(pool, parse_state, ((httpmap_maps_item_values_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -100,7 +101,7 @@ static bool parse_httpmap_maps_item(njt_pool_t *pool, parse_state_t *parse_state
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "keyFrom";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->keyFrom))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->keyFrom))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->keyFrom))->data);
             ((&out->keyFrom))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->keyFrom), 2, ((&out->keyFrom))->len, err_ret)) {
@@ -114,7 +115,7 @@ static bool parse_httpmap_maps_item(njt_pool_t *pool, parse_state_t *parse_state
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "keyTo";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->keyTo))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->keyTo))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->keyTo))->data);
             ((&out->keyTo))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->keyTo), 2, ((&out->keyTo))->len, err_ret)) {
@@ -195,7 +196,8 @@ static bool parse_httpmap_maps(njt_pool_t *pool, parse_state_t *parse_state, htt
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((httpmap_maps_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(httpmap_maps_item_t));
+        ((httpmap_maps_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(httpmap_maps_item_t));
+        memset(((httpmap_maps_item_t**)out->elts)[i], 0, sizeof(httpmap_maps_item_t));
         if (parse_httpmap_maps_item(pool, parse_state, ((httpmap_maps_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -493,8 +495,7 @@ void set_httpmap_maps_item_values_item_valueTo(httpmap_maps_item_values_item_t* 
     obj->is_valueTo_set = 1;
 }
 httpmap_maps_item_values_item_t* create_httpmap_maps_item_values_item(njt_pool_t *pool) {
-    httpmap_maps_item_values_item_t* out = njt_palloc(pool, sizeof(httpmap_maps_item_values_item_t));
-    memset(out, 0, sizeof(httpmap_maps_item_values_item_t));
+    httpmap_maps_item_values_item_t* out = njt_pcalloc(pool, sizeof(httpmap_maps_item_values_item_t));
     return out;
 }
 int add_item_httpmap_maps_item_values(httpmap_maps_item_values_t *src, httpmap_maps_item_values_item_t* item) {
@@ -522,8 +523,7 @@ void set_httpmap_maps_item_hostnames(httpmap_maps_item_t* obj, httpmap_maps_item
     obj->is_hostnames_set = 1;
 }
 httpmap_maps_item_t* create_httpmap_maps_item(njt_pool_t *pool) {
-    httpmap_maps_item_t* out = njt_palloc(pool, sizeof(httpmap_maps_item_t));
-    memset(out, 0, sizeof(httpmap_maps_item_t));
+    httpmap_maps_item_t* out = njt_pcalloc(pool, sizeof(httpmap_maps_item_t));
     return out;
 }
 int add_item_httpmap_maps(httpmap_maps_t *src, httpmap_maps_item_t* item) {
@@ -543,8 +543,7 @@ void set_httpmap_maps(httpmap_t* obj, httpmap_maps_t* field) {
     obj->is_maps_set = 1;
 }
 httpmap_t* create_httpmap(njt_pool_t *pool) {
-    httpmap_t* out = njt_palloc(pool, sizeof(httpmap_t));
-    memset(out, 0, sizeof(httpmap_t));
+    httpmap_t* out = njt_pcalloc(pool, sizeof(httpmap_t));
     return out;
 }
 
@@ -813,7 +812,7 @@ httpmap_t* json_parse_httpmap(njt_pool_t *pool, const njt_str_t *json_string, js
     jsmntok_t *token_buffer;
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
-        token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
+        token_buffer = njt_pcalloc(pool, sizeof(jsmntok_t)*max_token_number);
         parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
             LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
@@ -833,7 +832,8 @@ httpmap_t* json_parse_httpmap(njt_pool_t *pool, const njt_str_t *json_string, js
         }
         break; // parse success
     }
-    out = njt_palloc(pool, sizeof(httpmap_t));;
+    out = njt_pcalloc(pool, sizeof(httpmap_t));;
+    memset(out, 0, sizeof(httpmap_t));
     if (parse_httpmap(pool, parse_state, out, err_ret)) {
         return NULL;
     }
@@ -842,10 +842,10 @@ httpmap_t* json_parse_httpmap(njt_pool_t *pool, const njt_str_t *json_string, js
 
 njt_str_t* to_json_httpmap(njt_pool_t *pool, httpmap_t* out, njt_int_t flags) {
     njt_str_t *json_str;
-    json_str = njt_palloc(pool, sizeof(njt_str_t));
+    json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_httpmap(pool, out, &str_len, flags);
-    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_httpmap(pool, out, json_str, flags);
     return json_str;
