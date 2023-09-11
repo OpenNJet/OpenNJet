@@ -41,6 +41,7 @@ static bool parse_dyn_fault_inject_locationDef_locations(njt_pool_t *pool, parse
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_fault_inject_locationDef_t));
+        memset(((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i], 0, sizeof(dyn_fault_inject_locationDef_locations_item_t));
         if (parse_dyn_fault_inject_locationDef(pool, parse_state, ((dyn_fault_inject_locationDef_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -669,6 +670,7 @@ static bool parse_dyn_fault_inject_servers_item_locations(njt_pool_t *pool, pars
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_fault_inject_locationDef_t));
+        memset(((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i], 0, sizeof(dyn_fault_inject_servers_item_locations_item_t));
         if (parse_dyn_fault_inject_locationDef(pool, parse_state, ((dyn_fault_inject_servers_item_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -757,6 +759,7 @@ static bool parse_dyn_fault_inject_servers(njt_pool_t *pool, parse_state_t *pars
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dyn_fault_inject_servers_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_fault_inject_servers_item_t));
+        memset(((dyn_fault_inject_servers_item_t**)out->elts)[i], 0, sizeof(dyn_fault_inject_servers_item_t));
         if (parse_dyn_fault_inject_servers_item(pool, parse_state, ((dyn_fault_inject_servers_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -1335,6 +1338,7 @@ dyn_fault_inject_t* json_parse_dyn_fault_inject(njt_pool_t *pool, const njt_str_
         break; // parse success
     }
     out = njt_palloc(pool, sizeof(dyn_fault_inject_t));;
+    memset(out, 0, sizeof(dyn_fault_inject_t));
     if (parse_dyn_fault_inject(pool, parse_state, out, err_ret)) {
         return NULL;
     }

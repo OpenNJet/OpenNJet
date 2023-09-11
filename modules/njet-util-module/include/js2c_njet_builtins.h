@@ -2,6 +2,7 @@
  * MIT License
  *
  * Copyright (c) 2020 Alex Badics
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -186,7 +187,7 @@ static inline const char *jsmn_error_as_string(int err) {
 
 #define js2c_check_field_set(obj_field_set) do { \
     if (obj_field_set) { \
-        LOG_ERROR_JSON_PARSE(DUPLICATE_FIELD_ERR, CURRENT_STRING(parse_state), CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s': conn", parse_state->current_key); \
+        LOG_ERROR_JSON_PARSE(DUPLICATE_FIELD_ERR, CURRENT_STRING(parse_state), CURRENT_TOKEN(parse_state).start, "Duplicate field definition in '%s'", parse_state->current_key); \
         return true; \
     } \
 } while(0)
@@ -347,9 +348,19 @@ static inline bool builtin_parse_bool(njt_pool_t *pool, parse_state_t *parse_sta
         LOG_ERROR_JSON_PARSE(BOOL_VALUE_ERR, parse_state->current_key , token->start, "Invalid boolean literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
         return true;
     }
-    *out = first_char == 't';
-    parse_state->current_token += 1;
-    return false;
+    size_t str_len = (size_t)(token->end - token->start);
+    if (4 == str_len && memcmp(parse_state->json_string + token->start, "true", token->end - token->start) == 0){
+        *out = true;
+        parse_state->current_token += 1;
+        return false;
+    } else if (5 == str_len && memcmp(parse_state->json_string + token->start, "false", token->end - token->start) == 0){
+        *out = false;
+        parse_state->current_token += 1;
+        return false;
+    } else {
+        LOG_ERROR_JSON_PARSE(BOOL_VALUE_ERR, parse_state->current_key , token->start, "Invalid boolean literal in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
+        return true;
+    }
 }
 
 static inline bool builtin_parse_signed(

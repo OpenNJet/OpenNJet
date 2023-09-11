@@ -353,6 +353,7 @@ rpc_result_t* json_parse_rpc_result(njt_pool_t *pool, const njt_str_t *json_stri
         break; // parse success
     }
     out = njt_palloc(pool, sizeof(rpc_result_t));;
+    memset(out, 0, sizeof(rpc_result_t));
     if (parse_rpc_result(pool, parse_state, out, err_ret)) {
         return NULL;
     }

@@ -52,10 +52,14 @@ static bool parse_dyn_ssl_servers_item_serverNames(njt_pool_t *pool, parse_state
 
 static bool parse_dyn_ssl_servers_item_certificates_item_cert_type(njt_pool_t *pool, parse_state_t *parse_state, dyn_ssl_servers_item_certificates_item_cert_type_t *out, js2c_parse_error_t *err_ret) {
     js2c_check_type(JSMN_STRING);
-    if (current_string_is(parse_state, "regular")) {
-        *out = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR;
+    if (current_string_is(parse_state, "rsa")) {
+        *out = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_RSA;
     } else if (current_string_is(parse_state, "ntls")) {
         *out = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS;
+    } else if (current_string_is(parse_state, "ecc")) {
+        *out = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_ECC;
+    } else if (current_string_is(parse_state, "other")) {
+        *out = DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_OTHER;
     } else {
         LOG_ERROR_JSON_PARSE(UNKNOWN_ENUM_VALUE_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
         return true;
@@ -195,6 +199,7 @@ static bool parse_dyn_ssl_servers_item_certificates(njt_pool_t *pool, parse_stat
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dyn_ssl_servers_item_certificates_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_ssl_servers_item_certificates_item_t));
+        memset(((dyn_ssl_servers_item_certificates_item_t**)out->elts)[i], 0, sizeof(dyn_ssl_servers_item_certificates_item_t));
         if (parse_dyn_ssl_servers_item_certificates_item(pool, parse_state, ((dyn_ssl_servers_item_certificates_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -285,6 +290,7 @@ static bool parse_dyn_ssl_servers(njt_pool_t *pool, parse_state_t *parse_state, 
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dyn_ssl_servers_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_ssl_servers_item_t));
+        memset(((dyn_ssl_servers_item_t**)out->elts)[i], 0, sizeof(dyn_ssl_servers_item_t));
         if (parse_dyn_ssl_servers_item(pool, parse_state, ((dyn_ssl_servers_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -390,14 +396,24 @@ static void get_json_length_dyn_ssl_servers_item_serverNames(njt_pool_t *pool, d
 // BEGIN GET_JSON_LENGTH ENUM
 
 static void get_json_length_dyn_ssl_servers_item_certificates_item_cert_type(njt_pool_t *pool, dyn_ssl_servers_item_certificates_item_cert_type_t *out, size_t *length, njt_int_t flags) {
-    if (*out == DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR) {
-        // "regular"
-        *length += 7 + 2;
+    if (*out == DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_RSA) {
+        // "rsa"
+        *length += 3 + 2;
         return;
     }
     if (*out == DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS) {
         // "ntls"
         *length += 4 + 2;
+        return;
+    }
+    if (*out == DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_ECC) {
+        // "ecc"
+        *length += 3 + 2;
+        return;
+    }
+    if (*out == DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_OTHER) {
+        // "other"
+        *length += 5 + 2;
         return;
     }
 }
@@ -819,14 +835,24 @@ static void to_oneline_json_dyn_ssl_servers_item_serverNames(njt_pool_t *pool, d
 
 static void to_oneline_json_dyn_ssl_servers_item_certificates_item_cert_type(njt_pool_t *pool, dyn_ssl_servers_item_certificates_item_cert_type_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    if (*out == DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR) {
-        cur = njt_sprintf(cur, "\"regular\"");
-        buf->len += 7 + 2;
+    if (*out == DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_RSA) {
+        cur = njt_sprintf(cur, "\"rsa\"");
+        buf->len += 3 + 2;
         return;
     }
     if (*out == DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS) {
         cur = njt_sprintf(cur, "\"ntls\"");
         buf->len += 4 + 2;
+        return;
+    }
+    if (*out == DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_ECC) {
+        cur = njt_sprintf(cur, "\"ecc\"");
+        buf->len += 3 + 2;
+        return;
+    }
+    if (*out == DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_OTHER) {
+        cur = njt_sprintf(cur, "\"other\"");
+        buf->len += 5 + 2;
         return;
     }
 }
@@ -1107,6 +1133,7 @@ dyn_ssl_t* json_parse_dyn_ssl(njt_pool_t *pool, const njt_str_t *json_string, js
         break; // parse success
     }
     out = njt_palloc(pool, sizeof(dyn_ssl_t));;
+    memset(out, 0, sizeof(dyn_ssl_t));
     if (parse_dyn_ssl(pool, parse_state, out, err_ret)) {
         return NULL;
     }

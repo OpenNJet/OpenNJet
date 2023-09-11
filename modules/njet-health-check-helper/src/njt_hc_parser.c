@@ -2718,6 +2718,7 @@ health_check_t* json_parse_health_check(njt_pool_t *pool, const njt_str_t *json_
         break; // parse success
     }
     out = njt_palloc(pool, sizeof(health_check_t));;
+    memset(out, 0, sizeof(health_check_t));
     if (parse_health_check(pool, parse_state, out, err_ret)) {
         return NULL;
     }

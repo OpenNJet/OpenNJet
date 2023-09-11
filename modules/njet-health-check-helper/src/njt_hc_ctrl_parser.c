@@ -76,6 +76,7 @@ static bool parse_health_checks(njt_pool_t *pool, parse_state_t *parse_state, he
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((health_checks_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(health_checks_item_t));
+        memset(((health_checks_item_t**)out->elts)[i], 0, sizeof(health_checks_item_t));
         if (parse_health_checks_item(pool, parse_state, ((health_checks_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -302,6 +303,7 @@ health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *jso
         break; // parse success
     }
     out = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(health_checks_item_t*));;
+    memset(out, 0, sizeof(health_checks_t));
     if (parse_health_checks(pool, parse_state, out, err_ret)) {
         return NULL;
     }

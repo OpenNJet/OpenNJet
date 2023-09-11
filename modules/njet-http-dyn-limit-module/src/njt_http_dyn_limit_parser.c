@@ -104,6 +104,7 @@ static bool parse_dyn_limit_locationDef_limit_conns(njt_pool_t *pool, parse_stat
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_locationDef_limit_conns_item_t));
+        memset(((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i], 0, sizeof(dyn_limit_locationDef_limit_conns_item_t));
         if (parse_dyn_limit_locationDef_limit_conns_item(pool, parse_state, ((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -264,6 +265,7 @@ static bool parse_dyn_limit_locationDef_limit_reqs(njt_pool_t *pool, parse_state
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_locationDef_limit_reqs_item_t));
+        memset(((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i], 0, sizeof(dyn_limit_locationDef_limit_reqs_item_t));
         if (parse_dyn_limit_locationDef_limit_reqs_item(pool, parse_state, ((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -314,6 +316,7 @@ static bool parse_dyn_limit_locationDef_locations(njt_pool_t *pool, parse_state_
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dyn_limit_locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_locationDef_t));
+        memset(((dyn_limit_locationDef_locations_item_t**)out->elts)[i], 0, sizeof(dyn_limit_locationDef_locations_item_t));
         if (parse_dyn_limit_locationDef(pool, parse_state, ((dyn_limit_locationDef_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -1828,6 +1831,7 @@ static bool parse_dyn_limit_servers_item_locations(njt_pool_t *pool, parse_state
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dyn_limit_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_locationDef_t));
+        memset(((dyn_limit_servers_item_locations_item_t**)out->elts)[i], 0, sizeof(dyn_limit_servers_item_locations_item_t));
         if (parse_dyn_limit_locationDef(pool, parse_state, ((dyn_limit_servers_item_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -1916,6 +1920,7 @@ static bool parse_dyn_limit_servers(njt_pool_t *pool, parse_state_t *parse_state
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dyn_limit_servers_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_servers_item_t));
+        memset(((dyn_limit_servers_item_t**)out->elts)[i], 0, sizeof(dyn_limit_servers_item_t));
         if (parse_dyn_limit_servers_item(pool, parse_state, ((dyn_limit_servers_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -2009,6 +2014,7 @@ static bool parse_dyn_limit_limit_rps(njt_pool_t *pool, parse_state_t *parse_sta
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dyn_limit_limit_rps_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_limit_rps_item_t));
+        memset(((dyn_limit_limit_rps_item_t**)out->elts)[i], 0, sizeof(dyn_limit_limit_rps_item_t));
         if (parse_dyn_limit_limit_rps_item(pool, parse_state, ((dyn_limit_limit_rps_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -2823,6 +2829,7 @@ dyn_limit_t* json_parse_dyn_limit(njt_pool_t *pool, const njt_str_t *json_string
         break; // parse success
     }
     out = njt_palloc(pool, sizeof(dyn_limit_t));;
+    memset(out, 0, sizeof(dyn_limit_t));
     if (parse_dyn_limit(pool, parse_state, out, err_ret)) {
         return NULL;
     }

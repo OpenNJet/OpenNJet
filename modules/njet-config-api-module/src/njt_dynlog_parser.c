@@ -201,6 +201,7 @@ static bool parse_dynlog_locationDef_locations(njt_pool_t *pool, parse_state_t *
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dynlog_locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_locationDef_t));
+        memset(((dynlog_locationDef_locations_item_t**)out->elts)[i], 0, sizeof(dynlog_locationDef_locations_item_t));
         if (parse_dynlog_locationDef(pool, parse_state, ((dynlog_locationDef_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -217,6 +218,7 @@ static bool parse_dynlog_locationDef_accessLogs(njt_pool_t *pool, parse_state_t 
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dynlog_locationDef_accessLogs_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_accessLog_t));
+        memset(((dynlog_locationDef_accessLogs_item_t**)out->elts)[i], 0, sizeof(dynlog_locationDef_accessLogs_item_t));
         if (parse_dynlog_accessLog(pool, parse_state, ((dynlog_locationDef_accessLogs_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -980,6 +982,7 @@ static bool parse_dynlog_servers_item_locations(njt_pool_t *pool, parse_state_t 
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dynlog_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_locationDef_t));
+        memset(((dynlog_servers_item_locations_item_t**)out->elts)[i], 0, sizeof(dynlog_servers_item_locations_item_t));
         if (parse_dynlog_locationDef(pool, parse_state, ((dynlog_servers_item_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -1068,6 +1071,7 @@ static bool parse_dynlog_servers(njt_pool_t *pool, parse_state_t *parse_state, d
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dynlog_servers_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_servers_item_t));
+        memset(((dynlog_servers_item_t**)out->elts)[i], 0, sizeof(dynlog_servers_item_t));
         if (parse_dynlog_servers_item(pool, parse_state, ((dynlog_servers_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -1084,6 +1088,7 @@ static bool parse_dynlog_accessLogFormats(njt_pool_t *pool, parse_state_t *parse
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         ((dynlog_accessLogFormats_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_accessLogFormat_t));
+        memset(((dynlog_accessLogFormats_item_t**)out->elts)[i], 0, sizeof(dynlog_accessLogFormats_item_t));
         if (parse_dynlog_accessLogFormat(pool, parse_state, ((dynlog_accessLogFormats_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -1788,6 +1793,7 @@ dynlog_t* json_parse_dynlog(njt_pool_t *pool, const njt_str_t *json_string, js2c
         break; // parse success
     }
     out = njt_palloc(pool, sizeof(dynlog_t));;
+    memset(out, 0, sizeof(dynlog_t));
     if (parse_dynlog(pool, parse_state, out, err_ret)) {
         return NULL;
     }
