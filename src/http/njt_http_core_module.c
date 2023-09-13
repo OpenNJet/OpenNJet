@@ -6030,7 +6030,6 @@ njt_http_core_loc_parse_tree_ctx(loc_parse_node_t *root,njt_pool_t   *pool){
     loc_parse_node_t* current = root;
     int stack_size = 0;
 
-    printf("count: %d \n", count);
     // printf("start traverse tree \n");
     while (current != NULL || stack_size != 0) {
         if (current != NULL) {

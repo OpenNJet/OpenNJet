@@ -103,7 +103,7 @@ components:
       properties:
         cert_type:
           type: string
-          description: 证书类型 regular:标准证书   ntls:国密证书 国密需要都配置，其他证书不配置enc相关字段
+          description: 证书类型 rsa:标准证书 ecc:ecc证书  ntls:国密证书 other:其他证书 国密需要都配置，其他证书不配置enc相关字段
           example: ntls
         certificate:
           type: string
@@ -148,7 +148,7 @@ components:
           properties:
             cert_type:
               type: string
-              description: 证书类型 regular:标准证书   ntls:国密证书 国密需要都配置，其他证书不配置enc相关字段
+              description: 证书类型 rsa:标准证书 ecc:ecc证书  ntls:国密证书 国密需要都配置，其他证书不配置enc相关字段
               example: ntls
             certificate:
               type: string

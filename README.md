@@ -1,6 +1,6 @@
 # OpenNJet
 
-![Static Badge](https://img.shields.io/badge/Release-V1.1.2-blue?link=https%3A%2F%2Fgitee.com%2Fnjet-rd%2Fnjet%2Ftags)![Static Badge](https://img.shields.io/badge/License-MulanPSL%202.0-blue)
+![Static Badge](https://img.shields.io/badge/Release-V1.2.1-blue?link=https%3A%2F%2Fgitee.com%2Fnjet-rd%2Fnjet%2Ftags)![Static Badge](https://img.shields.io/badge/License-MulanPSL%202.0-blue)
 
 OpenNJet 应用引擎是基于 NGINX 的面向互联网和**云原生**应用提供的运行时组态服务程序，作为底层引擎，OpenNJet 实现了**NGINX 云原生功能增强、安全加固和代码重构**，利用动态加载机制可以实现不同的产品形态，如Web服务器、流媒体服务器、负载均衡、代理(Proxy)、应用中间件、API网关、消息队列等产品形态等等。OpenNJet 在云原生架构中作为数据平面，除了提供南北向通信网关的功能以外，还提供了服务网格中东西向通信能力。在原有功能基础上增加了透明流量劫持、熔断、遥测与故障注入等新功能特性。
 
