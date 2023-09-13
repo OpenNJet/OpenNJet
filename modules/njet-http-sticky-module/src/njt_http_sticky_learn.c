@@ -228,7 +228,7 @@ static void njt_http_sticky_learn_timeout_handler(njt_event_t *event)
     /* iterate the doublely linked list */
     for (cache = njt_queue_head(&sticky_tree->queue);
          cache != njt_queue_sentinel(&sticky_tree->queue);
-         cache = njt_queue_next(cache)) {
+         ) {
         /* get the node */
         curr = njt_queue_data(cache, njt_http_sticky_learn_node_t, lru_node);
 
@@ -237,7 +237,8 @@ static void njt_http_sticky_learn_timeout_handler(njt_event_t *event)
             /* timeout, remove the node */
             njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                           "[event] removing node %V", &curr->value);
-
+	
+	    cache = njt_queue_next(cache);
             /* delete the node from tree */
             njt_queue_remove(&curr->lru_node);
             njt_rbtree_delete(sticky_tree->tree, &curr->rbnode);

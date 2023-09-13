@@ -200,6 +200,13 @@ typedef struct {
 njt_int_t njt_ssl_init(njt_log_t *log);
 njt_int_t njt_ssl_create(njt_ssl_t *ssl, njt_uint_t protocols, void *data);
 
+//add by clb
+njt_int_t njt_ssl_get_certificate_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
+    njt_str_t *key, njt_uint_t *cert_type);
+njt_int_t njt_ssl_set_certificates_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_array_t *certs,
+    njt_array_t *keys, njt_array_t *cert_types);
+//add by clb end
+
 njt_int_t njt_ssl_certificates(njt_conf_t *cf, njt_ssl_t *ssl,
     njt_array_t *certs, njt_array_t *keys, njt_array_t *passwords);
 njt_int_t njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl,

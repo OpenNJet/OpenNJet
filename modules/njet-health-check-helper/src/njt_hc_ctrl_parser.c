@@ -27,7 +27,7 @@ static bool parse_health_checks_item(njt_pool_t *pool, parse_state_t *parse_stat
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "hc_type";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->hc_type))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->hc_type))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->hc_type))->data);
             ((&out->hc_type))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->hc_type), 0, ((&out->hc_type))->len, err_ret)) {
@@ -41,7 +41,7 @@ static bool parse_health_checks_item(njt_pool_t *pool, parse_state_t *parse_stat
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "upstream_name";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->upstream_name))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->upstream_name))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->upstream_name))->data);
             ((&out->upstream_name))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->upstream_name), 0, ((&out->upstream_name))->len, err_ret)) {
@@ -75,7 +75,8 @@ static bool parse_health_checks(njt_pool_t *pool, parse_state_t *parse_state, he
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((health_checks_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(health_checks_item_t));
+        ((health_checks_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(health_checks_item_t));
+        memset(((health_checks_item_t**)out->elts)[i], 0, sizeof(health_checks_item_t));
         if (parse_health_checks_item(pool, parse_state, ((health_checks_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -170,8 +171,7 @@ void set_health_checks_item_upstream_name(health_checks_item_t* obj, health_chec
     obj->is_upstream_name_set = 1;
 }
 health_checks_item_t* create_health_checks_item(njt_pool_t *pool) {
-    health_checks_item_t* out = njt_palloc(pool, sizeof(health_checks_item_t));
-    memset(out, 0, sizeof(health_checks_item_t));
+    health_checks_item_t* out = njt_pcalloc(pool, sizeof(health_checks_item_t));
     return out;
 }
 int add_item_health_checks(health_checks_t *src, health_checks_item_t* item) {
@@ -281,7 +281,7 @@ health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *jso
     jsmntok_t *token_buffer;
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
-        token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
+        token_buffer = njt_pcalloc(pool, sizeof(jsmntok_t)*max_token_number);
         parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
             LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
@@ -302,6 +302,7 @@ health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *jso
         break; // parse success
     }
     out = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(health_checks_item_t*));;
+    memset(out, 0, sizeof(health_checks_t));
     if (parse_health_checks(pool, parse_state, out, err_ret)) {
         return NULL;
     }
@@ -310,10 +311,10 @@ health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *jso
 
 njt_str_t* to_json_health_checks(njt_pool_t *pool, health_checks_t* out, njt_int_t flags) {
     njt_str_t *json_str;
-    json_str = njt_palloc(pool, sizeof(njt_str_t));
+    json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_health_checks(pool, out, &str_len, flags);
-    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_health_checks(pool, out, json_str, flags);
     return json_str;

@@ -30,7 +30,7 @@ static bool parse_dynlog_accessLog(njt_pool_t *pool, parse_state_t *parse_state,
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "path";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->path))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->path))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->path))->data);
             ((&out->path))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->path), 0, ((&out->path))->len, err_ret)) {
@@ -44,7 +44,7 @@ static bool parse_dynlog_accessLog(njt_pool_t *pool, parse_state_t *parse_state,
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "formatName";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->formatName))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->formatName))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->formatName))->data);
             ((&out->formatName))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->formatName), 0, ((&out->formatName))->len, err_ret)) {
@@ -130,8 +130,7 @@ void set_dynlog_accessLog_formatName(dynlog_accessLog_t* obj, dynlog_accessLog_f
     obj->is_formatName_set = 1;
 }
 dynlog_accessLog_t* create_dynlog_accessLog(njt_pool_t *pool) {
-    dynlog_accessLog_t* out = njt_palloc(pool, sizeof(dynlog_accessLog_t));
-    memset(out, 0, sizeof(dynlog_accessLog_t));
+    dynlog_accessLog_t* out = njt_pcalloc(pool, sizeof(dynlog_accessLog_t));
     return out;
 }
 
@@ -200,7 +199,8 @@ static bool parse_dynlog_locationDef_locations(njt_pool_t *pool, parse_state_t *
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dynlog_locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_locationDef_t));
+        ((dynlog_locationDef_locations_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dynlog_locationDef_t));
+        memset(((dynlog_locationDef_locations_item_t**)out->elts)[i], 0, sizeof(dynlog_locationDef_locations_item_t));
         if (parse_dynlog_locationDef(pool, parse_state, ((dynlog_locationDef_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -216,7 +216,8 @@ static bool parse_dynlog_locationDef_accessLogs(njt_pool_t *pool, parse_state_t 
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dynlog_locationDef_accessLogs_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_accessLog_t));
+        ((dynlog_locationDef_accessLogs_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dynlog_accessLog_t));
+        memset(((dynlog_locationDef_accessLogs_item_t**)out->elts)[i], 0, sizeof(dynlog_locationDef_accessLogs_item_t));
         if (parse_dynlog_accessLog(pool, parse_state, ((dynlog_locationDef_accessLogs_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -241,7 +242,7 @@ static bool parse_dynlog_locationDef(njt_pool_t *pool, parse_state_t *parse_stat
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "location";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->location))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->location))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->location))->data);
             ((&out->location))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->location), 0, ((&out->location))->len, err_ret)) {
@@ -301,8 +302,7 @@ static bool parse_dynlog_locationDef(njt_pool_t *pool, parse_state_t *parse_stat
     }
     // set default
     if (!out->is_locations_set) {
-        out->locations = njt_palloc(pool, sizeof(njt_array_t));
-        memset(out->locations, 0, sizeof(njt_array_t));
+        out->locations = njt_pcalloc(pool, sizeof(njt_array_t));
     }
     // set default
     if (!out->is_accessLogOn_set) {
@@ -310,8 +310,7 @@ static bool parse_dynlog_locationDef(njt_pool_t *pool, parse_state_t *parse_stat
     }
     // set default
     if (!out->is_accessLogs_set) {
-        out->accessLogs = njt_palloc(pool, sizeof(njt_array_t));
-        memset(out->accessLogs, 0, sizeof(njt_array_t));
+        out->accessLogs = njt_pcalloc(pool, sizeof(njt_array_t));
     }
     parse_state->current_token = saved_current_token;
     return false;
@@ -498,8 +497,7 @@ void set_dynlog_locationDef_accessLogs(dynlog_locationDef_t* obj, dynlog_locatio
     obj->is_accessLogs_set = 1;
 }
 dynlog_locationDef_t* create_dynlog_locationDef(njt_pool_t *pool) {
-    dynlog_locationDef_t* out = njt_palloc(pool, sizeof(dynlog_locationDef_t));
-    memset(out, 0, sizeof(dynlog_locationDef_t));
+    dynlog_locationDef_t* out = njt_pcalloc(pool, sizeof(dynlog_locationDef_t));
     return out;
 }
 
@@ -691,7 +689,7 @@ static bool parse_dynlog_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "name";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->name))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->name))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->name))->data);
             ((&out->name))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->name), 0, ((&out->name))->len, err_ret)) {
@@ -716,7 +714,7 @@ static bool parse_dynlog_accessLogFormat(njt_pool_t *pool, parse_state_t *parse_
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "format";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->format))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->format))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->format))->data);
             ((&out->format))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->format), 0, ((&out->format))->len, err_ret)) {
@@ -841,8 +839,7 @@ void set_dynlog_accessLogFormat_format(dynlog_accessLogFormat_t* obj, dynlog_acc
     obj->is_format_set = 1;
 }
 dynlog_accessLogFormat_t* create_dynlog_accessLogFormat(njt_pool_t *pool) {
-    dynlog_accessLogFormat_t* out = njt_palloc(pool, sizeof(dynlog_accessLogFormat_t));
-    memset(out, 0, sizeof(dynlog_accessLogFormat_t));
+    dynlog_accessLogFormat_t* out = njt_pcalloc(pool, sizeof(dynlog_accessLogFormat_t));
     return out;
 }
 
@@ -942,7 +939,7 @@ static bool parse_dynlog_servers_item_listens(njt_pool_t *pool, parse_state_t *p
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-        ((&((dynlog_servers_item_listens_item_t*)out->elts)[i]))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+        ((&((dynlog_servers_item_listens_item_t*)out->elts)[i]))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
         js2c_malloc_check(((&((dynlog_servers_item_listens_item_t*)out->elts)[i]))->data);
         ((&((dynlog_servers_item_listens_item_t*)out->elts)[i]))->len = token_size;
         if (builtin_parse_string(pool, parse_state, (&((dynlog_servers_item_listens_item_t*)out->elts)[i]), 1, ((&((dynlog_servers_item_listens_item_t*)out->elts)[i]))->len, err_ret)) {
@@ -961,7 +958,7 @@ static bool parse_dynlog_servers_item_serverNames(njt_pool_t *pool, parse_state_
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-        ((&((dynlog_servers_item_serverNames_item_t*)out->elts)[i]))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+        ((&((dynlog_servers_item_serverNames_item_t*)out->elts)[i]))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
         js2c_malloc_check(((&((dynlog_servers_item_serverNames_item_t*)out->elts)[i]))->data);
         ((&((dynlog_servers_item_serverNames_item_t*)out->elts)[i]))->len = token_size;
         if (builtin_parse_string(pool, parse_state, (&((dynlog_servers_item_serverNames_item_t*)out->elts)[i]), 0, ((&((dynlog_servers_item_serverNames_item_t*)out->elts)[i]))->len, err_ret)) {
@@ -979,7 +976,8 @@ static bool parse_dynlog_servers_item_locations(njt_pool_t *pool, parse_state_t 
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dynlog_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_locationDef_t));
+        ((dynlog_servers_item_locations_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dynlog_locationDef_t));
+        memset(((dynlog_servers_item_locations_item_t**)out->elts)[i], 0, sizeof(dynlog_servers_item_locations_item_t));
         if (parse_dynlog_locationDef(pool, parse_state, ((dynlog_servers_item_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -1067,7 +1065,8 @@ static bool parse_dynlog_servers(njt_pool_t *pool, parse_state_t *parse_state, d
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dynlog_servers_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_servers_item_t));
+        ((dynlog_servers_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dynlog_servers_item_t));
+        memset(((dynlog_servers_item_t**)out->elts)[i], 0, sizeof(dynlog_servers_item_t));
         if (parse_dynlog_servers_item(pool, parse_state, ((dynlog_servers_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -1083,7 +1082,8 @@ static bool parse_dynlog_accessLogFormats(njt_pool_t *pool, parse_state_t *parse
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dynlog_accessLogFormats_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dynlog_accessLogFormat_t));
+        ((dynlog_accessLogFormats_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dynlog_accessLogFormat_t));
+        memset(((dynlog_accessLogFormats_item_t**)out->elts)[i], 0, sizeof(dynlog_accessLogFormats_item_t));
         if (parse_dynlog_accessLogFormat(pool, parse_state, ((dynlog_accessLogFormats_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -1142,8 +1142,7 @@ static bool parse_dynlog(njt_pool_t *pool, parse_state_t *parse_state, dynlog_t 
     }
     // set default
     if (!out->is_accessLogFormats_set) {
-        out->accessLogFormats = njt_palloc(pool, sizeof(njt_array_t));
-        memset(out->accessLogFormats, 0, sizeof(njt_array_t));
+        out->accessLogFormats = njt_pcalloc(pool, sizeof(njt_array_t));
     }
     parse_state->current_token = saved_current_token;
     return false;
@@ -1444,8 +1443,7 @@ void set_dynlog_servers_item_locations(dynlog_servers_item_t* obj, dynlog_server
     obj->is_locations_set = 1;
 }
 dynlog_servers_item_t* create_dynlog_servers_item(njt_pool_t *pool) {
-    dynlog_servers_item_t* out = njt_palloc(pool, sizeof(dynlog_servers_item_t));
-    memset(out, 0, sizeof(dynlog_servers_item_t));
+    dynlog_servers_item_t* out = njt_pcalloc(pool, sizeof(dynlog_servers_item_t));
     return out;
 }
 int add_item_dynlog_servers(dynlog_servers_t *src, dynlog_servers_item_t* item) {
@@ -1481,8 +1479,7 @@ void set_dynlog_accessLogFormats(dynlog_t* obj, dynlog_accessLogFormats_t* field
     obj->is_accessLogFormats_set = 1;
 }
 dynlog_t* create_dynlog(njt_pool_t *pool) {
-    dynlog_t* out = njt_palloc(pool, sizeof(dynlog_t));
-    memset(out, 0, sizeof(dynlog_t));
+    dynlog_t* out = njt_pcalloc(pool, sizeof(dynlog_t));
     return out;
 }
 
@@ -1767,7 +1764,7 @@ dynlog_t* json_parse_dynlog(njt_pool_t *pool, const njt_str_t *json_string, js2c
     jsmntok_t *token_buffer;
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
-        token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
+        token_buffer = njt_pcalloc(pool, sizeof(jsmntok_t)*max_token_number);
         parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
             LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
@@ -1787,7 +1784,8 @@ dynlog_t* json_parse_dynlog(njt_pool_t *pool, const njt_str_t *json_string, js2c
         }
         break; // parse success
     }
-    out = njt_palloc(pool, sizeof(dynlog_t));;
+    out = njt_pcalloc(pool, sizeof(dynlog_t));;
+    memset(out, 0, sizeof(dynlog_t));
     if (parse_dynlog(pool, parse_state, out, err_ret)) {
         return NULL;
     }
@@ -1796,10 +1794,10 @@ dynlog_t* json_parse_dynlog(njt_pool_t *pool, const njt_str_t *json_string, js2c
 
 njt_str_t* to_json_dynlog(njt_pool_t *pool, dynlog_t* out, njt_int_t flags) {
     njt_str_t *json_str;
-    json_str = njt_palloc(pool, sizeof(njt_str_t));
+    json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_dynlog(pool, out, &str_len, flags);
-    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_dynlog(pool, out, json_str, flags);
     return json_str;

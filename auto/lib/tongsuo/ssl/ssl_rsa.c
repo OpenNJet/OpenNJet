@@ -566,6 +566,11 @@ int SSL_use_PrivateKey_ASN1(int type, SSL *ssl, const unsigned char *d,
     return ret;
 }
 
+void * SSL_CTX_get_certificate_type(EVP_PKEY *pkey, size_t *pidx)
+{
+    return (void *)ssl_cert_lookup_by_pkey(pkey, pidx);
+}
+
 int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x)
 {
     int rv;
