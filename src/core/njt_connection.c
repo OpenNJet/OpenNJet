@@ -30,7 +30,6 @@ njt_create_listening(njt_conf_t *cf, struct sockaddr *sockaddr,
     if (ls == NULL) {
         return NULL;
     }
-   njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,"njt_create_listening ls=%p,len=%d",ls,cf->cycle->listening.nelts);
     njt_memzero(ls, sizeof(njt_listening_t));
 
     sa = njt_palloc(cf->pool, socklen);

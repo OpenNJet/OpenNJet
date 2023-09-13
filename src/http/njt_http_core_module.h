@@ -175,7 +175,9 @@ typedef struct {
     njt_hash_keys_arrays_t    *variables_keys;
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t		           *dyn_var_pool;
-    njt_pool_t		           *dyn_vs_pool;
+#endif
+#if (NJT_HTTP_DYNAMIC_SERVER)
+        njt_pool_t		           *dyn_vs_pool;
 #endif
     njt_array_t               *ports;
 

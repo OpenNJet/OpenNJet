@@ -816,7 +816,6 @@ njt_event_process_init(njt_cycle_t *cycle)
 
         c->type = ls[i].type;
         c->log = &ls[i].log;
-	njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "njt_event_process_init listening=%p,ls=%p,servers=%p",ls,&ls[i],ls[i].servers);
         c->listening = &ls[i];
         ls[i].connection = c;
 

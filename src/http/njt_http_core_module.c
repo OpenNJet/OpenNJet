@@ -3065,6 +3065,9 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     }
     cf->pool = new_server_pool;
     cf->temp_pool = new_server_pool;
+
+     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                          "create server=%p",cf->pool);
 #endif
 
     ctx = njt_pcalloc(cf->pool, sizeof(njt_http_conf_ctx_t));
@@ -3868,7 +3871,6 @@ njt_http_core_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     if (conf->server_name.data == NULL) {
         return NJT_CONF_ERROR;
     }
-    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,"njt_http_core_merge_srv_conf server=%p,name=%V",conf,&conf->server_name);
     return NJT_CONF_OK;
 }
 
@@ -5856,6 +5858,12 @@ njt_http_core_if_location_get_args(njt_str_t old,njt_str_t *name,njt_str_t *oper
 	break;
     }
   }
+  if(space_num == 1) {
+	oper->len = old.data + old.len - oper->data;
+	if(oper->len != 0) {
+		space_num++;
+	}
+  }
   return space_num;
 }
 
@@ -5890,7 +5898,11 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
 	if(num <= 1) {
 		njt_snprintf(new_src.data,new_src.len,"if (%V){",&name);
 	} else if(num == 2) {
-		njt_snprintf(new_src.data,new_src.len,"if (%V %V \"%V\"){",&name,&oper,&value);
+		if(value.len > 0 && value.data != NULL) {
+			njt_snprintf(new_src.data,new_src.len,"if (%V %V \"%V\"){",&name,&oper,&value);
+		} else {
+			njt_snprintf(new_src.data,new_src.len,"if (%V \"%V\"){",&name,&oper);
+		}
 	}
 	njt_http_core_split_if(cf,new_src);
 	rc = njt_http_core_if_location(cf,&new_src,pclcf);

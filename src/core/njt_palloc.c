@@ -135,6 +135,9 @@ njt_destroy_pool(njt_pool_t *pool)
     njt_pool_t          *sub_pool;
     njt_queue_t         *sub_queue;
     pool->log = njt_cycle->log;
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                          "njt_destroy_pool=%p",pool);
+
     if (pool->parent_pool.prev != NULL && pool->parent_pool.next != NULL && !njt_queue_empty(&pool->parent_pool)){
         njt_queue_remove(&pool->parent_pool);
     }
