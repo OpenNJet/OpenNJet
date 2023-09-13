@@ -824,7 +824,7 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"njt_http_init_locations_common create  named_parent_pool null!");	
 		return NJT_ERROR;
 	    }
-	    rc = njt_sub_pool(cf->cycle->pool,cscf->named_parent_pool);
+	    rc = njt_sub_pool(cscf->pool,cscf->named_parent_pool);
     	    if (rc != NJT_OK) {
         	return NJT_ERROR;
    	    }

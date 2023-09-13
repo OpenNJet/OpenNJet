@@ -3102,7 +3102,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (new_pool == NULL) {
         return NJT_CONF_ERROR;
     }
-    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    rc = njt_sub_pool(new_server_pool,new_pool);
     if (rc != NJT_OK) {
         return NJT_CONF_ERROR;
     }
@@ -3256,10 +3256,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (new_pool == NULL) {
         return NJT_CONF_ERROR;
     }
-    rc = njt_sub_pool(cf->cycle->pool,new_pool);
-    if (rc != NJT_OK) {
-        return NJT_CONF_ERROR;
-    }
+   
     cf->pool = new_pool;
     cf->temp_pool = new_pool;
 #endif
@@ -3273,6 +3270,11 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     ctx->main_conf = pctx->main_conf;
     ctx->srv_conf = pctx->srv_conf;
     pclcf = pctx->loc_conf[njt_http_core_module.ctx_index];
+
+    rc = njt_sub_pool(pclcf->pool,new_pool);
+    if (rc != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
 
     ctx->loc_conf = njt_pcalloc(cf->pool, sizeof(void *) * njt_http_max_module);
     if (ctx->loc_conf == NULL) {
@@ -4968,7 +4970,7 @@ njt_http_core_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (new_pool == NULL) {
         return NJT_CONF_ERROR;
     }
-    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    rc = njt_sub_pool(pclcf->pool,new_pool);
     if (rc != NJT_OK) {
         return NJT_CONF_ERROR;
     }

@@ -306,9 +306,6 @@ typedef struct {
     /* the default server configuration for this address:port */
     njt_http_core_srv_conf_t  *default_server;
     njt_array_t                servers;  /* array of njt_http_core_srv_conf_t */
-#if (NJT_HTTP_DYNAMIC_SERVER)
-    unsigned      if_bind:1;	
-#endif  
 } njt_http_conf_addr_t;
 
 

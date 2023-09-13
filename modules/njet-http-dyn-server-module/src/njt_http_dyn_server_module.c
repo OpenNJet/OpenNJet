@@ -129,8 +129,11 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
     conf.ctx = njt_cycle->conf_ctx;
 	conf.log = njt_cycle->log;
     if (njt_http_optimize_servers(&conf, cmcf, cmcf->ports) != NJT_OK) {
+
+		njt_destroy_pool(cmcf->dyn_vs_pool);
+		cmcf->dyn_vs_pool = old_pool;
         rc = NJT_ERROR;
-        goto out;   //zyg todo
+        goto out;   
     }
  
     if(old_pool != NULL){
@@ -322,16 +325,20 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
     conf.cmd_type = NJT_MAIN_CONF;
     conf.ctx = njt_cycle->conf_ctx;	
     if (njt_http_optimize_servers(&conf, cmcf, cmcf->ports) != NJT_OK) {
+
+		njt_destroy_pool(cmcf->dyn_vs_pool);
+		cmcf->dyn_vs_pool = old_pool;
         rc = NJT_ERROR;
 	    goto out;   //zyg todo
+    }
+  if(old_pool != NULL) {
+		njt_destroy_pool(old_pool);
     }
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge end +++++++++++++++");
 
     njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "add server end +++++++++++++++");
 out:
-    if(old_pool != NULL) {
-	njt_destroy_pool(old_pool);
-    }
+   
     if(rc != NJT_OK) {
     	  njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  server [%V] error!",&server_name);
     } else {

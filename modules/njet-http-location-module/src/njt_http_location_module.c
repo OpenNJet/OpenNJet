@@ -248,7 +248,7 @@ njt_http_refresh_location(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf, njt_ht
             rc = NJT_ERROR;
             return rc;
         }
-		njt_sub_pool(cf->cycle->pool ,clcf->new_locations_pool);
+		njt_sub_pool(clcf->pool ,clcf->new_locations_pool);  //clcf 是 server 级别的location，挂到自己下，也就是和server 同一个池。
 
 	} else {
 		old_new_locations_pool = clcf->new_locations_pool;
