@@ -449,7 +449,7 @@ njt_int_t njt_save_pids_to_kv(njt_cycle_t *cycle){
         pids_v.data = pids;
         pids_v.len = len;
         njt_log_error(NJT_LOG_INFO, cycle->log, 0, 
-            "===============set all pids:%V", &pids_v);
+            "set all pids:%V", &pids_v);
 
         rc = njet_iot_client_kv_set((void *)pids_k.data, pids_k.len, pids, len, NULL, master_evt_ctx);
         if (rc != NJT_OK) {
