@@ -358,8 +358,7 @@ static njt_int_t njt_sysguard_cpu_init_module(njt_cycle_t *cycle){
     sysguard_cpu_timer->data = ccf;
     sysguard_cpu_timer->cancelable = 1;
 
-    // njt_add_timer(sysguard_cpu_timer, ccf->interval);
-    njt_add_timer(sysguard_cpu_timer, 15000);
+    njt_add_timer(sysguard_cpu_timer, ccf->interval);
     return NJT_OK;
 }
 
@@ -621,8 +620,7 @@ static void njt_sysguard_cpu_timer_handler(njt_event_t *ev){
 
 
 next_sys_usage:
-    // njt_add_timer(ev, ccf->interval);
-    njt_add_timer(ev, 15000);
+    njt_add_timer(ev, ccf->interval);
 
     return ;
 }
