@@ -21,7 +21,7 @@ njt_sysload_lvlhsh_test(njt_lvlhsh_query_t *lhq, void *data)
     return NJT_OK;
 }
 
-njt_int_t njt_get_cpu_usage(njt_str_t *cpunumber, njt_int_t *cpu_usage, njt_int_t *diff_total){
+njt_int_t njt_get_cpu_usage(njt_str_t *cpunumber, njt_int_t *cpu_usage, time_t *diff_total){
     njt_uint_t          rc;
     njt_cpuinfo_t       cpuinfo;
     static time_t       prev_total = 0, prev_work = 0;
@@ -41,7 +41,7 @@ njt_int_t njt_get_cpu_usage(njt_str_t *cpunumber, njt_int_t *cpu_usage, njt_int_
     *cpu_usage = (njt_int_t)(100.0 * (work - prev_work) / (total - prev_total));
 
     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
-        " total cpu usage:%d  usr:%d  nice:%d  sys:%d idle:%d work:%d  prev_work:%d total:%d  pre_total:%d work-:%d total-:%d", 
+        " total cpu usage:%d  usr:%T  nice:%T  sys:%T idle:%T work:%T  prev_work:%T total:%T  pre_total:%T work-:%T total-:%T", 
         *cpu_usage, cpuinfo.usr, cpuinfo.nice, cpuinfo.sys, cpuinfo.idle,
         work, prev_work, total, prev_total, work - prev_work, total - prev_total);
 
@@ -56,7 +56,7 @@ njt_int_t njt_get_cpu_usage(njt_str_t *cpunumber, njt_int_t *cpu_usage, njt_int_
 
 njt_int_t
 njt_get_process_average_cpu_usage(njt_pool_t *pool, njt_int_t *average_cpu_usage, njt_uint_t worker_n,
-        njt_str_t *pids_v, njt_lvlhsh_t *prev_pids_work, njt_int_t diff_total){
+        njt_str_t *pids_v, njt_lvlhsh_t *prev_pids_work, time_t diff_total){
     njt_str_t                       s_pid;
     njt_uint_t                      i;
     njt_process_cpuinfo_t           p_cpuinfo;
@@ -64,7 +64,7 @@ njt_get_process_average_cpu_usage(njt_pool_t *pool, njt_int_t *average_cpu_usage
     static time_t                   prev_pid_work;
     time_t                          total = 0, work = 0;
     njt_uint_t                      real_work = 0;
-    njt_int_t                       diff_work = 0;
+    time_t                          diff_work = 0;
     njt_int_t                       pid_cpu_usage;
     njt_int_t                       total_pid_cpu_usage = 0;
     njt_lvlhsh_query_t              lhq;
@@ -120,11 +120,11 @@ njt_get_process_average_cpu_usage(njt_pool_t *pool, njt_int_t *average_cpu_usage
             diff_work = work - prev_pid_work;
             total += diff_work;
 
-            pid_cpu_usage = (njt_int_t)(100.0 * diff_work / diff_total);
+            pid_cpu_usage = (njt_int_t)(100.0 * njt_ncpu * diff_work / diff_total);
 
             njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
-                " get process:%V cpu_usage:%d utime:%d stime:%d cutime:%d cstime:%d work:%d pre_work:%d diff_work:%d diff_total:%d",
-                &s_pid, pid_cpu_usage, p_cpuinfo.utime, p_cpuinfo.stime,
+                " get process:%V cpu_usage:%d njt_ncpu:%d utime:%T stime:%T cutime:%T cstime:%T work:%T pre_work:%T diff_work:%T diff_total:%T",
+                &s_pid, pid_cpu_usage, njt_ncpu, p_cpuinfo.utime, p_cpuinfo.stime,
                 p_cpuinfo.cutime, p_cpuinfo.cstime, work, prev_pid_work, diff_work, diff_total);
             total_pid_cpu_usage += pid_cpu_usage;
 

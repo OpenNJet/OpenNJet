@@ -42,12 +42,12 @@ static njt_core_module_t  njt_sysguard_cpu_module_ctx = {
 
 njt_module_t  njt_sysguard_cpu_module = {
     NJT_MODULE_V1,
-    &njt_sysguard_cpu_module_ctx,                /* module context */
-    njt_sysguard_cpu_commands,                   /* module directives */
-    NJT_CORE_MODULE,                       /* module type */
-    NULL,                                  /* init master */
-    NULL,          /* init module */
-    njt_sysguard_cpu_init_module,                                  /* init process */
+    &njt_sysguard_cpu_module_ctx,               /* module context */
+    njt_sysguard_cpu_commands,                  /* module directives */
+    NJT_CORE_MODULE,                            /* module type */
+    NULL,                                       /* init master */
+    NULL,                                       /* init module */
+    njt_sysguard_cpu_init_module,               /* init process */
     NULL,                                  /* init thread */
     NULL,                                  /* exit thread */
     NULL,                                  /* exit process */
@@ -323,8 +323,11 @@ invalid:
 
 
 static njt_int_t njt_sysguard_cpu_init_module(njt_cycle_t *cycle){
-    njt_event_t        *sysguard_cpu_timer;
-    njt_sysguard_cpu_conf_t *ccf;
+    njt_event_t                 *sysguard_cpu_timer;
+    njt_sysguard_cpu_conf_t     *ccf;
+    njt_int_t                   cpu_usage;
+    njt_str_t                   cpunumber;
+    time_t                      diff_total;
 
     if(njt_process != NJT_PROCESS_HELPER){
         return NJT_OK;
@@ -353,12 +356,20 @@ static njt_int_t njt_sysguard_cpu_init_module(njt_cycle_t *cycle){
     }
     njt_lvlhsh_init(&ccf->prev_pids_work);
 
+    //get inital cpu use info
+    njt_str_set(&cpunumber, "cpu");
+
+    //get sys cpu
+    njt_log_error(NJT_LOG_INFO, cycle->log, 0, "sysguard_cpu module init");
+    njt_get_cpu_usage(&cpunumber, &cpu_usage, &diff_total);
+
     sysguard_cpu_timer->handler = njt_sysguard_cpu_timer_handler;
     sysguard_cpu_timer->log = njt_cycle->log;
     sysguard_cpu_timer->data = ccf;
     sysguard_cpu_timer->cancelable = 1;
 
     njt_add_timer(sysguard_cpu_timer, ccf->interval);
+    // njt_add_timer(sysguard_cpu_timer, 15000);
     return NJT_OK;
 }
 
@@ -496,7 +507,7 @@ static void njt_sysguard_cpu_timer_handler(njt_event_t *ev){
     njt_str_t                       pids_k = njt_string("kv_http___sysguard_pids");
     njt_str_t                       pids_v;
     njt_int_t                       worker_c;
-    njt_int_t                       diff_total;
+    time_t                          diff_total;
     njt_int_t                       new_worker_c;
     u_char                          *end;
     u_char                          s_tmp[24];
@@ -621,6 +632,7 @@ static void njt_sysguard_cpu_timer_handler(njt_event_t *ev){
 
 next_sys_usage:
     njt_add_timer(ev, ccf->interval);
+    // njt_add_timer(ev, 15000);
 
     return ;
 }
