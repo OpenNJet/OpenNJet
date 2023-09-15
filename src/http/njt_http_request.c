@@ -2278,6 +2278,7 @@ njt_http_validate_host(njt_str_t *host, njt_pool_t *pool, njt_uint_t alloc)
 static void njt_http_core_free_srv_ctx(void* data){
     njt_http_core_srv_conf_t  *cscf = data;
     --cscf->ref_count;
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1.1 free VS server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
 }
 #endif
 //end
@@ -3884,6 +3885,7 @@ njt_http_free_request(njt_http_request_t *r, njt_int_t rc)
     cscf = njt_http_get_module_srv_conf(r, njt_http_core_module);
     if(cscf->disable && cscf->ref_count == 0 && cscf->pool != NULL ){
         //njt_http_server_delete_dyn_var(cscf);
+	 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "2 delete VS server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
         njt_destroy_pool(cscf->pool);
     }
 #endif

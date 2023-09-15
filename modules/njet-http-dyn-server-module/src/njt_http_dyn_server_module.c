@@ -790,6 +790,7 @@ njt_http_dyn_server_delete_main_server(njt_http_core_srv_conf_t* cscf){
 			cscf->disable = 1;
 			njt_array_delete_idx(&cmcf->servers,i);  //zyg todo  正在运行的业务，会不会再用。先清除，但内存没释放
 			njt_http_server_delete_dyn_var(cscf);  
+			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1 delete VS server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
 			if(cscf->ref_count == 0) {
 				njt_destroy_pool(cscf->pool);
 			}
