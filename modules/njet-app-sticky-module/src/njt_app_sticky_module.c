@@ -68,6 +68,7 @@ typedef struct {
 	njt_str_t 							key;			//cookie name ,header or query params and so on
 	njt_app_sticky_srv_conf_t 			*srv_conf;
 	njt_http_request_t 					*request;
+	njt_int_t 							(*old_proc)(njt_http_request_t *r);
 } njt_app_sticky_peer_data_t;
 
 
@@ -168,8 +169,8 @@ static njt_int_t njt_app_sticky_init_peer(njt_http_request_t *r,
 		return NJT_ERROR;
 	}
 	aspd->srv_conf = ascf;
-	aspd->request =r;
-
+	aspd->request = r;
+	
 	njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "init app_sticky");
 	
@@ -201,6 +202,7 @@ static njt_int_t njt_app_sticky_init_peer(njt_http_request_t *r,
 		}
 	}
     r->upstream->peer.get = njt_app_sticky_get_peer;
+	aspd->old_proc = r->upstream->process_header;
 
     return NJT_OK;
 }
@@ -292,7 +294,7 @@ static njt_int_t njt_app_sticky_get_peer(njt_peer_connection_t *pc, void *data){
 				req_ctx->ctx = ctx;
 				req_ctx->request = aspd->request;
 
-				req_ctx->old_proc = aspd->request->upstream->process_header;
+				req_ctx->old_proc = aspd->old_proc;
 				
 				req_ctx->request->upstream->process_header = njt_app_sticky_header_filter;
 
@@ -336,7 +338,7 @@ static njt_int_t njt_app_sticky_get_peer(njt_peer_connection_t *pc, void *data){
 	req_ctx->ctx = ctx;
 	req_ctx->request = aspd->request;
 
-	req_ctx->old_proc = aspd->request->upstream->process_header;
+	req_ctx->old_proc = aspd->old_proc;
 	req_ctx->request->upstream->process_header = njt_app_sticky_header_filter;
 	req_ctx->srv_conf = aspd->srv_conf;
 
