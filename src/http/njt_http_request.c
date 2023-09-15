@@ -3869,10 +3869,22 @@ njt_http_free_request(njt_http_request_t *r, njt_int_t rc)
     clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
 #endif
     //end
+     cscf = njt_http_get_module_srv_conf(r, njt_http_core_module);
     pool = r->pool;
     r->pool = NULL;
-
     njt_destroy_pool(pool);
+    // by zyg
+#if (NJT_HTTP_DYNAMIC_SERVER)
+   
+    if(cscf->disable && cscf->ref_count == 0 && cscf->pool != NULL ){
+        //njt_http_server_delete_dyn_var(cscf);
+	 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "2 delete VS server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
+        njt_destroy_pool(cscf->pool);
+        return;  //zyg 如果server 删除，就不再执行location 删除。
+    }
+#endif
+
+
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     if(clcf->disable && clcf->ref_count == 0 && clcf->pool != NULL ){
@@ -3880,15 +3892,7 @@ njt_http_free_request(njt_http_request_t *r, njt_int_t rc)
     }
 #endif
     //end
-    // by zyg
-#if (NJT_HTTP_DYNAMIC_SERVER)
-    cscf = njt_http_get_module_srv_conf(r, njt_http_core_module);
-    if(cscf->disable && cscf->ref_count == 0 && cscf->pool != NULL ){
-        //njt_http_server_delete_dyn_var(cscf);
-	 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "2 delete VS server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
-        njt_destroy_pool(cscf->pool);
-    }
-#endif
+
     //end
 }
 

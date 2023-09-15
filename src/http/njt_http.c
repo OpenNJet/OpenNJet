@@ -1581,7 +1581,6 @@ njt_http_add_server(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 
     } else {
         server = addr->servers.elts;
-	njt_log_error(NJT_LOG_EMERG, cf->log, 0,"njt_http_add_server server=%p",server);
         for (i = 0; i < addr->servers.nelts; i++) {
             if (server[i] == cscf) {
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
@@ -1689,10 +1688,7 @@ njt_http_server_names(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
                 continue;
             }
 #endif
-	    njt_log_error(NJT_LOG_WARN, cf->log, 0,
-                              " server p=%p,server name \"%V\",name server=%p,addr=%p ",
-                             cscfp[s],&name[n].name,name[n].server,addr);
-
+	
             rc = njt_hash_add_key(&ha, &name[n].name, name[n].server,
                                   NJT_HASH_WILDCARD_KEY);
 
@@ -1720,12 +1716,10 @@ njt_http_server_names(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
     hash.bucket_size = cmcf->server_names_hash_bucket_size;
     hash.name = "server_names_hash";
     hash.pool = cf->pool;
-    njt_log_error(NJT_LOG_WARN, cf->log, 0,"njt_http_server_names");
 
     if (ha.keys.nelts) {
         hash.hash = &addr->hash;
         hash.temp_pool = NULL;
-	njt_log_error(NJT_LOG_WARN, cf->log, 0,"server_name hash=%p",hash.hash);
         if (njt_hash_init(&hash, ha.keys.elts, ha.keys.nelts) != NJT_OK) {
             goto failed;
         }
@@ -2062,7 +2056,7 @@ njt_http_add_addrs(njt_conf_t *cf, njt_http_port_t *hport,
         if (vn == NULL) {
             return NJT_ERROR;
         }
-	njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,"njt_http_add_addrs hport->addrs=%p,virtual_names=%p,addr=%p,conf=%p",hport->addrs,vn,addr,&addrs[i].conf);
+	
         addrs[i].conf.virtual_names = vn;
 
         vn->names.hash = addr[i].hash;
