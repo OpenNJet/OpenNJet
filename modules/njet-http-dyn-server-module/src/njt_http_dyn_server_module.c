@@ -26,7 +26,7 @@ njt_str_t njt_del_headtail_space(njt_str_t src);
 static njt_int_t
 njt_http_dyn_server_init_worker(njt_cycle_t *cycle);
 
-static void  njt_http_dyn_server_delete_all_var(njt_http_core_srv_conf_t *cscf);
+
 
 static njt_int_t
 njt_http_dyn_server_delete_configure_server();
@@ -787,9 +787,12 @@ njt_http_dyn_server_delete_main_server(njt_http_core_srv_conf_t* cscf){
 	for( i = 0; i < cmcf->servers.nelts; i++){ 
 	
 		if(cscfp[i] == cscf  && cscf->listen == 1 && cscf->dynamic == 1) { //动态，并且有listen，没listen 的没有做引用计数。 cscf->dynamic == 1 
-			njt_array_delete_idx(&cmcf->servers,i);
-			njt_http_dyn_server_delete_all_var(cscf);
-			njt_destroy_pool(cscf->pool);
+			cscf->disable = 1;
+			njt_array_delete_idx(&cmcf->servers,i);  //zyg todo  正在运行的业务，会不会再用。先清除，但内存没释放
+			njt_http_server_delete_dyn_var(cscf);  
+			if(cscf->ref_count == 0) {
+				njt_destroy_pool(cscf->pool);
+			}
 			break;
 		}
 	}
@@ -810,19 +813,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 	 njt_http_server_name_t  *name;
 	 njt_str_t *server_name = &server_info->server_name;
 	 u_char *pdata;
-	/*njt_conf_t conf;
-	njt_http_conf_ctx_t* http_ctx;
 
-	http_ctx = (njt_http_conf_ctx_t*)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);
-    conf.pool = njt_cycle->pool; 
-    conf.temp_pool = njt_cycle->pool;
-    conf.ctx = http_ctx;
-    conf.cycle = (njt_cycle_t *) njt_cycle;
-    conf.log = njt_cycle->log;
-    conf.module_type = NJT_HTTP_MODULE;
-    conf.cmd_type = NJT_HTTP_MAIN_CONF;
-    conf.dynamic = 1;
-	*/
 	cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
 	ports = cmcf->ports;
     if (ports == NULL) {
@@ -889,34 +880,4 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
     
 
     return NJT_OK;
-}
-
-static void njt_http_dyn_server_delete_server_var(njt_http_core_srv_conf_t *cscf) {
-
-}
-static void  njt_http_dyn_server_delete_all_locations_var(njt_queue_t *locations) {
-
-    njt_queue_t *x;
-    njt_http_location_queue_t *lq;
-    njt_http_core_loc_conf_t *clcf;
-    if(locations != NULL) {
-	    for (x = njt_queue_head(locations);
-		 x != njt_queue_sentinel(locations);
-		 x = njt_queue_next(x)) {
-		lq = (njt_http_location_queue_t *) x;
-		clcf = lq->exact ? lq->exact : lq->inclusive;
-		if (clcf) {
-		   njt_http_dyn_server_delete_all_locations_var(clcf->old_locations);
-		   njt_http_location_delete_dyn_var(clcf);
-		   
-		}
-	    }
-    }
-}
-static void  njt_http_dyn_server_delete_all_var(njt_http_core_srv_conf_t *cscf) {
-  njt_http_core_loc_conf_t *clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
-  njt_http_dyn_server_delete_server_var(cscf);
-  njt_http_dyn_server_delete_all_locations_var(clcf->old_locations);
-  njt_http_server_delete_dyn_var(cscf);
-  
 }

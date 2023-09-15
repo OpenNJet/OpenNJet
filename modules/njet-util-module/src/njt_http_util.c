@@ -535,28 +535,57 @@ static njt_int_t njt_http_rewrite_delete_dyn_var(njt_http_rewrite_loc_conf_t *rl
 	return rf;
 
 }
- void njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf) {
 
-	njt_uint_t                 rf = 0;
-	njt_http_rewrite_loc_conf_t  *rlcf = clcf->loc_conf[njt_http_rewrite_module.ctx_index];  //njt_http_conf_get_module_loc_conf(clcf,njt_http_rewrite_module); //clcf->loc_conf[njt_http_core_module.ctx_index])
-	
-	rf = njt_http_rewrite_delete_dyn_var(rlcf);
-	if(rf == 1) {
-		njt_http_refresh_variables_keys();
-	}
 
-	
+static void njt_http_location_delete_dyn_var_run(njt_http_core_loc_conf_t *clcf,njt_uint_t *have) {
+     njt_queue_t *locations;
+    njt_queue_t *q;
+    njt_http_rewrite_loc_conf_t  *rlcf;
+    njt_uint_t                 rf = 0;
+    njt_http_location_queue_t *lq;
+    njt_http_core_loc_conf_t *new_clcf;
+    locations = clcf->old_locations;
+    if (locations != NULL) {
+        for (q = njt_queue_head(locations);
+             q != njt_queue_sentinel(locations);
+             q = njt_queue_next(q)) {
+            lq = (njt_http_location_queue_t *) q;
+            if (lq->exact != NULL) {
+                new_clcf = lq->exact;
+                njt_http_location_delete_dyn_var_run(new_clcf,have);
+            } else if (lq->inclusive != NULL) {
+                new_clcf = lq->inclusive;
+                njt_http_location_delete_dyn_var_run(new_clcf,have); //zyg
+            }
+			
+        }
+    } else {
+        rlcf = clcf->loc_conf[njt_http_rewrite_module.ctx_index]; 
+        rf = njt_http_rewrite_delete_dyn_var(rlcf);
+        if(rf == 1) {
+            *have = rf;
+        }
+    }
 }
-
+void  njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf) {
+      njt_uint_t                 rf = 0;
+      njt_http_location_delete_dyn_var_run(clcf,&rf);
+      if(rf == 1) {
+		njt_http_refresh_variables_keys();
+	  }
+  
+}
 void njt_http_server_delete_dyn_var(njt_http_core_srv_conf_t *cscf) {
 
-	njt_uint_t                 rf = 0;
+	njt_uint_t                 rf = 0,rf2 = 0;
+    njt_http_core_loc_conf_t *clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
+    njt_http_location_delete_dyn_var_run(clcf,&rf);
+
 	njt_http_rewrite_loc_conf_t  *rlcf = cscf->ctx->loc_conf[njt_http_rewrite_module.ctx_index];  //njt_http_conf_get_module_loc_conf(clcf,njt_http_rewrite_module); //clcf->loc_conf[njt_http_core_module.ctx_index])
-	
-	rf = njt_http_rewrite_delete_dyn_var(rlcf);
-	if(rf == 1) {
+	rf2 = njt_http_rewrite_delete_dyn_var(rlcf);
+	if(rf == 1 || rf2 == 1) {
 		njt_http_refresh_variables_keys();
 	}
-
-	
 }
+
+

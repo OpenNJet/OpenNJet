@@ -982,6 +982,8 @@ static void njt_http_core_free_ctx(void* data){
 #endif
 //end
 
+
+
 njt_int_t
 njt_http_core_find_config_phase(njt_http_request_t *r,
     njt_http_phase_handler_t *ph)
