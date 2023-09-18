@@ -319,7 +319,7 @@ njt_get_process_cpu_info(njt_str_t *pid, njt_process_cpuinfo_t *cpuinfo, njt_log
     } state;
 
     // str_full_name.data = full_name;
-
+    njt_memzero(full_name, 1024);
     njt_snprintf(full_name, sizeof(full_name) - 1, 
         "/proc/%V/stat", pid);
     // str_full_name.len = end - full_name;
