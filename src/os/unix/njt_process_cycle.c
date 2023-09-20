@@ -15,6 +15,7 @@
 #include <njt_md5.h>
 
 #define MAX_DYN_WORKER_C 512
+#define WORKER_COUNT_KEY "kv_http___master_worker_count"
 
 static void njt_start_worker_processes(njt_cycle_t *cycle, njt_int_t n,
     njt_int_t type);
@@ -39,9 +40,10 @@ static void njt_channel_handler(njt_event_t *ev);
 static void njt_cache_manager_process_cycle(njt_cycle_t *cycle, void *data);
 static void njt_cache_manager_process_handler(njt_event_t *ev);
 static void njt_cache_loader_process_handler(njt_event_t *ev);
+//for dynamic worker process changes
 static njt_int_t njt_master_init_mdb(njt_cycle_t *cycle, const char *cfg);
 static void njt_update_worker_processes(njt_cycle_t *cycle, njt_core_conf_t *ccf, njt_int_t worker_c);
-
+static void njt_check_and_update_worker_count(njt_cycle_t *cycle, njt_core_conf_t *ccf);
 //add by clb
 njt_int_t njt_save_pids_to_kv(njt_cycle_t *cycle);
 
@@ -110,8 +112,6 @@ njt_master_process_cycle(njt_cycle_t *cycle)
     njt_str_t          worker_v;
     njt_int_t          worker_c;
     njt_int_t          rc;
-    u_char             s_tmp[24] = { 0 };
-    u_char *end;
 
     sigemptyset(&set);
     sigaddset(&set, SIGCHLD);
@@ -162,13 +162,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
     njt_start_helper_processes(cycle, 0);
 
     if (master_evt_ctx) {
-        end = njt_snprintf(s_tmp, 24, "%d", ccf->worker_processes);
-        worker_v.data = s_tmp;
-        worker_v.len = end - s_tmp;
-        rc = njet_iot_client_kv_set((void *)worker_k.data, worker_k.len, worker_v.data, worker_v.len, NULL, master_evt_ctx);
-        if (rc != NJT_OK) {
-            njt_log_error(NJT_LOG_ERR, cycle->log, 0, "error setting worker count into kvstore");
-        }
+        njt_check_and_update_worker_count(cycle, ccf);
 
         //add by clb
         //update all pids to kv
@@ -294,6 +288,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             njt_cycle = cycle;
             ccf = (njt_core_conf_t *)njt_get_conf(cycle->conf_ctx,
                 njt_core_module);
+            njt_check_and_update_worker_count(cycle, ccf);
             njt_start_worker_processes(cycle, ccf->worker_processes,
                 NJT_PROCESS_JUST_RESPAWN);
             njt_start_cache_manager_processes(cycle, 1);
@@ -417,6 +412,43 @@ njt_single_process_cycle(njt_cycle_t *cycle)
             njt_reopen = 0;
             njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "reopening logs");
             njt_reopen_files(cycle, (njt_uid_t)-1);
+        }
+    }
+}
+
+static void njt_check_and_update_worker_count(njt_cycle_t *cycle, njt_core_conf_t *ccf)
+{
+    njt_str_t          worker_k = njt_string(WORKER_COUNT_KEY);
+    njt_str_t          worker_v;
+    njt_int_t          worker_c;
+    njt_int_t          has_worker_kv;
+    njt_int_t          rc;
+    u_char             s_tmp[24] = { 0 };
+    u_char *end;
+
+    if (!master_evt_ctx) {
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "master_evt_ctx not existed, kv func not available");
+        return;      
+    }
+    has_worker_kv = 0;
+    njt_str_set(&worker_v, "");
+    rc = njet_iot_client_kv_get((void *)worker_k.data, worker_k.len, (void **)&worker_v.data, (uint32_t *)&worker_v.len, master_evt_ctx);;
+    if (rc == NJT_OK) {
+        worker_c = njt_atoi(worker_v.data, worker_v.len);
+        if (worker_c > 0 && worker_c < MAX_DYN_WORKER_C) {
+            has_worker_kv = 1;
+        }
+    }
+    //if kv_http___master_worker_count has valid value, trigger njt_update_worker_processes
+    if (has_worker_kv) {
+        njt_update_worker_processes(cycle, ccf, worker_c);
+    } else {
+        end = njt_snprintf(s_tmp, 24, "%d", ccf->worker_processes);
+        worker_v.data = s_tmp;
+        worker_v.len = end - s_tmp;
+        rc = njet_iot_client_kv_set((void *)worker_k.data, worker_k.len, worker_v.data, worker_v.len, NULL, master_evt_ctx);
+        if (rc != NJT_OK) {
+            njt_log_error(NJT_LOG_ERR, cycle->log, 0, "error setting worker count into kvstore");
         }
     }
 }
