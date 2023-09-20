@@ -560,11 +560,13 @@ static void njt_http_location_delete_dyn_var_run(njt_http_core_loc_conf_t *clcf,
 			
         }
     } 
+    if(clcf->loc_conf != NULL) {
         rlcf = clcf->loc_conf[njt_http_rewrite_module.ctx_index]; 
         rf = njt_http_rewrite_delete_dyn_var(rlcf);
         if(rf == 1) {
             *have = rf;
         }
+    }
 }
 void  njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf) {
       njt_uint_t                 rf = 0;
