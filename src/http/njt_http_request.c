@@ -293,7 +293,6 @@ njt_http_init_connection(njt_connection_t *c)
             hc->addr_conf = &addr[0].conf;
             break;
         }
-	njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,"2 njt_http_init_connection  listening=%p,port=%p,addr=%p,servers=%p,addr_conf=%p",c->listening,port,addr,c->listening->servers,hc->addr_conf);
     }
 
     /* the default server configuration for the address:port */

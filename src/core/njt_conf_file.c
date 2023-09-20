@@ -1030,7 +1030,7 @@ njt_conf_log_error(njt_uint_t level, njt_conf_t *cf, njt_err_t err,
                   cf->conf_file->file.name.data, cf->conf_file->line);
     //by zyg	
     if(cf->errstr){
-    	p = njt_snprintf(cf->errstr->data,cf->errstr->len,"%*s in %s:%ui",p - errstr, errstr,cf->conf_file->file.name.data, cf->conf_file->line);
+    	p = njt_snprintf(cf->errstr->data,NJT_MAX_CONF_ERRSTR,"%*s in %s:%ui",p - errstr, errstr,cf->conf_file->file.name.data, cf->conf_file->line);
     	cf->errstr->len = p - cf->errstr->data;
     }
     //end
