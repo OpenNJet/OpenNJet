@@ -14,6 +14,7 @@ export LUAJIT_LIB='/etc/njet/luajit/lib'
 #--with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 #--with-cc-opt=-I'auto/lib/tassl/include' --with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-proto-module"
+NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-proxy-protocol-tlv-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-util-module"  #njet-http-if-location-module
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-if-location-module"  #njet-http-if-location-module
 NJET_MODULES="$NJET_MODULES --add-module=src/ext/lua/kit"

@@ -10,7 +10,14 @@
 #include <njt_core.h>
 #include <njt_stream.h>
 #include <njt_stream_proxy_module.h>
-
+#if (NJT_STREAM_PROTOCOL_V2)
+#include <njt_stream_proxy_protocol_tlv_module.h>
+#endif
+struct pp2_tlv {
+            uint8_t type;
+            uint16_t length;
+            uint8_t value[0];
+        };
 static void njt_stream_proxy_handler(njt_stream_session_t *s);
 static njt_int_t njt_stream_proxy_eval(njt_stream_session_t *s,
     njt_stream_proxy_srv_conf_t *pscf);
@@ -62,7 +69,8 @@ static njt_int_t njt_stream_proxy_merge_ssl(njt_conf_t *cf,
     njt_stream_proxy_srv_conf_t *conf, njt_stream_proxy_srv_conf_t *prev);
 static njt_int_t njt_stream_proxy_set_ssl(njt_conf_t *cf,
     njt_stream_proxy_srv_conf_t *pscf);
-
+u_char *
+njt_proxy_protocol_v2_write(njt_stream_session_t *s, u_char *buf, u_char *last);
 
 static njt_conf_bitmask_t  njt_stream_proxy_ssl_protocols[] = {
     { njt_string("SSLv2"), NJT_SSL_SSLv2 },
@@ -886,7 +894,7 @@ njt_stream_proxy_init_upstream(njt_stream_session_t *s)
 
         cl->buf->pos = p;
 
-        p = njt_proxy_protocol_write(c, p, p + NJT_PROXY_PROTOCOL_MAX_HEADER);
+        p = njt_proxy_protocol_v2_write(s, p, p + NJT_PROXY_PROTOCOL_MAX_HEADER);
         if (p == NULL) {
             njt_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
             return;
@@ -937,7 +945,7 @@ njt_stream_proxy_send_proxy_protocol(njt_stream_session_t *s)
     njt_log_debug0(NJT_LOG_DEBUG_STREAM, c->log, 0,
                    "stream proxy send PROXY protocol header");
 
-    p = njt_proxy_protocol_write(c, buf, buf + NJT_PROXY_PROTOCOL_MAX_HEADER);
+    p = njt_proxy_protocol_v2_write(s, buf, buf + NJT_PROXY_PROTOCOL_MAX_HEADER);
     if (p == NULL) {
         njt_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
         return NJT_ERROR;
@@ -2659,4 +2667,120 @@ njt_stream_proxy_bind(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     return NJT_CONF_OK;
+}
+
+
+u_char *
+njt_proxy_protocol_v2_write(njt_stream_session_t *s, u_char *buf, u_char *last)
+{
+    njt_uint_t  cnf_version = 1;
+    njt_connection_t  *c = s->connection;
+
+#if (NJT_STREAM_PROTOCOL_V2)
+#if (NJT_HAVE_INET6)
+    struct sockaddr_in6  *sin6;
+#endif
+     njt_uint_t                    i;
+    struct pp2_tlv                ptlv;
+    u_char                        *p;
+    in_port_t  port, lport;
+    njt_proxy_protocol_header_t        *header;
+    static const u_char signature[] = "\r\n\r\n\0\r\nQUIT\n";
+    void * pscf  = NULL;
+    njt_uint_t  roxy_addr_len = 0;
+    struct sockaddr_in   *sin;
+    njt_stream_proxy_protocol_tlv_cmd_t *cmds;
+     pscf = njt_stream_get_module_srv_conf(s, njt_stream_proxy_protocol_tlv_module);
+     if(pscf != NULL && ((njt_stream_proxy_protocol_tlv_srv_conf_t *)pscf)->enable == 1) {
+       cnf_version = 2;
+     }
+
+#endif
+    if(cnf_version == 1) {  //v1
+       return  njt_proxy_protocol_write(c,buf,last);
+    } else {
+#if (NJT_STREAM_PROTOCOL_V2)
+        if (njt_connection_local_sockaddr(c, NULL, 0) != NJT_OK) {
+            return NULL;
+        }
+       header = (njt_proxy_protocol_header_t *)buf;
+       p = (buf + sizeof(njt_proxy_protocol_header_t));
+
+       njt_memcpy(header->signature,signature,sizeof(header->signature));
+       header->version_command = 0x21;
+        switch (c->sockaddr->sa_family) {
+            case AF_INET:
+                header->family_transport = (0x1 << 4);
+		sin = (struct sockaddr_in *) c->sockaddr;
+                njt_memcpy(p,&sin->sin_addr,4);
+                p += 4;
+		sin = (struct sockaddr_in *) c->local_sockaddr;
+                njt_memcpy(p,&sin->sin_addr,4);
+                p += 4;
+                port = njt_inet_get_port(c->sockaddr);
+                lport = njt_inet_get_port(c->local_sockaddr);
+                port = htons(port);
+                lport = htons(lport);
+                njt_memcpy(p,&port,sizeof(port));
+                p += sizeof(port);
+                njt_memcpy(p,&lport,sizeof(lport));
+                 p += sizeof(lport);
+                roxy_addr_len = 12;
+                break;
+
+        #if (NJT_HAVE_INET6)
+            case AF_INET6:
+                header->family_transport = (0x2 << 4);
+		sin6 = (struct sockaddr_in6 *) c->sockaddr;
+                njt_memcpy(p,&sin6->sin6_addr,16);
+                p += 16;
+		sin6 = (struct sockaddr_in6 *) c->local_sockaddr;
+                njt_memcpy(p,&sin6->sin6_addr,16);
+                 p += 16;
+                port = njt_inet_get_port(c->sockaddr);
+                lport = njt_inet_get_port(c->local_sockaddr);
+                port = htons(port);
+                lport = htons(lport);
+                njt_memcpy(p,&port,sizeof(port));
+                 p += sizeof(port);
+                njt_memcpy(p,&lport,sizeof(lport));
+                 p += sizeof(lport);
+                roxy_addr_len = 36;
+                break;
+        #endif
+            default:
+                header->family_transport = (0xF << 4);
+       }
+       header->family_transport = (header->family_transport|0x01);
+
+        p = (buf + sizeof(njt_proxy_protocol_header_t) + roxy_addr_len);
+        cmds = ((njt_stream_proxy_protocol_tlv_srv_conf_t *)pscf)->commands.elts;
+        for (i = 0; i < ((njt_stream_proxy_protocol_tlv_srv_conf_t *)pscf)->commands.nelts; i++) {
+
+            if(p + sizeof(ptlv.type) + sizeof(ptlv.length) + s->variables[cmds[i].index].len > last) {
+                njt_log_error(NJT_LOG_ERR, c->log, 0,
+                              "too long value of  proxy_pp2_set_tlv");
+                 return NULL;
+            }
+            if (cmds[i].name.len >= 2 && cmds[i].name.data[0] == '0' && cmds[i].name.data[1] == 'x') {
+                ptlv.type = njt_hextoi(cmds[i].name.data + 2, cmds[i].name.len - 2);
+                njt_memcpy(p,&ptlv.type,sizeof(ptlv.type));
+                p += sizeof(ptlv.type);
+
+                ptlv.length = s->variables[cmds[i].index].len;
+                ptlv.length = htons(ptlv.length);
+                njt_memcpy(p,&ptlv.length,sizeof(ptlv.length));
+                p += sizeof(ptlv.length);
+
+                njt_memcpy(p,s->variables[cmds[i].index].data,s->variables[cmds[i].index].len);
+                p = p + s->variables[cmds[i].index].len;
+            } 
+           
+
+        }
+        *(uint16_t*)(&header->len) = htons(p - buf - sizeof(njt_proxy_protocol_header_t));
+        return p;
+#endif
+        return NULL;
+    }
 }
