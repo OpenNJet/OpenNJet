@@ -656,6 +656,8 @@ njt_http_ssl_create_srv_conf(njt_conf_t *cf)
     sscf->verify_depth = NJT_CONF_UNSET_UINT;
     sscf->certificates = NJT_CONF_UNSET_PTR;
     sscf->certificate_keys = NJT_CONF_UNSET_PTR;
+    sscf->dyn_cert_crc32 = NJT_CONF_UNSET_PTR;   //add by clb
+    sscf->cert_types = NJT_CONF_UNSET_PTR;   //add by clb
     sscf->passwords = NJT_CONF_UNSET_PTR;
     sscf->conf_commands = NJT_CONF_UNSET_PTR;
     sscf->builtin_session_cache = NJT_CONF_UNSET;
@@ -717,6 +719,12 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 
     njt_conf_merge_ptr_value(conf->certificates, prev->certificates, NULL);
     njt_conf_merge_ptr_value(conf->certificate_keys, prev->certificate_keys,
+                         NULL);
+
+    //add by clb
+    njt_conf_merge_ptr_value(conf->dyn_cert_crc32, prev->dyn_cert_crc32,
+                         NULL);
+    njt_conf_merge_ptr_value(conf->cert_types, prev->cert_types,
                          NULL);
 
     njt_conf_merge_ptr_value(conf->passwords, prev->passwords, NULL);
@@ -870,6 +878,25 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         {
             return NJT_CONF_ERROR;
         }
+
+        if(conf->cert_types == NULL){
+            conf->cert_types = njt_array_create(cf->pool, 4, sizeof(njt_uint_t));
+            if(conf->cert_types == NULL){
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                    " ssl config, cert_type create error");
+
+                return NJT_CONF_ERROR;
+            }
+        }
+
+        if (njt_ssl_set_certificates_type(cf, &conf->ssl, conf->certificates,
+                                 conf->certificate_keys, conf->cert_types)
+            != NJT_OK)
+        {
+            njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                    " ssl config, cert_type set error");
+            return NJT_CONF_ERROR;
+        }
     }
 
     conf->ssl.buffer_size = conf->buffer_size;
@@ -1004,7 +1031,6 @@ njt_http_ssl_compile_certificates(njt_conf_t *cf,
     nelts = conf->certificates->nelts;
 
     for (i = 0; i < nelts; i++) {
-
         if (njt_http_script_variables_count(&cert[i])) {
             goto found;
         }

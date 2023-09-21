@@ -1874,6 +1874,7 @@ int SSL_CTX_use_dc_PrivateKey_file(SSL_CTX *ctx, const char *file, int type);
 __owur int SSL_CTX_use_PrivateKey_ASN1(int pk, SSL_CTX *ctx,
                                        const unsigned char *d, long len);
 __owur int SSL_CTX_use_certificate(SSL_CTX *ctx, X509 *x);
+__owur void* SSL_CTX_get_certificate_type(EVP_PKEY *pkey, size_t *pidx);
 # ifndef OPENSSL_NO_NTLS
 __owur int SSL_CTX_use_enc_certificate(SSL_CTX *ctx, X509 *x);
 __owur int SSL_CTX_use_sign_certificate(SSL_CTX *ctx, X509 *x);

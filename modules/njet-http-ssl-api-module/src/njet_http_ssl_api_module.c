@@ -696,20 +696,6 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     }
 
 	njt_crc32_init(crc32);
-	njt_crc32_update(&crc32, api_data->cert_info->certificate.data,api_data->cert_info->certificate.len);
-    njt_crc32_update(&crc32, api_data->cert_info->certificateKey.data,api_data->cert_info->certificateKey.len);
-    if(api_data->cert_info->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS){
-        njt_crc32_update(&crc32, (u_char*)"ntls", 4);
-        if(api_data->cert_info->certificateEnc.len > 0){
-            njt_crc32_update(&crc32, api_data->cert_info->certificateEnc.data, api_data->cert_info->certificateEnc.len);
-        }
-        if(api_data->cert_info->certificateKeyEnc.len > 0){
-            njt_crc32_update(&crc32, api_data->cert_info->certificateKeyEnc.data, api_data->cert_info->certificateKeyEnc.len);
-        }
-    }else{
-        njt_crc32_update(&crc32, (u_char *)"regular", 7);
-    }
-
 	for (i = 0; i < api_data->serverNames->nelts; i++){
         serverName = get_dyn_ssl_api_serverNames_item(api_data->serverNames, i);
         if(serverName->len > 0){
@@ -724,6 +710,14 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
         }
 	}
 
+    if(api_data->cert_info->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_NTLS){
+        njt_crc32_update(&crc32, (u_char*)"ntls", 4);
+    }else if(api_data->cert_info->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_RSA){
+        njt_crc32_update(&crc32, (u_char *)"rsa", 3);
+    }else{
+        njt_crc32_update(&crc32, (u_char *)"ecc", 7);
+    }
+
 	njt_crc32_final(crc32);
 
 	topic_name.data = njt_pcalloc(r->pool,topic_len);
@@ -737,7 +731,7 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     }
 	
 	njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
-                      " ===========type:[%V]  crc32:%ui", &api_data->type, crc32);    
+                      " dyn ssl, type:[%V]  crc32:%ui", &api_data->type, crc32);    
 
 	if(api_data->type == DYN_SSL_API_TYPE_DEL){
 		p = njt_snprintf(topic_name.data,topic_len,"/ins/ssl/l_%ui",crc32);
@@ -756,11 +750,11 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
         goto out;
 	} else {
 		// p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/ssl/l_%ui",crc32);
-        p = njt_snprintf(topic_name.data,topic_len,"/ins/ssl/l_%ui",crc32);
+        p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/ssl/l_%ui",crc32);
 	}
 
 	topic_name.len = p - topic_name.data;
-	rc = njt_http_dyn_ssl_rpc_send(r, &topic_name, &json_str, 1);
+	rc = njt_http_dyn_ssl_rpc_send(r, &topic_name, &json_str, 0);
 	if(rc == NJT_OK) {
 		++r->main->count;
 	}

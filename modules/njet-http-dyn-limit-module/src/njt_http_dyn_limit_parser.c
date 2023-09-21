@@ -46,7 +46,7 @@ static bool parse_dyn_limit_locationDef_limit_conns_item(njt_pool_t *pool, parse
             parse_state->current_key = "zone";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->zone))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->zone))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->zone))->data);
             ((&out->zone))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->zone), 0, ((&out->zone))->len, err_ret)) {
@@ -78,7 +78,7 @@ static bool parse_dyn_limit_locationDef_limit_conns_item(njt_pool_t *pool, parse
     // set default
     if (!out->is_zone_set) {
         size_t token_size = strlen("");
-        (out->zone).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->zone).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->zone).data);
         (out->zone).len = token_size;
         if (out->zone.len == 0) {
@@ -103,7 +103,8 @@ static bool parse_dyn_limit_locationDef_limit_conns(njt_pool_t *pool, parse_stat
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_locationDef_limit_conns_item_t));
+        ((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dyn_limit_locationDef_limit_conns_item_t));
+        memset(((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i], 0, sizeof(dyn_limit_locationDef_limit_conns_item_t));
         if (parse_dyn_limit_locationDef_limit_conns_item(pool, parse_state, ((dyn_limit_locationDef_limit_conns_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -178,7 +179,7 @@ static bool parse_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool, parse_
             parse_state->current_key = "zone";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->zone))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->zone))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->zone))->data);
             ((&out->zone))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->zone), 0, ((&out->zone))->len, err_ret)) {
@@ -207,7 +208,7 @@ static bool parse_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool, parse_
             parse_state->current_key = "delay";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->delay))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->delay))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->delay))->data);
             ((&out->delay))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->delay), 0, ((&out->delay))->len, err_ret)) {
@@ -225,7 +226,7 @@ static bool parse_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool, parse_
     // set default
     if (!out->is_zone_set) {
         size_t token_size = strlen("");
-        (out->zone).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->zone).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->zone).data);
         (out->zone).len = token_size;
         if (out->zone.len == 0) {
@@ -242,7 +243,7 @@ static bool parse_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool, parse_
     // set default
     if (!out->is_delay_set) {
         size_t token_size = strlen("");
-        (out->delay).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->delay).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->delay).data);
         (out->delay).len = token_size;
         if (out->delay.len == 0) {
@@ -263,7 +264,8 @@ static bool parse_dyn_limit_locationDef_limit_reqs(njt_pool_t *pool, parse_state
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_locationDef_limit_reqs_item_t));
+        ((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dyn_limit_locationDef_limit_reqs_item_t));
+        memset(((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i], 0, sizeof(dyn_limit_locationDef_limit_reqs_item_t));
         if (parse_dyn_limit_locationDef_limit_reqs_item(pool, parse_state, ((dyn_limit_locationDef_limit_reqs_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -313,7 +315,8 @@ static bool parse_dyn_limit_locationDef_locations(njt_pool_t *pool, parse_state_
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dyn_limit_locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_locationDef_t));
+        ((dyn_limit_locationDef_locations_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dyn_limit_locationDef_t));
+        memset(((dyn_limit_locationDef_locations_item_t**)out->elts)[i], 0, sizeof(dyn_limit_locationDef_locations_item_t));
         if (parse_dyn_limit_locationDef(pool, parse_state, ((dyn_limit_locationDef_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -338,7 +341,7 @@ static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_s
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "location";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->location))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->location))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->location))->data);
             ((&out->location))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->location), 0, ((&out->location))->len, err_ret)) {
@@ -353,7 +356,7 @@ static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_s
             parse_state->current_key = "limit_rate";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->limit_rate))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->limit_rate))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->limit_rate))->data);
             ((&out->limit_rate))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->limit_rate), 0, ((&out->limit_rate))->len, err_ret)) {
@@ -368,7 +371,7 @@ static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_s
             parse_state->current_key = "limit_rate_after";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->limit_rate_after))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->limit_rate_after))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->limit_rate_after))->data);
             ((&out->limit_rate_after))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->limit_rate_after), 0, ((&out->limit_rate_after))->len, err_ret)) {
@@ -528,7 +531,7 @@ static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_s
     // set default
     if (!out->is_limit_rate_set) {
         size_t token_size = strlen("");
-        (out->limit_rate).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->limit_rate).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->limit_rate).data);
         (out->limit_rate).len = token_size;
         if (out->limit_rate.len == 0) {
@@ -541,7 +544,7 @@ static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_s
     // set default
     if (!out->is_limit_rate_after_set) {
         size_t token_size = strlen("");
-        (out->limit_rate_after).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->limit_rate_after).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->limit_rate_after).data);
         (out->limit_rate_after).len = token_size;
         if (out->limit_rate_after.len == 0) {
@@ -557,8 +560,7 @@ static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_s
     }
     // set default
     if (!out->is_limit_conns_set) {
-        out->limit_conns = njt_palloc(pool, sizeof(njt_array_t));
-        memset(out->limit_conns, 0, sizeof(njt_array_t));
+        out->limit_conns = njt_pcalloc(pool, sizeof(njt_array_t));
     }
     // set default
     if (!out->is_limit_conn_dry_run_set) {
@@ -578,8 +580,7 @@ static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_s
     }
     // set default
     if (!out->is_limit_reqs_set) {
-        out->limit_reqs = njt_palloc(pool, sizeof(njt_array_t));
-        memset(out->limit_reqs, 0, sizeof(njt_array_t));
+        out->limit_reqs = njt_pcalloc(pool, sizeof(njt_array_t));
     }
     // set default
     if (!out->is_limit_req_dry_run_set) {
@@ -595,8 +596,7 @@ static bool parse_dyn_limit_locationDef(njt_pool_t *pool, parse_state_t *parse_s
     }
     // set default
     if (!out->is_locations_set) {
-        out->locations = njt_palloc(pool, sizeof(njt_array_t));
-        memset(out->locations, 0, sizeof(njt_array_t));
+        out->locations = njt_pcalloc(pool, sizeof(njt_array_t));
     }
     parse_state->current_token = saved_current_token;
     return false;
@@ -1153,8 +1153,7 @@ void set_dyn_limit_locationDef_limit_conns_item_conn(dyn_limit_locationDef_limit
     obj->is_conn_set = 1;
 }
 dyn_limit_locationDef_limit_conns_item_t* create_dyn_limit_locationDef_limit_conns_item(njt_pool_t *pool) {
-    dyn_limit_locationDef_limit_conns_item_t* out = njt_palloc(pool, sizeof(dyn_limit_locationDef_limit_conns_item_t));
-    memset(out, 0, sizeof(dyn_limit_locationDef_limit_conns_item_t));
+    dyn_limit_locationDef_limit_conns_item_t* out = njt_pcalloc(pool, sizeof(dyn_limit_locationDef_limit_conns_item_t));
     return out;
 }
 int add_item_dyn_limit_locationDef_limit_conns(dyn_limit_locationDef_limit_conns_t *src, dyn_limit_locationDef_limit_conns_item_t* item) {
@@ -1202,8 +1201,7 @@ void set_dyn_limit_locationDef_limit_reqs_item_delay(dyn_limit_locationDef_limit
     obj->is_delay_set = 1;
 }
 dyn_limit_locationDef_limit_reqs_item_t* create_dyn_limit_locationDef_limit_reqs_item(njt_pool_t *pool) {
-    dyn_limit_locationDef_limit_reqs_item_t* out = njt_palloc(pool, sizeof(dyn_limit_locationDef_limit_reqs_item_t));
-    memset(out, 0, sizeof(dyn_limit_locationDef_limit_reqs_item_t));
+    dyn_limit_locationDef_limit_reqs_item_t* out = njt_pcalloc(pool, sizeof(dyn_limit_locationDef_limit_reqs_item_t));
     return out;
 }
 int add_item_dyn_limit_locationDef_limit_reqs(dyn_limit_locationDef_limit_reqs_t *src, dyn_limit_locationDef_limit_reqs_item_t* item) {
@@ -1251,8 +1249,7 @@ void set_dyn_limit_locationDef_locations(dyn_limit_locationDef_t* obj, dyn_limit
     obj->is_locations_set = 1;
 }
 dyn_limit_locationDef_t* create_dyn_limit_locationDef(njt_pool_t *pool) {
-    dyn_limit_locationDef_t* out = njt_palloc(pool, sizeof(dyn_limit_locationDef_t));
-    memset(out, 0, sizeof(dyn_limit_locationDef_t));
+    dyn_limit_locationDef_t* out = njt_pcalloc(pool, sizeof(dyn_limit_locationDef_t));
     return out;
 }
 
@@ -1790,7 +1787,7 @@ static bool parse_dyn_limit_servers_item_listens(njt_pool_t *pool, parse_state_t
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-        ((&((dyn_limit_servers_item_listens_item_t*)out->elts)[i]))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+        ((&((dyn_limit_servers_item_listens_item_t*)out->elts)[i]))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
         js2c_malloc_check(((&((dyn_limit_servers_item_listens_item_t*)out->elts)[i]))->data);
         ((&((dyn_limit_servers_item_listens_item_t*)out->elts)[i]))->len = token_size;
         if (builtin_parse_string(pool, parse_state, (&((dyn_limit_servers_item_listens_item_t*)out->elts)[i]), 1, ((&((dyn_limit_servers_item_listens_item_t*)out->elts)[i]))->len, err_ret)) {
@@ -1809,7 +1806,7 @@ static bool parse_dyn_limit_servers_item_serverNames(njt_pool_t *pool, parse_sta
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-        ((&((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i]))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+        ((&((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i]))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
         js2c_malloc_check(((&((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i]))->data);
         ((&((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i]))->len = token_size;
         if (builtin_parse_string(pool, parse_state, (&((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i]), 0, ((&((dyn_limit_servers_item_serverNames_item_t*)out->elts)[i]))->len, err_ret)) {
@@ -1827,7 +1824,8 @@ static bool parse_dyn_limit_servers_item_locations(njt_pool_t *pool, parse_state
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dyn_limit_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_locationDef_t));
+        ((dyn_limit_servers_item_locations_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dyn_limit_locationDef_t));
+        memset(((dyn_limit_servers_item_locations_item_t**)out->elts)[i], 0, sizeof(dyn_limit_servers_item_locations_item_t));
         if (parse_dyn_limit_locationDef(pool, parse_state, ((dyn_limit_servers_item_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -1915,7 +1913,8 @@ static bool parse_dyn_limit_servers(njt_pool_t *pool, parse_state_t *parse_state
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dyn_limit_servers_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_servers_item_t));
+        ((dyn_limit_servers_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dyn_limit_servers_item_t));
+        memset(((dyn_limit_servers_item_t**)out->elts)[i], 0, sizeof(dyn_limit_servers_item_t));
         if (parse_dyn_limit_servers_item(pool, parse_state, ((dyn_limit_servers_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -1941,7 +1940,7 @@ static bool parse_dyn_limit_limit_rps_item(njt_pool_t *pool, parse_state_t *pars
             parse_state->current_key = "zone";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->zone))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->zone))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->zone))->data);
             ((&out->zone))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->zone), 0, ((&out->zone))->len, err_ret)) {
@@ -1956,7 +1955,7 @@ static bool parse_dyn_limit_limit_rps_item(njt_pool_t *pool, parse_state_t *pars
             parse_state->current_key = "rate";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->rate))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->rate))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->rate))->data);
             ((&out->rate))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->rate), 0, ((&out->rate))->len, err_ret)) {
@@ -1974,7 +1973,7 @@ static bool parse_dyn_limit_limit_rps_item(njt_pool_t *pool, parse_state_t *pars
     // set default
     if (!out->is_zone_set) {
         size_t token_size = strlen("");
-        (out->zone).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->zone).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->zone).data);
         (out->zone).len = token_size;
         if (out->zone.len == 0) {
@@ -1987,7 +1986,7 @@ static bool parse_dyn_limit_limit_rps_item(njt_pool_t *pool, parse_state_t *pars
     // set default
     if (!out->is_rate_set) {
         size_t token_size = strlen("");
-        (out->rate).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->rate).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->rate).data);
         (out->rate).len = token_size;
         if (out->rate.len == 0) {
@@ -2008,7 +2007,8 @@ static bool parse_dyn_limit_limit_rps(njt_pool_t *pool, parse_state_t *parse_sta
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dyn_limit_limit_rps_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_limit_limit_rps_item_t));
+        ((dyn_limit_limit_rps_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dyn_limit_limit_rps_item_t));
+        memset(((dyn_limit_limit_rps_item_t**)out->elts)[i], 0, sizeof(dyn_limit_limit_rps_item_t));
         if (parse_dyn_limit_limit_rps_item(pool, parse_state, ((dyn_limit_limit_rps_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -2067,8 +2067,7 @@ static bool parse_dyn_limit(njt_pool_t *pool, parse_state_t *parse_state, dyn_li
     }
     // set default
     if (!out->is_limit_rps_set) {
-        out->limit_rps = njt_palloc(pool, sizeof(njt_array_t));
-        memset(out->limit_rps, 0, sizeof(njt_array_t));
+        out->limit_rps = njt_pcalloc(pool, sizeof(njt_array_t));
     }
     parse_state->current_token = saved_current_token;
     return false;
@@ -2415,8 +2414,7 @@ void set_dyn_limit_servers_item_locations(dyn_limit_servers_item_t* obj, dyn_lim
     obj->is_locations_set = 1;
 }
 dyn_limit_servers_item_t* create_dyn_limit_servers_item(njt_pool_t *pool) {
-    dyn_limit_servers_item_t* out = njt_palloc(pool, sizeof(dyn_limit_servers_item_t));
-    memset(out, 0, sizeof(dyn_limit_servers_item_t));
+    dyn_limit_servers_item_t* out = njt_pcalloc(pool, sizeof(dyn_limit_servers_item_t));
     return out;
 }
 int add_item_dyn_limit_servers(dyn_limit_servers_t *src, dyn_limit_servers_item_t* item) {
@@ -2444,8 +2442,7 @@ void set_dyn_limit_limit_rps_item_rate(dyn_limit_limit_rps_item_t* obj, dyn_limi
     obj->is_rate_set = 1;
 }
 dyn_limit_limit_rps_item_t* create_dyn_limit_limit_rps_item(njt_pool_t *pool) {
-    dyn_limit_limit_rps_item_t* out = njt_palloc(pool, sizeof(dyn_limit_limit_rps_item_t));
-    memset(out, 0, sizeof(dyn_limit_limit_rps_item_t));
+    dyn_limit_limit_rps_item_t* out = njt_pcalloc(pool, sizeof(dyn_limit_limit_rps_item_t));
     return out;
 }
 int add_item_dyn_limit_limit_rps(dyn_limit_limit_rps_t *src, dyn_limit_limit_rps_item_t* item) {
@@ -2465,8 +2462,7 @@ void set_dyn_limit_limit_rps(dyn_limit_t* obj, dyn_limit_limit_rps_t* field) {
     obj->is_limit_rps_set = 1;
 }
 dyn_limit_t* create_dyn_limit(njt_pool_t *pool) {
-    dyn_limit_t* out = njt_palloc(pool, sizeof(dyn_limit_t));
-    memset(out, 0, sizeof(dyn_limit_t));
+    dyn_limit_t* out = njt_pcalloc(pool, sizeof(dyn_limit_t));
     return out;
 }
 
@@ -2802,7 +2798,7 @@ dyn_limit_t* json_parse_dyn_limit(njt_pool_t *pool, const njt_str_t *json_string
     jsmntok_t *token_buffer;
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
-        token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
+        token_buffer = njt_pcalloc(pool, sizeof(jsmntok_t)*max_token_number);
         parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
             LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
@@ -2822,7 +2818,8 @@ dyn_limit_t* json_parse_dyn_limit(njt_pool_t *pool, const njt_str_t *json_string
         }
         break; // parse success
     }
-    out = njt_palloc(pool, sizeof(dyn_limit_t));;
+    out = njt_pcalloc(pool, sizeof(dyn_limit_t));;
+    memset(out, 0, sizeof(dyn_limit_t));
     if (parse_dyn_limit(pool, parse_state, out, err_ret)) {
         return NULL;
     }
@@ -2831,10 +2828,10 @@ dyn_limit_t* json_parse_dyn_limit(njt_pool_t *pool, const njt_str_t *json_string
 
 njt_str_t* to_json_dyn_limit(njt_pool_t *pool, dyn_limit_t* out, njt_int_t flags) {
     njt_str_t *json_str;
-    json_str = njt_palloc(pool, sizeof(njt_str_t));
+    json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_dyn_limit(pool, out, &str_len, flags);
-    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_dyn_limit(pool, out, json_str, flags);
     return json_str;

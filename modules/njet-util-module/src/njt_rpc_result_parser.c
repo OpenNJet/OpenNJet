@@ -19,7 +19,7 @@ static bool parse_rpc_result_data(njt_pool_t *pool, parse_state_t *parse_state, 
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-        ((&((rpc_result_data_item_t*)out->elts)[i]))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+        ((&((rpc_result_data_item_t*)out->elts)[i]))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
         js2c_malloc_check(((&((rpc_result_data_item_t*)out->elts)[i]))->data);
         ((&((rpc_result_data_item_t*)out->elts)[i]))->len = token_size;
         if (builtin_parse_string(pool, parse_state, (&((rpc_result_data_item_t*)out->elts)[i]), 0, ((&((rpc_result_data_item_t*)out->elts)[i]))->len, err_ret)) {
@@ -72,7 +72,7 @@ static bool parse_rpc_result(njt_pool_t *pool, parse_state_t *parse_state, rpc_r
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "msg";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->msg))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->msg))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->msg))->data);
             ((&out->msg))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->msg), 0, ((&out->msg))->len, err_ret)) {
@@ -89,8 +89,7 @@ static bool parse_rpc_result(njt_pool_t *pool, parse_state_t *parse_state, rpc_r
     parse_state->current_token = object_start_token;
     // set default
     if (!out->is_data_set) {
-        out->data = njt_palloc(pool, sizeof(njt_array_t));
-        memset(out->data, 0, sizeof(njt_array_t));
+        out->data = njt_pcalloc(pool, sizeof(njt_array_t));
     }
     parse_state->current_token = saved_current_token;
     return false;
@@ -217,8 +216,7 @@ void set_rpc_result_msg(rpc_result_t* obj, rpc_result_msg_t* field) {
     obj->is_msg_set = 1;
 }
 rpc_result_t* create_rpc_result(njt_pool_t *pool) {
-    rpc_result_t* out = njt_palloc(pool, sizeof(rpc_result_t));
-    memset(out, 0, sizeof(rpc_result_t));
+    rpc_result_t* out = njt_pcalloc(pool, sizeof(rpc_result_t));
     return out;
 }
 
@@ -332,7 +330,7 @@ rpc_result_t* json_parse_rpc_result(njt_pool_t *pool, const njt_str_t *json_stri
     jsmntok_t *token_buffer;
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
-        token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
+        token_buffer = njt_pcalloc(pool, sizeof(jsmntok_t)*max_token_number);
         parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
             LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
@@ -352,7 +350,8 @@ rpc_result_t* json_parse_rpc_result(njt_pool_t *pool, const njt_str_t *json_stri
         }
         break; // parse success
     }
-    out = njt_palloc(pool, sizeof(rpc_result_t));;
+    out = njt_pcalloc(pool, sizeof(rpc_result_t));;
+    memset(out, 0, sizeof(rpc_result_t));
     if (parse_rpc_result(pool, parse_state, out, err_ret)) {
         return NULL;
     }
@@ -361,10 +360,10 @@ rpc_result_t* json_parse_rpc_result(njt_pool_t *pool, const njt_str_t *json_stri
 
 njt_str_t* to_json_rpc_result(njt_pool_t *pool, rpc_result_t* out, njt_int_t flags) {
     njt_str_t *json_str;
-    json_str = njt_palloc(pool, sizeof(njt_str_t));
+    json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_rpc_result(pool, out, &str_len, flags);
-    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_rpc_result(pool, out, json_str, flags);
     return json_str;

@@ -21,7 +21,8 @@ static bool parse_dyn_vts_locationDef_locations(njt_pool_t *pool, parse_state_t 
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dyn_vts_locationDef_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_vts_locationDef_t));
+        ((dyn_vts_locationDef_locations_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dyn_vts_locationDef_t));
+        memset(((dyn_vts_locationDef_locations_item_t**)out->elts)[i], 0, sizeof(dyn_vts_locationDef_locations_item_t));
         if (parse_dyn_vts_locationDef(pool, parse_state, ((dyn_vts_locationDef_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -46,7 +47,7 @@ static bool parse_dyn_vts_locationDef(njt_pool_t *pool, parse_state_t *parse_sta
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "location";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->location))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->location))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->location))->data);
             ((&out->location))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->location), 0, ((&out->location))->len, err_ret)) {
@@ -96,8 +97,7 @@ static bool parse_dyn_vts_locationDef(njt_pool_t *pool, parse_state_t *parse_sta
     }
     // set default
     if (!out->is_locations_set) {
-        out->locations = njt_palloc(pool, sizeof(njt_array_t));
-        memset(out->locations, 0, sizeof(njt_array_t));
+        out->locations = njt_pcalloc(pool, sizeof(njt_array_t));
     }
     parse_state->current_token = saved_current_token;
     return false;
@@ -224,8 +224,7 @@ void set_dyn_vts_locationDef_locations(dyn_vts_locationDef_t* obj, dyn_vts_locat
     obj->is_locations_set = 1;
 }
 dyn_vts_locationDef_t* create_dyn_vts_locationDef(njt_pool_t *pool) {
-    dyn_vts_locationDef_t* out = njt_palloc(pool, sizeof(dyn_vts_locationDef_t));
-    memset(out, 0, sizeof(dyn_vts_locationDef_t));
+    dyn_vts_locationDef_t* out = njt_pcalloc(pool, sizeof(dyn_vts_locationDef_t));
     return out;
 }
 
@@ -342,7 +341,7 @@ static bool parse_dyn_vts_servers_item_listens(njt_pool_t *pool, parse_state_t *
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-        ((&((dyn_vts_servers_item_listens_item_t*)out->elts)[i]))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+        ((&((dyn_vts_servers_item_listens_item_t*)out->elts)[i]))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
         js2c_malloc_check(((&((dyn_vts_servers_item_listens_item_t*)out->elts)[i]))->data);
         ((&((dyn_vts_servers_item_listens_item_t*)out->elts)[i]))->len = token_size;
         if (builtin_parse_string(pool, parse_state, (&((dyn_vts_servers_item_listens_item_t*)out->elts)[i]), 1, ((&((dyn_vts_servers_item_listens_item_t*)out->elts)[i]))->len, err_ret)) {
@@ -361,7 +360,7 @@ static bool parse_dyn_vts_servers_item_serverNames(njt_pool_t *pool, parse_state
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-        ((&((dyn_vts_servers_item_serverNames_item_t*)out->elts)[i]))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+        ((&((dyn_vts_servers_item_serverNames_item_t*)out->elts)[i]))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
         js2c_malloc_check(((&((dyn_vts_servers_item_serverNames_item_t*)out->elts)[i]))->data);
         ((&((dyn_vts_servers_item_serverNames_item_t*)out->elts)[i]))->len = token_size;
         if (builtin_parse_string(pool, parse_state, (&((dyn_vts_servers_item_serverNames_item_t*)out->elts)[i]), 0, ((&((dyn_vts_servers_item_serverNames_item_t*)out->elts)[i]))->len, err_ret)) {
@@ -379,7 +378,8 @@ static bool parse_dyn_vts_servers_item_locations(njt_pool_t *pool, parse_state_t
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dyn_vts_servers_item_locations_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_vts_locationDef_t));
+        ((dyn_vts_servers_item_locations_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dyn_vts_locationDef_t));
+        memset(((dyn_vts_servers_item_locations_item_t**)out->elts)[i], 0, sizeof(dyn_vts_servers_item_locations_item_t));
         if (parse_dyn_vts_locationDef(pool, parse_state, ((dyn_vts_servers_item_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -467,7 +467,8 @@ static bool parse_dyn_vts_servers(njt_pool_t *pool, parse_state_t *parse_state, 
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((dyn_vts_servers_item_t**)out->elts)[i] = njt_palloc(pool, sizeof(dyn_vts_servers_item_t));
+        ((dyn_vts_servers_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(dyn_vts_servers_item_t));
+        memset(((dyn_vts_servers_item_t**)out->elts)[i], 0, sizeof(dyn_vts_servers_item_t));
         if (parse_dyn_vts_servers_item(pool, parse_state, ((dyn_vts_servers_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
@@ -507,7 +508,7 @@ static bool parse_dyn_vts(njt_pool_t *pool, parse_state_t *parse_state, dyn_vts_
             parse_state->current_key = "vhost_traffic_status_filter_by_set_key";
             js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->vhost_traffic_status_filter_by_set_key))->data = (u_char*)njt_palloc(pool, (size_t)(token_size + 1));
+            ((&out->vhost_traffic_status_filter_by_set_key))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->vhost_traffic_status_filter_by_set_key))->data);
             ((&out->vhost_traffic_status_filter_by_set_key))->len = token_size;
             if (builtin_parse_string(pool, parse_state, (&out->vhost_traffic_status_filter_by_set_key), 0, ((&out->vhost_traffic_status_filter_by_set_key))->len, err_ret)) {
@@ -524,13 +525,12 @@ static bool parse_dyn_vts(njt_pool_t *pool, parse_state_t *parse_state, dyn_vts_
     parse_state->current_token = object_start_token;
     // set default
     if (!out->is_servers_set) {
-        out->servers = njt_palloc(pool, sizeof(njt_array_t));
-        memset(out->servers, 0, sizeof(njt_array_t));
+        out->servers = njt_pcalloc(pool, sizeof(njt_array_t));
     }
     // set default
     if (!out->is_vhost_traffic_status_filter_by_set_key_set) {
         size_t token_size = strlen("");
-        (out->vhost_traffic_status_filter_by_set_key).data = (u_char*)njt_palloc(pool, token_size + 1);
+        (out->vhost_traffic_status_filter_by_set_key).data = (u_char*)njt_pcalloc(pool, token_size + 1);
         js2c_malloc_check((out->vhost_traffic_status_filter_by_set_key).data);
         (out->vhost_traffic_status_filter_by_set_key).len = token_size;
         if (out->vhost_traffic_status_filter_by_set_key.len == 0) {
@@ -813,8 +813,7 @@ void set_dyn_vts_servers_item_locations(dyn_vts_servers_item_t* obj, dyn_vts_ser
     obj->is_locations_set = 1;
 }
 dyn_vts_servers_item_t* create_dyn_vts_servers_item(njt_pool_t *pool) {
-    dyn_vts_servers_item_t* out = njt_palloc(pool, sizeof(dyn_vts_servers_item_t));
-    memset(out, 0, sizeof(dyn_vts_servers_item_t));
+    dyn_vts_servers_item_t* out = njt_pcalloc(pool, sizeof(dyn_vts_servers_item_t));
     return out;
 }
 int add_item_dyn_vts_servers(dyn_vts_servers_t *src, dyn_vts_servers_item_t* item) {
@@ -838,8 +837,7 @@ void set_dyn_vts_vhost_traffic_status_filter_by_set_key(dyn_vts_t* obj, dyn_vts_
     obj->is_vhost_traffic_status_filter_by_set_key_set = 1;
 }
 dyn_vts_t* create_dyn_vts(njt_pool_t *pool) {
-    dyn_vts_t* out = njt_palloc(pool, sizeof(dyn_vts_t));
-    memset(out, 0, sizeof(dyn_vts_t));
+    dyn_vts_t* out = njt_pcalloc(pool, sizeof(dyn_vts_t));
     return out;
 }
 
@@ -1095,7 +1093,7 @@ dyn_vts_t* json_parse_dyn_vts(njt_pool_t *pool, const njt_str_t *json_string, js
     jsmntok_t *token_buffer;
     int parse_result;
     for ( ; /* parse unsuccessful */; ) {
-        token_buffer = njt_palloc(pool, sizeof(jsmntok_t)*max_token_number);
+        token_buffer = njt_pcalloc(pool, sizeof(jsmntok_t)*max_token_number);
         parse_result = builtin_parse_json_string(pool, parse_state, token_buffer, max_token_number, (char *)json_string->data, json_string->len, err_ret);
         if (parse_result == JSMN_ERROR_INVAL) {
             LOG_ERROR_JSON_PARSE(INVALID_JSON_CHAR_ERR, "", -1, "%s", "Invalid character inside JSON string");
@@ -1115,7 +1113,8 @@ dyn_vts_t* json_parse_dyn_vts(njt_pool_t *pool, const njt_str_t *json_string, js
         }
         break; // parse success
     }
-    out = njt_palloc(pool, sizeof(dyn_vts_t));;
+    out = njt_pcalloc(pool, sizeof(dyn_vts_t));;
+    memset(out, 0, sizeof(dyn_vts_t));
     if (parse_dyn_vts(pool, parse_state, out, err_ret)) {
         return NULL;
     }
@@ -1124,10 +1123,10 @@ dyn_vts_t* json_parse_dyn_vts(njt_pool_t *pool, const njt_str_t *json_string, js
 
 njt_str_t* to_json_dyn_vts(njt_pool_t *pool, dyn_vts_t* out, njt_int_t flags) {
     njt_str_t *json_str;
-    json_str = njt_palloc(pool, sizeof(njt_str_t));
+    json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
     get_json_length_dyn_vts(pool, out, &str_len, flags);
-    json_str->data = (u_char*)njt_palloc(pool, str_len + 1);
+    json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
     to_oneline_json_dyn_vts(pool, out, json_str, flags);
     return json_str;

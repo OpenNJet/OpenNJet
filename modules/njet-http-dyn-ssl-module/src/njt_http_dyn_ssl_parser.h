@@ -20,8 +20,10 @@ typedef njt_str_t dyn_ssl_servers_item_serverNames_item_t;
 
 typedef njt_array_t  dyn_ssl_servers_item_serverNames_t;
 typedef enum dyn_ssl_servers_item_certificates_item_cert_type_t_e{
-    DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_REGULAR,
-    DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS
+    DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_RSA,
+    DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_NTLS,
+    DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_ECC,
+    DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_OTHER
 } dyn_ssl_servers_item_certificates_item_cert_type_t;
 
 typedef njt_str_t dyn_ssl_servers_item_certificates_item_certificate_t;
