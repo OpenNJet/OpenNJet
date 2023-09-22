@@ -234,9 +234,13 @@ typedef struct {
 typedef struct {
 #if (NJT_PCRE)
     njt_http_regex_t          *regex;
+#if (NJT_HTTP_DYNAMIC_SERVER) 
+    njt_str_t                  full_name;
+#endif   
 #endif
     njt_http_core_srv_conf_t  *server;   /* virtual name server conf */
     njt_str_t                  name;
+
 } njt_http_server_name_t;
 
 

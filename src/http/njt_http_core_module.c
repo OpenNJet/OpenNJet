@@ -4760,6 +4760,7 @@ njt_http_core_server_name(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             return NJT_CONF_ERROR;
         }
 
+        sn->full_name = value[i];
         value[i].len--;
         value[i].data++;
 
