@@ -519,6 +519,11 @@ end:
     return rc;
 }
 
+static int njt_http_dyn_map_change_handler(njt_str_t *key, njt_str_t *value, void *data)
+{
+    return njt_http_dyn_map_put_handler_internal(key, value, data, NULL);
+}
+
 static u_char *njt_http_dyn_map_put_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data)
 {
     njt_str_t err_json_msg;
@@ -540,7 +545,7 @@ static njt_int_t njt_http_dyn_map_module_init_process(njt_cycle_t *cycle)
     h.key = &rpc_key;
     h.rpc_get_handler = njt_http_dyn_map_get_handler;
     h.rpc_put_handler = njt_http_dyn_map_put_handler;
-
+    h.handler = njt_http_dyn_map_change_handler;
     h.api_type = NJT_KV_API_TYPE_DECLATIVE;
     njt_kv_reg_handler(&h);
 
