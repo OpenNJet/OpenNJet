@@ -371,7 +371,7 @@ static int  njt_cluster_limit_conn_on_node_on(njt_str_t* node, njt_str_t* node_p
 
 static njt_int_t cluster_limit_conn_init_first_worker(njt_cycle_t *cycle)
 {
-    // njt_http_conf_ctx_t                 *conf_ctx;
+    njt_http_conf_ctx_t                 *conf_ctx;
     // njt_http_cluster_limit_conn_ctx_t   *ctx;
     // njt_http_cluster_limit_conn_conf_t  *lccf;
     // njt_shm_zone_t                      **zones, *zone;
@@ -381,7 +381,7 @@ static njt_int_t cluster_limit_conn_init_first_worker(njt_cycle_t *cycle)
     {
         return NJT_OK;
     }
-    // conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
+    conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(cycle->conf_ctx, njt_http_module);
     // lccf = conf_ctx->loc_conf[njt_http_cluster_limit_conn_module.ctx_index];
     if (njt_process == NJT_PROCESS_HELPER)
     {
@@ -419,6 +419,7 @@ static njt_int_t cluster_limit_conn_init_first_worker(njt_cycle_t *cycle)
         ev->timer_set =0;
         ev->cancelable = 1;
         ev->handler = njt_http_cluster_limit_conn_sync;
+        ev->data = conf_ctx;
         njt_add_timer(ev, SYNC_INT);	
     }
 
