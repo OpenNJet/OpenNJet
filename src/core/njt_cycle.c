@@ -313,11 +313,25 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         return NULL;
     }
 
+    size_t             length; // by lcm
+    njt_conf_element_t conf_root;
+    njt_memzero(&conf_root, sizeof(njt_conf_element_t)); // by lcm
+    njt_conf_cur = &conf_root; // by lcm
     if (njt_conf_parse(&conf, &cycle->conf_file) != NJT_CONF_OK) {
         environ = senv;
         njt_destroy_cycle_pools(&conf);
         return NULL;
     }
+    length = 0;
+    njt_conf_get_json_length(&conf_root, &length, 1); // by lcm
+    njt_conf_json.data = njt_palloc(conf.cycle->pool, length);
+    if (njt_conf_json.data) {
+        njt_conf_get_json_str(&conf_root, &njt_conf_json, 1);
+    }
+
+    printf("test test test \n");
+    printf("%s \n", (char*)njt_conf_json.data);
+
 
     if (njt_conf_parse_post(cycle) != NJT_CONF_OK) {
         environ = senv;

@@ -114,6 +114,28 @@ typedef char *(*njt_conf_handler_pt)(njt_conf_t *cf,
     njt_command_t *dummy, void *conf);
 
 
+// add by lcm
+typedef struct njt_conf_cmd_s njt_conf_cmd_t;
+typedef struct njt_conf_element_s njt_conf_element_t;
+struct njt_conf_cmd_s {
+    njt_str_t    key;
+    njt_array_t  *value;
+};
+
+struct njt_conf_element_s {
+    njt_str_t           name;
+    njt_str_t           block_name;
+    njt_array_t        *cmds;
+    njt_uint_t          is_on_off:1;
+    njt_uint_t          is_num:1;
+    njt_array_t        *blocks; // not null, has sub block
+    njt_conf_element_t *parent;
+};
+
+extern void *njt_conf_cur; 
+extern njt_str_t njt_conf_json; 
+// end of add
+
 struct njt_conf_s {
     char                 *name;
     njt_array_t          *args;
@@ -134,7 +156,6 @@ struct njt_conf_s {
     void                 *handler_conf;
     njt_str_t *errstr;  //by zyg
 };
-
 
 typedef char *(*njt_conf_post_handler_pt) (njt_conf_t *cf,
     void *data, void *conf);
@@ -274,6 +295,8 @@ char *njt_conf_parse(njt_conf_t *cf, njt_str_t *filename);
 char *njt_conf_include(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 
+void njt_conf_get_json_length(njt_conf_element_t *root, size_t *length, njt_uint_t is_root) ;
+void njt_conf_get_json_str(njt_conf_element_t *root, njt_str_t *out, njt_uint_t is_root) ;
 njt_int_t njt_conf_full_name(njt_cycle_t *cycle, njt_str_t *name,
     njt_uint_t conf_prefix);
 njt_open_file_t *njt_conf_open_file(njt_cycle_t *cycle, njt_str_t *name);
