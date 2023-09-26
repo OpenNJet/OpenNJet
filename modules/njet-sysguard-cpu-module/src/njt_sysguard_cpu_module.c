@@ -333,7 +333,6 @@ static njt_int_t njt_sysguard_cpu_init_module(njt_cycle_t *cycle){
         return NJT_OK;
     }
 
-
     ccf = (njt_sysguard_cpu_conf_t *)njt_get_conf(cycle->conf_ctx, njt_sysguard_cpu_module);    
     if(ccf == NULL){
         return NJT_OK;
@@ -344,7 +343,7 @@ static njt_int_t njt_sysguard_cpu_init_module(njt_cycle_t *cycle){
     }
 
     //start timer event
-    sysguard_cpu_timer = njt_palloc(cycle->pool, sizeof(njt_event_t));
+    sysguard_cpu_timer = njt_pcalloc(cycle->pool, sizeof(njt_event_t));
     if(sysguard_cpu_timer == NULL){
         return NJT_ERROR;
     }
