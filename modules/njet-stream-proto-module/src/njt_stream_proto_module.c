@@ -244,16 +244,17 @@ static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
 	   ret = getsockopt ( c->fd, SOL_IP, SO_ORIGINAL_DST, &org_src_addr,&org_src_addr_len);  
 	} else if(c->sockaddr->sa_family == AF_INET6) {
 	   ret = getsockopt ( c->fd,SOL_IPV6, IP6T_SO_ORIGINAL_DST, &org_src_addr,&org_src_addr_len);
+	    njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, " 0 stream_nginmesh_dest error=%s",strerror(errno));
 	}
 	if(ret == -1) {
 	   int n = errno;
-	   printf("%d",n);
+	    njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, "stream_nginmesh_dest error=%s",strerror(n));
 	} else {
 		njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, "ip address length %d",org_src_addr_len);
 		if(org_src_addr.ss_family == AF_INET || org_src_addr.ss_family == AF_INET6)  {
 		   addr = (struct sockaddr*)&org_src_addr;
 		
-		   
+		  	   
 		   ctx->dest.data = njt_pnalloc(ctx->pool,NJT_SOCKADDR_STRLEN);
 		   if(ctx->dest.data != NULL) {
 			ctx->dest.len = NJT_SOCKADDR_STRLEN;
@@ -265,6 +266,12 @@ static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
                                                                 ctx->dest.data, ctx->dest.len, 1); // ip:port
 			ctx->dest_port.data = ctx->dest.data + ctx->dest_ip.len + 1;
 			ctx->dest_port.len = ctx->dest.data + ctx->dest.len - ctx->dest_port.data;
+
+			if(org_src_addr.ss_family == AF_INET6) {
+				ctx->dest_ip.data = ctx->dest.data + 1;
+				ctx->dest_port.data = ctx->dest.data + ctx->dest_ip.len + 3;
+				ctx->dest_port.len = (ctx->dest.len - ctx->dest_ip.len - 3); // - [
+			}
 
 			njt_str_set(&ctx->port_mode,"none");
 			 if(sscf->proto_ports != NULL) {
