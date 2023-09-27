@@ -68,6 +68,7 @@ typedef struct {
 	njt_str_t 							key;			//cookie name ,header or query params and so on
 	njt_app_sticky_srv_conf_t 			*srv_conf;
 	njt_http_request_t 					*request;
+	njt_int_t 							(*old_proc)(njt_http_request_t *r);
 } njt_app_sticky_peer_data_t;
 
 
@@ -168,8 +169,8 @@ static njt_int_t njt_app_sticky_init_peer(njt_http_request_t *r,
 		return NJT_ERROR;
 	}
 	aspd->srv_conf = ascf;
-	aspd->request =r;
-
+	aspd->request = r;
+	
 	njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "init app_sticky");
 	
@@ -201,6 +202,7 @@ static njt_int_t njt_app_sticky_init_peer(njt_http_request_t *r,
 		}
 	}
     r->upstream->peer.get = njt_app_sticky_get_peer;
+	aspd->old_proc = r->upstream->process_header;
 
     return NJT_OK;
 }
@@ -292,7 +294,7 @@ static njt_int_t njt_app_sticky_get_peer(njt_peer_connection_t *pc, void *data){
 				req_ctx->ctx = ctx;
 				req_ctx->request = aspd->request;
 
-				req_ctx->old_proc = aspd->request->upstream->process_header;
+				req_ctx->old_proc = aspd->old_proc;
 				
 				req_ctx->request->upstream->process_header = njt_app_sticky_header_filter;
 
@@ -336,7 +338,7 @@ static njt_int_t njt_app_sticky_get_peer(njt_peer_connection_t *pc, void *data){
 	req_ctx->ctx = ctx;
 	req_ctx->request = aspd->request;
 
-	req_ctx->old_proc = aspd->request->upstream->process_header;
+	req_ctx->old_proc = aspd->old_proc;
 	req_ctx->request->upstream->process_header = njt_app_sticky_header_filter;
 	req_ctx->srv_conf = aspd->srv_conf;
 
@@ -881,6 +883,8 @@ static njt_int_t njt_app_sticky_init_worker(njt_cycle_t *cycle)
 	njt_app_sticky_srv_conf_t 		*ascf = NULL;
 	njt_uint_t                      i;
 	njt_app_sticky_srv_conf_t 		**zone_ctx = NULL;
+	njt_flag_t						app_sticky_exist = 0;
+	void            				*ev_data = NULL;
 
 	if (njt_process==NJT_PROCESS_HELPER ) {
         return NJT_OK;
@@ -923,7 +927,9 @@ static njt_int_t njt_app_sticky_init_worker(njt_cycle_t *cycle)
 		if (ascf == NULL || ascf->ctx ==NULL){
 			njt_log_error(NJT_LOG_DEBUG, cycle->log,0," app sticky ascf null return");
 			continue;
-		}  
+		}
+		ev_data = ascf;
+		app_sticky_exist = 1;
 
         zone_ctx = njt_array_push(sticky_ctxes);
 		if(zone_ctx == NULL){
@@ -940,12 +946,13 @@ static njt_int_t njt_app_sticky_init_worker(njt_cycle_t *cycle)
 
 	njt_gossip_reg_app_handler(njt_app_sticky_recv_data,njt_app_sticky_on_node_on, GOSSIP_APP_APP_STICKY, sticky_ctxes);
 	//only the first worker do broadcast job
-	if (njt_worker == 0)  {
+	if (njt_worker == 0 && app_sticky_exist)  {
 		njt_event_t *ev = njt_palloc(cycle->pool, sizeof(njt_event_t));
 		ev->log = &cycle->new_log;
-		ev->timer_set =0;
+		ev->timer_set = 0;
 		ev->cancelable = 1;
 		ev->handler = app_sticky_sync;
+		ev->data = ev_data;
 		njt_add_timer(ev,APP_STICKY_SYNC_INT);	
 	}
 

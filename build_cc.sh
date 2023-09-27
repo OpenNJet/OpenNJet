@@ -14,6 +14,7 @@ export LUAJIT_LIB='/etc/njet/luajit/lib'
 #--with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 #--with-cc-opt=-I'auto/lib/tassl/include' --with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-proto-module"
+NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-proxy-protocol-tlv-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-util-module"  #njet-http-if-location-module
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-if-location-module"  #njet-http-if-location-module
 NJET_MODULES="$NJET_MODULES --add-module=src/ext/lua/kit"
@@ -54,6 +55,7 @@ NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-fault-inject-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-fault-inject-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-jwt-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-sysguard-cpu-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
 LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo "
 # LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo"
