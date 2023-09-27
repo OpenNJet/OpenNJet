@@ -14,6 +14,8 @@
 #include <njt_http_sendmsg_module.h>
 #include <njt_http_dyn_server_module.h>
 #include <njt_rpc_result_util.h>
+#include "js2c_njet_builtins.h"
+#include <njt_str_util.h>
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 extern  njt_int_t
@@ -33,6 +35,7 @@ njt_http_dyn_server_delete_configure_server();
 
 static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *server_info);
 
+static njt_int_t njt_http_dyn_server_post_merge_servers();
 
 typedef struct njt_http_dyn_server_ctx_s {
 } njt_http_dyn_server_ctx_t, njt_stream_http_dyn_server_ctx_t;
@@ -206,6 +209,7 @@ njt_int_t njt_http_check_upstream_exist(njt_cycle_t *cycle,njt_pool_t *pool, njt
 static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_info,njt_uint_t from_api_add) {
 	njt_conf_t conf;
 	njt_int_t rc = NJT_OK;
+	njt_int_t ret = NJT_OK;
 	u_char *p;
 	char *rv = NULL;
 	njt_pool_t  *old_pool = NULL;
@@ -334,8 +338,12 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 		rc = NJT_ERROR;
 		goto out;   //zyg todo
 	}
+	ret = njt_http_dyn_server_post_merge_servers();
 	if(old_pool != NULL) {
 		njt_destroy_pool(old_pool);
+	}
+	if(ret == NJT_ERROR) {
+		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"add server,but no find in servers.");
 	}
 	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge end +++++++++++++++");
 
@@ -732,8 +740,15 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 	njt_str_t server_file = njt_string("add_server.txt");
 	njt_str_t server_path;
 	njt_str_t server_full_file;
+	njt_str_t  server_name;
 
-	cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->server_name);	
+	server_name = delete_escape(server_info->pool, &server_info->server_name);;
+	if(server_name.data == NULL) {
+		rc = NJT_ERROR;
+		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_http_dyn_server_write_data handle_escape_on_write error!");
+		goto out;
+	} 
+	cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_name);	
 	(*server_info).cscf = cscf;
 
 	server_path = njt_cycle->prefix;
@@ -780,6 +795,27 @@ out:
 }
 
 static void
+njt_http_dyn_server_delete_regex_server_name(njt_http_conf_addr_t* addr,njt_str_t *server_name){
+	
+	njt_uint_t i;
+	njt_uint_t len;
+	if(server_name == NULL || server_name->len == 0 || server_name->data[0] != '~') {
+		return;
+	}
+	for(i=0; i < addr->nregex; i++) {
+		if(addr->regex[i].full_name.len == server_name->len  && njt_strncasecmp(addr->regex[i].full_name.data,server_name->data,server_name->len) == 0) {
+			if(i < addr->nregex -1) {
+				len =  (addr->nregex -1 - i) * sizeof(njt_http_server_name_t);
+				njt_memmove(&addr->regex[i],&addr->regex[i+1],len);  //不做交互，防止有序。
+			}
+			addr->nregex--;
+			break;
+		}
+	}
+
+}
+
+static void
 njt_http_dyn_server_delete_main_server(njt_http_core_srv_conf_t* cscf){
 	njt_http_core_srv_conf_t   **cscfp;
 	njt_http_core_main_conf_t *cmcf;
@@ -803,6 +839,7 @@ njt_http_dyn_server_delete_main_server(njt_http_core_srv_conf_t* cscf){
 
 
 }
+
 
 	static njt_int_t
 njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_http_dyn_server_info_t *server_info) //njt_http_dyn_server_info_t *server_info
@@ -853,6 +890,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 								addr[a].wc_tail = NULL;
 								njt_memset(&addr[a].hash,0,sizeof(njt_hash_t));
 							}
+							njt_http_dyn_server_delete_regex_server_name(&addr[a],server_name);
 							njt_http_dyn_server_delete_main_server(cscf);
 							return NJT_OK;
 						} else {
@@ -869,6 +907,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 							if(name[j].name.len == server_name->len
 									&& njt_strncmp(name[j].name.data,server_name->data,server_name->len) == 0){
 								njt_array_delete_idx(&cscf->server_names,j);
+								njt_http_dyn_server_delete_regex_server_name(&addr[a],server_name);
 								njt_http_dyn_server_delete_main_server(cscf);
 								return NJT_OK;
 							}
@@ -884,4 +923,23 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 
 
 	return NJT_OK;
+}
+
+
+
+static njt_int_t njt_http_dyn_server_post_merge_servers() {
+	njt_http_core_srv_conf_t   **cscfp;
+	njt_http_core_main_conf_t *cmcf;
+
+	cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
+	cscfp = cmcf->servers.elts;
+	if(cmcf->servers.nelts > 0) {
+		if (cscfp[cmcf->servers.nelts-1]->dynamic_status == 0 && cscfp[cmcf->servers.nelts-1]->dynamic == 1) {
+			cscfp[cmcf->servers.nelts-1]->dynamic_status = 1;
+			return NJT_OK;
+		}
+	} else {
+		return NJT_OK;
+	}
+	return NJT_ERROR;
 }
