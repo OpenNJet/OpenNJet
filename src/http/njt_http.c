@@ -607,6 +607,11 @@ njt_http_merge_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
 
     for (s = 0; s < cmcf->servers.nelts; s++) {
 
+#if (NJT_HTTP_DYNAMIC_SERVER)
+	if (cf->dynamic == 1 &&  ((cscfp[s]->dynamic == 1 && cscfp[s]->dynamic_status == 1) || cscfp[s]->dynamic ==  0) ) {
+		continue;
+	}
+#endif
         /* merge the server{}s' srv_conf's */
 
         ctx->srv_conf = cscfp[s]->ctx->srv_conf;
@@ -1394,7 +1399,11 @@ njt_http_add_listen(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     }
 
     /* add a port to the port list */
-
+    if(cf->dynamic == 1) {  //zyg 动态的必须有监听。
+          njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "no find listen port for %d",p);
+         return NJT_ERROR;
+    }
     port = njt_array_push(cmcf->ports);
     if (port == NULL) {
         return NJT_ERROR;
@@ -1505,6 +1514,12 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 
 
         return NJT_OK;
+    }
+    if(cf->dynamic == 1) {
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "no find listen for %V",
+                                   &lsopt->addr_text);
+        return NJT_ERROR;
     }
 
     /* add the address to the addresses list that bound to this port */
