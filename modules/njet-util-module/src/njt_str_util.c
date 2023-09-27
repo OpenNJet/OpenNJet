@@ -69,3 +69,42 @@ njt_str_t njt_del_headtail_space(njt_str_t src){
   dst.len = j-i+1;
   return dst;
 }
+
+
+
+ njt_str_t delete_escape(njt_pool_t *pool, njt_str_t *src) {
+    u_char *p;
+    njt_str_t out;
+    u_char* dst;
+    p = src->data;
+    out.len = 0;
+    out.data = (u_char *)njt_pcalloc(pool,src->len+1);
+    if(out.data == NULL) {
+        return out;
+    }
+    out.len = src->len;
+    dst = out.data;
+    for(;p < src->data + src->len;) {
+        if (*p == '\\') {
+            switch (*++p) {
+                case '"':  *dst++ = '"';  p++; break;
+                case '\\': *dst++ = '\\'; p++; break;
+                case '/':  *dst++ = '/';  p++; break;
+                case 'b':  *dst++ = '\b'; p++; break;
+                case 'f':  *dst++ = '\f'; p++; break;
+                case 'n':  *dst++ = '\n'; p++; break;
+                case 'r':  *dst++ = '\r'; p++; break;
+                case 't':  *dst++ = '\t'; p++; break;
+                default:
+                break;
+                // unreachable, should get err in jsmn parse string
+                    // return_err(src, "invalid escaped character in string");
+            }
+        } else {
+            *dst++ = *p++;
+        }
+    }
+    out.len = dst - out.data;
+    out.data[out.len] = 0;
+    return out;
+}
