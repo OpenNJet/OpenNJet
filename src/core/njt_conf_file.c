@@ -270,27 +270,20 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
         }
 
         // add by lcm
-        // print current token 
-        for (int i = 0; i < 2; i++) {
-        // for (int i = 0; i < (int)cf->args->nelts; i++) {
+        for (int i = 0; i < (int)cf->args->nelts; i++) {
             if (i == 0) {
                 printf("\"%s\": ", ((njt_str_t*)cf->args->elts)[i].data);
             } else {
-                printf("\"%s\",\n",  ((njt_str_t*)cf->args->elts)[i].data);
+                printf("\"%s\" ",  ((njt_str_t*)cf->args->elts)[i].data);
             }
-        }
-
-        if (rc == NJT_CONF_BLOCK_DONE) {
-        }
-        if (rc == NJT_CONF_BLOCK_START) {
-            printf("{ \n");
         }
         printf("\n");
 
         if (njt_process == NJT_PROCESS_SINGLE) {
-            njt_conf_element_handler(cf, rc);
+            if (njt_conf_element_handler(cf, rc) != NJT_OK) {
+                printf("error occured \n");
+            }
         }
-
         // end of add
 
 
@@ -392,28 +385,40 @@ done:
     return NJT_CONF_OK;
 }
 
-static njt_int_t njt_conf_get_online_args(njt_conf_t *cf, njt_str_t *value){
+static njt_int_t njt_conf_cmd_set_args(njt_conf_t *cf, njt_conf_cmd_t *ccmd){
     njt_uint_t      i, j;
     njt_uint_t      need_escape;
     njt_pool_t     *pool = cf->cycle->pool;
-    njt_str_t      *arg;
+    njt_str_t      *arg, *value;
     size_t          vlen;
     char           *cur, *dst;
+    njt_array_t    *pos, *tmp;
 
-    need_escape = 0;
+    pos = njt_array_push(ccmd->value);
+    tmp = njt_array_create(pool, 1, sizeof(njt_str_t));
+    if (pos == NULL || tmp == NULL) {
+        return NJT_ERROR;
+    }
+    njt_memcpy(pos, tmp, sizeof(njt_array_t));
+
     if (cf->args->nelts == 1) {
+        value = njt_array_push(pos);
         value->data = njt_palloc(pool, 1);
         if (value->data == NULL) {
             return NJT_ERROR;
         }
-        value->data[0] = '\0';
-        value->len = 1;
+        njt_str_set(value, ""); // value->len = 0;
         return NJT_OK;
     }
 
 
     for (i = 1; i < cf->args->nelts; i++) {
+        value = njt_array_push(pos);
+        if (value == NULL) {
+            return NJT_ERROR;
+        }
         arg = &((njt_str_t*)cf->args->elts)[i];
+        need_escape = 0;
         for (j = 0; j < arg->len; j++) {
             switch ((char)arg->data[j]) {
                 case '\\': 
@@ -423,158 +428,247 @@ static njt_int_t njt_conf_get_online_args(njt_conf_t *cf, njt_str_t *value){
                 case '\f':  
                 case '\n':  
                 case '\r':  
-                case '\t':  need_escape += 1; break;
+                case '\t':  need_escape ++; break;
                 default:
                      break;
             }
         }
-    }
 
-    vlen = need_escape;
-    vlen += cf->args->nelts - 2; // first is cmd name, split args
-    for (i = 1; i < cf->args->nelts; i++) {
-        arg = &((njt_str_t*)cf->args->elts)[i];
-        vlen += arg->len; // if end with \0,  need minus one;
-    }
+        vlen = need_escape + arg->len;
+        value->data = njt_palloc(cf->cycle->pool, vlen);
+        if (value->data == NULL) {
+            return NJT_ERROR;
+        }
 
-    value->data = njt_palloc(cf->cycle->pool, vlen);
-    if (value->data == NULL) {
-        return NJT_ERROR;
-    }
-    value->len = 0;
-
-    j = 0;
-    dst = (char*)value->data;
-    for (i = 1; i < cf->args->nelts; i++) {
-        arg = &((njt_str_t*)cf->args->elts)[i];
+        value->len = vlen;
+        dst = (char*)value->data;
         cur = (char*)arg->data;
+
         if (!need_escape) {
             for (j = 0; j < arg->len; j++, cur++) {
                 *dst++ = *cur;
-                value->len ++;
             }
         } else {
-            cur = (char *)value->data;
             for (j = 0; j < arg->len; j++, cur++) {
                 switch (*cur) {
-                    case '"':  *dst++ = '\\'; *dst++ = '"'; value->len++; break;
-                    case '\\': *dst++ = '\\'; *dst++ = '\\'; value->len++; break;
+                    case '"':  *dst++ = '\\'; *dst++ = '"'; break;
+                    case '\\': *dst++ = '\\'; *dst++ = '\\'; break;
                     // case '/':  *dst++ = '\\'; *dst++ = '/'; out->len++; break;
-                    case '\b': *dst++ = '\\'; *dst++ = 'b'; value->len++; break;
-                    case '\f': *dst++ = '\\'; *dst++ = 'f'; value->len++; break;
-                    case '\n': *dst++ = '\\'; *dst++ = 'n'; value->len++; break;
-                    case '\r': *dst++ = '\\'; *dst++ = 'r'; value->len++; break;
-                    case '\t': *dst++ = '\\'; *dst++ = 't'; value->len++; break;
+                    case '\b': *dst++ = '\\'; *dst++ = 'b'; break;
+                    case '\f': *dst++ = '\\'; *dst++ = 'f'; break;
+                    case '\n': *dst++ = '\\'; *dst++ = 'n'; break;
+                    case '\r': *dst++ = '\\'; *dst++ = 'r'; break;
+                    case '\t': *dst++ = '\\'; *dst++ = 't'; break;
                     default:
                         *dst++ = *cur;
-                        value->len ++;
                 }
             }
         }
-        if (i < cf->args->nelts - 1) {
-            *dst++ = ';';
-            // *dst++ = ' ';
-            value->len++;
-        }
     }
-    // *dst = '\0';
-    // value->len++;
 
     return NJT_OK;
 }
 
 void njt_conf_get_json_length(njt_conf_element_t *root, size_t *length, njt_uint_t is_root) {
-    njt_uint_t      i, j;
+    njt_uint_t      i, j, k;
     njt_conf_cmd_t *cmd;
+    njt_array_t    *values;
     njt_str_t      *arg;
+    njt_conf_block_t    *blocks;
     njt_conf_element_t      *block;
-    *length += 2; // {}
-    // if(!is_root) {
-    //     // "name":
-    //     *length += root->name.len + 2 + 1; // if has \0; need minus one;
-    // }
-    if (root->block_name.len ) {
-        //      "_key":  "block_name",
-        *length += 7 + root->block_name.len + 2 + 1; // \0??
+
+    *length += 1;
+
+    if (root->block_name != NULL) {
+        *length += 7; // "_key":  "block_name",
+        cmd = root->block_name;
+        if (cmd->value->nelts == 1) {
+            // "key": "value",
+            values = cmd->value->elts;
+            if (values->nelts == 1) {
+                // all as string now, change to boolean or number later
+                arg = (njt_str_t*)values->elts;// "key": "value",
+                *length += arg->len + 2;
+            } else {
+                *length += 1; 
+                for (k = 0; k < values->nelts; k++) {
+                    arg = &((njt_str_t*)values->elts)[k];
+                    *length += arg->len + 3;
+                }
+            }
+        }
+        *length += 1; 
     }
+      
 
     for (i = 0; i < root->cmds->nelts; i++) {
         cmd = &((njt_conf_cmd_t*)root->cmds->elts)[i];
-        // "key":
-        *length += cmd->key.len + 2 + 1; // if has \0; need minus one;
+        *length += cmd->key.len + 3;
         if (cmd->value->nelts == 1) {
             // "key": "value",
-            // all as string now, change to boolean or number later
-            arg = (njt_str_t*)cmd->value->elts;
-            *length += arg->len + 2 + 1; // "value",
-        } else {
-            *length += 3; // [],
-            for (j = 0; j < cmd->value->nelts; j++) {
-                arg = &((njt_str_t*)cmd->value->elts)[i];
-                *length += arg->len + 2 + 1; // "value",
+            values = cmd->value->elts;
+            if (values->nelts == 1) {
+                // all as string now, change to boolean or number later
+                arg = (njt_str_t*)values->elts;// "key": "value",
+                *length += arg->len + 2;
+            } else {
+                *length += 1; 
+                for (k = 0; k < values->nelts; k++) {
+                    arg = &((njt_str_t*)values->elts)[k];
+                    *length += arg->len + 3;
+                }
             }
-            *length -= 1; // last ,
+        } else {
+            *length += 1;
+            for (j = 0; j < cmd->value->nelts; j++) {
+                *length += 1;
+                values = &((njt_array_t*)cmd->value->elts)[j];
+                for (k = 0; k < values->nelts; k++) {
+                    arg = &((njt_str_t*)values->elts)[k];
+                    *length += arg->len + 3;
+                }
+                *length += 1;
+            }
         }
+        *length += 1;
     }
-    if (root->blocks) {
-        *length -= 1; // last ,
+
+    if (root->blocks == NULL) {
         return;
     }
+
     for (i = 0; i < root->blocks->nelts; i++) {
-        block = &((njt_conf_element_t*)root->blocks->elts)[i];
-        njt_conf_get_json_length(block, length, 0);
-        *length += 1; // ,
+        blocks = &((njt_conf_block_t*)root->blocks->elts)[i];
+        printf("length: %ld    key: %s\n", *length, (char*)blocks->key.data);
+        *length += blocks->key.len + 3;
+        if (blocks->value->nelts == 1) {
+            block = blocks->value->elts; // http : {}
+            njt_conf_get_json_length(block, length, 0);
+        } else { // locaction [{location1}, {location2}, ...]
+            *length += 1;
+            for (j = 0; j < blocks->value->nelts; j++) {
+                block = &((njt_conf_element_t*)blocks->value->elts)[j];
+                njt_conf_get_json_length(block, length, 0);
+                *length += 1;
+            }
+        }
+        *length += 1;
     }
-    *length -= 1; // last ,
 }
 
 void njt_conf_get_json_str(njt_conf_element_t *root, njt_str_t *out, njt_uint_t is_root) {
-    njt_uint_t      i, j;
-    njt_conf_cmd_t *cmd;
-    njt_str_t      *arg;
-    njt_conf_element_t      *block;
+    njt_uint_t             i, j, k;
+    njt_conf_cmd_t        *cmd;
+    njt_array_t           *values;
+    njt_str_t             *arg;
+    njt_conf_block_t      *blocks;
+    njt_conf_element_t    *block;
     u_char *dst;
+
+
     dst = out->data + out->len;
     *dst++ = '{'; out->len++;
-    if (root->block_name.len) {
-        //      "_key":  "block_name",
-        dst = njt_sprintf(dst, "\"_key\":\"%V\",", root->block_name);
-        out->len = dst - out->data;
-    }
 
+    if (root->block_name != NULL) {
+        dst = njt_sprintf(dst, "\"_key\":"); //"_key":  "block_name",
+        cmd = root->block_name;
+        if (cmd->value->nelts == 1) {
+            // "key": "value",
+            values = cmd->value->elts;
+            if (values->nelts == 1) {
+                // all as string now, change to boolean or number later
+                arg = (njt_str_t*)values->elts;// "key": "value",
+                dst = njt_sprintf(dst, "\"%V\"", arg);
+            } else {
+                *dst++ = '['; 
+                for (k = 0; k < values->nelts; k++) {
+                    arg = &((njt_str_t*)values->elts)[k];
+                    dst = njt_sprintf(dst, "\"%V\",", arg);
+                }
+                dst--; // last ,
+                *dst++ = ']'; 
+            }
+        }
+        *dst++ = ','; 
+    }
 
     for (i = 0; i < root->cmds->nelts; i++) {
         cmd = &((njt_conf_cmd_t*)root->cmds->elts)[i];
-        // "key":
-        dst = njt_sprintf(dst, "\"%V\":", cmd);
-        out->len = dst - out->data;
+        dst = njt_sprintf(dst, "\"%V\":", &cmd->key); // "key":
         if (cmd->value->nelts == 1) {
             // "key": "value",
-            arg = (njt_str_t*)cmd->value->elts;
-            dst = njt_sprintf(dst, "\"%V\"", arg);
-            out->len = dst - out->data;
+            values = cmd->value->elts;
+            if (values->nelts == 1) {
+                // all as string now, change to boolean or number later
+                arg = (njt_str_t*)values->elts;// "key": "value",
+                dst = njt_sprintf(dst, "\"%V\"", arg);
+            } else {
+                *dst++ = '['; 
+                for (k = 0; k < values->nelts; k++) {
+                    arg = &((njt_str_t*)values->elts)[k];
+                    dst = njt_sprintf(dst, "\"%V\",", arg);
+                }
+                dst--; // last ,
+                *dst++ = ']'; 
+                out->len = dst - out->data;
+            }
         } else {
             *dst++ = '['; 
             for (j = 0; j < cmd->value->nelts; j++) {
-                arg = &((njt_str_t*)cmd->value->elts)[i];
-                dst = njt_sprintf(dst, "\"%V\",", arg);
+                *dst++ = '['; 
+                values = &((njt_array_t*)cmd->value->elts)[j];
+                for (k = 0; k < values->nelts; k++) {
+                    arg = &((njt_str_t*)values->elts)[k];
+                    dst = njt_sprintf(dst, "\"%V\",", arg);
+                }
+                dst--; // last ,
+                *dst++ = ']'; 
+                *dst++ = ','; 
+                out->len = dst - out->data;
             }
             dst--; // last ,
             *dst++ = ']'; 
         }
         *dst++ = ','; 
     }
-    if (root->blocks) {
+    out->len = dst - out->data;
+
+    if (root->blocks == NULL) {
         dst--;
-        *dst++ = '\0';
+        *dst++ = '}'; 
         out->len = dst - out->data;
         return;
     }
+
     for (i = 0; i < root->blocks->nelts; i++) {
-        block = &((njt_conf_element_t*)root->blocks->elts)[i];
-        njt_conf_get_json_str(block, out, 0);
+        dst = out->data + out->len;
+        blocks = &((njt_conf_block_t*)root->blocks->elts)[i];
+        dst = njt_sprintf(dst, "\"%V\":", &blocks->key); // "key":
+        out->len = dst - out->data;
+        if (blocks->value->nelts == 1) {
+            // http : {}
+            block = blocks->value->elts;
+            njt_conf_get_json_str(block, out, 0);
+        } else {
+            *dst++ = '['; 
+            out->len = dst - out->data;
+            for (j = 0; j < blocks->value->nelts; j++) {
+                block = &((njt_conf_element_t*)blocks->value->elts)[j];
+                njt_conf_get_json_str(block, out, 0);
+                dst = out->data + out->len;
+                *dst++ = ','; 
+                out->len = dst - out->data;
+            }
+            dst = out->data + out->len;
+            dst--; // last ,
+            *dst++ = ']'; 
+        }
+        dst = out->data + out->len;
         *dst++ = ','; 
+        out->len = dst - out->data;
     }
+    
+    dst = out->data + out->len;
     dst--;
     *dst++ = '}'; 
     out->len = dst - out->data;
@@ -583,17 +677,20 @@ void njt_conf_get_json_str(njt_conf_element_t *root, njt_str_t *out, njt_uint_t 
 static njt_int_t
 njt_conf_element_handler(njt_conf_t *cf, njt_int_t rc)
 {
-    njt_uint_t         i, j, found;
-    njt_str_t          *name, *value, *pos; 
-    njt_command_t      *cmd;
-    njt_conf_element_t *cur, *new;
+    // njt_uint_t         i;
+    njt_uint_t         j, found; // , found_cmd;
+    njt_str_t          *name;
+    // njt_command_t      *cmd;
+    njt_conf_element_t *cur;
+    njt_conf_element_t *new_block, *bpos;
+    njt_conf_block_t   *block;
     njt_conf_cmd_t     *ccmd; 
     njt_pool_t         *pool = cf->cycle->pool; // TODO CHECK!!!
 
     cur = (njt_conf_element_t*)njt_conf_cur;
-    // all conditions will be checked in njt_conf_handler() 
+    // // all conditions will be checked in njt_conf_handler() 
     if (rc == NJT_CONF_BLOCK_DONE) {
-        njt_conf_cur = (void *)cur->parent;
+        njt_conf_cur = cur->parent;
         return NJT_OK;
     }
 
@@ -602,115 +699,174 @@ njt_conf_element_handler(njt_conf_t *cf, njt_int_t rc)
     }
 
     name = cf->args->elts;
+    // found_cmd = 0;
+
+    // for (i = 0; cf->cycle->modules[i]; i++) {
+
+    //     cmd = cf->cycle->modules[i]->commands;
+    //     if (cmd == NULL) {
+    //         continue;
+    //     }
+
+    //     for ( /* void */ ; cmd->name.len; cmd++) {
+
+    //         if (name->len != cmd->name.len) {
+    //             continue;
+    //         }
+
+    //         if (njt_strcmp(name->data, cmd->name.data) != 0) {
+    //             continue;
+    //         }
+
+
+    //         if (cf->cycle->modules[i]->type != NJT_CONF_MODULE
+    //             && cf->cycle->modules[i]->type != cf->module_type)
+    //         {
+    //             continue;
+    //         }
+
+    //         /* is the directive's location right ? */
+
+    //         if (!(cmd->type & cf->cmd_type)) {
+    //             continue;
+    //         }
+    //         found_cmd = 1;
+    //         break;
+    //     }
+    //     if (found_cmd) {
+    //         break;
+    //     }
+    // }
+    // return NJT_OK;
     found = 0;
-
-    for (i = 0; cf->cycle->modules[i]; i++) {
-
-        cmd = cf->cycle->modules[i]->commands;
-        if (cmd == NULL) {
-            continue;
+    if (rc == NJT_OK)
+    {
+        if (!cur->cmds)
+        {
+            cur->cmds = njt_array_create(pool, 1, sizeof(njt_conf_cmd_t));
+            if (!cur->cmds)
+            {
+                return NJT_ERROR;
+            }
         }
-
-        for ( /* void */ ; cmd->name.len; cmd++) {
-
-            if (name->len != cmd->name.len) {
-                continue;
-            }
-
-            if (njt_strcmp(name->data, cmd->name.data) != 0) {
-                continue;
-            }
-
-
-            if (cf->cycle->modules[i]->type != NJT_CONF_MODULE
-                && cf->cycle->modules[i]->type != cf->module_type)
+        // find cmd by key
+        for (j = 0; j < cur->cmds->nelts; j++)
+        {
+            ccmd = &((njt_conf_cmd_t *)(cur->cmds->elts))[j];
+            if (ccmd->key.len != name->len)
             {
                 continue;
             }
 
-            /* is the directive's location right ? */
-
-            if (!(cmd->type & cf->cmd_type)) {
+            // 这里之前用njt_strcmp出过错误，有时ccmd->key_data的len之后不是\0
+            if (njt_memcmp(name->data, ccmd->key.data, name->len) != 0)
+            {
                 continue;
             }
 
-            // grenerate a njt_str (cmd) for value in args;
-            value = njt_palloc(pool, sizeof(njt_str_t));
-            if (njt_conf_get_online_args(cf, value) == NJT_ERROR) {
+            found = 1;
+            break;
+        }
+
+        if (!found)
+        {
+            ccmd = njt_array_push(cur->cmds);
+            if (ccmd == NULL) {
                 return NJT_ERROR;
             }
-            printf("value: %s\n", (char *)value->data);
-            if (rc == NJT_OK) {
-                if (!cur->cmds) {
-                    cur->cmds = njt_array_create(pool, 1, sizeof(njt_conf_cmd_t));
-                    if (!cur->cmds) {
-                        return NJT_ERROR;
-                    }
-                }
-                // find cmd by key
-                for (j = 0; j < cur->cmds->nelts; j++) {
-                    ccmd = &((njt_conf_cmd_t*)(cur->cmds->elts))[i];
-                    if (ccmd->key.len != name->len) {
-                        continue;
-                    }
-
-                    if (njt_strcmp(name->data, ccmd->key.data) != 0)
-                    {
-                        continue;
-                    }
-
-                    found = 1;
-                    break;
-                }
-                
-                if (!found) {
-                    ccmd = njt_array_push(cur->cmds);
-                    ccmd->key.data = njt_palloc(pool, name->len);
-                    ccmd->key.len = name->len;
-                    njt_memcpy(ccmd->key.data, name->data, name->len);
-                    ccmd->value = njt_array_create(pool, 1, sizeof(njt_str_t));
-                    
-                }
-                // set value to pos
-                pos = njt_array_push(ccmd->value);
-                if (pos == NULL) {
-                    return NJT_ERROR;
-                }
-                njt_memcpy(pos, value, sizeof(njt_str_t));
-                return NJT_OK;  
+            ccmd->key.data = njt_palloc(pool, name->len);
+            if (ccmd->key.data == NULL) {
+                return NJT_ERROR;
             }
-
-            if (rc == NJT_CONF_BLOCK_START) {
-                // if duplicate, njt_conf_handler will find and return error.
-                new = njt_palloc(pool, sizeof(njt_conf_element_t));
-                if (new == NULL) {
-                    return NJT_ERROR;
-                }
-                new->name.data = njt_palloc(pool, name->len);
-                new->name.len = name->len;
-                njt_memcpy(new->name.data, name->data, name->len);
-                if (cf->args->nelts > 1) {
-                    new->block_name.data = njt_palloc(pool, value->len);
-                    new->block_name.len = value->len;
-                    memcpy(new->block_name.data, value->data, value->len);
-                }
-                if (cur->blocks == NULL) {
-                    cur->blocks = njt_array_create(pool, 1, sizeof(njt_conf_element_t));
-                    if (cur->blocks == NULL) {
-                        return NJT_ERROR;
-                    }
-                }
-                njt_conf_element_t *bpos = njt_array_push(cur->blocks);
-                if (bpos == NULL) {
-                    return NJT_ERROR;
-                }
-                njt_memcpy(bpos, new, sizeof(njt_conf_element_t));
-                bpos->parent = cur;
-                njt_conf_cur = bpos;
-                return NJT_OK;
-            }
-
+            ccmd->key.len = name->len;
+            njt_memcpy(ccmd->key.data, name->data, name->len);
+            ccmd->value = njt_array_create(pool, 1, sizeof(njt_array_t));
+            // ccmd->is_num = 0;
+            // ccmd->is_flag = 0;
         }
+        // set value to ccmd
+        if (njt_conf_cmd_set_args(cf, ccmd) == NJT_ERROR) {
+            return NJT_ERROR;
+        }
+        // if (found_cmd) {
+        //     if (cmd->type & NJT_CONF_FLAG) {
+        //         // ccmd->is_flag = 1;
+        //     }
+        // }
+        return NJT_OK;
+    }
+
+    if (rc == NJT_CONF_BLOCK_START) {
+        new_block = njt_pcalloc(pool, sizeof(njt_conf_element_t));
+        if (new_block == NULL) {
+            return NJT_ERROR;
+        }
+        if (cf->args->nelts > 1) {
+            new_block->block_name = njt_palloc(pool, sizeof(njt_conf_cmd_t));
+            if (new_block->block_name == NULL) {
+                return NJT_ERROR;
+            }
+            new_block->block_name->value = njt_array_create(pool, 1, sizeof(njt_array_t));
+            if (new_block->block_name->value == NULL) {
+                return NJT_ERROR;
+            }
+            if (njt_conf_cmd_set_args(cf, new_block->block_name) == NJT_ERROR) {
+                return NJT_ERROR;
+            }
+        }
+
+        if (!cur->blocks)
+        {
+            cur->blocks = njt_array_create(pool, 1, sizeof(njt_conf_block_t));
+            if (!cur->blocks)
+            {
+                return NJT_ERROR;
+            }
+        }
+        // find cmd by key
+        for (j = 0; j < cur->blocks->nelts; j++)
+        {
+            block = &((njt_conf_block_t *)(cur->blocks->elts))[j];
+            if (block->key.len != name->len)
+            {
+                continue;
+            }
+
+            if (njt_memcmp(name->data, block->key.data, name->len) != 0)
+            {
+                continue;
+            }
+
+            found = 1;
+            break;
+        }
+
+        if (!found) {
+            block = njt_array_push(cur->blocks);
+            if (block == NULL) {
+                return NJT_ERROR;
+            }
+            block->key.data = njt_palloc(pool, name->len);
+            if (block->key.data == NULL) {
+                return NJT_ERROR;
+            }
+            block->key.len = name->len;
+            njt_memcpy(block->key.data, name->data, name->len);
+            block->value = njt_array_create(pool, 1, sizeof(njt_conf_element_t));
+            if (block->value == NULL) {
+                return NJT_ERROR;
+            }
+        }
+
+        bpos = njt_array_push(block->value);
+        if (bpos == NULL) {
+            return NJT_ERROR;
+        }
+        njt_memcpy(bpos, new_block, sizeof(njt_conf_element_t));
+        bpos->parent = cur;
+        njt_conf_cur = bpos;
+        
+        return NJT_OK;
     }
 
     return NJT_ERROR;

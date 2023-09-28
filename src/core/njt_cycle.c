@@ -324,13 +324,15 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     }
     length = 0;
     njt_conf_get_json_length(&conf_root, &length, 1); // by lcm
-    njt_conf_json.data = njt_palloc(conf.cycle->pool, length);
+    njt_conf_json.data = njt_palloc(conf.cycle->pool, length + 4096);
     if (njt_conf_json.data) {
         njt_conf_get_json_str(&conf_root, &njt_conf_json, 1);
     }
 
     printf("test test test \n");
     printf("%s \n", (char*)njt_conf_json.data);
+    printf("%ld \n", length);
+    printf("%ld \n", njt_conf_json.len);
 
 
     if (njt_conf_parse_post(cycle) != NJT_CONF_OK) {
