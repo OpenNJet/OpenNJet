@@ -302,7 +302,6 @@ health_checks_t* json_parse_health_checks(njt_pool_t *pool, const njt_str_t *jso
         break; // parse success
     }
     out = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(health_checks_item_t*));;
-    memset(out, 0, sizeof(health_checks_t));
     if (parse_health_checks(pool, parse_state, out, err_ret)) {
         return NULL;
     }
