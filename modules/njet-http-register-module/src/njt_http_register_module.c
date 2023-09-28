@@ -514,17 +514,17 @@ static void njt_http_register_check_write_handler(njt_event_t *wev) {
 static void njt_http_register_check_read_handler(njt_event_t *rev) {
     njt_connection_t                    *c;
     u_char      buf[4096];
-    njt_str_t   tmp_str;
-    ssize_t n;
+    // njt_str_t   tmp_str;
+    // ssize_t n;
 
     c = rev->data;
 
-    n = c->recv(c, buf, 4096);
-    tmp_str.data = buf;
-    tmp_str.len = n;
+    c->recv(c, buf, 4096);
+    // tmp_str.data = buf;
+    // tmp_str.len = n;
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "register recv:%V", &tmp_str);
+    // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+    //                 "register recv:%V", &tmp_str);
     
     //just close
     njt_http_close_connection(c);
@@ -586,7 +586,7 @@ njt_http_register_http_write_handler(njt_event_t *wev) {
     size = register_data->send_buf->last - register_data->send_buf->pos;
     tmp_str.data = register_data->send_buf->pos;
     tmp_str.len = size;
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                     "register send:%V", &tmp_str);
 
     n = c->send(c, register_data->send_buf->pos,

@@ -12,6 +12,7 @@ build_bin:
     - sudo chmod +x ./build_cc.sh ./configure
     - sudo ./build_cc.sh conf $CI_COMMIT_SHA
     - sudo make -j `nproc`
+    - sudo ./build_lua.sh
     - sudo mkdir -p work/etc/njet/lualib/ work/usr/local/lib/ work/etc/njet/logs/ logs/  # 创建文件包目录
     - sudo cp -R /etc/njet/* work/etc/njet/
     - sudo cp -R /etc/njet/luajit/lib/* work/usr/local/lib/
