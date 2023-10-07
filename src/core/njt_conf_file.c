@@ -556,6 +556,14 @@ void njt_conf_get_json_length(njt_conf_element_t *root, size_t *length, njt_uint
     }
 }
 
+njt_int_t njt_conf_find_server(njt_array_t *svr_name, njt_conf_element_t *svr_conf) {
+    return NJT_OK;
+};
+njt_int_t njt_conf_find_location(njt_str_t *svr_name, njt_array_t *loc_names, njt_conf_element_t *loc_conf) {
+    return NJT_OK;
+};
+
+
 void njt_conf_get_json_str(njt_conf_element_t *root, njt_str_t *out, njt_uint_t is_root) {
     njt_uint_t             i, j, k;
     njt_conf_cmd_t        *cmd;
