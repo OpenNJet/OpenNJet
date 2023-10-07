@@ -9,8 +9,8 @@ if [ $# -eq 2 ];
 then
   git_tag="$git_tag$2"
 fi
-export LUAJIT_INC='/etc/njet/luajit/include/luajit-2.1'
-export LUAJIT_LIB='/etc/njet/luajit/lib'
+export LUAJIT_INC="`pwd`/luajit/src"
+export LUAJIT_LIB="`pwd`/luajit/src"
 #--with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 #--with-cc-opt=-I'auto/lib/tassl/include' --with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-proto-module"
@@ -97,13 +97,10 @@ cdir=`cd $(dirname $0); pwd`
     for option; do
         case $option in
             conf*)
-		if [ ! -d /etc/njet/luajit ]; then
-		   cd luajit;make;make install;cd -;
-		   cp -fr /etc/njet/luajit/lib/libluajit-5.1.so.2    /usr/local/lib/
-		fi
-		if [ ! -d /etc/njet/lualib ]; then
-		   cp -fr lualib /etc/njet/lualib
-		fi
+                if [ ! -f luajit/src/libluajit-5.1.so ]; then
+                    cd luajit;make;cd -;
+                    cp -f luajit/src/libluajit.so luajit/src/libluajit-5.1.so
+                fi
 
                 # ./configure --with-openssl=/root/download/openssl-openssl-3.0.8-quic1  $flags --with-openssl-opt='--strict-warnings' --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
                 ./configure --with-openssl=auto/lib/tongsuo $flags --with-openssl-opt='--strict-warnings enable-ntls' --with-ntls --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
@@ -112,6 +109,13 @@ cdir=`cd $(dirname $0); pwd`
                 make
                 ;;
             install)
+                if [ ! -d /etc/njet/luajit ]; then
+                    cd luajit;make install;cd -;
+                    cp -a /etc/njet/luajit/lib/libluajit-5.1.* /usr/local/lib/
+		fi
+                if [ ! -d /etc/njet/lualib ]; then
+		    cp -fr lualib /etc/njet/lualib
+                fi
                 cd auto/lib/keepalived; make install; cd -;
                 make install
 		mkdir /etc/njet/data
