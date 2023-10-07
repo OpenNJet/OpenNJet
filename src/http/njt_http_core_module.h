@@ -221,7 +221,7 @@ typedef struct {
 #endif
 #if (NJT_HTTP_DYNAMIC_SERVER)
     unsigned		          dynamic:1;
-    unsigned		          dynamic_status:1;
+    unsigned		          dynamic_status:2;
     unsigned                  disable:1;
     njt_pool_t                *pool;
     njt_uint_t                ref_count;

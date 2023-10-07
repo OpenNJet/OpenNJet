@@ -36,6 +36,7 @@ njt_http_dyn_server_delete_configure_server();
 static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *server_info);
 
 static njt_int_t njt_http_dyn_server_post_merge_servers();
+static njt_int_t njt_http_dyn_server_delete_dirtyservers(njt_http_dyn_server_info_t *server_info);
 
 typedef struct njt_http_dyn_server_ctx_s {
 } njt_http_dyn_server_ctx_t, njt_stream_http_dyn_server_ctx_t;
@@ -351,6 +352,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 out:
 
 	if(rc != NJT_OK) {
+		njt_http_dyn_server_delete_dirtyservers(server_info);
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  server [%V] error!",&server_name);
 	} else {
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  server [%V] succ!",&server_name);
@@ -926,6 +928,20 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 }
 
 
+static njt_int_t njt_http_dyn_server_delete_dirtyservers(njt_http_dyn_server_info_t *server_info) {
+	njt_http_core_srv_conf_t   **cscfp;
+	njt_http_core_main_conf_t *cmcf;
+
+	cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
+	cscfp = cmcf->servers.elts;
+	if(cmcf->servers.nelts > 0) {
+		if (cscfp[cmcf->servers.nelts-1]->dynamic_status == 1 ) {
+
+			njt_http_dyn_server_delete_configure_server(cscfp[cmcf->servers.nelts-1],server_info);
+		}
+	} 
+	return NJT_OK;
+}
 
 static njt_int_t njt_http_dyn_server_post_merge_servers() {
 	njt_http_core_srv_conf_t   **cscfp;
@@ -934,8 +950,8 @@ static njt_int_t njt_http_dyn_server_post_merge_servers() {
 	cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
 	cscfp = cmcf->servers.elts;
 	if(cmcf->servers.nelts > 0) {
-		if (cscfp[cmcf->servers.nelts-1]->dynamic_status == 0 && cscfp[cmcf->servers.nelts-1]->dynamic == 1) {
-			cscfp[cmcf->servers.nelts-1]->dynamic_status = 1;
+		if (cscfp[cmcf->servers.nelts-1]->dynamic_status == 1 ) {
+			cscfp[cmcf->servers.nelts-1]->dynamic_status = 2;
 			return NJT_OK;
 		}
 	} else {

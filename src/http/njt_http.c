@@ -608,7 +608,7 @@ njt_http_merge_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
     for (s = 0; s < cmcf->servers.nelts; s++) {
 
 #if (NJT_HTTP_DYNAMIC_SERVER)
-	if (cf->dynamic == 1 &&  ((cscfp[s]->dynamic == 1 && cscfp[s]->dynamic_status == 1) || cscfp[s]->dynamic ==  0) ) {
+	if (cf->dynamic == 1 &&  cscfp[s]->dynamic_status != 1 ) {
 		continue;
 	}
 #endif

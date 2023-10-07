@@ -3177,6 +3177,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     cf->pool = old_server_pool;
     cf->temp_pool = old_server_temp_pool;
     cscf->dynamic = cf->dynamic;
+    cscf->dynamic_status = cf->dynamic;  // 1 
 #endif
 
 
