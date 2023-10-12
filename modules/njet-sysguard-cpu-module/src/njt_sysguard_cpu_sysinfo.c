@@ -237,9 +237,8 @@ njt_get_cpu_info(njt_str_t *cpunumber, njt_cpuinfo_t *cpuinfo, njt_log_t *log)
         if (njt_strncasecmp((u_char *) cpunumber->data,
                             (u_char *) p, cpunumber->len) == 0)
         {
-
-            for (state = 0, p,
-                 q = (u_char *) strtok((char *) p, " "); q; state++)
+            q = (u_char *) strtok((char *) p, " ");
+            for (state = 0; q; state++)
             {
                 cputime = njt_atotm(q, strlen((char *) q));
 
@@ -271,10 +270,8 @@ njt_get_cpu_info(njt_str_t *cpunumber, njt_cpuinfo_t *cpuinfo, njt_log_t *log)
 
                 q = (u_char *) strtok(NULL, " ");
             }
+            break;
         }
-
-        break;
-
     }
 
     return NJT_OK;
@@ -375,8 +372,8 @@ njt_get_process_cpu_info(njt_str_t *pid, njt_process_cpuinfo_t *cpuinfo, njt_log
     }
 
     for (i=0; p < last; p++) {
-        for (state = 0,
-            q = (u_char *) strtok((char *) p, " "); q; state++)
+        q = (u_char *) strtok((char *) p, " ");
+        for (state = 0; q; state++)
         {
             cputime = njt_atotm(q, strlen((char *) q));
 
@@ -399,7 +396,6 @@ njt_get_process_cpu_info(njt_str_t *pid, njt_process_cpuinfo_t *cpuinfo, njt_log
         }
 
         break;
-
     }
 
     njt_close_file(fd);

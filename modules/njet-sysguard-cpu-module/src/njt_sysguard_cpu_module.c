@@ -300,7 +300,6 @@ njt_sysguard_cpu(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     if(ccf->min_worker > ccf->max_worker){
-        return "min_worker should less then max_worker";
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
             "min_worker:%d should less then max_worker:%d",
             ccf->min_worker, ccf->max_worker);
