@@ -3881,13 +3881,13 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 	ctx = njt_http_get_module_ctx(r, njt_http_upstream_api_module);
 	
 	rc = NJT_OK;
+	peer = NULL;
 	body_chain = r->request_body->bufs;
 	if (body_chain && body_chain->next) {
 		/*The post body is too large*/
 		rc = NJT_HTTP_UPS_API_TOO_LARGE_BODY;
 		goto out;
 	}
-	peer = NULL;
 
 	peers = ctx->peers;
 	out.next = NULL;
@@ -4572,7 +4572,7 @@ njt_stream_upstream_api_process_get(njt_http_request_t *r,
 	server_list_t                   *server_list = NULL; 
 	njt_str_t                       *to_json = NULL;
 
-
+	rc = NJT_OK;
 	umcf = njt_stream_cycle_get_module_main_conf(njet_master_cycle, njt_stream_upstream_module);
 	if(umcf == NULL) {
 		rc = NJT_HTTP_UPS_API_PATH_NOT_FOUND;
@@ -4859,7 +4859,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 		peer->hc_down  = 100 + peer->hc_down;
 	} 
 
-	if (json_peer.server.len  > 0) {
+	if (json_peer.server.len  > 0 && u.naddrs > 0) {
 		if(peer->server.len < json_peer.server.len) {
 			njt_slab_free_locked(peers->shpool,peer->server.data);
 			peer->server.data = njt_slab_calloc_locked(peers->shpool, json_peer.server.len);
