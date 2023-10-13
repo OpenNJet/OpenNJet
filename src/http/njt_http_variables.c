@@ -147,7 +147,9 @@ static void njt_http_variable_set_uri_key(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_http_variable_get_uri_key(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
-
+static njt_int_t
+njt_http_variable_proxy_protocol_tlv(njt_http_request_t *r,
+    njt_http_variable_value_t *v, uintptr_t data);
 /*
  * TODO:
  *     Apache CGI: AUTH_TYPE, PATH_INFO (null), PATH_TRANSLATED
@@ -228,7 +230,9 @@ static njt_http_variable_t  njt_http_core_variables[] = {
     { njt_string("proxy_protocol_server_port"), NULL,
       njt_http_variable_proxy_protocol_port,
       offsetof(njt_proxy_protocol_t, dst_port), 0, 0, NJT_VAR_INIT_REF_COUNT },
-
+    { njt_string("proxy_protocol_tlv_"), NULL,
+      njt_http_variable_proxy_protocol_tlv,
+      0, NJT_HTTP_VAR_PREFIX, 0,NJT_VAR_INIT_REF_COUNT},
     { njt_string("server_addr"), NULL, njt_http_variable_server_addr, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
 
     { njt_string("server_port"), NULL, njt_http_variable_server_port, 0, 0, 0, NJT_VAR_INIT_REF_COUNT },
@@ -1508,6 +1512,39 @@ njt_http_variable_proxy_protocol_port(njt_http_request_t *r,
 
     return NJT_OK;
 }
+
+static njt_int_t
+njt_http_variable_proxy_protocol_tlv(njt_http_request_t *r,
+    njt_http_variable_value_t *v, uintptr_t data)
+{
+    njt_str_t *name = (njt_str_t *) data;
+
+    njt_int_t  rc;
+    njt_str_t  tlv, value;
+
+    tlv.len = name->len - (sizeof("proxy_protocol_tlv_") - 1);
+    tlv.data = name->data + sizeof("proxy_protocol_tlv_") - 1;
+
+    rc = njt_proxy_protocol_get_tlv(r->connection, &tlv, &value);
+
+    if (rc == NJT_ERROR) {
+        return NJT_ERROR;
+    }
+
+    if (rc == NJT_DECLINED) {
+        v->not_found = 1;
+        return NJT_OK;
+    }
+
+    v->len = value.len;
+    v->valid = 1;
+    v->no_cacheable = 0;
+    v->not_found = 0;
+    v->data = value.data;
+
+    return NJT_OK;
+}
+
 
 
 static njt_int_t

@@ -5830,6 +5830,12 @@ njt_http_core_if_location_get_args(njt_str_t old,njt_str_t *name,njt_str_t *oper
 	break;
     }
   }
+  if(space_num == 1) {
+        oper->len = old.data + old.len - oper->data;
+        if(oper->len != 0) {
+                space_num++;
+        }
+  }
   return space_num;
 }
 
@@ -5864,7 +5870,11 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
 	if(num <= 1) {
 		njt_snprintf(new_src.data,new_src.len,"if (%V){",&name);
 	} else if(num == 2) {
-		njt_snprintf(new_src.data,new_src.len,"if (%V %V \"%V\"){",&name,&oper,&value);
+		if(value.len > 0 && value.data != NULL) {
+                        njt_snprintf(new_src.data,new_src.len,"if (%V %V \"%V\"){",&name,&oper,&value);
+                } else {
+                        njt_snprintf(new_src.data,new_src.len,"if (%V \"%V\"){",&name,&oper);
+                }
 	}
 	njt_http_core_split_if(cf,new_src);
 	rc = njt_http_core_if_location(cf,&new_src,pclcf);
