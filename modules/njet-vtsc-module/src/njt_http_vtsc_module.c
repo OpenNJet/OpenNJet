@@ -1207,6 +1207,7 @@ static njt_str_t *njt_vts_dynapi_dump_vts_conf(njt_cycle_t *cycle, njt_pool_t *p
     njt_http_server_name_t      *server_name;
     dyn_vts_t                   dynjson_obj;
     dyn_vts_servers_item_t      *server_item;
+    dyn_vts_vhost_traffic_status_filter_by_set_key_t fitler_set_by_key_filed;
     
     njt_memzero(&dynjson_obj, sizeof(dyn_vts_t));
     hcmcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_core_module);
@@ -1214,7 +1215,8 @@ static njt_str_t *njt_vts_dynapi_dump_vts_conf(njt_cycle_t *cycle, njt_pool_t *p
         goto err;
     }
 
-    njt_vts_dynapi_dump_vts_filter_conf(cycle, &dynjson_obj.vhost_traffic_status_filter_by_set_key, pool);
+    njt_vts_dynapi_dump_vts_filter_conf(cycle, &fitler_set_by_key_filed, pool);
+    set_dyn_vts_vhost_traffic_status_filter_by_set_key(&dynjson_obj, &fitler_set_by_key_filed);
     set_dyn_vts_servers(&dynjson_obj, create_dyn_vts_servers(pool, 4));
     if(dynjson_obj.servers == NULL){
         goto err;
