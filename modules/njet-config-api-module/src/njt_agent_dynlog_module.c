@@ -166,22 +166,25 @@ njt_log_format_with_accessLogFormat_t(njt_pool_t *pool, dynlog_accessLogFormat_t
     if(!alf) return NULL;
     memset(alf,0,sizeof(njt_http_dyn_access_log_format_t));
     dynlog_accessLogFormat_format_t *format = get_dynlog_accessLogFormat_format(fmt);
-    dynlog_accessLogFormat_escape_t escape = get_dynlog_accessLogFormat_escape(fmt);
+    
     dynlog_accessLogFormat_name_t *name = get_dynlog_accessLogFormat_name(fmt);
     if(format != NULL){
         alf->format = *format;
     }
     
-    switch (escape) {
-        case DYNLOG_ACCESSLOGFORMAT_ESCAPE_DEFAULT:
-            njt_str_set(&alf->escape,"default");
-            break;
-        case DYNLOG_ACCESSLOGFORMAT_ESCAPE_JSON:
-            njt_str_set(&alf->escape,"json");
-            break;
-        case DYNLOG_ACCESSLOGFORMAT_ESCAPE_NONE:
-            njt_str_set(&alf->escape,"none");
-            break;
+    if(fmt->is_escape_set){
+        dynlog_accessLogFormat_escape_t escape = get_dynlog_accessLogFormat_escape(fmt);
+        switch (escape) {
+            case DYNLOG_ACCESSLOGFORMAT_ESCAPE_DEFAULT:
+                njt_str_set(&alf->escape,"default");
+                break;
+            case DYNLOG_ACCESSLOGFORMAT_ESCAPE_JSON:
+                njt_str_set(&alf->escape,"json");
+                break;
+            case DYNLOG_ACCESSLOGFORMAT_ESCAPE_NONE:
+                njt_str_set(&alf->escape,"none");
+                break;
+        }
     }
     alf->name = *name;
     return alf;
@@ -477,7 +480,7 @@ static njt_str_t *njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
             set_dynlog_accessLogFormat_name(accessLog_formats_item, &fmt[i].name);
         }
         if( fmt[i].escape.len > 0 ){
-            if(fmt[i].escape.len == 6 && njt_strncmp(fmt[i].escape.data, "default", 6) ==0){
+            if(fmt[i].escape.len == 7 && njt_strncmp(fmt[i].escape.data, "default", 7) ==0){
                 set_dynlog_accessLogFormat_escape(accessLog_formats_item, DYNLOG_ACCESSLOGFORMAT_ESCAPE_DEFAULT);
             }else if (fmt[i].escape.len == 4 && njt_strncmp(fmt[i].escape.data, "json", 4) ==0)
             {
