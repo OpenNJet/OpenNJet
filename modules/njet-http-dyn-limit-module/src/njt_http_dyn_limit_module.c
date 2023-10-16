@@ -702,7 +702,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate(dyn_limit_servers_item_locations_i
 
     rate = njt_array_push(cf->args);
     rate->len = data->limit_rate.len;
-    rate->data = njt_palloc(pool, data->limit_rate.len);
+    rate->data = njt_pcalloc(pool, data->limit_rate.len);
     if(rate->data == NULL){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_limit_set_limit_rate malloc error");
 
@@ -861,7 +861,7 @@ static njt_int_t njt_dyn_limit_set_limit_rate_after(dyn_limit_servers_item_locat
 
     rate_after = njt_array_push(cf->args);
     rate_after->len = data->limit_rate_after.len;
-    rate_after->data = njt_palloc(pool, data->limit_rate_after.len);
+    rate_after->data = njt_pcalloc(pool, data->limit_rate_after.len);
     if(rate_after->data == NULL){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_limit_set_limit_rate_after palloc error");
         
@@ -1670,12 +1670,12 @@ static void njt_dyn_limit_dump_locs_json(njt_pool_t *pool,
                     delay_max_comp = NJT_MAX_INT_T_VALUE / 1000;
                     delay_max_comp *= 1000;
 
-                    delay_str = njt_palloc(pool, sizeof(njt_str_t));
+                    delay_str = njt_pcalloc(pool, sizeof(njt_str_t));
                     if(delay_str == NULL){
                         return;
                     }
 
-                    delay_str->data = njt_palloc(pool, delay_max_len);
+                    delay_str->data = njt_pcalloc(pool, delay_max_len);
                     if(delay_str->data == NULL){
                         return;
                     }
@@ -1836,12 +1836,12 @@ static njt_str_t *njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *
         req_ctx = shm_zone[i].data;
         if(req_ctx == NULL){
             rate_str.len = sizeof("0r/s");
-            rate_str.data = njt_palloc(pool, rate_str.len);
+            rate_str.data = njt_pcalloc(pool, rate_str.len);
             njt_memcpy(rate_str.data, "0r/s", rate_str.len);
         }else{
             tmp_rate = req_ctx->ori_rate;
-            rate_str.data = njt_palloc(pool, rate_max_len);
-            njt_memzero(rate_str.data, rate_max_len);
+            rate_str.data = njt_pcalloc(pool, rate_max_len);
+            // njt_memzero(rate_str.data, rate_max_len);
             if(60 == req_ctx->scale){
                 p = njt_snprintf(rate_str.data, rate_max_len, "%dr/m", tmp_rate);
             }else{

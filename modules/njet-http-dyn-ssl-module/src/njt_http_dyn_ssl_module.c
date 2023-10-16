@@ -606,7 +606,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
 
     cscfp = hcmcf->servers.elts;
     for( i = 0; i < hcmcf->servers.nelts; i++){
-        server_item = njt_palloc(pool, sizeof(dyn_ssl_servers_item_t));
+        server_item = njt_pcalloc(pool, sizeof(dyn_ssl_servers_item_t));
         if(server_item == NULL){
             goto err;
         }

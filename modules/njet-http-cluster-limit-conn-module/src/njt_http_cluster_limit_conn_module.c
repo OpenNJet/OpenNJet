@@ -414,7 +414,7 @@ static njt_int_t cluster_limit_conn_init_first_worker(njt_cycle_t *cycle)
 
 	//only the first worker do broadcast job
 	if (njt_worker == 0)  {
-        njt_event_t *ev = njt_palloc(cycle->pool, sizeof(njt_event_t));
+        njt_event_t *ev = njt_pcalloc(cycle->pool, sizeof(njt_event_t));
         ev->log = &cycle->new_log;
         ev->timer_set =0;
         ev->cancelable = 1;

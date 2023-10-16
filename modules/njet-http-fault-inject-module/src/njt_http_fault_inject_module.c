@@ -309,7 +309,7 @@ void njt_http_fault_inject_delay_request(njt_http_request_t *r){
     }
 
     if(r->delay_timer == NULL){
-        r->delay_timer = njt_palloc(r->pool, sizeof(njt_event_t));
+        r->delay_timer = njt_pcalloc(r->pool, sizeof(njt_event_t));
         if(r->delay_timer == NULL){
             njt_log_error(NJT_LOG_EMERG, r->pool->log, 0, " delay timer malloc error in fault inject");
             njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
