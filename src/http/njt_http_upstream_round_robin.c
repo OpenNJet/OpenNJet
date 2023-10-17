@@ -628,7 +628,7 @@ njt_http_upstream_get_peer(njt_http_upstream_rr_peer_data_t *rrp)
         }
 
         if (peer->rr_effective_weight < peer_slow_weight) {
-            peer->rr_effective_weight += NJT_WEIGHT_POWER;
+            peer->rr_effective_weight += (peer_slow_weight/peer->weight);
         } 
 	if(peer != NULL) {
 	   njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "peer ip=%V,name=%V,rr_current_weight=%d,rr_effective_weight=%d,peer_slow_weight=%d",&peer->server,&peer->name,peer->rr_current_weight,peer->rr_effective_weight,peer_slow_weight);
