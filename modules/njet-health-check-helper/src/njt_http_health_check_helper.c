@@ -4437,6 +4437,7 @@ static njt_int_t njt_http_health_check_conf_out_handler(njt_http_request_t *r, n
         case HC_CERTIFICATE_KEY_NOT_CONF:
         case HC_BODY_ERROR:
             r->headers_out.status = NJT_HTTP_BAD_REQUEST;
+            break;
         case HC_DOUBLE_SET:
             r->headers_out.status = NJT_HTTP_CONFLICT;
             break;
