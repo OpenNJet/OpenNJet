@@ -66,6 +66,7 @@ typedef struct {
     njt_int_t            max_worker;
     njt_lvlhsh_t         prev_pids_work;
     njt_str_t            old_pids;
+    njt_int_t            n_cpu;
     njt_pool_t           *pool;
 } njt_sysguard_cpu_conf_t;
 
@@ -89,6 +90,7 @@ njt_sysguard_cpu_module_create_conf(njt_cycle_t *cycle)
     ccf->min_worker = NJT_CONF_UNSET;
     ccf->max_worker = NJT_CONF_UNSET;
     ccf->pool = NJT_CONF_UNSET_PTR;
+    ccf->n_cpu = njt_ncpu;
     njt_str_null(&ccf->old_pids);
 
     return ccf;
@@ -281,6 +283,9 @@ njt_sysguard_cpu(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         }               
     }
 
+    //get real cpu number
+    ccf->n_cpu = njt_sysguard_get_cpu_number(cf);
+
     //init unconfig param
     njt_conf_init_value(ccf->interval, 1*60*1000);
     njt_conf_init_value(ccf->low_threshold, 10);
@@ -288,7 +293,7 @@ njt_sysguard_cpu(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_conf_init_value(ccf->sys_high_threshold, 80);
     njt_conf_init_value(ccf->worker_step, 1);
     njt_conf_init_value(ccf->min_worker, 1);
-    njt_conf_init_value(ccf->max_worker, njt_ncpu);
+    njt_conf_init_value(ccf->max_worker, ccf->n_cpu);
 
     //logic check
     if(ccf->low_threshold >= ccf->high_threshold){
@@ -554,7 +559,7 @@ static void njt_sysguard_cpu_timer_handler(njt_event_t *ev){
 
 
     //get all workers's average cpu
-    rc = njt_get_process_average_cpu_usage(ccf->pool, &average_cpu_usage, worker_c, &pids_v, &ccf->prev_pids_work, diff_total);
+    rc = njt_get_process_average_cpu_usage(ccf->pool, ccf->n_cpu, &average_cpu_usage, worker_c, &pids_v, &ccf->prev_pids_work, diff_total);
     if(rc != NJT_OK){
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
             " get process average cpu usage error, not adjust worker");
