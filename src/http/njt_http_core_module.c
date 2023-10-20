@@ -4710,7 +4710,9 @@ njt_http_core_server_name(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         } else {
             sn->name = value[i];
         }
-
+#if (NJT_HTTP_DYNAMIC_LOC) 
+        sn->full_name = sn->name;
+#endif
         if (value[i].data[0] != '~') {
             njt_strlow(sn->name.data, sn->name.data, sn->name.len);
             continue;
@@ -4727,7 +4729,9 @@ njt_http_core_server_name(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                                "empty regex in server name \"%V\"", &value[i]);
             return NJT_CONF_ERROR;
         }
-
+#if (NJT_HTTP_DYNAMIC_LOC) 
+        sn->full_name = sn->name;
+#endif
         value[i].len--;
         value[i].data++;
 
