@@ -3819,6 +3819,7 @@ njt_http_core_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 #endif
         sn->server = conf;
         njt_str_set(&sn->name, "");
+         njt_str_set(&sn->full_name, "");
     }
 
     sn = conf->server_names.elts;

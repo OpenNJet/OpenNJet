@@ -113,16 +113,9 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 
 
             if (addr_conf->virtual_names != NULL) {
-                if(server_name->data[0] != '~') {
-                    cscf = njt_hash_find_combined(&addr_conf->virtual_names->names,
-                                            njt_hash_key(server_name->data, server_name->len),
-                                            server_name->data, server_name->len);
-                    if(cscf != NULL){
-                        ret_cscf = cscf;
-                        goto out;
-                    }
-                } else {
-                    sn = addr_conf->virtual_names->regex;
+
+                if(server_name->len > 0 && server_name->data[0] == '~') {
+                     sn = addr_conf->virtual_names->regex;
                     for (k = 0; k <  addr_conf->virtual_names->nregex; ++k) {
                         if(sn[k].full_name.len == server_name->len &&
                         njt_strncasecmp(sn[k].full_name.data,server_name->data,server_name->len)==0){
@@ -130,7 +123,15 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
                             goto out;
                         }
                     }
-                }
+                } else {
+                    cscf = njt_hash_find_combined(&addr_conf->virtual_names->names,
+                                            njt_hash_key(server_name->data, server_name->len),
+                                            server_name->data, server_name->len);
+                    if(cscf != NULL){
+                        ret_cscf = cscf;
+                        goto out;
+                    }
+                } 
             }
            
         }
@@ -196,19 +197,8 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
                 }
             }
             if (listen == NULL && addr_conf->virtual_names != NULL) {
-                if(cscf->server_name.len > 0 && cscf->server_name.data[0] != '~' ) {
-                    tcscf = njt_hash_find_combined(&addr_conf->virtual_names->names,
-                                                njt_hash_key(cscf->server_name.data, cscf->server_name.len),
-                                                cscf->server_name.data, cscf->server_name.len);
-                    if(cscf == tcscf){
-                        listen  = njt_array_push(array);
-                        if(listen == NULL){
-                            return NJT_ERROR_ERR;
-                        }
-                    }
-                } else {
-                    if(listen == NULL){
-                    sn = addr_conf->virtual_names->regex;
+                if(cscf->server_name.len > 0 && cscf->server_name.data[0] == '~' ) {
+                     sn = addr_conf->virtual_names->regex;
                         for (k = 0; k <  addr_conf->virtual_names->nregex; ++k) {
                             if(sn[i].server == cscf){
                                 listen  = njt_array_push(array);
@@ -218,8 +208,17 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
                                 break;
                             }
                         }
-                    }   
-                }
+                } else {
+                    tcscf = njt_hash_find_combined(&addr_conf->virtual_names->names,
+                                                njt_hash_key(cscf->server_name.data, cscf->server_name.len),
+                                                cscf->server_name.data, cscf->server_name.len);
+                    if(cscf == tcscf){
+                        listen  = njt_array_push(array);
+                        if(listen == NULL){
+                            return NJT_ERROR_ERR;
+                        }
+                    }
+                } 
                 
             }
 			if(listen != NULL) {
