@@ -1791,7 +1791,7 @@ static njt_str_t *njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *
 
         server_name = cscfp[i]->server_names.elts;
         for (j = 0; j < cscfp[i]->server_names.nelts; ++j) {
-            tmp_str = &server_name[j].name;
+            tmp_str = &server_name[j].full_name;
             add_item_dyn_limit_servers_item_serverNames(server_item->serverNames, tmp_str);
         }
 

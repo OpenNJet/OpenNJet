@@ -444,7 +444,7 @@ static njt_str_t *njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
 
         server_name = cscfp[i]->server_names.elts;
         for (j = 0; j < cscfp[i]->server_names.nelts; ++j) {
-            tmp_str = &server_name[j].name;
+            tmp_str = &server_name[j].full_name;
             add_item_dynlog_servers_item_serverNames(server_item->serverNames,tmp_str);
         }
 
