@@ -55,7 +55,7 @@ njt_int_t njt_get_cpu_usage(njt_str_t *cpunumber, njt_int_t *cpu_usage, time_t *
 
 
 njt_int_t
-njt_get_process_average_cpu_usage(njt_pool_t *pool, njt_int_t *average_cpu_usage, njt_uint_t worker_n,
+njt_get_process_average_cpu_usage(njt_pool_t *pool, njt_int_t n_cpu, njt_int_t *average_cpu_usage, njt_uint_t worker_n,
         njt_str_t *pids_v, njt_lvlhsh_t *prev_pids_work, time_t diff_total){
     njt_str_t                       s_pid;
     njt_uint_t                      i;
@@ -120,11 +120,11 @@ njt_get_process_average_cpu_usage(njt_pool_t *pool, njt_int_t *average_cpu_usage
             diff_work = work - prev_pid_work;
             total += diff_work;
 
-            pid_cpu_usage = (njt_int_t)(100.0 * njt_ncpu * diff_work / diff_total);
+            pid_cpu_usage = (njt_int_t)(100.0 * n_cpu * diff_work / diff_total);
 
             njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
-                " get process:%V cpu_usage:%d njt_ncpu:%d utime:%T stime:%T cutime:%T cstime:%T work:%T pre_work:%T diff_work:%T diff_total:%T",
-                &s_pid, pid_cpu_usage, njt_ncpu, p_cpuinfo.utime, p_cpuinfo.stime,
+                " get process:%V cpu_usage:%d n_cpu:%d utime:%T stime:%T cutime:%T cstime:%T work:%T pre_work:%T diff_work:%T diff_total:%T",
+                &s_pid, pid_cpu_usage, n_cpu, p_cpuinfo.utime, p_cpuinfo.stime,
                 p_cpuinfo.cutime, p_cpuinfo.cstime, work, prev_pid_work, diff_work, diff_total);
             total_pid_cpu_usage += pid_cpu_usage;
 
@@ -415,6 +415,106 @@ njt_get_process_cpu_info(njt_str_t *pid, njt_process_cpuinfo_t *cpuinfo, njt_log
 
 #endif
 
+
+#define NJT_CPU_CGROUP_QUOTA "/sys/fs/cgroup/cpu/cpu.cfs_quota_us"
+#define NJT_CPU_CGROUP_PERIOD "/sys/fs/cgroup/cpu/cpu.cfs_period_us"
+
+njt_int_t
+njt_sysguard_get_cpu_number(njt_conf_t *cf){
+    njt_fd_t            fd;
+    u_char              buf[1024];
+    ssize_t             n;
+    ssize_t             cpu_quota, cpu_period;
+    njt_int_t           i;
+
+    //first use cgroup
+    // /sys/fs/cgroup/cpu/cpu.cfs_quota_us
+    fd = njt_open_file(NJT_CPU_CGROUP_QUOTA, NJT_FILE_RDONLY,
+                        NJT_FILE_OPEN,
+                        NJT_FILE_DEFAULT_ACCESS);
+
+    if (fd == NJT_INVALID_FILE) {
+        njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+                        "cgroup quota file open error, just use njt_ncpu");
+
+        goto use_njt_cpu;
+    }
+    njt_memzero(buf, 1024);
+    n = njt_read_fd(fd, buf, 1024);
+    if (n == NJT_ERROR || n < 1) {
+        njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+                      "cgroup quota file read error, just use njt_ncpu");
+
+        njt_close_file(fd);
+        goto use_njt_cpu;
+    }
+    njt_close_file(fd);
+    if(buf[0] == '-'){
+                njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+                      "cgroup quota is -1, just use njt_ncpu");
+        goto use_njt_cpu;
+    }
+
+    for(i = 0; i < n; i++){
+        if(buf[i] < '0' || buf[i] > '9'){
+            buf[i] = '\0';
+            n--;
+        }
+    }
+    cpu_quota = njt_atosz(buf, n);
+    if(cpu_quota == -1){
+        njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+                "cgroup cpu_quota get error, just use njt_ncpu, buf:%s len:%d", buf, n);
+        goto use_njt_cpu;
+    }
+    
+    // /sys/fs/cgroup/cpu/cpu.cfs_period_us
+    fd = njt_open_file(NJT_CPU_CGROUP_PERIOD, NJT_FILE_RDONLY,
+                        NJT_FILE_OPEN,
+                        NJT_FILE_DEFAULT_ACCESS);
+
+    if (fd == NJT_INVALID_FILE) {
+        njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+                        "cgroup period file open error, just use njt_ncpu");
+
+        goto use_njt_cpu;
+    }
+    njt_memzero(buf, 1024);
+    n = njt_read_fd(fd, buf, 1024);
+    if (n == NJT_ERROR || n < 1) {
+        njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+                      "cgroup period file read error, just use njt_ncpu");
+
+        njt_close_file(fd);
+        goto use_njt_cpu;
+    }
+    njt_close_file(fd);
+    if(buf[0] == '-'){
+                njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+                      "cgroup cpu_period is -1, just use njt_ncpu");
+        goto use_njt_cpu;
+    }
+
+    for(i = 0; i < n; i++){
+        if(buf[i] < '0' || buf[i] > '9'){
+            buf[i] = '\0';
+            n--;
+        }
+    }
+    cpu_period = njt_atosz(buf, n);
+    if(cpu_period == -1){
+                njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+                      "cgroup cpu_period get error, just use njt_ncpu, buf:%s len:%d", buf, n);
+        goto use_njt_cpu;
+    }
+
+    return cpu_quota / cpu_period;
+
+use_njt_cpu:
+    njt_conf_log_error(NJT_LOG_INFO, cf, 0,
+                    "sysguard_cpu use njt_ncpu:%d", njt_ncpu);
+    return njt_ncpu;
+}
 
 
 
