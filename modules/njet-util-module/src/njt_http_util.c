@@ -5,6 +5,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 #include <njt_http_util.h>
+extern njt_module_t  njt_http_rewrite_module;
 
 njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
     njt_http_core_srv_conf_t* cscf, *ret_cscf;
@@ -340,3 +341,6 @@ njt_int_t njt_http_util_read_request_body(njt_http_request_t *r, njt_str_t *req_
 
     return NJT_OK;
 }
+
+
+  
