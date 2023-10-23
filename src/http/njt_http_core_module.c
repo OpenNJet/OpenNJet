@@ -1030,24 +1030,17 @@ njt_http_core_find_config_phase(njt_http_request_t *r,
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_http_core_loc_conf_t  *temp;
-    njt_http_cleanup_t   **cln,*end;
+    njt_pool_cleanup_t   *cln;
 //    njt_pool_cleanup_t  **cln,*end;
 	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "ref_count used_ref=%i",r->used_ref);
         temp = njt_http_get_module_loc_conf(r,njt_http_core_module);
         ++temp->ref_count;
 
-	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "ref_count clcf=%p",temp);
-        cln = &r->main->cleanup;
-        end = njt_pcalloc(r->pool, sizeof(njt_http_cleanup_t));
-//        cln = &r->pool->cleanup;
-//        end = njt_pcalloc(r->pool, sizeof(njt_pool_cleanup_t));
-        end->data = temp;
-        end->handler = njt_http_core_free_ctx;
-        end->next = NULL;
-        while (*cln != NULL){
-            cln = &(*cln)->next;
-        }
-        *cln = end;
+	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "ref_count clcf=%V,ref_count=%i",&temp->name,temp->ref_count);
+        cln = njt_pool_cleanup_add(r->main->connection->pool,0);
+        cln->handler = njt_http_core_free_ctx;
+        cln->data = temp;
+        
     
 #endif
     //end
@@ -2792,8 +2785,8 @@ njt_http_location_cleanup_add(njt_http_core_loc_conf_t *clcf, void(*handler)(njt
     }
     njt_http_location_cleanup(clcf);
     clcf->disable = 1;
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_destroy_pool clcf=%p,name=%V,pool=%p,ref_count=%i",clcf,&clcf->name,clcf->pool,clcf->ref_count);
     if (clcf->ref_count == 0 && clcf->pool != NULL && clcf->dynamic_status != 0) {
-    	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_destroy_pool clcf=%p,name=%V,pool=%p",clcf,&clcf->name,clcf->pool);
         njt_destroy_pool(clcf->pool);
     }
 }

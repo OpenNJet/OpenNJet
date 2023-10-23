@@ -2749,7 +2749,6 @@ njt_http_terminate_request(njt_http_request_t *r, njt_int_t rc)
     njt_http_cleanup_t    *cln;
     njt_http_request_t    *mr;
     njt_http_ephemeral_t  *e;
-
     mr = r->main;
 
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -3768,13 +3767,6 @@ njt_http_free_request(njt_http_request_t *r, njt_int_t rc)
         return;
     }
 
-    // by zyg
-#if (NJT_HTTP_DYNAMIC_LOC)
-    clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
-     ++clcf->ref_count;   //临时++， 防止在 handler 中释放。  最后的clcf，在下面释放。其他的在handler 中释放。
-#endif
-    //end
-
     cln = r->cleanup;
     r->cleanup = NULL;
 
@@ -3850,11 +3842,11 @@ njt_http_free_request(njt_http_request_t *r, njt_int_t rc)
     njt_destroy_pool(pool);
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
-     --clcf->ref_count; 
+     /* --clcf->ref_count; 
     if(clcf->disable && clcf->ref_count == 0 && clcf->pool != NULL ){
         njt_http_location_delete_dyn_var(clcf);
         njt_destroy_pool(clcf->pool);
-    }
+    }*/
 #endif
     //end
 }
