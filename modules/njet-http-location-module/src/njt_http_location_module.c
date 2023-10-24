@@ -56,6 +56,16 @@ typedef struct njt_http_location_main_conf_s {
 
 
 
+static  njt_str_t njt_invalid_dyn_location_body[] = {
+	njt_string("zone"),
+	njt_string("proxy_pass"),
+	njt_null_string
+};
+static  njt_str_t njt_invalid_dyn_proxy_pass[] = {
+	njt_string("unix"),
+	njt_null_string
+};
+
 
 
 static njt_command_t njt_http_location_commands[] = {
@@ -818,12 +828,46 @@ njt_int_t njt_http_check_sub_location(njt_json_element *in_items,njt_http_locati
 	}
 	return NJT_OK;
 }
+
+
+static njt_str_t  njt_http_location_check_location_body(njt_str_t src) {
+	njt_str_t *name;
+	njt_str_t ret_null = njt_null_string;
+
+	if(src.len == 0 ){
+		return ret_null;
+	}
+	for (name = njt_invalid_dyn_location_body; name->len; name++) {
+       if(njt_strlcasestrn(src.data,src.data + src.len,name->data,name->len - 1) != NULL) {
+		  return *name;
+	   }
+    }
+	return ret_null;
+}
+static njt_str_t  njt_http_location_check_proxy_pass(njt_str_t src) {
+	njt_str_t *name;
+	njt_str_t ret_null = njt_null_string;
+
+	if(src.len == 0 ){
+		return ret_null;
+	}
+	for (name = njt_invalid_dyn_proxy_pass; name->len; name++) {
+       if(njt_strlcasestrn(src.data,src.data + src.len,name->data,name->len - 1) != NULL) {
+		  return *name;
+	   }
+    }
+	return ret_null;
+
+}
 static njt_int_t
 njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_array_t *location_array,njt_json_element *in_items) {
 
 	njt_json_element *out_items, *items;
 	njt_int_t rc;
 	njt_str_t  key;
+	u_char *p;
+	njt_str_t  check_val;
+	njt_uint_t  msg_len = 128;
 	njt_queue_t   *q;
 	njt_str_t  add = njt_string("add");
 	//njt_str_t  del = njt_string("del");
@@ -883,10 +927,27 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 			rc = njt_struct_find(items, &key, &out_items);
 			if(rc == NJT_OK ){
 				 if (out_items->type != NJT_JSON_STR) {
-				 njt_str_set(&location_info->msg, "proxy_pass error!!!");
+				 	njt_str_set(&location_info->msg, "proxy_pass error!!!");
 					  return NJT_ERROR;
 					}
 				sub_location->proxy_pass = njt_del_headtail_space(out_items->strval);
+
+				check_val = njt_http_location_check_proxy_pass(sub_location->proxy_pass);
+				if(check_val.len != 0) {
+					location_info->msg.len = 0;
+					location_info->msg.data = njt_palloc(location_info->pool,msg_len);
+					if(location_info->msg.data != NULL) {
+						location_info->msg.len = msg_len;
+						p = njt_snprintf(location_info->msg.data,location_info->msg.len,"proxy_pass no support %V!",&check_val);	
+						location_info->msg.len = p - location_info->msg.data;
+
+					} else {
+						njt_str_set(&location_info->msg, "proxy_pass error!");
+					}
+					
+					return NJT_ERROR;
+				}
+
 			} 
 
 			njt_str_set(&key,"location_body");
@@ -908,6 +969,21 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 				}
 			} else if(rc == NJT_OK && out_items->type == NJT_JSON_STR) {
 				 sub_location->location_body = njt_del_headtail_space(out_items->strval);
+			}
+			check_val = njt_http_location_check_location_body(sub_location->location_body);
+			if(check_val.len != 0) {
+				location_info->msg.len = 0;
+				location_info->msg.data = njt_palloc(location_info->pool,msg_len);
+				if(location_info->msg.data != NULL) {
+					location_info->msg.len = msg_len;
+					p = njt_snprintf(location_info->msg.data,location_info->msg.len,"location_body no support %V!",&check_val);	
+					location_info->msg.len = p - location_info->msg.data;
+
+				} else {
+					njt_str_set(&location_info->msg, "location_body error!");
+				}
+				
+				return NJT_ERROR;
 			}
 			if(sub_location->location_body.len > 0 && sub_location->location_body.data != NULL) {
 				if(njt_strstr(sub_location->location_body.data,"proxy_pass ") != NULL) {
