@@ -744,13 +744,16 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 	njt_str_t server_full_file;
 	njt_str_t  server_name;
 
-	server_name = delete_escape(server_info->pool, &server_info->server_name);;
+	server_name = server_info->server_name; //delete_escape(server_info->pool, &server_info->server_name);;
 	if(server_name.data == NULL) {
 		rc = NJT_ERROR;
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_http_dyn_server_write_data handle_escape_on_write error!");
 		goto out;
 	} 
 	cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_name);	
+	if(cscf == NULL) {
+		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_http_dyn_server_write_data no find server_name=%V!",&server_name);
+	}
 	(*server_info).cscf = cscf;
 
 	server_path = njt_cycle->prefix;
