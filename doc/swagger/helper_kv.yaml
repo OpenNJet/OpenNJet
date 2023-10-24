@@ -45,6 +45,28 @@ paths:
           description: Not Found 
         '500':
           description: Internal Server Error
+    delete:
+      tags:
+        - sendmsg kv
+      summary: delete kv from kvstore 
+      parameters:
+        - in: query
+          name: key
+          schema:
+            type: string
+            example: 'test_key'
+      responses:
+        '200':
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: 'key is deleted from db'
+        '404':
+          description: Not Found 
+        '500':
+          description: Internal Server Error
 components:
   schemas:
     kvdata:
@@ -57,5 +79,3 @@ components:
         value: 
           type: string 
           example: 'test msg'
-                              
-
