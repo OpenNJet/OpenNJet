@@ -29,15 +29,17 @@ build_rpm:
   stage: build_rpm
   image: 192.168.30.226/yunke-slb-ingress/rpmbuild:1.0
   variables:
-    DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "Y2hlbmd4dWU6Q2hlbmd4dWUxMjM="}}}'
+    DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
   when: manual
   script:
-    - sudo ln -s `pwd` /srv
-    - sudo chown -R builder `pwd`
-    - rpmbuild -bb /srv/njet_main/build/rpm/njet.spec
-    - mkdir ./output/
-    - cp /home/builder/rpm/x86_64/*.rpm ./output/
+    - cd /builds/njet_dev/  
+    - tar cf /home/builder/rpm/njet_main.tar --exclude="njet_main/.git" njet_main
+    - cp /builds/njet_dev/njet_main/build/rpm/* /home/builder/rpm/ 
+    - rpmbuild -bb /home/builder/rpm/njet.spec
+    - cd /builds/njet_dev/njet_main 
+    - sudo mkdir -p work 
+    - sudo cp -a /home/builder/rpm/x86_64/*.rpm work/ 
   artifacts:
     paths: # 需要打包的文件
-      - ./output/*.rpm
+      - work/*.rpm
     expire_in: 2h20min # 打包文件存储有效期
