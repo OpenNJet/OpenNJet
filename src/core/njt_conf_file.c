@@ -1280,27 +1280,29 @@ njt_conf_save_to_file(njt_pool_t *pool, njt_log_t *log,
     }
 
     rc = NJT_OK;
+    length = 0;
     if (root == NULL) {
         out.data = njt_palloc(pool, 4);
         if (out.data == NULL) {
             return NJT_ERROR;
         }
         njt_str_set(&out, "null");
+        length = 4;
+    } else {
+        njt_conf_get_json_length(root, &length, 1);
+        out.data = njt_palloc(pool, length);
+        if (out.data == NULL) {
+            return NJT_ERROR;
+        }
+        out.len = 0;
+        njt_conf_get_json_str(root, &out, 1);
     }
-
-    length = 0;
-    njt_conf_get_json_length(root, &length, 1);
-    out.data = njt_palloc(pool, length);
-    if (out.data == NULL) {
-        return NJT_ERROR;
-    }
-    out.len = 0;
-    njt_conf_get_json_str(root, &out, 1);
 
     if (njt_write_file(&file, out.data, length, 0) == NJT_ERROR) {
         rc = NJT_ERROR;
     }
 
+    njt_pfree(pool, out.data);
     njt_close_file(file.fd);
     
 

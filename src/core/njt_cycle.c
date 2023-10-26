@@ -314,7 +314,6 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     }
 
     //----------------------------------------------------------
-    size_t             length; // by lcm
     njt_conf_element_t conf_root;
     njt_memzero(&conf_root, sizeof(njt_conf_element_t)); // by lcm
     njt_conf_cur = &conf_root; // by lcm
@@ -332,6 +331,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     //----------------------------------------------------------
     // 输出到字符串
+    size_t             length; // by lcm
     length = 0;
     njt_conf_get_json_length(&conf_root, &length, 1); // by lcm
     njt_conf_json.data = njt_palloc(conf.cycle->pool, length + 4096);
