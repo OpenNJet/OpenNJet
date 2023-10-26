@@ -56,6 +56,7 @@ NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-fault-inject-module
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-fault-inject-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-jwt-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-sysguard-cpu-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-register-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
 LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo "
 # LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo"
