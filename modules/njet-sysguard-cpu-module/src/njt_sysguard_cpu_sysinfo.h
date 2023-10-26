@@ -50,10 +50,12 @@ njt_get_process_cpu_info(njt_str_t *pid, njt_process_cpuinfo_t *p_cpuinfo, njt_l
 njt_int_t njt_get_cpu_usage(njt_str_t *cpunumber, njt_int_t *cpu_usage, time_t *diff_total);
 
 njt_int_t
-njt_get_process_average_cpu_usage(njt_pool_t *pool, njt_int_t *average_cpu_usage, 
-        njt_uint_t worker_n, njt_str_t *pids_v, njt_lvlhsh_t *prev_pid_work, time_t diff_total);
+njt_get_process_average_cpu_usage(njt_pool_t *pool, njt_int_t n_cpu, 
+        njt_int_t *average_cpu_usage, njt_uint_t worker_n,
+        njt_str_t *pids_v, njt_lvlhsh_t *prev_pids_work, time_t diff_total);
 
-
+njt_int_t
+njt_sysguard_get_cpu_number();
 
 #endif /* _NJT_SYSLOAD_SYSINFO_H_INCLUDED_ */
 

@@ -46,6 +46,7 @@ static void njt_update_worker_processes(njt_cycle_t *cycle, njt_core_conf_t *ccf
 static void njt_check_and_update_worker_count(njt_cycle_t *cycle, njt_core_conf_t *ccf);
 //add by clb
 njt_int_t njt_save_pids_to_kv(njt_cycle_t *cycle);
+njt_int_t njt_save_register_info_to_kv(njt_cycle_t *cycle);
 
 njt_uint_t    njt_process;
 njt_uint_t    njt_worker;
@@ -94,6 +95,7 @@ static njt_log_t        njt_exit_log;
 static njt_open_file_t  njt_exit_log_file;
 static struct evt_ctx_t *master_evt_ctx = NULL;
 
+extern njt_module_t njt_register_set_module;
 
 void
 njt_master_process_cycle(njt_cycle_t *cycle)
@@ -167,6 +169,9 @@ njt_master_process_cycle(njt_cycle_t *cycle)
         //add by clb
         //update all pids to kv
         njt_save_pids_to_kv(cycle);
+
+        //save register info    
+        njt_save_register_info_to_kv(cycle);
     }
 
     njt_new_binary = 0;
@@ -269,6 +274,8 @@ njt_master_process_cycle(njt_cycle_t *cycle)
                 //add by clb
                 //update all pids to kv
                 njt_save_pids_to_kv(cycle);
+
+                njt_save_register_info_to_kv(cycle);
                 continue;
             }
 
@@ -305,6 +312,9 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             //add by clb
             //update all pids to kv
             njt_save_pids_to_kv(cycle);
+
+            //save register info to kv
+            njt_save_register_info_to_kv(cycle);
         }
 
         if (njt_restart) {
@@ -452,6 +462,31 @@ static void njt_check_and_update_worker_count(njt_cycle_t *cycle, njt_core_conf_
         }
     }
 }
+
+
+njt_int_t njt_save_register_info_to_kv(njt_cycle_t *cycle){
+    njt_int_t           rc;
+    njt_str_t           register_info_k = njt_string("kv_http___register_info");
+    njt_str_t           register_info_v;
+
+
+    if (master_evt_ctx) {
+        //set register info to kv
+        njt_str_set(&register_info_v, "ready_register");
+        njt_log_error(NJT_LOG_INFO, cycle->log, 0, 
+            "set all register_info:%V", &register_info_v);
+
+        rc = njet_iot_client_kv_set((void *)register_info_k.data, register_info_k.len,
+                (void *)register_info_v.data, register_info_v.len, NULL, master_evt_ctx);
+        if (rc != NJT_OK) {
+            njt_log_error(NJT_LOG_ERR, cycle->log, 0, "error setting register_info into kvstore");
+            return NJT_ERROR;
+        }
+    }
+
+    return NJT_OK;
+}
+
 
 njt_int_t njt_save_pids_to_kv(njt_cycle_t *cycle){
     njt_int_t       i;

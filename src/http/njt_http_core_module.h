@@ -230,6 +230,9 @@ typedef struct {
 #endif
     njt_http_core_srv_conf_t  *server;   /* virtual name server conf */
     njt_str_t                  name;
+#if (NJT_HTTP_DYNAMIC_LOC) 
+    njt_str_t                  full_name;
+#endif
 } njt_http_server_name_t;
 
 
