@@ -93,6 +93,11 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
 	njt_conf_t conf;
 	njt_int_t rc = NJT_OK;
 
+	 if(server_info->server_name.len > 0 && server_info->server_name.data[0] == '\"' && server_info->server_name.data[server_info->server_name.len-1] == '\"') {
+           server_info->server_name.data++;
+           server_info->server_name.len -= 2;
+        }
+
 	msg = server_info->buffer;
 
 	cscf = server_info->cscf;
@@ -774,6 +779,7 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 
 
 	njt_fd_t fd;
+	njt_str_t find_server_name;
 	njt_int_t  rc = NJT_OK; 
 
 
@@ -784,7 +790,12 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 	njt_str_t server_path;
 	njt_str_t server_full_file;
 	
-	cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->server_name);	
+	find_server_name = server_info->server_name;
+	if(server_info->server_name.len > 0 && server_info->server_name.data[0] == '\"' && server_info->server_name.data[server_info->server_name.len-1] == '\"') {
+	   find_server_name.data++;
+	   find_server_name.len -= 2;
+	}
+	cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&find_server_name);	
 	(*server_info).cscf = cscf;
 
 	server_path = njt_cycle->prefix;
@@ -835,7 +846,9 @@ njt_http_dyn_server_delete_regex_server_name(njt_http_conf_addr_t* addr,njt_str_
 	
 	njt_uint_t i;
 	njt_uint_t len;
-	if(server_name == NULL || server_name->len == 0 || server_name->data[0] != '~') {
+
+	
+	if(server_name->data[0] != '~') {
 		return;
 	}
 	for(i=0; i < addr->nregex; i++) {
