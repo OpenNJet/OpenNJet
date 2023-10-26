@@ -11,6 +11,7 @@
 #include <math.h>
 #include <njt_http_kv_module.h>
 #include <njt_http_util.h>
+#include <njt_str_util.h>
 #include <njt_http_sendmsg_module.h>
 #include <njt_http_location_module.h>
 #include <njt_rpc_result_util.h>
@@ -314,7 +315,7 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     njt_http_core_loc_conf_t *clcf, *dclcf;
     njt_http_location_queue_t *lq,*if_lq;
     u_char *p;
-    njt_str_t location_name,msg,location_name_key;
+    njt_str_t location_name,msg,location_name_key,add_escape_val;
 
     
     msg.len = 1024;
@@ -367,7 +368,8 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 		p = njt_snprintf(location_name.data, 1024, "%V", &location_info->location);
 	}
 	location_name.len = p - location_name.data;
-	location_name_key = njt_http_location_get_full_name(location_info->pool,location_name);
+	add_escape_val = add_escape(location_info->pool,location_name);
+	location_name_key = njt_http_location_get_full_name(location_info->pool,add_escape_val);
 
     if(clcf->old_locations == NULL) {
 	   lq = NULL;
@@ -476,7 +478,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     njt_http_core_srv_conf_t *cscf;
     char *rv = NULL;
     njt_http_core_loc_conf_t *clcf,*new_clcf;
-    njt_str_t location_name,msg,location_name_key;
+    njt_str_t location_name,msg,location_name_key,add_escape_val;
     u_char *p;
 	njt_http_sub_location_info_t  *sub_location, *loc;
     njt_http_location_queue_t *lq;
@@ -555,7 +557,8 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     }
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
 	if(clcf->old_locations) {
-	    location_name_key = njt_http_location_get_full_name(location_info->pool,location_name);
+		add_escape_val = add_escape(location_info->pool,location_name);
+	    location_name_key = njt_http_location_get_full_name(location_info->pool,add_escape_val);
 	    lq = njt_http_find_location(location_name_key, clcf->old_locations);
 	    if (lq != NULL) {  
 		 njt_str_set(&location_info->msg,"location exist!");
@@ -1241,6 +1244,7 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 	int32_t  rlen,buffer_len,remain;
 	njt_uint_t i;
 	njt_http_sub_location_info_t *loc,*loc_array;
+	njt_str_t  add_escape_val;
 	njt_str_t  tag = njt_string("\n}\n");
 
 	if(location_array->nelts == 0 ) {
@@ -1262,20 +1266,23 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 			remain = data + buffer_len - p;
 
 			if(loc->location_rule.len != 0 && loc->location_rule.data != NULL){
-				p = njt_snprintf(p, remain, "%V ",&loc->location_rule);
+				add_escape_val = add_escape(location_info->pool,loc->location_rule);
+				p = njt_snprintf(p, remain, "%V ",&add_escape_val);
 				remain = data + buffer_len - p;
 			}
 			if(loc->location.len != 0 && loc->location.data != NULL){
-				
-				p = njt_snprintf(p, remain, "%V {\n",&loc->location);
+				add_escape_val = add_escape(location_info->pool,loc->location);
+				p = njt_snprintf(p, remain, "%V {\n",&add_escape_val);
 				remain = data + buffer_len - p;
 			}
 			if(loc->location_body.len != 0 && loc->location_body.data != NULL){
-				p = njt_snprintf(p, remain, " %V; \n",&loc->location_body);
+				add_escape_val = add_escape(location_info->pool,loc->location_body);
+				p = njt_snprintf(p, remain, " %V; \n",&add_escape_val);
 				remain = data + buffer_len - p;
 			}
 			if(loc->proxy_pass.len != 0 && loc->proxy_pass.data != NULL){
-				p = njt_snprintf(p, remain, " proxy_pass %V;\n",&loc->proxy_pass);
+				add_escape_val = add_escape(location_info->pool,loc->proxy_pass);
+				p = njt_snprintf(p, remain, " proxy_pass %V;\n",&add_escape_val);
 				remain = data + buffer_len - p;
 			}
 
