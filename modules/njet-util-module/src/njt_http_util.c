@@ -201,7 +201,7 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
                 if(cscf->server_name.len > 0 && cscf->server_name.data[0] == '~' ) {
                      sn = addr_conf->virtual_names->regex;
                         for (k = 0; k <  addr_conf->virtual_names->nregex; ++k) {
-                            if(sn[i].server == cscf){
+                            if(sn[k].server == cscf){
                                 listen  = njt_array_push(array);
                                 if(listen == NULL){
                                     return NJT_ERROR_ERR;
