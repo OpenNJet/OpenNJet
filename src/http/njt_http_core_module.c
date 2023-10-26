@@ -2792,12 +2792,11 @@ njt_http_location_cleanup_add(njt_http_core_loc_conf_t *clcf, void(*handler)(njt
 }
 
 static void
-njt_http_set_del_variable_flag( njt_str_t *name)
+njt_http_set_del_variable_flag(njt_http_variable_t *fv)
 {
     njt_uint_t                  i;
     njt_http_variable_t        *v;
     njt_http_core_main_conf_t  *cmcf;
-
   
     cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module); //variables  动态pool 上申请，格位重复使用。 内存释放
 	if(cmcf == NULL) {
@@ -2809,28 +2808,38 @@ njt_http_set_del_variable_flag( njt_str_t *name)
     if (v == NULL) {
         return;
     } else {
-        for (i = 0; i < cmcf->variables.nelts; i++) {
-            if (name->len != v[i].name.len
-                || njt_strncasecmp(name->data, v[i].name.data, name->len) != 0)
-            {
-                continue;
+        if(cmcf->variables.nelts > fv->index && fv->name.len == v[fv->index].name.len && njt_strncasecmp(fv->name.data, v[fv->index].name.data, fv->name.len) == 0) {
+                njt_pfree(cmcf->variables.pool,v[fv->index].name.data);
+                v[fv->index].name.data = NULL;
+                v[fv->index].name.len =  0;
+
+        } else {  //zyg 正常不会走到这里。走到这里表示，变量被提前删除了，或名字变了。
+            njt_log_error(NJT_LOG_WARN, njt_cycle->pool->log, 0, "njt_http_set_del_variable_flag can't find variable %V by index!",&fv->name);
+            for (i = 0; i < cmcf->variables.nelts; i++) {
+                if (fv->name.len != v[i].name.len
+                    || njt_strncasecmp(fv->name.data, v[i].name.data, fv->name.len) != 0)
+                {
+                    continue;
+                }
+                njt_pfree(cmcf->variables.pool,v[i].name.data);
+                v[i].name.data = NULL;
+                v[i].name.len =  0;
+                break;
             }
-           njt_pfree(cmcf->variables.pool,v[i].name.data);
-		   v[i].name.data = NULL;
-		   v[i].name.len =  0;
-		   break;
         }
+       
     }
  
 }
 
 static void
-njt_http_set_del_variables_keys_flag( njt_str_t *name)
+njt_http_set_del_variables_keys_flag(njt_http_variable_t *fv)
 {
     njt_uint_t                  i;
     njt_http_variable_t        *v;
     njt_http_core_main_conf_t  *cmcf;
 	njt_hash_key_t             *key;
+    //njt_str_t *name = &fv->name;
 
   
 
@@ -2845,20 +2854,20 @@ njt_http_set_del_variables_keys_flag( njt_str_t *name)
         return;
     } else {
        for (i = 0; i < cmcf->variables_keys->keys.nelts; i++) {
-        if (name->len != key[i].key.len
-            || njt_strncasecmp(name->data, key[i].key.data, name->len) != 0)
-        {
+        v = key[i].value;
+        if( v->index != fv->index ) {
             continue;
         }
-
-        v = key[i].value;
-	if(v != NULL && v->name.data != NULL) {
-	   njt_pfree(cmcf->dyn_var_pool,v->name.data);
-	   v->name.data = NULL;
-	   v->name.len = 0;
-	}
-	break;
-
+        if(v != NULL && v->name.data != NULL) {
+            njt_pfree(cmcf->dyn_var_pool,v->name.data);
+            v->name.data = NULL;
+            v->name.len = 0;
+            v->index = 0;
+        }
+        return;
+       }
+       if (i == cmcf->variables_keys->keys.nelts) {
+            njt_log_error(NJT_LOG_WARN, njt_cycle->pool->log, 0, "njt_http_set_del_variables_keys_flag can't find variable %V by index!",&fv->name);
        }
     }
 }
@@ -2873,8 +2882,9 @@ static void njt_http_refresh_variables_keys(){
 	njt_pool_t *old_pool;
 	u_char *pdata;
 	njt_hash_keys_arrays_t    *old_variables_keys;
+    static njt_uint_t  use_clone_mem = 1;
 
-njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
+   njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 
    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
    if(cmcf == NULL) {
@@ -2924,35 +2934,27 @@ njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 				continue;
 			}
 			
-			/*
-			newv = njt_palloc(new_pool, sizeof(njt_http_variable_t));
-			if (newv == NULL) {
-				exit(0); //todo
-				return;
-			}
-			*newv = *v;*/
 			pdata = v->name.data;
 			newv = v;
-			newv->name.data = njt_pnalloc(cmcf->dyn_var_pool, v->name.len);
-			
-
-			//num++;
-			if (newv->name.data == NULL) {
-				cmcf->variables_keys = old_variables_keys; //失败时，继续使用旧的。
-				 njt_destroy_pool(new_pool);
-				 njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys name alloc  error!");
-				return;
-			}
-
-			njt_strlow(newv->name.data, pdata, v->name.len);
-
-
+            if(use_clone_mem == 1) {  //zyg 第一次有静态名，需要copy
+                newv->name.data = njt_pnalloc(cmcf->dyn_var_pool, v->name.len);
+                //num++;
+                if (newv->name.data == NULL) {
+                    cmcf->variables_keys = old_variables_keys; //失败时，继续使用旧的。
+                    njt_destroy_pool(new_pool);
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys name alloc  error!");
+                    return;
+                }
+                njt_strlow(newv->name.data, pdata, v->name.len);
+            }
 			njt_hash_add_key(cmcf->variables_keys, &newv->name, newv, 0);
-			
-			njt_pfree(cmcf->dyn_var_pool,pdata);
+            if(use_clone_mem == 1) {
+			    njt_pfree(cmcf->dyn_var_pool,pdata);
+            }
 			
 
 		}
+        use_clone_mem = 0;
 
 		if(old_pool){
 		   njt_destroy_pool(old_pool);
@@ -2976,8 +2978,8 @@ static njt_int_t njt_http_rewrite_delete_dyn_var(njt_http_rewrite_loc_conf_t *rl
 		//printf("%s",ip[i]->name.data);
 		if( (ip[i]->ref_count == 0 && ip[i]->flags &  NJT_HTTP_DYN_VAR) ){
 			//printf("%s",ip[i]->name.data);
-			njt_http_set_del_variable_flag(&ip[i]->name);
-			njt_http_set_del_variables_keys_flag(&ip[i]->name);
+			njt_http_set_del_variable_flag(ip[i]);
+			njt_http_set_del_variables_keys_flag(ip[i]);
 			rf = 1;
 		}
 	}
