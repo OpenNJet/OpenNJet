@@ -71,20 +71,66 @@ njt_str_t njt_del_headtail_space(njt_str_t src){
 }
 
 
+njt_str_t  add_escape(njt_pool_t *pool, njt_str_t src) {
+    size_t i;
+    njt_str_t out;
+    njt_uint_t need_convert = 0;
+    njt_str_null(&out); 
+    char *cur = (char *)src.data;
+    for (i = 0; i < src.len && need_convert == 0; i++, cur++) {
+        switch (*cur) {
+            case '"':  
+            case '\\': 
+            // case '/':  need_convert = true; break;
+            case '\b':  
+            case '\f':  
+            case '\n':  
+            case '\r':  
+            case '\t':  need_convert = 1; break;
+        default:
+            break;
+        }
+    }
+    if (need_convert == 0) {
+        return src;
+    }
 
- njt_str_t delete_escape(njt_pool_t *pool, njt_str_t *src) {
+    out.data = (u_char *)njt_pcalloc(pool, 2*src.len);
+    char *dst = (char *)out.data;
+    out.len = src.len;
+    cur = (char *)src.data;
+    for (i = 0; i < src.len; i++, cur++) {
+        switch (*cur) {
+            case '"':  *dst++ = '\\'; *dst++ = '"'; out.len++; break;
+            case '\\': *dst++ = '\\'; *dst++ = '\\'; out.len++; break;
+            // case '/':  *dst++ = '\\'; *dst++ = '/'; out->len++; break;
+            case '\b': *dst++ = '\\'; *dst++ = 'b'; out.len++; break;
+            case '\f': *dst++ = '\\'; *dst++ = 'f'; out.len++; break;
+            case '\n': *dst++ = '\\'; *dst++ = 'n'; out.len++; break;
+            case '\r': *dst++ = '\\'; *dst++ = 'r'; out.len++; break;
+            case '\t': *dst++ = '\\'; *dst++ = 't'; out.len++; break;
+        default:
+            *dst++ = *cur;
+        }
+    }
+
+    return out;
+}
+
+
+ njt_str_t delete_escape(njt_pool_t *pool, njt_str_t src) {
     u_char *p;
     njt_str_t out;
     u_char* dst;
-    p = src->data;
+    p = src.data;
     out.len = 0;
-    out.data = (u_char *)njt_pcalloc(pool,src->len+1);
+    out.data = (u_char *)njt_pcalloc(pool,src.len+1);
     if(out.data == NULL) {
         return out;
     }
-    out.len = src->len;
+    out.len = src.len;
     dst = out.data;
-    for(;p < src->data + src->len;) {
+    for(;p < src.data + src.len;) {
         if (*p == '\\') {
             switch (*++p) {
                 case '"':  *dst++ = '"';  p++; break;

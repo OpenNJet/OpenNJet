@@ -11,6 +11,7 @@
 #include <math.h>
 #include <njt_http_kv_module.h>
 #include <njt_http_util.h>
+#include <njt_str_util.h>
 #include <njt_http_sendmsg_module.h>
 #include <njt_http_location_module.h>
 #include <njt_rpc_result_util.h>
@@ -42,7 +43,6 @@ static njt_http_core_loc_conf_t * njt_http_location_find_new_location(njt_http_c
 
 
 
-
 static char *
 njt_http_location_api(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static njt_str_t njt_http_location_get_full_name(njt_pool_t *pool,njt_str_t src);
@@ -56,6 +56,16 @@ typedef struct njt_http_location_main_conf_s {
 } njt_http_location_main_conf_t;
 
 
+
+static  njt_str_t njt_invalid_dyn_location_body[] = {
+	njt_string("zone"),
+	njt_string("proxy_pass"),
+	njt_null_string
+};
+static  njt_str_t njt_invalid_dyn_proxy_pass[] = {
+	njt_string("unix"),
+	njt_null_string
+};
 
 
 
@@ -149,36 +159,8 @@ static char *njt_http_location_merge_loc_conf(njt_conf_t *cf,
 
 
 
-static void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
-    njt_queue_t *locations;
-    njt_queue_t *q;
-    njt_http_location_queue_t *lq;
-    njt_http_core_loc_conf_t *new_clcf;
-    locations = clcf->old_locations;
-    if (locations != NULL) {
-        for (q = njt_queue_head(locations);
-             q != njt_queue_sentinel(locations);
-             ) {
-            lq = (njt_http_location_queue_t *) q;
-	    q = njt_queue_next(q);
-	    njt_queue_remove(&lq->queue);
-            if (lq->exact != NULL) {
-                new_clcf = lq->exact;
-                njt_http_location_destroy(new_clcf);
-            } else if (lq->inclusive != NULL) {
-                new_clcf = lq->inclusive;
-                njt_http_location_destroy(new_clcf); //zyg
-            }
-			
-        }
-    }
-    njt_http_location_cleanup(clcf);
-    clcf->disable = 1;
-    if (clcf->ref_count == 0 && clcf->pool != NULL && clcf->dynamic_status != 0) {
-    	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_destroy_pool clcf=%p,name=%V,pool=%p",clcf,&clcf->name,clcf->pool);
-        njt_destroy_pool(clcf->pool);
-    }
-}
+    
+
 
 
 
@@ -333,7 +315,7 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     njt_http_core_loc_conf_t *clcf, *dclcf;
     njt_http_location_queue_t *lq,*if_lq;
     u_char *p;
-    njt_str_t location_name,msg,location_name_key;
+    njt_str_t location_name,msg,location_name_key,add_escape_val;
 
     
     msg.len = 1024;
@@ -386,7 +368,8 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 		p = njt_snprintf(location_name.data, 1024, "%V", &location_info->location);
 	}
 	location_name.len = p - location_name.data;
-	location_name_key = njt_http_location_get_full_name(location_info->pool,location_name);
+	add_escape_val = add_escape(location_info->pool,location_name);
+	location_name_key = njt_http_location_get_full_name(location_info->pool,add_escape_val);
 
     if(clcf->old_locations == NULL) {
 	   lq = NULL;
@@ -415,10 +398,10 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 	  njt_queue_remove(&if_lq->queue);
 	}
     }
-    njt_http_location_delete_dyn_var(dclcf);
+  
     njt_queue_remove(&lq->queue);
     njt_pfree(lq->parent_pool, lq);
-
+	njt_http_location_delete_dyn_var(dclcf);
     njt_http_location_destroy(dclcf);
 	njt_http_refresh_location(&cf, cscf, clcf);
 
@@ -492,7 +475,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     njt_http_core_srv_conf_t *cscf;
     char *rv = NULL;
     njt_http_core_loc_conf_t *clcf,*new_clcf;
-    njt_str_t location_name,msg,location_name_key;
+    njt_str_t location_name,msg,location_name_key,add_escape_val;
     u_char *p;
 	njt_http_sub_location_info_t  *sub_location, *loc;
     njt_http_location_queue_t *lq;
@@ -571,7 +554,8 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     }
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
 	if(clcf->old_locations) {
-	    location_name_key = njt_http_location_get_full_name(location_info->pool,location_name);
+		add_escape_val = add_escape(location_info->pool,location_name);
+	    location_name_key = njt_http_location_get_full_name(location_info->pool,add_escape_val);
 	    lq = njt_http_find_location(location_name_key, clcf->old_locations);
 	    if (lq != NULL) {  
 		 njt_str_set(&location_info->msg,"location exist!");
@@ -623,6 +607,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	
 		//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse  location[%V] error:%s",&location_name,rv);
 		//njt_str_set(&location_info->msg,"njt_conf_parse error!");
+		njt_http_location_delete_dyn_var(clcf);
         njt_http_location_clear_dirty_data(clcf);
         rc = NJT_ERROR;
         goto out;
@@ -843,12 +828,46 @@ njt_int_t njt_http_check_sub_location(njt_json_element *in_items,njt_http_locati
 	}
 	return NJT_OK;
 }
+
+
+static njt_str_t  njt_http_location_check_location_body(njt_str_t src) {
+	njt_str_t *name;
+	njt_str_t ret_null = njt_null_string;
+
+	if(src.len == 0 ){
+		return ret_null;
+	}
+	for (name = njt_invalid_dyn_location_body; name->len; name++) {
+       if(njt_strlcasestrn(src.data,src.data + src.len,name->data,name->len - 1) != NULL) {
+		  return *name;
+	   }
+    }
+	return ret_null;
+}
+static njt_str_t  njt_http_location_check_proxy_pass(njt_str_t src) {
+	njt_str_t *name;
+	njt_str_t ret_null = njt_null_string;
+
+	if(src.len == 0 ){
+		return ret_null;
+	}
+	for (name = njt_invalid_dyn_proxy_pass; name->len; name++) {
+       if(njt_strlcasestrn(src.data,src.data + src.len,name->data,name->len - 1) != NULL) {
+		  return *name;
+	   }
+    }
+	return ret_null;
+
+}
 static njt_int_t
 njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_array_t *location_array,njt_json_element *in_items) {
 
 	njt_json_element *out_items, *items;
 	njt_int_t rc;
 	njt_str_t  key;
+	u_char *p;
+	njt_str_t  check_val;
+	njt_uint_t  msg_len = 128;
 	njt_queue_t   *q;
 	njt_str_t  add = njt_string("add");
 	//njt_str_t  del = njt_string("del");
@@ -908,10 +927,27 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 			rc = njt_struct_find(items, &key, &out_items);
 			if(rc == NJT_OK ){
 				 if (out_items->type != NJT_JSON_STR) {
-				 njt_str_set(&location_info->msg, "proxy_pass error!!!");
+				 	njt_str_set(&location_info->msg, "proxy_pass error!!!");
 					  return NJT_ERROR;
 					}
 				sub_location->proxy_pass = njt_del_headtail_space(out_items->strval);
+
+				check_val = njt_http_location_check_proxy_pass(sub_location->proxy_pass);
+				if(check_val.len != 0) {
+					location_info->msg.len = 0;
+					location_info->msg.data = njt_palloc(location_info->pool,msg_len);
+					if(location_info->msg.data != NULL) {
+						location_info->msg.len = msg_len;
+						p = njt_snprintf(location_info->msg.data,location_info->msg.len,"proxy_pass no support %V!",&check_val);	
+						location_info->msg.len = p - location_info->msg.data;
+
+					} else {
+						njt_str_set(&location_info->msg, "proxy_pass error!");
+					}
+					
+					return NJT_ERROR;
+				}
+
 			} 
 
 			njt_str_set(&key,"location_body");
@@ -933,6 +969,21 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 				}
 			} else if(rc == NJT_OK && out_items->type == NJT_JSON_STR) {
 				 sub_location->location_body = njt_del_headtail_space(out_items->strval);
+			}
+			check_val = njt_http_location_check_location_body(sub_location->location_body);
+			if(check_val.len != 0) {
+				location_info->msg.len = 0;
+				location_info->msg.data = njt_palloc(location_info->pool,msg_len);
+				if(location_info->msg.data != NULL) {
+					location_info->msg.len = msg_len;
+					p = njt_snprintf(location_info->msg.data,location_info->msg.len,"location_body no support %V!",&check_val);	
+					location_info->msg.len = p - location_info->msg.data;
+
+				} else {
+					njt_str_set(&location_info->msg, "location_body error!");
+				}
+				
+				return NJT_ERROR;
 			}
 			if(sub_location->location_body.len > 0 && sub_location->location_body.data != NULL) {
 				if(njt_strstr(sub_location->location_body.data,"proxy_pass ") != NULL) {
@@ -1190,6 +1241,7 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 	int32_t  rlen,buffer_len,remain;
 	njt_uint_t i;
 	njt_http_sub_location_info_t *loc,*loc_array;
+	njt_str_t  add_escape_val;
 	njt_str_t  tag = njt_string("\n}\n");
 
 	if(location_array->nelts == 0 ) {
@@ -1211,20 +1263,23 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 			remain = data + buffer_len - p;
 
 			if(loc->location_rule.len != 0 && loc->location_rule.data != NULL){
-				p = njt_snprintf(p, remain, "%V ",&loc->location_rule);
+				add_escape_val = add_escape(location_info->pool,loc->location_rule);
+				p = njt_snprintf(p, remain, "%V ",&add_escape_val);
 				remain = data + buffer_len - p;
 			}
 			if(loc->location.len != 0 && loc->location.data != NULL){
-				
-				p = njt_snprintf(p, remain, "%V {\n",&loc->location);
+				add_escape_val = add_escape(location_info->pool,loc->location);
+				p = njt_snprintf(p, remain, "%V {\n",&add_escape_val);
 				remain = data + buffer_len - p;
 			}
 			if(loc->location_body.len != 0 && loc->location_body.data != NULL){
-				p = njt_snprintf(p, remain, " %V; \n",&loc->location_body);
+				add_escape_val = add_escape(location_info->pool,loc->location_body);
+				p = njt_snprintf(p, remain, " %V; \n",&add_escape_val);
 				remain = data + buffer_len - p;
 			}
 			if(loc->proxy_pass.len != 0 && loc->proxy_pass.data != NULL){
-				p = njt_snprintf(p, remain, " proxy_pass %V;\n",&loc->proxy_pass);
+				add_escape_val = add_escape(location_info->pool,loc->proxy_pass);
+				p = njt_snprintf(p, remain, " proxy_pass %V;\n",&add_escape_val);
 				remain = data + buffer_len - p;
 			}
 
@@ -1364,9 +1419,6 @@ static njt_http_core_loc_conf_t * njt_http_location_find_new_location(njt_http_c
     return NULL;
 
 }
-
-
-
 static njt_str_t njt_http_location_get_full_name(njt_pool_t *pool,njt_str_t src) {
   njt_conf_t cf;
   njt_str_t full_name,*value;

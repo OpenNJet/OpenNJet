@@ -235,13 +235,12 @@ typedef struct {
 typedef struct {
 #if (NJT_PCRE)
     njt_http_regex_t          *regex;
-#if (NJT_HTTP_DYNAMIC_SERVER) 
-    njt_str_t                  full_name;
-#endif   
 #endif
     njt_http_core_srv_conf_t  *server;   /* virtual name server conf */
     njt_str_t                  name;
-
+#if (NJT_HTTP_DYNAMIC_LOC) 
+    njt_str_t                  full_name;
+#endif
 } njt_http_server_name_t;
 
 
@@ -586,6 +585,9 @@ njt_http_cleanup_t *njt_http_cleanup_add(njt_http_request_t *r, size_t size);
 #if (NJT_HTTP_DYNAMIC_LOC)
 void njt_http_location_cleanup(njt_http_core_loc_conf_t *clcf);
 njt_int_t njt_http_location_cleanup_add(njt_http_core_loc_conf_t *clcf, void(*handler)(njt_http_core_loc_conf_t *hclcf,void* data) ,void* data);
+void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf);
+void njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf);
+void njt_http_server_delete_dyn_var(njt_http_core_srv_conf_t *cscf);
 #endif
 //end
 

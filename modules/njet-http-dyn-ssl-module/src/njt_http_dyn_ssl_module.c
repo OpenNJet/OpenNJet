@@ -606,7 +606,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
 
     cscfp = hcmcf->servers.elts;
     for( i = 0; i < hcmcf->servers.nelts; i++){
-        server_item = njt_palloc(pool, sizeof(dyn_ssl_servers_item_t));
+        server_item = njt_pcalloc(pool, sizeof(dyn_ssl_servers_item_t));
         if(server_item == NULL){
             goto err;
         }
@@ -627,7 +627,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
 
         server_name = cscfp[i]->server_names.elts;
         for (j = 0; j < cscfp[i]->server_names.nelts; ++j) {
-            tmp_str = &server_name[j].name;
+            tmp_str = &server_name[j].full_name;
             add_item_dyn_ssl_servers_item_serverNames(server_item->serverNames,tmp_str);
         }
 

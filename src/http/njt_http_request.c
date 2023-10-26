@@ -2275,9 +2275,20 @@ njt_http_validate_host(njt_str_t *host, njt_pool_t *pool, njt_uint_t alloc)
 // by zyg
 #if (NJT_HTTP_DYNAMIC_SERVER)
 static void njt_http_core_free_srv_ctx(void* data){
+    njt_http_core_loc_conf_t *clcf;
     njt_http_core_srv_conf_t  *cscf = data;
     --cscf->ref_count;
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1.1 free VS server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "1.1 free VS server %V,ref_count=%d,disable=%d!",&cscf->server_name,cscf->ref_count,cscf->disable);
+     if(cscf->disable == 1 && cscf->ref_count == 0) {
+        clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
+        njt_http_location_delete_dyn_var(clcf);
+        njt_http_location_destroy(clcf);
+        njt_http_server_delete_dyn_var(cscf);  
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "ntj_destroy_pool VS server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
+       njt_destroy_pool(cscf->pool);
+    }
+
+    
 }
 #endif
 //end
@@ -2362,19 +2373,10 @@ njt_http_set_virtual_server(njt_http_request_t *r, njt_str_t *host)
     njt_set_connection_log(r->connection, clcf->error_log);
 
 #if (NJT_HTTP_DYNAMIC_SERVER)
-    njt_http_cleanup_t   **cln,*end;
-     cln = &r->main->cleanup;
-     end = njt_pcalloc(r->pool, sizeof(njt_http_cleanup_t));
-     if(end == NULL){
-         return NJT_ERROR;
-     }
-    end->data = cscf;
-    end->handler = njt_http_core_free_srv_ctx;
-    end->next = NULL;
-    while (*cln != NULL){
-        cln = &(*cln)->next;
-    }
-    *cln = end;
+     njt_pool_cleanup_t   *cln;
+     cln = njt_pool_cleanup_add(r->main->connection->pool,0);
+    cln->handler = njt_http_core_free_srv_ctx;
+    cln->data = cscf;
     cscf->ref_count ++;
 #endif 
 
@@ -2775,7 +2777,6 @@ njt_http_terminate_request(njt_http_request_t *r, njt_int_t rc)
     njt_http_cleanup_t    *cln;
     njt_http_request_t    *mr;
     njt_http_ephemeral_t  *e;
-
     mr = r->main;
 
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -3784,7 +3785,7 @@ njt_http_free_request(njt_http_request_t *r, njt_int_t rc)
     njt_http_cleanup_t        *cln;
     njt_http_log_ctx_t        *ctx;
     njt_http_core_loc_conf_t  *clcf;
-    njt_http_core_srv_conf_t  *cscf;
+    //njt_http_core_srv_conf_t  *cscf;
 
     log = r->connection->log;
 
@@ -3868,30 +3869,9 @@ njt_http_free_request(njt_http_request_t *r, njt_int_t rc)
     clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
 #endif
     //end
-     cscf = njt_http_get_module_srv_conf(r, njt_http_core_module);
     pool = r->pool;
     r->pool = NULL;
     njt_destroy_pool(pool);
-    // by zyg
-#if (NJT_HTTP_DYNAMIC_SERVER)
-   
-    if(cscf->disable && cscf->ref_count == 0 && cscf->pool != NULL ){
-        //njt_http_server_delete_dyn_var(cscf);
-	 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "2 delete VS server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
-        njt_destroy_pool(cscf->pool);
-        return;  //zyg 如果server 删除，就不再执行location 删除。
-    }
-#endif
-
-
-    // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
-    if(clcf->disable && clcf->ref_count == 0 && clcf->pool != NULL ){
-        njt_destroy_pool(clcf->pool);
-    }
-#endif
-    //end
-
     //end
 }
 

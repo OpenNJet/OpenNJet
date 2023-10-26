@@ -730,7 +730,7 @@ static void invoke_kv_change_handler(njt_str_t *key, njt_str_t *value)
 
     if (kv_handler_hashmap) {
         rc = njt_lvlhsh_map_get(kv_handler_hashmap, key, (intptr_t *)&kv_handler);
-        if (rc == NJT_OK) {
+        if (rc == NJT_OK && kv_handler->callbacks.handler) {
             njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got kv handler : %p for key %V", kv_handler, key);
             kv_handler->callbacks.handler(key, value, kv_handler->callbacks.data);
         }
@@ -798,7 +798,7 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
         if (rc == NJT_OK) {
             njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "hash key is :%V in worker %d", &hash_key, njt_worker);
             rc = njt_lvlhsh_map_get(kv_handler_hashmap, &hash_key, (intptr_t *)&tm_handler);
-            if (rc == NJT_OK) {
+            if (rc == NJT_OK && tm_handler->callbacks.handler) {
                 nstr_topic.data = (u_char *)topic;
                 nstr_topic.len = strlen(topic);
                 nstr_msg.data = (u_char *)msg;

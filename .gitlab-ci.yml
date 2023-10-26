@@ -12,6 +12,10 @@ build_bin:
     - sudo chmod +x ./build_cc.sh ./configure
     - sudo ./build_cc.sh conf $CI_COMMIT_SHA
     - sudo make -j `nproc`
+    - sudo ./build_cc.sh install
+    - sudo chmod +x ./build_lua.sh
+    - sudo mkdir -p objs/scripts/register/
+    - sudo ./build_lua.sh
     - sudo mkdir -p work/etc/njet/lualib/ work/usr/local/lib/ work/etc/njet/logs/ logs/  # 创建文件包目录
     - sudo cp -R /etc/njet/* work/etc/njet/
     - sudo cp -R /etc/njet/luajit/lib/* work/usr/local/lib/
@@ -20,6 +24,7 @@ build_bin:
     paths:     # 需要打包的文件
       - objs/njet
       - objs/*.so
+      - objs/scripts
       - work/*
       - logs/
     expire_in: 1 week # 打包文件存储有效期

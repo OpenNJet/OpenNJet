@@ -23,9 +23,8 @@ static njt_http_dyn_access_api_loc_t * njt_api_loc_with_loc_item(njt_pool_t *poo
     njt_uint_t                      i;
 
     if(!loc_item) return NULL;
-    aal = njt_palloc(pool,sizeof(njt_http_dyn_access_api_loc_t));
+    aal = njt_pcalloc(pool,sizeof(njt_http_dyn_access_api_loc_t));
     if(!aal) return NULL;
-    memset(aal,0,sizeof(njt_http_dyn_access_api_loc_t));
 
     if(loc_item->is_location_set){
         aal->full_name = *get_dynlog_locationDef_location(loc_item);
@@ -162,26 +161,28 @@ static njt_int_t njt_dynlog_update_locs_log(dynlog_servers_item_locations_t *loc
 static njt_http_dyn_access_log_format_t *
 njt_log_format_with_accessLogFormat_t(njt_pool_t *pool, dynlog_accessLogFormat_t *fmt){
     njt_http_dyn_access_log_format_t * alf;
-    alf = njt_palloc(pool,sizeof(njt_http_dyn_access_log_format_t));
+    alf = njt_pcalloc(pool,sizeof(njt_http_dyn_access_log_format_t));
     if(!alf) return NULL;
-    memset(alf,0,sizeof(njt_http_dyn_access_log_format_t));
     dynlog_accessLogFormat_format_t *format = get_dynlog_accessLogFormat_format(fmt);
-    dynlog_accessLogFormat_escape_t escape = get_dynlog_accessLogFormat_escape(fmt);
+    
     dynlog_accessLogFormat_name_t *name = get_dynlog_accessLogFormat_name(fmt);
     if(format != NULL){
         alf->format = *format;
     }
     
-    switch (escape) {
-        case DYNLOG_ACCESSLOGFORMAT_ESCAPE_DEFAULT:
-            njt_str_set(&alf->escape,"default");
-            break;
-        case DYNLOG_ACCESSLOGFORMAT_ESCAPE_JSON:
-            njt_str_set(&alf->escape,"json");
-            break;
-        case DYNLOG_ACCESSLOGFORMAT_ESCAPE_NONE:
-            njt_str_set(&alf->escape,"none");
-            break;
+    if(fmt->is_escape_set){
+        dynlog_accessLogFormat_escape_t escape = get_dynlog_accessLogFormat_escape(fmt);
+        switch (escape) {
+            case DYNLOG_ACCESSLOGFORMAT_ESCAPE_DEFAULT:
+                njt_str_set(&alf->escape,"default");
+                break;
+            case DYNLOG_ACCESSLOGFORMAT_ESCAPE_JSON:
+                njt_str_set(&alf->escape,"json");
+                break;
+            case DYNLOG_ACCESSLOGFORMAT_ESCAPE_NONE:
+                njt_str_set(&alf->escape,"none");
+                break;
+        }
     }
     alf->name = *name;
     return alf;
@@ -443,7 +444,7 @@ static njt_str_t *njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
 
         server_name = cscfp[i]->server_names.elts;
         for (j = 0; j < cscfp[i]->server_names.nelts; ++j) {
-            tmp_str = &server_name[j].name;
+            tmp_str = &server_name[j].full_name;
             add_item_dynlog_servers_item_serverNames(server_item->serverNames,tmp_str);
         }
 
@@ -468,7 +469,7 @@ static njt_str_t *njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
 
     fmt = lmcf->formats.elts;
     for( i = 0; i < lmcf->formats.nelts; i++){
-        accessLog_formats_item = njt_palloc(pool, sizeof(dynlog_accessLogFormats_item_t));
+        accessLog_formats_item = njt_pcalloc(pool, sizeof(dynlog_accessLogFormats_item_t));
         if(accessLog_formats_item == NULL){
             goto err;
         }
@@ -477,7 +478,7 @@ static njt_str_t *njt_dynlog_dump_log_conf(njt_cycle_t *cycle,njt_pool_t *pool){
             set_dynlog_accessLogFormat_name(accessLog_formats_item, &fmt[i].name);
         }
         if( fmt[i].escape.len > 0 ){
-            if(fmt[i].escape.len == 6 && njt_strncmp(fmt[i].escape.data, "default", 6) ==0){
+            if(fmt[i].escape.len == 7 && njt_strncmp(fmt[i].escape.data, "default", 7) ==0){
                 set_dynlog_accessLogFormat_escape(accessLog_formats_item, DYNLOG_ACCESSLOGFORMAT_ESCAPE_DEFAULT);
             }else if (fmt[i].escape.len == 4 && njt_strncmp(fmt[i].escape.data, "json", 4) ==0)
             {

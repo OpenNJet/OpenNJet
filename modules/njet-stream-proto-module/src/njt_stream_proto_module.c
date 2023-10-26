@@ -9,8 +9,9 @@
 #include <njt_http.h>
 #include <njt_stream.h>
 #include <sys/socket.h>
+#include <net/if.h>
 #include <linux/netfilter_ipv4.h>
-
+#include <linux/netfilter_ipv6/ip6_tables.h>
 
 
 
@@ -225,41 +226,53 @@ static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
     socklen_t                           org_src_addr_len;
     njt_connection_t                    *c;
     njt_stream_proto_ctx_t           *ctx;
-    char *paddr;
-    njt_uint_t port,nelts,i;
-    u_char *p;
+    njt_uint_t nelts,i;
+    njt_int_t         ret = -1;
     njt_keyval_t      *kv;
     njt_stream_proto_srv_conf_t  *sscf;
-    struct sockaddr_in *addr_in;
+    struct sockaddr *addr;
     njt_int_t  rc = NJT_OK;
 	
 
     c = s->connection;
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
+    njt_str_set(&ctx->port_mode,"none");
     sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);	
-	njt_memzero(&org_src_addr, sizeof(struct sockaddr));
-	 org_src_addr_len =  sizeof(struct sockaddr);
-	if(getsockopt ( c->fd, SOL_IP, SO_ORIGINAL_DST, &org_src_addr,&org_src_addr_len) == -1) {
+	njt_memzero(&org_src_addr, sizeof(struct sockaddr_storage));
+	 org_src_addr_len =  sizeof(struct sockaddr_storage);
+	if(c->sockaddr->sa_family == AF_INET) {
+	   ret = getsockopt ( c->fd, SOL_IP, SO_ORIGINAL_DST, &org_src_addr,&org_src_addr_len);  
+	} else if(c->sockaddr->sa_family == AF_INET6) {
+	   ret = getsockopt ( c->fd,SOL_IPV6, IP6T_SO_ORIGINAL_DST, &org_src_addr,&org_src_addr_len);
+	    njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, " 0 stream_nginmesh_dest error=%s",strerror(errno));
+	}
+	if(ret == -1) {
 	   int n = errno;
-	   printf("%d",n);
+	    njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, "stream_nginmesh_dest error=%s",strerror(n));
 	} else {
 		njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, "ip address length %d",org_src_addr_len);
-		if(org_src_addr.ss_family == AF_INET )  {
-		   addr_in = (struct sockaddr_in *)&org_src_addr;
-		   paddr = inet_ntoa(addr_in->sin_addr);
-		   port = ntohs(addr_in->sin_port);
-		   ctx->dest.data = njt_pnalloc(ctx->pool,46);
+		if(org_src_addr.ss_family == AF_INET || org_src_addr.ss_family == AF_INET6)  {
+		   addr = (struct sockaddr*)&org_src_addr;
+		
+		  	   
+		   ctx->dest.data = njt_pnalloc(ctx->pool,NJT_SOCKADDR_STRLEN);
 		   if(ctx->dest.data != NULL) {
-			ctx->dest.len = 46;
+			ctx->dest.len = NJT_SOCKADDR_STRLEN;
 		   	njt_memzero(ctx->dest.data,ctx->dest.len);
 			ctx->dest_ip.data = ctx->dest.data;
-			p  = njt_sprintf(ctx->dest.data,"%s",paddr);
-			ctx->dest_ip.len = p - ctx->dest.data;
-			ctx->dest_port.data = p + 1;
+			ctx->dest_ip.len = njt_sock_ntop(addr, sizeof(njt_sockaddr_t),
+                                                                ctx->dest.data, ctx->dest.len, 0);  //ip
+			ctx->dest.len =  njt_sock_ntop(addr, sizeof(njt_sockaddr_t),
+                                                                ctx->dest.data, ctx->dest.len, 1); // ip:port
+			ctx->dest_port.data = ctx->dest.data + ctx->dest_ip.len + 1;
+			ctx->dest_port.len = ctx->dest.data + ctx->dest.len - ctx->dest_port.data;
 
-			p  = njt_sprintf(p,":%d",port);
-			ctx->dest.len = p - ctx->dest.data;
-			ctx->dest_port.len = p - ctx->dest_port.data;
+			if(org_src_addr.ss_family == AF_INET6) {
+				ctx->dest_ip.data = ctx->dest.data + 1;
+				ctx->dest_port.data = ctx->dest.data + ctx->dest_ip.len + 3;
+				ctx->dest_port.len = (ctx->dest.len - ctx->dest_ip.len - 3); // - [
+			}
+
 			njt_str_set(&ctx->port_mode,"none");
 			 if(sscf->proto_ports != NULL) {
 			 	kv = sscf->proto_ports->elts;
@@ -273,6 +286,7 @@ static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
 			 } 
 		   }
 		}
+
 	}
 	 njt_log_debug(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                    "assignment njtmesh_dest: %V",&ctx->dest);
