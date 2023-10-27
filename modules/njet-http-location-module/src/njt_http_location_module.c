@@ -361,14 +361,20 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "find && free old location start +++++++++++++++");
 
 	location_name.data = njt_pcalloc(location_info->pool, 1024);
+
+
+	if(location_info->location.len > 0 && location_info->location.data[0] == '\"' && location_info->location.data[location_info->location.len-1] == '\"') {
+		add_escape_val = location_info->location;
+	} else {
+		add_escape_val = add_escape(location_info->pool,location_info->location);
+	}
 	if(location_info->location_rule.len > 0) {
 		p = njt_snprintf(location_name.data, 1024, "%V%V", &location_info->location_rule,
-								 &location_info->location);
+								 &add_escape_val);
 	} else {
-		p = njt_snprintf(location_name.data, 1024, "%V", &location_info->location);
+		p = njt_snprintf(location_name.data, 1024, "%V", &add_escape_val);
 	}
 	location_name.len = p - location_name.data;
-	add_escape_val = add_escape(location_info->pool,location_name);
 	location_name_key = njt_http_location_get_full_name(location_info->pool,add_escape_val);
 
     if(clcf->old_locations == NULL) {
@@ -377,7 +383,7 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 		lq = njt_http_find_location(location_name_key, clcf->old_locations);
 	}
     if (lq == NULL) {
-	njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "not find  location [%V]!",&location_name);
+	njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "not find  location [%V],full_name=%V!",&location_name,&location_name_key);
 	if(msg.data != NULL){
 		p = njt_snprintf(msg.data, 1024, "not find  location [%V]!", &location_name);
 		msg.len = p - msg.data;
@@ -1268,7 +1274,11 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 				remain = data + buffer_len - p;
 			}
 			if(loc->location.len != 0 && loc->location.data != NULL){
-				add_escape_val = add_escape(location_info->pool,loc->location);
+				if(loc->location.len > 0 && loc->location.data[0] == '\"' && loc->location.data[loc->location.len-1] == '\"') {
+					add_escape_val = loc->location;
+				} else {
+					add_escape_val = add_escape(location_info->pool,loc->location);
+				}
 				p = njt_snprintf(p, remain, "%V {\n",&add_escape_val);
 				remain = data + buffer_len - p;
 			}
@@ -1319,7 +1329,7 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
     //njt_str_t  dport;
     njt_fd_t fd;
     njt_int_t  rc; 
-    //njt_uint_t i;
+   njt_str_t find_server_name;
     
     u_char *p; // *data;
     njt_http_core_srv_conf_t *cscf;
@@ -1331,8 +1341,13 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
 	int32_t  rlen;
 	//njt_http_sub_location_info_t **loc_array;
     
+	find_server_name = location_info->server_name;
+	if(location_info->server_name.len > 0 && location_info->server_name.data[0] == '\"' && location_info->server_name.data[location_info->server_name.len-1] == '\"') {
+	   find_server_name.data++;
+	   find_server_name.len -= 2;
+	}
 
-    cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&location_info->addr_port,&location_info->server_name);	
+    cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&location_info->addr_port,&find_server_name);	
     (*location_info).cscf = cscf;
 
         location_path = njt_cycle->prefix;
