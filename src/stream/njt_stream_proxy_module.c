@@ -13,12 +13,16 @@
 #if (NJT_STREAM_PROTOCOL_V2)
 #include <njt_stream_proxy_protocol_tlv_module.h>
 #endif
+#if (NJT_STREAM_FTP_PROXY)
+#include <njt_stream_ftp_proxy_module.h>
+#endif
+
 struct pp2_tlv {
             uint8_t type;
             uint16_t length;
             uint8_t value[0];
         };
-static void njt_stream_proxy_handler(njt_stream_session_t *s);
+// static void njt_stream_proxy_handler(njt_stream_session_t *s);
 static njt_int_t njt_stream_proxy_eval(njt_stream_session_t *s,
     njt_stream_proxy_srv_conf_t *pscf);
 static njt_int_t njt_stream_proxy_set_local(njt_stream_session_t *s,
@@ -381,7 +385,7 @@ njt_module_t  njt_stream_proxy_module = {
 };
 
 
-static void
+void
 njt_stream_proxy_handler(njt_stream_session_t *s)
 {
     u_char                           *p;
@@ -462,9 +466,13 @@ njt_stream_proxy_handler(njt_stream_session_t *s)
     }
 
     if (u->resolved == NULL) {
-
+#if (NJT_STREAM_FTP_PROXY)
+        if(NJT_OK != njt_stream_ftp_proxy_replace_upstream(s, &uscf)){
+            uscf = pscf->upstream;
+        }
+#else
         uscf = pscf->upstream;
-
+#endif
     } else {
 
 #if (NJT_STREAM_SSL)
@@ -1793,6 +1801,13 @@ njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
             }
 
             if (n >= 0) {
+#ifdef NJT_STREAM_FTP_PROXY
+                //todo if ftp_proxy, need replace data port
+                if(from_upstream){
+                    njt_stream_ftp_proxy_filter_pasv(s, b->last, &n);
+                }
+#endif
+
                 if (limit_rate) {
                     delay = (njt_msec_t) (n * 1000 / limit_rate);
 
@@ -2107,6 +2122,12 @@ njt_stream_proxy_finalize(njt_stream_session_t *s, njt_uint_t rc)
         njt_close_connection(pc);
         u->peer.connection = NULL;
     }
+
+#if (NJT_STREAM_FTP_PROXY)
+    //todo need free all data port map info
+    njt_stream_ftp_proxy_cleanup(s);
+#endif
+
 
 noupstream:
 

@@ -130,6 +130,10 @@ njt_stream_init_connection(njt_connection_t *c)
     s->ssl = addr_conf->ssl;
 #endif
 
+#if (NJT_STREAM_FTP_PROXY)
+    njt_queue_init(&s->ftp_port_list);
+#endif
+
     if (c->buffer) {
         s->received += c->buffer->last - c->buffer->pos;
     }
