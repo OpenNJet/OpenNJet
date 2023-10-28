@@ -125,6 +125,7 @@ static void *njt_stream_proto_create_srv_conf(njt_conf_t *cf)
 
     conf->enabled = NJT_CONF_UNSET;
     conf->proto_ports = NJT_CONF_UNSET_PTR;
+    conf->proto_enabled = NJT_CONF_UNSET;
     return conf;
 }
 
@@ -140,6 +141,7 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
     njt_conf_merge_value(conf->enabled, prev->enabled, 0);
     njt_conf_merge_ptr_value(conf->proto_ports,
                               prev->proto_ports, NULL);
+    njt_conf_merge_value(conf->proto_enabled, prev->proto_enabled, 0);
     return NJT_CONF_OK;
 }
 
@@ -152,6 +154,7 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
 	 njt_int_t  rc = NJT_DECLINED;
 	 njt_int_t  rc_http = NJT_DECLINED;
 	 njt_http_request_t  r;
+	 njt_str_t       none = njt_string("none");
 	 u_char          *pos;
 
 	 c = s->connection;
@@ -171,10 +174,6 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
 	if(ctx && ctx->complete == 1) {
 		return NJT_OK;
 	}
-    if (c->buffer == NULL) {
-        return NJT_AGAIN;
-    }
-	
     if (ctx == NULL) {
         ctx = njt_pcalloc(c->pool, sizeof(njt_stream_proto_ctx_t));
         if (ctx == NULL) {
@@ -184,13 +183,20 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
         njt_stream_set_ctx(s, ctx, njt_stream_proto_module);
         ctx->pool = c->pool;
         ctx->log = c->log;
-        ctx->pos = c->buffer->pos;
+        ctx->pos = NULL;
 	ctx->complete = 0;
 	njt_stream_nginmesh_dest_handler(s);
     }
-	if(ctx->complete == 1){
-		return NJT_OK;
-	}
+    if(ctx->port_mode.len == none.len && njt_strncmp(ctx->port_mode.data,none.data,none.len) == 0 && !sscf->proto_enabled) {
+	ctx->complete = 1;
+	return NJT_OK;
+    }
+    if (c->buffer == NULL) {
+        return NJT_AGAIN;
+    }
+    if(ctx->pos == NULL) {
+        ctx->pos = c->buffer->pos;
+    }
 	rc = njt_stream_preread_proto_handler(s);
 	if(rc == NJT_OK) {
 		ctx->complete = 1;
@@ -273,7 +279,6 @@ static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
 				ctx->dest_port.len = (ctx->dest.len - ctx->dest_ip.len - 3); // - [
 			}
 
-			njt_str_set(&ctx->port_mode,"none");
 			 if(sscf->proto_ports != NULL) {
 			 	kv = sscf->proto_ports->elts;
 				 nelts = sscf->proto_ports->nelts;	
