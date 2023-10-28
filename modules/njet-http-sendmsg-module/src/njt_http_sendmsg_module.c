@@ -324,7 +324,7 @@ static njt_int_t sendmsg_api_del_handler(njt_http_request_t *r)
     njt_buf_t *b;
     njt_chain_t out;
     njt_str_t key, lmdb_key;
-    njt_int_t ok;
+    njt_int_t ok = NJT_ERROR;
 
     if (r->args.len)
     {
