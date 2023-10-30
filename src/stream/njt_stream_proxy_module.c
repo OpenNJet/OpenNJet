@@ -1802,7 +1802,7 @@ njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
 
             if (n >= 0) {
 #ifdef NJT_STREAM_FTP_PROXY
-                //todo if ftp_proxy, need replace data port
+                //if ftp_proxy, need replace data port
                 if(from_upstream){
                     njt_stream_ftp_proxy_filter_pasv(s, b->last, &n);
                 }
@@ -2124,7 +2124,7 @@ njt_stream_proxy_finalize(njt_stream_session_t *s, njt_uint_t rc)
     }
 
 #if (NJT_STREAM_FTP_PROXY)
-    //todo need free all data port map info
+    //need free all data port map info of current session
     njt_stream_ftp_proxy_cleanup(s);
 #endif
 

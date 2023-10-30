@@ -385,7 +385,7 @@ njt_int_t njt_stream_ftp_proxy_replace_upstream(njt_stream_session_t *s,
     //             "ftp proxy get proto dest_port transfer error");
     //     return NJT_ERROR;
     // }
-    proxy_port = 10000;
+    proxy_port = njt_inet_get_port(s->connection->local_sockaddr);
 
     ftp_url_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
     if(ftp_url_pool == NULL || NJT_OK != njt_sub_pool(njt_cycle->pool, ftp_url_pool)){
@@ -448,7 +448,7 @@ njt_int_t njt_stream_ftp_proxy_replace_upstream(njt_stream_session_t *s,
     if (njt_parse_url((*uscf)->ftp_url_pool, &u) != NJT_OK) {
         if (u.err) {
             njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
-                    "%s in upstream \"%V\"", u.err, &u.url);
+                    "ftp data, %s in upstream \"%V\"", u.err, &u.url);
         }
 
         return NJT_ERROR;
@@ -696,8 +696,6 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
 
     fscf = njt_stream_get_module_srv_conf(s, njt_stream_ftp_proxy_module);
     if(fscf == NULL || fscf->type != NJT_STREAM_FTP_CTRL){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "==========no ftp control in filter");
         return;
     }
 
@@ -710,7 +708,7 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
     end_index = (u_char *)njt_strchr(data, ')');
     if (start_index == NULL || end_index == NULL){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "==========not pasv data");
+                "ftp proxy, not pasv data");
         return;
     }
 
@@ -744,7 +742,7 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
 
     if(quot_number != 5){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "==========not pasv data, quot number:%d < 5", quot_number);
+                "not pasv data, quot number:%d < 5", quot_number);
         return;
     }
     sip.data = (u_char *)sip_buf;
@@ -756,7 +754,7 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
     njt_memzero(cip_buf, 50);
     njt_memcpy(cip_buf, s->connection->addr_text.data, s->connection->addr_text.len);
     cip.len = s->connection->addr_text.len;
-    cport = ((struct sockaddr_in *)s->connection->sockaddr)->sin_port;
+    cport = njt_inet_get_port(s->connection->sockaddr);
 
     //port map
     proxy_port = njt_stream_ftp_proxy_get_empty_port(fscf, &cip, cport, &sip, sport);
@@ -779,7 +777,7 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
     data_queue = njt_pcalloc(fscf->pool, sizeof(njt_stream_ftp_data_port_t));
     if(data_queue == NULL){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "==========ftp proxy malloc port info error");
+                "ftp proxy malloc port info error");
         return;
     }
     data_queue->data_port = proxy_port;
@@ -850,8 +848,6 @@ njt_stream_ftp_data_proxy_cleanup(njt_stream_session_t *s)
 
     fscf = njt_stream_get_module_srv_conf(s, njt_stream_ftp_proxy_module);
     if(fscf == NULL || fscf->type != NJT_STREAM_FTP_DATA){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "==========call data clean, just return");
         return;
     }
 
@@ -874,7 +870,7 @@ njt_stream_ftp_data_proxy_cleanup(njt_stream_session_t *s)
     //             "ftp proxy get proto dest_port transfer error in cleanup");
     //     return;
     // }
-    proxy_port = 10000;
+    proxy_port = njt_inet_get_port(s->connection->local_sockaddr);
 
     ctx = fscf->shm_zone->data;
     njt_shmtx_lock(&ctx->shpool->mutex);
@@ -894,7 +890,7 @@ njt_stream_ftp_data_proxy_cleanup(njt_stream_session_t *s)
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
             "ftp_proxy data free_port:%d cip:%V cport:%d used_port_num:%d  freed_port_num:%d",
             proxy_port, &s->connection->addr_text, 
-            ((struct sockaddr_in *)s->connection->sockaddr)->sin_port,
+            njt_inet_get_port(s->connection->sockaddr),
             ctx->sh->used_port_num, ctx->sh->freed_port_num);
     }
 
@@ -923,8 +919,6 @@ njt_stream_ftp_control_proxy_cleanup(njt_stream_session_t *s)
 
     fscf = njt_stream_get_module_srv_conf(s, njt_stream_ftp_proxy_module);
     if(fscf == NULL || fscf->type != NJT_STREAM_FTP_CTRL){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "==========call ftp control clean ,just return");
         return;
     }
 
@@ -945,7 +939,7 @@ njt_stream_ftp_control_proxy_cleanup(njt_stream_session_t *s)
         if (node != NULL) {
             node_info = (njt_stream_ftp_proxy_node_t *)&node->color;
             //check cip info
-            if(((struct sockaddr_in *)s->connection->sockaddr)->sin_port == node_info->cport
+            if(njt_inet_get_port(s->connection->sockaddr) == node_info->cport
                 && s->connection->addr_text.len == node_info->cip_len
                 && njt_strncmp(s->connection->addr_text.data, node_info->cip, node_info->cip_len) == 0){
 
@@ -957,7 +951,7 @@ njt_stream_ftp_control_proxy_cleanup(njt_stream_session_t *s)
                 njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
                     "ftp_proxy control free_port:%d cip:%V cport:%d used_port_num:%d  freed_port_num:%d",
                     fdp->data_port, &s->connection->addr_text, 
-                    ((struct sockaddr_in *)s->connection->sockaddr)->sin_port,
+                    njt_inet_get_port(s->connection->sockaddr),
                     ctx->sh->used_port_num, ctx->sh->freed_port_num);
             }
         }
@@ -982,6 +976,7 @@ njt_int_t njt_stream_ftp_proxy_get_empty_port(njt_stream_ftp_proxy_srv_conf_t  *
     u_char                              *end;
     njt_str_t                           key;
     uint32_t                            hash;
+    njt_flag_t                          found;
 
     ctx = conf->shm_zone->data;
     njt_shmtx_lock(&ctx->shpool->mutex);
@@ -994,10 +989,28 @@ njt_int_t njt_stream_ftp_proxy_get_empty_port(njt_stream_ftp_proxy_srv_conf_t  *
     }
 
     if(ctx->sh->cur_empty_port == -1){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "ftp_proxy has no freed port");
-        njt_shmtx_unlock(&ctx->shpool->mutex);
-        return -1;
+        found = 0;
+        //get next_empty_port
+        for(port_index = ctx->min_port; port_index <= ctx->max_port; port_index++){
+            end = njt_snprintf(data_buf, 100,"%d", port_index);
+            key.data = data_buf;
+            key.len = end - data_buf;
+
+            hash = njt_crc32_short(key.data, key.len);
+            node = njt_stream_ftp_proxy_lookup(&ctx->sh->rbtree, &key, hash);
+            if (node == NULL) {
+                ctx->sh->cur_empty_port = port_index;
+                found = 1;
+                break;
+            }
+        }
+
+        if(!found){
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    "ftp_proxy should has freed port, but not found, logic error");
+            njt_shmtx_unlock(&ctx->shpool->mutex);
+            return -1;
+        }
     }
 
     cur_port = ctx->sh->cur_empty_port;
