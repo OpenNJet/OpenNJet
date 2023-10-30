@@ -22,7 +22,7 @@ OpenNJet 应用引擎是基于 NGINX 的面向互联网和云原生应用提供�
 mv njet_main njet
 tar xzf njet/build/rpm/opennjet.conf.files.tar.gz
 tar xzf njet/build/rpm/lua.module.tar.gz
-cd njet && sed -i 's/--strict-warnings//g' ./build_cc.sh && ./build_cc.sh conf && make -j `nproc`
+cd njet && sed -i 's/--strict-warnings//g' ./build_cc.sh && ./build_cc.sh conf $CI_COMMIT_SHA && make -j `nproc`
 if [ -d scripts ]; then
   for i in `find ./scripts -type f`; do
     LUA_PATH="`pwd`/luajit/src/?.lua;;" luajit/src/luajit -bg $i $i 
