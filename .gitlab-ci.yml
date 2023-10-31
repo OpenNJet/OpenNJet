@@ -20,6 +20,7 @@ build_bin:
     - sudo cp -R /etc/njet/* work/etc/njet/
     - sudo cp -R /etc/njet/luajit/lib/* work/usr/local/lib/
     - sudo cp -a auto/lib/keepalived/keepalived/emb/.libs/libha_emb.so* work/usr/local/lib/ 2>/dev/null
+    - sudo cp -a auto/lib/modsecurity/src/.libs/libmodsecurity.so* work/usr/local/lib/ 2>/dev/null
   artifacts:
     paths:     # 需要打包的文件
       - objs/njet

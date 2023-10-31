@@ -47,6 +47,9 @@ mkdir -p %{buildroot}/usr/local/njet/lualib/clib/
 cp -a lua_module/resty-cjson/cjson.so  %{buildroot}/usr/local/njet/lualib/clib/
 cp -a lua_module/resty-http/lib/* %{buildroot}/usr/local/njet/lualib/lib/
 cp -a njet/auto/lib/keepalived/keepalived/emb/.libs/libha_emb.so* %{buildroot}/usr/local/njet/lib 
+if [ -d njet/auto/lib/modsecurity/src/.libs/ ]; then
+ cp -a njet/auto/lib/modsecurity/src/.libs/libmodsecurity.so* %{buildroot}/usr/local/njet/lib
+fi
 
 %pre
 if [ "$1" -eq 1 ]; then

@@ -57,14 +57,15 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-fault-i
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-jwt-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-sysguard-cpu-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-register-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-modsecurity-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
 LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo "
 # LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo"
 flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --with-debug --build=$git_tag --with-stream --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-http_v3_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module  --with-cc=/usr/bin/cc"
-LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm "
-CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
-#LD_OPT="-ldl -lm "
-#CC_OPT="-O0 -ggdb"
+#LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm "
+#CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
+LD_OPT="-ldl -lm "
+CC_OPT="-O0 -ggdb"
 
 #api doc make tar file
 doctar=doc.tar
@@ -124,7 +125,8 @@ cdir=`cd $(dirname $0); pwd`
                 ;;
             clean)
                 rm -rf auto/lib/njetmq/build
-                rm auto/lib/keepalived/Makefile
+                rm -f auto/lib/keepalived/Makefile
+                cd auto/lib/modsecurity; make clean; cd -;
                 make clean
                 ;;
             release)
