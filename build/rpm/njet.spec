@@ -1,238 +1,100 @@
-#ref:https://fedoraproject.org/wiki/How_to_create_an_RPM_package
-%define njet_home %{_localstatedir}/cache/njet
-%define njet_user njet
-%define njet_group njet
+Name:     njet 
+Version:  1.2.2 
+Release:  1%{?dist} 
 
-#redefine source directory location so we can place all sources in a subdirectory for easier management
-%define _sourcedir /srv/njet_main
+Summary:  OpenNJet Application Engine
+License:  MulanPSL-2.0  
+URL:      https://gitee.com/njet-rd/njet    
 
-# distribution specific definitions
-%define use_systemd (0%{?fedora} && 0%{?fedora} >= 18) || (0%{?rhel} && 0%{?rhel} >= 7)
+#SOURCE0:  %{name}-%{version}.tar.gz
+SOURCE0:  njet_main.tar
 
-%if 0%{?rhel}  == 5
-Group: System Environment/Daemons
 Requires(pre): shadow-utils
-Requires: initscripts >= 8.36
-Requires(post): chkconfig
-%endif
-
-%if 0%{?rhel}  == 6
-Group: System Environment/Daemons
-Requires(pre): shadow-utils
-Requires: initscripts >= 8.36
-Requires(post): chkconfig
-%define with_spdy 1
-%endif
-
-%if 0%{?rhel}  == 7
-Group: Application
-Requires(pre): shadow-utils
-Requires: systemd
-BuildRequires: systemd
-%define with_spdy 1
-%endif
-
-%if 0%{?suse_version}
-Group: Productivity/Networking/Web/Servers
-Requires(pre): pwdutils
-%endif
-
-# end of distribution specific definitions
-
-Summary: TMLake
-Name: njet
-Version: 1.0
-Release: R1
-URL: https://www.tmlake.com/
-Packager: TMLake
-Vendor: TMLake
-
-
-
-
-Source6: build/rpm/njet.upgrade.sh
-
-
-License: Proprietary
-
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
-BuildRequires: zlib-devel
-
-Provides: webserver
+BuildRequires: systemd make gcc  gcc-c++ vim-common m4 autoconf automake cmake3 zlib-devel openssl-devel pcre-devel libtool libtool-ltdl pkgconfig
 
 %description
-Extends NGINX open source to create an enterprise-grade
-Application Delivery Controller, and Web Server. Enhanced
-features include: Layer 4 and Layer 7 load balancing with health checks,
-session persistence and dynamic upstream configuration; Improved content caching, sorted URI.
-
-%package debug
-Summary: TMLake
-Group: TMLake
-Requires: njet
-%description debug
+OpenNJet 应用引擎是基于 NGINX 的面向互联网和云原生应用提供的运行时组态服务程序，作为底层引擎，OpenNJet 实现了NGINX 云原生功能增强、安全加固和代码重构，利用动态加载机制可以实现不同的产品形态，如Web服务器、流媒体服务器、负载均衡、代理(Proxy)、应用中间件、API网关、消息队列等产品形态等等。
 
 %prep
-#%setup -q
-#%setup -T -D -a 0
+%setup -q -c -n %{name}-%{version}
 
 %build
-cd %{_sourcedir} && ./build_cc.sh conf %{getenv:CI_COMMIT_SHA}
-cd %{_sourcedir} && %{__make} %{?_smp_mflags}
-%{__mkdir} -p %{_builddir}/%{name}-%{version}/objs/
-%{__cp} %{_sourcedir}/objs/njet  %{_builddir}/%{name}-%{version}/objs/njet
-%{__cp} %{_sourcedir}/objs/njet  %{_builddir}/%{name}-%{version}/objs/njet.debug
+mv njet_main njet
+tar xzf njet/build/rpm/opennjet.conf.files.tar.gz
+tar xzf njet/build/rpm/lua.module.tar.gz
+cd njet && sed -i 's/--strict-warnings//g' ./build_cc.sh && ./build_cc.sh conf $CI_COMMIT_SHA && make -j `nproc`
+if [ -d scripts ]; then
+  for i in `find ./scripts -type f`; do
+    LUA_PATH="`pwd`/luajit/src/?.lua;;" luajit/src/luajit -bg $i $i 
+  done
+fi
+cd %{_builddir}/%{name}-%{version}/lua_module/resty-cjson && LUA_INCLUDE_DIR=%{_builddir}/%{name}-%{version}/njet/luajit/src make
 
 %install
-%{__rm} -rf $RPM_BUILD_ROOT
-cd %{_sourcedir} && %{__make} DESTDIR=$RPM_BUILD_ROOT install
-
-%{__mkdir} -p $RPM_BUILD_ROOT%{_datadir}/njet
-%{__mv} $RPM_BUILD_ROOT%{_sysconfdir}/njet/html $RPM_BUILD_ROOT%{_datadir}/njet/
-
-%{__rm} -f $RPM_BUILD_ROOT%{_sysconfdir}/njet/*.default
-%{__rm} -f $RPM_BUILD_ROOT%{_sysconfdir}/njet/fastcgi.conf
-
-%{__mkdir} -p $RPM_BUILD_ROOT%{_localstatedir}/log/njet
-%{__mkdir} -p $RPM_BUILD_ROOT%{_localstatedir}/run/njet
-%{__mkdir} -p $RPM_BUILD_ROOT%{_localstatedir}/cache/njet
-
-%{__mkdir} -p $RPM_BUILD_ROOT%{_sysconfdir}/njet/conf.d
-%{__rm} $RPM_BUILD_ROOT%{_sysconfdir}/njet/njet.conf
-%{__install} -m 644 -p %{_sourcedir}/build/rpm/njet.conf \
-   $RPM_BUILD_ROOT%{_sysconfdir}/njet/njet.conf
-
-%{__mkdir} -p $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig
-%{__install} -m 644 -p %{_sourcedir}/build/rpm/njet.sysconf \
-   $RPM_BUILD_ROOT%{_sysconfdir}/sysconfig/njet
-
-   
-%if %{use_systemd}
-# install systemd-specific files
-%{__mkdir} -p $RPM_BUILD_ROOT%{_unitdir}
-%{__install} -m644 %{_sourcedir}/build/rpm/njet.service \
-        $RPM_BUILD_ROOT%{_unitdir}/njet.service
-%{__mkdir} -p $RPM_BUILD_ROOT%{_libexecdir}/initscripts/legacy-actions/njet
-%{__install} -m755 %{_sourcedir}/build/rpm/njet.upgrade.sh \
-        $RPM_BUILD_ROOT%{_libexecdir}/initscripts/legacy-actions/njet/upgrade
-%else
-# install SYSV init stuff
-%{__mkdir} -p $RPM_BUILD_ROOT%{_initrddir}
-%{__install} -m755 %{_sourcedir}/build/rpm/njet.init \
-   $RPM_BUILD_ROOT%{_initrddir}/njet
-%endif
-
-# install log rotation stuff
-%{__mkdir} -p $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d
-%{__install} -m 644 -p %{_sourcedir}/build/rpm/logrotate \
-   $RPM_BUILD_ROOT%{_sysconfdir}/logrotate.d/njet
-%{__install} -m644 %{_builddir}/%{name}-%{version}/objs/njet.debug \
-   $RPM_BUILD_ROOT%{_sbindir}/njet.debug
-
-%clean
-%{__rm} -rf $RPM_BUILD_ROOT
-
-%files
-%defattr(-,root,root)
-
-%{_sbindir}/njet
-
-%dir %{_sysconfdir}/njet
-%dir %{_sysconfdir}/njet/conf.d
-
-
-%config(noreplace) %{_sysconfdir}/njet/njet.conf
-%config(noreplace) %{_sysconfdir}/njet/mime.types
-%config(noreplace) %{_sysconfdir}/njet/fastcgi_params
-%config(noreplace) %{_sysconfdir}/njet/scgi_params
-%config(noreplace) %{_sysconfdir}/njet/uwsgi_params
-%config(noreplace) %{_sysconfdir}/njet/koi-utf
-%config(noreplace) %{_sysconfdir}/njet/koi-win
-%config(noreplace) %{_sysconfdir}/njet/win-utf
-
-%config(noreplace) %{_sysconfdir}/logrotate.d/njet
-%config(noreplace) %{_sysconfdir}/sysconfig/njet
-#add core rules file
-
-
-%if %{use_systemd}
-%{_unitdir}/njet.service
-%dir %{_libexecdir}/initscripts/legacy-actions/njet
-%{_libexecdir}/initscripts/legacy-actions/njet/*
-%else
-%{_initrddir}/njet
-%endif
-
-%dir %{_datadir}/njet
-%dir %{_datadir}/njet/html
-%{_datadir}/njet/html/*
-
-%attr(0755,root,root) %dir %{_localstatedir}/cache/njet
-%attr(0755,root,root) %dir %{_localstatedir}/log/njet
-
-%files debug
-%attr(0755,root,root) %{_sbindir}/njet.debug
+rm -rf %{buildroot}
+mkdir -p %{buildroot}/usr/local/njet/modules/
+cp -a njet.conf.files/* %{buildroot}
+cp -a njet/objs/njet %{buildroot}/usr/local/njet/sbin/
+cp -a njet/objs/*.so  %{buildroot}/usr/local/njet/modules/
+cp -a njet/lualib/lib/* %{buildroot}/usr/local/njet/lualib/lib/
+cp -a njet/luajit/src/libluajit.so* %{buildroot}/usr/local/njet/lib/libluajit-5.1.so.2.1.0
+if [ -d njet/scripts ]; then
+  cp -a njet/scripts/* %{buildroot}/usr/local/njet/modules/
+fi
+ln -sf libluajit-5.1.so.2.1.0 %{buildroot}/usr/local/njet/lib/libluajit-5.1.so.2
+ln -sf libluajit-5.1.so.2.1.0 %{buildroot}/usr/local/njet/lib/libluajit-5.1.so
+mkdir -p %{buildroot}/usr/local/njet/lualib/clib/
+cp -a lua_module/resty-cjson/cjson.so  %{buildroot}/usr/local/njet/lualib/clib/
+cp -a lua_module/resty-http/lib/* %{buildroot}/usr/local/njet/lualib/lib/
+cp -a njet/auto/lib/keepalived/keepalived/emb/.libs/libha_emb.so* %{buildroot}/usr/local/njet/lib 
 
 %pre
-# Add the "njet" user
-getent group %{njet_group} >/dev/null || groupadd -r %{njet_group}
-getent passwd %{njet_user} >/dev/null || \
-    useradd -r -g %{njet_group} -s /sbin/nologin \
-    -d %{njet_home} -c "njet user"  %{njet_user}
-exit 0
+if [ "$1" -eq 1 ]; then
+   if ! getent group njet >/dev/null 2>&1; then
+     /usr/sbin/groupadd njet
+   fi
+   if ! getent passwd njet >/dev/null 2>&1; then
+     /usr/sbin/useradd njet -g njet -M -s /sbin/nologin
+   fi
+fi
 
 %post
-# Register the njet service
-useradd -s /sbin/nologin njet  -M  
-if [ $1 -eq 1 ]; then
-%if %{use_systemd}
-    /usr/bin/systemctl preset njet.service >/dev/null 2>&1 ||:
-%else
-    /sbin/chkconfig --add njet
-%endif
-    # print site info
-    cat <<BANNER
-----------------------------------------------------------------------
-Thanks for using njet!
-----------------------------------------------------------------------
-BANNER
 
-    # Touch and set permisions on default log files on installation
+grep -q /usr/local/lib /etc/ld.so.conf
 
-    if [ -d %{_localstatedir}/log/njet ]; then
-        if [ ! -e %{_localstatedir}/log/njet/access.log ]; then
-            touch %{_localstatedir}/log/njet/access.log
-            %{__chmod} 640 %{_localstatedir}/log/njet/access.log
-            %{__chown} njet:adm %{_localstatedir}/log/njet/access.log
-        fi
-
-        if [ ! -e %{_localstatedir}/log/njet/error.log ]; then
-            touch %{_localstatedir}/log/njet/error.log
-            %{__chmod} 640 %{_localstatedir}/log/njet/error.log
-            %{__chown} njet:adm %{_localstatedir}/log/njet/error.log
-        fi
-    fi
+if [ $? != 0 ] ; then
+  echo "/usr/local/lib" >> /etc/ld.so.conf
 fi
+
+ldconfig
+
+systemctl daemon-reload
+systemctl enable njet.service
+/usr/sbin/setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw=eip /usr/local/njet/sbin/njet
 
 %preun
-if [ $1 -eq 0 ]; then
-%if %use_systemd
-    /usr/bin/systemctl --no-reload disable njet.service >/dev/null 2>&1 ||:
-    /usr/bin/systemctl stop njet.service >/dev/null 2>&1 ||:
-%else
-    /sbin/service njet stop > /dev/null 2>&1
-    /sbin/chkconfig --del njet
-%endif
-fi
+systemctl stop njet.service >/dev/null 2>&1
+systemctl disable njet.service
+systemctl daemon-reload
 
 %postun
-%if %use_systemd
-/usr/bin/systemctl daemon-reload >/dev/null 2>&1 ||:
-%endif
-if [ $1 -ge 1 ]; then
-    /sbin/service njet status  >/dev/null 2>&1 || exit 0
-    /sbin/service njet upgrade >/dev/null 2>&1 || echo \
-        "Binary upgrade failed, please check njet's error.log"
+if [ "$1" -eq 0 ]; then
+   rm -rf /usr/local/njet/
 fi
 
+%clean
+rm -rf %{buildroot}
+
+%files
+%defattr(-,root,root,-)
+/etc/systemd/system/njet.service.d/filelimit.conf
+/etc/ld.so.conf.d/njet.conf
+%{_unitdir}/njet.service
+%attr(-,njet,njet) /usr/local/njet/
+
 %changelog
+* Wed Oct 18 2023 hongxina <hongxina@tmlake.com> - 1.2.2-1
+- DESC: update to 1.2.2-1
+
+* Tue Aug 15 2023 hongxina <hongxina@tmlake.com> - 1.1.2-1
+- init 
