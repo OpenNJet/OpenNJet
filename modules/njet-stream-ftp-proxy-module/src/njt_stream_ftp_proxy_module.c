@@ -362,7 +362,8 @@ njt_int_t njt_stream_ftp_proxy_replace_upstream(njt_stream_session_t *s,
     njt_stream_ftp_proxy_node_t         *node_info;
     njt_str_t                           sip;
     njt_int_t                           proxy_port;
-    // njt_stream_proto_ctx_t              *proto_ctx;
+    njt_stream_proto_ctx_t              *proto_ctx;
+    njt_stream_proto_srv_conf_t         *proto_cf;
     njt_pool_t                          *ftp_url_pool;
 
 
@@ -371,21 +372,34 @@ njt_int_t njt_stream_ftp_proxy_replace_upstream(njt_stream_session_t *s,
         return NJT_ERROR;
     }
 
-    // //need get real port
-    // proto_ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
-    // if(proto_ctx == NULL){
-    //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-    //             "ftp proxy could not get proto dest_port info");
-    //     return NJT_ERROR;
-    // }
+    //need get real port
+	proto_cf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
+	if(proto_cf != NULL && (proto_cf->enabled || proto_cf->proto_enabled)) {
+		proto_ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
+		if(proto_ctx == NULL || proto_ctx->complete == 0) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    "ftp proxy could not get proto dest_port info in replace upstream, just use socket addrinfo");
+            
+            proxy_port = njt_inet_get_port(s->connection->local_sockaddr);
 
-    // proxy_port = njt_atoi(proto_ctx->dest_port.data, proto_ctx->dest_port.len);
-    // if(proxy_port == NJT_ERROR){
-    //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-    //             "ftp proxy get proto dest_port transfer error");
-    //     return NJT_ERROR;
-    // }
-    proxy_port = njt_inet_get_port(s->connection->local_sockaddr);
+        }else{
+            proxy_port = njt_atoi(proto_ctx->dest_port.data, proto_ctx->dest_port.len);
+            if(proxy_port == NJT_ERROR){
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    "ftp proxy get proto dest_port:%V transfer error in replace upstream, just use socket addrinfo", &proto_ctx->dest_port);
+                
+                proxy_port = njt_inet_get_port(s->connection->local_sockaddr);
+            }else{
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                    "ftp proxy get port from prtoto in replace upstream");
+            }
+        }
+    }else{
+        proxy_port = njt_inet_get_port(s->connection->local_sockaddr);
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            "ftp proxy could not get proto info in replace upstream, just use socket addrinfo");
+    }
+    
 
     ftp_url_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
     if(ftp_url_pool == NULL || NJT_OK != njt_sub_pool(njt_cycle->pool, ftp_url_pool)){
@@ -843,7 +857,8 @@ njt_stream_ftp_data_proxy_cleanup(njt_stream_session_t *s)
     uint32_t                            hash;
     njt_str_t                           key;
     njt_int_t                           proxy_port;
-    // njt_stream_proto_ctx_t              *proto_ctx;
+    njt_stream_proto_ctx_t              *proto_ctx;
+    njt_stream_proto_srv_conf_t         *proto_cf;
     
 
     fscf = njt_stream_get_module_srv_conf(s, njt_stream_ftp_proxy_module);
@@ -856,21 +871,32 @@ njt_stream_ftp_data_proxy_cleanup(njt_stream_session_t *s)
         s->upstream->upstream = NULL;
     }
 
-    // //need get real port
-    // proto_ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
-    // if(proto_ctx == NULL){
-    //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-    //             "ftp proxy could not get proto dest_port info in cleanup");
-    //     return;
-    // }
-
-    // proxy_port = njt_atoi(proto_ctx->dest_port.data, proto_ctx->dest_port.len);
-    // if(proxy_port == NJT_ERROR){
-    //     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-    //             "ftp proxy get proto dest_port transfer error in cleanup");
-    //     return;
-    // }
-    proxy_port = njt_inet_get_port(s->connection->local_sockaddr);
+    //need get real port
+	proto_cf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
+	if(proto_cf != NULL && (proto_cf->enabled || proto_cf->proto_enabled)) {
+		proto_ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
+		if(proto_ctx == NULL || proto_ctx->complete == 0) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    "ftp proxy could not get proto dest_port info in cleanup, just use socket addrinfo");
+            
+            proxy_port = njt_inet_get_port(s->connection->local_sockaddr);
+        }else{
+            proxy_port = njt_atoi(proto_ctx->dest_port.data, proto_ctx->dest_port.len);
+            if(proxy_port == NJT_ERROR){
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "ftp proxy get proto dest_port transfer error in cleanup, just use socket addrinfo");
+                
+                proxy_port = njt_inet_get_port(s->connection->local_sockaddr);
+            }else{
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    "ftp proxy get port from prtoto in replace upstream");
+            }
+        }
+    }else{
+        proxy_port = njt_inet_get_port(s->connection->local_sockaddr);
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                "ftp proxy could not get protoinfo, just use socket addrinfo");
+    }
 
     ctx = fscf->shm_zone->data;
     njt_shmtx_lock(&ctx->shpool->mutex);
