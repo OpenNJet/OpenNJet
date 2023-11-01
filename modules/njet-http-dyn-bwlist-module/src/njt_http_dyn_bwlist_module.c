@@ -11,6 +11,8 @@
 #include "njt_http_dyn_bwlist_parser.h"
 
 extern njt_module_t njt_http_access_module;
+extern void* njt_conf_root_ptr;
+extern void* njt_conf_cur_ptr;
 
 njt_str_t dyn_bwlist_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 

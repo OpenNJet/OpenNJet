@@ -271,7 +271,7 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
         }
 
         // add by lcm
-        if (njt_process == NJT_PROCESS_SINGLE) { // 需要修改
+        if (njt_process == NJT_PROCESS_SINGLE || 1) { // 需要修改, 先所有进程都作一下更新
             if (njt_conf_element_handler(cf->pool, cf, rc) != NJT_OK) {
                 printf("error occured \n");
             }
@@ -1444,10 +1444,10 @@ njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
     njt_conf_block_t   *block;
     njt_conf_cmd_t     *ccmd; 
 
-    cur = (njt_conf_element_t*)njt_conf_cur;
+    cur = (njt_conf_element_t*)njt_conf_cur_ptr;
     // // all conditions will be checked in njt_conf_handler() 
     if (rc == NJT_CONF_BLOCK_DONE) {
-        njt_conf_cur = cur->parent;
+        njt_conf_cur_ptr = cur->parent;
         return NJT_OK;
     }
 
@@ -1576,7 +1576,7 @@ njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
         }
         njt_memcpy(bpos, new_block, sizeof(njt_conf_element_t));
         bpos->parent = cur;
-        njt_conf_cur = bpos;
+        njt_conf_cur_ptr = bpos;
         
         return NJT_OK;
     }

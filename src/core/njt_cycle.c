@@ -313,10 +313,11 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         return NULL;
     }
 
-    //----------------------------------------------------------
+    //by lcm ---------------------------------------------------
     njt_conf_element_t conf_root;
-    njt_memzero(&conf_root, sizeof(njt_conf_element_t)); // by lcm
-    njt_conf_cur = &conf_root; // by lcm
+    njt_memzero(&conf_root, sizeof(njt_conf_element_t));
+    njt_conf_cur_ptr = &conf_root;
+    njt_conf_root_ptr = &conf_root;
     //----------------------------------------------------------
 
 
