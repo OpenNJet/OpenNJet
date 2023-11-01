@@ -888,7 +888,7 @@ njt_stream_ftp_data_proxy_cleanup(njt_stream_session_t *s)
                 
                 proxy_port = njt_inet_get_port(s->connection->local_sockaddr);
             }else{
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                     "ftp proxy get port from prtoto in replace upstream");
             }
         }
