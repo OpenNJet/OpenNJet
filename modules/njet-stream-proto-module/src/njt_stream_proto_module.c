@@ -331,18 +331,23 @@ static njt_int_t njt_stream_preread_proto_variable(njt_stream_session_t *s,  //
 	njt_stream_proto_ctx_t  *ctx;
 	njt_connection_t            *c;
 	njt_str_t       none = njt_string("none");
-
+	njt_stream_proto_srv_conf_t  *sscf =  njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
+    	njt_str_null(&version);
 	c = s->connection;
 	ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
 
 	if (ctx == NULL) {
+
+		if (c->type == SOCK_DGRAM && sscf != NULL && sscf->proto_enabled) {
+		   njt_str_set(&version, "udp");
+		   goto end;		  
+		}
 		v->not_found = 1;
 		return NJT_OK;
 	}
 
     /* SSL_get_version() format */
 
-    njt_str_null(&version);
 
     switch (ctx->version[0]) {
     case 0:
@@ -388,7 +393,7 @@ static njt_int_t njt_stream_preread_proto_variable(njt_stream_session_t *s,  //
 	   njt_str_set(&version, "");
 	}
 
-	
+end:
     v->valid = 1;
     v->no_cacheable = 0;
     v->not_found = 0;

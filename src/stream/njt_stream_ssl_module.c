@@ -490,9 +490,12 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
 			if(rc == NJT_AGAIN) {
 				return NJT_AGAIN;
 			} else if( rc == NJT_DECLINED) {
+				c->buffer = NULL;
 				ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
 				if (ctx != NULL && (ctx->port_mode.len == none.len && njt_strncmp(ctx->port_mode.data,none.data,none.len) == 0)) {
-                                   return NJT_OK;
+				   if(!s->ssl) {
+                                  	 return NJT_OK;
+				  }
                                 }
 				else if (ctx != NULL && ctx->ssl == 0) {
 					if((ctx->port_mode.len == disable.len && njt_strncmp(ctx->port_mode.data,disable.data,disable.len) == 0) ||
@@ -513,8 +516,9 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
                                                 return NJT_ERROR;
                                         }
 				}
+			} else {
+				c->buffer = NULL;
 			}
-			c->buffer = NULL;
 		}
 	}
 	
