@@ -272,7 +272,7 @@ njt_stream_lua_ssl_cert_handler(njt_ssl_conn_t *ssl_conn, void *data)
     njt_set_connection_log(fc, cscf->error_log);
 
 #else
-#   error "stream ssl_cert_by_lua only supports nginx >= 1.13.0"
+#   error "stream ssl_cert_by_lua only supports njet >= 1.13.0"
 #endif
 
     if (cctx == NULL) {
@@ -508,7 +508,7 @@ njt_stream_lua_ssl_cert_by_chunk(lua_State *L, njt_stream_lua_request_t *r)
     lua_setfenv(co, -2);
 #endif
 
-    /* save nginx request in coroutine globals table */
+    /* save njet request in coroutine globals table */
     njt_stream_lua_set_req(co, r);
 
     ctx->cur_co_ctx = &ctx->entry_co_ctx;

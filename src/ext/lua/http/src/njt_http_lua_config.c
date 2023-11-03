@@ -43,7 +43,7 @@ njt_http_lua_inject_config_api(lua_State *L)
     lua_setfield(L, -2, "njt_lua_version");
 
     lua_pushcfunction(L, njt_http_lua_config_configure);
-    lua_setfield(L, -2, "nginx_configure");
+    lua_setfield(L, -2, "njet_configure");
 
     lua_pushliteral(L, "http");
     lua_setfield(L, -2, "subsystem");
