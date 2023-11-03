@@ -306,8 +306,11 @@ void njt_conf_get_json_length(njt_conf_element_t *root,
     size_t *length, njt_uint_t is_root);
 void njt_conf_get_json_str(njt_conf_element_t *root,
     njt_str_t *out, njt_uint_t is_root);
-njt_conf_element_t* njt_conf_get_server_block(njt_pool_t* pool,
+njt_conf_element_t* njt_conf_get_server_block(
     njt_conf_element_t *cur, njt_str_t *listen, njt_str_t *server_name);
+njt_conf_element_t * njt_conf_get_http_block(njt_pool_t *pool);
+njt_conf_element_t * njt_conf_get_simple_location_block(njt_pool_t *pool,
+    njt_conf_element_t *cur, njt_str_t *name);
 njt_conf_element_t* njt_conf_get_block( njt_conf_element_t *cur, 
     njt_str_t *key, njt_array_t *sub_names);
 njt_conf_cmd_t* njt_conf_get_key_conf(njt_conf_element_t *block, njt_str_t *key);

@@ -458,6 +458,7 @@ njt_conf_cmd_set_args(njt_pool_t *pool, njt_conf_t *cf, njt_conf_cmd_t *ccmd){
     return NJT_OK;
 }
 
+// 如果数据已经转义过了，这里是不是要加个标志
 static njt_int_t
 njt_conf_cmd_set_value(njt_pool_t *pool, njt_conf_cmd_t *cmd, njt_array_t *cf){
     njt_uint_t      i, j;
@@ -485,7 +486,7 @@ njt_conf_cmd_set_value(njt_pool_t *pool, njt_conf_cmd_t *cmd, njt_array_t *cf){
     }
 
 
-    for (i = 1; i < cf->nelts; i++) {
+    for (i = 1; i < cf->nelts; i++) { 
         value = njt_array_push(pos);
         if (value == NULL) {
             return NJT_ERROR;
@@ -636,6 +637,52 @@ void njt_conf_get_json_length(njt_conf_element_t *root, size_t *length, njt_uint
 }
 
 // 如果能保证sub_name的名称是唯一的，也可以进行递归查找
+njt_conf_element_t*
+njt_conf_get_http_block(njt_pool_t *dyn_pool) {
+    njt_str_t           http;
+    njt_conf_element_t *ret;
+
+    http.data = njt_palloc(dyn_pool, 4);
+    if (http.data == NULL) {
+        return NULL;
+    }
+
+    njt_str_set(&http, "http");
+    ret = njt_conf_get_block(njt_conf_root_ptr, &http, NULL);
+    njt_pfree(dyn_pool, http.data);
+
+    return ret;
+}
+
+njt_conf_element_t*
+njt_conf_get_simple_location_block(njt_pool_t *dyn_pool, njt_conf_element_t *cur, njt_str_t *name) {
+    njt_str_t           loc, *pos;
+    njt_array_t        *sub_name;
+    njt_conf_element_t *ret;
+
+    loc.data = njt_palloc(dyn_pool, 8);
+    if (loc.data == NULL) {
+        return NULL;
+    }
+
+    sub_name = njt_array_create(dyn_pool, 1, sizeof(njt_str_t));
+    if (sub_name == NULL) {
+        njt_pfree(dyn_pool, loc.data);
+        return NULL;
+    }
+
+    pos = njt_array_push(sub_name);
+    njt_memcpy(pos, name, sizeof(njt_str_t));
+
+    njt_str_set(&loc, "location");
+    ret = njt_conf_get_block(njt_conf_root_ptr, &loc, sub_name);
+    njt_array_destroy(sub_name);
+    njt_pfree(dyn_pool, loc.data);
+
+
+    return ret;
+}
+
 njt_conf_element_t* 
 njt_conf_get_block( njt_conf_element_t *cur, 
     njt_str_t *key, njt_array_t *sub_names)
@@ -718,7 +765,7 @@ njt_conf_get_block( njt_conf_element_t *cur,
 };
 
 njt_conf_element_t* 
-njt_conf_get_server_block(njt_pool_t* pool, njt_conf_element_t *cur,
+njt_conf_get_server_block(njt_conf_element_t *cur,
     njt_str_t *listen, njt_str_t *server_name)
 {
     u_char              *p, *port, *listen_port;
@@ -826,7 +873,10 @@ njt_conf_get_server_block(njt_pool_t* pool, njt_conf_element_t *cur,
                                         localhost = 0;
                                         listen_localhost = 0;
                                         // 80 表示地址是0.0.0.0
-                                        if ( tmp_port != NJT_ERROR || (arg->len >= 7 && njt_memcmp(arg->data, "0.0.0.0", 7)) == 0) {
+                                        if ( tmp_port != NJT_ERROR || tmp_listen_port != NJT_ERROR 
+                                             || (arg->len >= 7 && njt_memcmp(arg->data, "0.0.0.0", 7)) == 0 
+                                             || (listen->len >= 7 && njt_memcmp(listen->data, "0.0.0.0", 7)) == 0) 
+                                        {
                                             addr_match = 1;
                                         } else { // 127.0.0.1 == localhost
                                             if (arg->len >= 9 && (njt_memcmp(p, "localhost", 9) == 0 

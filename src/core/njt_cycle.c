@@ -332,97 +332,97 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     //----------------------------------------------------------
     // 输出到字符串
-    size_t             length; // by lcm
-    length = 0;
-    njt_conf_get_json_length(&conf_root, &length, 1); // by lcm
-    njt_conf_json.data = njt_palloc(conf.cycle->pool, length + 4096);
-    if (njt_conf_json.data) {
-        njt_conf_get_json_str(&conf_root, &njt_conf_json, 1);
-    }
+    // size_t             length; // by lcm
+    // length = 0;
+    // njt_conf_get_json_length(&conf_root, &length, 1); // by lcm
+    // njt_conf_json.data = njt_palloc(conf.cycle->pool, length + 4096);
+    // if (njt_conf_json.data) {
+    //     njt_conf_get_json_str(&conf_root, &njt_conf_json, 1);
+    // }
 
-    printf("test test test \n");
-    printf("%s \n", (char*)njt_conf_json.data);
-    printf("%ld \n", length);
-    printf("%ld \n", njt_conf_json.len);
-    // 查找对应的block http
-    njt_str_t s_http;
-    s_http.data = njt_palloc(conf.cycle->pool, 4);
-    njt_str_set(&s_http, "http");
-    njt_conf_element_t *http;
-    http = njt_conf_get_block(&conf_root, &s_http, NULL);
-    // 查找http下面的server
-    njt_str_t s_listen;
-    s_listen.data = njt_palloc(conf.cycle->pool, 6);
-    njt_str_set(&s_listen, "443");
-    njt_str_t s_svr_name;
-    s_svr_name.data = njt_palloc(conf.cycle->pool, 9);
-    njt_str_set(&s_svr_name, "localhost");
-    njt_conf_element_t *svr;
-    svr = njt_conf_get_server_block(conf.cycle->pool, http,  &s_listen, &s_svr_name);
+    // printf("test test test \n");
+    // printf("%s \n", (char*)njt_conf_json.data);
+    // printf("%ld \n", length);
+    // printf("%ld \n", njt_conf_json.len);
+    // // 查找对应的block http
+    // njt_str_t s_http;
+    // s_http.data = njt_palloc(conf.cycle->pool, 4);
+    // njt_str_set(&s_http, "http");
+    // njt_conf_element_t *http;
+    // http = njt_conf_get_block(&conf_root, &s_http, NULL);
+    // // 查找http下面的server
+    // njt_str_t s_listen;
+    // s_listen.data = njt_palloc(conf.cycle->pool, 6);
+    // njt_str_set(&s_listen, "443");
+    // njt_str_t s_svr_name;
+    // s_svr_name.data = njt_palloc(conf.cycle->pool, 9);
+    // njt_str_set(&s_svr_name, "localhost");
+    // njt_conf_element_t *svr;
+    // svr = njt_conf_get_server_block(http,  &s_listen, &s_svr_name);
 
-    // 查找servser下面的 location, /test
-    njt_str_t s_loc;
-    s_loc.data = njt_palloc(conf.cycle->pool, 8);
-    njt_str_set(&s_loc, "location");
-    njt_str_t s_test;
-    s_test.data = njt_palloc(conf.cycle->pool, 5);
-    njt_str_set(&s_test, "/test");
-    njt_array_t *sub_names = njt_array_create(conf.cycle->pool, 1, sizeof(njt_str_t));
-    void *p = njt_array_push(sub_names);
-    njt_memcpy(p, &s_test, sizeof(njt_str_t));
-    njt_conf_element_t *loc;
-    loc = njt_conf_get_block(svr, &s_loc, sub_names);
+    // // 查找servser下面的 location, /test
+    // njt_str_t s_loc;
+    // s_loc.data = njt_palloc(conf.cycle->pool, 8);
+    // njt_str_set(&s_loc, "location");
+    // njt_str_t s_test;
+    // s_test.data = njt_palloc(conf.cycle->pool, 5);
+    // njt_str_set(&s_test, "/test");
+    // njt_array_t *sub_names = njt_array_create(conf.cycle->pool, 1, sizeof(njt_str_t));
+    // void *p = njt_array_push(sub_names);
+    // njt_memcpy(p, &s_test, sizeof(njt_str_t));
+    // njt_conf_element_t *loc;
+    // loc = njt_conf_get_block(svr, &s_loc, sub_names);
     
-    // 读取 add-header的值
-    njt_str_t s_add_header;
-    s_add_header.data = njt_palloc(conf.cycle->pool, 10);
-    njt_str_set(&s_add_header, "add_header");
-    njt_conf_cmd_t *cmd;
-    cmd = njt_conf_get_key_conf(loc, &s_add_header);
-    printf("size of cmd: %ld\n", cmd->value->nelts); // 用debug看了值，取得是对的
+    // // 读取 add-header的值
+    // njt_str_t s_add_header;
+    // s_add_header.data = njt_palloc(conf.cycle->pool, 10);
+    // njt_str_set(&s_add_header, "add_header");
+    // njt_conf_cmd_t *cmd;
+    // cmd = njt_conf_get_key_conf(loc, &s_add_header);
+    // printf("size of cmd: %ld\n", cmd->value->nelts); // 用debug看了值，取得是对的
 
     
-    // 设置 add-header的值 追加
-    njt_array_t *cf;
-    cf = njt_array_create(conf.cycle->pool, 2, sizeof(njt_str_t));
-    p = njt_array_push(cf);
-    njt_memcpy(p, &s_add_header, sizeof(njt_str_t));
-    p = njt_array_push(cf);
-    njt_memcpy(p, &s_test, sizeof(njt_str_t));
-    njt_conf_add_cmd(conf.cycle->pool, loc, cf);
-    cmd = njt_conf_get_key_conf(loc, &s_add_header);
-    printf("size of cmd: %ld\n", cmd->value->nelts); 
+    // // 设置 add-header的值 追加
+    // njt_array_t *cf;
+    // cf = njt_array_create(conf.cycle->pool, 2, sizeof(njt_str_t));
+    // p = njt_array_push(cf);
+    // njt_memcpy(p, &s_add_header, sizeof(njt_str_t));
+    // p = njt_array_push(cf);
+    // njt_memcpy(p, &s_test, sizeof(njt_str_t));
+    // njt_conf_add_cmd(conf.cycle->pool, loc, cf);
+    // cmd = njt_conf_get_key_conf(loc, &s_add_header);
+    // printf("size of cmd: %ld\n", cmd->value->nelts); 
 
-    // 设置 add-header的值 重置
-    njt_conf_set_cmd(conf.cycle->pool, loc, cf);
-    cmd = njt_conf_get_key_conf(loc, &s_add_header);
-    printf("size of cmd: %ld\n", cmd->value->nelts); 
+    // // 设置 add-header的值 重置
+    // njt_conf_set_cmd(conf.cycle->pool, loc, cf);
+    // cmd = njt_conf_get_key_conf(loc, &s_add_header);
+    // printf("size of cmd: %ld\n", cmd->value->nelts); 
 
-    // 增加一个block location "/new_added"
-    njt_str_t s_new_added;
-    s_new_added.data = njt_palloc(conf.cycle->pool, 10);
-    njt_str_set(&s_new_added, "/new_added");
-    njt_array_t *cf1;
-    cf1 = njt_array_create(conf.cycle->pool, 2, sizeof(njt_str_t));
-    p = njt_array_push(cf1);
-    njt_memcpy(p, &s_new_added, sizeof(njt_str_t));
-    njt_conf_element_t *new_block;
-    new_block = njt_conf_create_block(conf.cycle->pool, cf1);
-    njt_conf_set_cmd(conf.cycle->pool, new_block, cf);
+    // // 增加一个block location "/new_added"
+    // njt_str_t s_new_added;
+    // s_new_added.data = njt_palloc(conf.cycle->pool, 10);
+    // njt_str_set(&s_new_added, "/new_added");
+    // njt_array_t *cf1;
+    // cf1 = njt_array_create(conf.cycle->pool, 2, sizeof(njt_str_t));
+    // p = njt_array_push(cf1);
+    // njt_memcpy(p, &s_new_added, sizeof(njt_str_t));
+    // njt_conf_element_t *new_block;
+    // new_block = njt_conf_create_block(conf.cycle->pool, cf1);
+    // njt_conf_set_cmd(conf.cycle->pool, new_block, cf);
 
-    njt_conf_add_block(conf.cycle->pool, svr, new_block, &s_loc);
+    // njt_conf_add_block(conf.cycle->pool, svr, new_block, &s_loc);
 
-    // 删除一个location /test
-    loc = njt_conf_get_block(svr, &s_loc, sub_names);
-    njt_conf_delete_block(conf.cycle->pool, loc);
+    // // 删除一个location /test
+    // loc = njt_conf_get_block(svr, &s_loc, sub_names);
+    // njt_conf_delete_block(conf.cycle->pool, loc);
 
 
-    // 输出到文件 
-    njt_str_t temp;
-    temp.data = njt_palloc(conf.cycle->pool, 8);
-    njt_str_set(&temp, "aa.json");
-    njt_conf_save_to_file(conf.cycle->pool, conf.log, svr, &temp);
-    printf("test test test \n");
+    // // 输出到文件 
+    // njt_str_t temp;
+    // temp.data = njt_palloc(conf.cycle->pool, 8);
+    // njt_str_set(&temp, "aa.json");
+    // njt_conf_save_to_file(conf.cycle->pool, conf.log, svr, &temp);
+    // printf("test test test \n");
 
     //----------------------------------------------------------
 
