@@ -58,12 +58,12 @@ typedef struct njt_http_location_main_conf_s {
 
 
 static  njt_str_t njt_invalid_dyn_location_body[] = {
-	njt_string("zone"),
-	njt_string("proxy_pass"),
+	njt_string("zone "),
+	njt_string("proxy_pass "),
 	njt_null_string
 };
 static  njt_str_t njt_invalid_dyn_proxy_pass[] = {
-	njt_string("unix"),
+	njt_string("unix "),
 	njt_null_string
 };
 
