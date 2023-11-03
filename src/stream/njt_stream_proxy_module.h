@@ -61,6 +61,10 @@ typedef struct {
     njt_flag_t                       ssl_ntls;
 #endif
 
+#if (NJT_HAVE_SET_ALPN)
+    njt_str_t                        ssl_alpn;
+#endif
+
 #endif
 
     njt_stream_upstream_srv_conf_t  *upstream;

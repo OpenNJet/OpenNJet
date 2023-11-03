@@ -346,7 +346,14 @@ static njt_command_t  njt_stream_proxy_commands[] = {
       offsetof(njt_stream_proxy_srv_conf_t, ssl_ntls),
       NULL },
 #endif
-
+#if (NJT_HAVE_SET_ALPN)
+     { njt_string("proxy_ssl_alpn"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_proxy_srv_conf_t, ssl_alpn),
+      NULL },
+#endif
 #endif
 
       njt_null_command
@@ -2304,6 +2311,9 @@ njt_stream_proxy_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_conf_merge_value(conf->ssl_ntls, prev->ssl_ntls, 0);
 #endif
 
+#if (NJT_HAVE_SET_ALPN)
+    njt_conf_merge_str_value(conf->ssl_alpn, prev->ssl_alpn, "");
+#endif
     if (conf->ssl_enable && njt_stream_proxy_set_ssl(cf, conf) != NJT_OK) {
         return NJT_CONF_ERROR;
     }
@@ -2507,6 +2517,16 @@ njt_stream_proxy_set_ssl(njt_conf_t *cf, njt_stream_proxy_srv_conf_t *pscf)
     {
         return NJT_ERROR;
     }
+#if (NJT_HAVE_SET_ALPN)
+     if (SSL_CTX_set_alpn_protos(pscf->ssl->ctx,
+                                pscf->ssl_alpn.data, pscf->ssl_alpn.len)
+        != 0)
+    {
+        njt_ssl_error(NJT_LOG_EMERG, cf->log, 0,
+                      "SSL_CTX_set_alpn_protos() failed");
+        return NJT_ERROR;
+    }
+#endif
 
     return NJT_OK;
 }
