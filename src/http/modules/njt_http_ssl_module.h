@@ -14,7 +14,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 
-
+#define  NJT_HAVE_SET_ALPN  1
 typedef struct {
     njt_flag_t                      enable;
 
@@ -74,6 +74,9 @@ typedef struct {
 
 #if (NJT_HAVE_NTLS)
     njt_flag_t                      ntls;
+#endif
+#if (NJT_HAVE_SET_ALPN)
+    njt_str_t                      alpn;
 #endif
 } njt_http_ssl_srv_conf_t;
 

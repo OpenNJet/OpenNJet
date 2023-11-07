@@ -5,6 +5,8 @@
 #include <njt_core.h>
 #include <njt_stream.h>
 
+#define NJT_HAVE_SET_ALPN  1
+
 typedef struct {
     njt_addr_t                      *addr;
     njt_stream_complex_value_t      *value;
@@ -62,7 +64,7 @@ typedef struct {
 #endif
 
 #if (NJT_HAVE_SET_ALPN)
-    njt_str_t                        ssl_alpn;
+    njt_str_t                        proxy_ssl_alpn;
 #endif
 
 #endif
