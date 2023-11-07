@@ -352,6 +352,10 @@ njt_http_vhost_traffic_status_dump_restore(njt_event_t *ev)
         njt_http_vhost_traffic_status_file_close(&file);
         return;
     }
+            njt_log_error(NJT_LOG_ERR, ev->log, 0,
+                        "========== restore njt_ncpu:%d",
+                        njt_ncpu);
+
 
     len = (ctx->shm_name.len >= NJT_HTTP_VHOST_TRAFFIC_STATUS_DUMP_HEADER_NAME_SIZE)
           ? NJT_HTTP_VHOST_TRAFFIC_STATUS_DUMP_HEADER_NAME_SIZE - 1
