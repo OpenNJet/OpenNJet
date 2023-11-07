@@ -2123,11 +2123,6 @@ njt_stream_proxy_finalize(njt_stream_session_t *s, njt_uint_t rc)
         u->peer.connection = NULL;
     }
 
-#if (NJT_STREAM_FTP_PROXY)
-    //need free all data port map info of current session
-    njt_stream_ftp_proxy_cleanup(s);
-#endif
-
 
 noupstream:
 

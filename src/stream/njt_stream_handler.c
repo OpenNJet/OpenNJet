@@ -10,7 +10,9 @@
 #include <njt_core.h>
 #include <njt_event.h>
 #include <njt_stream.h>
-
+#if (NJT_STREAM_FTP_PROXY)
+#include <njt_stream_ftp_proxy_module.h>
+#endif
 
 static void njt_stream_log_session(njt_stream_session_t *s);
 static void njt_stream_close_connection(njt_connection_t *c);
@@ -351,6 +353,11 @@ njt_stream_close_connection(njt_connection_t *c)
 
 #if (NJT_STAT_STUB)
     (void) njt_atomic_fetch_add(njt_stat_active, -1);
+#endif
+
+#if (NJT_STREAM_FTP_PROXY)
+    //need free all data port map info of current session
+    njt_stream_ftp_proxy_cleanup((njt_stream_session_t *)c->data);
 #endif
 
     pool = c->pool;
