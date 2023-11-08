@@ -2749,7 +2749,6 @@ njt_http_terminate_request(njt_http_request_t *r, njt_int_t rc)
     njt_http_cleanup_t    *cln;
     njt_http_request_t    *mr;
     njt_http_ephemeral_t  *e;
-
     mr = r->main;
 
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -3836,20 +3835,18 @@ njt_http_free_request(njt_http_request_t *r, njt_int_t rc)
      * Setting r->pool to NULL will increase probability to catch double close
      * of request since the request object is allocated from its own pool.
      */
-    // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
-    clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
-#endif
-    //end
+
     pool = r->pool;
     r->pool = NULL;
 
     njt_destroy_pool(pool);
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
+     /* --clcf->ref_count; 
     if(clcf->disable && clcf->ref_count == 0 && clcf->pool != NULL ){
+        njt_http_location_delete_dyn_var(clcf);
         njt_destroy_pool(clcf->pool);
-    }
+    }*/
 #endif
     //end
 }

@@ -47,12 +47,6 @@ struct njt_http_variable_s {
     njt_uint_t                    index;
 	njt_uint_t                    ref_count;
 };
-#if (NJT_HTTP_DYNAMIC_LOC)
-typedef struct {
-    njt_http_variable_t           *v;
-    njt_int_t                     ref_count;
-} njt_http_dyn_variable_t;
-#endif
 #define njt_http_null_variable  { njt_null_string, NULL, NULL, 0, 0, 0, NJT_VAR_INIT_REF_COUNT}
 
 
