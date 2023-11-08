@@ -107,10 +107,6 @@ njt_http_vhost_traffic_status_map_node(njt_slab_pool_t *shpool, njt_http_vhost_t
 
     vtsn -= (njt_ncpu - njt_cpu_id);
 
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                        "========== map node, njt_ncpu:%d njt_cpu_id:%d",
-                        njt_ncpu, njt_cpu_id);
-
     return vtsn;
 }
 
@@ -204,10 +200,6 @@ njt_http_vhost_traffic_status_shm_add_node(njt_http_request_t *r,
             vtsnd->len = (u_short) key->len;
             njt_http_vhost_traffic_status_nodes_init(r, vtsnd);
 
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                        "========== not found, njt_ncpu:%d njt_cpu_id:%d",
-                        njt_ncpu, njt_cpu_id);
-
             vtsnd->stat_upstream.type = type;
             njt_memcpy(vtsnd->data, key->data, key->len);
 
@@ -220,24 +212,18 @@ njt_http_vhost_traffic_status_shm_add_node(njt_http_request_t *r,
                 njt_http_vhost_traffic_status_node_init_update(r, vtsn);
             }
         } else {
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                        "========== found, njt_ncpu:%d njt_cpu_id:%d",
-                        njt_ncpu, njt_cpu_id);
             init = NJT_HTTP_VHOST_TRAFFIC_STATUS_NODE_FIND;
             vtsnd = njt_http_vhost_traffic_status_get_node(node);
             njt_shrwlock_wr2rdlock(&shpool->rwlock);
-            vtsn = njt_http_vhost_traffic_status_map_node(shpool, vtsnd);
+            vtsn = njt_http_vhost_traffic_status_map_node(shpool, vtsnd);          
             njt_rwlock_wlock(&vtsn->lock);
             if (!upto) {
                 njt_http_vhost_traffic_status_node_set(r, vtsn);
             }
         }
     } else {
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                        "========== found2, njt_ncpu:%d njt_cpu_id:%d",
-                        njt_ncpu, njt_cpu_id);
         init = NJT_HTTP_VHOST_TRAFFIC_STATUS_NODE_FIND;
-        vtsnd = njt_http_vhost_traffic_status_get_node(node);
+        vtsnd = njt_http_vhost_traffic_status_get_node(node);        
         vtsn = njt_http_vhost_traffic_status_map_node(shpool, vtsnd);
         njt_rwlock_wlock(&vtsn->lock);
         if (!upto) {
