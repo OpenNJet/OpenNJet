@@ -1024,6 +1024,10 @@ njt_http_vtsc_init_worker(njt_cycle_t *cycle)
         return NJT_OK;
     }
 
+    if (njt_worker != 0)  {
+        return NJT_OK;
+    }
+
     /* dumper */
     dump_event = &ctx->dump_event;
     dump_event->handler = njt_http_vhost_traffic_status_dump_handler;
