@@ -115,17 +115,17 @@ int njt_quic_select_socket_by_dcid(struct sk_reuseport_md *ctx)
 
     switch (rc) {
     case 0:
-        debugmsg("nginx quic socket selected by key 0x%llx", key);
+        debugmsg("njet quic socket selected by key 0x%llx", key);
         return SK_PASS;
 
     /* kernel returns positive error numbers, errno.h defines positive */
     case -ENOENT:
-        debugmsg("nginx quic default route for key 0x%llx", key);
+        debugmsg("njet quic default route for key 0x%llx", key);
         /* let the default reuseport logic decide which socket to choose */
         return SK_PASS;
 
     default:
-        debugmsg("nginx quic bpf_sk_select_reuseport err: %d key 0x%llx",
+        debugmsg("njet quic bpf_sk_select_reuseport err: %d key 0x%llx",
                  rc, key);
         goto failed;
     }
