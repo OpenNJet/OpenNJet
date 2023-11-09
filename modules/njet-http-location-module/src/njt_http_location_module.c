@@ -557,7 +557,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     }
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
 	if(clcf->old_locations) {
-		add_escape_val = add_escape(location_info->pool,location_name);
+	    add_escape_val = add_escape(location_info->pool,location_name);
 	    location_name_key = njt_http_location_get_full_name(location_info->pool,add_escape_val);
 	    lq = njt_http_find_location(location_name_key, clcf->old_locations);
 	    if (lq != NULL) {  
