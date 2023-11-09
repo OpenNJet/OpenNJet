@@ -1276,12 +1276,12 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 				remain = data + buffer_len - p;
 			}
 			if(loc->location_body.len != 0 && loc->location_body.data != NULL){
-				add_escape_val = add_escape(location_info->pool,loc->location_body);
+				add_escape_val = loc->location_body;//add_escape(location_info->pool,loc->location_body);
 				p = njt_snprintf(p, remain, " %V; \n",&add_escape_val);
 				remain = data + buffer_len - p;
 			}
 			if(loc->proxy_pass.len != 0 && loc->proxy_pass.data != NULL){
-				add_escape_val = add_escape(location_info->pool,loc->proxy_pass);
+				add_escape_val = loc->proxy_pass; //add_escape(location_info->pool,loc->proxy_pass);
 				p = njt_snprintf(p, remain, " proxy_pass %V;\n",&add_escape_val);
 				remain = data + buffer_len - p;
 			}
