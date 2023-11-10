@@ -21,6 +21,8 @@ static void *njt_stream_proxy_protocol_tlv_create_srv_conf(njt_conf_t *cf);
 static char *njt_stream_proxy_protocol_set_tlv(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static char *
 njt_stream_proxy_protocol_tlv_merge_srv_conf(njt_conf_t *cf, void *parent, void *child);
+static char *proxy_session_protocol_var(njt_conf_t *cf, njt_command_t *cmd,
+                                   void *conf);
 
 static njt_command_t  njt_stream_proxy_protocol_tlv_commands[] = {
 
@@ -35,6 +37,12 @@ static njt_command_t  njt_stream_proxy_protocol_tlv_commands[] = {
       njt_conf_set_flag_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(njt_stream_proxy_protocol_tlv_srv_conf_t, enable),
+      NULL },
+       { njt_string("proxy_session_protocol_enable"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
+      proxy_session_protocol_var,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      0,
       NULL },
 
       njt_null_command
@@ -165,6 +173,7 @@ njt_stream_proxy_protocol_tlv_create_srv_conf(njt_conf_t *cf)
         return NULL;
     }
     conf->enable = NJT_CONF_UNSET;
+    conf->var_index = NJT_CONF_UNSET_UINT;
     /*
      * set by njt_pcalloc():
      *
@@ -243,6 +252,40 @@ njt_stream_proxy_protocol_set_tlv(njt_conf_t *cf, njt_command_t *cmd, void *conf
     if (njt_stream_compile_complex_value(&ccv) != NJT_OK) {
         return NJT_CONF_ERROR;
     }
+
+    return NJT_CONF_OK;
+}
+
+static char *proxy_session_protocol_var(njt_conf_t *cf, njt_command_t *cmd,
+                                   void *conf) {
+    njt_str_t *value;
+    njt_str_t variable;
+    njt_stream_proxy_protocol_tlv_srv_conf_t *scf = conf;
+
+    value = cf->args->elts;
+
+
+     if ((u_char *)njt_strstr(value[1].data, "$") == value[1].data) {
+         if (value[1].len <= sizeof("$") - 1) {
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "a variable must be indicated under "
+                                   "\"name\" parameter.");
+                return NJT_CONF_ERROR;
+            }
+            /* get the name of the variable */
+            variable.len = value[1].len - sizeof("$") + 1;
+            variable.data = value[1].data + sizeof("$") - 1;
+            scf->var_index  = njt_stream_get_variable_index(cf, &variable);
+
+     } else {
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "unknown parameter \"%V\"",
+                           &value[0]);
+        return NJT_CONF_ERROR;
+     }
+
+ //njt_stream_variable_value_t  *value;
+
+    //value = njt_stream_get_indexed_variable(s, data);
 
     return NJT_CONF_OK;
 }

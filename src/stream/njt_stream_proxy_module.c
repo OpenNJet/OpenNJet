@@ -693,6 +693,20 @@ njt_stream_proxy_connect(njt_stream_session_t *s)
     njt_connection_t             *c, *pc;
     njt_stream_upstream_t        *u;
     njt_stream_proxy_srv_conf_t  *pscf;
+    njt_flag_t                     flag;
+#if (NJT_STREAM_PROTOCOL_V2)
+    njt_stream_variable_value_t  *value;
+    njt_stream_proxy_protocol_tlv_srv_conf_t *scf = njt_stream_get_module_srv_conf(s,njt_stream_proxy_protocol_tlv_module);
+    flag = NJT_CONF_UNSET;
+    if(scf != NULL &&  scf->var_index != NJT_CONF_UNSET_UINT) {
+        value = njt_stream_get_indexed_variable(s, scf->var_index);
+        if (value != NULL &&  value->not_found == 0 && value->len == 1 && value->data[0] == '1') {
+           flag = 1; 
+        } else {
+            flag = 0;
+        }
+    }
+#endif
 
     c = s->connection;
 
@@ -704,6 +718,9 @@ njt_stream_proxy_connect(njt_stream_session_t *s)
 
     u->connected = 0;
     u->proxy_protocol = pscf->proxy_protocol;
+#if (NJT_STREAM_PROTOCOL_V2)
+    u->proxy_protocol = (flag != NJT_CONF_UNSET ? flag:pscf->proxy_protocol);
+#endif
 
     if (u->state) {
         u->state->response_time = njt_current_msec - u->start_time;
