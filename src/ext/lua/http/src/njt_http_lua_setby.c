@@ -48,7 +48,7 @@ njt_http_lua_set_by_chunk(lua_State *L, njt_http_request_t *r, njt_str_t *val,
     lua_atpanic(L, njt_http_lua_atpanic);
 
     NJT_LUA_EXCEPTION_TRY {
-        dd("initialize nginx context in Lua VM, code chunk at "
+        dd("initialize njet context in Lua VM, code chunk at "
            "stack top    sp = 1");
         njt_http_lua_set_by_lua_env(L, r, nargs, args);
 
@@ -58,7 +58,7 @@ njt_http_lua_set_by_chunk(lua_State *L, njt_http_request_t *r, njt_str_t *val,
         }
 
 #if (NJT_PCRE)
-        /* XXX: work-around to nginx regex subsystem */
+        /* XXX: work-around to njet regex subsystem */
         old_pool = njt_http_lua_pcre_malloc_init(r->pool);
 #endif
 
@@ -74,7 +74,7 @@ njt_http_lua_set_by_chunk(lua_State *L, njt_http_request_t *r, njt_str_t *val,
         lua_remove(L, 1);  /* remove traceback function */
 
 #if (NJT_PCRE)
-        /* XXX: work-around to nginx regex subsystem */
+        /* XXX: work-around to njet regex subsystem */
         njt_http_lua_pcre_malloc_done(old_pool);
 #endif
 
@@ -113,7 +113,7 @@ njt_http_lua_set_by_chunk(lua_State *L, njt_http_request_t *r, njt_str_t *val,
 
     } NJT_LUA_EXCEPTION_CATCH {
 
-        dd("nginx execution restored");
+        dd("njet execution restored");
         return NJT_ERROR;
     }
 

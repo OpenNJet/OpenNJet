@@ -8,33 +8,33 @@
 #include <njt_core.h>
 #include <njet.h>
 #include <njt_event.h>
-#include <njt_json_api.h>
-#include <njt_json_util.h>
+// #include <njt_json_api.h>
+// #include <njt_json_util.h>
 #include <njt_http.h>
 #include <njt_stream.h>   /* by zhaokang */
 
 #include "njt_common_health_check.h"
 
-/**
- * 它接受一个字符串，将其解析为时间，并将结果存储在 njt_msec_t 变量中
- *
- * @param el 要解析的 json 元素
- * @param def 字段的定义。
- * @param data 指向数据结构的指针
- *
- * @return 返回值是解析的状态。
- */
-njt_int_t njt_json_parse_msec(njt_json_element *el,njt_json_define_t *def,void *data){
-    njt_int_t tmp;
-    njt_msec_t *target = data ;
-    tmp = njt_parse_time(&el->strval, 0);
-    if(tmp == NJT_ERROR){
-        return NJT_ERROR;
-    }
-    target= data;
-    *target = tmp;
-    return NJT_OK;
-}
+// /**
+//  * 它接受一个字符串，将其解析为时间，并将结果存储在 njt_msec_t 变量中
+//  *
+//  * @param el 要解析的 json 元素
+//  * @param def 字段的定义。
+//  * @param data 指向数据结构的指针
+//  *
+//  * @return 返回值是解析的状态。
+//  */
+// njt_int_t njt_json_parse_msec(njt_json_element *el, void *data){
+//     njt_int_t tmp;
+//     njt_msec_t *target = data ;
+//     tmp = njt_parse_time(&el->strval, 0);
+//     if(tmp == NJT_ERROR){
+//         return NJT_ERROR;
+//     }
+//     target= data;
+//     *target = tmp;
+//     return NJT_OK;
+// }
 
 
 #if (NJT_OPENSSL)
@@ -48,21 +48,11 @@ static njt_conf_bitmask_t  njt_http_ssl_protocols[] = {
         { njt_null_string, 0 }
 };
 
-njt_int_t njt_json_parse_ssl_protocols(njt_json_element *el,njt_json_define_t *def,void *data)
+njt_int_t njt_json_parse_ssl_protocols(njt_str_t value, njt_uint_t *np)
 {
-    njt_uint_t          *np, i, m;
-    njt_str_t           value;
+    njt_uint_t          i, m;
     njt_conf_bitmask_t  *mask;
 
-    njt_helper_hc_ssl_add_data_t *ssl_data = (void*) ((char *)data - def->offset);
-
-    ssl_data->ssl_protocols_str = el->strval;
-
-    if(el->type != NJT_JSON_STR){
-        return NJT_ERROR;
-    }
-    np = (njt_uint_t *)data;
-    value = el->strval;
     mask = njt_http_ssl_protocols;
 
     for (i = 0; i < value.len; i++) {

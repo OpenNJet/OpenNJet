@@ -4,7 +4,7 @@
 
 #ifndef NJET_MAIN_RPC_RESULT_UTIL_H
 #define NJET_MAIN_RPC_RESULT_UTIL_H
-#include <njt_json_api.h>
+// #include <njt_json_api.h>
 #include <njt_core.h>
 
 // 通用错误码定义
@@ -19,7 +19,8 @@ enum NJT_HTTP_RSP_ERROR
     NJT_RPC_RSP_ERROR_END,
 
     //self
-    NJT_RPC_RSP_ERR_INPUT_PARAM = 10
+    NJT_RPC_RSP_ERR_INPUT_PARAM = 10,
+    NJT_RPC_RSP_CERT_REPEATED
 };
 #define NJT_IS_PUBLIC_ERROR(rc) ((rc)>=NJT_RPC_RSP_ERROR_START && rc<NJT_RPC_RSP_ERROR_END)
 struct njt_rpc_result_s{

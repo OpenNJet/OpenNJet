@@ -453,18 +453,14 @@ njt_stream_preread_phase(njt_stream_session_t *s,
     }
 
     if (rc == NJT_DECLINED) {
-        return NJT_AGAIN;
+        return NJT_DECLINED;
     }
 
     if (rc == NJT_DONE) {
         return NJT_OK;
     }
 
-    if (rc == NJT_ERROR) {
-        rc = NJT_STREAM_INTERNAL_SERVER_ERROR;
-    }
-
-    return NJT_OK;
+    return NJT_DECLINED;
 }
 
 
@@ -479,38 +475,49 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
 
     njt_str_t  strict = njt_string("STRICT");
     njt_str_t  disable = njt_string("DISABLE");
-    njt_str_t  both = njt_string("BOTH");
-	
+    njt_str_t  both = njt_string("PERMISSIVE");
+    njt_str_t  none = njt_string("none");	
 	njt_stream_proto_ctx_t *ctx;
 	njt_stream_proto_srv_conf_t  *cf;
 
 	c = s->connection;
 
 	cf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
-	if(cf != NULL && cf->enabled) {
+	if(cf != NULL && (cf->enabled || cf->proto_enabled || (cf->proto_ports != NULL && cf->proto_ports->nelts != 0))) {
 		ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
-		if(ctx == NULL) {
+		if(ctx == NULL || ctx->complete == 0) {
 			rc = njt_stream_preread_phase(s,njt_stream_handler);
 			if(rc == NJT_AGAIN) {
 				return NJT_AGAIN;
-			} else if( rc == NJT_OK) {
+			} else if( rc == NJT_DECLINED) {
 				c->buffer = NULL;
 				ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
-				if (ctx != NULL && ctx->ssl == 0) {
+				if (ctx != NULL && (ctx->port_mode.len == none.len && njt_strncmp(ctx->port_mode.data,none.data,none.len) == 0)) {
+				   if(!s->ssl) {
+                                  	 return NJT_OK;
+				  }
+                                }
+				else if (ctx != NULL && ctx->ssl == 0) {
 					if((ctx->port_mode.len == disable.len && njt_strncmp(ctx->port_mode.data,disable.data,disable.len) == 0) ||
 					 (ctx->port_mode.len == both.len && njt_strncmp(ctx->port_mode.data,both.data,both.len) == 0)) {
+					        njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "sidecar: not ssl port_mode %V,ok!",&ctx->port_mode);
 						return NJT_OK;
 					} else {
+					        njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "sidecar: not ssl port_mode %V,reject!",&ctx->port_mode);
 						return NJT_ERROR;
 					}
 				} else if (ctx != NULL){
 					if((ctx->port_mode.len == strict.len && njt_strncmp(ctx->port_mode.data,strict.data,strict.len) == 0) ||
                                          (ctx->port_mode.len == both.len && njt_strncmp(ctx->port_mode.data,both.data,both.len) == 0)) {
-                                                return NJT_OK;
+                                                //return NJT_OK;
+					        njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "sidecar:ssl port_mode %V,ok!",&ctx->port_mode);
                                         } else {
+					        njt_log_debug1(NJT_LOG_DEBUG_STREAM, c->log, 0, "sidecar: ssl port_mode %V,reject!",&ctx->port_mode);
                                                 return NJT_ERROR;
                                         }
 				}
+			} else {
+				c->buffer = NULL;
 			}
 		}
 	}

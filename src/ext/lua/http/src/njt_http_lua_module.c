@@ -1000,7 +1000,7 @@ njt_http_lua_create_main_conf(njt_conf_t *cf)
 
     lmcf->worker_thread_vm_pool_size = NJT_CONF_UNSET;
 
-    dd("nginx Lua module main config structure initialized!");
+    dd("njet Lua module main config structure initialized!");
 
     return lmcf;
 }

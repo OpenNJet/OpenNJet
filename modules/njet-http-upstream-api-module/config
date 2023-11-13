@@ -5,6 +5,10 @@ njt_module_deps=" \
 "
 njt_module_srcs=" \
   $njt_addon_dir/src/njt_http_upstream_api_module.c \
+  $njt_addon_dir/src/njt_http_upstream_api_parser.c \
+  $njt_addon_dir/src/njt_http_upstream_api_server_list_parser.c \
+  $njt_addon_dir/src/njt_http_upstream_api_error_msg.c \
+  $njt_addon_dir/src/njt_http_upstream_list_api_parser.c \
 "
 njt_module_incs=""
 njt_module_libs=""

@@ -30,7 +30,7 @@ typedef struct
     njt_str_t conf_file;
     njt_uint_t off;
     njt_msec_t rpc_timeout;
-    njt_flag_t kv_api_enabled;
+    njt_uint_t kv_api_enabled;
 } njt_http_sendmsg_conf_t;
 
 typedef struct
@@ -56,6 +56,7 @@ static void njt_http_sendmsg_iot_register_outside_reader(njt_event_handler_pt h,
 static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle);
 static void sendmsg_exit_worker(njt_cycle_t *cycle);
 static void *njt_http_sendmsg_create_conf(njt_conf_t *cf);
+static char *njt_http_sendmsg_merge_loc_conf(njt_conf_t *cf, void *parent, void *child);
 static char *njt_dyn_sendmsg_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static char *njt_dyn_sendmsg_rpc_timeout_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static njt_int_t njt_http_sendmsg_init(njt_conf_t *cf);
@@ -80,7 +81,7 @@ static njt_http_module_t njt_http_sendmsg_module_ctx = {
     NULL, /* merge server configuration */
 
     njt_http_sendmsg_create_loc_conf, /* create location configuration */
-    NULL                              /* merge location configuration */
+    njt_http_sendmsg_merge_loc_conf   /* merge location configuration */
 };
 
 static njt_command_t njt_sendmsg_commands[] = {
@@ -318,6 +319,69 @@ static njt_int_t sendmsg_api_get_handler(njt_http_request_t *r)
     return njt_http_output_filter(r, &out);
 }
 
+static njt_int_t sendmsg_api_del_handler(njt_http_request_t *r)
+{
+    njt_buf_t *b;
+    njt_chain_t out;
+    njt_str_t key, lmdb_key;
+    njt_int_t ok = NJT_ERROR;
+
+    if (r->args.len)
+    {
+        if (njt_http_arg(r, (u_char *)"key", 3, &key) == NJT_OK)
+        {
+
+            lmdb_key.data = njt_pcalloc(r->pool, key.len + 8); // lmdb's prefix is kv_http_
+            if (lmdb_key.data == NULL)
+            {
+                njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+                              "dyn_sendmsg_kv njt_pcalloc topic name error.");
+                njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
+                return NJT_DONE;
+            }
+            njt_memcpy(lmdb_key.data, "kv_http_", 8);
+            njt_memcpy(lmdb_key.data + 8, key.data, key.len);
+            lmdb_key.len = key.len + 8;
+
+            ok = njt_dyn_kv_del(&lmdb_key);
+            if (ok != NJT_OK)
+            {
+                njt_log_error(NJT_LOG_INFO, r->connection->log, 0, "key %V not found", &lmdb_key);
+            }
+        }
+    }
+
+    r->headers_out.content_type_len = sizeof("text/plain") - 1;
+    njt_str_set(&r->headers_out.content_type, "text/plain");
+
+    b = njt_pcalloc(r->pool, sizeof(njt_buf_t));
+    out.buf = b;
+    out.next = NULL;
+    b->memory = 1;
+    b->last_buf = 1;
+
+    char *not_found = "key is not existed in db\n";
+    char *del_ok = "key is deleted from db\n";
+    if (ok == NJT_OK)
+    {
+        b->pos = (u_char *)del_ok;
+        b->last = (u_char *)(del_ok + strlen(del_ok));
+        r->headers_out.status = NJT_HTTP_OK;
+        r->headers_out.content_length_n = strlen(del_ok);
+    }
+    else
+    {
+        b->pos = (u_char *)not_found;
+        b->last = (u_char *)(not_found + strlen(not_found));
+        r->headers_out.status = NJT_HTTP_NOT_FOUND;
+        r->headers_out.content_length_n = strlen(not_found);
+    }
+
+    njt_http_send_header(r);
+
+    return njt_http_output_filter(r, &out);
+}
+
 static njt_http_sendmsg_post_data_t *njt_http_parser_sendmsg_data(njt_str_t json_str)
 {
     njt_json_manager json_body;
@@ -483,6 +547,7 @@ njt_http_sendmsg_handler(njt_http_request_t *r)
 
     if (r->method == NJT_HTTP_GET)
     {
+        njt_http_discard_request_body(r);
         return sendmsg_api_get_handler(r);
     }
     if (r->method == NJT_HTTP_POST)
@@ -497,8 +562,12 @@ njt_http_sendmsg_handler(njt_http_request_t *r)
         }
 
         return NJT_DONE;
-    }
-
+    } 
+    if (r->method == NJT_HTTP_DELETE)
+    {
+        njt_http_discard_request_body(r);
+        return sendmsg_api_del_handler(r);
+    } 
     return NJT_DECLINED;
 }
 
@@ -638,8 +707,19 @@ njt_http_sendmsg_create_loc_conf(njt_conf_t *cf)
         return NULL;
     }
 
-    conf->kv_api_enabled = NJT_CONF_UNSET;
+    conf->kv_api_enabled = NJT_CONF_UNSET_UINT;
     return conf;
+}
+
+static char *njt_http_sendmsg_merge_loc_conf(njt_conf_t *cf,
+        void *parent, void *child)
+{
+    njt_http_sendmsg_conf_t *prev = parent;
+    njt_http_sendmsg_conf_t *conf = child;
+
+    njt_conf_merge_uint_value(conf->kv_api_enabled, prev->kv_api_enabled, 0);
+
+    return NJT_CONF_OK;
 }
 
 static char *njt_dyn_sendmsg_rpc_timeout_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
@@ -867,6 +947,20 @@ int njt_dyn_kv_set(njt_str_t *key, njt_str_t *value)
         return NJT_ERROR;
     }
     int ret = njet_iot_client_kv_set(key->data, key->len, value->data, value->len, NULL, sendmsg_mqtt_ctx);
+    if (ret < 0)
+    {
+        return NJT_ERROR;
+    }
+    return NJT_OK;
+}
+int njt_dyn_kv_del(njt_str_t *key)
+{
+    if (key->data == NULL)
+    {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_dyn_kv_del got wrong key data");
+        return NJT_ERROR;
+    }
+    int ret = njet_iot_client_kv_del(key->data, key->len, NULL, 0, sendmsg_mqtt_ctx);
     if (ret < 0)
     {
         return NJT_ERROR;

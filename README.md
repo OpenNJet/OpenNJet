@@ -1,48 +1,56 @@
+# OpenNJet
 
+![Static Badge](https://img.shields.io/badge/Release-V1.2.2-blue?link=https%3A%2F%2Fgitee.com%2Fnjet-rd%2Fnjet%2Ftags)![Static Badge](https://img.shields.io/badge/License-MulanPSL%202.0-blue)
 
-# **OpenNJet 介绍**
+OpenNJet 应用引擎是基于 NGINX 的面向互联网和**云原生**应用提供的运行时组态服务程序，作为底层引擎，OpenNJet 实现了**NGINX 云原生功能增强、安全加固和代码重构**，利用动态加载机制可以实现不同的产品形态，如Web服务器、流媒体服务器、负载均衡、代理(Proxy)、应用中间件、API网关、消息队列等产品形态等等。OpenNJet 在云原生架构中作为数据平面，除了提供南北向通信网关的功能以外，还提供了服务网格中东西向通信能力。在原有功能基础上增加了透明流量劫持、熔断、遥测与故障注入等新功能特性。
 
-OpenNJet 应用引擎是基于 NGINX 的面向互联网和云原生应用提供的运行时组态服务程序。具备环境感知、安全控制、加速优化等能力，作为底层引擎，OpenNJet 利用动态加载机制可以实现不同的产品形态，如API网关、消息代理、出入向代理，负载均衡，WAF等等。在云原生架构中，OpenNJet 除了提供南北向通信网关的功能以外，还提供了服务网格中东西向通信、透明流量劫持、熔断、遥测与故障注入等新功能特性。 
+<img src="https://gitee.com/gebona/picture/raw/master/202308031418513.png" alt="图片 1" style="zoom:50%;" />
 
-OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，随着 NGINX 版本迭代，吸收上游 NGINX 的更新，已经同步更新到 NGINX1.23.1 版本，OpenNJet 具有高性能、稳定、易扩展的特点，同时也解决了 NGINX 长期存在的难于动态配置、管理功能影响业务等问题。我们目标在于适应国内特定的技术规范及标准，如国密算法套件支持、构建安全可控的云原生数据面，支撑我国云原生产业生态。
+OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，OpenNJet 具有高性能、稳定、易扩展的特点，同时也解决了 NGINX 长期存在的难于**动态配置**、管理功能影响业务等问题。我们旨在适应国内特定的技术规范及标准，如国密算法套件支持、构建安全可控的云原生数据面，支撑我国云原生产业生态。
 
+**OpenNJet 是由开放原子开源基金会（OpenAtom Foundation）孵化及运营的开源项目！**
 
+# 优势
 
-# 🏗️ 技术架构
+✨数据面、控制面隔离：CoPilot 框架隔离数据面、管理面功能，避免对数据面能力的影响，在提供稳定高性能的数据面能力的基础上，可以方便地扩充各种管理接口，如指标输出、[健康检查](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8Cv1.1.2.md#36-%E4%B8%BB%E5%8A%A8%E5%81%A5%E5%BA%B7%E6%A3%80%E6%9F%A5)、管理界面、配置同步等；
 
-![teck-arch](https://gitee.com/gebona/picture/raw/master/202307051059921.png)
+✨动态能力：动态配置能力可以解决NGINX的长期痛点，实现性能无损的配置变更；
 
-# ✨ **功能特性**   
+✨内置企业特性：国密、[集群](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8Cv1.1.2.md#323-%E7%BB%84%E6%92%AD%E9%9B%86%E7%BE%A4)状态同步及集群配额控制、[高可用](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8Cv1.1.2.md#323-copilotha)及运维文档一体化。
 
-[OpenNJet功能特性](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E5%8A%9F%E8%83%BD%E7%89%B9%E6%80%A7.md)
+- 更多功能特性 -> [查看](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E5%8A%9F%E8%83%BD%E7%89%B9%E6%80%A7.md)
 
+# 技术架构
 
-# 💥源码下载
+<img src="https://gitee.com/gebona/picture/raw/master/202308031442571.png" alt="image-20230803144159782" style="zoom:50%;" />
 
-OpenNJet 主库地址：
+- 以不同进程隔离数据面（workers）及控制管理能力（copilots)，两者间主要通过共享内存共享数据；
 
-https://gitee.com/njet-rd/njet
+- 利用 mqtt 协议构建底层 event bus，形成一套动态配置框架，第三方模块容易的实现动态配置改造；
+- coworkers 采用插件机制，可以按需和不同的系统对接，实现不同的管控能力；
 
+# 路线图
 
+- [功能规划](https://gitee.com/njet-rd/njet/milestones/190511)
 
-# 🚀**安装**
+- [Q3 milestone](https://gitee.com/njet-rd/njet/milestones/189927)
 
-**Quic Start:**
+# **快速开始**
 
-   提供基于 Dockerfile 文件的形式进行快速编译
+提供基于 Dockerfile 文件的形式进行快速编译
 
-**依赖：**
+- 依赖：docker 环境（需要在编译机器安装docker并启动docker）
 
-1. docker 环境（需要在编译机器安装docker并启动docker）
-
-**步骤：**  
+- 步骤：  
 
 1. 下载 OpenNJet 源码
 2. 执行如下命令：
 
-​     docker build -t njet_main:v1.0 .
+```
+     docker build -t njet_main:v1.0 .
 
-​     docker run -v `pwd`:/njet_main njet_main:v1.0 /bin/bash -c "cd /njet_main && sh build_njet.sh"
+​    docker run -v `pwd`:/njet_main njet_main:v1.0 /bin/bash -c "cd /njet_main && sh build_njet.sh"
+```
 
 3. 编译完后，在 objs 目录下，主要包含 njet 文件和相关的 so 文件
 
@@ -50,54 +58,35 @@ https://gitee.com/njet-rd/njet
 
 ​     *.so 相关模块对应的动态库文件
 
+# 文档
+
+获取更多的信息和使用说明，可以从 [文档](https://gitee.com/njet-rd/docs) 开启OpenNJet的世界！
+
+- [快速上手](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B.md)
+- [编码规范&新手指引](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E7%BC%96%E7%A0%81%E8%A7%84%E8%8C%83%E4%BB%A5%E5%8F%8A%E6%96%B0%E6%89%8B%E6%8C%87%E5%BC%95.md)
+- [使用手册](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8Cv1.1.2.md)
+- [开发指南](https://gitee.com/njet-rd/docs/blob/master/zh-cn/CoPilot%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97.md)
+
+# 贡献
+
+如果您对我们的项目非常感兴趣，请查看 [贡献指南](https://gitee.com/njet-rd/community/blob/master/%E5%BC%80%E5%8F%91%E8%80%85%E8%B4%A1%E7%8C%AE%E6%8C%87%E5%8D%97.md) 了解更多贡献的流程，当然，我们也非常欢迎您通过Issue的方式帮助修正我们的贡献流程。
 
 
-# 📝**文档**
+# 沟通渠道
 
-[快速上手](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E5%BF%AB%E9%80%9F%E4%B8%8A%E6%89%8B.md)
+- 技术交流面对面：QQ群号：607280080
 
-[使用手册](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E4%BD%BF%E7%94%A8%E6%89%8B%E5%86%8Cv1.1.1.md)
+<img src="https://gitee.com/gebona/picture/raw/master/202308031735418.png" alt="WeChat7df7875d28df2f367d1693b20a30762b" style="zoom:25%;" />
 
-[OpenNJet编码规范以及新手指引](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E7%BC%96%E7%A0%81%E8%A7%84%E8%8C%83%E4%BB%A5%E5%8F%8A%E6%96%B0%E6%89%8B%E6%8C%87%E5%BC%95.md)
+- **工作组[会议纪要](http://opennjet.tmlake.com:9011/p/OpenNJet_%E5%8F%8C%E5%91%A8%E4%BC%9A)**
 
-[OpenNJet遗留问题](https://gitee.com/njet-rd/docs/blob/master/zh-cn/OpenNJet%E9%81%97%E7%95%99%E9%97%AE%E9%A2%98.md)
+# 安全说明
 
+如果您在使用过程中发现任何安全问题，请通过以下方式直接联系我们： 
 
-# 📝**其他资料**
-[云原生应用引擎技术发展白皮书](云原生应用引擎技术发展白皮书.pdf) 
+- 邮箱：lijhaal@tmlake.com
 
+# 许可证
 
-# FAQ
+OpenNJet 基于 [MulanPSL-2.0](http://license.coscl.org.cn/MulanPSL2/) 许可证！
 
-### 什么是应用引擎？
-
----
-
-应用引擎是面向互联网和云原生应用提供的运行时组态服务程序。具备环境感知、安全控制、加速优化等能力，一般呈现为Web服务、流媒体服务、代理(Proxy)、应用中间件、API网关、消息队列等产品形态。
-
-- 互联网时代国际主流的应用引擎包括：NGINX, Apache, IIS 等。
-
-- 在云原生时代有许多新的轻量级应用引擎涌现，比较流行的云原生应用引擎包括： NGINX(C语言 ) ，Envoy(C++语言) , Linkerd(Rust语言) 等。
-
-在云原生架构中，应用引擎除了提供南北向通信网关的功能以外，还提供了服务网格中东西向通信、透明流量劫持、熔断、遥测与故障注入、链路追踪、蓝绿发布等新功能特性，因此应用引擎在云原生架构中发挥着更为关键的作用。
-
-![app](https://gitee.com/gebona/picture/raw/master/202307051100792.png)
-
-<center>图1 云原生应用引擎架构
-
-#### 应用引擎的产品形态
-
-![product](https://gitee.com/gebona/picture/raw/master/202307051101908.png)
-
-<center>图2 应用引擎产品形态
-
-如上图所示，应用引擎产品形态包括Web服务器、流媒体服务器、应用服务器和代理服务器等。其中代理服务器又可分为正向代理、反向代理、边车和消息代理等产品。
-
-
-
-
-# 技术交流QQ群：
-
-群号：607280080
-
-<img src="https://gitee.com/gebona/picture/raw/master/202307051101964.jpg" alt="qq" style="zoom:50%;" />

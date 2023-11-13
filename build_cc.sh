@@ -7,14 +7,14 @@ modulesdir=/usr/lib/njet/modules
 git_tag=""
 if [ $# -eq 2 ];
 then
-  git_tag="$git_tag$2"
+  git_tag="NJT_$2"
 fi
-export LUAJIT_INC='/etc/njet/luajit/include/luajit-2.1'
-export LUAJIT_LIB='/etc/njet/luajit/lib'
-chmod +x ./configure ./auto/lib/pcre-8.45/configure ./auto/lib/tassl/Configure
+export LUAJIT_INC="`pwd`/luajit/src"
+export LUAJIT_LIB="`pwd`/luajit/src"
 #--with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 #--with-cc-opt=-I'auto/lib/tassl/include' --with-ld-opt='-Wl,-rpath,/usr/local/tassl/openssl/lib'
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-proto-module"
+NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-stream-proxy-protocol-tlv-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-util-module"  #njet-http-if-location-module
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-if-location-module"  #njet-http-if-location-module
 NJET_MODULES="$NJET_MODULES --add-module=src/ext/lua/kit"
@@ -36,6 +36,7 @@ NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-kv-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-config-api-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-sendmsg-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-bwlist-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-map-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-split-clients-2-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-proxy-connect-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-health-check-helper"
@@ -49,14 +50,20 @@ NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-gossip-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-app-sticky-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-cluster-limit-conn-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-cluster-limit-req-module"
-# NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-test_multicast-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"
+# NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-fault-inject-module"
+NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-fault-inject-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-fault-inject-module"
+NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-jwt-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-sysguard-cpu-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-register-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
-LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo --with-pcre=auto/lib/pcre-8.45"
-flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --with-debug --build=NJT1.0_$git_tag --with-stream --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module  --with-cc=/usr/bin/cc"
-LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm -lpcre"
+LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo "
+# LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo"
+flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --with-debug --build=$git_tag --with-stream --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module --with-http_stub_status_module --with-http_sub_module --with-http_v2_module --with-http_v3_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module  --with-cc=/usr/bin/cc"
+LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm "
 CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
-#LD_OPT="-ldl -lm -lpcre"
+#LD_OPT="-ldl -lm "
 #CC_OPT="-O0 -ggdb"
 
 #api doc make tar file
@@ -91,25 +98,33 @@ cdir=`cd $(dirname $0); pwd`
     for option; do
         case $option in
             conf*)
-		if [ ! -d /etc/njet/luajit ]; then
-		   cd luajit;make;make install;cd -;
-		   cp -fr /etc/njet/luajit/lib/libluajit-5.1.so.2    /usr/local/lib/
-		fi
-		if [ ! -d /etc/njet/lualib ]; then
-		   cp -fr lualib /etc/njet/lualib
-		fi
+                if [ ! -f luajit/src/libluajit-5.1.so ]; then
+                    cd luajit;make;cd -;
+                    cp -f luajit/src/libluajit.so luajit/src/libluajit-5.1.so
+                fi
 
+                # ./configure --with-openssl=/root/download/openssl-openssl-3.0.8-quic1  $flags --with-openssl-opt='--strict-warnings' --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
                 ./configure --with-openssl=auto/lib/tongsuo $flags --with-openssl-opt='--strict-warnings enable-ntls' --with-ntls --with-cc-opt="$CC_OPT" --with-ld-opt="$LD_OPT"
                 ;;
             make)
                 make
                 ;;
             install)
+                if [ ! -d /etc/njet/luajit ]; then
+                    cd luajit;make install;cd -;
+                    cp -a /etc/njet/luajit/lib/libluajit-5.1.* /usr/local/lib/
+		fi
+                if [ ! -d /etc/njet/lualib ]; then
+		    cp -fr lualib /etc/njet/lualib
+                fi
+                cd auto/lib/keepalived; make install; cd -;
                 make install
 		mkdir /etc/njet/data
 		chmod 777 -R /etc/njet/data  /etc/njet/logs
                 ;;
             clean)
+                rm -rf auto/lib/njetmq/build
+                rm auto/lib/keepalived/Makefile
                 make clean
                 ;;
             release)

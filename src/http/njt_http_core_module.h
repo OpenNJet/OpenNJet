@@ -76,6 +76,8 @@ typedef struct {
     unsigned                   wildcard:1;
     unsigned                   ssl:1;
     unsigned                   http2:1;
+    unsigned                   http3:1;
+    unsigned                   quic:1;
 #if (NJT_HAVE_INET6)
     unsigned                   ipv6only:1;
 #endif
@@ -87,6 +89,7 @@ typedef struct {
     int                        backlog;
     int                        rcvbuf;
     int                        sndbuf;
+    int                        type;
 #if (NJT_HAVE_SETFIB)
     int                        setfib;
 #endif
@@ -227,6 +230,9 @@ typedef struct {
 #endif
     njt_http_core_srv_conf_t  *server;   /* virtual name server conf */
     njt_str_t                  name;
+#if (NJT_HTTP_DYNAMIC_LOC) 
+    njt_str_t                  full_name;
+#endif
 } njt_http_server_name_t;
 
 
@@ -246,6 +252,8 @@ struct njt_http_addr_conf_s {
 
     unsigned                   ssl:1;
     unsigned                   http2:1;
+    unsigned                   http3:1;
+    unsigned                   quic:1;
     unsigned                   proxy_protocol:1;
 };
 
@@ -275,6 +283,7 @@ typedef struct {
 
 typedef struct {
     njt_int_t                  family;
+    njt_int_t                  type;
     in_port_t                  port;
     njt_array_t                addrs;     /* array of njt_http_conf_addr_t */
 } njt_http_conf_port_t;
@@ -568,6 +577,8 @@ njt_http_cleanup_t *njt_http_cleanup_add(njt_http_request_t *r, size_t size);
 #if (NJT_HTTP_DYNAMIC_LOC)
 void njt_http_location_cleanup(njt_http_core_loc_conf_t *clcf);
 njt_int_t njt_http_location_cleanup_add(njt_http_core_loc_conf_t *clcf, void(*handler)(njt_http_core_loc_conf_t *hclcf,void* data) ,void* data);
+void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf);
+void njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf);
 #endif
 //end
 

@@ -5,7 +5,6 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
-
 #include <njt_config.h>
 #include <njt_core.h>
 
@@ -14,16 +13,15 @@
 #define NJT_PROXY_PROTOCOL_AF_INET6         2
 
 
-#define njt_proxy_protocol_parse_uint16(p)  ((p)[0] << 8 | (p)[1])
+#define njt_proxy_protocol_parse_uint16(p)                                    \
+    ( ((uint16_t) (p)[0] << 8)                                                \
+    + (           (p)[1]) )
 
-
-typedef struct {
-    u_char                                  signature[12];
-    u_char                                  version_command;
-    u_char                                  family_transport;
-    u_char                                  len[2];
-} njt_proxy_protocol_header_t;
-
+#define njt_proxy_protocol_parse_uint32(p)                                    \
+    ( ((uint32_t) (p)[0] << 24)                                               \
+    + (           (p)[1] << 16)                                               \
+    + (           (p)[2] << 8)                                                \
+    + (           (p)[3]) )
 
 typedef struct {
     u_char                                  src_addr[4];
@@ -41,12 +39,53 @@ typedef struct {
 } njt_proxy_protocol_inet6_addrs_t;
 
 
+typedef struct {
+    u_char                                  type;
+    u_char                                  len[2];
+} njt_proxy_protocol_tlv_t;
+
+
+typedef struct {
+    u_char                                  client;
+    u_char                                  verify[4];
+} njt_proxy_protocol_tlv_ssl_t;
+
+
+typedef struct {
+    njt_str_t                               name;
+    njt_uint_t                              type;
+} njt_proxy_protocol_tlv_entry_t;
+
+
 static u_char *njt_proxy_protocol_read_addr(njt_connection_t *c, u_char *p,
     u_char *last, njt_str_t *addr);
 static u_char *njt_proxy_protocol_read_port(u_char *p, u_char *last,
     in_port_t *port, u_char sep);
 static u_char *njt_proxy_protocol_v2_read(njt_connection_t *c, u_char *buf,
     u_char *last);
+static njt_int_t njt_proxy_protocol_lookup_tlv(njt_connection_t *c,
+    njt_str_t *tlvs, njt_uint_t type, njt_str_t *value);
+
+
+static njt_proxy_protocol_tlv_entry_t  njt_proxy_protocol_tlv_entries[] = {
+    { njt_string("alpn"),       0x01 },
+    { njt_string("authority"),  0x02 },
+    { njt_string("unique_id"),  0x05 },
+    { njt_string("ssl"),        0x20 },
+    { njt_string("netns"),      0x30 },
+    { njt_string("njt"),        0xF0 },
+    { njt_null_string,          0x00 }
+};
+
+
+static njt_proxy_protocol_tlv_entry_t  njt_proxy_protocol_tlv_ssl_entries[] = {
+    { njt_string("version"),    0x21 },
+    { njt_string("cn"),         0x22 },
+    { njt_string("cipher"),     0x23 },
+    { njt_string("sig_alg"),    0x24 },
+    { njt_string("key_alg"),    0x25 },
+    { njt_null_string,          0x00 }
+};
 
 
 u_char *
@@ -62,7 +101,7 @@ njt_proxy_protocol_read(njt_connection_t *c, u_char *buf, u_char *last)
     len = last - buf;
 
     if (len >= sizeof(njt_proxy_protocol_header_t)
-        && memcmp(p, signature, sizeof(signature) - 1) == 0)
+        && njt_memcmp(p, signature, sizeof(signature) - 1) == 0)
     {
         return njt_proxy_protocol_v2_read(c, buf, last);
     }
@@ -140,8 +179,14 @@ skip:
 
 invalid:
 
+    for (p = buf; p < last; p++) {
+        if (*p == CR || *p == LF) {
+            break;
+        }
+    }
+
     njt_log_error(NJT_LOG_ERR, c->log, 0,
-                  "broken header: \"%*s\"", (size_t) (last - buf), buf);
+                  "broken header: \"%*s\"", (size_t) (p - buf), buf);
 
     return NULL;
 }
@@ -223,12 +268,14 @@ njt_proxy_protocol_read_port(u_char *p, u_char *last, in_port_t *port,
 }
 
 
+
 u_char *
 njt_proxy_protocol_write(njt_connection_t *c, u_char *buf, u_char *last)
 {
     njt_uint_t  port, lport;
-
-    if (last - buf < NJT_PROXY_PROTOCOL_MAX_HEADER) {
+    if (last - buf < NJT_PROXY_PROTOCOL_V1_MAX_HEADER) {
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                      "too small buffer for PROXY protocol");
         return NULL;
     }
 
@@ -341,11 +388,11 @@ njt_proxy_protocol_v2_read(njt_connection_t *c, u_char *buf, u_char *last)
 
         src_sockaddr.sockaddr_in.sin_family = AF_INET;
         src_sockaddr.sockaddr_in.sin_port = 0;
-        memcpy(&src_sockaddr.sockaddr_in.sin_addr, in->src_addr, 4);
+        njt_memcpy(&src_sockaddr.sockaddr_in.sin_addr, in->src_addr, 4);
 
         dst_sockaddr.sockaddr_in.sin_family = AF_INET;
         dst_sockaddr.sockaddr_in.sin_port = 0;
-        memcpy(&dst_sockaddr.sockaddr_in.sin_addr, in->dst_addr, 4);
+        njt_memcpy(&dst_sockaddr.sockaddr_in.sin_addr, in->dst_addr, 4);
 
         pp->src_port = njt_proxy_protocol_parse_uint16(in->src_port);
         pp->dst_port = njt_proxy_protocol_parse_uint16(in->dst_port);
@@ -368,11 +415,11 @@ njt_proxy_protocol_v2_read(njt_connection_t *c, u_char *buf, u_char *last)
 
         src_sockaddr.sockaddr_in6.sin6_family = AF_INET6;
         src_sockaddr.sockaddr_in6.sin6_port = 0;
-        memcpy(&src_sockaddr.sockaddr_in6.sin6_addr, in6->src_addr, 16);
+        njt_memcpy(&src_sockaddr.sockaddr_in6.sin6_addr, in6->src_addr, 16);
 
         dst_sockaddr.sockaddr_in6.sin6_family = AF_INET6;
         dst_sockaddr.sockaddr_in6.sin6_port = 0;
-        memcpy(&dst_sockaddr.sockaddr_in6.sin6_addr, in6->dst_addr, 16);
+        njt_memcpy(&dst_sockaddr.sockaddr_in6.sin6_addr, in6->dst_addr, 16);
 
         pp->src_port = njt_proxy_protocol_parse_uint16(in6->src_port);
         pp->dst_port = njt_proxy_protocol_parse_uint16(in6->dst_port);
@@ -413,11 +460,148 @@ njt_proxy_protocol_v2_read(njt_connection_t *c, u_char *buf, u_char *last)
                    &pp->src_addr, pp->src_port, &pp->dst_addr, pp->dst_port);
 
     if (buf < end) {
-        njt_log_debug1(NJT_LOG_DEBUG_CORE, c->log, 0,
-                       "PROXY protocol v2 %z bytes of tlv ignored", end - buf);
+        pp->tlvs.data = njt_pnalloc(c->pool, end - buf);
+        if (pp->tlvs.data == NULL) {
+            return NULL;
+        }
+
+        njt_memcpy(pp->tlvs.data, buf, end - buf);
+        pp->tlvs.len = end - buf;
     }
 
     c->proxy_protocol = pp;
 
     return end;
 }
+
+
+njt_int_t
+njt_proxy_protocol_get_tlv(njt_connection_t *c, njt_str_t *name,
+    njt_str_t *value)
+{
+    u_char                          *p;
+    size_t                           n;
+    uint32_t                         verify;
+    njt_str_t                        ssl, *tlvs;
+    njt_int_t                        rc, type;
+    njt_proxy_protocol_tlv_ssl_t    *tlv_ssl;
+    njt_proxy_protocol_tlv_entry_t  *te;
+
+    if (c->proxy_protocol == NULL) {
+        return NJT_DECLINED;
+    }
+
+    njt_log_debug1(NJT_LOG_DEBUG_CORE, c->log, 0,
+                   "PROXY protocol v2 get tlv \"%V\"", name);
+
+    te = njt_proxy_protocol_tlv_entries;
+    tlvs = &c->proxy_protocol->tlvs;
+
+    p = name->data;
+    n = name->len;
+
+    if (n >= 4 && p[0] == 's' && p[1] == 's' && p[2] == 'l' && p[3] == '_') {
+
+        rc = njt_proxy_protocol_lookup_tlv(c, tlvs, 0x20, &ssl);
+        if (rc != NJT_OK) {
+            return rc;
+        }
+
+        if (ssl.len < sizeof(njt_proxy_protocol_tlv_ssl_t)) {
+            return NJT_ERROR;
+        }
+
+        p += 4;
+        n -= 4;
+
+        if (n == 6 && njt_strncmp(p, "verify", 6) == 0) {
+
+            tlv_ssl = (njt_proxy_protocol_tlv_ssl_t *) ssl.data;
+            verify = njt_proxy_protocol_parse_uint32(tlv_ssl->verify);
+
+            value->data = njt_pnalloc(c->pool, NJT_INT32_LEN);
+            if (value->data == NULL) {
+                return NJT_ERROR;
+            }
+
+            value->len = njt_sprintf(value->data, "%uD", verify)
+                         - value->data;
+            return NJT_OK;
+        }
+
+        ssl.data += sizeof(njt_proxy_protocol_tlv_ssl_t);
+        ssl.len -= sizeof(njt_proxy_protocol_tlv_ssl_t);
+
+        te = njt_proxy_protocol_tlv_ssl_entries;
+        tlvs = &ssl;
+    }
+
+    if (n >= 2 && p[0] == '0' && p[1] == 'x') {
+
+        type = njt_hextoi(p + 2, n - 2);
+        if (type == NJT_ERROR) {
+            njt_log_error(NJT_LOG_ERR, c->log, 0,
+                          "invalid PROXY protocol TLV \"%V\"", name);
+            return NJT_ERROR;
+        }
+
+        return njt_proxy_protocol_lookup_tlv(c, tlvs, type, value);
+    }
+
+    for ( /* void */ ; te->type; te++) {
+        if (te->name.len == n && njt_strncmp(te->name.data, p, n) == 0) {
+            return njt_proxy_protocol_lookup_tlv(c, tlvs, te->type, value);
+        }
+    }
+
+    njt_log_error(NJT_LOG_ERR, c->log, 0,
+                  "unknown PROXY protocol TLV \"%V\"", name);
+
+    return NJT_DECLINED;
+}
+
+
+static njt_int_t
+njt_proxy_protocol_lookup_tlv(njt_connection_t *c, njt_str_t *tlvs,
+    njt_uint_t type, njt_str_t *value)
+{
+    u_char                    *p;
+    size_t                     n, len;
+    njt_proxy_protocol_tlv_t  *tlv;
+
+    njt_log_debug1(NJT_LOG_DEBUG_CORE, c->log, 0,
+                   "PROXY protocol v2 lookup tlv:%02xi", type);
+
+    p = tlvs->data;
+    n = tlvs->len;
+
+    while (n) {
+        if (n < sizeof(njt_proxy_protocol_tlv_t)) {
+            njt_log_error(NJT_LOG_ERR, c->log, 0, "broken PROXY protocol TLV");
+            return NJT_ERROR;
+        }
+
+        tlv = (njt_proxy_protocol_tlv_t *) p;
+        len = njt_proxy_protocol_parse_uint16(tlv->len);
+
+        p += sizeof(njt_proxy_protocol_tlv_t);
+        n -= sizeof(njt_proxy_protocol_tlv_t);
+
+        if (n < len) {
+            njt_log_error(NJT_LOG_ERR, c->log, 0, "broken PROXY protocol TLV");
+            return NJT_ERROR;
+        }
+
+        if (tlv->type == type) {
+            value->data = p;
+            value->len = len;
+            return NJT_OK;
+        }
+
+        p += len;
+        n -= len;
+    }
+
+    return NJT_DECLINED;
+}
+

@@ -1,0 +1,30 @@
+njt_feature="njt_stream_proxy_protocol_tlv_module"
+njt_feature_name=
+njt_feature_run=no
+njt_feature_incs=
+njt_feature_libs=""
+njt_feature_path="$njt_addon_dir"
+njt_module_deps=" \
+  $njt_addon_dir/src/njt_stream_proxy_protocol_tlv_module.h \
+"
+njt_check_src="$njt_addon_dir/src/njt_stream_proxy_protocol_tlv_module.c"
+
+njt_feature_test="int a;"
+have=NJT_STREAM_PROTOCOL_V2 . auto/have
+CORE_INCS="$CORE_INCS $njt_addon_dir/src"
+
+if [ $njt_found = yes ]; then
+    have=NJT_STREAM_PROTO_MODULE . auto/have
+    CORE_INCS="$CORE_INCS $njt_feature_path"
+    njt_addon_name=njt_stream_proxy_protocol_tlv_module
+    njt_module_type=STREAM
+    njt_module_name=$njt_addon_name
+    STREAM_MODULES="$STREAM_MODULES njt_stream_proxy_protocol_tlv_module"
+    NJT_ADDON_DEPS="$NJT_ADDON_DEPS $njt_feature_deps"
+    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_check_src"
+else
+    cat << END
+    $0: error: the njet-stream-proto-module addon error.
+END
+    exit 1
+fi

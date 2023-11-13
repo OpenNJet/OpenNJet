@@ -11,8 +11,9 @@
 
 
 #define njet_version      1023001
-#define NJT_VERSION      "1.23.1"
+#define NJT_VERSION      "1.2.3"
 #define NJT_VER          "njet/" NJT_VERSION
+
 
 #ifdef NJT_BUILD
 #define NJT_VER_BUILD    NJT_VER " (" NJT_BUILD ")"

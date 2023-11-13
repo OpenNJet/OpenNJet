@@ -11,6 +11,10 @@
 #include <njt_http.h>
 #include <njt_http_proxy_module.h>
 
+// #if (NJT_HTTP_FAULT_INJECT)
+#include <njt_http_fault_inject_module.h>
+// #endif
+
 #define  NJT_HTTP_PROXY_COOKIE_SECURE           0x0001
 #define  NJT_HTTP_PROXY_COOKIE_SECURE_ON        0x0002
 #define  NJT_HTTP_PROXY_COOKIE_SECURE_OFF       0x0004
@@ -29,7 +33,7 @@ static njt_int_t njt_http_proxy_eval(njt_http_request_t *r,
 #if (NJT_HTTP_CACHE)
 static njt_int_t njt_http_proxy_create_key(njt_http_request_t *r);
 #endif
-static njt_int_t njt_http_proxy_create_request(njt_http_request_t *r);
+ njt_int_t njt_http_proxy_create_request(njt_http_request_t *r);
 static njt_int_t njt_http_proxy_reinit_request(njt_http_request_t *r);
 static njt_int_t njt_http_proxy_body_output_filter(void *data, njt_chain_t *in);
 static njt_int_t njt_http_proxy_process_status_line(njt_http_request_t *r);
@@ -172,7 +176,7 @@ static njt_conf_enum_t  njt_http_proxy_http_version[] = {
 
 
 njt_module_t  njt_http_proxy_module;
-
+extern njt_module_t njt_http_fault_inject_module;
 
 static njt_command_t  njt_http_proxy_commands[] = {
 
@@ -847,6 +851,7 @@ njt_http_proxy_handler(njt_http_request_t *r)
     njt_http_upstream_t         *u;
     njt_http_proxy_ctx_t        *ctx;
     njt_http_proxy_loc_conf_t   *plcf;
+    // njt_http_fault_inject_conf_t *ficf;
 #if (NJT_HTTP_CACHE)
     njt_http_proxy_main_conf_t  *pmcf;
 #endif
@@ -928,8 +933,13 @@ njt_http_proxy_handler(njt_http_request_t *r)
     {
         r->request_body_no_buffering = 1;
     }
-
+// rc = njt_http_read_client_request_body(r, njt_http_upstream_init);
+    //add by clb
+#if (NJT_HTTP_FAULT_INJECT)
+    rc = njt_http_read_client_request_body(r, njt_http_fault_inject_handler);
+#else
     rc = njt_http_read_client_request_body(r, njt_http_upstream_init);
+#endif
 
     if (rc >= NJT_HTTP_SPECIAL_RESPONSE) {
         return rc;
@@ -1248,7 +1258,7 @@ njt_http_proxy_create_key(njt_http_request_t *r)
 #endif
 
 
-static njt_int_t
+ njt_int_t
 njt_http_proxy_create_request(njt_http_request_t *r)
 {
     size_t                        len, uri_len, loc_len, body_len,
@@ -1558,7 +1568,7 @@ njt_http_proxy_create_request(njt_http_request_t *r)
             *b->last++ = CR; *b->last++ = LF;
 
             njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                           "http proxy header: \"%V: %V\"",
+                           "zyg http proxy header: \"%V: %V\"",
                            &header[i].key, &header[i].value);
         }
     }

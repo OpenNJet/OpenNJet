@@ -631,11 +631,11 @@ njt_http_location_read_data(njt_http_request_t *r){
 	if(rc == NJT_OK) {
 		++r->main->count;
 	}
+	njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "1 send topic retain_flag=%V, key=%V,value=%V",&location_info->type,&topic_name,&json_str);
 	if(location_info != NULL) {
                 njt_destroy_pool(location_info->pool);
     }
 
-	njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "1 send topic retain_flag=%V, key=%V,value=%V",&location_info->type,&topic_name,&json_str);
 	goto out;
 
 	

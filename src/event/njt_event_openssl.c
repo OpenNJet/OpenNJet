@@ -32,9 +32,6 @@ static int njt_ssl_new_client_session(njt_ssl_conn_t *ssl_conn,
 #ifdef SSL_READ_EARLY_DATA_SUCCESS
 static njt_int_t njt_ssl_try_early_data(njt_connection_t *c);
 #endif
-#if (NJT_DEBUG)
-static void njt_ssl_handshake_log(njt_connection_t *c);
-#endif
 static void njt_ssl_handshake_handler(njt_event_t *ev);
 #ifdef SSL_READ_EARLY_DATA_SUCCESS
 static ssize_t njt_ssl_recv_early(njt_connection_t *c, u_char *buf,
@@ -421,6 +418,93 @@ njt_ssl_certificates(njt_conf_t *cf, njt_ssl_t *ssl, njt_array_t *certs,
             return NJT_ERROR;
         }
     }
+
+    return NJT_OK;
+}
+
+
+//add by clb
+njt_int_t
+njt_ssl_set_certificates_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_array_t *certs,
+    njt_array_t *keys, njt_array_t *cert_types)
+{
+    njt_str_t   *cert, *key;
+    njt_uint_t   i;
+    njt_uint_t   cert_type, *cert_type_item;
+
+    cert = certs->elts;
+    key = keys->elts;
+
+    for (i = 0; i < certs->nelts; i++) {
+        if (njt_ssl_get_certificate_type(cf, ssl, &cert[i], &key[i], &cert_type)
+            != NJT_OK)
+        {
+            return NJT_ERROR;
+        }
+
+        cert_type_item = njt_array_push(cert_types);
+        if(cert_type_item != NULL){
+            *cert_type_item = cert_type;
+        }
+    }
+
+    return NJT_OK;
+}
+
+//add by clb
+njt_int_t
+njt_ssl_get_certificate_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
+    njt_str_t *key, njt_uint_t *cert_type)
+{
+    char            *err;
+    X509            *x509;
+    EVP_PKEY        *pkey;
+    STACK_OF(X509)  *chain;
+    size_t          pidx;
+#if (NJT_HAVE_NTLS)
+    njt_uint_t       type;
+#endif
+
+    *cert_type = 3;      //other type
+    x509 = njt_ssl_load_certificate(cf->pool, &err, cert, &chain);
+    if (x509 == NULL) {
+        if (err != NULL) {
+            njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                          "cannot load certificate \"%s\": %s",
+                          cert->data, err);
+        }
+
+        return NJT_ERROR;
+    }
+
+#if (NJT_HAVE_NTLS)
+    type = njt_ssl_ntls_type(cert);
+
+    if (type == NJT_SSL_NTLS_CERT_SIGN || type == NJT_SSL_NTLS_CERT_ENC) {
+        //ntls type
+        *cert_type = 1;
+        return NJT_OK;
+    }
+
+#endif
+    pkey = X509_get0_pubkey(x509);
+    if (SSL_CTX_get_certificate_type(pkey, &pidx) == NULL) {
+        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0, "unknown certificate type");
+        X509_free(x509);
+        sk_X509_pop_free(chain, X509_free);
+        return NJT_ERROR;
+    }
+
+    //# define SSL_PKEY_RSA            0
+    //# define SSL_PKEY_ECC            3
+    if(pidx == 0){
+        *cert_type = 0;       //RSA type
+    }else if(pidx == 3){
+        *cert_type = 2;       //ECC type
+    }
+
+    X509_free(x509);
+    sk_X509_pop_free(chain, X509_free);
 
     return NJT_OK;
 }
@@ -2180,7 +2264,7 @@ njt_ssl_try_early_data(njt_connection_t *c)
 
 #if (NJT_DEBUG)
 
-static void
+void
 njt_ssl_handshake_log(njt_connection_t *c)
 {
     char         buf[129], *s, *d;
@@ -3324,6 +3408,13 @@ njt_ssl_shutdown(njt_connection_t *c)
     njt_int_t   rc;
     njt_err_t   err;
     njt_uint_t  tries;
+
+#if (NJT_QUIC)
+    if (c->quic) {
+        /* QUIC streams inherit SSL object */
+        return NJT_OK;
+    }
+#endif
 
     rc = NJT_OK;
 

@@ -26,6 +26,14 @@
 #include <openssl/engine.h>
 #endif
 #include <openssl/evp.h>
+#if (NJT_QUIC)
+#ifdef OPENSSL_IS_BORINGSSL
+#include <openssl/hkdf.h>
+#include <openssl/chacha.h>
+#else
+#include <openssl/kdf.h>
+#endif
+#endif
 #include <openssl/hmac.h>
 #ifndef OPENSSL_NO_OCSP
 #include <openssl/ocsp.h>
@@ -192,6 +200,13 @@ typedef struct {
 njt_int_t njt_ssl_init(njt_log_t *log);
 njt_int_t njt_ssl_create(njt_ssl_t *ssl, njt_uint_t protocols, void *data);
 
+//add by clb
+njt_int_t njt_ssl_get_certificate_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
+    njt_str_t *key, njt_uint_t *cert_type);
+njt_int_t njt_ssl_set_certificates_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_array_t *certs,
+    njt_array_t *keys, njt_array_t *cert_types);
+//add by clb end
+
 njt_int_t njt_ssl_certificates(njt_conf_t *cf, njt_ssl_t *ssl,
     njt_array_t *certs, njt_array_t *keys, njt_array_t *passwords);
 njt_int_t njt_ssl_certificate(njt_conf_t *cf, njt_ssl_t *ssl,
@@ -313,6 +328,9 @@ njt_int_t njt_ssl_get_client_v_remain(njt_connection_t *c, njt_pool_t *pool,
 
 
 njt_int_t njt_ssl_handshake(njt_connection_t *c);
+#if (NJT_DEBUG)
+void njt_ssl_handshake_log(njt_connection_t *c);
+#endif
 ssize_t njt_ssl_recv(njt_connection_t *c, u_char *buf, size_t size);
 ssize_t njt_ssl_write(njt_connection_t *c, u_char *data, size_t size);
 ssize_t njt_ssl_recv_chain(njt_connection_t *c, njt_chain_t *cl, off_t limit);
