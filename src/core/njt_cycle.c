@@ -314,10 +314,12 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     }
 
     //by lcm ---------------------------------------------------
-    njt_conf_element_t conf_root;
-    njt_memzero(&conf_root, sizeof(njt_conf_element_t));
-    njt_conf_cur_ptr = &conf_root;
-    njt_conf_root_ptr = &conf_root;
+    njt_conf_element_t *conf_root;
+    cycle->conf_root = njt_pcalloc(cycle->pool, sizeof(njt_conf_element_t));
+    conf_root = cycle->conf_root;
+    njt_memzero(conf_root, sizeof(njt_conf_element_t));
+    njt_conf_cur_ptr = conf_root;
+    njt_conf_root_ptr = conf_root;
     //----------------------------------------------------------
 
 
@@ -332,18 +334,20 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     //----------------------------------------------------------
     // 输出到字符串
-    // size_t             length; // by lcm
-    // length = 0;
-    // njt_conf_get_json_length(&conf_root, &length, 1); // by lcm
-    // njt_conf_json.data = njt_palloc(conf.cycle->pool, length + 4096);
-    // if (njt_conf_json.data) {
-    //     njt_conf_get_json_str(&conf_root, &njt_conf_json, 1);
-    // }
+    size_t             length; // by lcm
+    length = 0;
+    njt_conf_check_svrname(pool, conf_root);
+    njt_conf_get_json_length(conf_root, &length, 1); // by lcm
+    njt_conf_json.data = njt_palloc(conf.cycle->pool, length + 4096);
+    if (njt_conf_json.data) {
+        njt_conf_get_json_str(conf_root, &njt_conf_json, 1);
+    }
 
-    // printf("test test test \n");
-    // printf("%s \n", (char*)njt_conf_json.data);
-    // printf("%ld \n", length);
-    // printf("%ld \n", njt_conf_json.len);
+    printf("test test test \n");
+    printf("conf file %s \n", cycle->conf_file.data);
+    printf("%s \n", (char*)njt_conf_json.data);
+    printf("%ld \n", length);
+    printf("%ld \n", njt_conf_json.len);
     // // 查找对应的block http
     // njt_str_t s_http;
     // s_http.data = njt_palloc(conf.cycle->pool, 4);
@@ -378,7 +382,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     // s_add_header.data = njt_palloc(conf.cycle->pool, 10);
     // njt_str_set(&s_add_header, "add_header");
     // njt_conf_cmd_t *cmd;
-    // cmd = njt_conf_get_key_conf(loc, &s_add_header);
+    // cmd = njt_conf_get_cmd_conf(loc, &s_add_header);
     // printf("size of cmd: %ld\n", cmd->value->nelts); // 用debug看了值，取得是对的
 
     
@@ -390,12 +394,12 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     // p = njt_array_push(cf);
     // njt_memcpy(p, &s_test, sizeof(njt_str_t));
     // njt_conf_add_cmd(conf.cycle->pool, loc, cf);
-    // cmd = njt_conf_get_key_conf(loc, &s_add_header);
+    // cmd = njt_conf_get_cmd_conf(loc, &s_add_header);
     // printf("size of cmd: %ld\n", cmd->value->nelts); 
 
     // // 设置 add-header的值 重置
     // njt_conf_set_cmd(conf.cycle->pool, loc, cf);
-    // cmd = njt_conf_get_key_conf(loc, &s_add_header);
+    // cmd = njt_conf_get_cmd_conf(loc, &s_add_header);
     // printf("size of cmd: %ld\n", cmd->value->nelts); 
 
     // // 增加一个block location "/new_added"
@@ -417,12 +421,12 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     // njt_conf_delete_block(conf.cycle->pool, loc);
 
 
-    // // 输出到文件 
-    // njt_str_t temp;
-    // temp.data = njt_palloc(conf.cycle->pool, 8);
-    // njt_str_set(&temp, "aa.json");
-    // njt_conf_save_to_file(conf.cycle->pool, conf.log, svr, &temp);
-    // printf("test test test \n");
+    // 输出到文件 
+    njt_str_t temp;
+    temp.data = njt_palloc(conf.cycle->pool, 8);
+    njt_str_set(&temp, "aa.json");
+    njt_conf_save_to_file(conf.cycle->pool, conf.log, cycle->conf_root, &temp);
+    printf("save to aa.json \n");
 
     //----------------------------------------------------------
 

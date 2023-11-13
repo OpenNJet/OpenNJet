@@ -11,7 +11,8 @@
 #include "njt_http_dyn_bwlist_parser.h"
 
 extern njt_module_t njt_http_access_module;
-// extern void* njt_conf_cur_ptr;
+extern void* njt_conf_cur_ptr;
+extern void* njt_conf_root_ptr;
 
 njt_str_t dyn_bwlist_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
@@ -22,6 +23,7 @@ static njt_int_t njt_dyn_bwlist_add_rule_to_loc(njt_pool_t *dyn_pool, njt_http_a
     njt_str_t      *deny, *addr;
     njt_int_t       i, count;
     u_char         *p, val;
+
 
     cf = njt_array_create(dyn_pool, 2, sizeof(njt_str_t));
     if (cf == NULL) {
@@ -40,7 +42,7 @@ static njt_int_t njt_dyn_bwlist_add_rule_to_loc(njt_pool_t *dyn_pool, njt_http_a
     }
 
     addr = njt_array_push(cf);
-    addr->data = njt_palloc(dyn_pool, INET_ADDRSTRLEN+3); // 255.255.255.255/32
+    addr->data = njt_palloc(dyn_pool, INET_ADDRSTRLEN+3); // allow 255.255.255.255/32
     if (addr->data == NULL){
         return NJT_ERROR;
     }
@@ -49,6 +51,7 @@ static njt_int_t njt_dyn_bwlist_add_rule_to_loc(njt_pool_t *dyn_pool, njt_http_a
 
     p = (u_char *)&rule->mask;
     // 这里面就不判断并返回了，跑一遍循环也很快
+    count = 0;
     for (i = 0; i < 4; i++) {
         val = p[i];
         while (val) {
@@ -58,12 +61,21 @@ static njt_int_t njt_dyn_bwlist_add_rule_to_loc(njt_pool_t *dyn_pool, njt_http_a
     }
     // print mask
     if (count != 32) {
-        p = njt_sprintf(addr->data + addr->len, "/%ld", count);
+        p = njt_sprintf(addr->data + addr->len, "/%l", count);
         addr->len = p - addr->data;
     } 
     
     pool = njt_cycle->pool;
-    njt_conf_add_cmd(pool, loc, cf);
+    njt_conf_cmd_hit_item(pool, loc, cf);
+
+    // rm from allow or deny
+    deny = cf->elts;
+    if (rule->deny) {
+        njt_str_set(deny, "allow");
+    } else {
+        njt_str_set(deny, "deny");
+    }
+    njt_conf_cmd_del_item(pool, loc, cf);
 
     return NJT_OK;
 }
@@ -100,6 +112,7 @@ static njt_int_t njt_dyn_bwlist_add_rule6_to_loc(njt_pool_t *dyn_pool, njt_http_
     addr->len = njt_inet_ntop(AF_INET6, &rule->addr, addr->data , INET6_ADDRSTRLEN);
 
     p = (u_char *)&rule->mask;
+    count = 0;
     for (i = 0; i < 16; i++) {
         val = p[i];
         if (val == 0) {
@@ -560,6 +573,14 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t *pool, dynbwlist_t
 
     // get http_conf
     hce = njt_conf_get_http_block(pool); // 需要确认这是哪个pool
+    if (hce != NULL) {
+        printf("get http \n");
+        njt_str_t temp;
+        temp.data = njt_palloc(pool, 10);
+        njt_str_set(&temp, "http.json");
+        njt_conf_save_to_file(pool, njt_cycle->log, hce, &temp);
+        printf("save to http.json \n");
+    }
 
     for (i = 0; i < api_data->servers->nelts; i++) {
         dsi = get_dynbwlist_servers_item(api_data->servers, i);
@@ -606,7 +627,7 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t *pool, dynbwlist_t
         }
     }
     njt_rpc_result_update_code(rpc_result);
-    // 输出到文件 
+    //  输出到文件 
     njt_str_t temp;
     temp.data = njt_palloc(pool, 8);
     njt_str_set(&temp, "aa.json");
@@ -680,6 +701,7 @@ static int njt_dyn_bwlist_change_handler_internal(njt_str_t *key, njt_str_t *val
     }
 
     api_data = json_parse_dynbwlist(pool, value, &err_info);
+    printf("value: %s\n", value->data);
     if (api_data == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "json_parse_dynbwlist err: %V", &err_info.err_str);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);

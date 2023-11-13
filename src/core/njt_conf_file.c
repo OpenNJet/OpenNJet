@@ -377,8 +377,9 @@ done:
 static njt_int_t
 njt_conf_cmd_set_args(njt_pool_t *pool, njt_conf_t *cf, njt_conf_cmd_t *ccmd){
     njt_uint_t      i, j;
-    njt_uint_t      need_escape;
+    njt_uint_t      need_escape, re_location;
     njt_str_t      *arg, *value;
+    njt_str_t       index;
     size_t          vlen;
     char           *cur, *dst;
     njt_array_t    *pos, *tmp;
@@ -400,13 +401,37 @@ njt_conf_cmd_set_args(njt_pool_t *pool, njt_conf_t *cf, njt_conf_cmd_t *ccmd){
         return NJT_OK;
     }
 
+    arg = cf->args->elts;
+    re_location = arg->len == 8 && njt_strncmp(arg->data, "location", 8) == 0 && cf->args->nelts == 3;
+    if (re_location) {
+        vlen =0;
+        for(i = 1; i < cf->args->nelts; i++){
+            arg = &((njt_str_t*)cf->args->elts)[i];
+            vlen += arg->len;
+        }
+        index.data = njt_pcalloc(pool, vlen+1);
+        if (index.data == NULL){
+            return NJT_ERROR;
+        }
+        index.len = 0;
+        for(i = 1; i < cf->args->nelts; i++){
+            arg = &((njt_str_t*)cf->args->elts)[i];
+            njt_memcpy(index.data + index.len, arg->data, arg->len);
+            index.len += arg->len;
+        }
+        index.len = vlen;
+        arg = &index;
+    }
+
 
     for (i = 1; i < cf->args->nelts; i++) {
         value = njt_array_push(pos);
         if (value == NULL) {
             return NJT_ERROR;
         }
-        arg = &((njt_str_t*)cf->args->elts)[i];
+        if (!re_location) { // re_location arg = &index
+            arg = &((njt_str_t*)cf->args->elts)[i];
+        }
         need_escape = 0;
         for (j = 0; j < arg->len; j++) {
             switch ((char)arg->data[j]) {
@@ -453,7 +478,12 @@ njt_conf_cmd_set_args(njt_pool_t *pool, njt_conf_t *cf, njt_conf_cmd_t *ccmd){
                 }
             }
         }
+        if (re_location) {
+            break;
+        }
     }
+
+
 
     return NJT_OK;
 }
@@ -545,12 +575,13 @@ njt_conf_cmd_set_value(njt_pool_t *pool, njt_conf_cmd_t *cmd, njt_array_t *cf){
 
 
 void njt_conf_get_json_length(njt_conf_element_t *root, size_t *length, njt_uint_t is_root) {
-    njt_uint_t      i, j, k;
-    njt_conf_cmd_t *cmd;
-    njt_array_t    *values;
-    njt_str_t      *arg;
-    njt_conf_block_t    *blocks;
+    njt_uint_t               i, j, k;
+    njt_conf_cmd_t          *cmd;
+    njt_array_t             *values;
+    njt_str_t               *arg;
+    njt_conf_block_t        *blocks;
     njt_conf_element_t      *block;
+    njt_uint_t               svr_or_loc, sname, listen; 
 
     *length += 1;
 
@@ -584,10 +615,12 @@ void njt_conf_get_json_length(njt_conf_element_t *root, size_t *length, njt_uint
         for (i = 0; i < root->cmds->nelts; i++) {
             cmd = &((njt_conf_cmd_t *)root->cmds->elts)[i];
             *length += cmd->key.len + 3;
-            if (cmd->value->nelts == 1) {
+            listen = (cmd->key.len == 6 && njt_strncmp(cmd->key.data, "listen", 6) == 0);
+            sname = (cmd->key.len == 11 && njt_strncmp(cmd->key.data, "server_name", 11) == 0);
+            if (cmd->value->nelts == 1 && !listen) {
                 // "key": "value",
                 values = cmd->value->elts;
-                if (values->nelts == 1) {
+                if (values->nelts == 1 && !sname) {
                     // all as string now, change to boolean or number later
                     arg = (njt_str_t *)values->elts; // "key": "value",
                     *length += arg->len + 2;
@@ -596,6 +629,9 @@ void njt_conf_get_json_length(njt_conf_element_t *root, size_t *length, njt_uint
                     for (k = 0; k < values->nelts; k++) {
                         arg = &((njt_str_t *)values->elts)[k];
                         *length += arg->len + 3;
+                    }
+                    if (k == 0) {
+                        *length += 1;
                     }
                 }
             } else {
@@ -607,6 +643,12 @@ void njt_conf_get_json_length(njt_conf_element_t *root, size_t *length, njt_uint
                         arg = &((njt_str_t *)values->elts)[k];
                         *length += arg->len + 3;
                     }
+                    if (k == 0) {
+                        *length += 1;
+                    }
+                    *length += 1;
+                }
+                if (j == 0) {
                     *length += 1;
                 }
             }
@@ -621,7 +663,9 @@ void njt_conf_get_json_length(njt_conf_element_t *root, size_t *length, njt_uint
     for (i = 0; i < root->blocks->nelts; i++) {
         blocks = &((njt_conf_block_t*)root->blocks->elts)[i];
         *length += blocks->key.len + 3;
-        if (blocks->value->nelts == 1) {
+        svr_or_loc = (blocks->key.len == 6 && njt_strncmp(blocks->key.data, "server", 6) == 0)
+                     || (blocks->key.len == 8 && njt_strncmp(blocks->key.data, "location", 8) == 0);
+        if (blocks->value->nelts == 1 && !svr_or_loc) {
             block = blocks->value->elts; // http : {}
             njt_conf_get_json_length(block, length, 0);
         } else { // locaction [{location1}, {location2}, ...]
@@ -675,7 +719,7 @@ njt_conf_get_simple_location_block(njt_pool_t *dyn_pool, njt_conf_element_t *cur
     njt_memcpy(pos, name, sizeof(njt_str_t));
 
     njt_str_set(&loc, "location");
-    ret = njt_conf_get_block(njt_conf_root_ptr, &loc, sub_name);
+    ret = njt_conf_get_block(njt_conf_cur_ptr, &loc, sub_name);
     njt_array_destroy(sub_name);
     njt_pfree(dyn_pool, loc.data);
 
@@ -770,6 +814,7 @@ njt_conf_get_server_block(njt_conf_element_t *cur,
 {
     u_char              *p, *port, *listen_port;
     njt_uint_t           i, j, ii, jj, kk;
+    njt_uint_t           pos;
     njt_uint_t           found_listen, found_server, addr_match, port_match;
     njt_uint_t           listen_checked, server_name_checked;
     njt_uint_t           localhost, listen_localhost;
@@ -848,7 +893,7 @@ njt_conf_get_server_block(njt_conf_element_t *cur,
                                                 port_match = 1;
                                             }
                                         } else if (port) { // listen_port 没有
-                                            tmp_port = njt_atoi(p+1, p + arg->len - port);
+                                            tmp_port = njt_atoi(p+1, p + arg->len - port - 1);
                                             tmp_listen_port = njt_atoi(listen->data, listen->len);
                                             if (tmp_port == tmp_listen_port) {
                                                 port_match = 1;
@@ -857,7 +902,7 @@ njt_conf_get_server_block(njt_conf_element_t *cur,
                                             }
                                         } else if (listen_port) {
                                             tmp_port = njt_atoi(arg->data, arg->len);
-                                            tmp_listen_port = njt_atoi(listen_port+1, listen->data + listen->len - listen_port);
+                                            tmp_listen_port = njt_atoi(listen_port+1, listen->data + listen->len - listen_port - 1);
                                             if (tmp_port == tmp_listen_port) {
                                                 port_match = 1;
                                             } else if (tmp_port == NJT_ERROR && tmp_listen_port == 80) {
@@ -927,12 +972,15 @@ njt_conf_get_server_block(njt_conf_element_t *cur,
                                 }
                                 for (kk = 0; kk < values->nelts; kk++) {
                                     arg = &((njt_str_t*)values->elts)[kk];// 每一个元素,
-                                    if (arg->len == server_name->len 
-                                        && njt_memcmp(arg->data, server_name->data,
-                                                      arg->len) == 0)
-                                    {
+                                    if (arg->len == server_name->len) {
+                                        // 不区分大小写
                                         found_server = 1;
-                                        break;
+                                        for (pos = 0; pos < arg->len; pos++) {
+                                            if (njt_tolower(arg->data[pos]) != njt_tolower(server_name->data[pos])) {
+                                                found_server = 0;
+                                                break;
+                                            }
+                                        }
                                     }
                                 }
                                 if (found_server) break;
@@ -958,7 +1006,7 @@ njt_conf_get_server_block(njt_conf_element_t *cur,
 
 
 njt_conf_cmd_t*
-njt_conf_get_key_conf(njt_conf_element_t *block, njt_str_t *key) {
+njt_conf_get_cmd_conf(njt_conf_element_t *block, njt_str_t *key) {
     njt_uint_t      i;
     njt_conf_cmd_t *cmd;
 
@@ -995,7 +1043,9 @@ void njt_conf_free_cmd(njt_pool_t *pool, njt_conf_cmd_t *cmd) {
             if (arg->data) {
                 njt_pfree(pool, arg);
             }
+            
         }
+        njt_pfree(pool, values->elts);
     }
     njt_pfree(pool, cmd->value->elts);
 }
@@ -1130,8 +1180,7 @@ njt_conf_add_cmd(njt_pool_t *pool, njt_conf_element_t *block, njt_array_t *cf) {
     njt_str_t       *name;
     njt_conf_cmd_t  *cmd;
 
-    if (!block->cmds)
-    {
+    if (!block->cmds) {
         block->cmds = njt_array_create(pool, 1, sizeof(njt_conf_cmd_t));
         if (!block->cmds) {
             return NJT_ERROR;
@@ -1140,8 +1189,7 @@ njt_conf_add_cmd(njt_pool_t *pool, njt_conf_element_t *block, njt_array_t *cf) {
 
     name = cf->elts;
     found = 0;
-    for (i = 0; i < block->cmds->nelts; i++)
-    {
+    for (i = 0; i < block->cmds->nelts; i++) {
         cmd = &((njt_conf_cmd_t *)(block->cmds->elts))[i];
         if (cmd->key.len != name->len) {
             continue;
@@ -1156,8 +1204,7 @@ njt_conf_add_cmd(njt_pool_t *pool, njt_conf_element_t *block, njt_array_t *cf) {
         break;
     }
 
-    if (!found)
-    {
+    if (!found) {
         cmd = njt_array_push(block->cmds);
         if (cmd == NULL) {
             return NJT_ERROR;
@@ -1174,6 +1221,218 @@ njt_conf_add_cmd(njt_pool_t *pool, njt_conf_element_t *block, njt_array_t *cf) {
     return njt_conf_cmd_set_value(pool, cmd, cf);
 }
 
+// 将当前内容加到cmd的最后，如果已经有当前内容，提取出来再加到后面
+// 例如 location / {listen 8080; listen 127.0.0.1:8888;}
+// 在 readd listen 8080; 后
+// 变为 location / {listen 127.0.0.1:8888; listen 8080;}
+njt_int_t
+njt_conf_cmd_hit_item(njt_pool_t *pool, njt_conf_element_t *block, njt_array_t *cf) {
+    njt_uint_t       i, j, found, match;
+    njt_str_t       *name, *arg;
+    njt_array_t     *values, tmp;
+    njt_conf_cmd_t  *cmd;
+
+
+    if (!block->cmds) {
+        block->cmds = njt_array_create(pool, 1, sizeof(njt_conf_cmd_t));
+        if (!block->cmds) {
+            return NJT_ERROR;
+        }
+    }
+    
+    name = cf->elts;
+    found = 0;
+    for (i = 0; i < block->cmds->nelts; i++) {
+        cmd = &((njt_conf_cmd_t *)(block->cmds->elts))[i];
+        if (cmd->key.len != name->len) {
+            continue;
+        }
+
+        // 这里之前用njt_strcmp出过错误，有时ccmd->key_data的len之后不是\0
+        if (njt_memcmp(name->data, cmd->key.data, name->len) != 0) {
+            continue;
+        }
+
+        found = 1;
+        break;
+    }
+
+    if (!found) {
+        cmd = njt_array_push(block->cmds);
+        if (cmd == NULL) {
+            return NJT_ERROR;
+        }
+        cmd->key.data = njt_palloc(pool, name->len);
+        if (cmd->key.data == NULL) {
+            return NJT_ERROR;
+        }
+        cmd->key.len = name->len;
+        njt_memcpy(cmd->key.data, name->data, name->len);
+        cmd->value = njt_array_create(pool, 1, sizeof(njt_array_t));
+        return njt_conf_cmd_set_value(pool, cmd, cf);
+    }
+
+    for (i = 0; i < cmd->value->nelts; i++) {
+
+        values = &((njt_array_t *)cmd->value->elts)[i];
+        if (values->nelts != cf->nelts - 1) { // 必须是全量匹配
+            continue;
+        } 
+        
+        match = 1;
+        for (j = 0; j < values->nelts; j++) {
+            arg = &((njt_str_t*)values->elts)[j];
+            name = &((njt_str_t*)cf->elts)[j+1]; // cf->elts[0] = cmd.name
+            if (arg->len != name->len || njt_strncmp(arg->data, name->data, arg->len) != 0) {
+           
+                match = 0;
+                break;
+            }
+        }
+        if (match) { // move to tail 
+            tmp = *values;
+            for (j = i+1; j < cmd->value->nelts; j++) {
+                njt_memcpy(&((njt_array_t *)cmd->value->elts)[j-1], &((njt_array_t *)cmd->value->elts)[j], sizeof(njt_array_t));   
+            }
+            njt_memcpy(&((njt_array_t *)cmd->value->elts)[j], &tmp, sizeof(njt_array_t));   
+            return NJT_OK;
+        }
+    } 
+
+    // match == 0
+    return njt_conf_cmd_set_value(pool, cmd, cf);
+
+}
+
+// 只删除完全对应的那一条，其他的保存不变, 目前只做全量匹配
+// 例如 location / {listen 8080; listen 127.0.0.1:8888;}
+// 在 删除 listen 8080; 后
+// 变为 location / {listen 127.0.0.1:8888;}
+njt_int_t
+njt_conf_cmd_del_item(njt_pool_t *pool, njt_conf_element_t *block, njt_array_t *cf) {
+    njt_uint_t       i, j, found, match;
+    njt_str_t       *name, *arg;
+    njt_array_t     *values, tmp;
+    njt_conf_cmd_t  *cmd;
+
+    if (!block->cmds) {
+        return NJT_OK;
+    }
+
+    name = cf->elts;
+    found = 0;
+    for (i = 0; i < block->cmds->nelts; i++) {
+        cmd = &((njt_conf_cmd_t *)(block->cmds->elts))[i];
+        if (cmd->key.len != name->len) {
+            continue;
+        }
+
+        // 这里之前用njt_strcmp出过错误，有时ccmd->key_data的len之后不是\0
+        if (njt_memcmp(name->data, cmd->key.data, name->len) != 0) {
+            continue;
+        }
+
+        found = 1;
+        break;
+    }
+
+    if (!found) {
+        return NJT_OK;
+    }
+
+    for (i = 0; i < cmd->value->nelts; i++) {
+
+        values = &((njt_array_t *)cmd->value->elts)[i];
+        if (values->nelts != cf->nelts - 1) { // 必须是全量匹配
+            continue;
+        } 
+        
+        match = 1;
+        for (j = 0; j < values->nelts; j++) {
+            arg = &((njt_str_t*)values->elts)[j];
+            name = &((njt_str_t*)cf->elts)[j+1]; // cf->elts[0] = cmd.name
+            if (arg->len != name->len || njt_strncmp(arg->data, name->data, arg->len) != 0) {
+           
+                match = 0;
+                break;
+            }
+        }
+        if (match) {
+            tmp = *values;
+            for (j = i+1; j < cmd->value->nelts; j++) {
+                njt_memcpy(&((njt_array_t *)cmd->value->elts)[j-1], &((njt_array_t *)cmd->value->elts)[j], sizeof(njt_array_t));   
+            }
+ 
+            // free tmp->elts[j]->data
+            for (j = 0; j < tmp.nelts; j++) {
+                arg = &((njt_str_t*)values->elts)[j];
+                if (arg->data != NULL) {
+                    njt_pfree(pool, arg->data);
+                }
+            }
+            njt_memset(tmp.elts, 0, tmp.nalloc * sizeof(njt_str_t));
+            tmp.nelts = 0;
+            njt_memcpy(&((njt_array_t *)cmd->value->elts)[cmd->value->nelts - 1], &tmp, sizeof(njt_array_t));   
+            cmd->value->nelts--;
+            break;
+        }
+    } 
+
+    return NJT_OK;
+}
+
+njt_int_t
+njt_conf_check_svrname(njt_pool_t *pool, njt_conf_element_t *root) {
+    njt_conf_element_t *http, *svr;
+    njt_conf_block_t   *blocks;
+    njt_array_t        *cf;
+    njt_str_t          sname, *arg;
+    njt_uint_t         i, j;
+
+    cf = NULL;
+    sname.data = njt_palloc(pool, 11);
+    if (sname.data == NULL) {
+        return NJT_ERROR;
+    }
+    njt_str_set(&sname, "server_name");
+
+
+    // 查找对应的block http
+    njt_str_t s_http;
+    s_http.data = njt_palloc(pool, 4);
+    njt_str_set(&s_http, "http");
+    http = njt_conf_get_block(root, &s_http, NULL);
+
+    // 查找http下面的server
+    for (i = 0; i < http->blocks->nelts; i++) {
+        blocks = &((njt_conf_block_t*) http->blocks->elts)[i];
+        if (blocks->key.len == 6 
+            && njt_strncmp(blocks->key.data, "server", 6) == 0) 
+        {
+            for (j = 0; j < blocks->value->nelts; j++) {
+
+                svr = &((njt_conf_element_t*)blocks->value->elts)[j];
+                if (njt_conf_get_cmd_conf(svr, &sname) == NULL) {
+                    if (cf == NULL) {
+                        cf = njt_array_create(pool, 1, sizeof(njt_str_t));
+                        if (cf == NULL) {
+                            return NJT_ERROR;
+                        }
+                        arg = njt_array_push(cf);
+                        njt_memcpy(arg, &sname, sizeof(njt_str_t));
+                    }
+                    if (njt_conf_set_cmd(pool, svr, cf) != NJT_OK) {
+                        return NJT_ERROR;
+                    }
+                }
+            }
+            break;
+        }
+    }
+
+    return NJT_OK;
+}
+
 njt_int_t
 njt_conf_set_cmd(njt_pool_t *pool, njt_conf_element_t *block, njt_array_t *cf) {
     njt_uint_t       i, j, found;
@@ -1185,8 +1444,7 @@ njt_conf_set_cmd(njt_pool_t *pool, njt_conf_element_t *block, njt_array_t *cf) {
         return NJT_ERROR;
     }
 
-    if (!block->cmds)
-    {
+    if (!block->cmds) {
         block->cmds = njt_array_create(pool, 1, sizeof(njt_conf_cmd_t));
         if (!block->cmds) {
             return NJT_ERROR;
@@ -1195,8 +1453,7 @@ njt_conf_set_cmd(njt_pool_t *pool, njt_conf_element_t *block, njt_array_t *cf) {
 
     name = cf->elts;
     found = 0;
-    for (i = 0; i < block->cmds->nelts; i++)
-    {
+    for (i = 0; i < block->cmds->nelts; i++) {
         cmd = &((njt_conf_cmd_t *)(block->cmds->elts))[i];
         if (cmd->key.len != name->len) {
             continue;
@@ -1364,6 +1621,7 @@ void
 njt_conf_get_json_str(njt_conf_element_t *root, njt_str_t *out, njt_uint_t is_root)
 {
     njt_uint_t             i, j, k;
+    njt_uint_t             svr_or_loc, sname, listen;
     njt_conf_cmd_t        *cmd;
     njt_array_t           *values;
     njt_str_t             *arg;
@@ -1402,10 +1660,12 @@ njt_conf_get_json_str(njt_conf_element_t *root, njt_str_t *out, njt_uint_t is_ro
         for (i = 0; i < root->cmds->nelts; i++) {
             cmd = &((njt_conf_cmd_t*)root->cmds->elts)[i];
             dst = njt_sprintf(dst, "\"%V\":", &cmd->key); // "key":
-            if (cmd->value->nelts == 1) {
+            listen = (cmd->key.len == 6 && njt_strncmp(cmd->key.data, "listen", 6) == 0);
+            sname = (cmd->key.len == 11 && njt_strncmp(cmd->key.data, "server_name", 11) == 0);
+            if (cmd->value->nelts == 1 && !listen) {
                 // "key": "value",
                 values = cmd->value->elts;
-                if (values->nelts == 1) {
+                if (values->nelts == 1 && !sname) {
                     // all as string now, change to boolean or number later
                     arg = (njt_str_t*)values->elts;// "key": "value",
                     dst = njt_sprintf(dst, "\"%V\"", arg);
@@ -1415,7 +1675,9 @@ njt_conf_get_json_str(njt_conf_element_t *root, njt_str_t *out, njt_uint_t is_ro
                         arg = &((njt_str_t*)values->elts)[k];
                         dst = njt_sprintf(dst, "\"%V\",", arg);
                     }
-                    dst--; // last ,
+                    if (k) {
+                        dst--; // last ,
+                    }
                     *dst++ = ']'; 
                     out->len = dst - out->data;
                 }
@@ -1428,12 +1690,16 @@ njt_conf_get_json_str(njt_conf_element_t *root, njt_str_t *out, njt_uint_t is_ro
                         arg = &((njt_str_t*)values->elts)[k];
                         dst = njt_sprintf(dst, "\"%V\",", arg);
                     }
-                    dst--; // last ,
+                    if (k > 0) {
+                        dst--; // last ,
+                    }
                     *dst++ = ']'; 
                     *dst++ = ','; 
                     out->len = dst - out->data;
                 }
-                dst--; // last ,
+                if (j > 0) {
+                    dst--; // last ,
+                }
                 *dst++ = ']'; 
             }
             *dst++ = ','; 
@@ -1453,7 +1719,9 @@ njt_conf_get_json_str(njt_conf_element_t *root, njt_str_t *out, njt_uint_t is_ro
         blocks = &((njt_conf_block_t*)root->blocks->elts)[i];
         dst = njt_sprintf(dst, "\"%V\":", &blocks->key); // "key":
         out->len = dst - out->data;
-        if (blocks->value->nelts == 1) {
+        svr_or_loc = (blocks->key.len == 6 && njt_strncmp(blocks->key.data, "server", 6) == 0)
+                     || (blocks->key.len == 8 && njt_strncmp(blocks->key.data, "location", 8) == 0);
+        if (blocks->value->nelts == 1 && !svr_or_loc) {
             // http : {}
             block = blocks->value->elts;
             njt_conf_get_json_str(block, out, 0);

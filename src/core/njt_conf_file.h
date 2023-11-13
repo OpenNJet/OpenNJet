@@ -313,10 +313,14 @@ njt_conf_element_t * njt_conf_get_simple_location_block(njt_pool_t *pool,
     njt_conf_element_t *cur, njt_str_t *name);
 njt_conf_element_t* njt_conf_get_block( njt_conf_element_t *cur, 
     njt_str_t *key, njt_array_t *sub_names);
-njt_conf_cmd_t* njt_conf_get_key_conf(njt_conf_element_t *block, njt_str_t *key);
+njt_conf_cmd_t* njt_conf_get_cmd_conf(njt_conf_element_t *block, njt_str_t *key);
 njt_int_t njt_conf_add_cmd(njt_pool_t *pool,
     njt_conf_element_t *block, njt_array_t *cf);
 njt_int_t njt_conf_set_cmd(njt_pool_t *pool,
+    njt_conf_element_t *block, njt_array_t *cf);
+njt_int_t njt_conf_cmd_hit_item(njt_pool_t *pool,
+    njt_conf_element_t *block, njt_array_t *cf);
+njt_int_t njt_conf_cmd_del_item(njt_pool_t *pool,
     njt_conf_element_t *block, njt_array_t *cf);
 njt_conf_element_t* njt_conf_create_block(njt_pool_t *pool, njt_array_t *names);
 njt_int_t njt_conf_add_block( njt_pool_t *pool, njt_conf_element_t *parent, 
@@ -324,6 +328,7 @@ njt_int_t njt_conf_add_block( njt_pool_t *pool, njt_conf_element_t *parent,
 njt_int_t njt_conf_delete_block(njt_pool_t *pool, njt_conf_element_t *block);
 njt_int_t njt_conf_save_to_file(njt_pool_t *pool, njt_log_t *log,
     njt_conf_element_t *root, njt_str_t *fname);
+njt_int_t njt_conf_check_svrname(njt_pool_t *pool, njt_conf_element_t *root);
 // ---------------------------------------------
 
 njt_int_t njt_conf_full_name(njt_cycle_t *cycle, njt_str_t *name,
