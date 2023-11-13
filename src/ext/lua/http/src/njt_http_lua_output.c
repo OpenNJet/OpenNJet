@@ -153,7 +153,7 @@ njt_http_lua_njt_echo(lua_State *L, unsigned newline)
         rc = njt_http_lua_send_header_if_needed(r, ctx);
         if (rc == NJT_ERROR || rc > NJT_OK) {
             lua_pushnil(L);
-            lua_pushliteral(L, "nginx output filter error");
+            lua_pushliteral(L, "njet output filter error");
             return 2;
         }
 
@@ -240,7 +240,7 @@ njt_http_lua_njt_echo(lua_State *L, unsigned newline)
 
     if (rc == NJT_ERROR || rc >= NJT_HTTP_SPECIAL_RESPONSE) {
         lua_pushnil(L);
-        lua_pushliteral(L, "nginx output filter error");
+        lua_pushliteral(L, "njet output filter error");
         return 2;
     }
 
@@ -555,7 +555,7 @@ njt_http_lua_njt_flush(lua_State *L)
 
     if (rc == NJT_ERROR || rc >= NJT_HTTP_SPECIAL_RESPONSE) {
         lua_pushnil(L);
-        lua_pushliteral(L, "nginx output filter error");
+        lua_pushliteral(L, "njet output filter error");
         return 2;
     }
 
@@ -665,7 +665,7 @@ njt_http_lua_njt_eof(lua_State *L)
 
     if (rc == NJT_ERROR || rc >= NJT_HTTP_SPECIAL_RESPONSE) {
         lua_pushnil(L);
-        lua_pushliteral(L, "nginx output filter error");
+        lua_pushliteral(L, "njet output filter error");
         return 2;
     }
 
@@ -725,7 +725,7 @@ njt_http_lua_njt_send_headers(lua_State *L)
         rc = njt_http_lua_send_header_if_needed(r, ctx);
         if (rc == NJT_ERROR || rc > NJT_OK) {
             lua_pushnil(L);
-            lua_pushliteral(L, "nginx output filter error");
+            lua_pushliteral(L, "njet output filter error");
             return 2;
         }
     }

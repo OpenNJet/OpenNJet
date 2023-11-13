@@ -552,6 +552,50 @@ int njet_iot_client_kv_set(const void *key, u_int32_t key_len, const void *val, 
 	return 0;
 }
 
+int njet_iot_client_kv_del(const void *key, u_int32_t key_len, const void *val, u_int32_t val_len, struct evt_ctx_t *ctx)
+{
+	MDB_txn *txn;
+	MDB_dbi dbi;
+	MDB_val mk, mv;
+	if (!ctx)
+	{
+		return MOSQ_ERR_INVAL;
+	}
+	// log__printf(ctx.mosq,MOSQ_LOG_INFO,"kv set begin");
+	int ret = mdb_txn_begin(ctx->kv_env, NULL, 0, &txn);
+	if (ret != 0)
+	{
+		log__printf(ctx->mosq, MOSQ_LOG_INFO, "set open trans failed:%d", ret);
+		return -1;
+	}
+	ret = mdb_dbi_open(txn, NULL, MDB_CREATE, &dbi);
+	if (ret != 0)
+	{
+		log__printf(ctx->mosq, MOSQ_LOG_INFO, "open db failed:%d", ret);
+		mdb_txn_abort(txn);
+		return -1;
+	}
+	mk.mv_data = (char *)key;
+	mk.mv_size = key_len;
+	mv.mv_data = (char *)val;
+	mv.mv_size = val_len;
+	ret = mdb_del(txn, dbi, &mk, &mv);
+	if (ret != 0)
+	{
+		log__printf(ctx->mosq, MOSQ_LOG_INFO, "set failed:%d", ret);
+		mdb_txn_abort(txn);
+		return -1;
+	}
+	mdb_txn_commit(txn);
+	// log__printf(ctx.mosq,MOSQ_LOG_INFO,"kv set end");
+	if (ret != 0)
+	{
+		log__printf(ctx->mosq, MOSQ_LOG_INFO, "commit failed:%d", ret);
+		return -1;
+	}
+	return 0;
+}
+
 int njet_iot_client_add_topic(struct evt_ctx_t *ctx, char *topic)
 {
 	if (ctx == NULL)

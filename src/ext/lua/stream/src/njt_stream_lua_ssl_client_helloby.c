@@ -259,7 +259,7 @@ njt_stream_lua_ssl_client_hello_handler(njt_ssl_conn_t *ssl_conn,
     njt_set_connection_log(fc, cscf->error_log);
 
 #else
-#error "stream ssl_client_hello_by_lua only supports nginx >= 1.19.3"
+#error "stream ssl_client_hello_by_lua only supports njet >= 1.19.3"
 #endif
 
     if (cctx == NULL) {
@@ -494,7 +494,7 @@ njt_stream_lua_ssl_client_hello_by_chunk(lua_State *L,
     lua_setfenv(co, -2);
 #endif
 
-    /* save nginx request in coroutine globals table */
+    /* save njet request in coroutine globals table */
     njt_stream_lua_set_req(co, r);
 
     ctx->cur_co_ctx = &ctx->entry_co_ctx;

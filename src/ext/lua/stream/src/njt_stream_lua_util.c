@@ -1289,7 +1289,7 @@ propagate_error:
         }
 
     } NJT_LUA_EXCEPTION_CATCH {
-        dd("nginx execution restored");
+        dd("njet execution restored");
     }
 
     return NJT_ERROR;

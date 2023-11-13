@@ -58,12 +58,12 @@ typedef struct njt_http_location_main_conf_s {
 
 
 static  njt_str_t njt_invalid_dyn_location_body[] = {
-	njt_string("zone"),
-	njt_string("proxy_pass"),
+	njt_string("zone "),
+	njt_string("proxy_pass "),
 	njt_null_string
 };
 static  njt_str_t njt_invalid_dyn_proxy_pass[] = {
-	njt_string("unix"),
+	njt_string("unix "),
 	njt_null_string
 };
 
@@ -560,7 +560,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     }
     clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
 	if(clcf->old_locations) {
-		add_escape_val = add_escape(location_info->pool,location_name);
+	    add_escape_val = add_escape(location_info->pool,location_name);
 	    location_name_key = njt_http_location_get_full_name(location_info->pool,add_escape_val);
 	    lq = njt_http_find_location(location_name_key, clcf->old_locations);
 	    if (lq != NULL) {  
@@ -1283,12 +1283,12 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 				remain = data + buffer_len - p;
 			}
 			if(loc->location_body.len != 0 && loc->location_body.data != NULL){
-				add_escape_val = add_escape(location_info->pool,loc->location_body);
+				add_escape_val = loc->location_body;//add_escape(location_info->pool,loc->location_body);
 				p = njt_snprintf(p, remain, " %V; \n",&add_escape_val);
 				remain = data + buffer_len - p;
 			}
 			if(loc->proxy_pass.len != 0 && loc->proxy_pass.data != NULL){
-				add_escape_val = add_escape(location_info->pool,loc->proxy_pass);
+				add_escape_val = loc->proxy_pass; //add_escape(location_info->pool,loc->proxy_pass);
 				p = njt_snprintf(p, remain, " proxy_pass %V;\n",&add_escape_val);
 				remain = data + buffer_len - p;
 			}

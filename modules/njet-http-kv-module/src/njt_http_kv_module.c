@@ -527,11 +527,9 @@ static void kv_exit_worker(njt_cycle_t *cycle)
 
 njt_int_t njt_http_kv_get(njt_http_request_t *r, njt_http_variable_value_t *v, uintptr_t data)
 {
-    uint32_t hash;
-    njt_rbtree_node_t *node;
-    njt_http_kv_node_t *lc;
     njt_str_t *var;
     njt_str_t dbm_val;
+    u_int32_t val_len;
 
     if (kv_evt_ctx == NULL) {
         v->not_found = 1;
@@ -539,53 +537,19 @@ njt_int_t njt_http_kv_get(njt_http_request_t *r, njt_http_variable_value_t *v, u
     }
     // todo: assume data is variable name:
     var = (njt_str_t *)data;
-    hash = njt_crc32_short(var->data, var->len);
     njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "get key:%V", var);
-    node = njt_http_kv_rbtree_lookup(&kv_tree, var, hash);
-    if (node == NULL) {
-        // tips:lookup in dbm, in rbtree map is kv_http_{var}: {val}, while in mdb, map is {cluster_name}_{var}:{val}
-        int n;
-        u_int32_t ret_len;
-        njt_str_t mdb_key;
-        mdb_key.len = cluster_name.len + 1 + var->len - 8;
 
-        mdb_key.data = njt_palloc(r->pool, mdb_key.len);
-
-        memcpy(mdb_key.data, cluster_name.data, cluster_name.len);
-        mdb_key.data[cluster_name.len] = '_';
-        memcpy(mdb_key.data + cluster_name.len + 1, var->data + 8, var->len - 8);
-
-        njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "get keyin db:%V", &mdb_key);
-        int ret = njet_iot_client_kv_get(mdb_key.data, mdb_key.len, (void **)&dbm_val.data, &ret_len, kv_evt_ctx);
-        dbm_val.len = ret_len;
-        if (ret != 0) {
-            v->not_found = 1;
-            return NJT_OK;
-        }
-        njt_str_t *node_val = njt_palloc(njt_cycle->pool, sizeof(njt_str_t));
-        n = offsetof(njt_rbtree_node_t, color) + offsetof(njt_http_kv_node_t, data) + var->len;
-        node = njt_palloc(njt_cycle->pool, n);
-
-        node->key = hash;
-        lc = (njt_http_kv_node_t *)&node->color;
-        lc->len = (u_char)var->len;
-        lc->val = node_val;
-        node_val->data = njt_pstrdup(njt_cycle->pool, &dbm_val);
-        node_val->len = dbm_val.len;
-
-        memcpy(lc->data, var->data, var->len);
-
-        njt_rbtree_insert(&kv_tree, node);
+    int ret = njet_iot_client_kv_get(var->data, var->len, (void **)&dbm_val.data, &val_len, kv_evt_ctx);
+    if (ret != 0) {
+        v->not_found = 1;
+        return NJT_OK;
     }
-    lc = (njt_http_kv_node_t *)&node->color;
-
+    dbm_val.len = val_len;
     v->valid = 1;
     v->no_cacheable = 0;
     v->not_found = 0;
-    // tips: not copy/mv data, use ptr directly
-    // todo: do we need to copy the data, because kvset would update lc->value.data?
-    v->len = lc->val->len;
-    v->data = lc->val->data;
+    v->len = val_len;
+    v->data = njt_pstrdup(r->pool, &dbm_val);
     return NJT_OK;
 }
 
@@ -922,6 +886,18 @@ int njt_db_kv_set(njt_str_t *key, njt_str_t *value)
         return NJT_ERROR;
     }
     int ret = njet_iot_client_kv_set(key->data, key->len, value->data, value->len, NULL, kv_evt_ctx);
+    if (ret < 0) {
+        return NJT_ERROR;
+    }
+    return NJT_OK;
+}
+int njt_db_kv_del(njt_str_t *key)
+{
+    if (key->data == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_db_kv_del got wrong key data");
+        return NJT_ERROR;
+    }
+    int ret = njet_iot_client_kv_del(key->data, key->len, NULL, 0, kv_evt_ctx);
     if (ret < 0) {
         return NJT_ERROR;
     }

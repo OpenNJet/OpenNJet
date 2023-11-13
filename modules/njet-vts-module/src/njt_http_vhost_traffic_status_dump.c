@@ -110,14 +110,17 @@ njt_http_vhost_traffic_status_dump_node_write(njt_event_t *ev, njt_file_t *file,
 {
     njt_http_vhost_traffic_status_ctx_t   *ctx;
     njt_http_vhost_traffic_status_node_t  *volatile vtsn;
+    njt_http_vhost_traffic_status_node_t  *volatile vtsnd;
 
     ctx = ev->data;
 
     if (node != ctx->rbtree->sentinel) {
-        vtsn = njt_http_vhost_traffic_status_get_node(node);
+        // vtsn = njt_http_vhost_traffic_status_get_node(node);
+        vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
 
-        (void) njt_write_fd(file->fd, vtsn, sizeof(njt_http_vhost_traffic_status_node_t));
-        (void) njt_write_fd(file->fd, vtsn->data, vtsn->len);
+        (void) njt_write_fd(file->fd, vtsn, (1+njt_ncpu) * sizeof(njt_http_vhost_traffic_status_node_t));
+        vtsnd = njt_http_vhost_traffic_status_get_node(node); 
+        (void) njt_write_fd(file->fd, vtsnd->data, vtsnd->len);
         (void) njt_write_fd(file->fd, NJT_HTTP_VHOST_TRAFFIC_STATUS_DUMP_DATA_PAD,
                             sizeof(NJT_HTTP_VHOST_TRAFFIC_STATUS_DUMP_DATA_PAD));
 
@@ -280,9 +283,9 @@ njt_http_vhost_traffic_status_dump_restore_add_node(njt_event_t *ev,
     hash = njt_crc32_short(key->data, key->len);
 
     node = njt_http_vhost_traffic_status_node_lookup(ctx->rbtree, key, hash);
-
     /* copy node */
     if (node == NULL) {
+
         size = offsetof(njt_rbtree_node_t, color)
                + offsetof(njt_http_vhost_traffic_status_node_t, data) * (1 + njt_ncpu)
                + key->len;
@@ -291,14 +294,12 @@ njt_http_vhost_traffic_status_dump_restore_add_node(njt_event_t *ev,
         node = njt_slab_alloc_locked(shpool, size);
 
         if (node != NULL) {
-            vtsn = njt_http_vhost_traffic_status_get_node(node);
-
+            vtsn = (njt_http_vhost_traffic_status_node_t *) &node->color;
             node->key = hash;
-
-            *vtsn = *ovtsn;
-
+            njt_memcpy(vtsn, ovtsn, offsetof(njt_http_vhost_traffic_status_node_t, data) * (1 + njt_ncpu));
+            vtsn = njt_http_vhost_traffic_status_get_node(node);
+            vtsn->len = key->len;
             njt_memcpy(vtsn->data, key->data, key->len);
-
             njt_rbtree_insert(ctx->rbtree, node);
         } else {
             njt_log_error(NJT_LOG_ALERT, ev->log, 0,
@@ -328,8 +329,10 @@ njt_http_vhost_traffic_status_dump_restore(njt_event_t *ev)
     njt_int_t                                     rc;
     njt_file_t                                    file;
     njt_http_vhost_traffic_status_ctx_t          *ctx;
-    njt_http_vhost_traffic_status_node_t          vtsn;
+    njt_http_vhost_traffic_status_node_t          *vtsn, *last_vtsn;
     njt_http_vhost_traffic_status_dump_header_t   file_header;
+    njt_pool_t                                   *dyn_vtsn_pool;
+    size_t                                        vtsn_all_size;
 
     ctx = ev->data;
 
@@ -376,32 +379,53 @@ njt_http_vhost_traffic_status_dump_restore(njt_event_t *ev)
 
     offset = n;
 
+    dyn_vtsn_pool = njt_create_dynamic_pool(njt_pagesize, ev->log);
+    if (dyn_vtsn_pool == NULL) {
+        njt_log_error(NJT_LOG_ALERT, ev->log, 0,
+                      "dump_restore::njt_pcalloc() vtsn pool failed");
+        njt_http_vhost_traffic_status_file_close(&file);
+        return;
+    }    
+
+    vtsn_all_size = sizeof(njt_http_vhost_traffic_status_node_t) * (1 + njt_ncpu);
+
+    vtsn = njt_pcalloc(dyn_vtsn_pool, vtsn_all_size);
+    if (vtsn == NULL) {
+        njt_log_error(NJT_LOG_ALERT, ev->log, 0,
+                      "dump_restore::njt_pcalloc() vtsn failed");
+        njt_destroy_pool(dyn_vtsn_pool);
+        njt_http_vhost_traffic_status_file_close(&file);
+        return;
+    }    
+    
     for ( ;; ) {
         njt_memzero(buf, NJT_HTTP_VHOST_TRAFFIC_STATUS_DUMP_DATA_BUF_SIZE);
 
         /* read: node */
-        n = njt_read_file(&file, (u_char *) &vtsn,
-                          sizeof(njt_http_vhost_traffic_status_node_t), offset);
+        n = njt_read_file(&file, (u_char *) vtsn,
+                          vtsn_all_size, offset);
 
         if (n == NJT_ERROR || n == 0
-            || n != sizeof(njt_http_vhost_traffic_status_node_t)) {
+            || n != (ssize_t)vtsn_all_size) {
             njt_log_debug1(NJT_LOG_DEBUG_HTTP, ev->log, 0,
                           "dump_restore::njt_read_file() node size:%z failed", n);
             break;
         }
 
-        if (vtsn.len > NJT_HTTP_VHOST_TRAFFIC_STATUS_DUMP_DATA_BUF_SIZE) {
-            offset += vtsn.len + sizeof(NJT_HTTP_VHOST_TRAFFIC_STATUS_DUMP_DATA_PAD);
+        last_vtsn = vtsn + njt_ncpu;
+
+        if (last_vtsn->len > NJT_HTTP_VHOST_TRAFFIC_STATUS_DUMP_DATA_BUF_SIZE) {
+            offset += last_vtsn->len + sizeof(NJT_HTTP_VHOST_TRAFFIC_STATUS_DUMP_DATA_PAD);
             continue;
         }
 
         /* read: data */
         offset += n;
-        n = njt_read_file(&file, buf, vtsn.len, offset);
-        if (n != vtsn.len) {
+        n = njt_read_file(&file, buf, last_vtsn->len, offset);
+        if (n != last_vtsn->len) {
             njt_log_debug2(NJT_LOG_DEBUG_HTTP, ev->log, 0,
                           "dump_restore::njt_read_file() read:%z, data:%z failed",
-                          n, vtsn.len);
+                          n, last_vtsn->len);
             break;
         }
 
@@ -425,10 +449,10 @@ njt_http_vhost_traffic_status_dump_restore(njt_event_t *ev)
         }
 
         /* push: node */
-        key.len = vtsn.len;
+        key.len = last_vtsn->len;
         key.data = buf;
 
-        rc = njt_http_vhost_traffic_status_dump_restore_add_node(ev, &vtsn, &key);
+        rc = njt_http_vhost_traffic_status_dump_restore_add_node(ev, vtsn, &key);
         if (rc != NJT_OK) {
             njt_log_debug0(NJT_LOG_DEBUG_HTTP, ev->log, 0,
                            "dump_restore::dump_restore_add_node() failed");
@@ -438,6 +462,7 @@ njt_http_vhost_traffic_status_dump_restore(njt_event_t *ev)
         offset += n;
     }
 
+    njt_destroy_pool(dyn_vtsn_pool);
     njt_http_vhost_traffic_status_file_close(&file);
 }
 

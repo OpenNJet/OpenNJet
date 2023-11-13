@@ -599,7 +599,7 @@ njt_stream_health_check_dummy_handler(njt_event_t *ev) {
     njt_log_debug0(NJT_LOG_DEBUG_EVENT, ev->log, 0,
                         "stream health check dummy handler");
 }
-static u_char* test_str=(u_char*)"nginx health check";
+static u_char* test_str=(u_char*)"njet health check";
 static njt_int_t
 njt_stream_health_check_send_handler(njt_event_t *wev) {
     njt_connection_t                    *c;
