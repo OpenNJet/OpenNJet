@@ -759,7 +759,7 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 			escape_server_name = add_escape(server_info->pool,server_info->old_server_name);
 		}
 		if(server_info->old_server_name.len != 0 && server_info->server_body.len != 0 ){
-			escape_server_body = add_escape(server_info->pool,server_info->server_body);
+			escape_server_body = server_info->server_body;   //add_escape(server_info->pool,server_info->server_body);
 			p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V;\n%V \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name,&escape_server_body);
 		} else {
 			p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V; \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name);
