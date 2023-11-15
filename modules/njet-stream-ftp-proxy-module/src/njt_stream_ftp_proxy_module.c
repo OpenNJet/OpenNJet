@@ -456,7 +456,7 @@ njt_int_t njt_stream_ftp_proxy_replace_upstream(njt_stream_session_t *s,
     njt_memcpy(u.url.data, buf, u.url.len);
     u.no_resolve = 1;
 
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                 "ftp data replace server addr:%V", &u.url);
 
     if (njt_parse_url((*uscf)->ftp_url_pool, &u) != NJT_OK) {
@@ -913,7 +913,7 @@ njt_stream_ftp_data_proxy_cleanup(njt_stream_session_t *s)
         ctx->sh->used_port_num--;
         ctx->sh->freed_port_num++;
 
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
             "ftp_proxy data free_port:%d cip:%V cport:%d used_port_num:%d  freed_port_num:%d",
             proxy_port, &s->connection->addr_text, 
             njt_inet_get_port(s->connection->sockaddr),
@@ -974,7 +974,7 @@ njt_stream_ftp_control_proxy_cleanup(njt_stream_session_t *s)
                 ctx->sh->used_port_num--;
                 ctx->sh->freed_port_num++;
 
-                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
                     "ftp_proxy control free_port:%d cip:%V cport:%d used_port_num:%d  freed_port_num:%d",
                     fdp->data_port, &s->connection->addr_text, 
                     njt_inet_get_port(s->connection->sockaddr),
@@ -1089,7 +1089,7 @@ njt_int_t njt_stream_ftp_proxy_get_empty_port(njt_stream_ftp_proxy_srv_conf_t  *
         }
     }
 
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
         "ftp_proxy now_port is:%d next empty port is:%d   used_port_num:%d  freed_port_num:%d\
         cip:%V cport:%d  sip:%V  sport:%d",
         cur_port, ctx->sh->cur_empty_port, ctx->sh->used_port_num, ctx->sh->freed_port_num,
