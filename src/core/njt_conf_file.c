@@ -1534,7 +1534,7 @@ njt_conf_read_memory_token(njt_conf_t *cf,njt_str_t data)
     for ( ;; ) {
 
         if (b->pos >= b->last) {
-	    if(start <= b->last && found == 1) {
+	    if(start <= b->last) {
 		word = njt_array_push(cf->args);
                 if (word == NULL) {
                     return NJT_ERROR;
