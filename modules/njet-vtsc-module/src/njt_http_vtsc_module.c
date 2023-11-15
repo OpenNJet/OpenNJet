@@ -710,6 +710,8 @@ njt_http_vtsc_create_main_conf(njt_conf_t *cf)
         return NULL;
     }
 
+    njt_http_vts_enable = 0;
+
     /*
      * set by njt_pcalloc():
      *
