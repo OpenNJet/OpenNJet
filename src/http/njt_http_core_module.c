@@ -975,13 +975,36 @@ njt_http_core_rewrite_phase(njt_http_request_t *r, njt_http_phase_handler_t *ph)
 }
 // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
-static void njt_http_core_free_ctx(void* data){
+static void njt_http_core_free_location(void* data){
     njt_http_core_loc_conf_t  *clcf = data;
-    --clcf->ref_count;
-    if(clcf->disable == 1 && clcf->ref_count == 0) {
+    if(clcf != NULL && clcf->disable == 1 && clcf->ref_count == 0) {
         njt_http_location_delete_dyn_var(clcf);
-        njt_http_location_destroy(clcf);
+        njt_http_location_destroy(clcf); 
+       
     }
+}
+static void njt_http_core_free_ctx(void* data){
+    njt_http_core_loc_conf_t  *clcf;
+    njt_http_request_t *r;
+    njt_pool_cleanup_t   *cln;
+    u_char *p = data;
+    njt_memcpy(&clcf,p,sizeof(njt_http_core_loc_conf_t  *));
+    njt_memcpy(&r,p + sizeof(njt_http_core_loc_conf_t  *),sizeof(njt_http_request_t  *));
+
+     //njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "ref_count clcf=%V,ref_count=%i",&clcf->name,clcf->ref_count);
+
+    --clcf->ref_count;
+
+    if(clcf->disable == 1 && clcf->ref_count == 0) {
+        
+        cln = njt_pool_cleanup_add(r->connection->pool,0);
+        if (cln != NULL) {
+             cln->data = clcf;
+             cln->handler = njt_http_core_free_location;
+        }
+
+    } 
+   
 }
 #endif
 //end
@@ -1033,17 +1056,23 @@ njt_http_core_find_config_phase(njt_http_request_t *r,
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_http_core_loc_conf_t  *temp;
     njt_pool_cleanup_t   *cln;
+    u_char *pt;
 //    njt_pool_cleanup_t  **cln,*end;
 	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "ref_count used_ref=%i",r->used_ref);
         temp = njt_http_get_module_loc_conf(r,njt_http_core_module);
         ++temp->ref_count;
 
 	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "ref_count clcf=%V,ref_count=%i",&temp->name,temp->ref_count);
-        cln = njt_pool_cleanup_add(r->main->connection->pool,0);
+        cln = njt_pool_cleanup_add(r->main->pool,sizeof(njt_http_core_loc_conf_t *) + sizeof(njt_http_request_t *));
+        if (cln == NULL) {
+             njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
+             return NJT_OK;
+        }
         cln->handler = njt_http_core_free_ctx;
-        cln->data = temp;
+        pt = cln->data;
+        njt_memcpy(pt,&temp,sizeof(njt_http_core_loc_conf_t *));
+        njt_memcpy(pt+sizeof(njt_http_core_loc_conf_t *),&r->main,sizeof(njt_http_request_t *));
         
-    
 #endif
     //end
     njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
