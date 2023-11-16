@@ -336,7 +336,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     // 输出到字符串
     size_t             length; // by lcm
     length = 0;
-    njt_conf_check_svrname(pool, conf_root);
+    njt_conf_check_svrname_listen(pool, conf_root);
     njt_conf_get_json_length(conf_root, &length, 1); // by lcm
     njt_conf_json.data = njt_palloc(conf.cycle->pool, length + 4096);
     if (njt_conf_json.data) {

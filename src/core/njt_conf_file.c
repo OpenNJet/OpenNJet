@@ -1382,19 +1382,33 @@ njt_conf_cmd_del_item(njt_pool_t *pool, njt_conf_element_t *block, njt_array_t *
 }
 
 njt_int_t
-njt_conf_check_svrname(njt_pool_t *pool, njt_conf_element_t *root) {
+njt_conf_check_svrname_listen(njt_pool_t *pool, njt_conf_element_t *root) {
     njt_conf_element_t *http, *svr;
     njt_conf_block_t   *blocks;
-    njt_array_t        *cf;
-    njt_str_t          sname, *arg;
-    njt_uint_t         i, j;
+    njt_conf_cmd_t     *listen;
+    njt_array_t        *cf, *args;
+    njt_str_t           sname, slisten, slocalhost, *arg, *new_arg;
+    njt_uint_t          i, j, k, l, is_local;
+    u_char             *port;
+    njt_pool_t         *dyn_pool;
 
     cf = NULL;
-    sname.data = njt_palloc(pool, 11);
+    dyn_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    sname.data = njt_palloc(dyn_pool, 11);
     if (sname.data == NULL) {
         return NJT_ERROR;
     }
     njt_str_set(&sname, "server_name");
+    slisten.data = njt_palloc(dyn_pool, 6);
+    if (slisten.data == NULL) {
+        return NJT_ERROR;
+    }
+    njt_str_set(&slisten, "listen");
+    slocalhost.data = njt_palloc(dyn_pool, 9);
+    if (slocalhost.data == NULL) {
+        return NJT_ERROR;
+    }
+    njt_str_set(&slocalhost, "localhost");
 
 
     // 查找对应的block http
@@ -1423,6 +1437,59 @@ njt_conf_check_svrname(njt_pool_t *pool, njt_conf_element_t *root) {
                     }
                     if (njt_conf_set_cmd(pool, svr, cf) != NJT_OK) {
                         return NJT_ERROR;
+                    }
+                }
+                listen = njt_conf_get_cmd_conf(svr, &slisten);
+                if (listen != NULL) { // == null will be checked by parse_conf
+                    for (k = 0; k < listen->value->nelts; k++) {
+                        args = &((njt_array_t *)listen->value->elts)[k];
+                        arg = (njt_str_t *)args->elts; // only need the first arg
+                        // 如果地址为localhost, 改为127.0.0.1, 这个好，长度不变
+                        is_local = arg->len >= 9;
+                        if (arg->len >= 9) {
+                            for (l = 0; l < 9; l++) { // no need to early break 
+                                is_local = is_local && (njt_tolower(arg->data[l])) == slocalhost.data[l];
+                            }
+                        }
+                        if (is_local) {
+                            njt_snprintf(arg->data, 9, "127.0.0.1");
+                        }
+                        // 如果没有端口, 默认加上80, 这是目前的默认值 
+
+                        port = njt_strlchr(arg->data, arg->data + arg->len, ':');
+                        if (port == NULL) {
+                            if (arg->len < 7) { // 0.0.0.0, only port
+                                // 0.0.0.0:port
+                                new_arg = njt_palloc(pool, sizeof(njt_str_t));
+                                if (new_arg == NULL) {
+                                    return NJT_ERROR;
+                                }
+                                new_arg->data = njt_palloc(pool, 8 + arg->len);
+                                if (new_arg->data == NULL) {
+                                    return NJT_ERROR;
+                                }
+                                njt_sprintf(new_arg->data, "0.0.0.0:");
+                                njt_memcpy(new_arg->data+8, arg->data, arg->len);
+                                new_arg->len = 8 + arg->len;
+                                njt_pfree(pool, arg->data);
+                                njt_memcpy(arg, new_arg, sizeof(njt_str_t));
+                            } else { // add ":80"
+                                // address:89
+                                new_arg = njt_palloc(pool, sizeof(njt_str_t));
+                                if (new_arg == NULL) {
+                                    return NJT_ERROR;
+                                }
+                                new_arg->data = njt_palloc(pool, 3 + arg->len);
+                                if (new_arg->data == NULL) {
+                                    return NJT_ERROR;
+                                }
+                                njt_memcpy(new_arg->data, arg->data, arg->len);
+                                njt_sprintf(new_arg->data+arg->len, ":80");
+                                new_arg->len = 3 + arg->len;
+                                njt_pfree(pool, arg->data);
+                                njt_memcpy(arg, new_arg, sizeof(njt_str_t)); 
+                            }
+                        } 
                     }
                 }
             }

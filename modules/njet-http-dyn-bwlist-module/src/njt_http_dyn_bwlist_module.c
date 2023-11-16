@@ -11,129 +11,129 @@
 #include "njt_http_dyn_bwlist_parser.h"
 
 extern njt_module_t njt_http_access_module;
-extern void* njt_conf_cur_ptr;
-extern void* njt_conf_root_ptr;
+// extern void* njt_conf_cur_ptr;
+// extern void* njt_conf_root_ptr;
 
 njt_str_t dyn_bwlist_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
 // use njt_cycle->pool
-static njt_int_t njt_dyn_bwlist_add_rule_to_loc(njt_pool_t *dyn_pool, njt_http_access_rule_t *rule, njt_conf_element_t* loc) {
-    njt_pool_t     *pool;
-    njt_array_t    *cf;
-    njt_str_t      *deny, *addr;
-    njt_int_t       i, count;
-    u_char         *p, val;
+// static njt_int_t njt_dyn_bwlist_add_rule_to_loc(njt_pool_t *dyn_pool, njt_http_access_rule_t *rule, njt_conf_element_t* loc) {
+//     njt_pool_t     *pool;
+//     njt_array_t    *cf;
+//     njt_str_t      *deny, *addr;
+//     njt_int_t       i, count;
+//     u_char         *p, val;
 
 
-    cf = njt_array_create(dyn_pool, 2, sizeof(njt_str_t));
-    if (cf == NULL) {
-        return NJT_ERROR;
-    }
+//     cf = njt_array_create(dyn_pool, 2, sizeof(njt_str_t));
+//     if (cf == NULL) {
+//         return NJT_ERROR;
+//     }
 
-    deny = njt_array_push(cf);
-    deny->data = njt_palloc(dyn_pool, 5);
-    if (deny->data == NULL) {
-        return NJT_ERROR;
-    }
-    if (rule->deny) {
-        njt_str_set(deny, "deny");
-    } else {
-        njt_str_set(deny, "allow");
-    }
+//     deny = njt_array_push(cf);
+//     deny->data = njt_palloc(dyn_pool, 5);
+//     if (deny->data == NULL) {
+//         return NJT_ERROR;
+//     }
+//     if (rule->deny) {
+//         njt_str_set(deny, "deny");
+//     } else {
+//         njt_str_set(deny, "allow");
+//     }
 
-    addr = njt_array_push(cf);
-    addr->data = njt_palloc(dyn_pool, INET_ADDRSTRLEN+3); // allow 255.255.255.255/32
-    if (addr->data == NULL){
-        return NJT_ERROR;
-    }
-    // print addr
-    addr->len = njt_inet_ntop(AF_INET, &rule->addr, addr->data , INET_ADDRSTRLEN);
+//     addr = njt_array_push(cf);
+//     addr->data = njt_palloc(dyn_pool, INET_ADDRSTRLEN+3); // allow 255.255.255.255/32
+//     if (addr->data == NULL){
+//         return NJT_ERROR;
+//     }
+//     // print addr
+//     addr->len = njt_inet_ntop(AF_INET, &rule->addr, addr->data , INET_ADDRSTRLEN);
 
-    p = (u_char *)&rule->mask;
-    // 这里面就不判断并返回了，跑一遍循环也很快
-    count = 0;
-    for (i = 0; i < 4; i++) {
-        val = p[i];
-        while (val) {
-            count += val & 1; 
-            val >>= 1;
-        }
-    }
-    // print mask
-    if (count != 32) {
-        p = njt_sprintf(addr->data + addr->len, "/%l", count);
-        addr->len = p - addr->data;
-    } 
+//     p = (u_char *)&rule->mask;
+//     // 这里面就不判断并返回了，跑一遍循环也很快
+//     count = 0;
+//     for (i = 0; i < 4; i++) {
+//         val = p[i];
+//         while (val) {
+//             count += val & 1; 
+//             val >>= 1;
+//         }
+//     }
+//     // print mask
+//     if (count != 32) {
+//         p = njt_sprintf(addr->data + addr->len, "/%l", count);
+//         addr->len = p - addr->data;
+//     } 
     
-    pool = njt_cycle->pool;
-    njt_conf_cmd_hit_item(pool, loc, cf);
+//     pool = njt_cycle->pool;
+//     njt_conf_cmd_hit_item(pool, loc, cf);
 
-    // rm from allow or deny
-    deny = cf->elts;
-    if (rule->deny) {
-        njt_str_set(deny, "allow");
-    } else {
-        njt_str_set(deny, "deny");
-    }
-    njt_conf_cmd_del_item(pool, loc, cf);
+//     // rm from allow or deny
+//     deny = cf->elts;
+//     if (rule->deny) {
+//         njt_str_set(deny, "allow");
+//     } else {
+//         njt_str_set(deny, "deny");
+//     }
+//     njt_conf_cmd_del_item(pool, loc, cf);
 
-    return NJT_OK;
-}
+//     return NJT_OK;
+// }
 
-static njt_int_t njt_dyn_bwlist_add_rule6_to_loc(njt_pool_t *dyn_pool, njt_http_access_rule6_t *rule, njt_conf_element_t* loc) {
-    njt_pool_t     *pool;
-    njt_array_t    *cf;
-    njt_str_t      *deny, *addr;
-    njt_int_t       i, count;
-    u_char         *p, val;
+// static njt_int_t njt_dyn_bwlist_add_rule6_to_loc(njt_pool_t *dyn_pool, njt_http_access_rule6_t *rule, njt_conf_element_t* loc) {
+//     njt_pool_t     *pool;
+//     njt_array_t    *cf;
+//     njt_str_t      *deny, *addr;
+//     njt_int_t       i, count;
+//     u_char         *p, val;
 
-    cf = njt_array_create(dyn_pool, 2, sizeof(njt_str_t));
-    if (cf == NULL) {
-        return NJT_ERROR;
-    }
+//     cf = njt_array_create(dyn_pool, 2, sizeof(njt_str_t));
+//     if (cf == NULL) {
+//         return NJT_ERROR;
+//     }
 
-    deny = njt_array_push(cf);
-    deny->data = njt_palloc(dyn_pool, 5);
-    if (deny->data == NULL) {
-        return NJT_ERROR;
-    }
-    if (rule->deny) {
-        njt_str_set(deny, "deny");
-    } else {
-        njt_str_set(deny, "allow");
-    }
+//     deny = njt_array_push(cf);
+//     deny->data = njt_palloc(dyn_pool, 5);
+//     if (deny->data == NULL) {
+//         return NJT_ERROR;
+//     }
+//     if (rule->deny) {
+//         njt_str_set(deny, "deny");
+//     } else {
+//         njt_str_set(deny, "allow");
+//     }
 
-    addr = njt_array_push(cf);
-    addr->data = njt_palloc(dyn_pool, INET6_ADDRSTRLEN+4); // xxxx:xxxxx::xxxx/123
-    if (addr->data == NULL){
-        return NJT_ERROR;
-    }
-    // print addr
-    addr->len = njt_inet_ntop(AF_INET6, &rule->addr, addr->data , INET6_ADDRSTRLEN);
+//     addr = njt_array_push(cf);
+//     addr->data = njt_palloc(dyn_pool, INET6_ADDRSTRLEN+4); // xxxx:xxxxx::xxxx/123
+//     if (addr->data == NULL){
+//         return NJT_ERROR;
+//     }
+//     // print addr
+//     addr->len = njt_inet_ntop(AF_INET6, &rule->addr, addr->data , INET6_ADDRSTRLEN);
 
-    p = (u_char *)&rule->mask;
-    count = 0;
-    for (i = 0; i < 16; i++) {
-        val = p[i];
-        if (val == 0) {
-            break; //如果有0，说明后面也都是0，就不用计算了
-        }
-        while (val) {
-            count += val & 1; 
-            val >>= 1;
-        }
-    }
-    // print mask
-    if (count != 128) {
-        p = njt_sprintf(addr->data + addr->len, "/%ld", count);
-        addr->len = p - addr->data;
-    } 
+//     p = (u_char *)&rule->mask;
+//     count = 0;
+//     for (i = 0; i < 16; i++) {
+//         val = p[i];
+//         if (val == 0) {
+//             break; //如果有0，说明后面也都是0，就不用计算了
+//         }
+//         while (val) {
+//             count += val & 1; 
+//             val >>= 1;
+//         }
+//     }
+//     // print mask
+//     if (count != 128) {
+//         p = njt_sprintf(addr->data + addr->len, "/%ld", count);
+//         addr->len = p - addr->data;
+//     } 
     
-    pool = njt_cycle->pool;
-    njt_conf_add_cmd(pool, loc, cf);
+//     pool = njt_cycle->pool;
+//     njt_conf_add_cmd(pool, loc, cf);
 
-    return NJT_OK;
-}
+//     return NJT_OK;
+// }
 
 static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, dynbwlist_servers_item_locations_item_t *data, njt_http_conf_ctx_t *ctx, njt_rpc_result_t *rpc_result)
 {
@@ -201,7 +201,7 @@ static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, dynbwlist_servers_it
             rule->addr = addr;
             rule->deny = deny;
 
-            njt_dyn_bwlist_add_rule_to_loc(pool, rule, njt_conf_cur_ptr);
+            // njt_dyn_bwlist_add_rule_to_loc(pool, rule, njt_conf_cur_ptr);
         }
     }
 
@@ -243,7 +243,7 @@ static njt_int_t njt_dyn_bwlist_set_rules(njt_pool_t *pool, dynbwlist_servers_it
             rule6->mask = mask;
             rule6->addr = addr;
             rule6->deny = deny;
-            njt_dyn_bwlist_add_rule6_to_loc(pool, rule6, njt_conf_cur_ptr);
+            // njt_dyn_bwlist_add_rule6_to_loc(pool, rule6, njt_conf_cur_ptr);
         }
     }
 #endif
@@ -275,7 +275,7 @@ static njt_int_t njt_dyn_bwlist_update_locs(dynbwlist_servers_item_locations_t *
     njt_str_t *name;
     bool loc_found;
     njt_str_t rpc_data_str;
-    njt_conf_element_t *lce;
+    // njt_conf_element_t *lce;
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
 
@@ -331,11 +331,11 @@ static njt_int_t njt_dyn_bwlist_update_locs(dynbwlist_servers_item_locations_t *
 
                 // get location element
                 // 如果location不是一个字符串，需要调用复杂的获取函数
-                lce = njt_conf_get_simple_location_block(pool, njt_conf_cur_ptr, name);
-                if (lce == NULL) {
-                    njt_log_error(NJT_LOG_ERR, pool->log, 0, " error in find_location %V", name);
-                }
-                njt_conf_cur_ptr = lce;
+                // lce = njt_conf_get_simple_location_block(pool, njt_conf_cur_ptr, name);
+                // if (lce == NULL) {
+                    // njt_log_error(NJT_LOG_ERR, pool->log, 0, " error in find_location %V", name);
+                // }
+                // njt_conf_cur_ptr = lce;
 
                 rc = njt_dyn_bwlist_set_rules(pool, dbwl, ctx, rpc_result);
                 if (rc != NJT_OK) {
@@ -368,9 +368,9 @@ static njt_int_t njt_dyn_bwlist_update_locs(dynbwlist_servers_item_locations_t *
         }
 
         // reset njt_conf_cur_ptr;
-        if (loc_found) {
-            njt_conf_cur_ptr = lce->parent;
-        }
+        // if (loc_found) {
+        //     njt_conf_cur_ptr = lce->parent;
+        // }
     }
 
     // reset
@@ -562,7 +562,7 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t *pool, dynbwlist_t
     u_char data_buf[1024];
     u_char *end;
     njt_str_t rpc_data_str;
-    njt_conf_element_t *hce, *sce;
+    njt_conf_element_t *hce; //, *sce;
     rpc_data_str.data = data_buf;
 
     cycle = (njt_cycle_t *)njt_cycle;
@@ -612,12 +612,12 @@ static njt_int_t njt_dyn_bwlist_update_access_conf(njt_pool_t *pool, dynbwlist_t
         }
 
         // get server conf
-        sce = njt_conf_get_server_block(hce, port, serverName);
-        if (sce == NULL) {
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "can`t find server by listen:%V server_name:%V;",
-                          port, serverName);
-        }
-        njt_conf_cur_ptr = sce;
+        // sce = njt_conf_get_server_block(hce, port, serverName);
+        // if (sce == NULL) {
+        //     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "can`t find server by listen:%V server_name:%V;",
+        //                   port, serverName);
+        // }
+        // njt_conf_cur_ptr = sce;
 
         njt_http_conf_ctx_t ctx = *cscf->ctx;
         clcf = njt_http_get_module_loc_conf(cscf->ctx, njt_http_core_module);
