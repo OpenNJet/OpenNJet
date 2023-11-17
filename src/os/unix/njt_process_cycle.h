@@ -49,6 +49,7 @@ extern njt_uint_t      njt_exiting;
 
 extern sig_atomic_t    njt_reap;
 extern sig_atomic_t    njt_sigio;
+extern njt_uint_t      njt_is_privileged_agent;
 extern sig_atomic_t    njt_sigalrm;
 extern sig_atomic_t    njt_quit;
 extern sig_atomic_t    njt_debug_quit;
