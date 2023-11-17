@@ -1042,7 +1042,7 @@ void njt_http_core_free_srv_ctx(void* data) {
 
     if(cscf->disable == 1 && cscf->ref_count == 0) {
         
-        cln = njt_pool_cleanup_add(r->connection->pool,0);
+        cln = njt_pool_cleanup_add_tail(r->connection->pool,0);
         if (cln != NULL) {
              cln->data = cscf;
              cln->handler = njt_http_core_free_srv;
