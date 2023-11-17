@@ -170,6 +170,10 @@ typedef struct {
 
 njt_int_t njt_stream_upstream_init_round_robin(njt_conf_t *cf,
     njt_stream_upstream_srv_conf_t *us);
+#if (NJT_STREAM_FTP_PROXY)
+njt_int_t njt_stream_ftp_data_proxy_upstream_init_round_robin(njt_pool_t *pool,
+    njt_stream_upstream_srv_conf_t *us);
+#endif
 njt_int_t njt_stream_upstream_init_round_robin_peer(njt_stream_session_t *s,
     njt_stream_upstream_srv_conf_t *us);
 njt_int_t njt_stream_upstream_create_round_robin_peer(njt_stream_session_t *s,

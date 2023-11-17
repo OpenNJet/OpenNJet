@@ -221,6 +221,10 @@ struct njt_stream_session_s {
     u_char                        *captures_data;
 #endif
 
+#if (NJT_STREAM_FTP_PROXY)
+    njt_queue_t                    ftp_port_list;
+#endif    
+
     njt_int_t                      phase_handler;
     njt_uint_t                     status;
 
