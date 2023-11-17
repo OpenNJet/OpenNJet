@@ -502,6 +502,41 @@ njt_pool_cleanup_add(njt_pool_t *p, size_t size)
 
     return c;
 }
+/// @brief  尾部添加。 by zyg
+/// @param p 
+/// @param size 
+/// @return 
+njt_pool_cleanup_t *
+njt_pool_cleanup_add_tail(njt_pool_t *p, size_t size)
+{
+    njt_pool_cleanup_t  *c;
+    njt_pool_cleanup_t   **cln;
+    c = njt_palloc(p, sizeof(njt_pool_cleanup_t));
+    if (c == NULL) {
+        return NULL;
+    }
+
+    if (size) {
+        c->data = njt_palloc(p, size);
+        if (c->data == NULL) {
+            return NULL;
+        }
+
+    } else {
+        c->data = NULL;
+    }
+
+    c->handler = NULL;
+    c->next = NULL;
+    cln = &p->cleanup;
+    while (*cln != NULL){
+            cln = &(*cln)->next;
+    }
+    *cln = c;
+    njt_log_debug1(NJT_LOG_DEBUG_ALLOC, p->log, 0, "add tail cleanup: %p", c);
+
+    return c;
+}
 
 
 void
