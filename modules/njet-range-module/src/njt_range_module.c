@@ -272,11 +272,7 @@ njt_int_t njt_range_init_process(njt_cycle_t *cycle){
     njt_str_t                       tmp_path;
 
 
-    if(njt_process != NJT_PROCESS_WORKER && njt_process != NJT_PROCESS_SINGLE){
-        return NJT_OK;
-    }
-
-    if(njt_worker != 0){
+    if(njt_process != NJT_PROCESS_HELPER){
         return NJT_OK;
     }
 
@@ -321,11 +317,7 @@ static void njt_range_exit_process(njt_cycle_t *cycle){
     njt_str_t                       tmp_path;
 
 
-    if(njt_process != NJT_PROCESS_WORKER && njt_process != NJT_PROCESS_SINGLE){
-        return;
-    }
-
-    if(njt_worker != 0){
+    if(njt_process != NJT_PROCESS_HELPER){
         return;
     }
 
