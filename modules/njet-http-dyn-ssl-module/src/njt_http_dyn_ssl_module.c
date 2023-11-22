@@ -839,7 +839,7 @@ static u_char* njt_http_dyn_ssl_rpc_handler(njt_str_t *topic, njt_str_t *request
     njt_pool_t *pool = NULL;
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_agent_dynlog_change_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_http_dyn_ssl_rpc_handler create pool error");
         goto end;
     }
     msg = njt_http_dyn_ssl_dump_conf(cycle, pool);

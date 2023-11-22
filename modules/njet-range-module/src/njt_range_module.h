@@ -35,10 +35,10 @@ typedef struct {
 } njt_range_iptables_path_t;
 
 typedef struct {
-    njt_queue_t             ranges;
-    njt_uint_t              try_del_times;
-    njt_range_iptables_path_t               iptables_path;
-    njt_pool_t              *pool;
+    njt_queue_t                     ranges;
+    njt_uint_t                      try_del_times;
+    njt_range_iptables_path_t       iptables_path;
+    njt_pool_t                      *pool;
 } njt_range_conf_t;
 
 njt_int_t njt_range_add_rule(njt_str_t *iptables_path, njt_str_t *type, njt_str_t *src_ports, njt_uint_t dst_port);

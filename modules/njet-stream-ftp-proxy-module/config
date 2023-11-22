@@ -40,7 +40,6 @@ njt_module_srcs=" \
   $njt_addon_dir/src/njt_stream_ftp_proxy_module.c \
 "
 
-have=NJT_STREAM_FTP_PROXY . auto/have
 njt_module_incs="$njt_addon_dir/src"
 NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_module_srcs"
 

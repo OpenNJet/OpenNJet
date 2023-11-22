@@ -67,6 +67,7 @@ njt_range_module_create_conf(njt_cycle_t *cycle)
     njt_memcpy(rcf->iptables_path.path, tmp_str.data, tmp_str.len);
 
     rcf->try_del_times = 3;
+    // rcf->try_del_times = 0;
 
     return rcf;
 }
@@ -286,7 +287,6 @@ njt_int_t njt_range_init_process(njt_cycle_t *cycle){
         rcf->pool->log = cycle->log;
     }
 
-    // system("/usr/sbin/iptables -t nat -I PREROUTING -p tcp --dport 17000 -j REDIRECT --to-port 16000");
     tmp_path.data = rcf->iptables_path.path;
     tmp_path.len = rcf->iptables_path.len;
 
@@ -359,8 +359,8 @@ njt_int_t njt_range_add_rule(njt_str_t *iptables_path, njt_str_t *type, njt_str_
     tmp_str.len = end - buf;
 
 
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "=====add rule:%V", &tmp_str);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+            "range add rule:%V", &tmp_str);
 
 
     ret = system((char *)buf);
@@ -384,10 +384,8 @@ njt_int_t njt_range_del_rule(njt_str_t *iptables_path, njt_str_t *type, njt_str_
     tmp_str.data = buf;
     tmp_str.len = end - buf;
 
-
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "=====del rule:%V", &tmp_str);
-
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+            "range del rule:%V", &tmp_str);
 
     ret = system((char *)buf);
     if(0 != ret){
