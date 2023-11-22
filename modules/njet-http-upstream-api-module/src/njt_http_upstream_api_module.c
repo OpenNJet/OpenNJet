@@ -18,6 +18,14 @@
 #include "njt_str_util.h"
 #include <njt_http_util.h>
 
+
+static njt_str_t status_down = njt_string("down");  
+static njt_str_t status_unhealthy = njt_string("unhealthy");  
+static njt_str_t status_draining = njt_string("draining");  
+static njt_str_t status_checking = njt_string("checking");  
+static njt_str_t status_unavail = njt_string("unavail");  
+static njt_str_t status_up = njt_string("up");  
+
 #define MIN_UPSTREAM_API_BODY_LEN 2
 #define MAX_UPSTREAM_API_BODY_LEN 5242880
 
@@ -52,12 +60,6 @@
 
 #define njt_get_peer_status_name(peer) \
 	({ \
-	 njt_str_t status_down = njt_string("down");  \
-	 njt_str_t status_unhealthy = njt_string("unhealthy");  \
-	 njt_str_t status_draining = njt_string("draining");  \
-	 njt_str_t status_checking = njt_string("checking");  \
-	 njt_str_t status_unavail = njt_string("unavail");  \
-	 njt_str_t status_up = njt_string("up");  \
 	 njt_str_t *msg;  \
 	 if(peer->down == 1) {  \
 	 msg = &status_down; \
