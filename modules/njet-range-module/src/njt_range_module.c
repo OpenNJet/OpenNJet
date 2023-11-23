@@ -303,7 +303,7 @@ njt_int_t njt_range_init_process(njt_cycle_t *cycle){
         }
 
         if(NJT_OK != njt_range_add_rule(&tmp_path, &rule_item->type, &rule_item->src_ports, rule_item->dst_port)){
-            njt_log_error(NJT_LOG_DEBUG, cycle->log, 0,
+            njt_log_error(NJT_LOG_ERR, cycle->log, 0,
                     "range add rule error, type:%V  src_ports:%V  dst_port:%d",
                     &rule_item->type, &rule_item->src_ports, rule_item->dst_port);
             continue;
@@ -338,7 +338,7 @@ static void njt_range_exit_process(njt_cycle_t *cycle){
         rule_item = njt_queue_data(q, njt_range_rule_t, range_queue);
 
         if(NJT_OK != njt_range_del_rule(&tmp_path, &rule_item->type, &rule_item->src_ports, rule_item->dst_port)){
-            njt_log_error(NJT_LOG_DEBUG, cycle->log, 0,
+            njt_log_error(NJT_LOG_ERR, cycle->log, 0,
                     "range add rule error, type:%V  src_ports:%V  dst_port:%d",
                     &rule_item->type, &rule_item->src_ports, rule_item->dst_port);
             continue;
@@ -362,10 +362,8 @@ njt_int_t njt_range_add_rule(njt_str_t *iptables_path, njt_str_t *type, njt_str_
     tmp_str.data = buf;
     tmp_str.len = end - buf;
 
-
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
             "range add rule:%V", &tmp_str);
-
 
     ret = system((char *)buf);
     if(0 != ret){
