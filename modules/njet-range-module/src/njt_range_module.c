@@ -271,6 +271,8 @@ njt_int_t njt_range_init_process(njt_cycle_t *cycle){
     njt_range_rule_t                *rule_item;
     njt_uint_t                       i = 0;
     njt_str_t                       tmp_path;
+    uid_t                           uid = 0;
+    int                             ret;
 
 
     if(njt_process != NJT_PROCESS_HELPER){
@@ -281,6 +283,9 @@ njt_int_t njt_range_init_process(njt_cycle_t *cycle){
     if(rcf == NULL){
         return NJT_OK;
     }
+
+    //setuid
+    ret = setuid(uid);
 
     //update rcf->pool->log = cycle_log
     if(rcf->pool != NJT_CONF_UNSET_PTR){
