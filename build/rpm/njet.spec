@@ -66,7 +66,7 @@ ldconfig
 systemctl daemon-reload
 systemctl enable njet.service
 
-/usr/sbin/setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw=eip /usr/local/njet/sbin/njet
+/usr/sbin/setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw,cap_setuid=eip /usr/local/njet/sbin/njet
 
 %preun
 systemctl stop njet.service >/dev/null 2>&1
