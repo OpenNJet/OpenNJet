@@ -744,6 +744,42 @@ static int njt_agent_location_change_handler_internal(njt_str_t *key, njt_str_t 
 	return NJT_OK;
 }
 
+static njt_str_t *njt_dyn_bwlist_dump_access_conf(njt_cycle_t *cycle, njt_pool_t *pool) {
+	
+}
+static u_char *njt_agent_location_get_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data) {
+    njt_cycle_t *cycle;
+    njt_str_t *msg;
+    u_char *buf;
+    njt_pool_t *pool = NULL;
+
+    buf = NULL;
+    cycle = (njt_cycle_t *)njt_cycle;
+    *len = 0;
+
+    pool = njt_create_pool(njt_pagesize, njt_cycle->log);
+    if (pool == NULL) {
+        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_dyn_bwlist_rpc_handler create pool error");
+        goto out;
+    }
+
+    msg = njt_dyn_location_dump_conf(cycle, pool);
+    buf = njt_calloc(msg->len, cycle->log);
+    if (buf == NULL) {
+        goto out;
+    }
+
+    njt_memcpy(buf, msg->data, msg->len);
+    *len = msg->len;
+
+out:
+    if (pool != NULL) {
+        njt_destroy_pool(pool);
+    }
+
+    return buf;
+
+}
 
 static u_char* njt_agent_location_put_handler(njt_str_t *topic, njt_str_t *request, int* len, void *data) {
     njt_str_t err_json_msg;
@@ -767,11 +803,11 @@ njt_http_location_init_worker(njt_cycle_t *cycle) {
     njt_kv_reg_handler_t h;
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &key;
+	h.rpc_get_handler = njt_agent_location_get_handler;
     h.rpc_put_handler = njt_agent_location_put_handler;
     h.handler = topic_kv_change_handler;
     h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
     njt_kv_reg_handler(&h);
-
     return NJT_OK;
 }
 
