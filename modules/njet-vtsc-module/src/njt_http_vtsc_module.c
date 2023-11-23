@@ -710,6 +710,8 @@ njt_http_vtsc_create_main_conf(njt_conf_t *cf)
         return NULL;
     }
 
+    njt_http_vts_enable = 0;
+
     /*
      * set by njt_pcalloc():
      *
@@ -1439,7 +1441,7 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_str_t *dynconf, njt
 
     ctx->filter_keys_dyn = NULL;
     ctx->dyn_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, cycle->log);
-    if(ctx->dyn_pool == NULL) {
+    if(ctx->dyn_pool == NULL || NJT_OK != njt_sub_pool(cycle->pool, ctx->dyn_pool)) {
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
