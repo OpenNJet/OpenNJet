@@ -121,6 +121,7 @@ cdir=`cd $(dirname $0); pwd`
 		    cp -fr lualib /etc/njet/lualib
                 fi
                 cd auto/lib/keepalived; make install; cd -;
+                cd auto/lib/luapkg; make install; cd -;
                 make install
 		mkdir /etc/njet/data
 		chmod 777 -R /etc/njet/data  /etc/njet/logs
@@ -128,6 +129,7 @@ cdir=`cd $(dirname $0); pwd`
             clean)
                 rm -rf auto/lib/njetmq/build
                 rm auto/lib/keepalived/Makefile
+		cd auto/lib/luapkg; make clean; cd -;
                 make clean
                 ;;
             release)
