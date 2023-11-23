@@ -104,12 +104,12 @@ njt_range(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             value[i].data += 5;
             value[i].len -= 5;
 
-            if(njt_strncmp(value[i].data, "tcp", 3) == 0) {
+            if(value[i].len == 3 && njt_strncmp(value[i].data, "tcp", 3) == 0) {
                 njt_str_set(&rule.type, "tcp");
-            }else if(njt_strncmp(value[i].data, "udp", 3) == 0) {
-                njt_str_set(&rule.type, "udp");
+            // }else if(value[i].len == 3 && njt_strncmp(value[i].data, "udp", 3) == 0) {
+            //     njt_str_set(&rule.type, "udp");
             }else{
-                return "range type should be tcp or udp";
+                return "range type should be tcp";
             }
 
             continue;
