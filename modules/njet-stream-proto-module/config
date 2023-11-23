@@ -16,7 +16,7 @@ if [ $njt_found = yes ]; then
     njt_addon_name=njt_stream_proto_module
     njt_module_type=STREAM
     njt_module_name=$njt_addon_name
-    STREAM_MODULES="$STREAM_MODULES njt_stream_proto_module"
+    STREAM_MODULES=$(echo $STREAM_MODULES | sed "s/njt_stream_ssl_preread_module/njt_stream_proto_module njt_stream_ssl_preread_module/")
     NJT_ADDON_DEPS="$NJT_ADDON_DEPS $njt_feature_deps"
     NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_check_src"
 else

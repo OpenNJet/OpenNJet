@@ -263,7 +263,7 @@ njt_stream_lua_log_by_chunk(lua_State *L, njt_stream_lua_request_t *r)
 
     } NJT_LUA_EXCEPTION_CATCH {
 
-        dd("nginx execution restored");
+        dd("njet execution restored");
         return NJT_ERROR;
     }
 

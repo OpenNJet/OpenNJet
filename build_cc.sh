@@ -59,6 +59,7 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-sysguard-cpu-mod
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-register-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-modsecurity-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-modsecurity-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-stream-ftp-proxy-module"
 PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
 LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo "
 # LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo"
@@ -120,6 +121,7 @@ cdir=`cd $(dirname $0); pwd`
 		    cp -fr lualib /etc/njet/lualib
                 fi
                 cd auto/lib/keepalived; make install; cd -;
+                cd auto/lib/luapkg; make install; cd -;
                 make install
 		mkdir /etc/njet/data
 		chmod 777 -R /etc/njet/data  /etc/njet/logs
@@ -127,6 +129,7 @@ cdir=`cd $(dirname $0); pwd`
             clean)
                 rm -rf auto/lib/njetmq/build
                 rm -f auto/lib/keepalived/Makefile
+		cd auto/lib/luapkg; make clean; cd -;
                 cd auto/lib/modsecurity; make clean; cd -;
                 make clean
                 ;;

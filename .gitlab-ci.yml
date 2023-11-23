@@ -39,7 +39,7 @@ build_rpm:
   script:
     - cd /builds/njet_dev/  
     - tar cf /home/builder/rpm/njet_main.tar --exclude="njet_main/.git" njet_main
-    - cp /builds/njet_dev/njet_main/build/rpm/* /home/builder/rpm/ 
+    - cp /builds/njet_dev/njet_main/build/rpm/njet.spec /home/builder/rpm/ 
     - rpmbuild -bb /home/builder/rpm/njet.spec
     - cd /builds/njet_dev/njet_main 
     - sudo mkdir -p work 

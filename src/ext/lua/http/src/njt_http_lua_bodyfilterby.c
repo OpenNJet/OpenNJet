@@ -90,7 +90,7 @@ njt_http_lua_body_filter_by_chunk(lua_State *L, njt_http_request_t *r,
     njt_pool_t      *old_pool;
 #endif
 
-    dd("initialize nginx context in Lua VM, code chunk at stack top  sp = 1");
+    dd("initialize njet context in Lua VM, code chunk at stack top  sp = 1");
     njt_http_lua_body_filter_by_lua_env(L, r, in);
 
 #if (NJT_PCRE)

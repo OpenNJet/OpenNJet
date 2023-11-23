@@ -1,5 +1,5 @@
 Name:     njet 
-Version:  1.2.2 
+Version:  1.2.3 
 Release:  1%{?dist} 
 
 Summary:  OpenNJet Application Engine
@@ -20,22 +20,19 @@ OpenNJet 应用引擎是基于 NGINX 的面向互联网和云原生应用提供�
 
 %build
 mv njet_main njet
-tar xzf njet/build/rpm/opennjet.conf.files.tar.gz
-tar xzf njet/build/rpm/lua.module.tar.gz
 cd njet && sed -i 's/--strict-warnings//g' ./build_cc.sh && ./build_cc.sh conf $CI_COMMIT_SHA && make -j `nproc`
 if [ -d scripts ]; then
   for i in `find ./scripts -type f`; do
     LUA_PATH="`pwd`/luajit/src/?.lua;;" luajit/src/luajit -bg $i $i 
   done
 fi
-cd %{_builddir}/%{name}-%{version}/lua_module/resty-cjson && LUA_INCLUDE_DIR=%{_builddir}/%{name}-%{version}/njet/luajit/src make
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/usr/local/njet/modules/
-cp -a njet.conf.files/* %{buildroot}
+mkdir -p %{buildroot}/usr/local/njet/{logs,data,modules,lib,sbin,lualib/lib,lualib/clib}
+cp -a njet/build/rpm/njet.conf.files/* %{buildroot}
 cp -a njet/objs/njet %{buildroot}/usr/local/njet/sbin/
-cp -a njet/objs/*.so  %{buildroot}/usr/local/njet/modules/
+cp -a njet/objs/*.so %{buildroot}/usr/local/njet/modules/
 cp -a njet/lualib/lib/* %{buildroot}/usr/local/njet/lualib/lib/
 cp -a njet/luajit/src/libluajit.so* %{buildroot}/usr/local/njet/lib/libluajit-5.1.so.2.1.0
 if [ -d njet/scripts ]; then
@@ -43,9 +40,7 @@ if [ -d njet/scripts ]; then
 fi
 ln -sf libluajit-5.1.so.2.1.0 %{buildroot}/usr/local/njet/lib/libluajit-5.1.so.2
 ln -sf libluajit-5.1.so.2.1.0 %{buildroot}/usr/local/njet/lib/libluajit-5.1.so
-mkdir -p %{buildroot}/usr/local/njet/lualib/clib/
-cp -a lua_module/resty-cjson/cjson.so  %{buildroot}/usr/local/njet/lualib/clib/
-cp -a lua_module/resty-http/lib/* %{buildroot}/usr/local/njet/lualib/lib/
+cd njet/auto/lib/luapkg; DESTDIR=%{buildroot} PREFIX=/usr/local CDIR_linux=njet/lualib/clib LDIR_linux=njet/lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -
 cp -a njet/auto/lib/keepalived/keepalived/emb/.libs/libha_emb.so* %{buildroot}/usr/local/njet/lib 
 if [ -d njet/auto/lib/modsecurity/src/.libs/ ]; then
  cp -a njet/auto/lib/modsecurity/src/.libs/libmodsecurity.so* %{buildroot}/usr/local/njet/lib
@@ -73,7 +68,8 @@ ldconfig
 
 systemctl daemon-reload
 systemctl enable njet.service
-/usr/sbin/setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw=eip /usr/local/njet/sbin/njet
+
+/usr/sbin/setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw,cap_setuid=eip /usr/local/njet/sbin/njet
 
 %preun
 systemctl stop njet.service >/dev/null 2>&1
@@ -96,8 +92,12 @@ rm -rf %{buildroot}
 %attr(-,njet,njet) /usr/local/njet/
 
 %changelog
+* Wed Nov 8 2023 hongxina <hongxina@tmlake.com> - 1.2.3-1
+- update to 1.2.3 
+
 * Wed Oct 18 2023 hongxina <hongxina@tmlake.com> - 1.2.2-1
 - DESC: update to 1.2.2-1
 
 * Tue Aug 15 2023 hongxina <hongxina@tmlake.com> - 1.1.2-1
 - init 
+

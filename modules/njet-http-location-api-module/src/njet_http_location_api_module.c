@@ -644,9 +644,9 @@ err:
     out.buf = NULL;
      rpc_result = njt_rpc_result_create();
     if(rpc_result == NULL){
-		if(location_info != NULL) {
-                njt_destroy_pool(location_info->pool);
-		}
+	    if(location_info != NULL) {
+		    njt_destroy_pool(location_info->pool);
+	    }
        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rpc_result allocate null");
        rc = NJT_ERROR;
        goto out;
@@ -667,6 +667,7 @@ err:
 		njt_rpc_result_set_msg2(rpc_result,&insert);
         
     }
+    njt_str_null(&insert);
     njt_rpc_result_to_json_str(rpc_result,&insert);
 
     r->headers_out.content_type_len = sizeof("text/plain") - 1;
@@ -685,16 +686,21 @@ err:
 
     rc = njt_http_send_header(r);
 	if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
-        njt_http_finalize_request(r, rc);
-        return;
+        //njt_http_finalize_request(r, rc);
+        //return;
+	goto out;
     }
    
     rc = njt_http_output_filter(r, &out);
 
 out:
-	njt_http_finalize_request(r, rc);
+    njt_http_finalize_request(r, rc);
     if(rpc_result){
+	if(insert.data != NULL && insert.len != 0) {
+		njt_free(insert.data);
+	}
         njt_rpc_result_destroy(rpc_result);
+
     }
     return;
 

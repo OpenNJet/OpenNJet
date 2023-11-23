@@ -9,7 +9,6 @@ case "$CC" in
     *)
         CORE_INCS="$CORE_INCS $KEEPALIVED/keepalived/emb/"
         CORE_DEPS="$CORE_DEPS $KEEPALIVED/keepalived/emb/njt_vrrp_emb.h"
-        CFLAGS="$CFLAGS -L$KEEPALIVED/keepalived/emb/.libs -L/usr/local/lib"
     ;;
 esac
 
