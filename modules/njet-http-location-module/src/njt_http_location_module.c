@@ -3,6 +3,7 @@
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
+
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
@@ -744,8 +745,10 @@ static int njt_agent_location_change_handler_internal(njt_str_t *key, njt_str_t 
 	return NJT_OK;
 }
 
-static njt_str_t *njt_dyn_bwlist_dump_access_conf(njt_cycle_t *cycle, njt_pool_t *pool) {
+static njt_str_t *njt_dyn_location_dump_conf(njt_cycle_t *cycle, njt_pool_t *pool) {
 	
+	njt_str_t *ret = njt_pcalloc(cycle->pool, sizeof(njt_str_t));
+	return ret;
 }
 static u_char *njt_agent_location_get_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data) {
     njt_cycle_t *cycle;
