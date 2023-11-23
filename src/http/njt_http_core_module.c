@@ -2851,6 +2851,7 @@ static void njt_http_refresh_variables_keys(){
 	njt_hash_key_t             *key;
 	njt_pool_t *old_pool;
 	u_char *pdata;
+	njt_int_t rc;
 	njt_hash_keys_arrays_t    *old_variables_keys;
     static njt_uint_t  use_clone_mem = 1;
 
@@ -2871,7 +2872,12 @@ static void njt_http_refresh_variables_keys(){
 		   njt_log_error(NJT_LOG_ERR, njt_cycle->pool->log, 0, "njt_http_refresh_variables_keys create pool error!");
 		   return ;
 	   }
-
+	   rc = njt_sub_pool(njt_cycle->pool,new_pool);
+           if (rc != NJT_OK) {
+                   cmcf->variables_keys = old_variables_keys;
+                   njt_destroy_pool(new_pool);
+                   return;
+           }
 
 	   cmcf->variables_keys = njt_pcalloc(new_pool,
                                        sizeof(njt_hash_keys_arrays_t));
