@@ -137,6 +137,7 @@ struct njt_conf_element_s {
     njt_conf_element_t *parent;
 };
 
+extern void *njt_conf_pool_ptr; 
 extern void *njt_conf_cur_ptr; 
 extern void *njt_conf_root_ptr;
 extern njt_str_t njt_conf_json; 

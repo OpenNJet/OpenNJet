@@ -160,6 +160,9 @@ USE_OPENSSL=NO
 USE_OPENSSL_QUIC=NO
 OPENSSL=NONE
 
+USE_GO_CONF_HELPER=NO
+GO_CONF_HELPER_PATH=NONE
+
 USE_ZLIB=NO
 ZLIB=NONE
 ZLIB_OPT=
@@ -379,6 +382,8 @@ use the \"--with-mail_ssl_module\" option instead"
 
         --with-openssl=*)                OPENSSL="$value"           ;;
         --with-openssl-opt=*)            OPENSSL_OPT="$value"       ;;
+
+        --with-go-dynconf-path=*)         GO_CONF_HELPER_PATH="$value";;
 
         --with-md5=*)
             NJT_POST_CONF_MSG="$NJT_POST_CONF_MSG
@@ -612,6 +617,8 @@ cat << END
 
   --with-openssl=DIR                 set path to OpenSSL library sources
   --with-openssl-opt=OPTIONS         set additional build options for OpenSSL
+
+  --with-go-dynconf-path=PATH         set path to go config update helper
 
   --with-debug                       enable debug logging
 

@@ -319,6 +319,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     conf_root = cycle->conf_root;
     njt_memzero(conf_root, sizeof(njt_conf_element_t));
     njt_conf_cur_ptr = conf_root;
+    njt_conf_pool_ptr = cycle->pool;
     njt_conf_root_ptr = conf_root;
     //----------------------------------------------------------
 
@@ -336,18 +337,21 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     // 输出到字符串
     size_t             length; // by lcm
     length = 0;
-    njt_conf_check_svrname_listen(pool, conf_root);
+    // njt_conf_check_svrname_listen(pool, conf_root);
     njt_conf_get_json_length(conf_root, &length, 1); // by lcm
     njt_conf_json.data = njt_palloc(conf.cycle->pool, length + 4096);
+    // njt_conf_json.data = njt_alloc(length + 4096, cycle->log);
     if (njt_conf_json.data) {
         njt_conf_get_json_str(conf_root, &njt_conf_json, 1);
     }
+    njt_pfree(conf.cycle->pool, njt_conf_json.data);
 
-    printf("test test test \n");
-    printf("conf file %s \n", cycle->conf_file.data);
+    // printf("test test test \n");
+    // printf("conf file %s \n", cycle->conf_file.data);
     printf("%s \n", (char*)njt_conf_json.data);
     printf("%ld \n", length);
     printf("%ld \n", njt_conf_json.len);
+    njt_conf_json.len = 0;
     // // 查找对应的block http
     // njt_str_t s_http;
     // s_http.data = njt_palloc(conf.cycle->pool, 4);
