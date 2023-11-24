@@ -9,6 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
+#include <njt_str_util.h>
 // by chengxu
 #if (NJT_HTTP_CACHE_PURGE)
 #include <njt_cache_purge.h>
@@ -6618,6 +6619,7 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
 #if (NJT_HTTP_DYNAMIC_UPSTREAM)
     uscf->ref_count = 1;
     uscf->pool = new_pool;
+    njt_str_copy_pool(new_pool,uscf->host,u->host,goto error);
    if(cf->dynamic == 1) {
    init = njt_http_upstream_init_round_robin;
     if (init(cf,uscf) != NJT_OK) {
