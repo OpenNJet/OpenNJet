@@ -806,7 +806,7 @@ static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_le
                 nstr_msg.data = (u_char *)msg;
                 nstr_msg.len = msg_len;
                 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "in njt_http_kv_module, invoke rpc handler topic:%V, msg: %V ", &nstr_topic, &nstr_msg);
-                if (njt_strncmp(topic, RPC_TOPIC_PREFIX, RPC_TOPIC_PREFIX_LEN) == 0
+                if (njt_strstr(topic, RPC_TOPIC_PREFIX) != NULL
                     && kv_handler->callbacks.rpc_get_handler) {
                     return kv_handler->callbacks.rpc_get_handler(&nstr_topic, &nstr_msg, len, kv_handler->callbacks.data);
                 } else if (kv_handler->callbacks.rpc_put_handler) {
