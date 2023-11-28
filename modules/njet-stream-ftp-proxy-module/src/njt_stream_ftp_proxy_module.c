@@ -367,6 +367,10 @@ njt_int_t njt_stream_ftp_proxy_replace_upstream(njt_stream_session_t *s,
     njt_pool_t                          *ftp_url_pool;
 
 
+    if(njt_stream_ftp_proxy_module.ctx_index == NJT_MODULE_UNSET_INDEX){
+        return NJT_ERROR;
+    }
+
     fscf = njt_stream_get_module_srv_conf(s, njt_stream_ftp_proxy_module);
     if(fscf == NULL || fscf->type != NJT_STREAM_FTP_DATA){
         return NJT_ERROR;
@@ -708,6 +712,11 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
     u_char                              *end;
     njt_stream_ftp_data_port_t          *data_queue;
 
+
+    if(njt_stream_ftp_proxy_module.ctx_index == NJT_MODULE_UNSET_INDEX){
+        return;
+    }
+
     fscf = njt_stream_get_module_srv_conf(s, njt_stream_ftp_proxy_module);
     if(fscf == NULL || fscf->type != NJT_STREAM_FTP_CTRL){
         return;
@@ -860,6 +869,9 @@ njt_stream_ftp_data_proxy_cleanup(njt_stream_session_t *s)
     njt_stream_proto_ctx_t              *proto_ctx;
     njt_stream_proto_srv_conf_t         *proto_cf;
     
+    if(njt_stream_ftp_proxy_module.ctx_index == NJT_MODULE_UNSET_INDEX){
+        return;
+    }
 
     fscf = njt_stream_get_module_srv_conf(s, njt_stream_ftp_proxy_module);
     if(fscf == NULL || fscf->type != NJT_STREAM_FTP_DATA){
@@ -938,6 +950,10 @@ njt_stream_ftp_control_proxy_cleanup(njt_stream_session_t *s)
     uint32_t                            hash;
     njt_str_t                           key;
     
+
+    if(njt_stream_ftp_proxy_module.ctx_index == NJT_MODULE_UNSET_INDEX){
+        return;
+    }
 
     if(njt_queue_empty(&s->ftp_port_list)){
         return;
