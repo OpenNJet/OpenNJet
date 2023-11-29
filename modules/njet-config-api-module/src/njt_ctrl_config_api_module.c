@@ -118,6 +118,7 @@ static int njt_ctrl_dynlog_rpc_msg_handler(njt_dyn_rpc_res_t* res, njt_str_t *ms
         if(res->rc == RPC_RC_TIMEOUT){
             rc = njt_ctrl_dynlog_request_output(req,NJT_HTTP_INTERNAL_SERVER_ERROR,&err_msg);
         }
+	njt_log_error(NJT_LOG_INFO,njt_cycle->log, 0, " njt_ctrl_dynlog_rpc_msg_handler  r->main->count : %p,%i",req->main,req->main->count);
         njt_http_finalize_request(req,rc);
     }
     return NJT_OK;
@@ -361,10 +362,12 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
         }
         rc = njt_ctrl_dynlog_rpc_send(r,&topic,&smsg, 0);
         if(rc != NJT_OK){
+ 	    njt_log_error(NJT_LOG_INFO,njt_cycle->log, 0, "error r->main->count : %p,%i,uri=%V,%V",r->main,r->main->count,&r->uri,&r->connection->addr_text);
             goto err;
         }
         ++r->main->count;
-        return NJT_DONE;
+	njt_log_error(NJT_LOG_INFO,njt_cycle->log, 0, "r->main->count : %p,%i,uri=%V,%V",r->main,r->main->count,&r->uri,&r->connection->addr_text);
+        return NJT_OK;
     }
     rc = NJT_HTTP_NOT_FOUND;
 
