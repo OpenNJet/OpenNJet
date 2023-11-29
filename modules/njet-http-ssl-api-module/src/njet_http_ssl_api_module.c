@@ -662,7 +662,7 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
 
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_http_ssl_change_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_change_handler create pool error");
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
         njt_rpc_result_set_msg(rpc_result, (u_char *)" update handler create pool error");
         rc = NJT_ERROR;

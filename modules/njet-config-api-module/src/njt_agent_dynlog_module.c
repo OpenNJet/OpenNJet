@@ -553,7 +553,7 @@ static int  njt_agent_dynlog_change_handler_internal(njt_str_t *key, njt_str_t *
     njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_dyn_dynlog_change_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_dynlog_change_handler create pool error");
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
         rc = NJT_ERROR;
         goto rpc_msg;
