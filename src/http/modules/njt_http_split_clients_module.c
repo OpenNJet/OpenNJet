@@ -599,6 +599,18 @@ static char *njt_conf_split_clients_block(njt_conf_t *cf, njt_command_t *cmd,
     last = 0;
     part = ctx->parts.elts;
 
+    if (ctx->parts.nelts == 0 ) {
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                "should be at least one default \"*\" entry in config file");
+            return NJT_CONF_ERROR;
+    }
+    
+    if (!part[ctx->parts.nelts-1].last) {
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                "last entry in config file should be \"*\" ");
+            return NJT_CONF_ERROR;
+    }
+
     for (i = 0; i < ctx->parts.nelts; i++) {
         sum = part[i].percent ? sum + part[i].percent : 10000;
         if (sum > 10000) {
