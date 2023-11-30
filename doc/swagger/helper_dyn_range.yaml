@@ -1,0 +1,124 @@
+openapi: 3.0.3
+info:
+  title: dyn range api
+  description: 动态range 配置
+  version: 1.0.0
+
+servers:
+  - url: '/'
+paths:
+  /range:
+    get:
+      tags:
+        - dyn range config
+      summary: return range config
+      description: get range config
+      operationId: getDynRange
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+    put:
+      tags:
+        - dyn range config
+      summary: set range conf
+      description: set range conf
+      operationId: setDynRange
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RangeConf'
+          required: true
+      responses:
+        '204':
+          description: Success
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+        ###DEFINITIONS
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+
+    MainConf:
+      title: ranges Conf
+      description: 动态ranges配置
+      type: object
+      properties:
+        ranges:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetRangeConf'
+
+
+    GetRangeConf:
+      title:     GetRangeConf
+      description: 动态 range 配置
+      type: object
+      properties:
+        type:
+          type: string
+          description: tcp or udp rule
+        src_ports:
+          type: string
+          description: 端口范围[10000:10010]或者单个端口 10000
+        dst_port:
+          type: string
+          description: 目标端口
+        try_del_times:
+          type: integer
+          description: 进程刚起来,尝试删除次数,默认为3次
+        iptables_path:
+          type: string
+          description: iptables 路径， 默认/usr/sbin/iptables
+
+    RangeConf:
+      title:     RangeConf
+      description: 动态 range 配置
+      type: object
+      properties:
+        action:
+          type: string
+          description: add or del
+        type:
+          type: string
+          description: tcp or udp rule
+        src_ports:
+          type: string
+          description: 端口范围[10000:10010]或者单个端口 10000
+        dst_port:
+          type: string
+          description: 目标端口
+        try_del_times:
+          type: integer
+          description: 进程刚起来,尝试删除次数,默认为3次
+        iptables_path:
+          type: string
+          description: iptables 路径， 默认/usr/sbin/iptables
+
