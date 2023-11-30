@@ -1513,6 +1513,15 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_str_t *dynconf, njt
         second.len = data - second.data - 1;
     }
 
+    //check whther has two param at least
+    if (first.data == NULL || first.len < 1
+        || second.data == NULL || second.len < 1) {
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " need at least two param in filter key");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        goto FAIL;
+    }
+
     flag = 0;
 
     while (data < filter_data + len) {
