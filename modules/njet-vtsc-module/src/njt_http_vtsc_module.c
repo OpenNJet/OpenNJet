@@ -1441,7 +1441,7 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_str_t *dynconf, njt
 
     ctx->filter_keys_dyn = NULL;
     ctx->dyn_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, cycle->log);
-    if(ctx->dyn_pool == NULL) {
+    if(ctx->dyn_pool == NULL || NJT_OK != njt_sub_pool(cycle->pool, ctx->dyn_pool)) {
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
@@ -1511,6 +1511,15 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_str_t *dynconf, njt
     }
     if (data <= filter_data + len) {
         second.len = data - second.data - 1;
+    }
+
+    //check whther has two param at least
+    if (first.data == NULL || first.len < 1
+        || second.data == NULL || second.len < 1) {
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " need at least two param in filter key");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        goto FAIL;
     }
 
     flag = 0;
