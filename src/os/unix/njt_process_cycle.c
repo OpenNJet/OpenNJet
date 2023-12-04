@@ -82,8 +82,9 @@ njt_uint_t    njt_is_privileged_agent = 0;
 njt_uint_t    njt_master_listening_count = 0;
 njt_uint_t    njt_is_privileged_helper = 0;
 njt_str_t     njt_conf_json;
-void         *njt_conf_pool_ptr;
-void         *njt_conf_cur_ptr;
+void         *njt_conf_pool_ptr = NULL;
+void         *njt_conf_cur_ptr = NULL;
+void         *njt_conf_dyn_loc_ptr = NULL;
 void         *njt_conf_root_ptr; //指向root节点
 
 

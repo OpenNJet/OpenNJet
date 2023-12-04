@@ -9,7 +9,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 
-typedef struct njt_http_sub_location_info_s {
+typedef struct njt_conf_sub_location_info_s {
     
 	njt_str_t location_rule;
     njt_str_t location;
@@ -18,7 +18,7 @@ typedef struct njt_http_sub_location_info_s {
 	njt_array_t   *sub_location_array;
 } njt_http_sub_location_info_t;
 
-typedef struct njt_http_location_info_s {
+typedef struct njt_conf_location_info_s {
     njt_str_t file;
 	njt_str_t type;
     njt_str_t addr_port;

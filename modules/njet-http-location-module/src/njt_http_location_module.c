@@ -485,6 +485,11 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     njt_http_location_queue_t *lq;
 
     njt_str_t location_path; // = njt_string("./conf/add_location.txt");
+	
+	// add for dyn_conf update
+	njt_conf_element_t *dyn_loc;
+	njt_pool_t         *dyn_pool;
+	// end for dyn_conf update
 
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add location start +++++++++++++++");
 
@@ -606,7 +611,27 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 
     //clcf->locations = NULL; // clcf->old_locations;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
+	// add for dyn_conf update
+		if ((njt_process != NJT_PROCESS_WORKER && njt_process != NJT_PROCESS_SINGLE) || njt_worker != 0) {
+			// do nothing;
+		} else {
+		dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
+		if (dyn_pool == NULL) {
+			rc = NJT_ERROR;
+			goto out;
+		}
+		dyn_loc = njt_pcalloc(dyn_pool, sizeof(njt_conf_element_t));
+		if (dyn_loc == NULL) {
+			rc = NJT_ERROR;
+			goto out;
+		}
+		njt_conf_cur_ptr = dyn_loc;
+		njt_conf_init_conf_parse(dyn_loc, dyn_pool);
+		
+	}
+	// end for dyn_conf update
     rv = njt_conf_parse(&conf, &location_path);
+	njt_conf_finish_conf_parse(); // add for dyn_conf update
     if (rv != NULL) {
 	
 		//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse  location[%V] error:%s",&location_name,rv);
@@ -665,6 +690,22 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
         goto out;
     }
     njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "add location end +++++++++++++++");
+
+	// add for dyn_conf update
+	njt_int_t ret;
+	ret = njt_conf_dyn_loc_merge_location(njt_cycle->pool, &location_info->addr_port, &location_info->server_name, dyn_loc);
+	printf(" ret 1: %ld\n", ret);
+	ret = njt_conf_dyn_loc_add_loc(njt_cycle->pool, njt_conf_dyn_loc_ptr, (void *)location_info);
+	printf(" ret 1: %ld\n", ret);
+    njt_str_t *dyn_loc_str = njt_conf_dyn_loc_get_pub_str(dyn_pool, njt_conf_dyn_loc_ptr);
+
+    printf("test test test \n");
+    // printf("conf file %s \n", cycle->conf_file.data);
+    printf("%s \n", (char*)dyn_loc_str->data);
+    printf("test test test \n");
+    njt_destroy_pool(dyn_pool);
+	// end for dyn_conf update
+
 out:
     if(rc != NJT_OK) {
     	  njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  location [%V] error!",&location_name);
@@ -801,8 +842,25 @@ static int  topic_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data
 static njt_int_t
 njt_http_location_init_worker(njt_cycle_t *cycle) {
 
+	// add for dyn_conf update
+	//todo check for work_0 or worker_p
+	if ((njt_process != NJT_PROCESS_WORKER && njt_process != NJT_PROCESS_SINGLE) || njt_worker != 0) {
+		// do nothing;
+	} else {
+		njt_conf_dyn_loc_ptr = njt_conf_dyn_loc_init_server(njt_cycle->pool, njt_cycle->conf_root);
+		if (njt_conf_dyn_loc_ptr == NULL) {
+			return NJT_ERROR;
+		}
+	}
+	
+	printf("dyn loc conf init finished --------------------------------------------------\n");
+	// end for dyn_conf update
+	
 	njt_str_t  key = njt_string("loc");
-
+	if (njt_process != NJT_PROCESS_WORKER && njt_process != NJT_PROCESS_SINGLE) {
+		/*only works in the worker 0 prcess.*/
+		return NJT_OK;
+	}
     njt_kv_reg_handler_t h;
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &key;
