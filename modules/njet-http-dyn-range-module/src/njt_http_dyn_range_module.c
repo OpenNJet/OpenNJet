@@ -19,6 +19,121 @@
 extern  njt_module_t njt_range_module;
 
 
+
+static njt_int_t njt_dyn_range_check_param(dyn_range_api_t *api_data,
+            njt_rpc_result_t *rpc_result){
+    u_char                      data_buf[1024];
+    u_char                      *end;
+    njt_str_t                   rpc_data_str;
+    u_char                      *p;
+    njt_int_t                   tmp_value;
+    njt_int_t                   left_value, right_value, left_len, right_len;
+    njt_uint_t                  j, has_m = 0, m_count = 0;
+
+    rpc_data_str.data = data_buf;
+    rpc_data_str.len = 0;
+
+    //check type
+    if(api_data->type != DYN_RANGE_API_TYPE_TCP){
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+            " type should be tcp");
+
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
+        return NJT_ERROR;
+    }
+
+    if(api_data->dst_port < 1){
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+            " range dst_port should be int and more than 0");
+
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
+        return NJT_ERROR;
+    }
+
+    if(api_data->try_del_times < 1){
+        api_data->try_del_times = 0;
+    }
+
+    //check valid
+    if(!api_data->is_src_ports_set || api_data->src_ports.len < 1){
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+            " range src_port must be set and not empty");
+
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
+        return NJT_ERROR;
+    }
+
+    for(j = 0; j < api_data->src_ports.len; j++){
+        if(api_data->src_ports.data[j] == ':'){
+            has_m = 1;
+            m_count++;
+            p = &api_data->src_ports.data[j];
+        }
+    }
+
+    if(m_count > 1){
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+            " range src_port not valid");
+
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        return NJT_ERROR;   
+    }
+
+    if(has_m == 0){
+        tmp_value = njt_atoi(api_data->src_ports.data, api_data->src_ports.len);
+        if (tmp_value < 1) {
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                " range src_port not valid");
+
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+            return NJT_ERROR;
+        }
+    }else{
+        left_len = p - api_data->src_ports.data;
+        right_len = api_data->src_ports.len - left_len - 1;
+        if(left_len < 1 || right_len < 1){
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                " range src_port not valid");
+
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+            return NJT_ERROR;
+        }
+
+        //check left value
+        left_value = njt_atoi(api_data->src_ports.data, left_len);
+        if (left_value < 1) {
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                " range src_port not valid");
+
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+            return NJT_ERROR;
+        }
+
+        //check right value
+        right_value = njt_atoi(p+1, right_len);
+        if (right_value < 1) {
+            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
+                " range src_port not valid");
+
+            rpc_data_str.len = end - data_buf;
+            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+            return NJT_ERROR;
+        }
+    }
+
+    return NJT_OK;
+}
+
 static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
                 njt_rpc_result_t *rpc_result){
     njt_range_conf_t                *rcf;
@@ -121,6 +236,13 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
         }
     }else{
         if(api_data->action == DYN_RANGE_API_ACTION_ADD){
+            //check param
+            if(NJT_OK != njt_dyn_range_check_param(api_data, rpc_result)){
+                njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
+                        "dyn range check param error");
+                return NJT_ERROR;  
+            }
+
             //create range rule in pool
             rule_item = njt_pcalloc(rcf->pool, sizeof(njt_range_rule_t));
             if(rule_item == NULL){
@@ -353,7 +475,7 @@ static int  njt_http_dyn_range_update_handler(njt_str_t *key, njt_str_t *value, 
             njt_str_t msg = njt_string("");
             njt_kv_sendmsg(key,&msg,0);
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
-            njt_rpc_result_set_msg(rpc_result, (u_char *)" dyn range update fail");
+            // njt_rpc_result_set_msg(rpc_result, (u_char *)" dyn range update fail");
         }
     }else if(api_data->action == DYN_RANGE_API_ACTION_DEL){
         //need delete msg
