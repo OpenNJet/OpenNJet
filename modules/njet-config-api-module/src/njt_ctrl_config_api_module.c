@@ -362,11 +362,11 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
         }
         rc = njt_ctrl_dynlog_rpc_send(r,&topic,&smsg, 0);
         if(rc != NJT_OK){
- 	    njt_log_error(NJT_LOG_INFO,njt_cycle->log, 0, "error r->main->count : %p,%i,uri=%V,%V",r->main,r->main->count,&r->uri,&r->connection->addr_text);
+ 	    //njt_log_error(NJT_LOG_INFO,njt_cycle->log, 0, "error r->main->count : %p,%i,uri=%V,%V",r->main,r->main->count,&r->uri,&r->connection->addr_text);
             goto err;
         }
         ++r->main->count;
-	njt_log_error(NJT_LOG_INFO,njt_cycle->log, 0, "r->main->count : %p,%i,uri=%V,%V",r->main,r->main->count,&r->uri,&r->connection->addr_text);
+	//njt_log_error(NJT_LOG_INFO,njt_cycle->log, 0, "r->main->count : %p,%i,uri=%V,%V",r->main,r->main->count,&r->uri,&r->connection->addr_text);
         return NJT_OK;
     }
     rc = NJT_HTTP_NOT_FOUND;
