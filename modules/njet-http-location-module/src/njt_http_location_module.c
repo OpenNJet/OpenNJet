@@ -1378,6 +1378,19 @@ static void njt_http_location_clear_dirty_data(njt_http_core_loc_conf_t *clcf) {
     njt_http_location_queue_t *lx;
     njt_http_core_loc_conf_t *dclcf;
 
+        if(clcf->if_locations != NULL) {
+    q = njt_queue_head(clcf->if_locations);
+
+    while (q != njt_queue_sentinel(clcf->if_locations)) {
+        x = njt_queue_next(q);
+        lx = (njt_http_location_queue_t *) q;
+        if (lx->dynamic_status == 1) {
+            njt_queue_remove(q);
+        }
+        q = x;
+    }
+    }
+
     if(clcf->old_locations != NULL) {
     q = njt_queue_head(clcf->old_locations);
 
