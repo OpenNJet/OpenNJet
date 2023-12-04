@@ -116,6 +116,9 @@ typedef struct {
     njt_str_t                      ssl_crl;
     njt_array_t                   *ssl_conf_commands;
 #endif
+#if(NJT_HTTP_DYNAMIC_UPSTREAM)
+    unsigned  preserve:1;
+#endif
 } njt_http_proxy_loc_conf_t;
 
 

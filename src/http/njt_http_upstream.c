@@ -9,6 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
+#include <njt_str_util.h>
 // by chengxu
 #if (NJT_HTTP_CACHE_PURGE)
 #include <njt_cache_purge.h>
@@ -6508,7 +6509,17 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     njt_http_upstream_server_t     *us;
     njt_http_upstream_srv_conf_t   *uscf, **uscfp;
     njt_http_upstream_main_conf_t  *umcf;
-
+#if (NJT_HTTP_DYNAMIC_UPSTREAM)
+     njt_int_t rc;
+    njt_pool_t                     *old_pool;
+    njt_http_upstream_init_pt       init;  
+    njt_pool_t  *new_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (NULL == new_pool) {
+        return NULL;
+    }
+    old_pool = cf->pool;
+    cf->pool = new_pool;
+#endif
     if (!(flags & NJT_HTTP_UPSTREAM_CREATE)) {
 
         if (njt_parse_url(cf->pool, u) != NJT_OK) {
@@ -6517,7 +6528,7 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
                                    "%s in upstream \"%V\"", u->err, &u->url);
             }
 
-            return NULL;
+            goto error;
         }
     }
 
@@ -6539,14 +6550,14 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
         {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "duplicate upstream \"%V\"", &u->host);
-            return NULL;
+             goto error;
         }
 
         if ((uscfp[i]->flags & NJT_HTTP_UPSTREAM_CREATE) && !u->no_port) {
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "upstream \"%V\" may not have port %d",
                                &u->host, u->port);
-            return NULL;
+             goto error;
         }
 
         if ((flags & NJT_HTTP_UPSTREAM_CREATE) && !uscfp[i]->no_port) {
@@ -6554,7 +6565,7 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
                           "upstream \"%V\" may not have port %d in %s:%ui",
                           &u->host, uscfp[i]->port,
                           uscfp[i]->file_name, uscfp[i]->line);
-            return NULL;
+             goto error;
         }
 
         if (uscfp[i]->port && u->port
@@ -6567,13 +6578,17 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
             uscfp[i]->flags = flags;
             uscfp[i]->port = 0;
         }
-
+#if (NJT_HTTP_DYNAMIC_UPSTREAM)
+      cf->pool = old_pool;
+     njt_destroy_pool(new_pool);
+     uscfp[i]->ref_count ++;
+#endif
         return uscfp[i];
     }
 
     uscf = njt_pcalloc(cf->pool, sizeof(njt_http_upstream_srv_conf_t));
     if (uscf == NULL) {
-        return NULL;
+         goto error;
     }
 
     uscf->flags = flags;
@@ -6582,17 +6597,18 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
     uscf->line = cf->conf_file->line;
     uscf->port = u->port;
     uscf->no_port = u->no_port;
+  
 
     if (u->naddrs == 1 && (u->port || u->family == AF_UNIX)) {
         uscf->servers = njt_array_create(cf->pool, 1,
                                          sizeof(njt_http_upstream_server_t));
         if (uscf->servers == NULL) {
-            return NULL;
+             goto error;
         }
 
         us = njt_array_push(uscf->servers);
         if (us == NULL) {
-            return NULL;
+             goto error;
         }
 
         njt_memzero(us, sizeof(njt_http_upstream_server_t));
@@ -6600,15 +6616,38 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
         us->addrs = u->addrs;
         us->naddrs = 1;
     }
-
+#if (NJT_HTTP_DYNAMIC_UPSTREAM)
+    uscf->ref_count = 1;
+    uscf->pool = new_pool;
+    njt_str_copy_pool(new_pool,uscf->host,u->host,goto error);
+   if(cf->dynamic == 1) {
+   init = njt_http_upstream_init_round_robin;
+    if (init(cf,uscf) != NJT_OK) {
+            goto error;
+    } 
+   }
+    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    if (rc != NJT_OK) {
+         goto error;
+    }
+    cf->pool = old_pool;
+#endif
     uscfp = njt_array_push(&umcf->upstreams);
     if (uscfp == NULL) {
-        return NULL;
+         goto error;
     }
 
     *uscfp = uscf;
-
     return uscf;
+
+
+error:
+#if (NJT_HTTP_DYNAMIC_UPSTREAM)
+     cf->pool = old_pool;
+     njt_destroy_pool(new_pool);
+#endif
+     return NULL;
+
 }
 
 
@@ -7012,3 +7051,6 @@ njt_http_upstream_init_main_conf(njt_conf_t *cf, void *conf)
 
     return NJT_CONF_OK;
 }
+
+
+
