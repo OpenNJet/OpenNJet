@@ -9,6 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
+#include <njt_http_util.h>
 #include <njt_http_if_location_api.h>
 #include <njt_http_if_location_parse.h>
 #include <njt_http_if_location_lex.h>
@@ -2833,37 +2834,6 @@ njt_http_location_cleanup_add(njt_http_core_loc_conf_t *clcf, void(*handler)(njt
         pc->data = clcf;
     }
     return NJT_OK;
-}
-
- void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
-    njt_queue_t *q;
-	njt_queue_t *locations;
-    njt_http_location_queue_t *lq;
-    njt_http_core_loc_conf_t *new_clcf;
-    locations = clcf->old_locations;
-    if (locations != NULL) {
-        for (q = njt_queue_head(locations);
-             q != njt_queue_sentinel(locations);
-             ) {
-            lq = (njt_http_location_queue_t *) q;
-	    q = njt_queue_next(q);
-	    njt_queue_remove(&lq->queue);
-            if (lq->exact != NULL) {
-                new_clcf = lq->exact;
-                njt_http_location_destroy(new_clcf);
-            } else if (lq->inclusive != NULL) {
-                new_clcf = lq->inclusive;
-                njt_http_location_destroy(new_clcf); //zyg
-            }
-			
-        }
-    }
-    njt_http_location_cleanup(clcf);
-    clcf->disable = 1;
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "ntj_destroy_pool clcf=%p,name=%V,pool=%p,ref_count=%i",clcf,&clcf->name,clcf->pool,clcf->ref_count);
-    if (clcf->ref_count == 0 && clcf->pool != NULL && clcf->dynamic_status != 0) {
-        njt_destroy_pool(clcf->pool);
-    }
 }
 
 static void

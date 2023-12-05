@@ -5046,10 +5046,12 @@ njt_http_proxy_merge_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *conf,
     {
         if (prev->upstream.ssl) {
             conf->upstream.ssl = prev->upstream.ssl;
+            conf->preserve = prev->preserve;
             return NJT_OK;
         }
 
         preserve = 1;
+	conf->preserve = preserve;
 
     } else {
         preserve = 0;
@@ -5089,8 +5091,15 @@ njt_http_proxy_set_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *plcf)
     {
         return NJT_ERROR;
     }
-
+#if(NJT_HTTP_DYNAMIC_UPSTREAM)
+    if(plcf->preserve == 1) {
+	    cln = njt_pool_cleanup_add(cf->cycle->pool, 0);
+    } else {
+	    cln = njt_pool_cleanup_add(cf->pool, 0);
+    }
+#else
     cln = njt_pool_cleanup_add(cf->pool, 0);
+#endif
     if (cln == NULL) {
         njt_ssl_cleanup_ctx(plcf->upstream.ssl);
         return NJT_ERROR;

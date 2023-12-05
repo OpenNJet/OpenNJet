@@ -1513,6 +1513,15 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_str_t *dynconf, njt
         second.len = data - second.data - 1;
     }
 
+    //check whther has two param at least
+    if (first.data == NULL || first.len < 1
+        || second.data == NULL || second.len < 1) {
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " need at least two param in filter key");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        goto FAIL;
+    }
+
     flag = 0;
 
     while (data < filter_data + len) {
@@ -1684,7 +1693,7 @@ static u_char* njt_agent_vts_rpc_get_handler(njt_str_t *topic, njt_str_t *reques
     
     pool = njt_create_pool(njt_pagesize, njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_agent_vts_rpc_get_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_agent_vts_rpc_get_handler create pool error");
         goto out;
     }
 
@@ -1728,7 +1737,7 @@ static int  njt_agent_vts_change_handler_internal(njt_str_t *key, njt_str_t *val
 
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_agent_vts_change_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_agent_vts_change_handler create pool error");
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
         return NJT_OK;
     }
