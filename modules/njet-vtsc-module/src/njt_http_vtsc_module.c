@@ -1693,7 +1693,7 @@ static u_char* njt_agent_vts_rpc_get_handler(njt_str_t *topic, njt_str_t *reques
     
     pool = njt_create_pool(njt_pagesize, njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_agent_vts_rpc_get_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_agent_vts_rpc_get_handler create pool error");
         goto out;
     }
 
@@ -1737,7 +1737,7 @@ static int  njt_agent_vts_change_handler_internal(njt_str_t *key, njt_str_t *val
 
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_agent_vts_change_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_agent_vts_change_handler create pool error");
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
         return NJT_OK;
     }
