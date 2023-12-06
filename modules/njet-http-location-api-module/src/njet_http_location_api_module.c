@@ -462,6 +462,7 @@ static njt_int_t njt_http_location_rpc_send(njt_http_request_t *r,njt_str_t *mod
     njt_http_location_rpc_ctx_t *ctx;
     njt_pool_cleanup_t *cleanup;
 
+    r->write_event_handler = njt_http_request_empty_handler;
     dlmcf = njt_http_get_module_main_conf(r,njt_http_location_api_module);
     index = njt_http_location_get_free_index(dlmcf);
     if(index == -1 ){
@@ -491,7 +492,7 @@ static njt_int_t njt_http_location_rpc_send(njt_http_request_t *r,njt_str_t *mod
     if(rc == NJT_OK){
         dlmcf->reqs[index] = r;
     }
-    return NJT_OK;
+    return rc;
 
     err:
     return NJT_ERROR;

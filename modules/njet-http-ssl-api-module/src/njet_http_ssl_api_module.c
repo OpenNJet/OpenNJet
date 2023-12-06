@@ -576,7 +576,7 @@ static njt_int_t njt_http_dyn_ssl_rpc_send(njt_http_request_t *r,njt_str_t *modu
     njt_int_t                       rc;
     njt_http_dyn_ssl_rpc_ctx_t      *ctx;
     njt_pool_cleanup_t              *cleanup;
-
+    r->write_event_handler = njt_http_request_empty_handler;
     dlmcf = njt_http_get_module_main_conf(r,njt_http_ssl_api_module);
     if(dlmcf == NULL){
         goto err;
@@ -609,7 +609,7 @@ static njt_int_t njt_http_dyn_ssl_rpc_send(njt_http_request_t *r,njt_str_t *modu
     if(rc == NJT_OK){
         dlmcf->reqs[index] = r;
     }
-    return NJT_OK;
+    return rc;
 
     err:
     return NJT_ERROR;
