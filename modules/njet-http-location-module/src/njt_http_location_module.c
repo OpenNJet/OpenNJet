@@ -681,7 +681,7 @@ static int njt_agent_location_change_handler_internal(njt_str_t *key, njt_str_t 
 	njt_str_t  add = njt_string("add");
 	njt_str_t  del = njt_string("del");
 	njt_str_t  del_topic = njt_string("");
-	njt_str_t  worker_str = njt_string("/worker_0");
+	njt_str_t  worker_str = njt_string("/worker_a");
 	njt_str_t  new_key;
 	njt_rpc_result_t * rpc_result;
 	njt_uint_t from_api_add = 0;

@@ -480,7 +480,7 @@ static int  njt_http_ssl_update_handler(njt_str_t *key, njt_str_t *value, void *
     njt_pool_t                          *pool = NULL;
     njt_rpc_result_t                    *rpc_result = NULL;
     js2c_parse_error_t                  err_info;
-    njt_str_t                           worker_str = njt_string("/worker_0");
+    njt_str_t                           worker_str = njt_string("/worker_a");
     njt_str_t                           new_key;
 
 

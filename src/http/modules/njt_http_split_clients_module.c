@@ -457,9 +457,6 @@ static njt_int_t njt_http_split_clients_init_worker(njt_cycle_t *cycle)
 #if NJT_HTTP_KV_MODULE
     njt_http_conf_ctx_t *conf_ctx;
     njt_http_split_clients_conf_t *sccf;
-    if (njt_process != NJT_PROCESS_WORKER) {
-        return NJT_OK;
-    }
     // return  when there is no http configuraton
     if (njt_http_split_clients_module.ctx_index == NJT_CONF_UNSET_UINT) {
         return NJT_OK;

@@ -749,8 +749,8 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
 
         goto out;
 	} else {
-		// p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/ssl/l_%ui",crc32);
-        p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/ssl/l_%ui",crc32);
+		// p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/ssl/l_%ui",crc32);
+        p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/ssl/l_%ui",crc32);
 	}
 
 	topic_name.len = p - topic_name.data;
