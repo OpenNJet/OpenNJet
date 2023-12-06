@@ -81,9 +81,6 @@ static njt_int_t njt_http_map_init_worker(njt_cycle_t *cycle)
 #if NJT_HTTP_DYN_MAP_MODULE
     njt_uint_t i;
     njt_http_map_conf_t *mcf;
-    if (njt_process != NJT_PROCESS_WORKER) {
-        return NJT_OK;
-    }
     mcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_map_module);
     if (mcf == NULL) {
         return NJT_OK;
