@@ -1865,7 +1865,7 @@ err:
 static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, dyn_limit_t *api_data,
                         njt_rpc_result_t *rpc_result)
 {
-    njt_cycle_t                         *cycle, *new_cycle;
+    njt_cycle_t                         *cycle;
     njt_http_core_srv_conf_t            *cscf;
     njt_http_core_loc_conf_t            *clcf;
     dyn_limit_servers_item_t            *dsi;
@@ -1881,15 +1881,7 @@ static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, dyn_limit_t *
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
 
-    if (njt_process == NJT_PROCESS_HELPER)
-    {
-        new_cycle = (njt_cycle_t *)njt_cycle;
-        cycle = new_cycle->old_cycle;
-    }
-    else
-    {
-        cycle = (njt_cycle_t *)njt_cycle;
-    }
+    cycle = (njt_cycle_t *)njt_cycle;
 
     //update rps
     if(api_data->is_limit_rps_set && api_data->limit_rps != NULL){

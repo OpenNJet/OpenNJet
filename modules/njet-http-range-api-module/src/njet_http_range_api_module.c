@@ -296,7 +296,7 @@ njt_dyn_range_handler(njt_http_request_t *r) {
 
     if(r->method == NJT_HTTP_GET){
         njt_str_t smsg = njt_string("{\"method\":\"GET\"}");
-        njt_str_set(&topic, "/worker_p/rpc/range");
+        njt_str_set(&topic, "/worker_a/rpc/range");
 
         rc = njt_dyn_range_rpc_send(r, &topic, &smsg, 0);
         if(rc != NJT_OK){
@@ -529,7 +529,7 @@ njt_dyn_range_read_data(njt_http_request_t *r){
 	njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
             " dyn range, type:%d  crc32:%ui", api_data->type, crc32);    
 
-    p = njt_snprintf(topic_name.data,topic_len,"/worker_p/ins/range/l_%ui",crc32);
+    p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/range/l_%ui",crc32);
 	topic_name.len = p - topic_name.data;
 	rc = njt_dyn_range_rpc_send(r, &topic_name, &json_str, 0);
 	if(rc == NJT_OK) {
