@@ -332,106 +332,61 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         return NULL;
     }
 
+    // add for dyn_conf
     njt_conf_finish_conf_parse();
-
-
-
+    njt_conf_check_svrname_listen(pool, conf_root);
+    // end for dyn_conf
     //----------------------------------------------------------
     // 输出到字符串
-    size_t             length; // by lcm
-    length = 0;
-    njt_conf_check_svrname_listen(pool, conf_root);
-    njt_conf_get_json_length(conf_root, &length, 1); // by lcm
-    njt_conf_json.data = njt_pcalloc(conf.cycle->pool, length + 4096);
-    // njt_conf_json.data = njt_alloc(length + 4096, cycle->log);
-    if (njt_conf_json.data) {
-        njt_conf_get_json_str(conf_root, &njt_conf_json, 1);
-    }
-    njt_pfree(conf.cycle->pool, njt_conf_json.data);
+    // size_t             length; // by lcm
+    // length = 0;
+    // njt_conf_get_json_length(conf_root, &length, 1); // by lcm
+    // njt_conf_json.data = njt_pcalloc(conf.cycle->pool, length + 4096);
+    // // njt_conf_json.data = njt_alloc(length + 4096, cycle->log);
+    // if (njt_conf_json.data) {
+    //     njt_conf_get_json_str(conf_root, &njt_conf_json, 1);
+    // }
+    // njt_pfree(conf.cycle->pool, njt_conf_json.data);
 
-    // printf("test test test \n");
-    // printf("conf file %s \n", cycle->conf_file.data);
-    printf("%s \n", (char*)njt_conf_json.data);
-    printf("%ld \n", length);
-    printf("%ld \n", njt_conf_json.len);
-    njt_conf_json.len = 0;
+    // // printf("test test test \n");
+    // // printf("conf file %s \n", cycle->conf_file.data);
+    // printf("%s \n", (char*)njt_conf_json.data);
+    // printf("%ld \n", length);
+    // printf("%ld \n", njt_conf_json.len);
+    // njt_conf_json.len = 0;
 
-    njt_conf_element_t *dyn_loc = njt_conf_dyn_loc_init_server(cycle->pool, conf_root);
-    length = 0;
-    // njt_conf_check_svrname_listen(pool, conf_root);
-    njt_conf_get_json_length(dyn_loc, &length, 1); // by lcm
-    njt_conf_json.data = njt_pcalloc(conf.cycle->pool, length + 4096);
-    // njt_conf_json.data = njt_alloc(length + 4096, cycle->log);
-    if (njt_conf_json.data) {
-        njt_conf_get_json_str(dyn_loc, &njt_conf_json, 1);
-    }
-    njt_pfree(conf.cycle->pool, njt_conf_json.data);
+    // njt_conf_element_t *dyn_loc = njt_conf_dyn_loc_init_server(cycle->pool, conf_root);
+    // length = 0;
+    // // njt_conf_check_svrname_listen(pool, conf_root);
+    // njt_conf_get_json_length(dyn_loc, &length, 1); // by lcm
+    // njt_conf_json.data = njt_pcalloc(conf.cycle->pool, length + 4096);
+    // // njt_conf_json.data = njt_alloc(length + 4096, cycle->log);
+    // if (njt_conf_json.data) {
+    //     njt_conf_get_json_str(dyn_loc, &njt_conf_json, 1);
+    // }
+    // njt_pfree(conf.cycle->pool, njt_conf_json.data);
 
-    // printf("test test test \n");
-    // printf("conf file %s \n", cycle->conf_file.data);
-    printf("%s \n", (char*)njt_conf_json.data);
-    printf("%ld \n", length);
-    printf("%ld \n", njt_conf_json.len);
+    // // printf("test test test \n");
+    // // printf("conf file %s \n", cycle->conf_file.data);
+    // printf("%s \n", (char*)njt_conf_json.data);
+    // printf("%ld \n", length);
+    // printf("%ld \n", njt_conf_json.len);
 
-    njt_pool_t *dyn_pool;
-    dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, cycle->log);
-    njt_conf_element_t *new_loc = get_test_element_ptr(cycle->pool, 1);
-    njt_str_t addr_port;
-    njt_str_t svr_name;
-    addr_port.data = njt_palloc(dyn_pool, 12);
-    njt_str_set(&addr_port, "0.0.0.0:7323");
-    svr_name.data = njt_palloc(pool, 5);
-    njt_str_set(&svr_name, "testY");
-
-
-    njt_conf_dyn_loc_ptr = dyn_loc;
-    njt_conf_dyn_loc_merge_location(cycle->pool, &addr_port, &svr_name, new_loc);
-    // njt_conf_dyn_loc_merge_location(cycle->pool, &addr_port, &svr_name, new_loc);
-
-    length = 0;
-    njt_conf_json.len = 0;
-    // njt_conf_check_svrname_listen(pool, conf_root);
-    njt_conf_get_json_length(dyn_loc, &length, 1); // by lcm
-    njt_conf_json.data = njt_pcalloc(conf.cycle->pool, length + 4096);
-    // njt_conf_json.data = njt_alloc(length + 4096, cycle->log);
-    if (njt_conf_json.data) {
-        njt_conf_get_json_str(dyn_loc, &njt_conf_json, 1);
-    }
-
-    // printf("test test test \n");
-    // printf("conf file %s \n", cycle->conf_file.data);
-    printf("%s \n", "after merge: ");
-    printf("%s \n", (char*)njt_conf_json.data);
-    printf("%ld \n", length);
-    printf("%ld \n", njt_conf_json.len);
-    njt_pfree(conf.cycle->pool, njt_conf_json.data);
-
-
-    njt_conf_location_info_t *loc_info = get_test_location_info(dyn_pool, 1);
-    njt_conf_dyn_loc_add_loc(cycle->pool, dyn_loc, loc_info);
-    njt_destroy_pool(dyn_pool);
-    length = 0;
-    njt_conf_json.len = 0;
-    // njt_conf_check_svrname_listen(pool, conf_root);
-    njt_conf_get_json_length(dyn_loc, &length, 1); // by lcm
-    njt_conf_json.data = njt_pcalloc(conf.cycle->pool, length + 4096);
-    // njt_conf_json.data = njt_alloc(length + 4096, cycle->log);
-    if (njt_conf_json.data) {
-        njt_conf_get_json_str(dyn_loc, &njt_conf_json, 1);
-    }
-
-    // printf("test test test \n");
-    // printf("conf file %s \n", cycle->conf_file.data);
-    printf("%s \n", (char*)njt_conf_json.data);
-    printf("%ld \n", length);
-    printf("%ld \n", njt_conf_json.len);
-    njt_pfree(conf.cycle->pool, njt_conf_json.data);
-
-
+    // njt_pool_t *dyn_pool;
     // dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, cycle->log);
-    // loc_info = get_test_location_info(dyn_pool, 0);
-    // njt_conf_dyn_loc_del_loc(cycle->pool, dyn_loc, loc_info);
-    // njt_destroy_pool(dyn_pool);
+    // njt_conf_element_t *new_loc = get_test_element_ptr(cycle->pool, 1);
+    // njt_str_t addr_port;
+    // njt_str_t svr_name;
+    // addr_port.data = njt_palloc(dyn_pool, 12);
+    // njt_str_set(&addr_port, "0.0.0.0:7323");
+    // svr_name.data = njt_palloc(pool, 5);
+    // njt_str_set(&svr_name, "testY");
+
+
+    // njt_conf_dyn_loc_ptr = dyn_loc;
+    // njt_conf_dyn_loc_merge_location(cycle->pool, &addr_port, &svr_name, new_loc);
+    // // njt_conf_dyn_loc_merge_location(cycle->pool, &addr_port, &svr_name, new_loc);
+
     // length = 0;
     // njt_conf_json.len = 0;
     // // njt_conf_check_svrname_listen(pool, conf_root);
@@ -444,13 +399,14 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     // // printf("test test test \n");
     // // printf("conf file %s \n", cycle->conf_file.data);
+    // printf("%s \n", "after merge: ");
     // printf("%s \n", (char*)njt_conf_json.data);
     // printf("%ld \n", length);
     // printf("%ld \n", njt_conf_json.len);
     // njt_pfree(conf.cycle->pool, njt_conf_json.data);
 
-    // dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, cycle->log);
-    // loc_info = get_test_location_info(dyn_pool, 1);
+
+    // njt_conf_location_info_t *loc_info = get_test_location_info(dyn_pool, 1);
     // njt_conf_dyn_loc_add_loc(cycle->pool, dyn_loc, loc_info);
     // njt_destroy_pool(dyn_pool);
     // length = 0;
@@ -470,42 +426,85 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     // printf("%ld \n", njt_conf_json.len);
     // njt_pfree(conf.cycle->pool, njt_conf_json.data);
 
+
+    // // dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, cycle->log);
+    // // loc_info = get_test_location_info(dyn_pool, 0);
+    // // njt_conf_dyn_loc_del_loc(cycle->pool, dyn_loc, loc_info);
+    // // njt_destroy_pool(dyn_pool);
+    // // length = 0;
+    // // njt_conf_json.len = 0;
+    // // // njt_conf_check_svrname_listen(pool, conf_root);
+    // // njt_conf_get_json_length(dyn_loc, &length, 1); // by lcm
+    // // njt_conf_json.data = njt_pcalloc(conf.cycle->pool, length + 4096);
+    // // // njt_conf_json.data = njt_alloc(length + 4096, cycle->log);
+    // // if (njt_conf_json.data) {
+    // //     njt_conf_get_json_str(dyn_loc, &njt_conf_json, 1);
+    // // }
+
+    // // // printf("test test test \n");
+    // // // printf("conf file %s \n", cycle->conf_file.data);
+    // // printf("%s \n", (char*)njt_conf_json.data);
+    // // printf("%ld \n", length);
+    // // printf("%ld \n", njt_conf_json.len);
+    // // njt_pfree(conf.cycle->pool, njt_conf_json.data);
+
+    // // dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, cycle->log);
+    // // loc_info = get_test_location_info(dyn_pool, 1);
+    // // njt_conf_dyn_loc_add_loc(cycle->pool, dyn_loc, loc_info);
+    // // njt_destroy_pool(dyn_pool);
+    // // length = 0;
+    // // njt_conf_json.len = 0;
+    // // // njt_conf_check_svrname_listen(pool, conf_root);
+    // // njt_conf_get_json_length(dyn_loc, &length, 1); // by lcm
+    // // njt_conf_json.data = njt_pcalloc(conf.cycle->pool, length + 4096);
+    // // // njt_conf_json.data = njt_alloc(length + 4096, cycle->log);
+    // // if (njt_conf_json.data) {
+    // //     njt_conf_get_json_str(dyn_loc, &njt_conf_json, 1);
+    // // }
+
+    // // // printf("test test test \n");
+    // // // printf("conf file %s \n", cycle->conf_file.data);
+    // // printf("%s \n", (char*)njt_conf_json.data);
+    // // printf("%ld \n", length);
+    // // printf("%ld \n", njt_conf_json.len);
+    // // njt_pfree(conf.cycle->pool, njt_conf_json.data);
+
+    // // dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, cycle->log);
+    // // loc_info = get_test_location_info(dyn_pool, 0);
+    // // njt_conf_dyn_loc_del_loc(cycle->pool, dyn_loc, loc_info);
+    // // njt_destroy_pool(dyn_pool);
+    // // length = 0;
+    // // njt_conf_json.len = 0;
+    // // // njt_conf_check_svrname_listen(pool, conf_root);
+    // // njt_conf_get_json_length(dyn_loc, &length, 1); // by lcm
+    // // njt_conf_json.data = njt_pcalloc(conf.cycle->pool, length + 4096);
+    // // // njt_conf_json.data = njt_alloc(length + 4096, cycle->log);
+    // // if (njt_conf_json.data) {
+    // //     njt_conf_get_json_str(dyn_loc, &njt_conf_json, 1);
+    // // }
+
+    // // // printf("test test test \n");
+    // // // printf("conf file %s \n", cycle->conf_file.data);
+    // // printf("%s \n", (char*)njt_conf_json.data);
+    // // printf("%ld \n", length);
+    // // printf("%ld \n", njt_conf_json.len);
+    // // njt_pfree(conf.cycle->pool, njt_conf_json.data);
+
     // dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, cycle->log);
-    // loc_info = get_test_location_info(dyn_pool, 0);
-    // njt_conf_dyn_loc_del_loc(cycle->pool, dyn_loc, loc_info);
-    // njt_destroy_pool(dyn_pool);
-    // length = 0;
-    // njt_conf_json.len = 0;
-    // // njt_conf_check_svrname_listen(pool, conf_root);
-    // njt_conf_get_json_length(dyn_loc, &length, 1); // by lcm
-    // njt_conf_json.data = njt_pcalloc(conf.cycle->pool, length + 4096);
-    // // njt_conf_json.data = njt_alloc(length + 4096, cycle->log);
-    // if (njt_conf_json.data) {
-    //     njt_conf_get_json_str(dyn_loc, &njt_conf_json, 1);
-    // }
+    // njt_str_t *dyn_loc_str = njt_conf_dyn_loc_get_pub_str(dyn_pool, dyn_loc);
 
     // // printf("test test test \n");
     // // printf("conf file %s \n", cycle->conf_file.data);
-    // printf("%s \n", (char*)njt_conf_json.data);
-    // printf("%ld \n", length);
-    // printf("%ld \n", njt_conf_json.len);
-    // njt_pfree(conf.cycle->pool, njt_conf_json.data);
+    // printf("%s \n", (char*)dyn_loc_str->data);
+    // njt_destroy_pool(dyn_pool);
 
-    dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, cycle->log);
-    njt_str_t *dyn_loc_str = njt_conf_dyn_loc_get_pub_str(dyn_pool, dyn_loc);
+    // dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, cycle->log);
+    // dyn_loc_str = njt_conf_dyn_loc_get_ins_str(dyn_pool, dyn_loc);
 
-    // printf("test test test \n");
-    // printf("conf file %s \n", cycle->conf_file.data);
-    printf("%s \n", (char*)dyn_loc_str->data);
-    njt_destroy_pool(dyn_pool);
-
-    dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, cycle->log);
-    dyn_loc_str = njt_conf_dyn_loc_get_ins_str(dyn_pool, dyn_loc);
-
-    // printf("test test test \n");
-    // printf("conf file %s \n", cycle->conf_file.data);
-    printf("%s \n", (char*)dyn_loc_str->data);
-    njt_destroy_pool(dyn_pool);
+    // // printf("test test test \n");
+    // // printf("conf file %s \n", cycle->conf_file.data);
+    // printf("%s \n", (char*)dyn_loc_str->data);
+    // njt_destroy_pool(dyn_pool);
 
 
 
@@ -583,11 +582,11 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
 
     // 输出到文件 
-    njt_str_t temp;
-    temp.data = njt_palloc(conf.cycle->pool, 8);
-    njt_str_set(&temp, "aa.json");
-    njt_conf_save_to_file(conf.cycle->pool, conf.log, cycle->conf_root, &temp);
-    printf("save to aa.json \n");
+    // njt_str_t temp;
+    // temp.data = njt_palloc(conf.cycle->pool, 8);
+    // njt_str_set(&temp, "aa.json");
+    // njt_conf_save_to_file(conf.cycle->pool, conf.log, cycle->conf_root, &temp);
+    // printf("save to aa.json \n");
 
     //----------------------------------------------------------
 

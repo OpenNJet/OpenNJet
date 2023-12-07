@@ -81,11 +81,14 @@ njt_uint_t    njt_restart;
 njt_uint_t    njt_is_privileged_agent = 0;
 njt_uint_t    njt_master_listening_count = 0;
 njt_uint_t    njt_is_privileged_helper = 0;
+// add for dyn conf
 njt_str_t     njt_conf_json;
 void         *njt_conf_pool_ptr = NULL;
 void         *njt_conf_cur_ptr = NULL;
 void         *njt_conf_dyn_loc_ptr = NULL;
-void         *njt_conf_root_ptr; //指向root节点
+void         *njt_conf_dyn_loc_pool = NULL;
+void         *njt_conf_root_ptr; //指向 njt_cycle->conf_root
+// end for dyn conf
 
 
 static u_char  master_process[] = "master process";

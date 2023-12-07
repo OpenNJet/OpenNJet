@@ -269,9 +269,8 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
             goto done;
         }
 
-        // add by lcm
-        if (njt_conf_pool_ptr != NULL) { // 需要修改, 先所有进程都作一下更新
-        // if (njt_process == NJT_PROCESS_SINGLE || 1) { // 需要修改, 先所有进程都作一下更新
+        // add by dyn_conf
+        if (njt_conf_pool_ptr != NULL) { 
             if (njt_conf_element_handler(njt_conf_pool_ptr, cf, rc) != NJT_OK) {
                 printf("error occured \n");
             }
