@@ -502,6 +502,10 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         njet_iot_client_add_topic(kv_evt_ctx, "$share/njet//rpc/#");
         snprintf(worker_topic, 31, "/worker_%d/#", (int)njt_worker);
         njet_iot_client_add_topic(kv_evt_ctx, worker_topic);
+    } else if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+        njet_iot_client_add_topic(kv_evt_ctx, "/dyn/#");
+        snprintf(worker_topic, 31, "/worker_a/#");
+        njet_iot_client_add_topic(kv_evt_ctx, worker_topic);
     }
     ret = njet_iot_client_connect(3, 5, kv_evt_ctx);
     if (0 != ret) {
@@ -819,12 +823,13 @@ static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_le
                 } else if (kv_handler->callbacks.rpc_put_handler) {
                     u_char *ret_str = kv_handler->callbacks.rpc_put_handler(&nstr_topic, &nstr_msg, len, kv_handler->callbacks.data);
                     send_full_conf = false;
-                    //if it is declative api and it is in worker_0, get the full configuration and broadcast it
+                    //if it is declative api and it is in worker_a, get the full configuration and broadcast it
                     if (kv_handler->callbacks.api_type == NJT_KV_API_TYPE_DECLATIVE
                         && kv_handler->callbacks.rpc_get_handler
-                        && strlen(topic) > 10 && njt_strncmp(topic, "/worker_0/", 10) == 0) {
+                        && strlen(topic) > 10 
+                        && (njt_strncmp(topic, "/worker_a/", 10) == 0 || njt_strncmp(topic, "/worker_p/", 10) == 0) ) {
                         send_full_conf = true;
-                        // remove prefix /worker_0 
+                        // remove prefix /worker_{a,p} 
                         send_topic.len = strlen(topic) - 9;
                         send_topic.data = njt_calloc(send_topic.len, njt_cycle->log);
                         if (send_topic.data == NULL) {
@@ -836,8 +841,9 @@ static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_le
                     // instructional api
                     if (kv_handler->callbacks.api_type == NJT_KV_API_TYPE_INSTRUCTIONAL
                         && kv_handler->callbacks.rpc_get_handler
-                        && strlen(topic) > 14 && njt_strncmp(topic, "/worker_p/ins/", 14) == 0) {
-                        //change topic /worker_p/ins/# -> /dyn/# 
+                        && strlen(topic) > 14 
+                        && (njt_strncmp(topic, "/worker_a/ins/", 14) == 0 || njt_strncmp(topic, "/worker_p/ins/", 14) == 0) ) {
+                        //change topic /worker_{a,p}/ins/# -> /dyn/# 
                         send_full_conf = true;
                         send_topic.len = 5 + hash_key.len; // /dyn/${hash_key}
                         send_topic.data = njt_calloc(send_topic.len, njt_cycle->log);

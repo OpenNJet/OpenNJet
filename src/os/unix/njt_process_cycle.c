@@ -78,7 +78,8 @@ sig_atomic_t  njt_noaccept;
 njt_uint_t    njt_noaccepting;
 njt_uint_t    njt_restart;
 
-njt_uint_t    njt_is_privileged_agent;
+njt_uint_t    njt_is_privileged_agent = 0;
+njt_uint_t    njt_master_listening_count = 0;
 njt_uint_t    njt_is_privileged_helper = 0;
 
 
@@ -1703,6 +1704,12 @@ njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker)
         }
     }
 
+    //for privileged agent, all listening sockets were closed
+    //restore lisening.nelts for dynamic configuration
+    if (njt_is_privileged_agent) {
+        cycle->listening.nelts = njt_master_listening_count;
+    }
+
     for (n = 0; n < njt_last_process; n++) {
 
         if (njt_processes[n].pid == -1) {
@@ -2240,6 +2247,7 @@ njt_privileged_agent_process_cycle(njt_cycle_t *cycle, void *data)
     njt_core_conf_t *ccf = (njt_core_conf_t *) njt_get_conf(cycle->conf_ctx, njt_core_module);
     njt_process = NJT_PROCESS_HELPER;
     njt_is_privileged_agent = 1;
+    njt_master_listening_count = cycle->listening.nelts;
 
     njt_close_listening_sockets(cycle);
 
