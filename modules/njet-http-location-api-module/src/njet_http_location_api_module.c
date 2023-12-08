@@ -620,7 +620,7 @@ njt_http_location_read_data(njt_http_request_t *r){
 	
 	
 	if(location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0 ){
-		p = njt_snprintf(topic_name.data,topic_len,"/ins/loc/l_%ui",crc32);
+		p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/loc/l_%ui",crc32);
 	} else  if(location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0 ){
 		p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/loc/l_%ui",crc32);
 	} else {
