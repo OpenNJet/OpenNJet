@@ -104,7 +104,7 @@ components:
           type: string
           description: cache加速配置执行状态
         download_ratio:
-          type: Integer
+          type: int
           description: 下载进度
 
     CacheConf:
