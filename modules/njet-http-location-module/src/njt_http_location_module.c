@@ -857,10 +857,11 @@ njt_http_location_init_worker(njt_cycle_t *cycle) {
 			return NJT_ERROR;
 		}
 	}
+	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "dyn loc: init dyn loc conf finished ");
 	
-	printf("dyn loc conf init finished --------------------------------------------------\n");
+	// printf("dyn loc conf init finished --------------------------------------------------\n");
 	// end for dyn_conf update
-	
+
 	njt_str_t  key = njt_string("loc");
 	if (njt_process != NJT_PROCESS_WORKER && njt_process != NJT_PROCESS_SINGLE) {
 		/*only works in the worker 0 prcess.*/
