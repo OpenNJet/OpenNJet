@@ -503,7 +503,7 @@ njt_conf_get_http_block(njt_pool_t *dyn_pool) {
     }
 
     njt_str_set(&http, "http");
-    ret = njt_conf_get_block(njt_conf_root_ptr, &http, NULL);
+    ret = njt_conf_get_block(njt_cycle->conf_root, &http, NULL);
     njt_pfree(dyn_pool, http.data);
 
     return ret;
@@ -551,7 +551,7 @@ njt_conf_get_block( njt_conf_element_t *cur,
     njt_conf_element_t  *block, *ret;
 
     ret = NULL;
-    if (cur->blocks == NULL || cur->blocks->nelts == 0) {
+    if (cur == NULL || cur->blocks == NULL || cur->blocks->nelts == 0) {
         return ret;
     }
 

@@ -87,7 +87,6 @@ void         *njt_conf_pool_ptr = NULL;
 void         *njt_conf_cur_ptr = NULL;
 void         *njt_conf_dyn_loc_ptr = NULL;
 void         *njt_conf_dyn_loc_pool = NULL;
-void         *njt_conf_root_ptr; //指向 njt_cycle->conf_root
 // end for dyn conf
 
 

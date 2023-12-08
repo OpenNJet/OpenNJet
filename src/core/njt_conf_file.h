@@ -114,35 +114,6 @@ typedef char *(*njt_conf_handler_pt)(njt_conf_t *cf,
     njt_command_t *dummy, void *conf);
 
 
-// // add by lcm
-// typedef struct njt_conf_cmd_s njt_conf_cmd_t;
-// typedef struct njt_conf_block_s njt_conf_block_t;
-// typedef struct njt_conf_element_s njt_conf_element_t;
-// struct njt_conf_cmd_s {
-//     njt_str_t     key;
-//     njt_array_t  *value;
-//     // njt_uint_t    is_flag:1;
-//     // njt_uint_t    is_num:1;
-// };
-
-// struct njt_conf_block_s {
-//     njt_str_t     key;
-//     njt_array_t  *value;
-// };
-
-// struct njt_conf_element_s {
-//     njt_conf_cmd_t     *block_name;
-//     njt_array_t        *cmds;
-//     njt_array_t        *blocks; // not null, has sub block
-//     njt_conf_element_t *parent;
-// };
-
-// extern void *njt_conf_pool_ptr; 
-// extern void *njt_conf_cur_ptr; 
-// extern void *njt_conf_root_ptr;
-// extern njt_str_t njt_conf_json; 
-// // end of add
-
 struct njt_conf_s {
     char                 *name;
     njt_array_t          *args;

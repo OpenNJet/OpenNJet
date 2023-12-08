@@ -415,16 +415,8 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 
     // add for dyn_loc conf update
 	njt_pool_t *dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
-	printf("test test test \n");
-    njt_str_t *dyn_loc_str = njt_conf_dyn_loc_get_ins_str(dyn_pool, njt_conf_dyn_loc_ptr);
-    printf("before del: %s \n", (char*)dyn_loc_str->data);
 	njt_conf_dyn_loc_del_loc(njt_conf_dyn_loc_pool, njt_conf_dyn_loc_ptr, (void *)location_info);
-    dyn_loc_str = njt_conf_dyn_loc_get_ins_str(dyn_pool, njt_conf_dyn_loc_ptr);
-    printf("after del: %s \n", (char*)dyn_loc_str->data);
-    dyn_loc_str = njt_conf_dyn_loc_get_pub_str(dyn_pool, njt_conf_dyn_loc_ptr);
-    printf("%s \n", (char*)dyn_loc_str->data);
 	njt_conf_dyn_loc_save_to_file(dyn_pool, njt_cycle->log, njt_conf_dyn_loc_ptr);
-    printf("test test test \n");
     njt_destroy_pool(dyn_pool);
 	// end for dyn_loc conf update
 
@@ -707,21 +699,10 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	if (dyn_pool == NULL) {
 		rc = NJT_ERROR;
 		goto out;
-		}
-	njt_int_t ret;
-	ret = njt_conf_dyn_loc_merge_location(njt_conf_dyn_loc_pool, &location_info->addr_port, &location_info->server_name, dyn_loc);
-	printf(" ret 1: %ld\n", ret);
-	ret = njt_conf_dyn_loc_add_loc(njt_conf_dyn_loc_pool, njt_conf_dyn_loc_ptr, (void *)location_info);
-	printf(" ret 1: %ld\n", ret);
-
-    printf("test test test \n");
-    // printf("conf file %s \n", cycle->conf_file.data);
-    njt_str_t *dyn_loc_str = njt_conf_dyn_loc_get_ins_str(dyn_pool, njt_conf_dyn_loc_ptr);
-    printf("%s \n", (char*)dyn_loc_str->data);
-    dyn_loc_str = njt_conf_dyn_loc_get_pub_str(dyn_pool, njt_conf_dyn_loc_ptr);
-    printf("%s \n", (char*)dyn_loc_str->data);
+	}
+	njt_conf_dyn_loc_merge_location(njt_conf_dyn_loc_pool, &location_info->addr_port, &location_info->server_name, dyn_loc);
+	njt_conf_dyn_loc_add_loc(njt_conf_dyn_loc_pool, njt_conf_dyn_loc_ptr, (void *)location_info);
 	njt_conf_dyn_loc_save_to_file(dyn_pool, njt_cycle->log, njt_conf_dyn_loc_ptr);
-    printf("test test test \n");
     njt_destroy_pool(dyn_pool);
 	// end for dyn_conf update
 

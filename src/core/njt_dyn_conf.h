@@ -87,7 +87,6 @@ struct njt_conf_dyn_loc_svr_s {
 extern void *njt_conf_pool_ptr; 
 extern void *njt_conf_dyn_loc_pool; 
 extern void *njt_conf_cur_ptr; 
-extern void *njt_conf_root_ptr;
 extern void *njt_conf_dyn_loc_ptr;
 extern njt_str_t njt_conf_json; 
 
