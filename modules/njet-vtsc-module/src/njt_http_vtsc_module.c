@@ -997,10 +997,6 @@ njt_http_vtsc_init_worker(njt_cycle_t *cycle)
     njt_event_t                          *dump_event;
     njt_http_vhost_traffic_status_ctx_t  *ctx;
 
-    if (njt_process != NJT_PROCESS_WORKER) {
-        return NJT_OK;
-    }
-
     njt_http_vtsp_module = &njt_http_vtsc_module;
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, cycle->log, 0,
@@ -1592,7 +1588,7 @@ FAIL:
 
 static njt_int_t njt_dynvts_update(njt_pool_t *pool, dyn_vts_t *api_data, njt_rpc_result_t *rpc_result)
 {
-    njt_cycle_t                 *cycle, *new_cycle;
+    njt_cycle_t                 *cycle;
     njt_http_core_srv_conf_t    *cscf;
     njt_http_core_loc_conf_t    *clcf;
     dyn_vts_servers_item_t      *dsi;
@@ -1607,12 +1603,7 @@ static njt_int_t njt_dynvts_update(njt_pool_t *pool, dyn_vts_t *api_data, njt_rp
     rpc_data_str.data = data_buf;
     njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
 
-    if (njt_process == NJT_PROCESS_HELPER){
-        new_cycle = (njt_cycle_t*)njt_cycle;
-        cycle = new_cycle->old_cycle;
-    } else {
-        cycle = (njt_cycle_t*)njt_cycle;
-    }
+    cycle = (njt_cycle_t*)njt_cycle;
 
     if (api_data->is_vhost_traffic_status_filter_by_set_key_set && api_data->vhost_traffic_status_filter_by_set_key.len > 0) {
         njt_dynvts_update_filter(cycle, &api_data->vhost_traffic_status_filter_by_set_key, rpc_result);

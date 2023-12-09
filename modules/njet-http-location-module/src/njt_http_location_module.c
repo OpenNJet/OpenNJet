@@ -681,7 +681,7 @@ static int njt_agent_location_change_handler_internal(njt_str_t *key, njt_str_t 
 	njt_str_t  add = njt_string("add");
 	njt_str_t  del = njt_string("del");
 	njt_str_t  del_topic = njt_string("");
-	njt_str_t  worker_str = njt_string("/worker_0");
+	njt_str_t  worker_str = njt_string("/worker_a");
 	njt_str_t  new_key;
 	njt_rpc_result_t * rpc_result;
 	njt_uint_t from_api_add = 0;
@@ -763,10 +763,7 @@ static njt_int_t
 njt_http_location_init_worker(njt_cycle_t *cycle) {
 
 	njt_str_t  key = njt_string("loc");
-	if (njt_process != NJT_PROCESS_WORKER && njt_process != NJT_PROCESS_SINGLE) {
-		/*only works in the worker 0 prcess.*/
-		return NJT_OK;
-	}
+
     njt_kv_reg_handler_t h;
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &key;
@@ -959,18 +956,9 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 			rc = njt_struct_find(items, &key, &out_items);
 			if( (location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0)) {
 				if(rc != NJT_OK || out_items->type != NJT_JSON_STR){
-				 if(sub_location->proxy_pass.len == 0) {
-					njt_str_set(&location_info->msg, "location_body null");
-					return NJT_ERROR;
-				  } else {
 					njt_str_set(&sub_location->location_body,"");
-				  }
 				} else {
 					sub_location->location_body = njt_del_headtail_space(out_items->strval);
-					if(sub_location->location_body.len == 0 && sub_location->proxy_pass.len == 0) {
-					  njt_str_set(&location_info->msg, "location_body null");
-					  return NJT_ERROR;
-					}
 				}
 			} else if(rc == NJT_OK && out_items->type == NJT_JSON_STR) {
 				 sub_location->location_body = njt_del_headtail_space(out_items->strval);
@@ -1388,6 +1376,19 @@ static void njt_http_location_clear_dirty_data(njt_http_core_loc_conf_t *clcf) {
     njt_queue_t *x, *q;
     njt_http_location_queue_t *lx;
     njt_http_core_loc_conf_t *dclcf;
+
+        if(clcf->if_locations != NULL) {
+    q = njt_queue_head(clcf->if_locations);
+
+    while (q != njt_queue_sentinel(clcf->if_locations)) {
+        x = njt_queue_next(q);
+        lx = (njt_http_location_queue_t *) q;
+        if (lx->dynamic_status == 1) {
+            njt_queue_remove(q);
+        }
+        q = x;
+    }
+    }
 
     if(clcf->old_locations != NULL) {
     q = njt_queue_head(clcf->old_locations);

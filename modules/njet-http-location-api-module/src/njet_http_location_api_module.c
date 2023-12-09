@@ -462,6 +462,7 @@ static njt_int_t njt_http_location_rpc_send(njt_http_request_t *r,njt_str_t *mod
     njt_http_location_rpc_ctx_t *ctx;
     njt_pool_cleanup_t *cleanup;
 
+    r->write_event_handler = njt_http_request_empty_handler;
     dlmcf = njt_http_get_module_main_conf(r,njt_http_location_api_module);
     index = njt_http_location_get_free_index(dlmcf);
     if(index == -1 ){
@@ -491,7 +492,7 @@ static njt_int_t njt_http_location_rpc_send(njt_http_request_t *r,njt_str_t *mod
     if(rc == NJT_OK){
         dlmcf->reqs[index] = r;
     }
-    return NJT_OK;
+    return rc;
 
     err:
     return NJT_ERROR;
@@ -621,7 +622,7 @@ njt_http_location_read_data(njt_http_request_t *r){
 	if(location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0 ){
 		p = njt_snprintf(topic_name.data,topic_len,"/ins/loc/l_%ui",crc32);
 	} else  if(location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0 ){
-		p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/loc/l_%ui",crc32);
+		p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/loc/l_%ui",crc32);
 	} else {
 		njt_str_set(&location_info->msg, "type error!!!");
 		goto err;

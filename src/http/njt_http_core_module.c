@@ -3758,11 +3758,6 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
             return NJT_CONF_ERROR;
         }
     }
-    if (clcf->if_loc == 1 ) {
-	     if (njt_http_add_location_pre_process(cf,&pclcf->if_locations,pclcf->pool) != NJT_OK || njt_http_add_location(cf, &pclcf->if_locations, clcf) != NJT_OK) {
-		    return NJT_CONF_ERROR;
-	      }
-     } 
 	    if(cf->dynamic != 1){
 		if (njt_http_add_location_pre_process(cf,&pclcf->locations,pclcf->pool) != NJT_OK || njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
 		    return NJT_CONF_ERROR;
@@ -3770,6 +3765,11 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
 	    } else {
 			 clcf->dynamic_status = 1;  // 1 
 		}
+    if (clcf->if_loc == 1 ) {
+	     if (njt_http_add_location_pre_process(cf,&pclcf->if_locations,pclcf->pool) != NJT_OK || njt_http_add_location(cf, &pclcf->if_locations, clcf) != NJT_OK) {
+		    return NJT_CONF_ERROR;
+	      }
+     } 
 	    if (njt_http_add_location_pre_process(cf,&pclcf->old_locations,pclcf->pool) != NJT_OK || njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
 		    return NJT_CONF_ERROR;
 	    }
@@ -6064,10 +6064,12 @@ njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf)
     root = NULL;
     r = yyparse(&root);
     if(r != NJT_OK || root == NULL) {
+    	free_bison_tree(root);
 	return NJT_CONF_ERROR;
     }
     rc = njt_http_core_cp_loc_parse_tree(root,pclcf->pool,&loc_exp_dyn_parse_tree);  
     if(rc != NJT_OK || loc_exp_dyn_parse_tree == NULL) {
+    	free_bison_tree(root);
 	return NJT_CONF_ERROR;
     }
     free_bison_tree(root);
@@ -6329,6 +6331,7 @@ njt_http_core_loc_parse_tree_ctx(loc_parse_node_t *root,njt_pool_t   *pool){
                 if(idx != current->loc_exp->idx) {
                     printf("idx: %d,  idx_exp: %d \n", idx, current->loc_exp->idx);
                 }
+		 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_loc_parse_tree_ctx run idx=%d, %s",current->loc_exp->idx,current->loc_exp->exp);
                 // printf("correct: idx: %d,  idx_exp: %d \n", idx, current->loc_exp->idx);
                 exps[idx] = current->loc_exp->exp;
                 idx++;

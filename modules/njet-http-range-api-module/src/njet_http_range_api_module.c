@@ -296,7 +296,7 @@ njt_dyn_range_handler(njt_http_request_t *r) {
 
     if(r->method == NJT_HTTP_GET){
         njt_str_t smsg = njt_string("{\"method\":\"GET\"}");
-        njt_str_set(&topic, "/worker_p/rpc/range");
+        njt_str_set(&topic, "/worker_a/rpc/range");
 
         rc = njt_dyn_range_rpc_send(r, &topic, &smsg, 0);
         if(rc != NJT_OK){
@@ -372,7 +372,8 @@ static njt_int_t njt_dyn_range_rpc_send(njt_http_request_t *r,njt_str_t *module_
     njt_int_t                       rc;
     njt_dyn_range_rpc_ctx_t      *ctx;
     njt_pool_cleanup_t              *cleanup;
-
+    
+    r->write_event_handler = njt_http_request_empty_handler;
     dlmcf = njt_http_get_module_main_conf(r,njt_http_range_api_module);
     if(dlmcf == NULL){
         goto err;
@@ -405,7 +406,7 @@ static njt_int_t njt_dyn_range_rpc_send(njt_http_request_t *r,njt_str_t *module_
     if(rc == NJT_OK){
         dlmcf->reqs[index] = r;
     }
-    return NJT_OK;
+    return rc;
 
     err:
     return NJT_ERROR;
@@ -529,7 +530,7 @@ njt_dyn_range_read_data(njt_http_request_t *r){
 	njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
             " dyn range, type:%d  crc32:%ui", api_data->type, crc32);    
 
-    p = njt_snprintf(topic_name.data,topic_len,"/worker_p/ins/range/l_%ui",crc32);
+    p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/range/l_%ui",crc32);
 	topic_name.len = p - topic_name.data;
 	rc = njt_dyn_range_rpc_send(r, &topic_name, &json_str, 0);
 	if(rc == NJT_OK) {

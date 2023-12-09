@@ -152,6 +152,21 @@ static njt_command_t  njt_core_commands[] = {
       0,
       0,
       NULL },
+    
+    { njt_string("privileged_agent"),
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_flag_slot,
+      0,
+      offsetof(njt_core_conf_t, privileged_agent),
+      NULL },
+    
+    { njt_string("privileged_agent_connections"),
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_num_slot,
+      0,
+      offsetof(njt_core_conf_t, privileged_agent_connections),
+      NULL },
+    
 
       njt_null_command
 };
@@ -1087,6 +1102,9 @@ njt_core_module_create_conf(njt_cycle_t *cycle)
     ccf->user = (njt_uid_t) NJT_CONF_UNSET_UINT;
     ccf->group = (njt_gid_t) NJT_CONF_UNSET_UINT;
 
+    ccf->privileged_agent = NJT_CONF_UNSET;
+    ccf->privileged_agent_connections = NJT_CONF_UNSET_UINT;
+
     if (njt_array_init(&ccf->env, cycle->pool, 1, sizeof(njt_str_t))
         != NJT_OK)
     {
@@ -1109,6 +1127,9 @@ njt_core_module_init_conf(njt_cycle_t *cycle, void *conf)
 
     njt_conf_init_value(ccf->worker_processes, 1);
     njt_conf_init_value(ccf->debug_points, 0);
+
+    njt_conf_init_value(ccf->privileged_agent, 1);
+    njt_conf_init_uint_value(ccf->privileged_agent_connections, 128);
 
 #if (NJT_HAVE_CPU_AFFINITY)
 

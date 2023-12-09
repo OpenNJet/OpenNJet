@@ -741,7 +741,7 @@ err:
 static njt_int_t njt_dyn_fault_inject_update_conf(njt_pool_t *pool, dyn_fault_inject_t *api_data,
                         njt_rpc_result_t *rpc_result)
 {
-    njt_cycle_t                         *cycle, *new_cycle;
+    njt_cycle_t                         *cycle;
     njt_http_core_srv_conf_t            *cscf;
     njt_http_core_loc_conf_t            *clcf;
     dyn_fault_inject_servers_item_t     *dsi;
@@ -757,15 +757,7 @@ static njt_int_t njt_dyn_fault_inject_update_conf(njt_pool_t *pool, dyn_fault_in
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
 
-    if (njt_process == NJT_PROCESS_HELPER)
-    {
-        new_cycle = (njt_cycle_t *)njt_cycle;
-        cycle = new_cycle->old_cycle;
-    }
-    else
-    {
-        cycle = (njt_cycle_t *)njt_cycle;
-    }
+    cycle = (njt_cycle_t *)njt_cycle;
 
     if(api_data->is_servers_set && api_data->servers != NULL){
         for (i = 0; i < api_data->servers->nelts; i++)
