@@ -443,19 +443,17 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         return NJT_OK;
     }
 
-    if (njt_process != NJT_PROCESS_HELPER) {
-        njt_str_t rhk = njt_string("njt_http_kv_module");
-        njt_kv_reg_handler_t h;
-        njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
-        h.key = &rhk;
-        h.rpc_get_handler = njt_http_kv_module_rpc_handler;
-        h.api_type = NJT_KV_API_TYPE_DECLATIVE;
-        ret = njt_kv_reg_handler(&h);
+    njt_str_t rhk = njt_string("njt_http_kv_module");
+    njt_kv_reg_handler_t h;
+    njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
+    h.key = &rhk;
+    h.rpc_get_handler = njt_http_kv_module_rpc_handler;
+    h.api_type = NJT_KV_API_TYPE_DECLATIVE;
+    ret = njt_kv_reg_handler(&h);
 
-        if (ret != NJT_OK) {
-            njt_log_error(NJT_LOG_ERR, cycle->log, 0, "can't reg rpc handler for kv module");
-            return NJT_ERROR;
-        }
+    if (ret != NJT_OK) {
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "can't reg rpc handler for kv module");
+        return NJT_ERROR;
     }
 
     memcpy(client_id, mqconf->node_name.data, mqconf->node_name.len);
