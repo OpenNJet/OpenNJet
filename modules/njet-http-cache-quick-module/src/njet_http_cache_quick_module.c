@@ -68,6 +68,30 @@ njt_int_t
 njt_http_cache_quick_lvlhsh_test(njt_lvlhsh_query_t *lhq, void *data);
 
 
+#if (NJT_OPENSSL)
+typedef struct njt_http_cache_quick_ssl_conf_s {
+    njt_flag_t ssl_enable;
+    njt_flag_t ntls_enable;
+    njt_flag_t ssl_session_reuse;
+    njt_uint_t ssl_protocols;
+    njt_str_t ssl_protocol_str;
+    njt_str_t ssl_ciphers;
+    njt_str_t ssl_name;
+    njt_flag_t ssl_server_name;
+    njt_flag_t ssl_verify;
+    njt_int_t ssl_verify_depth;
+    njt_str_t ssl_trusted_certificate;
+    njt_str_t ssl_crl;
+    njt_str_t ssl_certificate;
+    njt_str_t ssl_certificate_key;
+    njt_str_t ssl_enc_certificate;
+    njt_str_t ssl_enc_certificate_key;
+    njt_array_t *ssl_passwords;
+    njt_array_t *ssl_conf_commands;
+    njt_ssl_t *ssl;
+} njt_http_cache_quick_ssl_conf_t;
+#endif
+
 
 typedef struct njt_http_cache_resouce_metainfo_s{
     njt_str_t       addr_port;
@@ -77,6 +101,11 @@ typedef struct njt_http_cache_resouce_metainfo_s{
     njt_str_t       location_body;
     njt_str_t       proxy_pass;
     
+    njt_int_t       ssl_enable;
+#if (NJT_OPENSSL)
+    njt_http_cache_quick_ssl_conf_t ssl;
+#endif
+
     uint32_t        crc32;
     njt_str_t       crc32_str;
 
@@ -117,6 +146,7 @@ typedef struct njt_http_cache_quick_download_peer_s {
     njt_chain_t                     *last_chain_node;
     void                            *parser;
 
+    uint32_t                        crc32;
     njt_str_t                       crc32_str;
     njt_str_t                       host;
 #if (NJT_HTTP_SSL)
@@ -288,7 +318,8 @@ static njt_str_t *njt_http_caches_to_json(njt_pool_t *pool, njt_http_cache_quick
     njt_http_cache_resouce_metainfo_t       *cache_info;
     njt_queue_t                             *q;
     cache_t                                 dynjson_obj;
-    cache_caches_item_t                     *cache_item;               
+    cache_caches_item_t                     *cache_item;
+    cache_caches_item_download_ratio_t      ratio;           
     // njt_str_t                               tmp_str;
 
 
@@ -342,7 +373,8 @@ static njt_str_t *njt_http_caches_to_json(njt_pool_t *pool, njt_http_cache_quick
         if(cache_info->current_size < 1){
             set_cache_caches_item_download_ratio(cache_item, 0);
         }else{
-            set_cache_caches_item_download_ratio(cache_item, cache_info->resource_size / cache_info->current_size);
+            ratio = (cache_info->resource_size * 1.0) / (cache_info->current_size * 1.0) * 100;
+            set_cache_caches_item_download_ratio(cache_item, ratio);
         }
 
         add_item_cache_caches(dynjson_obj.caches, cache_item);
@@ -846,6 +878,8 @@ static njt_http_cache_resouce_metainfo_t *njt_http_add_cache_item_to_queue(
             njt_http_cache_quick_main_conf_t *cqmf, cache_api_t *api_data){
     njt_http_cache_resouce_metainfo_t       *cache_info;
     njt_pool_t                              *item_pool;
+    njt_pool_cleanup_t                      *cln;
+    njt_conf_t                              cf;
 
     item_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
     if (item_pool == NULL || NJT_OK != njt_sub_pool(njt_cycle->pool, item_pool)) {
@@ -857,6 +891,49 @@ static njt_http_cache_resouce_metainfo_t *njt_http_add_cache_item_to_queue(
     if(cache_info == NULL){
         return NULL;
     }
+
+    cache_info->ssl_enable = 1;
+#if (NJT_OPENSSL)
+    njt_str_set(&cache_info->ssl.ssl_ciphers, "DEFAULT");
+    cache_info->ssl.ssl_protocols = (NJT_CONF_BITMASK_SET | NJT_SSL_TLSv1 | NJT_SSL_TLSv1_1 | NJT_SSL_TLSv1_2);
+    cache_info->ssl.ssl = njt_pcalloc(item_pool, sizeof(njt_ssl_t));
+    if(cache_info->ssl.ssl == NULL){
+        return NULL;
+    }
+    cache_info->ssl.ssl->log = njt_cycle->log;
+    if (njt_ssl_create(cache_info->ssl.ssl, cache_info->ssl.ssl_protocols, NULL)
+        != NJT_OK)
+    {
+        return NULL;
+    }
+#if (NJT_HAVE_NTLS)
+    if (1 == cache_info->ssl.ntls_enable) {
+        SSL_CTX_set_ssl_version(cache_info->ssl.ssl->ctx, NTLS_method());
+        SSL_CTX_set_cipher_list(cache_info->ssl.ssl->ctx,(const char *)cache_info->ssl.ssl_ciphers.data);
+        SSL_CTX_enable_ntls(cache_info->ssl.ssl->ctx);
+    }
+#endif
+
+    cf.pool = item_pool;
+    cf.log = njt_cycle->log;
+    cf.cycle = (njt_cycle_t *)njt_cycle;
+
+
+    cln = njt_pool_cleanup_add(cf.pool, 0);
+    if (cln == NULL) {
+        njt_ssl_cleanup_ctx(cache_info->ssl.ssl);
+        return NULL;
+    }
+
+    cln->handler = njt_ssl_cleanup_ctx;
+    cln->data = cache_info->ssl.ssl;
+    if (njt_ssl_ciphers(&cf, cache_info->ssl.ssl, &cache_info->ssl.ssl_ciphers, 0)
+        != NJT_OK)
+    {
+        return NULL;
+    }
+#endif
+
     cache_info->item_pool = item_pool;
 
     if(api_data->is_addr_port_set){
@@ -919,9 +996,8 @@ static njt_peer_connection_t *njt_http_cache_quick_create_download_peer(
         njt_pool_t *pool, njt_http_cache_resouce_metainfo_t *cache_info){
     njt_url_t                   u;
     u_char                      *p;
-    njt_uint_t                  i, n;
-    njt_str_t                   tmp_str;
     njt_peer_connection_t       *peer;
+    njt_str_t                   host, port;
 
     p = (u_char *)njt_strstr(cache_info->addr_port.data,":");
     if(p == NULL) {
@@ -932,20 +1008,21 @@ static njt_peer_connection_t *njt_http_cache_quick_create_download_peer(
         return NULL;
     }
 
-    njt_memzero(&u, sizeof(njt_url_t));
-    // u.url.len = cache_info->addr_port.len;
-    // u.url.data = njt_pstrdup(pool, &cache_info->addr_port);
-    // tmp_str.data = (u_char *)"192.168.40.136:80";
-    njt_str_set(&tmp_str, (u_char *)"192.168.40.136:80");
-    u.url.len = tmp_str.len;
-    u.url.data = njt_pstrdup(pool, &tmp_str); 
+    host.data = cache_info->addr_port.data;
+    host.len = p - cache_info->addr_port.data;
 
-    if(u.url.data == NULL){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "cache quick create url error");
-        return NULL;
-    }
-    u.no_resolve = 1;
+    port.data = p + 1;
+    port.len = cache_info->addr_port.len - host.len - 1;
+
+    njt_memzero(&u, sizeof(njt_url_t));
+    u.url.len = cache_info->addr_port.len;
+    u.url.data = njt_pstrdup(pool, &cache_info->addr_port);
+    
+    // njt_str_set(&tmp_str, "192.168.40.136:80");
+    // u.url.len = tmp_str.len;
+    // u.url.data = njt_pstrdup(pool, &tmp_str); 
+
+    // u.no_resolve = 1;
     if (njt_parse_url(pool, &u) != NJT_OK) {
         if (u.err) {
             njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
@@ -955,18 +1032,18 @@ static njt_peer_connection_t *njt_http_cache_quick_create_download_peer(
         return NULL;
     }
 
-    if (njt_inet_resolve_host(pool, &u) != NJT_OK) {
-        if (u.err) {
-            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
-                    "cache quick resolve url error:%s url:%V",
-                    u.err, &cache_info->addr_port);
-        }
+    // if (njt_inet_resolve_host(pool, &u) != NJT_OK) {
+    //     if (u.err) {
+    //         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
+    //                 "cache quick resolve url error:%s url:%V",
+    //                 u.err, &cache_info->addr_port);
+    //     }
 
-        return NULL;
-    }
+    //     return NULL;
+    // }
 
-    n = u.naddrs;
-    peer = njt_pcalloc(pool, sizeof(njt_peer_connection_t) * n);
+    // n = u.naddrs;
+    peer = njt_pcalloc(pool, sizeof(njt_peer_connection_t));
     if (peer == NULL) {
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
                 "cache quick malloc peer error, url:%V",
@@ -975,11 +1052,10 @@ static njt_peer_connection_t *njt_http_cache_quick_create_download_peer(
         return NULL;
     }
 
-    for (i = 0; i < u.naddrs; i++) {
-        peer[i].sockaddr = u.addrs[i].sockaddr;
-        peer[i].socklen = u.addrs[i].socklen;
-        peer[i].name = &u.addrs[i].name;
-    }
+    peer->sockaddr = u.addrs[0].sockaddr;
+    peer->socklen = u.addrs[0].socklen;
+    peer->name = &u.addrs[0].name;
+    njt_inet_set_port(peer->sockaddr, njt_atoi(port.data, port.len));
 
     return peer;
 }
@@ -1018,12 +1094,16 @@ njt_http_cache_quick_update_download_status_str(njt_http_cache_resouce_metainfo_
 static njt_int_t
 njt_http_cache_quick_update_download_status(njt_http_cache_quick_download_peer_t *cq_peer,
         cache_api_status_t status) {
+    njt_int_t                           rc;
     njt_lvlhsh_query_t                  lhq;
     njt_http_cache_quick_main_conf_t   *cqmf;
     njt_http_cache_resouce_metainfo_t  *cache_info;
 
     cqmf = (njt_http_cache_quick_main_conf_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_cache_quick_module);   
     if(cqmf == NULL){
+        if (cq_peer->peer->connection) {
+            njt_http_close_connection(cq_peer->peer->connection);
+        }
         return NJT_OK;
     }
 
@@ -1034,15 +1114,20 @@ njt_http_cache_quick_update_download_status(njt_http_cache_quick_download_peer_t
     if(NJT_OK == njt_lvlhsh_find(&cqmf->resource_to_metainfo, &lhq)){
         cache_info = lhq.value;
         njt_http_cache_quick_update_download_status_str(cache_info, status);
-        return NJT_OK;
+        rc = NJT_OK;
     }else{
         njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
             "update download status, not find cache info, crc32:%V", &cq_peer->crc32_str);
         
-        return NJT_ERROR;
+        rc = NJT_ERROR;
     }
 
-    return NJT_OK;
+
+    if (cq_peer->peer->connection) {
+        njt_http_close_connection(cq_peer->peer->connection);
+    }
+
+    return rc;
 }
 
 
@@ -1053,11 +1138,56 @@ njt_http_cache_quicky_dummy_handler(njt_event_t *ev) {
 }
 
 
+static void njt_http_cache_quick_update_download_process(njt_uint_t total_flag,
+        njt_http_cache_quick_download_peer_t *cq_peer, ssize_t n){
+    njt_lvlhsh_query_t                  lhq;
+    njt_http_cache_quick_main_conf_t   *cqmf;
+    njt_http_cache_resouce_metainfo_t  *cache_info;
+
+    cqmf = (njt_http_cache_quick_main_conf_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_cache_quick_module);   
+    if(cqmf == NULL){
+        return;
+    }
+
+    lhq.key = cq_peer->crc32_str;
+    lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
+    lhq.proto = &njt_http_cache_quick_lvlhsh_proto;
+    lhq.pool = cqmf->cache_pool;
+    if(NJT_OK == njt_lvlhsh_find(&cqmf->resource_to_metainfo, &lhq)){
+        cache_info = lhq.value;
+        if(total_flag){
+            cache_info->resource_size = n;
+            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                "update download process, file size:%d", n);
+        }else{
+            cache_info->current_size += n;
+            // njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            //     "update download process, read_size:%d  current_size:%d  file_size:%d",
+            //     n, cache_info->current_size, cache_info->resource_size);
+        }
+
+        return;
+    }else{
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+            "update download process, not find cache info, crc32:%V", &cq_peer->crc32_str);
+        
+        return;
+    }
+
+    return;    
+}
+
+
 static njt_int_t
 njt_cache_quick_http_process_body(njt_http_cache_quick_download_peer_t *cq_peer) {
-    njt_cache_quick_http_parse_t *hp;
+    njt_cache_quick_http_parse_t    *hp;
+    njt_buf_t                       *b;
 
     hp = cq_peer->parser;
+    b = cq_peer->recv_buf;
+
+    njt_http_cache_quick_update_download_process(0, cq_peer, b->last - b->pos);
+    b->pos = b->last;
 
     if (hp->done) {
         return NJT_DONE;
@@ -1253,44 +1383,7 @@ njt_cache_quick_http_parse_header_line(njt_http_cache_quick_download_peer_t *cq_
     return NJT_DONE;
 }
 
-static void njt_http_cache_quick_update_download_process(njt_uint_t total_flag,
-        njt_http_cache_quick_download_peer_t *cq_peer, ssize_t n){
-    njt_lvlhsh_query_t                  lhq;
-    njt_http_cache_quick_main_conf_t   *cqmf;
-    njt_http_cache_resouce_metainfo_t  *cache_info;
 
-    cqmf = (njt_http_cache_quick_main_conf_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_cache_quick_module);   
-    if(cqmf == NULL){
-        return;
-    }
-
-    lhq.key = cq_peer->crc32_str;
-    lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
-    lhq.proto = &njt_http_cache_quick_lvlhsh_proto;
-    lhq.pool = cqmf->cache_pool;
-    if(NJT_OK == njt_lvlhsh_find(&cqmf->resource_to_metainfo, &lhq)){
-        cache_info = lhq.value;
-        if(total_flag){
-            cache_info->resource_size = n;
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                "update download process, file size:%d", n);
-        }else{
-            cache_info->current_size += n;
-            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                "update download process, read_size:%d  current_size:%d  file_size:%d",
-                n, cache_info->current_size, cache_info->resource_size);
-        }
-
-        return;
-    }else{
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-            "update download process, not find cache info, crc32:%V", &cq_peer->crc32_str);
-        
-        return;
-    }
-
-    return;    
-}
 
 static njt_int_t
 njt_cache_quick_http_process_headers(njt_http_cache_quick_download_peer_t *cq_peer) {
@@ -1368,7 +1461,7 @@ njt_cache_quick_http_process_headers(njt_http_cache_quick_download_peer_t *cq_pe
         }
 
         /*http header parse error*/
-        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                        "http process header error.");
         return NJT_ERROR;
     }
@@ -1648,9 +1741,10 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
         if (n > 0) {
             b->last += n;
             hp = cq_peer->parser;
-            if(NJT_HTTP_CACHE_QUICK_PARSE_BODY == hp->stage){
-                njt_http_cache_quick_update_download_process(0, cq_peer, n);
-            }
+            // if(NJT_HTTP_CACHE_QUICK_PARSE_BODY == hp->stage){
+            //     njt_http_cache_quick_update_download_process(0, cq_peer, b->last - b->pos);
+            //     b->pos = b->last;
+            // }
             rc = hp->process(cq_peer);
             if (rc == NJT_ERROR) {
                 return NJT_ERROR;
@@ -1741,7 +1835,7 @@ njt_http_cache_quick_http_write_handler(njt_event_t *wev) {
     c = wev->data;
     cq_peer = c->data;
 
-    njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0, "http check send.");
+    njt_log_error(NJT_LOG_INFO, c->log, 0, "http check send.");
 
     if (cq_peer->send_buf == NULL) {
         cq_peer->send_buf = njt_create_temp_buf(cq_peer->pool, njt_pagesize);
@@ -1761,11 +1855,11 @@ njt_http_cache_quick_http_write_handler(njt_event_t *wev) {
         cq_peer->send_buf->last = njt_snprintf(cq_peer->send_buf->last,
                                                cq_peer->send_buf->end - cq_peer->send_buf->last, "Host: %V" CRLF,
                                                &cq_peer->host);
-        cq_peer->send_buf->last = njt_snprintf(cq_peer->send_buf->last,
-                                               cq_peer->send_buf->end - cq_peer->send_buf->last, "Host: 192.168.40.136" CRLF);
+        // cq_peer->send_buf->last = njt_snprintf(cq_peer->send_buf->last,
+        //                                        cq_peer->send_buf->end - cq_peer->send_buf->last, "Host: 192.168.40.136" CRLF);
         cq_peer->send_buf->last = njt_snprintf(cq_peer->send_buf->last,
                                                cq_peer->send_buf->end - cq_peer->send_buf->last,
-                                               "User-Agent: njet (health-check)" CRLF);
+                                               "User-Agent: njet (cache-quick)" CRLF);
         cq_peer->send_buf->last = njt_snprintf(cq_peer->send_buf->last,
                                                cq_peer->send_buf->end - cq_peer->send_buf->last, CRLF);
     }
@@ -1774,7 +1868,6 @@ njt_http_cache_quick_http_write_handler(njt_event_t *wev) {
 
     n = c->send(c, cq_peer->send_buf->pos,
                 cq_peer->send_buf->last - cq_peer->send_buf->pos);
-
     if (n == NJT_ERROR) {
         return NJT_ERROR;
     }
@@ -1802,13 +1895,14 @@ static void njt_http_cache_quick_download_write_handler(njt_event_t *wev) {
     njt_http_cache_quick_download_peer_t    *cq_peer;
     njt_int_t                               rc;
     
-    
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                       "call ==============write handler");
     c = wev->data;
     cq_peer = c->data;
 
     if (wev->timedout) {
+        // njt_del_timer(wev);
+        if (wev->timer_set) {
+            njt_del_timer(wev);
+        }
         /*log the case and update the peer status.*/
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                        "write action for cache_quick timeout");
@@ -1835,8 +1929,6 @@ static void njt_http_cache_quick_download_write_handler(njt_event_t *wev) {
         /*AGAIN*/
     }
 
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                       "==========write handler rc:%d", rc);
 
     if (!wev->timer_set) {
         njt_add_timer(wev, 5000);
@@ -1852,12 +1944,13 @@ static void njt_http_cache_quick_download_read_handler(njt_event_t *rev) {
     njt_int_t                               rc;
 
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                       "call ==============read handler");
     c = rev->data;
     cq_peer = c->data;
 
     if (rev->timedout) {
+        if (rev->timer_set) {
+            njt_del_timer(rev);
+        }
         /*log the case and update the peer status.*/
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                        "read action for cache_quick timeout");
@@ -1872,7 +1965,7 @@ static void njt_http_cache_quick_download_read_handler(njt_event_t *rev) {
     rc = njt_http_cache_quick_http_read_handler(rev);
     if (rc == NJT_ERROR) {
         /*log the case and update the peer status.*/
-        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                        "read action error for cache_quick");
         njt_http_cache_quick_update_download_status(cq_peer, CACHE_API_STATUS_ERROR);
         return;
@@ -1882,10 +1975,6 @@ static void njt_http_cache_quick_download_read_handler(njt_event_t *rev) {
     } else {
         /*AGAIN*/
     }
-
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                       "==========read handler rc:%d", rc);
-
     if (!rev->timer_set) {
         njt_add_timer(rev, 5000);
     }
@@ -1893,6 +1982,85 @@ static void njt_http_cache_quick_download_read_handler(njt_event_t *rev) {
     return;
 }
 
+#if (NJT_HTTP_SSL)
+static njt_int_t
+njt_http_cache_quick_ssl_handshake(njt_connection_t *c,
+            njt_http_cache_quick_download_peer_t *cq_peer,
+            njt_http_cache_resouce_metainfo_t *cache_info
+            ) {
+    if (c->ssl->handshaked) {
+        cq_peer->peer->connection->write->handler = njt_http_cache_quick_download_write_handler;
+        cq_peer->peer->connection->read->handler = njt_http_cache_quick_download_read_handler;
+
+        /*NJT_AGAIN or NJT_OK*/
+        njt_http_cache_quick_download_write_handler(cq_peer->peer->connection->write);
+        return NJT_OK;
+    }
+
+    if (c->write->timedout) {
+        return NJT_ERROR;
+    }
+
+    return NJT_ERROR;
+}
+
+static void njt_http_cache_quick_ssl_handshake_handler(njt_connection_t *c){
+    njt_http_cache_quick_download_peer_t    *cq_peer;
+    njt_http_cache_resouce_metainfo_t       *cache_info;
+    njt_int_t                               rc;
+    njt_http_cache_quick_main_conf_t        *cqmf;
+
+    cqmf = (njt_http_cache_quick_main_conf_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_cache_quick_module);   
+    if(cqmf == NULL){
+        return;
+    }
+
+    cq_peer = c->data;
+
+    if(NJT_OK == njt_cache_quick_item_exist(cq_peer->crc32, cqmf, &cache_info)){
+        rc = njt_http_cache_quick_ssl_handshake(c, cq_peer, cache_info);
+        if (rc != NJT_OK) {
+            /*log the case and update the peer status.*/
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "read action error for cache quick ssl handshake");
+            njt_http_cache_quick_update_download_status(cq_peer, CACHE_API_STATUS_ERROR);
+        }
+    }
+}
+
+static njt_int_t njt_http_cache_quick_ssl_init_connection(njt_connection_t *c,
+        njt_http_cache_quick_download_peer_t *cq_peer,
+        njt_http_cache_resouce_metainfo_t *cache_info) {
+    njt_int_t rc;
+
+    // if (njt_http_cache_quick_test_connect(c) != NJT_OK) {
+    //     return NJT_ERROR;
+    // }
+    if (njt_ssl_create_connection(cache_info->ssl.ssl, c,
+                                  NJT_SSL_BUFFER | NJT_SSL_CLIENT) != NJT_OK) {
+        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "ssl init create connection for cache_quick error ");
+        return NJT_ERROR;
+    }
+
+    c->sendfile = 0;
+    c->log->action = "SSL handshaking to hc";
+
+    rc = njt_ssl_handshake(c);
+    if (rc == NJT_AGAIN) {
+
+        if (!c->write->timer_set) {
+            njt_add_timer(c->write, 1000);
+        }
+
+        c->ssl->handler = njt_http_cache_quick_ssl_handshake_handler;
+        return NJT_OK;
+    }
+
+    return njt_http_cache_quick_ssl_handshake(c, cq_peer, cache_info);
+//    return NJT_OK;
+}
+
+#endif
 
 
 static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
@@ -1976,13 +2144,14 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
     cq_peer->host.len = p - cache_info->addr_port.data;
     cq_peer->host.data = njt_pstrdup(pool, &cache_info->addr_port);
 
+    cq_peer->crc32 = cache_info->crc32;
     cq_peer->crc32_str.len = cache_info->crc32_str.len;
     cq_peer->crc32_str.data = njt_pstrdup(pool, &cache_info->crc32_str);
 
     cq_peer->location_name.len = cache_info->location_name.len;
     cq_peer->location_name.data = njt_pstrdup(pool, &cache_info->location_name);
 
-    cq_peer->peer->type = SOCK_STREAM;
+    // cq_peer->peer->type = SOCK_STREAM;
     cq_peer->peer->get = njt_event_get_peer;
     cq_peer->peer->log = njt_cycle->log;
     cq_peer->peer->log_error = NJT_ERROR_ERR;
@@ -2001,23 +2170,30 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
     }
 
     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-            " cache quick connected to peer of %V", &cache_info->addr_port);
+            " cache quick connected to peer of %V, rc:%d", &cache_info->addr_port, rc);
 
     cq_peer->peer->connection->data = cq_peer;
     cq_peer->peer->connection->pool = cq_peer->pool;
 #if (NJT_HTTP_SSL)
-    // if (hhccf->ssl.ssl_enable && hhccf->ssl.ssl->ctx &&
-    //     cq_peer->peer.connection->ssl == NULL) { //zyg
-    //     rc = njt_http_hc_ssl_init_connection(cq_peer->peer.connection, cq_peer);
-    //     if (rc == NJT_ERROR) {
-    //         njt_http_upstream_rr_peers_unlock(peers);
-    //         njt_http_cache_quick_common_update(cq_peer, NJT_ERROR);
-    //         njt_http_upstream_rr_peers_wlock(peers);
-    //     }
-    //     continue;
-    // }
-#endif
+    if (cache_info->ssl_enable && cache_info->ssl.ssl->ctx &&
+        cq_peer->peer->connection->ssl == NULL) {
+        rc = njt_http_cache_quick_ssl_init_connection(cq_peer->peer->connection, cq_peer, cache_info);
+        if (rc == NJT_ERROR) {
+            cache_info->status = CACHE_API_STATUS_ERROR;
+            njt_str_set(&tmp_str, "cache quick ssl connect init error");
+            cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
+            cache_info->status_str.len = tmp_str.len;
 
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    " cache quick ssl connect to peer:%V error", &cache_info->addr_port);
+            njt_destroy_pool(pool);
+            return;
+        }
+        return;
+    }
+#endif
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                    " =============80 connect");
     cq_peer->peer->connection->write->handler = njt_http_cache_quick_download_write_handler;
     cq_peer->peer->connection->read->handler = njt_http_cache_quick_download_read_handler;
 
@@ -2038,7 +2214,7 @@ static njt_int_t njt_http_cache_quick_download(njt_http_cache_resouce_metainfo_t
     download_timer->data = cache_info;
     download_timer->cancelable = 1;
 
-    njt_add_timer(download_timer, 5000);
+    njt_add_timer(download_timer, 1000);
 
     return NJT_OK;
 }
@@ -2059,6 +2235,7 @@ static njt_int_t njt_cache_quick_download_status(njt_http_cache_quick_main_conf_
     u_char                                  buff[50];
     u_char                                  *end;
     njt_str_t                               tmp_str;
+    njt_int_t                               ratio;
 
 
     //del item from local, queue and lvlhash
@@ -2086,7 +2263,8 @@ static njt_int_t njt_cache_quick_download_status(njt_http_cache_quick_main_conf_
     cache_info = lhq.value;
     if(cache_info->status != CACHE_API_STATUS_ERROR){
         if(cache_info->current_size > 0){
-            end = njt_snprintf(buff, 50, DOWNLOAD_STATUS_INFO, cache_info->resource_size / cache_info->current_size);
+            ratio = (cache_info->resource_size * 1.0) / (cache_info->current_size * 1.0) * 100;
+            end = njt_snprintf(buff, 50, DOWNLOAD_STATUS_INFO, ratio);
         }else{
             end = njt_snprintf(buff, 50, DOWNLOAD_STATUS_INFO, 0);
         }
