@@ -19,6 +19,7 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
     njt_http_in6_addr_t *addr6;
     njt_http_addr_conf_t *addr_conf;
     njt_http_server_name_t *sn;
+    njt_str_t server_low_name;
 	njt_url_t  u;
 	struct sockaddr_in   *ssin;
 #if (NJT_HAVE_INET6)
@@ -43,10 +44,20 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 	if (njt_parse_url(pool, &u) != NJT_OK) {
 		goto out;
 	}
-
+    
     if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 ) {
-        ls = cycle->listening.elts;
-        for (i = 0; i < cycle->listening.nelts; i++) {
+	
+	server_low_name.data = njt_pnalloc(pool,server_name->len);
+	if(server_low_name.data == NULL) {
+		goto out;
+	}
+	server_low_name.len = server_name->len;
+	njt_strlow(server_low_name.data, server_name->data,server_name->len);
+
+	server_name = &server_low_name;
+
+	    ls = cycle->listening.elts;
+	    for (i = 0; i < cycle->listening.nelts; i++) {
             if(ls[i].server_type != NJT_HTTP_SERVER_TYPE){
                 continue; // 非http listen
             }
@@ -106,8 +117,12 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
             cscf = addr_conf->default_server;
             name = cscf->server_names.elts;
             for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
-                if(name[j].full_name.len == server_name->len
+                if(server_name->data[0] != '~' && name[j].full_name.len == server_name->len
                    && njt_strncmp(name[j].full_name.data,server_name->data,server_name->len) == 0){
+					ret_cscf = cscf;
+                    goto out;
+                } else if(server_name->data[0] == '~' && name[j].full_name.len == server_name->len
+                   && njt_strncasecmp(name[j].full_name.data,server_name->data,server_name->len) == 0){
 					ret_cscf = cscf;
                     goto out;
                 }

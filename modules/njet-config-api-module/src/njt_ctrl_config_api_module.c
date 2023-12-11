@@ -131,6 +131,7 @@ static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *modul
     njt_ctrl_dynlog_rpc_ctx_t *ctx;
     njt_pool_cleanup_t *cleanup;
 
+    r->write_event_handler = njt_http_request_empty_handler;
     dlmcf = njt_http_get_module_main_conf(r,njt_ctrl_config_api_module);
     index = njt_ctrl_dynlog_get_free_index(dlmcf);
     if(index == -1 ){
@@ -160,7 +161,7 @@ static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *modul
     if(rc == NJT_OK){
         dlmcf->reqs[index] = r;
     }
-    return NJT_OK;
+    return rc;
 
     err:
     return NJT_ERROR;
@@ -317,7 +318,7 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
     rc= NJT_OK;
     njt_str_t srv_err = njt_string("{\"code\":500,\"msg\":\"server error\"}");
     njt_str_t not_found_err = njt_string("{\"code\":404,\"msg\":\"not found error\"}");
-    njt_str_t rpc_pre = njt_string("/rpc/");
+    njt_str_t rpc_pre = njt_string("/worker_a/rpc/");
     njt_ctrl_dynlog_main_cf_t * uclcf = njt_http_get_module_loc_conf(r, njt_ctrl_config_api_module);
     if(uclcf == NULL  || uclcf->config_api_enabled == NJT_CONF_UNSET_UINT || uclcf->config_api_enabled == 0){
         return NJT_DECLINED;
