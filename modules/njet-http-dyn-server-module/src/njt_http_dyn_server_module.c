@@ -373,7 +373,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 	njt_str_t  add = njt_string("add");
 	njt_str_t  del = njt_string("del");
 	njt_str_t  del_topic = njt_string("");
-	njt_str_t  worker_str = njt_string("/worker_0");
+	njt_str_t  worker_str = njt_string("/worker_a");
 	njt_str_t  new_key;
 	njt_rpc_result_t * rpc_result;
 	njt_uint_t from_api_add = 0;
@@ -459,10 +459,6 @@ static njt_int_t
 njt_http_dyn_server_init_worker(njt_cycle_t *cycle) {
 
 	njt_str_t  key = njt_string("srv");
-	if (njt_process != NJT_PROCESS_WORKER && njt_process != NJT_PROCESS_SINGLE) {
-		/*only works in the worker 0 prcess.*/
-		return NJT_OK;
-	}
 	njt_kv_reg_handler_t h;
 	njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
 	h.key = &key;

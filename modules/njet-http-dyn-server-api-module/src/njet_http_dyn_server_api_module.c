@@ -594,9 +594,9 @@ njt_http_dyn_server_read_data(njt_http_request_t *r){
 	
 	
 	if(server_info->type.len == del.len && njt_strncmp(server_info->type.data,del.data,server_info->type.len) == 0 ){
-		p = njt_snprintf(topic_name.data,topic_len,"/ins/srv/s_%ui",crc32);
+		p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/srv/s_%ui",crc32);
 	} else  if(server_info->type.len == add.len && njt_strncmp(server_info->type.data,add.data,server_info->type.len) == 0 ){
-		p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/srv/s_%ui",crc32);
+		p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/srv/s_%ui",crc32);
 	} else {
 		njt_str_set(&server_info->msg, "type error!!!");
 		goto err;
