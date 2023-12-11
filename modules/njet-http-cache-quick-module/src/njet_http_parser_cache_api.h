@@ -21,6 +21,12 @@ typedef enum cache_api_type_t_e{
 
 typedef njt_str_t cache_api_addr_port_t;
 
+typedef enum cache_api_server_ssl_type_t_e{
+    CACHE_API_SERVER_SSL_TYPE_NONE,
+    CACHE_API_SERVER_SSL_TYPE_SSL,
+    CACHE_API_SERVER_SSL_TYPE_NTLS
+} cache_api_server_ssl_type_t;
+
 typedef njt_str_t cache_api_server_name_t;
 
 typedef njt_str_t cache_api_location_rule_t;
@@ -34,6 +40,7 @@ typedef njt_str_t cache_api_proxy_pass_t;
 typedef struct cache_api_t_s {
     cache_api_type_t type;
     cache_api_addr_port_t addr_port;
+    cache_api_server_ssl_type_t server_ssl_type;
     cache_api_server_name_t server_name;
     cache_api_location_rule_t location_rule;
     cache_api_location_name_t location_name;
@@ -41,6 +48,7 @@ typedef struct cache_api_t_s {
     cache_api_proxy_pass_t proxy_pass;
     unsigned int is_type_set:1;
     unsigned int is_addr_port_set:1;
+    unsigned int is_server_ssl_type_set:1;
     unsigned int is_server_name_set:1;
     unsigned int is_location_rule_set:1;
     unsigned int is_location_name_set:1;
@@ -50,6 +58,7 @@ typedef struct cache_api_t_s {
 
 cache_api_type_t get_cache_api_type(cache_api_t *out);
 cache_api_addr_port_t* get_cache_api_addr_port(cache_api_t *out);
+cache_api_server_ssl_type_t get_cache_api_server_ssl_type(cache_api_t *out);
 cache_api_server_name_t* get_cache_api_server_name(cache_api_t *out);
 cache_api_location_rule_t* get_cache_api_location_rule(cache_api_t *out);
 cache_api_location_name_t* get_cache_api_location_name(cache_api_t *out);
@@ -57,6 +66,7 @@ cache_api_location_body_t* get_cache_api_location_body(cache_api_t *out);
 cache_api_proxy_pass_t* get_cache_api_proxy_pass(cache_api_t *out);
 void set_cache_api_type(cache_api_t* obj, cache_api_type_t field);
 void set_cache_api_addr_port(cache_api_t* obj, cache_api_addr_port_t* field);
+void set_cache_api_server_ssl_type(cache_api_t* obj, cache_api_server_ssl_type_t field);
 void set_cache_api_server_name(cache_api_t* obj, cache_api_server_name_t* field);
 void set_cache_api_location_rule(cache_api_t* obj, cache_api_location_rule_t* field);
 void set_cache_api_location_name(cache_api_t* obj, cache_api_location_name_t* field);

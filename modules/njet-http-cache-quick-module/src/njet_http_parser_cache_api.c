@@ -29,6 +29,23 @@ static bool parse_cache_api_type(njt_pool_t *pool, parse_state_t *parse_state, c
 }
 
 
+static bool parse_cache_api_server_ssl_type(njt_pool_t *pool, parse_state_t *parse_state, cache_api_server_ssl_type_t *out, js2c_parse_error_t *err_ret) {
+    js2c_check_type(JSMN_STRING);
+    if (current_string_is(parse_state, "none")) {
+        *out = CACHE_API_SERVER_SSL_TYPE_NONE;
+    } else if (current_string_is(parse_state, "ssl")) {
+        *out = CACHE_API_SERVER_SSL_TYPE_SSL;
+    } else if (current_string_is(parse_state, "ntls")) {
+        *out = CACHE_API_SERVER_SSL_TYPE_NTLS;
+    } else {
+        LOG_ERROR_JSON_PARSE(UNKNOWN_ENUM_VALUE_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
+        return true;
+    }
+    parse_state->current_token += 1;
+    return false;
+}
+
+
 static bool parse_cache_api(njt_pool_t *pool, parse_state_t *parse_state, cache_api_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
 
@@ -61,6 +78,16 @@ static bool parse_cache_api(njt_pool_t *pool, parse_state_t *parse_state, cache_
                 return true;
             }
             out->is_addr_port_set = 1;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "server_ssl_type")) {
+            js2c_check_field_set(out->is_server_ssl_type_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "server_ssl_type";
+            if (parse_cache_api_server_ssl_type(pool, parse_state, (&out->server_ssl_type), err_ret)) {
+                return true;
+            }
+            out->is_server_ssl_type_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "server_name")) {
             js2c_check_field_set(out->is_server_name_set);
@@ -149,6 +176,10 @@ static bool parse_cache_api(njt_pool_t *pool, parse_state_t *parse_state, cache_
         LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': addr_port", parse_state->current_key);
         return true;
     }
+    if (!out->is_server_ssl_type_set) {
+        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': server_ssl_type", parse_state->current_key);
+        return true;
+    }
     if (!out->is_server_name_set) {
         LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': server_name", parse_state->current_key);
         return true;
@@ -215,6 +246,25 @@ static void get_json_length_cache_api_addr_port(njt_pool_t *pool, cache_api_addr
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
+// BEGIN GET_JSON_LENGTH ENUM
+
+static void get_json_length_cache_api_server_ssl_type(njt_pool_t *pool, cache_api_server_ssl_type_t *out, size_t *length, njt_int_t flags) {
+    if (*out == CACHE_API_SERVER_SSL_TYPE_NONE) {
+        // "none"
+        *length += 4 + 2;
+        return;
+    }
+    if (*out == CACHE_API_SERVER_SSL_TYPE_SSL) {
+        // "ssl"
+        *length += 3 + 2;
+        return;
+    }
+    if (*out == CACHE_API_SERVER_SSL_TYPE_NTLS) {
+        // "ntls"
+        *length += 4 + 2;
+        return;
+    }
+}
 
 static void get_json_length_cache_api_server_name(njt_pool_t *pool, cache_api_server_name_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
@@ -263,6 +313,14 @@ static void get_json_length_cache_api(njt_pool_t *pool, cache_api_t *out, size_t
     if (omit == 0) {
         *length += (9 + 3); // "addr_port": 
         get_json_length_cache_api_addr_port(pool, (&out->addr_port), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    omit = out->is_server_ssl_type_set ? 0 : 1;
+    if (omit == 0) {
+        *length += (15 + 3); // "server_ssl_type": 
+        get_json_length_cache_api_server_ssl_type(pool, (&out->server_ssl_type), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -325,6 +383,10 @@ cache_api_addr_port_t* get_cache_api_addr_port(cache_api_t *out) {
     return &out->addr_port;
 }
 
+cache_api_server_ssl_type_t get_cache_api_server_ssl_type(cache_api_t *out) {
+    return out->server_ssl_type;
+}
+
 cache_api_server_name_t* get_cache_api_server_name(cache_api_t *out) {
     return &out->server_name;
 }
@@ -351,6 +413,10 @@ void set_cache_api_type(cache_api_t* obj, cache_api_type_t field) {
 void set_cache_api_addr_port(cache_api_t* obj, cache_api_addr_port_t* field) {
     njt_memcpy(&obj->addr_port, field, sizeof(njt_str_t));
     obj->is_addr_port_set = 1;
+}
+void set_cache_api_server_ssl_type(cache_api_t* obj, cache_api_server_ssl_type_t field) {
+    obj->server_ssl_type = field;
+    obj->is_server_ssl_type_set = 1;
 }
 void set_cache_api_server_name(cache_api_t* obj, cache_api_server_name_t* field) {
     njt_memcpy(&obj->server_name, field, sizeof(njt_str_t));
@@ -401,6 +467,25 @@ static void to_oneline_json_cache_api_addr_port(njt_pool_t *pool, cache_api_addr
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_cache_api_server_ssl_type(njt_pool_t *pool, cache_api_server_ssl_type_t *out, njt_str_t* buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    if (*out == CACHE_API_SERVER_SSL_TYPE_NONE) {
+        cur = njt_sprintf(cur, "\"none\"");
+        buf->len += 4 + 2;
+        return;
+    }
+    if (*out == CACHE_API_SERVER_SSL_TYPE_SSL) {
+        cur = njt_sprintf(cur, "\"ssl\"");
+        buf->len += 3 + 2;
+        return;
+    }
+    if (*out == CACHE_API_SERVER_SSL_TYPE_NTLS) {
+        cur = njt_sprintf(cur, "\"ntls\"");
+        buf->len += 4 + 2;
+        return;
+    }
 }
 
 static void to_oneline_json_cache_api_server_name(njt_pool_t *pool, cache_api_server_name_t *out, njt_str_t *buf, njt_int_t flags) {
@@ -465,6 +550,16 @@ static void to_oneline_json_cache_api(njt_pool_t *pool, cache_api_t *out, njt_st
         cur = njt_sprintf(cur, "\"addr_port\":");
         buf->len = cur - buf->data;
         to_oneline_json_cache_api_addr_port(pool, (&out->addr_port), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_server_ssl_type_set ? 0 : 1;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"server_ssl_type\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_cache_api_server_ssl_type(pool, (&out->server_ssl_type), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;

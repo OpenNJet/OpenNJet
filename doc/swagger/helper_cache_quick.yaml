@@ -88,6 +88,9 @@ components:
         server_name:
           type: string
           description: http server 配置的servername,没有设置为空即可
+        server_ssl_type:
+          type: string
+          description: http server 类型, 取值[none|ssl|ntls], 分别表示http server、https server、https 国密server 
         location_rule:
           type: string
           description: location name前得修饰符,没有设置为空即可
@@ -122,6 +125,9 @@ components:
         server_name:
           type: string
           description: http server 配置的servername,没有设置为空即可
+        server_ssl_type:
+          type: string
+          description: http server 类型, 取值[none|ssl|ntls], 分别表示http server、https server、https 国密server 
         location_rule:
           type: string
           description: location name前得修饰符,没有设置为空即可

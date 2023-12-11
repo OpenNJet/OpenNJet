@@ -12,6 +12,23 @@
 /* ========================== Generated parsers ========================== */
 
 
+static bool parse_cache_caches_item_server_ssl_type(njt_pool_t *pool, parse_state_t *parse_state, cache_caches_item_server_ssl_type_t *out, js2c_parse_error_t *err_ret) {
+    js2c_check_type(JSMN_STRING);
+    if (current_string_is(parse_state, "none")) {
+        *out = CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NONE;
+    } else if (current_string_is(parse_state, "ssl")) {
+        *out = CACHE_CACHES_ITEM_SERVER_SSL_TYPE_SSL;
+    } else if (current_string_is(parse_state, "ntls")) {
+        *out = CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NTLS;
+    } else {
+        LOG_ERROR_JSON_PARSE(UNKNOWN_ENUM_VALUE_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
+        return true;
+    }
+    parse_state->current_token += 1;
+    return false;
+}
+
+
 static bool parse_cache_caches_item(njt_pool_t *pool, parse_state_t *parse_state, cache_caches_item_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
 
@@ -48,6 +65,16 @@ static bool parse_cache_caches_item(njt_pool_t *pool, parse_state_t *parse_state
                 return true;
             }
             out->is_server_name_set = 1;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "server_ssl_type")) {
+            js2c_check_field_set(out->is_server_ssl_type_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "server_ssl_type";
+            if (parse_cache_caches_item_server_ssl_type(pool, parse_state, (&out->server_ssl_type), err_ret)) {
+                return true;
+            }
+            out->is_server_ssl_type_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "location_rule")) {
             js2c_check_field_set(out->is_location_rule_set);
@@ -149,6 +176,10 @@ static bool parse_cache_caches_item(njt_pool_t *pool, parse_state_t *parse_state
         LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': server_name", parse_state->current_key);
         return true;
     }
+    if (!out->is_server_ssl_type_set) {
+        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': server_ssl_type", parse_state->current_key);
+        return true;
+    }
     if (!out->is_location_rule_set) {
         LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': location_rule", parse_state->current_key);
         return true;
@@ -247,6 +278,25 @@ static void get_json_length_cache_caches_item_server_name(njt_pool_t *pool, cach
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
+// BEGIN GET_JSON_LENGTH ENUM
+
+static void get_json_length_cache_caches_item_server_ssl_type(njt_pool_t *pool, cache_caches_item_server_ssl_type_t *out, size_t *length, njt_int_t flags) {
+    if (*out == CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NONE) {
+        // "none"
+        *length += 4 + 2;
+        return;
+    }
+    if (*out == CACHE_CACHES_ITEM_SERVER_SSL_TYPE_SSL) {
+        // "ssl"
+        *length += 3 + 2;
+        return;
+    }
+    if (*out == CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NTLS) {
+        // "ntls"
+        *length += 4 + 2;
+        return;
+    }
+}
 
 static void get_json_length_cache_caches_item_location_rule(njt_pool_t *pool, cache_caches_item_location_rule_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
@@ -303,6 +353,14 @@ static void get_json_length_cache_caches_item(njt_pool_t *pool, cache_caches_ite
     if (omit == 0) {
         *length += (11 + 3); // "server_name": 
         get_json_length_cache_caches_item_server_name(pool, (&out->server_name), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
+    omit = out->is_server_ssl_type_set ? 0 : 1;
+    if (omit == 0) {
+        *length += (15 + 3); // "server_ssl_type": 
+        get_json_length_cache_caches_item_server_ssl_type(pool, (&out->server_ssl_type), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -419,6 +477,10 @@ cache_caches_item_server_name_t* get_cache_caches_item_server_name(cache_caches_
     return &out->server_name;
 }
 
+cache_caches_item_server_ssl_type_t get_cache_caches_item_server_ssl_type(cache_caches_item_t *out) {
+    return out->server_ssl_type;
+}
+
 cache_caches_item_location_rule_t* get_cache_caches_item_location_rule(cache_caches_item_t *out) {
     return &out->location_rule;
 }
@@ -457,6 +519,10 @@ void set_cache_caches_item_addr_port(cache_caches_item_t* obj, cache_caches_item
 void set_cache_caches_item_server_name(cache_caches_item_t* obj, cache_caches_item_server_name_t* field) {
     njt_memcpy(&obj->server_name, field, sizeof(njt_str_t));
     obj->is_server_name_set = 1;
+}
+void set_cache_caches_item_server_ssl_type(cache_caches_item_t* obj, cache_caches_item_server_ssl_type_t field) {
+    obj->server_ssl_type = field;
+    obj->is_server_ssl_type_set = 1;
 }
 void set_cache_caches_item_location_rule(cache_caches_item_t* obj, cache_caches_item_location_rule_t* field) {
     njt_memcpy(&obj->location_rule, field, sizeof(njt_str_t));
@@ -519,6 +585,25 @@ static void to_oneline_json_cache_caches_item_server_name(njt_pool_t *pool, cach
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_cache_caches_item_server_ssl_type(njt_pool_t *pool, cache_caches_item_server_ssl_type_t *out, njt_str_t* buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    if (*out == CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NONE) {
+        cur = njt_sprintf(cur, "\"none\"");
+        buf->len += 4 + 2;
+        return;
+    }
+    if (*out == CACHE_CACHES_ITEM_SERVER_SSL_TYPE_SSL) {
+        cur = njt_sprintf(cur, "\"ssl\"");
+        buf->len += 3 + 2;
+        return;
+    }
+    if (*out == CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NTLS) {
+        cur = njt_sprintf(cur, "\"ntls\"");
+        buf->len += 4 + 2;
+        return;
+    }
 }
 
 static void to_oneline_json_cache_caches_item_location_rule(njt_pool_t *pool, cache_caches_item_location_rule_t *out, njt_str_t *buf, njt_int_t flags) {
@@ -590,6 +675,16 @@ static void to_oneline_json_cache_caches_item(njt_pool_t *pool, cache_caches_ite
         cur = njt_sprintf(cur, "\"server_name\":");
         buf->len = cur - buf->data;
         to_oneline_json_cache_caches_item_server_name(pool, (&out->server_name), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_server_ssl_type_set ? 0 : 1;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"server_ssl_type\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_cache_caches_item_server_ssl_type(pool, (&out->server_ssl_type), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
