@@ -269,6 +269,7 @@ static njt_int_t njt_stream_nginmesh_get_port_mode(njt_stream_session_t *s) {
 	njt_uint_t nelts,i;
 	njt_stream_proto_ctx_t           *ctx;
     njt_uint_t  port;
+    njt_str_t  dest_port;
 
 	ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
 	sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
@@ -277,20 +278,22 @@ static njt_int_t njt_stream_nginmesh_get_port_mode(njt_stream_session_t *s) {
 		return NJT_OK;
 	}
     njt_str_null(&ctx->port_mode);
+    njt_str_null(&dest_port);
 	if(sscf->proto_ports != NULL) {
+        dest_port = ctx->dest_port;
         if(!sscf->enabled && ctx->dest_port.len == 0) {
-            ctx->dest_port.data = njt_pnalloc(ctx->pool,sizeof("65535") - 1);
-            if(ctx->dest_port.data != NULL) {
+            dest_port.data = njt_pnalloc(ctx->pool,sizeof("65535") - 1);
+            if(dest_port.data != NULL) {
                  port = njt_inet_get_port(s->connection->listening->sockaddr);
                 if (port > 0 && port < 65536) {
-                    ctx->dest_port.len = njt_sprintf(ctx->dest_port.data, "%ui", port) - ctx->dest_port.data;
+                    dest_port.len = njt_sprintf(dest_port.data, "%ui", port) - dest_port.data;
                 }
             }
         }
 		kv = sscf->proto_ports->elts;
 		nelts = sscf->proto_ports->nelts;
 		for (i = 0; i < nelts; i++) {
-			if(kv[i].key.len == ctx->dest_port.len && njt_strncmp(kv[i].key.data,ctx->dest_port.data,kv[i].key.len) == 0) {
+			if(kv[i].key.len == dest_port.len && njt_strncmp(kv[i].key.data,dest_port.data,kv[i].key.len) == 0) {
 				ctx->port_mode = kv[i].value;
 				break;
 			}
