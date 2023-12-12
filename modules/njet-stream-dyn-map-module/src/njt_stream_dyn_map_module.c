@@ -389,6 +389,108 @@ error:
     return NJT_ERROR;
 }
 
+static njt_int_t njt_stream_dyn_map_validate_value(njt_str_t *value)
+{
+    njt_uint_t   i, j, bracket;
+    u_char       ch;
+    njt_str_t    name;
+    njt_stream_core_main_conf_t *cmcf;
+    njt_stream_variable_t *v;
+    bool var_defined;
+
+    if (!value || value->len == 0) {
+        return NJT_OK;
+    }
+    cmcf = njt_stream_cycle_get_module_main_conf(njt_cycle, njt_stream_core_module);
+    if (cmcf == NULL) {
+        return NJT_OK;
+    }
+    v = cmcf->variables.elts;
+    if (v == NULL) {
+        return NJT_OK;
+    }
+
+    for (i = 0; i < value->len; i++) {
+        name.len = 0;
+        if (value->data[i] == '$') {
+            if (++i == value->len) {
+                goto invalid_variable;
+            }
+            if (value->data[i] == '{') {
+                bracket = 1;
+                if (++i == value->len) {
+                    goto invalid_variable;
+                }
+                name.data = &value->data[i];
+            } else {
+                bracket = 0;
+                name.data = &value->data[i];
+            }
+
+            for ( /* void */; i < value->len; i++, name.len++) {
+                ch = value->data[i];
+                if (ch == '}' && bracket) {
+                    i++;
+                    bracket = 0;
+                    break;
+                }
+                if ((ch >= 'A' && ch <= 'Z')
+                    || (ch >= 'a' && ch <= 'z')
+                    || (ch >= '0' && ch <= '9')
+                    || ch == '_') {
+                    continue;
+                }
+                break;
+            }
+            if (bracket) {
+                goto invalid_variable;
+            }
+            if (name.len == 0) {
+                goto invalid_variable;
+            }
+            //check if variable is existed
+            var_defined = false;
+            for (j = 0; j < cmcf->variables.nelts; j++) {
+                if (njt_strncmp(v[j].name.data, name.data, name.len) == 0) {
+                    var_defined = true;
+                    break;
+                }
+            }
+            if (!var_defined) {
+                goto invalid_variable;
+            }
+        }
+    }
+
+    return NJT_OK;
+
+invalid_variable:
+    return NJT_ERROR;
+}
+
+static njt_int_t njt_stream_dyn_map_validate_values(streammap_maps_item_values_t *values, njt_str_t **tmp_var_str)
+{
+    njt_uint_t i;
+    streammap_maps_item_values_item_t *vi;
+    njt_str_t *from, *to;
+
+    for (i = 0; i < values->nelts;i++) {
+        vi = get_streammap_maps_item_values_item(values, i);
+        from = get_streammap_maps_item_values_item_valueFrom(vi);
+        to = get_streammap_maps_item_values_item_valueTo(vi);
+
+        if (njt_stream_dyn_map_validate_value(from) != NJT_OK) {
+            *tmp_var_str = from;
+            return NJT_ERROR;
+        }
+        if (njt_stream_dyn_map_validate_value(to) != NJT_OK) {
+            *tmp_var_str = to;
+            return NJT_ERROR;
+        }
+    }
+    return NJT_OK;
+}
+
 static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, streammap_t *api_data, njt_rpc_result_t *rpc_result)
 {
     njt_stream_conf_ctx_t *conf_ctx;
@@ -399,6 +501,7 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, streammap_t *a
     u_char data_buf[1024] = { 0 };
     u_char *end;
     njt_str_t rpc_data_str;
+    njt_str_t *tmp_var_str;
     rpc_data_str.data = data_buf;
     rpc_data_str.len = 0;
 
@@ -437,10 +540,20 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, streammap_t *a
             keyTo->len--;
             rc = njt_lvlhsh_map_get(&mcf->var_hash, keyTo, (intptr_t *)&var_hash_item);
             if (rc == NJT_OK) {
+                rc = njt_stream_dyn_map_validate_values(get_streammap_maps_item_values(item), &tmp_var_str);
+                if (rc != NJT_OK) {
+                    end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "invalid variable in string: %V", tmp_var_str);
+                    rpc_data_str.len = end - data_buf;
+                    njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
+                    njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+                    njt_destroy_pool(pool);
+                    continue;
+                }
                 rc = njt_stream_dyn_map_update_existed_var(pool, temp_pool, conf_ctx, item, mcf, var_hash_item, rpc_result);
                 if (rc != NJT_OK) {
                     end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " njt_dyn_map_update_values error");
                     rpc_data_str.len = end - data_buf;
+                    njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                     njt_destroy_pool(pool);
                 }
@@ -455,6 +568,7 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, streammap_t *a
         } else {
             end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "keyTo %V is invalid, it should start with $", keyTo);
             rpc_data_str.len = end - data_buf;
+            njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             njt_destroy_pool(pool);
         }
