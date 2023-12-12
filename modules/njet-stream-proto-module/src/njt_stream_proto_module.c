@@ -257,7 +257,7 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
 	if(rc == NJT_AGAIN || rc_http == NJT_AGAIN) {
 		return NJT_AGAIN;
 	}
-	ctx->ssl = 2;
+	ctx->ssl = 0;
 	ctx->complete = 1;
 	return NJT_DECLINED;
 }
@@ -268,6 +268,7 @@ static njt_int_t njt_stream_nginmesh_get_port_mode(njt_stream_session_t *s) {
 	njt_keyval_t      *kv;
 	njt_uint_t nelts,i;
 	njt_stream_proto_ctx_t           *ctx;
+    njt_uint_t  port;
 
 	ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
 	sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
@@ -277,6 +278,15 @@ static njt_int_t njt_stream_nginmesh_get_port_mode(njt_stream_session_t *s) {
 	}
     njt_str_null(&ctx->port_mode);
 	if(sscf->proto_ports != NULL) {
+        if(!sscf->enabled && ctx->dest_port.len == 0) {
+            ctx->dest_port.data = njt_pnalloc(ctx->pool,sizeof("65535") - 1);
+            if(ctx->dest_port.data != NULL) {
+                 port = njt_inet_get_port(s->connection->listening->sockaddr);
+                if (port > 0 && port < 65536) {
+                    ctx->dest_port.len = njt_sprintf(ctx->dest_port.data, "%ui", port) - ctx->dest_port.data;
+                }
+            }
+        }
 		kv = sscf->proto_ports->elts;
 		nelts = sscf->proto_ports->nelts;
 		for (i = 0; i < nelts; i++) {
