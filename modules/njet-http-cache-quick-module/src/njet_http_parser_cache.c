@@ -12,23 +12,6 @@
 /* ========================== Generated parsers ========================== */
 
 
-static bool parse_cache_caches_item_server_ssl_type(njt_pool_t *pool, parse_state_t *parse_state, cache_caches_item_server_ssl_type_t *out, js2c_parse_error_t *err_ret) {
-    js2c_check_type(JSMN_STRING);
-    if (current_string_is(parse_state, "none")) {
-        *out = CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NONE;
-    } else if (current_string_is(parse_state, "ssl")) {
-        *out = CACHE_CACHES_ITEM_SERVER_SSL_TYPE_SSL;
-    } else if (current_string_is(parse_state, "ntls")) {
-        *out = CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NTLS;
-    } else {
-        LOG_ERROR_JSON_PARSE(UNKNOWN_ENUM_VALUE_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
-        return true;
-    }
-    parse_state->current_token += 1;
-    return false;
-}
-
-
 static bool parse_cache_caches_item(njt_pool_t *pool, parse_state_t *parse_state, cache_caches_item_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
 
@@ -38,59 +21,7 @@ static bool parse_cache_caches_item(njt_pool_t *pool, parse_state_t *parse_state
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
         js2c_key_children_check_for_obj();
-        if (current_string_is(parse_state, "addr_port")) {
-            js2c_check_field_set(out->is_addr_port_set);
-            parse_state->current_token += 1;
-            const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "addr_port";
-            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->addr_port))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
-            js2c_malloc_check(((&out->addr_port))->data);
-            ((&out->addr_port))->len = token_size;
-            if (builtin_parse_string(pool, parse_state, (&out->addr_port), 0, ((&out->addr_port))->len, err_ret)) {
-                return true;
-            }
-            out->is_addr_port_set = 1;
-            parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "server_name")) {
-            js2c_check_field_set(out->is_server_name_set);
-            parse_state->current_token += 1;
-            const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "server_name";
-            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->server_name))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
-            js2c_malloc_check(((&out->server_name))->data);
-            ((&out->server_name))->len = token_size;
-            if (builtin_parse_string(pool, parse_state, (&out->server_name), 0, ((&out->server_name))->len, err_ret)) {
-                return true;
-            }
-            out->is_server_name_set = 1;
-            parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "server_ssl_type")) {
-            js2c_check_field_set(out->is_server_ssl_type_set);
-            parse_state->current_token += 1;
-            const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "server_ssl_type";
-            if (parse_cache_caches_item_server_ssl_type(pool, parse_state, (&out->server_ssl_type), err_ret)) {
-                return true;
-            }
-            out->is_server_ssl_type_set = 1;
-            parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "location_rule")) {
-            js2c_check_field_set(out->is_location_rule_set);
-            parse_state->current_token += 1;
-            const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "location_rule";
-            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->location_rule))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
-            js2c_malloc_check(((&out->location_rule))->data);
-            ((&out->location_rule))->len = token_size;
-            if (builtin_parse_string(pool, parse_state, (&out->location_rule), 0, ((&out->location_rule))->len, err_ret)) {
-                return true;
-            }
-            out->is_location_rule_set = 1;
-            parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "location_name")) {
+        if (current_string_is(parse_state, "location_name")) {
             js2c_check_field_set(out->is_location_name_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
@@ -104,40 +35,25 @@ static bool parse_cache_caches_item(njt_pool_t *pool, parse_state_t *parse_state
             }
             out->is_location_name_set = 1;
             parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "location_body")) {
-            js2c_check_field_set(out->is_location_body_set);
+        } else if (current_string_is(parse_state, "backend_server")) {
+            js2c_check_field_set(out->is_backend_server_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "location_body";
+            parse_state->current_key = "backend_server";
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->location_body))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
-            js2c_malloc_check(((&out->location_body))->data);
-            ((&out->location_body))->len = token_size;
-            if (builtin_parse_string(pool, parse_state, (&out->location_body), 0, ((&out->location_body))->len, err_ret)) {
+            ((&out->backend_server))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->backend_server))->data);
+            ((&out->backend_server))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->backend_server), 0, ((&out->backend_server))->len, err_ret)) {
                 return true;
             }
-            out->is_location_body_set = 1;
-            parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "proxy_pass")) {
-            js2c_check_field_set(out->is_proxy_pass_set);
-            parse_state->current_token += 1;
-            const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "proxy_pass";
-            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->proxy_pass))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
-            js2c_malloc_check(((&out->proxy_pass))->data);
-            ((&out->proxy_pass))->len = token_size;
-            if (builtin_parse_string(pool, parse_state, (&out->proxy_pass), 0, ((&out->proxy_pass))->len, err_ret)) {
-                return true;
-            }
-            out->is_proxy_pass_set = 1;
+            out->is_backend_server_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "status")) {
             js2c_check_field_set(out->is_status_set);
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "status";
-            js2c_null_check();
             int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
             ((&out->status))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
             js2c_malloc_check(((&out->status))->data);
@@ -168,46 +84,17 @@ static bool parse_cache_caches_item(njt_pool_t *pool, parse_state_t *parse_state
     }
     const int saved_current_token = parse_state->current_token;
     parse_state->current_token = object_start_token;
-    if (!out->is_addr_port_set) {
-        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': addr_port", parse_state->current_key);
-        return true;
-    }
-    if (!out->is_server_name_set) {
-        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': server_name", parse_state->current_key);
-        return true;
-    }
-    if (!out->is_server_ssl_type_set) {
-        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': server_ssl_type", parse_state->current_key);
-        return true;
-    }
-    if (!out->is_location_rule_set) {
-        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': location_rule", parse_state->current_key);
-        return true;
-    }
     if (!out->is_location_name_set) {
         LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': location_name", parse_state->current_key);
         return true;
     }
-    if (!out->is_location_body_set) {
-        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': location_body", parse_state->current_key);
+    if (!out->is_backend_server_set) {
+        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': backend_server", parse_state->current_key);
         return true;
     }
-    if (!out->is_proxy_pass_set) {
-        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': proxy_pass", parse_state->current_key);
-        return true;
-    }
-    // set default
     if (!out->is_status_set) {
-        size_t token_size = strlen("None");
-        (out->status).data = (u_char*)njt_pcalloc(pool, token_size + 1);
-        js2c_malloc_check((out->status).data);
-        (out->status).len = token_size;
-        if (out->status.len == 0) {
-            (out->status).data[0] = 0;
-        }
-        if (token_size > 0) {
-            njt_memcpy(out->status.data, "None", token_size);
-        }
+        LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': status", parse_state->current_key);
+        return true;
     }
     parse_state->current_token = saved_current_token;
     return false;
@@ -269,51 +156,12 @@ static bool parse_cache(njt_pool_t *pool, parse_state_t *parse_state, cache_t *o
 }
 
 
-static void get_json_length_cache_caches_item_addr_port(njt_pool_t *pool, cache_caches_item_addr_port_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    *length += dst->len + 2; //  "str" 
-}
-
-static void get_json_length_cache_caches_item_server_name(njt_pool_t *pool, cache_caches_item_server_name_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    *length += dst->len + 2; //  "str" 
-}
-// BEGIN GET_JSON_LENGTH ENUM
-
-static void get_json_length_cache_caches_item_server_ssl_type(njt_pool_t *pool, cache_caches_item_server_ssl_type_t *out, size_t *length, njt_int_t flags) {
-    if (*out == CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NONE) {
-        // "none"
-        *length += 4 + 2;
-        return;
-    }
-    if (*out == CACHE_CACHES_ITEM_SERVER_SSL_TYPE_SSL) {
-        // "ssl"
-        *length += 3 + 2;
-        return;
-    }
-    if (*out == CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NTLS) {
-        // "ntls"
-        *length += 4 + 2;
-        return;
-    }
-}
-
-static void get_json_length_cache_caches_item_location_rule(njt_pool_t *pool, cache_caches_item_location_rule_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    *length += dst->len + 2; //  "str" 
-}
-
 static void get_json_length_cache_caches_item_location_name(njt_pool_t *pool, cache_caches_item_location_name_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_cache_caches_item_location_body(njt_pool_t *pool, cache_caches_item_location_body_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    *length += dst->len + 2; //  "str" 
-}
-
-static void get_json_length_cache_caches_item_proxy_pass(njt_pool_t *pool, cache_caches_item_proxy_pass_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_cache_caches_item_backend_server(njt_pool_t *pool, cache_caches_item_backend_server_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
@@ -339,41 +187,6 @@ static void get_json_length_cache_caches_item(njt_pool_t *pool, cache_caches_ite
     njt_int_t omit;
     njt_int_t count = 0;
     omit = 0;
-    omit = out->is_addr_port_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->addr_port.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        *length += (9 + 3); // "addr_port": 
-        get_json_length_cache_caches_item_addr_port(pool, (&out->addr_port), length, flags);
-        *length += 1; // ","
-        count++;
-    }
-    omit = 0;
-    omit = out->is_server_name_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->server_name.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        *length += (11 + 3); // "server_name": 
-        get_json_length_cache_caches_item_server_name(pool, (&out->server_name), length, flags);
-        *length += 1; // ","
-        count++;
-    }
-    omit = 0;
-    omit = out->is_server_ssl_type_set ? 0 : 1;
-    if (omit == 0) {
-        *length += (15 + 3); // "server_ssl_type": 
-        get_json_length_cache_caches_item_server_ssl_type(pool, (&out->server_ssl_type), length, flags);
-        *length += 1; // ","
-        count++;
-    }
-    omit = 0;
-    omit = out->is_location_rule_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->location_rule.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        *length += (13 + 3); // "location_rule": 
-        get_json_length_cache_caches_item_location_rule(pool, (&out->location_rule), length, flags);
-        *length += 1; // ","
-        count++;
-    }
-    omit = 0;
     omit = out->is_location_name_set ? 0 : 1;
     omit = (flags & OMIT_NULL_STR) && (out->location_name.data) == NULL ? 1 : omit;
     if (omit == 0) {
@@ -383,20 +196,11 @@ static void get_json_length_cache_caches_item(njt_pool_t *pool, cache_caches_ite
         count++;
     }
     omit = 0;
-    omit = out->is_location_body_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->location_body.data) == NULL ? 1 : omit;
+    omit = out->is_backend_server_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->backend_server.data) == NULL ? 1 : omit;
     if (omit == 0) {
-        *length += (13 + 3); // "location_body": 
-        get_json_length_cache_caches_item_location_body(pool, (&out->location_body), length, flags);
-        *length += 1; // ","
-        count++;
-    }
-    omit = 0;
-    omit = out->is_proxy_pass_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->proxy_pass.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        *length += (10 + 3); // "proxy_pass": 
-        get_json_length_cache_caches_item_proxy_pass(pool, (&out->proxy_pass), length, flags);
+        *length += (14 + 3); // "backend_server": 
+        get_json_length_cache_caches_item_backend_server(pool, (&out->backend_server), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -469,32 +273,12 @@ static void get_json_length_cache(njt_pool_t *pool, cache_t *out, size_t *length
     *length += 1;
 }
 
-cache_caches_item_addr_port_t* get_cache_caches_item_addr_port(cache_caches_item_t *out) {
-    return &out->addr_port;
-}
-
-cache_caches_item_server_name_t* get_cache_caches_item_server_name(cache_caches_item_t *out) {
-    return &out->server_name;
-}
-
-cache_caches_item_server_ssl_type_t get_cache_caches_item_server_ssl_type(cache_caches_item_t *out) {
-    return out->server_ssl_type;
-}
-
-cache_caches_item_location_rule_t* get_cache_caches_item_location_rule(cache_caches_item_t *out) {
-    return &out->location_rule;
-}
-
 cache_caches_item_location_name_t* get_cache_caches_item_location_name(cache_caches_item_t *out) {
     return &out->location_name;
 }
 
-cache_caches_item_location_body_t* get_cache_caches_item_location_body(cache_caches_item_t *out) {
-    return &out->location_body;
-}
-
-cache_caches_item_proxy_pass_t* get_cache_caches_item_proxy_pass(cache_caches_item_t *out) {
-    return &out->proxy_pass;
+cache_caches_item_backend_server_t* get_cache_caches_item_backend_server(cache_caches_item_t *out) {
+    return &out->backend_server;
 }
 
 cache_caches_item_status_t* get_cache_caches_item_status(cache_caches_item_t *out) {
@@ -512,33 +296,13 @@ cache_caches_item_t* get_cache_caches_item(cache_caches_t *out, size_t idx) {
 cache_caches_t* get_cache_caches(cache_t *out) {
     return out->caches;
 }
-void set_cache_caches_item_addr_port(cache_caches_item_t* obj, cache_caches_item_addr_port_t* field) {
-    njt_memcpy(&obj->addr_port, field, sizeof(njt_str_t));
-    obj->is_addr_port_set = 1;
-}
-void set_cache_caches_item_server_name(cache_caches_item_t* obj, cache_caches_item_server_name_t* field) {
-    njt_memcpy(&obj->server_name, field, sizeof(njt_str_t));
-    obj->is_server_name_set = 1;
-}
-void set_cache_caches_item_server_ssl_type(cache_caches_item_t* obj, cache_caches_item_server_ssl_type_t field) {
-    obj->server_ssl_type = field;
-    obj->is_server_ssl_type_set = 1;
-}
-void set_cache_caches_item_location_rule(cache_caches_item_t* obj, cache_caches_item_location_rule_t* field) {
-    njt_memcpy(&obj->location_rule, field, sizeof(njt_str_t));
-    obj->is_location_rule_set = 1;
-}
 void set_cache_caches_item_location_name(cache_caches_item_t* obj, cache_caches_item_location_name_t* field) {
     njt_memcpy(&obj->location_name, field, sizeof(njt_str_t));
     obj->is_location_name_set = 1;
 }
-void set_cache_caches_item_location_body(cache_caches_item_t* obj, cache_caches_item_location_body_t* field) {
-    njt_memcpy(&obj->location_body, field, sizeof(njt_str_t));
-    obj->is_location_body_set = 1;
-}
-void set_cache_caches_item_proxy_pass(cache_caches_item_t* obj, cache_caches_item_proxy_pass_t* field) {
-    njt_memcpy(&obj->proxy_pass, field, sizeof(njt_str_t));
-    obj->is_proxy_pass_set = 1;
+void set_cache_caches_item_backend_server(cache_caches_item_t* obj, cache_caches_item_backend_server_t* field) {
+    njt_memcpy(&obj->backend_server, field, sizeof(njt_str_t));
+    obj->is_backend_server_set = 1;
 }
 void set_cache_caches_item_status(cache_caches_item_t* obj, cache_caches_item_status_t* field) {
     njt_memcpy(&obj->status, field, sizeof(njt_str_t));
@@ -573,46 +337,6 @@ cache_t* create_cache(njt_pool_t *pool) {
     return out;
 }
 
-static void to_oneline_json_cache_caches_item_addr_port(njt_pool_t *pool, cache_caches_item_addr_port_t *out, njt_str_t *buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    cur = njt_sprintf(cur, "\"%V\"", dst);
-    buf->len = cur - buf->data;
-}
-
-static void to_oneline_json_cache_caches_item_server_name(njt_pool_t *pool, cache_caches_item_server_name_t *out, njt_str_t *buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    cur = njt_sprintf(cur, "\"%V\"", dst);
-    buf->len = cur - buf->data;
-}
-
-static void to_oneline_json_cache_caches_item_server_ssl_type(njt_pool_t *pool, cache_caches_item_server_ssl_type_t *out, njt_str_t* buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    if (*out == CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NONE) {
-        cur = njt_sprintf(cur, "\"none\"");
-        buf->len += 4 + 2;
-        return;
-    }
-    if (*out == CACHE_CACHES_ITEM_SERVER_SSL_TYPE_SSL) {
-        cur = njt_sprintf(cur, "\"ssl\"");
-        buf->len += 3 + 2;
-        return;
-    }
-    if (*out == CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NTLS) {
-        cur = njt_sprintf(cur, "\"ntls\"");
-        buf->len += 4 + 2;
-        return;
-    }
-}
-
-static void to_oneline_json_cache_caches_item_location_rule(njt_pool_t *pool, cache_caches_item_location_rule_t *out, njt_str_t *buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    cur = njt_sprintf(cur, "\"%V\"", dst);
-    buf->len = cur - buf->data;
-}
-
 static void to_oneline_json_cache_caches_item_location_name(njt_pool_t *pool, cache_caches_item_location_name_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
@@ -620,14 +344,7 @@ static void to_oneline_json_cache_caches_item_location_name(njt_pool_t *pool, ca
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_cache_caches_item_location_body(njt_pool_t *pool, cache_caches_item_location_body_t *out, njt_str_t *buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    cur = njt_sprintf(cur, "\"%V\"", dst);
-    buf->len = cur - buf->data;
-}
-
-static void to_oneline_json_cache_caches_item_proxy_pass(njt_pool_t *pool, cache_caches_item_proxy_pass_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_cache_caches_item_backend_server(njt_pool_t *pool, cache_caches_item_backend_server_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
@@ -658,49 +375,6 @@ static void to_oneline_json_cache_caches_item(njt_pool_t *pool, cache_caches_ite
     cur = njt_sprintf(cur, "{");
     buf->len ++;
     omit = 0;
-    omit = out->is_addr_port_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->addr_port.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        cur = njt_sprintf(cur, "\"addr_port\":");
-        buf->len = cur - buf->data;
-        to_oneline_json_cache_caches_item_addr_port(pool, (&out->addr_port), buf, flags);
-        cur = buf->data + buf->len;
-        cur = njt_sprintf(cur, ",");
-        buf->len ++;
-    }
-    omit = 0;
-    omit = out->is_server_name_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->server_name.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        cur = njt_sprintf(cur, "\"server_name\":");
-        buf->len = cur - buf->data;
-        to_oneline_json_cache_caches_item_server_name(pool, (&out->server_name), buf, flags);
-        cur = buf->data + buf->len;
-        cur = njt_sprintf(cur, ",");
-        buf->len ++;
-    }
-    omit = 0;
-    omit = out->is_server_ssl_type_set ? 0 : 1;
-    if (omit == 0) {
-        cur = njt_sprintf(cur, "\"server_ssl_type\":");
-        buf->len = cur - buf->data;
-        to_oneline_json_cache_caches_item_server_ssl_type(pool, (&out->server_ssl_type), buf, flags);
-        cur = buf->data + buf->len;
-        cur = njt_sprintf(cur, ",");
-        buf->len ++;
-    }
-    omit = 0;
-    omit = out->is_location_rule_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->location_rule.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        cur = njt_sprintf(cur, "\"location_rule\":");
-        buf->len = cur - buf->data;
-        to_oneline_json_cache_caches_item_location_rule(pool, (&out->location_rule), buf, flags);
-        cur = buf->data + buf->len;
-        cur = njt_sprintf(cur, ",");
-        buf->len ++;
-    }
-    omit = 0;
     omit = out->is_location_name_set ? 0 : 1;
     omit = (flags & OMIT_NULL_STR) && (out->location_name.data) == NULL ? 1 : omit;
     if (omit == 0) {
@@ -712,23 +386,12 @@ static void to_oneline_json_cache_caches_item(njt_pool_t *pool, cache_caches_ite
         buf->len ++;
     }
     omit = 0;
-    omit = out->is_location_body_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->location_body.data) == NULL ? 1 : omit;
+    omit = out->is_backend_server_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->backend_server.data) == NULL ? 1 : omit;
     if (omit == 0) {
-        cur = njt_sprintf(cur, "\"location_body\":");
+        cur = njt_sprintf(cur, "\"backend_server\":");
         buf->len = cur - buf->data;
-        to_oneline_json_cache_caches_item_location_body(pool, (&out->location_body), buf, flags);
-        cur = buf->data + buf->len;
-        cur = njt_sprintf(cur, ",");
-        buf->len ++;
-    }
-    omit = 0;
-    omit = out->is_proxy_pass_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->proxy_pass.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        cur = njt_sprintf(cur, "\"proxy_pass\":");
-        buf->len = cur - buf->data;
-        to_oneline_json_cache_caches_item_proxy_pass(pool, (&out->proxy_pass), buf, flags);
+        to_oneline_json_cache_caches_item_backend_server(pool, (&out->backend_server), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;

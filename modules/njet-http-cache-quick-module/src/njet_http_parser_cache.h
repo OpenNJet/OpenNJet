@@ -13,44 +13,20 @@
 #include "njt_core.h"
 #include "js2c_njet_builtins.h"
 /* ===================== Generated type declarations ===================== */
-typedef njt_str_t cache_caches_item_addr_port_t;
-
-typedef njt_str_t cache_caches_item_server_name_t;
-
-typedef enum cache_caches_item_server_ssl_type_t_e{
-    CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NONE,
-    CACHE_CACHES_ITEM_SERVER_SSL_TYPE_SSL,
-    CACHE_CACHES_ITEM_SERVER_SSL_TYPE_NTLS
-} cache_caches_item_server_ssl_type_t;
-
-typedef njt_str_t cache_caches_item_location_rule_t;
-
 typedef njt_str_t cache_caches_item_location_name_t;
 
-typedef njt_str_t cache_caches_item_location_body_t;
-
-typedef njt_str_t cache_caches_item_proxy_pass_t;
+typedef njt_str_t cache_caches_item_backend_server_t;
 
 typedef njt_str_t cache_caches_item_status_t;
 
 typedef int64_t cache_caches_item_download_ratio_t;
 typedef struct cache_caches_item_t_s {
-    cache_caches_item_addr_port_t addr_port;
-    cache_caches_item_server_name_t server_name;
-    cache_caches_item_server_ssl_type_t server_ssl_type;
-    cache_caches_item_location_rule_t location_rule;
     cache_caches_item_location_name_t location_name;
-    cache_caches_item_location_body_t location_body;
-    cache_caches_item_proxy_pass_t proxy_pass;
+    cache_caches_item_backend_server_t backend_server;
     cache_caches_item_status_t status;
     cache_caches_item_download_ratio_t download_ratio;
-    unsigned int is_addr_port_set:1;
-    unsigned int is_server_name_set:1;
-    unsigned int is_server_ssl_type_set:1;
-    unsigned int is_location_rule_set:1;
     unsigned int is_location_name_set:1;
-    unsigned int is_location_body_set:1;
-    unsigned int is_proxy_pass_set:1;
+    unsigned int is_backend_server_set:1;
     unsigned int is_status_set:1;
     unsigned int is_download_ratio_set:1;
 } cache_caches_item_t;
@@ -61,25 +37,15 @@ typedef struct cache_t_s {
     unsigned int is_caches_set:1;
 } cache_t;
 
-cache_caches_item_addr_port_t* get_cache_caches_item_addr_port(cache_caches_item_t *out);
-cache_caches_item_server_name_t* get_cache_caches_item_server_name(cache_caches_item_t *out);
-cache_caches_item_server_ssl_type_t get_cache_caches_item_server_ssl_type(cache_caches_item_t *out);
-cache_caches_item_location_rule_t* get_cache_caches_item_location_rule(cache_caches_item_t *out);
 cache_caches_item_location_name_t* get_cache_caches_item_location_name(cache_caches_item_t *out);
-cache_caches_item_location_body_t* get_cache_caches_item_location_body(cache_caches_item_t *out);
-cache_caches_item_proxy_pass_t* get_cache_caches_item_proxy_pass(cache_caches_item_t *out);
+cache_caches_item_backend_server_t* get_cache_caches_item_backend_server(cache_caches_item_t *out);
 cache_caches_item_status_t* get_cache_caches_item_status(cache_caches_item_t *out);
 cache_caches_item_download_ratio_t get_cache_caches_item_download_ratio(cache_caches_item_t *out);
 cache_caches_item_t* get_cache_caches_item(cache_caches_t *out, size_t idx);
 // CHECK ARRAY not exceeding bounds before calling this func
 cache_caches_t* get_cache_caches(cache_t *out);
-void set_cache_caches_item_addr_port(cache_caches_item_t* obj, cache_caches_item_addr_port_t* field);
-void set_cache_caches_item_server_name(cache_caches_item_t* obj, cache_caches_item_server_name_t* field);
-void set_cache_caches_item_server_ssl_type(cache_caches_item_t* obj, cache_caches_item_server_ssl_type_t field);
-void set_cache_caches_item_location_rule(cache_caches_item_t* obj, cache_caches_item_location_rule_t* field);
 void set_cache_caches_item_location_name(cache_caches_item_t* obj, cache_caches_item_location_name_t* field);
-void set_cache_caches_item_location_body(cache_caches_item_t* obj, cache_caches_item_location_body_t* field);
-void set_cache_caches_item_proxy_pass(cache_caches_item_t* obj, cache_caches_item_proxy_pass_t* field);
+void set_cache_caches_item_backend_server(cache_caches_item_t* obj, cache_caches_item_backend_server_t* field);
 void set_cache_caches_item_status(cache_caches_item_t* obj, cache_caches_item_status_t* field);
 void set_cache_caches_item_download_ratio(cache_caches_item_t* obj, cache_caches_item_download_ratio_t field);
 cache_caches_item_t* create_cache_caches_item(njt_pool_t *pool);

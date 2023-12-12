@@ -6,18 +6,16 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
-#include "njet_http_parser_cache_dynloc.h"
+#include "njet_http_parser_cache_add_loc.h"
 #include "njt_core.h"
 #include "js2c_njet_builtins.h"
 /* ========================== Generated parsers ========================== */
 
 
-static bool parse_cache_dyn_location_type(njt_pool_t *pool, parse_state_t *parse_state, cache_dyn_location_type_t *out, js2c_parse_error_t *err_ret) {
+static bool parse_cache_add_dyn_location_type(njt_pool_t *pool, parse_state_t *parse_state, cache_add_dyn_location_type_t *out, js2c_parse_error_t *err_ret) {
     js2c_check_type(JSMN_STRING);
     if (current_string_is(parse_state, "add")) {
-        *out = CACHE_DYN_LOCATION_TYPE_ADD;
-    } else if (current_string_is(parse_state, "del")) {
-        *out = CACHE_DYN_LOCATION_TYPE_DEL;
+        *out = CACHE_ADD_DYN_LOCATION_TYPE_ADD;
     } else {
         LOG_ERROR_JSON_PARSE(UNKNOWN_ENUM_VALUE_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
         return true;
@@ -27,7 +25,7 @@ static bool parse_cache_dyn_location_type(njt_pool_t *pool, parse_state_t *parse
 }
 
 
-static bool parse_cache_dyn_location_locations_item(njt_pool_t *pool, parse_state_t *parse_state, cache_dyn_location_locations_item_t *out, js2c_parse_error_t *err_ret) {
+static bool parse_cache_add_dyn_location_locations_item(njt_pool_t *pool, parse_state_t *parse_state, cache_add_dyn_location_locations_item_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
 
     js2c_check_type(JSMN_OBJECT);
@@ -120,15 +118,15 @@ static bool parse_cache_dyn_location_locations_item(njt_pool_t *pool, parse_stat
 }
 
 
-static bool parse_cache_dyn_location_locations(njt_pool_t *pool, parse_state_t *parse_state, cache_dyn_location_locations_t *out, js2c_parse_error_t *err_ret) {
+static bool parse_cache_add_dyn_location_locations(njt_pool_t *pool, parse_state_t *parse_state, cache_add_dyn_location_locations_t *out, js2c_parse_error_t *err_ret) {
     int i;
     js2c_check_type(JSMN_ARRAY);
     const int n = parse_state->tokens[parse_state->current_token].size;
     parse_state->current_token += 1;
     for (i = 0; i < n; ++i) {
-        ((cache_dyn_location_locations_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(cache_dyn_location_locations_item_t));
-        memset(((cache_dyn_location_locations_item_t**)out->elts)[i], 0, sizeof(cache_dyn_location_locations_item_t));
-        if (parse_cache_dyn_location_locations_item(pool, parse_state, ((cache_dyn_location_locations_item_t**)out->elts)[i], err_ret)) {
+        ((cache_add_dyn_location_locations_item_t**)out->elts)[i] = njt_pcalloc(pool, sizeof(cache_add_dyn_location_locations_item_t));
+        memset(((cache_add_dyn_location_locations_item_t**)out->elts)[i], 0, sizeof(cache_add_dyn_location_locations_item_t));
+        if (parse_cache_add_dyn_location_locations_item(pool, parse_state, ((cache_add_dyn_location_locations_item_t**)out->elts)[i], err_ret)) {
             return true;
         }
         out->nelts ++;
@@ -137,7 +135,7 @@ static bool parse_cache_dyn_location_locations(njt_pool_t *pool, parse_state_t *
 }
 
 
-static bool parse_cache_dyn_location(njt_pool_t *pool, parse_state_t *parse_state, cache_dyn_location_t *out, js2c_parse_error_t *err_ret) {
+static bool parse_cache_add_dyn_location(njt_pool_t *pool, parse_state_t *parse_state, cache_add_dyn_location_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
 
     js2c_check_type(JSMN_OBJECT);
@@ -151,7 +149,7 @@ static bool parse_cache_dyn_location(njt_pool_t *pool, parse_state_t *parse_stat
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "type";
-            if (parse_cache_dyn_location_type(pool, parse_state, (&out->type), err_ret)) {
+            if (parse_cache_add_dyn_location_type(pool, parse_state, (&out->type), err_ret)) {
                 return true;
             }
             out->is_type_set = 1;
@@ -189,10 +187,10 @@ static bool parse_cache_dyn_location(njt_pool_t *pool, parse_state_t *parse_stat
             parse_state->current_token += 1;
             const char* saved_key = parse_state->current_key;
             parse_state->current_key = "locations";
-            out->locations = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(cache_dyn_location_locations_item_t*));
+            out->locations = njt_array_create(pool, parse_state->tokens[parse_state->current_token].size ,sizeof(cache_add_dyn_location_locations_item_t*));
             js2c_malloc_check(out->locations);
 
-            if (parse_cache_dyn_location_locations(pool, parse_state, (out->locations), err_ret)) {
+            if (parse_cache_add_dyn_location_locations(pool, parse_state, (out->locations), err_ret)) {
                 return true;
             }
             out->is_locations_set = 1;
@@ -226,50 +224,45 @@ static bool parse_cache_dyn_location(njt_pool_t *pool, parse_state_t *parse_stat
 
 // BEGIN GET_JSON_LENGTH ENUM
 
-static void get_json_length_cache_dyn_location_type(njt_pool_t *pool, cache_dyn_location_type_t *out, size_t *length, njt_int_t flags) {
-    if (*out == CACHE_DYN_LOCATION_TYPE_ADD) {
+static void get_json_length_cache_add_dyn_location_type(njt_pool_t *pool, cache_add_dyn_location_type_t *out, size_t *length, njt_int_t flags) {
+    if (*out == CACHE_ADD_DYN_LOCATION_TYPE_ADD) {
         // "add"
         *length += 3 + 2;
         return;
     }
-    if (*out == CACHE_DYN_LOCATION_TYPE_DEL) {
-        // "del"
-        *length += 3 + 2;
-        return;
-    }
 }
 
-static void get_json_length_cache_dyn_location_addr_port(njt_pool_t *pool, cache_dyn_location_addr_port_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_cache_add_dyn_location_addr_port(njt_pool_t *pool, cache_add_dyn_location_addr_port_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_cache_dyn_location_server_name(njt_pool_t *pool, cache_dyn_location_server_name_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_cache_add_dyn_location_server_name(njt_pool_t *pool, cache_add_dyn_location_server_name_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_cache_dyn_location_locations_item_location_rule(njt_pool_t *pool, cache_dyn_location_locations_item_location_rule_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_cache_add_dyn_location_locations_item_location_rule(njt_pool_t *pool, cache_add_dyn_location_locations_item_location_rule_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_cache_dyn_location_locations_item_location_name(njt_pool_t *pool, cache_dyn_location_locations_item_location_name_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_cache_add_dyn_location_locations_item_location_name(njt_pool_t *pool, cache_add_dyn_location_locations_item_location_name_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_cache_dyn_location_locations_item_location_body(njt_pool_t *pool, cache_dyn_location_locations_item_location_body_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_cache_add_dyn_location_locations_item_location_body(njt_pool_t *pool, cache_add_dyn_location_locations_item_location_body_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_cache_dyn_location_locations_item_proxy_pass(njt_pool_t *pool, cache_dyn_location_locations_item_proxy_pass_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_cache_add_dyn_location_locations_item_proxy_pass(njt_pool_t *pool, cache_add_dyn_location_locations_item_proxy_pass_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
 
-static void get_json_length_cache_dyn_location_locations_item(njt_pool_t *pool, cache_dyn_location_locations_item_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_cache_add_dyn_location_locations_item(njt_pool_t *pool, cache_add_dyn_location_locations_item_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -282,7 +275,7 @@ static void get_json_length_cache_dyn_location_locations_item(njt_pool_t *pool, 
     omit = (flags & OMIT_NULL_STR) && (out->location_rule.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (13 + 3); // "location_rule": 
-        get_json_length_cache_dyn_location_locations_item_location_rule(pool, (&out->location_rule), length, flags);
+        get_json_length_cache_add_dyn_location_locations_item_location_rule(pool, (&out->location_rule), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -291,7 +284,7 @@ static void get_json_length_cache_dyn_location_locations_item(njt_pool_t *pool, 
     omit = (flags & OMIT_NULL_STR) && (out->location_name.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (13 + 3); // "location_name": 
-        get_json_length_cache_dyn_location_locations_item_location_name(pool, (&out->location_name), length, flags);
+        get_json_length_cache_add_dyn_location_locations_item_location_name(pool, (&out->location_name), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -300,7 +293,7 @@ static void get_json_length_cache_dyn_location_locations_item(njt_pool_t *pool, 
     omit = (flags & OMIT_NULL_STR) && (out->location_body.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (13 + 3); // "location_body": 
-        get_json_length_cache_dyn_location_locations_item_location_body(pool, (&out->location_body), length, flags);
+        get_json_length_cache_add_dyn_location_locations_item_location_body(pool, (&out->location_body), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -309,7 +302,7 @@ static void get_json_length_cache_dyn_location_locations_item(njt_pool_t *pool, 
     omit = (flags & OMIT_NULL_STR) && (out->proxy_pass.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (10 + 3); // "proxy_pass": 
-        get_json_length_cache_dyn_location_locations_item_proxy_pass(pool, (&out->proxy_pass), length, flags);
+        get_json_length_cache_add_dyn_location_locations_item_proxy_pass(pool, (&out->proxy_pass), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -319,7 +312,7 @@ static void get_json_length_cache_dyn_location_locations_item(njt_pool_t *pool, 
     *length += 1;
 }
 
-static void get_json_length_cache_dyn_location_locations(njt_pool_t *pool, cache_dyn_location_locations_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_cache_add_dyn_location_locations(njt_pool_t *pool, cache_add_dyn_location_locations_t *out, size_t *length, njt_int_t flags) {
     njt_uint_t i;
     njt_uint_t omit;
     njt_int_t count = 0;
@@ -330,9 +323,9 @@ static void get_json_length_cache_dyn_location_locations(njt_pool_t *pool, cache
     *length += 2; // "[]"
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        omit = ((flags & OMIT_NULL_OBJ) && ((cache_dyn_location_locations_item_t**)out->elts)[i] == NULL) ? 1 : 0;
+        omit = ((flags & OMIT_NULL_OBJ) && ((cache_add_dyn_location_locations_item_t**)out->elts)[i] == NULL) ? 1 : 0;
         if (omit == 0) {
-            get_json_length_cache_dyn_location_locations_item(pool, ((cache_dyn_location_locations_item_t**)out->elts)[i], length, flags);
+            get_json_length_cache_add_dyn_location_locations_item(pool, ((cache_add_dyn_location_locations_item_t**)out->elts)[i], length, flags);
             *length += 1; // ","
             count++; // ","
         }
@@ -342,7 +335,7 @@ static void get_json_length_cache_dyn_location_locations(njt_pool_t *pool, cache
     }
 }
 
-static void get_json_length_cache_dyn_location(njt_pool_t *pool, cache_dyn_location_t *out, size_t *length, njt_int_t flags) {
+static void get_json_length_cache_add_dyn_location(njt_pool_t *pool, cache_add_dyn_location_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
         return;
@@ -354,7 +347,7 @@ static void get_json_length_cache_dyn_location(njt_pool_t *pool, cache_dyn_locat
     omit = out->is_type_set ? 0 : 1;
     if (omit == 0) {
         *length += (4 + 3); // "type": 
-        get_json_length_cache_dyn_location_type(pool, (&out->type), length, flags);
+        get_json_length_cache_add_dyn_location_type(pool, (&out->type), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -363,7 +356,7 @@ static void get_json_length_cache_dyn_location(njt_pool_t *pool, cache_dyn_locat
     omit = (flags & OMIT_NULL_STR) && (out->addr_port.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (9 + 3); // "addr_port": 
-        get_json_length_cache_dyn_location_addr_port(pool, (&out->addr_port), length, flags);
+        get_json_length_cache_add_dyn_location_addr_port(pool, (&out->addr_port), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -372,7 +365,7 @@ static void get_json_length_cache_dyn_location(njt_pool_t *pool, cache_dyn_locat
     omit = (flags & OMIT_NULL_STR) && (out->server_name.data) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (11 + 3); // "server_name": 
-        get_json_length_cache_dyn_location_server_name(pool, (&out->server_name), length, flags);
+        get_json_length_cache_add_dyn_location_server_name(pool, (&out->server_name), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -381,7 +374,7 @@ static void get_json_length_cache_dyn_location(njt_pool_t *pool, cache_dyn_locat
     omit = (flags & OMIT_NULL_ARRAY) && (out->locations) == NULL ? 1 : omit;
     if (omit == 0) {
         *length += (9 + 3); // "locations": 
-        get_json_length_cache_dyn_location_locations(pool, (out->locations), length, flags);
+        get_json_length_cache_add_dyn_location_locations(pool, (out->locations), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -391,74 +384,74 @@ static void get_json_length_cache_dyn_location(njt_pool_t *pool, cache_dyn_locat
     *length += 1;
 }
 
-cache_dyn_location_locations_item_location_rule_t* get_cache_dyn_location_locations_item_location_rule(cache_dyn_location_locations_item_t *out) {
+cache_add_dyn_location_locations_item_location_rule_t* get_cache_add_dyn_location_locations_item_location_rule(cache_add_dyn_location_locations_item_t *out) {
     return &out->location_rule;
 }
 
-cache_dyn_location_locations_item_location_name_t* get_cache_dyn_location_locations_item_location_name(cache_dyn_location_locations_item_t *out) {
+cache_add_dyn_location_locations_item_location_name_t* get_cache_add_dyn_location_locations_item_location_name(cache_add_dyn_location_locations_item_t *out) {
     return &out->location_name;
 }
 
-cache_dyn_location_locations_item_location_body_t* get_cache_dyn_location_locations_item_location_body(cache_dyn_location_locations_item_t *out) {
+cache_add_dyn_location_locations_item_location_body_t* get_cache_add_dyn_location_locations_item_location_body(cache_add_dyn_location_locations_item_t *out) {
     return &out->location_body;
 }
 
-cache_dyn_location_locations_item_proxy_pass_t* get_cache_dyn_location_locations_item_proxy_pass(cache_dyn_location_locations_item_t *out) {
+cache_add_dyn_location_locations_item_proxy_pass_t* get_cache_add_dyn_location_locations_item_proxy_pass(cache_add_dyn_location_locations_item_t *out) {
     return &out->proxy_pass;
 }
-cache_dyn_location_locations_item_t* get_cache_dyn_location_locations_item(cache_dyn_location_locations_t *out, size_t idx) {
-    return ((cache_dyn_location_locations_item_t**)out->elts)[idx];
+cache_add_dyn_location_locations_item_t* get_cache_add_dyn_location_locations_item(cache_add_dyn_location_locations_t *out, size_t idx) {
+    return ((cache_add_dyn_location_locations_item_t**)out->elts)[idx];
 
 }
 
-cache_dyn_location_type_t get_cache_dyn_location_type(cache_dyn_location_t *out) {
+cache_add_dyn_location_type_t get_cache_add_dyn_location_type(cache_add_dyn_location_t *out) {
     return out->type;
 }
 
-cache_dyn_location_addr_port_t* get_cache_dyn_location_addr_port(cache_dyn_location_t *out) {
+cache_add_dyn_location_addr_port_t* get_cache_add_dyn_location_addr_port(cache_add_dyn_location_t *out) {
     return &out->addr_port;
 }
 
-cache_dyn_location_server_name_t* get_cache_dyn_location_server_name(cache_dyn_location_t *out) {
+cache_add_dyn_location_server_name_t* get_cache_add_dyn_location_server_name(cache_add_dyn_location_t *out) {
     return &out->server_name;
 }
 
-cache_dyn_location_locations_t* get_cache_dyn_location_locations(cache_dyn_location_t *out) {
+cache_add_dyn_location_locations_t* get_cache_add_dyn_location_locations(cache_add_dyn_location_t *out) {
     return out->locations;
 }
-void set_cache_dyn_location_type(cache_dyn_location_t* obj, cache_dyn_location_type_t field) {
+void set_cache_add_dyn_location_type(cache_add_dyn_location_t* obj, cache_add_dyn_location_type_t field) {
     obj->type = field;
     obj->is_type_set = 1;
 }
-void set_cache_dyn_location_addr_port(cache_dyn_location_t* obj, cache_dyn_location_addr_port_t* field) {
+void set_cache_add_dyn_location_addr_port(cache_add_dyn_location_t* obj, cache_add_dyn_location_addr_port_t* field) {
     njt_memcpy(&obj->addr_port, field, sizeof(njt_str_t));
     obj->is_addr_port_set = 1;
 }
-void set_cache_dyn_location_server_name(cache_dyn_location_t* obj, cache_dyn_location_server_name_t* field) {
+void set_cache_add_dyn_location_server_name(cache_add_dyn_location_t* obj, cache_add_dyn_location_server_name_t* field) {
     njt_memcpy(&obj->server_name, field, sizeof(njt_str_t));
     obj->is_server_name_set = 1;
 }
-void set_cache_dyn_location_locations_item_location_rule(cache_dyn_location_locations_item_t* obj, cache_dyn_location_locations_item_location_rule_t* field) {
+void set_cache_add_dyn_location_locations_item_location_rule(cache_add_dyn_location_locations_item_t* obj, cache_add_dyn_location_locations_item_location_rule_t* field) {
     njt_memcpy(&obj->location_rule, field, sizeof(njt_str_t));
     obj->is_location_rule_set = 1;
 }
-void set_cache_dyn_location_locations_item_location_name(cache_dyn_location_locations_item_t* obj, cache_dyn_location_locations_item_location_name_t* field) {
+void set_cache_add_dyn_location_locations_item_location_name(cache_add_dyn_location_locations_item_t* obj, cache_add_dyn_location_locations_item_location_name_t* field) {
     njt_memcpy(&obj->location_name, field, sizeof(njt_str_t));
     obj->is_location_name_set = 1;
 }
-void set_cache_dyn_location_locations_item_location_body(cache_dyn_location_locations_item_t* obj, cache_dyn_location_locations_item_location_body_t* field) {
+void set_cache_add_dyn_location_locations_item_location_body(cache_add_dyn_location_locations_item_t* obj, cache_add_dyn_location_locations_item_location_body_t* field) {
     njt_memcpy(&obj->location_body, field, sizeof(njt_str_t));
     obj->is_location_body_set = 1;
 }
-void set_cache_dyn_location_locations_item_proxy_pass(cache_dyn_location_locations_item_t* obj, cache_dyn_location_locations_item_proxy_pass_t* field) {
+void set_cache_add_dyn_location_locations_item_proxy_pass(cache_add_dyn_location_locations_item_t* obj, cache_add_dyn_location_locations_item_proxy_pass_t* field) {
     njt_memcpy(&obj->proxy_pass, field, sizeof(njt_str_t));
     obj->is_proxy_pass_set = 1;
 }
-cache_dyn_location_locations_item_t* create_cache_dyn_location_locations_item(njt_pool_t *pool) {
-    cache_dyn_location_locations_item_t* out = njt_pcalloc(pool, sizeof(cache_dyn_location_locations_item_t));
+cache_add_dyn_location_locations_item_t* create_cache_add_dyn_location_locations_item(njt_pool_t *pool) {
+    cache_add_dyn_location_locations_item_t* out = njt_pcalloc(pool, sizeof(cache_add_dyn_location_locations_item_t));
     return out;
 }
-int add_item_cache_dyn_location_locations(cache_dyn_location_locations_t *src, cache_dyn_location_locations_item_t* item) {
+int add_item_cache_add_dyn_location_locations(cache_add_dyn_location_locations_t *src, cache_add_dyn_location_locations_item_t* item) {
     void *new = njt_array_push(src);
     if (new == NULL) {
         return NJT_ERROR;
@@ -467,75 +460,70 @@ int add_item_cache_dyn_location_locations(cache_dyn_location_locations_t *src, c
     return NJT_OK;
 }
 
-cache_dyn_location_locations_t* create_cache_dyn_location_locations(njt_pool_t *pool, size_t nelts) {
-    return njt_array_create(pool, nelts, sizeof(cache_dyn_location_locations_item_t*));
+cache_add_dyn_location_locations_t* create_cache_add_dyn_location_locations(njt_pool_t *pool, size_t nelts) {
+    return njt_array_create(pool, nelts, sizeof(cache_add_dyn_location_locations_item_t*));
 }
-void set_cache_dyn_location_locations(cache_dyn_location_t* obj, cache_dyn_location_locations_t* field) {
+void set_cache_add_dyn_location_locations(cache_add_dyn_location_t* obj, cache_add_dyn_location_locations_t* field) {
     obj->locations = field;
     obj->is_locations_set = 1;
 }
-cache_dyn_location_t* create_cache_dyn_location(njt_pool_t *pool) {
-    cache_dyn_location_t* out = njt_pcalloc(pool, sizeof(cache_dyn_location_t));
+cache_add_dyn_location_t* create_cache_add_dyn_location(njt_pool_t *pool) {
+    cache_add_dyn_location_t* out = njt_pcalloc(pool, sizeof(cache_add_dyn_location_t));
     return out;
 }
 
-static void to_oneline_json_cache_dyn_location_type(njt_pool_t *pool, cache_dyn_location_type_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_cache_add_dyn_location_type(njt_pool_t *pool, cache_add_dyn_location_type_t *out, njt_str_t* buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
-    if (*out == CACHE_DYN_LOCATION_TYPE_ADD) {
+    if (*out == CACHE_ADD_DYN_LOCATION_TYPE_ADD) {
         cur = njt_sprintf(cur, "\"add\"");
         buf->len += 3 + 2;
         return;
     }
-    if (*out == CACHE_DYN_LOCATION_TYPE_DEL) {
-        cur = njt_sprintf(cur, "\"del\"");
-        buf->len += 3 + 2;
-        return;
-    }
 }
 
-static void to_oneline_json_cache_dyn_location_addr_port(njt_pool_t *pool, cache_dyn_location_addr_port_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_cache_add_dyn_location_addr_port(njt_pool_t *pool, cache_add_dyn_location_addr_port_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_cache_dyn_location_server_name(njt_pool_t *pool, cache_dyn_location_server_name_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_cache_add_dyn_location_server_name(njt_pool_t *pool, cache_add_dyn_location_server_name_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_cache_dyn_location_locations_item_location_rule(njt_pool_t *pool, cache_dyn_location_locations_item_location_rule_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_cache_add_dyn_location_locations_item_location_rule(njt_pool_t *pool, cache_add_dyn_location_locations_item_location_rule_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_cache_dyn_location_locations_item_location_name(njt_pool_t *pool, cache_dyn_location_locations_item_location_name_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_cache_add_dyn_location_locations_item_location_name(njt_pool_t *pool, cache_add_dyn_location_locations_item_location_name_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_cache_dyn_location_locations_item_location_body(njt_pool_t *pool, cache_dyn_location_locations_item_location_body_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_cache_add_dyn_location_locations_item_location_body(njt_pool_t *pool, cache_add_dyn_location_locations_item_location_body_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_cache_dyn_location_locations_item_proxy_pass(njt_pool_t *pool, cache_dyn_location_locations_item_proxy_pass_t *out, njt_str_t *buf, njt_int_t flags) {
+static void to_oneline_json_cache_add_dyn_location_locations_item_proxy_pass(njt_pool_t *pool, cache_add_dyn_location_locations_item_proxy_pass_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_cache_dyn_location_locations_item(njt_pool_t *pool, cache_dyn_location_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_cache_add_dyn_location_locations_item(njt_pool_t *pool, cache_add_dyn_location_locations_item_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -551,7 +539,7 @@ static void to_oneline_json_cache_dyn_location_locations_item(njt_pool_t *pool, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"location_rule\":");
         buf->len = cur - buf->data;
-        to_oneline_json_cache_dyn_location_locations_item_location_rule(pool, (&out->location_rule), buf, flags);
+        to_oneline_json_cache_add_dyn_location_locations_item_location_rule(pool, (&out->location_rule), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -562,7 +550,7 @@ static void to_oneline_json_cache_dyn_location_locations_item(njt_pool_t *pool, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"location_name\":");
         buf->len = cur - buf->data;
-        to_oneline_json_cache_dyn_location_locations_item_location_name(pool, (&out->location_name), buf, flags);
+        to_oneline_json_cache_add_dyn_location_locations_item_location_name(pool, (&out->location_name), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -573,7 +561,7 @@ static void to_oneline_json_cache_dyn_location_locations_item(njt_pool_t *pool, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"location_body\":");
         buf->len = cur - buf->data;
-        to_oneline_json_cache_dyn_location_locations_item_location_body(pool, (&out->location_body), buf, flags);
+        to_oneline_json_cache_add_dyn_location_locations_item_location_body(pool, (&out->location_body), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -584,7 +572,7 @@ static void to_oneline_json_cache_dyn_location_locations_item(njt_pool_t *pool, 
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"proxy_pass\":");
         buf->len = cur - buf->data;
-        to_oneline_json_cache_dyn_location_locations_item_proxy_pass(pool, (&out->proxy_pass), buf, flags);
+        to_oneline_json_cache_add_dyn_location_locations_item_proxy_pass(pool, (&out->proxy_pass), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -599,7 +587,7 @@ static void to_oneline_json_cache_dyn_location_locations_item(njt_pool_t *pool, 
     buf->len ++;
 }
 
-static void to_oneline_json_cache_dyn_location_locations(njt_pool_t *pool, cache_dyn_location_locations_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_cache_add_dyn_location_locations(njt_pool_t *pool, cache_add_dyn_location_locations_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char *cur = buf->data + buf->len;
     njt_uint_t i;
@@ -612,9 +600,9 @@ static void to_oneline_json_cache_dyn_location_locations(njt_pool_t *pool, cache
     buf->len ++;
     for (i = 0; i < out->nelts; ++i) {
         omit = 0;
-        omit = ((flags & OMIT_NULL_OBJ) && ((cache_dyn_location_locations_item_t**)out->elts)[i] == NULL) ? 1 : 0;
+        omit = ((flags & OMIT_NULL_OBJ) && ((cache_add_dyn_location_locations_item_t**)out->elts)[i] == NULL) ? 1 : 0;
         if (omit == 0) {
-            to_oneline_json_cache_dyn_location_locations_item(pool, ((cache_dyn_location_locations_item_t**)out->elts)[i], buf, flags);
+            to_oneline_json_cache_add_dyn_location_locations_item(pool, ((cache_add_dyn_location_locations_item_t**)out->elts)[i], buf, flags);
             cur = buf->data + buf->len;
             cur = njt_sprintf(cur, ",");
             buf->len ++;
@@ -630,7 +618,7 @@ static void to_oneline_json_cache_dyn_location_locations(njt_pool_t *pool, cache
     buf->len ++;
 }
 
-static void to_oneline_json_cache_dyn_location(njt_pool_t *pool, cache_dyn_location_t *out, njt_str_t* buf, njt_int_t flags) {
+static void to_oneline_json_cache_add_dyn_location(njt_pool_t *pool, cache_add_dyn_location_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
     if (out == NULL) {
@@ -645,7 +633,7 @@ static void to_oneline_json_cache_dyn_location(njt_pool_t *pool, cache_dyn_locat
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"type\":");
         buf->len = cur - buf->data;
-        to_oneline_json_cache_dyn_location_type(pool, (&out->type), buf, flags);
+        to_oneline_json_cache_add_dyn_location_type(pool, (&out->type), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -656,7 +644,7 @@ static void to_oneline_json_cache_dyn_location(njt_pool_t *pool, cache_dyn_locat
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"addr_port\":");
         buf->len = cur - buf->data;
-        to_oneline_json_cache_dyn_location_addr_port(pool, (&out->addr_port), buf, flags);
+        to_oneline_json_cache_add_dyn_location_addr_port(pool, (&out->addr_port), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -667,7 +655,7 @@ static void to_oneline_json_cache_dyn_location(njt_pool_t *pool, cache_dyn_locat
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"server_name\":");
         buf->len = cur - buf->data;
-        to_oneline_json_cache_dyn_location_server_name(pool, (&out->server_name), buf, flags);
+        to_oneline_json_cache_add_dyn_location_server_name(pool, (&out->server_name), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -678,7 +666,7 @@ static void to_oneline_json_cache_dyn_location(njt_pool_t *pool, cache_dyn_locat
     if (omit == 0) {
         cur = njt_sprintf(cur, "\"locations\":");
         buf->len = cur - buf->data;
-        to_oneline_json_cache_dyn_location_locations(pool, (out->locations), buf, flags);
+        to_oneline_json_cache_add_dyn_location_locations(pool, (out->locations), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
@@ -692,8 +680,8 @@ static void to_oneline_json_cache_dyn_location(njt_pool_t *pool, cache_dyn_locat
     cur = njt_sprintf(cur, "}");
     buf->len ++;
 }
-cache_dyn_location_t* json_parse_cache_dyn_location(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret) {
-    cache_dyn_location_t* out;
+cache_add_dyn_location_t* json_parse_cache_add_dyn_location(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret) {
+    cache_add_dyn_location_t* out;
     parse_state_t parse_state_var;
     parse_state_t *parse_state = &parse_state_var;
     uint64_t max_token_number = 1024;
@@ -720,20 +708,20 @@ cache_dyn_location_t* json_parse_cache_dyn_location(njt_pool_t *pool, const njt_
         }
         break; // parse success
     }
-    out = njt_pcalloc(pool, sizeof(cache_dyn_location_t));;
-    if (parse_cache_dyn_location(pool, parse_state, out, err_ret)) {
+    out = njt_pcalloc(pool, sizeof(cache_add_dyn_location_t));;
+    if (parse_cache_add_dyn_location(pool, parse_state, out, err_ret)) {
         return NULL;
     }
     return out;
 }
 
-njt_str_t* to_json_cache_dyn_location(njt_pool_t *pool, cache_dyn_location_t* out, njt_int_t flags) {
+njt_str_t* to_json_cache_add_dyn_location(njt_pool_t *pool, cache_add_dyn_location_t* out, njt_int_t flags) {
     njt_str_t *json_str;
     json_str = njt_pcalloc(pool, sizeof(njt_str_t));
     size_t str_len = 0;
-    get_json_length_cache_dyn_location(pool, out, &str_len, flags);
+    get_json_length_cache_add_dyn_location(pool, out, &str_len, flags);
     json_str->data = (u_char*)njt_pcalloc(pool, str_len + 1);
     json_str->len = 0;
-    to_oneline_json_cache_dyn_location(pool, out, json_str, flags);
+    to_oneline_json_cache_add_dyn_location(pool, out, json_str, flags);
     return json_str;
 }

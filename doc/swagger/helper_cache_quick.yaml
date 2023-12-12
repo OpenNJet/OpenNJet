@@ -82,32 +82,17 @@ components:
       description: cache quick 配置
       type: object
       properties:
-        addr_port:
-          type: string
-          description: 格式{ip}:{port}, http server 地址
-        server_name:
-          type: string
-          description: http server 配置的servername,没有设置为空即可
-        server_ssl_type:
-          type: string
-          description: http server 类型, 取值[none|ssl|ntls], 分别表示http server、https server、https 国密server 
-        location_rule:
-          type: string
-          description: location name前得修饰符,没有设置为空即可
         location_name:
           type: string
           description: location name
-        location_body:
+        backend_server:
           type: string
-          description: location body info
-        proxy_pass:
-          type: string
-          description: proxy_pass指令内容
+          description: dst server 
         status:
           type: string
           description: cache加速配置执行状态
         download_ratio:
-          type: int
+          type: integer
           description: 下载进度
 
     CacheConf:
@@ -119,25 +104,10 @@ components:
         type:
           type: string
           description: add or del or download_status
-        addr_port:
-          type: string
-          description: 格式{ip}:{port}, http server 地址
-        server_name:
-          type: string
-          description: http server 配置的servername,没有设置为空即可
-        server_ssl_type:
-          type: string
-          description: http server 类型, 取值[none|ssl|ntls], 分别表示http server、https server、https 国密server 
-        location_rule:
-          type: string
-          description: location name前得修饰符,没有设置为空即可
         location_name:
           type: string
           description: location name
-        location_body:
+        backend_server:
           type: string
-          description: location body info
-        proxy_pass:
-          type: string
-          description: proxy_pass指令内容
+          description: dst server addr
 
