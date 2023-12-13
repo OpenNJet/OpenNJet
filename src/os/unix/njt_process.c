@@ -565,6 +565,16 @@ njt_process_get_status(void)
             }
         }
 
+        if (njt_strncmp("privileged agent process", process, 24) == 0 ) {
+            if (WEXITSTATUS(status) == 2) {
+                njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,
+                          "fatal error in privileged agent process %d, check setuid capability in execute file",
+                           pid);
+            } else {
+                njt_privileged_agent_exited = 1;
+            }
+        }
+
         if (WTERMSIG(status)) {
 #ifdef WCOREDUMP
             njt_log_error(NJT_LOG_ALERT, njt_cycle->log, 0,

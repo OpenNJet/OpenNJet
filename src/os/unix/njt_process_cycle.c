@@ -79,6 +79,7 @@ njt_uint_t    njt_noaccepting;
 njt_uint_t    njt_restart;
 
 njt_uint_t    njt_is_privileged_agent = 0;
+njt_uint_t    njt_privileged_agent_exited = 0;
 njt_uint_t    njt_master_listening_count = 0;
 njt_uint_t    njt_is_privileged_helper = 0;
 
@@ -306,7 +307,6 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             njt_start_worker_processes(cycle, ccf->worker_processes,
                 NJT_PROCESS_JUST_RESPAWN);
             njt_start_cache_manager_processes(cycle, 1);
-            njt_start_privileged_agent_processes(cycle, 1);
 
             /* allow new processes to start */
             njt_msleep(100);
@@ -330,7 +330,6 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             njt_start_worker_processes(cycle, ccf->worker_processes,
                 NJT_PROCESS_RESPAWN);
             njt_start_cache_manager_processes(cycle, 0);
-            njt_start_privileged_agent_processes(cycle, 0);
             live = 1;
 
             //add by clb
@@ -375,6 +374,10 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             } else {
                 njt_log_error(NJT_LOG_INFO, cycle->log, 0, "can't get worker processes count from kv store");
             }
+        }
+
+        if (njt_privileged_agent_exited) {
+            njt_start_privileged_agent_processes(cycle, 0);
         }
     }
 }
@@ -988,10 +991,10 @@ njt_start_privileged_agent_processes(njt_cycle_t *cycle, njt_uint_t respawn)
                       ccf->privileged_agent_connections);
         return;
     }
+    njt_privileged_agent_exited=0;
     njt_spawn_process(cycle, njt_privileged_agent_process_cycle,
                       "privileged agent process", "privileged agent process",
-                      respawn ? NJT_PROCESS_JUST_RESPAWN : NJT_PROCESS_RESPAWN,NULL);
-
+                      NJT_PROCESS_NORESPAWN,NULL);
 
     njt_pass_open_channel(cycle);
 }
@@ -1619,11 +1622,13 @@ njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker)
         }
 #endif
 
-        if (setuid(ccf->user) == -1) {
-            njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
-                "setuid(%d) failed", ccf->user);
-            /* fatal */
-            exit(2);
+        if (!njt_is_privileged_agent) {
+            if (setuid(ccf->user) == -1) {
+                njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
+                    "setuid(%d) failed", ccf->user);
+                /* fatal */
+                exit(2);
+            }
         }
 
 #if (NJT_HAVE_CAPABILITIES)
@@ -1646,6 +1651,15 @@ njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker)
             }
         }
 #endif
+    }
+
+    if (njt_is_privileged_agent) {
+        if (setuid(0) == -1) {
+            njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
+                "setuid(%d) failed", 0);
+            /* fatal */
+            exit(2);
+        }
     }
 
     if (worker >= 0) {
