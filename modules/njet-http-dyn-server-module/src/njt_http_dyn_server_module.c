@@ -419,6 +419,13 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 		rc = njt_http_dyn_server_write_data(server_info);
 		if (rc == NJT_OK) {
 			rc = njt_http_dyn_server_delete_handler(server_info);
+			if (rc == NJT_OK) {
+				if(key->len > worker_str.len && njt_strncmp(key->data,worker_str.data,worker_str.len) == 0) {
+					new_key.data = key->data + worker_str.len;
+					new_key.len  = key->len - worker_str.len;
+					njt_kv_sendmsg(&new_key,value,0);
+				}
+			}
 			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "delete topic_kv_change_handler key=%V,value=%V",key,value);
 		}
 	}
