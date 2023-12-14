@@ -376,6 +376,9 @@ static njt_int_t njt_stream_dyn_map_update_existed_var(njt_pool_t *pool, njt_poo
     if (rc != NJT_OK) {
         goto error;
     }
+    if (ctx.keys.keys.nelts == 0 ) {
+        njt_memzero(&map->map.hash.hash, sizeof(njt_hash_t));
+    }
 
     if (var_hash_item->dynamic && var_hash_item->ori_conf->pool) {
         njt_destroy_pool(var_hash_item->ori_conf->pool);
