@@ -233,7 +233,7 @@ njt_int_t njt_connection_error(njt_connection_t *c, njt_err_t err, char *text);
 
 njt_connection_t *njt_get_connection(njt_socket_t s, njt_log_t *log);
 void njt_free_connection(njt_connection_t *c);
-
+njt_listening_t * njt_get_listening(njt_conf_t *cf, struct sockaddr *sockaddr, socklen_t socklen);
 void njt_reusable_connection(njt_connection_t *c, njt_uint_t reusable);
 
 #endif /* _NJT_CONNECTION_H_INCLUDED_ */

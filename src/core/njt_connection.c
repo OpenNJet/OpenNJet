@@ -30,7 +30,6 @@ njt_create_listening(njt_conf_t *cf, struct sockaddr *sockaddr,
     if (ls == NULL) {
         return NULL;
     }
-
     njt_memzero(ls, sizeof(njt_listening_t));
 
     sa = njt_palloc(cf->pool, socklen);
@@ -1654,4 +1653,17 @@ njt_connection_error(njt_connection_t *c, njt_err_t err, char *text)
     njt_log_error(level, c->log, err, text);
 
     return NJT_ERROR;
+}
+njt_listening_t *
+njt_get_listening(njt_conf_t *cf, struct sockaddr *sockaddr,
+    socklen_t socklen){
+    njt_uint_t         i;
+    njt_listening_t   *ls;
+    ls = cf->cycle->listening.elts;
+    for (i = 0; i < cf->cycle->listening.nelts; i++) {
+	if(ls[i].socklen == socklen && njt_memcmp(sockaddr,ls[i].sockaddr,socklen) == 0){
+	   return &ls[i];
+	}	
+    }
+    return NULL;	
 }
