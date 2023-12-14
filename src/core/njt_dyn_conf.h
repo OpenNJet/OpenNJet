@@ -118,8 +118,6 @@ njt_int_t njt_conf_add_block( njt_pool_t *pool, njt_conf_element_t *parent,
 njt_int_t njt_conf_delete_block(njt_pool_t *pool, njt_conf_element_t *block);
 njt_int_t njt_conf_save_to_file(njt_pool_t *pool, njt_log_t *log,
     njt_conf_element_t *root, njt_str_t *fname);
-njt_int_t njt_conf_dyn_loc_save_to_file(njt_pool_t *pool, njt_log_t *log,
-    njt_conf_element_t *root);
 njt_int_t njt_conf_check_svrname_listen(njt_pool_t *pool, njt_conf_element_t *root);
 
 void njt_conf_init_conf_parse(njt_conf_element_t *root, njt_pool_t* pool);
@@ -127,13 +125,15 @@ void njt_conf_finish_conf_parse();
 
 #if NJT_HTTP_DYNAMIC_LOC
 njt_conf_element_t * njt_conf_dyn_loc_init_server(njt_pool_t *pool, njt_conf_element_t* root);
-njt_conf_location_info_t* get_test_location_info(njt_pool_t *pool, njt_uint_t add); // for test only
-njt_conf_element_t* get_test_element_ptr(njt_pool_t *pool, njt_uint_t add); // for test only
+// njt_conf_location_info_t* get_test_location_info(njt_pool_t *pool, njt_uint_t add); // for test only
+// njt_conf_element_t* get_test_element_ptr(njt_pool_t *pool, njt_uint_t add); // for test only
 njt_int_t 
 njt_conf_dyn_loc_merge_location(njt_pool_t *pool, njt_str_t* addr_port, njt_str_t *svr_name, njt_conf_element_t* dyn_locs);
 njt_int_t njt_conf_dyn_loc_add_loc(njt_pool_t *pool, njt_conf_element_t *root, njt_conf_location_info_t *loc_info);
 njt_int_t njt_conf_dyn_loc_del_loc(njt_pool_t * pool, njt_conf_element_t *root, njt_conf_location_info_t *loc_info);
 njt_str_t* njt_conf_dyn_loc_get_pub_str(njt_pool_t *pool, njt_conf_element_t *root);
 njt_str_t* njt_conf_dyn_loc_get_ins_str(njt_pool_t *pool, njt_conf_element_t *root);
+njt_int_t njt_conf_dyn_loc_save_pub_to_file(njt_pool_t *pool, njt_log_t *log,
+    njt_conf_element_t *root);
 #endif
 #endif // _NJT_DYN_CONF_H_INCLUDED_

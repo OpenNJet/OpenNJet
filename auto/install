@@ -175,8 +175,8 @@ if test -f "$GO_CONF_HELPER_PATH"; then
     cat << END                                                >> $NJT_MAKEFILE
 
 	cp $GO_CONF_HELLPER_PATH '\$(DESTDIR)`dirname "$NJT_SBIN_PATH"`/go-conf-helper'
-	ln -sf '\$(DESTDIR)`dirname "$NJT_SBIN_PATH"`/conf-merge' '\$(DESTDIR)$NJT_CONF_PREFIX/go-conf-helper'
 END
+	# ln -sf '\$(DESTDIR)`dirname "$NJT_SBIN_PATH"`/conf-merge' '\$(DESTDIR)$NJT_CONF_PREFIX/go-conf-helper'
 
 fi
 fi

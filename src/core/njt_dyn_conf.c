@@ -1990,7 +1990,7 @@ njt_conf_element_t * njt_conf_dyn_loc_init_server(njt_pool_t *pool, njt_conf_ele
                     cnt = 0;
                     // cmd = &((njt_conf_cmd_t *)svr->cmds->elts)[k];
                     cmd = &((njt_conf_cmd_t *)svr->cmds->elts)[k];
-                    printf("key: %s \n", cmd->key.data);
+                    // printf("key: %s \n", cmd->key.data);
                     if (cmd->key.len == 6 && njt_strncmp(cmd->key.data, "listen", 6) == 0) {
                         njt_conf_add_cmd_full(pool, new_svr, cmd); // 增加一个函数，add_cmd_full
                         cnt++;
@@ -3224,6 +3224,7 @@ njt_conf_dyn_loc_get_pub_json_str(njt_conf_element_t *root, njt_str_t *out, njt_
         out->len = dst - out->data;
         svr_or_loc = (blocks->key.len == 6 && njt_strncmp(blocks->key.data, "server", 6) == 0)
                      || (blocks->key.len == 8 && njt_strncmp(blocks->key.data, "location", 8) == 0);
+
         if (blocks->value->nelts == 1 && !svr_or_loc) {
             // http : {}
             block = blocks->value->elts;
@@ -3393,7 +3394,7 @@ njt_conf_element_t* get_test_element_ptr(njt_pool_t *pool, njt_uint_t add) {
 }
 
 njt_int_t
-njt_conf_dyn_loc_save_to_file(njt_pool_t *pool, njt_log_t *log, 
+njt_conf_dyn_loc_save_pub_to_file(njt_pool_t *pool, njt_log_t *log, 
     njt_conf_element_t *root)
 {
     size_t      length;
@@ -3401,21 +3402,15 @@ njt_conf_dyn_loc_save_to_file(njt_pool_t *pool, njt_log_t *log,
     njt_uint_t  create;
     njt_file_t  file;
     njt_str_t   out;
+    njt_str_t   file_name = njt_string("dynloc.json");
 
 
 
     njt_memzero(&file, sizeof(njt_file_t));
 
-    file.name.data = njt_palloc(pool, 11);
-    if (file.name.data == NULL) {
-        return NJT_ERROR;
-    }
-    njt_str_set(&file.name, "dynloc.json");
-
+    file.name = file_name;
     file.log = log;
-
     create = NJT_FILE_TRUNCATE; // 每次重新生成新文件
-
     file.fd = njt_open_file(file.name.data, NJT_FILE_RDWR,
                             create, NJT_FILE_DEFAULT_ACCESS);
 
