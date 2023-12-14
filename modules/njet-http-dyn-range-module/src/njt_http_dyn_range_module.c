@@ -54,10 +54,6 @@ static njt_int_t njt_dyn_range_check_param(dyn_range_api_t *api_data,
         return NJT_ERROR;
     }
 
-    if(api_data->try_del_times < 1){
-        api_data->try_del_times = 0;
-    }
-
     //check valid
     if(!api_data->is_src_ports_set || api_data->src_ports.len < 1){
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
@@ -268,20 +264,6 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
 
             njt_queue_insert_tail(&rcf->ranges, &rule_item->range_queue);
 
-            if(api_data->is_try_del_times_set){
-                rcf->try_del_times = api_data->try_del_times;
-            }
-
-            if(api_data->is_iptables_path_set){
-                if(api_data->iptables_path.len > IPTABLES_PATH_LEN){
-                    rcf->iptables_path.len = IPTABLES_PATH_LEN;
-                }else{
-                    rcf->iptables_path.len = api_data->iptables_path.len;
-                }
-
-                njt_memcpy(rcf->iptables_path.path, api_data->iptables_path.data, rcf->iptables_path.len);
-            }
-
             tmp_str.data = rcf->iptables_path.path;
             tmp_str.len = rcf->iptables_path.len;
             if(NJT_OK != njt_range_add_rule(&tmp_str, &rule_item->type, &rule_item->src_ports, rule_item->dst_port)){
@@ -379,14 +361,6 @@ static int  njt_http_dyn_range_full_update_handler(njt_str_t *key, njt_str_t *va
 
         if(range_item->is_dst_port_set){
             set_dyn_range_api_dst_port(&api_data, get_dyn_range_ranges_item_dst_port(range_item));
-        }
-
-        if(range_item->is_try_del_times_set){
-            set_dyn_range_api_try_del_times(&api_data, get_dyn_range_ranges_item_try_del_times(range_item));
-        }
-
-        if(range_item->is_iptables_path_set){
-            set_dyn_range_api_iptables_path(&api_data, get_dyn_range_ranges_item_iptables_path(range_item));
         }
 
         rc = njt_update_range(pool, &api_data, rpc_result);
@@ -509,7 +483,7 @@ static njt_str_t *njt_http_dyn_range_dump_conf(njt_cycle_t *cycle,njt_pool_t *po
     njt_queue_t                         *q;
     njt_range_rule_t                    *rule_item;
     njt_range_conf_t                    *rcf;
-    njt_str_t                           tmp_str;
+
 
     njt_memzero(&dynjson_obj, sizeof(dyn_range_t));
 
@@ -543,14 +517,6 @@ static njt_str_t *njt_http_dyn_range_dump_conf(njt_cycle_t *cycle,njt_pool_t *po
 
         //set dst_port
         set_dyn_range_ranges_item_dst_port(range_item, rule_item->dst_port);
-
-        //set try_del_times
-        set_dyn_range_ranges_item_try_del_times(range_item, rcf->try_del_times);
-
-        //set iptables_path
-        tmp_str.data = rcf->iptables_path.path;
-        tmp_str.len = rcf->iptables_path.len;
-        set_dyn_range_ranges_item_iptables_path(range_item, &tmp_str);
 
         add_item_dyn_range_ranges(dynjson_obj.ranges, range_item);
     }
