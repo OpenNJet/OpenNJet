@@ -61,7 +61,7 @@ static char *njt_stream_ssl_conf_command_check(njt_conf_t *cf, void *post,
     void *data);
 
 static njt_int_t njt_stream_ssl_init(njt_conf_t *cf);
-extern njt_int_t njt_stream_handler(njt_stream_session_t *s);
+extern njt_int_t njt_stream_proto_handler(njt_stream_session_t *s);
 
 
 static njt_conf_bitmask_t  njt_stream_ssl_protocols[] = {
@@ -476,23 +476,23 @@ njt_stream_ssl_handler(njt_stream_session_t *s)
     njt_str_t  strict = njt_string("STRICT");
     njt_str_t  disable = njt_string("DISABLE");
     njt_str_t  both = njt_string("PERMISSIVE");
-    njt_str_t  none = njt_string("none");	
+	
 	njt_stream_proto_ctx_t *ctx;
 	njt_stream_proto_srv_conf_t  *cf;
 
 	c = s->connection;
 
 	cf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
-	if(cf != NULL && (cf->enabled || cf->proto_enabled || (cf->proto_ports != NULL && cf->proto_ports->nelts != 0))) {
+	if(cf != NULL && (cf->proto_enabled || (cf->proto_ports != NULL && cf->proto_ports->nelts != 0))) {
 		ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
 		if(ctx == NULL || ctx->complete == 0) {
-			rc = njt_stream_preread_phase(s,njt_stream_handler);
+			rc = njt_stream_preread_phase(s,njt_stream_proto_handler);
 			if(rc == NJT_AGAIN) {
 				return NJT_AGAIN;
 			} else if( rc == NJT_DECLINED) {
 				c->buffer = NULL;
 				ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
-				if (ctx != NULL && (ctx->port_mode.len == none.len && njt_strncmp(ctx->port_mode.data,none.data,none.len) == 0)) {
+				if (ctx != NULL && (ctx->port_mode.len == 0 && ctx->port_mode.data == NULL)) {
 				   if(!s->ssl) {
                                   	 return NJT_OK;
 				  }
