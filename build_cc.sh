@@ -1,9 +1,16 @@
 #!/bin/bash
-#tgtdir=/Users/`whoami`/njet
-tgtdir=/etc/njet
-tgbindir=/usr/sbin/njet
-tglogdir=/var/log/njet/error.log
-modulesdir=/usr/lib/njet/modules
+
+#NJET_CONF_PATH=/etc/njet/njet.conf
+#NJET_PREFIX=/etc/njet
+#NJET_SBIN_PATH=/usr/sbin/njet
+#NJET_MODULES_PATH=/usr/lib/njet/modules
+
+NJET_CONF_PATH=/usr/local/njet/conf/njet.conf
+NJET_PREFIX=/usr/local/njet
+NJET_SBIN_PATH=/usr/local/njet/sbin/njet
+NJET_MODULES_PATH=/usr/local/njet/modules
+
+
 git_tag=""
 if [ $# -eq 2 ];
 then
@@ -54,7 +61,6 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-app-sticky-modul
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-cluster-limit-conn-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-cluster-limit-req-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-cache-purge-module"
-# NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-fault-inject-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-fault-inject-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-fault-inject-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-jwt-module"
@@ -64,9 +70,8 @@ NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-range-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-range-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-range-api-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-stream-ftp-proxy-module"
-PATH_INFO=" --conf-path=/etc/njet/njet.conf   --prefix=$tgtdir --sbin-path=$tgbindir --modules-path=$modulesdir "
+PATH_INFO=" --conf-path=$NJET_CONF_PATH   --prefix=$NJET_PREFIX --sbin-path=$NJET_SBIN_PATH --modules-path=$NJET_MODULES_PATH "
 LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo "
-# LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo"
 flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --with-debug --build=$git_tag --with-stream --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module  --with-http_sub_module --with-http_v2_module --with-http_v3_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module  --with-cc=/usr/bin/cc"
 LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm "
 CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
@@ -117,22 +122,16 @@ cdir=`cd $(dirname $0); pwd`
                 make
                 ;;
             install)
-                if [ ! -d /etc/njet/luajit ]; then
-                    cd luajit;make install;cd -;
-                    cp -a /etc/njet/luajit/lib/libluajit-5.1.* /usr/local/lib/
-		fi
-                if [ ! -d /etc/njet/lualib ]; then
-		    cp -fr lualib /etc/njet/lualib
-                fi
-                cd auto/lib/keepalived; make install; cd -;
-                cd auto/lib/luapkg; make install; cd -;
                 make install
-		mkdir /etc/njet/data
-		chmod 777 -R /etc/njet/data  /etc/njet/logs
+                cd luajit;make install;cd -;
+		mkdir -p $NJET_PREFIX/lualib
+		cp -a lualib/lib $NJET_PREFIX/lualib/
+                cd auto/lib/keepalived; make install; cd -;
+                cd auto/lib/luapkg; PREFIX=/usr/local CDIR_linux=njet/lualib/clib LDIR_linux=njet/lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -;
                 ;;
             clean)
                 rm -rf auto/lib/njetmq/build
-                rm auto/lib/keepalived/Makefile
+                rm -f auto/lib/keepalived/Makefile
 		cd auto/lib/luapkg; make clean; cd -;
                 make clean
                 ;;
