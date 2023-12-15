@@ -264,13 +264,9 @@ invalid:
 static njt_int_t njt_range_create_chain(njt_str_t *iptables){
     u_char          buf[1024];
     FILE            *fp= NULL;
-    // u_char          *end;
-    // njt_str_t       tmp_str;
 
     njt_memzero(buf, 1024);
     njt_snprintf(buf, 1024, NJT_RANG_CREATE_CHAIN, iptables);
-    // tmp_str.data = buf;
-    // tmp_str.len = end - buf;
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
@@ -290,13 +286,9 @@ static njt_int_t njt_range_create_chain(njt_str_t *iptables){
 static njt_int_t njt_range_remove_chain(njt_str_t *iptables){
     u_char          buf[1024];
     FILE            *fp= NULL;
-    // u_char          *end;
-    // njt_str_t       tmp_str;
 
     njt_memzero(buf, 1024);
     njt_snprintf(buf, 1024, NJT_RANG_REMOVE_CHAIN, iptables);
-    // tmp_str.data = buf;
-    // tmp_str.len = end - buf;
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
@@ -316,13 +308,9 @@ static njt_int_t njt_range_remove_chain(njt_str_t *iptables){
 static njt_int_t njt_range_clear_chain(njt_str_t *iptables){
     u_char          buf[1024];
     FILE            *fp= NULL;
-    // u_char          *end;
-    // njt_str_t       tmp_str;
 
     njt_memzero(buf, 1024);
     njt_snprintf(buf, 1024, NJT_RANG_CLEAR_CHAIN, iptables);
-    // tmp_str.data = buf;
-    // tmp_str.len = end - buf;
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
@@ -342,13 +330,9 @@ static njt_int_t njt_range_clear_chain(njt_str_t *iptables){
 static njt_int_t njt_range_del_one_nat_chain(njt_str_t *iptables, njt_str_t *str_num){
     u_char          buf[1024];
     FILE            *fp= NULL;
-    // u_char          *end;
-    // njt_str_t       tmp_str;
 
     njt_memzero(buf, 1024);
     njt_snprintf(buf, 1024, NJT_RANG_DEL_MAP_NAT_CHAIN, iptables, str_num);
-    // tmp_str.data = buf;
-    // tmp_str.len = end - buf;
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
@@ -371,7 +355,6 @@ static njt_int_t njt_range_del_map_nat_chain(njt_str_t *iptables){
     u_char          buf[1024];
     u_char          get_buf[10240];
     FILE            *fp= NULL;
-    // u_char          *end;
     njt_str_t       tmp_str;
     int             nread;
     u_char          *tmp_point, *data_point, *last_point, *first_point;
@@ -379,8 +362,6 @@ static njt_int_t njt_range_del_map_nat_chain(njt_str_t *iptables){
 
     njt_memzero(buf, 1024);
     njt_snprintf(buf, 1024, NJT_RANG_GET_NAT_CHAIN, iptables);
-    // tmp_str.data = buf;
-    // tmp_str.len = end - buf;
 
     fp = popen((char *)buf, "r");
     if(fp == NULL){
@@ -391,10 +372,6 @@ static njt_int_t njt_range_del_map_nat_chain(njt_str_t *iptables){
     }
 
     nread = fread(get_buf,1,10240,fp);
-
-    // tmp_str.data = get_buf;
-    // tmp_str.len = nread;
-
     if(nread > 1){
         data_point = &get_buf[0];
         tmp_point = data_point + nread - 1;
@@ -447,16 +424,9 @@ static njt_int_t njt_range_del_map_nat_chain(njt_str_t *iptables){
 static njt_int_t njt_range_map_nat_chain(njt_str_t *iptables){
     u_char          buf[1024];
     FILE            *fp= NULL;
-    // u_char          *end;
-    // njt_str_t       tmp_str;
 
     njt_memzero(buf, 1024);
     njt_snprintf(buf, 1024, NJT_RANG_MAP_NAT_CHAIN, iptables);
-    // tmp_str.data = buf;
-    // tmp_str.len = end - buf;
-
-    // njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-    //         "range map nat chain:%V", &tmp_str);
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
@@ -558,13 +528,9 @@ static void njt_range_exit_process(njt_cycle_t *cycle){
 njt_int_t njt_range_add_rule(njt_str_t *iptables_path, njt_str_t *type, njt_str_t *src_ports, njt_uint_t dst_port){
     u_char          buf[1024];
     FILE            *fp= NULL;
-    // u_char          *end;
-    // njt_str_t       tmp_str;
 
     njt_memzero(buf, 1024);
     njt_snprintf(buf, 1024, NJT_RANG_ADD_RULE, iptables_path, src_ports, dst_port);
-    // tmp_str.data = buf;
-    // tmp_str.len = end - buf;
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
@@ -585,13 +551,9 @@ njt_int_t njt_range_add_rule(njt_str_t *iptables_path, njt_str_t *type, njt_str_
 njt_int_t njt_range_del_rule(njt_str_t *iptables_path, njt_str_t *type, njt_str_t *src_ports, njt_uint_t dst_port){
     u_char          buf[1024];
     FILE            *fp= NULL;
-    // u_char          *end;
-    // njt_str_t       tmp_str;
 
     njt_memzero(buf, 1024);
     njt_snprintf(buf, 1024, NJT_RANG_DEL_RULE, iptables_path, src_ports, dst_port);
-    // tmp_str.data = buf;
-    // tmp_str.len = end - buf;
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
