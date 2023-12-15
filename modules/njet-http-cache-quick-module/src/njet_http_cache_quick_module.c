@@ -763,7 +763,7 @@ static njt_int_t njt_http_cache_item_del_dyn_location(njt_http_cache_resouce_met
 	njt_crc32_final(crc32);
 
     topic_name.data = buf;
-    p = njt_snprintf(buf, 100, "/ins/loc/l_%ui", crc32);
+    p = njt_snprintf(buf, 100, "/worker_a/ins/loc/l_%ui", crc32);
     topic_name.len = p - buf;
 
     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
