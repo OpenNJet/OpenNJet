@@ -271,7 +271,9 @@ typedef struct {
 	njt_str_t       dest_port;
 	njt_str_t       proto;
 	njt_str_t       port_mode;
-	njt_flag_t      complete;
+    unsigned        complete:1;
+    unsigned        complete_get_port:1;
+    unsigned        complete_nginmesh:1;
 
 } njt_stream_proto_ctx_t;
 typedef struct {

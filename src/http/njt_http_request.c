@@ -263,7 +263,6 @@ njt_http_init_connection(njt_connection_t *c)
             sin = (struct sockaddr_in *) c->local_sockaddr;
 
             addr = port->addrs;
-
             /* the last address is "*" */
 
             for (i = 0; i < port->naddrs - 1; i++) {
@@ -273,6 +272,7 @@ njt_http_init_connection(njt_connection_t *c)
             }
 
             hc->addr_conf = &addr[i].conf;
+	     njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,"njt_http_init_connection listening=%p, port=%p, addr=%p,servers=%p,addr_conf=%p",c->listening,port,addr,c->listening->servers,hc->addr_conf);	
 
             break;
         }
@@ -2273,6 +2273,7 @@ njt_http_validate_host(njt_str_t *host, njt_pool_t *pool, njt_uint_t alloc)
 }
 
 
+
 njt_int_t
 njt_http_set_virtual_server(njt_http_request_t *r, njt_str_t *host)
 {
@@ -2308,7 +2309,7 @@ njt_http_set_virtual_server(njt_http_request_t *r, njt_str_t *host)
     }
 
 #endif
-
+   njt_log_error(NJT_LOG_INFO, r->connection->log, 0,"hc->addr_conf->virtual_names=%p,addr_conf=%p",hc->addr_conf->virtual_names,hc->addr_conf);
     rc = njt_http_find_virtual_server(r->connection,
                                       hc->addr_conf->virtual_names,
                                       host, r, &cscf);
@@ -2351,6 +2352,22 @@ njt_http_set_virtual_server(njt_http_request_t *r, njt_str_t *host)
     clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
 
     njt_set_connection_log(r->connection, clcf->error_log);
+
+#if (NJT_HTTP_DYNAMIC_SERVER)
+     njt_pool_cleanup_t   *cln;
+     u_char *pt;
+    cln = njt_pool_cleanup_add(r->main->pool,sizeof(njt_http_core_srv_conf_t *) + sizeof(njt_http_request_t *));
+     if (cln == NULL) {
+             njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
+             return NJT_OK;
+    }
+    cln->handler = njt_http_core_free_srv_ctx;
+    pt = cln->data;
+    njt_memcpy(pt,&cscf,sizeof(njt_http_core_srv_conf_t *));
+    njt_memcpy(pt+sizeof(njt_http_core_srv_conf_t *),&r->main,sizeof(njt_http_request_t *));
+    cscf->ref_count ++;
+
+#endif 
 
     return NJT_OK;
 }
@@ -3757,6 +3774,7 @@ njt_http_free_request(njt_http_request_t *r, njt_int_t rc)
     njt_http_cleanup_t        *cln;
     njt_http_log_ctx_t        *ctx;
     njt_http_core_loc_conf_t  *clcf;
+    //njt_http_core_srv_conf_t  *cscf;
 
     log = r->connection->log;
 
@@ -3835,19 +3853,14 @@ njt_http_free_request(njt_http_request_t *r, njt_int_t rc)
      * Setting r->pool to NULL will increase probability to catch double close
      * of request since the request object is allocated from its own pool.
      */
-
-    pool = r->pool;
-    r->pool = NULL;
-
-    njt_destroy_pool(pool);
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
-     /* --clcf->ref_count; 
-    if(clcf->disable && clcf->ref_count == 0 && clcf->pool != NULL ){
-        njt_http_location_delete_dyn_var(clcf);
-        njt_destroy_pool(clcf->pool);
-    }*/
+    clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
 #endif
+    //end
+    pool = r->pool;
+    r->pool = NULL;
+    njt_destroy_pool(pool);
     //end
 }
 

@@ -150,3 +150,21 @@ njt_array_push_n(njt_array_t *a, njt_uint_t n)
 
     return elt;
 }
+
+void njt_array_delete_idx(njt_array_t *a, njt_uint_t idx){
+
+	u_char *last;
+	u_char *p;
+
+	if(a->nelts <= idx){
+		return;
+	}
+	if(a->nelts - 1 != idx) { //last one
+		p = (u_char *)a->elts + (idx * a->size);
+		last = (u_char *)a->elts + ((a->nelts -1) * a->size);
+		njt_memcpy(p,last,a->size);
+	}
+	a->nelts--;
+
+
+}
