@@ -92,7 +92,7 @@ static u_char *njt_http_dyn_map_get_handler(njt_str_t *topic, njt_str_t *request
 
     pool = njt_create_pool(njt_pagesize, njt_cycle->log);
     if (pool == NULL) {
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_dyn_map_rpc_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_map_rpc_handler create pool error");
         goto out;
     }
 
@@ -535,10 +535,6 @@ static u_char *njt_http_dyn_map_put_handler(njt_str_t *topic, njt_str_t *request
 
 static njt_int_t njt_http_dyn_map_module_init_process(njt_cycle_t *cycle)
 {
-    if (njt_process != NJT_PROCESS_WORKER) {
-        return NJT_OK;
-    }
-
     njt_str_t rpc_key = njt_string("http_dyn_map");
     njt_kv_reg_handler_t h;
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));

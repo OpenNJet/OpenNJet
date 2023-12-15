@@ -21,6 +21,8 @@ static void njt_start_worker_processes(njt_cycle_t *cycle, njt_int_t n,
     njt_int_t type);
 static void njt_start_cache_manager_processes(njt_cycle_t *cycle,
     njt_uint_t respawn);
+static void njt_start_privileged_agent_processes(njt_cycle_t *cycle,
+    njt_uint_t respawn);
 static njt_uint_t njt_start_helper_processes(njt_cycle_t *cycle,
     njt_uint_t respawn);
 static njt_uint_t njt_restart_helper_processes(njt_cycle_t *cycle,
@@ -38,6 +40,7 @@ static void njt_worker_process_exit(njt_cycle_t *cycle);
 void njt_helper_process_exit(njt_cycle_t *cycle);
 static void njt_channel_handler(njt_event_t *ev);
 static void njt_cache_manager_process_cycle(njt_cycle_t *cycle, void *data);
+static void njt_privileged_agent_process_cycle(njt_cycle_t *cycle, void *data);
 static void njt_cache_manager_process_handler(njt_event_t *ev);
 static void njt_cache_loader_process_handler(njt_event_t *ev);
 //for dynamic worker process changes
@@ -75,6 +78,9 @@ sig_atomic_t  njt_noaccept;
 njt_uint_t    njt_noaccepting;
 njt_uint_t    njt_restart;
 
+njt_uint_t    njt_is_privileged_agent = 0;
+njt_uint_t    njt_privileged_agent_exited = 0;
+njt_uint_t    njt_master_listening_count = 0;
 njt_uint_t    njt_is_privileged_helper = 0;
 
 
@@ -162,6 +168,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
         NJT_PROCESS_RESPAWN);
     njt_start_cache_manager_processes(cycle, 0);
     njt_start_helper_processes(cycle, 0);
+    njt_start_privileged_agent_processes(cycle, 0);
 
     if (master_evt_ctx) {
         njt_check_and_update_worker_count(cycle, ccf);
@@ -269,6 +276,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
                 njt_start_worker_processes(cycle, ccf->worker_processes,
                     NJT_PROCESS_RESPAWN);
                 njt_start_cache_manager_processes(cycle, 0);
+                njt_start_privileged_agent_processes(cycle, 0);
                 njt_noaccepting = 0;
 
                 //add by clb
@@ -366,6 +374,10 @@ njt_master_process_cycle(njt_cycle_t *cycle)
             } else {
                 njt_log_error(NJT_LOG_INFO, cycle->log, 0, "can't get worker processes count from kv store");
             }
+        }
+
+        if (njt_privileged_agent_exited) {
+            njt_start_privileged_agent_processes(cycle, 0);
         }
     }
 }
@@ -960,6 +972,32 @@ njt_restart_helper_processes(njt_cycle_t *cycle, njt_uint_t respawn)
     return nelts;
 }
 
+
+static void
+njt_start_privileged_agent_processes(njt_cycle_t *cycle, njt_uint_t respawn)
+{
+    njt_core_conf_t       *ccf;
+
+    ccf = (njt_core_conf_t *) njt_get_conf(cycle->conf_ctx,
+                                           njt_core_module);
+
+    if (!ccf->privileged_agent) {
+        return;
+    }
+    if (ccf->privileged_agent_connections == 0) {
+        njt_log_error(NJT_LOG_ALERT, cycle->log, 0,
+                      "%ui worker_connection is not enough, "
+                      "privileged agent process cannot be spawned",
+                      ccf->privileged_agent_connections);
+        return;
+    }
+    njt_privileged_agent_exited=0;
+    njt_spawn_process(cycle, njt_privileged_agent_process_cycle,
+                      "privileged agent process", "privileged agent process",
+                      NJT_PROCESS_NORESPAWN,NULL);
+
+    njt_pass_open_channel(cycle);
+}
 
 static void
 njt_pass_open_channel(njt_cycle_t *cycle)
@@ -1584,11 +1622,13 @@ njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker)
         }
 #endif
 
-        if (setuid(ccf->user) == -1) {
-            njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
-                "setuid(%d) failed", ccf->user);
-            /* fatal */
-            exit(2);
+        if (!njt_is_privileged_agent) {
+            if (setuid(ccf->user) == -1) {
+                njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
+                    "setuid(%d) failed", ccf->user);
+                /* fatal */
+                exit(2);
+            }
         }
 
 #if (NJT_HAVE_CAPABILITIES)
@@ -1611,6 +1651,15 @@ njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker)
             }
         }
 #endif
+    }
+
+    if (njt_is_privileged_agent) {
+        if (setuid(0) == -1) {
+            njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
+                "setuid(%d) failed", 0);
+            /* fatal */
+            exit(2);
+        }
     }
 
     if (worker >= 0) {
@@ -1667,6 +1716,12 @@ njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker)
                 exit(2);
             }
         }
+    }
+
+    //for privileged agent, all listening sockets were closed
+    //restore lisening.nelts for dynamic configuration
+    if (njt_is_privileged_agent) {
+        cycle->listening.nelts = njt_master_listening_count;
     }
 
     for (n = 0; n < njt_last_process; n++) {
@@ -1909,7 +1964,10 @@ njt_worker_process_exit(njt_cycle_t *cycle)
 {
     njt_uint_t         i;
     njt_connection_t *c;
-
+#if (NJT_DEBUG)
+    njt_event_t              *read_events;
+    njt_event_t              *write_events;
+#endif
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->exit_process) {
             cycle->modules[i]->exit_process(cycle);
@@ -1960,19 +2018,25 @@ njt_worker_process_exit(njt_cycle_t *cycle)
     njt_exit_cycle.files = njt_cycle->files;
     njt_exit_cycle.files_n = njt_cycle->files_n;
     njt_cycle = &njt_exit_cycle;
-#if (NJT_DEBUG)
-
-
-    if(cycle->connections)
-        njt_free(cycle->connections);
-    if(cycle->read_events)
-        njt_free(cycle->read_events);
-    if(cycle->write_events)
-        njt_free(cycle->write_events);
-#endif
-    njt_destroy_pool(cycle->pool);
 
     njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "exit");
+#if (NJT_DEBUG)
+    read_events = cycle->read_events;
+    write_events = cycle->write_events;
+    c = cycle->connections;
+#endif
+
+    njt_destroy_pool(cycle->pool);
+
+#if (NJT_DEBUG)
+    if(c != NULL)
+        njt_free(c);
+    if(read_events != NULL)
+        njt_free(read_events);
+    if(write_events != NULL)
+        njt_free(write_events);
+#endif
+
 
     exit(0);
 }
@@ -1984,6 +2048,8 @@ njt_helper_process_exit(njt_cycle_t *cycle)
     njt_uint_t         i;
 #if (NJT_DEBUG)
     njt_connection_t    *c;
+    njt_event_t              *read_events;
+    njt_event_t              *write_events;
 #endif
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->exit_process) {
@@ -2011,7 +2077,11 @@ njt_helper_process_exit(njt_cycle_t *cycle)
     njt_exit_cycle.files = njt_cycle->files;
     njt_exit_cycle.files_n = njt_cycle->files_n;
     njt_cycle = &njt_exit_cycle;
+
+    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "exit");
 #if (NJT_DEBUG)
+    	read_events = cycle->read_events;
+	write_events = cycle->write_events;
         c = cycle->connections;
         for (i = 0; i < cycle->connection_n; i++) {
 		if (c[i].fd != -1
@@ -2022,18 +2092,19 @@ njt_helper_process_exit(njt_cycle_t *cycle)
                         njt_destroy_pool(c[i].pool);
                 }
         }
-
-
-    if(cycle->connections)
-        njt_free(cycle->connections);
-    if(cycle->read_events)
-        njt_free(cycle->read_events);
-    if(cycle->write_events)
-        njt_free(cycle->write_events);
 #endif
+
     njt_destroy_pool(cycle->pool);
 
-    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "exit");
+#if (NJT_DEBUG)
+    if(c != NULL)
+        njt_free(c);
+    if(read_events != NULL)
+        njt_free(read_events);
+    if(write_events != NULL)
+        njt_free(write_events);
+#endif
+
 
     exit(0);
 }
@@ -2176,6 +2247,49 @@ njt_cache_manager_process_cycle(njt_cycle_t *cycle, void *data)
         njt_process_events_and_timers(cycle);
     }
 }
+
+
+static void
+njt_privileged_agent_process_cycle(njt_cycle_t *cycle, void *data)
+{
+    char   *name = data;
+
+    /*
+     * Set correct process type since closing listening Unix domain socket
+     * in a master process also removes the Unix domain socket file.
+     */
+    njt_core_conf_t *ccf = (njt_core_conf_t *) njt_get_conf(cycle->conf_ctx, njt_core_module);
+    njt_process = NJT_PROCESS_HELPER;
+    njt_is_privileged_agent = 1;
+    njt_master_listening_count = cycle->listening.nelts;
+
+    njt_close_listening_sockets(cycle);
+
+    /* Set a moderate number of connections for a helper process. */
+    cycle->connection_n = ccf->privileged_agent_connections;
+    njt_worker_process_init(cycle, -1);
+
+    njt_use_accept_mutex = 0;
+
+    njt_setproctitle(name);
+
+    for ( ;; ) {
+
+        if (njt_terminate || njt_quit) {
+            njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exiting");
+            njt_worker_process_exit(cycle);
+        }
+
+        if (njt_reopen) {
+            njt_reopen = 0;
+            njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "reopening logs");
+            njt_reopen_files(cycle, -1);
+        }
+
+        njt_process_events_and_timers(cycle);
+    }
+}
+
 
 
 static void

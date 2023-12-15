@@ -1,0 +1,16 @@
+njt_addon_name=njt_http_dyn_server_api_module
+njt_module_type=HTTP
+njt_module_name=$njt_addon_name
+njt_module_deps=" \
+"
+njt_module_srcs=" \
+  $njt_addon_dir/src/njet_http_dyn_server_api_module.c \
+"
+njt_module_incs=""
+njt_module_libs=""
+
+ have=NJT_HTTP_DYNAMIC_LOC . auto/have
+
+. auto/module
+
+

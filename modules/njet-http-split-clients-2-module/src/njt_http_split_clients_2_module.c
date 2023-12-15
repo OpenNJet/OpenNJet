@@ -343,9 +343,6 @@ static njt_int_t njt_http_split_client_2_init_worker(njt_cycle_t *cycle)
     njt_http_conf_ctx_t *conf_ctx;
     njt_http_split_clients_2_conf_t *sc2cf;
 
-    if (njt_process != NJT_PROCESS_WORKER) {
-        return NJT_OK;
-    }
     // return  when there is no http configuraton
     if (njt_http_split_clients_2_module.ctx_index == NJT_CONF_UNSET_UINT) {
         return NJT_OK;

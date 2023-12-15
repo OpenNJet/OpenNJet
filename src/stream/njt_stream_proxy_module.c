@@ -701,8 +701,8 @@ njt_stream_proxy_connect(njt_stream_session_t *s)
     njt_connection_t             *c, *pc;
     njt_stream_upstream_t        *u;
     njt_stream_proxy_srv_conf_t  *pscf;
-    njt_flag_t                     flag;
 #if (NJT_STREAM_PROTOCOL_V2)
+    njt_flag_t                     flag;
     njt_stream_variable_value_t  *value;
     njt_stream_proxy_protocol_tlv_srv_conf_t *scf = njt_stream_get_module_srv_conf(s,njt_stream_proxy_protocol_tlv_module);
     flag = NJT_CONF_UNSET;
