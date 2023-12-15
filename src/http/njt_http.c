@@ -60,8 +60,7 @@ static void njt_http_create_locations_list(njt_queue_t *locations,
 static njt_http_location_tree_node_t *
 njt_http_create_locations_tree(njt_conf_t *cf, njt_queue_t *locations,
                                size_t prefix);
-
-static njt_int_t njt_http_optimize_servers(njt_conf_t *cf,
+ njt_int_t njt_http_optimize_servers(njt_conf_t *cf,
                                            njt_http_core_main_conf_t *cmcf, njt_array_t *ports);
 
 static njt_int_t njt_http_server_names(njt_conf_t *cf,
@@ -608,6 +607,11 @@ njt_http_merge_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
 
     for (s = 0; s < cmcf->servers.nelts; s++) {
 
+#if (NJT_HTTP_DYNAMIC_SERVER)
+	if (cf->dynamic == 1 &&  cscfp[s]->dynamic_status != 1 ) {
+		continue;
+	}
+#endif
         /* merge the server{}s' srv_conf's */
 
         ctx->srv_conf = cscfp[s]->ctx->srv_conf;
@@ -825,7 +829,7 @@ njt_http_init_locations_common(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"njt_http_init_locations_common create  named_parent_pool null!");	
 		return NJT_ERROR;
 	    }
-	    rc = njt_sub_pool(cf->cycle->pool,cscf->named_parent_pool);
+	    rc = njt_sub_pool(cscf->pool,cscf->named_parent_pool);
     	    if (rc != NJT_OK) {
         	return NJT_ERROR;
    	    }
@@ -1395,7 +1399,11 @@ njt_http_add_listen(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     }
 
     /* add a port to the port list */
-
+    if(cf->dynamic == 1) {  //zyg 动态的必须有监听。
+          njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "no find listen port for %d",p);
+         return NJT_ERROR;
+    }
     port = njt_array_push(cmcf->ports);
     if (port == NULL) {
         return NJT_ERROR;
@@ -1507,6 +1515,12 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 
         return NJT_OK;
     }
+    if(cf->dynamic == 1) {
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "no find listen for %V",
+                                   &lsopt->addr_text);
+        return NJT_ERROR;
+    }
 
     /* add the address to the addresses list that bound to this port */
 
@@ -1601,9 +1615,10 @@ njt_http_add_server(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 
     return NJT_OK;
 }
+   extern  void
+njt_show_listening_sockets(njt_cycle_t *cycle);   //zyg todo
 
-
-static njt_int_t
+njt_int_t
 njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
                           njt_array_t *ports) {
     njt_uint_t p, a;
@@ -1613,7 +1628,6 @@ njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
     if (ports == NULL) {
         return NJT_OK;
     }
-
     port = ports->elts;
     for (p = 0; p < ports->nelts; p++) {
 
@@ -1624,10 +1638,10 @@ njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
          * check whether all name-based servers have the same
          * configuration as a default server for given address:port
          */
-
+	
         addr = port[p].addrs.elts;
         for (a = 0; a < port[p].addrs.nelts; a++) {
-
+	   //njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0,"index=%d,ports=%p,port=%p,addr=%p,servers.nelts=%d",p,ports,&port[p],addr,addr[a].servers.nelts);
             if (addr[a].servers.nelts > 1
                 #if (NJT_PCRE)
                 || addr[a].default_server->captures
@@ -1638,7 +1652,6 @@ njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
                 }
             }
         }
-
         if (njt_http_init_listening(cf, &port[p]) != NJT_OK) {
             return NJT_ERROR;
         }
@@ -1690,7 +1703,7 @@ njt_http_server_names(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
                 continue;
             }
 #endif
-
+	
             rc = njt_hash_add_key(&ha, &name[n].name, name[n].server,
                                   NJT_HASH_WILDCARD_KEY);
 
@@ -1722,7 +1735,6 @@ njt_http_server_names(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
     if (ha.keys.nelts) {
         hash.hash = &addr->hash;
         hash.temp_pool = NULL;
-
         if (njt_hash_init(&hash, ha.keys.elts, ha.keys.nelts) != NJT_OK) {
             goto failed;
         }
@@ -1878,18 +1890,29 @@ njt_http_init_listening(njt_conf_t *cf, njt_http_conf_port_t *port) {
             i++;
             continue;
         }
-
-        ls = njt_http_add_listening(cf, &addr[i]);
-        if (ls == NULL) {
+#if (NJT_HTTP_DYNAMIC_SERVER)
+	if (cf->dynamic == 1) {// 0.0.0.0   //127.0.0.1
+	   ls = njt_get_listening(cf,addr[i].opt.sockaddr,addr[i].opt.socklen);
+       if(ls == NULL) {
             return NJT_ERROR;
-        }
+       }
+	   hport = ls->servers;
+	} else {
+#endif
+		ls = njt_http_add_listening(cf, &addr[i]);
+		if (ls == NULL) {
+		    return NJT_ERROR;
+		}
+		//addr[i].if_bind = 1;
 
-        hport = njt_pcalloc(cf->pool, sizeof(njt_http_port_t));
-        if (hport == NULL) {
-            return NJT_ERROR;
-        }
-
-        ls->servers = hport;
+		hport = njt_pcalloc(cf->pool, sizeof(njt_http_port_t));
+		if (hport == NULL) {
+		    return NJT_ERROR;
+		}
+		ls->servers = hport;
+#if (NJT_HTTP_DYNAMIC_SERVER)
+	}
+#endif
         ls->server_type = NJT_HTTP_SERVER_TYPE;
 
         hport->naddrs = i + 1;
@@ -1909,7 +1932,6 @@ njt_http_init_listening(njt_conf_t *cf, njt_http_conf_port_t *port) {
                 }
                 break;
         }
-
         addr++;
         last--;
     }
@@ -1928,7 +1950,6 @@ njt_http_add_listening(njt_conf_t *cf, njt_http_conf_addr_t *addr) {
     if (ls == NULL) {
         return NULL;
     }
-
     ls->addr_ntop = 1;
 
     ls->handler = njt_http_init_connection;
@@ -2050,7 +2071,7 @@ njt_http_add_addrs(njt_conf_t *cf, njt_http_port_t *hport,
         if (vn == NULL) {
             return NJT_ERROR;
         }
-
+	
         addrs[i].conf.virtual_names = vn;
 
         vn->names.hash = addr[i].hash;

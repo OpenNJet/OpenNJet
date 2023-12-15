@@ -672,6 +672,9 @@ njt_http_ssl_create_srv_conf(njt_conf_t *cf)
     sscf->ntls = NJT_CONF_UNSET;
 #endif
 
+#if NJT_HTTP_DYNAMIC_SERVER
+   sscf->pool = cf->pool;
+#endif
     return sscf;
 }
 
@@ -808,8 +811,11 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     if (njt_ssl_create(&conf->ssl, conf->protocols, conf) != NJT_OK) {
         return NJT_CONF_ERROR;
     }
-
+#if NJT_HTTP_DYNAMIC_SERVER
+    cln = njt_pool_cleanup_add(conf->pool, 0);
+#else
     cln = njt_pool_cleanup_add(cf->pool, 0);
+#endif
     if (cln == NULL) {
         njt_ssl_cleanup_ctx(&conf->ssl);
         return NJT_CONF_ERROR;
@@ -817,7 +823,6 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 
     cln->handler = njt_ssl_cleanup_ctx;
     cln->data = &conf->ssl;
-
 #ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
 
     if (SSL_CTX_set_tlsext_servername_callback(conf->ssl.ctx,

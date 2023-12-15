@@ -1010,6 +1010,52 @@ static void njt_http_core_free_ctx(void* data){
 #endif
 //end
 
+// by zyg
+#if (NJT_HTTP_DYNAMIC_SERVER)
+static void njt_http_core_free_srv(void* data){
+    njt_http_core_loc_conf_t *clcf;
+    njt_http_core_srv_conf_t  *cscf = data;
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_free_srv server %V,ref_count=%d,disable=%d!",&cscf->server_name,cscf->ref_count,cscf->disable);
+     if(cscf != NULL && cscf->disable == 1 && cscf->ref_count == 0) {
+        clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
+        njt_http_location_delete_dyn_var(clcf);
+        njt_http_location_destroy(clcf);
+        njt_http_server_delete_dyn_var(cscf);  
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_free_srv server %V,ref_count=%d!",&cscf->server_name,cscf->ref_count);
+       njt_destroy_pool(cscf->pool);
+    }
+
+    
+}
+
+void njt_http_core_free_srv_ctx(void* data) {
+   
+    njt_http_core_srv_conf_t  *cscf;
+    njt_http_request_t *r;
+    njt_pool_cleanup_t   *cln;
+    u_char *p = data;
+    njt_memcpy(&cscf,p,sizeof(njt_http_core_srv_conf_t  *));
+    njt_memcpy(&r,p + sizeof(njt_http_core_srv_conf_t  *),sizeof(njt_http_request_t  *));
+
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_free_srv_ctx server %V,ref_count=%d,disable=%d!",&cscf->server_name,cscf->ref_count,cscf->disable);
+
+    --cscf->ref_count;
+
+    if(cscf->disable == 1 && cscf->ref_count == 0) {
+        
+        cln = njt_pool_cleanup_add_tail(r->connection->pool,0);
+        if (cln != NULL) {
+             cln->data = cscf;
+             cln->handler = njt_http_core_free_srv;
+        }
+    } 
+}
+
+#endif
+//end
+
+
+
 njt_int_t
 njt_http_core_find_config_phase(njt_http_request_t *r,
     njt_http_phase_handler_t *ph)
@@ -3315,6 +3361,28 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     njt_http_listen_opt_t        lsopt;
     njt_http_core_srv_conf_t    *cscf, **cscfp;
     njt_http_core_main_conf_t   *cmcf;
+	njt_int_t rc;
+
+#if (NJT_HTTP_DYNAMIC_SERVER)
+    njt_pool_t *old_server_pool,*new_server_pool,*old_server_temp_pool;
+    
+
+    old_server_pool = cf->pool;
+    old_server_temp_pool = cf->temp_pool;
+    new_server_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (new_server_pool == NULL) {
+        return NJT_CONF_ERROR;
+    }
+    rc = njt_sub_pool(cf->cycle->pool,new_server_pool);
+    if (rc != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
+    cf->pool = new_server_pool;
+    cf->temp_pool = new_server_pool;
+
+     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
+                          "create server=%p",cf->pool);
+#endif
 
     ctx = njt_pcalloc(cf->pool, sizeof(njt_http_conf_ctx_t));
     if (ctx == NULL) {
@@ -3340,7 +3408,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     // by ChengXu
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t *old_pool,*new_pool,*old_temp_pool;
-    njt_int_t rc;
+
 
     old_pool = cf->pool;
     old_temp_pool = cf->temp_pool;
@@ -3348,7 +3416,7 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (new_pool == NULL) {
         return NJT_CONF_ERROR;
     }
-    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    rc = njt_sub_pool(new_server_pool,new_pool);
     if (rc != NJT_OK) {
         return NJT_CONF_ERROR;
     }
@@ -3415,10 +3483,17 @@ njt_http_core_server(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     cf->cmd_type = NJT_HTTP_SRV_CONF;
 
     rv = njt_conf_parse(cf, NULL);
-
     *cf = pcf;
+#if (NJT_HTTP_DYNAMIC_SERVER)
+    cscf->pool = new_server_pool;
+    cf->pool = old_server_pool;
+    cf->temp_pool = old_server_temp_pool;
+    cscf->dynamic = cf->dynamic;
+    cscf->dynamic_status = cf->dynamic;  // 1 
+#endif
 
-    if (rv == NJT_CONF_OK && !cscf->listen) {
+
+    if (rv == NJT_CONF_OK && !cscf->listen && cf->dynamic == 0) {
         njt_memzero(&lsopt, sizeof(njt_http_listen_opt_t));
 
         p = njt_pcalloc(cf->pool, sizeof(struct sockaddr_in));
@@ -3496,10 +3571,7 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     if (new_pool == NULL) {
         return NJT_CONF_ERROR;
     }
-    rc = njt_sub_pool(cf->cycle->pool,new_pool);
-    if (rc != NJT_OK) {
-        return NJT_CONF_ERROR;
-    }
+   
     cf->pool = new_pool;
     cf->temp_pool = new_pool;
 #endif
@@ -3513,6 +3585,11 @@ njt_http_core_location(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     ctx->main_conf = pctx->main_conf;
     ctx->srv_conf = pctx->srv_conf;
     pclcf = pctx->loc_conf[njt_http_core_module.ctx_index];
+
+    rc = njt_sub_pool(pclcf->pool,new_pool);
+    if (rc != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
 
     ctx->loc_conf = njt_pcalloc(cf->pool, sizeof(void *) * njt_http_max_module);
     if (ctx->loc_conf == NULL) {
@@ -4036,7 +4113,9 @@ njt_http_core_create_srv_conf(njt_conf_t *cf)
 
     cscf->file_name = cf->conf_file->file.name.data;
     cscf->line = cf->conf_file->line;
-
+#if (NJT_HTTP_DYNAMIC_SERVER)
+    cscf->pool=cf->pool;  // cx 澶勭悊鍐呭瓨閲婃斁
+#endif
     return cscf;
 }
 
@@ -4110,7 +4189,6 @@ njt_http_core_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     if (conf->server_name.data == NULL) {
         return NJT_CONF_ERROR;
     }
-
     return NJT_CONF_OK;
 }
 
@@ -4544,7 +4622,6 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_listen_opt_t   lsopt;
 
     cscf->listen = 1;
-
     value = cf->args->elts;
 
     njt_memzero(&u, sizeof(njt_url_t));
@@ -5213,7 +5290,7 @@ njt_http_core_limit_except(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (new_pool == NULL) {
         return NJT_CONF_ERROR;
     }
-    rc = njt_sub_pool(cf->cycle->pool,new_pool);
+    rc = njt_sub_pool(pclcf->pool,new_pool);
     if (rc != NJT_OK) {
         return NJT_CONF_ERROR;
     }
@@ -6390,4 +6467,16 @@ static njt_int_t njt_http_add_location_pre_process(njt_conf_t *cf,njt_queue_t **
         //end
         njt_queue_init(*locations);
 	return NJT_OK;
+}
+void njt_http_server_delete_dyn_var(njt_http_core_srv_conf_t *cscf) {
+
+	njt_uint_t                 rf = 0,rf2 = 0;
+    njt_http_core_loc_conf_t *clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
+    njt_http_location_delete_dyn_var_run(clcf,&rf);
+
+	njt_http_rewrite_loc_conf_t  *rlcf = cscf->ctx->loc_conf[njt_http_rewrite_module.ctx_index];  //njt_http_conf_get_module_loc_conf(clcf,njt_http_rewrite_module); //clcf->loc_conf[njt_http_core_module.ctx_index])
+	rf2 = njt_http_rewrite_delete_dyn_var(rlcf);
+	if(rf == 1 || rf2 == 1) {
+		njt_http_refresh_variables_keys();
+	}
 }

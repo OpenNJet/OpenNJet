@@ -24,6 +24,8 @@ NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-upstream-dynamic-se
 #NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-http-sticky-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-location-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-location-api-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-server-module"
+NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-dyn-server-api-module"
 NJET_MODULES="$NJET_MODULES --add-dynamic-module=./modules/njet-http-upstream-api-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-mqconf-module"
 NJET_MODULES="$NJET_MODULES --add-module=./modules/njet-vts-module"
