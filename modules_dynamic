@@ -31,3 +31,4 @@
 ./modules/njet-http-dyn-range-module
 ./modules/njet-http-range-api-module
 ./modules/njet-stream-ftp-proxy-module
+./modules/njet-stream-dyn-map-module
