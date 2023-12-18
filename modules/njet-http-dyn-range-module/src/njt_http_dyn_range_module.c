@@ -441,6 +441,9 @@ static int  njt_http_dyn_range_update_handler(njt_str_t *key, njt_str_t *value, 
     njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
     rc = njt_update_range(pool,api_data, rpc_result);
     if(rc != NJT_OK){
+        njt_str_t msg = njt_string("");
+        njt_kv_sendmsg(key,&msg,0);
+
         if(rc == NJT_DECLINED){
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
             if(api_data->action == DYN_RANGE_API_ACTION_DEL){
@@ -448,12 +451,9 @@ static int  njt_http_dyn_range_update_handler(njt_str_t *key, njt_str_t *value, 
             }else if(api_data->action == DYN_RANGE_API_ACTION_ADD){
                 njt_rpc_result_set_msg(rpc_result, (u_char *)" rule has exist");
             }
+        }else{
+            njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
         }
-
-        njt_str_t msg = njt_string("");
-        njt_kv_sendmsg(key,&msg,0);
-        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
-        // njt_rpc_result_set_msg(rpc_result, (u_char *)" dyn range update fail");
     }else if(api_data->action == DYN_RANGE_API_ACTION_DEL){
         //need delete msg
         njt_str_t msg = njt_string("");

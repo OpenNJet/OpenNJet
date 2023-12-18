@@ -527,21 +527,37 @@ static void njt_range_exit_process(njt_cycle_t *cycle){
 
 njt_int_t njt_range_add_rule(njt_str_t *iptables_path, njt_str_t *type, njt_str_t *src_ports, njt_uint_t dst_port){
     u_char          buf[1024];
+    // u_char          read_buf[10240];
     FILE            *fp= NULL;
+    njt_str_t       tmp_str;
+    // njt_int_t       nread;
+    u_char          *end;
+    njt_int_t       status;
 
     njt_memzero(buf, 1024);
-    njt_snprintf(buf, 1024, NJT_RANG_ADD_RULE, iptables_path, src_ports, dst_port);
+    end = njt_snprintf(buf, 1024, NJT_RANG_ADD_RULE, iptables_path, src_ports, dst_port);
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
+        tmp_str.data = buf;
+        tmp_str.len = end - buf;
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-            "range add rule error");
+            "range popen error about add rule:%V", &tmp_str);
         
         return NJT_ERROR;
     }
 
     if(fp != NULL){
-        pclose(fp);
+        status = pclose(fp);
+
+        if(0 != WEXITSTATUS(status)){
+            tmp_str.data = buf;
+            tmp_str.len = end - buf;
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                "range error about add rule:%V exitstatus:%d", &tmp_str, WEXITSTATUS(status));
+
+            return NJT_ERROR;
+        }
     }
 
     return NJT_OK;
@@ -550,21 +566,35 @@ njt_int_t njt_range_add_rule(njt_str_t *iptables_path, njt_str_t *type, njt_str_
 
 njt_int_t njt_range_del_rule(njt_str_t *iptables_path, njt_str_t *type, njt_str_t *src_ports, njt_uint_t dst_port){
     u_char          buf[1024];
+    u_char          *end;
     FILE            *fp= NULL;
+    njt_str_t       tmp_str;
+    njt_int_t       status;
 
     njt_memzero(buf, 1024);
-    njt_snprintf(buf, 1024, NJT_RANG_DEL_RULE, iptables_path, src_ports, dst_port);
+    end = njt_snprintf(buf, 1024, NJT_RANG_DEL_RULE, iptables_path, src_ports, dst_port);
 
     fp = popen((char *)buf, "w");
     if(fp == NULL){
+        tmp_str.data = buf;
+        tmp_str.len = end - buf;
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-            "range del rule error");
+            "range popen error about del rule:%V", &tmp_str);
         
         return NJT_ERROR;
     }
 
     if(fp != NULL){
-        pclose(fp);
+        status = pclose(fp);
+
+        if(0 != WEXITSTATUS(status)){
+            tmp_str.data = buf;
+            tmp_str.len = end - buf;
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                "range error about del rule:%V exitstatus:%d", &tmp_str, WEXITSTATUS(status));
+
+            return NJT_ERROR;
+        }
     }
 
     return NJT_OK;
