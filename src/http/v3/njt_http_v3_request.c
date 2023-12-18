@@ -59,30 +59,19 @@ static const struct {
 void
 njt_http_v3_init_stream(njt_connection_t *c)
 {
-    njt_http_v3_session_t     *h3c;
     njt_http_connection_t     *hc, *phc;
     njt_http_v3_srv_conf_t    *h3scf;
     njt_http_core_loc_conf_t  *clcf;
-    njt_http_core_srv_conf_t  *cscf;
 
     hc = c->data;
 
     hc->ssl = 1;
 
     clcf = njt_http_get_module_loc_conf(hc->conf_ctx, njt_http_core_module);
-    cscf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_core_module);
-    h3scf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_v3_module);
 
     if (c->quic == NULL) {
-        if (njt_http_v3_init_session(c) != NJT_OK) {
-            njt_http_close_connection(c);
-            return;
-        }
-
-        h3c = hc->v3_session;
-        njt_add_timer(&h3c->keepalive, cscf->client_header_timeout);
-
-        h3scf->quic.timeout = clcf->keepalive_timeout;
+        h3scf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_v3_module);
+        h3scf->quic.idle_timeout = clcf->keepalive_timeout;
         njt_quic_run(c, &h3scf->quic);
         return;
     }
@@ -118,6 +107,10 @@ njt_http_v3_init(njt_connection_t *c)
     njt_http_core_loc_conf_t  *clcf;
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0, "http3 init");
+
+    if (njt_http_v3_init_session(c) != NJT_OK) {
+        return NJT_ERROR;
+    }
 
     h3c = njt_http_v3_get_session(c);
     clcf = njt_http_v3_get_module_loc_conf(c, njt_http_core_module);

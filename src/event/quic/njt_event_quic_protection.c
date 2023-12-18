@@ -26,11 +26,13 @@ static njt_int_t njt_hkdf_extract(u_char *out_key, size_t *out_len,
 
 static uint64_t njt_quic_parse_pn(u_char **pos, njt_int_t len, u_char *mask,
     uint64_t *largest_pn);
-
-static njt_int_t njt_quic_tls_open(const njt_quic_cipher_t *cipher,
-    njt_quic_secret_t *s, njt_str_t *out, u_char *nonce, njt_str_t *in,
-    njt_str_t *ad, njt_log_t *log);
-static njt_int_t njt_quic_tls_hp(njt_log_t *log, const EVP_CIPHER *cipher,
+static njt_int_t njt_quic_crypto_open( njt_quic_secret_t *s, njt_str_t *out,
+    u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log);
+#ifndef OPENSSL_IS_BORINGSSL
+static njt_int_t njt_quic_crypto_common(njt_quic_secret_t *s, njt_str_t *out,
+    u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log);
+#endif
+static njt_int_t njt_quic_crypto_hp(njt_log_t *log, const EVP_CIPHER *cipher,
     njt_quic_secret_t *s, u_char *out, u_char *in);
 
 static njt_int_t njt_quic_create_packet(njt_quic_header_t *pkt,
@@ -109,13 +111,14 @@ njt_int_t
 njt_quic_keys_set_initial_secret(njt_quic_keys_t *keys, njt_str_t *secret,
     njt_log_t *log)
 {
-    size_t              is_len;
-    uint8_t             is[SHA256_DIGEST_LENGTH];
-    njt_str_t           iss;
-    njt_uint_t          i;
-    const EVP_MD       *digest;
-    njt_quic_hkdf_t     seq[8];
-    njt_quic_secret_t  *client, *server;
+    size_t               is_len;
+    uint8_t              is[SHA256_DIGEST_LENGTH];
+    njt_str_t            iss;
+    njt_uint_t           i;
+    const EVP_MD        *digest;
+    njt_quic_hkdf_t      seq[8];
+    njt_quic_secret_t   *client, *server;
+    njt_quic_ciphers_t  ciphers;
 
     static const uint8_t salt[20] =
         "\x38\x76\x2c\xf7\xf5\x59\x34\xb3\x4d\x17"
@@ -181,7 +184,26 @@ njt_quic_keys_set_initial_secret(njt_quic_keys_t *keys, njt_str_t *secret,
         }
     }
 
+
+    if (njt_quic_ciphers(1, &ciphers, ssl_encryption_initial) == NJT_ERROR) {
+        return NJT_ERROR;
+    }
+
+    if (njt_quic_crypto_init(ciphers.c, client, 0, log) == NJT_ERROR) {
+        return NJT_ERROR;
+    }
+
+    if (njt_quic_crypto_init(ciphers.c, server, 1, log) == NJT_ERROR) {
+        goto failed;
+    }
+
     return NJT_OK;
+
+failed:
+    
+    njt_quic_keys_cleanup(keys);
+
+    return NJT_ERROR;
 }
 
 
@@ -344,114 +366,9 @@ failed:
 }
 
 
-static njt_int_t
-njt_quic_tls_open(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
-    njt_str_t *out, u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log)
-{
-
-#ifdef OPENSSL_IS_BORINGSSL
-    EVP_AEAD_CTX  *ctx;
-
-    ctx = EVP_AEAD_CTX_new(cipher, s->key.data, s->key.len,
-                           EVP_AEAD_DEFAULT_TAG_LENGTH);
-    if (ctx == NULL) {
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_AEAD_CTX_new() failed");
-        return NJT_ERROR;
-    }
-
-    if (EVP_AEAD_CTX_open(ctx, out->data, &out->len, out->len, nonce, s->iv.len,
-                          in->data, in->len, ad->data, ad->len)
-        != 1)
-    {
-        EVP_AEAD_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_AEAD_CTX_open() failed");
-        return NJT_ERROR;
-    }
-
-    EVP_AEAD_CTX_free(ctx);
-#else
-    int              len;
-    EVP_CIPHER_CTX  *ctx;
-
-    ctx = EVP_CIPHER_CTX_new();
-    if (ctx == NULL) {
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_CIPHER_CTX_new() failed");
-        return NJT_ERROR;
-    }
-
-    if (EVP_DecryptInit_ex(ctx, cipher, NULL, NULL, NULL) != 1) {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_DecryptInit_ex() failed");
-        return NJT_ERROR;
-    }
-
-    in->len -= NJT_QUIC_TAG_LEN;
-
-    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, NJT_QUIC_TAG_LEN, 
-                            in->data + in->len)
-        == 0)
-    {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0,
-                      "EVP_CIPHER_CTX_ctrl(EVP_CTRL_AEAD_SET_TAG) failed");
-        return NJT_ERROR;
-    }
-
-    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_IVLEN, s->iv.len, NULL)
-        == 0)
-    {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0,
-                      "EVP_CIPHER_CTX_ctrl(EVP_CTRL_AEAD_SET_IVLEN) failed");
-        return NJT_ERROR;
-    }
-
-    if (EVP_DecryptInit_ex(ctx, NULL, NULL, s->key.data, nonce) != 1) {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_DecryptInit_ex() failed");
-        return NJT_ERROR;
-    }
-
-    if (EVP_CIPHER_mode(cipher) == EVP_CIPH_CCM_MODE
-        && EVP_DecryptUpdate(ctx, NULL, &len, NULL, in->len) != 1)
-    {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_DecryptUpdate() failed");
-        return NJT_ERROR;
-    }
-
-    if (EVP_DecryptUpdate(ctx, NULL, &len, ad->data, ad->len) != 1) {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_DecryptUpdate() failed");
-        return NJT_ERROR;
-    }
-
-    if (EVP_DecryptUpdate(ctx, out->data, &len, in->data, in->len) != 1) {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_DecryptUpdate() failed");
-        return NJT_ERROR;
-    }
-
-    out->len = len;
-
-    if (EVP_DecryptFinal_ex(ctx, out->data + out->len, &len) <= 0) {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_DecryptFinal_ex failed");
-        return NJT_ERROR;
-    }
-
-    out->len += len;
-
-    EVP_CIPHER_CTX_free(ctx);
-#endif
-
-    return NJT_OK;
-}
-
-
 njt_int_t
-njt_quic_tls_seal(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
-    njt_str_t *out, u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log)
+njt_quic_crypto_init(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
+    njt_int_t enc, njt_log_t *log)
 {
 
 #ifdef OPENSSL_IS_BORINGSSL
@@ -463,19 +380,7 @@ njt_quic_tls_seal(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
         njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_AEAD_CTX_new() failed");
         return NJT_ERROR;
     }
-
-    if (EVP_AEAD_CTX_seal(ctx, out->data, &out->len, out->len, nonce, s->iv.len,
-                          in->data, in->len, ad->data, ad->len)
-        != 1)
-    {
-        EVP_AEAD_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_AEAD_CTX_seal() failed");
-        return NJT_ERROR;
-    }
-
-    EVP_AEAD_CTX_free(ctx);
 #else
-    int              len;
     EVP_CIPHER_CTX  *ctx;
 
     ctx = EVP_CIPHER_CTX_new();
@@ -484,9 +389,9 @@ njt_quic_tls_seal(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
         return NJT_ERROR;
     }
 
-    if (EVP_EncryptInit_ex(ctx, cipher, NULL, NULL, NULL) != 1) {
+    if (EVP_CipherInit_ex(ctx, cipher, NULL, NULL, NULL, enc) != 1) {
         EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_EncryptInit_ex() failed");
+        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_CipherInit_ex() failed");
         return NJT_ERROR;
     }
 
@@ -510,62 +415,143 @@ njt_quic_tls_seal(const njt_quic_cipher_t *cipher, njt_quic_secret_t *s,
         return NJT_ERROR;
     }
 
-    if (EVP_EncryptInit_ex(ctx, NULL, NULL, s->key.data, nonce) != 1) {
+    if (EVP_CipherInit_ex(ctx, NULL, NULL, s->key.data, NULL, enc) != 1) {
         EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_EncryptInit_ex() failed");
+        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_CipherInit_ex() failed");
         return NJT_ERROR;
     }
-
-    if (EVP_CIPHER_mode(cipher) == EVP_CIPH_CCM_MODE
-        && EVP_EncryptUpdate(ctx, NULL, &len, NULL, in->len) != 1)
-    {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_EncryptUpdate() failed");
-        return NJT_ERROR;
-    }
-
-    if (EVP_EncryptUpdate(ctx, NULL, &len, ad->data, ad->len) != 1) {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_EncryptUpdate() failed");
-        return NJT_ERROR;
-    }
-
-    if (EVP_EncryptUpdate(ctx, out->data, &len, in->data, in->len) != 1) {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_EncryptUpdate() failed");
-        return NJT_ERROR;
-    }
-
-    out->len = len;
-
-    if (EVP_EncryptFinal_ex(ctx, out->data + out->len, &len) <= 0) {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_EncryptFinal_ex failed");
-        return NJT_ERROR;
-    }
-
-    out->len += len;
-
-    if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, NJT_QUIC_TAG_LEN,
-                            out->data + out->len)
-        == 0)
-    {
-        EVP_CIPHER_CTX_free(ctx);
-        njt_ssl_error(NJT_LOG_INFO, log, 0,
-                      "EVP_CIPHER_CTX_ctrl(EVP_CTRL_AEAD_GET_TAG) failed");
-        return NJT_ERROR;
-    }
-
-    out->len += NJT_QUIC_TAG_LEN;
-
-    EVP_CIPHER_CTX_free(ctx);
 #endif
+
+    s->ctx = ctx;
     return NJT_OK;
 }
 
 
 static njt_int_t
-njt_quic_tls_hp(njt_log_t *log, const EVP_CIPHER *cipher,
+njt_quic_crypto_open(njt_quic_secret_t *s, njt_str_t *out, u_char *nonce,
+    njt_str_t *in, njt_str_t *ad, njt_log_t *log)
+{
+#ifdef OPENSSL_IS_BORINGSSL
+    if (EVP_AEAD_CTX_open(s->ctx, out->data, &out->len, out->len, nonce,
+                          s->iv.len, in->data, in->len, ad->data, ad->len)
+        != 1)
+    {
+        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_AEAD_CTX_open() failed");
+        return NJT_ERROR;
+    }
+
+    return NJT_OK;
+#else
+    return njt_quic_crypto_common(s, out, nonce, in, ad, log);
+#endif
+}
+
+
+njt_int_t
+njt_quic_crypto_seal(njt_quic_secret_t *s, njt_str_t *out, u_char *nonce,
+    njt_str_t *in, njt_str_t *ad, njt_log_t *log)
+{
+#ifdef OPENSSL_IS_BORINGSSL
+    if (EVP_AEAD_CTX_seal(s->ctx, out->data, &out->len, out->len, nonce,
+                          s->iv.len, in->data, in->len, ad->data, ad->len)
+        != 1)
+    {
+        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_AEAD_CTX_seal() failed");
+        return NJT_ERROR;
+    }
+
+    return NJT_OK;
+#else
+    return njt_quic_crypto_common(s, out, nonce, in, ad, log);
+#endif
+}
+
+
+static njt_int_t
+njt_quic_crypto_common(njt_quic_secret_t *s, njt_str_t *out, u_char *nonce,
+    njt_str_t *in, njt_str_t *ad, njt_log_t *log)
+{
+    int                     len, enc;
+    njt_quic_crypto_ctx_t  *ctx;
+
+    ctx = s->ctx;
+    enc = EVP_CIPHER_CTX_encrypting(ctx);
+
+    if (EVP_CipherInit_ex(ctx, NULL, NULL, NULL, nonce, enc) != 1) {
+        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_CipherInit_ex() failed");
+        return NJT_ERROR;
+    }
+
+    if (enc == 0) {
+        in->len -= NJT_QUIC_TAG_LEN;
+
+        if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_SET_TAG, NJT_QUIC_TAG_LEN,
+                                in->data + in->len)
+            == 0)
+        {
+            njt_ssl_error(NJT_LOG_INFO, log, 0,
+                          "EVP_CIPHER_CTX_ctrl(EVP_CTRL_AEAD_SET_TAG) failed");
+            return NJT_ERROR;
+        }
+    }
+
+    if (EVP_CIPHER_mode(EVP_CIPHER_CTX_cipher(ctx)) == EVP_CIPH_CCM_MODE
+        && EVP_CipherUpdate(ctx, NULL, &len, NULL, in->len) != 1)
+    {
+        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_CipherUpdate() failed");
+        return NJT_ERROR;
+    }
+
+    if (EVP_CipherUpdate(ctx, NULL, &len, ad->data, ad->len) != 1) {
+        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_CipherUpdate() failed");
+        return NJT_ERROR;
+    }
+
+    if (EVP_CipherUpdate(ctx, out->data, &len, in->data, in->len) != 1) {
+        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_CipherUpdate() failed");
+        return NJT_ERROR;
+    }
+
+    out->len = len;
+
+    if (EVP_CipherFinal_ex(ctx, out->data + out->len, &len) <= 0) {
+        njt_ssl_error(NJT_LOG_INFO, log, 0, "EVP_CipherFinal_ex failed");
+        return NJT_ERROR;
+    }
+
+    out->len += len;
+
+    if (enc == 1) {
+        if (EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_AEAD_GET_TAG, NJT_QUIC_TAG_LEN,
+                                out->data + out->len)
+            == 0)
+        {
+            njt_ssl_error(NJT_LOG_INFO, log, 0,
+                        "EVP_CIPHER_CTX_ctrl(EVP_CTRL_AEAD_GET_TAG) failed");
+            return NJT_ERROR;
+        }
+    }
+
+    return NJT_OK;
+}
+
+
+void
+njt_quic_crypto_cleanup(njt_quic_secret_t *s)
+{
+    if (s->ctx) {
+#ifdef OPENSSL_IS_BORINGSSL
+        EVP_AEAD_CTX_free(s->ctx);
+#else
+        EVP_CIPHER_CTX_free(s->ctx);
+#endif
+        s->ctx = NULL;
+    }
+}
+
+
+static njt_int_t
+njt_quic_crypto_hp(njt_log_t *log, const EVP_CIPHER *cipher,
     njt_quic_secret_t *s, u_char *out, u_char *in)
 {
     int              outlen;
@@ -666,15 +652,25 @@ njt_quic_keys_set_encryption_secret(njt_log_t *log, njt_uint_t is_write,
         }
     }
 
+    if (njt_quic_crypto_init(ciphers.c, peer_secret, is_write, log)
+        == NJT_ERROR)
+    {
+        return NJT_ERROR;
+    }
+
     return NJT_OK;
 }
 
 
 njt_uint_t
 njt_quic_keys_available(njt_quic_keys_t *keys,
-    enum ssl_encryption_level_t level)
+    enum ssl_encryption_level_t level, njt_uint_t is_write)
 {
-    return keys->secrets[level].client.key.len != 0;
+    if (is_write == 0) {
+        return keys->secrets[level].client.ctx != NULL;
+    }
+
+    return keys->secrets[level].server.ctx != NULL;
 }
 
 
@@ -682,9 +678,14 @@ void
 njt_quic_keys_discard(njt_quic_keys_t *keys,
     enum ssl_encryption_level_t level)
 {
-    keys->secrets[level].client.key.len = 0;
-}
+    njt_quic_secret_t  *client, *server;
 
+    client = &keys->secrets[level].client;
+    server = &keys->secrets[level].server;
+
+    njt_quic_crypto_cleanup(client);
+    njt_quic_crypto_cleanup(server);
+}
 
 void
 njt_quic_keys_switch(njt_connection_t *c, njt_quic_keys_t *keys)
@@ -694,29 +695,41 @@ njt_quic_keys_switch(njt_connection_t *c, njt_quic_keys_t *keys)
     current = &keys->secrets[ssl_encryption_application];
     next = &keys->next_key;
 
+    njt_quic_crypto_cleanup(&current->client);
+    njt_quic_crypto_cleanup(&current->server);
+
     tmp = *current;
     *current = *next;
     *next = tmp;
 }
 
 
-njt_int_t
-njt_quic_keys_update(njt_connection_t *c, njt_quic_keys_t *keys)
+void
+njt_quic_keys_update(njt_event_t *ev)
 {
-    njt_uint_t           i;
-    njt_quic_hkdf_t      seq[6];
-    njt_quic_ciphers_t   ciphers;
-    njt_quic_secrets_t  *current, *next;
+    njt_uint_t              i;
+    njt_quic_hkdf_t         seq[6];
+    njt_quic_keys_t        *keys;
+    njt_connection_t       *c;
+    njt_quic_ciphers_t      ciphers;
+    njt_quic_secrets_t     *current, *next;
+    njt_quic_connection_t  *qc;
+
+    c = ev->data;
+    qc = njt_quic_get_connection(c);
+    keys = qc->keys;
 
     current = &keys->secrets[ssl_encryption_application];
     next = &keys->next_key;
 
     njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0, "quic key update");
 
+    c->log->action = "updating keys";
+
     if (njt_quic_ciphers(keys->cipher, &ciphers, ssl_encryption_application)
         == NJT_ERROR)
     {
-        return NJT_ERROR;
+        goto failed;
     }
 
     next->client.secret.len = current->client.secret.len;
@@ -744,11 +757,42 @@ njt_quic_keys_update(njt_connection_t *c, njt_quic_keys_t *keys)
 
     for (i = 0; i < (sizeof(seq) / sizeof(seq[0])); i++) {
         if (njt_quic_hkdf_expand(&seq[i], ciphers.d, c->log) != NJT_OK) {
-            return NJT_ERROR;
+            goto failed;
         }
     }
 
-    return NJT_OK;
+    if (njt_quic_crypto_init(ciphers.c, &next->client, 0, c->log) == NJT_ERROR)
+    {
+        goto failed;
+    }
+
+    if (njt_quic_crypto_init(ciphers.c, &next->server, 1, c->log) == NJT_ERROR)
+    {
+        goto failed;
+    }
+
+    return;
+
+failed:
+
+    njt_quic_close_connection(c, NJT_ERROR);
+}
+
+
+void
+njt_quic_keys_cleanup(njt_quic_keys_t *keys)
+{
+    njt_uint_t           i;
+    njt_quic_secrets_t  *next;
+
+    for (i = 0; i < NJT_QUIC_ENCRYPTION_LAST; i++) {
+        njt_quic_keys_discard(keys, i);
+    }
+
+    next = &keys->next_key;
+
+    njt_quic_crypto_cleanup(&next->client);
+    njt_quic_crypto_cleanup(&next->server);
 }
 
 
@@ -783,15 +827,14 @@ njt_quic_create_packet(njt_quic_header_t *pkt, njt_str_t *res)
     njt_memcpy(nonce, secret->iv.data, secret->iv.len);
     njt_quic_compute_nonce(nonce, sizeof(nonce), pkt->number);
 
-    if (njt_quic_tls_seal(ciphers.c, secret, &out,
-                          nonce, &pkt->payload, &ad, pkt->log)
+    if (njt_quic_crypto_seal(secret, &out, nonce, &pkt->payload, &ad, pkt->log)
         != NJT_OK)
     {
         return NJT_ERROR;
     }
 
     sample = &out.data[4 - pkt->num_len];
-    if (njt_quic_tls_hp(pkt->log, ciphers.hp, secret, mask, sample)
+    if (njt_quic_crypto_hp(pkt->log, ciphers.hp, secret, mask, sample)
         != NJT_OK)
     {
         return NJT_ERROR;
@@ -844,11 +887,18 @@ njt_quic_create_retry_packet(njt_quic_header_t *pkt, njt_str_t *res)
     njt_memcpy(secret.key.data, key, sizeof(key));
     secret.iv.len = NJT_QUIC_IV_LEN;
 
-    if (njt_quic_tls_seal(ciphers.c, &secret, &itag, nonce, &in, &ad, pkt->log)
-        != NJT_OK)
-    {
+    if (njt_quic_crypto_init(ciphers.c, &secret, 1, pkt->log) == NJT_ERROR) {
         return NJT_ERROR;
     }
+
+    if (njt_quic_crypto_seal(&secret, &itag, nonce, &in, &ad, pkt->log)
+        != NJT_OK)
+    {
+        njt_quic_crypto_cleanup(&secret);
+        return NJT_ERROR;
+    }
+
+    njt_quic_crypto_cleanup(&secret);
 
     res->len = itag.data + itag.len - start;
     res->data = start;
@@ -980,7 +1030,7 @@ njt_quic_decrypt(njt_quic_header_t *pkt, uint64_t *largest_pn)
     u_char              *p, *sample;
     size_t               len;
     uint64_t             pn, lpn;
-    njt_int_t            pnl, rc;
+    njt_int_t            pnl;
     njt_str_t            in, ad;
     njt_uint_t           key_phase;
     njt_quic_secret_t   *secret;
@@ -1014,7 +1064,7 @@ njt_quic_decrypt(njt_quic_header_t *pkt, uint64_t *largest_pn)
 
     /* header protection */
 
-    if (njt_quic_tls_hp(pkt->log, ciphers.hp, secret, mask, sample)
+    if (njt_quic_crypto_hp(pkt->log, ciphers.hp, secret, mask, sample)
         != NJT_OK)
     {
         return NJT_DECLINED;
@@ -1069,9 +1119,9 @@ njt_quic_decrypt(njt_quic_header_t *pkt, uint64_t *largest_pn)
     pkt->payload.len = in.len - NJT_QUIC_TAG_LEN;
     pkt->payload.data = pkt->plaintext + ad.len;
 
-    rc = njt_quic_tls_open(ciphers.c, secret, &pkt->payload,
-                           nonce, &in, &ad, pkt->log);
-    if (rc != NJT_OK) {
+    if (njt_quic_crypto_open(secret, &pkt->payload, nonce, &in, &ad, pkt->log)
+       != NJT_OK)
+    {
         return NJT_DECLINED;
     }
 

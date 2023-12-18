@@ -906,6 +906,10 @@ njt_quic_ack_packet(njt_connection_t *c, njt_quic_header_t *pkt)
                    "quic njt_quic_ack_packet pn:%uL largest %L fr:%uL"
                    " nranges:%ui", pkt->pn, (int64_t) ctx->largest_range,
                    ctx->first_range, ctx->nranges);
+    
+    if (!njt_quic_keys_available(qc->keys, ctx->level, 1)) {
+        return NJT_OK;
+    }
 
     prev_pending = ctx->pending_ack;
 

@@ -68,7 +68,8 @@ typedef struct {
     njt_flag_t                     retry;
     njt_flag_t                     gso_enabled;
     njt_flag_t                     disable_active_migration;
-    njt_msec_t                     timeout;
+    njt_msec_t                     handshake_timeout;
+    njt_msec_t                     idle_timeout;
     njt_str_t                      host_key;
     size_t                         stream_buffer_size;
     njt_uint_t                     max_concurrent_streams_bidi;

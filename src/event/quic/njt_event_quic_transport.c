@@ -1986,7 +1986,7 @@ njt_quic_init_transport_params(njt_quic_tp_t *tp, njt_quic_conf_t *qcf)
      *     tp->preferred_address = NULL
      */
 
-    tp->max_idle_timeout = qcf->timeout;
+    tp->max_idle_timeout = qcf->idle_timeout;
 
     tp->max_udp_payload_size = NJT_QUIC_MAX_UDP_PAYLOAD_SIZE;;
 

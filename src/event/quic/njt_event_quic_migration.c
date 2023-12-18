@@ -519,9 +519,7 @@ njt_quic_validate_path(njt_connection_t *c, njt_quic_path_t *path)
         return NJT_ERROR;
     }
 
-    if (njt_quic_send_path_challenge(c, path) != NJT_OK) {
-        return NJT_ERROR;
-    }
+    (void) njt_quic_send_path_challenge(c, path);
 
     ctx = njt_quic_get_send_ctx(qc, ssl_encryption_application);
     pto = njt_max(njt_quic_pto(c, ctx), 1000);

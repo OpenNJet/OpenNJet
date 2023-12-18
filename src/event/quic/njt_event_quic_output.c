@@ -520,6 +520,21 @@ njt_quic_output_packet(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
 
     qc = njt_quic_get_connection(c);
 
+    if (!njt_quic_keys_available(qc->keys, ctx->level, 1)) {
+        njt_log_error(NJT_LOG_ALERT, c->log, 0, "quic %s write keys discarded",
+                      njt_quic_level_name(ctx->level));
+
+        while (!njt_queue_empty(&ctx->frames)) {
+            q = njt_queue_head(&ctx->frames);
+            njt_queue_remove(q);
+
+            f = njt_queue_data(q, njt_quic_frame_t, queue);
+            njt_quic_free_frame(c, f);
+        }
+
+        return 0;
+    }
+
     njt_quic_init_packet(c, ctx, &pkt, qc->path);
 
     min_payload = njt_quic_payload_size(&pkt, min);
@@ -927,12 +942,16 @@ njt_quic_send_early_cc(njt_connection_t *c, njt_quic_header_t *inpkt,
     res.data = dst;
 
     if (njt_quic_encrypt(&pkt, &res) != NJT_OK) {
+        njt_quic_keys_cleanup(pkt.keys);
         return NJT_ERROR;
     }
 
     if (njt_quic_send(c, res.data, res.len, c->sockaddr, c->socklen) < 0) {
+        njt_quic_keys_cleanup(pkt.keys);
         return NJT_ERROR;
     }
+
+    njt_quic_keys_cleanup(pkt.keys);
 
     return NJT_DONE;
 }

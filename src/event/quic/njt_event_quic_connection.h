@@ -229,6 +229,8 @@ struct njt_quic_connection_s {
     njt_event_t                       pto;
     njt_event_t                       close;
     njt_event_t                       path_validation;
+    njt_event_t                       key_update;
+
     njt_msec_t                        last_cc;
 
     njt_msec_t                        first_rtt;
