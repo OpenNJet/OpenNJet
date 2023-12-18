@@ -10,7 +10,7 @@ build_bin:
 #  image: gcc:4.8.5   # gcc 版本
   script:
     - sudo chmod +x ./build_cc.sh ./configure
-    - sudo ./build_cc.sh conf $CI_COMMIT_SHA
+    - sudo ./build_cc.sh -t $CI_COMMIT_SHA -d conf
     - sudo make -j `nproc`
     - sudo ./build_cc.sh install
     - sudo chmod +x ./build_lua.sh

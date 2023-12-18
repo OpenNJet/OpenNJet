@@ -1,0 +1,16 @@
+# mqconf and kv moudles are required  
+./modules/njet-mqconf-module
+./modules/njet-http-kv-module
+./modules/njet-stream-proto-module
+./modules/njet-stream-proxy-protocol-tlv-module
+./modules/njet-util-module
+./modules/njet-http-if-location-module
+./src/ext/lua/kit
+./modules/njet-stream-upstream-dynamic-servers-module
+./modules/njet-http-upstream-dynamic-servers-module
+./modules/njet-vts-module
+./modules/njet-http-proxy-connect-module
+./modules/njet-gossip-module
+./modules/njet-cache-purge-module
+./modules/njet-http-fault-inject-module
+./modules/njet-jwt-module
