@@ -64,3 +64,5 @@
 ./modules/njet-http-range-api-module
 # optional
 ./modules/njet-stream-ftp-proxy-module
+# optional
+./modules/njet-stream-dyn-map-module
