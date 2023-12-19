@@ -1,0 +1,66 @@
+# required
+./modules/njet-http-location-module
+# required
+./modules/njet-http-location-api-module
+# required
+./modules/njet-http-dyn-server-module
+# required
+./modules/njet-http-dyn-server-api-module
+# required
+./modules/njet-http-upstream-api-module
+# required
+./modules/njet-vtsc-module
+# required
+./modules/njet-vtsd-module
+# required
+./modules/njet-helper-ctrl-module
+# optional
+./modules/njet-helper-privilege-module
+# required
+./modules/njet-helper-broker-module
+# optional
+./modules/njet-helper-ha-module
+# required
+./modules/njet-config-api-module
+# required
+./modules/njet-http-sendmsg-module
+# optional
+./modules/njet-http-dyn-bwlist-module
+# optional - required by kic 
+./modules/njet-http-dyn-map-module
+# optional
+./modules/njet-http-split-clients-2-module
+# optional
+./modules/njet-health-check-helper
+# optional
+./modules/njet-doc-module
+# required
+./modules/njet-http-dyn-ssl-module
+# required
+./modules/njet-http-ssl-api-module
+# optional
+./modules/njet-http-dyn-limit-module
+# optional - required by kic and sidecar
+./src/ext/lua/http
+# optional - required by kic and sidecar
+./src/ext/lua/stream
+# optional
+./modules/njet-app-sticky-module
+# optional
+./modules/njet-http-cluster-limit-conn-module
+# optional
+./modules/njet-http-cluster-limit-req-module
+# optional
+./modules/njet-http-dyn-fault-inject-module
+# required
+./modules/njet-sysguard-cpu-module
+# optional
+./modules/njet-http-register-module
+# optional - required by kic
+./modules/njet-range-module
+# optional - required by kic
+./modules/njet-http-dyn-range-module
+# optional - required by kic
+./modules/njet-http-range-api-module
+# optional
+./modules/njet-stream-ftp-proxy-module
