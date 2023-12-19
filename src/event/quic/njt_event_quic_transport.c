@@ -1136,6 +1136,9 @@ njt_quic_parse_frame(njt_quic_header_t *pkt, u_char *start, u_char *end,
     }
 
     f->level = pkt->level;
+#if (NJT_DEBUG)
+    f->pnum = pkt->pn;
+#endif
 
     return p - start;
 

@@ -267,11 +267,11 @@ struct njt_quic_frame_s {
     njt_queue_t                                      queue;
     uint64_t                                         pnum;
     size_t                                           plen;
-    njt_msec_t                                       first;
-    njt_msec_t                                       last;
+    njt_msec_t                                       send_time;
     ssize_t                                          len;
     unsigned                                         need_ack:1;
     unsigned                                         pkt_need_ack:1;
+    unsigned                                         ignore_congestion:1;
 
     njt_chain_t                                     *data;
     union {
@@ -298,45 +298,46 @@ struct njt_quic_frame_s {
 
 
 typedef struct {
-    njt_log_t                                       *log;
-    njt_quic_path_t                                 *path;
+    njt_log_t                                  *log;
+    njt_quic_path_t                            *path;
 
-    njt_quic_keys_t                                 *keys;
+    njt_quic_keys_t                            *keys;
 
-    njt_msec_t                                       received;
-    uint64_t                                         number;
-    uint8_t                                          num_len;
-    uint32_t                                         trunc;
-    uint8_t                                          flags;
-    uint32_t                                         version;
-    njt_str_t                                        token;
-    enum ssl_encryption_level_t                      level;
-    njt_uint_t                                       error;
+    njt_msec_t                                  received;
+    uint64_t                                    number;
+    uint8_t                                     num_len;
+    uint32_t                                    trunc;
+    uint8_t                                     flags;
+    uint32_t                                    version;
+    njt_str_t                                   token;
+    enum ssl_encryption_level_t                 level;
+    njt_uint_t                                  error;
 
     /* filled in by parser */
-    njt_buf_t                                       *raw;
+    njt_buf_t                                  *raw;
 
-    u_char                                          *data;
-    size_t                                           len;
+    u_char                                     *data;
+    size_t                                      len;
 
     /* cleartext field */
-    njt_str_t                                        odcid; /* retry packet tag */
-    u_char                                           odcid_buf[NJT_QUIC_MAX_CID_LEN];
-    njt_str_t                                        dcid;
-    njt_str_t                                        scid;
-    uint64_t                                         pn;
-    u_char                                          *plaintext;
-    njt_str_t                                        payload; /* decrypted data */
+    njt_str_t                                   odcid; /* retry packet tag */
+    u_char                                      odcid_buf[NJT_QUIC_MAX_CID_LEN];
+    njt_str_t                                   dcid;
+    njt_str_t                                   scid;
+    uint64_t                                    pn;
+    u_char                                     *plaintext;
+    njt_str_t                                   payload; /* decrypted data */
 
-    unsigned                                          need_ack:1;
-    unsigned                                          key_phase:1;
-    unsigned                                          key_update:1;
-    unsigned                                          parsed:1;
-    unsigned                                          decrypted:1;
-    unsigned                                          validated:1;
-    unsigned                                          retried:1;
-    unsigned                                          first:1;
-    unsigned                                          rebound:1;
+    unsigned                                    need_ack:1;
+    unsigned                                    key_phase:1;
+    unsigned                                    key_update:1;
+    unsigned                                    parsed:1;
+    unsigned                                    decrypted:1;
+    unsigned                                    validated:1;
+    unsigned                                    retried:1;
+    unsigned                                    first:1;
+    unsigned                                    rebound:1;
+    unsigned                                    path_challenged:1;
 } njt_quic_header_t;
 
 

@@ -259,14 +259,7 @@ njt_quic_new_connection(njt_connection_t *c, njt_quic_conf_t *conf,
 
     njt_queue_init(&qc->free_frames);
 
-    qc->avg_rtt = NJT_QUIC_INITIAL_RTT;
-    qc->rttvar = NJT_QUIC_INITIAL_RTT / 2;
-    qc->min_rtt = NJT_TIMER_INFINITE;
-    qc->first_rtt = NJT_TIMER_INFINITE;
-
-    /*
-     * qc->latest_rtt = 0
-     */
+    njt_quic_init_rtt(qc);
 
     qc->pto.log = c->log;
     qc->pto.data = c;
@@ -584,6 +577,8 @@ njt_quic_close_connection(njt_connection_t *c, njt_int_t rc)
     }
 
     njt_quic_close_sockets(c);
+
+    njt_quic_keys_cleanup(qc->keys);
 
     njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0, "quic close completed");
 

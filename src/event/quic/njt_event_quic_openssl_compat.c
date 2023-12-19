@@ -218,6 +218,8 @@ njt_quic_compat_keylog_callback(const SSL *ssl, const char *line)
 
         (void) njt_quic_compat_set_encryption_secret(c, &com->keys, level,
                                                      cipher, secret, n);
+
+        njt_explicit_memzero(secret, n);
     }
 }
 
@@ -230,6 +232,7 @@ njt_quic_compat_set_encryption_secret(njt_connection_t *c,
     njt_int_t            key_len;
     njt_str_t            secret_str;
     njt_uint_t           i;
+    njt_quic_md_t        key;
     njt_quic_hkdf_t      seq[2];
     njt_quic_secret_t   *peer_secret;
     njt_quic_ciphers_t   ciphers;
@@ -239,29 +242,21 @@ njt_quic_compat_set_encryption_secret(njt_connection_t *c,
 
     keys->cipher = SSL_CIPHER_get_id(cipher);
 
-    key_len = njt_quic_ciphers(keys->cipher, &ciphers, level);
+    key_len = njt_quic_ciphers(keys->cipher, &ciphers);
 
     if (key_len == NJT_ERROR) {
         njt_ssl_error(NJT_LOG_INFO, c->log, 0, "unexpected cipher");
         return NJT_ERROR;
     }
 
-    if (sizeof(peer_secret->secret.data) < secret_len) {
-        njt_log_error(NJT_LOG_ALERT, log, 0,
-                      "unexpected secret len: %uz", secret_len);
-        return NJT_ERROR;
-    }
+    key.len = key_len;
 
-    peer_secret->secret.len = secret_len;
-    njt_memcpy(peer_secret->secret.data, secret, secret_len);
-
-    peer_secret->key.len = key_len;
     peer_secret->iv.len = NJT_QUIC_IV_LEN;
 
     secret_str.len = secret_len;
     secret_str.data = (u_char *) secret;
 
-    njt_quic_hkdf_set(&seq[0], "tls13 key", &peer_secret->key, &secret_str);
+    njt_quic_hkdf_set(&seq[0], "tls13 key", &key, &secret_str);
     njt_quic_hkdf_set(&seq[1], "tls13 iv", &peer_secret->iv, &secret_str);
 
     for (i = 0; i < (sizeof(seq) / sizeof(seq[0])); i++) {
@@ -287,9 +282,13 @@ njt_quic_compat_set_encryption_secret(njt_connection_t *c,
         cln->data = peer_secret;
     }
 
-    if (njt_quic_crypto_init(ciphers.c, peer_secret, 1, c->log) == NJT_ERROR) {
+    if (njt_quic_crypto_init(ciphers.c, peer_secret, &key, 1, c->log)
+        == NJT_ERROR) 
+    {
         return NJT_ERROR;
     }
+
+    njt_explicit_memzero(key.data, key.len);
 
     return NJT_OK;
 }
@@ -585,10 +584,9 @@ njt_quic_compat_create_header(njt_quic_compat_record_t *rec, u_char *out,
 static njt_int_t
 njt_quic_compat_create_record(njt_quic_compat_record_t *rec, njt_str_t *res)
 {
-    njt_str_t            ad, out;
-    njt_quic_secret_t   *secret;
-    njt_quic_ciphers_t   ciphers;
-    u_char               nonce[NJT_QUIC_IV_LEN];
+    njt_str_t           ad, out;
+    njt_quic_secret_t  *secret;
+    u_char              nonce[NJT_QUIC_IV_LEN];
 
     ad.data = res->data;
     ad.len = njt_quic_compat_create_header(rec, ad.data, 0);
@@ -600,10 +598,6 @@ njt_quic_compat_create_record(njt_quic_compat_record_t *rec, njt_str_t *res)
     njt_log_debug2(NJT_LOG_DEBUG_EVENT, rec->log, 0,
                    "quic compat ad len:%uz %xV", ad.len, &ad);
 #endif
-
-    if (njt_quic_ciphers(rec->keys->cipher, &ciphers, rec->level) == NJT_ERROR) {
-        return NJT_ERROR;
-    }
 
     secret = &rec->keys->secret;
 
