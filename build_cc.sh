@@ -105,7 +105,9 @@ cdir=`cd $(dirname $0); pwd`
                 cd luajit;make install;cd -;
 		mkdir -p $NJET_PREFIX/lualib
 		cp -a lualib/lib $NJET_PREFIX/lualib/
-                cd auto/lib/keepalived; make install; cd -;
+		if [ -d auto/lib/keepalived/keepalived/emb/.libs ]; then
+                  cd auto/lib/keepalived; make install; cd -;
+                fi 
                 cd auto/lib/luapkg; PREFIX=/usr/local CDIR_linux=njet/lualib/clib LDIR_linux=njet/lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -;
                 ;;
             clean)
