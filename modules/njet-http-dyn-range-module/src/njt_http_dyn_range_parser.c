@@ -73,35 +73,6 @@ static bool parse_dyn_range_ranges_item(njt_pool_t *pool, parse_state_t *parse_s
             *(&out->dst_port) = int_parse_tmp;
             out->is_dst_port_set = 1;
             parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "try_del_times")) {
-            js2c_check_field_set(out->is_try_del_times_set);
-            parse_state->current_token += 1;
-            const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "try_del_times";
-            js2c_null_check();
-            int64_t int_parse_tmp;
-            if (builtin_parse_signed(pool, parse_state, true, false, 10, &int_parse_tmp, err_ret)) {
-                return true;
-            }
-            js2c_int_range_check_min(0LL);
-            *(&out->try_del_times) = int_parse_tmp;
-            out->is_try_del_times_set = 1;
-            parse_state->current_key = saved_key;
-        } else if (current_string_is(parse_state, "iptables_path")) {
-            js2c_check_field_set(out->is_iptables_path_set);
-            parse_state->current_token += 1;
-            const char* saved_key = parse_state->current_key;
-            parse_state->current_key = "iptables_path";
-            js2c_null_check();
-            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
-            ((&out->iptables_path))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
-            js2c_malloc_check(((&out->iptables_path))->data);
-            ((&out->iptables_path))->len = token_size;
-            if (builtin_parse_string(pool, parse_state, (&out->iptables_path), 0, ((&out->iptables_path))->len, err_ret)) {
-                return true;
-            }
-            out->is_iptables_path_set = 1;
-            parse_state->current_key = saved_key;
         } else {
             LOG_ERROR_JSON_PARSE(UNKNOWN_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown field in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
             return true;
@@ -112,23 +83,6 @@ static bool parse_dyn_range_ranges_item(njt_pool_t *pool, parse_state_t *parse_s
     if (!out->is_src_ports_set) {
         LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': src_ports", parse_state->current_key);
         return true;
-    }
-    // set default
-    if (!out->is_try_del_times_set) {
-        out->try_del_times = 0LL;
-    }
-    // set default
-    if (!out->is_iptables_path_set) {
-        size_t token_size = strlen("None");
-        (out->iptables_path).data = (u_char*)njt_pcalloc(pool, token_size + 1);
-        js2c_malloc_check((out->iptables_path).data);
-        (out->iptables_path).len = token_size;
-        if (out->iptables_path.len == 0) {
-            (out->iptables_path).data[0] = 0;
-        }
-        if (token_size > 0) {
-            njt_memcpy(out->iptables_path.data, "None", token_size);
-        }
     }
     parse_state->current_token = saved_current_token;
     return false;
@@ -216,18 +170,6 @@ static void get_json_length_dyn_range_ranges_item_dst_port(njt_pool_t *pool, dyn
     *length += cur - str;
 }
 
-static void get_json_length_dyn_range_ranges_item_try_del_times(njt_pool_t *pool, dyn_range_ranges_item_try_del_times_t *out, size_t *length, njt_int_t flags) {
-    u_char str[24];
-    u_char *cur;
-    cur = njt_sprintf(str, "%L", *out);
-    *length += cur - str;
-}
-
-static void get_json_length_dyn_range_ranges_item_iptables_path(njt_pool_t *pool, dyn_range_ranges_item_iptables_path_t *out, size_t *length, njt_int_t flags) {
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    *length += dst->len + 2; //  "str" 
-}
-
 static void get_json_length_dyn_range_ranges_item(njt_pool_t *pool, dyn_range_ranges_item_t *out, size_t *length, njt_int_t flags) {
     if (out == NULL) {
         *length += 4; // null
@@ -258,23 +200,6 @@ static void get_json_length_dyn_range_ranges_item(njt_pool_t *pool, dyn_range_ra
     if (omit == 0) {
         *length += (8 + 3); // "dst_port": 
         get_json_length_dyn_range_ranges_item_dst_port(pool, (&out->dst_port), length, flags);
-        *length += 1; // ","
-        count++;
-    }
-    omit = 0;
-    omit = out->is_try_del_times_set ? 0 : 1;
-    if (omit == 0) {
-        *length += (13 + 3); // "try_del_times": 
-        get_json_length_dyn_range_ranges_item_try_del_times(pool, (&out->try_del_times), length, flags);
-        *length += 1; // ","
-        count++;
-    }
-    omit = 0;
-    omit = out->is_iptables_path_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->iptables_path.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        *length += (13 + 3); // "iptables_path": 
-        get_json_length_dyn_range_ranges_item_iptables_path(pool, (&out->iptables_path), length, flags);
         *length += 1; // ","
         count++;
     }
@@ -341,14 +266,6 @@ dyn_range_ranges_item_src_ports_t* get_dyn_range_ranges_item_src_ports(dyn_range
 dyn_range_ranges_item_dst_port_t get_dyn_range_ranges_item_dst_port(dyn_range_ranges_item_t *out) {
     return out->dst_port;
 }
-
-dyn_range_ranges_item_try_del_times_t get_dyn_range_ranges_item_try_del_times(dyn_range_ranges_item_t *out) {
-    return out->try_del_times;
-}
-
-dyn_range_ranges_item_iptables_path_t* get_dyn_range_ranges_item_iptables_path(dyn_range_ranges_item_t *out) {
-    return &out->iptables_path;
-}
 dyn_range_ranges_item_t* get_dyn_range_ranges_item(dyn_range_ranges_t *out, size_t idx) {
     return ((dyn_range_ranges_item_t**)out->elts)[idx];
 
@@ -368,14 +285,6 @@ void set_dyn_range_ranges_item_src_ports(dyn_range_ranges_item_t* obj, dyn_range
 void set_dyn_range_ranges_item_dst_port(dyn_range_ranges_item_t* obj, dyn_range_ranges_item_dst_port_t field) {
     obj->dst_port = field;
     obj->is_dst_port_set = 1;
-}
-void set_dyn_range_ranges_item_try_del_times(dyn_range_ranges_item_t* obj, dyn_range_ranges_item_try_del_times_t field) {
-    obj->try_del_times = field;
-    obj->is_try_del_times_set = 1;
-}
-void set_dyn_range_ranges_item_iptables_path(dyn_range_ranges_item_t* obj, dyn_range_ranges_item_iptables_path_t* field) {
-    njt_memcpy(&obj->iptables_path, field, sizeof(njt_str_t));
-    obj->is_iptables_path_set = 1;
 }
 dyn_range_ranges_item_t* create_dyn_range_ranges_item(njt_pool_t *pool) {
     dyn_range_ranges_item_t* out = njt_pcalloc(pool, sizeof(dyn_range_ranges_item_t));
@@ -429,19 +338,6 @@ static void to_oneline_json_dyn_range_ranges_item_dst_port(njt_pool_t *pool, dyn
     buf->len = cur - buf->data;
 }
 
-static void to_oneline_json_dyn_range_ranges_item_try_del_times(njt_pool_t *pool, dyn_range_ranges_item_try_del_times_t *out, njt_str_t* buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    cur = njt_sprintf(cur, "%L", *out);
-    buf->len = cur - buf->data;
-}
-
-static void to_oneline_json_dyn_range_ranges_item_iptables_path(njt_pool_t *pool, dyn_range_ranges_item_iptables_path_t *out, njt_str_t *buf, njt_int_t flags) {
-    u_char* cur = buf->data + buf->len;
-    njt_str_t *dst = handle_escape_on_write(pool, out);
-    cur = njt_sprintf(cur, "\"%V\"", dst);
-    buf->len = cur - buf->data;
-}
-
 static void to_oneline_json_dyn_range_ranges_item(njt_pool_t *pool, dyn_range_ranges_item_t *out, njt_str_t* buf, njt_int_t flags) {
     njt_int_t omit;
     u_char* cur = buf->data + buf->len;
@@ -479,27 +375,6 @@ static void to_oneline_json_dyn_range_ranges_item(njt_pool_t *pool, dyn_range_ra
         cur = njt_sprintf(cur, "\"dst_port\":");
         buf->len = cur - buf->data;
         to_oneline_json_dyn_range_ranges_item_dst_port(pool, (&out->dst_port), buf, flags);
-        cur = buf->data + buf->len;
-        cur = njt_sprintf(cur, ",");
-        buf->len ++;
-    }
-    omit = 0;
-    omit = out->is_try_del_times_set ? 0 : 1;
-    if (omit == 0) {
-        cur = njt_sprintf(cur, "\"try_del_times\":");
-        buf->len = cur - buf->data;
-        to_oneline_json_dyn_range_ranges_item_try_del_times(pool, (&out->try_del_times), buf, flags);
-        cur = buf->data + buf->len;
-        cur = njt_sprintf(cur, ",");
-        buf->len ++;
-    }
-    omit = 0;
-    omit = out->is_iptables_path_set ? 0 : 1;
-    omit = (flags & OMIT_NULL_STR) && (out->iptables_path.data) == NULL ? 1 : omit;
-    if (omit == 0) {
-        cur = njt_sprintf(cur, "\"iptables_path\":");
-        buf->len = cur - buf->data;
-        to_oneline_json_dyn_range_ranges_item_iptables_path(pool, (&out->iptables_path), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;

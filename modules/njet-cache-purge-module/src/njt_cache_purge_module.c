@@ -636,7 +636,7 @@ njt_http_cache_is_reset_all(njt_http_request_t *r)
     /* check if the uri equals /\* or not */
     njt_http_core_loc_conf_t  *clcf;
     clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
-    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0,
                    "location name is %V.", &clcf->name);
 
     if (r->uri.len >= 3 && r->uri.data[r->uri.len - 1] == '*'
@@ -656,7 +656,7 @@ njt_http_cache_is_purge_all(njt_http_request_t *r)
     /* check if the uri equals /\* or not */
     njt_http_core_loc_conf_t  *clcf;
     clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
-    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0,
                    "location name is %V.", &clcf->name);
     if (r->uri.len >= 2 && r->uri.data[r->uri.len - 1] == '*'
     //处理分片删除的问题

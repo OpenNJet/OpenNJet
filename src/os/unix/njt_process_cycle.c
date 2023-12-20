@@ -1993,11 +1993,6 @@ njt_worker_process_exit(njt_cycle_t *cycle)
                     "*%uA open socket #%d left in connection %ui",
                     c[i].number, c[i].fd, i);
                 njt_debug_quit = 1;
-	    #if (NJT_DEBUG)
-	    	if(c[i].pool != NULL) {
-                        njt_destroy_pool(c[i].pool);
-                }
-	    #endif
             }
         }
 
