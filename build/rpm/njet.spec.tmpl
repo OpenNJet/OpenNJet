@@ -1,5 +1,5 @@
 Name:     njet 
-Version:  1.2.3 
+Version:  {{NJT_VERSION}} 
 Release:  1%{?dist} 
 
 Summary:  OpenNJet Application Engine
@@ -20,7 +20,7 @@ OpenNJet 应用引擎是基于 NGINX 的面向互联网和云原生应用提供�
 
 %build
 mv njet_main njet
-cd njet && sed -i 's/--strict-warnings//g' ./build_cc.sh && ./build_cc.sh -t $CI_COMMIT_SHA conf && make -j `nproc`
+cd njet && sed -i 's/--strict-warnings//g' ./build_cc.sh && ./build_cc.sh {{NJT_BUILD_OPT}} conf && make -j `nproc`
 if [ -d scripts ]; then
   for i in `find ./scripts -type f`; do
     LUA_PATH="`pwd`/luajit/src/?.lua;;" luajit/src/luajit -bg $i $i 
@@ -41,9 +41,11 @@ fi
 ln -sf libluajit-5.1.so.2.1.0 %{buildroot}/usr/local/njet/lib/libluajit-5.1.so.2
 ln -sf libluajit-5.1.so.2.1.0 %{buildroot}/usr/local/njet/lib/libluajit-5.1.so
 cd njet/auto/lib/luapkg; DESTDIR=%{buildroot} PREFIX=/usr/local CDIR_linux=njet/lualib/clib LDIR_linux=njet/lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -
-cp -a njet/auto/lib/keepalived/keepalived/emb/.libs/libha_emb.so* %{buildroot}/usr/local/njet/lib 
 if [ -d njet/auto/lib/modsecurity/src/.libs/ ]; then
  cp -a njet/auto/lib/modsecurity/src/.libs/libmodsecurity.so* %{buildroot}/usr/local/njet/lib
+fi
+if [ -d njet/auto/lib/keepalived/keepalived/emb/.libs ]; then
+ cp -a njet/auto/lib/keepalived/keepalived/emb/.libs/libha_emb.so* %{buildroot}/usr/local/njet/lib 
 fi
 
 %pre
