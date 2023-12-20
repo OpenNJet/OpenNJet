@@ -37,6 +37,7 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 
 static njt_int_t njt_http_dyn_server_post_merge_servers();
 static njt_int_t njt_http_dyn_server_delete_dirtyservers(njt_http_dyn_server_info_t *server_info);
+static njt_uint_t njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name);
 
 typedef struct njt_http_dyn_server_ctx_s {
 } njt_http_dyn_server_ctx_t, njt_stream_http_dyn_server_ctx_t;
@@ -218,6 +219,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	njt_int_t ret = NJT_OK;
 	u_char *p;
 	char *rv = NULL;
+	njt_flag_t   del = 0;
 	njt_pool_t  *old_pool = NULL;
 	njt_http_conf_ctx_t* http_ctx;
 	njt_str_t server_name,msg;
@@ -288,6 +290,8 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 
 	//clcf->locations = NULL; // clcf->old_locations;
 	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
+
+	del = 1;
 	rv = njt_conf_parse(&conf, &server_path);
 	if (rv != NULL) {
 		server_info->msg = *conf.errstr;
@@ -313,12 +317,18 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 		module = conf.cycle->modules[m]->ctx;
 		mi = conf.cycle->modules[m]->ctx_index;
 		rv = njt_http_merge_servers(&conf, cmcf, module, mi);
-		if (rv != NJT_CONF_OK) {
+		if (rv != NJT_CONF_OK ) {
 			rc = NJT_ERROR;
 			njt_str_set(&server_info->msg,"add server error:merge_servers");
 			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error:merge_servers!");
 			goto out;
 		}
+	}
+	if (njt_http_ssl_dynamic_init(&conf) != NJT_OK) {
+			rc = NJT_ERROR;
+		    njt_str_set(&server_info->msg,"add server error:no ssl_certificate!");
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error:no ssl_certificate!");
+			goto out;
 	}
 
 
@@ -327,6 +337,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	cmcf->dyn_vs_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
 	if(cmcf->dyn_vs_pool == NULL) {
 		njt_str_set(&server_info->msg,"create pool error!");
+		cmcf->dyn_vs_pool = old_pool;
 		rc = NJT_ERROR;
 		goto out;
 	} else {
@@ -337,13 +348,16 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	conf.module_type = NJT_CORE_MODULE;
 	conf.cmd_type = NJT_MAIN_CONF;
 	conf.ctx = njt_cycle->conf_ctx;	
-	if (njt_http_optimize_servers(&conf, cmcf, cmcf->ports) != NJT_OK) {
+	if (njt_http_optimize_servers(&conf, cmcf, cmcf->ports) != NJT_OK ) {
 		njt_str_set(&server_info->msg,"njt_http_optimize_servers error!");
+		njt_http_dyn_server_delete_dirtyservers(server_info);
 		njt_destroy_pool(cmcf->dyn_vs_pool);
 		cmcf->dyn_vs_pool = old_pool;
 		rc = NJT_ERROR;
+		del = 0;
 		goto out;   //zyg todo
 	}
+
 	ret = njt_http_dyn_server_post_merge_servers();
 	if(old_pool != NULL) {
 		njt_destroy_pool(old_pool);
@@ -357,7 +371,9 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 out:
 
 	if(rc != NJT_OK) {
-		njt_http_dyn_server_delete_dirtyservers(server_info);
+		if(del == 1) {
+			njt_http_dyn_server_delete_dirtyservers(server_info);
+		}
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  server [%V] error!",&server_name);
 	} else {
 		njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  server [%V] succ!",&server_name);
@@ -745,7 +761,8 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 	u_char *p,*data;
 	int32_t  rlen,buffer_len,remain;
 	njt_str_t  escape_server_name,escape_server_body;
-
+	njt_uint_t  ssl;
+	njt_str_t   opt_ssl;
 	buffer_len = server_info->buffer.len;
 	remain = buffer_len;
 	data = server_info->buffer.data;
@@ -753,6 +770,12 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 
 	if(server_info) {
 		njt_memzero(data,buffer_len);
+		njt_str_set(&opt_ssl,"");
+		ssl = njt_http_get_ssl_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->server_name);	
+		if(ssl == 1) {
+			njt_str_set(&opt_ssl,"ssl");
+		}
+		server_info->listen_option = opt_ssl;
 		p = data;
 		p = njt_snprintf(p, remain, "server {\n");
 		remain = data + buffer_len - p;
@@ -1015,4 +1038,119 @@ static njt_int_t njt_http_dyn_server_post_merge_servers() {
 		return NJT_OK;
 	}
 	return NJT_ERROR;
+}
+
+
+
+static njt_uint_t njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
+    njt_listening_t *ls, *target_ls = NULL;
+    njt_uint_t i,ssl;
+	in_port_t  nport;
+ 
+    njt_http_port_t *port;
+    njt_http_in_addr_t *addr;
+    njt_http_in6_addr_t *addr6;
+    njt_http_addr_conf_t *addr_conf;
+    njt_str_t server_low_name;
+	njt_url_t  u;
+	struct sockaddr_in   *ssin;
+#if (NJT_HAVE_INET6)
+    struct sockaddr_in6  *ssin6;
+#endif
+
+	njt_pool_t *pool;
+	ssl = 0;
+    target_ls = NULL;
+
+	pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+	if(pool == NULL) {
+		 return ssl;
+	}
+	
+	njt_memzero(&u,sizeof(njt_url_t));
+	u.url = *addr_port;
+	u.default_port = 80;
+	u.no_resolve = 1;
+
+	if (njt_parse_url(pool, &u) != NJT_OK) {
+		goto out;
+	}
+    
+    if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 ) {
+	
+	server_low_name.data = njt_pnalloc(pool,server_name->len);
+	if(server_low_name.data == NULL) {
+		goto out;
+	}
+	server_low_name.len = server_name->len;
+	njt_strlow(server_low_name.data, server_name->data,server_name->len);
+
+	server_name = &server_low_name;
+
+	    ls = cycle->listening.elts;
+	    for (i = 0; i < cycle->listening.nelts; i++) {
+            if(ls[i].server_type != NJT_HTTP_SERVER_TYPE){
+                continue; // 非http listen
+            }
+			nport = 0;
+			 if (njt_cmp_sockaddr(ls[i].sockaddr, ls[i].socklen,
+                                     &u.sockaddr.sockaddr, u.socklen, 1)
+                    == NJT_OK) {
+                target_ls = &ls[i];
+                break;
+            } else if(ls[i].sockaddr->sa_family != AF_UNIX && ls[i].sockaddr->sa_family == u.family && njt_inet_wildcard(ls[i].sockaddr) == 1){
+				nport = njt_inet_get_port(ls[i].sockaddr);
+				if(nport == u.port) {
+					target_ls = &ls[i];
+	                break;
+				}
+			}
+        }
+        if (target_ls == NULL) {
+            njt_log_error(NJT_LOG_INFO, cycle->log, 0, "can`t find listen server %V",addr_port);
+            goto out;
+        }
+        port = target_ls->servers;
+        addr=NULL;
+        addr6=NULL;
+        switch (target_ls->sockaddr->sa_family) {
+
+#if (NJT_HAVE_INET6)
+            case AF_INET6:
+                addr6 = port->addrs;
+                break;
+#endif
+            default: /* AF_INET */
+                addr = port->addrs;
+                break;
+        }
+        for (i = 0; i < port->naddrs ; ++i) {
+			if(target_ls->sockaddr->sa_family != AF_UNIX) {
+				if (addr6 != NULL) {
+					ssin6 = (struct sockaddr_in6 *) &u.sockaddr.sockaddr; 
+					if (njt_memcmp(&addr6[i].addr6, &ssin6->sin6_addr,16) != 0) {
+						continue;
+					}
+					addr_conf = &addr6[i].conf;
+				} else {
+					ssin = (struct sockaddr_in *) &u.sockaddr.sockaddr;          
+					if (addr[i].addr != ssin->sin_addr.s_addr) {
+						continue;
+					}
+					addr_conf = &addr[i].conf;
+				}
+				if(addr_conf == NULL){
+					continue;
+				}
+			} else {
+				addr_conf = &addr[0].conf;
+			}
+			ssl = addr_conf->ssl;
+        }
+    }
+out:
+	if(pool != NULL) {
+		njt_destroy_pool(pool);
+	}
+    return ssl;
 }

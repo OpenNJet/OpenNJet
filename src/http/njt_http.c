@@ -9,7 +9,7 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
-
+#include <njt_http_ssl_module.h>
 
 static char *njt_http_block(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
@@ -1450,6 +1450,27 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
             continue;
         }
 
+#if (NJT_HTTP_DYNAMIC_SERVER)
+	if(cf->dynamic == 1) {
+		if(lsopt->ssl != addr[i].opt.ssl) {
+			njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+					   "error listen options for ssl %V",
+					   &addr[i].opt.addr_text);
+			return NJT_ERROR;
+		}
+		/*
+		njt_http_ssl_srv_conf_t     *sscf;
+		sscf = cscf->ctx->srv_conf[njt_http_ssl_module.ctx_index];
+		if ((sscf->certificates == NJT_CONF_UNSET_PTR || sscf->certificates == NULL) && (sscf->reject_handshake == 0 || sscf->reject_handshake == NJT_CONF_UNSET)) {
+			 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                              "no \"ssl_certificate\" is defined for "
+                              "the \"listen ... ssl\" directive in %s:%ui",
+                              cscf->file_name, cscf->line);
+			return NJT_ERROR;
+			 
+		}*/
+	}
+#endif
         /* the address is already in the address list */
 
         if (njt_http_add_server(cf, cscf, &addr[i]) != NJT_OK) {
