@@ -794,11 +794,6 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         }
 
     } else if (conf->certificates) {
-	if(cf->dynamic == 1 && conf->enable == 0) {
-	   njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                          "no listen ssl opt!");
-	    //return NJT_CONF_ERROR;
-	}
         if (conf->certificate_keys == NULL
             || conf->certificate_keys->nelts < conf->certificates->nelts)
         {
