@@ -16,10 +16,8 @@
 
 #define IPTABLES_PATH_LEN   300
 
-#define NJT_IPTABLES_PATH   "/usr/sbin/iptables"
 
-#define NJT_RANG_ADD_RULE   "%V -t nat -I PREROUTING -p tcp --dport %V -j REDIRECT --to-port %d"
-#define NJT_RANG_DEL_RULE   "%V -t nat -D PREROUTING -p tcp --dport %V -j REDIRECT --to-port %d"
+
 
 typedef struct {
     njt_str_t               type;
@@ -36,7 +34,6 @@ typedef struct {
 
 typedef struct {
     njt_queue_t                     ranges;
-    njt_uint_t                      try_del_times;
     njt_range_iptables_path_t       iptables_path;
     njt_pool_t                      *pool;
 } njt_range_conf_t;
