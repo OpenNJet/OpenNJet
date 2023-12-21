@@ -866,7 +866,8 @@ njt_stream_ftp_data_proxy_cleanup(njt_stream_session_t *s)
         return;
     }
 
-    if(s->upstream != NULL && s->upstream->upstream != NULL && s->upstream->upstream->ftp_url_pool != NULL){
+    // if(s->upstream != NULL && s->upstream->upstream != NULL && s->upstream->upstream->ftp_url_pool != NULL){
+    if(s->upstream->upstream != NULL && s->upstream->upstream->ftp_url_pool != NULL){
         njt_destroy_pool(s->upstream->upstream->ftp_url_pool);
         s->upstream->upstream = NULL;
     }
