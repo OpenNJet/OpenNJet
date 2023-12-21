@@ -330,8 +330,7 @@ static njt_int_t njt_stream_get_nginmesh_dest(njt_stream_session_t *s)
 	    njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, " 0 stream_nginmesh_dest error=%s",strerror(errno));
 	}
 	if(ret == -1) {
-	   int n = errno;
-	    njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, "stream_nginmesh_dest error=%s",strerror(n));
+	    njt_log_error(NJT_LOG_WARN, s->connection->log,0, "stream_nginmesh_dest error=%s",strerror(errno));
 	} else {
 		njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, "ip address length %d",org_src_addr_len);
 		if(org_src_addr.ss_family == AF_INET || org_src_addr.ss_family == AF_INET6)  {

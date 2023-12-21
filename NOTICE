@@ -49,3 +49,10 @@ https://keepalived.org/
 Copyright (C) 2001-2017 Alexandre Cassen, <acassen@gmail.com>
 GNU GPLv2
 源代码修改之后引入
+
+ModSecurity
+https://github.com/SpiderLabs/ModSecurity
+https://github.com/SpiderLabs/ModSecurity-nginx
+Copyright (c) 2015 - 2023 Trustwave Holdings, Inc. (http://www.trustwave.com/)
+Apache-2.0 license
+源代码修改之后引入

@@ -116,6 +116,7 @@ static njt_http_module_t njt_http_range_api_module_ctx = {
         njt_dyn_range_merge_loc_conf   /* merge location configuration */
 };
 
+
 njt_module_t njt_http_range_api_module = {
         NJT_MODULE_V1,
         &njt_http_range_api_module_ctx, /* module context */
@@ -532,7 +533,7 @@ njt_dyn_range_read_data(njt_http_request_t *r){
 
     p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/range/l_%ui",crc32);
 	topic_name.len = p - topic_name.data;
-	rc = njt_dyn_range_rpc_send(r, &topic_name, &json_str, 0);
+	rc = njt_dyn_range_rpc_send(r, &topic_name, &json_str, 1);
 	if(rc == NJT_OK) {
 		++r->main->count;
 	}
