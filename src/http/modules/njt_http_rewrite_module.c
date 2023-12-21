@@ -600,8 +600,14 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     clcf->name = pclcf->name;
     clcf->noname = 1;
 
+#if (NJT_HTTP_DYNAMIC_LOC)
+    clcf->dynamic_status = 1;
+#endif
     if (njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
         return NJT_CONF_ERROR;
+    }
+    if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
+	return NJT_CONF_ERROR;
     }
 
     if (njt_http_rewrite_if_condition(cf, lcf) != NJT_CONF_OK) {
