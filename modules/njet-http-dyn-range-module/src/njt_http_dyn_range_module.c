@@ -54,10 +54,6 @@ static njt_int_t njt_dyn_range_check_param(dyn_range_api_t *api_data,
         return NJT_ERROR;
     }
 
-    if(api_data->try_del_times < 1){
-        api_data->try_del_times = 0;
-    }
-
     //check valid
     if(!api_data->is_src_ports_set || api_data->src_ports.len < 1){
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
@@ -266,22 +262,6 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
             }
             njt_memcpy(rule_item->src_ports.data, api_data->src_ports.data, api_data->src_ports.len);
 
-            njt_queue_insert_tail(&rcf->ranges, &rule_item->range_queue);
-
-            if(api_data->is_try_del_times_set){
-                rcf->try_del_times = api_data->try_del_times;
-            }
-
-            if(api_data->is_iptables_path_set){
-                if(api_data->iptables_path.len > IPTABLES_PATH_LEN){
-                    rcf->iptables_path.len = IPTABLES_PATH_LEN;
-                }else{
-                    rcf->iptables_path.len = api_data->iptables_path.len;
-                }
-
-                njt_memcpy(rcf->iptables_path.path, api_data->iptables_path.data, rcf->iptables_path.len);
-            }
-
             tmp_str.data = rcf->iptables_path.path;
             tmp_str.len = rcf->iptables_path.len;
             if(NJT_OK != njt_range_add_rule(&tmp_str, &rule_item->type, &rule_item->src_ports, rule_item->dst_port)){
@@ -295,8 +275,13 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
                 rpc_data_str.len = end - data_buf;
                 njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
 
+                njt_pfree(rcf->pool, rule_item->src_ports.data);
+                njt_pfree(rcf->pool, rule_item);
+
                 return NJT_ERROR;
             }
+
+            njt_queue_insert_tail(&rcf->ranges, &rule_item->range_queue);
 
         }else if(api_data->action == DYN_RANGE_API_ACTION_DEL){
             //not found, should not be delete
@@ -307,107 +292,99 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
     return NJT_OK;
 }
 
-static int  njt_http_dyn_range_full_update_handler(njt_str_t *key, njt_str_t *value, void *data){
-    njt_int_t                            rc = NJT_OK;
-    dyn_range_t                         *api_full_datas = NULL;
-    dyn_range_api_t                     api_data;
-    njt_pool_t                          *pool = NULL;
-    njt_rpc_result_t                    *rpc_result = NULL;
-    js2c_parse_error_t                  err_info;
-    dyn_range_ranges_t                  *dyn_ranges = NULL;
-    dyn_range_ranges_item_t             *range_item = NULL;
-    njt_uint_t                          j;
+// static int  njt_http_dyn_range_full_update_handler(njt_str_t *key, njt_str_t *value, void *data){
+//     njt_int_t                            rc = NJT_OK;
+//     dyn_range_t                         *api_full_datas = NULL;
+//     dyn_range_api_t                     api_data;
+//     njt_pool_t                          *pool = NULL;
+//     njt_rpc_result_t                    *rpc_result = NULL;
+//     js2c_parse_error_t                  err_info;
+//     dyn_range_ranges_t                  *dyn_ranges = NULL;
+//     dyn_range_ranges_item_t             *range_item = NULL;
+//     njt_uint_t                          j;
 
 
-    rpc_result = njt_rpc_result_create();
-    if(!rpc_result){
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
-                "dyn_range_full_update, njt_rpc_result_create error");
-        rc = NJT_ERROR;
+//     rpc_result = njt_rpc_result_create();
+//     if(!rpc_result){
+//         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
+//                 "dyn_range_full_update, njt_rpc_result_create error");
+//         rc = NJT_ERROR;
 
-        goto end;
-    }
+//         goto end;
+//     }
 
-    if(value->len < 2 ){
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "input param not valid, less then 2 byte");
+//     if(value->len < 2 ){
+//         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "input param not valid, less then 2 byte");
         
-        return NJT_ERROR;
-    }
+//         return NJT_ERROR;
+//     }
 
-    pool = njt_create_pool(njt_pagesize, njt_cycle->log);
-    if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_dyn_range_full_change_handler create pool error");
+//     pool = njt_create_pool(njt_pagesize, njt_cycle->log);
+//     if(pool == NULL){
+//         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_dyn_range_full_change_handler create pool error");
         
-        return NJT_ERROR;
-    }
+//         return NJT_ERROR;
+//     }
 
-    api_full_datas = json_parse_dyn_range(pool, value, &err_info);
-    if (api_full_datas == NULL)
-    {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
-                "json_parse_dyn_range err: %V",  &err_info.err_str);
+//     api_full_datas = json_parse_dyn_range(pool, value, &err_info);
+//     if (api_full_datas == NULL)
+//     {
+//         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+//                 "json_parse_dyn_range err: %V",  &err_info.err_str);
 
-        rc = NJT_ERROR;
-        goto end;
-    }
+//         rc = NJT_ERROR;
+//         goto end;
+//     }
 
-    if(!api_full_datas->is_ranges_set){
-        rc = NJT_OK;
-        goto end;
-    }
+//     if(!api_full_datas->is_ranges_set){
+//         rc = NJT_OK;
+//         goto end;
+//     }
 
-    njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
+//     njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
 
-    //loop range
-    dyn_ranges = get_dyn_range_ranges(api_full_datas);
-    range_item = dyn_ranges->elts;
-    for (j = 0; j < dyn_ranges->nelts; ++j) {
-        range_item = get_dyn_range_ranges_item(dyn_ranges, j);
-        if(range_item == NULL){
-            continue;
-        }
-        njt_memzero(&api_data, sizeof(dyn_range_api_t));
-        set_dyn_range_api_action(&api_data, DYN_RANGE_API_ACTION_ADD);
+//     //loop range
+//     dyn_ranges = get_dyn_range_ranges(api_full_datas);
+//     range_item = dyn_ranges->elts;
+//     for (j = 0; j < dyn_ranges->nelts; ++j) {
+//         range_item = get_dyn_range_ranges_item(dyn_ranges, j);
+//         if(range_item == NULL){
+//             continue;
+//         }
+//         njt_memzero(&api_data, sizeof(dyn_range_api_t));
+//         set_dyn_range_api_action(&api_data, DYN_RANGE_API_ACTION_ADD);
 
-        if(range_item->is_type_set){
-            set_dyn_range_api_type(&api_data, get_dyn_range_ranges_item_type(range_item));
-        }
+//         if(range_item->is_type_set){
+//             set_dyn_range_api_type(&api_data, get_dyn_range_ranges_item_type(range_item));
+//         }
 
-        if(range_item->is_src_ports_set){
-            set_dyn_range_api_src_ports(&api_data, get_dyn_range_ranges_item_src_ports(range_item));
-        }
+//         if(range_item->is_src_ports_set){
+//             set_dyn_range_api_src_ports(&api_data, get_dyn_range_ranges_item_src_ports(range_item));
+//         }
 
-        if(range_item->is_dst_port_set){
-            set_dyn_range_api_dst_port(&api_data, get_dyn_range_ranges_item_dst_port(range_item));
-        }
+//         if(range_item->is_dst_port_set){
+//             set_dyn_range_api_dst_port(&api_data, get_dyn_range_ranges_item_dst_port(range_item));
+//         }
 
-        if(range_item->is_try_del_times_set){
-            set_dyn_range_api_try_del_times(&api_data, get_dyn_range_ranges_item_try_del_times(range_item));
-        }
+//         rc = njt_update_range(pool, &api_data, rpc_result);
+//         if(rc != NJT_OK){
+//             if(rc == NJT_DECLINED){
+//                 njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+//                     "full range change rule has exist");
+//             }else{
+//                 njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
+//                     "full range change update fail");
+//             }
+//         }
+//     }
 
-        if(range_item->is_iptables_path_set){
-            set_dyn_range_api_iptables_path(&api_data, get_dyn_range_ranges_item_iptables_path(range_item));
-        }
+// end:
+//     if(pool != NULL){
+//         njt_destroy_pool(pool);
+//     }
 
-        rc = njt_update_range(pool, &api_data, rpc_result);
-        if(rc != NJT_OK){
-            if(rc == NJT_DECLINED){
-                njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
-                    "full range change rule has exist");
-            }else{
-                njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, 
-                    "full range change update fail");
-            }
-        }
-    }
-
-end:
-    if(pool != NULL){
-        njt_destroy_pool(pool);
-    }
-
-    return rc;
-}
+//     return rc;
+// }
 
 
 static int  njt_http_dyn_range_update_handler(njt_str_t *key, njt_str_t *value, void *data, njt_str_t *out_msg){
@@ -464,6 +441,9 @@ static int  njt_http_dyn_range_update_handler(njt_str_t *key, njt_str_t *value, 
     njt_rpc_result_set_code(rpc_result,NJT_RPC_RSP_SUCCESS);
     rc = njt_update_range(pool,api_data, rpc_result);
     if(rc != NJT_OK){
+        njt_str_t msg = njt_string("");
+        njt_kv_sendmsg(key,&msg,0);
+
         if(rc == NJT_DECLINED){
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
             if(api_data->action == DYN_RANGE_API_ACTION_DEL){
@@ -472,15 +452,12 @@ static int  njt_http_dyn_range_update_handler(njt_str_t *key, njt_str_t *value, 
                 njt_rpc_result_set_msg(rpc_result, (u_char *)" rule has exist");
             }
         }else{
-            njt_str_t msg = njt_string("");
-            njt_kv_sendmsg(key,&msg,0);
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
-            // njt_rpc_result_set_msg(rpc_result, (u_char *)" dyn range update fail");
         }
     }else if(api_data->action == DYN_RANGE_API_ACTION_DEL){
         //need delete msg
         njt_str_t msg = njt_string("");
-        njt_kv_sendmsg(key,&msg,0);
+        njt_kv_sendmsg(key, &msg, 0);
     }
 
     end:
@@ -509,7 +486,7 @@ static njt_str_t *njt_http_dyn_range_dump_conf(njt_cycle_t *cycle,njt_pool_t *po
     njt_queue_t                         *q;
     njt_range_rule_t                    *rule_item;
     njt_range_conf_t                    *rcf;
-    njt_str_t                           tmp_str;
+
 
     njt_memzero(&dynjson_obj, sizeof(dyn_range_t));
 
@@ -543,14 +520,6 @@ static njt_str_t *njt_http_dyn_range_dump_conf(njt_cycle_t *cycle,njt_pool_t *po
 
         //set dst_port
         set_dyn_range_ranges_item_dst_port(range_item, rule_item->dst_port);
-
-        //set try_del_times
-        set_dyn_range_ranges_item_try_del_times(range_item, rcf->try_del_times);
-
-        //set iptables_path
-        tmp_str.data = rcf->iptables_path.path;
-        tmp_str.len = rcf->iptables_path.len;
-        set_dyn_range_ranges_item_iptables_path(range_item, &tmp_str);
 
         add_item_dyn_range_ranges(dynjson_obj.ranges, range_item);
     }
@@ -609,11 +578,17 @@ static u_char* njt_http_dyn_range_put_handler(njt_str_t *topic, njt_str_t *reque
 static njt_int_t njt_http_dyn_range_init_process(njt_cycle_t* cycle){
     njt_str_t  rpc_key = njt_string("range");
     njt_kv_reg_handler_t h;
+
+    if(njt_process != NJT_PROCESS_HELPER || 1 != njt_is_privileged_agent){
+        return NJT_OK;
+    }
+
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &rpc_key;
     h.rpc_get_handler = njt_http_dyn_range_rpc_handler;
     h.rpc_put_handler = njt_http_dyn_range_put_handler;
-    h.handler = njt_http_dyn_range_full_update_handler;
+    // h.handler = njt_http_dyn_range_full_update_handler;
+    h.handler = NULL;
     h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
     njt_kv_reg_handler(&h);
 

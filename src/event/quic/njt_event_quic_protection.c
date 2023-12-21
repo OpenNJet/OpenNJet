@@ -95,6 +95,13 @@ njt_quic_ciphers(njt_uint_t id, njt_quic_ciphers_t *ciphers,
         ciphers->d = EVP_sha256();
         len = 16;
         break;
+
+    case TLS1_3_CK_SM4_GCM_SM3:
+        ciphers->c = EVP_sm4_gcm();  
+        ciphers->hp = EVP_sm4_ctr(); 
+        ciphers->d = EVP_sm3(); 
+        len = 16;
+        break;
 #endif
 
     default:
