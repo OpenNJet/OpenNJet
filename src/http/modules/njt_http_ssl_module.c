@@ -1469,29 +1469,30 @@ njt_http_ssl_init(njt_conf_t *cf)
 }
 
 njt_int_t
-njt_http_ssl_dynamic_init(njt_conf_t *cf)
+njt_http_ssl_dynamic_init(njt_conf_t *cf,njt_http_addr_conf_t *addr_conf)
 {
-    njt_uint_t                   a, p, s;
     const char                  *name;
-    njt_http_conf_addr_t        *addr;
-    njt_http_conf_port_t        *port;
     njt_http_ssl_srv_conf_t     *sscf;
     njt_http_core_loc_conf_t    *clcf;
-    njt_http_core_srv_conf_t   **cscfp, *cscf;
+    njt_http_core_srv_conf_t   **cscfp, *cscf,*cscf_default;
     njt_http_core_main_conf_t   *cmcf;
 
+    if(addr_conf == NULL) {
+	return NJT_OK;
+    }
     cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
     cscfp = cmcf->servers.elts;
+    cscf = NULL;
+    if(cmcf->servers.nelts > 0 && cscfp[cmcf->servers.nelts-1]->dynamic_status == 1) {
+	cscf = cscfp[cmcf->servers.nelts-1];
+    } else {
+	    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"njt_http_ssl_dynamic_init no find server!");
+	return NJT_OK;
+    }
+    
 
-    for (s = 0; s < cmcf->servers.nelts; s++) {
-
-        sscf = cscfp[s]->ctx->srv_conf[njt_http_ssl_module.ctx_index];
-
-        if (cscfp[s]->dynamic_status != 1) {
-            continue;
-        }
-
-        clcf = cscfp[s]->ctx->loc_conf[njt_http_core_module.ctx_index];
+        sscf = cscf->ctx->srv_conf[njt_http_ssl_module.ctx_index];
+        clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
 
         if (sscf->stapling) {
             if (njt_ssl_stapling_resolver(cf, &sscf->ssl, clcf->resolver,
@@ -1510,27 +1511,15 @@ njt_http_ssl_dynamic_init(njt_conf_t *cf)
                 return NJT_ERROR;
             }
         }
-    }
+ 	if(!addr_conf->ssl && !addr_conf->quic) {
+		return NJT_OK;
+	}   
 
-    if (cmcf->ports == NULL) {
-        return NJT_OK;
-    }
-
-    port = cmcf->ports->elts;
-    for (p = 0; p < cmcf->ports->nelts; p++) {
-
-        addr = port[p].addrs.elts;
-        for (a = 0; a < port[p].addrs.nelts; a++) {
-
-            if (!addr[a].opt.ssl && !addr[a].opt.quic) {
-                continue;
-            }
-
-            if (addr[a].opt.quic) {
+            if (addr_conf->quic) {
                 name = "quic";
 
 #if (NJT_QUIC_OPENSSL_COMPAT)
-                if (njt_http_ssl_quic_compat_dynamic_init(cf, &addr[a]) != NJT_OK) {
+                if (njt_http_ssl_quic_compat_dynamic_init(cf, cscf) != NJT_OK) {
                     return NJT_ERROR;
                 }
 #endif
@@ -1539,12 +1528,12 @@ njt_http_ssl_dynamic_init(njt_conf_t *cf)
                 name = "ssl";
             }
 
-            cscf = addr[a].default_server;
-            sscf = cscf->ctx->srv_conf[njt_http_ssl_module.ctx_index];
+            cscf_default = addr_conf->default_server;
+            sscf = cscf_default->ctx->srv_conf[njt_http_ssl_module.ctx_index];
 
             if (sscf->certificates) {
 
-                if (addr[a].opt.quic && !(sscf->protocols & NJT_SSL_TLSv1_3)) {
+                if (addr_conf->quic && !(sscf->protocols & NJT_SSL_TLSv1_3)) {
                     njt_log_error(NJT_LOG_EMERG, cf->log, 0,
                                   "\"ssl_protocols\" must enable TLSv1.3 for "
                                   "the \"listen ... %s\" directive in %s:%ui",
@@ -1552,7 +1541,7 @@ njt_http_ssl_dynamic_init(njt_conf_t *cf)
                     return NJT_ERROR;
                 }
 
-                continue;
+                return NJT_OK;
             }
 
             if (!sscf->reject_handshake) {
@@ -1568,14 +1557,11 @@ njt_http_ssl_dynamic_init(njt_conf_t *cf)
              * check all non-default server blocks
              */
 
-            cscfp = addr[a].servers.elts;
-            for (s = 0; s < addr[a].servers.nelts; s++) {
 
-                cscf = cscfp[s];
                 sscf = cscf->ctx->srv_conf[njt_http_ssl_module.ctx_index];
 
                 if (sscf->certificates || sscf->reject_handshake) {
-                    continue;
+                    return NJT_OK;
                 }
 
                 njt_log_error(NJT_LOG_EMERG, cf->log, 0,
@@ -1583,9 +1569,6 @@ njt_http_ssl_dynamic_init(njt_conf_t *cf)
                               "the \"listen ... %s\" directive in %s:%ui",
                               name, cscf->file_name, cscf->line);
                 return NJT_ERROR;
-            }
-        }
-    }
 
     return NJT_OK;
 }
@@ -1617,28 +1600,19 @@ njt_http_ssl_quic_compat_init(njt_conf_t *cf, njt_http_conf_addr_t *addr)
 }
 
 static njt_int_t
-njt_http_ssl_quic_compat_dynamic_init(njt_conf_t *cf, njt_http_conf_addr_t *addr)
+njt_http_ssl_quic_compat_dynamic_init(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf)
 {
-    njt_uint_t                  s;
-    njt_http_ssl_srv_conf_t    *sscf;
-    njt_http_core_srv_conf_t  **cscfp, *cscf;
+	njt_http_ssl_srv_conf_t    *sscf;
+	sscf = cscf->ctx->srv_conf[njt_http_ssl_module.ctx_index];
+	if(sscf != NULL) {
+		if (sscf->certificates || sscf->reject_handshake) {
+			if (njt_quic_compat_init(cf, sscf->ssl.ctx) != NJT_OK) {
+				return NJT_ERROR;
+			}
+		}
+	}
 
-    cscfp = addr->servers.elts;
-    for (s = 0; s < addr->servers.nelts; s++) {
-        if (cscfp[s]->dynamic_status != 1) {
-            continue;
-        }
-        cscf = cscfp[s];
-        sscf = cscf->ctx->srv_conf[njt_http_ssl_module.ctx_index];
-
-        if (sscf->certificates || sscf->reject_handshake) {
-            if (njt_quic_compat_init(cf, sscf->ssl.ctx) != NJT_OK) {
-                return NJT_ERROR;
-            }
-        }
-    }
-
-    return NJT_OK;
+	return NJT_OK;
 }
 
 #endif

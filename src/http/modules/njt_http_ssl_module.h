@@ -89,6 +89,6 @@ njt_int_t njt_http_ssl_compile_certificates(njt_conf_t *cf,
 #endif
 
 njt_int_t
-njt_http_ssl_dynamic_init(njt_conf_t *cf);
+njt_http_ssl_dynamic_init(njt_conf_t *cf,njt_http_addr_conf_t *addr_conf);
 
 #endif /* _NJT_HTTP_SSL_H_INCLUDED_ */
