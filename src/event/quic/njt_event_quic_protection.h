@@ -113,6 +113,7 @@ njt_int_t njt_quic_crypto_init(const njt_quic_cipher_t *cipher,
     njt_quic_secret_t *s, njt_quic_md_t *key, njt_int_t enc, njt_log_t *log);
 njt_int_t njt_quic_crypto_seal(njt_quic_secret_t *s, njt_str_t *out,
     u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log);
+void njt_quic_crypto_cleanup(njt_quic_secret_t *s);
 njt_int_t njt_quic_hkdf_expand(njt_quic_hkdf_t *hkdf, const EVP_MD *digest,
     njt_log_t *log);
 

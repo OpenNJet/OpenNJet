@@ -28,7 +28,8 @@ static njt_int_t njt_hkdf_extract(u_char *out_key, size_t *out_len,
 
 static uint64_t njt_quic_parse_pn(u_char **pos, njt_int_t len, u_char *mask,
     uint64_t *largest_pn);
-static njt_int_t njt_quic_crypto_open( njt_quic_secret_t *s, njt_str_t *out,
+
+static njt_int_t njt_quic_crypto_open(njt_quic_secret_t *s, njt_str_t *out,
     u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log);
 #ifndef OPENSSL_IS_BORINGSSL
 static njt_int_t njt_quic_crypto_common(njt_quic_secret_t *s, njt_str_t *out,
@@ -120,7 +121,7 @@ njt_quic_keys_set_initial_secret(njt_quic_keys_t *keys, njt_str_t *secret,
     njt_quic_md_t        client_key, server_key;
     njt_quic_hkdf_t      seq[8];
     njt_quic_secret_t   *client, *server;
-    njt_quic_ciphers_t  ciphers;
+    njt_quic_ciphers_t   ciphers;
 
     static const uint8_t salt[20] =
         "\x38\x76\x2c\xf7\xf5\x59\x34\xb3\x4d\x17"
@@ -213,7 +214,7 @@ njt_quic_keys_set_initial_secret(njt_quic_keys_t *keys, njt_str_t *secret,
     return NJT_OK;
 
 failed:
-    
+
     njt_quic_keys_cleanup(keys);
 
     return NJT_ERROR;
@@ -542,9 +543,11 @@ njt_quic_crypto_common(njt_quic_secret_t *s, njt_str_t *out, u_char *nonce,
             == 0)
         {
             njt_ssl_error(NJT_LOG_INFO, log, 0,
-                        "EVP_CIPHER_CTX_ctrl(EVP_CTRL_AEAD_GET_TAG) failed");
+                          "EVP_CIPHER_CTX_ctrl(EVP_CTRL_AEAD_GET_TAG) failed");
             return NJT_ERROR;
         }
+
+        out->len += NJT_QUIC_TAG_LEN;
     }
 
     return NJT_OK;
@@ -574,10 +577,9 @@ njt_quic_crypto_hp_init(const EVP_CIPHER *cipher, njt_quic_secret_t *s,
     EVP_CIPHER_CTX  *ctx;
 
 #ifdef OPENSSL_IS_BORINGSSL
-
     if (cipher == (EVP_CIPHER *) EVP_aead_chacha20_poly1305()) {
         /* no EVP interface */
-        s->hp_ctx == NULL;
+        s->hp_ctx = NULL;
         return NJT_OK;
     }
 #endif
@@ -645,7 +647,7 @@ njt_quic_crypto_hp_cleanup(njt_quic_secret_t *s)
         EVP_CIPHER_CTX_free(s->hp_ctx);
         s->hp_ctx = NULL;
     }
- }
+}
 
 
 njt_int_t
@@ -705,7 +707,6 @@ njt_quic_keys_set_encryption_secret(njt_log_t *log, njt_uint_t is_write,
         return NJT_ERROR;
     }
 
-
     if (njt_quic_crypto_hp_init(ciphers.hp, peer_secret, log) == NJT_ERROR) {
         return NJT_ERROR;
     }
@@ -746,6 +747,7 @@ njt_quic_keys_discard(njt_quic_keys_t *keys,
     njt_explicit_memzero(client->secret.data, client->secret.len);
     njt_explicit_memzero(server->secret.data, server->secret.len);
 }
+
 
 void
 njt_quic_keys_switch(njt_connection_t *c, njt_quic_keys_t *keys)
@@ -952,7 +954,7 @@ njt_quic_create_retry_packet(njt_quic_header_t *pkt, njt_str_t *res)
                    "quic retry itag len:%uz %xV", ad.len, &ad);
 #endif
 
-    if (njt_quic_ciphers(0, &ciphers) == NJT_ERROR) {
+    if (njt_quic_ciphers(NJT_QUIC_INITIAL_CIPHER, &ciphers) == NJT_ERROR) {
         return NJT_ERROR;
     }
 
@@ -960,7 +962,9 @@ njt_quic_create_retry_packet(njt_quic_header_t *pkt, njt_str_t *res)
     njt_memcpy(key.data, key_data, sizeof(key_data));
     secret.iv.len = NJT_QUIC_IV_LEN;
 
-    if (njt_quic_crypto_init(ciphers.c, &secret, &key, 1, pkt->log) == NJT_ERROR) {
+    if (njt_quic_crypto_init(ciphers.c, &secret, &key, 1, pkt->log)
+        == NJT_ERROR)
+    {
         return NJT_ERROR;
     }
 
@@ -1185,7 +1189,7 @@ njt_quic_decrypt(njt_quic_header_t *pkt, uint64_t *largest_pn)
     pkt->payload.data = pkt->plaintext + ad.len;
 
     if (njt_quic_crypto_open(secret, &pkt->payload, nonce, &in, &ad, pkt->log)
-       != NJT_OK)
+        != NJT_OK)
     {
         return NJT_DECLINED;
     }

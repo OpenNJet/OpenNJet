@@ -603,7 +603,7 @@ njt_quic_send_path_challenge(njt_connection_t *c, njt_quic_path_t *path)
             min = 1200;
         }
 
-        if (njt_quic_frame_sendto(c, frame, min, path) != NJT_ERROR) {
+        if (njt_quic_frame_sendto(c, frame, min, path) == NJT_ERROR) {
             return NJT_ERROR;
         }
     }
@@ -849,7 +849,7 @@ njt_quic_expire_path_mtu_delay(njt_connection_t *c, njt_quic_path_t *path)
             return NJT_OK;
         }
 
-        /* rc == NGX_DECLINED */
+        /* rc == NJT_DECLINED */
 
         path->max_mtu = path->mtud;
 
@@ -887,7 +887,7 @@ njt_quic_expire_path_mtu_discovery(njt_connection_t *c, njt_quic_path_t *path)
             return NJT_OK;
         }
 
-        /* rc == NGX_DECLINED */
+        /* rc == NJT_DECLINED */
     }
 
     njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,

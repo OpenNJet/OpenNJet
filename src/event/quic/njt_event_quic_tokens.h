@@ -18,6 +18,7 @@
 
 #define NJT_QUIC_AES_256_GCM_IV_LEN          12
 #define NJT_QUIC_AES_256_GCM_TAG_LEN         16
+
 #define NJT_QUIC_TOKEN_BUF_SIZE             (NJT_QUIC_AES_256_GCM_IV_LEN      \
                                              + NJT_QUIC_MAX_TOKEN_SIZE        \
                                              + NJT_QUIC_AES_256_GCM_TAG_LEN)

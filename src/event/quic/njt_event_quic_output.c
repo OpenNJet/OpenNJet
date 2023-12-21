@@ -342,7 +342,7 @@ njt_quic_create_segments(njt_connection_t *c)
 
         len = njt_min(segsize, (size_t) (end - p));
 
-        if (len && cg->in_flight + (p-dst) < cg->window) {
+        if (len && cg->in_flight + (p - dst) < cg->window) {
 
             n = njt_quic_output_packet(c, ctx, p, len, len);
             if (n == NJT_ERROR) {
@@ -1225,6 +1225,7 @@ njt_quic_frame_sendto(njt_connection_t *c, njt_quic_frame_t *frame,
     min_payload = njt_max(min_payload, pad);
 
     if (min_payload > max_payload) {
+        njt_quic_free_frame(c, frame);
         return NJT_AGAIN;
     }
 
@@ -1276,7 +1277,6 @@ njt_quic_frame_sendto(njt_connection_t *c, njt_quic_frame_t *frame,
     }
 
     path->sent += sent;
-
 
     if (frame->need_ack && !qc->closing) {
         njt_queue_insert_tail(&ctx->sent, &frame->queue);

@@ -218,9 +218,9 @@ njt_quic_compat_keylog_callback(const SSL *ssl, const char *line)
 
         (void) njt_quic_compat_set_encryption_secret(c, &com->keys, level,
                                                      cipher, secret, n);
-
-        njt_explicit_memzero(secret, n);
     }
+
+    njt_explicit_memzero(secret, n);
 }
 
 
@@ -265,9 +265,7 @@ njt_quic_compat_set_encryption_secret(njt_connection_t *c,
         }
     }
 
-
     /* register cleanup handler once */
-
 
     if (peer_secret->ctx) {
         njt_quic_crypto_cleanup(peer_secret);
@@ -283,7 +281,7 @@ njt_quic_compat_set_encryption_secret(njt_connection_t *c,
     }
 
     if (njt_quic_crypto_init(ciphers.c, peer_secret, &key, 1, c->log)
-        == NJT_ERROR) 
+        == NJT_ERROR)
     {
         return NJT_ERROR;
     }
@@ -440,7 +438,7 @@ njt_quic_compat_message_callback(int write_p, int version, int content_type,
                        "quic compat tx %s len:%uz ",
                        njt_quic_level_name(level), len);
 
-        if (com->method->add_handshake_data(ssl, level, buf, len)) != 1) {
+        if (com->method->add_handshake_data(ssl, level, buf, len) != 1) {
             goto failed;
         }
 
@@ -464,7 +462,7 @@ njt_quic_compat_message_callback(int write_p, int version, int content_type,
 
     return;
 
-failed: 
+failed:
 
     njt_post_event(&qc->close, &njt_posted_events);
 }

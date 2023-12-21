@@ -25,8 +25,8 @@
 
 #define NJT_QUIC_MIN_INITIAL_SIZE            1200
 
-#define NJT_QUIC_STREAM_SERVER_INITIATED     0X01
-#define NJT_QUIC_STREAM_UNIDIRECTIONAL       0X02
+#define NJT_QUIC_STREAM_SERVER_INITIATED     0x01
+#define NJT_QUIC_STREAM_UNIDIRECTIONAL       0x02
 
 
 typedef njt_int_t (*njt_quic_init_pt)(njt_connection_t *c);
@@ -54,11 +54,11 @@ typedef enum {
 
 
 typedef struct {
-    uint64_t                      size;
-    uint64_t                      offset;
-    uint64_t                      last_offset;
-    njt_chain_t                  *chain;
-    njt_chain_t                  *last_chain;
+    uint64_t                       size;
+    uint64_t                       offset;
+    uint64_t                       last_offset;
+    njt_chain_t                   *chain;
+    njt_chain_t                   *last_chain;
 } njt_quic_buffer_t;
 
 

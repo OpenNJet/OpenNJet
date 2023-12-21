@@ -13,7 +13,7 @@
 
 #define NJT_QUIC_MAX_ACK_GAP                 2
 
-/* RFC 9002, 6.1.1. Packet Threshold: kPacketThreashold */
+/* RFC 9002, 6.1.1. Packet Threshold: kPacketThreshold */
 #define NJT_QUIC_PKT_THR                     3 /* packets */
 /* RFC 9002, 6.1.2. Time Threshold: kGranularity */
 #define NJT_QUIC_TIME_GRANULARITY            1 /* ms */
@@ -79,7 +79,7 @@ njt_quic_handle_ack_frame(njt_connection_t *c, njt_quic_header_t *pkt,
 
     njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "quic njt_quic_handle_ack_frame level:%d", pkt->level);
-    
+
     ack = &f->u.ack;
 
     /*
@@ -113,7 +113,7 @@ njt_quic_handle_ack_frame(njt_connection_t *c, njt_quic_header_t *pkt,
         ctx->largest_ack = max;
         njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "quic updated largest received ack:%uL", max);
-        
+
         /*
          * RFC 9002, 5.1.  Generating RTT Samples
          *
@@ -152,7 +152,7 @@ njt_quic_handle_ack_frame(njt_connection_t *c, njt_quic_header_t *pkt,
                           "quic invalid range:%ui in ack frame", i);
             return NJT_ERROR;
         }
-        
+
         max = min - gap - 2;
 
         if (range > max) {
@@ -160,7 +160,7 @@ njt_quic_handle_ack_frame(njt_connection_t *c, njt_quic_header_t *pkt,
             njt_log_error(NJT_LOG_INFO, c->log, 0,
                           "quic invalid range:%ui in ack frame", i);
             return NJT_ERROR;
-        }        
+        }
 
         min = max - range;
 
@@ -208,9 +208,9 @@ njt_quic_rtt_sample(njt_connection_t *c, njt_quic_ack_frame_t *ack,
             adjusted_rtt -= ack_delay;
         }
 
-        qc->avg_rtt += (adjusted_rtt >> 3) - (qc->avg_rtt >> 3);
         rttvar_sample = njt_abs((njt_msec_int_t) (qc->avg_rtt - adjusted_rtt));
         qc->rttvar += (rttvar_sample >> 2) - (qc->rttvar >> 2);
+        qc->avg_rtt += (adjusted_rtt >> 3) - (qc->avg_rtt >> 3);
     }
 
     njt_log_debug4(NJT_LOG_DEBUG_EVENT, c->log, 0,
@@ -755,7 +755,7 @@ njt_quic_set_lost_timer(njt_connection_t *c)
 
         q = njt_queue_last(&ctx->sent);
         f = njt_queue_data(q, njt_quic_frame_t, queue);
-        w = (njt_msec_int_t) 
+        w = (njt_msec_int_t)
                 (f->send_time + (njt_quic_pto(c, ctx) << qc->pto_count) - now);
 
         if (w < 0) {
@@ -929,7 +929,7 @@ njt_quic_ack_packet(njt_connection_t *c, njt_quic_header_t *pkt)
                    "quic njt_quic_ack_packet pn:%uL largest %L fr:%uL"
                    " nranges:%ui", pkt->pn, (int64_t) ctx->largest_range,
                    ctx->first_range, ctx->nranges);
-    
+
     if (!njt_quic_keys_available(qc->keys, ctx->level, 1)) {
         return NJT_OK;
     }

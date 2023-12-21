@@ -4,6 +4,7 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
+
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_event.h>
@@ -212,6 +213,7 @@ njt_quic_run(njt_connection_t *c, njt_quic_conf_t *conf)
 
     njt_add_timer(c->read, qc->tp.max_idle_timeout);
     njt_add_timer(&qc->close, qc->conf->handshake_timeout);
+
     njt_quic_connstate_dbg(c);
 
     c->read->handler = njt_quic_input_handler;
@@ -843,10 +845,11 @@ njt_quic_handle_packet(njt_connection_t *c, njt_quic_conf_t *conf,
 
         if (rc == NJT_DECLINED && pkt->level == ssl_encryption_application) {
             if (njt_quic_handle_stateless_reset(c, pkt) == NJT_OK) {
-                njt_post_event(&qc->close, &njt_posted_events);
+                njt_log_error(NJT_LOG_INFO, c->log, 0,
+                              "quic stateless reset packet detected");
 
                 qc->draining = 1;
-                njt_quic_close_connection(c, NJT_OK);
+                njt_post_event(&qc->close, &njt_posted_events);
 
                 return NJT_OK;
             }
@@ -1077,7 +1080,7 @@ njt_quic_discard_ctx(njt_connection_t *c, enum ssl_encryption_level_t level)
     qc = njt_quic_get_connection(c);
 
     if (!njt_quic_keys_available(qc->keys, level, 0)
-        && !njt_quic_keys_available(qc->keys, level, 1)) 
+        && !njt_quic_keys_available(qc->keys, level, 1))
     {
         return;
     }
@@ -1392,7 +1395,7 @@ njt_quic_handle_frames(njt_connection_t *c, njt_quic_header_t *pkt)
 
     if (do_close) {
         qc->draining = 1;
-        njt_post_event(&qc->close, &njt_posted_events)
+        njt_post_event(&qc->close, &njt_posted_events);
     }
 
     if (pkt->path != qc->path && nonprobing) {
