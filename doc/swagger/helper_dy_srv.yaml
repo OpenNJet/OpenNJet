@@ -1,0 +1,82 @@
+openapi: 3.0.3
+info:
+  title: njet-api
+  description: njet-api
+  version: 1.0.0
+servers:
+  - url: '/'
+paths:
+  /dyn_srv:
+    put:
+      tags:
+        - dyn_srv
+      summary: Delete a dynamic vs from server
+      description: Delete a dynamic vs from server.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/del_vs'
+          required: true
+      responses:
+        '200':
+          description: result info
+    post:
+      tags:
+        - dyn_srv
+      summary: Add a dynamic vs to server
+      description: Add a dynamic vs to server.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/add_vs'
+          required: true
+      responses:
+       '200':
+          description: result info
+###DEFINITIONS
+components:
+  schemas:
+    del_vs:
+      title: dyn_srv
+      description: delete dynamic vs from server
+      type: object
+      properties:
+        type:
+          type: string
+          description: fix value "del".
+          example: del
+        addr_port:
+          type: string
+          description: addr and port of server.
+          example: 0.0.0.0:90
+        server_name:
+          type: string
+          description:  server name .
+          example: server-90
+    add_vs:
+      title: dyn_srv
+      description: add dynamic vs to server
+      type: object
+      properties:
+        type:
+          type: string
+          example: add
+        addr_port:
+          type: string
+          description: addr and port of server.
+          example: 0.0.0.0:90
+        listen_option:
+          type: string
+          description: parameter of listen
+          example: ""
+        server_name:
+          type: string
+          description:  server name .
+          example: server-90
+        server_body:
+          type: string
+          description:  content of server.
+          example: "return 200 server-90"
+    
