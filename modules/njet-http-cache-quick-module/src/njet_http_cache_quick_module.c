@@ -42,9 +42,10 @@ extern njt_cycle_t *njet_master_cycle;
 
 
 typedef enum cache_quick_status_t_e{
-    CACHE_QUICK_STATUS_NONE,
+    CACHE_QUICK_STATUS_INIT,
     CACHE_QUICK_STATUS_ADD_LOC_OK,
     CACHE_QUICK_STATUS_DEL_LOC_OK,
+    CACHE_QUICK_STATUS_DOWNLOAD_ERROR,
     CACHE_QUICK_STATUS_OK,
     CACHE_QUICK_STATUS_ERROR
 } cache_quick_status_t;
@@ -74,6 +75,7 @@ njt_http_cache_quick(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 njt_int_t
 njt_http_cache_quick_lvlhsh_test(njt_lvlhsh_query_t *lhq, void *data);
+
 
 
 
@@ -176,6 +178,12 @@ typedef struct njt_cache_quick_http_parse_s {
 
 
 static void njt_http_cache_quick_save(njt_http_cache_quick_main_conf_t *cqmf);
+static njt_int_t
+njt_http_cache_quick_download(njt_http_cache_resouce_metainfo_t *cache_info);
+
+static void
+njt_http_cache_quick_update_download_status_str(njt_http_cache_resouce_metainfo_t  *cache_info,
+        cache_quick_status_t status);
 
 
 const njt_lvlhsh_proto_t  njt_http_cache_quick_lvlhsh_proto = {
@@ -474,7 +482,6 @@ static int njt_http_cache_quicky_add_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
     rpc_result_t                        *rpc_res;
 
     cache_info = res->data;
-
     if(res->rc == RPC_RC_OK){
         tmp_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
         if(tmp_pool == NULL){
@@ -522,6 +529,10 @@ static int njt_http_cache_quicky_add_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
             njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
                     " cache quick add dyn loc ok, location:%V", &cache_info->location_name);
 
+
+            //start download
+            njt_http_cache_quick_download(cache_info);
+
             return NJT_OK;
         }
     }
@@ -537,7 +548,21 @@ static int njt_http_cache_quicky_add_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
         cache_info->status_str.len = tmp_str.len;
 
         return NJT_ERROR;
+    }else{
+        cache_info->status = CACHE_QUICK_STATUS_ERROR;
+
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+                    " cache quick add dyn loc error, location:%V", &cache_info->location_name);
+
+        njt_str_set(&tmp_str, "cache quick add dyn loc error");
+        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
+        cache_info->status_str.len = tmp_str.len;
+
+        return NJT_ERROR;
     }
+
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+                    " cache quick add dyn loc rpc ===========ret:%d", res->rc);
 
     return rc;
 }
@@ -940,6 +965,8 @@ static njt_http_cache_resouce_metainfo_t *njt_http_add_cache_item_to_queue(
 
     njt_queue_insert_tail(&cqmf->caches, &cache_info->cache_item);
 
+    njt_http_cache_quick_update_download_status_str(cache_info, CACHE_QUICK_STATUS_INIT);
+
     return cache_info;
 }
 
@@ -1046,7 +1073,7 @@ njt_http_cache_quick_update_download_status_str(njt_http_cache_resouce_metainfo_
     cache_info->status = status;
     switch(cache_info->status)
     {
-    case CACHE_QUICK_STATUS_NONE:
+    case CACHE_QUICK_STATUS_INIT:
         njt_str_set(&tmp_str, "init status");
         break;
     case CACHE_QUICK_STATUS_ADD_LOC_OK:
@@ -1054,6 +1081,9 @@ njt_http_cache_quick_update_download_status_str(njt_http_cache_resouce_metainfo_
         break;
     case CACHE_QUICK_STATUS_OK:
         njt_str_set(&tmp_str, "download ok");
+        break;
+    case CACHE_QUICK_STATUS_DOWNLOAD_ERROR:
+        njt_str_set(&tmp_str, "download error, return not 200");
         break;
     case CACHE_QUICK_STATUS_ERROR:
         njt_str_set(&tmp_str, "has error");
@@ -1597,6 +1627,12 @@ njt_cache_quick_http_parse_status_line(njt_http_cache_quick_download_peer_t *cq_
 
                 if (++hp->count == 3) {
                     state = sw_space_after_status;
+                    //if not 200, return error
+                    if(200 != hp->code){
+                        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
+                            " cache quick download return code is not 200, retcode:%d", hp->code);
+                        return NJT_ABORT;
+                    }
                 }
 
                 break;
@@ -1729,6 +1765,10 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
             rc = hp->process(cq_peer);
             if (rc == NJT_ERROR) {
                 return NJT_ERROR;
+            }
+
+            if (rc == NJT_ABORT) {
+                return NJT_ABORT;
             }
 
             /*link chain buffer*/
@@ -1944,18 +1984,24 @@ static void njt_http_cache_quick_download_read_handler(njt_event_t *rev) {
     }
 
     rc = njt_http_cache_quick_http_read_handler(rev);
-    if (rc == NJT_ERROR) {
-        /*log the case and update the peer status.*/
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                       "read action error for cache_quick");
-        njt_http_cache_quick_update_download_status(cq_peer, CACHE_QUICK_STATUS_ERROR);
-        return;
-    } else if (rc == NJT_DONE) {
-        njt_http_cache_quick_update_download_status(cq_peer, CACHE_QUICK_STATUS_OK);
-        return;
-    } else {
-        /*AGAIN*/
+    switch (rc)
+    {
+        case NJT_ERROR:
+            /*log the case and update the peer status.*/
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "read action error for cache_quick");
+            njt_http_cache_quick_update_download_status(cq_peer, CACHE_QUICK_STATUS_ERROR);
+            return;
+        case NJT_DONE:
+            njt_http_cache_quick_update_download_status(cq_peer, CACHE_QUICK_STATUS_OK);
+            return;
+        case NJT_ABORT:
+            njt_http_cache_quick_update_download_status(cq_peer, CACHE_QUICK_STATUS_DOWNLOAD_ERROR);
+            return;
+        default:
+            break;
     }
+
     if (!rev->timer_set) {
         njt_add_timer(rev, 5000);
     }
@@ -2378,10 +2424,9 @@ static njt_int_t njt_cache_quick_add_item(njt_http_cache_quick_main_conf_t *cqmf
         return NJT_ERROR;
     }
 
-    //kv_set save and create download event
+    //kv_set save
     njt_http_cache_quick_save(cqmf);
 
-    njt_http_cache_quick_download(cache_info);
     
     return NJT_OK;
 }

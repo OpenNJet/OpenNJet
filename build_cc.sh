@@ -49,7 +49,7 @@ PATH_INFO=" --conf-path=$NJET_CONF_PATH   --prefix=$NJET_PREFIX --sbin-path=$NJE
 LIB_SRC_PATH=" --with-openssl=auto/lib/tongsuo "
 flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --build=$GIT_TAG --with-stream --with-http_addition_module --with-http_auth_request_module --with-http_dav_module --with-http_flv_module --with-http_gunzip_module --with-http_gzip_static_module --with-http_mp4_module --with-http_random_index_module --with-http_realip_module --with-http_secure_link_module --with-http_slice_module --with-http_ssl_module  --with-http_sub_module --with-http_v2_module --with-http_v3_module --with-mail --with-mail_ssl_module  --with-stream_realip_module --with-stream_ssl_module --with-stream_ssl_preread_module  --with-cc=/usr/bin/cc --without-pcre2"
 
-if [[ "$DEBUG" == "True" ]]; then
+if [ "$DEBUG" = "True" ]; then
   LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm "
   CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
   flags="$flags --with-debug"
@@ -105,12 +105,19 @@ cdir=`cd $(dirname $0); pwd`
                 cd luajit;make install;cd -;
 		mkdir -p $NJET_PREFIX/lualib
 		cp -a lualib/lib $NJET_PREFIX/lualib/
-                cd auto/lib/keepalived; make install; cd -;
+		if [ -d auto/lib/modsecurity/src/.libs ]; then
+                  cp -a auto/lib/modsecurity/src/.libs/libmodsecurity.so* /usr/local/lib
+                fi
+		if [ -d auto/lib/keepalived/keepalived/emb/.libs ]; then
+                  cd auto/lib/keepalived; make install; cd -;
+                fi 
                 cd auto/lib/luapkg; PREFIX=/usr/local CDIR_linux=njet/lualib/clib LDIR_linux=njet/lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -;
+		ldconfig
                 ;;
             clean)
                 rm -rf auto/lib/njetmq/build
                 rm -f auto/lib/keepalived/Makefile
+                cd auto/lib/modsecurity; make clean; cd -;
 		cd auto/lib/luapkg; make clean; cd -;
                 make clean
                 ;;
