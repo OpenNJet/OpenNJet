@@ -1081,6 +1081,9 @@ njt_http_cache_quick_update_download_status_str(njt_http_cache_resouce_metainfo_
     case CACHE_QUICK_STATUS_OK:
         njt_str_set(&tmp_str, "download ok");
         break;
+    case CACHE_QUICK_STATUS_DOWNLOAD_ING:
+        njt_str_set(&tmp_str, "downloading");
+        break;
     case CACHE_QUICK_STATUS_DOWNLOAD_ERROR:
         njt_str_set(&tmp_str, "download error, return not 200");
         break;
