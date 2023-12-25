@@ -1168,10 +1168,10 @@ static void njt_http_cache_quick_update_download_process(njt_uint_t total_flag,
         if(total_flag){
             cache_info->resource_size = n;
             njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                "update download process, file size:%d", n);
+                "update download process, file size:%uA", n);
         }else{
             cache_info->current_size += n;
-            cache_info->download_ratio = (cache_info->resource_size * 1.0) / (cache_info->current_size * 1.0) * 100;
+            cache_info->download_ratio = (cache_info->current_size * 1.0) / (cache_info->resource_size * 1.0) * 100;
         }
 
         return;
@@ -1711,7 +1711,7 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
     ssize_t                                 n, size;
     njt_buf_t                               *b;
     njt_int_t                               rc;
-    njt_chain_t                             *chain, *node;
+    // njt_chain_t                             *chain, *node;
     njt_cache_quick_http_parse_t            *hp;
 
     c = rev->data;
@@ -1770,6 +1770,9 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
 
             /*link chain buffer*/
             if (b->last == b->end) {
+                b->pos = b->start;
+                b->last = b->start;
+                b->end = b->last + size;
                 hp = cq_peer->parser;
                 if (hp->stage != NJT_HTTP_CACHE_QUICK_PARSE_BODY) {
                     /*log. The status and headers are too large to be hold in one buffer*/
@@ -1778,27 +1781,27 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
                     return NJT_ERROR;
                 }
 
-                chain = njt_alloc_chain_link(cq_peer->pool);
-                if (chain == NULL) {
-                    /*log and process the error*/
-                    njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                                   "memory allocation of the chain buf failed.");
-                    return NJT_ERROR;
-                }
+                // chain = njt_alloc_chain_link(cq_peer->pool);
+                // if (chain == NULL) {
+                //     /*log and process the error*/
+                //     njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                //                    "memory allocation of the chain buf failed.");
+                //     return NJT_ERROR;
+                // }
 
-                chain->buf = b;
-                chain->next = NULL;
+                // chain->buf = b;
+                // chain->next = NULL;
 
-                node = cq_peer->recv_chain;
-                if (node == NULL) {
-                    cq_peer->recv_chain = chain;
-                } else {
-                    cq_peer->last_chain_node->next = chain;
-                }
-                cq_peer->last_chain_node = chain;
+                // node = cq_peer->recv_chain;
+                // if (node == NULL) {
+                //     cq_peer->recv_chain = chain;
+                // } else {
+                //     cq_peer->last_chain_node->next = chain;
+                // }
+                // cq_peer->last_chain_node = chain;
 
-                /*Reset the recv buffer*/
-                cq_peer->recv_buf = NULL;
+                // /*Reset the recv buffer*/
+                // cq_peer->recv_buf = NULL;
             }
 
             continue;
