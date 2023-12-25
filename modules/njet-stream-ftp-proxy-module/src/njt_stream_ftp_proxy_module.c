@@ -773,14 +773,12 @@ void njt_stream_ftp_proxy_filter_pasv(njt_stream_session_t *s, u_char *data, ssi
 
     //modify data ip and port, use proxy_ip and proxy_port
     //get proxy_ip 
-    for(p = start_index+1;;){
-        proxy_port1 = (proxy_port >> 8) & 0xff;
-        proxy_port2 = proxy_port & 0xff;
-        end = njt_snprintf(data_buf, 100, "%V,%d,%d).\r\n", &fscf->proxy_ip, proxy_port1, proxy_port2);
-        njt_memcpy(p, data_buf, end - data_buf);
-        *n = (p - data) + (end - data_buf);
-        break;
-    }
+    p = start_index+1;
+    proxy_port1 = (proxy_port >> 8) & 0xff;
+    proxy_port2 = proxy_port & 0xff;
+    end = njt_snprintf(data_buf, 100, "%V,%d,%d).\r\n", &fscf->proxy_ip, proxy_port1, proxy_port2);
+    njt_memcpy(p, data_buf, end - data_buf);
+    *n = (p - data) + (end - data_buf);
 
     //add data_port to stream's ftp_port_queue
     data_queue = njt_pcalloc(fscf->pool, sizeof(njt_stream_ftp_data_port_t));
