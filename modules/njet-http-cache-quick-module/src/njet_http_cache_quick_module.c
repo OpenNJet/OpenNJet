@@ -45,6 +45,7 @@ typedef enum cache_quick_status_t_e{
     CACHE_QUICK_STATUS_INIT,
     CACHE_QUICK_STATUS_ADD_LOC_OK,
     CACHE_QUICK_STATUS_DEL_LOC_OK,
+    CACHE_QUICK_STATUS_DOWNLOAD_ING,
     CACHE_QUICK_STATUS_DOWNLOAD_ERROR,
     CACHE_QUICK_STATUS_OK,
     CACHE_QUICK_STATUS_ERROR
@@ -529,6 +530,7 @@ static int njt_http_cache_quicky_add_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
             njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
                     " cache quick add dyn loc ok, location:%V", &cache_info->location_name);
 
+            njt_http_cache_quick_update_download_status_str(cache_info, CACHE_QUICK_STATUS_ADD_LOC_OK);
 
             //start download
             njt_http_cache_quick_download(cache_info);
@@ -2019,6 +2021,8 @@ njt_http_cache_quick_ssl_handshake(njt_connection_t *c,
         cq_peer->peer->connection->write->handler = njt_http_cache_quick_download_write_handler;
         cq_peer->peer->connection->read->handler = njt_http_cache_quick_download_read_handler;
 
+        njt_http_cache_quick_update_download_status_str(cache_info, CACHE_QUICK_STATUS_DOWNLOAD_ING);
+
         /*NJT_AGAIN or NJT_OK*/
         njt_http_cache_quick_download_write_handler(cq_peer->peer->connection->write);
         return NJT_OK;
@@ -2222,6 +2226,8 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
 
     cq_peer->peer->connection->write->handler = njt_http_cache_quick_download_write_handler;
     cq_peer->peer->connection->read->handler = njt_http_cache_quick_download_read_handler;
+
+    njt_http_cache_quick_update_download_status_str(cache_info, CACHE_QUICK_STATUS_DOWNLOAD_ING);
 
     //send request
     njt_http_cache_quick_download_write_handler(cq_peer->peer->connection->write);
