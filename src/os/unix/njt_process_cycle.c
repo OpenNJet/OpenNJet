@@ -1653,15 +1653,6 @@ njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker)
 #endif
     }
 
-    if (njt_is_privileged_agent) {
-        if (setuid(0) == -1) {
-            njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
-                "setuid(%d) failed", 0);
-            /* fatal */
-            exit(2);
-        }
-    }
-
     if (worker >= 0) {
         cpu_affinity = njt_get_cpu_affinity(worker);
 
@@ -2264,6 +2255,15 @@ njt_privileged_agent_process_cycle(njt_cycle_t *cycle, void *data)
     cycle->connection_n = ccf->privileged_agent_connections;
     njt_worker_process_init(cycle, -1);
 
+    if (njt_is_privileged_agent) {
+        if (setuid(0) == -1) {
+            njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
+                "setuid(%d) failed", 0);
+            /* fatal */
+            exit(2);
+        }
+    }
+    
     njt_use_accept_mutex = 0;
 
     njt_setproctitle(name);
