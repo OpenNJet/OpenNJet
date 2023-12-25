@@ -1722,15 +1722,15 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
     c = rev->data;
     cq_peer = c->data;
 
-    njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0, "cache quick recv.");
+    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "cache quick recv.");
 
     /*Init the internal parser*/
     if (cq_peer->parser == NULL) {
         hp = njt_pcalloc(cq_peer->pool, sizeof(njt_cache_quick_http_parse_t));
         if (hp == NULL) {
             /*log*/
-            njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                           "memory allocation error for cache_quick.");
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "memory allocation error for cache_quick");
+
             return NJT_ERROR;
         }
 
@@ -1745,8 +1745,7 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
             b = njt_create_temp_buf(cq_peer->pool, njt_pagesize);
             if (b == NULL) {
                 /*log*/
-                njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                               "recv buffer memory allocation error for cache_quick.");
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "recv buffer memory allocation error for cache_quick.");
                 return NJT_ERROR;
             }
             cq_peer->recv_buf = b;
@@ -1766,6 +1765,7 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
             // }
             rc = hp->process(cq_peer);
             if (rc == NJT_ERROR) {
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "cache quick process ret error");
                 return NJT_ERROR;
             }
 
@@ -1781,8 +1781,7 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
                 hp = cq_peer->parser;
                 if (hp->stage != NJT_HTTP_CACHE_QUICK_PARSE_BODY) {
                     /*log. The status and headers are too large to be hold in one buffer*/
-                    njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                                   "status and headers exceed one page size");
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "status and headers exceed one page size");
                     return NJT_ERROR;
                 }
 
@@ -1815,8 +1814,7 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
         if (n == NJT_AGAIN) {
             if (njt_handle_read_event(rev, 0) != NJT_OK) {
                 /*log*/
-                njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                               "read event handle error for cache_quick");
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "read event handle error for cache_quick");
                 return NJT_ERROR;
             }
             return NJT_AGAIN;
@@ -1824,8 +1822,7 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
 
         if (n == NJT_ERROR) {
             /*log*/
-            njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                           "read error for cache_quick");
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "read error for cache_quick");
             return NJT_ERROR;
         }
 
@@ -1843,8 +1840,7 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
 
     if (rc == NJT_AGAIN) {
         /* the connection is shutdown*/
-        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                       "connection is shutdown");
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "cache quick connection is shutdown");
         return NJT_ERROR;
     }
 
@@ -2059,6 +2055,9 @@ static void njt_http_cache_quick_ssl_handshake_handler(njt_connection_t *c){
                         "read action error for cache quick ssl handshake");
             njt_http_cache_quick_update_download_status(cq_peer, CACHE_QUICK_STATUS_ERROR);
         }
+
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            "cache quick ssl handshake success");
     }
 }
 
@@ -2083,13 +2082,15 @@ static njt_int_t njt_http_cache_quick_ssl_init_connection(njt_connection_t *c,
     if (rc == NJT_AGAIN) {
 
         if (!c->write->timer_set) {
-            njt_add_timer(c->write, 1000);
+            njt_add_timer(c->write, 10000);
         }
-
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+            "et ssl handshake handler");
         c->ssl->handler = njt_http_cache_quick_ssl_handshake_handler;
         return NJT_OK;
     }
-
+    // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+    //     "==============directive set ssl handshake handler");
     return njt_http_cache_quick_ssl_handshake(c, cq_peer, cache_info);
 //    return NJT_OK;
 }
