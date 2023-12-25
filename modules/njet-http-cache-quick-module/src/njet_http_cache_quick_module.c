@@ -561,9 +561,6 @@ static int njt_http_cache_quicky_add_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
         return NJT_ERROR;
     }
 
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
-                    " cache quick add dyn loc rpc ===========ret:%d", res->rc);
-
     return rc;
 }
 
