@@ -162,62 +162,6 @@ out:
 
 }
 
-
-njt_int_t njt_http_check_upstream_exist(njt_cycle_t *cycle,njt_pool_t *pool, njt_str_t *name) {
-	njt_uint_t i;
-	njt_http_upstream_srv_conf_t **uscfp;
-	njt_http_upstream_main_conf_t *umcf;
-	njt_url_t u;
-	size_t add,len;
-	u_short port;
-	u_char *p;
-
-	if (name->len < 8) {
-		return NJT_ERROR;
-	}
-	if (njt_strncasecmp(name->data, (u_char *) "http://", 7) == 0) {
-		add = 7;
-		port = 80;
-	} else if (njt_strncasecmp(name->data, (u_char *) "https://", 8) == 0) {
-		add = 8;
-		port = 443;
-	} else {
-		return NJT_ERROR;
-	}
-	len = name->len;
-	p = (u_char *) njt_strlchr(name->data,name->data+name->len,'$');
-	if(p != NULL){
-		len = p - name->data;
-	} 
-	njt_memzero(&u, sizeof(njt_url_t));
-
-	u.url.len =  len - add;
-	u.url.data = name->data + add;
-	u.default_port = port;
-	u.uri_part = 1;
-	u.no_resolve = 1;
-
-	if (njt_parse_url(pool, &u) != NJT_OK) {
-		if (u.err) {
-			return NJT_ERROR;
-		}
-	}
-	umcf = njt_http_cycle_get_module_main_conf(cycle, njt_http_upstream_module);
-
-	uscfp = umcf->upstreams.elts;
-
-	for (i = 0; i < umcf->upstreams.nelts; i++) {
-		if (uscfp[i]->host.len == u.host.len
-				&& njt_strncasecmp(uscfp[i]->host.data, u.host.data, u.host.len)
-				== 0) {
-			return NJT_OK;
-		}
-	}
-	return NJT_ERROR;
-}
-
-
-
 static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_info,njt_uint_t from_api_add) {
 	njt_conf_t conf;
 	njt_int_t rc = NJT_OK;

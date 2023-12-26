@@ -32,5 +32,4 @@ typedef struct njt_http_dyn_server_loc_conf_s {
 } njt_http_dyn_server_loc_conf_t;
 
 njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_uint_t method);
-njt_int_t njt_http_check_upstream_exist(njt_cycle_t *cycle,njt_pool_t *pool, njt_str_t *name);
 #endif
