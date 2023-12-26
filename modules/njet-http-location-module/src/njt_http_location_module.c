@@ -416,6 +416,7 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 
 njt_int_t njt_http_check_upstream_exist(njt_cycle_t *cycle,njt_pool_t *pool, njt_str_t *name) {
     return NJT_OK;
+    
     /*
     njt_uint_t i;
     njt_http_upstream_srv_conf_t **uscfp;
