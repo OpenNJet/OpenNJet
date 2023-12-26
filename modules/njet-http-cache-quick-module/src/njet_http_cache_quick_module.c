@@ -2056,10 +2056,10 @@ static void njt_http_cache_quick_ssl_handshake_handler(njt_connection_t *c){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                         "read action error for cache quick ssl handshake");
             njt_http_cache_quick_update_download_status(cq_peer, CACHE_QUICK_STATUS_ERROR);
+        }else{
+            njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
+                "cache quick ssl handshake success");
         }
-
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-            "cache quick ssl handshake success");
     }
 }
 
@@ -2083,7 +2083,7 @@ static njt_int_t njt_http_cache_quick_ssl_init_connection(njt_connection_t *c,
     rc = njt_ssl_handshake(c);
     if (rc == NJT_AGAIN) {
         if (!c->write->timer_set) {
-            njt_add_timer(c->write, 30000);
+            njt_add_timer(c->write, 20000);
         }
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
             "set ssl handshake handler");
