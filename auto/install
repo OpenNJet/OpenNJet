@@ -176,7 +176,7 @@ install:	build $NJT_INSTALL_PERL_MODULES
 	test -d build/rpm/njet.conf.files/usr/local/njet/conf/modsec \\
                && cp -a build/rpm/njet.conf.files/usr/local/njet/conf/modsec \$(DESTDIR)$NJT_CONF_PREFIX/
 
-	/usr/sbin/setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw,cap_setuid=eip '\$(DESTDIR)$NJT_SBIN_PATH'
+	setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw,cap_setuid=eip '\$(DESTDIR)$NJT_SBIN_PATH'
 END
 
 

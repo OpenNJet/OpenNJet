@@ -715,7 +715,7 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     }else if(api_data->cert_info->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_RSA){
         njt_crc32_update(&crc32, (u_char *)"rsa", 3);
     }else{
-        njt_crc32_update(&crc32, (u_char *)"ecc", 7);
+        njt_crc32_update(&crc32, (u_char *)"ecc", 3);
     }
 
 	njt_crc32_final(crc32);
