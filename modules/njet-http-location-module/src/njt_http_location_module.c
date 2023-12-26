@@ -471,7 +471,7 @@ njt_int_t njt_http_check_upstream_exist(njt_cycle_t *cycle,njt_pool_t *pool, njt
 static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *location_info,njt_uint_t from_api_add) {
     njt_conf_t conf;
     njt_int_t rc = NJT_OK;
-	njt_uint_t  i,msg_len;
+	njt_uint_t  msg_len;
     njt_http_core_srv_conf_t *cscf;
     char *rv = NULL;
     njt_http_core_loc_conf_t *clcf,*new_clcf;
