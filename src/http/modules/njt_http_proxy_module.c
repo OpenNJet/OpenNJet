@@ -5071,6 +5071,7 @@ njt_http_proxy_merge_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *conf,
 
     if (preserve) {
         prev->upstream.ssl = conf->upstream.ssl;
+	prev->preserve = conf->preserve;
     }
 
     return NJT_OK;
