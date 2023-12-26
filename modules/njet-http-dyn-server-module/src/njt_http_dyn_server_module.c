@@ -18,6 +18,7 @@
 #include <njt_str_util.h>
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
+extern njt_conf_check_cmd_handler_pt  njt_conf_check_cmd_handler;
 extern  njt_int_t
 njt_http_optimize_servers(njt_conf_t *cf, njt_http_core_main_conf_t *cmcf,
 		njt_array_t *ports); 
@@ -37,7 +38,8 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 
 static njt_int_t njt_http_dyn_server_post_merge_servers();
 static njt_int_t njt_http_dyn_server_delete_dirtyservers(njt_http_dyn_server_info_t *server_info);
-static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name);
+static njt_uint_t njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name);
+static njt_int_t  njt_http_check_server_body(njt_str_t cmd);
 
 typedef struct njt_http_dyn_server_ctx_s {
 } njt_http_dyn_server_ctx_t, njt_stream_http_dyn_server_ctx_t;
@@ -74,10 +76,12 @@ njt_module_t njt_http_dyn_server_module = {
 
 
 
-
 static  njt_str_t njt_invalid_dyn_server_body[] = {
 	njt_string("zone"),
 	njt_string("location"),
+	njt_string("if"),
+	njt_string("ssl_ocsp"),
+	njt_string("ssl_stapling"),
 	njt_null_string
 };
 
@@ -292,12 +296,17 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
 
 	del = 1;
+	njt_conf_check_cmd_handler = njt_http_check_server_body;
 	rv = njt_conf_parse(&conf, &server_path);
 	if (rv != NULL) {
 		server_info->msg = *conf.errstr;
 		rc = NJT_ERROR;
+	
+		njt_conf_check_cmd_handler = NULL;
 		goto out;
 	}
+	njt_conf_check_cmd_handler = NULL;
+
 	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");
 
 	cscf = http_ctx->srv_conf[njt_http_core_module.ctx_index];
@@ -541,19 +550,19 @@ njt_int_t njt_http_check_sub_server(njt_json_element *in_items,njt_http_dyn_serv
 	return NJT_OK;
 }
 
-static njt_str_t  njt_http_check_server_body(njt_str_t src) {
+static njt_int_t  njt_http_check_server_body(njt_str_t cmd) {
 	njt_str_t *name;
-	njt_str_t ret_null = njt_null_string;
 
-	if(src.len == 0 ){
-		return ret_null;
+	if(cmd.len == 0 ){
+		return NJT_OK;
 	}
 	for (name = njt_invalid_dyn_server_body; name->len; name++) {
-       if(njt_strlcasestrn(src.data,src.data + src.len,name->data,name->len - 1) != NULL) {
-		  return *name;
+       if(cmd.len == name->len && njt_strncmp(cmd.data,name->data,name->len) == 0) {
+		  //njt_invalid_dyn_server_body_field = *name;
+		  return NJT_ERROR;
 	   }
     }
-	return ret_null;
+	return NJT_OK;
 }
 
 
@@ -618,9 +627,6 @@ njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_
 	njt_str_t  add = njt_string("add");
 	njt_str_t  del = njt_string("del");
 	njt_str_t  key;
-	njt_str_t  check_val;
-	njt_uint_t  msg_len = 128;
-	u_char *p;
 	njt_json_element *items;
 
 
@@ -733,20 +739,23 @@ njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_
 
 		}
 	}
+	/*
 	check_val = njt_http_check_server_body(server_info->server_body);
-	if(check_val.len != 0) {
+	if(check_val != NJT_OK) {
 		server_info->msg.len = 0;
 		server_info->msg.data = njt_palloc(server_info->pool,msg_len);
 		if(server_info->msg.data != NULL) {
 			server_info->msg.len = msg_len;
-			p = njt_snprintf(server_info->msg.data,server_info->msg.len,"location_body no support %V!",&check_val);	
+			p = njt_snprintf(server_info->msg.data,server_info->msg.len,"location_body no support %V!",&njt_invalid_dyn_server_body_field);	
 			server_info->msg.len = p - server_info->msg.data;
 
 		} else {
 			njt_str_set(&server_info->msg, "server_body error!");
 		}
+		njt_str_set(&njt_invalid_dyn_server_body_field,"");
 		goto end;
-	} 
+	} */
+	
 
 end:
 	return server_info;
@@ -762,7 +771,6 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 	int32_t  rlen,buffer_len,remain;
 	njt_str_t  escape_server_name,escape_server_body;
 	njt_uint_t  ssl;
-	njt_http_addr_conf_t *addr_conf;
 	njt_str_t   opt_ssl;
 	buffer_len = server_info->buffer.len;
 	remain = buffer_len;
@@ -772,15 +780,11 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 	if(server_info) {
 		njt_memzero(data,buffer_len);
 		njt_str_set(&opt_ssl,"");
-		ssl = 0;
-		addr_conf = njt_http_get_ssl_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->server_name);	
-		if(addr_conf != NULL) {
-			ssl = addr_conf->ssl;
-		}
-		server_info->addr_conf = addr_conf;
+		ssl = njt_http_get_ssl_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->server_name);	
 		if(ssl == 1) {
 			njt_str_set(&opt_ssl,"ssl");
 		}
+		server_info->listen_option = opt_ssl;
 		p = data;
 		p = njt_snprintf(p, remain, "server {\n");
 		remain = data + buffer_len - p;
@@ -791,12 +795,16 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 		}
 		if(server_info->old_server_name.len != 0 && server_info->server_body.len != 0 ){
 			escape_server_body = server_info->server_body;   //add_escape(server_info->pool,server_info->server_body);
-			p = njt_snprintf(p, remain, "listen %V %V %V;\nserver_name %V;\n%V \n}\n",&server_info->addr_port,&opt_ssl,&server_info->listen_option,&escape_server_name,&escape_server_body);
+			if(escape_server_body.len > 0 && escape_server_body.data[escape_server_body.len-1] != ';') {
+				p = njt_snprintf(p, remain, "listen %V %V %V;\nserver_name %V;\n%V; \n}\n",&server_info->addr_port,&opt_ssl,&server_info->listen_option,&escape_server_name,&escape_server_body);
+			} else {
+				p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V;\n%V \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name,&escape_server_body);
+			}
 		} else {
 			if(escape_server_name.len > 0 && escape_server_name.data[escape_server_name.len-1] != ';') {
-				p = njt_snprintf(p, remain, "listen %V %V %V;\nserver_name %V; \n}\n",&server_info->addr_port,&opt_ssl,&server_info->listen_option,&escape_server_name);
+				p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V; \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name);
 			} else {
-				p = njt_snprintf(p, remain, "listen %V %V %V;\nserver_name %V \n}\n",&server_info->addr_port,&opt_ssl,&server_info->listen_option,&escape_server_name);
+				p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name);
 			}
 		}
 		remain = data + buffer_len - p;
@@ -833,8 +841,9 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 
 	server_full_file.len = server_path.len + server_file.len + 10;//  workid_add_server.txt
 	server_full_file.data = njt_pcalloc(server_info->pool, server_full_file.len);
-	p = njt_snprintf(server_full_file.data, server_full_file.len, "%Vlogs/%d_%V", &server_path, njt_worker,
-			&server_file);
+	p = njt_snprintf(server_full_file.data, server_full_file.len, "%Vlogs/%d_%d_%V", &server_path, njt_process, njt_worker,
+                         &server_file);
+
 	server_full_file.len = p - server_full_file.data;
 	fd = njt_open_file(server_full_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE,
 			NJT_FILE_DEFAULT_ACCESS);
@@ -1043,9 +1052,9 @@ static njt_int_t njt_http_dyn_server_post_merge_servers() {
 
 
 
-static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
+static njt_uint_t njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
     njt_listening_t *ls, *target_ls = NULL;
-    njt_uint_t i;
+    njt_uint_t i,ssl;
 	in_port_t  nport;
  
     njt_http_port_t *port;
@@ -1060,12 +1069,12 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 #endif
 
 	njt_pool_t *pool;
-	addr_conf = NULL;
-	target_ls = NULL;
+	ssl = 0;
+    target_ls = NULL;
 
 	pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
 	if(pool == NULL) {
-		 return NULL;
+		 return ssl;
 	}
 	
 	njt_memzero(&u,sizeof(njt_url_t));
@@ -1146,12 +1155,12 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 			} else {
 				addr_conf = &addr[0].conf;
 			}
-			break;
+			ssl = addr_conf->ssl;
         }
     }
 out:
 	if(pool != NULL) {
 		njt_destroy_pool(pool);
 	}
-    return addr_conf;
+    return ssl;
 }

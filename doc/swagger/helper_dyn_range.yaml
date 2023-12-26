@@ -91,12 +91,7 @@ components:
         dst_port:
           type: string
           description: 目标端口
-        try_del_times:
-          type: integer
-          description: 进程刚起来,尝试删除次数,默认为3次
-        iptables_path:
-          type: string
-          description: iptables 路径， 默认/usr/sbin/iptables
+
 
     RangeConf:
       title:     RangeConf
@@ -115,10 +110,4 @@ components:
         dst_port:
           type: string
           description: 目标端口
-        try_del_times:
-          type: integer
-          description: 进程刚起来,尝试删除次数,默认为3次
-        iptables_path:
-          type: string
-          description: iptables 路径， 默认/usr/sbin/iptables
 

@@ -17,7 +17,7 @@
 #include <njt_rpc_result_util.h>
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
-
+extern njt_conf_check_cmd_handler_pt  njt_conf_check_cmd_handler;
 
 njt_str_t njt_del_headtail_space(njt_str_t src);
 
@@ -41,7 +41,7 @@ extern njt_int_t njt_http_init_locations(njt_conf_t *cf,
 static void njt_http_location_clear_dirty_data(njt_http_core_loc_conf_t *clcf);
 static njt_http_core_loc_conf_t * njt_http_location_find_new_location(njt_http_core_loc_conf_t *clcf);
 
-
+static njt_int_t  njt_http_location_check_location_body(njt_str_t src);
 
 static char *
 njt_http_location_api(njt_conf_t *cf, njt_command_t *cmd, void *conf);
@@ -56,14 +56,12 @@ typedef struct njt_http_location_main_conf_s {
 } njt_http_location_main_conf_t;
 
 
-
 static  njt_str_t njt_invalid_dyn_location_body[] = {
-	njt_string("zone "),
-	njt_string("proxy_pass "),
+	njt_string("zone"),
+	njt_string("if"),
 	njt_null_string
 };
 static  njt_str_t njt_invalid_dyn_proxy_pass[] = {
-	njt_string("unix "),
 	njt_null_string
 };
 
@@ -605,6 +603,9 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 
     //clcf->locations = NULL; // clcf->old_locations;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
+
+	njt_conf_check_cmd_handler = njt_http_location_check_location_body;
+
     rv = njt_conf_parse(&conf, &location_path);
     if (rv != NULL) {
 	
@@ -615,6 +616,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	    njt_http_location_delete_dyn_var(clcf);
 	    njt_http_location_clear_dirty_data(clcf);
 	    rc = NJT_ERROR;
+		njt_conf_check_cmd_handler = NULL;
 	    goto out;
     }
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");
@@ -840,19 +842,19 @@ njt_int_t njt_http_check_sub_location(njt_json_element *in_items,njt_http_locati
 }
 
 
-static njt_str_t  njt_http_location_check_location_body(njt_str_t src) {
+static njt_int_t  njt_http_location_check_location_body(njt_str_t cmd) {
 	njt_str_t *name;
-	njt_str_t ret_null = njt_null_string;
 
-	if(src.len == 0 ){
-		return ret_null;
+	if(cmd.len == 0 ){
+		return NJT_OK;
 	}
 	for (name = njt_invalid_dyn_location_body; name->len; name++) {
-       if(njt_strlcasestrn(src.data,src.data + src.len,name->data,name->len - 1) != NULL) {
-		  return *name;
+       if(cmd.len == name->len && njt_strncmp(cmd.data,name->data,name->len) == 0) {
+		  //njt_invalid_dyn_location_body_field = *name;
+		  return NJT_ERROR;
 	   }
     }
-	return ret_null;
+	return NJT_OK;
 }
 static njt_str_t  njt_http_location_check_proxy_pass(njt_str_t src) {
 	njt_str_t *name;
@@ -971,21 +973,7 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 			} else if(rc == NJT_OK && out_items->type == NJT_JSON_STR) {
 				 sub_location->location_body = njt_del_headtail_space(out_items->strval);
 			}
-			check_val = njt_http_location_check_location_body(sub_location->location_body);
-			if(check_val.len != 0) {
-				location_info->msg.len = 0;
-				location_info->msg.data = njt_palloc(location_info->pool,msg_len);
-				if(location_info->msg.data != NULL) {
-					location_info->msg.len = msg_len;
-					p = njt_snprintf(location_info->msg.data,location_info->msg.len,"location_body no support %V!",&check_val);	
-					location_info->msg.len = p - location_info->msg.data;
-
-				} else {
-					njt_str_set(&location_info->msg, "location_body error!");
-				}
-				
-				return NJT_ERROR;
-			}
+			
 			if(sub_location->location_body.len > 0 && sub_location->location_body.data != NULL) {
 				if(njt_strstr(sub_location->location_body.data,"proxy_pass ") != NULL) {
 					njt_str_set(&location_info->msg, "directive is not allowed here in location_body");
@@ -1275,7 +1263,11 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 			}
 			if(loc->location_body.len != 0 && loc->location_body.data != NULL){
 				add_escape_val = loc->location_body;//add_escape(location_info->pool,loc->location_body);
-				p = njt_snprintf(p, remain, " %V; \n",&add_escape_val);
+				if(add_escape_val.len > 0 && add_escape_val.data[add_escape_val.len-1] != ';' && add_escape_val.data[add_escape_val.len-1] != '}'){
+					p = njt_snprintf(p, remain, " %V; \n",&add_escape_val);
+				} else {
+					p = njt_snprintf(p, remain, " %V \n",&add_escape_val);
+				}
 				remain = data + buffer_len - p;
 			}
 			if(loc->proxy_pass.len != 0 && loc->proxy_pass.data != NULL){
