@@ -1,0 +1,113 @@
+openapi: 3.0.3
+info:
+  title: cache quick
+  description: cache加速配置
+  version: 1.0.0
+
+servers:
+  - url: '/'
+paths:
+  /cache:
+    get:
+      tags:
+        - cache quick config
+      summary: return cache quick config
+      description: get cache quick config
+      operationId: getCacheQuick
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+    put:
+      tags:
+        - cache quick config
+      summary: set cache quick conf
+      description: set cache quick conf
+      operationId: setCacheQuick
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CacheConf'
+          required: true
+      responses:
+        '204':
+          description: Success
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+        ###DEFINITIONS
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+
+    MainConf:
+      title: cache quick Conf
+      description: cache quick配置
+      type: object
+      properties:
+        caches:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetCacheConf'
+
+
+    GetCacheConf:
+      title:     GetCacheConf
+      description: cache quick 配置
+      type: object
+      properties:
+        location_name:
+          type: string
+          description: location name
+        backend_server:
+          type: string
+          description: dst server 
+        status:
+          type: string
+          description: cache加速配置执行状态
+        download_ratio:
+          type: integer
+          description: 下载进度
+
+    CacheConf:
+      title:     CacheConf
+      description: cache quick 配置
+      type: object
+      properties:
+        action:
+        type:
+          type: string
+          description: add or del or download_status
+        location_name:
+          type: string
+          description: location name
+        backend_server:
+          type: string
+          description: dst server addr
+
