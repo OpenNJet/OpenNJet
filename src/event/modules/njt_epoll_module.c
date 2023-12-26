@@ -795,8 +795,8 @@ njt_epoll_process_events(njt_cycle_t *cycle, njt_msec_t timer, njt_uint_t flags)
 
     /* NJT_TIMER_INFINITE == INFTIM */
 
-    njt_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
-                   "epoll timer: %M", timer);
+    // njt_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
+    //                "epoll timer: %M", timer);
 
     events = epoll_wait(ep, event_list, (int) nevents, timer);
 
