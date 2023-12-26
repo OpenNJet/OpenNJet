@@ -75,8 +75,9 @@ njt_module_t njt_http_dyn_server_module = {
 
 
 static  njt_str_t njt_invalid_dyn_server_body[] = {
-	njt_string("zone"),
-	njt_string("location"),
+	njt_string("zone "),
+	njt_string("location "),
+	njt_string("if "),
 	njt_null_string
 };
 
@@ -127,7 +128,14 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
 	if(cmcf->dyn_vs_pool == NULL) {
 		rc = NJT_ERROR;
 		goto out;
-	} 
+	}
+       	rc = njt_sub_pool(njt_cycle->pool,cmcf->dyn_vs_pool);	
+	if(rc != NJT_OK) {
+		njt_destroy_pool(cmcf->dyn_vs_pool);
+		cmcf->dyn_vs_pool = old_pool;
+                rc = NJT_ERROR;
+                goto out;
+        }
 	njt_memzero(&conf,sizeof(njt_conf_t));
 	conf.dynamic = 1;
 	conf.pool = cmcf->dyn_vs_pool;
@@ -763,7 +771,7 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 		}
 		if(server_info->old_server_name.len != 0 && server_info->server_body.len != 0 ){
 			escape_server_body = server_info->server_body;   //add_escape(server_info->pool,server_info->server_body);
-			if(escape_server_body.len > 0 && escape_server_body.data[escape_server_body.len-1] != ';') {
+			if(escape_server_body.len > 0 && escape_server_body.data[escape_server_body.len-1] != ';' && escape_server_body.data[escape_server_body.len-1] != '}') {
 				p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V;\n%V; \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name,&escape_server_body);
 			} else {
 				p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V;\n%V \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name,&escape_server_body);
