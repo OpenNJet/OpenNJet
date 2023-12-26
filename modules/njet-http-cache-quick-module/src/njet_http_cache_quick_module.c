@@ -90,33 +90,7 @@ typedef struct njt_http_cache_quick_ssl_conf_s {
 #endif
 
 
-typedef struct njt_http_cache_resouce_metainfo_s{
-    njt_str_t       addr_port;
-    njt_str_t       server_name;
-    njt_str_t       location_rule;
-    njt_str_t       location_name;
-    njt_str_t       location_body;
-    njt_str_t       proxy_pass;
-    
-    cache_quick_server_ssl_type_t       ssl_type;
-#if (NJT_OPENSSL)
-    njt_http_cache_quick_ssl_conf_t ssl;
-#endif
 
-    uint32_t        crc32;
-    njt_str_t       crc32_str;
-
-    ssize_t         resource_size;
-    ssize_t         current_size;
-    njt_int_t       download_ratio;
-
-    cache_quick_status_t  status;
-    njt_str_t       status_str;
-    njt_event_t     download_timer;
-    njt_pool_t      *item_pool;
-
-    njt_queue_t     cache_item;
-} njt_http_cache_resouce_metainfo_t;
 
 
 typedef struct njt_http_cache_quick_loc_conf_s{
@@ -152,6 +126,36 @@ typedef struct njt_http_cache_quick_download_peer_s {
 #endif
 }njt_http_cache_quick_download_peer_t;
 
+
+typedef struct njt_http_cache_resouce_metainfo_s{
+    njt_str_t       addr_port;
+    njt_str_t       server_name;
+    njt_str_t       location_rule;
+    njt_str_t       location_name;
+    njt_str_t       location_body;
+    njt_str_t       proxy_pass;
+    
+    cache_quick_server_ssl_type_t       ssl_type;
+#if (NJT_OPENSSL)
+    njt_http_cache_quick_ssl_conf_t ssl;
+#endif
+
+    uint32_t        crc32;
+    njt_str_t       crc32_str;
+
+    ssize_t         resource_size;
+    ssize_t         current_size;
+    njt_int_t       download_ratio;
+
+    cache_quick_status_t  status;
+    njt_str_t       status_str;
+    njt_event_t     download_timer;
+    njt_pool_t      *item_pool;
+
+    njt_http_cache_quick_download_peer_t *cq_peer;
+
+    njt_queue_t     cache_item;
+} njt_http_cache_resouce_metainfo_t;
 
 /*Structure used for holding http parser internal info*/
 typedef struct njt_cache_quick_http_parse_s {
@@ -1130,6 +1134,7 @@ njt_http_cache_quick_update_download_status(njt_http_cache_quick_download_peer_t
         cache_info = lhq.value;
         njt_http_cache_quick_update_download_status_str(cache_info, status);
         rc = NJT_OK;
+        cache_info->cq_peer = NULL;
     }else{
         njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
             "update download status, not find cache info, crc32:%V", &cq_peer->crc32_str);
@@ -1689,12 +1694,11 @@ njt_cache_quick_http_parse_status_line(njt_http_cache_quick_download_peer_t *cq_
 
     b->pos = p;
     hp->state = state;
-                        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
-                            " =========parse line ret again");
+    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+        " =========parse line ret again");
     return NJT_AGAIN;
 
     done:
-
     b->pos = p + 1;
     hp->state = sw_start;
 
@@ -1703,9 +1707,7 @@ njt_cache_quick_http_parse_status_line(njt_http_cache_quick_download_peer_t *cq_
     hp->stage = NJT_HTTP_CACHE_QUICK_PARSE_HEADER;
     hp->process = njt_cache_quick_http_process_headers;
 
-    hp->process(cq_peer);
-
-    return NJT_OK;
+    return hp->process(cq_peer);
 }
 
 
@@ -2191,7 +2193,7 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
     cq_peer->peer->get = njt_event_get_peer;
     cq_peer->peer->log = njt_cycle->log;
     cq_peer->peer->log_error = NJT_ERROR_ERR;
-
+    
     rc = njt_event_connect_peer(cq_peer->peer);
     if (rc == NJT_ERROR || rc == NJT_DECLINED || rc == NJT_BUSY) {
         cache_info->status = CACHE_QUICK_STATUS_ERROR;
@@ -2205,6 +2207,7 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
         return;
     }
 
+    cache_info->cq_peer = cq_peer;
     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
             " cache quick connected to peer of %V, rc:%d", &cache_info->addr_port, rc);
 
@@ -2223,6 +2226,7 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                     " cache quick ssl connect to peer:%V error", &cache_info->addr_port);
             njt_destroy_pool(pool);
+            cache_info->cq_peer = NULL;
             return;
         }
         return;
@@ -2336,6 +2340,14 @@ static njt_int_t njt_cache_quick_del_item(njt_http_cache_quick_main_conf_t *cqmf
         return NJT_ERROR;
     }
 
+    //check wether is download
+    if(cache_info->cq_peer != NULL){
+        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_INPUT_PARAM);
+        njt_rpc_result_set_msg(rpc_result, (u_char *)" downloading, please delete a moment later");
+
+        return NJT_ERROR;
+    }
+
     //del dyn locaton
     if(NJT_OK != njt_http_cache_item_del_dyn_location(cache_info, cqmf)){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
@@ -2443,7 +2455,7 @@ static njt_int_t njt_cache_quick_add_item(njt_http_cache_quick_main_conf_t *cqmf
 }
 
 
-static njt_int_t njt_http_cache_quick_conf_out_handler(cache_api_type_t cache_api_type,
+static njt_int_t njt_http_cache_quick_conf_out_handler(
             njt_http_request_t *r, njt_rpc_result_t *rpc_result) {
     njt_buf_t       *buf;
     njt_chain_t     out;
@@ -2565,7 +2577,7 @@ static void njt_http_cache_quick_api_read_data(njt_http_request_t *r){
     api_data = json_parse_cache_api(r->pool, &json_str, &err_info);
     if(api_data == NULL){
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0, 
-            " cache quick json parse error:%V", &err_info.err_str);
+            " cache quick json parse error:%V json:%V", &err_info.err_str, &json_str);
 
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
         njt_rpc_result_set_msg2(rpc_result, &err_info.err_str);
@@ -2635,7 +2647,7 @@ static void njt_http_cache_quick_api_read_data(njt_http_request_t *r){
     }
 
 out:
-    rc = njt_http_cache_quick_conf_out_handler(api_data->type, r, rpc_result);
+    rc = njt_http_cache_quick_conf_out_handler(r, rpc_result);
 
 end:
     if(rpc_result){
@@ -2699,7 +2711,7 @@ njt_http_cache_quick_handler(njt_http_request_t *r) {
     }
 
 out_handler:
-    rc = njt_http_cache_quick_conf_out_handler(0, r, rpc_result);
+    rc = njt_http_cache_quick_conf_out_handler(r, rpc_result);
 
     if(rpc_result != NULL){
         njt_rpc_result_destroy(rpc_result);
