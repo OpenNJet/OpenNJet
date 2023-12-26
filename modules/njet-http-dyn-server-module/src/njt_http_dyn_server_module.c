@@ -231,7 +231,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	njt_str_t server_path; // = njt_string("./conf/add_server.txt");
 	njt_http_core_main_conf_t *cmcf;
 	njt_http_core_srv_conf_t *cscf;
-	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
+	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
 
 	msg = server_info->buffer;
 	server_path.len = 0;
@@ -294,7 +294,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	conf.dynamic = 1;
 
 	//clcf->locations = NULL; // clcf->old_locations;
-	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
+	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse start +++++++++++++++");
 
 	del = 1;
 	njt_conf_check_cmd_handler = njt_http_check_server_body;
@@ -308,7 +308,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	}
 	njt_conf_check_cmd_handler = NULL;
 
-	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");
+	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse end +++++++++++++++");
 
 	cscf = http_ctx->srv_conf[njt_http_core_module.ctx_index];
 	conf.pool = cscf->pool;
@@ -318,7 +318,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	//merge servers
 	njt_http_module_t *module;
 	njt_uint_t mi, m;
-	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge start +++++++++++++++");
+	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge start +++++++++++++++");
 	for (m = 0; conf.cycle->modules[m]; m++) {
 		if (conf.cycle->modules[m]->type != NJT_HTTP_MODULE) {
 			continue;
@@ -330,14 +330,14 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 		if (rv != NJT_CONF_OK ) {
 			rc = NJT_ERROR;
 			njt_str_set(&server_info->msg,"add server error:merge_servers");
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error:merge_servers!");
+			//njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error:merge_servers!");
 			goto out;
 		}
 	}
 	if (njt_http_ssl_dynamic_init(&conf,server_info->addr_conf) != NJT_OK) {
 			rc = NJT_ERROR;
 		    njt_str_set(&server_info->msg,"add server error:no ssl_certificate!");
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error:no ssl_certificate!");
+			//njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error:no ssl_certificate!");
 			goto out;
 	}
 
@@ -375,9 +375,9 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	if(ret == NJT_ERROR) {
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"add server,but no find in servers.");
 	}
-	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge end +++++++++++++++");
+	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "merge end +++++++++++++++");
 
-	njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "add server end +++++++++++++++");
+	//njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "add server end +++++++++++++++");
 out:
 
 	if(rc != NJT_OK) {
@@ -406,7 +406,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 
 	njt_int_t rc = NJT_OK;
 	njt_http_dyn_server_info_t *server_info;
-	njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "get topic  key=%V,value=%V",key,value);
+	//njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "get topic  key=%V,value=%V",key,value);
 
 	server_info = njt_http_parser_server_data(*value,0);
 	if(server_info == NULL) {
@@ -428,7 +428,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 			rc = njt_http_add_server_handler(server_info,from_api_add);  //njt_http_dyn_server_delete_handler
 			if(rc != NJT_OK) {
 				if(from_api_add == 0){
-					njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V",key,value);
+					//njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V",key,value);
 					njt_kv_sendmsg(key,&del_topic,0);
 				}
 				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V",key,value);
@@ -438,7 +438,7 @@ static int njt_agent_server_change_handler_internal(njt_str_t *key, njt_str_t *v
 					new_key.len  = key->len - worker_str.len;
 					njt_kv_sendmsg(&new_key,value,1);
 				}
-				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V",key,value);
+				//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V",key,value);
 			}
 		}
 	} else if(server_info->type.len == del.len && njt_strncmp(server_info->type.data,del.data,server_info->type.len) == 0 ){
