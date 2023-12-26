@@ -1377,7 +1377,8 @@ njt_cache_quick_http_parse_header_line(njt_http_cache_quick_download_peer_t *cq_
 
     b->pos = p;
     hp->state = state;
-
+                        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+                            " =========parse header ret again");
     return NJT_AGAIN;
 
     done:
@@ -1688,7 +1689,8 @@ njt_cache_quick_http_parse_status_line(njt_http_cache_quick_download_peer_t *cq_
 
     b->pos = p;
     hp->state = state;
-
+                        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+                            " =========parse line ret again");
     return NJT_AGAIN;
 
     done:
@@ -1722,7 +1724,7 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
     c = rev->data;
     cq_peer = c->data;
 
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "cache quick recv.");
+    // njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "cache quick recv.");
 
     /*Init the internal parser*/
     if (cq_peer->parser == NULL) {
@@ -1777,7 +1779,7 @@ njt_http_cache_quick_http_read_handler(njt_event_t *rev) {
             if (b->last == b->end) {
                 b->pos = b->start;
                 b->last = b->start;
-                b->end = b->last + size;
+                // b->end = b->last + size;
                 hp = cq_peer->parser;
                 if (hp->stage != NJT_HTTP_CACHE_QUICK_PARSE_BODY) {
                     /*log. The status and headers are too large to be hold in one buffer*/
@@ -2084,7 +2086,7 @@ static njt_int_t njt_http_cache_quick_ssl_init_connection(njt_connection_t *c,
             njt_add_timer(c->write, 30000);
         }
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-            "et ssl handshake handler");
+            "set ssl handshake handler");
         c->ssl->handler = njt_http_cache_quick_ssl_handshake_handler;
         return NJT_OK;
     }
