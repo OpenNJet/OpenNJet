@@ -422,7 +422,6 @@ njt_int_t njt_http_check_upstream_exist(njt_cycle_t *cycle,njt_pool_t *pool, njt
     size_t add,len;
     u_short port;
     u_char *p;
-    return NJT_OK;
     if (name->len < 8) {
         return NJT_ERROR;
     }
@@ -528,17 +527,6 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
         }
         location_name.len = p - location_name.data;
 	
-	sub_location = location_info->location_array->elts;
-	for(i = 0; i < location_info->location_array->nelts; i++) {
-		loc = &sub_location[i];
-		if(loc->proxy_pass.len > 0) {
-			rc = njt_http_check_upstream_exist((njt_cycle_t  *)njt_cycle,location_info->pool, &loc->proxy_pass);
-			if (rc != NJT_OK) {
-    				njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add location error:no find upstream:%V",&loc->proxy_pass);
-				goto out;
-			}
-		}
-	}
 
     cscf = location_info->cscf;  
     if (cscf == NULL) {
@@ -586,10 +574,11 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	goto out;
     }
 
-    location_info->msg.len = NJT_MAX_CONF_ERRSTR;
-    location_info->msg.data = njt_pcalloc(location_info->pool,location_info->msg.len);
+    location_info->msg.len = 0;
+    location_info->msg.data = njt_pcalloc(location_info->pool,NJT_MAX_CONF_ERRSTR);
     if(location_info->msg.data != NULL){ 
-	conf.errstr = &location_info->msg;
+		location_info->msg.len = NJT_MAX_CONF_ERRSTR;
+		conf.errstr = &location_info->msg;
     }
 	
     conf.pool = location_info->pool; 
