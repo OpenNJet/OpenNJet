@@ -143,10 +143,6 @@ njt_module_t  njt_app_sticky_module = {
 };
 static njt_int_t njt_app_sticky_init_upstream(njt_conf_t *cf,
     njt_http_upstream_srv_conf_t *us) {
-
-	 njt_log_debug0(NJT_LOG_DEBUG_HTTP, cf->log, 0,
-                   "init app_sticky");
-
     if (njt_http_upstream_init_round_robin(cf, us) != NJT_OK) {
         return NJT_ERROR;
     }
@@ -170,9 +166,6 @@ static njt_int_t njt_app_sticky_init_peer(njt_http_request_t *r,
 	}
 	aspd->srv_conf = ascf;
 	aspd->request = r;
-	
-	njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "init app_sticky");
 	
 	r->upstream->peer.data = &aspd->rrp;
 
@@ -685,7 +678,7 @@ static void app_sticky_sync_data( njt_app_sticky_ctx_t* ctx, njt_str_t* zone, nj
 		njt_app_sticky_rb_node_t * lr;
 		lr = njt_queue_data(q, njt_app_sticky_rb_node_t, queue);	
 		njt_msec_t ttl = checkpoint_stamp - lr->last_seen;
-		njt_log_error(NJT_LOG_DEBUG,ctx->log,0,"check queue:%M", ttl);
+
 		//todo: 
 		if ( ttl > interval) break;
 		//todo: check tail for remove
@@ -722,11 +715,11 @@ static void app_sticky_sync_data( njt_app_sticky_ctx_t* ctx, njt_str_t* zone, nj
 		tail= mp_encode_str(tail,(char *)zone->data, tmp_zone_len);	//zone name
 		tail= mp_encode_uint(tail, njt_current_msec - lr->last_seen);	
  
-		njt_str_t tmpkey;
-		tmpkey.data = lr->data;
-		tmpkey.len = lr->len;
-		njt_log_error(NJT_LOG_DEBUG, ctx->log, 0," send data msg_index:%d key:%V val:%V zone:%V ttl:%M",
-			msg_cnt, &tmpkey, &lr->up_name, zone, njt_current_msec - lr->last_seen);
+		// njt_str_t tmpkey;
+		// tmpkey.data = lr->data;
+		// tmpkey.len = lr->len;
+		// njt_log_error(NJT_LOG_DEBUG, ctx->log, 0," send data msg_index:%d key:%V val:%V zone:%V ttl:%M",
+		// 	msg_cnt, &tmpkey, &lr->up_name, zone, njt_current_msec - lr->last_seen);
 
 
 		buf_size  = buf_size - (tail - head);
@@ -1039,7 +1032,7 @@ njt_app_sticky_header_filter(njt_http_request_t *r)
 	njt_int_t ret;
 	njt_app_sticky_req_ctx_t  *req_ctx = njt_http_get_module_ctx(r,njt_app_sticky_module);
 
-	njt_log_error(NJT_LOG_DEBUG,r->connection->log,0,"appsticky process header,using ctx:%p",req_ctx);
+	// njt_log_error(NJT_LOG_DEBUG,r->connection->log,0,"appsticky process header,using ctx:%p",req_ctx);
 
 	if (req_ctx ==NULL ) return NJT_ERROR;
 	

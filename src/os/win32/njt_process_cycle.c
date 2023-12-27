@@ -789,7 +789,7 @@ njt_worker_thread(void *data)
             }
         }
 
-        njt_log_debug0(NJT_LOG_DEBUG_CORE, cycle->log, 0, "worker cycle");
+        // njt_log_debug0(NJT_LOG_DEBUG_CORE, cycle->log, 0, "worker cycle");
 
         njt_process_events_and_timers(cycle);
 

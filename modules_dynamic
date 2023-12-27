@@ -72,3 +72,5 @@
 ./modules/njet-http-dyn-modsecurity-module
 # optional
 ./modules/njet-stream-dyn-map-module
+# optional
+./modules/njet-http-cache-quick-module

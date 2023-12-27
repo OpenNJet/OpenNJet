@@ -877,9 +877,9 @@ njt_http_file_cache_read(njt_http_request_t *r, njt_http_cache_t *c)
 
         njt_shmtx_unlock(&cache->shpool->mutex);
 
-        njt_log_debug3(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "http file cache expired: %i %T %T",
-                       rc, c->valid_sec, now);
+        // njt_log_debug3(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+        //                "http file cache expired: %i %T %T",
+        //                rc, c->valid_sec, now);
 
         return rc;
     }
@@ -2108,8 +2108,8 @@ njt_http_file_cache_expire(njt_http_file_cache_t *cache)
     njt_http_file_cache_node_t  *fcn;
     u_char                       key[2 * NJT_HTTP_CACHE_KEY_LEN];
 
-    njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                   "http file cache expire");
+    // njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+    //                "http file cache expire");
 
     path = cache->path;
     len = path->name.len + 1 + path->len + 2 * NJT_HTTP_CACHE_KEY_LEN;
@@ -2270,8 +2270,8 @@ njt_http_file_cache_purge(njt_http_file_cache_t *cache)
     njt_queue_t                 *item;
     njt_http_file_cache_node_t  *fcn;
 
-    njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                   "http file purge");
+    // njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+    //                "http file purge");
 
     path = cache->path;
     len = path->name.len + 1 + path->len + 2 * NJT_HTTP_CACHE_KEY_LEN;
@@ -2287,7 +2287,7 @@ njt_http_file_cache_purge(njt_http_file_cache_t *cache)
     item = njt_queue_head(&cache->sh->queue);
     wait = 1;
     if(njt_queue_empty(&cache->sh->queue)){
-        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,"http cache files size is 0 ");
+        // njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,"http cache files size is 0 ");
     }
     while(item != njt_queue_sentinel(&cache->sh->queue)) {
 
@@ -2388,9 +2388,9 @@ njt_http_file_cache_manager(void *data)
 
         njt_shmtx_unlock(&cache->shpool->mutex);
 
-        njt_log_debug3(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                       "http file cache size: %O c:%ui w:%i",
-                       size, count, (njt_int_t) watermark);
+        // njt_log_debug3(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+        //                "http file cache size: %O c:%ui w:%i",
+        //                size, count, (njt_int_t) watermark);
 
         if (size < cache->max_size && count < watermark) {
 
@@ -2436,11 +2436,11 @@ njt_http_file_cache_manager(void *data)
 
 done:
 
-    elapsed = njt_abs((njt_msec_int_t) (njt_current_msec - cache->last));
+    // elapsed = njt_abs((njt_msec_int_t) (njt_current_msec - cache->last));
 
-    njt_log_debug3(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                   "http file cache manager: %ui e:%M n:%M",
-                   cache->files, elapsed, next);
+    // njt_log_debug3(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+    //                "http file cache manager: %ui e:%M n:%M",
+    //                cache->files, elapsed, next);
 
     return next;
 }

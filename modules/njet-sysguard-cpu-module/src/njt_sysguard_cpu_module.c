@@ -354,7 +354,7 @@ static njt_int_t njt_sysguard_cpu_init_module(njt_cycle_t *cycle){
 
     ccf->pool = njt_create_dynamic_pool(njt_pagesize, cycle->log);
     if (ccf->pool == NULL || NJT_OK != njt_sub_pool(cycle->pool, ccf->pool)) {
-        njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "njt_create_peer_map error");
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "njt_create_peer_map error");
         return NJT_ERROR;
     }
     njt_lvlhsh_init(&ccf->prev_pids_work);

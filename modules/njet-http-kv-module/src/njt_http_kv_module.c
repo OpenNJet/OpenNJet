@@ -192,7 +192,6 @@ static void njt_http_kv_loop_mqtt(njt_event_t *ev)
     case 4:  // no connection
     case 19: // lost keepalive
     case 7:  // lost connection
-        njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt_client run ret:%d, ev: %p, ev timeouted %d", ret, ev, ev->timedout);
         njt_http_kv_iot_set_timer(njt_http_kv_iot_conn_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
         break;
@@ -208,18 +207,16 @@ static void njt_http_kv_iot_conn_timeout(njt_event_t *ev)
     njt_connection_t *c = (njt_connection_t *)ev->data;
     struct evt_ctx_t *ctx = (struct evt_ctx_t *)c->data;
     int ret;
-    njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "Event fired!,try connect again, %p ", ev);
     if (ev->timedout) {
         ret = njet_iot_client_connect(3, 5, ctx);
         if (ret != 0) {
             if (ret == -5) {
-                njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "client is connecting or has connected");
+                //client is connecting or has connected
                 return;
             }
-            njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect to broker failed:%d", ret);
             njt_add_timer(ev, 1000);
         } else {
-            njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect ok, register io");
+            //connect ok, register io
             njt_http_kv_iot_register_outside_reader(njt_http_kv_loop_mqtt, ctx);
         }
     }
@@ -269,7 +266,6 @@ static void njt_http_kv_iot_set_timer(njt_event_handler_pt h, int interval, stru
 
     ev = njt_palloc(njt_cycle->pool, sizeof(njt_event_t));
     njt_memzero(ev, sizeof(njt_event_t));
-    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "in mqtt set timer, ev addr: %p", ev);
     ev->log = njt_cycle->log;
     ev->handler = h;
     ev->cancelable = 1;
@@ -287,6 +283,7 @@ static char *kv_rr_callback(const char *topic, int is_reply, const char *msg, in
     msg_str.data = (u_char *)msg;
     msg_str.len = msg_len;
 
+    //to avoid unused-but-set-variable warning
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "kv got rr msg, topic: %V, msg:%V, seesion_id: %d", &topic_str, &msg_str, session_id);
     return (char *)invoke_rpc_handler(topic, msg, msg_len, out_len);
 }
@@ -354,7 +351,6 @@ static int msg_callback(const char *topic, const char *msg, int msg_len, void *o
             memcpy(node_val->data, val, val_l);
             node_val->len = val_l;
         }
-        njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "worker write kv in local kv tree:%s,%V", key, &kv_key);
         return 0;
     }
 
@@ -479,11 +475,10 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
     prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
     njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
     prefix[cycle->prefix.len] = '\0';
-    njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "module http_kv init worker");
     kv_evt_ctx = njet_iot_client_init(prefix, localcfg, kv_rr_callback, msg_callback, client_id, log, cycle);
     njt_free(prefix);
     if (kv_evt_ctx == NULL) {
-        njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "init local mqtt client failed, exiting");
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "init local mqtt client failed, exiting");
         njet_iot_client_exit(kv_evt_ctx);
         return NJT_ERROR;
     };
@@ -550,7 +545,6 @@ njt_int_t njt_http_kv_get(njt_http_request_t *r, njt_http_variable_value_t *v, u
     }
     // todo: assume data is variable name:
     var = (njt_str_t *)data;
-    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "get key:%V", var);
 
     int ret = njet_iot_client_kv_get(var->data, var->len, (void **)&dbm_val.data, &val_len, kv_evt_ctx);
     if (ret != 0) {
@@ -693,7 +687,6 @@ int njt_kv_reg_handler(njt_kv_reg_handler_t *h)
         njt_free(old_handler->callbacks.key->data);
         njt_free(old_handler);
     }
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "set  kv handler into hash: %p: %V", kv_handler, kv_handler->callbacks.key);
     return NJT_OK;
 }
 
@@ -704,12 +697,10 @@ static void invoke_kv_change_handler(njt_str_t *key, njt_str_t *value)
     if (value == NULL || value->len == 0) {
         return;
     }
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke kv change for key:%V value:%V", key, value);
-
+ 
     if (kv_handler_hashmap) {
         rc = njt_lvlhsh_map_get(kv_handler_hashmap, key, (intptr_t *)&kv_handler);
         if (rc == NJT_OK && kv_handler->callbacks.handler) {
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got kv handler : %p for key %V", kv_handler, key);
             kv_handler->callbacks.handler(key, value, kv_handler->callbacks.data);
         }
     }
@@ -770,18 +761,15 @@ static void invoke_topic_msg_handler(const char *topic, const char *msg, int msg
     if (msg == NULL || msg_len == 0) {
         return;
     }
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke topic msg handler for topic:%s ", topic);
     if (kv_handler_hashmap) {
         rc = njt_kv_get_hashkey_from_topic(topic, &hash_key);
         if (rc == NJT_OK) {
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "hash key is :%V in worker %d", &hash_key, njt_worker);
             rc = njt_lvlhsh_map_get(kv_handler_hashmap, &hash_key, (intptr_t *)&tm_handler);
             if (rc == NJT_OK && tm_handler->callbacks.handler) {
                 nstr_topic.data = (u_char *)topic;
                 nstr_topic.len = strlen(topic);
                 nstr_msg.data = (u_char *)msg;
                 nstr_msg.len = msg_len;
-                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got kv handler : %p, %V", tm_handler, tm_handler->callbacks.key);
                 tm_handler->callbacks.handler(&nstr_topic, &nstr_msg, tm_handler->callbacks.data);
             }
         }
@@ -801,7 +789,6 @@ static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_le
     njt_str_t get_data = njt_string("");
     int full_conf_len;
 
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "invoke rpc handler for topic:%s ", topic);
     if (strlen(topic) <= 5) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "in njt_http_kv_module, got wrong topic:%s ", topic);
         *len = 0;
@@ -810,14 +797,12 @@ static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_le
     if (kv_handler_hashmap) {
         rc = njt_kv_get_hashkey_from_topic(topic, &hash_key);
         if (rc == NJT_OK) {
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "hash key is :%V in worker %d", &hash_key, njt_worker);
             rc = njt_lvlhsh_map_get(kv_handler_hashmap, &hash_key, (intptr_t *)&kv_handler);
             if (rc == NJT_OK) {
                 nstr_topic.data = (u_char *)topic;
                 nstr_topic.len = strlen(topic);
                 nstr_msg.data = (u_char *)msg;
                 nstr_msg.len = msg_len;
-                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "in njt_http_kv_module, invoke rpc handler topic:%V, msg: %V ", &nstr_topic, &nstr_msg);
                 if (njt_strstr(topic, RPC_TOPIC_PREFIX) != NULL
                     && kv_handler->callbacks.rpc_get_handler) {
                     return kv_handler->callbacks.rpc_get_handler(&nstr_topic, &nstr_msg, len, kv_handler->callbacks.data);
