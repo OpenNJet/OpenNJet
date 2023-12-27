@@ -1344,7 +1344,7 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
 
         //todo
         //njt_str_set(&location_path, "/tmp/");
-        location_full_file.len = location_path.len + location_file.len + 10;//  workid_add_location.txt
+        location_full_file.len = location_path.len + location_file.len + 50;//  workid_add_location.txt
         location_full_file.data = njt_pcalloc(location_info->pool, location_full_file.len);
         p = njt_snprintf(location_full_file.data, location_full_file.len, "%Vlogs/%d_%d_%V", &location_path, njt_process, njt_worker,
                          &location_file);

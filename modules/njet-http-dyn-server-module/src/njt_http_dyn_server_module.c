@@ -815,7 +815,7 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 	server_path = njt_cycle->prefix;
 
 
-	server_full_file.len = server_path.len + server_file.len + 10;//  workid_add_server.txt
+	server_full_file.len = server_path.len + server_file.len + 50;//  workid_add_server.txt
 	server_full_file.data = njt_pcalloc(server_info->pool, server_full_file.len);
 	p = njt_snprintf(server_full_file.data, server_full_file.len, "%Vlogs/%d_%V", &server_path, njt_worker,
 			&server_file);
