@@ -1957,7 +1957,7 @@ static void njt_http_cache_quick_download_write_handler(njt_event_t *wev) {
 
 
     if (!wev->timer_set) {
-        njt_add_timer(wev, 5000);
+        njt_add_timer(wev, 20000);
     }
 
     return;
@@ -2008,7 +2008,7 @@ static void njt_http_cache_quick_download_read_handler(njt_event_t *rev) {
     }
 
     if (!rev->timer_set) {
-        njt_add_timer(rev, 5000);
+        njt_add_timer(rev, 20000);
     }
 
     return;
