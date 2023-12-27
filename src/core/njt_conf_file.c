@@ -15,7 +15,7 @@ static njt_int_t njt_conf_add_dump(njt_conf_t *cf, njt_str_t *filename);
 static njt_int_t njt_conf_handler(njt_conf_t *cf, njt_int_t last);
 static njt_int_t njt_conf_read_token(njt_conf_t *cf);
 static void njt_conf_flush_files(njt_cycle_t *cycle);
-
+extern njt_conf_check_cmd_handler_pt  njt_conf_check_cmd_handler;
 
 static njt_command_t  njt_conf_commands[] = {
 
@@ -371,6 +371,7 @@ njt_conf_handler(njt_conf_t *cf, njt_int_t last)
     njt_uint_t      i, found;
     njt_str_t      *name;
     njt_command_t  *cmd;
+    njt_int_t      rc;
 
     name = cf->args->elts;
 
@@ -470,7 +471,14 @@ njt_conf_handler(njt_conf_t *cf, njt_int_t last)
                     conf = confp[cf->cycle->modules[i]->ctx_index];
                 }
             }
-
+            if(njt_conf_check_cmd_handler != NULL) {
+                 rc = njt_conf_check_cmd_handler(cmd->name);
+                 if(rc == NJT_ERROR) {
+                    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                               "\"%s\" directive no support of dynamic!", name->data);
+                    return NJT_ERROR;
+                 }
+            }
             rv = cmd->set(cf, cmd, conf);
 
             if (rv == NJT_CONF_OK) {

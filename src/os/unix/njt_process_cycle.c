@@ -82,6 +82,7 @@ njt_uint_t    njt_is_privileged_agent = 0;
 njt_uint_t    njt_privileged_agent_exited = 0;
 njt_uint_t    njt_master_listening_count = 0;
 njt_uint_t    njt_is_privileged_helper = 0;
+njt_conf_check_cmd_handler_pt  njt_conf_check_cmd_handler = NULL;
 
 
 static u_char  master_process[] = "master process";
