@@ -21,7 +21,7 @@ typedef struct {
     njt_uint_t   nalloc;
     njt_pool_t  *pool;
 #if (NJT_HTTP_DYNAMIC_LOC)
-    njt_uint_t   free;
+    //njt_uint_t   free;
 #endif
 } njt_array_t;
 
