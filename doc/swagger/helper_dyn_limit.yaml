@@ -175,7 +175,7 @@ components:
                 type: string
                 example: perip
               conn: 
-                type: int
+                type: integer
                 example: 10
         limit_conn_dry_run:
           type: string
@@ -186,7 +186,7 @@ components:
           description: 超过连接限制后日志打印级别 .
           enum: [info, notice, warn, error]
         limit_conn_status:
-          type: int
+          type: integer
           description:  超过连接限制后返回码,范围[400, 599], 包含400和599.
           example: 503
         limit_reqs_scope:
@@ -203,7 +203,7 @@ components:
                 type: string
                 example: req_perip
               burst: 
-                type: int
+                type: integer
                 example: 10
               delay: 
                 type: string
@@ -217,7 +217,7 @@ components:
           description: 超过连接限制后日志打印级别 .
           enum: [info, notice, warn, error]
         limit_req_status:
-          type: int
+          type: integer
           description:  超过连接限制后返回码,范围[400, 599], 包含400和599.
           example: 503
         locations:

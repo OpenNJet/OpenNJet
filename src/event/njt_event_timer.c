@@ -76,9 +76,9 @@ njt_event_expire_timers(void)
 
         ev = njt_rbtree_data(node, njt_event_t, timer);
 
-        njt_log_debug2(NJT_LOG_DEBUG_EVENT, ev->log, 0,
-                       "event timer del: %d: %M",
-                       njt_event_ident(ev->data), ev->timer.key);
+        // njt_log_debug2(NJT_LOG_DEBUG_EVENT, ev->log, 0,
+        //                "event timer del: %d: %M",
+        //                njt_event_ident(ev->data), ev->timer.key);
 
         njt_rbtree_delete(&njt_event_timer_rbtree, &ev->timer);
 

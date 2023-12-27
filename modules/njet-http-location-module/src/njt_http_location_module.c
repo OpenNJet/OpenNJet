@@ -60,10 +60,10 @@ typedef struct njt_http_location_main_conf_s {
 static  njt_str_t njt_invalid_dyn_location_body[] = {
 	njt_string("zone "),
 	njt_string("proxy_pass "),
+	njt_string("if "),
 	njt_null_string
 };
 static  njt_str_t njt_invalid_dyn_proxy_pass[] = {
-	njt_string("unix "),
 	njt_null_string
 };
 
@@ -1275,7 +1275,11 @@ static njt_int_t njt_http_sub_location_write_data(njt_fd_t fd,njt_http_location_
 			}
 			if(loc->location_body.len != 0 && loc->location_body.data != NULL){
 				add_escape_val = loc->location_body;//add_escape(location_info->pool,loc->location_body);
-				p = njt_snprintf(p, remain, " %V; \n",&add_escape_val);
+				if(add_escape_val.len > 0 && add_escape_val.data[add_escape_val.len-1] != ';' && add_escape_val.data[add_escape_val.len-1] != '}'){
+					p = njt_snprintf(p, remain, " %V; \n",&add_escape_val);
+				} else {
+					p = njt_snprintf(p, remain, " %V \n",&add_escape_val);
+				}
 				remain = data + buffer_len - p;
 			}
 			if(loc->proxy_pass.len != 0 && loc->proxy_pass.data != NULL){
@@ -1340,9 +1344,9 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
 
         //todo
         //njt_str_set(&location_path, "/tmp/");
-        location_full_file.len = location_path.len + location_file.len + 10;//  workid_add_location.txt
+        location_full_file.len = location_path.len + location_file.len + 50;//  workid_add_location.txt
         location_full_file.data = njt_pcalloc(location_info->pool, location_full_file.len);
-        p = njt_snprintf(location_full_file.data, location_full_file.len, "%Vlogs/%d_%V", &location_path, njt_worker,
+        p = njt_snprintf(location_full_file.data, location_full_file.len, "%Vlogs/%d_%d_%V", &location_path, njt_process, njt_worker,
                          &location_file);
         location_full_file.len = p - location_full_file.data;
     fd = njt_open_file(location_full_file.data, NJT_FILE_CREATE_OR_OPEN | NJT_FILE_RDWR, NJT_FILE_TRUNCATE,

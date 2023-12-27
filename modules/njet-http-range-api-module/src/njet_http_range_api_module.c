@@ -537,7 +537,6 @@ njt_dyn_range_read_data(njt_http_request_t *r){
 	if(rc == NJT_OK) {
 		++r->main->count;
 	}
-	njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "1 send topic retain_flag=%V, key=%V,value=%V",&api_data->type,&topic_name,&json_str);
 	
     goto out;
 
