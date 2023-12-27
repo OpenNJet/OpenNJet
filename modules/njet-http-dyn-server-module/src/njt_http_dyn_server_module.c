@@ -133,7 +133,14 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
 	if(cmcf->dyn_vs_pool == NULL) {
 		rc = NJT_ERROR;
 		goto out;
-	} 
+	}
+	rc = njt_sub_pool(njt_cycle->pool,cmcf->dyn_vs_pool);
+        if(rc != NJT_OK) {
+                njt_destroy_pool(cmcf->dyn_vs_pool);
+                cmcf->dyn_vs_pool = old_pool;
+                rc = NJT_ERROR;
+                goto out;
+        } 
 	njt_memzero(&conf,sizeof(njt_conf_t));
 	conf.dynamic = 1;
 	conf.pool = cmcf->dyn_vs_pool;
