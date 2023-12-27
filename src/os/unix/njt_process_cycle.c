@@ -403,7 +403,7 @@ njt_single_process_cycle(njt_cycle_t *cycle)
     }
 
     for (;; ) {
-        njt_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
+        // njt_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
 
         njt_process_events_and_timers(cycle);
 
@@ -1518,7 +1518,7 @@ njt_worker_process_cycle(njt_cycle_t *cycle, void *data)
             }
         }
 
-        njt_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
+        // njt_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
 
         njt_process_events_and_timers(cycle);
 
