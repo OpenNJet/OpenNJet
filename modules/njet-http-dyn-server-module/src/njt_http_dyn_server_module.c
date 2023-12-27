@@ -190,7 +190,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	if (server_info->file.len != 0) {
 		server_path = server_info->file;
 	}
-
+	server_name = server_info->server_name;
 	cscf = server_info->cscf;
 	if(cscf != NULL){
 		p = njt_snprintf(server_info->buffer.data,server_info->buffer.len,"error:[%V] server[%V] exist!",&server_info->addr_port,&server_info->server_name);
@@ -202,7 +202,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 
 
 	if (server_path.len == 0) {
-		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error:server_path=0");
+		//njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error:server_path=0");
 		njt_str_set(&server_info->msg,"add server error:server_path=0");
 		rc = NJT_ERROR;
 		goto out;
@@ -210,19 +210,18 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 
 
 	if (rc == NJT_ERROR || rc > NJT_OK) {
-		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error!");
+		//njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add server error!");
 		njt_str_set(&server_info->msg,"add server error!");
 		rc = NJT_ERROR;
 		goto out;
 	}
 
-	server_name = server_info->server_name;
 
 	njt_memzero(&conf, sizeof(njt_conf_t));
 	conf.args = njt_array_create(server_info->pool, 10, sizeof(njt_str_t));
 	if (conf.args == NULL) {
 		njt_str_set(&server_info->msg,"add server njt_array_create error!");
-		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  server[%V] error:args allocate fail!",&server_name);
+		//njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  server[%V] error:args allocate fail!",&server_name);
 		rc = NJT_ERROR;
 		goto out;
 	}
