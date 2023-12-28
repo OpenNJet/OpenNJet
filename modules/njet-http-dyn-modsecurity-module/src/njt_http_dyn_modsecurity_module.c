@@ -432,10 +432,6 @@ static u_char *njt_dyn_modsecurity_rpc_put_handler(njt_str_t *topic, njt_str_t *
 
 static njt_int_t njt_http_dyn_modsecurity_module_init_process(njt_cycle_t *cycle)
 {
-    if (njt_process != NJT_PROCESS_WORKER) {
-        return NJT_OK;
-    }
-
     njt_str_t modsecurity_rpc_key = njt_string("http_dyn_modsecurity");
     njt_kv_reg_handler_t h;
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
