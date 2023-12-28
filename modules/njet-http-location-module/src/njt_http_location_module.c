@@ -963,6 +963,8 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 			} 
 
 			njt_str_set(&key,"location_body");
+
+			njt_str_set(&sub_location->location_body,"");
 			rc = njt_struct_find(items, &key, &out_items);
 			if( (location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0)) {
 				if(rc != NJT_OK || out_items->type != NJT_JSON_STR){
