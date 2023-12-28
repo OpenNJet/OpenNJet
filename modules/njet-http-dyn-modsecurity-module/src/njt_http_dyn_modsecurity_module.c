@@ -187,13 +187,10 @@ static void njt_dyn_modsecurity_dump_locs(njt_pool_t *pool, njt_queue_t *locatio
         }
 
         if (clcf->old_locations) {
-            loc_item->locations = create_dynmodsecurity_locationDef_locations(pool, 4);
-            if (loc_item->locations == NULL) {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can`t create sub location array"
-                );
-                return;
+            set_dynmodsecurity_locationDef_locations(loc_item, create_dynmodsecurity_locationDef_locations(pool, 4));
+            if (loc_item->locations != NULL) {
+                njt_dyn_modsecurity_dump_locs(pool, clcf->old_locations, loc_item->locations);
             }
-            njt_dyn_modsecurity_dump_locs(pool, clcf->old_locations, loc_item->locations);
         }
     }
 
