@@ -1,0 +1,15 @@
+njt_module_type=CORE
+njt_module_name="njt_range_module"
+
+njt_module_deps=" \
+    $njt_addon_dir/src/njt_range_module.h"
+
+njt_module_srcs="$njt_addon_dir/src/njt_range_module.c"
+
+
+have=NJT_RANGE . auto/have
+njt_module_incs="$njt_addon_dir/src"
+NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_module_srcs"
+
+
+. auto/module

@@ -1,0 +1,30 @@
+# required
+./modules/njet-mqconf-module
+# required
+./modules/njet-http-kv-module
+# required
+./modules/njet-stream-proto-module
+# required
+./modules/njet-stream-proxy-protocol-tlv-module
+# required
+./modules/njet-util-module
+# required
+./modules/njet-http-if-location-module
+# optional, required by http-lua and stream-lua
+./src/ext/lua/kit
+# required
+./modules/njet-stream-upstream-dynamic-servers-module
+# required
+./modules/njet-http-upstream-dynamic-servers-module
+# required
+./modules/njet-vts-module
+# required
+./modules/njet-http-proxy-connect-module
+# required
+./modules/njet-gossip-module
+# required
+./modules/njet-cache-purge-module
+# required
+./modules/njet-http-fault-inject-module
+# optional
+./modules/njet-jwt-module

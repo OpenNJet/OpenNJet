@@ -31,10 +31,10 @@ static void *(*old_pcre_malloc)(size_t);
 static void (*old_pcre_free)(void *ptr);
 
 
-/* XXX: work-around to nginx regex subsystem, must init a memory pool
+/* XXX: work-around to njet regex subsystem, must init a memory pool
  * to use PCRE functions. As PCRE still has memory-leaking problems,
- * and nginx overwrote pcre_malloc/free hooks with its own static
- * functions, so nobody else can reuse nginx regex subsystem... */
+ * and njet overwrote pcre_malloc/free hooks with its own static
+ * functions, so nobody else can reuse njet regex subsystem... */
 static void *
 njt_stream_lua_pcre_malloc(size_t size)
 {
@@ -71,7 +71,7 @@ njt_stream_lua_pcre_malloc_init(njt_pool_t *pool)
 
     if (pcre_malloc != njt_stream_lua_pcre_malloc) {
 
-        dd("overriding nginx pcre malloc and free");
+        dd("overriding njet pcre malloc and free");
 
         njt_stream_lua_pcre_pool = pool;
 

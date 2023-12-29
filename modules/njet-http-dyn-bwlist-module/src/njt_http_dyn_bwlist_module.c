@@ -205,7 +205,7 @@ static njt_int_t njt_dyn_bwlist_update_locs(dynbwlist_servers_item_locations_t *
                 rpc_data_str.len = 0;
                 rc = njt_dyn_bwlist_set_rules(pool, dbwl, ctx, rpc_result);
                 if (rc != NJT_OK) {
-                    njt_log_error(NJT_LOG_ERR, pool->log, 0, " error in njt_dyn_bwlist_set_rules");
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, " error in njt_dyn_bwlist_set_rules");
                     if (0 == rpc_data_str.len) {
                         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " njt_dyn_bwlist_set_rules error[%V];", name);
                         rpc_data_str.len = end - data_buf;
@@ -330,13 +330,10 @@ static void njt_dyn_bwlist_dump_locs(njt_pool_t *pool, njt_queue_t *locations, d
 #endif
 
         if (clcf->old_locations) {
-            loc_item->locations = create_dynbwlist_locationDef_locations(pool, 4);
-            if (loc_item->locations == NULL) {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can`t create sub location array"
-                );
-                return;
-            }
-            njt_dyn_bwlist_dump_locs(pool, clcf->old_locations, loc_item->locations);
+            set_dynbwlist_locationDef_locations(loc_item, create_dynbwlist_locationDef_locations(pool, 4));
+            if (loc_item->locations != NULL) {
+                njt_dyn_bwlist_dump_locs(pool, clcf->old_locations, loc_item->locations);
+            } 
         }
 
     }
@@ -391,7 +388,7 @@ static njt_str_t *njt_dyn_bwlist_dump_access_conf(njt_cycle_t *cycle, njt_pool_t
 
         server_name = cscfp[i]->server_names.elts;
         for (j = 0; j < cscfp[i]->server_names.nelts; ++j) {
-            tmp_str = &server_name[j].name;
+            tmp_str = &server_name[j].full_name;
             add_item_dynbwlist_servers_item_serverNames(server_item->serverNames, tmp_str);
         }
 
@@ -483,7 +480,7 @@ static u_char *njt_dyn_bwlist_rpc_get_handler(njt_str_t *topic, njt_str_t *reque
 
     pool = njt_create_pool(njt_pagesize, njt_cycle->log);
     if (pool == NULL) {
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_dyn_bwlist_rpc_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_bwlist_rpc_handler create pool error");
         goto out;
     }
 
@@ -528,7 +525,7 @@ static int njt_dyn_bwlist_change_handler_internal(njt_str_t *key, njt_str_t *val
     njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_SUCCESS);
     pool = njt_create_pool(njt_pagesize, njt_cycle->log);
     if (pool == NULL) {
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_dyn_bwlist_change_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_dyn_bwlist_change_handler create pool error");
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
         rc = NJT_ERROR;
         goto rpc_msg;
@@ -536,7 +533,7 @@ static int njt_dyn_bwlist_change_handler_internal(njt_str_t *key, njt_str_t *val
 
     api_data = json_parse_dynbwlist(pool, value, &err_info);
     if (api_data == NULL) {
-        njt_log_error(NJT_LOG_ERR, pool->log, 0, "json_parse_dynbwlist err: %V", &err_info.err_str);
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "json_parse_dynbwlist err: %V", &err_info.err_str);
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_JSON);
         njt_rpc_result_set_msg2(rpc_result, &err_info.err_str);
         rc = NJT_ERROR;
@@ -576,10 +573,6 @@ static u_char *njt_dyn_bwlist_rpc_put_handler(njt_str_t *topic, njt_str_t *reque
 
 static njt_int_t njt_http_dyn_bwlist_module_init_process(njt_cycle_t *cycle)
 {
-    if (njt_process != NJT_PROCESS_WORKER) {
-        return NJT_OK;
-    }
-
     njt_str_t bwlist_rpc_key = njt_string("http_dyn_bwlist");
     njt_kv_reg_handler_t h;
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));

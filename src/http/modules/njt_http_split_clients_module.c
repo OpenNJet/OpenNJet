@@ -457,9 +457,6 @@ static njt_int_t njt_http_split_clients_init_worker(njt_cycle_t *cycle)
 #if NJT_HTTP_KV_MODULE
     njt_http_conf_ctx_t *conf_ctx;
     njt_http_split_clients_conf_t *sccf;
-    if (njt_process != NJT_PROCESS_WORKER) {
-        return NJT_OK;
-    }
     // return  when there is no http configuraton
     if (njt_http_split_clients_module.ctx_index == NJT_CONF_UNSET_UINT) {
         return NJT_OK;
@@ -598,6 +595,18 @@ static char *njt_conf_split_clients_block(njt_conf_t *cf, njt_command_t *cmd,
     sum = 0;
     last = 0;
     part = ctx->parts.elts;
+
+    if (ctx->parts.nelts == 0 ) {
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                "should be at least one default \"*\" entry in config file");
+            return NJT_CONF_ERROR;
+    }
+    
+    if (!part[ctx->parts.nelts-1].last) {
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                "last entry in config file should be \"*\" ");
+            return NJT_CONF_ERROR;
+    }
 
     for (i = 0; i < ctx->parts.nelts; i++) {
         sum = part[i].percent ? sum + part[i].percent : 10000;

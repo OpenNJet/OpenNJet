@@ -72,7 +72,7 @@ njt_shmtx_lock(njt_shmtx_t *mtx)
 {
     njt_uint_t         i, n;
 
-    njt_log_debug0(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0, "shmtx lock");
+    // njt_log_debug0(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0, "shmtx lock");
 
     for ( ;; ) {
 
@@ -138,7 +138,7 @@ void
 njt_shmtx_unlock(njt_shmtx_t *mtx)
 {
     if (mtx->spin != (njt_uint_t) -1) {
-        njt_log_debug0(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0, "shmtx unlock");
+        // njt_log_debug0(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0, "shmtx unlock");
     }
 
     if (njt_atomic_cmp_set(mtx->lock, njt_pid, 0)) {

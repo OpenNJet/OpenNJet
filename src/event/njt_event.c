@@ -250,8 +250,8 @@ njt_process_events_and_timers(njt_cycle_t *cycle)
 
     delta = njt_current_msec - delta;
 
-    njt_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
-                   "timer delta: %M", delta);
+    // njt_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
+    //                "timer delta: %M", delta);
 
     njt_event_process_posted(cycle, &njt_posted_accept_events);
 
@@ -816,7 +816,6 @@ njt_event_process_init(njt_cycle_t *cycle)
 
         c->type = ls[i].type;
         c->log = &ls[i].log;
-
         c->listening = &ls[i];
         ls[i].connection = c;
 
@@ -1366,4 +1365,19 @@ njt_event_core_init_conf(njt_cycle_t *cycle, void *conf)
     njt_conf_init_msec_value(ecf->accept_mutex_delay, 500);
 
     return NJT_CONF_OK;
+}
+void
+njt_show_listening_sockets(njt_cycle_t *cycle)
+{
+    njt_uint_t         i;
+    njt_listening_t   *ls;
+
+
+
+    ls = cycle->listening.elts;
+    for (i = 0; i < cycle->listening.nelts; i++) {
+
+ 	njt_log_error(NJT_LOG_EMERG, cycle->log, 0, "njt_show_listening_sockets listening=%p,ls=%p,servers=%p",ls,&ls[i],ls[i].servers);       
+    }
+
 }

@@ -1,0 +1,47 @@
+# njt_feature="njt_stream_ftp_proxy_module"
+# njt_feature_name=
+# njt_feature_run=no
+# njt_feature_incs=
+# njt_feature_libs=""
+# njt_feature_path="$njt_addon_dir"
+# njt_module_deps=" \
+#   $njt_addon_dir/src/njt_stream_ftp_proxy_module.h \
+# "
+# njt_check_src="$njt_addon_dir/src/njt_stream_ftp_proxy_module.c"
+
+# njt_feature_test="int a;"
+# have=NJT_STREAM_FTP_PROXY . auto/have
+# CORE_INCS="$CORE_INCS $njt_addon_dir/src"
+
+# if [ $njt_found = yes ]; then
+#     have=NJT_STREAM_FTP_PROXY . auto/have
+#     CORE_INCS="$CORE_INCS $njt_feature_path"
+#     njt_addon_name=njt_stream_ftp_proxy_module
+#     njt_module_type=STREAM
+#     njt_module_name=$njt_addon_name
+#     STREAM_MODULES="$STREAM_MODULES njt_stream_ftp_proxy_module"
+#     NJT_ADDON_DEPS="$NJT_ADDON_DEPS $njt_feature_deps"
+#     NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_check_src"
+# else
+#     cat << END
+#     $0: error: the njet-stream-ftp-proxy-module addon error.
+# END
+#     exit 1
+# fi
+
+
+njt_addon_name=njt_stream_ftp_proxy_module
+njt_module_type=STREAM
+njt_module_name=$njt_addon_name
+njt_module_deps=" \
+$njt_addon_dir/src/njt_stream_ftp_proxy_module.h \
+"
+njt_module_srcs=" \
+  $njt_addon_dir/src/njt_stream_ftp_proxy_module.c \
+"
+
+njt_module_incs="$njt_addon_dir/src"
+NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_module_srcs"
+
+have=NJT_STREAM_FTP_PROXY . auto/have
+. auto/module

@@ -89,6 +89,11 @@ struct njt_stream_upstream_srv_conf_s {
     njt_shm_zone_t                    *shm_zone;
     njt_uint_t                        update_id;
 #endif
+
+#if (NJT_STREAM_FTP_PROXY)
+    njt_pool_t                         *ftp_url_pool; 
+#endif
+
 #if (NJT_HTTP_UPSTREAM_DYNAMIC_SERVER)
     njt_str_t                       state_file;
     njt_resolver_t                 *resolver;/* resolver */

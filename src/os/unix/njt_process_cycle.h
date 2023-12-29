@@ -49,6 +49,7 @@ extern njt_uint_t      njt_exiting;
 
 extern sig_atomic_t    njt_reap;
 extern sig_atomic_t    njt_sigio;
+extern njt_uint_t      njt_is_privileged_agent;
 extern sig_atomic_t    njt_sigalrm;
 extern sig_atomic_t    njt_quit;
 extern sig_atomic_t    njt_debug_quit;
@@ -59,5 +60,6 @@ extern sig_atomic_t    njt_reopen;
 extern sig_atomic_t    njt_change_binary;
 extern sig_atomic_t    njt_reap_helper;
 extern sig_atomic_t    njt_rtc;
-extern njt_uint_t    njt_is_privileged_helper;
+extern njt_uint_t      njt_is_privileged_helper;
+extern njt_uint_t      njt_privileged_agent_exited;
 #endif /* _NJT_PROCESS_CYCLE_H_INCLUDED_ */

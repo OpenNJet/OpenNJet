@@ -1,0 +1,14 @@
+
+# Copyright (C) Igor Sysoev
+# Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
+
+MODSECURITY="auto/lib/modsecurity"
+case "$CC" in
+    *)
+        CORE_DEPS="$CORE_DEPS $MODSECURITY/src/config.h"
+    ;;
+esac
+
+
+

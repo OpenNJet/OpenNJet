@@ -197,7 +197,7 @@ failed:
 
     njt_log_error(NJT_LOG_EMERG, cycle->log, 0,
                   "njt_quic_bpf_module failed to initialize properly, ignored."
-                  "please check limits and note that nginx state now "
+                  "please check limits and note that njet state now "
                   "can be inconsistent and restart may be required");
 
     return NJT_OK;

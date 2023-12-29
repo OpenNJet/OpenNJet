@@ -81,9 +81,9 @@ njt_array_push(njt_array_t *a)
 
             njt_memcpy(new, a->elts, size);
 #if (NJT_HTTP_DYNAMIC_LOC)
-	    if(a->free == 1) {
-	       njt_pfree(p,a->elts);	
-	    }
+	 //   if(a->free == 1) {
+	  //     njt_pfree(p,a->elts);	
+	   // }
 #endif
             a->elts = new;
             a->nalloc *= 2;
@@ -136,9 +136,9 @@ njt_array_push_n(njt_array_t *a, njt_uint_t n)
 
             njt_memcpy(new, a->elts, a->nelts * a->size);
 #if (NJT_HTTP_DYNAMIC_LOC)
-	    if(a->free == 1) {
-               njt_pfree(p,a->elts);
-            }
+	   // if(a->free == 1) {
+            //   njt_pfree(p,a->elts);
+           // }
 #endif
             a->elts = new;
             a->nalloc = nalloc;
@@ -149,4 +149,22 @@ njt_array_push_n(njt_array_t *a, njt_uint_t n)
     a->nelts += n;
 
     return elt;
+}
+
+void njt_array_delete_idx(njt_array_t *a, njt_uint_t idx){
+
+	u_char *last;
+	u_char *p;
+
+	if(a->nelts <= idx){
+		return;
+	}
+	if(a->nelts - 1 != idx) { //last one
+		p = (u_char *)a->elts + (idx * a->size);
+		last = (u_char *)a->elts + ((a->nelts -1) * a->size);
+		njt_memcpy(p,last,a->size);
+	}
+	a->nelts--;
+
+
 }

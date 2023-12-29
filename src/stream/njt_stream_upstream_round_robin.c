@@ -33,6 +33,250 @@ static void njt_stream_upstream_empty_save_session(njt_peer_connection_t *pc,
 #endif
 
 
+#if (NJT_STREAM_FTP_PROXY)
+njt_int_t njt_stream_ftp_data_proxy_upstream_init_round_robin(njt_pool_t *pool,
+    njt_stream_upstream_srv_conf_t *us)
+{
+    njt_url_t                        u;
+    njt_uint_t                       i, j, n, w, t;
+    njt_stream_upstream_server_t    *server;
+    njt_stream_upstream_rr_peer_t   *peer, **peerp;
+    njt_stream_upstream_rr_peers_t  *peers, *backup;
+    njt_msec_t now_time = njt_time();
+
+    us->peer.init = njt_stream_upstream_init_round_robin_peer;
+
+    if (us->servers) {
+        server = us->servers->elts;
+
+        n = 0;
+        w = 0;
+        t = 0;
+
+        peers = njt_pcalloc(pool, sizeof(njt_stream_upstream_rr_peers_t));
+        if (peers == NULL) {
+            return NJT_ERROR;
+        }
+        for (i = 0; i < us->servers->nelts; i++) {
+            if (server[i].backup) {
+                continue;
+            }
+	    //zyg
+	    if(server[i].dynamic != 1){
+		server[i].parent_id = -1;
+	    }else {
+		server[i].parent_id = (njt_int_t)peers->next_order++;
+	    }
+	    //end
+            n += server[i].naddrs;
+            w += server[i].naddrs * server[i].weight;
+
+            if (!server[i].down) {
+                t += server[i].naddrs;
+            }
+        }
+
+        peers->single = (n <= 1);
+        peers->number = n;
+        peers->weighted = (w != n);
+        peers->total_weight = w;
+        peers->tries = t;
+        peers->name = &us->host;
+        peerp = &peers->peer;
+
+	if(n > 0) {
+	peer = njt_pcalloc(pool, sizeof(njt_stream_upstream_rr_peer_t) * n);
+        if (peer == NULL) {
+            return NJT_ERROR;
+        }
+        n = 0;
+
+        for (i = 0; i < us->servers->nelts; i++) {
+            if (server[i].backup) {
+                continue;
+            }
+
+            for (j = 0; j < server[i].naddrs; j++) {
+                peer[n].sockaddr = server[i].addrs[j].sockaddr;
+                peer[n].socklen = server[i].addrs[j].socklen;
+                peer[n].name = server[i].addrs[j].name;
+                peer[n].weight = server[i].weight;
+                peer[n].effective_weight = server[i].weight;
+		peer[n].rr_effective_weight = server[i].weight * NJT_WEIGHT_POWER;
+                peer[n].current_weight = 0;
+                peer[n].rr_current_weight = 0;
+                peer[n].max_conns = server[i].max_conns;
+                peer[n].max_fails = server[i].max_fails;
+                peer[n].fail_timeout = server[i].fail_timeout;
+                peer[n].down = server[i].down;
+                peer[n].server = server[i].name;
+		peer[n].hc_upstart = now_time;
+		//zyg
+		peer[n].id = peers->next_order++;
+		peer[n].slow_start = server[i].slow_start;
+		peer[n].parent_id = server[i].parent_id;
+		//end
+                *peerp = &peer[n];
+                peerp = &peer[n].next;
+                n++;
+            }
+        }
+	}
+        us->peer.data = peers;
+
+        /* backup servers */
+
+        n = 0;
+        w = 0;
+        t = 0;
+
+        for (i = 0; i < us->servers->nelts; i++) {
+            if (!server[i].backup) {
+                continue;
+            }
+	    if(server[i].dynamic != 1) {
+		server[i].parent_id = -1;
+	    } else {
+		server[i].parent_id = (njt_int_t)peers->next_order++;
+	    }
+            n += server[i].naddrs;
+            w += server[i].naddrs * server[i].weight;
+
+            if (!server[i].down) {
+                t += server[i].naddrs;
+            }
+        }
+
+        if (n == 0) {
+            return NJT_OK;
+        }
+
+        backup = njt_pcalloc(pool, sizeof(njt_stream_upstream_rr_peers_t));
+        if (backup == NULL) {
+            return NJT_ERROR;
+        }
+
+        peer = njt_pcalloc(pool, sizeof(njt_stream_upstream_rr_peer_t) * n);
+        if (peer == NULL) {
+            return NJT_ERROR;
+        }
+
+        backup->single = 0;
+        backup->number = n;
+        backup->weighted = (w != n);
+        backup->total_weight = w;
+        backup->tries = t;
+        backup->name = &us->host;
+
+        n = 0;
+        peerp = &backup->peer;
+
+        for (i = 0; i < us->servers->nelts; i++) {
+            if (!server[i].backup) {
+                continue;
+            }
+
+            for (j = 0; j < server[i].naddrs; j++) {
+                peer[n].sockaddr = server[i].addrs[j].sockaddr;
+                peer[n].socklen = server[i].addrs[j].socklen;
+                peer[n].name = server[i].addrs[j].name;
+                peer[n].weight = server[i].weight;
+                peer[n].effective_weight = server[i].weight;
+		peer[n].rr_effective_weight = server[i].weight * NJT_WEIGHT_POWER;
+                peer[n].current_weight = 0;
+                peer[n].rr_current_weight = 0;
+                peer[n].max_conns = server[i].max_conns;
+                peer[n].max_fails = server[i].max_fails;
+                peer[n].fail_timeout = server[i].fail_timeout;
+                peer[n].down = server[i].down;
+                peer[n].server = server[i].name;
+		peer[n].parent_id = server[i].parent_id;
+		peer[n].slow_start = server[i].slow_start;
+		peer[n].hc_upstart = now_time;
+	        peer[n].id = peers->next_order++;
+                *peerp = &peer[n];
+                peerp = &peer[n].next;
+                n++;
+            }
+        }
+
+        peers->next = backup;
+        peers->single = (peers->number + peers->next->number == 1);
+
+        return NJT_OK;
+    }
+
+
+    /* an upstream implicitly defined by proxy_pass, etc. */
+
+    if (us->port == 0) {
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
+                      "no port in upstream \"%V\" in %s:%ui",
+                      &us->host, us->file_name, us->line);
+        return NJT_ERROR;
+    }
+
+    njt_memzero(&u, sizeof(njt_url_t));
+
+    u.host = us->host;
+    u.port = us->port;
+
+    if (njt_inet_resolve_host(pool, &u) != NJT_OK) {
+        if (u.err) {
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0,
+                          "%s in upstream \"%V\" in %s:%ui",
+                          u.err, &us->host, us->file_name, us->line);
+        }
+
+        return NJT_ERROR;
+    }
+
+    n = u.naddrs;
+
+    peers = njt_pcalloc(pool, sizeof(njt_stream_upstream_rr_peers_t));
+    if (peers == NULL) {
+        return NJT_ERROR;
+    }
+
+    peer = njt_pcalloc(pool, sizeof(njt_stream_upstream_rr_peer_t) * n);
+    if (peer == NULL) {
+        return NJT_ERROR;
+    }
+
+    peers->single = (n <= 1);
+    peers->number = n;
+    peers->weighted = 0;
+    peers->total_weight = n;
+    peers->tries = n;
+    peers->name = &us->host;
+
+    peerp = &peers->peer;
+
+    for (i = 0; i < u.naddrs; i++) {
+        peer[i].sockaddr = u.addrs[i].sockaddr;
+        peer[i].socklen = u.addrs[i].socklen;
+        peer[i].name = u.addrs[i].name;
+        peer[i].weight = 1;
+        peer[i].effective_weight = 1;
+	peer[i].rr_effective_weight = 1*NJT_WEIGHT_POWER;
+        peer[i].current_weight = 0;
+        peer[i].rr_current_weight = 0;
+        peer[i].max_conns = 0;
+        peer[i].max_fails = 1;
+        peer[i].fail_timeout = 10;
+        *peerp = &peer[i];
+        peerp = &peer[i].next;
+    }
+
+    us->peer.data = peers;
+
+    /* implicitly defined upstream has no backup servers */
+
+    return NJT_OK;
+}
+#endif
+
+
 njt_int_t
 njt_stream_upstream_init_round_robin(njt_conf_t *cf,
     njt_stream_upstream_srv_conf_t *us)
@@ -670,7 +914,7 @@ njt_stream_upstream_get_peer(njt_stream_upstream_rr_peer_data_t *rrp)
             peer->effective_weight++;
         }
         if (peer->rr_effective_weight < peer_slow_weight) {
-	    peer->rr_effective_weight += NJT_WEIGHT_POWER;
+	    peer->rr_effective_weight += (peer_slow_weight/peer->weight);
         }
 	 if(peer != NULL) {
            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "peer ip=%V,rr_current_weight=%d,rr_effective_weight=%d,peer_slow_weight=%d",&peer->server,peer->rr_current_weight,peer->rr_effective_weight,peer_slow_weight);

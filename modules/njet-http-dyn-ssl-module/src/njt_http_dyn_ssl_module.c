@@ -480,7 +480,7 @@ static int  njt_http_ssl_update_handler(njt_str_t *key, njt_str_t *value, void *
     njt_pool_t                          *pool = NULL;
     njt_rpc_result_t                    *rpc_result = NULL;
     js2c_parse_error_t                  err_info;
-    njt_str_t                           worker_str = njt_string("/worker_0");
+    njt_str_t                           worker_str = njt_string("/worker_a");
     njt_str_t                           new_key;
 
 
@@ -505,7 +505,7 @@ static int  njt_http_ssl_update_handler(njt_str_t *key, njt_str_t *value, void *
 
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_http_ssl_change_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_change_handler create pool error");
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
         njt_rpc_result_set_msg(rpc_result, (u_char *)" update handler create pool error");
         rc = NJT_ERROR;
@@ -627,7 +627,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
 
         server_name = cscfp[i]->server_names.elts;
         for (j = 0; j < cscfp[i]->server_names.nelts; ++j) {
-            tmp_str = &server_name[j].name;
+            tmp_str = &server_name[j].full_name;
             add_item_dyn_ssl_servers_item_serverNames(server_item->serverNames,tmp_str);
         }
 
@@ -839,7 +839,7 @@ static u_char* njt_http_dyn_ssl_rpc_handler(njt_str_t *topic, njt_str_t *request
     njt_pool_t *pool = NULL;
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_agent_dynlog_change_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_dyn_ssl_rpc_handler create pool error");
         goto end;
     }
     msg = njt_http_dyn_ssl_dump_conf(cycle, pool);

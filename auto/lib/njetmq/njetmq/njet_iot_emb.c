@@ -312,7 +312,7 @@ int njet_iot_init(const char *prefix, const char *config_file)
 {
 	struct mosquitto__config *config;
 	struct timeval tv;
-	char nameBuff[32];
+	char nameBuff[32] = {0};
 	int rc;
 	int argc = 3;
 	char *argv[3];
@@ -345,7 +345,10 @@ int njet_iot_init(const char *prefix, const char *config_file)
 	config->prefix = (char *)prefix;
 
 	rc = config__parse_args(config, argc, argv);
-	unlink(nameBuff);
+	if (config_file == NULL || strlen(config_file) == 0)
+	{
+		unlink(nameBuff);
+	}
 	if (rc != MOSQ_ERR_SUCCESS)
 		return rc;
 

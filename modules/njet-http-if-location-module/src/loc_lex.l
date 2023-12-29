@@ -137,5 +137,14 @@ int idx = 0;
 }; */
 
 void yyerror(loc_parse_node_t **tree_root, const char *msg) {
+    reset();
     printf("Syntax error: %s\n", msg);
 }; 
+
+void reset() {
+    paren_count = 0; 
+    inside_paren_count = 0; // count for () within $http  =   [^ab]c.()()$$$
+    closed = 0;
+    idx = 0;
+}
+

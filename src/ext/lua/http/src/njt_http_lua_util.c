@@ -1152,7 +1152,7 @@ njt_http_lua_run_thread(lua_State *L, njt_http_request_t *r,
                ctx->cur_co_ctx->is_wrap);
 
 #if (NJT_PCRE)
-            /* XXX: work-around to nginx regex subsystem */
+            /* XXX: work-around to njet regex subsystem */
             old_pool = njt_http_lua_pcre_malloc_init(r->pool);
 #endif
 
@@ -1186,7 +1186,7 @@ njt_http_lua_run_thread(lua_State *L, njt_http_request_t *r,
             rv = lua_resume(orig_coctx->co, nrets);
 
 #if (NJT_PCRE)
-            /* XXX: work-around to nginx regex subsystem */
+            /* XXX: work-around to njet regex subsystem */
             njt_http_lua_pcre_malloc_done(old_pool);
 #endif
 
@@ -1650,7 +1650,7 @@ propagate_error:
         }
 
     } NJT_LUA_EXCEPTION_CATCH {
-        dd("nginx execution restored");
+        dd("njet execution restored");
     }
 
     return NJT_ERROR;
@@ -4414,7 +4414,7 @@ njt_http_lua_copy_escaped_header(njt_http_request_t *r,
     escape = njt_http_lua_escape_uri(NULL, data, len, type);
     if (escape > 0) {
         /*
-         * we allocate space for the trailing '\0' char here because nginx
+         * we allocate space for the trailing '\0' char here because njet
          * header values must be null-terminated
          */
         dst->data = njt_palloc(r->pool, len + 2 * escape + 1);

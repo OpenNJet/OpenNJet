@@ -16,7 +16,8 @@ typedef struct {
 
 typedef struct {
     njt_flag_t     enable;
-    njt_array_t                 commands;
+    njt_array_t    commands;
+    njt_uint_t     var_index;
 } njt_stream_proxy_protocol_tlv_srv_conf_t;
 
 extern njt_module_t  njt_stream_proxy_protocol_tlv_module;

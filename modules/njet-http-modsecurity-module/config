@@ -1,0 +1,87 @@
+
+njt_addon_name=njt_http_modsecurity_module
+
+# We must place njt_http_modsecurity_module after njt_http_gzip_filter_module
+# in load order list to be able to read response body before it gets compressed
+# (for filter modules later initialization means earlier execution).
+#
+# Nginx implements load ordering only for dynamic modules and only a BEFORE part
+# of "njt_module_order". So we list all of the modules that come after
+# njt_http_gzip_filter_module as a BEFORE dependency for
+# njt_http_modsecurity_module.
+#
+# For static compilation HTTP_FILTER_MODULES will be patched later.
+
+modsecurity_dependency="njt_http_postpone_filter_module \
+                        njt_http_ssi_filter_module \
+                        njt_http_charset_filter_module \
+                        njt_http_xslt_filter_module \
+                        njt_http_image_filter_module \
+                        njt_http_sub_filter_module \
+                        njt_http_addition_filter_module \
+                        njt_http_gunzip_filter_module \
+                        njt_http_userid_filter_module \
+                        njt_http_headers_filter_module \
+                        njt_http_copy_filter_module"
+
+
+njt_module_type=HTTP_FILTER
+njt_module_name="$njt_addon_name"
+njt_module_srcs="$njt_addon_dir/src/njt_http_modsecurity_module.c \
+            $njt_addon_dir/src/njt_http_modsecurity_pre_access.c \
+            $njt_addon_dir/src/njt_http_modsecurity_header_filter.c \
+            $njt_addon_dir/src/njt_http_modsecurity_body_filter.c \
+            $njt_addon_dir/src/njt_http_modsecurity_log.c \
+            $njt_addon_dir/src/njt_http_modsecurity_rewrite.c \
+            "
+njt_module_deps="$njt_addon_dir/src/ddebug.h \
+            $njt_addon_dir/src/njt_http_modsecurity_common.h \
+            "
+njt_module_incs="$njt_addon_dir/../../auto/lib/modsecurity/headers"
+njt_module_libs="-L$njt_addon_dir/../../auto/lib/modsecurity/src/.libs/ -lmodsecurity"
+NJT_HTTP_MODSECURITY="YES"
+
+njt_module_order="njt_http_chunked_filter_module \
+                          njt_http_v2_filter_module \
+                          njt_http_range_header_filter_module \
+                          njt_http_gzip_filter_module \
+                          $njt_module_name \
+                          $modsecurity_dependency";
+
+. auto/module
+
+#
+# Nginx does not provide reliable way to introduce our module into required
+# place in static ($njt_module_link=ADDON) compilation mode, so we must
+# explicitly update module "ordering rules".
+#
+if [ "$njt_module_link" != DYNAMIC ] ; then
+    # Reposition modsecurity module to satisfy $modsecurity_dependency
+    # (this mimics dependency resolution made by njt_add_module() function
+    # though less optimal in terms of computational complexity).
+    modules=
+    found=
+    for module in $HTTP_FILTER_MODULES; do
+        # skip our module name from the original list
+        if [ "$module" = "$njt_addon_name" ]; then
+            continue
+        fi
+        if [ -z "${found}" ]; then
+            for item in $modsecurity_dependency; do
+                if [ "$module" = "$item" ]; then
+                    modules="${modules} $njt_addon_name"
+                    found=1
+                    break
+                fi
+            done
+        fi
+        modules="${modules} $module"
+    done
+    if [ -z "${found}" ]; then
+        # This must never happen since njt_http_copy_filter_module must be in HTTP_FILTER_MODULES
+        # and we stated dependency on it in $modsecurity_dependency
+        echo "$0: error: cannot reposition modsecurity module in HTTP_FILTER_MODULES list"
+        exit 1
+    fi
+    HTTP_FILTER_MODULES="${modules}"
+fi

@@ -118,6 +118,7 @@ static int njt_ctrl_dynlog_rpc_msg_handler(njt_dyn_rpc_res_t* res, njt_str_t *ms
         if(res->rc == RPC_RC_TIMEOUT){
             rc = njt_ctrl_dynlog_request_output(req,NJT_HTTP_INTERNAL_SERVER_ERROR,&err_msg);
         }
+	njt_log_error(NJT_LOG_INFO,njt_cycle->log, 0, " njt_ctrl_dynlog_rpc_msg_handler  r->main->count : %p,%i",req->main,req->main->count);
         njt_http_finalize_request(req,rc);
     }
     return NJT_OK;
@@ -130,6 +131,7 @@ static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *modul
     njt_ctrl_dynlog_rpc_ctx_t *ctx;
     njt_pool_cleanup_t *cleanup;
 
+    r->write_event_handler = njt_http_request_empty_handler;
     dlmcf = njt_http_get_module_main_conf(r,njt_ctrl_config_api_module);
     index = njt_ctrl_dynlog_get_free_index(dlmcf);
     if(index == -1 ){
@@ -159,7 +161,7 @@ static njt_int_t njt_ctrl_dynlog_rpc_send(njt_http_request_t *r,njt_str_t *modul
     if(rc == NJT_OK){
         dlmcf->reqs[index] = r;
     }
-    return NJT_OK;
+    return rc;
 
     err:
     return NJT_ERROR;
@@ -269,7 +271,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
         njt_str_concat(r->pool,topic,key_prf_1,uri[2],return );
         rc = njt_dyn_sendmsg(&topic,&json_str,1);
     } else if(uri[0].data[0] == '2') {
-        njt_str_t  key_prf_2 = njt_string("/worker_0/dyn/");
+        njt_str_t  key_prf_2 = njt_string("/worker_a/dyn/");
         njt_str_concat(r->pool,topic,key_prf_2,uri[2],return );
         rc = njt_ctrl_dynlog_rpc_send(r,&topic,&json_str, 0);
     } else {
@@ -316,7 +318,7 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
     rc= NJT_OK;
     njt_str_t srv_err = njt_string("{\"code\":500,\"msg\":\"server error\"}");
     njt_str_t not_found_err = njt_string("{\"code\":404,\"msg\":\"not found error\"}");
-    njt_str_t rpc_pre = njt_string("/rpc/");
+    njt_str_t rpc_pre = njt_string("/worker_a/rpc/");
     njt_ctrl_dynlog_main_cf_t * uclcf = njt_http_get_module_loc_conf(r, njt_ctrl_config_api_module);
     if(uclcf == NULL  || uclcf->config_api_enabled == NJT_CONF_UNSET_UINT || uclcf->config_api_enabled == 0){
         return NJT_DECLINED;
@@ -361,10 +363,12 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
         }
         rc = njt_ctrl_dynlog_rpc_send(r,&topic,&smsg, 0);
         if(rc != NJT_OK){
+ 	    //njt_log_error(NJT_LOG_INFO,njt_cycle->log, 0, "error r->main->count : %p,%i,uri=%V,%V",r->main,r->main->count,&r->uri,&r->connection->addr_text);
             goto err;
         }
         ++r->main->count;
-        return NJT_DONE;
+	//njt_log_error(NJT_LOG_INFO,njt_cycle->log, 0, "r->main->count : %p,%i,uri=%V,%V",r->main,r->main->count,&r->uri,&r->connection->addr_text);
+        return NJT_OK;
     }
     rc = NJT_HTTP_NOT_FOUND;
 
