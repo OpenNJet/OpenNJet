@@ -462,6 +462,7 @@ static njt_int_t njt_http_location_rpc_send(njt_http_request_t *r,njt_str_t *mod
     njt_http_location_rpc_ctx_t *ctx;
     njt_pool_cleanup_t *cleanup;
 
+    r->write_event_handler = njt_http_request_empty_handler;
     dlmcf = njt_http_get_module_main_conf(r,njt_http_location_api_module);
     index = njt_http_location_get_free_index(dlmcf);
     if(index == -1 ){
@@ -491,7 +492,7 @@ static njt_int_t njt_http_location_rpc_send(njt_http_request_t *r,njt_str_t *mod
     if(rc == NJT_OK){
         dlmcf->reqs[index] = r;
     }
-    return NJT_OK;
+    return rc;
 
     err:
     return NJT_ERROR;
@@ -619,9 +620,9 @@ njt_http_location_read_data(njt_http_request_t *r){
 	
 	
 	if(location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0 ){
-		p = njt_snprintf(topic_name.data,topic_len,"/ins/loc/l_%ui",crc32);
+		p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/loc/l_%ui",crc32);
 	} else  if(location_info->type.len == add.len && njt_strncmp(location_info->type.data,add.data,location_info->type.len) == 0 ){
-		p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/loc/l_%ui",crc32);
+		p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/loc/l_%ui",crc32);
 	} else {
 		njt_str_set(&location_info->msg, "type error!!!");
 		goto err;
@@ -644,9 +645,9 @@ err:
     out.buf = NULL;
      rpc_result = njt_rpc_result_create();
     if(rpc_result == NULL){
-		if(location_info != NULL) {
-                njt_destroy_pool(location_info->pool);
-		}
+	    if(location_info != NULL) {
+		    njt_destroy_pool(location_info->pool);
+	    }
        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "rpc_result allocate null");
        rc = NJT_ERROR;
        goto out;
@@ -667,6 +668,7 @@ err:
 		njt_rpc_result_set_msg2(rpc_result,&insert);
         
     }
+    njt_str_null(&insert);
     njt_rpc_result_to_json_str(rpc_result,&insert);
 
     r->headers_out.content_type_len = sizeof("text/plain") - 1;
@@ -685,16 +687,21 @@ err:
 
     rc = njt_http_send_header(r);
 	if (rc == NJT_ERROR || rc > NJT_OK || r->header_only) {
-        njt_http_finalize_request(r, rc);
-        return;
+        //njt_http_finalize_request(r, rc);
+        //return;
+	goto out;
     }
    
     rc = njt_http_output_filter(r, &out);
 
 out:
-	njt_http_finalize_request(r, rc);
+    njt_http_finalize_request(r, rc);
     if(rpc_result){
+	if(insert.data != NULL && insert.len != 0) {
+		njt_free(insert.data);
+	}
         njt_rpc_result_destroy(rpc_result);
+
     }
     return;
 

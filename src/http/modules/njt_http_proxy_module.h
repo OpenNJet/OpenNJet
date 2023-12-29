@@ -120,6 +120,8 @@ typedef struct {
 #endif
 #if (NJT_HAVE_SET_ALPN)
     njt_str_t        proxy_ssl_alpn;
+#if(NJT_HTTP_DYNAMIC_UPSTREAM)
+    unsigned  preserve:1;
 #endif
 } njt_http_proxy_loc_conf_t;
 

@@ -100,6 +100,8 @@ njt_int_t njt_pfree(njt_pool_t *pool, void *p);
 
 
 njt_pool_cleanup_t *njt_pool_cleanup_add(njt_pool_t *p, size_t size);
+njt_pool_cleanup_t *
+njt_pool_cleanup_add_tail(njt_pool_t *p, size_t size);
 void njt_pool_run_cleanup_file(njt_pool_t *p, njt_fd_t fd);
 void njt_pool_cleanup_file(void *data);
 void njt_pool_delete_file(void *data);

@@ -359,7 +359,7 @@ njt_stream_get_indexed_variable(njt_stream_session_t *s, njt_uint_t index)
 
     njt_stream_variable_depth--;
 
-    if (v[index].get_handler(s, &s->variables[index], v[index].data)
+    if (v[index].get_handler && v[index].get_handler(s, &s->variables[index], v[index].data)
         == NJT_OK)
     {
         njt_stream_variable_depth++;

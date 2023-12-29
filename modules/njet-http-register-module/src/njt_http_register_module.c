@@ -379,7 +379,7 @@ static njt_int_t njt_send_http_register_info(njt_http_register_main_conf_t *ccf,
     //connect to lua server
     pool = njt_create_pool(njt_pagesize, njt_cycle->log);
     if (pool == NULL) {
-        njt_log_error(NJT_LOG_ERR, pool->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                         "create pool failure for register module.");
         return NJT_ERROR;
     }

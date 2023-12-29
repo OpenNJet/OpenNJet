@@ -21,6 +21,7 @@
 
 #define NJT_DEBUG_POINTS_STOP   1
 #define NJT_DEBUG_POINTS_ABORT  2
+#define HAVE_PRIVILEGED_PROCESS_PATCH   1
 
 
 typedef struct njt_shm_zone_s  njt_shm_zone_t;
@@ -92,6 +93,9 @@ struct njt_cycle_s {
 typedef struct {
     njt_flag_t                daemon;
     njt_flag_t                master;
+
+    njt_flag_t                privileged_agent;
+    njt_uint_t                privileged_agent_connections;
 
     njt_msec_t                timer_resolution;
     njt_msec_t                shutdown_timeout;

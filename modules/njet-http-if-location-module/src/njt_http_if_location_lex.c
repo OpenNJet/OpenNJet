@@ -2208,8 +2208,16 @@ void yyfree (void * ptr )
 
 
 
+void reset() {
+    paren_count = 0; 
+    inside_paren_count = 0; // count for () within $http  =   [^ab]c.()()$$$
+    closed = 0;
+    idx = 0;
+}
 
 void yyerror(loc_parse_node_t **tree_root, const char *msg) {
+     reset();
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"Syntax error: %s\n", msg);
 }; 
+
 

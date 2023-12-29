@@ -222,125 +222,6 @@ static char *njt_http_dyn_ssl_merge_loc_conf(njt_conf_t *cf,
     return NJT_CONF_OK;
 }
 
-// static njt_buf_t *
-// njt_http_upstream_api_get_out_buf(njt_http_request_t *r, ssize_t len,
-//                                   njt_chain_t *out) {
-//     njt_buf_t *b;
-//     njt_chain_t *last_chain, *new_chain;
-
-
-//     if ((njt_uint_t) len > njt_pagesize) {
-//         /*The string len is larger than one buf*/
-
-//         njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-//                       "buffer size is beyond one pagesize.");
-//         return NULL;
-//     }
-
-//     last_chain = out;
-//     while (out->next) {
-//         out->buf->last_buf = 0;
-//         out->buf->last_in_chain = 0;
-
-//         last_chain = out->next;
-//         out = out->next;
-//     }
-
-//     b = last_chain->buf;
-//     if (b == NULL) {
-
-//         b = njt_create_temp_buf(r->pool, njt_pagesize);
-//         if (b == NULL) {
-//             njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-//                           "couldn't allocate the temp buffer.");
-//             return NULL;
-//         }
-
-//         last_chain->buf = b;
-//         last_chain->next = NULL;
-
-//         b->last_buf = 1;
-//         b->last_in_chain = 1;
-//         b->memory = 1;
-
-//         return b;
-//     }
-
-//     /*if the buf's left size is big enough to hold one server*/
-
-//     if ((b->end - b->last) < len) {
-
-//         new_chain = njt_pcalloc(r->pool, sizeof(njt_chain_t));
-//         if (new_chain == NULL) {
-//             njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-//                           "couldn't allocate the chain.");
-//             return NULL;
-//         }
-
-//         b = njt_create_temp_buf(r->pool, njt_pagesize);
-//         if (b == NULL) {
-//             njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-//                           "couldn't allocate temp buffer.");
-//             return NULL;
-//         }
-//         new_chain->buf = b;
-//         new_chain->next = NULL;
-
-//         last_chain->buf->last_buf = 0;
-//         last_chain->buf->last_in_chain = 0;
-
-//         new_chain->buf->last_buf = 1;
-//         new_chain->buf->last_in_chain = 1;
-
-//         last_chain->next = new_chain;
-//     }
-
-//     return b;
-// }
-
-// static njt_int_t
-// njt_http_upstream_api_insert_out_str(njt_http_request_t *r,
-//                                      njt_chain_t *out, njt_str_t *str) {
-//     njt_buf_t *b;
-
-//     if (str->len == 0) {
-//         return NJT_OK;
-//     }
-//     if (str == NULL || str->data == NULL) {
-//         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-//                        "parameter error in function %s", __func__);
-//         return NJT_ERROR;
-//     }
-
-//     b = njt_http_upstream_api_get_out_buf(r, str->len, out);
-//     if (b == NULL) {
-//         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-//                        "could not alloc buffer in function %s", __func__);
-//         return NJT_ERROR;
-//     }
-
-//     b->last = njt_snprintf(b->last, str->len, "%V", str);
-
-//     return NJT_OK;
-// }
-
-// static ssize_t
-// njt_http_upstream_api_out_len(njt_chain_t *out) {
-//     ssize_t len;
-
-//     len = 0;
-//     while (out) {
-
-//         if (out->buf) {
-//             len += out->buf->last - out->buf->pos;
-//         }
-
-//         out = out->next;
-//     }
-
-//     return len;
-// }
-
 
 static int njt_http_dyn_ssl_request_output(njt_http_request_t *r,njt_int_t code, njt_str_t *msg){
     njt_int_t rc;
@@ -459,7 +340,7 @@ njt_http_dyn_ssl_handler(njt_http_request_t *r) {
     njt_str_null(&msg);
     njt_str_t srv_err = njt_string("{\"code\":500,\"msg\":\"server error\"}");
     // njt_str_t not_found_err = njt_string("{\"code\":404,\"msg\":\"not found error\"}");
-    // njt_str_t rpc_pre = njt_string("/rpc/");
+    // njt_str_t rpc_pre = njt_string("/worker_a/rpc/");
     // path = njt_array_create( r->pool, 4, sizeof(njt_str_t));
     // if (path == NULL) {
     //     njt_log_error(NJT_LOG_ERR, r->connection->log, 0,"array init of path error.");
@@ -491,7 +372,7 @@ njt_http_dyn_ssl_handler(njt_http_request_t *r) {
     if(r->method == NJT_HTTP_GET){
         njt_str_t smsg = njt_string("{\"method\":\"GET\"}");
         // njt_str_concat(r->pool,topic, rpc_pre, uri[0], goto err);
-        njt_str_set(&topic, "/rpc/ssl");
+        njt_str_set(&topic, "/worker_a/rpc/ssl");
 
         rc = njt_http_dyn_ssl_rpc_send(r, &topic, &smsg, 0);
         if(rc != NJT_OK){
@@ -576,7 +457,7 @@ static njt_int_t njt_http_dyn_ssl_rpc_send(njt_http_request_t *r,njt_str_t *modu
     njt_int_t                       rc;
     njt_http_dyn_ssl_rpc_ctx_t      *ctx;
     njt_pool_cleanup_t              *cleanup;
-
+    r->write_event_handler = njt_http_request_empty_handler;
     dlmcf = njt_http_get_module_main_conf(r,njt_http_ssl_api_module);
     if(dlmcf == NULL){
         goto err;
@@ -609,7 +490,7 @@ static njt_int_t njt_http_dyn_ssl_rpc_send(njt_http_request_t *r,njt_str_t *modu
     if(rc == NJT_OK){
         dlmcf->reqs[index] = r;
     }
-    return NJT_OK;
+    return rc;
 
     err:
     return NJT_ERROR;
@@ -662,7 +543,7 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
 
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_http_ssl_change_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_http_ssl_change_handler create pool error");
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
         njt_rpc_result_set_msg(rpc_result, (u_char *)" update handler create pool error");
         rc = NJT_ERROR;
@@ -715,7 +596,7 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
     }else if(api_data->cert_info->cert_type == DYN_SSL_API_CERT_INFO_CERT_TYPE_RSA){
         njt_crc32_update(&crc32, (u_char *)"rsa", 3);
     }else{
-        njt_crc32_update(&crc32, (u_char *)"ecc", 7);
+        njt_crc32_update(&crc32, (u_char *)"ecc", 3);
     }
 
 	njt_crc32_final(crc32);
@@ -749,8 +630,8 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
 
         goto out;
 	} else {
-		// p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/ssl/l_%ui",crc32);
-        p = njt_snprintf(topic_name.data,topic_len,"/worker_0/ins/ssl/l_%ui",crc32);
+		// p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/ssl/l_%ui",crc32);
+        p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/ssl/l_%ui",crc32);
 	}
 
 	topic_name.len = p - topic_name.data;
@@ -758,7 +639,6 @@ njt_http_dyn_ssl_read_data(njt_http_request_t *r){
 	if(rc == NJT_OK) {
 		++r->main->count;
 	}
-	njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "1 send topic retain_flag=%V, key=%V,value=%V",&api_data->type,&topic_name,&json_str);
 	
     goto out;
 

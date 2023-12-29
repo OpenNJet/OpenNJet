@@ -128,7 +128,7 @@ njt_stream_lua_ffi_enable_privileged_agent(char **err)
     return NJT_OK;
 
 #else
-    *err = "missing privileged agent process patch in the nginx core";
+    *err = "missing privileged agent process patch in the njet core";
     return NJT_ERROR;
 #endif
 }

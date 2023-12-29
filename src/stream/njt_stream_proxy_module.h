@@ -72,4 +72,8 @@ typedef struct {
     njt_stream_upstream_srv_conf_t  *upstream;
     njt_stream_complex_value_t      *upstream_value;
 } njt_stream_proxy_srv_conf_t;
+
+
+
+void njt_stream_proxy_handler(njt_stream_session_t *s);
 #endif
