@@ -328,7 +328,7 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 	int ret;
 	int i;
 	char *cfg_dir, *tmp_name;
-	char nameBuff[32];
+	char nameBuff[32] = {0};
 	MDB_envinfo info;
 	struct evt_ctx_t *ctx;
 	struct mosq_config *cfg;
@@ -375,9 +375,12 @@ struct evt_ctx_t *njet_iot_client_init(const char *prefix, const char *cfg_file,
 			goto INIT_ERR;
 		}
 		cfg_file = nameBuff;
+		ret = client_config_load(cfg, CLIENT_SUB, cfg_file);
+		unlink(nameBuff);
+	} else {
+		ret = client_config_load(cfg, CLIENT_SUB, cfg_file);
 	}
-	ret = client_config_load(cfg, CLIENT_SUB, cfg_file);
-	unlink(nameBuff);
+
 	if (ret != MOSQ_ERR_SUCCESS)
 		goto INIT_ERR;
 	ctx->cfg = cfg;

@@ -32,9 +32,9 @@ extern njt_rbtree_t  njt_event_timer_rbtree;
 static njt_inline void
 njt_event_del_timer(njt_event_t *ev)
 {
-    njt_log_debug2(NJT_LOG_DEBUG_EVENT, ev->log, 0,
-                   "event timer del: %d: %M",
-                    njt_event_ident(ev->data), ev->timer.key);
+    // njt_log_debug2(NJT_LOG_DEBUG_EVENT, ev->log, 0,
+    //                "event timer del: %d: %M",
+    //                 njt_event_ident(ev->data), ev->timer.key);
 
     njt_rbtree_delete(&njt_event_timer_rbtree, &ev->timer);
 
@@ -78,9 +78,9 @@ njt_event_add_timer(njt_event_t *ev, njt_msec_t timer)
 
     ev->timer.key = key;
 
-    njt_log_debug3(NJT_LOG_DEBUG_EVENT, ev->log, 0,
-                   "event timer add: %d: %M:%M",
-                    njt_event_ident(ev->data), timer, ev->timer.key);
+    // njt_log_debug3(NJT_LOG_DEBUG_EVENT, ev->log, 0,
+    //                "event timer add: %d: %M:%M",
+    //                 njt_event_ident(ev->data), timer, ev->timer.key);
 
     njt_rbtree_insert(&njt_event_timer_rbtree, &ev->timer);
 

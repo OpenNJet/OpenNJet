@@ -617,7 +617,7 @@ njt_http_get_variable_index(njt_conf_t *cf, njt_str_t *name)
 			} else {
 				 njt_sub_pool(njt_cycle->pool,new_pool);
 			}
-			cmcf->variables.free = 1;
+			//cmcf->variables.free = 1;
 			if (njt_array_init(&cmcf->variables, new_pool, 4,
                            sizeof(njt_http_variable_t))
             != NJT_OK)

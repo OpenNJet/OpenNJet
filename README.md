@@ -49,7 +49,7 @@ OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，OpenNJet 具有
 ```
      docker build -t njet_main:v1.0 .
 
-​    docker run -v `pwd`:/njet_main njet_main:v1.0 /bin/bash -c "cd /njet_main && sh build_njet.sh"
+​    docker run -v `pwd`:/njet_main njet_main:v1.0 /bin/bash -c "cd /njet_main && ./build_cc.sh conf make"
 ```
 
 3. 编译完后，在 objs 目录下，主要包含 njet 文件和相关的 so 文件

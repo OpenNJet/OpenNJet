@@ -139,7 +139,6 @@ static void njt_http_sendmsg_loop_mqtt(njt_event_t *ev)
     case 4:  // no connection
     case 19: // lost keepalive
     case 7:  // lost connection
-        njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "mqtt_client run ret:%d, ev: %p, ev timeouted %d", ret, ev, ev->timedout);
         njt_http_sendmsg_iot_set_timer(njt_http_sendmsg_iot_conn_timeout, 10, ctx);
         njt_del_event(ev, NJT_READ_EVENT, NJT_CLOSE_EVENT);
         break;
@@ -155,7 +154,6 @@ static void njt_http_sendmsg_iot_conn_timeout(njt_event_t *ev)
     njt_connection_t *c = (njt_connection_t *)ev->data;
     struct evt_ctx_t *ctx = (struct evt_ctx_t *)c->data;
     int ret;
-    njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "Event fired!,try connect again, %p ", ev);
     if (ev->timedout)
     {
         ret = njet_iot_client_connect(3, 5, ctx);
@@ -163,15 +161,14 @@ static void njt_http_sendmsg_iot_conn_timeout(njt_event_t *ev)
         {
             if (ret == -5)
             {
-                njt_log_error(NJT_LOG_DEBUG, ev->log, 0, "client is connecting or has connected");
+                //client is connecting or has connected
                 return;
             }
-            njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect to broker failed:%d", ret);
             njt_add_timer(ev, 1000);
         }
         else
         {
-            njt_log_error(NJT_LOG_NOTICE, ev->log, 0, "connect ok, register io");
+            //connect ok, register io
             njt_http_sendmsg_iot_register_outside_reader(njt_http_sendmsg_loop_mqtt, ctx);
         }
     }
@@ -223,7 +220,6 @@ static void njt_http_sendmsg_iot_set_timer(njt_event_handler_pt h, int interval,
 
     ev = njt_palloc(njt_cycle->pool, sizeof(njt_event_t));
     njt_memzero(ev, sizeof(njt_event_t));
-    njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "in mqtt set timer, ev addr: %p", ev);
     ev->log = njt_cycle->log;
     ev->handler = h;
     ev->cancelable = 1;
@@ -499,8 +495,6 @@ static void sendmsg_api_post_handler(njt_http_request_t *r)
         njt_http_finalize_request(r, NJT_HTTP_BAD_REQUEST);
         return;
     }
-    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0,
-                  "dyn_sendmsg_kv parse ok, key:%V, value: %V", &postdata->key, &postdata->value);
 
     topic_name.data = njt_pcalloc(r->pool, postdata->key.len + 13); // topic's prefix is /dyn/kv_http_
     if (topic_name.data == NULL)
@@ -579,6 +573,7 @@ static char *sendmsg_rr_callback(const char *topic, int is_reply, const char *ms
     msg_str.data = (u_char *)msg;
     msg_str.len = msg_len;
 
+    //to avoid unused-but-set-variable warning
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "sendmsg got msg, topic: %V, msg:%V, seesion_id: %d", &topic_str, &msg_str, session_id);
 
     if (is_reply)
@@ -646,12 +641,11 @@ static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle)
     prefix = njt_calloc(cycle->prefix.len + 1, cycle->log);
     njt_memcpy(prefix, cycle->prefix.data, cycle->prefix.len);
     prefix[cycle->prefix.len] = '\0';
-    njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "module http_sendmsg init worker");
     sendmsg_mqtt_ctx = njet_iot_client_init(prefix, localcfg, sendmsg_rr_callback, NULL, client_id, log, cycle);
     njt_free(prefix);
     if (sendmsg_mqtt_ctx == NULL)
     {
-        njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "init local mqtt client failed, exiting");
+        njt_log_error(NJT_LOG_ERR, cycle->log, 0, "init local mqtt client failed, exiting");
         njet_iot_client_exit(sendmsg_mqtt_ctx);
         return NJT_ERROR;
     };
@@ -1027,7 +1021,6 @@ static int njt_reg_rpc_msg_handler(int msg_session_id, int invoker_session_id, r
         njt_free(old_handler->key.data);
         njt_free(old_handler);
     }
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add rpc handler %p for session_id %d : %v", rpc_handler, msg_session_id, &rpc_handler->key);
     return NJT_OK;
 }
 
@@ -1051,7 +1044,6 @@ static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int 
         hash_rc = njt_lvlhsh_map_get(rpc_msg_handler_hashmap, &nstr_key, (intptr_t *)&rpc_handler);
         if (hash_rc == NJT_OK)
         {
-            njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "got rpc handler : %p for session_id %d", rpc_handler, session_id);
             nstr_msg.data = (u_char *)msg;
             nstr_msg.len = msg_len;
             res.session_id = rpc_handler->invoker_session_id;

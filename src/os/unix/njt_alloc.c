@@ -74,7 +74,7 @@ njt_alloc(size_t size, njt_log_t *log)
                       "malloc(%uz) failed", size);
     }
 
-    njt_log_debug2(NJT_LOG_DEBUG_ALLOC, log, 0, "malloc: %p:%uz", p, size);
+    // njt_log_debug2(NJT_LOG_DEBUG_ALLOC, log, 0, "malloc: %p:%uz", p, size);
 
     return p;
 }

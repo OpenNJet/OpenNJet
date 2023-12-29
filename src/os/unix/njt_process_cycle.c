@@ -82,6 +82,7 @@ njt_uint_t    njt_is_privileged_agent = 0;
 njt_uint_t    njt_privileged_agent_exited = 0;
 njt_uint_t    njt_master_listening_count = 0;
 njt_uint_t    njt_is_privileged_helper = 0;
+njt_conf_check_cmd_handler_pt  njt_conf_check_cmd_handler = NULL;
 
 
 static u_char  master_process[] = "master process";
@@ -402,7 +403,7 @@ njt_single_process_cycle(njt_cycle_t *cycle)
     }
 
     for (;; ) {
-        njt_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
+        // njt_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
 
         njt_process_events_and_timers(cycle);
 
@@ -1517,7 +1518,7 @@ njt_worker_process_cycle(njt_cycle_t *cycle, void *data)
             }
         }
 
-        njt_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
+        // njt_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
 
         njt_process_events_and_timers(cycle);
 
@@ -1651,15 +1652,6 @@ njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker)
             }
         }
 #endif
-    }
-
-    if (njt_is_privileged_agent) {
-        if (setuid(0) == -1) {
-            njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
-                "setuid(%d) failed", 0);
-            /* fatal */
-            exit(2);
-        }
     }
 
     if (worker >= 0) {
@@ -2264,6 +2256,15 @@ njt_privileged_agent_process_cycle(njt_cycle_t *cycle, void *data)
     cycle->connection_n = ccf->privileged_agent_connections;
     njt_worker_process_init(cycle, -1);
 
+    if (njt_is_privileged_agent) {
+        if (setuid(0) == -1) {
+            njt_log_error(NJT_LOG_EMERG, cycle->log, njt_errno,
+                "setuid(%d) failed", 0);
+            /* fatal */
+            exit(2);
+        }
+    }
+    
     njt_use_accept_mutex = 0;
 
     njt_setproctitle(name);

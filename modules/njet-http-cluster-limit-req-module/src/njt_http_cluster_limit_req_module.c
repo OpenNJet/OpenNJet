@@ -270,10 +270,6 @@ void njt_http_udp_send_handler(njt_http_cluster_limit_req_ctx_t *ctx, njt_str_t*
             continue;
         }
 
-        // njt_log_error(NJT_LOG_DEBUG,njt_cycle->log,0,
-        //     "=need syn, req:%d  client:%p now:%M  last_changed:%M  diff:%M",
-        //     client->q_item.sibling_item.conn, client, now, client->q_item.last_changed,
-        //     now - client->q_item.last_changed);
         item = njt_array_push(&out_arr);
         //todo: force the key less than 128 bytes
         if (item == NULL)
@@ -282,12 +278,6 @@ void njt_http_udp_send_handler(njt_http_cluster_limit_req_ctx_t *ctx, njt_str_t*
             njt_shmtx_unlock(&ctx->shpool->mutex);
             return;
         }
-        /*
-        memcpy(item->data,client->q_item.sibling_item.data,client->q_item.sibling_item.len);
-        item->len=client->q_item.sibling_item.len;
-        item->conn=client->q_item.sibling_item.conn;
-        */
-
         //tips: optimize, use direct struct copy instead of multi value assignment
         memcpy(item, &client->q_item.sibling_item, sizeof(njt_http_cluster_limit_req_item_t));
 
@@ -353,7 +343,6 @@ void njt_http_udp_send_handler(njt_http_cluster_limit_req_ctx_t *ctx, njt_str_t*
 			    njt_gossip_app_close_msg_buf(tail);
 			//if (msg_cnt>=10) {
 				mp_encode_array(replace_cnt, msg_cnt);
-				njt_log_error(NJT_LOG_DEBUG,njt_cycle->log,0," cluster limit req large sync pack:%d",msg_cnt);
 				njt_gossip_send_app_msg_buf();
 				msg_cnt= 0;
 				head=NULL;
@@ -373,7 +362,6 @@ void njt_http_udp_send_handler(njt_http_cluster_limit_req_ctx_t *ctx, njt_str_t*
 	}
 	if (msg_cnt > 0) {
 		mp_encode_array(replace_cnt, msg_cnt);
-		njt_log_error(NJT_LOG_DEBUG,njt_cycle->log,0," cluster limit req sync pack:%d",msg_cnt);
 		njt_gossip_send_app_msg_buf();
 	}
 
@@ -625,7 +613,6 @@ njt_http_cluster_limit_req_handler(njt_http_request_t *r)
                 }
                 client->node = node;
                 lc->snap = client;
-                njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, " cluster limit req init snap:%p,next:%p,%p", client, client->next, client->prev);
             }
             else
             {
@@ -633,9 +620,6 @@ njt_http_cluster_limit_req_handler(njt_http_request_t *r)
                 lc->snap->q_item.last_changed = now;
             }
         }
-
-        njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "limit req: %08Xi %d", node->key, lc->conn);
 
         njt_shmtx_unlock(&ctx->shpool->mutex);
     }
@@ -1190,7 +1174,6 @@ static void njt_cluster_limit_req_update_req(njt_str_t key_in, int other_req, nj
     node = njt_limit_req_sync_lookup(&ctx->sh->rbtree, &key_in, hash);
     if (node == NULL)
     {
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, " cluster limit req need create new tree node, receive:%d,%V", other_req, &sibling_node);
         n = offsetof(njt_rbtree_node_t, color) + offsetof(njt_http_cluster_limit_req_node_t, data) + key_in.len;
         node = njt_slab_alloc_locked(ctx->shpool, n);
         if (node == NULL)
@@ -1219,13 +1202,11 @@ static void njt_cluster_limit_req_update_req(njt_str_t key_in, int other_req, nj
 
         njt_memcpy(lc->data, key_in.data, key_in.len);
         njt_rbtree_insert(&ctx->sh->rbtree, node);
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, " cluster limit req new node:%d", lc->conn);
         njt_shmtx_unlock(&ctx->shpool->mutex);
     }
     else
     {
         lc = (njt_http_cluster_limit_req_node_t *)&node->color;
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "cluster limit req found tree node:%d, receive:%d,%V", lc->conn, other_req, &sibling_node);
         for (i = 0; i < SIBLING_MAX; i++)
         {
             v = &lc->sibling[i];
@@ -1240,9 +1221,6 @@ static void njt_cluster_limit_req_update_req(njt_str_t key_in, int other_req, nj
             }
             else
             {
-                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-                    " cluster limit req %s,%d,check %V update sibling:%d", 
-                    v->sibling_item.data, v->sibling_item.len, &sibling_node, other_req);
                 if (sibling_node.len == v->sibling_item.len && njt_memcmp(v->sibling_item.data, sibling_node.data, sibling_node.len) == 0)
                 {
 
@@ -1314,7 +1292,6 @@ static int njt_cluster_limit_req_recv_data(const char* msg, void* data)
         && njt_memcmp(sibling_node.data, ctx->node_name->data, sibling_node.len) == 0)
     {
         //todo: from own, so drop it
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, " cluster limit req  send from:%V, skip", &sibling_node);
         return NJT_ERROR;
     }
 

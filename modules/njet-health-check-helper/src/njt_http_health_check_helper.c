@@ -741,7 +741,6 @@ njt_stream_health_check_match_all(njt_connection_t *c){
         }
         if (n == NJT_ERROR) {
             njt_log_debug0(NJT_LOG_ERR, njt_cycle->log, 0,"read error for health check");
-            return NJT_ERROR;
         }
 //        break;
 //    }
