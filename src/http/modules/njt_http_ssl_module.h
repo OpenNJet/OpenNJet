@@ -77,6 +77,7 @@ typedef struct {
 #endif
 #if (NJT_HAVE_SET_ALPN)
     njt_str_t                      alpn;
+#endif
 #if (NJT_HTTP_DYNAMIC_SERVER)
     njt_pool_t                      *pool;
 #endif
