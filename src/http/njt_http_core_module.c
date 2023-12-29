@@ -2930,7 +2930,6 @@ static void njt_http_refresh_variables_keys(){
 	njt_hash_keys_arrays_t    *old_variables_keys;
     static njt_uint_t  use_clone_mem = 1;
 
-   njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg begin");
 
    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
    if(cmcf == NULL) {
@@ -3009,9 +3008,7 @@ static void njt_http_refresh_variables_keys(){
 
 		if(old_pool){
 		   njt_destroy_pool(old_pool);
-		   njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg njt_destroy_pool pool:%p, remain:%p",old_pool,new_pool);
 		}
-		njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg end");
 		 //njt_log_error(NJT_LOG_DEBUG, njt_cycle->pool->log, 0, "zyg all:%d, remain:%d",count,num);
 		
 }

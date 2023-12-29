@@ -330,13 +330,10 @@ static void njt_dyn_bwlist_dump_locs(njt_pool_t *pool, njt_queue_t *locations, d
 #endif
 
         if (clcf->old_locations) {
-            loc_item->locations = create_dynbwlist_locationDef_locations(pool, 4);
-            if (loc_item->locations == NULL) {
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can`t create sub location array"
-                );
-                return;
-            }
-            njt_dyn_bwlist_dump_locs(pool, clcf->old_locations, loc_item->locations);
+            set_dynbwlist_locationDef_locations(loc_item, create_dynbwlist_locationDef_locations(pool, 4));
+            if (loc_item->locations != NULL) {
+                njt_dyn_bwlist_dump_locs(pool, clcf->old_locations, loc_item->locations);
+            } 
         }
 
     }
