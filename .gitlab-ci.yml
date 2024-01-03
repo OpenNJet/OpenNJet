@@ -10,23 +10,21 @@ build_bin:
 #  image: gcc:4.8.5   # gcc 版本
   script:
     - sudo chmod +x ./build_cc.sh ./configure
-    - sudo ./build_cc.sh conf $CI_COMMIT_SHA
+    - sudo ./build_cc.sh -t $CI_COMMIT_SHA -d conf
     - sudo make -j `nproc`
     - sudo ./build_cc.sh install
     - sudo chmod +x ./build_lua.sh
     - sudo mkdir -p objs/scripts/register/
     - sudo ./build_lua.sh
-    - sudo mkdir -p work/etc/njet/lualib/ work/usr/local/lib/ work/etc/njet/logs/ logs/  # 创建文件包目录
-    - sudo cp -R /etc/njet/* work/etc/njet/
-    - sudo cp -R /etc/njet/luajit/lib/* work/usr/local/lib/
-    - sudo cp -a auto/lib/keepalived/keepalived/emb/.libs/libha_emb.so* work/usr/local/lib/ 2>/dev/null
+    - sudo mkdir -p work/usr/local/lib/   # 创建文件包目录
+    - sudo cp -a /usr/local/njet work/usr/local/
+    - sudo cp -a /usr/local/lib/* work/usr/local/lib/
   artifacts:
     paths:     # 需要打包的文件
       - objs/njet
       - objs/*.so
       - objs/scripts
       - work/*
-      - logs/
     expire_in: 1 week # 打包文件存储有效期
 
 build_rpm:
@@ -38,7 +36,9 @@ build_rpm:
   script:
     - cd /builds/njet_dev/  
     - tar cf /home/builder/rpm/njet_main.tar --exclude="njet_main/.git" njet_main
-    - cp /builds/njet_dev/njet_main/build/rpm/* /home/builder/rpm/ 
+    - sudo chmod +x /builds/njet_dev/njet_main/build/rpm/generate_njet_spec.sh
+    - cd /builds/njet_dev/njet_main/build/rpm && NJT_BUILD_OPT="-t $CI_COMMIT_SHA" ./generate_njet_spec.sh  && cd - 
+    - cp /builds/njet_dev/njet_main/build/rpm/njet.spec /home/builder/rpm/ 
     - rpmbuild -bb /home/builder/rpm/njet.spec
     - cd /builds/njet_dev/njet_main 
     - sudo mkdir -p work 
@@ -46,4 +46,4 @@ build_rpm:
   artifacts:
     paths: # 需要打包的文件
       - work/*.rpm
-    expire_in: 2h20min # 打包文件存储有效期
+    expire_in: 1 week # 打包文件存储有效期

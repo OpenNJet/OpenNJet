@@ -599,7 +599,7 @@ njt_stream_health_check_dummy_handler(njt_event_t *ev) {
     njt_log_debug0(NJT_LOG_DEBUG_EVENT, ev->log, 0,
                         "stream health check dummy handler");
 }
-static u_char* test_str=(u_char*)"nginx health check";
+static u_char* test_str=(u_char*)"njet health check";
 static njt_int_t
 njt_stream_health_check_send_handler(njt_event_t *wev) {
     njt_connection_t                    *c;
@@ -741,7 +741,6 @@ njt_stream_health_check_match_all(njt_connection_t *c){
         }
         if (n == NJT_ERROR) {
             njt_log_debug0(NJT_LOG_ERR, njt_cycle->log, 0,"read error for health check");
-            return NJT_ERROR;
         }
 //        break;
 //    }
@@ -1799,7 +1798,7 @@ njt_http_hc_grpc_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstr
     pool = njt_create_pool(njt_pagesize, njt_cycle->log);
     if (pool == NULL) {
         /*log the malloc failure*/
-        njt_log_error(NJT_LOG_ERR, pool->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                       "create pool failure for health check.");
         goto OUT;
     }
@@ -3973,11 +3972,9 @@ njt_http_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_http_upstre
                 njt_http_upstream_rr_peers_wlock(peers);
             } else {
                 pool = njt_create_pool(njt_pagesize, njt_cycle->log);
-                njt_log_error(NJT_LOG_DEBUG, pool->log, 0,
-                              "create peer pool: upstream = %V",&peer->name);
                 if (pool == NULL) {
                     /*log the malloc failure*/
-                    njt_log_error(NJT_LOG_ERR, pool->log, 0,
+                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                                   "create pool failure for health check.");
                     continue;
                 }
@@ -4131,9 +4128,8 @@ void njt_stream_health_loop_peer(njt_helper_health_check_conf_t *hhccf, njt_stre
             pool = njt_create_pool(njt_pagesize, njt_cycle->log);
             if (pool == NULL) {
                 /*log the malloc failure*/
-                njt_log_error(NJT_LOG_ERR, pool->log, 0,
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                               "create pool failure for health check.");
-                njt_destroy_pool(pool);
                 continue;
             }
                 
@@ -4337,8 +4333,9 @@ static void njt_health_check_recovery_confs(){
     }
 
     end:
-    njt_destroy_pool(pool);
-
+    if(pool != NULL){
+        njt_destroy_pool(pool);
+    }
 }
 
 
@@ -4406,7 +4403,9 @@ static void njt_stream_health_check_recovery_confs(){
     }
 
 end:
-    njt_destroy_pool(pool);
+    if(pool != NULL){
+        njt_destroy_pool(pool);
+    }
 }
 
 
@@ -5277,7 +5276,7 @@ static void njt_hc_clean_peers_map(njt_helper_health_check_conf_t *hhccf){
 
     hhccf->map_pool = njt_create_pool(njt_pagesize, njt_cycle->log);
     if (hhccf->map_pool == NULL || NJT_OK != njt_sub_pool(njt_cycle->pool, hhccf->map_pool)) {
-        njt_log_error(NJT_LOG_DEBUG, hhccf->map_pool->log, 0, "njt_create_peer_map error");
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_create_peer_map error");
         return;
     }
 
@@ -5662,7 +5661,9 @@ static void njt_stream_hc_kv_flush_conf_info(njt_helper_health_check_conf_t *hhc
     njt_dyn_kv_set(&tkey1, msg);
 
 end:
-    njt_destroy_pool(pool);
+    if(pool != NULL){
+        njt_destroy_pool(pool);
+    }
 }
 
 static char *njt_http_health_check_conf(njt_conf_t *cf, njt_command_t *cmd, void *conf) {

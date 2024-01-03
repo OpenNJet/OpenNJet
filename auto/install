@@ -146,9 +146,21 @@ install:	build $NJT_INSTALL_PERL_MODULES
 		'\$(DESTDIR)$NJT_CONF_PREFIX/scgi_params.default'
 
 	test -f '\$(DESTDIR)$NJT_CONF_PATH' \\
-		|| cp conf/njet.conf '\$(DESTDIR)$NJT_CONF_PATH'
-	cp conf/njet.conf '\$(DESTDIR)$NJT_CONF_PREFIX/njet.conf.default'
+		|| sed -e "s|%%NJT_MODULES_PATH%%|$NJT_MODULES_PATH|g" \\
+			-e "s|%%NJT_CONF_PREFIX%%|$NJT_CONF_PREFIX|g" \\
+			< conf/njet.conf > '\$(DESTDIR)$NJT_CONF_PATH'
+	sed -e "s|%%NJT_MODULES_PATH%%|$NJT_MODULES_PATH|g" \\
+		-e "s|%%NJT_CONF_PREFIX%%|$NJT_CONF_PREFIX|g" \\
+		< conf/njet.conf >'\$(DESTDIR)$NJT_CONF_PREFIX/njet.conf.default'
 
+	test -f '\$(DESTDIR)$NJT_CONF_PREFIX/njet_ctrl.conf' \\
+		|| sed -e "s|%%NJT_MODULES_PATH%%|$NJT_MODULES_PATH|g" \\
+			-e "s|%%NJT_CONF_PREFIX%%|$NJT_CONF_PREFIX|g" \\
+			< conf/njet_ctrl.conf > '\$(DESTDIR)$NJT_CONF_PREFIX/njet_ctrl.conf'
+	sed -e "s|%%NJT_MODULES_PATH%%|$NJT_MODULES_PATH|g" \\
+		-e "s|%%NJT_CONF_PREFIX%%|$NJT_CONF_PREFIX|g" \\
+		< conf/njet_ctrl.conf >'\$(DESTDIR)$NJT_CONF_PREFIX/njet_ctrl.conf.default'
+	
 	test -d '\$(DESTDIR)`dirname "$NJT_PID_PATH"`' \\
 		|| mkdir -p '\$(DESTDIR)`dirname "$NJT_PID_PATH"`'
 
@@ -157,6 +169,14 @@ install:	build $NJT_INSTALL_PERL_MODULES
 
 	test -d '\$(DESTDIR)$NJT_PREFIX/html' \\
 		|| cp -R $NJT_HTML '\$(DESTDIR)$NJT_PREFIX'
+
+	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/logs'
+	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/data'
+	
+	test -d build/rpm/njet.conf.files/usr/local/njet/conf/modsec \\
+               && cp -a build/rpm/njet.conf.files/usr/local/njet/conf/modsec \$(DESTDIR)$NJT_CONF_PREFIX/
+
+	setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw,cap_setuid=eip '\$(DESTDIR)$NJT_SBIN_PATH'
 END
 
 

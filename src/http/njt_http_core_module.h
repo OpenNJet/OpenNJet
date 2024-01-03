@@ -176,6 +176,9 @@ typedef struct {
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t		           *dyn_var_pool;
 #endif
+#if (NJT_HTTP_DYNAMIC_SERVER)
+        njt_pool_t		           *dyn_vs_pool;
+#endif
     njt_array_t               *ports;
 
     njt_http_phase_t           phases[NJT_HTTP_LOG_PHASE + 1];
@@ -215,8 +218,13 @@ typedef struct {
     //add by clb
 #if (NJT_HTTP_DYNAMIC_LOC)
     njt_pool_t                *named_parent_pool;
-//    njt_pool_t                *new_named_parent_pool;
-//    njt_http_core_loc_conf_t  **new_named_locations;
+#endif
+#if (NJT_HTTP_DYNAMIC_SERVER)
+    unsigned		          dynamic:1;
+    unsigned		          dynamic_status:2;
+    unsigned                  disable:1;
+    njt_pool_t                *pool;
+    njt_uint_t                ref_count;
 #endif
 } njt_http_core_srv_conf_t;
 
@@ -577,6 +585,8 @@ njt_http_cleanup_t *njt_http_cleanup_add(njt_http_request_t *r, size_t size);
 #if (NJT_HTTP_DYNAMIC_LOC)
 void njt_http_location_cleanup(njt_http_core_loc_conf_t *clcf);
 njt_int_t njt_http_location_cleanup_add(njt_http_core_loc_conf_t *clcf, void(*handler)(njt_http_core_loc_conf_t *hclcf,void* data) ,void* data);
+void njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf);
+void njt_http_server_delete_dyn_var(njt_http_core_srv_conf_t *cscf);
 #endif
 //end
 
@@ -602,6 +612,10 @@ njt_int_t njt_http_get_forwarded_addr(njt_http_request_t *r, njt_addr_t *addr,
 
 njt_int_t njt_http_link_multi_headers(njt_http_request_t *r);
 njt_http_location_queue_t *njt_http_find_location(njt_str_t name, njt_queue_t *locations);
+
+#if (NJT_HTTP_DYNAMIC_SERVER)
+void njt_http_core_free_srv_ctx(void* data);
+#endif
 
 extern njt_module_t  njt_http_core_module;
 

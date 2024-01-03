@@ -4,7 +4,9 @@
 
 #include <njt_core.h>
 #include <njt_http.h>
+#include <njt_http_proxy_module.h>
 #include <njt_http_util.h>
+extern njt_module_t  njt_http_proxy_module;
 
 njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
     njt_http_core_srv_conf_t* cscf, *ret_cscf;
@@ -17,6 +19,7 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
     njt_http_in6_addr_t *addr6;
     njt_http_addr_conf_t *addr_conf;
     njt_http_server_name_t *sn;
+    njt_str_t server_low_name;
 	njt_url_t  u;
 	struct sockaddr_in   *ssin;
 #if (NJT_HAVE_INET6)
@@ -41,10 +44,20 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 	if (njt_parse_url(pool, &u) != NJT_OK) {
 		goto out;
 	}
-
+    
     if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 ) {
-        ls = cycle->listening.elts;
-        for (i = 0; i < cycle->listening.nelts; i++) {
+	
+	server_low_name.data = njt_pnalloc(pool,server_name->len);
+	if(server_low_name.data == NULL) {
+		goto out;
+	}
+	server_low_name.len = server_name->len;
+	njt_strlow(server_low_name.data, server_name->data,server_name->len);
+
+	server_name = &server_low_name;
+
+	    ls = cycle->listening.elts;
+	    for (i = 0; i < cycle->listening.nelts; i++) {
             if(ls[i].server_type != NJT_HTTP_SERVER_TYPE){
                 continue; // 非http listen
             }
@@ -104,8 +117,12 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
             cscf = addr_conf->default_server;
             name = cscf->server_names.elts;
             for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
-                if(name[j].full_name.len == server_name->len
+                if(server_name->data[0] != '~' && name[j].full_name.len == server_name->len
                    && njt_strncmp(name[j].full_name.data,server_name->data,server_name->len) == 0){
+					ret_cscf = cscf;
+                    goto out;
+                } else if(server_name->data[0] == '~' && name[j].full_name.len == server_name->len
+                   && njt_strncasecmp(name[j].full_name.data,server_name->data,server_name->len) == 0){
 					ret_cscf = cscf;
                     goto out;
                 }
@@ -345,3 +362,70 @@ njt_int_t njt_http_util_read_request_body(njt_http_request_t *r, njt_str_t *req_
 
     return NJT_OK;
 }
+
+ void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
+    njt_queue_t *q;
+	njt_queue_t *locations;
+    njt_http_location_queue_t *lq;
+    njt_http_core_loc_conf_t *new_clcf;
+    njt_http_proxy_loc_conf_t    *plcf;
+     njt_http_upstream_srv_conf_t    *upstream;
+
+    locations = clcf->old_locations;
+    if (locations != NULL) {
+        for (q = njt_queue_head(locations);
+             q != njt_queue_sentinel(locations);
+             ) {
+            lq = (njt_http_location_queue_t *) q;
+	    q = njt_queue_next(q);
+	    njt_queue_remove(&lq->queue);
+            if (lq->exact != NULL) {
+                new_clcf = lq->exact;
+                njt_http_location_destroy(new_clcf);
+            } else if (lq->inclusive != NULL) {
+                new_clcf = lq->inclusive;
+                njt_http_location_destroy(new_clcf); //zyg
+            }
+			
+        }
+    }
+    njt_http_location_cleanup(clcf);
+    clcf->disable = 1;
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_destroy_pool clcf=%p,name=%V,pool=%p,ref_count=%i",clcf,&clcf->name,clcf->pool,clcf->ref_count);
+    if (clcf->ref_count == 0 && clcf->pool != NULL && clcf->dynamic_status != 0) {
+        plcf = clcf->loc_conf[njt_http_proxy_module.ctx_index];
+        if(plcf != NULL && plcf->upstream.upstream != NULL) {
+            upstream = plcf->upstream.upstream;
+            upstream->ref_count --;
+            if(upstream->ref_count == 0) {
+                njt_http_upstream_del(upstream);
+            }
+        }
+        njt_destroy_pool(clcf->pool);
+    }
+}
+
+#if(NJT_HTTP_DYNAMIC_UPSTREAM)
+void njt_http_upstream_del(njt_http_upstream_srv_conf_t *upstream) {
+
+    njt_uint_t                      i;
+    njt_http_upstream_srv_conf_t   **uscfp;
+    njt_http_upstream_main_conf_t  *umcf;
+
+    umcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_upstream_module);
+
+    uscfp = umcf->upstreams.elts;
+
+    for (i = 0; i < umcf->upstreams.nelts; i++) {
+        if(uscfp[i] == upstream) {
+            if(i != umcf->upstreams.nelts-1) {
+                uscfp[i] = uscfp[umcf->upstreams.nelts-1];
+            } 
+            umcf->upstreams.nelts--;
+            njt_destroy_pool(upstream->pool);
+            break;
+        }
+    }
+}
+#endif
+  

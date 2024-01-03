@@ -19,7 +19,7 @@ static njt_int_t njt_stream_proto_dest_variable(njt_stream_session_t *s,njt_stre
 static njt_int_t njt_stream_proto_ip_variable(njt_stream_session_t *s,njt_stream_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_stream_proto_port_variable(njt_stream_session_t *s,njt_stream_variable_value_t *v, uintptr_t data);
 static njt_int_t njt_stream_proto_add_variables(njt_conf_t *cf);
-static njt_int_t njt_stream_proto_init(njt_conf_t *cf);
+static njt_int_t njt_stream_njtmesh_dest_proto_init(njt_conf_t *cf);
 static void *njt_stream_proto_create_srv_conf(njt_conf_t *cf);
 static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void *child);
 static njt_int_t njt_stream_preread_proto_variable(njt_stream_session_t *s,  //
@@ -27,7 +27,7 @@ static njt_int_t njt_stream_preread_proto_variable(njt_stream_session_t *s,  //
 static njt_int_t
 njt_stream_preread_parse_record(njt_stream_proto_ctx_t *ctx,
     u_char *pos, u_char *last);
-static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s);
+static njt_int_t njt_stream_get_nginmesh_dest(njt_stream_session_t *s);
 static njt_int_t
 njt_stream_preread_proto_handler(njt_stream_session_t *s);
 static njt_int_t njt_stream_nginmesh_get_port_mode(njt_stream_session_t *s);
@@ -73,7 +73,7 @@ static njt_command_t njt_stream_proto_commands[] = {
 /* The module context. */
 static njt_stream_module_t njt_stream_proto_module_ctx = {
     njt_stream_proto_add_variables, /* preconfiguration */
-    njt_stream_proto_init, /* postconfiguration */
+    njt_stream_njtmesh_dest_proto_init, /* postconfiguration */
     NULL,
     NULL, /* init main configuration */
     njt_stream_proto_create_srv_conf, /* create server configuration */
@@ -147,7 +147,44 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
 }
 
 
- njt_int_t njt_stream_handler(njt_stream_session_t *s)
+ njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
+{
+	njt_connection_t                    *c;
+	njt_stream_proto_ctx_t           *ctx;
+	 njt_stream_proto_srv_conf_t  *sscf;
+
+	 c = s->connection;
+	 sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
+	 if(sscf == NULL) {
+		 return NJT_DECLINED;
+	 }
+
+    if (!sscf->enabled ) {
+        return NJT_DECLINED;
+    }
+	if (c->type != SOCK_STREAM) {
+        return NJT_DECLINED;
+    }
+	ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
+    if (ctx == NULL) {
+        ctx = njt_pcalloc(c->pool, sizeof(njt_stream_proto_ctx_t));
+        if (ctx == NULL) {
+            return NJT_ERROR;
+        }
+        njt_stream_set_ctx(s, ctx, njt_stream_proto_module);
+        ctx->pool = c->pool;
+        ctx->log = c->log;
+        ctx->pos = NULL;
+    }
+    if(ctx->complete_nginmesh == 1) {
+		return NJT_DECLINED;
+	}
+    njt_stream_get_nginmesh_dest(s);
+     ctx->complete_nginmesh = 1;
+	return NJT_DECLINED;
+}
+
+ njt_int_t njt_stream_proto_handler(njt_stream_session_t *s)
 {
 	njt_connection_t                    *c;
 	njt_stream_proto_ctx_t           *ctx;
@@ -155,7 +192,6 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
 	 njt_int_t  rc = NJT_DECLINED;
 	 njt_int_t  rc_http = NJT_DECLINED;
 	 njt_http_request_t  r;
-	 njt_str_t       none = njt_string("none");
 	 u_char          *pos;
 
 	 c = s->connection;
@@ -164,35 +200,33 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
 		 return NJT_DECLINED;
 	 }
 
-    if (!sscf->enabled && !sscf->proto_enabled && (sscf->proto_ports == NULL || sscf->proto_ports->nelts == 0)) {
+    if (!sscf->proto_enabled && (sscf->proto_ports == NULL || sscf->proto_ports->nelts == 0)) {
         return NJT_DECLINED;
     }
 	if (c->type != SOCK_STREAM) {
         return NJT_DECLINED;
     }
 	ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
-	if(ctx && ctx->complete == 1) {
-		return NJT_DECLINED;
-	}
     if (ctx == NULL) {
         ctx = njt_pcalloc(c->pool, sizeof(njt_stream_proto_ctx_t));
         if (ctx == NULL) {
             return NJT_ERROR;
         }
-
         njt_stream_set_ctx(s, ctx, njt_stream_proto_module);
         ctx->pool = c->pool;
         ctx->log = c->log;
         ctx->pos = NULL;
-	ctx->complete = 0;
-	njt_str_set(&ctx->port_mode,"none");
-
-	njt_stream_nginmesh_dest_handler(s);
-	njt_stream_nginmesh_get_port_mode(s);
     }
-    if(ctx->port_mode.len == none.len && njt_strncmp(ctx->port_mode.data,none.data,none.len) == 0) {
-	ctx->complete = 1;
-	return NJT_DECLINED;
+    if(ctx->complete == 1) {
+		return NJT_DECLINED;
+	}
+    if(ctx->complete_get_port == 0) {
+        ctx->complete_get_port = 1;
+        njt_stream_nginmesh_get_port_mode(s);
+    }
+    if(ctx->port_mode.len == 0 && ctx->port_mode.data == NULL) {  //无配置，不限制
+        ctx->complete = 1;
+        return NJT_DECLINED;
     }
     if (c->buffer == NULL) {
         return NJT_AGAIN;
@@ -223,35 +257,49 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
 	if(rc == NJT_AGAIN || rc_http == NJT_AGAIN) {
 		return NJT_AGAIN;
 	}
-	ctx->ssl = 2;
+	ctx->ssl = 0;
 	ctx->complete = 1;
 	return NJT_DECLINED;
 }
+
 static njt_int_t njt_stream_nginmesh_get_port_mode(njt_stream_session_t *s) {
 
 	njt_stream_proto_srv_conf_t  *sscf;
 	njt_keyval_t      *kv;
 	njt_uint_t nelts,i;
 	njt_stream_proto_ctx_t           *ctx;
-	njt_str_t       none = njt_string("none");
+    njt_uint_t  port;
+    njt_str_t  dest_port;
 
 	ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
 	sscf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
 
-	if(sscf == NULL ) {
+	if(sscf == NULL || ctx == NULL) {
 		return NJT_OK;
 	}
+    njt_str_null(&ctx->port_mode);
+    njt_str_null(&dest_port);
 	if(sscf->proto_ports != NULL) {
+        dest_port = ctx->dest_port;
+        if(!sscf->enabled && ctx->dest_port.len == 0) {
+            dest_port.data = njt_pnalloc(ctx->pool,sizeof("65535") - 1);
+            if(dest_port.data != NULL) {
+                 port = njt_inet_get_port(s->connection->listening->sockaddr);
+                if (port > 0 && port < 65536) {
+                    dest_port.len = njt_sprintf(dest_port.data, "%ui", port) - dest_port.data;
+                }
+            }
+        }
 		kv = sscf->proto_ports->elts;
 		nelts = sscf->proto_ports->nelts;
 		for (i = 0; i < nelts; i++) {
-			if(kv[i].key.len == ctx->dest_port.len && njt_strncmp(kv[i].key.data,ctx->dest_port.data,kv[i].key.len) == 0) {
+			if(kv[i].key.len == dest_port.len && njt_strncmp(kv[i].key.data,dest_port.data,kv[i].key.len) == 0) {
 				ctx->port_mode = kv[i].value;
 				break;
 			}
 		}
 	}
-	if((ctx->port_mode.len == none.len && njt_strncmp(ctx->port_mode.data,none.data,none.len) == 0) && sscf->proto_enabled) {
+	if((ctx->port_mode.len == 0 && ctx->port_mode.data == NULL) && sscf->proto_enabled) {
 		njt_str_set(&ctx->port_mode,"PERMISSIVE");
 	  
 	}
@@ -259,7 +307,7 @@ static njt_int_t njt_stream_nginmesh_get_port_mode(njt_stream_session_t *s) {
 	
     
 }
-static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
+static njt_int_t njt_stream_get_nginmesh_dest(njt_stream_session_t *s)   
 {
 
     struct sockaddr_storage             org_src_addr;
@@ -269,14 +317,10 @@ static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
     njt_int_t         ret = -1;
     struct sockaddr *addr;
     njt_int_t  rc = NJT_OK;
-    njt_stream_proto_srv_conf_t  *sscf =  njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
-    if(sscf == NULL || !sscf->enabled) {
-	return NJT_OK;
-    }
+  
 	
     c = s->connection;
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
-    njt_str_set(&ctx->port_mode,"none");
 	njt_memzero(&org_src_addr, sizeof(struct sockaddr_storage));
 	 org_src_addr_len =  sizeof(struct sockaddr_storage);
 	if(c->sockaddr->sa_family == AF_INET) {
@@ -286,8 +330,7 @@ static njt_int_t njt_stream_nginmesh_dest_handler(njt_stream_session_t *s)
 	    njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, " 0 stream_nginmesh_dest error=%s",strerror(errno));
 	}
 	if(ret == -1) {
-	   int n = errno;
-	    njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, "stream_nginmesh_dest error=%s",strerror(n));
+	    njt_log_error(NJT_LOG_WARN, s->connection->log,0, "stream_nginmesh_dest error=%s",strerror(errno));
 	} else {
 		njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, "ip address length %d",org_src_addr_len);
 		if(org_src_addr.ss_family == AF_INET || org_src_addr.ss_family == AF_INET6)  {
@@ -330,7 +373,7 @@ static njt_int_t njt_stream_preread_proto_variable(njt_stream_session_t *s,  //
 	njt_str_t                      version;
 	njt_stream_proto_ctx_t  *ctx;
 	njt_connection_t            *c;
-	njt_str_t       none = njt_string("none");
+
 	njt_stream_proto_srv_conf_t  *sscf =  njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
     	njt_str_null(&version);
 	c = s->connection;
@@ -389,7 +432,7 @@ static njt_int_t njt_stream_preread_proto_variable(njt_stream_session_t *s,  //
 	if(version.len == 0 && c->type == SOCK_DGRAM) {
 		 njt_str_set(&version, "udp");
 	}
-	if((ctx->port_mode.len == none.len && njt_strncmp(ctx->port_mode.data,none.data,none.len) == 0)) {
+	if((ctx->port_mode.len == 0 && ctx->port_mode.data == NULL)) {
 	   njt_str_set(&version, "");
 	}
 
@@ -869,7 +912,7 @@ njt_stream_preread_parse_record(njt_stream_proto_ctx_t *ctx,
 // add handler to pre-access
 // otherwise, handler can't be add as part of config handler if proxy handler is involved.
 
-static njt_int_t njt_stream_proto_init(njt_conf_t *cf)
+static njt_int_t njt_stream_njtmesh_dest_proto_init(njt_conf_t *cf)
 {
     njt_stream_handler_pt        *h;
     njt_stream_core_main_conf_t  *cmcf;
@@ -880,12 +923,20 @@ static njt_int_t njt_stream_proto_init(njt_conf_t *cf)
 
     cmcf = njt_stream_conf_get_module_main_conf(cf, njt_stream_core_module);
 
+    
+    h = njt_array_push(&cmcf->phases[NJT_STREAM_POST_ACCEPT_PHASE].handlers);
+    if (h == NULL) {
+        return NJT_ERROR;
+    }
+
+    *h = njt_stream_nginmesh_dest_handler;
+
     h = njt_array_push(&cmcf->phases[NJT_STREAM_PREREAD_PHASE].handlers);
     if (h == NULL) {
         return NJT_ERROR;
     }
 
-    *h = njt_stream_handler;
+    *h = njt_stream_proto_handler;
 
     return NJT_OK;
 }

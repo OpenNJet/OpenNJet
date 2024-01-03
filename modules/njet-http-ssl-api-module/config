@@ -9,7 +9,7 @@ njt_module_srcs=" \
 njt_module_incs=""
 njt_module_libs=""
 
- have=NJT_HTTP_DYNAMIC_LOC . auto/have
+# have=NJT_HTTP_SSL_API . auto/have
 
 . auto/module
 

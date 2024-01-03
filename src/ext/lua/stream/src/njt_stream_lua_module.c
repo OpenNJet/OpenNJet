@@ -717,7 +717,7 @@ njt_stream_lua_create_main_conf(njt_conf_t *cf)
         return NULL;
     }
 
-    dd("nginx Lua module main config structure initialized!");
+    dd("njet Lua module main config structure initialized!");
 
     return lmcf;
 }

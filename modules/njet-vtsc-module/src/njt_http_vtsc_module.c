@@ -710,6 +710,8 @@ njt_http_vtsc_create_main_conf(njt_conf_t *cf)
         return NULL;
     }
 
+    njt_http_vts_enable = 0;
+
     /*
      * set by njt_pcalloc():
      *
@@ -995,10 +997,6 @@ njt_http_vtsc_init_worker(njt_cycle_t *cycle)
     njt_event_t                          *dump_event;
     njt_http_vhost_traffic_status_ctx_t  *ctx;
 
-    if (njt_process != NJT_PROCESS_WORKER) {
-        return NJT_OK;
-    }
-
     njt_http_vtsp_module = &njt_http_vtsc_module;
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, cycle->log, 0,
@@ -1021,6 +1019,10 @@ njt_http_vtsc_init_worker(njt_cycle_t *cycle)
     if (!(ctx->enable & ctx->dump) || ctx->rbtree == NULL) {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, cycle->log, 0,
                        "vts::init_worker(): is bypassed");
+        return NJT_OK;
+    }
+
+    if (njt_worker != 0)  {
         return NJT_OK;
     }
 
@@ -1435,7 +1437,7 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_str_t *dynconf, njt
 
     ctx->filter_keys_dyn = NULL;
     ctx->dyn_pool = njt_create_dynamic_pool(NJT_MIN_POOL_SIZE, cycle->log);
-    if(ctx->dyn_pool == NULL) {
+    if(ctx->dyn_pool == NULL || NJT_OK != njt_sub_pool(cycle->pool, ctx->dyn_pool)) {
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
@@ -1505,6 +1507,15 @@ static void njt_dynvts_update_filter(njt_cycle_t *cycle, njt_str_t *dynconf, njt
     }
     if (data <= filter_data + len) {
         second.len = data - second.data - 1;
+    }
+
+    //check whther has two param at least
+    if (first.data == NULL || first.len < 1
+        || second.data == NULL || second.len < 1) {
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " need at least two param in filter key");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        goto FAIL;
     }
 
     flag = 0;
@@ -1577,7 +1588,7 @@ FAIL:
 
 static njt_int_t njt_dynvts_update(njt_pool_t *pool, dyn_vts_t *api_data, njt_rpc_result_t *rpc_result)
 {
-    njt_cycle_t                 *cycle, *new_cycle;
+    njt_cycle_t                 *cycle;
     njt_http_core_srv_conf_t    *cscf;
     njt_http_core_loc_conf_t    *clcf;
     dyn_vts_servers_item_t      *dsi;
@@ -1592,12 +1603,7 @@ static njt_int_t njt_dynvts_update(njt_pool_t *pool, dyn_vts_t *api_data, njt_rp
     rpc_data_str.data = data_buf;
     njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
 
-    if (njt_process == NJT_PROCESS_HELPER){
-        new_cycle = (njt_cycle_t*)njt_cycle;
-        cycle = new_cycle->old_cycle;
-    } else {
-        cycle = (njt_cycle_t*)njt_cycle;
-    }
+    cycle = (njt_cycle_t*)njt_cycle;
 
     if (api_data->is_vhost_traffic_status_filter_by_set_key_set && api_data->vhost_traffic_status_filter_by_set_key.len > 0) {
         njt_dynvts_update_filter(cycle, &api_data->vhost_traffic_status_filter_by_set_key, rpc_result);
@@ -1678,7 +1684,7 @@ static u_char* njt_agent_vts_rpc_get_handler(njt_str_t *topic, njt_str_t *reques
     
     pool = njt_create_pool(njt_pagesize, njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_agent_vts_rpc_get_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_agent_vts_rpc_get_handler create pool error");
         goto out;
     }
 
@@ -1722,7 +1728,7 @@ static int  njt_agent_vts_change_handler_internal(njt_str_t *key, njt_str_t *val
 
     pool = njt_create_pool(njt_pagesize,njt_cycle->log);
     if(pool == NULL){
-        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_agent_vts_change_handler create pool error");
+        njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "njt_agent_vts_change_handler create pool error");
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
         return NJT_OK;
     }

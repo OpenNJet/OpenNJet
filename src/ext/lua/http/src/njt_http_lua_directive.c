@@ -1763,7 +1763,7 @@ njt_http_lua_capture_error_log(njt_conf_t *cf, njt_command_t *cmd,
     void *conf)
 {
 #ifndef HAVE_INTERCEPT_ERROR_LOG_PATCH
-    return "not found: missing the capture error log patch for nginx";
+    return "not found: missing the capture error log patch for njet";
 #else
     njt_str_t                     *value;
     ssize_t                        size;

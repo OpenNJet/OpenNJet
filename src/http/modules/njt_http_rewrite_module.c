@@ -958,23 +958,7 @@ njt_http_rewrite_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     if (v->get_handler == NULL) {
         v->get_handler = njt_http_rewrite_var;
         v->data = index;
-#if (NJT_HTTP_DYNAMIC_LOC)
-	if(lcf->var_names.pool == NULL) {
-			if (njt_array_init(&lcf->var_names, cf->pool, 4,
-                           sizeof(njt_http_dyn_variable_t *))
-            != NJT_OK)
-			{
-				return NULL;
-			}
-		} 
-			njt_http_variable_t **v_name = njt_array_push(&lcf->var_names);
-			if(v_name != NULL) {
-				*v_name = v;
-			}
-		
-#endif
     }
-
     if (njt_http_rewrite_value(cf, lcf, &value[2]) != NJT_CONF_OK) {
         return NJT_CONF_ERROR;
     }
@@ -990,7 +974,7 @@ njt_http_rewrite_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         vhcode->handler = v->set_handler;
         vhcode->data = v->data;
 
-        return NJT_CONF_OK;
+        goto end;
     }
 
     vcode = njt_http_script_start_code(cf->pool, &lcf->codes,
@@ -1001,6 +985,23 @@ njt_http_rewrite_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     vcode->code = njt_http_script_set_var_code;
     vcode->index = (uintptr_t) index;
+
+end:
+#if (NJT_HTTP_DYNAMIC_LOC)
+	if(lcf->var_names.pool == NULL) {
+			if (njt_array_init(&lcf->var_names, cf->pool, 4,
+                           sizeof(njt_http_variable_t *))
+            != NJT_OK)
+			{
+				return NJT_CONF_ERROR;
+			}
+		} 
+			njt_http_variable_t **v_name = njt_array_push(&lcf->var_names);
+			if(v_name != NULL) {
+				*v_name = v;
+			}
+		
+#endif
 
     return NJT_CONF_OK;
 }

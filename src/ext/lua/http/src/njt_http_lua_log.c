@@ -26,7 +26,7 @@ static void njt_http_lua_inject_log_consts(lua_State *L);
 
 
 /**
- * Wrapper of nginx log functionality. Take a log level param and varargs of
+ * Wrapper of njet log functionality. Take a log level param and varargs of
  * log message params.
  *
  * @param L Lua state pointer
@@ -63,7 +63,7 @@ njt_http_lua_njt_log(lua_State *L)
 
 
 /**
- * Override Lua print function, output message to nginx error logs. Equal to
+ * Override Lua print function, output message to njet error logs. Equal to
  * njt.log(njt.NOTICE, ...).
  *
  * @param L Lua state pointer
@@ -293,7 +293,7 @@ njt_http_lua_inject_log_api(lua_State *L)
 static void
 njt_http_lua_inject_log_consts(lua_State *L)
 {
-    /* {{{ nginx log level constants */
+    /* {{{ njet log level constants */
     lua_pushinteger(L, NJT_LOG_STDERR);
     lua_setfield(L, -2, "STDERR");
 
@@ -374,7 +374,7 @@ njt_http_lua_ffi_errlog_set_filter_level(int level, u_char *err, size_t *errlen)
     return NJT_OK;
 #else
     *errlen = njt_snprintf(err, *errlen,
-                           "missing the capture error log patch for nginx")
+                           "missing the capture error log patch for njet")
               - err;
     return NJT_ERROR;
 #endif
@@ -408,7 +408,7 @@ njt_http_lua_ffi_errlog_get_msg(char **log, int *loglevel, u_char *err,
     return loglen;
 #else
     *errlen = njt_snprintf(err, *errlen,
-                           "missing the capture error log patch for nginx")
+                           "missing the capture error log patch for njet")
               - err;
     return NJT_ERROR;
 #endif

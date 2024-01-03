@@ -104,7 +104,7 @@ components:
         vhost_traffic_status_filter_by_set_key:
           type: string
           description: vts filter set .
-          example: \"$request_uri\" \"$server_name\"
+          example: '"$request_uri" "$server_name"'
         servers:
           type: array
           items:

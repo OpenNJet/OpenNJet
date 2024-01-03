@@ -1,0 +1,6 @@
+njt_module_type=STREAM
+njt_module_name="njt_stream_dyn_map_module"
+njt_module_srcs="$njt_addon_dir/src/njt_stream_dyn_map_module.c\
+                 $njt_addon_dir/src/njt_stream_dyn_map_parser.c"
+have=NJT_STREAM_DYN_MAP_MODULE . auto/have
+. auto/module

@@ -1064,7 +1064,8 @@ if [ $STREAM != NO ]; then
                      src/stream/njt_stream_variables.h \
                      src/stream/njt_stream_script.h \
                      src/stream/njt_stream_upstream.h \
-                     src/stream/njt_stream_upstream_round_robin.h"
+                     src/stream/njt_stream_upstream_round_robin.h \
+                     src/stream/njt_stream_dyn_module.h"
     njt_module_srcs="src/stream/njt_stream.c \
                      src/stream/njt_stream_variables.c \
                      src/stream/njt_stream_script.c \
