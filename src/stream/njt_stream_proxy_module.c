@@ -2356,6 +2356,9 @@ njt_stream_proxy_merge_ssl(njt_conf_t *cf, njt_stream_proxy_srv_conf_t *conf,
 #if (NJT_HAVE_NTLS)
         && conf->ssl_ntls == NJT_CONF_UNSET
 #endif
+#if (NJT_HAVE_SET_ALPN)
+    && conf->proxy_ssl_alpn.data == NULL
+#endif
         && conf->ssl_conf_commands == NJT_CONF_UNSET_PTR)
     {
         if (prev->ssl) {
