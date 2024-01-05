@@ -869,7 +869,7 @@ void njt_conf_free_cmd(njt_pool_t *pool, njt_conf_cmd_t *cmd) {
         for (j = 0; j < values->nelts; j++) {
             arg = &((njt_str_t*)values->elts)[j];
             if (arg->data) {
-                njt_pfree(pool, arg);
+                njt_pfree(pool, arg->data);
             }
             
         }
@@ -906,6 +906,7 @@ void njt_conf_free_element(njt_pool_t *pool, njt_conf_element_t *block) {
     if (block->block_name) {
         njt_conf_free_cmd(pool, block->block_name);
         njt_pfree(pool, block->block_name);
+        // block->block_name = NULL;
     }
 
     if (block->cmds) {
@@ -914,6 +915,7 @@ void njt_conf_free_element(njt_pool_t *pool, njt_conf_element_t *block) {
             njt_conf_free_cmd(pool, cmd);
         }
         njt_pfree(pool, block->cmds->elts);
+        // block->cmds = NULL;
     }
 
     if (block->blocks) {
@@ -922,6 +924,7 @@ void njt_conf_free_element(njt_pool_t *pool, njt_conf_element_t *block) {
             njt_conf_free_block(pool, sub_block);
         }
         njt_pfree(pool, block->blocks->elts);
+        // block->blocks = NULL;
     }
 }
 
