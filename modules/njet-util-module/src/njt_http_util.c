@@ -167,8 +167,9 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
     njt_uint_t i,j,k,len;
     njt_http_port_t *port;
     njt_http_in_addr_t *addr;
+    njt_uint_t         worker;
     njt_http_in6_addr_t *addr6;
-    njt_http_addr_conf_t             *addr_conf;
+    njt_http_addr_conf_t             *addr_conf;   //(njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent)  if (!ls[i].reuseport || ls[i].worker != 0)
     njt_str_t *listen, data;
     njt_http_server_name_t *sn;
     njt_http_core_srv_conf_t  *tcscf;
@@ -177,10 +178,17 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 	 struct sockaddr_in   *sin,   ssin;
 	 in_port_t  nport;
 	//njt_uint_t  addr_len = NJT_SOCKADDR_STRLEN;
+    worker = njt_worker;
+    if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+        worker = 0;
+    }
     ls = njt_cycle->listening.elts;
     for (i = 0; i < njt_cycle->listening.nelts; ++i) {
         if(ls[i].server_type != NJT_HTTP_SERVER_TYPE){
             continue; // 非http listen
+        }
+        if (ls[i].reuseport && ls[i].worker != worker) {
+            continue; 
         }
         port = ls[i].servers;
         addr=NULL;
