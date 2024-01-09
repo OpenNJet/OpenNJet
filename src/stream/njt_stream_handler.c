@@ -352,7 +352,11 @@ njt_stream_close_connection(njt_connection_t *c)
 #endif
 
 #if (NJT_STAT_STUB)
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                "==========njt_stream_close_connection add - 1, old:%uA", *njt_stat_active);
     (void) njt_atomic_fetch_add(njt_stat_active, -1);
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                "==========njt_stream_close_connection add - 1, now:%uA", *njt_stat_active);
 #endif
 
 #if (NJT_STREAM_FTP_PROXY)

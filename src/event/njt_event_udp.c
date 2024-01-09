@@ -211,7 +211,11 @@ njt_event_recvmsg(njt_event_t *ev)
         c->socklen = socklen;
 
 #if (NJT_STAT_STUB)
+        njt_log_error(NJT_LOG_ALERT, ev->log, 0,
+                "==========event recvmsg add + 1, old:%uA", *njt_stat_active);
         (void) njt_atomic_fetch_add(njt_stat_active, 1);
+                njt_log_error(NJT_LOG_ALERT, ev->log, 0,
+                "==========event recvmsg add + 1, now:%uA", *njt_stat_active);
 #endif
 
         c->pool = njt_create_pool(ls->pool_size, ev->log);
@@ -361,7 +365,11 @@ njt_close_accepted_udp_connection(njt_connection_t *c)
     }
 
 #if (NJT_STAT_STUB)
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                "==========close_accepted_udp_connection add - 1, old:%uA", *njt_stat_active);
     (void) njt_atomic_fetch_add(njt_stat_active, -1);
+            njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                "==========close_accepted_udp_connection add - 1, now:%uA", *njt_stat_active);
 #endif
 }
 

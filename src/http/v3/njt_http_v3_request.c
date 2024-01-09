@@ -187,7 +187,11 @@ njt_http_v3_init_request_stream(njt_connection_t *c)
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0, "http3 init request stream");
 
 #if (NJT_STAT_STUB)
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                "==========njt_http_v3_init_request_stream add + 1, old:%uA", *njt_stat_active);
     (void) njt_atomic_fetch_add(njt_stat_active, 1);
+        njt_log_error(NJT_LOG_ALERT, c->log, 0,
+                "==========njt_http_v3_init_request_stream add + 1, now:%uA", *njt_stat_active);
 #endif
 
     hc = c->data;
