@@ -51,6 +51,12 @@ typedef enum cache_quick_status_t_e{
     CACHE_QUICK_STATUS_ERROR
 } cache_quick_status_t;
 
+typedef enum cache_quick_op_status_t_e{
+    CACHE_QUICK_OP_STATUS_ADDING,
+    CACHE_QUICK_OP_STATUS_DELING,
+    CACHE_QUICK_OP_STATUS_DONE
+} cache_quick_op_status_t;
+
 typedef enum cache_quick_server_ssl_type_t_e{
     CACHE_QUICK_SERVER_SSL_TYPE_NONE,
     CACHE_QUICK_SERVER_SSL_TYPE_SSL,
@@ -148,6 +154,7 @@ typedef struct njt_http_cache_resouce_metainfo_s{
     njt_int_t       download_ratio;
 
     cache_quick_status_t  status;
+    cache_quick_op_status_t  op_status;
     njt_str_t       status_str;
     njt_event_t     download_timer;
     njt_pool_t      *item_pool;
@@ -190,6 +197,13 @@ static void
 njt_http_cache_quick_update_download_status_str(njt_http_cache_resouce_metainfo_t  *cache_info,
         cache_quick_status_t status);
 
+static njt_int_t njt_http_del_cache_item_from_queue(
+    njt_http_cache_quick_main_conf_t *cqmf, njt_http_cache_resouce_metainfo_t   *cache_info);
+
+
+static void
+njt_http_cache_quick_update_status_str(njt_http_cache_resouce_metainfo_t  *cache_info,
+        cache_quick_status_t status, njt_str_t *tmp_str);
 
 const njt_lvlhsh_proto_t  njt_http_cache_quick_lvlhsh_proto = {
     NJT_LVLHSH_LARGE_MEMALIGN,
@@ -493,10 +507,8 @@ static int njt_http_cache_quicky_add_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
                     " cache quick dyn loc result msg create pool error");
 
-            cache_info->status = CACHE_QUICK_STATUS_ERROR;
             njt_str_set(&tmp_str, "cache quick dyn loc result msg create pool error");
-            cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-            cache_info->status_str.len = tmp_str.len;
+            njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
 
             return NJT_ERROR;
         }
@@ -508,10 +520,8 @@ static int njt_http_cache_quicky_add_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
                     " cache quick dyn loc result msg parse error");
 
-            cache_info->status = CACHE_QUICK_STATUS_ERROR;
             njt_str_set(&tmp_str, "cache quick dyn loc result msg parse error");
-            cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-            cache_info->status_str.len = tmp_str.len;
+            njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
 
             return NJT_ERROR;
         }
@@ -520,9 +530,7 @@ static int njt_http_cache_quicky_add_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
                     " cache quick add dyn loc error:%V", &rpc_res->msg);
 
-            cache_info->status = CACHE_QUICK_STATUS_ERROR;
-            cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &rpc_res->msg);
-            cache_info->status_str.len = rpc_res->msg.len;
+            njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &rpc_res->msg);
 
             njt_destroy_pool(tmp_pool);
 
@@ -550,8 +558,7 @@ static int njt_http_cache_quicky_add_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
                     " cache quick add dyn loc rpc timeout, location:%V", &cache_info->location_name);
 
         njt_str_set(&tmp_str, "cache quick add dyn loc rpc timeout");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
 
         return NJT_ERROR;
     }else{
@@ -561,8 +568,7 @@ static int njt_http_cache_quicky_add_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
                     " cache quick add dyn loc error, location:%V", &cache_info->location_name);
 
         njt_str_set(&tmp_str, "cache quick add dyn loc error");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
 
         return NJT_ERROR;
     }
@@ -576,6 +582,28 @@ static int njt_http_cache_quicky_del_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
     js2c_parse_error_t                  err_info;
     njt_pool_t                          *tmp_pool;
     rpc_result_t                        *rpc_res;
+    njt_http_cache_resouce_metainfo_t   *cache_info;
+    njt_http_cache_quick_main_conf_t    *cqmf;
+
+
+    //real delete
+    cache_info = res->data;
+
+    cqmf = (njt_http_cache_quick_main_conf_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_cache_quick_module);   
+    if(cqmf != NULL){
+        //first delete from lvlhash
+        if(NJT_OK != njt_http_del_cache_item_from_lvlhash(cache_info->crc32, cqmf)){
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+                " del cache info from lvlhash error");
+        }else if(NJT_OK != njt_http_del_cache_item_from_queue(cqmf, cache_info)){
+            //delete from queue
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
+                " del cache info from queue error");
+        }else{
+            //kv_set refresh
+            njt_http_cache_quick_save(cqmf);
+        }
+    }
 
 
     if(res->rc == RPC_RC_OK){
@@ -642,10 +670,8 @@ static njt_int_t njt_http_cache_item_add_dyn_location(
     {
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, " cache quick create dyn loc pool error");
         
-        cache_info->status = CACHE_QUICK_STATUS_ERROR;
         njt_str_set(&tmp_str, "cache quick create dyn loc pool error");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
         
         return NJT_ERROR;
     }
@@ -657,12 +683,10 @@ static njt_int_t njt_http_cache_item_add_dyn_location(
     set_cache_add_dyn_location_locations(&dyn_location, create_cache_add_dyn_location_locations(pool, 1));
     if(dyn_location.locations == NULL){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, " cache quick create dyn loc locations error");
-        
-        cache_info->status = CACHE_QUICK_STATUS_ERROR;
+
         njt_str_set(&tmp_str, "cache quick create dyn loc locations error");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
-        
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
+
         rc = NJT_ERROR;
         goto add_dyn_loc_out;
     }
@@ -671,11 +695,9 @@ static njt_int_t njt_http_cache_item_add_dyn_location(
     if(dyn_loc_item == NULL){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, " cache quick create dyn loc item error");
         
-        cache_info->status = CACHE_QUICK_STATUS_ERROR;
         njt_str_set(&tmp_str, "cache quick create dyn loc item error");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
-        
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
+
         rc = NJT_ERROR;
         goto add_dyn_loc_out;
     }
@@ -691,11 +713,9 @@ static njt_int_t njt_http_cache_item_add_dyn_location(
     if(msg == NULL){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, " cache quick location json parse error");
         
-        cache_info->status = CACHE_QUICK_STATUS_ERROR;
         njt_str_set(&tmp_str, "cache quick location json parse error");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
-        
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
+
         rc = NJT_ERROR;
         goto add_dyn_loc_out;
     }
@@ -750,11 +770,9 @@ static njt_int_t njt_http_cache_item_del_dyn_location(njt_http_cache_resouce_met
     {
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, " cache quick create del dyn loc pool error");
         
-        cache_info->status = CACHE_QUICK_STATUS_ERROR;
         njt_str_set(&tmp_str, "cache quick create del dyn loc pool error");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
-        
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
+
         return NJT_ERROR;
     }
 
@@ -769,11 +787,9 @@ static njt_int_t njt_http_cache_item_del_dyn_location(njt_http_cache_resouce_met
     if(msg == NULL){
         njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, " cache quick del location json parse error");
         
-        cache_info->status = CACHE_QUICK_STATUS_ERROR;
         njt_str_set(&tmp_str, "cache quick del location json parse error");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
-        
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
+
         rc = NJT_ERROR;
         goto del_dyn_loc_out;
     }
@@ -781,8 +797,8 @@ static njt_int_t njt_http_cache_item_del_dyn_location(njt_http_cache_resouce_met
 	njt_crc32_init(crc32);
 	njt_crc32_update(&crc32, cache_info->addr_port.data, cache_info->addr_port.len);
 	if (cache_info->server_name.len > 0) {
-		njt_crc32_update(&crc32, cache_info->server_name.data, cache_info->server_name.len);
 	}
+		njt_crc32_update(&crc32, cache_info->server_name.data, cache_info->server_name.len);
 	if (cache_info->location_rule.len > 0) {
 		njt_crc32_update(&crc32, cache_info->location_rule.data, cache_info->location_rule.len);
 	}
@@ -798,7 +814,7 @@ static njt_int_t njt_http_cache_item_del_dyn_location(njt_http_cache_resouce_met
         " cache quick del dyn location, topic:%V  json:%V", &topic_name, msg);
 
     //call njt_rpc_send to add dyn location
-    njt_dyn_rpc(&topic_name, msg, 0, 0, njt_http_cache_quicky_del_dynloc_rpc_msg_handler, NULL);
+    njt_dyn_rpc(&topic_name, msg, 0, 0, njt_http_cache_quicky_del_dynloc_rpc_msg_handler, cache_info);
 
 del_dyn_loc_out:
     if (pool != NULL)
@@ -837,54 +853,20 @@ static njt_int_t njt_http_add_cache_item_to_lvlhash(uint32_t crc32,
 
 
 static njt_int_t njt_http_del_cache_item_from_queue(
-            njt_http_cache_quick_main_conf_t *cqmf, cache_api_t *api_data){
-    njt_queue_t             *q;
+            njt_http_cache_quick_main_conf_t *cqmf, njt_http_cache_resouce_metainfo_t   *cache_info){
 
-    njt_http_cache_resouce_metainfo_t       *cache_info = NULL;
-    njt_uint_t                              found = 0;
+    njt_queue_remove(&cache_info->cache_item);
 
-    //find item
-    q = njt_queue_head(&cqmf->caches);
-    for (; q != njt_queue_sentinel(&cqmf->caches); q = njt_queue_next(q)) {
-        cache_info = njt_queue_data(q, njt_http_cache_resouce_metainfo_t, cache_item);
-        if(cache_info->location_name.len != api_data->location_name.len){
-            continue;
+    //free memory
+    if(cache_info->item_pool != NULL){
+        if(cache_info->download_timer.timer_set){
+            njt_del_timer(&cache_info->download_timer);
         }
 
-        if(cache_info->location_name.len > 0
-            && njt_strncmp(cache_info->location_name.data, api_data->location_name.data, cache_info->location_name.len) != 0){
-            continue;
-        }
-
-        if(cache_info->proxy_pass.len != api_data->backend_server.len){
-            continue;
-        }
-
-        if(cache_info->proxy_pass.len > 0
-            && njt_strncmp(cache_info->proxy_pass.data, api_data->backend_server.data, cache_info->proxy_pass.len) != 0){
-            continue;
-        }
-
-        found = 1;
-        break;
+        njt_destroy_pool(cache_info->item_pool);
     }
 
-    if(found){
-        njt_queue_remove(&cache_info->cache_item);
-        //free memory
-        if(cache_info->item_pool != NULL){
-            if(cache_info->download_timer.timer_set){
-                njt_del_timer(&cache_info->download_timer);
-            }
- 
-            njt_destroy_pool(cache_info->item_pool);
-        }
-
-        return NJT_OK;
-    }
-
-
-    return NJT_ERROR;
+    return NJT_OK;
 }
 
 
@@ -1078,21 +1060,25 @@ njt_http_cache_quick_update_download_status_str(njt_http_cache_resouce_metainfo_
     {
     case CACHE_QUICK_STATUS_INIT:
         njt_str_set(&tmp_str, "init status");
+        cache_info->op_status = CACHE_QUICK_OP_STATUS_DONE;
         break;
     case CACHE_QUICK_STATUS_ADD_LOC_OK:
         njt_str_set(&tmp_str, "add dyn location ok");
         break;
     case CACHE_QUICK_STATUS_OK:
         njt_str_set(&tmp_str, "download ok");
+        cache_info->op_status = CACHE_QUICK_OP_STATUS_DONE;
         break;
     case CACHE_QUICK_STATUS_DOWNLOAD_ING:
         njt_str_set(&tmp_str, "downloading");
         break;
     case CACHE_QUICK_STATUS_DOWNLOAD_ERROR:
         njt_str_set(&tmp_str, "download error, return not 200");
+        cache_info->op_status = CACHE_QUICK_OP_STATUS_DONE;
         break;
     case CACHE_QUICK_STATUS_ERROR:
         njt_str_set(&tmp_str, "has error");
+        cache_info->op_status = CACHE_QUICK_OP_STATUS_DONE;
         break;
     default:
         njt_str_set(&tmp_str, "init status");
@@ -1109,6 +1095,27 @@ njt_http_cache_quick_update_download_status_str(njt_http_cache_resouce_metainfo_
         njt_http_cache_quick_save(cqmf);
     }
 }
+
+
+static void
+njt_http_cache_quick_update_status_str(njt_http_cache_resouce_metainfo_t  *cache_info,
+        cache_quick_status_t status, njt_str_t *tmp_str){
+    njt_http_cache_quick_main_conf_t   *cqmf;
+
+    cache_info->status = status;
+    cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, tmp_str);
+    cache_info->status_str.len = tmp_str->len;
+
+    cache_info->op_status = CACHE_QUICK_OP_STATUS_DONE;
+
+    //need flush kv set
+    //kv_set refresh
+    cqmf = (njt_http_cache_quick_main_conf_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_cache_quick_module);   
+    if(cqmf != NULL){
+        njt_http_cache_quick_save(cqmf);
+    }
+}
+
 
 static njt_int_t
 njt_http_cache_quick_update_download_status(njt_http_cache_quick_download_peer_t *cq_peer,
@@ -2129,10 +2136,8 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
     //connect peer
     pool = njt_create_pool(njt_pagesize, njt_cycle->log);
     if (pool == NULL) {
-        cache_info->status = CACHE_QUICK_STATUS_ERROR;
         njt_str_set(&tmp_str, "create pool error when downloading");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
 
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
             "create pool error when downloading, url:%V", &cache_info->addr_port);
@@ -2141,10 +2146,8 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
 
     cq_peer = njt_pcalloc(pool, sizeof(njt_http_cache_quick_download_peer_t));
     if (cq_peer == NULL) {
-        cache_info->status = CACHE_QUICK_STATUS_ERROR;
         njt_str_set(&tmp_str, "cache quick download pool malloc error");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
 
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                         " cache quick download pool malloc error, url:%V", &cache_info->addr_port);
@@ -2155,10 +2158,8 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
     cq_peer->pool = pool;
     cq_peer->peer = njt_http_cache_quick_create_download_peer(pool, cache_info);
     if(cq_peer->peer == NULL){
-        cache_info->status = CACHE_QUICK_STATUS_ERROR;
         njt_str_set(&tmp_str, "cache quick create download peer error");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
 
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                 " cache quick create download peer:%V error", &cache_info->addr_port);
@@ -2168,10 +2169,8 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
 
     p = (u_char *)njt_strstr(cache_info->addr_port.data,":");
     if(p == NULL) {
-        cache_info->status = CACHE_QUICK_STATUS_ERROR;
         njt_str_set(&tmp_str, "cache quick addr_port format error");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
 
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                 " cache quick addr_port format, peer:%V", &cache_info->addr_port);
@@ -2196,10 +2195,8 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
     
     rc = njt_event_connect_peer(cq_peer->peer);
     if (rc == NJT_ERROR || rc == NJT_DECLINED || rc == NJT_BUSY) {
-        cache_info->status = CACHE_QUICK_STATUS_ERROR;
         njt_str_set(&tmp_str, "cache quick connect to peer error");
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-        cache_info->status_str.len = tmp_str.len;
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
 
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                 " cache quick connect to peer:%V error", &cache_info->addr_port);
@@ -2218,10 +2215,8 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
         cq_peer->peer->connection->ssl == NULL) {
         rc = njt_http_cache_quick_ssl_init_connection(cq_peer->peer->connection, cq_peer, cache_info);
         if (rc == NJT_ERROR) {
-            cache_info->status = CACHE_QUICK_STATUS_ERROR;
             njt_str_set(&tmp_str, "cache quick ssl connect init error");
-            cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &tmp_str);
-            cache_info->status_str.len = tmp_str.len;
+            njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
 
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                     " cache quick ssl connect to peer:%V error", &cache_info->addr_port);
@@ -2348,6 +2343,24 @@ static njt_int_t njt_cache_quick_del_item(njt_http_cache_quick_main_conf_t *cqmf
         return NJT_ERROR;
     }
 
+
+    if(CACHE_QUICK_OP_STATUS_ADDING == cache_info->op_status){
+        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_INPUT_PARAM);
+        njt_rpc_result_set_msg(rpc_result, (u_char *)" last add operator is adding, please delete a moment later");
+
+        return NJT_ERROR;
+    }
+
+
+    if(CACHE_QUICK_OP_STATUS_DELING == cache_info->op_status){
+        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_INPUT_PARAM);
+        njt_rpc_result_set_msg(rpc_result, (u_char *)" last del operator is deleting, please delete a moment later");
+
+        return NJT_ERROR;
+    }
+
+    cache_info->op_status = CACHE_QUICK_OP_STATUS_DELING;
+
     //del dyn locaton
     if(NJT_OK != njt_http_cache_item_del_dyn_location(cache_info, cqmf)){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
@@ -2359,31 +2372,6 @@ static njt_int_t njt_cache_quick_del_item(njt_http_cache_quick_main_conf_t *cqmf
         // return NJT_ERROR;
     }
 
-    //first delete from lvlhash
-    if(NJT_OK != njt_http_del_cache_item_from_lvlhash(crc32, cqmf)){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
-            " del cache info from lvlhash error");
-
-        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
-        njt_rpc_result_set_msg(rpc_result, (u_char *)"del cache info from lvlhash error");
-
-        return NJT_ERROR; 
-    }
-
-    //delete from queue
-    if(NJT_OK != njt_http_del_cache_item_from_queue(cqmf, api_data)){
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
-            " del cache info from queue error");
-
-        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
-        njt_rpc_result_set_msg(rpc_result, (u_char *)"del cache info from queue error");
-
-        return NJT_ERROR;  
-    }
-
-    //kv_set refresh
-    njt_http_cache_quick_save(cqmf);
-
     //todo purge cache info
     
     return NJT_OK;
@@ -2394,6 +2382,7 @@ static njt_int_t njt_cache_quick_add_item(njt_http_cache_quick_main_conf_t *cqmf
             cache_api_t *api_data, njt_rpc_result_t*rpc_result) {
     njt_http_cache_resouce_metainfo_t       *cache_info;
     uint32_t                                 crc32;
+    njt_str_t                                tmp_str;
 
 
     //add item to local, queue and lvlhash
@@ -2411,7 +2400,7 @@ static njt_int_t njt_cache_quick_add_item(njt_http_cache_quick_main_conf_t *cqmf
 
         return NJT_ERROR;
     }
-
+    
     //insert queue
     cache_info = njt_http_add_cache_item_to_queue(cqmf, api_data);
     if(cache_info == NULL){
@@ -2424,7 +2413,6 @@ static njt_int_t njt_cache_quick_add_item(njt_http_cache_quick_main_conf_t *cqmf
         return NJT_ERROR;
     }
 
-
     //insert lvlhash
     if(NJT_OK != njt_http_add_cache_item_to_lvlhash(crc32, cache_info, cqmf)){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
@@ -2436,6 +2424,11 @@ static njt_int_t njt_cache_quick_add_item(njt_http_cache_quick_main_conf_t *cqmf
         return NJT_ERROR;  
     }
 
+    cache_info->op_status = CACHE_QUICK_OP_STATUS_ADDING;
+
+    //kv_set save
+    njt_http_cache_quick_save(cqmf);
+
     //add dyn locaton
     if(NJT_OK != njt_http_cache_item_add_dyn_location(cache_info, cqmf)){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
@@ -2443,12 +2436,12 @@ static njt_int_t njt_cache_quick_add_item(njt_http_cache_quick_main_conf_t *cqmf
 
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
         njt_rpc_result_set_msg(rpc_result, (u_char *)"cache quick add dyn location error");
+        
+        njt_str_set(&tmp_str, "cache quick add dyn location error");
+        njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
 
         return NJT_ERROR;
     }
-
-    //kv_set save
-    njt_http_cache_quick_save(cqmf);
 
     
     return NJT_OK;
@@ -2731,6 +2724,7 @@ static void njt_http_cache_quick_recovery_confs(njt_http_cache_quick_main_conf_t
     cache_api_t                     api_data, *p_api_data;
     js2c_parse_error_t              err_info;
     njt_http_cache_resouce_metainfo_t       *cache_info;
+    njt_str_t                       tmp_str;
 
 
     pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
@@ -2798,9 +2792,17 @@ static void njt_http_cache_quick_recovery_confs(njt_http_cache_quick_main_conf_t
         }
 
         //update origin status
-        cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &item->status);
-        cache_info->status_str.len = item->status.len;
-        cache_info->download_ratio = item->download_ratio;
+        njt_str_set(&tmp_str, "downloading");
+        if(item->status.len == tmp_str.len && 0 == njt_strncmp(item->status.data, tmp_str.data, tmp_str.len)){
+            njt_str_set(&tmp_str, "has error, reload when downloading");
+            njt_http_cache_quick_update_status_str(cache_info, CACHE_QUICK_STATUS_ERROR, &tmp_str);
+        }else{
+            cache_info->status_str.data = njt_pstrdup(cache_info->item_pool, &item->status);
+            cache_info->status_str.len = item->status.len;
+            cache_info->download_ratio = item->download_ratio;
+        }
+
+        cache_info->op_status = CACHE_QUICK_OP_STATUS_DONE;
 
         //insert lvlhash
         if(NJT_OK != njt_http_add_cache_item_to_lvlhash(crc32, cache_info, cqmf)){
