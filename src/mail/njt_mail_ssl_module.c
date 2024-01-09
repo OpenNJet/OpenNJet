@@ -683,7 +683,7 @@ njt_mail_ssl_session_cache(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                 len++;
             }
 
-            if (len == 0) {
+            if (len == 0 || j == value[i].len) {
                 goto invalid;
             }
 
