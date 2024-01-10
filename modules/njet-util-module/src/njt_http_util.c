@@ -252,6 +252,7 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 
 					//njt_memzero(&sockaddr,sizeof(struct sockaddr ));
 					//sockaddr.sa_family = ls[i].sockaddr->sa_family;
+					sockaddr = NULL;
 					if(ls[i].sockaddr->sa_family == AF_INET6) {
 						sockaddr = (struct sockaddr *)&ssin6;
 						njt_memzero(&ssin6,sizeof(struct sockaddr_in6 ));
@@ -263,6 +264,9 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 						 sin = (struct sockaddr_in  *)sockaddr;
 						 sin->sin_addr.s_addr = addr[j].addr;
 					} 
+					if (sockaddr == NULL) {
+					   return NJT_ERROR;
+					}
 					sockaddr->sa_family = ls[i].sockaddr->sa_family;
 					njt_inet_set_port(sockaddr,nport);
 					len = njt_sock_ntop(sockaddr, sizeof(njt_sockaddr_t),
@@ -304,6 +308,7 @@ njt_int_t njt_http_util_read_request_body(njt_http_request_t *r, njt_str_t *req_
     }
 
     len = 0;
+    fd = -1;
     // if requst body is more than client_body_buffer_size, it is in the tmp file  
     if (body_chain->buf->file) {
         fd = body_chain->buf->file->fd;
@@ -335,7 +340,7 @@ njt_int_t njt_http_util_read_request_body(njt_http_request_t *r, njt_str_t *req_
         req_body->len = 0;
         return NJT_ERROR;
     }
-    if (body_chain->buf->file) {
+    if (body_chain->buf->file && fd != -1) {
         n = njt_read_fd(fd, req_body->data, len);
         if (n == -1) {
             njt_log_error(NJT_LOG_ALERT, r->connection->log, 0,
