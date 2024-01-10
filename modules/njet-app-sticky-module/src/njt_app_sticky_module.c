@@ -241,7 +241,7 @@ static njt_int_t njt_app_sticky_get_peer(njt_peer_connection_t *pc, void *data){
 	njt_app_sticky_req_ctx_t *req_ctx;
 
 	njt_uint_t i;
-	njt_app_sticky_ctx_t *ctx;
+	njt_app_sticky_ctx_t *ctx = NULL;
 	njt_app_sticky_peer_data_t * aspd=(njt_app_sticky_peer_data_t*)data;
 
 	if(aspd == NULL){
@@ -249,7 +249,7 @@ static njt_int_t njt_app_sticky_get_peer(njt_peer_connection_t *pc, void *data){
 		goto use_rr;
 	}
 
-	ctx=aspd->srv_conf->ctx;
+	ctx = aspd->srv_conf->ctx;
 
 	if (aspd->key.len ==0 )  {
 		njt_log_error(NJT_LOG_DEBUG, aspd->request->connection->log, 0, "no app_sticky key, use rr");
