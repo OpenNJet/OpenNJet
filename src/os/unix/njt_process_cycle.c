@@ -1538,6 +1538,7 @@ njt_worker_process_cycle(njt_cycle_t *cycle, void *data)
                 njt_set_shutdown_timer(cycle);
                 njt_close_listening_sockets(cycle);
                 njt_close_idle_connections(cycle);
+                njt_event_process_posted(cycle, &njt_posted_events);
             }
         }
 
@@ -1560,7 +1561,7 @@ njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker)
     njt_cpuset_t *cpu_affinity;
     struct rlimit     rlmt;
     njt_core_conf_t *ccf;
-    njt_listening_t *ls;
+    // njt_listening_t *ls;
 
     if (njt_set_environment(cycle, NULL) == NULL) {
         /* fatal */
@@ -1692,14 +1693,14 @@ njt_worker_process_init(njt_cycle_t *cycle, njt_int_t worker)
     tp = njt_timeofday();
     srandom(((unsigned)njt_pid << 16) ^ tp->sec ^ tp->msec);
 
-    /*
-     * disable deleting previous events for the listening sockets because
-     * in the worker processes there are no events at all at this point
-     */
-    ls = cycle->listening.elts;
-    for (i = 0; i < cycle->listening.nelts; i++) {
-        ls[i].previous = NULL;
-    }
+    // /*
+    //  * disable deleting previous events for the listening sockets because
+    //  * in the worker processes there are no events at all at this point
+    //  */
+    // ls = cycle->listening.elts;
+    // for (i = 0; i < cycle->listening.nelts; i++) {
+    //     ls[i].previous = NULL;
+    // }
 
     for (i = 0; cycle->modules[i]; i++) {
         if (cycle->modules[i]->init_process) {

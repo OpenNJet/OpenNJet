@@ -141,8 +141,8 @@ njt_copy(u_char *dst, u_char *src, size_t len)
 #endif
 
 
-#define njt_memmove(dst, src, n)   (void) memmove(dst, src, n)
-#define njt_movemem(dst, src, n)   (((u_char *) memmove(dst, src, n)) + (n))
+#define njt_memmove(dst, src, n)  (void) memmove(dst, src, n)
+#define njt_movemem(dst, src, n)  (((u_char *) memmove(dst, src, n)) + (n))
 
 
 /* msvc and icc7 compile memcmp() to the inline loop */

@@ -122,6 +122,7 @@ njt_wsarecv_chain(njt_connection_t *c, njt_chain_t *chain, off_t limit)
     } else if (bytes == size) {
 
         if (njt_socket_nread(c->fd, &rev->available) == -1) {
+            rev->ready = 0;
             rev->error = 1;
             njt_connection_error(c, njt_socket_errno,
                                  njt_socket_nread_n " failed");
@@ -139,6 +140,7 @@ njt_wsarecv_chain(njt_connection_t *c, njt_chain_t *chain, off_t limit)
     }
 
     if (bytes == 0) {
+        rev->ready = 0;
         rev->eof = 1;
     }
 

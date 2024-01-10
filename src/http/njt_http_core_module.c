@@ -4615,7 +4615,7 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     njt_str_t              *value, size;
     njt_url_t               u;
-    njt_uint_t              n;
+    njt_uint_t              n, i;
     njt_http_listen_opt_t   lsopt;
 
     cscf->listen = 1;
@@ -4993,6 +4993,16 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #endif
 
     for (n = 0; n < u.naddrs; n++) {
+
+        for (i = 0; i < n; i++) {
+            if (njt_cmp_sockaddr(u.addrs[n].sockaddr, u.addrs[n].socklen,
+                                 u.addrs[i].sockaddr, u.addrs[i].socklen, 1)
+                == NJT_OK)
+            {
+                goto next;
+            }
+        }
+
         lsopt.sockaddr = u.addrs[n].sockaddr;
         lsopt.socklen = u.addrs[n].socklen;
         lsopt.addr_text = u.addrs[n].name;
@@ -5001,6 +5011,9 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         if (njt_http_add_listen(cf, cscf, &lsopt) != NJT_OK) {
             return NJT_CONF_ERROR;
         }
+
+    next: 
+        continue;
     }
 
     return NJT_CONF_OK;

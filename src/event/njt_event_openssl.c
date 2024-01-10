@@ -2464,6 +2464,7 @@ njt_ssl_recv(njt_connection_t *c, u_char *buf, size_t size)
 #endif
 
     if (c->ssl->last == NJT_ERROR) {
+        c->read->ready = 0;
         c->read->error = 1;
         return NJT_ERROR;
     }
@@ -2530,6 +2531,7 @@ njt_ssl_recv(njt_connection_t *c, u_char *buf, size_t size)
 #if (NJT_HAVE_FIONREAD)
 
                     if (njt_socket_nread(c->fd, &c->read->available) == -1) {
+                        c->read->ready = 0;
                         c->read->error = 1;
                         njt_connection_error(c, njt_socket_errno,
                                              njt_socket_nread_n " failed");
@@ -2566,6 +2568,7 @@ njt_ssl_recv(njt_connection_t *c, u_char *buf, size_t size)
             return 0;
 
         case NJT_ERROR:
+            c->read->ready = 0;
             c->read->error = 1;
 
             /* fall through */
@@ -2586,6 +2589,7 @@ njt_ssl_recv_early(njt_connection_t *c, u_char *buf, size_t size)
     size_t     readbytes;
 
     if (c->ssl->last == NJT_ERROR) {
+        c->read->ready = 0;
         c->read->error = 1;
         return NJT_ERROR;
     }
@@ -2685,6 +2689,7 @@ njt_ssl_recv_early(njt_connection_t *c, u_char *buf, size_t size)
             return 0;
 
         case NJT_ERROR:
+            c->read->ready = 0;
             c->read->error = 1;
 
             /* fall through */
@@ -3280,7 +3285,7 @@ njt_ssl_sendfile(njt_connection_t *c, njt_buf_t *file, size_t size)
     n = SSL_sendfile(c->ssl->connection, file->file->fd, file->file_pos,
                      size, flags);
 
-    njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0, "SSL_sendfile: %d", n);
+    njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0, "SSL_sendfile: %z", n);
 
     if (n > 0) {
 

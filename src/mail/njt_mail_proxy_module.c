@@ -891,7 +891,7 @@ njt_mail_proxy_send_proxy_protocol(njt_mail_session_t *s)
     u_char            *p;
     ssize_t            n, size;
     njt_connection_t  *c;
-    u_char             buf[NJT_PROXY_PROTOCOL_MAX_HEADER];
+    u_char             buf[NJT_PROXY_PROTOCOL_V1_MAX_HEADER];
 
     s->connection->log->action = "sending PROXY protocol header to upstream";
 
@@ -899,7 +899,7 @@ njt_mail_proxy_send_proxy_protocol(njt_mail_session_t *s)
                    "mail proxy send PROXY protocol header");
 
     p = njt_proxy_protocol_write(s->connection, buf,
-                                 buf + NJT_PROXY_PROTOCOL_MAX_HEADER);
+                                 buf + NJT_PROXY_PROTOCOL_V1_MAX_HEADER);
     if (p == NULL) {
         njt_mail_proxy_internal_server_error(s);
         return NJT_ERROR;

@@ -1785,9 +1785,8 @@ njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
 
         size = b->end - b->last;
 
-        if (size && src != NULL && src->read->ready && !src->read->delayed
-            && !src->read->error)
-        {
+        if (size && src != NULL && src->read->ready && !src->read->delayed ) {
+
             if (limit_rate) {
                 limit = (off_t) limit_rate * (njt_time() - u->start_sec + 1)
                         - *received;
