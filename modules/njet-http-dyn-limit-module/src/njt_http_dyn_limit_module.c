@@ -376,7 +376,7 @@ static njt_int_t njt_dyn_limit_set_limit_reqs(dyn_limit_servers_item_locations_i
     bool                         found = false;
     njt_shm_zone_t              *shm_zone;
     njt_int_t                    rc;
-    njt_uint_t                   delay;
+    njt_uint_t                   delay = 0;
     njt_int_t                    tmp_delay;
     u_char                       data_buf[1024];
     u_char                      *end;
@@ -1265,7 +1265,7 @@ static njt_int_t njt_dyn_limit_set_limit_req_dry_run(dyn_limit_servers_item_loca
 static njt_int_t njt_dyn_limit_update_rps(njt_cycle_t *cycle, dyn_limit_limit_rps_item_t *rps_date,
                 njt_rpc_result_t *rpc_result){
     njt_uint_t                           i;
-    njt_uint_t                           index;
+    njt_uint_t                           index = 0;
     njt_shm_zone_t                      *shm_zone;
     njt_list_part_t                     *part;
     size_t                               len;

@@ -511,7 +511,7 @@ static void njt_sysguard_cpu_timer_handler(njt_event_t *ev){
     njt_str_t                       pids_v;
     njt_int_t                       worker_c;
     time_t                          diff_total;
-    njt_int_t                       new_worker_c;
+    njt_int_t                       new_worker_c = 0;
     u_char                          *end;
     u_char                          s_tmp[24];
 

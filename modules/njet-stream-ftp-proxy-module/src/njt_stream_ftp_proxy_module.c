@@ -129,7 +129,7 @@ njt_stream_ftp_ctrl(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_str_t                           *value;
     njt_str_t                           s, name;
     u_char                              *p;
-    ssize_t                             size;
+    ssize_t                             size = 0;
     njt_uint_t                          i, j;
     njt_stream_ftp_proxy_ctx_t                *ctx;
 
