@@ -268,6 +268,7 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 
 					//njt_memzero(&sockaddr,sizeof(struct sockaddr ));
 					//sockaddr.sa_family = ls[i].sockaddr->sa_family;
+					sockaddr = NULL;
 					if(ls[i].sockaddr->sa_family == AF_INET6) {
 						sockaddr = (struct sockaddr *)&ssin6;
 						njt_memzero(&ssin6,sizeof(struct sockaddr_in6 ));
@@ -278,6 +279,9 @@ njt_int_t njt_http_get_listens_by_server(njt_array_t *array,njt_http_core_srv_co
 						njt_memzero(&ssin,sizeof(struct sockaddr_in ));
 						sin = (struct sockaddr_in  *)sockaddr;
 						sin->sin_addr.s_addr = addr[j].addr;
+					}
+					if (sockaddr == NULL) {
+						return NJT_ERROR;
 					} 
 					sockaddr->sa_family = ls[i].sockaddr->sa_family;
 					njt_inet_set_port(sockaddr,nport);
