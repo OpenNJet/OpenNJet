@@ -84,7 +84,8 @@ njt_int_t
 njt_http_cache_quick_lvlhsh_test(njt_lvlhsh_query_t *lhq, void *data);
 
 
-
+static void
+njt_http_cache_quick_close_connection(njt_connection_t *c);
 
 
 #if (NJT_OPENSSL)
@@ -1128,7 +1129,7 @@ njt_http_cache_quick_update_download_status(njt_http_cache_quick_download_peer_t
     cqmf = (njt_http_cache_quick_main_conf_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_cache_quick_module);   
     if(cqmf == NULL){
         if (cq_peer->peer->connection) {
-            njt_http_close_connection(cq_peer->peer->connection);
+            njt_http_cache_quick_close_connection(cq_peer->peer->connection);
         }
         return NJT_OK;
     }
@@ -1151,7 +1152,7 @@ njt_http_cache_quick_update_download_status(njt_http_cache_quick_download_peer_t
 
 
     if (cq_peer->peer->connection) {
-        njt_http_close_connection(cq_peer->peer->connection);
+        njt_http_cache_quick_close_connection(cq_peer->peer->connection);
     }
 
     return rc;
@@ -2392,7 +2393,8 @@ static njt_int_t njt_cache_quick_add_item(njt_http_cache_quick_main_conf_t *cqmf
     if(NJT_OK == njt_cache_quick_item_exist(crc32, cqmf, &cache_info)){
         if(api_data->is_location_name_set){
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
-                " cache quick item:%V is already exist", &api_data->location_name);
+                " cache quick item:%V is already exist(please delete first) or maybe last delete action is deleteing",
+                &api_data->location_name);
         }
 
         njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_INPUT_PARAM);
@@ -2712,6 +2714,42 @@ out_handler:
 
     return rc;
 }
+
+
+static void
+njt_http_cache_quick_close_connection(njt_connection_t *c)
+{
+    njt_pool_t  *pool;
+
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
+                   "close http connection: %d", c->fd);
+
+#if (NJT_HTTP_SSL)
+
+    if (c->ssl) {
+        if (njt_ssl_shutdown(c) == NJT_AGAIN) {
+            c->ssl->handler = njt_http_cache_quick_close_connection;
+            return;
+        }
+    }
+
+#endif
+
+#if (NJT_HTTP_V3)
+    if (c->quic) {
+        njt_http_v3_reset_stream(c);
+    }
+#endif
+
+    c->destroyed = 1;
+
+    pool = c->pool;
+
+    njt_close_connection(c);
+
+    njt_destroy_pool(pool);
+}
+
 
 
 

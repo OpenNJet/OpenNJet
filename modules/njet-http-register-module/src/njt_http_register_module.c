@@ -23,6 +23,8 @@ static njt_int_t
 njt_http_register_http_write_handler(njt_event_t *wev);
 static void
 njt_http_register_dummy_handler(njt_event_t *ev);
+static void
+njt_http_register_close_connection(njt_connection_t *c);
 
 
 static njt_command_t  njt_http_register_commands[] = {
@@ -474,6 +476,41 @@ static njt_int_t njt_send_http_register_info(njt_http_register_main_conf_t *ccf,
 }
 
 
+static void
+njt_http_register_close_connection(njt_connection_t *c)
+{
+    njt_pool_t  *pool;
+
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
+                   "close http connection: %d", c->fd);
+
+#if (NJT_HTTP_SSL)
+
+    if (c->ssl) {
+        if (njt_ssl_shutdown(c) == NJT_AGAIN) {
+            c->ssl->handler = njt_http_register_close_connection;
+            return;
+        }
+    }
+
+#endif
+
+#if (NJT_HTTP_V3)
+    if (c->quic) {
+        njt_http_v3_reset_stream(c);
+    }
+#endif
+
+    c->destroyed = 1;
+
+    pool = c->pool;
+
+    njt_close_connection(c);
+
+    njt_destroy_pool(pool);
+}
+
+
 static void njt_http_register_check_write_handler(njt_event_t *wev) {
     njt_connection_t                    *c;
     njt_int_t                           rc;
@@ -483,7 +520,7 @@ static void njt_http_register_check_write_handler(njt_event_t *wev) {
         /*log the case and update the peer status.*/
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                        "write action for register timeout");
-        njt_http_close_connection(c);
+        njt_http_register_close_connection(c);
         return;
     }
 
@@ -497,7 +534,7 @@ static void njt_http_register_check_write_handler(njt_event_t *wev) {
         /*log the case and update the peer status.*/
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                        "write action error for register");
-        njt_http_close_connection(c);
+        njt_http_register_close_connection(c);
         return;
     } else if (rc == NJT_DONE || rc == NJT_OK) {
         return;
@@ -527,7 +564,7 @@ static void njt_http_register_check_read_handler(njt_event_t *rev) {
     //                 "register recv:%V", &tmp_str);
     
     //just close
-    njt_http_close_connection(c);
+    njt_http_register_close_connection(c);
 
     return;
 }
@@ -564,7 +601,7 @@ njt_http_register_http_write_handler(njt_event_t *wev) {
                                                &register_data->ccf->server, register_data->ccf->port);
         register_data->send_buf->last = njt_snprintf(register_data->send_buf->last,
                                                register_data->send_buf->end - register_data->send_buf->last,
-                                               "User-Agent: njet (health-check)" CRLF);
+                                               "User-Agent: njet (health-register)" CRLF);
         register_data->send_buf->last = njt_snprintf(register_data->send_buf->last,
                                                register_data->send_buf->end - register_data->send_buf->last,
                                                "Content-Type: application/json" CRLF);
