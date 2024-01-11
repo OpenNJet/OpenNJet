@@ -737,13 +737,13 @@ njt_regex_create_conf(njt_cycle_t *cycle)
         return NULL;
     }
 
-    cln->handler = njt_regex_cleanup;
-    cln->data = rcf;
-
     rcf->studies = njt_list_create(cycle->pool, 8, sizeof(njt_regex_elt_t));
     if (rcf->studies == NULL) {
         return NULL;
     }
+
+    cln->handler = njt_regex_cleanup;
+    cln->data = rcf;
 
     njt_regex_studies = rcf->studies;
 

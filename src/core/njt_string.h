@@ -146,7 +146,7 @@ njt_copy(u_char *dst, u_char *src, size_t len)
 
 
 /* msvc and icc7 compile memcmp() to the inline loop */
-#define njt_memcmp(s1, s2, n)  memcmp((const char *) s1, (const char *) s2, n)
+#define njt_memcmp(s1, s2, n)     memcmp(s1, s2, n)
 
 
 u_char *njt_cpystrn(u_char *dst, u_char *src, size_t n);
