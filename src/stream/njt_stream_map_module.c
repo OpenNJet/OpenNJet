@@ -167,7 +167,7 @@ njt_stream_map_create_conf(njt_conf_t *cf)
 {
     njt_stream_map_conf_t  *mcf;
 
-    mcf = njt_palloc(cf->pool, sizeof(njt_stream_map_conf_t));
+    mcf = njt_pcalloc(cf->pool, sizeof(njt_stream_map_conf_t));
     if (mcf == NULL) {
         return NULL;
     }
