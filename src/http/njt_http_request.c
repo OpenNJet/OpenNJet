@@ -2883,7 +2883,8 @@ njt_http_finalize_connection(njt_http_request_t *r)
         || (clcf->lingering_close == NJT_HTTP_LINGERING_ON
             && (r->lingering_close
                 || r->header_in->pos < r->header_in->last
-                || r->connection->read->ready)))
+                || r->connection->read->ready
+                || r->connection->pipeline)))
     {
         njt_http_set_lingering_close(r->connection);
         return;
@@ -3267,6 +3268,7 @@ njt_http_set_keepalive(njt_http_request_t *r)
 
         c->sent = 0;
         c->destroyed = 0;
+        c->pipeline = 1;
 
         if (rev->timer_set) {
             njt_del_timer(rev);

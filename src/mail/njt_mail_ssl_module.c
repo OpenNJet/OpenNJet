@@ -361,8 +361,9 @@ njt_mail_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
                          prev->prefer_server_ciphers, 0);
 
     njt_conf_merge_bitmask_value(conf->protocols, prev->protocols,
-                         (NJT_CONF_BITMASK_SET|NJT_SSL_TLSv1
-                          |NJT_SSL_TLSv1_1|NJT_SSL_TLSv1_2));
+                         (NJT_CONF_BITMASK_SET
+                          |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
+                          |NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3));
 
     njt_conf_merge_uint_value(conf->verify, prev->verify, 0);
     njt_conf_merge_uint_value(conf->verify_depth, prev->verify_depth, 1);

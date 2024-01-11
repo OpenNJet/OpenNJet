@@ -300,6 +300,10 @@ typedef struct {
 typedef struct {
     njt_http_listen_opt_t      opt;
 
+    unsigned                   protocols:3;
+    unsigned                   protocols_set:1;
+    unsigned                   protocols_changed:1;
+
     njt_hash_t                 hash;
     njt_hash_wildcard_t       *wc_head;
     njt_hash_wildcard_t       *wc_tail;
@@ -534,8 +538,8 @@ struct njt_http_location_tree_node_s {
     njt_pool_t   *parent_pool;
 #endif
 //end by clb
+    u_short                          len;
     u_char                           auto_redirect;
-    u_char                           len;
     u_char                           name[1];
 };
 

@@ -328,7 +328,9 @@ njt_mail_proxy_pop3_handler(njt_event_t *rev)
         c->log->action = NULL;
         njt_log_error(NJT_LOG_INFO, c->log, 0, "client logged in");
 
-        if (s->buffer->pos < s->buffer->last) {
+        if (s->buffer->pos < s->buffer->last
+            || s->connection->read->ready)
+        {
             njt_post_event(c->write, &njt_posted_events);
         }
 
@@ -487,7 +489,9 @@ njt_mail_proxy_imap_handler(njt_event_t *rev)
         c->log->action = NULL;
         njt_log_error(NJT_LOG_INFO, c->log, 0, "client logged in");
 
-        if (s->buffer->pos < s->buffer->last) {
+        if (s->buffer->pos < s->buffer->last
+            || s->connection->read->ready)
+        {
             njt_post_event(c->write, &njt_posted_events);
         }
 
@@ -822,7 +826,9 @@ njt_mail_proxy_smtp_handler(njt_event_t *rev)
         c->log->action = NULL;
         njt_log_error(NJT_LOG_INFO, c->log, 0, "client logged in");
 
-        if (s->buffer->pos < s->buffer->last) {
+        if (s->buffer->pos < s->buffer->last
+            || s->connection->read->ready)
+        {
             njt_post_event(c->write, &njt_posted_events);
         }
 

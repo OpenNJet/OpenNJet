@@ -182,6 +182,7 @@ struct njt_connection_s {
     unsigned            timedout:1;
     unsigned            error:1;
     unsigned            destroyed:1;
+    unsigned            pipeline:1;
 
     unsigned            idle:1;
     unsigned            reusable:1;

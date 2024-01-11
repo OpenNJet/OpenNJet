@@ -1969,10 +1969,6 @@ njt_http_send_response(njt_http_request_t *r, njt_uint_t status,
         }
     }
 
-    if (r != r->main && val.len == 0) {
-        return njt_http_send_header(r);
-    }
-
     b = njt_calloc_buf(r->pool);
     if (b == NULL) {
         return NJT_HTTP_INTERNAL_SERVER_ERROR;
@@ -1983,6 +1979,7 @@ njt_http_send_response(njt_http_request_t *r, njt_uint_t status,
     b->memory = val.len ? 1 : 0;
     b->last_buf = (r == r->main) ? 1 : 0;
     b->last_in_chain = 1;
+    b->sync = (b->last_buf || b->memory) ? 0 : 1;
 
     out.buf = b;
     out.next = NULL;
