@@ -185,6 +185,10 @@
     "only upstream response processing time\n"                                 \
     "# TYPE njet_vts_upstream_response_duration_seconds histogram\n"
 
+#define NJT_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HDR_S                \
+    "# HELP njet_vts_upstream_hdr Upstream HDR\n"       \
+    "# TYPE njet_vts_upstream_hdr gauge\n"                          
+
 #define NJT_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HDR              \
     "njet_vts_upstream_hdr{code=\"p50reqdelayMsecr\"} %uA\n"                   \
     "njet_vts_upstream_hdr{code=\"p99reqdelayMsecr\"} %uA\n"                   \
