@@ -1103,7 +1103,7 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 						continue;
 					}
 					addr_conf = &addr6[i].conf;
-				} else {
+				} else if (addr != NULL){
 					ssin = (struct sockaddr_in *) &u.sockaddr.sockaddr;          
 					if (addr[i].addr != ssin->sin_addr.s_addr) {
 						continue;
@@ -1114,7 +1114,9 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 					continue;
 				}
 			} else {
-				addr_conf = &addr[0].conf;
+				if(addr != NULL) {
+					addr_conf = &addr[0].conf;
+				}
 			}
 			break;
 		}
