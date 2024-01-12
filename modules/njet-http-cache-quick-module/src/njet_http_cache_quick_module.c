@@ -2674,11 +2674,7 @@ njt_http_cache_quick_handler(njt_http_request_t *r) {
     if(!rpc_result){
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0, 
                 " cache quick create rpc_result error");
-        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
-        njt_rpc_result_set_msg(rpc_result, (u_char *)" cache quick create rpc_result error");
-
-        rc = NJT_ERROR;
-        goto out_handler;
+        return NJT_ERROR;
     }
     njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_SUCCESS);
 
@@ -2705,7 +2701,6 @@ njt_http_cache_quick_handler(njt_http_request_t *r) {
         njt_rpc_result_set_msg(rpc_result, (u_char *)" method not allowed");
     }
 
-out_handler:
     rc = njt_http_cache_quick_conf_out_handler(r, rpc_result);
 
     if(rpc_result != NULL){
