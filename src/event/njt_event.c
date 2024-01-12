@@ -605,8 +605,6 @@ njt_event_module_init(njt_cycle_t *cycle)
     njt_stat_handled = (njt_atomic_t *) (shared + 4 * cl);
     njt_stat_requests = (njt_atomic_t *) (shared + 5 * cl);
     njt_stat_active = (njt_atomic_t *) (shared + 6 * cl);
-        njt_log_error(NJT_LOG_ALERT, cycle->log, 0,
-                "==========njt_event_module_init init, old:%uA", *njt_stat_active);
     njt_stat_reading = (njt_atomic_t *) (shared + 7 * cl);
     njt_stat_writing = (njt_atomic_t *) (shared + 8 * cl);
     njt_stat_waiting = (njt_atomic_t *) (shared + 9 * cl);

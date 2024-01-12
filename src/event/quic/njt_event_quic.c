@@ -588,11 +588,7 @@ quic_done:
     }
 
 #if (NJT_STAT_STUB)
-        njt_log_error(NJT_LOG_ALERT, c->log, 0,
-                "==========njt_quic_close_connection add - 1, old:%uA", *njt_stat_active);
     (void) njt_atomic_fetch_add(njt_stat_active, -1);
-        njt_log_error(NJT_LOG_ALERT, c->log, 0,
-                "==========njt_quic_close_connection add - 1, now:%uA", *njt_stat_active);
 #endif
 
     c->destroyed = 1;
