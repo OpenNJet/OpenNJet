@@ -2032,9 +2032,9 @@ njt_worker_process_exit(njt_cycle_t *cycle)
 void
 njt_helper_process_exit(njt_cycle_t *cycle)
 {
-    njt_uint_t         i;
+    njt_uint_t          i;
+    njt_connection_t    *c = NULL;
 #if (NJT_DEBUG)
-    njt_connection_t    *c;
     njt_event_t              *read_events;
     njt_event_t              *write_events;
 #endif
