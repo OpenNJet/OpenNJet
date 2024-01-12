@@ -250,8 +250,8 @@ njt_process_events_and_timers(njt_cycle_t *cycle)
 
     delta = njt_current_msec - delta;
 
-    njt_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
-                   "timer delta: %M", delta);
+    // njt_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
+    //                "timer delta: %M", delta);
 
     njt_event_process_posted(cycle, &njt_posted_accept_events);
 

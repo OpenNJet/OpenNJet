@@ -398,6 +398,9 @@ void njt_http_upstream_traver(void *ctx,njt_int_t (*item_handle)(void *ctx,njt_h
 
 void njt_stream_upstream_traver(void *ctx,njt_int_t (*item_handle)(void *ctx,njt_stream_upstream_srv_conf_t *));
 
+static void
+njt_http_health_check_close_connection(njt_connection_t *c);
+
 
 static njt_health_checker_t njt_health_checks[] = {
         {    
@@ -741,7 +744,6 @@ njt_stream_health_check_match_all(njt_connection_t *c){
         }
         if (n == NJT_ERROR) {
             njt_log_debug0(NJT_LOG_ERR, njt_cycle->log, 0,"read error for health check");
-            return NJT_ERROR;
         }
 //        break;
 //    }
@@ -2062,6 +2064,41 @@ njt_http_get_health_check_type(njt_str_t *str) {
     return NULL;
 }
 
+
+static void
+njt_http_health_check_close_connection(njt_connection_t *c)
+{
+    njt_pool_t  *pool;
+
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
+                   "close http connection: %d", c->fd);
+
+#if (NJT_HTTP_SSL)
+
+    if (c->ssl) {
+        if (njt_ssl_shutdown(c) == NJT_AGAIN) {
+            c->ssl->handler = njt_http_health_check_close_connection;
+            return;
+        }
+    }
+
+#endif
+
+#if (NJT_HTTP_V3)
+    if (c->quic) {
+        njt_http_v3_reset_stream(c);
+    }
+#endif
+
+    c->destroyed = 1;
+
+    pool = c->pool;
+
+    njt_close_connection(c);
+
+    njt_destroy_pool(pool);
+}
+
 static void njt_free_peer_resource(njt_http_health_check_peer_t *hc_peer) {
 //    njt_pool_t *pool;
     njt_helper_health_check_conf_t *hhccf = hc_peer->hhccf;
@@ -2072,7 +2109,7 @@ static void njt_free_peer_resource(njt_http_health_check_peer_t *hc_peer) {
     njt_uint_t local_peer_id = hc_peer->peer_id;
     
     if (hc_peer->peer.connection) {
-        njt_http_close_connection(hc_peer->peer.connection);
+        njt_http_health_check_close_connection(hc_peer->peer.connection);
 //        njt_close_connection(hc_peer->peer.connection);
     }
 

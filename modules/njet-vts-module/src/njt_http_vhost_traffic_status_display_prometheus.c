@@ -536,20 +536,21 @@ njt_http_vhost_traffic_status_display_prometheus_set(njt_http_request_t *r,
 
     s = buf;
 
-    extern njt_int_t njt_http_vts_hdr_values[5];
-    extern njt_int_t njt_http_vts_hdr_get(void);
-    njt_http_vts_hdr_get();
-    buf = njt_sprintf(buf, NJT_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HDR,
-                njt_http_vts_hdr_values[0],
-                njt_http_vts_hdr_values[1],
-                njt_http_vts_hdr_values[2],
-                njt_http_vts_hdr_values[3],
-                njt_http_vts_hdr_values[4]);
-
     buf = njt_http_vhost_traffic_status_display_prometheus_set_upstream(r, buf, node);
 
     if (s == buf) {
         buf = o;
+    } else {
+        extern njt_int_t njt_http_vts_hdr_values[5];
+        extern njt_int_t njt_http_vts_hdr_get(void);
+        buf = njt_sprintf(buf, NJT_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HDR_S);
+        njt_http_vts_hdr_get();
+        buf = njt_sprintf(buf, NJT_HTTP_VHOST_TRAFFIC_STATUS_PROMETHEUS_FMT_UPSTREAM_HDR,
+                    njt_http_vts_hdr_values[0],
+                    njt_http_vts_hdr_values[1],
+                    njt_http_vts_hdr_values[2],
+                    njt_http_vts_hdr_values[3],
+                    njt_http_vts_hdr_values[4]);
     }
 
 #if (NJT_HTTP_CACHE)

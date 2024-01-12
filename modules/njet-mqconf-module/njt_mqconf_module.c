@@ -203,6 +203,8 @@ njt_helper(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     file = value[2];
 
+    njt_str_null(&cfile);
+
     if (cf->args->nelts == 4) {
         cfile = value[3];
         cffile = value[3];

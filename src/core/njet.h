@@ -11,7 +11,7 @@
 
 
 #define njet_version      1023001
-#define NJT_VERSION      "2.0.0"
+#define NJT_VERSION      "2.0.1"
 #define NJT_VER          "njet/" NJT_VERSION
 
 

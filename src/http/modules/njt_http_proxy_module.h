@@ -12,6 +12,8 @@
 #include <njt_core.h>
 #include <njt_http.h>
 
+#define NJT_HAVE_SET_ALPN  1
+
 typedef struct {
     njt_array_t                    caches;  /* njt_http_file_cache_t * */
 } njt_http_proxy_main_conf_t;
@@ -115,6 +117,9 @@ typedef struct {
     njt_str_t                      ssl_trusted_certificate;
     njt_str_t                      ssl_crl;
     njt_array_t                   *ssl_conf_commands;
+#endif
+#if (NJT_HAVE_SET_ALPN)
+    njt_str_t        proxy_ssl_alpn;
 #endif
 #if(NJT_HTTP_DYNAMIC_UPSTREAM)
     unsigned  preserve:1;

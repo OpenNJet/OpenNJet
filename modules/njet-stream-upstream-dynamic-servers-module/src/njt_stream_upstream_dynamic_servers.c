@@ -942,7 +942,6 @@ static njt_int_t njt_stream_upstream_dynamic_servers_init_process(
 		timer->data = cycle;
 		timer->cancelable = 1;
         refresh_in = njt_random() % 1000;
-		njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,"zyg add3  time=%Xp",timer);
         njt_add_timer(timer, refresh_in);
 	
     return NJT_OK;
@@ -1228,7 +1227,6 @@ static void njt_stream_upstream_check_dynamic_server(njt_event_t *ev)
 						timer->cancelable = 1;
 						refresh_in = njt_random() % 1000;
 						njt_stream_upstream_dynamic_server_resolve(timer);
-						njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,"zyg add10 time=%Xp,dynamic_server=%Xp,parent_id=%d",timer,dynamic_server,dynamic_server->parent_node->id);
 						//njt_add_timer(timer, refresh_in);
 					}
 				}
@@ -1441,7 +1439,6 @@ static void njt_stream_upstream_dynamic_server_resolve(njt_event_t *ev)
         njt_log_error(NJT_LOG_ALERT, ev->log, 0,
                       "upstream-dynamic-servers: njt_resolve_name failed for '%V'", &ctx->name);
 
-		njt_log_debug(NJT_LOG_DEBUG_CORE, njt_cycle->log, 0,"zyg add  time=%Xp",&dynamic_server->timer);
         njt_add_timer(&dynamic_server->timer, 1000);
     }
 }

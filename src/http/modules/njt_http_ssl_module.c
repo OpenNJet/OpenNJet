@@ -46,6 +46,12 @@ static njt_int_t njt_http_ssl_compile_certificates(njt_conf_t *cf,
     njt_http_ssl_srv_conf_t *conf);
 #endif
 
+#if (NJT_HAVE_SET_ALPN)
+static char *
+njt_http_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+#endif
+
+
 static char *njt_http_ssl_enable(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 static char *njt_http_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd,
@@ -62,6 +68,8 @@ static njt_int_t njt_http_ssl_init(njt_conf_t *cf);
 #if (NJT_QUIC_OPENSSL_COMPAT)
 static njt_int_t njt_http_ssl_quic_compat_init(njt_conf_t *cf,
     njt_http_conf_addr_t *addr);
+static njt_int_t
+njt_http_ssl_quic_compat_dynamic_init(njt_conf_t *cf, njt_http_conf_addr_t *addr);    
 #endif
 
 
@@ -333,6 +341,14 @@ static njt_command_t  njt_http_ssl_commands[] = {
       offsetof(njt_http_ssl_srv_conf_t, ntls),
       NULL },
 #endif
+#if (NJT_HAVE_SET_ALPN)
+    { njt_string("ssl_alpn"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_1MORE,
+      njt_http_ssl_alpn,
+      NJT_HTTP_SRV_CONF_OFFSET,
+      0,
+      NULL },
+#endif
 
       njt_null_command
 };
@@ -521,7 +537,15 @@ njt_http_ssl_alpn_select(njt_ssl_conn_t *ssl_conn, const unsigned char **out,
         srv = (unsigned char *) NJT_HTTP_ALPN_PROTOS;
         srvlen = sizeof(NJT_HTTP_ALPN_PROTOS) - 1;
     }
+#if (NJT_HAVE_SET_ALPN)
+    njt_http_ssl_srv_conf_t  *sscf;
+    sscf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_ssl_module);
+    if(sscf != NULL && sscf->alpn.len > 0) {
+        srv = sscf->alpn.data;
+        srvlen = sscf->alpn.len;
 
+    }
+#endif
     if (SSL_select_next_proto((unsigned char **) out, outlen, srv, srvlen,
                               in, inlen)
         != OPENSSL_NPN_NEGOTIATED)
@@ -792,7 +816,6 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         }
 
     } else if (conf->certificates) {
-
         if (conf->certificate_keys == NULL
             || conf->certificate_keys->nelts < conf->certificates->nelts)
         {
@@ -1467,6 +1490,111 @@ njt_http_ssl_init(njt_conf_t *cf)
     return NJT_OK;
 }
 
+njt_int_t
+njt_http_ssl_dynamic_init(njt_conf_t *cf,njt_http_addr_conf_t *addr_conf)
+{
+    const char                  *name;
+    njt_http_ssl_srv_conf_t     *sscf;
+    njt_http_core_loc_conf_t    *clcf;
+    njt_http_core_srv_conf_t   **cscfp, *cscf,*cscf_default;
+    njt_http_core_main_conf_t   *cmcf;
+
+    if(addr_conf == NULL) {
+	return NJT_OK;
+    }
+    cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
+    cscfp = cmcf->servers.elts;
+    cscf = NULL;
+    if(cmcf->servers.nelts > 0 && cscfp[cmcf->servers.nelts-1]->dynamic_status == 1) {
+	cscf = cscfp[cmcf->servers.nelts-1];
+    } else {
+	    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,"njt_http_ssl_dynamic_init no find server!");
+	return NJT_OK;
+    }
+    
+
+        sscf = cscf->ctx->srv_conf[njt_http_ssl_module.ctx_index];
+        clcf = cscf->ctx->loc_conf[njt_http_core_module.ctx_index];
+
+        if (sscf->stapling) {
+            if (njt_ssl_stapling_resolver(cf, &sscf->ssl, clcf->resolver,
+                                          clcf->resolver_timeout)
+                != NJT_OK)
+            {
+                return NJT_ERROR;
+            }
+        }
+
+        if (sscf->ocsp) {
+            if (njt_ssl_ocsp_resolver(cf, &sscf->ssl, clcf->resolver,
+                                      clcf->resolver_timeout)
+                != NJT_OK)
+            {
+                return NJT_ERROR;
+            }
+        }
+ 	if(!addr_conf->ssl && !addr_conf->quic) {
+		return NJT_OK;
+	}   
+
+            if (addr_conf->quic) {
+                name = "quic";
+
+#if (NJT_QUIC_OPENSSL_COMPAT)
+                if (njt_http_ssl_quic_compat_dynamic_init(cf, cscf) != NJT_OK) {
+                    return NJT_ERROR;
+                }
+#endif
+
+            } else {
+                name = "ssl";
+            }
+
+            cscf_default = addr_conf->default_server;
+            sscf = cscf_default->ctx->srv_conf[njt_http_ssl_module.ctx_index];
+
+            if (sscf->certificates) {
+
+                if (addr_conf->quic && !(sscf->protocols & NJT_SSL_TLSv1_3)) {
+                    njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                                  "\"ssl_protocols\" must enable TLSv1.3 for "
+                                  "the \"listen ... %s\" directive in %s:%ui",
+                                  name, cscf->file_name, cscf->line);
+                    return NJT_ERROR;
+                }
+
+                return NJT_OK;
+            }
+
+            if (!sscf->reject_handshake) {
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                              "no \"ssl_certificate\" is defined for "
+                              "the \"listen ... %s\" directive in %s:%ui",
+                              name, cscf->file_name, cscf->line);
+                return NJT_ERROR;
+            }
+
+            /*
+             * if no certificates are defined in the default server,
+             * check all non-default server blocks
+             */
+
+
+                sscf = cscf->ctx->srv_conf[njt_http_ssl_module.ctx_index];
+
+                if (sscf->certificates || sscf->reject_handshake) {
+                    return NJT_OK;
+                }
+
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                              "no \"ssl_certificate\" is defined for "
+                              "the \"listen ... %s\" directive in %s:%ui",
+                              name, cscf->file_name, cscf->line);
+                return NJT_ERROR;
+
+    return NJT_OK;
+}
+
 
 #if (NJT_QUIC_OPENSSL_COMPAT)
 
@@ -1493,4 +1621,76 @@ njt_http_ssl_quic_compat_init(njt_conf_t *cf, njt_http_conf_addr_t *addr)
     return NJT_OK;
 }
 
+static njt_int_t
+njt_http_ssl_quic_compat_dynamic_init(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf)
+{
+	njt_http_ssl_srv_conf_t    *sscf;
+	sscf = cscf->ctx->srv_conf[njt_http_ssl_module.ctx_index];
+	if(sscf != NULL) {
+		if (sscf->certificates || sscf->reject_handshake) {
+			if (njt_quic_compat_init(cf, sscf->ssl.ctx) != NJT_OK) {
+				return NJT_ERROR;
+			}
+		}
+	}
+
+	return NJT_OK;
+}
+
+#endif
+
+
+#if (NJT_HAVE_SET_ALPN)
+static char *
+njt_http_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+
+    njt_http_ssl_srv_conf_t  *scf = conf;
+
+    u_char      *p;
+    size_t       len;
+    njt_str_t   *value;
+    njt_uint_t   i;
+
+    if (scf->alpn.len) {
+        return "is duplicate";
+    }
+
+    value = cf->args->elts;
+
+    len = 0;
+
+    for (i = 1; i < cf->args->nelts; i++) {
+
+        if (value[i].len > 255) {
+            return "protocol too long";
+        }
+
+        len += value[i].len + 1;
+    }
+
+    scf->alpn.data = njt_pnalloc(cf->pool, len);
+    if (scf->alpn.data == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    p = scf->alpn.data;
+
+    for (i = 1; i < cf->args->nelts; i++) {
+        *p++ = value[i].len;
+        p = njt_cpymem(p, value[i].data, value[i].len);
+    }
+
+    scf->alpn.len = len;
+
+    return NJT_CONF_OK;
+
+#else
+    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                       "the \"ssl_alpn\" directive requires OpenSSL "
+                       "with ALPN support");
+    return NJT_CONF_ERROR;
+#endif
+}
 #endif

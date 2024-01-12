@@ -1,6 +1,6 @@
 # OpenNJet
 
-![Static Badge](https://img.shields.io/badge/Release-V1.2.2-blue?link=https%3A%2F%2Fgitee.com%2Fnjet-rd%2Fnjet%2Ftags)![Static Badge](https://img.shields.io/badge/License-MulanPSL%202.0-blue)
+![Static Badge](https://img.shields.io/badge/License-MulanPSL%202.0-blue)
 
 OpenNJet 应用引擎是基于 NGINX 的面向互联网和**云原生**应用提供的运行时组态服务程序，作为底层引擎，OpenNJet 实现了**NGINX 云原生功能增强、安全加固和代码重构**，利用动态加载机制可以实现不同的产品形态，如Web服务器、流媒体服务器、负载均衡、代理(Proxy)、应用中间件、API网关、消息队列等产品形态等等。OpenNJet 在云原生架构中作为数据平面，除了提供南北向通信网关的功能以外，还提供了服务网格中东西向通信能力。在原有功能基础上增加了透明流量劫持、熔断、遥测与故障注入等新功能特性。
 
@@ -33,8 +33,6 @@ OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，OpenNJet 具有
 
 - [功能规划](https://gitee.com/njet-rd/njet/milestones/190511)
 
-- [Q3 milestone](https://gitee.com/njet-rd/njet/milestones/189927)
-
 # **快速开始**
 
 提供基于 Dockerfile 文件的形式进行快速编译
@@ -49,7 +47,7 @@ OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，OpenNJet 具有
 ```
      docker build -t njet_main:v1.0 .
 
-​    docker run -v `pwd`:/njet_main njet_main:v1.0 /bin/bash -c "cd /njet_main && sh build_njet.sh"
+​    docker run -v `pwd`:/njet_main njet_main:v1.0 /bin/bash -c "cd /njet_main && ./build_cc.sh conf make"
 ```
 
 3. 编译完后，在 objs 目录下，主要包含 njet 文件和相关的 so 文件
@@ -57,6 +55,38 @@ OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，OpenNJet 具有
 ​     njet 可执行文件
 
 ​     *.so 相关模块对应的动态库文件
+
+# **APT软件源安装使用**
+
+目前支持Ubuntu 18.04/20.04/22.04 amd64 架构的操作系统通过APT源直接安装二进制软件包。步骤如下：
+
+1. 添加gpg 文件
+
+```
+sudo apt-get update
+sudo apt-get install ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://njet.org.cn/download/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/njet.gpg
+sudo chmod a+r /etc/apt/keyrings/njet.gpg
+```
+
+2. 添加APT源
+
+```
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/njet.gpg] https://njet.org.cn/download/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/njet.list > /dev/null
+sudo apt-get update
+```
+
+3. 安装及启动
+
+```
+sudo apt-get install njet
+sudo systemctl start njet
+```
+
 
 # 文档
 
