@@ -56,6 +56,38 @@ OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，OpenNJet 具有
 
 ​     *.so 相关模块对应的动态库文件
 
+# **APT软件源安装使用**
+
+目前支持Ubuntu 18.04/20.04/22.04 amd64 架构的操作系统通过APT源直接安装二进制软件包。步骤如下：
+
+1. 添加gpg 文件
+
+```
+sudo apt-get update
+sudo apt-get install ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://njet.org.cn/download/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/njet.gpg
+sudo chmod a+r /etc/apt/keyrings/njet.gpg
+```
+
+2. 添加APT源
+
+```
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/njet.gpg] https://njet.org.cn/download/linux/ubuntu \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/njet.list > /dev/null
+sudo apt-get update
+```
+
+3. 安装及启动
+
+```
+sudo apt-get install njet
+sudo systemctl start njet
+```
+
+
 # 文档
 
 获取更多的信息和使用说明，可以从 [文档](https://gitee.com/njet-rd/docs) 开启OpenNJet的世界！
