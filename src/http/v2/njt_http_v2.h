@@ -25,8 +25,6 @@
 #define NJT_HTTP_V2_MAX_FIELD                                                 \
     (127 + (1 << (NJT_HTTP_V2_INT_OCTETS - 1) * 7) - 1)
 
-#define NJT_HTTP_V2_STREAM_ID_SIZE       4
-
 #define NJT_HTTP_V2_FRAME_HEADER_SIZE    9
 
 /* frame types */
@@ -63,6 +61,14 @@ typedef struct njt_http_v2_out_frame_s    njt_http_v2_out_frame_t;
 typedef u_char *(*njt_http_v2_handler_pt) (njt_http_v2_connection_t *h2c,
     u_char *pos, u_char *end);
 
+
+typedef struct {
+    njt_flag_t                       enable;
+    size_t                           pool_size;
+    njt_uint_t                       concurrent_streams;
+    size_t                           preread_size;
+    njt_uint_t                       streams_index_mask;
+} njt_http_v2_srv_conf_t;
 
 typedef struct {
     njt_str_t                        name;
@@ -127,9 +133,6 @@ struct njt_http_v2_connection_s {
     njt_uint_t                       idle;
     njt_uint_t                       priority_limit;
 
-    njt_uint_t                       pushing;
-    njt_uint_t                       concurrent_pushes;
-
     size_t                           send_window;
     size_t                           recv_window;
     size_t                           init_window;
@@ -156,7 +159,6 @@ struct njt_http_v2_connection_s {
 
     njt_uint_t                       closed_nodes;
     njt_uint_t                       last_sid;
-    njt_uint_t                       last_push;
 
     time_t                           lingering_time;
 
@@ -164,7 +166,6 @@ struct njt_http_v2_connection_s {
     unsigned                         table_update:1;
     unsigned                         blocked:1;
     unsigned                         goaway:1;
-    unsigned                         push_disabled:1;
 };
 
 
@@ -294,9 +295,6 @@ void njt_http_v2_init(njt_event_t *rev);
 njt_int_t njt_http_v2_read_request_body(njt_http_request_t *r);
 njt_int_t njt_http_v2_read_unbuffered_request_body(njt_http_request_t *r);
 
-njt_http_v2_stream_t *njt_http_v2_push_stream(njt_http_v2_stream_t *parent,
-    njt_str_t *path);
-
 void njt_http_v2_close_stream(njt_http_v2_stream_t *stream, njt_int_t rc);
 
 njt_int_t njt_http_v2_send_output_queue(njt_http_v2_connection_t *h2c);
@@ -398,20 +396,25 @@ njt_int_t njt_http_v2_table_size(njt_http_v2_connection_t *h2c, size_t size);
 #define NJT_HTTP_V2_STATUS_404_INDEX      13
 #define NJT_HTTP_V2_STATUS_500_INDEX      14
 
-#define NJT_HTTP_V2_ACCEPT_ENCODING_INDEX 16
-#define NJT_HTTP_V2_ACCEPT_LANGUAGE_INDEX 17
 #define NJT_HTTP_V2_CONTENT_LENGTH_INDEX  28
 #define NJT_HTTP_V2_CONTENT_TYPE_INDEX    31
 #define NJT_HTTP_V2_DATE_INDEX            33
 #define NJT_HTTP_V2_LAST_MODIFIED_INDEX   44
 #define NJT_HTTP_V2_LOCATION_INDEX        46
 #define NJT_HTTP_V2_SERVER_INDEX          54
-#define NJT_HTTP_V2_USER_AGENT_INDEX      58
 #define NJT_HTTP_V2_VARY_INDEX            59
+
+#define NJT_HTTP_V2_PREFACE_START         "PRI * HTTP/2.0\r\n"
+#define NJT_HTTP_V2_PREFACE_END           "\r\nSM\r\n\r\n"
+#define NJT_HTTP_V2_PREFACE               NJT_HTTP_V2_PREFACE_START           \
+                                          NJT_HTTP_V2_PREFACE_END
 
 
 u_char *njt_http_v2_string_encode(u_char *dst, u_char *src, size_t len,
     u_char *tmp, njt_uint_t lower);
+
+
+extern njt_module_t  njt_http_v2_module;
 
 
 #endif /* _NJT_HTTP_V2_H_INCLUDED_ */

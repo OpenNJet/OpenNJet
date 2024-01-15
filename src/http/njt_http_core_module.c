@@ -4826,6 +4826,11 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
         if (njt_strcmp(value[n].data, "http2") == 0) {
 #if (NJT_HTTP_V2)
+            njt_conf_log_error(NJT_LOG_WARN, cf, 0,
+                               "the \"listen ... http2\" directive "
+                               "is deprecated, use "
+                               "the \"http2\" directive instead");
+
             lsopt.http2 = 1;
             continue;
 #else

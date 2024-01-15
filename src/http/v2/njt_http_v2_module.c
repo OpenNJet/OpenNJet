@@ -28,8 +28,6 @@ static void *njt_http_v2_create_loc_conf(njt_conf_t *cf);
 static char *njt_http_v2_merge_loc_conf(njt_conf_t *cf, void *parent,
     void *child);
 
-static char *njt_http_v2_push(njt_conf_t *cf, njt_command_t *cmd, void *conf);
-
 static char *njt_http_v2_recv_buffer_size(njt_conf_t *cf, void *post,
     void *data);
 static char *njt_http_v2_pool_size(njt_conf_t *cf, void *post, void *data);
@@ -76,6 +74,13 @@ static njt_conf_post_t  njt_http_v2_chunk_size_post =
 
 static njt_command_t  njt_http_v2_commands[] = {
 
+    { njt_string("http2"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_FLAG,
+      njt_conf_set_flag_slot,
+      NJT_HTTP_SRV_CONF_OFFSET,
+      offsetof(njt_http_v2_srv_conf_t, enable),
+      NULL },
+
     { njt_string("http2_recv_buffer_size"),
       NJT_HTTP_MAIN_CONF|NJT_CONF_TAKE1,
       njt_conf_set_size_slot,
@@ -99,9 +104,9 @@ static njt_command_t  njt_http_v2_commands[] = {
 
     { njt_string("http2_max_concurrent_pushes"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
-      njt_conf_set_num_slot,
-      NJT_HTTP_SRV_CONF_OFFSET,
-      offsetof(njt_http_v2_srv_conf_t, concurrent_pushes),
+      njt_http_v2_obsolete,
+      0,
+      0,
       NULL },
 
     { njt_string("http2_max_requests"),
@@ -162,15 +167,15 @@ static njt_command_t  njt_http_v2_commands[] = {
 
     { njt_string("http2_push_preload"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_FLAG,
-      njt_conf_set_flag_slot,
-      NJT_HTTP_LOC_CONF_OFFSET,
-      offsetof(njt_http_v2_loc_conf_t, push_preload),
+      njt_http_v2_obsolete,
+      0,
+      0,
       NULL },
 
     { njt_string("http2_push"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
-      njt_http_v2_push,
-      NJT_HTTP_LOC_CONF_OFFSET,
+      njt_http_v2_obsolete,
+      0,
       0,
       NULL },
 
@@ -315,10 +320,11 @@ njt_http_v2_create_srv_conf(njt_conf_t *cf)
         return NULL;
     }
 
+    h2scf->enable = NJT_CONF_UNSET;
+
     h2scf->pool_size = NJT_CONF_UNSET_SIZE;
 
     h2scf->concurrent_streams = NJT_CONF_UNSET_UINT;
-    h2scf->concurrent_pushes = NJT_CONF_UNSET_UINT;
 
     h2scf->preread_size = NJT_CONF_UNSET_SIZE;
 
@@ -334,12 +340,12 @@ njt_http_v2_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_http_v2_srv_conf_t *prev = parent;
     njt_http_v2_srv_conf_t *conf = child;
 
+    njt_conf_merge_value(conf->enable, prev->enable, 0);
+
     njt_conf_merge_size_value(conf->pool_size, prev->pool_size, 4096);
 
     njt_conf_merge_uint_value(conf->concurrent_streams,
                               prev->concurrent_streams, 128);
-    njt_conf_merge_uint_value(conf->concurrent_pushes,
-                              prev->concurrent_pushes, 10);
 
     njt_conf_merge_size_value(conf->preread_size, prev->preread_size, 65536);
 
@@ -360,16 +366,7 @@ njt_http_v2_create_loc_conf(njt_conf_t *cf)
         return NULL;
     }
 
-    /*
-     * set by njt_pcalloc():
-     *
-     *     h2lcf->pushes = NULL;
-     */
-
     h2lcf->chunk_size = NJT_CONF_UNSET_SIZE;
-
-    h2lcf->push_preload = NJT_CONF_UNSET;
-    h2lcf->push = NJT_CONF_UNSET;
 
     return h2lcf;
 }
@@ -382,72 +379,6 @@ njt_http_v2_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
     njt_http_v2_loc_conf_t *conf = child;
 
     njt_conf_merge_size_value(conf->chunk_size, prev->chunk_size, 8 * 1024);
-
-    njt_conf_merge_value(conf->push, prev->push, 1);
-
-    if (conf->push && conf->pushes == NULL) {
-        conf->pushes = prev->pushes;
-    }
-
-    njt_conf_merge_value(conf->push_preload, prev->push_preload, 0);
-
-    return NJT_CONF_OK;
-}
-
-
-static char *
-njt_http_v2_push(njt_conf_t *cf, njt_command_t *cmd, void *conf)
-{
-    njt_http_v2_loc_conf_t *h2lcf = conf;
-
-    njt_str_t                         *value;
-    njt_http_complex_value_t          *cv;
-    njt_http_compile_complex_value_t   ccv;
-
-    value = cf->args->elts;
-
-    if (njt_strcmp(value[1].data, "off") == 0) {
-
-        if (h2lcf->pushes) {
-            return "\"off\" parameter cannot be used with URI";
-        }
-
-        if (h2lcf->push == 0) {
-            return "is duplicate";
-        }
-
-        h2lcf->push = 0;
-        return NJT_CONF_OK;
-    }
-
-    if (h2lcf->push == 0) {
-        return "URI cannot be used with \"off\" parameter";
-    }
-
-    h2lcf->push = 1;
-
-    if (h2lcf->pushes == NULL) {
-        h2lcf->pushes = njt_array_create(cf->pool, 1,
-                                         sizeof(njt_http_complex_value_t));
-        if (h2lcf->pushes == NULL) {
-            return NJT_CONF_ERROR;
-        }
-    }
-
-    cv = njt_array_push(h2lcf->pushes);
-    if (cv == NULL) {
-        return NJT_CONF_ERROR;
-    }
-
-    njt_memzero(&ccv, sizeof(njt_http_compile_complex_value_t));
-
-    ccv.cf = cf;
-    ccv.value = &value[1];
-    ccv.complex_value = cv;
-
-    if (njt_http_compile_complex_value(&ccv) != NJT_OK) {
-        return NJT_CONF_ERROR;
-    }
 
     return NJT_CONF_OK;
 }
@@ -552,10 +483,17 @@ njt_http_v2_obsolete(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
     njt_conf_deprecated_t  *d = cmd->post;
 
-    njt_conf_log_error(NJT_LOG_WARN, cf, 0,
-                       "the \"%s\" directive is obsolete, "
-                       "use the \"%s\" directive instead",
-                       d->old_name, d->new_name);
+    if (d) {
+        njt_conf_log_error(NJT_LOG_WARN, cf, 0,
+                           "the \"%s\" directive is obsolete, "
+                           "use the \"%s\" directive instead",
+                           d->old_name, d->new_name);
+
+    } else {
+        njt_conf_log_error(NJT_LOG_WARN, cf, 0,
+                           "the \"%V\" directive is obsolete, ignored",
+                           &cmd->name);
+    }
 
     return NJT_CONF_OK;
 }

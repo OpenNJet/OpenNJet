@@ -428,7 +428,6 @@ if [ $HTTP = YES ]; then
 
     if [ $HTTP_V2 = YES ]; then
         have=NJT_HTTP_V2 . auto/have
-        have=NJT_HTTP_HEADERS . auto/have
 
         njt_module_name=njt_http_v2_module
         njt_module_incs=src/http/v2
@@ -449,7 +448,6 @@ if [ $HTTP = YES ]; then
         HTTP_SSL=YES
 
         have=NJT_HTTP_V3 . auto/have
-        have=NJT_HTTP_HEADERS . auto/have
 
         njt_module_name=njt_http_v3_module
         njt_module_incs=src/http/v3
