@@ -141,12 +141,30 @@ int  njt_ssl_stapling_index;
 njt_int_t
 njt_ssl_init(njt_log_t *log)
 {
-#if OPENSSL_VERSION_NUMBER >= 0x10100003L
+#if (OPENSSL_INIT_LOAD_CONFIG && !defined LIBRESSL_VERSION_NUMBER)
 
-    if (OPENSSL_init_ssl(OPENSSL_INIT_LOAD_CONFIG, NULL) == 0) {
+    OPENSSL_INIT_SETTINGS  *init;
+
+    init = OPENSSL_INIT_new();
+    if (init == NULL) {
+        njt_ssl_error(NJT_LOG_ALERT, log, 0, "OPENSSL_INIT_new() failed");
+        return NJT_ERROR;
+    }
+
+#ifndef OPENSSL_NO_STDIO
+    if (OPENSSL_INIT_set_config_appname(init, "njet") == 0) {
+        njt_ssl_error(NJT_LOG_ALERT, log, 0,
+                      "OPENSSL_INIT_set_config_appname() failed");
+        return NJT_ERROR;
+    }
+#endif
+
+    if (OPENSSL_init_ssl(OPENSSL_INIT_LOAD_CONFIG, init) == 0) {
         njt_ssl_error(NJT_LOG_ALERT, log, 0, "OPENSSL_init_ssl() failed");
         return NJT_ERROR;
     }
+
+    OPENSSL_INIT_free(init);
 
     /*
      * OPENSSL_init_ssl() may leave errors in the error queue
@@ -157,7 +175,7 @@ njt_ssl_init(njt_log_t *log)
 
 #else
 
-    OPENSSL_config(NULL);
+    OPENSSL_config("njet");
 
     SSL_library_init();
     SSL_load_error_strings();
