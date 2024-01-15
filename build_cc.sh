@@ -54,8 +54,8 @@ if [ "$DEBUG" = "True" ]; then
   CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
   flags="$flags --with-debug"
 else 
-  LD_OPT="-ldl -lm "
-  CC_OPT=""
+  LD_OPT="-ldl -lm"
+  CC_OPT="-O2 -g"
 fi
 
 #api doc make tar file

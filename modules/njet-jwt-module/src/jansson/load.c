@@ -97,7 +97,7 @@ static void error_set(json_error_t *error, const lex_t *lex, enum json_error_cod
 
     va_start(ap, msg);
     vsnprintf(msg_text, JSON_ERROR_TEXT_LENGTH-30, msg, ap);
-    msg_text[JSON_ERROR_TEXT_LENGTH - 1] = '\0';
+    msg_text[JSON_ERROR_TEXT_LENGTH - 31] = '\0';
     va_end(ap);
 
     if (lex) {
