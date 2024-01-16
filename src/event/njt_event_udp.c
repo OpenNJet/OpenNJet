@@ -82,7 +82,7 @@ njt_event_recvmsg(njt_event_t *ev)
             msg.msg_controllen = sizeof(msg_control);
 
             njt_memzero(&msg_control, sizeof(msg_control));
-       }
+        }
 #endif
 
         n = recvmsg(lc->fd, &msg, 0);

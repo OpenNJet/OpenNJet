@@ -348,6 +348,7 @@ njt_http_v2_read_handler(njt_event_t *rev)
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0, "http2 read handler");
 
     h2c->blocked = 1;
+    h2c->new_streams = 0;
 
     if (c->close) {
         c->close = 0;
@@ -386,13 +387,11 @@ njt_http_v2_read_handler(njt_event_t *rev)
     h2mcf = njt_http_get_module_main_conf(h2c->http_connection->conf_ctx,
                                           njt_http_v2_module);
 
-    available = h2mcf->recv_buffer_size - 2 * NJT_HTTP_V2_STATE_BUFFER_SIZE;
+    available = h2mcf->recv_buffer_size - NJT_HTTP_V2_STATE_BUFFER_SIZE;
 
     do {
         p = h2mcf->recv_buffer;
-
-        njt_memcpy(p, h2c->state.buffer, NJT_HTTP_V2_STATE_BUFFER_SIZE);
-        end = p + h2c->state.buffer_used;
+        end = njt_cpymem(p, h2c->state.buffer, h2c->state.buffer_used);
 
         n = c->recv(c, end, available);
 
@@ -1285,6 +1284,14 @@ njt_http_v2_state_headers(njt_http_v2_connection_t *h2c, u_char *pos,
         goto rst_stream;
     }
 
+    if (h2c->new_streams++ >= 2 * h2scf->concurrent_streams) {
+        njt_log_error(NJT_LOG_INFO, h2c->connection->log, 0,
+                      "client sent too many streams at once");
+
+        status = NJT_HTTP_V2_REFUSED_STREAM;
+        goto rst_stream;
+    }
+
     if (!h2c->settings_ack
         && !(h2c->state.flags & NJT_HTTP_V2_END_STREAM_FLAG)
         && h2scf->preread_size < NJT_HTTP_V2_DEFAULT_WINDOW)
@@ -1349,6 +1356,12 @@ njt_http_v2_state_headers(njt_http_v2_connection_t *h2c, u_char *pos,
     return njt_http_v2_state_header_block(h2c, pos, end);
 
 rst_stream:
+
+    if (h2c->refused_streams++ > njt_max(h2scf->concurrent_streams, 100)) {
+        njt_log_error(NJT_LOG_INFO, h2c->connection->log, 0,
+                      "client sent too many refused streams");
+        return njt_http_v2_connection_error(h2c, NJT_HTTP_V2_NO_ERROR);
+    }
 
     if (njt_http_v2_send_rst_stream(h2c, h2c->state.sid, status) != NJT_OK) {
         return njt_http_v2_connection_error(h2c, NJT_HTTP_V2_INTERNAL_ERROR);
@@ -2578,7 +2591,7 @@ njt_http_v2_state_save(njt_http_v2_connection_t *h2c, u_char *pos, u_char *end,
         return njt_http_v2_connection_error(h2c, NJT_HTTP_V2_INTERNAL_ERROR);
     }
 
-    njt_memcpy(h2c->state.buffer, pos, NJT_HTTP_V2_STATE_BUFFER_SIZE);
+    njt_memcpy(h2c->state.buffer, pos, size);
 
     h2c->state.buffer_used = size;
     h2c->state.handler = handler;

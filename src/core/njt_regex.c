@@ -605,6 +605,8 @@ njt_regex_cleanup(void *data)
      * the new cycle, these will be re-allocated.
      */
 
+    njt_regex_malloc_init(NULL);
+
     if (njt_regex_compile_context) {
         pcre2_compile_context_free(njt_regex_compile_context);
         njt_regex_compile_context = NULL;
@@ -615,6 +617,8 @@ njt_regex_cleanup(void *data)
         njt_regex_match_data = NULL;
         njt_regex_match_data_size = 0;
     }
+
+    njt_regex_malloc_done();
 
 #endif
 }
@@ -711,9 +715,6 @@ njt_regex_module_init(njt_cycle_t *cycle)
     njt_regex_malloc_done();
 
     njt_regex_studies = NULL;
-#if (NJT_PCRE2)
-    njt_regex_compile_context = NULL;
-#endif
 
     return NJT_OK;
 }

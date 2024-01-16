@@ -389,7 +389,7 @@ njt_http_v2_recv_buffer_size(njt_conf_t *cf, void *post, void *data)
 {
     size_t *sp = data;
 
-    if (*sp <= 2 * NJT_HTTP_V2_STATE_BUFFER_SIZE) {
+    if (*sp <= NJT_HTTP_V2_STATE_BUFFER_SIZE) {
         return "value is too small";
     }
 

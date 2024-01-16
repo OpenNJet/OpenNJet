@@ -563,8 +563,8 @@ njt_conf_read_token(njt_conf_t *cf)
                     }
 
                     njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                  "unexpected end of file, "
-                                  "expecting \";\" or \"}\"");
+                                       "unexpected end of file, "
+                                       "expecting \";\" or \"}\"");
                     return NJT_ERROR;
                 }
 

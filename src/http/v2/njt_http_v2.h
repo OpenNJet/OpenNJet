@@ -131,6 +131,8 @@ struct njt_http_v2_connection_s {
     njt_uint_t                       processing;
     njt_uint_t                       frames;
     njt_uint_t                       idle;
+    njt_uint_t                       new_streams;
+    njt_uint_t                       refused_streams;
     njt_uint_t                       priority_limit;
 
     size_t                           send_window;
