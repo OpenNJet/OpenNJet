@@ -587,12 +587,6 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         }
 
     }
-    // by ChengXu
-#if (NJT_HTTP_DYNAMIC_LOC)
-    cf->pool = old_pool;
-    cf->temp_pool = old_temp_pool;
-#endif
-    //end
     pclcf = pctx->loc_conf[njt_http_core_module.ctx_index];
 
     clcf = ctx->loc_conf[njt_http_core_module.ctx_index];
@@ -600,15 +594,16 @@ njt_http_rewrite_if(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     clcf->name = pclcf->name;
     clcf->noname = 1;
 
-#if (NJT_HTTP_DYNAMIC_LOC)
-    clcf->dynamic_status = 1;
-#endif
-    if (njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
-        return NJT_CONF_ERROR;
-    }
-    if (njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
-	return NJT_CONF_ERROR;
-    }
+    if(cf->dynamic != 1){
+		if (njt_http_add_location_pre_process(cf,&pclcf->locations,pclcf->pool) != NJT_OK || njt_http_add_location(cf, &pclcf->locations, clcf) != NJT_OK) {
+		    return NJT_CONF_ERROR;
+	    } 
+    } else {
+			 clcf->dynamic_status = 1;  // 1 
+	}
+    if (njt_http_add_location_pre_process(cf,&pclcf->old_locations,pclcf->pool) != NJT_OK || njt_http_add_location(cf, &pclcf->old_locations, clcf) != NJT_OK) {
+		    return NJT_CONF_ERROR;
+	}
 
     if (njt_http_rewrite_if_condition(cf, lcf) != NJT_CONF_OK) {
         return NJT_CONF_ERROR;
