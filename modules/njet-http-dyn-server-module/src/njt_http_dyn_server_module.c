@@ -759,9 +759,9 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 			}
 		} else {
 			if(escape_server_name.len > 0 && escape_server_name.data[escape_server_name.len-1] != ';') {
-				p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V; \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name);
+				p = njt_snprintf(p, remain, "listen %V %V %V;\nserver_name %V; \n}\n",&server_info->addr_port,&opt_ssl,&server_info->listen_option,&escape_server_name);
 			} else {
-				p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name);
+				p = njt_snprintf(p, remain, "listen %V %V %V;\nserver_name %V \n}\n",&server_info->addr_port,&opt_ssl,&server_info->listen_option,&escape_server_name);
 			}
 		}
 		remain = data + buffer_len - p;
@@ -1103,7 +1103,7 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 						continue;
 					}
 					addr_conf = &addr6[i].conf;
-				} else {
+				} else if (addr != NULL){
 					ssin = (struct sockaddr_in *) &u.sockaddr.sockaddr;          
 					if (addr[i].addr != ssin->sin_addr.s_addr) {
 						continue;
@@ -1114,7 +1114,9 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 					continue;
 				}
 			} else {
-				addr_conf = &addr[0].conf;
+				if(addr != NULL) {
+					addr_conf = &addr[0].conf;
+				}
 			}
 			break;
 		}
