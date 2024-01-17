@@ -26,5 +26,7 @@
 ./modules/njet-cache-purge-module
 # required
 ./modules/njet-http-fault-inject-module
+# required
+./modules/njet-alpn-module
 # optional
 ./modules/njet-jwt-module

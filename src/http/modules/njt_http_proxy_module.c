@@ -125,6 +125,13 @@ static njt_int_t njt_http_proxy_merge_ssl(njt_conf_t *cf,
 static njt_int_t njt_http_proxy_set_ssl(njt_conf_t *cf,
     njt_http_proxy_loc_conf_t *plcf);
 #endif
+
+
+#if (NJT_HAVE_SET_ALPN)
+static char *
+njt_http_proxy_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+#endif
+
 static void njt_http_proxy_set_vars(njt_url_t *u, njt_http_proxy_vars_t *v);
 
 
@@ -688,6 +695,14 @@ static njt_command_t  njt_http_proxy_commands[] = {
       njt_conf_set_flag_slot,
       NJT_HTTP_LOC_CONF_OFFSET,
       offsetof(njt_http_proxy_loc_conf_t, upstream.ssl_ntls),
+      NULL },
+#endif
+#if (NJT_HAVE_SET_ALPN)
+      { njt_string("proxy_ssl_alpn"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_1MORE,
+      njt_http_proxy_ssl_alpn,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      0,
       NULL },
 #endif
 
@@ -3477,7 +3492,7 @@ njt_http_proxy_create_loc_conf(njt_conf_t *cf)
     conf->headers_hash_bucket_size = NJT_CONF_UNSET_UINT;
 
     njt_str_set(&conf->upstream.module, "proxy");
-
+    
     return conf;
 }
 
@@ -3823,6 +3838,9 @@ njt_http_proxy_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
     if (conf->upstream.ssl_ntls) {
         conf->upstream.ssl_ciphers = conf->ssl_ciphers;
     }
+#endif
+#if (NJT_HAVE_SET_ALPN)
+   njt_conf_merge_str_value(conf->proxy_ssl_alpn, prev->proxy_ssl_alpn, "");
 #endif
 
     if (conf->ssl && njt_http_proxy_set_ssl(cf, conf) != NJT_OK) {
@@ -5083,7 +5101,7 @@ static njt_int_t
 njt_http_proxy_set_ssl(njt_conf_t *cf, njt_http_proxy_loc_conf_t *plcf)
 {
     njt_pool_cleanup_t       *cln;
-
+ 
     if (plcf->upstream.ssl->ctx) {
         return NJT_OK;
     }
@@ -5243,7 +5261,21 @@ skip:
     {
         return NJT_ERROR;
     }
-
+#if (NJT_HAVE_SET_ALPN)
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+    if(plcf->proxy_ssl_alpn.len >  0) {
+   
+     if (SSL_CTX_set_alpn_protos(plcf->upstream.ssl->ctx,
+                                (u_char *)plcf->proxy_ssl_alpn.data,plcf->proxy_ssl_alpn.len)
+        != 0)
+    {
+        njt_ssl_error(NJT_LOG_EMERG, cf->log, 0,
+                      "SSL_CTX_set_alpn_protos() failed");
+        return NJT_ERROR;
+    }
+    }
+#endif
+#endif
     return NJT_OK;
 }
 
@@ -5282,3 +5314,58 @@ njt_http_proxy_set_vars(njt_url_t *u, njt_http_proxy_vars_t *v)
 
     v->uri = u->uri;
 }
+
+#if (NJT_HAVE_SET_ALPN)
+static char *
+njt_http_proxy_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+{
+#ifdef TLSEXT_TYPE_application_layer_protocol_negotiation
+
+    njt_http_proxy_loc_conf_t  *scf = conf;
+
+    u_char      *p;
+    size_t       len;
+    njt_str_t   *value;
+    njt_uint_t   i;
+
+    if (scf->proxy_ssl_alpn.len) {
+        return "is duplicate";
+    }
+
+    value = cf->args->elts;
+
+    len = 0;
+
+    for (i = 1; i < cf->args->nelts; i++) {
+
+        if (value[i].len > 255) {
+            return "protocol too long";
+        }
+
+        len += value[i].len + 1;
+    }
+
+    scf->proxy_ssl_alpn.data = njt_pnalloc(cf->pool, len);
+    if (scf->proxy_ssl_alpn.data == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    p = scf->proxy_ssl_alpn.data;
+
+    for (i = 1; i < cf->args->nelts; i++) {
+        *p++ = value[i].len;
+        p = njt_cpymem(p, value[i].data, value[i].len);
+    }
+
+    scf->proxy_ssl_alpn.len = len;
+
+    return NJT_CONF_OK;
+
+#else
+    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                       "the \"proxy_ssl_alpn\" directive requires OpenSSL "
+                       "with ALPN support");
+    return NJT_CONF_ERROR;
+#endif
+}
+#endif

@@ -25,7 +25,7 @@ static njt_int_t njt_dyn_range_check_param(dyn_range_api_t *api_data,
     u_char                      data_buf[1024];
     u_char                      *end;
     njt_str_t                   rpc_data_str;
-    u_char                      *p;
+    u_char                      *p = NULL;
     njt_int_t                   tmp_value;
     njt_int_t                   left_value, right_value, left_len, right_len;
     njt_uint_t                  j, has_m = 0, m_count = 0;

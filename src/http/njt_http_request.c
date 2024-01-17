@@ -2332,7 +2332,7 @@ njt_http_set_virtual_server(njt_http_request_t *r, njt_str_t *host)
     }
 
 #endif
-   njt_log_error(NJT_LOG_INFO, r->connection->log, 0,"hc->addr_conf->virtual_names=%p,addr_conf=%p",hc->addr_conf->virtual_names,hc->addr_conf);
+   //njt_log_error(NJT_LOG_INFO, r->connection->log, 0,"hc->addr_conf->virtual_names=%p,addr_conf=%p",hc->addr_conf->virtual_names,hc->addr_conf);
     rc = njt_http_find_virtual_server(r->connection,
                                       hc->addr_conf->virtual_names,
                                       host, r, &cscf);

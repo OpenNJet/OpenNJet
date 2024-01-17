@@ -759,9 +759,9 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 			}
 		} else {
 			if(escape_server_name.len > 0 && escape_server_name.data[escape_server_name.len-1] != ';') {
-				p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V; \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name);
+				p = njt_snprintf(p, remain, "listen %V %V %V;\nserver_name %V; \n}\n",&server_info->addr_port,&opt_ssl,&server_info->listen_option,&escape_server_name);
 			} else {
-				p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name);
+				p = njt_snprintf(p, remain, "listen %V %V %V;\nserver_name %V \n}\n",&server_info->addr_port,&opt_ssl,&server_info->listen_option,&escape_server_name);
 			}
 		}
 		remain = data + buffer_len - p;
@@ -1007,19 +1007,19 @@ static njt_int_t njt_http_dyn_server_post_merge_servers() {
 	return NJT_ERROR;
 }
 static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
-    njt_listening_t *ls, *target_ls = NULL;
-    njt_uint_t i;
+	njt_listening_t *ls, *target_ls = NULL;
+	njt_uint_t i;
 	in_port_t  nport;
- 
-    njt_http_port_t *port;
-    njt_http_in_addr_t *addr;
-    njt_http_in6_addr_t *addr6;
-    njt_http_addr_conf_t *addr_conf;
-    njt_str_t server_low_name;
+	njt_uint_t         worker;
+	njt_http_port_t *port;
+	njt_http_in_addr_t *addr;
+	njt_http_in6_addr_t *addr6;
+	njt_http_addr_conf_t *addr_conf;
+	njt_str_t server_low_name;
 	njt_url_t  u;
 	struct sockaddr_in   *ssin;
 #if (NJT_HAVE_INET6)
-    struct sockaddr_in6  *ssin6;
+	struct sockaddr_in6  *ssin6;
 #endif
 
 	njt_pool_t *pool;
@@ -1028,9 +1028,9 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 
 	pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
 	if(pool == NULL) {
-		 return NULL;
+		return NULL;
 	}
-	
+
 	njt_memzero(&u,sizeof(njt_url_t));
 	u.url = *addr_port;
 	u.default_port = 80;
@@ -1039,56 +1039,63 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 	if (njt_parse_url(pool, &u) != NJT_OK) {
 		goto out;
 	}
-    
-    if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 ) {
-	
-	server_low_name.data = njt_pnalloc(pool,server_name->len);
-	if(server_low_name.data == NULL) {
-		goto out;
-	}
-	server_low_name.len = server_name->len;
-	njt_strlow(server_low_name.data, server_name->data,server_name->len);
 
-	server_name = &server_low_name;
+	if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 ) {
 
-	    ls = cycle->listening.elts;
-	    for (i = 0; i < cycle->listening.nelts; i++) {
-            if(ls[i].server_type != NJT_HTTP_SERVER_TYPE){
-                continue; // 非http listen
-            }
+		server_low_name.data = njt_pnalloc(pool,server_name->len);
+		if(server_low_name.data == NULL) {
+			goto out;
+		}
+		server_low_name.len = server_name->len;
+		njt_strlow(server_low_name.data, server_name->data,server_name->len);
+
+		server_name = &server_low_name;
+		worker = njt_worker;
+		if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+                        worker = 0;
+                }
+		ls = cycle->listening.elts;
+		for (i = 0; i < cycle->listening.nelts; i++) {
+			if(ls[i].server_type != NJT_HTTP_SERVER_TYPE){
+				continue; // 非http listen
+			}
+			 if (ls[i].reuseport && ls[i].worker != worker) {
+                                continue;
+                        }
+
 			nport = 0;
-			 if (njt_cmp_sockaddr(ls[i].sockaddr, ls[i].socklen,
-                                     &u.sockaddr.sockaddr, u.socklen, 1)
-                    == NJT_OK) {
-                target_ls = &ls[i];
-                break;
-            } else if(ls[i].sockaddr->sa_family != AF_UNIX && ls[i].sockaddr->sa_family == u.family && njt_inet_wildcard(ls[i].sockaddr) == 1){
+			if (njt_cmp_sockaddr(ls[i].sockaddr, ls[i].socklen,
+						&u.sockaddr.sockaddr, u.socklen, 1)
+					== NJT_OK) {
+				target_ls = &ls[i];
+				break;
+			} else if(ls[i].sockaddr->sa_family != AF_UNIX && ls[i].sockaddr->sa_family == u.family && njt_inet_wildcard(ls[i].sockaddr) == 1){
 				nport = njt_inet_get_port(ls[i].sockaddr);
 				if(nport == u.port) {
 					target_ls = &ls[i];
-	                break;
+					break;
 				}
 			}
-        }
-        if (target_ls == NULL) {
-            njt_log_error(NJT_LOG_INFO, cycle->log, 0, "can`t find listen server %V",addr_port);
-            goto out;
-        }
-        port = target_ls->servers;
-        addr=NULL;
-        addr6=NULL;
-        switch (target_ls->sockaddr->sa_family) {
+		}
+		if (target_ls == NULL) {
+			njt_log_error(NJT_LOG_INFO, cycle->log, 0, "can`t find listen server %V",addr_port);
+			goto out;
+		}
+		port = target_ls->servers;
+		addr=NULL;
+		addr6=NULL;
+		switch (target_ls->sockaddr->sa_family) {
 
 #if (NJT_HAVE_INET6)
-            case AF_INET6:
-                addr6 = port->addrs;
-                break;
+			case AF_INET6:
+				addr6 = port->addrs;
+				break;
 #endif
-            default: /* AF_INET */
-                addr = port->addrs;
-                break;
-        }
-        for (i = 0; i < port->naddrs ; ++i) {
+			default: /* AF_INET */
+				addr = port->addrs;
+				break;
+		}
+		for (i = 0; i < port->naddrs ; ++i) {
 			if(target_ls->sockaddr->sa_family != AF_UNIX) {
 				if (addr6 != NULL) {
 					ssin6 = (struct sockaddr_in6 *) &u.sockaddr.sockaddr; 
@@ -1096,7 +1103,7 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 						continue;
 					}
 					addr_conf = &addr6[i].conf;
-				} else {
+				} else if (addr != NULL){
 					ssin = (struct sockaddr_in *) &u.sockaddr.sockaddr;          
 					if (addr[i].addr != ssin->sin_addr.s_addr) {
 						continue;
@@ -1107,16 +1114,18 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 					continue;
 				}
 			} else {
-				addr_conf = &addr[0].conf;
+				if(addr != NULL) {
+					addr_conf = &addr[0].conf;
+				}
 			}
 			break;
-        }
-    }
+		}
+	}
 out:
 	if(pool != NULL) {
 		njt_destroy_pool(pool);
 	}
-    return addr_conf;
+	return addr_conf;
 }
 
 

@@ -2033,9 +2033,9 @@ njt_worker_process_exit(njt_cycle_t *cycle)
 void
 njt_helper_process_exit(njt_cycle_t *cycle)
 {
-    njt_uint_t         i;
+    njt_uint_t          i;
+    njt_connection_t    *c = NULL;
 #if (NJT_DEBUG)
-    njt_connection_t    *c;
     njt_event_t              *read_events;
     njt_event_t              *write_events;
 #endif
@@ -2067,6 +2067,27 @@ njt_helper_process_exit(njt_cycle_t *cycle)
     njt_cycle = &njt_exit_cycle;
 
     njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "exit");
+
+//add by clb
+//close all connection of active
+    c = cycle->connections;
+    for (i = 0; i < cycle->connection_n; i++) {
+        if (c[i].fd == (njt_socket_t) -1
+            || c[i].read == NULL
+            || c[i].read->accept
+            || c[i].read->channel
+            || c[i].read->resolver)
+        {
+            continue;
+        }
+
+        c[i].close = 1;
+        c[i].error = 1;
+
+        c[i].read->handler(c[i].read);
+    }
+//end
+
 #if (NJT_DEBUG)
     	read_events = cycle->read_events;
 	write_events = cycle->write_events;

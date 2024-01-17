@@ -55,7 +55,7 @@ if [ "$DEBUG" = "True" ]; then
   flags="$flags --with-debug"
 else 
   LD_OPT="-ldl -lm "
-  CC_OPT="-O0 -ggdb"
+  CC_OPT=""
 fi
 
 #api doc make tar file

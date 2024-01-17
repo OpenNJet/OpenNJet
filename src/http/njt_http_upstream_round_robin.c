@@ -574,7 +574,7 @@ njt_http_upstream_get_peer(njt_http_upstream_rr_peer_data_t *rrp)
 
     best = NULL;
     total = 0;
-
+    peer_slow_weight = 0;
 #if (NJT_SUPPRESS_WARN)
     p = 0;
 #endif
