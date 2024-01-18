@@ -85,7 +85,7 @@ typedef struct {
 static void error_set(json_error_t *error, const lex_t *lex, enum json_error_code code,
                       const char *msg, ...) {
     va_list ap;
-    char msg_text[JSON_ERROR_TEXT_LENGTH-30];
+    char msg_text[JSON_ERROR_TEXT_LENGTH];
     char msg_with_context[JSON_ERROR_TEXT_LENGTH];
 
     int line = -1, col = -1;
@@ -96,8 +96,8 @@ static void error_set(json_error_t *error, const lex_t *lex, enum json_error_cod
         return;
 
     va_start(ap, msg);
-    vsnprintf(msg_text, JSON_ERROR_TEXT_LENGTH-30, msg, ap);
-    msg_text[JSON_ERROR_TEXT_LENGTH - 31] = '\0';
+    vsnprintf(msg_text, JSON_ERROR_TEXT_LENGTH, msg, ap);
+    msg_text[JSON_ERROR_TEXT_LENGTH - 1] = '\0';
     va_end(ap);
 
     if (lex) {
@@ -689,7 +689,7 @@ static json_t *parse_object(lex_t *lex, size_t flags, json_error_t *error) {
         }
 
         if (flags & JSON_REJECT_DUPLICATES) {
-            if (json_object_get(object, key)) {
+            if (json_object_getn(object, key, len)) {
                 jsonp_free(key);
                 error_set(error, lex, json_error_duplicate_key, "duplicate object key");
                 goto error;
@@ -710,7 +710,7 @@ static json_t *parse_object(lex_t *lex, size_t flags, json_error_t *error) {
             goto error;
         }
 
-        if (json_object_set_new_nocheck(object, key, value)) {
+        if (json_object_setn_new_nocheck(object, key, len, value)) {
             jsonp_free(key);
             goto error;
         }
