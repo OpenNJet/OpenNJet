@@ -2744,9 +2744,10 @@ njt_proxy_protocol_v2_write(njt_stream_session_t *s, u_char *buf, u_char *last)
 #if (NJT_HAVE_INET6)
     struct sockaddr_in6  *sin6;
 #endif
-     njt_uint_t                    i;
+    njt_uint_t                    i;
     struct pp2_tlv                ptlv;
     u_char                        *p;
+    uint16_t                       len;
     in_port_t  port, lport;
     njt_proxy_protocol_header_t        *header;
     static const u_char signature[] = "\r\n\r\n\0\r\nQUIT\n";
@@ -2842,7 +2843,9 @@ njt_proxy_protocol_v2_write(njt_stream_session_t *s, u_char *buf, u_char *last)
            
 
         }
-        *(uint16_t*)(&header->len) = htons(p - buf - sizeof(njt_proxy_protocol_header_t));
+	len = htons(p - buf - sizeof(njt_proxy_protocol_header_t));
+	njt_memcpy(&header->len,&len,sizeof(uint16_t));
+        //*(uint16_t*)(&header->len) = htons(p - buf - sizeof(njt_proxy_protocol_header_t));
         return p;
 #endif
         return NULL;
