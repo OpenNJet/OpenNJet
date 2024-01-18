@@ -262,6 +262,8 @@ add_library(njetmq STATIC ${MOSQ_SRCS})
 target_link_libraries(njetmq ${MOSQ_LIBS})
 
 if (UNIX)
+	
+	set_target_properties(njetmq PROPERTIES COMPILE_FLAGS "-fPIC")
 	if (APPLE)
 		set_target_properties(njetmq PROPERTIES LINK_FLAGS "-Wl,-exported_symbols_list -Wl,${mosquitto_SOURCE_DIR}/src/linker-macosx.syms")
 	else (APPLE)
