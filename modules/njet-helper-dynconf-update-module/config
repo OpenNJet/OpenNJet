@@ -1,0 +1,7 @@
+njt_addon_name=njt_helper_dynconf_update_module
+
+njt_module_type=HTTP
+njt_module_name=njt_helper_dynconf_update_module
+njt_module_srcs="$njt_addon_dir/njt_helper_dynconf_update_module.c"
+CORE_INCS="$CORE_INCS $njt_addon_dir"
+. auto/module

@@ -189,6 +189,18 @@ END
 
 fi
 
+if test -n "$GO_CONF_HELPER_PATH"; then
+if test -f "$GO_CONF_HELPER_PATH"; then
+
+    cat << END                                                >> $NJT_MAKEFILE
+
+	cp $GO_CONF_HELLPER_PATH '\$(DESTDIR)`dirname "$NJT_SBIN_PATH"`/go-conf-helper'
+END
+	# ln -sf '\$(DESTDIR)`dirname "$NJT_SBIN_PATH"`/conf-merge' '\$(DESTDIR)$NJT_CONF_PREFIX/go-conf-helper'
+
+fi
+fi
+
 
 if test -n "$DYNAMIC_MODULES"; then
     cat << END                                                >> $NJT_MAKEFILE

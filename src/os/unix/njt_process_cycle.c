@@ -83,6 +83,13 @@ njt_uint_t    njt_privileged_agent_exited = 0;
 njt_uint_t    njt_master_listening_count = 0;
 njt_uint_t    njt_is_privileged_helper = 0;
 njt_conf_check_cmd_handler_pt  njt_conf_check_cmd_handler = NULL;
+// add for dyn conf
+njt_str_t     njt_conf_json;
+void         *njt_conf_pool_ptr = NULL;
+void         *njt_conf_cur_ptr = NULL;
+void         *njt_conf_dyn_loc_ptr = NULL;
+void         *njt_conf_dyn_loc_pool = NULL;
+// end for dyn conf
 
 
 static u_char  master_process[] = "master process";

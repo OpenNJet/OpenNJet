@@ -8,6 +8,7 @@
 
 #include <njt_config.h>
 #include <njt_core.h>
+#include <njt_dyn_conf.h>
 
 #define NJT_CONF_BUFFER  4096
 
@@ -63,10 +64,10 @@ static njt_uint_t argument_number[] = {
 char *
 njt_conf_param(njt_conf_t *cf)
 {
-    char             *rv;
-    njt_str_t        *param;
-    njt_buf_t         b;
-    njt_conf_file_t   conf_file;
+    char              *rv;
+    njt_str_t         *param;
+    njt_buf_t          b;
+    njt_conf_file_t    conf_file;
 
     param = &cf->cycle->conf_param;
 
@@ -91,6 +92,7 @@ njt_conf_param(njt_conf_t *cf)
     cf->conf_file = &conf_file;
     cf->conf_file->buffer = &b;
 
+    
     rv = njt_conf_parse(cf, NULL);
 
     cf->conf_file = NULL;
@@ -249,7 +251,7 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
         type = parse_param;
     }
 
-
+ 
     for ( ;; ) {
         rc = njt_conf_read_token(cf);
 
@@ -266,6 +268,15 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
         if (rc == NJT_ERROR) {
             goto done;
         }
+
+        // add by dyn_conf
+        if (njt_conf_pool_ptr != NULL) { 
+            if (njt_conf_element_handler(njt_conf_pool_ptr, cf, rc) != NJT_OK) {
+                printf("error occured \n");
+            }
+        }
+        // end of add
+
 
         if (rc == NJT_CONF_BLOCK_DONE) {
 

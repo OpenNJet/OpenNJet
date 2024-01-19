@@ -3,6 +3,7 @@
  * Copyright (C) Nginx, Inc.
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
+
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
@@ -414,6 +415,16 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
 	
     //note: delete queue memory, which delete when remove queue 
     //njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "delete  location [%V] succ!",&location_name);
+
+    // add for dyn_loc conf update
+	if (njt_process == NJT_PROCESS_HELPER) {
+		njt_pool_t *dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
+		njt_conf_dyn_loc_del_loc(njt_conf_dyn_loc_pool, njt_conf_dyn_loc_ptr, (void *)location_info);
+		njt_conf_dyn_loc_save_pub_to_file(dyn_pool, njt_cycle->log, njt_conf_dyn_loc_ptr);
+		njt_destroy_pool(dyn_pool);
+	}
+	// end for dyn_loc conf update
+
     return NJT_OK;
 	
 }
@@ -490,6 +501,11 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     njt_http_location_queue_t *lq;
 
     njt_str_t location_path; // = njt_string("./conf/add_location.txt");
+	
+	// add for dyn_conf update
+	njt_conf_element_t *dyn_loc = NULL;
+	njt_pool_t         *dyn_pool = NULL;
+	// end for dyn_conf update
 
     //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add location start +++++++++++++++");
 
@@ -606,7 +622,25 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 
 	njt_conf_check_cmd_handler = njt_http_location_check_location_body;
 
+	// add for dyn_conf update
+	if (njt_process == NJT_PROCESS_HELPER) {
+		dyn_loc = njt_pcalloc(njt_cycle->pool, sizeof(njt_conf_element_t));
+		if (dyn_loc == NULL) {
+			rc = NJT_ERROR;
+			goto out;
+		}
+		njt_conf_cur_ptr = dyn_loc;
+		njt_conf_init_conf_parse(dyn_loc, njt_conf_dyn_loc_pool);
+	}
+
     rv = njt_conf_parse(&conf, &location_path);
+		
+	// add for dyn_conf update
+	if (njt_process == NJT_PROCESS_HELPER) {
+		njt_conf_finish_conf_parse(); 
+	}
+	// end for dyn_conf update
+
     if (rv != NULL) {
 	
 		//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse  location[%V] error:%s",&location_name,rv);
@@ -666,7 +700,29 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
         goto out;
     }
     //njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "add location end +++++++++++++++");
+
+	// add for dyn_conf update
+	if (njt_process == NJT_PROCESS_HELPER) {
+		dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
+		if (dyn_pool == NULL) {
+			rc = NJT_ERROR;
+			goto out;
+		}
+		njt_int_t ret;
+		// printf("end of add dyn location . --------------------------\n");
+		ret = njt_conf_dyn_loc_merge_location(njt_conf_dyn_loc_pool, &location_info->addr_port, &location_info->server_name, dyn_loc);
+		njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "dyn loc merge result %ld", ret);
+		ret = njt_conf_dyn_loc_add_loc(njt_conf_dyn_loc_pool, njt_conf_dyn_loc_ptr, (void *)location_info);
+		njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "dyn loc add result %ld", ret);
+		njt_conf_dyn_loc_save_pub_to_file(dyn_pool, njt_cycle->log, njt_conf_dyn_loc_ptr);
+	}
+    // njt_destroy_pool(dyn_pool);
+	// end for dyn_conf update
+
 out:
+    if (dyn_pool != NULL) {
+		njt_destroy_pool(dyn_pool);
+	}
     if(rc != NJT_OK) {
     	   //njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  location [%V] error!",&location_name);
     } else {
@@ -754,6 +810,45 @@ static int njt_agent_location_change_handler_internal(njt_str_t *key, njt_str_t 
 	return NJT_OK;
 }
 
+static njt_str_t *njt_dyn_location_dump_conf(njt_cycle_t *cycle, njt_pool_t *pool) {
+	
+	// njt_str_t *ret = njt_pcalloc(cycle->pool, sizeof(njt_str_t));
+	njt_str_t *ret = njt_conf_dyn_loc_get_ins_str(pool, njt_conf_dyn_loc_ptr);
+	return ret;
+}
+static u_char *njt_agent_location_get_handler(njt_str_t *topic, njt_str_t *request, int *len, void *data) {
+    njt_cycle_t *cycle;
+    njt_str_t *msg;
+    u_char *buf;
+    njt_pool_t *pool = NULL;
+
+    buf = NULL;
+    cycle = (njt_cycle_t *)njt_cycle;
+    *len = 0;
+
+    pool = njt_create_pool(njt_pagesize, njt_cycle->log);
+    if (pool == NULL) {
+        njt_log_error(NJT_LOG_EMERG, pool->log, 0, "njt_dyn_bwlist_rpc_handler create pool error");
+        goto out;
+    }
+
+    msg = njt_dyn_location_dump_conf(cycle, pool);
+    buf = njt_calloc(msg->len, cycle->log);
+    if (buf == NULL) {
+        goto out;
+    }
+
+    njt_memcpy(buf, msg->data, msg->len);
+    *len = msg->len;
+
+out:
+    if (pool != NULL) {
+        njt_destroy_pool(pool);
+    }
+
+    return buf;
+
+}
 
 static u_char* njt_agent_location_put_handler(njt_str_t *topic, njt_str_t *request, int* len, void *data) {
     njt_str_t err_json_msg;
@@ -772,16 +867,35 @@ static int  topic_kv_change_handler(njt_str_t *key, njt_str_t *value, void *data
 static njt_int_t
 njt_http_location_init_worker(njt_cycle_t *cycle) {
 
-	njt_str_t  key = njt_string("loc");
+	// add for dyn_conf update
+	if (njt_process == NJT_PROCESS_HELPER) { // check for worker_p
+		njt_conf_dyn_loc_pool = njt_create_dynamic_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
+		if (njt_conf_dyn_loc_pool == NULL) {
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "dyn loc: create dynamic pool error ");
+			return NJT_ERROR;
+		}
+		njt_conf_dyn_loc_ptr = njt_conf_dyn_loc_init_server(njt_conf_dyn_loc_pool, njt_cycle->conf_root);
+		if (njt_conf_dyn_loc_ptr == NULL) {
+			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "dyn loc: init dyn servers error ");
+			return NJT_ERROR;
+		}
+		njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "dyn loc: init dyn loc conf finished ");
+	}
+	// end for dyn_conf update
 
+	njt_str_t  key = njt_string("loc");
+	// if (njt_process != NJT_PROCESS_WORKER && njt_process != NJT_PROCESS_SINGLE) {
+	// 	/*only works in the worker 0 prcess.*/
+	// 	return NJT_OK;
+	// }
     njt_kv_reg_handler_t h;
     njt_memzero(&h, sizeof(njt_kv_reg_handler_t));
     h.key = &key;
+	h.rpc_get_handler = njt_agent_location_get_handler;
     h.rpc_put_handler = njt_agent_location_put_handler;
     h.handler = topic_kv_change_handler;
     h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
     njt_kv_reg_handler(&h);
-
     return NJT_OK;
 }
 
