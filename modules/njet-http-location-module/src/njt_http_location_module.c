@@ -767,17 +767,17 @@ static int njt_agent_location_change_handler_internal(njt_str_t *key, njt_str_t 
 		rc = njt_http_add_location_handler(location_info,from_api_add);  //njt_http_location_delete_handler
 		if(rc != NJT_OK) {
 			if(from_api_add == 0){
-				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V",key,value);
+				//njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V",key,value);
 				njt_kv_sendmsg(key,&del_topic,0);
 			}
-			//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V",key,value);
+			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler error key=%V,value=%V",key,value);
 		} else {
 			if(key->len > worker_str.len && njt_strncmp(key->data,worker_str.data,worker_str.len) == 0) {
 				new_key.data = key->data + worker_str.len;
 				new_key.len  = key->len - worker_str.len;
 				njt_kv_sendmsg(&new_key,value,1);
 			}
-			//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V",key,value);
+			njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add topic_kv_change_handler succ key=%V,value=%V",key,value);
 		}
 	} else if(location_info->type.len == del.len && njt_strncmp(location_info->type.data,del.data,location_info->type.len) == 0 ){
 		njt_http_location_write_data(location_info);

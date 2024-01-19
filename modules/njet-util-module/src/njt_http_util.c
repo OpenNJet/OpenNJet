@@ -47,10 +47,13 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 	}
 
 	if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 ) {
-
-		server_low_name.data = njt_pnalloc(pool,server_name->len);
-		if(server_low_name.data == NULL) {
-			goto out;
+		njt_str_null(&server_low_name);
+		if (server_name->len > 0) {
+			server_low_name.data = njt_pnalloc(pool,server_name->len);
+			if(server_low_name.data == NULL) {
+				njt_log_error(NJT_LOG_ERR, cycle->log, 0, "njt_http_get_srv_by_port alloc error!");
+				goto out;
+			}
 		}
 		server_low_name.len = server_name->len;
 		njt_strlow(server_low_name.data, server_name->data,server_name->len);
@@ -125,11 +128,7 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 			cscf = addr_conf->default_server;
 			name = cscf->server_names.elts;
 			for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
-				if(server_name->data[0] != '~' && name[j].full_name.len == server_name->len
-						&& njt_strncmp(name[j].full_name.data,server_name->data,server_name->len) == 0){
-					ret_cscf = cscf;
-					goto out;
-				} else if(server_name->data[0] == '~' && name[j].full_name.len == server_name->len
+				if(name[j].full_name.len == server_name->len
 						&& njt_strncasecmp(name[j].full_name.data,server_name->data,server_name->len) == 0){
 					ret_cscf = cscf;
 					goto out;
