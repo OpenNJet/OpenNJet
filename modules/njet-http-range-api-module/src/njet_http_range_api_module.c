@@ -500,13 +500,6 @@ njt_dyn_range_read_data(njt_http_request_t *r){
         njt_crc32_update(&crc32, (u_char*)"tcp", 3);
     }else if(api_data->type == DYN_RANGE_API_TYPE_UDP){
         njt_crc32_update(&crc32, (u_char*)"udp", 3);
-        njt_log_debug1(NJT_LOG_ERR, pool->log, 0,
-                       " tempory not support udp type %s", __func__);
-        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR_MEM_ALLOC);
-        njt_rpc_result_set_msg(rpc_result, (u_char *)" tempory not support udp type");
-
-        rc = NJT_ERROR;
-        goto err;
     }else{
         njt_crc32_update(&crc32, (u_char*)"tcp", 3);
     }

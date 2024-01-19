@@ -57,6 +57,9 @@ typedef struct {
     unsigned                       reuseport:1;
     unsigned                       so_keepalive:2;
     unsigned                       proxy_protocol:1;
+    //add by clb, used for udp and tcp traffic hack
+    njt_flag_t                     mesh:1;
+    //end add by clb
 #if (NJT_HAVE_KEEPALIVE_TUNABLE)
     int                            tcp_keepidle;
     int                            tcp_keepintvl;

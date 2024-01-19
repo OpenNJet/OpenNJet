@@ -34,9 +34,9 @@ static njt_int_t njt_dyn_range_check_param(dyn_range_api_t *api_data,
     rpc_data_str.len = 0;
 
     //check type
-    if(api_data->type != DYN_RANGE_API_TYPE_TCP){
+    if(api_data->type != DYN_RANGE_API_TYPE_TCP && api_data->type != DYN_RANGE_API_TYPE_UDP){
         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-            " type should be tcp");
+            " type should be tcp or udp");
 
         rpc_data_str.len = end - data_buf;
         njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
@@ -142,6 +142,7 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
     njt_int_t                       found = 0;
     dyn_range_api_type_t            tmp_type;
     njt_str_t                       tmp_str;
+    njt_str_t                       tmp_ip_str;
 
     
     rpc_data_str.data = data_buf;
@@ -219,7 +220,11 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
         }else if(api_data->action == DYN_RANGE_API_ACTION_DEL){
             tmp_str.data = rcf->iptables_path.path;
             tmp_str.len = rcf->iptables_path.len;
-            if(NJT_OK != njt_range_del_rule(&tmp_str, &rule_item->type, &rule_item->src_ports, rule_item->dst_port)){
+            tmp_ip_str.data = rcf->ip_path.path;
+            tmp_ip_str.len = rcf->ip_path.len;
+
+            if(NJT_OK != njt_range_operator_rule(&tmp_str, &tmp_ip_str, NJT_RANGE_ACTION_DEL,
+                    &rule_item->type, &rule_item->src_ports, rule_item->dst_port)){
                 njt_log_error(NJT_LOG_ERR, cycle->log, 0,
                         "range add rule error, type:%V  src_ports:%V  dst_port:%d",
                         &rule_item->type, &rule_item->src_ports, rule_item->dst_port);
@@ -264,7 +269,10 @@ static njt_int_t njt_update_range(njt_pool_t *pool, dyn_range_api_t *api_data,
 
             tmp_str.data = rcf->iptables_path.path;
             tmp_str.len = rcf->iptables_path.len;
-            if(NJT_OK != njt_range_add_rule(&tmp_str, &rule_item->type, &rule_item->src_ports, rule_item->dst_port)){
+            tmp_ip_str.data = rcf->ip_path.path;
+            tmp_ip_str.len = rcf->ip_path.len;
+            if(NJT_OK != njt_range_operator_rule(&tmp_str, &tmp_ip_str, NJT_RANGE_ACTION_ADD,
+                    &rule_item->type, &rule_item->src_ports, rule_item->dst_port)){
                 njt_log_error(NJT_LOG_ERR, cycle->log, 0,
                         "range add rule error, type:%V  src_ports:%V  dst_port:%d",
                         &rule_item->type, &rule_item->src_ports, rule_item->dst_port);

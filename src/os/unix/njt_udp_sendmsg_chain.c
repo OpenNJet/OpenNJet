@@ -321,7 +321,6 @@ njt_set_srcaddr_cmsg(struct cmsghdr *cmsg, struct sockaddr *local_sockaddr)
 njt_int_t
 njt_get_srcaddr_cmsg(struct cmsghdr *cmsg, struct sockaddr *local_sockaddr)
 {
-
 #if (NJT_HAVE_IP_RECVDSTADDR)
     struct in_addr       *addr;
     struct sockaddr_in   *sin;
@@ -335,9 +334,9 @@ njt_get_srcaddr_cmsg(struct cmsghdr *cmsg, struct sockaddr *local_sockaddr)
     struct sockaddr_in6  *sin6;
 #endif
 
-
  #if (NJT_HAVE_IP_RECVDSTADDR)
-
+    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+            "===================njt_get_srcaddr_cmsg ");
     if (cmsg->cmsg_level == IPPROTO_IP
         && cmsg->cmsg_type == IP_RECVDSTADDR
         && local_sockaddr->sa_family == AF_INET)
@@ -396,8 +395,13 @@ njt_sendmsg(njt_connection_t *c, struct msghdr *msg, int flags)
 #endif
 
 eintr:
-
-    n = sendmsg(c->fd, msg, flags);
+    //modify by clb, udp traffic hack need use real_sock send msg to client
+    if(c->udp && c->udp->real_sock != (njt_socket_t)-1){
+        n = sendmsg(c->udp->real_sock, msg, flags);
+    }else{
+        n = sendmsg(c->fd, msg, flags);
+    }
+    //end modify by clb
 
     if (n == -1) {
         err = njt_errno;
