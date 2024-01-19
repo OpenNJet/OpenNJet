@@ -1,0 +1,8 @@
+#!/bin/sh
+  
+if ! getent group njet >/dev/null 2>&1; then
+  /usr/sbin/groupadd njet
+fi
+if ! getent passwd njet >/dev/null 2>&1; then
+   /usr/sbin/useradd njet -g njet -M -s /sbin/nologin
+fi

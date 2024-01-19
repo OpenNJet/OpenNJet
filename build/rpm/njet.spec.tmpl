@@ -79,9 +79,6 @@ systemctl disable njet.service
 systemctl daemon-reload
 
 %postun
-if [ "$1" -eq 0 ]; then
-   rm -rf /usr/local/njet/
-fi
 
 %clean
 rm -rf %{buildroot}

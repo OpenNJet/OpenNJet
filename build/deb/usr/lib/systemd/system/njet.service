@@ -1,0 +1,17 @@
+[Unit]
+Description=njet
+After=network.target
+
+[Service]
+Type=forking
+User=njet
+Group=njet
+WorkingDirectory=/usr/local/njet
+ExecStart=/usr/local/njet/sbin/njet -p /usr/local/njet -c conf/njet.conf
+ExecStop=/usr/local/njet/sbin/njet -p /usr/local/njet -c conf/njet.conf -s stop
+ExecReload=/usr/local/njet/sbin/njet -p /usr/local/njet -c conf/njet.conf -s reload
+RestartPreventExitStatus=SIGKILL
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -79,7 +79,7 @@ njt_module_t njt_http_dyn_server_module = {
 static  njt_str_t njt_invalid_dyn_server_body[] = {
 	njt_string("zone"),
 	njt_string("location"),
-	njt_string("if"),
+	//njt_string("if"),
 	njt_string("ssl_ocsp"),
 	njt_string("ssl_stapling"),
 	njt_string("quic"),
