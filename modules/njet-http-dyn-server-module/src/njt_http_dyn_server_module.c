@@ -951,6 +951,13 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 						}
 
 					} else {
+						if(cscf->dynamic == 0) {
+							msg = server_info->buffer;
+							pdata = njt_snprintf(msg.data, msg.len, "this server,can to be delete!", &server_info->addr_port);
+							msg.len = pdata - msg.data;
+							server_info->msg = msg;
+							return NJT_ERROR;
+						}
 						name = cscf->server_names.elts;
 						for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
 							if(name[j].name.len == server_name->len
