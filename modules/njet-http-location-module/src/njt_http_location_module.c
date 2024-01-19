@@ -58,8 +58,7 @@ typedef struct njt_http_location_main_conf_s {
 
 static  njt_str_t njt_invalid_dyn_location_body[] = {
 	njt_string("zone"),
-	njt_string("if"),
-	njt_string("alias"),
+	//njt_string("alias"),
 	njt_null_string
 };
 static  njt_str_t njt_invalid_dyn_proxy_pass[] = {
@@ -976,13 +975,13 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 			} else if(rc == NJT_OK && out_items->type == NJT_JSON_STR) {
 				 sub_location->location_body = njt_del_headtail_space(out_items->strval);
 			}
-			
+			/*
 			if(sub_location->location_body.len > 0 && sub_location->location_body.data != NULL) {
 				if(njt_strstr(sub_location->location_body.data,"proxy_pass ") != NULL) {
 					njt_str_set(&location_info->msg, "directive is not allowed here in location_body");
 					return NJT_ERROR;
 				}
-			}
+			}*/
 
 			njt_str_set(&key,"locations");
 			rc = njt_struct_find(items, &key, &out_items);
