@@ -91,6 +91,7 @@ typedef void (*njt_connection_handler_pt)(njt_connection_t *c);
 #endif
 #endif
 #include <njt_process_cycle.h>
+#include <njt_dyn_conf.h>
 #include <njt_conf_file.h>
 #include <njt_module.h>
 #include <njt_open_file_cache.h>
