@@ -503,7 +503,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     njt_str_t location_path; // = njt_string("./conf/add_location.txt");
 	
 	// add for dyn_conf update
-	njt_conf_element_t *dyn_loc;
+	njt_conf_element_t *dyn_loc = NULL;
 	njt_pool_t         *dyn_pool = NULL;
 	// end for dyn_conf update
 
@@ -709,7 +709,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 			goto out;
 		}
 		njt_int_t ret;
-		printf("end of add dyn location . --------------------------\n");
+		// printf("end of add dyn location . --------------------------\n");
 		ret = njt_conf_dyn_loc_merge_location(njt_conf_dyn_loc_pool, &location_info->addr_port, &location_info->server_name, dyn_loc);
 		njt_log_error(NJT_LOG_DEBUG,njt_cycle->log, 0, "dyn loc merge result %ld", ret);
 		ret = njt_conf_dyn_loc_add_loc(njt_conf_dyn_loc_pool, njt_conf_dyn_loc_ptr, (void *)location_info);
