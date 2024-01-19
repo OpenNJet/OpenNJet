@@ -313,11 +313,27 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         return NULL;
     }
 
+    //by lcm ---------------------------------------------------
+    njt_conf_element_t *conf_root;
+    cycle->conf_root = njt_pcalloc(cycle->pool, sizeof(njt_conf_element_t));
+    conf_root = cycle->conf_root;
+    njt_memzero(conf_root, sizeof(njt_conf_element_t));
+    njt_conf_init_conf_parse(cycle->conf_root, cycle->pool);
+    //----------------------------------------------------------
+
+
+
     if (njt_conf_parse(&conf, &cycle->conf_file) != NJT_CONF_OK) {
         environ = senv;
         njt_destroy_cycle_pools(&conf);
         return NULL;
     }
+
+    // add for dyn_conf
+    njt_conf_finish_conf_parse();
+    njt_conf_check_svrname_listen(pool, conf_root);
+    // end for dyn_conf
+
 
     if (njt_conf_parse_post(cycle) != NJT_CONF_OK) {
         environ = senv;

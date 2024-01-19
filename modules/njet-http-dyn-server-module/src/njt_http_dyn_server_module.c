@@ -38,7 +38,7 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 
 static njt_int_t njt_http_dyn_server_post_merge_servers();
 static njt_int_t njt_http_dyn_server_delete_dirtyservers(njt_http_dyn_server_info_t *server_info);
-static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name);
+static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port);
 static njt_int_t  njt_http_check_server_body(njt_str_t cmd);
 
 typedef struct njt_http_dyn_server_ctx_s {
@@ -79,7 +79,7 @@ njt_module_t njt_http_dyn_server_module = {
 static  njt_str_t njt_invalid_dyn_server_body[] = {
 	njt_string("zone"),
 	njt_string("location"),
-	njt_string("if"),
+	//njt_string("if"),
 	njt_string("ssl_ocsp"),
 	njt_string("ssl_stapling"),
 	njt_string("quic"),
@@ -733,7 +733,7 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 		njt_memzero(data,buffer_len);
 		njt_str_set(&opt_ssl,"");
 		ssl = 0;
-		addr_conf = njt_http_get_ssl_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->server_name);	
+		addr_conf = njt_http_get_ssl_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port);	
 		if(addr_conf != NULL) {
 			ssl = addr_conf->ssl;
 		}
@@ -759,9 +759,9 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 			}
 		} else {
 			if(escape_server_name.len > 0 && escape_server_name.data[escape_server_name.len-1] != ';') {
-				p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V; \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name);
+				p = njt_snprintf(p, remain, "listen %V %V %V;\nserver_name %V; \n}\n",&server_info->addr_port,&opt_ssl,&server_info->listen_option,&escape_server_name);
 			} else {
-				p = njt_snprintf(p, remain, "listen %V %V;\nserver_name %V \n}\n",&server_info->addr_port,&server_info->listen_option,&escape_server_name);
+				p = njt_snprintf(p, remain, "listen %V %V %V;\nserver_name %V \n}\n",&server_info->addr_port,&opt_ssl,&server_info->listen_option,&escape_server_name);
 			}
 		}
 		remain = data + buffer_len - p;
@@ -844,7 +844,7 @@ njt_http_dyn_server_delete_regex_server_name(njt_http_conf_addr_t* addr,njt_str_
 	njt_uint_t len;
 
 	
-	if(server_name->data[0] != '~') {
+	if(server_name == NULL || server_name->len == 0 || server_name->data[0] != '~') {
 		return;
 	}
 	for(i=0; i < addr->nregex; i++) {
@@ -954,7 +954,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 						name = cscf->server_names.elts;
 						for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
 							if(name[j].name.len == server_name->len
-									&& njt_strncmp(name[j].name.data,server_name->data,server_name->len) == 0){
+									&& njt_strncasecmp(name[j].name.data,server_name->data,server_name->len) == 0){
 								njt_array_delete_idx(&cscf->server_names,j);
 								njt_http_dyn_server_delete_regex_server_name(&addr[a],server_name);
 								njt_http_dyn_server_delete_main_server(cscf);
@@ -1006,7 +1006,7 @@ static njt_int_t njt_http_dyn_server_post_merge_servers() {
 	}
 	return NJT_ERROR;
 }
-static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
+static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port){
 	njt_listening_t *ls, *target_ls = NULL;
 	njt_uint_t i;
 	in_port_t  nport;
@@ -1015,7 +1015,6 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 	njt_http_in_addr_t *addr;
 	njt_http_in6_addr_t *addr6;
 	njt_http_addr_conf_t *addr_conf;
-	njt_str_t server_low_name;
 	njt_url_t  u;
 	struct sockaddr_in   *ssin;
 #if (NJT_HAVE_INET6)
@@ -1040,16 +1039,8 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 		goto out;
 	}
 
-	if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 ) {
+	if (addr_port != NULL && addr_port->len > 0 ) {
 
-		server_low_name.data = njt_pnalloc(pool,server_name->len);
-		if(server_low_name.data == NULL) {
-			goto out;
-		}
-		server_low_name.len = server_name->len;
-		njt_strlow(server_low_name.data, server_name->data,server_name->len);
-
-		server_name = &server_low_name;
 		worker = njt_worker;
 		if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
                         worker = 0;
@@ -1103,7 +1094,7 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 						continue;
 					}
 					addr_conf = &addr6[i].conf;
-				} else {
+				} else if (addr != NULL){
 					ssin = (struct sockaddr_in *) &u.sockaddr.sockaddr;          
 					if (addr[i].addr != ssin->sin_addr.s_addr) {
 						continue;
@@ -1114,7 +1105,9 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 					continue;
 				}
 			} else {
-				addr_conf = &addr[0].conf;
+				if(addr != NULL) {
+					addr_conf = &addr[0].conf;
+				}
 			}
 			break;
 		}

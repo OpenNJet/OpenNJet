@@ -628,7 +628,10 @@ njt_int_t njt_range_init_process(njt_cycle_t *cycle){
     }
 
     //setuid
-    setuid(uid);
+    //setuid(uid);
+    if (setuid(uid) == -1) {
+            njt_log_error(NJT_LOG_ERR, cycle->log, 0, "njt_range_init_process setuid error!");
+    }
 
     //update rcf->pool->log = cycle_log
     if(rcf->pool != NJT_CONF_UNSET_PTR){

@@ -47,10 +47,13 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 	}
 
 	if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 ) {
-
-		server_low_name.data = njt_pnalloc(pool,server_name->len);
-		if(server_low_name.data == NULL) {
-			goto out;
+		njt_str_null(&server_low_name);
+		if (server_name->len > 0) {
+			server_low_name.data = njt_pnalloc(pool,server_name->len);
+			if(server_low_name.data == NULL) {
+				njt_log_error(NJT_LOG_ERR, cycle->log, 0, "njt_http_get_srv_by_port alloc error!");
+				goto out;
+			}
 		}
 		server_low_name.len = server_name->len;
 		njt_strlow(server_low_name.data, server_name->data,server_name->len);
@@ -125,11 +128,7 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 			cscf = addr_conf->default_server;
 			name = cscf->server_names.elts;
 			for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
-				if(server_name->data[0] != '~' && name[j].full_name.len == server_name->len
-						&& njt_strncmp(name[j].full_name.data,server_name->data,server_name->len) == 0){
-					ret_cscf = cscf;
-					goto out;
-				} else if(server_name->data[0] == '~' && name[j].full_name.len == server_name->len
+				if(name[j].full_name.len == server_name->len
 						&& njt_strncasecmp(name[j].full_name.data,server_name->data,server_name->len) == 0){
 					ret_cscf = cscf;
 					goto out;
@@ -392,6 +391,9 @@ void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
 	njt_http_proxy_loc_conf_t    *plcf;
 	njt_http_upstream_srv_conf_t    *upstream;
 
+	if(clcf == NULL) {
+		return;
+	}
 	locations = clcf->old_locations;
 	if (locations != NULL) {
 		for (q = njt_queue_head(locations);
@@ -399,14 +401,23 @@ void njt_http_location_destroy(njt_http_core_loc_conf_t *clcf) {
 		    ) {
 			lq = (njt_http_location_queue_t *) q;
 			q = njt_queue_next(q);
-			njt_queue_remove(&lq->queue);
+			new_clcf = NULL;
 			if (lq->exact != NULL) {
 				new_clcf = lq->exact;
-				njt_http_location_destroy(new_clcf);
+				//njt_http_location_destroy(new_clcf);
 			} else if (lq->inclusive != NULL) {
 				new_clcf = lq->inclusive;
-				njt_http_location_destroy(new_clcf); //zyg
+				//njt_http_location_destroy(new_clcf); //zyg
 			}
+		
+			if (new_clcf != NULL && (new_clcf->noname == 1 && clcf->ref_count != 0)){
+				
+			} else {
+				njt_queue_remove(&lq->queue);
+				njt_http_location_destroy(new_clcf);
+			}
+			
+			
 
 		}
 	}

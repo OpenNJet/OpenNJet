@@ -82,10 +82,22 @@ typedef struct {
 
 /*** error reporting ***/
 
+static int jansson_snprintf(char *buf, size_t max, const char *fmt, ...)
+{
+    int n;
+    va_list   args;
+
+    va_start(args, fmt);
+    n = vsnprintf(buf, max, fmt, args);
+    va_end(args);
+
+    return n;
+}
+
 static void error_set(json_error_t *error, const lex_t *lex, enum json_error_code code,
                       const char *msg, ...) {
     va_list ap;
-    char msg_text[JSON_ERROR_TEXT_LENGTH-30];
+    char msg_text[JSON_ERROR_TEXT_LENGTH];
     char msg_with_context[JSON_ERROR_TEXT_LENGTH];
 
     int line = -1, col = -1;
@@ -96,7 +108,7 @@ static void error_set(json_error_t *error, const lex_t *lex, enum json_error_cod
         return;
 
     va_start(ap, msg);
-    vsnprintf(msg_text, JSON_ERROR_TEXT_LENGTH-30, msg, ap);
+    vsnprintf(msg_text, JSON_ERROR_TEXT_LENGTH, msg, ap);
     msg_text[JSON_ERROR_TEXT_LENGTH - 1] = '\0';
     va_end(ap);
 
@@ -109,7 +121,7 @@ static void error_set(json_error_t *error, const lex_t *lex, enum json_error_cod
 
         if (saved_text && saved_text[0]) {
             if (lex->saved_text.length <= 20) {
-                snprintf(msg_with_context, JSON_ERROR_TEXT_LENGTH, "%s near '%s'",
+                jansson_snprintf(msg_with_context, JSON_ERROR_TEXT_LENGTH, "%s near '%s'",
                          msg_text, saved_text);
                 msg_with_context[JSON_ERROR_TEXT_LENGTH - 1] = '\0';
                 result = msg_with_context;
@@ -123,7 +135,7 @@ static void error_set(json_error_t *error, const lex_t *lex, enum json_error_cod
                 /* No context for UTF-8 decoding errors */
                 result = msg_text;
             } else {
-                snprintf(msg_with_context, JSON_ERROR_TEXT_LENGTH, "%s near end of file",
+                jansson_snprintf(msg_with_context, JSON_ERROR_TEXT_LENGTH, "%s near end of file",
                          msg_text);
                 msg_with_context[JSON_ERROR_TEXT_LENGTH - 1] = '\0';
                 result = msg_with_context;
@@ -689,7 +701,7 @@ static json_t *parse_object(lex_t *lex, size_t flags, json_error_t *error) {
         }
 
         if (flags & JSON_REJECT_DUPLICATES) {
-            if (json_object_get(object, key)) {
+            if (json_object_getn(object, key, len)) {
                 jsonp_free(key);
                 error_set(error, lex, json_error_duplicate_key, "duplicate object key");
                 goto error;
@@ -710,7 +722,7 @@ static json_t *parse_object(lex_t *lex, size_t flags, json_error_t *error) {
             goto error;
         }
 
-        if (json_object_set_new_nocheck(object, key, value)) {
+        if (json_object_setn_new_nocheck(object, key, len, value)) {
             jsonp_free(key);
             goto error;
         }

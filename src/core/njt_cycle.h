@@ -87,6 +87,7 @@ struct njt_cycle_s {
     njt_str_t                 error_log;
     njt_str_t                 lock_file;
     njt_str_t                 hostname;
+    void                     *conf_root;
 };
 
 

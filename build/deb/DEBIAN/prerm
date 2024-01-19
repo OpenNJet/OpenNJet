@@ -1,0 +1,5 @@
+#!/bin/sh
+  
+systemctl stop njet.service >/dev/null 2>&1
+systemctl disable njet.service
+systemctl daemon-reload
