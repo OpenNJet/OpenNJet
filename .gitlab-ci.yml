@@ -1,6 +1,7 @@
 stages:
   - build_bin
   - build_rpm
+  - build_deb
 
 build_bin:
   stage: build_bin
@@ -34,16 +35,39 @@ build_rpm:
     DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
   when: manual
   script:
-    - cd /builds/njet_dev/  
+    - cd ..  
     - tar cf /home/builder/rpm/njet_main.tar --exclude="njet_main/.git" njet_main
-    - sudo chmod +x /builds/njet_dev/njet_main/build/rpm/generate_njet_spec.sh
-    - cd /builds/njet_dev/njet_main/build/rpm && NJT_BUILD_OPT="-t $CI_COMMIT_SHA" ./generate_njet_spec.sh  && cd - 
-    - cp /builds/njet_dev/njet_main/build/rpm/njet.spec /home/builder/rpm/ 
+    - sudo chmod +x njet_main/build/rpm/generate_njet_spec.sh
+    - cd njet_main
+    - cd build/rpm && NJT_BUILD_OPT="-t $CI_COMMIT_SHA" ./generate_njet_spec.sh  && cd - 
+    - cp build/rpm/njet.spec /home/builder/rpm/ 
     - rpmbuild -bb /home/builder/rpm/njet.spec
-    - cd /builds/njet_dev/njet_main 
     - sudo mkdir -p work 
     - sudo cp -a /home/builder/rpm/x86_64/*.rpm work/ 
   artifacts:
     paths: # 需要打包的文件
       - work/*.rpm
+    expire_in: 1 week # 打包文件存储有效期
+
+build_deb:
+  stage: build_deb
+  image: tmlake/njet-build:ubuntu18.04
+  when: manual
+  script: 
+    - ./build_cc.sh -t $CI_COMMIT_SHA conf 
+    - make -j `nproc` 
+    - ./build_cc.sh install
+    - chmod +x ./build_lua.sh
+    - mkdir -p objs/scripts/register/
+    - ./build_lua.sh
+    - mkdir -p build/deb/usr/local
+    - cp -a /usr/local/njet build/deb/usr/local
+    - cp -a /usr/local/lib build/deb/usr/local/njet/
+    - cp -a objs/scripts/* build/deb/usr/local/njet/modules/
+    - cd build && ./generate_deb.sh && cd -
+    - mkdir -p work
+    - cp -a build/*.deb work/
+  artifacts:
+    paths: # 需要打包的文件
+      - work/*.deb
     expire_in: 1 week # 打包文件存储有效期

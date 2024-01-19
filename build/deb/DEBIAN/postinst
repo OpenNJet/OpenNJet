@@ -1,0 +1,10 @@
+#!/bin/sh
+
+ldconfig
+
+systemctl daemon-reload
+systemctl enable njet.service
+
+chown -R njet:njet /usr/local/njet  
+/sbin/setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw,cap_setuid=eip /usr/local/njet/sbin/njet
+
