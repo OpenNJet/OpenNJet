@@ -1320,6 +1320,9 @@ njt_conf_check_svrname_listen(njt_pool_t *pool, njt_conf_element_t *root) {
     s_http.data = njt_palloc(pool, 4);
     njt_str_set(&s_http, "http");
     http = njt_conf_get_block(root, &s_http, NULL);
+    if (http == NULL) {
+        return NJT_OK;
+    }
 
     // 查找http下面的server
     for (i = 0; i < http->blocks->nelts; i++) {
