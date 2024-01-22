@@ -1423,6 +1423,7 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
                        njt_http_conf_port_t *port, njt_http_listen_opt_t *lsopt) {
     njt_uint_t i, default_server, proxy_protocol;
     njt_http_conf_addr_t *addr;
+    njt_http_listen_opt_t old_opt;
 #if (NJT_HTTP_SSL)
     njt_uint_t ssl;
 #endif
@@ -1501,8 +1502,15 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
                                    &addr[i].opt.addr_text);
                 return NJT_ERROR;
             }
-
+            old_opt = addr[i].opt;              //by zyg
             addr[i].opt = *lsopt;
+
+            //by zyg 地址还用旧的，不会变，其他非指针的，需要赋值。
+            if(cf->dynamic == 1) {
+                addr[i].opt.sockaddr = old_opt.sockaddr;
+                addr[i].opt.socklen = old_opt.socklen;
+                addr[i].opt.addr_text = old_opt.addr_text;
+            }
         }
 
         /* check the duplicate "default" server for this address:port */

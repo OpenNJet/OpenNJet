@@ -932,6 +932,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 								njt_array_delete_idx(&port[p].addrs,a);
 							}
 							if(addr[a].default_server == cscf && addr[a].servers.nelts > 0) { //切换默认default_server
+								addr[a].opt.default_server = 0;
 								addr[a].default_server = cscfp[0];
 							}
 							if(addr[a].servers.nelts <= 1) {
