@@ -171,7 +171,7 @@ struct njt_connection_s {
     socklen_t           local_socklen;
 
     //add by clb, used for udp traffic hack
-    struct sockaddr_in  udp_real_dst_addr;
+    struct sockaddr_storage     udp_real_dst_addr;
     //end by clb
 
     njt_buf_t          *buffer;

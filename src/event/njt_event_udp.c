@@ -41,14 +41,17 @@ njt_event_recvmsg(njt_event_t *ev)
 
     //add by clb for udp traffic hack
     struct cmsghdr    *cmsg_tmp;
+    struct sockaddr_in *tmp_real_dst_addr;
     struct sockaddr_in *tmp_local_addr;
+    struct sockaddr_in6 *tmp_real_dst_addr6;
+    struct sockaddr_in6 *tmp_local_addr6;
     njt_uint_t         found = 0;
     //end by clb
 
 #if (NJT_HAVE_ADDRINFO_CMSG)
     //modify by clb, udp traffic hack need more memory(old 32bytes, modify to 64 bytes)
     // u_char             msg_control[CMSG_SPACE(sizeof(njt_addrinfo_t))];
-    u_char             msg_control[64];
+    u_char             msg_control[128];
     //end modify by clb
 #endif
 
@@ -346,31 +349,52 @@ njt_event_recvmsg(njt_event_t *ev)
         //add by clb, used for udp traffic hack
         if(ls->mesh){
             found = 0;
-            for(cmsg_tmp = CMSG_FIRSTHDR(&msg); cmsg_tmp != NULL; cmsg_tmp = CMSG_NXTHDR(&msg, cmsg_tmp)){
-                if(cmsg_tmp->cmsg_level == SOL_IP && cmsg_tmp->cmsg_type == IP_RECVORIGDSTADDR){
-                    
-                    tmp_local_addr = (struct sockaddr_in*)local_sockaddr;
-                    memcpy(&c->udp_real_dst_addr, CMSG_DATA(cmsg_tmp), sizeof(struct sockaddr_in));
-                    if(ntohs(tmp_local_addr->sin_port) == ntohs(c->udp_real_dst_addr.sin_port)){
+            if(AF_INET == ls->sockaddr->sa_family){
+                for(cmsg_tmp = CMSG_FIRSTHDR(&msg); cmsg_tmp != NULL; cmsg_tmp = CMSG_NXTHDR(&msg, cmsg_tmp)){
+                    if(cmsg_tmp->cmsg_level == SOL_IP && cmsg_tmp->cmsg_type == IP_RECVORIGDSTADDR){
+                        tmp_local_addr = (struct sockaddr_in*)local_sockaddr;
+                        memcpy(&c->udp_real_dst_addr, CMSG_DATA(cmsg_tmp), sizeof(struct sockaddr_in));
+                        tmp_real_dst_addr = (struct sockaddr_in *)&c->udp_real_dst_addr;
+                        // njt_log_error(NJT_LOG_ALERT, ev->log, 0,
+                        //     "==================ipv4 port:%d", ntohs(tmp_real_dst_addr->sin_port));
+                        if(ntohs(tmp_local_addr->sin_port) == ntohs(tmp_real_dst_addr->sin_port)){
+                            break;
+                        }
+
+                        found = 1;
                         break;
                     }
+                }
+            }else if(AF_INET6 == ls->sockaddr->sa_family){
+                for(cmsg_tmp = CMSG_FIRSTHDR(&msg); cmsg_tmp != NULL; cmsg_tmp = CMSG_NXTHDR(&msg, cmsg_tmp)){
+                    if(cmsg_tmp->cmsg_level == SOL_IPV6 && cmsg_tmp->cmsg_type == IPV6_RECVORIGDSTADDR){
+                        tmp_local_addr6 = (struct sockaddr_in6*)local_sockaddr;
 
-                    found = 1;
-                    break;
+                        memcpy(&c->udp_real_dst_addr, CMSG_DATA(cmsg_tmp), sizeof(struct sockaddr_in6));
+                        tmp_real_dst_addr6 = (struct sockaddr_in6 *)&c->udp_real_dst_addr;
+                        // njt_log_error(NJT_LOG_ALERT, ev->log, 0,
+                        //     "==================ipv6 port:%d", ntohs(tmp_real_dst_addr6->sin6_port));
+                        if(ntohs(tmp_local_addr6->sin6_port) == ntohs(tmp_real_dst_addr6->sin6_port)){
+                            break;
+                        }
+
+                        found = 1;
+                        break;
+                    }
                 }
             }
 
             if(found){
                 //create udp socket
-                c->udp->real_sock = njt_socket(AF_INET, SOCK_DGRAM, 0);
+                c->udp->real_sock = njt_socket(c->udp_real_dst_addr.ss_family, SOCK_DGRAM, 0);
                 if (c->udp->real_sock == (njt_socket_t) -1) {
                     njt_log_error(NJT_LOG_ALERT, ev->log, 0,
-                            "udp create real sock error, port:%d", ntohs(c->udp_real_dst_addr.sin_port));
+                            "udp create real sock error, port:%d", ntohs(tmp_real_dst_addr->sin_port));
                 }else{
                     if(njt_nonblocking(c->udp->real_sock) == -1)
                     {
                         njt_log_error(NJT_LOG_ALERT, ev->log, 0,
-                            "udp set real sock nonblocking error, port:%d", ntohs(c->udp_real_dst_addr.sin_port));
+                            "udp set real sock nonblocking error, port:%d", ntohs(tmp_real_dst_addr->sin_port));
                     }
 
                     int  reuseport = 1;
@@ -380,7 +404,7 @@ njt_event_recvmsg(njt_event_t *ev)
                         == -1)
                     {
                         njt_log_error(NJT_LOG_ALERT, ev->log, 0,
-                            "udp real sock set sock reuseport error, port:%d", ntohs(c->udp_real_dst_addr.sin_port));
+                            "udp real sock set sock reuseport error, port:%d", ntohs(tmp_real_dst_addr->sin_port));
                     }
     #else
                     if (setsockopt(c->udp->real_sock, SOL_SOCKET, SO_REUSEPORT,
@@ -388,22 +412,32 @@ njt_event_recvmsg(njt_event_t *ev)
                         == -1)
                     {
                         njt_log_error(NJT_LOG_ALERT, ev->log, 0,
-                            "udp real sock set sock reuseport error, port:%d", ntohs(c->udp_real_dst_addr.sin_port));
+                            "udp real sock set sock reuseport error, port:%d", ntohs(tmp_real_dst_addr->sin_port));
                     }
     #endif
                     //bind real port info
-                    if(bind(c->udp->real_sock, (struct sockaddr *)&c->udp_real_dst_addr, sizeof(c->udp_real_dst_addr)) <0)
-                    {
-                        njt_log_error(NJT_LOG_ALERT, ev->log, 0,
-                            "udp real sock bind error, port:%d", ntohs(c->udp_real_dst_addr.sin_port));
+                    if(AF_INET == c->udp_real_dst_addr.ss_family){
+                        if(bind(c->udp->real_sock, (struct sockaddr*)&c->udp_real_dst_addr, sizeof(struct sockaddr_in)) <0)
+                        {
+                            njt_log_error(NJT_LOG_ALERT, ev->log, 0,
+                                "udp real sock bind error(ipv4), port:%d", ntohs(tmp_real_dst_addr->sin_port));
+                        }
+                    }else if(AF_INET6 == c->udp_real_dst_addr.ss_family){
+                        if(bind(c->udp->real_sock, (struct sockaddr*)&c->udp_real_dst_addr, sizeof(struct sockaddr_in6)) <0)
+                        {
+                            njt_log_error(NJT_LOG_ALERT, ev->log, 0,
+                                "udp real sock bind error(ipv6), port:%d", ntohs(tmp_real_dst_addr->sin_port));
+                        }
                     }
                 }
             }else{
                 //set local addr
-                tmp_local_addr = (struct sockaddr_in*)local_sockaddr;
-                memcpy(&c->udp_real_dst_addr, CMSG_DATA(cmsg_tmp), sizeof(struct sockaddr_in));
+                if(AF_INET == ls->sockaddr->sa_family){
+                    memcpy(&c->udp_real_dst_addr, local_sockaddr, sizeof(struct sockaddr_in));
+                }else if(AF_INET6 == ls->sockaddr->sa_family){
+                    memcpy(&c->udp_real_dst_addr, local_sockaddr, sizeof(struct sockaddr_in6));
+                }
             }
-
         }
         //end by clb
 
