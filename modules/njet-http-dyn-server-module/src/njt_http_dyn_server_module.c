@@ -104,7 +104,7 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
 	cscf = server_info->cscf;
 	if (cscf == NULL ) {
 		if(msg.data != NULL && cscf == NULL){
-			p = njt_snprintf(msg.data, 1024, "error:host[%V],no find server [%V]!", &server_info->addr_port,&server_info->server_name);
+			p = njt_snprintf(msg.data, msg.len, "error:host[%V],no find server [%V]!", &server_info->addr_port,&server_info->server_name);
 			msg.len = p - msg.data;
 			server_info->msg = msg;
 			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "host[%V],no find server [%V]!",&server_info->addr_port,&server_info->server_name);
@@ -226,10 +226,10 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 		goto out;
 	}
 
-	//server_info->msg = server_info->buffer;
-
-	if(server_info->buffer.data != NULL){ 
-		conf.errstr = &server_info->buffer;
+	server_info->msg.len = NJT_MAX_CONF_ERRSTR;
+	server_info->msg.data = server_info->buffer.data;
+	if(server_info->msg.data != NULL){ 
+		conf.errstr = &server_info->msg;
 	}
 
 	cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
@@ -250,7 +250,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	njt_conf_check_cmd_handler = njt_http_check_server_body;
 	rv = njt_conf_parse(&conf, &server_path);
 	if (rv != NULL) {
-		server_info->msg = *conf.errstr;
+		//server_info->msg = *conf.errstr;
 		rc = NJT_ERROR;
 	
 		njt_conf_check_cmd_handler = NULL;
@@ -450,54 +450,6 @@ njt_http_dyn_server_init_worker(njt_cycle_t *cycle) {
 	h.api_type = NJT_KV_API_TYPE_INSTRUCTIONAL;
 	njt_kv_reg_handler(&h);
 
-	return NJT_OK;
-}
-
-
-
-njt_int_t njt_http_check_sub_server(njt_json_element *in_items,njt_http_dyn_server_info_t *server_info) {
-
-	njt_json_element  *items;
-	njt_str_t   str;
-	njt_str_t   error = njt_string("invalid parameter:");
-	njt_queue_t   *q;
-	if(in_items->type != NJT_JSON_OBJ) {
-		njt_str_set(&server_info->msg, "json error!!!");
-		return NJT_ERROR;
-	}
-
-	for (q = njt_queue_head(&in_items->objdata.datas);
-			q != njt_queue_sentinel(&in_items->objdata.datas);
-			q = njt_queue_next(q)) {
-
-		items = njt_queue_data(q, njt_json_element, ele_queue);
-		if(items == NULL){
-			break;
-		}
-		njt_str_set(&str,"server_name");
-		if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
-			continue;
-		}
-		njt_str_set(&str,"server_body");
-		if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
-			continue;
-		}
-		njt_str_set(&str,"servers");
-		if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
-			continue;
-		}
-		str.len = error.len + items->key.len + 1;
-		str.data = njt_pcalloc(server_info->pool,str.len);
-		if(str.data != NULL) {
-			njt_snprintf(str.data,str.len,"%V%V!",&error,&items->key);	
-			server_info->msg = str;
-		} else {
-			njt_str_set(&server_info->msg, "json error!!!");
-		}
-	}
-	if(server_info->msg.len > 0){
-		return NJT_ERROR;
-	}
 	return NJT_OK;
 }
 

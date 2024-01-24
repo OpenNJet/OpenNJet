@@ -62,9 +62,6 @@ static  njt_str_t njt_invalid_dyn_location_body[] = {
 	//njt_string("alias"),
 	njt_null_string
 };
-static  njt_str_t njt_invalid_dyn_proxy_pass[] = {
-	njt_null_string
-};
 
 
 
@@ -594,11 +591,10 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	goto out;
     }
 
-    location_info->msg.len = 0;
-    location_info->msg.data = njt_pcalloc(location_info->pool,NJT_MAX_CONF_ERRSTR);
+    location_info->msg.len = NJT_MAX_CONF_ERRSTR;
+    location_info->msg.data = location_info->buffer.data;
     if(location_info->msg.data != NULL){ 
-		location_info->msg.len = NJT_MAX_CONF_ERRSTR;
-		conf.errstr = &location_info->msg;
+               conf.errstr = &location_info->msg;
     }
 	
     conf.pool = location_info->pool; 
@@ -964,30 +960,12 @@ static njt_int_t  njt_http_location_check_location_body(njt_str_t cmd) {
     }
 	return NJT_OK;
 }
-static njt_str_t  njt_http_location_check_proxy_pass(njt_str_t src) {
-	njt_str_t *name;
-	njt_str_t ret_null = njt_null_string;
-
-	if(src.len == 0 ){
-		return ret_null;
-	}
-	for (name = njt_invalid_dyn_proxy_pass; name->len; name++) {
-       if(njt_strlcasestrn(src.data,src.data + src.len,name->data,name->len - 1) != NULL) {
-		  return *name;
-	   }
-    }
-	return ret_null;
-
-}
 static njt_int_t
 njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_array_t *location_array,njt_json_element *in_items) {
 
 	njt_json_element *out_items, *items;
 	njt_int_t rc;
 	njt_str_t  key;
-	u_char *p;
-	njt_str_t  check_val;
-	njt_uint_t  msg_len = 128;
 	njt_queue_t   *q;
 	njt_str_t  add = njt_string("add");
 	//njt_str_t  del = njt_string("del");
@@ -1051,23 +1029,6 @@ njt_http_parser_sub_location_data(njt_http_location_info_t *location_info,njt_ar
 					  return NJT_ERROR;
 					}
 				sub_location->proxy_pass = njt_del_headtail_space(out_items->strval);
-
-				check_val = njt_http_location_check_proxy_pass(sub_location->proxy_pass);
-				if(check_val.len != 0) {
-					location_info->msg.len = 0;
-					location_info->msg.data = njt_palloc(location_info->pool,msg_len);
-					if(location_info->msg.data != NULL) {
-						location_info->msg.len = msg_len;
-						p = njt_snprintf(location_info->msg.data,location_info->msg.len,"proxy_pass no support %V!",&check_val);	
-						location_info->msg.len = p - location_info->msg.data;
-
-					} else {
-						njt_str_set(&location_info->msg, "proxy_pass error!");
-					}
-					
-					return NJT_ERROR;
-				}
-
 			} 
 
 			njt_str_set(&key,"location_body");
