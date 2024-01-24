@@ -13,6 +13,10 @@
 #include <njt_http_sendmsg_module.h>
 #include <njt_http_dyn_server_module.h>
 #include <njt_rpc_result_util.h>
+#include <njt_http_util.h>
+#define VS_MIN_BODY_LEN 8
+#define VS_MAX_BODY_LEN 5242880
+
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 extern njt_cycle_t *njet_master_cycle;
@@ -204,7 +208,7 @@ static char *njt_http_dyn_server_merge_loc_conf(njt_conf_t *cf,
 }
 
 static njt_buf_t *
-njt_http_upstream_api_get_out_buf(njt_http_request_t *r, ssize_t len,
+njt_http_dyn_server_api_get_out_buf(njt_http_request_t *r, ssize_t len,
                                   njt_chain_t *out) {
     njt_buf_t *b;
     njt_chain_t *last_chain, *new_chain;
@@ -280,7 +284,7 @@ njt_http_upstream_api_get_out_buf(njt_http_request_t *r, ssize_t len,
 }
 
 static njt_int_t
-njt_http_upstream_api_insert_out_str(njt_http_request_t *r,
+njt_http_dyn_server_api_insert_out_str(njt_http_request_t *r,
                                      njt_chain_t *out, njt_str_t *str) {
     njt_buf_t *b;
 
@@ -293,7 +297,7 @@ njt_http_upstream_api_insert_out_str(njt_http_request_t *r,
         return NJT_ERROR;
     }
 
-    b = njt_http_upstream_api_get_out_buf(r, str->len, out);
+    b = njt_http_dyn_server_api_get_out_buf(r, str->len, out);
     if (b == NULL) {
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                        "could not alloc buffer in function %s", __func__);
@@ -306,7 +310,7 @@ njt_http_upstream_api_insert_out_str(njt_http_request_t *r,
 }
 
 static ssize_t
-njt_http_upstream_api_out_len(njt_chain_t *out) {
+njt_http_dyn_server_api_out_len(njt_chain_t *out) {
     ssize_t len;
 
     len = 0;
@@ -501,9 +505,8 @@ static njt_int_t njt_http_dyn_server_rpc_send(njt_http_request_t *r,njt_str_t *m
 static void
 njt_http_dyn_server_read_data(njt_http_request_t *r){
 	njt_str_t json_str;
-    njt_chain_t *body_chain,*tmp_chain;
     njt_int_t rc;
-    njt_uint_t len,size;
+    njt_uint_t len;
     njt_chain_t out;
     njt_str_t insert;
     njt_http_dyn_server_info_t *server_info;
@@ -518,47 +521,16 @@ njt_http_dyn_server_read_data(njt_http_request_t *r){
    
     server_info = NULL;
     rpc_result = NULL;
-    if (r->request_body == NULL) {
-         goto err;
-    }
-
-
-    body_chain = r->request_body->bufs;
-    body_chain = r->request_body->bufs;
-    if(body_chain == NULL){
-        goto err;
-    }
-
-
-	
+    
+     rc = njt_http_util_read_request_body(r, &json_str, VS_MIN_BODY_LEN, VS_MAX_BODY_LEN);
     /*check the sanity of the json body*/
-    json_str.data = body_chain->buf->pos;
-    json_str.len = body_chain->buf->last - body_chain->buf->pos;
-	if(json_str.len < 2 ){
+
+	if(json_str.len < VS_MIN_BODY_LEN ){  
         goto err;
     }
 
-	len = 0 ;
-    tmp_chain = body_chain;
-    while (tmp_chain!= NULL){
-        len += tmp_chain->buf->last - tmp_chain->buf->pos;
-        tmp_chain = tmp_chain->next;
-    }
-    json_str.len = len;
-    json_str.data = njt_pcalloc(r->pool,len);
-    if(json_str.data == NULL){
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "could not alloc buffer in function %s", __func__);
-        goto err;
-    }
-    len = 0;
-    tmp_chain = r->request_body->bufs;
-    while (tmp_chain!= NULL){
-        size = tmp_chain->buf->last-tmp_chain->buf->pos;
-        njt_memcpy(json_str.data + len,tmp_chain->buf->pos,size);
-        tmp_chain = tmp_chain->next;
-        len += size;
-    }
+
+
 
 
 
@@ -648,8 +620,8 @@ err:
     r->headers_out.content_type_len = sizeof("text/plain") - 1;
     njt_str_set(&r->headers_out.content_type, "text/plain");
     r->headers_out.content_type_lowcase = NULL;
-    rc = njt_http_upstream_api_insert_out_str(r, &out, &insert);
-    len = njt_http_upstream_api_out_len(&out);
+    rc = njt_http_dyn_server_api_insert_out_str(r, &out, &insert);
+    len = njt_http_dyn_server_api_out_len(&out);
     r->headers_out.content_length_n = len;
     if (r->headers_out.content_length) {
         r->headers_out.content_length->hash = 0;

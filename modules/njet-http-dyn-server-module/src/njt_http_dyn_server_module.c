@@ -690,6 +690,7 @@ njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_
 
 		}
 	}
+	server_info->buffer.len = json_str.len;
 	/*
 	check_val = njt_http_check_server_body(server_info->server_body);
 	if(check_val != NJT_OK) {
@@ -782,7 +783,7 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 
 	njt_fd_t fd;
 	njt_int_t  rc = NJT_OK; 
-
+	int32_t buffer_len;
 
 	u_char *p; // *data;
 	njt_http_core_srv_conf_t *cscf;
@@ -814,13 +815,17 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 
 
 	if(server_info->buffer.data == NULL) {
-		server_info->buffer.len = (10240 > NJT_MAX_CONF_ERRSTR ?10240:NJT_MAX_CONF_ERRSTR);
-		server_info->buffer.data     = njt_pcalloc(server_info->pool, server_info->buffer.len);
+		buffer_len = server_info->buffer.len  + 1024;
+		buffer_len = (buffer_len > NJT_MAX_CONF_ERRSTR ?buffer_len:NJT_MAX_CONF_ERRSTR);
+
+		server_info->buffer.len = 0;
+		server_info->buffer.data     = njt_pcalloc(server_info->pool,buffer_len);
 		if(server_info->buffer.data == NULL) {
 			rc = NJT_ERROR;
 			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_http_dyn_server_write_data njt_pcalloc error!");
 			goto out;
 		}
+		server_info->buffer.len = buffer_len;
 	}
 	rc = njt_http_server_write_file(fd,server_info);
 
