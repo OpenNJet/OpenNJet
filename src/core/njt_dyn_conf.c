@@ -1965,6 +1965,11 @@ njt_conf_element_t * njt_conf_dyn_loc_init_server(njt_pool_t *pool, njt_conf_ele
         goto failed;
     }
 
+    if (http->blocks == NULL) {
+        njt_destroy_pool(dyn_pool);
+        return root;
+    }
+
     for (i = 0; i < http->blocks->nelts; i++) {
         block = &((njt_conf_block_t*)http->blocks->elts)[i];
         // find server block
