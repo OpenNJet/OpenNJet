@@ -313,6 +313,10 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     u_char *p;
     njt_str_t location_name,msg,location_name_key,add_escape_val;
 
+    if(location_info->buffer.len == 0 || location_info->buffer.data == NULL) {
+           njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "buffer null");
+           return NJT_ERROR;
+    }
     
     msg.len = 1024;
     msg.data = njt_pcalloc(location_info->pool,msg.len);
@@ -505,7 +509,10 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 	// end for dyn_conf update
 
     //njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add location start +++++++++++++++");
-
+	if(location_info->buffer.len == 0 || location_info->buffer.data == NULL) {
+		njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "buffer null");
+           	return NJT_ERROR;
+	}
 	if (location_info->location_array == NULL || location_info->location_array->nelts == 0) {
     		//njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add location error:locations null");
 		njt_str_set(&location_info->msg,"add location error:locations null");
@@ -1399,7 +1406,6 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
     
 
     cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&location_info->addr_port,&location_info->server_name);	
-    (*location_info).cscf = cscf;
 
         location_path = njt_cycle->prefix;
 
@@ -1447,6 +1453,7 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
         return;
     }
     (*location_info).file = location_full_file;
+    (*location_info).cscf = cscf;
 }
 
 static void njt_http_location_clear_dirty_data(njt_http_core_loc_conf_t *clcf) {

@@ -99,6 +99,11 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
 	njt_conf_t conf;
 	njt_int_t rc = NJT_OK;
 
+	 if(server_info->buffer.len == 0 || server_info->buffer.data == NULL) {
+           njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "buffer null");
+           return NJT_ERROR;
+        }
+
 	msg = server_info->buffer;
 
 	cscf = server_info->cscf;
@@ -183,7 +188,10 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	njt_http_core_main_conf_t *cmcf;
 	njt_http_core_srv_conf_t *cscf;
 	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
-
+	if(server_info->buffer.len == 0 || server_info->buffer.data == NULL) {
+	   njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "buffer null");
+	   return NJT_ERROR;
+	}
 	msg = server_info->buffer;
 	server_path.len = 0;
 	server_path.data = NULL;
