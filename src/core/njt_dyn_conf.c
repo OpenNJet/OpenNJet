@@ -2901,8 +2901,11 @@ njt_conf_dyn_loc_get_json_str(njt_conf_element_t *root, njt_str_t *out, njt_uint
     }
 
     if (root->blocks == NULL) {
-        dst = out->data + out->len;
-        dst--;
+
+        if (root->cmds != NULL || (root->cmds == NULL && root->block_name)) {
+            dst--;
+        }
+
         *dst++ = '}'; 
         out->len = dst - out->data;
         return;
