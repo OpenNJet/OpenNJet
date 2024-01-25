@@ -1709,8 +1709,17 @@ njt_get_listening(njt_conf_t *cf, struct sockaddr *sockaddr,
     socklen_t socklen){
     njt_uint_t         i;
     njt_listening_t   *ls;
+    njt_uint_t         worker;
+   
+    worker = njt_worker;
+    if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+	    worker = 0;
+    }   
     ls = cf->cycle->listening.elts;
     for (i = 0; i < cf->cycle->listening.nelts; i++) {
+	    if (ls[i].reuseport && ls[i].worker != worker) {
+		    continue; 
+	    }
 	if(ls[i].socklen == socklen && njt_memcmp(sockaddr,ls[i].sockaddr,socklen) == 0){
 	   return &ls[i];
 	}	

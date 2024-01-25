@@ -742,6 +742,8 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 		if(ssl == 1) {
 			njt_str_set(&opt_ssl,"ssl");
 		}
+		//
+		njt_str_set(&server_info->listen_option,""); //暂时不支持其他的参数
 		p = data;
 		p = njt_snprintf(p, remain, "server {\n");
 		remain = data + buffer_len - p;
@@ -932,6 +934,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 								njt_array_delete_idx(&port[p].addrs,a);
 							}
 							if(addr[a].default_server == cscf && addr[a].servers.nelts > 0) { //切换默认default_server
+								//addr[a].opt.default_server = 0; todo
 								addr[a].default_server = cscfp[0];
 							}
 							if(addr[a].servers.nelts <= 1) {
@@ -951,6 +954,13 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 						}
 
 					} else {
+						if(cscf->dynamic == 0) {
+							msg = server_info->buffer;
+							pdata = njt_snprintf(msg.data, msg.len, "only dynamic server,can to be delete!", &server_info->addr_port);
+							msg.len = pdata - msg.data;
+							server_info->msg = msg;
+							return NJT_ERROR;
+						}
 						name = cscf->server_names.elts;
 						for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
 							if(name[j].name.len == server_name->len

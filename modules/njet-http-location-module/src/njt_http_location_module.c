@@ -643,9 +643,10 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
 
     if (rv != NULL) {
 	
-		//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse  location[%V] error:%s",&location_name,rv);
 	    if(location_info->msg.len == NJT_MAX_CONF_ERRSTR && location_info->msg.data[0] == '\0') {
 	    	njt_str_set(&location_info->msg,"njt_conf_parse error!");
+	    } else if(location_info->msg.len != NJT_MAX_CONF_ERRSTR) {
+	    	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse  location[%V] error:%V",&location_name,&location_info->msg);
 	    }
 	    njt_http_location_delete_dyn_var(clcf);
 	    njt_http_location_clear_dirty_data(clcf);
