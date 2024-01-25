@@ -626,7 +626,7 @@ njt_open_listening_sockets(njt_cycle_t *cycle)
                                   &ls[i].addr_text);
                 }
 
-                //add by clb, used for udp traffic hack, need set IP_TRANSPARENT and IP_RECVORIGDSTADDR
+                //add by clb, used for udp traffic hack, need set IPV6_TRANSPARENT and IPV6_RECVORIGDSTADDR
                 int n = 1;
                 if(0 != setsockopt(s, SOL_IPV6, IPV6_TRANSPARENT, &n, sizeof(int))){
                             njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
