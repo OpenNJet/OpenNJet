@@ -221,6 +221,7 @@ typedef struct {
     njt_http_complex_value_t    value;
     njt_http_variable_value_t *default_value;
     njt_uint_t                  hostnames;      /* unsigned  hostnames:1 */
+    njt_pool_t                  *pool;
 } njt_http_map_ctx_t;
 
 typedef struct {

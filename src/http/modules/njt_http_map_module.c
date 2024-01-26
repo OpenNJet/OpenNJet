@@ -10,7 +10,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 #include <njt_http_dyn_module.h>
-
+#define NJT_HTTP_DYN_MAP_V2_MODULE 1
 static int njt_libc_cdecl njt_http_map_cmp_dns_wildcards(const void *one,
     const void *two);
 static void *njt_http_map_create_conf(njt_conf_t *cf);
@@ -266,13 +266,14 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     char *rv;
     njt_str_t *value, name;
     njt_conf_t                         save;
-    njt_pool_t *pool;
+    njt_pool_t *pool,*new_map_pool;
     njt_http_map_ctx_t *map;
     njt_http_variable_t *var;
     njt_http_map_conf_ctx_t            ctx;
     njt_http_compile_complex_value_t   ccv;
     njt_int_t rc;
 
+    
     if (mcf->hash_max_size == NJT_CONF_UNSET_UINT) {
         mcf->hash_max_size = 2048;
     }
@@ -284,7 +285,17 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         mcf->hash_bucket_size = njt_align(mcf->hash_bucket_size,
             njt_cacheline_size);
     }
-
+    /// by zyg
+#if (NJT_HTTP_DYN_MAP_V2_MODULE)
+    if(cf->dynamic == 1) {
+        new_map_pool = njt_create_pool(NJT_DEFAULT_POOL_SIZE, cf->log);
+        if (new_map_pool == NULL) {
+            return NJT_CONF_ERROR;
+        }
+        njt_sub_pool(njt_cycle->pool, new_map_pool);
+        cf->pool = new_map_pool;
+    } 
+#endif
     map = njt_pcalloc(cf->pool, sizeof(njt_http_map_ctx_t));
     if (map == NULL) {
         return NJT_CONF_ERROR;
@@ -294,15 +305,30 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     njt_memzero(&ccv, sizeof(njt_http_compile_complex_value_t));
 
-    ccv.cf = cf;
-    ccv.value = &value[1];
+    ccv.cf = cf; //zyg todo
+    if(cf->dynamic == 1) {
+        map->pool = new_map_pool;
+	    ccv.value = njt_pcalloc(cf->pool, sizeof(njt_str_t));
+	    if(ccv.value == NULL) {
+		return NJT_CONF_ERROR;
+	    }
+            ccv.value->data = njt_pstrdup(cf->pool, &value[1]);
+            if(ccv.value->data == NULL) {
+                return NJT_CONF_ERROR;
+            }
+            ccv.value->len = value[1].len;
+    } else {
+        ccv.value = &value[1];
+    }
+    //ccv.value = &value[1];
     ccv.complex_value = &map->value;
 
     if (njt_http_compile_complex_value(&ccv) != NJT_OK) {
         return NJT_CONF_ERROR;
     }
-
     name = value[2];
+
+
 
     if (name.data[0] != '$') {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
