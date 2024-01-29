@@ -51,7 +51,7 @@ njt_event_recvmsg(njt_event_t *ev)
 #if (NJT_HAVE_ADDRINFO_CMSG)
     //modify by clb, udp traffic hack need more memory(old 32bytes, modify to 64 bytes)
     // u_char             msg_control[CMSG_SPACE(sizeof(njt_addrinfo_t))];
-    u_char             msg_control[128];
+    u_char             msg_control[256];
     //end modify by clb
 #endif
 
