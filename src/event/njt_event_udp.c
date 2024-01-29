@@ -353,8 +353,8 @@ njt_event_recvmsg(njt_event_t *ev)
                 for(cmsg_tmp = CMSG_FIRSTHDR(&msg); cmsg_tmp != NULL; cmsg_tmp = CMSG_NXTHDR(&msg, cmsg_tmp)){
                     if(cmsg_tmp->cmsg_level == SOL_IP && cmsg_tmp->cmsg_type == IP_RECVORIGDSTADDR){
                         tmp_local_addr = (struct sockaddr_in*)local_sockaddr;
-                        memcpy(&c->udp_real_dst_addr, CMSG_DATA(cmsg_tmp), sizeof(struct sockaddr_in));
-                        tmp_real_dst_addr = (struct sockaddr_in *)&c->udp_real_dst_addr;
+                        memcpy(&c->mesh_dst_addr, CMSG_DATA(cmsg_tmp), sizeof(struct sockaddr_in));
+                        tmp_real_dst_addr = (struct sockaddr_in *)&c->mesh_dst_addr;
                         // njt_log_error(NJT_LOG_ALERT, ev->log, 0,
                         //     "==================ipv4 port:%d", ntohs(tmp_real_dst_addr->sin_port));
                         if(ntohs(tmp_local_addr->sin_port) == ntohs(tmp_real_dst_addr->sin_port)){
@@ -370,8 +370,8 @@ njt_event_recvmsg(njt_event_t *ev)
                     if(cmsg_tmp->cmsg_level == SOL_IPV6 && cmsg_tmp->cmsg_type == IPV6_RECVORIGDSTADDR){
                         tmp_local_addr6 = (struct sockaddr_in6*)local_sockaddr;
 
-                        memcpy(&c->udp_real_dst_addr, CMSG_DATA(cmsg_tmp), sizeof(struct sockaddr_in6));
-                        tmp_real_dst_addr6 = (struct sockaddr_in6 *)&c->udp_real_dst_addr;
+                        memcpy(&c->mesh_dst_addr, CMSG_DATA(cmsg_tmp), sizeof(struct sockaddr_in6));
+                        tmp_real_dst_addr6 = (struct sockaddr_in6 *)&c->mesh_dst_addr;
                         // njt_log_error(NJT_LOG_ALERT, ev->log, 0,
                         //     "==================ipv6 port:%d", ntohs(tmp_real_dst_addr6->sin6_port));
                         if(ntohs(tmp_local_addr6->sin6_port) == ntohs(tmp_real_dst_addr6->sin6_port)){
@@ -386,7 +386,7 @@ njt_event_recvmsg(njt_event_t *ev)
 
             if(found){
                 //create udp socket
-                c->udp->real_sock = njt_socket(c->udp_real_dst_addr.ss_family, SOCK_DGRAM, 0);
+                c->udp->real_sock = njt_socket(c->mesh_dst_addr.ss_family, SOCK_DGRAM, 0);
                 if (c->udp->real_sock == (njt_socket_t) -1) {
                     njt_log_error(NJT_LOG_ALERT, ev->log, 0,
                             "udp create real sock error, port:%d", ntohs(tmp_real_dst_addr->sin_port));
@@ -416,14 +416,14 @@ njt_event_recvmsg(njt_event_t *ev)
                     }
     #endif
                     //bind real port info
-                    if(AF_INET == c->udp_real_dst_addr.ss_family){
-                        if(bind(c->udp->real_sock, (struct sockaddr*)&c->udp_real_dst_addr, sizeof(struct sockaddr_in)) <0)
+                    if(AF_INET == c->mesh_dst_addr.ss_family){
+                        if(bind(c->udp->real_sock, (struct sockaddr*)&c->mesh_dst_addr, sizeof(struct sockaddr_in)) <0)
                         {
                             njt_log_error(NJT_LOG_ALERT, ev->log, 0,
                                 "udp real sock bind error(ipv4), port:%d", ntohs(tmp_real_dst_addr->sin_port));
                         }
-                    }else if(AF_INET6 == c->udp_real_dst_addr.ss_family){
-                        if(bind(c->udp->real_sock, (struct sockaddr*)&c->udp_real_dst_addr, sizeof(struct sockaddr_in6)) <0)
+                    }else if(AF_INET6 == c->mesh_dst_addr.ss_family){
+                        if(bind(c->udp->real_sock, (struct sockaddr*)&c->mesh_dst_addr, sizeof(struct sockaddr_in6)) <0)
                         {
                             njt_log_error(NJT_LOG_ALERT, ev->log, 0,
                                 "udp real sock bind error(ipv6), port:%d", ntohs(tmp_real_dst_addr->sin_port));
@@ -433,9 +433,9 @@ njt_event_recvmsg(njt_event_t *ev)
             }else{
                 //set local addr
                 if(AF_INET == ls->sockaddr->sa_family){
-                    memcpy(&c->udp_real_dst_addr, local_sockaddr, sizeof(struct sockaddr_in));
+                    memcpy(&c->mesh_dst_addr, local_sockaddr, sizeof(struct sockaddr_in));
                 }else if(AF_INET6 == ls->sockaddr->sa_family){
-                    memcpy(&c->udp_real_dst_addr, local_sockaddr, sizeof(struct sockaddr_in6));
+                    memcpy(&c->mesh_dst_addr, local_sockaddr, sizeof(struct sockaddr_in6));
                 }
             }
         }
