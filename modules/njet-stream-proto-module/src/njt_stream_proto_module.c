@@ -159,7 +159,7 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
 		 return NJT_DECLINED;
 	 }
 
-     if (s->connection && s->connection->listening && s->connection->listening->mesh) {
+     if (!sscf->enabled && s->connection && s->connection->listening && s->connection->listening->mesh) {
          sscf->enabled = 1;
      } 
      if (!sscf->enabled ) {
