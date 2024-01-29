@@ -94,24 +94,24 @@ njt_http_dyn_server_delete_handler(njt_http_dyn_server_info_t *server_info) {
 	njt_http_core_srv_conf_t *cscf;
 	u_char *p;
 	njt_http_core_main_conf_t *cmcf;
-	njt_str_t msg;
 	njt_pool_t *old_pool;
 	njt_conf_t conf;
 	njt_int_t rc = NJT_OK;
 
 	 if(server_info->buffer.len == 0 || server_info->buffer.data == NULL) {
            njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "buffer null");
+		   njt_str_set(&server_info->msg,"error:buffer null!");
            return NJT_ERROR;
         }
 
-	msg = server_info->buffer;
+
 
 	cscf = server_info->cscf;
 	if (cscf == NULL ) {
-		if(msg.data != NULL && cscf == NULL){
-			p = njt_snprintf(msg.data, msg.len, "error:host[%V],no find server [%V]!", &server_info->addr_port,&server_info->server_name);
-			msg.len = p - msg.data;
-			server_info->msg = msg;
+		if(cscf == NULL){
+			p = njt_snprintf(server_info->buffer.data,server_info->buffer.len, "error:host[%V],no find server [%V]!", &server_info->addr_port,&server_info->server_name);
+			server_info->msg = server_info->buffer;
+			server_info->msg.len = p - server_info->buffer.data;
 			njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "host[%V],no find server [%V]!",&server_info->addr_port,&server_info->server_name);
 		} else if(cscf != NULL){
 			njt_str_set(&server_info->msg,"error:server is null!");
@@ -183,16 +183,17 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	njt_flag_t   del = 0;
 	njt_pool_t  *old_pool = NULL;
 	njt_http_conf_ctx_t* http_ctx;
-	njt_str_t server_name,msg;
+	njt_str_t server_name;
 	njt_str_t server_path; // = njt_string("./conf/add_server.txt");
 	njt_http_core_main_conf_t *cmcf;
 	njt_http_core_srv_conf_t *cscf;
 	//njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add server start +++++++++++++++");
 	if(server_info->buffer.len == 0 || server_info->buffer.data == NULL) {
 	   njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "buffer null");
+	   njt_str_set(&server_info->msg,"error:buffer null!");
 	   return NJT_ERROR;
 	}
-	msg = server_info->buffer;
+
 	server_path.len = 0;
 	server_path.data = NULL;
 	if (server_info->file.len != 0) {
@@ -202,9 +203,9 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	cscf = server_info->cscf;
 	if(cscf != NULL){
 		p = njt_snprintf(server_info->buffer.data,server_info->buffer.len,"error:[%V] server[%V] exist!",&server_info->addr_port,&server_info->server_name);
-		msg.len = p - msg.data;
-		server_info->msg = msg;		    
-		njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "%V",&msg);
+		server_info->msg = server_info->buffer;	
+		server_info->msg.len = p - server_info->buffer.data;	    
+		njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "%V",&server_info->msg);
 		return NJT_ERROR;
 	} 
 
@@ -258,9 +259,13 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	njt_conf_check_cmd_handler = njt_http_check_server_body;
 	rv = njt_conf_parse(&conf, &server_path);
 	if (rv != NULL) {
-		//server_info->msg = *conf.errstr;
+		 if(server_info->msg.len == NJT_MAX_CONF_ERRSTR && server_info->msg.data[0] == '\0') {
+	    	njt_str_set(&server_info->msg,"njt_conf_parse error!");
+	    } else if(server_info->msg.len != NJT_MAX_CONF_ERRSTR) {
+	    	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_conf_parse  location[%V] error:%V",&server_name,&server_info->msg);
+	    }
+
 		rc = NJT_ERROR;
-	
 		njt_conf_check_cmd_handler = NULL;
 		goto out;
 	}
@@ -481,6 +486,7 @@ njt_int_t njt_http_check_top_server( njt_json_manager *json_body,njt_http_dyn_se
 
 	njt_json_element  *items;
 	njt_str_t   str;
+	u_char        *p;
 	njt_queue_t   *q;
 	njt_str_t   error = njt_string("invalid parameter:");
 	if(json_body->json_val == NULL || json_body->json_val->type != NJT_JSON_OBJ) {
@@ -516,14 +522,12 @@ njt_int_t njt_http_check_top_server( njt_json_manager *json_body,njt_http_dyn_se
 		if(items->key.len == str.len && njt_strncmp(str.data,items->key.data,str.len) == 0){
 			continue;
 		}
-		str.len = error.len + items->key.len + 1;
-		str.data = njt_pcalloc(server_info->pool,str.len);
-		if(str.data != NULL) {
-			njt_snprintf(str.data,str.len,"%V%V!",&error,&items->key);	
-			server_info->msg = str;
-		} else {
-			njt_str_set(&server_info->msg, "json error!!!");
-		}
+
+	
+		p = njt_snprintf(server_info->buffer.data,server_info->buffer.len,"%V%V!",&error,&items->key);	
+		server_info->msg = server_info->buffer;
+		server_info->msg.len = p - server_info->buffer.data;
+		
 	}
 	if(server_info->msg.len > 0){
 		return NJT_ERROR;
@@ -538,6 +542,7 @@ njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_
 	njt_str_t  add = njt_string("add");
 	njt_str_t  del = njt_string("del");
 	njt_str_t  key;
+	int32_t  buffer_len;
 	njt_json_element *items;
 
 
@@ -560,6 +565,14 @@ njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_
 
 	//server_info->type = -1;
 	server_info->pool = server_pool;
+	buffer_len = json_str.len  + 1024;
+	buffer_len = (buffer_len > NJT_MAX_CONF_ERRSTR ?buffer_len:NJT_MAX_CONF_ERRSTR);
+	server_info->buffer.len = 0;
+	server_info->buffer.data = njt_pcalloc(server_info->pool,buffer_len);
+	if(server_info->buffer.data != NULL) {
+		server_info->buffer.len = buffer_len;
+	}
+
 
 	rc = njt_http_check_top_server(&json_body,server_info);
 	if(rc == NJT_ERROR) {
@@ -650,25 +663,8 @@ njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_
 
 		}
 	}
-	server_info->buffer.len = json_str.len;
-	/*
-	check_val = njt_http_check_server_body(server_info->server_body);
-	if(check_val != NJT_OK) {
-		server_info->msg.len = 0;
-		server_info->msg.data = njt_palloc(server_info->pool,msg_len);
-		if(server_info->msg.data != NULL) {
-			server_info->msg.len = msg_len;
-			p = njt_snprintf(server_info->msg.data,server_info->msg.len,"location_body no support %V!",&njt_invalid_dyn_server_body_field);	
-			server_info->msg.len = p - server_info->msg.data;
-
-		} else {
-			njt_str_set(&server_info->msg, "server_body error!");
-		}
-		njt_str_set(&njt_invalid_dyn_server_body_field,"");
-		goto end;
-	} */
 	
-
+	
 end:
 	return server_info;
 
@@ -743,7 +739,6 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 
 	njt_fd_t fd;
 	njt_int_t  rc = NJT_OK; 
-	int32_t buffer_len;
 
 	u_char *p; // *data;
 	njt_http_core_srv_conf_t *cscf;
@@ -771,21 +766,6 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 		njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_http_dyn_server_write_data njt_open_file[%V] error!",&server_full_file);
 		rc = NJT_ERROR;
 		goto out;
-	}
-
-
-	if(server_info->buffer.data == NULL) {
-		buffer_len = server_info->buffer.len  + 1024;
-		buffer_len = (buffer_len > NJT_MAX_CONF_ERRSTR ?buffer_len:NJT_MAX_CONF_ERRSTR);
-
-		server_info->buffer.len = 0;
-		server_info->buffer.data     = njt_pcalloc(server_info->pool,buffer_len);
-		if(server_info->buffer.data == NULL) {
-			rc = NJT_ERROR;
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_http_dyn_server_write_data njt_pcalloc error!");
-			goto out;
-		}
-		server_info->buffer.len = buffer_len;
 	}
 	rc = njt_http_server_write_file(fd,server_info);
 
@@ -865,7 +845,6 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 	njt_http_conf_addr_t  *addr;
 	njt_http_core_main_conf_t *cmcf;
 	njt_array_t *ports;
-	njt_str_t    msg;
 	njt_http_core_srv_conf_t   **cscfp;
 	njt_http_server_name_t  *name;
 	njt_str_t *server_name = &server_info->server_name;
@@ -911,19 +890,19 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 							njt_http_dyn_server_delete_main_server(cscf);
 							return NJT_OK;
 						} else {
-							msg = server_info->buffer;
-							pdata = njt_snprintf(msg.data, msg.len, "only dynamic server,can to be delete!", &server_info->addr_port);
-							msg.len = pdata - msg.data;
-							server_info->msg = msg;
+						
+							pdata = njt_snprintf(server_info->buffer.data, server_info->buffer.len, "only dynamic server,can to be delete!", &server_info->addr_port);
+							server_info->msg = server_info->buffer;
+							server_info->msg.len = pdata - server_info->buffer.data;
 							return NJT_ERROR;
 						}
 
 					} else {
 						if(cscf->dynamic == 0) {
-							msg = server_info->buffer;
-							pdata = njt_snprintf(msg.data, msg.len, "only dynamic server,can to be delete!", &server_info->addr_port);
-							msg.len = pdata - msg.data;
-							server_info->msg = msg;
+				
+							pdata = njt_snprintf(server_info->buffer.data,server_info->buffer.len, "only dynamic server,can to be delete!", &server_info->addr_port);
+							server_info->msg = server_info->buffer;
+							server_info->msg.len = pdata - server_info->buffer.data;
 							return NJT_ERROR;
 						}
 						name = cscf->server_names.elts;
