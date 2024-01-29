@@ -382,19 +382,16 @@ static njt_int_t njt_stream_preread_proto_variable(njt_stream_session_t *s,  //
 	c = s->connection;
 	ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
 
-	if (ctx == NULL) {
-
-		if (c->type == SOCK_DGRAM && sscf != NULL && sscf->proto_enabled) {
+    if (c->type == SOCK_DGRAM && sscf != NULL && sscf->proto_enabled) {
 		   njt_str_set(&version, "udp");
 		   goto end;		  
-		}
+	}
+	if (ctx == NULL) {
 		v->not_found = 1;
 		return NJT_OK;
 	}
 
     /* SSL_get_version() format */
-
-
     switch (ctx->version[0]) {
     case 0:
         switch (ctx->version[1]) {
