@@ -39,7 +39,7 @@ static njt_int_t njt_stream_nginmesh_get_port_mode(njt_stream_session_t *s);
  *
  */
 static njt_command_t njt_stream_proto_commands[] = {
-
+    /*
     {
       njt_string("njtmesh_dest"),
       NJT_STREAM_MAIN_CONF | NJT_STREAM_SRV_CONF | NJT_CONF_FLAG,
@@ -47,7 +47,7 @@ static njt_command_t njt_stream_proto_commands[] = {
       NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(njt_stream_proto_srv_conf_t, enabled),
       NULL
-    },
+    },*/
     {
       njt_string("njtmesh_port_mode"),
       NJT_STREAM_MAIN_CONF | NJT_STREAM_SRV_CONF | NJT_CONF_TAKE2,
@@ -124,7 +124,7 @@ static void *njt_stream_proto_create_srv_conf(njt_conf_t *cf)
         return NULL;
     }
 
-    conf->enabled = NJT_CONF_UNSET;
+
     conf->proto_ports = NJT_CONF_UNSET_PTR;
     conf->proto_enabled = NJT_CONF_UNSET;
     return conf;
@@ -139,7 +139,6 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
     njt_stream_proto_srv_conf_t *prev = parent;
     njt_stream_proto_srv_conf_t *conf = child;
 
-    njt_conf_merge_value(conf->enabled, prev->enabled, 0);
     njt_conf_merge_ptr_value(conf->proto_ports,
                               prev->proto_ports, NULL);
     njt_conf_merge_value(conf->proto_enabled, prev->proto_enabled, 0);
@@ -159,10 +158,7 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
 		 return NJT_DECLINED;
 	 }
 
-     if (!sscf->enabled && s->connection && s->connection->listening && s->connection->listening->mesh) {
-         sscf->enabled = 1;
-     } 
-     if (!sscf->enabled ) {
+     if (!(s->connection && s->connection->listening && s->connection->listening->mesh) ) {
         return NJT_DECLINED;
     }
 	ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);

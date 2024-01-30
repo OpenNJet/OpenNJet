@@ -280,7 +280,6 @@ typedef struct {
 
 } njt_stream_proto_ctx_t;
 typedef struct {
-    njt_flag_t      enabled;
 	njt_array_t     *proto_ports;
 	njt_flag_t      proto_enabled;
 } njt_stream_proto_srv_conf_t;
