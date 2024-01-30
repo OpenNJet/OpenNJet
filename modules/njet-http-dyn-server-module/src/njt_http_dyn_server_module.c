@@ -238,6 +238,7 @@ static njt_int_t njt_http_add_server_handler(njt_http_dyn_server_info_t *server_
 	server_info->msg.len = NJT_MAX_CONF_ERRSTR;
 	server_info->msg.data = server_info->buffer.data;
 	if(server_info->msg.data != NULL){ 
+		njt_memzero(server_info->msg.data,server_info->msg.len);
 		conf.errstr = &server_info->msg;
 	}
 
