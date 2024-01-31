@@ -49,9 +49,9 @@ njt_event_recvmsg(njt_event_t *ev)
     //end by clb
 
 #if (NJT_HAVE_ADDRINFO_CMSG)
-    //modify by clb, udp traffic hack need more memory(old 32bytes, modify to 64 bytes)
+    //modify by clb, udp traffic hack need more memory(old 32bytes, modify to 256 bytes)
     // u_char             msg_control[CMSG_SPACE(sizeof(njt_addrinfo_t))];
-    u_char             msg_control[128];
+    u_char             msg_control[256];
     //end modify by clb
 #endif
 
@@ -88,7 +88,7 @@ njt_event_recvmsg(njt_event_t *ev)
         msg.msg_iovlen = 1;
 
 #if (NJT_HAVE_ADDRINFO_CMSG)
-        if (ls->wildcard) {
+        if (ls->wildcard || ls->mesh) {
             msg.msg_control = &msg_control;
             msg.msg_controllen = sizeof(msg_control);
             njt_memzero(&msg_control, sizeof(msg_control));
@@ -142,7 +142,6 @@ njt_event_recvmsg(njt_event_t *ev)
         local_socklen = ls->socklen;
 
 #if (NJT_HAVE_ADDRINFO_CMSG)
-
         if (ls->wildcard) {
             struct cmsghdr  *cmsg;
 

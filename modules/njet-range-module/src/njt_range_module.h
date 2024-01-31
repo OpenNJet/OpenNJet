@@ -25,6 +25,7 @@
 
 typedef struct {
     njt_str_t               type;
+    njt_str_t               family;
     njt_str_t               src_ports;
     njt_int_t               dst_port;
 
@@ -39,6 +40,7 @@ typedef struct {
 typedef struct {
     njt_queue_t                     ranges;
     njt_range_path_t                iptables_path;
+    njt_range_path_t                ip6tables_path;
     njt_range_path_t                ip_path;
     njt_pool_t                      *pool;
 } njt_range_conf_t;

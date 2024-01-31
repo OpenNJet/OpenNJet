@@ -5038,6 +5038,13 @@ njt_http_core_server_name(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                                "server name \"%V\" has suspicious symbols",
                                &value[i]);
         }
+#if (NJT_HTTP_DYNAMIC_LOC) 
+         if(cf->dynamic == 1  && cscf->server_names.nelts >= 1) {
+             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                               "dynamic server only support one name!");
+            return NJT_CONF_ERROR;
+        }
+#endif
 
         sn = njt_array_push(&cscf->server_names);
         if (sn == NULL) {

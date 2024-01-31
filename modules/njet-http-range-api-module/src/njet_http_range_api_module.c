@@ -503,6 +503,17 @@ njt_dyn_range_read_data(njt_http_request_t *r){
     }else{
         njt_crc32_update(&crc32, (u_char*)"tcp", 3);
     }
+
+    //falimy
+    if(api_data->is_family_set){
+        if(DYN_RANGE_API_FAMILY_IPV_4 == api_data->family){
+            njt_crc32_update(&crc32, (u_char*)"ipv4", 4);
+        }else{
+            njt_crc32_update(&crc32, (u_char*)"ipv6", 4);
+        }
+    }else{
+        njt_crc32_update(&crc32, (u_char*)"ipv4", 4);
+    }
     njt_crc32_update(&crc32, api_data->src_ports.data, api_data->src_ports.len);
     njt_memzero(dst_port_buf, 100);
     end = njt_snprintf(dst_port_buf, 100, "%d", api_data->dst_port);
@@ -522,7 +533,7 @@ njt_dyn_range_read_data(njt_http_request_t *r){
     }
 	
 	njt_log_error(NJT_LOG_INFO, r->connection->log, 0,
-            " dyn range, type:%d  crc32:%ui", api_data->type, crc32);    
+            " dyn range, type:%d family:%d crc32:%ui", api_data->type, api_data->family, crc32);    
 
     p = njt_snprintf(topic_name.data,topic_len,"/worker_a/ins/range/l_%ui",crc32);
 	topic_name.len = p - topic_name.data;

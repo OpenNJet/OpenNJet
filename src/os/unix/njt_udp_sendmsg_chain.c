@@ -335,8 +335,6 @@ njt_get_srcaddr_cmsg(struct cmsghdr *cmsg, struct sockaddr *local_sockaddr)
 #endif
 
  #if (NJT_HAVE_IP_RECVDSTADDR)
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-            "===================njt_get_srcaddr_cmsg ");
     if (cmsg->cmsg_level == IPPROTO_IP
         && cmsg->cmsg_type == IP_RECVDSTADDR
         && local_sockaddr->sa_family == AF_INET)

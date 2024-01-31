@@ -626,7 +626,7 @@ njt_open_listening_sockets(njt_cycle_t *cycle)
                                   &ls[i].addr_text);
                 }
 
-                //add by clb, used for udp traffic hack, need set IP_TRANSPARENT and IP_RECVORIGDSTADDR
+                //add by clb, used for udp traffic hack, need set IPV6_TRANSPARENT and IPV6_RECVORIGDSTADDR
                 int n = 1;
                 if(0 != setsockopt(s, SOL_IPV6, IPV6_TRANSPARENT, &n, sizeof(int))){
                             njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
@@ -1709,8 +1709,17 @@ njt_get_listening(njt_conf_t *cf, struct sockaddr *sockaddr,
     socklen_t socklen){
     njt_uint_t         i;
     njt_listening_t   *ls;
+    njt_uint_t         worker;
+   
+    worker = njt_worker;
+    if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
+	    worker = 0;
+    }   
     ls = cf->cycle->listening.elts;
     for (i = 0; i < cf->cycle->listening.nelts; i++) {
+	    if (ls[i].reuseport && ls[i].worker != worker) {
+		    continue; 
+	    }
 	if(ls[i].socklen == socklen && njt_memcmp(sockaddr,ls[i].sockaddr,socklen) == 0){
 	   return &ls[i];
 	}	

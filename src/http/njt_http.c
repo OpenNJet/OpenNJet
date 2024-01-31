@@ -1501,7 +1501,6 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
                                    &addr[i].opt.addr_text);
                 return NJT_ERROR;
             }
-
             addr[i].opt = *lsopt;
         }
 

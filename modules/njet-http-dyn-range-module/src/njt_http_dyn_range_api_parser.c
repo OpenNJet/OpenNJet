@@ -42,6 +42,21 @@ static bool parse_dyn_range_api_type(njt_pool_t *pool, parse_state_t *parse_stat
 }
 
 
+static bool parse_dyn_range_api_family(njt_pool_t *pool, parse_state_t *parse_state, dyn_range_api_family_t *out, js2c_parse_error_t *err_ret) {
+    js2c_check_type(JSMN_STRING);
+    if (current_string_is(parse_state, "ipv4")) {
+        *out = DYN_RANGE_API_FAMILY_IPV_4;
+    } else if (current_string_is(parse_state, "ipv6")) {
+        *out = DYN_RANGE_API_FAMILY_IPV_6;
+    } else {
+        LOG_ERROR_JSON_PARSE(UNKNOWN_ENUM_VALUE_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Unknown enum value in '%s': %.*s", parse_state->current_key, CURRENT_STRING_FOR_ERROR(parse_state));
+        return true;
+    }
+    parse_state->current_token += 1;
+    return false;
+}
+
+
 static bool parse_dyn_range_api(njt_pool_t *pool, parse_state_t *parse_state, dyn_range_api_t *out, js2c_parse_error_t *err_ret) {
     njt_uint_t i;
 
@@ -70,6 +85,17 @@ static bool parse_dyn_range_api(njt_pool_t *pool, parse_state_t *parse_state, dy
                 return true;
             }
             out->is_type_set = 1;
+            parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "family")) {
+            js2c_check_field_set(out->is_family_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "family";
+            js2c_null_check();
+            if (parse_dyn_range_api_family(pool, parse_state, (&out->family), err_ret)) {
+                return true;
+            }
+            out->is_family_set = 1;
             parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "src_ports")) {
             js2c_check_field_set(out->is_src_ports_set);
@@ -109,6 +135,10 @@ static bool parse_dyn_range_api(njt_pool_t *pool, parse_state_t *parse_state, dy
         LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': src_ports", parse_state->current_key);
         return true;
     }
+    // set default
+    if (!out->is_family_set) {
+        out->family = DYN_RANGE_API_FAMILY_IPV_4;
+    }
     parse_state->current_token = saved_current_token;
     return false;
 }
@@ -138,6 +168,20 @@ static void get_json_length_dyn_range_api_type(njt_pool_t *pool, dyn_range_api_t
     if (*out == DYN_RANGE_API_TYPE_UDP) {
         // "udp"
         *length += 3 + 2;
+        return;
+    }
+}
+// BEGIN GET_JSON_LENGTH ENUM
+
+static void get_json_length_dyn_range_api_family(njt_pool_t *pool, dyn_range_api_family_t *out, size_t *length, njt_int_t flags) {
+    if (*out == DYN_RANGE_API_FAMILY_IPV_4) {
+        // "ipv4"
+        *length += 4 + 2;
+        return;
+    }
+    if (*out == DYN_RANGE_API_FAMILY_IPV_6) {
+        // "ipv6"
+        *length += 4 + 2;
         return;
     }
 }
@@ -179,6 +223,14 @@ static void get_json_length_dyn_range_api(njt_pool_t *pool, dyn_range_api_t *out
         count++;
     }
     omit = 0;
+    omit = out->is_family_set ? 0 : 1;
+    if (omit == 0) {
+        *length += (6 + 3); // "family": 
+        get_json_length_dyn_range_api_family(pool, (&out->family), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
     omit = out->is_src_ports_set ? 0 : 1;
     omit = (flags & OMIT_NULL_STR) && (out->src_ports.data) == NULL ? 1 : omit;
     if (omit == 0) {
@@ -209,6 +261,10 @@ dyn_range_api_type_t get_dyn_range_api_type(dyn_range_api_t *out) {
     return out->type;
 }
 
+dyn_range_api_family_t get_dyn_range_api_family(dyn_range_api_t *out) {
+    return out->family;
+}
+
 dyn_range_api_src_ports_t* get_dyn_range_api_src_ports(dyn_range_api_t *out) {
     return &out->src_ports;
 }
@@ -223,6 +279,10 @@ void set_dyn_range_api_action(dyn_range_api_t* obj, dyn_range_api_action_t field
 void set_dyn_range_api_type(dyn_range_api_t* obj, dyn_range_api_type_t field) {
     obj->type = field;
     obj->is_type_set = 1;
+}
+void set_dyn_range_api_family(dyn_range_api_t* obj, dyn_range_api_family_t field) {
+    obj->family = field;
+    obj->is_family_set = 1;
 }
 void set_dyn_range_api_src_ports(dyn_range_api_t* obj, dyn_range_api_src_ports_t* field) {
     njt_memcpy(&obj->src_ports, field, sizeof(njt_str_t));
@@ -261,6 +321,20 @@ static void to_oneline_json_dyn_range_api_type(njt_pool_t *pool, dyn_range_api_t
     if (*out == DYN_RANGE_API_TYPE_UDP) {
         cur = njt_sprintf(cur, "\"udp\"");
         buf->len += 3 + 2;
+        return;
+    }
+}
+
+static void to_oneline_json_dyn_range_api_family(njt_pool_t *pool, dyn_range_api_family_t *out, njt_str_t* buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    if (*out == DYN_RANGE_API_FAMILY_IPV_4) {
+        cur = njt_sprintf(cur, "\"ipv4\"");
+        buf->len += 4 + 2;
+        return;
+    }
+    if (*out == DYN_RANGE_API_FAMILY_IPV_6) {
+        cur = njt_sprintf(cur, "\"ipv6\"");
+        buf->len += 4 + 2;
         return;
     }
 }
@@ -304,6 +378,16 @@ static void to_oneline_json_dyn_range_api(njt_pool_t *pool, dyn_range_api_t *out
         cur = njt_sprintf(cur, "\"type\":");
         buf->len = cur - buf->data;
         to_oneline_json_dyn_range_api_type(pool, (&out->type), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_family_set ? 0 : 1;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"family\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_dyn_range_api_family(pool, (&out->family), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
