@@ -2050,11 +2050,13 @@ njt_http_add_addrs(njt_conf_t *cf, njt_http_port_t *hport,
     struct sockaddr_in *sin;
     njt_http_virtual_names_t *vn;
 
-    hport->addrs = njt_pcalloc(cf->pool,
-                               hport->naddrs * sizeof(njt_http_in_addr_t));
-    if (hport->addrs == NULL) {
-        return NJT_ERROR;
-    }
+    if (cf->dynamic == 0) {
+	    hport->addrs = njt_pcalloc(cf->pool,
+				       hport->naddrs * sizeof(njt_http_in_addr_t));
+	    if (hport->addrs == NULL) {
+		return NJT_ERROR;
+	    }
+   }
 
     addrs = hport->addrs;
 
@@ -2117,10 +2119,12 @@ njt_http_add_addrs6(njt_conf_t *cf, njt_http_port_t *hport,
     struct sockaddr_in6 *sin6;
     njt_http_virtual_names_t *vn;
 
-    hport->addrs = njt_pcalloc(cf->pool,
-                               hport->naddrs * sizeof(njt_http_in6_addr_t));
-    if (hport->addrs == NULL) {
-        return NJT_ERROR;
+    if(cf->dynamic == 0) {
+	    hport->addrs = njt_pcalloc(cf->pool,
+				       hport->naddrs * sizeof(njt_http_in6_addr_t));
+	    if (hport->addrs == NULL) {
+		return NJT_ERROR;
+	    }
     }
 
     addrs6 = hport->addrs;
