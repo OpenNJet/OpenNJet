@@ -525,17 +525,19 @@ njt_open_listening_sockets(njt_cycle_t *cycle)
                     }
                 }
 
-                //add by clb, used for udp traffic hack, need set IP_TRANSPARENT and IP_RECVORIGDSTADDR
-                int n = 1;
-                if(0 != setsockopt(s, SOL_IP, IP_TRANSPARENT, &n, sizeof(int))){
-                            njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
-                                    "====================set opt transparent error");
-                }
+                // add by clb, used for udp traffic hack, need set IP_TRANSPARENT and IP_RECVORIGDSTADDR
+                if(ls[i].mesh){
+                    int n = 1;
+                    if(0 != setsockopt(s, SOL_IP, IP_TRANSPARENT, &n, sizeof(int))){
+                                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                        "====================set opt transparent error");
+                    }
 
-                n = 1;
-                if(0 != setsockopt(s, IPPROTO_IP, IP_RECVORIGDSTADDR, &n, sizeof(int))){
-                            njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
-                                    "====================set opt IP_RECVORIGDSTADDR error");
+                    n = 1;
+                    if(0 != setsockopt(s, IPPROTO_IP, IP_RECVORIGDSTADDR, &n, sizeof(int))){
+                                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                        "====================set opt IP_RECVORIGDSTADDR error");
+                    }
                 }
                 //end add by clb
             }
@@ -627,16 +629,18 @@ njt_open_listening_sockets(njt_cycle_t *cycle)
                 }
 
                 //add by clb, used for udp traffic hack, need set IPV6_TRANSPARENT and IPV6_RECVORIGDSTADDR
-                int n = 1;
-                if(0 != setsockopt(s, SOL_IPV6, IPV6_TRANSPARENT, &n, sizeof(int))){
-                            njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
-                                    "====================set opt transparent error");
-                }
+                if(ls[i].mesh){
+                    int n = 1;
+                    if(0 != setsockopt(s, SOL_IPV6, IPV6_TRANSPARENT, &n, sizeof(int))){
+                                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                        "====================set opt transparent error");
+                    }
 
-                n = 1;
-                if(0 != setsockopt(s, IPPROTO_IPV6, IPV6_RECVORIGDSTADDR, &n, sizeof(int))){
-                            njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
-                                    "====================set opt IP_RECVORIGDSTADDR error");
+                    n = 1;
+                    if(0 != setsockopt(s, IPPROTO_IPV6, IPV6_RECVORIGDSTADDR, &n, sizeof(int))){
+                                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                        "====================set opt IP_RECVORIGDSTADDR error");
+                    }
                 }
                 //end add by clb
             }
