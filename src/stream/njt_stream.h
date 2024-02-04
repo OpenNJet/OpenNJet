@@ -57,6 +57,9 @@ typedef struct {
     unsigned                       reuseport:1;
     unsigned                       so_keepalive:2;
     unsigned                       proxy_protocol:1;
+    //add by clb, used for udp and tcp traffic hack
+    unsigned                     mesh:1;
+    //end add by clb
 #if (NJT_HAVE_KEEPALIVE_TUNABLE)
     int                            tcp_keepidle;
     int                            tcp_keepintvl;
@@ -277,7 +280,6 @@ typedef struct {
 
 } njt_stream_proto_ctx_t;
 typedef struct {
-    	njt_flag_t      enabled;
 	njt_array_t     *proto_ports;
 	njt_flag_t      proto_enabled;
 } njt_stream_proto_srv_conf_t;

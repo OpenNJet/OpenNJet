@@ -496,7 +496,7 @@ njt_open_listening_sockets(njt_cycle_t *cycle)
                 return NJT_ERROR;
             }
 
-            //by clb
+            //by clb, used for broadcast and udp traffic hack
             if (ls[i].type == SOCK_DGRAM
                 && ls[i].sockaddr->sa_family == AF_INET ) 
             {    
@@ -524,6 +524,22 @@ njt_open_listening_sockets(njt_cycle_t *cycle)
                             return NJT_ERROR;
                     }
                 }
+
+                // add by clb, used for udp traffic hack, need set IP_TRANSPARENT and IP_RECVORIGDSTADDR
+                if(ls[i].mesh){
+                    int n = 1;
+                    if(0 != setsockopt(s, SOL_IP, IP_TRANSPARENT, &n, sizeof(int))){
+                                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                        "====================set opt transparent error");
+                    }
+
+                    n = 1;
+                    if(0 != setsockopt(s, IPPROTO_IP, IP_RECVORIGDSTADDR, &n, sizeof(int))){
+                                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                        "====================set opt IP_RECVORIGDSTADDR error");
+                    }
+                }
+                //end add by clb
             }
             //end
 
@@ -611,6 +627,22 @@ njt_open_listening_sockets(njt_cycle_t *cycle)
                                   "setsockopt(IPV6_V6ONLY) %V failed, ignored",
                                   &ls[i].addr_text);
                 }
+
+                //add by clb, used for udp traffic hack, need set IPV6_TRANSPARENT and IPV6_RECVORIGDSTADDR
+                if(ls[i].mesh){
+                    int n = 1;
+                    if(0 != setsockopt(s, SOL_IPV6, IPV6_TRANSPARENT, &n, sizeof(int))){
+                                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                        "====================set opt transparent error");
+                    }
+
+                    n = 1;
+                    if(0 != setsockopt(s, IPPROTO_IPV6, IPV6_RECVORIGDSTADDR, &n, sizeof(int))){
+                                njt_log_error(NJT_LOG_EMERG, log, njt_socket_errno,
+                                        "====================set opt IP_RECVORIGDSTADDR error");
+                    }
+                }
+                //end add by clb
             }
 #endif
             /* TODO: close on exit */
@@ -1324,12 +1356,34 @@ njt_close_connection(njt_connection_t *c)
         njt_delete_posted_event(c->write);
     }
 
+    log_error = c->log_error;
+
+    if(c->udp && c->udp->real_sock != (njt_socket_t)-1){
+        if (njt_close_socket(c->udp->real_sock) == -1) {
+            err = njt_socket_errno;
+            if (err == NJT_ECONNRESET || err == NJT_ENOTCONN) {
+                switch (log_error) {
+                case NJT_ERROR_INFO:
+                    level = NJT_LOG_INFO;
+                    break;
+                case NJT_ERROR_ERR:
+                    level = NJT_LOG_ERR;
+                    break;
+                default:
+                    level = NJT_LOG_CRIT;
+                }
+            } else {
+                level = NJT_LOG_CRIT;
+            }
+
+            c->udp->real_sock = (njt_socket_t)-1;
+        }
+    }
+
     c->read->closed = 1;
     c->write->closed = 1;
 
     njt_reusable_connection(c, 0);
-
-    log_error = c->log_error;
 
     njt_free_connection(c);
 

@@ -515,6 +515,10 @@ njt_stream_optimize_servers(njt_conf_t *cf, njt_array_t *ports)
             ls->fastopen = addr[i].opt.fastopen;
 #endif
 
+            //add by clb. used for tcp and udp traffic hack
+            ls->mesh = addr[i].opt.mesh;
+            //end add by clb
+
 #if (NJT_HAVE_REUSEPORT)
             ls->reuseport = addr[i].opt.reuseport;
 #endif
