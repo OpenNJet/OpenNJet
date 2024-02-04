@@ -16,6 +16,7 @@ extern njt_int_t njt_http_lua_content_handler_inline(njt_http_request_t *r);
 extern njt_int_t njt_http_lua_content_handler(njt_http_request_t *r);
 extern u_char *njt_http_lua_gen_chunk_cache_key(njt_conf_t *cf, const char *tag, const u_char *src, size_t src_len);
 extern njt_int_t njt_http_lua_access_handler_inline(njt_http_request_t *r);
+extern njt_int_t njt_http_lua_access_handler(njt_http_request_t *r);
 
 njt_str_t dyn_http_server_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
@@ -177,7 +178,6 @@ static njt_int_t njt_dyn_http_lua_set_lua(njt_pool_t *pool, dynhttplua_servers_i
                 goto error;
             }
             llcf->content_chunkname = chunkname;
-            llcf->content_src_key = cache_key;
             llcf->content_handler = njt_http_lua_content_handler_inline;
             /*  register location content handler */
             clcf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
@@ -191,17 +191,18 @@ static njt_int_t njt_dyn_http_lua_set_lua(njt_pool_t *pool, dynhttplua_servers_i
             /*  get code cache table */
             lua_pushlightuserdata(L, njt_http_lua_lightudata_mask(code_cache_key));
             lua_rawget(L, LUA_REGISTRYINDEX);   //cache
-            if (llcf->old_content_cache_key) {
+            if (llcf->content_src_key) {
                 lua_pushnil(L);
-                lua_setfield(L, -2, (const char *)llcf->old_content_cache_key);
+                lua_setfield(L, -2, (const char *)llcf->content_src_key);
             }
-            llcf->old_content_cache_key = cache_key;
             if (llcf->content_src_ref != LUA_NOREF && llcf->content_src_ref != LUA_REFNIL) {
                 luaL_unref(L, -1, llcf->content_src_ref);
             }
             llcf->content_src_ref = LUA_REFNIL;
             /*  remove cache table*/
             lua_pop(L, 1);
+            
+            llcf->content_src_key = cache_key;
         }
         if (httplua_obj->is_access_by_set) {
             lmcf->requires_capture_filter = 1;
@@ -215,24 +216,24 @@ static njt_int_t njt_dyn_http_lua_set_lua(njt_pool_t *pool, dynhttplua_servers_i
                 goto error;
             }
             llcf->access_chunkname = chunkname;
-            llcf->access_src_key = cache_key;
             llcf->access_handler = njt_http_lua_access_handler_inline;
             llcf->access_src.value.data = njt_pstrdup(pool, &httplua_obj->access_by);
             llcf->access_src.value.len = httplua_obj->access_by.len;
             /*  get code cache table */
             lua_pushlightuserdata(L, njt_http_lua_lightudata_mask(code_cache_key));
             lua_rawget(L, LUA_REGISTRYINDEX);   //cache
-            if (llcf->old_access_cache_key) {
+            if (llcf->access_src_key) {
                 lua_pushnil(L);
-                lua_setfield(L, -2, (const char *)llcf->old_access_cache_key);
+                lua_setfield(L, -2, (const char *)llcf->access_src_key);
             }
-            llcf->old_access_cache_key = cache_key;
             if (llcf->access_src_ref != LUA_NOREF && llcf->access_src_ref != LUA_REFNIL) {
                 luaL_unref(L, -1, llcf->access_src_ref);
             }
             llcf->access_src_ref = LUA_REFNIL;
             /*  remove cache table*/
             lua_pop(L, 1);
+            
+            llcf->access_src_key = cache_key;
         }
     }
 
@@ -526,9 +527,27 @@ static njt_int_t njt_http_dyn_lua_module_init_process(njt_cycle_t *cycle)
     return NJT_OK;
 }
 
+static njt_int_t
+njt_http_dyn_lua_init(njt_conf_t *cf)
+{
+    njt_http_handler_pt        *h;
+    njt_http_core_main_conf_t  *cmcf;
+
+    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
+
+    h = njt_array_push(&cmcf->phases[NJT_HTTP_ACCESS_PHASE].handlers);
+    if (h == NULL) {
+        return NJT_ERROR;
+    }
+
+    *h = njt_http_lua_access_handler;
+
+    return NJT_OK;
+}
+
 static njt_http_module_t njt_http_dyn_lua_module_ctx = {
     NULL, /* preconfiguration */
-    NULL, /* postconfiguration */
+    njt_http_dyn_lua_init, /* postconfiguration */
 
     NULL, /* create main configuration */
     NULL, /* init main configuration */
