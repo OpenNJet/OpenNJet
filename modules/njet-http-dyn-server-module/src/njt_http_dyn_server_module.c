@@ -555,6 +555,7 @@ njt_http_dyn_server_info_t * njt_http_parser_server_data(njt_str_t json_str,njt_
 	rc = njt_json_2_structure(&json_str, &json_body, server_pool);
 	if (rc != NJT_OK) {
 		rc = NJT_ERROR;
+		njt_log_error(NJT_LOG_ERR,njt_cycle->log, 0, "json error!,json=%V",&json_str);
 		njt_destroy_pool(server_pool);
 		return NULL;
 	}

@@ -657,9 +657,9 @@ out:
 		njt_destroy_pool(dyn_pool);
 	}
     if(rc != NJT_OK) {
-    	   //njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  location [%V] error!",&location_name);
+    	   njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "add  location [%V] error!",&location_name);
     } else {
-	   //njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  location [%V] succ!",&location_name);
+	   njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "add  location [%V] succ!",&location_name);
     }
     return rc;
 }
@@ -1091,7 +1091,8 @@ njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str,njt_
 	rc = njt_json_2_structure(&json_str, &json_body, location_pool);
     if (rc != NJT_OK) {
         rc = NJT_ERROR;
-		njt_destroy_pool(location_pool);
+	njt_log_error(NJT_LOG_ERR,njt_cycle->log, 0, "json error!,json=%V",&json_str);
+	njt_destroy_pool(location_pool);
         return NULL;
     }
 	location_info = njt_pcalloc(location_pool, sizeof(njt_http_location_info_t));
