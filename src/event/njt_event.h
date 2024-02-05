@@ -16,6 +16,19 @@
 
 #define NJT_INVALID_INDEX  0xd0d0d0d0
 
+//add by clb, support ipv6 udp traffic hack
+#ifndef IPV6_ORIGDSTADDR
+#define IPV6_ORIGDSTADDR        74
+#endif
+
+#ifndef IPV6_RECVORIGDSTADDR
+#define IPV6_RECVORIGDSTADDR    IPV6_ORIGDSTADDR
+#endif
+
+#ifndef IPV6_TRANSPARENT
+#define IPV6_TRANSPARENT        75
+#endif
+//end add by clb
 
 #if (NJT_HAVE_IOCP)
 

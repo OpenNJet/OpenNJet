@@ -27,6 +27,9 @@
 struct njt_udp_connection_s {
     njt_rbtree_node_t   node;
     njt_connection_t   *connection;
+    //add by clb, used for udp traffic hack, send msg use this socket
+    njt_socket_t 		real_sock;
+    //end add by clb
     njt_buf_t          *buffer;
     njt_str_t           key;
 };
