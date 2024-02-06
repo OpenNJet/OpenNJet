@@ -895,7 +895,7 @@ njt_http_dyn_server_delete_main_server(njt_http_core_srv_conf_t* cscf){
 	static njt_int_t
 njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_http_dyn_server_info_t *server_info) //njt_http_dyn_server_info_t *server_info
 {
-	njt_uint_t             p, a,i,j;
+	njt_uint_t             p, a,i,j,del_flag;
 	njt_http_conf_port_t  *port;
 	njt_http_conf_addr_t  *addr;
 	njt_http_core_main_conf_t *cmcf;
@@ -911,7 +911,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 	if (ports == NULL) {
 		return NJT_OK;
 	}
-
+	del_flag = 0;
 	port = ports->elts;
 	for (p = 0; p < ports->nelts; p++) {
 
@@ -943,8 +943,9 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 								njt_memset(&addr[a].hash,0,sizeof(njt_hash_t));
 							}
 							njt_http_dyn_server_delete_regex_server_name(&addr[a],server_name);
-							njt_http_dyn_server_delete_main_server(cscf);
-							return NJT_OK;
+							del_flag = 1;
+							//njt_http_dyn_server_delete_main_server(cscf);
+							continue;
 						} else {
 							msg = server_info->buffer;
 							pdata = njt_snprintf(msg.data, msg.len, "only dynamic server,can to be delete!", &server_info->addr_port);
@@ -967,8 +968,9 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 									&& njt_strncasecmp(name[j].name.data,server_name->data,server_name->len) == 0){
 								njt_array_delete_idx(&cscf->server_names,j);
 								njt_http_dyn_server_delete_regex_server_name(&addr[a],server_name);
-								njt_http_dyn_server_delete_main_server(cscf);
-								return NJT_OK;
+								del_flag = 1;
+								//njt_http_dyn_server_delete_main_server(cscf);
+								continue;
 							}
 
 						}
@@ -976,6 +978,9 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 				}
 			}
 		}
+	}
+	if (del_flag == 1) {
+		njt_http_dyn_server_delete_main_server(cscf);
 	}
 
 
