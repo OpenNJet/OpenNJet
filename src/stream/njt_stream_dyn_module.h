@@ -56,5 +56,26 @@ typedef struct {
 #endif
 } njt_stream_map_conf_ctx_t;
 
+typedef struct {
+    njt_rbtree_t                              *rbtree;
+
+    /* array of njt_stream_server_traffic_status_filter_t */
+    njt_array_t                               *filter_keys;
+
+    /* array of njt_stream_server_traffic_status_limit_t */
+    njt_array_t                               *limit_traffics;
+
+    /* array of njt_stream_server_traffic_status_limit_t */
+    njt_array_t                               *limit_filter_traffics;
+
+    njt_flag_t                                 enable;
+    njt_flag_t                                 filter_check_duplicate;
+    njt_flag_t                                 limit_check_duplicate;
+
+    njt_stream_upstream_main_conf_t           *upstream;
+    njt_str_t                                  shm_name;
+    ssize_t                                    shm_size;
+} njt_stream_server_traffic_status_ctx_t;
+
 
 #endif //NJET_MAIN_NJT_STREAM_DYN_MODULE_H
