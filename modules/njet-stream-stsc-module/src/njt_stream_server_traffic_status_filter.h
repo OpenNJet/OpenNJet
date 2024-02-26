@@ -9,12 +9,6 @@
 
 
 typedef struct {
-    njt_stream_complex_value_t                filter_key;
-    njt_stream_complex_value_t                filter_name;
-} njt_stream_server_traffic_status_filter_t;
-
-
-typedef struct {
     njt_str_t                                 key;
 } njt_stream_server_traffic_status_filter_key_t;
 

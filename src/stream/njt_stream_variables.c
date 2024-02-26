@@ -1273,7 +1273,5 @@ njt_stream_variables_init_vars(njt_conf_t *cf)
         return NJT_ERROR;
     }
 
-    cmcf->variables_keys = NULL;
-
     return NJT_OK;
 }

@@ -99,39 +99,6 @@
     n * (n + 1) / 2                                                       \
 )
 
-typedef struct {
-    njt_shm_zone_t                            *shm_zone;
-    njt_str_t                                  shm_name;
-    njt_flag_t                                 enable;
-    njt_flag_t                                 filter;
-    njt_flag_t                                 filter_check_duplicate;
-
-    /* array of njt_stream_server_traffic_status_filter_t */
-    njt_array_t                               *filter_keys;
-
-    njt_flag_t                                 limit;
-    njt_flag_t                                 limit_check_duplicate;
-
-    /* array of njt_stream_server_traffic_status_limit_t */
-    njt_array_t                               *limit_traffics;
-
-    /* array of njt_stream_server_traffic_status_limit_t */
-    njt_array_t                               *limit_filter_traffics;
-
-    njt_stream_server_traffic_status_node_t    stats;
-    njt_msec_t                                 start_msec;
-
-    njt_flag_t                                 average_method;
-    njt_msec_t                                 average_period;
-
-    /* array of njt_stream_server_traffic_status_node_histogram_t */
-    njt_array_t                               *histogram_buckets;
-
-
-    njt_rbtree_node_t                        **node_caches;
-} njt_stream_server_traffic_status_conf_t;
-
-
 njt_msec_t njt_stream_server_traffic_status_current_msec(void);
 njt_msec_int_t njt_stream_server_traffic_status_session_time(njt_stream_session_t *s);
 njt_msec_int_t njt_stream_server_traffic_status_upstream_response_time(njt_stream_session_t *s,
