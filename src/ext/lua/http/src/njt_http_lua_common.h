@@ -425,6 +425,10 @@ typedef struct {
     njt_flag_t                       log_socket_errors;
     njt_flag_t                       check_client_abort;
     njt_flag_t                       use_default_type;
+#ifdef NJT_HTTP_DYN_LUA_MODULE
+    njt_int_t                        dynamic;
+    njt_pool_t                       *conf_pool;
+#endif
 } njt_http_lua_loc_conf_t;
 
 

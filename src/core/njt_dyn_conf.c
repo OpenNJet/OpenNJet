@@ -158,6 +158,7 @@ njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
     // // all conditions will be checked in njt_conf_handler() 
     if (rc == NJT_CONF_BLOCK_DONE) {
         njt_conf_cur_ptr = cur->parent;
+        // printf("rc = NJT_CONF_BLOCK_DONE \n");
         return NJT_OK;
     }
 
@@ -166,7 +167,12 @@ njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
     }
 
     name = cf->args->elts;
-    // printf("name: %s \n", name->data);
+    if (name->len == 20 && njt_strncmp(name->data, "content_by_lua_block", 20) == NJT_OK) {
+        return NJT_OK;
+    }
+    if (name->len == 19 && njt_strncmp(name->data, "access_by_lua_block", 19) == NJT_OK) {
+        return NJT_OK;
+    }
     found = 0;
 
     if (rc == NJT_OK) {
@@ -176,7 +182,7 @@ njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
                 return NJT_ERROR;
             }
         }
-        // find cmd by key
+        // find cmd by keygi
         for (j = 0; j < cur->cmds->nelts; j++) {
             ccmd = &((njt_conf_cmd_t *)(cur->cmds->elts))[j];
             if (ccmd->key.len != name->len) {
