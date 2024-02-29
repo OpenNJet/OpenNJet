@@ -461,4 +461,101 @@ void njt_http_upstream_del(njt_http_upstream_srv_conf_t *upstream) {
 }
 #endif
 
+  njt_str_t njt_get_command_unique_name(njt_pool_t *pool,njt_str_t src) {
+  njt_conf_t cf;
+  njt_str_t full_name,*value,new_src;
+  u_char* index;
+  njt_uint_t len,i;
+  full_name.len = 0;
+  full_name.data = NULL;
+  njt_memzero(&cf, sizeof(njt_conf_t));
+  cf.pool = pool;
+  cf.temp_pool = pool;
+  cf.log = njt_cycle->log;
+  if(src.len == 0) {
+	return full_name;
+  }
+   new_src.len = src.len + 2;
+   new_src.data = njt_pcalloc(pool,new_src.len);  //add " {"
+	if (new_src.data == NULL){
+		return full_name;
+	}
+	njt_memcpy(new_src.data,src.data,src.len);
+	new_src.data[new_src.len - 2] = ' ';
+	new_src.data[new_src.len - 1] = '{';
 
+  cf.args = njt_array_create(cf.pool, 10, sizeof(njt_str_t));
+    if (cf.args == NULL) {
+        return full_name;
+    }
+   njt_conf_read_memory_token(&cf,new_src);
+   if(cf.args->nelts > 0) {
+	cf.args->nelts--;
+   }
+   len =0;
+   value = cf.args->elts;
+    for(i = 0; i < cf.args->nelts; i++){
+        len += value[i].len;
+    }
+    index = njt_pcalloc(pool,len);
+    if (index == NULL){
+        return full_name;
+    }
+    full_name.data = index;
+    for(i = 0; i < cf.args->nelts; i++){
+        njt_memcpy(index,value[i].data,value[i].len);
+        index += value[i].len;
+        //*index = (u_char)' ';
+        //++index;
+    }
+    full_name.len = len;
+    return full_name;
+ 
+}
+
+
+njt_int_t njt_http_location_full_name_cmp(njt_str_t src,njt_str_t dst) {
+
+	njt_pool_t  *pool;
+	njt_str_t   command1,command2;
+
+	pool = njt_create_pool(1024, njt_cycle->log);
+	if(pool == NULL) {
+		return NJT_ERROR;
+	}
+
+	command1 = njt_get_command_unique_name(pool,src);
+	command2 = njt_get_command_unique_name(pool,dst);
+	if(command1.len == command2.len && njt_strncmp(command1.data,command2.data,command1.len) == 0) {
+			return NJT_OK;
+	}
+	return NJT_ERROR;
+}
+
+njt_int_t njt_http_server_full_name_cmp(njt_str_t src,njt_str_t dst) {
+	njt_pool_t  *pool;
+	njt_str_t   command1,command2;
+	njt_uint_t  is_case;
+	pool = njt_create_pool(1024, njt_cycle->log);
+	if(pool == NULL) {
+		return NJT_ERROR;
+	}
+
+	command1 = njt_get_command_unique_name(pool,src);
+	command2 = njt_get_command_unique_name(pool,dst);
+	is_case = 0;
+	if((command1.len > 0 && command1.data[0] == '~') || (command2.len > 0 && command2.data[0] == '~')) {
+		is_case = 1;
+	}
+	if(is_case == 1) {
+		if(command1.len == command2.len && njt_strncmp(command1.data,command2.data,command1.len) == 0) {
+			return NJT_OK;
+		}
+	} else {
+		if(command1.len == command2.len && njt_strncasecmp(command1.data,command2.data,command1.len) == 0) {
+			return NJT_OK;
+		}
+	}
+	
+	return NJT_ERROR;
+}
