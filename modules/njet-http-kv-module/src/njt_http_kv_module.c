@@ -278,6 +278,16 @@ static void njt_http_kv_iot_set_timer(njt_event_handler_pt h, int interval, stru
 static char *kv_rr_callback(const char *topic, int is_reply, const char *msg, int msg_len, int session_id, int *out_len)
 {
     njt_str_t topic_str, msg_str;
+
+    if (njt_exiting || njt_terminate) {
+        //when process is exiting or terminate, skip msg processing
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "process is existing, skip kv handling");
+        u_char exitMsg[] = "{\"code\":-2, \"msg\":\"process is existing\"}";
+        u_char *pchar = njt_calloc(41, njt_cycle->log);
+        njt_memcpy(pchar, exitMsg, 41);
+        *out_len = 41;
+        return (char *)pchar;
+    }
     topic_str.data = (u_char *)topic;
     topic_str.len = strlen(topic);
     msg_str.data = (u_char *)msg;
@@ -294,6 +304,13 @@ static int msg_callback(const char *topic, const char *msg, int msg_len, void *o
     njt_str_t kv_key, kv_value;
     njt_cycle_t *cycle = (njt_cycle_t *)out_data;
     njt_uint_t hash;
+
+    if (njt_exiting || njt_terminate) {
+        //when process is exiting or terminate, skip msg processing
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "process is existing, skip kv handling");
+        return NJT_OK;
+    }
+
     // tips: 1 means message should be processed in lua
     int kv_topic_l = strlen(mqtt_kv_topic);
     int topic_l = strlen(topic);
