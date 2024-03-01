@@ -357,16 +357,16 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     };
 
     //njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "find && free old location start +++++++++++++++");
-
-	location_name.data = njt_pcalloc(location_info->pool, 1024);
+	location_name.len = (location_info->location_rule.len + location_info->location.len) + 1;
+	location_name.data = njt_pcalloc(location_info->pool,location_name.len);
 	if(location_name.data == NULL) {
 		return NJT_ERROR;
 	}
 	if(location_info->location_rule.len > 0) {
-		p = njt_snprintf(location_name.data, 1024, "%V%V", &location_info->location_rule,
+		p = njt_snprintf(location_name.data,location_name.len, "%V%V", &location_info->location_rule,
 								 &location_info->location);
 	} else {
-		p = njt_snprintf(location_name.data, 1024, "%V", &location_info->location);
+		p = njt_snprintf(location_name.data,location_name.len, "%V", &location_info->location);
 	}
 	location_name.len = p - location_name.data;
 	add_escape_val = add_escape(location_info->pool,location_name);
