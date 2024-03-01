@@ -313,7 +313,12 @@ njt_stream_get_variable_index(njt_conf_t *cf, njt_str_t *name)
     }
 
     v->name.len = name->len;
-    v->name.data = njt_pnalloc(cf->pool, name->len);
+#if (NJT_HTTP_DYNAMIC_LOC)
+	v->name.data = njt_pnalloc(cmcf->variables.pool, name->len);
+#else
+	v->name.data = njt_pnalloc(cf->pool, name->len);
+#endif
+
     if (v->name.data == NULL) {
         return NJT_ERROR;
     }
