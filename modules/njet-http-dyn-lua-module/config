@@ -1,0 +1,8 @@
+njt_module_type=HTTP
+njt_module_name="njt_http_dyn_lua_module"
+njt_module_srcs="$njt_addon_dir/src/njt_http_dyn_lua_module.c \
+                $njt_addon_dir/src/njt_http_dyn_lua_parser.c"
+njt_module_incs="$njt_addon_dir/../../src/ext/lua/http/src"
+
+have=NJT_HTTP_DYN_LUA_MODULE . auto/have
+. auto/module

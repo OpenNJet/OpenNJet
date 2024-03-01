@@ -91,6 +91,18 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
         return NJT_ERROR;
     }
 
+    if(hsscf->certificate_values){
+        njt_log_error(NJT_LOG_ERR, pool->log, 0, 
+            " dyn ssl, certificate has variable, not support dyn update, listen:%V server_name:%V",
+            port, serverName);
+
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " dyn ssl, certificate has variable, not support dyn update");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+
+        return NJT_ERROR;
+    }    
+
     end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " listen[%V] server_name[%V]", port, serverName);
     rpc_data_str.len = end - data_buf;
     njt_rpc_result_set_conf_path(rpc_result, &rpc_data_str);
@@ -718,7 +730,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
                     add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
                 }
 #else
-                set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_RSA);
+                set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, cert_type[j]);
 
                 set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &cert[j]);
                 set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &key[j]);
@@ -733,7 +745,8 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
             }
             var_cert = hsscf->certificate_values->elts;
             var_key = hsscf->certificate_key_values->elts;
-            cert_type = hsscf->cert_types->elts;
+            //because has variable cert, so not suport certtype, set to other
+            // cert_type = hsscf->cert_types->elts;
             for(j = 0 ; j < hsscf->certificate_values->nelts ; ++j ){
                 cert_item = create_dyn_ssl_servers_item_certificates_item(pool);
                 if(cert_item == NULL ){
@@ -802,7 +815,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
                     // njt_log_error(NJT_LOG_EMERG, njt_cycle->log, 0, "dyn ssl, error: should not get enc before sign");
                 }else{
                     // set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_RSA);
-                    set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, cert_type[j]);
+                    set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_OTHER);
 
                     set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &var_cert[j].value);
                     set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &var_key[j].value);
@@ -810,7 +823,7 @@ static njt_str_t *njt_http_dyn_ssl_dump_conf(njt_cycle_t *cycle,njt_pool_t *pool
                     add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
                 }
 #else
-                set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_RSA);
+                set_dyn_ssl_servers_item_certificates_item_cert_type(cert_item, DYN_SSL_SERVERS_ITEM_CERTIFICATES_ITEM_CERT_TYPE_OTHER);
                 set_dyn_ssl_servers_item_certificates_item_certificate(cert_item, &var_cert[j].value);
                 set_dyn_ssl_servers_item_certificates_item_certificateKey(cert_item, &var_key[j].value);
                 add_item_dyn_ssl_servers_item_certificates(server_item->certificates, cert_item);
