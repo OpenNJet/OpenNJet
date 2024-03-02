@@ -527,8 +527,10 @@ njt_int_t njt_http_location_full_name_cmp(njt_str_t src,njt_str_t dst) {
 	command1 = njt_get_command_unique_name(pool,src);
 	command2 = njt_get_command_unique_name(pool,dst);
 	if(command1.len == command2.len && njt_strncmp(command1.data,command2.data,command1.len) == 0) {
+			njt_destroy_pool(pool);
 			return NJT_OK;
 	}
+	njt_destroy_pool(pool);
 	return NJT_ERROR;
 }
 
@@ -549,13 +551,32 @@ njt_int_t njt_http_server_full_name_cmp(njt_str_t src,njt_str_t dst) {
 	}
 	if(is_case == 1) {
 		if(command1.len == command2.len && njt_strncmp(command1.data,command2.data,command1.len) == 0) {
+			njt_destroy_pool(pool);
 			return NJT_OK;
 		}
 	} else {
 		if(command1.len == command2.len && njt_strncasecmp(command1.data,command2.data,command1.len) == 0) {
+			njt_destroy_pool(pool);
 			return NJT_OK;
 		}
 	}
-	
+	njt_destroy_pool(pool);
 	return NJT_ERROR;
+}
+
+njt_http_core_srv_conf_t* njt_http_get_srv_by_ori_name(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
+
+	njt_pool_t  *pool;
+	njt_str_t   name;
+	njt_http_core_srv_conf_t* srv;
+
+	pool = njt_create_pool(1024, njt_cycle->log);
+	if(pool == NULL) {
+		return NULL;
+	}
+	name = njt_get_command_unique_name(pool,*server_name);
+	srv = njt_http_get_srv_by_port(cycle,addr_port,&name);
+
+	njt_destroy_pool(pool);
+	return srv;
 }
