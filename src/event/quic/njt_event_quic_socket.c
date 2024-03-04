@@ -181,6 +181,9 @@ njt_quic_listen(njt_connection_t *c, njt_quic_connection_t *qc,
     qsock->udp.node.key = njt_crc32_long(id.data, id.len);
     qsock->udp.key = id;
 
+    //udp traffic hack, init real_sock to -1
+    qsock->udp.real_sock = (njt_socket_t)-1;
+
     njt_rbtree_insert(&c->listening->rbtree, &qsock->udp.node);
 
     njt_queue_insert_tail(&qc->sockets, &qsock->queue);

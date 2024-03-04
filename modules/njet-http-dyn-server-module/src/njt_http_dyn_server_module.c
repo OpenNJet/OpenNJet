@@ -38,7 +38,7 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 
 static njt_int_t njt_http_dyn_server_post_merge_servers();
 static njt_int_t njt_http_dyn_server_delete_dirtyservers(njt_http_dyn_server_info_t *server_info);
-static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name);
+static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port);
 static njt_int_t  njt_http_check_server_body(njt_str_t cmd);
 
 typedef struct njt_http_dyn_server_ctx_s {
@@ -733,7 +733,7 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 		njt_memzero(data,buffer_len);
 		njt_str_set(&opt_ssl,"");
 		ssl = 0;
-		addr_conf = njt_http_get_ssl_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->server_name);	
+		addr_conf = njt_http_get_ssl_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port);	
 		if(addr_conf != NULL) {
 			ssl = addr_conf->ssl;
 		}
@@ -742,6 +742,8 @@ static njt_int_t njt_http_server_write_file(njt_fd_t fd,njt_http_dyn_server_info
 		if(ssl == 1) {
 			njt_str_set(&opt_ssl,"ssl");
 		}
+		//
+		njt_str_set(&server_info->listen_option,""); //暂时不支持其他的参数
 		p = data;
 		p = njt_snprintf(p, remain, "server {\n");
 		remain = data + buffer_len - p;
@@ -844,7 +846,7 @@ njt_http_dyn_server_delete_regex_server_name(njt_http_conf_addr_t* addr,njt_str_
 	njt_uint_t len;
 
 	
-	if(server_name->data[0] != '~') {
+	if(server_name == NULL || server_name->len == 0 || server_name->data[0] != '~') {
 		return;
 	}
 	for(i=0; i < addr->nregex; i++) {
@@ -932,6 +934,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 								njt_array_delete_idx(&port[p].addrs,a);
 							}
 							if(addr[a].default_server == cscf && addr[a].servers.nelts > 0) { //切换默认default_server
+								//addr[a].opt.default_server = 0; todo
 								addr[a].default_server = cscfp[0];
 							}
 							if(addr[a].servers.nelts <= 1) {
@@ -951,10 +954,17 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 						}
 
 					} else {
+						if(cscf->dynamic == 0) {
+							msg = server_info->buffer;
+							pdata = njt_snprintf(msg.data, msg.len, "only dynamic server,can to be delete!", &server_info->addr_port);
+							msg.len = pdata - msg.data;
+							server_info->msg = msg;
+							return NJT_ERROR;
+						}
 						name = cscf->server_names.elts;
 						for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
 							if(name[j].name.len == server_name->len
-									&& njt_strncmp(name[j].name.data,server_name->data,server_name->len) == 0){
+									&& njt_strncasecmp(name[j].name.data,server_name->data,server_name->len) == 0){
 								njt_array_delete_idx(&cscf->server_names,j);
 								njt_http_dyn_server_delete_regex_server_name(&addr[a],server_name);
 								njt_http_dyn_server_delete_main_server(cscf);
@@ -1006,7 +1016,7 @@ static njt_int_t njt_http_dyn_server_post_merge_servers() {
 	}
 	return NJT_ERROR;
 }
-static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
+static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_str_t *addr_port){
 	njt_listening_t *ls, *target_ls = NULL;
 	njt_uint_t i;
 	in_port_t  nport;
@@ -1015,7 +1025,6 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 	njt_http_in_addr_t *addr;
 	njt_http_in6_addr_t *addr6;
 	njt_http_addr_conf_t *addr_conf;
-	njt_str_t server_low_name;
 	njt_url_t  u;
 	struct sockaddr_in   *ssin;
 #if (NJT_HAVE_INET6)
@@ -1040,16 +1049,8 @@ static njt_http_addr_conf_t * njt_http_get_ssl_by_port(njt_cycle_t *cycle,njt_st
 		goto out;
 	}
 
-	if (server_name !=NULL && addr_port != NULL && addr_port->len > 0 ) {
+	if (addr_port != NULL && addr_port->len > 0 ) {
 
-		server_low_name.data = njt_pnalloc(pool,server_name->len);
-		if(server_low_name.data == NULL) {
-			goto out;
-		}
-		server_low_name.len = server_name->len;
-		njt_strlow(server_low_name.data, server_name->data,server_name->len);
-
-		server_name = &server_low_name;
 		worker = njt_worker;
 		if (njt_process == NJT_PROCESS_HELPER && njt_is_privileged_agent) {
                         worker = 0;

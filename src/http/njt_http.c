@@ -1506,7 +1506,6 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
                                    &addr[i].opt.addr_text);
                 return NJT_ERROR;
             }
-
             addr[i].opt = *lsopt;
         }
 
@@ -2110,15 +2109,18 @@ njt_http_add_addrs(njt_conf_t *cf, njt_http_port_t *hport,
     struct sockaddr_in *sin;
     njt_http_virtual_names_t *vn;
 
-    hport->addrs = njt_pcalloc(cf->pool,
-                               hport->naddrs * sizeof(njt_http_in_addr_t));
-    if (hport->addrs == NULL) {
-        return NJT_ERROR;
-    }
-
+    if ( cf->dynamic == 0 || hport->addrs == NULL) {
+	    hport->addrs = njt_pcalloc(cf->pool,
+				       hport->naddrs * sizeof(njt_http_in_addr_t));
+	    if (hport->addrs == NULL) {
+		return NJT_ERROR;
+	    }
+   } 
     addrs = hport->addrs;
 
     for (i = 0; i < hport->naddrs; i++) {
+
+        addrs[i].conf.virtual_names = NULL;   //zyg.dynamic  动态需要
 
         sin = (struct sockaddr_in *) addr[i].opt.sockaddr;
         addrs[i].addr = sin->sin_addr.s_addr;
@@ -2176,16 +2178,18 @@ njt_http_add_addrs6(njt_conf_t *cf, njt_http_port_t *hport,
     struct sockaddr_in6 *sin6;
     njt_http_virtual_names_t *vn;
 
-    hport->addrs = njt_pcalloc(cf->pool,
-                               hport->naddrs * sizeof(njt_http_in6_addr_t));
-    if (hport->addrs == NULL) {
-        return NJT_ERROR;
+    if ( cf->dynamic == 0 || hport->addrs == NULL) {
+	    hport->addrs = njt_pcalloc(cf->pool,
+				       hport->naddrs * sizeof(njt_http_in6_addr_t));
+	    if (hport->addrs == NULL) {
+		return NJT_ERROR;
+	    }
     }
 
     addrs6 = hport->addrs;
 
     for (i = 0; i < hport->naddrs; i++) {
-
+        addrs6[i].conf.virtual_names = NULL;  //zyg.dynamic  动态需要
         sin6 = (struct sockaddr_in6 *) addr[i].opt.sockaddr;
         addrs6[i].addr6 = sin6->sin6_addr;
         addrs6[i].conf.default_server = addr[i].default_server;

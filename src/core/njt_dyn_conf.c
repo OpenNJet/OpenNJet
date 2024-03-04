@@ -158,6 +158,7 @@ njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
     // // all conditions will be checked in njt_conf_handler() 
     if (rc == NJT_CONF_BLOCK_DONE) {
         njt_conf_cur_ptr = cur->parent;
+        // printf("rc = NJT_CONF_BLOCK_DONE \n");
         return NJT_OK;
     }
 
@@ -166,7 +167,12 @@ njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
     }
 
     name = cf->args->elts;
-    // printf("name: %s \n", name->data);
+    if (name->len == 20 && njt_strncmp(name->data, "content_by_lua_block", 20) == NJT_OK) {
+        return NJT_OK;
+    }
+    if (name->len == 19 && njt_strncmp(name->data, "access_by_lua_block", 19) == NJT_OK) {
+        return NJT_OK;
+    }
     found = 0;
 
     if (rc == NJT_OK) {
@@ -176,7 +182,7 @@ njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
                 return NJT_ERROR;
             }
         }
-        // find cmd by key
+        // find cmd by keygi
         for (j = 0; j < cur->cmds->nelts; j++) {
             ccmd = &((njt_conf_cmd_t *)(cur->cmds->elts))[j];
             if (ccmd->key.len != name->len) {
@@ -1320,7 +1326,8 @@ njt_conf_check_svrname_listen(njt_pool_t *pool, njt_conf_element_t *root) {
     s_http.data = njt_palloc(pool, 4);
     njt_str_set(&s_http, "http");
     http = njt_conf_get_block(root, &s_http, NULL);
-    if (http == NULL) {
+    // 检查http块是否存在，及http block下是否有block
+    if (http == NULL || http->blocks == NULL) {
         return NJT_OK;
     }
 
@@ -1716,7 +1723,7 @@ njt_conf_save_to_file(njt_pool_t *pool, njt_log_t *log,
         njt_conf_get_json_str(root, &out, 1);
     }
 
-    if (njt_write_file(&file, out.data, length, 0) == NJT_ERROR) {
+    if (njt_write_file(&file, out.data, out.len, 0) == NJT_ERROR) {
         rc = NJT_ERROR;
     }
 
@@ -1819,7 +1826,11 @@ njt_conf_get_json_str(njt_conf_element_t *root, njt_str_t *out, njt_uint_t is_ro
     }
 
     if (root->blocks == NULL) {
-        dst--;
+
+        if (root->cmds != NULL || (root->cmds == NULL && root->block_name)) {
+            dst--;
+        }
+
         *dst++ = '}'; 
         out->len = dst - out->data;
         return;
@@ -1958,6 +1969,11 @@ njt_conf_element_t * njt_conf_dyn_loc_init_server(njt_pool_t *pool, njt_conf_ele
     // http = njt_conf_get_block(njt_cycle->conf_root, &s_http, NULL);
     if (http == NULL) {
         goto failed;
+    }
+
+    if (http->blocks == NULL) {
+        njt_destroy_pool(dyn_pool);
+        return root;
     }
 
     for (i = 0; i < http->blocks->nelts; i++) {
@@ -2896,8 +2912,11 @@ njt_conf_dyn_loc_get_json_str(njt_conf_element_t *root, njt_str_t *out, njt_uint
     }
 
     if (root->blocks == NULL) {
-        dst = out->data + out->len;
-        dst--;
+
+        if (root->cmds != NULL || (root->cmds == NULL && root->block_name)) {
+            dst--;
+        }
+
         *dst++ = '}'; 
         out->len = dst - out->data;
         return;
@@ -2973,11 +2992,11 @@ void njt_conf_dyn_loc_get_pub_json_length(njt_conf_element_t *root, size_t *leng
     njt_conf_element_t      *block;
     njt_uint_t               svr_or_loc, sname, listen; 
 
-    *length += 1;
-
     if(root == NULL) {
         return;
     }
+
+    *length += 1;
 
     if (root->block_name != NULL) {
         *length += 7; // "_key":  "block_name",
@@ -3112,9 +3131,13 @@ njt_conf_dyn_loc_get_pub_json_str(njt_conf_element_t *root, njt_str_t *out, njt_
     njt_conf_element_t    *block;
     u_char *dst;
 
+    if (root == NULL) {
+        return;
+    }
 
     dst = out->data + out->len;
-    *dst++ = '{'; out->len++;
+    *dst++ = '{';
+    out->len++;
 
     if (root->block_name != NULL) {
         dst = njt_sprintf(dst, "\"_key\":"); //"_key":  "block_name",
@@ -3217,7 +3240,11 @@ njt_conf_dyn_loc_get_pub_json_str(njt_conf_element_t *root, njt_str_t *out, njt_
     }
 
     if (root->blocks == NULL) {
-        dst--;
+
+        if (root->cmds != NULL || (root->cmds == NULL && root->block_name)) {
+            dst--;
+        }
+
         *dst++ = '}'; 
         out->len = dst - out->data;
         return;
@@ -3435,7 +3462,7 @@ njt_conf_dyn_loc_save_pub_to_file(njt_pool_t *pool, njt_log_t *log,
         length = 4;
     } else {
         njt_conf_dyn_loc_get_pub_json_length(root, &length, 1);
-        out.data = njt_palloc(pool, length);
+        out.data = njt_palloc(pool, length + 1);
         if (out.data == NULL) {
             return NJT_ERROR;
         }
@@ -3443,7 +3470,7 @@ njt_conf_dyn_loc_save_pub_to_file(njt_pool_t *pool, njt_log_t *log,
         njt_conf_dyn_loc_get_pub_json_str(root, &out, 1);
     }
 
-    if (njt_write_file(&file, out.data, length, 0) == NJT_ERROR) {
+    if (njt_write_file(&file, out.data, out.len, 0) == NJT_ERROR) {
         rc = NJT_ERROR;
     }
 

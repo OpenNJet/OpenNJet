@@ -640,6 +640,13 @@ njt_stream_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             continue;
         }
 
+        //add by clb, used for udp and tcp traffic hack
+        if (njt_strcmp(value[i].data, "mesh") == 0) {
+            ls->mesh = 1;
+            continue;
+        }
+        //end add by clb
+
 #if (NJT_HAVE_TCP_FASTOPEN)
         if (njt_strncmp(value[i].data, "fastopen=", 9) == 0) {
             ls->fastopen = njt_atoi(value[i].data + 9, value[i].len - 9);

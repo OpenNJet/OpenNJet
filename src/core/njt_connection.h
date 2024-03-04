@@ -79,6 +79,10 @@ struct njt_listening_s {
     unsigned            keepalive:2;
     unsigned            quic:1;
 
+//add by clb, used for tcp and udp traffic hack
+    unsigned          mesh:1;
+//end add by clb
+
     unsigned            deferred_accept:1;
     unsigned            delete_deferred:1;
     unsigned            add_deferred:1;
@@ -165,6 +169,10 @@ struct njt_connection_s {
 
     struct sockaddr    *local_sockaddr;
     socklen_t           local_socklen;
+
+    //add by clb, used for udp traffic hack
+    struct sockaddr_storage     mesh_dst_addr;
+    //end by clb
 
     njt_buf_t          *buffer;
 
