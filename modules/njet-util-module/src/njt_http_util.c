@@ -516,7 +516,7 @@ void njt_http_upstream_del(njt_http_upstream_srv_conf_t *upstream) {
 }
 
 
-njt_int_t njt_http_location_full_name_cmp(njt_str_t src,njt_str_t dst) {
+njt_int_t njt_http_location_full_name_cmp(njt_str_t full_name,njt_str_t src) {
 
 	njt_pool_t  *pool;
 	njt_str_t   command1,command2;
@@ -526,8 +526,8 @@ njt_int_t njt_http_location_full_name_cmp(njt_str_t src,njt_str_t dst) {
 		return NJT_ERROR;
 	}
 
-	command1 = njt_get_command_unique_name(pool,src);
-	command2 = njt_get_command_unique_name(pool,dst);
+	command1 = njt_get_command_unique_name(pool,full_name);
+	command2 = njt_get_command_unique_name(pool,src);
 	if(command1.len == command2.len && njt_strncmp(command1.data,command2.data,command1.len) == 0) {
 			njt_destroy_pool(pool);
 			return NJT_OK;

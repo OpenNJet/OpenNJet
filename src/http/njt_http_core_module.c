@@ -6452,7 +6452,7 @@ njt_http_location_queue_t *njt_http_find_location(njt_str_t name, njt_queue_t *l
 		 x = njt_queue_next(x)) {
 		lq = (njt_http_location_queue_t *) x;
 		clcf = lq->exact ? lq->exact : lq->inclusive;
-        if (njt_http_location_full_name_cmp(name, clcf->full_name) == 0) {
+        if (njt_http_location_full_name_cmp(clcf->full_name,name) == 0) {
         return lq;
         }
 		
