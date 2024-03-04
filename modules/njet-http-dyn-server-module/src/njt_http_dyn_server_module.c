@@ -832,17 +832,18 @@ out:
 }
 
 static void
-njt_http_dyn_server_delete_regex_server_name(njt_http_conf_addr_t* addr,njt_str_t *server_name){
+njt_http_dyn_server_delete_regex_server_name(njt_pool_t *pool,njt_http_conf_addr_t* addr,njt_str_t *server_name){
 	
 	njt_uint_t i;
 	njt_uint_t len;
-
+	njt_str_t  full_name;
 	
 	if(server_name == NULL || server_name->len == 0 || server_name->data[0] != '~') {
 		return;
 	}
 	for(i=0; i < addr->nregex; i++) {
-		if(addr->regex[i].full_name.len == server_name->len  && njt_strncasecmp(addr->regex[i].full_name.data,server_name->data,server_name->len) == 0) {
+		full_name = njt_get_command_unique_name(pool,addr->regex[i].full_name);
+		if(full_name.len == server_name->len  && njt_strncasecmp(full_name.data,server_name->data,server_name->len) == 0) {
 			if(i < addr->nregex -1) {
 				len =  (addr->nregex -1 - i) * sizeof(njt_http_server_name_t);
 				njt_memmove(&addr->regex[i],&addr->regex[i+1],len);  //不做交互，防止有序。
@@ -934,7 +935,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 								addr[a].wc_tail = NULL;
 								njt_memset(&addr[a].hash,0,sizeof(njt_hash_t));
 							}
-							njt_http_dyn_server_delete_regex_server_name(&addr[a],server_name);
+							njt_http_dyn_server_delete_regex_server_name(server_info->pool,&addr[a],server_name);
 							del_flag = 1;
 							//njt_http_dyn_server_delete_main_server(cscf);
 							continue;
@@ -959,7 +960,7 @@ njt_http_dyn_server_delete_configure_server(njt_http_core_srv_conf_t* cscf,njt_h
 							if(name[j].name.len == server_name->len
 									&& njt_strncasecmp(name[j].name.data,server_name->data,server_name->len) == 0){
 								njt_array_delete_idx(&cscf->server_names,j);
-								njt_http_dyn_server_delete_regex_server_name(&addr[a],server_name);
+								njt_http_dyn_server_delete_regex_server_name(server_info->pool,&addr[a],server_name);
 								del_flag = 1;
 								//njt_http_dyn_server_delete_main_server(cscf);
 								continue;
