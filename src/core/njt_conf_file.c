@@ -269,14 +269,13 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
             goto done;
         }
 
-        // add by dyn_conf
+#if (NJT_HELPER_GO_DYNCONF) // by lcm
         if (njt_conf_pool_ptr != NULL) { 
             if (njt_conf_element_handler(njt_conf_pool_ptr, cf, rc) != NJT_OK) {
                 printf("error occured \n");
             }
         }
-        // end of add
-
+#endif
 
         if (rc == NJT_CONF_BLOCK_DONE) {
 
