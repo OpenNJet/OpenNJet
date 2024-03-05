@@ -550,9 +550,9 @@ njt_int_t njt_http_server_full_name_cmp(njt_str_t full_name,njt_str_t server_nam
 		command1 = server_name;
 	}
 	command2 = njt_get_command_unique_name(pool,full_name);
-	is_case = 0;
-	if(command2.len > 0 && command2.data[0] == '~') {
-		is_case = 1;
+	is_case = 1;
+	if(command1.len > 0 && command1.data[0] != '~' && command2.len > 0 && command2.data[0] != '~') {
+		is_case = 0;
 	}
 	if(is_case == 1) {
 		if(command1.len == command2.len && njt_strncmp(command1.data,command2.data,command1.len) == 0) {
