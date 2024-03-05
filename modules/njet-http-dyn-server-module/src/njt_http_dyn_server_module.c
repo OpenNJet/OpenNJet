@@ -836,14 +836,12 @@ njt_http_dyn_server_delete_regex_server_name(njt_pool_t *pool,njt_http_conf_addr
 	
 	njt_uint_t i;
 	njt_uint_t len;
-	njt_str_t  full_name;
 	
 	if(server_name == NULL || server_name->len == 0 || server_name->data[0] != '~') {
 		return;
 	}
 	for(i=0; i < addr->nregex; i++) {
-		full_name = njt_get_command_unique_name(pool,addr->regex[i].full_name);
-		if(full_name.len == server_name->len  && njt_strncasecmp(full_name.data,server_name->data,server_name->len) == 0) {
+		if(njt_http_server_full_name_cmp(addr->regex[i].full_name,*server_name,0) == NJT_OK) {
 			if(i < addr->nregex -1) {
 				len =  (addr->nregex -1 - i) * sizeof(njt_http_server_name_t);
 				njt_memmove(&addr->regex[i],&addr->regex[i+1],len);  //不做交互，防止有序。
