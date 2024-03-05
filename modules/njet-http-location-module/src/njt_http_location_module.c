@@ -1441,7 +1441,7 @@ static void njt_http_location_write_data(njt_http_location_info_t *location_info
 	//njt_http_sub_location_info_t **loc_array;
     
 
-    cscf = njt_http_get_srv_by_ori_name((njt_cycle_t  *)njt_cycle,&location_info->addr_port,&location_info->server_name);	
+    cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&location_info->addr_port,&location_info->server_name);	
     (*location_info).cscf = cscf;
 
         location_path = njt_cycle->prefix;

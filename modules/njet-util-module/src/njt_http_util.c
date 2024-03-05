@@ -8,7 +8,7 @@
 #include <njt_http_util.h>
 extern njt_module_t  njt_http_proxy_module;
 
-njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
+njt_http_core_srv_conf_t* njt_http_get_srv_by_server_name(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
 	njt_http_core_srv_conf_t* cscf, *ret_cscf;
 	njt_listening_t *ls, *target_ls = NULL;
 	njt_uint_t i,j,k;
@@ -569,18 +569,19 @@ njt_int_t njt_http_server_full_name_cmp(njt_str_t full_name,njt_str_t server_nam
 	return NJT_ERROR;
 }
 
-njt_http_core_srv_conf_t* njt_http_get_srv_by_ori_name(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
+njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
 
 	njt_pool_t  *pool;
 	njt_str_t   name;
 	njt_http_core_srv_conf_t* srv;
 
+	njt_log_error(NJT_LOG_INFO, cycle->log, 0, "njt_http_get_srv_by_port server_name = %V",server_name);
 	pool = njt_create_pool(1024, njt_cycle->log);
 	if(pool == NULL) {
 		return NULL;
 	}
 	name = njt_get_command_unique_name(pool,*server_name);
-	srv = njt_http_get_srv_by_port(cycle,addr_port,&name);
+	srv = njt_http_get_srv_by_server_name(cycle,addr_port,&name);
 
 	njt_destroy_pool(pool);
 	return srv;

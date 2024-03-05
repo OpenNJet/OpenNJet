@@ -64,8 +64,7 @@ static njt_int_t njt_http_update_server_ssl(njt_pool_t *pool, dyn_ssl_api_t *api
     port = get_dyn_ssl_api_listens_item(api_data->listens, 0);
     serverName = get_dyn_ssl_api_listens_item(api_data->serverNames, 0);
 
-    //cscf = njt_http_get_srv_by_port(cycle, port, serverName);  by zyg
-    cscf = njt_http_get_srv_by_ori_name(cycle, port, serverName);
+    cscf = njt_http_get_srv_by_port(cycle, port, serverName);
     if (cscf == NULL)
     {
         njt_log_error(NJT_LOG_INFO, pool->log, 0, "can`t find server by listen:%V server_name:%V ",
