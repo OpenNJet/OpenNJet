@@ -636,6 +636,7 @@ err:
 		r->headers_out.status = 400;
 		if(server_info == NULL) {
 		   njt_str_set(&insert, "json parser error!");
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "json parser error=%V",&json_str);
 		} else {
 			insert = server_info->msg;
 		}
