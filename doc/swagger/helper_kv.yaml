@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: sendmsg kv api
   description: sendmsg 模块设置kv 值
-  version: 1.0.0
+  version: 1.1.0
 
 servers:
   - url: '/'

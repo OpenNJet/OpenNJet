@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: dyn config api
+  title: dyn fault injet api
   description: 动态fault inject限流
-  version: 1.0.0
+  version: 1.1.0
 
 servers:
   - url: '/config/2'

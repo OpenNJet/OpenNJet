@@ -16,6 +16,8 @@
 #include <njt_rpc_result_parser.h>
 #include <njt_http_util.h>
 
+
+#include "njet_http_api_register_module.h"
 #include "njet_http_parser_cache.h"
 #include "njet_http_parser_cache_api.h"
 #include "njet_http_parser_cache_add_loc.h"
@@ -69,16 +71,11 @@ njt_http_cache_quick_handler(njt_http_request_t *r);
 static njt_int_t
 njt_http_cache_quick_init_worker(njt_cycle_t *cycle);
 
-static void *
-njt_http_cache_quick_create_loc_conf(njt_conf_t *cf);
-
 static njt_int_t njt_http_cache_quick_init_module(njt_cycle_t *cycle);
 
 static njt_int_t
 njt_http_cache_quick_init(njt_conf_t *cf);
 
-static char *
-njt_http_cache_quick(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 njt_int_t
 njt_http_cache_quick_lvlhsh_test(njt_lvlhsh_query_t *lhq, void *data);
@@ -95,14 +92,6 @@ typedef struct njt_http_cache_quick_ssl_conf_s {
     njt_ssl_t *ssl;
 } njt_http_cache_quick_ssl_conf_t;
 #endif
-
-
-
-
-
-typedef struct njt_http_cache_quick_loc_conf_s{
-    njt_flag_t      cache_quick_enable;
-} njt_http_cache_quick_loc_conf_t;
 
 
 typedef struct njt_http_cache_quick_main_conf_s{
@@ -222,22 +211,9 @@ njt_http_cache_quick_lvlhsh_test(njt_lvlhsh_query_t *lhq, void *data)
 }
 
 
-static njt_command_t njt_http_cache_quick_commands[] = {
-        {
-                njt_string("cache_quick_api"),
-                NJT_HTTP_LOC_CONF|NJT_CONF_NOARGS,
-                njt_http_cache_quick,
-                NJT_HTTP_LOC_CONF_OFFSET,
-                0,
-                NULL
-        },
-        njt_null_command
-};
-
-
 static njt_http_module_t njt_http_cache_quick_module_ctx = {
         NULL,                              /* preconfiguration */
-        njt_http_cache_quick_init,                              /* postconfiguration */
+        njt_http_cache_quick_init,         /* postconfiguration */
 
         NULL,                              /* create main configuration */
         NULL,                              /* init main configuration */
@@ -245,14 +221,14 @@ static njt_http_module_t njt_http_cache_quick_module_ctx = {
         NULL,                              /* create server configuration */
         NULL,                              /* merge server configuration */
 
-        njt_http_cache_quick_create_loc_conf, /* create location configuration */
-        NULL   /* merge location configuration */
+        NULL,                              /* create location configuration */
+        NULL                               /* merge location configuration */
 };
 
 njt_module_t njt_http_cache_quick_module = {
         NJT_MODULE_V1,
         &njt_http_cache_quick_module_ctx, /* module context */
-        njt_http_cache_quick_commands,    /* module directives */
+        NULL,                               /* module directives */
         NJT_HTTP_MODULE,                    /* module type */
         NULL,                               /* init master */
         njt_http_cache_quick_init_module,   /* init module */
@@ -263,17 +239,6 @@ njt_module_t njt_http_cache_quick_module = {
         NULL,                               /* exit master */
         NJT_MODULE_V1_PADDING
 };
-
-
-static char *
-njt_http_cache_quick(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
-    
-	njt_http_cache_quick_loc_conf_t   *cqmf = conf;
-
-    cqmf->cache_quick_enable = 1;
-
-    return NJT_CONF_OK;
-}
 
 
 static njt_int_t njt_http_cache_quick_init_module(njt_cycle_t *cycle) {
@@ -308,36 +273,16 @@ static njt_int_t njt_http_cache_quick_init_module(njt_cycle_t *cycle) {
 
 static njt_int_t
 njt_http_cache_quick_init(njt_conf_t *cf) {
-    njt_http_core_main_conf_t  *cmcf;
-    njt_http_handler_pt        *h;
+    njt_http_api_reg_info_t             h;
+    njt_str_t  module_key = njt_string("/v1/cache");
 
-    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
-    h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
-    if (h == NULL) {
-        return NJT_ERROR;
-    }
-
-    *h = njt_http_cache_quick_handler;
+    njt_memzero(&h, sizeof(njt_http_api_reg_info_t));
+    h.key = &module_key;
+    h.handler = njt_http_cache_quick_handler;
+    njt_http_api_module_reg_handler(&h);
 
     return NJT_OK;
 }
-
-
-static void *
-njt_http_cache_quick_create_loc_conf(njt_conf_t *cf) {
-    njt_http_cache_quick_loc_conf_t *cqmf;
-
-    cqmf = njt_pcalloc(cf->pool, sizeof(njt_http_cache_quick_loc_conf_t));
-    if (cqmf == NULL) {
-        njt_log_error(NJT_LOG_ERR, cf->log, 0, "malloc cqmf eror");
-        return NULL;
-    }
-
-    cqmf->cache_quick_enable = 0;
-
-    return cqmf;
-}
-
 
 
 static njt_str_t *njt_http_caches_to_json(njt_pool_t *pool, njt_http_cache_quick_main_conf_t *cqmf) {
@@ -345,8 +290,6 @@ static njt_str_t *njt_http_caches_to_json(njt_pool_t *pool, njt_http_cache_quick
     njt_queue_t                             *q;
     cache_t                                 dynjson_obj;
     cache_caches_item_t                     *cache_item;          
-    // njt_str_t                               tmp_str;
-
 
     njt_memzero(&dynjson_obj, sizeof(cache_t));
 
@@ -1707,8 +1650,7 @@ njt_cache_quick_http_parse_status_line(njt_http_cache_quick_download_peer_t *cq_
 
     b->pos = p;
     hp->state = state;
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
-        " =========parse line ret again");
+
     return NJT_AGAIN;
 
     done:
@@ -2661,17 +2603,11 @@ end:
 static njt_int_t
 njt_http_cache_quick_handler(njt_http_request_t *r) {
     njt_int_t                       rc = NJT_OK;
-    njt_http_cache_quick_loc_conf_t *cqlcf;
     njt_http_cache_quick_main_conf_t *cqmf;
     njt_rpc_result_t                *rpc_result = NULL;
 
     cqmf = (njt_http_cache_quick_main_conf_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_cache_quick_module);   
     if(cqmf == NULL){
-        return NJT_DECLINED;
-    }
-
-    cqlcf = njt_http_get_module_loc_conf(r, njt_http_cache_quick_module);
-    if(cqlcf == NULL  || cqlcf->cache_quick_enable == NJT_CONF_UNSET || cqlcf->cache_quick_enable == 0){
         return NJT_DECLINED;
     }
 
