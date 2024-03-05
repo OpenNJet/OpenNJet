@@ -784,7 +784,7 @@ static njt_int_t njt_http_dyn_server_write_data(njt_http_dyn_server_info_t *serv
 	njt_str_t server_full_file;
 	
 	server_info->server_name = njt_get_command_unique_name(server_info->pool,server_info->old_server_name);
-	cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->server_name);	
+	cscf = njt_http_get_srv_by_port((njt_cycle_t  *)njt_cycle,&server_info->addr_port,&server_info->old_server_name);	
 	(*server_info).cscf = cscf;
 
 	server_path = njt_cycle->prefix;
