@@ -9,6 +9,9 @@
 #include <njt_config.h>
 #include <njt_core.h>
 
+static void njt_queue_merge(njt_queue_t *queue, njt_queue_t *tail,
+    njt_int_t (*cmp)(const njt_queue_t *, const njt_queue_t *));
+
 
 /*
  * find the middle queue element if the queue has odd number of elements
@@ -46,13 +49,13 @@ njt_queue_middle(njt_queue_t *queue)
 }
 
 
-/* the stable insertion sort */
+/* the stable merge sort */
 
 void
 njt_queue_sort(njt_queue_t *queue,
     njt_int_t (*cmp)(const njt_queue_t *, const njt_queue_t *))
 {
-    njt_queue_t  *q, *prev, *next;
+    njt_queue_t  *q, tail;
 
     q = njt_queue_head(queue);
 
@@ -60,22 +63,44 @@ njt_queue_sort(njt_queue_t *queue,
         return;
     }
 
-    for (q = njt_queue_next(q); q != njt_queue_sentinel(queue); q = next) {
+    q = njt_queue_middle(queue);
 
-        prev = njt_queue_prev(q);
-        next = njt_queue_next(q);
+    njt_queue_split(queue, q, &tail);
 
-        njt_queue_remove(q);
+    njt_queue_sort(queue, cmp);
+    njt_queue_sort(&tail, cmp);
 
-        do {
-            if (cmp(prev, q) <= 0) {
-                break;
-            }
+    njt_queue_merge(queue, &tail, cmp);
+}
 
-            prev = njt_queue_prev(prev);
 
-        } while (prev != njt_queue_sentinel(queue));
+static void
+njt_queue_merge(njt_queue_t *queue, njt_queue_t *tail,
+    njt_int_t (*cmp)(const njt_queue_t *, const njt_queue_t *))
+{
+    njt_queue_t  *q1, *q2;
 
-        njt_queue_insert_after(prev, q);
+    q1 = njt_queue_head(queue);
+    q2 = njt_queue_head(tail);
+
+    for ( ;; ) {
+        if (q1 == njt_queue_sentinel(queue)) {
+            njt_queue_add(queue, tail);
+            break;
+        }
+
+        if (q2 == njt_queue_sentinel(tail)) {
+            break;
+        }
+
+        if (cmp(q1, q2) <= 0) {
+            q1 = njt_queue_next(q1);
+            continue;
+        }
+
+        njt_queue_remove(q2);
+        njt_queue_insert_before(q1, q2);
+
+        q2 = njt_queue_head(tail);
     }
 }

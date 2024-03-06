@@ -284,7 +284,6 @@ njt_feature="UDP_SEGMENT"
 njt_feature_name="NJT_HAVE_UDP_SEGMENT"
 njt_feature_run=no
 njt_feature_incs="#include <sys/socket.h>
-                  #include <stdint.h>
                   #include <netinet/udp.h>"
 njt_feature_path=
 njt_feature_libs=

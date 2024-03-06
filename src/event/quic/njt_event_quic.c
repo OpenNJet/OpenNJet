@@ -4,6 +4,7 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
+
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_event.h>
@@ -211,6 +212,8 @@ njt_quic_run(njt_connection_t *c, njt_quic_conf_t *conf)
     qc = njt_quic_get_connection(c);
 
     njt_add_timer(c->read, qc->tp.max_idle_timeout);
+    njt_add_timer(&qc->close, qc->conf->handshake_timeout);
+
     njt_quic_connstate_dbg(c);
 
     c->read->handler = njt_quic_input_handler;
@@ -258,14 +261,7 @@ njt_quic_new_connection(njt_connection_t *c, njt_quic_conf_t *conf,
 
     njt_queue_init(&qc->free_frames);
 
-    qc->avg_rtt = NJT_QUIC_INITIAL_RTT;
-    qc->rttvar = NJT_QUIC_INITIAL_RTT / 2;
-    qc->min_rtt = NJT_TIMER_INFINITE;
-    qc->first_rtt = NJT_TIMER_INFINITE;
-
-    /*
-     * qc->latest_rtt = 0
-     */
+    njt_quic_init_rtt(qc);
 
     qc->pto.log = c->log;
     qc->pto.data = c;
@@ -282,6 +278,10 @@ njt_quic_new_connection(njt_connection_t *c, njt_quic_conf_t *conf,
     qc->path_validation.log = c->log;
     qc->path_validation.data = c;
     qc->path_validation.handler = njt_quic_path_handler;
+
+    qc->key_update.log = c->log;
+    qc->key_update.data = c;
+    qc->key_update.handler = njt_quic_keys_update;
 
     qc->conf = conf;
 
@@ -329,6 +329,7 @@ njt_quic_new_connection(njt_connection_t *c, njt_quic_conf_t *conf,
     qc->validated = pkt->validated;
 
     if (njt_quic_open_sockets(c, qc, pkt) != NJT_OK) {
+        njt_quic_keys_cleanup(qc->keys);
         return NULL;
     }
 
@@ -414,7 +415,7 @@ njt_quic_input_handler(njt_event_t *rev)
     if (c->close) {
         c->close = 0;
 
-        if (!njt_exiting) {
+        if (!njt_exiting || !qc->streams.initialized) {
             qc->error = NJT_QUIC_ERR_NO_ERROR;
             qc->error_reason = "graceful shutdown";
             njt_quic_close_connection(c, NJT_ERROR);
@@ -481,6 +482,10 @@ njt_quic_close_connection(njt_connection_t *c, njt_int_t rc)
             njt_quic_free_frames(c, &qc->send_ctx[i].sent);
         }
 
+        if (qc->close.timer_set) {
+            njt_del_timer(&qc->close);
+        }
+
         if (rc == NJT_DONE) {
 
             /*
@@ -505,9 +510,6 @@ njt_quic_close_connection(njt_connection_t *c, njt_int_t rc)
              *  to terminate the connection immediately.
              */
 
-            qc->error_level = c->ssl ? SSL_quic_read_level(c->ssl->connection)
-                                     : ssl_encryption_initial;
-
             if (qc->error == (njt_uint_t) -1) {
                 qc->error = NJT_QUIC_ERR_INTERNAL_ERROR;
                 qc->error_app = 0;
@@ -520,17 +522,19 @@ njt_quic_close_connection(njt_connection_t *c, njt_int_t rc)
                            qc->error_app ? "app " : "", qc->error,
                            qc->error_reason ? qc->error_reason : "");
 
-            if (rc == NJT_OK) {
-                ctx = njt_quic_get_send_ctx(qc, qc->error_level);
-                njt_add_timer(&qc->close, 3 * njt_quic_pto(c, ctx));
-            }
+            for (i = 0; i < NJT_QUIC_SEND_CTX_LAST; i++) {
+                ctx = &qc->send_ctx[i];
 
-            (void) njt_quic_send_cc(c);
+                if (!njt_quic_keys_available(qc->keys, ctx->level, 1)) {
+                    continue;
+                }
 
-            if (qc->error_level == ssl_encryption_handshake) {
-                /* for clients that might not have handshake keys */
-                qc->error_level = ssl_encryption_initial;
+                qc->error_level = ctx->level;
                 (void) njt_quic_send_cc(c);
+
+                if (rc == NJT_OK) {
+                    njt_add_timer(&qc->close, 3 * njt_quic_pto(c, ctx));
+                }
             }
         }
 
@@ -562,6 +566,10 @@ njt_quic_close_connection(njt_connection_t *c, njt_int_t rc)
         njt_delete_posted_event(&qc->push);
     }
 
+    if (qc->key_update.posted) {
+        njt_delete_posted_event(&qc->key_update);
+    }
+
     if (qc->close.timer_set) {
         return;
     }
@@ -571,6 +579,8 @@ njt_quic_close_connection(njt_connection_t *c, njt_int_t rc)
     }
 
     njt_quic_close_sockets(c);
+
+    njt_quic_keys_cleanup(qc->keys);
 
     njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0, "quic close completed");
 
@@ -835,10 +845,11 @@ njt_quic_handle_packet(njt_connection_t *c, njt_quic_conf_t *conf,
 
         if (rc == NJT_DECLINED && pkt->level == ssl_encryption_application) {
             if (njt_quic_handle_stateless_reset(c, pkt) == NJT_OK) {
-                njt_post_event(&qc->close, &njt_posted_events);
+                njt_log_error(NJT_LOG_INFO, c->log, 0,
+                              "quic stateless reset packet detected");
 
                 qc->draining = 1;
-                njt_quic_close_connection(c, NJT_OK);
+                njt_post_event(&qc->close, &njt_posted_events);
 
                 return NJT_OK;
             }
@@ -945,7 +956,7 @@ njt_quic_handle_payload(njt_connection_t *c, njt_quic_header_t *pkt)
 
     c->log->action = "decrypting packet";
 
-    if (!njt_quic_keys_available(qc->keys, pkt->level)) {
+    if (!njt_quic_keys_available(qc->keys, pkt->level, 0)) {
         njt_log_error(NJT_LOG_INFO, c->log, 0,
                       "quic no %s keys, ignoring packet",
                       njt_quic_level_name(pkt->level));
@@ -955,10 +966,7 @@ njt_quic_handle_payload(njt_connection_t *c, njt_quic_header_t *pkt)
 #if !defined (OPENSSL_IS_BORINGSSL)
     /* OpenSSL provides read keys for an application level before it's ready */
 
-    if (pkt->level == ssl_encryption_application
-        && SSL_quic_read_level(c->ssl->connection)
-           < ssl_encryption_application)
-    {
+    if (pkt->level == ssl_encryption_application && !c->ssl->handshaked) {
         njt_log_error(NJT_LOG_INFO, c->log, 0,
                       "quic no %s keys ready, ignoring packet",
                       njt_quic_level_name(pkt->level));
@@ -1054,7 +1062,9 @@ njt_quic_handle_payload(njt_connection_t *c, njt_quic_header_t *pkt)
         return rc;
     }
 
-    return njt_quic_keys_update(c, qc->keys);
+    njt_post_event(&qc->key_update, &njt_posted_events);
+
+    return NJT_OK;
 }
 
 
@@ -1069,7 +1079,9 @@ njt_quic_discard_ctx(njt_connection_t *c, enum ssl_encryption_level_t level)
 
     qc = njt_quic_get_connection(c);
 
-    if (!njt_quic_keys_available(qc->keys, level)) {
+    if (!njt_quic_keys_available(qc->keys, level, 0)
+        && !njt_quic_keys_available(qc->keys, level, 1))
+    {
         return;
     }
 
@@ -1099,7 +1111,7 @@ njt_quic_discard_ctx(njt_connection_t *c, enum ssl_encryption_level_t level)
     }
 
     if (level == ssl_encryption_initial) {
-        /* close temporary listener with odcid */
+        /* close temporary listener with initial dcid */
         qsock = njt_quic_find_socket(c, NJT_QUIC_UNSET_PN);
         if (qsock) {
             njt_quic_close_socket(c, qsock);
@@ -1383,7 +1395,7 @@ njt_quic_handle_frames(njt_connection_t *c, njt_quic_header_t *pkt)
 
     if (do_close) {
         qc->draining = 1;
-        njt_post_event(&qc->close, &njt_posted_events)
+        njt_post_event(&qc->close, &njt_posted_events);
     }
 
     if (pkt->path != qc->path && nonprobing) {

@@ -58,6 +58,7 @@ typedef struct {
     unsigned             nomem:1;
     unsigned             buffering:1;
     unsigned             zlib_ng:1;
+    unsigned             state_allocated:1;
 
     size_t               zin;
     size_t               zout;
@@ -515,9 +516,10 @@ njt_http_gzip_filter_memory(njt_http_request_t *r, njt_http_gzip_ctx_t *ctx)
     } else {
         /*
          * Another zlib variant, https://github.com/zlib-ng/zlib-ng.
-         * It forces window bits to 13 for fast compression level,
-         * uses 16-byte padding in one of window-sized buffers, and
-         * uses 128K hash.
+         * It used to force window bits to 13 for fast compression level,
+         * uses (64 + sizeof(void*)) additional space on all allocations
+         * for alignment, 16-byte padding in one of window-sized buffers,
+         * and 128K hash.
          */
 
         if (conf->level == 1) {
@@ -525,7 +527,8 @@ njt_http_gzip_filter_memory(njt_http_request_t *r, njt_http_gzip_ctx_t *ctx)
         }
 
         ctx->allocated = 8192 + 16 + (1 << (wbits + 2))
-                         + 131072 + (1 << (memlevel + 8));
+                         + 131072 + (1 << (memlevel + 8))
+                         + 4 * (64 + sizeof(void*));
         ctx->zlib_ng = 1;
     }
 }
@@ -927,12 +930,16 @@ njt_http_gzip_filter_alloc(void *opaque, u_int items, u_int size)
 
     alloc = items * size;
 
-    if (items == 1 && alloc % 512 != 0 && alloc < 8192) {
+    if (items == 1 && alloc % 512 != 0 && alloc < 8192
+        && !ctx->state_allocated)
+    {
 
         /*
          * The zlib deflate_state allocation, it takes about 6K,
          * we allocate 8K.  Other allocations are divisible by 512.
          */
+
+        ctx->state_allocated = 1;
 
         alloc = 8192;
     }

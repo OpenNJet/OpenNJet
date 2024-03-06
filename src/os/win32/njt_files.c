@@ -11,11 +11,15 @@
 
 
 #define NJT_UTF16_BUFLEN  256
+#define NJT_UTF8_BUFLEN   512
 
-static njt_int_t njt_win32_check_filename(u_char *name, u_short *u,
-    size_t len);
-static u_short *njt_utf8_to_utf16(u_short *utf16, u_char *utf8, size_t *len);
-
+static njt_int_t njt_win32_check_filename(u_short *u, size_t len,
+    njt_uint_t dirname);
+static u_short *njt_utf8_to_utf16(u_short *utf16, u_char *utf8, size_t *len,
+    size_t reserved);
+static u_char *njt_utf16_to_utf8(u_char *utf8, u_short *utf16, size_t *len,
+    size_t *allocated);
+uint32_t njt_utf16_decode(u_short **u, size_t n);
 
 /* FILE_FLAG_BACKUP_SEMANTICS allows to obtain a handle to a directory */
 
@@ -29,7 +33,7 @@ njt_open_file(u_char *name, u_long mode, u_long create, u_long access)
     u_short     utf16[NJT_UTF16_BUFLEN];
 
     len = NJT_UTF16_BUFLEN;
-    u = njt_utf8_to_utf16(utf16, name, &len);
+    u = njt_utf8_to_utf16(utf16, name, &len, 0);
 
     if (u == NULL) {
         return INVALID_HANDLE_VALUE;
@@ -38,7 +42,7 @@ njt_open_file(u_char *name, u_long mode, u_long create, u_long access)
     fd = INVALID_HANDLE_VALUE;
 
     if (create == NJT_FILE_OPEN
-        && njt_win32_check_filename(name, u, len) != NJT_OK)
+        && njt_win32_check_filename(u, len, 0) != NJT_OK)
     {
         goto failed;
     }
@@ -48,6 +52,41 @@ njt_open_file(u_char *name, u_long mode, u_long create, u_long access)
                      NULL, create, FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
 failed:
+
+    if (u != utf16) {
+        err = njt_errno;
+        njt_free(u);
+        njt_set_errno(err);
+    }
+
+    return fd;
+}
+
+
+njt_fd_t
+njt_open_tempfile(u_char *name, njt_uint_t persistent, njt_uint_t access)
+{
+    size_t      len;
+    u_short    *u;
+    njt_fd_t    fd;
+    njt_err_t   err;
+    u_short     utf16[NJT_UTF16_BUFLEN];
+
+    len = NJT_UTF16_BUFLEN;
+    u = njt_utf8_to_utf16(utf16, name, &len, 0);
+
+    if (u == NULL) {
+        return INVALID_HANDLE_VALUE;
+    }
+
+    fd = CreateFileW(u,
+                     GENERIC_READ|GENERIC_WRITE,
+                     FILE_SHARE_READ|FILE_SHARE_WRITE|FILE_SHARE_DELETE,
+                     NULL,
+                     CREATE_NEW,
+                     persistent ? 0:
+                         FILE_ATTRIBUTE_TEMPORARY|FILE_FLAG_DELETE_ON_CLOSE,
+                     NULL);
 
     if (u != utf16) {
         err = njt_errno;
@@ -203,6 +242,97 @@ njt_write_console(njt_fd_t fd, void *buf, size_t size)
 }
 
 
+njt_int_t
+njt_delete_file(u_char *name)
+{
+    long        rc;
+    size_t      len;
+    u_short    *u;
+    njt_err_t   err;
+    u_short     utf16[NJT_UTF16_BUFLEN];
+
+    len = NJT_UTF16_BUFLEN;
+    u = njt_utf8_to_utf16(utf16, name, &len, 0);
+
+    if (u == NULL) {
+        return NJT_FILE_ERROR;
+    }
+
+    rc = NJT_FILE_ERROR;
+
+    if (njt_win32_check_filename(u, len, 0) != NJT_OK) {
+        goto failed;
+    }
+
+    rc = DeleteFileW(u);
+
+failed:
+
+    if (u != utf16) {
+        err = njt_errno;
+        njt_free(u);
+        njt_set_errno(err);
+    }
+
+    return rc;
+}
+
+
+njt_int_t
+njt_rename_file(u_char *from, u_char *to)
+{
+    long        rc;
+    size_t      len;
+    u_short    *fu, *tu;
+    njt_err_t   err;
+    u_short     utf16f[NJT_UTF16_BUFLEN];
+    u_short     utf16t[NJT_UTF16_BUFLEN];
+
+    len = NJT_UTF16_BUFLEN;
+    fu = njt_utf8_to_utf16(utf16f, from, &len, 0);
+
+    if (fu == NULL) {
+        return NJT_FILE_ERROR;
+    }
+
+    rc = NJT_FILE_ERROR;
+    tu = NULL;
+
+    if (njt_win32_check_filename(fu, len, 0) != NJT_OK) {
+        goto failed;
+    }
+
+    len = NJT_UTF16_BUFLEN;
+    tu = njt_utf8_to_utf16(utf16t, to, &len, 0);
+
+    if (tu == NULL) {
+        goto failed;
+    }
+
+    if (njt_win32_check_filename(tu, len, 1) != NJT_OK) {
+        goto failed;
+    }
+
+    rc = MoveFileW(fu, tu);
+
+failed:
+
+    if (fu != utf16f) {
+        err = njt_errno;
+        njt_free(fu);
+        njt_set_errno(err);
+    }
+
+    if (tu && tu != utf16t) {
+        err = njt_errno;
+        njt_free(tu);
+        njt_set_errno(err);
+    }
+
+    return rc;
+}
+
+
 njt_err_t
 njt_win32_rename_file(njt_str_t *from, njt_str_t *to, njt_log_t *log)
 {
@@ -228,27 +358,35 @@ njt_win32_rename_file(njt_str_t *from, njt_str_t *to, njt_log_t *log)
 
         njt_sprintf(name + to->len, ".%0muA.DELETE%Z", num);
 
-        if (MoveFile((const char *) to->data, (const char *) name) != 0) {
+        if (njt_rename_file(to->data, name) != NJT_FILE_ERROR) {
             break;
         }
 
-        collision = 1;
+        err = njt_errno;
 
-        njt_log_error(NJT_LOG_CRIT, log, njt_errno,
+        if (err == NJT_EEXIST || err == NJT_EEXIST_FILE) {
+            collision = 1;
+            continue;
+        }
+
+        njt_log_error(NJT_LOG_CRIT, log,err,
                       "MoveFile() \"%s\" to \"%s\" failed", to->data, name);
+        goto failed;
     }
 
-    if (MoveFile((const char *) from->data, (const char *) to->data) == 0) {
+    if (njt_rename_file(from->data, to->data) == NJT_FILE_ERROR) {
         err = njt_errno;
 
     } else {
         err = 0;
     }
 
-    if (DeleteFile((const char *) name) == 0) {
+    if (njt_delete_file(name) == NJT_FILE_ERROR) {
         njt_log_error(NJT_LOG_CRIT, log, njt_errno,
                       "DeleteFile() \"%s\" failed", name);
     }
+
+failed:
 
     /* mutex_unlock() */
 
@@ -270,7 +408,7 @@ njt_file_info(u_char *file, njt_file_info_t *sb)
 
     len = NJT_UTF16_BUFLEN;
 
-    u = njt_utf8_to_utf16(utf16, file, &len);
+    u = njt_utf8_to_utf16(utf16, file, &len, 0);
 
     if (u == NULL) {
         return NJT_FILE_ERROR;
@@ -278,7 +416,7 @@ njt_file_info(u_char *file, njt_file_info_t *sb)
 
     rc = NJT_FILE_ERROR;
 
-    if (njt_win32_check_filename(file, u, len) != NJT_OK) {
+    if (njt_win32_check_filename(u, len, 0) != NJT_OK) {
         goto failed;
     }
 
@@ -424,53 +562,88 @@ njt_realpath(u_char *path, u_char *resolved)
     return path;
 }
 
+size_t
+njt_getcwd(u_char *buf, size_t size)
+{
+    u_char   *p;
+    size_t    n;
+    u_short   utf16[NJT_MAX_PATH];
+
+    n = GetCurrentDirectoryW(NJT_MAX_PATH, utf16);
+
+    if (n == 0) {
+        return 0;
+    }
+
+    if (n > NJT_MAX_PATH) {
+        njt_set_errno(ERROR_INSUFFICIENT_BUFFER);
+        return 0;
+    }
+
+    p = njt_utf16_to_utf8(buf, utf16, &size, NULL);
+
+    if (p == NULL) {
+        return 0;
+    }
+
+    if (p != buf) {
+        njt_free(p);
+        njt_set_errno(ERROR_INSUFFICIENT_BUFFER);
+        return 0;
+    }
+
+    return size - 1;
+}
 
 njt_int_t
 njt_open_dir(njt_str_t *name, njt_dir_t *dir)
 {
-    u_char     *pattern, *p;
+    size_t      len;
+    u_short    *u, *p;
     njt_err_t   err;
+    u_short     utf16[NJT_UTF16_BUFLEN];
 
-    pattern = malloc(name->len + 3);
-    if (pattern == NULL) {
+    len = NJT_UTF16_BUFLEN - 2;
+    u = njt_utf8_to_utf16(utf16, name->data, &len, 2);
+
+    if (u == NULL) {
         return NJT_ERROR;
     }
 
-    p = njt_cpymem(pattern, name->data, name->len);
+    if (njt_win32_check_filename(u, len, 0) != NJT_OK) {
+        goto failed;
+    }
+
+    p = &u[len - 1];
 
     *p++ = '/';
     *p++ = '*';
     *p = '\0';
 
-    dir->dir = FindFirstFile((const char *) pattern, &dir->finddata);
+    dir->dir = FindFirstFileW(u, &dir->finddata);
 
     if (dir->dir == INVALID_HANDLE_VALUE) {
-        err = njt_errno;
-        njt_free(pattern);
-        njt_set_errno(err);
-        return NJT_ERROR;
+        goto failed;
     }
 
-    njt_free(pattern);
+    if (u != utf16) {
+        njt_free(u);
+    }
 
     dir->valid_info = 1;
     dir->ready = 1;
+    dir->name = NULL;
+    dir->allocated = 0;
 
     return NJT_OK;
-}
 
 
-njt_int_t
-njt_read_dir(njt_dir_t *dir)
-{
-    if (dir->ready) {
-        dir->ready = 0;
-        return NJT_OK;
-    }
+failed:
 
-    if (FindNextFile(dir->dir, &dir->finddata) != 0) {
-        dir->type = 1;
-        return NJT_OK;
+    if (u != utf16) {
+        err = ngx_errno;
+        njt_free(u);
+        njt_set_errno(err);
     }
 
     return NJT_ERROR;
@@ -478,8 +651,57 @@ njt_read_dir(njt_dir_t *dir)
 
 
 njt_int_t
+njt_read_dir(njt_dir_t *dir)
+{
+    u_char  *name;
+    size_t   len, allocated;
+
+    if (dir->ready) {
+        dir->ready = 0;
+        goto convert;
+    }
+
+    if (FindNextFileW(dir->dir, &dir->finddata) != 0) {
+        dir->type = 1;
+        goto convert;
+    }
+
+    return NJT_ERROR;
+
+convert:
+
+    name = dir->name;
+    len = dir->allocated;
+
+    name = njt_utf16_to_utf8(name, dir->finddata.cFileName, &len, &allocated);
+
+    if (name == NULL) {
+        return NJT_ERROR;
+    }
+
+    if (name != dir->name) {
+
+        if (dir->name) {
+            njt_free(dir->name);
+        }
+
+        dir->name = name;
+        dir->allocated = allocated;
+    }
+
+    dir->namelen = len - 1;
+
+    return NJT_OK;
+}
+
+
+njt_int_t
 njt_close_dir(njt_dir_t *dir)
 {
+    if (dir->name) {
+        njt_free(dir->name);
+    }
+
     if (FindClose(dir->dir) == 0) {
         return NJT_ERROR;
     }
@@ -489,17 +711,101 @@ njt_close_dir(njt_dir_t *dir)
 
 
 njt_int_t
+njt_create_dir(u_char *name, njt_uint_t access)
+{
+    long        rc;
+    size_t      len;
+    u_short    *u;
+    njt_err_t   err;
+    u_short     utf16[NJT_UTF16_BUFLEN];
+
+    len = NJT_UTF16_BUFLEN;
+    u = njt_utf8_to_utf16(utf16, name, &len, 0);
+
+    if (u == NULL) {
+        return NJT_FILE_ERROR;
+    }
+
+    rc = NJT_FILE_ERROR;
+
+    if (njt_win32_check_filename(u, len, 1) != NJT_OK) {
+        goto failed;
+    }
+
+    rc = CreateDirectoryW(u, NULL);
+
+failed:
+
+    if (u != utf16) {
+        err = njt_errno;
+        njt_free(u);
+        njt_set_errno(err);
+    }
+
+    return rc;
+}
+
+njt_int_t
+njt_delete_dir(u_char *name)
+{
+    long        rc;
+    size_t      len;
+    u_short    *u;
+    njt_err_t   err;
+    u_short     utf16[NJT_UTF16_BUFLEN];
+
+    len = NJT_UTF16_BUFLEN;
+    u = njt_utf8_to_utf16(utf16, name, &len, 0);
+
+    if (u == NULL) {
+        return njt_FILE_ERROR;
+    }
+
+    rc = njt_FILE_ERROR;
+
+    if (njt_win32_check_filename(u, len, 0) != njt_OK) {
+        goto failed;
+    }
+
+    rc = RemoveDirectoryW(u);
+
+failed:
+
+    if (u != utf16) {
+        err = njt_errno;
+        njt_free(u);
+        njt_set_errno(err);
+    }
+
+    return rc;
+}
+
+
+njt_int_t
 njt_open_glob(njt_glob_t *gl)
 {
     u_char     *p;
     size_t      len;
+    u_short    *u;
     njt_err_t   err;
+    u_short     utf16[NJT_UTF16_BUFLEN];
 
-    gl->dir = FindFirstFile((const char *) gl->pattern, &gl->finddata);
+    len = NJT_UTF16_BUFLEN;
+    u = njt_utf8_to_utf16(utf16, gl->pattern, &len, 0);
+
+    if (u == NULL) {
+        return NJT_ERROR;
+    }
+
+    gl->dir = FindFirstFileW(u, &gl->finddata);
 
     if (gl->dir == INVALID_HANDLE_VALUE) {
 
         err = njt_errno;
+
+        if (u != utf16) {
+            njt_free(u);
+        }
 
         if ((err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND)
              && gl->test)
@@ -507,6 +813,8 @@ njt_open_glob(njt_glob_t *gl)
             gl->no_match = 1;
             return NJT_OK;
         }
+
+        njt_set_errno(err);
 
         return NJT_ERROR;
     }
@@ -517,17 +825,9 @@ njt_open_glob(njt_glob_t *gl)
         }
     }
 
-    len = njt_strlen(gl->finddata.cFileName);
-    gl->name.len = gl->last + len;
-
-    gl->name.data = njt_alloc(gl->name.len + 1, gl->log);
-    if (gl->name.data == NULL) {
-        return NJT_ERROR;
+    if (u != utf16) {
+        njt_free(u);
     }
-
-    njt_memcpy(gl->name.data, gl->pattern, gl->last);
-    njt_cpystrn(gl->name.data + gl->last, (u_char *) gl->finddata.cFileName,
-                len + 1);
 
     gl->ready = 1;
 
@@ -538,40 +838,25 @@ njt_open_glob(njt_glob_t *gl)
 njt_int_t
 njt_read_glob(njt_glob_t *gl, njt_str_t *name)
 {
-    size_t     len;
-    njt_err_t  err;
+    u_char     *p;
+    size_t      len;
+    njt_err_t   err;
+    u_char      utf8[NJT_UTF8_BUFLEN];
 
     if (gl->no_match) {
         return NJT_DONE;
     }
 
     if (gl->ready) {
-        *name = gl->name;
-
         gl->ready = 0;
-        return NJT_OK;
+        goto convert;
     }
 
     njt_free(gl->name.data);
     gl->name.data = NULL;
 
-    if (FindNextFile(gl->dir, &gl->finddata) != 0) {
-
-        len = njt_strlen(gl->finddata.cFileName);
-        gl->name.len = gl->last + len;
-
-        gl->name.data = njt_alloc(gl->name.len + 1, gl->log);
-        if (gl->name.data == NULL) {
-            return NJT_ERROR;
-        }
-
-        njt_memcpy(gl->name.data, gl->pattern, gl->last);
-        njt_cpystrn(gl->name.data + gl->last, (u_char *) gl->finddata.cFileName,
-                    len + 1);
-
-        *name = gl->name;
-
-        return NJT_OK;
+    if (FindNextFileW(gl->dir, &gl->finddata) != 0) {
+        goto convert;
     }
 
     err = njt_errno;
@@ -582,6 +867,43 @@ njt_read_glob(njt_glob_t *gl, njt_str_t *name)
 
     njt_log_error(NJT_LOG_ALERT, gl->log, err,
                   "FindNextFile(%s) failed", gl->pattern);
+
+    return NJT_ERROR;
+
+convert:
+
+    len = NJT_UTF8_BUFLEN;
+    p = njt_utf16_to_utf8(utf8, gl->finddata.cFileName, &len, NULL);
+
+    if (p == NULL) {
+        return NJT_ERROR;
+    }
+
+    gl->name.len = gl->last + len - 1;
+
+    gl->name.data = njt_alloc(gl->name.len + 1, gl->log);
+    if (gl->name.data == NULL) {
+        goto failed;
+    }
+
+    njt_memcpy(gl->name.data, gl->pattern, gl->last);
+    njt_cpystrn(gl->name.data + gl->last, p, len);
+
+    if (p != utf8) {
+        njt_free(p);
+    }
+
+    *name = gl->name;
+
+    return NJT_OK;
+
+failed:
+
+    if (p != utf8) {
+        err = njt_errno;
+        njt_free(p);
+        njt_set_errno(err);
+    }
 
     return NJT_ERROR;
 }
@@ -643,16 +965,29 @@ njt_directio_off(njt_fd_t fd)
 size_t
 njt_fs_bsize(u_char *name)
 {
-    u_char  root[4];
-    u_long  sc, bs, nfree, ncl;
+    u_long    sc, bs, nfree, ncl;
+    size_t    len;
+    u_short  *u;
+    u_short   utf16[NJT_UTF16_BUFLEN];
 
-    if (name[2] == ':') {
-        njt_cpystrn(root, name, 4);
-        name = root;
+    len = NJT_UTF16_BUFLEN;
+    u = njt_utf8_to_utf16(utf16, name, &len, 0);
+
+    if (u == NULL) {
+        return 512;
     }
 
-    if (GetDiskFreeSpace((const char *) name, &sc, &bs, &nfree, &ncl) == 0) {
+    if (GetDiskFreeSpaceW(u, &sc, &bs, &nfree, &ncl) == 0) {
+
+        if (u != utf16) {
+            njt_free(u);
+        }
+
         return 512;
+    }
+
+    if (u != utf16) {
+        njt_free(u);
     }
 
     return sc * bs;
@@ -662,10 +997,29 @@ njt_fs_bsize(u_char *name)
 off_t
 njt_fs_available(u_char *name)
 {
-    ULARGE_INTEGER  navail;
+    size_t           len;
+    u_short         *u;
+    ULARGE_INTEGER   navail;
+    u_short          utf16[NJT_UTF16_BUFLEN];
 
-    if (GetDiskFreeSpaceEx((const char *) name, &navail, NULL, NULL) == 0) {
+    len = NJT_UTF16_BUFLEN;
+    u = njt_utf8_to_utf16(utf16, name, &len, 0);
+
+    if (u == NULL) {
         return NJT_MAX_OFF_T_VALUE;
+    }
+
+    if (GetDiskFreeSpaceExW(u, &navail, NULL, NULL) == 0) {
+
+        if (u != utf16) {
+            njt_free(u);
+        }
+
+        return NJT_MAX_OFF_T_VALUE;
+    }
+
+    if (u != utf16) {
+        njt_free(u);
     }
 
     return (off_t) navail.QuadPart;
@@ -673,11 +1027,11 @@ njt_fs_available(u_char *name)
 
 
 static njt_int_t
-njt_win32_check_filename(u_char *name, u_short *u, size_t len)
+njt_win32_check_filename(u_short *u, size_t len, njt_uint_t dirname)
 {
     u_char     *p, ch;
     u_long      n;
-    u_short    *lu;
+    u_short    *lu, *p, *slash, ch;
     njt_err_t   err;
     enum {
         sw_start = 0,
@@ -690,9 +1044,14 @@ njt_win32_check_filename(u_char *name, u_short *u, size_t len)
     /* check for NTFS streams (":"), trailing dots and spaces */
 
     lu = NULL;
+    slash = NULL;
     state = sw_start;
 
-    for (p = name; *p; p++) {
+#if (NJT_SUPPRESS_WARN)
+    ch = 0;
+#endif
+
+    for (p = u; *p; p++) {
         ch = *p;
 
         switch (state) {
@@ -706,6 +1065,7 @@ njt_win32_check_filename(u_char *name, u_short *u, size_t len)
 
             if (ch == '/' || ch == '\\') {
                 state = sw_after_slash;
+                slash = p;
             }
 
             break;
@@ -724,6 +1084,7 @@ njt_win32_check_filename(u_char *name, u_short *u, size_t len)
 
             if (ch == '/' || ch == '\\') {
                 state = sw_after_slash;
+                slash = p;
                 break;
             }
 
@@ -751,6 +1112,7 @@ njt_win32_check_filename(u_char *name, u_short *u, size_t len)
 
             if (ch == '/' || ch == '\\') {
                 state = sw_after_slash;
+                slash = p;
                 break;
             }
 
@@ -779,6 +1141,12 @@ njt_win32_check_filename(u_char *name, u_short *u, size_t len)
         goto invalid;
     }
 
+    if (dirname && slash) {
+        ch = *slash;
+        *slash = '\0';
+        len = slash - u + 1;
+    }
+
     /* check if long name match */
 
     lu = malloc(len * 2);
@@ -789,11 +1157,20 @@ njt_win32_check_filename(u_char *name, u_short *u, size_t len)
     n = GetLongPathNameW(u, lu, len);
 
     if (n == 0) {
+
+        if (dirname && slash && njt_errno == NJT_ENOENT) {
+            njt_set_errno(NJT_ENOPATH);
+        }
+
         goto failed;
     }
 
     if (n != len - 1 || _wcsicmp(u, lu) != 0) {
         goto invalid;
+    }
+
+    if (dirname && slash) {
+        *slash = ch;
     }
 
     njt_free(lu);
@@ -806,6 +1183,10 @@ invalid:
 
 failed:
 
+    if (dirname && slash) {
+        *slash = ch;
+    }
+
     if (lu) {
         err = njt_errno;
         njt_free(lu);
@@ -817,7 +1198,7 @@ failed:
 
 
 static u_short *
-njt_utf8_to_utf16(u_short *utf16, u_char *utf8, size_t *len)
+njt_utf8_to_utf16(u_short *utf16, u_char *utf8, size_t *len, size_t reserved)
 {
     u_char    *p;
     u_short   *u, *last;
@@ -866,7 +1247,7 @@ njt_utf8_to_utf16(u_short *utf16, u_char *utf8, size_t *len)
 
     /* the given buffer is not enough, allocate a new one */
 
-    u = malloc(((p - utf8) + njt_strlen(p) + 1) * sizeof(u_short));
+    u = malloc(((p - utf8) + njt_strlen(p) + 1 + reserved) * sizeof(u_short));
     if (u == NULL) {
         return NULL;
     }
@@ -910,4 +1291,167 @@ njt_utf8_to_utf16(u_short *utf16, u_char *utf8, size_t *len)
     }
 
     /* unreachable */
+}
+
+
+static u_char *
+njt_utf16_to_utf8(u_char *utf8, u_short *utf16, size_t *len, size_t *allocated)
+{
+    u_char    *p, *last;
+    u_short   *u, *j;
+    uint32_t   n;
+
+    u = utf16;
+    p = utf8;
+    last = utf8 + *len;
+
+    while (p < last) {
+
+        if (*u < 0x80) {
+            *p++ = (u_char) *u;
+
+            if (*u == 0) {
+                *len = p - utf8;
+                return utf8;
+            }
+
+            u++;
+
+            continue;
+        }
+
+        if (p >= last - 4) {
+            *len = p - utf8;
+            break;
+        }
+
+        n = njt_utf16_decode(&u, 2);
+
+        if (n > 0x10ffff) {
+            njt_set_errno(NJT_EILSEQ);
+            return NULL;
+        }
+
+        if (n >= 0x10000) {
+            *p++ = (u_char) (0xf0 + (n >> 18));
+            *p++ = (u_char) (0x80 + ((n >> 12) & 0x3f));
+            *p++ = (u_char) (0x80 + ((n >> 6) & 0x3f));
+            *p++ = (u_char) (0x80 + (n & 0x3f));
+            continue;
+        }
+
+        if (n >= 0x0800) {
+            *p++ = (u_char) (0xe0 + (n >> 12));
+            *p++ = (u_char) (0x80 + ((n >> 6) & 0x3f));
+            *p++ = (u_char) (0x80 + (n & 0x3f));
+            continue;
+        }
+
+        *p++ = (u_char) (0xc0 + (n >> 6));
+        *p++ = (u_char) (0x80 + (n & 0x3f));
+    }
+
+    /* the given buffer is not enough, allocate a new one */
+
+    for (j = u; *j; j++) { /* void */ }
+
+    p = malloc((j - utf16) * 4 + 1);
+    if (p == NULL) {
+        return NULL;
+    }
+
+    if (allocated) {
+        *allocated = (j - utf16) * 4 + 1;
+    }
+
+    njt_memcpy(p, utf8, *len);
+
+    utf8 = p;
+    p += *len;
+
+    for ( ;; ) {
+
+        if (*u < 0x80) {
+            *p++ = (u_char) *u;
+
+            if (*u == 0) {
+                *len = p - utf8;
+                return utf8;
+            }
+
+            u++;
+
+            continue;
+        }
+
+        n = njt_utf16_decode(&u, 2);
+
+        if (n > 0x10ffff) {
+            njt_free(utf8);
+            njt_set_errno(NJT_EILSEQ);
+            return NULL;
+        }
+
+        if (n >= 0x10000) {
+            *p++ = (u_char) (0xf0 + (n >> 18));
+            *p++ = (u_char) (0x80 + ((n >> 12) & 0x3f));
+            *p++ = (u_char) (0x80 + ((n >> 6) & 0x3f));
+            *p++ = (u_char) (0x80 + (n & 0x3f));
+            continue;
+        }
+
+        if (n >= 0x0800) {
+            *p++ = (u_char) (0xe0 + (n >> 12));
+            *p++ = (u_char) (0x80 + ((n >> 6) & 0x3f));
+            *p++ = (u_char) (0x80 + (n & 0x3f));
+            continue;
+        }
+
+        *p++ = (u_char) (0xc0 + (n >> 6));
+        *p++ = (u_char) (0x80 + (n & 0x3f));
+    }
+    /* unreachable */
+}
+
+
+/*
+ * ngx_utf16_decode() decodes one or two UTF-16 code units
+ * the return values:
+ *    0x80 - 0x10ffff         valid character
+ *    0x110000 - 0xfffffffd   invalid sequence
+ *    0xfffffffe              incomplete sequence
+ *    0xffffffff              error
+ */
+
+uint32_t
+njt_utf16_decode(u_short **u, size_t n)
+{
+    uint32_t  k, m;
+
+    k = **u;
+
+    if (k < 0xd800 || k > 0xdfff) {
+        (*u)++;
+        return k;
+    }
+
+    if (k > 0xdbff) {
+        (*u)++;
+        return 0xffffffff;
+    }
+
+    if (n < 2) {
+        return 0xfffffffe;
+    }
+
+    (*u)++;
+
+    m = *(*u)++;
+
+    if (m < 0xdc00 || m > 0xdfff) {
+        return 0xffffffff;
+
+    }
+
+    return 0x10000 + ((k - 0xd800) << 10) + (m - 0xdc00);
 }

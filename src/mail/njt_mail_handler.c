@@ -284,11 +284,11 @@ njt_mail_init_session_handler(njt_event_t *rev)
 
     s = c->data;
 
-    sslcf = njt_mail_get_module_srv_conf(s, njt_mail_ssl_module);
 
-    if (sslcf->enable || s->ssl) {
+    if (s->ssl) {
         c->log->action = "SSL handshaking";
 
+        sslcf = njt_mail_get_module_srv_conf(s, njt_mail_ssl_module);
         njt_mail_ssl_init_connection(&sslcf->ssl, c);
         return;
     }

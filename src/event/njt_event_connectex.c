@@ -128,8 +128,8 @@ void njt_iocp_wait_events(int main)
     conn[0] = NULL;
 
     for ( ;; ) {
-        offset = (nevents == WSA_MAXIMUM_WAIT_EVENTS + 1) ? 1: 0;
-        timeout = (nevents == 1 && !first) ? 60000: INFINITE;
+        offset = (nevents == WSA_MAXIMUM_WAIT_EVENTS + 1) ? 1 : 0;
+        timeout = (nevents == 1 && !first) ? 60000 : INFINITE;
 
         n = WSAWaitForMultipleEvents(nevents - offset, events[offset],
                                      0, timeout, 0);
