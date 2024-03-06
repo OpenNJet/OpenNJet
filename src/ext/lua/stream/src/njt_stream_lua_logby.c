@@ -41,7 +41,7 @@ static njt_int_t njt_stream_lua_log_by_chunk(lua_State *L,
 static void
 njt_stream_lua_log_by_lua_env(lua_State *L, njt_stream_lua_request_t *r)
 {
-    /*  set nginx request pointer to current lua thread's globals table */
+    /*  set njet request pointer to current lua thread's globals table */
     njt_stream_lua_set_req(L, r);
 
 #ifndef OPENRESTY_LUAJIT
@@ -223,11 +223,11 @@ njt_stream_lua_log_by_chunk(lua_State *L, njt_stream_lua_request_t *r)
 
     NJT_LUA_EXCEPTION_TRY {
 
-        /* initialize nginx context in Lua VM, code chunk at stack top sp = 1 */
+        /* initialize njet context in Lua VM, code chunk at stack top sp = 1 */
         njt_stream_lua_log_by_lua_env(L, r);
 
 #if (NJT_PCRE)
-        /* XXX: work-around to nginx regex subsystem */
+        /* XXX: work-around to njet regex subsystem */
         old_pool = njt_stream_lua_pcre_malloc_init(r->pool);
 #endif
 
@@ -240,7 +240,7 @@ njt_stream_lua_log_by_chunk(lua_State *L, njt_stream_lua_request_t *r)
         lua_remove(L, 1);  /* remove traceback function */
 
 #if (NJT_PCRE)
-        /* XXX: work-around to nginx regex subsystem */
+        /* XXX: work-around to njet regex subsystem */
         njt_stream_lua_pcre_malloc_done(old_pool);
 #endif
 

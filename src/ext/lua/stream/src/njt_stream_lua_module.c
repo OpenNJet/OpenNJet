@@ -57,6 +57,9 @@ static char *njt_stream_lua_ssl_conf_command_check(njt_conf_t *cf, void *post,
 #endif
 static char *njt_stream_lua_malloc_trim(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
+#if (NJT_PCRE2)
+extern void njt_stream_lua_regex_cleanup(void *data);
+#endif
 
 
 static njt_conf_post_t  njt_stream_lua_lowat_post =
@@ -423,6 +426,20 @@ static njt_command_t njt_stream_lua_cmds[] = {
       offsetof(njt_stream_lua_srv_conf_t, ssl_verify_depth),
       NULL },
 
+    { njt_string("lua_ssl_certificate"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_array_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_lua_srv_conf_t, ssl_certificates),
+      NULL },
+
+    { njt_string("lua_ssl_certificate_key"),
+      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_array_slot,
+      NJT_STREAM_SRV_CONF_OFFSET,
+      offsetof(njt_stream_lua_srv_conf_t, ssl_certificate_keys),
+      NULL },
+
     { njt_string("lua_ssl_trusted_certificate"),
       NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_TAKE1,
       njt_conf_set_str_slot,
@@ -564,7 +581,16 @@ njt_stream_lua_init(njt_conf_t *cf)
     cln->data = lmcf;
     cln->handler = njt_stream_lua_sema_mm_cleanup;
 
+#if (NJT_PCRE2)
+    /* add the cleanup of pcre2 regex */
+    cln = njt_pool_cleanup_add(cf->pool, 0);
+    if (cln == NULL) {
+        return NJT_ERROR;
+    }
 
+    cln->data = lmcf;
+    cln->handler = njt_stream_lua_regex_cleanup;
+#endif
 
     if (lmcf->lua == NULL) {
         dd("initializing lua vm");
@@ -580,6 +606,15 @@ njt_stream_lua_init(njt_conf_t *cf)
                           "the OpenResty releases from https://openresty.org/"
                           "en/download.html)");
         }
+#else
+#   if !defined(HAVE_LUA_EXDATA2)
+        njt_log_error(NJT_LOG_ALERT, cf->log, 0,
+                      "detected an old version of OpenResty's LuaJIT missing "
+                      "the exdata2 API and thus the "
+                      "performance will be compromised; please upgrade to the "
+                      "latest version of OpenResty's LuaJIT: "
+                      "https://github.com/openresty/luajit2");
+#   endif
 #endif
 
 
@@ -815,6 +850,8 @@ njt_stream_lua_create_srv_conf(njt_conf_t *cf)
 
 #if (NJT_STREAM_SSL)
     conf->ssl_verify_depth = NJT_CONF_UNSET_UINT;
+    conf->ssl_certificates = NJT_CONF_UNSET_PTR;
+    conf->ssl_certificate_keys = NJT_CONF_UNSET_PTR;
 #endif
 
     return conf;
@@ -927,6 +964,10 @@ njt_stream_lua_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 
     njt_conf_merge_uint_value(conf->ssl_verify_depth,
                               prev->ssl_verify_depth, 1);
+    njt_conf_merge_ptr_value(conf->ssl_certificates,
+                             prev->ssl_certificates, NULL);
+    njt_conf_merge_ptr_value(conf->ssl_certificate_keys,
+                             prev->ssl_certificate_keys, NULL);
     njt_conf_merge_str_value(conf->ssl_trusted_certificate,
                              prev->ssl_trusted_certificate, "");
     njt_conf_merge_str_value(conf->ssl_crl, prev->ssl_crl, "");
@@ -974,6 +1015,13 @@ njt_stream_lua_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         conf->preread_chunkname = prev->preread_chunkname;
     }
 
+    if (conf->log_src.value.len == 0) {
+        conf->log_src = prev->log_src;
+        conf->log_handler = prev->log_handler;
+        conf->log_src_key = prev->log_src_key;
+        conf->log_chunkname = prev->log_chunkname;
+    }
+
     return NJT_CONF_OK;
 }
 
@@ -994,6 +1042,20 @@ njt_stream_lua_set_ssl(njt_conf_t *cf, njt_stream_lua_srv_conf_t *lscf)
 
     lscf->ssl->log = cf->log;
 
+    if (lscf->ssl_certificates) {
+        if (lscf->ssl_certificate_keys == NULL
+            || lscf->ssl_certificate_keys->nelts
+            < lscf->ssl_certificates->nelts)
+        {
+            njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                          "no \"lua_ssl_certificate_key\" is defined "
+                          "for certificate \"%V\"",
+                          ((njt_str_t *) lscf->ssl_certificates->elts)
+                          + lscf->ssl_certificates->nelts - 1);
+            return NJT_ERROR;
+        }
+    }
+
     if (njt_ssl_create(lscf->ssl, lscf->ssl_protocols, NULL) != NJT_OK) {
         return NJT_ERROR;
     }
@@ -1013,6 +1075,16 @@ njt_stream_lua_set_ssl(njt_conf_t *cf, njt_stream_lua_srv_conf_t *lscf)
         njt_ssl_error(NJT_LOG_EMERG, cf->log, 0,
                       "SSL_CTX_set_cipher_list(\"%V\") failed",
                       &lscf->ssl_ciphers);
+        return NJT_ERROR;
+    }
+
+    if (lscf->ssl_certificates
+        && njt_ssl_certificates(cf, lscf->ssl,
+                                lscf->ssl_certificates,
+                                lscf->ssl_certificate_keys,
+                                NULL)
+        != NJT_OK)
+    {
         return NJT_ERROR;
     }
 

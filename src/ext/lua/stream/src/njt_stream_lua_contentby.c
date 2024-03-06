@@ -71,7 +71,7 @@ njt_stream_lua_content_by_chunk(lua_State *L, njt_stream_lua_request_t *r)
     lua_setfenv(co, -2);
 #endif
 
-    /*  save nginx request in coroutine globals table */
+    /*  save njet request in coroutine globals table */
     njt_stream_lua_set_req(co, r);
 
     ctx->cur_co_ctx = &ctx->entry_co_ctx;
@@ -80,6 +80,8 @@ njt_stream_lua_content_by_chunk(lua_State *L, njt_stream_lua_request_t *r)
 #ifdef NJT_LUA_USE_ASSERT
     ctx->cur_co_ctx->co_top = 1;
 #endif
+
+    njt_stream_lua_attach_co_ctx_to_L(co, ctx->cur_co_ctx);
 
     /*  {{{ register request cleanup hooks */
     if (ctx->cleanup == NULL) {

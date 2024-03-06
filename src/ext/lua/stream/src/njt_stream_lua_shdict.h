@@ -64,6 +64,52 @@ typedef struct {
 } njt_stream_lua_shm_zone_ctx_t;
 
 
+#if (NJT_DARWIN)
+typedef struct {
+    void                  *zone;
+    const unsigned char   *key;
+    size_t                 key_len;
+    int                   *value_type;
+    unsigned char        **str_value_buf;
+    size_t                *str_value_len;
+    double                *num_value;
+    int                   *user_flags;
+    int                    get_stale;
+    int                   *is_stale;
+    char                 **errmsg;
+} njt_stream_lua_shdict_get_params_t;
+
+
+typedef struct {
+    void                  *zone;
+    int                    op;
+    const unsigned char   *key;
+    size_t                 key_len;
+    int                    value_type;
+    const unsigned char   *str_value_buf;
+    size_t                 str_value_len;
+    double                 num_value;
+    long                   exptime;
+    int                    user_flags;
+    char                 **errmsg;
+    int                   *forcible;
+} njt_stream_lua_shdict_store_params_t;
+
+
+typedef struct {
+    void                  *zone;
+    const unsigned char   *key;
+    size_t                 key_len;
+    double                *num_value;
+    char                 **errmsg;
+    int                    has_init;
+    double                 init;
+    long                   init_ttl;
+    int                   *forcible;
+} njt_stream_lua_shdict_incr_params_t;
+#endif
+
+
 njt_int_t njt_stream_lua_shdict_init_zone(njt_shm_zone_t *shm_zone, void *data);
 void njt_stream_lua_shdict_rbtree_insert_value(njt_rbtree_node_t *temp,
     njt_rbtree_node_t *node, njt_rbtree_node_t *sentinel);

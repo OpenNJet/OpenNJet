@@ -2028,4 +2028,42 @@ njt_stream_lua_ffi_shdict_free_space(njt_shm_zone_t *zone)
 #endif
 
 
+#if (NJT_DARWIN)
+int
+njt_stream_lua_ffi_shdict_get_macos(njt_stream_lua_shdict_get_params_t *p)
+{
+    return njt_stream_lua_ffi_shdict_get(p->zone,
+                                         (u_char *) p->key, p->key_len,
+                                         p->value_type, p->str_value_buf,
+                                         p->str_value_len, p->num_value,
+                                         p->user_flags, p->get_stale,
+                                         p->is_stale, p->errmsg);
+}
+
+
+int
+njt_stream_lua_ffi_shdict_store_macos(njt_stream_lua_shdict_store_params_t *p)
+{
+    return njt_stream_lua_ffi_shdict_store(p->zone, p->op,
+                                           (u_char *) p->key, p->key_len,
+                                           p->value_type,
+                                           (u_char *) p->str_value_buf,
+                                           p->str_value_len, p->num_value,
+                                           p->exptime, p->user_flags,
+                                           p->errmsg, p->forcible);
+}
+
+
+int
+njt_stream_lua_ffi_shdict_incr_macos(njt_stream_lua_shdict_incr_params_t *p)
+{
+    return njt_stream_lua_ffi_shdict_incr(p->zone,
+                                          (u_char *) p->key, p->key_len,
+                                          p->num_value, p->errmsg,
+                                          p->has_init, p->init, p->init_ttl,
+                                          p->forcible);
+}
+#endif
+
+
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */

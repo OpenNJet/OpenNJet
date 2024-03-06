@@ -442,11 +442,7 @@ njt_stream_lua_socket_tcp(lua_State *L)
         return luaL_error(L, "no ctx found");
     }
 
-    njt_stream_lua_check_context(L, ctx, NJT_STREAM_LUA_CONTEXT_CONTENT
-                                 | NJT_STREAM_LUA_CONTEXT_PREREAD
-                                 | NJT_STREAM_LUA_CONTEXT_SSL_CLIENT_HELLO
-                                 | NJT_STREAM_LUA_CONTEXT_SSL_CERT
-                                 | NJT_STREAM_LUA_CONTEXT_TIMER);
+    njt_stream_lua_check_context(L, ctx, NJT_STREAM_LUA_CONTEXT_YIELDABLE);
 
     lua_createtable(L, 5 /* narr */, 1 /* nrec */);
     lua_pushlightuserdata(L, njt_stream_lua_lightudata_mask(
@@ -897,12 +893,7 @@ njt_stream_lua_socket_tcp_connect(lua_State *L)
         return luaL_error(L, "no ctx found");
     }
 
-    njt_stream_lua_check_context(L, ctx, NJT_STREAM_LUA_CONTEXT_CONTENT
-
-                               | NJT_STREAM_LUA_CONTEXT_PREREAD
-                               | NJT_STREAM_LUA_CONTEXT_SSL_CLIENT_HELLO
-                               | NJT_STREAM_LUA_CONTEXT_SSL_CERT
-                               | NJT_STREAM_LUA_CONTEXT_TIMER);
+    njt_stream_lua_check_context(L, ctx, NJT_STREAM_LUA_CONTEXT_YIELDABLE);
 
     luaL_checktype(L, 1, LUA_TTABLE);
 
@@ -3195,6 +3186,25 @@ njt_stream_lua_socket_tcp_shutdown(lua_State *L)
         return luaL_error(L, "no request found");
     }
 
+    if (u == NULL
+        || u->peer.connection == NULL
+        || (u->read_closed && u->write_closed))
+    {
+        lua_pushnil(L);
+        lua_pushliteral(L, "closed");
+        return 2;
+    }
+
+    if (u->write_closed) {
+        lua_pushnil(L);
+        lua_pushliteral(L, "already shutdown");
+        return 2;
+    }
+
+    if (u->request != r) {
+        return luaL_error(L, "bad request");
+    }
+
     ctx = njt_stream_lua_get_module_ctx(r, njt_stream_lua_module);
     if (ctx == NULL) {
         njt_stream_lua_socket_handle_write_error(r, u,
@@ -3220,25 +3230,6 @@ njt_stream_lua_socket_tcp_shutdown(lua_State *L)
 
         /* prevent all further output attempt */
         ctx->eof = 1;
-    }
-
-    if (u == NULL
-        || u->peer.connection == NULL
-        || (u->read_closed && u->write_closed))
-    {
-        lua_pushnil(L);
-        lua_pushliteral(L, "closed");
-        return 2;
-    }
-
-    if (u->write_closed) {
-        lua_pushnil(L);
-        lua_pushliteral(L, "already shutdown");
-        return 2;
-    }
-
-    if (u->request != r) {
-        return luaL_error(L, "bad request");
     }
 
     njt_stream_lua_socket_check_busy_connecting(r, u, L);
@@ -4132,7 +4123,7 @@ njt_stream_lua_socket_tcp_resume_conn_op(
 #endif
 
     /* we manually destroy wait_connect_op before triggering connect
-     * operation resumption, so that there is no resumption happens when Nginx
+     * operation resumption, so that there is no resumption happens when NJet
      * is exiting.
      */
     if (njt_queue_empty(&spool->wait_connect_op)) {
