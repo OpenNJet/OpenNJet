@@ -1,7 +1,7 @@
 
 /*
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -21,9 +21,12 @@
 
 
 static int njt_http_lua_socket_tcp(lua_State *L);
+static int njt_http_lua_socket_tcp_bind(lua_State *L);
 static int njt_http_lua_socket_tcp_connect(lua_State *L);
 #if (NJT_HTTP_SSL)
-static int njt_http_lua_socket_tcp_sslhandshake(lua_State *L);
+static void njt_http_lua_ssl_handshake_handler(njt_connection_t *c);
+static int njt_http_lua_ssl_handshake_retval_handler(njt_http_request_t *r,
+    njt_http_lua_socket_tcp_upstream_t *u, lua_State *L);
 #endif
 static int njt_http_lua_socket_tcp_receive(lua_State *L);
 static int njt_http_lua_socket_tcp_receiveany(lua_State *L);
@@ -73,6 +76,8 @@ static void njt_http_lua_socket_dummy_handler(njt_http_request_t *r,
     njt_http_lua_socket_tcp_upstream_t *u);
 static int njt_http_lua_socket_tcp_receive_helper(njt_http_request_t *r,
     njt_http_lua_socket_tcp_upstream_t *u, lua_State *L);
+static void njt_http_lua_socket_tcp_read_prepare(njt_http_request_t *r,
+    njt_http_lua_socket_tcp_upstream_t *u, void *data, lua_State *L);
 static njt_int_t njt_http_lua_socket_tcp_read(njt_http_request_t *r,
     njt_http_lua_socket_tcp_upstream_t *u);
 static int njt_http_lua_socket_tcp_receive_retval_handler(njt_http_request_t *r,
@@ -150,12 +155,6 @@ static void njt_http_lua_socket_shutdown_pool_helper(
     njt_http_lua_socket_pool_t *spool);
 static int njt_http_lua_socket_prepare_error_retvals(njt_http_request_t *r,
     njt_http_lua_socket_tcp_upstream_t *u, lua_State *L, njt_uint_t ft_type);
-#if (NJT_HTTP_SSL)
-static int njt_http_lua_ssl_handshake_retval_handler(njt_http_request_t *r,
-    njt_http_lua_socket_tcp_upstream_t *u, lua_State *L);
-static void njt_http_lua_ssl_handshake_handler(njt_connection_t *c);
-static int njt_http_lua_ssl_free_session(lua_State *L);
-#endif
 static void njt_http_lua_socket_tcp_close_connection(njt_connection_t *c);
 
 
@@ -165,14 +164,17 @@ enum {
     SOCKET_CONNECT_TIMEOUT_INDEX = 2,
     SOCKET_SEND_TIMEOUT_INDEX = 4,
     SOCKET_READ_TIMEOUT_INDEX = 5,
+    SOCKET_CLIENT_CERT_INDEX  = 6 ,
+    SOCKET_CLIENT_PKEY_INDEX  = 7 ,
+    SOCKET_BIND_INDEX = 8   /* only in upstream cosocket */
 };
 
 
 enum {
-    SOCKET_OP_CONNECT,
-    SOCKET_OP_READ,
-    SOCKET_OP_WRITE,
-    SOCKET_OP_RESUME_CONN,
+    SOCKET_OP_CONNECT      = 0x01,
+    SOCKET_OP_READ         = 0x02,
+    SOCKET_OP_WRITE        = 0x04,
+    SOCKET_OP_RESUME_CONN  = 0x08,
 };
 
 
@@ -223,9 +225,6 @@ static char njt_http_lua_upstream_udata_metatable_key;
 static char njt_http_lua_downstream_udata_metatable_key;
 static char njt_http_lua_pool_udata_metatable_key;
 static char njt_http_lua_pattern_udata_metatable_key;
-#if (NJT_HTTP_SSL)
-static char njt_http_lua_ssl_session_metatable_key;
-#endif
 
 
 #define njt_http_lua_tcp_socket_metatable_literal_key  "__tcp_cosocket_mt"
@@ -236,7 +235,7 @@ njt_http_lua_inject_socket_tcp_api(njt_log_t *log, lua_State *L)
 {
     njt_int_t         rc;
 
-    lua_createtable(L, 0, 4 /* nrec */);    /* njt.socket */
+    lua_createtable(L, 0, 4 /* nrec */);    /* ngx.socket */
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp);
     lua_pushvalue(L, -1);
@@ -244,16 +243,16 @@ njt_http_lua_inject_socket_tcp_api(njt_log_t *log, lua_State *L)
     lua_setfield(L, -2, "stream");
 
     {
-        const char  buf[] = "local sock = njt.socket.tcp()"
+        const char  buf[] = "local sock = ngx.socket.tcp()"
                             " local ok, err = sock:connect(...)"
                             " if ok then return sock else return nil, err end";
 
-        rc = luaL_loadbuffer(L, buf, sizeof(buf) - 1, "=njt.socket.connect");
+        rc = luaL_loadbuffer(L, buf, sizeof(buf) - 1, "=ngx.socket.connect");
     }
 
     if (rc != NJT_OK) {
         njt_log_error(NJT_LOG_CRIT, log, 0,
-                      "failed to load Lua code for njt.socket.connect(): %i",
+                      "failed to load Lua code for ngx.socket.connect(): %i",
                       rc);
 
     } else {
@@ -277,10 +276,10 @@ njt_http_lua_inject_socket_tcp_api(njt_log_t *log, lua_State *L)
     lua_setfield(L, -2, "receiveuntil");
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_settimeout);
-    lua_setfield(L, -2, "settimeout"); /* njt socket mt */
+    lua_setfield(L, -2, "settimeout"); /* ngx socket mt */
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_settimeouts);
-    lua_setfield(L, -2, "settimeouts"); /* njt socket mt */
+    lua_setfield(L, -2, "settimeouts"); /* ngx socket mt */
 
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
@@ -306,10 +305,10 @@ njt_http_lua_inject_socket_tcp_api(njt_log_t *log, lua_State *L)
     lua_setfield(L, -2, "send");
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_settimeout);
-    lua_setfield(L, -2, "settimeout"); /* njt socket mt */
+    lua_setfield(L, -2, "settimeout"); /* ngx socket mt */
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_settimeouts);
-    lua_setfield(L, -2, "settimeouts"); /* njt socket mt */
+    lua_setfield(L, -2, "settimeouts"); /* ngx socket mt */
 
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
@@ -320,17 +319,13 @@ njt_http_lua_inject_socket_tcp_api(njt_log_t *log, lua_State *L)
     /* {{{tcp object metatable */
     lua_pushlightuserdata(L, njt_http_lua_lightudata_mask(
                           tcp_socket_metatable_key));
-    lua_createtable(L, 0 /* narr */, 14 /* nrec */);
+    lua_createtable(L, 0 /* narr */, 16 /* nrec */);
+
+    lua_pushcfunction(L, njt_http_lua_socket_tcp_bind);
+    lua_setfield(L, -2, "bind");
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_connect);
     lua_setfield(L, -2, "connect");
-
-#if (NJT_HTTP_SSL)
-
-    lua_pushcfunction(L, njt_http_lua_socket_tcp_sslhandshake);
-    lua_setfield(L, -2, "sslhandshake");
-
-#endif
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_receive);
     lua_setfield(L, -2, "receive");
@@ -348,10 +343,10 @@ njt_http_lua_inject_socket_tcp_api(njt_log_t *log, lua_State *L)
     lua_setfield(L, -2, "close");
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_settimeout);
-    lua_setfield(L, -2, "settimeout"); /* njt socket mt */
+    lua_setfield(L, -2, "settimeout"); /* ngx socket mt */
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_settimeouts);
-    lua_setfield(L, -2, "settimeouts"); /* njt socket mt */
+    lua_setfield(L, -2, "settimeouts"); /* ngx socket mt */
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_getreusedtimes);
     lua_setfield(L, -2, "getreusedtimes");
@@ -405,19 +400,6 @@ njt_http_lua_inject_socket_tcp_api(njt_log_t *log, lua_State *L)
     lua_setfield(L, -2, "__gc");
     lua_rawset(L, LUA_REGISTRYINDEX);
     /* }}} */
-
-#if (NJT_HTTP_SSL)
-
-    /* {{{ssl session userdata metatable */
-    lua_pushlightuserdata(L, njt_http_lua_lightudata_mask(
-                          ssl_session_metatable_key));
-    lua_createtable(L, 0 /* narr */, 1 /* nrec */); /* metatable */
-    lua_pushcfunction(L, njt_http_lua_ssl_free_session);
-    lua_setfield(L, -2, "__gc");
-    lua_rawset(L, LUA_REGISTRYINDEX);
-    /* }}} */
-
-#endif
 }
 
 
@@ -452,7 +434,7 @@ njt_http_lua_socket_tcp(lua_State *L)
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_YIELDABLE);
 
-    lua_createtable(L, 5 /* narr */, 1 /* nrec */);
+    lua_createtable(L, 7 /* narr */, 1 /* nrec */);
     lua_pushlightuserdata(L, njt_http_lua_lightudata_mask(
                           tcp_socket_metatable_key));
     lua_rawget(L, LUA_REGISTRYINDEX);
@@ -854,6 +836,63 @@ no_memory_and_not_resuming:
 
 
 static int
+njt_http_lua_socket_tcp_bind(lua_State *L)
+{
+    njt_http_request_t   *r;
+    njt_http_lua_ctx_t   *ctx;
+    int                   n;
+    u_char               *text;
+    size_t                len;
+    njt_addr_t           *local;
+
+    n = lua_gettop(L);
+
+    if (n != 2) {
+        return luaL_error(L, "expecting 2 arguments, but got %d",
+                          lua_gettop(L));
+    }
+
+    r = njt_http_lua_get_req(L);
+    if (r == NULL) {
+        return luaL_error(L, "no request found");
+    }
+
+    ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
+    if (ctx == NULL) {
+        return luaL_error(L, "no ctx found");
+    }
+
+    njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_ACCESS
+                               | NJT_HTTP_LUA_CONTEXT_CONTENT
+                               | NJT_HTTP_LUA_CONTEXT_TIMER
+                               | NJT_HTTP_LUA_CONTEXT_SSL_CERT
+                               | NJT_HTTP_LUA_CONTEXT_SSL_SESS_FETCH
+                               | NJT_HTTP_LUA_CONTEXT_SSL_CLIENT_HELLO);
+
+    luaL_checktype(L, 1, LUA_TTABLE);
+
+    text = (u_char *) luaL_checklstring(L, 2, &len);
+
+    local = njt_http_lua_parse_addr(L, text, len);
+    if (local == NULL) {
+        lua_pushnil(L);
+        lua_pushfstring(L, "bad address");
+        return 2;
+    }
+
+    /* TODO: we may reuse the userdata here */
+    lua_rawseti(L, 1, SOCKET_BIND_INDEX);
+
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "lua tcp socket bind ip: %V", &local->name);
+
+    lua_pushboolean(L, 1);
+    return 1;
+}
+
+
+static int
 njt_http_lua_socket_tcp_connect(lua_State *L)
 {
     njt_http_request_t          *r;
@@ -864,6 +903,7 @@ njt_http_lua_socket_tcp_connect(lua_State *L)
     size_t                       len;
     njt_http_lua_loc_conf_t     *llcf;
     njt_peer_connection_t       *pc;
+    njt_addr_t                  *local;
     int                          connect_timeout, send_timeout, read_timeout;
     unsigned                     custom_pool;
     int                          key_index;
@@ -878,7 +918,7 @@ njt_http_lua_socket_tcp_connect(lua_State *L)
 
     n = lua_gettop(L);
     if (n != 2 && n != 3 && n != 4) {
-        return luaL_error(L, "njt.socket connect: expecting 2, 3, or 4 "
+        return luaL_error(L, "ngx.socket connect: expecting 2, 3, or 4 "
                           "arguments (including the object), but seen %d", n);
     }
 
@@ -1093,6 +1133,14 @@ njt_http_lua_socket_tcp_connect(lua_State *L)
     pc->log_error = NJT_ERROR_ERR;
 
     dd("lua peer connection log: %p", pc->log);
+
+    lua_rawgeti(L, 1, SOCKET_BIND_INDEX);
+    local = lua_touserdata(L, -1);
+    lua_pop(L, 1);
+
+    if (local) {
+        u->peer.local = local;
+    }
 
     lua_rawgeti(L, 1, SOCKET_CONNECT_TIMEOUT_INDEX);
     lua_rawgeti(L, 1, SOCKET_SEND_TIMEOUT_INDEX);
@@ -1560,64 +1608,73 @@ njt_http_lua_socket_conn_error_retval_handler(njt_http_request_t *r,
 
 #if (NJT_HTTP_SSL)
 
-static int
-njt_http_lua_socket_tcp_sslhandshake(lua_State *L)
+static const char *
+njt_http_lua_socket_tcp_check_busy(njt_http_request_t *r,
+    njt_http_lua_socket_tcp_upstream_t *u, unsigned int ops)
 {
-    int                      n, top;
-    njt_int_t                rc;
-    njt_str_t                name = njt_null_string;
+    if ((ops & SOCKET_OP_CONNECT) && u->conn_waiting) {
+        return "socket busy connecting";
+    }
+
+    if ((ops & SOCKET_OP_READ) && u->read_waiting) {
+        return "socket busy reading";
+    }
+
+    if ((ops & SOCKET_OP_WRITE)
+        && (u->write_waiting
+            || (u->raw_downstream
+                && (r->connection->buffered & NJT_HTTP_LOWLEVEL_BUFFERED))))
+    {
+        return "socket busy writing";
+    }
+
+    return NULL;
+}
+
+
+int
+njt_http_lua_ffi_socket_tcp_sslhandshake(njt_http_request_t *r,
+    njt_http_lua_socket_tcp_upstream_t *u, njt_ssl_session_t *sess,
+    int enable_session_reuse, njt_str_t *server_name, int verify,
+    int ocsp_status_req, STACK_OF(X509) *chain, EVP_PKEY *pkey,
+    const char **errmsg)
+{
+    njt_int_t                rc, i;
     njt_connection_t        *c;
-    njt_ssl_session_t      **psession;
-    njt_http_request_t      *r;
     njt_http_lua_ctx_t      *ctx;
     njt_http_lua_co_ctx_t   *coctx;
-
-    njt_http_lua_socket_tcp_upstream_t  *u;
-
-    /* Lua function arguments: self [,session] [,host] [,verify]
-       [,send_status_req] */
-
-    n = lua_gettop(L);
-    if (n < 1 || n > 5) {
-        return luaL_error(L, "njt.socket sslhandshake: expecting 1 ~ 5 "
-                          "arguments (including the object), but seen %d", n);
-    }
-
-    r = njt_http_lua_get_req(L);
-    if (r == NULL) {
-        return luaL_error(L, "no request found");
-    }
+    const char              *busy_msg;
+    njt_ssl_conn_t          *ssl_conn;
+    X509                    *x509;
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                    "lua tcp socket ssl handshake");
-
-    luaL_checktype(L, 1, LUA_TTABLE);
-
-    lua_rawgeti(L, 1, SOCKET_CTX_INDEX);
-    u = lua_touserdata(L, -1);
 
     if (u == NULL
         || u->peer.connection == NULL
         || u->read_closed
         || u->write_closed)
     {
-        lua_pushnil(L);
-        lua_pushliteral(L, "closed");
-        return 2;
+        *errmsg = "closed";
+        return NJT_ERROR;
     }
 
     if (u->request != r) {
-        return luaL_error(L, "bad request");
+        *errmsg = "bad request";
+        return NJT_ERROR;
     }
 
-    njt_http_lua_socket_check_busy_connecting(r, u, L);
-    njt_http_lua_socket_check_busy_reading(r, u, L);
-    njt_http_lua_socket_check_busy_writing(r, u, L);
+    busy_msg = njt_http_lua_socket_tcp_check_busy(r, u, SOCKET_OP_CONNECT
+                                                  | SOCKET_OP_READ
+                                                  | SOCKET_OP_WRITE);
+    if (busy_msg != NULL) {
+        *errmsg = busy_msg;
+        return NJT_ERROR;
+    }
 
     if (u->raw_downstream || u->body_downstream) {
-        lua_pushnil(L);
-        lua_pushliteral(L, "not supported for downstream");
-        return 2;
+        *errmsg = "not supported for downstream sockets";
+        return NJT_ERROR;
     }
 
     c = u->peer.connection;
@@ -1625,122 +1682,140 @@ njt_http_lua_socket_tcp_sslhandshake(lua_State *L)
     u->ssl_session_reuse = 1;
 
     if (c->ssl && c->ssl->handshaked) {
-        switch (lua_type(L, 2)) {
-        case LUA_TUSERDATA:
-            lua_pushvalue(L, 2);
-            break;
-
-        case LUA_TBOOLEAN:
-            if (!lua_toboolean(L, 2)) {
-                /* avoid generating the ssl session */
-                lua_pushboolean(L, 1);
-                break;
-            }
-            /* fall through */
-
-        default:
-            njt_http_lua_ssl_handshake_retval_handler(r, u, L);
-            break;
+        if (sess != NULL) {
+            return NJT_DONE;
         }
 
-        return 1;
+        u->ssl_session_reuse = enable_session_reuse;
+
+        (void) njt_http_lua_ssl_handshake_retval_handler(r, u, NULL);
+
+        return NJT_OK;
     }
 
     if (njt_ssl_create_connection(u->conf->ssl, c,
                                   NJT_SSL_BUFFER|NJT_SSL_CLIENT)
         != NJT_OK)
     {
-        lua_pushnil(L);
-        lua_pushliteral(L, "failed to create ssl connection");
-        return 2;
+        *errmsg = "failed to create ssl connection";
+        return NJT_ERROR;
     }
+
+    ssl_conn = c->ssl->connection;
 
     ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
     if (ctx == NULL) {
-        return luaL_error(L, "no ctx found");
+        return NJT_HTTP_LUA_FFI_NO_REQ_CTX;
     }
 
     coctx = ctx->cur_co_ctx;
 
     c->sendfile = 0;
 
-    if (n >= 2) {
-        if (lua_type(L, 2) == LUA_TBOOLEAN) {
-            u->ssl_session_reuse = lua_toboolean(L, 2);
+    if (sess != NULL) {
+        if (njt_ssl_set_session(c, sess) != NJT_OK) {
+            *errmsg = "ssl set session failed";
+            return NJT_ERROR;
+        }
 
-        } else {
-            psession = lua_touserdata(L, 2);
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
+                       "lua ssl set session: %p", sess);
 
-            if (psession != NULL && *psession != NULL) {
-                if (njt_ssl_set_session(c, *psession) != NJT_OK) {
-                    lua_pushnil(L);
-                    lua_pushliteral(L, "lua ssl set session failed");
-                    return 2;
-                }
+    } else {
+        u->ssl_session_reuse = enable_session_reuse;
+    }
 
-                njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
-                               "lua ssl set session: %p", *psession);
+    if (chain != NULL) {
+        njt_http_lua_assert(pkey != NULL); /* ensured by resty.core */
+
+        if (sk_X509_num(chain) < 1) {
+            ERR_clear_error();
+            *errmsg = "invalid client certificate chain";
+            return NJT_ERROR;
+        }
+
+        x509 = sk_X509_value(chain, 0);
+        if (x509 == NULL) {
+            ERR_clear_error();
+            *errmsg = "ssl fetch client certificate from chain failed";
+            return NJT_ERROR;
+        }
+
+        if (SSL_use_certificate(ssl_conn, x509) == 0) {
+            ERR_clear_error();
+            *errmsg = "ssl set client certificate failed";
+            return NJT_ERROR;
+        }
+
+        /* read rest of the chain */
+
+        for (i = 1; i < (njt_int_t) sk_X509_num(chain); i++) {
+            x509 = sk_X509_value(chain, i);
+            if (x509 == NULL) {
+                ERR_clear_error();
+                *errmsg = "ssl fetch client intermediate certificate from "
+                          "chain failed";
+                return NJT_ERROR;
+            }
+
+            if (SSL_add1_chain_cert(ssl_conn, x509) == 0) {
+                ERR_clear_error();
+                *errmsg = "ssl set client intermediate certificate failed";
+                return NJT_ERROR;
             }
         }
 
-        if (n >= 3) {
-            name.data = (u_char *) lua_tolstring(L, 3, &name.len);
-
-            if (name.data) {
-                njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                               "lua ssl server name: \"%*s\"", name.len,
-                               name.data);
-
-#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
-
-                if (SSL_set_tlsext_host_name(c->ssl->connection,
-                                             (char *) name.data)
-                    == 0)
-                {
-                    lua_pushnil(L);
-                    lua_pushliteral(L, "SSL_set_tlsext_host_name failed");
-                    return 2;
-                }
-
-#else
-
-               njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0,
-                              "lua socket SNI disabled because the current "
-                              "version of OpenSSL lacks the support");
-
-#endif
-            }
-
-            if (n >= 4) {
-                u->ssl_verify = lua_toboolean(L, 4);
-
-                if (n >= 5) {
-                    if (lua_toboolean(L, 5)) {
-#ifdef NJT_HTTP_LUA_USE_OCSP
-                        SSL_set_tlsext_status_type(c->ssl->connection,
-                                                   TLSEXT_STATUSTYPE_ocsp);
-#else
-                        return luaL_error(L, "no OCSP support");
-#endif
-                    }
-                }
-            }
+        if (SSL_use_PrivateKey(ssl_conn, pkey) == 0) {
+            ERR_clear_error();
+            *errmsg = "ssl set client private key failed";
+            return NJT_ERROR;
         }
     }
 
-    dd("found sni name: %.*s %p", (int) name.len, name.data, name.data);
+    if (server_name != NULL && server_name->data != NULL) {
+        njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                       "lua ssl server name: \"%V\"", server_name);
 
-    if (name.len == 0) {
+#ifdef SSL_CTRL_SET_TLSEXT_HOSTNAME
+        if (SSL_set_tlsext_host_name(c->ssl->connection,
+                                     (char *) server_name->data)
+            == 0)
+        {
+            *errmsg = "SSL_set_tlsext_host_name failed";
+            return NJT_ERROR;
+        }
+
+#else
+        *errmsg = "no TLS extension support";
+        return NJT_ERROR;
+#endif
+    }
+
+    u->ssl_verify = verify;
+
+    if (ocsp_status_req) {
+#ifdef NJT_HTTP_LUA_USE_OCSP
+        SSL_set_tlsext_status_type(c->ssl->connection,
+                                   TLSEXT_STATUSTYPE_ocsp);
+
+#else
+        *errmsg = "no OCSP support";
+        return NJT_ERROR;
+#endif
+    }
+
+    if (server_name == NULL || server_name->len == 0) {
         u->ssl_name.len = 0;
 
     } else {
         if (u->ssl_name.data) {
             /* buffer already allocated */
 
-            if (u->ssl_name.len >= name.len) {
+            if (u->ssl_name.len >= server_name->len) {
                 /* reuse it */
-                njt_memcpy(u->ssl_name.data, name.data, name.len);
-                u->ssl_name.len = name.len;
+                njt_memcpy(u->ssl_name.data, server_name->data,
+                           server_name->len);
+                u->ssl_name.len = server_name->len;
 
             } else {
                 njt_free(u->ssl_name.data);
@@ -1751,17 +1826,15 @@ njt_http_lua_socket_tcp_sslhandshake(lua_State *L)
 
 new_ssl_name:
 
-            u->ssl_name.data = njt_alloc(name.len, njt_cycle->log);
+            u->ssl_name.data = njt_alloc(server_name->len, njt_cycle->log);
             if (u->ssl_name.data == NULL) {
                 u->ssl_name.len = 0;
-
-                lua_pushnil(L);
-                lua_pushliteral(L, "no memory");
-                return 2;
+                *errmsg = "no memory";
+                return NJT_ERROR;
             }
 
-            njt_memcpy(u->ssl_name.data, name.data, name.len);
-            u->ssl_name.len = name.len;
+            njt_memcpy(u->ssl_name.data, server_name->data, server_name->len);
+            u->ssl_name.len = server_name->len;
         }
     }
 
@@ -1775,7 +1848,8 @@ new_ssl_name:
 
     rc = njt_ssl_handshake(c);
 
-    dd("njt_ssl_handshake returned %d", (int) rc);
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "njt_ssl_handshake returned: %d", rc);
 
     if (rc == NJT_AGAIN) {
         if (c->write->timer_set) {
@@ -1800,21 +1874,24 @@ new_ssl_name:
             r->write_event_handler = njt_http_core_run_phases;
         }
 
-        return lua_yield(L, 0);
+        return NJT_AGAIN;
     }
 
-    top = lua_gettop(L);
     njt_http_lua_ssl_handshake_handler(c);
-    return lua_gettop(L) - top;
+
+    if (rc == NJT_ERROR) {
+        *errmsg = u->error_ret;
+        return NJT_ERROR;
+    }
+
+    return NJT_OK;
 }
 
 
 static void
 njt_http_lua_ssl_handshake_handler(njt_connection_t *c)
 {
-    const char                  *err;
     int                          waiting;
-    lua_State                   *L;
     njt_int_t                    rc;
     njt_connection_t            *dc;  /* downstream connection */
     njt_http_request_t          *r;
@@ -1837,11 +1914,9 @@ njt_http_lua_ssl_handshake_handler(njt_connection_t *c)
     waiting = u->conn_waiting;
 
     dc = r->connection;
-    L = u->write_co_ctx->co;
 
     if (c->read->timedout) {
-        lua_pushnil(L);
-        lua_pushliteral(L, "timeout");
+        u->error_ret = "timeout";
         goto failed;
     }
 
@@ -1850,19 +1925,18 @@ njt_http_lua_ssl_handshake_handler(njt_connection_t *c)
     }
 
     if (c->ssl->handshaked) {
-
         if (u->ssl_verify) {
             rc = SSL_get_verify_result(c->ssl->connection);
 
             if (rc != X509_V_OK) {
-                lua_pushnil(L);
-                err = lua_pushfstring(L, "%d: %s", (int) rc,
-                                      X509_verify_cert_error_string(rc));
+                u->error_ret = X509_verify_cert_error_string(rc);
+                u->openssl_error_code_ret = rc;
 
                 llcf = njt_http_get_module_loc_conf(r, njt_http_lua_module);
                 if (llcf->log_socket_errors) {
                     njt_log_error(NJT_LOG_ERR, dc->log, 0, "lua ssl "
-                                  "certificate verify error: (%s)", err);
+                                  "certificate verify error: (%d: %s)",
+                                  rc, u->error_ret);
                 }
 
                 goto failed;
@@ -1873,8 +1947,7 @@ njt_http_lua_ssl_handshake_handler(njt_connection_t *c)
             if (u->ssl_name.len
                 && njt_ssl_check_host(c, &u->ssl_name) != NJT_OK)
             {
-                lua_pushnil(L);
-                lua_pushliteral(L, "certificate host mismatch");
+                u->error_ret = "certificate host mismatch";
 
                 llcf = njt_http_get_module_loc_conf(r, njt_http_lua_module);
                 if (llcf->log_socket_errors) {
@@ -1893,7 +1966,7 @@ njt_http_lua_ssl_handshake_handler(njt_connection_t *c)
             njt_http_lua_socket_handle_conn_success(r, u);
 
         } else {
-            (void) njt_http_lua_ssl_handshake_retval_handler(r, u, L);
+            (void) njt_http_lua_ssl_handshake_retval_handler(r, u, NULL);
         }
 
         if (waiting) {
@@ -1903,21 +1976,42 @@ njt_http_lua_ssl_handshake_handler(njt_connection_t *c)
         return;
     }
 
-    lua_pushnil(L);
-    lua_pushliteral(L, "handshake failed");
+    u->error_ret = "handshake failed";
 
 failed:
 
     if (waiting) {
         u->write_prepare_retvals =
-                                njt_http_lua_socket_conn_error_retval_handler;
-        njt_http_lua_socket_handle_conn_error(r, u,
-                                              NJT_HTTP_LUA_SOCKET_FT_SSL);
+            njt_http_lua_socket_conn_error_retval_handler;
+        njt_http_lua_socket_handle_conn_error(r, u, NJT_HTTP_LUA_SOCKET_FT_SSL);
         njt_http_run_posted_requests(dc);
 
     } else {
-        (void) njt_http_lua_socket_conn_error_retval_handler(r, u, L);
+        u->ft_type |= NJT_HTTP_LUA_SOCKET_FT_SSL;
+
+        (void) njt_http_lua_socket_conn_error_retval_handler(r, u, NULL);
     }
+}
+
+
+int
+njt_http_lua_ffi_socket_tcp_get_sslhandshake_result(njt_http_request_t *r,
+    njt_http_lua_socket_tcp_upstream_t *u, njt_ssl_session_t **sess,
+    const char **errmsg, int *openssl_error_code)
+{
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "lua cosocket get SSL handshake result for upstream: %p", u);
+
+    if (u->error_ret != NULL) {
+        *errmsg = u->error_ret;
+        *openssl_error_code = u->openssl_error_code_ret;
+
+        return NJT_ERROR;
+    }
+
+    *sess = u->ssl_session_ret;
+
+    return NJT_OK;
 }
 
 
@@ -1926,36 +2020,38 @@ njt_http_lua_ssl_handshake_retval_handler(njt_http_request_t *r,
     njt_http_lua_socket_tcp_upstream_t *u, lua_State *L)
 {
     njt_connection_t            *c;
-    njt_ssl_session_t           *ssl_session, **ud;
+    njt_ssl_session_t           *ssl_session;
 
     if (!u->ssl_session_reuse) {
-        lua_pushboolean(L, 1);
-        return 1;
+        return 0;
     }
-
-    ud = lua_newuserdata(L, sizeof(njt_ssl_session_t *));
 
     c = u->peer.connection;
 
     ssl_session = njt_ssl_get_session(c);
     if (ssl_session == NULL) {
-        *ud = NULL;
+        u->ssl_session_ret = NULL;
 
     } else {
-        *ud = ssl_session;
+        u->ssl_session_ret = ssl_session;
 
         njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
                        "lua ssl save session: %p", ssl_session);
-
-        /* set up the __gc metamethod */
-        lua_pushlightuserdata(L, njt_http_lua_lightudata_mask(
-                              ssl_session_metatable_key));
-        lua_rawget(L, LUA_REGISTRYINDEX);
-        lua_setmetatable(L, -2);
     }
 
-    return 1;
+    return 0;
 }
+
+
+void
+njt_http_lua_ffi_ssl_free_session(njt_ssl_session_t *sess)
+{
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                   "lua ssl free session: %p", sess);
+
+    njt_ssl_free_session(sess);
+}
+
 
 #endif  /* NJT_HTTP_SSL */
 
@@ -2009,10 +2105,12 @@ njt_http_lua_socket_prepare_error_retvals(njt_http_request_t *r,
     u_char           errstr[NJT_MAX_ERROR_STR];
     u_char          *p;
 
-    if (ft_type & (NJT_HTTP_LUA_SOCKET_FT_RESOLVER
-                   | NJT_HTTP_LUA_SOCKET_FT_SSL))
-    {
+    if (ft_type & NJT_HTTP_LUA_SOCKET_FT_RESOLVER) {
         return 2;
+    }
+
+    if (ft_type & NJT_HTTP_LUA_SOCKET_FT_SSL) {
+        return 0;
     }
 
     lua_pushnil(L);
@@ -2070,8 +2168,6 @@ njt_http_lua_socket_tcp_receive_helper(njt_http_request_t *r,
     njt_http_lua_ctx_t                  *ctx;
     njt_http_lua_co_ctx_t               *coctx;
 
-    u->input_filter_ctx = u;
-
     ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
 
     if (u->bufs_in == NULL) {
@@ -2099,6 +2195,8 @@ njt_http_lua_socket_tcp_receive_helper(njt_http_request_t *r,
 
     u->read_waiting = 0;
     u->read_co_ctx = NULL;
+
+    njt_http_lua_socket_tcp_read_prepare(r, u, u, L);
 
     rc = njt_http_lua_socket_tcp_read(r, u);
 
@@ -2316,7 +2414,7 @@ njt_http_lua_socket_tcp_receive(lua_State *L)
         case LUA_TNUMBER:
             bytes = lua_tointeger(L, 2);
             if (bytes < 0) {
-                return luaL_argerror(L, 2, "bad pattern argument");
+                return luaL_argerror(L, 2, "bad number argument");
             }
 
 #if 1
@@ -2333,7 +2431,7 @@ njt_http_lua_socket_tcp_receive(lua_State *L)
             break;
 
         default:
-            return luaL_argerror(L, 2, "bad pattern argument");
+            return luaL_argerror(L, 2, "bad argument");
             break;
         }
 
@@ -2421,6 +2519,87 @@ njt_http_lua_socket_read_any(void *data, ssize_t bytes)
 }
 
 
+static void
+njt_http_lua_socket_tcp_read_prepare(njt_http_request_t *r,
+    njt_http_lua_socket_tcp_upstream_t *u, void *data, lua_State *L)
+{
+    njt_http_lua_ctx_t                  *ctx;
+    njt_chain_t                         *new_cl;
+    njt_buf_t                           *b;
+    off_t                                size;
+
+    njt_http_lua_socket_compiled_pattern_t     *cp;
+
+    /* input_filter_ctx doesn't change, no need recovering */
+    if (u->input_filter_ctx == data) {
+        return;
+    }
+
+    /* last input_filter_ctx is null or upstream, no data pending */
+    if (u->input_filter_ctx == NULL || u->input_filter_ctx == u) {
+        u->input_filter_ctx = data;
+        return;
+    }
+
+    /* compiled pattern may be with data pending */
+
+    cp = u->input_filter_ctx;
+    u->input_filter_ctx = data;
+
+    cp->upstream = NULL;
+
+    /* no data pending */
+    if (cp->state <= 0) {
+        return;
+    }
+
+    b = &u->buffer;
+
+    if (b->pos - b->start >= cp->state) {
+        dd("pending data in one buffer");
+
+        b->pos -= cp->state;
+
+        u->buf_in->buf->pos = b->pos;
+        u->buf_in->buf->last = b->pos;
+
+        /* reset dfa state for future matching */
+        cp->state = 0;
+        return;
+    }
+
+    dd("pending data in multiple buffers");
+
+    ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
+
+    size = njt_buf_size(b);
+
+    new_cl =
+        njt_http_lua_chain_get_free_buf(r->connection->log, r->pool,
+                                        &ctx->free_recv_bufs,
+                                        cp->state + size);
+
+    if (new_cl == NULL) {
+        luaL_error(L, "no memory");
+        return;
+    }
+
+    njt_memcpy(b, new_cl->buf, sizeof(njt_buf_t));
+
+    b->last = njt_copy(b->last, cp->pattern.data, cp->state);
+    b->last = njt_copy(b->last, u->buf_in->buf->pos, size);
+
+    u->buf_in->next = ctx->free_recv_bufs;
+    ctx->free_recv_bufs = u->buf_in;
+
+    u->bufs_in = new_cl;
+    u->buf_in = new_cl;
+
+    /* reset dfa state for future matching */
+    cp->state = 0;
+}
+
+
 static njt_int_t
 njt_http_lua_socket_tcp_read(njt_http_request_t *r,
     njt_http_lua_socket_tcp_upstream_t *u)
@@ -2441,6 +2620,14 @@ njt_http_lua_socket_tcp_read(njt_http_request_t *r,
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
                    "lua tcp socket read data: wait:%d",
                    (int) u->read_waiting);
+
+    /* njt_shutdown_timer_handler will set c->close and c->error on timeout
+     * when worker_shutdown_timeout is configured.
+     * The rev->ready is false at that time, so we need to set u->eof.
+     */
+    if (c->close && c->error) {
+        u->eof = 1;
+    }
 
     b = &u->buffer;
     read = 0;
@@ -3113,7 +3300,7 @@ njt_http_lua_socket_tcp_settimeout(lua_State *L)
     n = lua_gettop(L);
 
     if (n != 2) {
-        return luaL_error(L, "njt.socket settimeout: expecting 2 arguments "
+        return luaL_error(L, "ngx.socket settimeout: expecting 2 arguments "
                           "(including the object) but seen %d", lua_gettop(L));
     }
 
@@ -3160,7 +3347,7 @@ njt_http_lua_socket_tcp_settimeouts(lua_State *L)
     n = lua_gettop(L);
 
     if (n != 4) {
-        return luaL_error(L, "njt.socket settimeout: expecting 4 arguments "
+        return luaL_error(L, "ngx.socket settimeouts: expecting 4 arguments "
                           "(including the object) but seen %d", lua_gettop(L));
     }
 
@@ -3364,7 +3551,7 @@ njt_http_lua_socket_send(njt_http_request_t *r,
 
 
                 njt_chain_update_chains(r->pool,
-                                        &ctx->free_bufs, &ctx->busy_bufs,
+                                        &ctx->free_bufs, &u->busy_bufs,
                                         &u->request_bufs,
                                         (njt_buf_tag_t) &njt_http_lua_module);
 
@@ -4142,6 +4329,11 @@ njt_http_lua_socket_tcp_finalize(njt_http_request_t *r,
     njt_http_lua_socket_tcp_finalize_read_part(r, u);
     njt_http_lua_socket_tcp_finalize_write_part(r, u);
 
+    if (u->input_filter_ctx != NULL && u->input_filter_ctx != u) {
+        ((njt_http_lua_socket_compiled_pattern_t *)
+         u->input_filter_ctx)->upstream = NULL;
+    }
+
     if (u->raw_downstream || u->body_downstream) {
         u->peer.connection = NULL;
         return;
@@ -4395,7 +4587,7 @@ njt_http_lua_socket_receiveuntil_iterator(lua_State *L)
 
     n = lua_gettop(L);
     if (n > 1) {
-        return luaL_error(L, "expecting 0 or 1 arguments, "
+        return luaL_error(L, "expecting 0 or 1 argument, "
                           "but seen %d", n);
     }
 
@@ -4458,8 +4650,6 @@ njt_http_lua_socket_receiveuntil_iterator(lua_State *L)
         (u_char *) lua_tolstring(L, lua_upvalueindex(2),
                                  &cp->pattern.len);
 
-    u->input_filter_ctx = cp;
-
     ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
 
     if (u->bufs_in == NULL) {
@@ -4485,6 +4675,8 @@ njt_http_lua_socket_receiveuntil_iterator(lua_State *L)
 
     u->read_waiting = 0;
     u->read_co_ctx = NULL;
+
+    njt_http_lua_socket_tcp_read_prepare(r, u, cp, L);
 
     rc = njt_http_lua_socket_tcp_read(r, u);
 
@@ -4643,6 +4835,7 @@ njt_http_lua_socket_read_until(void *data, ssize_t bytes)
     u_char                                   c;
     u_char                                  *pat;
     size_t                                   pat_len;
+    size_t                                   pending_len;
     int                                      i;
     int                                      state;
     int                                      old_state = 0; /* just to make old
@@ -4771,11 +4964,12 @@ njt_http_lua_socket_read_until(void *data, ssize_t bytes)
 
         /* matched */
 
-        dd("adding pending data: %.*s", (int) (old_state + 1 - state),
-           (char *) pat);
+        pending_len = old_state + 1 - state;
+
+        dd("adding pending data: %.*s", (int) pending_len, (char *) pat);
 
         rc = njt_http_lua_socket_add_pending_data(r, u, b->pos, i, pat,
-                                                  old_state + 1 - state,
+                                                  pending_len,
                                                   old_state);
 
         if (rc != NJT_OK) {
@@ -4786,14 +4980,14 @@ njt_http_lua_socket_read_until(void *data, ssize_t bytes)
         i++;
 
         if (u->length) {
-            if (u->rest <= (size_t) state) {
+            if (u->rest <= pending_len) {
                 u->rest = 0;
                 cp->state = state;
                 b->pos += i;
                 return NJT_OK;
 
             } else {
-                u->rest -= state;
+                u->rest -= pending_len;
             }
         }
 
@@ -4812,13 +5006,24 @@ njt_http_lua_socket_cleanup_compiled_pattern(lua_State *L)
 {
     njt_http_lua_socket_compiled_pattern_t      *cp;
 
-    njt_http_lua_dfa_edge_t         *edge, *p;
-    unsigned                         i;
+    njt_http_lua_socket_tcp_upstream_t      *u;
+    njt_http_lua_dfa_edge_t                 *edge, *p;
+    unsigned                                 i;
 
     dd("cleanup compiled pattern");
 
     cp = lua_touserdata(L, 1);
-    if (cp == NULL || cp->recovering == NULL) {
+    if (cp == NULL) {
+        return 0;
+    }
+
+    u = cp->upstream;
+    if (u != NULL) {
+        njt_http_lua_socket_tcp_read_prepare(u->request, u, NULL, L);
+        u->input_filter_ctx = NULL;
+    }
+
+    if (cp->recovering == NULL) {
         return 0;
     }
 
@@ -4872,7 +5077,7 @@ njt_http_lua_req_socket(lua_State *L)
         lua_pop(L, 1);
 
     } else {
-        return luaL_error(L, "expecting zero arguments, but got %d",
+        return luaL_error(L, "expecting 0 or 1 argument, but got %d",
                           lua_gettop(L));
     }
 
@@ -4895,6 +5100,12 @@ njt_http_lua_req_socket(lua_State *L)
     }
 #endif
 
+#if (NJT_HTTP_V3)
+    if (r->http_version == NJT_HTTP_VERSION_30) {
+        return luaL_error(L, "http v3 not supported yet");
+    }
+#endif
+
     if (!raw && r->headers_in.chunked) {
         lua_pushnil(L);
         lua_pushliteral(L, "chunked request bodies not supported yet");
@@ -4907,6 +5118,7 @@ njt_http_lua_req_socket(lua_State *L)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 
@@ -4943,7 +5155,7 @@ njt_http_lua_req_socket(lua_State *L)
         }
 
         if (!r->header_sent) {
-            /* prevent other parts of nginx from sending out
+            /* prevent other parts of njet from sending out
              * the response header */
             r->header_sent = 1;
         }
@@ -5189,7 +5401,12 @@ njt_http_lua_socket_tcp_setkeepalive(lua_State *L)
     pc = &u->peer;
     c = pc->connection;
 
-    if (c == NULL || u->read_closed || u->write_closed) {
+    /* When the server closes the connection,
+     * epoll will return EPOLLRDHUP event and njet will set pending_eof.
+     */
+    if (c == NULL || u->read_closed || u->write_closed
+        || c->read->eof || c->read->pending_eof)
+    {
         lua_pushnil(L);
         lua_pushliteral(L, "closed");
         return 2;
@@ -5219,8 +5436,7 @@ njt_http_lua_socket_tcp_setkeepalive(lua_State *L)
         return 2;
     }
 
-    if (c->read->eof
-        || c->read->error
+    if (c->read->error
         || c->read->timedout
         || c->write->error
         || c->write->timedout)
@@ -5386,6 +5602,7 @@ njt_http_lua_socket_tcp_setkeepalive(lua_State *L)
     if (c->read->ready) {
         rc = njt_http_lua_socket_keepalive_close_handler(c->read);
         if (rc != NJT_OK) {
+            njt_http_lua_socket_tcp_finalize(r, u);
             lua_pushnil(L);
             lua_pushliteral(L, "connection in dubious state");
             return 2;
@@ -6034,7 +6251,7 @@ njt_http_lua_tcp_queue_conn_op_cleanup(void *data)
         /*
         * We need the extra parentheses around the argument
         * of njt_delete_posted_event() just to work around macro issues in
-        * nginx cores older than 1.7.5 (exclusive).
+        * njet cores older than 1.7.5 (exclusive).
         */
         njt_delete_posted_event((&conn_op_ctx->event));
 
@@ -6100,27 +6317,6 @@ njt_http_lua_coctx_cleanup(void *data)
 
     njt_http_lua_socket_tcp_finalize(u->request, u);
 }
-
-
-#if (NJT_HTTP_SSL)
-
-static int
-njt_http_lua_ssl_free_session(lua_State *L)
-{
-    njt_ssl_session_t      **psession;
-
-    psession = lua_touserdata(L, 1);
-    if (psession && *psession != NULL) {
-        njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                       "lua ssl free session: %p", *psession);
-
-        njt_ssl_free_session(*psession);
-    }
-
-    return 0;
-}
-
-#endif  /* NJT_HTTP_SSL */
 
 
 void
@@ -6396,7 +6592,7 @@ njt_http_lua_ffi_socket_tcp_getoption(njt_http_lua_socket_tcp_upstream_t *u,
 
     fd = u->peer.connection->fd;
 
-    if (fd == (njt_socket_t) -1) {
+    if (fd == (int) -1) {
         *errlen = njt_snprintf(err, *errlen, "invalid socket fd") - err;
         return NJT_ERROR;
     }
@@ -6453,7 +6649,7 @@ njt_http_lua_ffi_socket_tcp_setoption(njt_http_lua_socket_tcp_upstream_t *u,
 
     fd = u->peer.connection->fd;
 
-    if (fd == (njt_socket_t) -1) {
+    if (fd == (int) -1) {
         *errlen = njt_snprintf(err, *errlen, "invalid socket fd") - err;
         return NJT_ERROR;
     }
@@ -6514,7 +6710,7 @@ njt_http_lua_ffi_socket_tcp_hack_fd(njt_http_lua_socket_tcp_upstream_t *u,
     }
 
     rc = u->peer.connection->fd;
-    if (rc == (njt_socket_t) -1) {
+    if (rc == (int) -1) {
         *errlen = njt_snprintf(err, *errlen, "invalid socket fd") - err;
         return -1;
     }

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Xiaozhe Wang (chaoslawful)
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -124,16 +124,15 @@ njt_http_lua_set_by_chunk(lua_State *L, njt_http_request_t *r, njt_str_t *val,
 }
 
 
-int
-njt_http_lua_setby_param_get(lua_State *L, njt_http_request_t *r)
+void
+njt_http_lua_ffi_get_setby_param(njt_http_request_t *r, int idx,
+    u_char **data_p, size_t *len_p)
 {
-    int         idx;
     int         n;
 
     njt_http_variable_value_t       *v;
     njt_http_lua_main_conf_t        *lmcf;
 
-    idx = luaL_checkint(L, 2);
     idx--;
 
     lmcf = njt_http_get_module_main_conf(r, njt_http_lua_module);
@@ -145,13 +144,12 @@ njt_http_lua_setby_param_get(lua_State *L, njt_http_request_t *r)
     v = lmcf->setby_args;
 
     if (idx < 0 || idx > n - 1) {
-        lua_pushnil(L);
+        *len_p = 0;
 
     } else {
-        lua_pushlstring(L, (const char *) (v[idx].data), v[idx].len);
+        *data_p = v[idx].data;
+        *len_p = v[idx].len;
     }
-
-    return 1;
 }
 
 

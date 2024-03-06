@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Xiaozhe Wang (chaoslawful)
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -75,7 +75,7 @@ njt_http_lua_njt_sleep(lua_State *L)
         coctx->sleep.delayed = 1;
         njt_post_event(&coctx->sleep, &njt_posted_delayed_events);
 #else
-        njt_log_error(NJT_LOG_WARN, r->connection->log, 0, "njt.sleep(0)"
+        njt_log_error(NJT_LOG_WARN, r->connection->log, 0, "ngx.sleep(0)"
                       " called without delayed events patch, this will"
                       " hurt performance");
         njt_add_timer(&coctx->sleep, (njt_msec_t) delay);
@@ -154,7 +154,7 @@ njt_http_lua_sleep_cleanup(void *data)
 
     if (coctx->sleep.timer_set) {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                       "lua clean up the timer for pending njt.sleep");
+                       "lua clean up the timer for pending ngx.sleep");
 
         njt_del_timer(&coctx->sleep);
     }
@@ -166,12 +166,12 @@ njt_http_lua_sleep_cleanup(void *data)
     if (coctx->sleep.prev) {
 #endif
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                       "lua clean up the posted event for pending njt.sleep");
+                       "lua clean up the posted event for pending ngx.sleep");
 
         /*
         * We need the extra parentheses around the argument
         * of njt_delete_posted_event() just to work around macro issues in
-        * nginx cores older than 1.7.5 (exclusive).
+        * njet cores older than 1.7.5 (exclusive).
         */
         njt_delete_posted_event((&coctx->sleep));
     }

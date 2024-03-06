@@ -216,11 +216,11 @@ njt_http_lua_log_by_chunk(lua_State *L, njt_http_request_t *r)
 
     NJT_LUA_EXCEPTION_TRY {
 
-        /* initialize nginx context in Lua VM, code chunk at stack top sp = 1 */
+        /* initialize njet context in Lua VM, code chunk at stack top sp = 1 */
         njt_http_lua_log_by_lua_env(L, r);
 
 #if (NJT_PCRE)
-        /* XXX: work-around to nginx regex subsystem */
+        /* XXX: work-around to njet regex subsystem */
         old_pool = njt_http_lua_pcre_malloc_init(r->pool);
 #endif
 
@@ -233,7 +233,7 @@ njt_http_lua_log_by_chunk(lua_State *L, njt_http_request_t *r)
         lua_remove(L, 1);  /* remove traceback function */
 
 #if (NJT_PCRE)
-        /* XXX: work-around to nginx regex subsystem */
+        /* XXX: work-around to njet regex subsystem */
         njt_http_lua_pcre_malloc_done(old_pool);
 #endif
 

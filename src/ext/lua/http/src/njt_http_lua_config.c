@@ -22,7 +22,7 @@ static int njt_http_lua_config_configure(lua_State *L);
 void
 njt_http_lua_inject_config_api(lua_State *L)
 {
-    /* njt.config */
+    /* ngx.config */
 
     lua_createtable(L, 0, 6 /* nrec */);    /* .config */
 

@@ -10,6 +10,10 @@
 #endif
 #include "ddebug.h"
 
+#if !(NJT_WIN32)
+#include <njt_channel.h>
+#endif
+
 
 #define NJT_PROCESS_PRIVILEGED_AGENT    99
 
@@ -19,6 +23,40 @@ njt_http_lua_ffi_worker_pid(void)
 {
     return (int) njt_pid;
 }
+
+
+#if !(NJT_WIN32)
+int
+njt_http_lua_ffi_worker_pids(int *pids, size_t *pids_len)
+{
+    size_t    n;
+    njt_int_t i;
+
+    n = 0;
+    for (i = 0; n < *pids_len && i < NJT_MAX_PROCESSES; i++) {
+        if (i != njt_process_slot && njt_processes[i].pid == 0) {
+            break;
+        }
+
+        /* The current process */
+        if (i == njt_process_slot) {
+            pids[n++] = njt_pid;
+        }
+
+        if (njt_processes[i].channel[0] > 0 && njt_processes[i].pid > 0) {
+            pids[n++] = njt_processes[i].pid;
+        }
+    }
+
+    if (n == 0) {
+        return NJT_ERROR;
+    }
+
+    *pids_len = n;
+
+    return NJT_OK;
+}
+#endif
 
 
 int

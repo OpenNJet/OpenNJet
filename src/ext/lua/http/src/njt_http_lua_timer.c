@@ -1,7 +1,7 @@
 
 /*
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -56,7 +56,7 @@ static void njt_http_lua_abort_pending_timers(njt_event_t *ev);
 void
 njt_http_lua_inject_timer_api(lua_State *L)
 {
-    lua_createtable(L, 0 /* narr */, 4 /* nrec */);    /* njt.timer. */
+    lua_createtable(L, 0 /* narr */, 4 /* nrec */);    /* ngx.timer. */
 
     lua_pushcfunction(L, njt_http_lua_njt_timer_at);
     lua_setfield(L, -2, "at");
@@ -121,7 +121,7 @@ njt_http_lua_njt_timer_at(lua_State *L)
 
 /*
  * TODO: return a timer handler instead which can be passed to
- * the njt.timer.cancel method to cancel the timer.
+ * the ngx.timer.cancel method to cancel the timer.
  */
 static int
 njt_http_lua_njt_timer_every(lua_State *L)
@@ -177,10 +177,10 @@ njt_http_lua_njt_timer_helper(lua_State *L, int every)
     njt_http_lua_assert(ctx != NULL);
 
     /*
-     * Since njet.has been confirmed that all timers have been cleaned up when
+     * Since njet has been confirmed that all timers have been cleaned up when
      * exit worker is executed, all timers will no longer be executed in exit
      * worker phase.
-     * Reference https://github.com/nginx/nginx/blob/f02e2a734ef472f0dcf83ab2
+     * Reference https://github.com/njet/njet/blob/f02e2a734ef472f0dcf83ab2
      * e8ce96d1acead8a5/src/os/unix/njt_process_cycle.c#L715
      */
     njt_http_lua_check_context(L, ctx, ~NJT_HTTP_LUA_CONTEXT_EXIT_WORKER);
@@ -520,7 +520,7 @@ njt_http_lua_timer_handler(njt_event_t *ev)
     njt_connection_t        *c = NULL;
     njt_http_request_t      *r = NULL;
     njt_http_lua_ctx_t      *ctx;
-    njt_http_cleanup_t      *cln;
+    njt_pool_cleanup_t      *cln;
     njt_pool_cleanup_t      *pcln;
 
     njt_http_lua_timer_ctx_t         tctx;
@@ -534,7 +534,7 @@ njt_http_lua_timer_handler(njt_event_t *ev)
     const char              *errmsg;
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                   "lua njt.timer expired");
+                   "lua ngx.timer expired");
 
     njt_memcpy(&tctx, ev->data, sizeof(njt_http_lua_timer_ctx_t));
     njt_free(ev);
@@ -566,6 +566,8 @@ njt_http_lua_timer_handler(njt_event_t *ev)
     c = njt_http_lua_create_fake_connection(tctx.pool);
     if (c == NULL) {
         errmsg = "could not create fake connection";
+        /* tctx.pool is freed in njt_http_lua_create_fake_connection */
+        tctx.pool = NULL;
         goto failed;
     }
 
@@ -619,7 +621,7 @@ njt_http_lua_timer_handler(njt_event_t *ev)
 
     L = njt_http_lua_get_lua_vm(r, ctx);
 
-    cln = njt_http_cleanup_add(r, 0);
+    cln = njt_pool_cleanup_add(r->pool, 0);
     if (cln == NULL) {
         errmsg = "could not add request cleanup";
         goto failed;
@@ -740,7 +742,7 @@ njt_http_lua_log_timer_error(njt_log_t *log, u_char *buf, size_t len)
 
     dd("ctx = %p", c);
 
-    p = njt_snprintf(buf, len, ", context: njt.timer");
+    p = njt_snprintf(buf, len, ", context: ngx.timer");
     len -= p - buf;
     buf = p;
 
@@ -814,7 +816,7 @@ njt_http_lua_abort_pending_timers(njt_event_t *ev)
 
     cur = njt_event_timer_rbtree.root;
 
-    /* XXX nginx does not guarantee the parent of root is meaningful,
+    /* XXX njet does not guarantee the parent of root is meaningful,
      * so we temporarily override it to simplify tree traversal. */
     temp = cur->parent;
     cur->parent = NULL;
@@ -822,7 +824,7 @@ njt_http_lua_abort_pending_timers(njt_event_t *ev)
     prev = NULL;
 
     events = njt_pcalloc(njt_cycle->pool,
-                         lmcf->pending_timers * sizeof(njt_event_t));
+                         lmcf->pending_timers * sizeof(njt_event_t *));
     if (events == NULL) {
         return;
     }

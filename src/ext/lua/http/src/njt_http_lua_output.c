@@ -63,6 +63,7 @@ njt_http_lua_njt_echo(lua_State *L, unsigned newline)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 
@@ -138,7 +139,7 @@ njt_http_lua_njt_echo(lua_State *L, unsigned newline)
             default:
 
                 msg = lua_pushfstring(L, "string, number, boolean, nil, "
-                                      "njt.null, or array table expected, "
+                                      "ngx.null, or array table expected, "
                                       "but got %s", lua_typename(L, type));
 
                 return luaL_argerror(L, i, msg);
@@ -499,6 +500,7 @@ njt_http_lua_njt_flush(lua_State *L)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 
@@ -527,7 +529,7 @@ njt_http_lua_njt_flush(lua_State *L)
 
     if (ctx->buffering) {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "lua http 1.0 buffering makes njt.flush() a no-op");
+                       "lua http 1.0 buffering makes ngx.flush() a no-op");
 
         lua_pushnil(L);
         lua_pushliteral(L, "buffering");
@@ -653,6 +655,7 @@ njt_http_lua_njt_eof(lua_State *L)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 
@@ -715,6 +718,7 @@ njt_http_lua_njt_send_headers(lua_State *L)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 

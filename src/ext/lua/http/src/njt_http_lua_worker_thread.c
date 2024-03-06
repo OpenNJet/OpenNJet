@@ -1,8 +1,8 @@
 /*
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  * Copyright (C) Jinhua Luo (kingluo)
- * I hereby assign copyright in this code to the lua-nginx-module project,
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * I hereby assign copyright in this code to the lua-njet-module project,
  * to be licensed under the same terms as the rest of the code.
  */
 
@@ -17,7 +17,12 @@
 #include "njt_http_lua_util.h"
 #include "njt_http_lua_string.h"
 #include "njt_http_lua_config.h"
+#include "njt_http_lua_shdict.h"
 
+#ifndef STRINGIFY
+#define TOSTRING(x)  #x
+#define STRINGIFY(x) TOSTRING(x)
+#endif
 
 #if (NJT_THREADS)
 
@@ -25,6 +30,7 @@
 #include <njt_thread.h>
 #include <njt_thread_pool.h>
 
+#define LUA_COPY_MAX_DEPTH 100
 
 typedef struct njt_http_lua_task_ctx_s {
     lua_State                        *vm;
@@ -37,7 +43,7 @@ typedef struct {
     njt_http_lua_co_ctx_t   *wait_co_ctx;
     int                      n_args;
     int                      rc;
-    int                      is_abort:1;
+    njt_uint_t               is_abort:1;
 } njt_http_lua_worker_thread_ctx_t;
 
 
@@ -140,24 +146,17 @@ njt_http_lua_get_task_ctx(lua_State *L, njt_http_request_t *r)
         lua_setfield(vm, -2, "path");
         lua_pushlstring(vm, cpath, cpath_len);
         lua_setfield(vm, -2, "cpath");
+        lua_pop(vm, 1);
 
         /* pop path, cpath and "package" table from L */
         lua_pop(L, 3);
 
         /* inject API from C */
-        lua_newtable(L);    /* njt.* */
+        lua_newtable(vm);    /* ngx.* */
         njt_http_lua_inject_string_api(vm);
         njt_http_lua_inject_config_api(vm);
-        lua_setglobal(vm, "njt");
-
-        /* inject API via ffi */
-        lua_getglobal(vm, "require");
-        lua_pushstring(vm, "resty.core.regex");
-        if (lua_pcall(vm, 1, 0, 0) != 0) {
-            lua_close(vm);
-            njt_free(ctx);
-            return NULL;
-        }
+        njt_http_lua_inject_shdict_api(lmcf, vm);
+        lua_setglobal(vm, "ngx");
 
         lua_getglobal(vm, "require");
         lua_pushstring(vm, "resty.core.hash");
@@ -169,6 +168,14 @@ njt_http_lua_get_task_ctx(lua_State *L, njt_http_request_t *r)
 
         lua_getglobal(vm, "require");
         lua_pushstring(vm, "resty.core.base64");
+        if (lua_pcall(vm, 1, 0, 0) != 0) {
+            lua_close(vm);
+            njt_free(ctx);
+            return NULL;
+        }
+
+        lua_getglobal(vm, "require");
+        lua_pushstring(vm, "resty.core.shdict");
         if (lua_pcall(vm, 1, 0, 0) != 0) {
             lua_close(vm);
             njt_free(ctx);
@@ -198,7 +205,7 @@ njt_http_lua_free_task_ctx(njt_http_lua_task_ctx_t *ctx)
 
 static int
 njt_http_lua_xcopy(lua_State *from, lua_State *to, int idx,
-    const int allow_nil)
+    const int allow_nil, const int depth, const char **err)
 {
     size_t           len = 0;
     const char      *str;
@@ -225,6 +232,13 @@ njt_http_lua_xcopy(lua_State *from, lua_State *to, int idx,
         return LUA_TSTRING;
 
     case LUA_TTABLE:
+        if (depth >= LUA_COPY_MAX_DEPTH) {
+            *err = "suspicious circular references, "
+                   "table depth exceed max depth: "
+                   STRINGIFY(LUA_COPY_MAX_DEPTH);
+            return LUA_TNONE;
+        }
+
         top_from = lua_gettop(from);
         top_to = lua_gettop(to);
 
@@ -238,8 +252,9 @@ njt_http_lua_xcopy(lua_State *from, lua_State *to, int idx,
         lua_pushnil(from);
 
         while (lua_next(from, idx) != 0) {
-            if (njt_http_lua_xcopy(from, to, -2, 0) != LUA_TNONE
-                && njt_http_lua_xcopy(from, to, -1, 0) != LUA_TNONE)
+            if (njt_http_lua_xcopy(from, to, -2, 0, depth + 1, err) != LUA_TNONE
+                && njt_http_lua_xcopy(from, to, -1, 0,
+                                      depth + 1, err) != LUA_TNONE)
             {
                 lua_rawset(to, -3);
 
@@ -259,16 +274,24 @@ njt_http_lua_xcopy(lua_State *from, lua_State *to, int idx,
             lua_pushnil(to);
             return LUA_TNIL;
         }
-        /* fall through */
 
-    /*
-     * ignore unsupported values:
-     * LUA_TNONE
-     * LUA_TFUNCTION
-     * LUA_TUSERDATA
-     * LUA_TTHREAD
-     */
+        *err = "unsupported Lua type: LUA_TNIL";
+        return LUA_TNONE;
+
+    case LUA_TFUNCTION:
+        *err = "unsupported Lua type: LUA_TFUNCTION";
+        return LUA_TNONE;
+
+    case LUA_TUSERDATA:
+        *err = "unsupported Lua type: LUA_TUSERDATA";
+        return LUA_TNONE;
+
+    case LUA_TTHREAD:
+        *err = "unsupported Lua type: LUA_TTHREAD";
+        return LUA_TNONE;
+
     default:
+        *err = "unsupported Lua type";
         return LUA_TNONE;
     }
 }
@@ -288,7 +311,51 @@ njt_http_lua_worker_thread_handler(void *data, njt_log_t *log)
 }
 
 
-/* executed in nginx event loop */
+static njt_int_t
+njt_http_lua_worker_thread_resume(njt_http_request_t *r)
+{
+    lua_State                   *vm;
+    njt_connection_t            *c;
+    njt_int_t                    rc;
+    njt_uint_t                   nreqs;
+    njt_http_lua_ctx_t          *ctx;
+
+    ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
+    if (ctx == NULL) {
+        return NJT_ERROR;
+    }
+
+    ctx->resume_handler = njt_http_lua_wev_handler;
+
+    c = r->connection;
+    vm = njt_http_lua_get_lua_vm(r, ctx);
+    nreqs = c->requests;
+
+    rc = njt_http_lua_run_thread(vm, r, ctx,
+                                 ctx->cur_co_ctx->nresults_from_worker_thread);
+
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "lua run thread returned %d", rc);
+
+    if (rc == NJT_AGAIN) {
+        return njt_http_lua_run_posted_threads(c, vm, r, ctx, nreqs);
+    }
+
+    if (rc == NJT_DONE) {
+        njt_http_lua_finalize_request(r, NJT_DONE);
+        return njt_http_lua_run_posted_threads(c, vm, r, ctx, nreqs);
+    }
+
+    if (ctx->entered_content_phase) {
+        njt_http_lua_finalize_request(r, rc);
+        return NJT_DONE;
+    }
+
+    return rc;
+}
+
+
+/* executed in njet event loop */
 static void
 njt_http_lua_worker_thread_event_handler(njt_event_t *ev)
 {
@@ -300,10 +367,10 @@ njt_http_lua_worker_thread_event_handler(njt_event_t *ev)
     size_t                            len;
     const char                       *str;
     int                               i;
-    int                               rc;
     njt_http_lua_ctx_t               *ctx;
     lua_State                        *vm;
     int                               saved_top;
+    const char                       *err;
 
     worker_thread_ctx = ev->data;
 
@@ -339,10 +406,12 @@ njt_http_lua_worker_thread_event_handler(njt_event_t *ev)
         lua_pushboolean(L, 1);
         nresults = lua_gettop(vm) + 1;
         for (i = 1; i < nresults; i++) {
-            if (njt_http_lua_xcopy(vm, L, i, 1) == LUA_TNONE) {
+            err = NULL;
+            if (njt_http_lua_xcopy(vm, L, i, 1, 1, &err) == LUA_TNONE) {
                 lua_settop(L, saved_top);
                 lua_pushboolean(L, 0);
-                lua_pushstring(L, "unsupported return value");
+                lua_pushfstring(L, "%s in the return value",
+                                err != NULL ? err : "unsupoorted Lua type");
                 nresults = 2;
                 break;
             }
@@ -350,6 +419,7 @@ njt_http_lua_worker_thread_event_handler(njt_event_t *ev)
     }
 
     ctx->cur_co_ctx = worker_thread_ctx->wait_co_ctx;
+    ctx->cur_co_ctx->nresults_from_worker_thread = nresults;
     ctx->cur_co_ctx->cleanup = NULL;
 
     njt_http_lua_free_task_ctx(worker_thread_ctx->ctx);
@@ -357,30 +427,15 @@ njt_http_lua_worker_thread_event_handler(njt_event_t *ev)
 
     /* resume the caller coroutine */
 
-    vm = njt_http_lua_get_lua_vm(r, ctx);
-
-    rc = njt_http_lua_run_thread(vm, r, ctx, nresults);
-
-    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "lua run thread returned %d", rc);
-
-    if (rc == NJT_AGAIN) {
-        njt_http_lua_run_posted_threads(c, vm, r, ctx, c->requests);
-        return;
-    }
-
-    if (rc == NJT_DONE) {
-        njt_http_lua_finalize_request(r, NJT_DONE);
-        njt_http_lua_run_posted_threads(c, vm, r, ctx, c->requests);
-        return;
-    }
-
-    /* rc == NJT_ERROR || rc >= NJT_OK */
-
     if (ctx->entered_content_phase) {
-        njt_http_lua_finalize_request(r, rc);
-        return;
+        (void) njt_http_lua_worker_thread_resume(r);
+
+    } else {
+        ctx->resume_handler = njt_http_lua_worker_thread_resume;
+        njt_http_core_run_phases(r);
     }
+
+    njt_http_run_posted_requests(c);
 
     return;
 
@@ -518,9 +573,11 @@ njt_http_lua_run_worker_thread(lua_State *L)
 
     /* copying passed arguments */
     for (i = 4; i <= n_args; i++) {
-        if (njt_http_lua_xcopy(L, vm, i, 1) == LUA_TNONE) {
+        err = NULL;
+        if (njt_http_lua_xcopy(L, vm, i, 1, 1, &err) == LUA_TNONE) {
             lua_pushboolean(L, 0);
-            lua_pushstring(L, "unsupported argument type");
+            lua_pushfstring(L, "%s in the argument",
+                            err != NULL ? err : "unsupoorted Lua type");
             njt_http_lua_free_task_ctx(tctx);
             return 2;
         }

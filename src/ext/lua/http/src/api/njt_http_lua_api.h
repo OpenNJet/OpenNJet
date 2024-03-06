@@ -20,7 +20,10 @@
 /* Public API for other Nginx modules */
 
 
-#define njt_http_lua_version  10021
+#define njt_http_lua_version  10026
+
+
+typedef struct njt_http_lua_co_ctx_s  njt_http_lua_co_ctx_t;
 
 
 typedef struct {
@@ -56,6 +59,17 @@ njt_shm_zone_t *njt_http_lua_find_zone(u_char *name_data, size_t name_len);
 
 njt_shm_zone_t *njt_http_lua_shared_memory_add(njt_conf_t *cf, njt_str_t *name,
     size_t size, void *tag);
+
+njt_http_lua_co_ctx_t *njt_http_lua_get_cur_co_ctx(njt_http_request_t *r);
+
+void njt_http_lua_set_cur_co_ctx(njt_http_request_t *r,
+    njt_http_lua_co_ctx_t *coctx);
+
+lua_State *njt_http_lua_get_co_ctx_vm(njt_http_lua_co_ctx_t *coctx);
+
+void njt_http_lua_co_ctx_resume_helper(njt_http_lua_co_ctx_t *coctx, int nrets);
+
+int njt_http_lua_get_lua_http10_buffering(njt_http_request_t *r);
 
 
 #endif /* _NJT_HTTP_LUA_API_H_INCLUDED_ */

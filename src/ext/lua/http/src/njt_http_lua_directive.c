@@ -18,6 +18,7 @@
 #include "njt_http_lua_cache.h"
 #include "njt_http_lua_contentby.h"
 #include "njt_http_lua_accessby.h"
+#include "njt_http_lua_server_rewriteby.h"
 #include "njt_http_lua_rewriteby.h"
 #include "njt_http_lua_logby.h"
 #include "njt_http_lua_headerfilterby.h"
@@ -33,6 +34,12 @@
 #include "njt_http_lua_log.h"
 
 
+/* the max length is 60, after deducting the fixed four characters "=(:)"
+ * only 56 left.
+ */
+#define LJ_CHUNKNAME_MAX_LEN 56
+
+
 typedef struct njt_http_lua_block_parser_ctx_s
     njt_http_lua_block_parser_ctx_t;
 
@@ -44,8 +51,6 @@ typedef struct njt_http_lua_block_parser_ctx_s
 static njt_int_t njt_http_lua_set_by_lua_init(njt_http_request_t *r);
 #endif
 
-static u_char *njt_http_lua_gen_chunk_name(njt_conf_t *cf, const char *tag,
-    size_t tag_len, size_t *chunkname_len);
 static njt_int_t njt_http_lua_conf_read_lua_token(njt_conf_t *cf,
     njt_http_lua_block_parser_ctx_t *ctx);
 static u_char *njt_http_lua_strlstrn(u_char *s1, u_char *last, u_char *s2,
@@ -281,6 +286,8 @@ njt_http_lua_set_by_lua_block(njt_conf_t *cf, njt_command_t *cmd,
 char *
 njt_http_lua_set_by_lua(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
+    size_t               chunkname_len;
+    u_char              *chunkname;
     u_char              *cache_key;
     njt_str_t           *value;
     njt_str_t            target;
@@ -313,7 +320,15 @@ njt_http_lua_set_by_lua(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
 
+    chunkname = njt_http_lua_gen_chunk_name(cf, "set_by_lua",
+                                            sizeof("set_by_lua") - 1,
+                                            &chunkname_len);
+    if (chunkname == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
     filter_data->key = cache_key;
+    filter_data->chunkname = chunkname;
     filter_data->ref = LUA_REFNIL;
     filter_data->script = value[2];
     filter_data->size = filter.size;
@@ -376,6 +391,7 @@ njt_http_lua_set_by_lua_file(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     filter_data->key = cache_key;
     filter_data->ref = LUA_REFNIL;
     filter_data->size = filter.size;
+    filter_data->chunkname = NULL;
 
     njt_str_null(&filter_data->script);
 
@@ -405,7 +421,8 @@ njt_http_lua_filter_set_by_lua_inline(njt_http_request_t *r, njt_str_t *val,
                                        filter_data->script.data,
                                        filter_data->script.len,
                                        &filter_data->ref,
-                                       filter_data->key, "=set_by_lua");
+                                       filter_data->key,
+                                       (const char *) filter_data->chunkname);
     if (rc != NJT_OK) {
         return NJT_ERROR;
     }
@@ -539,7 +556,7 @@ njt_http_lua_rewrite_by_lua(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             return NJT_CONF_ERROR;
         }
 
-        /* Don't eval nginx variables for inline lua code */
+        /* Don't eval njet variables for inline lua code */
         llcf->rewrite_src.value = value[1];
         llcf->rewrite_chunkname = chunkname;
 
@@ -569,6 +586,111 @@ njt_http_lua_rewrite_by_lua(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_lua_module);
 
     lmcf->requires_rewrite = 1;
+    lmcf->requires_capture_filter = 1;
+
+    return NJT_CONF_OK;
+}
+
+
+char *
+njt_http_lua_server_rewrite_by_lua_block(njt_conf_t *cf,
+    njt_command_t *cmd, void *conf)
+{
+    char        *rv;
+    njt_conf_t   save;
+    save = *cf;
+    cf->handler = njt_http_lua_server_rewrite_by_lua;
+    cf->handler_conf = conf;
+
+    rv = njt_http_lua_conf_lua_block_parse(cf, cmd);
+
+    *cf = save;
+
+    return rv;
+}
+
+
+char *
+njt_http_lua_server_rewrite_by_lua(njt_conf_t *cf, njt_command_t *cmd,
+    void *conf)
+{
+    size_t                       chunkname_len;
+    u_char                      *cache_key = NULL, *chunkname;
+    njt_str_t                   *value;
+    njt_http_lua_main_conf_t    *lmcf;
+    njt_http_lua_srv_conf_t     *lscf = conf;
+
+    njt_http_compile_complex_value_t         ccv;
+
+    dd("enter");
+
+    /*  must specify a content handler */
+    if (cmd->post == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+    if (lscf->srv.server_rewrite_handler) {
+        return "is duplicate";
+    }
+
+    value = cf->args->elts;
+
+    if (value[1].len == 0) {
+        /*  Oops...Invalid location conf */
+        njt_conf_log_error(NJT_LOG_ERR, cf, 0,
+                           "invalid location config: no runnable Lua code");
+
+        return NJT_CONF_ERROR;
+    }
+
+    if (cmd->post == njt_http_lua_server_rewrite_handler_inline) {
+        chunkname =
+            njt_http_lua_gen_chunk_name(cf, "server_rewrite_by_lua",
+                                        sizeof("server_rewrite_by_lua") - 1,
+                                        &chunkname_len);
+        if (chunkname == NULL) {
+            return NJT_CONF_ERROR;
+        }
+
+        cache_key =
+            njt_http_lua_gen_chunk_cache_key(cf, "server_rewrite_by_lua",
+                                             value[1].data,
+                                             value[1].len);
+        if (cache_key == NULL) {
+            return NJT_CONF_ERROR;
+        }
+
+        /* Don't eval njet variables for inline lua code */
+        lscf->srv.server_rewrite_src.value = value[1];
+        lscf->srv.server_rewrite_chunkname = chunkname;
+
+    } else {
+        njt_memzero(&ccv, sizeof(njt_http_compile_complex_value_t));
+        ccv.cf = cf;
+        ccv.value = &value[1];
+        ccv.complex_value = &lscf->srv.server_rewrite_src;
+
+        if (njt_http_compile_complex_value(&ccv) != NJT_OK) {
+            return NJT_CONF_ERROR;
+        }
+
+        if (lscf->srv.server_rewrite_src.lengths == NULL) {
+            /* no variable found */
+            cache_key = njt_http_lua_gen_file_cache_key(cf, value[1].data,
+                                                        value[1].len);
+            if (cache_key == NULL) {
+                return NJT_CONF_ERROR;
+            }
+        }
+    }
+
+    lscf->srv.server_rewrite_src_key = cache_key;
+    lscf->srv.server_rewrite_handler =
+                                  (njt_http_lua_srv_conf_handler_pt) cmd->post;
+
+    lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_lua_module);
+
+    lmcf->requires_server_rewrite = 1;
     lmcf->requires_capture_filter = 1;
 
     return NJT_CONF_OK;
@@ -641,7 +763,7 @@ njt_http_lua_access_by_lua(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             return NJT_CONF_ERROR;
         }
 
-        /* Don't eval nginx variables for inline lua code */
+        /* Don't eval njet variables for inline lua code */
         llcf->access_src.value = value[1];
         llcf->access_chunkname = chunkname;
 
@@ -746,7 +868,7 @@ njt_http_lua_content_by_lua(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             return NJT_CONF_ERROR;
         }
 
-        /* Don't eval nginx variables for inline lua code */
+        /* Don't eval njet variables for inline lua code */
         llcf->content_src.value = value[1];
         llcf->content_chunkname = chunkname;
 
@@ -855,7 +977,7 @@ njt_http_lua_log_by_lua(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             return NJT_CONF_ERROR;
         }
 
-        /* Don't eval nginx variables for inline lua code */
+        /* Don't eval njet variables for inline lua code */
         llcf->log_src.value = value[1];
         llcf->log_chunkname = chunkname;
 
@@ -913,7 +1035,8 @@ char *
 njt_http_lua_header_filter_by_lua(njt_conf_t *cf, njt_command_t *cmd,
     void *conf)
 {
-    u_char                      *cache_key = NULL;
+    size_t                       chunkname_len;
+    u_char                      *cache_key = NULL, *chunkname;
     njt_str_t                   *value;
     njt_http_lua_main_conf_t    *lmcf;
     njt_http_lua_loc_conf_t     *llcf = conf;
@@ -948,8 +1071,15 @@ njt_http_lua_header_filter_by_lua(njt_conf_t *cf, njt_command_t *cmd,
             return NJT_CONF_ERROR;
         }
 
-        /* Don't eval nginx variables for inline lua code */
+        chunkname = njt_http_lua_gen_chunk_name(cf, "header_filter_by_lua",
+                            sizeof("header_filter_by_lua") - 1, &chunkname_len);
+        if (chunkname == NULL) {
+            return NJT_CONF_ERROR;
+        }
+
+        /* Don't eval njet variables for inline lua code */
         llcf->header_filter_src.value = value[1];
+        llcf->header_filter_chunkname = chunkname;
 
     } else {
         njt_memzero(&ccv, sizeof(njt_http_compile_complex_value_t));
@@ -1005,7 +1135,8 @@ char *
 njt_http_lua_body_filter_by_lua(njt_conf_t *cf, njt_command_t *cmd,
     void *conf)
 {
-    u_char                      *cache_key = NULL;
+    size_t                       chunkname_len;
+    u_char                      *cache_key = NULL, *chunkname;
     njt_str_t                   *value;
     njt_http_lua_main_conf_t    *lmcf;
     njt_http_lua_loc_conf_t     *llcf = conf;
@@ -1040,8 +1171,16 @@ njt_http_lua_body_filter_by_lua(njt_conf_t *cf, njt_command_t *cmd,
             return NJT_CONF_ERROR;
         }
 
-        /* Don't eval nginx variables for inline lua code */
+        chunkname = njt_http_lua_gen_chunk_name(cf, "body_filter_by_lua",
+                              sizeof("body_filter_by_lua") - 1, &chunkname_len);
+        if (chunkname == NULL) {
+            return NJT_CONF_ERROR;
+        }
+
+
+        /* Don't eval njet variables for inline lua code */
         llcf->body_filter_src.value = value[1];
+        llcf->body_filter_chunkname = chunkname;
 
     } else {
         njt_memzero(&ccv, sizeof(njt_http_compile_complex_value_t));
@@ -1101,6 +1240,8 @@ njt_http_lua_init_by_lua(njt_conf_t *cf, njt_command_t *cmd,
     u_char                      *name;
     njt_str_t                   *value;
     njt_http_lua_main_conf_t    *lmcf = conf;
+    size_t                       chunkname_len;
+    u_char                      *chunkname;
 
     dd("enter");
 
@@ -1136,6 +1277,15 @@ njt_http_lua_init_by_lua(njt_conf_t *cf, njt_command_t *cmd,
 
     } else {
         lmcf->init_src = value[1];
+
+        chunkname = njt_http_lua_gen_chunk_name(cf, "init_by_lua",
+                                                sizeof("init_by_lua") - 1,
+                                                &chunkname_len);
+        if (chunkname == NULL) {
+            return NJT_CONF_ERROR;
+        }
+
+        lmcf->init_chunkname = chunkname;
     }
 
     return NJT_CONF_OK;
@@ -1168,6 +1318,8 @@ njt_http_lua_init_worker_by_lua(njt_conf_t *cf, njt_command_t *cmd,
     u_char                      *name;
     njt_str_t                   *value;
     njt_http_lua_main_conf_t    *lmcf = conf;
+    size_t                       chunkname_len;
+    u_char                      *chunkname;
 
     dd("enter");
 
@@ -1196,6 +1348,14 @@ njt_http_lua_init_worker_by_lua(njt_conf_t *cf, njt_command_t *cmd,
 
     } else {
         lmcf->init_worker_src = value[1];
+
+        chunkname = njt_http_lua_gen_chunk_name(cf, "init_worker_by_lua",
+                              sizeof("init_worker_by_lua") - 1, &chunkname_len);
+        if (chunkname == NULL) {
+            return NJT_CONF_ERROR;
+        }
+
+        lmcf->init_worker_chunkname = chunkname;
     }
 
     return NJT_CONF_OK;
@@ -1228,6 +1388,8 @@ njt_http_lua_exit_worker_by_lua(njt_conf_t *cf, njt_command_t *cmd,
     u_char                      *name;
     njt_str_t                   *value;
     njt_http_lua_main_conf_t    *lmcf = conf;
+    size_t                       chunkname_len;
+    u_char                      *chunkname;
 
     /*  must specify a content handler */
     if (cmd->post == NULL) {
@@ -1254,6 +1416,15 @@ njt_http_lua_exit_worker_by_lua(njt_conf_t *cf, njt_command_t *cmd,
 
     } else {
         lmcf->exit_worker_src = value[1];
+
+        chunkname = njt_http_lua_gen_chunk_name(cf, "exit_worker_by_lua",
+                                                sizeof("exit_worker_by_lua")- 1,
+                                                &chunkname_len);
+        if (chunkname == NULL) {
+            return NJT_CONF_ERROR;
+        }
+
+        lmcf->exit_worker_chunkname = chunkname;
     }
 
     return NJT_CONF_OK;
@@ -1266,7 +1437,7 @@ njt_http_lua_set_by_lua_init(njt_http_request_t *r)
 {
     lua_State                   *L;
     njt_http_lua_ctx_t          *ctx;
-    njt_http_cleanup_t          *cln;
+    njt_pool_cleanup_t          *cln;
 
     ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
     if (ctx == NULL) {
@@ -1281,7 +1452,7 @@ njt_http_lua_set_by_lua_init(njt_http_request_t *r)
     }
 
     if (ctx->cleanup == NULL) {
-        cln = njt_http_cleanup_add(r, 0);
+        cln = njt_pool_cleanup_add(r->pool, 0);
         if (cln == NULL) {
             return NJT_ERROR;
         }
@@ -1297,12 +1468,20 @@ njt_http_lua_set_by_lua_init(njt_http_request_t *r)
 #endif
 
 
-static u_char *
+u_char *
 njt_http_lua_gen_chunk_name(njt_conf_t *cf, const char *tag, size_t tag_len,
     size_t *chunkname_len)
 {
     u_char      *p, *out;
     size_t       len;
+    njt_uint_t   start_line;
+    njt_str_t   *conf_prefix;
+    njt_str_t   *filename;
+    u_char      *filename_end;
+    const char  *pre_str = "";
+    njt_uint_t   reserve_len;
+
+    njt_http_lua_main_conf_t    *lmcf;
 
     len = sizeof("=(:)") - 1 + tag_len + cf->conf_file->file.name.len
           + NJT_INT64_LEN + 1;
@@ -1312,27 +1491,56 @@ njt_http_lua_gen_chunk_name(njt_conf_t *cf, const char *tag, size_t tag_len,
         return NULL;
     }
 
-    if (cf->conf_file->file.name.len) {
-        p = cf->conf_file->file.name.data + cf->conf_file->file.name.len;
-        while (--p >= cf->conf_file->file.name.data) {
-            if (*p == '/' || *p == '\\') {
-                p++;
+    lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_lua_module);
+    start_line = lmcf->directive_line > 0
+        ? lmcf->directive_line : cf->conf_file->line;
+    p = njt_snprintf(out, len, "%d", start_line);
+    reserve_len = tag_len + p - out;
+
+    filename = &cf->conf_file->file.name;
+    filename_end = filename->data + filename->len;
+    if (filename->len > 0) {
+        if (filename->len >= 11) {
+            p = filename_end - 11;
+            if ((*p == '/' || *p == '\\')
+                && njt_memcmp(p, "/njet.conf", 11) == 0)
+            {
+                p++; /* now p is njet.conf */
                 goto found;
             }
         }
 
-        p++;
+        conf_prefix = &cf->cycle->conf_prefix;
+        p = filename->data + conf_prefix->len;
+        if ((conf_prefix->len < filename->len)
+            && njt_memcmp(conf_prefix->data,
+                          filename->data, conf_prefix->len) == 0)
+        {
+            /* files in conf_prefix directory, use the relative path */
+            if (filename_end - p + reserve_len > LJ_CHUNKNAME_MAX_LEN) {
+                p = filename_end - LJ_CHUNKNAME_MAX_LEN + reserve_len + 3;
+                pre_str = "...";
+            }
 
-    } else {
-        p = cf->conf_file->file.name.data;
+            goto found;
+        }
     }
+
+    p = filename->data;
+
+    if (filename->len + reserve_len <= LJ_CHUNKNAME_MAX_LEN) {
+        goto found;
+    }
+
+    p = filename_end - LJ_CHUNKNAME_MAX_LEN + reserve_len + 3;
+    pre_str = "...";
 
 found:
 
-    p = njt_snprintf(out, len, "=%*s(%*s:%d)%Z",
-                     tag_len, tag, cf->conf_file->file.name.data
-                     + cf->conf_file->file.name.len - p,
-                     p, cf->conf_file->line);
+
+    p = njt_snprintf(out, len, "=%*s(%s%*s:%d)%Z",
+                     tag_len, tag, pre_str, filename_end - p,
+                     p, start_line);
 
     *chunkname_len = p - out - 1;  /* exclude the trailing '\0' byte */
 
@@ -1344,6 +1552,7 @@ found:
 char *
 njt_http_lua_conf_lua_block_parse(njt_conf_t *cf, njt_command_t *cmd)
 {
+    njt_http_lua_main_conf_t           *lmcf;
     njt_http_lua_block_parser_ctx_t     ctx;
 
     int               level = 1;
@@ -1376,6 +1585,9 @@ njt_http_lua_conf_lua_block_parse(njt_conf_t *cf, njt_command_t *cmd)
 
     ctx.token_len = 0;
     start_line = cf->conf_file->line;
+
+    lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_lua_module);
+    lmcf->directive_line = start_line;
 
     dd("init start line: %d", (int) start_line);
 
@@ -1494,6 +1706,8 @@ failed:
     rc = NJT_ERROR;
 
 done:
+
+    lmcf->directive_line = 0;
 
     if (rc == NJT_ERROR) {
         return NJT_CONF_ERROR;

@@ -41,7 +41,7 @@ njt_event_recvmsg(njt_event_t *ev)
 
     //add by clb for udp traffic hack
     struct cmsghdr    *cmsg_tmp;
-    struct sockaddr_in *tmp_real_dst_addr;
+    struct sockaddr_in *tmp_real_dst_addr = NULL;
     struct sockaddr_in *tmp_local_addr;
     struct sockaddr_in6 *tmp_real_dst_addr6;
     struct sockaddr_in6 *tmp_local_addr6;

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Xiaozhe Wang (chaoslawful)
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -141,7 +141,12 @@ njt_http_lua_rewrite_handler(njt_http_request_t *r)
         return NJT_DONE;
     }
 
+/* http2 read body may break http2 stream process */
+#if (NJT_HTTP_V2)
+    if (llcf->force_read_body && !ctx->read_body_done && !r->main->stream) {
+#else
     if (llcf->force_read_body && !ctx->read_body_done) {
+#endif
         r->request_body_in_single_buf = 1;
         r->request_body_in_persistent_file = 1;
         r->request_body_in_clean_file = 1;
@@ -242,7 +247,7 @@ njt_http_lua_rewrite_by_chunk(lua_State *L, njt_http_request_t *r)
     njt_event_t             *rev;
     njt_connection_t        *c;
     njt_http_lua_ctx_t      *ctx;
-    njt_http_cleanup_t      *cln;
+    njt_pool_cleanup_t      *cln;
 
     njt_http_lua_loc_conf_t     *llcf;
 
@@ -265,7 +270,7 @@ njt_http_lua_rewrite_by_chunk(lua_State *L, njt_http_request_t *r)
     lua_setfenv(co, -2);
 #endif
 
-    /*  save nginx request in coroutine globals table */
+    /*  save njet request in coroutine globals table */
     njt_http_lua_set_req(co, r);
 
     /*  {{{ initialize request context */
@@ -292,9 +297,9 @@ njt_http_lua_rewrite_by_chunk(lua_State *L, njt_http_request_t *r)
 
     /*  }}} */
 
-    /*  {{{ register request cleanup hooks */
+    /*  {{{ register njet pool cleanup hooks */
     if (ctx->cleanup == NULL) {
-        cln = njt_http_cleanup_add(r, 0);
+        cln = njt_pool_cleanup_add(r->pool, 0);
         if (cln == NULL) {
             return NJT_HTTP_INTERNAL_SERVER_ERROR;
         }

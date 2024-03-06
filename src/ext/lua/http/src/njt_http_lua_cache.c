@@ -308,7 +308,13 @@ njt_http_lua_cache_loadfile(njt_log_t *log, lua_State *L,
             break;
 
         case LUA_ERRFILE:
-            errcode = NJT_HTTP_NOT_FOUND;
+            if (errno == ENOENT) {
+                errcode = NJT_HTTP_NOT_FOUND;
+
+            } else {
+                errcode = NJT_HTTP_SERVICE_UNAVAILABLE;
+            }
+
             /* fall through */
 
         default:

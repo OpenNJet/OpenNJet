@@ -26,6 +26,10 @@ char *njt_http_lua_content_by_lua_block(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 char *njt_http_lua_content_by_lua(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
+char *njt_http_lua_server_rewrite_by_lua(njt_conf_t *cf, njt_command_t *cmd,
+    void *conf);
+char *njt_http_lua_server_rewrite_by_lua_block(njt_conf_t *cf,
+    njt_command_t *cmd, void *conf);
 char *njt_http_lua_rewrite_by_lua_block(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 char *njt_http_lua_rewrite_by_lua(njt_conf_t *cf, njt_command_t *cmd,
@@ -82,7 +86,8 @@ char *njt_http_lua_conf_lua_block_parse(njt_conf_t *cf,
     njt_command_t *cmd);
 char *njt_http_lua_capture_error_log(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
-
+u_char *njt_http_lua_gen_chunk_name(njt_conf_t *cf, const char *tag,
+    size_t tag_len, size_t *chunkname_len);
 
 #endif /* _NJT_HTTP_LUA_DIRECTIVE_H_INCLUDED_ */
 

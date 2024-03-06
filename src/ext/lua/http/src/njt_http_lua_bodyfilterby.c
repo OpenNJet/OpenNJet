@@ -94,7 +94,7 @@ njt_http_lua_body_filter_by_chunk(lua_State *L, njt_http_request_t *r,
     njt_http_lua_body_filter_by_lua_env(L, r, in);
 
 #if (NJT_PCRE)
-    /* XXX: work-around to nginx regex subsystem */
+    /* XXX: work-around to njet regex subsystem */
     old_pool = njt_http_lua_pcre_malloc_init(r->pool);
 #endif
 
@@ -107,7 +107,7 @@ njt_http_lua_body_filter_by_chunk(lua_State *L, njt_http_request_t *r,
     lua_remove(L, 1);  /* remove traceback function */
 
 #if (NJT_PCRE)
-    /* XXX: work-around to nginx regex subsystem */
+    /* XXX: work-around to njet regex subsystem */
     njt_http_lua_pcre_malloc_done(old_pool);
 #endif
 
@@ -162,7 +162,8 @@ njt_http_lua_body_filter_inline(njt_http_request_t *r, njt_chain_t *in)
                                        llcf->body_filter_src.value.len,
                                        &llcf->body_filter_src_ref,
                                        llcf->body_filter_src_key,
-                                       "=body_filter_by_lua");
+                                       (const char *)
+                                       llcf->body_filter_chunkname);
     if (rc != NJT_OK) {
         return NJT_ERROR;
     }
@@ -190,7 +191,7 @@ njt_http_lua_body_filter_file(njt_http_request_t *r, njt_chain_t *in)
 
     llcf = njt_http_get_module_loc_conf(r, njt_http_lua_module);
 
-    /* Eval nginx variables in code path string first */
+    /* Eval njet variables in code path string first */
     if (njt_http_complex_value(r, &llcf->body_filter_src, &eval_src)
         != NJT_OK)
     {
@@ -234,7 +235,7 @@ njt_http_lua_body_filter(njt_http_request_t *r, njt_chain_t *in)
     njt_http_lua_ctx_t          *ctx;
     njt_int_t                    rc;
     uint16_t                     old_context;
-    njt_http_cleanup_t          *cln;
+    njt_pool_cleanup_t          *cln;
     njt_chain_t                 *out;
     njt_chain_t                 *cl, *ln;
     njt_http_lua_main_conf_t    *lmcf;
@@ -299,7 +300,7 @@ njt_http_lua_body_filter(njt_http_request_t *r, njt_chain_t *in)
         out = NULL;
         njt_chain_update_chains(r->pool,
                                 &ctx->free_bufs, &ctx->filter_busy_bufs, &out,
-                                (njt_buf_tag_t) &njt_http_lua_module);
+                                (njt_buf_tag_t) &njt_http_lua_body_filter);
         if (rc != NJT_OK
             && ctx->filter_busy_bufs != NULL
             && (r->connection->buffered
@@ -314,7 +315,7 @@ njt_http_lua_body_filter(njt_http_request_t *r, njt_chain_t *in)
     }
 
     if (ctx->cleanup == NULL) {
-        cln = njt_http_cleanup_add(r, 0);
+        cln = njt_pool_cleanup_add(r->pool, 0);
         if (cln == NULL) {
             return NJT_ERROR;
         }
@@ -345,7 +346,7 @@ njt_http_lua_body_filter(njt_http_request_t *r, njt_chain_t *in)
         lmcf = njt_http_get_module_main_conf(r, njt_http_lua_module);
 
         /* lmcf->body_filter_chain is the new buffer chain if
-         * body_filter_by_lua set new body content via njt.arg[1] = new_content
+         * body_filter_by_lua set new body content via ngx.arg[1] = new_content
          * otherwise it is the original `in` buffer chain.
          */
         out = lmcf->body_filter_chain;
@@ -378,7 +379,7 @@ njt_http_lua_body_filter(njt_http_request_t *r, njt_chain_t *in)
 
     njt_chain_update_chains(r->pool,
                             &ctx->free_bufs, &ctx->filter_busy_bufs, &out,
-                            (njt_buf_tag_t) &njt_http_lua_module);
+                            (njt_buf_tag_t) &njt_http_lua_body_filter);
 
     return rc;
 }
@@ -396,51 +397,48 @@ njt_http_lua_body_filter_init(void)
 
 
 int
-njt_http_lua_body_filter_param_get(lua_State *L, njt_http_request_t *r)
+njt_http_lua_ffi_get_body_filter_param_eof(njt_http_request_t *r)
 {
-    u_char              *data, *p;
-    size_t               size;
     njt_chain_t         *cl;
-    njt_buf_t           *b;
-    int                  idx;
     njt_chain_t         *in;
 
     njt_http_lua_main_conf_t    *lmcf;
 
-    idx = luaL_checkint(L, 2);
-
-    dd("index: %d", idx);
-
-    if (idx != 1 && idx != 2) {
-        lua_pushnil(L);
-        return 1;
-    }
-
     lmcf = njt_http_get_module_main_conf(r, njt_http_lua_module);
     in = lmcf->body_filter_chain;
 
-    if (idx == 2) {
-        /* asking for the eof argument */
+    /* asking for the eof argument */
 
-        for (cl = in; cl; cl = cl->next) {
-            if (cl->buf->last_buf || cl->buf->last_in_chain) {
-                lua_pushboolean(L, 1);
-                return 1;
-            }
+    for (cl = in; cl; cl = cl->next) {
+        if (cl->buf->last_buf || cl->buf->last_in_chain) {
+            return 1;
         }
-
-        lua_pushboolean(L, 0);
-        return 1;
     }
 
-    /* idx == 1 */
+    return 0;
+}
+
+
+int
+njt_http_lua_ffi_get_body_filter_param_body(njt_http_request_t *r,
+    u_char **data_p, size_t *len_p)
+{
+    size_t               size;
+    njt_chain_t         *cl;
+    njt_buf_t           *b;
+    njt_chain_t         *in;
+
+    njt_http_lua_main_conf_t    *lmcf;
+
+    lmcf = njt_http_get_module_main_conf(r, njt_http_lua_module);
+    in = lmcf->body_filter_chain;
 
     size = 0;
 
     if (in == NULL) {
         /* being a cleared chain on the Lua land */
-        lua_pushliteral(L, "");
-        return 1;
+        *len_p = 0;
+        return NJT_OK;
     }
 
     if (in->next == NULL) {
@@ -448,8 +446,9 @@ njt_http_lua_body_filter_param_get(lua_State *L, njt_http_request_t *r)
         dd("seen only single buffer");
 
         b = in->buf;
-        lua_pushlstring(L, (char *) b->pos, b->last - b->pos);
-        return 1;
+        *data_p = b->pos;
+        *len_p = b->last - b->pos;
+        return NJT_OK;
     }
 
     dd("seen multiple buffers");
@@ -464,7 +463,26 @@ njt_http_lua_body_filter_param_get(lua_State *L, njt_http_request_t *r)
         }
     }
 
-    data = (u_char *) lua_newuserdata(L, size);
+    /* the buf is need and is not allocated from Lua land yet, return with
+     * the actual size */
+    *len_p = size;
+    return NJT_AGAIN;
+}
+
+
+int
+njt_http_lua_ffi_copy_body_filter_param_body(njt_http_request_t *r,
+    u_char *data)
+{
+    u_char              *p;
+    njt_chain_t         *cl;
+    njt_buf_t           *b;
+    njt_chain_t         *in;
+
+    njt_http_lua_main_conf_t    *lmcf;
+
+    lmcf = njt_http_get_module_main_conf(r, njt_http_lua_module);
+    in = lmcf->body_filter_chain;
 
     for (p = data, cl = in; cl; cl = cl->next) {
         b = cl->buf;
@@ -475,8 +493,7 @@ njt_http_lua_body_filter_param_get(lua_State *L, njt_http_request_t *r)
         }
     }
 
-    lua_pushlstring(L, (char *) data, size);
-    return 1;
+    return NJT_OK;
 }
 
 
@@ -641,6 +658,7 @@ njt_http_lua_body_filter_param_set(lua_State *L, njt_http_request_t *r,
         return luaL_error(L, "no memory");
     }
 
+    cl->buf->tag = (njt_buf_tag_t) &njt_http_lua_body_filter;
     if (type == LUA_TTABLE) {
         cl->buf->last = njt_http_lua_copy_str_in_table(L, 3, cl->buf->last);
 
@@ -658,6 +676,8 @@ done:
             if (cl == NULL) {
                 return luaL_error(L, "no memory");
             }
+
+            cl->buf->tag = (njt_buf_tag_t) &njt_http_lua_body_filter;
         }
 
         if (last) {

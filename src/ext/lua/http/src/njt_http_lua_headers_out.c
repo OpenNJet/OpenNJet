@@ -230,6 +230,9 @@ new_header:
 
     h->key = hv->key;
     h->value = *value;
+#if defined(njet_version) && njet_version >= 1023000
+    h->next = NULL;
+#endif
 
     h->lowcase_key = njt_pnalloc(r->pool, h->key.len);
     if (h->lowcase_key == NULL) {
@@ -312,6 +315,69 @@ static njt_int_t
 njt_http_set_builtin_multi_header(njt_http_request_t *r,
     njt_http_lua_header_val_t *hv, njt_str_t *value)
 {
+#if defined(njet_version) && njet_version >= 1023000
+    njt_table_elt_t  **headers, *h, *ho, **ph;
+
+    headers = (njt_table_elt_t **) ((char *) &r->headers_out + hv->offset);
+
+    if (hv->no_override) {
+        for (h = *headers; h; h = h->next) {
+            if (!h->hash) {
+                h->value = *value;
+                h->hash = hv->hash;
+                return NJT_OK;
+            }
+        }
+
+        goto create;
+    }
+
+    /* override old values (if any) */
+
+    if (*headers) {
+        for (h = (*headers)->next; h; h = h->next) {
+            h->hash = 0;
+            h->value.len = 0;
+        }
+
+        h = *headers;
+
+        h->value = *value;
+
+        if (value->len == 0) {
+            h->hash = 0;
+
+        } else {
+            h->hash = hv->hash;
+        }
+
+        return NJT_OK;
+    }
+
+create:
+
+    for (ph = headers; *ph; ph = &(*ph)->next) { /* void */ }
+
+    ho = njt_list_push(&r->headers_out.headers);
+    if (ho == NULL) {
+        return NJT_ERROR;
+    }
+
+    ho->value = *value;
+
+    if (value->len == 0) {
+        ho->hash = 0;
+
+    } else {
+        ho->hash = hv->hash;
+    }
+
+    ho->key = hv->key;
+    ho->next = NULL;
+    *ph = ho;
+
+    return NJT_OK;
+#else
     njt_array_t      *pa;
     njt_table_elt_t  *ho, **ph;
     njt_uint_t        i;
@@ -385,6 +451,7 @@ create:
     *ph = ho;
 
     return NJT_OK;
+#endif
 }
 
 
@@ -487,8 +554,9 @@ njt_http_lua_set_output_header(njt_http_request_t *r, njt_http_lua_ctx_t *ctx,
     njt_str_t key, njt_str_t value, unsigned override)
 {
     njt_http_lua_header_val_t         hv;
-    njt_http_lua_set_header_t        *handlers = njt_http_lua_set_handlers;
-    njt_uint_t                        i;
+    njt_http_lua_main_conf_t         *lmcf;
+    njt_http_lua_set_header_t        *lsh;
+    njt_hash_t                       *hash;
 
     dd("set header value: %.*s", (int) value.len, value.data);
 
@@ -505,41 +573,19 @@ njt_http_lua_set_output_header(njt_http_request_t *r, njt_http_lua_ctx_t *ctx,
 
     hv.offset = 0;
     hv.no_override = !override;
-    hv.handler = NULL;
+    hv.handler = njt_http_set_header;
 
-    for (i = 0; handlers[i].name.len; i++) {
-        if (hv.key.len != handlers[i].name.len
-            || njt_strncasecmp(hv.key.data, handlers[i].name.data,
-                               handlers[i].name.len) != 0)
-        {
-            dd("hv key comparison: %s <> %s", handlers[i].name.data,
-               hv.key.data);
-
-            continue;
-        }
-
-        dd("Matched handler: %s %s", handlers[i].name.data, hv.key.data);
-
-        hv.offset = handlers[i].offset;
-        hv.handler = handlers[i].handler;
-
+    lmcf = njt_http_get_module_main_conf(r, njt_http_lua_module);
+    hash = &lmcf->builtin_headers_out;
+    lsh = njt_http_lua_hash_find_lc(hash, hv.hash, hv.key.data, hv.key.len);
+    if (lsh) {
+        dd("Matched handler: %s %s", lsh->name.data, hv.key.data);
+        hv.offset = lsh->offset;
+        hv.handler = lsh->handler;
         if (hv.handler == njt_http_set_content_type_header) {
             ctx->mime_set = 1;
         }
-
-        break;
     }
-
-    if (handlers[i].name.len == 0 && handlers[i].handler) {
-        hv.offset = handlers[i].offset;
-        hv.handler = handlers[i].handler;
-    }
-
-#if 1
-    if (hv.handler == NULL) {
-        return NJT_ERROR;
-    }
-#endif
 
     return hv.handler(r, &hv, &value);
 }
@@ -651,6 +697,50 @@ njt_http_lua_get_output_header(lua_State *L, njt_http_request_t *r,
 
     lua_pushnil(L);
     return 1;
+}
+
+
+njt_int_t
+njt_http_lua_init_builtin_headers_out(njt_conf_t *cf,
+    njt_http_lua_main_conf_t *lmcf)
+{
+    njt_array_t                   headers;
+    njt_hash_key_t               *hk;
+    njt_hash_init_t               hash;
+    njt_http_lua_set_header_t    *handlers = njt_http_lua_set_handlers;
+    njt_uint_t                    count;
+
+    count = sizeof(njt_http_lua_set_handlers)
+            / sizeof(njt_http_lua_set_header_t);
+
+    if (njt_array_init(&headers, cf->temp_pool, count, sizeof(njt_hash_key_t))
+        != NJT_OK)
+    {
+        return NJT_ERROR;
+    }
+
+    while (handlers->name.data) {
+        hk = njt_array_push(&headers);
+        if (hk == NULL) {
+            return NJT_ERROR;
+        }
+
+        hk->key = handlers->name;
+        hk->key_hash = njt_hash_key_lc(handlers->name.data, handlers->name.len);
+        hk->value = (void *) handlers;
+
+        handlers++;
+    }
+
+    hash.hash = &lmcf->builtin_headers_out;
+    hash.key = njt_hash_key_lc;
+    hash.max_size = 512;
+    hash.bucket_size = njt_align(64, njt_cacheline_size);
+    hash.name = "builtin_headers_out_hash";
+    hash.pool = cf->pool;
+    hash.temp_pool = NULL;
+
+    return njt_hash_init(&hash, headers.elts, headers.nelts);
 }
 
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */

@@ -20,6 +20,7 @@ local subsystem = njt.config.subsystem
 
 local njt_lua_ffi_now
 local njt_lua_ffi_time
+local njt_lua_ffi_monotonic_msec
 local njt_lua_ffi_today
 local njt_lua_ffi_localtime
 local njt_lua_ffi_utctime
@@ -30,6 +31,7 @@ if subsystem == 'http' then
     ffi.cdef[[
 double njt_http_lua_ffi_now(void);
 long njt_http_lua_ffi_time(void);
+long njt_http_lua_ffi_monotonic_msec(void);
 void njt_http_lua_ffi_today(unsigned char *buf);
 void njt_http_lua_ffi_localtime(unsigned char *buf);
 void njt_http_lua_ffi_utctime(unsigned char *buf);
@@ -42,6 +44,7 @@ void njt_http_lua_ffi_parse_http_time(const unsigned char *str, size_t len,
 
     njt_lua_ffi_now = C.njt_http_lua_ffi_now
     njt_lua_ffi_time = C.njt_http_lua_ffi_time
+    njt_lua_ffi_monotonic_msec = C.njt_http_lua_ffi_monotonic_msec
     njt_lua_ffi_today = C.njt_http_lua_ffi_today
     njt_lua_ffi_localtime = C.njt_http_lua_ffi_localtime
     njt_lua_ffi_utctime = C.njt_http_lua_ffi_utctime
@@ -51,6 +54,7 @@ elseif subsystem == 'stream' then
     ffi.cdef[[
 double njt_stream_lua_ffi_now(void);
 long njt_stream_lua_ffi_time(void);
+long njt_stream_lua_ffi_monotonic_msec(void);
 void njt_stream_lua_ffi_today(unsigned char *buf);
 void njt_stream_lua_ffi_localtime(unsigned char *buf);
 void njt_stream_lua_ffi_utctime(unsigned char *buf);
@@ -59,6 +63,7 @@ void njt_stream_lua_ffi_update_time(void);
 
     njt_lua_ffi_now = C.njt_stream_lua_ffi_now
     njt_lua_ffi_time = C.njt_stream_lua_ffi_time
+    njt_lua_ffi_monotonic_msec = C.njt_stream_lua_ffi_monotonic_msec
     njt_lua_ffi_today = C.njt_stream_lua_ffi_today
     njt_lua_ffi_localtime = C.njt_stream_lua_ffi_localtime
     njt_lua_ffi_utctime = C.njt_stream_lua_ffi_utctime
@@ -67,12 +72,28 @@ end
 
 
 function njt.now()
-    return tonumber(njt_lua_ffi_now())
+    local now = tonumber(njt_lua_ffi_now())
+    return now
 end
 
 
 function njt.time()
-    return tonumber(njt_lua_ffi_time())
+    local time = tonumber(njt_lua_ffi_time())
+    return time
+end
+
+
+local function monotonic_msec()
+    local msec = tonumber(njt_lua_ffi_monotonic_msec())
+    return msec
+end
+
+
+local function monotonic_time()
+    local msec = tonumber(njt_lua_ffi_monotonic_msec())
+    local time = msec / 1000
+
+    return time
 end
 
 
@@ -149,11 +170,14 @@ function njt.parse_http_time(time_str)
         return nil
     end
 
-    return tonumber(res)
+    local time = tonumber(res)
+    return time
 end
 
 end
 
 return {
-    version = base.version
+    version = base.version,
+    monotonic_msec = monotonic_msec,
+    monotonic_time = monotonic_time
 }

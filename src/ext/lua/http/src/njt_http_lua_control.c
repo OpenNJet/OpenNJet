@@ -25,17 +25,17 @@ static int njt_http_lua_on_abort(lua_State *L);
 void
 njt_http_lua_inject_control_api(njt_log_t *log, lua_State *L)
 {
-    /* njt.redirect */
+    /* ngx.redirect */
 
     lua_pushcfunction(L, njt_http_lua_njt_redirect);
     lua_setfield(L, -2, "redirect");
 
-    /* njt.exec */
+    /* ngx.exec */
 
     lua_pushcfunction(L, njt_http_lua_njt_exec);
     lua_setfield(L, -2, "exec");
 
-    /* njt.on_abort */
+    /* ngx.on_abort */
 
     lua_pushcfunction(L, njt_http_lua_on_abort);
     lua_setfield(L, -2, "on_abort");
@@ -92,6 +92,7 @@ njt_http_lua_njt_exec(lua_State *L)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 
@@ -164,7 +165,7 @@ njt_http_lua_njt_exec(lua_State *L)
     }
 
     if (r->header_sent || ctx->header_sent) {
-        return luaL_error(L, "attempt to call njt.exec after "
+        return luaL_error(L, "attempt to call ngx.exec after "
                           "sending out response headers");
     }
 
@@ -211,11 +212,11 @@ njt_http_lua_njt_redirect(lua_State *L)
             && rc != NJT_HTTP_PERMANENT_REDIRECT
             && rc != NJT_HTTP_TEMPORARY_REDIRECT)
         {
-            return luaL_error(L, "only njt.HTTP_MOVED_TEMPORARILY, "
-                              "njt.HTTP_MOVED_PERMANENTLY, "
-                              "njt.HTTP_PERMANENT_REDIRECT, "
-                              "njt.HTTP_SEE_OTHER, and "
-                              "njt.HTTP_TEMPORARY_REDIRECT are allowed");
+            return luaL_error(L, "only ngx.HTTP_MOVED_TEMPORARILY, "
+                              "ngx.HTTP_MOVED_PERMANENTLY, "
+                              "ngx.HTTP_PERMANENT_REDIRECT, "
+                              "ngx.HTTP_SEE_OTHER, and "
+                              "ngx.HTTP_TEMPORARY_REDIRECT are allowed");
         }
 
     } else {
@@ -233,13 +234,14 @@ njt_http_lua_njt_redirect(lua_State *L)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 
     njt_http_lua_check_if_abortable(L, ctx);
 
     if (r->header_sent || ctx->header_sent) {
-        return luaL_error(L, "attempt to call njt.redirect after sending out "
+        return luaL_error(L, "attempt to call ngx.redirect after sending out "
                           "the headers");
     }
 
@@ -279,6 +281,9 @@ njt_http_lua_njt_redirect(lua_State *L)
 
     h->value.len = len;
     h->value.data = uri;
+#if defined(njet_version) && njet_version >= 1023000
+    h->next = NULL;
+#endif
     njt_str_set(&h->key, "Location");
 
     r->headers_out.status = rc;
@@ -359,6 +364,14 @@ njt_http_lua_ffi_exit(njt_http_request_t *r, int status, u_char *err,
 {
     njt_http_lua_ctx_t       *ctx;
 
+    if (status == NJT_AGAIN || status == NJT_DONE) {
+        *errlen = njt_snprintf(err, *errlen,
+                               "bad argument to 'ngx.exit': does not accept "
+                               "NJT_AGAIN or NJT_DONE")
+                  - err;
+        return NJT_ERROR;
+    }
+
     ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
     if (ctx == NULL) {
         *errlen = njt_snprintf(err, *errlen, "no request ctx found") - err;
@@ -366,6 +379,7 @@ njt_http_lua_ffi_exit(njt_http_request_t *r, int status, u_char *err,
     }
 
     if (njt_http_lua_ffi_check_context(ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                                       | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                        | NJT_HTTP_LUA_CONTEXT_ACCESS
                                        | NJT_HTTP_LUA_CONTEXT_CONTENT
                                        | NJT_HTTP_LUA_CONTEXT_TIMER
@@ -428,7 +442,7 @@ njt_http_lua_ffi_exit(njt_http_request_t *r, int status, u_char *err,
     {
         if (status != (njt_int_t) r->headers_out.status) {
             njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "attempt to "
-                          "set status %d via njt.exit after sending out the "
+                          "set status %d via ngx.exit after sending out the "
                           "response status %ui", status,
                           r->headers_out.status);
         }

@@ -39,7 +39,7 @@ njt_http_lua_njt_set_ctx_helper(lua_State *L, njt_http_request_t *r,
 
     if (ctx->ctx_ref == LUA_NOREF) {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "lua create njt.ctx table for the current request");
+                       "lua create ngx.ctx table for the current request");
 
         lua_pushliteral(L, njt_http_lua_ctx_tables_key);
         lua_rawget(L, LUA_REGISTRYINDEX);
@@ -56,7 +56,7 @@ njt_http_lua_njt_set_ctx_helper(lua_State *L, njt_http_request_t *r,
     }
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                   "lua fetching existing njt.ctx table for the current "
+                   "lua fetching existing ngx.ctx table for the current "
                    "request");
 
     lua_pushliteral(L, njt_http_lua_ctx_tables_key);
@@ -193,7 +193,7 @@ njt_http_lua_njt_ctx_cleanup(void *data)
     njt_http_lua_njt_ctx_cleanup_data_t    *clndata = data;
 
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                   "lua release njt.ctx at ref %d", clndata->ref);
+                   "lua release ngx.ctx at ref %d", clndata->ref);
 
     L = clndata->vm;
 

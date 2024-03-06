@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Xiaozhe Wang (chaoslawful)
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -53,6 +53,8 @@ njt_str_t  njt_http_lua_patch_method =
 njt_str_t  njt_http_lua_trace_method =
         njt_http_lua_method_name("TRACE");
 
+njt_str_t host_header = njt_string("host");
+
 
 static njt_str_t  njt_http_lua_content_length_header_key =
     njt_string("Content-Length");
@@ -86,8 +88,8 @@ enum {
 };
 
 
-/* njt.location.capture is just a thin wrapper around
- * njt.location.capture_multi */
+/* ngx.location.capture is just a thin wrapper around
+ * ngx.location.capture_multi */
 static int
 njt_http_lua_njt_location_capture(lua_State *L)
 {
@@ -1668,6 +1670,9 @@ njt_http_lua_copy_request_headers(njt_http_request_t *sr,
 
         clh->hash = njt_http_lua_content_length_hash;
         clh->key = njt_http_lua_content_length_header_key;
+#if defined(njet_version) && njet_version >= 1023000
+        clh->next = NULL;
+#endif
         clh->lowcase_key = njt_pnalloc(sr->pool, clh->key.len);
         if (clh->lowcase_key == NULL) {
             return NJT_ERROR;
@@ -1696,6 +1701,17 @@ njt_http_lua_copy_request_headers(njt_http_request_t *sr,
 
     part = &pr->headers_in.headers.part;
     header = part->elts;
+
+#if (NJT_HTTP_V3)
+    if (pr->headers_in.server.data != NULL) {
+        if (njt_http_lua_set_input_header(sr, host_header,
+                                          pr->headers_in.server, 0)
+            == NJT_ERROR)
+        {
+            return NJT_ERROR;
+        }
+    }
+#endif
 
     for (i = 0; /* void */; i++) {
 
