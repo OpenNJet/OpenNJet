@@ -2001,12 +2001,13 @@ static void njt_http_log_dyn_using_file(njt_pool_t *pool,njt_http_dyn_log_file_t
 }
 // 未使用需检查文件引用计数，此处不会随lmcf.pool 自动释放
 static njt_http_dyn_log_file_t * njt_http_log_dyn_open_file(njt_http_log_main_conf_t *lmcf,njt_str_t *path){
-    njt_queue_t *q;
-    njt_http_dyn_log_file_t *node;
-    njt_open_file_t *file;
+    njt_queue_t                 *q;
+    njt_http_dyn_log_file_t     *node;
+    njt_open_file_t             *file;
 //    njt_pool_cleanup_t *cln;
 //    njt_pool_cleanup_file_t        *clnf;
-    njt_pool_t *pool;
+    njt_pool_t                  *pool;
+    njt_core_conf_t             *ccf;
 
     pool = lmcf->pool;
     q = njt_queue_head(&lmcf->file_queue);
@@ -2043,6 +2044,20 @@ static njt_http_dyn_log_file_t * njt_http_log_dyn_open_file(njt_http_log_main_co
                       &file->name);
         return  NULL;
     }
+
+    //add by clb, should set file own is real worker user
+    if(njt_is_privileged_agent){
+        ccf = (njt_core_conf_t *)njt_get_conf(njt_cycle->conf_ctx, njt_core_module);
+        if (ccf && ccf->user != (uid_t) NJT_CONF_UNSET_UINT) {
+            if(strncmp(ccf->username, "root", 4) != 0){
+                if (fchown(file->fd,ccf->user, ccf->group) == -1) {
+                    njt_log_error(NJT_LOG_EMERG, njt_cycle->log, njt_errno,
+                                    "privileage chown file %V failed", &file->name);
+                }
+            }
+        }
+    }
+    //end add by clb
 
 #if !(NJT_WIN32)
     if (fcntl(file->fd, F_SETFD, FD_CLOEXEC) == -1) {

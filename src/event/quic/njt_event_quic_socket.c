@@ -94,8 +94,8 @@ njt_quic_open_sockets(njt_connection_t *c, njt_quic_connection_t *qc,
 
     tmp->sid.seqnum = NJT_QUIC_UNSET_PN; /* temporary socket */
 
-    njt_memcpy(tmp->sid.id, pkt->odcid.data, pkt->odcid.len);
-    tmp->sid.len = pkt->odcid.len;
+    njt_memcpy(tmp->sid.id, pkt->dcid.data, pkt->dcid.len);
+    tmp->sid.len = pkt->dcid.len;
 
     if (njt_quic_listen(c, qc, tmp) != NJT_OK) {
         goto failed;

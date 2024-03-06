@@ -36,6 +36,15 @@
 #define NJT_QUIC_SOCKET_RETRY_DELAY      10 /* ms, for NJT_AGAIN on write */
 
 
+#define njt_quic_log_packet(log, pkt)                                         \
+    njt_log_debug6(NJT_LOG_DEBUG_EVENT, log, 0,                               \
+                   "quic packet tx %s bytes:%ui need_ack:%d"                  \
+                   " number:%L encoded nl:%d trunc:0x%xD",                    \
+                   njt_quic_level_name((pkt)->level), (pkt)->payload.len,     \
+                   (pkt)->need_ack, (pkt)->number, (pkt)->num_len,            \
+                    (pkt)->trunc);
+
+
 static njt_int_t njt_quic_create_datagrams(njt_connection_t *c);
 static void njt_quic_commit_send(njt_connection_t *c, njt_quic_send_ctx_t *ctx);
 static void njt_quic_revert_send(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
@@ -55,8 +64,6 @@ static ssize_t njt_quic_send(njt_connection_t *c, u_char *buf, size_t len,
     struct sockaddr *sockaddr, socklen_t socklen);
 static void njt_quic_set_packet_number(njt_quic_header_t *pkt,
     njt_quic_send_ctx_t *ctx);
-static size_t njt_quic_path_limit(njt_connection_t *c, njt_quic_path_t *path,
-    size_t size);
 
 
 njt_int_t
@@ -335,7 +342,7 @@ njt_quic_create_segments(njt_connection_t *c)
 
         len = njt_min(segsize, (size_t) (end - p));
 
-        if (len && cg->in_flight + (p-dst) < cg->window) {
+        if (len && cg->in_flight + (p - dst) < cg->window) {
 
             n = njt_quic_output_packet(c, ctx, p, len, len);
             if (n == NJT_ERROR) {
@@ -520,6 +527,21 @@ njt_quic_output_packet(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
 
     qc = njt_quic_get_connection(c);
 
+    if (!njt_quic_keys_available(qc->keys, ctx->level, 1)) {
+        njt_log_error(NJT_LOG_ALERT, c->log, 0, "quic %s write keys discarded",
+                      njt_quic_level_name(ctx->level));
+
+        while (!njt_queue_empty(&ctx->frames)) {
+            q = njt_queue_head(&ctx->frames);
+            njt_queue_remove(q);
+
+            f = njt_queue_data(q, njt_quic_frame_t, queue);
+            njt_quic_free_frame(c, f);
+        }
+
+        return 0;
+    }
+
     njt_quic_init_packet(c, ctx, &pkt, qc->path);
 
     min_payload = njt_quic_payload_size(&pkt, min);
@@ -564,6 +586,10 @@ njt_quic_output_packet(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
             pkt.need_ack = 1;
         }
 
+        f->pnum = ctx->pnum;
+        f->send_time = now;
+        f->plen = 0;
+
         njt_quic_log_frame(c->log, f, 1);
 
         flen = njt_quic_create_frame(p, f);
@@ -573,11 +599,6 @@ njt_quic_output_packet(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
 
         len += flen;
         p += flen;
-
-        f->pnum = ctx->pnum;
-        f->first = now;
-        f->last = now;
-        f->plen = 0;
 
         nframes++;
     }
@@ -596,11 +617,7 @@ njt_quic_output_packet(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
 
     res.data = data;
 
-    njt_log_debug6(NJT_LOG_DEBUG_EVENT, c->log, 0,
-                   "quic packet tx %s bytes:%ui"
-                   " need_ack:%d number:%L encoded nl:%d trunc:0x%xD",
-                   njt_quic_level_name(ctx->level), pkt.payload.len,
-                   pkt.need_ack, pkt.number, pkt.num_len, pkt.trunc);
+    njt_quic_log_packet(c->log, &pkt);
 
     if (njt_quic_encrypt(&pkt, &res) != NJT_OK) {
         return NJT_ERROR;
@@ -827,7 +844,7 @@ njt_quic_send_stateless_reset(njt_connection_t *c, njt_quic_conf_t *conf,
 njt_int_t
 njt_quic_send_cc(njt_connection_t *c)
 {
-    njt_quic_frame_t       frame;
+    njt_quic_frame_t       *frame;
     njt_quic_connection_t  *qc;
 
     qc = njt_quic_get_connection(c);
@@ -843,22 +860,27 @@ njt_quic_send_cc(njt_connection_t *c)
         return NJT_OK;
     }
 
-    njt_memzero(&frame, sizeof(njt_quic_frame_t));
+    frame = njt_quic_alloc_frame(c);
+    if (frame == NULL) {
+        return NJT_ERROR;
+    }
 
-    frame.level = qc->error_level;
-    frame.type = qc->error_app ? NJT_QUIC_FT_CONNECTION_CLOSE_APP
+    frame->level = qc->error_level;
+    frame->type = qc->error_app ? NJT_QUIC_FT_CONNECTION_CLOSE_APP
                                 : NJT_QUIC_FT_CONNECTION_CLOSE;
-    frame.u.close.error_code = qc->error;
-    frame.u.close.frame_type = qc->error_ftype;
+    frame->u.close.error_code = qc->error;
+    frame->u.close.frame_type = qc->error_ftype;
 
     if (qc->error_reason) {
-        frame.u.close.reason.len = njt_strlen(qc->error_reason);
-        frame.u.close.reason.data = (u_char *) qc->error_reason;
+        frame->u.close.reason.len = njt_strlen(qc->error_reason);
+        frame->u.close.reason.data = (u_char *) qc->error_reason;
     }
+
+    frame->ignore_congestion = 1;
 
     qc->last_cc = njt_current_msec;
 
-    return njt_quic_frame_sendto(c, &frame, 0, qc->path);
+    return njt_quic_frame_sendto(c, frame, 0, qc->path);
 }
 
 
@@ -885,12 +907,12 @@ njt_quic_send_early_cc(njt_connection_t *c, njt_quic_header_t *inpkt,
     frame.u.close.reason.data = (u_char *) reason;
     frame.u.close.reason.len = njt_strlen(reason);
 
+    njt_quic_log_frame(c->log, &frame, 1);
+
     len = njt_quic_create_frame(NULL, &frame);
     if (len > NJT_QUIC_MAX_UDP_PAYLOAD_SIZE) {
         return NJT_ERROR;
     }
-
-    njt_quic_log_frame(c->log, &frame, 1);
 
     len = njt_quic_create_frame(src, &frame);
     if (len == -1) {
@@ -926,13 +948,19 @@ njt_quic_send_early_cc(njt_connection_t *c, njt_quic_header_t *inpkt,
 
     res.data = dst;
 
+    njt_quic_log_packet(c->log, &pkt);
+
     if (njt_quic_encrypt(&pkt, &res) != NJT_OK) {
+        njt_quic_keys_cleanup(pkt.keys);
         return NJT_ERROR;
     }
 
     if (njt_quic_send(c, res.data, res.len, c->sockaddr, c->socklen) < 0) {
+        njt_quic_keys_cleanup(pkt.keys);
         return NJT_ERROR;
     }
+
+    njt_quic_keys_cleanup(pkt.keys);
 
     return NJT_DONE;
 }
@@ -1158,37 +1186,64 @@ njt_int_t
 njt_quic_frame_sendto(njt_connection_t *c, njt_quic_frame_t *frame,
     size_t min, njt_quic_path_t *path)
 {
-    size_t                  min_payload, pad;
+    size_t                  max, max_payload, min_payload, pad;
     ssize_t                 len, sent;
     njt_str_t               res;
+    njt_msec_t              now;
     njt_quic_header_t       pkt;
     njt_quic_send_ctx_t    *ctx;
+    njt_quic_congestion_t  *cg;
     njt_quic_connection_t  *qc;
 
     static u_char           src[NJT_QUIC_MAX_UDP_PAYLOAD_SIZE];
     static u_char           dst[NJT_QUIC_MAX_UDP_PAYLOAD_SIZE];
 
     qc = njt_quic_get_connection(c);
+    cg = &qc->congestion;
     ctx = njt_quic_get_send_ctx(qc, frame->level);
+
+    now = njt_current_msec;
+
+    max = njt_quic_path_limit(c, path, path->mtu);
+
+    njt_log_debug3(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                   "quic sendto %s packet max:%uz min:%uz",
+                   njt_quic_level_name(ctx->level), max, min);
+
+    if (cg->in_flight >= cg->window && !frame->ignore_congestion) {
+        njt_quic_free_frame(c, frame);
+        return NJT_AGAIN;
+    }
 
     njt_quic_init_packet(c, ctx, &pkt, path);
 
-    min = njt_quic_path_limit(c, path, min);
+    min_payload = njt_quic_payload_size(&pkt, min);
+    max_payload = njt_quic_payload_size(&pkt, max);
 
-    min_payload = min ? njt_quic_payload_size(&pkt, min) : 0;
-
+    /* RFC 9001, 5.4.2.  Header Protection Sample */
     pad = 4 - pkt.num_len;
     min_payload = njt_max(min_payload, pad);
 
-    len = njt_quic_create_frame(NULL, frame);
-    if (len > NJT_QUIC_MAX_UDP_PAYLOAD_SIZE) {
-        return NJT_ERROR;
+    if (min_payload > max_payload) {
+        njt_quic_free_frame(c, frame);
+        return NJT_AGAIN;
     }
+
+#if (NJT_DEBUG)
+    frame->pnum = pkt.number;
+#endif
 
     njt_quic_log_frame(c->log, frame, 1);
 
+    len = njt_quic_create_frame(NULL, frame);
+    if ((size_t) len > max_payload) {
+        njt_quic_free_frame(c, frame);
+        return NJT_AGAIN;
+    }
+
     len = njt_quic_create_frame(src, frame);
     if (len == -1) {
+        njt_quic_free_frame(c, frame);
         return NJT_ERROR;
     }
 
@@ -1202,24 +1257,52 @@ njt_quic_frame_sendto(njt_connection_t *c, njt_quic_frame_t *frame,
 
     res.data = dst;
 
+    njt_quic_log_packet(c->log, &pkt);
+
     if (njt_quic_encrypt(&pkt, &res) != NJT_OK) {
+        njt_quic_free_frame(c, frame);
         return NJT_ERROR;
     }
+
+    frame->pnum = ctx->pnum;
+    frame->send_time = now;
+    frame->plen = res.len;
 
     ctx->pnum++;
 
     sent = njt_quic_send(c, res.data, res.len, path->sockaddr, path->socklen);
     if (sent < 0) {
+        njt_quic_free_frame(c, frame);
         return sent;
     }
 
     path->sent += sent;
 
+    if (frame->need_ack && !qc->closing) {
+        njt_queue_insert_tail(&ctx->sent, &frame->queue);
+
+        cg->in_flight += frame->plen;
+
+    } else {
+        njt_quic_free_frame(c, frame);
+        return NJT_OK;
+    }
+
+    njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                   "quic congestion send if:%uz", cg->in_flight);
+
+    if (!qc->send_timer_set) {
+        qc->send_timer_set = 1;
+        njt_add_timer(c->read, qc->tp.max_idle_timeout);
+    }
+
+    njt_quic_set_lost_timer(c);
+
     return NJT_OK;
 }
 
 
-static size_t
+size_t
 njt_quic_path_limit(njt_connection_t *c, njt_quic_path_t *path, size_t size)
 {
     off_t  max;
@@ -1229,8 +1312,6 @@ njt_quic_path_limit(njt_connection_t *c, njt_quic_path_t *path, size_t size)
         max = (path->sent >= max) ? 0 : max - path->sent;
 
         if ((off_t) size > max) {
-            njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
-                           "quic path limit %uz - %O", size, max);
             return max;
         }
     }

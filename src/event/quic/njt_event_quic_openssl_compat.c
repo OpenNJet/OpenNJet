@@ -45,7 +45,6 @@ struct njt_quic_compat_s {
     const SSL_QUIC_METHOD        *method;
 
     enum ssl_encryption_level_t   write_level;
-    enum ssl_encryption_level_t   read_level;
 
     uint64_t                      read_record;
     njt_quic_compat_keys_t        keys;
@@ -56,9 +55,10 @@ struct njt_quic_compat_s {
 
 
 static void njt_quic_compat_keylog_callback(const SSL *ssl, const char *line);
-static njt_int_t njt_quic_compat_set_encryption_secret(njt_log_t *log,
+static njt_int_t njt_quic_compat_set_encryption_secret(njt_connection_t *c,
     njt_quic_compat_keys_t *keys, enum ssl_encryption_level_t level,
     const SSL_CIPHER *cipher, const uint8_t *secret, size_t secret_len);
+static void njt_quic_compat_cleanup_encryption_secret(void *data);
 static int njt_quic_compat_add_transport_params_callback(SSL *ssl,
     unsigned int ext_type, unsigned int context, const unsigned char **out,
     size_t *outlen, X509 *x, size_t chainidx, int *al, void *add_arg);
@@ -214,63 +214,90 @@ njt_quic_compat_keylog_callback(const SSL *ssl, const char *line)
 
     } else {
         com->method->set_read_secret((SSL *) ssl, level, cipher, secret, n);
-        com->read_level = level;
         com->read_record = 0;
 
-        (void) njt_quic_compat_set_encryption_secret(c->log, &com->keys, level,
+        (void) njt_quic_compat_set_encryption_secret(c, &com->keys, level,
                                                      cipher, secret, n);
     }
+
+    njt_explicit_memzero(secret, n);
 }
 
 
 static njt_int_t
-njt_quic_compat_set_encryption_secret(njt_log_t *log,
+njt_quic_compat_set_encryption_secret(njt_connection_t *c,
     njt_quic_compat_keys_t *keys, enum ssl_encryption_level_t level,
     const SSL_CIPHER *cipher, const uint8_t *secret, size_t secret_len)
 {
     njt_int_t            key_len;
     njt_str_t            secret_str;
     njt_uint_t           i;
+    njt_quic_md_t        key;
     njt_quic_hkdf_t      seq[2];
     njt_quic_secret_t   *peer_secret;
     njt_quic_ciphers_t   ciphers;
+    njt_pool_cleanup_t  *cln;
 
     peer_secret = &keys->secret;
 
     keys->cipher = SSL_CIPHER_get_id(cipher);
 
-    key_len = njt_quic_ciphers(keys->cipher, &ciphers, level);
+    key_len = njt_quic_ciphers(keys->cipher, &ciphers);
 
     if (key_len == NJT_ERROR) {
-        njt_ssl_error(NJT_LOG_INFO, log, 0, "unexpected cipher");
+        njt_ssl_error(NJT_LOG_INFO, c->log, 0, "unexpected cipher");
         return NJT_ERROR;
     }
 
-    if (sizeof(peer_secret->secret.data) < secret_len) {
-        njt_log_error(NJT_LOG_ALERT, log, 0,
-                      "unexpected secret len: %uz", secret_len);
-        return NJT_ERROR;
-    }
+    key.len = key_len;
 
-    peer_secret->secret.len = secret_len;
-    njt_memcpy(peer_secret->secret.data, secret, secret_len);
-
-    peer_secret->key.len = key_len;
     peer_secret->iv.len = NJT_QUIC_IV_LEN;
 
     secret_str.len = secret_len;
     secret_str.data = (u_char *) secret;
 
-    njt_quic_hkdf_set(&seq[0], "tls13 key", &peer_secret->key, &secret_str);
+    njt_quic_hkdf_set(&seq[0], "tls13 key", &key, &secret_str);
     njt_quic_hkdf_set(&seq[1], "tls13 iv", &peer_secret->iv, &secret_str);
 
     for (i = 0; i < (sizeof(seq) / sizeof(seq[0])); i++) {
-        if (njt_quic_hkdf_expand(&seq[i], ciphers.d, log) != NJT_OK) {
+        if (njt_quic_hkdf_expand(&seq[i], ciphers.d, c->log) != NJT_OK) {
             return NJT_ERROR;
         }
     }
 
+    /* register cleanup handler once */
+
+    if (peer_secret->ctx) {
+        njt_quic_crypto_cleanup(peer_secret);
+
+    } else {
+        cln = njt_pool_cleanup_add(c->pool, 0);
+        if (cln == NULL) {
+            return NJT_ERROR;
+        }
+
+        cln->handler = njt_quic_compat_cleanup_encryption_secret;
+        cln->data = peer_secret;
+    }
+
+    if (njt_quic_crypto_init(ciphers.c, peer_secret, &key, 1, c->log)
+        == NJT_ERROR)
+    {
+        return NJT_ERROR;
+    }
+
+    njt_explicit_memzero(key.data, key.len);
+
     return NJT_OK;
+}
+
+
+static void
+njt_quic_compat_cleanup_encryption_secret(void *data)
+{
+    njt_quic_secret_t *secret = data;
+
+    njt_quic_crypto_cleanup(secret);
 }
 
 
@@ -411,7 +438,9 @@ njt_quic_compat_message_callback(int write_p, int version, int content_type,
                        "quic compat tx %s len:%uz ",
                        njt_quic_level_name(level), len);
 
-        (void) com->method->add_handshake_data(ssl, level, buf, len);
+        if (com->method->add_handshake_data(ssl, level, buf, len) != 1) {
+            goto failed;
+        }
 
         break;
 
@@ -423,11 +452,19 @@ njt_quic_compat_message_callback(int write_p, int version, int content_type,
                            "quic compat %s alert:%ui len:%uz ",
                            njt_quic_level_name(level), alert, len);
 
-            (void) com->method->send_alert(ssl, level, alert);
+            if (com->method->send_alert(ssl, level, alert) != 1) {
+                goto failed;
+            }
         }
 
         break;
     }
+
+    return;
+
+failed:
+
+    njt_post_event(&qc->close, &njt_posted_events);
 }
 
 
@@ -545,10 +582,9 @@ njt_quic_compat_create_header(njt_quic_compat_record_t *rec, u_char *out,
 static njt_int_t
 njt_quic_compat_create_record(njt_quic_compat_record_t *rec, njt_str_t *res)
 {
-    njt_str_t            ad, out;
-    njt_quic_secret_t   *secret;
-    njt_quic_ciphers_t   ciphers;
-    u_char               nonce[NJT_QUIC_IV_LEN];
+    njt_str_t           ad, out;
+    njt_quic_secret_t  *secret;
+    u_char              nonce[NJT_QUIC_IV_LEN];
 
     ad.data = res->data;
     ad.len = njt_quic_compat_create_header(rec, ad.data, 0);
@@ -561,18 +597,12 @@ njt_quic_compat_create_record(njt_quic_compat_record_t *rec, njt_str_t *res)
                    "quic compat ad len:%uz %xV", ad.len, &ad);
 #endif
 
-    if (njt_quic_ciphers(rec->keys->cipher, &ciphers, rec->level) == NJT_ERROR)
-    {
-        return NJT_ERROR;
-    }
-
     secret = &rec->keys->secret;
 
     njt_memcpy(nonce, secret->iv.data, secret->iv.len);
     njt_quic_compute_nonce(nonce, sizeof(nonce), rec->number);
 
-    if (njt_quic_tls_seal(ciphers.c, secret, &out,
-                          nonce, &rec->payload, &ad, rec->log)
+    if (njt_quic_crypto_seal(secret, &out, nonce, &rec->payload, &ad, rec->log)
         != NJT_OK)
     {
         return NJT_ERROR;
@@ -581,32 +611,6 @@ njt_quic_compat_create_record(njt_quic_compat_record_t *rec, njt_str_t *res)
     res->len = ad.len + out.len;
 
     return NJT_OK;
-}
-
-
-enum ssl_encryption_level_t
-SSL_quic_read_level(const SSL *ssl)
-{
-    njt_connection_t       *c;
-    njt_quic_connection_t  *qc;
-
-    c = njt_ssl_get_connection(ssl);
-    qc = njt_quic_get_connection(c);
-
-    return qc->compat->read_level;
-}
-
-
-enum ssl_encryption_level_t
-SSL_quic_write_level(const SSL *ssl)
-{
-    njt_connection_t       *c;
-    njt_quic_connection_t  *qc;
-
-    c = njt_ssl_get_connection(ssl);
-    qc = njt_quic_get_connection(c);
-
-    return qc->compat->write_level;
 }
 
 
