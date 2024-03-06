@@ -198,12 +198,12 @@ static njt_int_t njt_http_api_module_register_request_output(njt_http_request_t 
 static api_module_handler
 njt_http_api_module_find_handler(njt_str_t *module_key){
     njt_int_t rc;
-    njt_http_api_module_handler_t *api_module_handler;
+    njt_http_api_module_handler_t *module_handler;
 
     if (njt_http_api_module_handler_hashmap) {
-        rc = njt_lvlhsh_map_get(njt_http_api_module_handler_hashmap, module_key, (intptr_t *)&api_module_handler);
-        if (rc == NJT_OK && api_module_handler->callbacks.handler) {
-            return api_module_handler->callbacks.handler;
+        rc = njt_lvlhsh_map_get(njt_http_api_module_handler_hashmap, module_key, (intptr_t *)&module_handler);
+        if (rc == NJT_OK && module_handler->callbacks.handler) {
+            return module_handler->callbacks.handler;
         }
     }
 
@@ -283,42 +283,42 @@ njt_int_t njt_http_api_module_reg_handler(njt_http_api_reg_info_t *reg_info){
         return NJT_ERROR;
     }
 
-    njt_http_api_module_handler_t *api_module_handler, *old_handler;
+    njt_http_api_module_handler_t *module_handler, *old_handler;
     if (njt_http_api_module_handler_hashmap == NULL) {
         njt_http_api_module_handler_hashmap = njt_calloc(sizeof(njt_lvlhash_map_t), njt_cycle->log);
         njt_queue_init(&njt_http_api_module_handler_queue);
     }
-    api_module_handler = njt_calloc(sizeof(njt_http_api_module_handler_t), njt_cycle->log);
+    module_handler = njt_calloc(sizeof(njt_http_api_module_handler_t), njt_cycle->log);
 
-    if (api_module_handler == NULL) {
+    if (module_handler == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
             "can't not malloc handler's memory while api module reg handler for key :%V ", reg_info->key);
 
         return NJT_ERROR;
     }
 
-    api_module_handler->callbacks.key = njt_calloc(sizeof(njt_str_t), njt_cycle->log);
-    if (api_module_handler->callbacks.key == NULL) {
+    module_handler->callbacks.key = njt_calloc(sizeof(njt_str_t), njt_cycle->log);
+    if (module_handler->callbacks.key == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
             "can't not malloc handler key's memory while api module reg handler for key :%V ", reg_info->key);
 
         return NJT_ERROR;
     }
-    api_module_handler->callbacks.key->data = (u_char *)njt_calloc(reg_info->key->len, njt_cycle->log);
-    if (api_module_handler->callbacks.key->data == NULL) {
+    module_handler->callbacks.key->data = (u_char *)njt_calloc(reg_info->key->len, njt_cycle->log);
+    if (module_handler->callbacks.key->data == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, 
             "can't not malloc handler key's memory while api module reg handler for key :%V ", reg_info->key);
 
         return NJT_ERROR;
     }
-    njt_memcpy(api_module_handler->callbacks.key->data, reg_info->key->data, reg_info->key->len);
-    api_module_handler->callbacks.key->len = reg_info->key->len;
-    api_module_handler->callbacks.handler = reg_info->handler;
+    njt_memcpy(module_handler->callbacks.key->data, reg_info->key->data, reg_info->key->len);
+    module_handler->callbacks.key->len = reg_info->key->len;
+    module_handler->callbacks.handler = reg_info->handler;
 
-    njt_queue_insert_tail(&njt_http_api_module_handler_queue, &api_module_handler->queue);
-    njt_lvlhsh_map_put(njt_http_api_module_handler_hashmap, api_module_handler->callbacks.key, (intptr_t)api_module_handler, (intptr_t *)&old_handler);
+    njt_queue_insert_tail(&njt_http_api_module_handler_queue, &module_handler->queue);
+    njt_lvlhsh_map_put(njt_http_api_module_handler_hashmap, module_handler->callbacks.key, (intptr_t)module_handler, (intptr_t *)&old_handler);
     // if handler existed with the same key in the hashmap
-    if (old_handler && old_handler != api_module_handler) {
+    if (old_handler && old_handler != module_handler) {
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
             "Key :%V has been registered in api module, please double check", reg_info->key);
         njt_free(old_handler->callbacks.key->data);
