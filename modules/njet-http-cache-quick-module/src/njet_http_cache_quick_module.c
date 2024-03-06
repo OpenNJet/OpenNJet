@@ -1067,8 +1067,13 @@ njt_http_cache_quick_update_download_status_str(njt_http_cache_resouce_metainfo_
         njt_str_set(&tmp_str, "add dyn location ok");
         break;
     case CACHE_QUICK_STATUS_OK:
-        njt_str_set(&tmp_str, "download ok");
-        cache_info->op_status = CACHE_QUICK_OP_STATUS_DONE;
+        if(cache_info->resource_size == cache_info->current_size){
+            njt_str_set(&tmp_str, "download ok");
+            cache_info->op_status = CACHE_QUICK_OP_STATUS_DONE;
+        }else{
+            njt_str_set(&tmp_str, "has error, please check error log file");
+            cache_info->op_status = CACHE_QUICK_OP_STATUS_DONE;
+        }
         break;
     case CACHE_QUICK_STATUS_DOWNLOAD_ING:
         njt_str_set(&tmp_str, "downloading");
