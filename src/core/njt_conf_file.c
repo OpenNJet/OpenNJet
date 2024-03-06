@@ -1579,51 +1579,14 @@ njt_conf_read_memory_token(njt_conf_t *cf,njt_str_t data)
     for ( ;; ) {
 
         if (b->pos >= b->last) {
-	    if(start <= b->last) {
-		word = njt_array_push(cf->args);
-                if (word == NULL) {
-                    return NJT_ERROR;
-                }
-                word->data = njt_pnalloc(cf->pool, b->pos - 1 - start + 1);
-                if (word->data == NULL) {
-                    return NJT_ERROR;
-                }
-
-                for (dst = word->data, src = start, len = 0;
-                     src <= b->pos;
-                     len++)
-                {
-                    if (*src == '\\') {
-                        switch (src[1]) {
-                        case '"':
-                        case '\'':
-                        case '\\':
-                            src++;
-                            break;
-
-                        case 't':
-                            *dst++ = '\t';
-                            src += 2;
-                            continue;
-
-                        case 'r':
-                            *dst++ = '\r';
-                            src += 2;
-                            continue;
-
-                        case 'n':
-                            *dst++ = '\n';
-                            src += 2;
-                            continue;
-                        }
-
-                    }
-                    *dst++ = *src++;
-                }
-                *dst = '\0';
-                word->len = len;
-	    }
-	    break;
+	
+            len = b->pos - start;
+            if (len) {
+                njt_memmove(b->start, start, len);
+            }
+            b->pos = b->start + len;
+            b->last = b->pos + 0;
+            start = b->start;
         }
 
         ch = *b->pos++;

@@ -6043,7 +6043,7 @@ njt_http_core_pool_size(njt_conf_t *cf, void *post, void *data)
 
 //a=b && (c=d)
 
-njt_int_t njt_http_core_if_location(njt_conf_t *cf, njt_str_t * command,njt_http_core_loc_conf_t  *pclcf){
+njt_int_t njt_http_core_if_location(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf){
 
 
 	njt_http_script_if_code_t    *if_code,*if_end_code;
@@ -6093,38 +6093,72 @@ njt_int_t njt_http_core_if_location(njt_conf_t *cf, njt_str_t * command,njt_http
 	return NJT_OK;
 }
 
-static njt_int_t njt_http_core_split_if(njt_conf_t *cf,njt_str_t src){
-    /*
-    cf->args->nelts = 0;
-    njt_uint_t  i;
-    njt_str_t  str_tmp = src;
-    u_char *p;
+static njt_int_t njt_http_core_split_if(njt_conf_t *cf,njt_str_t name,njt_str_t oper,njt_str_t value){
+    
+    //njt_snprintf(new_src.data,new_src.len,"if (%V %V \"%V\") {",&name,&oper,&value);
     njt_str_t   *word;
-    for(i=0; i < str_tmp.len; i++){
-      if (str_tmp.data[i] == ' ' || str_tmp.data[i] == '\t' || str_tmp.data[i] == '\r' || str_tmp.data[i] == '\n' ||  str_tmp.data[i] == '=') {
-	if(p == NULL) {
-	   continue;
-	} else {
-	   word = njt_array_push(cf->args);
-	    if (word == NULL) {
-                    return NJT_ERROR;
-            }
-	   word->data = p;
-	   word->len = str_tmp.data + i - p;
-           p = NULL;
-	}
-      } else  if(p == NULL){
-	  p = str_tmp.data + i;
-	}
+    njt_str_t   if_field = njt_string("if");
+     njt_str_t  if_begin = njt_string("(");
+    njt_str_t   if_end = njt_string(")");
+
+    if(name.len == 0 || name.data == NULL) {
+          return NJT_ERROR;
     }
-    if(p != NULL){
-	word = njt_array_push(cf->args);
-	word->data = p;
-	 word->len = str_tmp.data + i - p;
-    }*/
-   njt_conf_read_memory_token(cf,src);	
+
+    cf->args->nelts = 0;
+    word = njt_array_push(cf->args);
+    if(word == NULL) {
+          return NJT_ERROR;
+    }
+
+    word->data = if_field.data;
+    word->len = if_field.len;
+
+
+    word = njt_array_push(cf->args);
+    if(word == NULL) {
+          return NJT_ERROR;
+    }
+    word->data = if_begin.data;
+    word->len = if_begin.len;
+
+
+
+    word = njt_array_push(cf->args);
+    if(word == NULL) {
+          return NJT_ERROR;
+    }
+    word->data = name.data;
+    word->len = name.len;
+
+    if(oper.len != 0 && oper.data != NULL) {
+          word = njt_array_push(cf->args);
+         if(word == NULL) {
+             return NJT_ERROR;
+         }
+          word->data = oper.data;
+          word->len = oper.len;
+    }
+
+     if(value.len != 0 && value.data != NULL) {
+         word = njt_array_push(cf->args);
+         if(word == NULL) {
+             return NJT_ERROR;
+         }
+          word->data = value.data;
+          word->len = value.len;
+    }
+
+    word = njt_array_push(cf->args);
+    if(word == NULL) {
+             return NJT_ERROR;
+    }
+    word->data = if_end.data;
+    word->len = if_end.len;
+   //njt_conf_read_memory_token(cf,src);	
    return NJT_OK;
 }
+
 
 static char *
 njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf){
@@ -6213,7 +6247,7 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
   
 
 
-  njt_int_t  i,num;
+  njt_int_t  i;
   //njt_http_core_loc_conf_t **ploc;
   njt_str_t  new_src,old,name,oper,value;
   njt_int_t rc;
@@ -6235,7 +6269,8 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
 	new_src.data = njt_pcalloc(cf->pool,new_src.len);
 	
 	njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_run_location idx=%d, %s",i,pdata);
-	num = njt_http_core_if_location_get_args(old,&name,&oper,&value);
+	njt_http_core_if_location_get_args(old,&name,&oper,&value);
+    /*
 	if(num <= 1) {
 		njt_snprintf(new_src.data,new_src.len,"if (%V){",&name);
 	} else if(num == 2) {
@@ -6244,9 +6279,10 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
                 } else {
                         njt_snprintf(new_src.data,new_src.len,"if (%V \"%V\"){",&name,&oper);
                 }
-	}
-	njt_http_core_split_if(cf,new_src);
-	rc = njt_http_core_if_location(cf,&new_src,pclcf);
+	}*/
+
+	njt_http_core_split_if(cf,name,oper,value);
+	rc = njt_http_core_if_location(cf,pclcf);
 	if (rc  != NJT_OK) {
 		return NJT_CONF_ERROR;
 	}

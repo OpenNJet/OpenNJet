@@ -468,35 +468,40 @@ void njt_http_upstream_del(njt_http_upstream_srv_conf_t *upstream) {
   njt_str_t full_name,*value,new_src;
   u_char* index;
   njt_uint_t len,i;
+  njt_str_t  location = njt_string("location    {");
   full_name.len = 0;
   full_name.data = NULL;
   njt_memzero(&cf, sizeof(njt_conf_t));
   cf.pool = pool;
   cf.temp_pool = pool;
   cf.log = njt_cycle->log;
+
+
+  //njt_str_set(&src,"~\\");
   if(src.len == 0) {
 	return full_name;
   }
-   new_src.len = src.len + 2;
+   new_src.len = src.len + location.len;
    new_src.data = njt_pcalloc(pool,new_src.len);  //add " {"
 	if (new_src.data == NULL){
 		return full_name;
 	}
-	njt_memcpy(new_src.data,src.data,src.len);
-	new_src.data[new_src.len - 2] = ' ';
-	new_src.data[new_src.len - 1] = '{';
+	//njt_memcpy(new_src.data,src.data,src.len);
+	//new_src.data[new_src.len - 2] = ' ';
+	//new_src.data[new_src.len - 1] = '{';
+	njt_snprintf(new_src.data,new_src.len,"location %V {",&src);
 
   cf.args = njt_array_create(cf.pool, 10, sizeof(njt_str_t));
     if (cf.args == NULL) {
         return full_name;
     }
    njt_conf_read_memory_token(&cf,new_src);
-   if(cf.args->nelts > 0) {
-	cf.args->nelts--;
-   }
+   //if(cf.args->nelts > 0) {
+//	cf.args->nelts--;
+  // }
    len =0;
    value = cf.args->elts;
-    for(i = 0; i < cf.args->nelts; i++){
+    for(i = 1; i < cf.args->nelts; i++){
         len += value[i].len;
     }
     index = njt_pcalloc(pool,len);
@@ -504,7 +509,7 @@ void njt_http_upstream_del(njt_http_upstream_srv_conf_t *upstream) {
         return full_name;
     }
     full_name.data = index;
-    for(i = 0; i < cf.args->nelts; i++){
+    for(i = 1; i < cf.args->nelts; i++){
         njt_memcpy(index,value[i].data,value[i].len);
         index += value[i].len;
         //*index = (u_char)' ';
