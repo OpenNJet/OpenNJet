@@ -305,7 +305,7 @@ static njt_int_t njt_dyn_http_lua_update_locs(dynhttplua_servers_item_locations_
         for (; tq != njt_queue_sentinel(q); tq = njt_queue_next(tq)) {
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
-            if (name->len == clcf->full_name.len && njt_strncmp(name->data, clcf->full_name.data, name->len) == 0) {
+            if (njt_http_location_full_name_cmp(clcf->full_name, *name) == 0) {
                 loc_found = true;
                 ctx->loc_conf = clcf->loc_conf;
                 njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
