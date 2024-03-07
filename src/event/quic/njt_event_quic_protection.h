@@ -27,8 +27,10 @@
 
 #ifdef OPENSSL_IS_BORINGSSL
 #define njt_quic_cipher_t             EVP_AEAD
+#define njt_quic_crypto_ctx_t         EVP_AEAD_CTX
 #else
 #define njt_quic_cipher_t             EVP_CIPHER
+#define njt_quic_crypto_ctx_t         EVP_CIPHER_CTX
 #endif
 
 
@@ -46,9 +48,10 @@ typedef struct {
 
 typedef struct {
     njt_quic_md_t             secret;
-    njt_quic_md_t             key;
     njt_quic_iv_t             iv;
     njt_quic_md_t             hp;
+    njt_quic_crypto_ctx_t    *ctx;
+    EVP_CIPHER_CTX           *hp_ctx;
 } njt_quic_secret_t;
 
 
@@ -96,19 +99,21 @@ njt_int_t njt_quic_keys_set_encryption_secret(njt_log_t *log,
     enum ssl_encryption_level_t level, const SSL_CIPHER *cipher,
     const uint8_t *secret, size_t secret_len);
 njt_uint_t njt_quic_keys_available(njt_quic_keys_t *keys,
-    enum ssl_encryption_level_t level);
+    enum ssl_encryption_level_t level, njt_uint_t is_write);
 void njt_quic_keys_discard(njt_quic_keys_t *keys,
     enum ssl_encryption_level_t level);
 void njt_quic_keys_switch(njt_connection_t *c, njt_quic_keys_t *keys);
-njt_int_t njt_quic_keys_update(njt_connection_t *c, njt_quic_keys_t *keys);
+void njt_quic_keys_update(njt_event_t *ev);
+void njt_quic_keys_cleanup(njt_quic_keys_t *keys);
 njt_int_t njt_quic_encrypt(njt_quic_header_t *pkt, njt_str_t *res);
 njt_int_t njt_quic_decrypt(njt_quic_header_t *pkt, uint64_t *largest_pn);
 void njt_quic_compute_nonce(u_char *nonce, size_t len, uint64_t pn);
-njt_int_t njt_quic_ciphers(njt_uint_t id, njt_quic_ciphers_t *ciphers,
-    enum ssl_encryption_level_t level);
-njt_int_t njt_quic_tls_seal(const njt_quic_cipher_t *cipher,
-    njt_quic_secret_t *s, njt_str_t *out, u_char *nonce, njt_str_t *in,
-    njt_str_t *ad, njt_log_t *log);
+njt_int_t njt_quic_ciphers(njt_uint_t id, njt_quic_ciphers_t *ciphers);
+njt_int_t njt_quic_crypto_init(const njt_quic_cipher_t *cipher,
+    njt_quic_secret_t *s, njt_quic_md_t *key, njt_int_t enc, njt_log_t *log);
+njt_int_t njt_quic_crypto_seal(njt_quic_secret_t *s, njt_str_t *out,
+    u_char *nonce, njt_str_t *in, njt_str_t *ad, njt_log_t *log);
+void njt_quic_crypto_cleanup(njt_quic_secret_t *s);
 njt_int_t njt_quic_hkdf_expand(njt_quic_hkdf_t *hkdf, const EVP_MD *digest,
     njt_log_t *log);
 

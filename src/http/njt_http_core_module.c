@@ -1969,10 +1969,6 @@ njt_http_send_response(njt_http_request_t *r, njt_uint_t status,
         }
     }
 
-    if (r != r->main && val.len == 0) {
-        return njt_http_send_header(r);
-    }
-
     b = njt_calloc_buf(r->pool);
     if (b == NULL) {
         return NJT_HTTP_INTERNAL_SERVER_ERROR;
@@ -1983,6 +1979,7 @@ njt_http_send_response(njt_http_request_t *r, njt_uint_t status,
     b->memory = val.len ? 1 : 0;
     b->last_buf = (r == r->main) ? 1 : 0;
     b->last_in_chain = 1;
+    b->sync = (b->last_buf || b->memory) ? 0 : 1;
 
     out.buf = b;
     out.next = NULL;
@@ -4621,7 +4618,7 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     njt_str_t              *value, size;
     njt_url_t               u;
-    njt_uint_t              n;
+    njt_uint_t              n, i;
     njt_http_listen_opt_t   lsopt;
 
     cscf->listen = 1;
@@ -4835,6 +4832,11 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
         if (njt_strcmp(value[n].data, "http2") == 0) {
 #if (NJT_HTTP_V2)
+            njt_conf_log_error(NJT_LOG_WARN, cf, 0,
+                               "the \"listen ... http2\" directive "
+                               "is deprecated, use "
+                               "the \"http2\" directive instead");
+
             lsopt.http2 = 1;
             continue;
 #else
@@ -4999,6 +5001,16 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #endif
 
     for (n = 0; n < u.naddrs; n++) {
+
+        for (i = 0; i < n; i++) {
+            if (njt_cmp_sockaddr(u.addrs[n].sockaddr, u.addrs[n].socklen,
+                                 u.addrs[i].sockaddr, u.addrs[i].socklen, 1)
+                == NJT_OK)
+            {
+                goto next;
+            }
+        }
+
         lsopt.sockaddr = u.addrs[n].sockaddr;
         lsopt.socklen = u.addrs[n].socklen;
         lsopt.addr_text = u.addrs[n].name;
@@ -5007,6 +5019,9 @@ njt_http_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         if (njt_http_add_listen(cf, cscf, &lsopt) != NJT_OK) {
             return NJT_CONF_ERROR;
         }
+
+    next: 
+        continue;
     }
 
     return NJT_CONF_OK;

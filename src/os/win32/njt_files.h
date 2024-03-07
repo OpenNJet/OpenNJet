@@ -31,7 +31,11 @@ typedef struct {
 
 typedef struct {
     HANDLE                          dir;
-    WIN32_FIND_DATA                 finddata;
+    WIN32_FIND_DATAW                finddata;
+
+    u_char                         *name;
+    size_t                          namelen;
+    size_t                          allocated;
 
     unsigned                        valid_info:1;
     unsigned                        type:1;
@@ -41,7 +45,7 @@ typedef struct {
 
 typedef struct {
     HANDLE                          dir;
-    WIN32_FIND_DATA                 finddata;
+    WIN32_FIND_DATAW                finddata;
 
     unsigned                        ready:1;
     unsigned                        test:1;
@@ -120,7 +124,7 @@ ssize_t njt_write_console(njt_fd_t fd, void *buf, size_t size);
 #define NJT_LINEFEED                CRLF
 
 
-#define njt_delete_file(name)       DeleteFile((const char *) name)
+njt_int_t njt_delete_file(u_char *name);
 #define njt_delete_file_n           "DeleteFile()"
 
 
@@ -175,8 +179,12 @@ void njt_close_file_mapping(njt_file_mapping_t *fm);
 
 u_char *njt_realpath(u_char *path, u_char *resolved);
 #define njt_realpath_n              ""
-#define njt_getcwd(buf, size)       GetCurrentDirectory(size, (char *) buf)
+
+
+size_t ngx_getcwd(u_char *buf, size_t size);
 #define njt_getcwd_n                "GetCurrentDirectory()"
+
+
 #define njt_path_separator(c)       ((c) == '/' || (c) == '\\')
 
 #define NJT_HAVE_MAX_PATH           1
@@ -195,19 +203,19 @@ njt_int_t njt_close_dir(njt_dir_t *dir);
 #define njt_close_dir_n             "FindClose()"
 
 
-#define njt_create_dir(name, access) CreateDirectory((const char *) name, NULL)
+njt_int_t ngx_create_dir(u_char *name, njt_uint_t access);
 #define njt_create_dir_n            "CreateDirectory()"
 
 
-#define njt_delete_dir(name)        RemoveDirectory((const char *) name)
+njt_int_t njt_delete_dir(u_char *name);
 #define njt_delete_dir_n            "RemoveDirectory()"
 
 
 #define njt_dir_access(a)           (a)
 
 
-#define njt_de_name(dir)            ((u_char *) (dir)->finddata.cFileName)
-#define njt_de_namelen(dir)         njt_strlen((dir)->finddata.cFileName)
+#define njt_de_name(dir)            (dir)->name
+#define njt_de_namelen(dir)         (dir)->namelen
 
 njt_int_t njt_de_info(u_char *name, njt_dir_t *dir);
 #define njt_de_info_n               "dummy()"

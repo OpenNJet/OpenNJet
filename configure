@@ -43,7 +43,7 @@ if test -z "$NJT_PLATFORM"; then
 
 else
     echo "building for $NJT_PLATFORM"
-    NJT_SYSTEM=$NJT_PLATFORM
+    NJT_SYSTEM=i386
 fi
 
 . auto/cc/conf
