@@ -13,7 +13,7 @@
 
 #define NJT_QUIC_MAX_ACK_GAP                 2
 
-/* RFC 9002, 6.1.1. Packet Threshold: kPacketThreashold */
+/* RFC 9002, 6.1.1. Packet Threshold: kPacketThreshold */
 #define NJT_QUIC_PKT_THR                     3 /* packets */
 /* RFC 9002, 6.1.2. Time Threshold: kGranularity */
 #define NJT_QUIC_TIME_GRANULARITY            1 /* ms */
@@ -79,7 +79,7 @@ njt_quic_handle_ack_frame(njt_connection_t *c, njt_quic_header_t *pkt,
 
     njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "quic njt_quic_handle_ack_frame level:%d", pkt->level);
-    
+
     ack = &f->u.ack;
 
     /*
@@ -113,7 +113,7 @@ njt_quic_handle_ack_frame(njt_connection_t *c, njt_quic_header_t *pkt,
         ctx->largest_ack = max;
         njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0,
                        "quic updated largest received ack:%uL", max);
-        
+
         /*
          * RFC 9002, 5.1.  Generating RTT Samples
          *
@@ -152,7 +152,7 @@ njt_quic_handle_ack_frame(njt_connection_t *c, njt_quic_header_t *pkt,
                           "quic invalid range:%ui in ack frame", i);
             return NJT_ERROR;
         }
-        
+
         max = min - gap - 2;
 
         if (range > max) {
@@ -160,7 +160,7 @@ njt_quic_handle_ack_frame(njt_connection_t *c, njt_quic_header_t *pkt,
             njt_log_error(NJT_LOG_INFO, c->log, 0,
                           "quic invalid range:%ui in ack frame", i);
             return NJT_ERROR;
-        }        
+        }
 
         min = max - range;
 
@@ -208,9 +208,9 @@ njt_quic_rtt_sample(njt_connection_t *c, njt_quic_ack_frame_t *ack,
             adjusted_rtt -= ack_delay;
         }
 
-        qc->avg_rtt += (adjusted_rtt >> 3) - (qc->avg_rtt >> 3);
         rttvar_sample = njt_abs((njt_msec_int_t) (qc->avg_rtt - adjusted_rtt));
         qc->rttvar += (rttvar_sample >> 2) - (qc->rttvar >> 2);
+        qc->avg_rtt += (adjusted_rtt >> 3) - (qc->avg_rtt >> 3);
     }
 
     njt_log_debug4(NJT_LOG_DEBUG_EVENT, c->log, 0,
@@ -266,16 +266,16 @@ njt_quic_handle_ack_frame_range(njt_connection_t *c, njt_quic_send_ctx_t *ctx,
             }
 
             if (f->pnum == max) {
-                st->max_pn = f->last;
+                st->max_pn = f->send_time;
             }
 
             /* save earliest and latest send times of frames ack'ed */
-            if (st->oldest == NJT_TIMER_INFINITE || f->last < st->oldest) {
-                st->oldest = f->last;
+            if (st->oldest == NJT_TIMER_INFINITE || f->send_time < st->oldest) {
+                st->oldest = f->send_time;
             }
 
-            if (st->newest == NJT_TIMER_INFINITE || f->last > st->newest) {
-                st->newest = f->last;
+            if (st->newest == NJT_TIMER_INFINITE || f->send_time > st->newest) {
+                st->newest = f->send_time;
             }
 
             njt_queue_remove(&f->queue);
@@ -326,11 +326,15 @@ njt_quic_congestion_ack(njt_connection_t *c, njt_quic_frame_t *f)
     qc = njt_quic_get_connection(c);
     cg = &qc->congestion;
 
+    if (f->pnum < qc->rst_pnum) {
+        return;
+    }
+
     blocked = (cg->in_flight >= cg->window) ? 1 : 0;
 
     cg->in_flight -= f->plen;
 
-    timer = f->last - cg->recovery_start;
+    timer = f->send_time - cg->recovery_start;
 
     if ((njt_msec_int_t) timer <= 0) {
         njt_log_debug3(NJT_LOG_DEBUG_EVENT, c->log, 0,
@@ -466,7 +470,7 @@ njt_quic_detect_lost(njt_connection_t *c, njt_quic_ack_stat_t *st)
                 break;
             }
 
-            wait = start->last + thr - now;
+            wait = start->send_time + thr - now;
 
             njt_log_debug4(NJT_LOG_DEBUG_EVENT, c->log, 0,
                            "quic detect_lost pnum:%uL thr:%M wait:%i level:%d",
@@ -478,14 +482,14 @@ njt_quic_detect_lost(njt_connection_t *c, njt_quic_ack_stat_t *st)
                 break;
             }
 
-            if (start->last > qc->first_rtt) {
+            if (start->send_time > qc->first_rtt) {
 
-                if (oldest == NJT_TIMER_INFINITE || start->last < oldest) {
-                    oldest = start->last;
+                if (oldest == NJT_TIMER_INFINITE || start->send_time < oldest) {
+                    oldest = start->send_time;
                 }
 
-                if (newest == NJT_TIMER_INFINITE || start->last > newest) {
-                    newest = start->last;
+                if (newest == NJT_TIMER_INFINITE || start->send_time > newest) {
+                    newest = start->send_time;
                 }
 
                 nlost++;
@@ -594,6 +598,7 @@ njt_quic_resend_frames(njt_connection_t *c, njt_quic_send_ctx_t *ctx)
             break;
 
         case NJT_QUIC_FT_PING:
+        case NJT_QUIC_FT_PATH_CHALLENGE:
         case NJT_QUIC_FT_PATH_RESPONSE:
         case NJT_QUIC_FT_CONNECTION_CLOSE:
             njt_quic_free_frame(c, f);
@@ -667,12 +672,16 @@ njt_quic_congestion_lost(njt_connection_t *c, njt_quic_frame_t *f)
     qc = njt_quic_get_connection(c);
     cg = &qc->congestion;
 
+    if (f->pnum < qc->rst_pnum) {
+        return;
+    }
+
     blocked = (cg->in_flight >= cg->window) ? 1 : 0;
 
     cg->in_flight -= f->plen;
     f->plen = 0;
 
-    timer = f->last - cg->recovery_start;
+    timer = f->send_time - cg->recovery_start;
 
     if ((njt_msec_int_t) timer <= 0) {
         njt_log_debug3(NJT_LOG_DEBUG_EVENT, c->log, 0,
@@ -730,7 +739,8 @@ njt_quic_set_lost_timer(njt_connection_t *c)
         if (ctx->largest_ack != NJT_QUIC_UNSET_PN) {
             q = njt_queue_head(&ctx->sent);
             f = njt_queue_data(q, njt_quic_frame_t, queue);
-            w = (njt_msec_int_t) (f->last + njt_quic_lost_threshold(qc) - now);
+            w = (njt_msec_int_t)
+                            (f->send_time + njt_quic_lost_threshold(qc) - now);
 
             if (f->pnum <= ctx->largest_ack) {
                 if (w < 0 || ctx->largest_ack - f->pnum >= NJT_QUIC_PKT_THR) {
@@ -745,8 +755,8 @@ njt_quic_set_lost_timer(njt_connection_t *c)
 
         q = njt_queue_last(&ctx->sent);
         f = njt_queue_data(q, njt_quic_frame_t, queue);
-        w = (njt_msec_int_t) (f->last + (njt_quic_pto(c, ctx) << qc->pto_count)
-                              - now);
+        w = (njt_msec_int_t)
+                (f->send_time + (njt_quic_pto(c, ctx) << qc->pto_count) - now);
 
         if (w < 0) {
             w = 0;
@@ -825,11 +835,12 @@ void njt_quic_lost_handler(njt_event_t *ev)
 void
 njt_quic_pto_handler(njt_event_t *ev)
 {
-    njt_uint_t              i;
+    njt_uint_t              i, n;
     njt_msec_t              now;
     njt_queue_t            *q;
+    njt_msec_int_t          w;
     njt_connection_t       *c;
-    njt_quic_frame_t       *f, frame;
+    njt_quic_frame_t       *f;
     njt_quic_send_ctx_t    *ctx;
     njt_quic_connection_t  *qc;
 
@@ -849,6 +860,8 @@ njt_quic_pto_handler(njt_event_t *ev)
 
         q = njt_queue_last(&ctx->sent);
         f = njt_queue_data(q, njt_quic_frame_t, queue);
+        w = (njt_msec_int_t)
+                (f->send_time + (njt_quic_pto(c, ctx) << qc->pto_count) - now);
 
         if (f->pnum <= ctx->largest_ack
             && ctx->largest_ack != NJT_QUIC_UNSET_PN)
@@ -856,9 +869,7 @@ njt_quic_pto_handler(njt_event_t *ev)
             continue;
         }
 
-        if ((njt_msec_int_t) (f->last + (njt_quic_pto(c, ctx) << qc->pto_count)
-                              - now) > 0) 
-        {
+        if (w > 0) {
             continue;
         }
 
@@ -866,16 +877,21 @@ njt_quic_pto_handler(njt_event_t *ev)
                        "quic pto %s pto_count:%ui",
                        njt_quic_level_name(ctx->level), qc->pto_count);
 
-        njt_memzero(&frame, sizeof(njt_quic_frame_t));
-        frame.level = ctx->level;
-        frame.type = NJT_QUIC_FT_PING;
+        for (n = 0; n < 2; n++) {
 
-        if (njt_quic_frame_sendto(c, &frame, 0, qc->path) != NJT_OK
-            || njt_quic_frame_sendto(c, &frame, 0, qc->path) != NJT_OK)
-        {
-            njt_quic_close_connection(c, NJT_ERROR);
-            return;
-         }
+            f = njt_quic_alloc_frame(c);
+            if (f == NULL) {
+                goto failed;
+            }
+
+            f->level = ctx->level;
+            f->type = NJT_QUIC_FT_PING;
+            f->ignore_congestion = 1;
+
+            if (njt_quic_frame_sendto(c, f, 0, qc->path) == NJT_ERROR) {
+                goto failed;
+            }
+        }
     }
 
     qc->pto_count++;
@@ -883,6 +899,13 @@ njt_quic_pto_handler(njt_event_t *ev)
     njt_quic_set_lost_timer(c);
 
     njt_quic_connstate_dbg(c);
+
+    return;
+
+failed:
+
+    njt_quic_close_connection(c, NJT_ERROR);
+    return;
 }
 
 
@@ -906,6 +929,10 @@ njt_quic_ack_packet(njt_connection_t *c, njt_quic_header_t *pkt)
                    "quic njt_quic_ack_packet pn:%uL largest %L fr:%uL"
                    " nranges:%ui", pkt->pn, (int64_t) ctx->largest_range,
                    ctx->first_range, ctx->nranges);
+
+    if (!njt_quic_keys_available(qc->keys, ctx->level, 1)) {
+        return NJT_OK;
+    }
 
     prev_pending = ctx->pending_ack;
 

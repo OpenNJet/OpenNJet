@@ -325,10 +325,6 @@ typedef struct {
 #endif
 #endif
 
-#if (NJT_HTTP_V3 || NJT_COMPAT)
-    njt_http_v3_session_t            *v3_session;
-#endif
-
     njt_chain_t                      *busy;
     njt_int_t                         nbusy;
 

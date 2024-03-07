@@ -24,8 +24,6 @@ static int njt_mail_ssl_alpn_select(njt_ssl_conn_t *ssl_conn,
 static void *njt_mail_ssl_create_conf(njt_conf_t *cf);
 static char *njt_mail_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child);
 
-static char *njt_mail_ssl_enable(njt_conf_t *cf, njt_command_t *cmd,
-    void *conf);
 static char *njt_mail_ssl_starttls(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 static char *njt_mail_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd,
@@ -66,23 +64,11 @@ static njt_conf_enum_t  njt_mail_ssl_verify[] = {
 };
 
 
-static njt_conf_deprecated_t  njt_mail_ssl_deprecated = {
-    njt_conf_deprecated, "ssl", "listen ... ssl"
-};
-
-
 static njt_conf_post_t  njt_mail_ssl_conf_command_post =
     { njt_mail_ssl_conf_command_check };
 
 
 static njt_command_t  njt_mail_ssl_commands[] = {
-
-    { njt_string("ssl"),
-      NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_FLAG,
-      njt_mail_ssl_enable,
-      NJT_MAIL_SRV_CONF_OFFSET,
-      offsetof(njt_mail_ssl_conf_t, enable),
-      &njt_mail_ssl_deprecated },
 
     { njt_string("starttls"),
       NJT_MAIL_MAIN_CONF|NJT_MAIL_SRV_CONF|NJT_CONF_TAKE1,
@@ -323,7 +309,6 @@ njt_mail_ssl_create_conf(njt_conf_t *cf)
      *     scf->shm_zone = NULL;
      */
 
-    scf->enable = NJT_CONF_UNSET;
     scf->starttls = NJT_CONF_UNSET_UINT;
     scf->certificates = NJT_CONF_UNSET_PTR;
     scf->certificate_keys = NJT_CONF_UNSET_PTR;
@@ -350,7 +335,6 @@ njt_mail_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
     char                *mode;
     njt_pool_cleanup_t  *cln;
 
-    njt_conf_merge_value(conf->enable, prev->enable, 0);
     njt_conf_merge_uint_value(conf->starttls, prev->starttls,
                          NJT_MAIL_STARTTLS_OFF);
 
@@ -361,8 +345,9 @@ njt_mail_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
                          prev->prefer_server_ciphers, 0);
 
     njt_conf_merge_bitmask_value(conf->protocols, prev->protocols,
-                         (NJT_CONF_BITMASK_SET|NJT_SSL_TLSv1
-                          |NJT_SSL_TLSv1_1|NJT_SSL_TLSv1_2));
+                         (NJT_CONF_BITMASK_SET
+                          |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
+                          |NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3));
 
     njt_conf_merge_uint_value(conf->verify, prev->verify, 0);
     njt_conf_merge_uint_value(conf->verify_depth, prev->verify_depth, 1);
@@ -393,9 +378,6 @@ njt_mail_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
 
     if (conf->listen) {
         mode = "listen ... ssl";
-
-    } else if (conf->enable) {
-        mode = "ssl";
 
     } else if (conf->starttls != NJT_MAIL_STARTTLS_OFF) {
         mode = "starttls";
@@ -546,34 +528,6 @@ njt_mail_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
 
 
 static char *
-njt_mail_ssl_enable(njt_conf_t *cf, njt_command_t *cmd, void *conf)
-{
-    njt_mail_ssl_conf_t  *scf = conf;
-
-    char  *rv;
-
-    rv = njt_conf_set_flag_slot(cf, cmd, conf);
-
-    if (rv != NJT_CONF_OK) {
-        return rv;
-    }
-
-    if (scf->enable && (njt_int_t) scf->starttls > NJT_MAIL_STARTTLS_OFF) {
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "\"starttls\" directive conflicts with \"ssl on\"");
-        return NJT_CONF_ERROR;
-    }
-
-    if (!scf->listen) {
-        scf->file = cf->conf_file->file.name.data;
-        scf->line = cf->conf_file->line;
-    }
-
-    return NJT_CONF_OK;
-}
-
-
-static char *
 njt_mail_ssl_starttls(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
     njt_mail_ssl_conf_t  *scf = conf;
@@ -584,12 +538,6 @@ njt_mail_ssl_starttls(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     if (rv != NJT_CONF_OK) {
         return rv;
-    }
-
-    if (scf->enable == 1 && (njt_int_t) scf->starttls > NJT_MAIL_STARTTLS_OFF) {
-        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                           "\"ssl\" directive conflicts with \"starttls\"");
-        return NJT_CONF_ERROR;
     }
 
     if (!scf->listen) {
@@ -683,7 +631,7 @@ njt_mail_ssl_session_cache(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                 len++;
             }
 
-            if (len == 0) {
+            if (len == 0 || j == value[i].len) {
                 goto invalid;
             }
 

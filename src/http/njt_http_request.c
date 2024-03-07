@@ -319,12 +319,6 @@ njt_http_init_connection(njt_connection_t *c)
     rev->handler = njt_http_wait_request_handler;
     c->write->handler = njt_http_empty_handler;
 
-#if (NJT_HTTP_V2)
-    if (hc->addr_conf->http2) {
-        rev->handler = njt_http_v2_init;
-    }
-#endif
-
 #if (NJT_HTTP_V3)
     if (hc->addr_conf->quic) {
         njt_http_v3_init_stream(c);
@@ -333,16 +327,10 @@ njt_http_init_connection(njt_connection_t *c)
 #endif
 
 #if (NJT_HTTP_SSL)
-    {
-    njt_http_ssl_srv_conf_t  *sscf;
-
-    sscf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_ssl_module);
-
-    if (sscf->enable || hc->addr_conf->ssl) {
+    if (hc->addr_conf->ssl) {
         hc->ssl = 1;
         c->log->action = "SSL handshaking";
         rev->handler = njt_http_ssl_handshake;
-    }
     }
 #endif
 
@@ -384,6 +372,9 @@ njt_http_wait_request_handler(njt_event_t *rev)
     njt_buf_t                 *b;
     njt_connection_t          *c;
     njt_http_connection_t     *hc;
+#if (NJT_HTTP_V2)
+    njt_http_v2_srv_conf_t    *h2scf;
+#endif
     njt_http_core_srv_conf_t  *cscf;
 
     c = rev->data;
@@ -430,6 +421,8 @@ njt_http_wait_request_handler(njt_event_t *rev)
         b->end = b->last + size;
     }
 
+    size = b->end - b->last;
+
     n = c->recv(c, b->last, size);
 
     if (n == NJT_AGAIN) {
@@ -444,12 +437,16 @@ njt_http_wait_request_handler(njt_event_t *rev)
             return;
         }
 
-        /*
-         * We are trying to not hold c->buffer's memory for an idle connection.
-         */
+        if (b->pos == b->last) {
 
-        if (njt_pfree(c->pool, b->start) == NJT_OK) {
-            b->start = NULL;
+            /*
+            * We are trying to not hold c->buffer's memory for an
+            * idle connection.
+            */
+
+            if (njt_pfree(c->pool, b->start) == NJT_OK) {
+                b->start = NULL;
+            }
         }
 
         return;
@@ -489,6 +486,29 @@ njt_http_wait_request_handler(njt_event_t *rev)
             return;
         }
     }
+
+#if (NJT_HTTP_V2)
+
+    h2scf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_v2_module);
+
+    if (!hc->ssl && (h2scf->enable || hc->addr_conf->http2)) {
+
+        size = njt_min(sizeof(NJT_HTTP_V2_PREFACE) - 1,
+                       (size_t) (b->last - b->pos));
+
+        if (njt_memcmp(b->pos, NJT_HTTP_V2_PREFACE, size) == 0) {
+
+            if (size == sizeof(NJT_HTTP_V2_PREFACE) - 1) {
+                njt_http_v2_init(rev);
+                return;
+            }
+
+            njt_post_event(rev, &njt_posted_events);
+            return;
+        }
+    }
+
+#endif
 
     c->log->action = "reading client request line";
 
@@ -815,13 +835,16 @@ njt_http_ssl_handshake_handler(njt_connection_t *c)
 #if (NJT_HTTP_V2                                                              \
      && defined TLSEXT_TYPE_application_layer_protocol_negotiation)
         {
-        unsigned int            len;
-        const unsigned char    *data;
-        njt_http_connection_t  *hc;
+        unsigned int             len;
+        const unsigned char     *data;
+        njt_http_connection_t   *hc;
+        njt_http_v2_srv_conf_t  *h2scf;
 
         hc = c->data;
 
-        if (hc->addr_conf->http2) {
+        h2scf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_v2_module);
+
+        if (h2scf->enable || hc->addr_conf->http2) {
 
             SSL_get0_alpn_selected(c->ssl->connection, &data, &len);
 
@@ -2883,7 +2906,8 @@ njt_http_finalize_connection(njt_http_request_t *r)
         || (clcf->lingering_close == NJT_HTTP_LINGERING_ON
             && (r->lingering_close
                 || r->header_in->pos < r->header_in->last
-                || r->connection->read->ready)))
+                || r->connection->read->ready
+                || r->connection->pipeline)))
     {
         njt_http_set_lingering_close(r->connection);
         return;
@@ -3267,6 +3291,7 @@ njt_http_set_keepalive(njt_http_request_t *r)
 
         c->sent = 0;
         c->destroyed = 0;
+        c->pipeline = 1;
 
         if (rev->timer_set) {
             njt_del_timer(rev);

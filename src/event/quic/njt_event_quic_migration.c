@@ -37,16 +37,28 @@ njt_int_t
 njt_quic_handle_path_challenge_frame(njt_connection_t *c,
     njt_quic_header_t *pkt, njt_quic_path_challenge_frame_t *f)
 {
-    njt_quic_frame_t        frame, *fp;
+    size_t                  min;
+    njt_quic_frame_t       *fp;
     njt_quic_connection_t  *qc;
+
+    if (pkt->level != ssl_encryption_application || pkt->path_challenged) {
+        njt_log_debug0(NJT_LOG_DEBUG_EVENT, c->log, 0,
+                       "quic ignoring PATH_CHALLENGE");
+        return NJT_OK;
+    }
+
+    pkt->path_challenged = 1;
 
     qc = njt_quic_get_connection(c);
 
-    njt_memzero(&frame, sizeof(njt_quic_frame_t));
+    fp = njt_quic_alloc_frame(c);
+    if (fp == NULL) {
+        return NJT_ERROR;
+    }
 
-    frame.level = ssl_encryption_application;
-    frame.type = NJT_QUIC_FT_PATH_RESPONSE;
-    frame.u.path_response = *f;
+    fp->level = ssl_encryption_application;
+    fp->type = NJT_QUIC_FT_PATH_RESPONSE;
+    fp->u.path_response = *f;
 
     /*
      * RFC 9000, 8.2.2.  Path Validation Responses
@@ -58,8 +70,14 @@ njt_quic_handle_path_challenge_frame(njt_connection_t *c,
     /*
      * An endpoint MUST expand datagrams that contain a PATH_RESPONSE frame
      * to at least the smallest allowed maximum datagram size of 1200 bytes.
+     * ...
+     * However, an endpoint MUST NOT expand the datagram containing the
+     * PATH_RESPONSE if the resulting data exceeds the anti-amplification limit.
      */
-    if (njt_quic_frame_sendto(c, &frame, 1200, pkt->path) == NJT_ERROR) {
+
+    min = (njt_quic_path_limit(c, pkt->path, 1200) < 1200) ? 0 : 1200;
+
+    if (njt_quic_frame_sendto(c, fp, min, pkt->path) == NJT_ERROR) {
         return NJT_ERROR;
     }
 
@@ -93,6 +111,7 @@ njt_quic_handle_path_response_frame(njt_connection_t *c,
     njt_uint_t              rst;
     njt_queue_t            *q;
     njt_quic_path_t        *path, *prev;
+    njt_quic_send_ctx_t    *ctx;
     njt_quic_connection_t  *qc;
 
     qc = njt_quic_get_connection(c);
@@ -114,8 +133,8 @@ njt_quic_handle_path_response_frame(njt_connection_t *c,
             continue;
         }
 
-        if (njt_memcmp(path->challenge1, f->data, sizeof(f->data)) == 0
-            || njt_memcmp(path->challenge2, f->data, sizeof(f->data)) == 0)
+        if (njt_memcmp(path->challenge[0], f->data, sizeof(f->data)) == 0
+            || njt_memcmp(path->challenge[1], f->data, sizeof(f->data)) == 0)
         {
             goto valid;
         }
@@ -152,10 +171,16 @@ valid:
 
             path->mtu = prev->mtu;
             path->max_mtu = prev->max_mtu;
+            path->mtu_unvalidated = 0;
         }
     }
 
     if (rst) {
+        /* prevent old path packets contribution to congestion control */
+
+        ctx = njt_quic_get_send_ctx(qc, ssl_encryption_application);
+        qc->rst_pnum = ctx->pnum;
+
         njt_memzero(&qc->congestion, sizeof(njt_quic_congestion_t));
 
         qc->congestion.window = njt_min(10 * qc->tp.max_udp_payload_size,
@@ -163,6 +188,15 @@ valid:
                                            14720));
         qc->congestion.ssthresh = (size_t) -1;
         qc->congestion.recovery_start = njt_current_msec;
+
+        njt_quic_init_rtt(qc);
+    }
+
+    path->validated = 1;
+
+    if (path->mtu_unvalidated) {
+        path->mtu_unvalidated = 0;
+        return njt_quic_validate_path(c, path);
     }
 
     /*
@@ -181,8 +215,6 @@ valid:
                   path->seqnum, &path->addr_text);
 
     njt_quic_path_dbg(c, "is validated", path);
-
-    path->validated = 1;
 
     njt_quic_discover_path_mtu(c, path);
 
@@ -511,17 +543,11 @@ njt_quic_validate_path(njt_connection_t *c, njt_quic_path_t *path)
 
     path->tries = 0;
 
-    if (RAND_bytes(path->challenge1, 8) != 1) {
+    if (RAND_bytes((u_char *) path->challenge, sizeof(path->challenge)) != 1) {
         return NJT_ERROR;
     }
 
-    if (RAND_bytes(path->challenge2, 8) != 1) {
-        return NJT_ERROR;
-    }
-
-    if (njt_quic_send_path_challenge(c, path) != NJT_OK) {
-        return NJT_ERROR;
-    }
+    (void) njt_quic_send_path_challenge(c, path);
 
     ctx = njt_quic_get_send_ctx(qc, ssl_encryption_application);
     pto = njt_max(njt_quic_pto(c, ctx), 1000);
@@ -538,37 +564,48 @@ njt_quic_validate_path(njt_connection_t *c, njt_quic_path_t *path)
 static njt_int_t
 njt_quic_send_path_challenge(njt_connection_t *c, njt_quic_path_t *path)
 {
-    njt_quic_frame_t  frame;
+    size_t             min;
+    njt_uint_t         n;
+    njt_quic_frame_t  *frame;
 
     njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
                    "quic path seq:%uL send path_challenge tries:%ui",
                    path->seqnum, path->tries);
 
-    njt_memzero(&frame, sizeof(njt_quic_frame_t));
+    for (n = 0; n < 2; n++) {
 
-    frame.level = ssl_encryption_application;
-    frame.type = NJT_QUIC_FT_PATH_CHALLENGE;
+        frame = njt_quic_alloc_frame(c);
+        if (frame == NULL) {
+            return NJT_ERROR;
+        }
 
-    njt_memcpy(frame.u.path_challenge.data, path->challenge1, 8);
+        frame->level = ssl_encryption_application;
+        frame->type = NJT_QUIC_FT_PATH_CHALLENGE;
 
-    /*
-     * RFC 9000, 8.2.1.  Initiating Path Validation
-     *
-     * An endpoint MUST expand datagrams that contain a PATH_CHALLENGE frame
-     * to at least the smallest allowed maximum datagram size of 1200 bytes,
-     * unless the anti-amplification limit for the path does not permit
-     * sending a datagram of this size.
-     */
+        njt_memcpy(frame->u.path_challenge.data, path->challenge[n], 8);
+    
+        /*
+        * RFC 9000, 8.2.1.  Initiating Path Validation
+        *
+        * An endpoint MUST expand datagrams that contain a PATH_CHALLENGE frame
+        * to at least the smallest allowed maximum datagram size of 1200 bytes,
+        * unless the anti-amplification limit for the path does not permit
+        * sending a datagram of this size.
+        */
 
-     /* same applies to PATH_RESPONSE frames */
-    if (njt_quic_frame_sendto(c, &frame, 1200, path) != NJT_ERROR) {
-        return NJT_ERROR;
-    }
+        if (path->mtu_unvalidated
+            || njt_quic_path_limit(c, path, 1200) < 1200)
+        {
+            min = 0;
+            path->mtu_unvalidated = 1;
 
-    njt_memcpy(frame.u.path_challenge.data, path->challenge2, 8);
+        } else {
+            min = 1200;
+        }
 
-    if (njt_quic_frame_sendto(c, &frame, 1200, path) != NJT_ERROR) {
-        return NJT_ERROR;
+        if (njt_quic_frame_sendto(c, frame, min, path) == NJT_ERROR) {
+            return NJT_ERROR;
+        }
     }
 
     return NJT_OK;
@@ -812,7 +849,7 @@ njt_quic_expire_path_mtu_delay(njt_connection_t *c, njt_quic_path_t *path)
             return NJT_OK;
         }
 
-        /* rc == NGX_DECLINED */
+        /* rc == NJT_DECLINED */
 
         path->max_mtu = path->mtud;
 
@@ -850,7 +887,7 @@ njt_quic_expire_path_mtu_discovery(njt_connection_t *c, njt_quic_path_t *path)
             return NJT_OK;
         }
 
-        /* rc == NGX_DECLINED */
+        /* rc == NJT_DECLINED */
     }
 
     njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
@@ -868,16 +905,20 @@ njt_quic_expire_path_mtu_discovery(njt_connection_t *c, njt_quic_path_t *path)
 static njt_int_t
 njt_quic_send_path_mtu_probe(njt_connection_t *c, njt_quic_path_t *path)
 {
+    size_t                  mtu;
     njt_int_t               rc;
     njt_uint_t              log_error;
-    njt_quic_frame_t        frame;
+    njt_quic_frame_t       *frame;
     njt_quic_send_ctx_t    *ctx;
     njt_quic_connection_t  *qc;
 
-    njt_memzero(&frame, sizeof(njt_quic_frame_t));
+    frame = njt_quic_alloc_frame(c);
+    if (frame == NULL) {
+        return NJT_ERROR;
+    }
 
-    frame.level = ssl_encryption_application;
-    frame.type = NJT_QUIC_FT_PING;
+    frame->level = ssl_encryption_application;
+    frame->type = NJT_QUIC_FT_PING;
 
     qc = njt_quic_get_connection(c);
     ctx = njt_quic_get_send_ctx(qc, ssl_encryption_application);
@@ -891,7 +932,12 @@ njt_quic_send_path_mtu_probe(njt_connection_t *c, njt_quic_path_t *path)
     log_error = c->log_error;
     c->log_error = NJT_ERROR_IGNORE_EMSGSIZE;
 
-    rc = njt_quic_frame_sendto(c, &frame, path->mtud, path);
+    mtu = path->mtu;
+    path->mtu = path->mtud;
+
+    rc = njt_quic_frame_sendto(c, frame, path->mtud, path);
+
+    path->mtu = mtu;
     c->log_error = log_error;
 
     if (rc == NJT_ERROR) {

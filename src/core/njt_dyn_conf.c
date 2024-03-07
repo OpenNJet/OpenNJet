@@ -142,6 +142,173 @@ njt_conf_cmd_set_args(njt_pool_t *pool, njt_conf_t *cf, njt_conf_cmd_t *ccmd){
 
 
 njt_int_t
+njt_conf_dyn_check_lua_block(njt_str_t *name) {
+    // "lua_load_resty_core" deprecated
+    // "lua_thread_cache_max_entries" njt_conf_set_num_slot,
+    // "lua_max_running_timers"       njt_conf_set_num_slot,
+    // "lua_max_pending_timers"       njt_conf_set_num_slot,
+    // "lua_shared_dict"              njt_http_lua_shared_dict, can parse
+    // "lua_capture_error_log"        njt_http_lua_capture_error_log, can parse
+    // "lua_sa_restart"               njt_conf_set_flag_slot,
+    // "lua_regex_cache_max_entries   njt_http_lua_regex_cache_max_entries, can parse
+    // "lua_regex_match_limit"        njt_http_lua_regex_match_limit, can parse
+    // "lua_package_cpath"            njt_http_lua_package_cpath, can parse
+    // "lua_package_path"             njt_http_lua_package_path, can parse
+    // "lua_code_cache"               njt_http_lua_code_cache, can parse
+    // "lua_need_request_body"        njt_conf_set_flag_slot,
+    // "lua_transform_underscores_in_response_headers"
+    //                                njt_conf_set_flag_slot,
+    // "lua_socket_log_errors"        njt_conf_set_flag_slot,
+    // "init_by_lua_block"
+    if (name->len == 17 && njt_strncmp(name->data, "init_by_lua_block", 17) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "init_by_lua"                   njt_http_lua_init_by_lua, 这个处理一行
+    // "init_by_lua_file"),            njt_http_lua_init_by_lua, 这个处理一行
+    // "init_worker_by_lua_block"
+    if (name->len == 24 && njt_strncmp(name->data, "init_worker_by_lua_block", 24) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "init_worker_by_lua"            njt_http_lua_init_worker_by_lua, 这个处理一行
+    // "init_worker_by_lua_file"       njt_http_lua_init_worker_by_lua, 这个处理一行
+
+    // "exit_worker_by_lua_block"
+    if (name->len == 24 && njt_strncmp(name->data, "exit_worker_by_lua_block", 24) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "exit_worker_by_lua_file"       njt_http_lua_exit_worker_by_lua, 这个处理一行
+
+#if defined(NDK) && NDK
+    /* set_by_lua_block $res { inline Lua code } */
+    // "set_by_lua_block"
+    if (name->len == 16 && njt_strncmp(name->data, "set_by_lua_block", 16) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    /* set_by_lua $res <inline script> [$arg1 [$arg2 [...]]] */
+    // "set_by_lua"                      njt_http_lua_set_by_lua, 这个处理一行
+    /* set_by_lua_file $res rel/or/abs/path/to/script [$arg1 [$arg2 [..]]] */
+    // "set_by_lua_file"                 njt_http_lua_set_by_lua_file, 这个处理一行
+#endif
+
+    /* rewrite_by_lua "<inline script>" */
+    // "rewrite_by_lua"                  njt_http_lua_rewrite_by_lua, 这个处理一行
+    /* rewrite_by_lua_block { <inline script> } */
+    // "rewrite_by_lua_block",
+    if (name->len == 20 && njt_strncmp(name->data, "rewrite_by_lua_block", 20) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    /* access_by_lua "<inline script>" */
+    // "access_by_lua"                   njt_http_lua_access_by_lua, 这个处理一行
+    /* access_by_lua_block { <inline script> } */
+    if (name->len == 19 && njt_strncmp(name->data, "access_by_lua_block", 19) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    /* content_by_lua "<inline script>" */
+    // "content_by_lua")                 njt_http_lua_content_by_lua, 这个处理一行
+    /* content_by_lua_block { <inline script> } */
+    if (name->len == 20 && njt_strncmp(name->data, "content_by_lua_block", 20) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // in stream lua
+    if (name->len == 20 && njt_strncmp(name->data, "preread_by_lua_block", 20) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    /* log_by_lua <inline script> */
+    // "log_by_lua"                       njt_http_lua_log_by_lua, 这个处理一行
+    // "rewrite_by_lua_file"),            njt_http_lua_rewrite_by_lua, 这个处理一行
+    /* log_by_lua_block { <inline script> } */
+    if (name->len == 16 && njt_strncmp(name->data, "log_by_lua_block", 16) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "rewrite_by_lua_no_postpone"        njt_conf_set_flag_slot,
+    // "access_by_lua_file"                njt_http_lua_access_by_lua, 一行
+    // "access_by_lua_no_postpone")        njt_conf_set_flag_slot,
+    /* content_by_lua_file rel/or/abs/path/to/script */
+    // "content_by_lua_file"               njt_http_lua_content_by_lua, 一行
+    // "log_by_lua_file")                  njt_http_lua_log_by_lua, 一行
+    /* header_filter_by_lua <inline script> */
+    // "header_filter_by_lua"              njt_http_lua_header_filter_by_lua, 一行
+    /* header_filter_by_lua_block { <inline script> } */
+    if (name->len == 26 && njt_strncmp(name->data, "header_filter_by_lua_block", 26) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "header_filter_by_lua_file          njt_http_lua_header_filter_by_lua, 一行
+    // "body_filter_by_lua"                njt_http_lua_body_filter_by_lua, 一行
+    // "body_filter_by_lua_file"),         njt_http_lua_body_filter_by_lua, 一行
+    /* body_filter_by_lua_block { <inline script> } */
+    if (name->len == 24 && njt_strncmp(name->data, "body_filter_by_lua_block", 24) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "balancer_by_lua_block"
+    if (name->len == 21 && njt_strncmp(name->data, "balancer_by_lua_block", 21) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "balancer_by_lua_file"                njt_http_lua_balancer_by_lua, one line
+    // "lua_socket_keepalive_timeout"        njt_conf_set_msec_slot,
+    // "lua_socket_connect_timeout"          njt_conf_set_msec_slot,
+    // "balancer_by_lua_file"                njt_http_lua_balancer_by_lua, one line
+    // "lua_socket_keepalive_timeout"        njt_conf_set_msec_slot
+    // "lua_socket_connect_timeout"          njt_conf_set_msec_slot
+    // "lua_socket_send_timeout"             njt_conf_set_msec_slot,
+    // "lua_socket_send_lowat"               njt_conf_set_size_slot,
+    // "lua_socket_buffer_size"              njt_conf_set_size_slot,
+    // "lua_socket_pool_size")               njt_conf_set_num_slot,
+    // "lua_socket_read_timeout"             njt_conf_set_msec_slot,
+    // "lua_http10_buffering"                njt_conf_set_flag_slot,
+    // "lua_check_client_abort"              njt_conf_set_flag_slot,
+    // "lua_use_default_type"                njt_conf_set_flag_slot,
+
+#if (NJT_HTTP_SSL)
+
+    // "lua_ssl_protocols"                   njt_conf_set_bitmask_slot,
+    // "lua_ssl_ciphers"                     njt_conf_set_str_slot,
+    // "ssl_client_hello_by_lua_block"
+    if (name->len == 29 && njt_strncmp(name->data, "ssl_client_hello_by_lua_block", 29) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "ssl_client_hello_by_lua_file"        njt_http_lua_ssl_client_hello_by_lua, one line
+    // "ssl_certificate_by_lua_block"
+    if (name->len == 25 && njt_strncmp(name->data, "ssl_certificate_lua_block", 25) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "ssl_certificate_by_lua_file"         njt_http_lua_ssl_cert_by_lua, one line
+    // "ssl_session_store_by_lua_file"       njt_http_lua_ssl_sess_store_by_lua, one line
+    // "ssl_session_fetch_by_lua_block",
+    if (name->len == 30 && njt_strncmp(name->data, "ssl_session_fetch_by_lua_block", 30) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "ssl_session_fetch_by_lua_file"       njt_http_lua_ssl_sess_fetch_by_lua, one line
+    // "lua_ssl_verify_depth"                njt_conf_set_num_slot
+    // "lua_ssl_trusted_certificate"         njt_conf_set_str_slot,
+    // "lua_ssl_crl"                         njt_conf_set_str_slot,
+
+#if (njet_version >= 1019004)
+    // "lua_ssl_conf_command"                njt_conf_set_keyval_slot,
+#endif
+#endif  /* NJT_HTTP_SSL */
+
+    // "lua_malloc_trim"                     njt_http_lua_malloc_trim,
+    // "lua_worker_thread_vm_pool_size"      njt_conf_set_num_slot,
+    // njt_null_command
+    return NJT_ERROR;
+}
+
+njt_int_t
 njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
 {
     // njt_uint_t         i;
@@ -167,12 +334,13 @@ njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
     }
 
     name = cf->args->elts;
-    if (name->len == 20 && njt_strncmp(name->data, "content_by_lua_block", 20) == NJT_OK) {
-        return NJT_OK;
-    }
-    if (name->len == 19 && njt_strncmp(name->data, "access_by_lua_block", 19) == NJT_OK) {
-        return NJT_OK;
-    }
+
+    // if (name->len == 20 && njt_strncmp(name->data, "content_by_lua_block", 20) == NJT_OK) {
+    //     return NJT_OK;
+    // }
+    // if (name->len == 19 && njt_strncmp(name->data, "access_by_lua_block", 19) == NJT_OK) {
+    //     return NJT_OK;
+    // }
     found = 0;
 
     if (rc == NJT_OK) {
@@ -293,6 +461,13 @@ njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
         njt_memcpy(bpos, new_block, sizeof(njt_conf_element_t));
         bpos->parent = cur;
         njt_conf_cur_ptr = bpos;
+
+
+        // for lua block
+        if (njt_conf_dyn_check_lua_block(name) == NJT_OK) {
+            njt_conf_cur_ptr = cur;
+            // return NJT_OK;
+        }
         
         return NJT_OK;
     }
@@ -471,6 +646,9 @@ void njt_conf_get_json_length(njt_conf_element_t *root, size_t *length, njt_uint
     }
 
     if (root->blocks == NULL) {
+        if (root->cmds == NULL && root->block_name == NULL) {
+            *length += 1;
+        }
         return;
     }
 
@@ -2759,6 +2937,9 @@ void njt_conf_dyn_loc_get_json_length(njt_conf_element_t *root, size_t *length, 
     }
 
     if (root->blocks == NULL) {
+        if (root->cmds == NULL && root->block_name == NULL) {
+            *length += 1;
+        }
         return;
     }
 
@@ -3093,6 +3274,9 @@ void njt_conf_dyn_loc_get_pub_json_length(njt_conf_element_t *root, size_t *leng
     }
 
     if (root->blocks == NULL) {
+        if (root->cmds == NULL && root->block_name == NULL) {
+            *length += 1;
+        }
         return;
     }
 

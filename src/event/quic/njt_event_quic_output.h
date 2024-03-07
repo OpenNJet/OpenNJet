@@ -35,5 +35,7 @@ njt_int_t njt_quic_send_ack_range(njt_connection_t *c,
 
 njt_int_t njt_quic_frame_sendto(njt_connection_t *c, njt_quic_frame_t *frame,
     size_t min, njt_quic_path_t *path);
+size_t njt_quic_path_limit(njt_connection_t *c, njt_quic_path_t *path,
+    size_t size);
 
 #endif /* _NJT_EVENT_QUIC_OUTPUT_H_INCLUDED_ */

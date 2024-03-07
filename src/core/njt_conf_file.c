@@ -269,14 +269,13 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
             goto done;
         }
 
-        // add by dyn_conf
+#if (NJT_HELPER_GO_DYNCONF) // by lcm
         if (njt_conf_pool_ptr != NULL) { 
             if (njt_conf_element_handler(njt_conf_pool_ptr, cf, rc) != NJT_OK) {
                 printf("error occured \n");
             }
         }
-        // end of add
-
+#endif
 
         if (rc == NJT_CONF_BLOCK_DONE) {
 
@@ -574,8 +573,8 @@ njt_conf_read_token(njt_conf_t *cf)
                     }
 
                     njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                  "unexpected end of file, "
-                                  "expecting \";\" or \"}\"");
+                                       "unexpected end of file, "
+                                       "expecting \";\" or \"}\"");
                     return NJT_ERROR;
                 }
 

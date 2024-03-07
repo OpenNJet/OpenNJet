@@ -805,6 +805,7 @@ njt_worker_thread(void *data)
                 njt_set_shutdown_timer(cycle);
                 njt_close_listening_sockets(cycle);
                 njt_close_idle_connections(cycle);
+                njt_event_process_posted(cycle, &njt_posted_events);
             }
         }
 

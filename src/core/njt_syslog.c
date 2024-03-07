@@ -19,6 +19,7 @@
 static char *njt_syslog_parse_args(njt_conf_t *cf, njt_syslog_peer_t *peer);
 static njt_int_t njt_syslog_init_peer(njt_syslog_peer_t *peer);
 static void njt_syslog_cleanup(void *data);
+static u_char *njt_syslog_log_error(njt_log_t *log, u_char *buf, size_t len);
 
 
 static char  *facilities[] = {
@@ -66,6 +67,9 @@ njt_syslog_process_conf(njt_conf_t *cf, njt_syslog_peer_t *peer)
     if (peer->tag.data == NULL) {
         njt_str_set(&peer->tag, "njet");
     }
+
+    peer->hostname = &cf->cycle->hostname;
+    peer->logp = &cf->cycle->new_log;
 
     peer->conn.fd = (njt_socket_t) -1;
 
@@ -244,7 +248,7 @@ njt_syslog_add_header(njt_syslog_peer_t *peer, u_char *buf)
     }
 
     return njt_sprintf(buf, "<%ui>%V %V %V: ", pri, &njt_cached_syslog_time,
-                       &njt_cycle->hostname, &peer->tag);
+                       peer->hostname, &peer->tag);
 }
 
 
@@ -287,14 +291,18 @@ njt_syslog_send(njt_syslog_peer_t *peer, u_char *buf, size_t len)
 {
     ssize_t  n;
 
+    if (peer->log.handler == NULL) {
+        peer->log = *peer->logp;
+        peer->log.handler = njt_syslog_log_error;
+        peer->log.data = peer;
+        peer->log.action = "logging to syslog";
+    }
+
     if (peer->conn.fd == (njt_socket_t) -1) {
         if (njt_syslog_init_peer(peer) != NJT_OK) {
             return NJT_ERROR;
         }
     }
-
-    /* log syslog socket events with valid log */
-    peer->conn.log = njt_cycle->log;
 
     if (njt_send) {
         n = njt_send(&peer->conn, buf, len);
@@ -307,7 +315,7 @@ njt_syslog_send(njt_syslog_peer_t *peer, u_char *buf, size_t len)
     if (n == NJT_ERROR) {
 
         if (njt_close_socket(peer->conn.fd) == -1) {
-            njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_socket_errno,
+            njt_log_error(NJT_LOG_ALERT, &peer->log, njt_socket_errno,
                           njt_close_socket_n " failed");
         }
 
@@ -325,24 +333,25 @@ njt_syslog_init_peer(njt_syslog_peer_t *peer)
 
     fd = njt_socket(peer->server.sockaddr->sa_family, SOCK_DGRAM, 0);
     if (fd == (njt_socket_t) -1) {
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_socket_errno,
+        njt_log_error(NJT_LOG_ALERT, &peer->log, njt_socket_errno,
                       njt_socket_n " failed");
         return NJT_ERROR;
     }
 
     if (njt_nonblocking(fd) == -1) {
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_socket_errno,
+        njt_log_error(NJT_LOG_ALERT, &peer->log, njt_socket_errno,
                       njt_nonblocking_n " failed");
         goto failed;
     }
 
     if (connect(fd, peer->server.sockaddr, peer->server.socklen) == -1) {
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_socket_errno,
+        njt_log_error(NJT_LOG_ALERT, &peer->log, njt_socket_errno,
                       "connect() failed");
         goto failed;
     }
 
     peer->conn.fd = fd;
+    peer->conn.log = &peer->log;
 
     /* UDP sockets are always ready to write */
     peer->conn.write->ready = 1;
@@ -352,7 +361,7 @@ njt_syslog_init_peer(njt_syslog_peer_t *peer)
 failed:
 
     if (njt_close_socket(fd) == -1) {
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_socket_errno,
+        njt_log_error(NJT_LOG_ALERT, &peer->log, njt_socket_errno,
                       njt_close_socket_n " failed");
     }
 
@@ -373,7 +382,30 @@ njt_syslog_cleanup(void *data)
     }
 
     if (njt_close_socket(peer->conn.fd) == -1) {
-        njt_log_error(NJT_LOG_ALERT, njt_cycle->log, njt_socket_errno,
+        njt_log_error(NJT_LOG_ALERT, &peer->log, njt_socket_errno,
                       njt_close_socket_n " failed");
     }
+}
+
+
+static u_char *
+njt_syslog_log_error(njt_log_t *log, u_char *buf, size_t len)
+{
+    u_char             *p;
+    njt_syslog_peer_t  *peer;
+
+    p = buf;
+
+    if (log->action) {
+        p = njt_snprintf(buf, len, " while %s", log->action);
+        len -= p - buf;
+    }
+
+    peer = log->data;
+
+    if (peer) {
+        p = njt_snprintf(p, len, ", server: %V", &peer->server.name);
+    }
+
+    return p;
 }
