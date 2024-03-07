@@ -1293,7 +1293,7 @@ njt_http_create_locations_tree(njt_conf_t *cf, njt_queue_t *locations,
     node->auto_redirect = (u_char) ((lq->exact && lq->exact->auto_redirect)
                                     || (lq->inclusive && lq->inclusive->auto_redirect));
 
-    node->len = (u_char) len;
+    node->len = (u_short) len;
     njt_memcpy(node->name, &lq->name->data[prefix], len);
 
     njt_queue_split(locations, q, &tail);
@@ -1421,8 +1421,9 @@ njt_http_add_listen(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
 static njt_int_t
 njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
                        njt_http_conf_port_t *port, njt_http_listen_opt_t *lsopt) {
-    njt_uint_t i, default_server, proxy_protocol;
-    njt_http_conf_addr_t *addr;
+    njt_uint_t             i, default_server, proxy_protocol,
+                           protocols, protocols_prev;
+    njt_http_conf_addr_t  *addr;
 #if (NJT_HTTP_SSL)
     njt_uint_t ssl;
 #endif
@@ -1430,7 +1431,6 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     njt_uint_t http2;
 #endif
 #if (NJT_HTTP_V3)
-    njt_uint_t http3;
     njt_uint_t quic;
 #endif
 
@@ -1481,15 +1481,20 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         default_server = addr[i].opt.default_server;
 
         proxy_protocol = lsopt->proxy_protocol || addr[i].opt.proxy_protocol;
+        protocols = lsopt->proxy_protocol;
+        protocols_prev = addr[i].opt.proxy_protocol;
 
 #if (NJT_HTTP_SSL)
         ssl = lsopt->ssl || addr[i].opt.ssl;
+        protocols |= lsopt->ssl << 1;
+        protocols_prev |= addr[i].opt.ssl << 1;
 #endif
 #if (NJT_HTTP_V2)
         http2 = lsopt->http2 || addr[i].opt.http2;
+        protocols |= lsopt->http2 << 2;
+        protocols_prev |= addr[i].opt.http2 << 2;
 #endif
 #if (NJT_HTTP_V3)
-        http3 = lsopt->http3 || addr[i].opt.http3;
         quic = lsopt->quic || addr[i].opt.quic;
 #endif
 
@@ -1519,6 +1524,58 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
             addr[i].default_server = cscf;
         }
 
+        /* check for conflicting protocol options */
+
+        if ((protocols | protocols_prev) != protocols_prev) {
+
+            /* options added */
+
+            if ((addr[i].opt.set && !lsopt->set)
+                || addr[i].protocols_changed
+                || (protocols | protocols_prev) != protocols)
+            {
+                njt_conf_log_error(NJT_LOG_WARN, cf, 0,
+                                   "protocol options redefined for %V",
+                                   &addr[i].opt.addr_text);
+            }
+
+            addr[i].protocols = protocols_prev;
+            addr[i].protocols_set = 1;
+            addr[i].protocols_changed = 1;
+
+        } else if ((protocols_prev | protocols) != protocols) {
+
+            /* options removed */
+
+            if (lsopt->set
+                || (addr[i].protocols_set && protocols != addr[i].protocols))
+            {
+                njt_conf_log_error(NJT_LOG_WARN, cf, 0,
+                                   "protocol options redefined for %V",
+                                   &addr[i].opt.addr_text);
+            }
+
+            addr[i].protocols = protocols;
+            addr[i].protocols_set = 1;
+            addr[i].protocols_changed = 1;
+
+        } else {
+
+            /* the same options */
+
+            if ((lsopt->set && addr[i].protocols_changed)
+                || (addr[i].protocols_set && protocols != addr[i].protocols))
+            {
+                njt_conf_log_error(NJT_LOG_WARN, cf, 0,
+                                   "protocol options redefined for %V",
+                                   &addr[i].opt.addr_text);
+            }
+
+            addr[i].protocols = protocols;
+            addr[i].protocols_set = 1;
+        }
+
+
         addr[i].opt.default_server = default_server;
         addr[i].opt.proxy_protocol = proxy_protocol;
 #if (NJT_HTTP_SSL)
@@ -1528,7 +1585,6 @@ njt_http_add_addresses(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
         addr[i].opt.http2 = http2;
 #endif
 #if (NJT_HTTP_V3)
-        addr[i].opt.http3 = http3;
         addr[i].opt.quic = quic;
 #endif
 
@@ -1584,6 +1640,9 @@ njt_http_add_address(njt_conf_t *cf, njt_http_core_srv_conf_t *cscf,
     }
 
     addr->opt = *lsopt;
+    addr->protocols = 0;
+    addr->protocols_set = 0;
+    addr->protocols_changed = 0;
     addr->hash.buckets = NULL;
     addr->hash.size = 0;
     addr->wc_head = NULL;
@@ -2073,7 +2132,6 @@ njt_http_add_addrs(njt_conf_t *cf, njt_http_port_t *hport,
         addrs[i].conf.http2 = addr[i].opt.http2;
 #endif
 #if (NJT_HTTP_V3)
-        addrs[i].conf.http3 = addr[i].opt.http3;
         addrs[i].conf.quic = addr[i].opt.quic;
 #endif
         addrs[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;
@@ -2142,7 +2200,6 @@ njt_http_add_addrs6(njt_conf_t *cf, njt_http_port_t *hport,
         addrs6[i].conf.http2 = addr[i].opt.http2;
 #endif
 #if (NJT_HTTP_V3)
-        addrs6[i].conf.http3 = addr[i].opt.http3;
         addrs6[i].conf.quic = addr[i].opt.quic;
 #endif
         addrs6[i].conf.proxy_protocol = addr[i].opt.proxy_protocol;

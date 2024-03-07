@@ -108,7 +108,11 @@
 #endif
 
 #define NJT_MODULE_SIGNATURE_17  "0"
+#if (NJT_QUIC || NJT_COMPAT)
+#define NJT_MODULE_SIGNATURE_18  "1"
+#else
 #define NJT_MODULE_SIGNATURE_18  "0"
+#endif
 
 #if (NJT_HAVE_OPENAT)
 #define NJT_MODULE_SIGNATURE_19  "1"

@@ -886,8 +886,8 @@ njt_quic_log_frame(njt_log_t *log, njt_quic_frame_t *f, njt_uint_t tx)
         break;
     }
 
-    njt_log_debug4(NJT_LOG_DEBUG_EVENT, log, 0, "quic frame %s %s %*s",
-                   tx ? "tx" : "rx", njt_quic_level_name(f->level),
+    njt_log_debug5(NJT_LOG_DEBUG_EVENT, log, 0, "quic frame %s %s:%uL %*s",
+                   tx ? "tx" : "rx", njt_quic_level_name(f->level), f->pnum,
                    p - buf, buf);
 }
 

@@ -16,20 +16,20 @@
 
 
 typedef struct {
-    njt_str_t                        name;
-    njt_str_t                        value;
+    njt_str_t                     name;
+    njt_str_t                     value;
 } njt_http_v3_field_t;
 
 
 typedef struct {
-    njt_http_v3_field_t             **elts;
-    njt_uint_t                        nelts;
-    njt_uint_t                        base;
-    size_t                            size;
-    size_t                            capacity;
-    uint64_t                          insert_count;
-    uint64_t                          ack_insert_count;
-    njt_event_t                       send_insert_count;
+    njt_http_v3_field_t         **elts;
+    njt_uint_t                    nelts;
+    njt_uint_t                    base;
+    size_t                        size;
+    size_t                        capacity;
+    uint64_t                      insert_count;
+    uint64_t                      ack_insert_count;
+    njt_event_t                   send_insert_count;
 } njt_http_v3_dynamic_table_t;
 
 
@@ -56,4 +56,4 @@ njt_int_t njt_http_v3_set_param(njt_connection_t *c, uint64_t id,
     uint64_t value);
 
 
-#endif /* _NJT_HTTP_V#_TABLE_H_INCLUDED_ */
+#endif /* _NJT_HTTP_V3_TABLE_H_INCLUDED_ */

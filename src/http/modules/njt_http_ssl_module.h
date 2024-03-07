@@ -16,8 +16,6 @@
 
 #define  NJT_HAVE_SET_ALPN  1
 typedef struct {
-    njt_flag_t                      enable;
-
     njt_ssl_t                       ssl;
 
     njt_flag_t                      prefer_server_ciphers;
@@ -68,9 +66,6 @@ typedef struct {
     njt_flag_t                      stapling_verify;
     njt_str_t                       stapling_file;
     njt_str_t                       stapling_responder;
-
-    u_char                         *file;
-    njt_uint_t                      line;
 
 #if (NJT_HAVE_NTLS)
     njt_flag_t                      ntls;
