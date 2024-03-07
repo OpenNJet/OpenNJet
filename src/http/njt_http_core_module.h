@@ -331,6 +331,14 @@ typedef struct njt_http_location_destroy_s {
 #endif
 //end
 
+//add by clb, used for ctrl api module
+typedef struct {
+    njt_str_t       module_key;
+    uint32_t        api_limit_except;
+    void            **limit_except_loc_conf;
+} njt_http_api_limit_except_t;
+//end add by clb
+
 struct njt_http_core_loc_conf_s {
     njt_str_t     name;          /* location name */
     njt_str_t     escaped_name;
@@ -370,6 +378,10 @@ struct njt_http_core_loc_conf_s {
 
     /* pointer to the modules' loc_conf */
     void        **loc_conf;
+
+    //add by clb, used for ctrl api module
+    njt_array_t  *api_limit_excepts;
+    //end add by clb
 
     uint32_t      limit_except;
     void        **limit_except_loc_conf;
