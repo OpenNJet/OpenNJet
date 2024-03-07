@@ -4,9 +4,9 @@ info:
   description: njet-api
   version: 1.1.0
 servers:
-  - url: '/'
+  - url: '/api'
 paths:
-  /dyn_srv:
+  /v1/dyn_srv:
     put:
       tags:
         - dyn_srv
