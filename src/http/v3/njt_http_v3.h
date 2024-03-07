@@ -79,11 +79,12 @@
 #define NJT_HTTP_V3_ERR_DECODER_STREAM_ERROR       0x202
 
 
-#define njt_http_quic_get_connection(c)                                       \
-    ((njt_http_connection_t *) ((c)->quic ? (c)->quic->parent->data           \
+#define njt_http_v3_get_session(c)                                            \
+    ((njt_http_v3_session_t *) ((c)->quic ? (c)->quic->parent->data           \
                                           : (c)->data))
 
-#define njt_http_v3_get_session(c)  njt_http_quic_get_connection(c)->v3_session
+#define njt_http_quic_get_connection(c)                                       \
+    (njt_http_v3_get_session(c)->http_connection)
 
 #define njt_http_v3_get_module_loc_conf(c, module)                            \
     njt_http_get_module_loc_conf(njt_http_quic_get_connection(c)->conf_ctx,   \
@@ -121,6 +122,8 @@ struct njt_http_v3_parse_s {
 
 
 struct njt_http_v3_session_s {
+    njt_http_connection_t        *http_connection;
+
     njt_http_v3_dynamic_table_t   table;
 
     njt_event_t                   keepalive;

@@ -232,8 +232,8 @@ njt_iocp_del_connection(njt_connection_t *c, njt_uint_t flags)
 }
 
 
-static
-njt_int_t njt_iocp_process_events(njt_cycle_t *cycle, njt_msec_t timer,
+static njt_int_t
+njt_iocp_process_events(njt_cycle_t *cycle, njt_msec_t timer,
     njt_uint_t flags)
 {
     int                rc;
@@ -357,7 +357,7 @@ njt_iocp_create_conf(njt_cycle_t *cycle)
 
     cf = njt_palloc(cycle->pool, sizeof(njt_iocp_conf_t));
     if (cf == NULL) {
-        return NJT_CONF_ERROR;
+        return NULL;
     }
 
     cf->threads = NJT_CONF_UNSET;

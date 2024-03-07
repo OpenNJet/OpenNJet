@@ -435,6 +435,7 @@ njt_event_init_conf(njt_cycle_t *cycle, void *conf)
 {
 #if (NJT_HAVE_REUSEPORT)
     njt_uint_t        i;
+    njt_core_conf_t  *ccf;
     njt_listening_t  *ls;
 #endif
 
@@ -461,7 +462,9 @@ njt_event_init_conf(njt_cycle_t *cycle, void *conf)
 
 #if (NJT_HAVE_REUSEPORT)
 
-    if (!njt_test_config) {
+    ccf = (njt_core_conf_t *) njt_get_conf(cycle->conf_ctx, njt_core_module);
+
+    if (!njt_test_config && ccf->master) {
 
         ls = cycle->listening.elts;
         for (i = 0; i < cycle->listening.nelts; i++) {
@@ -828,7 +831,9 @@ njt_event_process_init(njt_cycle_t *cycle)
         rev->deferred_accept = ls[i].deferred_accept;
 #endif
 
-        if (!(njt_event_flags & NJT_USE_IOCP_EVENT)) {
+        if (!(njt_event_flags & NJT_USE_IOCP_EVENT)
+            && cycle->old_cycle)
+        {
             if (ls[i].previous) {
 
                 /*

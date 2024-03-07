@@ -48,6 +48,9 @@ struct njt_queue_s {
     (h)->prev = x
 
 
+#define njt_queue_insert_before   njt_queue_insert_tail
+
+
 #define njt_queue_head(h)                                                     \
     (h)->next
 
