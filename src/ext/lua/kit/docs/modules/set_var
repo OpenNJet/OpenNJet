@@ -4,7 +4,7 @@ set var tools
 
 OVERVIEW
 --------
-This collection of tools is designed to make it easier to set Nginx variables
+This collection of tools is designed to make it easier to set NJet variables
 using a common interface.  It works by plugging into and extending the features
 of the internal rewrite module, and operations performed by this module are
 therefore done at the rewrite phase of handling.

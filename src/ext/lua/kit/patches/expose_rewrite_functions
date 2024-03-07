@@ -186,7 +186,7 @@ diff -rNp a/src/http/modules/njt_http_rewrite_module.h b/src/http/modules/njt_ht
 + /*
 +  * Copyright (C) Marcus Clyne
 +  *
-+  * Note : this file has been created by the Nginx Development Kit using
++  * Note : this file has been created by the NJet Development Kit using
 +  * some code from njt_http_rewrite_module.c
 +  */
 + 

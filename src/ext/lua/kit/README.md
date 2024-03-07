@@ -1,7 +1,7 @@
 Name
 ====
 
-Nginx Development Kit (NDK)
+NJet Development Kit (NDK)
 
 Table of Contents
 =================
@@ -27,20 +27,20 @@ Table of Contents
 Synopsis
 ========
 
-The NDK is an Nginx module that is designed to extend the core functionality of the
-excellent Nginx webserver in a way that can be used as a basis of other Nginx modules.
+The NDK is an NJet module that is designed to extend the core functionality of the
+excellent NJet webserver in a way that can be used as a basis of other NJet modules.
 
 It has functions and macros to deal with generic tasks that don't currently have
 generic code as part of the core distribution.  The NDK itself adds few features
 that are seen from a user's point of view - it's just designed to help reduce the
-code that Nginx module developers need to write.
+code that NJet module developers need to write.
 
-Nginx module developers wishing to use any of the features in the NDK should specify
+NJet module developers wishing to use any of the features in the NDK should specify
 that the NDK is a dependency of their module, and that users will need to compile
 it as well when they compile their own modules.  They will also need to declare in
 their own modules which features of the NDK they wish to use (explained below).
 
-If you are not an Nginx module developer, then the only useful part of this project
+If you are not an NJet module developer, then the only useful part of this project
 will be the 'usage for users' section below.
 
 [Back to TOC](#table-of-contents)
@@ -86,12 +86,12 @@ just the case of adding an extra line to a config file and re-running the build 
 Usage for users
 ===============
 
-If another Nginx module you wish to use specifies that the NDK is a dependency, you
+If another NJet module you wish to use specifies that the NDK is a dependency, you
 will need to do the following :
 
 1. download the source (https://github.com/simpl/njt_devel_kit)
 2. unpack the source (tar -xzf $name)
-3. compile Nginx with the following extra option `--add-module=/path/to/njt_devel_kit`.
+3. compile NJet with the following extra option `--add-module=/path/to/njt_devel_kit`.
 
 e.g.
 
@@ -105,11 +105,11 @@ e.g.
 Building as a dynamic module
 ----------------------------
 
-Starting from NGINX 1.9.11, you can also compile this module as a dynamic module, by using the `--add-dynamic-module=PATH` option instead of `--add-module=PATH` on the
-`./configure` command line above. And then you can explicitly load the module in your `nginx.conf` via the [load_module](http://nginx.org/en/docs/njt_core_module.html#load_module)
+Starting from NJET 1.9.11, you can also compile this module as a dynamic module, by using the `--add-dynamic-module=PATH` option instead of `--add-module=PATH` on the
+`./configure` command line above. And then you can explicitly load the module in your `njet.conf` via the [load_module](http://njet.org/en/docs/njt_core_module.html#load_module)
 directive, for example,
 
-```nginx
+```njet
 load_module /path/to/modules/ndk_http_module.so;
 load_module /path/to/another/module.so;
 ```
@@ -152,7 +152,7 @@ CFLAGS="$CFLAGS -DNDK_[module_name]"
 ```
 
 is now deprecated. It will still work, but results in unnecessary lines being
-displayed when compiling Nginx.
+displayed when compiling NJet.
 
 [Back to TOC](#table-of-contents)
 
@@ -175,12 +175,12 @@ Modules using NDK
 
 The following 3rd-party modules make use of NDK.
 
-* [njt_http_lua_module](https://github.com/openresty/lua-nginx-module#readme)
-* [njt_http_set_misc_module](https://github.com/openresty/set-misc-nginx-module#readme)
-* [njt_http_encrypted_session_module](https://github.com/openresty/encrypted-session-nginx-module#readme)
-* [njt_http_form_input_module](https://github.com/calio/form-input-nginx-module#readme)
-* [njt_http_iconv_module](https://github.com/calio/iconv-nginx-module#readme)
-* [njt_http_array_var_module](https://github.com/openresty/array-var-nginx-module#readme)
+* [njt_http_lua_module](https://github.com/openresty/lua-njet-module#readme)
+* [njt_http_set_misc_module](https://github.com/openresty/set-misc-njet-module#readme)
+* [njt_http_encrypted_session_module](https://github.com/openresty/encrypted-session-njet-module#readme)
+* [njt_http_form_input_module](https://github.com/calio/form-input-njet-module#readme)
+* [njt_http_iconv_module](https://github.com/calio/iconv-njet-module#readme)
+* [njt_http_array_var_module](https://github.com/openresty/array-var-njet-module#readme)
 
 If you would like to add your module to this list, please let us know.
 
@@ -231,7 +231,7 @@ ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Contributing / Feedback
 =======================
 
-If you are an Nginx module developer, and have developed some functions that are
+If you are an NJet module developer, and have developed some functions that are
 generic in nature (or would be easily adapted to be so), then please send them to
 me at the address below, and I'll addmclyne to the kit.
 
