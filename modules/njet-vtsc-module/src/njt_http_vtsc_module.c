@@ -1311,7 +1311,7 @@ static njt_int_t njt_dynvts_update_locs(njt_array_t *locs, njt_queue_t *q, njt_r
         for (; tq!= njt_queue_sentinel(q); tq = njt_queue_next(tq)) {
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
-            if (njt_http_location_full_name_cmp(clcf->full_name, *name) == 0) {
+            if (clcf != NULL && njt_http_location_full_name_cmp(clcf->full_name, *name) == 0) {
                 if(rpc_result){
                     njt_rpc_result_set_conf_path(rpc_result, &parent_conf_path);
                     end = njt_snprintf(data_buf,sizeof(data_buf) - 1, ".locations[%V]", &clcf->full_name);

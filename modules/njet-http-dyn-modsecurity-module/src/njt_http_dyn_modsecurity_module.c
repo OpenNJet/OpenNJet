@@ -97,7 +97,7 @@ static njt_int_t njt_dyn_modsecurity_update_locs(dynmodsecurity_servers_item_loc
         for (; tq != njt_queue_sentinel(q); tq = njt_queue_next(tq)) {
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
-            if (njt_http_location_full_name_cmp(clcf->full_name, *name) == 0) {
+            if (clcf != NULL && njt_http_location_full_name_cmp(clcf->full_name, *name) == 0) {
                 loc_found = true;
                 ctx->loc_conf = clcf->loc_conf;
                 njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
