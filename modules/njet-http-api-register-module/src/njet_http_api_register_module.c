@@ -99,10 +99,14 @@ njt_module_t njt_http_api_register_module = {
 
 static char *
 njt_dyn_module_api(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
-    
-	njt_http_api_module_register_loc_conf_t   *clcf = conf;
+    // njt_http_core_loc_conf_t   *clcf;
+	njt_http_api_module_register_loc_conf_t   *arcf = conf;
 
-    clcf->http_api_module_register_enable = 1;
+    arcf->http_api_module_register_enable = 1;
+
+    // clcf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
+    // clcf->handler = njt_http_api_module_register_handler;
+
     return NJT_CONF_OK;
 }
 
