@@ -3196,7 +3196,7 @@ njt_http_upstream_api_handler(njt_http_request_t *r)
 
 	if_send = 1;
 	uclcf = njt_http_get_module_loc_conf(r, njt_http_upstream_api_module);
-	if(uclcf == NULL  || uclcf->enable == NJT_CONF_UNSET_UINT || uclcf->enable == 0){
+	if(uclcf == NULL){
 		return NJT_DECLINED;
 	}
 	if (uclcf->write == NJT_CONF_UNSET_UINT || uclcf->write == 0) {
