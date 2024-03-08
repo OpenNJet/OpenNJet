@@ -198,6 +198,9 @@ njt_process_events_and_timers(njt_cycle_t *cycle)
     njt_uint_t  flags;
     njt_msec_t  timer, delta;
 
+    njt_queue_t     *q; // openresty patch
+    njt_event_t     *ev; // openresty patch
+
     if (njt_timer_resolution) {
         timer = NJT_TIMER_INFINITE;
         flags = 0;
@@ -216,6 +219,15 @@ njt_process_events_and_timers(njt_cycle_t *cycle)
 
 #endif
     }
+
+    // openrestry patch
+    if (!njt_queue_empty(&njt_posted_delayed_events)) {
+        njt_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
+                       "posted delayed event queue not empty"
+                       " making poll timeout 0");
+        timer = 0;
+    }
+    // openresty patch end
 
     if (njt_use_accept_mutex) {
         if (njt_accept_disabled > 0) {
@@ -262,6 +274,38 @@ njt_process_events_and_timers(njt_cycle_t *cycle)
     njt_event_expire_timers();
 
     njt_event_process_posted(cycle, &njt_posted_events);
+
+    // openresty patch
+    while (!njt_queue_empty(&njt_posted_delayed_events)) {
+        q = njt_queue_head(&njt_posted_delayed_events);
+
+        ev = njt_queue_data(q, njt_event_t, queue);
+        if (ev->delayed) {
+            /* start of newly inserted nodes */
+            for (/* void */;
+                 q != njt_queue_sentinel(&njt_posted_delayed_events);
+                 q = njt_queue_next(q))
+            {
+                ev = njt_queue_data(q, njt_event_t, queue);
+                ev->delayed = 0;
+
+                njt_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
+                               "skipping delayed posted event %p,"
+                               " till next iteration", ev);
+            }
+
+            break;
+        }
+
+        njt_log_debug1(NJT_LOG_DEBUG_EVENT, cycle->log, 0,
+                       "delayed posted event %p", ev);
+
+        njt_delete_posted_event(ev);
+
+        ev->handler(ev);
+    }
+    // openresty patch end
+
 }
 
 
@@ -669,6 +713,7 @@ njt_event_process_init(njt_cycle_t *cycle)
     njt_queue_init(&njt_posted_accept_events);
     njt_queue_init(&njt_posted_next_events);
     njt_queue_init(&njt_posted_events);
+    njt_queue_init(&njt_posted_delayed_events); // openresty patch
 
     if (njt_event_timer_init(cycle->log) == NJT_ERROR) {
         return NJT_ERROR;
@@ -804,6 +849,20 @@ njt_event_process_init(njt_cycle_t *cycle)
 
 #if (NJT_HAVE_REUSEPORT)
         if (ls[i].reuseport && ls[i].worker != njt_worker) {
+            // openresty patch
+            njt_log_debug2(NJT_LOG_DEBUG_CORE, cycle->log, 0,
+                           "closing unused fd:%d listening on %V",
+                           ls[i].fd, &ls[i].addr_text);
+
+            if (njt_close_socket(ls[i].fd) == -1) {
+                njt_log_error(NJT_LOG_EMERG, cycle->log, njt_socket_errno,
+                              njt_close_socket_n " %V failed",
+                              &ls[i].addr_text);
+            }
+
+            ls[i].fd = (njt_socket_t) -1;
+            // openresty patch end
+
             continue;
         }
 #endif

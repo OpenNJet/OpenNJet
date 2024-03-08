@@ -375,6 +375,13 @@ struct njt_http_upstream_s {
     njt_array_t                     *caches;
 #endif
 
+    // openresty patch
+#define HAVE_NJT_UPSTREAM_TIMEOUT_FIELDS  1
+    njt_msec_t                       connect_timeout;
+    njt_msec_t                       send_timeout;
+    njt_msec_t                       read_timeout;
+    // openresty patch end
+
     njt_http_upstream_headers_in_t   headers_in;
 
     njt_http_upstream_resolved_t    *resolved;

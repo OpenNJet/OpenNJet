@@ -14,6 +14,7 @@
 njt_queue_t  njt_posted_accept_events;
 njt_queue_t  njt_posted_next_events;
 njt_queue_t  njt_posted_events;
+njt_queue_t  njt_posted_delayed_events; // openresty patch
 
 
 void

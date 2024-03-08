@@ -411,10 +411,27 @@ njt_single_process_cycle(njt_cycle_t *cycle)
 
     for (;; ) {
         // njt_log_debug0(NJT_LOG_DEBUG_EVENT, cycle->log, 0, "worker cycle");
+        // openresty patch
+        if (njt_exiting) {
+            if (njt_event_no_timers_left() == NJT_OK) {
+                njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exiting");
+
+                for (i = 0; cycle->modules[i]; i++) {
+                    if (cycle->modules[i]->exit_process) {
+                        cycle->modules[i]->exit_process(cycle);
+                    }
+                }
+
+                njt_master_process_exit(cycle);
+            }
+        }
+        // openresty patch end
 
         njt_process_events_and_timers(cycle);
 
-        if (njt_terminate || njt_quit) {
+        // if (njt_terminate || njt_quit) { // openresty patch
+        if (njt_terminate) {  // openresty patch
+            njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exiting"); // openresty patch
 
             for (i = 0; cycle->modules[i]; i++) {
                 if (cycle->modules[i]->exit_process) {
@@ -424,6 +441,24 @@ njt_single_process_cycle(njt_cycle_t *cycle)
 
             njt_master_process_exit(cycle);
         }
+
+        // openresty patch
+        if (njt_quit) {
+            njt_quit = 0;
+            njt_log_error(NJT_LOG_NOTICE, cycle->log, 0,
+                          "gracefully shutting down");
+            njt_setproctitle("process is shutting down");
+
+            if (!njt_exiting) {
+                njt_exiting = 1;
+                njt_set_shutdown_timer(cycle);
+                njt_close_listening_sockets(cycle);
+                njt_close_idle_connections(cycle);
+            }
+        }
+        // openresty patch end
+
+
 
         if (njt_reconfigure) {
             njt_reconfigure = 0;
@@ -1498,6 +1533,13 @@ njt_master_process_exit(njt_cycle_t *cycle)
     njt_exit_cycle.files_n = njt_cycle->files_n;
     njt_cycle = &njt_exit_cycle;
 
+    // openresty patch
+    if (saved_init_cycle_pool != NULL && saved_init_cycle_pool != cycle->pool) {
+        njt_destroy_pool(saved_init_cycle_pool);
+        saved_init_cycle_pool = NULL;
+    }
+    // openresty patch end
+
     njt_destroy_pool(cycle->pool);
 
     exit(0);
@@ -1979,6 +2021,9 @@ njt_worker_process_exit(njt_cycle_t *cycle)
             if (c[i].fd != -1
                 && c[i].read
                 && !c[i].read->accept
+#if (HAVE_SOCKET_CLOEXEC_PATCH) // openresty patch
+                && !c[i].read->skip_socket_leak_check
+#endif // openresty patch end
                 && !c[i].read->channel
                 && !c[i].read->resolver) {
                 njt_log_error(NJT_LOG_ALERT, cycle->log, 0,
@@ -2250,7 +2295,8 @@ njt_cache_manager_process_cycle(njt_cycle_t *cycle, void *data)
 
         if (njt_terminate || njt_quit) {
             njt_log_error(NJT_LOG_NOTICE, cycle->log, 0, "exiting");
-            exit(0);
+            // exit(0); openresty patch
+            njt_worker_process_exit(cycle); // openresty patch
         }
 
         if (njt_reopen) {

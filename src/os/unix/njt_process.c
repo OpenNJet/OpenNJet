@@ -379,6 +379,17 @@ njt_signal_handler(int signo, siginfo_t *siginfo, void *ucontext)
         case njt_signal_value(NJT_RECONFIGURE_SIGNAL):
             njt_reconfigure = 1;
             action = ", reconfiguring";
+            // openresty patch
+            if (njt_process == NJT_PROCESS_SINGLE) {
+                njt_terminate = 1;
+                action = ", exiting";
+
+            } else {
+                njt_reconfigure = 1;
+                action = ", reconfiguring";
+            }
+            // openresty patch
+
             break;
 
         case njt_signal_value(NJT_REOPEN_SIGNAL):

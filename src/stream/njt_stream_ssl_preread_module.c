@@ -189,7 +189,8 @@ njt_stream_ssl_preread_handler(njt_stream_session_t *s)
         }
 
         if (rc != NJT_AGAIN) {
-            return rc;
+            // return rc; openresty patch
+            return rc == NJT_OK ? NJT_DECLINED : rc; // openresty patch
         }
 
         p += len;

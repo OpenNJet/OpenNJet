@@ -227,11 +227,20 @@ njt_resolver_create(njt_conf_t *cf, njt_str_t *names, njt_uint_t n)
             continue;
         }
 
-#if (NJT_HAVE_INET6)
+// #if (NJT_HAVE_INET6) openresy patch
         if (njt_strncmp(names[i].data, "ipv4=", 5) == 0) {
 
             if (njt_strcmp(&names[i].data[5], "on") == 0) {
+#if (NJT_HAVE_INET6) // openresy patch
                 r->ipv4 = 1;
+                // openresty patch
+#else
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "no ipv6 support but \"%V\" in resolver",
+                                   &names[i]);
+                return NULL;
+#endif
+                // openresty patch end
 
             } else if (njt_strcmp(&names[i].data[5], "off") == 0) {
                 r->ipv4 = 0;
@@ -251,8 +260,9 @@ njt_resolver_create(njt_conf_t *cf, njt_str_t *names, njt_uint_t n)
                 r->ipv6 = 1;
 
             } else if (njt_strcmp(&names[i].data[5], "off") == 0) {
+#if (NJT_HAVE_INET6) // openresy patch
                 r->ipv6 = 0;
-
+#endif // openresty patch
             } else {
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid parameter: %V", &names[i]);
@@ -261,7 +271,7 @@ njt_resolver_create(njt_conf_t *cf, njt_str_t *names, njt_uint_t n)
 
             continue;
         }
-#endif
+// #endif openresty
 
         njt_memzero(&u, sizeof(njt_url_t));
 
@@ -4552,7 +4562,16 @@ njt_tcp_connect(njt_resolver_connection_t *rec)
     njt_event_t       *rev, *wev;
     njt_connection_t  *c;
 
+// openresty patch
+#if (NJT_HAVE_SOCKET_CLOEXEC)
+    s = njt_socket(rec->sockaddr->sa_family, SOCK_STREAM | SOCK_CLOEXEC, 0);
+
+#else
     s = njt_socket(rec->sockaddr->sa_family, SOCK_STREAM, 0);
+#endif
+// openresty patch end
+    s = njt_socket(rec->sockaddr->sa_family, SOCK_STREAM, 0); // openresty patch
+
 
     njt_log_debug1(NJT_LOG_DEBUG_EVENT, &rec->log, 0, "TCP socket %d", s);
 

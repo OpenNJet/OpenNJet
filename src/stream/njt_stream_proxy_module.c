@@ -411,10 +411,24 @@ njt_stream_proxy_handler(njt_stream_session_t *s)
     njt_stream_proxy_srv_conf_t      *pscf;
     njt_stream_upstream_srv_conf_t   *uscf, **uscfp;
     njt_stream_upstream_main_conf_t  *umcf;
+    njt_stream_proxy_ctx_t           *pctx; // openresty patch
 
     c = s->connection;
 
     pscf = njt_stream_get_module_srv_conf(s, njt_stream_proxy_module);
+
+    // openresty patch
+    pctx = njt_palloc(c->pool, sizeof(njt_stream_proxy_ctx_t));
+    if (pctx == NULL) {
+        njt_stream_proxy_finalize(s, NJT_STREAM_INTERNAL_SERVER_ERROR);
+        return;
+    }
+
+    pctx->connect_timeout = pscf->connect_timeout;
+    pctx->timeout = pscf->timeout;
+
+    njt_stream_set_ctx(s, pctx, njt_stream_proxy_module);
+    // openresty patch end
 
     njt_log_debug0(NJT_LOG_DEBUG_STREAM, c->log, 0,
                    "proxy connection handler");
@@ -714,6 +728,7 @@ njt_stream_proxy_connect(njt_stream_session_t *s)
     njt_connection_t             *c, *pc;
     njt_stream_upstream_t        *u;
     njt_stream_proxy_srv_conf_t  *pscf;
+    njt_stream_proxy_ctx_t       *ctx; // openresty patch
 #if (NJT_STREAM_PROTOCOL_V2)
     njt_flag_t                     flag;
     njt_stream_variable_value_t  *value;
@@ -734,6 +749,8 @@ njt_stream_proxy_connect(njt_stream_session_t *s)
     c->log->action = "connecting to upstream";
 
     pscf = njt_stream_get_module_srv_conf(s, njt_stream_proxy_module);
+
+    ctx = njt_stream_get_module_ctx(s, njt_stream_proxy_module); // openresty patch
 
     u = s->upstream;
 
@@ -770,6 +787,15 @@ njt_stream_proxy_connect(njt_stream_session_t *s)
         return;
     }
 
+    // openresy patch
+    if (rc >= NJT_STREAM_SPECIAL_RESPONSE) {
+        njt_stream_proxy_finalize(s, rc);
+        return;
+    }
+    // openresy patch end
+
+
+
     u->state->peer = u->peer.name;
 
     if (rc == NJT_BUSY) {
@@ -801,7 +827,8 @@ njt_stream_proxy_connect(njt_stream_session_t *s)
     pc->read->handler = njt_stream_proxy_connect_handler;
     pc->write->handler = njt_stream_proxy_connect_handler;
 
-    njt_add_timer(pc->write, pscf->connect_timeout);
+    // njt_add_timer(pc->write, pscf->connect_timeout); openresty patch
+    njt_add_timer(pc->write, ctx->connect_timeout); // openresty patch
 }
 
 
@@ -971,12 +998,23 @@ njt_stream_proxy_init_upstream(njt_stream_session_t *s)
 static njt_int_t
 njt_stream_proxy_send_proxy_protocol(njt_stream_session_t *s)
 {
-    u_char                       *p;
-    ssize_t                       n, size;
-    njt_connection_t             *c, *pc;
-    njt_stream_upstream_t        *u;
-    njt_stream_proxy_srv_conf_t  *pscf;
-    u_char                        buf[NJT_PROXY_PROTOCOL_MAX_HEADER];
+    // openresty patch
+    // u_char                       *p;
+    // ssize_t                       n, size;
+    // njt_connection_t             *c, *pc;
+    // njt_stream_upstream_t        *u;
+    // njt_stream_proxy_srv_conf_t  *pscf;
+    // u_char                        buf[NJT_PROXY_PROTOCOL_MAX_HEADER];
+    u_char                  *p;
+    u_char                   buf[NJT_PROXY_PROTOCOL_MAX_HEADER];
+    ssize_t                  n, size;
+    njt_connection_t        *c, *pc;
+    njt_stream_upstream_t   *u;
+    njt_stream_proxy_ctx_t  *ctx;
+
+    ctx = njt_stream_get_module_ctx(s, njt_stream_proxy_module);
+    // openresty patch end
+
 
     c = s->connection;
 
@@ -1003,9 +1041,12 @@ njt_stream_proxy_send_proxy_protocol(njt_stream_session_t *s)
             return NJT_ERROR;
         }
 
-        pscf = njt_stream_get_module_srv_conf(s, njt_stream_proxy_module);
+        // openresty patch
+        // pscf = njt_stream_get_module_srv_conf(s, njt_stream_proxy_module);
 
-        njt_add_timer(pc->write, pscf->timeout);
+        // njt_add_timer(pc->write, pscf->timeout);
+        njt_add_timer(pc->write, ctx->timeout);
+        // openresty patch end
 
         pc->write->handler = njt_stream_proxy_connect_handler;
 
@@ -1080,6 +1121,10 @@ njt_stream_proxy_ssl_init_connection(njt_stream_session_t *s)
     njt_connection_t             *pc;
     njt_stream_upstream_t        *u;
     njt_stream_proxy_srv_conf_t  *pscf;
+    njt_stream_proxy_ctx_t       *ctx; // openresy patch
+
+    ctx = njt_stream_get_module_ctx(s, njt_stream_proxy_module); // openresty patch
+
 
     u = s->upstream;
 
@@ -1151,7 +1196,8 @@ njt_stream_proxy_ssl_init_connection(njt_stream_session_t *s)
     if (rc == NJT_AGAIN) {
 
         if (!pc->write->timer_set) {
-            njt_add_timer(pc->write, pscf->connect_timeout);
+            // njt_add_timer(pc->write, pscf->connect_timeout); openresty patch
+            njt_add_timer(pc->write, ctx->connect_timeout); // openresty patch
         }
 
         pc->ssl->handler = njt_stream_proxy_ssl_handshake;
@@ -1532,6 +1578,7 @@ njt_stream_proxy_process_connection(njt_event_t *ev, njt_uint_t from_upstream)
     njt_stream_session_t         *s;
     njt_stream_upstream_t        *u;
     njt_stream_proxy_srv_conf_t  *pscf;
+    njt_stream_proxy_ctx_t       *ctx; // openresty patch
 
     c = ev->data;
     s = c->data;
@@ -1542,6 +1589,8 @@ njt_stream_proxy_process_connection(njt_event_t *ev, njt_uint_t from_upstream)
         njt_stream_proxy_finalize(s, NJT_STREAM_OK);
         return;
     }
+
+    ctx = njt_stream_get_module_ctx(s, njt_stream_proxy_module); // openresty patch
 
     c = s->connection;
     pc = u->peer.connection;
@@ -1562,7 +1611,8 @@ njt_stream_proxy_process_connection(njt_event_t *ev, njt_uint_t from_upstream)
                 }
 
                 if (u->connected && !c->read->delayed && !pc->read->delayed) {
-                    njt_add_timer(c->write, pscf->timeout);
+                    // njt_add_timer(c->write, pscf->timeout); openresty patch
+                    njt_add_timer(c->write, ctx->timeout); // openresty patch
                 }
 
                 return;
@@ -1724,6 +1774,9 @@ njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
     njt_log_handler_pt            handler;
     njt_stream_upstream_t        *u;
     njt_stream_proxy_srv_conf_t  *pscf;
+    njt_stream_proxy_ctx_t       *ctx; // openresty patch
+
+    ctx = njt_stream_get_module_ctx(s, njt_stream_proxy_module); // openresty patch
 
     u = s->upstream;
 
@@ -1928,7 +1981,8 @@ njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
         }
 
         if (!c->read->delayed && !pc->read->delayed) {
-            njt_add_timer(c->write, pscf->timeout);
+            // njt_add_timer(c->write, pscf->timeout); openresty patch
+            njt_add_timer(c->write, ctx->timeout); // openresty patch
 
         } else if (c->write->timer_set) {
             njt_del_timer(c->write);
@@ -2909,3 +2963,16 @@ njt_stream_proxy_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #endif
 }
 #endif
+
+// openresty patch
+njt_uint_t
+njt_stream_proxy_get_next_upstream_tries(njt_stream_session_t *s)
+{
+    njt_stream_proxy_srv_conf_t      *pscf;
+
+    pscf = njt_stream_get_module_srv_conf(s, njt_stream_proxy_module);
+
+    return pscf->next_upstream_tries;
+}
+
+// openresty patch end

@@ -48,6 +48,17 @@ int njt_blocking(njt_socket_t s);
 
 #endif
 
+#if (NJT_HAVE_FD_CLOEXEC) // openresty patch
+
+#define njt_cloexec(s)      fcntl(s, F_SETFD, FD_CLOEXEC)
+#define njt_cloexec_n       "fcntl(FD_CLOEXEC)"
+
+/* at least FD_CLOEXEC is required to ensure connection fd is closed
+ * after execve */
+#define HAVE_SOCKET_CLOEXEC_PATCH  1
+
+#endif // openresty patch end   
+
 int njt_tcp_nopush(njt_socket_t s);
 int njt_tcp_push(njt_socket_t s);
 

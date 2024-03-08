@@ -841,6 +841,12 @@ old_shm_zone_done:
     //end
     if (njt_process == NJT_PROCESS_MASTER || njt_is_init_cycle(old_cycle)) {
 
+        // openresty patch
+        if (njt_is_init_cycle(old_cycle)) {
+            saved_init_cycle_pool = NULL;
+        }
+        // openresty patch end
+
         njt_destroy_pool(old_cycle->pool);
         cycle->old_cycle = NULL;
 
