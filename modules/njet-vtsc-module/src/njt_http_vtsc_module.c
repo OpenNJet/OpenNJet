@@ -1613,11 +1613,11 @@ static njt_int_t njt_dynvts_update(njt_pool_t *pool, dyn_vts_t *api_data, njt_rp
         for (i = 0; i < api_data->servers->nelts; ++i) {
             dsi = get_dyn_vts_servers_item(api_data->servers, i);
             if (dsi == NULL || !dsi->is_listens_set || !dsi->is_serverNames_set 
-                    || !dsi->is_locations_set || dsi->listens->nelts < 1 
-                    || dsi->serverNames->nelts < 1 || dsi->locations->nelts < 1) {
+                    || dsi->listens->nelts < 1 
+                    || dsi->serverNames->nelts < 1) {
                 // listens or server_names is empty
                 end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-                    " server parameters error, listens or serverNames or locations is empty,at position %d", i);
+                    " server parameters error, listens or serverNames is empty,at position %d", i);
                 rpc_data_str.len = end - data_buf;
                 njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                 continue;
