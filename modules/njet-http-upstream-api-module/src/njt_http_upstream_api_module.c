@@ -3199,6 +3199,7 @@ njt_http_upstream_api_handler(njt_http_request_t *r)
 	if(uclcf == NULL){
 		return NJT_DECLINED;
 	}
+	uclcf->write = 1;
 	if (uclcf->write == NJT_CONF_UNSET_UINT || uclcf->write == 0) {
 		if (r->method == NJT_HTTP_POST || r->method == NJT_HTTP_DELETE
 				|| r->method == NJT_HTTP_PATCH) {
