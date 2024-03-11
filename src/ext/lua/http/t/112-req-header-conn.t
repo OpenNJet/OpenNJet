@@ -21,7 +21,7 @@ __DATA__
 --- config
     location /req-header {
         rewrite_by_lua '
-            ngx.req.set_header("Connection", nil);
+            njt.req.set_header("Connection", nil);
         ';
 
         echo "connection: $http_connection";
@@ -30,12 +30,12 @@ __DATA__
 GET /req-header
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: conn type: %d\n", $r->headers_in->connection_type)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: conn type: %d\n", $r->headers_in->connection_type)
 }
 
@@ -54,7 +54,7 @@ connection:
 --- config
     location /req-header {
         rewrite_by_lua '
-            ngx.req.set_header("Connection", "CLOSE");
+            njt.req.set_header("Connection", "CLOSE");
         ';
 
         echo "connection: $http_connection";
@@ -63,12 +63,12 @@ connection:
 GET /req-header
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: conn type: %d\n", $r->headers_in->connection_type)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: conn type: %d\n", $r->headers_in->connection_type)
 }
 
@@ -87,7 +87,7 @@ connection: CLOSE
 --- config
     location /req-header {
         rewrite_by_lua '
-            ngx.req.set_header("Connection", "keep-alive");
+            njt.req.set_header("Connection", "keep-alive");
         ';
 
         echo "connection: $http_connection";
@@ -96,12 +96,12 @@ connection: CLOSE
 GET /req-header
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: conn type: %d\n", $r->headers_in->connection_type)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: conn type: %d\n", $r->headers_in->connection_type)
 }
 
@@ -120,7 +120,7 @@ connection: keep-alive
 --- config
     location /req-header {
         rewrite_by_lua '
-            ngx.req.set_header("Connection", "bad");
+            njt.req.set_header("Connection", "bad");
         ';
 
         echo "connection: $http_connection";
@@ -129,12 +129,12 @@ connection: keep-alive
 GET /req-header
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: conn type: %d\n", $r->headers_in->connection_type)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: conn type: %d\n", $r->headers_in->connection_type)
 }
 

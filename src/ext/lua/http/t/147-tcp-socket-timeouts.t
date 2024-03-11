@@ -42,14 +42,14 @@ __DATA__
     server_tokens off;
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeouts(150, 150, 150)  -- 150ms read timeout
 
-            local port = ngx.var.server_port
+            local port = njt.var.server_port
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
@@ -57,17 +57,17 @@ __DATA__
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
             while true do
                 local line, err, part = sock:receive()
                 if line then
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
 
                 else
-                    ngx.say("failed to receive a line: ", err, " [", part, "]")
+                    njt.say("failed to receive a line: ", err, " [", part, "]")
                     break
                 end
             end
@@ -78,8 +78,8 @@ __DATA__
 
     location /foo {
         content_by_lua_block {
-            ngx.sleep(0.01) -- 10 ms
-            ngx.say("foo")
+            njt.sleep(0.01) -- 10 ms
+            njt.say("foo")
         }
         more_clear_headers Date;
     }
@@ -98,14 +98,14 @@ received: foo
     server_tokens off;
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeouts(150, 150, 2)  -- 2ms read timeout
 
-            local port = ngx.var.server_port
+            local port = njt.var.server_port
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
@@ -113,17 +113,17 @@ received: foo
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
             while true do
                 local line, err, part = sock:receive()
                 if line then
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
 
                 else
-                    ngx.say("failed to receive a line: ", err, " [", part, "]")
+                    njt.say("failed to receive a line: ", err, " [", part, "]")
                     break
                 end
             end
@@ -134,8 +134,8 @@ received: foo
 
     location /foo {
         content_by_lua_block {
-            ngx.sleep(0.01) -- 10 ms
-            ngx.say("foo")
+            njt.sleep(0.01) -- 10 ms
+            njt.say("foo")
         }
         more_clear_headers Date;
     }
@@ -154,14 +154,14 @@ lua tcp socket read timed out
     server_tokens off;
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeouts(500, 500, 500)  -- 500ms timeout
 
-            local port = ngx.var.server_port
+            local port = njt.var.server_port
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
@@ -173,14 +173,14 @@ lua tcp socket read timed out
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
             for i = 1, num do
                 local bytes, err = sock:send(data)
                 if not bytes then
-                    ngx.say("failed to send body: ", err)
+                    njt.say("failed to send body: ", err)
                     return
                 end
             end
@@ -188,10 +188,10 @@ lua tcp socket read timed out
             while true do
                 local line, err, part = sock:receive()
                 if line then
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
 
                 else
-                    ngx.say("failed to receive a line: ", err, " [", part, "]")
+                    njt.say("failed to receive a line: ", err, " [", part, "]")
                     break
                 end
             end
@@ -202,9 +202,9 @@ lua tcp socket read timed out
 
     location /foo {
         content_by_lua_block {
-            local content_length = ngx.req.get_headers()["Content-Length"]
+            local content_length = njt.req.get_headers()["Content-Length"]
 
-            local sock = ngx.req.socket()
+            local sock = njt.req.socket()
 
             sock:settimeouts(500, 500, 500)
 
@@ -213,12 +213,12 @@ lua tcp socket read timed out
             for i = 1, content_length, chunk do
                 local data, err = sock:receive(chunk)
                 if not data then
-                    ngx.say("failed to receive chunk: ", err)
+                    njt.say("failed to receive chunk: ", err)
                     return
                 end
             end
 
-            ngx.say("got len: ", content_length)
+            njt.say("got len: ", content_length)
         }
     }
 
@@ -236,14 +236,14 @@ received: got len: 80
     server_tokens off;
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeouts(500, 500, 500)  -- 500ms timeout
 
-            local port = ngx.var.server_port
+            local port = njt.var.server_port
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
@@ -255,14 +255,14 @@ received: got len: 80
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
             for i = 1, num do
                 local bytes, err = sock:send(data)
                 if not bytes then
-                    ngx.say("failed to send body: ", err)
+                    njt.say("failed to send body: ", err)
                     return
                 end
             end
@@ -270,10 +270,10 @@ received: got len: 80
             while true do
                 local line, err, part = sock:receive()
                 if line then
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
 
                 else
-                    ngx.say("failed to receive a line: ", err, " [", part, "]")
+                    njt.say("failed to receive a line: ", err, " [", part, "]")
                     break
                 end
             end
@@ -284,9 +284,9 @@ received: got len: 80
 
     location /foo {
         content_by_lua_block {
-            local content_length = ngx.req.get_headers()["Content-Length"]
+            local content_length = njt.req.get_headers()["Content-Length"]
 
-            local sock = ngx.req.socket()
+            local sock = njt.req.socket()
 
             sock:settimeouts(500, 500, 500)
 
@@ -295,12 +295,12 @@ received: got len: 80
             for i = 1, content_length, chunk do
                 local data, err = sock:receive(chunk)
                 if not data then
-                    ngx.say("failed to receive chunk: ", err)
+                    njt.say("failed to receive chunk: ", err)
                     return
                 end
             end
 
-            ngx.say("got len: ", content_length)
+            njt.say("got len: ", content_length)
         }
     }
 
@@ -319,23 +319,23 @@ lua tcp socket write timed out
     resolver_timeout 3s;
     location /test {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeouts(100, 100, 100)
 
             local ok, err = sock:connect("127.0.0.2", 12345)
-            ngx.say("connect: ", ok, " ", err)
+            njt.say("connect: ", ok, " ", err)
 
             local bytes
             bytes, err = sock:send("hello")
-            ngx.say("send: ", bytes, " ", err)
+            njt.say("send: ", bytes, " ", err)
 
             local line
             line, err = sock:receive()
-            ngx.say("receive: ", line, " ", err)
+            njt.say("receive: ", line, " ", err)
 
             ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         }
     }
 --- request
@@ -356,14 +356,14 @@ lua tcp socket connect timed out, when connecting to 127.0.0.2:12345
     server_tokens off;
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeouts(200, 200, 200)  -- 200ms timeout
 
-            local port = ngx.var.server_port
+            local port = njt.var.server_port
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
@@ -375,26 +375,26 @@ lua tcp socket connect timed out, when connecting to 127.0.0.2:12345
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
             for i = 1, num do
                 local bytes, err = sock:send(data)
                 if not bytes then
-                    ngx.log(ngx.ERR, "failed to send body: ", err)
+                    njt.log(njt.ERR, "failed to send body: ", err)
                     return
                 end
-                ngx.sleep(0.12) -- 120ms
+                njt.sleep(0.12) -- 120ms
             end
 
             while true do
                 local line, err, part = sock:receive()
                 if line then
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
 
                 else
-                    ngx.say("failed to receive a line: ", err, " [", part, "]")
+                    njt.say("failed to receive a line: ", err, " [", part, "]")
                     break
                 end
             end
@@ -405,9 +405,9 @@ lua tcp socket connect timed out, when connecting to 127.0.0.2:12345
 
     location /foo {
         content_by_lua_block {
-            local content_length = ngx.req.get_headers()["Content-Length"]
+            local content_length = njt.req.get_headers()["Content-Length"]
 
-            local sock = ngx.req.socket(true)
+            local sock = njt.req.socket(true)
 
             local chunk = 4
 
@@ -416,19 +416,19 @@ lua tcp socket connect timed out, when connecting to 127.0.0.2:12345
 
                 local data, err = sock:receive(content_length)
                 if not data then
-                    ngx.log(ngx.ERR, "failed to receive data: ", err)
+                    njt.log(njt.ERR, "failed to receive data: ", err)
                     return
                 end
             end
 
-            local co = ngx.thread.spawn(read)
+            local co = njt.thread.spawn(read)
 
             sock:settimeout(100) -- send: 100ms
             sock:send("ok\n")
 
-            local ok, err = ngx.thread.wait(co)
+            local ok, err = njt.thread.wait(co)
             if not ok then
-                ngx.log(ngx.ERR, "failed to wait co: ", err)
+                njt.log(njt.ERR, "failed to wait co: ", err)
             end
         }
     }
@@ -449,14 +449,14 @@ failed to receive data: timeout
     server_tokens off;
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeouts(200, 200, 200)  -- 200ms timeout
 
-            local port = ngx.var.server_port
+            local port = njt.var.server_port
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
@@ -468,26 +468,26 @@ failed to receive data: timeout
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
             for i = 1, num do
                 local bytes, err = sock:send(data)
                 if not bytes then
-                    ngx.log(ngx.ERR, "failed to send body: ", err)
+                    njt.log(njt.ERR, "failed to send body: ", err)
                     return
                 end
-                ngx.sleep(0.12) -- 120ms
+                njt.sleep(0.12) -- 120ms
             end
 
             while true do
                 local line, err, part = sock:receive()
                 if line then
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
 
                 else
-                    ngx.say("failed to receive a line: ", err, " [", part, "]")
+                    njt.say("failed to receive a line: ", err, " [", part, "]")
                     break
                 end
             end
@@ -498,9 +498,9 @@ failed to receive data: timeout
 
     location /foo {
         content_by_lua_block {
-            local content_length = ngx.req.get_headers()["Content-Length"]
+            local content_length = njt.req.get_headers()["Content-Length"]
 
-            local sock = ngx.req.socket(true)
+            local sock = njt.req.socket(true)
 
             sock:settimeouts(0, 100, 200) -- send: 100ms, read: 200ms
 
@@ -509,18 +509,18 @@ failed to receive data: timeout
             local function read()
                 local data, err = sock:receive(content_length)
                 if not data then
-                    ngx.log(ngx.ERR, "failed to receive data: ", err)
+                    njt.log(njt.ERR, "failed to receive data: ", err)
                     return
                 end
             end
 
-            local co = ngx.thread.spawn(read)
+            local co = njt.thread.spawn(read)
 
             sock:send("ok\n")
 
-            local ok, err = ngx.thread.wait(co)
+            local ok, err = njt.thread.wait(co)
             if not ok then
-                ngx.log(ngx.ERR, "failed to wait co: ", err)
+                njt.log(njt.ERR, "failed to wait co: ", err)
             end
         }
     }
@@ -539,20 +539,20 @@ failed to receive a line: closed []
 --- config
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = pcall(sock.settimeouts, sock,
                                   (2 ^ 31) - 1, 500, 500)
             if not ok then
-                ngx.say("failed to set timeouts: ", err)
+                njt.say("failed to set timeouts: ", err)
             else
-                ngx.say("settimeouts: ok")
+                njt.say("settimeouts: ok")
             end
 
             ok, err = pcall(sock.settimeouts, sock, 2 ^ 31, 500, 500)
             if not ok then
-                ngx.say("failed to set timeouts: ", err)
+                njt.say("failed to set timeouts: ", err)
             else
-                ngx.say("settimeouts: ok")
+                njt.say("settimeouts: ok")
             end
         }
     }
@@ -570,20 +570,20 @@ failed to set timeouts: bad timeout value
 --- config
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = pcall(sock.settimeouts, sock,
                                   500, (2 ^ 31) - 1, 500)
             if not ok then
-                ngx.say("failed to set timeouts: ", err)
+                njt.say("failed to set timeouts: ", err)
             else
-                ngx.say("settimeouts: ok")
+                njt.say("settimeouts: ok")
             end
 
             ok, err = pcall(sock.settimeouts, sock, 500, 2 ^ 31, 500)
             if not ok then
-                ngx.say("failed to set timeouts: ", err)
+                njt.say("failed to set timeouts: ", err)
             else
-                ngx.say("settimeouts: ok")
+                njt.say("settimeouts: ok")
             end
         }
     }
@@ -601,20 +601,20 @@ failed to set timeouts: bad timeout value
 --- config
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = pcall(sock.settimeouts, sock,
                                   500, 500, (2 ^ 31) - 1)
             if not ok then
-                ngx.say("failed to set timeouts: ", err)
+                njt.say("failed to set timeouts: ", err)
             else
-                ngx.say("settimeouts: ok")
+                njt.say("settimeouts: ok")
             end
 
             ok, err = pcall(sock.settimeouts, sock, 500, 500, 2 ^ 31)
             if not ok then
-                ngx.say("failed to set timeouts: ", err)
+                njt.say("failed to set timeouts: ", err)
             else
-                ngx.say("settimeouts: ok")
+                njt.say("settimeouts: ok")
             end
         }
     }

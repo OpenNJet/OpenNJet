@@ -45,10 +45,10 @@ __DATA__
             local x1 = shm_zones.x1
 
             name, size, isinit, isold = x1:get_info()
-            ngx.say("name=", name)
-            ngx.say("size=", size)
-            ngx.say("isinit=", isinit)
-            ngx.say("isold=", isold)
+            njt.say("name=", name)
+            njt.say("size=", size)
+            njt.say("isinit=", isinit)
+            njt.say("isold=", isold)
         }
     }
 --- request
@@ -74,10 +74,10 @@ isold=false
             local x1 = shm_zones.x1
 
             name, size, isinit, isold = x1:get_info()
-            ngx.say("name=", name)
-            ngx.say("size=", size)
-            ngx.say("isinit=", isinit)
-            ngx.say("isold=", isold)
+            njt.say("name=", name)
+            njt.say("size=", size)
+            njt.say("isinit=", isinit)
+            njt.say("isold=", isold)
         }
     }
 --- request

@@ -20,9 +20,9 @@ __DATA__
 --- config
     location /t {
         content_by_lua '
-            ngx.header["ETag"] = "123456789"
-            ngx.header.last_modified = "Thu, 10 May 2012 07:50:59 GMT"
-            ngx.say(ngx.var.http_if_none_match)
+            njt.header["ETag"] = "123456789"
+            njt.header.last_modified = "Thu, 10 May 2012 07:50:59 GMT"
+            njt.say(njt.var.http_if_none_match)
         ';
     }
 --- request
@@ -42,9 +42,9 @@ If-Modified-Since: Thu, 10 May 2012 07:50:59 GMT
     location /t {
         etag on;
         content_by_lua '
-            ngx.header["ETag"] = "123456789"
-            ngx.header.last_modified = "Thu, 10 May 2012 07:50:59 GMT"
-            ngx.say(ngx.var.http_if_none_match)
+            njt.header["ETag"] = "123456789"
+            njt.header.last_modified = "Thu, 10 May 2012 07:50:59 GMT"
+            njt.say(njt.var.http_if_none_match)
         ';
     }
 --- request
@@ -65,10 +65,10 @@ If-Modified-Since: Thu, 10 May 2012 07:50:59 GMT
     location /t {
         etag on;
         content_by_lua '
-            ngx.header["ETag"] = "123456789"
-            ngx.header.last_modified = "Thu, 10 May 2012 07:50:59 GMT"
-            ngx.header["ETag"] = nil
-            ngx.say(ngx.var.http_if_none_match)
+            njt.header["ETag"] = "123456789"
+            njt.header.last_modified = "Thu, 10 May 2012 07:50:59 GMT"
+            njt.header["ETag"] = nil
+            njt.say(njt.var.http_if_none_match)
         ';
     }
 --- request

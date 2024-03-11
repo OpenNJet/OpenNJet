@@ -15,10 +15,10 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: ngx.config.debug
+=== TEST 1: njt.config.debug
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("debug: ", ngx.config.debug)
+        njt.say("debug: ", njt.config.debug)
     }
 
 --- stream_response_like chop
@@ -28,10 +28,10 @@ __DATA__
 
 
 
-=== TEST 2: ngx.config.subystem
+=== TEST 2: njt.config.subystem
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("subsystem: ", ngx.config.subsystem)
+        njt.say("subsystem: ", njt.config.subsystem)
     }
 --- stream_response
 subsystem: stream

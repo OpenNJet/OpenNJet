@@ -298,7 +298,7 @@ struct njt_http_lua_main_conf_s {
     njt_uint_t           directive_line;
 
 #if (njet_version >= 1011011)
-    /* the following 2 fields are only used by ngx.req.raw_headers() for now */
+    /* the following 2 fields are only used by njt.req.raw_headers() for now */
     njt_buf_t          **busy_buf_ptrs;
     njt_int_t            busy_buf_ptr_count;
 #endif
@@ -523,7 +523,7 @@ struct njt_http_lua_co_ctx_s {
     unsigned                 pending_subreqs; /* number of subrequests being
                                                  waited */
 
-    njt_event_t              sleep;  /* used for ngx.sleep */
+    njt_event_t              sleep;  /* used for njt.sleep */
 
     njt_queue_t              sem_wait_queue;
 
@@ -546,13 +546,13 @@ struct njt_http_lua_co_ctx_s {
 
     unsigned                 flushing:1; /* indicates whether the current
                                             coroutine is waiting for
-                                            ngx.flush(true) */
+                                            njt.flush(true) */
 
     unsigned                 is_uthread:1; /* whether the current coroutine is
                                               a user thread */
 
     unsigned                 thread_spawn_yielded:1; /* yielded from
-                                                        the ngx.thread.spawn()
+                                                        the njt.thread.spawn()
                                                         call */
     unsigned                 sem_resume_status:1;
 
@@ -595,7 +595,7 @@ typedef struct njt_http_lua_ctx_s {
                                            registry */
 
     unsigned                 flushing_coros; /* number of coroutines waiting on
-                                                ngx.flush(true) */
+                                                njt.flush(true) */
 
     njt_chain_t             *out;  /* buffered output chain for HTTP 1.0 */
     njt_chain_t             *free_bufs;
@@ -671,7 +671,7 @@ typedef struct njt_http_lua_ctx_s {
 
     unsigned         buffering:1; /* HTTP 1.0 response body buffering flag */
 
-    unsigned         no_abort:1; /* prohibit "world abortion" via ngx.exit()
+    unsigned         no_abort:1; /* prohibit "world abortion" via njt.exit()
                                     and etc */
 
     unsigned         header_sent:1; /* r->header_sent is not sufficient for

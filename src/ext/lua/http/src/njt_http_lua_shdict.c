@@ -316,7 +316,7 @@ njt_http_lua_inject_shdict_api(njt_http_lua_main_conf_t *lmcf, lua_State *L)
 
     if (lmcf->shdict_zones != NULL) {
         lua_createtable(L, 0, lmcf->shdict_zones->nelts /* nrec */);
-                /* ngx.shared */
+                /* njt.shared */
 
         lua_createtable(L, 0 /* narr */, 22 /* nrec */); /* shared mt */
 
@@ -366,7 +366,7 @@ njt_http_lua_inject_shdict_api(njt_http_lua_main_conf_t *lmcf, lua_State *L)
         lua_pop(L, 1); /* shared */
 
     } else {
-        lua_newtable(L);    /* ngx.shared */
+        lua_newtable(L);    /* njt.shared */
     }
 
     lua_setfield(L, -2, "shared");

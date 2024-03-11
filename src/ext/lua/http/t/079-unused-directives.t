@@ -95,7 +95,7 @@ lua log handler, uri:"/t"
 === TEST 4: content_by_lua used
 --- config
     location /t {
-        content_by_lua 'ngx.say("hello")';
+        content_by_lua 'njt.say("hello")';
     }
 --- request
 GET /t
@@ -270,8 +270,8 @@ have been prohibited since then.
     location = /t {
         echo ok;
         header_filter_by_lua '
-            ngx.status = 201
-            ngx.header.Foo = "foo"
+            njt.status = 201
+            njt.header.Foo = "foo"
         ';
 
     }
@@ -298,8 +298,8 @@ have been prohibited since then.
     location = /t {
         echo -n ok;
         body_filter_by_lua '
-            if ngx.arg[2] then
-                ngx.arg[1] = ngx.arg[1] .. "ay\\n"
+            if njt.arg[2] then
+                njt.arg[1] = njt.arg[1] .. "ay\\n"
             end
         ';
 
@@ -323,8 +323,8 @@ have been prohibited since then.
 --- config
     location = /t {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.say("sub: ", res.body)
+            local res = njt.location.capture("/sub")
+            njt.say("sub: ", res.body)
         ';
     }
 

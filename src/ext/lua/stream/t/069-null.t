@@ -24,14 +24,14 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: compare ngx.null with cjson.null
+=== TEST 1: compare njt.null with cjson.null
 --- stream_config eval
     "lua_package_cpath '$::LuaCpath';";
 --- stream_server_config
     content_by_lua_block {
         local cjson = require "cjson"
-        ngx.say(cjson.null == ngx.null)
-        ngx.say(cjson.encode(ngx.null))
+        njt.say(cjson.null == njt.null)
+        njt.say(cjson.encode(njt.null))
     }
 --- stream_response
 true
@@ -41,39 +41,39 @@ null
 
 
 
-=== TEST 2: output ngx.null
+=== TEST 2: output njt.null
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("ngx.null: ", ngx.null)
+        njt.say("njt.null: ", njt.null)
     }
 --- stream_response
-ngx.null: null
+njt.null: null
 --- no_error_log
 [error]
 
 
 
-=== TEST 3: output ngx.null in a table
+=== TEST 3: output njt.null in a table
 --- stream_server_config
     content_by_lua_block {
-        ngx.say({"ngx.null: ", ngx.null})
+        njt.say({"njt.null: ", njt.null})
     }
 --- stream_response
-ngx.null: null
+njt.null: null
 --- no_error_log
 [error]
 
 
 
-=== TEST 4: log ngx.null
+=== TEST 4: log njt.null
 --- stream_server_config
     content_by_lua_block {
-        print("ngx.null: ", ngx.null)
-        ngx.say("done")
+        print("njt.null: ", njt.null)
+        njt.say("done")
     }
 --- stream_response
 done
 --- error_log
-ngx.null: null
+njt.null: null
 --- no_error_log
 [error]

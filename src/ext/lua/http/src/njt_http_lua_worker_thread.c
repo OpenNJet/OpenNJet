@@ -152,11 +152,11 @@ njt_http_lua_get_task_ctx(lua_State *L, njt_http_request_t *r)
         lua_pop(L, 3);
 
         /* inject API from C */
-        lua_newtable(vm);    /* ngx.* */
+        lua_newtable(vm);    /* njt.* */
         njt_http_lua_inject_string_api(vm);
         njt_http_lua_inject_config_api(vm);
         njt_http_lua_inject_shdict_api(lmcf, vm);
-        lua_setglobal(vm, "ngx");
+        lua_setglobal(vm, "njt");
 
         lua_getglobal(vm, "require");
         lua_pushstring(vm, "resty.core.hash");

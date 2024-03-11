@@ -24,13 +24,13 @@ __DATA__
 === TEST 1: flush wait - content
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("hello, world")
-        local ok, err = ngx.flush(true)
+        njt.say("hello, world")
+        local ok, err = njt.flush(true)
         if not ok then
-            ngx.log(ngx.ERR, "flush failed: ", err)
+            njt.log(njt.ERR, "flush failed: ", err)
             return
         end
-        ngx.say("hiya")
+        njt.say("hiya")
     }
 --- stream_response
 hello, world
@@ -46,13 +46,13 @@ lua reuse free buf memory 13 >= 5
 --- stream_server_config
     lua_socket_send_timeout 500ms;
     content_by_lua_block {
-        ngx.say("hello, world")
-        local ok, err = ngx.flush(false)
+        njt.say("hello, world")
+        local ok, err = njt.flush(false)
         if not ok then
-            ngx.log(ngx.ERR, "flush failed: ", err)
+            njt.log(njt.ERR, "flush failed: ", err)
             return
         end
-        ngx.say("hiya")
+        njt.say("hiya")
     }
 --- stream_response
 hello, world
@@ -63,9 +63,9 @@ hiya
 === TEST 3: flush wait - big data
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(string.rep("a", 1024 * 64))
-        ngx.flush(true)
-        ngx.say("hiya")
+        njt.say(string.rep("a", 1024 * 64))
+        njt.flush(true)
+        njt.say("hiya")
     }
 --- stream_response
 hello, world
@@ -78,14 +78,14 @@ hiya
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("hello, world")
-            ngx.flush(true)
+            njt.say("hello, world")
+            njt.flush(true)
             coroutine.yield()
-            ngx.say("hiya")
+            njt.say("hiya")
         end
         local c = coroutine.create(f)
-        ngx.say(coroutine.resume(c))
-        ngx.say(coroutine.resume(c))
+        njt.say(coroutine.resume(c))
+        njt.say(coroutine.resume(c))
     }
 --- stap2
 F(njt_http_lua_wev_handler) {
@@ -169,9 +169,9 @@ lua reuse free buf memory 13 >= 5
 === TEST 5: flush before sending out the header
 --- stream_server_config
     content_by_lua_block {
-        ngx.flush()
-        ngx.status = 404
-        ngx.say("not found")
+        njt.flush()
+        njt.status = 404
+        njt.say("not found")
     }
 --- stream_response
 not found
@@ -186,16 +186,16 @@ TODO
 --- stream_server_config
         limit_rate 150;
     content_by_lua_block {
-        local begin = ngx.now()
+        local begin = njt.now()
         for i = 1, 2 do
-            ngx.print(string.rep("a", 100))
-            local ok, err = ngx.flush(true)
+            njt.print(string.rep("a", 100))
+            local ok, err = njt.flush(true)
             if not ok then
-                ngx.log(ngx.ERR, "failed to flush: ", err)
+                njt.log(njt.ERR, "failed to flush: ", err)
             end
         end
-        local elapsed = ngx.now() - begin
-        ngx.log(ngx.WARN, "lua writes elapsed ", elapsed, " sec")
+        local elapsed = njt.now() - begin
+        njt.log(njt.WARN, "lua writes elapsed ", elapsed, " sec")
     }
 --- stream_response eval
 "a" x 200

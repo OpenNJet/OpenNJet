@@ -139,7 +139,7 @@ njt_http_lua_njt_echo(lua_State *L, unsigned newline)
             default:
 
                 msg = lua_pushfstring(L, "string, number, boolean, nil, "
-                                      "ngx.null, or array table expected, "
+                                      "njt.null, or array table expected, "
                                       "but got %s", lua_typename(L, type));
 
                 return luaL_argerror(L, i, msg);
@@ -529,7 +529,7 @@ njt_http_lua_njt_flush(lua_State *L)
 
     if (ctx->buffering) {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
-                       "lua http 1.0 buffering makes ngx.flush() a no-op");
+                       "lua http 1.0 buffering makes njt.flush() a no-op");
 
         lua_pushnil(L);
         lua_pushliteral(L, "buffering");

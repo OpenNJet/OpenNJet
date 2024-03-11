@@ -17,10 +17,10 @@ __DATA__
 
 === TEST 1: get_phase in init_by_lua
 --- stream_config
-    init_by_lua_block { phase = ngx.get_phase() }
+    init_by_lua_block { phase = njt.get_phase() }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(phase)
+        njt.say(phase)
     }
 --- stream_response
 init
@@ -32,8 +32,8 @@ TODO
 --- SKIP
 --- stream_server_config
     access_by_lua_block {
-        ngx.say(ngx.get_phase())
-        ngx.exit(200)
+        njt.say(njt.get_phase())
+        njt.exit(200)
     }
 --- stream_response
 access
@@ -43,7 +43,7 @@ access
 === TEST 3: get_phase in content_by_lua
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.get_phase())
+        njt.say(njt.get_phase())
     }
 --- stream_response
 content
@@ -56,22 +56,22 @@ TODO
 --- stream_server_config
     echo "OK";
     log_by_lua_block {
-        ngx.log(ngx.ERR, ngx.get_phase())
+        njt.log(njt.ERR, njt.get_phase())
     }
 --- error_log
 log
 
 
 
-=== TEST 5: get_phase in ngx.timer callback
+=== TEST 5: get_phase in njt.timer callback
 --- stream_server_config
     content_by_lua_block {
         local function f()
-            ngx.log(ngx.WARN, "current phase: ", ngx.get_phase())
+            njt.log(njt.WARN, "current phase: ", njt.get_phase())
         end
-        local ok, err = ngx.timer.at(0, f)
+        local ok, err = njt.timer.at(0, f)
         if not ok then
-            ngx.log(ngx.ERR, "failed to add timer: ", err)
+            njt.log(njt.ERR, "failed to add timer: ", err)
         end
     }
 --- no_error_log
@@ -83,10 +83,10 @@ current phase: timer
 
 === TEST 6: get_phase in init_worker_by_lua
 --- stream_config
-    init_worker_by_lua_block { phase = ngx.get_phase() }
+    init_worker_by_lua_block { phase = njt.get_phase() }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(phase)
+        njt.say(phase)
     }
 --- stream_response
 init_worker

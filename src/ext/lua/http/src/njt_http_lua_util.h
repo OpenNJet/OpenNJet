@@ -43,7 +43,7 @@
                                 | NJT_HTTP_LUA_CONTEXT_SSL_SESS_FETCH)
 
 
-/* key in Lua vm registry for all the "ngx.ctx" tables */
+/* key in Lua vm registry for all the "njt.ctx" tables */
 #define njt_http_lua_ctx_tables_key  "njt_lua_ctx_tables"
 
 
@@ -56,7 +56,7 @@
      : (c) == NJT_HTTP_LUA_CONTEXT_LOG ? "log_by_lua*"                       \
      : (c) == NJT_HTTP_LUA_CONTEXT_HEADER_FILTER ? "header_filter_by_lua*"   \
      : (c) == NJT_HTTP_LUA_CONTEXT_BODY_FILTER ? "body_filter_by_lua*"       \
-     : (c) == NJT_HTTP_LUA_CONTEXT_TIMER ? "ngx.timer"                       \
+     : (c) == NJT_HTTP_LUA_CONTEXT_TIMER ? "njt.timer"                       \
      : (c) == NJT_HTTP_LUA_CONTEXT_INIT_WORKER ? "init_worker_by_lua*"       \
      : (c) == NJT_HTTP_LUA_CONTEXT_EXIT_WORKER ? "exit_worker_by_lua*"       \
      : (c) == NJT_HTTP_LUA_CONTEXT_BALANCER ? "balancer_by_lua*"             \
@@ -121,7 +121,7 @@ extern char njt_http_lua_socket_pool_key;
 /* coroutine anchoring table key in Lua VM registry */
 extern char njt_http_lua_coroutines_key;
 
-/* key to the metatable for ngx.req.get_headers() and ngx.resp.get_headers() */
+/* key to the metatable for njt.req.get_headers() and njt.resp.get_headers() */
 extern char njt_http_lua_headers_metatable_key;
 
 

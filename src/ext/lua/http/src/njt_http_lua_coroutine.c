@@ -20,7 +20,7 @@
 /*
  * Design:
  *
- * In order to support using ngx.* API in Lua coroutines, we have to create
+ * In order to support using njt.* API in Lua coroutines, we have to create
  * new coroutine in the main coroutine instead of the calling coroutine
  */
 
@@ -345,7 +345,7 @@ njt_http_lua_inject_coroutine_api(njt_log_t *log, lua_State *L)
             "for _, key in ipairs(keys) do\n"
                "local std = coroutine['_' .. key]\n"
                "local ours = coroutine['__' .. key]\n"
-               "local raw_ctx = ngx._phase_ctx\n"
+               "local raw_ctx = njt._phase_ctx\n"
                "coroutine[key] = function (...)\n"
 #ifdef OPENRESTY_LUAJIT
                     "local r = get_req()\n"

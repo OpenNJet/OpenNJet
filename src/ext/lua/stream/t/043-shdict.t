@@ -23,13 +23,13 @@ __DATA__
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32)
         dogs:set("bah", 10502)
         local val = dogs:get("foo")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
         val = dogs:get("bah")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
     }
 --- stream_response
 32 number
@@ -44,14 +44,14 @@ __DATA__
     lua_shared_dict cats 1m;
 --- stream_server_config
     content_by_lua_block {
-        local cats = ngx.shared.cats
+        local cats = njt.shared.cats
         cats:set("foo", 3.14159)
         cats:set("baz", 1.28)
         cats:set("baz", 3.96)
         local val = cats:get("foo")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
         val = cats:get("baz")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
     }
 --- stream_response
 3.14159 number
@@ -66,13 +66,13 @@ __DATA__
     lua_shared_dict cats 1m;
 --- stream_server_config
     content_by_lua_block {
-        local cats = ngx.shared.cats
+        local cats = njt.shared.cats
         cats:set("foo", true)
         cats:set("bar", false)
         local val = cats:get("foo")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
         val = cats:get("bar")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
     }
 --- stream_response
 true boolean
@@ -87,14 +87,14 @@ false boolean
     lua_shared_dict cats 1m;
 --- stream_server_config
     content_by_lua_block {
-        local cats = ngx.shared.cats
-        ngx.say(cats:set(1234, "cat"))
-        ngx.say(cats:set("1234", "dog"))
-        ngx.say(cats:set(256, "bird"))
-        ngx.say(cats:get(1234))
-        ngx.say(cats:get("1234"))
+        local cats = njt.shared.cats
+        njt.say(cats:set(1234, "cat"))
+        njt.say(cats:set("1234", "dog"))
+        njt.say(cats:set(256, "bird"))
+        njt.say(cats:get(1234))
+        njt.say(cats:get("1234"))
         local val = cats:get("256")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
     }
 --- stream_response
 truenilfalse
@@ -113,13 +113,13 @@ bird string
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", "hello")
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
         dogs:set("foo", "hello, world")
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
         dogs:set("foo", "hello")
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
     }
 --- stream_response
 hello
@@ -135,10 +135,10 @@ hello
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32, 0.01)
-        ngx.sleep(0.01)
-        ngx.say(dogs:get("foo"))
+        njt.sleep(0.01)
+        njt.say(dogs:get("foo"))
     }
 --- stream_response
 nil
@@ -152,12 +152,12 @@ nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("bar", 56, 0.001)
         dogs:set("baz", 78, 0.001)
         dogs:set("foo", 32, 0.01)
-        ngx.sleep(0.012)
-        ngx.say(dogs:get("foo"))
+        njt.sleep(0.012)
+        njt.say(dogs:get("foo"))
     }
 --- stream_response
 nil
@@ -171,10 +171,10 @@ nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32, 0.5)
-        ngx.sleep(0.01)
-        ngx.say(dogs:get("foo"))
+        njt.sleep(0.01)
+        njt.say(dogs:get("foo"))
     }
 --- stream_response
 32
@@ -192,24 +192,24 @@ nil
     content_by_lua_file html/a.lua;
 --- user_files
 >>> a.lua
-local dogs = ngx.shared.dogs
+local dogs = njt.shared.dogs
 local i = 0
 while i < 1000 do
     i = i + 1
     local val = string.rep(" hello", 10) .. i
     local res, err, forcible = dogs:set("key_" .. i, val)
     if not res or forcible then
-        ngx.say(res, " ", err, " ", forcible)
+        njt.say(res, " ", err, " ", forcible)
         break
     end
 end
-ngx.say("abort at ", i)
-ngx.say("cur value: ", dogs:get("key_" .. i))
+njt.say("abort at ", i)
+njt.say("cur value: ", dogs:get("key_" .. i))
 if i > 1 then
-    ngx.say("1st value: ", dogs:get("key_1"))
+    njt.say("1st value: ", dogs:get("key_1"))
 end
 if i > 2 then
-    ngx.say("2nd value: ", dogs:get("key_2"))
+    njt.say("2nd value: ", dogs:get("key_2"))
 end
 
 --- stream_response eval
@@ -231,7 +231,7 @@ my $a = "true nil true\nabort at (353|705)\ncur value: " . (" hello" x 10) . "\\
     content_by_lua_file html/a.lua;
 --- user_files
 >>> a.lua
-local dogs = ngx.shared.dogs
+local dogs = njt.shared.dogs
 local i = 0
 while i < 1000 do
     i = i + 1
@@ -241,17 +241,17 @@ while i < 1000 do
     end
     local res, err, forcible = dogs:set("key_" .. i, val)
     if not res or forcible then
-        ngx.say(res, " ", err, " ", forcible)
+        njt.say(res, " ", err, " ", forcible)
         break
     end
 end
-ngx.say("abort at ", i)
-ngx.say("cur value: ", dogs:get("key_" .. i))
+njt.say("abort at ", i)
+njt.say("cur value: ", dogs:get("key_" .. i))
 if i > 1 then
-    ngx.say("1st value: ", dogs:get("key_1"))
+    njt.say("1st value: ", dogs:get("key_1"))
 end
 if i > 2 then
-    ngx.say("2nd value: ", dogs:get("key_2"))
+    njt.say("2nd value: ", dogs:get("key_2"))
 end
 --- stream_response eval
 my $a = "true nil true\nabort at (353|705)\ncur value: " . (" hello" x 10) . "\\1\n1st value: " . (" hello" x 10) . "1\n2nd value: nil\n";
@@ -269,15 +269,15 @@ my $a = "true nil true\nabort at (353|705)\ncur value: " . (" hello" x 10) . "\\
     lua_shared_dict cats 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
-        local cats = ngx.shared.cats
+        local dogs = njt.shared.dogs
+        local cats = njt.shared.cats
         dogs:set("foo", 32)
         cats:set("foo", "hello, world")
-        ngx.say(dogs:get("foo"))
-        ngx.say(cats:get("foo"))
+        njt.say(dogs:get("foo"))
+        njt.say(cats:get("foo"))
         dogs:set("foo", 56)
-        ngx.say(dogs:get("foo"))
-        ngx.say(cats:get("foo"))
+        njt.say(dogs:get("foo"))
+        njt.say(cats:get("foo"))
     }
 --- stream_response
 32
@@ -294,9 +294,9 @@ hello, world
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
-        ngx.say(dogs:get("foo"))
-        ngx.say(dogs:get("foo"))
+        local dogs = njt.shared.dogs
+        njt.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
     }
 --- stream_response
 nil
@@ -312,13 +312,13 @@ nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local rc, err = pcall(dogs.set, "foo", 3, 0.01)
-        ngx.say(rc, " ", err)
+        njt.say(rc, " ", err)
         rc, err = pcall(dogs.set, "foo", 3)
-        ngx.say(rc, " ", err)
+        njt.say(rc, " ", err)
         rc, err = pcall(dogs.get, "foo")
-        ngx.say(rc, " ", err)
+        njt.say(rc, " ", err)
     }
 --- stream_response
 false bad argument #1 to '?' (userdata expected, got string)
@@ -335,9 +335,9 @@ false expecting exactly two arguments, but only seen 1
 --- stream_server_config
     content_by_lua_block {
         collectgarbage("collect")
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local res, err, forcible = dogs:set("foo", string.rep("helloworld", 10000))
-        ngx.say(res, " ", err, " ", forcible)
+        njt.say(res, " ", err, " ", forcible)
     }
 --- stream_response
 false no memory false
@@ -354,19 +354,19 @@ njt_slab_alloc() failed: no memory in lua_shared_dict zone
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local key = string.rep("a", 65535)
         local rc, err = dogs:set(key, "hello")
-        ngx.say(rc, " ", err)
-        ngx.say(dogs:get(key))
+        njt.say(rc, " ", err)
+        njt.say(dogs:get(key))
 
         key = string.rep("a", 65536)
         ok, err = dogs:set(key, "world")
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
 
     }
 --- stream_response
@@ -383,13 +383,13 @@ not ok: key too long
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:set("foo", dogs)
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 not ok: bad value type
@@ -403,13 +403,13 @@ not ok: bad value type
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32)
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
         dogs:delete("foo")
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
         dogs:set("foo", "hello, world")
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
     }
 --- stream_response
 32
@@ -425,11 +425,11 @@ hello, world
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:delete("foo")
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
         dogs:set("foo", "hello, world")
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
     }
 --- stream_response
 nil
@@ -444,13 +444,13 @@ hello, world
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32)
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
         dogs:set("foo", nil)
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
         dogs:set("foo", "hello, world")
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
     }
 --- stream_response
 32
@@ -466,11 +466,11 @@ hello, world
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", nil)
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
         dogs:set("foo", "hello, world")
-        ngx.say(dogs:get("foo"))
+        njt.say(dogs:get("foo"))
     }
 --- stream_response
 nil
@@ -485,18 +485,18 @@ hello, world
     lua_shared_dict dogs 100k;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local i = 0
         while i < 1000 do
             i = i + 1
             local val = string.rep("hello", i )
             local res, err, forcible = dogs:set("key_" .. i, val)
             if not res or forcible then
-                ngx.say(res, " ", err, " ", forcible)
+                njt.say(res, " ", err, " ", forcible)
                 break
             end
         end
-        ngx.say("abort at ", i)
+        njt.say("abort at ", i)
     }
 --- stream_response_like
 ^true nil true\nabort at (?:139|140|141)$
@@ -511,10 +511,10 @@ hello, world
 --- stream_server_config
     content_by_lua_block {
         collectgarbage("collect")
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("bah", "hello")
         local res, err, forcible = dogs:set("foo", string.rep("helloworld", 10000))
-        ngx.say(res, " ", err, " ", forcible)
+        njt.say(res, " ", err, " ", forcible)
     }
 --- stream_response
 false no memory true
@@ -531,11 +531,11 @@ njt_slab_alloc() failed: no memory in lua_shared_dict zone
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32)
         local res, err, forcible = dogs:add("foo", 10502)
-        ngx.say("add: ", res, " ", err, " ", forcible)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("add: ", res, " ", err, " ", forcible)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 add: false exists false
@@ -550,11 +550,11 @@ foo = 32
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("bah", 32)
         local res, err, forcible = dogs:add("foo", 10502)
-        ngx.say("add: ", res, " ", err, " ", forcible)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("add: ", res, " ", err, " ", forcible)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 add: true nil false
@@ -569,14 +569,14 @@ foo = 10502
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("bar", 32, 0.001)
         dogs:set("baz", 32, 0.001)
         dogs:set("foo", 32, 0.001)
-        ngx.sleep(0.002)
+        njt.sleep(0.002)
         local res, err, forcible = dogs:add("foo", 10502)
-        ngx.say("add: ", res, " ", err, " ", forcible)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("add: ", res, " ", err, " ", forcible)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 add: true nil false
@@ -591,14 +591,14 @@ foo = 10502
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("bar", 32, 0.001)
         dogs:set("baz", 32, 0.001)
         dogs:set("foo", "hi", 0.001)
-        ngx.sleep(0.002)
+        njt.sleep(0.002)
         local res, err, forcible = dogs:add("foo", "hello")
-        ngx.say("add: ", res, " ", err, " ", forcible)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("add: ", res, " ", err, " ", forcible)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 add: true nil false
@@ -613,15 +613,15 @@ foo = hello
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32)
         local res, err, forcible = dogs:replace("foo", 10502)
-        ngx.say("replace: ", res, " ", err, " ", forcible)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("replace: ", res, " ", err, " ", forcible)
+        njt.say("foo = ", dogs:get("foo"))
 
         local res, err, forcible = dogs:replace("foo", "hello")
-        ngx.say("replace: ", res, " ", err, " ", forcible)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("replace: ", res, " ", err, " ", forcible)
+        njt.say("foo = ", dogs:get("foo"))
 
     }
 --- stream_response
@@ -639,11 +639,11 @@ foo = hello
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("bah", 32)
         local res, err, forcible = dogs:replace("foo", 10502)
-        ngx.say("replace: ", res, " ", err, " ", forcible)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("replace: ", res, " ", err, " ", forcible)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 replace: false not found false
@@ -658,14 +658,14 @@ foo = nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("bar", 3, 0.001)
         dogs:set("baz", 2, 0.001)
         dogs:set("foo", 32, 0.001)
-        ngx.sleep(0.002)
+        njt.sleep(0.002)
         local res, err, forcible = dogs:replace("foo", 10502)
-        ngx.say("replace: ", res, " ", err, " ", forcible)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("replace: ", res, " ", err, " ", forcible)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 replace: false not found false
@@ -680,14 +680,14 @@ foo = nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("bar", 32, 0.001)
         dogs:set("baz", 32, 0.001)
         dogs:set("foo", "hi", 0.001)
-        ngx.sleep(0.002)
+        njt.sleep(0.002)
         local rc, err, forcible = dogs:replace("foo", "hello")
-        ngx.say("replace: ", rc, " ", err, " ", forcible)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("replace: ", rc, " ", err, " ", forcible)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 replace: false not found false
@@ -702,11 +702,11 @@ foo = nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32)
         local res, err = dogs:incr("foo", 10502)
-        ngx.say("incr: ", res, " ", err)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("incr: ", res, " ", err)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 incr: 10534 nil
@@ -721,11 +721,11 @@ foo = 10534
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("bah", 32)
         local res, err = dogs:incr("foo", 2)
-        ngx.say("incr: ", res, " ", err)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("incr: ", res, " ", err)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 incr: nil not found
@@ -740,14 +740,14 @@ foo = nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("bar", 3, 0.001)
         dogs:set("baz", 2, 0.001)
         dogs:set("foo", 32, 0.001)
-        ngx.sleep(0.002)
+        njt.sleep(0.002)
         local res, err = dogs:incr("foo", 10502)
-        ngx.say("incr: ", res, " ", err)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("incr: ", res, " ", err)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 incr: nil not found
@@ -762,11 +762,11 @@ foo = nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32)
         local res, err = dogs:incr("foo", 0)
-        ngx.say("incr: ", res, " ", err)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("incr: ", res, " ", err)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 incr: 32 nil
@@ -781,11 +781,11 @@ foo = 32
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32)
         local res, err = dogs:incr("foo", 0.14)
-        ngx.say("incr: ", res, " ", err)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("incr: ", res, " ", err)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 incr: 32.14 nil
@@ -800,11 +800,11 @@ foo = 32.14
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32)
         local res, err = dogs:incr("foo", -0.14)
-        ngx.say("incr: ", res, " ", err)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("incr: ", res, " ", err)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 incr: 31.86 nil
@@ -819,11 +819,11 @@ foo = 31.86
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", true)
         local res, err = dogs:incr("foo", -0.14)
-        ngx.say("incr: ", res, " ", err)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("incr: ", res, " ", err)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 incr: nil not a number
@@ -838,15 +838,15 @@ foo = true
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32, 0, 199)
         dogs:set("bah", 10502, 202)
         local val, flags = dogs:get("foo")
-        ngx.say(val, " ", type(val))
-        ngx.say(flags, " ", type(flags))
+        njt.say(val, " ", type(val))
+        njt.say(flags, " ", type(flags))
         val, flags = dogs:get("bah")
-        ngx.say(val, " ", type(val))
-        ngx.say(flags, " ", type(flags))
+        njt.say(val, " ", type(val))
+        njt.say(flags, " ", type(flags))
     }
 --- stream_response
 32 number
@@ -863,11 +863,11 @@ nil nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32, 0.01, 255)
-        ngx.sleep(0.01)
+        njt.sleep(0.01)
         local res, flags = dogs:get("foo")
-        ngx.say("res = ", res, ", flags = ", flags)
+        njt.say("res = ", res, ", flags = ", flags)
     }
 --- stream_response
 res = nil, flags = nil
@@ -881,21 +881,21 @@ res = nil, flags = nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32)
         dogs:set("bah", 10502)
 
         local val = dogs:get("foo")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
         val = dogs:get("bah")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
 
         dogs:flush_all()
 
         val = dogs:get("foo")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
         val = dogs:get("bah")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
     }
 --- stream_response
 32 number
@@ -912,15 +912,15 @@ nil nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", "x", 1)
         dogs:set("bah", "y", 0)
         dogs:set("bar", "z", 100)
 
-        ngx.sleep(1.5)
+        njt.sleep(1.5)
 
         local num = dogs:flush_expired()
-        ngx.say(num)
+        njt.say(num)
     }
 --- stream_response
 1
@@ -934,7 +934,7 @@ nil nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
 
         for i=1,100 do
             dogs:set(tostring(i), "x", 1)
@@ -943,10 +943,10 @@ nil nil
         dogs:set("bah", "y", 0)
         dogs:set("bar", "z", 100)
 
-        ngx.sleep(1.5)
+        njt.sleep(1.5)
 
         local num = dogs:flush_expired(42)
-        ngx.say(num)
+        njt.say(num)
     }
 --- stream_response
 42
@@ -960,10 +960,10 @@ nil nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
 
         local num = dogs:flush_expired()
-        ngx.say(num)
+        njt.say(num)
     }
 --- stream_response
 0
@@ -977,13 +977,13 @@ nil nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
 
         dogs:set("bah", "y", 0)
         dogs:set("bar", "z", 100)
 
         local num = dogs:flush_expired()
-        ngx.say(num)
+        njt.say(num)
     }
 --- stream_response
 0
@@ -997,15 +997,15 @@ nil nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
 
         dogs:set("bah", "y", 0)
         dogs:set("bar", "z", 0)
         local keys = dogs:get_keys()
-        ngx.say(#keys)
+        njt.say(#keys)
         table.sort(keys)
         for _,k in ipairs(keys) do
-            ngx.say(k)
+            njt.say(k)
         end
     }
 --- stream_response
@@ -1022,12 +1022,12 @@ bar
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
 
         dogs:set("bah", "y", 0)
         dogs:set("bar", "z", 0)
         local keys = dogs:get_keys(1)
-        ngx.say(#keys)
+        njt.say(#keys)
     }
 --- stream_response
 1
@@ -1041,15 +1041,15 @@ bar
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", "x", 1)
         dogs:set("bah", "y", 0)
         dogs:set("bar", "z", 100)
 
-        ngx.sleep(1.5)
+        njt.sleep(1.5)
 
         local keys = dogs:get_keys()
-        ngx.say(#keys)
+        njt.say(#keys)
     }
 --- stream_response
 2
@@ -1063,12 +1063,12 @@ bar
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
 
         dogs:set("bah", "y", 0)
         dogs:set("bar", "z", 0)
         local keys = dogs:get_keys(3)
-        ngx.say(#keys)
+        njt.say(#keys)
     }
 --- stream_response
 2
@@ -1082,9 +1082,9 @@ bar
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local keys = dogs:get_keys()
-        ngx.say(#keys)
+        njt.say(#keys)
     }
 --- stream_response
 0
@@ -1098,9 +1098,9 @@ bar
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local keys = dogs:get_keys(4)
-        ngx.say(#keys)
+        njt.say(#keys)
     }
 --- stream_response
 0
@@ -1114,15 +1114,15 @@ bar
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", "x", 1)
         dogs:set("bah", "y", 1)
         dogs:set("bar", "z", 1)
 
-        ngx.sleep(1.5)
+        njt.sleep(1.5)
 
         local keys = dogs:get_keys()
-        ngx.say(#keys)
+        njt.say(#keys)
     }
 --- stream_response
 0
@@ -1136,12 +1136,12 @@ bar
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         for i=1,2048 do
             dogs:set(tostring(i), i)
         end
         local keys = dogs:get_keys()
-        ngx.say(#keys)
+        njt.say(#keys)
     }
 --- stream_response
 1024
@@ -1155,12 +1155,12 @@ bar
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         for i=1,2048 do
             dogs:set(tostring(i), i)
         end
         local keys = dogs:get_keys(0)
-        ngx.say(#keys)
+        njt.say(#keys)
     }
 --- stream_response
 2048
@@ -1178,24 +1178,24 @@ bar
     content_by_lua_file html/a.lua;
 --- user_files
 >>> a.lua
-local dogs = ngx.shared.dogs
+local dogs = njt.shared.dogs
 local i = 0
 while i < 1000 do
     i = i + 1
     local val = string.rep(" hello", 10) .. i
     local res, err = dogs:safe_set("key_" .. i, val)
     if not res then
-        ngx.say(res, " ", err)
+        njt.say(res, " ", err)
         break
     end
 end
-ngx.say("abort at ", i)
-ngx.say("cur value: ", dogs:get("key_" .. i))
+njt.say("abort at ", i)
+njt.say("cur value: ", dogs:get("key_" .. i))
 if i > 1 then
-    ngx.say("1st value: ", dogs:get("key_1"))
+    njt.say("1st value: ", dogs:get("key_1"))
 end
 if i > 2 then
-    ngx.say("2nd value: ", dogs:get("key_2"))
+    njt.say("2nd value: ", dogs:get("key_2"))
 end
 --- stream_response eval
 my $a = "false no memory\nabort at (353|705)\ncur value: nil\n1st value: " . (" hello" x 10) . "1\n2nd value: " . (" hello" x 10) . "2\n";
@@ -1214,24 +1214,24 @@ my $a = "false no memory\nabort at (353|705)\ncur value: nil\n1st value: " . (" 
     content_by_lua_file html/a.lua;
 --- user_files
 >>> a.lua
-local dogs = ngx.shared.dogs
+local dogs = njt.shared.dogs
 local i = 0
 while i < 1000 do
     i = i + 1
     local val = string.rep(" hello", 10) .. i
     local res, err = dogs:safe_add("key_" .. i, val)
     if not res then
-        ngx.say(res, " ", err)
+        njt.say(res, " ", err)
         break
     end
 end
-ngx.say("abort at ", i)
-ngx.say("cur value: ", dogs:get("key_" .. i))
+njt.say("abort at ", i)
+njt.say("cur value: ", dogs:get("key_" .. i))
 if i > 1 then
-    ngx.say("1st value: ", dogs:get("key_1"))
+    njt.say("1st value: ", dogs:get("key_1"))
 end
 if i > 2 then
-    ngx.say("2nd value: ", dogs:get("key_2"))
+    njt.say("2nd value: ", dogs:get("key_2"))
 end
 --- stream_response eval
 my $a = "false no memory\nabort at (353|705)\ncur value: nil\n1st value: " . (" hello" x 10) . "1\n2nd value: " . (" hello" x 10) . "2\n";
@@ -1251,14 +1251,14 @@ cur value:  hello hello hello hello hello hello hello hello hello hello1
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32, 0.01)
         dogs:set("blah", 33, 0.1)
-        ngx.sleep(0.02)
+        njt.sleep(0.02)
         local val, flags, stale = dogs:get_stale("foo")
-        ngx.say(val, ", ", flags, ", ", stale)
+        njt.say(val, ", ", flags, ", ", stale)
         local val, flags, stale = dogs:get_stale("blah")
-        ngx.say(val, ", ", flags, ", ", stale)
+        njt.say(val, ", ", flags, ", ", stale)
     }
 --- stream_response
 32, nil, true
@@ -1273,13 +1273,13 @@ cur value:  hello hello hello hello hello hello hello hello hello hello1
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:set(nil, 32)
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 not ok: nil key
@@ -1293,13 +1293,13 @@ not ok: nil key
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs.set(nil, "foo", 32)
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 --- error_log
@@ -1312,13 +1312,13 @@ bad "zone" argument
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:set("", 32)
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 not ok: empty key
@@ -1332,13 +1332,13 @@ not ok: empty key
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs.get(nil, "foo")
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 --- error_log
@@ -1351,13 +1351,13 @@ bad "zone" argument
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:get(nil)
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 not ok: nil key
@@ -1371,13 +1371,13 @@ not ok: nil key
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:get("")
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 not ok: empty key
@@ -1391,13 +1391,13 @@ not ok: empty key
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:get(string.rep("a", 65536))
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 not ok: key too long
@@ -1411,20 +1411,20 @@ not ok: key too long
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:set("foo", string.rep("helloworld", 1024))
         if not ok then
-            ngx.say("set not ok: ", err)
+            njt.say("set not ok: ", err)
             return
         end
-        ngx.say("set ok")
+        njt.say("set ok")
 
         local data, err = dogs:get("foo")
         if data == nil and err then
-            ngx.say("get not ok: ", err)
+            njt.say("get not ok: ", err)
             return
         end
-        ngx.say("get ok: ", #data)
+        njt.say("get ok: ", #data)
 
     }
 --- stream_response
@@ -1440,13 +1440,13 @@ get ok: 10240
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:get_stale(nil)
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 not ok: nil key
@@ -1460,13 +1460,13 @@ not ok: nil key
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:get_stale("")
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 not ok: empty key
@@ -1480,19 +1480,19 @@ not ok: empty key
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:set(1024, "hello")
         if not ok then
-            ngx.say("set not ok: ", err)
+            njt.say("set not ok: ", err)
             return
         end
-        ngx.say("set ok")
+        njt.say("set ok")
         local data, err = dogs:get_stale(1024)
         if not ok then
-            ngx.say("get_stale not ok: ", err)
+            njt.say("get_stale not ok: ", err)
             return
         end
-        ngx.say("get_stale: ", data)
+        njt.say("get_stale: ", data)
     }
 --- stream_response
 set ok
@@ -1507,13 +1507,13 @@ get_stale: hello
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:get_stale(string.rep("a", 65536))
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 not ok: key too long
@@ -1527,13 +1527,13 @@ not ok: key too long
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local data, err = dogs:get_stale("not_found")
         if data == nil and err then
-            ngx.say("get not ok: ", err)
+            njt.say("get not ok: ", err)
             return
         end
-        ngx.say("get ok: ", data)
+        njt.say("get ok: ", data)
     }
 --- stream_response
 get ok: nil
@@ -1547,20 +1547,20 @@ get ok: nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:set("foo", string.rep("helloworld", 1024))
         if not ok then
-            ngx.say("set not ok: ", err)
+            njt.say("set not ok: ", err)
             return
         end
-        ngx.say("set ok")
+        njt.say("set ok")
 
         local data, err, stale = dogs:get_stale("foo")
         if data == nil and err then
-            ngx.say("get not ok: ", err)
+            njt.say("get not ok: ", err)
             return
         end
-        ngx.say("get_stale ok: ", #data, ", stale: ", stale)
+        njt.say("get_stale ok: ", #data, ", stale: ", stale)
 
     }
 --- stream_response
@@ -1576,20 +1576,20 @@ get_stale ok: 10240, stale: false
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:set("foo", true)
         if not ok then
-            ngx.say("set not ok: ", err)
+            njt.say("set not ok: ", err)
             return
         end
-        ngx.say("set ok")
+        njt.say("set ok")
 
         local data, err, stale = dogs:get_stale("foo")
         if data == nil and err then
-            ngx.say("get not ok: ", err)
+            njt.say("get not ok: ", err)
             return
         end
-        ngx.say("get_stale ok: ", data, ", stale: ", stale)
+        njt.say("get_stale ok: ", data, ", stale: ", stale)
 
     }
 --- stream_response
@@ -1605,20 +1605,20 @@ get_stale ok: true, stale: false
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:set("foo", false)
         if not ok then
-            ngx.say("set not ok: ", err)
+            njt.say("set not ok: ", err)
             return
         end
-        ngx.say("set ok")
+        njt.say("set ok")
 
         local data, err, stale = dogs:get_stale("foo")
         if data == nil and err then
-            ngx.say("get not ok: ", err)
+            njt.say("get not ok: ", err)
             return
         end
-        ngx.say("get_stale ok: ", data, ", stale: ", stale)
+        njt.say("get_stale ok: ", data, ", stale: ", stale)
 
     }
 --- stream_response
@@ -1634,21 +1634,21 @@ get_stale ok: false, stale: false
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:set("foo", false, 0, 325)
         if not ok then
-            ngx.say("set not ok: ", err)
+            njt.say("set not ok: ", err)
             return
         end
-        ngx.say("set ok")
+        njt.say("set ok")
 
         local data, err, stale = dogs:get_stale("foo")
         if data == nil and err then
-            ngx.say("get not ok: ", err)
+            njt.say("get not ok: ", err)
             return
         end
         flags = err
-        ngx.say("get_stale ok: ", data, ", flags: ", flags,
+        njt.say("get_stale ok: ", data, ", flags: ", flags,
                 ", stale: ", stale)
 
     }
@@ -1665,13 +1665,13 @@ get_stale ok: false, flags: 325, stale: false
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:incr(nil, 32)
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 not ok: nil key
@@ -1685,13 +1685,13 @@ not ok: nil key
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs.incr(nil, "foo", 32)
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 --- error_log
@@ -1704,13 +1704,13 @@ bad "zone" argument
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:incr("", 32)
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 not ok: empty key
@@ -1724,14 +1724,14 @@ not ok: empty key
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local key = string.rep("a", 65536)
         local ok, err = dogs:incr(key, 32)
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
 
     }
 --- stream_response
@@ -1746,27 +1746,27 @@ not ok: key too long
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local key = 56
         local ok, err = dogs:set(key, 1)
         if not ok then
-            ngx.say("set not ok: ", err)
+            njt.say("set not ok: ", err)
             return
         end
-        ngx.say("set ok")
+        njt.say("set ok")
         ok, err = dogs:incr(key, 32)
         if not ok then
-            ngx.say("incr not ok: ", err)
+            njt.say("incr not ok: ", err)
             return
         end
-        ngx.say("incr ok")
+        njt.say("incr ok")
         local data, err = dogs:get(key)
         if data == nil and err then
-            ngx.say("get not ok: ", err)
+            njt.say("get not ok: ", err)
             return
         end
         local flags = err
-        ngx.say("get ok: ", data, ", flags: ", flags)
+        njt.say("get ok: ", data, ", flags: ", flags)
 
     }
 --- stream_response
@@ -1783,27 +1783,27 @@ get ok: 33, flags: nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local key = 56
         local ok, err = dogs:set(key, 1)
         if not ok then
-            ngx.say("set not ok: ", err)
+            njt.say("set not ok: ", err)
             return
         end
-        ngx.say("set ok")
+        njt.say("set ok")
         ok, err = dogs:incr(key, "32")
         if not ok then
-            ngx.say("incr not ok: ", err)
+            njt.say("incr not ok: ", err)
             return
         end
-        ngx.say("incr ok")
+        njt.say("incr ok")
         local data, err = dogs:get(key)
         if data == nil and err then
-            ngx.say("get not ok: ", err)
+            njt.say("get not ok: ", err)
             return
         end
         local flags = err
-        ngx.say("get ok: ", data, ", flags: ", flags)
+        njt.say("get ok: ", data, ", flags: ", flags)
 
     }
 --- stream_response
@@ -1820,13 +1820,13 @@ get ok: 33, flags: nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local ok, err = dogs:add("foo", nil)
         if not ok then
-            ngx.say("not ok: ", err)
+            njt.say("not ok: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 not ok: attempt to add or replace nil values
@@ -1840,15 +1840,15 @@ not ok: attempt to add or replace nil values
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 2, 0)
         dogs:replace("foo", 32, 0.01)
         local data = dogs:get("foo")
-        ngx.say("get foo: ", data)
-        ngx.sleep(0.02)
+        njt.say("get foo: ", data)
+        njt.sleep(0.02)
         local res, err, forcible = dogs:replace("foo", 10502)
-        ngx.say("replace: ", res, " ", err, " ", forcible)
-        ngx.say("foo = ", dogs:get("foo"))
+        njt.say("replace: ", res, " ", err, " ", forcible)
+        njt.say("foo = ", dogs:get("foo"))
     }
 --- stream_response
 get foo: 32
@@ -1859,12 +1859,12 @@ foo = nil
 
 
 
-=== TEST 82: the lightuserdata ngx.null has no methods of shared dicts.
+=== TEST 82: the lightuserdata njt.null has no methods of shared dicts.
 --- stream_config
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local lightuserdata = ngx.null
+        local lightuserdata = njt.null
         lightuserdata:set("foo", 1)
     }
 --- stream_response
@@ -1884,7 +1884,7 @@ bad "zone" argument
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs.set({1}, "foo", 1)
     }
 --- stream_response
@@ -1898,7 +1898,7 @@ bad "zone" argument
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs.get({1}, "foo")
     }
 --- stream_response
@@ -1912,7 +1912,7 @@ bad "zone" argument
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs.incr({1}, "foo", 32)
     }
 --- stream_response
@@ -1926,7 +1926,7 @@ bad "zone" argument
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("type: ", type(ngx.shared.dogs))
+        njt.say("type: ", type(njt.shared.dogs))
     }
 --- stream_response
 type: table
@@ -1941,19 +1941,19 @@ type: table
     lua_shared_dict cats 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32)
         dogs:set("bah", 10502)
         local val = dogs:get("foo")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
         val = dogs:get("bah")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
 
-        local cats = ngx.shared.cats
+        local cats = njt.shared.cats
         val = cats:get("foo")
-        ngx.say(val or "nil")
+        njt.say(val or "nil")
         val = cats:get("bah")
-        ngx.say(val or "nil")
+        njt.say(val or "nil")
     }
 --- stream_response
 32 number
@@ -1970,29 +1970,29 @@ nil
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local len, err = dogs:lpush("cc", "1") --add another list to avoid key"aa" be cleaned (run ‘njt_http_lua_shdict_expire(ctx, 1)’ may clean key ,ensure key'aa' not clean ,just expired))
         if not len then
-            ngx.say("push cc  err: ", err)
+            njt.say("push cc  err: ", err)
         end
         local len, err = dogs:lpush("aa", "1")
         if not len then
-            ngx.say("push1 err: ", err)
+            njt.say("push1 err: ", err)
         end
         local succ, err = dogs:expire("aa", 0.2)
         if not succ then
-            ngx.say("expire err: ",err)
+            njt.say("expire err: ",err)
         end
-        ngx.sleep(0.3) -- list aa expired
+        njt.sleep(0.3) -- list aa expired
         local len, err = dogs:lpush("aa", "2") --push to an expired list may set as a new list
         if not len then
-            ngx.say("push2 err: ", err)
+            njt.say("push2 err: ", err)
         end
         local len, err = dogs:llen("aa") -- new list len is 1
         if not len then
-            ngx.say("llen err: ", err)
+            njt.say("llen err: ", err)
         else
-            ngx.say("aa:len :", dogs:llen("aa"))
+            njt.say("aa:len :", dogs:llen("aa"))
         end
     }
 --- stream_response
@@ -2007,30 +2007,30 @@ aa:len :1
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local len, err = dogs:lpush("cc", "1") --add another list to avoid key"aa" be cleaned (run ‘njt_http_lua_shdict_expire(ctx, 1)’ may clean key ,ensure key'aa' not clean ,just expired))
         if not len then
-            ngx.say("push cc  err: ", err)
+            njt.say("push cc  err: ", err)
         end
         local len, err = dogs:lpush("aa", "1")
         if not len then
-            ngx.say("push1 err: ", err)
+            njt.say("push1 err: ", err)
         end
         local succ, err = dogs:expire("aa", 0.2)
         if not succ then
-            ngx.say("expire err: ",err)
+            njt.say("expire err: ",err)
         end
-        ngx.sleep(0.3) -- list aa expired
+        njt.sleep(0.3) -- list aa expired
         local len, err = dogs:lpush("aa", "2") --push to an expired list may set as a new list
         if not len then
-            ngx.say("push2 err: ", err)
+            njt.say("push2 err: ", err)
         end
         local val, err = dogs:lpop("aa")
         if not val then
-            ngx.say("llen err: ", err)
+            njt.say("llen err: ", err)
         end
         local val, err = dogs:lpop("aa")  -- val == nil
-        ngx.say("aa list value: ", val)
+        njt.say("aa list value: ", val)
     }
 --- stream_response
 aa list value: nil

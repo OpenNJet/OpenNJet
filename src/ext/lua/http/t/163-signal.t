@@ -23,9 +23,9 @@ __DATA__
 --- config
     location = /t {
         content_by_lua_block {
-            local pid = ngx.worker.pid()
+            local pid = njt.worker.pid()
             os.execute("kill -HUP " .. pid)
-            ngx.sleep(0.01)
+            njt.sleep(0.01)
 
             os.execute("kill -QUIT " .. pid)
         }
@@ -45,7 +45,7 @@ qr/\[notice\] \d+#\d+: reconfiguring/
 --- config
     location = /t {
         content_by_lua_block {
-            local pid = ngx.worker.pid()
+            local pid = njt.worker.pid()
             os.execute("kill -HUP " .. pid)
         }
     }

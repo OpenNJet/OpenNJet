@@ -45,10 +45,10 @@ __DATA__
         content_by_lua '
             local foo = package.loaded.foo
             if foo then
-                ngx.say("found")
+                njt.say("found")
                 foo.hi()
             else
-                ngx.say("not found")
+                njt.say("not found")
             end
         ';
     }
@@ -58,10 +58,10 @@ GET /main
 >>> foo.lua
 module(..., package.seeall);
 
-ngx.say("loading");
+njt.say("loading");
 
 function hi ()
-    ngx.say("hello, foo")
+    njt.say("hello, foo")
 end;
 --- response_body
 loading
@@ -79,7 +79,7 @@ hello, foo
 --- config
     location /main {
         content_by_lua '
-            ngx.print(package.cpath);
+            njt.print(package.cpath);
         ';
     }
 --- request
@@ -95,7 +95,7 @@ GET /main
 --- config
     location /main {
         content_by_lua '
-            ngx.print(package.path);
+            njt.print(package.path);
         ';
     }
 --- request
@@ -110,7 +110,7 @@ GET /main
 --- config
     location /main {
         content_by_lua '
-            ngx.print(package.cpath);
+            njt.print(package.cpath);
         ';
     }
 --- request
@@ -125,7 +125,7 @@ GET /main
 --- config
     location /main {
         content_by_lua '
-            ngx.print(package.path);
+            njt.print(package.path);
         ';
     }
 --- request
@@ -140,7 +140,7 @@ GET /main
 --- config
     location /main {
         content_by_lua '
-            ngx.print(package.cpath);
+            njt.print(package.cpath);
         ';
     }
 --- request
@@ -149,32 +149,32 @@ GET /main
 
 
 
-=== TEST 7: require "ngx" (content_by_lua)
+=== TEST 7: require "njt" (content_by_lua)
 --- config
-    location /ngx {
+    location /njt {
         content_by_lua '
-            local ngx = require "ngx"
-            ngx.say("hello, world")
+            local njt = require "njt"
+            njt.say("hello, world")
         ';
     }
 --- request
-GET /ngx
+GET /njt
 --- response_body
 hello, world
 
 
 
-=== TEST 8: require "ngx" (set_by_lua)
+=== TEST 8: require "njt" (set_by_lua)
 --- config
-    location /ngx {
+    location /njt {
         set_by_lua $res '
-            local ngx = require "ngx"
-            return ngx.escape_uri(" ")
+            local njt = require "njt"
+            return njt.escape_uri(" ")
         ';
         echo $res;
     }
 --- request
-GET /ngx
+GET /njt
 --- response_body
 %20
 
@@ -186,7 +186,7 @@ GET /ngx
         content_by_lua '
             local ndk = require "ndk"
             local res = ndk.set_var.set_escape_uri(" ")
-            ngx.say(res)
+            njt.say(res)
         ';
     }
 --- request

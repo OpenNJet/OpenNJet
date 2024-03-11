@@ -19,28 +19,28 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: ngx.say and cosocket
+=== TEST 1: njt.say and cosocket
 --- stream_server_config
     content_by_lua_block {
-        local sock = assert(ngx.req.socket(true))
+        local sock = assert(njt.req.socket(true))
         sock:settimeout(1000)
         while true do
             local data = sock:receive(5)
             if not data then
                 return
             end
-            ngx.print(data)
-            ngx.flush(true)
+            njt.print(data)
+            njt.flush(true)
         end
     }
 --- config
     location /test {
         content_by_lua_block {
-            ngx.say("hello")
-            --ngx.flush(true)
+            njt.say("hello")
+            --njt.flush(true)
 
-            local sock = ngx.socket.tcp()
-            local ok, err = sock:connect("127.0.0.1", ngx.var.server_port + 1)
+            local sock = njt.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", njt.var.server_port + 1)
             assert(ok)
 
             local last_duration = 0
@@ -51,8 +51,8 @@ __DATA__
 
             for i = 1,100000 do
                 if cnt == 0 then
-                    ngx.update_time()
-                    t1 = ngx.now()
+                    njt.update_time()
+                    t1 = njt.now()
                 end
 
                 cnt = cnt + 1
@@ -63,16 +63,16 @@ __DATA__
 
                 if cnt == 1000 then
                     cnt = 0
-                    ngx.update_time()
-                    t2 = ngx.now()
+                    njt.update_time()
+                    t2 = njt.now()
                     local duration = (t2 - t1) * 1000
                     if last_duration > 0 and (duration - last_duration) > ERR_THRESHOLD_MS then
                         if err_cnt >= 3 then
-                            ngx.log(ngx.ERR,
+                            njt.log(njt.ERR,
                                 "more than ", err_cnt, " times, duration larger than ",
                                 ERR_THRESHOLD_MS, " ms, ",
                                 "last_duration: ", math.floor(duration), " ms")
-                            return ngx.exit(500)
+                            return njt.exit(500)
                         end
                         err_cnt = err_cnt + 1
                     end
@@ -81,7 +81,7 @@ __DATA__
             end
 
             sock:close()
-            ngx.exit(200)
+            njt.exit(200)
         }
     }
 --- no_error_log

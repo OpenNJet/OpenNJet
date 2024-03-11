@@ -24,7 +24,7 @@ __DATA__
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.say("hello, world")
+            njt.say("hello, world")
         }
     }
 --- request
@@ -44,10 +44,10 @@ hello, world
                 dogs = {32, 78, 96},
                 cat = "kitty",
             }
-            ngx.say("a.dogs[1] = ", a.dogs[1])
-            ngx.say("a.dogs[2] = ", a.dogs[2])
-            ngx.say("a.dogs[3] = ", a.dogs[3])
-            ngx.say("a.cat = ", a.cat)
+            njt.say("a.dogs[1] = ", a.dogs[1])
+            njt.say("a.dogs[2] = ", a.dogs[2])
+            njt.say("a.dogs[3] = ", a.dogs[3])
+            njt.say("a.cat = ", a.cat)
         }
     }
 --- request
@@ -67,8 +67,8 @@ a.cat = kitty
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.say("}1, 2)")
-            ngx.say('{1, 2)')
+            njt.say("}1, 2)")
+            njt.say('{1, 2)')
         }
     }
 --- request
@@ -86,8 +86,8 @@ GET /t
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.say("\"}1, 2)")
-            ngx.say('\'{1, 2)')
+            njt.say("\"}1, 2)")
+            njt.say('\'{1, 2)')
         }
     }
 --- request
@@ -115,7 +115,7 @@ GET /t
 
                         {
             ]==]
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request
@@ -136,7 +136,7 @@ ok
             '  "
                         }
             ]]
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request
@@ -153,7 +153,7 @@ ok
     location = /t {
         content_by_lua_block {
             --}} {}
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request
@@ -170,45 +170,45 @@ ok
     server_tokens off;
     location = /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
-            local port = ngx.var.port
-            local ok, err = sock:connect('127.0.0.1', tonumber(ngx.var.server_port))
+            local sock = njt.socket.tcp()
+            local port = njt.var.port
+            local ok, err = sock:connect('127.0.0.1', tonumber(njt.var.server_port))
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say('connected: ', ok)
+            njt.say('connected: ', ok)
 
             local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
             -- req = "OK"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             while true do
                 local line, err, part = sock:receive()
                 if line then
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
 
                 else
-                    ngx.say("failed to receive a line: ", err, " [", part, "]")
+                    njt.say("failed to receive a line: ", err, " [", part, "]")
                     break
                 end
             end
 
             ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         }
     }
 
     location /foo {
-        content_by_lua_block { ngx.say("foo") }
+        content_by_lua_block { njt.say("foo") }
         more_clear_headers Date;
     }
 
@@ -244,30 +244,30 @@ close: 1 nil
     location = /t {
         set $a '';
         rewrite_by_lua_block {
-            local s = ngx.var.a
+            local s = njt.var.a
             s = s .. "}rewrite{\n"
-            ngx.var.a = s
+            njt.var.a = s
         }
         access_by_lua_block {
-            local s = ngx.var.a
+            local s = njt.var.a
             s = s .. '}access{\n'
-            ngx.var.a = s
+            njt.var.a = s
         }
         content_by_lua_block {
-            local s = ngx.var.a
+            local s = njt.var.a
             s = s .. [[}content{]]
-            ngx.say(s)
-            ngx.say("glob: ", glob)
+            njt.say(s)
+            njt.say("glob: ", glob)
         }
         log_by_lua_block {
             print("log by lua running \"}{!\"")
         }
         header_filter_by_lua_block {
-            ngx.header["Foo"] = "\"Hello, world\""
-            ngx.header["Content-Length"] = nil
+            njt.header["Foo"] = "\"Hello, world\""
+            njt.header["Content-Length"] = nil
         }
         body_filter_by_lua_block {
-            local data, eof = ngx.arg[1], ngx.arg[2]
+            local data, eof = njt.arg[1], njt.arg[2]
             print("eof = ", eof)
             if eof then
                 if not data then
@@ -275,7 +275,7 @@ close: 1 nil
                 end
                 data = data .. "}body filter{\n"
                 print("data: ", data)
-                ngx.arg[1] = data
+                njt.arg[1] = data
             end
         }
     }
@@ -301,7 +301,7 @@ log by lua running "}{!"
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.say([[hello, world")
+            njt.say([[hello, world")
         }
     }
 --- request
@@ -320,7 +320,7 @@ qr/\[emerg\] .*? Lua code block missing the closing long bracket "]]", the inlin
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.say([==[hello, world")
+            njt.say([==[hello, world")
         }
     }
 --- request
@@ -339,7 +339,7 @@ qr/\[emerg\] .*? Lua code block missing the closing long bracket "]==]", the inl
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.say(--[[hello, world")
+            njt.say(--[[hello, world")
         }
     }
 --- request
@@ -358,7 +358,7 @@ qr/\[emerg\] .*? Lua code block missing the closing long bracket "]]", the inlin
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.say(--[=[hello, world")
+            njt.say(--[=[hello, world")
         }
     }
 --- request
@@ -380,7 +380,7 @@ the *_by_lua_block directive.
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.say("hello")
+            njt.say("hello")
 --- request
 GET /t
 --- response_body
@@ -396,7 +396,7 @@ hello, world
 === TEST 15: content_by_lua_block (compact)
 --- config
     location = /t {
-        content_by_lua_block {ngx.say("hello, world", {"!"})}
+        content_by_lua_block {njt.say("hello, world", {"!"})}
     }
 --- request
 GET /t
@@ -427,7 +427,7 @@ qr{\[error\] .*? unexpected symbol near ']'}
     location = /t {
         content_by_lua_block {
             local t1, t2 = {"hello world"}, {1}
-            ngx.say(t1[t2[1]])
+            njt.say(t1[t2[1]])
         }
     }
 --- request
@@ -458,10 +458,10 @@ GET /lua
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.say([[ok--]])
-            ngx.say([==[ok--]==])
-            ngx.say([==[ok-- ]==])
-            --[[ --]] ngx.say("done")
+            njt.say([[ok--]])
+            njt.say([==[ok--]==])
+            njt.say([==[ok-- ]==])
+            --[[ --]] njt.say("done")
         }
     }
 --- request
@@ -479,7 +479,7 @@ done
 === TEST 20: double quotes in long brackets
 --- config
     location = /t {
-        rewrite_by_lua_block { print([[Hey, it is "!]]) } content_by_lua_block { ngx.say([["]]) }
+        rewrite_by_lua_block { print([[Hey, it is "!]]) } content_by_lua_block { njt.say([["]]) }
     }
 --- request
 GET /t
@@ -495,7 +495,7 @@ Hey, it is "!
 === TEST 21: single quotes in long brackets
 --- config
     location = /t {
-        rewrite_by_lua_block { print([[Hey, it is '!]]) } content_by_lua_block { ngx.say([[']]) }
+        rewrite_by_lua_block { print([[Hey, it is '!]]) } content_by_lua_block { njt.say([[']]) }
     }
 --- request
 GET /t
@@ -512,7 +512,7 @@ Hey, it is '!
 --- config
         location /test1 {
             content_by_lua_block {
-                ngx.say("1: this is just some random filler to cause an error",
+                njt.say("1: this is just some random filler to cause an error",
                 "this is just some random filler to cause an error",
                 "this is just some random filler to cause an error",
                 "this is just some random filler to cause an error",
@@ -537,7 +537,7 @@ Hey, it is '!
         }
         location /test2 {
             content_by_lua_block {
-                ngx.say("2: this is just some random filler to cause an error",
+                njt.say("2: this is just some random filler to cause an error",
                 "this is just some random filler to cause an error",
                 "this is just some random filler to cause an error",
                 "this is just some random filler to cause an error",
@@ -562,7 +562,7 @@ Hey, it is '!
 
         location /test3 {
             content_by_lua_block {
-                ngx.say("3: this is just some random filler to cause an error",
+                njt.say("3: this is just some random filler to cause an error",
                 "this is just some random filler to cause an error",
                 "this is just some random filler to cause an error",
                 "this is just some random filler to cause an error",
@@ -597,8 +597,8 @@ GET /test3
 --- config
     location /t {
         content_by_lua_block {
-            ngx.say("}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }")
-            ngx.say("}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }")
+            njt.say("}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }")
+            njt.say("}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                }")
         }
     }
 --- request
@@ -629,7 +629,7 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
             ]]
-            ngx.say(foo)
+            njt.say(foo)
         }
     }
 --- request

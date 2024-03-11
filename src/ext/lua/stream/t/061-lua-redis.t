@@ -30,14 +30,14 @@ __DATA__
     lua_package_path '$TEST_NGINX_PWD/t/lib/?.lua;;';
 --- stream_server_config
     content_by_lua_block {
-        package.loaded["socket"] = ngx.socket
+        package.loaded["socket"] = njt.socket
         local Redis = require "Redis"
 
         local redis = Redis.connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
 
         redis:set("some_key", "hello 1234")
         local data = redis:get("some_key")
-        ngx.say("some_key: ", data)
+        njt.say("some_key: ", data)
     }
 --- stream_response
 some_key: hello 1234
@@ -54,7 +54,7 @@ qq{
 }
 --- stream_server_config
     content_by_lua_block {
-        package.loaded["socket"] = ngx.socket
+        package.loaded["socket"] = njt.socket
         local Redis = require "Redis"
 
         local ljson = require "ljson"
@@ -65,26 +65,26 @@ qq{
 
         local loop = r2:pubsub({ subscribe = "foo" })
         local msg, abort = loop()
-        ngx.say("msg type: ", type(msg))
-        ngx.say("abort: ", type(abort))
+        njt.say("msg type: ", type(msg))
+        njt.say("abort: ", type(abort))
 
         if msg then
-            ngx.say("msg: ", ljson.encode(msg))
+            njt.say("msg: ", ljson.encode(msg))
         end
 
         for i = 1, 3 do
             r1:publish("foo", "test " .. i)
             msg, abort = loop()
             if msg then
-                ngx.say("msg: ", ljson.encode(msg))
+                njt.say("msg: ", ljson.encode(msg))
             end
-            ngx.say("abort: ", type(abort))
+            njt.say("abort: ", type(abort))
         end
 
         abort()
 
         msg, abort = loop()
-        ngx.say("msg type: ", type(msg))
+        njt.say("msg type: ", type(msg))
     }
 --- stap2
 global ids, cur

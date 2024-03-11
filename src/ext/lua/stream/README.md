@@ -58,7 +58,7 @@ stream {
         listen 1234;
 
         content_by_lua_block {
-            ngx.say("Hello, Lua!")
+            njt.say("Hello, Lua!")
         }
     }
 }
@@ -79,14 +79,14 @@ stream {
         ssl_session_timeout 10m;
 
         content_by_lua_block {
-            local sock = assert(ngx.req.socket(true))
+            local sock = assert(njt.req.socket(true))
             local data = sock:receive()  -- read a line from downstream
             if data == "thunder!" then
-                ngx.say("flash!")  -- output data
+                njt.say("flash!")  -- output data
             else
-                ngx.say("boom!")
+                njt.say("boom!")
             end
-            ngx.say("the end...")
+            njt.say("the end...")
         }
     }
 }
@@ -100,10 +100,10 @@ stream {
         listen unix:/tmp/nginx.sock;
 
         content_by_lua_block {
-            ngx.say("What's up?")
-            ngx.flush(true)  -- flush any pending output and wait
-            ngx.sleep(3)  -- sleeping for 3 sec
-            ngx.say("Bye bye...")
+            njt.say("What's up?")
+            njt.flush(true)  -- flush any pending output and wait
+            njt.sleep(3)  -- sleeping for 3 sec
+            njt.say("Bye bye...")
         }
     }
 }
@@ -195,7 +195,7 @@ Acts as a `preread` phase handler and executes Lua code string specified in `lua
 (or packet in datagram mode).
 The Lua code may make [API calls](#nginx-api-for-lua) and is executed as a new spawned coroutine in an independent global environment (i.e. a sandbox).
 
-It is possible to acquire the raw request socket using [ngx.req.socket](https://github.com/openresty/lua-nginx-module#ngxreqsocket)
+It is possible to acquire the raw request socket using [njt.req.socket](https://github.com/openresty/lua-nginx-module#njtreqsocket)
 and receive data from or send data to the client. However, keep in mind that calling the `receive()` method
 of the request socket will consume the data from the buffer and such consumed data will not be seen by handlers
 further down the chain.
@@ -240,7 +240,7 @@ log_by_lua_block
 
 Runs the Lua source code specified as `<lua-script>` during the `log` request processing phase. This does not replace the current access logs, but runs before.
 
-Yielding APIs such as `ngx.req.socket`, `ngx.socket.*`, `ngx.sleep`, or `ngx.say` are **not** available in this phase.
+Yielding APIs such as `njt.req.socket`, `njt.socket.*`, `njt.sleep`, or `njt.say` are **not** available in this phase.
 
 This directive was first introduced in the `v0.0.3` release.
 
@@ -279,7 +279,7 @@ Add the variable `$var` to the "stream" subsystem and makes it changeable. If `$
 this directive will do nothing.
 
 By default, variables added using this directive are considered "not found" and reading them
-using `ngx.var` will return `nil`. However, they could be re-assigned via the `ngx.var.VARIABLE` API at any time.
+using `njt.var` will return `nil`. However, they could be re-assigned via the `njt.var.VARIABLE` API at any time.
 
 This directive was first introduced in the `v0.0.4` release.
 
@@ -306,30 +306,30 @@ Nginx API for Lua
 Many Lua API functions are ported from njt_http_lua. Check out the official
 manual of njt_http_lua for more details on these Lua API functions.
 
-* [ngx.var.VARIABLE](https://github.com/openresty/lua-nginx-module#ngxvarvariable)
+* [njt.var.VARIABLE](https://github.com/openresty/lua-nginx-module#njtvarvariable)
 
 This module fully supports the new variable subsystem inside the Nginx stream core. You may access any
 [built-in variables](https://nginx.org/en/docs/stream/njt_stream_core_module.html#variables) provided by the stream core or
 other stream modules.
 * [Core constants](https://github.com/openresty/lua-nginx-module#core-constants)
 
-    `ngx.OK`, `ngx.ERROR`, and etc.
+    `njt.OK`, `njt.ERROR`, and etc.
 * [Nginx log level constants](https://github.com/openresty/lua-nginx-module#nginx-log-level-constants)
 
-    `ngx.ERR`, `ngx.WARN`, and etc.
+    `njt.ERR`, `njt.WARN`, and etc.
 * [print](https://github.com/openresty/lua-nginx-module#print)
-* [ngx.ctx](https://github.com/openresty/lua-nginx-module#ngxctx)
-* [ngx.balancer](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/balancer.md)
+* [njt.ctx](https://github.com/openresty/lua-nginx-module#njtctx)
+* [njt.balancer](https://github.com/openresty/lua-resty-core/blob/master/lib/njt/balancer.md)
 
-* [ngx.req.socket](https://github.com/openresty/lua-nginx-module#ngxreqsocket)
+* [njt.req.socket](https://github.com/openresty/lua-nginx-module#njtreqsocket)
 
 Only raw request sockets are supported, for obvious reasons. The `raw` argument value
 is ignored and the raw request socket is always returned. Unlike njt_http_lua,
-you can still call output API functions like `ngx.say`, `ngx.print`, and `ngx.flush`
+you can still call output API functions like `njt.say`, `njt.print`, and `njt.flush`
 after acquiring the raw request socket via this function.
 
 When the stream server is in UDP mode, reading from the downstream socket returned by the
-`ngx.req.socket` call will only return the content of a single packet. Therefore
+`njt.req.socket` call will only return the content of a single packet. Therefore
 the reading call will never block and will return `nil, "no more data"` when all the
 data from the datagram has been consumed. However, you may choose to send multiple UDP
 packets back to the client using the downstream socket.
@@ -343,7 +343,7 @@ reqsock:receiveany
 
 **syntax:** *data, err = reqsock:receiveany(max)*
 
-**context:** *content_by_lua&#42;, ngx.timer.&#42;, ssl_certificate_by_lua&#42;*
+**context:** *content_by_lua&#42;, njt.timer.&#42;, ssl_certificate_by_lua&#42;*
 
 This method is similar to [tcpsock:receiveany](https://github.com/openresty/lua-nginx-module#tcpsockreceiveany) method
 
@@ -364,8 +364,8 @@ and sends TCP FIN, while keeping the reading half open.
 Currently only the `"send"` direction is supported. Using any parameters other than "send" will return
 an error.
 
-If you called any output functions (like [ngx.say](https://github.com/openresty/lua-nginx-module#ngxsay))
-before calling this method, consider use `ngx.flush(true)` to make sure all busy buffers are complely
+If you called any output functions (like [njt.say](https://github.com/openresty/lua-nginx-module#njtsay))
+before calling this method, consider use `njt.flush(true)` to make sure all busy buffers are complely
 flushed before shutting down the socket. If any busy buffers were detected, this method will return `nil`
 will error message `"socket busy writing"`.
 
@@ -385,17 +385,17 @@ local LINGERING_TIMEOUT = 5000 -- 5 seconds
 
 local ok, err = sock:shutdown("send")
 if not ok then
-    ngx.log(ngx.ERR, "failed to shutdown: ", err)
+    njt.log(njt.ERR, "failed to shutdown: ", err)
     return
 end
 
-local deadline = ngx.time() + LINGERING_TIME
+local deadline = njt.time() + LINGERING_TIME
 
 sock:settimeouts(nil, nil, LINGERING_TIMEOUT)
 
 repeat
     local data, _, partial = sock:receive(1024)
-until (not data and not partial) or ngx.time() >= deadline
+until (not data and not partial) or njt.time() >= deadline
 ```
 
 [Back to TOC](#directives)
@@ -442,7 +442,7 @@ be thrown. Consuming client data after calling this API is allowed and safe.
 Here is an example of using this API:
 
 ```lua
-local sock = assert(ngx.req.socket())
+local sock = assert(njt.req.socket())
 
 local data = assert(sock:peek(1)) -- peek the first 1 byte that contains the length
 data = string.byte(data)
@@ -451,71 +451,71 @@ data = assert(sock:peek(data + 1)) -- peek the length + the size byte
 
 local payload = data:sub(2) -- trim the length byte to get actual payload
 
-ngx.log(ngx.INFO, "payload is: ", payload)
+njt.log(njt.INFO, "payload is: ", payload)
 ```
 
 This API was first introduced in the `v0.0.6` release.
 
 [Back to TOC](#directives)
 
-* [ngx.print](https://github.com/openresty/lua-nginx-module#ngxprint)
-* [ngx.say](https://github.com/openresty/lua-nginx-module#ngxsay)
-* [ngx.log](https://github.com/openresty/lua-nginx-module#ngxlog)
-* [ngx.flush](https://github.com/openresty/lua-nginx-module#ngxflush)
+* [njt.print](https://github.com/openresty/lua-nginx-module#njtprint)
+* [njt.say](https://github.com/openresty/lua-nginx-module#njtsay)
+* [njt.log](https://github.com/openresty/lua-nginx-module#njtlog)
+* [njt.flush](https://github.com/openresty/lua-nginx-module#njtflush)
 
     This call currently ignores the `wait` argument and always wait for all the pending
 output to be completely flushed out (to the system socket send buffers).
-* [ngx.exit](https://github.com/openresty/lua-nginx-module#ngxexit)
-* [ngx.eof](https://github.com/openresty/lua-nginx-module#ngxeof)
-* [ngx.sleep](https://github.com/openresty/lua-nginx-module#ngxsleep)
-* [ngx.escape_uri](https://github.com/openresty/lua-nginx-module#ngxescape_uri)
-* [ngx.unescape_uri](https://github.com/openresty/lua-nginx-module#ngxunescape_uri)
-* [ngx.encode_args](https://github.com/openresty/lua-nginx-module#ngxencode_args)
-* [ngx.decode_args](https://github.com/openresty/lua-nginx-module#ngxdecode_args)
-* [ngx.encode_base64](https://github.com/openresty/lua-nginx-module#ngxencode_base64)
-* [ngx.decode_base64](https://github.com/openresty/lua-nginx-module#ngxdecode_base64)
-* [ngx.crc32_short](https://github.com/openresty/lua-nginx-module#ngxcrc32_short)
-* [ngx.crc32_long](https://github.com/openresty/lua-nginx-module#ngxcrc32_long)
-* [ngx.hmac_sha1](https://github.com/openresty/lua-nginx-module#ngxhmac_sha1)
-* [ngx.md5](https://github.com/openresty/lua-nginx-module#ngxmd5)
-* [ngx.md5_bin](https://github.com/openresty/lua-nginx-module#ngxmd5_bin)
-* [ngx.sha1_bin](https://github.com/openresty/lua-nginx-module#ngxsha1_bin)
-* [ngx.quote_sql_str](https://github.com/openresty/lua-nginx-module#ngxquote_sql_str)
-* [ngx.today](https://github.com/openresty/lua-nginx-module#ngxtoday)
-* [ngx.time](https://github.com/openresty/lua-nginx-module#ngxtime)
-* [ngx.now](https://github.com/openresty/lua-nginx-module#ngxnow)
-* [ngx.update_time](https://github.com/openresty/lua-nginx-module#ngxupdate_time)
-* [ngx.localtime](https://github.com/openresty/lua-nginx-module#ngxlocaltime)
-* [ngx.utctime](https://github.com/openresty/lua-nginx-module#ngxutctime)
-* [ngx.re.match](https://github.com/openresty/lua-nginx-module#ngxrematch)
-* [ngx.re.find](https://github.com/openresty/lua-nginx-module#ngxrefind)
-* [ngx.re.gmatch](https://github.com/openresty/lua-nginx-module#ngxregmatch)
-* [ngx.re.sub](https://github.com/openresty/lua-nginx-module#ngxresub)
-* [ngx.re.gsub](https://github.com/openresty/lua-nginx-module#ngxregsub)
-* [ngx.shared.DICT](https://github.com/openresty/lua-nginx-module#ngxshareddict)
-* [ngx.socket.tcp](https://github.com/openresty/lua-nginx-module#ngxsockettcp)
-* [ngx.socket.udp](https://github.com/openresty/lua-nginx-module#ngxsocketudp)
-* [ngx.socket.connect](https://github.com/openresty/lua-nginx-module#ngxsocketconnect)
-* [ngx.get_phase](https://github.com/openresty/lua-nginx-module#ngxget_phase)
-* [ngx.thread.spawn](https://github.com/openresty/lua-nginx-module#ngxthreadspawn)
-* [ngx.thread.wait](https://github.com/openresty/lua-nginx-module#ngxthreadwait)
-* [ngx.thread.kill](https://github.com/openresty/lua-nginx-module#ngxthreadkill)
-* [ngx.on_abort](https://github.com/openresty/lua-nginx-module#ngxon_abort)
-* [ngx.timer.at](https://github.com/openresty/lua-nginx-module#ngxtimerat)
-* [ngx.timer.running_count](https://github.com/openresty/lua-nginx-module#ngxtimerrunning_count)
-* [ngx.timer.pending_count](https://github.com/openresty/lua-nginx-module#ngxtimerpending_count)
-* [ngx.config.debug](https://github.com/openresty/lua-nginx-module#ngxconfigdebug)
-* [ngx.config.subsystem](https://github.com/openresty/lua-nginx-module#ngxconfigsubsystem)
+* [njt.exit](https://github.com/openresty/lua-nginx-module#njtexit)
+* [njt.eof](https://github.com/openresty/lua-nginx-module#njteof)
+* [njt.sleep](https://github.com/openresty/lua-nginx-module#njtsleep)
+* [njt.escape_uri](https://github.com/openresty/lua-nginx-module#njtescape_uri)
+* [njt.unescape_uri](https://github.com/openresty/lua-nginx-module#njtunescape_uri)
+* [njt.encode_args](https://github.com/openresty/lua-nginx-module#njtencode_args)
+* [njt.decode_args](https://github.com/openresty/lua-nginx-module#njtdecode_args)
+* [njt.encode_base64](https://github.com/openresty/lua-nginx-module#njtencode_base64)
+* [njt.decode_base64](https://github.com/openresty/lua-nginx-module#njtdecode_base64)
+* [njt.crc32_short](https://github.com/openresty/lua-nginx-module#njtcrc32_short)
+* [njt.crc32_long](https://github.com/openresty/lua-nginx-module#njtcrc32_long)
+* [njt.hmac_sha1](https://github.com/openresty/lua-nginx-module#njthmac_sha1)
+* [njt.md5](https://github.com/openresty/lua-nginx-module#njtmd5)
+* [njt.md5_bin](https://github.com/openresty/lua-nginx-module#njtmd5_bin)
+* [njt.sha1_bin](https://github.com/openresty/lua-nginx-module#njtsha1_bin)
+* [njt.quote_sql_str](https://github.com/openresty/lua-nginx-module#njtquote_sql_str)
+* [njt.today](https://github.com/openresty/lua-nginx-module#njttoday)
+* [njt.time](https://github.com/openresty/lua-nginx-module#njttime)
+* [njt.now](https://github.com/openresty/lua-nginx-module#njtnow)
+* [njt.update_time](https://github.com/openresty/lua-nginx-module#njtupdate_time)
+* [njt.localtime](https://github.com/openresty/lua-nginx-module#njtlocaltime)
+* [njt.utctime](https://github.com/openresty/lua-nginx-module#njtutctime)
+* [njt.re.match](https://github.com/openresty/lua-nginx-module#njtrematch)
+* [njt.re.find](https://github.com/openresty/lua-nginx-module#njtrefind)
+* [njt.re.gmatch](https://github.com/openresty/lua-nginx-module#njtregmatch)
+* [njt.re.sub](https://github.com/openresty/lua-nginx-module#njtresub)
+* [njt.re.gsub](https://github.com/openresty/lua-nginx-module#njtregsub)
+* [njt.shared.DICT](https://github.com/openresty/lua-nginx-module#njtshareddict)
+* [njt.socket.tcp](https://github.com/openresty/lua-nginx-module#njtsockettcp)
+* [njt.socket.udp](https://github.com/openresty/lua-nginx-module#njtsocketudp)
+* [njt.socket.connect](https://github.com/openresty/lua-nginx-module#njtsocketconnect)
+* [njt.get_phase](https://github.com/openresty/lua-nginx-module#njtget_phase)
+* [njt.thread.spawn](https://github.com/openresty/lua-nginx-module#njtthreadspawn)
+* [njt.thread.wait](https://github.com/openresty/lua-nginx-module#njtthreadwait)
+* [njt.thread.kill](https://github.com/openresty/lua-nginx-module#njtthreadkill)
+* [njt.on_abort](https://github.com/openresty/lua-nginx-module#njton_abort)
+* [njt.timer.at](https://github.com/openresty/lua-nginx-module#njttimerat)
+* [njt.timer.running_count](https://github.com/openresty/lua-nginx-module#njttimerrunning_count)
+* [njt.timer.pending_count](https://github.com/openresty/lua-nginx-module#njttimerpending_count)
+* [njt.config.debug](https://github.com/openresty/lua-nginx-module#njtconfigdebug)
+* [njt.config.subsystem](https://github.com/openresty/lua-nginx-module#njtconfigsubsystem)
 
     Always takes the Lua string value `"stream"` in this module.
-* [ngx.config.prefix](https://github.com/openresty/lua-nginx-module#ngxconfigprefix)
-* [ngx.config.njet_version](https://github.com/openresty/lua-nginx-module#ngxconfignjet_version)
-* [ngx.config.nginx_configure](https://github.com/openresty/lua-nginx-module#ngxconfignginx_configure)
-* [ngx.config.njt_lua_version](https://github.com/openresty/lua-nginx-module#ngxconfignjt_lua_version)
-* [ngx.worker.exiting](https://github.com/openresty/lua-nginx-module#ngxworkerexiting)
-* [ngx.worker.pid](https://github.com/openresty/lua-nginx-module#ngxworkerpid)
-* [ngx.worker.count](https://github.com/openresty/lua-nginx-module#ngxworkercount)
-* [ngx.worker.id](https://github.com/openresty/lua-nginx-module#ngxworkerid)
+* [njt.config.prefix](https://github.com/openresty/lua-nginx-module#njtconfigprefix)
+* [njt.config.njet_version](https://github.com/openresty/lua-nginx-module#njtconfignjet_version)
+* [njt.config.nginx_configure](https://github.com/openresty/lua-nginx-module#njtconfignginx_configure)
+* [njt.config.njt_lua_version](https://github.com/openresty/lua-nginx-module#njtconfignjt_lua_version)
+* [njt.worker.exiting](https://github.com/openresty/lua-nginx-module#njtworkerexiting)
+* [njt.worker.pid](https://github.com/openresty/lua-nginx-module#njtworkerpid)
+* [njt.worker.count](https://github.com/openresty/lua-nginx-module#njtworkercount)
+* [njt.worker.id](https://github.com/openresty/lua-nginx-module#njtworkerid)
 * [coroutine.create](https://github.com/openresty/lua-nginx-module#coroutinecreate)
 * [coroutine.resume](https://github.com/openresty/lua-nginx-module#coroutineresume)
 * [coroutine.yield](https://github.com/openresty/lua-nginx-module#coroutineyield)

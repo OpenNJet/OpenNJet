@@ -75,7 +75,7 @@ __DATA__
             if not counter then
                 counter = 1
             elseif counter >= 2 then
-                return ngx.exit(503)
+                return njt.exit(503)
             else
                 counter = counter + 1
             end
@@ -83,44 +83,44 @@ __DATA__
             package.loaded.counter = counter
 
             do
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 sock:settimeout(2000)
 
                 local ok, err = sock:connect("www.google.com", 443)
                 if not ok then
-                    ngx.say("failed to connect: ", err)
+                    njt.say("failed to connect: ", err)
                     return
                 end
 
-                ngx.say("connected: ", ok)
+                njt.say("connected: ", ok)
 
                 local sess, err = sock:sslhandshake()
                 if not sess then
-                    ngx.say("failed to do SSL handshake: ", err)
+                    njt.say("failed to do SSL handshake: ", err)
                     return
                 end
 
-                ngx.say("ssl handshake: ", type(sess))
+                njt.say("ssl handshake: ", type(sess))
 
                 local req = "GET / HTTP/1.1\r\nHost: www.google.com\r\nConnection: close\r\n\r\n"
                 local bytes, err = sock:send(req)
                 if not bytes then
-                    ngx.say("failed to send http request: ", err)
+                    njt.say("failed to send http request: ", err)
                     return
                 end
 
-                ngx.say("sent http request: ", bytes, " bytes.")
+                njt.say("sent http request: ", bytes, " bytes.")
 
                 local line, err = sock:receive()
                 if not line then
-                    ngx.say("failed to receive response status line: ", err)
+                    njt.say("failed to receive response status line: ", err)
                     return
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
 
                 local ok, err = sock:close()
-                ngx.say("close: ", ok, " ", err)
+                njt.say("close: ", ok, " ", err)
             end  -- do
 
             collectgarbage()
@@ -155,27 +155,27 @@ SSL reused session
 "
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect('unix:$::HtmlDir/mtls.sock')
             if not ok then
-                ngx.say('failed to connect: ', err)
+                njt.say('failed to connect: ', err)
             end
 
             assert(sock:sslhandshake())
 
-            ngx.say('connected: ', ok)
+            njt.say('connected: ', ok)
 
             local req = 'GET /\\r\\n'
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say('failed to send request: ', err)
+                njt.say('failed to send request: ', err)
                 return
             end
 
-            ngx.say('request sent: ', bytes)
+            njt.say('request sent: ', bytes)
 
-            ngx.say(sock:receive('*a'))
+            njt.say(sock:receive('*a'))
 
             assert(sock:close())
         }
@@ -199,10 +199,10 @@ GET /t
 "
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect('unix:$::HtmlDir/mtls.sock')
             if not ok then
-                ngx.say('failed to connect: ', err)
+                njt.say('failed to connect: ', err)
             end
 
             local f = assert(io.open('$::HtmlDir/mtls_client.crt'))
@@ -213,7 +213,7 @@ GET /t
             local key_data = f:read('*a')
             f:close()
 
-            local ssl = require('ngx.ssl')
+            local ssl = require('njt.ssl')
 
             local chain = assert(ssl.parse_pem_cert(cert_data))
             local priv = assert(ssl.parse_pem_priv_key(key_data))
@@ -222,19 +222,19 @@ GET /t
 
             assert(sock:sslhandshake())
 
-            ngx.say('connected: ', ok)
+            njt.say('connected: ', ok)
 
             local req = 'GET /\\r\\n'
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say('failed to send request: ', err)
+                njt.say('failed to send request: ', err)
                 return
             end
 
-            ngx.say('request sent: ', bytes)
+            njt.say('request sent: ', bytes)
 
-            ngx.say(sock:receive('*a'))
+            njt.say(sock:receive('*a'))
 
             assert(sock:close())
         }
@@ -259,11 +259,11 @@ hello, CN=foo@example.com,O=OpenResty,ST=California,C=US
 --- config
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:setclientcert("doesnt", "work")
             if not ok then
-                ngx.say('failed to setclientcert: ', err)
+                njt.say('failed to setclientcert: ', err)
                 return
             end
 
@@ -287,19 +287,19 @@ failed to setclientcert: bad cert arg: cdata expected, got string
 "
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local f = assert(io.open('$::HtmlDir/mtls_client.crt'))
             local cert_data = f:read('*a')
             f:close()
 
-            local ssl = require('ngx.ssl')
+            local ssl = require('njt.ssl')
 
             local chain = assert(ssl.parse_pem_cert(cert_data))
 
             local ok, err = sock:setclientcert(chain, 'work')
             if not ok then
-                ngx.say('failed to setclientcert: ', err)
+                njt.say('failed to setclientcert: ', err)
                 return
             end
 
@@ -324,11 +324,11 @@ failed to setclientcert: bad pkey arg: cdata expected, got string
 --- config
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:setclientcert(nil, "work")
             if not ok then
-                ngx.say('failed to setclientcert: ', err)
+                njt.say('failed to setclientcert: ', err)
                 return
             end
 
@@ -351,11 +351,11 @@ failed to setclientcert: client certificate must be supplied with corresponding 
 --- config
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:setclientcert('doesnt', nil)
             if not ok then
-                ngx.say('failed to setclientcert: ', err)
+                njt.say('failed to setclientcert: ', err)
                 return
             end
 

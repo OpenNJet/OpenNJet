@@ -56,7 +56,7 @@ static void njt_http_lua_abort_pending_timers(njt_event_t *ev);
 void
 njt_http_lua_inject_timer_api(lua_State *L)
 {
-    lua_createtable(L, 0 /* narr */, 4 /* nrec */);    /* ngx.timer. */
+    lua_createtable(L, 0 /* narr */, 4 /* nrec */);    /* njt.timer. */
 
     lua_pushcfunction(L, njt_http_lua_njt_timer_at);
     lua_setfield(L, -2, "at");
@@ -121,7 +121,7 @@ njt_http_lua_njt_timer_at(lua_State *L)
 
 /*
  * TODO: return a timer handler instead which can be passed to
- * the ngx.timer.cancel method to cancel the timer.
+ * the njt.timer.cancel method to cancel the timer.
  */
 static int
 njt_http_lua_njt_timer_every(lua_State *L)
@@ -534,7 +534,7 @@ njt_http_lua_timer_handler(njt_event_t *ev)
     const char              *errmsg;
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                   "lua ngx.timer expired");
+                   "lua njt.timer expired");
 
     njt_memcpy(&tctx, ev->data, sizeof(njt_http_lua_timer_ctx_t));
     njt_free(ev);
@@ -742,7 +742,7 @@ njt_http_lua_log_timer_error(njt_log_t *log, u_char *buf, size_t len)
 
     dd("ctx = %p", c);
 
-    p = njt_snprintf(buf, len, ", context: ngx.timer");
+    p = njt_snprintf(buf, len, ", context: njt.timer");
     len -= p - buf;
     buf = p;
 

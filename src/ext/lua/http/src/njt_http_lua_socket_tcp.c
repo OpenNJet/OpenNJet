@@ -235,7 +235,7 @@ njt_http_lua_inject_socket_tcp_api(njt_log_t *log, lua_State *L)
 {
     njt_int_t         rc;
 
-    lua_createtable(L, 0, 4 /* nrec */);    /* ngx.socket */
+    lua_createtable(L, 0, 4 /* nrec */);    /* njt.socket */
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp);
     lua_pushvalue(L, -1);
@@ -243,16 +243,16 @@ njt_http_lua_inject_socket_tcp_api(njt_log_t *log, lua_State *L)
     lua_setfield(L, -2, "stream");
 
     {
-        const char  buf[] = "local sock = ngx.socket.tcp()"
+        const char  buf[] = "local sock = njt.socket.tcp()"
                             " local ok, err = sock:connect(...)"
                             " if ok then return sock else return nil, err end";
 
-        rc = luaL_loadbuffer(L, buf, sizeof(buf) - 1, "=ngx.socket.connect");
+        rc = luaL_loadbuffer(L, buf, sizeof(buf) - 1, "=njt.socket.connect");
     }
 
     if (rc != NJT_OK) {
         njt_log_error(NJT_LOG_CRIT, log, 0,
-                      "failed to load Lua code for ngx.socket.connect(): %i",
+                      "failed to load Lua code for njt.socket.connect(): %i",
                       rc);
 
     } else {
@@ -276,10 +276,10 @@ njt_http_lua_inject_socket_tcp_api(njt_log_t *log, lua_State *L)
     lua_setfield(L, -2, "receiveuntil");
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_settimeout);
-    lua_setfield(L, -2, "settimeout"); /* ngx socket mt */
+    lua_setfield(L, -2, "settimeout"); /* njt socket mt */
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_settimeouts);
-    lua_setfield(L, -2, "settimeouts"); /* ngx socket mt */
+    lua_setfield(L, -2, "settimeouts"); /* njt socket mt */
 
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
@@ -305,10 +305,10 @@ njt_http_lua_inject_socket_tcp_api(njt_log_t *log, lua_State *L)
     lua_setfield(L, -2, "send");
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_settimeout);
-    lua_setfield(L, -2, "settimeout"); /* ngx socket mt */
+    lua_setfield(L, -2, "settimeout"); /* njt socket mt */
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_settimeouts);
-    lua_setfield(L, -2, "settimeouts"); /* ngx socket mt */
+    lua_setfield(L, -2, "settimeouts"); /* njt socket mt */
 
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
@@ -343,10 +343,10 @@ njt_http_lua_inject_socket_tcp_api(njt_log_t *log, lua_State *L)
     lua_setfield(L, -2, "close");
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_settimeout);
-    lua_setfield(L, -2, "settimeout"); /* ngx socket mt */
+    lua_setfield(L, -2, "settimeout"); /* njt socket mt */
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_settimeouts);
-    lua_setfield(L, -2, "settimeouts"); /* ngx socket mt */
+    lua_setfield(L, -2, "settimeouts"); /* njt socket mt */
 
     lua_pushcfunction(L, njt_http_lua_socket_tcp_getreusedtimes);
     lua_setfield(L, -2, "getreusedtimes");
@@ -918,7 +918,7 @@ njt_http_lua_socket_tcp_connect(lua_State *L)
 
     n = lua_gettop(L);
     if (n != 2 && n != 3 && n != 4) {
-        return luaL_error(L, "ngx.socket connect: expecting 2, 3, or 4 "
+        return luaL_error(L, "njt.socket connect: expecting 2, 3, or 4 "
                           "arguments (including the object), but seen %d", n);
     }
 
@@ -3300,7 +3300,7 @@ njt_http_lua_socket_tcp_settimeout(lua_State *L)
     n = lua_gettop(L);
 
     if (n != 2) {
-        return luaL_error(L, "ngx.socket settimeout: expecting 2 arguments "
+        return luaL_error(L, "njt.socket settimeout: expecting 2 arguments "
                           "(including the object) but seen %d", lua_gettop(L));
     }
 
@@ -3347,7 +3347,7 @@ njt_http_lua_socket_tcp_settimeouts(lua_State *L)
     n = lua_gettop(L);
 
     if (n != 4) {
-        return luaL_error(L, "ngx.socket settimeouts: expecting 4 arguments "
+        return luaL_error(L, "njt.socket settimeouts: expecting 4 arguments "
                           "(including the object) but seen %d", lua_gettop(L));
     }
 

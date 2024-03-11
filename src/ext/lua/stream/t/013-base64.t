@@ -18,7 +18,7 @@ __DATA__
 
 === TEST 1: base64 encode hello
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.encode_base64("hello")) }
+    content_by_lua_block { njt.say(njt.encode_base64("hello")) }
 --- stream_response
 aGVsbG8=
 --- no_error_log
@@ -26,9 +26,9 @@ aGVsbG8=
 
 
 
-=== TEST 2: nil string to ngx.encode_base64
+=== TEST 2: nil string to njt.encode_base64
 --- stream_server_config
-    content_by_lua_block { ngx.say("left" .. ngx.encode_base64(nil) .. "right") }
+    content_by_lua_block { njt.say("left" .. njt.encode_base64(nil) .. "right") }
 --- stream_response
 leftright
 --- no_error_log
@@ -36,9 +36,9 @@ leftright
 
 
 
-=== TEST 3: empty string to ngx.encode_base64
+=== TEST 3: empty string to njt.encode_base64
 --- stream_server_config
-    content_by_lua_block { ngx.say("left" .. ngx.encode_base64("") .. "right") }
+    content_by_lua_block { njt.say("left" .. njt.encode_base64("") .. "right") }
 --- stream_response
 leftright
 --- no_error_log
@@ -48,7 +48,7 @@ leftright
 
 === TEST 4: base64 encode hello
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.decode_base64("aGVsbG8=")) }
+    content_by_lua_block { njt.say(njt.decode_base64("aGVsbG8=")) }
 --- stream_response
 hello
 --- no_error_log
@@ -56,9 +56,9 @@ hello
 
 
 
-=== TEST 5: null string to ngx.decode_base64
+=== TEST 5: null string to njt.decode_base64
 --- stream_server_config
-    content_by_lua_block { ngx.say("left" .. ngx.decode_base64("") .. "right") }
+    content_by_lua_block { njt.say("left" .. njt.decode_base64("") .. "right") }
 --- stream_response
 leftright
 --- no_error_log
@@ -66,9 +66,9 @@ leftright
 
 
 
-=== TEST 6: use ngx.decode_base64 in content_by_lua (nil)
+=== TEST 6: use njt.decode_base64 in content_by_lua (nil)
 --- stream_server_config
-    content_by_lua_block { ngx.say("left" .. ngx.decode_base64(nil) .. "right") }
+    content_by_lua_block { njt.say("left" .. njt.decode_base64(nil) .. "right") }
 --- stream_response
 --- error_log
 string argument only
@@ -77,7 +77,7 @@ string argument only
 
 === TEST 7: base64 encode number
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.encode_base64(32)) }
+    content_by_lua_block { njt.say(njt.encode_base64(32)) }
 --- stream_response
 MzI=
 --- no_error_log
@@ -87,7 +87,7 @@ MzI=
 
 === TEST 8: base64 decode number
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.decode_base64(32)) }
+    content_by_lua_block { njt.say(njt.decode_base64(32)) }
 --- stream_response
 --- error_log
 string argument only
@@ -96,7 +96,7 @@ string argument only
 
 === TEST 9: base64 decode error
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.decode_base64("^*~")) }
+    content_by_lua_block { njt.say(njt.decode_base64("^*~")) }
 --- stream_response
 nil
 --- no_error_log
@@ -106,7 +106,7 @@ nil
 
 === TEST 10: base64 encode without padding (explicit true to no_padding)
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.encode_base64("hello", true)) }
+    content_by_lua_block { njt.say(njt.encode_base64("hello", true)) }
 --- stream_response
 aGVsbG8
 --- no_error_log
@@ -116,7 +116,7 @@ aGVsbG8
 
 === TEST 11: base64 encode short string
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.encode_base64("w")) }
+    content_by_lua_block { njt.say(njt.encode_base64("w")) }
 --- stream_response
 dw==
 --- no_error_log
@@ -126,7 +126,7 @@ dw==
 
 === TEST 12: base64 encode short string with padding (explicit false to no_padding)
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.encode_base64("w", false)) }
+    content_by_lua_block { njt.say(njt.encode_base64("w", false)) }
 --- stream_response
 dw==
 --- no_error_log
@@ -136,7 +136,7 @@ dw==
 
 === TEST 13: base64 encode with wrong 2nd parameter
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.encode_base64("w", 0)) }
+    content_by_lua_block { njt.say(njt.encode_base64("w", 0)) }
 --- stream_response
 --- error_log eval
 qr/runtime error: content_by_lua\(nginx\.conf:\d+\):\d+: bad no_padding: boolean expected, got number/

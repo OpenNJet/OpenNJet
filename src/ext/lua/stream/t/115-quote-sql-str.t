@@ -15,7 +15,7 @@ __DATA__
 === TEST 1: \0
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.quote_sql_str("a\0b\0"))
+        njt.say(njt.quote_sql_str("a\0b\0"))
     }
 
 --- config
@@ -29,7 +29,7 @@ __DATA__
 === TEST 2: \t
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.quote_sql_str("a\tb\t"))
+        njt.say(njt.quote_sql_str("a\tb\t"))
     }
 
 --- config
@@ -43,7 +43,7 @@ __DATA__
 === TEST 3: \b
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.quote_sql_str("a\bb\b"))
+        njt.say(njt.quote_sql_str("a\bb\b"))
     }
 
 --- config
@@ -57,7 +57,7 @@ __DATA__
 === TEST 4: \Z
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.quote_sql_str("a\026b\026"))
+        njt.say(njt.quote_sql_str("a\026b\026"))
     }
 
 --- config

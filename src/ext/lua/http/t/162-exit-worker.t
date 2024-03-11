@@ -19,7 +19,7 @@ __DATA__
 === TEST 1: simple exit_worker_by_lua_block
 --- http_config
     exit_worker_by_lua_block {
-        ngx.log(ngx.NOTICE, "log from exit_worker_by_lua_block")
+        njt.log(njt.NOTICE, "log from exit_worker_by_lua_block")
     }
 --- config
     location /t {
@@ -43,7 +43,7 @@ log from exit_worker_by_lua_block
     }
 --- user_files
 >>> exit_worker.lua
-ngx.log(ngx.NOTICE, "log from exit_worker_by_lua_file")
+njt.log(njt.NOTICE, "log from exit_worker_by_lua_file")
 --- request
 GET /t
 --- response_body
@@ -58,14 +58,14 @@ log from exit_worker_by_lua_file
     qq{lua_package_path '$::HtmlDir/?.lua;;';
         exit_worker_by_lua_block {
             foo = require("foo")
-            ngx.log(ngx.NOTICE, foo.bar)
+            njt.log(njt.NOTICE, foo.bar)
         }}
 --- config
     location /t {
         content_by_lua_block {
             foo = require("foo")
             foo.bar = "hello, world"
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- user_files
@@ -80,18 +80,18 @@ hello, world
 
 
 
-=== TEST 4: ngx.timer is not allow
+=== TEST 4: njt.timer is not allow
 --- http_config
     exit_worker_by_lua_block {
         local function bar()
-            ngx.log(ngx.ERR, "run the timer!")
+            njt.log(njt.ERR, "run the timer!")
         end
 
-        local ok, err = ngx.timer.at(0, bar)
+        local ok, err = njt.timer.at(0, bar)
         if not ok then
-            ngx.log(ngx.ERR, "failed to create timer: ", err)
+            njt.log(njt.ERR, "failed to create timer: ", err)
         else
-            ngx.log(ngx.NOTICE, "success")
+            njt.log(njt.NOTICE, "success")
         end
     }
 --- config
@@ -111,20 +111,20 @@ API disabled in the context of exit_worker_by_lua*
 --- http_config
     lua_shared_dict dog 1m;
     exit_worker_by_lua_block {
-        local dog = ngx.shared.dog
+        local dog = njt.shared.dog
         local val, err = dog:get("foo")
         if not val then
-            ngx.log(ngx.ERR, "failed get shdict: ", err)
+            njt.log(njt.ERR, "failed get shdict: ", err)
         else
-            ngx.log(ngx.NOTICE, "get val: ", val)
+            njt.log(njt.NOTICE, "get val: ", val)
         end
     }
 --- config
     location /t {
         content_by_lua_block {
-            local dog = ngx.shared.dog
+            local dog = njt.shared.dog
             dog:set("foo", 100)
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request
@@ -143,12 +143,12 @@ get val: 100
     proxy_cache_path /tmp/cache levels=1:2 keys_zone=cache:1m;
 
     init_by_lua_block {
-        assert(require "ngx.process".enable_privileged_agent())
+        assert(require "njt.process".enable_privileged_agent())
     }
 
     exit_worker_by_lua_block {
-        local process = require "ngx.process"
-        ngx.log(ngx.INFO, "hello from exit worker by lua, process type: ", process.type())
+        local process = require "njt.process"
+        njt.log(njt.INFO, "hello from exit worker by lua, process type: ", process.type())
     }
 --- config
     location = /t {
@@ -176,8 +176,8 @@ qr/privileged agent process \d+ exited/,
     proxy_cache_path /tmp/cache levels=1:2 keys_zone=cache:1m;
 
     exit_worker_by_lua_block {
-        local process = require "ngx.process"
-        ngx.log(ngx.INFO, "hello from exit worker by lua, process type: ", process.type())
+        local process = require "njt.process"
+        njt.log(njt.INFO, "hello from exit worker by lua, process type: ", process.type())
     }
 --- config
     location = /t {

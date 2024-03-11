@@ -38,12 +38,12 @@ __DATA__
         postpone_output 1;
         content_by_lua_block {
             for i = 1, 5 do
-                ngx.say(i, ": Hello World!")
+                njt.say(i, ": Hello World!")
             end
         }
 
         body_filter_by_lua_block {
-            ngx.arg[1] = ngx.arg[1]
+            njt.arg[1] = njt.arg[1]
         }
     }
 --- request

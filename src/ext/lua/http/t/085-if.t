@@ -22,7 +22,7 @@ __DATA__
     location /t {
         set $true $arg_a;
         if ($true) {
-            set_by_lua $true 'return tonumber(ngx.var["true"]) + 1';
+            set_by_lua $true 'return tonumber(njt.var["true"]) + 1';
             break;
         }
         set $true "empty";
@@ -43,7 +43,7 @@ GET /t
     location /t {
         set $true $arg_a;
         if ($true) {
-            set_by_lua $true 'return tonumber(ngx.var["true"]) + 1';
+            set_by_lua $true 'return tonumber(njt.var["true"]) + 1';
             break;
         }
         set $true "blah";
@@ -67,7 +67,7 @@ GET /t?a=2
             # nothing
         }
 
-        content_by_lua 'ngx.say("hello world")';
+        content_by_lua 'njt.say("hello world")';
     }
 --- request
 GET /t
@@ -86,7 +86,7 @@ hello world
             # nothing
         }
 
-        rewrite_by_lua 'ngx.say("hello world") ngx.exit(200)';
+        rewrite_by_lua 'njt.say("hello world") njt.exit(200)';
     }
 --- request
 GET /t
@@ -105,7 +105,7 @@ hello world
             # nothing
         }
 
-        access_by_lua 'ngx.say("hello world") ngx.exit(200)';
+        access_by_lua 'njt.say("hello world") njt.exit(200)';
     }
 --- request
 GET /t
@@ -124,7 +124,7 @@ hello world
             # nothing
         }
 
-        log_by_lua 'ngx.log(ngx.WARN, "from log by lua")';
+        log_by_lua 'njt.log(njt.WARN, "from log by lua")';
         echo hello world;
     }
 --- request
@@ -146,7 +146,7 @@ from log by lua
             # nothing
         }
 
-        header_filter_by_lua 'ngx.header.Foo = "bah"';
+        header_filter_by_lua 'njt.header.Foo = "bah"';
         echo hello world;
     }
 --- request
@@ -168,7 +168,7 @@ Foo: bah
             # nothing
         }
 
-        body_filter_by_lua 'ngx.arg[1] = string.upper(ngx.arg[1])';
+        body_filter_by_lua 'njt.arg[1] = string.upper(njt.arg[1])';
         echo hello world;
     }
 --- request
@@ -180,7 +180,7 @@ HELLO WORLD
 
 
 
-=== TEST 9: if is evil for ngx_proxy
+=== TEST 9: if is evil for njt_proxy
 This test case requires the following patch for the nginx core:
 http://mailman.nginx.org/pipermail/nginx-devel/2012-June/002374.html
 --- config

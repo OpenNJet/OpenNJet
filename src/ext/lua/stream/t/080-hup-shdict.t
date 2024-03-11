@@ -37,13 +37,13 @@ __DATA__
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", 32)
         dogs:set("bah", 10502)
         local val = dogs:get("foo")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
         val = dogs:get("bah")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
     }
 --- stream_response
 32 number
@@ -58,15 +58,15 @@ __DATA__
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
 
         -- dogs:set("foo", 32)
         -- dogs:set("bah", 10502)
 
         local val = dogs:get("foo")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
         val = dogs:get("bah")
-        ngx.say(val, " ", type(val))
+        njt.say(val, " ", type(val))
     }
 --- stream_response
 32 number

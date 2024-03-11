@@ -20,7 +20,7 @@ __DATA__
 === TEST 1: content_by_lua
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("prefix: ", ngx.config.prefix())
+        njt.say("prefix: ", njt.config.prefix())
     }
 --- stream_response_like chop
 ^prefix: \/\S+$

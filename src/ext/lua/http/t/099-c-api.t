@@ -27,17 +27,17 @@ __DATA__
             local ffi = require "ffi"
 
             ffi.cdef[[
-                void *ngx_http_lua_find_zone(char *data, size_t len);
+                void *njt_http_lua_find_zone(char *data, size_t len);
             ]]
 
             local buf = ffi.new("char[?]", 4)
             ffi.copy(buf, "foo", 3)
-            local zone = ffi.C.ngx_http_lua_find_zone(buf, 3)
-            ngx.say("foo zone: ", tonumber(ffi.cast("long", zone)) ~= 0 and "defined" or "undef")
+            local zone = ffi.C.njt_http_lua_find_zone(buf, 3)
+            njt.say("foo zone: ", tonumber(ffi.cast("long", zone)) ~= 0 and "defined" or "undef")
 
             ffi.copy(buf, "dogs", 4)
-            zone = ffi.C.ngx_http_lua_find_zone(buf, 4)
-            ngx.say("dogs zone: ", tonumber(ffi.cast("long", zone)) ~= 0 and "defined" or "undef")
+            zone = ffi.C.njt_http_lua_find_zone(buf, 4)
+            njt.say("dogs zone: ", tonumber(ffi.cast("long", zone)) ~= 0 and "defined" or "undef")
         ';
     }
 --- request
@@ -62,7 +62,7 @@ dogs zone: defined
                 typedef struct {
                     size_t  len;
                     char   *data;
-                } ngx_str_t;
+                } njt_str_t;
 
                 typedef struct {
                     uint8_t         type;
@@ -70,35 +70,35 @@ dogs zone: defined
                     union {
                         int         b; /* boolean */
                         double      n; /* number */
-                        ngx_str_t   s; /* string */
+                        njt_str_t   s; /* string */
                     } value;
 
-                } ngx_http_lua_value_t;
+                } njt_http_lua_value_t;
 
-                void *ngx_http_lua_find_zone(char *data, size_t len);
-                intptr_t ngx_http_lua_shared_dict_get(void *zone, char *kdata, size_t klen, ngx_http_lua_value_t *val);
+                void *njt_http_lua_find_zone(char *data, size_t len);
+                intptr_t njt_http_lua_shared_dict_get(void *zone, char *kdata, size_t klen, njt_http_lua_value_t *val);
             ]]
 
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 1234567)
             dogs:set("bar", 3.14159)
 
             local buf = ffi.new("char[?]", 4)
 
             ffi.copy(buf, "dogs", 4)
-            local zone = ffi.C.ngx_http_lua_find_zone(buf, 4)
+            local zone = ffi.C.njt_http_lua_find_zone(buf, 4)
 
-            local val = ffi.new("ngx_http_lua_value_t[?]", 1)
+            local val = ffi.new("njt_http_lua_value_t[?]", 1)
 
             ffi.copy(buf, "foo", 3)
-            local rc = ffi.C.ngx_http_lua_shared_dict_get(zone, buf, 3, val)
-            ngx.say("foo: rc=", tonumber(rc),
+            local rc = ffi.C.njt_http_lua_shared_dict_get(zone, buf, 3, val)
+            njt.say("foo: rc=", tonumber(rc),
                 ", type=", val[0].type,
                 ", val=", tonumber(val[0].value.n))
 
             ffi.copy(buf, "bar", 3)
-            local rc = ffi.C.ngx_http_lua_shared_dict_get(zone, buf, 3, val)
-            ngx.say("bar: rc=", tonumber(rc),
+            local rc = ffi.C.njt_http_lua_shared_dict_get(zone, buf, 3, val)
+            njt.say("bar: rc=", tonumber(rc),
                 ", type=", val[0].type,
                 ", val=", tonumber(val[0].value.n))
         ';
@@ -125,7 +125,7 @@ bar: rc=0, type=3, val=3.14159
                 typedef struct {
                     size_t  len;
                     char   *data;
-                } ngx_str_t;
+                } njt_str_t;
 
                 typedef struct {
                     uint8_t         type;
@@ -133,36 +133,36 @@ bar: rc=0, type=3, val=3.14159
                     union {
                         int         b; /* boolean */
                         double      n; /* number */
-                        ngx_str_t   s; /* string */
+                        njt_str_t   s; /* string */
                     } value;
 
-                } ngx_http_lua_value_t;
+                } njt_http_lua_value_t;
 
-                void *ngx_http_lua_find_zone(char *data, size_t len);
-                intptr_t ngx_http_lua_shared_dict_get(void *zone, char *kdata, size_t klen, ngx_http_lua_value_t *val);
+                void *njt_http_lua_find_zone(char *data, size_t len);
+                intptr_t njt_http_lua_shared_dict_get(void *zone, char *kdata, size_t klen, njt_http_lua_value_t *val);
             ]]
 
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", true)
             dogs:set("bar", false)
 
             local buf = ffi.new("char[?]", 4)
 
             ffi.copy(buf, "dogs", 4)
-            local zone = ffi.C.ngx_http_lua_find_zone(buf, 4)
+            local zone = ffi.C.njt_http_lua_find_zone(buf, 4)
 
-            local val = ffi.new("ngx_http_lua_value_t[?]", 1)
+            local val = ffi.new("njt_http_lua_value_t[?]", 1)
 
             ffi.copy(buf, "foo", 3)
-            local rc = ffi.C.ngx_http_lua_shared_dict_get(zone, buf, 3, val)
-            ngx.say("foo: rc=", tonumber(rc),
+            local rc = ffi.C.njt_http_lua_shared_dict_get(zone, buf, 3, val)
+            njt.say("foo: rc=", tonumber(rc),
                 ", type=", tonumber(val[0].type),
                 ", val=", tonumber(val[0].value.b))
 
-            local val = ffi.new("ngx_http_lua_value_t[?]", 1)
+            local val = ffi.new("njt_http_lua_value_t[?]", 1)
             ffi.copy(buf, "bar", 3)
-            local rc = ffi.C.ngx_http_lua_shared_dict_get(zone, buf, 3, val)
-            ngx.say("bar: rc=", tonumber(rc),
+            local rc = ffi.C.njt_http_lua_shared_dict_get(zone, buf, 3, val)
+            njt.say("bar: rc=", tonumber(rc),
                 ", type=", tonumber(val[0].type),
                 ", val=", tonumber(val[0].value.b))
         ';
@@ -189,7 +189,7 @@ bar: rc=0, type=1, val=0
                 typedef struct {
                     size_t  len;
                     char   *data;
-                } ngx_str_t;
+                } njt_str_t;
 
                 typedef struct {
                     uint8_t         type;
@@ -197,33 +197,33 @@ bar: rc=0, type=1, val=0
                     union {
                         int         b; /* boolean */
                         double      n; /* number */
-                        ngx_str_t   s; /* string */
+                        njt_str_t   s; /* string */
                     } value;
 
-                } ngx_http_lua_value_t;
+                } njt_http_lua_value_t;
 
-                void *ngx_http_lua_find_zone(char *data, size_t len);
-                intptr_t ngx_http_lua_shared_dict_get(void *zone, char *kdata, size_t klen, ngx_http_lua_value_t *val);
+                void *njt_http_lua_find_zone(char *data, size_t len);
+                intptr_t njt_http_lua_shared_dict_get(void *zone, char *kdata, size_t klen, njt_http_lua_value_t *val);
             ]]
 
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:flush_all()
 
             local buf = ffi.new("char[?]", 4)
 
             ffi.copy(buf, "dogs", 4)
-            local zone = ffi.C.ngx_http_lua_find_zone(buf, 4)
+            local zone = ffi.C.njt_http_lua_find_zone(buf, 4)
 
-            local val = ffi.new("ngx_http_lua_value_t[?]", 1)
+            local val = ffi.new("njt_http_lua_value_t[?]", 1)
 
             ffi.copy(buf, "foo", 3)
-            local rc = ffi.C.ngx_http_lua_shared_dict_get(zone, buf, 3, val)
-            ngx.say("foo: rc=", tonumber(rc))
+            local rc = ffi.C.njt_http_lua_shared_dict_get(zone, buf, 3, val)
+            njt.say("foo: rc=", tonumber(rc))
 
-            local val = ffi.new("ngx_http_lua_value_t[?]", 1)
+            local val = ffi.new("njt_http_lua_value_t[?]", 1)
             ffi.copy(buf, "bar", 3)
-            local rc = ffi.C.ngx_http_lua_shared_dict_get(zone, buf, 3, val)
-            ngx.say("bar: rc=", tonumber(rc))
+            local rc = ffi.C.njt_http_lua_shared_dict_get(zone, buf, 3, val)
+            njt.say("bar: rc=", tonumber(rc))
         ';
     }
 --- request
@@ -248,7 +248,7 @@ bar: rc=-5
                 typedef struct {
                     size_t  len;
                     char   *data;
-                } ngx_str_t;
+                } njt_str_t;
 
                 typedef struct {
                     uint8_t         type;
@@ -256,44 +256,44 @@ bar: rc=-5
                     union {
                         int         b; /* boolean */
                         double      n; /* number */
-                        ngx_str_t   s; /* string */
+                        njt_str_t   s; /* string */
                     } value;
 
-                } ngx_http_lua_value_t;
+                } njt_http_lua_value_t;
 
-                void *ngx_http_lua_find_zone(char *data, size_t len);
-                intptr_t ngx_http_lua_shared_dict_get(void *zone, char *kdata, size_t klen, ngx_http_lua_value_t *val);
+                void *njt_http_lua_find_zone(char *data, size_t len);
+                intptr_t njt_http_lua_shared_dict_get(void *zone, char *kdata, size_t klen, njt_http_lua_value_t *val);
             ]]
 
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", "hello world")
             dogs:set("bar", "")
 
             local buf = ffi.new("char[?]", 4)
 
             ffi.copy(buf, "dogs", 4)
-            local zone = ffi.C.ngx_http_lua_find_zone(buf, 4)
+            local zone = ffi.C.njt_http_lua_find_zone(buf, 4)
 
             local s = ffi.new("char[?]", 20)
 
-            local val = ffi.new("ngx_http_lua_value_t[?]", 1)
+            local val = ffi.new("njt_http_lua_value_t[?]", 1)
             val[0].value.s.len = 20
             val[0].value.s.data = s
 
             ffi.copy(buf, "foo", 3)
-            local rc = ffi.C.ngx_http_lua_shared_dict_get(zone, buf, 3, val)
-            ngx.say("foo: rc=", tonumber(rc),
+            local rc = ffi.C.njt_http_lua_shared_dict_get(zone, buf, 3, val)
+            njt.say("foo: rc=", tonumber(rc),
                 ", type=", tonumber(val[0].type),
                 ", val=", ffi.string(val[0].value.s.data, val[0].value.s.len),
                 ", len=", tonumber(val[0].value.s.len))
 
-            local val = ffi.new("ngx_http_lua_value_t[?]", 1)
+            local val = ffi.new("njt_http_lua_value_t[?]", 1)
             val[0].value.s.len = 20
             val[0].value.s.data = s
 
             ffi.copy(buf, "bar", 3)
-            local rc = ffi.C.ngx_http_lua_shared_dict_get(zone, buf, 3, val)
-            ngx.say("bar: rc=", tonumber(rc),
+            local rc = ffi.C.njt_http_lua_shared_dict_get(zone, buf, 3, val)
+            njt.say("bar: rc=", tonumber(rc),
                 ", type=", tonumber(val[0].type),
                 ", val=", ffi.string(val[0].value.s.data, val[0].value.s.len),
                 ", len=", tonumber(val[0].value.s.len))
@@ -321,7 +321,7 @@ bar: rc=0, type=4, val=, len=0
                 typedef struct {
                     size_t  len;
                     char   *data;
-                } ngx_str_t;
+                } njt_str_t;
 
                 typedef struct {
                     uint8_t         type;
@@ -329,28 +329,28 @@ bar: rc=0, type=4, val=, len=0
                     union {
                         int         b; /* boolean */
                         double      n; /* number */
-                        ngx_str_t   s; /* string */
+                        njt_str_t   s; /* string */
                     } value;
 
-                } ngx_http_lua_value_t;
+                } njt_http_lua_value_t;
 
-                void *ngx_http_lua_find_zone(char *data, size_t len);
-                intptr_t ngx_http_lua_shared_dict_get(void *zone, char *kdata, size_t klen, ngx_http_lua_value_t *val);
+                void *njt_http_lua_find_zone(char *data, size_t len);
+                intptr_t njt_http_lua_shared_dict_get(void *zone, char *kdata, size_t klen, njt_http_lua_value_t *val);
             ]]
 
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", nil)
 
             local buf = ffi.new("char[?]", 4)
 
             ffi.copy(buf, "dogs", 4)
-            local zone = ffi.C.ngx_http_lua_find_zone(buf, 4)
+            local zone = ffi.C.njt_http_lua_find_zone(buf, 4)
 
-            local val = ffi.new("ngx_http_lua_value_t[?]", 1)
+            local val = ffi.new("njt_http_lua_value_t[?]", 1)
 
             ffi.copy(buf, "foo", 3)
-            local rc = ffi.C.ngx_http_lua_shared_dict_get(zone, buf, 3, val)
-            ngx.say("foo: rc=", tonumber(rc))
+            local rc = ffi.C.njt_http_lua_shared_dict_get(zone, buf, 3, val)
+            njt.say("foo: rc=", tonumber(rc))
         ';
     }
 --- request
@@ -372,21 +372,21 @@ foo: rc=-5
             local ffi = require "ffi"
 
             ffi.cdef[[
-                void *ngx_http_lua_find_zone(char *data, size_t len);
+                void *njt_http_lua_find_zone(char *data, size_t len);
             ]]
 
             local buf = ffi.new("char[?]", 4)
             ffi.copy(buf, "cats", 4)
-            local zone = ffi.C.ngx_http_lua_find_zone(buf, 4)
+            local zone = ffi.C.njt_http_lua_find_zone(buf, 4)
             local cats = tostring(zone)
 
             ffi.copy(buf, "dogs", 4)
-            zone = ffi.C.ngx_http_lua_find_zone(buf, 4)
+            zone = ffi.C.njt_http_lua_find_zone(buf, 4)
             local dogs = tostring(zone)
 
-            ngx.say("dogs == cats ? ", dogs == cats)
-            -- ngx.say("dogs: ", dogs)
-            -- ngx.say("cats ", cats)
+            njt.say("dogs == cats ? ", dogs == cats)
+            -- njt.say("dogs: ", dogs)
+            -- njt.say("cats ", cats)
         ';
     }
 --- request

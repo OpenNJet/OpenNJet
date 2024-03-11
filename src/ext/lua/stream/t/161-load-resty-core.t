@@ -25,7 +25,7 @@ __DATA__
         local loaded_resty_core = package.loaded["resty.core"]
         local resty_core = require "resty.core"
 
-        ngx.say("resty.core loaded: ", loaded_resty_core == resty_core)
+        njt.say("resty.core loaded: ", loaded_resty_core == resty_core)
     }
 --- stream_response
 resty.core loaded: true
@@ -40,7 +40,7 @@ resty.core loaded: true
         local loaded_resty_core = package.loaded["resty.core"]
         local resty_core = require "resty.core"
 
-        ngx.say("resty.core loaded: ", loaded_resty_core == resty_core)
+        njt.say("resty.core loaded: ", loaded_resty_core == resty_core)
     }
 --- stream_response
 resty.core loaded: true
@@ -55,7 +55,7 @@ resty.core loaded: true
         local loaded_resty_core = package.loaded["resty.core"]
         local resty_core = require "resty.core"
 
-        ngx.say("resty.core loaded: ", loaded_resty_core ~= nil)
+        njt.say("resty.core loaded: ", loaded_resty_core ~= nil)
     }
 --- stream_response
 resty.core loaded: true
@@ -70,7 +70,7 @@ resty.core loaded: true
         local loaded_resty_core = package.loaded["resty.core"]
         local resty_core = require "resty.core"
 
-        ngx.say("resty.core loaded: ", loaded_resty_core == resty_core)
+        njt.say("resty.core loaded: ", loaded_resty_core == resty_core)
 
         resty_core.go()
     }
@@ -81,7 +81,7 @@ loaded from html dir
 >>> resty/core.lua
 return {
     go = function ()
-        ngx.say("loaded from html dir")
+        njt.say("loaded from html dir")
     end
 }
 
@@ -92,7 +92,7 @@ return {
     "lua_package_path '$::HtmlDir/?.lua;';"
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- must_die
 --- error_log eval
@@ -109,7 +109,7 @@ qr/\[alert\] .*? failed to load the 'resty\.core' module .*? \(reason: module 'r
     }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- error_log eval
 qr/\[error\] .*? failed to load the 'resty\.core' module .*? \(reason: module 'resty\.core' not found:/
@@ -123,7 +123,7 @@ qr/\[alert\] .*? failed to load the 'resty\.core' module/
     lua_load_resty_core on;
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- grep_error_log eval: qr/\[warn\] .*? lua_load_resty_core is deprecated.*/
 --- grep_error_log_out eval
@@ -139,7 +139,7 @@ qr/\[warn\] .*? lua_load_resty_core is deprecated \(the lua-resty-core library i
     lua_load_resty_core off;
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- grep_error_log eval: qr/\[warn\] .*? lua_load_resty_core is deprecated.*/
 --- grep_error_log_out eval

@@ -26,10 +26,10 @@ __DATA__
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -39,7 +39,7 @@ __DATA__
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -56,10 +56,10 @@ c = true
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -69,7 +69,7 @@ c = true
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -86,10 +86,10 @@ foo = true
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -99,15 +99,15 @@ foo = true
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
 
-            ngx.say("again...")
+            njt.say("again...")
 
-            args, err = ngx.req.get_uri_args()
+            args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             keys = {}
@@ -117,7 +117,7 @@ foo = true
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -136,10 +136,10 @@ b r = 4a 2
 --- config
     location /t {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -149,10 +149,10 @@ b r = 4a 2
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -166,10 +166,10 @@ done
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -179,10 +179,10 @@ done
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -196,10 +196,10 @@ done
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -211,13 +211,13 @@ done
             for i, key in ipairs(keys) do
                 local val = args[key]
                 if type(val) == "table" then
-                    ngx.say(key, " = [", table.concat(val, ", "), "]")
+                    njt.say(key, " = [", table.concat(val, ", "), "]")
                 else
-                    ngx.say(key, " = ", val)
+                    njt.say(key, " = ", val)
                 end
             end
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -232,10 +232,10 @@ done
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -247,13 +247,13 @@ done
             for i, key in ipairs(keys) do
                 local val = args[key]
                 if type(val) == "table" then
-                    ngx.say(key, " = [", table.concat(val, ", "), "]")
+                    njt.say(key, " = [", table.concat(val, ", "), "]")
                 else
-                    ngx.say(key, " = ", val)
+                    njt.say(key, " = ", val)
                 end
             end
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -269,24 +269,24 @@ done
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
-            -- ngx.say(args)
+            -- njt.say(args)
             for key, val in pairs(args) do
                 table.insert(keys, key)
             end
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -300,24 +300,24 @@ done
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
-            -- ngx.say(args)
+            -- njt.say(args)
             for key, val in pairs(args) do
                 table.insert(keys, key)
             end
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -332,10 +332,10 @@ done
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -345,10 +345,10 @@ done
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -362,10 +362,10 @@ done
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -375,17 +375,17 @@ done
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
 
-            ngx.say("updating args...")
+            njt.say("updating args...")
 
-            ngx.var.args = "a=3&b=4"
+            njt.var.args = "a=3&b=4"
 
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -395,10 +395,10 @@ done
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -420,8 +420,8 @@ done
     location /foo {
         #set $args 'hello';
         rewrite_by_lua '
-            ngx.req.set_uri_args("hello")
-            ngx.req.set_uri("/bar", true);
+            njt.req.set_uri_args("hello")
+            njt.req.set_uri("/bar", true);
         ';
         proxy_pass http://127.0.0.2:12345;
     }
@@ -443,8 +443,8 @@ lua set uri jump to "/bar"
     location /foo {
         #set $args 'hello';
         rewrite_by_lua '
-            ngx.req.set_uri_args("hello")
-            ngx.req.set_uri("/bar", true)
+            njt.req.set_uri_args("hello")
+            njt.req.set_uri("/bar", true)
         ';
         echo "foo: $uri?$args";
     }
@@ -463,8 +463,8 @@ bar: /bar?hello
     location /foo {
         #set $args 'hello';
         rewrite_by_lua '
-            ngx.req.set_uri_args("hello")
-            ngx.req.set_uri("/bar", true)
+            njt.req.set_uri_args("hello")
+            njt.req.set_uri("/bar", true)
         ';
         echo "foo: $uri?$args";
     }
@@ -483,8 +483,8 @@ bar: /bar?hello
     location /foo {
         #set $args 'hello';
         rewrite_by_lua '
-            ngx.req.set_uri("/bar")
-            ngx.req.set_uri_args("hello")
+            njt.req.set_uri("/bar")
+            njt.req.set_uri_args("hello")
         ';
         echo "foo: $uri?$args";
     }
@@ -500,11 +500,11 @@ foo: /bar?hello
     location /foo {
         #set $args 'hello';
         rewrite_by_lua '
-            local res, err = pcall(ngx.req.set_uri, "")
+            local res, err = pcall(njt.req.set_uri, "")
             print("rewrite: err: ", err)
         ';
         content_by_lua '
-            ngx.say("foo: ", ngx.var.uri, "?", ngx.var.args)
+            njt.say("foo: ", njt.var.uri, "?", njt.var.args)
         ';
     }
 --- request
@@ -526,8 +526,8 @@ rewrite: err: attempt to use zero-length uri
     location /foo {
         #rewrite ^ /bar?hello? break;
         rewrite_by_lua '
-            ngx.req.set_uri_args("hello")
-            ngx.req.set_uri("/bar")
+            njt.req.set_uri_args("hello")
+            njt.req.set_uri("/bar")
         ';
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT;
     }
@@ -546,8 +546,8 @@ HTTP/1.0 hello
     location /foo {
         #rewrite ^ /bar?hello? break;
         rewrite_by_lua '
-            ngx.req.set_uri("/bar")
-            ngx.req.set_uri_args({["ca t"] = "%"})
+            njt.req.set_uri("/bar")
+            njt.req.set_uri_args({["ca t"] = "%"})
         ';
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT;
     }
@@ -566,9 +566,9 @@ HTTP/1.0 ca%20t=%25
     location /foo {
         #set $args 'hello';
         rewrite_by_lua '
-            ngx.req.set_uri_args("hello")
-            ngx.req.set_uri("/bar", true);
-            ngx.exit(503)
+            njt.req.set_uri_args("hello")
+            njt.req.set_uri("/bar", true);
+            njt.exit(503)
         ';
         proxy_pass http://127.0.0.2:12345;
     }
@@ -579,7 +579,7 @@ hello
 
 
 
-=== TEST 20: ngx.req.set_uri with jump not allowed in access phase
+=== TEST 20: njt.req.set_uri with jump not allowed in access phase
 --- config
     location /bar {
         echo $query_string;
@@ -588,8 +588,8 @@ hello
         #set $args 'hello';
         set $err '';
         access_by_lua '
-            local res, err = pcall(ngx.req.set_uri, "/bar", true);
-            ngx.var.err = err
+            local res, err = pcall(njt.req.set_uri, "/bar", true);
+            njt.var.err = err
         ';
         echo "err: $err";
     }
@@ -600,7 +600,7 @@ err: API disabled in the context of access_by_lua*
 
 
 
-=== TEST 21: ngx.req.set_uri without jump allowed in access phase
+=== TEST 21: njt.req.set_uri without jump allowed in access phase
 --- config
     location /bar {
         echo $query_string;
@@ -609,7 +609,7 @@ err: API disabled in the context of access_by_lua*
         #set $args 'hello';
         set $err '';
         access_by_lua '
-            ngx.req.set_uri("/bar")
+            njt.req.set_uri("/bar")
         ';
         echo "uri: $uri";
     }
@@ -620,7 +620,7 @@ uri: /bar
 
 
 
-=== TEST 22: ngx.req.set_uri with jump not allowed in content phase
+=== TEST 22: njt.req.set_uri with jump not allowed in content phase
 --- config
     location /bar {
         echo $query_string;
@@ -628,8 +628,8 @@ uri: /bar
     location /foo {
         #set $args 'hello';
         content_by_lua '
-            local res, err = pcall(ngx.req.set_uri, "/bar", true);
-            ngx.say("err: ", err)
+            local res, err = pcall(njt.req.set_uri, "/bar", true);
+            njt.say("err: ", err)
         ';
     }
 --- request
@@ -639,7 +639,7 @@ err: API disabled in the context of content_by_lua*
 
 
 
-=== TEST 23: ngx.req.set_uri without jump allowed in content phase
+=== TEST 23: njt.req.set_uri without jump allowed in content phase
 --- config
     location /bar {
         echo $query_string;
@@ -648,8 +648,8 @@ err: API disabled in the context of content_by_lua*
         #set $args 'hello';
         set $err '';
         content_by_lua '
-            ngx.req.set_uri("/bar")
-            ngx.say("uri: ", ngx.var.uri)
+            njt.req.set_uri("/bar")
+            njt.say("uri: ", njt.var.uri)
         ';
     }
 --- request
@@ -659,7 +659,7 @@ uri: /bar
 
 
 
-=== TEST 24: ngx.req.set_uri with jump not allowed in set_by_lua
+=== TEST 24: njt.req.set_uri with jump not allowed in set_by_lua
 --- config
     location /bar {
         echo $query_string;
@@ -667,7 +667,7 @@ uri: /bar
     location /foo {
         #set $args 'hello';
         set_by_lua $err '
-            local res, err = pcall(ngx.req.set_uri, "/bar", true);
+            local res, err = pcall(njt.req.set_uri, "/bar", true);
             return err
         ';
         echo "err: $err";
@@ -679,12 +679,12 @@ err: API disabled in the context of set_by_lua*
 
 
 
-=== TEST 25: ngx.encode_args (sanity)
+=== TEST 25: njt.encode_args (sanity)
 --- config
     location /lua {
         set_by_lua $args_str '
             local t = {a = "bar", b = "foo"}
-            return ngx.encode_args(t)
+            return njt.encode_args(t)
         ';
         echo $args_str;
     }
@@ -695,12 +695,12 @@ qr/a=bar&b=foo|b=foo&a=bar/
 
 
 
-=== TEST 26: ngx.encode_args (empty table)
+=== TEST 26: njt.encode_args (empty table)
 --- config
     location /lua {
         content_by_lua '
             local t = {a = nil}
-            ngx.say("args:" .. ngx.encode_args(t))
+            njt.say("args:" .. njt.encode_args(t))
         ';
     }
 --- request
@@ -710,12 +710,12 @@ args:
 
 
 
-=== TEST 27: ngx.encode_args (value is table)
+=== TEST 27: njt.encode_args (value is table)
 --- config
     location /lua {
         content_by_lua '
             local t = {a = {9, 2}, b = 3}
-            ngx.say("args:" .. ngx.encode_args(t))
+            njt.say("args:" .. njt.encode_args(t))
         ';
     }
 --- request
@@ -730,12 +730,12 @@ GET /lua
 
 
 
-=== TEST 28: ngx.encode_args (boolean values)
+=== TEST 28: njt.encode_args (boolean values)
 --- config
     location /lua {
         content_by_lua '
             local t = {a = true, foo = 3}
-            ngx.say("args: " .. ngx.encode_args(t))
+            njt.say("args: " .. njt.encode_args(t))
         ';
     }
 --- request
@@ -745,12 +745,12 @@ GET /lua
 
 
 
-=== TEST 29: ngx.encode_args (boolean values, false)
+=== TEST 29: njt.encode_args (boolean values, false)
 --- config
     location /lua {
         content_by_lua '
             local t = {a = false, foo = 3}
-            ngx.say("args: " .. ngx.encode_args(t))
+            njt.say("args: " .. njt.encode_args(t))
         ';
     }
 --- request
@@ -760,12 +760,12 @@ args: foo=3
 
 
 
-=== TEST 30: boolean values in ngx.encode_args
+=== TEST 30: boolean values in njt.encode_args
 --- config
     location /lua {
         set_by_lua $args_str '
             local t = {bar = {32, true}, foo = 3}
-            return ngx.encode_args(t)
+            return njt.encode_args(t)
         ';
         echo $args_str;
     }
@@ -783,15 +783,15 @@ GET /lua
 
 
 
-=== TEST 31: ngx.encode_args (bad user data value)
+=== TEST 31: njt.encode_args (bad user data value)
 --- http_config
     lua_shared_dict dogs 1m;
 --- config
     location /lua {
         content_by_lua '
-            local t = {bar = ngx.shared.dogs, foo = 3}
-            local rc, err = pcall(ngx.encode_args, t)
-            ngx.say("rc: ", rc, ", err: ", err)
+            local t = {bar = njt.shared.dogs, foo = 3}
+            local rc, err = pcall(njt.encode_args, t)
+            njt.say("rc: ", rc, ", err: ", err)
         ';
     }
 --- request
@@ -801,12 +801,12 @@ rc: false, err: attempt to use userdata as query arg value
 
 
 
-=== TEST 32: ngx.encode_args (empty table)
+=== TEST 32: njt.encode_args (empty table)
 --- config
     location /lua {
         content_by_lua '
             local t = {}
-            ngx.say("args: ", ngx.encode_args(t))
+            njt.say("args: ", njt.encode_args(t))
         ';
     }
 --- request
@@ -816,12 +816,12 @@ args:
 
 
 
-=== TEST 33: ngx.encode_args (bad arg)
+=== TEST 33: njt.encode_args (bad arg)
 --- config
     location /lua {
         content_by_lua '
-            local rc, err = pcall(ngx.encode_args, true)
-            ngx.say("rc: ", rc, ", err: ", err)
+            local rc, err = pcall(njt.encode_args, true)
+            njt.say("rc: ", rc, ", err: ", err)
         ';
     }
 --- request
@@ -835,10 +835,10 @@ rc: false, err: bad argument #1 to '?' (table expected, got boolean)
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args(2)
+            local args, err = njt.req.get_uri_args(2)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -848,7 +848,7 @@ rc: false, err: bad argument #1 to '?' (table expected, got boolean)
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -868,10 +868,10 @@ lua hit query args limit 2
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args(2)
+            local args, err = njt.req.get_uri_args(2)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -881,7 +881,7 @@ lua hit query args limit 2
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -901,10 +901,10 @@ lua hit query args limit 2
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args(2)
+            local args, err = njt.req.get_uri_args(2)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -914,10 +914,10 @@ lua hit query args limit 2
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -936,10 +936,10 @@ lua hit query args limit 2
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -949,7 +949,7 @@ lua hit query args limit 2
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -990,10 +990,10 @@ lua hit query args limit 100
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args(102)
+            local args, err = njt.req.get_uri_args(102)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -1003,7 +1003,7 @@ lua hit query args limit 100
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -1044,10 +1044,10 @@ lua hit query args limit 102
 --- config
     location /lua {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args(0)
+            local args, err = njt.req.get_uri_args(0)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -1057,7 +1057,7 @@ lua hit query args limit 102
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -1098,8 +1098,8 @@ CORE::join("", @k);
     location /foo {
         #rewrite ^ /bar?hello? break;
         rewrite_by_lua '
-            ngx.req.set_uri_args({a = 3, b = {5, 6}})
-            ngx.req.set_uri("/bar")
+            njt.req.set_uri_args({a = 3, b = {5, 6}})
+            njt.req.set_uri("/bar")
         ';
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT;
     }
@@ -1110,20 +1110,20 @@ qr/HTTP\/1.0 (a=3&b=5&b=6|b=5&b=6&a=3|b=6&b=5&a=3)/
 
 
 
-=== TEST 41: ngx.decode_args (sanity)
+=== TEST 41: njt.decode_args (sanity)
 --- config
     location /lua {
         content_by_lua '
             local err
             local args = "a=bar&b=foo"
-            args, err = ngx.decode_args(args)
+            args, err = njt.decode_args(args)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
-            ngx.say("a = ", args.a)
-            ngx.say("b = ", args.b)
+            njt.say("a = ", args.a)
+            njt.say("b = ", args.b)
         ';
     }
 --- request
@@ -1134,20 +1134,20 @@ b = foo
 
 
 
-=== TEST 42: ngx.decode_args (multi-value)
+=== TEST 42: njt.decode_args (multi-value)
 --- config
     location /lua {
         content_by_lua '
             local err
             local args = "a=bar&b=foo&a=baz"
-            args, err = ngx.decode_args(args)
+            args, err = njt.decode_args(args)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
-            ngx.say("a = ", table.concat(args.a, ", "))
-            ngx.say("b = ", args.b)
+            njt.say("a = ", table.concat(args.a, ", "))
+            njt.say("b = ", args.b)
         ';
     }
 --- request
@@ -1158,18 +1158,18 @@ b = foo
 
 
 
-=== TEST 43: ngx.decode_args (empty string)
+=== TEST 43: njt.decode_args (empty string)
 --- config
     location /lua {
         content_by_lua '
             local err
             local args = ""
-            args, err = ngx.decode_args(args)
+            args, err = njt.decode_args(args)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
-            ngx.say("n = ", #args)
+            njt.say("n = ", #args)
         ';
     }
 --- request
@@ -1179,19 +1179,19 @@ n = 0
 
 
 
-=== TEST 44: ngx.decode_args (boolean args)
+=== TEST 44: njt.decode_args (boolean args)
 --- config
     location /lua {
         content_by_lua '
             local err
             local args = "a&b"
-            args, err = ngx.decode_args(args)
+            args, err = njt.decode_args(args)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
-            ngx.say("a = ", args.a)
-            ngx.say("b = ", args.b)
+            njt.say("a = ", args.a)
+            njt.say("b = ", args.b)
         ';
     }
 --- request
@@ -1202,20 +1202,20 @@ b = true
 
 
 
-=== TEST 45: ngx.decode_args (empty value args)
+=== TEST 45: njt.decode_args (empty value args)
 --- config
     location /lua {
         content_by_lua '
             local err
             local args = "a=&b="
-            args, err = ngx.decode_args(args)
+            args, err = njt.decode_args(args)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
-            ngx.say("a = ", args.a)
-            ngx.say("b = ", args.b)
+            njt.say("a = ", args.a)
+            njt.say("b = ", args.b)
         ';
     }
 --- request
@@ -1226,19 +1226,19 @@ b =
 
 
 
-=== TEST 46: ngx.decode_args (max_args = 1)
+=== TEST 46: njt.decode_args (max_args = 1)
 --- config
     location /lua {
         content_by_lua '
             local err
             local args = "a=bar&b=foo"
-            args, err = ngx.decode_args(args, 1)
+            args, err = njt.decode_args(args, 1)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
-            ngx.say("a = ", args.a)
-            ngx.say("b = ", args.b)
+            njt.say("a = ", args.a)
+            njt.say("b = ", args.b)
         ';
     }
 --- request
@@ -1250,20 +1250,20 @@ b = nil
 
 
 
-=== TEST 47: ngx.decode_args (max_args = -1)
+=== TEST 47: njt.decode_args (max_args = -1)
 --- config
     location /lua {
         content_by_lua '
             local err
             local args = "a=bar&b=foo"
-            args, err = ngx.decode_args(args, -1)
+            args, err = njt.decode_args(args, -1)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
-            ngx.say("a = ", args.a)
-            ngx.say("b = ", args.b)
+            njt.say("a = ", args.a)
+            njt.say("b = ", args.b)
         ';
     }
 --- request
@@ -1274,14 +1274,14 @@ b = foo
 
 
 
-=== TEST 48: ngx.decode_args should not modify lua strings in place
+=== TEST 48: njt.decode_args should not modify lua strings in place
 --- config
     location /lua {
         content_by_lua '
             local s = "f+f=bar&B=foo"
-            local args, err = ngx.decode_args(s)
+            local args, err = njt.decode_args(s)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local arr = {}
@@ -1290,9 +1290,9 @@ b = foo
             end
             table.sort(arr)
             for i, k in ipairs(arr) do
-                ngx.say("key: ", k)
+                njt.say("key: ", k)
             end
-            ngx.say("s = ", s)
+            njt.say("s = ", s)
         ';
     }
 --- request
@@ -1306,7 +1306,7 @@ s = f+f=bar&B=foo
 
 
 
-=== TEST 49: ngx.decode_args should not modify lua strings in place (sample from Xu Jian)
+=== TEST 49: njt.decode_args should not modify lua strings in place (sample from Xu Jian)
 --- config
     lua_need_request_body on;
     location /t {
@@ -1324,14 +1324,14 @@ s = f+f=bar&B=foo
                 return result
             end
 
-            local post_data = ngx.req.get_body_data()
+            local post_data = njt.req.get_body_data()
 
             local commands = split(post_data, "||")
             for _, command in pairs(commands) do
-                --command = ngx.unescape_uri(command)
-                local request_args, err = ngx.decode_args(command, 0)
+                --command = njt.unescape_uri(command)
+                local request_args, err = njt.decode_args(command, 0)
                 if err then
-                    ngx.say("err: ", err)
+                    njt.say("err: ", err)
                 end
 
                 local arr = {}
@@ -1340,9 +1340,9 @@ s = f+f=bar&B=foo
                 end
                 table.sort(arr)
                 for i, k in ipairs(arr) do
-                    ngx.say(k, ": ", request_args[k])
+                    njt.say(k, ": ", request_args[k])
                 end
-                ngx.say(" ===============")
+                njt.say(" ===============")
             end
         ';
     }
@@ -1373,9 +1373,9 @@ method: zadd
 === TEST 50: recursive rewrite
 --- config
     rewrite_by_lua '
-        local args = ngx.var.args
+        local args = njt.var.args
         if args == "jump" then
-            ngx.req.set_uri("/jump",true)
+            njt.req.set_uri("/jump",true)
         end
     ';
 
@@ -1402,12 +1402,12 @@ rewrite or internal redirection cycle while processing "/jump"
 
 
 
-=== TEST 51: boolean values in ngx.encode_args (trailing arg)
+=== TEST 51: boolean values in njt.encode_args (trailing arg)
 --- config
     location /lua {
         set_by_lua $args_str '
             local t = {a = {32, true}, foo = 3, bar = 5}
-            return ngx.encode_args(t)
+            return njt.encode_args(t)
         ';
         echo $args_str;
     }
@@ -1426,12 +1426,12 @@ GET /lua
 
 
 
-=== TEST 52: false boolean values in ngx.encode_args
+=== TEST 52: false boolean values in njt.encode_args
 --- config
     location /lua {
         set_by_lua $args_str '
             local t = {a = {32, false}, foo = 3, bar = 5}
-            return ngx.encode_args(t)
+            return njt.encode_args(t)
         ';
         echo $args_str;
     }
@@ -1449,12 +1449,12 @@ GET /lua
 
 
 
-=== TEST 53: false boolean values in ngx.encode_args (escaping)
+=== TEST 53: false boolean values in njt.encode_args (escaping)
 --- config
     location /lua {
         set_by_lua $args_str '
             local t = {["a b"] = {32, false}, foo = 3, bar = 5}
-            return ngx.encode_args(t)
+            return njt.encode_args(t)
         ';
         echo $args_str;
     }
@@ -1472,12 +1472,12 @@ GET /lua
 
 
 
-=== TEST 54: true boolean values in ngx.encode_args (escaping)
+=== TEST 54: true boolean values in njt.encode_args (escaping)
 --- config
     location /lua {
         set_by_lua $args_str '
             local t = {["a b"] = {32, true}, foo = 3, bar = 5}
-            return ngx.encode_args(t)
+            return njt.encode_args(t)
         ';
         echo $args_str;
     }
@@ -1504,8 +1504,8 @@ GET /lua
     location /foo {
         #rewrite ^ /bar?hello? break;
         rewrite_by_lua '
-            ngx.req.set_uri_args({a = 3, b = {5, true, 6}})
-            ngx.req.set_uri("/bar")
+            njt.req.set_uri_args({a = 3, b = {5, true, 6}})
+            njt.req.set_uri("/bar")
         ';
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT;
     }
@@ -1530,8 +1530,8 @@ GET /lua
     location /foo {
         #rewrite ^ /bar?hello? break;
         rewrite_by_lua '
-            ngx.req.set_uri_args({a = 3, b = true})
-            ngx.req.set_uri("/bar")
+            njt.req.set_uri_args({a = 3, b = true})
+            njt.req.set_uri("/bar")
         ';
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT;
     }
@@ -1542,12 +1542,12 @@ GET /lua
 
 
 
-=== TEST 57: ngx.encode_args (escaping)
+=== TEST 57: njt.encode_args (escaping)
 --- config
     location /lua {
         content_by_lua_block {
             local t = {bar = "-_.!~*'()", foo = ",$@|`"}
-            ngx.say("args: ", ngx.encode_args(t))
+            njt.say("args: ", njt.encode_args(t))
         }
     }
 --- request
@@ -1564,8 +1564,8 @@ qr/(\Qargs: foo=%2C%24%40%7C%60&bar=-_.!~*'()\E)|(\Qargs: bar=-_.!~*'()&foo=%2C%
     location /t {
         content_by_lua_block {
             local new_uri = "/foo\tbar"
-            ngx.req.set_uri(new_uri)
-            ngx.say(ngx.var.uri)
+            njt.req.set_uri(new_uri)
+            njt.say(njt.var.uri)
         }
     }
 --- request
@@ -1581,8 +1581,8 @@ qr/(\Qargs: foo=%2C%24%40%7C%60&bar=-_.!~*'()\E)|(\Qargs: bar=-_.!~*'()&foo=%2C%
     location /t {
         content_by_lua_block {
             local new_uri = '\0foo'
-            ngx.req.set_uri(new_uri, false, true)
-            ngx.say(ngx.var.uri)
+            njt.req.set_uri(new_uri, false, true)
+            njt.say(njt.var.uri)
         }
     }
 --- request
@@ -1598,7 +1598,7 @@ qr/\0foo/
     location /t {
         rewrite_by_lua_block {
             local new_uri = "/foo bar"
-            ngx.req.set_uri(new_uri)
+            njt.req.set_uri(new_uri)
         }
 
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT;
@@ -1606,8 +1606,8 @@ qr/\0foo/
 
     location /foo {
         content_by_lua_block {
-            ngx.say("request_uri: ", ngx.var.request_uri)
-            ngx.say("uri: ", ngx.var.uri)
+            njt.say("request_uri: ", njt.var.request_uri)
+            njt.say("uri: ", njt.var.uri)
         }
     }
 --- request
@@ -1628,8 +1628,8 @@ uri: /foo bar
     location /foo {
         #set $args 'hello';
         rewrite_by_lua_block {
-            ngx.req.set_uri_args(true)
-            ngx.req.set_uri("/bar", true)
+            njt.req.set_uri_args(true)
+            njt.req.set_uri("/bar", true)
         }
         proxy_pass http://127.0.0.2:12345;
     }
@@ -1651,8 +1651,8 @@ bad argument #1 to 'set_uri_args' (string, number, or table expected, but got bo
     location /foo {
         #set $args 'hello';
         rewrite_by_lua_block {
-            ngx.req.set_uri_args(nil)
-            ngx.req.set_uri("/bar", true)
+            njt.req.set_uri_args(nil)
+            njt.req.set_uri("/bar", true)
         }
         proxy_pass http://127.0.0.2:12345;
     }
@@ -1674,8 +1674,8 @@ bad argument #1 to 'set_uri_args' (string, number, or table expected, but got ni
     location /foo {
         #set $args 'hello';
         rewrite_by_lua_block {
-            ngx.req.set_uri_args(ngx.null)
-            ngx.req.set_uri("/bar", true)
+            njt.req.set_uri_args(njt.null)
+            njt.req.set_uri("/bar", true)
         }
         proxy_pass http://127.0.0.2:12345;
     }
@@ -1695,7 +1695,7 @@ explicit specify binary option to true
     location /t {
         rewrite_by_lua_block {
             local new_uri = "/foo\r\nbar"
-            ngx.req.set_uri(new_uri, false, true)
+            njt.req.set_uri(new_uri, false, true)
         }
 
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT;
@@ -1703,8 +1703,8 @@ explicit specify binary option to true
 
     location /foo {
         content_by_lua_block {
-            ngx.say("request_uri: ", ngx.var.request_uri)
-            ngx.say("uri: ", ngx.var.uri)
+            njt.say("request_uri: ", njt.var.request_uri)
+            njt.say("uri: ", njt.var.uri)
         }
     }
 --- request
@@ -1722,7 +1722,7 @@ explicit specify binary option to false
     location /t {
         rewrite_by_lua_block {
             local new_uri = "/foo\r\nbar"
-            ngx.req.set_uri(new_uri, false, false)
+            njt.req.set_uri(new_uri, false, false)
         }
 
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT;
@@ -1730,8 +1730,8 @@ explicit specify binary option to false
 
     location /foo {
         content_by_lua_block {
-            ngx.say("request_uri: ", ngx.var.request_uri)
-            ngx.say("uri: ", ngx.var.uri)
+            njt.say("request_uri: ", njt.var.request_uri)
+            njt.say("uri: ", njt.var.uri)
         }
     }
 --- request
@@ -1748,7 +1748,7 @@ explicit specify binary option to false
     location /t {
         rewrite_by_lua_block {
             local new_uri = "/foo bar"
-            ngx.req.set_uri(new_uri, false, true)
+            njt.req.set_uri(new_uri, false, true)
         }
 
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT;
@@ -1756,8 +1756,8 @@ explicit specify binary option to false
 
     location /foo {
         content_by_lua_block {
-            ngx.say("request_uri: ", ngx.var.request_uri)
-            ngx.say("uri: ", ngx.var.uri)
+            njt.say("request_uri: ", njt.var.request_uri)
+            njt.say("uri: ", njt.var.uri)
         }
     }
 --- request

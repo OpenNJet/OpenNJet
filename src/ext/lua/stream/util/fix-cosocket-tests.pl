@@ -32,7 +32,7 @@ while (<>) {
             print;
             next;
         }
-        if (/^(.*)\bngx\.var\.port\b(.*)/) {
+        if (/^(.*)\bnjt\.var\.port\b(.*)/) {
             if (!defined $port_var) {
                 die "No port variable defined";
             }

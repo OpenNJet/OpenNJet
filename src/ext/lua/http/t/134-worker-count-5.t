@@ -21,7 +21,7 @@ __DATA__
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say("worker count: ", ngx.worker.count())
+            njt.say("worker count: ", njt.worker.count())
         }
     }
 --- request
@@ -36,12 +36,12 @@ worker count: 5
 === TEST 2: init_by_lua
 --- http_config
     init_by_lua_block {
-        package.loaded.count = ngx.worker.count()
+        package.loaded.count = njt.worker.count()
     }
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say("workers: ", package.loaded.count)
+            njt.say("workers: ", package.loaded.count)
         }
     }
 --- request
@@ -63,13 +63,13 @@ workers: 5
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- user_files
 >>> file.lua
 local timer_interval = 1
-local time_factor = timer_interval / (ngx.worker.count() * 60)
+local time_factor = timer_interval / (njt.worker.count() * 60)
 --- request
 GET /lua
 --- response_body

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # this script is for developers only.
-# dependent on the ngx-build script from the nginx-devel-utils repository:
-#   https://github.com/openresty/nginx-devel-utils/blob/master/ngx-build
+# dependent on the njt-build script from the nginx-devel-utils repository:
+#   https://github.com/openresty/nginx-devel-utils/blob/master/njt-build
 # the resulting nginx is located at ./work/nginx/sbin/nginx
 
 root=`pwd`
@@ -10,7 +10,7 @@ version=${1:-1.4.1}
 home=~
 force=$2
 
-# the ngx-build script is from https://github.com/agentzh/nginx-devel-utils
+# the njt-build script is from https://github.com/agentzh/nginx-devel-utils
 
             #--add-module=$home/work/nginx_upload_module-2.2.0 \
 
@@ -34,7 +34,7 @@ if [ "$USE_PCRE2" = "Y" ]; then
     PCRE_LIB=$PCRE2_LIB
 fi
 
-time ngx-build $force $version \
+time njt-build $force $version \
             --with-threads \
             --with-pcre-jit \
             $disable_pcre2 \

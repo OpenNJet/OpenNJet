@@ -47,9 +47,9 @@ __DATA__
     send_timeout 100ms;
     location /test {
         content_by_lua '
-            ngx.say("hello, world")
-            ngx.flush(true)
-            ngx.say("hiya")
+            njt.say("hello, world")
+            njt.flush(true)
+            njt.say("hiya")
         ';
     }
 --- request
@@ -67,11 +67,11 @@ qr/client timed out \(\d+: .*?timed out\)/
     send_timeout 1234ms;
     location /test {
         content_by_lua '
-            ngx.say(string.rep("blah blah blah", 10))
-            -- ngx.flush(true)
-            ngx.eof()
+            njt.say(string.rep("blah blah blah", 10))
+            -- njt.flush(true)
+            njt.eof()
             for i = 1, 20 do
-                ngx.sleep(0.1)
+                njt.sleep(0.1)
             end
         ';
     }
@@ -80,7 +80,7 @@ GET /test
 --- stap
 global evtime
 
-F(ngx_http_handler) {
+F(njt_http_handler) {
     delete evtime
 }
 
@@ -122,25 +122,25 @@ del timer 1234
 
 
 
-=== TEST 3: exit in user thread (entry thread is still pending on ngx.flush)
+=== TEST 3: exit in user thread (entry thread is still pending on njt.flush)
 --- config
     send_timeout 200ms;
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
 
-            ngx.say("hello, world!")
-            ngx.flush(true)
+            njt.say("hello, world!")
+            njt.flush(true)
 
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 --- request
@@ -151,7 +151,7 @@ GET /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -178,22 +178,22 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_coctx_cleanup) {
+F(njt_http_lua_coctx_cleanup) {
     println("lua tcp socket cleanup")
 }
 
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize request: c:%d, a:%d, cb:%d, rb:%d\n", $r->main->count,
         $r == $r->connection->data, $r->connection->buffered, $r->buffered)
 }
 
-F(ngx_http_set_write_handler) {
+F(njt_http_set_write_handler) {
     println("set write handler")
 }
 */
 
-F(ngx_http_lua_flush_cleanup) {
+F(njt_http_lua_flush_cleanup) {
     println("lua flush cleanup")
 }
 _EOC_
@@ -224,13 +224,13 @@ free request
     send_timeout 100ms;
     location /test {
         content_by_lua '
-            ngx.say("hello, world")
-            local ok, err = ngx.flush(true)
+            njt.say("hello, world")
+            local ok, err = njt.flush(true)
             if not ok then
-                ngx.log(ngx.ERR, "failed to flush: ", err)
+                njt.log(njt.ERR, "failed to flush: ", err)
                 return
             end
-            ngx.say("hiya")
+            njt.say("hiya")
         ';
     }
 --- request
@@ -251,19 +251,19 @@ qr/client timed out \(\d+: .*?timed out\)/,
     send_timeout 100ms;
     location /test {
         content_by_lua '
-            ngx.say("hello, world")
+            njt.say("hello, world")
 
             local function run(tag)
-                local ok, err = ngx.flush(true)
+                local ok, err = njt.flush(true)
                 if not ok then
-                    ngx.log(ngx.ERR, "thread ", tag, ": failed to flush: ", err)
+                    njt.log(njt.ERR, "thread ", tag, ": failed to flush: ", err)
                     return
                 end
-                ngx.say("hiya")
+                njt.say("hiya")
             end
 
             local function new_thread(tag)
-                local ok, err = ngx.thread.spawn(run, tag)
+                local ok, err = njt.thread.spawn(run, tag)
                 if not ok then
                     return error("failed to spawn thread: ", err)
                 end
@@ -295,13 +295,13 @@ qr/client timed out \(\d+: .*?timed out\)/,
     location /test {
         limit_rate 2;
         content_by_lua '
-            ngx.say("hello, lua")
-            local ok, err = ngx.flush(true)
+            njt.say("hello, lua")
+            local ok, err = njt.flush(true)
             if not ok then
-                ngx.log(ngx.ERR, "failed to flush: ", err)
+                njt.log(njt.ERR, "failed to flush: ", err)
                 return
             end
-            ngx.say("hiya")
+            njt.say("hiya")
         ';
     }
 --- request

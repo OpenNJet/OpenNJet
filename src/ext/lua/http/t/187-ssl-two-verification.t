@@ -46,9 +46,9 @@ __DATA__
         server_tokens off;
         location /foo {
             default_type 'text/plain';
-            content_by_lua_block { ngx.status = 201 ngx.say("foo") ngx.exit(201) }
+            content_by_lua_block { njt.status = 201 njt.say("foo") njt.exit(201) }
             log_by_lua_block {
-                ngx.log(ngx.INFO, "ssl_client_s_dn: ", ngx.var.ssl_client_s_dn)
+                njt.log(njt.INFO, "ssl_client_s_dn: ", njt.var.ssl_client_s_dn)
             }
             more_clear_headers Date;
         }
@@ -62,48 +62,48 @@ __DATA__
     location /t {
         content_by_lua_block {
             do
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
 
                 sock:settimeout(2000)
 
                 local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
                 -- local ok, err = sock:connect("127.0.0.1", 4433)
                 if not ok then
-                    ngx.say("failed to connect: ", err)
+                    njt.say("failed to connect: ", err)
                     return
                 end
 
-                ngx.say("connected: ", ok)
+                njt.say("connected: ", ok)
 
                 local sess, err = sock:sslhandshake(nil, "test.com", true)
                 if not sess then
-                    ngx.say("failed to do SSL handshake: ", err)
+                    njt.say("failed to do SSL handshake: ", err)
                     return
                 end
 
-                ngx.say("ssl handshake: ", type(sess))
+                njt.say("ssl handshake: ", type(sess))
 
                 local req = "GET /foo HTTP/1.0\r\nHost: test.com\r\nConnection: close\r\n\r\n"
                 local bytes, err = sock:send(req)
                 if not bytes then
-                    ngx.say("failed to send http request: ", err)
+                    njt.say("failed to send http request: ", err)
                     return
                 end
 
-                ngx.say("sent http request: ", bytes, " bytes.")
+                njt.say("sent http request: ", bytes, " bytes.")
 
                 while true do
                     local line, err = sock:receive()
                     if not line then
-                        -- ngx.say("failed to receive response status line: ", err)
+                        -- njt.say("failed to receive response status line: ", err)
                         break
                     end
 
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
                 end
 
                 local ok, err = sock:close()
-                ngx.say("close: ", ok, " ", err)
+                njt.say("close: ", ok, " ", err)
             end  -- do
             -- collectgarbage()
         }
@@ -133,7 +133,7 @@ ssl_client_s_dn: emailAddress=agentzh@gmail.com,CN=test.com,OU=OpenResty,O=OpenR
 [alert]
 --- grep_error_log eval: qr/ssl_client_hello_by_lua\(.*?,|\bssl client hello: connection reusable: \d+|\breusable connection: \d+/
 --- grep_error_log_out eval
-# Since nginx version 1.17.9, nginx call ngx_reusable_connection(c, 0)
+# Since nginx version 1.17.9, nginx call njt_reusable_connection(c, 0)
 # before call ssl callback function
 $Test::Nginx::Util::NginxVersion >= 1.017009 ?
 qr/reusable connection: 0

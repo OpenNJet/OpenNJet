@@ -76,10 +76,10 @@ static u_char njt_http_lua_socket_udp_buffer[UDP_MAX_DATAGRAM_SIZE];
 void
 njt_http_lua_inject_socket_udp_api(njt_log_t *log, lua_State *L)
 {
-    lua_getfield(L, -1, "socket"); /* ngx socket */
+    lua_getfield(L, -1, "socket"); /* njt socket */
 
     lua_pushcfunction(L, njt_http_lua_socket_udp);
-    lua_setfield(L, -2, "udp"); /* ngx socket */
+    lua_setfield(L, -2, "udp"); /* njt socket */
 
     /* udp socket object metatable */
     lua_pushlightuserdata(L, njt_http_lua_lightudata_mask(
@@ -87,7 +87,7 @@ njt_http_lua_inject_socket_udp_api(njt_log_t *log, lua_State *L)
     lua_createtable(L, 0 /* narr */, 6 /* nrec */);
 
     lua_pushcfunction(L, njt_http_lua_socket_udp_setpeername);
-    lua_setfield(L, -2, "setpeername"); /* ngx socket mt */
+    lua_setfield(L, -2, "setpeername"); /* njt socket mt */
 
     lua_pushcfunction(L, njt_http_lua_socket_udp_send);
     lua_setfield(L, -2, "send");
@@ -96,10 +96,10 @@ njt_http_lua_inject_socket_udp_api(njt_log_t *log, lua_State *L)
     lua_setfield(L, -2, "receive");
 
     lua_pushcfunction(L, njt_http_lua_socket_udp_settimeout);
-    lua_setfield(L, -2, "settimeout"); /* ngx socket mt */
+    lua_setfield(L, -2, "settimeout"); /* njt socket mt */
 
     lua_pushcfunction(L, njt_http_lua_socket_udp_close);
-    lua_setfield(L, -2, "close"); /* ngx socket mt */
+    lua_setfield(L, -2, "close"); /* njt socket mt */
 
     lua_pushvalue(L, -1);
     lua_setfield(L, -2, "__index");
@@ -184,7 +184,7 @@ njt_http_lua_socket_udp_setpeername(lua_State *L)
 
     n = lua_gettop(L);
     if (n != 2 && n != 3) {
-        return luaL_error(L, "ngx.socket.udp setpeername: expecting 2 or 3 "
+        return luaL_error(L, "njt.socket.udp setpeername: expecting 2 or 3 "
                           "arguments (including the object), but seen %d", n);
     }
 
@@ -1045,7 +1045,7 @@ njt_http_lua_socket_udp_settimeout(lua_State *L)
     n = lua_gettop(L);
 
     if (n != 2) {
-        return luaL_error(L, "ngx.socket settimeout: expecting at least 2 "
+        return luaL_error(L, "njt.socket settimeout: expecting at least 2 "
                           "arguments (including the object) but seen %d",
                           lua_gettop(L));
     }

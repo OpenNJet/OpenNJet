@@ -20,32 +20,32 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: entries under ngx. (content by lua)
+=== TEST 1: entries under njt. (content by lua)
 --- config
         location = /test {
             content_by_lua '
                 local n = 0
-                for k, v in pairs(ngx) do
+                for k, v in pairs(njt) do
                     n = n + 1
                 end
-                ngx.say("ngx: ", n)
+                njt.say("njt: ", n)
             ';
         }
 --- request
 GET /test
 --- response_body
-ngx: 114
+njt: 114
 --- no_error_log
 [error]
 
 
 
-=== TEST 2: entries under ngx. (set by lua)
+=== TEST 2: entries under njt. (set by lua)
 --- config
         location = /test {
             set_by_lua $n '
                 local n = 0
-                for k, v in pairs(ngx) do
+                for k, v in pairs(njt) do
                     n = n + 1
                 end
                 return n;
@@ -61,23 +61,23 @@ GET /test
 
 
 
-=== TEST 3: entries under ngx. (header filter by lua)
+=== TEST 3: entries under njt. (header filter by lua)
 --- config
         location = /test {
             set $n '';
 
             content_by_lua '
-                ngx.send_headers()
-                ngx.say("n = ", ngx.var.n)
+                njt.send_headers()
+                njt.say("n = ", njt.var.n)
             ';
 
             header_filter_by_lua '
                 local n = 0
-                for k, v in pairs(ngx) do
+                for k, v in pairs(njt) do
                     n = n + 1
                 end
 
-                ngx.var.n = n
+                njt.var.n = n
             ';
         }
 --- request
@@ -97,7 +97,7 @@ n = 114
                 for k, v in pairs(ndk) do
                     n = n + 1
                 end
-                ngx.say("n = ", n)
+                njt.say("n = ", n)
             ';
         }
 --- request
@@ -109,15 +109,15 @@ n = 1
 
 
 
-=== TEST 5: entries under ngx.req (content by lua)
+=== TEST 5: entries under njt.req (content by lua)
 --- config
         location = /test {
             content_by_lua '
                 local n = 0
-                for k, v in pairs(ngx.req) do
+                for k, v in pairs(njt.req) do
                     n = n + 1
                 end
-                ngx.say("n = ", n)
+                njt.say("n = ", n)
             ';
         }
 --- request
@@ -129,12 +129,12 @@ n = 23
 
 
 
-=== TEST 6: entries under ngx.req (set by lua)
+=== TEST 6: entries under njt.req (set by lua)
 --- config
         location = /test {
             set_by_lua $n '
                 local n = 0
-                for k, v in pairs(ngx.req) do
+                for k, v in pairs(njt.req) do
                     n = n + 1
                 end
                 return n
@@ -151,22 +151,22 @@ n = 23
 
 
 
-=== TEST 7: entries under ngx.req (header filter by lua)
+=== TEST 7: entries under njt.req (header filter by lua)
 --- config
         location = /test {
             set $n '';
 
             header_filter_by_lua '
                 local n = 0
-                for k, v in pairs(ngx.req) do
+                for k, v in pairs(njt.req) do
                     n = n + 1
                 end
-                ngx.var.n = n
+                njt.var.n = n
             ';
 
             content_by_lua '
-                ngx.send_headers()
-                ngx.say("n = ", ngx.var.n)
+                njt.send_headers()
+                njt.say("n = ", njt.var.n)
             ';
         }
 --- request
@@ -178,15 +178,15 @@ n = 23
 
 
 
-=== TEST 8: entries under ngx.location
+=== TEST 8: entries under njt.location
 --- config
         location = /test {
             content_by_lua '
                 local n = 0
-                for k, v in pairs(ngx.location) do
+                for k, v in pairs(njt.location) do
                     n = n + 1
                 end
-                ngx.say("n = ", n)
+                njt.say("n = ", n)
             ';
         }
 --- request
@@ -198,15 +198,15 @@ n = 2
 
 
 
-=== TEST 9: entries under ngx.socket
+=== TEST 9: entries under njt.socket
 --- config
         location = /test {
             content_by_lua '
                 local n = 0
-                for k, v in pairs(ngx.socket) do
+                for k, v in pairs(njt.socket) do
                     n = n + 1
                 end
-                ngx.say("n = ", n)
+                njt.say("n = ", n)
             ';
         }
 --- request
@@ -218,16 +218,16 @@ n = 4
 
 
 
-=== TEST 10: entries under ngx._tcp_meta
+=== TEST 10: entries under njt._tcp_meta
 --- SKIP
 --- config
         location = /test {
             content_by_lua '
                 local n = 0
-                for k, v in pairs(ngx._tcp_meta) do
+                for k, v in pairs(njt._tcp_meta) do
                     n = n + 1
                 end
-                ngx.say("n = ", n)
+                njt.say("n = ", n)
             ';
         }
 --- request
@@ -244,15 +244,15 @@ n = 10
         location = /test {
             content_by_lua '
                 local n = 0
-                local sock, err = ngx.req.socket()
+                local sock, err = njt.req.socket()
                 if not sock then
-                    ngx.say("failed to get the request socket: ", err)
+                    njt.say("failed to get the request socket: ", err)
                 end
 
                 for k, v in pairs(getmetatable(sock)) do
                     n = n + 1
                 end
-                ngx.say("n = ", n)
+                njt.say("n = ", n)
             ';
         }
 --- request
@@ -271,13 +271,13 @@ n = 6
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local mt = dogs.__index
             local n = 0
             for k, v in pairs(mt) do
                 n = n + 1
             end
-            ngx.say("n = ", n)
+            njt.say("n = ", n)
         ';
     }
 --- request
@@ -289,15 +289,15 @@ n = 22
 
 
 
-=== TEST 13: entries under ngx. (log by lua)
+=== TEST 13: entries under njt. (log by lua)
 --- config
     location = /t {
         log_by_lua '
             local n = 0
-            for k, v in pairs(ngx) do
+            for k, v in pairs(njt) do
                 n = n + 1
             end
-            ngx.log(ngx.ERR, "ngx. entry count: ", n)
+            njt.log(njt.ERR, "njt. entry count: ", n)
         ';
     }
 --- request
@@ -305,19 +305,19 @@ GET /t
 --- response_body_like: 404 Not Found
 --- error_code: 404
 --- error_log
-ngx. entry count: 114
+njt. entry count: 114
 
 
 
-=== TEST 14: entries under ngx.timer
+=== TEST 14: entries under njt.timer
 --- config
         location = /test {
             content_by_lua '
                 local n = 0
-                for k, v in pairs(ngx.timer) do
+                for k, v in pairs(njt.timer) do
                     n = n + 1
                 end
-                ngx.say("n = ", n)
+                njt.say("n = ", n)
             ';
         }
 --- request
@@ -329,15 +329,15 @@ n = 4
 
 
 
-=== TEST 15: entries under ngx.config
+=== TEST 15: entries under njt.config
 --- config
         location = /test {
             content_by_lua '
                 local n = 0
-                for k, v in pairs(ngx.config) do
+                for k, v in pairs(njt.config) do
                     n = n + 1
                 end
-                ngx.say("n = ", n)
+                njt.say("n = ", n)
             ';
         }
 --- request
@@ -349,15 +349,15 @@ n = 6
 
 
 
-=== TEST 16: entries under ngx.re
+=== TEST 16: entries under njt.re
 --- config
         location = /test {
             content_by_lua '
                 local n = 0
-                for k, v in pairs(ngx.re) do
+                for k, v in pairs(njt.re) do
                     n = n + 1
                 end
-                ngx.say("n = ", n)
+                njt.say("n = ", n)
             ';
         }
 --- request
@@ -377,7 +377,7 @@ n = 5
                 for k, v in pairs(coroutine) do
                     n = n + 1
                 end
-                ngx.say("coroutine: ", n)
+                njt.say("coroutine: ", n)
             ';
         }
 --- request
@@ -397,15 +397,15 @@ coroutine: 16
 
 
 
-=== TEST 18: entries under ngx.thread. (content by lua)
+=== TEST 18: entries under njt.thread. (content by lua)
 --- config
         location = /test {
             content_by_lua '
                 local n = 0
-                for k, v in pairs(ngx.thread) do
+                for k, v in pairs(njt.thread) do
                     n = n + 1
                 end
-                ngx.say("thread: ", n)
+                njt.say("thread: ", n)
             ';
         }
 --- request
@@ -424,15 +424,15 @@ thread: 3
 
 
 
-=== TEST 19: entries under ngx.worker
+=== TEST 19: entries under njt.worker
 --- config
         location = /test {
             content_by_lua '
                 local n = 0
-                for k, v in pairs(ngx.worker) do
+                for k, v in pairs(njt.worker) do
                     n = n + 1
                 end
-                ngx.say("worker: ", n)
+                njt.say("worker: ", n)
             ';
         }
 --- request
@@ -449,11 +449,11 @@ worker: 4
         location = /test {
             content_by_lua_block {
                 local n = 0
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 for k, v in pairs(getmetatable(sock)) do
                     n = n + 1
                 end
-                ngx.say("n = ", n)
+                njt.say("n = ", n)
             }
         }
 --- request
@@ -470,11 +470,11 @@ n = 14
         location = /test {
             content_by_lua '
                 local n = 0
-                local sock = ngx.socket.udp()
+                local sock = njt.socket.udp()
                 for k, v in pairs(getmetatable(sock)) do
                     n = n + 1
                 end
-                ngx.say("n = ", n)
+                njt.say("n = ", n)
             ';
         }
 --- request
@@ -491,10 +491,10 @@ n = 6
         location = /test {
             content_by_lua '
                 local n = 0
-                ngx.req.read_body()
-                local sock, err = ngx.req.socket(true)
+                njt.req.read_body()
+                local sock, err = njt.req.socket(true)
                 if not sock then
-                    ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+                    njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
                     return
                 end
 
@@ -504,7 +504,7 @@ n = 6
 
                 local ok, err = sock:send("HTTP/1.1 200 OK\\r\\nContent-Length: 6\\r\\n\\r\\nn = "..n.."\\n")
                 if not ok then
-                    ngx.log(ngx.ERR, "failed to send: ", err)
+                    njt.log(njt.ERR, "failed to send: ", err)
                     return
                 end
             ';
@@ -524,10 +524,10 @@ n = 7
             content_by_lua_block {
                 local narr = 0
                 local nrec = 0
-                ngx.req.read_body()
-                local sock, err = ngx.req.socket(true)
+                njt.req.read_body()
+                local sock, err = njt.req.socket(true)
                 if not sock then
-                    ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+                    njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
                     return
                 end
                 sock:settimeouts(1000, 2000, 3000)
@@ -542,7 +542,7 @@ n = 7
 
                 local ok, err = sock:send("HTTP/1.1 200 OK\r\n\r\nnarr = "..narr.."\nnrec = "..nrec.."\n")
                 if not ok then
-                    ngx.log(ngx.ERR, "failed to send: ", err)
+                    njt.log(njt.ERR, "failed to send: ", err)
                     return
                 end
             }
@@ -563,9 +563,9 @@ nrec = 3
             content_by_lua_block {
                 local narr = 0
                 local nrec = 0
-                local sock, err = ngx.req.socket()
+                local sock, err = njt.req.socket()
                 if not sock then
-                    ngx.log(ngx.ERR, "server: failed to get req socket: ", err)
+                    njt.log(njt.ERR, "server: failed to get req socket: ", err)
                     return
                 end
                 sock:settimeouts(1000, 2000, 3000)
@@ -578,7 +578,7 @@ nrec = 3
                 -- include '__index'
                 nrec = nrec - narr + 1
 
-                ngx.say("narr = "..narr.."\nnrec = "..nrec)
+                njt.say("narr = "..narr.."\nnrec = "..nrec)
             }
         }
 --- request

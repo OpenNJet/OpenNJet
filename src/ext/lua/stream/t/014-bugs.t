@@ -66,7 +66,7 @@ error loading module 'foo' from file
 
 === TEST 2: print lua empty strings
 --- stream_server_config
-    content_by_lua_block { ngx.print("") ngx.flush() ngx.print("Hi") }
+    content_by_lua_block { njt.print("") njt.flush() njt.print("Hi") }
 --- stream_response chop
 Hi
 --- no_error_log
@@ -76,7 +76,7 @@ Hi
 
 === TEST 3: say lua empty strings
 --- stream_server_config
-    content_by_lua_block { ngx.say("") ngx.flush() ngx.print("Hi") }
+    content_by_lua_block { njt.say("") njt.flush() njt.print("Hi") }
 --- stream_response eval
 "
 Hi"
@@ -100,35 +100,35 @@ Hi"
 module("test", package.seeall)
 
 function go(port)
-    local sock = ngx.socket.tcp()
-    local sock2 = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
+    local sock2 = njt.socket.tcp()
 
     sock:settimeout(1000)
     sock2:settimeout(6000000)
 
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
     local ok, err = sock2:connect("127.0.0.1", port)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
     local ok, err = sock:setkeepalive(100, 100)
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 
     local ok, err = sock2:setkeepalive(200, 100)
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 
-    ngx.say("done")
+    njt.say("done")
 end
 --- stap2
 F(njt_close_connection) {
@@ -149,7 +149,7 @@ done
     content_by_lua_file html/a.lua;
 
 --- user_files eval
-my $s = "ngx.say('ok')\n";
+my $s = "njt.say('ok')\n";
 ">>> a.lua\n" . (" " x (8192 - length($s))) . $s;
 
 --- stream_response
@@ -159,7 +159,7 @@ ok
 
 
 
-=== TEST 6: tcp: nginx crash when resolve an not exist domain in ngx.thread.spawn
+=== TEST 6: tcp: nginx crash when resolve an not exist domain in njt.thread.spawn
 https://github.com/openresty/lua-nginx-module/issues/1915
 --- stream_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
@@ -167,10 +167,10 @@ https://github.com/openresty/lua-nginx-module/issues/1915
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     content_by_lua_block {
         local function tcp(host, port)
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok,err = sock:connect(host, port)
             if not ok then
-                ngx.log(ngx.WARN, "failed: ", err)
+                njt.log(njt.WARN, "failed: ", err)
                 sock:close()
                 return false
             end
@@ -184,19 +184,19 @@ https://github.com/openresty/lua-nginx-module/issues/1915
 
         local threads = {}
         for i = 1, 3 do
-            threads[i] = ngx.thread.spawn(tcp, host, port)
+            threads[i] = njt.thread.spawn(tcp, host, port)
         end
 
-        local ok, res = ngx.thread.wait(threads[1],threads[2],threads[3])
+        local ok, res = njt.thread.wait(threads[1],threads[2],threads[3])
         if not ok then
-            ngx.say("failed to wait thread")
+            njt.say("failed to wait thread")
             return
         end
 
-        ngx.say("res: ", res)
+        njt.say("res: ", res)
 
         for i = 1, 3 do
-            ngx.thread.kill(threads[i])
+            njt.thread.kill(threads[i])
         end
     }
 
@@ -217,10 +217,10 @@ https://github.com/openresty/lua-nginx-module/issues/1915
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     content_by_lua_block {
         local function tcp(host, port)
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok,err = sock:connect(host, port)
             if not ok then
-                ngx.log(ngx.WARN, "failed: ", err)
+                njt.log(njt.WARN, "failed: ", err)
                 sock:close()
                 return false
             end
@@ -234,19 +234,19 @@ https://github.com/openresty/lua-nginx-module/issues/1915
 
         local threads = {}
         for i = 1, 3 do
-            threads[i] = ngx.thread.spawn(tcp, host, port)
+            threads[i] = njt.thread.spawn(tcp, host, port)
         end
 
-        local ok, res = ngx.thread.wait(threads[1],threads[2],threads[3])
+        local ok, res = njt.thread.wait(threads[1],threads[2],threads[3])
         if not ok then
-            ngx.say("failed to wait thread")
+            njt.say("failed to wait thread")
             return
         end
 
-        ngx.say("res: ", res)
+        njt.say("res: ", res)
 
         for i = 1, 3 do
-            ngx.thread.kill(threads[i])
+            njt.thread.kill(threads[i])
         end
     }
 
@@ -267,10 +267,10 @@ https://github.com/openresty/lua-nginx-module/issues/1915
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     content_by_lua_block {
         local function udp(host, port)
-            local sock = ngx.socket.udp()
+            local sock = njt.socket.udp()
             local ok,err = sock:setpeername(host, port)
             if not ok then
-                ngx.log(ngx.WARN, "failed: ", err)
+                njt.log(njt.WARN, "failed: ", err)
                 sock:close()
                 return false
             end
@@ -284,19 +284,19 @@ https://github.com/openresty/lua-nginx-module/issues/1915
 
         local threads = {}
         for i = 1, 3 do
-            threads[i] = ngx.thread.spawn(udp, host, port)
+            threads[i] = njt.thread.spawn(udp, host, port)
         end
 
-        local ok, res = ngx.thread.wait(threads[1],threads[2],threads[3])
+        local ok, res = njt.thread.wait(threads[1],threads[2],threads[3])
         if not ok then
-            ngx.say("failed to wait thread")
+            njt.say("failed to wait thread")
             return
         end
 
-        ngx.say("res: ", res)
+        njt.say("res: ", res)
 
         for i = 1, 3 do
-            ngx.thread.kill(threads[i])
+            njt.thread.kill(threads[i])
         end
     }
 
@@ -309,7 +309,7 @@ notexistdomain.openresty.org could not be resolved
 
 
 
-=== TEST 9: udp: nginx crash when resolve an not exist domain in ngx.thread.spawn
+=== TEST 9: udp: nginx crash when resolve an not exist domain in njt.thread.spawn
 https://github.com/openresty/lua-nginx-module/issues/1915
 --- stream_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
@@ -317,10 +317,10 @@ https://github.com/openresty/lua-nginx-module/issues/1915
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     content_by_lua_block {
         local function udp(host, port)
-            local sock = ngx.socket.udp()
+            local sock = njt.socket.udp()
             local ok,err = sock:setpeername(host, port)
             if not ok then
-                ngx.log(ngx.WARN, "failed: ", err)
+                njt.log(njt.WARN, "failed: ", err)
                 sock:close()
                 return false
             end
@@ -334,19 +334,19 @@ https://github.com/openresty/lua-nginx-module/issues/1915
 
         local threads = {}
         for i = 1, 3 do
-            threads[i] = ngx.thread.spawn(udp, host, port)
+            threads[i] = njt.thread.spawn(udp, host, port)
         end
 
-        local ok, res = ngx.thread.wait(threads[1],threads[2],threads[3])
+        local ok, res = njt.thread.wait(threads[1],threads[2],threads[3])
         if not ok then
-            ngx.say("failed to wait thread")
+            njt.say("failed to wait thread")
             return
         end
 
-        ngx.say("res: ", res)
+        njt.say("res: ", res)
 
         for i = 1, 3 do
-            ngx.thread.kill(threads[i])
+            njt.thread.kill(threads[i])
         end
     }
 

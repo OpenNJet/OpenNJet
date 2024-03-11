@@ -25,7 +25,7 @@ add_block_preprocessor(sub {
 
             for _, signame in ipairs(signals) do
                 local cmd = string.format("kill -s %s %d && sleep 0.01",
-                                          signame, ngx.worker.pid())
+                                          signame, njt.worker.pid())
                 local err = select(2, io.popen(cmd):read("*a"))
                 if err then
                     error("SIG" .. signame .. " caused: " .. err)
@@ -175,6 +175,6 @@ Interrupted system call
         echo ok;
 
         log_by_lua_block {
-            ngx.timer.at(0, test_sa_restart)
+            njt.timer.at(0, test_sa_restart)
         }
     }

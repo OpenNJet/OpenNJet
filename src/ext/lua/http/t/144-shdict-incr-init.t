@@ -25,11 +25,11 @@ __DATA__
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             local res, err = dogs:incr("foo", 10502, 1)
-            ngx.say("incr: ", res, " ", err)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err)
+            njt.say("foo = ", dogs:get("foo"))
         }
     }
 --- request
@@ -48,12 +48,12 @@ foo = 10534
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:flush_all()
             dogs:set("bah", 32)
             local res, err = dogs:incr("foo", 10502, 1)
-            ngx.say("incr: ", res, " ", err)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err)
+            njt.say("foo = ", dogs:get("foo"))
         }
     }
 --- request
@@ -72,15 +72,15 @@ foo = 10503
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             for i = 1, 20 do
                 dogs:set("bar" .. i, i, 0.001)
             end
             dogs:set("foo", "32", 0.001)
-            ngx.location.capture("/sleep/0.002")
+            njt.location.capture("/sleep/0.002")
             local res, err = dogs:incr("foo", 10502, 0)
-            ngx.say("incr: ", res, " ", err)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err)
+            njt.say("foo = ", dogs:get("foo"))
         }
     }
     location ~ ^/sleep/(.+) {
@@ -102,15 +102,15 @@ foo = 10502
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             for i = 1, 20 do
                 dogs:set("bar" .. i, i, 0.001)
             end
             dogs:set("foo", 32, 0.001)
-            ngx.location.capture("/sleep/0.002")
+            njt.location.capture("/sleep/0.002")
             local res, err = dogs:incr("foo", 10502, 0)
-            ngx.say("incr: ", res, " ", err)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err)
+            njt.say("foo = ", dogs:get("foo"))
         }
     }
     location ~ ^/sleep/(.+) {
@@ -132,7 +132,7 @@ foo = 10502
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:flush_all()
             local long_prefix = string.rep("1234567890", 100)
             for i = 1, 1000 do
@@ -143,10 +143,10 @@ foo = 10502
                 end
             end
             local res, err, forcible = dogs:incr(long_prefix .. "bar", 10502, 0)
-            ngx.say("incr: ", res, " ", err, " ", forcible)
+            njt.say("incr: ", res, " ", err, " ", forcible)
             local res, err, forcible = dogs:incr(long_prefix .. "foo", 10502, 0)
-            ngx.say("incr: ", res, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get(long_prefix .. "foo"))
+            njt.say("incr: ", res, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get(long_prefix .. "foo"))
         }
     }
 --- request
@@ -166,11 +166,11 @@ foo = 10502
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 1)
             local res, err, forcible = dogs:incr("foo", 1)
-            ngx.say("incr: ", res, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get("foo"))
         }
     }
 --- request
@@ -189,11 +189,11 @@ foo = 2
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", true)
             local res, err = dogs:incr("foo", 1, 0)
-            ngx.say("incr: ", res, " ", err)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err)
+            njt.say("foo = ", dogs:get("foo"))
         }
     }
 --- request
@@ -212,10 +212,10 @@ foo = true
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local res, err, forcible = dogs:incr("foo", 1, "bar")
-            ngx.say("incr: ", res, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get("foo"))
         }
     }
 --- request

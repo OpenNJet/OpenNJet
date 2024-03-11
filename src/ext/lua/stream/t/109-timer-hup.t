@@ -46,12 +46,12 @@ __DATA__
     content_by_lua_block {
         local f, err = io.open("$TEST_NGINX_SERVER_ROOT/logs/nginx.pid", "r")
         if not f then
-            ngx.say("failed to open nginx.pid: ", err)
+            njt.say("failed to open nginx.pid: ", err)
             return
         end
 
         local pid = f:read()
-        -- ngx.say("master pid: [", pid, "]")
+        -- njt.say("master pid: [", pid, "]")
 
         f:close()
 
@@ -61,12 +61,12 @@ __DATA__
             print("timer prematurely expired: ", premature)
             print("in callback: hello, ", i)
         end
-        local ok, err = ngx.timer.at(3, f)
+        local ok, err = njt.timer.at(3, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
+        njt.say("registered timer")
         os.execute("kill -HUP " .. pid)
     }
 
@@ -84,7 +84,7 @@ timer prematurely expired: false
 
 --- error_log
 lua abort pending timers
-lua ngx.timer expired
+lua njt.timer expired
 stream lua close fake stream connection
 in callback: hello, 1
 timer prematurely expired: true
@@ -96,12 +96,12 @@ timer prematurely expired: true
     content_by_lua_block {
         local f, err = io.open("$TEST_NGINX_SERVER_ROOT/logs/nginx.pid", "r")
         if not f then
-            ngx.say("failed to open nginx.pid: ", err)
+            njt.say("failed to open nginx.pid: ", err)
             return
         end
 
         local pid = f:read()
-        -- ngx.say("master pid: [", pid, "]")
+        -- njt.say("master pid: [", pid, "]")
 
         f:close()
 
@@ -112,13 +112,13 @@ timer prematurely expired: true
             print("in callback: hello, ", i, "!")
         end
         for i = 1, 10 do
-            local ok, err = ngx.timer.at(3, f)
+            local ok, err = njt.timer.at(3, f)
             if not ok then
-                ngx.say("failed to set timer: ", err)
+                njt.say("failed to set timer: ", err)
                 return
             end
         end
-        ngx.say("registered timers")
+        njt.say("registered timers")
         os.execute("kill -HUP " .. pid)
     }
 
@@ -136,7 +136,7 @@ timer prematurely expired: false
 
 --- error_log
 lua abort pending timers
-lua ngx.timer expired
+lua njt.timer expired
 stream lua close fake stream connection
 in callback: hello, 1!
 in callback: hello, 2!
@@ -157,30 +157,30 @@ timer prematurely expired: true
     content_by_lua_block {
         local f, err = io.open("$TEST_NGINX_SERVER_ROOT/logs/nginx.pid", "r")
         if not f then
-            ngx.say("failed to open nginx.pid: ", err)
+            njt.say("failed to open nginx.pid: ", err)
             return
         end
 
         local pid = f:read()
-        -- ngx.say("master pid: [", pid, "]")
+        -- njt.say("master pid: [", pid, "]")
 
         f:close()
 
         local function f(premature)
             print("timer prematurely expired: ", premature)
-            local ok, err = ngx.timer.at(3, f)
+            local ok, err = njt.timer.at(3, f)
             if not ok then
                 print("failed to register a new timer after reload: ", err)
             else
                 print("registered a new timer after reload")
             end
         end
-        local ok, err = ngx.timer.at(3, f)
+        local ok, err = njt.timer.at(3, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
+        njt.say("registered timer")
         os.execute("kill -HUP " .. pid)
     }
 
@@ -198,10 +198,10 @@ timer prematurely expired: false
 
 --- error_log
 lua abort pending timers
-lua ngx.timer expired
+lua njt.timer expired
 stream lua close fake stream connection
 timer prematurely expired: true
-failed to register a new timer after reload: process exiting, context: ngx.timer
+failed to register a new timer after reload: process exiting, context: njt.timer
 
 
 
@@ -210,36 +210,36 @@ failed to register a new timer after reload: process exiting, context: ngx.timer
     content_by_lua_block {
         local f, err = io.open("$TEST_NGINX_SERVER_ROOT/logs/nginx.pid", "r")
         if not f then
-            ngx.say("failed to open nginx.pid: ", err)
+            njt.say("failed to open nginx.pid: ", err)
             return
         end
 
         local pid = f:read()
-        -- ngx.say("master pid: [", pid, "]")
+        -- njt.say("master pid: [", pid, "]")
 
         f:close()
 
         local function g(premature)
             print("g: timer prematurely expired: ", premature)
-            print("g: exiting=", ngx.worker.exiting())
+            print("g: exiting=", njt.worker.exiting())
         end
 
         local function f(premature)
             print("f: timer prematurely expired: ", premature)
-            print("f: exiting=", ngx.worker.exiting())
-            local ok, err = ngx.timer.at(0, g)
+            print("f: exiting=", njt.worker.exiting())
+            local ok, err = njt.timer.at(0, g)
             if not ok then
                 print("f: failed to register a new timer after reload: ", err)
             else
                 print("f: registered a new timer after reload")
             end
         end
-        local ok, err = ngx.timer.at(3, f)
+        local ok, err = njt.timer.at(3, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
+        njt.say("registered timer")
         os.execute("kill -HUP " .. pid)
     }
 
@@ -257,7 +257,7 @@ failed to register a new timer after reload
 
 --- error_log
 lua abort pending timers
-lua ngx.timer expired
+lua njt.timer expired
 stream lua close fake stream connection
 f: timer prematurely expired: true
 f: registered a new timer after reload
@@ -272,28 +272,28 @@ g: exiting=true
     content_by_lua_block {
         local f, err = io.open("$TEST_NGINX_SERVER_ROOT/logs/nginx.pid", "r")
         if not f then
-            ngx.say("failed to open nginx.pid: ", err)
+            njt.say("failed to open nginx.pid: ", err)
             return
         end
 
         local pid = f:read()
-        -- ngx.say("master pid: [", pid, "]")
+        -- njt.say("master pid: [", pid, "]")
 
         f:close()
 
         local function f(premature)
             print("f: timer prematurely expired: ", premature)
-            print("f: exiting=", ngx.worker.exiting())
+            print("f: exiting=", njt.worker.exiting())
         end
 
         for i = 1, 100 do
-            local ok, err = ngx.timer.at(3 + i, f)
+            local ok, err = njt.timer.at(3 + i, f)
             if not ok then
-                ngx.say("failed to set timer: ", err)
+                njt.say("failed to set timer: ", err)
                 return
             end
         end
-        ngx.say("ok")
+        njt.say("ok")
         os.execute("kill -HUP " .. pid)
     }
 
@@ -334,10 +334,10 @@ TODO
         stream_req = table.concat(stream_req, "\r\n")
 
         -- Connect the socket
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local ok,err = sock:connect("127.0.0.1", 12355)
         if not ok then
-            ngx.log(ngx.ERR, err)
+            njt.log(njt.ERR, err)
         end
 
         -- Send the request
@@ -371,33 +371,33 @@ TODO
 
         -- Breaks the timer
         sock:setkeepalive()
-        ngx.say("ok")
+        njt.say("ok")
 
     log_by_lua_block {
         local background_thread
         background_thread = function(premature)
-            ngx.log(ngx.DEBUG, premature)
+            njt.log(njt.DEBUG, premature)
             if premature then
-                ngx.shared["test_dict"]:delete("background_flag")
+                njt.shared["test_dict"]:delete("background_flag")
                 return
             end
-            local ok, err = ngx.timer.at(1, background_thread)
+            local ok, err = njt.timer.at(1, background_thread)
 
             local f, err = io.open("$TEST_NGINX_SERVER_ROOT/logs/nginx.pid", "r")
             if not f then
-                ngx.say("failed to open nginx.pid: ", err)
+                njt.say("failed to open nginx.pid: ", err)
                 return
             end
             local pid = f:read()
-            -- ngx.say("master pid: [", pid, "]")
+            -- njt.say("master pid: [", pid, "]")
             f:close()
 
             os.execute("kill -HUP " .. pid)
         end
-        local dict = ngx.shared["test_dict"]
+        local dict = njt.shared["test_dict"]
 
         if dict:get("background_flag") == nil then
-            local ok, err = ngx.timer.at(0, background_thread)
+            local ok, err = njt.timer.at(0, background_thread)
             if ok then
                 dict:set("test_dict", 1)
             end
@@ -436,30 +436,30 @@ lua found 1 pending timers
             if kill then
                 local f, err = assert(io.open("$TEST_NGINX_SERVER_ROOT/logs/nginx.pid", "r"))
                 local pid = f:read()
-                -- ngx.say("master pid: [", pid, "]")
+                -- njt.say("master pid: [", pid, "]")
                 f:close()
 
                 os.execute("kill -HUP " .. pid)
             end
         end
 
-        math.randomseed(ngx.time())
+        math.randomseed(njt.time())
         local rand = math.random
-        local newtimer = ngx.timer.at
+        local newtimer = njt.timer.at
         for i = 1, 8191 do
             local delay = rand(4096)
             local ok, err = newtimer(delay, job, false)
             if not ok then
-                ngx.say("failed to create timer at ", delay, ": ", err)
+                njt.say("failed to create timer at ", delay, ": ", err)
                 return
             end
         end
         local ok, err = newtimer(0, job, true)
         if not ok then
-            ngx.say("failed to create the killer timer: ", err)
+            njt.say("failed to create the killer timer: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 
 --- config

@@ -73,7 +73,7 @@ njt_http_lua_ffi_set_resp_status(njt_http_request_t *r, int status)
 
     if (r->header_sent) {
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                      "attempt to set ngx.status after sending out "
+                      "attempt to set njt.status after sending out "
                       "response headers");
         return NJT_DECLINED;
     }

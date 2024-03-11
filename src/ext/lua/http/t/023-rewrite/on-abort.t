@@ -6,11 +6,11 @@ use t::StapThread;
 our $GCScript = <<_EOC_;
 $t::StapThread::GCScript
 
-F(ngx_http_lua_check_broken_connection) {
+F(njt_http_lua_check_broken_connection) {
     println("lua check broken conn")
 }
 
-F(ngx_http_lua_request_cleanup) {
+F(njt_http_lua_request_cleanup) {
     println("lua req cleanup")
 }
 _EOC_
@@ -36,16 +36,16 @@ __DATA__
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
             end)
 
             if not ok then
                 error("cannot set on_abort: " .. err)
             end
 
-            ngx.sleep(0.7)
-            ngx.log(ngx.NOTICE, "main handler done")
+            njt.sleep(0.7)
+            njt.log(njt.NOTICE, "main handler done")
         ';
         content_by_lua return;
     }
@@ -83,17 +83,17 @@ main handler done
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
-                ngx.exit(444)
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
+                njt.exit(444)
             end)
 
             if not ok then
                 error("cannot set on_abort: " .. err)
             end
 
-            ngx.sleep(0.7)
-            ngx.log(ngx.NOTICE, "main handler done")
+            njt.sleep(0.7)
+            njt.log(njt.NOTICE, "main handler done")
         ';
         content_by_lua return;
     }
@@ -123,21 +123,21 @@ on abort called
 
 
 
-=== TEST 3: ngx.exit(499) with pending subrequest
+=== TEST 3: njt.exit(499) with pending subrequest
 --- config
     location = /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
-                ngx.exit(499)
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
+                njt.exit(499)
             end)
 
             if not ok then
                 error("cannot set on_abort: " .. err)
             end
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
         ';
         content_by_lua return;
     }
@@ -169,21 +169,21 @@ on abort called
 
 
 
-=== TEST 4: ngx.exit(408) with pending subrequest
+=== TEST 4: njt.exit(408) with pending subrequest
 --- config
     location = /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
-                ngx.exit(408)
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
+                njt.exit(408)
             end)
 
             if not ok then
                 error("cannot set on_abort: " .. err)
             end
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
         ';
         content_by_lua return;
     }
@@ -216,21 +216,21 @@ on abort called
 
 
 
-=== TEST 5: ngx.exit(-1) with pending subrequest
+=== TEST 5: njt.exit(-1) with pending subrequest
 --- config
     location = /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
-                ngx.exit(-1)
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
+                njt.exit(-1)
             end)
 
             if not ok then
                 error("cannot set on_abort: " .. err)
             end
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
         ';
         content_by_lua return;
     }
@@ -262,22 +262,22 @@ on abort called
 
 
 
-=== TEST 6: ngx.exit(0) with pending subrequest
+=== TEST 6: njt.exit(0) with pending subrequest
 --- config
     location = /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
-                ngx.exit(0)
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
+                njt.exit(0)
             end)
 
             if not ok then
                 error("cannot set on_abort: " .. err)
             end
 
-            ngx.location.capture("/sleep")
-            ngx.log(ngx.ERR, "main handler done")
+            njt.location.capture("/sleep")
+            njt.log(njt.ERR, "main handler done")
         ';
         content_by_lua return;
     }
@@ -321,35 +321,35 @@ qr/lua user thread aborted: runtime error: rewrite_by_lua\(nginx\.conf:\d+\):4: 
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
-                local sock = ngx.socket.tcp()
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
+                local sock = njt.socket.tcp()
                 local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
                 if not ok then
-                    ngx.log(ngx.ERR, "failed to connect to redis: ", err)
-                    ngx.exit(499)
+                    njt.log(njt.ERR, "failed to connect to redis: ", err)
+                    njt.exit(499)
                 end
                 local bytes, err = sock:send("flushall\\r\\n")
                 if not bytes then
-                    ngx.log(ngx.ERR, "failed to send query: ", err)
-                    ngx.exit(499)
+                    njt.log(njt.ERR, "failed to send query: ", err)
+                    njt.exit(499)
                 end
 
                 local res, err = sock:receive()
                 if not res then
-                    ngx.log(ngx.ERR, "failed to receive: ", err)
-                    ngx.exit(499)
+                    njt.log(njt.ERR, "failed to receive: ", err)
+                    njt.exit(499)
                 end
-                ngx.log(ngx.NOTICE, "callback done: ", res)
-                ngx.exit(499)
+                njt.log(njt.NOTICE, "callback done: ", res)
+                njt.exit(499)
             end)
 
             if not ok then
                 error("cannot set on_abort: " .. err)
             end
 
-            ngx.sleep(0.7)
-            ngx.log(ngx.NOTICE, "main handler done")
+            njt.sleep(0.7)
+            njt.log(njt.NOTICE, "main handler done")
         ';
         content_by_lua return;
     }
@@ -385,17 +385,17 @@ callback done: +OK
     location /t {
         lua_check_client_abort off;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
             end)
 
             if not ok then
-                ngx.say("cannot set on_abort: ", err)
+                njt.say("cannot set on_abort: ", err)
                 return
             end
 
-            ngx.sleep(0.7)
-            ngx.log(ngx.NOTICE, "main handler done")
+            njt.sleep(0.7)
+            njt.log(njt.NOTICE, "main handler done")
         ';
     }
 --- request
@@ -424,15 +424,15 @@ main handler done
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
             end)
 
             if not ok then
                 error("cannot set on_abort: " .. err)
             end
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -462,17 +462,17 @@ main handler done
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
             end)
 
             if not ok then
                 error("cannot set on_abort: " .. err)
             end
 
-            ngx.thread.spawn(function ()
-                ngx.sleep(0.7)
-                ngx.log(ngx.NOTICE, "main handler done")
+            njt.thread.spawn(function ()
+                njt.sleep(0.7)
+                njt.log(njt.NOTICE, "main handler done")
             end)
         ';
         content_by_lua return;
@@ -515,18 +515,18 @@ main handler done
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
-                ngx.exit(444)
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
+                njt.exit(444)
             end)
 
             if not ok then
                 error("cannot set on_abort: " .. err)
             end
 
-            ngx.thread.spawn(function ()
-                ngx.sleep(0.7)
-                ngx.log(ngx.NOTICE, "main handler done")
+            njt.thread.spawn(function ()
+                njt.sleep(0.7)
+                njt.log(njt.NOTICE, "main handler done")
             end)
         ';
         content_by_lua return;
@@ -565,17 +565,17 @@ on abort called
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
             end)
 
             if not ok then
                 error("cannot set on_abort: " .. err)
             end
 
-            ngx.thread.spawn(function ()
-                ngx.sleep(0.1)
-                ngx.say("done")
+            njt.thread.spawn(function ()
+                njt.sleep(0.1)
+                njt.say("done")
             end)
         ';
         content_by_lua return;
@@ -612,27 +612,27 @@ main handler done
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
             end)
 
             if not ok then
-                ngx.say("1: cannot set on_abort: " .. err)
+                njt.say("1: cannot set on_abort: " .. err)
                 return
             end
 
-            local ok, err = ngx.on_abort(function ()
-                ngx.log(ngx.NOTICE, "on abort called")
+            local ok, err = njt.on_abort(function ()
+                njt.log(njt.NOTICE, "on abort called")
             end)
 
             if not ok then
-                ngx.say("2: cannot set on_abort: " .. err)
+                njt.say("2: cannot set on_abort: " .. err)
                 return
             end
 
-            ngx.thread.spawn(function ()
-                ngx.sleep(0.1)
-                ngx.say("done")
+            njt.thread.spawn(function ()
+                njt.sleep(0.1)
+                njt.say("done")
             end)
         ';
         content_by_lua return;

@@ -17,7 +17,7 @@ my $stream_config = <<_EOC_;
                     }
                     stream {
                         init_by_lua_block {
-                            ngx.log(ngx.ERR, "run init_by_lua")
+                            njt.log(njt.ERR, "run init_by_lua")
                         }
                     }
                 ]]
@@ -28,7 +28,7 @@ my $stream_config = <<_EOC_;
             local conf_file = "$html_dir/nginx.conf"
             local f, err = io.open(conf_file, "w")
             if not f then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
                 return
             end
 
@@ -69,16 +69,16 @@ __DATA__
         local cmd = nginx .. " -p $TEST_NGINX_HTML_DIR -c " .. conf_file .. " -s reopen"
         local p, err = io.popen(cmd)
         if not p then
-            ngx.log(ngx.ERR, err)
+            njt.log(njt.ERR, err)
             return
         end
 
         local out, err = p:read("*a")
         if not out then
-            ngx.log(ngx.ERR, err)
+            njt.log(njt.ERR, err)
 
         else
-            ngx.log(ngx.WARN, out)
+            njt.log(njt.WARN, out)
         end
     }
 --- error_log
@@ -97,31 +97,31 @@ qr/\[error\] .*? init_by_lua:\d+: run init_by_lua/
         local cmd = nginx .. " -p $TEST_NGINX_HTML_DIR -c " .. conf_file .. " -t"
         local p, err = io.popen(cmd)
         if not p then
-            ngx.log(ngx.ERR, err)
+            njt.log(njt.ERR, err)
             return
         end
 
         local out, err = p:read("*a")
         if not out then
-            ngx.log(ngx.ERR, err)
+            njt.log(njt.ERR, err)
 
         else
-            ngx.log(ngx.WARN, out)
+            njt.log(njt.WARN, out)
         end
 
         local cmd = nginx .. " -p $TEST_NGINX_HTML_DIR -c " .. conf_file .. " -T"
         local p, err = io.popen(cmd)
         if not p then
-            ngx.log(ngx.ERR, err)
+            njt.log(njt.ERR, err)
             return
         end
 
         local out, err = p:read("*a")
         if not out then
-            ngx.log(ngx.ERR, err)
+            njt.log(njt.ERR, err)
 
         else
-            ngx.log(ngx.WARN, out)
+            njt.log(njt.WARN, out)
         end
     }
 --- error_log
@@ -141,7 +141,7 @@ qr/\[error\] .*? init_by_lua:\d+: run init_by_lua/
             stream {
                 lua_shared_dict test 64k;
                 init_by_lua_block {
-                    ngx.log(ngx.ERR, "run init_by_lua with lua_shared_dict")
+                    njt.log(njt.ERR, "run init_by_lua with lua_shared_dict")
                 }
             }
         ]]
@@ -151,31 +151,31 @@ qr/\[error\] .*? init_by_lua:\d+: run init_by_lua/
         local cmd = nginx .. " -p $TEST_NGINX_HTML_DIR -c " .. conf_file .. " -t"
         local p, err = io.popen(cmd)
         if not p then
-            ngx.log(ngx.ERR, err)
+            njt.log(njt.ERR, err)
             return
         end
 
         local out, err = p:read("*a")
         if not out then
-            ngx.log(ngx.ERR, err)
+            njt.log(njt.ERR, err)
 
         else
-            ngx.log(ngx.WARN, out)
+            njt.log(njt.WARN, out)
         end
 
         local cmd = nginx .. " -p $TEST_NGINX_HTML_DIR -c " .. conf_file .. " -T"
         local p, err = io.popen(cmd)
         if not p then
-            ngx.log(ngx.ERR, err)
+            njt.log(njt.ERR, err)
             return
         end
 
         local out, err = p:read("*a")
         if not out then
-            ngx.log(ngx.ERR, err)
+            njt.log(njt.ERR, err)
 
         else
-            ngx.log(ngx.WARN, out)
+            njt.log(njt.WARN, out)
         end
     }
 --- error_log

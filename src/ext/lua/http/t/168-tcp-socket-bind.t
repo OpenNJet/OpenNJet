@@ -38,44 +38,44 @@ __DATA__
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua_block {
             local ip = "127.0.0.1"
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:bind(ip)
             if not ok then
-                ngx.say("failed to bind", err)
+                njt.say("failed to bind", err)
                 return
             end
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local bytes, err = sock:send("GET /foo HTTP/1.1\r\nHost: localhost\r\nConnection: keepalive\r\n\r\n")
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent")
+            njt.say("request sent")
 
             local reader = sock:receiveuntil("\r\n0\r\n\r\n")
             local data, err = reader()
 
             if not data then
-                ngx.say("failed to receive response body: ", err)
+                njt.say("failed to receive response body: ", err)
                 return
             end
 
-            ngx.say("received response")
+            njt.say("received response")
             local remote_ip = string.match(data, "(bind: %d+%.%d+%.%d+%.%d+)")
-            ngx.say(remote_ip)
+            njt.say(remote_ip)
 
-            ngx.say("done")
+            njt.say("done")
         }
     }
 
@@ -105,46 +105,46 @@ done
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua_block {
             local ip = "$TEST_NGINX_SERVER_IP"
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:bind(ip)
             if not ok then
-                ngx.say("failed to bind", err)
+                njt.say("failed to bind", err)
                 return
             end
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local bytes, err = sock:send("GET /foo HTTP/1.1\r\nHost: localhost\r\nConnection: keepalive\r\n\r\n")
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent")
+            njt.say("request sent")
 
             local reader = sock:receiveuntil("\r\n0\r\n\r\n")
             local data, err = reader()
 
             if not data then
-                ngx.say("failed to receive response body: ", err)
+                njt.say("failed to receive response body: ", err)
                 return
             end
 
-            ngx.say("received response")
+            njt.say("received response")
             local remote_ip = string.match(data, "(bind: %d+%.%d+%.%d+%.%d+)")
             if remote_ip == "bind: $TEST_NGINX_SERVER_IP" then
-                ngx.say("ip matched")
+                njt.say("ip matched")
             end
 
-            ngx.say("done")
+            njt.say("done")
         }
     }
 
@@ -178,7 +178,7 @@ done
             local test = require "test"
             local t1 = test.go()
             local t2 = test.go()
-            ngx.say("t2 - t1: ", t2 - t1)
+            njt.say("t2 - t1: ", t2 - t1)
         }
     }
 --- user_files
@@ -187,30 +187,30 @@ local _M = {}
 
 function _M.go()
     local ip = "127.0.0.1"
-    local port = ngx.var.port
+    local port = njt.var.port
 
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:bind(ip)
     if not ok then
-        ngx.say("failed to bind", err)
+        njt.say("failed to bind", err)
         return
     end
 
-    ngx.say("bind: ", ip)
+    njt.say("bind: ", ip)
 
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok)
+    njt.say("connected: ", ok)
 
     local reused = sock:getreusedtimes()
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 
     return reused
@@ -240,24 +240,24 @@ t2 - t1: 1
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua_block {
             local ip = "$TEST_NGINX_NOT_EXIST_IP"
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:bind(ip)
             if not ok then
-                ngx.say("failed to bind", err)
+                njt.say("failed to bind", err)
                 return
             end
 
-            ngx.say("bind: ", ip)
+            njt.say("bind: ", ip)
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
         }
     }
 --- request
@@ -278,24 +278,24 @@ failed to connect: cannot assign requested address
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua_block {
             local ip = "$TEST_NGINX_INVALID_IP"
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:bind(ip)
             if not ok then
-                ngx.say("failed to bind: ", err)
+                njt.say("failed to bind: ", err)
                 return
             end
 
-            ngx.say("bind: ", ip)
+            njt.say("bind: ", ip)
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
         }
     }
 --- request
@@ -312,19 +312,19 @@ failed to bind: bad address
     init_worker_by_lua_block {
         -- this is not the recommend way, just for test
         local function tcp()
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:bind("127.0.0.1")
             if not ok then
-                ngx.log(ngx.ERR, "failed to bind")
+                njt.log(njt.ERR, "failed to bind")
             end
 
             package.loaded.share_sock = sock
         end
 
-        local ok, err = ngx.timer.at(0, tcp)
+        local ok, err = njt.timer.at(0, tcp)
         if not ok then
-            ngx.log(ngx.ERR, "failed to create timer")
+            njt.log(njt.ERR, "failed to create timer")
         end
     }
 --- config
@@ -332,10 +332,10 @@ failed to bind: bad address
    location /t {
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
 
             -- make sure share_sock is created
-            ngx.sleep(0.002)
+            njt.sleep(0.002)
 
             local sock = package.loaded.share_sock
             if sock ~= nil then
@@ -343,11 +343,11 @@ failed to bind: bad address
 
                 local ok, err = sock:connect("127.0.0.1", port)
                 if not ok then
-                    ngx.say("failed to connect: ", err)
+                    njt.say("failed to connect: ", err)
                     return
                 end
 
-                ngx.say("connected: ", ok)
+                njt.say("connected: ", ok)
 
                 sock:close()
                 collectgarbage("collect")
@@ -355,7 +355,7 @@ failed to bind: bad address
                 -- the sock from package.loaded.share_sock is just
                 -- for the first request after worker init
                 -- add following code to keep the same result for other request
-                ngx.say("connected: ", 1)
+                njt.say("connected: ", 1)
             end
         }
     }

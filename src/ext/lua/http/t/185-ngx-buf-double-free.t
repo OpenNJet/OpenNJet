@@ -8,15 +8,15 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: one buf was linked to multiple ngx_chain_t nodes
+=== TEST 1: one buf was linked to multiple njt_chain_t nodes
 --- config
     location /t {
         content_by_lua_block {
             local str = string.rep(".", 1300)
-            ngx.print(str)
-            ngx.flush()
-            ngx.print("small chunk")
-            ngx.flush()
+            njt.print(str)
+            njt.flush()
+            njt.print("small chunk")
+            njt.flush()
         }
         body_filter_by_lua_block {local dummy=1}
     }

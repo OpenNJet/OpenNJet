@@ -19,7 +19,7 @@ __DATA__
 --- config
     location = /test {
         content_by_lua '
-            ngx.say(ngx.crc32_short("hello, world"))
+            njt.say(njt.crc32_short("hello, world"))
         ';
     }
 --- request
@@ -33,7 +33,7 @@ GET /test
 --- config
     location = /test {
         content_by_lua '
-            ngx.say(ngx.crc32_long("hello, world"))
+            njt.say(njt.crc32_long("hello, world"))
         ';
     }
 --- request
@@ -47,7 +47,7 @@ GET /test
 --- config
     location = /test {
         content_by_lua '
-            ngx.say(ngx.crc32_long(""))
+            njt.say(njt.crc32_long(""))
         ';
     }
 --- request

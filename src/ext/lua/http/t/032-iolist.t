@@ -22,7 +22,7 @@ __DATA__
     location /lua {
         content_by_lua '
             local table = {"hello", nil, true, false, 32.5, 56}
-            ngx.say(table)
+            njt.say(table)
         ';
     }
 --- request
@@ -38,7 +38,7 @@ helloniltruefalse32.556
         content_by_lua '
             local table = {"hello", nil, true, false, 32.5, 56}
             local table2 = {table, "--", table}
-            ngx.say(table2)
+            njt.say(table2)
         ';
     }
 --- request
@@ -53,7 +53,7 @@ helloniltruefalse32.556--helloniltruefalse32.556
     location /lua {
         content_by_lua '
             local table = {foo = 3}
-            ngx.say(table)
+            njt.say(table)
         ';
     }
 --- request
@@ -69,7 +69,7 @@ GET /lua
         content_by_lua '
             local f = function () return end
             local table = {1, 3, f}
-            ngx.say(table)
+            njt.say(table)
         ';
     }
 --- request

@@ -346,7 +346,7 @@ njt_http_lua_body_filter(njt_http_request_t *r, njt_chain_t *in)
         lmcf = njt_http_get_module_main_conf(r, njt_http_lua_module);
 
         /* lmcf->body_filter_chain is the new buffer chain if
-         * body_filter_by_lua set new body content via ngx.arg[1] = new_content
+         * body_filter_by_lua set new body content via njt.arg[1] = new_content
          * otherwise it is the original `in` buffer chain.
          */
         out = lmcf->body_filter_chain;

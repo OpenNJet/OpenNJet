@@ -6,11 +6,11 @@ use t::StapThread;
 our $GCScript = <<_EOC_;
 $t::StapThread::GCScript
 
-F(ngx_http_lua_check_broken_connection) {
+F(njt_http_lua_check_broken_connection) {
     println("lua check broken conn")
 }
 
-F(ngx_http_lua_request_cleanup) {
+F(njt_http_lua_request_cleanup) {
     println("lua req cleanup")
 }
 _EOC_
@@ -31,13 +31,13 @@ __DATA__
 === TEST 1: server_rewrite_by_lua_block in http
 --- http_config
     server_rewrite_by_lua_block {
-        ngx.ctx.a = "server_rewrite_by_lua_block in http"
+        njt.ctx.a = "server_rewrite_by_lua_block in http"
     }
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say(ngx.ctx.a)
-            ngx.log(ngx.INFO, ngx.ctx.a)
+            njt.say(njt.ctx.a)
+            njt.log(njt.INFO, njt.ctx.a)
         }
     }
 --- request
@@ -54,11 +54,11 @@ server_rewrite_by_lua_block in http
 === TEST 2: server_rewrite_by_lua_block in server
 --- config
     server_rewrite_by_lua_block {
-        ngx.log(ngx.INFO, "server_rewrite_by_lua_block in server")
+        njt.log(njt.INFO, "server_rewrite_by_lua_block in server")
     }
     location /lua {
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 --- request
@@ -75,7 +75,7 @@ server_rewrite_by_lua_block in server
 === TEST 3: redirect
 --- config
     server_rewrite_by_lua_block {
-        ngx.redirect("/foo")
+        njt.redirect("/foo")
     }
 --- request
 GET /lua
@@ -91,12 +91,12 @@ qr{[Ll]ocation: /foo\r\n}
 === TEST 4: flush
 --- config
     server_rewrite_by_lua_block {
-        ngx.say("foo")
-        ngx.flush(true)
+        njt.say("foo")
+        njt.flush(true)
     }
     location /lua {
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 --- request
@@ -111,12 +111,12 @@ foo
 === TEST 5: eof
 --- config
     server_rewrite_by_lua_block {
-        ngx.say("foo")
-        ngx.eof()
+        njt.say("foo")
+        njt.eof()
     }
     location /lua {
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 --- request
@@ -131,13 +131,13 @@ foo
 === TEST 6: send_headers
 --- config
     server_rewrite_by_lua_block {
-        ngx.header["Foox"] = {"conx1", "conx2" }
-        ngx.header["Fooy"] = {"cony1", "cony2" }
-        ngx.send_headers()
+        njt.header["Foox"] = {"conx1", "conx2" }
+        njt.header["Fooy"] = {"cony1", "cony2" }
+        njt.send_headers()
     }
     location /lua {
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 --- request
@@ -154,8 +154,8 @@ Fooy: cony1, cony2
 === TEST 7: read_body
 --- config
     server_rewrite_by_lua_block {
-        ngx.req.read_body()
-        ngx.say(ngx.var.request_body)
+        njt.req.read_body()
+        njt.say(njt.var.request_body)
     }
 --- request
 POST /lua
@@ -170,15 +170,15 @@ hello, world
 === TEST 8: req_sock
 --- config
     server_rewrite_by_lua_block {
-        local sock = ngx.req.socket()
+        local sock = njt.req.socket()
             sock:receive(2)
             sock:receive(2)
             sock:receive(1)
-            ngx.sleep(1)
+            njt.sleep(1)
     }
     location /lua {
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 --- request
@@ -209,9 +209,9 @@ delete thread 1
         echo "bar: $uri?$args";
     }
     server_rewrite_by_lua_block {
-        if ngx.var.uri ~= "/bar" then
-            ngx.req.set_uri_args("hello")
-            ngx.req.set_uri("/bar", true)
+        if njt.var.uri ~= "/bar" then
+            njt.req.set_uri_args("hello")
+            njt.req.set_uri("/bar", true)
         end
     }
     location /foo {
@@ -228,15 +228,15 @@ bar: /bar?hello
 === TEST 10: server_rewrite_by_lua_block overwrite by server
 --- http_config
     server_rewrite_by_lua_block {
-        ngx.log(ngx.INFO, "server_rewrite_by_lua_block in http")
+        njt.log(njt.INFO, "server_rewrite_by_lua_block in http")
     }
 --- config
     server_rewrite_by_lua_block {
-        ngx.log(ngx.INFO, "server_rewrite_by_lua_block in server")
+        njt.log(njt.INFO, "server_rewrite_by_lua_block in server")
     }
     location /lua {
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 --- request
@@ -253,12 +253,12 @@ server_rewrite_by_lua_block in server
 === TEST 11: sleep
 --- config
     server_rewrite_by_lua_block {
-        ngx.sleep(0.001)
-        ngx.log(ngx.INFO, "server_rewrite_by_lua_block in server")
+        njt.sleep(0.001)
+        njt.log(njt.INFO, "server_rewrite_by_lua_block in server")
     }
     location /lua {
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 --- request
@@ -272,15 +272,15 @@ server_rewrite_by_lua_block in server
 
 
 
-=== TEST 12: ngx.exit(ngx.OK)
+=== TEST 12: njt.exit(njt.OK)
 --- config
     server_rewrite_by_lua_block {
-        ngx.log(ngx.INFO, "ngx.exit")
-        ngx.exit(ngx.OK)
+        njt.log(njt.INFO, "njt.exit")
+        njt.exit(njt.OK)
     }
     location /lua {
         content_by_lua_block {
-        ngx.say("OK")
+        njt.say("OK")
         }
     }
 --- request
@@ -288,21 +288,21 @@ GET /lua
 --- response_body
 OK
 --- error_log
-ngx.exit
+njt.exit
 --- no_error_log
 [error]
 
 
 
-=== TEST 13: ngx.exit(503)
+=== TEST 13: njt.exit(503)
 --- config
     server_rewrite_by_lua_block {
-        ngx.exit(503)
+        njt.exit(503)
     }
     location /lua {
         content_by_lua_block {
-         ngx.log(ngx.ERR, "content_by_lua")
-         ngx.say("OK")
+         njt.log(njt.ERR, "content_by_lua")
+         njt.say("OK")
         }
     }
 --- request
@@ -316,19 +316,19 @@ GET /lua
 === TEST 14: subrequests
 --- config
     server_rewrite_by_lua_block {
-        ngx.log(ngx.INFO, "is_subrequest:", ngx.is_subrequest)
+        njt.log(njt.INFO, "is_subrequest:", njt.is_subrequest)
     }
 
     location /lua {
         content_by_lua_block {
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
         }
     }
 
     location /sub {
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 
@@ -344,23 +344,23 @@ is_subrequest:true
 
 
 
-=== TEST 15: rewrite by ngx_http_rewrite_module
+=== TEST 15: rewrite by njt_http_rewrite_module
 --- config
     server_rewrite_by_lua_block {
-        ngx.log(ngx.INFO, "uri is ", ngx.var.uri)
+        njt.log(njt.INFO, "uri is ", njt.var.uri)
     }
 
     rewrite ^ /re;
 
     location /re {
         content_by_lua_block {
-            ngx.say("RE")
+            njt.say("RE")
         }
     }
 
     location /ok {
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 
@@ -378,15 +378,15 @@ uri is /lua
 === TEST 16: exec
 --- config
     server_rewrite_by_lua_block {
-        if ngx.var.uri ~= "/ok" then
-            ngx.exec("/ok")
+        if njt.var.uri ~= "/ok" then
+            njt.exec("/ok")
         end
-        ngx.log(ngx.INFO, "uri is ", ngx.var.uri)
+        njt.log(njt.INFO, "uri is ", njt.var.uri)
     }
 
     location /ok {
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 
@@ -404,15 +404,15 @@ uri is /ok
 === TEST 17: server_rewrite_by_lua and rewrite_by_lua
 --- http_config
     server_rewrite_by_lua_block {
-        ngx.log(ngx.INFO, "server_rewrite_by_lua_block in http")
+        njt.log(njt.INFO, "server_rewrite_by_lua_block in http")
     }
 --- config
     location /lua {
         rewrite_by_lua_block {
-            ngx.log(ngx.INFO, "rewrite_by_lua_block in location")
+            njt.log(njt.INFO, "rewrite_by_lua_block in location")
         }
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 --- request
@@ -433,14 +433,14 @@ rewrite_by_lua_block in location
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 --- request
 GET /lua
 --- user_files
 >>> foo.lua
-ngx.log(ngx.INFO, "rewrite_by_lua_file in server")
+njt.log(njt.INFO, "rewrite_by_lua_file in server")
 --- response_body
 OK
 --- error_log
@@ -458,7 +458,7 @@ rewrite_by_lua_file in server
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say("OK")
+            njt.say("OK")
         }
     }
 --- request
@@ -478,7 +478,7 @@ no_such_error
     }
     location /lua {
         content_by_lua_block {
-            ngx.say("Hello world")
+            njt.say("Hello world")
         }
     }
 --- request

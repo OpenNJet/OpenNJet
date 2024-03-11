@@ -88,8 +88,8 @@ enum {
 };
 
 
-/* ngx.location.capture is just a thin wrapper around
- * ngx.location.capture_multi */
+/* njt.location.capture is just a thin wrapper around
+ * njt.location.capture_multi */
 static int
 njt_http_lua_njt_location_capture(lua_State *L)
 {

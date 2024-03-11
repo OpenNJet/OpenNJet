@@ -21,18 +21,18 @@ __DATA__
 --- config
     location /lua {
         content_by_lua_block {
-            local pids, err = ngx.worker.pids()
+            local pids, err = njt.worker.pids()
             if err ~= nil then
                 return
             end
-            local pid = ngx.worker.pid()
-            ngx.say("worker pid: ", pid)
-            local count = ngx.worker.count()
-            ngx.say("worker count: ", count)
-            ngx.say("worker pids count: ", #pids)
+            local pid = njt.worker.pid()
+            njt.say("worker pid: ", pid)
+            local count = njt.worker.count()
+            njt.say("worker count: ", count)
+            njt.say("worker pids count: ", #pids)
             for i = 1, count do
                 if pids[i] == pid then
-                    ngx.say("worker pid is correct.")
+                    njt.say("worker pid is correct.")
                     return
                 end
             end

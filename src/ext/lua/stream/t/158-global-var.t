@@ -37,10 +37,10 @@ __DATA__
         if not foo then
             foo = 1
         else
-            ngx.log(ngx.WARN, "old foo: ", foo)
+            njt.log(njt.WARN, "old foo: ", foo)
             foo = foo + 1
         end
-        ngx.say(foo)
+        njt.say(foo)
     }
 --- stream_response_like eval
 qr/^(2|3)$/
@@ -56,7 +56,7 @@ qr/^(2|3)$/
         if not foo then
             foo = 1
         else
-            ngx.log(ngx.WARN, "old foo: ", foo)
+            njt.log(njt.WARN, "old foo: ", foo)
             foo = foo + 1
         end
     }
@@ -65,10 +65,10 @@ qr/^(2|3)$/
         if not foo then
             foo = 1
         else
-            ngx.log(ngx.WARN, "old foo: ", foo)
+            njt.log(njt.WARN, "old foo: ", foo)
             foo = foo + 1
         end
-        ngx.say(foo)
+        njt.say(foo)
     }
 --- stream_response_like eval
 qr/^(2|3)$/
@@ -84,10 +84,10 @@ qr/^(2|3)$/
         if not foo then
             foo = 1
         else
-            ngx.log(ngx.WARN, "old foo: ", foo)
+            njt.log(njt.WARN, "old foo: ", foo)
             foo = foo + 1
         end
-        ngx.say(foo)
+        njt.say(foo)
     }
     content_by_lua_block {
     }
@@ -107,10 +107,10 @@ preread_by_lua\(nginx\.conf:\d+\):3: in main chunk/, "old foo: 1\n"]
         if not foo then
             foo = 1
         else
-            ngx.log(ngx.WARN, "old foo: ", foo)
+            njt.log(njt.WARN, "old foo: ", foo)
             foo = foo + 1
         end
-        ngx.say(foo)
+        njt.say(foo)
     }
 --- stream_response_like chomp
 \A[12]\n\z
@@ -125,13 +125,13 @@ content_by_lua\(nginx\.conf:\d+\):3: in main chunk, \n\z/, "old foo: 1\n"]
 === TEST 5: log_by_lua
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(foo)
+        njt.say(foo)
     }
     log_by_lua_block {
         if not foo then
             foo = 1
         else
-            ngx.log(ngx.WARN, "old foo: ", foo)
+            njt.log(njt.WARN, "old foo: ", foo)
             foo = foo + 1
         end
     }
@@ -152,17 +152,17 @@ log_by_lua\(nginx\.conf:\d+\):3: in main chunk/, "old foo: 1\n"]
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
         end
-        local ok, err = ngx.timer.at(0, f)
+        local ok, err = njt.timer.at(0, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.sleep(0.01)
-        ngx.say(foo)
+        njt.sleep(0.01)
+        njt.say(foo)
     }
 --- stream_response_like chomp
 \A[12]\n\z
@@ -181,17 +181,17 @@ content_by_lua\(nginx\.conf:\d+\):4: in\n\z/, "old foo: 1\n"]
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
         end
-        local ok, err = ngx.thread.spawn(f)
+        local ok, err = njt.thread.spawn(f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.sleep(0.01)
-        ngx.say(foo)
+        njt.sleep(0.01)
+        njt.say(foo)
     }
 --- stream_response_like chomp
 \A[12]\n\z
@@ -210,7 +210,7 @@ qr/(old foo: \d+|writing a global Lua variable \('\w+'\))/
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
         }
@@ -235,7 +235,7 @@ connect() to 0.0.0.1:1234 failed
                 _G[1] = 2
             end
 
-            ngx.say(foo)
+            njt.say(foo)
         }
 --- stream_response
 0
@@ -256,8 +256,8 @@ connect() to 0.0.0.1:1234 failed
     }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(foo)
-        ngx.say(bar)
+        njt.say(foo)
+        njt.say(bar)
     }
 --- stream_response
 1

@@ -60,7 +60,7 @@ ok
 
     location = /t {
         access_by_lua_block {
-            ngx.var.proxy_local_addr="127.0.0.1"
+            njt.var.proxy_local_addr="127.0.0.1"
         }
         proxy_pass http://backend/back;
     }
@@ -92,7 +92,7 @@ ok
 
     location = /t {
         access_by_lua_block {
-            ngx.var.proxy_local_addr="127.0.0.10"
+            njt.var.proxy_local_addr="127.0.0.10"
         }
         proxy_pass http://backend/back;
     }
@@ -124,7 +124,7 @@ ok
 
     location = /t {
         access_by_lua_block {
-            ngx.var.proxy_local_addr="100.100.100.100"
+            njt.var.proxy_local_addr="100.100.100.100"
         }
         proxy_pass http://backend/back;
     }

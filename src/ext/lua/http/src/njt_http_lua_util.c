@@ -826,7 +826,7 @@ static void
 njt_http_lua_inject_njt_api(lua_State *L, njt_http_lua_main_conf_t *lmcf,
     njt_log_t *log)
 {
-    lua_createtable(L, 0 /* narr */, 115 /* nrec */);    /* ngx.* */
+    lua_createtable(L, 0 /* narr */, 115 /* nrec */);    /* njt.* */
 
     lua_pushcfunction(L, njt_http_lua_get_raw_phase_context);
     lua_setfield(L, -2, "_phase_ctx");
@@ -856,13 +856,13 @@ njt_http_lua_inject_njt_api(lua_State *L, njt_http_lua_main_conf_t *lmcf,
     njt_http_lua_inject_worker_thread_api(log, L);
 #endif
 
-    lua_getglobal(L, "package"); /* ngx package */
-    lua_getfield(L, -1, "loaded"); /* ngx package loaded */
-    lua_pushvalue(L, -3); /* ngx package loaded ngx */
-    lua_setfield(L, -2, "ngx"); /* ngx package loaded */
+    lua_getglobal(L, "package"); /* njt package */
+    lua_getfield(L, -1, "loaded"); /* njt package loaded */
+    lua_pushvalue(L, -3); /* njt package loaded njt */
+    lua_setfield(L, -2, "njt"); /* njt package loaded */
     lua_pop(L, 2);
 
-    lua_setglobal(L, "ngx");
+    lua_setglobal(L, "njt");
 
     njt_http_lua_inject_coroutine_api(log, L);
 }
@@ -875,10 +875,10 @@ njt_http_lua_inject_global_write_guard(lua_State *L, njt_log_t *log)
     int         rc;
 
     const char buf[] =
-        "local njt_log = ngx.log\n"
-        "local njt_WARN = ngx.WARN\n"
+        "local njt_log = njt.log\n"
+        "local njt_WARN = njt.WARN\n"
         "local tostring = tostring\n"
-        "local njt_get_phase = ngx.get_phase\n"
+        "local njt_get_phase = njt.get_phase\n"
         "local traceback = require 'debug'.traceback\n"
         "local function newindex(table, key, value)\n"
             "rawset(table, key, value)\n"
@@ -2291,7 +2291,7 @@ njt_http_lua_unescape_uri(u_char **dst, u_char **src, size_t size,
 void
 njt_http_lua_inject_req_api(njt_log_t *log, lua_State *L)
 {
-    /* ngx.req table */
+    /* njt.req table */
 
     lua_createtable(L, 0 /* narr */, 23 /* nrec */);    /* .req */
 
@@ -3107,7 +3107,7 @@ njt_http_lua_inject_arg_api(lua_State *L)
 
     dd("top: %d, type -1: %s", lua_gettop(L), luaL_typename(L, -1));
 
-    lua_rawset(L, -3);    /*  set ngx.arg table */
+    lua_rawset(L, -3);    /*  set njt.arg table */
 }
 
 

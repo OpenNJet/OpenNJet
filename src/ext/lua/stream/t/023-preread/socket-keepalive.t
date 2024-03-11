@@ -40,35 +40,35 @@ __DATA__
 module("test", package.seeall)
 
 function go(port)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local req = "flush_all\r\n"
 
     local bytes, err = sock:send(req)
     if not bytes then
-        ngx.say("failed to send request: ", err)
+        njt.say("failed to send request: ", err)
         return
     end
-    ngx.say("request sent: ", bytes)
+    njt.say("request sent: ", bytes)
 
     local line, err, part = sock:receive()
     if line then
-        ngx.say("received: ", line)
+        njt.say("received: ", line)
 
     else
-        ngx.say("failed to receive a line: ", err, " [", part, "]")
+        njt.say("failed to receive a line: ", err, " [", part, "]")
     end
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- stream_response_like
@@ -112,36 +112,36 @@ lua tcp socket get keepalive peer: using connection
 module("test", package.seeall)
 
 function go(port, keepalive)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local req = "flush_all\r\n"
 
     local bytes, err = sock:send(req)
     if not bytes then
-        ngx.say("failed to send request: ", err)
+        njt.say("failed to send request: ", err)
         return
     end
-    ngx.say("request sent: ", bytes)
+    njt.say("request sent: ", bytes)
 
     local line, err, part = sock:receive()
     if line then
-        ngx.say("received: ", line)
+        njt.say("received: ", line)
 
     else
-        ngx.say("failed to receive a line: ", err, " [", part, "]")
+        njt.say("failed to receive a line: ", err, " [", part, "]")
     end
 
     if keepalive then
         local ok, err = sock:setkeepalive()
         if not ok then
-            ngx.say("failed to set reusable: ", err)
+            njt.say("failed to set reusable: ", err)
         end
 
     else

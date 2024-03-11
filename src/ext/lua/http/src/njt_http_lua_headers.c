@@ -758,8 +758,8 @@ njt_http_lua_create_headers_metatable(njt_log_t *log, lua_State *L)
     lua_pushlightuserdata(L, njt_http_lua_lightudata_mask(
                           headers_metatable_key));
 
-    /* metatable for ngx.req.get_headers(_, true) and
-     * ngx.resp.get_headers(_, true) */
+    /* metatable for njt.req.get_headers(_, true) and
+     * njt.resp.get_headers(_, true) */
     lua_createtable(L, 0, 1);
 
     rc = luaL_loadbuffer(L, buf, sizeof(buf) - 1, "=headers metatable");
@@ -962,7 +962,7 @@ njt_http_lua_ffi_set_resp_header(njt_http_request_t *r, const u_char *key_data,
 
     if (r->header_sent || ctx->header_sent) {
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "attempt to "
-                      "set ngx.header.HEADER after sending out "
+                      "set njt.header.HEADER after sending out "
                       "response headers");
         return NJT_DECLINED;
     }

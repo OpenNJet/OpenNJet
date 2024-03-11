@@ -24,8 +24,8 @@ __DATA__
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.last_modified = "Thu, 10 May 2012 07:50:59 GMT"
-            ngx.say("hello")
+            njt.header.last_modified = "Thu, 10 May 2012 07:50:59 GMT"
+            njt.say("hello")
         ';
     }
 --- request
@@ -44,8 +44,8 @@ If-Modified-Since: Thu, 10 May 2012 07:50:59 GMT
     location /lua {
         if_modified_since before;
         content_by_lua '
-            ngx.header.last_modified = "Thu, 10 May 2012 07:50:48 GMT"
-            ngx.say("hello")
+            njt.header.last_modified = "Thu, 10 May 2012 07:50:48 GMT"
+            njt.say("hello")
         ';
     }
 --- request
@@ -64,10 +64,10 @@ If-Modified-Since: Thu, 10 May 2012 07:50:59 GMT
     location /lua {
         #if_modified_since before;
         content_by_lua '
-            ngx.header.last_modified = "Thu, 10 May 2012 07:50:48 GMT"
-            local ok, err = ngx.say("hello")
+            njt.header.last_modified = "Thu, 10 May 2012 07:50:48 GMT"
+            local ok, err = njt.say("hello")
             if not ok then
-                ngx.log(ngx.WARN, "say failed: ", err)
+                njt.log(njt.WARN, "say failed: ", err)
             end
         ';
     }

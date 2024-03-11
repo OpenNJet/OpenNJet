@@ -6,11 +6,11 @@ use t::StapThread;
 our $GCScript = <<_EOC_;
 $t::StapThread::GCScript
 
-F(ngx_http_lua_check_broken_connection) {
+F(njt_http_lua_check_broken_connection) {
     println("lua check broken conn")
 }
 
-F(ngx_http_lua_request_cleanup) {
+F(njt_http_lua_request_cleanup) {
     println("lua req cleanup")
 }
 _EOC_
@@ -36,7 +36,7 @@ __DATA__
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
     }
 --- request
@@ -65,10 +65,10 @@ client prematurely closed connection
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
         log_by_lua '
-            ngx.log(ngx.NOTICE, "here in log by lua")
+            njt.log(njt.NOTICE, "here in log by lua")
         ';
     }
 --- request
@@ -97,7 +97,7 @@ here in log by lua
     location /t {
         lua_check_client_abort off;
         rewrite_by_lua '
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
         content_by_lua return;
     }
@@ -127,7 +127,7 @@ lua req cleanup
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            ngx.location.capture("/sub")
+            njt.location.capture("/sub")
             error("bad things happen")
         ';
     }
@@ -160,7 +160,7 @@ client prematurely closed connection
     location /t {
         lua_check_client_abort off;
         rewrite_by_lua '
-            ngx.location.capture("/sub")
+            njt.location.capture("/sub")
             error("bad things happen")
         ';
     }
@@ -192,7 +192,7 @@ bad things happen
     location = /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            ngx.location.capture("/sub")
+            njt.location.capture("/sub")
             error("bad things happen")
         ';
     }
@@ -205,7 +205,7 @@ bad things happen
     location = /sleep {
         lua_check_client_abort on;
         rewrite_by_lua '
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
     }
 --- request
@@ -233,7 +233,7 @@ client prematurely closed connection
     location = /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            ngx.location.capture("/sub")
+            njt.location.capture("/sub")
             error("bad things happen")
         ';
     }
@@ -268,10 +268,10 @@ client prematurely closed connection
         lua_check_client_abort on;
         lua_need_request_body on;
         rewrite_by_lua '
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
         log_by_lua '
-            ngx.log(ngx.NOTICE, "here in log by lua")
+            njt.log(njt.NOTICE, "here in log by lua")
         ';
     }
 --- request
@@ -296,16 +296,16 @@ here in log by lua
 
 
 
-=== TEST 9: ngx.req.read_body + sleep + stop (log handler still gets called)
+=== TEST 9: njt.req.read_body + sleep + stop (log handler still gets called)
 --- config
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            ngx.req.read_body()
-            ngx.sleep(1)
+            njt.req.read_body()
+            njt.sleep(1)
         ';
         log_by_lua '
-            ngx.log(ngx.NOTICE, "here in log by lua")
+            njt.log(njt.NOTICE, "here in log by lua")
         ';
     }
 --- request
@@ -330,14 +330,14 @@ here in log by lua
 
 
 
-=== TEST 10: ngx.req.socket + receive() + sleep + stop
+=== TEST 10: njt.req.socket + receive() + sleep + stop
 --- config
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local sock = ngx.req.socket()
+            local sock = njt.req.socket()
             sock:receive()
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
     }
 --- request
@@ -361,14 +361,14 @@ client prematurely closed connection
 
 
 
-=== TEST 11: ngx.req.socket + receive(N) + sleep + stop
+=== TEST 11: njt.req.socket + receive(N) + sleep + stop
 --- config
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local sock = ngx.req.socket()
+            local sock = njt.req.socket()
             sock:receive(5)
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
     }
 --- request
@@ -394,14 +394,14 @@ client prematurely closed connection
 
 
 
-=== TEST 12: ngx.req.socket + receive(n) + sleep + stop
+=== TEST 12: njt.req.socket + receive(n) + sleep + stop
 --- config
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local sock = ngx.req.socket()
+            local sock = njt.req.socket()
             sock:receive(2)
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
         content_by_lua return;
     }
@@ -430,16 +430,16 @@ delete thread 1)$
 
 
 
-=== TEST 13: ngx.req.socket + m * receive(n) + sleep + stop
+=== TEST 13: njt.req.socket + m * receive(n) + sleep + stop
 --- config
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local sock = ngx.req.socket()
+            local sock = njt.req.socket()
             sock:receive(2)
             sock:receive(2)
             sock:receive(1)
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
     }
 --- request
@@ -465,15 +465,15 @@ client prematurely closed connection
 
 
 
-=== TEST 14: ngx.req.socket + receiveuntil + sleep + stop
+=== TEST 14: njt.req.socket + receiveuntil + sleep + stop
 --- config
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local sock = ngx.req.socket()
+            local sock = njt.req.socket()
             local it = sock:receiveuntil("\\n")
             it()
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
     }
 --- request
@@ -498,16 +498,16 @@ client prematurely closed connection
 
 
 
-=== TEST 15: ngx.req.socket + receiveuntil + it(n) + sleep + stop
+=== TEST 15: njt.req.socket + receiveuntil + it(n) + sleep + stop
 --- config
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local sock = ngx.req.socket()
+            local sock = njt.req.socket()
             local it = sock:receiveuntil("\\n")
             it(2)
             it(3)
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
     }
 --- request
@@ -537,35 +537,35 @@ client prematurely closed connection
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            ngx.req.discard_body()
+            njt.req.discard_body()
 
-            local sock, err = ngx.socket.tcp()
+            local sock, err = njt.socket.tcp()
             if not sock then
-                ngx.log(ngx.ERR, "failed to get socket: ", err)
+                njt.log(njt.ERR, "failed to get socket: ", err)
                 return
             end
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
-                ngx.log(ngx.ERR, "failed to connect: ", err)
+                njt.log(njt.ERR, "failed to connect: ", err)
                 return
             end
 
             local bytes, err = sock:send("blpop nonexist 2\\r\\n")
             if not bytes then
-                ngx.log(ngx.ERR, "failed to send query: ", err)
+                njt.log(njt.ERR, "failed to send query: ", err)
                 return
             end
 
-            -- ngx.log(ngx.ERR, "about to receive")
+            -- njt.log(njt.ERR, "about to receive")
 
             local res, err = sock:receive()
             if not res then
-                ngx.log(ngx.ERR, "failed to receive query: ", err)
+                njt.log(njt.ERR, "failed to receive query: ", err)
                 return
             end
 
-            ngx.log(ngx.ERR, "res: ", res)
+            njt.log(njt.ERR, "res: ", res)
         ';
     }
 --- request
@@ -589,15 +589,15 @@ client prematurely closed connection
 
 
 
-=== TEST 17: ngx.req.socket + receive n < content-length + stop
+=== TEST 17: njt.req.socket + receive n < content-length + stop
 --- config
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local sock = ngx.req.socket()
+            local sock = njt.req.socket()
             local res, err = sock:receive("*a")
             if not res then
-                ngx.log(ngx.NOTICE, "failed to receive: ", err)
+                njt.log(njt.NOTICE, "failed to receive: ", err)
                 return
             end
             error("bad")
@@ -630,18 +630,18 @@ failed to receive: client aborted
 
 
 
-=== TEST 18: ngx.req.socket + receive n == content-length + stop
+=== TEST 18: njt.req.socket + receive n == content-length + stop
 --- config
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            local sock = ngx.req.socket()
+            local sock = njt.req.socket()
             local res, err = sock:receive("*a")
             if not res then
-                ngx.log(ngx.NOTICE, "failed to receive: ", err)
+                njt.log(njt.NOTICE, "failed to receive: ", err)
                 return
             end
-            ngx.sleep(1)
+            njt.sleep(1)
             error("bad")
         ';
         content_by_lua return;
@@ -671,17 +671,17 @@ client prematurely closed connection
 
 
 
-=== TEST 19: ngx.req.socket + receive n == content-length + ignore
+=== TEST 19: njt.req.socket + receive n == content-length + ignore
 --- config
     location /t {
         rewrite_by_lua '
-            local sock = ngx.req.socket()
+            local sock = njt.req.socket()
             local res, err = sock:receive("*a")
             if not res then
-                ngx.log(ngx.NOTICE, "failed to receive: ", err)
+                njt.log(njt.NOTICE, "failed to receive: ", err)
                 return
             end
-            ngx.say("done")
+            njt.say("done")
         ';
         content_by_lua return;
     }
@@ -709,12 +709,12 @@ lua req cleanup
 
 
 
-=== TEST 20: ngx.req.read_body + sleep + stop (log handler still gets called)
+=== TEST 20: njt.req.read_body + sleep + stop (log handler still gets called)
 --- config
     location /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            ngx.req.read_body()
+            njt.req.read_body()
         ';
         content_by_lua return;
     }
@@ -744,14 +744,14 @@ lua req cleanup
     location = /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            ngx.exec("/t2")
+            njt.exec("/t2")
         ';
     }
 
     location = /t2 {
         lua_check_client_abort off;
         content_by_lua '
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
     }
 --- request
@@ -782,7 +782,7 @@ lua req cleanup
     location = /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            ngx.exec("/t2")
+            njt.exec("/t2")
         ';
     }
 
@@ -819,7 +819,7 @@ delete thread 1
     location = /t {
         lua_check_client_abort on;
         rewrite_by_lua '
-            ngx.exec("@t2")
+            njt.exec("@t2")
         ';
     }
 

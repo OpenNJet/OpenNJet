@@ -21,7 +21,7 @@ __DATA__
 --- config
     location /t {
         rewrite_by_lua '
-           ngx.req.set_header("Cookie", nil)
+           njt.req.set_header("Cookie", nil)
         ';
         echo "Cookie foo: $cookie_foo";
         echo "Cookie baz: $cookie_baz";
@@ -34,11 +34,11 @@ Cookie: foo=bar
 Cookie: baz=blah
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: cookies: %d\n", $r->headers_in->cookies->nelts)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: cookies: %d\n", $r->headers_in->cookies->nelts)
 }
 
@@ -60,7 +60,7 @@ Cookie:
 --- config
     location /t {
         rewrite_by_lua '
-           ngx.req.set_header("Cookie", nil)
+           njt.req.set_header("Cookie", nil)
         ';
         echo "Cookie foo: $cookie_foo";
         echo "Cookie baz: $cookie_baz";
@@ -70,11 +70,11 @@ Cookie:
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: cookies: %d\n", $r->headers_in->cookies->nelts)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: cookies: %d\n", $r->headers_in->cookies->nelts)
 }
 
@@ -96,7 +96,7 @@ Cookie:
 --- config
     location /t {
         rewrite_by_lua '
-           ngx.req.set_header("Cookie", "boo=123")
+           njt.req.set_header("Cookie", "boo=123")
         ';
         echo "Cookie foo: $cookie_foo";
         echo "Cookie baz: $cookie_baz";
@@ -110,11 +110,11 @@ Cookie: foo=bar
 Cookie: baz=blah
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: cookies: %d\n", $r->headers_in->cookies->nelts)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: cookies: %d\n", $r->headers_in->cookies->nelts)
 }
 
@@ -137,7 +137,7 @@ Cookie: boo=123
 --- config
     location /t {
         rewrite_by_lua '
-           ngx.req.set_header("Cookie", "boo=123")
+           njt.req.set_header("Cookie", "boo=123")
         ';
         echo "Cookie foo: $cookie_foo";
         echo "Cookie baz: $cookie_baz";
@@ -148,11 +148,11 @@ Cookie: boo=123
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: cookies: %d\n", $r->headers_in->cookies->nelts)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: cookies: %d\n", $r->headers_in->cookies->nelts)
 }
 
@@ -175,7 +175,7 @@ Cookie: boo=123
 --- config
     location /t {
         rewrite_by_lua '
-           ngx.req.set_header("Cookie", {"boo=123","foo=78"})
+           njt.req.set_header("Cookie", {"boo=123","foo=78"})
         ';
         echo "Cookie foo: $cookie_foo";
         echo "Cookie baz: $cookie_baz";
@@ -189,11 +189,11 @@ Cookie: foo=bar
 Cookie: baz=blah
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: cookies: %d\n", $r->headers_in->cookies->nelts)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: cookies: %d\n", $r->headers_in->cookies->nelts)
 }
 
@@ -216,7 +216,7 @@ Cookie: boo=123; foo=78
 --- config
     location /t {
         rewrite_by_lua '
-           ngx.req.set_header("Cookie", {"boo=123", "foo=bar"})
+           njt.req.set_header("Cookie", {"boo=123", "foo=bar"})
         ';
         echo "Cookie foo: $cookie_foo";
         echo "Cookie baz: $cookie_baz";
@@ -227,11 +227,11 @@ Cookie: boo=123; foo=78
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: cookies: %d\n", $r->headers_in->cookies->nelts)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: cookies: %d\n", $r->headers_in->cookies->nelts)
 }
 
@@ -254,7 +254,7 @@ Cookie: boo=123; foo=bar
 --- config
     location /t {
         rewrite_by_lua_block {
-           ngx.req.set_header("Cookie", {"boo=123\nfoo", "foo=bar\rbar"})
+           njt.req.set_header("Cookie", {"boo=123\nfoo", "foo=bar\rbar"})
         }
         echo "Cookie foo: $cookie_foo";
         echo "Cookie baz: $cookie_baz";

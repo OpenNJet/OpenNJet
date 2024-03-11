@@ -29,15 +29,15 @@ __DATA__
 --- config
     location /test {
         content_by_lua '
-            package.loaded["socket"] = ngx.socket
+            package.loaded["socket"] = njt.socket
             local Memcached = require "Memcached"
-            Memcached.socket = ngx.socket
+            Memcached.socket = njt.socket
 
             local memc = Memcached.Connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
 
             memc:set("some_key", "hello 1234")
             local data = memc:get("some_key")
-            ngx.say("some_key: ", data)
+            njt.say("some_key: ", data)
         ';
     }
 --- request
@@ -60,21 +60,21 @@ some_key: hello 1234
 
             local ok, err = memc:set("some_key", "hello 1234")
             if not ok then
-                ngx.log(ngx.ERR, "failed to set some_key: ", err)
-                ngx.exit(500)
+                njt.log(njt.ERR, "failed to set some_key: ", err)
+                njt.exit(500)
             end
 
             local data, err = memc:get("some_key")
             if not data and err then
-                ngx.log(ngx.ERR, "failed to get some_key: ", err)
-                ngx.exit(500)
+                njt.log(njt.ERR, "failed to get some_key: ", err)
+                njt.exit(500)
             end
 
-            ngx.say("some_key: ", data)
+            njt.say("some_key: ", data)
 
             local res, err = memc:set_keepalive()
             if not res then
-                ngx.say("failed to set keepalive: ", err)
+                njt.say("failed to set keepalive: ", err)
                 return
             end
         ';
@@ -85,8 +85,8 @@ module("resty.memcached", package.seeall)
 
 local mt = { __index = resty.memcached }
 local sub = string.sub
-local escape_uri = ngx.escape_uri
-local socket_connect = ngx.socket.connect
+local escape_uri = njt.escape_uri
+local socket_connect = njt.socket.connect
 local match = string.match
 
 function connect(...)
