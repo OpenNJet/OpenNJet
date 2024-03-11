@@ -173,8 +173,8 @@ static njt_int_t njt_http_upstream_cookie_variable(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data);
 
 static char *njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy);
-static char *njt_http_upstream_server(njt_conf_t *cf, njt_command_t *cmd,
-    void *conf);
+//static char *njt_http_upstream_server(njt_conf_t *cf, njt_command_t *cmd,
+//    void *conf);
 
 static njt_int_t njt_http_upstream_set_local(njt_http_request_t *r,
   njt_http_upstream_t *u, njt_http_upstream_local_t *local);
@@ -342,14 +342,14 @@ static njt_command_t  njt_http_upstream_commands[] = {
       0,
       0,
       NULL },
-
+/* by zyg.  add njt_http_upstream_dynamic_servers.c
     { njt_string("server"),
       NJT_HTTP_UPS_CONF|NJT_CONF_1MORE,
       njt_http_upstream_server,
       NJT_HTTP_SRV_CONF_OFFSET,
       0,
       NULL },
-
+*/
       njt_null_command
 };
 
@@ -6344,7 +6344,7 @@ njt_http_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     return rv;
 }
 
-
+/*
 static char *
 njt_http_upstream_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
@@ -6499,7 +6499,7 @@ not_supported:
                        &value[i]);
 
     return NJT_CONF_ERROR;
-}
+}*/
 
 
 njt_http_upstream_srv_conf_t *
