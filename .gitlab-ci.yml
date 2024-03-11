@@ -30,7 +30,8 @@ build_bin:
 
 build_rpm:
   stage: build_rpm
-  image: tmlake/rpmbuild:1.1
+  #image: tmlake/rpmbuild:1.1
+  image: tmlake/njet-build:centos7
   # variables:
   #   DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
   when: manual
