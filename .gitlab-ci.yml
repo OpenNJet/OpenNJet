@@ -5,9 +5,9 @@ stages:
 
 build_bin:
   stage: build_bin
-  image: 192.168.30.226/yunke-slb-ingress/rpmbuild:1.1
-  variables:
-    DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
+  image: tmlake/rpmbuild:1.1
+  # variables:
+  #   DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
 #  image: gcc:4.8.5   # gcc 版本
   script:
     - sudo chmod +x ./build_cc.sh ./configure
@@ -30,9 +30,9 @@ build_bin:
 
 build_rpm:
   stage: build_rpm
-  image: 192.168.30.226/yunke-slb-ingress/rpmbuild:1.1
-  variables:
-    DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
+  image: tmlake/rpmbuild:1.1
+  # variables:
+  #   DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
   when: manual
   script:
     - cd ..  
@@ -54,7 +54,6 @@ build_deb:
   image: tmlake/njet-build:ubuntu18.04
   when: manual
   script: 
-    - apt -y install libpcre2-dev
     - ./build_cc.sh -t $CI_COMMIT_SHA conf 
     - make -j `nproc` 
     - ./build_cc.sh install
