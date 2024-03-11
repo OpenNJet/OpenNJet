@@ -1483,7 +1483,7 @@ njt_http_update_location_config(njt_http_request_t *r)
             && len >= tmp_limit_except->module_key.len
             && 0 == njt_strncmp((r->uri.data+clcf->name.len), tmp_limit_except->module_key.data, tmp_limit_except->module_key.len)){
                 if(len == tmp_limit_except->module_key.len
-                ||(r->uri.data[r->uri.len-1] == '/')){
+                ||(r->uri.data[clcf->name.len+tmp_limit_except->module_key.len] == '/')){
                     r->loc_conf = tmp_limit_except->limit_except_loc_conf;
                     clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
                     break;
