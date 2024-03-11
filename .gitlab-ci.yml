@@ -5,7 +5,7 @@ stages:
 
 build_bin:
   stage: build_bin
-  image: tmlake/rpmbuild:1.1
+  image: tmlake/njet-build:centos7
   # variables:
   #   DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
 #  image: gcc:4.8.5   # gcc 版本
