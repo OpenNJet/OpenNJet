@@ -10,7 +10,6 @@ build_bin:
     DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
 #  image: gcc:4.8.5   # gcc 版本
   script:
-    - sudo yum -y install pcre2-devel
     - sudo chmod +x ./build_cc.sh ./configure
     - sudo ./build_cc.sh -t $CI_COMMIT_SHA -d conf
     - sudo make -j `nproc`
@@ -36,7 +35,6 @@ build_rpm:
     DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
   when: manual
   script:
-    - sudo yum -y install pcre2-devel
     - cd ..  
     - tar cf /home/builder/rpm/njet_main.tar --exclude="njet_main/.git" njet_main
     - sudo chmod +x njet_main/build/rpm/generate_njet_spec.sh
