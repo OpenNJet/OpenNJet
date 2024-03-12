@@ -17,8 +17,9 @@
 #include "njt_http_upstream_api_error_msg.h" 
 #include "njt_str_util.h"
 #include <njt_http_util.h>
+#include "njet_http_api_register_module.h"
 
-
+static njt_str_t upstream_api_module_name = njt_string("upstream_api");
 static njt_str_t status_down = njt_string("down");  
 static njt_str_t status_unhealthy = njt_string("unhealthy");  
 static njt_str_t status_draining = njt_string("draining");  
@@ -28,6 +29,8 @@ static njt_str_t status_up = njt_string("up");
 
 #define MIN_UPSTREAM_API_BODY_LEN 2
 #define MAX_UPSTREAM_API_BODY_LEN 5242880
+#define MIN_UPSTREAM_API_VERSION  1
+#define MAX_UPSTREAM_API_VERSION  1
 
 #define NJT_GET_CHAR_NUM_INT(x)   \
 	({              \
@@ -293,16 +296,12 @@ njt_module_t njt_http_upstream_api_module = {
 	static njt_int_t
 njt_http_upstream_api_init(njt_conf_t *cf)
 {
-	njt_http_core_main_conf_t  *cmcf;
-	njt_http_handler_pt        *h;
-	cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
-	//njt_http_upstream_api_handler
-	h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
-	if (h == NULL) {
-		return NJT_ERROR;
-	}
-
-	*h = njt_http_upstream_api_handler;
+	njt_http_api_reg_info_t h;
+	njt_str_t  module_key = njt_string("/v1/upstream_api");
+	njt_memzero(&h, sizeof(njt_http_api_reg_info_t));
+	h.key = &module_key;
+	h.handler = njt_http_upstream_api_handler;
+	njt_http_api_module_reg_handler(&h);
 	return NJT_OK;
 }
 
@@ -444,10 +443,12 @@ njt_upstream_api_get_params(njt_array_t *path, njt_str_t *upstream,
 	if (length < 3 || length > 7) {
 		return NJT_HTTP_UPS_API_PATH_NOT_FOUND;
 	}
+	if(item[0].len < 2) {
+		return NJT_HTTP_UPS_API_UNKNOWN_VERSION;
+	}
+	version = njt_atoi(item[0].data+1, item[0].len-1);
 
-	version = njt_atoi(item[0].data, item[0].len);
-
-	if (version < 1 || version > 8) {
+	if (version < MIN_UPSTREAM_API_VERSION || version > MAX_UPSTREAM_API_VERSION) {
 		return NJT_HTTP_UPS_API_UNKNOWN_VERSION;
 	}
 	*upstream_type = 0;
@@ -840,7 +841,7 @@ njt_http_upstream_api_compose_one_server(njt_http_request_t *r,
 	if (id < 0) {
 		return NJT_HTTP_UPS_API_INTERNAL_ERROR;  
 	}
-	if(peer != NULL) {  //»ØÏÔ
+	if(peer != NULL) {  //ï¿½ï¿½ï¿½ï¿½
 		*server_one = njt_http_upstream_api_compose_one_server_schemo(r, peer,is_backup,(peer->id == (njt_uint_t)peer->parent_id ?1:0),*peers->name);
 		if(*server_one == NULL) {
 			return NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -894,7 +895,7 @@ njt_http_upstream_api_compose_one_server(njt_http_request_t *r,
 			}
 		}
 	}
-	//´ò°ü¸¸½Úµã¡£
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµã¡£
 	for (peer = peers->parent_node; peer != NULL; peer = peer->next) {
 
 		if(peer->parent_id == -1)
@@ -968,7 +969,7 @@ njt_http_upstream_api_compose_all_server(njt_http_request_t *r,
 
 		}
 	}
-	//´ò°ü¸¸½Úµã¡£
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµã¡£
 	for (peer = peers->parent_node; peer != NULL; peer = peer->next) {
 
 		if(peer->parent_id == -1)
@@ -2851,7 +2852,7 @@ njt_upstream_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 	njt_uint_t                          len;
 	njt_str_t                           *item;
 	njt_http_core_loc_conf_t            *clcf;
-	njt_str_t                           uri;
+	njt_str_t                           uri,data;
 
 	/*the uri is parsed and delete all the duplidated '/' characters.
 	 * for example, "/api//7//http///upstreams///////" will be parse to
@@ -2871,26 +2872,43 @@ njt_upstream_api_parse_path(njt_http_request_t *r, njt_array_t *path)
 
 	while (len > 0) {
 
-		item = njt_array_push(path);
-		if (item == NULL) {
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-					"array item of path push error.");
-			return NJT_ERROR;
-		}
-
-		item->data = p;
+		data.data = p;
 		sub_p = (u_char *)njt_strlchr(p,last,'/');
 
 		if (sub_p == NULL || (njt_uint_t)(sub_p - uri.data) > uri.len) {
-			item->len = uri.data + uri.len - p;
+			data.len = uri.data + uri.len - p;
+
+			if(path->nelts == 1 &&  data.len == upstream_api_module_name.len && njt_memcmp(data.data,upstream_api_module_name.data,data.len) == 0) {
+
+			} else {
+				item = njt_array_push(path);
+				if (item == NULL) {
+					njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+							"array item of path push error.");
+					return NJT_ERROR;
+				}
+				*item = data;
+			}
 			break;
 
 		} else {
-			item->len = sub_p - p;
+			data.len = sub_p - p;
+		}
+		if(path->nelts == 1 &&  data.len == upstream_api_module_name.len && njt_memcmp(data.data,upstream_api_module_name.data,data.len) == 0) {
+
+		} else {
+			item = njt_array_push(path);
+			if (item == NULL) {
+				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+						"array item of path push error.");
+				return NJT_ERROR;
+			}
+			*item = data;
 		}
 
-		len -= item->len;
-		p += item->len;
+
+		len -= data.len;
+		p += data.len;
 
 		if (*p == '/') {
 			len --;
@@ -3178,9 +3196,10 @@ njt_http_upstream_api_handler(njt_http_request_t *r)
 
 	if_send = 1;
 	uclcf = njt_http_get_module_loc_conf(r, njt_http_upstream_api_module);
-	if(uclcf == NULL  || uclcf->enable == NJT_CONF_UNSET_UINT || uclcf->enable == 0){
+	if(uclcf == NULL){
 		return NJT_DECLINED;
 	}
+	uclcf->write = 1;
 	if (uclcf->write == NJT_CONF_UNSET_UINT || uclcf->write == 0) {
 		if (r->method == NJT_HTTP_POST || r->method == NJT_HTTP_DELETE
 				|| r->method == NJT_HTTP_PATCH) {
@@ -4027,7 +4046,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 		}
 
 		njt_stream_upstream_api_create_dynamic_server(r,&new_peer,json_peer.backup);
-		njt_stream_upstream_api_compose_one_server(r, peers,&new_peer,json_peer.backup,new_peer.id,&server_one);  //»ØÏÔ
+		njt_stream_upstream_api_compose_one_server(r, peers,&new_peer,json_peer.backup,new_peer.id,&server_one);  //ï¿½ï¿½ï¿½ï¿½
 		
 		rc = NJT_OK;
 
@@ -4173,7 +4192,7 @@ njt_stream_upstream_api_post(njt_http_request_t *r)
 		peers->single = (peers->number + peers->next->number <= 1);
 		peers->update_id++;	
 		
-		njt_stream_upstream_api_compose_one_server(r, peers,peer,json_peer.backup,peer->id,&server_one);  //»ØÏÔ
+		njt_stream_upstream_api_compose_one_server(r, peers,peer,json_peer.backup,peer->id,&server_one);  //ï¿½ï¿½ï¿½ï¿½
 		njt_stream_upstream_rr_peers_unlock(peers);
 	}
 
@@ -4430,7 +4449,7 @@ njt_stream_upstream_api_compose_all_server(njt_http_request_t *r,
 
 		}
 	}
-	//´ò°ü¸¸½Úµã¡£
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµã¡£
 	for (peer = peers->parent_node; peer != NULL; peer = peer->next) {
 
 		if(peer->parent_id == -1)
@@ -4467,7 +4486,7 @@ njt_stream_upstream_api_compose_one_server(njt_http_request_t *r,
 		return NJT_HTTP_UPS_API_INTERNAL_ERROR;  
 	}
 
-	if(peer != NULL) {  //»ØÏÔ
+	if(peer != NULL) {  //ï¿½ï¿½ï¿½ï¿½
 		*server_one = njt_stream_upstream_api_compose_one_server_schemo(r, peer,is_backup,(peer->id == (njt_uint_t)peer->parent_id ?1:0),*peers->name);
 		if(*server_one == NULL) {
 			return NJT_HTTP_UPS_API_INTERNAL_ERROR;
@@ -4519,7 +4538,7 @@ njt_stream_upstream_api_compose_one_server(njt_http_request_t *r,
 			}
 		}
 	}
-	//´ò°ü¸¸½Úµã¡£
+	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Úµã¡£
 	for (peer = peers->parent_node; peer != NULL; peer = peer->next) {
 
 		if(peer->parent_id == -1)
@@ -4606,7 +4625,7 @@ njt_stream_upstream_api_process_get(njt_http_request_t *r,
 
 		} else {
 			if(server_id >= 0) {
-				rc = njt_stream_upstream_api_compose_one_server(r, peers, NULL,0,server_id,&server_one);  //²éÕÒÏÔÊ¾¡£
+				rc = njt_stream_upstream_api_compose_one_server(r, peers, NULL,0,server_id,&server_one);  //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¾ï¿½ï¿½
 				if (server_one == NULL) {
 					return rc;
 				}
@@ -4943,7 +4962,7 @@ njt_stream_upstream_api_patch(njt_http_request_t *r)
 		peer->effective_weight = json_peer.weight;
 	}
 	peers->update_id++;
-	rc = njt_stream_upstream_api_compose_one_server(r, peers, peer,is_backup,peer->id,&server_one); //»ØÏÔ¡£
+	rc = njt_stream_upstream_api_compose_one_server(r, peers, peer,is_backup,peer->id,&server_one); //ï¿½ï¿½ï¿½Ô¡ï¿½
 	njt_stream_upstream_rr_peers_unlock(peers);
 
 out:

@@ -9,7 +9,7 @@ info:
     key-value pairs management for
     [http](https://njet.org/en/docs/http/njt_http_keyval_module.html) and
     [stream](https://njet.org/en/docs/stream/njt_stream_keyval_module.html).
-basePath: /api/7
+basePath: /api/v1/upstream_api
 tags:
   - name: HTTP Upstreams
   - name: Stream Upstreams
