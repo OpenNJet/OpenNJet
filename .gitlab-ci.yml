@@ -63,6 +63,7 @@ build_deb:
     - mkdir -p build/deb/usr/local
     - cp -a /usr/local/njet build/deb/usr/local
     - cp -a /usr/local/lib build/deb/usr/local/njet/
+    - rm -f build/deb/usr/local/njet/lib/*.a
     - cp -a objs/scripts/* build/deb/usr/local/njet/modules/
     - cd build && ./generate_deb.sh && cd -
     - mkdir -p work
