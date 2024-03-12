@@ -10,7 +10,6 @@
 #include <njt_core.h>
 #include <njt_http.h>
 #include <njt_http_dyn_module.h>
-#define NJT_HTTP_DYN_MAP_V2_MODULE 1
 static int njt_libc_cdecl njt_http_map_cmp_dns_wildcards(const void *one,
     const void *two);
 static void *njt_http_map_create_conf(njt_conf_t *cf);
@@ -286,7 +285,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             njt_cacheline_size);
     }
     /// by zyg
-#if (NJT_HTTP_DYN_MAP_V2_MODULE)
+#if (NJT_HTTP_DYN_MAP_MODULE)
     if(cf->dynamic == 1) {
         new_map_pool = njt_create_pool(NJT_DEFAULT_POOL_SIZE, cf->log);
         if (new_map_pool == NULL) {
@@ -666,4 +665,29 @@ found:
     }
 
     return NJT_CONF_ERROR;
+}
+
+
+void njt_http_map_del_by_name(njt_str_t name)
+{
+#if NJT_HTTP_DYN_MAP_MODULE
+    njt_uint_t i;
+    njt_http_map_conf_t *mcf;
+    mcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_map_module);
+    if (mcf == NULL) {
+        return;
+    }
+    njt_http_map_var_hash_t *item = mcf->var_hash_items->elts;
+    for (i = 0;i < mcf->var_hash_items->nelts;i++) {
+        if(item[i].name.len == name.len && njt_memcmp(item[i].name.data,name.data,name.len) == 0) {
+            njt_lvlhsh_map_remove(&mcf->var_hash, &item[i].name);
+            njt_array_delete_idx(mcf->var_hash_items,i);
+            if(item->map->pool != NULL) {
+                njt_destroy_pool(item->map->pool);
+            }
+            break;
+        }
+        
+    }
+#endif
 }

@@ -215,6 +215,7 @@ typedef struct {
 njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc_t *data,njt_http_conf_ctx_t* ctx,njt_str_t * msg,njt_uint_t msg_capacity);
 
 njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data);
+void njt_http_map_del_by_name(njt_str_t name);
 
 typedef struct {
     njt_http_map_t              map;
