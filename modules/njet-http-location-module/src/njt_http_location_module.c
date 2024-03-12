@@ -417,14 +417,14 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     //note: delete queue memory, which delete when remove queue 
     //njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0, "delete  location [%V] succ!",&location_name);
 
-    // add for dyn_loc conf update
+#if (NJT_HELPER_GO_DYNCONF) // add for dyn_conf update
 	if (njt_process == NJT_PROCESS_HELPER) {
 		njt_pool_t *dyn_pool = njt_create_pool(NJT_CYCLE_POOL_SIZE, njt_cycle->log);
 		njt_conf_dyn_loc_del_loc(njt_conf_dyn_loc_pool, njt_conf_dyn_loc_ptr, (void *)location_info);
 		njt_conf_dyn_loc_save_pub_to_file(dyn_pool, njt_cycle->log, njt_conf_dyn_loc_ptr);
 		njt_destroy_pool(dyn_pool);
 	}
-	// end for dyn_loc conf update
+#endif	// end for dyn_loc conf update
 
     return NJT_OK;
 	
