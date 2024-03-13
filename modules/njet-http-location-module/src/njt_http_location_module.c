@@ -311,7 +311,7 @@ njt_http_location_delete_handler(njt_http_location_info_t *location_info) {
     njt_http_core_loc_conf_t *clcf, *dclcf;
     njt_http_location_queue_t *lq,*if_lq;
     u_char *p;
-    njt_str_t location_name,msg;
+    njt_str_t location_name;
 
     if(location_info->buffer.len == 0 || location_info->buffer.data == NULL) {
            njt_log_error(NJT_LOG_DEBUG,njt_cycle->pool->log, 0, "buffer null");
@@ -431,7 +431,7 @@ static njt_int_t njt_http_add_location_handler(njt_http_location_info_t *locatio
     njt_http_core_srv_conf_t *cscf;
     char *rv = NULL;
     njt_http_core_loc_conf_t *clcf,*new_clcf;
-    njt_str_t location_name,msg;
+    njt_str_t location_name;
     u_char *p;
 	njt_http_sub_location_info_t  *sub_location, *loc;
     njt_http_location_queue_t *lq;
