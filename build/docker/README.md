@@ -13,7 +13,7 @@
 cd njet_main
 export NJET_RIEPOSITORY="tmlake/njet"
 export NJET_TAG="latest"
-docker build --build-arg --build-arg NJet_VERSION=$NJET_TAG --build-arg GIT_COMMIT=$(git rev-parse HEAD)  --network host --target ubuntu-njet -f ./build/docker/Dockerfile_njet -t $NJET_RIEPOSITORY:$NJET_TAG ./ 
+docker build --build-arg NJet_VERSION=$NJET_TAG --build-arg GIT_COMMIT=$(git rev-parse HEAD)  --network host --target ubuntu-njet -f ./build/docker/Dockerfile_njet -t $NJET_RIEPOSITORY:$NJET_TAG ./ 
 ```
 
 ## Automatic
