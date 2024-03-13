@@ -16,6 +16,7 @@
 #include <njt_http_util.h>
 
 #include "njt_http_dyn_ssl_api_parser.h"
+#include "njet_http_api_register_module.h"
 
 
 #define MIN_CONFIG_BODY_LEN 2
@@ -35,12 +36,6 @@ static njt_int_t
 njt_http_dyn_ssl_init_worker(njt_cycle_t *cycle);
 
 static void *
-njt_http_dyn_ssl_create_loc_conf(njt_conf_t *cf);
-
-static char *njt_http_dyn_ssl_merge_loc_conf(njt_conf_t *cf,
-                                              void *parent, void *child);
-
-static void *
 njt_http_dyn_ssl_create_main_conf(njt_conf_t *cf);
 
 static njt_int_t
@@ -57,9 +52,6 @@ static njt_int_t njt_http_dyn_ssl_rpc_send(njt_http_request_t *r,njt_str_t *modu
 
 static int njt_http_dyn_ssl_request_output(njt_http_request_t *r,njt_int_t code, njt_str_t *msg);
 
-static char *
-njt_http_dyn_ssl_api(njt_conf_t *cf, njt_command_t *cmd, void *conf);
-
 typedef struct njt_http_dyn_ssl_ctx_s {
 } njt_http_dyn_ssl_ctx_t, njt_stream_http_dyn_ssl_ctx_t;
 
@@ -68,10 +60,6 @@ typedef struct njt_http_dyn_ssl_main_conf_s {  //njt_http_dyn_ssl_main_cf_t
 	njt_http_request_t **reqs;
     njt_int_t size;
 } njt_http_dyn_ssl_main_conf_t;
-
-typedef struct njt_http_dyn_ssl_loc_conf_s {  //njt_http_dyn_ssl_main_cf_t
-    njt_flag_t dyn_ssl_enable;
-}njt_http_dyn_ssl_loc_conf_t;
 
 
 typedef struct {
@@ -88,38 +76,24 @@ typedef struct {
     unsigned success:1;
 }njt_http_ssl_request_err_ctx_t;
 
-
-static njt_command_t njt_http_dyn_ssl_commands[] = {
-        {
-                njt_string("dyn_ssl_api"),
-                NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_ANY,
-                njt_http_dyn_ssl_api,
-                NJT_HTTP_LOC_CONF_OFFSET,
-                offsetof(njt_http_dyn_ssl_loc_conf_t, dyn_ssl_enable),
-                NULL
-        },
-        njt_null_command
-};
-
-
 static njt_http_module_t njt_http_ssl_api_module_ctx = {
         NULL,                              /* preconfiguration */
-        njt_http_dyn_ssl_init,                              /* postconfiguration */
+        njt_http_dyn_ssl_init,             /* postconfiguration */
 
-        njt_http_dyn_ssl_create_main_conf,                              /* create main configuration */
+        njt_http_dyn_ssl_create_main_conf, /* create main configuration */
         NULL,                              /* init main configuration */
 
         NULL,                              /* create server configuration */
         NULL,                              /* merge server configuration */
 
-        njt_http_dyn_ssl_create_loc_conf, /* create location configuration */
-        njt_http_dyn_ssl_merge_loc_conf   /* merge location configuration */
+        NULL,                               /* create location configuration */
+        NULL                                /* merge location configuration */
 };
 
 njt_module_t njt_http_ssl_api_module = {
         NJT_MODULE_V1,
         &njt_http_ssl_api_module_ctx, /* module context */
-        njt_http_dyn_ssl_commands,    /* module directives */
+        NULL,                           /* module directives */
         NJT_HTTP_MODULE,                    /* module type */
         NULL,                               /* init master */
         NULL,                               /* init module */
@@ -132,22 +106,10 @@ njt_module_t njt_http_ssl_api_module = {
 };
 
 
-static char *
-njt_http_dyn_ssl_api(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
-    
-	njt_http_dyn_ssl_loc_conf_t   *clcf = conf;
-
-    clcf->dyn_ssl_enable = 1;
-    return NJT_CONF_OK;
-}
-
-
 static njt_int_t
 njt_http_dyn_ssl_init(njt_conf_t *cf) {
-    njt_http_core_main_conf_t *cmcf;
-    njt_http_handler_pt *h;
-
-	 njt_http_dyn_ssl_main_conf_t *dlmcf;
+    njt_http_api_reg_info_t             h;
+	njt_http_dyn_ssl_main_conf_t        *dlmcf;
 
     dlmcf = njt_http_conf_get_module_main_conf(cf,njt_http_ssl_api_module);
     if(dlmcf == NULL){
@@ -164,35 +126,15 @@ njt_http_dyn_ssl_init(njt_conf_t *cf) {
         return NJT_ERROR;
     }
 
-    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
-	if(cmcf == NULL) {
-		return NJT_ERROR;
-	}
-    //njt_http_dyn_ssl_handler
-    h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
-    if (h == NULL) {
-        return NJT_ERROR;
-    }
+    njt_str_t  module_key = njt_string("/v1/ssl");
+    njt_memzero(&h, sizeof(njt_http_api_reg_info_t));
+    h.key = &module_key;
+    h.handler = njt_http_dyn_ssl_handler;
+    njt_http_api_module_reg_handler(&h);
 
-    *h = njt_http_dyn_ssl_handler;
     return NJT_OK;
 }
 
-
-static void *
-njt_http_dyn_ssl_create_loc_conf(njt_conf_t *cf) {
-    //ssize_t size;
-    //njt_str_t zone = njt_string("api_dy_server");
-    njt_http_dyn_ssl_loc_conf_t *uclcf;
-    //size = (ssize_t)(10 * njt_pagesize);
-    uclcf = njt_pcalloc(cf->pool, sizeof(njt_http_dyn_ssl_loc_conf_t));
-    if (uclcf == NULL) {
-        njt_log_error(NJT_LOG_ERR, cf->log, 0, "malloc uclcf eror");
-        return NULL;
-    }
-    uclcf->dyn_ssl_enable = NJT_CONF_UNSET;
-    return uclcf;
-}
 
 static void *
 njt_http_dyn_ssl_create_main_conf(njt_conf_t *cf) {
@@ -209,17 +151,6 @@ njt_http_dyn_ssl_create_main_conf(njt_conf_t *cf) {
     }
 	uclcf->size = NJT_CONF_UNSET;
     return uclcf;
-}
-
-
-static char *njt_http_dyn_ssl_merge_loc_conf(njt_conf_t *cf,
-                                              void *parent, void *child) {
-    njt_http_dyn_ssl_loc_conf_t *prev = parent;
-    njt_http_dyn_ssl_loc_conf_t *conf = child;
-
-    njt_conf_merge_value(conf->dyn_ssl_enable, prev->dyn_ssl_enable, 0);
-
-    return NJT_CONF_OK;
 }
 
 
@@ -264,99 +195,13 @@ static int njt_http_dyn_ssl_request_output(njt_http_request_t *r,njt_int_t code,
     return njt_http_output_filter(r, &out);
 }
 
-// static njt_int_t
-// njt_http_api_parse_path(njt_http_request_t *r, njt_array_t *path)
-// {
-//     u_char                              *p, *sub_p;
-//     njt_uint_t                          len;
-//     njt_str_t                           *item;
-//     njt_http_core_loc_conf_t            *clcf;
-//     njt_str_t                           uri;
-
-//     /*the uri is parsed and delete all the duplidated '/' characters.
-//      * for example, "/api//7//http///upstreams///////" will be parse to
-//      * "/api/7/http/upstreams/" already*/
-
-//     clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
-
-//     uri = r->uri;
-//     p = uri.data + clcf->name.len;
-//     len = uri.len - clcf->name.len;
-
-//     if (len != 0 && *p != '/') {
-//         return NJT_HTTP_NOT_FOUND;
-//     }
-//     if (*p == '/') {
-//         len --;
-//         p ++;
-//     }
-
-//     while (len > 0) {
-//         item = njt_array_push(path);
-//         if (item == NULL) {
-//             njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-//                           "zack: array item of path push error.");
-//             return NJT_ERROR;
-//         }
-
-//         item->data = p;
-//         sub_p = (u_char *)njt_strchr(p, '/');
-
-//         if (sub_p == NULL || (njt_uint_t)(sub_p - uri.data) > uri.len) {
-//             item->len = uri.data + uri.len - p;
-//             break;
-
-//         } else {
-//             item->len = sub_p - p;
-//         }
-
-//         len -= item->len;
-//         p += item->len;
-
-//         if (*p == '/') {
-//             len --;
-//             p ++;
-//         }
-
-//     }
-//     return NJT_OK;
-// }
-
 static njt_int_t
 njt_http_dyn_ssl_handler(njt_http_request_t *r) {
     njt_int_t                       rc = NJT_OK;
-    njt_http_dyn_ssl_loc_conf_t     *loc;
-    // njt_array_t                     *path;
     njt_str_t                       msg,topic;
-    
-    loc = njt_http_get_module_loc_conf(r, njt_http_ssl_api_module);
-    if (loc && loc->dyn_ssl_enable) {
-        //printf("11");
-    } else {
-        //printf("NJT_DECLINED");
-        return NJT_DECLINED;
-    }
 
     njt_str_null(&msg);
     njt_str_t srv_err = njt_string("{\"code\":500,\"msg\":\"server error\"}");
-    // njt_str_t not_found_err = njt_string("{\"code\":404,\"msg\":\"not found error\"}");
-    // njt_str_t rpc_pre = njt_string("/worker_a/rpc/");
-    // path = njt_array_create( r->pool, 4, sizeof(njt_str_t));
-    // if (path == NULL) {
-    //     njt_log_error(NJT_LOG_ERR, r->connection->log, 0,"array init of path error.");
-    //     goto err;
-    // }
-    // rc = njt_http_api_parse_path(r, path);
-    // if(rc != NJT_OK || path->nelts <= 0 ){
-    //     rc = NJT_HTTP_NOT_FOUND;
-    //     goto out;
-    // }
-    // uri = path->elts;
-    // // 增加版本2  www
-    // if(path->nelts != 1){
-    //     rc = NJT_HTTP_NOT_FOUND;
-    //     goto out;
-    // }
 
     if(r->method == NJT_HTTP_PUT){
         rc = njt_http_read_client_request_body(r, njt_http_dyn_ssl_read_data);
@@ -669,13 +514,3 @@ out:
 
     return;
 }
-
-
-
-
-
-
-
-
-
-

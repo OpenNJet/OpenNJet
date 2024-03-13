@@ -124,6 +124,7 @@ struct njt_ssl_connection_s {
     unsigned                    no_send_shutdown:1;
     unsigned                    shutdown_without_free:1;
     unsigned                    handshake_buffer_set:1;
+    unsigned                    session_timeout_set:1;
     unsigned                    try_early_data:1;
     unsigned                    in_early:1;
     unsigned                    in_ocsp:1;
@@ -144,35 +145,35 @@ typedef struct njt_ssl_sess_id_s  njt_ssl_sess_id_t;
 
 struct njt_ssl_sess_id_s {
     njt_rbtree_node_t           node;
-    u_char                     *id;
     size_t                      len;
-    u_char                     *session;
     njt_queue_t                 queue;
     time_t                      expire;
+    u_char                      id[32];
 #if (NJT_PTR_SIZE == 8)
-    void                       *stub;
-    u_char                      sess_id[32];
+    u_char                      *session;
+#else
+    u_char                      session[1];
 #endif
 };
+
+
+typedef struct {
+    u_char                      name[16];
+    u_char                      hmac_key[32];
+    u_char                      aes_key[32];
+    time_t                      expire;
+    unsigned                    size:8;
+    unsigned                    shared:1;
+} njt_ssl_ticket_key_t;
 
 
 typedef struct {
     njt_rbtree_t                session_rbtree;
     njt_rbtree_node_t           sentinel;
     njt_queue_t                 expire_queue;
+    njt_ssl_ticket_key_t        ticket_keys[3];
+    time_t                      fail_time;
 } njt_ssl_session_cache_t;
-
-
-#ifdef SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB
-
-typedef struct {
-    size_t                      size;
-    u_char                      name[16];
-    u_char                      hmac_key[32];
-    u_char                      aes_key[32];
-} njt_ssl_session_ticket_key_t;
-
-#endif
 
 
 #define NJT_SSL_SSLv2    0x0002
@@ -233,10 +234,12 @@ njt_int_t njt_ssl_ocsp(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *responder,
     njt_uint_t depth, njt_shm_zone_t *shm_zone);
 njt_int_t njt_ssl_ocsp_resolver(njt_conf_t *cf, njt_ssl_t *ssl,
     njt_resolver_t *resolver, njt_msec_t resolver_timeout);
+
 njt_int_t njt_ssl_ocsp_validate(njt_connection_t *c);
 njt_int_t njt_ssl_ocsp_get_status(njt_connection_t *c, const char **s);
 void njt_ssl_ocsp_cleanup(njt_connection_t *c);
 njt_int_t njt_ssl_ocsp_cache_init(njt_shm_zone_t *shm_zone, void *data);
+
 njt_array_t *njt_ssl_read_password_file(njt_conf_t *cf, njt_str_t *file);
 njt_array_t *njt_ssl_preserve_passwords(njt_conf_t *cf,
     njt_array_t *passwords);
@@ -350,7 +353,7 @@ char *njt_ssl_certificate_slot(njt_conf_t *cf, njt_command_t *cmd,
 extern int  njt_ssl_connection_index;
 extern int  njt_ssl_server_conf_index;
 extern int  njt_ssl_session_cache_index;
-extern int  njt_ssl_session_ticket_keys_index;
+extern int  njt_ssl_ticket_keys_index;
 extern int  njt_ssl_ocsp_index;
 extern int  njt_ssl_certificate_index;
 extern int  njt_ssl_next_certificate_index;

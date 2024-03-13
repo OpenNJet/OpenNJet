@@ -24,11 +24,99 @@ njt_conf_finish_conf_parse() {
 }
 
 
+njt_str_t njt_conf_get_command_unique_name(njt_pool_t *pool,njt_str_t src) {
+    njt_conf_t  cf;
+    njt_str_t   full_name, *value, new_src;
+    u_char*     index;
+    njt_uint_t  len, i;
+
+    full_name.len = 0;
+    full_name.data = NULL;
+    njt_memzero(&cf, sizeof(njt_conf_t));
+    cf.pool = pool;
+    cf.temp_pool = pool;
+    cf.log = njt_cycle->log;
+
+
+    //njt_str_set(&src,"~\\");
+    if(src.len == 0) {
+        return full_name;
+    }
+
+    new_src.len = src.len + 3;
+    new_src.data = njt_pcalloc(pool,new_src.len);  //add " {"
+
+    if (new_src.data == NULL){
+        return full_name;
+    }
+
+    njt_memcpy(new_src.data,src.data,src.len);
+    new_src.data[new_src.len - 3] = ' ';
+    new_src.data[new_src.len - 2] = '{';
+    new_src.data[new_src.len - 1] = '\0';
+
+
+    cf.args = njt_array_create(cf.pool, 10, sizeof(njt_str_t));
+    if (cf.args == NULL) {
+        return full_name;
+    }
+
+    njt_conf_read_memory_token(&cf,new_src);
+    len =0;
+    value = cf.args->elts;
+
+    for(i = 0; i < cf.args->nelts; i++){
+        len += value[i].len;
+    }
+
+    index = njt_pcalloc(pool,len);
+
+    if (index == NULL){
+        return full_name;
+    }
+
+    full_name.data = index;
+
+    for(i = 0; i < cf.args->nelts; i++){
+        njt_memcpy(index,value[i].data,value[i].len);
+        index += value[i].len;
+    }
+
+    full_name.len = len;
+
+    return full_name;
+}
+
+njt_int_t njt_conf_http_location_full_name_cmp(njt_str_t escaped_full_name,njt_str_t src) {
+
+	njt_pool_t  *pool;
+	njt_str_t   full_name, command1, command2;
+
+	pool = njt_create_pool(1024, njt_cycle->log);
+	if(pool == NULL) {
+		return NJT_ERROR;
+	}
+
+    full_name = delete_escape(pool, escaped_full_name);
+	command1 = njt_conf_get_command_unique_name(pool, full_name);
+	command2 = njt_conf_get_command_unique_name(pool, src);
+
+	if(command1.len == command2.len && njt_strncmp(command1.data,command2.data,command1.len) == 0) {
+        njt_destroy_pool(pool);
+        return NJT_OK;
+	}
+
+	njt_destroy_pool(pool);
+
+	return NJT_ERROR;
+}
+
+
 static njt_int_t
 njt_conf_cmd_set_args(njt_pool_t *pool, njt_conf_t *cf, njt_conf_cmd_t *ccmd){
     njt_uint_t      i, j;
-    njt_uint_t      need_escape, re_location;
-    njt_str_t      *arg, *value;
+    njt_uint_t      need_escape, is_location;
+    njt_str_t      *arg, *value, *ori_value;
     njt_str_t       index;
     size_t          vlen;
     char           *cur, *dst;
@@ -52,26 +140,36 @@ njt_conf_cmd_set_args(njt_pool_t *pool, njt_conf_t *cf, njt_conf_cmd_t *ccmd){
     }
 
     arg = cf->args->elts;
-    re_location = arg->len == 8 
-                  && njt_strncmp(arg->data, "location", 8) == 0 
-                  && cf->args->nelts >= 3;
-    if (re_location) {
+    is_location = arg->len == 8
+                  && njt_strncmp(arg->data, "location", 8) == 0;
+
+    if (is_location) {
         vlen =0;
-        for(i = 1; i < cf->args->nelts; i++){
-            arg = &((njt_str_t*)cf->args->elts)[i];
-            vlen += arg->len;
+        vlen =0;
+        ori_value = cf->ori_args->elts;
+
+        for(i = 1; i < cf->ori_args->nelts; i++){
+            //len += value[i].len+1;
+            vlen += ori_value[i].len + 1;
         }
-        index.data = njt_pcalloc(pool, vlen+1);
+
+        index.data = njt_pcalloc(pool,vlen+1);
+        index.len = 0;
+
         if (index.data == NULL){
             return NJT_ERROR;
         }
-        index.len = 0;
-        for(i = 1; i < cf->args->nelts; i++){
-            arg = &((njt_str_t*)cf->args->elts)[i];
-            njt_memcpy(index.data + index.len, arg->data, arg->len);
-            index.len += arg->len;
+
+        for(i = 1; i < cf->ori_args->nelts; i++){
+            njt_memcpy(index.data + index.len, ori_value[i].data, ori_value[i].len);
+            index.len += ori_value[i].len;
+            *(index.data + index.len) = (u_char)' ';
+            index.len ++;
         }
-        index.len = vlen;
+
+        if (index.len > 0) {
+            index.len --;
+        }
         arg = &index;
     }
 
@@ -81,7 +179,7 @@ njt_conf_cmd_set_args(njt_pool_t *pool, njt_conf_t *cf, njt_conf_cmd_t *ccmd){
         if (value == NULL) {
             return NJT_ERROR;
         }
-        if (!re_location) { // re_location arg = &index
+        if (!is_location) { // is_location arg = &index
             arg = &((njt_str_t*)cf->args->elts)[i];
         }
         need_escape = 0;
@@ -130,7 +228,7 @@ njt_conf_cmd_set_args(njt_pool_t *pool, njt_conf_t *cf, njt_conf_cmd_t *ccmd){
                 }
             }
         }
-        if (re_location) {
+        if (is_location) {
             break;
         }
     }
@@ -140,6 +238,173 @@ njt_conf_cmd_set_args(njt_pool_t *pool, njt_conf_t *cf, njt_conf_cmd_t *ccmd){
     return NJT_OK;
 }
 
+
+njt_int_t
+njt_conf_dyn_check_lua_block(njt_str_t *name) {
+    // "lua_load_resty_core" deprecated
+    // "lua_thread_cache_max_entries" njt_conf_set_num_slot,
+    // "lua_max_running_timers"       njt_conf_set_num_slot,
+    // "lua_max_pending_timers"       njt_conf_set_num_slot,
+    // "lua_shared_dict"              njt_http_lua_shared_dict, can parse
+    // "lua_capture_error_log"        njt_http_lua_capture_error_log, can parse
+    // "lua_sa_restart"               njt_conf_set_flag_slot,
+    // "lua_regex_cache_max_entries   njt_http_lua_regex_cache_max_entries, can parse
+    // "lua_regex_match_limit"        njt_http_lua_regex_match_limit, can parse
+    // "lua_package_cpath"            njt_http_lua_package_cpath, can parse
+    // "lua_package_path"             njt_http_lua_package_path, can parse
+    // "lua_code_cache"               njt_http_lua_code_cache, can parse
+    // "lua_need_request_body"        njt_conf_set_flag_slot,
+    // "lua_transform_underscores_in_response_headers"
+    //                                njt_conf_set_flag_slot,
+    // "lua_socket_log_errors"        njt_conf_set_flag_slot,
+    // "init_by_lua_block"
+    if (name->len == 17 && njt_strncmp(name->data, "init_by_lua_block", 17) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "init_by_lua"                   njt_http_lua_init_by_lua, 这个处理一行
+    // "init_by_lua_file"),            njt_http_lua_init_by_lua, 这个处理一行
+    // "init_worker_by_lua_block"
+    if (name->len == 24 && njt_strncmp(name->data, "init_worker_by_lua_block", 24) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "init_worker_by_lua"            njt_http_lua_init_worker_by_lua, 这个处理一行
+    // "init_worker_by_lua_file"       njt_http_lua_init_worker_by_lua, 这个处理一行
+
+    // "exit_worker_by_lua_block"
+    if (name->len == 24 && njt_strncmp(name->data, "exit_worker_by_lua_block", 24) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "exit_worker_by_lua_file"       njt_http_lua_exit_worker_by_lua, 这个处理一行
+
+#if defined(NDK) && NDK
+    /* set_by_lua_block $res { inline Lua code } */
+    // "set_by_lua_block"
+    if (name->len == 16 && njt_strncmp(name->data, "set_by_lua_block", 16) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    /* set_by_lua $res <inline script> [$arg1 [$arg2 [...]]] */
+    // "set_by_lua"                      njt_http_lua_set_by_lua, 这个处理一行
+    /* set_by_lua_file $res rel/or/abs/path/to/script [$arg1 [$arg2 [..]]] */
+    // "set_by_lua_file"                 njt_http_lua_set_by_lua_file, 这个处理一行
+#endif
+
+    /* rewrite_by_lua "<inline script>" */
+    // "rewrite_by_lua"                  njt_http_lua_rewrite_by_lua, 这个处理一行
+    /* rewrite_by_lua_block { <inline script> } */
+    // "rewrite_by_lua_block",
+    if (name->len == 20 && njt_strncmp(name->data, "rewrite_by_lua_block", 20) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    /* access_by_lua "<inline script>" */
+    // "access_by_lua"                   njt_http_lua_access_by_lua, 这个处理一行
+    /* access_by_lua_block { <inline script> } */
+    if (name->len == 19 && njt_strncmp(name->data, "access_by_lua_block", 19) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    /* content_by_lua "<inline script>" */
+    // "content_by_lua")                 njt_http_lua_content_by_lua, 这个处理一行
+    /* content_by_lua_block { <inline script> } */
+    if (name->len == 20 && njt_strncmp(name->data, "content_by_lua_block", 20) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // in stream lua
+    if (name->len == 20 && njt_strncmp(name->data, "preread_by_lua_block", 20) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    /* log_by_lua <inline script> */
+    // "log_by_lua"                       njt_http_lua_log_by_lua, 这个处理一行
+    // "rewrite_by_lua_file"),            njt_http_lua_rewrite_by_lua, 这个处理一行
+    /* log_by_lua_block { <inline script> } */
+    if (name->len == 16 && njt_strncmp(name->data, "log_by_lua_block", 16) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "rewrite_by_lua_no_postpone"        njt_conf_set_flag_slot,
+    // "access_by_lua_file"                njt_http_lua_access_by_lua, 一行
+    // "access_by_lua_no_postpone")        njt_conf_set_flag_slot,
+    /* content_by_lua_file rel/or/abs/path/to/script */
+    // "content_by_lua_file"               njt_http_lua_content_by_lua, 一行
+    // "log_by_lua_file")                  njt_http_lua_log_by_lua, 一行
+    /* header_filter_by_lua <inline script> */
+    // "header_filter_by_lua"              njt_http_lua_header_filter_by_lua, 一行
+    /* header_filter_by_lua_block { <inline script> } */
+    if (name->len == 26 && njt_strncmp(name->data, "header_filter_by_lua_block", 26) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "header_filter_by_lua_file          njt_http_lua_header_filter_by_lua, 一行
+    // "body_filter_by_lua"                njt_http_lua_body_filter_by_lua, 一行
+    // "body_filter_by_lua_file"),         njt_http_lua_body_filter_by_lua, 一行
+    /* body_filter_by_lua_block { <inline script> } */
+    if (name->len == 24 && njt_strncmp(name->data, "body_filter_by_lua_block", 24) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "balancer_by_lua_block"
+    if (name->len == 21 && njt_strncmp(name->data, "balancer_by_lua_block", 21) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "balancer_by_lua_file"                njt_http_lua_balancer_by_lua, one line
+    // "lua_socket_keepalive_timeout"        njt_conf_set_msec_slot,
+    // "lua_socket_connect_timeout"          njt_conf_set_msec_slot,
+    // "balancer_by_lua_file"                njt_http_lua_balancer_by_lua, one line
+    // "lua_socket_keepalive_timeout"        njt_conf_set_msec_slot
+    // "lua_socket_connect_timeout"          njt_conf_set_msec_slot
+    // "lua_socket_send_timeout"             njt_conf_set_msec_slot,
+    // "lua_socket_send_lowat"               njt_conf_set_size_slot,
+    // "lua_socket_buffer_size"              njt_conf_set_size_slot,
+    // "lua_socket_pool_size")               njt_conf_set_num_slot,
+    // "lua_socket_read_timeout"             njt_conf_set_msec_slot,
+    // "lua_http10_buffering"                njt_conf_set_flag_slot,
+    // "lua_check_client_abort"              njt_conf_set_flag_slot,
+    // "lua_use_default_type"                njt_conf_set_flag_slot,
+
+#if (NJT_HTTP_SSL)
+
+    // "lua_ssl_protocols"                   njt_conf_set_bitmask_slot,
+    // "lua_ssl_ciphers"                     njt_conf_set_str_slot,
+    // "ssl_client_hello_by_lua_block"
+    if (name->len == 29 && njt_strncmp(name->data, "ssl_client_hello_by_lua_block", 29) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "ssl_client_hello_by_lua_file"        njt_http_lua_ssl_client_hello_by_lua, one line
+    // "ssl_certificate_by_lua_block"
+    if (name->len == 25 && njt_strncmp(name->data, "ssl_certificate_lua_block", 25) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "ssl_certificate_by_lua_file"         njt_http_lua_ssl_cert_by_lua, one line
+    // "ssl_session_store_by_lua_file"       njt_http_lua_ssl_sess_store_by_lua, one line
+    // "ssl_session_fetch_by_lua_block",
+    if (name->len == 30 && njt_strncmp(name->data, "ssl_session_fetch_by_lua_block", 30) == NJT_OK) {
+        return NJT_OK;
+    }
+
+    // "ssl_session_fetch_by_lua_file"       njt_http_lua_ssl_sess_fetch_by_lua, one line
+    // "lua_ssl_verify_depth"                njt_conf_set_num_slot
+    // "lua_ssl_trusted_certificate"         njt_conf_set_str_slot,
+    // "lua_ssl_crl"                         njt_conf_set_str_slot,
+
+#if (njet_version >= 1019004)
+    // "lua_ssl_conf_command"                njt_conf_set_keyval_slot,
+#endif
+#endif  /* NJT_HTTP_SSL */
+
+    // "lua_malloc_trim"                     njt_http_lua_malloc_trim,
+    // "lua_worker_thread_vm_pool_size"      njt_conf_set_num_slot,
+    // njt_null_command
+    return NJT_ERROR;
+}
 
 njt_int_t
 njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
@@ -167,12 +432,13 @@ njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
     }
 
     name = cf->args->elts;
-    if (name->len == 20 && njt_strncmp(name->data, "content_by_lua_block", 20) == NJT_OK) {
-        return NJT_OK;
-    }
-    if (name->len == 19 && njt_strncmp(name->data, "access_by_lua_block", 19) == NJT_OK) {
-        return NJT_OK;
-    }
+
+    // if (name->len == 20 && njt_strncmp(name->data, "content_by_lua_block", 20) == NJT_OK) {
+    //     return NJT_OK;
+    // }
+    // if (name->len == 19 && njt_strncmp(name->data, "access_by_lua_block", 19) == NJT_OK) {
+    //     return NJT_OK;
+    // }
     found = 0;
 
     if (rc == NJT_OK) {
@@ -293,6 +559,13 @@ njt_conf_element_handler(njt_pool_t *pool, njt_conf_t *cf, njt_int_t rc)
         njt_memcpy(bpos, new_block, sizeof(njt_conf_element_t));
         bpos->parent = cur;
         njt_conf_cur_ptr = bpos;
+
+
+        // for lua block
+        if (njt_conf_dyn_check_lua_block(name) == NJT_OK) {
+            njt_conf_cur_ptr = cur;
+            // return NJT_OK;
+        }
         
         return NJT_OK;
     }
@@ -471,6 +744,9 @@ void njt_conf_get_json_length(njt_conf_element_t *root, size_t *length, njt_uint
     }
 
     if (root->blocks == NULL) {
+        if (root->cmds == NULL && root->block_name == NULL) {
+            *length += 1;
+        }
         return;
     }
 
@@ -536,7 +812,7 @@ njt_conf_get_simple_location_block(njt_pool_t *dyn_pool, njt_conf_element_t *cur
     njt_memcpy(pos, name, sizeof(njt_str_t));
 
     njt_str_set(&loc, "location");
-    ret = njt_conf_get_block(cur, &loc, sub_name);
+    ret = njt_conf_get_loc_block(cur, &loc, sub_name);
     njt_array_destroy(sub_name);
     njt_pfree(dyn_pool, loc.data);
 
@@ -581,7 +857,7 @@ njt_conf_get_block( njt_conf_element_t *cur,
                             return block;
                          }
                     }
-                } 
+                }
                 if (cmd != NULL) {
                     // 需要要cmd 和 sub_names 完全一样才算匹配
                     args = (njt_array_t*)cmd->value->elts; // _key must be one line
@@ -617,6 +893,72 @@ njt_conf_get_block( njt_conf_element_t *cur,
                         }
                     }
                     // }
+                }
+            }
+
+        }
+    }
+    return NULL;
+};
+
+
+njt_conf_element_t*
+njt_conf_get_loc_block( njt_conf_element_t *cur,
+    njt_str_t *key, njt_array_t *sub_names)
+ {
+    njt_uint_t           i, j, k;
+    njt_uint_t           same;
+    njt_str_t           *arg, *sub_name;
+    njt_array_t         *args;
+    njt_conf_cmd_t      *cmd;
+    njt_conf_block_t    *blocks;
+    njt_conf_element_t  *block, *ret;
+
+    ret = NULL;
+    if (cur == NULL || cur->blocks == NULL || cur->blocks->nelts == 0) {
+        return ret;
+    }
+
+    for (i = 0; i < cur->blocks->nelts; i++) {
+        blocks = &((njt_conf_block_t*) cur->blocks->elts)[i];
+        if (key->len == blocks->key.len
+            && njt_strncmp(key->data, blocks->key.data, key->len) == 0)
+        {
+            if (sub_names == NULL) {
+                ret = blocks->value->elts; // MUST block->value->nelts == 1
+                return ret;
+            }
+
+            for (j = 0; j < blocks->value->nelts; j++) {
+                block = &((njt_conf_element_t*)blocks->value->elts)[j];
+                cmd = block->block_name;
+                if (cmd == NULL) { // IN CASE
+                    if (sub_names->nelts == 1){
+                         sub_name = (njt_str_t *)sub_names->elts;
+                         if (sub_name->len == 0) {
+                            return block;
+                         }
+                    }
+                }
+                if (cmd != NULL) {
+                    // 需要要cmd 和 sub_names 完全一样才算匹配
+                    args = (njt_array_t*)cmd->value->elts; // _key must be one line
+                    same = 0;
+
+                    if (args->nelts == sub_names->nelts){
+                        for (k = 0; k < args->nelts; k++) {
+                            arg = &((njt_str_t*)args->elts)[k];
+                            sub_name = &((njt_str_t*)sub_names->elts)[k];
+                            if (njt_conf_http_location_full_name_cmp(*arg, *sub_name) == NJT_OK) {
+                                same++;
+                            } else {
+                                break;
+                            }
+                        }
+                        if (same == args->nelts) {
+                            return block;
+                        }
+                    }
                 }
             }
 
@@ -2044,7 +2386,7 @@ njt_conf_dyn_loc_add_sub_loc(njt_pool_t *pool, njt_conf_element_t *block,
                              njt_conf_sub_location_info_t *loc_info) 
 {
     njt_uint_t                   i;
-    njt_str_t                    full_name, loc_full_name, *arg;
+    njt_str_t                    full_name, *arg;
     njt_str_t                    s_loc, s_rule, s_loc_name, s_body, s_pass;
     njt_pool_t                   *dyn_pool;
     njt_array_t                  *cf;
@@ -2057,7 +2399,7 @@ njt_conf_dyn_loc_add_sub_loc(njt_pool_t *pool, njt_conf_element_t *block,
         return NJT_ERROR;
     }
 
-    full_name.data = njt_palloc(dyn_pool, 1023);
+    full_name.data = njt_palloc(dyn_pool, 1024);
     if (full_name.data == NULL) {
         return NJT_ERROR;
     }
@@ -2099,13 +2441,12 @@ njt_conf_dyn_loc_add_sub_loc(njt_pool_t *pool, njt_conf_element_t *block,
         p = njt_snprintf(full_name.data, 1023, "%V", &loc_info->location);
     }
     full_name.len = p - full_name.data;
-    loc_full_name = add_escape(dyn_pool, full_name);
 
-    loc = njt_conf_get_simple_location_block(pool, block, &loc_full_name);
+    loc = njt_conf_get_simple_location_block(pool, block, &full_name);
         
     if (loc == NULL) {
         njt_destroy_pool(dyn_pool);
-        printf("error, should have location \n");
+        // printf("error, should have location \n");
         return NJT_ERROR;
     } else {
         // loc = njt_pcalloc(pool, sizeof(njt_conf_element_t));
@@ -2117,10 +2458,10 @@ njt_conf_dyn_loc_add_sub_loc(njt_pool_t *pool, njt_conf_element_t *block,
         return NJT_ERROR;
     }
     arg = njt_array_push(cf);
-    arg->len = -1; // first is the cmd name
+    arg->len = 0; // first is the cmd name
     arg = njt_array_push(cf);
-    arg->data = loc_full_name.data;
-    arg->len = loc_full_name.len;
+    arg->data = full_name.data;
+    arg->len = full_name.len;
 
     loc->block_name = njt_pcalloc(pool, sizeof(njt_command_t));
     if (loc->block_name == NULL) {
@@ -2193,11 +2534,6 @@ njt_conf_dyn_loc_add_sub_loc(njt_pool_t *pool, njt_conf_element_t *block,
         }
     }
 
-    // if (njt_conf_add_block(pool, block, loc, &s_loc) != NJT_OK) {
-    //     return NJT_ERROR;
-    // }
-
-    // loc = njt_conf_get_simple_location_block(pool, block, &loc_full_name);
     if (loc_info->sub_location_array != NULL) {
         for (i = 0; i < loc_info->sub_location_array->nelts; i++) {
             sub_loc = &((njt_conf_sub_location_info_t *)loc_info->sub_location_array->elts)[i];
@@ -2282,44 +2618,46 @@ njt_conf_dyn_loc_add_loc(njt_pool_t *pool, njt_conf_element_t *root, njt_conf_lo
     }
 
     // add type -> add; 
-    cf = njt_array_create(dyn_pool, 2, sizeof(njt_str_t));
-    if (cf == NULL) {
-        return NJT_ERROR;
-    }
-    arg = njt_array_push(cf);
-    njt_memcpy(arg, &s_type, sizeof(njt_str_t));
-    arg = njt_array_push(cf);
-    njt_memcpy(arg, &s_add, sizeof(njt_str_t));
+    if (njt_conf_get_cmd_conf(svr, &s_type) == NULL) {
+        cf = njt_array_create(dyn_pool, 2, sizeof(njt_str_t));
+        if (cf == NULL) {
+            return NJT_ERROR;
+        }
+        arg = njt_array_push(cf);
+        njt_memcpy(arg, &s_type, sizeof(njt_str_t));
+        arg = njt_array_push(cf);
+        njt_memcpy(arg, &s_add, sizeof(njt_str_t));
 
-    if (njt_conf_set_cmd(pool, svr, cf) != NJT_OK) {
-        return NJT_ERROR;
-    }
+        if (njt_conf_set_cmd(pool, svr, cf) != NJT_OK) {
+            return NJT_ERROR;
+        }
 
-    // add addr_port; 
-    cf = njt_array_create(dyn_pool, 2, sizeof(njt_str_t));
-    if (cf == NULL) {
-        return NJT_ERROR;
-    }
-    arg = njt_array_push(cf);
-    njt_memcpy(arg, &s_port, sizeof(njt_str_t));
-    arg = njt_array_push(cf);
-    njt_memcpy(arg, &loc_info->addr_port, sizeof(njt_str_t));
+        // add addr_port;
+        cf = njt_array_create(dyn_pool, 2, sizeof(njt_str_t));
+        if (cf == NULL) {
+            return NJT_ERROR;
+        }
+        arg = njt_array_push(cf);
+        njt_memcpy(arg, &s_port, sizeof(njt_str_t));
+        arg = njt_array_push(cf);
+        njt_memcpy(arg, &loc_info->addr_port, sizeof(njt_str_t));
 
-    if (njt_conf_set_cmd(pool, svr, cf) != NJT_OK) {
-        return NJT_ERROR;
-    }
-    // add server-name; 
-    cf = njt_array_create(dyn_pool, 2, sizeof(njt_str_t));
-    if (cf == NULL) {
-        return NJT_ERROR;
-    }
-    arg = njt_array_push(cf);
-    njt_memcpy(arg, &s_svr_name, sizeof(njt_str_t));
-    arg = njt_array_push(cf);
-    njt_memcpy(arg, &loc_info->server_name, sizeof(njt_str_t));
+        if (njt_conf_set_cmd(pool, svr, cf) != NJT_OK) {
+            return NJT_ERROR;
+        }
+        // add server-name;
+        cf = njt_array_create(dyn_pool, 2, sizeof(njt_str_t));
+        if (cf == NULL) {
+            return NJT_ERROR;
+        }
+        arg = njt_array_push(cf);
+        njt_memcpy(arg, &s_svr_name, sizeof(njt_str_t));
+        arg = njt_array_push(cf);
+        njt_memcpy(arg, &loc_info->server_name, sizeof(njt_str_t));
 
-    if (njt_conf_set_cmd(pool, svr, cf) != NJT_OK) {
-        return NJT_ERROR;
+        if (njt_conf_set_cmd(pool, svr, cf) != NJT_OK) {
+            return NJT_ERROR;
+        }
     }
 
     // for each location 
@@ -2407,6 +2745,7 @@ njt_int_t njt_conf_dyn_loc_del_loc(njt_pool_t * pool, njt_conf_element_t *root, 
     full_name.len = p - full_name.data;
     loc_full_name = add_escape(dyn_pool, full_name);
 
+    printf("del loc full name: %s\n", loc_full_name.data);
     loc = njt_conf_get_simple_location_block(dyn_pool, svr, &loc_full_name);
     if (loc == NULL) {
         njt_destroy_pool(dyn_pool);
@@ -2632,6 +2971,7 @@ njt_conf_dyn_loc_merge_location(njt_pool_t *pool, njt_str_t* addr_port, njt_str_
             s_fullname.len += arg->len;
         }
 
+        printf("s_fullname: %s\n", s_fullname.data);
         // TODO 如果以后允许嵌套增加dyn_loc， 这里逻辑要改成递归的
         old_loc = njt_conf_get_simple_location_block(dyn_pool, svr, &s_fullname);
         if (old_loc != NULL) {
@@ -2759,6 +3099,9 @@ void njt_conf_dyn_loc_get_json_length(njt_conf_element_t *root, size_t *length, 
     }
 
     if (root->blocks == NULL) {
+        if (root->cmds == NULL && root->block_name == NULL) {
+            *length += 1;
+        }
         return;
     }
 
@@ -3093,6 +3436,9 @@ void njt_conf_dyn_loc_get_pub_json_length(njt_conf_element_t *root, size_t *leng
     }
 
     if (root->blocks == NULL) {
+        if (root->cmds == NULL && root->block_name == NULL) {
+            *length += 1;
+        }
         return;
     }
 

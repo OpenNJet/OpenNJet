@@ -269,14 +269,13 @@ njt_conf_parse(njt_conf_t *cf, njt_str_t *filename)
             goto done;
         }
 
-        // add by dyn_conf
+#if (NJT_HELPER_GO_DYNCONF) // by lcm
         if (njt_conf_pool_ptr != NULL) { 
             if (njt_conf_element_handler(njt_conf_pool_ptr, cf, rc) != NJT_OK) {
                 printf("error occured \n");
             }
         }
-        // end of add
-
+#endif
 
         if (rc == NJT_CONF_BLOCK_DONE) {
 
@@ -550,7 +549,15 @@ njt_conf_read_token(njt_conf_t *cf)
     s_quoted = 0;
     d_quoted = 0;
 
+    if(cf->ori_args == NULL) {
+        cf->ori_args = njt_array_create(cf->pool, 10, sizeof(njt_str_t));
+        if (cf->ori_args == NULL) {
+            return NJT_ERROR;
+        }
+    }
+    cf->ori_args->nelts = 0;
     cf->args->nelts = 0;
+
     b = cf->conf_file->buffer;
     dump = cf->conf_file->dump;
     start = b->pos;
@@ -574,8 +581,8 @@ njt_conf_read_token(njt_conf_t *cf)
                     }
 
                     njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
-                                  "unexpected end of file, "
-                                  "expecting \";\" or \"}\"");
+                                       "unexpected end of file, "
+                                       "expecting \";\" or \"}\"");
                     return NJT_ERROR;
                 }
 
@@ -830,6 +837,24 @@ njt_conf_read_token(njt_conf_t *cf)
                 }
                 *dst = '\0';
                 word->len = len;
+
+
+                word = njt_array_push(cf->ori_args);
+                if (word == NULL) {
+                    return NJT_ERROR;
+                }
+
+                word->len = src- start + need_space + 1 - last_space; 
+                
+                word->data = njt_pnalloc(cf->pool,word->len);
+                if (word->data == NULL) {
+                    return NJT_ERROR;
+                }
+
+                njt_memcpy(word->data,start - need_space,word->len);
+                //word->data = start - need_space;
+               
+
 
                 if (ch == ';') {
                     return NJT_OK;
@@ -1543,7 +1568,7 @@ njt_conf_read_memory_token(njt_conf_t *cf,njt_str_t data)
 
     b = &new_buf;
     new_buf.start = data.data;
-    new_buf.end = data.data + data.len;
+    new_buf.end = data.data + data.len - 1;
 
     new_buf.pos = new_buf.start;
     new_buf.last = new_buf.end;
@@ -1564,7 +1589,7 @@ njt_conf_read_memory_token(njt_conf_t *cf,njt_str_t data)
                 }
 
                 for (dst = word->data, src = start, len = 0;
-                     src < b->pos;
+                     src <= b->pos;
                      len++)
                 {
                     if (*src == '\\') {

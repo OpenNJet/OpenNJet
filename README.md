@@ -35,56 +35,27 @@ OpenNJet 最早是基于 NGINX1.19 基础 fork 并独立演进，OpenNJet 具有
 
 # **快速开始**
 
-提供基于 Dockerfile 文件的形式进行快速编译
+  我们提供了几种快速使用的方法：
+    二进制安装
+    发行版安装
+    源码安装
+    docker镜像启动
 
-- 依赖：docker 环境（需要在编译机器安装docker并启动docker）
+  前三种方式请参考：https://njet.org.cn/docs/quickstart/
+  docker镜像启动请参考：https://njet.org.cn/cases/njet-docker/
 
-- 步骤：  
+# **镜像构建**
 
-1. 下载 OpenNJet 源码
-2. 执行如下命令：
+  如果大家想制作OpenNJet镜像，可使用如下方法：
 
+下载njet_main源码，执行如下命令：
 ```
-     docker build -t njet_main:v1.0 .
-
-​    docker run -v `pwd`:/njet_main njet_main:v1.0 /bin/bash -c "cd /njet_main && ./build_cc.sh conf make"
-```
-
-3. 编译完后，在 objs 目录下，主要包含 njet 文件和相关的 so 文件
-
-​     njet 可执行文件
-
-​     *.so 相关模块对应的动态库文件
-
-# **APT软件源安装使用**
-
-目前支持Ubuntu 18.04/20.04/22.04 amd64 架构的操作系统通过APT源直接安装二进制软件包。步骤如下：
-
-1. 添加gpg 文件
-
-```
-sudo apt-get update
-sudo apt-get install ca-certificates curl gnupg
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://njet.org.cn/download/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/njet.gpg
-sudo chmod a+r /etc/apt/keyrings/njet.gpg
-```
-
-2. 添加APT源
-
-```
-echo \
-  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/njet.gpg] https://njet.org.cn/download/linux/ubuntu \
-  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
-  sudo tee /etc/apt/sources.list.d/njet.list > /dev/null
-sudo apt-get update
-```
-
-3. 安装及启动
-
-```
-sudo apt-get install njet
-sudo systemctl start njet
+  cd njet_main
+  //导入环境变量
+  export NJET_RIEPOSITORY="tmlake/njet"
+  export NJET_TAG="latest"
+  //构建镜像
+  docker build --build-arg NJet_VERSION=$NJET_TAG --build-arg GIT_COMMIT=$(gitrev-parse HEAD) --network host --target ubuntu-njet -f ./build/docker/Dockerfile_njet -t $NJET_RIEPOSITORY:$NJET_TAG ./
 ```
 
 

@@ -16,18 +16,18 @@
 /*
  * RFC 9000, 17.2.  Long Header Packets
  *           17.3.  Short Header Packets
- * 
+ *
  * QUIC flags in first byte
  */
 #define NJT_QUIC_PKT_LONG       0x80  /* header form */
 #define NJT_QUIC_PKT_FIXED_BIT  0x40
-#define NJT_QUIC_PKT_TYPE       0x30   /* in long packet */
-#define NJT_QUIC_PKT_KPHASE     0x04   /* in short packet */
+#define NJT_QUIC_PKT_TYPE       0x30  /* in long packet */
+#define NJT_QUIC_PKT_KPHASE     0x04  /* in short packet */
 
 #define njt_quic_long_pkt(flags)  ((flags) & NJT_QUIC_PKT_LONG)
 #define njt_quic_short_pkt(flags)  (((flags) & NJT_QUIC_PKT_LONG) == 0)
 
-/* long packet types */
+/* Long packet types */
 #define NJT_QUIC_PKT_INITIAL    0x00
 #define NJT_QUIC_PKT_ZRTT       0x10
 #define NJT_QUIC_PKT_HANDSHAKE  0x20
@@ -50,29 +50,29 @@
 #define njt_quic_level_name(lvl)                                              \
     (lvl == ssl_encryption_application) ? "app"                               \
         : (lvl == ssl_encryption_initial) ? "init"                            \
-        : (lvl == ssl_encryption_handshake) ? "hs" : "early"
+            : (lvl == ssl_encryption_handshake) ? "hs" : "early"
 
-#define NJT_QUIC_MAX_CID_LEN                          20
-#define NJT_QUIC_SERVER_CID_LEN                       NJT_QUIC_MAX_CID_LEN
+#define NJT_QUIC_MAX_CID_LEN                             20
+#define NJT_QUIC_SERVER_CID_LEN                          NJT_QUIC_MAX_CID_LEN
 
 /* 12.4.  Frames and Frame Types */
 #define NJT_QUIC_FT_PADDING                              0x00
 #define NJT_QUIC_FT_PING                                 0x01
 #define NJT_QUIC_FT_ACK                                  0x02
 #define NJT_QUIC_FT_ACK_ECN                              0x03
-#define NJT_QUIC_FT_RESET_STREAM                         0X04
+#define NJT_QUIC_FT_RESET_STREAM                         0x04
 #define NJT_QUIC_FT_STOP_SENDING                         0x05
-#define NJT_QUIC_FT_CRYPTO                               0X06
+#define NJT_QUIC_FT_CRYPTO                               0x06
 #define NJT_QUIC_FT_NEW_TOKEN                            0x07
-#define NJT_QUIC_FT_STREAM                               0X08
-#define NJT_QUIC_FT_STREAM1                              0X09
-#define NJT_QUIC_FT_STREAM2                              0X0A
-#define NJT_QUIC_FT_STREAM3                              0X0B
-#define NJT_QUIC_FT_STREAM4                              0X0C
-#define NJT_QUIC_FT_STREAM5                              0X0D
-#define NJT_QUIC_FT_STREAM6                              0X0E
-#define NJT_QUIC_FT_STREAM7                              0X0F
-#define NJT_QUIC_FT_MAX_DATA                             0X10
+#define NJT_QUIC_FT_STREAM                               0x08
+#define NJT_QUIC_FT_STREAM1                              0x09
+#define NJT_QUIC_FT_STREAM2                              0x0A
+#define NJT_QUIC_FT_STREAM3                              0x0B
+#define NJT_QUIC_FT_STREAM4                              0x0C
+#define NJT_QUIC_FT_STREAM5                              0x0D
+#define NJT_QUIC_FT_STREAM6                              0x0E
+#define NJT_QUIC_FT_STREAM7                              0x0F
+#define NJT_QUIC_FT_MAX_DATA                             0x10
 #define NJT_QUIC_FT_MAX_STREAM_DATA                      0x11
 #define NJT_QUIC_FT_MAX_STREAMS                          0x12
 #define NJT_QUIC_FT_MAX_STREAMS2                         0x13
@@ -158,16 +158,16 @@ typedef struct {
 
 
 typedef struct {
-    uint64_t                                     seqnum;
-    uint64_t                                     retire;
-    uint8_t                                      len;
-    u_char                                       cid[NJT_QUIC_CID_LEN_MAX];
-    u_char                                       srt[NJT_QUIC_SR_TOKEN_LEN];
+    uint64_t                                    seqnum;
+    uint64_t                                    retire;
+    uint8_t                                     len;
+    u_char                                      cid[NJT_QUIC_CID_LEN_MAX];
+    u_char                                      srt[NJT_QUIC_SR_TOKEN_LEN];
 } njt_quic_new_conn_id_frame_t;
 
 
 typedef struct {
-    uint64_t                                      length;
+    uint64_t                                    length;
 } njt_quic_new_token_frame_t;
 
 /*
@@ -176,8 +176,8 @@ typedef struct {
  * frame lacking some properties
  */
 typedef struct {
-    uint64_t                                       offset;
-    uint64_t                                       length;
+    uint64_t                                    offset;
+    uint64_t                                    length;
 } njt_quic_ordered_frame_t;
 
 typedef njt_quic_ordered_frame_t  njt_quic_crypto_frame_t;
@@ -185,158 +185,159 @@ typedef njt_quic_ordered_frame_t  njt_quic_crypto_frame_t;
 
 typedef struct {
     /* initial fields same as in njt_quic_ordered_frame_t */
-    uint64_t                                       offset;
-    uint64_t                                       length;
+    uint64_t                                    offset;
+    uint64_t                                    length;
 
-    uint64_t                                       stream_id;
-    unsigned                                       off:1;
-    unsigned                                       len:1;
-    unsigned                                       fin:1;
+    uint64_t                                    stream_id;
+    unsigned                                    off:1;
+    unsigned                                    len:1;
+    unsigned                                    fin:1;
 } njt_quic_stream_frame_t;
 
 
 typedef struct {
-    uint64_t                                       max_data;
+    uint64_t                                    max_data;
 } njt_quic_max_data_frame_t;
 
 
 typedef struct {
-    uint64_t                                       error_code;
-    uint64_t                                       frame_type;
-    njt_str_t                                      reason;
+    uint64_t                                    error_code;
+    uint64_t                                    frame_type;
+    njt_str_t                                   reason;
 } njt_quic_close_frame_t;
 
 
 typedef struct {
-    uint64_t                                       id;
-    uint64_t                                       error_code;
-    uint64_t                                       final_size;
+    uint64_t                                    id;
+    uint64_t                                    error_code;
+    uint64_t                                    final_size;
 } njt_quic_reset_stream_frame_t;
 
 
 typedef struct {
-    uint64_t                                       id;
-    uint64_t                                       error_code;
+    uint64_t                                    id;
+    uint64_t                                    error_code;
 } njt_quic_stop_sending_frame_t;
 
 
 typedef struct {
-    uint64_t                                        limit;
-    njt_uint_t                                      bidi;  /* unsigned: bidi:1 */
+    uint64_t                                    limit;
+    njt_uint_t                                  bidi;  /* unsigned: bidi:1 */
 } njt_quic_streams_blocked_frame_t;
 
 
 typedef struct {
-    uint64_t                                        limit;
-    njt_uint_t                                      bidi;  /* unsigned: bidi:1 */
+    uint64_t                                    limit;
+    njt_uint_t                                  bidi;  /* unsigned: bidi:1 */
 } njt_quic_max_streams_frame_t;
 
 
 typedef struct {
-    uint64_t                                         id;
-    uint64_t                                         limit;
+    uint64_t                                    id;
+    uint64_t                                    limit;
 } njt_quic_max_stream_data_frame_t;
 
 
 typedef struct {
-    uint64_t                                         limit;
+    uint64_t                                    limit;
 } njt_quic_data_blocked_frame_t;
 
 
 typedef struct {
-    uint64_t                                         id;
-    uint64_t                                         limit;
+    uint64_t                                    id;
+    uint64_t                                    limit;
 } njt_quic_stream_data_blocked_frame_t;
 
 
 typedef struct {
-    uint64_t                                         sequence_number;
+    uint64_t                                    sequence_number;
 } njt_quic_retire_cid_frame_t;
 
 
 typedef struct {
-    u_char                                           data[8];
+    u_char                                      data[8];
 } njt_quic_path_challenge_frame_t;
 
 
-typedef struct njt_quic_frame_s                      njt_quic_frame_t;
+typedef struct njt_quic_frame_s                 njt_quic_frame_t;
 
 struct njt_quic_frame_s {
-    njt_uint_t                                       type;
-    enum ssl_encryption_level_t                      level;
-    njt_queue_t                                      queue;
-    uint64_t                                         pnum;
-    size_t                                           plen;
-    njt_msec_t                                       first;
-    njt_msec_t                                       last;
-    ssize_t                                          len;
-    unsigned                                         need_ack:1;
-    unsigned                                         pkt_need_ack:1;
+    njt_uint_t                                  type;
+    enum ssl_encryption_level_t                 level;
+    njt_queue_t                                 queue;
+    uint64_t                                    pnum;
+    size_t                                      plen;
+    njt_msec_t                                  send_time;
+    ssize_t                                     len;
+    unsigned                                    need_ack:1;
+    unsigned                                    pkt_need_ack:1;
+    unsigned                                    ignore_congestion:1;
 
-    njt_chain_t                                     *data;
+    njt_chain_t                                *data;
     union {
-        njt_quic_ack_frame_t                         ack;
-        njt_quic_crypto_frame_t                      crypto;
-        njt_quic_ordered_frame_t                     ord;
-        njt_quic_new_conn_id_frame_t                 ncid;
-        njt_quic_new_token_frame_t                   token;
-        njt_quic_stream_frame_t                      stream;
-        njt_quic_max_data_frame_t                    max_data;
-        njt_quic_close_frame_t                       close;
-        njt_quic_reset_stream_frame_t                reset_stream;
-        njt_quic_stop_sending_frame_t                stop_sending;
-        njt_quic_streams_blocked_frame_t             streams_blocked;
-        njt_quic_max_streams_frame_t                 max_streams;
-        njt_quic_max_stream_data_frame_t             max_stream_data;
-        njt_quic_data_blocked_frame_t                data_blocked;
-        njt_quic_stream_data_blocked_frame_t         stream_data_blocked;
-        njt_quic_retire_cid_frame_t                  retire_cid;
-        njt_quic_path_challenge_frame_t              path_challenge;
-        njt_quic_path_challenge_frame_t              path_response;
+        njt_quic_ack_frame_t                    ack;
+        njt_quic_crypto_frame_t                 crypto;
+        njt_quic_ordered_frame_t                ord;
+        njt_quic_new_conn_id_frame_t            ncid;
+        njt_quic_new_token_frame_t              token;
+        njt_quic_stream_frame_t                 stream;
+        njt_quic_max_data_frame_t               max_data;
+        njt_quic_close_frame_t                  close;
+        njt_quic_reset_stream_frame_t           reset_stream;
+        njt_quic_stop_sending_frame_t           stop_sending;
+        njt_quic_streams_blocked_frame_t        streams_blocked;
+        njt_quic_max_streams_frame_t            max_streams;
+        njt_quic_max_stream_data_frame_t        max_stream_data;
+        njt_quic_data_blocked_frame_t           data_blocked;
+        njt_quic_stream_data_blocked_frame_t    stream_data_blocked;
+        njt_quic_retire_cid_frame_t             retire_cid;
+        njt_quic_path_challenge_frame_t         path_challenge;
+        njt_quic_path_challenge_frame_t         path_response;
     } u;
 };
 
 
 typedef struct {
-    njt_log_t                                       *log;
-    njt_quic_path_t                                 *path;
+    njt_log_t                                  *log;
+    njt_quic_path_t                            *path;
 
-    njt_quic_keys_t                                 *keys;
+    njt_quic_keys_t                            *keys;
 
-    njt_msec_t                                       received;
-    uint64_t                                         number;
-    uint8_t                                          num_len;
-    uint32_t                                         trunc;
-    uint8_t                                          flags;
-    uint32_t                                         version;
-    njt_str_t                                        token;
-    enum ssl_encryption_level_t                      level;
-    njt_uint_t                                       error;
+    njt_msec_t                                  received;
+    uint64_t                                    number;
+    uint8_t                                     num_len;
+    uint32_t                                    trunc;
+    uint8_t                                     flags;
+    uint32_t                                    version;
+    njt_str_t                                   token;
+    enum ssl_encryption_level_t                 level;
+    njt_uint_t                                  error;
 
     /* filled in by parser */
-    njt_buf_t                                       *raw;
+    njt_buf_t                                  *raw;   /* udp datagram */
 
-    u_char                                          *data;
-    size_t                                           len;
+    u_char                                     *data;  /* quic packet */
+    size_t                                      len;
 
-    /* cleartext field */
-    njt_str_t                                        odcid; /* retry packet tag */
-    u_char                                           odcid_buf[NJT_QUIC_MAX_CID_LEN];
-    njt_str_t                                        dcid;
-    njt_str_t                                        scid;
-    uint64_t                                         pn;
-    u_char                                          *plaintext;
-    njt_str_t                                        payload; /* decrypted data */
+    /* cleartext fields */
+    njt_str_t                                   odcid; /* retry packet tag */
+    u_char                                      odcid_buf[NJT_QUIC_MAX_CID_LEN];
+    njt_str_t                                   dcid;
+    njt_str_t                                   scid;
+    uint64_t                                    pn;
+    u_char                                     *plaintext;
+    njt_str_t                                   payload; /* decrypted data */
 
-    unsigned                                          need_ack:1;
-    unsigned                                          key_phase:1;
-    unsigned                                          key_update:1;
-    unsigned                                          parsed:1;
-    unsigned                                          decrypted:1;
-    unsigned                                          validated:1;
-    unsigned                                          retried:1;
-    unsigned                                          first:1;
-    unsigned                                          rebound:1;
+    unsigned                                    need_ack:1;
+    unsigned                                    key_phase:1;
+    unsigned                                    key_update:1;
+    unsigned                                    parsed:1;
+    unsigned                                    decrypted:1;
+    unsigned                                    validated:1;
+    unsigned                                    retried:1;
+    unsigned                                    first:1;
+    unsigned                                    rebound:1;
+    unsigned                                    path_challenged:1;
 } njt_quic_header_t;
 
 

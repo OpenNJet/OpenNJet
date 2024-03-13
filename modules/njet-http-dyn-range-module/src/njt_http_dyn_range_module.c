@@ -603,7 +603,7 @@ static u_char* njt_http_dyn_range_rpc_handler(njt_str_t *topic, njt_str_t *reque
     if(buf == NULL){
         goto end;
     }
-    njt_log_error(NJT_LOG_INFO, pool->log, 0, "send json : %V",msg);
+    // njt_log_error(NJT_LOG_INFO, pool->log, 0, "send json : %V",msg);
     njt_memcpy(buf, msg->data, msg->len);
     *len = msg->len;
 

@@ -937,7 +937,7 @@ njt_http_variable_headers_internal(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data, u_char sep)
 {
     size_t            len;
-    u_char           *p;
+    u_char           *p, *end;
     njt_table_elt_t  *h, *th;
 
     h = *(njt_table_elt_t **) ((char *) r + data);
@@ -979,6 +979,8 @@ njt_http_variable_headers_internal(njt_http_request_t *r,
     v->len = len;
     v->data = p;
 
+    end = p + len;
+
     for (th = h; th; th = th->next) {
 
         if (th->hash == 0) {
@@ -987,7 +989,7 @@ njt_http_variable_headers_internal(njt_http_request_t *r,
 
         p = njt_copy(p, th->value.data, th->value.len);
 
-        if (th->next == NULL) {
+        if (p == end) {
             break;
         }
 

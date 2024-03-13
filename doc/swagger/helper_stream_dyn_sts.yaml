@@ -1,0 +1,128 @@
+openapi: 3.0.3
+info:
+  title: dyn config api
+  description: 动态config 开关
+  version: 1.0.0
+
+servers:
+  - url: '/config/2'
+paths:
+  /config/:
+    get:
+      tags:
+        - dyn config module
+      summary: Returns a list of allow dynamic conf module
+      description: Returns a list of allow dynamic conf module
+      operationId: getDynConfModuleList
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleList'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+  /config/stream_dyn_sts:
+    put:
+      tags:
+        - stream dyn sts config
+      summary: set module conf
+      description: set module conf
+      operationId: setDynModuleConf
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+    get:
+      tags:
+        - stream dyn sts config 
+      summary: return dynamic module conf
+      description: get module conf
+      operationId: getDynModuleConf
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+        data:
+          type: array
+          items:
+            type: object
+    ModuleList:
+      title: module list
+      description: 支持动态配置的模块列表
+      type: array
+      items:
+        type: string
+    MainConf:
+      title: main Conf
+      description: 动态 main 级别配置
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServerConf'
+
+    ServerConf:
+      title: ServerConf
+      description: 动态 server 级别配置
+      type: object
+      properties:
+        listens:
+          type: array
+          description: server listen 端口列表
+          items:
+            type: string
+        server_traffic_status:
+          type: boolean
+          description: 指标采集开关
+        server_traffic_status_filter_by_set_key:
+          type: array
+          description: 指标过滤器
+          items:
+            type: string
+

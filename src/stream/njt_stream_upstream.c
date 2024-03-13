@@ -21,8 +21,8 @@ static njt_int_t njt_stream_upstream_bytes_variable(njt_stream_session_t *s,
 
 static char *njt_stream_upstream(njt_conf_t *cf, njt_command_t *cmd,
     void *dummy);
-static char *njt_stream_upstream_server(njt_conf_t *cf, njt_command_t *cmd,
-    void *conf);
+//static char *njt_stream_upstream_server(njt_conf_t *cf, njt_command_t *cmd,
+//    void *conf);
 static void *njt_stream_upstream_create_main_conf(njt_conf_t *cf);
 static char *njt_stream_upstream_init_main_conf(njt_conf_t *cf, void *conf);
 
@@ -35,14 +35,14 @@ static njt_command_t  njt_stream_upstream_commands[] = {
       0,
       0,
       NULL },
-
+/* by zyg  add njt_stream_upstream_dynamic_servers.c
     { njt_string("server"),
       NJT_STREAM_UPS_CONF|NJT_CONF_1MORE,
       njt_stream_upstream_server,
       NJT_STREAM_SRV_CONF_OFFSET,
       0,
       NULL },
-
+*/
       njt_null_command
 };
 
@@ -399,7 +399,7 @@ njt_stream_upstream(njt_conf_t *cf, njt_command_t *cmd, void *dummy)
     return rv;
 }
 
-
+/*
 static char *
 njt_stream_upstream_server(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
@@ -559,7 +559,7 @@ not_supported:
                        &value[i]);
 
     return NJT_CONF_ERROR;
-}
+}*/
 
 
 njt_stream_upstream_srv_conf_t *

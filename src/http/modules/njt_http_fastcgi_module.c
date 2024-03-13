@@ -2056,7 +2056,10 @@ njt_http_fastcgi_process_header(njt_http_request_t *r)
                     }
 
                     u->headers_in.status_n = status;
-                    u->headers_in.status_line = *status_line;
+
+                    if (status_line->len > 3) {
+                        u->headers_in.status_line = *status_line;
+                    }
 
                 } else if (u->headers_in.location) {
                     u->headers_in.status_n = 302;

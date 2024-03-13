@@ -31,6 +31,8 @@ njt_http_v3_init_session(njt_connection_t *c)
         goto failed;
     }
 
+    h3c->http_connection = hc;
+
     njt_queue_init(&h3c->blocked);
 
     h3c->keepalive.log = c->log;
@@ -49,7 +51,7 @@ njt_http_v3_init_session(njt_connection_t *c)
     cln->handler = njt_http_v3_cleanup_session;
     cln->data = h3c;
 
-    hc->v3_session = h3c;
+    c->data = h3c;
 
     return NJT_OK;
 

@@ -13,6 +13,7 @@ module_core_src="$module_core_src $njt_addon_dir/src/njt_rpc_result_parser.c"
 
 module_core_src="$module_core_src $njt_addon_dir/src/hints.c"
 module_core_src="$module_core_src $njt_addon_dir/src/msgpuck.c"
+module_core_src="$module_core_src $njt_addon_dir/src/njt_stream_util.c"
 
 # module_core_src="\
 # $module_core_src \

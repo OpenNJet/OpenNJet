@@ -9,6 +9,7 @@
 #include "njt_http_sendmsg_module.h"
 #include <njt_str_util.h>
 #include <njt_http_util.h>
+#include "njet_http_api_register_module.h"
 
 #define MIN_CONFIG_BODY_LEN 2
 #define MAX_CONFIG_BODY_LEN 5242880
@@ -16,7 +17,6 @@
 typedef struct {
     njt_http_request_t **reqs;
     njt_int_t size;
-    njt_uint_t config_api_enabled;
 }njt_ctrl_dynlog_main_cf_t;
 
 
@@ -260,31 +260,13 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
         goto err;
     }
 
-    // // 添加json_str校验逻辑
-    // rc = njt_json_2_structure(&json_str,&json_manager,r->pool);
-    // if(rc!=NJT_OK){
-    //     goto err;
-    // }
-
-    if(uri[0].data[0] == '1'){
-        njt_str_t  key_prf_1 = njt_string("/dyn/");
-        njt_str_concat(r->pool,topic,key_prf_1,uri[2],return );
-        rc = njt_dyn_sendmsg(&topic,&json_str,1);
-    } else if(uri[0].data[0] == '2') {
-        njt_str_t  key_prf_2 = njt_string("/worker_a/dyn/");
-        njt_str_concat(r->pool,topic,key_prf_2,uri[2],return );
-        rc = njt_ctrl_dynlog_rpc_send(r,&topic,&json_str, 0);
-    } else {
-        rc = NJT_HTTP_NOT_FOUND;
-    }
+    njt_str_t  key_prf_2 = njt_string("/worker_a/dyn/");
+    njt_str_concat(r->pool,topic,key_prf_2,uri[2],return );
+    rc = njt_ctrl_dynlog_rpc_send(r,&topic,&json_str, 0);
+    
     if(rc == NJT_OK){
-        if(uri[0].data[0] == '1'){
-            njt_ctrl_dynlog_request_output(r,NJT_OK,NULL);
-        } else if(uri[0].data[0] == '2') {
-            // 在回调中返回
-            ++r->main->count;
-//            njt_ctrl_dynlog_request_output(r,NJT_OK,&smsg);
-        }
+        // 在回调中返回
+         ++r->main->count;
         goto out;
     }
 
@@ -303,11 +285,7 @@ static void njt_ctrl_dyn_access_log_read_body(njt_http_request_t *r){
     return;
 }
 
-// 增加版本2  www
-#define valid_path_version(ver_uri) (ver_uri.len == 1 && (ver_uri.data[0] == '1' || ver_uri.data[0] == '2'))
-#define valid_path_config(cnf_uri)  (cnf_uri.len == 6 && njt_strncmp(cnf_uri.data,"config",6) ==0)
-
-// /api/1/config/{module_name}
+// /api/v1/config/{module_name}
 static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
     njt_int_t rc;
     njt_array_t *path;
@@ -319,10 +297,7 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
     njt_str_t srv_err = njt_string("{\"code\":500,\"msg\":\"server error\"}");
     njt_str_t not_found_err = njt_string("{\"code\":404,\"msg\":\"not found error\"}");
     njt_str_t rpc_pre = njt_string("/worker_a/rpc/");
-    njt_ctrl_dynlog_main_cf_t * uclcf = njt_http_get_module_loc_conf(r, njt_ctrl_config_api_module);
-    if(uclcf == NULL  || uclcf->config_api_enabled == NJT_CONF_UNSET_UINT || uclcf->config_api_enabled == 0){
-        return NJT_DECLINED;
-    }
+
     path = njt_array_create( r->pool, 4, sizeof(njt_str_t));
     if (path == NULL) {
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0,"array init of path error.");
@@ -334,8 +309,7 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
         goto out;
     }
     uri = path->elts;
-    // 增加版本2  www
-    if(path->nelts < 2 || !valid_path_version(uri[0]) || !valid_path_config(uri[1])){
+    if(path->nelts < 2 ){
         rc = NJT_HTTP_NOT_FOUND;
         goto out;
     }
@@ -386,28 +360,8 @@ static njt_int_t njt_dynlog_http_handler(njt_http_request_t *r){
 
     return njt_ctrl_dynlog_request_output(r,NJT_HTTP_INTERNAL_SERVER_ERROR,&srv_err);
 }
-static char *njt_dynlog_http_handler_conf(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
-//    njt_http_core_loc_conf_t *clcf;
-//    clcf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
-//    clcf->handler = njt_dynlog_http_handler;
-
-    njt_ctrl_dynlog_main_cf_t *dlmcf;
-    dlmcf = njt_http_conf_get_module_loc_conf(cf, njt_ctrl_config_api_module);
-    dlmcf->config_api_enabled = 1;
-    return NJT_CONF_OK;
-}
-
-
 
 static njt_command_t njt_dynlog_module_commands[] = {
-        {
-                njt_string("config_api"),
-                NJT_HTTP_LOC_CONF | NJT_CONF_NOARGS,
-                njt_dynlog_http_handler_conf,
-                NJT_HTTP_LOC_CONF_OFFSET,
-                0,
-                NULL
-        },
         {
                 njt_string("config_req_pool_size"),
                 NJT_HTTP_MAIN_CONF| NJT_CONF_TAKE1,
@@ -432,34 +386,28 @@ static njt_int_t   njt_ctrl_dynlog_postconfiguration(njt_conf_t *cf){
         return NJT_ERROR;
     }
 
-    njt_http_core_main_conf_t  *cmcf;
-    njt_http_handler_pt        *h;
-    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
-    //njt_http_upstream_api_handler
-    h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
-    if (h == NULL) {
-        return NJT_ERROR;
-    }
+    // njt_http_core_main_conf_t  *cmcf;
+    // njt_http_handler_pt        *h;
+    // cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
+    // //njt_http_upstream_api_handler
+    // h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
+    // if (h == NULL) {
+    //     return NJT_ERROR;
+    // }
 
-    *h = njt_dynlog_http_handler;
+    // *h = njt_dynlog_http_handler;
+
+    njt_http_api_reg_info_t             h;
+
+    njt_str_t  module_key = njt_string("/v1/config");
+    njt_memzero(&h, sizeof(njt_http_api_reg_info_t));
+    h.key = &module_key;
+    h.handler = njt_dynlog_http_handler;
+    njt_http_api_module_reg_handler(&h);
+
     return NJT_OK;
 }
 
-static void * njt_http_dynlog_create_loc_conf(njt_conf_t *cf){
-    njt_ctrl_dynlog_main_cf_t *conf;
-    conf = njt_palloc(cf->pool,sizeof(njt_ctrl_dynlog_main_cf_t));
-    if(!conf) return NULL;
-    conf->config_api_enabled = NJT_CONF_UNSET_UINT;
-    return conf;
-
-}
-static char * njt_http_dynlog_merge_loc_conf(njt_conf_t *cf, void *parent, void *child){
-    njt_ctrl_dynlog_main_cf_t *prev = parent;
-    njt_ctrl_dynlog_main_cf_t *conf = child;
-
-    njt_conf_merge_uint_value(conf->config_api_enabled, prev->config_api_enabled, 0);
-    return NJT_CONF_OK;
-}
 static void * njt_ctrl_dynlog_create_main_conf(njt_conf_t *cf){
     njt_ctrl_dynlog_main_cf_t *dlmcf;
     dlmcf = njt_pcalloc(cf->pool,sizeof (njt_ctrl_dynlog_main_cf_t));
@@ -480,8 +428,8 @@ static njt_http_module_t njt_ctrl_dynlog_module_ctx = {
         NULL,                                  /* create server configuration */
         NULL,                                  /* merge server configuration */
 
-        njt_http_dynlog_create_loc_conf,                                   /* create location configuration */
-        njt_http_dynlog_merge_loc_conf                                    /* merge location configuration */
+        NULL,                                  /* create location configuration */
+        NULL                                   /* merge location configuration */
 };
 
 njt_module_t njt_ctrl_config_api_module = {
