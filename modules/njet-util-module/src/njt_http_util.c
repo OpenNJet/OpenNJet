@@ -8,7 +8,7 @@
 #include <njt_http_util.h>
 extern njt_module_t  njt_http_proxy_module;
 
-njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
+njt_http_core_srv_conf_t* njt_http_get_srv_by_server_name(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
 	njt_http_core_srv_conf_t* cscf, *ret_cscf;
 	njt_listening_t *ls, *target_ls = NULL;
 	njt_uint_t i,j,k;
@@ -19,7 +19,7 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 	njt_http_in6_addr_t *addr6;
 	njt_http_addr_conf_t *addr_conf;
 	njt_http_server_name_t *sn;
-	njt_str_t server_low_name;
+	njt_str_t server_low_name,full_name;
 	njt_url_t  u;
 	njt_uint_t         worker;
 	struct sockaddr_in   *ssin;
@@ -128,8 +128,9 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 			cscf = addr_conf->default_server;
 			name = cscf->server_names.elts;
 			for(j = 0 ; j < cscf->server_names.nelts ; ++j ){
-				if(name[j].full_name.len == server_name->len
-						&& njt_strncasecmp(name[j].full_name.data,server_name->data,server_name->len) == 0){
+				full_name = njt_get_command_unique_name(pool,name[j].full_name);
+				if(full_name.len == server_name->len
+						&& njt_strncasecmp(full_name.data,server_name->data,server_name->len) == 0){
 					ret_cscf = cscf;
 					goto out;
 				}
@@ -141,8 +142,9 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 				if(server_name->len > 0 && server_name->data[0] == '~') {
 					sn = addr_conf->virtual_names->regex;
 					for (k = 0; k <  addr_conf->virtual_names->nregex; ++k) {
-						if(sn[k].full_name.len == server_name->len &&
-								njt_strncasecmp(sn[k].full_name.data,server_name->data,server_name->len)==0){
+						full_name = njt_get_command_unique_name(pool,sn[k].full_name);
+						if(full_name.len == server_name->len &&
+								njt_strncasecmp(full_name.data,server_name->data,server_name->len)==0){
 							ret_cscf = sn[k].server;
 							goto out;
 						}
@@ -461,4 +463,132 @@ void njt_http_upstream_del(njt_http_upstream_srv_conf_t *upstream) {
 }
 #endif
 
+  njt_str_t njt_get_command_unique_name(njt_pool_t *pool,njt_str_t src) {
+  njt_conf_t cf;
+  njt_str_t full_name,*value,new_src;
+  u_char* index;
+  njt_uint_t len,i;
+  full_name.len = 0;
+  full_name.data = NULL;
+  njt_memzero(&cf, sizeof(njt_conf_t));
+  cf.pool = pool;
+  cf.temp_pool = pool;
+  cf.log = njt_cycle->log;
 
+
+  //njt_str_set(&src,"~\\");
+  if(src.len == 0) {
+	return full_name;
+  }
+   new_src.len = src.len + 3;
+   new_src.data = njt_pcalloc(pool,new_src.len);  //add " {"
+	if (new_src.data == NULL){
+		return full_name;
+	}
+	njt_memcpy(new_src.data,src.data,src.len);
+	new_src.data[new_src.len - 3] = ' ';
+	new_src.data[new_src.len - 2] = '{';
+	new_src.data[new_src.len - 1] = '\0';
+	
+
+  cf.args = njt_array_create(cf.pool, 10, sizeof(njt_str_t));
+    if (cf.args == NULL) {
+        return full_name;
+    }
+   njt_conf_read_memory_token(&cf,new_src);
+   //if(cf.args->nelts > 0) {
+//	cf.args->nelts--;
+  // }
+   len =0;
+   value = cf.args->elts;
+    for(i = 0; i < cf.args->nelts; i++){
+        len += value[i].len;
+    }
+    index = njt_pcalloc(pool,len);
+    if (index == NULL){
+        return full_name;
+    }
+    full_name.data = index;
+    for(i = 0; i < cf.args->nelts; i++){
+        njt_memcpy(index,value[i].data,value[i].len);
+        index += value[i].len;
+        //*index = (u_char)' ';
+        //++index;
+    }
+    full_name.len = len;
+    return full_name;
+ 
+}
+
+
+njt_int_t njt_http_location_full_name_cmp(njt_str_t full_name,njt_str_t src) {
+
+	njt_pool_t  *pool;
+	njt_str_t   command1,command2;
+
+	pool = njt_create_pool(1024, njt_cycle->log);
+	if(pool == NULL) {
+		return NJT_ERROR;
+	}
+
+	command1 = njt_get_command_unique_name(pool,full_name);
+	command2 = njt_get_command_unique_name(pool,src);
+	if(command1.len == command2.len && njt_strncmp(command1.data,command2.data,command1.len) == 0) {
+			njt_destroy_pool(pool);
+			return NJT_OK;
+	}
+	njt_destroy_pool(pool);
+	return NJT_ERROR;
+}
+
+njt_int_t njt_http_server_full_name_cmp(njt_str_t full_name,njt_str_t server_name,njt_uint_t need_parse) {
+	njt_pool_t  *pool;
+	njt_str_t   command1,command2;
+	njt_uint_t  is_case;
+	pool = njt_create_pool(1024, njt_cycle->log);
+	if(pool == NULL) {
+		return NJT_ERROR;
+	}
+	if (need_parse) {
+		command1 = njt_get_command_unique_name(pool,server_name);
+	} else {
+		command1 = server_name;
+	}
+	command2 = njt_get_command_unique_name(pool,full_name);
+	is_case = 1;
+	if(command1.len > 0 && command1.data[0] != '~' && command2.len > 0 && command2.data[0] != '~') {
+		is_case = 0;
+	}
+	is_case = 0;  //我们正则也不区分大小写。所以用 0 
+	if(is_case == 1) {
+		if(command1.len == command2.len && njt_strncmp(command1.data,command2.data,command1.len) == 0) {
+			njt_destroy_pool(pool);
+			return NJT_OK;
+		}
+	} else {
+		if(command1.len == command2.len && njt_strncasecmp(command1.data,command2.data,command1.len) == 0) {
+			njt_destroy_pool(pool);
+			return NJT_OK;
+		}
+	}
+	njt_destroy_pool(pool);
+	return NJT_ERROR;
+}
+
+njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t *addr_port,njt_str_t *server_name){
+
+	njt_pool_t  *pool;
+	njt_str_t   name;
+	njt_http_core_srv_conf_t* srv;
+
+	njt_log_error(NJT_LOG_INFO, cycle->log, 0, "njt_http_get_srv_by_port server_name = %V",server_name);
+	pool = njt_create_pool(1024, njt_cycle->log);
+	if(pool == NULL) {
+		return NULL;
+	}
+	name = njt_get_command_unique_name(pool,*server_name);
+	srv = njt_http_get_srv_by_server_name(cycle,addr_port,&name);
+
+	njt_destroy_pool(pool);
+	return srv;
+}
