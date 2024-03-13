@@ -2,12 +2,12 @@ openapi: 3.0.3
 info:
   title: cache quick
   description: cache加速配置
-  version: 1.0.0
+  version: 1.1.0
 
 servers:
-  - url: '/'
+  - url: '/api'
 paths:
-  /cache:
+  /v1/cache:
     get:
       tags:
         - cache quick config

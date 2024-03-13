@@ -74,3 +74,9 @@
 ./modules/njet-stream-dyn-map-module
 # optional
 ./modules/njet-http-cache-quick-module
+# optional
+./modules/njet-stream-stsd-module
+# optional
+./modules/njet-stream-dyn-sts-module
+# optional
+./modules/njet-http-dyn-lua-module

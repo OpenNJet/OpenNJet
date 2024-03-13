@@ -651,6 +651,8 @@ njt_http_v3_parse_literal(njt_connection_t *c, njt_http_v3_parse_literal_t *st,
                                          st->length == 1, c->log)
                     != NJT_OK)
                 {
+                    njt_log_error(NJT_LOG_INFO, c->log, 0,
+                                  "client sent invalid encoded field line");
                     return NJT_ERROR;
                 }
 

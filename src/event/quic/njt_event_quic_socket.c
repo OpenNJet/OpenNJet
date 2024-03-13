@@ -94,8 +94,8 @@ njt_quic_open_sockets(njt_connection_t *c, njt_quic_connection_t *qc,
 
     tmp->sid.seqnum = NJT_QUIC_UNSET_PN; /* temporary socket */
 
-    njt_memcpy(tmp->sid.id, pkt->odcid.data, pkt->odcid.len);
-    tmp->sid.len = pkt->odcid.len;
+    njt_memcpy(tmp->sid.id, pkt->dcid.data, pkt->dcid.len);
+    tmp->sid.len = pkt->dcid.len;
 
     if (njt_quic_listen(c, qc, tmp) != NJT_OK) {
         goto failed;
@@ -180,6 +180,9 @@ njt_quic_listen(njt_connection_t *c, njt_quic_connection_t *qc,
     qsock->udp.connection = c;
     qsock->udp.node.key = njt_crc32_long(id.data, id.len);
     qsock->udp.key = id;
+
+    //udp traffic hack, init real_sock to -1
+    qsock->udp.real_sock = (njt_socket_t)-1;
 
     njt_rbtree_insert(&c->listening->rbtree, &qsock->udp.node);
 

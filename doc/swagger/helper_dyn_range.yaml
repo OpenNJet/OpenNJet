@@ -2,12 +2,12 @@ openapi: 3.0.3
 info:
   title: dyn range api
   description: 动态range 配置
-  version: 1.0.0
+  version: 1.1.0
 
 servers:
-  - url: '/'
+  - url: '/api'
 paths:
-  /range:
+  /v1/range:
     get:
       tags:
         - dyn range config
@@ -104,6 +104,9 @@ components:
         type:
           type: string
           description: tcp or udp rule
+        family:
+          type: string
+          description: ipv4 or ipv6
         src_ports:
           type: string
           description: 端口范围[10000:10010]或者单个端口 10000

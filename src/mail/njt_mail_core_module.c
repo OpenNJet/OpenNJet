@@ -309,7 +309,7 @@ njt_mail_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_str_t                  *value, size;
     njt_url_t                   u;
     njt_uint_t                  i, n, m;
-    njt_mail_listen_t          *ls, *als;
+    njt_mail_listen_t          *ls, *als, *nls;
     njt_mail_module_t          *module;
     njt_mail_core_main_conf_t  *cmcf;
 
@@ -334,7 +334,7 @@ njt_mail_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     cmcf = njt_mail_conf_get_module_main_conf(cf, njt_mail_core_module);
 
-    ls = njt_array_push_n(&cmcf->listen, u.naddrs);
+    ls = njt_array_push(&cmcf->listen);
     if (ls == NULL) {
         return NJT_CONF_ERROR;
     }
@@ -569,20 +569,40 @@ njt_mail_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
 
-    als = cmcf->listen.elts;
-
     for (n = 0; n < u.naddrs; n++) {
-        ls[n] = ls[0];
 
-        ls[n].sockaddr = u.addrs[n].sockaddr;
-        ls[n].socklen = u.addrs[n].socklen;
-        ls[n].addr_text = u.addrs[n].name;
-        ls[n].wildcard = njt_inet_wildcard(ls[n].sockaddr);
+        for (i = 0; i < n; i++) {
+            if (njt_cmp_sockaddr(u.addrs[n].sockaddr, u.addrs[n].socklen,
+                                 u.addrs[i].sockaddr, u.addrs[i].socklen, 1)
+                == NJT_OK)
+            {
+                goto next;
+            }
+        }
 
-        for (i = 0; i < cmcf->listen.nelts - u.naddrs + n; i++) {
+        if (n != 0) {
+            nls = njt_array_push(&cmcf->listen);
+            if (nls == NULL) {
+                return NJT_CONF_ERROR;
+            }
+
+            *nls = *ls;
+
+        } else {
+            nls = ls;
+        }
+
+        nls->sockaddr = u.addrs[n].sockaddr;
+        nls->socklen = u.addrs[n].socklen;
+        nls->addr_text = u.addrs[n].name;
+        nls->wildcard = njt_inet_wildcard(nls->sockaddr);
+
+        als = cmcf->listen.elts;
+
+        for (i = 0; i < cmcf->listen.nelts - 1; i++) {
 
             if (njt_cmp_sockaddr(als[i].sockaddr, als[i].socklen,
-                                 ls[n].sockaddr, ls[n].socklen, 1)
+                                 nls->sockaddr, nls->socklen, 1)
                 != NJT_OK)
             {
                 continue;
@@ -590,9 +610,12 @@ njt_mail_core_listen(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
             njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                "duplicate \"%V\" address and port pair",
-                               &ls[n].addr_text);
+                               &nls->addr_text);
             return NJT_CONF_ERROR;
         }
+
+    next:
+        continue;
     }
 
     return NJT_CONF_OK;

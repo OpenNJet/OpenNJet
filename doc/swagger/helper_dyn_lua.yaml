@@ -1,0 +1,152 @@
+openapi: 3.0.3
+info:
+  title: dyn lua config api
+  description: 动态config 开关
+  version: 1.1.0
+
+servers:
+  - url: '/api'
+paths:
+  /v1/config/:
+    get:
+      tags:
+        - dyn config module
+      summary: Returns a list of allow dynamic conf module
+      description: Returns a list of allow dynamic conf module
+      operationId: getDynConfModuleList
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleList'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+  /v1/config/http_lua:
+    put:
+      tags:
+        - http dyn lua config
+      summary: set module conf
+      description: set module conf
+      operationId: setDynModuleConf
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+    get:
+      tags:
+        - dyn lua config 
+      summary: return dynamic module conf
+      description: get module conf
+      operationId: getDynModuleConf
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+        data:
+          type: array
+          items:
+            type: object
+    ModuleList:
+      title: module list
+      description: 支持动态配置的模块列表
+      type: array
+      items:
+        type: string
+    MainConf:
+      title: main Conf
+      description: 动态 main 级别配置
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServerConf'
+
+    ServerConf:
+      title:     ServerConf
+      description: 动态 server 级别配置
+      type: object
+      properties:
+        listens:
+          type: array
+          description: server listen 端口列表
+          items:
+            type: string
+
+        serverNames:
+          type: array
+          description: server Name 列表.
+          items:
+            type: string
+        locations:
+          type: array
+          description: locations 列表
+          items:
+            $ref: '#/components/schemas/LocationConf'
+    LocationConf:
+      title: LocationConf
+      description: location 级别lua 配置信息
+      type: object
+      properties:
+        location:
+          type: string
+          description: location 名称 .
+          example: /demo
+        lua:
+            type: object
+            description: lua 配置
+            properties:
+              content_by: 
+                type: string
+              access_by: 
+                type: string
+        locations:
+          type: array
+          description: locations 列表
+          items:
+            $ref: '#/components/schemas/LocationConf'

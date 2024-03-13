@@ -39,7 +39,7 @@ static njt_int_t njt_stream_nginmesh_get_port_mode(njt_stream_session_t *s);
  *
  */
 static njt_command_t njt_stream_proto_commands[] = {
-
+    /*
     {
       njt_string("njtmesh_dest"),
       NJT_STREAM_MAIN_CONF | NJT_STREAM_SRV_CONF | NJT_CONF_FLAG,
@@ -47,7 +47,7 @@ static njt_command_t njt_stream_proto_commands[] = {
       NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(njt_stream_proto_srv_conf_t, enabled),
       NULL
-    },
+    },*/
     {
       njt_string("njtmesh_port_mode"),
       NJT_STREAM_MAIN_CONF | NJT_STREAM_SRV_CONF | NJT_CONF_TAKE2,
@@ -124,7 +124,7 @@ static void *njt_stream_proto_create_srv_conf(njt_conf_t *cf)
         return NULL;
     }
 
-    conf->enabled = NJT_CONF_UNSET;
+
     conf->proto_ports = NJT_CONF_UNSET_PTR;
     conf->proto_enabled = NJT_CONF_UNSET;
     return conf;
@@ -139,7 +139,6 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
     njt_stream_proto_srv_conf_t *prev = parent;
     njt_stream_proto_srv_conf_t *conf = child;
 
-    njt_conf_merge_value(conf->enabled, prev->enabled, 0);
     njt_conf_merge_ptr_value(conf->proto_ports,
                               prev->proto_ports, NULL);
     njt_conf_merge_value(conf->proto_enabled, prev->proto_enabled, 0);
@@ -159,10 +158,7 @@ static char *njt_stream_proto_merge_srv_conf(njt_conf_t *cf, void *parent, void 
 		 return NJT_DECLINED;
 	 }
 
-    if (!sscf->enabled ) {
-        return NJT_DECLINED;
-    }
-	if (c->type != SOCK_STREAM) {
+     if (!(s->connection && s->connection->listening && s->connection->listening->mesh) ) {
         return NJT_DECLINED;
     }
 	ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
@@ -281,7 +277,7 @@ static njt_int_t njt_stream_nginmesh_get_port_mode(njt_stream_session_t *s) {
     njt_str_null(&dest_port);
 	if(sscf->proto_ports != NULL) {
         dest_port = ctx->dest_port;
-        if(!sscf->enabled && ctx->dest_port.len == 0) {
+        if(dest_port.len == 0) {
             dest_port.data = njt_pnalloc(ctx->pool,sizeof("65535") - 1);
             if(dest_port.data != NULL) {
                  port = njt_inet_get_port(s->connection->listening->sockaddr);
@@ -310,7 +306,7 @@ static njt_int_t njt_stream_nginmesh_get_port_mode(njt_stream_session_t *s) {
 static njt_int_t njt_stream_get_nginmesh_dest(njt_stream_session_t *s)   
 {
 
-    struct sockaddr_storage             org_src_addr;
+    struct sockaddr_storage              *p_org_src_addr;
     socklen_t                           org_src_addr_len;
     njt_connection_t                    *c;
     njt_stream_proto_ctx_t           *ctx;
@@ -321,44 +317,47 @@ static njt_int_t njt_stream_get_nginmesh_dest(njt_stream_session_t *s)
 	
     c = s->connection;
     ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
-	njt_memzero(&org_src_addr, sizeof(struct sockaddr_storage));
-	 org_src_addr_len =  sizeof(struct sockaddr_storage);
-	if(c->sockaddr->sa_family == AF_INET) {
-	   ret = getsockopt ( c->fd, SOL_IP, SO_ORIGINAL_DST, &org_src_addr,&org_src_addr_len);  
-	} else if(c->sockaddr->sa_family == AF_INET6) {
-	   ret = getsockopt ( c->fd,SOL_IPV6, IP6T_SO_ORIGINAL_DST, &org_src_addr,&org_src_addr_len);
-	    njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, " 0 stream_nginmesh_dest error=%s",strerror(errno));
-	}
-	if(ret == -1) {
-	    njt_log_error(NJT_LOG_WARN, s->connection->log,0, "stream_nginmesh_dest error=%s",strerror(errno));
-	} else {
-		njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, "ip address length %d",org_src_addr_len);
-		if(org_src_addr.ss_family == AF_INET || org_src_addr.ss_family == AF_INET6)  {
-		   addr = (struct sockaddr*)&org_src_addr;
-		
-		  	   
-		   ctx->dest.data = njt_pnalloc(ctx->pool,NJT_SOCKADDR_STRLEN);
-		   if(ctx->dest.data != NULL) {
-			ctx->dest.len = NJT_SOCKADDR_STRLEN;
-		   	njt_memzero(ctx->dest.data,ctx->dest.len);
-			ctx->dest_ip.data = ctx->dest.data;
-			ctx->dest_ip.len = njt_sock_ntop(addr, sizeof(njt_sockaddr_t),
+	org_src_addr_len =  sizeof(struct sockaddr_storage);
+
+    p_org_src_addr = NULL;
+    if (c->type == SOCK_STREAM) {
+        njt_memzero(&c->mesh_dst_addr, sizeof(struct sockaddr_storage));
+        if(c->sockaddr->sa_family == AF_INET) {
+	        ret = getsockopt ( c->fd, SOL_IP, SO_ORIGINAL_DST, &c->mesh_dst_addr,&org_src_addr_len);  
+        } else if(c->sockaddr->sa_family == AF_INET6) {
+            ret = getsockopt ( c->fd,SOL_IPV6, IP6T_SO_ORIGINAL_DST, &c->mesh_dst_addr,&org_src_addr_len);
+            njt_log_debug1(NJT_LOG_DEBUG_STREAM, s->connection->log,0, " 0 stream_nginmesh_dest error=%s",strerror(errno));
+        }
+        if(ret == 0) {
+            p_org_src_addr = &c->mesh_dst_addr;
+        }
+        
+    } else if (c->type == SOCK_DGRAM && (s->connection && s->connection->listening && s->connection->listening->mesh)) {
+        p_org_src_addr =  &c->mesh_dst_addr;
+    } 
+
+    if(p_org_src_addr != NULL) {
+        addr = (struct sockaddr*)p_org_src_addr;
+        ctx->dest.data = njt_pnalloc(ctx->pool,NJT_SOCKADDR_STRLEN);
+        if(ctx->dest.data != NULL) {
+            ctx->dest.len = NJT_SOCKADDR_STRLEN;
+            njt_memzero(ctx->dest.data,ctx->dest.len);
+            ctx->dest_ip.data = ctx->dest.data;
+            ctx->dest_ip.len = njt_sock_ntop(addr, sizeof(njt_sockaddr_t),
                                                                 ctx->dest.data, ctx->dest.len, 0);  //ip
-			ctx->dest.len =  njt_sock_ntop(addr, sizeof(njt_sockaddr_t),
+            ctx->dest.len =  njt_sock_ntop(addr, sizeof(njt_sockaddr_t),
                                                                 ctx->dest.data, ctx->dest.len, 1); // ip:port
-			ctx->dest_port.data = ctx->dest.data + ctx->dest_ip.len + 1;
-			ctx->dest_port.len = ctx->dest.data + ctx->dest.len - ctx->dest_port.data;
+            ctx->dest_port.data = ctx->dest.data + ctx->dest_ip.len + 1;
+            ctx->dest_port.len = ctx->dest.data + ctx->dest.len - ctx->dest_port.data;
 
-			if(org_src_addr.ss_family == AF_INET6) {
-				ctx->dest_ip.data = ctx->dest.data + 1;
-				ctx->dest_port.data = ctx->dest.data + ctx->dest_ip.len + 3;
-				ctx->dest_port.len = (ctx->dest.len - ctx->dest_ip.len - 3); // - [
-			}
+            if(p_org_src_addr->ss_family == AF_INET6) {
+                ctx->dest_ip.data = ctx->dest.data + 1;
+                ctx->dest_port.data = ctx->dest.data + ctx->dest_ip.len + 3;
+                ctx->dest_port.len = (ctx->dest.len - ctx->dest_ip.len - 3); // - [
+            }
 
-		   }
-		}
-
-	}
+        }
+    }
 	 njt_log_debug(NJT_LOG_DEBUG_STREAM, ctx->log, 0,
                    "assignment njtmesh_dest: %V",&ctx->dest);
 
@@ -379,19 +378,16 @@ static njt_int_t njt_stream_preread_proto_variable(njt_stream_session_t *s,  //
 	c = s->connection;
 	ctx = njt_stream_get_module_ctx(s, njt_stream_proto_module);
 
-	if (ctx == NULL) {
-
-		if (c->type == SOCK_DGRAM && sscf != NULL && sscf->proto_enabled) {
+    if (c->type == SOCK_DGRAM && sscf != NULL && sscf->proto_enabled) {
 		   njt_str_set(&version, "udp");
 		   goto end;		  
-		}
+	}
+	if (ctx == NULL) {
 		v->not_found = 1;
 		return NJT_OK;
 	}
 
     /* SSL_get_version() format */
-
-
     switch (ctx->version[0]) {
     case 0:
         switch (ctx->version[1]) {
