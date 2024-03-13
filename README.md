@@ -87,6 +87,19 @@ sudo apt-get install njet
 sudo systemctl start njet
 ```
 
+# **Dokerfile 镜像构建**
+
+下载njet_main源码，执行如下命令：
+
+```
+  cd njet_main
+  //导入环境变量
+  export NJET_RIEPOSITORY="tmlake/njet"
+  export NJET_TAG="latest"
+  //构建镜像
+  docker build --build-arg NJet_VERSION=$NJET_TAG --build-arg GIT_COMMIT=$(gitrev-parse HEAD) --network host --target ubuntu-njet -f ./build/docker/Dockerfile_njet -t $NJET_RIEPOSITORY:$NJET_TAG ./
+```
+
 
 # 文档
 
