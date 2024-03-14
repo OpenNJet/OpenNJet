@@ -263,7 +263,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     njt_http_map_conf_t *mcf = conf;
 
     char *rv;
-    njt_str_t *value, name;
+    njt_str_t *value, name,from;
     njt_conf_t                         save;
     njt_pool_t *pool,*new_map_pool;
     njt_http_map_ctx_t *map;
@@ -326,6 +326,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
     name = value[2];
+    from = value[1];
 
 
 
@@ -423,7 +424,8 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     var_hash_item->name.len = name.len;
     var_hash_item->map = map;
     var_hash_item->ori_conf = ctx.ori_conf;
-    var_hash_item->dynamic = 0;;
+    var_hash_item->dynamic = 0;
+    var_hash_item->key_from = from;
 
 #endif
 
@@ -681,10 +683,11 @@ void njt_http_map_del_by_name(njt_str_t name)
     for (i = 0;i < mcf->var_hash_items->nelts;i++) {
         if(item[i].name.len == name.len && njt_memcmp(item[i].name.data,name.data,name.len) == 0) {
             njt_lvlhsh_map_remove(&mcf->var_hash, &item[i].name);
-            njt_array_delete_idx(mcf->var_hash_items,i);
-            if(item->map->pool != NULL) {
-                njt_destroy_pool(item->map->pool);
+            if(item[i].map->pool != NULL) {
+                njt_destroy_pool(item[i].map->pool);
             }
+            njt_array_delete_idx(mcf->var_hash_items,i);
+            
             break;
         }
         

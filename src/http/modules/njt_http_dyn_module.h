@@ -241,6 +241,7 @@ typedef struct {
 } njt_http_map_ori_conf_item_t;
 
 typedef struct {
+    njt_str_t   key_from;
     njt_str_t   name;
     njt_array_t *ori_conf;
     njt_http_map_ctx_t *map;
