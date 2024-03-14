@@ -9,7 +9,7 @@
 #include "njt_http_sendmsg_module.h"
 #include <njt_mqconf_module.h>
 #include <njt_hash_util.h>
-#include "njet_http_api_register_module.h"
+#include "njt_http_api_register_module.h"
 
 #define RPC_TOPIC_PREFIX "/dyn/"
 #define RPC_TOPIC_PREFIX_LEN 5

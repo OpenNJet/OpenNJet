@@ -9,7 +9,7 @@
 #include "njt_http_sendmsg_module.h"
 #include <njt_str_util.h>
 #include <njt_http_util.h>
-#include "njet_http_api_register_module.h"
+#include "njt_http_api_register_module.h"
 
 #define MIN_CONFIG_BODY_LEN 2
 #define MAX_CONFIG_BODY_LEN 5242880

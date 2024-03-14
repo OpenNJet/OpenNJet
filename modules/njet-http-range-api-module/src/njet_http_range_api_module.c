@@ -16,7 +16,7 @@
 #include <njt_http_util.h>
 
 #include "njt_http_dyn_range_api_parser.h"
-#include "njet_http_api_register_module.h"
+#include "njt_http_api_register_module.h"
 
 
 #define MIN_CONFIG_BODY_LEN 2

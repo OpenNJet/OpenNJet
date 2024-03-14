@@ -6,7 +6,7 @@
 #include <njt_http.h>
 #include <njt_hash_util.h>
 
-#include "njet_http_api_register_module.h"
+#include "njt_http_api_register_module.h"
 
 
 static njt_lvlhash_map_t *njt_http_api_module_handler_hashmap = NULL;

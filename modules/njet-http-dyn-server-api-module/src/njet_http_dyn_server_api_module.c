@@ -16,7 +16,7 @@
 #include <njt_http_util.h>
 #define VS_MIN_BODY_LEN 8
 #define VS_MAX_BODY_LEN 5242880
-#include "njet_http_api_register_module.h"
+#include "njt_http_api_register_module.h"
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
 extern njt_cycle_t *njet_master_cycle;

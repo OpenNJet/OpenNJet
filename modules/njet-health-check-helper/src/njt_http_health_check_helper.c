@@ -17,7 +17,7 @@
 #include <njt_http_sendmsg_module.h>
 #include "njt_hc_parser.h"
 #include "njt_hc_ctrl_parser.h"
-#include "njet_http_api_register_module.h"
+#include "njt_http_api_register_module.h"
 
 
 #define NJT_HTTP_SERVER_PORT        5688

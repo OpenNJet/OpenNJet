@@ -17,7 +17,7 @@
 #include "njt_http_upstream_api_error_msg.h" 
 #include "njt_str_util.h"
 #include <njt_http_util.h>
-#include "njet_http_api_register_module.h"
+#include "njt_http_api_register_module.h"
 
 static njt_str_t upstream_api_module_name = njt_string("upstream_api");
 static njt_str_t status_down = njt_string("down");  

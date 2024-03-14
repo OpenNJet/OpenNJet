@@ -16,7 +16,7 @@
 #include <njt_http_util.h>
 #define LOCATION_MIN_BODY_LEN 10  
 #define LOCATION_MAX_BODY_LEN 5242880
-#include "njet_http_api_register_module.h"
+#include "njt_http_api_register_module.h"
 
 extern njt_uint_t njt_worker;
 extern njt_module_t  njt_http_rewrite_module;
