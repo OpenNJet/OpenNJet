@@ -6,8 +6,10 @@
 #include <njt_config.h>
 #include <njt_core.h>
 #include <njt_http.h>
+#include <njt_crypt.h>
 #include <njt_http_kv_module.h>
 #include <njt_rpc_result_util.h>
+#include <njt_http_util.h>
 #include "njt_http_api_register_module.h"
 #include "njt_http_parser_auth_patch.h"
 #include "njt_http_parser_auth_put.h"
@@ -18,8 +20,6 @@
 #define NJT_HTTP_AUTH_API_PATH_BUF_SIZE 2048
 
 
-static njt_int_t
-njt_http_auth_handler(njt_http_request_t *r);
 
 static njt_int_t
 njt_http_auth_api_init_worker(njt_cycle_t *cycle);
@@ -29,6 +29,8 @@ static njt_int_t njt_http_auth_api_init_module(njt_cycle_t *cycle);
 static njt_int_t
 njt_http_auth_api_init(njt_conf_t *cf);
 
+static njt_int_t
+njt_http_auth_api_handler(njt_http_request_t *r);
 
 static njt_http_module_t njt_http_auth_api_module_ctx = {
         NULL,                              /* preconfiguration */
@@ -148,7 +150,6 @@ static void njt_http_auth_api_api_read_data(njt_http_request_t *r){
     njt_rpc_result_t            *rpc_result = NULL;
     njt_array_t                 *path;
     njt_str_t                   *uri;
-    njt_int_t                   ctypto_rc;
     njt_str_t                   auth_key, auth_passwd;
     u_char                      *p, *encrypted;
     u_char                      buf[NJT_HTTP_AUTH_API_PATH_BUF_SIZE];
@@ -240,7 +241,11 @@ static void njt_http_auth_api_api_read_data(njt_http_request_t *r){
         p = njt_snprintf(buf, NJT_HTTP_AUTH_API_PATH_BUF_SIZE, 
             "auth_basic:%V:%V", &api_put_data->prefix, &api_put_data->user_name);
         if (p == NULL) {
-            return NJT_HTTP_INTERNAL_SERVER_ERROR;
+            njt_log_error(NJT_LOG_ERR, r->connection->log, 0, 
+                " njt_snprintf error, auth_basic:%V:%V", &api_put_data->prefix, &api_put_data->user_name);
+
+            rc = NJT_ERROR;
+            goto out;
         }
 
         auth_key.len = p - buf;
@@ -251,16 +256,16 @@ static void njt_http_auth_api_api_read_data(njt_http_request_t *r){
             njt_rpc_result_set_msg(rpc_result, (u_char *)" user existed");
 
             njt_log_error(NJT_LOG_ERR, r->connection->log, 0, 
-                "user:[%V:%V] existed", &uri[4], &uri[5]);
+                "user:[%V:%V] existed", &api_put_data->prefix, &api_put_data->user_name);
 
             rc = NJT_ERROR;
             goto out;
         }
 
-        rc = njt_crypt(r->pool, r->headers_in.passwd.data, "{SHA}",
+        rc = njt_crypt(r->pool, api_put_data->password.data, (u_char *)"{SHA}",
                    &encrypted);
         
-        if (ctypto_rc != NJT_OK) {
+        if (rc != NJT_OK) {
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
             njt_rpc_result_set_msg(rpc_result, (u_char *)" password encrypt error");
 
@@ -270,11 +275,8 @@ static void njt_http_auth_api_api_read_data(njt_http_request_t *r){
             goto out;
         }
 
-        auth_passwd.len = strlen(encrypted);
+        auth_passwd.len = strlen((char *)encrypted);
         auth_passwd.data = encrypted;
-
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-            "==========user:%V  encry pass:%V", &auth_key, &auth_passwd);
 
         if(NJT_OK != njt_db_kv_set(&auth_key, &auth_passwd)){
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
@@ -296,7 +298,7 @@ static void njt_http_auth_api_api_read_data(njt_http_request_t *r){
             goto out;
         }
 
-        if(api_put_data->password.len < 1){
+        if(api_patch_data->password.len < 1){
             njt_log_error(NJT_LOG_ERR, r->connection->log, 0, 
                 " password should not be empty");
 
@@ -313,10 +315,12 @@ static void njt_http_auth_api_api_read_data(njt_http_request_t *r){
         path = njt_array_create(r->pool, 4, sizeof(njt_str_t));
         if (path == NULL) {
             njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "array init of path error.");
-            return NJT_ERROR;
+            rc = NJT_ERROR;
+
+            goto out;
         }
 
-        rc = njt_http_parse_path(r, path);
+        rc = njt_http_parse_path(r->uri, path);
         if(rc != NJT_OK){
             njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "url parse error.");
             rc = NJT_ERROR;
@@ -328,7 +332,11 @@ static void njt_http_auth_api_api_read_data(njt_http_request_t *r){
         p = njt_snprintf(buf, NJT_HTTP_AUTH_API_PATH_BUF_SIZE, 
             "auth_basic:%V:%V", &uri[4], &uri[5]);
         if (p == NULL) {
-            return NJT_HTTP_INTERNAL_SERVER_ERROR;
+            njt_log_error(NJT_LOG_ERR, r->connection->log, 0, 
+                " njt_snprintf error, auth_basic:%V:%V", &uri[4], &uri[5]);
+
+            rc = NJT_ERROR;
+            goto out;
         }
 
         auth_key.len = p - buf;
@@ -346,10 +354,10 @@ static void njt_http_auth_api_api_read_data(njt_http_request_t *r){
             goto out;
         }
 
-        rc = njt_crypt(r->pool, r->headers_in.passwd.data, "{SHA}",
+        rc = njt_crypt(r->pool, api_patch_data->password.data, (u_char *)"{SHA}",
                    &encrypted);
         
-        if (ctypto_rc != NJT_OK) {
+        if (rc != NJT_OK) {
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
             njt_rpc_result_set_msg(rpc_result, (u_char *)" password encrypt error");
 
@@ -359,7 +367,7 @@ static void njt_http_auth_api_api_read_data(njt_http_request_t *r){
             goto out;
         }
 
-        auth_passwd.len = strlen(encrypted);
+        auth_passwd.len = strlen((char *)encrypted);
         auth_passwd.data = encrypted;
 
         if(NJT_OK != njt_db_kv_set(&auth_key, &auth_passwd)){
@@ -408,15 +416,25 @@ njt_http_auth_api_handler(njt_http_request_t *r) {
         return NJT_ERROR;
     }
 
-    rc = njt_http_parse_path(r, path);
+    rc = njt_http_parse_path(r->uri, path);
     if(rc != NJT_OK){
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "url parse error.");
         return NJT_ERROR;
     }
     uri = path->elts;
 
+    if(path->nelts < 4 || uri[3].len != 8 || njt_strncmp(uri[3].data, "password", 8) != 0){
+        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
+        njt_rpc_result_set_msg(rpc_result, (u_char *)" url path not allowed");
+
+        njt_log_error(NJT_LOG_ERR, r->connection->log, 0, 
+            "%V url path not allowed", &r->uri);
+
+        goto out;
+    }
+
     if(r->method == NJT_HTTP_PUT) {
-        if(path->nelts != 4 || uri[3].len != 6 || njt_strncmp(uri[3].data, "passwd", 6) != 0){
+        if(path->nelts != 4){
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
             njt_rpc_result_set_msg(rpc_result, (u_char *)" url path not allowed");
 
@@ -442,7 +460,7 @@ njt_http_auth_api_handler(njt_http_request_t *r) {
 
         return NJT_DONE;
     } else if(r->method == NJT_HTTP_PATCH) {
-        if(path->nelts != 6 || uri[3].len != 6 || njt_strncmp(uri[3].data, "passwd", 6) != 0){
+        if(path->nelts != 6){
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
             njt_rpc_result_set_msg(rpc_result, (u_char *)" url path not allowed");
 
@@ -466,7 +484,7 @@ njt_http_auth_api_handler(njt_http_request_t *r) {
         }
         return NJT_DONE;
     } else if(r->method == NJT_HTTP_DELETE) {
-        if(path->nelts != 6 || uri[3].len != 6 || njt_strncmp(uri[3].data, "passwd", 6) != 0){
+        if(path->nelts != 6){
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
             njt_rpc_result_set_msg(rpc_result, (u_char *)" url path not allowed");
 

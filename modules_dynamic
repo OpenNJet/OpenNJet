@@ -80,3 +80,5 @@
 ./modules/njet-stream-dyn-sts-module
 # optional
 ./modules/njet-http-dyn-lua-module
+#optional
+./modules/njet-http-auth-api-module

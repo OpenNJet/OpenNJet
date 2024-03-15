@@ -46,15 +46,12 @@ paths:
       summary: Modify password of user
       description: Modify password of user
       operationId: PatchUserAuthPassword
-      produces:
-        - application/json
-      parameters:
-        - in: body
-          name: patchHttpUpstreamServer
-          description: Modify password of user.
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordMsg'
           required: true
-          schema:
-            $ref: '#/components/schemas/PasswordMsg'
       responses:
         '204':
           description: Success
@@ -95,7 +92,6 @@ components:
         msg:
           type: string
           description: 提示信息
-
     UserPasswdConf:
       title:     UserPasswdConf
       description: 用户认证kv密码配置
@@ -104,12 +100,17 @@ components:
         prefix:
           type: string
           description: 用户所属前缀
-          example: ntls
         user_name:
           type: string
           description: 用户名
-          example: "root"
         password:
           type: string
           description: 密码
-          example: "123456"
+    PasswordMsg:
+      title:     PasswordMsg
+      description: 用户认证kv密码修改
+      type: object
+      properties:
+        password:
+          type: string
+          description: 密码

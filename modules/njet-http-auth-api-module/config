@@ -6,6 +6,7 @@ njt_module_deps=" \
   $njt_addon_dir/src/njt_http_parser_auth_put.h \
 "
 njt_module_srcs=" \
+  $njt_addon_dir/src/njt_http_auth_api_module.c \
   $njt_addon_dir/src/njt_http_parser_auth_patch.c \
   $njt_addon_dir/src/njt_http_parser_auth_put.c \
 "

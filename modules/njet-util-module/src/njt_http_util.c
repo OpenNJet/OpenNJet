@@ -593,23 +593,18 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 	return srv;
 }
 
-njt_int_t njt_http_parse_path(njt_http_request_t *r, njt_array_t *path){
+njt_int_t njt_http_parse_path(njt_str_t uri, njt_array_t *path){
 	u_char                              *p,*end, *sub_p;
     njt_uint_t                          len;
     njt_str_t                           *item;
-    njt_http_core_loc_conf_t            *clcf;
-    njt_str_t                           uri;
 
     /*the uri is parsed and delete all the duplidated '/' characters.
      * for example, "/api//7//http///upstreams///////" will be parse to
      * "/api/7/http/upstreams/" already*/
 
-    clcf = njt_http_get_module_loc_conf(r, njt_http_core_module);
-
-    uri = r->uri;
-    p = uri.data + clcf->name.len;
+    p = uri.data;
     end = uri.data + uri.len;
-    len = uri.len - clcf->name.len;
+    len = uri.len;
 
     if (len != 0 && *p != '/') {
         return NJT_HTTP_NOT_FOUND;
@@ -622,7 +617,7 @@ njt_int_t njt_http_parse_path(njt_http_request_t *r, njt_array_t *path){
     while (len > 0) {
         item = njt_array_push(path);
         if (item == NULL) {
-            njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                           "zack: array item of path push error.");
             return NJT_ERROR;
         }
