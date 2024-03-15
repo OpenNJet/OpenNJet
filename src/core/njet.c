@@ -419,7 +419,9 @@ main(int argc, char *const *argv)
 static void
 njt_show_version_info(void)
 {
-    njt_write_stderr("njet version: " NJT_VER_BUILD NJT_LINEFEED);
+    if (!njt_show_configure) {
+        njt_write_stderr("njet version: " NJT_VER_BUILD NJT_LINEFEED);
+    }
 
     if (njt_show_help) {
         njt_write_stderr(
@@ -458,6 +460,8 @@ njt_show_version_info(void)
     }
 
     if (njt_show_configure) {
+        njt_write_stderr("njet version: " NJT_VER_BUILD);
+        njt_write_stderr(" (developed based on " NGNX_VERSION RESTY_VER ")" NJT_LINEFEED);
 
 #ifdef NJT_COMPILER
         njt_write_stderr("built by " NJT_COMPILER NJT_LINEFEED);
