@@ -338,10 +338,6 @@ cleanup:
             return NJT_HTTP_INTERNAL_SERVER_ERROR;
         }
 
-        njt_log_error(NJT_LOG_ERR, r->connection->log, 0,
-                        "=========user:%V  pass:%V",
-                        &auth_key, &auth_pwd);
-
         njt_cpystrn(pwd.data, auth_pwd.data, pwd.len + 1);
 
         rc = njt_http_auth_basic_crypt_handler(r, &pwd, &realm);
