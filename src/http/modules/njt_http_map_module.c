@@ -326,7 +326,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
     name = value[2];
-    from = value[1];
+    from = *ccv.value;  //
 
 
 

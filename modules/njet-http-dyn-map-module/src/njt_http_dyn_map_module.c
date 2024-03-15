@@ -713,22 +713,24 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, httpmap_t *api
     if (mcf == NULL) {
         return NJT_ERROR;
     }
-   
+    njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
+    if (pool == NULL) {
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        return NJT_ERROR;
+    }
+    rc = njt_sub_pool(njt_cycle->pool, pool);
+    if (rc != NJT_OK) {
+        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
+        rpc_data_str.len = end - data_buf;
+        njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+        njt_destroy_pool(pool);
+        return NJT_ERROR;
+        }
+
     for (i = 0;i < api_data->maps->nelts;i++) {
-        njt_pool_t *pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
-        if (pool == NULL) {
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
-            rpc_data_str.len = end - data_buf;
-            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-            return NJT_ERROR;
-        }
-        rc = njt_sub_pool(njt_cycle->pool, pool);
-        if (rc != NJT_OK) {
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " create pool error");
-            rpc_data_str.len = end - data_buf;
-            njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-            return NJT_ERROR;
-        }
+        
         rpc_data_str.len = 0;
         njt_str_null(&msg);
         httpmap_maps_item_t *item = get_httpmap_maps_item(api_data->maps, i);
@@ -787,17 +789,17 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, httpmap_t *api
                     
                     rpc_data_str.len = end - data_buf;
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-                    njt_destroy_pool(pool);
+                    //njt_destroy_pool(pool);
                     //return rc;
             }
         } else {
             end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "keyTo %V is invalid, it should start with $", keyTo);
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
-            njt_destroy_pool(pool);
+            //njt_destroy_pool(pool);
         }
     }
-
+     njt_destroy_pool(pool);
     return NJT_OK;
 }
 
