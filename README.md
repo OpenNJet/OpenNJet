@@ -6,7 +6,7 @@ OpenNJet 应用引擎是高性能、轻量级的WEB应用与代理软件。作�
 
 **OpenNJet 是由开放原子开源基金会（OpenAtom Foundation）孵化及运营的开源项目！**
 
-<img src="https://gitee.com/gebona/picture/raw/master/202403151548527.svg" alt="LOGO" style="zoom:5%;" />
+<img src="https://gitee.com/gebona/picture/raw/master/202403151548527.svg" width=40% alt="LOGO" style="zoom:5%;" />
 
 ## 独特优势
 
@@ -36,10 +36,10 @@ OpenNJet 应用引擎是高性能、轻量级的WEB应用与代理软件。作�
 
   我们提供了几种快速使用的方法：
 
--    [二进制安装](https://njet.org.cn/docs/quickstart/)
--    [发行版安装](https://njet.org.cn/docs/quickstart/)
+-    [二进制安装](https://njet.org.cn/docs/quickstart/#1-%E4%BA%8C%E8%BF%9B%E5%88%B6%E5%AE%89%E8%A3%85)
+-    [发行版安装](https://njet.org.cn/docs/quickstart/#2-%E5%AE%89%E8%A3%85%E5%8F%91%E8%A1%8C%E7%89%88)
+-    [源码安装](https://njet.org.cn/docs/quickstart/#3-%E6%BA%90%E7%A0%81%E5%AE%89%E8%A3%85)
 -    [docker镜像启动](https://njet.org.cn/cases/njet-docker/)
--    [源码安装](https://njet.org.cn/docs/quickstart/)
 
 #### **镜像构建**
 
