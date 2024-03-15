@@ -96,8 +96,6 @@ static njt_int_t njt_http_dyn_check_del_map(njt_pool_t  *pool,njt_str_t *name,nj
         }
         njt_http_map_del_by_name(*keyTo);
         njt_http_dyn_update_map_hash();
-    
-         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_check_del_map Succ!");
     }
    
     return rc;
@@ -676,8 +674,11 @@ static njt_int_t njt_dyn_del_map_from_var_hash(njt_pool_t *temp_pool, httpmap_t 
              njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_check_del_map from=%V,to=%V!",&item[i].key_from,&item[i].name);
              rc = njt_http_dyn_check_del_map(temp_pool,&item[i].name,&msg);
              if (rc != NJT_OK) {
-                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_check_del_map error!");
-             }
+                if(msg.len ==  0) {
+                     njt_str_set(&msg,"fail");
+                }
+                njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_check_del_map error:%V!",&msg);
+             } 
         }
     }
     return NJT_OK;
@@ -765,6 +766,9 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, httpmap_t *api
                     rc = njt_http_dyn_add_map(pool,item);
                     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_add_map map=%V,rc=%d",keyTo,rc);
             } else {
+                rc = NJT_ERROR;
+            }
+            if (rc != NJT_OK) {
                     if(api_data->maps->nelts != 1) {
                        njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
                     } else {

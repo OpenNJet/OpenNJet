@@ -685,6 +685,7 @@ void njt_http_map_del_by_name(njt_str_t name)
             njt_lvlhsh_map_remove(&mcf->var_hash, &item[i].name);
             if(item[i].map->pool != NULL) {
                 njt_destroy_pool(item[i].map->pool);
+                 njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_check_del_map Succ!");
             }
             njt_array_delete_idx(mcf->var_hash_items,i);
             
