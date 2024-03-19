@@ -6179,7 +6179,7 @@ static char *
 njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf){
 #if (NJT_HTTP_DYNAMIC_LOC)
     u_char* index;
-    njt_uint_t len =0,i;
+    njt_uint_t len =0,i,new_len;
     njt_str_t  command,*value;
     loc_parse_ctx_t* ctx;
     loc_parse_node_t *loc_exp_dyn_parse_tree, *root;
@@ -6195,13 +6195,24 @@ njt_http_core_if_location_parse(njt_conf_t *cf,njt_http_core_loc_conf_t  *pclcf)
         return NJT_CONF_ERROR;
     }
     command.data = index;
+    new_len = 0;
     for(i = 1; i < cf->args->nelts; i++){
+        if(i == cf->args->nelts - 1 && value[i].len == 1) {
+            if(new_len > 0) {
+                index--;
+                new_len--;
+            }
+        } 
+        new_len += value[i].len;
         njt_memcpy(index,value[i].data,value[i].len);
         index += value[i].len;
+
         *index = (u_char)' ';
         ++index;
+        new_len++;
+        
     }
-    command.len = len + 1;
+    command.len = new_len;
     yylex_destroy();
     yy_scan_string((char *)command.data);
     root = NULL;
