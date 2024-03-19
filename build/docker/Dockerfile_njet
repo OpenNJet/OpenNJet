@@ -1,0 +1,58 @@
+# syntax=docker/dockerfile:1.4
+ARG GIT_COMMIT=123
+
+############################################# Build njet for Ubuntu #############################################
+FROM ubuntu:18.04 AS builder-ubuntu-njet
+ARG GIT_COMMIT
+
+WORKDIR /tmp/build
+# copy files
+COPY . /tmp/build
+ENV PATH=$PATH:/usr/local/njet/sbin
+RUN pwd \
+    && ls \
+    && apt-get update \
+    && apt-get install gcc make -y \
+    && apt-get install libpcre3-dev libssl-dev zlib1g-dev perl cmake g++ vim libcap2-bin automake libtool autoconf m4 git -y \
+    && ln -sf /sbin/setcap /usr/sbin/setcap \
+    && ./build_cc.sh -t "${GIT_COMMIT}" conf make install \
+    && chmod +x ./build_lua.sh \
+    && mkdir -p ./objs/scripts/register/ \
+    && ./build_lua.sh
+
+
+#############################################Base image for Ubuntu #############################################
+FROM ubuntu:18.04 AS ubuntu-njet
+
+ARG NJet_VERSION
+ARG GIT_COMMIT
+ARG TARGETPLATFORM
+
+ENV PATH=$PATH:/usr/local/njet/sbin
+
+RUN --mount=type=bind,from=builder-ubuntu-njet,target=/tmp/njet/ \
+	apt-get update \
+	&& apt-get install --no-install-recommends --no-install-suggests -y libpcre3-dev libssl-dev zlib1g-dev sudo libcap2-bin iptables iproute2 vim curl net-tools jq \
+    && rm -rf  /var/log/*log /var/lib/apt/lists/* /var/log/apt/* /var/lib/dpkg/*-old /var/cache/debconf/*-old \
+    && cp -a /tmp/njet/usr/local/njet /usr/local \
+    && cp -a /tmp/njet/usr/local/lib /usr/local/ \
+    && cp -a /tmp/njet/tmp/build/objs/scripts/* /usr/local/njet/modules/ \
+    && ln -sf /sbin/iptables /usr/sbin/iptables \
+    && ln -sf /sbin/ip6tables /usr/sbin/ip6tables \
+    && ln -sf /sbin/ip /usr/sbin/ip \
+    && groupadd --system --gid 101 njet \
+    && useradd --system --gid njet --no-create-home --home-dir /nonexistent --comment "njet user" --shell /bin/false --uid 101 njet \
+    && echo "njet ALL=NOPASSWD: ALL" >> /etc/sudoers \
+    && chown -R njet:njet /usr/local/njet  \
+    && /sbin/setcap cap_dac_override,cap_dac_read_search,cap_net_bind_service,cap_net_admin,cap_net_raw,cap_setuid=eip /usr/local/njet/sbin/njet \
+    && ldconfig
+
+EXPOSE 8080 8081
+CMD ["njet", "-c", "/usr/local/njet/conf/njet.conf", "-g", "daemon off;"]
+
+USER 101
+
+LABEL njet.org.cn.image.njet.version="${NJet_VERSION}"
+LABEL njet.org.cn.image.njet.revision="${GIT_COMMIT}"
+LABEL njet.org.cn.image.build.os="ubuntu"
+LABEL njet.org.cn.image.build.target="${TARGETPLATFORM}"

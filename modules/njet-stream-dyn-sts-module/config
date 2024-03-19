@@ -1,0 +1,6 @@
+njt_module_type=STREAM
+njt_module_name="njt_stream_dyn_sts_module"
+njt_module_srcs="$njt_addon_dir/src/njt_stream_dyn_sts_module.c\
+                 $njt_addon_dir/src/parser_dynsts.c"
+have=NJT_STREAM_DYN_STS_MODULE . auto/have
+. auto/module

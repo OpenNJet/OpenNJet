@@ -79,6 +79,7 @@ njt_wsarecv(njt_connection_t *c, u_char *buf, size_t size)
                                      njt_socket_nread_n " failed");
 
             if (n == NJT_ERROR) {
+                rev->ready = 0;
                 rev->error = 1;
             }
 
@@ -96,6 +97,7 @@ njt_wsarecv(njt_connection_t *c, u_char *buf, size_t size)
     }
 
     if (bytes == 0) {
+        rev->ready = 0;
         rev->eof = 1;
     }
 

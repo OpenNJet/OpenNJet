@@ -52,8 +52,6 @@ njt_http_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 #endif
 
 
-static char *njt_http_ssl_enable(njt_conf_t *cf, njt_command_t *cmd,
-    void *conf);
 static char *njt_http_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
 static char *njt_http_ssl_session_cache(njt_conf_t *cf, njt_command_t *cmd,
@@ -101,23 +99,11 @@ static njt_conf_enum_t  njt_http_ssl_ocsp[] = {
 };
 
 
-static njt_conf_deprecated_t  njt_http_ssl_deprecated = {
-    njt_conf_deprecated, "ssl", "listen ... ssl"
-};
-
-
 static njt_conf_post_t  njt_http_ssl_conf_command_post =
     { njt_http_ssl_conf_command_check };
 
 
 static njt_command_t  njt_http_ssl_commands[] = {
-
-    { njt_string("ssl"),
-      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_FLAG,
-      njt_http_ssl_enable,
-      NJT_HTTP_SRV_CONF_OFFSET,
-      offsetof(njt_http_ssl_srv_conf_t, enable),
-      &njt_http_ssl_deprecated },
 
 #if (NJT_HTTP_MULTICERT)
     { njt_string("ssl_certificate"),
@@ -481,8 +467,11 @@ njt_http_ssl_alpn_select(njt_ssl_conn_t *ssl_conn, const unsigned char **out,
 #if (NJT_HTTP_V2 || NJT_HTTP_V3)
     njt_http_connection_t   *hc;
 #endif
+#if (NJT_HTTP_V2) 
+    njt_http_v2_srv_conf_t  *h2scf;
+#endif
 #if (NJT_HTTP_V3)
-    njt_http_v3_srv_conf_t     *h3scf;
+    njt_http_v3_srv_conf_t  *h3scf;
 #endif
 #if (NJT_HTTP_V2 || HTTP_V3_|| NJT_DEBUG)
     njt_connection_t       *c;
@@ -502,12 +491,6 @@ njt_http_ssl_alpn_select(njt_ssl_conn_t *ssl_conn, const unsigned char **out,
     hc = c->data;
 #endif
 
-#if (NJT_HTTP_V2)
-    if (hc->addr_conf->http2) {
-        srv = (unsigned char *) NJT_HTTP_V2_ALPN_PROTO NJT_HTTP_ALPN_PROTOS;
-        srvlen = sizeof(NJT_HTTP_V2_ALPN_PROTO NJT_HTTP_ALPN_PROTOS) - 1;
-    } else
-#endif
 #if (NJT_HTTP_V3)
     if (hc->addr_conf->quic) {
 
@@ -534,8 +517,19 @@ njt_http_ssl_alpn_select(njt_ssl_conn_t *ssl_conn, const unsigned char **out,
     } else
 #endif
     {
-        srv = (unsigned char *) NJT_HTTP_ALPN_PROTOS;
-        srvlen = sizeof(NJT_HTTP_ALPN_PROTOS) - 1;
+#if (NJT_HTTP_V2)
+        h2scf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_v2_module);
+
+        if (h2scf->enable || hc->addr_conf->http2) {
+            srv = (unsigned char *) NJT_HTTP_V2_ALPN_PROTO NJT_HTTP_ALPN_PROTOS;
+            srvlen = sizeof(NJT_HTTP_V2_ALPN_PROTO NJT_HTTP_ALPN_PROTOS) - 1;
+
+        } else
+#endif
+        {
+            srv = (unsigned char *) NJT_HTTP_ALPN_PROTOS;
+            srvlen = sizeof(NJT_HTTP_ALPN_PROTOS) - 1;
+        }
     }
 #if (NJT_HAVE_SET_ALPN)
     njt_http_ssl_srv_conf_t  *sscf;
@@ -671,7 +665,6 @@ njt_http_ssl_create_srv_conf(njt_conf_t *cf)
      *     sscf->stapling_responder = { 0, NULL };
      */
 
-    sscf->enable = NJT_CONF_UNSET;
     sscf->prefer_server_ciphers = NJT_CONF_UNSET;
     sscf->early_data = NJT_CONF_UNSET;
     sscf->reject_handshake = NJT_CONF_UNSET;
@@ -711,17 +704,6 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 
     njt_pool_cleanup_t  *cln;
 
-    if (conf->enable == NJT_CONF_UNSET) {
-        if (prev->enable == NJT_CONF_UNSET) {
-            conf->enable = 0;
-
-        } else {
-            conf->enable = prev->enable;
-            conf->file = prev->file;
-            conf->line = prev->line;
-        }
-    }
-
     njt_conf_merge_value(conf->session_timeout,
                          prev->session_timeout, 300);
 
@@ -732,8 +714,9 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     njt_conf_merge_value(conf->reject_handshake, prev->reject_handshake, 0);
 
     njt_conf_merge_bitmask_value(conf->protocols, prev->protocols,
-                         (NJT_CONF_BITMASK_SET|NJT_SSL_TLSv1
-                          |NJT_SSL_TLSv1_1|NJT_SSL_TLSv1_2));
+                         (NJT_CONF_BITMASK_SET
+                          |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
+                          |NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3));
 
     njt_conf_merge_size_value(conf->buffer_size, prev->buffer_size,
                          NJT_SSL_BUFSIZE);
@@ -785,37 +768,7 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 
     conf->ssl.log = cf->log;
 
-    if (conf->enable) {
-
-        if (conf->certificates) {
-            if (conf->certificate_keys == NULL) {
-                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                              "no \"ssl_certificate_key\" is defined for "
-                              "the \"ssl\" directive in %s:%ui",
-                              conf->file, conf->line);
-                return NJT_CONF_ERROR;
-            }
-
-            if (conf->certificate_keys->nelts < conf->certificates->nelts) {
-                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                              "no \"ssl_certificate_key\" is defined "
-                              "for certificate \"%V\" and "
-                              "the \"ssl\" directive in %s:%ui",
-                              ((njt_str_t *) conf->certificates->elts)
-                              + conf->certificates->nelts - 1,
-                              conf->file, conf->line);
-                return NJT_CONF_ERROR;
-            }
-
-        } else if (!conf->reject_handshake) {
-            njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                          "no \"ssl_certificate\" is defined for "
-                          "the \"ssl\" directive in %s:%ui",
-                          conf->file, conf->line);
-            return NJT_CONF_ERROR;
-        }
-
-    } else if (conf->certificates) {
+    if (conf->certificates) {
         if (conf->certificate_keys == NULL
             || conf->certificate_keys->nelts < conf->certificates->nelts)
         {
@@ -1124,26 +1077,6 @@ found:
 
 
 static char *
-njt_http_ssl_enable(njt_conf_t *cf, njt_command_t *cmd, void *conf)
-{
-    njt_http_ssl_srv_conf_t *sscf = conf;
-
-    char  *rv;
-
-    rv = njt_conf_set_flag_slot(cf, cmd, conf);
-
-    if (rv != NJT_CONF_OK) {
-        return rv;
-    }
-
-    sscf->file = cf->conf_file->file.name.data;
-    sscf->line = cf->conf_file->line;
-
-    return NJT_CONF_OK;
-}
-
-
-static char *
 njt_http_ssl_password_file(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
     njt_http_ssl_srv_conf_t *sscf = conf;
@@ -1225,7 +1158,7 @@ njt_http_ssl_session_cache(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                 len++;
             }
 
-            if (len == 0) {
+            if (len == 0 || j == value[i].len) {
                 goto invalid;
             }
 
@@ -1315,7 +1248,7 @@ njt_http_ssl_ocsp_cache(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         len++;
     }
 
-    if (len == 0) {
+    if (len == 0 || j == value[1].len) {
         goto invalid;
     }
 

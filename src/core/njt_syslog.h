@@ -10,14 +10,20 @@
 
 
 typedef struct {
-    njt_uint_t        facility;
-    njt_uint_t        severity;
-    njt_str_t         tag;
+    njt_uint_t         facility;
+    njt_uint_t         severity;
+    njt_str_t          tag;
 
-    njt_addr_t        server;
-    njt_connection_t  conn;
-    unsigned          busy:1;
-    unsigned          nohostname:1;
+    njt_str_t         *hostname;
+
+    njt_addr_t         server;
+    njt_connection_t   conn;
+
+    njt_log_t          log;
+    njt_log_t         *logp;
+
+    unsigned           busy:1;
+    unsigned           nohostname:1;
 } njt_syslog_peer_t;
 
 

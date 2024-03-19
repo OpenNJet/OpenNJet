@@ -206,7 +206,7 @@ njt_quic_validate_token(njt_connection_t *c, u_char *key,
     }
 
     if (pkt->token.len > (size_t) iv_len + NJT_QUIC_MAX_TOKEN_SIZE
-                         +NJT_QUIC_AES_256_GCM_TAG_LEN) 
+                         + NJT_QUIC_AES_256_GCM_TAG_LEN)
     {
         goto garbage;
     }

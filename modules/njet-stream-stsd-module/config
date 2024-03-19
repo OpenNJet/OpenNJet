@@ -1,0 +1,41 @@
+njt_addon_name=njt_stream_stsd_module
+have=NJT_STAT_STUB . auto/have
+
+HTTP_STREAM_STS_SRCS=" \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_module.c             \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_string.c             \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_shm.c                \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_node.c               \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_filter.c             \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_control.c            \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_display.c            \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_display_json.c       \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_display_prometheus.c \
+                 "
+
+HTTP_STREAM_STS_DEPS=" \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_module.h             \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_string.h             \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_shm.h                \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_node.h               \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_filter.h             \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_control.h            \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_display.h            \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_display_json.h       \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_display_prometheus.h \
+                 $njt_addon_dir/src/njt_http_stream_server_traffic_status_module_html.h        \
+                 "
+if test -n "$njt_module_link"; then
+    njt_module_type=HTTP
+    njt_module_name=$njt_addon_name
+    njt_module_srcs="$HTTP_STREAM_STS_SRCS"
+    njt_module_deps="$HTTP_STREAM_STS_DEPS"
+
+    . auto/module
+else
+    HTTP_MODULES="$HTTP_MODULES $njt_addon_name"
+    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $HTTP_STREAM_STS_SRCS"
+    NJT_ADDON_DEPS="$NJT_ADDON_DEPS $HTTP_STREAM_STS_DEPS"
+fi
+
+# vi:set ft=sh ts=4 sw=4 et fdm=marker:

@@ -330,7 +330,7 @@ static njt_http_variable_t  njt_http_ssi_vars[] = {
 static njt_int_t
 njt_http_ssi_header_filter(njt_http_request_t *r)
 {
-    njt_http_ssi_ctx_t       *ctx;
+    njt_http_ssi_ctx_t       *ctx, *mctx;
     njt_http_ssi_loc_conf_t  *slcf;
 
     slcf = njt_http_get_module_loc_conf(r, njt_http_ssi_filter_module);
@@ -341,6 +341,8 @@ njt_http_ssi_header_filter(njt_http_request_t *r)
     {
         return njt_http_next_header_filter(r);
     }
+
+    mctx = njt_http_get_module_ctx(r->main, njt_http_ssi_filter_module);
 
     ctx = njt_pcalloc(r->pool, sizeof(njt_http_ssi_ctx_t));
     if (ctx == NULL) {
@@ -368,6 +370,26 @@ njt_http_ssi_header_filter(njt_http_request_t *r)
     r->filter_need_in_memory = 1;
 
     if (r == r->main) {
+
+        if (mctx) {
+
+            /*
+             * if there was a shared context previously used as main,
+             * copy variables and blocks
+             */
+
+            ctx->variables = mctx->variables;
+            ctx->blocks = mctx->blocks;
+
+#if (NJT_PCRE)
+            ctx->ncaptures = mctx->ncaptures;
+            ctx->captures = mctx->captures;
+            ctx->captures_data = mctx->captures_data;
+#endif
+
+            mctx->shared = 0;
+        }
+
         njt_http_clear_content_length(r);
         njt_http_clear_accept_ranges(r);
 
@@ -380,6 +402,10 @@ njt_http_ssi_header_filter(njt_http_request_t *r)
         } else {
             njt_http_weak_etag(r);
         }
+
+    } else if (mctx == NULL) {
+        njt_http_set_ctx(r->main, ctx, njt_http_ssi_filter_module);
+        ctx->shared = 1;
     }
 
     return njt_http_next_header_filter(r);
@@ -406,6 +432,7 @@ njt_http_ssi_body_filter(njt_http_request_t *r, njt_chain_t *in)
     ctx = njt_http_get_module_ctx(r, njt_http_ssi_filter_module);
 
     if (ctx == NULL
+        || (ctx->shared && r == r->main)
         || (in == NULL
             && ctx->buf == NULL
             && ctx->in == NULL

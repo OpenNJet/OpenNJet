@@ -631,6 +631,10 @@ njt_quic_do_init_streams(njt_connection_t *c)
 
     qc->streams.initialized = 1;
 
+    if (!qc->closing && qc->close.timer_set) {
+        njt_del_timer(&qc->close);
+    }
+
     return NJT_OK;
 }
 

@@ -14,6 +14,7 @@
 static void njt_show_version_info(void);
 static njt_int_t njt_add_inherited_sockets(njt_cycle_t *cycle);
 static void njt_cleanup_environment(void *data);
+static void njt_cleanup_environment_variable(void *data);
 static njt_int_t njt_get_options(int argc, char *const *argv);
 static njt_int_t njt_process_options(njt_cycle_t *cycle);
 static njt_int_t njt_save_argv(njt_cycle_t *cycle, int argc, char *const *argv);
@@ -551,7 +552,8 @@ njt_add_inherited_sockets(njt_cycle_t *cycle)
 char **
 njt_set_environment(njt_cycle_t *cycle, njt_uint_t *last)
 {
-    char                **p, **env;
+    char                **p, **env, *str;
+    size_t                len;
     njt_str_t            *var;
     njt_uint_t            i, n;
     njt_core_conf_t      *ccf;
@@ -633,7 +635,31 @@ tz_found:
     for (i = 0; i < ccf->env.nelts; i++) {
 
         if (var[i].data[var[i].len] == '=') {
-            env[n++] = (char *) var[i].data;
+
+            if (last) {
+                env[n++] = (char *) var[i].data;
+                continue;
+            }
+
+            cln = njt_pool_cleanup_add(cycle->pool, 0);
+            if (cln == NULL) {
+                return NULL;
+            }
+
+            len = njt_strlen(var[i].data) + 1;
+
+            str = njt_alloc(len, cycle->log);
+            if (str == NULL) {
+                return NULL;
+            }
+
+            njt_memcpy(str, var[i].data, len);
+
+            cln->handler = njt_cleanup_environment_variable;
+            cln->data = str;
+
+            env[n++] = str;
+
             continue;
         }
 
@@ -675,6 +701,29 @@ njt_cleanup_environment(void *data)
     }
 
     njt_free(env);
+}
+
+
+static void
+njt_cleanup_environment_variable(void *data)
+{
+    char  *var = data;
+
+    char  **p;
+
+    for (p = environ; *p; p++) {
+
+        /*
+         * if an environment variable is still used, as it happens on exit,
+         * the only option is to leak it
+         */
+
+        if (*p == var) {
+            return;
+        }
+    }
+
+    njt_free(var);
 }
 
 

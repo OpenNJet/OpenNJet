@@ -66,6 +66,14 @@ typedef struct njt_quic_keys_s        njt_quic_keys_t;
 
 #define njt_quic_get_socket(c)               ((njt_quic_socket_t *)((c)->udp))
 
+#define njt_quic_init_rtt(qc)                                                 \
+    (qc)->avg_rtt = NJT_QUIC_INITIAL_RTT;                                     \
+    (qc)->rttvar = NJT_QUIC_INITIAL_RTT / 2;                                  \
+    (qc)->min_rtt = NJT_TIMER_INFINITE;                                       \
+    (qc)->first_rtt = NJT_TIMER_INFINITE;                                     \
+    (qc)->latest_rtt = 0;
+
+
 typedef enum {
     NJT_QUIC_PATH_IDLE = 0,
     NJT_QUIC_PATH_VALIDATING,
@@ -105,13 +113,13 @@ struct njt_quic_path_s {
     size_t                            max_mtu;
     off_t                             sent;
     off_t                             received;
-    u_char                            challenge1[8];
-    u_char                            challenge2[8];
+    u_char                            challenge[2][8];
     uint64_t                          seqnum;
     uint64_t                          mtu_pnum[NJT_QUIC_PATH_RETRIES];
     njt_str_t                         addr_text;
     u_char                            text[NJT_SOCKADDR_STRLEN];
-    njt_uint_t                        validated; /* unsigned validated:1; */
+    unsigned                          validated:1;
+    unsigned                          mtu_unvalidated:1;
 };
 
 
@@ -229,6 +237,8 @@ struct njt_quic_connection_s {
     njt_event_t                       pto;
     njt_event_t                       close;
     njt_event_t                       path_validation;
+    njt_event_t                       key_update;
+
     njt_msec_t                        last_cc;
 
     njt_msec_t                        first_rtt;
@@ -255,6 +265,8 @@ struct njt_quic_connection_s {
 
     njt_quic_streams_t                streams;
     njt_quic_congestion_t             congestion;
+
+    uint64_t                          rst_pnum;    /* first on validated path */
 
     off_t                             received;
 

@@ -16,6 +16,7 @@
 #include <njt_http_util.h>
 
 #include "njt_http_dyn_range_api_parser.h"
+#include "njet_http_api_register_module.h"
 
 
 #define MIN_CONFIG_BODY_LEN 2
@@ -35,12 +36,6 @@ static njt_int_t
 njt_dyn_range_init_worker(njt_cycle_t *cycle);
 
 static void *
-njt_dyn_range_create_loc_conf(njt_conf_t *cf);
-
-static char *njt_dyn_range_merge_loc_conf(njt_conf_t *cf,
-                                              void *parent, void *child);
-
-static void *
 njt_dyn_range_create_main_conf(njt_conf_t *cf);
 
 static njt_int_t
@@ -57,9 +52,6 @@ static njt_int_t njt_dyn_range_rpc_send(njt_http_request_t *r,njt_str_t *module_
 
 static int njt_dyn_range_request_output(njt_http_request_t *r,njt_int_t code, njt_str_t *msg);
 
-static char *
-njt_dyn_range_api(njt_conf_t *cf, njt_command_t *cmd, void *conf);
-
 typedef struct njt_dyn_range_ctx_s {
 } njt_dyn_range_ctx_t, njt_stream_dyn_range_ctx_t;
 
@@ -68,10 +60,6 @@ typedef struct njt_dyn_range_main_conf_s {  //njt_dyn_range_main_cf_t
 	njt_http_request_t **reqs;
     njt_int_t size;
 } njt_dyn_range_main_conf_t;
-
-typedef struct njt_dyn_range_loc_conf_s {  //njt_dyn_range_main_cf_t
-    njt_flag_t dyn_range_enable;
-}njt_dyn_range_loc_conf_t;
 
 
 typedef struct {
@@ -89,38 +77,22 @@ typedef struct {
 }njt_http_range_request_err_ctx_t;
 
 
-static njt_command_t njt_dyn_range_commands[] = {
-        {
-                njt_string("dyn_range_api"),
-                NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_ANY,
-                njt_dyn_range_api,
-                NJT_HTTP_LOC_CONF_OFFSET,
-                offsetof(njt_dyn_range_loc_conf_t, dyn_range_enable),
-                NULL
-        },
-        njt_null_command
-};
-
-
 static njt_http_module_t njt_http_range_api_module_ctx = {
         NULL,                              /* preconfiguration */
-        njt_dyn_range_init,                              /* postconfiguration */
-
-        njt_dyn_range_create_main_conf,                              /* create main configuration */
+        njt_dyn_range_init,                /* postconfiguration */
+        njt_dyn_range_create_main_conf,    /* create main configuration */
         NULL,                              /* init main configuration */
-
         NULL,                              /* create server configuration */
         NULL,                              /* merge server configuration */
-
-        njt_dyn_range_create_loc_conf, /* create location configuration */
-        njt_dyn_range_merge_loc_conf   /* merge location configuration */
+        NULL,                              /* create location configuration */
+        NULL                               /* merge location configuration */
 };
 
 
 njt_module_t njt_http_range_api_module = {
         NJT_MODULE_V1,
         &njt_http_range_api_module_ctx, /* module context */
-        njt_dyn_range_commands,    /* module directives */
+        NULL,                               /* module directives */
         NJT_HTTP_MODULE,                    /* module type */
         NULL,                               /* init master */
         NULL,                               /* init module */
@@ -133,22 +105,10 @@ njt_module_t njt_http_range_api_module = {
 };
 
 
-static char *
-njt_dyn_range_api(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
-    
-	njt_dyn_range_loc_conf_t   *clcf = conf;
-
-    clcf->dyn_range_enable = 1;
-    return NJT_CONF_OK;
-}
-
-
 static njt_int_t
 njt_dyn_range_init(njt_conf_t *cf) {
-    njt_http_core_main_conf_t *cmcf;
-    njt_http_handler_pt *h;
-
-	 njt_dyn_range_main_conf_t *dlmcf;
+    njt_http_api_reg_info_t             h;
+	njt_dyn_range_main_conf_t           *dlmcf;
 
     dlmcf = njt_http_conf_get_module_main_conf(cf,njt_http_range_api_module);
     if(dlmcf == NULL){
@@ -165,44 +125,20 @@ njt_dyn_range_init(njt_conf_t *cf) {
         return NJT_ERROR;
     }
 
-    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
-	if(cmcf == NULL) {
-		return NJT_ERROR;
-	}
-    //njt_dyn_range_handler
-    h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
-    if (h == NULL) {
-        return NJT_ERROR;
-    }
+    njt_str_t  module_key = njt_string("/v1/range");
+    njt_memzero(&h, sizeof(njt_http_api_reg_info_t));
+    h.key = &module_key;
+    h.handler = njt_dyn_range_handler;
+    njt_http_api_module_reg_handler(&h);
 
-    *h = njt_dyn_range_handler;
     return NJT_OK;
 }
 
 
 static void *
-njt_dyn_range_create_loc_conf(njt_conf_t *cf) {
-    //ssize_t size;
-    //njt_str_t zone = njt_string("api_dy_server");
-    njt_dyn_range_loc_conf_t *uclcf;
-    //size = (ssize_t)(10 * njt_pagesize);
-    uclcf = njt_pcalloc(cf->pool, sizeof(njt_dyn_range_loc_conf_t));
-    if (uclcf == NULL) {
-        njt_log_error(NJT_LOG_ERR, cf->log, 0, "malloc uclcf eror");
-        return NULL;
-    }
-    uclcf->dyn_range_enable = NJT_CONF_UNSET;
-    return uclcf;
-}
-
-static void *
 njt_dyn_range_create_main_conf(njt_conf_t *cf) {
-    //ssize_t size;
-    //njt_str_t zone = njt_string("api_dy_server");
-
     njt_dyn_range_main_conf_t *uclcf;
 
-    //size = (ssize_t)(10 * njt_pagesize);
     uclcf = njt_pcalloc(cf->pool, sizeof(njt_dyn_range_main_conf_t));
     if (uclcf == NULL) {
         njt_log_error(NJT_LOG_ERR, cf->log, 0, "malloc njt_dyn_range_main_conf_t eror");
@@ -210,17 +146,6 @@ njt_dyn_range_create_main_conf(njt_conf_t *cf) {
     }
 	uclcf->size = NJT_CONF_UNSET;
     return uclcf;
-}
-
-
-static char *njt_dyn_range_merge_loc_conf(njt_conf_t *cf,
-                                              void *parent, void *child) {
-    njt_dyn_range_loc_conf_t *prev = parent;
-    njt_dyn_range_loc_conf_t *conf = child;
-
-    njt_conf_merge_value(conf->dyn_range_enable, prev->dyn_range_enable, 0);
-
-    return NJT_CONF_OK;
 }
 
 
@@ -269,17 +194,7 @@ static int njt_dyn_range_request_output(njt_http_request_t *r,njt_int_t code, nj
 static njt_int_t
 njt_dyn_range_handler(njt_http_request_t *r) {
     njt_int_t                       rc = NJT_OK;
-    njt_dyn_range_loc_conf_t     *loc;
-    // njt_array_t                     *path;
     njt_str_t                       msg,topic;
-    
-    loc = njt_http_get_module_loc_conf(r, njt_http_range_api_module);
-    if (loc && loc->dyn_range_enable) {
-        //printf("11");
-    } else {
-        //printf("NJT_DECLINED");
-        return NJT_DECLINED;
-    }
 
     njt_str_null(&msg);
     njt_str_t srv_err = njt_string("{\"code\":500,\"msg\":\"server error\"}");
@@ -571,13 +486,3 @@ out:
 
     return;
 }
-
-
-
-
-
-
-
-
-
-

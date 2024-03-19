@@ -897,8 +897,9 @@ njt_stream_ssl_merge_conf(njt_conf_t *cf, void *parent, void *child)
                          prev->prefer_server_ciphers, 0);
 
     njt_conf_merge_bitmask_value(conf->protocols, prev->protocols,
-                         (NJT_CONF_BITMASK_SET|NJT_SSL_TLSv1
-                          |NJT_SSL_TLSv1_1|NJT_SSL_TLSv1_2));
+                         (NJT_CONF_BITMASK_SET
+                          |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
+                          |NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3));
 
     njt_conf_merge_uint_value(conf->verify, prev->verify, 0);
     njt_conf_merge_uint_value(conf->verify_depth, prev->verify_depth, 1);
@@ -1273,7 +1274,7 @@ njt_stream_ssl_session_cache(njt_conf_t *cf, njt_command_t *cmd, void *conf)
                 len++;
             }
 
-            if (len == 0) {
+           if (len == 0 || j == value[i].len) {
                 goto invalid;
             }
 

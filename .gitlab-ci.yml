@@ -2,6 +2,8 @@ stages:
   - build_bin
   - build_rpm
   - build_deb
+  - build_njet_image
+  - push_njet_image
 
 build_bin:
   stage: build_bin
@@ -72,3 +74,51 @@ build_deb:
     paths: # 需要打包的文件
       - work/*.deb
     expire_in: 1 week # 打包文件存储有效期
+
+variables:
+  NJET_RIEPOSITORY: "tmlake/njet"
+  DOCKER_TLS_CERTDIR: ""
+
+build_njet_image:
+  stage: build_njet_image
+  image: docker:20.10.11
+  services:
+    - docker:20.10.11-dind
+  before_script:
+    - docker info
+    - docker login -u tmlake -p dckr_pat_0AX95kK-qlZRlTnBES4faMtol9g
+  script:
+    - export
+    - sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
+    - apk update
+    - apk add make git
+    - echo "njet build start..."
+    - id
+    - mkdir docker-images
+    - DOCKER_BUILDKIT=1 docker build --build-arg BUILD_OS=ubuntu-njet --build-arg NJet_VERSION=$NJET_TAG --build-arg GIT_COMMIT=$CI_COMMIT_SHA  --network host --target ubuntu-njet -f ./build/docker/Dockerfile_njet -t $NJET_RIEPOSITORY:$NJET_TAG ./
+    - docker images
+    - docker save $NJET_RIEPOSITORY:$NJET_TAG > docker-images/njet-$NJET_TAG.tar
+    - ls docker-images
+    - echo "njet build end..."
+  artifacts:
+    paths:
+      - docker-images/
+  when: manual
+
+push_njet_image:
+  stage: push_njet_image
+  image: docker:20.10.11
+  services:
+    - docker:20.10.11-dind
+  before_script:
+    - docker info
+    - docker login -u tmlake -p dckr_pat_0AX95kK-qlZRlTnBES4faMtol9g
+  script:
+    - docker images
+    - ls docker-images
+    - docker load -i docker-images/njet-$NJET_TAG.tar
+    - docker images
+    - docker push $NJET_RIEPOSITORY:$NJET_TAG
+  dependencies:
+    - build_njet_image
+  when: manual

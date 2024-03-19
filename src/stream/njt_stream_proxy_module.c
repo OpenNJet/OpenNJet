@@ -1851,9 +1851,8 @@ njt_stream_proxy_process(njt_stream_session_t *s, njt_uint_t from_upstream,
 
         size = b->end - b->last;
 
-        if (size && src != NULL && src->read->ready && !src->read->delayed
-            && !src->read->error)
-        {
+        if (size && src != NULL && src->read->ready && !src->read->delayed ) {
+
             if (limit_rate) {
                 limit = (off_t) limit_rate * (njt_time() - u->start_sec + 1)
                         - *received;
@@ -2363,8 +2362,9 @@ njt_stream_proxy_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
                               prev->ssl_session_reuse, 1);
 
     njt_conf_merge_bitmask_value(conf->ssl_protocols, prev->ssl_protocols,
-                              (NJT_CONF_BITMASK_SET|NJT_SSL_TLSv1
-                               |NJT_SSL_TLSv1_1|NJT_SSL_TLSv1_2));
+                              (NJT_CONF_BITMASK_SET
+                               |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
+                               |NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3));
 
     njt_conf_merge_str_value(conf->ssl_ciphers, prev->ssl_ciphers, "DEFAULT");
 

@@ -6,8 +6,8 @@
  */
 
 
-#ifndef _NJT_HEEP_V3_PARSE_H_INCLUDED_
-#define _NJT_HEEP_V3_PARSE_H_INCLUDED_
+#ifndef _NJT_HTTP_V3_PARSE_H_INCLUDED_
+#define _NJT_HTTP_V3_PARSE_H_INCLUDED_
 
 
 #include <njt_config.h>
@@ -144,4 +144,4 @@ njt_int_t njt_http_v3_parse_uni(njt_connection_t *c,
     njt_http_v3_parse_uni_t *st, njt_buf_t *b);
 
 
-#endif /* _NJT_HEEP_V3_PARSE_H_INCLUDED_ */
+#endif /* _NJT_HTTP_V3_PARSE_H_INCLUDED_ */

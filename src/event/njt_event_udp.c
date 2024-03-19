@@ -41,7 +41,7 @@ njt_event_recvmsg(njt_event_t *ev)
 
     //add by clb for udp traffic hack
     struct cmsghdr    *cmsg_tmp;
-    struct sockaddr_in *tmp_real_dst_addr = NULL;
+    struct sockaddr_in *tmp_real_dst_addr = NULL; // for gcc-9 build
     struct sockaddr_in *tmp_local_addr;
     struct sockaddr_in6 *tmp_real_dst_addr6;
     struct sockaddr_in6 *tmp_local_addr6;
@@ -92,7 +92,7 @@ njt_event_recvmsg(njt_event_t *ev)
             msg.msg_control = &msg_control;
             msg.msg_controllen = sizeof(msg_control);
             njt_memzero(&msg_control, sizeof(msg_control));
-       }
+        }
 #endif
 
         n = recvmsg(lc->fd, &msg, 0);
