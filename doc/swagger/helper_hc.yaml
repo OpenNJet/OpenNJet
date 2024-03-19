@@ -1,12 +1,12 @@
 openapi: 3.0.3
 info:
-  title: njet-api
-  description: njet-api
-  version: 1.0.0
+  title: dyn health check config api
+  description: 健康检查配置
+  version: 1.1.0
 servers:
-  - url: '/hc/1'
+  - url: '/api'
 paths:
-  /hc/:
+  /v1/hc:
     get:
       tags:
         - Health Check
@@ -27,7 +27,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/CommonMsg'
 
-  /hc/{typeName}/{upstreamName}:
+  /v1/hc/{typeName}/{upstreamName}:
     parameters:
       - name: typeName
         type: string

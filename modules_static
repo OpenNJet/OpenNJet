@@ -30,3 +30,7 @@
 ./modules/njet-alpn-module
 # optional
 ./modules/njet-jwt-module
+# optional, required by njet-stream-stsd-module
+./modules/njet-stream-stsc-module
+# required
+./modules/njet-http-api-register-module
