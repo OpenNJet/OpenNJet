@@ -1628,7 +1628,6 @@ njt_conf_read_memory_token(njt_conf_t *cf,njt_str_t data)
         ch = *b->pos++;
 
         if (ch == LF) {
-            cf->conf_file->line++;
 
             if (sharp_comment) {
                 sharp_comment = 0;
