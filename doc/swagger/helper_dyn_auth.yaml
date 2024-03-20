@@ -1,0 +1,153 @@
+openapi: 3.0.3
+info:
+  title: dyn auth config api
+  description: 动态auth认证
+  version: 1.1.0
+
+servers:
+  - url: '/api'
+paths:
+  /v1/config/:
+    get:
+      tags:
+        - dyn config module
+      summary: Returns a list of allow dynamic conf module
+      description: Returns a list of allow dynamic conf module
+      operationId: getDynConfModuleList
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModuleList'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+  /v1/config/http_dyn_auth:
+    put:
+      tags:
+        - dyn auth config
+      summary: set module conf
+      description: set module conf
+      operationId: setDynModuleConf
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/MainConf'
+          required: true
+      responses:
+        '204':
+          description: Success
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+    get:
+      tags:
+        - dyn auth config
+      summary: return dynamic module conf
+      description: get module conf
+      operationId: getDynModuleConf
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+
+    ModuleList:
+      title: module list
+      description: 支持动态配置的模块列表
+      type: array
+      items:
+        type: string
+
+    MainConf:
+      title: main Conf
+      description: 动态 main 级别配置
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/ServerConf'
+
+    ServerConf:
+      title:     ServerConf
+      description: 动态 server 级别配置
+      type: object
+      properties:
+        listens:
+          type: array
+          description: server listen 端口列表
+          items:
+            type: string
+
+        serverNames:
+          type: array
+          description: server Name 列表.
+          items:
+            type: string
+        locations:
+          type: array
+          description: locations 列表
+          items:
+            $ref: '#/components/schemas/LocationConf'
+
+
+    LocationConf:
+      title: LocationConf
+      description: location 级别 auth 配置信息
+      type: object
+      properties:
+        location:
+          type: string
+          description: location 名称 .
+          example: /demo
+        auth_basic:
+          type: string
+          description: auth basic
+          example: openapi auth
+        auth_type:
+          type: string
+          description: 密码验证类型，文件密码或者kv 内存密码验证， 取值[file|kv]
+          example: file
+        auth_param:
+          type: string
+          description: auth_type为file, 则该参数为文件路径；auth_type为kv, 则该参数为 kv auth 前缀
+          example: /usr/local/njet/passwd.txt
+        locations:
+          type: array
+          description: locations 列表
+          items:
+            $ref: '#/components/schemas/LocationConf'
+
