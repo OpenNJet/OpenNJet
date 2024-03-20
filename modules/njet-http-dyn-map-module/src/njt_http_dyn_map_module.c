@@ -796,10 +796,11 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, httpmap_t *api
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         }
-        if(oper == 0 && rc == NJT_OK) {
-                //update
+        if (oper == 2 && have == 1){
+                //del
+                njt_destroy_pool(pool);
         } else {
-            njt_destroy_pool(pool);
+             //update,add
         }
     }
 

@@ -265,7 +265,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     char *rv;
     njt_str_t *value, name,from;
     njt_conf_t                         save;
-    njt_pool_t *pool,*new_map_pool;
+    njt_pool_t *pool,*new_map_pool,*old_pool;
     njt_http_map_ctx_t *map;
     njt_http_variable_t *var;
     njt_http_map_conf_ctx_t            ctx;
@@ -285,6 +285,8 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             njt_cacheline_size);
     }
     /// by zyg
+    old_pool = cf->pool;
+    new_map_pool = cf->pool;
 #if (NJT_HTTP_DYN_MAP_MODULE)
     if(cf->dynamic == 1) {
         new_map_pool = njt_create_pool(NJT_DEFAULT_POOL_SIZE, cf->log);
@@ -395,7 +397,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     rv = njt_conf_parse(cf, NULL);
 
     *cf = save;
-
+     cf->pool = old_pool;
     if (rv != NJT_CONF_OK) {
         njt_destroy_pool(pool);
         return rv;
@@ -405,7 +407,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         var->flags |= NJT_HTTP_VAR_NOCACHEABLE;
     }
 
-    rc = njt_http_map_create_hash_from_ctx(mcf, map, &ctx, cf->pool, pool);
+    rc = njt_http_map_create_hash_from_ctx(mcf, map, &ctx,new_map_pool, pool);
     if (rc != NJT_OK) {
         rv = NJT_CONF_ERROR;
     }
@@ -416,7 +418,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         return NJT_CONF_ERROR;
     }
 
-    var_hash_item->name.data = njt_pstrdup(cf->pool, &name);
+    var_hash_item->name.data = njt_pstrdup(new_map_pool, &name);
     if (var_hash_item->name.data == NULL) {
         njt_conf_log_error(NJT_LOG_ERR, cf, 0, "malloc error in http map for njt_http_map_var_hash_t.name ");
         return NJT_CONF_ERROR;
