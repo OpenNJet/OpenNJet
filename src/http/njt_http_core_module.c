@@ -6425,7 +6425,7 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
 	
 	
     njt_snprintf(new_src.data,new_src.len,"if (%V){",&old);
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_run_location idx=%d, %s",i,old);
+    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_run_location idx=%d, %V",i,&new_src);
 	//njt_http_core_if_location_get_args(old,&name,&oper,&value);
     /*
 	if(num <= 1) {
