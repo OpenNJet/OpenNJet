@@ -6409,7 +6409,7 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
   //njt_http_core_loc_conf_t **ploc;
   njt_str_t  new_src,old,name,oper,value;
   njt_int_t rc;
-  u_char *pdata;
+  u_char *pdata, *p;
 
    for(i=0; i < parse_ctx->count; i++) {
    	njt_str_null(&name);
@@ -6424,7 +6424,8 @@ njt_http_core_if_location_array_new(njt_conf_t *cf, loc_parse_ctx_t * parse_ctx,
 	new_src.data = njt_pcalloc(cf->pool,new_src.len);
 	
 	
-    njt_snprintf(new_src.data,new_src.len,"if (%V){",&old);
+    p = njt_snprintf(new_src.data,new_src.len,"if (%V){ ",&old);
+    new_src.len = p - new_src.data;
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_run_location idx=%d, %V",i,&new_src);
 	//njt_http_core_if_location_get_args(old,&name,&oper,&value);
     /*
