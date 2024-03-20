@@ -872,6 +872,8 @@ int njt_dyn_kv_get(njt_str_t *key, njt_str_t *value)
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_dyn_kv_get got wrong key:value data");
         return NJT_ERROR;
     }
+
+    njt_str_null(value);
     int ret = njet_iot_client_kv_get((void *)key->data, key->len, (void **)&value->data, (uint32_t *)&value->len, sendmsg_mqtt_ctx);
     if (ret < 0)
     {

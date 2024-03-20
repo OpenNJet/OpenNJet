@@ -1918,7 +1918,7 @@ static njt_int_t njt_dyn_limit_update_limit_conf(njt_pool_t *pool, dyn_limit_t *
                     || dsi->serverNames->nelts < 1) {
                 // listens or server_names is empty
                 end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-                    " server parameters error, listens or serverNames or locations is empty,at position %d", i);
+                    " server parameters error, listens or serverNames is empty,at position %d", i);
                 rpc_data_str.len = end - data_buf;
                 njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                 continue;

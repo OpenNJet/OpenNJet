@@ -251,6 +251,7 @@ static void njt_http_auth_api_api_read_data(njt_http_request_t *r){
         auth_key.len = p - buf;
         auth_key.data = buf;
 
+        njt_str_null();
         if(NJT_OK == njt_db_kv_get(&auth_key, &auth_passwd)){
             njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
             njt_rpc_result_set_msg(rpc_result, (u_char *)" user existed");
