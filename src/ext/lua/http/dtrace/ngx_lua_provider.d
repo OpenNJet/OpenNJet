@@ -22,15 +22,15 @@ provider nginx_lua {
     /* lua_State *L */
     probe http__lua__thread__yield(void *r, void *L);
 
-    /* ngx_http_lua_socket_tcp_upstream_t *u */
+    /* njt_http_lua_socket_tcp_upstream_t *u */
     probe http__lua__socket__tcp__send__start(void *r,
             void *u, u_char *data, size_t len);
 
-    /* ngx_http_lua_socket_tcp_upstream_t *u */
+    /* njt_http_lua_socket_tcp_upstream_t *u */
     probe http__lua__socket__tcp__receive__done(void *r,
             void *u, u_char *data, size_t len);
 
-    /* ngx_http_lua_socket_tcp_upstream_t *u */
+    /* njt_http_lua_socket_tcp_upstream_t *u */
     probe http__lua__socket__tcp__setkeepalive__buf__unread(
             void *r, void *u, u_char *data, size_t len);
 
@@ -38,7 +38,7 @@ provider nginx_lua {
     probe http__lua__user__thread__spawn(void *r,
             void *creator, void *newthread);
 
-    /* lua_State *thread, ngx_http_lua_ctx_t *ctx */
+    /* lua_State *thread, njt_http_lua_ctx_t *ctx */
     probe http__lua__thread__delete(void *r, void *thread, void *ctx);
 
     /* lua_State *thread */

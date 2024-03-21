@@ -44,12 +44,12 @@ __DATA__
                -- First we receive in a blocking fashion so that ctx->downstream_co_ctx will be changed
                local data, err, partial = req_socket:receive(1)
                if err ~= "timeout" then
-                  ngx.log(ngx.ERR, "Did not get timeout in the receiving thread!")
+                  njt.log(njt.ERR, "Did not get timeout in the receiving thread!")
                   return
                end
 
                -- Now, sleep so that coctx->data is changed to sleep handler
-               ngx.sleep(1)
+               njt.sleep(1)
             end
 
             local function writer(req_socket)
@@ -60,17 +60,17 @@ __DATA__
                end
             end
 
-            local req_socket, err = ngx.req.socket(true)
+            local req_socket, err = njt.req.socket(true)
             if req_socket == nil then
-               ngx.status = 500
+               njt.status = 500
                return error("Unable to get request socket:" .. (err or "nil"))
             end
 
-            local writer_thread = ngx.thread.spawn(writer, req_socket)
-            local reader_thread = ngx.thread.spawn(reader, req_socket)
+            local writer_thread = njt.thread.spawn(writer, req_socket)
+            local reader_thread = njt.thread.spawn(reader, req_socket)
 
-            ngx.thread.wait(writer_thread)
-            ngx.thread.wait(reader_thread)
+            njt.thread.wait(writer_thread)
+            njt.thread.wait(reader_thread)
             print("The two threads finished")
 ';
         }
@@ -100,32 +100,32 @@ Content-Length: 1
                -- First we receive in a blocking fashion so that ctx->downstream_co_ctx will be changed
                local data, err, partial = req_socket:receive(1)
                if err ~= "timeout" then
-                  ngx.log(ngx.ERR, "Did not get timeout in the receiving thread!")
+                  njt.log(njt.ERR, "Did not get timeout in the receiving thread!")
                   return
                end
 
                -- Now, sleep so that coctx->data is changed to sleep handler
-               ngx.sleep(1)
+               njt.sleep(1)
             end
 
             local function writer(req_socket)
                -- send in a slow manner with a low timeout, so that the timeout handler will be
-               ngx.sleep(0.3)
-               ngx.say("slow!!!")
-               ngx.flush(true)
+               njt.sleep(0.3)
+               njt.say("slow!!!")
+               njt.flush(true)
             end
 
-            local req_socket, err = ngx.req.socket()
+            local req_socket, err = njt.req.socket()
             if req_socket == nil then
-               ngx.status = 500
+               njt.status = 500
                return error("Unable to get request socket:" .. (err or "nil"))
             end
 
-            local writer_thread = ngx.thread.spawn(writer, req_socket)
-            local reader_thread = ngx.thread.spawn(reader, req_socket)
+            local writer_thread = njt.thread.spawn(writer, req_socket)
+            local reader_thread = njt.thread.spawn(reader, req_socket)
 
-            ngx.thread.wait(writer_thread)
-            ngx.thread.wait(reader_thread)
+            njt.thread.wait(writer_thread)
+            njt.thread.wait(reader_thread)
             print("The two threads finished")
 ';
         }

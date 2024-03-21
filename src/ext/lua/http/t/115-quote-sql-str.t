@@ -17,7 +17,7 @@ __DATA__
 --- config
     location = /set {
         content_by_lua '
-            ngx.say(ngx.quote_sql_str("a\\0b\\0"))
+            njt.say(njt.quote_sql_str("a\\0b\\0"))
         ';
     }
 --- request
@@ -33,7 +33,7 @@ GET /set
 --- config
     location = /set {
         content_by_lua '
-            ngx.say(ngx.quote_sql_str("a\\tb\\t"))
+            njt.say(njt.quote_sql_str("a\\tb\\t"))
         ';
     }
 --- request
@@ -49,7 +49,7 @@ GET /set
 --- config
     location = /set {
         content_by_lua '
-            ngx.say(ngx.quote_sql_str("a\\bb\\b"))
+            njt.say(njt.quote_sql_str("a\\bb\\b"))
         ';
     }
 --- request
@@ -65,7 +65,7 @@ GET /set
 --- config
     location = /set {
         content_by_lua '
-            ngx.say(ngx.quote_sql_str("a\\026b\\026"))
+            njt.say(njt.quote_sql_str("a\\026b\\026"))
         ';
     }
 --- request

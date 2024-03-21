@@ -50,9 +50,9 @@ __DATA__
     location = /t {
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeout(500)
-            assert(sock:connect("127.0.0.1", ngx.var.port))
+            assert(sock:connect("127.0.0.1", njt.var.port))
             local req = {
                 'GET /foo HTTP/1.0\r\n',
                 'Host: localhost\r\n',
@@ -60,7 +60,7 @@ __DATA__
             }
             local ok, err = sock:send(req)
             if not ok then
-                ngx.say("send request failed: ", err)
+                njt.say("send request failed: ", err)
                 return
             end
 
@@ -69,7 +69,7 @@ __DATA__
             while true do
                 local data, err, _ = sock:receive('*l')
                 if err then
-                    ngx.say('unexpected error occurs when receiving http head: ' .. err)
+                    njt.say('unexpected error occurs when receiving http head: ' .. err)
                     return
                 end
                 if #data == 0 then -- read last line of head
@@ -82,11 +82,11 @@ __DATA__
                 local data, err = sock:receiveany(1024)
                 if err then
                     if err ~= 'closed' then
-                        ngx.say('unexpected err: ', err)
+                        njt.say('unexpected err: ', err)
                     end
                     break
                 end
-                ngx.say(data)
+                njt.say(data)
             end
 
             sock:close()
@@ -106,15 +106,15 @@ __DATA__
             end
 
             -- flush http header
-            ngx.header['Content-Length'] = length
-            ngx.flush(true)
-            ngx.sleep(0.01)
+            njt.header['Content-Length'] = length
+            njt.flush(true)
+            njt.sleep(0.01)
 
             -- send http body bytes by bytes
             for _, v in ipairs(resp) do
-                ngx.print(v)
-                ngx.flush(true)
-                ngx.sleep(0.01)
+                njt.print(v)
+                njt.flush(true)
+                njt.sleep(0.01)
             end
         }
     }

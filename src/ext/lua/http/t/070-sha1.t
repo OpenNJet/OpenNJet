@@ -18,7 +18,7 @@ __DATA__
 === TEST 1: set sha1 hello
 --- config
     location = /sha1 {
-        content_by_lua 'ngx.say(ngx.encode_base64(ngx.sha1_bin("hello")))';
+        content_by_lua 'njt.say(njt.encode_base64(njt.sha1_bin("hello")))';
     }
 --- request
 GET /sha1
@@ -32,7 +32,7 @@ qvTGHdzF6KLavt4PO0gs2a6pQ00=
 === TEST 2: set sha1 ""
 --- config
     location = /sha1 {
-        content_by_lua 'ngx.say(ngx.encode_base64(ngx.sha1_bin("")))';
+        content_by_lua 'njt.say(njt.encode_base64(njt.sha1_bin("")))';
     }
 --- request
 GET /sha1
@@ -46,7 +46,7 @@ GET /sha1
 === TEST 3: set sha1 nil
 --- config
     location = /sha1 {
-        content_by_lua 'ngx.say(ngx.encode_base64(ngx.sha1_bin(nil)))';
+        content_by_lua 'njt.say(njt.encode_base64(njt.sha1_bin(nil)))';
     }
 --- request
 GET /sha1
@@ -60,7 +60,7 @@ GET /sha1
 === TEST 4: set sha1 number
 --- config
     location = /sha1 {
-        content_by_lua 'ngx.say(ngx.encode_base64(ngx.sha1_bin(512)))';
+        content_by_lua 'njt.say(njt.encode_base64(njt.sha1_bin(512)))';
     }
 --- request
 GET /sha1

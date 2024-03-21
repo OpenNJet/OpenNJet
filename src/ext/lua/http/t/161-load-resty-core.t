@@ -32,7 +32,7 @@ __DATA__
             local loaded_resty_core = package.loaded["resty.core"]
             local resty_core = require "resty.core"
 
-            ngx.say("resty.core loaded: ", loaded_resty_core == resty_core)
+            njt.say("resty.core loaded: ", loaded_resty_core == resty_core)
         }
     }
 --- response_body
@@ -49,7 +49,7 @@ resty.core loaded: true
             local loaded_resty_core = package.loaded["resty.core"]
             local resty_core = require "resty.core"
 
-            ngx.say("resty.core loaded: ", loaded_resty_core == resty_core)
+            njt.say("resty.core loaded: ", loaded_resty_core == resty_core)
         }
     }
 --- response_body
@@ -66,7 +66,7 @@ resty.core loaded: true
             local loaded_resty_core = package.loaded["resty.core"]
             local resty_core = require "resty.core"
 
-            ngx.say("resty.core loaded: ", loaded_resty_core == resty_core)
+            njt.say("resty.core loaded: ", loaded_resty_core == resty_core)
         }
     }
 --- response_body
@@ -83,7 +83,7 @@ resty.core loaded: true
             local loaded_resty_core = package.loaded["resty.core"]
             local resty_core = require "resty.core"
 
-            ngx.say("resty.core loaded: ", loaded_resty_core == resty_core)
+            njt.say("resty.core loaded: ", loaded_resty_core == resty_core)
 
             resty_core.go()
         }
@@ -95,7 +95,7 @@ loaded from html dir
 >>> resty/core.lua
 return {
     go = function ()
-        ngx.say("loaded from html dir")
+        njt.say("loaded from html dir")
     end
 }
 
@@ -124,7 +124,7 @@ qr/\[alert\] .*? failed to load the 'resty\.core' module .*? \(reason: module 'r
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- error_code: 500
@@ -145,7 +145,7 @@ qr/\[alert\] .*? failed to load the 'resty\.core' module/
 --- grep_error_log eval: qr/\[warn\] .*? lua_load_resty_core is deprecated.*/
 --- grep_error_log_out eval
 [
-qr/\[warn\] .*? lua_load_resty_core is deprecated \(the lua-resty-core library is required since ngx_lua v0\.10\.16\) in .*?nginx\.conf:\d+/,
+qr/\[warn\] .*? lua_load_resty_core is deprecated \(the lua-resty-core library is required since njt_lua v0\.10\.16\) in .*?nginx\.conf:\d+/,
 ""
 ]
 
@@ -161,6 +161,6 @@ qr/\[warn\] .*? lua_load_resty_core is deprecated \(the lua-resty-core library i
 --- grep_error_log eval: qr/\[warn\] .*? lua_load_resty_core is deprecated.*/
 --- grep_error_log_out eval
 [
-qr/\[warn\] .*? lua_load_resty_core is deprecated \(the lua-resty-core library is required since ngx_lua v0\.10\.16\) in .*?nginx\.conf:\d+/,
+qr/\[warn\] .*? lua_load_resty_core is deprecated \(the lua-resty-core library is required since njt_lua v0\.10\.16\) in .*?nginx\.conf:\d+/,
 ""
 ]

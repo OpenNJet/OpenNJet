@@ -29,39 +29,39 @@ server {
 
 --- stream_server_config
     preread_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
         -- req = "OK"
 
         local bytes, err = sock:send(req)
         if not bytes then
-        ngx.say("failed to send request: ", err)
+        njt.say("failed to send request: ", err)
         return
         end
 
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         while true do
             local line, err, part = sock:receive()
             if line then
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
 
             else
-                ngx.say("failed to receive a line: ", err, " [", part, "]")
+                njt.say("failed to receive a line: ", err, " [", part, "]")
                 break
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
     content_by_lua return;
@@ -80,25 +80,25 @@ recv() failed (104: Connection reset by peer
 === TEST 2: no resolver defined
 --- stream_server_config
     preread_by_lua_block {
-        local sock = ngx.socket.tcp()
-        local port = ngx.var.port
+        local sock = njt.socket.tcp()
+        local port = njt.var.port
         local ok, err = sock:connect("agentzh.org", 1234)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n"
         -- req = "OK"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
 
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
     }
 
     content_by_lua return;
@@ -117,41 +117,41 @@ attempt to send data on a closed socket:
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     resolver_timeout 3s;
     preread_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = 80
         local ok, err = sock:connect("agentzh.org", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET / HTTP/1.0\r\nHost: agentzh.org\r\nConnection: close\r\n\r\n"
         -- req = "OK"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
 
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local line, err = sock:receive()
         if line then
-            ngx.say("first line received: ", line)
+            njt.say("first line received: ", line)
 
         else
-            ngx.say("failed to receive the first line: ", err)
+            njt.say("failed to receive the first line: ", err)
         end
 
         line, err = sock:receive()
         if line then
-            ngx.say("second line received: ", line)
+            njt.say("second line received: ", line)
 
         else
-            ngx.say("failed to receive the second line: ", err)
+            njt.say("failed to receive the second line: ", err)
         end
     }
 
@@ -169,20 +169,20 @@ second line received: (?:Date|Server): .*?
 === TEST 4: connection refused (tcp)
 --- stream_server_config
     preread_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local ok, err = sock:connect("127.0.0.1", 16787)
-        ngx.say("connect: ", ok, " ", err)
+        njt.say("connect: ", ok, " ", err)
 
         local bytes
         bytes, err = sock:send("hello")
-        ngx.say("send: ", bytes, " ", err)
+        njt.say("send: ", bytes, " ", err)
 
         local line
         line, err = sock:receive()
-        ngx.say("receive: ", line, " ", err)
+        njt.say("receive: ", line, " ", err)
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
     content_by_lua return;
@@ -204,20 +204,20 @@ qr/connect\(\) failed \(\d+: Connection refused\)/
     lua_socket_read_timeout 100ms;
     resolver_timeout 3s;
     preread_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local ok, err = sock:connect("127.0.0.2", 12345)
-        ngx.say("connect: ", ok, " ", err)
+        njt.say("connect: ", ok, " ", err)
 
         local bytes
         bytes, err = sock:send("hello")
-        ngx.say("send: ", bytes, " ", err)
+        njt.say("send: ", bytes, " ", err)
 
         local line
         line, err = sock:receive()
-        ngx.say("receive: ", line, " ", err)
+        njt.say("receive: ", line, " ", err)
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
     content_by_lua return;
@@ -235,15 +235,15 @@ stream lua tcp socket connect timed out, when connecting to 127.0.0.2:12345
 === TEST 6: not closed manually
 --- stream_server_config
     preread_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
     }
 
     content_by_lua return;
@@ -259,26 +259,26 @@ connected: 1
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     resolver_timeout 3s;
     preread_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = 80
         local ok, err = sock:connect("blah-blah-not-found.agentzh.org", 1234)
         print("connected: ", ok, " ", err, " ", not ok)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET / HTTP/1.0\\r\\nHost: agentzh.org\\r\\nConnection: close\\r\\n\\r\\n"
         -- req = "OK"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
 
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
     }
 
     content_by_lua return;
@@ -297,26 +297,26 @@ attempt to send data on a closed socket
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     resolver_timeout 1ms;
     preread_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = 80
         local ok, err = sock:connect("blah-blah-not-found.agentzh.org", port)
         print("connected: ", ok, " ", err, " ", not ok)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET / HTTP/1.0\\r\\nHost: agentzh.org\\r\\nConnection: close\\r\\n\\r\\n"
         -- req = "OK"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
 
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
     }
 
     content_by_lua return;

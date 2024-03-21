@@ -7,9 +7,9 @@ stages:
 
 build_bin:
   stage: build_bin
-  image: 192.168.30.226/yunke-slb-ingress/rpmbuild:1.0
-  variables:
-    DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
+  image: tmlake/njet-build:centos7
+  # variables:
+  #   DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
 #  image: gcc:4.8.5   # gcc 版本
   script:
     - sudo chmod +x ./build_cc.sh ./configure
@@ -32,9 +32,10 @@ build_bin:
 
 build_rpm:
   stage: build_rpm
-  image: 192.168.30.226/yunke-slb-ingress/rpmbuild:1.0
-  variables:
-    DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
+  #image: tmlake/rpmbuild:1.1
+  image: tmlake/njet-build:centos7
+  # variables:
+  #   DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
   when: manual
   script:
     - cd ..  

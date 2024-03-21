@@ -19,11 +19,11 @@ __DATA__
 === TEST 1: sanity
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, 1234", "([0-9]+)", "o")
+        m = njt.re.match("hello, 1234", "([0-9]+)", "o")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -34,11 +34,11 @@ __DATA__
 === TEST 2: escaping sequences
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, 1234", "(\\d+)", "o")
+        m = njt.re.match("hello, 1234", "(\\d+)", "o")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -49,12 +49,12 @@ __DATA__
 === TEST 3: single capture
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, 1234", "([0-9]{2})[0-9]+", "o")
+        m = njt.re.match("hello, 1234", "([0-9]{2})[0-9]+", "o")
         if m then
-            ngx.say(m[0])
-            ngx.say(m[1])
+            njt.say(m[0])
+            njt.say(m[1])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -66,13 +66,13 @@ __DATA__
 === TEST 4: multiple captures
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, 1234", "([a-z]+).*?([0-9]{2})[0-9]+", "o")
+        m = njt.re.match("hello, 1234", "([a-z]+).*?([0-9]{2})[0-9]+", "o")
         if m then
-            ngx.say(m[0])
-            ngx.say(m[1])
-            ngx.say(m[2])
+            njt.say(m[0])
+            njt.say(m[1])
+            njt.say(m[2])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -85,11 +85,11 @@ hello
 === TEST 5: not matched
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, 1234", "foo", "o")
+        m = njt.re.match("hello, 1234", "foo", "o")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched: ", m)
+            njt.say("not matched: ", m)
         end
     }
 --- stream_response
@@ -100,11 +100,11 @@ not matched: nil
 === TEST 6: case sensitive by default
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, 1234", "HELLO", "o")
+        m = njt.re.match("hello, 1234", "HELLO", "o")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched: ", m)
+            njt.say("not matched: ", m)
         end
     }
 --- stream_response
@@ -115,11 +115,11 @@ not matched: nil
 === TEST 7: case sensitive by default
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, 1234", "HELLO", "oi")
+        m = njt.re.match("hello, 1234", "HELLO", "oi")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched: ", m)
+            njt.say("not matched: ", m)
         end
     }
 --- stream_response
@@ -130,15 +130,15 @@ hello
 === TEST 8: UTF-8 mode
 --- stream_server_config
     content_by_lua_block {
-        local rc, m = pcall(ngx.re.match, "hello章亦春", "HELLO.{2}", "iou")
+        local rc, m = pcall(njt.re.match, "hello章亦春", "HELLO.{2}", "iou")
         if not rc then
-            ngx.say("error: ", m)
+            njt.say("error: ", m)
             return
         end
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched: ", m)
+            njt.say("not matched: ", m)
         end
     }
 --- stream_response_like chop
@@ -149,11 +149,11 @@ this version of PCRE is not compiled with PCRE_UTF8 support|^hello章亦$
 === TEST 9: multi-line mode (^ at line head)
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello\nworld", "^world", "mo")
+        m = njt.re.match("hello\nworld", "^world", "mo")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched: ", m)
+            njt.say("not matched: ", m)
         end
     }
 --- stream_response
@@ -164,11 +164,11 @@ world
 === TEST 10: multi-line mode (. does not match \n)
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello\nworld", ".*", "om")
+        m = njt.re.match("hello\nworld", ".*", "om")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched: ", m)
+            njt.say("not matched: ", m)
         end
     }
 --- stream_response
@@ -179,11 +179,11 @@ hello
 === TEST 11: single-line mode (^ as normal)
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello\nworld", "^world", "so")
+        m = njt.re.match("hello\nworld", "^world", "so")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched: ", m)
+            njt.say("not matched: ", m)
         end
     }
 --- stream_response
@@ -194,11 +194,11 @@ not matched: nil
 === TEST 12: single-line mode (dot all)
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello\nworld", ".*", "os")
+        m = njt.re.match("hello\nworld", ".*", "os")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched: ", m)
+            njt.say("not matched: ", m)
         end
     }
 --- stream_response
@@ -210,11 +210,11 @@ world
 === TEST 13: extended mode (ignore whitespaces)
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello\nworld", [[\w     \w]], "xo")
+        m = njt.re.match("hello\nworld", [[\w     \w]], "xo")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched: ", m)
+            njt.say("not matched: ", m)
         end
     }
 --- stream_response
@@ -225,16 +225,16 @@ he
 === TEST 14: bad pattern
 --- stream_server_config
     content_by_lua_block {
-        local m, err = ngx.re.match("hello\\nworld", "(abc", "o")
+        local m, err = njt.re.match("hello\\nworld", "(abc", "o")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
 
         else
             if err then
-                ngx.say("error: ", err)
+                njt.say("error: ", err)
 
             else
-                ngx.say("not matched: ", m)
+                njt.say("not matched: ", m)
             end
         end
     }
@@ -248,15 +248,15 @@ error: pcre_compile() failed: missing ) in "(abc"
 === TEST 15: bad option
 --- stream_server_config
     content_by_lua_block {
-        rc, m = pcall(ngx.re.match, "hello\\nworld", ".*", "Ho")
+        rc, m = pcall(njt.re.match, "hello\\nworld", ".*", "Ho")
         if rc then
             if m then
-                ngx.say(m[0])
+                njt.say(m[0])
             else
-                ngx.say("not matched: ", m)
+                njt.say("not matched: ", m)
             end
         else
-            ngx.say("error: ", m)
+            njt.say("error: ", m)
         end
     }
 --- stream_response_like chop
@@ -267,13 +267,13 @@ error: pcre_compile() failed: missing ) in "(abc"
 === TEST 16: extended mode (ignore whitespaces)
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, world", "(world)|(hello)", "xo")
+        m = njt.re.match("hello, world", "(world)|(hello)", "xo")
         if m then
-            ngx.say(m[0])
-            ngx.say(m[1])
-            ngx.say(m[2])
+            njt.say(m[0])
+            njt.say(m[1])
+            njt.say(m[2])
         else
-            ngx.say("not matched: ", m)
+            njt.say("not matched: ", m)
         end
     }
 --- stream_response
@@ -286,13 +286,13 @@ hello
 === TEST 17: optional trailing captures
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, 1234", "([0-9]+)(h?)", "o")
+        m = njt.re.match("hello, 1234", "([0-9]+)(h?)", "o")
         if m then
-            ngx.say(m[0])
-            ngx.say(m[1])
-            ngx.say(m[2])
+            njt.say(m[0])
+            njt.say(m[1])
+            njt.say(m[2])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response eval
@@ -306,11 +306,11 @@ hello
 === TEST 18: anchored match (failed)
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, 1234", "([0-9]+)", "oa")
+        m = njt.re.match("hello, 1234", "([0-9]+)", "oa")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -321,11 +321,11 @@ not matched!
 === TEST 19: anchored match (succeeded)
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("1234, hello", "([0-9]+)", "ao")
+        m = njt.re.match("1234, hello", "([0-9]+)", "ao")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -337,13 +337,13 @@ not matched!
 --- stream_server_config
     content_by_lua_block {
         local ctx = {}
-        m = ngx.re.match("1234, hello", "([0-9]+)", "o", ctx)
+        m = njt.re.match("1234, hello", "([0-9]+)", "o", ctx)
         if m then
-            ngx.say(m[0])
-            ngx.say(ctx.pos)
+            njt.say(m[0])
+            njt.say(ctx.pos)
         else
-            ngx.say("not matched!")
-            ngx.say(ctx.pos)
+            njt.say("not matched!")
+            njt.say(ctx.pos)
         end
     }
 --- stream_response
@@ -356,13 +356,13 @@ not matched!
 --- stream_server_config
     content_by_lua_block {
         local ctx = { pos = 3 }
-        m = ngx.re.match("1234, hello", "([0-9]+)", "o", ctx)
+        m = njt.re.match("1234, hello", "([0-9]+)", "o", ctx)
         if m then
-            ngx.say(m[0])
-            ngx.say(ctx.pos)
+            njt.say(m[0])
+            njt.say(ctx.pos)
         else
-            ngx.say("not matched!")
-            ngx.say(ctx.pos)
+            njt.say("not matched!")
+            njt.say(ctx.pos)
         end
     }
 --- stream_response
@@ -375,11 +375,11 @@ not matched!
 --- stream_server_config
     content_by_lua_block {
         local ctx = {}
-        local m = ngx.re.match("{foobarbaz}", "(?<=foo)bar|(?<=bar)baz", "o", ctx)
-        ngx.say(m and m[0])
+        local m = njt.re.match("{foobarbaz}", "(?<=foo)bar|(?<=bar)baz", "o", ctx)
+        njt.say(m and m[0])
 
-        m = ngx.re.match("{foobarbaz}", "(?<=foo)bar|(?<=bar)baz", "o", ctx)
-        ngx.say(m and m[0])
+        m = njt.re.match("{foobarbaz}", "(?<=foo)bar|(?<=bar)baz", "o", ctx)
+        njt.say(m and m[0])
     }
 --- stream_response
 bar
@@ -390,14 +390,14 @@ baz
 === TEST 23: match (with regex cache)
 --- stream_server_config
     content_by_lua_block {
-        local m = ngx.re.match("hello, 1234", "([A-Z]+)", "io")
-        ngx.say(m and m[0])
+        local m = njt.re.match("hello, 1234", "([A-Z]+)", "io")
+        njt.say(m and m[0])
 
-        m = ngx.re.match("1234, okay", "([A-Z]+)", "io")
-        ngx.say(m and m[0])
+        m = njt.re.match("1234, okay", "([A-Z]+)", "io")
+        njt.say(m and m[0])
 
-        m = ngx.re.match("hello, 1234", "([A-Z]+)", "o")
-        ngx.say(m and m[0])
+        m = njt.re.match("hello, 1234", "([A-Z]+)", "o")
+        njt.say(m and m[0])
     }
 --- stream_response
 hello
@@ -410,18 +410,18 @@ nil
 --- stream_server_config
     content_by_lua_block {
         local ctx = {}
-        local m = ngx.re.match("hello, 1234", "([A-Z]+)", "io", ctx)
-        ngx.say(m and m[0])
-        ngx.say(ctx.pos)
+        local m = njt.re.match("hello, 1234", "([A-Z]+)", "io", ctx)
+        njt.say(m and m[0])
+        njt.say(ctx.pos)
 
-        m = ngx.re.match("1234, okay", "([A-Z]+)", "io", ctx)
-        ngx.say(m and m[0])
-        ngx.say(ctx.pos)
+        m = njt.re.match("1234, okay", "([A-Z]+)", "io", ctx)
+        njt.say(m and m[0])
+        njt.say(ctx.pos)
 
         ctx.pos = 1
-        m = ngx.re.match("hi, 1234", "([A-Z]+)", "o", ctx)
-        ngx.say(m and m[0])
-        ngx.say(ctx.pos)
+        m = njt.re.match("hi, 1234", "([A-Z]+)", "o", ctx)
+        njt.say(m and m[0])
+        njt.say(ctx.pos)
     }
 --- stream_response
 hello
@@ -438,14 +438,14 @@ nil
     lua_regex_cache_max_entries 2;
 --- stream_server_config
     content_by_lua_block {
-        local m = ngx.re.match("hello, 1234", "([0-9]+)", "o")
-        ngx.say(m and m[0])
+        local m = njt.re.match("hello, 1234", "([0-9]+)", "o")
+        njt.say(m and m[0])
 
-        m = ngx.re.match("howdy, 567", "([0-9]+)", "oi")
-        ngx.say(m and m[0])
+        m = njt.re.match("howdy, 567", "([0-9]+)", "oi")
+        njt.say(m and m[0])
 
-        m = ngx.re.match("hiya, 98", "([0-9]+)", "ox")
-        ngx.say(m and m[0])
+        m = njt.re.match("hiya, 98", "([0-9]+)", "ox")
+        njt.say(m and m[0])
     }
 --- stream_response
 1234
@@ -459,14 +459,14 @@ nil
     lua_regex_cache_max_entries 0;
 --- stream_server_config
     content_by_lua_block {
-        local m = ngx.re.match("hello, 1234", "([0-9]+)", "o")
-        ngx.say(m and m[0])
+        local m = njt.re.match("hello, 1234", "([0-9]+)", "o")
+        njt.say(m and m[0])
 
-        m = ngx.re.match("howdy, 567", "([0-9]+)", "oi")
-        ngx.say(m and m[0])
+        m = njt.re.match("howdy, 567", "([0-9]+)", "oi")
+        njt.say(m and m[0])
 
-        m = ngx.re.match("hiya, 98", "([0-9]+)", "ox")
-        ngx.say(m and m[0])
+        m = njt.re.match("hiya, 98", "([0-9]+)", "ox")
+        njt.say(m and m[0])
     }
 --- stream_response
 1234
@@ -478,14 +478,14 @@ nil
 === TEST 27: named subpatterns w/ extraction
 --- stream_server_config
     content_by_lua_block {
-        local m = ngx.re.match("hello, 1234", "(?<first>[a-z]+), [0-9]+", "o")
+        local m = njt.re.match("hello, 1234", "(?<first>[a-z]+), [0-9]+", "o")
         if m then
-            ngx.say(m[0])
-            ngx.say(m[1])
-            ngx.say(m.first)
-            ngx.say(m.second)
+            njt.say(m[0])
+            njt.say(m[1])
+            njt.say(m.first)
+            njt.say(m.second)
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -499,14 +499,14 @@ nil
 === TEST 28: duplicate named subpatterns w/ extraction
 --- stream_server_config
     content_by_lua_block {
-        local m = ngx.re.match("hello, 1234", "(?<first>[a-z]+), (?<first>[0-9]+)", "Do")
+        local m = njt.re.match("hello, 1234", "(?<first>[a-z]+), (?<first>[0-9]+)", "Do")
         if m then
-            ngx.say(m[0])
-            ngx.say(m[1])
-            ngx.say(m[2])
-            ngx.say(table.concat(m.first,"-"))
+            njt.say(m[0])
+            njt.say(m[1])
+            njt.say(m[2])
+            njt.say(table.concat(m.first,"-"))
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -520,14 +520,14 @@ hello-1234
 === TEST 29: named captures are empty strings
 --- stream_server_config
     content_by_lua_block {
-        local m = ngx.re.match("1234", "(?<first>[a-z]*)([0-9]+)", "o")
+        local m = njt.re.match("1234", "(?<first>[a-z]*)([0-9]+)", "o")
         if m then
-            ngx.say(m[0])
-            ngx.say(m.first)
-            ngx.say(m[1])
-            ngx.say(m[2])
+            njt.say(m[0])
+            njt.say(m.first)
+            njt.say(m[1])
+            njt.say(m[2])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -541,15 +541,15 @@ hello-1234
 === TEST 30: named captures are nil
 --- stream_server_config
     content_by_lua_block {
-        local m = ngx.re.match("hello, world", "(world)|(hello)|(?<named>howdy)", "o")
+        local m = njt.re.match("hello, world", "(world)|(hello)|(?<named>howdy)", "o")
         if m then
-            ngx.say(m[0])
-            ngx.say(m[1])
-            ngx.say(m[2])
-            ngx.say(m[3])
-            ngx.say(m["named"])
+            njt.say(m[0])
+            njt.say(m[1])
+            njt.say(m[2])
+            njt.say(m[3])
+            njt.say(m["named"])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response

@@ -94,7 +94,7 @@ __DATA__
 
             local r = require "resty.core.base" .get_request()
             if not r then
-                ngx.log(ngx.ERR, "no request found")
+                njt.log(njt.ERR, "no request found")
                 return
             end
 
@@ -108,7 +108,7 @@ __DATA__
 
             local rc = ffi.C.njt_stream_lua_ffi_cert_pem_to_der(cert, #cert, out, errmsg)
             if rc < 1 then
-                ngx.log(ngx.ERR, "failed to parse PEM cert: ",
+                njt.log(njt.ERR, "failed to parse PEM cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -117,7 +117,7 @@ __DATA__
 
             local rc = ffi.C.njt_stream_lua_ffi_ssl_set_der_certificate(r, cert_der, #cert_der, errmsg)
             if rc ~= 0 then
-                ngx.log(ngx.ERR, "failed to set DER cert: ",
+                njt.log(njt.ERR, "failed to set DER cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -130,7 +130,7 @@ __DATA__
 
             local rc = ffi.C.njt_stream_lua_ffi_priv_key_pem_to_der(pkey, #pkey, out, errmsg)
             if rc < 1 then
-                ngx.log(ngx.ERR, "failed to parse PEM priv key: ",
+                njt.log(njt.ERR, "failed to parse PEM priv key: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -139,7 +139,7 @@ __DATA__
 
             local rc = ffi.C.njt_stream_lua_ffi_ssl_set_der_private_key(r, pkey_der, #pkey_der, errmsg)
             if rc ~= 0 then
-                ngx.log(ngx.ERR, "failed to set DER priv key: ",
+                njt.log(njt.ERR, "failed to set DER priv key: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -155,38 +155,38 @@ __DATA__
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -221,7 +221,7 @@ lua ssl server name: "test.com"
 
             local r = require "resty.core.base" .get_request()
             if not r then
-                ngx.log(ngx.ERR, "no request found")
+                njt.log(njt.ERR, "no request found")
                 return
             end
 
@@ -235,7 +235,7 @@ lua ssl server name: "test.com"
 
             local rc = ffi.C.njt_stream_lua_ffi_cert_pem_to_der(cert, #cert, out, errmsg)
             if rc < 1 then
-                ngx.log(ngx.ERR, "failed to parse PEM cert: ",
+                njt.log(njt.ERR, "failed to parse PEM cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -244,7 +244,7 @@ lua ssl server name: "test.com"
 
             local rc = ffi.C.njt_stream_lua_ffi_ssl_set_der_certificate(r, cert_der, #cert_der, errmsg)
             if rc ~= 0 then
-                ngx.log(ngx.ERR, "failed to set DER cert: ",
+                njt.log(njt.ERR, "failed to set DER cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -257,7 +257,7 @@ lua ssl server name: "test.com"
 
             local rc = ffi.C.njt_stream_lua_ffi_priv_key_pem_to_der(pkey, #pkey, out, errmsg)
             if rc < 1 then
-                ngx.log(ngx.ERR, "failed to parse PEM priv key: ",
+                njt.log(njt.ERR, "failed to parse PEM priv key: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -266,7 +266,7 @@ lua ssl server name: "test.com"
 
             local rc = ffi.C.njt_stream_lua_ffi_ssl_set_der_private_key(r, pkey_der, #pkey_der, errmsg)
             if rc ~= 0 then
-                ngx.log(ngx.ERR, "failed to set DER priv key: ",
+                njt.log(njt.ERR, "failed to set DER priv key: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -282,38 +282,38 @@ lua ssl server name: "test.com"
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -348,7 +348,7 @@ lua ssl server name: "test.com"
 
             local r = require "resty.core.base" .get_request()
             if not r then
-                ngx.log(ngx.ERR, "no request found")
+                njt.log(njt.ERR, "no request found")
                 return
             end
 
@@ -358,7 +358,7 @@ lua ssl server name: "test.com"
 
             local rc = ffi.C.njt_stream_lua_ffi_cert_pem_to_der(cert, #cert, out, errmsg)
             if rc < 1 then
-                ngx.log(ngx.ERR, "failed to parse PEM cert: ",
+                njt.log(njt.ERR, "failed to parse PEM cert: ",
                         ffi.string(errmsg[0]))
             end
 
@@ -368,7 +368,7 @@ lua ssl server name: "test.com"
 
             local rc = ffi.C.njt_stream_lua_ffi_priv_key_pem_to_der(pkey, #pkey, out, errmsg)
             if rc < 1 then
-                ngx.log(ngx.ERR, "failed to parse PEM priv key: ",
+                njt.log(njt.ERR, "failed to parse PEM priv key: ",
                         ffi.string(errmsg[0]))
             end
         }
@@ -383,38 +383,38 @@ lua ssl server name: "test.com"
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -450,7 +450,7 @@ failed to parse PEM priv key: PEM_read_bio_PrivateKey() failed
 
             local r = require "resty.core.base" .get_request()
             if not r then
-                ngx.log(ngx.ERR, "no request found")
+                njt.log(njt.ERR, "no request found")
                 return
             end
 
@@ -462,14 +462,14 @@ failed to parse PEM priv key: PEM_read_bio_PrivateKey() failed
 
             local cert = ffi.C.njt_stream_lua_ffi_parse_pem_cert(cert_data, #cert_data, errmsg)
             if not cert then
-                ngx.log(ngx.ERR, "failed to parse PEM cert: ",
+                njt.log(njt.ERR, "failed to parse PEM cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
 
             local rc = ffi.C.njt_stream_lua_ffi_set_cert(r, cert, errmsg)
             if rc ~= 0 then
-                ngx.log(ngx.ERR, "failed to set cdata cert: ",
+                njt.log(njt.ERR, "failed to set cdata cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -482,14 +482,14 @@ failed to parse PEM priv key: PEM_read_bio_PrivateKey() failed
 
             local pkey = ffi.C.njt_stream_lua_ffi_parse_pem_priv_key(pkey_data, #pkey_data, errmsg)
             if pkey == nil then
-                ngx.log(ngx.ERR, "failed to parse PEM priv key: ",
+                njt.log(njt.ERR, "failed to parse PEM priv key: ",
                         ffi.string(errmsg[0]))
                 return
             end
 
             local rc = ffi.C.njt_stream_lua_ffi_set_priv_key(r, pkey, errmsg)
             if rc ~= 0 then
-                ngx.log(ngx.ERR, "failed to set cdata priv key: ",
+                njt.log(njt.ERR, "failed to set cdata priv key: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -507,38 +507,38 @@ failed to parse PEM priv key: PEM_read_bio_PrivateKey() failed
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -573,7 +573,7 @@ lua ssl server name: "test.com"
 
             local r = require "resty.core.base" .get_request()
             if not r then
-                ngx.log(ngx.ERR, "no request found")
+                njt.log(njt.ERR, "no request found")
                 return
             end
 
@@ -585,14 +585,14 @@ lua ssl server name: "test.com"
 
             local cert = ffi.C.njt_stream_lua_ffi_parse_pem_cert(cert_data, #cert_data, errmsg)
             if not cert then
-                ngx.log(ngx.ERR, "failed to parse PEM cert: ",
+                njt.log(njt.ERR, "failed to parse PEM cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
 
             local rc = ffi.C.njt_stream_lua_ffi_set_cert(r, cert, errmsg)
             if rc ~= 0 then
-                ngx.log(ngx.ERR, "failed to set cdata cert: ",
+                njt.log(njt.ERR, "failed to set cdata cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -605,14 +605,14 @@ lua ssl server name: "test.com"
 
             local pkey = ffi.C.njt_stream_lua_ffi_parse_pem_priv_key(pkey_data, #pkey_data, errmsg)
             if pkey == nil then
-                ngx.log(ngx.ERR, "failed to parse PEM priv key: ",
+                njt.log(njt.ERR, "failed to parse PEM priv key: ",
                         ffi.string(errmsg[0]))
                 return
             end
 
             local rc = ffi.C.njt_stream_lua_ffi_set_priv_key(r, pkey, errmsg)
             if rc ~= 0 then
-                ngx.log(ngx.ERR, "failed to set cdata priv key: ",
+                njt.log(njt.ERR, "failed to set cdata priv key: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -630,38 +630,38 @@ lua ssl server name: "test.com"
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -699,7 +699,7 @@ lua ssl server name: "test.com"
 
             local r = require "resty.core.base" .get_request()
             if not r then
-                ngx.log(ngx.ERR, "no request found")
+                njt.log(njt.ERR, "no request found")
                 return
             end
 
@@ -709,14 +709,14 @@ lua ssl server name: "test.com"
 
             local cert = ffi.C.njt_stream_lua_ffi_parse_pem_cert(cert_data, #cert_data, errmsg)
             if not cert then
-                ngx.log(ngx.ERR, "failed to parse PEM cert: ",
+                njt.log(njt.ERR, "failed to parse PEM cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
 
             local rc = ffi.C.njt_stream_lua_ffi_ssl_verify_client(r, cert, -1, errmsg)
             if rc ~= 0 then
-                ngx.log(ngx.ERR, "failed to set cdata cert: ",
+                njt.log(njt.ERR, "failed to set cdata cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -725,8 +725,8 @@ lua ssl server name: "test.com"
         }
 
         content_by_lua_block {
-            print('client certificate subject: ', ngx.var.ssl_client_s_dn)
-            ngx.say(ngx.var.ssl_client_verify)
+            print('client certificate subject: ', njt.var.ssl_client_s_dn)
+            njt.say(njt.var.ssl_client_verify)
         }
     }
 --- stream_server_config
@@ -766,21 +766,21 @@ client certificate subject: emailAddress=agentzh@gmail.com,CN=test.com
 
             local r = require "resty.core.base" .get_request()
             if not r then
-                ngx.log(ngx.ERR, "no request found")
+                njt.log(njt.ERR, "no request found")
                 return
             end
 
             local rc = ffi.C.njt_stream_lua_ffi_ssl_verify_client(r, nil, -1, errmsg)
             if rc ~= 0 then
-                ngx.log(ngx.ERR, "failed to set cdata cert: ",
+                njt.log(njt.ERR, "failed to set cdata cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
         }
 
         content_by_lua_block {
-            print('client certificate subject: ', ngx.var.ssl_client_s_dn)
-            ngx.say(ngx.var.ssl_client_verify)
+            print('client certificate subject: ', njt.var.ssl_client_s_dn)
+            njt.say(njt.var.ssl_client_verify)
         }
     }
 --- stream_server_config
@@ -820,7 +820,7 @@ client certificate subject: emailAddress=agentzh@gmail.com,CN=test.com
 
             local r = require "resty.core.base" .get_request()
             if not r then
-                ngx.log(ngx.ERR, "no request found")
+                njt.log(njt.ERR, "no request found")
                 return
             end
 
@@ -830,14 +830,14 @@ client certificate subject: emailAddress=agentzh@gmail.com,CN=test.com
 
             local cert = ffi.C.njt_stream_lua_ffi_parse_pem_cert(cert_data, #cert_data, errmsg)
             if not cert then
-                ngx.log(ngx.ERR, "failed to parse PEM cert: ",
+                njt.log(njt.ERR, "failed to parse PEM cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
 
             local rc = ffi.C.njt_stream_lua_ffi_ssl_verify_client(r, cert, 1, errmsg)
             if rc ~= 0 then
-                ngx.log(ngx.ERR, "failed to set cdata cert: ",
+                njt.log(njt.ERR, "failed to set cdata cert: ",
                         ffi.string(errmsg[0]))
                 return
             end
@@ -846,8 +846,8 @@ client certificate subject: emailAddress=agentzh@gmail.com,CN=test.com
         }
 
         content_by_lua_block {
-            print('client certificate subject: ', ngx.var.ssl_client_s_dn)
-            ngx.say(ngx.var.ssl_client_verify)
+            print('client certificate subject: ', njt.var.ssl_client_s_dn)
+            njt.say(njt.var.ssl_client_verify)
         }
     }
 --- stream_server_config

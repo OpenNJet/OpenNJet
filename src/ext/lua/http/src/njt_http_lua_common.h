@@ -32,6 +32,7 @@ typedef struct {
     size_t       size;
     int          ref;
     u_char      *key;
+    u_char      *chunkname;
     njt_str_t    script;
 } njt_http_lua_set_var_data_t;
 #endif
@@ -55,11 +56,17 @@ typedef struct {
 
 
 #if (NJT_PCRE)
-#include <pcre.h>
-#   if (PCRE_MAJOR > 8) || (PCRE_MAJOR == 8 && PCRE_MINOR >= 21)
+#   if (NJT_PCRE2)
 #       define LUA_HAVE_PCRE_JIT 1
 #   else
-#       define LUA_HAVE_PCRE_JIT 0
+
+#include <pcre.h>
+
+#       if (PCRE_MAJOR > 8) || (PCRE_MAJOR == 8 && PCRE_MINOR >= 21)
+#           define LUA_HAVE_PCRE_JIT 1
+#       else
+#           define LUA_HAVE_PCRE_JIT 0
+#       endif
 #   endif
 #endif
 
@@ -141,6 +148,7 @@ typedef struct {
 #define NJT_HTTP_LUA_CONTEXT_SSL_SESS_FETCH     0x1000
 #define NJT_HTTP_LUA_CONTEXT_EXIT_WORKER        0x2000
 #define NJT_HTTP_LUA_CONTEXT_SSL_CLIENT_HELLO   0x4000
+#define NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE     0x8000
 
 
 #define NJT_HTTP_LUA_FFI_NO_REQ_CTX         -100
@@ -214,13 +222,20 @@ struct njt_http_lua_main_conf_s {
 
     njt_int_t            lua_thread_cache_max_entries;
 
+    njt_hash_t           builtin_headers_out;
+
 #if (NJT_PCRE)
     njt_int_t            regex_cache_entries;
     njt_int_t            regex_cache_max_entries;
     njt_int_t            regex_match_limit;
-#   if (LUA_HAVE_PCRE_JIT)
+#endif
+
+#if (LUA_HAVE_PCRE_JIT)
+#if (NJT_PCRE2)
+    pcre2_jit_stack     *jit_stack;
+#else
     pcre_jit_stack      *jit_stack;
-#   endif
+#endif
 #endif
 
     njt_array_t         *shm_zones;  /* of njt_shm_zone_t* */
@@ -234,12 +249,15 @@ struct njt_http_lua_main_conf_s {
 
     njt_http_lua_main_conf_handler_pt    init_handler;
     njt_str_t                            init_src;
+    u_char                              *init_chunkname;
 
     njt_http_lua_main_conf_handler_pt    init_worker_handler;
     njt_str_t                            init_worker_src;
+    u_char                              *init_worker_chunkname;
 
     njt_http_lua_main_conf_handler_pt    exit_worker_handler;
     njt_str_t                            exit_worker_src;
+    u_char                              *exit_worker_chunkname;
 
     njt_http_lua_balancer_peer_data_t      *balancer_peer_data;
                     /* neither yielding nor recursion is possible in
@@ -277,6 +295,8 @@ struct njt_http_lua_main_conf_s {
                                                 of requests */
     njt_uint_t           malloc_trim_req_count;
 
+    njt_uint_t           directive_line;
+
 #if (njet_version >= 1011011)
     /* the following 2 fields are only used by njt.req.raw_headers() for now */
     njt_buf_t          **busy_buf_ptrs;
@@ -300,38 +320,50 @@ struct njt_http_lua_main_conf_s {
     unsigned             requires_log:1;
     unsigned             requires_shm:1;
     unsigned             requires_capture_log:1;
+    unsigned             requires_server_rewrite:1;
 };
 
 
 union njt_http_lua_srv_conf_u {
-#if (NJT_HTTP_SSL)
     struct {
+#if (NJT_HTTP_SSL)
         njt_http_lua_srv_conf_handler_pt     ssl_cert_handler;
         njt_str_t                            ssl_cert_src;
         u_char                              *ssl_cert_src_key;
+        u_char                              *ssl_cert_chunkname;
         int                                  ssl_cert_src_ref;
 
         njt_http_lua_srv_conf_handler_pt     ssl_sess_store_handler;
         njt_str_t                            ssl_sess_store_src;
         u_char                              *ssl_sess_store_src_key;
+        u_char                              *ssl_sess_store_chunkname;
         int                                  ssl_sess_store_src_ref;
 
         njt_http_lua_srv_conf_handler_pt     ssl_sess_fetch_handler;
         njt_str_t                            ssl_sess_fetch_src;
         u_char                              *ssl_sess_fetch_src_key;
+        u_char                              *ssl_sess_fetch_chunkname;
         int                                  ssl_sess_fetch_src_ref;
 
         njt_http_lua_srv_conf_handler_pt     ssl_client_hello_handler;
         njt_str_t                            ssl_client_hello_src;
         u_char                              *ssl_client_hello_src_key;
+        u_char                              *ssl_client_hello_chunkname;
         int                                  ssl_client_hello_src_ref;
-    } srv;
 #endif
+
+        njt_http_lua_srv_conf_handler_pt     server_rewrite_handler;
+        njt_http_complex_value_t             server_rewrite_src;
+        u_char                              *server_rewrite_src_key;
+        u_char                              *server_rewrite_chunkname;
+        int                                  server_rewrite_src_ref;
+    } srv;
 
     struct {
         njt_http_lua_srv_conf_handler_pt     handler;
         njt_str_t                            src;
         u_char                              *src_key;
+        u_char                              *chunkname;
         int                                  src_ref;
     } balancer;
 };
@@ -340,6 +372,8 @@ union njt_http_lua_srv_conf_u {
 typedef struct {
 #if (NJT_HTTP_SSL)
     njt_ssl_t              *ssl;  /* shared by SSL cosockets */
+    njt_array_t            *ssl_certificates;
+    njt_array_t            *ssl_certificate_keys;
     njt_uint_t              ssl_protocols;
     njt_str_t               ssl_ciphers;
     njt_uint_t              ssl_verify_depth;
@@ -365,6 +399,8 @@ typedef struct {
     njt_http_handler_pt     header_filter_handler;
 
     njt_http_output_body_filter_pt         body_filter_handler;
+
+
 
     u_char                  *rewrite_chunkname;
     njt_http_complex_value_t rewrite_src;    /*  rewrite_by_lua
@@ -402,6 +438,7 @@ typedef struct {
                                                      inline script/script
                                                      file path */
 
+    u_char                 *header_filter_chunkname;
     u_char                 *header_filter_src_key;
                                     /* cached key for header_filter_src */
     int                     header_filter_src_ref;
@@ -409,6 +446,7 @@ typedef struct {
 
     njt_http_complex_value_t         body_filter_src;
     u_char                          *body_filter_src_key;
+    u_char                          *body_filter_chunkname;
     int                              body_filter_src_ref;
 
     njt_msec_t                       keepalive_timeout;
@@ -473,6 +511,11 @@ struct njt_http_lua_co_ctx_s {
     njt_str_t               *sr_bodies;   /* all captured subrequest bodies */
 
     uint8_t                 *sr_flags;
+
+    unsigned                 nresults_from_worker_thread;  /* number of results
+                                                            * from worker
+                                                            * thread callback */
+    unsigned                 nrets;     /* njt_http_lua_run_thread nrets arg. */
 
     unsigned                 nsubreqs;  /* number of subrequests of the
                                          * current request */
@@ -562,7 +605,7 @@ typedef struct njt_http_lua_ctx_s {
     njt_chain_t             *filter_in_bufs;  /* for the body filter */
     njt_chain_t             *filter_busy_bufs;  /* for the body filter */
 
-    njt_http_cleanup_pt     *cleanup;
+    njt_pool_cleanup_pt     *cleanup;
 
     njt_http_cleanup_t      *free_cleanup; /* free list of cleanup records */
 
@@ -621,7 +664,7 @@ typedef struct njt_http_lua_ctx_s {
                                        response headers */
     unsigned         mime_set:1;    /* whether the user has set Content-Type
                                        response header */
-
+    unsigned         entered_server_rewrite_phase:1;
     unsigned         entered_rewrite_phase:1;
     unsigned         entered_access_phase:1;
     unsigned         entered_content_phase:1;

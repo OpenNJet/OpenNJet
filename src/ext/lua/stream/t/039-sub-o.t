@@ -19,9 +19,9 @@ __DATA__
 === TEST 1: matched but w/o variables
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, world", "[a-z]+", "howdy", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hello, world", "[a-z]+", "howdy", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 howdy, world
@@ -32,9 +32,9 @@ howdy, world
 === TEST 2: not matched
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, world", "[A-Z]+", "howdy", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hello, world", "[A-Z]+", "howdy", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 hello, world
@@ -45,9 +45,9 @@ hello, world
 === TEST 3: matched and with variables
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("a b c d", "(b) (c)", "[$0] [$1] [$2] [$3] [$134]", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("a b c d", "(b) (c)", "[$0] [$1] [$2] [$3] [$134]", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 a [b c] [b] [c] [] [] d
@@ -58,15 +58,15 @@ a [b c] [b] [c] [] [] d
 === TEST 4: matched and with named variables (bad template)
 --- stream_server_config
     content_by_lua_block {
-        local s, n, err = ngx.re.sub("a b c d",
+        local s, n, err = njt.re.sub("a b c d",
                                      "(b) (c)",
                                      "[$0] [$1] [$2] [$3] [$hello]",
                                      "o")
         if s then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
 
         else
-            ngx.say("error: ", err)
+            njt.say("error: ", err)
         end
     }
 --- stream_response
@@ -79,14 +79,14 @@ attempt to use named capturing variable "hello" (named captures not supported ye
 === TEST 5: matched and with named variables (bracketed)
 --- stream_server_config
     content_by_lua_block {
-        local s, n, err = ngx.re.sub("a b c d",
+        local s, n, err = njt.re.sub("a b c d",
                                      "(b) (c)",
                                      "[$0] [$1] [$2] [$3] [${hello}]",
                                      "o")
         if s then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
         else
-            ngx.say("error: ", err)
+            njt.say("error: ", err)
         end
     }
 --- stream_response
@@ -99,9 +99,9 @@ attempt to use named capturing variable "hello" (named captures not supported ye
 === TEST 6: matched and with bracketed variables
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("b c d", "(b) (c)", "[$0] [$1] [${2}] [$3] [${134}]", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("b c d", "(b) (c)", "[$0] [$1] [${2}] [$3] [${134}]", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 [b c] [b] [c] [] [] d
@@ -112,11 +112,11 @@ attempt to use named capturing variable "hello" (named captures not supported ye
 === TEST 7: matched and with bracketed variables (unmatched brackets)
 --- stream_server_config
     content_by_lua_block {
-        local s, n, err = ngx.re.sub("b c d", "(b) (c)", "[$0] [$1] [${2}] [$3] [${134]", "o")
+        local s, n, err = njt.re.sub("b c d", "(b) (c)", "[$0] [$1] [${2}] [$3] [${134]", "o")
         if s then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
         else
-            ngx.say("error: ", err)
+            njt.say("error: ", err)
         end
     }
 --- stream_response
@@ -129,11 +129,11 @@ the closing bracket in "134" variable is missing
 === TEST 8: matched and with bracketed variables (unmatched brackets)
 --- stream_server_config
     content_by_lua_block {
-        local s, n, err = ngx.re.sub("b c d", "(b) (c)", "[$0] [$1] [${2}] [$3] [${134", "o")
+        local s, n, err = njt.re.sub("b c d", "(b) (c)", "[$0] [$1] [${2}] [$3] [${134", "o")
         if s then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
         else
-            ngx.say("error: ", err)
+            njt.say("error: ", err)
         end
     }
 --- stream_response
@@ -146,11 +146,11 @@ the closing bracket in "134" variable is missing
 === TEST 9: matched and with bracketed variables (unmatched brackets)
 --- stream_server_config
     content_by_lua_block {
-        local s, n, err = ngx.re.sub("b c d", "(b) (c)", "[$0] [$1] [${2}] [$3] [${", "o")
+        local s, n, err = njt.re.sub("b c d", "(b) (c)", "[$0] [$1] [${2}] [$3] [${", "o")
         if s then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
         else
-            ngx.say("error: ", err)
+            njt.say("error: ", err)
         end
     }
 --- stream_response
@@ -163,11 +163,11 @@ lua script: invalid capturing variable name found in "[$0] [$1] [${2}] [$3] [${"
 === TEST 10: trailing $
 --- stream_server_config
     content_by_lua_block {
-        local s, n, err = ngx.re.sub("b c d", "(b) (c)", "[$0] [$1] [${2}] [$3] [$", "o")
+        local s, n, err = njt.re.sub("b c d", "(b) (c)", "[$0] [$1] [${2}] [$3] [$", "o")
         if s then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
         else
-            ngx.say("error: ", err)
+            njt.say("error: ", err)
         end
     }
 --- stream_response
@@ -180,9 +180,9 @@ lua script: invalid capturing variable name found in "[$0] [$1] [${2}] [$3] [$"
 === TEST 11: matched but w/o variables and with literal $
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, world", "[a-z]+", "ho$$wdy", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hello, world", "[a-z]+", "ho$$wdy", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 ho$wdy, world
@@ -193,9 +193,9 @@ ho$wdy, world
 === TEST 12: non-anchored match
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, 1234", " [0-9] ", "x", "xo")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hello, 1234", " [0-9] ", "x", "xo")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 hello, x234
@@ -206,9 +206,9 @@ hello, x234
 === TEST 13: anchored match
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, 1234", "[0-9]", "x", "ao")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hello, 1234", "[0-9]", "x", "ao")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 hello, 1234
@@ -223,9 +223,9 @@ hello, 1234
             return "[" .. m[0] .. "] [" .. m[1] .. "]"
         end
 
-        local s, n = ngx.re.sub("hello, 34", "([0-9])", repl, "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hello, 34", "([0-9])", repl, "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 hello, [3] [3]4
@@ -240,9 +240,9 @@ hello, [3] [3]4
             return "[" .. m[0] .. "] [" .. m[1] .. "]"
         end
 
-        local s, n = ngx.re.sub("hello, 34", "([A-Z])", repl, "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hello, 34", "([A-Z])", repl, "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 hello, 34
@@ -254,10 +254,10 @@ hello, 34
 --- SKIP
 --- stream_server_config
     content_by_lua_block {
-        local rc, s, n = pcall(ngx.re.sub, "hello, 34", "([A-Z])", true, "o")
-        ngx.say(rc)
-        ngx.say(s)
-        ngx.say(n)
+        local rc, s, n = pcall(njt.re.sub, "hello, 34", "([A-Z])", true, "o")
+        njt.say(rc)
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 false
@@ -269,10 +269,10 @@ nil
 === TEST 17: use number to replace
 --- stream_server_config
     content_by_lua_block {
-        local rc, s, n = pcall(ngx.re.sub, "hello, 34", "([0-9])", 72, "o")
-        ngx.say(rc)
-        ngx.say(s)
-        ngx.say(n)
+        local rc, s, n = pcall(njt.re.sub, "hello, 34", "([0-9])", 72, "o")
+        njt.say(rc)
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 true
@@ -286,10 +286,10 @@ hello, 724
 --- stream_server_config
     content_by_lua_block {
         local f = function (m) end
-        local rc, s, n = pcall(ngx.re.sub, "hello, 34", "([0-9])", f, "o")
-        ngx.say(rc)
-        ngx.say(s)
-        ngx.say(n)
+        local rc, s, n = pcall(njt.re.sub, "hello, 34", "([0-9])", f, "o")
+        njt.say(rc)
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 false
@@ -301,22 +301,22 @@ nil
 === TEST 19: with regex cache (with text replace)
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, 1234", "([A-Z]+)", "baz", "io")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hello, 1234", "([A-Z]+)", "baz", "io")
+        njt.say(s)
+        njt.say(n)
 
-        local s, n = ngx.re.sub("howdy, 1234", "([A-Z]+)", "baz", "io")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("howdy, 1234", "([A-Z]+)", "baz", "io")
+        njt.say(s)
+        njt.say(n)
 
 
-        s, n = ngx.re.sub("1234, okay", "([A-Z]+)", "blah", "io")
-        ngx.say(s)
-        ngx.say(n)
+        s, n = njt.re.sub("1234, okay", "([A-Z]+)", "blah", "io")
+        njt.say(s)
+        njt.say(n)
 
-        s, n = ngx.re.sub("hi, 1234", "([A-Z]+)", "hello", "o")
-        ngx.say(s)
-        ngx.say(n)
+        s, n = njt.re.sub("hi, 1234", "([A-Z]+)", "hello", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 baz, 1234
@@ -333,21 +333,21 @@ hi, 1234
 === TEST 20: with regex cache (with func replace)
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, 1234", "([A-Z]+)", "baz", "io")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hello, 1234", "([A-Z]+)", "baz", "io")
+        njt.say(s)
+        njt.say(n)
 
-        local s, n = ngx.re.sub("howdy, 1234", "([A-Z]+)", function () return "bah" end, "io")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("howdy, 1234", "([A-Z]+)", function () return "bah" end, "io")
+        njt.say(s)
+        njt.say(n)
 
-        s, n = ngx.re.sub("1234, okay", "([A-Z]+)", function () return "blah" end, "io")
-        ngx.say(s)
-        ngx.say(n)
+        s, n = njt.re.sub("1234, okay", "([A-Z]+)", function () return "blah" end, "io")
+        njt.say(s)
+        njt.say(n)
 
-        s, n = ngx.re.sub("hi, 1234", "([A-Z]+)", "hello", "o")
-        ngx.say(s)
-        ngx.say(n)
+        s, n = njt.re.sub("hi, 1234", "([A-Z]+)", "hello", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 baz, 1234
@@ -366,17 +366,17 @@ hi, 1234
     lua_regex_cache_max_entries 2;
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, 1234", "([0-9]+)", "hello", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hello, 1234", "([0-9]+)", "hello", "o")
+        njt.say(s)
+        njt.say(n)
 
-        s, n = ngx.re.sub("howdy, 567", "([0-9]+)", "hello", "oi")
-        ngx.say(s)
-        ngx.say(n)
+        s, n = njt.re.sub("howdy, 567", "([0-9]+)", "hello", "oi")
+        njt.say(s)
+        njt.say(n)
 
-        s, n = ngx.re.sub("hiya, 98", "([0-9]+)", "hello", "ox")
-        ngx.say(s)
-        ngx.say(n)
+        s, n = njt.re.sub("hiya, 98", "([0-9]+)", "hello", "ox")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 hello, hello
@@ -393,17 +393,17 @@ hiya, hello
     lua_regex_cache_max_entries 0;
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, 1234", "([0-9]+)", "hello", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hello, 1234", "([0-9]+)", "hello", "o")
+        njt.say(s)
+        njt.say(n)
 
-        s, n = ngx.re.sub("howdy, 567", "([0-9]+)", "hello", "oi")
-        ngx.say(s)
-        ngx.say(n)
+        s, n = njt.re.sub("howdy, 567", "([0-9]+)", "hello", "oi")
+        njt.say(s)
+        njt.say(n)
 
-        s, n = ngx.re.sub("hiya, 98", "([0-9]+)", "hello", "ox")
-        ngx.say(s)
-        ngx.say(n)
+        s, n = njt.re.sub("hiya, 98", "([0-9]+)", "hello", "ox")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 hello, hello
@@ -418,13 +418,13 @@ hiya, hello
 === TEST 23: empty replace
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, 1234", "([0-9]+)", "", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hello, 1234", "([0-9]+)", "", "o")
+        njt.say(s)
+        njt.say(n)
 
-        local s, n = ngx.re.sub("hi, 5432", "([0-9]+)", "", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("hi, 5432", "([0-9]+)", "", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 hello, 
@@ -437,9 +437,9 @@ hi,
 === TEST 24: matched and with variables w/o using named patterns in sub
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("a b c d", "(?<first>b) (?<second>c)", "[$0] [$1] [$2] [$3] [$134]", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("a b c d", "(?<first>b) (?<second>c)", "[$0] [$1] [$2] [$3] [$134]", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 a [b c] [b] [c] [] [] d
@@ -455,9 +455,9 @@ a [b c] [b] [c] [] [] d
             return "[" .. m[0] .. "] [" .. m["first"] .. "] [" .. m[2] .. "]"
         end
 
-        local s, n = ngx.re.sub("a b c d", "(?<first>b) (?<second>c)", repl, "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.sub("a b c d", "(?<first>b) (?<second>c)", repl, "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 a [b c] [b] [c] d

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Xiaozhe Wang (chaoslawful)
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -93,12 +93,14 @@ njt_http_lua_njt_req_set_uri(lua_State *L)
                 return luaL_error(L, "no ctx found");
             }
 
-            dd("rewrite: %d, access: %d, content: %d",
+            dd("server_rewrite: %d, rewrite: %d, access: %d, content: %d",
+               (int) ctx->entered_server_rewrite_phase,
                (int) ctx->entered_rewrite_phase,
                (int) ctx->entered_access_phase,
                (int) ctx->entered_content_phase);
 
-            njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE);
+            njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                                       | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE);
 
             njt_log_debug2(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
                            "lua set uri jump to \"%*s\"", len, p);

@@ -31,9 +31,9 @@ __DATA__
             local ok, err, errcode, sqlstate = db:connect{
                 host = "127.0.0.1",
                 port = $TEST_NGINX_MYSQL_PORT,
-                database = "ngx_test",
-                user = "ngx_test",
-                password = "ngx_test",
+                database = "njt_test",
+                user = "njt_test",
+                password = "njt_test",
                 charset = "utf8",
             }
 
@@ -46,12 +46,12 @@ __DATA__
             for _, query in ipairs(queries) do
                 local ok, err = db:query(query)
                 if not ok then
-                    ngx.say("failed to run mysql query \"", query, "\": ", err)
+                    njt.say("failed to run mysql query \"", query, "\": ", err)
                     return
                 end
             end
 
-            ngx.say("done!")
+            njt.say("done!")
         }
     }
 --- request

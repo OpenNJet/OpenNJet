@@ -23,12 +23,12 @@ __DATA__
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("hello in thread")
+            njt.say("hello in thread")
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -53,20 +53,20 @@ after
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("in thread 1")
+            njt.say("in thread 1")
         end
 
         function g()
-            ngx.say("in thread 2")
+            njt.say("in thread 2")
         end
 
-        ngx.say("before 1")
-        ngx.thread.spawn(f)
-        ngx.say("after 1")
+        njt.say("before 1")
+        njt.thread.spawn(f)
+        njt.say("after 1")
 
-        ngx.say("before 2")
-        ngx.thread.spawn(g)
-        ngx.say("after 2")
+        njt.say("before 2")
+        njt.thread.spawn(g)
+        njt.say("after 2")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -98,14 +98,14 @@ after 2
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("before sleep")
-            ngx.sleep(0.1)
-            ngx.say("after sleep")
+            njt.say("before sleep")
+            njt.sleep(0.1)
+            njt.say("after sleep")
         end
 
-        ngx.say("before thread create")
-        ngx.thread.spawn(f)
-        ngx.say("after thread create")
+        njt.say("before thread create")
+        njt.thread.spawn(f)
+        njt.say("after thread create")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -131,24 +131,24 @@ after sleep
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("1: before sleep")
-            ngx.sleep(0.2)
-            ngx.say("1: after sleep")
+            njt.say("1: before sleep")
+            njt.sleep(0.2)
+            njt.say("1: after sleep")
         end
 
         function g()
-            ngx.say("2: before sleep")
-            ngx.sleep(0.1)
-            ngx.say("2: after sleep")
+            njt.say("2: before sleep")
+            njt.sleep(0.1)
+            njt.say("2: after sleep")
         end
 
-        ngx.say("1: before thread create")
-        ngx.thread.spawn(f)
-        ngx.say("1: after thread create")
+        njt.say("1: before thread create")
+        njt.thread.spawn(f)
+        njt.say("1: after thread create")
 
-        ngx.say("2: before thread create")
-        ngx.thread.spawn(g)
-        ngx.say("2: after thread create")
+        njt.say("2: before thread create")
+        njt.thread.spawn(g)
+        njt.say("2: after thread create")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -183,11 +183,11 @@ delete thread 2
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.blah()
+            njt.blah()
         end
 
-        ngx.thread.spawn(f)
-        ngx.say("after")
+        njt.thread.spawn(f)
+        njt.say("after")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -210,18 +210,18 @@ qr/stream lua user thread aborted: runtime error: content_by_lua\(nginx\.conf:\d
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("before g")
-            ngx.thread.spawn(g)
-            ngx.say("after g")
+            njt.say("before g")
+            njt.thread.spawn(g)
+            njt.say("after g")
         end
 
         function g()
-            ngx.say("hello in g()")
+            njt.say("hello in g()")
         end
 
-        ngx.say("before f")
-        ngx.thread.spawn(f)
-        ngx.say("after f")
+        njt.say("before f")
+        njt.thread.spawn(f)
+        njt.say("after f")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -252,19 +252,19 @@ after g
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("before g")
-            ngx.thread.spawn(g)
-            ngx.say("after g")
+            njt.say("before g")
+            njt.thread.spawn(g)
+            njt.say("after g")
         end
 
         function g()
-            ngx.sleep(0.1)
-            ngx.say("hello in g()")
+            njt.sleep(0.1)
+            njt.say("hello in g()")
         end
 
-        ngx.say("before f")
-        ngx.thread.spawn(f)
-        ngx.say("after f")
+        njt.say("before f")
+        njt.thread.spawn(f)
+        njt.say("after f")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -297,11 +297,11 @@ hello in g()
         local co
         function f()
             co = coroutine.running()
-            ngx.sleep(0.1)
+            njt.sleep(0.1)
         end
 
-        ngx.thread.spawn(f)
-        ngx.say("status: ", coroutine.status(co))
+        njt.thread.spawn(f)
+        njt.say("status: ", coroutine.status(co))
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -328,8 +328,8 @@ status: running
             co = coroutine.running()
         end
 
-        ngx.thread.spawn(f)
-        ngx.say("status: ", coroutine.status(co))
+        njt.thread.spawn(f)
+        njt.say("status: ", coroutine.status(co))
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -359,11 +359,11 @@ status: zombie
         end
 
         function g()
-            ngx.sleep(0.1)
+            njt.sleep(0.1)
         end
 
-        ngx.thread.spawn(f)
-        ngx.say("status: ", coroutine.status(co))
+        njt.thread.spawn(f)
+        njt.say("status: ", coroutine.status(co))
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -388,19 +388,19 @@ status: normal
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("before g")
-            ngx.thread.spawn(g)
-            ngx.say("after g")
+            njt.say("before g")
+            njt.thread.spawn(g)
+            njt.say("after g")
         end
 
         function g()
-            ngx.say("hello in g()")
+            njt.say("hello in g()")
         end
 
-        ngx.say("before f")
+        njt.say("before f")
         local co = coroutine.create(f)
         coroutine.resume(co)
-        ngx.say("after f")
+        njt.say("after f")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -432,23 +432,23 @@ after f
 
         function f()
             local self = coroutine.running()
-            ngx.say("f 1")
+            njt.say("f 1")
             yield(self)
-            ngx.say("f 2")
+            njt.say("f 2")
             yield(self)
-            ngx.say("f 3")
+            njt.say("f 3")
         end
 
         local self = coroutine.running()
-        ngx.say("0")
+        njt.say("0")
         yield(self)
-        ngx.say("1")
-        ngx.thread.spawn(f)
-        ngx.say("2")
+        njt.say("1")
+        njt.thread.spawn(f)
+        njt.say("2")
         yield(self)
-        ngx.say("3")
+        njt.say("3")
         yield(self)
-        ngx.say("4")
+        njt.say("4")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -481,25 +481,25 @@ f 3
 
         function f()
             local self = coroutine.running()
-            ngx.say("f 1")
+            njt.say("f 1")
             yield(self)
-            ngx.say("f 2")
+            njt.say("f 2")
             yield(self)
-            ngx.say("f 3")
+            njt.say("f 3")
         end
 
         function g()
             local self = coroutine.running()
-            ngx.say("g 1")
+            njt.say("g 1")
             yield(self)
-            ngx.say("g 2")
+            njt.say("g 2")
             yield(self)
-            ngx.say("g 3")
+            njt.say("g 3")
         end
 
-        ngx.thread.spawn(f)
-        ngx.thread.spawn(g)
-        ngx.say("done")
+        njt.thread.spawn(f)
+        njt.thread.spawn(g)
+        njt.say("done")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -532,15 +532,15 @@ g 3
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("hello in thread")
+            njt.say("hello in thread")
             coroutine.yield(coroutine.running)
-            ngx.flush(true)
+            njt.flush(true)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
-        ngx.flush(true)
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
+        njt.flush(true)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -565,17 +565,17 @@ after
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("hello from f")
-            ngx.flush(true)
+            njt.say("hello from f")
+            njt.flush(true)
         end
 
         function g()
-            ngx.say("hello from g")
-            ngx.flush(true)
+            njt.say("hello from g")
+            njt.flush(true)
         end
 
-        ngx.thread.spawn(f)
-        ngx.thread.spawn(g)
+        njt.thread.spawn(f)
+        njt.thread.spawn(g)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -608,34 +608,34 @@ hello from g
 
 
 
-=== TEST 16: user threads + ngx.socket.tcp
+=== TEST 16: user threads + njt.socket.tcp
 --- stream_server_config
     content_by_lua_block {
         function f()
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
             local bytes, err = sock:send("flush_all\r\n")
             if not bytes then
-                ngx.say("failed to send query: ", err)
+                njt.say("failed to send query: ", err)
                 return
             end
 
             local line, err = sock:receive()
             if not line then
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
                 return
             end
 
-            ngx.say("received: ", line)
+            njt.say("received: ", line)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -656,30 +656,30 @@ received: OK
 
 
 
-=== TEST 17: user threads + ngx.socket.udp
+=== TEST 17: user threads + njt.socket.udp
 --- stream_server_config
     content_by_lua_block {
         function f()
-            local sock = ngx.socket.udp()
+            local sock = njt.socket.udp()
             local ok, err = sock:setpeername("127.0.0.1", 12345)
             local bytes, err = sock:send("blah")
             if not bytes then
-                ngx.say("failed to send query: ", err)
+                njt.say("failed to send query: ", err)
                 return
             end
 
             local line, err = sock:receive()
             if not line then
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
                 return
             end
 
-            ngx.say("received: ", line)
+            njt.say("received: ", line)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -714,24 +714,24 @@ after)$
 
 
 
-=== TEST 18: simple user thread with ngx.req.socket()
+=== TEST 18: simple user thread with njt.req.socket()
 --- stream_server_config
     content_by_lua_block {
         function f()
-            local sock = assert(ngx.req.socket())
+            local sock = assert(njt.req.socket())
             local body, err = sock:receive(11)
             if not body then
-                ngx.say("failed to read body: ", err)
+                njt.say("failed to read body: ", err)
                 return
             end
 
-            ngx.say("body: ", body)
+            njt.say("body: ", body)
         end
 
-        ngx.say("before")
-        ngx.flush(true)
-        ngx.thread.spawn(f)
-        ngx.say("after")
+        njt.say("before")
+        njt.flush(true)
+        njt.thread.spawn(f)
+        njt.say("after")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -766,12 +766,12 @@ body: hello world)$
 --- stream_server_config
     content_by_lua_block {
         function f(a, b)
-            ngx.say("hello ", a, " and ", b)
+            njt.say("hello ", a, " and ", b)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f, "foo", 3.14)
-        ngx.say("after")
+        njt.say("before")
+        njt.thread.spawn(f, "foo", 3.14)
+        njt.say("after")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -796,11 +796,11 @@ after
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.sleep(0.1)
-            ngx.say("f")
+            njt.sleep(0.1)
+            njt.say("f")
         end
 
-        ngx.thread.spawn(f)
+        njt.thread.spawn(f)
         collectgarbage()
     }
 --- stap2 eval: $::StapScript

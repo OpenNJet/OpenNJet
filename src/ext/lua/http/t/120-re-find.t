@@ -22,16 +22,16 @@ __DATA__
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "([0-9]+)", "jo")
+            local from, to, err = njt.re.find(s, "([0-9]+)", "jo")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                 end
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         ';
     }
@@ -51,16 +51,16 @@ matched: 1234
     location /re {
         content_by_lua '
             local s = "hello, world"
-            local from, to, err = ngx.re.find(s, "[0-9]*")
+            local from, to, err = njt.re.find(s, "[0-9]*")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                 end
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         ';
     }
@@ -80,13 +80,13 @@ matched:
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "([a-z]+).*?([0-9]{2})[0-9]+", "o")
+            local from, to, err = njt.re.find(s, "([a-z]+).*?([0-9]{2})[0-9]+", "o")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
             else
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         ';
     }
@@ -106,14 +106,14 @@ matched: hello, 1234
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "foo")
+            local from, to, err = njt.re.find(s, "foo")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -130,11 +130,11 @@ not matched.
 --- config
     location /re {
         content_by_lua '
-            local from = ngx.re.find("hello, 1234", "HELLO")
+            local from = njt.re.find("hello, 1234", "HELLO")
             if from then
-                ngx.say(from)
+                njt.say(from)
             else
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -152,14 +152,14 @@ not matched.
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "HELLO", "i")
+            local from, to, err = njt.re.find(s, "HELLO", "i")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -179,13 +179,13 @@ matched: hello
     location /re {
         content_by_lua '
             local s = "hello章亦春"
-            local from, to, err = ngx.re.find(s, "HELLO.{2}", "iu")
+            local from, to, err = njt.re.find(s, "HELLO.{2}", "iu")
             if not from then
-                ngx.say("FAIL: ", err)
+                njt.say("FAIL: ", err)
                 return
             end
 
-            ngx.say(string.sub(s, from, to))
+            njt.say(string.sub(s, from, to))
         ';
     }
 --- request
@@ -202,14 +202,14 @@ matched: hello
     location /re {
         content_by_lua '
             local s = "hello\\nworld"
-            local from, to, err = ngx.re.find(s, "^world", "m")
+            local from, to, err = njt.re.find(s, "^world", "m")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -229,14 +229,14 @@ matched: world
     location /re {
         content_by_lua '
             local s = "hello\\nworld"
-            local from, to, err = ngx.re.find(s, ".*", "m")
+            local from, to, err = njt.re.find(s, ".*", "m")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -256,14 +256,14 @@ matched: hello
     location /re {
         content_by_lua '
             local s = "hello\\nworld"
-            local from, to, err = ngx.re.find(s, "^world", "s")
+            local from, to, err = njt.re.find(s, "^world", "s")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -281,14 +281,14 @@ not matched.
     location /re {
         content_by_lua '
             local s = "hello\\nworld"
-            local from, to, err = ngx.re.find(s, ".*", "s")
+            local from, to, err = njt.re.find(s, ".*", "s")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -309,14 +309,14 @@ world
     location /re {
         content_by_lua '
             local s = "hello\\nworld"
-            local from, to, err = ngx.re.find(s, "\\\\w     \\\\w", "x")
+            local from, to, err = njt.re.find(s, "\\\\w     \\\\w", "x")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -336,18 +336,18 @@ matched: he
     location /re {
         content_by_lua '
             local s = "hello\\nworld"
-            local from, to, err = ngx.re.find(s, "(abc")
+            local from, to, err = njt.re.find(s, "(abc")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
 
                 else
-                    ngx.say("not matched.")
+                    njt.say("not matched.")
                 end
             end
         ';
@@ -366,19 +366,19 @@ error: pcre_compile() failed: missing ) in "(abc"
     location /re {
         content_by_lua '
             local s = "hello\\nworld"
-            local from, to, err = ngx.re.find(s, ".*", "H")
+            local from, to, err = njt.re.find(s, ".*", "H")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                     return
                 end
 
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -396,19 +396,19 @@ unknown flag "H"
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "([0-9]+)", "a")
+            local from, to, err = njt.re.find(s, "([0-9]+)", "a")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                     return
                 end
 
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -426,19 +426,19 @@ not matched.
     location /re {
         content_by_lua '
             local s = "1234, hello"
-            local from, to, err = ngx.re.find(s, "([0-9]+)", "a")
+            local from, to, err = njt.re.find(s, "([0-9]+)", "a")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                     return
                 end
 
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -458,14 +458,14 @@ matched: 1234
     location /re {
         content_by_lua '
             local ctx = {}
-            local from, to = ngx.re.find("1234, hello", "([0-9]+)", "", ctx)
+            local from, to = njt.re.find("1234, hello", "([0-9]+)", "", ctx)
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("pos: ", ctx.pos)
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("pos: ", ctx.pos)
             else
-                ngx.say("not matched!")
-                ngx.say("pos: ", ctx.pos)
+                njt.say("not matched!")
+                njt.say("pos: ", ctx.pos)
             end
         ';
     }
@@ -485,14 +485,14 @@ pos: 5
     location /re {
         content_by_lua '
             local ctx = { pos = 3 }
-            local from, to, err = ngx.re.find("1234, hello", "([0-9]+)", "", ctx)
+            local from, to, err = njt.re.find("1234, hello", "([0-9]+)", "", ctx)
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("pos: ", ctx.pos)
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("pos: ", ctx.pos)
             else
-                ngx.say("not matched!")
-                ngx.say("pos: ", ctx.pos)
+                njt.say("not matched!")
+                njt.say("pos: ", ctx.pos)
             end
         ';
     }
@@ -512,19 +512,19 @@ pos: 5
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "(?<first>[a-z]+), [0-9]+")
+            local from, to, err = njt.re.find(s, "(?<first>[a-z]+), [0-9]+")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                     return
                 end
 
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -546,17 +546,17 @@ matched: hello, 1234
             local target = "你好"
             local regex = "你好"
 
-            local from, to, err = ngx.re.find(string.sub(target, 1, 4), regex, "u")
+            local from, to, err = njt.re.find(string.sub(target, 1, 4), regex, "u")
 
             if err then
-                ngx.say("error: ", err)
+                njt.say("error: ", err)
                 return
             end
 
             if m then
-                ngx.say("matched: ", from)
+                njt.say("matched: ", from)
             else
-                ngx.say("not matched")
+                njt.say("not matched")
             end
         ';
     }
@@ -575,14 +575,14 @@ GET /t
     location /re {
         content_by_lua '
             local s = "你好"
-            local from, to, err = ngx.re.find(s, ".", "U")
+            local from, to, err = njt.re.find(s, ".", "U")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
 
             else
-                ngx.say("not matched.")
+                njt.say("not matched.")
             end
         ';
     }
@@ -624,22 +624,22 @@ local re = [==[(?i:([\s'\"`´’‘\(\)]*)?([\d\w]+)([\s'\"`´’‘\(\)]*)?(?:=
 
 local s = string.rep([[ABCDEFG]], 10)
 
-local start = ngx.now()
+local start = njt.now()
 
-local from, to, err = ngx.re.find(s, re, "o")
+local from, to, err = njt.re.find(s, re, "o")
 
 --[[
-ngx.update_time()
-local elapsed = ngx.now() - start
-ngx.say(elapsed, " sec elapsed.")
+njt.update_time()
+local elapsed = njt.now() - start
+njt.say(elapsed, " sec elapsed.")
 ]]
 
 if not from then
     if err then
-        ngx.say("error: ", err)
+        njt.say("error: ", err)
         return
     end
-    ngx.say("failed to match.")
+    njt.say("failed to match.")
     return
 end
 
@@ -666,22 +666,22 @@ local re = [==[(?i:([\s'\"`´’‘\(\)]*)?([\d\w]+)([\s'\"`´’‘\(\)]*)?(?:=
 
 local s = string.rep([[ABCDEFG]], 10)
 
-local start = ngx.now()
+local start = njt.now()
 
-local from, to, err = ngx.re.find(s, re, "o")
+local from, to, err = njt.re.find(s, re, "o")
 
 --[[
-ngx.update_time()
-local elapsed = ngx.now() - start
-ngx.say(elapsed, " sec elapsed.")
+njt.update_time()
+local elapsed = njt.now() - start
+njt.say(elapsed, " sec elapsed.")
 ]]
 
 if not from then
     if err then
-        ngx.say("error: ", err)
+        njt.say("error: ", err)
         return
     end
-    ngx.say("failed to match")
+    njt.say("failed to match")
     return
 end
 
@@ -699,16 +699,16 @@ failed to match
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "([0-9])([0-9]+)", "jo", nil, 1)
+            local from, to, err = njt.re.find(s, "([0-9])([0-9]+)", "jo", nil, 1)
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                 end
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         ';
     }
@@ -728,16 +728,16 @@ matched: 1
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "([0-9])([0-9]+)", "jo", nil, 0)
+            local from, to, err = njt.re.find(s, "([0-9])([0-9]+)", "jo", nil, 0)
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                 end
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         ';
     }
@@ -757,16 +757,16 @@ matched: 1234
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "([0-9])([0-9]+)", "jo", nil, 2)
+            local from, to, err = njt.re.find(s, "([0-9])([0-9]+)", "jo", nil, 2)
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                 end
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         ';
     }
@@ -786,17 +786,17 @@ matched: 234
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "([0-9])([0-9]+)", "jo", nil, 3)
+            local from, to, err = njt.re.find(s, "([0-9])([0-9]+)", "jo", nil, 3)
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                     return
                 end
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         ';
     }
@@ -814,17 +814,17 @@ error: nth out of bound
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "([0-9])([0-9]+)", "jo", nil, 4)
+            local from, to, err = njt.re.find(s, "([0-9])([0-9]+)", "jo", nil, 4)
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                     return
                 end
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         ';
     }
@@ -842,17 +842,17 @@ error: nth out of bound
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "([0-9])|(hello world)", "jo", nil, 2)
+            local from, to, err = njt.re.find(s, "([0-9])|(hello world)", "jo", nil, 2)
             if from or to then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                     return
                 end
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         ';
     }
@@ -870,17 +870,17 @@ not matched!
     location /re {
         content_by_lua '
             local s = "hello, 1234"
-            local from, to, err = ngx.re.find(s, "(hello world)|([0-9])", "jo", nil, 1)
+            local from, to, err = njt.re.find(s, "(hello world)|([0-9])", "jo", nil, 1)
             if from or to then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                     return
                 end
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         ';
     }
@@ -898,14 +898,14 @@ not matched!
     location /re {
         content_by_lua '
             local ctx = { pos = 3 }
-            local from, to, err = ngx.re.find("1234, hello", [[(\G[0-9]+)]], "", ctx)
+            local from, to, err = njt.re.find("1234, hello", [[(\G[0-9]+)]], "", ctx)
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("pos: ", ctx.pos)
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("pos: ", ctx.pos)
             else
-                ngx.say("not matched!")
-                ngx.say("pos: ", ctx.pos)
+                njt.say("not matched!")
+                njt.say("pos: ", ctx.pos)
             end
         ';
     }
@@ -927,17 +927,17 @@ pos: 5
     location /re {
         content_by_lua_block {
             local s = "This is <something> <something else> <something further> no more"
-            local from, to, err = ngx.re.find(s, "<.*>", "d")
+            local from, to, err = njt.re.find(s, "<.*>", "d")
             if from then
-                ngx.say("from: ", from)
-                ngx.say("to: ", to)
-                ngx.say("matched: ", string.sub(s, from, to))
+                njt.say("from: ", from)
+                njt.say("to: ", to)
+                njt.say("matched: ", string.sub(s, from, to))
             else
                 if err then
-                    ngx.say("error: ", err)
+                    njt.say("error: ", err)
                     return
                 end
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         }
     }

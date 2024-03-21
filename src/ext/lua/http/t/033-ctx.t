@@ -21,8 +21,8 @@ __DATA__
 --- config
     location /lua {
         content_by_lua '
-            ngx.ctx.foo = 32;
-            ngx.say(ngx.ctx.foo)
+            njt.ctx.foo = 32;
+            njt.say(njt.ctx.foo)
         ';
     }
 --- request
@@ -38,14 +38,14 @@ GET /lua
 --- config
     location /lua {
         rewrite_by_lua '
-            print("foo = ", ngx.ctx.foo)
-            ngx.ctx.foo = 76
+            print("foo = ", njt.ctx.foo)
+            njt.ctx.foo = 76
         ';
         access_by_lua '
-            ngx.ctx.foo = ngx.ctx.foo + 3
+            njt.ctx.foo = njt.ctx.foo + 3
         ';
         content_by_lua '
-            ngx.say(ngx.ctx.foo)
+            njt.say(njt.ctx.foo)
         ';
     }
 --- request
@@ -61,18 +61,18 @@ foo = nil
 
 
 
-=== TEST 3: interal redirect clears ngx.ctx
+=== TEST 3: interal redirect clears njt.ctx
 --- config
     location /echo {
         content_by_lua '
-            ngx.say(ngx.ctx.foo)
+            njt.say(njt.ctx.foo)
         ';
     }
     location /lua {
         content_by_lua '
-            ngx.ctx.foo = ngx.var.arg_data
-            -- ngx.say(ngx.ctx.foo)
-            ngx.exec("/echo")
+            njt.ctx.foo = njt.var.arg_data
+            -- njt.say(njt.ctx.foo)
+            njt.exec("/echo")
         ';
     }
 --- request
@@ -88,18 +88,18 @@ nil
 --- config
     location /sub {
         content_by_lua '
-            ngx.say("sub pre: ", ngx.ctx.blah)
-            ngx.ctx.blah = 32
-            ngx.say("sub post: ", ngx.ctx.blah)
+            njt.say("sub pre: ", njt.ctx.blah)
+            njt.ctx.blah = 32
+            njt.say("sub post: ", njt.ctx.blah)
         ';
     }
     location /main {
         content_by_lua '
-            ngx.ctx.blah = 73
-            ngx.say("main pre: ", ngx.ctx.blah)
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
-            ngx.say("main post: ", ngx.ctx.blah)
+            njt.ctx.blah = 73
+            njt.say("main pre: ", njt.ctx.blah)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
+            njt.say("main post: ", njt.ctx.blah)
         ';
     }
 --- request
@@ -118,13 +118,13 @@ main post: 73
 --- config
     location /lua {
         content_by_lua '
-            ngx.ctx = { foo = 32, bar = 54 };
-            ngx.say(ngx.ctx.foo)
-            ngx.say(ngx.ctx.bar)
+            njt.ctx = { foo = 32, bar = 54 };
+            njt.say(njt.ctx.foo)
+            njt.say(njt.ctx.bar)
 
-            ngx.ctx = { baz = 56  };
-            ngx.say(ngx.ctx.foo)
-            ngx.say(ngx.ctx.baz)
+            njt.ctx = { baz = 56  };
+            njt.say(njt.ctx.foo)
+            njt.say(njt.ctx.baz)
         ';
     }
 --- request
@@ -143,11 +143,11 @@ nil
 --- config
     location /lua {
         content_by_lua '
-            ngx.ctx.foo = 32;
-            ngx.say(ngx.ctx.foo)
+            njt.ctx.foo = 32;
+            njt.say(njt.ctx.foo)
         ';
         header_filter_by_lua '
-            ngx.header.blah = ngx.ctx.foo + 1
+            njt.header.blah = njt.ctx.foo + 1
         ';
     }
 --- request
@@ -165,7 +165,7 @@ blah: 33
 --- config
     location /other {
         content_by_lua '
-            ngx.say("dog = ", ngx.ctx.dog)
+            njt.say("dog = ", njt.ctx.dog)
         ';
     }
 
@@ -173,7 +173,7 @@ blah: 33
         set $dog 'blah';
         set $cat 'foo';
         content_by_lua '
-            local res1, res2 = ngx.location.capture_multi{
+            local res1, res2 = njt.location.capture_multi{
                 {"/other/1",
                     { ctx = { dog = "hello" }}
                 },
@@ -182,9 +182,9 @@ blah: 33
                 }
             };
 
-            ngx.print(res1.body)
-            ngx.print(res2.body)
-            ngx.say("parent: ", ngx.ctx.dog)
+            njt.print(res1.body)
+            njt.print(res2.body)
+            njt.say("parent: ", njt.ctx.dog)
         ';
     }
 --- request
@@ -201,8 +201,8 @@ parent: nil
 === TEST 8: set_by_lua
 --- config
     location /lua {
-        set_by_lua $bar 'ngx.ctx.foo = 3 return 4';
-        set_by_lua $foo 'return ngx.ctx.foo';
+        set_by_lua $bar 'njt.ctx.foo = 3 return 4';
+        set_by_lua $foo 'return njt.ctx.foo';
         echo "foo = $foo, bar = $bar";
     }
 --- request
@@ -214,18 +214,18 @@ foo = 3, bar = 4
 
 
 
-=== TEST 9: ngx.ctx leaks with ngx.exec + log_by_lua
+=== TEST 9: njt.ctx leaks with njt.exec + log_by_lua
 --- config
     location = /t {
         content_by_lua '
-            ngx.ctx.foo = 32;
-            ngx.exec("/f")
+            njt.ctx.foo = 32;
+            njt.exec("/f")
         ';
-        log_by_lua 'ngx.log(ngx.WARN, "ctx.foo = ", ngx.ctx.foo)';
+        log_by_lua 'njt.log(njt.WARN, "ctx.foo = ", njt.ctx.foo)';
     }
     location = /f {
         content_by_lua '
-            ngx.say(ngx.ctx.foo)
+            njt.say(njt.ctx.foo)
         ';
     }
 --- request
@@ -238,18 +238,18 @@ ctx.foo =
 
 
 
-=== TEST 10: memory leaks with ngx.ctx + ngx.req.set_uri + log_by_lua
+=== TEST 10: memory leaks with njt.ctx + njt.req.set_uri + log_by_lua
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.ctx.foo = 32;
-            ngx.req.set_uri("/f", true)
+            njt.ctx.foo = 32;
+            njt.req.set_uri("/f", true)
         ';
-        log_by_lua 'ngx.log(ngx.WARN, "ctx.foo = ", ngx.ctx.foo)';
+        log_by_lua 'njt.log(njt.WARN, "ctx.foo = ", njt.ctx.foo)';
     }
     location = /f {
         content_by_lua '
-            ngx.say(ngx.ctx.foo)
+            njt.say(njt.ctx.foo)
         ';
     }
 --- request
@@ -262,14 +262,14 @@ ctx.foo =
 
 
 
-=== TEST 11: ngx.ctx + ngx.exit(ngx.ERROR) + log_by_lua
+=== TEST 11: njt.ctx + njt.exit(njt.ERROR) + log_by_lua
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.ctx.foo = 32;
-            ngx.exit(ngx.ERROR)
+            njt.ctx.foo = 32;
+            njt.exit(njt.ERROR)
         ';
-        log_by_lua 'ngx.log(ngx.WARN, "ngx.ctx = ", ngx.ctx.foo)';
+        log_by_lua 'njt.log(njt.WARN, "njt.ctx = ", njt.ctx.foo)';
     }
 --- request
 GET /t
@@ -277,19 +277,19 @@ GET /t
 --- no_error_log
 [error]
 --- error_log
-ngx.ctx = 32
+njt.ctx = 32
 
 
 
-=== TEST 12: ngx.ctx + ngx.exit(200) + log_by_lua
+=== TEST 12: njt.ctx + njt.exit(200) + log_by_lua
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.ctx.foo = 32;
-            ngx.say(ngx.ctx.foo)
-            ngx.exit(200)
+            njt.ctx.foo = 32;
+            njt.say(njt.ctx.foo)
+            njt.exit(200)
         ';
-        log_by_lua 'ngx.log(ngx.WARN, "ctx.foo = ", ngx.ctx.foo)';
+        log_by_lua 'njt.log(njt.WARN, "ctx.foo = ", njt.ctx.foo)';
     }
 --- request
 GET /t
@@ -302,14 +302,14 @@ ctx.foo = 32
 
 
 
-=== TEST 13: ngx.ctx + ngx.redirect + log_by_lua
+=== TEST 13: njt.ctx + njt.redirect + log_by_lua
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.ctx.foo = 32;
-            ngx.redirect("/f")
+            njt.ctx.foo = 32;
+            njt.redirect("/f")
         ';
-        log_by_lua 'ngx.log(ngx.WARN, "ngx.ctx.foo = ", 32)';
+        log_by_lua 'njt.log(njt.WARN, "njt.ctx.foo = ", 32)';
     }
 --- request
 GET /t
@@ -322,11 +322,11 @@ ctx.foo = 32
 
 
 
-=== TEST 14: set ngx.ctx before internal redirects performed by other nginx modules
+=== TEST 14: set njt.ctx before internal redirects performed by other nginx modules
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.ctx.foo = "hello world";
+            njt.ctx.foo = "hello world";
         ';
         echo_exec /foo;
     }
@@ -342,15 +342,15 @@ hello
 [error]
 --- log_level: debug
 --- error_log
-lua release ngx.ctx at ref
+lua release njt.ctx at ref
 
 
 
-=== TEST 15: set ngx.ctx before internal redirects performed by other nginx modules (with log_by_lua)
+=== TEST 15: set njt.ctx before internal redirects performed by other nginx modules (with log_by_lua)
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.ctx.foo = "hello world";
+            njt.ctx.foo = "hello world";
         ';
         echo_exec /foo;
     }
@@ -367,14 +367,14 @@ hello
 [error]
 --- log_level: debug
 --- error_log
-lua release ngx.ctx at ref
+lua release njt.ctx at ref
 
 
 
-=== TEST 16: set ngx.ctx before simple uri rewrite performed by other nginx modules
+=== TEST 16: set njt.ctx before simple uri rewrite performed by other nginx modules
 --- config
     location = /t {
-        set_by_lua $a 'ngx.ctx.foo = "hello world"; return 1';
+        set_by_lua $a 'njt.ctx.foo = "hello world"; return 1';
         rewrite ^ /foo last;
         echo blah;
     }
@@ -390,23 +390,23 @@ foo
 [error]
 --- log_level: debug
 --- error_log
-lua release ngx.ctx at ref
+lua release njt.ctx at ref
 
 
 
-=== TEST 17: ngx.ctx gets prematurely released ngx.exit()
+=== TEST 17: njt.ctx gets prematurely released njt.exit()
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.ctx.foo = 3
+            njt.ctx.foo = 3
         ';
         content_by_lua '
-            -- if ngx.headers_sent ~= true then ngx.send_headers() end
-            return ngx.exit(200)
+            -- if njt.headers_sent ~= true then njt.send_headers() end
+            return njt.exit(200)
         ';
         header_filter_by_lua '
-            if ngx.ctx.foo ~= 3 then
-                ngx.log(ngx.ERR, "bad ngx.ctx.foo: ", ngx.ctx.foo)
+            if njt.ctx.foo ~= 3 then
+                njt.log(njt.ERR, "bad njt.ctx.foo: ", njt.ctx.foo)
             end
         ';
         }
@@ -418,20 +418,20 @@ lua release ngx.ctx at ref
 
 
 
-=== TEST 18: ngx.ctx gets prematurely released ngx.exit() (lua_code_cache off)
+=== TEST 18: njt.ctx gets prematurely released njt.exit() (lua_code_cache off)
 --- config
     location = /t {
         lua_code_cache off;
         rewrite_by_lua '
-            ngx.ctx.foo = 3
+            njt.ctx.foo = 3
         ';
         content_by_lua '
-            -- if ngx.headers_sent ~= true then ngx.send_headers() end
-            return ngx.exit(200)
+            -- if njt.headers_sent ~= true then njt.send_headers() end
+            return njt.exit(200)
         ';
         header_filter_by_lua '
-            if ngx.ctx.foo ~= 3 then
-                ngx.log(ngx.ERR, "bad ngx.ctx.foo: ", ngx.ctx.foo)
+            if njt.ctx.foo ~= 3 then
+                njt.log(njt.ERR, "bad njt.ctx.foo: ", njt.ctx.foo)
             end
         ';
         }

@@ -21,7 +21,7 @@ __DATA__
 --- config
     location /lua {
         content_by_lua '
-            ngx.say("prefix: ", ngx.config.prefix())
+            njt.say("prefix: ", njt.config.prefix())
         ';
     }
 --- request

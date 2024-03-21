@@ -19,12 +19,12 @@ __DATA__
 === TEST 1: sleep 0.5
 --- stream_server_config
     preread_by_lua_block {
-            ngx.update_time()
-            local before = ngx.now()
-            ngx.sleep(0.5)
-            local now = ngx.now()
-            ngx.say(now - before)
-            ngx.exit(200)
+            njt.update_time()
+            local before = njt.now()
+            njt.sleep(0.5)
+            local now = njt.now()
+            njt.say(now - before)
+            njt.exit(200)
     }
 
     return here;
@@ -39,12 +39,12 @@ stream lua sleep timer expired
 === TEST 2: sleep ag
 --- stream_server_config
     preread_by_lua_block {
-            ngx.update_time()
-            local before = ngx.now()
-            ngx.sleep("a")
-            local now = ngx.now()
-            ngx.say(now - before)
-            ngx.exit(200)
+            njt.update_time()
+            local before = njt.now()
+            njt.sleep("a")
+            local now = njt.now()
+            njt.say(now - before)
+            njt.exit(200)
     }
 
     return here;
@@ -56,13 +56,13 @@ bad argument #1 to 'sleep'
 === TEST 3: sleep 0.5 - multi-times
 --- stream_server_config
     preread_by_lua_block {
-        ngx.update_time()
-        local start = ngx.now()
-        ngx.sleep(0.3)
-        ngx.sleep(0.3)
-        ngx.sleep(0.3)
-        ngx.say(ngx.now() - start)
-        ngx.exit(200)
+        njt.update_time()
+        local start = njt.now()
+        njt.sleep(0.3)
+        njt.sleep(0.3)
+        njt.sleep(0.3)
+        njt.say(njt.now() - start)
+        njt.exit(200)
     }
 
     return here;
@@ -76,13 +76,13 @@ stream lua sleep timer expired
 
 
 
-=== TEST 4: sleep 0.5 - interleaved by ngx.say() - ended by ngx.sleep
+=== TEST 4: sleep 0.5 - interleaved by njt.say() - ended by njt.sleep
 --- stream_server_config
     preread_by_lua_block {
-        ngx.sleep(1)
-        ngx.say("blah")
-        ngx.sleep(1)
-        ngx.exit(200)
+        njt.sleep(1)
+        njt.say("blah")
+        njt.sleep(1)
+        njt.exit(200)
     }
 
     return here;
@@ -96,14 +96,14 @@ stream lua sleep timer expired
 
 
 
-=== TEST 5: sleep 0.5 - interleaved by ngx.say() - not ended by ngx.sleep
+=== TEST 5: sleep 0.5 - interleaved by njt.say() - not ended by njt.sleep
 --- stream_server_config
     preread_by_lua_block {
-        ngx.sleep(0.3)
-        ngx.say("blah")
-        ngx.sleep(0.5)
-        ngx.say("hiya")
-        ngx.exit(200)
+        njt.sleep(0.3)
+        njt.say("blah")
+        njt.sleep(0.5)
+        njt.say("hiya")
+        njt.exit(200)
     }
 
     return here;

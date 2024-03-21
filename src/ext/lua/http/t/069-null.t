@@ -24,15 +24,15 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: compare ngx.null with cjson.null
+=== TEST 1: compare njt.null with cjson.null
 --- http_config eval
     "lua_package_cpath '$::LuaCpath';";
 --- config
     location /lua {
         content_by_lua '
             local cjson = require "cjson"
-            ngx.say(cjson.null == ngx.null)
-            ngx.say(cjson.encode(ngx.null))
+            njt.say(cjson.null == njt.null)
+            njt.say(cjson.encode(njt.null))
         ';
     }
 --- request
@@ -45,44 +45,44 @@ null
 
 
 
-=== TEST 2: output ngx.null
+=== TEST 2: output njt.null
 --- config
     location /lua {
         content_by_lua '
-            ngx.say("ngx.null: ", ngx.null)
+            njt.say("njt.null: ", njt.null)
         ';
     }
 --- request
 GET /lua
 --- response_body
-ngx.null: null
+njt.null: null
 --- no_error_log
 [error]
 
 
 
-=== TEST 3: output ngx.null in a table
+=== TEST 3: output njt.null in a table
 --- config
     location /lua {
         content_by_lua '
-            ngx.say({"ngx.null: ", ngx.null})
+            njt.say({"njt.null: ", njt.null})
         ';
     }
 --- request
 GET /lua
 --- response_body
-ngx.null: null
+njt.null: null
 --- no_error_log
 [error]
 
 
 
-=== TEST 4: log ngx.null
+=== TEST 4: log njt.null
 --- config
     location /lua {
         content_by_lua '
-            print("ngx.null: ", ngx.null)
-            ngx.say("done")
+            print("njt.null: ", njt.null)
+            njt.say("done")
         ';
     }
 --- request
@@ -90,6 +90,6 @@ GET /lua
 --- response_body
 done
 --- error_log
-ngx.null: null
+njt.null: null
 --- no_error_log
 [error]

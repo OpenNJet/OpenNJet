@@ -27,6 +27,7 @@ typedef struct njt_stream_session_s  njt_stream_session_t;
 
 
 #define NJT_STREAM_OK                        200
+#define NJT_STREAM_SPECIAL_RESPONSE          300 // openresty patch
 #define NJT_STREAM_BAD_REQUEST               400
 #define NJT_STREAM_FORBIDDEN                 403
 #define NJT_STREAM_INTERNAL_SERVER_ERROR     500
@@ -284,6 +285,17 @@ typedef struct {
 	njt_flag_t      proto_enabled;
 } njt_stream_proto_srv_conf_t;
 
+// openresty patch
+typedef struct {
+    njt_msec_t                       connect_timeout;
+    njt_msec_t                       timeout;
+} njt_stream_proxy_ctx_t;
+
+
+#define NJT_STREAM_HAVE_PROXY_TIMEOUT_FIELDS_PATCH 1
+// openresty patch end
+
+
 #define NJT_STREAM_MODULE       0x4d525453     /* "STRM" */
 
 #define NJT_STREAM_MAIN_CONF    0x02000000
@@ -337,6 +349,7 @@ void njt_stream_finalize_session(njt_stream_session_t *s, njt_uint_t rc);
 extern njt_module_t  njt_stream_module;
 extern njt_uint_t    njt_stream_max_module;
 extern njt_module_t  njt_stream_core_module;
+extern njt_module_t  njt_stream_proxy_module; // openresty patch
 
 
 typedef njt_int_t (*njt_stream_filter_pt)(njt_stream_session_t *s,
@@ -345,5 +358,6 @@ typedef njt_int_t (*njt_stream_filter_pt)(njt_stream_session_t *s,
 
 extern njt_stream_filter_pt  njt_stream_top_filter;
 
+#define HAS_NJT_STREAM_PROXY_GET_NEXT_UPSTREAM_TRIES_PATCH 1 // openresty patch
 
 #endif /* _NJT_STREAM_H_INCLUDED_ */

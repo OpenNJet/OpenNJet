@@ -19,7 +19,7 @@ __DATA__
 === TEST 1: set md5 hello
 --- config
     location = /md5 {
-        content_by_lua 'ngx.say(ngx.md5("hello"))';
+        content_by_lua 'njt.say(njt.md5("hello"))';
     }
 --- request
 GET /md5
@@ -28,10 +28,10 @@ GET /md5
 
 
 
-=== TEST 2: nil string to ngx.md5
+=== TEST 2: nil string to njt.md5
 --- config
     location = /md5 {
-        content_by_lua 'ngx.say(ngx.md5(nil))';
+        content_by_lua 'njt.say(njt.md5(nil))';
     }
 --- request
 GET /md5
@@ -40,10 +40,10 @@ d41d8cd98f00b204e9800998ecf8427e
 
 
 
-=== TEST 3: null string to ngx.md5
+=== TEST 3: null string to njt.md5
 --- config
     location /md5 {
-        content_by_lua 'ngx.say(ngx.md5(""))';
+        content_by_lua 'njt.say(njt.md5(""))';
     }
 --- request
 GET /md5
@@ -52,10 +52,10 @@ d41d8cd98f00b204e9800998ecf8427e
 
 
 
-=== TEST 4: use ngx.md5 in set_by_lua
+=== TEST 4: use njt.md5 in set_by_lua
 --- config
     location = /md5 {
-        set_by_lua $a 'return ngx.md5("hello")';
+        set_by_lua $a 'return njt.md5("hello")';
         echo $a;
     }
 --- request
@@ -65,10 +65,10 @@ GET /md5
 
 
 
-=== TEST 5: use ngx.md5 in set_by_lua (nil)
+=== TEST 5: use njt.md5 in set_by_lua (nil)
 --- config
     location = /md5 {
-        set_by_lua $a 'return ngx.md5(nil)';
+        set_by_lua $a 'return njt.md5(nil)';
         echo $a;
     }
 --- request
@@ -78,10 +78,10 @@ d41d8cd98f00b204e9800998ecf8427e
 
 
 
-=== TEST 6: use ngx.md5 in set_by_lua (null string)
+=== TEST 6: use njt.md5 in set_by_lua (null string)
 --- config
     location /md5 {
-        set_by_lua $a 'return ngx.md5("")';
+        set_by_lua $a 'return njt.md5("")';
         echo $a;
     }
 --- request
@@ -94,7 +94,7 @@ d41d8cd98f00b204e9800998ecf8427e
 === TEST 7: md5(number)
 --- config
     location = /md5 {
-        content_by_lua 'ngx.say(ngx.md5(45))';
+        content_by_lua 'njt.say(njt.md5(45))';
     }
 --- request
 GET /md5

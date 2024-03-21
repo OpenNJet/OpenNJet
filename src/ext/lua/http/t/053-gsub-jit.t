@@ -20,11 +20,11 @@ __DATA__
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, 1234 5678", "([0-9]+)", "world", "j")
+            local s, n = njt.re.gsub("hello, 1234 5678", "([0-9]+)", "world", "j")
             if n then
-                ngx.say(s, ": ", n)
+                njt.say(s, ": ", n)
             else
-                ngx.say(s)
+                njt.say(s)
             end
         ';
     }
@@ -41,11 +41,11 @@ pcre JIT compiling result: 1
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, world", "[0-9]+", "hiya", "j")
+            local s, n = njt.re.gsub("hello, world", "[0-9]+", "hiya", "j")
             if n then
-                ngx.say(s, ": ", n)
+                njt.say(s, ": ", n)
             else
-                ngx.say(s)
+                njt.say(s)
             end
         ';
     }
@@ -62,11 +62,11 @@ pcre JIT compiling result: 1
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, 1234 5678", "([0-9]+)", "world", "jo")
+            local s, n = njt.re.gsub("hello, 1234 5678", "([0-9]+)", "world", "jo")
             if n then
-                ngx.say(s, ": ", n)
+                njt.say(s, ": ", n)
             else
-                ngx.say(s)
+                njt.say(s)
             end
         ';
     }
@@ -87,11 +87,11 @@ qr/pcre JIT compiling result: \d+/
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, world", "[0-9]+", "hiya", "jo")
+            local s, n = njt.re.gsub("hello, world", "[0-9]+", "hiya", "jo")
             if n then
-                ngx.say(s, ": ", n)
+                njt.say(s, ": ", n)
             else
-                ngx.say(s)
+                njt.say(s)
             end
         ';
     }
@@ -112,11 +112,11 @@ qr/pcre JIT compiling result: \d+/
 --- config
     location /re {
         content_by_lua '
-            local s, n, err = ngx.re.gsub("hello\\nworld", "(abc", "world", "j")
+            local s, n, err = njt.re.gsub("hello\\nworld", "(abc", "world", "j")
             if s then
-                ngx.say(s, ": ", n)
+                njt.say(s, ": ", n)
             else
-                ngx.say("error: ", err)
+                njt.say("error: ", err)
             end
         ';
     }
@@ -133,11 +133,11 @@ error: pcre_compile() failed: missing ) in "(abc"
 --- config
     location /re {
         content_by_lua '
-            local s, n, err = ngx.re.gsub("hello\\nworld", "(abc", "world", "jo")
+            local s, n, err = njt.re.gsub("hello\\nworld", "(abc", "world", "jo")
             if s then
-                ngx.say(s, ": ", n)
+                njt.say(s, ": ", n)
             else
-                ngx.say("error: ", err)
+                njt.say("error: ", err)
             end
         ';
     }

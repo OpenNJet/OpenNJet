@@ -92,6 +92,7 @@ njt_http_lua_njt_exec(lua_State *L)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 
@@ -233,6 +234,7 @@ njt_http_lua_njt_redirect(lua_State *L)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 
@@ -279,6 +281,9 @@ njt_http_lua_njt_redirect(lua_State *L)
 
     h->value.len = len;
     h->value.data = uri;
+#if defined(njet_version) && njet_version >= 1023000
+    h->next = NULL;
+#endif
     njt_str_set(&h->key, "Location");
 
     r->headers_out.status = rc;
@@ -359,6 +364,14 @@ njt_http_lua_ffi_exit(njt_http_request_t *r, int status, u_char *err,
 {
     njt_http_lua_ctx_t       *ctx;
 
+    if (status == NJT_AGAIN || status == NJT_DONE) {
+        *errlen = njt_snprintf(err, *errlen,
+                               "bad argument to 'njt.exit': does not accept "
+                               "NJT_AGAIN or NJT_DONE")
+                  - err;
+        return NJT_ERROR;
+    }
+
     ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
     if (ctx == NULL) {
         *errlen = njt_snprintf(err, *errlen, "no request ctx found") - err;
@@ -366,6 +379,7 @@ njt_http_lua_ffi_exit(njt_http_request_t *r, int status, u_char *err,
     }
 
     if (njt_http_lua_ffi_check_context(ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                                       | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                        | NJT_HTTP_LUA_CONTEXT_ACCESS
                                        | NJT_HTTP_LUA_CONTEXT_CONTENT
                                        | NJT_HTTP_LUA_CONTEXT_TIMER

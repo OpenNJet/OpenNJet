@@ -32,7 +32,7 @@ while (my $entry = readdir $dir) {
         next;
     }
 
-    if ($entry =~ m{ ^ ngx_ (?: \w+ _ )+ (\w+) \. ([ch]|rl) $}x) {
+    if ($entry =~ m{ ^ njt_ (?: \w+ _ )+ (\w+) \. ([ch]|rl) $}x) {
         ($base, $ext) = ($1, $2);
     } else {
         next;

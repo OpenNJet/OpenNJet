@@ -20,7 +20,7 @@ __DATA__
 --- config
     location /lua {
         content_by_lua '
-            ngx.say(ngx.http_time(1290079655))
+            njt.say(njt.http_time(1290079655))
         ';
     }
 --- request
@@ -34,7 +34,7 @@ Thu, 18 Nov 2010 11:27:35 GMT
 --- config
     location /lua {
         set_by_lua $a '
-            return ngx.http_time(1290079655)
+            return njt.http_time(1290079655)
         ';
         echo $a;
     }
@@ -49,7 +49,7 @@ Thu, 18 Nov 2010 11:27:35 GMT
 --- config
     location /lua {
         set_by_lua $a '
-            return ngx.parse_http_time("Thu, 18 Nov 2010 11:27:35 GMT")
+            return njt.parse_http_time("Thu, 18 Nov 2010 11:27:35 GMT")
         ';
         echo $a;
     }
@@ -64,7 +64,7 @@ GET /lua
 --- config
     location /lua {
         content_by_lua '
-            ngx.say(ngx.parse_http_time("Thu, 18 Nov 2010 11:27:35 GMT"))
+            njt.say(njt.parse_http_time("Thu, 18 Nov 2010 11:27:35 GMT"))
         ';
     }
 --- request
@@ -78,7 +78,7 @@ GET /lua
 --- config
     location /lua {
         content_by_lua '
-            ngx.say(ngx.parse_http_time("abc") or "nil")
+            njt.say(njt.parse_http_time("abc") or "nil")
         ';
     }
 --- request

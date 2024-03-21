@@ -35,7 +35,7 @@ diff -rNp a/src/http/modules/njt_http_rewrite_module.c b/src/http/modules/njt_ht
   
   static void *njt_http_rewrite_create_loc_conf(njt_conf_t *cf);
   static char *njt_http_rewrite_merge_loc_conf(njt_conf_t *cf,
-*************** static char *njt_http_rewrite_return(ngx
+*************** static char *njt_http_rewrite_return(njt
 *** 28,44 ****
       void *conf);
   static char *njt_http_rewrite_break(njt_conf_t *cf, njt_command_t *cmd,
@@ -156,7 +156,7 @@ diff -rNp a/src/http/modules/njt_http_rewrite_module.c b/src/http/modules/njt_ht
   njt_http_rewrite_variable(njt_conf_t *cf, njt_http_rewrite_loc_conf_t *lcf,
       njt_str_t *value)
   {
-*************** njt_http_rewrite_set(njt_conf_t *cf, ngx
+*************** njt_http_rewrite_set(njt_conf_t *cf, njt
 *** 948,954 ****
   }
   
@@ -186,7 +186,7 @@ diff -rNp a/src/http/modules/njt_http_rewrite_module.h b/src/http/modules/njt_ht
 + /*
 +  * Copyright (C) Marcus Clyne
 +  *
-+  * Note : this file has been created by the Nginx Development Kit using
++  * Note : this file has been created by the NJet Development Kit using
 +  * some code from njt_http_rewrite_module.c
 +  */
 + 

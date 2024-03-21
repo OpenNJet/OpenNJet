@@ -1,12 +1,12 @@
-When tracking down some potential issues in the nginx constellation,
+When tracking down some potential issues in the njet constellation,
 we've found it useful to understand where particular error messages
 are coming from, since many of the same messages are repeated in
 various places. This patch will write the source file from which the
 message originated, the function name, and the line number if you're
-using GCC to compile nginx. Here's an example:
+using GCC to compile njet. Here's an example:
 
 Old Output:
-2010/01/12 14:43:10 [notice] 67772#0: nginx/0.7.64
+2010/01/12 14:43:10 [notice] 67772#0: njet/0.7.64
 2010/01/12 14:43:10 [notice] 67772#0: built by gcc 4.0.1 (Apple Inc. build 5490)
 2010/01/12 14:43:10 [notice] 67772#0: OS: Darwin 9.8.0
 2010/01/12 14:43:10 [notice] 67772#0: hw.ncpu: 2
@@ -20,7 +20,7 @@ Old Output:
 
 New Output:
 2010/01/14 16:35:09 [notice] 27241#0: src/os/unix/njt_posix_init.c
-njt_os_status(   80) nginx/0.7.64
+njt_os_status(   80) njet/0.7.64
 2010/01/14 16:35:09 [notice] 27241#0: src/os/unix/njt_posix_init.c
 njt_os_status(   83) built by gcc 4.0.1 (Apple Inc. build 5490)
 2010/01/14 16:35:09 [notice] 27241#0: src/os/unix/njt_darwin_init.c
@@ -45,4 +45,4 @@ Formatting the filename and function name fields into fixed-width
 fields would be nicer, however that would require further changes in
 src/core/njt_string.c
 
-(C) Brian Moran - bmoran@onehub.com  (posted to nginx-devel mailing list on 15/01/10)
+(C) Brian Moran - bmoran@onehub.com  (posted to njet-devel mailing list on 15/01/10)

@@ -20,9 +20,9 @@ __DATA__
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("[hello, world]", "[a-z]+", "howdy", "o")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("[hello, world]", "[a-z]+", "howdy", "o")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -37,9 +37,9 @@ __DATA__
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, world", "[a-z]+", "howdy", "o")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("hello, world", "[a-z]+", "howdy", "o")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -54,9 +54,9 @@ howdy, howdy
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, world", "[A-Z]+", "howdy", "o")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("hello, world", "[A-Z]+", "howdy", "o")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -75,9 +75,9 @@ hello, world
                 return "[" .. m[0] .. "," .. m[1] .. "]"
             end
 
-            local s, n = ngx.re.gsub("hello, world", "([a-z])[a-z]+", f, "o")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("hello, world", "([a-z])[a-z]+", f, "o")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -96,9 +96,9 @@ hello, world
                 return "[" .. m[0] .. "," .. m[1] .. "]"
             end
 
-            local s, n = ngx.re.gsub("{hello, world}", "([a-z])[a-z]+", f, "o")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("{hello, world}", "([a-z])[a-z]+", f, "o")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -113,9 +113,9 @@ hello, world
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, world", "([a-z])[a-z]+", "[$0,$1]", "o")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("hello, world", "([a-z])[a-z]+", "[$0,$1]", "o")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -130,9 +130,9 @@ hello, world
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("{hello, world}", "([a-z])[a-z]+", "[$0,$1]", "o")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("{hello, world}", "([a-z])[a-z]+", "[$0,$1]", "o")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -151,7 +151,7 @@ hello, world
                 return "[" .. m[0] .. "," .. m[1] .. "]"
             end
 
-            local s, n = ngx.re.gsub("{hello, world}", "([a-z])[a-z]+", f, "o")
+            local s, n = njt.re.gsub("{hello, world}", "([a-z])[a-z]+", f, "o")
             return s
         ';
         echo $res;
@@ -167,9 +167,9 @@ hello, world
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("{foobarbaz}", "(?<=foo)bar|(?<=bar)baz", "h$0", "o")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("{foobarbaz}", "(?<=foo)bar|(?<=bar)baz", "h$0", "o")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -188,9 +188,9 @@ hello, world
                 return "[" .. m[0] .. "," .. m["first"] .. "]"
             end
 
-            local s, n = ngx.re.gsub("hello, world", "(?<first>[a-z])[a-z]+", repl, "o")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("hello, world", "(?<first>[a-z])[a-z]+", repl, "o")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request

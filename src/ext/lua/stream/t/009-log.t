@@ -19,9 +19,9 @@ __DATA__
 === TEST 1: test log-level STDERR
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("before log")
-        ngx.log(ngx.STDERR, "hello, log", 1234, 3.14159)
-        ngx.say("after log")
+        njt.say("before log")
+        njt.log(njt.STDERR, "hello, log", 1234, 3.14159)
+        njt.say("after log")
     }
 --- stream_response
 before log
@@ -34,9 +34,9 @@ qr/\[\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, log1
 === TEST 2: test log-level EMERG
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("before log")
-        ngx.log(ngx.EMERG, "hello, log", 1234, 3.14159)
-        ngx.say("after log")
+        njt.say("before log")
+        njt.log(njt.EMERG, "hello, log", 1234, 3.14159)
+        njt.say("after log")
     }
 --- stream_response
 before log
@@ -49,9 +49,9 @@ qr/\[emerg\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello,
 === TEST 3: test log-level ALERT
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("before log")
-        ngx.log(ngx.ALERT, "hello, log", 1234, 3.14159)
-        ngx.say("after log")
+        njt.say("before log")
+        njt.log(njt.ALERT, "hello, log", 1234, 3.14159)
+        njt.say("after log")
     }
 --- stream_response
 before log
@@ -64,9 +64,9 @@ qr/\[alert\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello,
 === TEST 4: test log-level CRIT
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("before log")
-        ngx.log(ngx.CRIT, "hello, log", 1234, 3.14159)
-        ngx.say("after log")
+        njt.say("before log")
+        njt.log(njt.CRIT, "hello, log", 1234, 3.14159)
+        njt.say("after log")
     }
 --- stream_response
 before log
@@ -79,9 +79,9 @@ qr/\[crit\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, 
 === TEST 5: test log-level ERR
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("before log")
-        ngx.log(ngx.ERR, "hello, log", 1234, 3.14159)
-        ngx.say("after log")
+        njt.say("before log")
+        njt.log(njt.ERR, "hello, log", 1234, 3.14159)
+        njt.say("after log")
     }
 --- stream_response
 before log
@@ -94,9 +94,9 @@ qr/\[error\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello,
 === TEST 6: test log-level WARN
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("before log")
-        ngx.log(ngx.WARN, "hello, log", 1234, 3.14159)
-        ngx.say("after log")
+        njt.say("before log")
+        njt.log(njt.WARN, "hello, log", 1234, 3.14159)
+        njt.say("after log")
     }
 --- stream_response
 before log
@@ -109,9 +109,9 @@ qr/\[warn\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, 
 === TEST 7: test log-level NOTICE
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("before log")
-        ngx.log(ngx.NOTICE, "hello, log", 1234, 3.14159)
-        ngx.say("after log")
+        njt.say("before log")
+        njt.log(njt.NOTICE, "hello, log", 1234, 3.14159)
+        njt.say("after log")
     }
 --- stream_response
 before log
@@ -124,9 +124,9 @@ qr/\[notice\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello
 === TEST 8: test log-level INFO
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("before log")
-        ngx.log(ngx.INFO, "hello, log", 1234, 3.14159)
-        ngx.say("after log")
+        njt.say("before log")
+        njt.log(njt.INFO, "hello, log", 1234, 3.14159)
+        njt.say("after log")
     }
 --- stream_response
 before log
@@ -139,9 +139,9 @@ qr/\[info\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, 
 === TEST 9: test log-level DEBUG
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("before log")
-        ngx.log(ngx.DEBUG, "hello, log", 1234, 3.14159)
-        ngx.say("after log")
+        njt.say("before log")
+        njt.log(njt.DEBUG, "hello, log", 1234, 3.14159)
+        njt.say("after log")
     }
 --- stream_response
 before log
@@ -154,9 +154,9 @@ qr/\[debug\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello,
 === TEST 10: regression test print()
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("before log")
+        njt.say("before log")
         print("hello, log", 1234, 3.14159)
-        ngx.say("after log")
+        njt.say("after log")
     }
 --- stream_response
 before log
@@ -172,7 +172,7 @@ qr/\[notice\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello
         print()
         print(nil)
         print("nil: ", nil)
-        ngx.say("hi");
+        njt.say("hi");
     }
 --- stream_response
 hi
@@ -188,8 +188,8 @@ qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):4: nil: nil,/,
 === TEST 12: test booleans and nil
 --- stream_server_config
     content_by_lua_block {
-        ngx.log(ngx.ERR, true, false, nil)
-        ngx.say(32)
+        njt.log(njt.ERR, true, false, nil)
+        njt.say(32)
     }
 --- stream_response
 32
@@ -198,11 +198,11 @@ qr/\[error\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):2: truefa
 
 
 
-=== TEST 13: ngx.log() big data
+=== TEST 13: njt.log() big data
 --- stream_server_config
     content_by_lua_block {
-        ngx.log(ngx.ERR, "a" .. string.rep("h", 1970) .. "b")
-        ngx.say("hi")
+        njt.log(njt.ERR, "a" .. string.rep("h", 1970) .. "b")
+        njt.say("hi")
     }
 --- response_headers
 --- error_log eval
@@ -210,7 +210,7 @@ qr/\[error\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):2: truefa
 
 
 
-=== TEST 14: ngx.log in Lua function calls & inlined lua
+=== TEST 14: njt.log in Lua function calls & inlined lua
 --- stream_server_config
     content_by_lua_block {
         function foo()
@@ -218,11 +218,11 @@ qr/\[error\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):2: truefa
         end
 
         function bar()
-            ngx.log(ngx.ERR, "hello, log", 1234, 3.14159)
+            njt.log(njt.ERR, "hello, log", 1234, 3.14159)
         end
 
         foo()
-        ngx.say("done")
+        njt.say("done")
     }
 --- stream_response
 done
@@ -231,7 +231,7 @@ qr/\[error\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):7: bar\(\
 
 
 
-=== TEST 15: ngx.log in Lua function tail-calls & inlined lua
+=== TEST 15: njt.log in Lua function tail-calls & inlined lua
 --- stream_server_config
     content_by_lua_block {
         function foo()
@@ -240,7 +240,7 @@ qr/\[error\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):7: bar\(\
 
         function bar(n)
             if n < 1 then
-                ngx.log(ngx.ERR, "hello, log", 1234, 3.14159)
+                njt.log(njt.ERR, "hello, log", 1234, 3.14159)
                 return n
             end
 
@@ -248,7 +248,7 @@ qr/\[error\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):7: bar\(\
         end
 
         foo()
-        ngx.say("done")
+        njt.say("done")
     }
 --- stream_response
 done
@@ -257,7 +257,7 @@ qr/\[error\] \S+: \S+ stream \[lua\] content_by_lua\(nginx\.conf:\d+\):8:(?: foo
 
 
 
-=== TEST 16: ngx.log in Lua files
+=== TEST 16: njt.log in Lua files
 --- stream_server_config
     content_by_lua_file 'html/test.lua';
 --- user_files
@@ -267,11 +267,11 @@ function foo()
 end
 
 function bar()
-    ngx.log(ngx.ERR, "hello, log", 1234, 3.14159)
+    njt.log(njt.ERR, "hello, log", 1234, 3.14159)
 end
 
 foo()
-ngx.say("done")
+njt.say("done")
 
 --- stream_response
 done
@@ -280,11 +280,11 @@ qr/\[error\] \S+: \S+ stream \[lua\] test.lua:6: bar\(\): hello, log12343.14159/
 
 
 
-=== TEST 17: ngx.log with bad levels (ngx.ERROR, -1)
+=== TEST 17: njt.log with bad levels (njt.ERROR, -1)
 --- stream_server_config
     content_by_lua_block {
-        ngx.log(ngx.ERROR, "hello lua")
-        ngx.say("done")
+        njt.log(njt.ERROR, "hello lua")
+        njt.say("done")
     }
 --- stream_response
 --- error_log
@@ -292,11 +292,11 @@ bad log level: -1
 
 
 
-=== TEST 18: ngx.log with bad levels (9)
+=== TEST 18: njt.log with bad levels (9)
 --- stream_server_config
     content_by_lua_block {
-        ngx.log(9, "hello lua")
-        ngx.say("done")
+        njt.log(9, "hello lua")
+        njt.say("done")
     }
 --- stream_response
 --- error_log
@@ -307,8 +307,8 @@ bad log level: 9
 === TEST 19: \0 in the log message
 --- stream_server_config
     content_by_lua_block {
-        ngx.log(ngx.WARN, "hello\0world")
-        ngx.say("ok")
+        njt.log(njt.WARN, "hello\0world")
+        njt.say("ok")
     }
 --- stream_response
 ok

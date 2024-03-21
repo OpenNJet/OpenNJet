@@ -1,7 +1,7 @@
 
 /*
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -199,9 +199,6 @@ njt_http_lua_shdict_lookup(njt_shm_zone_t *shm_zone, njt_uint_t hash,
         rc = njt_memn2cmp(kdata, sd->data, klen, (size_t) sd->key_len);
 
         if (rc == 0) {
-            njt_queue_remove(&sd->queue);
-            njt_queue_insert_head(&ctx->sh->lru_queue, &sd->queue);
-
             *sdp = sd;
 
             dd("node expires: %lld", (long long) sd->expires);
@@ -219,6 +216,9 @@ njt_http_lua_shdict_lookup(njt_shm_zone_t *shm_zone, njt_uint_t hash,
                     return NJT_DONE;
                 }
             }
+
+            njt_queue_remove(&sd->queue);
+            njt_queue_insert_head(&ctx->sh->lru_queue, &sd->queue);
 
             return NJT_OK;
         }
@@ -655,7 +655,7 @@ njt_http_lua_shared_dict_get(njt_shm_zone_t *zone, u_char *key_data,
             return NJT_ERROR;
         }
 
-        njt_memcpy(&value->value.b, data, len);
+        njt_memcpy(&value->value.n, data, len);
         break;
 
     case SHDICT_TBOOLEAN:
@@ -944,7 +944,7 @@ push_node:
 
         njt_shmtx_unlock(&ctx->shpool->mutex);
 
-        lua_pushboolean(L, 0);
+        lua_pushnil(L);
         lua_pushliteral(L, "no memory");
         return 2;
     }
@@ -2089,6 +2089,43 @@ njt_http_lua_ffi_shdict_free_space(njt_shm_zone_t *zone)
     njt_shmtx_unlock(&ctx->shpool->mutex);
 
     return bytes;
+}
+#endif
+
+
+#if (NJT_DARWIN)
+int
+njt_http_lua_ffi_shdict_get_macos(njt_http_lua_shdict_get_params_t *p)
+{
+    return njt_http_lua_ffi_shdict_get(p->zone,
+                                       (u_char *) p->key, p->key_len,
+                                       p->value_type, p->str_value_buf,
+                                       p->str_value_len, p->num_value,
+                                       p->user_flags, p->get_stale,
+                                       p->is_stale, p->errmsg);
+}
+
+
+int
+njt_http_lua_ffi_shdict_store_macos(njt_http_lua_shdict_store_params_t *p)
+{
+    return njt_http_lua_ffi_shdict_store(p->zone, p->op,
+                                         (u_char *) p->key, p->key_len,
+                                         p->value_type,
+                                         (u_char *) p->str_value_buf,
+                                         p->str_value_len, p->num_value,
+                                         p->exptime, p->user_flags,
+                                         p->errmsg, p->forcible);
+}
+
+
+int
+njt_http_lua_ffi_shdict_incr_macos(njt_http_lua_shdict_incr_params_t *p)
+{
+    return njt_http_lua_ffi_shdict_incr(p->zone, (u_char *) p->key, p->key_len,
+                                        p->num_value, p->errmsg,
+                                        p->has_init, p->init, p->init_ttl,
+                                        p->forcible);
 }
 #endif
 

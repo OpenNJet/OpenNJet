@@ -61,7 +61,10 @@ njt_event_accept(njt_event_t *ev)
 
 #if (NJT_HAVE_ACCEPT4)
         if (use_accept4) {
-            s = accept4(lc->fd, &sa.sockaddr, &socklen, SOCK_NONBLOCK);
+            // s = accept4(lc->fd, &sa.sockaddr, &socklen, SOCK_NONBLOCK); openresty patch
+            s = accept4(lc->fd, &sa.sockaddr, &socklen, 
+                        SOCK_NONBLOCK | SOCK_CLOEXEC); // openresty patch
+
         } else {
             s = accept(lc->fd, &sa.sockaddr, &socklen);
         }
@@ -201,6 +204,16 @@ njt_event_accept(njt_event_t *ev)
                     njt_close_accepted_connection(c);
                     return;
                 }
+
+#if (NJT_HAVE_FD_CLOEXEC) // openresty patch
+                if (njt_cloexec(s) == -1) {
+                    njt_log_error(NJT_LOG_ALERT, ev->log, njt_socket_errno,
+                                  njt_cloexec_n " failed");
+                    njt_close_accepted_connection(c);
+                    return;
+                }
+#endif // openresty patch end
+
             }
         }
 

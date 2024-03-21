@@ -22,7 +22,7 @@ __DATA__
 --- config
     location /nil {
         content_by_lua '
-            ngx.say(ngx.blah_blah == nil and "nil" or "not nil")
+            njt.say(njt.blah_blah == nil and "nil" or "not nil")
         ';
     }
 --- request
@@ -36,7 +36,7 @@ nil
 --- config
     location /nil {
         content_by_lua '
-            ngx.say(ngx.status == nil and "nil" or "not nil")
+            njt.say(njt.status == nil and "nil" or "not nil")
         ';
     }
 --- request
@@ -50,7 +50,7 @@ not nil
 --- config
     location /nil {
         content_by_lua '
-            ngx.say(ngx.status);
+            njt.say(njt.status);
         ';
     }
 --- request
@@ -64,8 +64,8 @@ GET /nil
 --- config
     location /nil {
         content_by_lua '
-            ngx.say("blah");
-            ngx.say(ngx.status);
+            njt.say("blah");
+            njt.say(njt.status);
         ';
     }
 --- request
@@ -80,8 +80,8 @@ blah
 --- config
     location /201 {
         content_by_lua '
-            ngx.status = 201;
-            ngx.say("created");
+            njt.status = 201;
+            njt.say("created");
         ';
     }
 --- request
@@ -96,8 +96,8 @@ created
 --- config
     location /201 {
         content_by_lua '
-            ngx.status = "201";
-            ngx.say("created");
+            njt.status = "201";
+            njt.say("created");
         ';
     }
 --- request
@@ -112,8 +112,8 @@ created
 --- config
     location /201 {
         content_by_lua '
-            ngx.status = "201.7";
-            ngx.say("created");
+            njt.status = "201.7";
+            njt.say("created");
         ';
     }
 --- request
@@ -128,8 +128,8 @@ created
 --- config
     location /201 {
         content_by_lua '
-            ngx.status = "abc";
-            ngx.say("created");
+            njt.status = "abc";
+            njt.say("created");
         ';
     }
 --- request
@@ -143,8 +143,8 @@ GET /201
 --- config
     location /201 {
         content_by_lua '
-            ngx.blah = 201;
-            ngx.say("created");
+            njt.blah = 201;
+            njt.say("created");
         ';
     }
 --- request
@@ -156,12 +156,12 @@ created
 
 
 
-=== TEST 10: set ngx.status before headers are sent
+=== TEST 10: set njt.status before headers are sent
 --- config
     location /t {
         content_by_lua '
-            ngx.say("ok")
-            ngx.status = 201
+            njt.say("ok")
+            njt.status = 201
         ';
     }
 --- request
@@ -170,17 +170,17 @@ created
 ok
 --- error_code: 200
 --- error_log eval
-qr/\[error\] .*? attempt to set ngx\.status after sending out response headers/
+qr/\[error\] .*? attempt to set njt\.status after sending out response headers/
 
 
 
-=== TEST 11: http 1.0 and ngx.status
+=== TEST 11: http 1.0 and njt.status
 --- config
     location /nil {
         content_by_lua '
-            ngx.status = ngx.HTTP_UNAUTHORIZED
-            ngx.say("invalid request")
-            ngx.exit(ngx.HTTP_OK)
+            njt.status = njt.HTTP_UNAUTHORIZED
+            njt.say("invalid request")
+            njt.exit(njt.HTTP_OK)
         ';
     }
 --- request
@@ -193,13 +193,13 @@ invalid request
 
 
 
-=== TEST 12: github issue #221: cannot modify ngx.status for responses from ngx_proxy
+=== TEST 12: github issue #221: cannot modify njt.status for responses from njt_proxy
 --- config
     location = /t {
         proxy_pass http://127.0.0.1:$server_port/;
         header_filter_by_lua '
-            if ngx.status == 206 then
-                ngx.status = ngx.HTTP_OK
+            if njt.status == 206 then
+                njt.status = njt.HTTP_OK
             end
         ';
     }
@@ -223,8 +223,8 @@ Range: bytes=0-4
 --- config
     location /t {
         content_by_lua '
-            ngx.status = 101
-            ngx.send_headers()
+            njt.status = 101
+            njt.send_headers()
         ';
     }
 --- request
@@ -239,7 +239,7 @@ GET /t
 === TEST 14: reading error status code
 --- config
     location = /t {
-        content_by_lua 'ngx.say("status = ", ngx.status)';
+        content_by_lua 'njt.say("status = ", njt.status)';
     }
 --- raw_request eval
 "GET /t\r\n"
@@ -253,11 +253,11 @@ status = 9
 --- config
     location /nil {
         content_by_lua '
-            ngx.exit(502)
+            njt.exit(502)
         ';
         body_filter_by_lua '
-            if ngx.arg[2] then
-                ngx.log(ngx.WARN, "ngx.status = ", ngx.status)
+            if njt.arg[2] then
+                njt.log(njt.WARN, "njt.status = ", njt.status)
             end
         ';
     }
@@ -266,20 +266,20 @@ GET /nil
 --- response_body_like: 502 Bad Gateway
 --- error_code: 502
 --- error_log
-ngx.status = 502
+njt.status = 502
 --- no_error_log
 [error]
 
 
 
-=== TEST 16: ngx.status assignment should clear r->err_status
+=== TEST 16: njt.status assignment should clear r->err_status
 --- config
 location = /t {
     return 502;
     header_filter_by_lua_block {
-        if ngx.status == 502 then
-            ngx.status = 654
-            ngx.log(ngx.WARN, "ngx.status: ", ngx.status)
+        if njt.status == 502 then
+            njt.status = 654
+            njt.log(njt.WARN, "njt.status: ", njt.status)
         end
     }
 }
@@ -287,7 +287,7 @@ location = /t {
 GET /t
 --- response_body_like: Bad Gateway
 --- error_log
-ngx.status: 654
+njt.status: 654
 --- no_error_log
 [error]
 --- error_code: 654

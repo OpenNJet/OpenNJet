@@ -2158,6 +2158,32 @@ njt_ssl_handshake(njt_connection_t *c)
         return NJT_AGAIN;
     }
 
+// openresty patch
+#if OPENSSL_VERSION_NUMBER >= 0x10002000L
+    if (sslerr == SSL_ERROR_WANT_X509_LOOKUP
+#   ifdef SSL_ERROR_PENDING_SESSION
+         || sslerr == SSL_ERROR_PENDING_SESSION
+#   endif
+#   ifdef SSL_ERROR_WANT_CLIENT_HELLO_CB
+        || sslerr == SSL_ERROR_WANT_CLIENT_HELLO_CB
+#   endif
+    ) {
+        c->read->handler = njt_ssl_handshake_handler;
+        c->write->handler = njt_ssl_handshake_handler;
+
+        if (njt_handle_read_event(c->read, 0) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        if (njt_handle_write_event(c->write, 0) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        return NJT_AGAIN;
+    }
+#endif
+// openresty patch end
+
     err = (sslerr == SSL_ERROR_SYSCALL) ? njt_errno : 0;
 
     c->ssl->no_wait_shutdown = 1;
@@ -2304,6 +2330,58 @@ njt_ssl_try_early_data(njt_connection_t *c)
 
         return NJT_AGAIN;
     }
+
+    // openresty patch
+    if (sslerr == SSL_ERROR_WANT_X509_LOOKUP) {
+        c->read->handler = njt_ssl_handshake_handler;
+        c->write->handler = njt_ssl_handshake_handler;
+
+        if (njt_handle_read_event(c->read, 0) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        if (njt_handle_write_event(c->write, 0) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        return NJT_AGAIN;
+    }
+
+#ifdef SSL_ERROR_WANT_CLIENT_HELLO_CB
+    if (sslerr == SSL_ERROR_WANT_CLIENT_HELLO_CB) {
+        c->read->handler = njt_ssl_handshake_handler;
+        c->write->handler = njt_ssl_handshake_handler;
+
+        if (njt_handle_read_event(c->read, 0) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        if (njt_handle_write_event(c->write, 0) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        return NJT_AGAIN;
+    }
+#endif
+
+#ifdef SSL_ERROR_PENDING_SESSION
+    if (sslerr == SSL_ERROR_PENDING_SESSION) {
+        c->read->handler = njt_ssl_handshake_handler;
+        c->write->handler = njt_ssl_handshake_handler;
+
+        if (njt_handle_read_event(c->read, 0) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        if (njt_handle_write_event(c->write, 0) != NJT_OK) {
+            return NJT_ERROR;
+        }
+
+        return NJT_AGAIN;
+    }
+#endif
+    // openresty patch end
+
 
     err = (sslerr == SSL_ERROR_SYSCALL) ? njt_errno : 0;
 

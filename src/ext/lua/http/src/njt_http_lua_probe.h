@@ -1,7 +1,7 @@
 /*
  * automatically generated from the file dtrace/njt_lua_provider.d by the
- *  gen-dtrace-probe-header tool in the nginx-devel-utils project:
- *  https://github.com/agentzh/nginx-devel-utils
+ *  gen-dtrace-probe-header tool in the njet-devel-utils project:
+ *  https://github.com/agentzh/njet-devel-utils
  */
 
 #ifndef _NJT_HTTP_LUA_PROBE_H_INCLUDED_

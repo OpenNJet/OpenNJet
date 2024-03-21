@@ -19,7 +19,7 @@ __DATA__
 === TEST 1: sanity
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("worker count: ", ngx.worker.count())
+        njt.say("worker count: ", njt.worker.count())
     }
 --- stream_response
 worker count: 5

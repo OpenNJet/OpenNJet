@@ -46,6 +46,8 @@ void njt_event_move_posted_next(njt_cycle_t *cycle);
 extern njt_queue_t  njt_posted_accept_events;
 extern njt_queue_t  njt_posted_next_events;
 extern njt_queue_t  njt_posted_events;
+extern njt_queue_t  njt_posted_delayed_events;
 
+#define HAVE_POSTED_DELAYED_EVENTS_PATCH
 
 #endif /* _NJT_EVENT_POSTED_H_INCLUDED_ */

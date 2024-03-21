@@ -33,31 +33,31 @@ __DATA__
 
     location /lua {
         rewrite_by_lua '
-            ngx.location.capture("/flush");
+            njt.location.capture("/flush");
 
-            local res = ngx.location.capture("/memc");
+            local res = njt.location.capture("/memc");
             print("rewrite GET: " .. res.status);
 
-            res = ngx.location.capture("/memc",
-                { method = ngx.HTTP_PUT, body = "hello" });
+            res = njt.location.capture("/memc",
+                { method = njt.HTTP_PUT, body = "hello" });
             print("rewrite PUT: " .. res.status);
 
-            res = ngx.location.capture("/memc");
+            res = njt.location.capture("/memc");
             print("rewrite cached: " .. res.body);
         ';
 
         content_by_lua '
-            ngx.location.capture("/flush");
+            njt.location.capture("/flush");
 
-            local res = ngx.location.capture("/memc");
-            ngx.say("content GET: " .. res.status);
+            local res = njt.location.capture("/memc");
+            njt.say("content GET: " .. res.status);
 
-            res = ngx.location.capture("/memc",
-                { method = ngx.HTTP_PUT, body = "hello" });
-            ngx.say("content PUT: " .. res.status);
+            res = njt.location.capture("/memc",
+                { method = njt.HTTP_PUT, body = "hello" });
+            njt.say("content PUT: " .. res.status);
 
-            res = ngx.location.capture("/memc");
-            ngx.say("content cached: " .. res.body);
+            res = njt.location.capture("/memc");
+            njt.say("content cached: " .. res.body);
         ';
     }
 --- request
@@ -84,11 +84,11 @@ rewrite cached: hello
     location /foo {
         set $foo '';
         rewrite_by_lua '
-            ngx.var.foo = 32
+            njt.var.foo = 32
         ';
 
         content_by_lua '
-            ngx.say(tonumber(ngx.var.foo) * 2)
+            njt.say(tonumber(njt.var.foo) * 2)
         ';
     }
 --- request
@@ -104,11 +104,11 @@ rewrite cached: hello
         lua_need_request_body off;
         set $res '';
         rewrite_by_lua '
-            ngx.var.res = ngx.var.request_body or "nil"
+            njt.var.res = njt.var.request_body or "nil"
         ';
         content_by_lua '
-            ngx.say(ngx.var.res or "nil")
-            ngx.say(ngx.var.request_body or "nil")
+            njt.say(njt.var.res or "nil")
+            njt.say(njt.var.request_body or "nil")
         ';
     }
 --- request eval
@@ -127,11 +127,11 @@ nil
         #lua_need_request_body off;
         set $res '';
         rewrite_by_lua '
-            ngx.var.res = ngx.var.request_body or "nil"
+            njt.var.res = njt.var.request_body or "nil"
         ';
         content_by_lua '
-            ngx.say(ngx.var.res or "nil")
-            ngx.say(ngx.var.request_body or "nil")
+            njt.say(njt.var.res or "nil")
+            njt.say(njt.var.request_body or "nil")
         ';
     }
 --- request eval
@@ -150,11 +150,11 @@ nil
         lua_need_request_body on;
         set $res '';
         rewrite_by_lua '
-            ngx.var.res = ngx.var.request_body or "nil"
+            njt.var.res = njt.var.request_body or "nil"
         ';
         content_by_lua '
-            ngx.say(ngx.var.res or "nil")
-            ngx.say(ngx.var.request_body or "nil")
+            njt.say(njt.var.res or "nil")
+            njt.say(njt.var.request_body or "nil")
         ';
     }
 --- request eval

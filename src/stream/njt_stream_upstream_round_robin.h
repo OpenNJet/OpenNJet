@@ -186,4 +186,18 @@ void njt_stream_upstream_free_round_robin_peer(njt_peer_connection_t *pc,
 njt_stream_upstream_del_round_robin_peer(njt_slab_pool_t *pool, njt_stream_upstream_rr_peer_t *peer);
 njt_int_t
 njt_stream_upstream_pre_handle_peer(njt_stream_upstream_rr_peer_t   *peer);
+
+// openresty patch
+#if (NJT_STREAM_SSL)
+njt_int_t njt_stream_upstream_set_round_robin_peer_session(
+    njt_peer_connection_t *pc, void *data);
+void njt_stream_upstream_save_round_robin_peer_session(
+    njt_peer_connection_t *pc, void *data);
+#endif
+
+
+#define HAVE_NJT_STREAM_BALANCER_EXPORT_PATCH 1
+// openresty patch end
+
+
 #endif /* _NJT_STREAM_UPSTREAM_ROUND_ROBIN_H_INCLUDED_ */

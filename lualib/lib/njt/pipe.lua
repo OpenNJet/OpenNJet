@@ -47,7 +47,8 @@ typedef struct {
     njt_http_lua_pipe_t    *pipe;
 } njt_http_lua_ffi_pipe_proc_t;
 
-int njt_http_lua_ffi_pipe_spawn(njt_http_lua_ffi_pipe_proc_t *proc,
+int njt_http_lua_ffi_pipe_spawn(njt_http_request_t *r,
+    njt_http_lua_ffi_pipe_proc_t *proc,
     const char *file, const char **argv, int merge_stderr, size_t buffer_size,
     const char **environ, u_char *errbuf, size_t *errbuf_size);
 
@@ -624,8 +625,9 @@ do
 
         local errbuf = get_string_buf(ERR_BUF_SIZE)
         local errbuf_size = get_size_ptr()
+        local r = get_request()
         errbuf_size[0] = ERR_BUF_SIZE
-        local rc = C.njt_http_lua_ffi_pipe_spawn(proc, exe, proc_args,
+        local rc = C.njt_http_lua_ffi_pipe_spawn(r, proc, exe, proc_args,
                                                  merge_stderr, buffer_size,
                                                  proc_envs, errbuf, errbuf_size)
         if rc == FFI_ERROR then

@@ -29,17 +29,17 @@ __DATA__
 === TEST 1: simple at
 --- stream_server_config
     content_by_lua_block {
-        local begin = ngx.now()
+        local begin = njt.now()
         local function f()
-            print("elapsed: ", ngx.now() - begin)
+            print("elapsed: ", njt.now() - begin)
         end
-        local ok, err = ngx.timer.at(0.05, f)
+        local ok, err = njt.timer.at(0.05, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
-        ngx.sleep(0.05)
+        njt.say("registered timer")
+        njt.sleep(0.05)
     }
 
 --- config
@@ -64,7 +64,7 @@ registered timer
 --- error_log eval
 [
 qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0\.0(?:4[4-9]|5[0-6])/,
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection"
 ]
 
@@ -73,19 +73,19 @@ qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0\.0(?:4[4-9]|5[0-6])
 === TEST 2: simple at (sleep in the timer callback)
 --- stream_server_config
     content_by_lua_block {
-        local begin = ngx.now()
+        local begin = njt.now()
         local function f()
             print("my lua timer handler")
-            ngx.sleep(0.02)
-            print("elapsed: ", ngx.now() - begin)
+            njt.sleep(0.02)
+            print("elapsed: ", njt.now() - begin)
         end
-        local ok, err = ngx.timer.at(0.05, f)
+        local ok, err = njt.timer.at(0.05, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
-        ngx.sleep(0.05)
+        njt.say("registered timer")
+        njt.sleep(0.05)
     }
 
 --- config
@@ -111,7 +111,7 @@ registered timer
 [
 qr/\[lua\] .*? my lua timer handler/,
 qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0\.0(?:6[4-9]|7[0-6])/,
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection"
 ]
 
@@ -120,13 +120,13 @@ qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0\.0(?:6[4-9]|7[0-6])
 === TEST 3: tcp cosocket in timer handler (short connections)
 --- stream_server_config
     content_by_lua_block {
-        local begin = ngx.now()
+        local begin = njt.now()
         local function fail(...)
-            ngx.log(ngx.ERR, ...)
+            njt.log(njt.ERR, ...)
         end
         local function f()
             print("my lua timer handler")
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local port = $TEST_NGINX_SERVER_PORT
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
@@ -164,19 +164,19 @@ qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0\.0(?:6[4-9]|7[0-6])
             ok, err = sock:close()
             print("close: ", ok, " ", err)
         end
-        local ok, err = ngx.timer.at(0.01, f)
+        local ok, err = njt.timer.at(0.01, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
-        ngx.sleep(0.02)
+        njt.say("registered timer")
+        njt.sleep(0.02)
     }
 
 --- config
     server_tokens off;
     location = /foo {
-    content_by_lua_block { ngx.say("foo") }
+    content_by_lua_block { njt.say("foo") }
         more_clear_headers Date;
     }
 
@@ -203,7 +203,7 @@ registered timer
 --- error_log eval
 [
 qr/\[lua\] .*? my lua timer handler/,
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection",
 "connected: 1",
 "request sent: 57",
@@ -224,7 +224,7 @@ qr/received: Server: \S+/,
 
 --- stream_server_config
     content_by_lua_block {
-        local begin = ngx.now()
+        local begin = njt.now()
         local function f()
             print("my lua timer handler")
 
@@ -232,13 +232,13 @@ qr/received: Server: \S+/,
             local port = $TEST_NGINX_MEMCACHED_PORT
             test.go(port)
         end
-        local ok, err = ngx.timer.at(0.01, f)
+        local ok, err = njt.timer.at(0.01, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
-        ngx.sleep(0.02)
+        njt.say("registered timer")
+        njt.sleep(0.02)
     }
 
 --- config
@@ -248,11 +248,11 @@ qr/received: Server: \S+/,
 module("test", package.seeall)
 
 local function fail(...)
-    ngx.log(ngx.ERR, ...)
+    njt.log(njt.ERR, ...)
 end
 
 function go(port)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
         fail("failed to connect: ", err)
@@ -305,7 +305,7 @@ registered timer
 --- error_log eval
 [
 qr/\[lua\] .*? my lua timer handler/,
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection",
 qr/go\(\): connected: 1, reused: \d+/,
 "go(): request sent: 11",
@@ -317,16 +317,16 @@ qr/go\(\): connected: 1, reused: \d+/,
 === TEST 5: 0 timer
 --- stream_server_config
     content_by_lua_block {
-        local begin = ngx.now()
+        local begin = njt.now()
         local function f()
-            print("elapsed: ", ngx.now() - begin)
+            print("elapsed: ", njt.now() - begin)
         end
-        local ok, err = ngx.timer.at(0, f)
+        local ok, err = njt.timer.at(0, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
+        njt.say("registered timer")
     }
 
 --- config
@@ -351,7 +351,7 @@ registered timer
 --- error_log eval
 [
 qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0(?:[^.]|\.00)/,
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection"
 ]
 
@@ -360,13 +360,13 @@ qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0(?:[^.]|\.00)/,
 === TEST 6: udp cosocket in timer handler
 --- stream_server_config
     content_by_lua_block {
-        local begin = ngx.now()
+        local begin = njt.now()
         local function fail(...)
-            ngx.log(ngx.ERR, ...)
+            njt.log(njt.ERR, ...)
         end
         local function f()
             print("my lua timer handler")
-            local socket = ngx.socket
+            local socket = njt.socket
             -- local socket = require "socket"
 
             local udp = socket.udp()
@@ -396,13 +396,13 @@ qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0(?:[^.]|\.00)/,
             end
             print("received ", #data, " bytes: ", data)
         end
-        local ok, err = ngx.timer.at(0.01, f)
+        local ok, err = njt.timer.at(0.01, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
-        ngx.sleep(0.05)
+        njt.say("registered timer")
+        njt.sleep(0.05)
     }
 
 --- stap2 eval: $::StapScript
@@ -426,7 +426,7 @@ registered timer
 --- error_log eval
 [
 qr/\[lua\] .*? my lua timer handler/,
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection",
 "connected: 1",
 "received 12 bytes: \x{00}\x{01}\x{00}\x{00}\x{00}\x{01}\x{00}\x{00}OK\x{0d}\x{0a}"
@@ -441,15 +441,15 @@ TODO
         echo hello world;
         echo_sleep 0.07;
     log_by_lua_block {
-        local begin = ngx.now()
+        local begin = njt.now()
         local function f()
             print("my lua timer handler")
-            ngx.sleep(0.02)
-            print("elapsed: ", ngx.now() - begin)
+            njt.sleep(0.02)
+            print("elapsed: ", njt.now() - begin)
         end
-        local ok, err = ngx.timer.at(0.05, f)
+        local ok, err = njt.timer.at(0.05, f)
         if not ok then
-            ngx.log(ngx.ERR, "failed to set timer: ", err)
+            njt.log(njt.ERR, "failed to set timer: ", err)
             return
         end
         print("registered timer")
@@ -477,7 +477,7 @@ hello world
 "registered timer",
 qr/\[lua\] .*? my lua timer handler/,
 qr/\[lua\] log_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0\.0(?:6[4-9]|7[0-6])/,
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection"
 ]
 
@@ -493,7 +493,7 @@ TODO
         echo hello;
         echo_sleep 0.01;
     log_by_lua_block {
-        local begin = ngx.now()
+        local begin = njt.now()
         local function f()
             print("my lua timer handler")
 
@@ -501,9 +501,9 @@ TODO
             local port = $TEST_NGINX_MEMCACHED_PORT
             test.go(port)
         end
-        local ok, err = ngx.timer.at(0.01, f)
+        local ok, err = njt.timer.at(0.01, f)
         if not ok then
-            ngx.log(ngx.ERR, "failed to set timer: ", err)
+            njt.log(njt.ERR, "failed to set timer: ", err)
             return
         end
         print("registered timer")
@@ -516,11 +516,11 @@ TODO
 module("test", package.seeall)
 
 local function fail(...)
-    ngx.log(ngx.ERR, ...)
+    njt.log(njt.ERR, ...)
 end
 
 function go(port)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
         fail("failed to connect: ", err)
@@ -572,7 +572,7 @@ hello
 [
 "registered timer",
 qr/\[lua\] .*? my lua timer handler/,
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection",
 qr/go\(\): connected: 1, reused: \d+/,
 "go(): request sent: 11",
@@ -601,13 +601,13 @@ qr/go\(\): connected: 1, reused: \d+/,
                 print("after resume, i = ", i)
             end
         end
-        local ok, err = ngx.timer.at(0.01, f)
+        local ok, err = njt.timer.at(0.01, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
-        ngx.sleep(0.01)
+        njt.say("registered timer")
+        njt.sleep(0.01)
     }
 
 --- config
@@ -632,7 +632,7 @@ registered timer
 
 --- error_log eval
 [
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection",
 "cnt = 0",
 "after resume, i = 1",
@@ -644,11 +644,11 @@ registered timer
 
 
 
-=== TEST 10: ngx.thread API
+=== TEST 10: njt.thread API
 --- stream_server_config
     content_by_lua_block {
         local function fail (...)
-            ngx.log(ngx.ERR, ...)
+            njt.log(njt.ERR, ...)
         end
         local function handle()
             function f()
@@ -656,7 +656,7 @@ registered timer
                 return "done"
             end
 
-            local t, err = ngx.thread.spawn(f)
+            local t, err = njt.thread.spawn(f)
             if not t then
                 fail("failed to spawn thread: ", err)
                 return
@@ -666,7 +666,7 @@ registered timer
 
             collectgarbage()
 
-            local ok, res = ngx.thread.wait(t)
+            local ok, res = njt.thread.wait(t)
             if not ok then
                 fail("failed to run thread: ", res)
                 return
@@ -674,13 +674,13 @@ registered timer
 
             print("wait result: ", res)
         end
-        local ok, err = ngx.timer.at(0.01, handle)
+        local ok, err = njt.timer.at(0.01, handle)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
-        ngx.sleep(0.02)
+        njt.say("registered timer")
+        njt.sleep(0.02)
     }
 
 --- config
@@ -708,7 +708,7 @@ registered timer
 
 --- error_log eval
 [
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection",
 "hello in thread",
 "thread created: zombie",
@@ -723,7 +723,7 @@ registered timer
 --- stream_server_config
     content_by_lua_block {
         local function f()
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             dogs:set("bah", 10502)
             local val = dogs:get("foo")
@@ -731,13 +731,13 @@ registered timer
             val = dogs:get("bah")
             print("get bah: ", val, " ", type(val))
         end
-        local ok, err = ngx.timer.at(0.01, f)
+        local ok, err = njt.timer.at(0.01, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
-        ngx.sleep(0.02)
+        njt.say("registered timer")
+        njt.sleep(0.02)
     }
 
 --- config
@@ -761,7 +761,7 @@ registered timer
 
 --- error_log eval
 [
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection",
 "get foo: 32 number",
 "get bah: 10502 number",
@@ -769,24 +769,24 @@ registered timer
 
 
 
-=== TEST 12: ngx.exit(0)
+=== TEST 12: njt.exit(0)
 --- stream_server_config
     content_by_lua_block {
         local function f()
             local function g()
-                print("BEFORE ngx.exit")
-                ngx.exit(0)
+                print("BEFORE njt.exit")
+                njt.exit(0)
             end
             g()
             print("CANNOT REACH HERE")
         end
-        local ok, err = ngx.timer.at(0.01, f)
+        local ok, err = njt.timer.at(0.01, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
-        ngx.sleep(0.01)
+        njt.say("registered timer")
+        njt.sleep(0.01)
     }
 
 --- config
@@ -805,9 +805,9 @@ registered timer
 
 --- error_log eval
 [
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection",
-"BEFORE ngx.exit",
+"BEFORE njt.exit",
 ]
 --- no_error_log
 CANNOT REACH HERE
@@ -815,24 +815,24 @@ API disabled
 
 
 
-=== TEST 13: ngx.exit(403)
+=== TEST 13: njt.exit(403)
 --- stream_server_config
     content_by_lua_block {
         local function f()
             local function g()
-                print("BEFORE ngx.exit")
-                ngx.exit(403)
+                print("BEFORE njt.exit")
+                njt.exit(403)
             end
             g()
             print("CANNOT REACH HERE")
         end
-        local ok, err = ngx.timer.at(0.01, f)
+        local ok, err = njt.timer.at(0.01, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
-        ngx.sleep(0.01)
+        njt.say("registered timer")
+        njt.sleep(0.01)
     }
 
 --- config
@@ -854,36 +854,36 @@ API disabled
 
 --- error_log eval
 [
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection",
-"BEFORE ngx.exit",
+"BEFORE njt.exit",
 ]
 
 
 
-=== TEST 14: exit in user thread (entry thread is still pending on ngx.sleep)
+=== TEST 14: exit in user thread (entry thread is still pending on njt.sleep)
 --- stream_server_config
     content_by_lua_block {
         local function handle()
             local function f()
                 print("hello in thread")
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
             print("BEFORE thread spawn")
-            ngx.thread.spawn(f)
+            njt.thread.spawn(f)
             print("AFTER thread spawn")
-            ngx.sleep(1)
+            njt.sleep(1)
             print("entry thread END")
         end
-        local ok, err = ngx.timer.at(0.01, handle)
+        local ok, err = njt.timer.at(0.01, handle)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
-        ngx.sleep(0.12)
+        njt.say("registered timer")
+        njt.sleep(0.12)
     }
 
 --- config
@@ -958,7 +958,7 @@ entry thread END
 
 --- error_log eval
 [
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "stream lua close fake stream connection",
 "BEFORE thread spawn",
 "hello in thread",
@@ -973,7 +973,7 @@ entry thread END
         local s = ""
 
         local function fail(...)
-            ngx.log(ngx.ERR, ...)
+            njt.log(njt.ERR, ...)
         end
 
         local function g()
@@ -982,21 +982,21 @@ entry thread END
         end
 
         local function f()
-            local ok, err = ngx.timer.at(0.01, g)
+            local ok, err = njt.timer.at(0.01, g)
             if not ok then
                 fail("failed to set timer: ", err)
                 return
             end
             s = s .. "[f]"
         end
-        local ok, err = ngx.timer.at(0.01, f)
+        local ok, err = njt.timer.at(0.01, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
+        njt.say("registered timer")
         s = "[m]"
-        ngx.sleep(0.03)
+        njt.sleep(0.03)
     }
 
 --- config
@@ -1022,6 +1022,6 @@ registered timer
 [crit]
 
 --- error_log
-lua ngx.timer expired
+lua njt.timer expired
 stream lua close fake stream connection
 trace: [m][f][g]

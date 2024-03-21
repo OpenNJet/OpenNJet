@@ -401,7 +401,7 @@ njt_stream_lua_balancer_by_chunk(lua_State *L, njt_stream_lua_request_t *r)
     size_t                   len;
     njt_int_t                rc;
 
-    /* init nginx context in Lua VM */
+    /* init njet context in Lua VM */
     njt_stream_lua_set_req(L, r);
 
 #ifndef OPENRESTY_LUAJIT
@@ -637,7 +637,7 @@ njt_stream_lua_ffi_balancer_set_timeouts(njt_stream_lua_request_t *r,
     long connect_timeout, long timeout,
     char **err)
 {
-    *err = "required Nginx patch not present, API disabled";
+    *err = "required NJet patch not present, API disabled";
     return NJT_ERROR;
 }
 #endif

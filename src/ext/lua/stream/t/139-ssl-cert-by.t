@@ -41,38 +41,38 @@ __DATA__
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -110,9 +110,9 @@ reusable connection: 0
     server {
         listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
         ssl_certificate_by_lua_block {
-            local begin = ngx.now()
-            ngx.sleep(0.1)
-            print("elapsed in ssl cert by lua: ", ngx.now() - begin)
+            local begin = njt.now()
+            njt.sleep(0.1)
+            print("elapsed in ssl cert by lua: ", njt.now() - begin)
         }
         ssl_certificate ../../cert/test.crt;
         ssl_certificate_key ../../cert/test.key;
@@ -124,38 +124,38 @@ reusable connection: 0
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -186,9 +186,9 @@ qr/elapsed in ssl cert by lua: 0.(?:09|1\d)\d+,/,
             local function f()
                 print("my timer run!")
             end
-            local ok, err = ngx.timer.at(0, f)
+            local ok, err = njt.timer.at(0, f)
             if not ok then
-                ngx.log(ngx.ERR, "failed to create timer: ", err)
+                njt.log(njt.ERR, "failed to create timer: ", err)
                 return
             end
         }
@@ -202,38 +202,38 @@ qr/elapsed in ssl cert by lua: 0.(?:09|1\d)\d+,/,
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -259,25 +259,25 @@ my timer run!
     server {
         listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
         ssl_certificate_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.log(ngx.ERR, "failed to connect to memc: ", err)
+                njt.log(njt.ERR, "failed to connect to memc: ", err)
                 return
             end
 
             local bytes, err = sock:send("flush_all\r\n")
             if not bytes then
-                ngx.log(ngx.ERR, "failed to send flush_all command: ", err)
+                njt.log(njt.ERR, "failed to send flush_all command: ", err)
                 return
             end
 
             local res, err = sock:receive()
             if not res then
-                ngx.log(ngx.ERR, "failed to receive memc reply: ", err)
+                njt.log(njt.ERR, "failed to receive memc reply: ", err)
                 return
             end
 
@@ -293,38 +293,38 @@ my timer run!
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -345,13 +345,13 @@ received memc reply: OK
 
 
 
-=== TEST 5: ngx.exit(0) - no yield
+=== TEST 5: njt.exit(0) - no yield
 --- stream_config
     server {
         listen 127.0.0.2:8080 ssl;
         ssl_certificate_by_lua_block {
-            ngx.exit(0)
-            ngx.log(ngx.ERR, "should never reached here...")
+            njt.exit(0)
+            njt.log(njt.ERR, "should never reached here...")
         }
         ssl_certificate ../../cert/test.crt;
         ssl_certificate_key ../../cert/test.key;
@@ -364,25 +364,25 @@ received memc reply: OK
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("127.0.0.2", 8080)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(false, nil, true, false)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
         end  -- do
     }
 
@@ -401,13 +401,13 @@ should never reached here
 
 
 
-=== TEST 6: ngx.exit(ngx.ERROR) - no yield
+=== TEST 6: njt.exit(njt.ERROR) - no yield
 --- stream_config
     server {
         listen 127.0.0.2:8080 ssl;
         ssl_certificate_by_lua_block {
-            ngx.exit(ngx.ERROR)
-            ngx.log(ngx.ERR, "should never reached here...")
+            njt.exit(njt.ERROR)
+            njt.log(njt.ERR, "should never reached here...")
         }
         ssl_certificate ../../cert/test.crt;
         ssl_certificate_key ../../cert/test.key;
@@ -420,25 +420,25 @@ should never reached here
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("127.0.0.2", 8080)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(false, nil, true, false)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
         end  -- do
     }
 
@@ -460,15 +460,15 @@ should never reached here
 
 
 
-=== TEST 7: ngx.exit(0) -  yield
+=== TEST 7: njt.exit(0) -  yield
 --- stream_config
     server {
         listen 127.0.0.2:8080 ssl;
         ssl_certificate_by_lua_block {
-            ngx.sleep(0.001)
-            ngx.exit(0)
+            njt.sleep(0.001)
+            njt.exit(0)
 
-            ngx.log(ngx.ERR, "should never reached here...")
+            njt.log(njt.ERR, "should never reached here...")
         }
         ssl_certificate ../../cert/test.crt;
         ssl_certificate_key ../../cert/test.key;
@@ -481,25 +481,25 @@ should never reached here
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("127.0.0.2", 8080)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(false, nil, true, false)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
         end  -- do
     }
 
@@ -518,15 +518,15 @@ should never reached here
 
 
 
-=== TEST 8: ngx.exit(ngx.ERROR) - yield
+=== TEST 8: njt.exit(njt.ERROR) - yield
 --- stream_config
     server {
         listen 127.0.0.2:8080 ssl;
         ssl_certificate_by_lua_block {
-            ngx.sleep(0.001)
-            ngx.exit(ngx.ERROR)
+            njt.sleep(0.001)
+            njt.exit(njt.ERROR)
 
-            ngx.log(ngx.ERR, "should never reached here...")
+            njt.log(njt.ERR, "should never reached here...")
         }
         ssl_certificate ../../cert/test.crt;
         ssl_certificate_key ../../cert/test.key;
@@ -539,25 +539,25 @@ should never reached here
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("127.0.0.2", 8080)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(false, nil, true, false)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
         end  -- do
     }
 
@@ -585,7 +585,7 @@ should never reached here
         listen 127.0.0.2:8080 ssl;
         ssl_certificate_by_lua_block {
             error("bad bad bad")
-            ngx.log(ngx.ERR, "should never reached here...")
+            njt.log(njt.ERR, "should never reached here...")
         }
         ssl_certificate ../../cert/test.crt;
         ssl_certificate_key ../../cert/test.key;
@@ -598,25 +598,25 @@ should never reached here
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("127.0.0.2", 8080)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(false, nil, true, false)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
         end  -- do
     }
 
@@ -644,9 +644,9 @@ should never reached here
     server {
         listen 127.0.0.2:8080 ssl;
         ssl_certificate_by_lua_block {
-            ngx.sleep(0.001)
+            njt.sleep(0.001)
             error("bad bad bad")
-            ngx.log(ngx.ERR, "should never reached here...")
+            njt.log(njt.ERR, "should never reached here...")
         }
         ssl_certificate ../../cert/test.crt;
         ssl_certificate_key ../../cert/test.key;
@@ -659,25 +659,25 @@ should never reached here
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("127.0.0.2", 8080)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(false, nil, true, false)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
         end  -- do
     }
 
@@ -703,7 +703,7 @@ should never reached here
 --- stream_config
     server {
         listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
-        ssl_certificate_by_lua_block {print("get_phase: ", ngx.get_phase())}
+        ssl_certificate_by_lua_block {print("get_phase: ", njt.get_phase())}
         ssl_certificate ../../cert/test.crt;
         ssl_certificate_key ../../cert/test.key;
 
@@ -714,25 +714,25 @@ should never reached here
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
         end
         collectgarbage()
     }
@@ -756,8 +756,8 @@ get_phase: ssl_cert
     server {
         listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
         ssl_certificate_by_lua_block {
-            ngx.sleep(0.3)
-            -- local ssl = require "ngx.ssl"
+            njt.sleep(0.3)
+            -- local ssl = require "njt.ssl"
             -- ssl.clear_certs()
             print("ssl-cert-by-lua: after sleeping")
         }
@@ -771,25 +771,25 @@ get_phase: ssl_cert
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(150)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(false, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
         end  -- do
         -- collectgarbage()
     }
@@ -829,38 +829,38 @@ print("ssl cert by lua is running!")
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -913,38 +913,38 @@ a.lua:1: ssl cert by lua is running!
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -979,20 +979,20 @@ lua ssl server name: "test.com"
         listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
         ssl_certificate_by_lua_block {
             function f()
-                ngx.sleep(0.01)
+                njt.sleep(0.01)
                 print("uthread: hello in thread")
                 return "done"
             end
 
-            local t, err = ngx.thread.spawn(f)
+            local t, err = njt.thread.spawn(f)
             if not t then
-                ngx.log(ngx.ERR, "uthread: failed to spawn thread: ", err)
-                return ngx.exit(ngx.ERROR)
+                njt.log(njt.ERR, "uthread: failed to spawn thread: ", err)
+                return njt.exit(njt.ERROR)
             end
 
             print("uthread: thread created: ", coroutine.status(t))
 
-            local ok, res = ngx.thread.wait(t)
+            local ok, res = njt.thread.wait(t)
             if not ok then
                 print("uthread: failed to wait thread: ", res)
                 return
@@ -1010,38 +1010,38 @@ lua ssl server name: "test.com"
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -1080,38 +1080,38 @@ GitHub openresty/lua-resty-core#42
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -1146,38 +1146,38 @@ ssl_certificate_by_lua:1: ssl cert by lua is running!
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -1214,38 +1214,38 @@ ssl_certificate_by_lua:1: ssl cert by lua is running!
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -1279,30 +1279,30 @@ ssl_certificate_by_lua:1: ssl cert by lua on server level is running!
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -1332,30 +1332,30 @@ ssl_certificate_by_lua:1: ssl cert by lua is running!
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -1387,38 +1387,38 @@ ssl_certificate_by_lua:1: ssl cert by lua is running!
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("127.0.0.2", 8080)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -1454,30 +1454,30 @@ ssl_certificate_by_lua:1: ssl cert by lua is running!
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("127.0.0.2", 8181)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -1513,38 +1513,38 @@ github issue #723
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -1576,11 +1576,11 @@ ssl_certificate_by_lua:1: ssl cert by lua is running!
         ssl_certificate_key ../../cert/test.key;
 
         content_by_lua_block {
-            ngx.timer.at(0.1, function() ngx.sleep(0.3) end)
-            ngx.timer.at(0.11, function() ngx.sleep(0.3) end)
-            ngx.timer.at(0.09, function() ngx.sleep(0.3) end)
-            ngx.sleep(0.2)
-            ngx.say(ngx.timer.running_count())
+            njt.timer.at(0.1, function() njt.sleep(0.3) end)
+            njt.timer.at(0.11, function() njt.sleep(0.3) end)
+            njt.timer.at(0.09, function() njt.sleep(0.3) end)
+            njt.sleep(0.2)
+            njt.say(njt.timer.running_count())
         }
     }
 --- stream_server_config
@@ -1588,38 +1588,38 @@ ssl_certificate_by_lua:1: ssl cert by lua is running!
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -1649,7 +1649,7 @@ close: 1 nil
         listen 127.0.0.1:12346 ssl;
 
         ssl_certificate_by_lua_block {
-            local ssl = require "ngx.ssl"
+            local ssl = require "njt.ssl"
             local byte = string.byte
             local addr, addrtype, err = ssl.raw_client_addr()
             local ip = string.format("%d.%d.%d.%d", byte(addr, 1), byte(addr, 2),
@@ -1666,38 +1666,38 @@ close: 1 nil
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("127.0.0.1", 12346)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }
@@ -1725,7 +1725,7 @@ client ip: 127.0.0.1
         listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
         ssl_certificate_by_lua_block {
-            local ssl = require "ngx.ssl"
+            local ssl = require "njt.ssl"
             local addr, addrtyp, err = ssl.raw_client_addr()
             print("client socket file: ", addr)
         }
@@ -1739,38 +1739,38 @@ client ip: 127.0.0.1
 
     content_by_lua_block {
         do
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             sock:settimeout(2000)
 
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.say("failed to do SSL handshake: ", err)
+                njt.say("failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.say("ssl handshake: ", type(sess))
+            njt.say("ssl handshake: ", type(sess))
 
             while true do
                 local line, err = sock:receive()
                 if not line then
-                    -- ngx.say("failed to receive response status line: ", err)
+                    -- njt.say("failed to receive response status line: ", err)
                     break
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end  -- do
         -- collectgarbage()
     }

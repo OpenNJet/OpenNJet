@@ -27,10 +27,10 @@ __DATA__
     }
     location /lua {
         content_by_lua '
-            if ngx.req.is_internal() then
-                ngx.say("internal")
+            if njt.req.is_internal() then
+                njt.say("internal")
             else
-                ngx.say("not internal")
+                njt.say("not internal")
             end
         ';
     }
@@ -48,10 +48,10 @@ not internal
     }
     location /lua {
         content_by_lua '
-            if ngx.req.is_internal() then
-                ngx.say("internal")
+            if njt.req.is_internal() then
+                njt.say("internal")
             else
-                ngx.say("not internal")
+                njt.say("not internal")
             end
         ';
     }

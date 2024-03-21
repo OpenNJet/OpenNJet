@@ -30,8 +30,8 @@ env LUA_CPATH;
 --- config
     location /lua {
         content_by_lua '
-            ngx.say(package.path)
-            ngx.say(package.cpath)
+            njt.say(package.path)
+            njt.say(package.cpath)
         ';
     }
 --- request
@@ -54,8 +54,8 @@ env LUA_CPATH;
     lua_code_cache off;
     location /lua {
         content_by_lua '
-            ngx.say(package.path)
-            ngx.say(package.cpath)
+            njt.say(package.path)
+            njt.say(package.cpath)
         ';
     }
 --- request

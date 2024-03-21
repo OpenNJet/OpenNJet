@@ -630,11 +630,11 @@ njt_auto_lib_run_tests() {
     fi
 
 
-    # directories beginning with '$pfx-' that are in the same directory as the Nginx source
+    # directories beginning with '$pfx-' that are in the same directory as the NJet source
 
     if [ $NJT_AUTO_LIB_SEARCH_PARENT = YES ]; then
         local src_dir=`cd ..; pwd`
-        njt_auto_lib_test_dirs " (found under Nginx source parent dir)" \
+        njt_auto_lib_test_dirs " (found under NJet source parent dir)" \
                 `find $src_dir/* -maxdepth 0 -type d !ame $pfx-* 2> /dev/null | sort -r` && return 0
     fi
 

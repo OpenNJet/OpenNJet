@@ -50,7 +50,7 @@ __DATA__
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
             return foo
@@ -74,10 +74,10 @@ set_by_lua:3: in main chunk, \n\z/, "old foo: 1\n"]
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
-            ngx.say(foo)
+            njt.say(foo)
         }
     }
 --- response_body_like chomp
@@ -97,10 +97,10 @@ rewrite_by_lua\(nginx\.conf:\d+\):\d+: in main chunk, \n\z/, "old foo: 1\n"]
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
-            ngx.say(foo)
+            njt.say(foo)
         }
     }
 --- response_body_like chomp
@@ -120,10 +120,10 @@ access_by_lua\(nginx\.conf:\d+\):\d+: in main chunk, \n\z/, "old foo: 1\n"]
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
-            ngx.say(foo)
+            njt.say(foo)
         }
     }
 --- response_body_like chomp
@@ -140,13 +140,13 @@ content_by_lua\(nginx\.conf:\d+\):\d+: in main chunk, \n\z/, "old foo: 1\n"]
 --- config
     location /t {
         content_by_lua_block {
-            ngx.say(foo)
+            njt.say(foo)
         }
         header_filter_by_lua_block {
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
         }
@@ -165,13 +165,13 @@ header_filter_by_lua:3: in main chunk, \n\z/, "old foo: 1\n"]
 --- config
     location /t {
         content_by_lua_block {
-            ngx.say(foo)
+            njt.say(foo)
         }
         body_filter_by_lua_block {
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
         }
@@ -191,13 +191,13 @@ old foo: 1\n\z/, "old foo: 2\nold foo: 3\n"]
 --- config
     location /t {
         content_by_lua_block {
-            ngx.say(foo)
+            njt.say(foo)
         }
         log_by_lua_block {
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
         }
@@ -221,7 +221,7 @@ log_by_lua\(nginx\.conf:\d+\):\d+: in main chunk\n\z/, "old foo: 1\n"]
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
         }
@@ -231,7 +231,7 @@ log_by_lua\(nginx\.conf:\d+\):\d+: in main chunk\n\z/, "old foo: 1\n"]
         server_tokens off;
         location /foo {
             content_by_lua_block {
-                ngx.say("foo: ", foo)
+                njt.say("foo: ", foo)
             }
         }
     }
@@ -242,54 +242,54 @@ log_by_lua\(nginx\.conf:\d+\):\d+: in main chunk\n\z/, "old foo: 1\n"]
     location /t {
         content_by_lua_block {
             do
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
 
                 sock:settimeout(2000)
 
                 local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
                 if not ok then
-                    ngx.say("failed to connect: ", err)
+                    njt.say("failed to connect: ", err)
                     return
                 end
 
-                -- ngx.say("connected: ", ok)
+                -- njt.say("connected: ", ok)
 
                 local sess, err = sock:sslhandshake(nil, "test.com", true)
                 if not sess then
-                    ngx.say("failed to do SSL handshake: ", err)
+                    njt.say("failed to do SSL handshake: ", err)
                     return
                 end
 
-                -- ngx.say("ssl handshake: ", type(sess))
+                -- njt.say("ssl handshake: ", type(sess))
 
                 local req = "GET /foo HTTP/1.0\r\nHost: test.com\r\nConnection: close\r\n\r\n"
                 local bytes, err = sock:send(req)
                 if not bytes then
-                    ngx.say("failed to send http request: ", err)
+                    njt.say("failed to send http request: ", err)
                     return
                 end
 
-                -- ngx.say("sent http request: ", bytes, " bytes.")
+                -- njt.say("sent http request: ", bytes, " bytes.")
 
                 while true do
                     local line, err = sock:receive()
                     if not line then
-                        -- ngx.say("failed to receive response status line: ", err)
+                        -- njt.say("failed to receive response status line: ", err)
                         break
                     end
 
-                    local m, err = ngx.re.match(line, "^foo: (.*)$", "jo")
+                    local m, err = njt.re.match(line, "^foo: (.*)$", "jo")
                     if err then
-                        ngx.say("failed to match line: ", err)
+                        njt.say("failed to match line: ", err)
                     end
 
                     if m and m[1] then
-                        ngx.print(m[1])
+                        njt.print(m[1])
                     end
                 end
 
                 local ok, err = sock:close()
-                ngx.say("done")
+                njt.say("done")
             end  -- do
         }
     }
@@ -312,17 +312,17 @@ ssl_certificate_by_lua:3: in main chunk\n\z/, "old foo: 1\n"]
                 if not foo then
                     foo = 1
                 else
-                    ngx.log(ngx.WARN, "old foo: ", foo)
+                    njt.log(njt.WARN, "old foo: ", foo)
                     foo = foo + 1
                 end
             end
-            local ok, err = ngx.timer.at(0, f)
+            local ok, err = njt.timer.at(0, f)
             if not ok then
-                ngx.say("failed to set timer: ", err)
+                njt.say("failed to set timer: ", err)
                 return
             end
-            ngx.sleep(0.01)
-            ngx.say(foo)
+            njt.sleep(0.01)
+            njt.say(foo)
         }
     }
 --- response_body_like chomp
@@ -346,10 +346,10 @@ content_by_lua\(nginx\.conf:\d+\):\d+: in\n\z/, "old foo: 1\n"]
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
-            ngx.say(foo)
+            njt.say(foo)
         }
     }
 --- response_body_like chomp
@@ -366,7 +366,7 @@ content_by_lua\(nginx\.conf:\d+\):\d+: in\n\z/, "old foo: 1\n"]
         if not foo then
             foo = 1
         else
-            ngx.log(ngx.WARN, "old foo: ", foo)
+            njt.log(njt.WARN, "old foo: ", foo)
             foo = foo + 1
         end
     }
@@ -376,10 +376,10 @@ content_by_lua\(nginx\.conf:\d+\):\d+: in\n\z/, "old foo: 1\n"]
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
-            ngx.say(foo)
+            njt.say(foo)
         }
     }
 --- response_body_like chomp
@@ -396,7 +396,7 @@ content_by_lua\(nginx\.conf:\d+\):\d+: in\n\z/, "old foo: 1\n"]
         if not foo then
             foo = 1
         else
-            ngx.log(ngx.WARN, "old foo: ", foo)
+            njt.log(njt.WARN, "old foo: ", foo)
             foo = foo + 1
         end
     }
@@ -404,7 +404,7 @@ content_by_lua\(nginx\.conf:\d+\):\d+: in\n\z/, "old foo: 1\n"]
         if not foo then
             foo = 1
         else
-            ngx.log(ngx.WARN, "old foo: ", foo)
+            njt.log(njt.WARN, "old foo: ", foo)
             foo = foo + 1
         end
     }
@@ -414,10 +414,10 @@ content_by_lua\(nginx\.conf:\d+\):\d+: in\n\z/, "old foo: 1\n"]
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
-            ngx.say(foo)
+            njt.say(foo)
         }
     }
 --- response_body_like chomp
@@ -440,8 +440,8 @@ content_by_lua\(nginx\.conf:\d+\):\d+: in\n\z/, "old foo: 1\n"]
 --- config
     location /t {
         content_by_lua_block {
-            ngx.say(foo)
-            ngx.say(bar)
+            njt.say(foo)
+            njt.say(bar)
         }
     }
 --- response_body
@@ -460,17 +460,17 @@ setting global variable
                 if not foo then
                     foo = 1
                 else
-                    ngx.log(ngx.WARN, "old foo: ", foo)
+                    njt.log(njt.WARN, "old foo: ", foo)
                     foo = foo + 1
                 end
             end
-            local ok, err = ngx.thread.spawn(f)
+            local ok, err = njt.thread.spawn(f)
             if not ok then
-                ngx.say("failed to set timer: ", err)
+                njt.say("failed to set timer: ", err)
                 return
             end
-            ngx.sleep(0.01)
-            ngx.say(foo)
+            njt.sleep(0.01)
+            njt.say(foo)
         }
     }
 --- response_body_like chomp
@@ -490,7 +490,7 @@ qr/(old foo: \d+|writing a global Lua variable \('\w+'\))/
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.WARN, "old foo: ", foo)
+                njt.log(njt.WARN, "old foo: ", foo)
                 foo = foo + 1
             end
         }

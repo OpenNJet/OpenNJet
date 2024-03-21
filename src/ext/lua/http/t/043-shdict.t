@@ -24,13 +24,13 @@ __DATA__
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             dogs:set("bah", 10502)
             local val = dogs:get("foo")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
             val = dogs:get("bah")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
         ';
     }
 --- request
@@ -49,14 +49,14 @@ GET /test
 --- config
     location = /test {
         content_by_lua '
-            local cats = ngx.shared.cats
+            local cats = njt.shared.cats
             cats:set("foo", 3.14159)
             cats:set("baz", 1.28)
             cats:set("baz", 3.96)
             local val = cats:get("foo")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
             val = cats:get("baz")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
         ';
     }
 --- request
@@ -75,13 +75,13 @@ GET /test
 --- config
     location = /test {
         content_by_lua '
-            local cats = ngx.shared.cats
+            local cats = njt.shared.cats
             cats:set("foo", true)
             cats:set("bar", false)
             local val = cats:get("foo")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
             val = cats:get("bar")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
         ';
     }
 --- request
@@ -100,14 +100,14 @@ false boolean
 --- config
     location = /test {
         content_by_lua '
-            local cats = ngx.shared.cats
-            ngx.say(cats:set(1234, "cat"))
-            ngx.say(cats:set("1234", "dog"))
-            ngx.say(cats:set(256, "bird"))
-            ngx.say(cats:get(1234))
-            ngx.say(cats:get("1234"))
+            local cats = njt.shared.cats
+            njt.say(cats:set(1234, "cat"))
+            njt.say(cats:set("1234", "dog"))
+            njt.say(cats:set(256, "bird"))
+            njt.say(cats:get(1234))
+            njt.say(cats:get("1234"))
             local val = cats:get("256")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
         ';
     }
 --- request
@@ -130,13 +130,13 @@ bird string
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", "hello")
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
             dogs:set("foo", "hello, world")
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
             dogs:set("foo", "hello")
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
         ';
     }
 --- request
@@ -156,10 +156,10 @@ hello
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32, 0.01)
-            ngx.location.capture("/sleep/0.01")
-            ngx.say(dogs:get("foo"))
+            njt.location.capture("/sleep/0.01")
+            njt.say(dogs:get("foo"))
         ';
     }
     location ~ '^/sleep/(.+)' {
@@ -180,12 +180,12 @@ nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("bar", 56, 0.001)
             dogs:set("baz", 78, 0.001)
             dogs:set("foo", 32, 0.01)
-            ngx.location.capture("/sleep/0.012")
-            ngx.say(dogs:get("foo"))
+            njt.location.capture("/sleep/0.012")
+            njt.say(dogs:get("foo"))
         ';
     }
     location ~ '^/sleep/(.+)' {
@@ -206,10 +206,10 @@ nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32, 0.5)
-            ngx.location.capture("/sleep/0.01")
-            ngx.say(dogs:get("foo"))
+            njt.location.capture("/sleep/0.01")
+            njt.say(dogs:get("foo"))
         ';
     }
     location ~ '^/sleep/(.+)' {
@@ -230,24 +230,24 @@ GET /test
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local i = 0
             while i < 1000 do
                 i = i + 1
                 local val = string.rep(" hello", 10) .. i
                 local res, err, forcible = dogs:set("key_" .. i, val)
                 if not res or forcible then
-                    ngx.say(res, " ", err, " ", forcible)
+                    njt.say(res, " ", err, " ", forcible)
                     break
                 end
             end
-            ngx.say("abort at ", i)
-            ngx.say("cur value: ", dogs:get("key_" .. i))
+            njt.say("abort at ", i)
+            njt.say("cur value: ", dogs:get("key_" .. i))
             if i > 1 then
-                ngx.say("1st value: ", dogs:get("key_1"))
+                njt.say("1st value: ", dogs:get("key_1"))
             end
             if i > 2 then
-                ngx.say("2nd value: ", dogs:get("key_2"))
+                njt.say("2nd value: ", dogs:get("key_2"))
             end
         ';
     }
@@ -269,7 +269,7 @@ my $a = "true nil true\nabort at (353|705)\ncur value: " . (" hello" x 10) . "\\
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local i = 0
             while i < 1000 do
                 i = i + 1
@@ -279,17 +279,17 @@ my $a = "true nil true\nabort at (353|705)\ncur value: " . (" hello" x 10) . "\\
                 end
                 local res, err, forcible = dogs:set("key_" .. i, val)
                 if not res or forcible then
-                    ngx.say(res, " ", err, " ", forcible)
+                    njt.say(res, " ", err, " ", forcible)
                     break
                 end
             end
-            ngx.say("abort at ", i)
-            ngx.say("cur value: ", dogs:get("key_" .. i))
+            njt.say("abort at ", i)
+            njt.say("cur value: ", dogs:get("key_" .. i))
             if i > 1 then
-                ngx.say("1st value: ", dogs:get("key_1"))
+                njt.say("1st value: ", dogs:get("key_1"))
             end
             if i > 2 then
-                ngx.say("2nd value: ", dogs:get("key_2"))
+                njt.say("2nd value: ", dogs:get("key_2"))
             end
         ';
     }
@@ -312,15 +312,15 @@ my $a = "true nil true\nabort at (353|705)\ncur value: " . (" hello" x 10) . "\\
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
-            local cats = ngx.shared.cats
+            local dogs = njt.shared.dogs
+            local cats = njt.shared.cats
             dogs:set("foo", 32)
             cats:set("foo", "hello, world")
-            ngx.say(dogs:get("foo"))
-            ngx.say(cats:get("foo"))
+            njt.say(dogs:get("foo"))
+            njt.say(cats:get("foo"))
             dogs:set("foo", 56)
-            ngx.say(dogs:get("foo"))
-            ngx.say(cats:get("foo"))
+            njt.say(dogs:get("foo"))
+            njt.say(cats:get("foo"))
         ';
     }
 --- request
@@ -341,9 +341,9 @@ hello, world
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
-            ngx.say(dogs:get("foo"))
-            ngx.say(dogs:get("foo"))
+            local dogs = njt.shared.dogs
+            njt.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
         ';
     }
 --- request
@@ -363,13 +363,13 @@ nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local rc, err = pcall(dogs.set, "foo", 3, 0.01)
-            ngx.say(rc, " ", err)
+            njt.say(rc, " ", err)
             rc, err = pcall(dogs.set, "foo", 3)
-            ngx.say(rc, " ", err)
+            njt.say(rc, " ", err)
             rc, err = pcall(dogs.get, "foo")
-            ngx.say(rc, " ", err)
+            njt.say(rc, " ", err)
         ';
     }
 --- request
@@ -390,9 +390,9 @@ false expecting exactly two arguments, but only seen 1
     location = /test {
         content_by_lua '
             collectgarbage("collect")
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local res, err, forcible = dogs:set("foo", string.rep("helloworld", 10000))
-            ngx.say(res, " ", err, " ", forcible)
+            njt.say(res, " ", err, " ", forcible)
         ';
     }
 --- request
@@ -403,7 +403,7 @@ false no memory false
 --- no_error_log
 [error]
 [crit]
-ngx_slab_alloc() failed: no memory in lua_shared_dict zone
+njt_slab_alloc() failed: no memory in lua_shared_dict zone
 
 
 
@@ -413,19 +413,19 @@ ngx_slab_alloc() failed: no memory in lua_shared_dict zone
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local key = string.rep("a", 65535)
             local rc, err = dogs:set(key, "hello")
-            ngx.say(rc, " ", err)
-            ngx.say(dogs:get(key))
+            njt.say(rc, " ", err)
+            njt.say(dogs:get(key))
 
             key = string.rep("a", 65536)
             local ok, err = dogs:set(key, "world")
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
 
         ';
     }
@@ -446,13 +446,13 @@ not ok: key too long
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:set("foo", dogs)
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -470,13 +470,13 @@ not ok: bad value type
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
             dogs:delete("foo")
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
             dogs:set("foo", "hello, world")
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
         ';
     }
 --- request
@@ -496,11 +496,11 @@ hello, world
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:delete("foo")
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
             dogs:set("foo", "hello, world")
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
         ';
     }
 --- request
@@ -519,13 +519,13 @@ hello, world
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
             dogs:set("foo", nil)
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
             dogs:set("foo", "hello, world")
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
         ';
     }
 --- request
@@ -545,11 +545,11 @@ hello, world
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", nil)
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
             dogs:set("foo", "hello, world")
-            ngx.say(dogs:get("foo"))
+            njt.say(dogs:get("foo"))
         ';
     }
 --- request
@@ -568,18 +568,18 @@ hello, world
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local i = 0
             while i < 1000 do
                 i = i + 1
                 local val = string.rep("hello", i )
                 local res, err, forcible = dogs:set("key_" .. i, val)
                 if not res or forcible then
-                    ngx.say(res, " ", err, " ", forcible)
+                    njt.say(res, " ", err, " ", forcible)
                     break
                 end
             end
-            ngx.say("abort at ", i)
+            njt.say("abort at ", i)
         ';
     }
 --- request
@@ -597,13 +597,13 @@ GET /test
 --- config
     location = /test {
         rewrite_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             dogs:set("bah", 10502)
             local val = dogs:get("foo")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
             val = dogs:get("bah")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
         ';
         content_by_lua return;
     }
@@ -623,13 +623,13 @@ GET /test
 --- config
     location = /test {
         access_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             dogs:set("bah", 10502)
             local val = dogs:get("foo")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
             val = dogs:get("bah")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
         ';
         content_by_lua return;
     }
@@ -649,7 +649,7 @@ GET /test
 --- config
     location = /test {
         set_by_lua $res '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             return dogs:get("foo")
         ';
@@ -671,9 +671,9 @@ GET /test
     location = /test {
         echo hello;
         header_filter_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
-            ngx.header["X-Foo"] = dogs:get("foo")
+            njt.header["X-Foo"] = dogs:get("foo")
         ';
     }
 --- request
@@ -694,10 +694,10 @@ hello
     location = /test {
         content_by_lua '
             collectgarbage("collect")
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("bah", "hello")
             local res, err, forcible = dogs:set("foo", string.rep("helloworld", 10000))
-            ngx.say(res, " ", err, " ", forcible)
+            njt.say(res, " ", err, " ", forcible)
         ';
     }
 --- request
@@ -708,7 +708,7 @@ false no memory true
 --- no_error_log
 [error]
 [crit]
-ngx_slab_alloc() failed: no memory in lua_shared_dict zone
+njt_slab_alloc() failed: no memory in lua_shared_dict zone
 
 
 
@@ -718,11 +718,11 @@ ngx_slab_alloc() failed: no memory in lua_shared_dict zone
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             local res, err, forcible = dogs:add("foo", 10502)
-            ngx.say("add: ", res, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("add: ", res, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
 --- request
@@ -741,11 +741,11 @@ foo = 32
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("bah", 32)
             local res, err, forcible = dogs:add("foo", 10502)
-            ngx.say("add: ", res, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("add: ", res, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
 --- request
@@ -764,14 +764,14 @@ foo = 10502
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("bar", 32, 0.001)
             dogs:set("baz", 32, 0.001)
             dogs:set("foo", 32, 0.001)
-            ngx.location.capture("/sleep/0.002")
+            njt.location.capture("/sleep/0.002")
             local res, err, forcible = dogs:add("foo", 10502)
-            ngx.say("add: ", res, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("add: ", res, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
     location ~ ^/sleep/(.+) {
@@ -793,14 +793,14 @@ foo = 10502
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("bar", 32, 0.001)
             dogs:set("baz", 32, 0.001)
             dogs:set("foo", "hi", 0.001)
-            ngx.location.capture("/sleep/0.002")
+            njt.location.capture("/sleep/0.002")
             local res, err, forcible = dogs:add("foo", "hello")
-            ngx.say("add: ", res, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("add: ", res, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
     location ~ ^/sleep/(.+) {
@@ -822,15 +822,15 @@ foo = hello
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             local res, err, forcible = dogs:replace("foo", 10502)
-            ngx.say("replace: ", res, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("replace: ", res, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get("foo"))
 
             local res, err, forcible = dogs:replace("foo", "hello")
-            ngx.say("replace: ", res, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("replace: ", res, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get("foo"))
 
         ';
     }
@@ -852,11 +852,11 @@ foo = hello
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("bah", 32)
             local res, err, forcible = dogs:replace("foo", 10502)
-            ngx.say("replace: ", res, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("replace: ", res, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
 --- request
@@ -875,14 +875,14 @@ foo = nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("bar", 3, 0.001)
             dogs:set("baz", 2, 0.001)
             dogs:set("foo", 32, 0.001)
-            ngx.location.capture("/sleep/0.002")
+            njt.location.capture("/sleep/0.002")
             local res, err, forcible = dogs:replace("foo", 10502)
-            ngx.say("replace: ", res, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("replace: ", res, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
     location ~ ^/sleep/(.+) {
@@ -904,14 +904,14 @@ foo = nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("bar", 32, 0.001)
             dogs:set("baz", 32, 0.001)
             dogs:set("foo", "hi", 0.001)
-            ngx.location.capture("/sleep/0.002")
+            njt.location.capture("/sleep/0.002")
             local rc, err, forcible = dogs:replace("foo", "hello")
-            ngx.say("replace: ", rc, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("replace: ", rc, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
     location ~ ^/sleep/(.+) {
@@ -933,11 +933,11 @@ foo = nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             local res, err = dogs:incr("foo", 10502)
-            ngx.say("incr: ", res, " ", err)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
 --- request
@@ -956,11 +956,11 @@ foo = 10534
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("bah", 32)
             local res, err = dogs:incr("foo", 2)
-            ngx.say("incr: ", res, " ", err)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
 --- request
@@ -979,14 +979,14 @@ foo = nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("bar", 3, 0.001)
             dogs:set("baz", 2, 0.001)
             dogs:set("foo", 32, 0.001)
-            ngx.location.capture("/sleep/0.002")
+            njt.location.capture("/sleep/0.002")
             local res, err = dogs:incr("foo", 10502)
-            ngx.say("incr: ", res, " ", err)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
     location ~ ^/sleep/(.+) {
@@ -1008,11 +1008,11 @@ foo = nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             local res, err = dogs:incr("foo", 0)
-            ngx.say("incr: ", res, " ", err)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
 --- request
@@ -1031,11 +1031,11 @@ foo = 32
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             local res, err = dogs:incr("foo", 0.14)
-            ngx.say("incr: ", res, " ", err)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
 --- request
@@ -1054,11 +1054,11 @@ foo = 32.14
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             local res, err = dogs:incr("foo", -0.14)
-            ngx.say("incr: ", res, " ", err)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
 --- request
@@ -1077,11 +1077,11 @@ foo = 31.86
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", true)
             local res, err = dogs:incr("foo", -0.14)
-            ngx.say("incr: ", res, " ", err)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("incr: ", res, " ", err)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
 --- request
@@ -1100,15 +1100,15 @@ foo = true
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32, 0, 199)
             dogs:set("bah", 10502, 202)
             local val, flags = dogs:get("foo")
-            ngx.say(val, " ", type(val))
-            ngx.say(flags, " ", type(flags))
+            njt.say(val, " ", type(val))
+            njt.say(flags, " ", type(flags))
             val, flags = dogs:get("bah")
-            ngx.say(val, " ", type(val))
-            ngx.say(flags, " ", type(flags))
+            njt.say(val, " ", type(val))
+            njt.say(flags, " ", type(flags))
         ';
     }
 --- request
@@ -1129,11 +1129,11 @@ nil nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32, 0.01, 255)
-            ngx.location.capture("/sleep/0.01")
+            njt.location.capture("/sleep/0.01")
             local res, flags = dogs:get("foo")
-            ngx.say("res = ", res, ", flags = ", flags)
+            njt.say("res = ", res, ", flags = ", flags)
         ';
     }
     location ~ '^/sleep/(.+)' {
@@ -1154,21 +1154,21 @@ res = nil, flags = nil
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             dogs:set("bah", 10502)
 
             local val = dogs:get("foo")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
             val = dogs:get("bah")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
 
             dogs:flush_all()
 
             val = dogs:get("foo")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
             val = dogs:get("bah")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
         ';
     }
 --- request
@@ -1189,15 +1189,15 @@ nil nil
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", "x", 1)
             dogs:set("bah", "y", 0)
             dogs:set("bar", "z", 100)
 
-            ngx.sleep(1.5)
+            njt.sleep(1.5)
 
             local num = dogs:flush_expired()
-            ngx.say(num)
+            njt.say(num)
         ';
     }
 --- request
@@ -1215,7 +1215,7 @@ GET /t
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             for i=1,100 do
                 dogs:set(tostring(i), "x", 1)
@@ -1224,10 +1224,10 @@ GET /t
             dogs:set("bah", "y", 0)
             dogs:set("bar", "z", 100)
 
-            ngx.sleep(1.5)
+            njt.sleep(1.5)
 
             local num = dogs:flush_expired(42)
-            ngx.say(num)
+            njt.say(num)
         ';
     }
 --- request
@@ -1245,10 +1245,10 @@ GET /t
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local num = dogs:flush_expired()
-            ngx.say(num)
+            njt.say(num)
         ';
     }
 --- request
@@ -1266,13 +1266,13 @@ GET /t
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             dogs:set("bah", "y", 0)
             dogs:set("bar", "z", 100)
 
             local num = dogs:flush_expired()
-            ngx.say(num)
+            njt.say(num)
         ';
     }
 --- request
@@ -1290,15 +1290,15 @@ GET /t
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             dogs:set("bah", "y", 0)
             dogs:set("bar", "z", 0)
             local keys = dogs:get_keys()
-            ngx.say(#keys)
+            njt.say(#keys)
             table.sort(keys)
             for _,k in ipairs(keys) do
-                ngx.say(k)
+                njt.say(k)
             end
         ';
     }
@@ -1319,12 +1319,12 @@ bar
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             dogs:set("bah", "y", 0)
             dogs:set("bar", "z", 0)
             local keys = dogs:get_keys(1)
-            ngx.say(#keys)
+            njt.say(#keys)
         ';
     }
 --- request
@@ -1342,15 +1342,15 @@ GET /t
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", "x", 1)
             dogs:set("bah", "y", 0)
             dogs:set("bar", "z", 100)
 
-            ngx.sleep(1.5)
+            njt.sleep(1.5)
 
             local keys = dogs:get_keys()
-            ngx.say(#keys)
+            njt.say(#keys)
         ';
     }
 --- request
@@ -1368,12 +1368,12 @@ GET /t
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             dogs:set("bah", "y", 0)
             dogs:set("bar", "z", 0)
             local keys = dogs:get_keys(3)
-            ngx.say(#keys)
+            njt.say(#keys)
         ';
     }
 --- request
@@ -1391,9 +1391,9 @@ GET /t
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local keys = dogs:get_keys()
-            ngx.say(#keys)
+            njt.say(#keys)
         ';
     }
 --- request
@@ -1411,9 +1411,9 @@ GET /t
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local keys = dogs:get_keys(4)
-            ngx.say(#keys)
+            njt.say(#keys)
         ';
     }
 --- request
@@ -1431,15 +1431,15 @@ GET /t
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", "x", 1)
             dogs:set("bah", "y", 1)
             dogs:set("bar", "z", 1)
 
-            ngx.sleep(1.5)
+            njt.sleep(1.5)
 
             local keys = dogs:get_keys()
-            ngx.say(#keys)
+            njt.say(#keys)
         ';
     }
 --- request
@@ -1457,12 +1457,12 @@ GET /t
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             for i=1,2048 do
                 dogs:set(tostring(i), i)
             end
             local keys = dogs:get_keys()
-            ngx.say(#keys)
+            njt.say(#keys)
         ';
     }
 --- request
@@ -1480,12 +1480,12 @@ GET /t
 --- config
     location = /t {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             for i=1,2048 do
                 dogs:set(tostring(i), i)
             end
             local keys = dogs:get_keys(0)
-            ngx.say(#keys)
+            njt.say(#keys)
         ';
     }
 --- request
@@ -1503,24 +1503,24 @@ GET /t
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local i = 0
             while i < 1000 do
                 i = i + 1
                 local val = string.rep(" hello", 10) .. i
                 local res, err = dogs:safe_set("key_" .. i, val)
                 if not res then
-                    ngx.say(res, " ", err)
+                    njt.say(res, " ", err)
                     break
                 end
             end
-            ngx.say("abort at ", i)
-            ngx.say("cur value: ", dogs:get("key_" .. i))
+            njt.say("abort at ", i)
+            njt.say("cur value: ", dogs:get("key_" .. i))
             if i > 1 then
-                ngx.say("1st value: ", dogs:get("key_1"))
+                njt.say("1st value: ", dogs:get("key_1"))
             end
             if i > 2 then
-                ngx.say("2nd value: ", dogs:get("key_2"))
+                njt.say("2nd value: ", dogs:get("key_2"))
             end
         ';
     }
@@ -1540,24 +1540,24 @@ my $a = "false no memory\nabort at (353|705)\ncur value: nil\n1st value: " . (" 
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local i = 0
             while i < 1000 do
                 i = i + 1
                 local val = string.rep(" hello", 10) .. i
                 local res, err = dogs:safe_add("key_" .. i, val)
                 if not res then
-                    ngx.say(res, " ", err)
+                    njt.say(res, " ", err)
                     break
                 end
             end
-            ngx.say("abort at ", i)
-            ngx.say("cur value: ", dogs:get("key_" .. i))
+            njt.say("abort at ", i)
+            njt.say("cur value: ", dogs:get("key_" .. i))
             if i > 1 then
-                ngx.say("1st value: ", dogs:get("key_1"))
+                njt.say("1st value: ", dogs:get("key_1"))
             end
             if i > 2 then
-                ngx.say("2nd value: ", dogs:get("key_2"))
+                njt.say("2nd value: ", dogs:get("key_2"))
             end
         ';
     }
@@ -1582,14 +1582,14 @@ cur value:  hello hello hello hello hello hello hello hello hello hello1
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32, 0.01)
             dogs:set("blah", 33, 0.3)
-            ngx.sleep(0.02)
+            njt.sleep(0.02)
             local val, flags, stale = dogs:get_stale("foo")
-            ngx.say(val, ", ", flags, ", ", stale)
+            njt.say(val, ", ", flags, ", ", stale)
             local val, flags, stale = dogs:get_stale("blah")
-            ngx.say(val, ", ", flags, ", ", stale)
+            njt.say(val, ", ", flags, ", ", stale)
         ';
     }
 --- request
@@ -1608,13 +1608,13 @@ GET /test
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:set(nil, 32)
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -1632,13 +1632,13 @@ not ok: nil key
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs.set(nil, "foo", 32)
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -1656,13 +1656,13 @@ bad "zone" argument
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:set("", 32)
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -1680,13 +1680,13 @@ not ok: empty key
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs.get(nil, "foo")
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -1704,13 +1704,13 @@ bad "zone" argument
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:get(nil)
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -1728,13 +1728,13 @@ not ok: nil key
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:get("")
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -1752,13 +1752,13 @@ not ok: empty key
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:get(string.rep("a", 65536))
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -1776,20 +1776,20 @@ not ok: key too long
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:set("foo", string.rep("helloworld", 1024))
             if not ok then
-                ngx.say("set not ok: ", err)
+                njt.say("set not ok: ", err)
                 return
             end
-            ngx.say("set ok")
+            njt.say("set ok")
 
             local data, err = dogs:get("foo")
             if data == nil and err then
-                ngx.say("get not ok: ", err)
+                njt.say("get not ok: ", err)
                 return
             end
-            ngx.say("get ok: ", #data)
+            njt.say("get ok: ", #data)
 
         ';
     }
@@ -1809,13 +1809,13 @@ get ok: 10240
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:get_stale(nil)
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -1833,13 +1833,13 @@ not ok: nil key
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:get_stale("")
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -1857,19 +1857,19 @@ not ok: empty key
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:set(1024, "hello")
             if not ok then
-                ngx.say("set not ok: ", err)
+                njt.say("set not ok: ", err)
                 return
             end
-            ngx.say("set ok")
+            njt.say("set ok")
             local data, err = dogs:get_stale(1024)
             if not ok then
-                ngx.say("get_stale not ok: ", err)
+                njt.say("get_stale not ok: ", err)
                 return
             end
-            ngx.say("get_stale: ", data)
+            njt.say("get_stale: ", data)
         ';
     }
 --- request
@@ -1888,13 +1888,13 @@ get_stale: hello
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:get_stale(string.rep("a", 65536))
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -1912,13 +1912,13 @@ not ok: key too long
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local data, err = dogs:get_stale("not_found")
             if data == nil and err then
-                ngx.say("get not ok: ", err)
+                njt.say("get not ok: ", err)
                 return
             end
-            ngx.say("get ok: ", data)
+            njt.say("get ok: ", data)
         ';
     }
 --- request
@@ -1936,20 +1936,20 @@ get ok: nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:set("foo", string.rep("helloworld", 1024))
             if not ok then
-                ngx.say("set not ok: ", err)
+                njt.say("set not ok: ", err)
                 return
             end
-            ngx.say("set ok")
+            njt.say("set ok")
 
             local data, err, stale = dogs:get_stale("foo")
             if data == nil and err then
-                ngx.say("get not ok: ", err)
+                njt.say("get not ok: ", err)
                 return
             end
-            ngx.say("get_stale ok: ", #data, ", stale: ", stale)
+            njt.say("get_stale ok: ", #data, ", stale: ", stale)
 
         ';
     }
@@ -1969,20 +1969,20 @@ get_stale ok: 10240, stale: false
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:set("foo", true)
             if not ok then
-                ngx.say("set not ok: ", err)
+                njt.say("set not ok: ", err)
                 return
             end
-            ngx.say("set ok")
+            njt.say("set ok")
 
             local data, err, stale = dogs:get_stale("foo")
             if data == nil and err then
-                ngx.say("get not ok: ", err)
+                njt.say("get not ok: ", err)
                 return
             end
-            ngx.say("get_stale ok: ", data, ", stale: ", stale)
+            njt.say("get_stale ok: ", data, ", stale: ", stale)
 
         ';
     }
@@ -2002,20 +2002,20 @@ get_stale ok: true, stale: false
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:set("foo", false)
             if not ok then
-                ngx.say("set not ok: ", err)
+                njt.say("set not ok: ", err)
                 return
             end
-            ngx.say("set ok")
+            njt.say("set ok")
 
             local data, err, stale = dogs:get_stale("foo")
             if data == nil and err then
-                ngx.say("get not ok: ", err)
+                njt.say("get not ok: ", err)
                 return
             end
-            ngx.say("get_stale ok: ", data, ", stale: ", stale)
+            njt.say("get_stale ok: ", data, ", stale: ", stale)
 
         ';
     }
@@ -2035,21 +2035,21 @@ get_stale ok: false, stale: false
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:set("foo", false, 0, 325)
             if not ok then
-                ngx.say("set not ok: ", err)
+                njt.say("set not ok: ", err)
                 return
             end
-            ngx.say("set ok")
+            njt.say("set ok")
 
             local data, err, stale = dogs:get_stale("foo")
             if data == nil and err then
-                ngx.say("get not ok: ", err)
+                njt.say("get not ok: ", err)
                 return
             end
             local flags = err
-            ngx.say("get_stale ok: ", data, ", flags: ", flags,
+            njt.say("get_stale ok: ", data, ", flags: ", flags,
                     ", stale: ", stale)
 
         ';
@@ -2070,13 +2070,13 @@ get_stale ok: false, flags: 325, stale: false
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:incr(nil, 32)
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -2094,13 +2094,13 @@ not ok: nil key
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs.incr(nil, "foo", 32)
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -2118,13 +2118,13 @@ bad "zone" argument
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:incr("", 32)
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -2142,14 +2142,14 @@ not ok: empty key
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local key = string.rep("a", 65536)
             local ok, err = dogs:incr(key, 32)
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
 
         ';
     }
@@ -2168,27 +2168,27 @@ not ok: key too long
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local key = 56
             local ok, err = dogs:set(key, 1)
             if not ok then
-                ngx.say("set not ok: ", err)
+                njt.say("set not ok: ", err)
                 return
             end
-            ngx.say("set ok")
+            njt.say("set ok")
             ok, err = dogs:incr(key, 32)
             if not ok then
-                ngx.say("incr not ok: ", err)
+                njt.say("incr not ok: ", err)
                 return
             end
-            ngx.say("incr ok")
+            njt.say("incr ok")
             local data, err = dogs:get(key)
             if data == nil and err then
-                ngx.say("get not ok: ", err)
+                njt.say("get not ok: ", err)
                 return
             end
             local flags = err
-            ngx.say("get ok: ", data, ", flags: ", flags)
+            njt.say("get ok: ", data, ", flags: ", flags)
 
         ';
     }
@@ -2209,27 +2209,27 @@ get ok: 33, flags: nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local key = 56
             local ok, err = dogs:set(key, 1)
             if not ok then
-                ngx.say("set not ok: ", err)
+                njt.say("set not ok: ", err)
                 return
             end
-            ngx.say("set ok")
+            njt.say("set ok")
             ok, err = dogs:incr(key, "32")
             if not ok then
-                ngx.say("incr not ok: ", err)
+                njt.say("incr not ok: ", err)
                 return
             end
-            ngx.say("incr ok")
+            njt.say("incr ok")
             local data, err = dogs:get(key)
             if data == nil and err then
-                ngx.say("get not ok: ", err)
+                njt.say("get not ok: ", err)
                 return
             end
             local flags = err
-            ngx.say("get ok: ", data, ", flags: ", flags)
+            njt.say("get ok: ", data, ", flags: ", flags)
 
         ';
     }
@@ -2250,13 +2250,13 @@ get ok: 33, flags: nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local ok, err = dogs:add("foo", nil)
             if not ok then
-                ngx.say("not ok: ", err)
+                njt.say("not ok: ", err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -2274,15 +2274,15 @@ not ok: attempt to add or replace nil values
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 2, 0)
             dogs:replace("foo", 32, 0.01)
             local data = dogs:get("foo")
-            ngx.say("get foo: ", data)
-            ngx.location.capture("/sleep/0.02")
+            njt.say("get foo: ", data)
+            njt.location.capture("/sleep/0.02")
             local res, err, forcible = dogs:replace("foo", 10502)
-            ngx.say("replace: ", res, " ", err, " ", forcible)
-            ngx.say("foo = ", dogs:get("foo"))
+            njt.say("replace: ", res, " ", err, " ", forcible)
+            njt.say("foo = ", dogs:get("foo"))
         ';
     }
     location ~ ^/sleep/(.+) {
@@ -2299,13 +2299,13 @@ foo = nil
 
 
 
-=== TEST 86: the lightuserdata ngx.null has no methods of shared dicts.
+=== TEST 86: the lightuserdata njt.null has no methods of shared dicts.
 --- http_config
     lua_shared_dict dogs 1m;
 --- config
     location = /test {
         content_by_lua '
-            local lightuserdata = ngx.null
+            local lightuserdata = njt.null
             lightuserdata:set("foo", 1)
         ';
     }
@@ -2330,7 +2330,7 @@ bad "zone" argument
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs.set({1}, "foo", 1)
         ';
     }
@@ -2349,7 +2349,7 @@ bad "zone" argument
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs.get({1}, "foo")
         ';
     }
@@ -2368,7 +2368,7 @@ bad "zone" argument
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs.incr({1}, "foo", 32)
         ';
     }
@@ -2386,7 +2386,7 @@ GET /test
 --- config
     location = /test {
         content_by_lua '
-            ngx.say("type: ", type(ngx.shared.dogs))
+            njt.say("type: ", type(njt.shared.dogs))
         ';
     }
 --- request
@@ -2405,19 +2405,19 @@ type: table
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             dogs:set("bah", 10502)
             local val = dogs:get("foo")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
             val = dogs:get("bah")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
 
-            local cats = ngx.shared.cats
+            local cats = njt.shared.cats
             val = cats:get("foo")
-            ngx.say(val or "nil")
+            njt.say(val or "nil")
             val = cats:get("bah")
-            ngx.say(val or "nil")
+            njt.say(val or "nil")
         ';
     }
 --- request
@@ -2438,7 +2438,7 @@ nil
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32, -1)
         ';
     }
@@ -2458,8 +2458,8 @@ bad "exptime" argument
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
-            ngx.say("error")
+            local dogs = njt.shared.dogs
+            njt.say("error")
         ';
     }
 --- request

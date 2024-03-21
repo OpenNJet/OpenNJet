@@ -19,7 +19,7 @@ __DATA__
 === TEST 1: nginx version
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("version: ", ngx.config.njet_version)
+        njt.say("version: ", njt.config.njet_version)
     }
 --- stream_response_like chop
 ^version: \d+$
@@ -31,7 +31,7 @@ __DATA__
 === TEST 2: njt_lua_version
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("version: ", ngx.config.njt_lua_version)
+        njt.say("version: ", njt.config.njt_lua_version)
     }
 --- stream_response_like chop
 ^version: \d+$

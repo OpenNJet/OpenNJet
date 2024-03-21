@@ -31,14 +31,14 @@ __DATA__
 --- config
     location /test {
         content_by_lua '
-            package.loaded["socket"] = ngx.socket
+            package.loaded["socket"] = njt.socket
             local Redis = require "Redis"
 
             local redis = Redis.connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
 
             redis:set("some_key", "hello 1234")
             local data = redis:get("some_key")
-            ngx.say("some_key: ", data)
+            njt.say("some_key: ", data)
         ';
     }
 --- request
@@ -59,7 +59,7 @@ qq{
 --- config
     location /test {
         content_by_lua '
-            package.loaded["socket"] = ngx.socket
+            package.loaded["socket"] = njt.socket
             local Redis = require "Redis"
 
             local ljson = require "ljson"
@@ -70,26 +70,26 @@ qq{
 
             local loop = r2:pubsub({ subscribe = "foo" })
             local msg, abort = loop()
-            ngx.say("msg type: ", type(msg))
-            ngx.say("abort: ", type(abort))
+            njt.say("msg type: ", type(msg))
+            njt.say("abort: ", type(abort))
 
             if msg then
-                ngx.say("msg: ", ljson.encode(msg))
+                njt.say("msg: ", ljson.encode(msg))
             end
 
             for i = 1, 3 do
                 r1:publish("foo", "test " .. i)
                 msg, abort = loop()
                 if msg then
-                    ngx.say("msg: ", ljson.encode(msg))
+                    njt.say("msg: ", ljson.encode(msg))
                 end
-                ngx.say("abort: ", type(abort))
+                njt.say("abort: ", type(abort))
             end
 
             abort()
 
             msg, abort = loop()
-            ngx.say("msg type: ", type(msg))
+            njt.say("msg type: ", type(msg))
         ';
     }
 --- stap2
@@ -101,7 +101,7 @@ function gen_id(k) {
     return cur
 }
 
-F(ngx_http_handler) {
+F(njt_http_handler) {
     delete ids
     cur = 0
 }
@@ -120,7 +120,7 @@ probe process("/usr/local/openresty-debug/luajit/lib/libluajit-5.1.so.2").functi
 */
 
 /*
-F(ngx_http_lua_run_thread) {
+F(njt_http_lua_run_thread) {
     id = gen_id($ctx->cur_co)
     printf("run thread %d\n", id)
 }
@@ -136,12 +136,12 @@ M(http-lua-entry-coroutine-yield) {
     println("entry coroutine yield")
 }
 
-F(ngx_http_lua_coroutine_yield) {
+F(njt_http_lua_coroutine_yield) {
     printf("yield %x\n", gen_id($L))
 }
 
 /*
-F(ngx_http_lua_coroutine_resume) {
+F(njt_http_lua_coroutine_resume) {
     printf("resume %x\n", gen_id($L))
 }
 */
@@ -152,7 +152,7 @@ M(http-lua-user-coroutine-yield) {
     printf("yield %x in %x\n", c, p)
 }
 
-F(ngx_http_lua_atpanic) {
+F(njt_http_lua_atpanic) {
     printf("lua atpanic(%d):", gen_id($L))
     print_ubacktrace();
 }
@@ -163,9 +163,9 @@ M(http-lua-user-coroutine-create) {
     printf("create %x in %x\n", c, p)
 }
 
-F(ngx_http_lua_ngx_exec) { println("exec") }
+F(njt_http_lua_njt_exec) { println("exec") }
 
-F(ngx_http_lua_ngx_exit) { println("exit") }
+F(njt_http_lua_njt_exit) { println("exit") }
 
 --- request
     GET /test

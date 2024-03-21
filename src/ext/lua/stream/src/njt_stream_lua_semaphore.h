@@ -11,7 +11,7 @@
  * Copyright (C) Yichun Zhang (agentzh)
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  * Copyright (C) cuiweixie
- * I hereby assign copyright in this code to the lua-nginx-module project,
+ * I hereby assign copyright in this code to the lua-njet-module project,
  * to be licensed under the same terms as the rest of the code.
  */
 

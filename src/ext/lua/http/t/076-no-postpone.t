@@ -24,7 +24,7 @@ __DATA__
     set $foo '';
     location /t {
         rewrite_by_lua '
-            ngx.var.foo = 1
+            njt.var.foo = 1
         ';
         if ($foo = 1) {
             echo "foo: $foo";
@@ -47,7 +47,7 @@ foo: 1
     set $foo '';
     location /t {
         rewrite_by_lua '
-            ngx.var.foo = 1
+            njt.var.foo = 1
         ';
         if ($foo = 1) {
             echo "foo: $foo";
@@ -68,7 +68,7 @@ no foo: 1
     set $foo '';
     location /t {
         rewrite_by_lua '
-            ngx.var.foo = 1
+            njt.var.foo = 1
         ';
         if ($foo = 1) {
             echo "foo: $foo";
@@ -90,8 +90,8 @@ no foo: 1
 --- config
     location /t {
         access_by_lua '
-            ngx.redirect("http://www.taobao.com/foo")
-            ngx.say("hi")
+            njt.redirect("http://www.taobao.com/foo")
+            njt.say("hi")
         ';
         content_by_lua 'return';
         deny all;
@@ -113,8 +113,8 @@ Location: http://www.taobao.com/foo
 --- config
     location /t {
         access_by_lua '
-            ngx.redirect("http://www.taobao.com/foo")
-            ngx.say("hi")
+            njt.redirect("http://www.taobao.com/foo")
+            njt.say("hi")
         ';
         content_by_lua 'return';
         deny all;
@@ -132,8 +132,8 @@ access forbidden by rule
 --- config
     location /t {
         access_by_lua '
-            ngx.redirect("http://www.taobao.com/foo")
-            ngx.say("hi")
+            njt.redirect("http://www.taobao.com/foo")
+            njt.say("hi")
         ';
         content_by_lua 'return';
         deny all;

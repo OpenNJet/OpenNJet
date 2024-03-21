@@ -27,11 +27,11 @@ __DATA__
     location = /test {
         content_by_lua_block {
             local shm_zones = require("fake_shm_zones")
-            ngx.say(type(shm_zones))
+            njt.say(type(shm_zones))
             local x1 = shm_zones.x1
-            ngx.say(type(x1))
+            njt.say(type(x1))
             local x2 = shm_zones.x2
-            ngx.say(type(x1))
+            njt.say(type(x1))
         }
     }
 --- request
@@ -53,7 +53,7 @@ table
         content_by_lua_block {
             local shm_zones = require("fake_shm_zones")
             local x1 = shm_zones.x1
-            ngx.say(type(x1))
+            njt.say(type(x1))
         }
     }
 --- request
@@ -76,10 +76,10 @@ table
             local x1 = shm_zones.x1
 
             name, size, isinit, isold = x1:get_info()
-            ngx.say("name=", name)
-            ngx.say("size=", size)
-            ngx.say("isinit=", isinit)
-            ngx.say("isold=", isold)
+            njt.say("name=", name)
+            njt.say("size=", size)
+            njt.say("isinit=", isinit)
+            njt.say("isold=", isold)
         }
     }
 --- request
@@ -109,22 +109,22 @@ isold=false
             local x3 = shm_zones.x3
 
             name, size, isinit, isold = x1:get_info()
-            ngx.say("name=", name)
-            ngx.say("size=", size)
-            ngx.say("isinit=", isinit)
-            ngx.say("isold=", isold)
+            njt.say("name=", name)
+            njt.say("size=", size)
+            njt.say("isinit=", isinit)
+            njt.say("isold=", isold)
 
             name, size, isinit, isold = x2:get_info()
-            ngx.say("name=", name)
-            ngx.say("size=", size)
-            ngx.say("isinit=", isinit)
-            ngx.say("isold=", isold)
+            njt.say("name=", name)
+            njt.say("size=", size)
+            njt.say("isinit=", isinit)
+            njt.say("isold=", isold)
 
             name, size, isinit, isold = x3:get_info()
-            ngx.say("name=", name)
-            ngx.say("size=", size)
-            ngx.say("isinit=", isinit)
-            ngx.say("isold=", isold)
+            njt.say("name=", name)
+            njt.say("size=", size)
+            njt.say("isinit=", isinit)
+            njt.say("isold=", isold)
         }
     }
 --- request
@@ -156,7 +156,7 @@ isold=false
         content_by_lua_block {
             local shm_zones = require("fake_shm_zones")
             local x1 = shm_zones.x1
-            ngx.say("error")
+            njt.say("error")
         }
     }
 --- request

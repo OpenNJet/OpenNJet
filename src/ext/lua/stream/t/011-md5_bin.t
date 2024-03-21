@@ -22,10 +22,10 @@ __DATA__
 === TEST 1: set md5_bin hello ????xxoo
 --- stream_server_config
     content_by_lua_block {
-        local a = string.gsub(ngx.md5_bin("hello"), ".", function (c)
+        local a = string.gsub(njt.md5_bin("hello"), ".", function (c)
             return string.format("%02x", string.byte(c))
         end)
-        ngx.say(a)
+        njt.say(a)
     }
 --- stream_response
 5d41402abc4b2a76b9719d911017c592
@@ -36,7 +36,7 @@ __DATA__
 
 === TEST 2: set md5_bin hello ????xxoo
 --- stream_server_config
-    content_by_lua_block { ngx.say(string.len(ngx.md5_bin("hello"))) }
+    content_by_lua_block { njt.say(string.len(njt.md5_bin("hello"))) }
 --- stream_response
 16
 --- no_error_log
@@ -47,11 +47,11 @@ __DATA__
 === TEST 3: set md5_bin hello
 --- stream_server_config
     content_by_lua_block {
-        local s = ngx.md5_bin("hello")
+        local s = njt.md5_bin("hello")
         s = string.gsub(s, ".", function (c)
                 return string.format("%02x", string.byte(c))
             end)
-        ngx.say(s)
+        njt.say(s)
     }
 --- stream_response
 5d41402abc4b2a76b9719d911017c592
@@ -60,14 +60,14 @@ __DATA__
 
 
 
-=== TEST 4: nil string to ngx.md5_bin
+=== TEST 4: nil string to njt.md5_bin
 --- stream_server_config
     content_by_lua_block {
-        local s = ngx.md5_bin(nil)
+        local s = njt.md5_bin(nil)
         s = string.gsub(s, ".", function (c)
                 return string.format("%02x", string.byte(c))
             end)
-        ngx.say(s)
+        njt.say(s)
     }
 --- stream_response
 d41d8cd98f00b204e9800998ecf8427e
@@ -76,14 +76,14 @@ d41d8cd98f00b204e9800998ecf8427e
 
 
 
-=== TEST 5: null string to ngx.md5_bin
+=== TEST 5: null string to njt.md5_bin
 --- stream_server_config
     content_by_lua_block {
-        local s = ngx.md5_bin("")
+        local s = njt.md5_bin("")
         s = string.gsub(s, ".", function (c)
                 return string.format("%02x", string.byte(c))
             end)
-        ngx.say(s)
+        njt.say(s)
     }
 --- stream_response
 d41d8cd98f00b204e9800998ecf8427e
@@ -95,11 +95,11 @@ d41d8cd98f00b204e9800998ecf8427e
 === TEST 6: md5_bin(number)
 --- stream_server_config
     content_by_lua_block {
-        s = ngx.md5_bin(45)
+        s = njt.md5_bin(45)
         s = string.gsub(s, ".", function (c)
                 return string.format("%02x", string.byte(c))
             end)
-        ngx.say(s)
+        njt.say(s)
     }
 --- stream_response
 6c8349cc7260ae62e3b1396831a8398f

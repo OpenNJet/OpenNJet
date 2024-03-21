@@ -21,9 +21,9 @@ __DATA__
     location /lua {
         # NOTE: the newline escape sequence must be double-escaped, as nginx config
         # parser will unescape first!
-        rewrite_by_lua 'ngx.print("Hello, Lua!\\n")';
+        rewrite_by_lua 'njt.print("Hello, Lua!\\n")';
         content_by_lua return;
-        #content_by_lua 'ngx.say("Hi")';
+        #content_by_lua 'njt.say("Hi")';
     }
 --- request
 GET /lua
@@ -38,10 +38,10 @@ Hello, Lua!
         # NOTE: the newline escape sequence must be double-escaped, as nginx config
         # parser will unescape first!
         rewrite_by_lua '
-            ngx.say("Hello, Lua!")
-            ngx.say("Yay! ", 123)';
+            njt.say("Hello, Lua!")
+            njt.say("Yay! ", 123)';
 
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /say
@@ -51,11 +51,11 @@ Yay! 123
 
 
 
-=== TEST 3: no ngx.echo
+=== TEST 3: no njt.echo
 --- config
     location /lua {
-        rewrite_by_lua 'ngx.echo("Hello, Lua!\\n")';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        rewrite_by_lua 'njt.echo("Hello, Lua!\\n")';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -69,8 +69,8 @@ GET /lua
     location /lua {
         # NOTE: the newline escape sequence must be double-escaped, as nginx config
         # parser will unescape first!
-        rewrite_by_lua 'local v = ngx.var["request_uri"] ngx.print("request_uri: ", v, "\\n")';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        rewrite_by_lua 'local v = njt.var["request_uri"] njt.print("request_uri: ", v, "\\n")';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua?a=1&b=2
@@ -83,12 +83,12 @@ request_uri: /lua?a=1&b=2
 --- config
     location /lua {
         rewrite_by_lua_file html/test.lua;
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- user_files
 >>> test.lua
-local v = ngx.var["request_uri"]
-ngx.print("request_uri: ", v, "\n")
+local v = njt.var["request_uri"]
+njt.print("request_uri: ", v, "\n")
 --- request
 GET /lua?a=1&b=2
 --- response_body
@@ -100,7 +100,7 @@ request_uri: /lua?a=1&b=2
 --- config
     location /lua {
         rewrite_by_lua_file html/calc.lua;
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- user_files
 >>> calc.lua
@@ -116,19 +116,19 @@ local function eval_exp(str)
     return loadstring("return "..str)()
 end
 
-local exp_str = ngx.var["arg_exp"]
+local exp_str = njt.var["arg_exp"]
 -- print("exp: '", exp_str, "'\n")
 local status, res
 status, res = pcall(uri_unescape, exp_str)
 if not status then
-    ngx.print("error: ", res, "\n")
+    njt.print("error: ", res, "\n")
     return
 end
 status, res = pcall(eval_exp, res)
 if status then
-    ngx.print("result: ", res, "\n")
+    njt.print("result: ", res, "\n")
 else
-    ngx.print("error: ", res, "\n")
+    njt.print("error: ", res, "\n")
 end
 --- request
 GET /lua?exp=1%2B2*math.sin(3)%2Fmath.exp(4)-math.sqrt(2)
@@ -140,9 +140,9 @@ result: -0.4090441561579
 === TEST 7: read $arg_xxx
 --- config
     location = /lua {
-        rewrite_by_lua 'local who = ngx.var.arg_who
-            ngx.print("Hello, ", who, "!")';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        rewrite_by_lua 'local who = njt.var.arg_who
+            njt.print("Hello, ", who, "!")';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua?who=agentzh
@@ -159,11 +159,11 @@ Hello, agentzh!
 
     location /lua {
         rewrite_by_lua '
-local res = ngx.location.capture("/other")
-ngx.print("status=", res.status, " ")
-ngx.print("body=", res.body)
+local res = njt.location.capture("/other")
+njt.print("status=", res.status, " ")
+njt.print("body=", res.body)
 ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -175,8 +175,8 @@ status=200 body=hello, world
 === TEST 9: capture non-existed location
 --- config
     location /lua {
-        rewrite_by_lua 'local res = ngx.location.capture("/other"); ngx.print("status=", res.status)';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        rewrite_by_lua 'local res = njt.location.capture("/other"); njt.print("status=", res.status)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -187,8 +187,8 @@ GET /lua
 === TEST 10: invalid capture location (not as expected...)
 --- config
     location /lua {
-        rewrite_by_lua 'local res = ngx.location.capture("*(#*"); ngx.say("res=", res.status)';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        rewrite_by_lua 'local res = njt.location.capture("*(#*"); njt.say("res=", res.status)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -200,7 +200,7 @@ res=404
 === TEST 11: nil is "nil"
 --- config
     location /lua {
-        rewrite_by_lua 'ngx.say(nil)';
+        rewrite_by_lua 'njt.say(nil)';
         content_by_lua return;
     }
 --- request
@@ -213,7 +213,7 @@ nil
 === TEST 12: write boolean
 --- config
     location /lua {
-        rewrite_by_lua 'ngx.say(true, " ", false)';
+        rewrite_by_lua 'njt.say(true, " ", false)';
         content_by_lua return;
     }
 --- request
@@ -223,11 +223,11 @@ true false
 
 
 
-=== TEST 13: bad argument type to ngx.location.capture
+=== TEST 13: bad argument type to njt.location.capture
 --- config
     location /lua {
-        rewrite_by_lua 'ngx.location.capture(nil)';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        rewrite_by_lua 'njt.location.capture(nil)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -240,19 +240,19 @@ GET /lua
 --- config
  location /recur {
        rewrite_by_lua '
-           local num = tonumber(ngx.var.arg_num) or 0;
-           ngx.print("num is: ", num, "\\n");
+           local num = tonumber(njt.var.arg_num) or 0;
+           njt.print("num is: ", num, "\\n");
 
            if (num > 0) then
-               res = ngx.location.capture("/recur?num="..tostring(num - 1));
-               ngx.print("status=", res.status, " ");
-               ngx.print("body=", res.body, "\\n");
+               res = njt.location.capture("/recur?num="..tostring(num - 1));
+               njt.print("status=", res.status, " ");
+               njt.print("body=", res.body, "\\n");
            else
-               ngx.print("end\\n");
+               njt.print("end\\n");
            end
            ';
 
-           content_by_lua 'ngx.exit(ngx.OK)';
+           content_by_lua 'njt.exit(njt.OK)';
    }
 --- request
 GET /recur
@@ -266,19 +266,19 @@ end
 --- config
  location /recur {
        rewrite_by_lua '
-           local num = tonumber(ngx.var.arg_num) or 0;
-           ngx.print("num is: ", num, "\\n");
+           local num = tonumber(njt.var.arg_num) or 0;
+           njt.print("num is: ", num, "\\n");
 
            if (num > 0) then
-               local res = ngx.location.capture("/recur?num="..tostring(num - 1));
-               ngx.print("status=", res.status, " ");
-               ngx.print("body=", res.body);
+               local res = njt.location.capture("/recur?num="..tostring(num - 1));
+               njt.print("status=", res.status, " ");
+               njt.print("body=", res.body);
            else
-               ngx.print("end\\n");
+               njt.print("end\\n");
            end
            ';
 
-           content_by_lua 'ngx.exit(ngx.OK)';
+           content_by_lua 'njt.exit(njt.OK)';
    }
 --- request
 GET /recur?num=3
@@ -295,8 +295,8 @@ end
 --- config
  location /set {
        set $a "";
-       rewrite_by_lua 'ngx.var.a = 32; ngx.say(ngx.var.a)';
-       content_by_lua 'ngx.exit(ngx.OK)';
+       rewrite_by_lua 'njt.var.a = 32; njt.say(njt.var.a)';
+       content_by_lua 'njt.exit(njt.OK)';
        add_header Foo $a;
    }
 --- request
@@ -312,8 +312,8 @@ Foo: 32
 --- config
  location /set {
        set $a 'hello\n\r\'"\\'; # this runs after rewrite_by_lua
-       rewrite_by_lua 'ngx.say(ngx.quote_sql_str(ngx.var.a))';
-       content_by_lua 'ngx.exit(ngx.OK)';
+       rewrite_by_lua 'njt.say(njt.quote_sql_str(njt.var.a))';
+       content_by_lua 'njt.exit(njt.OK)';
    }
 --- request
 GET /set
@@ -326,8 +326,8 @@ GET /set
 --- config
 location /set {
     #set $a "hello\n\r'\"\\";
-    rewrite_by_lua 'ngx.say(ngx.quote_sql_str("hello\\n\\r\'\\"\\\\"))';
-    content_by_lua 'ngx.exit(ngx.OK)';
+    rewrite_by_lua 'njt.say(njt.quote_sql_str("hello\\n\\r\'\\"\\\\"))';
+    content_by_lua 'njt.exit(njt.OK)';
 }
 --- request
 GET /set
@@ -341,9 +341,9 @@ GET /set
 location /set {
     rewrite_by_lua '
         local s = "hello 112";
-        ngx.say(string.find(s, "%d+$"))';
+        njt.say(string.find(s, "%d+$"))';
 
-    content_by_lua 'ngx.exit(ngx.OK)';
+    content_by_lua 'njt.exit(njt.OK)';
 }
 --- request
 GET /set
@@ -359,8 +359,8 @@ location /sub {
 }
 location /parent {
     set $a 12;
-    rewrite_by_lua 'local res = ngx.location.capture("/sub"); ngx.print(res.body)';
-    content_by_lua 'ngx.exit(ngx.OK)';
+    rewrite_by_lua 'local res = njt.location.capture("/sub"); njt.print(res.body)';
+    content_by_lua 'njt.exit(njt.OK)';
 }
 --- request
 GET /parent
@@ -376,14 +376,14 @@ location /sub {
 location /parent {
     set $a '';
     rewrite_by_lua '
-        ngx.var.a = 12;
-        local res = ngx.location.capture(
+        njt.var.a = 12;
+        local res = njt.location.capture(
             "/sub",
             { share_all_vars = true }
         );
-        ngx.print(res.body)
+        njt.print(res.body)
     ';
-    content_by_lua 'ngx.exit(ngx.OK)';
+    content_by_lua 'njt.exit(njt.OK)';
 }
 --- request
 GET /parent
@@ -399,11 +399,11 @@ location /sub {
 }
 location /parent {
     rewrite_by_lua '
-        local res = ngx.location.capture("/sub", { share_all_vars = true });
-        ngx.say(ngx.var.a)
+        local res = njt.location.capture("/sub", { share_all_vars = true });
+        njt.say(njt.var.a)
     ';
 
-    content_by_lua 'ngx.exit(ngx.OK)';
+    content_by_lua 'njt.exit(njt.OK)';
 }
 --- request
 GET /parent
@@ -421,8 +421,8 @@ location /sub {
 
 location /parent {
     rewrite_by_lua '
-        local res = ngx.location.capture("/sub", { share_all_vars = false });
-        ngx.say(ngx.var.a)
+        local res = njt.location.capture("/sub", { share_all_vars = false });
+        njt.say(njt.var.a)
     ';
     content_by_lua return;
 }
@@ -441,11 +441,11 @@ GET /parent
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/other");
-            ngx.say("type: ", res.header["Content-Type"]);
+            local res = njt.location.capture("/other");
+            njt.say("type: ", res.header["Content-Type"]);
         ';
 
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -459,19 +459,19 @@ type: foo/bar
     location /other {
         default_type 'foo/bar';
         rewrite_by_lua '
-            ngx.header.Bar = "Bah";
+            njt.header.Bar = "Bah";
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/other");
-            ngx.say("type: ", res.header["Content-Type"]);
-            ngx.say("Bar: ", res.header["Bar"]);
+            local res = njt.location.capture("/other");
+            njt.say("type: ", res.header["Content-Type"]);
+            njt.say("Bar: ", res.header["Bar"]);
         ';
 
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -486,19 +486,19 @@ Bar: Bah
     location /other {
         default_type 'foo/bar';
         rewrite_by_lua '
-            ngx.header.Bar = "Bah";
-            ngx.header.Bar = nil;
+            njt.header.Bar = "Bah";
+            njt.header.Bar = nil;
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/other");
-            ngx.say("type: ", res.header["Content-Type"]);
-            ngx.say("Bar: ", res.header["Bar"] or "nil");
+            local res = njt.location.capture("/other");
+            njt.say("type: ", res.header["Content-Type"]);
+            njt.say("Bar: ", res.header["Bar"] or "nil");
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -508,13 +508,13 @@ Bar: nil
 
 
 
-=== TEST 27: rewrite_by_lua runs before ngx_access
+=== TEST 27: rewrite_by_lua runs before njt_access
 --- config
     location /lua {
         deny all;
 
         rewrite_by_lua '
-            ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+            njt.exit(njt.HTTP_INTERNAL_SERVER_ERROR)
         ';
 
         content_by_lua return;
@@ -552,7 +552,7 @@ foo
 === TEST 29: rewrite_by_lua shouldn't send headers automatically (on simple exit)
 --- config
     location /lua {
-        rewrite_by_lua 'ngx.exit(ngx.OK)';
+        rewrite_by_lua 'njt.exit(njt.OK)';
 
         proxy_pass http://127.0.0.1:$server_port/foo;
     }
@@ -576,14 +576,14 @@ foo
 --- config
     location /lua {
         rewrite_by_lua '
-            ngx.say("Hi")
-            ngx.eof()
-            ngx.exit(ngx.HTTP_OK)
+            njt.say("Hi")
+            njt.eof()
+            njt.exit(njt.HTTP_OK)
         ';
 
         content_by_lua '
             print("HERE")
-            ngx.print("BAD")
+            njt.print("BAD")
         ';
     }
 --- request
@@ -600,14 +600,14 @@ Hi
 
         content_by_lua '
             print("HERE")
-            ngx.print("BAD")
+            njt.print("BAD")
         ';
     }
 --- user_files
 >>> hi.lua
-ngx.say("Hi")
-ngx.eof()
-ngx.exit(ngx.HTTP_OK)
+njt.say("Hi")
+njt.eof()
+njt.exit(njt.HTTP_OK)
 --- request
 GET /lua/hi
 --- response_body
@@ -619,12 +619,12 @@ Hi
 --- config
     location ~ '^/lua/(.+)' {
         set $path $1;
-        rewrite_by_lua 'ngx.say(ngx.var.path)';
+        rewrite_by_lua 'njt.say(njt.var.path)';
         content_by_lua return;
     }
     location ~ '^/lua2/(.+)' {
         set $path $1;
-        rewrite_by_lua 'ngx.say(ngx.var.path)';
+        rewrite_by_lua 'njt.say(njt.var.path)';
         content_by_lua return;
     }
     location /main {
@@ -645,7 +645,7 @@ bah
 
 === TEST 33: server rewrite_by_lua
 --- config
-    rewrite_by_lua 'ngx.header["X-Foo"] = "bar" -- ngx.send_headers()';
+    rewrite_by_lua 'njt.header["X-Foo"] = "bar" -- njt.send_headers()';
 --- request
 GET /
 --- response_body chop
@@ -662,7 +662,7 @@ X-Foo: bar
     rewrite_by_lua_file html/foo.lua;
 --- user_files
 >>> foo.lua
-ngx.header["X-Foo"] = "bar" -- ngx.send_headers()
+njt.header["X-Foo"] = "bar" -- njt.send_headers()
 --- request
 GET /
 --- response_body chop
@@ -676,7 +676,7 @@ X-Foo: bar
 --- config
     location /main {
         rewrite ^/main/xyz\.html$ /abc.html last;
-        rewrite_by_lua 'ngx.exit(503)';
+        rewrite_by_lua 'njt.exit(503)';
     }
     location ~ /abc.html {
         echo abc;
@@ -699,7 +699,7 @@ abc
     }
 --- user_files
 >>> exit.lua
-ngx.exit(503)
+njt.exit(503)
 --- request
     GET /main/xyz.html
 --- response_body
@@ -711,7 +711,7 @@ abc
 --- config
     location /main {
         rewrite ^/main/xyz\.html$ /abc.html;
-        rewrite_by_lua 'ngx.exit(503)';
+        rewrite_by_lua 'njt.exit(503)';
     }
     location ~ /abc.html {
         echo abc;
@@ -727,7 +727,7 @@ abc
 --- config
     location /main {
         rewrite ^/main/xyz\.html$ /abc.html break;
-        rewrite_by_lua 'ngx.exit(503)';
+        rewrite_by_lua 'njt.exit(503)';
     }
     location ~ /abc.html {
         echo abc;
@@ -746,8 +746,8 @@ abc
     }
 --- user_files
 >>> test.lua
-v = ngx.var["request_uri"]
-ngx.print("request_uri: ", v, "\n")
+v = njt.var["request_uri"]
+njt.print("request_uri: ", v, "\n")
 --- request
 GET /lua?a=1&b=2
 --- response_body_like: 404 Not Found
@@ -757,10 +757,10 @@ qr/failed to load external Lua file ".*?\btest2\.lua": cannot open .*? No such f
 
 
 
-=== TEST 40: use of ngx.say() in rewrite_by_lua without exiting with 200+.
+=== TEST 40: use of njt.say() in rewrite_by_lua without exiting with 200+.
 --- config
     location /t {
-        rewrite_by_lua "ngx.say('test')";
+        rewrite_by_lua "njt.say('test')";
         echo_exec /t2;
     }
 --- request
@@ -772,10 +772,10 @@ test
 
 
 
-=== TEST 41: use of ngx.say() in rewrite_by_lua without exiting with 200+. (with explicit ngx.eof())
+=== TEST 41: use of njt.say() in rewrite_by_lua without exiting with 200+. (with explicit njt.eof())
 --- config
     location /t {
-        rewrite_by_lua "ngx.say('test') ngx.eof()";
+        rewrite_by_lua "njt.say('test') njt.eof()";
         echo_exec /t2;
     }
 --- request
@@ -787,10 +787,10 @@ test
 
 
 
-=== TEST 42: use of ngx.say() in rewrite_by_lua without exiting with 200+. (with IO)
+=== TEST 42: use of njt.say() in rewrite_by_lua without exiting with 200+. (with IO)
 --- config
     location /t {
-        rewrite_by_lua "ngx.say('test') ngx.sleep(0.001)";
+        rewrite_by_lua "njt.say('test') njt.sleep(0.001)";
         echo_exec /t2;
     }
 --- request

@@ -25,12 +25,12 @@ __DATA__
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("hello in thread")
+                njt.say("hello in thread")
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
         ';
     }
 --- request
@@ -59,20 +59,20 @@ after
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("in thread 1")
+                njt.say("in thread 1")
             end
 
             local function g()
-                ngx.say("in thread 2")
+                njt.say("in thread 2")
             end
 
-            ngx.say("before 1")
-            ngx.thread.spawn(f)
-            ngx.say("after 1")
+            njt.say("before 1")
+            njt.thread.spawn(f)
+            njt.say("after 1")
 
-            ngx.say("before 2")
-            ngx.thread.spawn(g)
-            ngx.say("after 2")
+            njt.say("before 2")
+            njt.thread.spawn(g)
+            njt.say("after 2")
         ';
     }
 --- request
@@ -108,14 +108,14 @@ after 2
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("before sleep")
-                ngx.sleep(0.1)
-                ngx.say("after sleep")
+                njt.say("before sleep")
+                njt.sleep(0.1)
+                njt.say("after sleep")
             end
 
-            ngx.say("before thread create")
-            ngx.thread.spawn(f)
-            ngx.say("after thread create")
+            njt.say("before thread create")
+            njt.thread.spawn(f)
+            njt.say("after thread create")
         ';
     }
 --- request
@@ -145,24 +145,24 @@ after sleep
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("1: before sleep")
-                ngx.sleep(0.2)
-                ngx.say("1: after sleep")
+                njt.say("1: before sleep")
+                njt.sleep(0.2)
+                njt.say("1: after sleep")
             end
 
             local function g()
-                ngx.say("2: before sleep")
-                ngx.sleep(0.1)
-                ngx.say("2: after sleep")
+                njt.say("2: before sleep")
+                njt.sleep(0.1)
+                njt.say("2: after sleep")
             end
 
-            ngx.say("1: before thread create")
-            ngx.thread.spawn(f)
-            ngx.say("1: after thread create")
+            njt.say("1: before thread create")
+            njt.thread.spawn(f)
+            njt.say("1: after thread create")
 
-            ngx.say("2: before thread create")
-            ngx.thread.spawn(g)
-            ngx.say("2: after thread create")
+            njt.say("2: before thread create")
+            njt.thread.spawn(g)
+            njt.say("2: after thread create")
         ';
     }
 --- request
@@ -201,11 +201,11 @@ delete thread 2
     location /lua {
         content_by_lua '
             local function f()
-                ngx.blah()
+                njt.blah()
             end
 
-            ngx.thread.spawn(f)
-            ngx.say("after")
+            njt.thread.spawn(f)
+            njt.say("after")
         ';
     }
 --- request
@@ -232,14 +232,14 @@ qr/lua user thread aborted: runtime error: content_by_lua\(nginx\.conf:\d+\):3: 
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("before capture")
-                local res = ngx.location.capture("/proxy")
-                ngx.say("after capture: ", res.body)
+                njt.say("before capture")
+                local res = njt.location.capture("/proxy")
+                njt.say("after capture: ", res.body)
             end
 
-            ngx.say("before thread create")
-            ngx.thread.spawn(f)
-            ngx.say("after thread create")
+            njt.say("before thread create")
+            njt.thread.spawn(f)
+            njt.say("after thread create")
         ';
     }
 
@@ -278,16 +278,16 @@ after capture: hello world
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("before capture")
-                local res = ngx.location.capture("/proxy?foo")
-                ngx.say("after capture: ", res.body)
+                njt.say("before capture")
+                local res = njt.location.capture("/proxy?foo")
+                njt.say("after capture: ", res.body)
             end
 
-            ngx.say("before thread create")
-            ngx.thread.spawn(f)
-            ngx.say("after thread create")
-            local res = ngx.location.capture("/proxy?bar")
-            ngx.say("capture: ", res.body)
+            njt.say("before thread create")
+            njt.thread.spawn(f)
+            njt.say("after thread create")
+            local res = njt.location.capture("/proxy?bar")
+            njt.say("capture: ", res.body)
         ';
     }
 
@@ -331,16 +331,16 @@ after capture: hello foo
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("before capture")
-                local res = ngx.location.capture("/proxy?foo")
-                ngx.say("after capture: ", res.body)
+                njt.say("before capture")
+                local res = njt.location.capture("/proxy?foo")
+                njt.say("after capture: ", res.body)
             end
 
-            ngx.say("before thread create")
-            ngx.thread.spawn(f)
-            ngx.say("after thread create")
-            local res = ngx.location.capture("/proxy?bar")
-            ngx.say("capture: ", res.body)
+            njt.say("before thread create")
+            njt.thread.spawn(f)
+            njt.say("after thread create")
+            local res = njt.location.capture("/proxy?bar")
+            njt.say("capture: ", res.body)
         ';
     }
 
@@ -385,27 +385,27 @@ capture: hello bar
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("f: before capture")
-                local res = ngx.location.capture("/proxy?foo")
-                ngx.say("f: after capture: ", res.body)
+                njt.say("f: before capture")
+                local res = njt.location.capture("/proxy?foo")
+                njt.say("f: after capture: ", res.body)
             end
 
             local function g()
-                ngx.say("g: before capture")
-                local res = ngx.location.capture("/proxy?bah")
-                ngx.say("g: after capture: ", res.body)
+                njt.say("g: before capture")
+                local res = njt.location.capture("/proxy?bah")
+                njt.say("g: after capture: ", res.body)
             end
 
-            ngx.say("before thread 1 create")
-            ngx.thread.spawn(f)
-            ngx.say("after thread 1 create")
+            njt.say("before thread 1 create")
+            njt.thread.spawn(f)
+            njt.say("after thread 1 create")
 
-            ngx.say("before thread 2 create")
-            ngx.thread.spawn(g)
-            ngx.say("after thread 2 create")
+            njt.say("before thread 2 create")
+            njt.thread.spawn(g)
+            njt.say("after thread 2 create")
 
-            local res = ngx.location.capture("/proxy?bar")
-            ngx.say("capture: ", res.body)
+            local res = njt.location.capture("/proxy?bar")
+            njt.say("capture: ", res.body)
         ';
     }
 
@@ -464,18 +464,18 @@ g: after capture: hello bah
         content_by_lua '
             local g
             local function f()
-                ngx.say("before g")
-                ngx.thread.spawn(g)
-                ngx.say("after g")
+                njt.say("before g")
+                njt.thread.spawn(g)
+                njt.say("after g")
             end
 
             function g()
-                ngx.say("hello in g()")
+                njt.say("hello in g()")
             end
 
-            ngx.say("before f")
-            ngx.thread.spawn(f)
-            ngx.say("after f")
+            njt.say("before f")
+            njt.thread.spawn(f)
+            njt.say("after f")
         ';
     }
 --- request
@@ -511,19 +511,19 @@ after g
         content_by_lua '
             local g
             local function f()
-                ngx.say("before g")
-                ngx.thread.spawn(g)
-                ngx.say("after g")
+                njt.say("before g")
+                njt.thread.spawn(g)
+                njt.say("after g")
             end
 
             function g()
-                ngx.sleep(0.1)
-                ngx.say("hello in g()")
+                njt.sleep(0.1)
+                njt.say("hello in g()")
             end
 
-            ngx.say("before f")
-            ngx.thread.spawn(f)
-            ngx.say("after f")
+            njt.say("before f")
+            njt.thread.spawn(f)
+            njt.say("after f")
         ';
     }
 --- request
@@ -560,11 +560,11 @@ hello in g()
             local co
             local function f()
                 co = coroutine.running()
-                ngx.sleep(0.1)
+                njt.sleep(0.1)
             end
 
-            ngx.thread.spawn(f)
-            ngx.say("status: ", coroutine.status(co))
+            njt.thread.spawn(f)
+            njt.say("status: ", coroutine.status(co))
         ';
     }
 --- request
@@ -595,8 +595,8 @@ status: running
                 co = coroutine.running()
             end
 
-            ngx.thread.spawn(f)
-            ngx.say("status: ", coroutine.status(co))
+            njt.thread.spawn(f)
+            njt.say("status: ", coroutine.status(co))
         ';
     }
 --- request
@@ -631,11 +631,11 @@ status: zombie
             end
 
             function g()
-                ngx.sleep(0.1)
+                njt.sleep(0.1)
             end
 
-            ngx.thread.spawn(f)
-            ngx.say("status: ", coroutine.status(co))
+            njt.thread.spawn(f)
+            njt.say("status: ", coroutine.status(co))
         ';
     }
 --- request
@@ -665,19 +665,19 @@ status: normal
         content_by_lua '
             local g
             local function f()
-                ngx.say("before g")
-                ngx.thread.spawn(g)
-                ngx.say("after g")
+                njt.say("before g")
+                njt.thread.spawn(g)
+                njt.say("after g")
             end
 
             function g()
-                ngx.say("hello in g()")
+                njt.say("hello in g()")
             end
 
-            ngx.say("before f")
+            njt.say("before f")
             local co = coroutine.create(f)
             coroutine.resume(co)
-            ngx.say("after f")
+            njt.say("after f")
         ';
     }
 --- request
@@ -713,23 +713,23 @@ after f
 
             local function f()
                 local self = coroutine.running()
-                ngx.say("f 1")
+                njt.say("f 1")
                 yield(self)
-                ngx.say("f 2")
+                njt.say("f 2")
                 yield(self)
-                ngx.say("f 3")
+                njt.say("f 3")
             end
 
             local self = coroutine.running()
-            ngx.say("0")
+            njt.say("0")
             yield(self)
-            ngx.say("1")
-            ngx.thread.spawn(f)
-            ngx.say("2")
+            njt.say("1")
+            njt.thread.spawn(f)
+            njt.say("2")
             yield(self)
-            ngx.say("3")
+            njt.say("3")
             yield(self)
-            ngx.say("4")
+            njt.say("4")
         ';
     }
 --- request
@@ -766,25 +766,25 @@ f 3
 
             local function f()
                 local self = coroutine.running()
-                ngx.say("f 1")
+                njt.say("f 1")
                 yield(self)
-                ngx.say("f 2")
+                njt.say("f 2")
                 yield(self)
-                ngx.say("f 3")
+                njt.say("f 3")
             end
 
             local function g()
                 local self = coroutine.running()
-                ngx.say("g 1")
+                njt.say("g 1")
                 yield(self)
-                ngx.say("g 2")
+                njt.say("g 2")
                 yield(self)
-                ngx.say("g 3")
+                njt.say("g 3")
             end
 
-            ngx.thread.spawn(f)
-            ngx.thread.spawn(g)
-            ngx.say("done")
+            njt.thread.spawn(f)
+            njt.thread.spawn(g)
+            njt.say("done")
         ';
     }
 --- request
@@ -821,15 +821,15 @@ g 3
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("hello in thread")
+                njt.say("hello in thread")
                 coroutine.yield(coroutine.running)
-                ngx.flush(true)
+                njt.flush(true)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
-            ngx.flush(true)
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
+            njt.flush(true)
         ';
     }
 --- request
@@ -858,17 +858,17 @@ after
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("hello from f")
-                ngx.flush(true)
+                njt.say("hello from f")
+                njt.flush(true)
             end
 
             local function g()
-                ngx.say("hello from g")
-                ngx.flush(true)
+                njt.say("hello from g")
+                njt.flush(true)
             end
 
-            ngx.thread.spawn(f)
-            ngx.thread.spawn(g)
+            njt.thread.spawn(f)
+            njt.thread.spawn(g)
         ';
     }
 --- request
@@ -904,35 +904,35 @@ hello from g
 
 
 
-=== TEST 20: user threads + ngx.socket.tcp
+=== TEST 20: user threads + njt.socket.tcp
 --- config
     location /lua {
         content_by_lua '
             local function f()
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
                 if not ok then
-                    ngx.say("failed to connect: ", err)
+                    njt.say("failed to connect: ", err)
                     return
                 end
                 local bytes, err = sock:send("flush_all\\r\\n")
                 if not bytes then
-                    ngx.say("failed to send query: ", err)
+                    njt.say("failed to send query: ", err)
                     return
                 end
 
                 local line, err = sock:receive()
                 if not line then
-                    ngx.say("failed to receive: ", err)
+                    njt.say("failed to receive: ", err)
                     return
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
         ';
     }
 --- request
@@ -956,31 +956,31 @@ received: OK
 
 
 
-=== TEST 21: user threads + ngx.socket.udp
+=== TEST 21: user threads + njt.socket.udp
 --- config
     location /lua {
         content_by_lua '
             local function f()
-                local sock = ngx.socket.udp()
+                local sock = njt.socket.udp()
                 local ok, err = sock:setpeername("127.0.0.1", 12345)
                 local bytes, err = sock:send("blah")
                 if not bytes then
-                    ngx.say("failed to send query: ", err)
+                    njt.say("failed to send query: ", err)
                     return
                 end
 
                 local line, err = sock:receive()
                 if not line then
-                    ngx.say("failed to receive: ", err)
+                    njt.say("failed to receive: ", err)
                     return
                 end
 
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
         ';
     }
 --- request
@@ -1018,19 +1018,19 @@ after)$
 
 
 
-=== TEST 22: simple user thread with ngx.req.read_body()
+=== TEST 22: simple user thread with njt.req.read_body()
 --- config
     location /lua {
         content_by_lua '
             local function f()
-                ngx.req.read_body()
-                local body = ngx.req.get_body_data()
-                ngx.say("body: ", body)
+                njt.req.read_body()
+                local body = njt.req.get_body_data()
+                njt.say("body: ", body)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
         ';
     }
 --- request
@@ -1063,24 +1063,24 @@ body: hello world)$
 
 
 
-=== TEST 23: simple user thread with ngx.req.socket()
+=== TEST 23: simple user thread with njt.req.socket()
 --- config
     location /lua {
         content_by_lua '
             local function f()
-                local sock = ngx.req.socket()
+                local sock = njt.req.socket()
                 local body, err = sock:receive(11)
                 if not body then
-                    ngx.say("failed to read body: ", err)
+                    njt.say("failed to read body: ", err)
                     return
                 end
 
-                ngx.say("body: ", body)
+                njt.say("body: ", body)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
         ';
     }
 --- request
@@ -1118,12 +1118,12 @@ body: hello world)$
     location /lua {
         content_by_lua '
             local function f(a, b)
-                ngx.say("hello ", a, " and ", b)
+                njt.say("hello ", a, " and ", b)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f, "foo", 3.14)
-            ngx.say("after")
+            njt.say("before")
+            njt.thread.spawn(f, "foo", 3.14)
+            njt.say("after")
         ';
     }
 --- request
@@ -1151,21 +1151,21 @@ after
 --- config
     location /t {
         content_by_lua '
-            local capture = ngx.location.capture
+            local capture = njt.location.capture
             local insert = table.insert
 
             local function f(i)
                 local res = capture("/proxy/" .. i)
-                ngx.say("status: ", res.status)
+                njt.say("status: ", res.status)
             end
 
             local threads = {}
             for i = 1, 2 do
-                local co = ngx.thread.spawn(f, i)
+                local co = njt.thread.spawn(f, i)
                 insert(threads, co)
             end
 
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 
@@ -1179,19 +1179,19 @@ after
 "$::GCScript"
 .
 '
-F(ngx_http_finalize_request) {
-    printf("finalize request %s: rc:%d c:%d a:%d\n", ngx_http_req_uri($r), $rc, $r->main->count, $r == $r->main);
+F(njt_http_finalize_request) {
+    printf("finalize request %s: rc:%d c:%d a:%d\n", njt_http_req_uri($r), $rc, $r->main->count, $r == $r->main);
     #if ($rc == -1) {
         #print_ubacktrace()
     #}
 }
 
 M(http-subrequest-done) {
-    printf("subrequest %s done\n", ngx_http_req_uri($r))
+    printf("subrequest %s done\n", njt_http_req_uri($r))
 }
 
-F(ngx_http_lua_post_subrequest) {
-    printf("post subreq: %s rc=%d, status=%d a=%d\n", ngx_http_req_uri($r), $rc,
+F(njt_http_lua_post_subrequest) {
+    printf("post subreq: %s rc=%d, status=%d a=%d\n", njt_http_req_uri($r), $rc,
          $r->headers_out->status, $r == $r->main)
     #print_ubacktrace()
 }
@@ -1231,21 +1231,21 @@ status: 404
 --- config
     location /t {
         content_by_lua '
-            local capture = ngx.location.capture
+            local capture = njt.location.capture
             local insert = table.insert
 
             local function f(i)
                 local res = capture("/proxy/" .. i)
-                ngx.say("status: ", res.status)
+                njt.say("status: ", res.status)
             end
 
             local threads = {}
             for i = 1, 5 do
-                local co = ngx.thread.spawn(f, i)
+                local co = njt.thread.spawn(f, i)
                 insert(threads, co)
             end
 
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 
@@ -1312,26 +1312,26 @@ status: 404
 --- config
     location /t {
         content_by_lua '
-            local capture = ngx.location.capture
+            local capture = njt.location.capture
             local insert = table.insert
 
             local function f(i)
                 local res = capture("/proxy/" .. i)
-                ngx.say("status: ", res.status)
+                njt.say("status: ", res.status)
             end
 
             local threads = {}
             for i = 1, 2 do
-                local co = ngx.thread.spawn(f, i)
+                local co = njt.thread.spawn(f, i)
                 insert(threads, co)
             end
 
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 
     location ~ ^/proxy/(\d+) {
-        content_by_lua 'ngx.exit(201)';
+        content_by_lua 'njt.exit(201)';
     }
 --- request
     GET /t
@@ -1340,19 +1340,19 @@ status: 404
 "$::GCScript"
 .
 '
-F(ngx_http_finalize_request) {
-    printf("finalize request %s: rc:%d c:%d a:%d\n", ngx_http_req_uri($r), $rc, $r->main->count, $r == $r->main);
+F(njt_http_finalize_request) {
+    printf("finalize request %s: rc:%d c:%d a:%d\n", njt_http_req_uri($r), $rc, $r->main->count, $r == $r->main);
     #if ($rc == -1) {
         #print_ubacktrace()
     #}
 }
 
 M(http-subrequest-done) {
-    printf("subrequest %s done\n", ngx_http_req_uri($r))
+    printf("subrequest %s done\n", njt_http_req_uri($r))
 }
 
-F(ngx_http_lua_post_subrequest) {
-    printf("post subreq: %s rc=%d, status=%d a=%d\n", ngx_http_req_uri($r), $rc,
+F(njt_http_lua_post_subrequest) {
+    printf("post subreq: %s rc=%d, status=%d a=%d\n", njt_http_req_uri($r), $rc,
          $r->headers_out->status, $r == $r->main)
     #print_ubacktrace()
 }
@@ -1397,26 +1397,26 @@ status: 201
 --- config
     location /t {
         content_by_lua '
-            local capture = ngx.location.capture
+            local capture = njt.location.capture
             local insert = table.insert
 
             local function f(i)
                 local res = capture("/proxy/" .. i)
-                ngx.say("status: ", res.status)
+                njt.say("status: ", res.status)
             end
 
             local threads = {}
             for i = 1, 2 do
-                local co = ngx.thread.spawn(f, i)
+                local co = njt.thread.spawn(f, i)
                 insert(threads, co)
             end
 
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 
     location ~ ^/proxy/(\d+) {
-        content_by_lua 'ngx.exit(204)';
+        content_by_lua 'njt.exit(204)';
     }
 --- request
     GET /t
@@ -1425,19 +1425,19 @@ status: 201
 "$::GCScript"
 .
 '
-F(ngx_http_finalize_request) {
-    printf("finalize request %s: rc:%d c:%d a:%d\n", ngx_http_req_uri($r), $rc, $r->main->count, $r == $r->main);
+F(njt_http_finalize_request) {
+    printf("finalize request %s: rc:%d c:%d a:%d\n", njt_http_req_uri($r), $rc, $r->main->count, $r == $r->main);
     #if ($rc == -1) {
         #print_ubacktrace()
     #}
 }
 
 M(http-subrequest-done) {
-    printf("subrequest %s done\n", ngx_http_req_uri($r))
+    printf("subrequest %s done\n", njt_http_req_uri($r))
 }
 
-F(ngx_http_lua_post_subrequest) {
-    printf("post subreq: %s rc=%d, status=%d a=%d\n", ngx_http_req_uri($r), $rc,
+F(njt_http_lua_post_subrequest) {
+    printf("post subreq: %s rc=%d, status=%d a=%d\n", njt_http_req_uri($r), $rc,
          $r->headers_out->status, $r == $r->main)
     #print_ubacktrace()
 }
@@ -1482,7 +1482,7 @@ status: 204
     location /t {
         content_by_lua '
             local n = 5
-            local capture = ngx.location.capture
+            local capture = njt.location.capture
             local insert = table.insert
 
             local function f(i)
@@ -1492,16 +1492,16 @@ status: 204
 
             local threads = {}
             for i = 1, n do
-                local co = ngx.thread.spawn(f, i)
+                local co = njt.thread.spawn(f, i)
                 insert(threads, co)
             end
 
             for i = 1, n do
-                local ok, res = ngx.thread.wait(threads[i])
-                ngx.say(i, ": ", res)
+                local ok, res = njt.thread.wait(threads[i])
+                njt.say(i, ": ", res)
             end
 
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 
@@ -1559,7 +1559,7 @@ ok
     location /t {
         content_by_lua '
             local n = 20
-            local capture = ngx.location.capture
+            local capture = njt.location.capture
             local insert = table.insert
 
             local function f(i)
@@ -1569,16 +1569,16 @@ ok
 
             local threads = {}
             for i = 1, n do
-                local co = ngx.thread.spawn(f, i)
+                local co = njt.thread.spawn(f, i)
                 insert(threads, co)
             end
 
             for i = 1, n do
-                local ok, res = ngx.thread.wait(threads[i])
-                ngx.say(i, ": ", res)
+                local ok, res = njt.thread.wait(threads[i])
+                njt.say(i, ": ", res)
             end
 
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 
@@ -1652,11 +1652,11 @@ ok
     location /lua {
         content_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.say("f")
+                njt.sleep(0.1)
+                njt.say("f")
             end
 
-            ngx.thread.spawn(f)
+            njt.thread.spawn(f)
             collectgarbage()
         ';
     }

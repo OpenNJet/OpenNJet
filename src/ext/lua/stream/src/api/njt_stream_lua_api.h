@@ -27,10 +27,10 @@
 #include <stdint.h>
 
 
-/* Public API for other Nginx modules */
+/* Public API for other NJet modules */
 
 
-#define njt_stream_lua_version  11
+#define njt_stream_lua_version  14
 
 
 typedef struct {

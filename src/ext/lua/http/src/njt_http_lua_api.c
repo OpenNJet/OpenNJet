@@ -214,4 +214,132 @@ njt_http_lua_shared_memory_init(njt_shm_zone_t *shm_zone, void *data)
     return NJT_OK;
 }
 
+
+njt_http_lua_co_ctx_t *
+njt_http_lua_get_cur_co_ctx(njt_http_request_t *r)
+{
+    njt_http_lua_ctx_t  *ctx;
+
+    ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
+
+    return ctx->cur_co_ctx;
+}
+
+
+void
+njt_http_lua_set_cur_co_ctx(njt_http_request_t *r, njt_http_lua_co_ctx_t *coctx)
+{
+    njt_http_lua_ctx_t  *ctx;
+
+    ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
+
+    coctx->data = r;
+
+    ctx->cur_co_ctx = coctx;
+}
+
+
+lua_State *
+njt_http_lua_get_co_ctx_vm(njt_http_lua_co_ctx_t *coctx)
+{
+    return coctx->co;
+}
+
+
+static njt_int_t
+njt_http_lua_co_ctx_resume(njt_http_request_t *r)
+{
+    lua_State                   *vm;
+    njt_connection_t            *c;
+    njt_int_t                    rc;
+    njt_uint_t                   nreqs;
+    njt_http_lua_ctx_t          *ctx;
+
+    ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
+    if (ctx == NULL) {
+        return NJT_ERROR;
+    }
+
+    ctx->resume_handler = njt_http_lua_wev_handler;
+
+    c = r->connection;
+    vm = njt_http_lua_get_lua_vm(r, ctx);
+    nreqs = c->requests;
+
+    rc = njt_http_lua_run_thread(vm, r, ctx, ctx->cur_co_ctx->nrets);
+
+    njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
+                   "lua run thread returned %d", rc);
+
+    if (rc == NJT_AGAIN) {
+        return njt_http_lua_run_posted_threads(c, vm, r, ctx, nreqs);
+    }
+
+    if (rc == NJT_DONE) {
+        njt_http_lua_finalize_request(r, NJT_DONE);
+        return njt_http_lua_run_posted_threads(c, vm, r, ctx, nreqs);
+    }
+
+    if (ctx->entered_content_phase) {
+        njt_http_lua_finalize_request(r, rc);
+        return NJT_DONE;
+    }
+
+    return rc;
+}
+
+
+void
+njt_http_lua_co_ctx_resume_helper(njt_http_lua_co_ctx_t *coctx, int nrets)
+{
+    njt_connection_t        *c;
+    njt_http_request_t      *r;
+    njt_http_lua_ctx_t      *ctx;
+    njt_http_log_ctx_t      *log_ctx;
+
+    r = coctx->data;
+    c = r->connection;
+
+    ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
+
+    if (ctx == NULL) {
+        return;
+    }
+
+    if (c->fd != (njt_socket_t) -1) {  /* not a fake connection */
+        log_ctx = c->log->data;
+        log_ctx->current_request = r;
+    }
+
+    coctx->nrets = nrets;
+    coctx->cleanup = NULL;
+
+    njt_log_debug2(NJT_LOG_DEBUG_HTTP, c->log, 0,
+                   "lua coctx resume handler: \"%V?%V\"", &r->uri, &r->args);
+
+    ctx->cur_co_ctx = coctx;
+
+    if (ctx->entered_content_phase) {
+        (void) njt_http_lua_co_ctx_resume(r);
+
+    } else {
+        ctx->resume_handler = njt_http_lua_co_ctx_resume;
+        njt_http_core_run_phases(r);
+    }
+
+    njt_http_run_posted_requests(c);
+}
+
+
+int
+njt_http_lua_get_lua_http10_buffering(njt_http_request_t *r)
+{
+    njt_http_lua_loc_conf_t      *llcf;
+
+    llcf = njt_http_get_module_loc_conf(r, njt_http_lua_module);
+
+    return llcf->http10_buffering;
+}
+
+
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */

@@ -20,18 +20,18 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: 404 parallel subrequests after ngx.eof()
+=== TEST 1: 404 parallel subrequests after njt.eof()
 --- config
     location = /lua {
         content_by_lua '
-            ngx.say(1)
-            ngx.eof()
-            local res1, res2 = ngx.location.capture_multi{
+            njt.say(1)
+            njt.eof()
+            local res1, res2 = njt.location.capture_multi{
                 { "/bad1" },
                 { "/bad2" }
             }
-            ngx.log(ngx.WARN, "res1: ", res1.status)
-            ngx.log(ngx.WARN, "res2: ", res2.status)
+            njt.log(njt.WARN, "res1: ", res1.status)
+            njt.log(njt.WARN, "res2: ", res2.status)
         ';
     }
 --- request
@@ -47,18 +47,18 @@ No such file or directory
 
 
 
-=== TEST 2: parallel normal subrequests after ngx.eof()
+=== TEST 2: parallel normal subrequests after njt.eof()
 --- config
     location = /t {
         content_by_lua '
-            ngx.say(1)
-            ngx.eof()
-            local r1, r2 = ngx.location.capture_multi{
+            njt.say(1)
+            njt.eof()
+            local r1, r2 = njt.location.capture_multi{
                 { "/proxy/tom" },
                 { "/proxy/jim" }
             }
-            ngx.log(ngx.WARN, r1.body)
-            ngx.log(ngx.WARN, r2.body)
+            njt.log(njt.WARN, r1.body)
+            njt.log(njt.WARN, r2.body)
         ';
     }
 

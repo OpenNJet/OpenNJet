@@ -1,7 +1,6 @@
 
 # Copyright (C) Igor Sysoev
-# Copyright (C) Nginx, Inc.
-# Copyright (C) TMLake, Inc.
+# Copyright (C) NJet, Inc.
 
 
 CFLAGS =	-c -zq -bt=nt -ot -op -oi -oe -s -bm $(CPU_OPT)

@@ -15,6 +15,7 @@
 #include "njt_http_lua_directive.h"
 #include "njt_http_lua_capturefilter.h"
 #include "njt_http_lua_contentby.h"
+#include "njt_http_lua_server_rewriteby.h"
 #include "njt_http_lua_rewriteby.h"
 #include "njt_http_lua_accessby.h"
 #include "njt_http_lua_logby.h"
@@ -32,6 +33,7 @@
 #include "njt_http_lua_ssl_session_storeby.h"
 #include "njt_http_lua_ssl_session_fetchby.h"
 #include "njt_http_lua_headers.h"
+#include "njt_http_lua_headers_out.h"
 #include "njt_http_lua_pipe.h"
 
 
@@ -47,6 +49,8 @@ static char *njt_http_lua_merge_loc_conf(njt_conf_t *cf, void *parent,
 static njt_int_t njt_http_lua_init(njt_conf_t *cf);
 static char *njt_http_lua_lowat_check(njt_conf_t *cf, void *post, void *data);
 #if (NJT_HTTP_SSL)
+static njt_int_t njt_http_lua_merge_ssl(njt_conf_t *cf,
+    njt_http_lua_loc_conf_t *conf, njt_http_lua_loc_conf_t *prev);
 static njt_int_t njt_http_lua_set_ssl(njt_conf_t *cf,
     njt_http_lua_loc_conf_t *llcf);
 #if (njet_version >= 1019004)
@@ -56,6 +60,9 @@ static char *njt_http_lua_ssl_conf_command_check(njt_conf_t *cf, void *post,
 #endif
 static char *njt_http_lua_malloc_trim(njt_conf_t *cf, njt_command_t *cmd,
     void *conf);
+#if (NJT_PCRE2)
+extern void njt_http_lua_regex_cleanup(void *data);
+#endif
 
 
 static njt_conf_post_t  njt_http_lua_lowat_post =
@@ -290,6 +297,22 @@ static njt_command_t njt_http_lua_cmds[] = {
       0,
       (void *) njt_http_lua_filter_set_by_lua_file },
 #endif
+
+    /* server_rewrite_by_lua_block { <inline script> } */
+    { njt_string("server_rewrite_by_lua_block"),
+        NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_BLOCK|NJT_CONF_NOARGS,
+        njt_http_lua_server_rewrite_by_lua_block,
+        NJT_HTTP_SRV_CONF_OFFSET,
+        0,
+        (void *) njt_http_lua_server_rewrite_handler_inline },
+
+    /* server_rewrite_by_lua_file filename; */
+    { njt_string("server_rewrite_by_lua_file"),
+        NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_CONF_TAKE1,
+        njt_http_lua_server_rewrite_by_lua,
+        NJT_HTTP_SRV_CONF_OFFSET,
+        0,
+        (void *) njt_http_lua_server_rewrite_handler_file },
 
     /* rewrite_by_lua "<inline script>" */
     { njt_string("rewrite_by_lua"),
@@ -631,6 +654,20 @@ static njt_command_t njt_http_lua_cmds[] = {
       offsetof(njt_http_lua_loc_conf_t, ssl_verify_depth),
       NULL },
 
+    { njt_string("lua_ssl_certificate"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_array_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_lua_loc_conf_t, ssl_certificates),
+      NULL },
+
+    { njt_string("lua_ssl_certificate_key"),
+      NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_array_slot,
+      NJT_HTTP_LOC_CONF_OFFSET,
+      offsetof(njt_http_lua_loc_conf_t, ssl_certificate_keys),
+      NULL },
+
     { njt_string("lua_ssl_trusted_certificate"),
       NJT_HTTP_MAIN_CONF|NJT_HTTP_SRV_CONF|NJT_HTTP_LOC_CONF|NJT_CONF_TAKE1,
       njt_conf_set_str_slot,
@@ -753,6 +790,16 @@ njt_http_lua_init(njt_conf_t *cf)
 
     cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
 
+    if (lmcf->requires_server_rewrite) {
+        h = njt_array_push(
+          &cmcf->phases[NJT_HTTP_SERVER_REWRITE_PHASE].handlers);
+        if (h == NULL) {
+            return NJT_ERROR;
+        }
+
+        *h = njt_http_lua_server_rewrite_handler;
+    }
+
     if (lmcf->requires_rewrite) {
         h = njt_array_push(&cmcf->phases[NJT_HTTP_REWRITE_PHASE].handlers);
         if (h == NULL) {
@@ -811,6 +858,17 @@ njt_http_lua_init(njt_conf_t *cf)
 
     cln->data = lmcf;
     cln->handler = njt_http_lua_sema_mm_cleanup;
+
+#if (NJT_PCRE2)
+    /* add the cleanup of pcre2 regex */
+    cln = njt_pool_cleanup_add(cf->pool, 0);
+    if (cln == NULL) {
+        return NJT_ERROR;
+    }
+
+    cln->data = lmcf;
+    cln->handler = njt_http_lua_regex_cleanup;
+#endif
 
 #ifdef HAVE_NJT_LUA_PIPE
     njt_http_lua_pipe_init();
@@ -1087,6 +1145,15 @@ njt_http_lua_init_main_conf(njt_conf_t *cf, void *conf)
         lmcf->worker_thread_vm_pool_size = 100;
     }
 
+    if (njt_http_lua_init_builtin_headers_out(cf, lmcf) != NJT_OK) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0, "init header out error");
+
+        return NJT_CONF_ERROR;
+    }
+
+    dd("init built in headers out hash size: %ld",
+       lmcf->builtin_headers_out.size);
+
     return NJT_CONF_OK;
 }
 
@@ -1104,22 +1171,27 @@ njt_http_lua_create_srv_conf(njt_conf_t *cf)
     /* set by njt_pcalloc:
      *      lscf->srv.ssl_client_hello_handler = NULL;
      *      lscf->srv.ssl_client_hello_src = { 0, NULL };
+     *      lscf->srv.ssl_client_hello_chunkname = NULL;
      *      lscf->srv.ssl_client_hello_src_key = NULL;
      *
      *      lscf->srv.ssl_cert_handler = NULL;
      *      lscf->srv.ssl_cert_src = { 0, NULL };
+     *      lscf->srv.ssl_cert_chunkname = NULL;
      *      lscf->srv.ssl_cert_src_key = NULL;
      *
-     *      lscf->srv.ssl_session_store_handler = NULL;
-     *      lscf->srv.ssl_session_store_src = { 0, NULL };
-     *      lscf->srv.ssl_session_store_src_key = NULL;
+     *      lscf->srv.ssl_sess_store_handler = NULL;
+     *      lscf->srv.ssl_sess_store_src = { 0, NULL };
+     *      lscf->srv.ssl_sess_store_chunkname = NULL;
+     *      lscf->srv.ssl_sess_store_src_key = NULL;
      *
-     *      lscf->srv.ssl_session_fetch_handler = NULL;
-     *      lscf->srv.ssl_session_fetch_src = { 0, NULL };
-     *      lscf->srv.ssl_session_fetch_src_key = NULL;
+     *      lscf->srv.ssl_sess_fetch_handler = NULL;
+     *      lscf->srv.ssl_sess_fetch_src = { 0, NULL };
+     *      lscf->srv.ssl_sess_fetch_chunkname = NULL;
+     *      lscf->srv.ssl_sess_fetch_src_key = NULL;
      *
      *      lscf->balancer.handler = NULL;
      *      lscf->balancer.src = { 0, NULL };
+     *      lscf->balancer.chunkname = NULL;
      *      lscf->balancer.src_key = NULL;
      */
 
@@ -1139,10 +1211,11 @@ njt_http_lua_create_srv_conf(njt_conf_t *cf)
 static char *
 njt_http_lua_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 {
+    njt_http_lua_srv_conf_t *conf = child;
+    njt_http_lua_srv_conf_t *prev = parent;
+
 #if (NJT_HTTP_SSL)
 
-    njt_http_lua_srv_conf_t *prev = parent;
-    njt_http_lua_srv_conf_t *conf = child;
     njt_http_ssl_srv_conf_t *sscf;
 
     dd("merge srv conf");
@@ -1152,6 +1225,8 @@ njt_http_lua_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         conf->srv.ssl_client_hello_src_ref = prev->srv.ssl_client_hello_src_ref;
         conf->srv.ssl_client_hello_src_key = prev->srv.ssl_client_hello_src_key;
         conf->srv.ssl_client_hello_handler = prev->srv.ssl_client_hello_handler;
+        conf->srv.ssl_client_hello_chunkname
+            = prev->srv.ssl_client_hello_chunkname;
     }
 
     if (conf->srv.ssl_client_hello_src.len) {
@@ -1191,6 +1266,7 @@ njt_http_lua_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         conf->srv.ssl_cert_src_ref = prev->srv.ssl_cert_src_ref;
         conf->srv.ssl_cert_src_key = prev->srv.ssl_cert_src_key;
         conf->srv.ssl_cert_handler = prev->srv.ssl_cert_handler;
+        conf->srv.ssl_cert_chunkname = prev->srv.ssl_cert_chunkname;
     }
 
     if (conf->srv.ssl_cert_src.len) {
@@ -1230,6 +1306,7 @@ njt_http_lua_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         conf->srv.ssl_sess_store_src_ref = prev->srv.ssl_sess_store_src_ref;
         conf->srv.ssl_sess_store_src_key = prev->srv.ssl_sess_store_src_key;
         conf->srv.ssl_sess_store_handler = prev->srv.ssl_sess_store_handler;
+        conf->srv.ssl_sess_store_chunkname = prev->srv.ssl_sess_store_chunkname;
     }
 
     if (conf->srv.ssl_sess_store_src.len) {
@@ -1253,6 +1330,7 @@ njt_http_lua_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
         conf->srv.ssl_sess_fetch_src_ref = prev->srv.ssl_sess_fetch_src_ref;
         conf->srv.ssl_sess_fetch_src_key = prev->srv.ssl_sess_fetch_src_key;
         conf->srv.ssl_sess_fetch_handler = prev->srv.ssl_sess_fetch_handler;
+        conf->srv.ssl_sess_fetch_chunkname = prev->srv.ssl_sess_fetch_chunkname;
     }
 
     if (conf->srv.ssl_sess_fetch_src.len) {
@@ -1272,6 +1350,16 @@ njt_http_lua_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     }
 
 #endif  /* NJT_HTTP_SSL */
+
+    if (conf->srv.server_rewrite_src.value.len == 0) {
+        conf->srv.server_rewrite_src = prev->srv.server_rewrite_src;
+        conf->srv.server_rewrite_src_ref = prev->srv.server_rewrite_src_ref;
+        conf->srv.server_rewrite_src_key = prev->srv.server_rewrite_src_key;
+        conf->srv.server_rewrite_handler = prev->srv.server_rewrite_handler;
+        conf->srv.server_rewrite_chunkname
+            = prev->srv.server_rewrite_chunkname;
+    }
+
     return NJT_CONF_OK;
 }
 
@@ -1342,6 +1430,8 @@ njt_http_lua_create_loc_conf(njt_conf_t *cf)
 
 #if (NJT_HTTP_SSL)
     conf->ssl_verify_depth = NJT_CONF_UNSET_UINT;
+    conf->ssl_certificates = NJT_CONF_UNSET_PTR;
+    conf->ssl_certificate_keys = NJT_CONF_UNSET_PTR;
 #if (njet_version >= 1019004)
     conf->ssl_conf_commands = NJT_CONF_UNSET_PTR;
 #endif
@@ -1394,6 +1484,7 @@ njt_http_lua_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
         conf->header_filter_handler = prev->header_filter_handler;
         conf->header_filter_src_ref = prev->header_filter_src_ref;
         conf->header_filter_src_key = prev->header_filter_src_key;
+        conf->header_filter_chunkname = prev->header_filter_chunkname;
     }
 
     if (conf->body_filter_src.value.len == 0) {
@@ -1401,20 +1492,29 @@ njt_http_lua_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
         conf->body_filter_handler = prev->body_filter_handler;
         conf->body_filter_src_ref = prev->body_filter_src_ref;
         conf->body_filter_src_key = prev->body_filter_src_key;
+        conf->body_filter_chunkname = prev->body_filter_chunkname;
     }
 
 #if (NJT_HTTP_SSL)
 
+    if (njt_http_lua_merge_ssl(cf, conf, prev) != NJT_OK) {
+        return NJT_CONF_ERROR;
+    }
+
     njt_conf_merge_bitmask_value(conf->ssl_protocols, prev->ssl_protocols,
-                                 (NJT_CONF_BITMASK_SET|NJT_SSL_SSLv3
+                                 (NJT_CONF_BITMASK_SET
                                   |NJT_SSL_TLSv1|NJT_SSL_TLSv1_1
-                                  |NJT_SSL_TLSv1_2));
+                                  |NJT_SSL_TLSv1_2|NJT_SSL_TLSv1_3));
 
     njt_conf_merge_str_value(conf->ssl_ciphers, prev->ssl_ciphers,
                              "DEFAULT");
 
     njt_conf_merge_uint_value(conf->ssl_verify_depth,
                               prev->ssl_verify_depth, 1);
+    njt_conf_merge_ptr_value(conf->ssl_certificates,
+                             prev->ssl_certificates, NULL);
+    njt_conf_merge_ptr_value(conf->ssl_certificate_keys,
+                             prev->ssl_certificate_keys, NULL);
     njt_conf_merge_str_value(conf->ssl_trusted_certificate,
                              prev->ssl_trusted_certificate, "");
     njt_conf_merge_str_value(conf->ssl_crl, prev->ssl_crl, "");
@@ -1469,16 +1569,76 @@ njt_http_lua_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
 #if (NJT_HTTP_SSL)
 
 static njt_int_t
+njt_http_lua_merge_ssl(njt_conf_t *cf,
+    njt_http_lua_loc_conf_t *conf, njt_http_lua_loc_conf_t *prev)
+{
+    njt_uint_t  preserve;
+
+    if (conf->ssl_protocols == 0
+        && conf->ssl_ciphers.data == NULL
+        && conf->ssl_verify_depth == NJT_CONF_UNSET_UINT
+        && conf->ssl_certificates == NJT_CONF_UNSET_PTR
+        && conf->ssl_certificate_keys == NJT_CONF_UNSET_PTR
+        && conf->ssl_trusted_certificate.data == NULL
+        && conf->ssl_crl.data == NULL
+#if (njet_version >= 1019004)
+        && conf->ssl_conf_commands == NJT_CONF_UNSET_PTR
+#endif
+       )
+    {
+        if (prev->ssl) {
+            conf->ssl = prev->ssl;
+            return NJT_OK;
+        }
+
+        preserve = 1;
+
+    } else {
+        preserve = 0;
+    }
+
+    conf->ssl = njt_pcalloc(cf->pool, sizeof(njt_ssl_t));
+    if (conf->ssl == NULL) {
+        return NJT_ERROR;
+    }
+
+    conf->ssl->log = cf->log;
+
+    /*
+     * special handling to preserve conf->ssl_* in the "http" section
+     * to inherit it to all servers
+     */
+
+    if (preserve) {
+        prev->ssl = conf->ssl;
+    }
+
+    return NJT_OK;
+}
+
+
+static njt_int_t
 njt_http_lua_set_ssl(njt_conf_t *cf, njt_http_lua_loc_conf_t *llcf)
 {
     njt_pool_cleanup_t  *cln;
 
-    llcf->ssl = njt_pcalloc(cf->pool, sizeof(njt_ssl_t));
-    if (llcf->ssl == NULL) {
-        return NJT_ERROR;
+    if (llcf->ssl->ctx) {
+        return NJT_OK;
     }
 
-    llcf->ssl->log = cf->log;
+    if (llcf->ssl_certificates) {
+        if (llcf->ssl_certificate_keys == NULL
+            || llcf->ssl_certificate_keys->nelts
+            < llcf->ssl_certificates->nelts)
+        {
+            njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                          "no \"lua_ssl_certificate_key\" is defined "
+                          "for certificate \"%V\"",
+                          ((njt_str_t *) llcf->ssl_certificates->elts)
+                          + llcf->ssl_certificates->nelts - 1);
+            return NJT_ERROR;
+        }
+    }
 
     if (njt_ssl_create(llcf->ssl, llcf->ssl_protocols, NULL) != NJT_OK) {
         return NJT_ERROR;
@@ -1500,6 +1660,16 @@ njt_http_lua_set_ssl(njt_conf_t *cf, njt_http_lua_loc_conf_t *llcf)
         njt_ssl_error(NJT_LOG_EMERG, cf->log, 0,
                       "SSL_CTX_set_cipher_list(\"%V\") failed",
                       &llcf->ssl_ciphers);
+        return NJT_ERROR;
+    }
+
+    if (llcf->ssl_certificates
+        && njt_ssl_certificates(cf, llcf->ssl,
+                                llcf->ssl_certificates,
+                                llcf->ssl_certificate_keys,
+                                NULL)
+        != NJT_OK)
+    {
         return NJT_ERROR;
     }
 
