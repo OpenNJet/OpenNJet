@@ -91,7 +91,7 @@ njt_http_lua_balancer_handler_inline(njt_http_request_t *r,
                                        lscf->balancer.src.len,
                                        &lscf->balancer.src_ref,
                                        lscf->balancer.src_key,
-                                       "=balancer_by_lua");
+                                       (const char *) lscf->balancer.chunkname);
     if (rc != NJT_OK) {
         return rc;
     }
@@ -126,6 +126,8 @@ char *
 njt_http_lua_balancer_by_lua(njt_conf_t *cf, njt_command_t *cmd,
     void *conf)
 {
+    size_t                       chunkname_len;
+    u_char                      *chunkname;
     u_char                      *cache_key = NULL;
     u_char                      *name;
     njt_str_t                   *value;
@@ -173,8 +175,16 @@ njt_http_lua_balancer_by_lua(njt_conf_t *cf, njt_command_t *cmd,
             return NJT_CONF_ERROR;
         }
 
-        /* Don't eval nginx variables for inline lua code */
+        chunkname = njt_http_lua_gen_chunk_name(cf, "balancer_by_lua",
+                                                sizeof("balancer_by_lua") - 1,
+                                                &chunkname_len);
+        if (chunkname == NULL) {
+            return NJT_CONF_ERROR;
+        }
+
+        /* Don't eval njet variables for inline lua code */
         lscf->balancer.src = value[1];
+        lscf->balancer.chunkname = chunkname;
     }
 
     lscf->balancer.src_key = cache_key;
@@ -352,7 +362,7 @@ njt_http_lua_balancer_by_chunk(lua_State *L, njt_http_request_t *r)
     size_t                   len;
     njt_int_t                rc;
 
-    /* init nginx context in Lua VM */
+    /* init njet context in Lua VM */
     njt_http_lua_set_req(L, r);
 
 #ifndef OPENRESTY_LUAJIT

@@ -42,7 +42,7 @@ qr{\[crit\] .*? connect\(\) to 0\.0\.0\.1:1234 failed .*?, upstream: "0\.0\.0\.1
         server 0.0.0.1:1234;
         balancer_by_lua_block {
             print("hello from balancer by lua!")
-            ngx.exit(403)
+            njt.exit(403)
         }
     }
 --- stream_server_config
@@ -67,7 +67,7 @@ qr{\[crit\] .*? connect\(\) to 0\.0\.0\.1:1234 failed .*?, upstream: "0\.0\.0\.1
         server 0.0.0.1:1234;
         balancer_by_lua_block {
             print("hello from balancer by lua!")
-            ngx.exit(ngx.OK)
+            njt.exit(njt.OK)
         }
     }
 --- stream_server_config
@@ -82,12 +82,12 @@ qr{\[crit\] .*? connect\(\) to 0\.0\.0\.1:1234 failed .*?, upstream: "0\.0\.0\.1
 
 
 
-=== TEST 4: ngx.var works
+=== TEST 4: njt.var works
 --- stream_config
     upstream backend {
         server 0.0.0.1:1234;
         balancer_by_lua_block {
-            print("1: variable remote_addr = ", ngx.var.remote_addr)
+            print("1: variable remote_addr = ", njt.var.remote_addr)
         }
     }
 --- stream_server_config
@@ -128,7 +128,7 @@ qr{\[crit\] .*? connect\(\) to 0\.0\.0\.1:1234 failed .*?, upstream: "0\.0\.0\.1
     upstream backend {
         server 0.0.0.1:1234;
         balancer_by_lua_block {
-            local sock, err = ngx.socket.tcp()
+            local sock, err = njt.socket.tcp()
         }
     }
 --- stream_server_config
@@ -138,12 +138,12 @@ qr/\[error\] .*? failed to run balancer_by_lua\*: balancer_by_lua:2: API disable
 
 
 
-=== TEST 7: ngx.sleep is disabled
+=== TEST 7: njt.sleep is disabled
 --- stream_config
     upstream backend {
         server 0.0.0.1:1234;
         balancer_by_lua_block {
-            ngx.sleep(0.1)
+            njt.sleep(0.1)
         }
     }
 --- stream_server_config
@@ -158,7 +158,7 @@ qr/\[error\] .*? failed to run balancer_by_lua\*: balancer_by_lua:2: API disable
     upstream backend {
         server 0.0.0.1:1234;
         balancer_by_lua_block {
-            print("I am in phase ", ngx.get_phase())
+            print("I am in phase ", njt.get_phase())
         }
     }
 --- stream_server_config
@@ -173,12 +173,12 @@ qr{\[crit\] .*? connect\(\) to 0\.0\.0\.1:1234 failed .*?, upstream: "0\.0\.0\.1
 
 
 
-=== TEST 9: ngx.log(ngx.ERR, ...) github #816
+=== TEST 9: njt.log(njt.ERR, ...) github #816
 --- stream_config
     upstream backend {
         server 0.0.0.1:1234;
         balancer_by_lua_block {
-            ngx.log(ngx.ERR, "hello from balancer by lua!")
+            njt.log(njt.ERR, "hello from balancer by lua!")
         }
     }
 --- stream_server_config
@@ -201,25 +201,25 @@ qr{\[crit\] .*? connect\(\) to 0\.0\.0\.1:1234 failed .*?, upstream: "0\.0\.0\.1
     upstream backend {
         server 0.0.0.1:1234;
         balancer_by_lua_block {
-            local b = require "ngx.balancer"
+            local b = require "njt.balancer"
 
-            if not ngx.ctx.tries then
-                ngx.ctx.tries = 0
+            if not njt.ctx.tries then
+                njt.ctx.tries = 0
             end
 
-            if ngx.ctx.tries >= 6 then
-                ngx.log(ngx.ERR, "retry count exceed limit")
-                ngx.exit(500)
+            if njt.ctx.tries >= 6 then
+                njt.log(njt.ERR, "retry count exceed limit")
+                njt.exit(500)
             end
 
-            ngx.ctx.tries = ngx.ctx.tries + 1
-            print("retry counter: ", ngx.ctx.tries)
+            njt.ctx.tries = njt.ctx.tries + 1
+            print("retry counter: ", njt.ctx.tries)
 
             local ok, err = b.set_more_tries(2)
             if not ok then
                 return error("failed to set more tries: ", err)
             elseif err then
-                ngx.log(ngx.WARN, "set more tries: ", err)
+                njt.log(njt.WARN, "set more tries: ", err)
             end
 
             assert(b.set_current_peer("127.0.0.1", 81))
@@ -247,13 +247,13 @@ set more tries: reduced tries due to limit
     upstream backend {
         server 0.0.0.1:1234;
         balancer_by_lua_block {
-            local balancer = require "ngx.balancer"
-			local ctx = ngx.ctx
+            local balancer = require "njt.balancer"
+			local ctx = njt.ctx
 			if not ctx.has_run then
 				ctx.has_run = true
 				local _, err = balancer.set_more_tries(3)
 				if err then
-					ngx.log(ngx.ERR, "failed to set more tries: ", err)
+					njt.log(njt.ERR, "failed to set more tries: ", err)
 				end
 			end
 			balancer.set_current_peer("127.0.0.1", 81)

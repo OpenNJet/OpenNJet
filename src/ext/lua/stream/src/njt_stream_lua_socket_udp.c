@@ -187,12 +187,7 @@ njt_stream_lua_socket_udp(lua_State *L)
         return luaL_error(L, "no ctx found");
     }
 
-    njt_stream_lua_check_context(L, ctx, NJT_STREAM_LUA_CONTEXT_CONTENT
-
-                               | NJT_STREAM_LUA_CONTEXT_PREREAD
-                               | NJT_STREAM_LUA_CONTEXT_SSL_CLIENT_HELLO
-                               | NJT_STREAM_LUA_CONTEXT_SSL_CERT
-                               | NJT_STREAM_LUA_CONTEXT_TIMER);
+    njt_stream_lua_check_context(L, ctx, NJT_STREAM_LUA_CONTEXT_YIELDABLE);
 
     lua_createtable(L, 3 /* narr */, 1 /* nrec */);
     lua_pushlightuserdata(L, njt_stream_lua_lightudata_mask(
@@ -250,12 +245,7 @@ njt_stream_lua_socket_udp_setpeername(lua_State *L)
         return luaL_error(L, "no ctx found");
     }
 
-    njt_stream_lua_check_context(L, ctx, NJT_STREAM_LUA_CONTEXT_CONTENT
-
-                               | NJT_STREAM_LUA_CONTEXT_PREREAD
-                               | NJT_STREAM_LUA_CONTEXT_SSL_CLIENT_HELLO
-                               | NJT_STREAM_LUA_CONTEXT_SSL_CERT
-                               | NJT_STREAM_LUA_CONTEXT_TIMER);
+    njt_stream_lua_check_context(L, ctx, NJT_STREAM_LUA_CONTEXT_YIELDABLE);
 
     luaL_checktype(L, 1, LUA_TTABLE);
 

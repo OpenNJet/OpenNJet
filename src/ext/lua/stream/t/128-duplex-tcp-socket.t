@@ -23,15 +23,15 @@ __DATA__
 --- stream_server_config
 
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_MEMCACHED_PORT
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "flush_all\r\nget foo\r\nget bar\r\n"
         -- req = "OK"
@@ -42,36 +42,36 @@ __DATA__
             while send_idx <= #req do
                 local bytes, err = sock:send(sub(req, send_idx, send_idx))
                 if not bytes then
-                    ngx.say("failed to send request: ", err)
+                    njt.say("failed to send request: ", err)
                     return
                 end
                 -- if send_idx % 2 == 0 then
-                    ngx.sleep(0.001)
+                    njt.sleep(0.001)
                 -- end
                 send_idx = send_idx + 1
             end
-            -- ngx.say("request sent.")
+            -- njt.say("request sent.")
         end
 
-        local ok, err = ngx.thread.spawn(writer)
+        local ok, err = njt.thread.spawn(writer)
         if not ok then
-            ngx.say("failed to spawn writer thread: ", err)
+            njt.say("failed to spawn writer thread: ", err)
             return
         end
 
         for i = 1, 3 do
             local line, err, part = sock:receive()
             if line then
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
 
             else
-                ngx.say("failed to receive a line: ", err, " [", part, "]")
+                njt.say("failed to receive a line: ", err, " [", part, "]")
                 break
             end
         end
 
         ok, err = sock:setkeepalive()
-        ngx.say("setkeepalive: ", ok, " ", err)
+        njt.say("setkeepalive: ", ok, " ", err)
     }
 
 --- config
@@ -94,15 +94,15 @@ setkeepalive: 1 nil
     lua_socket_log_errors off;
 
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_MEMCACHED_PORT
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "flush_all\r\n"
         -- req = "OK"
@@ -115,18 +115,18 @@ setkeepalive: 1 nil
             while send_idx <= #req do
                 local bytes, err = sock:send(sub(req, send_idx, send_idx))
                 if not bytes then
-                    ngx.say("failed to send request: ", err)
+                    njt.say("failed to send request: ", err)
                     return
                 end
-                ngx.sleep(0.001)
+                njt.sleep(0.001)
                 send_idx = send_idx + 1
             end
-            -- ngx.say("request sent.")
+            -- njt.say("request sent.")
         end
 
-        local ok, err = ngx.thread.spawn(writer)
+        local ok, err = njt.thread.spawn(writer)
         if not ok then
-            ngx.say("failed to spawn writer thread: ", err)
+            njt.say("failed to spawn writer thread: ", err)
             return
         end
 
@@ -140,7 +140,7 @@ setkeepalive: 1 nil
                     data = data .. part
                 end
                 if err ~= "timeout" then
-                    ngx.say("failed to receive: ", err)
+                    njt.say("failed to receive: ", err)
                     return
                 end
 
@@ -148,19 +148,19 @@ setkeepalive: 1 nil
 
             else
                 data = data .. line
-                ngx.say("received: ", data)
+                njt.say("received: ", data)
                 done = true
                 break
             end
         end
 
         if not done then
-            ngx.say("partial read: ", data)
+            njt.say("partial read: ", data)
         end
 
-        ngx.say("read timed out: ", ntm)
+        njt.say("read timed out: ", ntm)
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -183,15 +183,15 @@ close: 1 nil$
     lua_socket_log_errors off;
 
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = 7658
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "flush_all\r\n"
         -- req = "OK"
@@ -202,18 +202,18 @@ close: 1 nil$
             while send_idx <= #req do
                 local bytes, err = sock:send(sub(req, send_idx, send_idx))
                 if not bytes then
-                    ngx.say("failed to send request: ", err)
+                    njt.say("failed to send request: ", err)
                     return
                 end
-                ngx.sleep(0.001)
+                njt.sleep(0.001)
                 send_idx = send_idx + 1
             end
-            -- ngx.say("request sent.")
+            -- njt.say("request sent.")
         end
 
-        local ok, err = ngx.thread.spawn(writer)
+        local ok, err = njt.thread.spawn(writer)
         if not ok then
-            ngx.say("failed to spawn writer thread: ", err)
+            njt.say("failed to spawn writer thread: ", err)
             return
         end
 
@@ -223,17 +223,17 @@ close: 1 nil$
         for i = 1, 3 do
             local res, err, part = sock:receive(1)
             if not res then
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
                 return
             else
                 data = data .. res
             end
-            ngx.sleep(0.001)
+            njt.sleep(0.001)
         end
 
-        ngx.say("received: ", data)
+        njt.say("received: ", data)
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -259,15 +259,15 @@ failed to send request: closed)$
     lua_socket_log_errors off;
 
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = 7658
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "flush_all\r\n"
         -- req = "OK"
@@ -278,21 +278,21 @@ failed to send request: closed)$
             while send_idx <= #req do
                 local bytes, err = sock:send(sub(req, send_idx, send_idx))
                 if not bytes then
-                    ngx.say("failed to send request: ", err)
+                    njt.say("failed to send request: ", err)
                     return
                 end
-                -- ngx.say("sent: ", bytes)
-                ngx.sleep(0.001)
+                -- njt.say("sent: ", bytes)
+                njt.sleep(0.001)
                 send_idx = send_idx + 1
             end
-            ngx.say("request sent.")
+            njt.say("request sent.")
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         end
 
-        local ok, err = ngx.thread.spawn(writer)
+        local ok, err = njt.thread.spawn(writer)
         if not ok then
-            ngx.say("failed to spawn writer thread: ", err)
+            njt.say("failed to spawn writer thread: ", err)
             return
         end
 
@@ -302,15 +302,15 @@ failed to send request: closed)$
         for i = 1, 3 do
             local res, err, part = sock:receive(1)
             if not res then
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
                 return
             else
                 data = data .. res
             end
-            ngx.sleep(0.001)
+            njt.sleep(0.001)
         end
 
-        ngx.say("received: ", data)
+        njt.say("received: ", data)
     }
 
 --- config
@@ -341,41 +341,41 @@ F(njt_http_lua_socket_tcp_finalize_write_part) {
     lua_socket_log_errors off;
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
 
         local function f()
-            ngx.sleep(0.001)
+            njt.sleep(0.001)
             local res, err = sock:receive(1)
-            ngx.say("receive: ", res, " ", err)
+            njt.say("receive: ", res, " ", err)
 
             local bytes, err = sock:send("hello")
-            ngx.say("send: ", bytes, " ", err)
+            njt.say("send: ", bytes, " ", err)
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
 
             local ok, err = sock:getreusedtimes()
-            ngx.say("getreusedtimes: ", ok, " ", err)
+            njt.say("getreusedtimes: ", ok, " ", err)
 
             local ok, err = sock:setkeepalive()
-            ngx.say("setkeepalive: ", ok, " ", err)
+            njt.say("setkeepalive: ", ok, " ", err)
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
-            ngx.say("connect: ", ok, " ", err)
+            njt.say("connect: ", ok, " ", err)
         end
 
-        local ok, err = ngx.thread.spawn(f)
+        local ok, err = njt.thread.spawn(f)
         if not ok then
-            ngx.say("failed to spawn writer thread: ", err)
+            njt.say("failed to spawn writer thread: ", err)
             return
         end
 
         sock:settimeout(300)
         local ok, err = sock:connect("127.0.0.2", 12345)
-        ngx.say("connect: ", ok, " ", err)
+        njt.say("connect: ", ok, " ", err)
 
         local ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -402,41 +402,41 @@ close: nil closed
     resolver 127.0.0.2:12345;
     resolver_timeout 300ms;
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
 
         local function f()
-            ngx.sleep(0.001)
+            njt.sleep(0.001)
             local res, err = sock:receive(1)
-            ngx.say("receive: ", res, " ", err)
+            njt.say("receive: ", res, " ", err)
 
             local bytes, err = sock:send("hello")
-            ngx.say("send: ", bytes, " ", err)
+            njt.say("send: ", bytes, " ", err)
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
 
             local ok, err = sock:getreusedtimes()
-            ngx.say("getreusedtimes: ", ok, " ", err)
+            njt.say("getreusedtimes: ", ok, " ", err)
 
             local ok, err = sock:setkeepalive()
-            ngx.say("setkeepalive: ", ok, " ", err)
+            njt.say("setkeepalive: ", ok, " ", err)
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
-            ngx.say("connect: ", ok, " ", err)
+            njt.say("connect: ", ok, " ", err)
         end
 
-        local ok, err = ngx.thread.spawn(f)
+        local ok, err = njt.thread.spawn(f)
         if not ok then
-            ngx.say("failed to spawn writer thread: ", err)
+            njt.say("failed to spawn writer thread: ", err)
             return
         end
 
         sock:settimeout(300)
         local ok, err = sock:connect("some2.agentzh.org", 80)
-        ngx.say("connect: ", ok, " ", err)
+        njt.say("connect: ", ok, " ", err)
 
         local ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -461,50 +461,50 @@ close: nil closed
 --- stream_server_config
     lua_socket_log_errors off;
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local ready = false
 
         local function f()
             while not ready do
-                ngx.sleep(0.001)
+                njt.sleep(0.001)
             end
 
             local res, err = sock:receive(1)
-            ngx.say("receive: ", res, " ", err)
+            njt.say("receive: ", res, " ", err)
 
             local bytes, err = sock:send("flush_all")
-            ngx.say("send: ", bytes, " ", err)
+            njt.say("send: ", bytes, " ", err)
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
 
             local ok, err = sock:getreusedtimes()
-            ngx.say("getreusedtimes: ", ok, " ", err)
+            njt.say("getreusedtimes: ", ok, " ", err)
 
             local ok, err = sock:setkeepalive()
-            ngx.say("setkeepalive: ", ok, " ", err)
+            njt.say("setkeepalive: ", ok, " ", err)
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
-            ngx.say("connect: ", ok, " ", err)
+            njt.say("connect: ", ok, " ", err)
         end
 
-        local ok, err = ngx.thread.spawn(f)
+        local ok, err = njt.thread.spawn(f)
         if not ok then
-            ngx.say("failed to spawn writer thread: ", err)
+            njt.say("failed to spawn writer thread: ", err)
             return
         end
 
         sock:settimeout(300)
         local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
-        ngx.say("connect: ", ok, " ", err)
+        njt.say("connect: ", ok, " ", err)
 
         ready = true
 
         local res, err = sock:receive(1)
-        ngx.say("receive: ", res, " ", err)
+        njt.say("receive: ", res, " ", err)
 
         local ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -531,55 +531,55 @@ close: 1 nil
     lua_socket_log_errors off;
     content_by_lua_block {
         local ready = false
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
 
         local function f()
             while not ready do
-                ngx.sleep(0.001)
+                njt.sleep(0.001)
             end
 
             local res, err = sock:receive(1)
-            ngx.say("receive: ", res, " ", err)
+            njt.say("receive: ", res, " ", err)
 
             local bytes, err = sock:send("flush_all")
-            ngx.say("send: ", bytes, " ", err)
+            njt.say("send: ", bytes, " ", err)
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
 
             local ok, err = sock:getreusedtimes()
-            ngx.say("getreusedtimes: ", ok, " ", err)
+            njt.say("getreusedtimes: ", ok, " ", err)
 
             local ok, err = sock:setkeepalive()
-            ngx.say("setkeepalive: ", ok, " ", err)
+            njt.say("setkeepalive: ", ok, " ", err)
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
-            ngx.say("connect: ", ok, " ", err)
+            njt.say("connect: ", ok, " ", err)
         end
 
-        local ok, err = ngx.thread.spawn(f)
+        local ok, err = njt.thread.spawn(f)
         if not ok then
-            ngx.say("failed to spawn writer thread: ", err)
+            njt.say("failed to spawn writer thread: ", err)
             return
         end
 
         sock:settimeout(300)
         local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
-        ngx.say("connect: ", ok, " ", err)
+        njt.say("connect: ", ok, " ", err)
 
         ready = true
 
         local it, err = sock:receiveuntil("\r\n")
         if not it then
-            ngx.say("receiveuntil() failed: ", err)
+            njt.say("receiveuntil() failed: ", err)
             return
         end
 
         local res, err = it()
-        ngx.say("receiveuntil() iterator: ", res, " ", err)
+        njt.say("receiveuntil() iterator: ", res, " ", err)
 
         local ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config

@@ -121,6 +121,8 @@ void njt_cpuinfo(void);
 #define NJT_DISABLE_SYMLINKS_NOTOWNER   2
 #endif
 
+extern njt_pool_t        *saved_init_cycle_pool; // openresty patch
+
 #define SIGCONF 37
 
 #endif /* _NJT_CORE_H_INCLUDED_ */

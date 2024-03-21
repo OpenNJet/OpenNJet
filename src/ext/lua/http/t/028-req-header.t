@@ -21,14 +21,14 @@ __DATA__
 --- config
     location /req-header {
         content_by_lua '
-            local headers, err = ngx.req.get_headers()
+            local headers, err = njt.req.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("Foo: ", headers["Foo"] or "nil")
-            ngx.say("Bar: ", headers["Bar"] or "nil")
+            njt.say("Foo: ", headers["Foo"] or "nil")
+            njt.say("Bar: ", headers["Bar"] or "nil")
         ';
     }
 --- request
@@ -49,18 +49,18 @@ lua exceeding request header limit
 --- config
     location /req-header {
         content_by_lua '
-            local headers, err = ngx.req.get_headers(nil, true)
+            local headers, err = njt.req.get_headers(nil, true)
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             local h = {}
             for k, v in pairs(headers) do
                 h[k] = v
             end
-            ngx.say("Foo: ", h["Foo"] or "nil")
-            ngx.say("Bar: ", h["Bar"] or "nil")
+            njt.say("Foo: ", h["Foo"] or "nil")
+            njt.say("Bar: ", h["Bar"] or "nil")
         ';
     }
 --- request
@@ -78,7 +78,7 @@ Bar: baz
 --- config
     location /req-header {
         rewrite_by_lua '
-            ngx.req.set_header("Foo", "new value");
+            njt.req.set_header("Foo", "new value");
         ';
 
         echo "Foo: $http_foo";
@@ -97,7 +97,7 @@ Foo: new value
 --- config
     location /req-header {
         rewrite_by_lua '
-            ngx.req.set_header("Foo", nil);
+            njt.req.set_header("Foo", nil);
         ';
 
         echo "Foo: $http_foo";
@@ -116,7 +116,7 @@ Foo:
 --- config
     location /bar {
         rewrite_by_lua '
-            ngx.req.set_header("Content-Length", 2048)
+            njt.req.set_header("Content-Length", 2048)
         ';
         echo_read_request_body;
         echo_request_body;
@@ -134,7 +134,7 @@ Foo:
 --- config
     location /bar {
         rewrite_by_lua '
-            ngx.req.set_header("content-length", 2048)
+            njt.req.set_header("content-length", 2048)
         ';
         echo_read_request_body;
         echo_request_body;
@@ -152,8 +152,8 @@ Foo:
 --- config
     location /bar {
         rewrite_by_lua '
-            ngx.req.set_header("Host", "foo")
-            ngx.req.set_header("User-Agent", "blah")
+            njt.req.set_header("Host", "foo")
+            njt.req.set_header("User-Agent", "blah")
         ';
         echo "Host: $host";
         echo "User-Agent: $http_user_agent";
@@ -171,8 +171,8 @@ $host always has a default value and cannot be really cleared.
 --- config
     location /bar {
         rewrite_by_lua '
-            ngx.req.set_header("Host", nil)
-            ngx.req.set_header("User-Agent", nil)
+            njt.req.set_header("Host", nil)
+            njt.req.set_header("User-Agent", nil)
         ';
         echo "Host: $host";
         echo "Host (2): $http_host";
@@ -191,9 +191,9 @@ User-Agent:
 --- config
     location /bar {
         rewrite_by_lua '
-            ngx.req.clear_header("Host")
-            ngx.req.clear_header("User-Agent")
-            ngx.req.clear_header("X-Foo")
+            njt.req.clear_header("Host")
+            njt.req.clear_header("User-Agent")
+            njt.req.clear_header("X-Foo")
         ';
         echo "Host: $host";
         echo "User-Agent: $http_user_agent";
@@ -214,7 +214,7 @@ X-Foo:
 --- config
     location /bar {
         access_by_lua '
-            ngx.req.clear_header("Content-Length")
+            njt.req.clear_header("Content-Length")
         ';
         echo "Content-Length: $http_content_length";
     }
@@ -231,7 +231,7 @@ Content-Length:
 --- config
     location /bar {
         access_by_lua '
-            ngx.req.set_header("Content-Type", "text/css")
+            njt.req.set_header("Content-Type", "text/css")
         ';
         echo "Content-Type: $content_type";
     }
@@ -249,7 +249,7 @@ Content-Type: text/css
 --- config
     location /bar {
         access_by_lua '
-            ngx.req.clear_header("Content-Type")
+            njt.req.clear_header("Content-Type")
         ';
         echo "Content-Type: $content_type";
     }
@@ -267,7 +267,7 @@ Content-Type:
 --- config
     location /bar {
         access_by_lua '
-            ngx.req.set_header("Foo", {"a", "b"})
+            njt.req.set_header("Foo", {"a", "b"})
         ';
         echo "Foo: $http_foo";
     }
@@ -282,7 +282,7 @@ Foo: a
 --- config
     location /bar {
         access_by_lua '
-            ngx.req.set_header("Foo", {"a", "abc"})
+            njt.req.set_header("Foo", {"a", "abc"})
         ';
         proxy_pass http://127.0.0.1:$server_port/foo;
     }
@@ -297,47 +297,47 @@ GET /bar
 
 
 
-=== TEST 15: set_header and clear_header should refresh ngx.req.get_headers() automatically
+=== TEST 15: set_header and clear_header should refresh njt.req.get_headers() automatically
 --- config
     location /foo {
         content_by_lua '
-            local headers, err = ngx.req.get_headers()
+            local headers, err = njt.req.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("Foo: ", headers["Foo"] or "nil")
+            njt.say("Foo: ", headers["Foo"] or "nil")
 
-            ngx.req.set_header("Foo", 32)
+            njt.req.set_header("Foo", 32)
 
-            headers, err = ngx.req.get_headers()
+            headers, err = njt.req.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("Foo 1: ", headers["Foo"] or "nil")
+            njt.say("Foo 1: ", headers["Foo"] or "nil")
 
-            ngx.req.set_header("Foo", "abc")
+            njt.req.set_header("Foo", "abc")
 
-            headers, err = ngx.req.get_headers()
+            headers, err = njt.req.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("Foo 2: ", headers["Foo"] or "nil")
+            njt.say("Foo 2: ", headers["Foo"] or "nil")
 
-            ngx.req.clear_header("Foo")
+            njt.req.clear_header("Foo")
 
-            headers, err = ngx.req.get_headers()
+            headers, err = njt.req.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("Foo 3: ", headers["Foo"] or "nil")
+            njt.say("Foo 3: ", headers["Foo"] or "nil")
         ';
     }
 --- more_headers
@@ -358,17 +358,17 @@ Foo 3: nil
     location /foo {
         content_by_lua '
             collectgarbage()
-            local headers, err = ngx.req.get_headers()
+            local headers, err = njt.req.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             local vals = headers["Foo"]
-            ngx.say("value is of type ", type(vals), ".")
+            njt.say("value is of type ", type(vals), ".")
             if type(vals) == "table" then
-                ngx.say("Foo takes ", #vals or "nil", " values.")
-                ngx.say("They are ", table.concat(vals, ", "), ".")
+                njt.say("Foo takes ", #vals or "nil", " values.")
+                njt.say("They are ", table.concat(vals, ", "), ".")
             end
         ';
     }
@@ -390,7 +390,7 @@ They are foo, bar, baz.
     location /bar {
         default_type 'text/plain';
         rewrite_by_lua '
-            ngx.req.set_header("Accept-Encoding", "gzip")
+            njt.req.set_header("Accept-Encoding", "gzip")
         ';
         gzip on;
         gzip_min_length  1;
@@ -413,7 +413,7 @@ Content-Encoding: gzip
     location /bar {
         default_type 'text/plain';
         rewrite_by_lua '
-            ngx.req.set_header("Accept-Encoding", {"gzip"})
+            njt.req.set_header("Accept-Encoding", {"gzip"})
         ';
         gzip on;
         gzip_min_length  1;
@@ -435,9 +435,9 @@ Content-Encoding: gzip
 --- config
     location /lua {
         content_by_lua '
-            local headers, err = ngx.req.get_headers()
+            local headers, err = njt.req.get_headers()
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -447,7 +447,7 @@ Content-Encoding: gzip
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, ": ", headers[key])
+                njt.say(key, ": ", headers[key])
             end
         ';
     }
@@ -487,9 +487,9 @@ lua exceeding request header limit 101 > 100
 --- config
     location /lua {
         content_by_lua '
-            local headers, err = ngx.req.get_headers()
+            local headers, err = njt.req.get_headers()
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -500,10 +500,10 @@ lua exceeding request header limit 101 > 100
             table.sort(keys)
             local cnt = 0
             for i, key in ipairs(keys) do
-                ngx.say(key, ": ", headers[key])
+                njt.say(key, ": ", headers[key])
                 cnt = cnt + 1
             end
-            ngx.say("found ", cnt, " headers")
+            njt.say("found ", cnt, " headers")
         ';
     }
 --- request
@@ -543,9 +543,9 @@ lua exceeding request header limit
 --- config
     location /lua {
         content_by_lua '
-            local headers, err = ngx.req.get_headers(102)
+            local headers, err = njt.req.get_headers(102)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -555,7 +555,7 @@ lua exceeding request header limit
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, ": ", headers[key])
+                njt.say(key, ": ", headers[key])
             end
         ';
     }
@@ -595,9 +595,9 @@ lua exceeding request header limit 103 > 102
 --- config
     location /lua {
         content_by_lua '
-            local headers, err = ngx.req.get_headers(102)
+            local headers, err = njt.req.get_headers(102)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -607,7 +607,7 @@ lua exceeding request header limit 103 > 102
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, ": ", headers[key])
+                njt.say(key, ": ", headers[key])
             end
         ';
     }
@@ -648,9 +648,9 @@ lua exceeding request header limit
 --- config
     location /lua {
         content_by_lua '
-            local headers, err = ngx.req.get_headers(0)
+            local headers, err = njt.req.get_headers(0)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -660,7 +660,7 @@ lua exceeding request header limit
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, ": ", headers[key])
+                njt.say(key, ": ", headers[key])
             end
         ';
     }
@@ -698,7 +698,7 @@ CORE::join("", @k);
 --- config
     location = /main {
         rewrite_by_lua '
-            local res = ngx.location.capture("/sub")
+            local res = njt.location.capture("/sub")
             print("subrequest: ", res.status)
         ';
 
@@ -707,9 +707,9 @@ CORE::join("", @k);
 
     location /sub {
         content_by_lua '
-            ngx.req.set_header("foo121", 121)
-            ngx.req.set_header("foo122", 122)
-            ngx.say("ok")
+            njt.req.set_header("foo121", 121)
+            njt.req.set_header("foo122", 122)
+            njt.say("ok")
         ';
     }
 
@@ -754,7 +754,7 @@ Bar: []
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.req.clear_header("Foo")
+            njt.req.clear_header("Foo")
         ';
 
         proxy_pass http://127.0.0.1:$server_port/echo;
@@ -780,7 +780,7 @@ Test-Header: [1]
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.req.clear_header("Content-Type")
+            njt.req.clear_header("Content-Type")
         ';
 
         proxy_pass http://127.0.0.1:$server_port/echo;
@@ -807,8 +807,8 @@ Test-Header: [1]
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.clear_header("Content-Type")
-            ngx.req.clear_header("Content-Length")
+            njt.req.clear_header("Content-Type")
+            njt.req.clear_header("Content-Length")
         ';
 
         #proxy_pass http://127.0.0.1:8888;
@@ -838,7 +838,7 @@ $/
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.req.clear_header("Foo")
+            njt.req.clear_header("Foo")
         ';
 
         proxy_pass http://127.0.0.1:$server_port/echo;
@@ -910,10 +910,10 @@ Foo22: foo22\r
         content_by_lua '
             local h = {}
             local arr = {}
-            local headers, err = ngx.req.get_headers(nil, true)
+            local headers, err = njt.req.get_headers(nil, true)
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             for k, v in pairs(headers) do
@@ -922,7 +922,7 @@ Foo22: foo22\r
             end
             table.sort(arr)
             for i, k in ipairs(arr) do
-                ngx.say(k, ": ", h[k])
+                njt.say(k, ": ", h[k])
             end
         ';
     }
@@ -943,13 +943,13 @@ My-Foo: bar
 --- config
     location /t {
         content_by_lua '
-            local h, err = ngx.req.get_headers(nil, true)
+            local h, err = njt.req.get_headers(nil, true)
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("My-Foo-Header: ", h.my_foo_header)
+            njt.say("My-Foo-Header: ", h.my_foo_header)
         ';
     }
 --- request
@@ -965,13 +965,13 @@ My-Foo-Header: nil
 --- config
     location /t {
         content_by_lua '
-            local h, err = ngx.req.get_headers()
+            local h, err = njt.req.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("My-Foo-Header: ", h.my_foo_header)
+            njt.say("My-Foo-Header: ", h.my_foo_header)
         ';
     }
 --- request
@@ -986,7 +986,7 @@ My-Foo-Header: Hello World
 === TEST 32: clear input header (just more than 20 headers)
 --- config
     location = /t {
-        rewrite_by_lua 'ngx.req.clear_header("R")';
+        rewrite_by_lua 'njt.req.clear_header("R")';
         proxy_pass http://127.0.0.1:$server_port/back;
         proxy_set_header Host foo;
         #proxy_pass http://127.0.0.1:1234/back;
@@ -1035,9 +1035,9 @@ Q: q\r
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.req.clear_header("R")
+            njt.req.clear_header("R")
             for i = 1, 21 do
-                ngx.req.set_header("foo-" .. i, i)
+                njt.req.set_header("foo-" .. i, i)
             end
         ';
         proxy_pass http://127.0.0.1:$server_port/back;
@@ -1109,8 +1109,8 @@ foo-21: 21\r
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.req.clear_header("R")
-            ngx.req.clear_header("Q")
+            njt.req.clear_header("R")
+            njt.req.clear_header("Q")
         ';
         proxy_pass http://127.0.0.1:$server_port/back;
         proxy_set_header Host foo;
@@ -1160,10 +1160,10 @@ P: p\r
 --- config
     location = /t {
         rewrite_by_lua '
-            ngx.req.clear_header("R")
-            ngx.req.clear_header("Q")
+            njt.req.clear_header("R")
+            njt.req.clear_header("Q")
             for i = 1, 21 do
-                ngx.req.set_header("foo-" .. i, i)
+                njt.req.set_header("foo-" .. i, i)
             end
         ';
         proxy_pass http://127.0.0.1:$server_port/back;
@@ -1235,10 +1235,10 @@ foo-21: 21\r
 --- config
     location /t {
         content_by_lua '
-            local headers, err = ngx.req.get_headers(0, true)
+            local headers, err = njt.req.get_headers(0, true)
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             -- get ALL the raw headers (0 == no limit, not recommended)
@@ -1250,7 +1250,7 @@ foo-21: 21\r
             end
             table.sort(arr)
             for i, k in ipairs(arr) do
-                ngx.say(k, ": ", h[k])
+                njt.say(k, ": ", h[k])
             end
         ';
     }
@@ -1273,7 +1273,7 @@ My-Foo: bar
 --- config
     location /t {
         rewrite_by_lua '
-           ngx.req.set_header("X-Real-IP", nil)
+           njt.req.set_header("X-Real-IP", nil)
         ';
         echo "X-Real-IP: $http_x_real_ip";
     }
@@ -1283,7 +1283,7 @@ GET /t
 X-Real-IP: 8.8.8.8
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     if (@defined($r->headers_in->x_real_ip) && $r->headers_in->x_real_ip) {
         printf("rewrite: x-real-ip: %s\n",
                user_string_n($r->headers_in->x_real_ip->value->data,
@@ -1293,7 +1293,7 @@ F(ngx_http_lua_rewrite_by_chunk) {
     }
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     if (@defined($r->headers_in->x_real_ip) && $r->headers_in->x_real_ip) {
         printf("content: x-real-ip: %s\n",
                user_string_n($r->headers_in->x_real_ip->value->data,
@@ -1319,7 +1319,7 @@ X-Real-IP:
 --- config
     location /t {
         rewrite_by_lua '
-           ngx.req.set_header("X-Real-IP", "8.8.4.4")
+           njt.req.set_header("X-Real-IP", "8.8.4.4")
         ';
         echo "X-Real-IP: $http_x_real_ip";
     }
@@ -1327,7 +1327,7 @@ X-Real-IP:
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     if (@defined($r->headers_in->x_real_ip) && $r->headers_in->x_real_ip) {
         printf("rewrite: x-real-ip: %s\n",
                user_string_n($r->headers_in->x_real_ip->value->data,
@@ -1338,7 +1338,7 @@ F(ngx_http_lua_rewrite_by_chunk) {
 
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     if (@defined($r->headers_in->x_real_ip) && $r->headers_in->x_real_ip) {
         printf("content: x-real-ip: %s\n",
                user_string_n($r->headers_in->x_real_ip->value->data,
@@ -1364,7 +1364,7 @@ X-Real-IP: 8.8.4.4
 --- config
     location /t {
         rewrite_by_lua '
-           ngx.req.set_header("Via", nil)
+           njt.req.set_header("Via", nil)
         ';
         echo "Via: $http_via";
     }
@@ -1374,7 +1374,7 @@ GET /t
 Via: 1.0 fred, 1.1 nowhere.com (Apache/1.1)
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     if (@defined($r->headers_in->via) && $r->headers_in->via) {
         printf("rewrite: via: %s\n",
                user_string_n($r->headers_in->via->value->data,
@@ -1384,7 +1384,7 @@ F(ngx_http_lua_rewrite_by_chunk) {
     }
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     if (@defined($r->headers_in->via) && $r->headers_in->via) {
         printf("content: via: %s\n",
                user_string_n($r->headers_in->via->value->data,
@@ -1410,7 +1410,7 @@ Via:
 --- config
     location /t {
         rewrite_by_lua '
-           ngx.req.set_header("Via", "1.0 fred, 1.1 nowhere.com (Apache/1.1)")
+           njt.req.set_header("Via", "1.0 fred, 1.1 nowhere.com (Apache/1.1)")
         ';
         echo "Via: $http_via";
     }
@@ -1418,7 +1418,7 @@ Via:
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     if (@defined($r->headers_in->via) && $r->headers_in->via) {
         printf("rewrite: via: %s\n",
                user_string_n($r->headers_in->via->value->data,
@@ -1429,7 +1429,7 @@ F(ngx_http_lua_rewrite_by_chunk) {
 
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     if (@defined($r->headers_in->via) && $r->headers_in->via) {
         printf("content: via: %s\n",
                user_string_n($r->headers_in->via->value->data,
@@ -1455,7 +1455,7 @@ Via: 1.0 fred, 1.1 nowhere.com (Apache/1.1)
 --- config
     location /req-header {
         rewrite_by_lua '
-            ngx.req.set_header("foo_bar", "some value");
+            njt.req.set_header("foo_bar", "some value");
         ';
         proxy_pass http://127.0.0.1:$server_port/back;
     }
@@ -1478,14 +1478,14 @@ $}
 --- config
     location /foo {
         content_by_lua '
-            ngx.req.set_header("X-Foo", "howdy");
-            local headers, err = ngx.req.get_headers()
+            njt.req.set_header("X-Foo", "howdy");
+            local headers, err = njt.req.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("X-Foo: ", headers["X-Foo"])
+            njt.say("X-Foo: ", headers["X-Foo"])
         ';
     }
 --- raw_request eval
@@ -1504,14 +1504,14 @@ X-Foo: nil
 --- config
     location /foo {
         content_by_lua '
-            ngx.req.set_header("X-Foo", "howdy");
-            local headers, err = ngx.req.get_headers()
+            njt.req.set_header("X-Foo", "howdy");
+            local headers, err = njt.req.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("X-Foo: ", headers["X-Foo"])
+            njt.say("X-Foo: ", headers["X-Foo"])
         ';
     }
 --- raw_request eval
@@ -1530,7 +1530,7 @@ X-Foo: nil
 --- config
     location /bar {
         rewrite_by_lua '
-            ngx.req.set_header("Host", "agentzh.org:1984")
+            njt.req.set_header("Host", "agentzh.org:1984")
         ';
         echo "host var: $host";
         echo "http_host var: $http_host";
@@ -1547,7 +1547,7 @@ http_host var: agentzh.org:1984
 --- config
     location /bar {
         rewrite_by_lua '
-            ngx.req.set_header("Host", "agentZH.org:1984")
+            njt.req.set_header("Host", "agentZH.org:1984")
         ';
         echo "host var: $host";
         echo "http_host var: $http_host";
@@ -1564,37 +1564,37 @@ http_host var: agentZH.org:1984
 --- config
     location = /t {
         content_by_lua '
-            local headers, err = ngx.req.get_headers(100, true)
+            local headers, err = njt.req.get_headers(100, true)
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             local n = 0
             for header, _ in pairs(headers) do
                 n = n + 1
-                ngx.req.clear_header(header)
+                njt.req.clear_header(header)
             end
-            ngx.say("got ", n, " headers")
+            njt.say("got ", n, " headers")
             local i = 0
             for header, value in pairs(headers) do
                 i = i + 1
                 print("1: reinsert header ", header, ": ", i)
-                ngx.req.set_header(header, value)
+                njt.req.set_header(header, value)
             end
 
-            headers, err = ngx.req.get_headers(100, true)
+            headers, err = njt.req.get_headers(100, true)
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             n = 0
             for header, _ in pairs(headers) do
                 n = n + 1
-                ngx.req.clear_header(header)
+                njt.req.clear_header(header)
             end
-            ngx.say("got ", n, " headers")
+            njt.say("got ", n, " headers")
             -- do return end
             local i = 0
             for header, value in pairs(headers) do
@@ -1603,7 +1603,7 @@ http_host var: agentZH.org:1984
                     break
                 end
                 print("2: reinsert header ", header, ": ", i)
-                ngx.req.set_header(header, value)
+                njt.req.set_header(header, value)
             end
         ';
     }
@@ -1628,19 +1628,19 @@ got 8 headers
 
 
 
-=== TEST 47: github issue #314: ngx.req.set_header does not override request headers with multiple values
+=== TEST 47: github issue #314: njt.req.set_header does not override request headers with multiple values
 --- config
     #lua_code_cache off;
     location = /t {
         content_by_lua '
-            ngx.req.set_header("AAA", "111")
-            local headers, err = ngx.req.get_headers()
+            njt.req.set_header("AAA", "111")
+            local headers, err = njt.req.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say(headers["AAA"])
+            njt.say(headers["AAA"])
         ';
     }
 --- request
@@ -1661,11 +1661,11 @@ AAA: 678
 --- config
     location /t {
         content_by_lua '
-            ngx.req.clear_header("if-match")
-            if not ngx.send_headers() then
+            njt.req.clear_header("if-match")
+            if not njt.send_headers() then
                 return
             end
-            ngx.say("test")
+            njt.say("test")
         ';
     }
 --- request
@@ -1683,12 +1683,12 @@ test
 --- config
     location /t {
         content_by_lua '
-            ngx.req.clear_header("if-unmodified-since")
-            ngx.header["Last-Modified"] = "Tue, 30 Jun 2011 12:16:36 GMT"
-            if not ngx.send_headers() then
+            njt.req.clear_header("if-unmodified-since")
+            njt.header["Last-Modified"] = "Tue, 30 Jun 2011 12:16:36 GMT"
+            if not njt.send_headers() then
                 return
             end
-            ngx.say("test")
+            njt.say("test")
         ';
     }
 --- request
@@ -1706,12 +1706,12 @@ test
 --- config
     location /t {
         content_by_lua '
-            ngx.req.clear_header("if-none-match")
-            -- ngx.header["etags"] = "abc"
-            if not ngx.send_headers() then
+            njt.req.clear_header("if-none-match")
+            -- njt.header["etags"] = "abc"
+            if not njt.send_headers() then
                 return
             end
-            ngx.say("test")
+            njt.say("test")
         ';
     }
 --- request
@@ -1729,7 +1729,7 @@ test
 --- config
     location = /a.txt {
         rewrite_by_lua_block {
-            ngx.req.set_header("Destination", "/b.txt")
+            njt.req.set_header("Destination", "/b.txt")
         }
         dav_methods MOVE;
         dav_access            all:rw;
@@ -1755,7 +1755,7 @@ client sent no "Destination" header
 --- config
     location = /t {
         access_by_lua_block {
-            ngx.req.set_header("X-Forwarded-For", "8.8.8.8")
+            njt.req.set_header("X-Forwarded-For", "8.8.8.8")
         }
         proxy_pass http://127.0.0.1:$server_port/back;
         proxy_set_header Foo $proxy_add_x_forwarded_for;
@@ -1779,7 +1779,7 @@ Foo: 8.8.8.8, 127.0.0.1
 --- config
     location = /t {
         access_by_lua_block {
-            ngx.req.clear_header("X-Forwarded-For")
+            njt.req.clear_header("X-Forwarded-For")
         }
         proxy_pass http://127.0.0.1:$server_port/back;
         proxy_set_header Foo $proxy_add_x_forwarded_for;
@@ -1807,8 +1807,8 @@ Foo: 127.0.0.1
 
     location = /err {
         content_by_lua_block {
-            ngx.req.set_header("Foo", "bar")
-            ngx.say("ok")
+            njt.req.set_header("Foo", "bar")
+            njt.say("ok")
         }
     }
 --- raw_request
@@ -1827,8 +1827,8 @@ ok
 
     location = /err {
         content_by_lua_block {
-            ngx.req.set_header("Foo", "bar")
-            ngx.say("ok")
+            njt.req.set_header("Foo", "bar")
+            njt.say("ok")
         }
     }
 --- raw_request
@@ -1847,10 +1847,10 @@ ok
 
     location = /err {
         content_by_lua_block {
-            ngx.req.set_header("Cookie", "foo=bar")
-            local test = ngx.var.cookie_bar
+            njt.req.set_header("Cookie", "foo=bar")
+            local test = njt.var.cookie_bar
 
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- raw_request
@@ -1867,9 +1867,9 @@ ok
 --- config
     location /lua {
         content_by_lua '
-            local headers, err = ngx.req.get_headers(3)
+            local headers, err = njt.req.get_headers(3)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local cnt = 0
@@ -1877,7 +1877,7 @@ ok
                 cnt = cnt + 1
             end
 
-            ngx.say("found ", cnt, " headers.");
+            njt.say("found ", cnt, " headers.");
         ';
     }
 --- request
@@ -1905,9 +1905,9 @@ lua exceeding request header limit 4 > 3
 --- config
     location /lua {
         content_by_lua '
-            local headers, err = ngx.req.get_headers(3)
+            local headers, err = njt.req.get_headers(3)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local cnt = 0
@@ -1915,7 +1915,7 @@ lua exceeding request header limit 4 > 3
                 cnt = cnt + 1
             end
 
-            ngx.say("found ", cnt, " headers.");
+            njt.say("found ", cnt, " headers.");
         ';
     }
 --- request
@@ -1941,9 +1941,9 @@ lua exceeding request header limit
 --- config
     location /lua {
         content_by_lua '
-            local headers, err = ngx.req.get_headers(3, true)
+            local headers, err = njt.req.get_headers(3, true)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local cnt = 0
@@ -1951,7 +1951,7 @@ lua exceeding request header limit
                 cnt = cnt + 1
             end
 
-            ngx.say("found ", cnt, " headers.");
+            njt.say("found ", cnt, " headers.");
         ';
     }
 --- request
@@ -1979,9 +1979,9 @@ lua exceeding request header limit 4 > 3
 --- config
     location /lua {
         content_by_lua '
-            local headers, err = ngx.req.get_headers(3, true)
+            local headers, err = njt.req.get_headers(3, true)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local cnt = 0
@@ -1989,7 +1989,7 @@ lua exceeding request header limit 4 > 3
                 cnt = cnt + 1
             end
 
-            ngx.say("found ", cnt, " headers.");
+            njt.say("found ", cnt, " headers.");
         ';
     }
 --- request
@@ -2018,9 +2018,9 @@ lua exceeding request header limit
         set $foo $host;
 
         content_by_lua_block {
-            ngx.say(ngx.var.host)
-            ngx.req.set_header("Host", "new");
-            ngx.say(ngx.var.host)
+            njt.say(njt.var.host)
+            njt.req.set_header("Host", "new");
+            njt.say(njt.var.host)
         }
     }
 --- request
@@ -2037,7 +2037,7 @@ new
 --- config
     location /req-header {
         rewrite_by_lua_block {
-            ngx.req.set_header("Foo\rfoo", "new value");
+            njt.req.set_header("Foo\rfoo", "new value");
         }
 
         echo "Foo: $http_foo";
@@ -2055,7 +2055,7 @@ Foo:
 --- config
     location /req-header {
         rewrite_by_lua_block {
-            ngx.req.set_header("Foo", "new\nvalue");
+            njt.req.set_header("Foo", "new\nvalue");
         }
 
         echo "Foo: $http_foo";
@@ -2073,11 +2073,11 @@ Foo: new%0Avalue
 --- config
     location /req-header {
         rewrite_by_lua_block {
-            ngx.req.set_header("Foo", { "new\nvalue", "foo\tbar" } );
+            njt.req.set_header("Foo", { "new\nvalue", "foo\tbar" } );
         }
 
         content_by_lua_block {
-            ngx.say(table.concat(ngx.req.get_headers()["foo"], ", "), ".")
+            njt.say(table.concat(njt.req.get_headers()["foo"], ", "), ".")
         }
     }
 --- request
@@ -2093,11 +2093,11 @@ new%0Avalue, foo	bar.
 --- config
     location /req-header {
         rewrite_by_lua_block {
-            ngx.req.set_header("Foo", "\"new\nvalue\\\"");
+            njt.req.set_header("Foo", "\"new\nvalue\\\"");
         }
 
         content_by_lua_block {
-            ngx.say(ngx.req.get_headers()["foo"])
+            njt.say(njt.req.get_headers()["foo"])
         }
     }
 --- request
@@ -2113,7 +2113,7 @@ GET /req-header
 --- config
     location /bar {
         access_by_lua_block {
-            ngx.req.set_header("Foo\r", "123\r\n")
+            njt.req.set_header("Foo\r", "123\r\n")
         }
         proxy_pass http://127.0.0.1:$server_port/foo;
     }
@@ -2132,7 +2132,7 @@ GET /bar
 --- config
     location /bar {
         access_by_lua_block {
-            ngx.req.set_header("Foo", "\0")
+            njt.req.set_header("Foo", "\0")
         }
         proxy_pass http://127.0.0.1:$server_port/foo;
     }
@@ -2151,7 +2151,7 @@ GET /bar
 --- config
     location /bar {
         access_by_lua_block {
-            ngx.req.set_header("Foo中文", "ab中文a")
+            njt.req.set_header("Foo中文", "ab中文a")
         }
         proxy_pass http://127.0.0.1:$server_port/foo;
     }

@@ -17,10 +17,10 @@ __DATA__
 --- config
     location /read {
         content_by_lua '
-            ngx.say(ngx.OK)
-            ngx.say(ngx.AGAIN)
-            ngx.say(ngx.DONE)
-            ngx.say(ngx.ERROR)
+            njt.say(njt.OK)
+            njt.say(njt.AGAIN)
+            njt.say(njt.DONE)
+            njt.say(njt.ERROR)
         ';
     }
 --- request
@@ -37,7 +37,7 @@ GET /read
 --- config
     location /read {
         content_by_lua '
-            ngx.say(ngx.HTTP_GATEWAY_TIMEOUT)
+            njt.say(njt.HTTP_GATEWAY_TIMEOUT)
         ';
     }
 --- request

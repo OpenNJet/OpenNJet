@@ -25,7 +25,7 @@ __DATA__
     location /test {
         satisfy any;
         allow all;
-        access_by_lua 'ngx.exit(403)';
+        access_by_lua 'njt.exit(403)';
 
         echo something important;
     }
@@ -44,7 +44,7 @@ something important
     location /test {
         satisfy any;
         deny all;
-        access_by_lua 'ngx.exit(403)';
+        access_by_lua 'njt.exit(403)';
 
         echo something important;
     }
@@ -58,12 +58,12 @@ access forbidden by rule
 
 
 
-=== TEST 3: satisfy any (explicit ngx.exit(0))
+=== TEST 3: satisfy any (explicit njt.exit(0))
 --- config
     location /test {
         satisfy any;
         deny all;
-        access_by_lua 'ngx.exit(0)';
+        access_by_lua 'njt.exit(0)';
 
         echo something important;
     }
@@ -103,7 +103,7 @@ something important
     location /test {
         satisfy any;
         deny all;
-        access_by_lua 'ngx.exit(ngx.DECLINED)';
+        access_by_lua 'njt.exit(njt.DECLINED)';
 
         echo something important;
     }
@@ -122,7 +122,7 @@ access forbidden by rule
     location /test {
         satisfy any;
         deny all;
-        access_by_lua 'ngx.location.capture("/echo") ngx.exit(ngx.DECLINED)';
+        access_by_lua 'njt.location.capture("/echo") njt.exit(njt.DECLINED)';
 
         echo something important;
     }
@@ -146,7 +146,7 @@ access forbidden by rule
     location /test {
         satisfy any;
         deny all;
-        access_by_lua 'ngx.location.capture("/echo") return';
+        access_by_lua 'njt.location.capture("/echo") return';
 
         echo something important;
     }
@@ -170,7 +170,7 @@ something important
     location /test {
         satisfy any;
         deny all;
-        access_by_lua 'ngx.location.capture("/echo") ngx.exit(403)';
+        access_by_lua 'njt.location.capture("/echo") njt.exit(403)';
 
         echo something important;
     }
@@ -188,12 +188,12 @@ access forbidden by rule
 
 
 
-=== TEST 9: satisfy any (explicit ngx.exit(0), with I/O)
+=== TEST 9: satisfy any (explicit njt.exit(0), with I/O)
 --- config
     location /test {
         satisfy any;
         deny all;
-        access_by_lua 'ngx.location.capture("/echo") ngx.exit(0)';
+        access_by_lua 'njt.location.capture("/echo") njt.exit(0)';
 
         echo something important;
     }

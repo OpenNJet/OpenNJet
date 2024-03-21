@@ -20,12 +20,12 @@ __DATA__
 --- config
     location /re {
         content_by_lua '
-            for m in ngx.re.gmatch("hello, halo", "h[a-z]|h[a-z][a-z]", "d") do
+            for m in njt.re.gmatch("hello, halo", "h[a-z]|h[a-z][a-z]", "d") do
                 if m then
-                    ngx.say(m[0])
-                    ngx.say(m[1])
+                    njt.say(m[0])
+                    njt.say(m[1])
                 else
-                    ngx.say("not matched: ", m)
+                    njt.say("not matched: ", m)
                 end
             end
         ';
@@ -44,11 +44,11 @@ nil
 --- config
     location /re {
         content_by_lua '
-            for m in ngx.re.gmatch("hello, halo", "h[a-z]|h[a-z][a-z]", "dj") do
+            for m in njt.re.gmatch("hello, halo", "h[a-z]|h[a-z][a-z]", "dj") do
                 if m then
-                    ngx.say(m[0])
+                    njt.say(m[0])
                 else
-                    ngx.say("not matched: ", m)
+                    njt.say("not matched: ", m)
                 end
             end
         ';
@@ -65,15 +65,15 @@ hal
 --- config
     location /re {
         content_by_lua '
-            local it = ngx.re.gmatch("hello, world", "[0-9]", "d")
+            local it = njt.re.gmatch("hello, world", "[0-9]", "d")
             local m = it()
-            if m then ngx.say(m[0]) else ngx.say(m) end
+            if m then njt.say(m[0]) else njt.say(m) end
 
             local m = it()
-            if m then ngx.say(m[0]) else ngx.say(m) end
+            if m then njt.say(m[0]) else njt.say(m) end
 
             local m = it()
-            if m then ngx.say(m[0]) else ngx.say(m) end
+            if m then njt.say(m[0]) else njt.say(m) end
         ';
     }
 --- request
@@ -89,8 +89,8 @@ nil
 --- config
     location /re {
         content_by_lua '
-            local it = ngx.re.gmatch("hello, world", "[a-z]+", "d")
-            ngx.say("done")
+            local it = njt.re.gmatch("hello, world", "[a-z]+", "d")
+            njt.say("done")
         ';
     }
 --- request
@@ -104,12 +104,12 @@ done
 --- config
     location /re {
         content_by_lua '
-            local it = ngx.re.gmatch("hello, world", "[a-z]+", "d")
+            local it = njt.re.gmatch("hello, world", "[a-z]+", "d")
             local m = it()
             if m then
-                ngx.say(m[0])
+                njt.say(m[0])
             else
-                ngx.say("not matched")
+                njt.say("not matched")
             end
         ';
     }
@@ -124,11 +124,11 @@ hello
 --- config
     location /re {
         content_by_lua '
-            for m in ngx.re.gmatch("hello, world", "[a-z]+", "do") do
+            for m in njt.re.gmatch("hello, world", "[a-z]+", "do") do
                 if m then
-                    ngx.say(m[0])
+                    njt.say(m[0])
                 else
-                    ngx.say("not matched: ", m)
+                    njt.say("not matched: ", m)
                 end
             end
         ';
@@ -145,15 +145,15 @@ world
 --- config
     location /re {
         content_by_lua '
-            local it = ngx.re.gmatch("hello, world", "[0-9]", "do")
+            local it = njt.re.gmatch("hello, world", "[0-9]", "do")
             local m = it()
-            if m then ngx.say(m[0]) else ngx.say(m) end
+            if m then njt.say(m[0]) else njt.say(m) end
 
             local m = it()
-            if m then ngx.say(m[0]) else ngx.say(m) end
+            if m then njt.say(m[0]) else njt.say(m) end
 
             local m = it()
-            if m then ngx.say(m[0]) else ngx.say(m) end
+            if m then njt.say(m[0]) else njt.say(m) end
         ';
     }
 --- request
@@ -169,8 +169,8 @@ nil
 --- config
     location /re {
         content_by_lua '
-            local it = ngx.re.gmatch("hello, world", "[a-z]+", "do")
-            ngx.say("done")
+            local it = njt.re.gmatch("hello, world", "[a-z]+", "do")
+            njt.say("done")
         ';
     }
 --- request
@@ -184,12 +184,12 @@ done
 --- config
     location /re {
         content_by_lua '
-            local it = ngx.re.gmatch("hello, world", "[a-z]+", "do")
+            local it = njt.re.gmatch("hello, world", "[a-z]+", "do")
             local m = it()
             if m then
-                ngx.say(m[0])
+                njt.say(m[0])
             else
-                ngx.say("not matched")
+                njt.say("not matched")
             end
         ';
     }
@@ -204,12 +204,12 @@ hello
 --- config
     location /re {
         content_by_lua '
-            local it, err = ngx.re.gmatch("hello\\nworld", "(abc", "d")
+            local it, err = njt.re.gmatch("hello\\nworld", "(abc", "d")
             if not it then
-                ngx.say("error: ", err)
+                njt.say("error: ", err)
                 return
             end
-            ngx.say("success")
+            njt.say("success")
         ';
     }
 --- request
@@ -225,12 +225,12 @@ error: pcre_compile() failed: missing ) in "(abc"
 --- config
     location /re {
         content_by_lua '
-            local it = ngx.re.gmatch("你好", ".", "Ud")
+            local it = njt.re.gmatch("你好", ".", "Ud")
             local m = it()
             if m then
-                ngx.say(m[0])
+                njt.say(m[0])
             else
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         ';
     }
@@ -260,12 +260,12 @@ exec opts: 2000
 --- config
     location /re {
         content_by_lua '
-            local it = ngx.re.gmatch("你好", ".", "ud")
+            local it = njt.re.gmatch("你好", ".", "ud")
             local m = it()
             if m then
-                ngx.say(m[0])
+                njt.say(m[0])
             else
-                ngx.say("not matched!")
+                njt.say("not matched!")
             end
         ';
     }
@@ -295,13 +295,13 @@ exec opts: 0
 --- config
     location /re {
         content_by_lua '
-            for m in  ngx.re.gmatch("hello", "(he|hell)", "d") do
+            for m in  njt.re.gmatch("hello", "(he|hell)", "d") do
                 if m then
-                    ngx.say(m[0])
-                    ngx.say(m[1])
-                    ngx.say(m[2])
+                    njt.say(m[0])
+                    njt.say(m[1])
+                    njt.say(m[2])
                 else
-                    ngx.say("not matched!")
+                    njt.say("not matched!")
                 end
             end
         ';
@@ -319,13 +319,13 @@ nil
 --- config
     location /re {
         content_by_lua '
-            for m in  ngx.re.gmatch("hello", "(he|hell)", "od") do
+            for m in  njt.re.gmatch("hello", "(he|hell)", "od") do
                 if m then
-                    ngx.say(m[0])
-                    ngx.say(m[1])
-                    ngx.say(m[2])
+                    njt.say(m[0])
+                    njt.say(m[1])
+                    njt.say(m[2])
                 else
-                    ngx.say("not matched!")
+                    njt.say("not matched!")
                 end
             end
         ';

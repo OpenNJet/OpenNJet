@@ -1,6 +1,7 @@
 
 /*
  * Copyright (C) by OpenResty Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
 
@@ -78,10 +79,15 @@ static void njt_http_lua_pipe_proc_read_stdout_cleanup(void *data);
 static void njt_http_lua_pipe_proc_read_stderr_cleanup(void *data);
 static void njt_http_lua_pipe_proc_write_cleanup(void *data);
 static void njt_http_lua_pipe_proc_wait_cleanup(void *data);
+static void njt_http_lua_pipe_reap_pids(njt_event_t *ev);
+static void njt_http_lua_pipe_reap_timer_handler(njt_event_t *ev);
+void njt_http_lua_ffi_pipe_proc_destroy(
+    njt_http_lua_ffi_pipe_proc_t *proc);
 
 
 static njt_rbtree_t       njt_http_lua_pipe_rbtree;
 static njt_rbtree_node_t  njt_http_lua_pipe_proc_sentinel;
+static njt_event_t        njt_reap_pid_event;
 
 
 #if (NJT_HTTP_LUA_HAVE_SIGNALFD)
@@ -159,6 +165,15 @@ njt_http_lua_pipe_add_signal_handler(njt_cycle_t *cycle)
     int                  rc;
     struct sigaction     sa;
 #endif
+
+    njt_reap_pid_event.handler = njt_http_lua_pipe_reap_timer_handler;
+    njt_reap_pid_event.log = cycle->log;
+    njt_reap_pid_event.data = cycle;
+    njt_reap_pid_event.cancelable = 1;
+
+    if (!njt_reap_pid_event.timer_set) {
+        njt_add_timer(&njt_reap_pid_event, 1000);
+    }
 
 #if (NJT_HTTP_LUA_HAVE_SIGNALFD)
     if (sigemptyset(&set) != 0) {
@@ -351,11 +366,7 @@ static void
 njt_http_lua_pipe_sigchld_event_handler(njt_event_t *ev)
 {
     int                              n;
-    int                              status;
-    njt_pid_t                        pid;
     njt_connection_t                *c = ev->data;
-    njt_rbtree_node_t               *node;
-    njt_http_lua_pipe_node_t        *pipe_node;
 
     njt_log_debug0(NJT_LOG_DEBUG_EVENT, njt_cycle->log, 0,
                    "lua pipe reaping children");
@@ -377,68 +388,95 @@ njt_http_lua_pipe_sigchld_event_handler(njt_event_t *ev)
             break;
         }
 
-        for ( ;; ) {
-            pid = waitpid(-1, &status, WNOHANG);
+        njt_http_lua_pipe_reap_pids(ev);
+    }
+}
 
-            if (pid == 0) {
-                break;
+
+static void
+njt_http_lua_pipe_reap_pids(njt_event_t *ev)
+{
+    int                              status;
+    njt_pid_t                        pid;
+    njt_rbtree_node_t               *node;
+    njt_http_lua_pipe_node_t        *pipe_node;
+
+    for ( ;; ) {
+        pid = waitpid(-1, &status, WNOHANG);
+
+        if (pid == 0) {
+            break;
+        }
+
+        if (pid < 0) {
+            if (njt_errno != NJT_ECHILD) {
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, njt_errno,
+                              "lua pipe waitpid failed");
             }
 
-            if (pid < 0) {
-                if (njt_errno != NJT_ECHILD) {
-                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, njt_errno,
-                                  "lua pipe waitpid failed");
-                }
+            break;
+        }
 
-                break;
+        /* This log is ported from Nginx's signal handler since we override
+         * or block it in this implementation. */
+        njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
+                      "signal %d (SIGCHLD) received from %P",
+                      SIGCHLD, pid);
+
+        njt_log_debug2(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                       "lua pipe SIGCHLD fd read pid:%P status:%d", pid,
+                       status);
+
+        node = njt_http_lua_pipe_lookup_pid(pid);
+        if (node != NULL) {
+            pipe_node = (njt_http_lua_pipe_node_t *) &node->color;
+            if (pipe_node->wait_co_ctx != NULL) {
+                njt_log_debug2(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+                               "lua pipe resume process:%p waiting for %P",
+                               pipe_node->proc, pid);
+
+                /*
+                 * We need the extra parentheses around the first argument
+                 * of njt_post_event() just to work around macro issues in
+                 * njet cores older than 1.7.12 (exclusive).
+                 */
+                njt_post_event((&pipe_node->wait_co_ctx->sleep),
+                               &njt_posted_events);
             }
 
-            /* This log is ported from Nginx's signal handler since we override
-             * or block it in this implementation. */
-            njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
-                          "signal %d (SIGCHLD) received from %P",
-                          SIGCHLD, pid);
+            /* TODO: we should proactively close and free up the pipe after
+             * the user consume all the data in the pipe.
+             */
+            pipe_node->proc->pipe->dead = 1;
 
-            njt_log_debug2(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                           "lua pipe SIGCHLD fd read pid:%P status:%d", pid,
-                           status);
+            if (WIFSIGNALED(status)) {
+                pipe_node->status = WTERMSIG(status);
+                pipe_node->reason_code = REASON_SIGNAL_CODE;
 
-            node = njt_http_lua_pipe_lookup_pid(pid);
-            if (node != NULL) {
-                pipe_node = (njt_http_lua_pipe_node_t *) &node->color;
-                if (pipe_node->wait_co_ctx != NULL) {
-                    njt_log_debug2(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                                   "lua pipe resume process:%p waiting for %P",
-                                   pipe_node->proc, pid);
+            } else if (WIFEXITED(status)) {
+                pipe_node->status = WEXITSTATUS(status);
+                pipe_node->reason_code = REASON_EXIT_CODE;
 
-                    /*
-                     * We need the extra parentheses around the first argument
-                     * of njt_post_event() just to work around macro issues in
-                     * nginx cores older than 1.7.12 (exclusive).
-                     */
-                    njt_post_event((&pipe_node->wait_co_ctx->sleep),
-                                   &njt_posted_events);
-                }
-
-                pipe_node->proc->pipe->dead = 1;
-
-                if (WIFSIGNALED(status)) {
-                    pipe_node->status = WTERMSIG(status);
-                    pipe_node->reason_code = REASON_SIGNAL_CODE;
-
-                } else if (WIFEXITED(status)) {
-                    pipe_node->status = WEXITSTATUS(status);
-                    pipe_node->reason_code = REASON_EXIT_CODE;
-
-                } else {
-                    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                                  "lua pipe unknown exit status %d from "
-                                  "process %P", status, pid);
-                    pipe_node->status = status;
-                    pipe_node->reason_code = REASON_UNKNOWN_CODE;
-                }
+            } else {
+                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                              "lua pipe unknown exit status %d from "
+                              "process %P", status, pid);
+                pipe_node->status = status;
+                pipe_node->reason_code = REASON_UNKNOWN_CODE;
             }
         }
+    }
+}
+
+
+static void
+njt_http_lua_pipe_reap_timer_handler(njt_event_t *ev)
+{
+    njt_http_lua_pipe_reap_pids(ev);
+
+    if (!njt_exiting) {
+        njt_add_timer(&njt_reap_pid_event, 1000);
+        njt_reap_pid_event.timedout = 0;
     }
 }
 
@@ -562,7 +600,8 @@ njt_http_lua_execvpe(const char *program, char * const argv[],
 
 
 int
-njt_http_lua_ffi_pipe_spawn(njt_http_lua_ffi_pipe_proc_t *proc,
+njt_http_lua_ffi_pipe_spawn(njt_http_request_t *r,
+    njt_http_lua_ffi_pipe_proc_t *proc,
     const char *file, const char **argv, int merge_stderr, size_t buffer_size,
     const char **environ, u_char *errbuf, size_t *errbuf_size)
 {
@@ -582,6 +621,7 @@ njt_http_lua_ffi_pipe_spawn(njt_http_lua_ffi_pipe_proc_t *proc,
     njt_http_lua_pipe_node_t       *pipe_node;
     struct sigaction                sa;
     njt_http_lua_pipe_signal_t     *sig;
+    njt_pool_cleanup_t             *cln;
     sigset_t                        set;
 
     pool_size = njt_align(NJT_MIN_POOL_SIZE + buffer_size * 2,
@@ -773,10 +813,21 @@ njt_http_lua_ffi_pipe_spawn(njt_http_lua_ffi_pipe_proc_t *proc,
             }
         }
 
-        close(in[0]);
-        close(out[1]);
+        if (close(in[0]) == -1) {
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, njt_errno,
+                          "lua pipe failed to close the in[0]");
+        }
+
+        if (close(out[1]) == -1) {
+            njt_log_error(NJT_LOG_EMERG, njt_cycle->log, njt_errno,
+                          "lua pipe failed to close the out[1]");
+        }
+
         if (!merge_stderr) {
-            close(err[1]);
+            if (close(err[1]) == -1) {
+                njt_log_error(NJT_LOG_EMERG, njt_cycle->log, njt_errno,
+                              "lua pipe failed to close the err[1]");
+            }
         }
 
         if (environ != NULL) {
@@ -856,6 +907,21 @@ njt_http_lua_ffi_pipe_spawn(njt_http_lua_ffi_pipe_proc_t *proc,
         }
 
         pp->stderr_fd = stderr_fd;
+    }
+
+    if (pp->cleanup == NULL) {
+        cln = njt_pool_cleanup_add(r->pool, 0);
+
+        if (cln == NULL) {
+            *errbuf_size = njt_snprintf(errbuf, *errbuf_size, "no memory")
+                           - errbuf;
+            goto close_in_out_err_fd;
+        }
+
+        cln->handler = (njt_pool_cleanup_pt) njt_http_lua_ffi_pipe_proc_destroy;
+        cln->data = proc;
+        pp->cleanup = &cln->handler;
+        pp->r = r;
     }
 
     node = (njt_rbtree_node_t *) (pp + 1);
@@ -1128,6 +1194,12 @@ njt_http_lua_ffi_pipe_proc_destroy(njt_http_lua_ffi_pipe_proc_t *proc)
         }
     }
 
+    if (pipe->cleanup != NULL) {
+        *pipe->cleanup = NULL;
+        njt_http_lua_cleanup_free(pipe->r, pipe->cleanup);
+        pipe->cleanup = NULL;
+    }
+
     njt_http_lua_pipe_proc_finalize(proc);
     njt_destroy_pool(pipe->pool);
     proc->pipe = NULL;
@@ -1141,7 +1213,7 @@ njt_http_lua_pipe_get_lua_ctx(njt_http_request_t *r,
     int                                 rc;
 
     *ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
-    if (ctx == NULL) {
+    if (*ctx == NULL) {
         return NJT_HTTP_LUA_FFI_NO_REQ_CTX;
     }
 

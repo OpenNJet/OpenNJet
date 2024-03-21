@@ -19,7 +19,7 @@ __DATA__
 === TEST 1: base64 encode hello
 --- config
     location = /encode_base64 {
-        content_by_lua 'ngx.say(ngx.encode_base64("hello"))';
+        content_by_lua 'njt.say(njt.encode_base64("hello"))';
     }
 --- request
 GET /encode_base64
@@ -28,10 +28,10 @@ aGVsbG8=
 
 
 
-=== TEST 2: nil string to ngx.encode_base64
+=== TEST 2: nil string to njt.encode_base64
 --- config
     location = /encode_base64 {
-        content_by_lua 'ngx.say("left" .. ngx.encode_base64(nil) .. "right")';
+        content_by_lua 'njt.say("left" .. njt.encode_base64(nil) .. "right")';
     }
 --- request
 GET /encode_base64
@@ -40,10 +40,10 @@ leftright
 
 
 
-=== TEST 3: null string to ngx.encode_base64
+=== TEST 3: null string to njt.encode_base64
 --- config
     location = /encode_base64 {
-        content_by_lua 'ngx.say("left" .. ngx.encode_base64("") .. "right")';
+        content_by_lua 'njt.say("left" .. njt.encode_base64("") .. "right")';
     }
 --- request
 GET /encode_base64
@@ -52,10 +52,10 @@ leftright
 
 
 
-=== TEST 4: use ngx.encode_base64 in set_by_lua
+=== TEST 4: use njt.encode_base64 in set_by_lua
 --- config
     location = /encode_base64 {
-        set_by_lua $a 'return ngx.encode_base64("hello")';
+        set_by_lua $a 'return njt.encode_base64("hello")';
         echo $a;
     }
 --- request
@@ -65,10 +65,10 @@ aGVsbG8=
 
 
 
-=== TEST 5: use ngx.encode_base64 in set_by_lua (nil)
+=== TEST 5: use njt.encode_base64 in set_by_lua (nil)
 --- config
     location = /encode_base64 {
-        set_by_lua $a 'return "left" .. ngx.encode_base64(nil) .. "right"';
+        set_by_lua $a 'return "left" .. njt.encode_base64(nil) .. "right"';
         echo $a;
     }
 --- request
@@ -78,10 +78,10 @@ leftright
 
 
 
-=== TEST 6: use ngx.encode_base64 in set_by_lua (null string)
+=== TEST 6: use njt.encode_base64 in set_by_lua (null string)
 --- config
     location /encode_base64 {
-        set_by_lua $a 'return "left" .. ngx.encode_base64("") .. "right"';
+        set_by_lua $a 'return "left" .. njt.encode_base64("") .. "right"';
         echo $a;
     }
 --- request
@@ -94,7 +94,7 @@ leftright
 === TEST 7: base64 encode hello
 --- config
     location = /decode_base64 {
-        content_by_lua 'ngx.say(ngx.decode_base64("aGVsbG8="))';
+        content_by_lua 'njt.say(njt.decode_base64("aGVsbG8="))';
     }
 --- request
 GET /decode_base64
@@ -103,10 +103,10 @@ hello
 
 
 
-=== TEST 8: null string to ngx.decode_base64
+=== TEST 8: null string to njt.decode_base64
 --- config
     location = /decode_base64 {
-        content_by_lua 'ngx.say("left" .. ngx.decode_base64("") .. "right")';
+        content_by_lua 'njt.say("left" .. njt.decode_base64("") .. "right")';
     }
 --- request
 GET /decode_base64
@@ -115,10 +115,10 @@ leftright
 
 
 
-=== TEST 9: use ngx.decode_base64 in set_by_lua
+=== TEST 9: use njt.decode_base64 in set_by_lua
 --- config
     location = /decode_base64 {
-        set_by_lua $a 'return ngx.decode_base64("aGVsbG8=")';
+        set_by_lua $a 'return njt.decode_base64("aGVsbG8=")';
         echo $a;
     }
 --- request
@@ -128,10 +128,10 @@ hello
 
 
 
-=== TEST 10: use ngx.decode_base64 in set_by_lua (nil)
+=== TEST 10: use njt.decode_base64 in set_by_lua (nil)
 --- config
     location = /decode_base64 {
-        set_by_lua $a 'return "left" .. ngx.decode_base64(nil) .. "right"';
+        set_by_lua $a 'return "left" .. njt.decode_base64(nil) .. "right"';
         echo $a;
     }
 --- request
@@ -143,10 +143,10 @@ string argument only
 
 
 
-=== TEST 11: use ngx.decode_base64 in set_by_lua (null string)
+=== TEST 11: use njt.decode_base64 in set_by_lua (null string)
 --- config
     location /decode_base64 {
-        set_by_lua $a 'return "left" .. ngx.decode_base64("") .. "right"';
+        set_by_lua $a 'return "left" .. njt.decode_base64("") .. "right"';
         echo $a;
     }
 --- request
@@ -159,7 +159,7 @@ leftright
 === TEST 12: base64 encode number
 --- config
     location = /t {
-        content_by_lua 'ngx.say(ngx.encode_base64(32))';
+        content_by_lua 'njt.say(njt.encode_base64(32))';
     }
 --- request
 GET /t
@@ -171,7 +171,7 @@ MzI=
 === TEST 13: base64 decode number
 --- config
     location = /t {
-        content_by_lua 'ngx.say(ngx.decode_base64(32))';
+        content_by_lua 'njt.say(njt.decode_base64(32))';
     }
 --- request
 GET /t
@@ -185,7 +185,7 @@ string argument only
 === TEST 14: base64 decode error
 --- config
     location = /t {
-        content_by_lua 'ngx.say(ngx.decode_base64("^*~"))';
+        content_by_lua 'njt.say(njt.decode_base64("^*~"))';
     }
 --- request
 GET /t
@@ -199,7 +199,7 @@ nil
 === TEST 15: base64 encode without padding (explicit true to no_padding)
 --- config
     location = /t {
-        content_by_lua 'ngx.say(ngx.encode_base64("hello", true))';
+        content_by_lua 'njt.say(njt.encode_base64("hello", true))';
     }
 --- request
 GET /t
@@ -211,7 +211,7 @@ aGVsbG8
 === TEST 16: base64 encode short string
 --- config
     location = /t {
-        content_by_lua 'ngx.say(ngx.encode_base64("w"))';
+        content_by_lua 'njt.say(njt.encode_base64("w"))';
     }
 --- request
 GET /t
@@ -223,7 +223,7 @@ dw==
 === TEST 17: base64 encode short string with padding (explicit false to no_padding)
 --- config
     location = /t {
-        content_by_lua 'ngx.say(ngx.encode_base64("w", false))';
+        content_by_lua 'njt.say(njt.encode_base64("w", false))';
     }
 --- request
 GET /t
@@ -235,7 +235,7 @@ dw==
 === TEST 18: base64 encode with wrong 2nd parameter
 --- config
     location = /t {
-        content_by_lua 'ngx.say(ngx.encode_base64("w", 0))';
+        content_by_lua 'njt.say(njt.encode_base64("w", 0))';
     }
 --- request
 GET /t

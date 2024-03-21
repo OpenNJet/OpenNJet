@@ -24,6 +24,11 @@
 #if (NJT_PCRE)
 njt_pool_t *njt_stream_lua_pcre_malloc_init(njt_pool_t *pool);
 void njt_stream_lua_pcre_malloc_done(njt_pool_t *old_pool);
+
+#if (NJT_PCRE2)
+void *njt_stream_lua_pcre_malloc(size_t size, void *data);
+void njt_stream_lua_pcre_free(void *ptr, void *data);
+#endif
 #endif
 
 

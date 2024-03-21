@@ -21,7 +21,7 @@ __DATA__
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", nil)
+            njt.req.set_header("User-Agent", nil)
 
         ';
         echo "User-Agent: $http_user_agent";
@@ -34,12 +34,12 @@ GET /t
 User-Agent: Opera/9.80 (Macintosh; Intel Mac OS X 10.7.4; U; en) Presto/2.10.229 Version/11.62
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: opera: %d\n", $r->headers_in->opera)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: opera: %d\n", $r->headers_in->opera)
 }
 
@@ -58,7 +58,7 @@ User-Agent:
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", nil)
+            njt.req.set_header("User-Agent", nil)
 
         ';
         echo "User-Agent: $http_user_agent";
@@ -71,13 +71,13 @@ GET /t
 User-Agent: Mozilla/4.0 (compatible; MSIE 4.01; Windows NT 5.0)
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
@@ -98,7 +98,7 @@ User-Agent:
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", "Mozilla/4.0 (compatible; MSIE 4.01; Windows NT 5.0)")
+            njt.req.set_header("User-Agent", "Mozilla/4.0 (compatible; MSIE 4.01; Windows NT 5.0)")
         ';
         echo "User-Agent: $http_user_agent";
     }
@@ -107,13 +107,13 @@ User-Agent:
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
@@ -134,7 +134,7 @@ User-Agent: Mozilla/4.0 (compatible; MSIE 4.01; Windows NT 5.0)
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", nil)
+            njt.req.set_header("User-Agent", nil)
 
         ';
         echo "User-Agent: $http_user_agent";
@@ -147,13 +147,13 @@ GET /t
 User-Agent: Mozilla/4.0 (compatible; MSIE 5.01; Windows 95; MSIECrawler)
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
@@ -174,7 +174,7 @@ User-Agent:
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", "Mozilla/4.0 (compatible; MSIE 5.01; Windows 95; MSIECrawler)")
+            njt.req.set_header("User-Agent", "Mozilla/4.0 (compatible; MSIE 5.01; Windows 95; MSIECrawler)")
         ';
         echo "User-Agent: $http_user_agent";
     }
@@ -183,13 +183,13 @@ User-Agent:
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
@@ -210,7 +210,7 @@ User-Agent: Mozilla/4.0 (compatible; MSIE 5.01; Windows 95; MSIECrawler)
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", nil)
+            njt.req.set_header("User-Agent", nil)
 
         ';
         echo "User-Agent: $http_user_agent";
@@ -223,13 +223,13 @@ GET /t
 User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0; Google Wireless Transcoder;)
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
@@ -250,7 +250,7 @@ User-Agent:
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0; Google Wireless Transcoder;)")
+            njt.req.set_header("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0; Google Wireless Transcoder;)")
         ';
         echo "User-Agent: $http_user_agent";
     }
@@ -259,13 +259,13 @@ User-Agent:
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
@@ -286,7 +286,7 @@ User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0; Google Wireless T
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", nil)
+            njt.req.set_header("User-Agent", nil)
 
         ';
         echo "User-Agent: $http_user_agent";
@@ -299,13 +299,13 @@ GET /t
 User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; InfoPath.1)
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
@@ -326,7 +326,7 @@ User-Agent:
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; InfoPath.1)")
+            njt.req.set_header("User-Agent", "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; InfoPath.1)")
         ';
         echo "User-Agent: $http_user_agent";
     }
@@ -335,13 +335,13 @@ User-Agent:
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
@@ -362,7 +362,7 @@ User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; InfoPath.1)
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; winfx; .NET CLR 1.1.4322; .NET CLR 2.0.50727; Zune 2.0)")
+            njt.req.set_header("User-Agent", "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; winfx; .NET CLR 1.1.4322; .NET CLR 2.0.50727; Zune 2.0)")
         ';
         echo "User-Agent: $http_user_agent";
     }
@@ -371,13 +371,13 @@ User-Agent: Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; InfoPath.1)
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
 }
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: msie=%d msie6=%d\n",
            $r->headers_in->msie,
            $r->headers_in->msie6)
@@ -398,7 +398,7 @@ User-Agent: Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; winfx; .NET CLR 1
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", nil)
+            njt.req.set_header("User-Agent", nil)
 
         ';
         echo "User-Agent: $http_user_agent";
@@ -411,12 +411,12 @@ GET /t
 User-Agent: Mozilla/5.0 (Android; Mobile; rv:13.0) Gecko/13.0 Firefox/13.0
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: gecko: %d\n", $r->headers_in->gecko)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: gecko: %d\n", $r->headers_in->gecko)
 }
 
@@ -435,7 +435,7 @@ User-Agent:
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:13.0) Gecko/13.0 Firefox/13.0")
+            njt.req.set_header("User-Agent", "Mozilla/5.0 (Android; Mobile; rv:13.0) Gecko/13.0 Firefox/13.0")
 
         ';
         echo "User-Agent: $http_user_agent";
@@ -445,12 +445,12 @@ User-Agent:
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: gecko: %d\n", $r->headers_in->gecko)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: gecko: %d\n", $r->headers_in->gecko)
 }
 
@@ -469,7 +469,7 @@ User-Agent: Mozilla/5.0 (Android; Mobile; rv:13.0) Gecko/13.0 Firefox/13.0
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", nil)
+            njt.req.set_header("User-Agent", nil)
 
         ';
         echo "User-Agent: $http_user_agent";
@@ -482,12 +482,12 @@ GET /t
 User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: chrome: %d\n", $r->headers_in->chrome)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: chrome: %d\n", $r->headers_in->chrome)
 }
 
@@ -506,7 +506,7 @@ User-Agent:
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19")
+            njt.req.set_header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.151 Safari/535.19")
 
         ';
         echo "User-Agent: $http_user_agent";
@@ -516,12 +516,12 @@ User-Agent:
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: chrome: %d\n", $r->headers_in->chrome)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: chrome: %d\n", $r->headers_in->chrome)
 }
 
@@ -540,7 +540,7 @@ User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_3) AppleWebKit/535.19 (K
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", nil)
+            njt.req.set_header("User-Agent", nil)
 
         ';
         echo "User-Agent: $http_user_agent";
@@ -553,12 +553,12 @@ GET /t
 User-Agent: Mozilla/5.0 (Macintosh; U; PPC Mac OS X; en) AppleWebKit/125.2 (KHTML, like Gecko) Safari/125.8
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: safari: %d\n", $r->headers_in->safari)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: safari: %d\n", $r->headers_in->safari)
 }
 
@@ -577,7 +577,7 @@ User-Agent:
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; en) AppleWebKit/125.2 (KHTML, like Gecko) Safari/125.8")
+            njt.req.set_header("User-Agent", "Mozilla/5.0 (Macintosh; U; PPC Mac OS X; en) AppleWebKit/125.2 (KHTML, like Gecko) Safari/125.8")
         ';
         echo "User-Agent: $http_user_agent";
     }
@@ -586,12 +586,12 @@ User-Agent:
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: safari: %d\n", $r->headers_in->safari)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: safari: %d\n", $r->headers_in->safari)
 }
 
@@ -610,7 +610,7 @@ User-Agent: Mozilla/5.0 (Macintosh; U; PPC Mac OS X; en) AppleWebKit/125.2 (KHTM
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", nil)
+            njt.req.set_header("User-Agent", nil)
 
         ';
         echo "User-Agent: $http_user_agent";
@@ -623,12 +623,12 @@ GET /t
 User-Agent: Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.10 (like Gecko) (Kubuntu)
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: konqueror: %d\n", $r->headers_in->konqueror)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: konqueror: %d\n", $r->headers_in->konqueror)
 }
 
@@ -647,7 +647,7 @@ User-Agent:
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", "Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.10 (like Gecko) (Kubuntu)")
+            njt.req.set_header("User-Agent", "Mozilla/5.0 (compatible; Konqueror/3.5; Linux) KHTML/3.5.10 (like Gecko) (Kubuntu)")
         ';
         echo "User-Agent: $http_user_agent";
     }
@@ -656,12 +656,12 @@ User-Agent:
 GET /t
 
 --- stap
-F(ngx_http_lua_rewrite_by_chunk) {
+F(njt_http_lua_rewrite_by_chunk) {
     printf("rewrite: konqueror: %d\n", $r->headers_in->konqueror)
 }
 
 
-F(ngx_http_core_content_phase) {
+F(njt_http_core_content_phase) {
     printf("content: konqueror: %d\n", $r->headers_in->konqueror)
 }
 

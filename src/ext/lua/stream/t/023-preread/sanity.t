@@ -17,10 +17,10 @@ __DATA__
 
 === TEST 1: basic print
 --- stream_server_config
-    preread_by_lua_block { ngx.print("Hello, Lua!\n") }
+    preread_by_lua_block { njt.print("Hello, Lua!\n") }
 
     content_by_lua return;
-    #content_by_lua 'ngx.say("Hi")';
+    #content_by_lua 'njt.say("Hi")';
 --- stream_response
 Hello, Lua!
 
@@ -29,21 +29,21 @@ Hello, Lua!
 === TEST 2: basic say
 --- stream_server_config
     preread_by_lua_block {
-        ngx.say("Hello, Lua!")
-        ngx.say("Yay! ", 123);
+        njt.say("Hello, Lua!")
+        njt.say("Yay! ", 123);
     }
 
-    content_by_lua_block { ngx.exit(ngx.OK) }
+    content_by_lua_block { njt.exit(njt.OK) }
 --- stream_response
 Hello, Lua!
 Yay! 123
 
 
 
-=== TEST 3: no ngx.echo
+=== TEST 3: no njt.echo
 --- stream_server_config
-    preread_by_lua_block { ngx.echo("Hello, Lua!\\n") }
-    content_by_lua_block { ngx.exit(ngx.OK) }
+    preread_by_lua_block { njt.echo("Hello, Lua!\\n") }
+    content_by_lua_block { njt.exit(njt.OK) }
 --- error_log
 attempt to call field 'echo' (a nil value)
 
@@ -53,8 +53,8 @@ attempt to call field 'echo' (a nil value)
 --- stream_server_config
     # NOTE: the newline escape sequence must be double-escaped, as nginx config
     # parser will unescape first!
-    preread_by_lua_block { v = ngx.var["remote_addr"] ngx.print("remote_addr: ", v, "\n") }
-    content_by_lua_block { ngx.exit(ngx.OK) }
+    preread_by_lua_block { v = njt.var["remote_addr"] njt.print("remote_addr: ", v, "\n") }
+    content_by_lua_block { njt.exit(njt.OK) }
 --- stream_response
 remote_addr: 127.0.0.1
 
@@ -63,11 +63,11 @@ remote_addr: 127.0.0.1
 === TEST 5: variable (file)
 --- stream_server_config
     preread_by_lua_file html/test.lua;
-    content_by_lua_block { ngx.exit(ngx.OK) }
+    content_by_lua_block { njt.exit(njt.OK) }
 --- user_files
 >>> test.lua
-v = ngx.var["remote_addr"]
-ngx.print("remote_addr: ", v, "\n")
+v = njt.var["remote_addr"]
+njt.print("remote_addr: ", v, "\n")
 --- stream_response
 remote_addr: 127.0.0.1
 
@@ -75,7 +75,7 @@ remote_addr: 127.0.0.1
 
 === TEST 6: nil is "nil"
 --- stream_server_config
-    preread_by_lua_block { ngx.say(nil) }
+    preread_by_lua_block { njt.say(nil) }
 
     content_by_lua return;
 --- stream_response
@@ -85,7 +85,7 @@ nil
 
 === TEST 7: write boolean
 --- stream_server_config
-    preread_by_lua_block { ngx.say(true, " ", false) }
+    preread_by_lua_block { njt.say(true, " ", false) }
 
     content_by_lua return;
 --- stream_response
@@ -95,8 +95,8 @@ true false
 
 === TEST 8: nginx quote sql string 1
 --- stream_server_config
-    preread_by_lua_block { ngx.say(ngx.quote_sql_str('hello\n\r\'"\\')) }
-    content_by_lua_block { ngx.exit(ngx.OK) }
+    preread_by_lua_block { njt.say(njt.quote_sql_str('hello\n\r\'"\\')) }
+    content_by_lua_block { njt.exit(njt.OK) }
 --- stream_response
 'hello\n\r\'\"\\'
 
@@ -104,8 +104,8 @@ true false
 
 === TEST 9: nginx quote sql string 2
 --- stream_server_config
-    preread_by_lua_block { ngx.say(ngx.quote_sql_str("hello\n\r'\"\\")) }
-    content_by_lua_block { ngx.exit(ngx.OK) }
+    preread_by_lua_block { njt.say(njt.quote_sql_str("hello\n\r'\"\\")) }
+    content_by_lua_block { njt.exit(njt.OK) }
 --- stream_response
 'hello\n\r\'\"\\'
 
@@ -115,10 +115,10 @@ true false
 --- stream_server_config
     preread_by_lua_block {
         local s = "hello 112";
-        ngx.say(string.find(s, "%d+$"));
+        njt.say(string.find(s, "%d+$"));
     }
 
-    content_by_lua_block { ngx.exit(ngx.OK) }
+    content_by_lua_block { njt.exit(njt.OK) }
 --- stream_response
 79
 
@@ -127,14 +127,14 @@ true false
 === TEST 11: short circuit
 --- stream_server_config
     preread_by_lua_block {
-        ngx.say("Hi")
-        ngx.eof()
-        ngx.exit(ngx.OK)
+        njt.say("Hi")
+        njt.eof()
+        njt.exit(njt.OK)
     }
 
     content_by_lua_block {
             print("HERE")
-            ngx.print("BAD")
+            njt.print("BAD")
     }
 --- stream_response
 Hi
@@ -147,13 +147,13 @@ Hi
 
     content_by_lua_block {
             print("HERE")
-            ngx.print("BAD")
+            njt.print("BAD")
     }
 --- user_files
 >>> 127.0.0.1.lua
-ngx.say("Hi")
-ngx.eof()
-ngx.exit(ngx.OK)
+njt.say("Hi")
+njt.eof()
+njt.exit(njt.OK)
 --- stream_response
 Hi
 
@@ -163,27 +163,27 @@ Hi
 --- stream_server_config
     ssl_preread on;
     preread_by_lua_block {
-        local n = ngx.var.ssl_preread_server_name
+        local n = njt.var.ssl_preread_server_name
 
         if n then
-            ngx.log(ngx.INFO, "$ssl_preread_server_name = " .. n)
+            njt.log(njt.INFO, "$ssl_preread_server_name = " .. n)
         end
 
         if n == "my.sni.server.name" then
-            ngx.exit(200)
+            njt.exit(200)
         end
 
-        local sock = ngx.socket.tcp()
-        local ok, err = sock:connect("127.0.0.1", tonumber(ngx.var.server_port))
+        local sock = njt.socket.tcp()
+        local ok, err = sock:connect("127.0.0.1", tonumber(njt.var.server_port))
         if not ok then
-            ngx.say(err)
-            return ngx.exit(500)
+            njt.say(err)
+            return njt.exit(500)
         end
 
         local _, err = sock:sslhandshake(nil, "my.sni.server.name")
         if not err then
-            ngx.say("did not error as expected")
-            return ngx.exit(500)
+            njt.say("did not error as expected")
+            return njt.exit(500)
         end
 
         sock:close()
@@ -208,7 +208,7 @@ $ssl_preread_server_name = my.sni.server.name while prereading client data
     return here;
 --- user_files
 >>> test.lua
-v = ngx.var["remote_addr"]
-ngx.print("remote_addr: ", v, "\n")
+v = njt.var["remote_addr"]
+njt.print("remote_addr: ", v, "\n")
 --- error_log eval
 qr/failed to load external Lua file ".*?\btest2\.lua": cannot open .*? No such file or directory/

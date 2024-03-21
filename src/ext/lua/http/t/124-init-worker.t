@@ -25,12 +25,12 @@ __DATA__
 === TEST 1: set a global lua var
 --- http_config
     init_worker_by_lua '
-        foo = ngx.md5("hello world")
+        foo = njt.md5("hello world")
     ';
 --- config
     location /t {
         content_by_lua '
-            ngx.say("foo = ", foo)
+            njt.say("foo = ", foo)
         ';
     }
 --- request
@@ -42,15 +42,15 @@ foo = 5eb63bbbe01eeed093cb22bb8f5acdc3
 
 
 
-=== TEST 2: no ngx.say()
+=== TEST 2: no njt.say()
 --- http_config
     init_worker_by_lua '
-        ngx.say("hello")
+        njt.say("hello")
     ';
 --- config
     location /t {
         content_by_lua '
-            ngx.say("foo = ", foo)
+            njt.say("foo = ", foo)
         ';
     }
 --- request
@@ -67,24 +67,24 @@ API disabled in the context of init_worker_by_lua*
     init_worker_by_lua '
         _G.my_counter = 0
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
         local function handler(premature)
             warn("timer expired (premature: ", premature, "; counter: ",
                  _G.my_counter, ")")
             _G.my_counter = _G.my_counter + 1
         end
-        local ok, err = ngx.timer.at(0, handler)
+        local ok, err = njt.timer.at(0, handler)
         if not ok then
-            ngx.log(ngx.ERR, "failed to create timer: ", err)
+            njt.log(njt.ERR, "failed to create timer: ", err)
         end
         warn("created timer: ", ok)
     ';
 --- config
     location /t {
         content_by_lua '
-            -- ngx.sleep(0.001)
-            ngx.say("my_counter = ", _G.my_counter)
+            -- njt.sleep(0.001)
+            njt.say("my_counter = ", _G.my_counter)
             _G.my_counter = _G.my_counter + 1
         ';
     }
@@ -107,15 +107,15 @@ warn(): timer expired (premature: false; counter: 0)
     init_worker_by_lua '
         _G.done = false
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
         local function error(...)
-            ngx.log(ngx.ERR, ...)
+            njt.log(njt.ERR, ...)
         end
         local function handler(premature)
             warn("timer expired (premature: ", premature, ")")
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
                 error("failed to connect: ", err)
@@ -143,7 +143,7 @@ warn(): timer expired (premature: false; counter: 0)
             _G.done = true
         end
 
-        local ok, err = ngx.timer.at(0, handler)
+        local ok, err = njt.timer.at(0, handler)
         if not ok then
             error("failed to create timer: ", err)
         end
@@ -153,17 +153,17 @@ warn(): timer expired (premature: false; counter: 0)
     location = /t {
         content_by_lua '
             local waited = 0
-            local sleep = ngx.sleep
+            local sleep = njt.sleep
             while not _G.done do
                 local delay = 0.001
                 sleep(delay)
                 waited = waited + delay
                 if waited > 1 then
-                    ngx.say("timed out")
+                    njt.say("timed out")
                     return
                 end
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -193,12 +193,12 @@ lua tcp socket read timeout: 60000
 --- config
     location /t {
         content_by_lua '
-            ngx.say("foo = ", foo)
+            njt.say("foo = ", foo)
         ';
     }
 --- user_files
 >>> foo.lua
-foo = ngx.md5("hello world")
+foo = njt.md5("hello world")
 --- request
     GET /t
 --- response_body
@@ -217,15 +217,15 @@ env TEST_NGINX_MEMCACHED_PORT;
 >>> foo.lua
 _G.done = false
 local function warn(...)
-    ngx.log(ngx.WARN, ...)
+    njt.log(njt.WARN, ...)
 end
 local function error(...)
-    ngx.log(ngx.ERR, ...)
+    njt.log(njt.ERR, ...)
 end
 local function handler(premature)
     warn("timer expired (premature: ", premature, ")")
 
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1",
                                  os.getenv("TEST_NGINX_MEMCACHED_PORT"))
     if not ok then
@@ -254,7 +254,7 @@ local function handler(premature)
     _G.done = true
 end
 
-local ok, err = ngx.timer.at(0, handler)
+local ok, err = njt.timer.at(0, handler)
 if not ok then
     error("failed to create timer: ", err)
 end
@@ -264,17 +264,17 @@ warn("created timer: ", ok)
     location = /t {
         content_by_lua '
             local waited = 0
-            local sleep = ngx.sleep
+            local sleep = njt.sleep
             while not _G.done do
                 local delay = 0.001
                 sleep(delay)
                 waited = waited + delay
                 if waited > 1 then
-                    ngx.say("timed out")
+                    njt.say("timed out")
                     return
                 end
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -298,14 +298,14 @@ lua tcp socket read timeout: 60000
 
 
 
-=== TEST 7: ngx.ctx
+=== TEST 7: njt.ctx
 --- http_config
     init_worker_by_lua '
-        ngx.ctx.foo = "hello world"
+        njt.ctx.foo = "hello world"
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
-        warn("foo = ", ngx.ctx.foo)
+        warn("foo = ", njt.ctx.foo)
     ';
 --- config
     location /t {
@@ -326,7 +326,7 @@ warn(): foo = hello world
 === TEST 8: print
 --- http_config
     init_worker_by_lua '
-        print("md5 = ", ngx.md5("hello world"))
+        print("md5 = ", njt.md5("hello world"))
     ';
 --- config
     location /t {
@@ -347,10 +347,10 @@ md5 = 5eb63bbbe01eeed093cb22bb8f5acdc3
 --- http_config
     init_worker_by_lua '
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
 
-        warn(ngx.unescape_uri("hello%20world"))
+        warn(njt.unescape_uri("hello%20world"))
     ';
 --- config
     location /t {
@@ -372,10 +372,10 @@ warn(): hello world
 --- http_config
     init_worker_by_lua '
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
 
-        warn(ngx.escape_uri("hello world"))
+        warn(njt.escape_uri("hello world"))
     ';
 --- config
     location /t {
@@ -393,14 +393,14 @@ warn(): hello%20world
 
 
 
-=== TEST 11: ngx.re
+=== TEST 11: njt.re
 --- http_config
     init_worker_by_lua '
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
 
-        warn((ngx.re.sub("hello world", "world", "XXX", "jo")))
+        warn((njt.re.sub("hello world", "world", "XXX", "jo")))
     ';
 --- config
     location /t {
@@ -418,14 +418,14 @@ warn(): hello XXX
 
 
 
-=== TEST 12: ngx.http_time
+=== TEST 12: njt.http_time
 --- http_config
     init_worker_by_lua '
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
 
-        warn(ngx.http_time(5678))
+        warn(njt.http_time(5678))
     ';
 --- config
     location /t {
@@ -458,7 +458,7 @@ warn(): Thu, 01 Jan 1970 01:34:38 GMT
         end
 
         local function handler()
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local port = 80
             local ok, err = sock:connect("agentzh.org", port)
             if not ok then
@@ -500,7 +500,7 @@ warn(): Thu, 01 Jan 1970 01:34:38 GMT
             done = true
         end
 
-        local ok, err = ngx.timer.at(0, handler)
+        local ok, err = njt.timer.at(0, handler)
         if not ok then
             say("failed to create timer: ", err)
         else
@@ -513,10 +513,10 @@ warn(): Thu, 01 Jan 1970 01:34:38 GMT
         content_by_lua '
             local i = 0
             while not done and i < 3000 do
-                ngx.sleep(0.001)
+                njt.sleep(0.001)
                 i = i + 1
             end
-            ngx.print(logs)
+            njt.print(logs)
         ';
     }
 --- request
@@ -542,7 +542,7 @@ second line received: (?:Date|Server): .*?
         end
 
         local function handler()
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", 16787)
             if not ok then
                 say("failed to connect: ", err)
@@ -552,7 +552,7 @@ second line received: (?:Date|Server): .*?
             done = true
         end
 
-        local ok, err = ngx.timer.at(0, handler)
+        local ok, err = njt.timer.at(0, handler)
         if not ok then
             say("failed to create timer: ", err)
         else
@@ -565,10 +565,10 @@ second line received: (?:Date|Server): .*?
         content_by_lua '
             local i = 0
             while not done and i < 1000 do
-                ngx.sleep(0.001)
+                njt.sleep(0.001)
                 i = i + 1
             end
-            ngx.print(logs)
+            njt.print(logs)
         ';
     }
 
@@ -578,7 +578,7 @@ second line received: (?:Date|Server): .*?
 timer created
 failed to connect: connection refused
 --- error_log eval
-qr/connect\(\) failed \(\d+: Connection refused\), context: ngx\.timer$/
+qr/connect\(\) failed \(\d+: Connection refused\), context: njt\.timer$/
 
 
 
@@ -593,7 +593,7 @@ qr/connect\(\) failed \(\d+: Connection refused\), context: ngx\.timer$/
         end
 
         local function handler()
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", 16787)
             if not ok then
                 say("failed to connect: ", err)
@@ -603,7 +603,7 @@ qr/connect\(\) failed \(\d+: Connection refused\), context: ngx\.timer$/
             done = true
         end
 
-        local ok, err = ngx.timer.at(0, handler)
+        local ok, err = njt.timer.at(0, handler)
         if not ok then
             say("failed to create timer: ", err)
         else
@@ -616,10 +616,10 @@ qr/connect\(\) failed \(\d+: Connection refused\), context: ngx\.timer$/
         content_by_lua '
             local i = 0
             while not done and i < 1000 do
-                ngx.sleep(0.001)
+                njt.sleep(0.001)
                 i = i + 1
             end
-            ngx.print(logs)
+            njt.print(logs)
         ';
     }
 
@@ -644,7 +644,7 @@ qr/connect\(\) failed \(\d+: Connection refused\)/
         end
 
         local function handler()
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", 16787)
             if not ok then
                 say("failed to connect: ", err)
@@ -654,7 +654,7 @@ qr/connect\(\) failed \(\d+: Connection refused\)/
             done = true
         end
 
-        local ok, err = ngx.timer.at(0, handler)
+        local ok, err = njt.timer.at(0, handler)
         if not ok then
             say("failed to create timer: ", err)
         else
@@ -667,10 +667,10 @@ qr/connect\(\) failed \(\d+: Connection refused\)/
         content_by_lua '
             local i = 0
             while not done and i < 1000 do
-                ngx.sleep(0.001)
+                njt.sleep(0.001)
                 i = i + 1
             end
-            ngx.print(logs)
+            njt.print(logs)
         ';
     }
 
@@ -716,16 +716,16 @@ ok
     init_worker_by_lua '
         done = false
         os.execute("sleep 0.1")
-        ngx.log(ngx.ERR, "Bad bad bad")
+        njt.log(njt.ERR, "Bad bad bad")
         done = true
     ';
 --- config
     location /t {
         content_by_lua '
             while not done do
-                ngx.sleep(0.001)
+                njt.sleep(0.001)
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- log_level: error
@@ -744,7 +744,7 @@ Bad bad bad
 
 
 
-=== TEST 19: fake module calls ngx_http_conf_get_module_srv_conf in its merge_srv_conf callback (GitHub issue #554)
+=== TEST 19: fake module calls njt_http_conf_get_module_srv_conf in its merge_srv_conf callback (GitHub issue #554)
 This also affects merge_loc_conf
 --- http_config
     init_worker_by_lua return;
@@ -771,8 +771,8 @@ ok
 
     init_by_lua_block {
         require "resty.core.regex"
-        assert(ngx.re.match("hello, world", [[hello, \w+]], "joi"))
-        assert(ngx.re.match("hi, world", [[hi, \w+]], "ji"))
+        assert(njt.re.match("hello, world", [[hello, \w+]], "joi"))
+        assert(njt.re.match("hi, world", [[hi, \w+]], "ji"))
     }
 
 --- config
@@ -817,8 +817,8 @@ start privileged agent process
 
     init_by_lua_block {
         require "resty.core.regex"
-        assert(ngx.re.match("hello, world", [[hello, \w+]], "joi"))
-        assert(ngx.re.match("hi, world", [[hi, \w+]], "ji"))
+        assert(njt.re.match("hello, world", [[hello, \w+]], "joi"))
+        assert(njt.re.match("hi, world", [[hi, \w+]], "ji"))
     }
 
 --- config
@@ -858,10 +858,10 @@ start privileged agent process
     proxy_cache_path /tmp/cache levels=1:2 keys_zone=cache:1m;
 
     init_by_lua_block {
-        assert(require "ngx.process".enable_privileged_agent())
+        assert(require "njt.process".enable_privileged_agent())
         require "resty.core.regex"
-        assert(ngx.re.match("hello, world", [[hello, \w+]], "joi"))
-        assert(ngx.re.match("hi, world", [[hi, \w+]], "ji"))
+        assert(njt.re.match("hello, world", [[hello, \w+]], "joi"))
+        assert(njt.re.match("hi, world", [[hi, \w+]], "ji"))
     }
 
 --- config
@@ -906,14 +906,14 @@ qr/start privileged agent process \d+/
     proxy_cache_path /tmp/cache levels=1:2 keys_zone=cache:1m;
 
     init_by_lua_block {
-        assert(require "ngx.process".enable_privileged_agent())
+        assert(require "njt.process".enable_privileged_agent())
         require "resty.core.regex"
-        assert(ngx.re.match("hello, world", [[hello, \w+]], "joi"))
-        assert(ngx.re.match("hi, world", [[hi, \w+]], "ji"))
+        assert(njt.re.match("hello, world", [[hello, \w+]], "joi"))
+        assert(njt.re.match("hi, world", [[hi, \w+]], "ji"))
     }
 
     init_worker_by_lua_block {
-        ngx.log(ngx.WARN, "hello from init worker by lua")
+        njt.log(njt.WARN, "hello from init worker by lua")
     }
 
 --- config
@@ -948,12 +948,12 @@ qr/lua close the global Lua VM ([0-9A-F]+)$/,
 
     init_by_lua_block {
         require "resty.core.regex"
-        assert(ngx.re.match("hello, world", [[hello, \w+]], "joi"))
-        assert(ngx.re.match("hi, world", [[hi, \w+]], "ji"))
+        assert(njt.re.match("hello, world", [[hello, \w+]], "joi"))
+        assert(njt.re.match("hi, world", [[hi, \w+]], "ji"))
     }
 
     init_worker_by_lua_block {
-        ngx.log(ngx.WARN, "hello from init worker by lua")
+        njt.log(njt.WARN, "hello from init worker by lua")
     }
 
 --- config

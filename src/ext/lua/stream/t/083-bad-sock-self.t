@@ -20,7 +20,7 @@ __DATA__
 === TEST 1: receive
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
         sock.receive("l")
     }
 --- stream_response
@@ -32,7 +32,7 @@ bad argument #1 to 'receive' (table expected, got string)
 === TEST 2: receiveuntil
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
         sock.receiveuntil(32, "ab")
     }
 --- stream_response
@@ -44,7 +44,7 @@ bad argument #1 to 'receiveuntil' (table expected, got number)
 === TEST 3: send (bad arg number)
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.socket.tcp()
+        local sock, err = njt.socket.tcp()
         sock.send("hello")
     }
 --- stream_response
@@ -56,7 +56,7 @@ expecting 2 arguments (including the object), but got 1
 === TEST 4: send (bad self)
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.socket.tcp()
+        local sock, err = njt.socket.tcp()
         sock.send("hello", 32)
     }
 --- stream_response
@@ -68,7 +68,7 @@ bad argument #1 to 'send' (table expected, got string)
 === TEST 5: getreusedtimes (bad self)
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.socket.tcp()
+        local sock, err = njt.socket.tcp()
         sock.getreusedtimes(2)
     }
 --- stream_response
@@ -80,7 +80,7 @@ bad argument #1 to 'getreusedtimes' (table expected, got number)
 === TEST 6: close (bad self)
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.socket.tcp()
+        local sock, err = njt.socket.tcp()
         sock.close(2)
     }
 --- stream_response
@@ -92,7 +92,7 @@ bad argument #1 to 'close' (table expected, got number)
 === TEST 7: setkeepalive (bad self)
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.socket.tcp()
+        local sock, err = njt.socket.tcp()
         sock.setkeepalive(2)
     }
 --- stream_response

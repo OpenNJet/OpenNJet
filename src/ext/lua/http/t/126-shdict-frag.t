@@ -25,17 +25,17 @@ __DATA__
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local function check_key(key)
                 local res, err = dogs:get(key)
                 if res then
-                    ngx.say("found ", key, ": ", #res)
+                    njt.say("found ", key, ": ", #res)
                 else
                     if not err then
-                        ngx.say(key, " not found")
+                        njt.say(key, " not found")
                     else
-                        ngx.say("failed to fetch key: ", err)
+                        njt.say("failed to fetch key: ", err)
                     end
                 end
             end
@@ -43,14 +43,14 @@ __DATA__
             local function set_key(key, value)
                 local ok, err, force = dogs:set(key, value)
                 if ok then
-                    ngx.print("successfully set ", key)
+                    njt.print("successfully set ", key)
                     if force then
-                        ngx.say(" with force.")
+                        njt.say(" with force.")
                     else
-                        ngx.say(".")
+                        njt.say(".")
                     end
                 else
-                    ngx.say("failed to set ", key, ": ", err)
+                    njt.say("failed to set ", key, ": ", err)
                 end
             end
 
@@ -73,15 +73,15 @@ GET /test
 global first_time = 1
 global active = 1
 
-F(ngx_http_lua_shdict_init_zone) {
+F(njt_http_lua_shdict_init_zone) {
     active = 0
 }
 
-F(ngx_http_lua_shdict_init_zone).return {
+F(njt_http_lua_shdict_init_zone).return {
     active = 1
 }
 
-F(ngx_slab_alloc_pages) {
+F(njt_slab_alloc_pages) {
     if (first_time) {
         printf("total pages: %d\n", $pool->pages->slab)
         first_time = 0
@@ -94,7 +94,7 @@ F(ngx_slab_alloc_pages) {
     }
 }
 
-F(ngx_slab_alloc_pages).return {
+F(njt_slab_alloc_pages).return {
     if ($return) {
         printf(" ok\n")
 
@@ -103,7 +103,7 @@ F(ngx_slab_alloc_pages).return {
     }
 }
 
-F(ngx_slab_free_pages) {
+F(njt_slab_free_pages) {
     printf("free pages: %d\n", $pages)
 }
 
@@ -153,17 +153,17 @@ found baz: 8102
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local function check_key(key)
                 local res, err = dogs:get(key)
                 if res then
-                    ngx.say("found ", key, ": ", #res)
+                    njt.say("found ", key, ": ", #res)
                 else
                     if not err then
-                        ngx.say(key, " not found")
+                        njt.say(key, " not found")
                     else
-                        ngx.say("failed to fetch key: ", err)
+                        njt.say("failed to fetch key: ", err)
                     end
                 end
             end
@@ -171,14 +171,14 @@ found baz: 8102
             local function set_key(key, value)
                 local ok, err, force = dogs:set(key, value)
                 if ok then
-                    ngx.print("successfully set ", key)
+                    njt.print("successfully set ", key)
                     if force then
-                        ngx.say(" with force.")
+                        njt.say(" with force.")
                     else
-                        ngx.say(".")
+                        njt.say(".")
                     end
                 else
-                    ngx.say("failed to set ", key, ": ", err)
+                    njt.say("failed to set ", key, ": ", err)
                 end
             end
 
@@ -202,15 +202,15 @@ GET /test
 global first_time = 1
 global active = 1
 
-F(ngx_http_lua_shdict_init_zone) {
+F(njt_http_lua_shdict_init_zone) {
     active = 0
 }
 
-F(ngx_http_lua_shdict_init_zone).return {
+F(njt_http_lua_shdict_init_zone).return {
     active = 1
 }
 
-F(ngx_slab_alloc_pages) {
+F(njt_slab_alloc_pages) {
     if (first_time) {
         printf("total pages: %d\n", $pool->pages->slab)
         first_time = 0
@@ -223,7 +223,7 @@ F(ngx_slab_alloc_pages) {
     }
 }
 
-F(ngx_slab_alloc_pages).return {
+F(njt_slab_alloc_pages).return {
     if ($return) {
         printf(" ok\n")
 
@@ -232,7 +232,7 @@ F(ngx_slab_alloc_pages).return {
     }
 }
 
-F(ngx_slab_free_pages) {
+F(njt_slab_free_pages) {
     printf("free pages: %d\n", $pages)
 }
 
@@ -284,17 +284,17 @@ found baz: 8102
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local function check_key(key)
                 local res, err = dogs:get(key)
                 if res then
-                    ngx.say("found ", key, ": ", #res)
+                    njt.say("found ", key, ": ", #res)
                 else
                     if not err then
-                        ngx.say(key, " not found")
+                        njt.say(key, " not found")
                     else
-                        ngx.say("failed to fetch key: ", err)
+                        njt.say("failed to fetch key: ", err)
                     end
                 end
             end
@@ -302,23 +302,23 @@ found baz: 8102
             local function set_key(key, value)
                 local ok, err, force = dogs:set(key, value)
                 if ok then
-                    ngx.print("successfully set ", key)
+                    njt.print("successfully set ", key)
                     if force then
-                        ngx.say(" with force.")
+                        njt.say(" with force.")
                     else
-                        ngx.say(".")
+                        njt.say(".")
                     end
                 else
-                    ngx.say("failed to set ", key, ": ", err)
+                    njt.say("failed to set ", key, ": ", err)
                 end
             end
 
             local function safe_set_key(key, value)
                 local ok, err = dogs:safe_set(key, value)
                 if ok then
-                    ngx.say("successfully safe set ", key)
+                    njt.say("successfully safe set ", key)
                 else
-                    ngx.say("failed to safe set ", key, ": ", err)
+                    njt.say("failed to safe set ", key, ": ", err)
                 end
             end
 
@@ -348,15 +348,15 @@ GET /test
 global first_time = 1
 global active = 1
 
-F(ngx_http_lua_shdict_init_zone) {
+F(njt_http_lua_shdict_init_zone) {
     active = 0
 }
 
-F(ngx_http_lua_shdict_init_zone).return {
+F(njt_http_lua_shdict_init_zone).return {
     active = 1
 }
 
-F(ngx_slab_alloc_pages) {
+F(njt_slab_alloc_pages) {
     if (first_time) {
         printf("total pages: %d\n", $pool->pages->slab)
         first_time = 0
@@ -369,7 +369,7 @@ F(ngx_slab_alloc_pages) {
     }
 }
 
-F(ngx_slab_alloc_pages).return {
+F(njt_slab_alloc_pages).return {
     if ($return) {
         printf(" ok\n")
 
@@ -378,7 +378,7 @@ F(ngx_slab_alloc_pages).return {
     }
 }
 
-F(ngx_slab_free_pages) {
+F(njt_slab_free_pages) {
     printf("free pages: %d\n", $pages)
 }
 
@@ -438,17 +438,17 @@ successfully safe set blah
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local function check_key(key)
                 local res, err = dogs:get(key)
                 if res then
-                    ngx.say("found ", key, ": ", #res)
+                    njt.say("found ", key, ": ", #res)
                 else
                     if not err then
-                        ngx.say(key, " not found")
+                        njt.say(key, " not found")
                     else
-                        ngx.say("failed to fetch key: ", err)
+                        njt.say("failed to fetch key: ", err)
                     end
                 end
             end
@@ -456,23 +456,23 @@ successfully safe set blah
             local function set_key(key, value)
                 local ok, err, force = dogs:set(key, value)
                 if ok then
-                    ngx.print("successfully set ", key)
+                    njt.print("successfully set ", key)
                     if force then
-                        ngx.say(" with force.")
+                        njt.say(" with force.")
                     else
-                        ngx.say(".")
+                        njt.say(".")
                     end
                 else
-                    ngx.say("failed to set ", key, ": ", err)
+                    njt.say("failed to set ", key, ": ", err)
                 end
             end
 
             local function safe_set_key(key, value)
                 local ok, err = dogs:safe_set(key, value)
                 if ok then
-                    ngx.say("successfully safe set ", key)
+                    njt.say("successfully safe set ", key)
                 else
-                    ngx.say("failed to safe set ", key, ": ", err)
+                    njt.say("failed to safe set ", key, ": ", err)
                 end
             end
 
@@ -503,15 +503,15 @@ GET /test
 global first_time = 1
 global active = 1
 
-F(ngx_http_lua_shdict_init_zone) {
+F(njt_http_lua_shdict_init_zone) {
     active = 0
 }
 
-F(ngx_http_lua_shdict_init_zone).return {
+F(njt_http_lua_shdict_init_zone).return {
     active = 1
 }
 
-F(ngx_slab_alloc_pages) {
+F(njt_slab_alloc_pages) {
     if (first_time) {
         printf("total pages: %d\n", $pool->pages->slab)
         first_time = 0
@@ -524,7 +524,7 @@ F(ngx_slab_alloc_pages) {
     }
 }
 
-F(ngx_slab_alloc_pages).return {
+F(njt_slab_alloc_pages).return {
     if ($return) {
         printf(" ok\n")
 
@@ -533,7 +533,7 @@ F(ngx_slab_alloc_pages).return {
     }
 }
 
-F(ngx_slab_free_pages) {
+F(njt_slab_free_pages) {
     printf("free pages: %d\n", $pages)
 }
 
@@ -573,17 +573,17 @@ found blah: 8100
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local function check_key(key)
                 local res, err = dogs:get(key)
                 if res then
-                    ngx.say("found ", key, ": ", #res)
+                    njt.say("found ", key, ": ", #res)
                 else
                     if not err then
-                        ngx.say(key, " not found")
+                        njt.say(key, " not found")
                     else
-                        ngx.say("failed to fetch key: ", err)
+                        njt.say("failed to fetch key: ", err)
                     end
                 end
             end
@@ -591,23 +591,23 @@ found blah: 8100
             local function set_key(key, value)
                 local ok, err, force = dogs:set(key, value)
                 if ok then
-                    ngx.print("successfully set ", key)
+                    njt.print("successfully set ", key)
                     if force then
-                        ngx.say(" with force.")
+                        njt.say(" with force.")
                     else
-                        ngx.say(".")
+                        njt.say(".")
                     end
                 else
-                    ngx.say("failed to set ", key, ": ", err)
+                    njt.say("failed to set ", key, ": ", err)
                 end
             end
 
             local function safe_set_key(key, value)
                 local ok, err = dogs:safe_set(key, value)
                 if ok then
-                    ngx.say("successfully safe set ", key)
+                    njt.say("successfully safe set ", key)
                 else
-                    ngx.say("failed to safe set ", key, ": ", err)
+                    njt.say("failed to safe set ", key, ": ", err)
                 end
             end
 
@@ -638,15 +638,15 @@ GET /test
 global first_time = 1
 global active = 1
 
-F(ngx_http_lua_shdict_init_zone) {
+F(njt_http_lua_shdict_init_zone) {
     active = 0
 }
 
-F(ngx_http_lua_shdict_init_zone).return {
+F(njt_http_lua_shdict_init_zone).return {
     active = 1
 }
 
-F(ngx_slab_alloc_pages) {
+F(njt_slab_alloc_pages) {
     if (first_time) {
         printf("total pages: %d\n", $pool->pages->slab)
         first_time = 0
@@ -659,7 +659,7 @@ F(ngx_slab_alloc_pages) {
     }
 }
 
-F(ngx_slab_alloc_pages).return {
+F(njt_slab_alloc_pages).return {
     if ($return) {
         printf(" ok\n")
 
@@ -668,7 +668,7 @@ F(ngx_slab_alloc_pages).return {
     }
 }
 
-F(ngx_slab_free_pages) {
+F(njt_slab_free_pages) {
     printf("free pages: %d\n", $pages)
 }
 
@@ -708,17 +708,17 @@ found blah: 8100
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local function check_key(key)
                 local res, err = dogs:get(key)
                 if res then
-                    ngx.say("found ", key, ": ", #res)
+                    njt.say("found ", key, ": ", #res)
                 else
                     if not err then
-                        ngx.say(key, " not found")
+                        njt.say(key, " not found")
                     else
-                        ngx.say("failed to fetch key: ", err)
+                        njt.say("failed to fetch key: ", err)
                     end
                 end
             end
@@ -726,23 +726,23 @@ found blah: 8100
             local function set_key(key, value)
                 local ok, err, force = dogs:set(key, value)
                 if ok then
-                    ngx.print("successfully set ", key)
+                    njt.print("successfully set ", key)
                     if force then
-                        ngx.say(" with force.")
+                        njt.say(" with force.")
                     else
-                        ngx.say(".")
+                        njt.say(".")
                     end
                 else
-                    ngx.say("failed to set ", key, ": ", err)
+                    njt.say("failed to set ", key, ": ", err)
                 end
             end
 
             local function safe_set_key(key, value)
                 local ok, err = dogs:safe_set(key, value)
                 if ok then
-                    ngx.say("successfully safe set ", key)
+                    njt.say("successfully safe set ", key)
                 else
-                    ngx.say("failed to safe set ", key, ": ", err)
+                    njt.say("failed to safe set ", key, ": ", err)
                 end
             end
 
@@ -770,15 +770,15 @@ GET /test
 global first_time = 1
 global active = 1
 
-F(ngx_http_lua_shdict_init_zone) {
+F(njt_http_lua_shdict_init_zone) {
     active = 0
 }
 
-F(ngx_http_lua_shdict_init_zone).return {
+F(njt_http_lua_shdict_init_zone).return {
     active = 1
 }
 
-F(ngx_slab_alloc_pages) {
+F(njt_slab_alloc_pages) {
     if (first_time) {
         printf("total pages: %d\n", $pool->pages->slab)
         first_time = 0
@@ -791,7 +791,7 @@ F(ngx_slab_alloc_pages) {
     }
 }
 
-F(ngx_slab_alloc_pages).return {
+F(njt_slab_alloc_pages).return {
     if ($return) {
         printf(" ok\n")
 
@@ -800,7 +800,7 @@ F(ngx_slab_alloc_pages).return {
     }
 }
 
-F(ngx_slab_free_pages) {
+F(njt_slab_free_pages) {
     printf("free pages: %d\n", $pages)
 }
 
@@ -837,17 +837,17 @@ found baz: 16300
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local function check_key(key)
                 local res, err = dogs:get(key)
                 if res then
-                    ngx.say("found ", key, ": ", #res)
+                    njt.say("found ", key, ": ", #res)
                 else
                     if not err then
-                        ngx.say(key, " not found")
+                        njt.say(key, " not found")
                     else
-                        ngx.say("failed to fetch key: ", err)
+                        njt.say("failed to fetch key: ", err)
                     end
                 end
             end
@@ -855,23 +855,23 @@ found baz: 16300
             local function set_key(key, value)
                 local ok, err, force = dogs:set(key, value)
                 if ok then
-                    ngx.print("successfully set ", key)
+                    njt.print("successfully set ", key)
                     if force then
-                        ngx.say(" with force.")
+                        njt.say(" with force.")
                     else
-                        ngx.say(".")
+                        njt.say(".")
                     end
                 else
-                    ngx.say("failed to set ", key, ": ", err)
+                    njt.say("failed to set ", key, ": ", err)
                 end
             end
 
             local function safe_set_key(key, value)
                 local ok, err = dogs:safe_set(key, value)
                 if ok then
-                    ngx.say("successfully safe set ", key)
+                    njt.say("successfully safe set ", key)
                 else
-                    ngx.say("failed to safe set ", key, ": ", err)
+                    njt.say("failed to safe set ", key, ": ", err)
                 end
             end
 
@@ -888,7 +888,7 @@ found baz: 16300
                 safe_set_key("baz", string.rep("b", 8100))
                 check_key("bar")
 
-                ngx.say("delete bar")
+                njt.say("delete bar")
                 dogs:delete("bar")
 
                 safe_set_key("baz", string.rep("b", 8100))
@@ -903,17 +903,17 @@ GET /test
 global first_time = 1
 global active = 1
 
-F(ngx_http_lua_shdict_init_zone) {
+F(njt_http_lua_shdict_init_zone) {
     active = 0
 }
 
-F(ngx_http_lua_shdict_init_zone).return {
+F(njt_http_lua_shdict_init_zone).return {
     active = 1
 }
 
-F(ngx_slab_alloc_pages) {
+F(njt_slab_alloc_pages) {
     if (first_time) {
-        //printf("slab max size: %d\n", @var("ngx_slab_max_size"))
+        //printf("slab max size: %d\n", @var("njt_slab_max_size"))
         printf("total pages: %d\n", $pool->pages->slab)
         first_time = 0
     }
@@ -925,7 +925,7 @@ F(ngx_slab_alloc_pages) {
     }
 }
 
-F(ngx_slab_alloc_pages).return {
+F(njt_slab_alloc_pages).return {
     if ($return) {
         printf(" ok\n")
 
@@ -934,7 +934,7 @@ F(ngx_slab_alloc_pages).return {
     }
 }
 
-F(ngx_slab_free_pages) {
+F(njt_slab_free_pages) {
     printf("free pages: %d\n", $pages)
 }
 
@@ -967,17 +967,17 @@ successfully safe set baz
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local function check_key(key)
                 local res, err = dogs:get(key)
                 if res then
-                    ngx.say("found ", key, ": ", #res)
+                    njt.say("found ", key, ": ", #res)
                 else
                     if not err then
-                        ngx.say(key, " not found")
+                        njt.say(key, " not found")
                     else
-                        ngx.say("failed to fetch key: ", err)
+                        njt.say("failed to fetch key: ", err)
                     end
                 end
             end
@@ -985,23 +985,23 @@ successfully safe set baz
             local function set_key(key, value)
                 local ok, err, force = dogs:set(key, value)
                 if ok then
-                    ngx.print("successfully set ", key)
+                    njt.print("successfully set ", key)
                     if force then
-                        ngx.say(" with force.")
+                        njt.say(" with force.")
                     else
-                        ngx.say(".")
+                        njt.say(".")
                     end
                 else
-                    ngx.say("failed to set ", key, ": ", err)
+                    njt.say("failed to set ", key, ": ", err)
                 end
             end
 
             local function safe_set_key(key, value)
                 local ok, err = dogs:safe_set(key, value)
                 if ok then
-                    ngx.say("successfully safe set ", key)
+                    njt.say("successfully safe set ", key)
                 else
-                    ngx.say("failed to safe set ", key, ": ", err)
+                    njt.say("failed to safe set ", key, ": ", err)
                 end
             end
 
@@ -1020,7 +1020,7 @@ successfully safe set baz
                 safe_set_key("baz", string.rep("b", 8100))
                 check_key("bar")
 
-                ngx.say("delete bar")
+                njt.say("delete bar")
                 dogs:delete("bar")
 
                 safe_set_key("baz", string.rep("b", 8100))
@@ -1035,17 +1035,17 @@ GET /test
 global first_time = 1
 global active = 1
 
-F(ngx_http_lua_shdict_init_zone) {
+F(njt_http_lua_shdict_init_zone) {
     active = 0
 }
 
-F(ngx_http_lua_shdict_init_zone).return {
+F(njt_http_lua_shdict_init_zone).return {
     active = 1
 }
 
-F(ngx_slab_alloc_pages) {
+F(njt_slab_alloc_pages) {
     if (first_time) {
-        //printf("slab max size: %d\n", @var("ngx_slab_max_size"))
+        //printf("slab max size: %d\n", @var("njt_slab_max_size"))
         printf("total pages: %d\n", $pool->pages->slab)
         first_time = 0
     }
@@ -1057,7 +1057,7 @@ F(ngx_slab_alloc_pages) {
     }
 }
 
-F(ngx_slab_alloc_pages).return {
+F(njt_slab_alloc_pages).return {
     if ($return) {
         printf(" ok\n")
 
@@ -1066,7 +1066,7 @@ F(ngx_slab_alloc_pages).return {
     }
 }
 
-F(ngx_slab_free_pages) {
+F(njt_slab_free_pages) {
     printf("free pages: %d\n", $pages)
 }
 
@@ -1098,17 +1098,17 @@ failed to safe set baz: no memory
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local function check_key(key)
                 local res, err = dogs:get(key)
                 if res then
-                    ngx.say("found ", key, ": ", #res)
+                    njt.say("found ", key, ": ", #res)
                 else
                     if not err then
-                        ngx.say(key, " not found")
+                        njt.say(key, " not found")
                     else
-                        ngx.say("failed to fetch key: ", err)
+                        njt.say("failed to fetch key: ", err)
                     end
                 end
             end
@@ -1116,23 +1116,23 @@ failed to safe set baz: no memory
             local function set_key(key, value)
                 local ok, err, force = dogs:set(key, value)
                 if ok then
-                    ngx.print("successfully set ", key)
+                    njt.print("successfully set ", key)
                     if force then
-                        ngx.say(" with force.")
+                        njt.say(" with force.")
                     else
-                        ngx.say(".")
+                        njt.say(".")
                     end
                 else
-                    ngx.say("failed to set ", key, ": ", err)
+                    njt.say("failed to set ", key, ": ", err)
                 end
             end
 
             local function safe_set_key(key, value)
                 local ok, err = dogs:safe_set(key, value)
                 if ok then
-                    ngx.say("successfully safe set ", key)
+                    njt.say("successfully safe set ", key)
                 else
-                    ngx.say("failed to safe set ", key, ": ", err)
+                    njt.say("failed to safe set ", key, ": ", err)
                 end
             end
 
@@ -1151,7 +1151,7 @@ failed to safe set baz: no memory
                 safe_set_key("baz", string.rep("b", 8100))
                 check_key("bar")
 
-                ngx.say("delete bar")
+                njt.say("delete bar")
                 dogs:delete("bar")
 
                 safe_set_key("baz", string.rep("b", 8100))
@@ -1166,17 +1166,17 @@ GET /test
 global first_time = 1
 global active = 1
 
-F(ngx_http_lua_shdict_init_zone) {
+F(njt_http_lua_shdict_init_zone) {
     active = 0
 }
 
-F(ngx_http_lua_shdict_init_zone).return {
+F(njt_http_lua_shdict_init_zone).return {
     active = 1
 }
 
-F(ngx_slab_alloc_pages) {
+F(njt_slab_alloc_pages) {
     if (first_time) {
-        //printf("slab max size: %d\n", @var("ngx_slab_max_size"))
+        //printf("slab max size: %d\n", @var("njt_slab_max_size"))
         printf("total pages: %d\n", $pool->pages->slab)
         first_time = 0
     }
@@ -1188,7 +1188,7 @@ F(ngx_slab_alloc_pages) {
     }
 }
 
-F(ngx_slab_alloc_pages).return {
+F(njt_slab_alloc_pages).return {
     if ($return) {
         printf(" ok\n")
 
@@ -1197,7 +1197,7 @@ F(ngx_slab_alloc_pages).return {
     }
 }
 
-F(ngx_slab_free_pages) {
+F(njt_slab_free_pages) {
     printf("free pages: %d\n", $pages)
 }
 
@@ -1230,12 +1230,12 @@ failed to safe set baz: no memory
     location = /t {
         content_by_lua '
             local rand = math.random
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local maxsz = 9000
             local maxkeyidx = 30
             local rep = string.rep
 
-            math.randomseed(ngx.time())
+            math.randomseed(njt.time())
             for i = 1, 30000 do
                 local key = "mylittlekey" .. rand(maxkeyidx)
                 local ok, err = dogs:get(key)
@@ -1244,7 +1244,7 @@ failed to safe set baz: no memory
                     local val = rep("a", sz)
                     local ok, err, forcible = dogs:set(key, val)
                     if err then
-                        ngx.log(ngx.ERR, "failed to set key: ", err)
+                        njt.log(njt.ERR, "failed to set key: ", err)
                         -- return
                     end
                     if forcible then
@@ -1252,7 +1252,7 @@ failed to safe set baz: no memory
                     end
                 end
             end
-            ngx.say("ok")
+            njt.say("ok")
             collectgarbage()
         ';
     }

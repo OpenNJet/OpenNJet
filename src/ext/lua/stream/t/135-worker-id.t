@@ -19,7 +19,7 @@ __DATA__
 === TEST 1: sanity
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("worker id: ", ngx.worker.id())
+        njt.say("worker id: ", njt.worker.id())
     }
 --- stream_response_like chop
 ^worker id: [0-1]$

@@ -36,7 +36,7 @@ __DATA__
         set $port $TEST_NGINX_MEMCACHED_PORT;
         content_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go(port)
             test.go(port)
         ';
@@ -46,35 +46,35 @@ __DATA__
 module("test", package.seeall)
 
 function go(port)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local req = "flush_all\r\n"
 
     local bytes, err = sock:send(req)
     if not bytes then
-        ngx.say("failed to send request: ", err)
+        njt.say("failed to send request: ", err)
         return
     end
-    ngx.say("request sent: ", bytes)
+    njt.say("request sent: ", bytes)
 
     local line, err, part = sock:receive()
     if line then
-        ngx.say("received: ", line)
+        njt.say("received: ", line)
 
     else
-        ngx.say("failed to receive a line: ", err, " [", part, "]")
+        njt.say("failed to receive a line: ", err, " [", part, "]")
     end
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- request
@@ -104,7 +104,7 @@ lua tcp socket keepalive create connection pool for key "127.0.0.1:$ENV{TEST_NGI
         set $port $TEST_NGINX_MEMCACHED_PORT;
         content_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go(port, true)
             test.go(port, false)
         ';
@@ -116,36 +116,36 @@ GET /t
 module("test", package.seeall)
 
 function go(port, keepalive)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local req = "flush_all\r\n"
 
     local bytes, err = sock:send(req)
     if not bytes then
-        ngx.say("failed to send request: ", err)
+        njt.say("failed to send request: ", err)
         return
     end
-    ngx.say("request sent: ", bytes)
+    njt.say("request sent: ", bytes)
 
     local line, err, part = sock:receive()
     if line then
-        ngx.say("received: ", line)
+        njt.say("received: ", line)
 
     else
-        ngx.say("failed to receive a line: ", err, " [", part, "]")
+        njt.say("failed to receive a line: ", err, " [", part, "]")
     end
 
     if keepalive then
         local ok, err = sock:setkeepalive()
         if not ok then
-            ngx.say("failed to set reusable: ", err)
+            njt.say("failed to set reusable: ", err)
         end
 
     else
@@ -176,46 +176,46 @@ received: OK
    location /t {
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua '
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: keepalive\\r\\n\\r\\n"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             local reader = sock:receiveuntil("\\r\\n0\\r\\n\\r\\n")
             local data, err = reader()
 
             if not data then
-                ngx.say("failed to receive response body: ", err)
+                njt.say("failed to receive response body: ", err)
                 return
             end
 
-            ngx.say("received response of ", #data, " bytes")
+            njt.say("received response of ", #data, " bytes")
 
             local ok, err = sock:setkeepalive()
             if not ok then
-                ngx.say("failed to set reusable: ", err)
+                njt.say("failed to set reusable: ", err)
             end
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 
@@ -252,46 +252,46 @@ done
 
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua '
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: keepalive\\r\\n\\r\\n"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             local reader = sock:receiveuntil("\\r\\n0\\r\\n\\r\\n")
             local data, err = reader()
 
             if not data then
-                ngx.say("failed to receive response body: ", err)
+                njt.say("failed to receive response body: ", err)
                 return
             end
 
-            ngx.say("received response of ", #data, " bytes")
+            njt.say("received response of ", #data, " bytes")
 
             local ok, err = sock:setkeepalive()
             if not ok then
-                ngx.say("failed to set reusable: ", err)
+                njt.say("failed to set reusable: ", err)
             end
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 
@@ -326,46 +326,46 @@ done
 
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua '
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: keepalive\\r\\n\\r\\n"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             local reader = sock:receiveuntil("\\r\\n0\\r\\n\\r\\n")
             local data, res = reader()
 
             if not data then
-                ngx.say("failed to receive response body: ", err)
+                njt.say("failed to receive response body: ", err)
                 return
             end
 
-            ngx.say("received response of ", #data, " bytes")
+            njt.say("received response of ", #data, " bytes")
 
             local ok, err = sock:setkeepalive()
             if not ok then
-                ngx.say("failed to set reusable: ", err)
+                njt.say("failed to set reusable: ", err)
             end
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 
@@ -404,46 +404,46 @@ qr/lua tcp socket connection pool size: 30\b/]
 
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua '
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: keepalive\\r\\n\\r\\n"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             local reader = sock:receiveuntil("\\r\\n0\\r\\n\\r\\n")
             local data, res = reader()
 
             if not data then
-                ngx.say("failed to receive response body: ", err)
+                njt.say("failed to receive response body: ", err)
                 return
             end
 
-            ngx.say("received response of ", #data, " bytes")
+            njt.say("received response of ", #data, " bytes")
 
             local ok, err = sock:setkeepalive()
             if not ok then
-                ngx.say("failed to set reusable: ", err)
+                njt.say("failed to set reusable: ", err)
             end
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 
@@ -481,46 +481,46 @@ qr/lua tcp socket connection pool size: 1\b/]
 
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua '
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: keepalive\\r\\n\\r\\n"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             local reader = sock:receiveuntil("\\r\\n0\\r\\n\\r\\n")
             local data, res = reader()
 
             if not data then
-                ngx.say("failed to receive response body: ", err)
+                njt.say("failed to receive response body: ", err)
                 return
             end
 
-            ngx.say("received response of ", #data, " bytes")
+            njt.say("received response of ", #data, " bytes")
 
             local ok, err = sock:setkeepalive()
             if not ok then
-                ngx.say("failed to set reusable: ", err)
+                njt.say("failed to set reusable: ", err)
             end
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 
@@ -556,46 +556,46 @@ qr/lua tcp socket connection pool size: 30\b/]
 
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua '
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: keepalive\\r\\n\\r\\n"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             local reader = sock:receiveuntil("\\r\\n0\\r\\n\\r\\n")
             local data, res = reader()
 
             if not data then
-                ngx.say("failed to receive response body: ", err)
+                njt.say("failed to receive response body: ", err)
                 return
             end
 
-            ngx.say("received response of ", #data, " bytes")
+            njt.say("received response of ", #data, " bytes")
 
             local ok, err = sock:setkeepalive(123)
             if not ok then
-                ngx.say("failed to set reusable: ", err)
+                njt.say("failed to set reusable: ", err)
             end
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 
@@ -634,46 +634,46 @@ qr/lua tcp socket connection pool size: 30\b/]
 
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua '
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: keepalive\\r\\n\\r\\n"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             local reader = sock:receiveuntil("\\r\\n0\\r\\n\\r\\n")
             local data, res = reader()
 
             if not data then
-                ngx.say("failed to receive response body: ", err)
+                njt.say("failed to receive response body: ", err)
                 return
             end
 
-            ngx.say("received response of ", #data, " bytes")
+            njt.say("received response of ", #data, " bytes")
 
             local ok, err = sock:setkeepalive(101, 25)
             if not ok then
-                ngx.say("failed to set reusable: ", err)
+                njt.say("failed to set reusable: ", err)
             end
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 
@@ -707,18 +707,18 @@ qr/lua tcp socket connection pool size: 25\b/]
     location /t {
         set $port $TEST_NGINX_MEMCACHED_PORT;
         content_by_lua_block {
-            local sock, err = ngx.socket.connect("127.0.0.1", ngx.var.port)
+            local sock, err = njt.socket.connect("127.0.0.1", njt.var.port)
             if not sock then
-                ngx.say(err)
+                njt.say(err)
                 return
             end
 
             local ok, err = pcall(sock.setkeepalive, sock, 0, 0)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
                 return
             end
-            ngx.say(ok)
+            njt.say(ok)
         }
     }
 --- request
@@ -739,46 +739,46 @@ bad argument #3 to '?' (bad "pool_size" option value: 0)
 
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua '
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: keepalive\\r\\n\\r\\n"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             local reader = sock:receiveuntil("\\r\\n0\\r\\n\\r\\n")
             local data, res = reader()
 
             if not data then
-                ngx.say("failed to receive response body: ", err)
+                njt.say("failed to receive response body: ", err)
                 return
             end
 
-            ngx.say("received response of ", #data, " bytes")
+            njt.say("received response of ", #data, " bytes")
 
             local ok, err = sock:setkeepalive(0)
             if not ok then
-                ngx.say("failed to set reusable: ", err)
+                njt.say("failed to set reusable: ", err)
             end
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 
@@ -826,7 +826,7 @@ qr/lua tcp socket connection pool size: 30\b/]
         content_by_lua '
             local test = require "test"
             local path = "$TEST_NGINX_HTML_DIR/nginx.sock";
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go(path, port)
             test.go(path, port)
         ';
@@ -838,37 +838,37 @@ GET /t
 module("test", package.seeall)
 
 function go(path, port)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("unix:" .. path)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local req = "GET /foo HTTP/1.1\r\nHost: localhost\r\nConnection: keepalive\r\n\r\n"
 
     local bytes, err = sock:send(req)
     if not bytes then
-        ngx.say("failed to send request: ", err)
+        njt.say("failed to send request: ", err)
         return
     end
-    ngx.say("request sent: ", bytes)
+    njt.say("request sent: ", bytes)
 
     local reader = sock:receiveuntil("\r\n0\r\n\r\n")
     local data, err = reader()
 
     if not data then
-        ngx.say("failed to receive response body: ", err)
+        njt.say("failed to receive response body: ", err)
         return
     end
 
-    ngx.say("received response of ", #data, " bytes")
+    njt.say("received response of ", #data, " bytes")
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- response_body
@@ -887,7 +887,7 @@ received response of 119 bytes
 
 
 
-=== TEST 13: github issue #108: ngx.location.capture + redis.set_keepalive
+=== TEST 13: github issue #108: njt.location.capture + redis.set_keepalive
 --- http_config eval
     qq{
         lua_package_path "$::HtmlDir/?.lua;;";
@@ -911,17 +911,17 @@ received response of 119 bytes
     }
 --- user_files
 >>> t.lua
-local sock, err = ngx.socket.connect("127.0.0.1", ngx.var.port)
-if not sock then ngx.say(err) return end
+local sock, err = njt.socket.connect("127.0.0.1", njt.var.port)
+if not sock then njt.say(err) return end
 sock:send("flush_all\r\n")
 sock:receive()
 sock:setkeepalive()
 
-sock, err = ngx.socket.connect("127.0.0.1", ngx.var.port)
-if not sock then ngx.say(err) return end
-local res = ngx.location.capture("/anyurl") --3
+sock, err = njt.socket.connect("127.0.0.1", njt.var.port)
+if not sock then njt.say(err) return end
+local res = njt.location.capture("/anyurl") --3
 
-ngx.say("ok")
+njt.say("ok")
 --- request
     GET /t
 --- response_body
@@ -934,7 +934,7 @@ lua tcp socket get keepalive peer: using connection
 
 
 
-=== TEST 14: github issue #110: ngx.exit with HTTP_NOT_FOUND causes worker process to exit
+=== TEST 14: github issue #110: njt.exit with HTTP_NOT_FOUND causes worker process to exit
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -943,9 +943,9 @@ lua tcp socket get keepalive peer: using connection
         set $port $TEST_NGINX_MEMCACHED_PORT;
         access_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go(port)
-            ngx.exit(404)
+            njt.exit(404)
         ';
         echo hello;
     }
@@ -956,10 +956,10 @@ Not found, dear...
 module("test", package.seeall)
 
 function go(port)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
-        ngx.log(ngx.ERR, "failed to connect: ", err)
+        njt.log(njt.ERR, "failed to connect: ", err)
         return
     end
 
@@ -967,19 +967,19 @@ function go(port)
 
     local bytes, err = sock:send(req)
     if not bytes then
-        ngx.log(ngx.ERR, "failed to send request: ", err)
+        njt.log(njt.ERR, "failed to send request: ", err)
         return
     end
 
     local line, err, part = sock:receive()
     if not line then
-        ngx.log(ngx.ERR, "failed to receive a line: ", err, " [", part, "]")
+        njt.log(njt.ERR, "failed to receive a line: ", err, " [", part, "]")
         return
     end
 
     -- local ok, err = sock:setkeepalive()
     -- if not ok then
-        -- ngx.log(ngx.ERR, "failed to set reusable: ", err)
+        -- njt.log(njt.ERR, "failed to set reusable: ", err)
         -- return
     -- end
 end
@@ -1001,7 +1001,7 @@ Not found, dear...
         set $port $TEST_NGINX_MEMCACHED_PORT;
         content_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go(port, "A")
             test.go(port, "B")
         ';
@@ -1011,18 +1011,18 @@ Not found, dear...
 module("test", package.seeall)
 
 function go(port, pool)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port, {pool = pool})
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- request
@@ -1049,7 +1049,7 @@ lua tcp socket keepalive create connection pool for key "B"
         set $port $TEST_NGINX_MEMCACHED_PORT;
         content_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go($TEST_NGINX_MEMCACHED_PORT, "foo")
             test.go($TEST_NGINX_SERVER_PORT, "foo")
         ';
@@ -1059,18 +1059,18 @@ lua tcp socket keepalive create connection pool for key "B"
 module("test", package.seeall)
 
 function go(port, pool)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port, {pool = pool})
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- request
@@ -1118,18 +1118,18 @@ lua tcp socket get keepalive peer: using connection
 module("test", package.seeall)
 
 function go(path, pool)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("unix:" .. path, {pool = pool})
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- request
@@ -1174,18 +1174,18 @@ lua tcp socket keepalive create connection pool for key "B"
 module("test", package.seeall)
 
 function go(path, pool)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("unix:" .. path, {pool = pool})
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- request
@@ -1211,7 +1211,7 @@ lua tcp socket get keepalive peer: using connection
         set $port $TEST_NGINX_MEMCACHED_PORT;
         content_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go($TEST_NGINX_MEMCACHED_PORT, 3.14)
             test.go($TEST_NGINX_SERVER_PORT, 3.14)
         ';
@@ -1221,18 +1221,18 @@ lua tcp socket get keepalive peer: using connection
 module("test", package.seeall)
 
 function go(port, pool)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port, {pool = pool})
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- request
@@ -1258,7 +1258,7 @@ lua tcp socket get keepalive peer: using connection
         set $port $TEST_NGINX_MEMCACHED_PORT;
         content_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go($TEST_NGINX_MEMCACHED_PORT, nil)
             test.go($TEST_NGINX_SERVER_PORT, nil)
         ';
@@ -1268,18 +1268,18 @@ lua tcp socket get keepalive peer: using connection
 module("test", package.seeall)
 
 function go(port, pool)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port, {pool = pool})
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- request
@@ -1301,7 +1301,7 @@ connected: 1, reused: 0
         set $port $TEST_NGINX_MEMCACHED_PORT;
         content_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go($TEST_NGINX_MEMCACHED_PORT, {})
             test.go($TEST_NGINX_SERVER_PORT, {})
         ';
@@ -1311,18 +1311,18 @@ connected: 1, reused: 0
 module("test", package.seeall)
 
 function go(port, pool)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port, {pool = pool})
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- request
@@ -1342,7 +1342,7 @@ bad argument #3 to 'connect' (bad "pool" option type: table)
         set $port $TEST_NGINX_MEMCACHED_PORT;
         content_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go($TEST_NGINX_MEMCACHED_PORT, true)
             test.go($TEST_NGINX_SERVER_PORT, false)
         ';
@@ -1352,18 +1352,18 @@ bad argument #3 to 'connect' (bad "pool" option type: table)
 module("test", package.seeall)
 
 function go(port, pool)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port, {pool = pool})
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- request
@@ -1400,7 +1400,7 @@ bad argument #3 to 'connect' (bad "pool" option type: boolean)
         set $port $TEST_NGINX_REDIS_PORT;
         content_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go(port)
         ';
     }
@@ -1409,16 +1409,16 @@ bad argument #3 to 'connect' (bad "pool" option type: boolean)
 module("test", package.seeall)
 
 function go(port)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
     local bytes, err = sock:send({})
     if err then
-        ngx.say("failed to send empty request: ", err)
+        njt.say("failed to send empty request: ", err)
         return
     end
 
@@ -1426,24 +1426,24 @@ function go(port)
 
     local bytes, err = sock:send(req)
     if not bytes then
-        ngx.say("failed to send request: ", err)
+        njt.say("failed to send request: ", err)
         return
     end
 
     local line, err, part = sock:receive()
     if line then
-        ngx.say("received: ", line)
+        njt.say("received: ", line)
 
     else
-        ngx.say("failed to receive a line: ", err, " [", part, "]")
+        njt.say("failed to receive a line: ", err, " [", part, "]")
     end
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 
-    ngx.say("done")
+    njt.say("done")
 end
 --- request
 GET /t
@@ -1456,19 +1456,19 @@ M(http-lua-socket-tcp-send-start) {
 M(http-lua-socket-tcp-receive-done) {
     printf("receive [%s]\n", text_str(user_string_n($arg3, $arg4)))
 }
-F(ngx_output_chain) {
-    #printf("ctx->in: %s\n", ngx_chain_dump($ctx->in))
-    #printf("ctx->busy: %s\n", ngx_chain_dump($ctx->busy))
-    printf("output chain: %s\n", ngx_chain_dump($in))
+F(njt_output_chain) {
+    #printf("ctx->in: %s\n", njt_chain_dump($ctx->in))
+    #printf("ctx->busy: %s\n", njt_chain_dump($ctx->busy))
+    printf("output chain: %s\n", njt_chain_dump($in))
 }
-F(ngx_linux_sendfile_chain) {
-    printf("linux sendfile chain: %s\n", ngx_chain_dump($in))
+F(njt_linux_sendfile_chain) {
+    printf("linux sendfile chain: %s\n", njt_chain_dump($in))
 }
-F(ngx_chain_writer) {
+F(njt_chain_writer) {
     printf("chain writer ctx out: %p\n", $data)
-    printf("nginx chain writer: %s\n", ngx_chain_dump($in))
+    printf("nginx chain writer: %s\n", njt_chain_dump($in))
 }
-F(ngx_http_lua_socket_tcp_setkeepalive) {
+F(njt_http_lua_socket_tcp_setkeepalive) {
     delete active
 }
 M(http-lua-socket-tcp-setkeepalive-buf-unread) {
@@ -1486,7 +1486,7 @@ probe syscall.recvfrom.return {
 }
 probe syscall.writev {
     if (active && pid() == target()) {
-        printf("writev(%s)", ngx_iovec_dump($vec, $vlen))
+        printf("writev(%s)", njt_iovec_dump($vec, $vlen))
         /*
         for (i = 0; i < $vlen; i++) {
             printf(" %p [%s]", $vec[i]->iov_base, text_str(user_string_n($vec[i]->iov_base, $vec[i]->iov_len)))
@@ -1515,46 +1515,46 @@ done
 
         set $port $TEST_NGINX_SERVER_PORT;
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.1\r\nHost: localhost\r\nConnection: keepalive\r\n\r\n"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             local reader = sock:receiveuntil("\r\n0\r\n\r\n")
             local data, res = reader()
 
             if not data then
-                ngx.say("failed to receive response body: ", err)
+                njt.say("failed to receive response body: ", err)
                 return
             end
 
-            ngx.say("received response of ", #data, " bytes")
+            njt.say("received response of ", #data, " bytes")
 
             local ok, err = sock:setkeepalive(nil, nil)
             if not ok then
-                ngx.say("failed to set reusable: ", err)
+                njt.say("failed to set reusable: ", err)
             end
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
 
-            ngx.say("done")
+            njt.say("done")
         }
     }
 
@@ -1589,15 +1589,15 @@ qr/lua tcp socket connection pool size: 30\b/]
         set $port $TEST_NGINX_SERVER_PORT;
 
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local function check_opts_for_connect(opts)
                 local ok, err = pcall(function()
-                    sock:connect("127.0.0.1", ngx.var.port, opts)
+                    sock:connect("127.0.0.1", njt.var.port, opts)
                 end)
                 if not ok then
-                    ngx.say(err)
+                    njt.say(err)
                 else
-                    ngx.say("ok")
+                    njt.say("ok")
                 end
             end
 
@@ -1625,35 +1625,35 @@ ok
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local function go()
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok, err = sock:connect("127.0.0.1", port, {pool_size = 1})
                 if not ok then
-                    ngx.say("failed to connect: ", err)
+                    njt.say("failed to connect: ", err)
                     return
                 end
 
-                ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+                njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
                 local req = "flush_all\r\n"
                 local bytes, err = sock:send(req)
                 if not bytes then
-                    ngx.say("failed to send request: ", err)
+                    njt.say("failed to send request: ", err)
                     return
                 end
-                ngx.say("request sent: ", bytes)
+                njt.say("request sent: ", bytes)
 
                 local line, err, part = sock:receive()
                 if line then
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
                 else
-                    ngx.say("failed to receive a line: ", err, " [", part, "]")
+                    njt.say("failed to receive a line: ", err, " [", part, "]")
                 end
 
                 local ok, err = sock:setkeepalive(0, 20)
                 if not ok then
-                    ngx.say("failed to set reusable: ", err)
+                    njt.say("failed to set reusable: ", err)
                 end
             end
 
@@ -1661,22 +1661,22 @@ ok
             go()
             go()
 
-            local sock1 = ngx.socket.connect("127.0.0.1", port)
-            local sock2 = ngx.socket.connect("127.0.0.1", port)
+            local sock1 = njt.socket.connect("127.0.0.1", port)
+            local sock2 = njt.socket.connect("127.0.0.1", port)
             local ok, err = sock1:setkeepalive(0, 20)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
             local ok, err = sock2:setkeepalive(0, 20)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
 
             -- the pool_size is 1 instead of 20
-            sock1 = ngx.socket.connect("127.0.0.1", port)
-            sock2 = ngx.socket.connect("127.0.0.1", port)
-            ngx.say("reused: ", sock1:getreusedtimes())
-            ngx.say("reused: ", sock2:getreusedtimes())
+            sock1 = njt.socket.connect("127.0.0.1", port)
+            sock2 = njt.socket.connect("127.0.0.1", port)
+            njt.say("reused: ", sock1:getreusedtimes())
+            njt.say("reused: ", sock2:getreusedtimes())
             sock1:setkeepalive(0, 20)
             sock2:setkeepalive(0, 20)
         }
@@ -1715,40 +1715,40 @@ reused: 0
         content_by_lua_block {
             local path = "unix:" .. "$TEST_NGINX_HTML_DIR/nginx.sock";
             local function go()
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok, err = sock:connect(path, {pool_size = 1})
                 if not ok then
-                    ngx.say("failed to connect: ", err)
+                    njt.say("failed to connect: ", err)
                     return
                 end
 
-                ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+                njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
                 local ok, err = sock:setkeepalive(0, 20)
                 if not ok then
-                    ngx.say("failed to set reusable: ", err)
+                    njt.say("failed to set reusable: ", err)
                 end
             end
 
             go()
             go()
 
-            local sock1 = ngx.socket.connect(path)
-            local sock2 = ngx.socket.connect(path)
+            local sock1 = njt.socket.connect(path)
+            local sock2 = njt.socket.connect(path)
             local ok, err = sock1:setkeepalive(0, 20)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
             local ok, err = sock2:setkeepalive(0, 20)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
 
             -- the pool_size is 1 instead of 20
-            sock1 = ngx.socket.connect(path)
-            sock2 = ngx.socket.connect(path)
-            ngx.say("reused: ", sock1:getreusedtimes())
-            ngx.say("reused: ", sock2:getreusedtimes())
+            sock1 = njt.socket.connect(path)
+            sock2 = njt.socket.connect(path)
+            njt.say("reused: ", sock1:getreusedtimes())
+            njt.say("reused: ", sock2:getreusedtimes())
             sock1:setkeepalive(0, 20)
             sock2:setkeepalive(0, 20)
         }
@@ -1778,20 +1778,20 @@ reused: 0
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local function go(pool)
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok, err = sock:connect("127.0.0.1", port, {pool = pool, pool_size = 1})
                 if not ok then
-                    ngx.say("failed to connect: ", err)
+                    njt.say("failed to connect: ", err)
                     return
                 end
 
-                ngx.say("connected: ", pool, ", reused: ", sock:getreusedtimes())
+                njt.say("connected: ", pool, ", reused: ", sock:getreusedtimes())
 
                 local ok, err = sock:setkeepalive(0, 20)
                 if not ok then
-                    ngx.say("failed to set reusable: ", err)
+                    njt.say("failed to set reusable: ", err)
                 end
             end
 
@@ -1800,22 +1800,22 @@ reused: 0
             go('A')
             go('B')
 
-            local sock1 = ngx.socket.connect("127.0.0.1", port, {pool = 'A'})
-            local sock2 = ngx.socket.connect("127.0.0.1", port, {pool = 'A'})
+            local sock1 = njt.socket.connect("127.0.0.1", port, {pool = 'A'})
+            local sock2 = njt.socket.connect("127.0.0.1", port, {pool = 'A'})
             local ok, err = sock1:setkeepalive(0, 20)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
             local ok, err = sock2:setkeepalive(0, 20)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
 
             -- the pool_size is 1 instead of 20
-            sock1 = ngx.socket.connect("127.0.0.1", port, {pool = 'A'})
-            sock2 = ngx.socket.connect("127.0.0.1", port, {pool = 'A'})
-            ngx.say("reused: ", sock1:getreusedtimes())
-            ngx.say("reused: ", sock2:getreusedtimes())
+            sock1 = njt.socket.connect("127.0.0.1", port, {pool = 'A'})
+            sock2 = njt.socket.connect("127.0.0.1", port, {pool = 'A'})
+            njt.say("reused: ", sock1:getreusedtimes())
+            njt.say("reused: ", sock2:getreusedtimes())
             sock1:setkeepalive(0, 20)
             sock2:setkeepalive(0, 20)
         }
@@ -1848,13 +1848,13 @@ qq{lua tcp socket keepalive create connection pool for key "B"},
         lua_socket_pool_size 1234;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {backlog = 0}
-            local sock, err = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock, err = njt.socket.connect("127.0.0.1", port, opts)
             if not sock then
-                ngx.say(err)
+                njt.say(err)
             else
-                ngx.say("ok")
+                njt.say("ok")
             end
         }
     }
@@ -1875,35 +1875,35 @@ lua tcp socket connection pool size: 1234
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool_size = 2, backlog = 0}
-            local sock = ngx.socket.connect("127.0.0.1", port, opts)
-            local not_reused_socket, err = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock = njt.socket.connect("127.0.0.1", port, opts)
+            local not_reused_socket, err = njt.socket.connect("127.0.0.1", port, opts)
             if not not_reused_socket then
-                ngx.say(err)
+                njt.say(err)
                 return
             end
             -- burst
-            local ok, err = ngx.socket.connect("127.0.0.1", port, opts)
+            local ok, err = njt.socket.connect("127.0.0.1", port, opts)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
 
             local ok, err = sock:setkeepalive()
             if not ok then
-                ngx.say(err)
+                njt.say(err)
                 return
             end
 
             ok, err = sock:connect("127.0.0.1", port, opts)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
-            ngx.say("reused: ", sock:getreusedtimes())
+            njt.say("reused: ", sock:getreusedtimes())
             -- both queue and pool is full
-            ok, err = ngx.socket.connect("127.0.0.1", port, opts)
+            ok, err = njt.socket.connect("127.0.0.1", port, opts)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
         }
     }
@@ -1924,53 +1924,53 @@ too many waiting connect operations
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool_size = 2, backlog = 2}
-            local sock1 = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock1 = njt.socket.connect("127.0.0.1", port, opts)
 
-            ngx.timer.at(0, function(premature)
-                local sock2, err = ngx.socket.connect("127.0.0.1", port, opts)
+            njt.timer.at(0, function(premature)
+                local sock2, err = njt.socket.connect("127.0.0.1", port, opts)
                 if not sock2 then
-                    ngx.log(ngx.ERR, err)
+                    njt.log(njt.ERR, err)
                     return
                 end
 
-                ngx.log(ngx.WARN, "start to handle timer")
-                ngx.sleep(0.1)
+                njt.log(njt.WARN, "start to handle timer")
+                njt.sleep(0.1)
                 sock2:close()
                 -- resume connect operation
-                ngx.log(ngx.WARN, "continue to handle timer")
+                njt.log(njt.WARN, "continue to handle timer")
             end)
 
-            ngx.sleep(0.05)
-            ngx.log(ngx.WARN, "start to handle cosocket")
-            local sock3, err = ngx.socket.connect("127.0.0.1", port, opts)
+            njt.sleep(0.05)
+            njt.log(njt.WARN, "start to handle cosocket")
+            local sock3, err = njt.socket.connect("127.0.0.1", port, opts)
             if not sock3 then
-                ngx.say(err)
+                njt.say(err)
                 return
             end
-            ngx.log(ngx.WARN, "continue to handle cosocket")
+            njt.log(njt.WARN, "continue to handle cosocket")
 
             local req = "flush_all\r\n"
             local bytes, err = sock3:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             local line, err, part = sock3:receive()
             if line then
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             else
-                ngx.say("failed to receive a line: ", err, " [", part, "]")
+                njt.say("failed to receive a line: ", err, " [", part, "]")
             end
 
             local ok, err = sock3:setkeepalive()
             if not ok then
-                ngx.say("failed to set reusable: ", err)
+                njt.say("failed to set reusable: ", err)
             end
-            ngx.say("setkeepalive: OK")
+            njt.say("setkeepalive: OK")
         }
     }
 --- request
@@ -2000,21 +2000,21 @@ continue to handle cosocket
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool = "test", pool_size = 1, backlog = 0}
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeouts(100, 3000, 3000)
             local ok, err = sock:connect("127.0.0.2", 12345, opts)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
 
-            local sock, err = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock, err = njt.socket.connect("127.0.0.1", port, opts)
             if not sock then
-                ngx.say(err)
+                njt.say(err)
             end
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request
@@ -2033,49 +2033,49 @@ ok
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool_size = 1, backlog = 1}
-            local sock1 = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock1 = njt.socket.connect("127.0.0.1", port, opts)
 
-            ngx.timer.at(0.01, function(premature)
-                ngx.log(ngx.WARN, "start to handle timer")
-                local sock2, err = ngx.socket.connect("127.0.0.1", port, opts)
+            njt.timer.at(0.01, function(premature)
+                njt.log(njt.WARN, "start to handle timer")
+                local sock2, err = njt.socket.connect("127.0.0.1", port, opts)
                 if not sock2 then
-                    ngx.log(ngx.ERR, err)
+                    njt.log(njt.ERR, err)
                     return
                 end
 
-                ngx.sleep(0.02)
+                njt.sleep(0.02)
                 local ok, err = sock2:close()
                 if not ok then
-                    ngx.log(ngx.ERR, err)
+                    njt.log(njt.ERR, err)
                 end
-                ngx.log(ngx.WARN, "continue to handle timer")
+                njt.log(njt.WARN, "continue to handle timer")
             end)
 
-            ngx.sleep(0.02)
-            local sock3, err = ngx.socket.connect("127.0.0.1", port, opts)
+            njt.sleep(0.02)
+            local sock3, err = njt.socket.connect("127.0.0.1", port, opts)
             if not sock3 then
-                ngx.say(err)
+                njt.say(err)
             end
             local ok, err = sock1:setkeepalive()
             if not ok then
-                ngx.say(err)
+                njt.say(err)
                 return
             end
-            ngx.sleep(0.01) -- run sock2
+            njt.sleep(0.01) -- run sock2
 
-            ngx.log(ngx.WARN, "start to handle cosocket")
-            local sock3, err = ngx.socket.connect("127.0.0.1", port, opts)
+            njt.log(njt.WARN, "start to handle cosocket")
+            local sock3, err = njt.socket.connect("127.0.0.1", port, opts)
             if not sock3 then
-                ngx.say(err)
+                njt.say(err)
                 return
             end
-            ngx.log(ngx.WARN, "continue to handle cosocket")
+            njt.log(njt.WARN, "continue to handle cosocket")
 
             local ok, err = sock3:setkeepalive()
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
         }
     }
@@ -2104,56 +2104,56 @@ continue to handle cosocket
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool = "test", pool_size = 1, backlog = 3}
-            local sock = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock = njt.socket.connect("127.0.0.1", port, opts)
 
-            ngx.timer.at(0.01, function(premature)
-                local sock, err = ngx.socket.connect("0.0.0.0", port, opts)
+            njt.timer.at(0.01, function(premature)
+                local sock, err = njt.socket.connect("0.0.0.0", port, opts)
                 if not sock then
-                    ngx.log(ngx.ERR, err)
+                    njt.log(njt.ERR, err)
                     return
                 end
 
                 local ok, err = sock:close()
                 if not ok then
-                    ngx.log(ngx.ERR, err)
+                    njt.log(njt.ERR, err)
                 end
             end)
 
-            ngx.timer.at(0.015, function(premature)
-                local sock, err = ngx.socket.connect("127.0.0.1", port, opts)
+            njt.timer.at(0.015, function(premature)
+                local sock, err = njt.socket.connect("127.0.0.1", port, opts)
                 if not sock then
-                    ngx.log(ngx.ERR, err)
+                    njt.log(njt.ERR, err)
                     return
                 end
 
                 local ok, err = sock:close()
                 if not ok then
-                    ngx.log(ngx.ERR, err)
+                    njt.log(njt.ERR, err)
                 end
             end)
 
-            ngx.timer.at(0.02, function(premature)
-                local sock, err = ngx.socket.connect("0.0.0.0", port, opts)
+            njt.timer.at(0.02, function(premature)
+                local sock, err = njt.socket.connect("0.0.0.0", port, opts)
                 if not sock then
-                    ngx.log(ngx.ERR, err)
+                    njt.log(njt.ERR, err)
                     return
                 end
 
                 local ok, err = sock:close()
                 if not ok then
-                    ngx.log(ngx.ERR, err)
+                    njt.log(njt.ERR, err)
                 end
             end)
 
-            ngx.sleep(0.03)
+            njt.sleep(0.03)
             local ok, err = sock:setkeepalive()
             if not ok then
-                ngx.say(err)
+                njt.say(err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request
@@ -2176,25 +2176,25 @@ queue connect operation for connection pool
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool = "test", pool_size = 1, backlog = 1}
-            local sock = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock = njt.socket.connect("127.0.0.1", port, opts)
 
-            ngx.timer.at(0, function(premature)
-                local sock, err = ngx.socket.connect("", port, opts)
+            njt.timer.at(0, function(premature)
+                local sock, err = njt.socket.connect("", port, opts)
                 if not sock then
-                    ngx.log(ngx.WARN, err)
+                    njt.log(njt.WARN, err)
                 end
             end)
 
-            ngx.sleep(0.01)
+            njt.sleep(0.01)
             -- use 'close' to force parsing host instead of reusing conn
             local ok, err = sock:close()
             if not ok then
-                ngx.say(err)
+                njt.say(err)
                 return
             end
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request
@@ -2217,41 +2217,41 @@ queue connect operation for connection pool
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool_size = 1, backlog = 2}
 
             local conn_sock = function()
-                local sock, err = ngx.socket.connect("127.0.0.1", port, opts)
+                local sock, err = njt.socket.connect("127.0.0.1", port, opts)
                 if not sock then
-                    ngx.say(err)
+                    njt.say(err)
                     return
                 end
-                ngx.say("start to handle uthread")
+                njt.say("start to handle uthread")
 
-                ngx.sleep(0.01)
+                njt.sleep(0.01)
                 sock:close()
-                ngx.say("continue to handle other uthread")
+                njt.say("continue to handle other uthread")
             end
 
-            local sock, err = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock, err = njt.socket.connect("127.0.0.1", port, opts)
             if not sock then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
                 return
             end
 
-            local co1 = ngx.thread.spawn(conn_sock)
-            local co2 = ngx.thread.spawn(conn_sock)
-            local co3 = ngx.thread.spawn(conn_sock)
+            local co1 = njt.thread.spawn(conn_sock)
+            local co2 = njt.thread.spawn(conn_sock)
+            local co3 = njt.thread.spawn(conn_sock)
 
             local ok, err = sock:setkeepalive()
             if not ok then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
             end
 
-            ngx.thread.wait(co1)
-            ngx.thread.wait(co2)
-            ngx.thread.wait(co3)
-            ngx.say("all uthreads ok")
+            njt.thread.wait(co1)
+            njt.thread.wait(co2)
+            njt.thread.wait(co3)
+            njt.say("all uthreads ok")
         }
     }
 --- request
@@ -2278,41 +2278,41 @@ queue connect operation for connection pool
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         access_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool_size = 1, backlog = 2}
 
             local conn_sock = function()
-                local sock, err = ngx.socket.connect("127.0.0.1", port, opts)
+                local sock, err = njt.socket.connect("127.0.0.1", port, opts)
                 if not sock then
-                    ngx.say(err)
+                    njt.say(err)
                     return
                 end
-                ngx.say("start to handle uthread")
+                njt.say("start to handle uthread")
 
-                ngx.sleep(0.01)
+                njt.sleep(0.01)
                 sock:close()
-                ngx.say("continue to handle other uthread")
+                njt.say("continue to handle other uthread")
             end
 
-            local sock, err = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock, err = njt.socket.connect("127.0.0.1", port, opts)
             if not sock then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
                 return
             end
 
-            local co1 = ngx.thread.spawn(conn_sock)
-            local co2 = ngx.thread.spawn(conn_sock)
-            local co3 = ngx.thread.spawn(conn_sock)
+            local co1 = njt.thread.spawn(conn_sock)
+            local co2 = njt.thread.spawn(conn_sock)
+            local co3 = njt.thread.spawn(conn_sock)
 
             local ok, err = sock:setkeepalive()
             if not ok then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
             end
 
-            ngx.thread.wait(co1)
-            ngx.thread.wait(co2)
-            ngx.thread.wait(co3)
-            ngx.say("all uthreads ok")
+            njt.thread.wait(co1)
+            njt.thread.wait(co2)
+            njt.thread.wait(co3)
+            njt.say("all uthreads ok")
         }
     }
 --- request
@@ -2339,41 +2339,41 @@ queue connect operation for connection pool
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         rewrite_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool_size = 1, backlog = 2}
 
             local conn_sock = function()
-                local sock, err = ngx.socket.connect("127.0.0.1", port, opts)
+                local sock, err = njt.socket.connect("127.0.0.1", port, opts)
                 if not sock then
-                    ngx.say(err)
+                    njt.say(err)
                     return
                 end
-                ngx.say("start to handle uthread")
+                njt.say("start to handle uthread")
 
-                ngx.sleep(0.01)
+                njt.sleep(0.01)
                 sock:close()
-                ngx.say("continue to handle other uthread")
+                njt.say("continue to handle other uthread")
             end
 
-            local sock, err = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock, err = njt.socket.connect("127.0.0.1", port, opts)
             if not sock then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
                 return
             end
 
-            local co1 = ngx.thread.spawn(conn_sock)
-            local co2 = ngx.thread.spawn(conn_sock)
-            local co3 = ngx.thread.spawn(conn_sock)
+            local co1 = njt.thread.spawn(conn_sock)
+            local co2 = njt.thread.spawn(conn_sock)
+            local co3 = njt.thread.spawn(conn_sock)
 
             local ok, err = sock:setkeepalive()
             if not ok then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
             end
 
-            ngx.thread.wait(co1)
-            ngx.thread.wait(co2)
-            ngx.thread.wait(co3)
-            ngx.say("all uthreads ok")
+            njt.thread.wait(co1)
+            njt.thread.wait(co2)
+            njt.thread.wait(co3)
+            njt.say("all uthreads ok")
         }
     }
 --- request
@@ -2400,45 +2400,45 @@ queue connect operation for connection pool
 
     location /t {
         content_by_lua_block {
-            local port = ngx.var.port
-            ngx.timer.at(0, function()
+            local port = njt.var.port
+            njt.timer.at(0, function()
                 local opts = {pool_size = 1, backlog = 2}
-                local sock, err = ngx.socket.connect("127.0.0.1", port, opts)
+                local sock, err = njt.socket.connect("127.0.0.1", port, opts)
                 if not sock then
-                    ngx.log(ngx.ERR, err)
+                    njt.log(njt.ERR, err)
                     return
                 end
 
-                ngx.sleep(0.1)
+                njt.sleep(0.1)
                 local ok, err = sock:setkeepalive()
                 if not ok then
-                    ngx.log(ngx.ERR, err)
+                    njt.log(njt.ERR, err)
                 end
             end)
 
-            ngx.sleep(0.01)
-            local res1, res2, res3 = ngx.location.capture_multi{
+            njt.sleep(0.01)
+            local res1, res2, res3 = njt.location.capture_multi{
                 {"/conn"}, {"/conn"}, {"/conn"}
             }
-            ngx.say(res1.body)
-            ngx.say(res2.body)
-            ngx.say(res3.body)
+            njt.say(res1.body)
+            njt.say(res2.body)
+            njt.say(res3.body)
         }
     }
 
     location /conn {
         content_by_lua_block {
-            local port = ngx.var.port
-            local sock, err = ngx.socket.connect("127.0.0.1", port)
+            local port = njt.var.port
+            local sock, err = njt.socket.connect("127.0.0.1", port)
             if not sock then
-                ngx.print(err)
+                njt.print(err)
                 return
             end
             local ok, err = sock:setkeepalive()
             if not ok then
-                ngx.print(err)
+                njt.print(err)
             else
-                ngx.print("ok")
+                njt.print("ok")
             end
         }
     }
@@ -2463,15 +2463,15 @@ queue connect operation for connection pool
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool_size = 1, backlog = 1}
-            local sock1 = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock1 = njt.socket.connect("127.0.0.1", port, opts)
 
-            local sock2 = ngx.socket.tcp()
+            local sock2 = njt.socket.tcp()
             sock2:settimeouts(10, 3000, 3000)
             local ok, err = sock2:connect("127.0.0.1", port, opts)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
         }
     }
@@ -2491,14 +2491,14 @@ timeout
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool_size = 1, backlog = 1}
-            local sock1 = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock1 = njt.socket.connect("127.0.0.1", port, opts)
 
-            local sock2 = ngx.socket.tcp()
+            local sock2 = njt.socket.tcp()
             local ok, err = sock2:connect("127.0.0.1", port, opts)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
         }
     }
@@ -2517,15 +2517,15 @@ timeout
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool_size = 1, backlog = 1}
-            local sock1 = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock1 = njt.socket.connect("127.0.0.1", port, opts)
 
-            local sock2 = ngx.socket.tcp()
+            local sock2 = njt.socket.tcp()
             sock2:settimeouts(3000, 3000, 3000)
             local ok, err = sock2:connect("127.0.0.1", port, opts)
             if not ok then
-                ngx.say(err)
+                njt.say(err)
             end
         }
     }
@@ -2545,11 +2545,11 @@ GET /t
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool = "test", pool_size = 1, backlog = 2}
 
             local conn_sock = function(should_timeout)
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok, err
                 if should_timeout then
                     ok, err = sock:connect("", port, opts)
@@ -2557,30 +2557,30 @@ GET /t
                     ok, err = sock:connect("127.0.0.1", port, opts)
                 end
                 if not ok then
-                    ngx.say(err)
+                    njt.say(err)
                     return
                 end
-                ngx.say("connected in uthread")
+                njt.say("connected in uthread")
                 sock:close()
             end
 
-            local sock, err = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock, err = njt.socket.connect("127.0.0.1", port, opts)
             if not sock then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
                 return
             end
 
-            local co1 = ngx.thread.spawn(conn_sock, true)
-            local co2 = ngx.thread.spawn(conn_sock)
+            local co1 = njt.thread.spawn(conn_sock, true)
+            local co2 = njt.thread.spawn(conn_sock)
 
             local ok, err = sock:close()
             if not ok then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
             end
 
-            ngx.thread.wait(co1)
-            ngx.thread.wait(co2)
-            ngx.say("ok")
+            njt.thread.wait(co1)
+            njt.thread.wait(co2)
+            njt.say("ok")
         }
     }
 --- request
@@ -2602,11 +2602,11 @@ ok
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool = "test", pool_size = 1, backlog = 1}
 
             local conn_sock = function(should_timeout)
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok, err
                 if should_timeout then
                     sock:settimeouts(100, 3000, 3000)
@@ -2615,19 +2615,19 @@ ok
                     ok, err = sock:connect("127.0.0.1", port, opts)
                 end
                 if not ok then
-                    ngx.say(err)
+                    njt.say(err)
                     return
                 end
-                ngx.say("connected in uthread")
+                njt.say("connected in uthread")
                 sock:close()
             end
 
-            local co1 = ngx.thread.spawn(conn_sock, true)
-            local co2 = ngx.thread.spawn(conn_sock)
+            local co1 = njt.thread.spawn(conn_sock, true)
+            local co2 = njt.thread.spawn(conn_sock)
 
-            ngx.thread.wait(co1)
-            ngx.thread.wait(co2)
-            ngx.say("ok")
+            njt.thread.wait(co1)
+            njt.thread.wait(co2)
+            njt.say("ok")
         }
     }
 --- request
@@ -2650,11 +2650,11 @@ lua tcp socket connect timed out, when connecting to
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool = "test", pool_size = 1, backlog = 1}
 
             local conn_sock = function(should_timeout)
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok, err
                 if should_timeout then
                     sock:settimeouts(1, 3000, 3000)
@@ -2663,19 +2663,19 @@ lua tcp socket connect timed out, when connecting to
                     ok, err = sock:connect("127.0.0.1", port, opts)
                 end
                 if not ok then
-                    ngx.say(err)
+                    njt.say(err)
                     return
                 end
-                ngx.say("connected in uthread")
+                njt.say("connected in uthread")
                 sock:close()
             end
 
-            local co1 = ngx.thread.spawn(conn_sock, true)
-            local co2 = ngx.thread.spawn(conn_sock)
+            local co1 = njt.thread.spawn(conn_sock, true)
+            local co2 = njt.thread.spawn(conn_sock)
 
-            ngx.thread.wait(co1)
-            ngx.thread.wait(co2)
-            ngx.say("ok")
+            njt.thread.wait(co1)
+            njt.thread.wait(co2)
+            njt.say("ok")
         }
     }
 --- request
@@ -2695,11 +2695,11 @@ queue connect operation for connection pool "test"
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local port = ngx.var.port
+            local port = njt.var.port
             local opts = {pool = "test", pool_size = 1, backlog = 1}
 
             local conn_sock = function(should_timeout)
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok, err
                 if should_timeout then
                     sock:settimeouts(100, 3000, 3000)
@@ -2708,19 +2708,19 @@ queue connect operation for connection pool "test"
                     ok, err = sock:connect("127.0.0.1", port, opts)
                 end
                 if not ok then
-                    ngx.say(err)
+                    njt.say(err)
                     return
                 end
-                ngx.say("connected in uthread")
+                njt.say("connected in uthread")
                 sock:close()
             end
 
-            local co1 = ngx.thread.spawn(conn_sock, true)
-            local co2 = ngx.thread.spawn(conn_sock)
+            local co1 = njt.thread.spawn(conn_sock, true)
+            local co2 = njt.thread.spawn(conn_sock)
 
-            ngx.thread.wait(co1)
-            ngx.thread.wait(co2)
-            ngx.say("ok")
+            njt.thread.wait(co1)
+            njt.thread.wait(co2)
+            njt.say("ok")
         }
     }
 --- request
@@ -2744,32 +2744,32 @@ queue connect operation for connection pool "test"
 
     location /sub {
         content_by_lua_block {
-            local semaphore = require "ngx.semaphore"
+            local semaphore = require "njt.semaphore"
             local sem = semaphore.new()
 
             local function f()
                 sem:wait(0.1)
-                ngx.exit(0)
+                njt.exit(0)
             end
 
             local opts = {pool = "test", pool_size = 1, backlog = 1}
-            local port = ngx.var.port
-            ngx.timer.at(0, function()
+            local port = njt.var.port
+            njt.timer.at(0, function()
                 sem:post()
-                local sock2, err = ngx.socket.connect("127.0.0.1", port, opts)
+                local sock2, err = njt.socket.connect("127.0.0.1", port, opts)
                 package.loaded.for_timer_to_resume:post()
                 if not sock2 then
-                    ngx.log(ngx.ALERT, "resume connect failed: ", err)
+                    njt.log(njt.ALERT, "resume connect failed: ", err)
                     return
                 end
 
-                ngx.log(ngx.INFO, "resume success")
+                njt.log(njt.INFO, "resume success")
             end)
 
-            ngx.thread.spawn(f)
-            local sock1, err = ngx.socket.connect("openresty.org", 80, opts)
+            njt.thread.spawn(f)
+            local sock1, err = njt.socket.connect("openresty.org", 80, opts)
             if not sock1 then
-                ngx.say(err)
+                njt.say(err)
                 return
             end
         }
@@ -2777,11 +2777,11 @@ queue connect operation for connection pool "test"
 
     location /t {
         content_by_lua_block {
-            local semaphore = require "ngx.semaphore"
+            local semaphore = require "njt.semaphore"
             local for_timer_to_resume = semaphore.new()
             package.loaded.for_timer_to_resume = for_timer_to_resume
 
-            ngx.location.capture("/sub")
+            njt.location.capture("/sub")
             for_timer_to_resume:wait(0.1)
         }
     }
@@ -2803,30 +2803,30 @@ resume success
     location /t {
         content_by_lua_block {
             local opts = {pool = "test", pool_size = 1, backlog = 1}
-            local port = ngx.var.port
+            local port = njt.var.port
 
             local function resolve()
-                local sock1, err = ngx.socket.connect("openresty.org", 80, opts)
+                local sock1, err = njt.socket.connect("openresty.org", 80, opts)
                 if not sock1 then
-                    ngx.say(err)
+                    njt.say(err)
                     return
                 end
             end
 
-            local th = ngx.thread.spawn(resolve)
-            local ok, err = ngx.thread.kill(th)
+            local th = njt.thread.spawn(resolve)
+            local ok, err = njt.thread.kill(th)
             if not ok then
-                ngx.log(ngx.ALERT, "kill thread failed: ", err)
+                njt.log(njt.ALERT, "kill thread failed: ", err)
                 return
             end
 
-            local sock2, err = ngx.socket.connect("127.0.0.1", port, opts)
+            local sock2, err = njt.socket.connect("127.0.0.1", port, opts)
             if not sock2 then
-                ngx.log(ngx.ALERT, "resume connect failed: ", err)
+                njt.log(njt.ALERT, "resume connect failed: ", err)
                 return
             end
 
-            ngx.log(ngx.INFO, "resume success")
+            njt.log(njt.INFO, "resume success")
         }
     }
 --- request
@@ -2845,7 +2845,7 @@ resume success
     location /t {
         content_by_lua_block {
             local function connect()
-                local sock, err = ngx.socket.connect("127.0.0.1", ngx.var.port)
+                local sock, err = njt.socket.connect("127.0.0.1", njt.var.port)
                 if not sock then
                     error("connect failed: " .. err)
                 end
@@ -2863,7 +2863,7 @@ resume success
             assert(sock1:close())
             assert(sock2:close())
 
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request
@@ -2882,7 +2882,7 @@ ok
     location /t {
         content_by_lua_block {
             local function connect()
-                local sock, err = ngx.socket.connect("127.0.0.1", ngx.var.port)
+                local sock, err = njt.socket.connect("127.0.0.1", njt.var.port)
                 if not sock then
                     error("connect failed: " .. err)
                 end
@@ -2900,7 +2900,7 @@ ok
             assert(sock1:close())
             assert(sock2:close())
 
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request
@@ -2919,20 +2919,20 @@ ok
     location /sub {
         content_by_lua_block {
             local opts = {pool = "test", pool_size = 1, backlog = 1}
-            local sock, err = ngx.socket.connect("127.0.0.1", ngx.var.port, opts)
+            local sock, err = njt.socket.connect("127.0.0.1", njt.var.port, opts)
             if not sock then
-                ngx.say("connect failed: " .. err)
+                njt.say("connect failed: " .. err)
                 return
             end
 
             local function f()
-                assert(ngx.socket.connect("127.0.0.1", ngx.var.port, opts))
+                assert(njt.socket.connect("127.0.0.1", njt.var.port, opts))
             end
 
-            local th = ngx.thread.spawn(f)
-            local ok, err = ngx.thread.kill(th)
+            local th = njt.thread.spawn(f)
+            local ok, err = njt.thread.kill(th)
             if not ok then
-                ngx.log(ngx.ERR, "kill thread failed: ", err)
+                njt.log(njt.ERR, "kill thread failed: ", err)
                 return
             end
 
@@ -2942,10 +2942,10 @@ ok
 
     location /t {
         content_by_lua_block {
-            ngx.location.capture("/sub")
+            njt.location.capture("/sub")
             -- let pending connect operation resumes first
-            ngx.sleep(0)
-            ngx.say("ok")
+            njt.sleep(0)
+            njt.say("ok")
         }
     }
 --- request
@@ -2989,18 +2989,18 @@ ok
 module("test", package.seeall)
 
 function go(path, pool)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("unix:" .. path, nil, {pool = pool})
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local ok, err = sock:setkeepalive()
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- request

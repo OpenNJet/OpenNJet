@@ -23,15 +23,15 @@ __DATA__
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("hello in thread")
-            ngx.exit(0)
+            njt.say("hello in thread")
+            njt.exit(0)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
-        ngx.sleep(1)
-        ngx.say("end")
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
+        njt.sleep(1)
+        njt.say("end")
     }
 --- stap2 eval: $::StapScript
 --- stap eval
@@ -78,20 +78,20 @@ hello in thread
 
 
 
-=== TEST 2: exit in user thread (entry thread is still pending on ngx.sleep)
+=== TEST 2: exit in user thread (entry thread is still pending on njt.sleep)
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("hello in thread")
-            ngx.sleep(0.1)
-            ngx.exit(0)
+            njt.say("hello in thread")
+            njt.sleep(0.1)
+            njt.exit(0)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
-        ngx.sleep(1)
-        ngx.say("end")
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
+        njt.sleep(1)
+        njt.say("end")
     }
 --- stap2 eval: $::StapScript
 --- stap eval
@@ -158,23 +158,23 @@ after
 
 
 
-=== TEST 3: exit in a user thread (another user thread is still pending on ngx.sleep)
+=== TEST 3: exit in a user thread (another user thread is still pending on njt.sleep)
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.sleep(0.1)
-            ngx.say("f")
-            ngx.exit(0)
+            njt.sleep(0.1)
+            njt.say("f")
+            njt.exit(0)
         end
 
         function g()
-            ngx.sleep(1)
-            ngx.say("g")
+            njt.sleep(1)
+            njt.say("g")
         end
 
-        ngx.thread.spawn(f)
-        ngx.thread.spawn(g)
-        ngx.say("end")
+        njt.thread.spawn(f)
+        njt.thread.spawn(g)
+        njt.say("end")
     }
 --- stap2 eval: $::StapScript
 --- stap eval
@@ -248,14 +248,14 @@ f
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.sleep(0.1)
-            ngx.say("exiting the user thread")
-            ngx.exit(0)
+            njt.sleep(0.1)
+            njt.say("exiting the user thread")
+            njt.exit(0)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -277,27 +277,27 @@ exiting the user thread
 
 
 
-=== TEST 5: exit in user thread (entry thread is still pending on the DNS resolver for ngx.socket.tcp)
+=== TEST 5: exit in user thread (entry thread is still pending on the DNS resolver for njt.socket.tcp)
 --- stream_server_config
     resolver 127.0.0.2:12345;
     resolver_timeout 12s;
     content_by_lua_block {
         function f()
-            ngx.say("hello in thread")
-            ngx.sleep(0.001)
-            ngx.exit(0)
+            njt.say("hello in thread")
+            njt.sleep(0.001)
+            njt.exit(0)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
-        local sock = ngx.socket.tcp()
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
+        local sock = njt.socket.tcp()
         local ok, err = sock:connect("agentzh.org", 80)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
-        ngx.say("end")
+        njt.say("end")
     }
 --- stap2 eval: $::StapScript
 --- stap eval
@@ -369,27 +369,27 @@ after
 
 
 
-=== TEST 6: exit in user thread (entry thread is still pending on the DNS resolver for ngx.socket.udp)
+=== TEST 6: exit in user thread (entry thread is still pending on the DNS resolver for njt.socket.udp)
 --- stream_server_config
     resolver 127.0.0.2:12345;
     resolver_timeout 12s;
     content_by_lua_block {
         function f()
-            ngx.say("hello in thread")
-            ngx.sleep(0.001)
-            ngx.exit(0)
+            njt.say("hello in thread")
+            njt.sleep(0.001)
+            njt.exit(0)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
-        local sock = ngx.socket.udp()
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
+        local sock = njt.socket.udp()
         local ok, err = sock:setpeername("agentzh.org", 80)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
-        ngx.say("end")
+        njt.say("end")
     }
 --- stap2 eval: $::StapScript
 --- stap eval
@@ -465,22 +465,22 @@ after
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("hello in thread")
-            ngx.sleep(0.1)
-            ngx.exit(0)
+            njt.say("hello in thread")
+            njt.sleep(0.1)
+            njt.exit(0)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
-        local sock = ngx.socket.tcp()
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
+        local sock = njt.socket.tcp()
         sock:settimeout(12000)
         local ok, err = sock:connect("127.0.0.2", 12345)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
-        ngx.say("end")
+        njt.say("end")
     }
 --- stap2 eval: $::StapScript
 --- stap eval
@@ -551,25 +551,25 @@ after
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("hello in thread")
-            ngx.sleep(0.1)
-            ngx.exit(0)
+            njt.say("hello in thread")
+            njt.sleep(0.1)
+            njt.exit(0)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
-        local sock = ngx.socket.tcp()
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
+        local sock = njt.socket.tcp()
 
         local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
         local bytes, ok = sock:send("blpop not_exists 2\\r\\n")
         if not bytes then
-            ngx.say("failed to send: ", err)
+            njt.say("failed to send: ", err)
             return
         end
 
@@ -577,11 +577,11 @@ after
 
         local data, err = sock:receive()
         if not data then
-            ngx.say("failed to receive: ", err)
+            njt.say("failed to receive: ", err)
             return
         end
 
-        ngx.say("end")
+        njt.say("end")
     }
 --- stap2 eval: $::StapScript
 --- stap eval
@@ -647,31 +647,31 @@ after
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("hello in thread")
-            ngx.sleep(0.1)
-            ngx.exit(0)
+            njt.say("hello in thread")
+            njt.sleep(0.1)
+            njt.exit(0)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
-        local sock = ngx.socket.tcp()
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
+        local sock = njt.socket.tcp()
 
         local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
         local bytes, ok = sock:send("blpop not_exists 2\\r\\n")
         if not bytes then
-            ngx.say("failed to send: ", err)
+            njt.say("failed to send: ", err)
             return
         end
 
         local it, err = sock:receiveuntil("\\r\\n")
         if not it then
-            ngx.say("failed to receive until: ", err)
+            njt.say("failed to receive until: ", err)
             return
         end
 
@@ -679,11 +679,11 @@ after
 
         local data, err = it()
         if not data then
-            ngx.say("failed to receive: ", err)
+            njt.say("failed to receive: ", err)
             return
         end
 
-        ngx.say("end")
+        njt.say("end")
     }
 --- stap2 eval: $::StapScript
 --- stap eval
@@ -749,19 +749,19 @@ after
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("hello in thread")
-            ngx.sleep(0.1)
-            ngx.exit(0)
+            njt.say("hello in thread")
+            njt.sleep(0.1)
+            njt.exit(0)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
-        local sock = ngx.socket.udp()
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
+        local sock = njt.socket.udp()
 
         local ok, err = sock:setpeername("8.8.8.8", 12345)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
@@ -769,11 +769,11 @@ after
 
         local data, err = sock:receive()
         if not data then
-            ngx.say("failed to receive: ", err)
+            njt.say("failed to receive: ", err)
             return
         end
 
-        ngx.say("end")
+        njt.say("end")
     }
 --- stap2 eval: $::StapScript
 --- stap eval
@@ -840,26 +840,26 @@ after
 --- stream_server_config
     content_by_lua_block {
         function f()
-            ngx.say("hello in thread")
-            ngx.sleep(0.1)
-            ngx.exit(0)
+            njt.say("hello in thread")
+            njt.sleep(0.1)
+            njt.exit(0)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
-        ngx.flush(true)
-        local sock = ngx.req.socket()
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
+        njt.flush(true)
+        local sock = njt.req.socket()
 
         sock:settimeout(12000)
 
         local data, err = sock:receive(1024)
         if not data then
-            ngx.say("failed to receive: ", err)
+            njt.say("failed to receive: ", err)
             return
         end
 
-        ngx.say("end")
+        njt.say("end")
     }
 
 --- stap2 eval: $::StapScript

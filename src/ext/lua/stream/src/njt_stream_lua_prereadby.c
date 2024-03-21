@@ -161,7 +161,7 @@ njt_stream_lua_preread_handler_file(njt_stream_lua_request_t *r)
 
     lscf = njt_stream_lua_get_module_srv_conf(r, njt_stream_lua_module);
 
-    /* Eval nginx variables in code path string first */
+    /* Eval njet variables in code path string first */
     if (njt_stream_complex_value(r->session, &lscf->preread_src, &eval_src)
         != NJT_OK)
     {
@@ -224,7 +224,7 @@ njt_stream_lua_preread_by_chunk(lua_State *L, njt_stream_lua_request_t *r)
     lua_setfenv(co, -2);
 #endif
 
-    /*  save nginx request in coroutine globals table */
+    /*  save njet request in coroutine globals table */
     njt_stream_lua_set_req(co, r);
 
     /*  {{{ initialize request context */
@@ -246,6 +246,8 @@ njt_stream_lua_preread_by_chunk(lua_State *L, njt_stream_lua_request_t *r)
 #ifdef NJT_LUA_USE_ASSERT
     ctx->cur_co_ctx->co_top = 1;
 #endif
+
+    njt_stream_lua_attach_co_ctx_to_L(co, ctx->cur_co_ctx);
 
     /*  }}} */
 

@@ -21,8 +21,8 @@ __DATA__
 --- config
     location = /test {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.var.request_body)
+            njt.req.read_body()
+            njt.say(njt.var.request_body)
         ';
     }
 --- request
@@ -41,8 +41,8 @@ hello, world
     client_body_timeout 1ms;
     location = /test {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.var.request_body)
+            njt.req.read_body()
+            njt.say(njt.var.request_body)
         ';
     }
 --- raw_request eval
@@ -67,10 +67,10 @@ hello, world"
     }
     location = /test {
         content_by_lua '
-            ngx.req.read_body()
-            local res = ngx.location.capture("/foo");
-            ngx.say(ngx.var.request_body)
-            ngx.say("sub: ", res.body)
+            njt.req.read_body()
+            local res = njt.location.capture("/foo");
+            njt.say(njt.var.request_body)
+            njt.say("sub: ", res.body)
         ';
     }
 --- request
@@ -92,10 +92,10 @@ sub: foo
     }
     location = /test {
         content_by_lua '
-            local res = ngx.location.capture("/foo");
-            ngx.req.read_body()
-            ngx.say(ngx.var.request_body)
-            ngx.say("sub: ", res.body)
+            local res = njt.location.capture("/foo");
+            njt.req.read_body()
+            njt.say(njt.var.request_body)
+            njt.say("sub: ", res.body)
         ';
     }
 --- request
@@ -114,14 +114,14 @@ sub: foo
 --- config
     location = /foo {
         content_by_lua '
-            ngx.req.discard_body()
-            ngx.say("body: ", ngx.var.request_body)
+            njt.req.discard_body()
+            njt.say("body: ", njt.var.request_body)
         ';
     }
     location = /bar {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say("body: ", ngx.var.request_body)
+            njt.req.read_body()
+            njt.say("body: ", njt.var.request_body)
         ';
 
     }
@@ -143,14 +143,14 @@ hiya, world"]
 --- config
     location = /foo {
         content_by_lua '
-            -- ngx.req.discard_body()
-            ngx.say("body: ", ngx.var.request_body)
+            -- njt.req.discard_body()
+            njt.say("body: ", njt.var.request_body)
         ';
     }
     location = /bar {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say("body: ", ngx.var.request_body)
+            njt.req.read_body()
+            njt.say("body: ", njt.var.request_body)
         ';
     }
 --- pipelined_requests eval
@@ -174,8 +174,8 @@ hiya, world"]
 --- config
     location = /test {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.req.get_body_data())
+            njt.req.read_body()
+            njt.say(njt.req.get_body_data())
         ';
     }
 --- request
@@ -194,8 +194,8 @@ hello, world
     client_body_in_file_only on;
     location = /test {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.req.get_body_data())
+            njt.req.read_body()
+            njt.say(njt.req.get_body_data())
         ';
     }
 --- request
@@ -214,8 +214,8 @@ nil
     client_body_in_file_only on;
     location = /test {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.req.get_body_file())
+            njt.req.read_body()
+            njt.say(njt.req.get_body_file())
         ';
     }
 --- request
@@ -232,8 +232,8 @@ hello, world
 --- config
     location = /test {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.req.get_body_file())
+            njt.req.read_body()
+            njt.say(njt.req.get_body_file())
         ';
     }
 --- request
@@ -251,11 +251,11 @@ nil
 --- config
     location = /test {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.req.set_body_data("hiya, dear")
-            ngx.say(ngx.req.get_body_data())
-            ngx.say(ngx.var.request_body)
-            ngx.say(ngx.var.echo_request_body)
+            njt.req.read_body()
+            njt.req.set_body_data("hiya, dear")
+            njt.say(njt.req.get_body_data())
+            njt.say(njt.var.request_body)
+            njt.say(njt.var.echo_request_body)
         ';
     }
 --- request
@@ -277,10 +277,10 @@ hiya, dear
 
     location = /test {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.req.set_body_data("hello, baby")
-            ngx.say(ngx.req.get_body_data())
-            ngx.say(ngx.var.request_body)
+            njt.req.read_body()
+            njt.req.set_body_data("hello, baby")
+            njt.say(njt.req.get_body_data())
+            njt.say(njt.var.request_body)
         ';
     }
 --- request
@@ -301,10 +301,10 @@ hello, baby
 
     location = /test {
         content_by_lua '
-            ngx.req.set_body_data("hello, baby")
-            ngx.say(ngx.req.get_body_data())
-            ngx.say(ngx.var.request_body)
-            -- ngx.location.capture("/sleep")
+            njt.req.set_body_data("hello, baby")
+            njt.say(njt.req.get_body_data())
+            njt.say(njt.var.request_body)
+            -- njt.location.capture("/sleep")
         ';
     }
     location = /sleep {
@@ -330,10 +330,10 @@ qr/lua entry thread aborted: runtime error: content_by_lua\(nginx\.conf:\d+\):2:
         set $old '';
         set $new '';
         rewrite_by_lua '
-            ngx.req.read_body()
-            ngx.var.old = ngx.req.get_body_file()
-            ngx.req.set_body_file(ngx.var.realpath_root .. "/a.txt")
-            ngx.var.new = ngx.req.get_body_file()
+            njt.req.read_body()
+            njt.var.old = njt.req.get_body_file()
+            njt.req.set_body_file(njt.var.realpath_root .. "/a.txt")
+            njt.var.new = njt.req.get_body_file()
         ';
         #echo_request_body;
         proxy_pass http://127.0.0.1:$server_port/echo;
@@ -369,10 +369,10 @@ Will you change this world?
         set $old '';
         set $new '';
         rewrite_by_lua '
-            ngx.req.read_body()
-            ngx.var.old = ngx.req.get_body_file() or ""
-            ngx.req.set_body_file(ngx.var.realpath_root .. "/a.txt")
-            ngx.var.new = ngx.req.get_body_file()
+            njt.req.read_body()
+            njt.var.old = njt.req.get_body_file() or ""
+            njt.req.set_body_file(njt.var.realpath_root .. "/a.txt")
+            njt.var.new = njt.req.get_body_file()
         ';
         #echo_request_body;
         proxy_pass http://127.0.0.1:$server_port/echo;
@@ -409,14 +409,14 @@ Will you change this world?
         set $old '';
         set $new '';
         content_by_lua '
-            ngx.req.read_body()
-            ngx.var.old = ngx.req.get_body_file()
-            local a_file = ngx.var.realpath_root .. "/a.txt"
-            ngx.req.set_body_file(a_file, true)
-            local b_file = ngx.var.realpath_root .. "/b.txt"
-            ngx.req.set_body_file(b_file, true)
-            ngx.say("a.txt exists: ", io.open(a_file) and "yes" or "no")
-            ngx.say("b.txt exists: ", io.open(b_file) and "yes" or "no")
+            njt.req.read_body()
+            njt.var.old = njt.req.get_body_file()
+            local a_file = njt.var.realpath_root .. "/a.txt"
+            njt.req.set_body_file(a_file, true)
+            local b_file = njt.var.realpath_root .. "/b.txt"
+            njt.req.set_body_file(b_file, true)
+            njt.say("a.txt exists: ", io.open(a_file) and "yes" or "no")
+            njt.say("b.txt exists: ", io.open(b_file) and "yes" or "no")
         ';
     }
     location /echo {
@@ -448,9 +448,9 @@ b.txt exists: yes
         set $old '';
         set $new '';
         rewrite_by_lua '
-            ngx.req.read_body()
-            local a_file = ngx.var.realpath_root .. "/a.txt"
-            ngx.req.set_body_file(a_file, true)
+            njt.req.read_body()
+            local a_file = njt.var.realpath_root .. "/a.txt"
+            njt.req.set_body_file(a_file, true)
         ';
         echo_request_body;
     }
@@ -484,9 +484,9 @@ qr/500 Internal Server Error/]
         set $old '';
         set $new '';
         rewrite_by_lua '
-            ngx.req.read_body()
-            local a_file = ngx.var.realpath_root .. "/a.txt"
-            ngx.req.set_body_file(a_file, false)
+            njt.req.read_body()
+            local a_file = njt.var.realpath_root .. "/a.txt"
+            njt.req.set_body_file(a_file, false)
         ';
         echo_request_body;
     }
@@ -522,9 +522,9 @@ Will you change this world?
         set $old '';
         set $new '';
         rewrite_by_lua '
-            ngx.req.discard_body()
-            local a_file = ngx.var.realpath_root .. "/a.txt"
-            ngx.req.set_body_file(a_file, false)
+            njt.req.discard_body()
+            local a_file = njt.var.realpath_root .. "/a.txt"
+            njt.req.set_body_file(a_file, false)
         ';
         echo_request_body;
     }
@@ -555,8 +555,8 @@ Will you change this world?
         set $old '';
         set $new '';
         rewrite_by_lua '
-            local a_file = ngx.var.realpath_root .. "/a.txt"
-            ngx.req.set_body_file(a_file, true)
+            local a_file = njt.var.realpath_root .. "/a.txt"
+            njt.req.set_body_file(a_file, true)
         ';
         echo_request_body;
     }
@@ -585,8 +585,8 @@ qr/lua entry thread aborted: runtime error: rewrite_by_lua\(nginx\.conf:\d+\):3:
 --- config
     location = /test {
         rewrite_by_lua '
-            ngx.req.read_body()
-            ngx.req.set_body_data("hiya, dear dear friend!")
+            njt.req.read_body()
+            njt.req.set_body_data("hiya, dear dear friend!")
         ';
         proxy_pass http://127.0.0.1:$server_port/echo;
     }
@@ -613,9 +613,9 @@ hiya, dear dear friend!
         set $old '';
         set $new '';
         rewrite_by_lua '
-            ngx.req.discard_body()
-            local a_file = ngx.var.realpath_root .. "/a.txt"
-            ngx.req.set_body_file(a_file, true)
+            njt.req.discard_body()
+            local a_file = njt.var.realpath_root .. "/a.txt"
+            njt.req.set_body_file(a_file, true)
         ';
         echo_request_body;
     }
@@ -642,9 +642,9 @@ Will you change this world?
 --- config
     location = /test {
         content_by_lua '
-            ngx.req.discard_body()
-            ngx.req.read_body()
-            ngx.print(ngx.req.get_body_data())
+            njt.req.discard_body()
+            njt.req.read_body()
+            njt.print(njt.req.get_body_data())
         ';
     }
 --- pipelined_requests eval
@@ -664,15 +664,15 @@ hello, world"]
 --- config
     location = /test {
         rewrite_by_lua '
-            ngx.req.read_body()
-            ngx.req.set_body_data("")
+            njt.req.read_body()
+            njt.req.set_body_data("")
         ';
         proxy_pass http://127.0.0.1:$server_port/echo;
     }
     location = /echo {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say("body: [", ngx.req.get_body_data(), "]")
+            njt.req.read_body()
+            njt.say("body: [", njt.req.get_body_data(), "]")
         ';
     }
 --- pipelined_requests eval
@@ -692,15 +692,15 @@ hello, world"]
 --- config
     location = /test {
         rewrite_by_lua '
-            ngx.req.read_body()
-            ngx.req.set_body_file(ngx.var.realpath_root .. "/a.txt")
+            njt.req.read_body()
+            njt.req.set_body_file(njt.var.realpath_root .. "/a.txt")
         ';
         proxy_pass http://127.0.0.1:$server_port/echo;
     }
     location = /echo {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say("body: [", ngx.req.get_body_data(), "]")
+            njt.req.read_body()
+            njt.say("body: [", njt.req.get_body_data(), "]")
         ';
     }
 --- user_files
@@ -727,27 +727,27 @@ hello, world"]
     }
 --- user_files
 >>> myscript.lua
-    local data, err = ngx.req.get_post_args()
+    local data, err = njt.req.get_post_args()
     if err then
-        ngx.log(ngx.ERR, "err: ", err)
-        return ngx.exit(500)
+        njt.log(njt.ERR, "err: ", err)
+        return njt.exit(500)
     end
 
     local data2 = {}
     for k, v in pairs(data) do
         if type(v) == "table" then
             for i, val in ipairs(v) do
-                local s = ngx.escape_uri(string.upper(k)) .. '='
-                        .. ngx.escape_uri(string.upper(val))
+                local s = njt.escape_uri(string.upper(k)) .. '='
+                        .. njt.escape_uri(string.upper(val))
                 table.insert(data2, s)
             end
         else
-            local s = ngx.escape_uri(string.upper(k)) .. '='
-                    .. ngx.escape_uri(string.upper(v))
+            local s = njt.escape_uri(string.upper(k)) .. '='
+                    .. njt.escape_uri(string.upper(v))
             table.insert(data2, s)
         end
     end
-    ngx.req.set_body_data(table.concat(data2, "&"))
+    njt.req.set_body_data(table.concat(data2, "&"))
 --- request
 POST /test
 a=1&a=2&b=hello&c=world
@@ -763,9 +763,9 @@ B=HELLO&A=1&A=2&C=WORLD
 --- config
     location = /test {
         rewrite_by_lua '
-            ngx.req.read_body()
-            ngx.req.set_body_data("hiya, dear dear friend!")
-            ngx.req.set_body_data("howdy, my dear little sister!")
+            njt.req.read_body()
+            njt.req.set_body_data("hiya, dear dear friend!")
+            njt.req.set_body_data("howdy, my dear little sister!")
         ';
         proxy_pass http://127.0.0.1:$server_port/echo;
     }
@@ -788,9 +788,9 @@ howdy, my dear little sister!
 --- config
     location = /test {
         rewrite_by_lua '
-            ngx.req.read_body()
-            ngx.req.set_body_data("hiya, dear dear friend!")
-            ngx.req.set_body_file(ngx.var.realpath_root .. "/a.txt")
+            njt.req.read_body()
+            njt.req.set_body_data("hiya, dear dear friend!")
+            njt.req.set_body_file(njt.var.realpath_root .. "/a.txt")
         ';
         proxy_pass http://127.0.0.1:$server_port/echo;
     }
@@ -816,9 +816,9 @@ howdy, my dear little sister!
 --- config
     location = /test {
         rewrite_by_lua '
-            ngx.req.read_body()
-            ngx.req.set_body_data("hiya, dear dear friend!")
-            ngx.req.set_body_data("")
+            njt.req.read_body()
+            njt.req.set_body_data("hiya, dear dear friend!")
+            njt.req.set_body_data("")
         ';
         proxy_pass http://127.0.0.1:$server_port/echo;
     }
@@ -848,8 +848,8 @@ hello, world
 
     location /store {
         content_by_lua '
-            local body = ngx.req.get_body_data()
-            ngx.log(ngx.WARN, "srcache_store: request body len: ", #body)
+            local body = njt.req.get_body_data()
+            njt.log(njt.WARN, "srcache_store: request body len: ", #body)
         ';
     }
 --- request
@@ -869,28 +869,28 @@ srcache_store: request body len: 55
 --- config
     location /t {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.req.init_body(4)
-            ngx.req.append_body("h")
-            ngx.req.append_body("ell")
-            ngx.req.finish_body()
+            njt.req.read_body()
+            njt.req.init_body(4)
+            njt.req.append_body("h")
+            njt.req.append_body("ell")
+            njt.req.finish_body()
 
-            ngx.say("content length: ", ngx.var.http_content_length)
+            njt.say("content length: ", njt.var.http_content_length)
 
-            local data = ngx.req.get_body_data()
-            ngx.say("body: ", data)
+            local data = njt.req.get_body_data()
+            njt.say("body: ", data)
 
         ';
     }
 --- request
     GET /t
 --- stap2
-F(ngx_http_lua_write_request_body) {
-    b = ngx_chain_buf($body)
+F(njt_http_lua_write_request_body) {
+    b = njt_chain_buf($body)
     println("buf: ", b,
-        ", in-mem: ", ngx_buf_in_memory(b),
-        ", size: ", ngx_buf_size(b),
-        ", data: ", ngx_buf_data(b))
+        ", in-mem: ", njt_buf_in_memory(b),
+        ", size: ", njt_buf_size(b),
+        ", data: ", njt_buf_data(b))
 }
 --- response_body
 content length: 4
@@ -905,50 +905,50 @@ body: hell
 --- config
     location /t {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.req.init_body(4)
-            ngx.req.append_body("h")
-            ngx.req.append_body("ell")
-            ngx.req.append_body("o")
-            ngx.req.finish_body()
+            njt.req.read_body()
+            njt.req.init_body(4)
+            njt.req.append_body("h")
+            njt.req.append_body("ell")
+            njt.req.append_body("o")
+            njt.req.finish_body()
 
-            ngx.say("content length: ", ngx.var.http_content_length)
+            njt.say("content length: ", njt.var.http_content_length)
 
-            local data = ngx.req.get_body_data()
-            ngx.say("body: ", data)
+            local data = njt.req.get_body_data()
+            njt.say("body: ", data)
 
-            local file = ngx.req.get_body_file()
+            local file = njt.req.get_body_file()
             if not file then
-                ngx.say("body file: ", file)
+                njt.say("body file: ", file)
                 return
             end
 
             local f, err = io.open(file, "r")
             if not f then
-                ngx.say("failed to open file: ", err)
+                njt.say("failed to open file: ", err)
                 return
             end
 
             local data = f:read("*a")
             f:close()
-            ngx.say("body file: ", data)
+            njt.say("body file: ", data)
         ';
     }
 --- request
     GET /t
 --- stap2
-F(ngx_http_lua_write_request_body) {
-    b = ngx_chain_buf($body)
+F(njt_http_lua_write_request_body) {
+    b = njt_chain_buf($body)
     println("buf: ", b,
-        ", in-mem: ", ngx_buf_in_memory(b),
-        ", size: ", ngx_buf_size(b),
-        ", data: ", ngx_buf_data(b))
+        ", in-mem: ", njt_buf_in_memory(b),
+        ", size: ", njt_buf_size(b),
+        ", data: ", njt_buf_data(b))
 }
-F(ngx_open_tempfile) {
+F(njt_open_tempfile) {
     println("open temp file ", user_string($name), ", persist: ", $persistent)
 }
-F(ngx_pool_delete_file) {
-    println("delete ", ngx_pool_cleanup_file_name($data))
+F(njt_pool_delete_file) {
+    println("delete ", njt_pool_cleanup_file_name($data))
 }
 --- response_body
 content length: 5
@@ -967,15 +967,15 @@ a client request body is buffered to a temporary file
     location /t {
         client_body_buffer_size 4;
         content_by_lua '
-            ngx.req.init_body()
-            ngx.req.append_body("h")
-            ngx.req.append_body("ell")
-            ngx.req.finish_body()
+            njt.req.init_body()
+            njt.req.append_body("h")
+            njt.req.append_body("ell")
+            njt.req.finish_body()
 
-            ngx.say("content length: ", ngx.var.http_content_length)
+            njt.say("content length: ", njt.var.http_content_length)
 
-            local data = ngx.req.get_body_data()
-            ngx.say("body: ", data)
+            local data = njt.req.get_body_data()
+            njt.say("body: ", data)
 
         ';
     }
@@ -996,16 +996,16 @@ qr/lua entry thread aborted: runtime error: content_by_lua\(nginx\.conf:\d+\):2:
     location /t {
         client_body_buffer_size 4;
         content_by_lua '
-            ngx.req.read_body()
-            ngx.req.init_body()
-            ngx.req.append_body("h")
-            ngx.req.append_body("ell")
-            ngx.req.finish_body()
+            njt.req.read_body()
+            njt.req.init_body()
+            njt.req.append_body("h")
+            njt.req.append_body("ell")
+            njt.req.finish_body()
 
-            ngx.say("content length: ", ngx.var.http_content_length)
+            njt.say("content length: ", njt.var.http_content_length)
 
-            local data = ngx.req.get_body_data()
-            ngx.say("body: ", data)
+            local data = njt.req.get_body_data()
+            njt.say("body: ", data)
 
         ';
     }
@@ -1026,12 +1026,12 @@ a client request body is buffered to a temporary file
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.read_body()
-            ngx.req.init_body(4)
-            ngx.req.append_body("h")
-            ngx.req.append_body("ell")
-            ngx.req.append_body("o\\n")
-            ngx.req.finish_body()
+            njt.req.read_body()
+            njt.req.init_body(4)
+            njt.req.append_body("h")
+            njt.req.append_body("ell")
+            njt.req.append_body("o\\n")
+            njt.req.finish_body()
         ';
 
         proxy_pass http://127.0.0.1:$server_port/back;
@@ -1048,7 +1048,7 @@ i do like the sky
 --- stap
 global valid = 0
 
-F(ngx_http_handler) { valid = 1  }
+F(njt_http_handler) { valid = 1  }
 
 probe syscall.unlink {
     if (valid && pid() == target()) {
@@ -1072,11 +1072,11 @@ a client request body is buffered to a temporary file
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.read_body()
-            ngx.req.init_body(4)
-            ngx.req.append_body("h")
-            ngx.req.append_body("ell")
-            ngx.req.finish_body()
+            njt.req.read_body()
+            njt.req.init_body(4)
+            njt.req.append_body("h")
+            njt.req.append_body("ell")
+            njt.req.finish_body()
         ';
 
         proxy_pass http://127.0.0.1:$server_port/back;
@@ -1105,37 +1105,37 @@ a client request body is buffered to a temporary file
         client_body_buffer_size 4;
 
         content_by_lua '
-            ngx.req.read_body()
+            njt.req.read_body()
 
-            -- ngx.say("original body: ", ngx.req.get_body_data())
-            -- ngx.say("original body file: ", ngx.req.get_body_file())
+            -- njt.say("original body: ", njt.req.get_body_data())
+            -- njt.say("original body file: ", njt.req.get_body_file())
 
-            ngx.req.init_body(4)
-            ngx.req.append_body("h")
-            ngx.req.append_body("ell")
-            ngx.req.append_body("o")
-            ngx.req.finish_body()
+            njt.req.init_body(4)
+            njt.req.append_body("h")
+            njt.req.append_body("ell")
+            njt.req.append_body("o")
+            njt.req.finish_body()
 
-            ngx.say("content length: ", ngx.var.http_content_length)
+            njt.say("content length: ", njt.var.http_content_length)
 
-            local data = ngx.req.get_body_data()
-            ngx.say("body: ", data)
+            local data = njt.req.get_body_data()
+            njt.say("body: ", data)
 
-            local file = ngx.req.get_body_file()
+            local file = njt.req.get_body_file()
             if not file then
-                ngx.say("body file: ", file)
+                njt.say("body file: ", file)
                 return
             end
 
             local f, err = io.open(file, "r")
             if not f then
-                ngx.say("failed to open file: ", err)
+                njt.say("failed to open file: ", err)
                 return
             end
 
             local data = f:read("*a")
             f:close()
-            ngx.say("body file: ", data)
+            njt.say("body file: ", data)
         ';
     }
 --- request eval
@@ -1143,9 +1143,9 @@ a client request body is buffered to a temporary file
 " . ("howdyworld" x 15)
 --- stap
 /*
-F(ngx_http_read_client_request_body) { T() }
+F(njt_http_read_client_request_body) { T() }
 M(http-read-body-abort) { println("read body aborted: ", user_string($arg2)) }
-M(http-read-req-header-done) { println("req header: ", ngx_table_elt_key($arg2), ": ", ngx_table_elt_value($arg2)) }
+M(http-read-req-header-done) { println("req header: ", njt_table_elt_key($arg2), ": ", njt_table_elt_value($arg2)) }
 #probe syscall.open { if (isinstr(argstr, "temp")) { println(name, ": ", argstr) } }
 
 probe syscall.unlink {
@@ -1157,8 +1157,8 @@ probe syscall.unlink {
 
 global valid = 0
 
-F(ngx_http_handler) { valid = 1  }
-#F(ngx_http_free_request) { valid = 0 }
+F(njt_http_handler) { valid = 1  }
+#F(njt_http_free_request) { valid = 0 }
 
 probe syscall.unlink {
     if (valid && pid() == target()) {
@@ -1196,19 +1196,19 @@ a client request body is buffered to a temporary file
 
 
 
-=== TEST 38: ngx.req.socket + init & append & finish (requests)
+=== TEST 38: njt.req.socket + init & append & finish (requests)
 --- config
     location = /t {
         client_body_buffer_size 1;
         lua_socket_buffer_size 1;
         content_by_lua '
-            local sock,err = ngx.req.socket()
+            local sock,err = njt.req.socket()
             if not sock then
-                ngx.say("failed to get req socket: ", err)
+                njt.say("failed to get req socket: ", err)
                 return
             end
 
-            ngx.req.init_body(100)
+            njt.req.init_body(100)
 
             while true do
                 local data, err = sock:receive(1)
@@ -1216,19 +1216,19 @@ a client request body is buffered to a temporary file
                     if err == "closed" then
                         break
                     else
-                        ngx.say("failed to read body: ", err)
+                        njt.say("failed to read body: ", err)
                         return
                     end
                 end
-                ngx.req.append_body(data)
+                njt.req.append_body(data)
             end
 
-            ngx.req.finish_body()
+            njt.req.finish_body()
 
-            ngx.say("content length: ", ngx.var.http_content_length)
+            njt.say("content length: ", njt.var.http_content_length)
 
-            local data = ngx.req.get_body_data()
-            ngx.say("body: ", data)
+            local data = njt.req.get_body_data()
+            njt.say("body: ", data)
 
         ';
     }
@@ -1246,19 +1246,19 @@ a client request body is buffered to a temporary file
 
 
 
-=== TEST 39: ngx.req.socket + init & append & finish (pipelined requests, small buffer size)
+=== TEST 39: njt.req.socket + init & append & finish (pipelined requests, small buffer size)
 --- config
     location = /t {
         client_body_buffer_size 1;
         lua_socket_buffer_size 1;
         content_by_lua '
-            local sock,err = ngx.req.socket()
+            local sock,err = njt.req.socket()
             if not sock then
-                ngx.say("failed to get req socket: ", err)
+                njt.say("failed to get req socket: ", err)
                 return
             end
 
-            ngx.req.init_body(100)
+            njt.req.init_body(100)
 
             while true do
                 local data, err = sock:receive(1)
@@ -1266,19 +1266,19 @@ a client request body is buffered to a temporary file
                     if err == "closed" then
                         break
                     else
-                        ngx.say("failed to read body: ", err)
+                        njt.say("failed to read body: ", err)
                         return
                     end
                 end
-                ngx.req.append_body(data)
+                njt.req.append_body(data)
             end
 
-            ngx.req.finish_body()
+            njt.req.finish_body()
 
-            ngx.say("content length: ", ngx.var.http_content_length)
+            njt.say("content length: ", njt.var.http_content_length)
 
-            local data = ngx.req.get_body_data()
-            ngx.say("body: ", data)
+            local data = njt.req.get_body_data()
+            njt.say("body: ", data)
 
         ';
     }
@@ -1301,40 +1301,40 @@ a client request body is buffered to a temporary file
 
 
 
-=== TEST 40: ngx.req.socket + init & append & finish (pipelined requests, big buffer size)
+=== TEST 40: njt.req.socket + init & append & finish (pipelined requests, big buffer size)
 --- config
     location = /t {
         client_body_buffer_size 100;
         lua_socket_buffer_size 100;
         content_by_lua '
-            local sock,err = ngx.req.socket()
+            local sock,err = njt.req.socket()
             if not sock then
-                ngx.say("failed to get req socket: ", err)
+                njt.say("failed to get req socket: ", err)
                 return
             end
 
-            ngx.req.init_body(100)
+            njt.req.init_body(100)
 
             while true do
                 local data, err, partial = sock:receive(100)
                 if not data then
                     if err == "closed" then
-                        ngx.req.append_body(partial)
+                        njt.req.append_body(partial)
                         break
                     else
-                        ngx.say("failed to read body: ", err)
+                        njt.say("failed to read body: ", err)
                         return
                     end
                 end
-                ngx.req.append_body(data)
+                njt.req.append_body(data)
             end
 
-            ngx.req.finish_body()
+            njt.req.finish_body()
 
-            ngx.say("content length: ", ngx.var.http_content_length)
+            njt.say("content length: ", njt.var.http_content_length)
 
-            local data = ngx.req.get_body_data()
-            ngx.say("body: ", data)
+            local data = njt.req.get_body_data()
+            njt.say("body: ", data)
 
         ';
     }
@@ -1357,21 +1357,21 @@ a client request body is buffered to a temporary file
 
 
 
-=== TEST 41: calling ngx.req.socket after ngx.req.read_body
+=== TEST 41: calling njt.req.socket after njt.req.read_body
 --- config
     location = /t {
         client_body_buffer_size 100;
         lua_socket_buffer_size 100;
         content_by_lua '
-            ngx.req.read_body()
+            njt.req.read_body()
 
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
             if not sock then
-                ngx.say("failed to get req socket: ", err)
+                njt.say("failed to get req socket: ", err)
                 return
             end
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -1391,8 +1391,8 @@ a client request body is buffered to a temporary file
 --- config
     location = /test {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.var.request_body)
+            njt.req.read_body()
+            njt.say(njt.var.request_body)
         ';
     }
 --- request
@@ -1408,12 +1408,12 @@ http finalize request: 500, "/test?" a:1, c:0
 
 
 
-=== TEST 43: chunked support in ngx.req.read_body
+=== TEST 43: chunked support in njt.req.read_body
 --- config
     location /t {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.req.get_body_data())
+            njt.req.read_body()
+            njt.say(njt.req.get_body_data())
         ';
     }
 --- raw_request eval
@@ -1450,9 +1450,9 @@ hello, world
         set $old '';
         set $new '';
         rewrite_by_lua '
-            ngx.req.read_body()
-            ngx.req.set_body_file(ngx.var.realpath_root .. "/a.txt")
-            ngx.var.new = ngx.req.get_body_file()
+            njt.req.read_body()
+            njt.req.set_body_file(njt.var.realpath_root .. "/a.txt")
+            njt.var.new = njt.req.get_body_file()
         ';
         #echo_request_body;
         proxy_pass http://127.0.0.1:$server_port/echo;
@@ -1494,15 +1494,15 @@ Will you change this world?
 --- config
     location = /foo {
         content_by_lua '
-            -- ngx.req.discard_body()
-            ngx.say("body: ", ngx.var.request_body)
-            ngx.exit(200)
+            -- njt.req.discard_body()
+            njt.say("body: ", njt.var.request_body)
+            njt.exit(200)
         ';
     }
     location = /bar {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say("body: ", ngx.var.request_body)
+            njt.req.read_body()
+            njt.say("body: ", njt.var.request_body)
         ';
     }
 --- pipelined_requests eval
@@ -1526,15 +1526,15 @@ hiya, world"]
 --- config
     location = /foo {
         content_by_lua '
-            -- ngx.req.discard_body()
-            ngx.say("body: ", ngx.var.request_body)
-            ngx.exit(201)
+            -- njt.req.discard_body()
+            njt.say("body: ", njt.var.request_body)
+            njt.exit(201)
         ';
     }
     location = /bar {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say("body: ", ngx.var.request_body)
+            njt.req.read_body()
+            njt.say("body: ", njt.var.request_body)
         ';
     }
 --- pipelined_requests eval
@@ -1558,15 +1558,15 @@ hiya, world"]
 --- config
     location = /foo {
         content_by_lua '
-            -- ngx.req.discard_body()
-            -- ngx.say("body: ", ngx.var.request_body)
-            ngx.redirect("/blah")
+            -- njt.req.discard_body()
+            -- njt.say("body: ", njt.var.request_body)
+            njt.redirect("/blah")
         ';
     }
     location = /bar {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say("body: ", ngx.var.request_body)
+            njt.req.read_body()
+            njt.say("body: ", njt.var.request_body)
         ';
     }
 --- pipelined_requests eval
@@ -1592,11 +1592,11 @@ hiya, world"]
 
     location = /foo {
         content_by_lua '
-            ngx.exit(404)
+            njt.exit(404)
         ';
     }
     location = /err {
-        content_by_lua 'ngx.say("error")';
+        content_by_lua 'njt.say("error")';
     }
 --- pipelined_requests eval
 ["POST /foo
@@ -1619,11 +1619,11 @@ hiya, world"]
 --- config
     location = /test {
         content_by_lua_block {
-            ngx.req.read_body()
-            ngx.say(ngx.req.get_body_data())
+            njt.req.read_body()
+            njt.say(njt.req.get_body_data())
         }
         log_by_lua_block {
-            ngx.log(ngx.WARN, "request body:", ngx.req.get_body_data())
+            njt.log(njt.WARN, "request body:", njt.req.get_body_data())
         }
     }
 --- request
@@ -1643,24 +1643,24 @@ request body:hello, world
 --- config
     location /t {
         content_by_lua '
-            local old_http_content_length = ngx.var.http_content_length
+            local old_http_content_length = njt.var.http_content_length
 
-            ngx.req.read_body()
-            ngx.req.init_body()
-            ngx.req.append_body("he")
-            ngx.req.append_body("llo")
-            ngx.req.finish_body()
+            njt.req.read_body()
+            njt.req.init_body()
+            njt.req.append_body("he")
+            njt.req.append_body("llo")
+            njt.req.finish_body()
 
-            ngx.say("old content length: ", old_http_content_length)
+            njt.say("old content length: ", old_http_content_length)
 
-            local data = ngx.req.get_body_data()
-            local data_file = ngx.req.get_body_file()
+            local data = njt.req.get_body_data()
+            local data_file = njt.req.get_body_file()
 
             if not data and data_file then
-                ngx.say("no data in buf, go to data file")
+                njt.say("no data in buf, go to data file")
             end
 
-            ngx.say("content length: ", ngx.var.http_content_length)
+            njt.say("content length: ", njt.var.http_content_length)
         ';
     }
 --- request
@@ -1680,24 +1680,24 @@ content length: 5
 --- config
     location /t {
         content_by_lua '
-            local old_http_content_length = ngx.var.http_content_length
+            local old_http_content_length = njt.var.http_content_length
 
-            ngx.req.read_body()
-            ngx.req.init_body(0)
-            ngx.req.append_body("he")
-            ngx.req.append_body("llo")
-            ngx.req.finish_body()
+            njt.req.read_body()
+            njt.req.init_body(0)
+            njt.req.append_body("he")
+            njt.req.append_body("llo")
+            njt.req.finish_body()
 
-            ngx.say("old content length: ", old_http_content_length)
+            njt.say("old content length: ", old_http_content_length)
 
-            local data = ngx.req.get_body_data()
-            local data_file = ngx.req.get_body_file()
+            local data = njt.req.get_body_data()
+            local data_file = njt.req.get_body_file()
 
             if not data and data_file then
-                ngx.say("no data in buf, go to data file")
+                njt.say("no data in buf, go to data file")
             end
 
-            ngx.say("content length: ", ngx.var.http_content_length)
+            njt.say("content length: ", njt.var.http_content_length)
         ';
     }
 --- request
@@ -1720,20 +1720,20 @@ content length: 5
 --- config
     location /t {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.req.init_body()
-            ngx.req.append_body("he")
-            ngx.req.append_body("llo")
-            ngx.req.finish_body()
+            njt.req.read_body()
+            njt.req.init_body()
+            njt.req.append_body("he")
+            njt.req.append_body("llo")
+            njt.req.finish_body()
 
-            local data = ngx.req.get_body_data()
-            local data_file = ngx.req.get_body_file()
+            local data = njt.req.get_body_data()
+            local data_file = njt.req.get_body_file()
 
             if not data and data_file then
-                ngx.say("no data in buf, go to data file")
+                njt.say("no data in buf, go to data file")
             end
 
-            ngx.say("content length: ", ngx.var.http_content_length)
+            njt.say("content length: ", njt.var.http_content_length)
         ';
     }
 --- request

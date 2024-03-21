@@ -695,6 +695,8 @@ njt_stream_lua_timer_handler(njt_event_t *ev)
     /*  save the request in coroutine globals table */
     njt_stream_lua_set_req(tctx.co, r);
 
+    njt_stream_lua_attach_co_ctx_to_L(tctx.co, ctx->cur_co_ctx);
+
     lmcf->running_timers++;
 
     lua_pushboolean(tctx.co, tctx.premature);
@@ -856,7 +858,7 @@ njt_stream_lua_abort_pending_timers(njt_event_t *ev)
 
     cur = njt_event_timer_rbtree.root;
 
-    /* XXX nginx does not guarantee the parent of root is meaningful,
+    /* XXX njet does not guarantee the parent of root is meaningful,
      * so we temporarily override it to simplify tree traversal. */
     temp = cur->parent;
     cur->parent = NULL;
@@ -864,7 +866,7 @@ njt_stream_lua_abort_pending_timers(njt_event_t *ev)
     prev = NULL;
 
     events = njt_pcalloc(njt_cycle->pool,
-                         lmcf->pending_timers * sizeof(njt_event_t));
+                         lmcf->pending_timers * sizeof(njt_event_t *));
     if (events == NULL) {
         return;
     }
@@ -918,7 +920,7 @@ njt_stream_lua_abort_pending_timers(njt_event_t *ev)
             next = cur->parent;
 
         } else {
-            /* not reacheable */
+            /* not reachable */
             next = NULL;
         }
 

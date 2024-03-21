@@ -16,9 +16,9 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: use ngx.today in content_by_lua*
+=== TEST 1: use njt.today in content_by_lua*
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.today()) }
+    content_by_lua_block { njt.say(njt.today()) }
 --- stream_response_like: ^\d{4}-\d{2}-\d{2}$
 --- no_error_log
 [error]

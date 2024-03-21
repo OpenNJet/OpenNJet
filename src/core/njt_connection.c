@@ -1172,6 +1172,14 @@ njt_close_listening_sockets(njt_cycle_t *cycle)
 
     ls = cycle->listening.elts;
     for (i = 0; i < cycle->listening.nelts; i++) {
+        // openresty patch
+#if (NJT_HAVE_REUSEPORT)
+        if (ls[i].fd == (njt_socket_t) -1) {
+            continue;
+        }
+#endif
+        // openresty patch end
+
 
         c = ls[i].connection;
 

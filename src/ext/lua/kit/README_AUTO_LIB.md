@@ -1,13 +1,13 @@
-Nginx Auto Lib Core
+NJet Auto Lib Core
 ===================
 
-Nginx Auto Lib Core is a generic external library-handler that has been designed to
-facilitate the inclusion of external libraries in modules for the Nginx web server.
-It has been written both for the benefit of Nginx module developers and for the end
-users of those Nginx modules, and can provide a consistent, intelligent, flexible
+NJet Auto Lib Core is a generic external library-handler that has been designed to
+facilitate the inclusion of external libraries in modules for the NJet web server.
+It has been written both for the benefit of NJet module developers and for the end
+users of those NJet modules, and can provide a consistent, intelligent, flexible
 cross-platform way to include external libraries.
 
-Any developers of Nginx modules are encouraged to use Auto Lib Core to handle library
+Any developers of NJet modules are encouraged to use Auto Lib Core to handle library
 dependencies for their modules rather than writing their own custom handler from scratch.
 
 Note : The latest version can be found [here](https://github.com/simplresty/njt_auto_lib).
@@ -34,10 +34,10 @@ Search order for paths
 (1) [PFX]_INC and [PFX]_LIB
 (2) [PFX] (source or install dir)
 (3) any dirs under [PFX]_BASE (see below)
-(4) any dirs under the parent directory of the Nginx source dir beginning with '[pfx]-'
+(4) any dirs under the parent directory of the NJet source dir beginning with '[pfx]-'
 (5) standard system paths (including /usr/local, /usr, /opt/local, /opt, /usr/pkg)
 
-If any of 1-3 are specified, then any set values will be searched, and the the Nginx
+If any of 1-3 are specified, then any set values will be searched, and the the NJet
 source's parent directory and system paths are not searched unless [PFX]_SEARCH_[PLACE]
 variable is set to YES, where PLACE ::= PARENT | SYSTEM. e.g.
 
@@ -54,11 +54,11 @@ $ export OPENSSL_SEARCH_PARENT=YES
 $ ./configure --with-openssl=/path/to/openssl
 
 will search first in the lib & inc dirs specified, then in /path/to/openssl, then will
-look for directories in /path/to/openssl/base and then in the Nginx source parent
+look for directories in /path/to/openssl/base and then in the NJet source parent
 directory, but will skip checking the system paths.
 
 Note : apart from system paths, all dirs are checked as both source and install directories,
-so static versions of installed OpenSSL, PCRE, Zlib etc libraries can be used with Nginx
+so static versions of installed OpenSSL, PCRE, Zlib etc libraries can be used with NJet
 if desired.
 
 
@@ -82,7 +82,7 @@ Searching under base paths
 
 Rather than specifying a specific path to find new libraries in non-standard locations,
 you may wish to specify a base path (or just let Auto Lib search the directory that the
-Nginx source is located in). This will then automatically find the most recent versions
+NJet source is located in). This will then automatically find the most recent versions
 of libraries and check them before older versions.
 
 e.g.
@@ -104,7 +104,7 @@ If [PFX]_BASE_SEARCH_PREFIX=something, then only directories beginning with 'som
 searched.
 
 When searching under [PFX]_BASE no prefix is added to the search, but when searching under
-the directory that the Nginx source is located in, the prefix [pfx]- is automatically added.
+the directory that the NJet source is located in, the prefix [pfx]- is automatically added.
 
 Note : there is currently a minor bug (due to the implementation of the 'sort' command)
 means versions that include hyphens (e.g. 1.0.0-beta5) are checked before versions like
@@ -135,7 +135,7 @@ Variables that users can set to help find libraries
 [PFX]_SEARCH_LIB_INC    Search in [PFX]_INC and [PFX]_LIB if set            (YES|NO, def=YES)
 [PFX]_SEARCH_DIR        Search [PFX] if set                                 (YES|NO, def=YES)
 [PFX]_SEARCH_BASE       Search under [PFX]_BASE if set                      (YES|NO, def=YES)
-[PFX]_SEARCH_PARENT     Search under the dir that the Nginx source is in    (YES|NO, see above)
+[PFX]_SEARCH_PARENT     Search under the dir that the NJet source is in    (YES|NO, see above)
 [PFX]_SEARCH_SYSTEM     Search in standard system paths                     (YES|NO, see above)
 [PFX]_SHARED            Use shared library rather than static               (YES|NO, def=YES)
 [PFX]_SYSTEM_DIRS       System dirs to search in (PATHS, space-separated, overrides the defaults)
@@ -154,7 +154,7 @@ How Auto Lib Core works
 -----------------------
 
 Auto Lib Core works as an interface layer between the module and the auto/feature part of
-the Nginx source. This is the file that results in the 'checking for ...' lines that you
+the NJet source. This is the file that results in the 'checking for ...' lines that you
 see when you call ./configure.
 
 auto/feature works by using a few key variables (see below) to generate some C code, trying
@@ -171,7 +171,7 @@ Auto Lib Core will automatically generate all the calls to auto/feature for you,
 take into account different operating systems etc in a consistent way, 'intelligent' way.
 
 
-Including Nginx Auto Lib Core with custom modules
+Including NJet Auto Lib Core with custom modules
 -------------------------------------------------
 
 Option 1 :
@@ -189,20 +189,20 @@ has $njt_addon_dir/njt_auto_lib_core in it)
 
 Option 2 :
 
-- make the Nginx Development Kit (github.com/simpl-it/njt_devel_kit) a dependency
+- make the NJet Development Kit (github.com/simpl-it/njt_devel_kit) a dependency
   for your module (Auto Lib Core is included automatically with it)
 
 
 Recommended way of including Auto Lib Core
 ------------------------------------------
 
-If the Nginx Development Kit (NDK) is already a dependency for your module, then you do
+If the NJet Development Kit (NDK) is already a dependency for your module, then you do
 not need to do anything - just follow the 'using Auto Lib Core' instructions below.
 
 If the NDK is not a dependency for your module, then it is recommended to include a
 copy of njt_auto_lib_core with your module, but to recommend to users of your module
 to include the NDK when compiling. If the module is not required for anything else, this
-will not make any difference to the Nginx binary that they compile, but will mean they
+will not make any difference to the NJet binary that they compile, but will mean they
 will get the latest version of Auto Lib Core (which probably won't change much anyway,
 but you never know).
 
@@ -249,7 +249,7 @@ including libraries in the normal way.
        name                           description
 ----------------------------------------------------------------------------------------
 
-core variables (i.e. the ones in the core Nginx source)
+core variables (i.e. the ones in the core NJet source)
 
 njt_feature_inc_path                CFLAGS and include path info (including -I)
 njt_feature_incs                    Include/define code inserted before main() in autotest.c
@@ -306,7 +306,7 @@ pfx                         str_to_lower (if two variables are passed to njt_aut
                             then $2, otherwise, $1)
 
 The easiest way to understand how all the defaults work is probably to look at the source code
-of njt_auto_lib_test_setup() and to look at the examples in the standard Nginx Auto Lib module
+of njt_auto_lib_test_setup() and to look at the examples in the standard NJet Auto Lib module
 which has code for OpenSSL, PCRE, Zlib, MD5 and SHA1.
 
 
@@ -326,7 +326,7 @@ Note : an update on what hooks are available will be added later. To see what ho
 available, just look in the source code of njt_auto_lib_core for any functions that just
 return 0 or 1.
 
-See the MD5 and SHA1 libraries of Nginx Auto Lib module for examples.
+See the MD5 and SHA1 libraries of NJet Auto Lib module for examples.
 
 
 
@@ -335,7 +335,7 @@ Checking that a library is required
 
 Although in most cases Auto Lib Core will be used where external libraries are
 definitely required (for a module to work), this may not always be the case. In the
-standard Nginx Auto Lib module (github.com/simpl-it/njt_auto_lib) - which is designed
+standard NJet Auto Lib module (github.com/simpl-it/njt_auto_lib) - which is designed
 to improve the inclusion of OpenSSL, PCRE and Zlib libraries and increase compilation
 speed where possible - the libraries are not always required, so checks are made to
 see if it is necessary.

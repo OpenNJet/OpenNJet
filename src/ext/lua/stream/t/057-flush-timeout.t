@@ -46,9 +46,9 @@ __DATA__
 --- stream_server_config
     lua_socket_send_timeout 100ms;
     content_by_lua_block {
-        ngx.say("hello, world")
-        ngx.flush(true)
-        ngx.say("hiya")
+        njt.say("hello, world")
+        njt.flush(true)
+        njt.say("hiya")
     }
 --- stream_response
 received 12 bytes of response data.
@@ -68,11 +68,11 @@ qr/stream response: hello, world, client/,
 --- stream_server_config
     lua_socket_send_timeout 1234ms;
     content_by_lua_block {
-        ngx.say(string.rep("blah blah blah", 10))
-        -- ngx.flush(true)
-        ngx.eof()
+        njt.say(string.rep("blah blah blah", 10))
+        -- njt.flush(true)
+        njt.eof()
         for i = 1, 20 do
-            ngx.sleep(0.1)
+            njt.sleep(0.1)
         end
     }
 --- stap
@@ -123,24 +123,24 @@ received 141 bytes of response data.
 
 
 
-=== TEST 3: exit in user thread (entry thread is still pending on ngx.flush)
+=== TEST 3: exit in user thread (entry thread is still pending on njt.flush)
 --- stream_server_config
     lua_socket_send_timeout 1s;
     content_by_lua_block {
         function f()
-            ngx.say("hello in thread")
-            ngx.sleep(0.2)
-            ngx.exit(0)
+            njt.say("hello in thread")
+            njt.sleep(0.2)
+            njt.exit(0)
         end
 
-        ngx.say("before")
-        ngx.thread.spawn(f)
-        ngx.say("after")
+        njt.say("before")
+        njt.thread.spawn(f)
+        njt.say("after")
 
-        ngx.say("hello, world!")
-        ngx.flush(true)
+        njt.say("hello, world!")
+        njt.flush(true)
 
-        ngx.say("end")
+        njt.say("end")
     }
 --- stap2 eval: $::StapScript
 --- stap eval
@@ -223,13 +223,13 @@ received 41 bytes of response data.
 --- stream_server_config
     lua_socket_send_timeout 100ms;
     content_by_lua_block {
-        ngx.say("hello, world")
-        local ok, err = ngx.flush(true)
+        njt.say("hello, world")
+        local ok, err = njt.flush(true)
         if not ok then
-            ngx.log(ngx.ERR, "failed to flush: ", err)
+            njt.log(njt.ERR, "failed to flush: ", err)
             return
         end
-        ngx.say("hiya")
+        njt.say("hiya")
     }
 --- log_stream_response
 --- stream_response
@@ -248,19 +248,19 @@ qr/client timed out \(\d+: .*?timed out\)/,
 --- stream_server_config
     lua_socket_send_timeout 100ms;
     content_by_lua_block {
-        ngx.say("hello, world")
+        njt.say("hello, world")
 
         local function run(tag)
-            local ok, err = ngx.flush(true)
+            local ok, err = njt.flush(true)
             if not ok then
-                ngx.log(ngx.ERR, "thread ", tag, ": failed to flush: ", err)
+                njt.log(njt.ERR, "thread ", tag, ": failed to flush: ", err)
                 return
             end
-            ngx.say("hiya")
+            njt.say("hiya")
         end
 
         local function new_thread(tag)
-            local ok, err = ngx.thread.spawn(run, tag)
+            local ok, err = njt.thread.spawn(run, tag)
             if not ok then
                 return error("failed to spawn thread: ", err)
             end
@@ -292,12 +292,12 @@ TODO
     #lua_socket_send_timeout 100ms;
     limit_rate 2;
     content_by_lua_block {
-        ngx.say("hello, world")
+        njt.say("hello, world")
         if not ok then
-            ngx.log(ngx.ERR, "failed to flush: ", err)
+            njt.log(njt.ERR, "failed to flush: ", err)
             return
         end
-        ngx.say("hiya")
+        njt.say("hiya")
     }
 --- stream_response
 --- error_log eval

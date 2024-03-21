@@ -21,37 +21,37 @@ __DATA__
 === TEST 1: memcached read lines
 --- stream_server_config
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_MEMCACHED_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "flush_all\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local readline = sock:receiveuntil("\r\n")
         local line, err, part = readline()
         if line then
-            ngx.say("received: ", line)
+            njt.say("received: ", line)
 
         else
-            ngx.say("failed to receive a line: ", err, " [", part, "]")
+            njt.say("failed to receive a line: ", err, " [", part, "]")
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 --- stream_response
 connected: 1
@@ -66,25 +66,25 @@ close: 1 nil
 === TEST 2: http read lines
 --- stream_server_config
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local readline = sock:receiveuntil("\r\n")
         local line, err, part
@@ -92,21 +92,21 @@ close: 1 nil
         for i = 1, 7 do
             line, err, part = readline()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
     server_tokens off;
     location = /foo {
-        content_by_lua_block { ngx.say("foo") }
+        content_by_lua_block { njt.say("foo") }
         more_clear_headers Date;
     }
 --- stream_response eval
@@ -130,25 +130,25 @@ close: 1 nil
 === TEST 3: http read all the headers in a single run
 --- stream_server_config
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local line, err, part
@@ -156,21 +156,21 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = read_headers()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
     server_tokens off;
     location = /foo {
-        content_by_lua_block { ngx.say("foo") }
+        content_by_lua_block { njt.say("foo") }
         more_clear_headers Date;
     }
 --- stream_response eval
@@ -195,30 +195,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("abcabd")
@@ -226,21 +226,21 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = reader()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
     server_tokens off;
     location = /foo {
-        content_by_lua_block { ngx.say("abcabcabd") }
+        content_by_lua_block { njt.say("abcabcabd") }
         more_clear_headers Date;
     }
 --- stream_response eval
@@ -261,30 +261,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("aa")
@@ -292,21 +292,21 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = reader()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
     server_tokens off;
     location = /foo {
-        content_by_lua_block { ngx.say("abcabcaad") }
+        content_by_lua_block { njt.say("abcabcaad") }
         more_clear_headers Date;
     }
 --- stream_response eval
@@ -327,30 +327,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("aaa")
@@ -358,15 +358,15 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = reader()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -393,30 +393,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("aaaaad")
@@ -424,15 +424,15 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = reader()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -461,30 +461,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("aaaaad")
@@ -492,15 +492,15 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = reader()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -529,30 +529,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("aaaaad")
@@ -560,15 +560,15 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = reader()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -595,30 +595,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("abcabdabcabe")
@@ -626,15 +626,15 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = reader()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -661,30 +661,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("abcabdabcabe")
@@ -692,15 +692,15 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = reader()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -727,30 +727,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("abcabdabcabe")
@@ -758,15 +758,15 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = reader()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -793,30 +793,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("abcabdabcabe")
@@ -824,15 +824,15 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = reader()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -859,30 +859,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("--abc")
@@ -890,15 +890,15 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = reader()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -925,30 +925,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("--abc")
@@ -956,15 +956,15 @@ close: 1 nil
         for i = 1, 7 do
             line, err, part = reader(4)
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -998,30 +998,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("--abc")
@@ -1029,15 +1029,15 @@ close: 1 nil
         for i = 1, 7 do
             line, err, part = reader(4)
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -1071,30 +1071,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("--abc")
@@ -1102,23 +1102,23 @@ close: 1 nil
         for i = 1, 7 do
             line, err, part = reader(4)
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a chunk: ", err, " [", part, "]")
+                njt.say("failed to read a chunk: ", err, " [", part, "]")
             end
 
             local data, err, part = sock:receive(1)
             if not data then
-                ngx.say("failed to read a byte: ", err, " [", part, "]")
+                njt.say("failed to read a byte: ", err, " [", part, "]")
                 break
             else
-                ngx.say("read one byte: ", data)
+                njt.say("read one byte: ", data)
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -1155,30 +1155,30 @@ close: 1 nil
     content_by_lua_block {
         -- collectgarbage("collect")
 
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
 
         local ok, err = sock:connect("127.0.0.1", port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say("connected: ", ok)
+        njt.say("connected: ", ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         local read_headers = sock:receiveuntil("\r\n\r\n")
         local headers, err, part = read_headers()
         if not headers then
-            ngx.say("failed to read headers: ", err, " [", part, "]")
+            njt.say("failed to read headers: ", err, " [", part, "]")
         end
 
         local reader = sock:receiveuntil("abcabd")
@@ -1186,15 +1186,15 @@ close: 1 nil
         for i = 1, 2 do
             line, err, part = reader()
             if line then
-                ngx.say("read: ", line)
+                njt.say("read: ", line)
 
             else
-                ngx.say("failed to read a line: ", err, " [", part, "]")
+                njt.say("failed to read a line: ", err, " [", part, "]")
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
@@ -1220,17 +1220,17 @@ close: 1 nil
 this exposed a memory leak in receiveuntil
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
         if not sock then
-            ngx.say("failed to get req socket: ", err)
+            njt.say("failed to get req socket: ", err)
             return
         end
         local reader, err = sock:receiveuntil("------------------------------------------- abcdefghijklmnopqrstuvwxyz")
         if not reader then
-            ngx.say("failed to get reader: ", err)
+            njt.say("failed to get reader: ", err)
             return
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 ok

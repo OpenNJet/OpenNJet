@@ -1,7 +1,7 @@
 
 /*
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -25,7 +25,7 @@
 #endif
 
 
-#define UDP_MAX_DATAGRAM_SIZE 8192
+#define UDP_MAX_DATAGRAM_SIZE 65536
 
 
 static int njt_http_lua_socket_udp(lua_State *L);
@@ -592,7 +592,7 @@ njt_http_lua_socket_resolve_retval_handler(njt_http_request_t *r,
     njt_http_lua_ctx_t              *ctx;
     njt_http_lua_co_ctx_t           *coctx;
     njt_connection_t                *c;
-    njt_http_cleanup_t              *cln;
+    njt_pool_cleanup_t              *cln;
     njt_http_upstream_resolved_t    *ur;
     njt_int_t                        rc;
     njt_http_lua_udp_connection_t   *uc;
@@ -626,7 +626,7 @@ njt_http_lua_socket_resolve_retval_handler(njt_http_request_t *r,
     }
 
     if (u->cleanup == NULL) {
-        cln = njt_http_cleanup_add(r, 0);
+        cln = njt_pool_cleanup_add(r->pool, 0);
         if (cln == NULL) {
             u->ft_type |= NJT_HTTP_LUA_SOCKET_FT_ERROR;
             lua_pushnil(L);

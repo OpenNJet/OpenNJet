@@ -87,11 +87,11 @@ njt_http_lua_header_filter_by_chunk(lua_State *L, njt_http_request_t *r)
         old_exit_code = ctx->exit_code;
     }
 
-    /*  initialize nginx context in Lua VM, code chunk at stack top    sp = 1 */
+    /*  initialize njet context in Lua VM, code chunk at stack top    sp = 1 */
     njt_http_lua_header_filter_by_lua_env(L, r);
 
 #if (NJT_PCRE)
-    /* XXX: work-around to nginx regex subsystem */
+    /* XXX: work-around to njet regex subsystem */
     old_pool = njt_http_lua_pcre_malloc_init(r->pool);
 #endif
 
@@ -104,7 +104,7 @@ njt_http_lua_header_filter_by_chunk(lua_State *L, njt_http_request_t *r)
     lua_remove(L, 1);  /* remove traceback function */
 
 #if (NJT_PCRE)
-    /* XXX: work-around to nginx regex subsystem */
+    /* XXX: work-around to njet regex subsystem */
     njt_http_lua_pcre_malloc_done(old_pool);
 #endif
 
@@ -172,7 +172,8 @@ njt_http_lua_header_filter_inline(njt_http_request_t *r)
                                        llcf->header_filter_src.value.len,
                                        &llcf->header_filter_src_ref,
                                        llcf->header_filter_src_key,
-                                       "=header_filter_by_lua");
+                                       (const char *)
+                                       llcf->header_filter_chunkname);
     if (rc != NJT_OK) {
         return NJT_ERROR;
     }
@@ -194,7 +195,7 @@ njt_http_lua_header_filter_file(njt_http_request_t *r)
 
     llcf = njt_http_get_module_loc_conf(r, njt_http_lua_module);
 
-    /* Eval nginx variables in code path string first */
+    /* Eval njet variables in code path string first */
     if (njt_http_complex_value(r, &llcf->header_filter_src, &eval_src)
         != NJT_OK)
     {
@@ -231,7 +232,7 @@ njt_http_lua_header_filter(njt_http_request_t *r)
     njt_http_lua_loc_conf_t     *llcf;
     njt_http_lua_ctx_t          *ctx;
     njt_int_t                    rc;
-    njt_http_cleanup_t          *cln;
+    njt_pool_cleanup_t          *cln;
     uint16_t                     old_context;
 
     njt_log_debug1(NJT_LOG_DEBUG_HTTP, r->connection->log, 0,
@@ -260,7 +261,7 @@ njt_http_lua_header_filter(njt_http_request_t *r)
     }
 
     if (ctx->cleanup == NULL) {
-        cln = njt_http_cleanup_add(r, 0);
+        cln = njt_pool_cleanup_add(r->pool, 0);
         if (cln == NULL) {
             return NJT_ERROR;
         }

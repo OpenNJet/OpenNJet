@@ -20,11 +20,11 @@ __DATA__
 === TEST 1: sleep 0.5 - content
 --- stream_server_config
     content_by_lua_block {
-        ngx.update_time()
-        local before = ngx.now()
-        ngx.sleep(0.5)
-        local now = ngx.now()
-        ngx.say(now - before)
+        njt.update_time()
+        local before = njt.now()
+        njt.sleep(0.5)
+        local now = njt.now()
+        njt.say(now - before)
     }
 --- stream_response_like chop
 ^0\.(?:4[5-9]\d*|5[0-5]\d*|5)$
@@ -37,11 +37,11 @@ stream lua sleep timer expired
 === TEST 2: sleep a - content
 --- stream_server_config
     content_by_lua_block {
-        ngx.update_time()
-        local before = ngx.now()
-        ngx.sleep("a")
-        local now = ngx.now()
-        ngx.say(now - before)
+        njt.update_time()
+        local before = njt.now()
+        njt.sleep("a")
+        local now = njt.now()
+        njt.say(now - before)
     }
 --- stream_response
 --- error_log
@@ -52,12 +52,12 @@ bad argument #1 to 'sleep'
 === TEST 3: sleep 0.33 - multi-times in content
 --- stream_server_config
     content_by_lua_block {
-        ngx.update_time()
-        local start = ngx.now()
-        ngx.sleep(0.33)
-        ngx.sleep(0.33)
-        ngx.sleep(0.33)
-        ngx.say(ngx.now() - start)
+        njt.update_time()
+        local start = njt.now()
+        njt.sleep(0.33)
+        njt.sleep(0.33)
+        njt.sleep(0.33)
+        njt.say(njt.now() - start)
     }
 --- stream_response_like chop
 ^(?:0\.9\d*|1\.[0-2]\d*|1)$
@@ -69,12 +69,12 @@ stream lua sleep timer expired
 
 
 
-=== TEST 4: sleep 0.5 - interleaved by ngx.say() - ended by ngx.sleep
+=== TEST 4: sleep 0.5 - interleaved by njt.say() - ended by njt.sleep
 --- stream_server_config
     content_by_lua_block {
-        ngx.sleep(1)
-        ngx.say("blah")
-        ngx.sleep(1)
+        njt.sleep(1)
+        njt.say("blah")
+        njt.sleep(1)
     }
 --- stream_response
 blah
@@ -86,13 +86,13 @@ stream lua sleep timer expired
 
 
 
-=== TEST 5: sleep 0.5 - interleaved by ngx.say() - not ended by ngx.sleep
+=== TEST 5: sleep 0.5 - interleaved by njt.say() - not ended by njt.sleep
 --- stream_server_config
     content_by_lua_block {
-        ngx.sleep(0.3)
-        ngx.say("blah")
-        ngx.sleep(0.5)
-        ngx.say("hiya")
+        njt.sleep(0.3)
+        njt.say("blah")
+        njt.sleep(0.5)
+        njt.say("hiya")
     }
 --- stream_response
 blah
@@ -108,11 +108,11 @@ stream lua sleep timer expired
 === TEST 6: sleep 0
 --- stream_server_config
     content_by_lua_block {
-        ngx.update_time()
-        local before = ngx.now()
-        ngx.sleep(0)
-        local now = ngx.now()
-        ngx.say("elapsed: ", now - before)
+        njt.update_time()
+        local before = njt.now()
+        njt.sleep(0)
+        local now = njt.now()
+        njt.say("elapsed: ", now - before)
     }
 --- stream_response_like chop
 elapsed: 0
@@ -124,13 +124,13 @@ stream lua sleep timer expired
 
 
 
-=== TEST 7: ngx.sleep unavailable in log_by_lua
+=== TEST 7: njt.sleep unavailable in log_by_lua
 TODO
 --- SKIP
 --- stream_server_config
         echo hello;
     log_by_lua_block {
-        ngx.sleep(0.1)
+        njt.sleep(0.1)
     }
 --- stream_response
 hello
@@ -140,28 +140,28 @@ API disabled in the context of log_by_lua*
 
 
 
-=== TEST 8: ngx.sleep() fails to yield (xpcall err handler)
+=== TEST 8: njt.sleep() fails to yield (xpcall err handler)
 --- stream_server_config
     content_by_lua_block {
         local function f()
             return error(1)
         end
         local function err()
-            ngx.sleep(0.001)
+            njt.sleep(0.001)
         end
         xpcall(f, err)
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 ok
 --- error_log
-lua clean up the timer for pending ngx.sleep
+lua clean up the timer for pending njt.sleep
 --- no_error_log
 [error]
 
 
 
-=== TEST 9: ngx.sleep() fails to yield (require)
+=== TEST 9: njt.sleep() fails to yield (require)
 --- stream_config
     lua_package_path "$prefix/html/?.lua;;";
 --- stream_server_config
@@ -171,31 +171,31 @@ lua clean up the timer for pending ngx.sleep
     }
 --- user_files
 >>> foosleep.lua
-ngx.sleep(0.001)
+njt.sleep(0.001)
 
 --- stream_response
 --- wait: 0.2
 --- error_log eval
 [
-"lua clean up the timer for pending ngx.sleep",
+"lua clean up the timer for pending njt.sleep",
 qr{runtime error: attempt to yield across (?:metamethod/)?C-call boundary},
 ]
 
 
 
-=== TEST 10: sleep coctx handler did not get called in ngx.exit().
+=== TEST 10: sleep coctx handler did not get called in njt.exit().
 --- stream_server_config
     content_by_lua_block {
         local function sleep(t)
             --- nginx return reply to client without waiting
-            ngx.sleep(t)
+            njt.sleep(t)
         end
 
         local function wait()
              --- worker would crash afterwards
              xpcall(function () error(1) end, function() return sleep(0.001) end)
-             --- ngx.exit was required to crash worker
-             ngx.exit(200)
+             --- njt.exit was required to crash worker
+             njt.exit(200)
         end
 
         wait()

@@ -34,7 +34,7 @@ __DATA__
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        ngx.sleep(1)
+        njt.sleep(1)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -61,9 +61,9 @@ TODO
 --- stream_server_config
         lua_check_client_abort on;
     content_by_lua_block {
-        ngx.sleep(1)
+        njt.sleep(1)
     log_by_lua_block {
-        ngx.log(ngx.NOTICE, "here in log by lua")
+        njt.log(njt.NOTICE, "here in log by lua")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -87,7 +87,7 @@ here in log by lua
 --- stream_server_config
     lua_check_client_abort off;
     content_by_lua_block {
-        ngx.sleep(1)
+        njt.sleep(1)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -113,9 +113,9 @@ TODO
         lua_check_client_abort on;
         lua_need_request_body on;
     content_by_lua_block {
-        ngx.sleep(1)
+        njt.sleep(1)
     log_by_lua_block {
-        ngx.log(ngx.NOTICE, "here in log by lua")
+        njt.log(njt.NOTICE, "here in log by lua")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -135,13 +135,13 @@ here in log by lua
 
 
 
-=== TEST 5: ngx.req.socket + receive() + sleep + stop
+=== TEST 5: njt.req.socket + receive() + sleep + stop
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local sock = ngx.req.socket()
+        local sock = njt.req.socket()
         sock:receive()
-        ngx.sleep(1)
+        njt.sleep(1)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -163,13 +163,13 @@ stream client prematurely closed connection
 
 
 
-=== TEST 6: ngx.req.socket + receive(N) + sleep + stop
+=== TEST 6: njt.req.socket + receive(N) + sleep + stop
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local sock = ngx.req.socket()
+        local sock = njt.req.socket()
         sock:receive(5)
-        ngx.sleep(1)
+        njt.sleep(1)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -193,13 +193,13 @@ stream client prematurely closed connection
 
 
 
-=== TEST 7: ngx.req.socket + receive(n) + sleep + stop
+=== TEST 7: njt.req.socket + receive(n) + sleep + stop
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local sock = ngx.req.socket()
+        local sock = njt.req.socket()
         sock:receive(2)
-        ngx.sleep(1)
+        njt.sleep(1)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -221,15 +221,15 @@ receive stream response error: timeout
 
 
 
-=== TEST 8: ngx.req.socket + m * receive(n) + sleep + stop
+=== TEST 8: njt.req.socket + m * receive(n) + sleep + stop
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local sock = ngx.req.socket()
+        local sock = njt.req.socket()
         sock:receive(2)
         sock:receive(2)
         sock:receive(1)
-        ngx.sleep(0.5)
+        njt.sleep(0.5)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -253,14 +253,14 @@ stream client prematurely closed connection
 
 
 
-=== TEST 9: ngx.req.socket + receiveuntil + sleep + stop
+=== TEST 9: njt.req.socket + receiveuntil + sleep + stop
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local sock = ngx.req.socket()
+        local sock = njt.req.socket()
         local it = sock:receiveuntil("\n")
         it()
-        ngx.sleep(1)
+        njt.sleep(1)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -281,15 +281,15 @@ stream client prematurely closed connection
 
 
 
-=== TEST 10: ngx.req.socket + receiveuntil + it(n) + sleep + stop
+=== TEST 10: njt.req.socket + receiveuntil + it(n) + sleep + stop
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local sock = ngx.req.socket()
+        local sock = njt.req.socket()
         local it = sock:receiveuntil("\n")
         it(2)
         it(3)
-        ngx.sleep(1)
+        njt.sleep(1)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -315,33 +315,33 @@ stream client prematurely closed connection
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local sock, err = ngx.socket.tcp()
+        local sock, err = njt.socket.tcp()
         if not sock then
-            ngx.log(ngx.ERR, "failed to get socket: ", err)
+            njt.log(njt.ERR, "failed to get socket: ", err)
             return
         end
 
         ok, err = sock:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
         if not ok then
-            ngx.log(ngx.ERR, "failed to connect: ", err)
+            njt.log(njt.ERR, "failed to connect: ", err)
             return
         end
 
         local bytes, err = sock:send("blpop nonexist 2\r\n")
         if not bytes then
-            ngx.log(ngx.ERR, "failed to send query: ", err)
+            njt.log(njt.ERR, "failed to send query: ", err)
             return
         end
 
-        -- ngx.log(ngx.ERR, "about to receive")
+        -- njt.log(njt.ERR, "about to receive")
 
         local res, err = sock:receive()
         if not res then
-            ngx.log(ngx.ERR, "failed to receive query: ", err)
+            njt.log(njt.ERR, "failed to receive query: ", err)
             return
         end
 
-        ngx.log(ngx.ERR, "res: ", res)
+        njt.log(njt.ERR, "res: ", res)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -362,14 +362,14 @@ stream client prematurely closed connection
 
 
 
-=== TEST 12: ngx.req.socket + receive all + ignore
+=== TEST 12: njt.req.socket + receive all + ignore
 --- stream_server_config
     lua_check_client_abort off;
     content_by_lua_block {
-        local sock = ngx.req.socket()
+        local sock = njt.req.socket()
         local res, err, part = sock:receive("*a")
         if not res then
-            ngx.log(ngx.NOTICE, "failed to receive: ", err, ": ", part)
+            njt.log(njt.NOTICE, "failed to receive: ", err, ": ", part)
             return
         end
         print("received data: ", res)
@@ -394,14 +394,14 @@ received data: hello
 
 
 
-=== TEST 13: ngx.req.socket + receive all + stop
+=== TEST 13: njt.req.socket + receive all + stop
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local sock = ngx.req.socket()
+        local sock = njt.req.socket()
         local res, err, part = sock:receive("*a")
         if not res then
-            ngx.log(ngx.NOTICE, "failed to receive: ", err, ": ", part)
+            njt.log(njt.NOTICE, "failed to receive: ", err, ": ", part)
             return
         end
         error("bad")
@@ -424,12 +424,12 @@ receive stream response error: timeout
 
 
 
-=== TEST 14: ngx.req.read_body + sleep + stop (log handler still gets called)
+=== TEST 14: njt.req.read_body + sleep + stop (log handler still gets called)
 --- stream_server_config
         lua_check_client_abort on;
     content_by_lua_block {
-        ngx.req.read_body()
-        ngx.sleep(0.1)
+        njt.req.read_body()
+        njt.sleep(0.1)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -451,7 +451,7 @@ stream client prematurely closed connection
 === TEST 15: sleep (default off)
 --- stream_server_config
     content_by_lua_block {
-        ngx.sleep(1)
+        njt.sleep(1)
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -471,15 +471,15 @@ receive stream response error: timeout
 
 
 
-=== TEST 16: ngx.say
+=== TEST 16: njt.say
 --- stream_server_config
     #postpone_output 1;
     content_by_lua_block {
-        ngx.sleep(0.2)
+        njt.sleep(0.2)
         for i = 1, 2 do
-            local ok, err = ngx.say("hello")
+            local ok, err = njt.say("hello")
             if not ok then
-                ngx.log(ngx.WARN, "say failed: ", err)
+                njt.log(njt.WARN, "say failed: ", err)
                 return
             end
         end
@@ -497,15 +497,15 @@ say failed: nginx output filter error
 
 
 
-=== TEST 17: ngx.print
+=== TEST 17: njt.print
 --- stream_server_config
     #postpone_output 1;
     content_by_lua_block {
-        ngx.sleep(0.2)
+        njt.sleep(0.2)
         for i = 1, 2 do
-            local ok, err = ngx.print("hello")
+            local ok, err = njt.print("hello")
             if not ok then
-                ngx.log(ngx.WARN, "print failed: ", err)
+                njt.log(njt.WARN, "print failed: ", err)
                 return
             end
         end
@@ -523,18 +523,18 @@ print failed: nginx output filter error
 
 
 
-=== TEST 18: ngx.flush
+=== TEST 18: njt.flush
 --- stream_server_config
     #postpone_output 1;
     content_by_lua_block {
-        ngx.say("hello")
-        ngx.sleep(0.2)
-        local ok, err = ngx.flush()
+        njt.say("hello")
+        njt.sleep(0.2)
+        local ok, err = njt.flush()
         if not ok then
-            ngx.log(ngx.WARN, "flush failed: ", err)
+            njt.log(njt.WARN, "flush failed: ", err)
             return
         end
-        ngx.log(ngx.WARN, "flush succeeded")
+        njt.log(njt.WARN, "flush succeeded")
     }
 --- wait: 0.2
 --- timeout: 0.1
@@ -549,17 +549,17 @@ flush succeeded
 
 
 
-=== TEST 19: ngx.eof
+=== TEST 19: njt.eof
 --- stream_server_config
     #postpone_output 1;
     content_by_lua_block {
-        ngx.sleep(0.2)
-        local ok, err = ngx.eof()
+        njt.sleep(0.2)
+        local ok, err = njt.eof()
         if not ok then
-            ngx.log(ngx.WARN, "eof failed: ", err)
+            njt.log(njt.WARN, "eof failed: ", err)
             return
         end
-        ngx.log(ngx.WARN, "eof succeeded")
+        njt.log(njt.WARN, "eof succeeded")
     }
 --- wait: 0.2
 --- timeout: 0.1

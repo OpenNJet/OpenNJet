@@ -21,10 +21,13 @@ static void njt_stream_upstream_notify_round_robin_peer(
     njt_peer_connection_t *pc, void *data, njt_uint_t state);
 #if (NJT_STREAM_SSL)
 
-static njt_int_t njt_stream_upstream_set_round_robin_peer_session(
-    njt_peer_connection_t *pc, void *data);
-static void njt_stream_upstream_save_round_robin_peer_session(
-    njt_peer_connection_t *pc, void *data);
+// openresty patch
+// static njt_int_t njt_stream_upstream_set_round_robin_peer_session(
+//     njt_peer_connection_t *pc, void *data);
+// static void njt_stream_upstream_save_round_robin_peer_session(
+//     njt_peer_connection_t *pc, void *data);
+// openresty patch end
+
 static njt_int_t njt_stream_upstream_empty_set_session(
     njt_peer_connection_t *pc, void *data);
 static void njt_stream_upstream_empty_save_session(njt_peer_connection_t *pc,
@@ -1054,7 +1057,8 @@ njt_stream_upstream_notify_round_robin_peer(njt_peer_connection_t *pc,
 
 #if (NJT_STREAM_SSL)
 
-static njt_int_t
+// static njt_int_t openresty patch
+njt_int_t // openresty patch
 njt_stream_upstream_set_round_robin_peer_session(njt_peer_connection_t *pc,
     void *data)
 {
@@ -1117,7 +1121,8 @@ njt_stream_upstream_set_round_robin_peer_session(njt_peer_connection_t *pc,
 }
 
 
-static void
+// static void openresty patch
+void // openresty patch
 njt_stream_upstream_save_round_robin_peer_session(njt_peer_connection_t *pc,
     void *data)
 {

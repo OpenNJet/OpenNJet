@@ -45,10 +45,10 @@ __DATA__
 --- stream_server_config
     #postpone_output 1;
     content_by_lua_block {
-        ngx.say("hello")
-        local sock, err = ngx.req.socket(true)
+        njt.say("hello")
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
     }
@@ -75,17 +75,17 @@ server: failed to get raw req socket: pending data to write
 --- stream_server_config
     #postpone_output 1;
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
         sock:settimeout(100)
         local ok, err = sock:send("hello, world!")
         if not ok then
-            ngx.log(ngx.ERR, "server: failed to send: ", err)
+            njt.log(njt.ERR, "server: failed to send: ", err)
         end
-        ngx.exit(444)
+        njt.exit(444)
     }
 
 --- config

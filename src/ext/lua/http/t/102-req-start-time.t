@@ -20,7 +20,7 @@ __DATA__
 === TEST 1: start time
 --- config
     location = /start {
-        content_by_lua 'ngx.say(ngx.req.start_time())';
+        content_by_lua 'njt.say(njt.req.start_time())';
     }
 --- request
 GET /start
@@ -33,7 +33,7 @@ GET /start
 === TEST 2: start time in set_by_lua
 --- config
     location = /start {
-        set_by_lua $a 'return ngx.req.start_time()';
+        set_by_lua $a 'return njt.req.start_time()';
         echo $a;
     }
 --- request
@@ -48,12 +48,12 @@ GET /start
 --- config
     location = /req_time {
         content_by_lua '
-            ngx.sleep(0.1)
+            njt.sleep(0.1)
 
-            local req_time = ngx.now() - ngx.req.start_time()
+            local req_time = njt.now() - njt.req.start_time()
 
-            ngx.say(req_time)
-            ngx.say(ngx.req.start_time() < ngx.now())
+            njt.say(req_time)
+            njt.say(njt.req.start_time() < njt.now())
         ';
     }
 --- request
@@ -70,19 +70,19 @@ true$
 --- config
     location = /req_time {
             content_by_lua '
-               ngx.sleep(0.1)
+               njt.sleep(0.1)
 
-               local req_time = ngx.now() - ngx.req.start_time()
+               local req_time = njt.now() - njt.req.start_time()
 
-               ngx.sleep(0.1)
+               njt.sleep(0.1)
 
-               ngx.update_time()
+               njt.update_time()
 
-               local req_time_updated = ngx.now() - ngx.req.start_time()
+               local req_time_updated = njt.now() - njt.req.start_time()
 
-               ngx.say(req_time)
-               ngx.say(req_time_updated)
-               ngx.say(req_time_updated > req_time)
+               njt.say(req_time)
+               njt.say(req_time_updated)
+               njt.say(req_time_updated > req_time)
             ';
     }
 --- request
@@ -99,12 +99,12 @@ true$
 === TEST 5: init_by_lua
 --- http_config
     init_by_lua '
-        time = ngx.req.start_time()
+        time = njt.req.start_time()
     ';
 --- config
     location = /t {
         content_by_lua '
-            ngx.say(time)
+            njt.say(time)
         ';
     }
 --- request

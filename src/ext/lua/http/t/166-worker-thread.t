@@ -44,8 +44,8 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
@@ -69,8 +69,8 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
@@ -96,8 +96,8 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, ok_or_err = ngx.run_worker_thread("testpool", "hello", "hello", {["hello"]="world", [1]={["embed"]=1}})
-        ngx.say(ok, " , ", ok_or_err)
+        local ok, ok_or_err = njt.run_worker_thread("testpool", "hello", "hello", {["hello"]="world", [1]={["embed"]=1}})
+        njt.say(ok, " , ", ok_or_err)
     }
 }
 --- user_files
@@ -126,8 +126,8 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, err = ngx.run_worker_thread("testpool")
-        ngx.say(ok, " : ", err)
+        local ok, err = njt.run_worker_thread("testpool")
+        njt.say(ok, " : ", err)
     }
 }
 --- request
@@ -147,8 +147,8 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, base64 = ngx.run_worker_thread("testpool", "hello", "enc", "hello")
-        ngx.say(ok, " , ", base64 == "aGVsbG8=")
+        local ok, base64 = njt.run_worker_thread("testpool", "hello", "enc", "hello")
+        njt.say(ok, " , ", base64 == "aGVsbG8=")
     }
 }
 --- user_files
@@ -186,9 +186,9 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, ret = ngx.run_worker_thread("testpool", "hello", "hello")
+        local ok, ret = njt.run_worker_thread("testpool", "hello", "hello")
         if ret.hello == "world" and ret[1].embed == 1 then
-            ngx.say(ok, " , ", true)
+            njt.say(ok, " , ", true)
         end
     }
 }
@@ -216,8 +216,8 @@ location /hello {
 
     content_by_lua_block {
         local function dummy() end
-        local ok, err = ngx.run_worker_thread("testpool", "hello", "hello", dummy)
-        ngx.say(ok, " : ", err)
+        local ok, err = njt.run_worker_thread("testpool", "hello", "hello", dummy)
+        njt.say(ok, " : ", err)
     }
 }
 --- user_files
@@ -243,8 +243,8 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, res1, res2 = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", res1, " , ", res2)
+        local ok, res1, res2 = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", res1, " , ", res2)
     }
 }
 --- user_files
@@ -270,8 +270,8 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", err)
+        local ok, err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", err)
     }
 }
 --- request
@@ -290,8 +290,8 @@ location /foo {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 
@@ -299,8 +299,8 @@ location /bar {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, foobar_or_err = ngx.run_worker_thread("testpool", "foobar", "foobar")
-        ngx.say(ok, " : ", foobar_or_err)
+        local ok, foobar_or_err = njt.run_worker_thread("testpool", "foobar", "foobar")
+        njt.say(ok, " : ", foobar_or_err)
     }
 }
 
@@ -309,11 +309,11 @@ location /t {
 
     content_by_lua_block {
         local function t(path)
-            local sock = ngx.socket.tcp()
-            local port = ngx.var.port
+            local sock = njt.socket.tcp()
+            local port = njt.var.port
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
@@ -321,21 +321,21 @@ location /t {
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
             local ret, err, part = sock:receive("*a")
             local _, idx = string.find(ret, "\r\n\r\n");
             idx = idx + 1
-            ngx.print(string.sub(ret, idx))
+            njt.print(string.sub(ret, idx))
             ok, err = sock:close()
         end
 
-        local t1 = ngx.thread.spawn(t, "/foo")
-        local t2 = ngx.thread.spawn(t, "/bar")
-        ngx.thread.wait(t1)
-        ngx.thread.wait(t2)
+        local t1 = njt.thread.spawn(t, "/foo")
+        local t2 = njt.thread.spawn(t, "/bar")
+        njt.thread.wait(t1)
+        njt.thread.wait(t2)
     }
 }
 --- user_files
@@ -368,13 +368,13 @@ location /foo {
 
     content_by_lua_block {
         local function t()
-            local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-            ngx.say(ok, " : ", hello_or_err)
+            local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+            njt.say(ok, " : ", hello_or_err)
         end
-        local t1 = ngx.thread.spawn(t)
-        if ngx.var.arg_kill == "kill" then
-            ngx.thread.kill(t1)
-            ngx.say("killed")
+        local t1 = njt.thread.spawn(t)
+        if njt.var.arg_kill == "kill" then
+            njt.thread.kill(t1)
+            njt.say("killed")
         end
     }
 }
@@ -384,11 +384,11 @@ location /t {
 
     content_by_lua_block {
         local function t(path)
-            local sock = ngx.socket.tcp()
-            local port = ngx.var.port
+            local sock = njt.socket.tcp()
+            local port = njt.var.port
             local ok, err = sock:connect("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
@@ -396,22 +396,22 @@ location /t {
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
             local ret, err, part = sock:receive("*a")
             local _, idx = string.find(ret, "\r\n\r\n");
             idx = idx + 1
-            ngx.print(string.sub(ret, idx))
+            njt.print(string.sub(ret, idx))
             ok, err = sock:close()
         end
 
-        local t1 = ngx.thread.spawn(t, "/foo?kill=kill")
-        ngx.thread.wait(t1)
-        ngx.sleep(4)
-        local t2 = ngx.thread.spawn(t, "/foo")
-        ngx.thread.wait(t2)
+        local t1 = njt.thread.spawn(t, "/foo?kill=kill")
+        njt.thread.wait(t1)
+        njt.sleep(4)
+        local t2 = njt.thread.spawn(t, "/foo")
+        njt.thread.wait(t2)
     }
 }
 --- user_files
@@ -445,11 +445,11 @@ location /hello {
 
     content_by_lua_block {
         local function t()
-            local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-            ngx.say(ok, " : ", hello_or_err)
+            local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+            njt.say(ok, " : ", hello_or_err)
         end
-        ngx.thread.spawn(t)
-        ngx.exit(200)
+        njt.thread.spawn(t)
+        njt.exit(200)
     }
 }
 --- user_files
@@ -477,9 +477,9 @@ location /hello {
 
     content_by_lua_block {
         local function dummy() end
-        local ok, err = ngx.run_worker_thread("testpool", "hello", "hello",
+        local ok, err = njt.run_worker_thread("testpool", "hello", "hello",
                     {["hello"]="world", [1]={["embed"]=1, ["dummy"]=dummy}})
-        ngx.say(ok, " : ", err)
+        njt.say(ok, " : ", err)
     }
 }
 --- user_files
@@ -505,12 +505,12 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, ret = ngx.run_worker_thread("testpool", "hello", "hello")
+        local ok, ret = njt.run_worker_thread("testpool", "hello", "hello")
         if ok == false then
-            ngx.say("false", " , ", ret)
+            njt.say("false", " , ", ret)
         end
         if ret.hello == "world" and ret[1].embed == 1 then
-            ngx.say(ok, " , ", true)
+            njt.say(ok, " , ", true)
         end
     }
 }
@@ -539,8 +539,8 @@ location /hello {
 
     content_by_lua_block {
         local function dummy() end
-        local ok, err = ngx.run_worker_thread("testpool", dummy, "hello")
-        ngx.say(ok, " : ", err)
+        local ok, err = njt.run_worker_thread("testpool", dummy, "hello")
+        njt.say(ok, " : ", err)
     }
 }
 --- user_files
@@ -567,8 +567,8 @@ location /hello {
 
     content_by_lua_block {
         local function dummy() end
-        local ok, err = ngx.run_worker_thread("testpool", "hello", dummy)
-        ngx.say(ok, " : ", err)
+        local ok, err = njt.run_worker_thread("testpool", "hello", dummy)
+        njt.say(ok, " : ", err)
     }
 }
 --- user_files
@@ -595,8 +595,8 @@ location /hello {
 
     content_by_lua_block {
         local function dummy() end
-        local ok, err = ngx.run_worker_thread(dummy, "hello", "hello")
-        ngx.say(ok, " : ", err)
+        local ok, err = njt.run_worker_thread(dummy, "hello", "hello")
+        njt.say(ok, " : ", err)
     }
 }
 --- user_files
@@ -612,7 +612,7 @@ false : threadpool should be a string
 
 
 
-=== TEST 18: ngx.encode_base64
+=== TEST 18: njt.encode_base64
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -622,14 +622,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    return ngx.encode_base64("hello")
+    return njt.encode_base64("hello")
 end
 return {hello=hello}
 --- request
@@ -639,7 +639,7 @@ true : aGVsbG8=
 
 
 
-=== TEST 19: ngx.config.subsystem
+=== TEST 19: njt.config.subsystem
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -649,14 +649,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    return ngx.config.subsystem
+    return njt.config.subsystem
 end
 return {hello=hello}
 --- request
@@ -666,7 +666,7 @@ true : http
 
 
 
-=== TEST 20: ngx.hmac_sha1
+=== TEST 20: njt.hmac_sha1
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -676,8 +676,8 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
@@ -685,8 +685,8 @@ location /hello {
 local function hello()
   local key = "thisisverysecretstuff"
   local src = "some string we want to sign"
-  local digest = ngx.hmac_sha1(key, src)
-  return ngx.encode_base64(digest)
+  local digest = njt.hmac_sha1(key, src)
+  return njt.encode_base64(digest)
 end
 return {hello=hello}
 --- request
@@ -696,7 +696,7 @@ true : R/pvxzHC4NLtj7S+kXFg/NePTmk=
 
 
 
-=== TEST 21: ngx.encode_args
+=== TEST 21: njt.encode_args
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -706,14 +706,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-  return ngx.encode_args({foo = 3, ["b r"] = "hello world"})
+  return njt.encode_args({foo = 3, ["b r"] = "hello world"})
 end
 return {hello=hello}
 --- request
@@ -723,7 +723,7 @@ qr/foo=3&b%20r=hello%20world|b%20r=hello%20world&foo=3/
 
 
 
-=== TEST 22: ngx.decode_args
+=== TEST 22: njt.decode_args
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -733,15 +733,15 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, ret = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", ret.a, " : ", ret.b)
+        local ok, ret = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", ret.a, " : ", ret.b)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
   local args = "a=bar&b=foo"
-  args = ngx.decode_args(args)
+  args = njt.decode_args(args)
   return args
 end
 return {hello=hello}
@@ -752,7 +752,7 @@ true : bar : foo
 
 
 
-=== TEST 23: ngx.quote_sql_str
+=== TEST 23: njt.quote_sql_str
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -760,14 +760,14 @@ true : bar : foo
 --- config
     location /hello {
         content_by_lua '
-          local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello", "a\\026b\\026")
-          ngx.say(ok, " : ", hello_or_err)
+          local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello", "a\\026b\\026")
+          njt.say(ok, " : ", hello_or_err)
         ';
     }
 --- user_files
 >>> hello.lua
 local function hello(str)
-  return ngx.quote_sql_str(str)
+  return njt.quote_sql_str(str)
 end
 return {hello=hello}
 --- request
@@ -777,7 +777,7 @@ true : 'a\Zb\Z'
 
 
 
-=== TEST 24: ngx.re.match
+=== TEST 24: njt.re.match
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -787,14 +787,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, a, b = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", a, " : ", b)
+        local ok, a, b = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", a, " : ", b)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-  local m, err = ngx.re.match("hello, 1234", "([0-9])[0-9]+")
+  local m, err = njt.re.match("hello, 1234", "([0-9])[0-9]+")
   return m[0], m[1]
 end
 return {hello=hello}
@@ -805,7 +805,7 @@ true : 1234 : 1
 
 
 
-=== TEST 25: ngx.re.find
+=== TEST 25: njt.re.find
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -815,15 +815,15 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, a = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", a)
+        local ok, a = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", a)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
     local str = "hello, 1234"
-    local from, to = ngx.re.find(str, "([0-9])([0-9]+)", "jo", nil, 2)
+    local from, to = njt.re.find(str, "([0-9])([0-9]+)", "jo", nil, 2)
     if from then
         return string.sub(str, from, to)
     end
@@ -836,7 +836,7 @@ true : 234
 
 
 
-=== TEST 26: ngx.re.gmatch
+=== TEST 26: njt.re.gmatch
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -846,17 +846,17 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, ret = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok)
-        ngx.say(ret[1])
-        ngx.say(ret[2])
+        local ok, ret = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok)
+        njt.say(ret[1])
+        njt.say(ret[2])
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
     local ret = {}
-    for m in ngx.re.gmatch("hello, world", "[a-z]+", "j") do
+    for m in njt.re.gmatch("hello, world", "[a-z]+", "j") do
         if m then
             table.insert(ret, m[0])
         end
@@ -873,7 +873,7 @@ world
 
 
 
-=== TEST 27: ngx.re.sub
+=== TEST 27: njt.re.sub
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -883,16 +883,16 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, a, b = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok)
-        ngx.say(a)
-        ngx.say(b)
+        local ok, a, b = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok)
+        njt.say(a)
+        njt.say(b)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    local newstr, n = ngx.re.sub("hello, 1234", "[0-9]", "$$")
+    local newstr, n = njt.re.sub("hello, 1234", "[0-9]", "$$")
     return newstr, n
 end
 return {hello=hello}
@@ -905,7 +905,7 @@ hello, $234
 
 
 
-=== TEST 28: ngx.re.gsub
+=== TEST 28: njt.re.gsub
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -915,16 +915,16 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, a, b = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok)
-        ngx.say(a)
-        ngx.say(b)
+        local ok, a, b = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok)
+        njt.say(a)
+        njt.say(b)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    local newstr, n, err = ngx.re.gsub("hello, world", "([a-z])[a-z]+", "[$0,$1]", "i")
+    local newstr, n, err = njt.re.gsub("hello, world", "([a-z])[a-z]+", "[$0,$1]", "i")
     return newstr, n
 end
 return {hello=hello}
@@ -937,7 +937,7 @@ true
 
 
 
-=== TEST 29: ngx.decode_base64
+=== TEST 29: njt.decode_base64
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -947,14 +947,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    return ngx.decode_base64("aGVsbG8=")
+    return njt.decode_base64("aGVsbG8=")
 end
 return {hello=hello}
 --- request
@@ -964,7 +964,7 @@ true : hello
 
 
 
-=== TEST 30: ngx.crc32_short
+=== TEST 30: njt.crc32_short
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -974,14 +974,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    return ngx.crc32_short("hello, world")
+    return njt.crc32_short("hello, world")
 end
 return {hello=hello}
 --- request
@@ -991,7 +991,7 @@ true : 4289425978
 
 
 
-=== TEST 31: ngx.crc32_long
+=== TEST 31: njt.crc32_long
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -1001,14 +1001,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    return ngx.crc32_long("hello, world")
+    return njt.crc32_long("hello, world")
 end
 return {hello=hello}
 --- request
@@ -1018,7 +1018,7 @@ true : 4289425978
 
 
 
-=== TEST 32: ngx.md5_bin
+=== TEST 32: njt.md5_bin
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -1028,14 +1028,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    local s = ngx.md5_bin(45)
+    local s = njt.md5_bin(45)
     s = string.gsub(s, ".", function (c)
             return string.format("%02x", string.byte(c))
         end)
@@ -1049,7 +1049,7 @@ true : 6c8349cc7260ae62e3b1396831a8398f
 
 
 
-=== TEST 33: ngx.md5
+=== TEST 33: njt.md5
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -1059,14 +1059,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    return ngx.md5("hello")
+    return njt.md5("hello")
 end
 return {hello=hello}
 --- request
@@ -1076,7 +1076,7 @@ true : 5d41402abc4b2a76b9719d911017c592
 
 
 
-=== TEST 34: ngx.config.debug
+=== TEST 34: njt.config.debug
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -1086,14 +1086,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    return ngx.config.debug
+    return njt.config.debug
 end
 return {hello=hello}
 --- request
@@ -1103,7 +1103,7 @@ GET /hello
 
 
 
-=== TEST 35: ngx.config.prefix
+=== TEST 35: njt.config.prefix
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -1113,14 +1113,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    return ngx.config.prefix()
+    return njt.config.prefix()
 end
 return {hello=hello}
 --- request
@@ -1130,7 +1130,7 @@ GET /hello
 
 
 
-=== TEST 36: ngx.config.njet_version
+=== TEST 36: njt.config.njet_version
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -1140,14 +1140,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    return ngx.config.njet_version
+    return njt.config.njet_version
 end
 return {hello=hello}
 --- request
@@ -1157,7 +1157,7 @@ GET /hello
 
 
 
-=== TEST 37: ngx.config.nginx_configure
+=== TEST 37: njt.config.nginx_configure
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -1167,14 +1167,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    return ngx.config.nginx_configure()
+    return njt.config.nginx_configure()
 end
 return {hello=hello}
 --- request
@@ -1184,7 +1184,7 @@ GET /hello
 
 
 
-=== TEST 38: ngx.config.ngx_lua_version
+=== TEST 38: njt.config.njt_lua_version
 --- main_config
     thread_pool testpool threads=100;
 --- http_config eval
@@ -1194,14 +1194,14 @@ location /hello {
     default_type 'text/plain';
 
     content_by_lua_block {
-        local ok, hello_or_err = ngx.run_worker_thread("testpool", "hello", "hello")
-        ngx.say(ok, " : ", hello_or_err)
+        local ok, hello_or_err = njt.run_worker_thread("testpool", "hello", "hello")
+        njt.say(ok, " : ", hello_or_err)
     }
 }
 --- user_files
 >>> hello.lua
 local function hello()
-    return ngx.config.ngx_lua_version
+    return njt.config.njt_lua_version
 end
 return {hello=hello}
 --- request

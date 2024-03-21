@@ -9,7 +9,7 @@ $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 my $html_dir = $ENV{TEST_NGINX_HTML_DIR};
 my $http_config = <<_EOC_;
     init_by_lua_block {
-        function set_up_ngx_tmp_conf(conf)
+        function set_up_njt_tmp_conf(conf)
             if conf == nil then
                 conf = [[
                     events {
@@ -17,7 +17,7 @@ my $http_config = <<_EOC_;
                     }
                     http {
                         init_by_lua_block {
-                            ngx.log(ngx.ERR, "run init_by_lua")
+                            njt.log(njt.ERR, "run init_by_lua")
                         }
                     }
                 ]]
@@ -28,7 +28,7 @@ my $http_config = <<_EOC_;
             local conf_file = "$html_dir/nginx.conf"
             local f, err = io.open(conf_file, "w")
             if not f then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
                 return
             end
 
@@ -38,10 +38,10 @@ my $http_config = <<_EOC_;
             return conf_file
         end
 
-        function get_ngx_bin_path()
+        function get_njt_bin_path()
             local ffi = require "ffi"
-            ffi.cdef[[char **ngx_argv;]]
-            return ffi.string(ffi.C.ngx_argv[0])
+            ffi.cdef[[char **njt_argv;]]
+            return ffi.string(ffi.C.njt_argv[0])
         end
     }
 _EOC_
@@ -69,22 +69,22 @@ __DATA__
 --- config
     location = /t {
         content_by_lua_block {
-            local conf_file = set_up_ngx_tmp_conf()
-            local nginx = get_ngx_bin_path()
+            local conf_file = set_up_njt_tmp_conf()
+            local nginx = get_njt_bin_path()
 
             local cmd = nginx .. " -p $TEST_NGINX_HTML_DIR -c " .. conf_file .. " -s reopen"
             local p, err = io.popen(cmd)
             if not p then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
                 return
             end
 
             local out, err = p:read("*a")
             if not out then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
 
             else
-                ngx.log(ngx.WARN, out)
+                njt.log(njt.WARN, out)
             end
             p:close()
             collectgarbage("collect")
@@ -101,38 +101,38 @@ qr/\[error\] .*? init_by_lua:\d+: run init_by_lua/
 --- config
     location = /t {
         content_by_lua_block {
-            local conf_file = set_up_ngx_tmp_conf()
-            local nginx = get_ngx_bin_path()
+            local conf_file = set_up_njt_tmp_conf()
+            local nginx = get_njt_bin_path()
 
             local cmd = nginx .. " -p $TEST_NGINX_HTML_DIR -c " .. conf_file .. " -t"
             local p, err = io.popen(cmd)
             if not p then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
                 return
             end
 
             local out, err = p:read("*a")
             if not out then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
 
             else
-                ngx.log(ngx.WARN, out)
+                njt.log(njt.WARN, out)
             end
             p:close()
 
             local cmd = nginx .. " -p $TEST_NGINX_HTML_DIR -c " .. conf_file .. " -T"
             local p, err = io.popen(cmd)
             if not p then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
                 return
             end
 
             local out, err = p:read("*a")
             if not out then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
 
             else
-                ngx.log(ngx.WARN, out)
+                njt.log(njt.WARN, out)
             end
             p:close()
             collectgarbage("collect")
@@ -156,42 +156,42 @@ qr/\[error\] .*? init_by_lua:\d+: run init_by_lua/
                 http {
                     lua_shared_dict test 64k;
                     init_by_lua_block {
-                        ngx.log(ngx.ERR, "run init_by_lua with lua_shared_dict")
+                        njt.log(njt.ERR, "run init_by_lua with lua_shared_dict")
                     }
                 }
             ]]
-            local conf_file = set_up_ngx_tmp_conf(conf)
-            local nginx = get_ngx_bin_path()
+            local conf_file = set_up_njt_tmp_conf(conf)
+            local nginx = get_njt_bin_path()
 
             local cmd = nginx .. " -p $TEST_NGINX_HTML_DIR -c " .. conf_file .. " -t"
             local p, err = io.popen(cmd)
             if not p then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
                 return
             end
 
             local out, err = p:read("*a")
             if not out then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
 
             else
-                ngx.log(ngx.WARN, out)
+                njt.log(njt.WARN, out)
             end
             p:close()
 
             local cmd = nginx .. " -p $TEST_NGINX_HTML_DIR -c " .. conf_file .. " -T"
             local p, err = io.popen(cmd)
             if not p then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
                 return
             end
 
             local out, err = p:read("*a")
             if not out then
-                ngx.log(ngx.ERR, err)
+                njt.log(njt.ERR, err)
 
             else
-                ngx.log(ngx.WARN, out)
+                njt.log(njt.WARN, out)
             end
             p:close()
             collectgarbage("collect")

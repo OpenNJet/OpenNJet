@@ -25,7 +25,7 @@ __DATA__
     location /lua {
         default_type text/plain;
         content_by_lua '
-            ngx.say("hello")
+            njt.say("hello")
         ';
     }
 --- request
@@ -45,7 +45,7 @@ Content-Type: text/plain
     location /lua {
         default_type text/plain;
         content_by_lua '
-            ngx.say("hello")
+            njt.say("hello")
         ';
     }
 --- request
@@ -65,7 +65,7 @@ Content-Type: text/plain
     location /lua {
         default_type text/plain;
         content_by_lua '
-            ngx.say("hello")
+            njt.say("hello")
         ';
     }
 --- request
@@ -86,7 +86,7 @@ hello
         lua_use_default_type on;
         default_type text/plain;
         content_by_lua '
-            ngx.say("hello")
+            njt.say("hello")
         ';
     }
 --- request
@@ -107,7 +107,7 @@ Content-Type: text/plain
         lua_use_default_type off;
         default_type text/plain;
         content_by_lua '
-            ngx.say("hello")
+            njt.say("hello")
         ';
     }
 --- request
@@ -127,7 +127,7 @@ hello
     location /lua {
         default_type text/plain;
         content_by_lua '
-            ngx.status = ngx.HTTP_NOT_MODIFIED
+            njt.status = njt.HTTP_NOT_MODIFIED
         ';
     }
 --- request

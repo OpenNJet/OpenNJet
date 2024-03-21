@@ -1,7 +1,7 @@
 
 /*
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -67,7 +67,7 @@ njt_http_lua_ssl_sess_fetch_handler_inline(njt_http_request_t *r,
                                        lscf->srv.ssl_sess_fetch_src.len,
                                        &lscf->srv.ssl_sess_fetch_src_ref,
                                        lscf->srv.ssl_sess_fetch_src_key,
-                                       "=ssl_session_fetch_by_lua_block");
+                             (const char *) lscf->srv.ssl_sess_fetch_chunkname);
     if (rc != NJT_OK) {
         return rc;
     }
@@ -103,6 +103,8 @@ char *
 njt_http_lua_ssl_sess_fetch_by_lua(njt_conf_t *cf, njt_command_t *cmd,
     void *conf)
 {
+    size_t                       chunkname_len;
+    u_char                      *chunkname;
     u_char                      *cache_key = NULL;
     u_char                      *name;
     njt_str_t                   *value;
@@ -154,8 +156,15 @@ njt_http_lua_ssl_sess_fetch_by_lua(njt_conf_t *cf, njt_command_t *cmd,
             return NJT_CONF_ERROR;
         }
 
-        /* Don't eval nginx variables for inline lua code */
+        chunkname = njt_http_lua_gen_chunk_name(cf, "ssl_session_fetch_by_lua",
+                        sizeof("ssl_session_fetch_by_lua") - 1, &chunkname_len);
+        if (chunkname == NULL) {
+            return NJT_CONF_ERROR;
+        }
+
+        /* Don't eval njet variables for inline lua code */
         lscf->srv.ssl_sess_fetch_src = value[1];
+        lscf->srv.ssl_sess_fetch_chunkname = chunkname;
     }
 
     lscf->srv.ssl_sess_fetch_src_key = cache_key;
@@ -469,7 +478,7 @@ njt_http_lua_ssl_sess_fetch_by_chunk(lua_State *L, njt_http_request_t *r)
     njt_int_t                rc;
     lua_State               *co;
     njt_http_lua_ctx_t      *ctx;
-    njt_http_cleanup_t      *cln;
+    njt_pool_cleanup_t      *cln;
 
     ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
 
@@ -509,7 +518,7 @@ njt_http_lua_ssl_sess_fetch_by_chunk(lua_State *L, njt_http_request_t *r)
     lua_setfenv(co, -2);
 #endif
 
-    /* save nginx request in coroutine globals table */
+    /* save njet request in coroutine globals table */
     njt_http_lua_set_req(co, r);
 
     ctx->cur_co_ctx = &ctx->entry_co_ctx;
@@ -523,7 +532,7 @@ njt_http_lua_ssl_sess_fetch_by_chunk(lua_State *L, njt_http_request_t *r)
 
     /* register request cleanup hooks */
     if (ctx->cleanup == NULL) {
-        cln = njt_http_cleanup_add(r, 0);
+        cln = njt_pool_cleanup_add(r->pool, 0);
         if (cln == NULL) {
             rc = NJT_ERROR;
             njt_http_lua_finalize_request(r, rc);

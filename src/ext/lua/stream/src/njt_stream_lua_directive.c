@@ -302,7 +302,7 @@ njt_stream_lua_preread_by_lua(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
         lscf->preread_chunkname = chunkname;
 
-        /* Don't eval nginx variables for inline lua code */
+        /* Don't eval njet variables for inline lua code */
 
         lscf->preread_src.value = value[1];
 
@@ -424,7 +424,7 @@ njt_stream_lua_content_by_lua(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
         dd("chunkname: %s", chunkname);
 
-        /* Don't eval nginx variables for inline lua code */
+        /* Don't eval njet variables for inline lua code */
 
         llcf->content_src.value = value[1];
 
@@ -544,7 +544,7 @@ njt_stream_lua_log_by_lua(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
         llcf->log_chunkname = chunkname;
 
-        /* Don't eval nginx variables for inline lua code */
+        /* Don't eval njet variables for inline lua code */
 
         llcf->log_src.value = value[1];
 
@@ -1193,7 +1193,7 @@ njt_stream_lua_capture_error_log(njt_conf_t *cf, njt_command_t *cmd,
     void *conf)
 {
 #ifndef HAVE_INTERCEPT_ERROR_LOG_PATCH
-    return "not found: missing the capture error log patch for nginx";
+    return "not found: missing the capture error log patch for njet";
 #else
     njt_str_t                     *value;
     ssize_t                        size;

@@ -504,6 +504,8 @@ njt_stream_lua_ssl_client_hello_by_chunk(lua_State *L,
     ctx->cur_co_ctx->co_top = 1;
 #endif
 
+    njt_stream_lua_attach_co_ctx_to_L(co, ctx->cur_co_ctx);
+
     /* register request cleanup hooks */
     if (ctx->cleanup == NULL) {
         cln = njt_stream_lua_cleanup_add(r, 0);

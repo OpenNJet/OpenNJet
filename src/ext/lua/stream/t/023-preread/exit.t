@@ -30,8 +30,8 @@ __DATA__
 
 === TEST 1: throw 500
 --- stream_server_config
-    preread_by_lua_block { ngx.exit(500);ngx.say('hi') }
-    content_by_lua_block { ngx.exit(ngx.OK) }
+    preread_by_lua_block { njt.exit(500);njt.say('hi') }
+    content_by_lua_block { njt.exit(njt.OK) }
 --- error_log
 finalize stream request: 500
 
@@ -39,7 +39,7 @@ finalize stream request: 500
 
 === TEST 2: throw 0
 --- stream_server_config
-    preread_by_lua_block { ngx.say('Hi'); ngx.eof(); ngx.exit(0);ngx.say('world') }
-    content_by_lua_block { ngx.exit(ngx.OK) }
+    preread_by_lua_block { njt.say('Hi'); njt.eof(); njt.exit(0);njt.say('world') }
+    content_by_lua_block { njt.exit(njt.OK) }
 --- stream_response
 Hi

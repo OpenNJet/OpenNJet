@@ -17,11 +17,11 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: content_by_lua + ngx.worker.exiting
+=== TEST 1: content_by_lua + njt.worker.exiting
 --- config
     location /lua {
         content_by_lua '
-            ngx.say("worker exiting: ", ngx.worker.exiting())
+            njt.say("worker exiting: ", njt.worker.exiting())
         ';
     }
 --- request
@@ -33,16 +33,16 @@ worker exiting: false
 
 
 
-=== TEST 2: content_by_lua + ngx.worker.pid
+=== TEST 2: content_by_lua + njt.worker.pid
 --- config
     location /lua {
         content_by_lua '
-            local pid = ngx.worker.pid()
-            ngx.say("worker pid: ", pid)
-            if pid ~= tonumber(ngx.var.pid) then
-                ngx.say("worker pid is wrong.")
+            local pid = njt.worker.pid()
+            njt.say("worker pid: ", pid)
+            if pid ~= tonumber(njt.var.pid) then
+                njt.say("worker pid is wrong.")
             else
-                ngx.say("worker pid is correct.")
+                njt.say("worker pid is correct.")
             end
         ';
     }
@@ -56,19 +56,19 @@ worker pid is correct\.
 
 
 
-=== TEST 3: init_worker_by_lua + ngx.worker.pid
+=== TEST 3: init_worker_by_lua + njt.worker.pid
 --- http_config
     init_worker_by_lua '
-        my_pid = ngx.worker.pid()
+        my_pid = njt.worker.pid()
     ';
 --- config
     location /lua {
         content_by_lua '
-            ngx.say("worker pid: ", my_pid)
-            if my_pid ~= tonumber(ngx.var.pid) then
-                ngx.say("worker pid is wrong.")
+            njt.say("worker pid: ", my_pid)
+            if my_pid ~= tonumber(njt.var.pid) then
+                njt.say("worker pid is wrong.")
             else
-                ngx.say("worker pid is correct.")
+                njt.say("worker pid is correct.")
             end
         ';
     }

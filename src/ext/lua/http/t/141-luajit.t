@@ -33,11 +33,11 @@ This is to maximize the address space that can be used by LuaJIT.
             ffi.C.free(p)
             if ffi.abi("64bit") then
                 if num < 2^31 then
-                    ngx.say("fail: ", string.format("p = %#x", num))
+                    njt.say("fail: ", string.format("p = %#x", num))
                     return
                 end
             end
-            ngx.say("pass")
+            njt.say("pass")
         }
     }
 --- request

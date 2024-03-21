@@ -1,4 +1,4 @@
-local ngx_null = ngx.null
+local njt_null = njt.null
 local tostring = tostring
 local byte = string.byte
 local gsub = string.gsub
@@ -42,7 +42,7 @@ end
 local encode
 
 encode = function (v)
-    if v == nil or v == ngx_null then
+    if v == nil or v == njt_null then
         return "null"
     end
 

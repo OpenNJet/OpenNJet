@@ -20,14 +20,14 @@ __DATA__
 --- config
     location /foo {
         access_by_lua '
-            local res1, res2 = ngx.location.capture_multi{
+            local res1, res2 = njt.location.capture_multi{
                 { "/a" },
                 { "/b" },
             }
-            ngx.say("res1.status = " .. res1.status)
-            ngx.say("res1.body = " .. res1.body)
-            ngx.say("res2.status = " .. res2.status)
-            ngx.say("res2.body = " .. res2.body)
+            njt.say("res1.status = " .. res1.status)
+            njt.say("res1.body = " .. res1.body)
+            njt.say("res2.status = " .. res2.status)
+            njt.say("res2.body = " .. res2.body)
         ';
         content_by_lua return;
     }
@@ -51,23 +51,23 @@ res2.body = b
 --- config
     location /foo {
         access_by_lua '
-            local res1, res2, res3, res4 = ngx.location.capture_multi{
+            local res1, res2, res3, res4 = njt.location.capture_multi{
                 { "/a" },
                 { "/b" },
                 { "/c" },
                 { "/d" },
             }
-            ngx.say("res1.status = " .. res1.status)
-            ngx.say("res1.body = " .. res1.body)
+            njt.say("res1.status = " .. res1.status)
+            njt.say("res1.body = " .. res1.body)
 
-            ngx.say("res2.status = " .. res2.status)
-            ngx.say("res2.body = " .. res2.body)
+            njt.say("res2.status = " .. res2.status)
+            njt.say("res2.body = " .. res2.body)
 
-            ngx.say("res3.status = " .. res3.status)
-            ngx.say("res3.body = " .. res3.body)
+            njt.say("res3.status = " .. res3.status)
+            njt.say("res3.body = " .. res3.body)
 
-            ngx.say("res4.status = " .. res4.status)
-            ngx.say("res4.body = " .. res4.body)
+            njt.say("res4.status = " .. res4.status)
+            njt.say("res4.body = " .. res4.body)
         ';
         content_by_lua return;
     }
@@ -92,23 +92,23 @@ res4.body = d
 --- config
     location /foo {
         access_by_lua '
-            local res1, res2 = ngx.location.capture_multi{
+            local res1, res2 = njt.location.capture_multi{
                 { "/a" },
                 { "/b" },
             }
-            ngx.say("res1.status = " .. res1.status)
-            ngx.say("res1.body = " .. res1.body)
-            ngx.say("res2.status = " .. res2.status)
-            ngx.say("res2.body = " .. res2.body)
+            njt.say("res1.status = " .. res1.status)
+            njt.say("res1.body = " .. res1.body)
+            njt.say("res2.status = " .. res2.status)
+            njt.say("res2.body = " .. res2.body)
 
-            res1, res2 = ngx.location.capture_multi{
+            res1, res2 = njt.location.capture_multi{
                 { "/a" },
                 { "/b" },
             }
-            ngx.say("2 res1.status = " .. res1.status)
-            ngx.say("2 res1.body = " .. res1.body)
-            ngx.say("2 res2.status = " .. res2.status)
-            ngx.say("2 res2.body = " .. res2.body)
+            njt.say("2 res1.status = " .. res1.status)
+            njt.say("2 res1.body = " .. res1.body)
+            njt.say("2 res2.status = " .. res2.status)
+            njt.say("2 res2.body = " .. res2.body)
 
         ';
         content_by_lua return;
@@ -137,26 +137,26 @@ res2.body = b
 --- config
     location /foo {
         rewrite_by_lua '
-            local res1, res2 = ngx.location.capture_multi{
+            local res1, res2 = njt.location.capture_multi{
                 { "/a" },
                 { "/b" },
             }
 
-            local n = ngx.var.arg_n
+            local n = njt.var.arg_n
 
-            ngx.say(n .. " res1.status = " .. res1.status)
-            ngx.say(n .. " res1.body = " .. res1.body)
-            ngx.say(n .. " res2.status = " .. res2.status)
-            ngx.say(n .. " res2.body = " .. res2.body)
+            njt.say(n .. " res1.status = " .. res1.status)
+            njt.say(n .. " res1.body = " .. res1.body)
+            njt.say(n .. " res2.status = " .. res2.status)
+            njt.say(n .. " res2.body = " .. res2.body)
         ';
         content_by_lua return;
     }
 
     location /main {
         access_by_lua '
-            local res = ngx.location.capture("/foo?n=1")
-            ngx.say("top res.status = " .. res.status)
-            ngx.say("top res.body = [" .. res.body .. "]")
+            local res = njt.location.capture("/foo?n=1")
+            njt.say("top res.status = " .. res.status)
+            njt.say("top res.body = [" .. res.body .. "]")
         ';
         content_by_lua return;
     }
@@ -186,39 +186,39 @@ top res.body = [1 res1.status = 200
         set $tag $1;
         rewrite_by_lua '
             local res1, res2
-            if ngx.var.tag == "foo" then
-                res1, res2 = ngx.location.capture_multi{
+            if njt.var.tag == "foo" then
+                res1, res2 = njt.location.capture_multi{
                     { "/a" },
                     { "/b" },
                 }
             else
-                res1, res2 = ngx.location.capture_multi{
+                res1, res2 = njt.location.capture_multi{
                     { "/c" },
                     { "/d" },
                 }
             end
 
-            local n = ngx.var.arg_n
+            local n = njt.var.arg_n
 
-            ngx.say(n .. " res1.status = " .. res1.status)
-            ngx.say(n .. " res1.body = " .. res1.body)
-            ngx.say(n .. " res2.status = " .. res2.status)
-            ngx.say(n .. " res2.body = " .. res2.body)
+            njt.say(n .. " res1.status = " .. res1.status)
+            njt.say(n .. " res1.body = " .. res1.body)
+            njt.say(n .. " res2.status = " .. res2.status)
+            njt.say(n .. " res2.body = " .. res2.body)
         ';
         content_by_lua return;
     }
 
     location /main {
         access_by_lua '
-            local res1, res2 = ngx.location.capture_multi{
+            local res1, res2 = njt.location.capture_multi{
                 { "/foo?n=1" },
                 { "/bar?n=2" },
             }
 
-            ngx.say("top res1.status = " .. res1.status)
-            ngx.say("top res1.body = [" .. res1.body .. "]")
-            ngx.say("top res2.status = " .. res2.status)
-            ngx.say("top res2.body = [" .. res2.body .. "]")
+            njt.say("top res1.status = " .. res1.status)
+            njt.say("top res1.body = [" .. res1.body .. "]")
+            njt.say("top res2.status = " .. res2.status)
+            njt.say("top res2.body = [" .. res2.body .. "]")
         ';
         content_by_lua return;
     }
@@ -248,14 +248,14 @@ top res2.body = [2 res1.status = 200
 --- config
     location /foo {
         access_by_lua '
-            local res1, res2 = ngx.location.capture_multi{
+            local res1, res2 = njt.location.capture_multi{
                 { "/a" },
                 { "/b" },
             }
-            ngx.say("res1.status = " .. res1.status)
-            ngx.say("res1.body = " .. res1.body)
-            ngx.say("res2.status = " .. res2.status)
-            ngx.say("res2.body = " .. res2.body)
+            njt.say("res1.status = " .. res1.status)
+            njt.say("res1.body = " .. res1.body)
+            njt.say("res2.status = " .. res2.status)
+            njt.say("res2.body = " .. res2.body)
         ';
         content_by_lua return;
     }
@@ -282,14 +282,14 @@ res2.body = STORED\r
 --- config
     location /main {
         access_by_lua '
-            local res1, res2 = ngx.location.capture_multi{
+            local res1, res2 = njt.location.capture_multi{
                 { "/foo?n=1" },
                 { "/bar?n=2" },
             }
-            ngx.say("res1.status = " .. res1.status)
-            ngx.say("res1.body = [" .. res1.body .. "]")
-            ngx.say("res2.status = " .. res2.status)
-            ngx.say("res2.body = [" .. res2.body .. "]")
+            njt.say("res1.status = " .. res1.status)
+            njt.say("res1.body = [" .. res1.body .. "]")
+            njt.say("res2.status = " .. res2.status)
+            njt.say("res2.body = [" .. res2.body .. "]")
         ';
         content_by_lua return;
     }
@@ -297,23 +297,23 @@ res2.body = STORED\r
         set $tag $1;
         rewrite_by_lua '
             local res1, res2
-            if ngx.var.tag == "foo" then
-                res1, res2 = ngx.location.capture_multi{
+            if njt.var.tag == "foo" then
+                res1, res2 = njt.location.capture_multi{
                     { "/a" },
                     { "/b" },
                 }
             else
-                res1, res2 = ngx.location.capture_multi{
+                res1, res2 = njt.location.capture_multi{
                     { "/c" },
                     { "/d" },
                 }
             end
-            print("args: " .. ngx.var.args)
-            local n = ngx.var.arg_n
-            ngx.say(n .. " res1.status = " .. res1.status)
-            ngx.say(n .. " res1.body = " .. res1.body)
-            ngx.say(n .. " res2.status = " .. res2.status)
-            ngx.say(n .. " res2.body = " .. res2.body)
+            print("args: " .. njt.var.args)
+            local n = njt.var.arg_n
+            njt.say(n .. " res1.status = " .. res1.status)
+            njt.say(n .. " res1.body = " .. res1.body)
+            njt.say(n .. " res2.status = " .. res2.status)
+            njt.say(n .. " res2.body = " .. res2.body)
         ';
         content_by_lua return;
     }
@@ -350,23 +350,23 @@ res2.body = [2 res1.status = 201
 --- config
     location /foo {
         access_by_lua '
-            local res1, res2, res3, res4 = ngx.location.capture_multi{
+            local res1, res2, res3, res4 = njt.location.capture_multi{
                 { "/a" },
                 { "/b" },
                 { "/c" },
                 { "/d" },
             }
-            ngx.say("res1.status = " .. res1.status)
-            ngx.say("res1.body = " .. res1.body)
+            njt.say("res1.status = " .. res1.status)
+            njt.say("res1.body = " .. res1.body)
 
-            ngx.say("res2.status = " .. res2.status)
-            ngx.say("res2.body = " .. res2.body)
+            njt.say("res2.status = " .. res2.status)
+            njt.say("res2.body = " .. res2.body)
 
-            ngx.say("res3.status = " .. res3.status)
-            ngx.say("res3.body = " .. res3.body)
+            njt.say("res3.status = " .. res3.status)
+            njt.say("res3.body = " .. res3.body)
 
-            ngx.say("res4.status = " .. res4.status)
-            ngx.say("res4.body = " .. res4.body)
+            njt.say("res4.status = " .. res4.status)
+            njt.say("res4.body = " .. res4.body)
         ';
         content_by_lua return;
     }

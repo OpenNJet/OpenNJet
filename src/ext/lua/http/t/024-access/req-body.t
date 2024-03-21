@@ -22,8 +22,8 @@ __DATA__
 --- config
     location = /test {
         access_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.var.request_body)
+            njt.req.read_body()
+            njt.say(njt.var.request_body)
         ';
         content_by_lua return;
     }
@@ -40,8 +40,8 @@ hello, world
     client_body_timeout 1ms;
     location = /test {
         access_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.var.request_body)
+            njt.req.read_body()
+            njt.say(njt.var.request_body)
         ';
         content_by_lua return;
     }
@@ -64,10 +64,10 @@ hello, world"
     }
     location = /test {
         access_by_lua '
-            ngx.req.read_body()
-            local res = ngx.location.capture("/foo");
-            ngx.say(ngx.var.request_body)
-            ngx.say("sub: ", res.body)
+            njt.req.read_body()
+            local res = njt.location.capture("/foo");
+            njt.say(njt.var.request_body)
+            njt.say("sub: ", res.body)
         ';
         content_by_lua return;
     }
@@ -87,10 +87,10 @@ sub: foo
     }
     location = /test {
         access_by_lua '
-            local res = ngx.location.capture("/foo");
-            ngx.req.read_body()
-            ngx.say(ngx.var.request_body)
-            ngx.say("sub: ", res.body)
+            local res = njt.location.capture("/foo");
+            njt.req.read_body()
+            njt.say(njt.var.request_body)
+            njt.say("sub: ", res.body)
         ';
         content_by_lua return;
     }
@@ -107,9 +107,9 @@ sub: foo
 --- config
     location = /test {
         access_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.var.request_body)
-            ngx.exit(200)
+            njt.req.read_body()
+            njt.say(njt.var.request_body)
+            njt.exit(200)
         ';
     }
 --- request
@@ -129,15 +129,15 @@ http finalize request: 500, "/test?" a:1, c:0
 --- config
     location = /foo {
         access_by_lua '
-            -- ngx.req.discard_body()
-            ngx.say("body: ", ngx.var.request_body)
-            ngx.exit(200)
+            -- njt.req.discard_body()
+            njt.say("body: ", njt.var.request_body)
+            njt.exit(200)
         ';
     }
     location = /bar {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say("body: ", ngx.var.request_body)
+            njt.req.read_body()
+            njt.say("body: ", njt.var.request_body)
         ';
     }
 --- pipelined_requests eval
@@ -161,15 +161,15 @@ hiya, world"]
 --- config
     location = /foo {
         access_by_lua '
-            -- ngx.req.discard_body()
-            ngx.say("body: ", ngx.var.request_body)
-            ngx.exit(201)
+            -- njt.req.discard_body()
+            njt.say("body: ", njt.var.request_body)
+            njt.exit(201)
         ';
     }
     location = /bar {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say("body: ", ngx.var.request_body)
+            njt.req.read_body()
+            njt.say("body: ", njt.var.request_body)
         ';
     }
 --- pipelined_requests eval
@@ -193,15 +193,15 @@ hiya, world"]
 --- config
     location = /foo {
         access_by_lua '
-            -- ngx.req.discard_body()
-            -- ngx.say("body: ", ngx.var.request_body)
-            ngx.redirect("/blah")
+            -- njt.req.discard_body()
+            -- njt.say("body: ", njt.var.request_body)
+            njt.redirect("/blah")
         ';
     }
     location = /bar {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say("body: ", ngx.var.request_body)
+            njt.req.read_body()
+            njt.say("body: ", njt.var.request_body)
         ';
     }
 --- pipelined_requests eval

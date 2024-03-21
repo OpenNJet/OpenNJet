@@ -198,7 +198,7 @@ return function ()
     for i = 1, 10 do
         ffi.C.free(t[i])
     end
-    ngx.say("ok")
+    njt.say("ok")
 end
 --- request
 GET /main
@@ -246,7 +246,7 @@ return function ()
     for i = 1, 10 do
         ffi.C.free(t[i])
     end
-    ngx.say("ok")
+    njt.say("ok")
 end
 
 --- request
@@ -292,7 +292,7 @@ return function ()
     for i = 1, 10 do
         ffi.C.free(t[i])
     end
-    ngx.say("ok")
+    njt.say("ok")
 end
 
 --- request

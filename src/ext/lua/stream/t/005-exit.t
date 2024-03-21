@@ -28,7 +28,7 @@ __DATA__
 
 === TEST 1: throw error
 --- stream_server_config
-    content_by_lua_block { ngx.exit(ngx.ERROR);ngx.say('hi') }
+    content_by_lua_block { njt.exit(njt.ERROR);njt.say('hi') }
 --- stream_response
 --- no_error_log
 [error]
@@ -37,7 +37,7 @@ __DATA__
 
 === TEST 2: throw error after sending the header and partial body
 --- stream_server_config
-    content_by_lua_block { ngx.say('hi');ngx.exit(ngx.ERROR);ngx.say(', you') }
+    content_by_lua_block { njt.say('hi');njt.exit(njt.ERROR);njt.say(', you') }
 --- no_error_log
 [error]
 --- stream_response
@@ -47,7 +47,7 @@ hi
 
 === TEST 3: throw 0
 --- stream_server_config
-    content_by_lua_block { ngx.say('Hi'); ngx.eof(); ngx.exit(0);ngx.say('world') }
+    content_by_lua_block { njt.say('Hi'); njt.eof(); njt.exit(0);njt.say('world') }
 --- stream_response
 Hi
 --- no_error_log
@@ -59,12 +59,12 @@ Hi
 --- stream_server_config
     content_by_lua_block {
         function f ()
-            ngx.say("hello")
-            ngx.exit(200)
+            njt.say("hello")
+            njt.exit(200)
         end
 
         pcall(f)
-        ngx.say("world")
+        njt.say("world")
     }
 --- stream_response
 hello
@@ -76,8 +76,8 @@ hello
 === TEST 5: throw 444 after sending out responses
 --- stream_server_config
     content_by_lua_block {
-        ngx.say('ok');
-        return ngx.exit(444)
+        njt.say('ok');
+        return njt.exit(444)
     }
 --- stream_response
 ok
@@ -90,8 +90,8 @@ ok
 === TEST 6: throw 499 after sending out responses
 --- stream_server_config
     content_by_lua_block {
-        ngx.say('ok');
-        return ngx.exit(499)
+        njt.say('ok');
+        return njt.exit(499)
     }
 --- stream_response
 ok
@@ -104,8 +104,8 @@ ok
 === TEST 7: throw 408 after sending out responses
 --- stream_server_config
     content_by_lua_block {
-        ngx.say('ok');
-        return ngx.exit(408)
+        njt.say('ok');
+        return njt.exit(408)
     }
 --- stream_response
 ok

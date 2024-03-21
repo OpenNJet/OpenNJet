@@ -22,8 +22,8 @@ __DATA__
 --- config
     location /read {
         content_by_lua '
-            ngx.redirect("http://agentzh.org/foo");
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo");
+            njt.say("hi")
         ';
     }
 --- request
@@ -39,8 +39,8 @@ Location: http://agentzh.org/foo
 --- config
     location /read {
         content_by_lua '
-            ngx.redirect("http://agentzh.org/foo", ngx.HTTP_MOVED_TEMPORARILY);
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo", njt.HTTP_MOVED_TEMPORARILY);
+            njt.say("hi")
         ';
     }
 --- request
@@ -56,8 +56,8 @@ Location: http://agentzh.org/foo
 --- config
     location /read {
         content_by_lua '
-            ngx.redirect("http://agentzh.org/foo", ngx.HTTP_MOVED_PERMANENTLY);
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo", njt.HTTP_MOVED_PERMANENTLY);
+            njt.say("hi")
         ';
     }
 --- request
@@ -73,8 +73,8 @@ Location: http://agentzh.org/foo
 --- config
     location /read {
         content_by_lua '
-            ngx.redirect("http://agentzh.org/foo", 404);
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo", 404);
+            njt.say("hi")
         ';
     }
 --- request
@@ -84,7 +84,7 @@ GET /read
 --- response_body_like: 500 Internal Server Error
 --- error_code: 500
 --- error_log
-only ngx.HTTP_MOVED_TEMPORARILY, ngx.HTTP_MOVED_PERMANENTLY, ngx.HTTP_PERMANENT_REDIRECT, ngx.HTTP_SEE_OTHER, and ngx.HTTP_TEMPORARY_REDIRECT are allowed
+only njt.HTTP_MOVED_TEMPORARILY, njt.HTTP_MOVED_PERMANENTLY, njt.HTTP_PERMANENT_REDIRECT, njt.HTTP_SEE_OTHER, and njt.HTTP_TEMPORARY_REDIRECT are allowed
 
 
 
@@ -92,8 +92,8 @@ only ngx.HTTP_MOVED_TEMPORARILY, ngx.HTTP_MOVED_PERMANENTLY, ngx.HTTP_PERMANENT_
 --- config
     location /read {
         content_by_lua '
-            ngx.redirect()
-            ngx.say("hi")
+            njt.redirect()
+            njt.say("hi")
         ';
     }
 --- request
@@ -115,9 +115,9 @@ GET /read
     }
     location /read {
         content_by_lua '
-            ngx.location.capture("/proxy")
-            ngx.redirect("/echo")
-            ngx.say("hi")
+            njt.location.capture("/proxy")
+            njt.redirect("/echo")
+            njt.say("hi")
         ';
     }
 --- request
@@ -132,8 +132,8 @@ GET /read
 --- config
     location /read {
         content_by_lua '
-            ngx.redirect("http://agentzh.org/foo?bar=3");
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo?bar=3");
+            njt.say("hi")
         ';
     }
 --- request
@@ -145,7 +145,7 @@ Location: http://agentzh.org/foo?bar=3
 
 
 
-=== TEST 8: location.capture + ngx.redirect
+=== TEST 8: location.capture + njt.redirect
 --- config
     location /echo {
         echo hello, world;
@@ -155,10 +155,10 @@ Location: http://agentzh.org/foo?bar=3
     }
     location /read {
         content_by_lua '
-            ngx.location.capture("/proxy")
-            ngx.location.capture("/proxy")
-            ngx.redirect("/echo")
-            ngx.exit(403)
+            njt.location.capture("/proxy")
+            njt.location.capture("/proxy")
+            njt.redirect("/echo")
+            njt.exit(403)
         ';
     }
 --- pipelined_requests eval
@@ -174,8 +174,8 @@ Location: http://agentzh.org/foo?bar=3
 --- config
     location /read {
         content_by_lua '
-            ngx.redirect("http://agentzh.org/foo", ngx.HTTP_TEMPORARY_REDIRECT);
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo", njt.HTTP_TEMPORARY_REDIRECT);
+            njt.say("hi")
         ';
     }
 --- request
@@ -191,8 +191,8 @@ Location: http://agentzh.org/foo
 --- config
     location /read {
         content_by_lua '
-            ngx.redirect("http://agentzh.org/foo?a=b&c=d", ngx.HTTP_TEMPORARY_REDIRECT);
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo?a=b&c=d", njt.HTTP_TEMPORARY_REDIRECT);
+            njt.say("hi")
         ';
     }
 --- request
@@ -208,8 +208,8 @@ Location: http://agentzh.org/foo?a=b&c=d
 --- config
     location /read {
         content_by_lua '
-            ngx.redirect("http://agentzh.org/foo?a=b&c=d", 307);
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo?a=b&c=d", 307);
+            njt.say("hi")
         ';
     }
 --- request
@@ -225,8 +225,8 @@ Location: http://agentzh.org/foo?a=b&c=d
 --- config
     location /read {
         content_by_lua_block {
-            ngx.redirect("http://agentzh.org/foo", ngx.HTTP_SEE_OTHER);
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo", njt.HTTP_SEE_OTHER);
+            njt.say("hi")
         }
     }
 --- request
@@ -242,8 +242,8 @@ Location: http://agentzh.org/foo
 --- config
     location /read {
         content_by_lua_block {
-            ngx.redirect("http://agentzh.org/foo?a=b&c=d", ngx.HTTP_SEE_OTHER);
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo?a=b&c=d", njt.HTTP_SEE_OTHER);
+            njt.say("hi")
         }
     }
 --- request
@@ -259,8 +259,8 @@ Location: http://agentzh.org/foo?a=b&c=d
 --- config
     location /read {
         content_by_lua_block {
-            ngx.redirect("http://agentzh.org/foo?a=b&c=d", 303);
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo?a=b&c=d", 303);
+            njt.say("hi")
         }
     }
 --- request
@@ -276,8 +276,8 @@ Location: http://agentzh.org/foo?a=b&c=d
 --- config
     location /read {
         content_by_lua '
-            ngx.redirect("http://agentzh.org/foo?a=b&c=d", ngx.HTTP_PERMANENT_REDIRECT);
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo?a=b&c=d", njt.HTTP_PERMANENT_REDIRECT);
+            njt.say("hi")
         ';
     }
 --- request
@@ -293,8 +293,8 @@ Location: http://agentzh.org/foo?a=b&c=d
 --- config
     location /read {
         content_by_lua '
-            ngx.redirect("http://agentzh.org/foo?a=b&c=d", 308);
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo?a=b&c=d", 308);
+            njt.say("hi")
         ';
     }
 --- request
@@ -310,8 +310,8 @@ Location: http://agentzh.org/foo?a=b&c=d
 --- config
     location /read {
         content_by_lua '
-            ngx.redirect("http://agentzh.org/foo?a=b&c=d", 308);
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo?a=b&c=d", 308);
+            njt.say("hi")
         ';
     }
 --- request
@@ -327,8 +327,8 @@ Location: http://agentzh.org/foo?a=b&c=d
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.redirect("http://agentzh.org/foo\rfoo:bar\nbar:foo");
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo\rfoo:bar\nbar:foo");
+            njt.say("hi")
         }
     }
 --- request
@@ -347,8 +347,8 @@ unsafe byte "0x0d" in redirect uri "http://agentzh.org/foo\x0Dfoo:bar\x0Abar:foo
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.redirect("http://agentzh.org/foo\nfoo:bar\rbar:foo");
-            ngx.say("hi")
+            njt.redirect("http://agentzh.org/foo\nfoo:bar\rbar:foo");
+            njt.say("hi")
         }
     }
 --- request
@@ -367,8 +367,8 @@ unsafe byte "0x0a" in redirect uri "http://agentzh.org/foo\x0Afoo:bar\x0Dbar:foo
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.redirect("\nfoo:http://agentzh.org/foo");
-            ngx.say("hi")
+            njt.redirect("\nfoo:http://agentzh.org/foo");
+            njt.say("hi")
         }
     }
 --- request
@@ -386,8 +386,8 @@ unsafe byte "0x0a" in redirect uri "\x0Afoo:http://agentzh.org/foo"
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.redirect("\rfoo:http://agentzh.org/foo");
-            ngx.say("hi")
+            njt.redirect("\rfoo:http://agentzh.org/foo");
+            njt.say("hi")
         }
     }
 --- request
@@ -405,8 +405,8 @@ unsafe byte "0x0d" in redirect uri "\x0Dfoo:http://agentzh.org/foo"
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.redirect("\rhttp\\://\"agentzh.org\"/foo");
-            ngx.say("hi")
+            njt.redirect("\rhttp\\://\"agentzh.org\"/foo");
+            njt.say("hi")
         }
     }
 --- request

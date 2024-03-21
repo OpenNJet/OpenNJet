@@ -21,11 +21,11 @@ __DATA__
 --- config
     location /test {
         content_by_lua '
-            ngx.update_time()
-            local before = ngx.now()
-            ngx.sleep(0.5)
-            local now = ngx.now()
-            ngx.say(now - before)
+            njt.update_time()
+            local before = njt.now()
+            njt.sleep(0.5)
+            local now = njt.now()
+            njt.say(now - before)
         ';
     }
 --- request
@@ -43,11 +43,11 @@ lua sleep timer expired: "/test?"
 --- config
     location /test {
         content_by_lua '
-            ngx.update_time()
-            local before = ngx.now()
-            ngx.sleep("a")
-            local now = ngx.now()
-            ngx.say(now - before)
+            njt.update_time()
+            local before = njt.now()
+            njt.sleep("a")
+            local now = njt.now()
+            njt.say(now - before)
         ';
     }
 --- request
@@ -63,16 +63,16 @@ bad argument #1 to 'sleep'
 --- config
     location /test {
         content_by_lua '
-            ngx.update_time()
-            local before = ngx.now()
-            ngx.location.capture("/sleep")
-            local now = ngx.now()
+            njt.update_time()
+            local before = njt.now()
+            njt.location.capture("/sleep")
+            local now = njt.now()
             local delay = now - before
-            ngx.say(delay)
+            njt.say(delay)
         ';
     }
     location /sleep {
-        content_by_lua 'ngx.sleep(0.5)';
+        content_by_lua 'njt.sleep(0.5)';
     }
 --- request
 GET /test
@@ -90,11 +90,11 @@ lua sleep timer expired: "/sleep?"
 --- config
     location /test {
         content_by_lua '
-            local res = ngx.location.capture("/sleep");
+            local res = njt.location.capture("/sleep");
         ';
     }
     location /sleep {
-        content_by_lua 'ngx.sleep("a")';
+        content_by_lua 'njt.sleep("a")';
     }
 --- request
 GET /test
@@ -108,12 +108,12 @@ bad argument #1 to 'sleep'
 --- config
     location /test {
         content_by_lua '
-            ngx.update_time()
-            local start = ngx.now()
-            ngx.sleep(0.33)
-            ngx.sleep(0.33)
-            ngx.sleep(0.33)
-            ngx.say(ngx.now() - start)
+            njt.update_time()
+            local start = njt.now()
+            njt.sleep(0.33)
+            njt.sleep(0.33)
+            njt.sleep(0.33)
+            njt.say(njt.now() - start)
         ';
     }
 --- request
@@ -128,16 +128,16 @@ lua sleep timer expired: "/test?"
 
 
 
-=== TEST 6: sleep 0.5 - interleaved by ngx.say() - ended by ngx.sleep
+=== TEST 6: sleep 0.5 - interleaved by njt.say() - ended by njt.sleep
 --- config
     location /test {
         content_by_lua '
-            ngx.send_headers()
-            -- ngx.location.capture("/sleep")
-            ngx.sleep(1)
-            ngx.say("blah")
-            ngx.sleep(1)
-            -- ngx.location.capture("/sleep")
+            njt.send_headers()
+            -- njt.location.capture("/sleep")
+            njt.sleep(1)
+            njt.say("blah")
+            njt.sleep(1)
+            -- njt.location.capture("/sleep")
         ';
     }
     location = /sleep {
@@ -155,17 +155,17 @@ lua sleep timer expired: "/test?"
 
 
 
-=== TEST 7: sleep 0.5 - interleaved by ngx.say() - not ended by ngx.sleep
+=== TEST 7: sleep 0.5 - interleaved by njt.say() - not ended by njt.sleep
 --- config
     location /test {
         content_by_lua '
-            ngx.send_headers()
-            -- ngx.location.capture("/sleep")
-            ngx.sleep(0.3)
-            ngx.say("blah")
-            ngx.sleep(0.5)
-            -- ngx.location.capture("/sleep")
-            ngx.say("hiya")
+            njt.send_headers()
+            -- njt.location.capture("/sleep")
+            njt.sleep(0.3)
+            njt.say("blah")
+            njt.sleep(0.5)
+            -- njt.location.capture("/sleep")
+            njt.say("hiya")
         ';
     }
     location = /sleep {
@@ -184,17 +184,17 @@ lua sleep timer expired: "/test?"
 
 
 
-=== TEST 8: ngx.location.capture before and after ngx.sleep
+=== TEST 8: njt.location.capture before and after njt.sleep
 --- config
     location /test {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
 
-            ngx.sleep(0.1)
+            njt.sleep(0.1)
 
-            res = ngx.location.capture("/sub")
-            ngx.print(res.body)
+            res = njt.location.capture("/sub")
+            njt.print(res.body)
         ';
     }
     location = /hello {
@@ -217,11 +217,11 @@ hello world
 --- config
     location /test {
         content_by_lua '
-            ngx.update_time()
-            local before = ngx.now()
-            ngx.sleep(0)
-            local now = ngx.now()
-            ngx.say("elapsed: ", now - before)
+            njt.update_time()
+            local before = njt.now()
+            njt.sleep(0)
+            local now = njt.now()
+            njt.say("elapsed: ", now - before)
         ';
     }
 --- request
@@ -237,12 +237,12 @@ lua sleep timer expired: "/test?"
 
 
 
-=== TEST 10: ngx.sleep unavailable in log_by_lua
+=== TEST 10: njt.sleep unavailable in log_by_lua
 --- config
     location /t {
         echo hello;
         log_by_lua '
-            ngx.sleep(0.1)
+            njt.sleep(0.1)
         ';
     }
 --- request
@@ -255,7 +255,7 @@ API disabled in the context of log_by_lua*
 
 
 
-=== TEST 11: ngx.sleep() fails to yield (xpcall err handler)
+=== TEST 11: njt.sleep() fails to yield (xpcall err handler)
 --- config
     location = /t {
         content_by_lua '
@@ -263,10 +263,10 @@ API disabled in the context of log_by_lua*
                 return error(1)
             end
             local function err()
-                ngx.sleep(0.001)
+                njt.sleep(0.001)
             end
             xpcall(f, err)
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -274,13 +274,13 @@ API disabled in the context of log_by_lua*
 --- response_body
 ok
 --- error_log
-lua clean up the timer for pending ngx.sleep
+lua clean up the timer for pending njt.sleep
 --- no_error_log
 [error]
 
 
 
-=== TEST 12: ngx.sleep() fails to yield (require)
+=== TEST 12: njt.sleep() fails to yield (require)
 --- http_config
     lua_package_path "$prefix/html/?.lua;;";
 --- config
@@ -294,33 +294,33 @@ lua clean up the timer for pending ngx.sleep
     GET /t
 --- user_files
 >>> foosleep.lua
-ngx.sleep(0.001)
+njt.sleep(0.001)
 
 --- response_body_like: 500 Internal Server Error
 --- error_code: 500
 --- wait: 0.2
 --- error_log eval
 [
-"lua clean up the timer for pending ngx.sleep",
+"lua clean up the timer for pending njt.sleep",
 qr{runtime error: attempt to yield across (?:metamethod/)?C-call boundary},
 ]
 
 
 
-=== TEST 13: sleep coctx handler did not get called in ngx.exit().
+=== TEST 13: sleep coctx handler did not get called in njt.exit().
 --- config
     location /t {
          content_by_lua "
             local function sleep(t)
                 --- nginx return reply to client without waiting
-                ngx.sleep(t)
+                njt.sleep(t)
             end
 
             local function wait()
                  --- worker would crash afterwards
                  xpcall(function () error(1) end, function() return sleep(0.001) end)
-                 --- ngx.exit was required to crash worker
-                 ngx.exit(200)
+                 --- njt.exit was required to crash worker
+                 njt.exit(200)
             end
 
             wait()
@@ -337,20 +337,20 @@ qr{runtime error: attempt to yield across (?:metamethod/)?C-call boundary},
 
 
 
-=== TEST 14: sleep coctx handler did not get called in ngx.exec().
+=== TEST 14: sleep coctx handler did not get called in njt.exec().
 --- config
     location /t {
          content_by_lua '
             local function sleep(t)
                 --- nginx return reply to client without waiting
-                ngx.sleep(t)
+                njt.sleep(t)
             end
 
             local function wait()
                  --- worker would crash afterwards
                  xpcall(function () error(1) end, function() return sleep(0.001) end)
-                 --- ngx.exit was required to crash worker
-                 ngx.exec("/dummy")
+                 --- njt.exit was required to crash worker
+                 njt.exec("/dummy")
             end
 
             wait()
@@ -372,20 +372,20 @@ ok
 
 
 
-=== TEST 15: sleep coctx handler did not get called in ngx.req.set_uri(uri, true).
+=== TEST 15: sleep coctx handler did not get called in njt.req.set_uri(uri, true).
 --- config
     location /t {
          rewrite_by_lua '
             local function sleep(t)
                 --- nginx return reply to client without waiting
-                ngx.sleep(t)
+                njt.sleep(t)
             end
 
             local function wait()
                  --- worker would crash afterwards
                  xpcall(function () error(1) end, function() return sleep(0.001) end)
-                 --- ngx.exit was required to crash worker
-                 ngx.req.set_uri("/dummy", true)
+                 --- njt.exit was required to crash worker
+                 njt.req.set_uri("/dummy", true)
             end
 
             wait()
@@ -413,18 +413,18 @@ ok
         content_by_lua_block {
             local function f (n)
                 print("f begin ", n)
-                ngx.sleep(0)
+                njt.sleep(0)
                 print("f middle ", n)
-                ngx.sleep(0)
+                njt.sleep(0)
                 print("f end ", n)
-                ngx.sleep(0)
+                njt.sleep(0)
             end
 
             for i = 1, 3 do
-                assert(ngx.thread.spawn(f, i))
+                assert(njt.thread.spawn(f, i))
             end
 
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request
@@ -462,18 +462,18 @@ e?poll timer: 0
 
             local function f (n)
                 print("f begin ", n)
-                ngx.sleep(delay)
+                njt.sleep(delay)
                 print("f middle ", n)
-                ngx.sleep(delay)
+                njt.sleep(delay)
                 print("f end ", n)
-                ngx.sleep(delay)
+                njt.sleep(delay)
             end
 
             for i = 1, 3 do
-                assert(ngx.thread.spawn(f, i))
+                assert(njt.thread.spawn(f, i))
             end
 
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request

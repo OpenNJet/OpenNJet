@@ -20,8 +20,8 @@ __DATA__
 === TEST 1: sanity
 --- stream_server_config
     content_by_lua_block {
-        ngx.ctx.foo = 32;
-        ngx.say(ngx.ctx.foo)
+        njt.ctx.foo = 32;
+        njt.say(njt.ctx.foo)
     }
 --- stream_response
 32
@@ -34,14 +34,14 @@ __DATA__
 TODO
 --- stream_server_config
     rewrite_by_lua_block {
-        print("foo = ", ngx.ctx.foo)
-        ngx.ctx.foo = 76
+        print("foo = ", njt.ctx.foo)
+        njt.ctx.foo = 76
     }
     access_by_lua_block {
-        ngx.ctx.foo = ngx.ctx.foo + 3
+        njt.ctx.foo = njt.ctx.foo + 3
     }
     content_by_lua_block {
-        ngx.say(ngx.ctx.foo)
+        njt.say(njt.ctx.foo)
     }
 --- stream_response
 79
@@ -55,16 +55,16 @@ foo = nil
 
 
 
-=== TEST 3: different requests have different ngx.ctx
+=== TEST 3: different requests have different njt.ctx
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.ctx.foo)
-        ngx.ctx.foo = 32
-        ngx.say(ngx.ctx.foo)
+        njt.say(njt.ctx.foo)
+        njt.ctx.foo = 32
+        njt.say(njt.ctx.foo)
     }
 --- stream_server_config2
     content_by_lua_block {
-        ngx.say(ngx.ctx.foo)
+        njt.say(njt.ctx.foo)
     }
 --- stream_response
 nil
@@ -78,13 +78,13 @@ nil
 === TEST 4: overriding ctx
 --- stream_server_config
     content_by_lua_block {
-        ngx.ctx = { foo = 32, bar = 54 };
-        ngx.say(ngx.ctx.foo)
-        ngx.say(ngx.ctx.bar)
+        njt.ctx = { foo = 32, bar = 54 };
+        njt.say(njt.ctx.foo)
+        njt.say(njt.ctx.bar)
 
-        ngx.ctx = { baz = 56  };
-        ngx.say(ngx.ctx.foo)
-        ngx.say(ngx.ctx.baz)
+        njt.ctx = { baz = 56  };
+        njt.say(njt.ctx.foo)
+        njt.say(njt.ctx.baz)
     }
 --- stream_response
 32
@@ -96,32 +96,32 @@ nil
 
 
 
-=== TEST 5: ngx.ctx + ngx.exit(ngx.ERROR) + log_by_lua
+=== TEST 5: njt.ctx + njt.exit(njt.ERROR) + log_by_lua
 TODO
 --- stream_server_config
     rewrite_by_lua_block {
-        ngx.ctx.foo = 32;
-        ngx.exit(ngx.ERROR)
+        njt.ctx.foo = 32;
+        njt.exit(njt.ERROR)
     }
-    log_by_lua_block { ngx.log(ngx.WARN, "ngx.ctx = ", ngx.ctx.foo) }
+    log_by_lua_block { njt.log(njt.WARN, "njt.ctx = ", njt.ctx.foo) }
 --- stream_response
 --- no_error_log
 [error]
 --- error_log
-ngx.ctx = 32
+njt.ctx = 32
 --- SKIP
 
 
 
-=== TEST 6: ngx.ctx + ngx.exit(200) + log_by_lua
+=== TEST 6: njt.ctx + njt.exit(200) + log_by_lua
 TODO
 --- stream_server_config
     rewrite_by_lua_block {
-        ngx.ctx.foo = 32;
-        ngx.say(ngx.ctx.foo)
-        ngx.exit(200)
+        njt.ctx.foo = 32;
+        njt.say(njt.ctx.foo)
+        njt.exit(200)
     }
-    log_by_lua 'ngx.log(ngx.WARN, "ctx.foo = ", ngx.ctx.foo)';
+    log_by_lua 'njt.log(njt.WARN, "ctx.foo = ", njt.ctx.foo)';
 --- stream_response
 32
 --- no_error_log

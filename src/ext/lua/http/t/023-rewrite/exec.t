@@ -18,8 +18,8 @@ __DATA__
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.exec("/hi");
-            ngx.say("Hi");
+            njt.exec("/hi");
+            njt.say("Hi");
         ';
     }
     location /hi {
@@ -36,10 +36,10 @@ Hello
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.exec("");
-            ngx.say("Hi");
+            njt.exec("");
+            njt.say("Hi");
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
     location /hi {
         echo "Hello";
@@ -55,10 +55,10 @@ GET /read
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.exec();
-            ngx.say("Hi");
+            njt.exec();
+            njt.say("Hi");
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
     location /hi {
         echo "Hello";
@@ -74,10 +74,10 @@ GET /read
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.exec(1, 2, 3, 4);
-            ngx.say("Hi");
+            njt.exec(1, 2, 3, 4);
+            njt.say("Hi");
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
     location /hi {
         echo "Hello";
@@ -93,10 +93,10 @@ GET /read
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.exec(nil)
-            ngx.say("Hi")
+            njt.exec(nil)
+            njt.say("Hi")
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
     location /hi {
         echo "Hello";
@@ -112,10 +112,10 @@ GET /read
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.exec("/hi", "Yichun Zhang")
-            ngx.say("Hi")
+            njt.exec("/hi", "Yichun Zhang")
+            njt.say("Hi")
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
     location /hi {
         echo Hello $query_string;
@@ -131,10 +131,10 @@ Hello Yichun Zhang
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.exec("/hi?agentzh")
-            ngx.say("Hi")
+            njt.exec("/hi?agentzh")
+            njt.say("Hi")
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
     location /hi {
         echo Hello $query_string;
@@ -150,10 +150,10 @@ Hello agentzh
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.exec("/hi?a=Yichun", "b=Zhang")
-            ngx.say("Hi")
+            njt.exec("/hi?a=Yichun", "b=Zhang")
+            njt.say("Hi")
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
     location /hi {
         echo Hello $query_string;
@@ -169,10 +169,10 @@ Hello a=Yichun&b=Zhang
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.exec("@hi?a=Yichun", "b=Zhang")
-            ngx.say("Hi")
+            njt.exec("@hi?a=Yichun", "b=Zhang")
+            njt.say("Hi")
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
     location @hi {
         echo Hello $query_string;
@@ -201,9 +201,9 @@ Hello
 
 --- user_files
 >>> test.lua
-ngx.location.capture('/a')
+njt.location.capture('/a')
 
-ngx.exec('/b')
+njt.exec('/b')
 --- request
     GET /test
 --- response_body
@@ -227,9 +227,9 @@ hello
 
 --- user_files
 >>> test.lua
-ngx.location.capture('/a')
+njt.location.capture('/a')
 
-ngx.exec('@b')
+njt.exec('@b')
 --- request
     GET /test
 --- response_body
@@ -237,7 +237,7 @@ hello
 
 
 
-=== TEST 12: github issue #40: 2 Subrequest calls when using access_by_lua, ngx.exec and echo_location (rewrite)
+=== TEST 12: github issue #40: 2 Subrequest calls when using access_by_lua, njt.exec and echo_location (rewrite)
 --- config
     location = /hi {
         echo hello;
@@ -247,14 +247,14 @@ hello
     }
     location /p{
         #content_by_lua '
-        #local res = ngx.location.capture("/sub")
-        #ngx.print(res.body)
+        #local res = njt.location.capture("/sub")
+        #njt.print(res.body)
         #';
         echo_location /sub;
     }
     location /lua {
         rewrite_by_lua '
-            ngx.exec("/p")
+            njt.exec("/p")
         ';
     }
 --- request
@@ -264,7 +264,7 @@ hello
 
 
 
-=== TEST 13: github issue #40: 2 Subrequest calls when using access_by_lua, ngx.exec and echo_location (rewrite + named location)
+=== TEST 13: github issue #40: 2 Subrequest calls when using access_by_lua, njt.exec and echo_location (rewrite + named location)
 --- config
     location = /hi {
         echo hello;
@@ -274,14 +274,14 @@ hello
     }
     location @p{
         #content_by_lua '
-            #local res = ngx.location.capture("/sub")
-            #ngx.print(res.body)
+            #local res = njt.location.capture("/sub")
+            #njt.print(res.body)
         #';
         echo_location /sub;
     }
     location /lua {
         rewrite_by_lua '
-            ngx.exec("@p")
+            njt.exec("@p")
         ';
     }
 --- request
@@ -291,7 +291,7 @@ hello
 
 
 
-=== TEST 14: github issue #40: 2 Subrequest calls when using access_by_lua, ngx.exec and echo_location (rewrite + post subrequest)
+=== TEST 14: github issue #40: 2 Subrequest calls when using access_by_lua, njt.exec and echo_location (rewrite + post subrequest)
 --- config
     location = /hi {
         echo hello;
@@ -301,8 +301,8 @@ hello
     }
     location /p{
         #content_by_lua '
-            #local res = ngx.location.capture("/sub")
-            #ngx.print(res.body)
+            #local res = njt.location.capture("/sub")
+            #njt.print(res.body)
         #';
         echo_location /sub;
     }
@@ -311,8 +311,8 @@ hello
     }
     location /lua {
         rewrite_by_lua '
-            ngx.location.capture("/blah")
-            ngx.exec("/p")
+            njt.location.capture("/blah")
+            njt.exec("/p")
         ';
     }
 --- request
@@ -322,18 +322,18 @@ hello
 
 
 
-=== TEST 15: rewrite_by_lua + ngx.exec + subrequest capture
+=== TEST 15: rewrite_by_lua + njt.exec + subrequest capture
 --- config
     location /main {
         rewrite_by_lua '
-            local res = ngx.location.capture("/test_loc");
-            ngx.print("hello, ", res.body)
+            local res = njt.location.capture("/test_loc");
+            njt.print("hello, ", res.body)
         ';
         content_by_lua return;
     }
     location /test_loc {
         rewrite_by_lua '
-            ngx.exec("@proxy")
+            njt.exec("@proxy")
         ';
     }
     location @proxy {
@@ -350,12 +350,12 @@ hello, bah
 
 
 
-=== TEST 16: rewrite_by_lua_file + ngx.exec + subrequest capture
+=== TEST 16: rewrite_by_lua_file + njt.exec + subrequest capture
 --- config
     location /main {
         rewrite_by_lua '
-            local res = ngx.location.capture("/test_loc");
-            ngx.print("hello, ", res.body)
+            local res = njt.location.capture("/test_loc");
+            njt.print("hello, ", res.body)
         ';
         content_by_lua return;
     }
@@ -371,7 +371,7 @@ hello, bah
     }
 --- user_files
 >>> jump.lua
-ngx.exec("@proxy")
+njt.exec("@proxy")
 --- request
     GET /main
 --- response_body
@@ -383,7 +383,7 @@ hello, bah
 --- config
     location /t {
         rewrite_by_lua_block {
-            ngx.exec("@foo")
+            njt.exec("@foo")
         }
     }
 

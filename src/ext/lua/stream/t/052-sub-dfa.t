@@ -19,11 +19,11 @@ __DATA__
 === TEST 1: matched with d
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, 1234 5678", "[0-9]|[0-9][0-9]", "world", "d")
+        local s, n = njt.re.sub("hello, 1234 5678", "[0-9]|[0-9][0-9]", "world", "d")
         if n then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
         else
-            ngx.say(s)
+            njt.say(s)
         end
     }
 --- stream_response
@@ -34,11 +34,11 @@ hello, world34 5678: 1
 === TEST 2: not matched with d
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, world", "[0-9]+", "hiya", "d")
+        local s, n = njt.re.sub("hello, world", "[0-9]+", "hiya", "d")
         if n then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
         else
-            ngx.say(s)
+            njt.say(s)
         end
     }
 --- stream_response
@@ -49,11 +49,11 @@ hello, world: 0
 === TEST 3: matched with do
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, 1234 5678", "[0-9]|[0-9][0-9]", "world", "do")
+        local s, n = njt.re.sub("hello, 1234 5678", "[0-9]|[0-9][0-9]", "world", "do")
         if n then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
         else
-            ngx.say(s)
+            njt.say(s)
         end
     }
 --- stream_response
@@ -64,11 +64,11 @@ hello, world34 5678: 1
 === TEST 4: not matched with do
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.sub("hello, world", "[0-9]+", "hiya", "do")
+        local s, n = njt.re.sub("hello, world", "[0-9]+", "hiya", "do")
         if n then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
         else
-            ngx.say(s)
+            njt.say(s)
         end
     }
 --- stream_response
@@ -79,12 +79,12 @@ hello, world: 0
 === TEST 5: bad pattern
 --- stream_server_config
     content_by_lua_block {
-        local s, n, err = ngx.re.sub("hello\\nworld", "(abc", "world", "j")
+        local s, n, err = njt.re.sub("hello\\nworld", "(abc", "world", "j")
         if s then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
 
         else
-            ngx.say("error: ", err)
+            njt.say("error: ", err)
         end
     }
 --- stream_response
@@ -97,12 +97,12 @@ error: pcre_compile() failed: missing ) in "(abc"
 === TEST 6: bad pattern + o
 --- stream_server_config
     content_by_lua_block {
-        local s, n, err = ngx.re.sub("hello\\nworld", "(abc", "world", "jo")
+        local s, n, err = njt.re.sub("hello\\nworld", "(abc", "world", "jo")
         if s then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
 
         else
-            ngx.say("error: ", err)
+            njt.say("error: ", err)
         end
     }
 --- stream_response
@@ -115,9 +115,9 @@ error: pcre_compile() failed: missing ) in "(abc"
 === TEST 7: UTF-8 mode without UTF-8 sequence checks
 --- stream_server_config
     content_by_lua_block {
-        local s, n, err = ngx.re.sub("你好", ".", "a", "Ud")
+        local s, n, err = njt.re.sub("你好", ".", "a", "Ud")
         if s then
-            ngx.say("s: ", s)
+            njt.say("s: ", s)
         end
     }
 --- stap
@@ -143,9 +143,9 @@ s: a好
 === TEST 8: UTF-8 mode with UTF-8 sequence checks
 --- stream_server_config
     content_by_lua_block {
-        local s, n, err = ngx.re.sub("你好", ".", "a", "ud")
+        local s, n, err = njt.re.sub("你好", ".", "a", "ud")
         if s then
-            ngx.say("s: ", s)
+            njt.say("s: ", s)
         end
     }
 --- stap

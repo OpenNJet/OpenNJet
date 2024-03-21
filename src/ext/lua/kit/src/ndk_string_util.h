@@ -10,5 +10,5 @@
 
 #define     njt_null_enum   { njt_null_string, 0 }
 
-#define     ndk_memcpyp(d,s)                njt_memcpy(d,s,sizeof(s))
+#define     ndk_memcpyp(d,s)                njt_memcpy(d,s,sizeof(*s))
 

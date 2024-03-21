@@ -33,10 +33,10 @@ __DATA__
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_DELETE });
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_DELETE });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -63,10 +63,10 @@ lua http subrequest "/other?"
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_DELETE });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_DELETE });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -91,10 +91,10 @@ DELETE
 
     location /t {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_POST });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_POST });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -115,10 +115,10 @@ POST
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_HEAD });
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_HEAD });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -142,10 +142,10 @@ GET /lua
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_GET });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_GET });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -170,9 +170,9 @@ GET
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo")
+            local res = njt.location.capture("/foo")
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -197,9 +197,9 @@ GET
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo", {})
+            local res = njt.location.capture("/foo", {})
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -227,10 +227,10 @@ GET
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_PUT, body = "hello" });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_PUT, body = "hello" });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -256,10 +256,10 @@ hello
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_PUT, body = "hello" });
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_PUT, body = "hello" });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -292,13 +292,13 @@ hello
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_PUT, body = "hello" });
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_PUT, body = "hello" });
 
-            ngx.print(res.body)
+            njt.print(res.body)
 
-            res = ngx.location.capture("/foo")
-            ngx.say(res.body)
+            res = njt.location.capture("/foo")
+            njt.say(res.body)
 
         ';
     }
@@ -330,10 +330,10 @@ GET
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_POST, body = "hello" });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_POST, body = "hello" });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -361,17 +361,17 @@ hello
 
     location /lua {
         content_by_lua '
-            ngx.location.capture("/flush");
+            njt.location.capture("/flush");
 
-            local res = ngx.location.capture("/memc");
-            ngx.say("GET: " .. res.status);
+            local res = njt.location.capture("/memc");
+            njt.say("GET: " .. res.status);
 
-            res = ngx.location.capture("/memc",
-                { method = ngx.HTTP_PUT, body = "hello" });
-            ngx.say("PUT: " .. res.status);
+            res = njt.location.capture("/memc",
+                { method = njt.HTTP_PUT, body = "hello" });
+            njt.say("PUT: " .. res.status);
 
-            res = ngx.location.capture("/memc");
-            ngx.say("cached: " .. res.body);
+            res = njt.location.capture("/memc");
+            njt.say("cached: " .. res.body);
 
         ';
     }
@@ -402,19 +402,19 @@ cached: hello
 
     location /lua {
         content_by_lua '
-            ngx.location.capture("/flush",
+            njt.location.capture("/flush",
                 { share_all_vars = true });
 
-            local res = ngx.location.capture("/memc",
+            local res = njt.location.capture("/memc",
                 { share_all_vars = true });
-            ngx.say("GET: " .. res.status);
+            njt.say("GET: " .. res.status);
 
-            res = ngx.location.capture("/memc",
-                { method = ngx.HTTP_PUT, body = "hello", share_all_vars = true });
-            ngx.say("PUT: " .. res.status);
+            res = njt.location.capture("/memc",
+                { method = njt.HTTP_PUT, body = "hello", share_all_vars = true });
+            njt.say("PUT: " .. res.status);
 
-            res = ngx.location.capture("/memc", { share_all_vars = true });
-            ngx.say("cached: " .. res.body);
+            res = njt.location.capture("/memc", { share_all_vars = true });
+            njt.say("cached: " .. res.body);
         ';
     }
 --- request
@@ -436,9 +436,9 @@ cached: hello
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
+            local res = njt.location.capture("/foo",
                 { args = {} })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -457,9 +457,9 @@ GET /lua
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
+            local res = njt.location.capture("/foo",
                 { args = { ["fo="] = "=>" } })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -479,10 +479,10 @@ fo%3D=%3D%3E
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
+            local res = njt.location.capture("/foo",
                 { args = { ["fo="] = "=>",
                     ["="] = ":" } })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -504,10 +504,10 @@ GET /lua
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
+            local res = njt.location.capture("/foo",
                 { args = { foo = 3,
                     bar = "hello" } })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -527,9 +527,9 @@ GET /lua
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
+            local res = njt.location.capture("/foo",
                 { args = { [57] = "hi" } })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -549,9 +549,9 @@ attempt to use a non-string key in the "args" option table
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
+            local res = njt.location.capture("/foo",
                 { args = { "hi" } })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -571,9 +571,9 @@ attempt to use a non-string key in the "args" option table
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo?a=3",
+            local res = njt.location.capture("/foo?a=3",
                 { args = { b = 4 } })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -593,9 +593,9 @@ a=3&b=4
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo?a=3",
+            local res = njt.location.capture("/foo?a=3",
                 { args = "b=4" })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -611,10 +611,10 @@ a=3&b=4
 --- config
     location /lua {
         content_by_lua '
-            if ngx.is_subrequest then
-                ngx.say("sub req")
+            if njt.is_subrequest then
+                njt.say("sub req")
             else
-                ngx.say("main req")
+                njt.say("main req")
             end
         ';
     }
@@ -635,10 +635,10 @@ main req
 
     location /lua {
         content_by_lua '
-            if ngx.is_subrequest then
-                ngx.say("sub req")
+            if njt.is_subrequest then
+                njt.say("sub req")
             else
-                ngx.say("main req")
+                njt.say("main req")
             end
         ';
     }
@@ -659,7 +659,7 @@ sub req
 
     location /lua {
         set_by_lua $a '
-            if ngx.is_subrequest then
+            if njt.is_subrequest then
                 return "sub req"
             else
                 return "main req"
@@ -686,9 +686,9 @@ https://github.com/chaoslawful/lua-nginx-module/issues/38
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_GET });
-            ngx.say("header foo: [", res.body, "]")
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_GET });
+            njt.say("header foo: [", res.body, "]")
         ';
     }
 --- request
@@ -712,9 +712,9 @@ https://github.com/chaoslawful/lua-nginx-module/issues/38
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/other",
+            local res = njt.location.capture("/other",
                 { body = "abc" });
-            ngx.say("header foo: [", res.body, "]")
+            njt.say("header foo: [", res.body, "]")
         ';
     }
 --- request
@@ -732,24 +732,24 @@ header foo: [bar]
 --- config
     location /a {
         content_by_lua '
-            ngx.say("hello, a");
+            njt.say("hello, a");
         ';
     }
     location /b {
         content_by_lua '
-            ngx.say("hello, b");
+            njt.say("hello, b");
         ';
     }
     location /c {
         content_by_lua '
-            ngx.say("hello, c");
+            njt.say("hello, c");
         ';
     }
     location /main {
         content_by_lua '
-            local res1, res2 = ngx.location.capture_multi({{"/a"}, {"/b"}})
-            local res3 = ngx.location.capture("/c")
-            ngx.print(res1.body, res2.body, res3.body)
+            local res1, res2 = njt.location.capture_multi({{"/a"}, {"/b"}})
+            local res3 = njt.location.capture("/c")
+            njt.print(res1.body, res2.body, res3.body)
         ';
     }
 --- request
@@ -781,10 +781,10 @@ lua reuse free buf memory
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_POST, body = "hello" });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_POST, body = "hello" });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -802,11 +802,11 @@ hello
 --- config
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo.html")
+            local res = njt.location.capture("/foo.html")
 
-            ngx.say(res.status)
-            ngx.say(res.header["Last-Modified"])
-            ngx.print(res.body)
+            njt.say(res.status)
+            njt.say(res.header["Last-Modified"])
+            njt.print(res.body)
         ';
     }
 --- request
@@ -827,16 +827,16 @@ hello, static file$
 --- config
     location /sub {
         content_by_lua '
-            ngx.ctx.foo = "bar";
+            njt.ctx.foo = "bar";
         ';
     }
     location /lua {
         content_by_lua '
             local ctx = {}
-            local res = ngx.location.capture("/sub", { ctx = ctx })
+            local res = njt.location.capture("/sub", { ctx = ctx })
 
-            ngx.say(ctx.foo);
-            ngx.say(ngx.ctx.foo);
+            njt.say(ctx.foo);
+            njt.say(njt.ctx.foo);
         ';
     }
 --- request
@@ -853,13 +853,13 @@ nil
 --- config
     location /sub {
         content_by_lua '
-            ngx.ctx.foo = "bar";
+            njt.ctx.foo = "bar";
         ';
     }
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/sub", { ctx = ngx.ctx })
-            ngx.say(ngx.ctx.foo);
+            local res = njt.location.capture("/sub", { ctx = njt.ctx })
+            njt.say(njt.ctx.foo);
         ';
     }
 --- request
@@ -886,12 +886,12 @@ bar
 
     location /t {
         content_by_lua '
-            local res = ngx.location.capture("/memc",
-                { method = ngx.HTTP_PUT, body = "hello 1234" });
-            -- ngx.say("PUT: " .. res.status);
+            local res = njt.location.capture("/memc",
+                { method = njt.HTTP_PUT, body = "hello 1234" });
+            -- njt.say("PUT: " .. res.status);
 
-            res = ngx.location.capture("/memc");
-            ngx.say("some_key: " .. res.body);
+            res = njt.location.capture("/memc");
+            njt.say("some_key: " .. res.body);
         ';
     }
 --- request
@@ -910,9 +910,9 @@ lua reuse free buf chain, but reallocate memory because
     location /other {
         default_type 'foo/bar';
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.var.request_method)
-            ngx.say(ngx.req.get_body_data())
+            njt.req.read_body()
+            njt.say(njt.var.request_method)
+            njt.say(njt.req.get_body_data())
         ';
     }
 
@@ -923,10 +923,10 @@ lua reuse free buf chain, but reallocate memory because
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_GET });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_GET });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -945,9 +945,9 @@ nil
     location /other {
         default_type 'foo/bar';
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.var.request_method)
-            ngx.say(ngx.req.get_body_data())
+            njt.req.read_body()
+            njt.say(njt.var.request_method)
+            njt.say(njt.req.get_body_data())
         ';
     }
 
@@ -958,12 +958,12 @@ nil
 
     location /lua {
         content_by_lua '
-            ngx.req.read_body()
+            njt.req.read_body()
 
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_GET });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_GET });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -982,9 +982,9 @@ nil
     location /other {
         default_type 'foo/bar';
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.var.request_method)
-            ngx.say(ngx.req.get_body_data())
+            njt.req.read_body()
+            njt.say(njt.var.request_method)
+            njt.say(njt.req.get_body_data())
         ';
     }
 
@@ -995,12 +995,12 @@ nil
 
     location /lua {
         content_by_lua '
-            ngx.req.read_body()
+            njt.req.read_body()
 
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_POST });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_POST });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -1019,9 +1019,9 @@ hello, world
     location /other {
         default_type 'foo/bar';
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.var.request_method)
-            ngx.say(ngx.req.get_body_data())
+            njt.req.read_body()
+            njt.say(njt.var.request_method)
+            njt.say(njt.req.get_body_data())
         ';
     }
 
@@ -1032,12 +1032,12 @@ hello, world
 
     location /lua {
         content_by_lua '
-            ngx.req.read_body()
+            njt.req.read_body()
 
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_PUT });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_PUT });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -1055,7 +1055,7 @@ hello, world
 --- config
     location /t {
         content_by_lua '
-            ngx.location.capture("/t")
+            njt.location.capture("/t")
         ';
     }
 --- request
@@ -1075,10 +1075,10 @@ lua subrequests cycle while processing "/t"
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_OPTIONS });
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_OPTIONS });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -1100,10 +1100,10 @@ OPTIONS
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_OPTIONS, body = "hello world" });
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_OPTIONS, body = "hello world" });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -1120,13 +1120,13 @@ hello world
 --- config
     location /t {
         content_by_lua '
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
-            local res = ngx.location.capture("/sub", { args = args })
-            ngx.print(res.body)
+            local res = njt.location.capture("/sub", { args = args })
+            njt.print(res.body)
         ';
     }
 
@@ -1146,15 +1146,15 @@ r%5B%5D=http%3A%2F%2Fajax.googleapis.com%3A80%2Fajax%2Flibs%2Fjquery%2F1.7.2%2Fj
 --- config
     location /sub {
         content_by_lua '
-            ngx.exit(ngx.ERROR)
+            njt.exit(njt.ERROR)
         ';
     }
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
+            local res = njt.location.capture("/sub")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
         ';
     }
 --- request
@@ -1173,9 +1173,9 @@ body:
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
+            local res = njt.location.capture("/sub")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
         ';
     }
 --- request
@@ -1191,36 +1191,36 @@ body:
     location /sub {
         echo hello world;
         body_filter_by_lua '
-            return ngx.ERROR
+            return njt.ERROR
         ';
     }
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
+            local res = njt.location.capture("/sub")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
         ';
     }
 --- request
 GET /main
 --- stap2
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 --- response_body
@@ -1243,10 +1243,10 @@ F(ngx_http_finalize_request) {
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/memc")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/memc")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -1257,9 +1257,9 @@ GET /main
 "VALUE foo 0 1024\r\nhello world"
 
 --- stap2
-F(ngx_http_lua_capture_body_filter) {
+F(njt_http_lua_capture_body_filter) {
     if (pid() == target() && $r != $r->main) {
-        printf("lua capture body output: %s\n", ngx_chain_dump($in))
+        printf("lua capture body output: %s\n", njt_chain_dump($in))
         if ($in->buf->last_in_chain) {
             print_ubacktrace()
         }
@@ -1267,23 +1267,23 @@ F(ngx_http_lua_capture_body_filter) {
 }
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -1313,10 +1313,10 @@ upstream prematurely closed connection
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/memc")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/memc")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -1327,9 +1327,9 @@ GET /main
 "VALUE foo 0 1024\r\nhello world"
 
 --- stap2
-F(ngx_http_lua_capture_body_filter) {
+F(njt_http_lua_capture_body_filter) {
     if (pid() == target() && $r != $r->main) {
-        printf("lua capture body output: %s\n", ngx_chain_dump($in))
+        printf("lua capture body output: %s\n", njt_chain_dump($in))
         //if ($in->buf->last_in_chain) {
             print_ubacktrace()
         //}
@@ -1337,23 +1337,23 @@ F(ngx_http_lua_capture_body_filter) {
 }
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -1386,10 +1386,10 @@ upstream timed out
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/proxy")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/proxy")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -1400,23 +1400,23 @@ GET /main
 "HTTP/1.0 200 OK\r\nContent-Length: 1024\r\n\r\nhello world"
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -1446,10 +1446,10 @@ upstream prematurely closed connection
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/proxy")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/proxy")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -1460,23 +1460,23 @@ GET /main
 "HTTP/1.0 200 OK\r\nContent-Length: 1024\r\n\r\nhello world"
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -1508,10 +1508,10 @@ upstream timed out
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/proxy")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/proxy")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -1522,23 +1522,23 @@ GET /main
 "HTTP/1.0 200 OK\r\n\r\nhello world"
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -1568,10 +1568,10 @@ truncated: false
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/proxy")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/proxy")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -1582,23 +1582,23 @@ GET /main
 "HTTP/1.0 200 OK\r\n\r\nhello world"
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -1631,10 +1631,10 @@ upstream timed out
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/proxy")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/proxy")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -1645,23 +1645,23 @@ GET /main
 "HTTP/1.0 200 OK\r\n\r\nhello world"
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -1691,10 +1691,10 @@ truncated: false
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/proxy")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/proxy")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -1705,23 +1705,23 @@ GET /main
 "HTTP/1.0 200 OK\r\n\r\nhello world"
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -1754,13 +1754,13 @@ upstream timed out
 
     location /lua {
         content_by_lua '
-            ngx.req.read_body()
+            njt.req.read_body()
 
             for i = 1, 2 do
-                local res = ngx.location.capture("/other",
-                    { method = ngx.HTTP_POST });
+                local res = njt.location.capture("/other",
+                    { method = njt.HTTP_POST });
 
-                ngx.say(res.body)
+                njt.say(res.body)
             end
         ';
     }
@@ -1794,13 +1794,13 @@ hello world
 
     location /lua {
         content_by_lua '
-            ngx.req.read_body()
+            njt.req.read_body()
 
             for i = 1, 2 do
-                local res = ngx.location.capture("/other",
-                    { method = ngx.HTTP_POST });
+                local res = njt.location.capture("/other",
+                    { method = njt.HTTP_POST });
 
-                ngx.say(res.body)
+                njt.say(res.body)
             end
         ';
     }
@@ -1834,13 +1834,13 @@ hello world
         #client_body_in_file_only on;
         client_body_buffer_size 1;
         content_by_lua '
-            ngx.req.read_body()
+            njt.req.read_body()
 
             for i = 1, 2 do
-                local res = ngx.location.capture("/other",
-                    { method = ngx.HTTP_POST });
+                local res = njt.location.capture("/other",
+                    { method = njt.HTTP_POST });
 
-                ngx.say(res.body)
+                njt.say(res.body)
             end
         ';
     }
@@ -1852,7 +1852,7 @@ hello world
 global valid = 0
 global fds
 
-F(ngx_http_handler) { valid = 1  }
+F(njt_http_handler) { valid = 1  }
 
 probe syscall.open {
     if (valid && pid() == target()) {
@@ -1879,15 +1879,15 @@ probe syscall.open.return {
     }
 }
 
-F(ngx_http_lua_subrequest) {
+F(njt_http_lua_subrequest) {
     println("lua subrequest")
 }
 
-F(ngx_output_chain) {
-    printf("output chain: %s\n", ngx_chain_dump($in))
+F(njt_output_chain) {
+    printf("output chain: %s\n", njt_chain_dump($in))
 }
 
-F(ngx_pool_run_cleanup_file) {
+F(njt_pool_run_cleanup_file) {
     println("clean up file: ", $fd)
 }
 
@@ -1917,10 +1917,10 @@ a client request body is buffered to a temporary file
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/proxy")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/proxy")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -1931,23 +1931,23 @@ GET /main
 "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\nb\r\nhello world\r"
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -1980,10 +1980,10 @@ upstream prematurely closed connection
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/proxy")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/proxy")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -1994,23 +1994,23 @@ GET /main
 "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\nb\r\nhello world\r"
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -2041,10 +2041,10 @@ upstream prematurely closed connection
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/proxy")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/proxy")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -2055,23 +2055,23 @@ GET /main
 "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\nb\r\nhello world\r"
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -2103,10 +2103,10 @@ upstream timed out
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/proxy")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/proxy")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -2117,23 +2117,23 @@ GET /main
 "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n"
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -2161,10 +2161,10 @@ truncated: false
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/proxy")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/proxy")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -2175,23 +2175,23 @@ GET /main
 "HTTP/1.1 200 OK\r\nTransfer-Encoding: chunked\r\n\r\n5\r\nhello\r\n0\r\n\r\n"
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -2220,10 +2220,10 @@ truncated: false
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/proxy")
-            ngx.say("status: ", res.status)
-            ngx.say("body: ", res.body)
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/proxy")
+            njt.say("status: ", res.status)
+            njt.say("body: ", res.body)
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -2234,23 +2234,23 @@ GET /main
 "HTTP/1.0 200 OK\r\nContent-Length: 1024\r\n\r\nhello world"
 
 --- stap
-F(ngx_http_upstream_finalize_request) {
+F(njt_http_upstream_finalize_request) {
     printf("upstream fin req: error=%d eof=%d rc=%d\n",
         $r->upstream->peer->connection->read->error,
         $r->upstream->peer->connection->read->eof,
         $rc)
     #print_ubacktrace()
 }
-F(ngx_connection_error) {
+F(njt_connection_error) {
     printf("conn err: %d: %s\n", $err, user_string($text))
     #print_ubacktrace()
 }
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     printf("post subreq: rc=%d, status=%d\n", $rc, $r->headers_out->status)
     #print_ubacktrace()
 }
 /*
-F(ngx_http_finalize_request) {
+F(njt_http_finalize_request) {
     printf("finalize: %d\n", $rc)
 }
 */
@@ -2277,21 +2277,21 @@ upstream prematurely closed connection
     location /lua {
         content_by_lua '
             local methods = {
-                ngx.HTTP_MKCOL,
-                ngx.HTTP_COPY,
-                ngx.HTTP_MOVE,
-                ngx.HTTP_PROPFIND,
-                ngx.HTTP_PROPPATCH,
-                ngx.HTTP_LOCK,
-                ngx.HTTP_UNLOCK,
-                ngx.HTTP_PATCH,
-                ngx.HTTP_TRACE,
+                njt.HTTP_MKCOL,
+                njt.HTTP_COPY,
+                njt.HTTP_MOVE,
+                njt.HTTP_PROPFIND,
+                njt.HTTP_PROPPATCH,
+                njt.HTTP_LOCK,
+                njt.HTTP_UNLOCK,
+                njt.HTTP_PATCH,
+                njt.HTTP_TRACE,
             }
 
             for i, method in ipairs(methods) do
-                local res = ngx.location.capture("/other",
+                local res = njt.location.capture("/other",
                     { method = method })
-                ngx.print(res.body)
+                njt.print(res.body)
             end
         ';
     }
@@ -2318,17 +2318,17 @@ method: TRACE
     location /other {
         default_type 'foo/bar';
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.req.get_body_data())
+            njt.req.read_body()
+            njt.say(njt.req.get_body_data())
         ';
     }
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_DELETE });
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_DELETE });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -2346,18 +2346,18 @@ nil
     location = /other {
         default_type 'foo/bar';
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.req.get_body_data())
+            njt.req.read_body()
+            njt.say(njt.req.get_body_data())
         ';
     }
 
     location /lua {
         content_by_lua '
-            ngx.req.read_body()
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_DELETE, always_forward_body = true });
+            njt.req.read_body()
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_DELETE, always_forward_body = true });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -2375,18 +2375,18 @@ hello world
     location = /other {
         default_type 'foo/bar';
         content_by_lua '
-            ngx.req.read_body()
-            ngx.say(ngx.req.get_body_data())
+            njt.req.read_body()
+            njt.say(njt.req.get_body_data())
         ';
     }
 
     location /lua {
         content_by_lua '
-            ngx.req.read_body()
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_DELETE, always_forward_body = true });
+            njt.req.read_body()
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_DELETE, always_forward_body = true });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -2411,8 +2411,8 @@ hello world
 --- config
     location = /t {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
         ';
     }
     location = /sub {
@@ -2425,11 +2425,11 @@ GET /t
 hello
 world
 --- stap
-F(ngx_http_lua_capture_header_filter) {
+F(njt_http_lua_capture_header_filter) {
     println("capture header filter")
 }
 
-F(ngx_http_lua_capture_body_filter) {
+F(njt_http_lua_capture_body_filter) {
     println("capture body filter")
 }
 
@@ -2455,8 +2455,8 @@ capture body filter
     location /proxy {
         internal;
         rewrite_by_lua "
-          local req = ngx.req
-          print(ngx.var._url)
+          local req = njt.req
+          print(njt.var._url)
 
           for k,v in pairs(req.get_headers()) do
             if k ~= 'content-length' then
@@ -2464,8 +2464,8 @@ capture body filter
             end
           end
 
-          if ngx.ctx.headers then
-            for k,v in pairs(ngx.ctx.headers) do
+          if njt.ctx.headers then
+            for k,v in pairs(njt.ctx.headers) do
               req.set_header(k, v)
             end
           end
@@ -2478,18 +2478,18 @@ capture body filter
     location /first {
       set $_url "";
       content_by_lua '
-        local res = ngx.location.capture("/proxy", {
+        local res = njt.location.capture("/proxy", {
           ctx = {
             headers = {
               ["Content-type"] = "application/x-www-form-urlencoded"
             }
           },
-          vars = { _url = "http://127.0.0.1:" .. ngx.var.server_port .. "/t" }
+          vars = { _url = "http://127.0.0.1:" .. njt.var.server_port .. "/t" }
         })
 
-        ngx.print(res.body)
+        njt.print(res.body)
 
-        local res = ngx.location.capture("/proxy", {
+        local res = njt.location.capture("/proxy", {
           ctx = {
             headers = {
               ["x-some-date"] = "Sun, 01 Dec 2013 11:47:41 GMT",
@@ -2497,10 +2497,10 @@ capture body filter
               ["Authorization"] = "Hello"
             }
           },
-          vars = { _url = "http://127.0.0.1:" .. ngx.var.server_port .. "/t" }
+          vars = { _url = "http://127.0.0.1:" .. njt.var.server_port .. "/t" }
         })
 
-        ngx.print(res.body)
+        njt.print(res.body)
       ';
     }
 --- request
@@ -2525,8 +2525,8 @@ qr/Assertion .*? failed/
     location /proxy {
         internal;
         rewrite_by_lua "
-          local req = ngx.req
-          print(ngx.var._url)
+          local req = njt.req
+          print(njt.var._url)
 
           for k,v in pairs(req.get_headers()) do
             if k ~= 'content-length' then
@@ -2534,8 +2534,8 @@ qr/Assertion .*? failed/
             end
           end
 
-          if ngx.ctx.headers then
-            for k,v in pairs(ngx.ctx.headers) do
+          if njt.ctx.headers then
+            for k,v in pairs(njt.ctx.headers) do
               req.set_header(k, v)
             end
           end
@@ -2548,20 +2548,20 @@ qr/Assertion .*? failed/
     location /second {
       set $_url "";
       content_by_lua '
-        local res = ngx.location.capture("/proxy", {
-          method = ngx.HTTP_POST,
+        local res = njt.location.capture("/proxy", {
+          method = njt.HTTP_POST,
           body = ("x"):rep(600),
           ctx = {
             headers = {
               ["Content-type"] = "application/x-www-form-urlencoded"
             }
           },
-          vars = { _url = "http://127.0.0.1:" .. ngx.var.server_port .. "/t" }
+          vars = { _url = "http://127.0.0.1:" .. njt.var.server_port .. "/t" }
         })
 
-        ngx.print(res.body)
+        njt.print(res.body)
 
-        local res = ngx.location.capture("/proxy", {
+        local res = njt.location.capture("/proxy", {
           ctx = {
             headers = {
               ["x-some-date"] = "Sun, 01 Dec 2013 11:47:41 GMT",
@@ -2569,16 +2569,16 @@ qr/Assertion .*? failed/
               ["Authorization"] = "Hello"
             }
           },
-          vars = { _url = "http://127.0.0.1:" .. ngx.var.server_port .. "/t" }
+          vars = { _url = "http://127.0.0.1:" .. njt.var.server_port .. "/t" }
         })
 
-        ngx.print(res.body)
+        njt.print(res.body)
 
-        local res = ngx.location.capture("/proxy", {
-          vars = { _url = "http://127.0.0.1:" .. ngx.var.server_port .. "/t" }
+        local res = njt.location.capture("/proxy", {
+          vars = { _url = "http://127.0.0.1:" .. njt.var.server_port .. "/t" }
         })
 
-        ngx.print(res.body)
+        njt.print(res.body)
       ';
     }
 --- request
@@ -2604,10 +2604,10 @@ qr/Assertion .*? failed/
 
     location = /t {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
-            ngx.say("pr: User-Agent: ", ngx.var.http_user_agent)
-            ngx.say("pr: Host: ", ngx.var.http_host)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
+            njt.say("pr: User-Agent: ", njt.var.http_user_agent)
+            njt.say("pr: Host: ", njt.var.http_host)
         ';
     }
 --- request
@@ -2629,7 +2629,7 @@ pr: Host: localhost
 --- config
     location = /sub {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", "bar")
+            njt.req.set_header("User-Agent", "bar")
         ';
         echo "sr: User-Agent: $http_user_agent";
         echo "sr: Host: $http_host";
@@ -2637,10 +2637,10 @@ pr: Host: localhost
 
     location = /t {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
-            ngx.say("pr: User-Agent: ", ngx.var.http_user_agent)
-            ngx.say("pr: Host: ", ngx.var.http_host)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
+            njt.say("pr: User-Agent: ", njt.var.http_user_agent)
+            njt.say("pr: Host: ", njt.var.http_host)
         ';
     }
 --- request
@@ -2662,7 +2662,7 @@ pr: Host: localhost
 --- config
     location = /sub {
         rewrite_by_lua '
-            ngx.req.set_header("User-Agent", "bar")
+            njt.req.set_header("User-Agent", "bar")
         ';
         echo "sr: User-Agent: $http_user_agent";
         echo "sr: Host: $http_host";
@@ -2670,10 +2670,10 @@ pr: Host: localhost
 
     location = /t {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
-            ngx.say("pr: User-Agent: ", ngx.var.http_user_agent)
-            ngx.say("pr: Host: ", ngx.var.http_host)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
+            njt.say("pr: User-Agent: ", njt.var.http_user_agent)
+            njt.say("pr: Host: ", njt.var.http_host)
         ';
     }
 --- request
@@ -2700,9 +2700,9 @@ pr: Host: localhost
 
     location = /t {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
-            ngx.say("pr: Cookie: ", ngx.var.http_cookie)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
+            njt.say("pr: Cookie: ", njt.var.http_cookie)
         ';
     }
 --- request
@@ -2728,9 +2728,9 @@ pr: Cookie: foo; bar
 
     location = /t {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
-            ngx.say("pr: Cookie: ", ngx.var.http_cookie)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
+            njt.say("pr: Cookie: ", njt.var.http_cookie)
         ';
     }
 --- request
@@ -2751,10 +2751,10 @@ pr: Cookie: foo; bar
 --- config
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/index.html",
-                { method = ngx.HTTP_HEAD });
-            ngx.say("content-length: ", res.header["Content-Length"])
-            ngx.say("body: [", res.body, "]")
+            local res = njt.location.capture("/index.html",
+                { method = njt.HTTP_HEAD });
+            njt.say("content-length: ", res.header["Content-Length"])
+            njt.say("body: [", res.body, "]")
         ';
     }
 --- request
@@ -2768,8 +2768,8 @@ $
 
 
 
-=== TEST 74: image_filter + ngx.location.capture
-ngx_http_image_filter_module's header filter intercepts
+=== TEST 74: image_filter + njt.location.capture
+njt_http_image_filter_module's header filter intercepts
 the header filter chain so the r->header_sent flag won't
 get set right after the header filter chain is first invoked.
 
@@ -2783,12 +2783,12 @@ location = /t {
     image_filter rotate 90;
 
     content_by_lua '
-        local res = ngx.location.capture("/back")
+        local res = njt.location.capture("/back")
         for k, v in pairs(res.header) do
-            ngx.header[k] = v
+            njt.header[k] = v
         end
-        ngx.status = res.status
-        ngx.print(res.body)
+        njt.status = res.status
+        njt.print(res.body)
     ';
 }
 
@@ -2796,7 +2796,7 @@ location = /t {
 GET /t
 --- response_body_like: .
 --- stap
-F(ngx_http_image_header_filter) {
+F(njt_http_image_header_filter) {
     println("image header filter")
 }
 --- stap_out
@@ -2813,12 +2813,12 @@ image header filter
         content_by_lua_block {
             local file1 = "/file1.txt"
             local file2 = "/file2.txt"
-            ngx.req.set_header( "Destination", file2 )
-            local res = ngx.location.capture(
-                file1, { method = ngx.HTTP_MOVE }
+            njt.req.set_header( "Destination", file2 )
+            local res = njt.location.capture(
+                file1, { method = njt.HTTP_MOVE }
             )
 
-            ngx.say(
+            njt.say(
                 "MOVE ", file1, " -> ", file2,
                 ", response status: ", res.status
             )
@@ -2850,11 +2850,11 @@ MOVE /file1.txt -> /file2.txt, response status: 204
     location = /t {
         content_by_lua_block {
             local file = "/file.txt"
-            local res = ngx.location.capture(
-                file, { method = ngx.HTTP_DELETE }
+            local res = njt.location.capture(
+                file, { method = njt.HTTP_DELETE }
             )
 
-            ngx.say(
+            njt.say(
                 "DELETE ", file,
                 ", response status: ", res.status
             )
@@ -2893,9 +2893,9 @@ DELETE /file.txt, response status: 204
 
         location / {
             content_by_lua_block {
-                ngx.say("method: ", ngx.var.request_method,
-                        ", uri: ", ngx.var.uri,
-                        ", X: ", ngx.var.http_x)
+                njt.say("method: ", njt.var.request_method,
+                        ", uri: ", njt.var.uri,
+                        ", X: ", njt.var.http_x)
             }
         }
     }
@@ -2911,8 +2911,8 @@ DELETE /file.txt, response status: 204
         more_clear_headers Date;
 
         content_by_lua_block {
-            local res = ngx.location.capture("/proxy")
-            ngx.print(res.body)
+            local res = njt.location.capture("/proxy")
+            njt.print(res.body)
         }
     }
 
@@ -2932,22 +2932,22 @@ X: GET /bar HTTP/1.0
 
 ]]
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeout(1000)
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_SERVER_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send req: ", err)
+                njt.say("failed to send req: ", err)
                 return
             end
 
-            ngx.say("req bytes: ", bytes)
+            njt.say("req bytes: ", bytes)
 
             local n_resp = 0
 
@@ -2955,7 +2955,7 @@ X: GET /bar HTTP/1.0
             while true do
                 local line, err = reader()
                 if line then
-                    ngx.say(line)
+                    njt.say(line)
                     if line == "0" then
                         n_resp = n_resp + 1
                     end
@@ -2965,7 +2965,7 @@ X: GET /bar HTTP/1.0
                     end
 
                 else
-                    ngx.say("err: ", err)
+                    njt.say("err: ", err)
                     break
                 end
             end
@@ -3017,8 +3017,8 @@ method: GET, uri: /foo, X: GET /bar HTTP/1.0
 
         location / {
             content_by_lua_block {
-                ngx.say("method: ", ngx.var.request_method,
-                        ", uri: ", ngx.var.uri)
+                njt.say("method: ", njt.var.request_method,
+                        ", uri: ", njt.var.uri)
             }
         }
     }
@@ -3034,9 +3034,9 @@ method: GET, uri: /foo, X: GET /bar HTTP/1.0
         more_clear_headers Date;
 
         content_by_lua_block {
-            ngx.req.read_body()
-            local res = ngx.location.capture("/proxy", { method = ngx.HTTP_POST })
-            ngx.print(res.body)
+            njt.req.read_body()
+            local res = njt.location.capture("/proxy", { method = njt.HTTP_POST })
+            njt.print(res.body)
         }
     }
 
@@ -3062,22 +3062,22 @@ hello
 
 ]]
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeout(1000)
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_SERVER_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send req: ", err)
+                njt.say("failed to send req: ", err)
                 return
             end
 
-            ngx.say("req bytes: ", bytes)
+            njt.say("req bytes: ", bytes)
 
             local n_resp = 0
 
@@ -3085,7 +3085,7 @@ hello
             while true do
                 local line, err = reader()
                 if line then
-                    ngx.say(line)
+                    njt.say(line)
                     if line == "0" then
                         n_resp = n_resp + 1
                     end
@@ -3095,7 +3095,7 @@ hello
                     end
 
                 else
-                    ngx.say("err: ", err)
+                    njt.say("err: ", err)
                     break
                 end
             end
@@ -3147,8 +3147,8 @@ method: POST, uri: /foo
 
         location / {
             content_by_lua_block {
-                ngx.say("method: ", ngx.var.request_method,
-                        ", uri: ", ngx.var.uri)
+                njt.say("method: ", njt.var.request_method,
+                        ", uri: ", njt.var.uri)
             }
         }
     }
@@ -3164,12 +3164,12 @@ method: POST, uri: /foo
         more_clear_headers Date;
 
         content_by_lua_block {
-            ngx.req.read_body()
-            local res = ngx.location.capture("/proxy", {
-                method = ngx.HTTP_POST,
+            njt.req.read_body()
+            local res = njt.location.capture("/proxy", {
+                method = njt.HTTP_POST,
                 always_forward_body = true
             })
-            ngx.print(res.body)
+            njt.print(res.body)
         }
     }
 
@@ -3195,22 +3195,22 @@ hello
 
 ]]
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeout(1000)
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_SERVER_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send req: ", err)
+                njt.say("failed to send req: ", err)
                 return
             end
 
-            ngx.say("req bytes: ", bytes)
+            njt.say("req bytes: ", bytes)
 
             local n_resp = 0
 
@@ -3218,7 +3218,7 @@ hello
             while true do
                 local line, err = reader()
                 if line then
-                    ngx.say(line)
+                    njt.say(line)
                     if line == "0" then
                         n_resp = n_resp + 1
                     end
@@ -3228,7 +3228,7 @@ hello
                     end
 
                 else
-                    ngx.say("err: ", err)
+                    njt.say("err: ", err)
                     break
                 end
             end
@@ -3280,8 +3280,8 @@ method: POST, uri: /foo
 
         location / {
             content_by_lua_block {
-                ngx.say("method: ", ngx.var.request_method,
-                        ", uri: ", ngx.var.uri)
+                njt.say("method: ", njt.var.request_method,
+                        ", uri: ", njt.var.uri)
             }
         }
     }
@@ -3297,13 +3297,13 @@ method: POST, uri: /foo
         more_clear_headers Date;
 
         content_by_lua_block {
-            ngx.req.read_body()
-            local res = ngx.location.capture("/proxy", {
-                method = ngx.HTTP_POST,
+            njt.req.read_body()
+            local res = njt.location.capture("/proxy", {
+                method = njt.HTTP_POST,
                 always_forward_body = true,
-                body = ngx.req.get_body_data()
+                body = njt.req.get_body_data()
             })
-            ngx.print(res.body)
+            njt.print(res.body)
         }
     }
 
@@ -3329,22 +3329,22 @@ hello
 
 ]]
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeout(1000)
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_SERVER_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send req: ", err)
+                njt.say("failed to send req: ", err)
                 return
             end
 
-            ngx.say("req bytes: ", bytes)
+            njt.say("req bytes: ", bytes)
 
             local n_resp = 0
 
@@ -3352,7 +3352,7 @@ hello
             while true do
                 local line, err = reader()
                 if line then
-                    ngx.say(line)
+                    njt.say(line)
                     if line == "0" then
                         n_resp = n_resp + 1
                     end
@@ -3362,7 +3362,7 @@ hello
                     end
 
                 else
-                    ngx.say("err: ", err)
+                    njt.say("err: ", err)
                     break
                 end
             end
@@ -3408,7 +3408,7 @@ method: POST, uri: /foo
 
     location /lua {
         content_by_lua_block {
-            local res = ngx.location.capture("/other",
+            local res = njt.location.capture("/other",
                 { method = 10240 });
         }
     }
@@ -3433,9 +3433,9 @@ unsupported HTTP method: 10240
 
         location / {
             content_by_lua_block {
-                ngx.say("method: ", ngx.var.request_method,
-                        ", uri: ", ngx.var.uri,
-                        ", X: ", ngx.var.http_x)
+                njt.say("method: ", njt.var.request_method,
+                        ", uri: ", njt.var.uri,
+                        ", X: ", njt.var.http_x)
             }
         }
     }
@@ -3451,8 +3451,8 @@ unsupported HTTP method: 10240
         more_clear_headers Date;
 
         content_by_lua_block {
-            local res = ngx.location.capture("/proxy")
-            ngx.print(res.body)
+            local res = njt.location.capture("/proxy")
+            njt.print(res.body)
         }
     }
 
@@ -3472,22 +3472,22 @@ X: GET /bar HTTP/1.0
 
 ]]
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeout(1000)
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_SERVER_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send req: ", err)
+                njt.say("failed to send req: ", err)
                 return
             end
 
-            ngx.say("req bytes: ", bytes)
+            njt.say("req bytes: ", bytes)
 
             local n_resp = 0
 
@@ -3495,7 +3495,7 @@ X: GET /bar HTTP/1.0
             while true do
                 local line, err = reader()
                 if line then
-                    ngx.say(line)
+                    njt.say(line)
                     if line == "0" then
                         n_resp = n_resp + 1
                     end
@@ -3505,7 +3505,7 @@ X: GET /bar HTTP/1.0
                     end
 
                 else
-                    ngx.say("err: ", err)
+                    njt.say("err: ", err)
                     break
                 end
             end

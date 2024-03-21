@@ -21,12 +21,12 @@ __DATA__
 --- config
     location /test {
         rewrite_by_lua '
-            ngx.update_time()
-            local before = ngx.now()
-            ngx.sleep(0.5)
-            local now = ngx.now()
-            ngx.say(now - before)
-            ngx.exit(200)
+            njt.update_time()
+            local before = njt.now()
+            njt.sleep(0.5)
+            local now = njt.now()
+            njt.say(now - before)
+            njt.exit(200)
         ';
     }
 --- request
@@ -43,12 +43,12 @@ lua sleep timer expired: "/test?"
 --- config
     location /test {
         rewrite_by_lua '
-            ngx.update_time()
-            local before = ngx.now()
-            ngx.sleep("a")
-            local now = ngx.now()
-            ngx.say(now - before)
-            ngx.exit(200)
+            njt.update_time()
+            local before = njt.now()
+            njt.sleep("a")
+            local now = njt.now()
+            njt.say(now - before)
+            njt.exit(200)
         ';
     }
 --- request
@@ -64,17 +64,17 @@ bad argument #1 to 'sleep'
 --- config
     location /test {
         rewrite_by_lua '
-            ngx.update_time()
-            local before = ngx.now()
-            ngx.location.capture("/sleep")
-            local now = ngx.now()
+            njt.update_time()
+            local before = njt.now()
+            njt.location.capture("/sleep")
+            local now = njt.now()
             local delay = now - before
-            ngx.say(delay)
-            ngx.exit(200)
+            njt.say(delay)
+            njt.exit(200)
         ';
     }
     location /sleep {
-        rewrite_by_lua 'ngx.sleep(0.5) ngx.exit(200)';
+        rewrite_by_lua 'njt.sleep(0.5) njt.exit(200)';
     }
 --- request
 GET /test
@@ -92,13 +92,13 @@ lua sleep timer expired: "/sleep?"
 --- config
     location /test {
         rewrite_by_lua '
-            local res = ngx.location.capture("/sleep");
-            ngx.say(res.status)
-            ngx.exit(200)
+            local res = njt.location.capture("/sleep");
+            njt.say(res.status)
+            njt.exit(200)
         ';
     }
     location /sleep {
-        rewrite_by_lua 'ngx.sleep("a") ngx.exit(200)';
+        rewrite_by_lua 'njt.sleep("a") njt.exit(200)';
     }
 --- request
 GET /test
@@ -113,13 +113,13 @@ bad argument #1 to 'sleep'
 --- config
     location /test {
         rewrite_by_lua '
-            ngx.update_time()
-            local start = ngx.now()
-            ngx.sleep(0.3)
-            ngx.sleep(0.3)
-            ngx.sleep(0.3)
-            ngx.say(ngx.now() - start)
-            ngx.exit(200)
+            njt.update_time()
+            local start = njt.now()
+            njt.sleep(0.3)
+            njt.sleep(0.3)
+            njt.sleep(0.3)
+            njt.say(njt.now() - start)
+            njt.exit(200)
         ';
     }
 --- request
@@ -134,17 +134,17 @@ lua sleep timer expired: "/test?"
 
 
 
-=== TEST 6: sleep 0.5 - interleaved by ngx.say() - ended by ngx.sleep
+=== TEST 6: sleep 0.5 - interleaved by njt.say() - ended by njt.sleep
 --- config
     location /test {
         rewrite_by_lua '
-            ngx.send_headers()
-            -- ngx.location.capture("/sleep")
-            ngx.sleep(1)
-            ngx.say("blah")
-            ngx.sleep(1)
-            -- ngx.location.capture("/sleep")
-            ngx.exit(200)
+            njt.send_headers()
+            -- njt.location.capture("/sleep")
+            njt.sleep(1)
+            njt.say("blah")
+            njt.sleep(1)
+            -- njt.location.capture("/sleep")
+            njt.exit(200)
         ';
     }
     location = /sleep {
@@ -162,18 +162,18 @@ lua sleep timer expired: "/test?"
 
 
 
-=== TEST 7: sleep 0.5 - interleaved by ngx.say() - not ended by ngx.sleep
+=== TEST 7: sleep 0.5 - interleaved by njt.say() - not ended by njt.sleep
 --- config
     location /test {
         rewrite_by_lua '
-            ngx.send_headers()
-            -- ngx.location.capture("/sleep")
-            ngx.sleep(0.3)
-            ngx.say("blah")
-            ngx.sleep(0.5)
-            -- ngx.location.capture("/sleep")
-            ngx.say("hiya")
-            ngx.exit(200)
+            njt.send_headers()
+            -- njt.location.capture("/sleep")
+            njt.sleep(0.3)
+            njt.say("blah")
+            njt.sleep(0.5)
+            -- njt.location.capture("/sleep")
+            njt.say("hiya")
+            njt.exit(200)
         ';
     }
     location = /sleep {
@@ -192,18 +192,18 @@ lua sleep timer expired: "/test?"
 
 
 
-=== TEST 8: ngx.location.capture before and after ngx.sleep
+=== TEST 8: njt.location.capture before and after njt.sleep
 --- config
     location /test {
         rewrite_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
 
-            ngx.sleep(0.1)
+            njt.sleep(0.1)
 
-            res = ngx.location.capture("/sub")
-            ngx.print(res.body)
-            ngx.exit(200)
+            res = njt.location.capture("/sub")
+            njt.print(res.body)
+            njt.exit(200)
         ';
     }
     location = /hello {

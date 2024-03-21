@@ -22,19 +22,19 @@ __DATA__
 === TEST 1: sanity
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
         if sock then
-            ngx.say("got the request socket")
+            njt.say("got the request socket")
         else
-            ngx.say("failed to get the request socket: ", err)
+            njt.say("failed to get the request socket: ", err)
         end
 
         for i = 1, 3 do
             local data, err, part = sock:receive(5)
             if data then
-                ngx.say("received: ", data)
+                njt.say("received: ", data)
             else
-                ngx.say("failed to receive: ", err, " [", part, "]")
+                njt.say("failed to receive: ", err, " [", part, "]")
             end
         end
     }
@@ -53,11 +53,11 @@ received: d! my
 === TEST 2: multipart rfc sample (just partial streaming)
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
         if sock then
-            ngx.say("got the request socket")
+            njt.say("got the request socket")
         else
-            ngx.say("failed to get the request socket: ", err)
+            njt.say("failed to get the request socket: ", err)
         end
 
         local boundary = "simple boundary"
@@ -67,9 +67,9 @@ received: d! my
 
         local data, err, part = read_to_boundary()
         if data then
-            ngx.say("preamble: [" .. data .. "]")
+            njt.say("preamble: [" .. data .. "]")
         else
-            ngx.say("failed to read the first boundary: ", err)
+            njt.say("failed to read the first boundary: ", err)
             return
         end
 
@@ -80,13 +80,13 @@ received: d! my
             local line, err = read_line()
 
             if not line then
-                ngx.say("failed to read post-boundary line: ", err)
+                njt.say("failed to read post-boundary line: ", err)
                 return
             end
 
-            m = ngx.re.match(line, "--$", "jo")
+            m = njt.re.match(line, "--$", "jo")
             if m then
-                ngx.say("found the end of the stream")
+                njt.say("found the end of the stream")
                 sock:receive() -- consume the epiloque.
                 return
             end
@@ -94,7 +94,7 @@ received: d! my
             while true do
                 local line, err = read_line()
                 if not line then
-                    ngx.say("failed to read part ", i, " header: ", err)
+                    njt.say("failed to read part ", i, " header: ", err)
                     return
                 end
 
@@ -103,14 +103,14 @@ received: d! my
                     break
                 end
 
-                ngx.say("part ", i, " header: [", line, "]")
+                njt.say("part ", i, " header: [", line, "]")
             end
 
             local data, err, part = read_to_boundary()
             if data then
-                ngx.say("part ", i, " body: [" .. data .. "]")
+                njt.say("part ", i, " body: [" .. data .. "]")
             else
-                ngx.say("failed to read part ", i + 1, " boundary: ", err)
+                njt.say("failed to read part ", i + 1, " boundary: ", err)
                 return
             end
 
@@ -154,11 +154,11 @@ found the end of the stream
 === TEST 3: multipart rfc sample (completely streaming)
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
         if sock then
-            ngx.say("got the request socket")
+            njt.say("got the request socket")
         else
-            ngx.say("failed to get the request socket: ", err)
+            njt.say("failed to get the request socket: ", err)
         end
 
         local boundary = "simple boundary"
@@ -176,19 +176,19 @@ found the end of the stream
                 break
 
             else
-                ngx.say("failed to read the first boundary: ", err)
+                njt.say("failed to read the first boundary: ", err)
                 return
             end
         end
 
-        ngx.say("preamble: [" .. preamble .. "]")
+        njt.say("preamble: [" .. preamble .. "]")
 
         local i = 1
         while true do
             local line, err = read_line(50)
 
             if not line and err then
-                ngx.say("1: failed to read post-boundary line: ", err)
+                njt.say("1: failed to read post-boundary line: ", err)
                 return
             end
 
@@ -196,18 +196,18 @@ found the end of the stream
                 local dummy
                 dummy, err = read_line(1)
                 if err then
-                    ngx.say("2: failed to read post-boundary line: ", err)
+                    njt.say("2: failed to read post-boundary line: ", err)
                     return
                 end
 
                 if dummy then
-                    ngx.say("bad post-boundary line: ", dummy)
+                    njt.say("bad post-boundary line: ", dummy)
                     return
                 end
 
-                m = ngx.re.match(line, "--$", "jo")
+                m = njt.re.match(line, "--$", "jo")
                 if m then
-                    ngx.say("found the end of the stream")
+                    njt.say("found the end of the stream")
                     sock:receive() -- consume the epiloque.
                     return
                 end
@@ -216,14 +216,14 @@ found the end of the stream
             while true do
                 local line, err = read_line(50)
                 if not line and err then
-                    ngx.say("failed to read part ", i, " header: ", err)
+                    njt.say("failed to read part ", i, " header: ", err)
                     return
                 end
 
                 if line then
                     local line, err = read_line(1)
                     if line or err then
-                        ngx.say("error")
+                        njt.say("error")
                         return
                     end
                 end
@@ -233,7 +233,7 @@ found the end of the stream
                     break
                 end
 
-                ngx.say("part ", i, " header: [", line, "]")
+                njt.say("part ", i, " header: [", line, "]")
             end
 
             local body = ""
@@ -244,7 +244,7 @@ found the end of the stream
                     body = body .. data
 
                 elseif err then
-                    ngx.say("failed to read part ", i + 1, " boundary: ", err)
+                    njt.say("failed to read part ", i + 1, " boundary: ", err)
                     return
 
                 else
@@ -252,7 +252,7 @@ found the end of the stream
                 end
             end
 
-            ngx.say("part ", i, " body: [" .. body .. "]")
+            njt.say("part ", i, " body: [" .. body .. "]")
 
             i = i + 1
         end
@@ -298,7 +298,7 @@ found the end of the stream
     content_by_lua_block {
         local test = require "test"
         test.go()
-        ngx.say("done")
+        njt.say("done")
     }
 --- user_files
 >>> test.lua
@@ -308,19 +308,19 @@ local sock, err
 
 function go()
     if not sock then
-        sock, err = ngx.req.socket()
+        sock, err = njt.req.socket()
         if sock then
-            ngx.say("got the request socket")
+            njt.say("got the request socket")
         else
-            ngx.say("failed to get the request socket: ", err)
+            njt.say("failed to get the request socket: ", err)
         end
     else
         for i = 1, 3 do
             local data, err, part = sock:receive(5)
             if data then
-                ngx.say("received: ", data)
+                njt.say("received: ", data)
             else
-                ngx.say("failed to receive: ", err, " [", part, "]")
+                njt.say("failed to receive: ", err, " [", part, "]")
             end
         end
     end
@@ -348,43 +348,43 @@ See https://groups.google.com/group/openresty/browse_thread/thread/43cf01da3c681
 module("test", package.seeall)
 
 function go()
-   local sock, err = ngx.req.socket()
+   local sock, err = njt.req.socket()
    if sock then
-      ngx.say("got the request socket")
+      njt.say("got the request socket")
    else
-      ngx.say("failed to get the request socket: ", err)
+      njt.say("failed to get the request socket: ", err)
       return
    end
 
    local data, err, part = sock:receive(56)
    if data then
-      ngx.say("received: ", data)
+      njt.say("received: ", data)
    else
-      ngx.say("failed to receive: ", err, " [", part, "]")
+      njt.say("failed to receive: ", err, " [", part, "]")
    end
 
    local discard_line = sock:receiveuntil('\r\n')
 
    local data, err, part = discard_line(8192)
    if data then
-      ngx.say("received len: ", #data)
+      njt.say("received len: ", #data)
    else
-      ngx.say("failed to receive: ", err, " [", part, "]")
+      njt.say("failed to receive: ", err, " [", part, "]")
    end
 
    local data, err, part = discard_line(1)
    if data then
-      ngx.say("received: ", data)
+      njt.say("received: ", data)
    else
-      ngx.say("failed to receive: ", err, " [", part, "]")
+      njt.say("failed to receive: ", err, " [", part, "]")
    end
 
-   ngx.say("done")
-   ngx.flush(true)
+   njt.say("done")
+   njt.flush(true)
 
    local res, err = sock:shutdown('send')
    if not res then
-       ngx.log(ngx.ERR, "server: failed to shutdown: ", err)
+       njt.log(njt.ERR, "server: failed to shutdown: ", err)
        return
    end
 end
@@ -409,27 +409,27 @@ done
     content_by_lua_block {
         local test = require "test"
         test.go()
-        ngx.say("done")
+        njt.say("done")
     }
 --- user_files
 >>> test.lua
 module("test", package.seeall)
 
 function go()
-   local sock, err = ngx.req.socket()
+   local sock, err = njt.req.socket()
    if sock then
-      ngx.say("got the request socket")
+      njt.say("got the request socket")
    else
-      ngx.say("failed to get the request socket: ", err)
+      njt.say("failed to get the request socket: ", err)
       return
    end
 
    for i = 1, 5 do
        local data, err, part = sock:receive(4)
        if data then
-          ngx.say("received: ", data)
+          njt.say("received: ", data)
        else
-          ngx.say("failed to receive: ", err, " [", part, "]")
+          njt.say("failed to receive: ", err, " [", part, "]")
           return
        end
    end
@@ -453,19 +453,19 @@ done
 --- stream_server_config
     lua_socket_buffer_size 5;
     content_by_lua_block {
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
         if sock then
-            ngx.say("got the request socket")
+            njt.say("got the request socket")
         else
-            ngx.say("failed to get the request socket: ", err)
+            njt.say("failed to get the request socket: ", err)
         end
 
         for i = 1, 11 do
             local data, err, part = sock:receive(2)
             if data then
-                ngx.say("received: ", data)
+                njt.say("received: ", data)
             else
-                ngx.say("failed to receive: ", err, " [", part, "]")
+                njt.say("failed to receive: ", err, " [", part, "]")
             end
         end
     }
@@ -499,10 +499,10 @@ received: be
 === TEST 8: failing reread after reading timeout happens
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
 
         if not sock then
-           ngx.say("failed to get socket: ", err)
+           njt.say("failed to get socket: ", err)
            return nil
         end
 
@@ -510,12 +510,12 @@ received: be
 
         local data, err, partial = sock:receive(4096)
         if err then
-           ngx.say("err: ", err, ", partial: ", partial)
+           njt.say("err: ", err, ", partial: ", partial)
         end
 
         local data, err, partial = sock:receive(4096)
         if err then
-           ngx.say("err: ", err, ", partial: ", partial)
+           njt.say("err: ", err, ", partial: ", partial)
            return
         end
     }
@@ -534,43 +534,43 @@ stream lua tcp socket read timed out
 === TEST 9: successful reread after reading timeout happens (receive -> receive)
 --- stream_server_config
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_SERVER_PORT)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
         local bytes, err = sock:send("POST /back HTTP/1.0\r\nHost: localhost\r\nContent-Length: 1024\r\n\r\nabc")
         if not bytes then
-            ngx.say("failed to send: ", err)
+            njt.say("failed to send: ", err)
         else
-            ngx.say("sent: ", bytes)
+            njt.say("sent: ", bytes)
         end
 
-        ngx.sleep(0.2)
+        njt.sleep(0.2)
 
         local bytes, err = sock:send("hello world")
         if not bytes then
-            ngx.say("failed to send: ", err)
+            njt.say("failed to send: ", err)
         else
-            ngx.say("sent: ", bytes)
+            njt.say("sent: ", bytes)
         end
 
         local reader = sock:receiveuntil("\r\n\r\n")
         local header, err = reader()
         if not header then
-            ngx.say("failed to receive header: ", err)
+            njt.say("failed to receive header: ", err)
             return
         end
 
         for i = 1, 2 do
             local line, err = sock:receive()
             if not line then
-                ngx.say("failed to receive line: ", err)
+                njt.say("failed to receive line: ", err)
                 return
             end
-            ngx.say("received: ", line)
+            njt.say("received: ", line)
         end
     }
 
@@ -578,13 +578,13 @@ stream lua tcp socket read timed out
     location = /back {
         lua_socket_log_errors on;
         content_by_lua_block {
-            ngx.send_headers()
-            ngx.flush(true)
+            njt.send_headers()
+            njt.flush(true)
 
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
 
             if not sock then
-               ngx.say("failed to get socket: ", err)
+               njt.say("failed to get socket: ", err)
                return nil
             end
 
@@ -592,19 +592,19 @@ stream lua tcp socket read timed out
 
             local data, err, partial = sock:receive(4096)
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                ngx.say("err: ", err, ", partial: ", partial)
+                njt.log(njt.ERR, "err: ", err)
+                njt.say("err: ", err, ", partial: ", partial)
             else
-                ngx.say("received: ", data)
+                njt.say("received: ", data)
             end
 
-            ngx.sleep(0.1)
+            njt.sleep(0.1)
 
             local data, err, partial = sock:receive(11)
             if err then
-               ngx.say("err: ", err, ", partial: ", partial)
+               njt.say("err: ", err, ", partial: ", partial)
             else
-                ngx.say("received: ", data)
+                njt.say("received: ", data)
             end
         }
     }
@@ -623,43 +623,43 @@ lua tcp socket read timed out
 === TEST 10: successful reread after reading timeout happens (receive -> receiveuntil)
 --- stream_server_config
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_SERVER_PORT)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
         local bytes, err = sock:send("POST /back HTTP/1.0\r\nHost: localhost\r\nContent-Length: 1024\r\n\r\nabc")
         if not bytes then
-            ngx.say("failed to send: ", err)
+            njt.say("failed to send: ", err)
         else
-            ngx.say("sent: ", bytes)
+            njt.say("sent: ", bytes)
         end
 
-        ngx.sleep(0.2)
+        njt.sleep(0.2)
 
         local bytes, err = sock:send("hello world\n")
         if not bytes then
-            ngx.say("failed to send: ", err)
+            njt.say("failed to send: ", err)
         else
-            ngx.say("sent: ", bytes)
+            njt.say("sent: ", bytes)
         end
 
         local reader = sock:receiveuntil("\r\n\r\n")
         local header, err = reader()
         if not header then
-            ngx.say("failed to receive header: ", err)
+            njt.say("failed to receive header: ", err)
             return
         end
 
         for i = 1, 2 do
             local line, err = sock:receive()
             if not line then
-                ngx.say("failed to receive line: ", err)
+                njt.say("failed to receive line: ", err)
                 return
             end
-            ngx.say("received: ", line)
+            njt.say("received: ", line)
         end
     }
 
@@ -667,13 +667,13 @@ lua tcp socket read timed out
     location = /back {
         lua_socket_log_errors on;
         content_by_lua_block {
-            ngx.send_headers()
-            ngx.flush(true)
+            njt.send_headers()
+            njt.flush(true)
 
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
 
             if not sock then
-               ngx.say("failed to get socket: ", err)
+               njt.say("failed to get socket: ", err)
                return nil
             end
 
@@ -681,19 +681,19 @@ lua tcp socket read timed out
 
             local data, err, partial = sock:receive(4096)
             if err then
-               ngx.say("err: ", err, ", partial: ", partial)
+               njt.say("err: ", err, ", partial: ", partial)
             else
-                ngx.say("received: ", data)
+                njt.say("received: ", data)
             end
 
-            ngx.sleep(0.1)
+            njt.sleep(0.1)
 
             local reader = sock:receiveuntil("\n")
             local data, err, partial = reader()
             if err then
-               ngx.say("err: ", err, ", partial: ", partial)
+               njt.say("err: ", err, ", partial: ", partial)
             else
-                ngx.say("received: ", data)
+                njt.say("received: ", data)
             end
         }
     }
@@ -712,43 +712,43 @@ lua tcp socket read timed out
 === TEST 11: successful reread after reading timeout happens (receiveuntil -> receive)
 --- stream_server_config
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_SERVER_PORT)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
         local bytes, err = sock:send("POST /back HTTP/1.0\r\nHost: localhost\r\nContent-Length: 1024\r\n\r\nabc")
         if not bytes then
-            ngx.say("failed to send: ", err)
+            njt.say("failed to send: ", err)
         else
-            ngx.say("sent: ", bytes)
+            njt.say("sent: ", bytes)
         end
 
-        ngx.sleep(0.2)
+        njt.sleep(0.2)
 
         local bytes, err = sock:send("hello world\n")
         if not bytes then
-            ngx.say("failed to send: ", err)
+            njt.say("failed to send: ", err)
         else
-            ngx.say("sent: ", bytes)
+            njt.say("sent: ", bytes)
         end
 
         local reader = sock:receiveuntil("\r\n\r\n")
         local header, err = reader()
         if not header then
-            ngx.say("failed to receive header: ", err)
+            njt.say("failed to receive header: ", err)
             return
         end
 
         for i = 1, 2 do
             local line, err = sock:receive()
             if not line then
-                ngx.say("failed to receive line: ", err)
+                njt.say("failed to receive line: ", err)
                 return
             end
-            ngx.say("received: ", line)
+            njt.say("received: ", line)
         end
     }
 
@@ -756,13 +756,13 @@ lua tcp socket read timed out
     location = /back {
         lua_socket_log_errors on;
         content_by_lua_block {
-            ngx.send_headers()
-            ngx.flush(true)
+            njt.send_headers()
+            njt.flush(true)
 
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
 
             if not sock then
-               ngx.say("failed to get socket: ", err)
+               njt.say("failed to get socket: ", err)
                return nil
             end
 
@@ -771,18 +771,18 @@ lua tcp socket read timed out
             local reader = sock:receiveuntil("no-such-terminator")
             local data, err, partial = reader()
             if not data then
-               ngx.say("err: ", err, ", partial: ", partial)
+               njt.say("err: ", err, ", partial: ", partial)
             else
-                ngx.say("received: ", data)
+                njt.say("received: ", data)
             end
 
-            ngx.sleep(0.1)
+            njt.sleep(0.1)
 
             local data, err, partial = sock:receive()
             if err then
-               ngx.say("err: ", err, ", partial: ", partial)
+               njt.say("err: ", err, ", partial: ", partial)
             else
-                ngx.say("received: ", data)
+                njt.say("received: ", data)
             end
         }
     }
@@ -802,17 +802,17 @@ lua tcp socket read timed out
 --- stream_server_config
     content_by_lua_block {
         do
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
             if sock then
-                ngx.say("got the request socket")
+                njt.say("got the request socket")
             else
-                ngx.say("failed to get the request socket: ", err)
+                njt.say("failed to get the request socket: ", err)
             end
         end
         collectgarbage()
-        ngx.log(ngx.WARN, "GC cycle done")
+        njt.log(njt.WARN, "GC cycle done")
 
-        ngx.say("done")
+        njt.say("done")
     }
 --- stream_response
 got the request socket
@@ -830,22 +830,22 @@ GC cycle done
 --- stream_server_config
 
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
-        ngx.log(ngx.INFO, "Got raw req socket")
+        njt.log(njt.INFO, "Got raw req socket")
         local data, err = sock:receiveany(500)
         if not data then
-            ngx.log(ngx.ERR, "server: failed to receive: ", err)
+            njt.log(njt.ERR, "server: failed to receive: ", err)
             return
         end
-        ngx.log(ngx.INFO, "Got: ", #data, " bytes")
+        njt.log(njt.INFO, "Got: ", #data, " bytes")
 
         local bytes, err = sock:send("1: received: " .. data .. "\n")
         if not bytes then
-            ngx.log(ngx.ERR, "server: failed to send: ", err)
+            njt.log(njt.ERR, "server: failed to send: ", err)
             return
         end
     }
@@ -865,40 +865,40 @@ Got: 5 bytes
 === TEST 14: receiveany small block size for a big size block
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
         sock:settimeouts(500, 100, 500)
-        ngx.sleep(0.2)
-        ngx.log(ngx.INFO, 'receiveany every 3 bytes per read ...')
+        njt.sleep(0.2)
+        njt.log(njt.INFO, 'receiveany every 3 bytes per read ...')
         local i = 0
         while true do
             i = i + 1
-            ngx.log(ngx.INFO, 'reading: ', i)
+            njt.log(njt.INFO, 'reading: ', i)
             local data, err = sock:receiveany(3)
             if not data then
                 if err == 'closed' then
-                    ngx.log(ngx.INFO, 'client closed')
+                    njt.log(njt.INFO, 'client closed')
                     break
                 end
                 if err == 'timeout' then
-                    ngx.log(ngx.INFO, 'client timeout, considered as closed')
+                    njt.log(njt.INFO, 'client timeout, considered as closed')
                     break
                 end
-                ngx.log(ngx.ERR, 'server receiveany error: ', err)
+                njt.log(njt.ERR, 'server receiveany error: ', err)
                 break
             end
             if i == 1 then
-                ngx.log(ngx.INFO, 'send back ok ...')
+                njt.log(njt.INFO, 'send back ok ...')
                 local ok, err = sock:send("ok\n")
                 if not ok then
-                    ngx.log(ngx.ERR, "failed to send: ", err)
+                    njt.log(njt.ERR, "failed to send: ", err)
                     return
                 end
             end
-            ngx.log(ngx.INFO, "Time ", i, " - got ", #data, " bytes: ", data)
+            njt.log(njt.INFO, "Time ", i, " - got ", #data, " bytes: ", data)
             sock:send("receive: " .. data .. "\n")
         end
     }
@@ -926,9 +926,9 @@ client timeout
 === TEST 15: receiveany with limited, max <= 0
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if sock == nil then
-            ngx.log(ngx.ERR, 'raw req socket error: ', err)
+            njt.log(njt.ERR, 'raw req socket error: ', err)
             return
         end
         sock:settimeouts(500, 500, 500)
@@ -936,7 +936,7 @@ client timeout
         local function receiveany_log_err(...)
             local ok, err = pcall(sock.receiveany, sock, ...)
             if not ok then
-                ngx.log(ngx.ERR, 'failed receiveany ', err)
+                njt.log(njt.ERR, 'failed receiveany ', err)
             end
         end
 
@@ -959,9 +959,9 @@ bad argument #2 to '?' (bad max argument)
 === TEST 16: receiveany send data after read side timeout
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if sock == nil then
-            ngx.log(ngx.ERR, 'failed to get raw req socket', err)
+            njt.log(njt.ERR, 'failed to get raw req socket', err)
             return
         end
         sock:settimeouts(500, 500, 500)
@@ -971,29 +971,29 @@ bad argument #2 to '?' (bad max argument)
             data, err = sock:receiveany(1024)
             if err then
                 if err ~= 'closed' then
-                    ngx.log(ngx.ERR, 'receiveany unexpected err: ', err)
+                    njt.log(njt.ERR, 'receiveany unexpected err: ', err)
                     break
                 end
 
                 data = "send data after read side closed"
                 bytes, err = sock:send(data)
                 if not bytes then
-                    ngx.log(ngx.ERR, 'failed to send after error ',err)
+                    njt.log(njt.ERR, 'failed to send after error ',err)
                 end
 
                 break
             end
-            ngx.say(data)
+            njt.say(data)
         end
 
         local bytes, err2 = sock:send("send data after read side ")
         if not bytes then
-            ngx.log(ngx.ERR, "failed to send: ", err2)
+            njt.log(njt.ERR, "failed to send: ", err2)
         end
 
         local bytes, err2 = sock:send(err)
         if not bytes then
-            ngx.log(ngx.ERR, "failed to send: ", err2)
+            njt.log(njt.ERR, "failed to send: ", err2)
         end
     }
 --- stream_response chomp

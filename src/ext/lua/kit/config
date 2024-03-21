@@ -7,7 +7,7 @@
 # TODO : an optional patch function
 
 ndk_generate_files() {
-    echo "building Nginx Development Kit utility functions and macros ..."
+    echo "building NJet Development Kit utility functions and macros ..."
 
     autobuild="$njt_addon_dir/auto/build"
     chmod +x $autobuild
@@ -15,11 +15,11 @@ ndk_generate_files() {
 }
 
 ndk_get_njet_version() {
-    # We get the Nginx version number from the string form rather than
+    # We get the NJet version number from the string form rather than
     # njet_version because it is available in more (every?) version
 
     cat src/core/njet.h                                |
-    grep  '#define NGINX_VERSION'                       |
+    grep  '#define NJET_VERSION'                       |
     sed -r                                              \
         -e 's/[^0-9.]*([0-9.]+).*/\1/'                  \
         -e 's/([0-9]+\.[0-9]+\.)([0-9]{1})$/\100\2/'    \

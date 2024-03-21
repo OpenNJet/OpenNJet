@@ -19,11 +19,11 @@ __DATA__
 === TEST 1: matched with d
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello", "(he|hell)", "d")
+        m = njt.re.match("hello", "(he|hell)", "d")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -34,11 +34,11 @@ hell
 === TEST 2: matched with d + j
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello", "(he|hell)", "jd")
+        m = njt.re.match("hello", "(he|hell)", "jd")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -49,11 +49,11 @@ hell
 === TEST 3: not matched with j
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("world", "(he|hell)", "d")
+        m = njt.re.match("world", "(he|hell)", "d")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -64,13 +64,13 @@ not matched!
 === TEST 4: matched with do
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello", "he|hell", "do")
+        m = njt.re.match("hello", "he|hell", "do")
         if m then
-            ngx.say(m[0])
-            ngx.say(m[1])
-            ngx.say(m[2])
+            njt.say(m[0])
+            njt.say(m[1])
+            njt.say(m[2])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -83,11 +83,11 @@ nil
 === TEST 5: not matched with do
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("world", "([0-9]+)", "do")
+        m = njt.re.match("world", "([0-9]+)", "do")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -98,11 +98,11 @@ not matched!
 === TEST 6: UTF-8 mode without UTF-8 sequence checks
 --- stream_server_config
     content_by_lua_block {
-        local m = ngx.re.match("你好", ".", "Ud")
+        local m = njt.re.match("你好", ".", "Ud")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stap
@@ -128,11 +128,11 @@ exec opts: 2000
 === TEST 7: UTF-8 mode with UTF-8 sequence checks
 --- stream_server_config
     content_by_lua_block {
-        local m = ngx.re.match("你好", ".", "ud")
+        local m = njt.re.match("你好", ".", "ud")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stap

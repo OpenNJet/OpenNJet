@@ -20,11 +20,11 @@ __DATA__
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, 1234 5678", "[0-9]|[0-9][0-9]", "world", "d")
+            local s, n = njt.re.gsub("hello, 1234 5678", "[0-9]|[0-9][0-9]", "world", "d")
             if n then
-                ngx.say(s, ": ", n)
+                njt.say(s, ": ", n)
             else
-                ngx.say(s)
+                njt.say(s)
             end
         ';
     }
@@ -39,11 +39,11 @@ hello, worldworld worldworld: 4
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, world", "[0-9]+", "hiya", "d")
+            local s, n = njt.re.gsub("hello, world", "[0-9]+", "hiya", "d")
             if n then
-                ngx.say(s, ": ", n)
+                njt.say(s, ": ", n)
             else
-                ngx.say(s)
+                njt.say(s)
             end
         ';
     }
@@ -58,11 +58,11 @@ hello, world: 0
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, 1234 5678", "[0-9]|[0-9][0-9]", "world", "do")
+            local s, n = njt.re.gsub("hello, 1234 5678", "[0-9]|[0-9][0-9]", "world", "do")
             if n then
-                ngx.say(s, ": ", n)
+                njt.say(s, ": ", n)
             else
-                ngx.say(s)
+                njt.say(s)
             end
         ';
     }
@@ -77,11 +77,11 @@ hello, worldworld worldworld: 4
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, world", "[0-9]+", "hiya", "do")
+            local s, n = njt.re.gsub("hello, world", "[0-9]+", "hiya", "do")
             if n then
-                ngx.say(s, ": ", n)
+                njt.say(s, ": ", n)
             else
-                ngx.say(s)
+                njt.say(s)
             end
         ';
     }
@@ -96,12 +96,12 @@ hello, world: 0
 --- config
     location /re {
         content_by_lua '
-            local s, n, err = ngx.re.gsub("hello\\nworld", "(abc", "world", "j")
+            local s, n, err = njt.re.gsub("hello\\nworld", "(abc", "world", "j")
             if s then
-                ngx.say("gsub: ", n)
+                njt.say("gsub: ", n)
 
             else
-                ngx.say("error: ", err)
+                njt.say("error: ", err)
             end
         ';
     }
@@ -116,11 +116,11 @@ error: pcre_compile() failed: missing ) in "(abc"
 --- config
     location /re {
         content_by_lua '
-            local s, n, err = ngx.re.gsub("hello\\nworld", "(abc", "world", "jo")
+            local s, n, err = njt.re.gsub("hello\\nworld", "(abc", "world", "jo")
             if s then
-                ngx.say("gsub: ", n)
+                njt.say("gsub: ", n)
             else
-                ngx.say("error: ", err)
+                njt.say("error: ", err)
             end
         ';
     }
@@ -137,9 +137,9 @@ error: pcre_compile() failed: missing ) in "(abc"
 --- config
     location /re {
         content_by_lua '
-            local s, n, err = ngx.re.gsub("你好", ".", "a", "Ud")
+            local s, n, err = njt.re.gsub("你好", ".", "a", "Ud")
             if s then
-                ngx.say("s: ", s)
+                njt.say("s: ", s)
             end
         ';
     }
@@ -171,9 +171,9 @@ s: aa
 --- config
     location /re {
         content_by_lua '
-            local s, n, err = ngx.re.gsub("你好", ".", "a", "ud")
+            local s, n, err = njt.re.gsub("你好", ".", "a", "ud")
             if s then
-                ngx.say("s: ", s)
+                njt.say("s: ", s)
             end
         ';
     }
@@ -205,7 +205,7 @@ s: aa
 --- config
     location /re {
         content_by_lua '
-            ngx.say(ngx.re.gsub("hello", "(he|hell)", function (m) ngx.say(m[0]) ngx.say(m[1]) return "x" end, "d"))
+            njt.say(njt.re.gsub("hello", "(he|hell)", function (m) njt.say(m[0]) njt.say(m[1]) return "x" end, "d"))
         ';
     }
 --- request
@@ -223,7 +223,7 @@ xo1
 --- config
     location /re {
         content_by_lua '
-            ngx.say(ngx.re.gsub("hello", "(he|hell)", function (m) ngx.say(m[0]) ngx.say(m[1]) return "x" end, "do"))
+            njt.say(njt.re.gsub("hello", "(he|hell)", function (m) njt.say(m[0]) njt.say(m[1]) return "x" end, "do"))
         ';
     }
 --- request

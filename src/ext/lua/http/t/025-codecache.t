@@ -32,9 +32,9 @@ __DATA__
         content_by_lua '
             -- os.execute("(echo HERE; pwd) > /dev/stderr")
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/test.lua", "w"))
-            f:write("ngx.say(101)")
+            f:write("njt.say(101)")
             f:close()
-            ngx.say("updated")
+            njt.say("updated")
         ';
     }
     location /main {
@@ -44,7 +44,7 @@ __DATA__
     }
 --- user_files
 >>> test.lua
-ngx.say(32)
+njt.say(32)
 --- request
 GET /main
 --- response_body
@@ -66,9 +66,9 @@ updated
         content_by_lua '
             -- os.execute("(echo HERE; pwd) > /dev/stderr")
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/test.lua", "w"))
-            f:write("ngx.say(101)")
+            f:write("njt.say(101)")
             f:close()
-            ngx.say("updated")
+            njt.say("updated")
         ';
     }
     location /main {
@@ -78,7 +78,7 @@ updated
     }
 --- user_files
 >>> test.lua
-ngx.say(32)
+njt.say(32)
 --- request
 GET /main
 --- response_body
@@ -100,9 +100,9 @@ updated
         content_by_lua '
             -- os.execute("(echo HERE; pwd) > /dev/stderr")
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/test.lua", "w"))
-            f:write("ngx.say(101)")
+            f:write("njt.say(101)")
             f:close()
-            ngx.say("updated")
+            njt.say("updated")
         ';
     }
     location /main {
@@ -112,7 +112,7 @@ updated
     }
 --- user_files
 >>> test.lua
-ngx.say(32)
+njt.say(32)
 --- request
 GET /main
 --- response_body
@@ -135,9 +135,9 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
         content_by_lua '
             -- os.execute("(echo HERE; pwd) > /dev/stderr")
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/test.lua", "w"))
-            f:write("ngx.say(101)")
+            f:write("njt.say(101)")
             f:close()
-            ngx.say("updated")
+            njt.say("updated")
         ';
     }
     location /main {
@@ -147,7 +147,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
     }
 --- user_files
 >>> test.lua
-ngx.say(32)
+njt.say(32)
 --- request
 GET /main
 --- response_body
@@ -171,9 +171,9 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
         content_by_lua '
             -- os.execute("(echo HERE; pwd) > /dev/stderr")
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/test.lua", "w"))
-            f:write("ngx.say(101)")
+            f:write("njt.say(101)")
             f:close()
-            ngx.say("updated")
+            njt.say("updated")
         ';
     }
     location /main {
@@ -183,7 +183,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
     }
 --- user_files
 >>> test.lua
-ngx.say(32)
+njt.say(32)
 --- request
 GET /main
 --- response_body
@@ -209,9 +209,9 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
         content_by_lua '
             -- os.execute("(echo HERE; pwd) > /dev/stderr")
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/foo.lua", "w"))
-            f:write("module(..., package.seeall); ngx.say(102);")
+            f:write("module(..., package.seeall); njt.say(102);")
             f:close()
-            ngx.say("updated")
+            njt.say("updated")
         ';
     }
     location /main {
@@ -221,7 +221,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
     }
 --- user_files
 >>> foo.lua
-module(..., package.seeall); ngx.say(32);
+module(..., package.seeall); njt.say(32);
 --- request
 GET /main
 --- response_body
@@ -245,9 +245,9 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
         content_by_lua '
             -- os.execute("(echo HERE; pwd) > /dev/stderr")
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/foo.lua", "w"))
-            f:write("module(..., package.seeall); ngx.say(102);")
+            f:write("module(..., package.seeall); njt.say(102);")
             f:close()
-            ngx.say("updated")
+            njt.say("updated")
         ';
     }
     location /main {
@@ -259,7 +259,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
 >>> test.lua
 local foo = require "foo";
 >>> foo.lua
-module(..., package.seeall); ngx.say(32);
+module(..., package.seeall); njt.say(32);
 --- request
 GET /main
 --- response_body
@@ -286,7 +286,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/foo.lua", "w"))
             f:write("module(..., package.seeall); return 102;")
             f:close()
-            ngx.say("updated")
+            njt.say("updated")
         ';
     }
     location /main {
@@ -325,7 +325,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/foo.lua", "w"))
             f:write("module(..., package.seeall); return 102;")
             f:close()
-            ngx.say("updated")
+            njt.say("updated")
         ';
     }
     location /main {
@@ -362,7 +362,7 @@ updated
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/test.lua", "w"))
             f:write("return 101")
             f:close()
-            ngx.say("updated")
+            njt.say("updated")
         ';
     }
     location /main {
@@ -397,7 +397,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/test.lua", "w"))
             f:write("return 101")
             f:close()
-            ngx.say("updated")
+            njt.say("updated")
         ';
     }
     location /main {
@@ -431,8 +431,8 @@ updated
     }
 --- user_files
 >>> test.lua
-ngx.say(string.len("hello"))
-ngx.say(table.concat({1,2,3}, ", "))
+njt.say(string.len("hello"))
+njt.say(table.concat({1,2,3}, ", "))
 --- request
     GET /main
 --- response_body
@@ -450,8 +450,8 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
     location /lua {
         lua_code_cache off;
         content_by_lua '
-            ngx.say(string.len("hello"))
-            ngx.say(table.concat({1,2,3}, ", "))
+            njt.say(string.len("hello"))
+            njt.say(table.concat({1,2,3}, ", "))
         ';
     }
     location /main {
@@ -497,7 +497,7 @@ os = require("os")
 table = require("table")
 coroutine = require("coroutine")
 package = require("package")
-ngx.say("OK")
+njt.say("OK")
 --- response_body
 OK
 OK
@@ -529,9 +529,9 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
         content_by_lua '
             local foo = package.loaded.luarocks
             if foo then
-                ngx.say("found")
+                njt.say("found")
             else
-                ngx.say("not found")
+                njt.say("not found")
             end
         ';
     }
@@ -541,10 +541,10 @@ GET /main
 >>> luarocks.lua
 module(..., package.seeall);
 
-ngx.say("loading");
+njt.say("loading");
 
 function hi ()
-    ngx.say("hello, foo")
+    njt.say("hello, foo")
 end;
 --- response_body
 loading
@@ -579,9 +579,9 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
         content_by_lua '
             local foo = package.loaded.luarocks2
             if foo then
-                ngx.say("found")
+                njt.say("found")
             else
-                ngx.say("not found")
+                njt.say("not found")
             end
         ';
     }
@@ -591,10 +591,10 @@ GET /main
 >>> luarocks2.lua
 module(..., package.seeall);
 
-ngx.say("loading");
+njt.say("loading");
 
 function hi ()
-    ngx.say("hello, foo")
+    njt.say("hello, foo")
 end;
 --- response_body
 loading
@@ -618,7 +618,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
             else
                 _G.foo = _G.foo + 1
             end
-            ngx.say("_G.foo: ", _G.foo)
+            njt.say("_G.foo: ", _G.foo)
         ';
     }
 --- request
@@ -636,7 +636,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
     init_by_lua '
       test = setfenv(
         function()
-          ngx.say(tostring(table))
+          njt.say(tostring(table))
         end,
         setmetatable({},
         {
@@ -668,10 +668,10 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
     location = /t {
         content_by_lua '
             if not jit then
-                ngx.say("skipped for non-LuaJIT")
+                njt.say("skipped for non-LuaJIT")
             else
                 local test = require("test")
-                ngx.say("test module loaded: ", test and true or false)
+                njt.say("test module loaded: ", test and true or false)
                 collectgarbage()
             end
         ';
@@ -699,15 +699,15 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
 
 
 
-=== TEST 20: ngx.timer.* + ndk
+=== TEST 20: njt.timer.* + ndk
 --- config
     lua_code_cache off;
     location /read {
         echo ok;
         log_by_lua '
-            ngx.timer.at(0, function ()
+            njt.timer.at(0, function ()
                 local foo = ndk.set_var.set_unescape_uri("a%20b")
-                ngx.log(ngx.WARN, "foo = ", foo)
+                njt.log(njt.WARN, "foo = ", foo)
             end)
         ';
     }
@@ -725,12 +725,12 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/
 
 
 
-=== TEST 21: set ngx.ctx before internal redirects performed by other nginx modules (with log_by_lua)
+=== TEST 21: set njt.ctx before internal redirects performed by other nginx modules (with log_by_lua)
 --- config
     lua_code_cache off;
     location = /t {
         rewrite_by_lua '
-            ngx.ctx.foo = "hello world";
+            njt.ctx.foo = "hello world";
         ';
         echo_exec /foo;
     }
@@ -747,7 +747,7 @@ hello
 [error]
 --- log_level: debug
 --- error_log eval
-["lua release ngx.ctx at ref",
+["lua release njt.ctx at ref",
 qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
 "lua close the global Lua VM",
 ]
@@ -763,7 +763,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
     }
 --- user_files
 >>> a.lua
-return ngx.arg[1] + ngx.arg[2]
+return njt.arg[1] + njt.arg[2]
 --- request
 GET /lua?a=5&b=2
 --- response_body
@@ -809,7 +809,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
             local s = ""
 
             local function fail(...)
-                ngx.log(ngx.ERR, ...)
+                njt.log(njt.ERR, ...)
             end
 
             local function g()
@@ -818,19 +818,19 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
             end
 
             local function f()
-                local ok, err = ngx.timer.at(0.01, g)
+                local ok, err = njt.timer.at(0.01, g)
                 if not ok then
                     fail("failed to set timer: ", err)
                     return
                 end
                 s = s .. "[f]"
             end
-            local ok, err = ngx.timer.at(0.01, f)
+            local ok, err = njt.timer.at(0.01, f)
             if not ok then
-                ngx.say("failed to set timer: ", err)
+                njt.say("failed to set timer: ", err)
                 return
             end
-            ngx.say("registered timer")
+            njt.say("registered timer")
             s = "[m]"
         ';
     }
@@ -847,7 +847,7 @@ decrementing the reference count for Lua VM: 3
 
 --- error_log eval
 [
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "http lua close fake http connection",
 "trace: [m][f][g]",
 qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
@@ -864,20 +864,20 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
 --- config
     location /t {
         content_by_lua '
-            local begin = ngx.now()
+            local begin = njt.now()
             local foo
             local function f()
                 foo = 3
-                print("elapsed: ", ngx.now() - begin)
+                print("elapsed: ", njt.now() - begin)
             end
-            local ok, err = ngx.timer.at(0.05, f)
+            local ok, err = njt.timer.at(0.05, f)
             if not ok then
-                ngx.say("failed to set timer: ", err)
+                njt.say("failed to set timer: ", err)
                 return
             end
-            ngx.say("registered timer")
-            ngx.sleep(0.06)
-            ngx.say("foo = ", foo)
+            njt.say("registered timer")
+            njt.sleep(0.06)
+            njt.say("foo = ", foo)
         ';
     }
 --- request
@@ -893,7 +893,7 @@ decrementing the reference count for Lua VM: 3
 
 --- error_log eval
 [
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "http lua close fake http connection",
 qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
 "lua close the global Lua VM",
@@ -913,31 +913,31 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
             local s = ""
 
             local function fail(...)
-                ngx.log(ngx.ERR, ...)
+                njt.log(njt.ERR, ...)
             end
 
             local f, g
 
             g = function ()
-                ngx.sleep(0.01)
+                njt.sleep(0.01)
                 collectgarbage()
             end
 
             f = function ()
-                ngx.sleep(0.01)
+                njt.sleep(0.01)
                 collectgarbage()
             end
-            local ok, err = ngx.timer.at(0, f)
+            local ok, err = njt.timer.at(0, f)
             if not ok then
-                ngx.say("failed to set timer f: ", err)
+                njt.say("failed to set timer f: ", err)
                 return
             end
-            local ok, err = ngx.timer.at(0, g)
+            local ok, err = njt.timer.at(0, g)
             if not ok then
-                ngx.say("failed to set timer g: ", err)
+                njt.say("failed to set timer g: ", err)
                 return
             end
-            ngx.say("registered timer")
+            njt.say("registered timer")
             s = "[m]"
         ';
     }
@@ -954,7 +954,7 @@ registered timer
 --- error_log eval
 [
 "1 lua_max_running_timers are not enough",
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "http lua close fake http connection",
 qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
 "decrementing the reference count for Lua VM: 3",
@@ -971,9 +971,9 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
     location = /t {
         lua_check_client_abort on;
         content_by_lua '
-            ngx.on_abort(function () end)
+            njt.on_abort(function () end)
             collectgarbage()
-            ngx.sleep(1)
+            njt.sleep(1)
         ';
     }
 --- request
@@ -1002,7 +1002,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
             local s = ""
 
             local function fail(...)
-                ngx.log(ngx.ERR, ...)
+                njt.log(njt.ERR, ...)
             end
 
             local function g()
@@ -1013,17 +1013,17 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
             local function f()
                 s = s .. "[f]"
             end
-            local ok, err = ngx.timer.at(0.01, f)
+            local ok, err = njt.timer.at(0.01, f)
             if not ok then
                 fail("failed to set timer: ", err)
                 return
             end
-            local ok, err = ngx.timer.at(0.01, g)
+            local ok, err = njt.timer.at(0.01, g)
             if not ok then
                 fail("failed to set timer: ", err)
                 return
             end
-            ngx.say("registered timer")
+            njt.say("registered timer")
             s = "[m]"
         ';
     }
@@ -1040,7 +1040,7 @@ decrementing the reference count for Lua VM: 4
 
 --- error_log eval
 [
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "http lua close fake http connection",
 "trace: [m][f][g]",
 "decrementing the reference count for Lua VM: 3",
@@ -1061,7 +1061,7 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
         set $port $TEST_NGINX_MEMCACHED_PORT;
         content_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go(port)
         ';
     }
@@ -1070,35 +1070,35 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
 module("test", package.seeall)
 
 function go(port)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local req = "flush_all\r\n"
 
     local bytes, err = sock:send(req)
     if not bytes then
-        ngx.say("failed to send request: ", err)
+        njt.say("failed to send request: ", err)
         return
     end
-    ngx.say("request sent: ", bytes)
+    njt.say("request sent: ", bytes)
 
     local line, err, part = sock:receive()
     if line then
-        ngx.say("received: ", line)
+        njt.say("received: ", line)
 
     else
-        ngx.say("failed to receive a line: ", err, " [", part, "]")
+        njt.say("failed to receive a line: ", err, " [", part, "]")
     end
 
     local ok, err = sock:setkeepalive(10)
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 end
 --- request
@@ -1129,7 +1129,7 @@ qr/\blua tcp socket keepalive: free connection pool [0-9A-F]+ for "127.0.0.1:/,
         set $port $TEST_NGINX_MEMCACHED_PORT;
         content_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go(port)
         ';
     }
@@ -1138,37 +1138,37 @@ qr/\blua tcp socket keepalive: free connection pool [0-9A-F]+ for "127.0.0.1:/,
 module("test", package.seeall)
 
 function go(port)
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
-    ngx.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
+    njt.say("connected: ", ok, ", reused: ", sock:getreusedtimes())
 
     local req = "flush_all\r\n"
 
     local bytes, err = sock:send(req)
     if not bytes then
-        ngx.say("failed to send request: ", err)
+        njt.say("failed to send request: ", err)
         return
     end
-    ngx.say("request sent: ", bytes)
+    njt.say("request sent: ", bytes)
 
     local line, err, part = sock:receive()
     if line then
-        ngx.say("received: ", line)
+        njt.say("received: ", line)
 
     else
-        ngx.say("failed to receive a line: ", err, " [", part, "]")
+        njt.say("failed to receive a line: ", err, " [", part, "]")
     end
 
     local ok, err = sock:setkeepalive(1)
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
-    ngx.sleep(0.01)
+    njt.sleep(0.01)
 end
 --- request
 GET /t
@@ -1199,31 +1199,31 @@ qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
             local s = ""
 
             local function fail(...)
-                ngx.log(ngx.ERR, ...)
+                njt.log(njt.ERR, ...)
             end
 
             local f, g
 
             g = function ()
-                ngx.sleep(0.01)
+                njt.sleep(0.01)
                 collectgarbage()
             end
 
             f = function ()
-                ngx.sleep(0.01)
+                njt.sleep(0.01)
                 collectgarbage()
             end
-            local ok, err = ngx.timer.at(0, f)
+            local ok, err = njt.timer.at(0, f)
             if not ok then
-                ngx.say("failed to set timer f: ", err)
+                njt.say("failed to set timer f: ", err)
                 return
             end
-            local ok, err = ngx.timer.at(0, g)
+            local ok, err = njt.timer.at(0, g)
             if not ok then
-                ngx.say("failed to set timer g: ", err)
+                njt.say("failed to set timer g: ", err)
                 return
             end
-            ngx.say("registered timer")
+            njt.say("registered timer")
             s = "[m]"
         ';
     }
@@ -1240,7 +1240,7 @@ registered timer
 --- error_log eval
 [
 "1 lua_max_running_timers are not enough",
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "http lua close fake http connection",
 qr/\[alert\] \S+ lua_code_cache is off; this will hurt performance/,
 "decrementing the reference count for Lua VM: 3",
@@ -1268,17 +1268,17 @@ location /t {
 --- user_files
 >>> a/proxy.conf
 location /a/ {
-    content_by_lua_block { ngx.say("/a/ is called") }
+    content_by_lua_block { njt.say("/a/ is called") }
 }
 
 >>> b/proxy.conf
 location /b/ {
-    content_by_lua_block { ngx.say("/b/ is called") }
+    content_by_lua_block { njt.say("/b/ is called") }
 }
 
 >>> c/proxy.conf
 location /c/ {
-    content_by_lua_block { ngx.say("/b/ is called") }
+    content_by_lua_block { njt.say("/b/ is called") }
 }
 
 --- request
@@ -1341,13 +1341,13 @@ location /t {
 
 --- user_files
 >>> a.lua
-ngx.say("/a/ is called")
+njt.say("/a/ is called")
 
 >>> b.lua
-ngx.say("/b/ is called")
+njt.say("/b/ is called")
 
 >>> c.lua
-ngx.say("/b/ is called")
+njt.say("/b/ is called")
 
 >>> a/proxy.conf
 location /a/ {
@@ -1454,9 +1454,9 @@ b
     }
 --- user_files
 >>> a.lua
-ngx.say("a")
+njt.say("a")
 >>> b.lua
-ngx.say("b")
+njt.say("b")
 --- request
 GET /main
 --- response_body
@@ -1486,7 +1486,7 @@ b
 
     location /main {
         content_by_lua_block {
-            local res1, res2, res3, res4, res5 = ngx.location.capture_multi{
+            local res1, res2, res3, res4, res5 = njt.location.capture_multi{
                 { "/proxy/a" },
                 { "/proxy/b" },
                 { "/proxy/a" },
@@ -1494,18 +1494,18 @@ b
                 { "/proxy/b" },
             }
 
-            ngx.say(res1.body)
-            ngx.say(res2.body)
-            ngx.say(res3.body)
-            ngx.say(res4.body)
-            ngx.say(res5.body)
+            njt.say(res1.body)
+            njt.say(res2.body)
+            njt.say(res3.body)
+            njt.say(res4.body)
+            njt.say(res5.body)
         }
     }
 --- user_files
 >>> a.lua
-ngx.print("a")
+njt.print("a")
 >>> b.lua
-ngx.print("b")
+njt.print("b")
 --- request
 GET /main
 --- response_body
@@ -1534,9 +1534,9 @@ b
     }
 --- user_files
 >>> a.lua
-ngx.say("a")
+njt.say("a")
 >>> b.lua
-ngx.say("b")
+njt.say("b")
 --- request
 GET /main
 --- response_body
@@ -1564,7 +1564,7 @@ b
 
     location /main {
         content_by_lua_block {
-            local res1, res2, res3, res4, res5 = ngx.location.capture_multi{
+            local res1, res2, res3, res4, res5 = njt.location.capture_multi{
                 { "/proxy/a" },
                 { "/proxy/b" },
                 { "/proxy/a" },
@@ -1572,18 +1572,18 @@ b
                 { "/proxy/b" },
             }
 
-            ngx.say(res1.header.match)
-            ngx.say(res2.header.match)
-            ngx.say(res3.header.match)
-            ngx.say(res4.header.match)
-            ngx.say(res5.header.match)
+            njt.say(res1.header.match)
+            njt.say(res2.header.match)
+            njt.say(res3.header.match)
+            njt.say(res4.header.match)
+            njt.say(res5.header.match)
         }
     }
 --- user_files
 >>> a.lua
-ngx.header.match = "a"
+njt.header.match = "a"
 >>> b.lua
-ngx.header.match = "b"
+njt.header.match = "b"
 --- request
 GET /main
 --- response_body
@@ -1614,11 +1614,11 @@ b
     }
 --- user_files
 >>> a.lua
-ngx.arg[1] = "a\n"
-ngx.arg[2] = true
+njt.arg[1] = "a\n"
+njt.arg[2] = true
 >>> b.lua
-ngx.arg[1] = "b\n"
-ngx.arg[2] = true
+njt.arg[1] = "b\n"
+njt.arg[2] = true
 --- request
 GET /main
 --- response_body
@@ -1651,9 +1651,9 @@ b
     }
 --- user_files
 >>> a.lua
-ngx.log(ngx.NOTICE, "grep me: a")
+njt.log(njt.NOTICE, "grep me: a")
 >>> b.lua
-ngx.log(ngx.NOTICE, "grep me: b")
+njt.log(njt.NOTICE, "grep me: b")
 --- request
 GET /main
 --- ignore_response_body
@@ -1684,13 +1684,13 @@ grep me: b
 
 === TEST 41: same chunk from different directives produces different closures
 --- http_config
-    ssl_session_fetch_by_lua_block { ngx.log(ngx.INFO, "hello") }
+    ssl_session_fetch_by_lua_block { njt.log(njt.INFO, "hello") }
 
-    ssl_session_store_by_lua_block { ngx.log(ngx.INFO, "hello") }
+    ssl_session_store_by_lua_block { njt.log(njt.INFO, "hello") }
 
     upstream backend {
         server unix:$TEST_NGINX_HTML_DIR/nginx.sock;
-        balancer_by_lua_block { ngx.log(ngx.INFO, "hello") }
+        balancer_by_lua_block { njt.log(njt.INFO, "hello") }
     }
 
     server {
@@ -1700,22 +1700,22 @@ grep me: b
         ssl_certificate_key $TEST_NGINX_CERT_DIR/cert/test.key;
         ssl_session_tickets off;
 
-        ssl_certificate_by_lua_block { ngx.log(ngx.INFO, "hello") }
+        ssl_certificate_by_lua_block { njt.log(njt.INFO, "hello") }
 
         location /lua {
-            set_by_lua_block $res { ngx.log(ngx.INFO, "hello") }
+            set_by_lua_block $res { njt.log(njt.INFO, "hello") }
 
-            rewrite_by_lua_block { ngx.log(ngx.INFO, "hello") }
+            rewrite_by_lua_block { njt.log(njt.INFO, "hello") }
 
-            access_by_lua_block { ngx.log(ngx.INFO, "hello") }
+            access_by_lua_block { njt.log(njt.INFO, "hello") }
 
-            content_by_lua_block { ngx.log(ngx.INFO, "hello") }
+            content_by_lua_block { njt.log(njt.INFO, "hello") }
 
-            header_filter_by_lua_block { ngx.log(ngx.INFO, "hello") }
+            header_filter_by_lua_block { njt.log(njt.INFO, "hello") }
 
-            body_filter_by_lua_block { ngx.log(ngx.INFO, "hello") }
+            body_filter_by_lua_block { njt.log(njt.INFO, "hello") }
 
-            log_by_lua_block { ngx.log(ngx.INFO, "hello") }
+            log_by_lua_block { njt.log(njt.INFO, "hello") }
         }
     }
 --- config
@@ -1729,41 +1729,41 @@ grep me: b
         set $html_dir $TEST_NGINX_HTML_DIR;
 
         content_by_lua_block {
-            ngx.location.capture("/proxy")
+            njt.location.capture("/proxy")
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeout(2000)
 
-            local ok, err = sock:connect("unix:" .. ngx.var.html_dir .. "/nginx.sock")
+            local ok, err = sock:connect("unix:" .. njt.var.html_dir .. "/nginx.sock")
             if not ok then
-                ngx.log(ngx.ERR, "failed to connect: ", err)
+                njt.log(njt.ERR, "failed to connect: ", err)
                 return
             end
 
             local sess, err = sock:sslhandshake(nil, "test.com", true)
             if not sess then
-                ngx.log(ngx.ERR, "failed to do SSL handshake: ", err)
+                njt.log(njt.ERR, "failed to do SSL handshake: ", err)
                 return
             end
             package.loaded.session = sess
             sock:close()
 
-            local ok, err = sock:connect("unix:" .. ngx.var.html_dir .. "/nginx.sock")
+            local ok, err = sock:connect("unix:" .. njt.var.html_dir .. "/nginx.sock")
             if not ok then
-                ngx.log(ngx.ERR, "failed to connect: ", err)
+                njt.log(njt.ERR, "failed to connect: ", err)
                 return
             end
 
             local sess, err = sock:sslhandshake(package.loaded.session, "test.com", true)
             if not sess then
-                ngx.log(ngx.ERR, "failed to do SSL handshake: ", err)
+                njt.log(njt.ERR, "failed to do SSL handshake: ", err)
                 return
             end
 
             local req = "GET /lua HTTP/1.0\r\nHost: test.com\r\nConnection: close\r\n\r\n"
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.log(ngx.ERR, "failed to send http request: ", err)
+                njt.log(njt.ERR, "failed to send http request: ", err)
                 return
             end
         }

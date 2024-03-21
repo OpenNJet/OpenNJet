@@ -176,5 +176,9 @@ njt_stream_upstream_srv_conf_t *njt_stream_upstream_add(njt_conf_t *cf,
 
 extern njt_module_t  njt_stream_upstream_module;
 
+#ifndef HAVE_BALANCER_STATUS_CODE_PATCH
+#define HAVE_BALANCER_STATUS_CODE_PATCH
+#endif
+
 
 #endif /* _NJT_STREAM_UPSTREAM_H_INCLUDED_ */

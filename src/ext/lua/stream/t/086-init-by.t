@@ -21,7 +21,7 @@ __DATA__
 --- stream_config
     init_by_lua_block { foo = "hello, FOO" }
 --- stream_server_config
-    content_by_lua_block { ngx.say(foo) }
+    content_by_lua_block { njt.say(foo) }
 --- stream_response
 hello, FOO
 --- no_error_log
@@ -33,7 +33,7 @@ hello, FOO
 --- stream_config
     init_by_lua_file html/init.lua;
 --- stream_server_config
-    content_by_lua_block { ngx.say(foo) }
+    content_by_lua_block { njt.say(foo) }
 --- user_files
 >>> init.lua
 foo = "hello, FOO"
@@ -57,7 +57,7 @@ hello, FOO
 module(..., package.seeall)
 
 function go()
-    ngx.say("hello, blah")
+    njt.say("hello, blah")
 end
 --- stream_response
 hello, blah
@@ -70,14 +70,14 @@ hello, blah
 --- stream_config
     lua_shared_dict dogs 1m;
     init_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("Jim", 6)
         dogs:get("Jim")
     }
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
-        ngx.say("Jim: ", dogs:get("Jim"))
+        local dogs = njt.shared.dogs
+        njt.say("Jim: ", dogs:get("Jim"))
     }
 --- stream_response
 Jim: 6
@@ -91,17 +91,17 @@ Jim: 6
     lua_shared_dict dogs 1m;
     lua_shared_dict cats 1m;
     init_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("Jim", 6)
         dogs:get("Jim")
-        local cats = ngx.shared.cats
+        local cats = njt.shared.cats
         cats:set("Tom", 2)
         dogs:get("Tom")
     }
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
-        ngx.say("Jim: ", dogs:get("Jim"))
+        local dogs = njt.shared.dogs
+        njt.say("Jim: ", dogs:get("Jim"))
     }
 --- stream_response
 Jim: 6
@@ -118,7 +118,7 @@ Jim: 6
         print("log from init_by_lua")
     }
 --- stream_server_config
-    content_by_lua_block { ngx.say('ok') }
+    content_by_lua_block { njt.say('ok') }
 --- stream_response
 ok
 --- grep_error_log chop
@@ -128,15 +128,15 @@ log from init_by_lua
 
 
 
-=== TEST 7: ngx.log
+=== TEST 7: njt.log
 --- stream_config
     lua_shared_dict dogs 1m;
     lua_shared_dict cats 1m;
     init_by_lua_block {
-        ngx.log(ngx.NOTICE, "log from init_by_lua")
+        njt.log(njt.NOTICE, "log from init_by_lua")
     }
 --- stream_server_config
-    content_by_lua_block { ngx.say('ok') }
+    content_by_lua_block { njt.say('ok') }
 --- stream_response
 ok
 --- grep_error_log chop
@@ -160,7 +160,7 @@ log from init_by_lua
 module(..., package.seeall)
 
 function go()
-    ngx.say("hello, blah")
+    njt.say("hello, blah")
 end
 --- stream_response
 hello, blah
@@ -188,9 +188,9 @@ hello, blah
     }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("foo = ", foo)
-        ngx.say("bar = ", bar)
-        ngx.say("baz = ", baz)
+        njt.say("foo = ", foo)
+        njt.say("bar = ", bar)
+        njt.say("baz = ", baz)
     }
 --- stream_response
 foo = 32
@@ -208,9 +208,9 @@ Failed to resume our co:
 
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("foo = ", foo)
-        ngx.say("bar = ", bar)
-        ngx.say("baz = ", baz)
+        njt.say("foo = ", foo)
+        njt.say("bar = ", bar)
+        njt.say("baz = ", baz)
     }
 --- user_files
 >>> init.lua
@@ -238,15 +238,15 @@ Failed to resume our co:
 
 
 
-=== TEST 11: access a field in the ngx. table
+=== TEST 11: access a field in the njt. table
 --- stream_config
     init_by_lua_block {
-        print("INIT 1: foo = ", ngx.foo)
-        ngx.foo = 3
-        print("INIT 2: foo = ", ngx.foo)
+        print("INIT 1: foo = ", njt.foo)
+        njt.foo = 3
+        print("INIT 2: foo = ", njt.foo)
     }
 --- stream_server_config
-    content_by_lua_block { ngx.say('ok') }
+    content_by_lua_block { njt.say('ok') }
 --- stream_response
 ok
 --- no_error_log

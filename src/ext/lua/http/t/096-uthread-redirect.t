@@ -20,23 +20,23 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: ngx.redirect() in user thread (entry thread is still pending on ngx.location.capture_multi), without pending output
+=== TEST 1: njt.redirect() in user thread (entry thread is still pending on njt.location.capture_multi), without pending output
 --- config
     location /lua {
         client_body_timeout 12000ms;
         content_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.redirect(301)
+                njt.sleep(0.1)
+                njt.redirect(301)
             end
 
-            ngx.thread.spawn(f)
+            njt.thread.spawn(f)
 
-            ngx.location.capture_multi{
+            njt.location.capture_multi{
                 {"/echo"},
                 {"/sleep"}
             }
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 
@@ -55,7 +55,7 @@ POST /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -82,8 +82,8 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_post_subrequest) {
-    printf("post subreq %s\n", ngx_http_req_uri($r))
+F(njt_http_lua_post_subrequest) {
+    printf("post subreq %s\n", njt_http_req_uri($r))
 }
 _EOC_
 
@@ -110,18 +110,18 @@ attempt to abort with pending subrequests
 
 
 
-=== TEST 2: redirect in user thread (entry thread is still pending on ngx.sleep)
+=== TEST 2: redirect in user thread (entry thread is still pending on njt.sleep)
 --- config
     location /lua {
         content_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.redirect(301)
+                njt.sleep(0.1)
+                njt.redirect(301)
             end
 
-            ngx.thread.spawn(f)
-            ngx.sleep(1)
-            ngx.say("end")
+            njt.thread.spawn(f)
+            njt.sleep(1)
+            njt.say("end")
         ';
     }
 --- request
@@ -132,7 +132,7 @@ GET /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -164,7 +164,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_sleep_cleanup) {
+F(njt_http_lua_sleep_cleanup) {
     println("lua sleep cleanup")
 }
 _EOC_
@@ -189,23 +189,23 @@ free request
 
 
 
-=== TEST 3: ngx.redirect() in entry thread (user thread is still pending on ngx.location.capture_multi), without pending output
+=== TEST 3: njt.redirect() in entry thread (user thread is still pending on njt.location.capture_multi), without pending output
 --- config
     location /lua {
         client_body_timeout 12000ms;
         content_by_lua '
             local function f()
-                ngx.location.capture_multi{
+                njt.location.capture_multi{
                     {"/echo"},
                     {"/sleep"}
                 }
-                ngx.say("end")
+                njt.say("end")
             end
 
-            ngx.thread.spawn(f)
+            njt.thread.spawn(f)
 
-            ngx.sleep(0.1)
-            ngx.redirect(301)
+            njt.sleep(0.1)
+            njt.redirect(301)
         ';
     }
 
@@ -226,7 +226,7 @@ Content-Length: 1024
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -253,8 +253,8 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_post_subrequest) {
-    printf("post subreq %s\n", ngx_http_req_uri($r))
+F(njt_http_lua_post_subrequest) {
+    printf("post subreq %s\n", njt_http_req_uri($r))
 }
 _EOC_
 

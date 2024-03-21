@@ -19,11 +19,11 @@ __DATA__
 === TEST 1: gmatch matched
 --- stream_server_config
     content_by_lua_block {
-        for m in ngx.re.gmatch("hello, world", "[a-z]+", "j") do
+        for m in njt.re.gmatch("hello, world", "[a-z]+", "j") do
             if m then
-                ngx.say(m[0])
+                njt.say(m[0])
             else
-                ngx.say("not matched: ", m)
+                njt.say("not matched: ", m)
             end
         end
     }
@@ -38,15 +38,15 @@ pcre JIT compiling result: 1
 === TEST 2: fail to match
 --- stream_server_config
     content_by_lua_block {
-        local it = ngx.re.gmatch("hello, world", "[0-9]", "j")
+        local it = njt.re.gmatch("hello, world", "[0-9]", "j")
         local m = it()
-        if m then ngx.say(m[0]) else ngx.say(m) end
+        if m then njt.say(m[0]) else njt.say(m) end
 
         local m = it()
-        if m then ngx.say(m[0]) else ngx.say(m) end
+        if m then njt.say(m[0]) else njt.say(m) end
 
         local m = it()
-        if m then ngx.say(m[0]) else ngx.say(m) end
+        if m then njt.say(m[0]) else njt.say(m) end
     }
 --- stream_response
 nil
@@ -60,8 +60,8 @@ pcre JIT compiling result: 1
 === TEST 3: gmatch matched but no iterate
 --- stream_server_config
     content_by_lua_block {
-        local it = ngx.re.gmatch("hello, world", "[a-z]+", "j")
-        ngx.say("done")
+        local it = njt.re.gmatch("hello, world", "[a-z]+", "j")
+        njt.say("done")
     }
 --- stream_response
 done
@@ -73,12 +73,12 @@ pcre JIT compiling result: 1
 === TEST 4: gmatch matched but only iterate once and still matches remain
 --- stream_server_config
     content_by_lua_block {
-        local it = ngx.re.gmatch("hello, world", "[a-z]+", "j")
+        local it = njt.re.gmatch("hello, world", "[a-z]+", "j")
         local m = it()
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched")
+            njt.say("not matched")
         end
     }
 --- stream_response
@@ -91,11 +91,11 @@ pcre JIT compiling result: 1
 === TEST 5: gmatch matched + o
 --- stream_server_config
     content_by_lua_block {
-        for m in ngx.re.gmatch("hello, world", "[a-z]+", "jo") do
+        for m in njt.re.gmatch("hello, world", "[a-z]+", "jo") do
             if m then
-                ngx.say(m[0])
+                njt.say(m[0])
             else
-                ngx.say("not matched: ", m)
+                njt.say("not matched: ", m)
             end
         end
     }
@@ -114,15 +114,15 @@ qr/pcre JIT compiling result: \d+/
 === TEST 6: fail to match + o
 --- stream_server_config
     content_by_lua_block {
-        local it = ngx.re.gmatch("hello, world", "[0-9]", "jo")
+        local it = njt.re.gmatch("hello, world", "[0-9]", "jo")
         local m = it()
-        if m then ngx.say(m[0]) else ngx.say(m) end
+        if m then njt.say(m[0]) else njt.say(m) end
 
         local m = it()
-        if m then ngx.say(m[0]) else ngx.say(m) end
+        if m then njt.say(m[0]) else njt.say(m) end
 
         local m = it()
-        if m then ngx.say(m[0]) else ngx.say(m) end
+        if m then njt.say(m[0]) else njt.say(m) end
     }
 --- stream_response
 nil
@@ -140,8 +140,8 @@ qr/pcre JIT compiling result: \d+/
 === TEST 7: gmatch matched but no iterate + o
 --- stream_server_config
     content_by_lua_block {
-        local it = ngx.re.gmatch("hello, world", "[a-z]+", "jo")
-        ngx.say("done")
+        local it = njt.re.gmatch("hello, world", "[a-z]+", "jo")
+        njt.say("done")
     }
 --- stream_response
 done
@@ -157,12 +157,12 @@ qr/pcre JIT compiling result: \d+/
 === TEST 8: gmatch matched but only iterate once and still matches remain + o
 --- stream_server_config
     content_by_lua_block {
-        local it = ngx.re.gmatch("hello, world", "[a-z]+", "jo")
+        local it = njt.re.gmatch("hello, world", "[a-z]+", "jo")
         local m = it()
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched")
+            njt.say("not matched")
         end
     }
 --- stream_response
@@ -179,12 +179,12 @@ qr/pcre JIT compiling result: \d+/
 === TEST 9: bad pattern
 --- stream_server_config
     content_by_lua_block {
-        local m, err = ngx.re.gmatch("hello\\nworld", "(abc", "j")
+        local m, err = njt.re.gmatch("hello\\nworld", "(abc", "j")
         if not m then
-            ngx.say("error: ", err)
+            njt.say("error: ", err)
             return
         end
-        ngx.say("success")
+        njt.say("success")
     }
 --- stream_response
 error: pcre_compile() failed: missing ) in "(abc"

@@ -374,6 +374,10 @@ use the \"--with-mail_ssl_module\" option instead"
         --with-pcre)                     USE_PCRE=YES               ;;
         --with-pcre=*)                   PCRE="$value"              ;;
         --with-pcre-opt=*)               PCRE_OPT="$value"          ;;
+        
+        # openreaty patch and  line near 605 
+        --with-pcre-conf-opt=*)          PCRE_CONF_OPT="$value"     ;;
+
         --with-pcre-jit)                 PCRE_JIT=YES               ;;
         --without-pcre2)                 PCRE2=DISABLED             ;;
 
@@ -598,6 +602,7 @@ cat << END
   --with-pcre                        force PCRE library usage
   --with-pcre=DIR                    set path to PCRE library sources
   --with-pcre-opt=OPTIONS            set additional build options for PCRE
+  --with-pcre-conf-opt=OPTIONS       set additional configure options for PCRE
   --with-pcre-jit                    build PCRE with JIT compilation support
   --without-pcre2                    do not use PCRE2 library
 

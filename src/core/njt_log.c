@@ -113,6 +113,8 @@ njt_log_error_core(njt_uint_t level, njt_log_t *log, njt_err_t err,
     njt_uint_t   wrote_stderr, debug_connection;
     u_char       errstr[NJT_MAX_ERROR_STR];
 
+    njt_log_intercept_pt    log_intercept = NULL; // openresty patch
+
     last = errstr + NJT_MAX_ERROR_STR;
 
     p = njt_cpymem(errstr, njt_cached_err_log_time.data,
@@ -153,6 +155,18 @@ njt_log_error_core(njt_uint_t level, njt_log_t *log, njt_err_t err,
     if (p > last - NJT_LINEFEED_SIZE) {
         p = last - NJT_LINEFEED_SIZE;
     }
+
+    // openresty patch
+    if (njt_cycle) {
+        log_intercept = njt_cycle->intercept_error_log_handler;
+    }
+
+    if (log_intercept && !njt_cycle->entered_logger) {
+        njt_cycle->entered_logger = 1;
+        log_intercept(log, level, errstr, p - errstr);
+        njt_cycle->entered_logger = 0;
+    }
+    // openresty patch end
 
     njt_linefeed(p);
 

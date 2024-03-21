@@ -204,6 +204,7 @@ static u_char      *njt_error_log;
 static u_char      *njt_conf_file;
 static u_char      *njt_conf_params;
 static char        *njt_signal;
+njt_pool_t         *saved_init_cycle_pool = NULL; // openresty patch
 
 
 static char **njt_os_environ;
@@ -277,6 +278,8 @@ main(int argc, char *const *argv)
     if (njt_save_argv(&init_cycle, argc, argv) != NJT_OK) {
         return 1;
     }
+
+    saved_init_cycle_pool = init_cycle.pool; // openresty patch
 
     if (njt_process_options(&init_cycle) != NJT_OK) {
         return 1;
@@ -417,7 +420,9 @@ main(int argc, char *const *argv)
 static void
 njt_show_version_info(void)
 {
-    njt_write_stderr("njet version: " NJT_VER_BUILD NJT_LINEFEED);
+    if (!njt_show_configure) {
+        njt_write_stderr("njet version: " NJT_VER_BUILD NJT_LINEFEED);
+    }
 
     if (njt_show_help) {
         njt_write_stderr(
@@ -456,6 +461,8 @@ njt_show_version_info(void)
     }
 
     if (njt_show_configure) {
+        njt_write_stderr("njet version: " NJT_VER_BUILD);
+        njt_write_stderr(" (developed based on " NGNX_VERSION RESTY_VER ")" NJT_LINEFEED);
 
 #ifdef NJT_COMPILER
         njt_write_stderr("built by " NJT_COMPILER NJT_LINEFEED);

@@ -518,6 +518,8 @@ njt_stream_lua_ssl_cert_by_chunk(lua_State *L, njt_stream_lua_request_t *r)
     ctx->cur_co_ctx->co_top = 1;
 #endif
 
+    njt_stream_lua_attach_co_ctx_to_L(co, ctx->cur_co_ctx);
+
     /* register request cleanup hooks */
     if (ctx->cleanup == NULL) {
         cln = njt_stream_lua_cleanup_add(r, 0);
@@ -1065,7 +1067,7 @@ njt_stream_lua_ffi_cert_pem_to_der(const u_char *pem, size_t pem_len, u_char *de
 
 int
 njt_stream_lua_ffi_priv_key_pem_to_der(const u_char *pem, size_t pem_len,
-    u_char *der, char **err)
+    const u_char *passphrase, u_char *der, char **err)
 {
     int          len;
     BIO         *in;
@@ -1078,7 +1080,7 @@ njt_stream_lua_ffi_priv_key_pem_to_der(const u_char *pem, size_t pem_len,
         return NJT_ERROR;
     }
 
-    pkey = PEM_read_bio_PrivateKey(in, NULL, NULL, NULL);
+    pkey = PEM_read_bio_PrivateKey(in, NULL, NULL, (void *)passphrase);
     if (pkey == NULL) {
         BIO_free(in);
         *err = "PEM_read_bio_PrivateKey() failed";
@@ -1364,7 +1366,7 @@ njt_stream_lua_ssl_verify_callback(int ok, X509_STORE_CTX *x509_store)
      * we never terminate handshake here and user can later use
      * $ssl_client_verify to check verification result.
      *
-     * this is consistent with Nginx behavior.
+     * this is consistent with NJet behavior.
      */
     return 1;
 }

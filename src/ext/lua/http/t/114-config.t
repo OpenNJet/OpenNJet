@@ -17,11 +17,11 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: ngx.config.debug
+=== TEST 1: njt.config.debug
 --- config
     location /t {
         content_by_lua '
-            ngx.say("debug: ", ngx.config.debug)
+            njt.say("debug: ", njt.config.debug)
         ';
     }
 --- request
@@ -33,11 +33,11 @@ GET /t
 
 
 
-=== TEST 2: ngx.config.subsystem
+=== TEST 2: njt.config.subsystem
 --- config
     location /t {
         content_by_lua '
-            ngx.say("subsystem: ", ngx.config.subsystem)
+            njt.say("subsystem: ", njt.config.subsystem)
         ';
     }
 --- request

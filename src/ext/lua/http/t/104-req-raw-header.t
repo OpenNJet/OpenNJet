@@ -20,7 +20,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 --- request
@@ -42,7 +42,7 @@ Connection: close\r
     large_client_header_buffers 30 561;
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 --- request
@@ -69,7 +69,7 @@ Connection: close\r
     large_client_header_buffers 30 561;
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header(true))
+            njt.print(njt.req.raw_header(true))
         ';
     }
 --- request
@@ -93,7 +93,7 @@ Connection: close\r
 --- config
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header(true))
+            njt.print(njt.req.raw_header(true))
         ';
     }
 --- request
@@ -112,7 +112,7 @@ Connection: close\r
 --- config
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header(true))
+            njt.print(njt.req.raw_header(true))
         ';
     }
 --- raw_request eval
@@ -135,7 +135,7 @@ Connection: close\r
 --- config
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 --- raw_request eval
@@ -161,7 +161,7 @@ Connection: close\r
     large_client_header_buffers 30 561;
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 
@@ -191,7 +191,7 @@ Connection: close\r
     large_client_header_buffers 30 561;
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header(true))
+            njt.print(njt.req.raw_header(true))
         ';
     }
 
@@ -220,7 +220,7 @@ Connection: close\r
     large_client_header_buffers 30 561;
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header(true))
+            njt.print(njt.req.raw_header(true))
         ';
     }
 
@@ -247,7 +247,7 @@ Connection: close\r
 --- config
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 --- pipelined_requests eval
@@ -279,7 +279,7 @@ Foo: bar\r
     large_client_header_buffers 30 561;
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 --- pipelined_requests eval
@@ -310,7 +310,7 @@ $headers}]
 --- config
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 --- raw_request eval
@@ -342,7 +342,7 @@ Foo: bar baz\r
     large_client_header_buffers 50 567;
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 
@@ -373,8 +373,8 @@ Connection: close\r
 --- config
     location /t {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.print(ngx.req.raw_header())
+            njt.req.read_body()
+            njt.print(njt.req.raw_header())
         ';
     }
 --- request
@@ -396,14 +396,14 @@ Content-Length: 5\r
 --- config
     location /t {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.print(ngx.req.raw_header())
+            njt.req.read_body()
+            njt.print(njt.req.raw_header())
         ';
     }
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/t")
-            ngx.print(res.body)
+            local res = njt.location.capture("/t")
+            njt.print(res.body)
         ';
     }
 
@@ -428,8 +428,8 @@ Content-Length: 5\r
     large_client_header_buffers 30 561;
     location /t {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.print(ngx.req.raw_header())
+            njt.req.read_body()
+            njt.print(njt.req.raw_header())
         ';
     }
 --- request
@@ -457,15 +457,15 @@ Connection: close\r
     large_client_header_buffers 30 561;
     location /t {
         content_by_lua '
-            ngx.req.read_body()
-            ngx.print(ngx.req.raw_header())
+            njt.req.read_body()
+            njt.print(njt.req.raw_header())
         ';
     }
 
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/t")
-            ngx.print(res.body)
+            local res = njt.location.capture("/t")
+            njt.print(res.body)
         ';
     }
 --- request
@@ -493,8 +493,8 @@ Connection: close\r
     large_client_header_buffers 30 564;
     location /t {
         content_by_lua '
-            -- ngx.req.read_body()
-            ngx.print(ngx.req.raw_header())
+            -- njt.req.read_body()
+            njt.print(njt.req.raw_header())
         ';
     }
 --- request
@@ -523,8 +523,8 @@ Connection: close\r
     large_client_header_buffers 30 564;
     location /t {
         content_by_lua '
-            -- ngx.req.read_body()
-            ngx.print(ngx.req.raw_header())
+            -- njt.req.read_body()
+            njt.print(njt.req.raw_header())
         ';
     }
 --- request
@@ -551,7 +551,7 @@ Connection: close\r
 --- config
     location /t {
         content_by_lua '
-           ngx.print(ngx.req.raw_header(true))
+           njt.print(njt.req.raw_header(true))
         ';
     }
 --- request
@@ -577,7 +577,7 @@ Cookie: " . ("C" x 1200) . "\r\n\r\n"
 --- config
     location /t {
         content_by_lua '
-           ngx.print(ngx.req.raw_header())
+           njt.print(njt.req.raw_header())
         ';
     }
 --- request
@@ -600,7 +600,7 @@ Cookie: " . ("C" x 1200) . "\r\n\r\n"
 
 
 
-=== TEST 22: ngx_proxy/ngx_fastcgi/etc change r->header_end to point to their own buffers
+=== TEST 22: njt_proxy/njt_fastcgi/etc change r->header_end to point to their own buffers
 --- config
     location = /t {
         proxy_buffering off;
@@ -616,7 +616,7 @@ Cookie: " . ("C" x 1200) . "\r\n\r\n"
     location = /500 {
         internal;
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 --- request
@@ -632,7 +632,7 @@ Connection: close\r
 
 
 
-=== TEST 23: ngx_proxy/ngx_fastcgi/etc change r->header_end to point to their own buffers (exclusive LF in the request data)
+=== TEST 23: njt_proxy/njt_fastcgi/etc change r->header_end to point to their own buffers (exclusive LF in the request data)
 --- config
     location = /t {
         proxy_buffering off;
@@ -648,7 +648,7 @@ Connection: close\r
     location = /500 {
         internal;
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 --- raw_request eval
@@ -670,7 +670,7 @@ Content-Length: 5
 
 
 
-=== TEST 24: ngx_proxy/ngx_fastcgi/etc change r->header_end to point to their own buffers (exclusive LF in the request data, and no status line)
+=== TEST 24: njt_proxy/njt_fastcgi/etc change r->header_end to point to their own buffers (exclusive LF in the request data, and no status line)
 --- config
     location = /t {
         proxy_buffering off;
@@ -686,7 +686,7 @@ Content-Length: 5
     location = /500 {
         internal;
         content_by_lua '
-            ngx.print(ngx.req.raw_header(true))
+            njt.print(njt.req.raw_header(true))
         ';
     }
 --- raw_request eval
@@ -707,7 +707,7 @@ Content-Length: 5
 
 
 
-=== TEST 25: ngx_proxy/ngx_fastcgi/etc change r->header_end to point to their own buffers (mixed LF and CRLF in the request data, and no status line)
+=== TEST 25: njt_proxy/njt_fastcgi/etc change r->header_end to point to their own buffers (mixed LF and CRLF in the request data, and no status line)
 --- config
     location = /t {
         proxy_buffering off;
@@ -723,7 +723,7 @@ Content-Length: 5
     location = /500 {
         internal;
         content_by_lua '
-            ngx.print(ngx.req.raw_header(true))
+            njt.print(njt.req.raw_header(true))
         ';
     }
 --- raw_request eval
@@ -744,7 +744,7 @@ Content-Length: 5\r
 
 
 
-=== TEST 26: ngx_proxy/ngx_fastcgi/etc change r->header_end to point to their own buffers (another way of mixing LF and CRLF in the request data, and no status line)
+=== TEST 26: njt_proxy/njt_fastcgi/etc change r->header_end to point to their own buffers (another way of mixing LF and CRLF in the request data, and no status line)
 --- config
     location = /t {
         proxy_buffering off;
@@ -760,7 +760,7 @@ Content-Length: 5\r
     location = /500 {
         internal;
         content_by_lua '
-            ngx.print(ngx.req.raw_header(true))
+            njt.print(njt.req.raw_header(true))
         ';
     }
 --- raw_request eval
@@ -787,7 +787,7 @@ Content-Length: 5
     large_client_header_buffers 3 5610;
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 --- pipelined_requests eval
@@ -821,7 +821,7 @@ Connection: close\r
     large_client_header_buffers 2 1921;
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 --- pipelined_requests eval
@@ -855,7 +855,7 @@ Foo: bar\r
     large_client_header_buffers 2 1921;
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 --- pipelined_requests eval
@@ -887,7 +887,7 @@ Foo: bar\r
 --- config
     location /t {
         content_by_lua_block {
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         }
     }
 
@@ -915,7 +915,7 @@ Connection: close
 --- config
     location /t {
         content_by_lua_block {
-            ngx.print(ngx.req.raw_header(true))
+            njt.print(njt.req.raw_header(true))
         }
     }
 
@@ -942,7 +942,7 @@ Connection: close
 --- config
     location /t {
         content_by_lua_block {
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         }
     }
 
@@ -971,7 +971,7 @@ Connection: close
 --- config
     location /t {
         content_by_lua_block {
-            ngx.print(ngx.req.raw_header(true))
+            njt.print(njt.req.raw_header(true))
         }
     }
 
@@ -999,7 +999,7 @@ Connection: close
 --- config
     location /t {
         content_by_lua '
-            ngx.print(ngx.req.raw_header())
+            njt.print(njt.req.raw_header())
         ';
     }
 --- raw_request eval
