@@ -128,6 +128,7 @@ njt_master_process_cycle(njt_cycle_t *cycle)
     njt_str_t          worker_v;
     njt_int_t          worker_c;
     njt_int_t          rc;
+    uint32_t           val_len = 0;
 
     sigemptyset(&set);
     sigaddset(&set, SIGCHLD);
@@ -370,8 +371,8 @@ njt_master_process_cycle(njt_cycle_t *cycle)
 
         if (master_evt_ctx && njt_rtc) {
             njt_rtc = 0;
-            njt_str_set(&worker_v, "");
-            rc = njet_iot_client_kv_get((void *)worker_k.data, worker_k.len, (void **)&worker_v.data, (uint32_t *)&worker_v.len, master_evt_ctx);;
+            rc = njet_iot_client_kv_get((void *)worker_k.data, worker_k.len, (void **)&worker_v.data, &val_len, master_evt_ctx);
+            worker_v.len = val_len;
             if (rc == NJT_OK) {
                 worker_c = njt_atoi(worker_v.data, worker_v.len);
                 if (worker_c <= 0 || worker_c > MAX_DYN_WORKER_C) {
@@ -454,7 +455,8 @@ static void njt_check_and_update_worker_count(njt_cycle_t *cycle, njt_core_conf_
     njt_int_t          has_worker_kv;
     njt_int_t          rc;
     u_char             s_tmp[24] = { 0 };
-    u_char *end;
+    u_char             *end;
+    uint32_t           val_len = 0;   
 
     if (!master_evt_ctx) {
         njt_log_error(NJT_LOG_ERR, cycle->log, 0, "master_evt_ctx not existed, kv func not available");
@@ -462,7 +464,9 @@ static void njt_check_and_update_worker_count(njt_cycle_t *cycle, njt_core_conf_
     }
     has_worker_kv = 0;
     njt_str_set(&worker_v, "");
-    rc = njet_iot_client_kv_get((void *)worker_k.data, worker_k.len, (void **)&worker_v.data, (uint32_t *)&worker_v.len, master_evt_ctx);;
+
+    rc = njet_iot_client_kv_get((void *)worker_k.data, worker_k.len, (void **)&worker_v.data, &val_len, master_evt_ctx);
+    worker_v.len = val_len;
     if (rc == NJT_OK) {
         worker_c = njt_atoi(worker_v.data, worker_v.len);
         if (worker_c > 0 && worker_c < MAX_DYN_WORKER_C) {

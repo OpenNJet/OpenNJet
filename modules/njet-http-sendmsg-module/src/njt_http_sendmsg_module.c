@@ -867,14 +867,19 @@ error:
 
 int njt_dyn_kv_get(njt_str_t *key, njt_str_t *value)
 {
+    uint32_t val_len = 0;
     if (key->data == NULL)
     {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_dyn_kv_get got wrong key:value data");
         return NJT_ERROR;
     }
+    // type of njt_str_t.len is size_t, in 64bit arch, it is not uint32_t,  
+    // force type conversion will not work in big-endian arch, 
+    // and even in little-endian arch, if value->len is not initialized, only low bytes will be set
+    // so use temporary variable when invoke lib api, and then assign to value->len 
+    int ret = njet_iot_client_kv_get((void *)key->data, key->len, (void **)&value->data, &val_len, sendmsg_mqtt_ctx);
+    value->len=val_len;
 
-    njt_str_null(value);
-    int ret = njet_iot_client_kv_get((void *)key->data, key->len, (void **)&value->data, (uint32_t *)&value->len, sendmsg_mqtt_ctx);
     if (ret < 0)
     {
         return NJT_ERROR;
