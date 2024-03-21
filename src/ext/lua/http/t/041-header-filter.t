@@ -24,7 +24,7 @@ __DATA__
     location /read {
         echo "Hi";
         header_filter_by_lua '
-            ngx.header.content_type = "text/my-plain";
+            njt.header.content_type = "text/my-plain";
         ';
 
     }
@@ -40,7 +40,7 @@ Hi
 === TEST 2: server config
 --- config
     header_filter_by_lua '
-        ngx.header.content_type = "text/my-plain";
+        njt.header.content_type = "text/my-plain";
     ';
 
     location /read {
@@ -59,7 +59,7 @@ Hi
 === TEST 3: set in http
 --- http_config
     header_filter_by_lua '
-        ngx.header.content_type = "text/my-plain";
+        njt.header.content_type = "text/my-plain";
     ';
 --- config
     location /read {
@@ -77,12 +77,12 @@ Hi
 === TEST 4: overriding config
 --- config
     header_filter_by_lua '
-        ngx.header.content_type = "text/my-plain";
+        njt.header.content_type = "text/my-plain";
     ';
     location /read {
         echo "Hi";
         header_filter_by_lua '
-            ngx.header.content_type = "text/read-plain";
+            njt.header.content_type = "text/read-plain";
         ';
     }
 --- request
@@ -99,7 +99,7 @@ Hi
     location /read {
         echo "Hi";
         header_filter_by_lua '
-            ngx.header.content_type = "text/my-plain";
+            njt.header.content_type = "text/my-plain";
         ';
 
     }
@@ -117,7 +117,7 @@ Hi
     location /read {
         echo "Hi";
         header_filter_by_lua '
-            ngx.header.content_length = "text/my-plain";
+            njt.header.content_length = "text/my-plain";
         ';
     }
 --- request
@@ -132,11 +132,11 @@ GET /read
    location /read {
         set $strvar '1';
         content_by_lua '
-            ngx.var.strvar = "127.0.0.1:8080";
-            ngx.say("Hi");
+            njt.var.strvar = "127.0.0.1:8080";
+            njt.say("Hi");
         ';
         header_filter_by_lua '
-            ngx.header.uid = ngx.var.strvar;
+            njt.header.uid = njt.var.strvar;
         ';
     }
 --- request
@@ -153,11 +153,11 @@ Hi
    location /read {
         set $strvar '1';
         content_by_lua '
-            ngx.var.strvar = "127.0.0.1:8080";
-            ngx.say("Hi");
+            njt.var.strvar = "127.0.0.1:8080";
+            njt.say("Hi");
         ';
         header_filter_by_lua '
-            ngx.header.uid = ngx.var.strvar;
+            njt.header.uid = njt.var.strvar;
         ';
     }
 --- request
@@ -173,11 +173,11 @@ uid: 127.0.0.1:8080
    location /read {
         set $strvar '1';
         content_by_lua '
-            ngx.var.strvar = "127.0.0.1:8080";
-            ngx.say("Hi");
+            njt.var.strvar = "127.0.0.1:8080";
+            njt.say("Hi");
         ';
         header_filter_by_lua '
-            ngx.header.uid = ngx.var.strvar;
+            njt.header.uid = njt.var.strvar;
         ';
 
     }
@@ -194,24 +194,24 @@ Hi
 --- config
    location /sub {
         content_by_lua '
-            ngx.say("Hi");
+            njt.say("Hi");
         ';
         header_filter_by_lua '
-            ngx.header.uid = "sub";
+            njt.header.uid = "sub";
         ';
     }
 
     location /parent {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
+            local res = njt.location.capture("/sub")
             if res.status == 200 then
-                ngx.say(res.header.uid)
+                njt.say(res.header.uid)
             else
-                ngx.say("parent")
+                njt.say("parent")
             end
         ';
         header_filter_by_lua '
-            ngx.header.uid = "parent";
+            njt.header.uid = "parent";
         ';
     }
 
@@ -228,12 +228,12 @@ sub
 --- config
     location /lua {
         content_by_lua '
-            ngx.ctx.foo = 32;
-            ngx.say(ngx.ctx.foo)
+            njt.ctx.foo = 32;
+            njt.say(njt.ctx.foo)
         ';
         header_filter_by_lua '
-            ngx.ctx.foo = ngx.ctx.foo + 1;
-            ngx.header.uid = ngx.ctx.foo;
+            njt.ctx.foo = njt.ctx.foo + 1;
+            njt.header.uid = njt.ctx.foo;
         ';
     }
 --- request
@@ -249,15 +249,15 @@ uid: 33
 --- config
     location /lua {
         content_by_lua '
-            ngx.say("Hi");
+            njt.say("Hi");
         ';
 
         header_filter_by_lua '
             local str = "";
-            local args, err = ngx.req.get_uri_args()
+            local args, err = njt.req.get_uri_args()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
             local keys = {}
             for key, val in pairs(args) do
@@ -273,7 +273,7 @@ uid: 33
                 end
             end
 
-            ngx.header.uid = str;
+            njt.header.uid = str;
         ';
     }
 --- request
@@ -285,14 +285,14 @@ Hi
 
 
 
-=== TEST 13: use ngx md5 function
+=== TEST 13: use njt md5 function
 --- config
     location /lua {
         content_by_lua '
-            ngx.say("Hi");
+            njt.say("Hi");
         ';
         header_filter_by_lua '
-            ngx.header.uid = ngx.md5("Hi");
+            njt.header.uid = njt.md5("Hi");
         ';
     }
 --- request
@@ -314,7 +314,7 @@ Hi
 GET /read
 --- user_files
 >>> foo.lua
-ngx.header.content_type = "text/my-plain";
+njt.header.content_type = "text/my-plain";
 --- response_headers
 Content-Type: text/my-plain
 --- response_body
@@ -333,7 +333,7 @@ Hi
 GET /read
 --- user_files
 >>> foo.lua
-ngx.header.content_type = "text/my-plain";
+njt.header.content_type = "text/my-plain";
 --- response_headers
 Content-Type: text/my-plain
 --- response_body
@@ -352,7 +352,7 @@ Hi
 GET /read
 --- user_files
 >>> foo.lua
-ngx.header.content_type = "text/my-plain";
+njt.header.content_type = "text/my-plain";
 --- response_headers
 Content-Type: text/my-plain
 --- response_body
@@ -371,9 +371,9 @@ Hi
 GET /read
 --- user_files
 >>> foo.lua
-ngx.header.content_type = "text/my-plain";
+njt.header.content_type = "text/my-plain";
 >>> bar.lua
-ngx.header.content_type = "text/read-plain";
+njt.header.content_type = "text/read-plain";
 --- response_headers
 Content-Type: text/read-plain
 --- response_body
@@ -381,29 +381,29 @@ Hi
 
 
 
-=== TEST 18: ngx.ctx available in header_filter_by_lua (already defined)
+=== TEST 18: njt.ctx available in header_filter_by_lua (already defined)
 --- config
     location /lua {
-        content_by_lua 'ngx.ctx.counter = 3 ngx.say(ngx.ctx.counter)';
-        header_filter_by_lua 'ngx.log(ngx.ERR, "ngx.ctx.counter: ", ngx.ctx.counter)';
+        content_by_lua 'njt.ctx.counter = 3 njt.say(njt.ctx.counter)';
+        header_filter_by_lua 'njt.log(njt.ERR, "njt.ctx.counter: ", njt.ctx.counter)';
     }
 --- request
 GET /lua
 --- response_body
 3
 --- error_log
-ngx.ctx.counter: 3
-lua release ngx.ctx
+njt.ctx.counter: 3
+lua release njt.ctx
 
 
 
-=== TEST 19: ngx.ctx available in header_filter_by_lua (not defined yet)
+=== TEST 19: njt.ctx available in header_filter_by_lua (not defined yet)
 --- config
     location /lua {
         echo hello;
         header_filter_by_lua '
-            ngx.log(ngx.ERR, "ngx.ctx.counter: ", ngx.ctx.counter)
-            ngx.ctx.counter = "hello world"
+            njt.log(njt.ERR, "njt.ctx.counter: ", njt.ctx.counter)
+            njt.ctx.counter = "hello world"
         ';
     }
 --- request
@@ -411,8 +411,8 @@ GET /lua
 --- response_body
 hello
 --- error_log
-ngx.ctx.counter: nil
-lua release ngx.ctx
+njt.ctx.counter: nil
+lua release njt.ctx
 
 
 
@@ -421,17 +421,17 @@ lua release ngx.ctx
     location /lua {
         set $foo '';
         content_by_lua '
-            ngx.send_headers()
-            ngx.say(ngx.var.foo)
+            njt.send_headers()
+            njt.say(njt.var.foo)
         ';
         header_filter_by_lua '
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.INFO, "old foo: ", foo)
+                njt.log(njt.INFO, "old foo: ", foo)
                 foo = foo + 1
             end
-            ngx.var.foo = foo
+            njt.var.foo = foo
         ';
     }
 --- request
@@ -451,8 +451,8 @@ GET /lua
     location /lua {
         set $foo '';
         content_by_lua '
-            ngx.send_headers()
-            ngx.say(ngx.var.foo)
+            njt.send_headers()
+            njt.say(njt.var.foo)
         ';
         header_filter_by_lua '
             error("Something bad")
@@ -473,8 +473,8 @@ failed to run header_filter_by_lua*: header_filter_by_lua:2: Something bad
     location /lua {
         set $foo '';
         content_by_lua '
-            ngx.send_headers()
-            ngx.say(ngx.var.foo)
+            njt.send_headers()
+            njt.say(njt.var.foo)
         ';
         header_filter_by_lua '
             error(nil)
@@ -490,10 +490,10 @@ failed to run header_filter_by_lua*: unknown reason
 
 
 
-=== TEST 23: no ngx.print
+=== TEST 23: no njt.print
 --- config
     location /lua {
-        header_filter_by_lua "ngx.print(32) return 1";
+        header_filter_by_lua "njt.print(32) return 1";
         echo ok;
     }
 --- request
@@ -504,10 +504,10 @@ API disabled in the context of header_filter_by_lua*
 
 
 
-=== TEST 24: no ngx.say
+=== TEST 24: no njt.say
 --- config
     location /lua {
-        header_filter_by_lua "ngx.say(32) return 1";
+        header_filter_by_lua "njt.say(32) return 1";
         echo ok;
     }
 --- request
@@ -518,10 +518,10 @@ API disabled in the context of header_filter_by_lua*
 
 
 
-=== TEST 25: no ngx.flush
+=== TEST 25: no njt.flush
 --- config
     location /lua {
-        header_filter_by_lua "ngx.flush()";
+        header_filter_by_lua "njt.flush()";
         echo ok;
     }
 --- request
@@ -532,10 +532,10 @@ API disabled in the context of header_filter_by_lua*
 
 
 
-=== TEST 26: no ngx.eof
+=== TEST 26: no njt.eof
 --- config
     location /lua {
-        header_filter_by_lua "ngx.eof()";
+        header_filter_by_lua "njt.eof()";
         echo ok;
     }
 --- request
@@ -546,10 +546,10 @@ API disabled in the context of header_filter_by_lua*
 
 
 
-=== TEST 27: no ngx.send_headers
+=== TEST 27: no njt.send_headers
 --- config
     location /lua {
-        header_filter_by_lua "ngx.send_headers()";
+        header_filter_by_lua "njt.send_headers()";
         echo ok;
     }
 --- request
@@ -560,28 +560,10 @@ API disabled in the context of header_filter_by_lua*
 
 
 
-=== TEST 28: no ngx.location.capture
+=== TEST 28: no njt.location.capture
 --- config
     location /lua {
-        header_filter_by_lua 'ngx.location.capture("/sub")';
-        echo ok;
-    }
-
-    location /sub {
-        echo sub;
-    }
---- request
-GET /lua
---- ignore_response
---- error_log
-API disabled in the context of header_filter_by_lua*
-
-
-
-=== TEST 29: no ngx.location.capture_multi
---- config
-    location /lua {
-        header_filter_by_lua 'ngx.location.capture_multi{{"/sub"}}';
+        header_filter_by_lua 'njt.location.capture("/sub")';
         echo ok;
     }
 
@@ -596,10 +578,28 @@ API disabled in the context of header_filter_by_lua*
 
 
 
-=== TEST 30: no ngx.redirect
+=== TEST 29: no njt.location.capture_multi
 --- config
     location /lua {
-        header_filter_by_lua 'ngx.redirect("/blah")';
+        header_filter_by_lua 'njt.location.capture_multi{{"/sub"}}';
+        echo ok;
+    }
+
+    location /sub {
+        echo sub;
+    }
+--- request
+GET /lua
+--- ignore_response
+--- error_log
+API disabled in the context of header_filter_by_lua*
+
+
+
+=== TEST 30: no njt.redirect
+--- config
+    location /lua {
+        header_filter_by_lua 'njt.redirect("/blah")';
         echo ok;
     }
 --- request
@@ -610,10 +610,10 @@ API disabled in the context of header_filter_by_lua*
 
 
 
-=== TEST 31: no ngx.exec
+=== TEST 31: no njt.exec
 --- config
     location /lua {
-        header_filter_by_lua 'ngx.exec("/blah")';
+        header_filter_by_lua 'njt.exec("/blah")';
         echo ok;
     }
 --- request
@@ -624,10 +624,10 @@ API disabled in the context of header_filter_by_lua*
 
 
 
-=== TEST 32: no ngx.req.set_uri(uri, true)
+=== TEST 32: no njt.req.set_uri(uri, true)
 --- config
     location /lua {
-        header_filter_by_lua 'ngx.req.set_uri("/blah", true)';
+        header_filter_by_lua 'njt.req.set_uri("/blah", true)';
         echo ok;
     }
 --- request
@@ -638,13 +638,13 @@ API disabled in the context of header_filter_by_lua*
 
 
 
-=== TEST 33: ngx.req.set_uri(uri) exists
+=== TEST 33: njt.req.set_uri(uri) exists
 --- config
     location /lua {
-        header_filter_by_lua 'ngx.req.set_uri("/blah") return 1';
+        header_filter_by_lua 'njt.req.set_uri("/blah") return 1';
         content_by_lua '
-            ngx.send_headers()
-            ngx.say("uri: ", ngx.var.uri)
+            njt.send_headers()
+            njt.say("uri: ", njt.var.uri)
         ';
     }
 --- request
@@ -656,10 +656,10 @@ uri: /blah
 
 
 
-=== TEST 34: no ngx.req.read_body()
+=== TEST 34: no njt.req.read_body()
 --- config
     location /lua {
-        header_filter_by_lua 'ngx.req.read_body()';
+        header_filter_by_lua 'njt.req.read_body()';
         echo ok;
     }
 --- request
@@ -670,10 +670,10 @@ API disabled in the context of header_filter_by_lua*
 
 
 
-=== TEST 35: no ngx.req.socket()
+=== TEST 35: no njt.req.socket()
 --- config
     location /lua {
-        header_filter_by_lua 'return ngx.req.socket()';
+        header_filter_by_lua 'return njt.req.socket()';
         echo ok;
     }
 --- request
@@ -684,10 +684,10 @@ API disabled in the context of header_filter_by_lua*
 
 
 
-=== TEST 36: no ngx.socket.tcp()
+=== TEST 36: no njt.socket.tcp()
 --- config
     location /lua {
-        header_filter_by_lua 'return ngx.socket.tcp()';
+        header_filter_by_lua 'return njt.socket.tcp()';
         echo ok;
     }
 --- request
@@ -698,10 +698,10 @@ API disabled in the context of header_filter_by_lua*
 
 
 
-=== TEST 37: no ngx.socket.connect()
+=== TEST 37: no njt.socket.connect()
 --- config
     location /lua {
-        header_filter_by_lua 'return ngx.socket.connect("127.0.0.1", 80)';
+        header_filter_by_lua 'return njt.socket.connect("127.0.0.1", 80)';
         echo ok;
     }
 --- request
@@ -716,10 +716,10 @@ API disabled in the context of header_filter_by_lua*
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.content_length = 12
-            ngx.say("hello world")
+            njt.header.content_length = 12
+            njt.say("hello world")
         ';
-        header_filter_by_lua 'ngx.header.content_length = nil';
+        header_filter_by_lua 'njt.header.content_length = nil';
     }
 --- request
 GET /lua
@@ -767,8 +767,8 @@ in function 'foo'
     }
 --- user_files
 >>> test.lua
-v = ngx.var["request_uri"]
-ngx.print("request_uri: ", v, "\n")
+v = njt.var["request_uri"]
+njt.print("request_uri: ", v, "\n")
 --- request
 GET /lua?a=1&b=2
 --- ignore_response
@@ -783,14 +783,14 @@ qr/failed to load external Lua file ".*?test2\.lua": cannot open .*? No such fil
     location = /t {
         echo ok;
         header_filter_by_lua '
-            return ngx.exit(582)
+            return njt.exit(582)
         ';
     }
 
     location = /bar {
         echo hi;
         header_filter_by_lua '
-            return ngx.exit(302)
+            return njt.exit(302)
         ';
     }
 --- request

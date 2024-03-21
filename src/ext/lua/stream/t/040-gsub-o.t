@@ -19,9 +19,9 @@ __DATA__
 === TEST 1: sanity
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("[hello, world]", "[a-z]+", "howdy", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("[hello, world]", "[a-z]+", "howdy", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 [howdy, howdy]
@@ -32,9 +32,9 @@ __DATA__
 === TEST 2: trimmed
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("hello, world", "[a-z]+", "howdy", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("hello, world", "[a-z]+", "howdy", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 howdy, howdy
@@ -45,9 +45,9 @@ howdy, howdy
 === TEST 3: not matched
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("hello, world", "[A-Z]+", "howdy", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("hello, world", "[A-Z]+", "howdy", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 hello, world
@@ -62,9 +62,9 @@ hello, world
             return "[" .. m[0] .. "," .. m[1] .. "]"
         end
 
-        local s, n = ngx.re.gsub("hello, world", "([a-z])[a-z]+", f, "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("hello, world", "([a-z])[a-z]+", f, "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 [hello,h], [world,w]
@@ -79,9 +79,9 @@ hello, world
             return "[" .. m[0] .. "," .. m[1] .. "]"
         end
 
-        local s, n = ngx.re.gsub("{hello, world}", "([a-z])[a-z]+", f, "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("{hello, world}", "([a-z])[a-z]+", f, "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 {[hello,h], [world,w]}
@@ -92,9 +92,9 @@ hello, world
 === TEST 6: replace by script (trimmed)
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("hello, world", "([a-z])[a-z]+", "[$0,$1]", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("hello, world", "([a-z])[a-z]+", "[$0,$1]", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 [hello,h], [world,w]
@@ -105,9 +105,9 @@ hello, world
 === TEST 7: replace by script (not trimmed)
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("{hello, world}", "([a-z])[a-z]+", "[$0,$1]", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("{hello, world}", "([a-z])[a-z]+", "[$0,$1]", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 {[hello,h], [world,w]}
@@ -118,9 +118,9 @@ hello, world
 === TEST 8: look-behind assertion
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("{foobarbaz}", "(?<=foo)bar|(?<=bar)baz", "h$0", "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("{foobarbaz}", "(?<=foo)bar|(?<=bar)baz", "h$0", "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 {foohbarhbaz}
@@ -135,9 +135,9 @@ hello, world
             return "[" .. m[0] .. "," .. m["first"] .. "]"
         end
 
-        local s, n = ngx.re.gsub("hello, world", "(?<first>[a-z])[a-z]+", repl, "o")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("hello, world", "(?<first>[a-z])[a-z]+", repl, "o")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 [hello,h], [world,w]

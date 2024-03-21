@@ -1,7 +1,7 @@
 
 /*
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -121,7 +121,12 @@ struct njt_http_lua_socket_tcp_upstream_s {
 
 #if (NJT_HTTP_SSL)
     njt_str_t                        ssl_name;
+    njt_ssl_session_t               *ssl_session_ret;
+    const char                      *error_ret;
+    int                              openssl_error_code_ret;
 #endif
+
+    njt_chain_t                     *busy_bufs;
 
     unsigned                         ft_type:16;
     unsigned                         no_close:1;

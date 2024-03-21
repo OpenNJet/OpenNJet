@@ -21,7 +21,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua '
-            ngx.say(ngx.req.http_version())
+            njt.say(njt.req.http_version())
         ';
     }
 --- request
@@ -37,7 +37,7 @@ GET /t
 --- config
     location /t {
         content_by_lua '
-            ngx.say(ngx.req.http_version())
+            njt.say(njt.req.http_version())
         ';
     }
 --- request

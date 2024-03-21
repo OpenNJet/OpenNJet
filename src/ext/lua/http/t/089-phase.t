@@ -18,11 +18,11 @@ __DATA__
 
 === TEST 1: get_phase in init_by_lua
 --- http_config
-    init_by_lua 'phase = ngx.get_phase()';
+    init_by_lua 'phase = njt.get_phase()';
 --- config
     location /lua {
         content_by_lua '
-            ngx.say(phase)
+            njt.say(phase)
         ';
     }
 --- request
@@ -34,10 +34,10 @@ init
 
 === TEST 2: get_phase in set_by_lua
 --- config
-    set_by_lua $phase 'return ngx.get_phase()';
+    set_by_lua $phase 'return njt.get_phase()';
     location /lua {
         content_by_lua '
-            ngx.say(ngx.var.phase)
+            njt.say(njt.var.phase)
         ';
     }
 --- request
@@ -51,8 +51,8 @@ set
 --- config
     location /lua {
         rewrite_by_lua '
-            ngx.say(ngx.get_phase())
-            ngx.exit(200)
+            njt.say(njt.get_phase())
+            njt.exit(200)
         ';
     }
 --- request
@@ -66,8 +66,8 @@ rewrite
 --- config
     location /lua {
         access_by_lua '
-            ngx.say(ngx.get_phase())
-            ngx.exit(200)
+            njt.say(njt.get_phase())
+            njt.exit(200)
         ';
     }
 --- request
@@ -81,7 +81,7 @@ access
 --- config
     location /lua {
         content_by_lua '
-            ngx.say(ngx.get_phase())
+            njt.say(njt.get_phase())
         ';
     }
 --- request
@@ -96,7 +96,7 @@ content
     location /lua {
         echo "OK";
         header_filter_by_lua '
-            ngx.header.Phase = ngx.get_phase()
+            njt.header.Phase = njt.get_phase()
         ';
     }
 --- request
@@ -110,10 +110,10 @@ Phase: header_filter
 --- config
     location /lua {
         content_by_lua '
-            ngx.exit(200)
+            njt.exit(200)
         ';
         body_filter_by_lua '
-            ngx.arg[1] = ngx.get_phase()
+            njt.arg[1] = njt.get_phase()
         ';
     }
 --- request
@@ -128,7 +128,7 @@ body_filter
     location /lua {
         echo "OK";
         log_by_lua '
-            ngx.log(ngx.ERR, ngx.get_phase())
+            njt.log(njt.ERR, njt.get_phase())
         ';
     }
 --- request
@@ -138,17 +138,17 @@ log
 
 
 
-=== TEST 9: get_phase in ngx.timer callback
+=== TEST 9: get_phase in njt.timer callback
 --- config
     location /lua {
         echo "OK";
         log_by_lua '
             local function f()
-                ngx.log(ngx.WARN, "current phase: ", ngx.get_phase())
+                njt.log(njt.WARN, "current phase: ", njt.get_phase())
             end
-            local ok, err = ngx.timer.at(0, f)
+            local ok, err = njt.timer.at(0, f)
             if not ok then
-                ngx.log(ngx.ERR, "failed to add timer: ", err)
+                njt.log(njt.ERR, "failed to add timer: ", err)
             end
         ';
     }
@@ -163,11 +163,11 @@ current phase: timer
 
 === TEST 10: get_phase in init_worker_by_lua
 --- http_config
-    init_worker_by_lua 'phase = ngx.get_phase()';
+    init_worker_by_lua 'phase = njt.get_phase()';
 --- config
     location /lua {
         content_by_lua '
-            ngx.say(phase)
+            njt.say(phase)
         ';
     }
 --- request
@@ -182,14 +182,14 @@ init_worker
 === TEST 11: get_phase in exit_worker_by_lua
 --- http_config
     exit_worker_by_lua_block {
-        local phase = ngx.get_phase()
-        ngx.log(ngx.ERR, phase)
-        ngx.log(ngx.ERR, "exiting now")
+        local phase = njt.get_phase()
+        njt.log(njt.ERR, phase)
+        njt.log(njt.ERR, "exiting now")
     }
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request

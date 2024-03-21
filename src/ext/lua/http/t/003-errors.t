@@ -59,7 +59,7 @@ GET /lua
 --- user_files
 >>> test.lua
 -- local j = require('json')
-local p = ngx.arg[1]
+local p = njt.arg[1]
 return p
 >>> feed.lua
 local s = require("json")
@@ -81,7 +81,7 @@ local function explode(d,p)
 return t
  end
 
-local a = explode(',', string.sub(ngx.arg[1], 2, -1))
+local a = explode(',', string.sub(njt.arg[1], 2, -1))
 local x = {}
 for i,v in ipairs(a) do table.insert(x,s.decode(v).friend_userid) end
 return table.concat(x,',')
@@ -96,8 +96,8 @@ GET /lua
 --- config
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/err")
-            ngx.say(res.status);
+            local res = njt.location.capture("/err")
+            njt.say(res.status);
         ';
     }
     location /err {
@@ -114,8 +114,8 @@ GET /main
 --- config
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/err")
-            ngx.say(res.status);
+            local res = njt.location.capture("/err")
+            njt.say(res.status);
         ';
     }
     location /err {

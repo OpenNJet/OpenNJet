@@ -19,8 +19,8 @@ __DATA__
         content_by_lua '
             local s = ndk.set_var.set_escape_uri(" :")
             local r = ndk.set_var.set_unescape_uri("a%20b")
-            ngx.say(s)
-            ngx.say(r)
+            njt.say(s)
+            njt.say(r)
         ';
     }
 --- request
@@ -36,7 +36,7 @@ a b
     location /read {
         content_by_lua '
             local s = ndk.set_var.set_escape_uri_blah_blah(" :")
-            ngx.say(s)
+            njt.say(s)
         ';
     }
 --- request
@@ -51,7 +51,7 @@ GET /read
     location /read {
         content_by_lua '
             local s = ndk.set_var.content_by_lua(" :")
-            ngx.say(s)
+            njt.say(s)
         ';
     }
 --- request
@@ -65,7 +65,7 @@ GET /read
 --- config
     location /read {
         header_filter_by_lua '
-            ngx.header.Foo = ndk.set_var.set_escape_uri(" %")
+            njt.header.Foo = ndk.set_var.set_escape_uri(" %")
         ';
         echo hi;
     }
@@ -78,7 +78,7 @@ hi
 
 
 
-=== TEST 5: bug: ndk.set_var not initialize ngx_http_variable_value_t variable properly
+=== TEST 5: bug: ndk.set_var not initialize njt_http_variable_value_t variable properly
 --- config
    location /luaset {
      content_by_lua "
@@ -86,8 +86,8 @@ hi
        local version = '2011.10.13+0000'
        local e_version = ndk.set_var.set_encode_base32(version)
        local s_version= ndk.set_var.set_quote_sql_str(version)
-       ngx.say(e_version)
-       ngx.say(s_version)
+       njt.say(e_version)
+       njt.say(s_version)
      ";
    }
 --- request
@@ -118,11 +118,11 @@ a b
     location /read {
         set $foo '';
         content_by_lua '
-            ngx.send_headers()
-            ngx.say(ngx.var.foo)
+            njt.send_headers()
+            njt.say(njt.var.foo)
         ';
         header_filter_by_lua '
-            ngx.var.foo = ndk.set_var.set_unescape_uri("a%20b")
+            njt.var.foo = ndk.set_var.set_unescape_uri("a%20b")
         ';
     }
 --- request
@@ -138,7 +138,7 @@ a b
         echo ok;
         log_by_lua '
             local foo = ndk.set_var.set_unescape_uri("a%20b")
-            ngx.log(ngx.WARN, "foo = ", foo)
+            njt.log(njt.WARN, "foo = ", foo)
         ';
     }
 --- request
@@ -151,14 +151,14 @@ foo = a b
 
 
 
-=== TEST 9: ngx.timer.*
+=== TEST 9: njt.timer.*
 --- config
     location /read {
         echo ok;
         log_by_lua '
-            ngx.timer.at(0, function ()
+            njt.timer.at(0, function ()
                 local foo = ndk.set_var.set_unescape_uri("a%20b")
-                ngx.log(ngx.WARN, "foo = ", foo)
+                njt.log(njt.WARN, "foo = ", foo)
             end)
         ';
     }

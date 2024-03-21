@@ -25,13 +25,13 @@ __DATA__
 --- config
     location /test {
         content_by_lua '
-            ngx.say("hello, world")
-            local ok, err = ngx.flush(true)
+            njt.say("hello, world")
+            local ok, err = njt.flush(true)
             if not ok then
-                ngx.log(ngx.ERR, "flush failed: ", err)
+                njt.log(njt.ERR, "flush failed: ", err)
                 return
             end
-            ngx.say("hiya")
+            njt.say("hiya")
         ';
     }
 --- request
@@ -51,13 +51,13 @@ lua reuse free buf chain, but reallocate memory because 5 >= 0
     send_timeout 500ms;
     location /test {
         content_by_lua '
-            ngx.say("hello, world")
-            local ok, err = ngx.flush(false)
+            njt.say("hello, world")
+            local ok, err = njt.flush(false)
             if not ok then
-                ngx.log(ngx.ERR, "flush failed: ", err)
+                njt.log(njt.ERR, "flush failed: ", err)
                 return
             end
-            ngx.say("hiya")
+            njt.say("hiya")
         ';
     }
 --- request
@@ -72,9 +72,9 @@ hiya
 --- config
     location /test {
         rewrite_by_lua '
-            ngx.say("hello, world")
-            ngx.flush(true)
-            ngx.say("hiya")
+            njt.say("hello, world")
+            njt.flush(true)
+            njt.say("hiya")
         ';
         content_by_lua return;
     }
@@ -90,9 +90,9 @@ hiya
 --- config
     location /test {
         rewrite_by_lua '
-            ngx.say("hello, world")
-            ngx.flush(false)
-            ngx.say("hiya")
+            njt.say("hello, world")
+            njt.flush(false)
+            njt.say("hiya")
         ';
         content_by_lua return;
     }
@@ -108,11 +108,11 @@ hiya
 --- config
     location /test {
         content_by_lua '
-            ngx.say("hello, world")
-            ngx.flush(true)
-            ngx.say("hiya")
-            ngx.flush(true)
-            ngx.say("blah")
+            njt.say("hello, world")
+            njt.flush(true)
+            njt.say("hiya")
+            njt.flush(true)
+            njt.say("blah")
         ';
     }
 --- request
@@ -126,7 +126,7 @@ Content-Length: 23
 --- timeout: 5
 --- error_log
 lua buffering output bufs for the HTTP 1.0 request
-lua http 1.0 buffering makes ngx.flush() a no-op
+lua http 1.0 buffering makes njt.flush() a no-op
 
 
 
@@ -134,17 +134,17 @@ lua http 1.0 buffering makes ngx.flush() a no-op
 --- config
     location /test {
         content_by_lua '
-            ngx.say("hello, world")
-            local ok, err = ngx.flush(false)
+            njt.say("hello, world")
+            local ok, err = njt.flush(false)
             if not ok then
-                ngx.log(ngx.WARN, "1: failed to flush: ", err)
+                njt.log(njt.WARN, "1: failed to flush: ", err)
             end
-            ngx.say("hiya")
-            local ok, err = ngx.flush(false)
+            njt.say("hiya")
+            local ok, err = njt.flush(false)
             if not ok then
-                ngx.log(ngx.WARN, "2: failed to flush: ", err)
+                njt.log(njt.WARN, "2: failed to flush: ", err)
             end
-            ngx.say("blah")
+            njt.say("blah")
         ';
     }
 --- request
@@ -157,7 +157,7 @@ blah
 Content-Length: 23
 --- error_log
 lua buffering output bufs for the HTTP 1.0 request
-lua http 1.0 buffering makes ngx.flush() a no-op
+lua http 1.0 buffering makes njt.flush() a no-op
 1: failed to flush: buffering
 2: failed to flush: buffering
 --- timeout: 5
@@ -168,9 +168,9 @@ lua http 1.0 buffering makes ngx.flush() a no-op
 --- config
     location /test {
         content_by_lua '
-            ngx.say(string.rep("a", 1024 * 64))
-            ngx.flush(true)
-            ngx.say("hiya")
+            njt.say(string.rep("a", 1024 * 64))
+            njt.flush(true)
+            njt.say("hiya")
         ';
     }
 --- request
@@ -186,11 +186,11 @@ hiya
 --- config
     location /test {
         content_by_lua '
-            ngx.say("hello, world")
-            ngx.flush(true)
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
-            ngx.flush(true)
+            njt.say("hello, world")
+            njt.flush(true)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
+            njt.flush(true)
         ';
     }
     location /sub {
@@ -209,11 +209,11 @@ sub
     lua_http10_buffering off;
     location /test {
         content_by_lua '
-            ngx.say("hello, world")
-            ngx.flush(true)
-            ngx.say("hiya")
-            ngx.flush(true)
-            ngx.say("blah")
+            njt.say("hello, world")
+            njt.flush(true)
+            njt.say("hiya")
+            njt.flush(true)
+            njt.say("blah")
         ';
     }
 --- request
@@ -227,7 +227,7 @@ blah
 --- timeout: 5
 --- no_error_log
 lua buffering output bufs for the HTTP 1.0 request
-lua http 1.0 buffering makes ngx.flush() a no-op
+lua http 1.0 buffering makes njt.flush() a no-op
 
 
 
@@ -237,11 +237,11 @@ lua http 1.0 buffering makes ngx.flush() a no-op
     location /test {
         lua_http10_buffering off;
         content_by_lua '
-            ngx.say("hello, world")
-            ngx.flush(false)
-            ngx.say("hiya")
-            ngx.flush(false)
-            ngx.say("blah")
+            njt.say("hello, world")
+            njt.flush(false)
+            njt.say("hiya")
+            njt.flush(false)
+            njt.say("blah")
         ';
     }
 --- request
@@ -254,7 +254,7 @@ blah
 !Content-Length
 --- no_error_log
 lua buffering output bufs for the HTTP 1.0 request
-lua http 1.0 buffering makes ngx.flush() a no-op
+lua http 1.0 buffering makes njt.flush() a no-op
 --- timeout: 5
 
 
@@ -264,11 +264,11 @@ lua http 1.0 buffering makes ngx.flush() a no-op
     location /test {
         lua_http10_buffering on;
         content_by_lua '
-            ngx.say("hello, world")
-            ngx.flush(true)
-            ngx.say("hiya")
-            ngx.flush(true)
-            ngx.say("blah")
+            njt.say("hello, world")
+            njt.flush(true)
+            njt.say("hiya")
+            njt.flush(true)
+            njt.say("blah")
         ';
     }
 --- request
@@ -282,7 +282,7 @@ Content-Length: 23
 --- timeout: 5
 --- error_log
 lua buffering output bufs for the HTTP 1.0 request
-lua http 1.0 buffering makes ngx.flush() a no-op
+lua http 1.0 buffering makes njt.flush() a no-op
 
 
 
@@ -291,11 +291,11 @@ lua http 1.0 buffering makes ngx.flush() a no-op
     location /test {
         lua_http10_buffering on;
         content_by_lua '
-            ngx.say("hello, world")
-            ngx.flush(false)
-            ngx.say("hiya")
-            ngx.flush(false)
-            ngx.say("blah")
+            njt.say("hello, world")
+            njt.flush(false)
+            njt.say("hiya")
+            njt.flush(false)
+            njt.say("blah")
         ';
     }
 --- request
@@ -308,7 +308,7 @@ blah
 Content-Length: 23
 --- error_log
 lua buffering output bufs for the HTTP 1.0 request
-lua http 1.0 buffering makes ngx.flush() a no-op
+lua http 1.0 buffering makes njt.flush() a no-op
 --- timeout: 5
 
 
@@ -318,20 +318,20 @@ lua http 1.0 buffering makes ngx.flush() a no-op
     location /test {
         content_by_lua '
             local function f()
-                ngx.say("hello, world")
-                ngx.flush(true)
+                njt.say("hello, world")
+                njt.flush(true)
                 coroutine.yield()
-                ngx.say("hiya")
+                njt.say("hiya")
             end
             local c = coroutine.create(f)
-            ngx.say(coroutine.resume(c))
-            ngx.say(coroutine.resume(c))
+            njt.say(coroutine.resume(c))
+            njt.say(coroutine.resume(c))
         ';
     }
 --- request
 GET /test
 --- stap2
-F(ngx_http_lua_wev_handler) {
+F(njt_http_lua_wev_handler) {
     printf("wev handler: wev:%d\n", $r->connection->write->ready)
 }
 
@@ -343,13 +343,13 @@ function gen_id(k) {
     return cur
 }
 
-F(ngx_http_handler) {
+F(njt_http_handler) {
     delete ids
     cur = 0
 }
 
 /*
-F(ngx_http_lua_run_thread) {
+F(njt_http_lua_run_thread) {
     id = gen_id($ctx->cur_co)
     printf("run thread %d\n", id)
 }
@@ -371,7 +371,7 @@ M(http-lua-entry-coroutine-yield) {
 }
 
 /*
-F(ngx_http_lua_coroutine_yield) {
+F(njt_http_lua_coroutine_yield) {
     printf("yield %x\n", gen_id($L))
 }
 */
@@ -382,7 +382,7 @@ M(http-lua-user-coroutine-yield) {
     printf("yield %x in %x\n", c, p)
 }
 
-F(ngx_http_lua_atpanic) {
+F(njt_http_lua_atpanic) {
     printf("lua atpanic(%d):", gen_id($L))
     print_ubacktrace();
 }
@@ -393,11 +393,11 @@ M(http-lua-user-coroutine-create) {
     printf("create %x in %x\n", c, p)
 }
 
-F(ngx_http_lua_ngx_exec) { println("exec") }
+F(njt_http_lua_njt_exec) { println("exec") }
 
-F(ngx_http_lua_ngx_exit) { println("exit") }
+F(njt_http_lua_njt_exit) { println("exit") }
 
-F(ngx_http_writer) { println("http writer") }
+F(njt_http_writer) { println("http writer") }
 
 --- response_body
 hello, world
@@ -413,9 +413,9 @@ lua reuse free buf memory 13 >= 5
 --- config
     location /test {
         content_by_lua '
-            ngx.flush()
-            ngx.status = 404
-            ngx.say("not found")
+            njt.flush()
+            njt.status = 404
+            njt.say("not found")
         ';
     }
 --- request
@@ -436,13 +436,13 @@ not found
 
     location /test {
         content_by_lua '
-            ngx.say("hello, world")
-            local ok, err = ngx.flush(true)
+            njt.say("hello, world")
+            local ok, err = njt.flush(true)
             if not ok then
-                ngx.log(ngx.ERR, "flush failed: ", err)
+                njt.log(njt.ERR, "flush failed: ", err)
                 return
             end
-            ngx.say("hiya")
+            njt.say("hiya")
         ';
     }
 --- request
@@ -462,21 +462,21 @@ Content-Encoding: gzip
     location /test {
         gunzip on;
         content_by_lua '
-            local f, err = io.open(ngx.var.document_root .. "/gzip.bin", "r")
+            local f, err = io.open(njt.var.document_root .. "/gzip.bin", "r")
             if not f then
-                ngx.say("failed to open file: ", err)
+                njt.say("failed to open file: ", err)
                 return
             end
             local data = f:read(100)
-            ngx.header.content_encoding = "gzip"
-            ngx.print(data)
-            local ok, err = ngx.flush(true)
+            njt.header.content_encoding = "gzip"
+            njt.print(data)
+            local ok, err = njt.flush(true)
             if not ok then
-                ngx.log(ngx.ERR, "flush failed: ", err)
+                njt.log(njt.ERR, "flush failed: ", err)
                 return
             end
             data = f:read("*a")
-            ngx.print(data)
+            njt.print(data)
         ';
     }
 --- user_files eval
@@ -495,16 +495,16 @@ GET /test
     location /test {
         limit_rate 150;
         content_by_lua '
-            local begin = ngx.now()
+            local begin = njt.now()
             for i = 1, 2 do
-                ngx.print(string.rep("a", 100))
-                local ok, err = ngx.flush(true)
+                njt.print(string.rep("a", 100))
+                local ok, err = njt.flush(true)
                 if not ok then
-                    ngx.log(ngx.ERR, "failed to flush: ", err)
+                    njt.log(njt.ERR, "failed to flush: ", err)
                 end
             end
-            local elapsed = ngx.now() - begin
-            ngx.log(ngx.WARN, "lua writes elapsed ", elapsed, " sec")
+            local elapsed = njt.now() - begin
+            njt.log(njt.WARN, "lua writes elapsed ", elapsed, " sec")
         ';
     }
 --- request

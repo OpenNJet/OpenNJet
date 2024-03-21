@@ -125,12 +125,7 @@ njt_stream_lua_coroutine_create_helper(lua_State *L,
     luaL_argcheck(L, lua_isfunction(L, 1) && !lua_iscfunction(L, 1), 1,
                   "Lua function expected");
 
-    njt_stream_lua_check_context(L, ctx, NJT_STREAM_LUA_CONTEXT_CONTENT
-                                 | NJT_STREAM_LUA_CONTEXT_TIMER
-                                 | NJT_STREAM_LUA_CONTEXT_SSL_CLIENT_HELLO
-                                 | NJT_STREAM_LUA_CONTEXT_SSL_CERT
-                                 | NJT_STREAM_LUA_CONTEXT_PREREAD
-                                 );
+    njt_stream_lua_check_context(L, ctx, NJT_STREAM_LUA_CONTEXT_YIELDABLE);
 
     vm = njt_stream_lua_get_lua_vm(r, ctx);
 
@@ -158,6 +153,7 @@ njt_stream_lua_coroutine_create_helper(lua_State *L,
 
 #ifdef OPENRESTY_LUAJIT
     njt_stream_lua_set_req(co, r);
+    njt_stream_lua_attach_co_ctx_to_L(co, coctx);
 #else
     /* make new coroutine share globals of the parent coroutine.
      * NOTE: globals don't have to be separated! */

@@ -138,6 +138,26 @@ njt_http_lua_access_handler(njt_http_request_t *r)
     }
 
     if (llcf->force_read_body && !ctx->read_body_done) {
+
+#if (NJT_HTTP_V2)
+        if (r->main->stream && r->headers_in.content_length_n < 0) {
+            njt_log_error(NJT_LOG_WARN, r->connection->log, 0,
+                          "disable lua_need_request_body, since "
+                          "http2 read_body may break http2 stream process");
+            goto done;
+        }
+#endif
+
+#if (NJT_HTTP_V3)
+        if (r->http_version == NJT_HTTP_VERSION_30
+            && r->headers_in.content_length_n < 0)
+        {
+            njt_log_error(NJT_LOG_WARN, r->connection->log, 0,
+                          "disable lua_need_request_body, since "
+                          "http2 read_body may break http2 stream process");
+            goto done;
+        }
+#endif
         r->request_body_in_single_buf = 1;
         r->request_body_in_persistent_file = 1;
         r->request_body_in_clean_file = 1;
@@ -154,6 +174,12 @@ njt_http_lua_access_handler(njt_http_request_t *r)
             return NJT_DONE;
         }
     }
+
+#if defined(NJT_HTTP_V3) || defined(NJT_HTTP_V2)
+
+done:
+
+#endif
 
     dd("calling access handler");
     return llcf->access_handler(r);
@@ -198,7 +224,7 @@ njt_http_lua_access_handler_file(njt_http_request_t *r)
 
     llcf = njt_http_get_module_loc_conf(r, njt_http_lua_module);
 
-    /* Eval nginx variables in code path string first */
+    /* Eval njet variables in code path string first */
     if (njt_http_complex_value(r, &llcf->access_src, &eval_src) != NJT_OK) {
         return NJT_ERROR;
     }
@@ -241,7 +267,7 @@ njt_http_lua_access_by_chunk(lua_State *L, njt_http_request_t *r)
     njt_event_t         *rev;
     njt_connection_t    *c;
     njt_http_lua_ctx_t  *ctx;
-    njt_http_cleanup_t  *cln;
+    njt_pool_cleanup_t  *cln;
 
     njt_http_lua_loc_conf_t     *llcf;
 
@@ -265,7 +291,7 @@ njt_http_lua_access_by_chunk(lua_State *L, njt_http_request_t *r)
     lua_setfenv(co, -2);
 #endif
 
-    /*  save nginx request in coroutine globals table */
+    /*  save njet request in coroutine globals table */
     njt_http_lua_set_req(co, r);
 
     /*  {{{ initialize request context */
@@ -292,9 +318,9 @@ njt_http_lua_access_by_chunk(lua_State *L, njt_http_request_t *r)
 
     /*  }}} */
 
-    /*  {{{ register request cleanup hooks */
+    /*  {{{ register njet pool cleanup hooks */
     if (ctx->cleanup == NULL) {
-        cln = njt_http_cleanup_add(r, 0);
+        cln = njt_pool_cleanup_add(r->pool, 0);
         if (cln == NULL) {
             return NJT_HTTP_INTERNAL_SERVER_ERROR;
         }

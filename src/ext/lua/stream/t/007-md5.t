@@ -18,7 +18,7 @@ __DATA__
 
 === TEST 1: set md5 hello
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.md5("hello")) }
+    content_by_lua_block { njt.say(njt.md5("hello")) }
 --- stream_response
 5d41402abc4b2a76b9719d911017c592
 --- no_error_log
@@ -26,9 +26,9 @@ __DATA__
 
 
 
-=== TEST 2: nil string to ngx.md5
+=== TEST 2: nil string to njt.md5
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.md5(nil)) }
+    content_by_lua_block { njt.say(njt.md5(nil)) }
 --- stream_response
 d41d8cd98f00b204e9800998ecf8427e
 --- no_error_log
@@ -36,9 +36,9 @@ d41d8cd98f00b204e9800998ecf8427e
 
 
 
-=== TEST 3: empty string to ngx.md5
+=== TEST 3: empty string to njt.md5
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.md5("")) }
+    content_by_lua_block { njt.say(njt.md5("")) }
 --- stream_response
 d41d8cd98f00b204e9800998ecf8427e
 --- no_error_log
@@ -48,7 +48,7 @@ d41d8cd98f00b204e9800998ecf8427e
 
 === TEST 4: md5(number)
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.md5(45)) }
+    content_by_lua_block { njt.say(njt.md5(45)) }
 --- stream_response
 6c8349cc7260ae62e3b1396831a8398f
 --- no_error_log

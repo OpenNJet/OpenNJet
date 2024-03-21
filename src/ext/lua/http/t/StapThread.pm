@@ -14,7 +14,7 @@ function gen_id(k) {
     return cur
 }
 
-F(ngx_http_handler) {
+F(njt_http_handler) {
     if (!alive_reqs[$r] && $r == $r->main) {
         in_req++
         alive_reqs[$r] = 1
@@ -26,14 +26,14 @@ F(ngx_http_handler) {
     }
 }
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     if (alive_reqs[$r]) {
         in_req--
         delete alive_reqs[$r]
     }
 }
 
-F(ngx_http_terminate_request) {
+F(njt_http_terminate_request) {
     if (alive_reqs[$r]) {
         in_req--
         delete alive_reqs[$r]
@@ -78,7 +78,7 @@ function gen_id(k) {
     return cur
 }
 
-F(ngx_http_handler) {
+F(njt_http_handler) {
     if (!alive_reqs[$r] && $r == $r->main) {
         in_req++
         alive_reqs[$r] = 1
@@ -96,7 +96,7 @@ F(ngx_http_handler) {
     }
 }
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     if (alive_reqs[$r]) {
         in_req--
         println("free request")
@@ -104,7 +104,7 @@ F(ngx_http_free_request) {
     }
 }
 
-F(ngx_http_terminate_request) {
+F(njt_http_terminate_request) {
     if (alive_reqs[$r]) {
         in_req--
         println("terminate request")
@@ -112,7 +112,7 @@ F(ngx_http_terminate_request) {
     }
 }
 
-F(ngx_http_lua_post_thread) {
+F(njt_http_lua_post_thread) {
     id = gen_id($coctx->co)
     printf("post thread %d\n", id)
 }
@@ -132,11 +132,11 @@ M(timer-expire) {
     delete timers[$arg1]
 }
 
-F(ngx_http_lua_sleep_handler) {
+F(njt_http_lua_sleep_handler) {
     printf("sleep handler called\n")
 }
 
-F(ngx_http_lua_run_thread) {
+F(njt_http_lua_run_thread) {
     id = gen_id($ctx->cur_co_ctx->co)
     printf("run thread %d\n", id)
     #if (id == 1) {
@@ -157,7 +157,7 @@ M(http-lua-user-thread-spawn) {
 
 M(http-lua-thread-delete) {
     t = gen_id($arg2)
-    uthreads = @cast($arg3, "ngx_http_lua_ctx_t")->uthreads
+    uthreads = @cast($arg3, "njt_http_lua_ctx_t")->uthreads
     printf("delete thread %x (uthreads %d)\n", t, uthreads)
     #print_ubacktrace()
 }
@@ -179,7 +179,7 @@ M(http-lua-thread-yield) {
 }
 
 /*
-F(ngx_http_lua_coroutine_yield) {
+F(njt_http_lua_coroutine_yield) {
     printf("yield %x\n", gen_id($L))
 }
 */
@@ -190,31 +190,31 @@ M(http-lua-user-coroutine-yield) {
     printf("yield %x in %x\n", c, p)
 }
 
-F(ngx_http_lua_atpanic) {
+F(njt_http_lua_atpanic) {
     printf("lua atpanic(%d):", gen_id($L))
     print_ubacktrace();
 }
 
-F(ngx_http_lua_run_posted_threads) {
+F(njt_http_lua_run_posted_threads) {
     printf("run posted threads\n")
 }
 
-F(ngx_http_finalize_request) {
-    printf("finalize request %s: rc:%d c:%d a:%d\n", ngx_http_req_uri($r), $rc, $r->main->count, $r == $r->main);
+F(njt_http_finalize_request) {
+    printf("finalize request %s: rc:%d c:%d a:%d\n", njt_http_req_uri($r), $rc, $r->main->count, $r == $r->main);
     #if ($rc == -1) {
         #print_ubacktrace()
     #}
 }
-F(ngx_http_lua_post_subrequest) {
-    printf("post subreq: %s rc=%d, status=%d a=%d\n", ngx_http_req_uri($r), $rc,
+F(njt_http_lua_post_subrequest) {
+    printf("post subreq: %s rc=%d, status=%d a=%d\n", njt_http_req_uri($r), $rc,
          $r->headers_out->status, $r == $r->main)
     #print_ubacktrace()
 }
 M(http-subrequest-done) {
-    printf("subrequest %s done\n", ngx_http_req_uri($r))
+    printf("subrequest %s done\n", njt_http_req_uri($r))
 }
 M(http-subrequest-wake-parent) {
-    printf("subrequest wake parent %s\n", ngx_http_req_uri($r->parent))
+    printf("subrequest wake parent %s\n", njt_http_req_uri($r->parent))
 }
 M(http-lua-user-coroutine-create) {
     p = gen_id($arg2)
@@ -222,32 +222,32 @@ M(http-lua-user-coroutine-create) {
     printf("create %x in %x\n", c, p)
 }
 
-F(ngx_http_lua_ngx_exec) { println("exec") }
+F(njt_http_lua_njt_exec) { println("exec") }
 
-F(ngx_http_lua_ngx_exit) { println("exit") }
-F(ngx_http_lua_ffi_exit) { println("exit") }
+F(njt_http_lua_njt_exit) { println("exit") }
+F(njt_http_lua_ffi_exit) { println("exit") }
 
-F(ngx_http_lua_req_body_cleanup) {
+F(njt_http_lua_req_body_cleanup) {
     println("lua req body cleanup")
 }
 
-F(ngx_http_read_client_request_body) {
+F(njt_http_read_client_request_body) {
     println("read client request body")
 }
 
-F(ngx_http_lua_finalize_coroutines) {
+F(njt_http_lua_finalize_coroutines) {
     println("finalize coroutines")
 }
 
-F(ngx_http_lua_ngx_exit) {
-    println("ngx.exit() called")
+F(njt_http_lua_njt_exit) {
+    println("njt.exit() called")
 }
 
-F(ngx_http_lua_ffi_exit) {
-    println("ngx.exit() called")
+F(njt_http_lua_ffi_exit) {
+    println("njt.exit() called")
 }
 
-F(ngx_http_lua_sleep_resume) {
+F(njt_http_lua_sleep_resume) {
     println("lua sleep resume")
 }
 
@@ -257,11 +257,11 @@ M(http-lua-coroutine-done) {
     //print_ubacktrace()
 }
 
-F(ngx_http_lua_ngx_echo) {
-    println("ngx.print or ngx.say")
+F(njt_http_lua_njt_echo) {
+    println("njt.print or njt.say")
 }
 
-F(ngx_http_lua_del_all_threads) {
+F(njt_http_lua_del_all_threads) {
     println("del all threads")
 }
 

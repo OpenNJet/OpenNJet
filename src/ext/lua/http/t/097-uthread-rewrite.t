@@ -24,12 +24,12 @@ __DATA__
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.req.set_uri("/foo", true)
+                njt.req.set_uri("/foo", true)
             end
 
-            ngx.thread.spawn(f)
-            ngx.sleep(1)
-            ngx.say("hello")
+            njt.thread.spawn(f)
+            njt.sleep(1)
+            njt.say("hello")
         ';
     }
 
@@ -59,11 +59,11 @@ i am foo
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.req.set_uri("/foo", true)
+                njt.sleep(0.1)
+                njt.req.set_uri("/foo", true)
             end
 
-            ngx.thread.spawn(f)
+            njt.thread.spawn(f)
         ';
     }
 
@@ -89,17 +89,17 @@ i am foo
 
 
 
-=== TEST 3: rewrite in user thread (entry thread is still pending on ngx.sleep)
+=== TEST 3: rewrite in user thread (entry thread is still pending on njt.sleep)
 --- config
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.req.set_uri("/foo", true)
+                njt.sleep(0.1)
+                njt.req.set_uri("/foo", true)
             end
 
-            ngx.thread.spawn(f)
-            ngx.sleep(1)
+            njt.thread.spawn(f)
+            njt.sleep(1)
         ';
     }
 
@@ -114,7 +114,7 @@ GET /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -146,7 +146,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_sleep_cleanup) {
+F(njt_http_lua_sleep_cleanup) {
     println("lua sleep cleanup")
 }
 _EOC_
@@ -171,21 +171,21 @@ hello foo
 
 
 
-=== TEST 4: rewrite in a user thread (another user thread is still pending on ngx.sleep)
+=== TEST 4: rewrite in a user thread (another user thread is still pending on njt.sleep)
 --- config
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.req.set_uri("/foo", true)
+                njt.sleep(0.1)
+                njt.req.set_uri("/foo", true)
             end
 
             local function g()
-                ngx.sleep(1)
+                njt.sleep(1)
             end
 
-            ngx.thread.spawn(f)
-            ngx.thread.spawn(g)
+            njt.thread.spawn(f)
+            njt.thread.spawn(g)
         ';
     }
 
@@ -200,7 +200,7 @@ GET /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -232,7 +232,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_sleep_cleanup) {
+F(njt_http_lua_sleep_cleanup) {
     println("lua sleep cleanup")
 }
 _EOC_
@@ -262,20 +262,20 @@ hello foo
 
 
 
-=== TEST 5: rewrite in user thread (entry thread is still pending on ngx.location.capture), without pending output
+=== TEST 5: rewrite in user thread (entry thread is still pending on njt.location.capture), without pending output
 --- config
     location /lua {
         client_body_timeout 12000ms;
         rewrite_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.req.set_uri("/foo", true)
+                njt.sleep(0.1)
+                njt.req.set_uri("/foo", true)
             end
 
-            ngx.thread.spawn(f)
+            njt.thread.spawn(f)
 
-            ngx.location.capture("/sleep")
-            ngx.say("end")
+            njt.location.capture("/sleep")
+            njt.say("end")
         ';
     }
 
@@ -294,7 +294,7 @@ POST /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -321,8 +321,8 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_post_subrequest) {
-    printf("post subreq %s\n", ngx_http_req_uri($r))
+F(njt_http_lua_post_subrequest) {
+    printf("post subreq %s\n", njt_http_req_uri($r))
 }
 
 _EOC_

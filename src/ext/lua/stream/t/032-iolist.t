@@ -22,7 +22,7 @@ __DATA__
 --- stream_server_config
     content_by_lua_block {
         local table = {"hello", nil, true, false, 32.5, 56}
-        ngx.say(table)
+        njt.say(table)
     }
 --- stream_response
 helloniltruefalse32.556
@@ -36,7 +36,7 @@ helloniltruefalse32.556
     content_by_lua_block {
         local table = {"hello", nil, true, false, 32.5, 56}
         local table2 = {table, "--", table}
-        ngx.say(table2)
+        njt.say(table2)
     }
 --- stream_response
 helloniltruefalse32.556--helloniltruefalse32.556
@@ -49,7 +49,7 @@ helloniltruefalse32.556--helloniltruefalse32.556
 --- stream_server_config
     content_by_lua_block {
         local table = {foo = 3}
-        ngx.say(table)
+        njt.say(table)
     }
 --- stream_response
 --- error_log
@@ -62,7 +62,7 @@ bad argument #1 to 'say' (non-array table found)
     content_by_lua_block {
         local f = function () return end
         local table = {1, 3, f}
-        ngx.say(table)
+        njt.say(table)
     }
 --- stream_response
 --- error_log

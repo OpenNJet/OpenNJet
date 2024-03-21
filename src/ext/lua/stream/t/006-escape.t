@@ -14,7 +14,7 @@ __DATA__
 
 === TEST 1: escape uri in content_by_lua
 --- stream_server_config
-    content_by_lua_block {ngx.say(ngx.escape_uri('a 你'))}
+    content_by_lua_block {njt.say(njt.escape_uri('a 你'))}
 --- stream_response
 a%20%E4%BD%A0
 --- no_error_log
@@ -24,7 +24,7 @@ a%20%E4%BD%A0
 
 === TEST 2: unescape uri in content_by_lua
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.unescape_uri('a%20%e4%bd%a0')) }
+    content_by_lua_block { njt.say(njt.unescape_uri('a%20%e4%bd%a0')) }
 --- stream_response
 a 你
 --- no_error_log
@@ -34,7 +34,7 @@ a 你
 
 === TEST 3: escape uri in content_by_lua
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.escape_uri('a+b')) }
+    content_by_lua_block { njt.say(njt.escape_uri('a+b')) }
 --- stream_response
 a%2Bb
 --- no_error_log
@@ -44,7 +44,7 @@ a%2Bb
 
 === TEST 4: escape uri in content_by_lua
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.escape_uri('"a/b={}:<>;&[]\\^')) }
+    content_by_lua_block { njt.say(njt.escape_uri('"a/b={}:<>;&[]\\^')) }
 --- stream_response
 %22a%2Fb%3D%7B%7D%3A%3C%3E%3B%26%5B%5D%5C%5E
 --- no_error_log
@@ -54,7 +54,7 @@ a%2Bb
 
 === TEST 5: escape a string that cannot be escaped
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.escape_uri('abc')) }
+    content_by_lua_block { njt.say(njt.escape_uri('abc')) }
 --- stream_response
 abc
 --- no_error_log
@@ -64,7 +64,7 @@ abc
 
 === TEST 6: escape an empty string that cannot be escaped
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.escape_uri('')) }
+    content_by_lua_block { njt.say(njt.escape_uri('')) }
 --- stream_response eval: "\n"
 --- no_error_log
 [error]
@@ -73,7 +73,7 @@ abc
 
 === TEST 7: escape nil
 --- stream_server_config
-    content_by_lua_block { ngx.say("[", ngx.escape_uri(nil), "]") }
+    content_by_lua_block { njt.say("[", njt.escape_uri(nil), "]") }
 --- stream_response
 []
 --- no_error_log
@@ -83,7 +83,7 @@ abc
 
 === TEST 8: escape numbers
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.escape_uri(32)) }
+    content_by_lua_block { njt.say(njt.escape_uri(32)) }
 --- stream_response
 32
 --- no_error_log
@@ -93,7 +93,7 @@ abc
 
 === TEST 9: unescape nil
 --- stream_server_config
-    content_by_lua_block { ngx.say("[", ngx.unescape_uri(nil), "]") }
+    content_by_lua_block { njt.say("[", njt.unescape_uri(nil), "]") }
 --- stream_response
 []
 --- no_error_log
@@ -103,7 +103,7 @@ abc
 
 === TEST 10: unescape numbers
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.unescape_uri(32)) }
+    content_by_lua_block { njt.say(njt.unescape_uri(32)) }
 --- stream_response
 32
 --- no_error_log
@@ -114,13 +114,13 @@ abc
 === TEST 11: escape type
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 0))
-        ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 1))
-        ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 2))
-        ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 3))
-        ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 4))
-        ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 5))
-        ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 6))
+        njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 0))
+        njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 1))
+        njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 2))
+        njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 3))
+        njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 4))
+        njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 5))
+        njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 6))
     }
 --- stream_response
 https://www.google.com/%3Ft=abc@%20:
@@ -138,7 +138,7 @@ https://www.google.com/?t=abc@%20:
 === TEST 12: escape type error
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", true))
+        njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", true))
     }
 --- stream_response
 --- error_log eval
@@ -151,7 +151,7 @@ qr/\[error\] \d+#\d+: \*\d+ lua entry thread aborted: runtime error: "type" is n
 === TEST 13: escape type out of range
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", -1))
+        njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", -1))
     }
 --- stream_response
 --- error_log eval
@@ -164,7 +164,7 @@ qr/\[error\] \d+#\d+: \*\d+ lua entry thread aborted: runtime error: "type" -1 o
 === TEST 14: escape type error
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 100))
+        njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 100))
     }
 --- stream_response
 --- error_log eval

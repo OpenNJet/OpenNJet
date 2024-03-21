@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # this script is for module developers.
-# the ngx-build script comes from the nginx-devel-utils project on GitHub:
+# the njt-build script comes from the nginx-devel-utils project on GitHub:
 #
 #       https://github.com/openresty/nginx-devel-utils
 
@@ -11,7 +11,7 @@ force=$2
 home=~
 
             #--add-module=$root/../stream-echo-nginx-module \
-ngx-build $force $version \
+njt-build $force $version \
             --with-cc-opt="-DNJT_LUA_USE_ASSERT -I$PCRE_INC -I$OPENSSL_INC" \
             --with-ld-opt="-L$PCRE_LIB -L$OPENSSL_LIB -Wl,-rpath,$PCRE_LIB:$LIBDRIZZLE_LIB:$OPENSSL_LIB" \
             --with-http_stub_status_module \

@@ -21,9 +21,9 @@ __DATA__
     lua_add_variable $foo;
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.var.foo)
-        ngx.var.foo = "bar"
-        ngx.say(ngx.var.foo)
+        njt.say(njt.var.foo)
+        njt.var.foo = "bar"
+        njt.say(njt.var.foo)
     }
 --- stream_response
 nil
@@ -39,7 +39,7 @@ bar
     lua_add_variable $foo;
 --- stream_server_config
     preread_by_lua_block {
-        ngx.var.foo = "bar"
+        njt.var.foo = "bar"
     }
 
     return $foo\n;
@@ -57,7 +57,7 @@ bar
     lua_add_variable $foo;
 --- stream_server_config
     preread_by_lua_block {
-        ngx.var.foo = "bar"
+        njt.var.foo = "bar"
     }
 
     return $foo\n;
@@ -77,7 +77,7 @@ bar
     access_log logs/error.log test;
 --- stream_server_config
     preread_by_lua_block {
-        ngx.var.foo = "bar"
+        njt.var.foo = "bar"
     }
 
     return $foo\n;

@@ -24,10 +24,10 @@ __DATA__
             dogs = {32, 78, 96},
             cat = "kitty",
         }
-        ngx.say("a.dogs[1] = ", a.dogs[1])
-        ngx.say("a.dogs[2] = ", a.dogs[2])
-        ngx.say("a.dogs[3] = ", a.dogs[3])
-        ngx.say("a.cat = ", a.cat)
+        njt.say("a.dogs[1] = ", a.dogs[1])
+        njt.say("a.dogs[2] = ", a.dogs[2])
+        njt.say("a.dogs[3] = ", a.dogs[3])
+        njt.say("a.cat = ", a.cat)
     }
 
 --- config
@@ -45,8 +45,8 @@ a.cat = kitty
 === TEST 2: content_by_lua_block (curly braces in strings)
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("}1, 2)")
-        ngx.say('{1, 2)')
+        njt.say("}1, 2)")
+        njt.say('{1, 2)')
     }
 
 --- config
@@ -62,8 +62,8 @@ a.cat = kitty
 === TEST 3: content_by_lua_block (curly braces in strings, with escaped terminators)
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("\"}1, 2)")
-        ngx.say('\'{1, 2)')
+        njt.say("\"}1, 2)")
+        njt.say('\'{1, 2)')
     }
 
 --- config
@@ -89,7 +89,7 @@ a.cat = kitty
 
                     {
         ]==]
-        ngx.say("ok")
+        njt.say("ok")
     }
 
 --- config
@@ -108,7 +108,7 @@ ok
         '  "
                     }
         ]]
-        ngx.say("ok")
+        njt.say("ok")
     }
 
 --- config
@@ -123,7 +123,7 @@ ok
 --- stream_server_config
     content_by_lua_block {
         --}} {}
-        ngx.say("ok")
+        njt.say("ok")
     }
 
 --- config
@@ -137,46 +137,46 @@ ok
 === TEST 7: content_by_lua_block (cosockets)
 --- stream_server_config
     content_by_lua_block {
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         local port = $TEST_NGINX_SERVER_PORT
         local ok, err = sock:connect('127.0.0.1', port)
         if not ok then
-            ngx.say("failed to connect: ", err)
+            njt.say("failed to connect: ", err)
             return
         end
 
-        ngx.say('connected: ', ok)
+        njt.say('connected: ', ok)
 
         local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
         -- req = "OK"
 
         local bytes, err = sock:send(req)
         if not bytes then
-            ngx.say("failed to send request: ", err)
+            njt.say("failed to send request: ", err)
             return
         end
 
-        ngx.say("request sent: ", bytes)
+        njt.say("request sent: ", bytes)
 
         while true do
             local line, err, part = sock:receive()
             if line then
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
 
             else
-                ngx.say("failed to receive a line: ", err, " [", part, "]")
+                njt.say("failed to receive a line: ", err, " [", part, "]")
                 break
             end
         end
 
         ok, err = sock:close()
-        ngx.say("close: ", ok, " ", err)
+        njt.say("close: ", ok, " ", err)
     }
 
 --- config
     server_tokens off;
     location = /foo {
-        content_by_lua_block { ngx.say("foo") }
+        content_by_lua_block { njt.say("foo") }
         more_clear_headers Date;
     }
 
@@ -208,15 +208,15 @@ close: 1 nil
     }
 --- stream_server_config
 #access_by_lua_block {
-    #local s = ngx.var.a
+    #local s = njt.var.a
     #s = s .. '}access{\n'
-    #ngx.var.a = s
+    #njt.var.a = s
     #}
     content_by_lua_block {
         s = [[}content{]]
-        ngx.ctx.a = s
-        ngx.say(s)
-        ngx.say("glob: ", glob)
+        njt.ctx.a = s
+        njt.say(s)
+        njt.say("glob: ", glob)
     }
     log_by_lua_block {
         print("log by lua running \"}{!\"")
@@ -237,7 +237,7 @@ log by lua running "}{!"
 === TEST 9: missing ]] (string)
 --- stream_server_config
     content_by_lua_block {
-        ngx.say([[hello, world")
+        njt.say([[hello, world")
     }
 
 --- config
@@ -254,7 +254,7 @@ qr/\[emerg\] .*? Lua code block missing the closing long bracket "]]" in .*?\bng
 === TEST 10: missing ]==] (string)
 --- stream_server_config
     content_by_lua_block {
-        ngx.say([==[hello, world")
+        njt.say([==[hello, world")
     }
 
 --- config
@@ -271,7 +271,7 @@ qr/\[emerg\] .*? Lua code block missing the closing long bracket "]==]" in .*?\b
 === TEST 11: missing ]] (comment)
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(--[[hello, world")
+        njt.say(--[[hello, world")
     }
 
 --- config
@@ -288,7 +288,7 @@ qr/\[emerg\] .*? Lua code block missing the closing long bracket "]]" in .*?\bng
 === TEST 12: missing ]=] (comment)
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(--[=[hello, world")
+        njt.say(--[=[hello, world")
     }
 
 --- config
@@ -308,7 +308,7 @@ the *_by_lua_block directive.
 
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("hello")
+        njt.say("hello")
 --- stream_response
 hello, world
 --- no_error_log
@@ -321,7 +321,7 @@ qr/\[emerg\] .*? "http" directive is not allowed here/
 
 === TEST 14: content_by_lua_block (compact)
 --- stream_server_config
-    content_by_lua_block {ngx.say("hello, world", {"!"})}
+    content_by_lua_block {njt.say("hello, world", {"!"})}
 
 --- config
 --- stream_response
@@ -336,7 +336,7 @@ hello, world!
     location = /t {
         content_by_lua_block {
             local t1, t2 = {"hello world"}, {1}
-            ngx.say(t1[t2[1]])
+            njt.say(t1[t2[1]])
         }
     }
 --- request
@@ -351,10 +351,10 @@ hello world
 === TEST 16: ambiguous line comments inside a long bracket string (GitHub #596)
 --- stream_server_config
     content_by_lua_block {
-        ngx.say([[ok--]])
-        ngx.say([==[ok--]==])
-        ngx.say([==[ok-- ]==])
-        --[[ --]] ngx.say("done")
+        njt.say([[ok--]])
+        njt.say([==[ok--]==])
+        njt.say([==[ok-- ]==])
+        --[[ --]] njt.say("done")
     }
 
 --- config
@@ -372,7 +372,7 @@ done
 TODO
 --- SKIP
 --- stream_server_config
-    access_by_lua_block { print([[Hey, it is "!]]) } content_by_lua_block { ngx.say([["]]) }
+    access_by_lua_block { print([[Hey, it is "!]]) } content_by_lua_block { njt.say([["]]) }
 
 --- config
 --- stream_response
@@ -388,7 +388,7 @@ Hey, it is "!
 TODO
 --- SKIP
 --- stream_server_config
-    access_by_lua_block { print([[Hey, it is '!]]) } content_by_lua_block { ngx.say([[']]) }
+    access_by_lua_block { print([[Hey, it is '!]]) } content_by_lua_block { njt.say([[']]) }
 
 --- config
 --- stream_response

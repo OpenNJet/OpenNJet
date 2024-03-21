@@ -21,10 +21,10 @@ __DATA__
     location /lua {
         lua_need_request_body on;
         content_by_lua '
-            local args, err = ngx.req.get_post_args()
+            local args, err = njt.req.get_post_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -34,7 +34,7 @@ __DATA__
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -53,10 +53,10 @@ c = true
     location /lua {
         lua_need_request_body off;
         content_by_lua '
-            local args, err = ngx.req.get_post_args()
+            local args, err = njt.req.get_post_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -66,7 +66,7 @@ c = true
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -83,10 +83,10 @@ a=3&b=4&c
     location /lua {
         lua_need_request_body on;
         content_by_lua '
-            local args, err = ngx.req.get_post_args()
+            local args, err = njt.req.get_post_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -98,9 +98,9 @@ a=3&b=4&c
             for i, key in ipairs(keys) do
                 local val = args[key]
                 if type(val) == "table" then
-                    ngx.say(key, ": ", table.concat(val, ", "))
+                    njt.say(key, ": ", table.concat(val, ", "))
                 else
-                    ngx.say(key, ": ", val)
+                    njt.say(key, ": ", val)
                 end
             end
         ';
@@ -115,11 +115,11 @@ POST /lua
 --- config
     location /lua {
         content_by_lua '
-            ngx.req.read_body();
-            local args, err = ngx.req.get_post_args(2)
+            njt.req.read_body();
+            local args, err = njt.req.get_post_args(2)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -129,7 +129,7 @@ POST /lua
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -149,11 +149,11 @@ lua hit query args limit 2
 --- config
     location /lua {
         content_by_lua '
-            ngx.req.read_body();
-            local args, err = ngx.req.get_post_args(2)
+            njt.req.read_body();
+            local args, err = njt.req.get_post_args(2)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -163,7 +163,7 @@ lua hit query args limit 2
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -183,11 +183,11 @@ lua hit query args limit 2
 --- config
     location /lua {
         content_by_lua '
-            ngx.req.read_body();
-            local args, err = ngx.req.get_post_args(2)
+            njt.req.read_body();
+            local args, err = njt.req.get_post_args(2)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -197,10 +197,10 @@ lua hit query args limit 2
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
 
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -219,11 +219,11 @@ lua hit query args limit 2
 --- config
     location /lua {
         content_by_lua '
-            ngx.req.read_body();
-            local args, err = ngx.req.get_post_args()
+            njt.req.read_body();
+            local args, err = njt.req.get_post_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -233,7 +233,7 @@ lua hit query args limit 2
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -272,11 +272,11 @@ lua hit query args limit 100
 --- config
     location /lua {
         content_by_lua '
-            ngx.req.read_body()
-            local args, err = ngx.req.get_post_args(102)
+            njt.req.read_body()
+            local args, err = njt.req.get_post_args(102)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -286,7 +286,7 @@ lua hit query args limit 100
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -325,11 +325,11 @@ lua hit query args limit 102
 --- config
     location /lua {
         content_by_lua '
-            ngx.req.read_body()
-            local args, err = ngx.req.get_post_args(0)
+            njt.req.read_body()
+            local args, err = njt.req.get_post_args(0)
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local keys = {}
@@ -339,7 +339,7 @@ lua hit query args limit 102
 
             table.sort(keys)
             for i, key in ipairs(keys) do
-                ngx.say(key, " = ", args[key])
+                njt.say(key, " = ", args[key])
             end
         ';
     }
@@ -378,10 +378,10 @@ CORE::join("", @k);
         lua_need_request_body on;
         client_body_in_file_only clean;
         content_by_lua_block {
-            local args, err = ngx.req.get_post_args()
+            local args, err = njt.req.get_post_args()
 
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             if args then
@@ -392,7 +392,7 @@ CORE::join("", @k);
 
                 table.sort(keys)
                 for i, key in ipairs(keys) do
-                    ngx.say(key, " = ", args[key])
+                    njt.say(key, " = ", args[key])
                 end
             end
         }

@@ -27,12 +27,12 @@ __DATA__
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_DELETE });
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_DELETE });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -54,13 +54,13 @@ DELETE
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_DELETE });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_DELETE });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
 
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -82,12 +82,12 @@ DELETE
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_POST });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_POST });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -105,12 +105,12 @@ POST
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_HEAD });
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_HEAD });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -131,12 +131,12 @@ GET /lua
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_GET });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_GET });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -158,11 +158,11 @@ GET
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo")
+            local res = njt.location.capture("/foo")
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -184,11 +184,11 @@ GET
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo", {})
+            local res = njt.location.capture("/foo", {})
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -213,12 +213,12 @@ GET
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_PUT, body = "hello" });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_PUT, body = "hello" });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -241,12 +241,12 @@ hello
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_PUT, body = "hello" });
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_PUT, body = "hello" });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -276,16 +276,16 @@ hello
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/other",
-                { method = ngx.HTTP_PUT, body = "hello" });
+            local res = njt.location.capture("/other",
+                { method = njt.HTTP_PUT, body = "hello" });
 
-            ngx.print(res.body)
+            njt.print(res.body)
 
-            res = ngx.location.capture("/foo")
-            ngx.say(res.body)
+            res = njt.location.capture("/foo")
+            njt.say(res.body)
 
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -313,12 +313,12 @@ GET
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo",
-                { method = ngx.HTTP_POST, body = "hello" });
+            local res = njt.location.capture("/foo",
+                { method = njt.HTTP_POST, body = "hello" });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -343,20 +343,20 @@ hello
 
     location /lua {
         rewrite_by_lua '
-            ngx.location.capture("/flush");
+            njt.location.capture("/flush");
 
-            local res = ngx.location.capture("/memc");
-            ngx.say("GET: " .. res.status);
+            local res = njt.location.capture("/memc");
+            njt.say("GET: " .. res.status);
 
-            res = ngx.location.capture("/memc",
-                { method = ngx.HTTP_PUT, body = "hello" });
-            ngx.say("PUT: " .. res.status);
+            res = njt.location.capture("/memc",
+                { method = njt.HTTP_PUT, body = "hello" });
+            njt.say("PUT: " .. res.status);
 
-            res = ngx.location.capture("/memc");
-            ngx.say("cached: " .. res.body);
+            res = njt.location.capture("/memc");
+            njt.say("cached: " .. res.body);
 
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -383,22 +383,22 @@ cached: hello
 
     location /lua {
         rewrite_by_lua '
-            ngx.location.capture("/flush",
+            njt.location.capture("/flush",
                 { share_all_vars = true });
 
-            local res = ngx.location.capture("/memc",
+            local res = njt.location.capture("/memc",
                 { share_all_vars = true });
-            ngx.say("GET: " .. res.status);
+            njt.say("GET: " .. res.status);
 
-            res = ngx.location.capture("/memc",
-                { method = ngx.HTTP_PUT, body = "hello", share_all_vars = true });
-            ngx.say("PUT: " .. res.status);
+            res = njt.location.capture("/memc",
+                { method = njt.HTTP_PUT, body = "hello", share_all_vars = true });
+            njt.say("PUT: " .. res.status);
 
-            res = ngx.location.capture("/memc", { share_all_vars = true });
-            ngx.say("cached: " .. res.body);
+            res = njt.location.capture("/memc", { share_all_vars = true });
+            njt.say("cached: " .. res.body);
 
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -417,11 +417,11 @@ cached: hello
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo",
+            local res = njt.location.capture("/foo",
                 { args = {} })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -437,11 +437,11 @@ GET /lua
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo",
+            local res = njt.location.capture("/foo",
                 { args = { ["fo="] = "=>" } })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -458,12 +458,12 @@ fo%3D=%3D%3E
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo",
+            local res = njt.location.capture("/foo",
                 { args = { ["fo="] = "=>",
                     ["="] = ":" } })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -480,12 +480,12 @@ GET /lua
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo",
+            local res = njt.location.capture("/foo",
                 { args = { foo = 3,
                     bar = "hello" } })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -502,11 +502,11 @@ GET /lua
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo",
+            local res = njt.location.capture("/foo",
                 { args = { [57] = "hi" } })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -523,11 +523,11 @@ GET /lua
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo",
+            local res = njt.location.capture("/foo",
                 { args = { "hi" } })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -544,11 +544,11 @@ GET /lua
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo?a=3",
+            local res = njt.location.capture("/foo?a=3",
                 { args = { b = 4 } })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -565,11 +565,11 @@ a=3&b=4
 
     location /lua {
         rewrite_by_lua '
-            local res = ngx.location.capture("/foo?a=3",
+            local res = njt.location.capture("/foo?a=3",
                 { args = "b=4" })
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -597,13 +597,13 @@ a=3&b=4
         rewrite_by_lua '
             print("HELLO")
             local memc_key = "hello"
-            local res = ngx.location.capture("/memc?key=" .. memc_key )
-            ngx.say("copass: res " .. res.status)
+            local res = njt.location.capture("/memc?key=" .. memc_key )
+            njt.say("copass: res " .. res.status)
 
             if res.status == 404 then
-                   ngx.say("copas: capture /memc_set")
-                   res = ngx.location.capture("/memc_set?key=" .. memc_key)
-                   ngx.say("copss: status " .. res.status);
+                   njt.say("copas: capture /memc_set")
+                   res = njt.location.capture("/memc_set?key=" .. memc_key)
+                   njt.say("copss: status " .. res.status);
             end
         ';
         content_by_lua 'return';
@@ -619,7 +619,7 @@ copss: status 200
 
 
 === TEST 23: I/O in named location
-the nginx core requires the patch https://github.com/agentzh/ngx_openresty/blob/master/patches/nginx-1.0.15-reset_wev_handler_in_named_locations.patch
+the nginx core requires the patch https://github.com/agentzh/njt_openresty/blob/master/patches/nginx-1.0.15-reset_wev_handler_in_named_locations.patch
 --- config
     location /t {
         echo_exec @named;
@@ -627,7 +627,7 @@ the nginx core requires the patch https://github.com/agentzh/ngx_openresty/blob/
 
     location @named {
         rewrite_by_lua '
-            ngx.location.capture("/hello")
+            njt.location.capture("/hello")
         ';
         echo done;
     }

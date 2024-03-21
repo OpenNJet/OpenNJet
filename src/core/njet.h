@@ -14,6 +14,11 @@
 #define NJT_VERSION      "2.0.1"
 #define NJT_VER          "njet/" NJT_VERSION
 
+#define NGNX_VERSION      "1.25.3"
+#define NGNX_VER          "ngi" "nx/" NGNX_VERSION
+
+#define RESTY_VERSION      "1.25.3.1"
+#define RESTY_VER          "openresty/" RESTY_VERSION
 
 #ifdef NJT_BUILD
 #define NJT_VER_BUILD    NJT_VER " (" NJT_BUILD ")"

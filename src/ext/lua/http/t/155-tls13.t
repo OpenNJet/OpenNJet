@@ -51,7 +51,7 @@ __DATA__
         server_tokens off;
         location /foo {
             default_type 'text/plain';
-            content_by_lua_block { ngx.status = 201 ngx.say("foo") ngx.exit(201) }
+            content_by_lua_block { njt.status = 201 njt.say("foo") njt.exit(201) }
         }
     }
 --- config
@@ -64,23 +64,23 @@ __DATA__
 
         content_by_lua_block {
             do
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
 
                 sock:settimeout(3000)
 
                 local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
                 if not ok then
-                    ngx.say("failed to connect: ", err)
+                    njt.say("failed to connect: ", err)
                     return
                 end
 
-                ngx.say("connected: ", ok)
+                njt.say("connected: ", ok)
 
                 local sess, err = sock:sslhandshake(nil, "test.com", true)
                 if not sess then
-                    ngx.say("failed to do SSL handshake: ", err)
+                    njt.say("failed to do SSL handshake: ", err)
                 else
-                    ngx.say("ssl handshake: ", type(sess))
+                    njt.say("ssl handshake: ", type(sess))
                 end
             end  -- do
             collectgarbage()

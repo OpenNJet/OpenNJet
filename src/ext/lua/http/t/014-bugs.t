@@ -74,15 +74,15 @@ lua_package_cpath '/home/agentz/rpm/BUILD/lua-yajl-1.1/build/?.so;/home/lz/luax/
     location = '/report/listBidwordPrices4lzExtra.htm' {
         content_by_lua '
             local yajl = require "yajl"
-            local w = ngx.var.arg_words
-            w = ngx.unescape_uri(w)
+            local w = njt.var.arg_words
+            w = njt.unescape_uri(w)
             local r = {}
             print("start for")
             for id in string.gmatch(w, "%d+") do
                  r[id] = -1
             end
             print("end for, start yajl")
-            ngx.print(yajl.to_string(r))
+            njt.print(yajl.to_string(r))
             print("end yajl")
         ';
     }
@@ -112,14 +112,14 @@ GET /report/listBidwordPrices4lzExtra.htm?words=123,156,2532
     }
     location = /main {
         content_by_lua '
-            local res = ngx.location.capture("/memc?c=get&k=foo&v=")
-            ngx.say("1: ", res.body)
+            local res = njt.location.capture("/memc?c=get&k=foo&v=")
+            njt.say("1: ", res.body)
 
-            res = ngx.location.capture("/memc?c=set&k=foo&v=bar");
-            ngx.say("2: ", res.body);
+            res = njt.location.capture("/memc?c=set&k=foo&v=bar");
+            njt.say("2: ", res.body);
 
-            res = ngx.location.capture("/memc?c=get&k=foo")
-            ngx.say("3: ", res.body);
+            res = njt.location.capture("/memc?c=get&k=foo")
+            njt.say("3: ", res.body);
         ';
     }
 --- request
@@ -132,9 +132,9 @@ GET /main
 --- config
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/")
-            ngx.say(res.status)
-            ngx.print(res.body)
+            local res = njt.location.capture("/")
+            njt.say(res.status)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -150,9 +150,9 @@ GET /main
 --- config
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/test.lua")
-            ngx.say(res.status)
-            ngx.print(res.body)
+            local res = njt.location.capture("/test.lua")
+            njt.say(res.status)
+            njt.print(res.body)
         ';
     }
 --- user_files
@@ -169,7 +169,7 @@ print("Hello, world")
 === TEST 6: print lua empty strings
 --- config
     location /lua {
-        content_by_lua 'ngx.print("") ngx.flush() ngx.print("Hi")';
+        content_by_lua 'njt.print("") njt.flush() njt.print("Hi")';
     }
 --- request
 GET /lua
@@ -181,7 +181,7 @@ Hi
 === TEST 7: say lua empty strings
 --- config
     location /lua {
-        content_by_lua 'ngx.say("") ngx.flush() ngx.print("Hi")';
+        content_by_lua 'njt.say("") njt.flush() njt.print("Hi")';
     }
 --- request
 GET /lua
@@ -196,24 +196,24 @@ https://github.com/chaoslawful/lua-nginx-module/issues/37
 --- config
     location /sub {
         content_by_lua '
-            ngx.header["Set-Cookie"] = {"TestCookie1=foo", "TestCookie2=bar"};
-            ngx.say("Hello")
+            njt.header["Set-Cookie"] = {"TestCookie1=foo", "TestCookie2=bar"};
+            njt.say("Hello")
         ';
     }
     location /lua {
         content_by_lua '
             -- local yajl = require "yajl"
-            ngx.header["Set-Cookie"] = {}
-            local res = ngx.location.capture("/sub")
+            njt.header["Set-Cookie"] = {}
+            local res = njt.location.capture("/sub")
 
             for i,j in pairs(res.header) do
-                ngx.header[i] = j
+                njt.header[i] = j
             end
 
-            -- ngx.say("set-cookie: ", yajl.to_string(res.header["Set-Cookie"]))
+            -- njt.say("set-cookie: ", yajl.to_string(res.header["Set-Cookie"]))
 
-            ngx.send_headers()
-            ngx.print("body: ", res.body)
+            njt.send_headers()
+            njt.print("body: ", res.body)
         ';
     }
 --- request
@@ -233,7 +233,7 @@ Set-Cookie: TestCookie2=bar.*"
 >>> foo.lua
 local res = {}
 res = {'good 1', 'good 2', 'good 3'}
-return ngx.redirect("/somedir/" .. ngx.escape_uri(res[math.random(1,#res)]))
+return njt.redirect("/somedir/" .. njt.escape_uri(res[math.random(1,#res)]))
 --- request
     GET /foo
 --- response_body
@@ -248,14 +248,14 @@ return ngx.redirect("/somedir/" .. ngx.escape_uri(res[math.random(1,#res)]))
     }
     location /foo {
         #content_by_lua '
-        #ngx.exec("/bar")
+        #njt.exec("/bar")
         #';
         echo_exec /bar;
     }
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/foo")
-            ngx.print(res.body)
+            local res = njt.location.capture("/foo")
+            njt.print(res.body)
         ';
     }
 --- request
@@ -268,17 +268,17 @@ Bar
 === TEST 11: capturing locations with internal redirects (lua redirect)
 --- config
     location /bar {
-        content_by_lua 'ngx.say("Bar")';
+        content_by_lua 'njt.say("Bar")';
     }
     location /foo {
         content_by_lua '
-            ngx.exec("/bar")
+            njt.exec("/bar")
         ';
     }
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/foo")
-            ngx.print(res.body)
+            local res = njt.location.capture("/foo")
+            njt.print(res.body)
         ';
     }
 --- request
@@ -292,8 +292,8 @@ Bar
 --- config
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/")
-            ngx.print(res.body)
+            local res = njt.location.capture("/")
+            njt.print(res.body)
         ';
     }
 --- request
@@ -307,20 +307,20 @@ Bar
 --- config
     location /bar {
         content_by_lua '
-            ngx.say("hello")
-            ngx.say("world")
+            njt.say("hello")
+            njt.say("world")
         ';
     }
     location /foo {
         #content_by_lua '
-        #ngx.exec("/bar")
+        #njt.exec("/bar")
         #';
         echo_exec /bar;
     }
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/foo")
-            ngx.print(res.body)
+            local res = njt.location.capture("/foo")
+            njt.print(res.body)
         ';
     }
 --- request
@@ -338,19 +338,19 @@ world
         client_body_in_single_buffer on;
 
         content_by_lua '
-            ngx.say(ngx.var.request_body)
+            njt.say(njt.var.request_body)
         ';
     }
     location /foo {
         #content_by_lua '
-        #ngx.exec("/bar")
+        #njt.exec("/bar")
         #';
         echo_exec /bar;
     }
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/foo", { method = ngx.HTTP_POST, body = "hello" })
-            ngx.print(res.body)
+            local res = njt.location.capture("/foo", { method = njt.HTTP_POST, body = "hello" })
+            njt.print(res.body)
         ';
     }
 --- request
@@ -368,9 +368,9 @@ hello
     }
     location /main {
         content_by_lua '
-            local res = ngx.location.capture("/foo")
-            ngx.say("status = ", res.status)
-            ngx.say("Location: ", res.header["Location"] or "nil")
+            local res = njt.location.capture("/foo")
+            njt.say("status = ", res.status)
+            njt.say("Location: ", res.header["Location"] or "nil")
         ';
     }
 --- request
@@ -384,10 +384,10 @@ Location: /foo/
 === TEST 16: nginx rewrite works in subrequests
 --- config
     access_by_lua '
-        local res = ngx.location.capture(ngx.var.uri)
-        ngx.say("status = ", res.status)
-        ngx.say("Location: ", res.header["Location"] or "nil")
-        ngx.exit(200)
+        local res = njt.location.capture(njt.var.uri)
+        njt.say("status = ", res.status)
+        njt.say("Location: ", res.header["Location"] or "nil")
+        njt.exit(200)
     ';
 --- request
     GET /foo
@@ -406,8 +406,8 @@ Location: /foo/
     location /lua {
         charset GBK;
         content_by_lua '
-            ngx.header.content_type = "text/xml; charset=UTF-8"
-            ngx.say("hi")
+            njt.header.content_type = "text/xml; charset=UTF-8"
+            njt.say("hi")
         ';
     }
 --- request
@@ -424,8 +424,8 @@ Content-Type: text/xml; charset=UTF-8
     location /lua {
         charset GBK;
         content_by_lua '
-            ngx.header.content_type = "text/xml"
-            ngx.say("hi")
+            njt.header.content_type = "text/xml"
+            njt.say("hi")
         ';
     }
 --- request
@@ -441,7 +441,7 @@ Content-Type: text/xml; charset=GBK
 --- config
     location ~ '^/lua/(.*)' {
         content_by_lua '
-            ngx.say(ngx.var[1] or "nil")
+            njt.say(njt.var[1] or "nil")
         ';
     }
 --- request
@@ -455,7 +455,7 @@ hello
 --- config
     location ~ '^/lua/(.*)' {
         content_by_lua '
-            ngx.say(ngx.var[0] or "nil")
+            njt.say(njt.var[0] or "nil")
         ';
     }
 --- request
@@ -469,7 +469,7 @@ nil
 --- config
     location ~ '^/lua/(.*)' {
         content_by_lua '
-            ngx.say(ngx.var[2] or "nil")
+            njt.say(njt.var[2] or "nil")
         ';
     }
 --- request
@@ -483,12 +483,12 @@ nil
 --- config
     location ~ '^/lua/(.*)/(.*)' {
         content_by_lua '
-            ngx.say(ngx.var[-1] or "nil")
-            ngx.say(ngx.var[0] or "nil")
-            ngx.say(ngx.var[1] or "nil")
-            ngx.say(ngx.var[2] or "nil")
-            ngx.say(ngx.var[3] or "nil")
-            ngx.say(ngx.var[4] or "nil")
+            njt.say(njt.var[-1] or "nil")
+            njt.say(njt.var[0] or "nil")
+            njt.say(njt.var[1] or "nil")
+            njt.say(njt.var[2] or "nil")
+            njt.say(njt.var[3] or "nil")
+            njt.say(njt.var[4] or "nil")
         ';
     }
 --- request
@@ -509,7 +509,7 @@ nil
         #set_unescape_uri $cookie_a "hello";
         set $http_a "hello";
         content_by_lua '
-            ngx.say(ngx.var.http_a)
+            njt.say(njt.var.http_a)
         ';
     }
 --- request
@@ -524,7 +524,7 @@ hello
 --- config
     location /main {
         content_by_lua '
-            dofile(ngx.var.realpath_root .. "/a.lua")
+            dofile(njt.var.realpath_root .. "/a.lua")
         ';
     }
     location /echo {
@@ -534,7 +534,7 @@ hello
     GET /main
 --- user_files
 >>> a.lua
-ngx.location.capture("/echo")
+njt.location.capture("/echo")
 --- response_body
 --- SKIP
 
@@ -544,7 +544,7 @@ ngx.location.capture("/echo")
 --- config
     location /test {
         rewrite_by_lua '
-            ngx.req.clear_header("Authorization")
+            njt.req.clear_header("Authorization")
         ';
         echo $http_a1;
         echo $http_authorization;
@@ -588,7 +588,7 @@ $s
             else
                 _G.t = 0
             end
-            ngx.print(t)
+            njt.print(t)
         ';
     }
 --- pipelined_requests eval
@@ -624,12 +624,12 @@ $s
 --- config
     location /test {
         content_by_lua '
-            local log_dict = ngx.shared.log_dict
-            ngx.print(log_dict:get("cnt") or 0)
+            local log_dict = njt.shared.log_dict
+            njt.print(log_dict:get("cnt") or 0)
         ';
 
         log_by_lua '
-            local log_dict = ngx.shared.log_dict
+            local log_dict = njt.shared.log_dict
             if _G.t then
                 _G.t = _G.t + 1
             else
@@ -654,11 +654,11 @@ $s
             else
                 _G.t = 0
             end
-            ngx.ctx.cnt = tostring(t)
+            njt.ctx.cnt = tostring(t)
         ';
         content_by_lua '
-            ngx.send_headers()
-            ngx.print(ngx.ctx.cnt or 0)
+            njt.send_headers()
+            njt.print(njt.ctx.cnt or 0)
         ';
     }
 --- pipelined_requests eval
@@ -677,11 +677,11 @@ $s
             else
                 _G.t = 0
             end
-            ngx.ctx.cnt = _G.t
+            njt.ctx.cnt = _G.t
         ';
         content_by_lua '
-            ngx.print("a")
-            ngx.say(ngx.ctx.cnt or 0)
+            njt.print("a")
+            njt.say(njt.ctx.cnt or 0)
         ';
     }
 --- request
@@ -701,7 +701,7 @@ qr/\Aa[036]
         default_type application/json;
         charset utf-8;
         charset_types application/json;
-        content_by_lua 'ngx.say("hi")';
+        content_by_lua 'njt.say("hi")';
     }
 --- request
     GET /lua
@@ -746,7 +746,7 @@ upstream prematurely closed connection while reading response header from upstre
     location = /sub {
         echo hello;
         body_filter_by_lua '
-            local eof = ngx.arg[2]
+            local eof = njt.arg[2]
             if eof then
                 print("eof found in body stream")
             end
@@ -767,7 +767,7 @@ eof found in body stream
 
 
 
-=== TEST 34: testing a segfault when using ngx_poll_module + ngx_resolver
+=== TEST 34: testing a segfault when using njt_poll_module + njt_resolver
 See more details here: http://mailman.nginx.org/pipermail/nginx-devel/2013-January/003275.html
 --- config
     location /t {
@@ -788,14 +788,14 @@ qr/(?:send|recv)\(\) failed \(\d+: Connection refused\) while resolving/
 
 
 
-=== TEST 35: github issue #218: ngx.location.capture hangs when querying a remote host that does not exist or is really slow to respond
+=== TEST 35: github issue #218: njt.location.capture hangs when querying a remote host that does not exist or is really slow to respond
 --- config
     set $myurl "https://not-exist.agentzh.org";
     location /toto {
         content_by_lua '
                 local proxyUrl = "/myproxy/entity"
-                local res = ngx.location.capture( proxyUrl,  { method = ngx.HTTP_GET })
-                ngx.say("Hello, ", res.status)
+                local res = njt.location.capture( proxyUrl,  { method = njt.HTTP_GET })
+                njt.say("Hello, ", res.status)
             ';
     }
     location ~ /myproxy {
@@ -817,7 +817,7 @@ qr/(?:send|recv)\(\) failed \(\d+: Connection refused\) while resolving/
 GET /toto
 
 --- stap2
-F(ngx_http_lua_post_subrequest) {
+F(njt_http_lua_post_subrequest) {
     println("lua post subrequest")
     print_ubacktrace()
 }
@@ -834,7 +834,7 @@ not-exist.agentzh.org could not be resolved
 === TEST 36: line comments in the last line of the inlined Lua code
 --- config
     location /lua {
-        content_by_lua 'ngx.say("ok") -- blah';
+        content_by_lua 'njt.say("ok") -- blah';
     }
 --- request
 GET /lua
@@ -899,7 +899,7 @@ args: foo=1&bar=2
         set $port $TEST_NGINX_REDIS_PORT;
         content_by_lua '
             local test = require "test"
-            local port = ngx.var.port
+            local port = njt.var.port
             test.go(port)
         ';
     }
@@ -908,40 +908,40 @@ args: foo=1&bar=2
 module("test", package.seeall)
 
 function go(port)
-    local sock = ngx.socket.tcp()
-    local sock2 = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
+    local sock2 = njt.socket.tcp()
 
     sock:settimeout(1000)
     sock2:settimeout(6000000)
 
     local ok, err = sock:connect("127.0.0.1", port)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
     local ok, err = sock2:connect("127.0.0.1", port)
     if not ok then
-        ngx.say("failed to connect: ", err)
+        njt.say("failed to connect: ", err)
         return
     end
 
     local ok, err = sock:setkeepalive(100, 100)
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 
     local ok, err = sock2:setkeepalive(200, 100)
     if not ok then
-        ngx.say("failed to set reusable: ", err)
+        njt.say("failed to set reusable: ", err)
     end
 
-    ngx.say("done")
+    njt.say("done")
 end
 --- request
 GET /t
 --- stap2
-F(ngx_close_connection) {
+F(njt_close_connection) {
     println("=== close connection")
     print_ubacktrace()
 }
@@ -961,7 +961,7 @@ done
     }
 
 --- user_files eval
-my $s = "ngx.say('ok')\n";
+my $s = "njt.say('ok')\n";
 ">>> a.lua\n" . (" " x (8192 - length($s))) . $s;
 
 --- request
@@ -1007,7 +1007,7 @@ $::TestCertificate"
 GET /t
 
 --- stap
-probe process("nginx").function("ngx_http_upstream_ssl_handshake") {
+probe process("nginx").function("njt_http_upstream_ssl_handshake") {
     printf("read timer set: %d\n", $c->read->timer_set)
     printf("write timer set: %d\n", $c->write->timer_set)
 }
@@ -1022,17 +1022,17 @@ write timer set: 1
 
 
 
-=== TEST 42: tcp: nginx crash when resolve an not exist domain in ngx.thread.spawn
+=== TEST 42: tcp: nginx crash when resolve an not exist domain in njt.thread.spawn
 https://github.com/openresty/lua-nginx-module/issues/1915
 --- config
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     location = /t {
         content_by_lua_block {
             local function tcp(host, port)
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok,err = sock:connect(host, port)
                 if not ok then
-                    ngx.log(ngx.WARN, "failed: ", err)
+                    njt.log(njt.WARN, "failed: ", err)
                     sock:close()
                     return false
                 end
@@ -1046,19 +1046,19 @@ https://github.com/openresty/lua-nginx-module/issues/1915
 
             local threads = {}
             for i = 1, 3 do
-                threads[i] = ngx.thread.spawn(tcp, host, port)
+                threads[i] = njt.thread.spawn(tcp, host, port)
             end
 
-            local ok, res = ngx.thread.wait(threads[1],threads[2],threads[3])
+            local ok, res = njt.thread.wait(threads[1],threads[2],threads[3])
             if not ok then
-                ngx.say("failed to wait thread")
+                njt.say("failed to wait thread")
                 return
             end
 
-            ngx.say("res: ", res)
+            njt.say("res: ", res)
 
             for i = 1, 3 do
-                ngx.thread.kill(threads[i])
+                njt.thread.kill(threads[i])
             end
         }
     }
@@ -1079,10 +1079,10 @@ https://github.com/openresty/lua-nginx-module/issues/1915
     location = /t {
         content_by_lua_block {
             local function tcp(host, port)
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok,err = sock:connect(host, port)
                 if not ok then
-                    ngx.log(ngx.WARN, "failed: ", err)
+                    njt.log(njt.WARN, "failed: ", err)
                     sock:close()
                     return false
                 end
@@ -1096,19 +1096,19 @@ https://github.com/openresty/lua-nginx-module/issues/1915
 
             local threads = {}
             for i = 1, 3 do
-                threads[i] = ngx.thread.spawn(tcp, host, port)
+                threads[i] = njt.thread.spawn(tcp, host, port)
             end
 
-            local ok, res = ngx.thread.wait(threads[1],threads[2],threads[3])
+            local ok, res = njt.thread.wait(threads[1],threads[2],threads[3])
             if not ok then
-                ngx.say("failed to wait thread")
+                njt.say("failed to wait thread")
                 return
             end
 
-            ngx.say("res: ", res)
+            njt.say("res: ", res)
 
             for i = 1, 3 do
-                ngx.thread.kill(threads[i])
+                njt.thread.kill(threads[i])
             end
         }
     }
@@ -1127,10 +1127,10 @@ https://github.com/openresty/lua-nginx-module/issues/1915
     location = /t {
         content_by_lua_block {
             local function udp(host, port)
-                local sock = ngx.socket.udp()
+                local sock = njt.socket.udp()
                 local ok,err = sock:setpeername(host, port)
                 if not ok then
-                    ngx.log(ngx.WARN, "failed: ", err)
+                    njt.log(njt.WARN, "failed: ", err)
                     sock:close()
                     return false
                 end
@@ -1144,19 +1144,19 @@ https://github.com/openresty/lua-nginx-module/issues/1915
 
             local threads = {}
             for i = 1, 3 do
-                threads[i] = ngx.thread.spawn(udp, host, port)
+                threads[i] = njt.thread.spawn(udp, host, port)
             end
 
-            local ok, res = ngx.thread.wait(threads[1],threads[2],threads[3])
+            local ok, res = njt.thread.wait(threads[1],threads[2],threads[3])
             if not ok then
-                ngx.say("failed to wait thread")
+                njt.say("failed to wait thread")
                 return
             end
 
-            ngx.say("res: ", res)
+            njt.say("res: ", res)
 
             for i = 1, 3 do
-                ngx.thread.kill(threads[i])
+                njt.thread.kill(threads[i])
             end
         }
     }
@@ -1170,17 +1170,17 @@ nonexistent.openresty.org could not be resolved
 
 
 
-=== TEST 45: udp: nginx crash when resolve an not exist domain in ngx.thread.spawn
+=== TEST 45: udp: nginx crash when resolve an not exist domain in njt.thread.spawn
 https://github.com/openresty/lua-nginx-module/issues/1915
 --- config
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     location = /t {
         content_by_lua_block {
             local function udp(host, port)
-                local sock = ngx.socket.udp()
+                local sock = njt.socket.udp()
                 local ok,err = sock:setpeername(host, port)
                 if not ok then
-                    ngx.log(ngx.WARN, "failed: ", err)
+                    njt.log(njt.WARN, "failed: ", err)
                     sock:close()
                     return false
                 end
@@ -1194,19 +1194,19 @@ https://github.com/openresty/lua-nginx-module/issues/1915
 
             local threads = {}
             for i = 1, 3 do
-                threads[i] = ngx.thread.spawn(udp, host, port)
+                threads[i] = njt.thread.spawn(udp, host, port)
             end
 
-            local ok, res = ngx.thread.wait(threads[1],threads[2],threads[3])
+            local ok, res = njt.thread.wait(threads[1],threads[2],threads[3])
             if not ok then
-                ngx.say("failed to wait thread")
+                njt.say("failed to wait thread")
                 return
             end
 
-            ngx.say("res: ", res)
+            njt.say("res: ", res)
 
             for i = 1, 3 do
-                ngx.thread.kill(threads[i])
+                njt.thread.kill(threads[i])
             end
         }
     }
@@ -1227,7 +1227,7 @@ https://github.com/openresty/lua-nginx-module/issues/1938
 --- config
     location /t {
         content_by_lua '
-            ngx.say("hello world")
+            njt.say("hello world")
         ';
     }
 --- request

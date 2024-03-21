@@ -22,24 +22,24 @@ __DATA__
 === TEST 1: sanity
 --- dgram_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
         if not sock then
-            ngx.log(ngx.ERR, "failed to get the request socket: ", err)
-            return ngx.exit(ngx.ERROR)
+            njt.log(njt.ERR, "failed to get the request socket: ", err)
+            return njt.exit(njt.ERROR)
         end
 
         local data, err = sock:receive()
         if not data then
-            ngx.log(ngx.ERR, "failed to receive: ", err)
-            return ngx.exit(ngx.ERROR)
+            njt.log(njt.ERR, "failed to receive: ", err)
+            return njt.exit(njt.ERROR)
         end
 
         -- print("data: ", data)
 
         local ok, err = sock:send("received: " .. data)
         if not ok then
-            ngx.log(ngx.ERR, "failed to send: ", err)
-            return ngx.exit(ngx.ERROR)
+            njt.log(njt.ERR, "failed to send: ", err)
+            return njt.exit(njt.ERROR)
         end
     }
 --- dgram_request chomp
@@ -64,9 +64,9 @@ received: hello world! my
 module("test", package.seeall)
 
 function go()
-   local sock, err = ngx.req.socket()
+   local sock, err = njt.req.socket()
    if sock then
-      ngx.ctx.sock = sock
+      njt.ctx.sock = sock
    else
       sock:send("failed to get the request socket: ", err)
       return
@@ -106,7 +106,7 @@ received: , wo
     content_by_lua_block {
         local resp = ""
 
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
         if sock then
             resp = "got the request socket\n"
         else
@@ -154,7 +154,7 @@ received: be
 === TEST 4: failing reread after reading timeout happens
 --- dgram_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
         local resp = ""
 
         if not sock then
@@ -192,7 +192,7 @@ data: nil, err: no more data, partial: nil
 --- dgram_server_config
     content_by_lua_block {
         do
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
             if sock then
                 sock:send("got the request socket")
             else
@@ -200,7 +200,7 @@ data: nil, err: no more data, partial: nil
             end
         end
         collectgarbage()
-        ngx.log(ngx.WARN, "GC cycle done")
+        njt.log(njt.WARN, "GC cycle done")
 
     }
 --- dgram_response chomp
@@ -214,27 +214,27 @@ GC cycle done
 
 
 
-=== TEST 6: ngx.req.socket with raw argument, argument is ignored
+=== TEST 6: njt.req.socket with raw argument, argument is ignored
 --- dgram_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "failed to get the request socket: ", err)
-            return ngx.exit(ngx.ERROR)
+            njt.log(njt.ERR, "failed to get the request socket: ", err)
+            return njt.exit(njt.ERROR)
         end
 
         local data, err = sock:receive()
         if not data then
-            ngx.log(ngx.ERR, "failed to receive: ", err)
-            return ngx.exit(ngx.ERROR)
+            njt.log(njt.ERR, "failed to receive: ", err)
+            return njt.exit(njt.ERROR)
         end
 
         -- print("data: ", data)
 
         local ok, err = sock:send("received: " .. data)
         if not ok then
-            ngx.log(ngx.ERR, "failed to send: ", err)
-            return ngx.exit(ngx.ERROR)
+            njt.log(njt.ERR, "failed to send: ", err)
+            return njt.exit(njt.ERROR)
         end
     }
 --- dgram_request chomp
@@ -252,28 +252,28 @@ sudo ip addr add 10.254.254.2/24 dev lo
 nmap will be blocked by travis , use dig to send dns request.
 --- dgram_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
         if not sock then
-            ngx.log(ngx.ERR,"ngx.req.socket error : ", err)
-            return ngx.exit(ngx.ERROR)
+            njt.log(njt.ERR,"njt.req.socket error : ", err)
+            return njt.exit(njt.ERROR)
         end
 
         local data = sock:receive()
         local ok, err = sock:send(data)
         if not ok then
-            ngx.log(ngx.ERR, "failed to send: ", err)
-            return ngx.exit(ngx.ERROR)
+            njt.log(njt.ERR, "failed to send: ", err)
+            return njt.exit(njt.ERROR)
         end
     }
 --- config
      location = /dns {
          content_by_lua_block {
-            local cmd = "dig -b 10.254.254.1 @10.254.254.2 openresty.org -p " .. tostring(ngx.var.server_port + 1)
+            local cmd = "dig -b 10.254.254.1 @10.254.254.2 openresty.org -p " .. tostring(njt.var.server_port + 1)
             local f = io.popen(cmd, "r")
-            ngx.sleep(0.2)
+            njt.sleep(0.2)
             local result = f:read("*a")
             f:close()
-            ngx.say("hello")
+            njt.say("hello")
          }
      }
 --- request

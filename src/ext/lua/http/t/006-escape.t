@@ -15,7 +15,7 @@ __DATA__
 === TEST 1: escape uri in set_by_lua
 --- config
     location /escape {
-        set_by_lua $res "return ngx.escape_uri('a 你')";
+        set_by_lua $res "return njt.escape_uri('a 你')";
         echo $res;
     }
 --- request
@@ -28,7 +28,7 @@ a%20%E4%BD%A0
 === TEST 2: unescape uri in set_by_lua
 --- config
     location /unescape {
-        set_by_lua $res "return ngx.unescape_uri('a%20%e4%bd%a0')";
+        set_by_lua $res "return njt.unescape_uri('a%20%e4%bd%a0')";
         echo $res;
     }
 --- request
@@ -41,7 +41,7 @@ a 你
 === TEST 3: escape uri in content_by_lua
 --- config
     location /escape {
-        content_by_lua "ngx.say(ngx.escape_uri('a 你'))";
+        content_by_lua "njt.say(njt.escape_uri('a 你'))";
     }
 --- request
 GET /escape
@@ -53,7 +53,7 @@ a%20%E4%BD%A0
 === TEST 4: unescape uri in content_by_lua
 --- config
     location /unescape {
-        content_by_lua "ngx.say(ngx.unescape_uri('a%20%e4%bd%a0'))";
+        content_by_lua "njt.say(njt.unescape_uri('a%20%e4%bd%a0'))";
     }
 --- request
 GET /unescape
@@ -65,7 +65,7 @@ a 你
 === TEST 5: escape uri in set_by_lua
 --- config
     location /escape {
-        set_by_lua $res "return ngx.escape_uri('a+b')";
+        set_by_lua $res "return njt.escape_uri('a+b')";
         echo $res;
     }
 --- request
@@ -78,7 +78,7 @@ a%2Bb
 === TEST 6: escape uri in set_by_lua
 --- config
     location /escape {
-        set_by_lua $res "return ngx.escape_uri('\"a/b={}:<>;&[]\\\\^')";
+        set_by_lua $res "return njt.escape_uri('\"a/b={}:<>;&[]\\\\^')";
         echo $res;
     }
 --- request
@@ -93,7 +93,7 @@ GET /escape
     location /escape {
         echo hello;
         header_filter_by_lua '
-            ngx.header.baz = ngx.escape_uri(" ")
+            njt.header.baz = njt.escape_uri(" ")
         ';
     }
 --- request
@@ -108,7 +108,7 @@ hello
 === TEST 8: escape a string that cannot be escaped
 --- config
     location /escape {
-        set_by_lua $res "return ngx.escape_uri('abc')";
+        set_by_lua $res "return njt.escape_uri('abc')";
         echo $res;
     }
 --- request
@@ -121,7 +121,7 @@ abc
 === TEST 9: escape an empty string that cannot be escaped
 --- config
     location /escape {
-        set_by_lua $res "return ngx.escape_uri('')";
+        set_by_lua $res "return njt.escape_uri('')";
         echo $res;
     }
 --- request
@@ -133,7 +133,7 @@ GET /escape
 === TEST 10: escape nil
 --- config
     location /escape {
-        set_by_lua $res "return ngx.escape_uri(nil)";
+        set_by_lua $res "return njt.escape_uri(nil)";
         echo "[$res]";
     }
 --- request
@@ -146,7 +146,7 @@ GET /escape
 === TEST 11: escape numbers
 --- config
     location /escape {
-        set_by_lua $res "return ngx.escape_uri(32)";
+        set_by_lua $res "return njt.escape_uri(32)";
         echo "[$res]";
     }
 --- request
@@ -159,7 +159,7 @@ GET /escape
 === TEST 12: unescape nil
 --- config
     location = /t {
-        set_by_lua $res "return ngx.unescape_uri(nil)";
+        set_by_lua $res "return njt.unescape_uri(nil)";
         echo "[$res]";
     }
 --- request
@@ -172,7 +172,7 @@ GET /t
 === TEST 13: unescape numbers
 --- config
     location = /t {
-        set_by_lua $res "return ngx.unescape_uri(32)";
+        set_by_lua $res "return njt.unescape_uri(32)";
         echo "[$res]";
     }
 --- request
@@ -186,8 +186,8 @@ GET /t
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say(ngx.escape_uri("-_.!~*'()"))
-            ngx.say(ngx.escape_uri(",$@|`"))
+            njt.say(njt.escape_uri("-_.!~*'()"))
+            njt.say(njt.escape_uri(",$@|`"))
         }
     }
 --- request
@@ -204,11 +204,11 @@ GET /lua
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say(ngx.escape_uri("https://www.google.com", 0))
-            ngx.say(ngx.escape_uri("https://www.google.com/query?q=test", 0))
-            ngx.say(ngx.escape_uri("https://www.google.com/query?\r\nq=test", 0))
-            ngx.say(ngx.escape_uri("-_.~!*'();:@&=+$,/?#", 0))
-            ngx.say(ngx.escape_uri("<>[]{}\\\" ", 0))
+            njt.say(njt.escape_uri("https://www.google.com", 0))
+            njt.say(njt.escape_uri("https://www.google.com/query?q=test", 0))
+            njt.say(njt.escape_uri("https://www.google.com/query?\r\nq=test", 0))
+            njt.say(njt.escape_uri("-_.~!*'();:@&=+$,/?#", 0))
+            njt.say(njt.escape_uri("<>[]{}\\\" ", 0))
         }
     }
 --- request
@@ -228,13 +228,13 @@ https://www.google.com/query%3F%0D%0Aq=test
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 0))
-            ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 1))
-            ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 2))
-            ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 3))
-            ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 4))
-            ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 5))
-            ngx.say(ngx.escape_uri("https://www.google.com/?t=abc@ :", 6))
+            njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 0))
+            njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 1))
+            njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 2))
+            njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 3))
+            njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 4))
+            njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 5))
+            njt.say(njt.escape_uri("https://www.google.com/?t=abc@ :", 6))
         }
     }
 --- request
@@ -256,7 +256,7 @@ https://www.google.com/?t=abc@%20:
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say(ngx.escape_uri("https://www.google.com", -1))
+            njt.say(njt.escape_uri("https://www.google.com", -1))
         }
     }
 --- request
@@ -271,7 +271,7 @@ qr/\[error\] \d+#\d+: \*\d+ lua entry thread aborted: runtime error: "type" \-1 
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say(ngx.escape_uri("https://www.google.com", 10))
+            njt.say(njt.escape_uri("https://www.google.com", 10))
         }
     }
 --- request
@@ -286,7 +286,7 @@ qr/\[error\] \d+#\d+: \*\d+ lua entry thread aborted: runtime error: "type" 10 o
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say(ngx.escape_uri("https://www.google.com", true))
+            njt.say(njt.escape_uri("https://www.google.com", true))
         }
     }
 --- request
@@ -301,7 +301,7 @@ qr/\[error\] \d+#\d+: \*\d+ lua entry thread aborted: runtime error: "type" is n
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say(ngx.unescape_uri("%ua%%20%au"))
+            njt.say(njt.unescape_uri("%ua%%20%au"))
         }
     }
 --- request
@@ -315,10 +315,10 @@ GET /lua
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say(ngx.unescape_uri("%a")) -- first character is good
-            ngx.say(ngx.unescape_uri("%u")) -- first character is bad
-            ngx.say(ngx.unescape_uri("%"))
-            ngx.say(ngx.unescape_uri("good%20job%"))
+            njt.say(njt.unescape_uri("%a")) -- first character is good
+            njt.say(njt.unescape_uri("%u")) -- first character is bad
+            njt.say(njt.unescape_uri("%"))
+            njt.say(njt.unescape_uri("good%20job%"))
         }
     }
 --- request

@@ -23,10 +23,10 @@ add_block_preprocessor(sub {
 
     init_by_lua_block {
         require "resty.core"
-        local process = require "ngx.process"
+        local process = require "njt.process"
         local ok, err = process.enable_privileged_agent()
         if not ok then
-            ngx.log(ngx.ERR, "failed to enable_privileged_agent: ", err)
+            njt.log(njt.ERR, "failed to enable_privileged_agent: ", err)
         end
     }
 
@@ -36,30 +36,30 @@ add_block_preprocessor(sub {
                 return
             end
 
-            local semaphore = require "ngx.semaphore"
+            local semaphore = require "njt.semaphore"
             local sem = semaphore.new()
 
-            ngx.log(ngx.ERR, "created semaphore object")
+            njt.log(njt.ERR, "created semaphore object")
 
             local function sem_wait()
 
                 local ok, err = sem:wait(100)
                 if not ok then
-                    ngx.log(ngx.ERR, "err: ", err)
+                    njt.log(njt.ERR, "err: ", err)
                 else
-                    ngx.log(ngx.ERR, "wait success")
+                    njt.log(njt.ERR, "wait success")
                 end
             end
 
-            while not ngx.worker.exiting() do
-                local co = ngx.thread.spawn(sem_wait)
-                ngx.thread.wait(co)
+            while not njt.worker.exiting() do
+                local co = njt.thread.spawn(sem_wait)
+                njt.thread.wait(co)
             end
         end
 
-        local ok, err = ngx.timer.at(0, test)
+        local ok, err = njt.timer.at(0, test)
         if not ok then
-            ngx.log(ngx.ERR, "failed to create semaphore timer err: ", err)
+            njt.log(njt.ERR, "failed to create semaphore timer err: ", err)
         end
 
         local function reload(pre)
@@ -67,17 +67,17 @@ add_block_preprocessor(sub {
                 return
             end
 
-            local shdict = ngx.shared.shdict
+            local shdict = njt.shared.shdict
             local success = shdict:add("reloaded", 1)
             if not success then
                 return
             end
 
-            ngx.log(ngx.ERR, "try to reload nginx")
+            njt.log(njt.ERR, "try to reload nginx")
 
-            local f, err = io.open(ngx.config.prefix() .. "/logs/nginx.pid", "r")
+            local f, err = io.open(njt.config.prefix() .. "/logs/nginx.pid", "r")
             if not f then
-                ngx.say("failed to open nginx.pid: ", err)
+                njt.say("failed to open nginx.pid: ", err)
                 return
             end
 
@@ -87,11 +87,11 @@ add_block_preprocessor(sub {
             os.execute("kill -HUP " .. pid)
         end
 
-        local typ = require "ngx.process".type
+        local typ = require "njt.process".type
         if typ() == "privileged agent" then
-            local ok, err = ngx.timer.at(0.1, reload)
+            local ok, err = njt.timer.at(0.1, reload)
             if not ok then
-                ngx.log(ngx.ERR, "failed to create semaphore timer err: ", err)
+                njt.log(njt.ERR, "failed to create semaphore timer err: ", err)
             end
         end
     }
@@ -107,8 +107,8 @@ __DATA__
 --- config
     location /test {
         content_by_lua_block {
-            ngx.sleep(1)
-            ngx.say("hello")
+            njt.sleep(1)
+            njt.say("hello")
         }
     }
 --- request
@@ -134,8 +134,8 @@ created semaphore object
 --- config
     location /test {
         content_by_lua_block {
-            ngx.sleep(1)
-            ngx.say("hello")
+            njt.sleep(1)
+            njt.say("hello")
         }
     }
 --- request

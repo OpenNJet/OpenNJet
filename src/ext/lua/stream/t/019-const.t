@@ -16,11 +16,11 @@ __DATA__
 === TEST 1: sanity
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.OK)
-        ngx.say(ngx.AGAIN)
-        ngx.say(ngx.DONE)
-        ngx.say(ngx.ERROR)
-        ngx.say(ngx.DECLINED)
+        njt.say(njt.OK)
+        njt.say(njt.AGAIN)
+        njt.say(njt.DONE)
+        njt.say(njt.ERROR)
+        njt.say(njt.DECLINED)
     }
 --- stream_response
 0

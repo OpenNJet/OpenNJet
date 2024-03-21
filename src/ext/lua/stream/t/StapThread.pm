@@ -240,11 +240,11 @@ F(njt_http_lua_finalize_coroutines) {
 }
 
 F(njt_http_lua_njt_exit) {
-    println("ngx.exit() called")
+    println("njt.exit() called")
 }
 
 F(njt_http_lua_ffi_exit) {
-    println("ngx.exit() called")
+    println("njt.exit() called")
 }
 
 F(njt_http_lua_sleep_resume) {
@@ -258,7 +258,7 @@ M(http-lua-coroutine-done) {
 }
 
 F(njt_http_lua_njt_echo) {
-    println("ngx.print or ngx.say")
+    println("njt.print or njt.say")
 }
 
 F(njt_http_lua_del_all_threads) {

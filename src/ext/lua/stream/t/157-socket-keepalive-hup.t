@@ -27,15 +27,15 @@ __DATA__
 === TEST 1: exiting
 --- stream_server_config
     content_by_lua_block {
-        local pidfile = ngx.config.prefix() .. "/logs/nginx.pid"
+        local pidfile = njt.config.prefix() .. "/logs/nginx.pid"
         local f, err = io.open(pidfile, "r")
         if not f then
-            ngx.say("failed to open nginx.pid: ", err)
+            njt.say("failed to open nginx.pid: ", err)
             return
         end
 
         local pid = f:read()
-        -- ngx.say("master pid: [", pid, "]")
+        -- njt.say("master pid: [", pid, "]")
 
         f:close()
 
@@ -44,7 +44,7 @@ __DATA__
         local function f(premature)
             print("timer prematurely expired: ", premature)
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_SERVER_PORT)
             if not ok then
@@ -60,12 +60,12 @@ __DATA__
 
             print("setkeepalive successfully")
         end
-        local ok, err = ngx.timer.at(3, f)
+        local ok, err = njt.timer.at(3, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
+        njt.say("registered timer")
         os.execute("kill -HUP " .. pid)
     }
 --- stream_response

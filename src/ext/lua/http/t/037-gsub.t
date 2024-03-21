@@ -20,9 +20,9 @@ __DATA__
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("[hello, world]", "[a-z]+", "howdy")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("[hello, world]", "[a-z]+", "howdy")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -37,9 +37,9 @@ __DATA__
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, world", "[a-z]+", "howdy")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("hello, world", "[a-z]+", "howdy")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -54,9 +54,9 @@ howdy, howdy
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, world", "[A-Z]+", "howdy")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("hello, world", "[A-Z]+", "howdy")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -75,9 +75,9 @@ hello, world
                 return "[" .. m[0] .. "," .. m[1] .. "]"
             end
 
-            local s, n = ngx.re.gsub("hello, world", "([a-z])[a-z]+", f)
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("hello, world", "([a-z])[a-z]+", f)
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -96,9 +96,9 @@ hello, world
                 return "[" .. m[0] .. "," .. m[1] .. "]"
             end
 
-            local s, n = ngx.re.gsub("{hello, world}", "([a-z])[a-z]+", f)
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("{hello, world}", "([a-z])[a-z]+", f)
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -113,9 +113,9 @@ hello, world
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello, world", "([a-z])[a-z]+", "[$0,$1]")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("hello, world", "([a-z])[a-z]+", "[$0,$1]")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -130,9 +130,9 @@ hello, world
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("{hello, world}", "([a-z])[a-z]+", "[$0,$1]")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("{hello, world}", "([a-z])[a-z]+", "[$0,$1]")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -151,7 +151,7 @@ hello, world
                 return "[" .. m[0] .. "," .. m[1] .. "]"
             end
 
-            local s, n = ngx.re.gsub("{hello, world}", "([a-z])[a-z]+", f)
+            local s, n = njt.re.gsub("{hello, world}", "([a-z])[a-z]+", f)
             return s
         ';
         echo $res;
@@ -167,9 +167,9 @@ hello, world
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("{foobarbaz}", "(?<=foo)bar|(?<=bar)baz", "h$0")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("{foobarbaz}", "(?<=foo)bar|(?<=bar)baz", "h$0")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -184,9 +184,9 @@ hello, world
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello", "a|", "b")
-            ngx.say("s: ", s)
-            ngx.say("n: ", n)
+            local s, n = njt.re.gsub("hello", "a|", "b")
+            njt.say("s: ", s)
+            njt.say("n: ", n)
         ';
     }
 --- request
@@ -203,9 +203,9 @@ n: 6
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("", "a|", "b")
-            ngx.say("s: ", s)
-            ngx.say("n: ", n)
+            local s, n = njt.re.gsub("", "a|", "b")
+            njt.say("s: ", s)
+            njt.say("n: ", n)
         ';
     }
 --- request
@@ -222,9 +222,9 @@ n: 1
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("hello", "a|", function () return "b" end)
-            ngx.say("s: ", s)
-            ngx.say("n: ", n)
+            local s, n = njt.re.gsub("hello", "a|", function () return "b" end)
+            njt.say("s: ", s)
+            njt.say("n: ", n)
         ';
     }
 --- request
@@ -241,9 +241,9 @@ n: 6
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("", "a|", function () return "b" end)
-            ngx.say("s: ", s)
-            ngx.say("n: ", n)
+            local s, n = njt.re.gsub("", "a|", function () return "b" end)
+            njt.say("s: ", s)
+            njt.say("n: ", n)
         ';
     }
 --- request
@@ -270,9 +270,9 @@ n: 1
                 return string.rep("c", string.len(m[0]))
             end
 
-            local s, n = ngx.re.gsub(subj, "b+", repl)
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub(subj, "b+", repl)
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -300,9 +300,9 @@ n: 1
                 return string.rep("c", string.len(m[0]))
             end
 
-            local s, n = ngx.re.gsub(subj, "b+", repl)
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub(subj, "b+", repl)
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -325,9 +325,9 @@ n: 1
                 .. string.rep("b", 1000)
                 .. "aaa"
 
-            local s, n = ngx.re.gsub(subj, "b(b+)(b)", "$1 $2")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub(subj, "b(b+)(b)", "$1 $2")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -350,9 +350,9 @@ n: 1
                 .. string.rep("a", 8000)
                 .. string.rep("b", 1000)
 
-            local s, n = ngx.re.gsub(subj, "b(b+)(b)", "$1 $2")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub(subj, "b(b+)(b)", "$1 $2")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -372,9 +372,9 @@ n: 1
                 return "[" .. m[0] .. "," .. m["first"] .. "]"
             end
 
-            local s, n = ngx.re.gsub("hello, world", "(?<first>[a-z])[a-z]+", repl)
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("hello, world", "(?<first>[a-z])[a-z]+", repl)
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -389,9 +389,9 @@ n: 1
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("a b c d", [[\w]], "[$0]")
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("a b c d", [[\w]], "[$0]")
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request
@@ -412,12 +412,12 @@ n: 1
             local regex = "你好"
 
             -- Note the D here
-            local s, n, err = ngx.re.gsub(string.sub(target, 1, 4), regex, "", "u")
+            local s, n, err = njt.re.gsub(string.sub(target, 1, 4), regex, "", "u")
 
             if s then
-                ngx.say(s, ": ", n)
+                njt.say(s, ": ", n)
             else
-                ngx.say("error: ", err)
+                njt.say("error: ", err)
             end
        ';
     }
@@ -435,9 +435,9 @@ error: pcre_exec\(\) failed: -10
 --- config
     location /re {
         content_by_lua '
-            local s, n, err = ngx.re.gsub("你好", ".", "a", "U")
+            local s, n, err = njt.re.gsub("你好", ".", "a", "U")
             if s then
-                ngx.say("s: ", s)
+                njt.say("s: ", s)
             end
         ';
     }
@@ -469,9 +469,9 @@ s: aa
 --- config
     location /re {
         content_by_lua '
-            local s, n, err = ngx.re.gsub("你好", ".", "a", "u")
+            local s, n, err = njt.re.gsub("你好", ".", "a", "u")
             if s then
-                ngx.say("s: ", s)
+                njt.say("s: ", s)
             end
         ';
     }
@@ -513,21 +513,21 @@ local re = [==[(?i:([\s'\"`´’‘\(\)]*)?([\d\w]+)([\s'\"`´’‘\(\)]*)?(?:=
 
 local s = string.rep([[ABCDEFG]], 10)
 
-local start = ngx.now()
+local start = njt.now()
 
-local res, cnt, err = ngx.re.gsub(s, re, "", "o")
+local res, cnt, err = njt.re.gsub(s, re, "", "o")
 
 --[[
-ngx.update_time()
-local elapsed = ngx.now() - start
-ngx.say(elapsed, " sec elapsed.")
+njt.update_time()
+local elapsed = njt.now() - start
+njt.say(elapsed, " sec elapsed.")
 ]]
 
 if err then
-    ngx.say("error: ", err)
+    njt.say("error: ", err)
     return
 end
-ngx.say("gsub: ", cnt)
+njt.say("gsub: ", cnt)
 
 --- request
     GET /re
@@ -550,21 +550,21 @@ local re = [==[(?i:([\s'\"`´’‘\(\)]*)?([\d\w]+)([\s'\"`´’‘\(\)]*)?(?:=
 
 local s = string.rep([[ABCDEFG]], 10)
 
-local start = ngx.now()
+local start = njt.now()
 
-local res, cnt, err = ngx.re.gsub(s, re, "", "o")
+local res, cnt, err = njt.re.gsub(s, re, "", "o")
 
 --[[
-ngx.update_time()
-local elapsed = ngx.now() - start
-ngx.say(elapsed, " sec elapsed.")
+njt.update_time()
+local elapsed = njt.now() - start
+njt.say(elapsed, " sec elapsed.")
 ]]
 
 if err then
-    ngx.say("error: ", err)
+    njt.say("error: ", err)
     return
 end
-ngx.say("gsub: ", cnt)
+njt.say("gsub: ", cnt)
 
 --- request
     GET /re
@@ -579,9 +579,9 @@ Original bad result: estCase
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("TestCase", "^ *", "", "o")
+            local s, n = njt.re.gsub("TestCase", "^ *", "", "o")
             if s then
-                ngx.say(s)
+                njt.say(s)
             end
         ';
     }
@@ -597,9 +597,9 @@ Original bad result: .b.d
 --- config
     location /re {
         content_by_lua '
-            local s, n = ngx.re.gsub("abcd", "a|(?=c)", ".")
+            local s, n = njt.re.gsub("abcd", "a|(?=c)", ".")
             if s then
-                ngx.say(s)
+                njt.say(s)
             end
         ';
     }
@@ -610,7 +610,7 @@ Original bad result: .b.d
 
 
 
-=== TEST 27: use of ngx.req.get_headers in the user callback
+=== TEST 27: use of njt.req.get_headers in the user callback
 --- config
 
 location = /t {
@@ -620,15 +620,15 @@ location = /t {
             INNER
 ]]
 
-        -- ngx.say(data)
+        -- njt.say(data)
 
-        local res =  ngx.re.gsub(data, "INNER", function(inner_matches)
-            local header = ngx.req.get_headers()["Host"]
-            -- local header = ngx.var["http_HEADER"]
+        local res =  njt.re.gsub(data, "INNER", function(inner_matches)
+            local header = njt.req.get_headers()["Host"]
+            -- local header = njt.var["http_HEADER"]
             return "INNER_REPLACED"
         end, "s")
 
-        ngx.print(res)
+        njt.print(res)
     ';
 }
 
@@ -643,7 +643,7 @@ GET /t
 
 
 
-=== TEST 28: use of ngx.var in the user callback
+=== TEST 28: use of njt.var in the user callback
 --- config
 
 location = /t {
@@ -653,15 +653,15 @@ location = /t {
             INNER
 ]]
 
-        -- ngx.say(data)
+        -- njt.say(data)
 
-        local res =  ngx.re.gsub(data, "INNER", function(inner_matches)
-            -- local header = ngx.req.get_headers()["Host"]
-            local header = ngx.var["http_HEADER"]
+        local res =  njt.re.gsub(data, "INNER", function(inner_matches)
+            -- local header = njt.req.get_headers()["Host"]
+            local header = njt.var["http_HEADER"]
             return "INNER_REPLACED"
         end, "s")
 
-        ngx.print(res)
+        njt.print(res)
     ';
 }
 
@@ -685,9 +685,9 @@ GET /t
                 return "[" .. m[0] .. "] [" .. m[1] .. "]"
             end
 
-            local s, n = ngx.re.gsub("hello, 34", "([0-9])|(world)", repl)
-            ngx.say(s)
-            ngx.say(n)
+            local s, n = njt.re.gsub("hello, 34", "([0-9])|(world)", repl)
+            njt.say(s)
+            njt.say(n)
         ';
     }
 --- request

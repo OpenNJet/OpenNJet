@@ -24,27 +24,27 @@ __DATA__
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("hello in thread")
+                njt.say("hello in thread")
                 return "done"
             end
 
-            local t, err = ngx.thread.spawn(f)
+            local t, err = njt.thread.spawn(f)
             if not t then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("thread created: ", coroutine.status(t))
+            njt.say("thread created: ", coroutine.status(t))
 
             collectgarbage()
 
-            local ok, res = ngx.thread.wait(t)
+            local ok, res = njt.thread.wait(t)
             if not ok then
-                ngx.say("failed to run thread: ", res)
+                njt.say("failed to run thread: ", res)
                 return
             end
 
-            ngx.say(res)
+            njt.say(res)
         ';
     }
 --- request
@@ -73,26 +73,26 @@ done
     location /lua {
         content_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.say("hello in thread")
+                njt.sleep(0.1)
+                njt.say("hello in thread")
                 return "done"
             end
 
-            local t, err = ngx.thread.spawn(f)
+            local t, err = njt.thread.spawn(f)
             if not t then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("thread created: ", coroutine.status(t))
+            njt.say("thread created: ", coroutine.status(t))
 
-            local ok, res = ngx.thread.wait(t)
+            local ok, res = njt.thread.wait(t)
             if not ok then
-                ngx.say("failed to wait thread: ", res)
+                njt.say("failed to wait thread: ", res)
                 return
             end
 
-            ngx.say(res)
+            njt.say(res)
         ';
     }
 --- request
@@ -121,50 +121,50 @@ done
     location /lua {
         content_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.say("f: hello")
+                njt.sleep(0.1)
+                njt.say("f: hello")
                 return "done"
             end
 
             local function g()
-                ngx.sleep(0.2)
-                ngx.say("g: hello")
+                njt.sleep(0.2)
+                njt.say("g: hello")
                 return "done"
             end
 
-            local tf, err = ngx.thread.spawn(f)
+            local tf, err = njt.thread.spawn(f)
             if not tf then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("f thread created: ", coroutine.status(tf))
+            njt.say("f thread created: ", coroutine.status(tf))
 
-            local tg, err = ngx.thread.spawn(g)
+            local tg, err = njt.thread.spawn(g)
             if not tg then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("g thread created: ", coroutine.status(tg))
+            njt.say("g thread created: ", coroutine.status(tg))
 
-            local ok, res = ngx.thread.wait(tg)
+            local ok, res = njt.thread.wait(tg)
             if not ok then
-                ngx.say("failed to wait g: ", res)
+                njt.say("failed to wait g: ", res)
                 return
             end
 
-            ngx.say("g: ", res)
+            njt.say("g: ", res)
 
-            ngx.say("f thread status: ", coroutine.status(tf))
+            njt.say("f thread status: ", coroutine.status(tf))
 
-            ok, res = ngx.thread.wait(tf)
+            ok, res = njt.thread.wait(tf)
             if not ok then
-                ngx.say("failed to wait f: ", res)
+                njt.say("failed to wait f: ", res)
                 return
             end
 
-            ngx.say("f: ", res)
+            njt.say("f: ", res)
         ';
     }
 --- request
@@ -201,50 +201,50 @@ f: done
     location /lua {
         content_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.say("f: hello")
+                njt.sleep(0.1)
+                njt.say("f: hello")
                 return "done"
             end
 
             local function g()
-                ngx.sleep(0.2)
-                ngx.say("g: hello")
+                njt.sleep(0.2)
+                njt.say("g: hello")
                 return "done"
             end
 
-            local tf, err = ngx.thread.spawn(f)
+            local tf, err = njt.thread.spawn(f)
             if not tf then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("f thread created: ", coroutine.status(tf))
+            njt.say("f thread created: ", coroutine.status(tf))
 
-            local tg, err = ngx.thread.spawn(g)
+            local tg, err = njt.thread.spawn(g)
             if not tg then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("g thread created: ", coroutine.status(tg))
+            njt.say("g thread created: ", coroutine.status(tg))
 
-            local ok, res = ngx.thread.wait(tf)
+            local ok, res = njt.thread.wait(tf)
             if not ok then
-                ngx.say("failed to wait f: ", res)
+                njt.say("failed to wait f: ", res)
                 return
             end
 
-            ngx.say("f: ", res)
+            njt.say("f: ", res)
 
-            ngx.say("g thread status: ", coroutine.status(tg))
+            njt.say("g thread status: ", coroutine.status(tg))
 
-            local ok, res = ngx.thread.wait(tg)
+            local ok, res = njt.thread.wait(tg)
             if not ok then
-                ngx.say("failed to wait g: ", res)
+                njt.say("failed to wait g: ", res)
                 return
             end
 
-            ngx.say("g: ", res)
+            njt.say("g: ", res)
         ';
     }
 --- request
@@ -282,27 +282,27 @@ g: done
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("hello in thread")
+                njt.say("hello in thread")
                 return "done", 3.14
             end
 
-            local t, err = ngx.thread.spawn(f)
+            local t, err = njt.thread.spawn(f)
             if not t then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("thread created: ", coroutine.status(t))
+            njt.say("thread created: ", coroutine.status(t))
 
             collectgarbage()
 
-            local ok, res1, res2 = ngx.thread.wait(t)
+            local ok, res1, res2 = njt.thread.wait(t)
             if not ok then
-                ngx.say("failed to run thread: ", res1)
+                njt.say("failed to run thread: ", res1)
                 return
             end
 
-            ngx.say("res: ", res1, " ", res2)
+            njt.say("res: ", res1, " ", res2)
         ';
     }
 --- request
@@ -331,26 +331,26 @@ res: done 3.14
     location /lua {
         content_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.say("hello in thread")
+                njt.sleep(0.1)
+                njt.say("hello in thread")
                 return "done", 3.14
             end
 
-            local t, err = ngx.thread.spawn(f)
+            local t, err = njt.thread.spawn(f)
             if not t then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("thread created: ", coroutine.status(t))
+            njt.say("thread created: ", coroutine.status(t))
 
-            local ok, res1, res2 = ngx.thread.wait(t)
+            local ok, res1, res2 = njt.thread.wait(t)
             if not ok then
-                ngx.say("failed to wait thread: ", res1)
+                njt.say("failed to wait thread: ", res1)
                 return
             end
 
-            ngx.say("res: ", res1, " ", res2)
+            njt.say("res: ", res1, " ", res2)
         ';
     }
 --- request
@@ -379,27 +379,27 @@ res: done 3.14
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("hello in thread")
+                njt.say("hello in thread")
                 error("bad bad!")
             end
 
-            local t, err = ngx.thread.spawn(f)
+            local t, err = njt.thread.spawn(f)
             if not t then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("thread created: ", coroutine.status(t))
+            njt.say("thread created: ", coroutine.status(t))
 
             collectgarbage()
 
-            local ok, res = ngx.thread.wait(t)
+            local ok, res = njt.thread.wait(t)
             if not ok then
-                ngx.say("failed to wait thread: ", res)
+                njt.say("failed to wait thread: ", res)
                 return
             end
 
-            ngx.say(res)
+            njt.say(res)
         ';
     }
 --- request
@@ -428,28 +428,28 @@ qr/lua user thread aborted: runtime error: content_by_lua\(nginx\.conf:\d+\):4: 
     location /lua {
         content_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.say("hello in thread")
+                njt.sleep(0.1)
+                njt.say("hello in thread")
                 error("bad bad!")
             end
 
-            local t, err = ngx.thread.spawn(f)
+            local t, err = njt.thread.spawn(f)
             if not t then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("thread created: ", coroutine.status(t))
+            njt.say("thread created: ", coroutine.status(t))
 
             collectgarbage()
 
-            local ok, res = ngx.thread.wait(t)
+            local ok, res = njt.thread.wait(t)
             if not ok then
-                ngx.say("failed to wait thread: ", res)
+                njt.say("failed to wait thread: ", res)
                 return
             end
 
-            ngx.say(res)
+            njt.say(res)
         ';
     }
 --- request
@@ -478,28 +478,28 @@ qr/lua user thread aborted: runtime error: content_by_lua\(nginx\.conf:\d+\):5: 
     location /lua {
         content_by_lua '
             local function g()
-                ngx.say("hello in thread")
+                njt.say("hello in thread")
                 return "done"
             end
 
             local function f()
-                local t, err = ngx.thread.spawn(g)
+                local t, err = njt.thread.spawn(g)
                 if not t then
-                    ngx.say("failed to spawn thread: ", err)
+                    njt.say("failed to spawn thread: ", err)
                     return
                 end
 
-                ngx.say("thread created: ", coroutine.status(t))
+                njt.say("thread created: ", coroutine.status(t))
 
                 collectgarbage()
 
-                local ok, res = ngx.thread.wait(t)
+                local ok, res = njt.thread.wait(t)
                 if not ok then
-                    ngx.say("failed to run thread: ", res)
+                    njt.say("failed to run thread: ", res)
                     return
                 end
 
-                ngx.say(res)
+                njt.say(res)
             end
 
             local co = coroutine.create(f)
@@ -534,29 +534,29 @@ done
     location /lua {
         content_by_lua '
             local function g()
-                ngx.sleep(0.1)
-                ngx.say("hello in thread")
+                njt.sleep(0.1)
+                njt.say("hello in thread")
                 return "done"
             end
 
             local function f()
-                local t, err = ngx.thread.spawn(g)
+                local t, err = njt.thread.spawn(g)
                 if not t then
-                    ngx.say("failed to spawn thread: ", err)
+                    njt.say("failed to spawn thread: ", err)
                     return
                 end
 
-                ngx.say("thread created: ", coroutine.status(t))
+                njt.say("thread created: ", coroutine.status(t))
 
                 collectgarbage()
 
-                local ok, res = ngx.thread.wait(t)
+                local ok, res = njt.thread.wait(t)
                 if not ok then
-                    ngx.say("failed to run thread: ", res)
+                    njt.say("failed to run thread: ", res)
                     return
                 end
 
-                ngx.say(res)
+                njt.say(res)
             end
 
             local co = coroutine.create(f)
@@ -590,8 +590,8 @@ done
 --- config
     location /lua {
         content_by_lua '
-            -- local out = function (...) ngx.log(ngx.ERR, ...) end
-            local out = ngx.say
+            -- local out = function (...) njt.log(njt.ERR, ...) end
+            local out = njt.say
 
             local function f()
                 out("f: hello")
@@ -603,7 +603,7 @@ done
                 return "g done"
             end
 
-            local tf, err = ngx.thread.spawn(f)
+            local tf, err = njt.thread.spawn(f)
             if not tf then
                 out("failed to spawn thread f: ", err)
                 return
@@ -611,7 +611,7 @@ done
 
             out("thread f created: ", coroutine.status(tf))
 
-            local tg, err = ngx.thread.spawn(g)
+            local tg, err = njt.thread.spawn(g)
             if not tg then
                 out("failed to spawn thread g: ", err)
                 return
@@ -619,7 +619,7 @@ done
 
             out("thread g created: ", coroutine.status(tg))
 
-            local ok, res = ngx.thread.wait(tf, tg)
+            local ok, res = njt.thread.wait(tf, tg)
             if not ok then
                 out("failed to wait thread: ", res)
                 return
@@ -665,22 +665,22 @@ g status: zombie
 --- config
     location /lua {
         content_by_lua '
-            -- local out = function (...) ngx.log(ngx.ERR, ...) end
-            local out = ngx.say
+            -- local out = function (...) njt.log(njt.ERR, ...) end
+            local out = njt.say
 
             local function f()
-                ngx.sleep(0.1)
+                njt.sleep(0.1)
                 out("f: hello")
                 return "f done"
             end
 
             local function g()
-                ngx.sleep(0.2)
+                njt.sleep(0.2)
                 out("g: hello")
                 return "g done"
             end
 
-            local tf, err = ngx.thread.spawn(f)
+            local tf, err = njt.thread.spawn(f)
             if not tf then
                 out("failed to spawn thread f: ", err)
                 return
@@ -688,7 +688,7 @@ g status: zombie
 
             out("thread f created: ", coroutine.status(tf))
 
-            local tg, err = ngx.thread.spawn(g)
+            local tg, err = njt.thread.spawn(g)
             if not tg then
                 out("failed to spawn thread g: ", err)
                 return
@@ -696,7 +696,7 @@ g status: zombie
 
             out("thread g created: ", coroutine.status(tg))
 
-            local ok, res = ngx.thread.wait(tf, tg)
+            local ok, res = njt.thread.wait(tf, tg)
             if not ok then
                 out("failed to wait thread: ", res)
                 return
@@ -742,22 +742,22 @@ g: hello
 --- config
     location /lua {
         content_by_lua '
-            -- local out = function (...) ngx.log(ngx.ERR, ...) end
-            local out = ngx.say
+            -- local out = function (...) njt.log(njt.ERR, ...) end
+            local out = njt.say
 
             local function f()
-                ngx.sleep(0.2)
+                njt.sleep(0.2)
                 out("f: hello")
                 return "f done"
             end
 
             local function g()
-                ngx.sleep(0.1)
+                njt.sleep(0.1)
                 out("g: hello")
                 return "g done"
             end
 
-            local tf, err = ngx.thread.spawn(f)
+            local tf, err = njt.thread.spawn(f)
             if not tf then
                 out("failed to spawn thread f: ", err)
                 return
@@ -765,7 +765,7 @@ g: hello
 
             out("thread f created: ", coroutine.status(tf))
 
-            local tg, err = ngx.thread.spawn(g)
+            local tg, err = njt.thread.spawn(g)
             if not tg then
                 out("failed to spawn thread g: ", err)
                 return
@@ -773,7 +773,7 @@ g: hello
 
             out("thread g created: ", coroutine.status(tg))
 
-            local ok, res = ngx.thread.wait(tf, tg)
+            local ok, res = njt.thread.wait(tf, tg)
             if not ok then
                 out("failed to wait thread: ", res)
                 return
@@ -819,8 +819,8 @@ f: hello
 --- config
     location /lua {
         content_by_lua '
-            -- local out = function (...) ngx.log(ngx.ERR, ...) end
-            local out = ngx.say
+            -- local out = function (...) njt.log(njt.ERR, ...) end
+            local out = njt.say
 
             local function f()
                 out("f: hello")
@@ -832,7 +832,7 @@ f: hello
                 error("g done")
             end
 
-            local tf, err = ngx.thread.spawn(f)
+            local tf, err = njt.thread.spawn(f)
             if not tf then
                 out("failed to spawn thread f: ", err)
                 return
@@ -840,7 +840,7 @@ f: hello
 
             out("thread f created: ", coroutine.status(tf))
 
-            local tg, err = ngx.thread.spawn(g)
+            local tg, err = njt.thread.spawn(g)
             if not tg then
                 out("failed to spawn thread g: ", err)
                 return
@@ -848,7 +848,7 @@ f: hello
 
             out("thread g created: ", coroutine.status(tg))
 
-            local ok, res = ngx.thread.wait(tf, tg)
+            local ok, res = njt.thread.wait(tf, tg)
             if not ok then
                 out("failed to wait thread: ", res)
             else
@@ -893,22 +893,22 @@ qr/lua user thread aborted: runtime error: content_by_lua\(nginx\.conf:\d+\):7: 
 --- config
     location /lua {
         content_by_lua '
-            -- local out = function (...) ngx.log(ngx.ERR, ...) end
-            local out = ngx.say
+            -- local out = function (...) njt.log(njt.ERR, ...) end
+            local out = njt.say
 
             local function f()
-                ngx.sleep(0.1)
+                njt.sleep(0.1)
                 out("f: hello")
                 error("f done")
             end
 
             local function g()
-                ngx.sleep(0.2)
+                njt.sleep(0.2)
                 out("g: hello")
                 error("g done")
             end
 
-            local tf, err = ngx.thread.spawn(f)
+            local tf, err = njt.thread.spawn(f)
             if not tf then
                 out("failed to spawn thread f: ", err)
                 return
@@ -916,7 +916,7 @@ qr/lua user thread aborted: runtime error: content_by_lua\(nginx\.conf:\d+\):7: 
 
             out("thread f created: ", coroutine.status(tf))
 
-            local tg, err = ngx.thread.spawn(g)
+            local tg, err = njt.thread.spawn(g)
             if not tg then
                 out("failed to spawn thread g: ", err)
                 return
@@ -924,7 +924,7 @@ qr/lua user thread aborted: runtime error: content_by_lua\(nginx\.conf:\d+\):7: 
 
             out("thread g created: ", coroutine.status(tg))
 
-            local ok, res = ngx.thread.wait(tf, tg)
+            local ok, res = njt.thread.wait(tf, tg)
             if not ok then
                 out("failed to wait thread: ", res)
             else
@@ -970,42 +970,42 @@ qr/lua user thread aborted: runtime error: content_by_lua\(nginx\.conf:\d+\):8: 
     location /lua {
         content_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.say("f: hello")
+                njt.sleep(0.1)
+                njt.say("f: hello")
                 return "done"
             end
 
             local function g()
-                ngx.sleep(0.2)
-                ngx.say("g: hello")
+                njt.sleep(0.2)
+                njt.say("g: hello")
                 return "done"
             end
 
-            local tf, err = ngx.thread.spawn(f)
+            local tf, err = njt.thread.spawn(f)
             if not tf then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("f thread created: ", coroutine.status(tf))
+            njt.say("f thread created: ", coroutine.status(tf))
 
-            local tg, err = ngx.thread.spawn(g)
+            local tg, err = njt.thread.spawn(g)
             if not tg then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("g thread created: ", coroutine.status(tg))
+            njt.say("g thread created: ", coroutine.status(tg))
 
-            local ok, res = ngx.thread.wait(tf, tg)
+            local ok, res = njt.thread.wait(tf, tg)
             if not ok then
-                ngx.say("failed to wait: ", res)
+                njt.say("failed to wait: ", res)
                 return
             end
 
-            ngx.say("res: ", res)
+            njt.say("res: ", res)
 
-            ngx.exit(200)
+            njt.exit(200)
         ';
     }
 --- request
@@ -1039,42 +1039,42 @@ res: done
     location /lua {
         content_by_lua '
             local function f()
-                ngx.sleep(0.2)
-                ngx.say("f: hello")
+                njt.sleep(0.2)
+                njt.say("f: hello")
                 return "f done"
             end
 
             local function g()
-                ngx.sleep(0.1)
-                ngx.say("g: hello")
+                njt.sleep(0.1)
+                njt.say("g: hello")
                 return "g done"
             end
 
-            local tf, err = ngx.thread.spawn(f)
+            local tf, err = njt.thread.spawn(f)
             if not tf then
-                ngx.say("failed to spawn thread f: ", err)
+                njt.say("failed to spawn thread f: ", err)
                 return
             end
 
-            ngx.say("f thread created: ", coroutine.status(tf))
+            njt.say("f thread created: ", coroutine.status(tf))
 
-            local tg, err = ngx.thread.spawn(g)
+            local tg, err = njt.thread.spawn(g)
             if not tg then
-                ngx.say("failed to spawn thread g: ", err)
+                njt.say("failed to spawn thread g: ", err)
                 return
             end
 
-            ngx.say("g thread created: ", coroutine.status(tg))
+            njt.say("g thread created: ", coroutine.status(tg))
 
-            local ok, res = ngx.thread.wait(tf, tg)
+            local ok, res = njt.thread.wait(tf, tg)
             if not ok then
-                ngx.say("failed to wait: ", res)
+                njt.say("failed to wait: ", res)
                 return
             end
 
-            ngx.say("res: ", res)
+            njt.say("res: ", res)
 
-            ngx.exit(200)
+            njt.exit(200)
         ';
     }
 --- request
@@ -1110,24 +1110,24 @@ res: g done
             local t
 
             local function f()
-                ngx.sleep(0.1)
+                njt.sleep(0.1)
                 return "done"
             end
 
             local function g()
-                t = ngx.thread.spawn(f)
+                t = njt.thread.spawn(f)
             end
 
             local co = coroutine.create(g)
             coroutine.resume(co)
 
-            local ok, res = ngx.thread.wait(t)
+            local ok, res = njt.thread.wait(t)
             if not ok then
-                ngx.say("failed to run thread: ", res)
+                njt.say("failed to run thread: ", res)
                 return
             end
 
-            ngx.say(res)
+            njt.say(res)
         ';
     }
 --- request
@@ -1155,7 +1155,7 @@ only the parent coroutine can wait on the thread
     location /lua {
         content_by_lua '
             local function f()
-                ngx.sleep(0.1)
+                njt.sleep(0.1)
                 coroutine.yield()
                 return "done"
             end
@@ -1163,13 +1163,13 @@ only the parent coroutine can wait on the thread
             local co = coroutine.create(f)
             coroutine.resume(co)
 
-            local ok, res = ngx.thread.wait(co)
+            local ok, res = njt.thread.wait(co)
             if not ok then
-                ngx.say("failed to run thread: ", res)
+                njt.say("failed to run thread: ", res)
                 return
             end
 
-            ngx.say(res)
+            njt.say(res)
         ';
     }
 --- request
@@ -1193,13 +1193,13 @@ qr/lua entry thread aborted: runtime error: content_by_lua\(nginx\.conf:\d+\):11
     location /lua {
         content_by_lua '
             local function f()
-                ngx.sleep(0.1)
+                njt.sleep(0.1)
                 collectgarbage()
                 error("f done")
             end
 
-            ngx.thread.spawn(f)
-            ngx.say("ok")
+            njt.thread.spawn(f)
+            njt.say("ok")
 
             collectgarbage()
         ';
@@ -1229,33 +1229,33 @@ qr/lua user thread aborted: runtime error: content_by_lua\(nginx\.conf:\d+\):5: 
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("hello in thread")
+                njt.say("hello in thread")
                 return "done"
             end
 
-            local t, err = ngx.thread.spawn(f)
+            local t, err = njt.thread.spawn(f)
             if not t then
-                ngx.say("failed to spawn thread: ", err)
+                njt.say("failed to spawn thread: ", err)
                 return
             end
 
-            ngx.say("thread created: ", coroutine.status(t))
+            njt.say("thread created: ", coroutine.status(t))
 
             collectgarbage()
 
-            local ok, res = ngx.thread.wait(t)
+            local ok, res = njt.thread.wait(t)
             if not ok then
-                ngx.say("failed to run thread: ", res)
+                njt.say("failed to run thread: ", res)
                 return
             end
 
-            local ok, res = ngx.thread.wait(t)
+            local ok, res = njt.thread.wait(t)
             if not ok then
-                ngx.say("failed to run thread: ", res)
+                njt.say("failed to run thread: ", res)
                 return
             end
 
-            ngx.say(res)
+            njt.say(res)
         ';
     }
 --- request
@@ -1284,28 +1284,28 @@ failed to run thread: already waited or killed
     location /lua {
         content_by_lua '
             local function f()
-                -- ngx.say("hello in thread")
+                -- njt.say("hello in thread")
                 return "done"
             end
 
             for i = 1, 100 do
-                local t, err = ngx.thread.spawn(f)
+                local t, err = njt.thread.spawn(f)
                 if not t then
-                    ngx.say("failed to spawn thread: ", err)
+                    njt.say("failed to spawn thread: ", err)
                     break
                 end
 
-                -- ngx.say("thread created: ", coroutine.status(t))
+                -- njt.say("thread created: ", coroutine.status(t))
 
                 collectgarbage()
 
-                local ok, res = ngx.thread.wait(t)
+                local ok, res = njt.thread.wait(t)
                 if not ok then
-                    ngx.say("failed to run thread: ", res)
+                    njt.say("failed to run thread: ", res)
                     break
                 end
 
-                ngx.say(i, ": ", res)
+                njt.say(i, ": ", res)
             end
         ';
     }

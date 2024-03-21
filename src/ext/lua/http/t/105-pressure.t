@@ -27,18 +27,18 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: memory issue in the "args" string option for ngx.location.capture
+=== TEST 1: memory issue in the "args" string option for njt.location.capture
 --- config
     location /test1 {
         content_by_lua '
-            local res = ngx.location.capture("/test2/auth", {args = ngx.var.args})
-            ngx.print(res.body)
+            local res = njt.location.capture("/test2/auth", {args = njt.var.args})
+            njt.print(res.body)
         ';
     }
     location /test2 {
         content_by_lua '
             collectgarbage()
-            ngx.say(ngx.var.args)
+            njt.say(njt.var.args)
         ';
     }
 

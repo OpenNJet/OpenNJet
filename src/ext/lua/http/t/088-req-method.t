@@ -21,7 +21,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua '
-            ngx.say("method: [", ngx.req.get_method(), "]")
+            njt.say("method: [", njt.req.get_method(), "]")
         ';
     }
 --- request
@@ -41,7 +41,7 @@ method: [GET]
 
     location /sub {
         content_by_lua '
-            ngx.say("method: [", ngx.req.get_method(), "]")
+            njt.say("method: [", njt.req.get_method(), "]")
         ';
     }
 --- request
@@ -57,7 +57,7 @@ method: [POST]
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_method(ngx.HTTP_POST)
+            njt.req.set_method(njt.HTTP_POST)
         ';
 
         proxy_pass http://127.0.0.1:$server_port/echo;
@@ -79,7 +79,7 @@ POST
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_method(ngx.HTTP_GET)
+            njt.req.set_method(njt.HTTP_GET)
         ';
 
         proxy_pass http://127.0.0.1:$server_port/echo;
@@ -102,7 +102,7 @@ GET
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_method(ngx.HTTP_DELETE)
+            njt.req.set_method(njt.HTTP_DELETE)
         ';
 
         proxy_pass http://127.0.0.1:$server_port/echo;
@@ -125,7 +125,7 @@ DELETE
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_method(ngx.HTTP_PUT)
+            njt.req.set_method(njt.HTTP_PUT)
         ';
 
         proxy_pass http://127.0.0.1:$server_port/echo;
@@ -148,7 +148,7 @@ PUT
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_method(ngx.HTTP_PUT)
+            njt.req.set_method(njt.HTTP_PUT)
         ';
 
         echo $request_method;
@@ -167,7 +167,7 @@ PUT
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_method(ngx.HTTP_HEAD)
+            njt.req.set_method(njt.HTTP_HEAD)
         ';
 
         proxy_pass http://127.0.0.1:$server_port/echo;
@@ -194,8 +194,8 @@ GET /t
 
     location /sub {
         content_by_lua '
-            ngx.req.set_method(ngx.HTTP_PUT)
-            ngx.say("sub: ", ngx.var.echo_request_method)
+            njt.req.set_method(njt.HTTP_PUT)
+            njt.say("sub: ", njt.var.echo_request_method)
         ';
     }
 --- request
@@ -212,7 +212,7 @@ main: GET
 --- config
     location /t {
         rewrite_by_lua '
-            ngx.req.set_method(ngx.HTTP_GET)
+            njt.req.set_method(njt.HTTP_GET)
         ';
 
         echo "method: $echo_request_method";
@@ -231,20 +231,20 @@ method: GET
     location /t {
         content_by_lua '
             local methods = {
-                ngx.HTTP_MKCOL,
-                ngx.HTTP_COPY,
-                ngx.HTTP_MOVE,
-                ngx.HTTP_PROPFIND,
-                ngx.HTTP_PROPPATCH,
-                ngx.HTTP_LOCK,
-                ngx.HTTP_UNLOCK,
-                ngx.HTTP_PATCH,
-                ngx.HTTP_TRACE,
+                njt.HTTP_MKCOL,
+                njt.HTTP_COPY,
+                njt.HTTP_MOVE,
+                njt.HTTP_PROPFIND,
+                njt.HTTP_PROPPATCH,
+                njt.HTTP_LOCK,
+                njt.HTTP_UNLOCK,
+                njt.HTTP_PATCH,
+                njt.HTTP_TRACE,
             }
 
             for i, method in ipairs(methods) do
-                ngx.req.set_method(method)
-                ngx.say("method: ", ngx.var.echo_request_method)
+                njt.req.set_method(method)
+                njt.say("method: ", njt.var.echo_request_method)
             end
         ';
     }

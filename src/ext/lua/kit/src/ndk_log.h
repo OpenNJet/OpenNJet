@@ -160,6 +160,6 @@
 #else /* NO VARIADIC MACROS */
 
 /* #warning does not work on Windows */
-#pragma message("Nginx Devel Kit logging without variadic macros not yet implemented")
+#pragma message("NJet Devel Kit logging without variadic macros not yet implemented")
 
 #endif /* VARIADIC MACROS */

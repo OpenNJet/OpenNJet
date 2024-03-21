@@ -19,7 +19,7 @@ __DATA__
 === TEST 1: bytecode (not stripped)
 --- stream_server_config
     content_by_lua_block {
-        local f = assert(loadstring("local a = a and a + 1 or 1 ngx.say('a = ', a)", "=code"))
+        local f = assert(loadstring("local a = a and a + 1 or 1 njt.say('a = ', a)", "=code"))
         local bc = string.dump(f)
         local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/a.luac", "w"))
         f:write(bc)
@@ -37,7 +37,7 @@ a = 1
 === TEST 2: bytecode (stripped)
 --- stream_server_config
     content_by_lua_block {
-        local f = assert(loadstring("local a = a and a + 1 or 1 ngx.say('a = ', a)", "=code"))
+        local f = assert(loadstring("local a = a and a + 1 or 1 njt.say('a = ', a)", "=code"))
         local bc = string.dump(f, true)
         local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/a.luac", "w"))
         f:write(bc)

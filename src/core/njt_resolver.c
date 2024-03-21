@@ -10,11 +10,29 @@
 #include <njt_core.h>
 #include <njt_event.h>
 
+// openresty patch
+#if !(NJT_WIN32)
+#include <resolv.h>
+#endif
+// openresty patch end
+
 
 #define NJT_RESOLVER_UDP_SIZE   4096
 
 #define NJT_RESOLVER_TCP_RSIZE  (2 + 65535)
 #define NJT_RESOLVER_TCP_WSIZE  8192
+
+// openresty patch
+#if !(NJT_WIN32)
+/*
+ * note that 2KB should be more than enough for majority of the
+ * resolv.conf files out there. it also acts as a safety guard to prevent
+ * abuse.
+ */
+#define NJT_RESOLVER_FILE_BUF_SIZE  2048
+#define NJT_RESOLVER_FILE_NAME      "/etc/resolv.conf"
+#endif
+// openresty patch end
 
 
 typedef struct {
@@ -130,6 +148,192 @@ static njt_resolver_node_t *njt_resolver_lookup_addr6(njt_resolver_t *r,
 #endif
 
 
+// openresty patch
+#if !(NJT_WIN32)
+static njt_int_t
+njt_resolver_read_resolv_conf(njt_conf_t *cf, njt_resolver_t *r, u_char *path,
+    size_t path_len)
+{
+    njt_url_t                        u;
+    njt_resolver_connection_t       *rec;
+    njt_fd_t                         fd;
+    njt_file_t                       file;
+    u_char                           buf[NJT_RESOLVER_FILE_BUF_SIZE];
+    u_char                           ipv6_buf[NJT_INET6_ADDRSTRLEN];
+    njt_uint_t                       address = 0, j, total = 0;
+    ssize_t                          n, i;
+    enum {
+        sw_nameserver,
+        sw_spaces,
+        sw_address,
+        sw_skip
+    } state;
+
+    file.name.data = path;
+    file.name.len = path_len;
+
+    if (njt_conf_full_name(cf->cycle, &file.name, 1) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    fd = njt_open_file(file.name.data, NJT_FILE_RDONLY,
+                       NJT_FILE_OPEN, 0);
+
+    if (fd == NJT_INVALID_FILE) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, njt_errno,
+                           njt_open_file_n " \"%s\" failed", file.name.data);
+
+        return NJT_ERROR;
+    }
+
+    njt_memzero(&file, sizeof(njt_file_t));
+
+    file.fd = fd;
+    file.log = cf->log;
+
+    state = sw_nameserver;
+
+    n = njt_read_file(&file, buf, NJT_RESOLVER_FILE_BUF_SIZE, 0);
+
+    if (n == NJT_ERROR) {
+        njt_conf_log_error(NJT_LOG_ALERT, cf, njt_errno,
+                           njt_read_file_n " \"%s\" failed", file.name.data);
+    }
+
+    if (njt_close_file(file.fd) == NJT_FILE_ERROR) {
+        njt_conf_log_error(NJT_LOG_ALERT, cf, njt_errno,
+                           njt_close_file_n " \"%s\" failed", file.name.data);
+    }
+
+    if (n == NJT_ERROR) {
+        return NJT_ERROR;
+    }
+
+    if (n == 0) {
+        return NJT_OK;
+    }
+
+    for (i = 0; i < n && total < MAXNS; /* void */) {
+        if (buf[i] == '#' || buf[i] == ';') {
+            state = sw_skip;
+        }
+
+        switch (state) {
+
+        case sw_nameserver:
+
+            if ((size_t) n - i >= sizeof("nameserver") - 1
+                && njt_memcmp(buf + i, "nameserver",
+                              sizeof("nameserver") - 1) == 0)
+            {
+                state = sw_spaces;
+                i += sizeof("nameserver") - 1;
+
+                continue;
+            }
+
+            break;
+
+        case sw_spaces:
+            if (buf[i] != '\t' && buf[i] != ' ') {
+                address = i;
+                state = sw_address;
+            }
+
+            break;
+        case sw_address:
+
+            if (buf[i] == CR || buf[i] == LF || i == n - 1) {
+                njt_memzero(&u, sizeof(njt_url_t));
+
+                u.url.data = buf + address;
+
+                if (i == n - 1 && buf[i] != CR && buf[i] != LF) {
+                    u.url.len = n - address;
+
+                } else {
+                    u.url.len = i - address;
+                }
+
+                u.default_port = 53;
+
+                /* IPv6? */
+                if (njt_strlchr(u.url.data, u.url.data + u.url.len,
+                                ':') != NULL)
+                {
+                    if (u.url.len + 2 > sizeof(ipv6_buf)) {
+                        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                           "IPv6 resolver address is too long:"
+                                           " \"%V\"", &u.url);
+
+                        return NJT_ERROR;
+                    }
+
+                    ipv6_buf[0] = '[';
+                    njt_memcpy(ipv6_buf + 1, u.url.data, u.url.len);
+                    ipv6_buf[u.url.len + 1] = ']';
+
+                    u.url.data = ipv6_buf;
+                    u.url.len = u.url.len + 2;
+                }
+
+                if (njt_parse_url(cf->pool, &u) != NJT_OK) {
+                    if (u.err) {
+                        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                           "%s in resolver \"%V\"",
+                                           u.err, &u.url);
+                    }
+
+                    return NJT_ERROR;
+                }
+
+                rec = njt_array_push_n(&r->connections, u.naddrs);
+                if (rec == NULL) {
+                    return NJT_ERROR;
+                }
+
+                njt_memzero(rec, u.naddrs * sizeof(njt_resolver_connection_t));
+
+                for (j = 0; j < u.naddrs; j++) {
+                    rec[j].sockaddr = u.addrs[j].sockaddr;
+                    rec[j].socklen = u.addrs[j].socklen;
+                    rec[j].server = u.addrs[j].name;
+                    rec[j].resolver = r;
+                }
+
+                total++;
+
+#if (NJT_DEBUG)
+                /*
+                 * logs with level below NJT_LOG_NOTICE will not be printed
+                 * in this early phase
+                 */
+                njt_conf_log_error(NJT_LOG_NOTICE, cf, 0,
+                                   "parsed a resolver: \"%V\"", &u.url);
+#endif
+
+                state = sw_nameserver;
+            }
+
+            break;
+
+        case sw_skip:
+            if (buf[i] == CR || buf[i] == LF) {
+                state = sw_nameserver;
+            }
+
+            break;
+        }
+
+        i++;
+    }
+
+    return NJT_OK;
+}
+#endif
+// openresty patch end
+
+
 njt_resolver_t *
 njt_resolver_create(njt_conf_t *cf, njt_str_t *names, njt_uint_t n)
 {
@@ -227,11 +431,20 @@ njt_resolver_create(njt_conf_t *cf, njt_str_t *names, njt_uint_t n)
             continue;
         }
 
-#if (NJT_HAVE_INET6)
+// #if (NJT_HAVE_INET6) openresy patch
         if (njt_strncmp(names[i].data, "ipv4=", 5) == 0) {
 
             if (njt_strcmp(&names[i].data[5], "on") == 0) {
+#if (NJT_HAVE_INET6) // openresy patch
                 r->ipv4 = 1;
+                // openresty patch
+#else
+                njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                   "no ipv6 support but \"%V\" in resolver",
+                                   &names[i]);
+                return NULL;
+#endif
+                // openresty patch end
 
             } else if (njt_strcmp(&names[i].data[5], "off") == 0) {
                 r->ipv4 = 0;
@@ -251,8 +464,9 @@ njt_resolver_create(njt_conf_t *cf, njt_str_t *names, njt_uint_t n)
                 r->ipv6 = 1;
 
             } else if (njt_strcmp(&names[i].data[5], "off") == 0) {
+#if (NJT_HAVE_INET6) // openresy patch
                 r->ipv6 = 0;
-
+#endif // openresty patch
             } else {
                 njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                                    "invalid parameter: %V", &names[i]);
@@ -261,7 +475,44 @@ njt_resolver_create(njt_conf_t *cf, njt_str_t *names, njt_uint_t n)
 
             continue;
         }
+// #endif openresty
+
+// openresty patch
+#if !(NJT_WIN32)
+        if (njt_strncmp(names[i].data, "local=", 6) == 0) {
+
+            if (njt_strcmp(&names[i].data[6], "on") == 0) {
+                if (njt_resolver_read_resolv_conf(cf, r,
+                                                  (u_char *)
+                                                  NJT_RESOLVER_FILE_NAME,
+                                                  sizeof(NJT_RESOLVER_FILE_NAME)
+                                                  - 1)
+                    != NJT_OK)
+                {
+                    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                       "unable to parse local resolver");
+                    return NULL;
+                }
+
+            } else if (njt_strcmp(&names[i].data[6], "off") != 0) {
+                if (njt_resolver_read_resolv_conf(cf, r,
+                                                  &names[i].data[6],
+                                                  names[i].len - 6)
+                    != NJT_OK)
+                {
+                    njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+                                       "unable to parse local resolver");
+                    return NULL;
+                }
+
+            }
+
+            continue;
+        }
 #endif
+// openresty patch end
+
+
 
         njt_memzero(&u, sizeof(njt_url_t));
 
@@ -4552,7 +4803,16 @@ njt_tcp_connect(njt_resolver_connection_t *rec)
     njt_event_t       *rev, *wev;
     njt_connection_t  *c;
 
+// openresty patch
+#if (NJT_HAVE_SOCKET_CLOEXEC)
+    s = njt_socket(rec->sockaddr->sa_family, SOCK_STREAM | SOCK_CLOEXEC, 0);
+
+#else
     s = njt_socket(rec->sockaddr->sa_family, SOCK_STREAM, 0);
+#endif
+// openresty patch end
+    s = njt_socket(rec->sockaddr->sa_family, SOCK_STREAM, 0); // openresty patch
+
 
     njt_log_debug1(NJT_LOG_DEBUG_EVENT, &rec->log, 0, "TCP socket %d", s);
 

@@ -39,10 +39,10 @@ __DATA__
     content_by_lua_block {
         local foo = package.loaded.foo
         if foo then
-            ngx.say("found")
+            njt.say("found")
             foo.hi()
         else
-            ngx.say("not found")
+            njt.say("not found")
         end
     }
 
@@ -51,20 +51,20 @@ __DATA__
     content_by_lua_block {
         local foo = package.loaded.foo
         if foo then
-            ngx.say("found")
+            njt.say("found")
             foo.hi()
         else
-            ngx.say("not found")
+            njt.say("not found")
         end
     }
 --- user_files
 >>> foo.lua
 local _M = {}
 
-ngx.say("loading");
+njt.say("loading");
 
 function _M.hi ()
-    ngx.say("hello, foo")
+    njt.say("hello, foo")
 end
 
 return _M
@@ -85,7 +85,7 @@ hello, foo
     "lua_package_cpath '$::HtmlDir/?.so';"
 --- stream_server_config
     content_by_lua_block {
-        ngx.print(package.cpath);
+        njt.print(package.cpath);
     }
 --- stream_response_like: ^[^;]+/servroot(_\d+)?/html/\?\.so$
 --- no_error_log
@@ -98,7 +98,7 @@ hello, foo
     "lua_package_path '$::HtmlDir/?.lua;;';"
 --- stream_server_config
     content_by_lua_block {
-        ngx.print(package.path)
+        njt.print(package.path)
     }
 --- stream_response_like: ^[^;]+/servroot(_\d+)?/html/\?\.lua;(.+\.lua)?;*$
 --- no_error_log
@@ -111,7 +111,7 @@ hello, foo
     "lua_package_cpath '$::HtmlDir/?.so;;';"
 --- stream_server_config
     content_by_lua_block {
-        ngx.print(package.cpath)
+        njt.print(package.cpath)
     }
 --- stream_response_like: ^[^;]+/servroot(_\d+)?/html/\?\.so;(.+\.so)?;*$
 --- no_error_log
@@ -124,7 +124,7 @@ hello, foo
     "lua_package_path ';;$::HtmlDir/?.lua';"
 --- stream_server_config
     content_by_lua_block {
-        ngx.print(package.path);
+        njt.print(package.path);
     }
 --- stream_response_like: ^(.+\.lua)?;*?[^;]+/servroot(_\d+)?/html/\?\.lua$
 --- no_error_log
@@ -137,7 +137,7 @@ hello, foo
     "lua_package_cpath ';;$::HtmlDir/?.so';"
 --- stream_server_config
     content_by_lua_block {
-        ngx.print(package.cpath);
+        njt.print(package.cpath);
     }
 --- stream_response_like: ^(.+\.so)?;*?[^;]+/servroot(_\d+)?/html/\?\.so$
 --- no_error_log
@@ -145,11 +145,11 @@ hello, foo
 
 
 
-=== TEST 7: require "ngx" (content_by_lua_block)
+=== TEST 7: require "njt" (content_by_lua_block)
 --- stream_server_config
     content_by_lua_block {
-        local ngx = require "ngx"
-        ngx.say("hello, world")
+        local njt = require "njt"
+        njt.say("hello, world")
     }
 --- stream_response
 hello, world

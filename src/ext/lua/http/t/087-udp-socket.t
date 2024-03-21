@@ -30,35 +30,35 @@ __DATA__
         #set $port 1234;
 
         content_by_lua '
-            local socket = ngx.socket
+            local socket = njt.socket
             -- local socket = require "socket"
 
             local udp = socket.udp()
 
-            local port = ngx.var.port
+            local port = njt.var.port
             udp:settimeout(1000) -- 1 sec
 
             local ok, err = udp:setpeername("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected")
+            njt.say("connected")
 
             local req = "\\0\\1\\0\\0\\0\\1\\0\\0flush_all\\r\\n"
             local ok, err = udp:send(req)
             if not ok then
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 return
             end
 
             local data, err = udp:receive()
             if not data then
-                ngx.say("failed to receive data: ", err)
+                njt.say("failed to receive data: ", err)
                 return
             end
-            ngx.print("received ", #data, " bytes: ", data)
+            njt.print("received ", #data, " bytes: ", data)
         ';
     }
 --- request
@@ -82,51 +82,51 @@ lua udp socket receive buffer size: 8192
         #set $port 1234;
 
         content_by_lua '
-            local socket = ngx.socket
+            local socket = njt.socket
             -- local socket = require "socket"
 
             local udp = socket.udp()
 
-            local port = ngx.var.port
+            local port = njt.var.port
             udp:settimeout(1000) -- 1 sec
 
             local ok, err = udp:setpeername("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected")
+            njt.say("connected")
 
             local req = "\\0\\1\\0\\0\\0\\1\\0\\0flush_all\\r\\n"
             local ok, err = udp:send(req)
             if not ok then
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 return
             end
 
             req = "\\0\\2\\0\\0\\0\\1\\0\\0flush_all\\r\\n"
             ok, err = udp:send(req)
             if not ok then
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 return
             end
 
-            ngx.sleep(0.05)
+            njt.sleep(0.05)
 
             local data, err = udp:receive()
             if not data then
-                ngx.say("failed to receive data: ", err)
+                njt.say("failed to receive data: ", err)
                 return
             end
-            ngx.print("1: received ", #data, " bytes: ", data)
+            njt.print("1: received ", #data, " bytes: ", data)
 
             data, err = udp:receive()
             if not data then
-                ngx.say("failed to receive data: ", err)
+                njt.say("failed to receive data: ", err)
                 return
             end
-            ngx.print("2: received ", #data, " bytes: ", data)
+            njt.print("2: received ", #data, " bytes: ", data)
         ';
     }
 --- request
@@ -151,35 +151,35 @@ GET /t
         #set $port 1234;
 
         content_by_lua '
-            local socket = ngx.socket
+            local socket = njt.socket
             -- local socket = require "socket"
 
             local udp = socket.udp()
 
-            local port = ngx.var.port
+            local port = njt.var.port
             udp:settimeout(1000) -- 1 sec
 
             local ok, err = udp:setpeername("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected")
+            njt.say("connected")
 
             local req = "\\0\\1\\0\\0\\0\\1\\0\\0flush_all\\r\\n"
             local ok, err = udp:send(req)
             if not ok then
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 return
             end
 
             local data, err = udp:receive()
             if not data then
-                ngx.say("failed to receive data: ", err)
+                njt.say("failed to receive data: ", err)
                 return
             end
-            ngx.print("received ", #data, " bytes: ", data)
+            njt.print("received ", #data, " bytes: ", data)
         ';
     }
 --- request
@@ -203,9 +203,9 @@ qr/recv\(\) failed \(\d+: Connection refused\)/
             for i = 1, 170 do
                 table.insert(reqs, {"/t"})
             end
-            local resps = {ngx.location.capture_multi(reqs)}
+            local resps = {njt.location.capture_multi(reqs)}
             for i = 1, 170 do
-                ngx.say(resps[i].status)
+                njt.say(resps[i].status)
             end
         ';
     }
@@ -216,7 +216,7 @@ qr/recv\(\) failed \(\d+: Connection refused\)/
         #set $port 1234;
 
         content_by_lua '
-            local port = ngx.var.port
+            local port = njt.var.port
             local foo = require "foo"
             local udp = foo.get_udp()
 
@@ -224,18 +224,18 @@ qr/recv\(\) failed \(\d+: Connection refused\)/
 
             local ok, err = udp:setpeername("127.0.0.1", port)
             if not ok then
-                ngx.log(ngx.ERR, "failed to connect: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "failed to connect: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("connected")
+            njt.say("connected")
 
             local data, err = udp:receive()
             if not data then
-                ngx.say("failed to receive data: ", err)
+                njt.say("failed to receive data: ", err)
                 return
             end
-            ngx.print("received ", #data, " bytes: ", data)
+            njt.print("received ", #data, " bytes: ", data)
         ';
     }
 --- user_files
@@ -246,7 +246,7 @@ local udp
 
 function get_udp()
     if not udp then
-        udp = ngx.socket.udp()
+        udp = njt.socket.udp()
     end
 
     return udp
@@ -277,9 +277,9 @@ qr/content_by_lua\(nginx\.conf:\d+\):8: bad request/
             for i = 1, 170 do
                 table.insert(reqs, {"/t"})
             end
-            local resps = {ngx.location.capture_multi(reqs)}
+            local resps = {njt.location.capture_multi(reqs)}
             for i = 1, 170 do
-                ngx.say(resps[i].status)
+                njt.say(resps[i].status)
             end
         ';
     }
@@ -290,16 +290,16 @@ qr/content_by_lua\(nginx\.conf:\d+\):8: bad request/
         #set $port 1234;
 
         content_by_lua '
-            local port = ngx.var.port
+            local port = njt.var.port
             local foo = require "foo"
             local udp = foo.get_udp(port)
 
             local data, err = udp:receive()
             if not data then
-                ngx.log(ngx.ERR, "failed to receive data: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "failed to receive data: ", err)
+                return njt.exit(500)
             end
-            ngx.print("received ", #data, " bytes: ", data)
+            njt.print("received ", #data, " bytes: ", data)
         ';
     }
 --- user_files
@@ -310,14 +310,14 @@ local udp
 
 function get_udp(port)
     if not udp then
-        udp = ngx.socket.udp()
+        udp = njt.socket.udp()
 
         udp:settimeout(100) -- 100ms
 
         local ok, err = udp:setpeername("127.0.0.1", port)
         if not ok then
-            ngx.log(ngx.ERR, "failed to connect: ", err)
-            return ngx.exit(500)
+            njt.log(njt.ERR, "failed to connect: ", err)
+            return njt.exit(500)
         end
     end
 
@@ -339,43 +339,43 @@ qr/content_by_lua\(nginx\.conf:\d+\):6: bad request/
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua '
-            local sock = ngx.socket.udp()
-            local port = ngx.var.port
+            local sock = njt.socket.udp()
+            local port = njt.var.port
 
             local ok, err = sock:setpeername("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             ok, err = sock:setpeername("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected again: ", ok)
+            njt.say("connected again: ", ok)
 
             local req = "\\0\\1\\0\\0\\0\\1\\0\\0flush_all\\r\\n"
             local ok, err = sock:send(req)
             if not ok then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
-            ngx.say("request sent: ", ok)
+            njt.say("request sent: ", ok)
 
             local line, err = sock:receive()
             if line then
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
 
             else
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
             end
 
             ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         ';
     }
 
@@ -408,29 +408,29 @@ close: 1 nil
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua '
-            local port = ngx.var.port
+            local port = njt.var.port
 
-            local sock = ngx.socket.udp()
+            local sock = njt.socket.udp()
             sock:settimeout(100) -- 100 ms
 
             local ok, err = sock:setpeername("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local line, err = sock:receive()
             if line then
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
 
             else
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
             end
 
             -- ok, err = sock:close()
-            -- ngx.say("close: ", ok, " ", err)
+            -- njt.say("close: ", ok, " ", err)
         ';
     }
 
@@ -457,35 +457,35 @@ lua udp socket read timed out
         #set $port 1234;
 
         content_by_lua '
-            local socket = ngx.socket
+            local socket = njt.socket
             -- local socket = require "socket"
 
             local udp = socket.udp()
 
-            local port = ngx.var.port
+            local port = njt.var.port
             udp:settimeout(1000) -- 1 sec
 
             local ok, err = udp:setpeername("127.0.0.1", port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected")
+            njt.say("connected")
 
             local req = "\\0\\1\\0\\0\\0\\1\\0\\0flush_all\\r\\n"
             local ok, err = udp:send(req)
             if not ok then
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 return
             end
 
             local data, err = udp:receive(1400)
             if not data then
-                ngx.say("failed to receive data: ", err)
+                njt.say("failed to receive data: ", err)
                 return
             end
-            ngx.print("received ", #data, " bytes: ", data)
+            njt.print("received ", #data, " bytes: ", data)
         ';
     }
 --- request
@@ -504,16 +504,16 @@ lua udp socket receive buffer size: 1400
 --- config
     location = /t {
         content_by_lua '
-            local udp = ngx.socket.udp()
+            local udp = njt.socket.udp()
             udp:settimeout(30)
             local ok, err = udp:setpeername("127.0.0.1", 19232)
             if not ok then
-                ngx.say("failed to setpeername: ", err)
+                njt.say("failed to setpeername: ", err)
                 return
             end
             local ok, err = udp:send("blah")
             if not ok then
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 return
             end
             for i = 1, 2 do
@@ -522,15 +522,15 @@ lua udp socket receive buffer size: 1400
                     -- continue
                 else
                     if not data then
-                        ngx.say("failed to receive: ", err)
+                        njt.say("failed to receive: ", err)
                         return
                     end
-                    ngx.say("received: ", data)
+                    njt.say("received: ", data)
                     return
                 end
             end
 
-            ngx.say("timed out")
+            njt.say("timed out")
         ';
     }
 --- udp_listen: 19232
@@ -550,7 +550,7 @@ lua udp socket read timed out
     server_tokens off;
     location /t {
         content_by_lua '
-            local socket = ngx.socket
+            local socket = njt.socket
             -- local socket = require "socket"
 
             local udp = socket.udp()
@@ -559,31 +559,31 @@ lua udp socket read timed out
 
             local ok, err = udp:setpeername("$TEST_NGINX_RESOLVER", 53)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
             local req = "\\0}\\1\\0\\0\\1\\0\\0\\0\\0\\0\\0\\3www\\6google\\3com\\0\\0\\1\\0\\1"
 
-            -- ngx.print(req)
+            -- njt.print(req)
             -- do return end
 
             local ok, err = udp:send(req)
             if not ok then
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 return
             end
 
             local data, err = udp:receive()
             if not data then
-                ngx.say("failed to receive data: ", err)
+                njt.say("failed to receive data: ", err)
                 return
             end
 
             if string.match(data, "\\3www\\6google\\3com") then
-                ngx.say("received a good response.")
+                njt.say("received a good response.")
             else
-                ngx.say("received a bad response: ", #data, " bytes: ", data)
+                njt.say("received a bad response: ", #data, " bytes: ", data)
             end
         ';
     }
@@ -611,13 +611,13 @@ lua udp socket receive buffer size: 8192
             if not counter then
                 counter = 1
             elseif counter >= 2 then
-                return ngx.exit(503)
+                return njt.exit(503)
             else
                 counter = counter + 1
             end
             package.loaded.counter = counter
 
-            local socket = ngx.socket
+            local socket = njt.socket
             -- local socket = require "socket"
 
             local udp = socket.udp()
@@ -626,31 +626,31 @@ lua udp socket receive buffer size: 8192
 
             local ok, err = udp:setpeername("google-public-dns-a.google.com", 53)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
             local req = "\\0}\\1\\0\\0\\1\\0\\0\\0\\0\\0\\0\\3www\\6google\\3com\\0\\0\\1\\0\\1"
 
-            -- ngx.print(req)
+            -- njt.print(req)
             -- do return end
 
             local ok, err = udp:send(req)
             if not ok then
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 return
             end
 
             local data, err = udp:receive()
             if not data then
-                ngx.say("failed to receive data: ", err)
+                njt.say("failed to receive data: ", err)
                 return
             end
 
             if string.match(data, "\\3www\\6google\\3com") then
-                ngx.say("received a good response.")
+                njt.say("received a good response.")
             else
-                ngx.say("received a bad response: ", #data, " bytes: ", data)
+                njt.say("received a bad response: ", #data, " bytes: ", data)
             end
         ';
     }
@@ -674,28 +674,28 @@ lua udp socket receive buffer size: 8192
 
     location = /sub {
         content_by_lua '
-            local sock = ngx.socket.udp()
+            local sock = njt.socket.udp()
             local ok, err = sock:setpeername("xxx", 80)
             if not ok then
-                ngx.say("failed to connect to xxx: ", err)
+                njt.say("failed to connect to xxx: ", err)
                 return
             end
-            ngx.say("successfully connected to xxx!")
+            njt.say("successfully connected to xxx!")
             sock:close()
         ';
     }
 
     location = /lua {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
         ';
     }
 --- request
 GET /sub
 
 --- stap
-F(ngx_resolve_name_done) {
+F(njt_resolve_name_done) {
     println("resolve name done")
 }
 
@@ -726,21 +726,21 @@ resolve name done
             local server = servers[package.i]
             package.i = package.i + 1
 
-            local sock = ngx.socket.udp()
+            local sock = njt.socket.udp()
             local ok, err = sock:setpeername(server, 80)
             if not ok then
-                ngx.say("failed to connect to ", server, ": ", err)
+                njt.say("failed to connect to ", server, ": ", err)
                 return
             end
-            ngx.say("successfully connected to xxx!")
+            njt.say("successfully connected to xxx!")
             sock:close()
         ';
     }
 
     location = /lua {
         content_by_lua '
-            local res = ngx.location.capture("/sub")
-            ngx.print(res.body)
+            local res = njt.location.capture("/sub")
+            njt.print(res.body)
         ';
     }
 --- request
@@ -763,35 +763,35 @@ successfully connected to xxx!
         #set $port 1234;
 
         content_by_lua '
-            local socket = ngx.socket
+            local socket = njt.socket
             -- local socket = require "socket"
 
             local udp = socket.udp()
 
-            local port = ngx.var.port
+            local port = njt.var.port
             udp:settimeout(1000) -- 1 sec
 
             local ok, err = udp:setpeername("unix:a.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected")
+            njt.say("connected")
 
             local req = "hello,\\nserver"
             local ok, err = udp:send(req)
             if not ok then
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 return
             end
 
             local data, err = udp:receive()
             if not data then
-                ngx.say("failed to receive data: ", err)
+                njt.say("failed to receive data: ", err)
                 return
             end
-            ngx.print("received ", #data, " bytes: ", data)
+            njt.print("received ", #data, " bytes: ", data)
         ';
     }
 --- request
@@ -837,18 +837,18 @@ probe syscall.socket.return, syscall.connect.return {
 
         content_by_lua '
             local test = require "test"
-            if ngx.var.arg_reset then
+            if njt.var.arg_reset then
                 local sock = test.new_sock()
-                local ok, err = sock:setpeername("127.0.0.1", ngx.var.port)
+                local ok, err = sock:setpeername("127.0.0.1", njt.var.port)
                 if not ok then
-                    ngx.say("failed to set peer: ", err)
+                    njt.say("failed to set peer: ", err)
                 else
-                    ngx.say("peer set")
+                    njt.say("peer set")
                 end
                 return
             end
             local sock = test.get_sock()
-            sock:setpeername("127.0.0.1", ngx.var.port)
+            sock:setpeername("127.0.0.1", njt.var.port)
         ';
     }
 --- user_files
@@ -858,7 +858,7 @@ module("test", package.seeall)
 local sock
 
 function new_sock()
-    sock = ngx.socket.udp()
+    sock = njt.socket.udp()
     return sock
 end
 
@@ -894,13 +894,13 @@ qr/runtime error: content_by_lua\(nginx\.conf:\d+\):14: bad request/
 
         content_by_lua '
             local test = require "test"
-            if ngx.var.arg_reset then
+            if njt.var.arg_reset then
                 local sock = test.new_sock()
-                local ok, err = sock:setpeername("127.0.0.1", ngx.var.port)
+                local ok, err = sock:setpeername("127.0.0.1", njt.var.port)
                 if not ok then
-                    ngx.say("failed to set peer: ", err)
+                    njt.say("failed to set peer: ", err)
                 else
-                    ngx.say("peer set")
+                    njt.say("peer set")
                 end
                 return
             end
@@ -915,7 +915,7 @@ module("test", package.seeall)
 local sock
 
 function new_sock()
-    sock = ngx.socket.udp()
+    sock = njt.socket.udp()
     return sock
 end
 
@@ -951,13 +951,13 @@ qr/runtime error: content_by_lua\(nginx\.conf:\d+\):14: bad request/
 
         content_by_lua '
             local test = require "test"
-            if ngx.var.arg_reset then
+            if njt.var.arg_reset then
                 local sock = test.new_sock()
-                local ok, err = sock:setpeername("127.0.0.1", ngx.var.port)
+                local ok, err = sock:setpeername("127.0.0.1", njt.var.port)
                 if not ok then
-                    ngx.say("failed to set peer: ", err)
+                    njt.say("failed to set peer: ", err)
                 else
-                    ngx.say("peer set")
+                    njt.say("peer set")
                 end
                 return
             end
@@ -972,7 +972,7 @@ module("test", package.seeall)
 local sock
 
 function new_sock()
-    sock = ngx.socket.udp()
+    sock = njt.socket.udp()
     return sock
 end
 
@@ -1008,13 +1008,13 @@ qr/runtime error: content_by_lua\(nginx\.conf:\d+\):14: bad request/
 
         content_by_lua '
             local test = require "test"
-            if ngx.var.arg_reset then
+            if njt.var.arg_reset then
                 local sock = test.new_sock()
-                local ok, err = sock:setpeername("127.0.0.1", ngx.var.port)
+                local ok, err = sock:setpeername("127.0.0.1", njt.var.port)
                 if not ok then
-                    ngx.say("failed to set peer: ", err)
+                    njt.say("failed to set peer: ", err)
                 else
-                    ngx.say("peer set")
+                    njt.say("peer set")
                 end
                 return
             end
@@ -1029,7 +1029,7 @@ module("test", package.seeall)
 local sock
 
 function new_sock()
-    sock = ngx.socket.udp()
+    sock = njt.socket.udp()
     return sock
 end
 
@@ -1054,10 +1054,10 @@ qr/runtime error: content_by_lua\(nginx\.conf:\d+\):14: bad request/
 --- config
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.udp()
+            local sock = njt.socket.udp()
             local ok, err = sock:setpeername("127.0.0.1", 65536)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
             end
         }
     }
@@ -1077,24 +1077,24 @@ failed to connect: bad port number: 65536
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local socket = ngx.socket
+            local socket = njt.socket
             local udp = socket.udp()
-            local port = ngx.var.port
+            local port = njt.var.port
             udp:settimeout(1000) -- 1 sec
 
-            local ok, err = udp:setpeername("127.0.0.1", ngx.var.port)
+            local ok, err = udp:setpeername("127.0.0.1", njt.var.port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
             local function send(data)
                 local bytes, err = udp:send(data)
                 if not bytes then
-                    ngx.say("failed to send: ", err)
+                    njt.say("failed to send: ", err)
                     return
                 end
-                ngx.say("sent ok")
+                njt.say("sent ok")
             end
 
             send(true)
@@ -1128,24 +1128,24 @@ Note: maximum number of digits after the decimal-point character is 13
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local socket = ngx.socket
+            local socket = njt.socket
             local udp = socket.udp()
-            local port = ngx.var.port
+            local port = njt.var.port
             udp:settimeout(1000) -- 1 sec
 
-            local ok, err = udp:setpeername("127.0.0.1", ngx.var.port)
+            local ok, err = udp:setpeername("127.0.0.1", njt.var.port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
             local function send(data)
                 local bytes, err = udp:send(data)
                 if not bytes then
-                    ngx.say("failed to send: ", err)
+                    njt.say("failed to send: ", err)
                     return
                 end
-                ngx.say("sent ok")
+                njt.say("sent ok")
             end
 
             send(123456)
@@ -1179,24 +1179,24 @@ the maximum number of significant digits is 14 in lua
         set $port $TEST_NGINX_MEMCACHED_PORT;
 
         content_by_lua_block {
-            local socket = ngx.socket
+            local socket = njt.socket
             local udp = socket.udp()
-            local port = ngx.var.port
+            local port = njt.var.port
             udp:settimeout(1000) -- 1 sec
 
-            local ok, err = udp:setpeername("127.0.0.1", ngx.var.port)
+            local ok, err = udp:setpeername("127.0.0.1", njt.var.port)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
             local function send(data)
                 local bytes, err = udp:send(data)
                 if not bytes then
-                    ngx.say("failed to send: ", err)
+                    njt.say("failed to send: ", err)
                     return
                 end
-                ngx.say("sent ok")
+                njt.say("sent ok")
             end
 
             send({"integer: ", 1234567890123})

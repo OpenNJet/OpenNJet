@@ -20,11 +20,11 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: ngx.encode_args (sanity)
+=== TEST 1: njt.encode_args (sanity)
 --- stream_server_config
     content_by_lua_block {
         local t = {a = "bar", b = "foo"}
-        ngx.say(ngx.encode_args(t))
+        njt.say(njt.encode_args(t))
     }
 --- stream_response eval
 qr/a=bar&b=foo|b=foo&a=bar/
@@ -33,11 +33,11 @@ qr/a=bar&b=foo|b=foo&a=bar/
 
 
 
-=== TEST 2: ngx.encode_args (empty table)
+=== TEST 2: njt.encode_args (empty table)
 --- stream_server_config
     content_by_lua_block {
         local t = {a = nil}
-        ngx.say("args:" .. ngx.encode_args(t))
+        njt.say("args:" .. njt.encode_args(t))
     }
 --- stream_response
 args:
@@ -46,11 +46,11 @@ args:
 
 
 
-=== TEST 3: ngx.encode_args (value is table)
+=== TEST 3: njt.encode_args (value is table)
 --- stream_server_config
     content_by_lua_block {
         local t = {a = {9, 2}, b = 3}
-        ngx.say("args:" .. ngx.encode_args(t))
+        njt.say("args:" .. njt.encode_args(t))
     }
 --- stream_response_like
 (?x) ^args:
@@ -64,11 +64,11 @@ args:
 
 
 
-=== TEST 4: ngx.encode_args (boolean values)
+=== TEST 4: njt.encode_args (boolean values)
 --- stream_server_config
     content_by_lua_block {
         local t = {a = true, foo = 3}
-        ngx.say("args: " .. ngx.encode_args(t))
+        njt.say("args: " .. njt.encode_args(t))
     }
 --- stream_response_like
 ^args: (?:a&foo=3|foo=3&a)$
@@ -77,11 +77,11 @@ args:
 
 
 
-=== TEST 5: ngx.encode_args (boolean values, false)
+=== TEST 5: njt.encode_args (boolean values, false)
 --- stream_server_config
     content_by_lua_block {
         local t = {a = false, foo = 3}
-        ngx.say("args: " .. ngx.encode_args(t))
+        njt.say("args: " .. njt.encode_args(t))
     }
 --- stream_response
 args: foo=3
@@ -90,11 +90,11 @@ args: foo=3
 
 
 
-=== TEST 6: boolean values in ngx.encode_args
+=== TEST 6: boolean values in njt.encode_args
 --- stream_server_config
     content_by_lua_block {
         local t = {bar = {32, true}, foo = 3}
-        ngx.say(ngx.encode_args(t))
+        njt.say(njt.encode_args(t))
     }
 --- stream_response_like
 (?x) ^
@@ -108,14 +108,14 @@ args: foo=3
 
 
 
-=== TEST 7: ngx.encode_args (bad user data value)
+=== TEST 7: njt.encode_args (bad user data value)
 --- stream_config
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local t = {bar = ngx.shared.dogs, foo = 3}
-        rc, err = pcall(ngx.encode_args, t)
-        ngx.say("rc: ", rc, ", err: ", err)
+        local t = {bar = njt.shared.dogs, foo = 3}
+        rc, err = pcall(njt.encode_args, t)
+        njt.say("rc: ", rc, ", err: ", err)
     }
 --- stream_response
 rc: false, err: attempt to use userdata as query arg value
@@ -124,11 +124,11 @@ rc: false, err: attempt to use userdata as query arg value
 
 
 
-=== TEST 8: ngx.encode_args (empty table)
+=== TEST 8: njt.encode_args (empty table)
 --- stream_server_config
     content_by_lua_block {
         local t = {}
-        ngx.say("args: ", ngx.encode_args(t))
+        njt.say("args: ", njt.encode_args(t))
     }
 --- stream_response
 args: 
@@ -137,11 +137,11 @@ args:
 
 
 
-=== TEST 9: ngx.encode_args (bad arg)
+=== TEST 9: njt.encode_args (bad arg)
 --- stream_server_config
     content_by_lua_block {
-        local rc, err = pcall(ngx.encode_args, true)
-        ngx.say("rc: ", rc, ", err: ", err)
+        local rc, err = pcall(njt.encode_args, true)
+        njt.say("rc: ", rc, ", err: ", err)
     }
 --- stream_response
 rc: false, err: bad argument #1 to '?' (table expected, got boolean)
@@ -150,13 +150,13 @@ rc: false, err: bad argument #1 to '?' (table expected, got boolean)
 
 
 
-=== TEST 10: ngx.decode_args (sanity)
+=== TEST 10: njt.decode_args (sanity)
 --- stream_server_config
     content_by_lua_block {
         local args = "a=bar&b=foo"
-        args = ngx.decode_args(args)
-        ngx.say("a = ", args.a)
-        ngx.say("b = ", args.b)
+        args = njt.decode_args(args)
+        njt.say("a = ", args.a)
+        njt.say("b = ", args.b)
     }
 --- stream_response
 a = bar
@@ -166,13 +166,13 @@ b = foo
 
 
 
-=== TEST 11: ngx.decode_args (multi-value)
+=== TEST 11: njt.decode_args (multi-value)
 --- stream_server_config
     content_by_lua_block {
         local args = "a=bar&b=foo&a=baz"
-        args = ngx.decode_args(args)
-        ngx.say("a = ", table.concat(args.a, ", "))
-        ngx.say("b = ", args.b)
+        args = njt.decode_args(args)
+        njt.say("a = ", table.concat(args.a, ", "))
+        njt.say("b = ", args.b)
     }
 --- stream_response
 a = bar, baz
@@ -182,12 +182,12 @@ b = foo
 
 
 
-=== TEST 12: ngx.decode_args (empty string)
+=== TEST 12: njt.decode_args (empty string)
 --- stream_server_config
     content_by_lua_block {
         local args = ""
-        args = ngx.decode_args(args)
-        ngx.say("n = ", #args)
+        args = njt.decode_args(args)
+        njt.say("n = ", #args)
     }
 --- stream_response
 n = 0
@@ -196,13 +196,13 @@ n = 0
 
 
 
-=== TEST 13: ngx.decode_args (boolean args)
+=== TEST 13: njt.decode_args (boolean args)
 --- stream_server_config
     content_by_lua_block {
         local args = "a&b"
-        args = ngx.decode_args(args)
-        ngx.say("a = ", args.a)
-        ngx.say("b = ", args.b)
+        args = njt.decode_args(args)
+        njt.say("a = ", args.a)
+        njt.say("b = ", args.b)
     }
 --- stream_response
 a = true
@@ -212,13 +212,13 @@ b = true
 
 
 
-=== TEST 14: ngx.decode_args (empty value args)
+=== TEST 14: njt.decode_args (empty value args)
 --- stream_server_config
     content_by_lua_block {
         local args = "a=&b="
-        args = ngx.decode_args(args)
-        ngx.say("a = ", args.a)
-        ngx.say("b = ", args.b)
+        args = njt.decode_args(args)
+        njt.say("a = ", args.a)
+        njt.say("b = ", args.b)
     }
 --- stream_response
 a = 
@@ -228,13 +228,13 @@ b =
 
 
 
-=== TEST 15: ngx.decode_args (max_args = 1)
+=== TEST 15: njt.decode_args (max_args = 1)
 --- stream_server_config
     content_by_lua_block {
         local args = "a=bar&b=foo"
-        args = ngx.decode_args(args, 1)
-        ngx.say("a = ", args.a)
-        ngx.say("b = ", args.b)
+        args = njt.decode_args(args, 1)
+        njt.say("a = ", args.a)
+        njt.say("b = ", args.b)
     }
 --- stream_response
 a = bar
@@ -244,13 +244,13 @@ b = nil
 
 
 
-=== TEST 16: ngx.decode_args (max_args = -1)
+=== TEST 16: njt.decode_args (max_args = -1)
 --- stream_server_config
     content_by_lua_block {
         local args = "a=bar&b=foo"
-        args = ngx.decode_args(args, -1)
-        ngx.say("a = ", args.a)
-        ngx.say("b = ", args.b)
+        args = njt.decode_args(args, -1)
+        njt.say("a = ", args.a)
+        njt.say("b = ", args.b)
     }
 --- stream_response
 a = bar
@@ -260,20 +260,20 @@ b = foo
 
 
 
-=== TEST 17: ngx.decode_args should not modify lua strings in place
+=== TEST 17: njt.decode_args should not modify lua strings in place
 --- stream_server_config
     content_by_lua_block {
         local s = "f+f=bar&B=foo"
-        args = ngx.decode_args(s)
+        args = njt.decode_args(s)
         local arr = {}
         for k, v in pairs(args) do
             table.insert(arr, k)
         end
         table.sort(arr)
         for i, k in ipairs(arr) do
-            ngx.say("key: ", k)
+            njt.say("key: ", k)
         end
-        ngx.say("s = ", s)
+        njt.say("s = ", s)
     }
 --- stream_response
 key: B

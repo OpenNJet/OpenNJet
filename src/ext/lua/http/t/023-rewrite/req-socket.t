@@ -22,19 +22,19 @@ __DATA__
 --- config
     location /t {
         rewrite_by_lua '
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
             if sock then
-                ngx.say("got the request socket")
+                njt.say("got the request socket")
             else
-                ngx.say("failed to get the request socket: ", err)
+                njt.say("failed to get the request socket: ", err)
             end
 
             for i = 1, 3 do
                 local data, err, part = sock:receive(5)
                 if data then
-                    ngx.say("received: ", data)
+                    njt.say("received: ", data)
                 else
-                    ngx.say("failed to receive: ", err, " [", part, "]")
+                    njt.say("failed to receive: ", err, " [", part, "]")
                 end
             end
         ';
@@ -58,21 +58,21 @@ failed to receive: closed [d]
 --- config
     location /t {
         rewrite_by_lua '
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
             if sock then
-                ngx.say("got the request socket")
+                njt.say("got the request socket")
             else
-                ngx.say("failed to get the request socket: ", err)
+                njt.say("failed to get the request socket: ", err)
             end
 
             local boundary
-            local header = ngx.var.http_content_type
-            local m = ngx.re.match(header, [[; +boundary=(?:"(.*?)"|(\\w+))]], "jo")
+            local header = njt.var.http_content_type
+            local m = njt.re.match(header, [[; +boundary=(?:"(.*?)"|(\\w+))]], "jo")
             if m then
                 boundary = m[1] or m[2]
 
             else
-                ngx.say("invalid content-type header")
+                njt.say("invalid content-type header")
                 return
             end
 
@@ -81,9 +81,9 @@ failed to receive: closed [d]
 
             local data, err, part = read_to_boundary()
             if data then
-                ngx.say("preamble: [" .. data .. "]")
+                njt.say("preamble: [" .. data .. "]")
             else
-                ngx.say("failed to read the first boundary: ", err)
+                njt.say("failed to read the first boundary: ", err)
                 return
             end
 
@@ -92,20 +92,20 @@ failed to receive: closed [d]
                 local line, err = read_line()
 
                 if not line then
-                    ngx.say("failed to read post-boundary line: ", err)
+                    njt.say("failed to read post-boundary line: ", err)
                     return
                 end
 
-                m = ngx.re.match(line, "--$", "jo")
+                m = njt.re.match(line, "--$", "jo")
                 if m then
-                    ngx.say("found the end of the stream")
+                    njt.say("found the end of the stream")
                     return
                 end
 
                 while true do
                     local line, err = read_line()
                     if not line then
-                        ngx.say("failed to read part ", i, " header: ", err)
+                        njt.say("failed to read part ", i, " header: ", err)
                         return
                     end
 
@@ -114,14 +114,14 @@ failed to receive: closed [d]
                         break
                     end
 
-                    ngx.say("part ", i, " header: [", line, "]")
+                    njt.say("part ", i, " header: [", line, "]")
                 end
 
                 local data, err, part = read_to_boundary()
                 if data then
-                    ngx.say("part ", i, " body: [" .. data .. "]")
+                    njt.say("part ", i, " body: [" .. data .. "]")
                 else
-                    ngx.say("failed to read part ", i + 1, " boundary: ", err)
+                    njt.say("failed to read part ", i + 1, " boundary: ", err)
                     return
                 end
 
@@ -172,21 +172,21 @@ found the end of the stream
 --- config
     location /t {
         rewrite_by_lua '
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
             if sock then
-                ngx.say("got the request socket")
+                njt.say("got the request socket")
             else
-                ngx.say("failed to get the request socket: ", err)
+                njt.say("failed to get the request socket: ", err)
             end
 
             local boundary
-            local header = ngx.var.http_content_type
-            local m = ngx.re.match(header, [[; +boundary=(?:"(.*?)"|(\\w+))]], "jo")
+            local header = njt.var.http_content_type
+            local m = njt.re.match(header, [[; +boundary=(?:"(.*?)"|(\\w+))]], "jo")
             if m then
                 boundary = m[1] or m[2]
 
             else
-                ngx.say("invalid content-type header")
+                njt.say("invalid content-type header")
                 return
             end
 
@@ -203,19 +203,19 @@ found the end of the stream
                     break
 
                 else
-                    ngx.say("failed to read the first boundary: ", err)
+                    njt.say("failed to read the first boundary: ", err)
                     return
                 end
             end
 
-            ngx.say("preamble: [" .. preamble .. "]")
+            njt.say("preamble: [" .. preamble .. "]")
 
             local i = 1
             while true do
                 local line, err = read_line(50)
 
                 if not line and err then
-                    ngx.say("1: failed to read post-boundary line: ", err)
+                    njt.say("1: failed to read post-boundary line: ", err)
                     return
                 end
 
@@ -223,18 +223,18 @@ found the end of the stream
                     local dummy
                     dummy, err = read_line(1)
                     if err then
-                        ngx.say("2: failed to read post-boundary line: ", err)
+                        njt.say("2: failed to read post-boundary line: ", err)
                         return
                     end
 
                     if dummy then
-                        ngx.say("bad post-boundary line: ", dummy)
+                        njt.say("bad post-boundary line: ", dummy)
                         return
                     end
 
-                    m = ngx.re.match(line, "--$", "jo")
+                    m = njt.re.match(line, "--$", "jo")
                     if m then
-                        ngx.say("found the end of the stream")
+                        njt.say("found the end of the stream")
                         return
                     end
                 end
@@ -242,14 +242,14 @@ found the end of the stream
                 while true do
                     local line, err = read_line(50)
                     if not line and err then
-                        ngx.say("failed to read part ", i, " header: ", err)
+                        njt.say("failed to read part ", i, " header: ", err)
                         return
                     end
 
                     if line then
                         local line, err = read_line(1)
                         if line or err then
-                            ngx.say("error")
+                            njt.say("error")
                             return
                         end
                     end
@@ -259,7 +259,7 @@ found the end of the stream
                         break
                     end
 
-                    ngx.say("part ", i, " header: [", line, "]")
+                    njt.say("part ", i, " header: [", line, "]")
                 end
 
                 local body = ""
@@ -270,7 +270,7 @@ found the end of the stream
                         body = body .. data
 
                     elseif err then
-                        ngx.say("failed to read part ", i + 1, " boundary: ", err)
+                        njt.say("failed to read part ", i + 1, " boundary: ", err)
                         return
 
                     else
@@ -278,7 +278,7 @@ found the end of the stream
                     end
                 end
 
-                ngx.say("part ", i, " body: [" .. body .. "]")
+                njt.say("part ", i, " body: [" .. body .. "]")
 
                 i = i + 1
             end
@@ -331,7 +331,7 @@ found the end of the stream
         rewrite_by_lua '
             local test = require "test"
             test.go()
-            ngx.say("done")
+            njt.say("done")
         ';
 
         content_by_lua return;
@@ -344,19 +344,19 @@ local sock, err
 
 function go()
     if not sock then
-        sock, err = ngx.req.socket()
+        sock, err = njt.req.socket()
         if sock then
-            ngx.say("got the request socket")
+            njt.say("got the request socket")
         else
-            ngx.say("failed to get the request socket: ", err)
+            njt.say("failed to get the request socket: ", err)
         end
     else
         for i = 1, 3 do
             local data, err, part = sock:receive(5)
             if data then
-                ngx.say("received: ", data)
+                njt.say("received: ", data)
             else
-                ngx.say("failed to receive: ", err, " [", part, "]")
+                njt.say("failed to receive: ", err, " [", part, "]")
             end
         end
     end
@@ -382,7 +382,7 @@ See https://groups.google.com/group/openresty/browse_thread/thread/43cf01da3c681
         rewrite_by_lua '
             local test = require "test"
             test.go()
-            ngx.say("done")
+            njt.say("done")
         ';
 
         content_by_lua return;
@@ -392,35 +392,35 @@ See https://groups.google.com/group/openresty/browse_thread/thread/43cf01da3c681
 module("test", package.seeall)
 
 function go()
-   local sock, err = ngx.req.socket()
+   local sock, err = njt.req.socket()
    if sock then
-      ngx.say("got the request socket")
+      njt.say("got the request socket")
    else
-      ngx.say("failed to get the request socket: ", err)
+      njt.say("failed to get the request socket: ", err)
       return
    end
 
    local data, err, part = sock:receive(56)
    if data then
-      ngx.say("received: ", data)
+      njt.say("received: ", data)
    else
-      ngx.say("failed to receive: ", err, " [", part, "]")
+      njt.say("failed to receive: ", err, " [", part, "]")
    end
 
    local discard_line = sock:receiveuntil('\r\n')
 
    local data, err, part = discard_line(8192)
    if data then
-      ngx.say("received len: ", #data)
+      njt.say("received len: ", #data)
    else
-      ngx.say("failed to receive: ", err, " [", part, "]")
+      njt.say("failed to receive: ", err, " [", part, "]")
    end
 
    local data, err, part = discard_line(1)
    if data then
-      ngx.say("received: ", data)
+      njt.say("received: ", data)
    else
-      ngx.say("failed to receive: ", err, " [", part, "]")
+      njt.say("failed to receive: ", err, " [", part, "]")
    end
 end
 --- request
@@ -446,7 +446,7 @@ done
         rewrite_by_lua '
             local test = require "test"
             test.go()
-            ngx.say("done")
+            njt.say("done")
         ';
 
         content_by_lua return;
@@ -456,20 +456,20 @@ done
 module("test", package.seeall)
 
 function go()
-   local sock, err = ngx.req.socket()
+   local sock, err = njt.req.socket()
    if sock then
-      ngx.say("got the request socket")
+      njt.say("got the request socket")
    else
-      ngx.say("failed to get the request socket: ", err)
+      njt.say("failed to get the request socket: ", err)
       return
    end
 
    while true do
        local data, err, part = sock:receive(4)
        if data then
-          ngx.say("received: ", data)
+          njt.say("received: ", data)
        else
-          ngx.say("failed to receive: ", err, " [", part, "]")
+          njt.say("failed to receive: ", err, " [", part, "]")
           return
        end
    end
@@ -502,20 +502,20 @@ done
 --- config
     location /t {
         rewrite_by_lua '
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
             if sock then
-                ngx.say("got the request socket")
+                njt.say("got the request socket")
             else
-                ngx.say("failed to get the request socket: ", err)
+                njt.say("failed to get the request socket: ", err)
                 return
             end
 
             for i = 1, 3 do
                 local data, err, part = sock:receive(5)
                 if data then
-                    ngx.say("received: ", data)
+                    njt.say("received: ", data)
                 else
-                    ngx.say("failed to receive: ", err, " [", part, "]")
+                    njt.say("failed to receive: ", err, " [", part, "]")
                 end
             end
         ';

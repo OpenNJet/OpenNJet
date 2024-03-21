@@ -28,8 +28,8 @@ __DATA__
 === TEST 1: throw 403
 --- config
     location /lua {
-        access_by_lua "ngx.exit(403);ngx.say('hi')";
-        content_by_lua 'ngx.exit(ngx.OK)';
+        access_by_lua "njt.exit(403);njt.say('hi')";
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -41,8 +41,8 @@ GET /lua
 === TEST 2: throw 404
 --- config
     location /lua {
-        access_by_lua "ngx.exit(404);ngx.say('hi');";
-        content_by_lua 'ngx.exit(ngx.OK)';
+        access_by_lua "njt.exit(404);njt.say('hi');";
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -54,8 +54,8 @@ GET /lua
 === TEST 3: throw 404 after sending the header and partial body
 --- config
     location /lua {
-        access_by_lua "ngx.say('hi');ngx.exit(404);ngx.say(', you')";
-        content_by_lua 'ngx.exit(ngx.OK)';
+        access_by_lua "njt.say('hi');njt.exit(404);njt.say(', you')";
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -64,20 +64,20 @@ hi
 --- no_error_log
 [alert]
 --- error_log
-attempt to set status 404 via ngx.exit after sending out the response status 200
+attempt to set status 404 via njt.exit after sending out the response status 200
 
 
 
-=== TEST 4: working with ngx_auth_request (succeeded)
+=== TEST 4: working with njt_auth_request (succeeded)
 --- config
     location /auth {
         access_by_lua "
-            if ngx.var.user == 'agentzh' then
-                ngx.eof();
+            if njt.var.user == 'agentzh' then
+                njt.eof();
             else
-                ngx.exit(403)
+                njt.exit(403)
             end";
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
     location /api {
         set $user $arg_user;
@@ -93,15 +93,15 @@ Logged in
 
 
 
-=== TEST 5: working with ngx_auth_request (failed)
+=== TEST 5: working with njt_auth_request (failed)
 --- config
     location /api {
         set $user $arg_user;
         access_by_lua "
-            if ngx.var.user == 'agentzh' then
-                ngx.eof();
+            if njt.var.user == 'agentzh' then
+                njt.eof();
             else
-                ngx.exit(403)
+                njt.exit(403)
             end";
 
         echo "Logged in";
@@ -113,13 +113,13 @@ GET /api?user=agentz
 
 
 
-=== TEST 6: working with ngx_auth_request (simplest form, w/o ngx_memc)
+=== TEST 6: working with njt_auth_request (simplest form, w/o njt_memc)
 --- http_config eval
 "
     lua_package_cpath '$::LuaCpath';
     upstream backend {
         drizzle_server 127.0.0.1:\$TEST_NGINX_MYSQL_PORT protocol=mysql
-                       dbname=ngx_test user=ngx_test password=ngx_test;
+                       dbname=njt_test user=njt_test password=njt_test;
         drizzle_keepalive max=300 mode=single overflow=ignore;
     }
 "
@@ -158,19 +158,19 @@ GET /api?user=agentz
 --- user_files
 >>> foo.lua
 local cjson = require('cjson');
-local old_uid = ngx.var.uid
+local old_uid = njt.var.uid
 print('about to run sr')
-local res = ngx.location.capture('/conv-uid-mysql?uid=' .. old_uid)
+local res = njt.location.capture('/conv-uid-mysql?uid=' .. old_uid)
 print('just have run sr' .. res.body)
-if (res.status ~= ngx.HTTP_OK) then
-    -- ngx.exit(res.status)
+if (res.status ~= njt.HTTP_OK) then
+    -- njt.exit(res.status)
 end
 res = cjson.decode(res.body)
 if (not res or not res[1] or not res[1].uid or
         not string.match(res[1].uid, '^%d+$')) then
-    ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+    njt.exit(njt.HTTP_INTERNAL_SERVER_ERROR)
 end
-ngx.var.uid = res[1].uid;
+njt.var.uid = res[1].uid;
 -- print('done')
 --- request
 GET /api?uid=32
@@ -180,13 +180,13 @@ Logged in 56
 
 
 
-=== TEST 7: working with ngx_auth_request (simplest form)
+=== TEST 7: working with njt_auth_request (simplest form)
 --- http_config eval
 "
     lua_package_cpath '$::LuaCpath';
     upstream backend {
         drizzle_server 127.0.0.1:\$TEST_NGINX_MYSQL_PORT protocol=mysql
-                       dbname=ngx_test user=ngx_test password=ngx_test;
+                       dbname=njt_test user=njt_test password=njt_test;
         drizzle_keepalive max=300 mode=single overflow=ignore;
     }
 "
@@ -225,19 +225,19 @@ Logged in 56
 --- user_files
 >>> foo.lua
 local cjson = require('cjson');
-local old_uid = ngx.var.uid
+local old_uid = njt.var.uid
 -- print('about to run sr')
-local res = ngx.location.capture('/conv-uid-mysql?uid=' .. old_uid)
+local res = njt.location.capture('/conv-uid-mysql?uid=' .. old_uid)
 -- print('just have run sr' .. res.body)
-if (res.status ~= ngx.HTTP_OK) then
-    ngx.exit(res.status)
+if (res.status ~= njt.HTTP_OK) then
+    njt.exit(res.status)
 end
 res = cjson.decode(res.body)
 if (not res or not res[1] or not res[1].uid or
         not string.match(res[1].uid, '^%d+$')) then
-    ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+    njt.exit(njt.HTTP_INTERNAL_SERVER_ERROR)
 end
-ngx.var.uid = res[1].uid;
+njt.var.uid = res[1].uid;
 -- print('done')
 --- request
 GET /api?uid=32
@@ -246,13 +246,13 @@ Logged in 56
 
 
 
-=== TEST 8: working with ngx_auth_request
+=== TEST 8: working with njt_auth_request
 --- http_config eval
 "
     lua_package_cpath '$::LuaCpath';
     upstream backend {
         drizzle_server 127.0.0.1:\$TEST_NGINX_MYSQL_PORT protocol=mysql
-                       dbname=ngx_test user=ngx_test password=ngx_test;
+                       dbname=njt_test user=njt_test password=njt_test;
         drizzle_keepalive max=300 mode=single overflow=ignore;
     }
 
@@ -302,19 +302,19 @@ Logged in 56
 --- user_files
 >>> foo.lua
 local cjson = require('cjson');
-local old_uid = ngx.var.uid
+local old_uid = njt.var.uid
 -- print('about to run sr')
-local res = ngx.location.capture('/conv-uid-mysql?uid=' .. old_uid)
+local res = njt.location.capture('/conv-uid-mysql?uid=' .. old_uid)
 -- print('just have run sr' .. res.body)
-if (res.status ~= ngx.HTTP_OK) then
-    ngx.exit(res.status)
+if (res.status ~= njt.HTTP_OK) then
+    njt.exit(res.status)
 end
 res = cjson.decode(res.body)
 if (not res or not res[1] or not res[1].uid or
         not string.match(res[1].uid, '^%d+$')) then
-    ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+    njt.exit(njt.HTTP_INTERNAL_SERVER_ERROR)
 end
-ngx.var.uid = res[1].uid;
+njt.var.uid = res[1].uid;
 -- print('done')
 --- request
 GET /api?uid=32
@@ -323,11 +323,11 @@ Logged in 56
 
 
 
-=== TEST 9: working with ngx_auth_request
+=== TEST 9: working with njt_auth_request
 --- http_config
     upstream backend {
         drizzle_server 127.0.0.1:$TEST_NGINX_MYSQL_PORT protocol=mysql
-                       dbname=ngx_test user=ngx_test password=ngx_test;
+                       dbname=njt_test user=njt_test password=njt_test;
         drizzle_keepalive max=300 mode=single overflow=ignore;
     }
 
@@ -369,7 +369,7 @@ Logged in 56
     location /conv-uid {
         internal;
         access_by_lua_file 'html/foo.lua';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 
     location /baz {
@@ -386,17 +386,17 @@ Logged in 56
 --- user_files
 >>> foo.lua
 local cjson = require('cjson');
-local seo_uri = ngx.var.my_uri
+local seo_uri = njt.var.my_uri
 -- print('about to run sr')
-local res = ngx.location.capture('/conv-mysql?' .. seo_uri)
-if (res.status ~= ngx.HTTP_OK) then
-    ngx.exit(res.status)
+local res = njt.location.capture('/conv-mysql?' .. seo_uri)
+if (res.status ~= njt.HTTP_OK) then
+    njt.exit(res.status)
 end
 res = cjson.decode(res.body)
 if (not res or not res[1] or not res[1].url) then
-    ngx.exit(ngx.HTTP_INTERNAL_SERVER_ERROR)
+    njt.exit(njt.HTTP_INTERNAL_SERVER_ERROR)
 end
-ngx.var.my_uri = res[1].url;
+njt.var.my_uri = res[1].url;
 -- print('done')
 --- request
 GET /baz
@@ -411,8 +411,8 @@ Location: http://localhost:$ServerPort/foo/bar
 === TEST 10: throw 0
 --- config
     location /lua {
-        access_by_lua "ngx.say('Hi'); ngx.eof(); ngx.exit(0);ngx.say('world')";
-        content_by_lua 'ngx.exit(ngx.OK)';
+        access_by_lua "njt.say('Hi'); njt.eof(); njt.exit(0);njt.say('world')";
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request
 GET /lua
@@ -422,10 +422,10 @@ Hi
 
 
 
-=== TEST 11: throw ngx.OK does *not* skip other later phase handlers
+=== TEST 11: throw njt.OK does *not* skip other later phase handlers
 --- config
     location /lua {
-        access_by_lua "ngx.exit(ngx.OK)";
+        access_by_lua "njt.exit(njt.OK)";
         set $foo hello;
         echo $foo;
     }
@@ -436,10 +436,10 @@ hello
 
 
 
-=== TEST 12: throw ngx.HTTP_OK *does* skip other later phase handlers (by inlined code)
+=== TEST 12: throw njt.HTTP_OK *does* skip other later phase handlers (by inlined code)
 --- config
     location /lua {
-        access_by_lua "ngx.exit(ngx.HTTP_OK)";
+        access_by_lua "njt.exit(njt.HTTP_OK)";
         set $foo hello;
         echo $foo;
     }
@@ -449,10 +449,10 @@ GET /lua
 
 
 
-=== TEST 13: throw ngx.HTTP_OK *does* skip other rewrite phase handlers (by inlined code + partial output)
+=== TEST 13: throw njt.HTTP_OK *does* skip other rewrite phase handlers (by inlined code + partial output)
 --- config
     location /lua {
-        rewrite_by_lua "ngx.say('hiya') ngx.exit(ngx.HTTP_OK)";
+        rewrite_by_lua "njt.say('hiya') njt.exit(njt.HTTP_OK)";
         set $foo hello;
         echo $foo;
     }
@@ -463,7 +463,7 @@ hiya
 
 
 
-=== TEST 14: throw ngx.HTTP_OK *does* skip other later phase handlers (by file)
+=== TEST 14: throw njt.HTTP_OK *does* skip other later phase handlers (by file)
 --- config
     location /lua {
         access_by_lua_file html/foo.lua;
@@ -472,14 +472,14 @@ hiya
     }
 --- user_files
 >>> foo.lua
-ngx.exit(ngx.HTTP_OK)
+njt.exit(njt.HTTP_OK)
 --- request
 GET /lua
 --- response_body
 
 
 
-=== TEST 15: throw ngx.HTTP_OK *does* skip other rewrite phase handlers (by file + partial output)
+=== TEST 15: throw njt.HTTP_OK *does* skip other rewrite phase handlers (by file + partial output)
 --- config
     location /lua {
         rewrite_by_lua_file html/foo.lua;
@@ -488,8 +488,8 @@ GET /lua
     }
 --- user_files
 >>> foo.lua
-ngx.say("morning")
-ngx.exit(ngx.HTTP_OK)
+njt.say("morning")
+njt.exit(njt.HTTP_OK)
 --- request
 GET /lua
 --- response_body
@@ -505,10 +505,10 @@ morning
     }
     location /foo {
         access_by_lua '
-            ngx.status = ngx.HTTP_GONE
-            ngx.say("This is our own content")
+            njt.status = njt.HTTP_GONE
+            njt.say("This is our own content")
             -- to cause quit the whole request rather than the current phase handler
-            ngx.exit(ngx.HTTP_OK)
+            njt.exit(njt.HTTP_OK)
         ';
         echo Hello;
     }
@@ -526,8 +526,8 @@ This is our own content
     error_page 404 /404.html;
     location /foo {
         access_by_lua '
-            ngx.location.capture("/sleep")
-            ngx.exit(ngx.HTTP_NOT_FOUND)
+            njt.location.capture("/sleep")
+            njt.exit(njt.HTTP_NOT_FOUND)
         ';
         echo Hello;
     }

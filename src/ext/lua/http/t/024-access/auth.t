@@ -26,13 +26,13 @@ __DATA__
 
         access_by_lua '
             -- check the client IP addr is in our black list
-            if ngx.var.remote_addr == "132.5.72.3" then
-                ngx.exit(ngx.HTTP_FORBIDDEN)
+            if njt.var.remote_addr == "132.5.72.3" then
+                njt.exit(njt.HTTP_FORBIDDEN)
             end
 
             -- check if the request body contains bad words
-            if ngx.var.request_body and string.match(ngx.var.request_body, "fuck") then
-                return ngx.redirect("/terms_of_use.html")
+            if njt.var.request_body and string.match(njt.var.request_body, "fuck") then
+                return njt.redirect("/terms_of_use.html")
             end
 
             -- tests passed
@@ -56,13 +56,13 @@ Logged in
 
         access_by_lua '
             -- check the client IP addr is in our black list
-            if ngx.var.remote_addr == "132.5.72.3" then
-                ngx.exit(ngx.HTTP_FORBIDDEN)
+            if njt.var.remote_addr == "132.5.72.3" then
+                njt.exit(njt.HTTP_FORBIDDEN)
             end
 
             -- check if the request body contains bad words
-            if ngx.var.request_body and string.match(ngx.var.request_body, "fuck") then
-                return ngx.redirect("/terms_of_use.html")
+            if njt.var.request_body and string.match(njt.var.request_body, "fuck") then
+                return njt.redirect("/terms_of_use.html")
             end
 
             -- tests passed
@@ -89,13 +89,13 @@ Location: /terms_of_use\.html
 
         access_by_lua '
             -- check the client IP addr is in our black list
-            if ngx.var.remote_addr == "127.0.0.1" then
-                ngx.exit(ngx.HTTP_FORBIDDEN)
+            if njt.var.remote_addr == "127.0.0.1" then
+                njt.exit(njt.HTTP_FORBIDDEN)
             end
 
             -- check if the request body contains bad words
-            if ngx.var.request_body and string.match(ngx.var.request_body, "fuck") then
-                return ngx.redirect("/terms_of_use.html")
+            if njt.var.request_body and string.match(njt.var.request_body, "fuck") then
+                return njt.redirect("/terms_of_use.html")
             end
 
             -- tests passed

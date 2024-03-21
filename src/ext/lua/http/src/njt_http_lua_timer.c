@@ -1,7 +1,7 @@
 
 /*
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -177,10 +177,10 @@ njt_http_lua_njt_timer_helper(lua_State *L, int every)
     njt_http_lua_assert(ctx != NULL);
 
     /*
-     * Since njet.has been confirmed that all timers have been cleaned up when
+     * Since njet has been confirmed that all timers have been cleaned up when
      * exit worker is executed, all timers will no longer be executed in exit
      * worker phase.
-     * Reference https://github.com/nginx/nginx/blob/f02e2a734ef472f0dcf83ab2
+     * Reference https://github.com/njet/njet/blob/f02e2a734ef472f0dcf83ab2
      * e8ce96d1acead8a5/src/os/unix/njt_process_cycle.c#L715
      */
     njt_http_lua_check_context(L, ctx, ~NJT_HTTP_LUA_CONTEXT_EXIT_WORKER);
@@ -520,7 +520,7 @@ njt_http_lua_timer_handler(njt_event_t *ev)
     njt_connection_t        *c = NULL;
     njt_http_request_t      *r = NULL;
     njt_http_lua_ctx_t      *ctx;
-    njt_http_cleanup_t      *cln;
+    njt_pool_cleanup_t      *cln;
     njt_pool_cleanup_t      *pcln;
 
     njt_http_lua_timer_ctx_t         tctx;
@@ -566,6 +566,8 @@ njt_http_lua_timer_handler(njt_event_t *ev)
     c = njt_http_lua_create_fake_connection(tctx.pool);
     if (c == NULL) {
         errmsg = "could not create fake connection";
+        /* tctx.pool is freed in njt_http_lua_create_fake_connection */
+        tctx.pool = NULL;
         goto failed;
     }
 
@@ -619,7 +621,7 @@ njt_http_lua_timer_handler(njt_event_t *ev)
 
     L = njt_http_lua_get_lua_vm(r, ctx);
 
-    cln = njt_http_cleanup_add(r, 0);
+    cln = njt_pool_cleanup_add(r->pool, 0);
     if (cln == NULL) {
         errmsg = "could not add request cleanup";
         goto failed;
@@ -814,7 +816,7 @@ njt_http_lua_abort_pending_timers(njt_event_t *ev)
 
     cur = njt_event_timer_rbtree.root;
 
-    /* XXX nginx does not guarantee the parent of root is meaningful,
+    /* XXX njet does not guarantee the parent of root is meaningful,
      * so we temporarily override it to simplify tree traversal. */
     temp = cur->parent;
     cur->parent = NULL;
@@ -822,7 +824,7 @@ njt_http_lua_abort_pending_timers(njt_event_t *ev)
     prev = NULL;
 
     events = njt_pcalloc(njt_cycle->pool,
-                         lmcf->pending_timers * sizeof(njt_event_t));
+                         lmcf->pending_timers * sizeof(njt_event_t *));
     if (events == NULL) {
         return;
     }

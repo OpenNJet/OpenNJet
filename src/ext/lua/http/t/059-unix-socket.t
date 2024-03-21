@@ -19,20 +19,20 @@ __DATA__
 --- config
     location /test {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("unix:/tmp/nosuchfile.sock")
-            ngx.say("connect: ", ok, " ", err)
+            njt.say("connect: ", ok, " ", err)
 
             local bytes
             bytes, err = sock:send("hello")
-            ngx.say("send: ", bytes, " ", err)
+            njt.say("send: ", bytes, " ", err)
 
             local line
             line, err = sock:receive()
-            ngx.say("receive: ", line, " ", err)
+            njt.say("receive: ", line, " ", err)
 
             ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         ';
     }
 --- request
@@ -51,14 +51,14 @@ qr{\[crit\] .*? connect\(\) to unix:/tmp/nosuchfile\.sock failed}
 --- config
     location /test {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("/tmp/test-nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
         ';
     }
 --- request
@@ -76,47 +76,47 @@ failed to connect: missing the port number
 
         server_tokens off;
         location /foo {
-            content_by_lua 'ngx.say("foo")';
+            content_by_lua 'njt.say("foo")';
             more_clear_headers Date;
         }
     }
 --- config
     location /test {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.0\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n"
             -- req = "OK"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             while true do
                 print("calling receive")
                 local line, err = sock:receive()
                 if line then
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
 
                 else
-                    ngx.say("failed to receive a line: ", err)
+                    njt.say("failed to receive a line: ", err)
                     break
                 end
             end
 
             ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         ';
     }
 --- request
@@ -136,7 +136,7 @@ close: 1 nil
 
 
 
-=== TEST 4: ngx.socket.stream
+=== TEST 4: njt.socket.stream
 --- http_config
     server {
         listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
@@ -144,47 +144,47 @@ close: 1 nil
 
         server_tokens off;
         location /foo {
-            content_by_lua_block { ngx.say("foo") }
+            content_by_lua_block { njt.say("foo") }
             more_clear_headers Date;
         }
     }
 --- config
     location /test {
         content_by_lua_block {
-            local sock = ngx.socket.stream()
+            local sock = njt.socket.stream()
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.0\r\nHost: localhost\r\nConnection: close\r\n\r\n"
             -- req = "OK"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             while true do
                 print("calling receive")
                 local line, err = sock:receive()
                 if line then
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
 
                 else
-                    ngx.say("failed to receive a line: ", err)
+                    njt.say("failed to receive a line: ", err)
                     break
                 end
             end
 
             ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         }
     }
 --- request
@@ -212,47 +212,47 @@ close: 1 nil
 
         server_tokens off;
         location /foo {
-            content_by_lua 'ngx.say("foo")';
+            content_by_lua 'njt.say("foo")';
             more_clear_headers Date;
         }
     }
 --- config
     location /test {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock", 80)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.0\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n"
             -- req = "OK"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             while true do
                 print("calling receive")
                 local line, err = sock:receive()
                 if line then
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
 
                 else
-                    ngx.say("failed to receive a line: ", err)
+                    njt.say("failed to receive a line: ", err)
                     break
                 end
             end
 
             ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         ';
     }
 --- request
@@ -280,47 +280,47 @@ close: 1 nil
 
         server_tokens off;
         location /foo {
-            content_by_lua 'ngx.say("foo")';
+            content_by_lua 'njt.say("foo")';
             more_clear_headers Date;
         }
     }
 --- config
     location /test {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock", nil)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local req = "GET /foo HTTP/1.0\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n"
             -- req = "OK"
 
             local bytes, err = sock:send(req)
             if not bytes then
-                ngx.say("failed to send request: ", err)
+                njt.say("failed to send request: ", err)
                 return
             end
 
-            ngx.say("request sent: ", bytes)
+            njt.say("request sent: ", bytes)
 
             while true do
                 print("calling receive")
                 local line, err = sock:receive()
                 if line then
-                    ngx.say("received: ", line)
+                    njt.say("received: ", line)
 
                 else
-                    ngx.say("failed to receive a line: ", err)
+                    njt.say("failed to receive a line: ", err)
                     break
                 end
             end
 
             ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         ';
     }
 --- request

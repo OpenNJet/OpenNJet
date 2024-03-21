@@ -11,7 +11,7 @@
  * Copyright (C) Yichun Zhang (agentzh)
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  * Copyright (C) cuiweixie
- * I hereby assign copyright in this code to the lua-nginx-module project,
+ * I hereby assign copyright in this code to the lua-njet-module project,
  * to be licensed under the same terms as the rest of the code.
  */
 
@@ -353,8 +353,8 @@ njt_stream_lua_ffi_sema_post(njt_stream_lua_sema_t *sem, int n)
 
     if (!njt_queue_empty(&sem->wait_queue)) {
         /* we need the extra paranthese around the first argument of
-         * njt_post_event() just to work around macro issues in nginx
-         * cores older than nginx 1.7.12 (exclusive).
+         * njt_post_event() just to work around macro issues in njet
+         * cores older than njet 1.7.12 (exclusive).
          */
         njt_post_event((&sem->sem_event), &njt_posted_events);
     }
@@ -388,11 +388,7 @@ njt_stream_lua_ffi_sema_wait(njt_stream_lua_request_t *r,
         return NJT_ERROR;
     }
 
-    rc = njt_stream_lua_ffi_check_context(ctx, NJT_STREAM_LUA_CONTEXT_CONTENT
-        | NJT_STREAM_LUA_CONTEXT_PREREAD
-        | NJT_STREAM_LUA_CONTEXT_SSL_CLIENT_HELLO
-        | NJT_STREAM_LUA_CONTEXT_SSL_CERT
-        | NJT_STREAM_LUA_CONTEXT_TIMER,
+    rc = njt_stream_lua_ffi_check_context(ctx, NJT_STREAM_LUA_CONTEXT_YIELDABLE,
         err, errlen);
 
     if (rc != NJT_OK) {
@@ -477,6 +473,10 @@ njt_stream_lua_sema_handler(njt_event_t *ev)
     njt_queue_t                         *q;
 
     sem = ev->data;
+    njt_log_debug2(NJT_LOG_DEBUG_STREAM, njt_cycle->log, 0,
+                   "semaphore handler: wait queue: %sempty, resource count: %d",
+                   njt_queue_empty(&sem->wait_queue) ? "" : "not ",
+                   sem->resource_count);
 
     while (!njt_queue_empty(&sem->wait_queue) && sem->resource_count > 0) {
 
@@ -571,6 +571,10 @@ njt_stream_lua_ffi_sema_gc(njt_stream_lua_sema_t *sem)
                       "in lua semaphore gc wait queue is"
                       " not empty while the semaphore %p is being "
                       "destroyed", sem);
+    }
+
+    if (sem->sem_event.posted) {
+        njt_delete_posted_event(&sem->sem_event);
     }
 
     njt_stream_lua_free_sema(sem);

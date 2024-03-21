@@ -37,15 +37,18 @@
 
 
 #if (NJT_PCRE)
+#   if (NJT_PCRE2)
+#      define LUA_HAVE_PCRE_JIT 1
+#   else
 
 #include <pcre.h>
 
-#if (PCRE_MAJOR > 8) || (PCRE_MAJOR == 8 && PCRE_MINOR >= 21)
-#   define LUA_HAVE_PCRE_JIT 1
-#else
-#   define LUA_HAVE_PCRE_JIT 0
-#endif
-
+#       if (PCRE_MAJOR > 8) || (PCRE_MAJOR == 8 && PCRE_MINOR >= 21)
+#           define LUA_HAVE_PCRE_JIT 1
+#       else
+#           define LUA_HAVE_PCRE_JIT 0
+#       endif
+#   endif
 #endif
 
 
@@ -93,7 +96,7 @@
 #endif
 
 
-/* Nginx HTTP Lua Inline tag prefix */
+/* NJet HTTP Lua Inline tag prefix */
 
 #define NJT_STREAM_LUA_INLINE_TAG "nhli_"
 
@@ -103,7 +106,7 @@
 #define NJT_STREAM_LUA_INLINE_KEY_LEN                                        \
     (NJT_STREAM_LUA_INLINE_TAG_LEN + 2 * MD5_DIGEST_LENGTH)
 
-/* Nginx HTTP Lua File tag prefix */
+/* NJet HTTP Lua File tag prefix */
 
 #define NJT_STREAM_LUA_FILE_TAG "nhlf_"
 
@@ -194,11 +197,14 @@ struct njt_stream_lua_main_conf_s {
     njt_int_t            regex_cache_entries;
     njt_int_t            regex_cache_max_entries;
     njt_int_t            regex_match_limit;
-
-#if (LUA_HAVE_PCRE_JIT)
-    pcre_jit_stack      *jit_stack;
 #endif
 
+#if (LUA_HAVE_PCRE_JIT)
+#if (NJT_PCRE2)
+    pcre2_jit_stack     *jit_stack;
+#else
+    pcre_jit_stack      *jit_stack;
+#endif
 #endif
 
     njt_array_t         *shm_zones;  /* of njt_shm_zone_t* */
@@ -246,6 +252,8 @@ struct njt_stream_lua_main_conf_s {
 struct njt_stream_lua_srv_conf_s {
 #if (NJT_STREAM_SSL)
     njt_ssl_t              *ssl;  /* shared by SSL cosockets */
+    njt_array_t            *ssl_certificates;
+    njt_array_t            *ssl_certificate_keys;
     njt_uint_t              ssl_protocols;
     njt_str_t               ssl_ciphers;
     njt_uint_t              ssl_verify_depth;

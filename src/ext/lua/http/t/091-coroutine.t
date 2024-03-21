@@ -17,13 +17,13 @@ function gen_id(k) {
     return cur
 }
 
-F(ngx_http_handler) {
+F(njt_http_handler) {
     delete ids
     cur = 0
 }
 
 /*
-F(ngx_http_lua_run_thread) {
+F(njt_http_lua_run_thread) {
     id = gen_id($ctx->cur_co)
     printf("run thread %d\n", id)
 }
@@ -45,7 +45,7 @@ M(http-lua-thread-yield) {
 }
 
 /*
-F(ngx_http_lua_coroutine_yield) {
+F(njt_http_lua_coroutine_yield) {
     printf("yield %x\n", gen_id($L))
 }
 */
@@ -56,7 +56,7 @@ M(http-lua-user-coroutine-yield) {
     printf("yield %x in %x\n", c, p)
 }
 
-F(ngx_http_lua_atpanic) {
+F(njt_http_lua_atpanic) {
     printf("lua atpanic(%d):", gen_id($L))
     print_ubacktrace();
 }
@@ -67,10 +67,10 @@ M(http-lua-user-coroutine-create) {
     printf("create %x in %x\n", c, p)
 }
 
-F(ngx_http_lua_ngx_exec) { println("exec") }
+F(njt_http_lua_njt_exec) { println("exec") }
 
-F(ngx_http_lua_ngx_exit) { println("exit") }
-F(ngx_http_lua_ffi_exit) { println("exit") }
+F(njt_http_lua_njt_exit) { println("exit") }
+F(njt_http_lua_ffi_exit) { println("exit") }
 _EOC_
 
 no_shuffle();
@@ -88,7 +88,7 @@ __DATA__
             local function f()
                 local cnt = 0
                 for i = 1, 20 do
-                    ngx.say("Hello, ", cnt)
+                    njt.say("Hello, ", cnt)
                     cy()
                     cnt = cnt + 1
                 end
@@ -97,7 +97,7 @@ __DATA__
             local c = cc(f)
             for i=1,3 do
                 cr(c)
-                ngx.say("***")
+                njt.say("***")
             end
         ';
     }
@@ -123,7 +123,7 @@ Hello, 2
             local function f(fid)
                 local cnt = 0
                 while true do
-                    ngx.say("cc", fid, ": ", cnt)
+                    njt.say("cc", fid, ": ", cnt)
                     coroutine.yield()
                     cnt = cnt + 1
                 end
@@ -164,15 +164,15 @@ cc3: 2
     location /lua {
         content_by_lua '
             local function worker(url)
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok, err = sock:connect(url, 80)
                 coroutine.yield()
                 if not ok then
-                    ngx.say("failed to connect to: ", url, " error: ", err)
+                    njt.say("failed to connect to: ", url, " error: ", err)
                     return
                 end
                 coroutine.yield()
-                ngx.say("successfully connected to: ", url)
+                njt.say("successfully connected to: ", url)
                 sock:close()
             end
 
@@ -197,7 +197,7 @@ cc3: 2
                 end
             end
 
-            ngx.say("*** All Done ***")
+            njt.say("*** All Done ***")
         ';
     }
 --- request
@@ -240,7 +240,7 @@ successfully connected to: openresty.org
             while 1 do
               local n = x()		-- pick a number until done
               if n == nil then break end
-              ngx.say(n)		-- must be a prime number
+              njt.say(n)		-- must be a prime number
               x = filter(n, x)	-- now remove its multiples
             end
         ';
@@ -286,7 +286,7 @@ GET /lua
             while 1 do
               local n = x()		-- pick a number until done
               if n == nil then break end
-              ngx.say(n)		-- must be a prime number
+              njt.say(n)		-- must be a prime number
               x = filter(n, x)	-- now remove its multiples
             end
         ';
@@ -322,13 +322,13 @@ GET /lua
             -- So the following case(using for loop) will be failed.
             -- Luajit is OK.
             if package.loaded["jit"] then
-                for i in generatefib(1000) do ngx.say(i) end
+                for i in generatefib(1000) do njt.say(i) end
             else
                 local gen = generatefib(1000)
                 while true do
                     local i = gen()
                     if not i then break end
-                    ngx.say(i)
+                    njt.say(i)
                 end
             end
         ';
@@ -363,15 +363,15 @@ GET /lua
     location /lua {
         content_by_lua '
             local function worker(url)
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok, err = sock:connect(url, 80)
                 coroutine.yield()
                 if not ok then
-                    ngx.say("failed to connect to: ", url, " error: ", err)
+                    njt.say("failed to connect to: ", url, " error: ", err)
                     return
                 end
                 coroutine.yield()
-                ngx.say("successfully connected to: ", url)
+                njt.say("successfully connected to: ", url)
                 sock:close()
             end
 
@@ -391,7 +391,7 @@ GET /lua
             for i=1,3 do cfs[i]() end
             for i=1,3 do cfs[i]() end
 
-            ngx.say("*** All Done ***")
+            njt.say("*** All Done ***")
         ';
     }
 --- request
@@ -416,21 +416,21 @@ successfully connected to: openresty.org
 
             local function f(self)
                 local cnt = 0
-                if rn() ~= self then ngx.say("error"); return end
-                ngx.say("running: ", st(self)) --running
+                if rn() ~= self then njt.say("error"); return end
+                njt.say("running: ", st(self)) --running
                 cy()
                 local c = cc(function(father)
-                    ngx.say("normal: ", st(father))
+                    njt.say("normal: ", st(father))
                 end) -- normal
                 cr(c, self)
             end
 
             local c = cc(f)
-            ngx.say("suspended: ", st(c)) -- suspended
+            njt.say("suspended: ", st(c)) -- suspended
             cr(c, c)
-            ngx.say("suspended: ", st(c)) -- suspended
+            njt.say("suspended: ", st(c)) -- suspended
             cr(c, c)
-            ngx.say("dead: ", st(c)) -- dead
+            njt.say("dead: ", st(c)) -- dead
         ';
     }
 --- request
@@ -450,9 +450,9 @@ dead: dead
 --- config
     location /lua {
         content_by_lua '
-            ngx.say("[", {coroutine.yield()}, "]")
-            ngx.say("[", {coroutine.yield(1, "a")}, "]")
-            ngx.say("done")
+            njt.say("[", {coroutine.yield()}, "]")
+            njt.say("[", {coroutine.yield(1, "a")}, "]")
+            njt.say("done")
         ';
     }
 --- request
@@ -479,7 +479,7 @@ Note: only coroutine.wrap propagates errors to the parent coroutine
             local l2 = coroutine.wrap(g)
             local l3 = coroutine.wrap(function() l1(l2) end)
             l3()
-            ngx.say("hello")
+            njt.say("hello")
         }
     }
 --- request
@@ -498,7 +498,7 @@ hello
         content_by_lua '
             -- emit a error
             unknown.unknown = 1
-            ngx.say("hello")
+            njt.say("hello")
         ';
     }
 --- request
@@ -520,11 +520,11 @@ GET /lua
                     if is_first then
                         is_first = false
                     else
-                        ngx.print(" ")
+                        njt.print(" ")
                     end
-                    ngx.print(v)
+                    njt.print(v)
                 end
-                ngx.print("\\\n")
+                njt.print("\\\n")
             end
 
             local function foo (a)
@@ -572,35 +572,35 @@ main false cannot resume dead coroutine
             local yield = coroutine.yield
             local g
             local function f()
-                ngx.say("f begin")
+                njt.say("f begin")
                 yield()
                 local c2 = create(g)
-                ngx.say("1: resuming c2")
+                njt.say("1: resuming c2")
                 resume(c2)
-                ngx.say("2: resuming c2")
+                njt.say("2: resuming c2")
                 resume(c2)
                 yield()
-                ngx.say("3: resuming c2")
+                njt.say("3: resuming c2")
                 resume(c2)
-                ngx.say("f done")
+                njt.say("f done")
             end
 
             function g()
-                ngx.say("g begin")
+                njt.say("g begin")
                 yield()
-                ngx.say("g going")
+                njt.say("g going")
                 yield()
-                ngx.say("g done")
+                njt.say("g done")
             end
 
             local c1 = create(f)
-            ngx.say("1: resuming c1")
+            njt.say("1: resuming c1")
             resume(c1)
-            ngx.say("2: resuming c1")
+            njt.say("2: resuming c1")
             resume(c1)
-            ngx.say("3: resuming c1")
+            njt.say("3: resuming c1")
             resume(c1)
-            ngx.say("main done")
+            njt.say("main done")
         ';
     }
 --- request
@@ -623,7 +623,7 @@ main done
 
 
 
-=== TEST 14: using ngx.exit in user coroutines
+=== TEST 14: using njt.exit in user coroutines
 --- config
     location /lua {
         content_by_lua '
@@ -647,14 +647,14 @@ main done
                 code = code + 1
                 yield()
                 code = code + 1
-                ngx.exit(code)
+                njt.exit(code)
             end
 
             local c1 = create(f)
             resume(c1)
             resume(c1)
             resume(c1)
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -680,7 +680,7 @@ exit
 
 
 
-=== TEST 15: using ngx.exec in user coroutines
+=== TEST 15: using njt.exec in user coroutines
 --- config
     location /lua {
         content_by_lua '
@@ -704,14 +704,14 @@ exit
                 code = code + 1
                 yield()
                 code = code + 1
-                ngx.exec("/n/" .. code)
+                njt.exec("/n/" .. code)
             end
 
             local c1 = create(f)
             resume(c1)
             resume(c1)
             resume(c1)
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 
@@ -752,7 +752,7 @@ num: 3
             end
 
             local c1 = coroutine.create(f)
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -767,7 +767,7 @@ API disabled in the context of header_filter_by_lua*
 --- config
     location /t {
         content_by_lua '
-            local print = ngx.say
+            local print = njt.say
 
             local c1, c2
 
@@ -806,7 +806,7 @@ f 2
 --- config
     location /t {
         content_by_lua '
-            local print = ngx.say
+            local print = njt.say
 
             local c1, c2
 
@@ -847,8 +847,8 @@ f 2
 --- config
     location /t {
         content_by_lua '
-            ngx.say(coroutine.status(coroutine.running()))
-            ngx.say(coroutine.resume(coroutine.running()))
+            njt.say(coroutine.status(coroutine.running()))
+            njt.say(coroutine.resume(coroutine.running()))
         ';
     }
 --- request
@@ -867,12 +867,12 @@ falsecannot resume running coroutine
         content_by_lua '
             local co
             local function f()
-                ngx.say("f: ", coroutine.status(co))
-                ngx.say("f: ", coroutine.resume(co))
+                njt.say("f: ", coroutine.status(co))
+                njt.say("f: ", coroutine.resume(co))
             end
             co = coroutine.create(f)
-            ngx.say("chunk: ", coroutine.status(co))
-            ngx.say("chunk: ", coroutine.resume(co))
+            njt.say("chunk: ", coroutine.status(co))
+            njt.say("chunk: ", coroutine.resume(co))
         ';
     }
 --- request
@@ -896,9 +896,9 @@ chunk: true
                 error("bad")
             end
             co = coroutine.create(f)
-            ngx.say("child: resume: ", coroutine.resume(co))
-            ngx.say("child: status: ", coroutine.status(co))
-            ngx.say("parent: status: ", coroutine.status(coroutine.running()))
+            njt.say("child: resume: ", coroutine.resume(co))
+            njt.say("child: status: ", coroutine.status(co))
+            njt.say("parent: status: ", coroutine.status(coroutine.running()))
         ';
     }
 --- request
@@ -918,9 +918,9 @@ $/s
     location /t {
         content_by_lua '
             local co = coroutine.running()
-            ngx.say("status: ", coroutine.status(co))
+            njt.say("status: ", coroutine.status(co))
             coroutine.yield(co)
-            ngx.say("status: ", coroutine.status(co))
+            njt.say("status: ", coroutine.status(co))
         ';
     }
 --- request
@@ -937,7 +937,7 @@ status: running
 --- config
     location = /t {
         content_by_lua '
-            local say = ngx.say
+            local say = njt.say
             local wrap, yield = coroutine.wrap, coroutine.yield
 
             local function it(it_state)
@@ -998,15 +998,15 @@ test10
     location /lua {
         content_by_lua '
             local function worker(url)
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok, err = sock:connect(url, 80)
                 coroutine.yield()
                 if not ok then
-                    ngx.say("failed to connect to: ", url, " error: ", err)
+                    njt.say("failed to connect to: ", url, " error: ", err)
                     return
                 end
                 coroutine.yield()
-                ngx.say("successfully connected to: ", url)
+                njt.say("successfully connected to: ", url)
                 sock:close()
             end
 
@@ -1029,7 +1029,7 @@ test10
                 end
             end
 
-            ngx.say("*** All Done ***")
+            njt.say("*** All Done ***")
         ';
     }
 --- request
@@ -1052,15 +1052,15 @@ successfully connected to: agentzh.org
     location /lua {
         content_by_lua '
             local function worker(url)
-                local sock = ngx.socket.tcp()
+                local sock = njt.socket.tcp()
                 local ok, err = sock:connect(url, 80)
                 coroutine.yield()
                 if not ok then
-                    ngx.say("failed to connect to: ", url, " error: ", err)
+                    njt.say("failed to connect to: ", url, " error: ", err)
                     return
                 end
                 coroutine.yield()
-                ngx.say("successfully connected to: ", url)
+                njt.say("successfully connected to: ", url)
                 sock:close()
             end
 
@@ -1083,7 +1083,7 @@ successfully connected to: agentzh.org
                 end
             end
 
-            ngx.say("*** All Done ***")
+            njt.say("*** All Done ***")
         ';
     }
 --- user_files
@@ -1119,7 +1119,7 @@ successfully connected to: agentzh.org
 
             local co = generator()
             local data = co()
-            ngx.say(data)
+            njt.say(data)
         ';
     }
 
@@ -1148,7 +1148,7 @@ data
 
             local co = generator()
             local data = co()
-            ngx.say(data)
+            njt.say(data)
         ';
     }
 
@@ -1181,12 +1181,12 @@ data
                 collectgarbage()
                 local c = cc(f)
                 if coroutine.status(c) == "dead" then
-                    ngx.say("found a dead coroutine")
+                    njt.say("found a dead coroutine")
                     return
                 end
                 cr(c)
             end
-            ngx.say("ok")
+            njt.say("ok")
         ';
     }
 --- request
@@ -1209,8 +1209,8 @@ ok
             local function f()
                 local cnt = 0
                 for i = 1, 20 do
-                    ngx.say("Hello, ", cnt)
-                    ngx.sleep(0.001)
+                    njt.say("Hello, ", cnt)
+                    njt.sleep(0.001)
                     cy()
                     cnt = cnt + 1
                 end
@@ -1219,7 +1219,7 @@ ok
             local c = cc(f)
             for i=1,3 do
                 cr(c)
-                ngx.say("***")
+                njt.say("***")
             end
         ';
     }
@@ -1336,7 +1336,7 @@ co yield: 2
 
             co()
 
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request
@@ -1454,7 +1454,7 @@ GET /t
 
             local ret1, ret2 = co()
 
-            ngx.say(ret1, ", ", ret2)
+            njt.say(ret1, ", ", ret2)
         }
     }
 --- request
@@ -1474,7 +1474,7 @@ ok, err
 
             local ret1 = co()
 
-            ngx.say(ret1)
+            njt.say(ret1)
         }
     }
 --- request
@@ -1497,7 +1497,7 @@ nil
 
             local ret1, ret2 = pcall(co)
 
-            ngx.say(ret1, ", ", ret2)
+            njt.say(ret1, ", ", ret2)
         }
     }
 --- request
@@ -1517,7 +1517,7 @@ false, something went wrong
             local co = coroutine.wrap(f)
             local co2 = coroutine.wrap(f)
 
-            ngx.say("co == co2: ", co == co2)
+            njt.say("co == co2: ", co == co2)
         }
     }
 --- request
@@ -1536,7 +1536,7 @@ co == co2: false
             local function f()
                 local cnt = 0
                 for i = 1, 20 do
-                    ngx.say("co yield: ", cnt)
+                    njt.say("co yield: ", cnt)
                     coroutine.yield()
                     cnt = cnt + 1
                 end
@@ -1544,7 +1544,7 @@ co == co2: false
 
             local f = coroutine.wrap(f)
             for i = 1, 3 do
-                ngx.say("co resume")
+                njt.say("co resume")
                 f()
             end
         }
@@ -1577,9 +1577,9 @@ co yield: 2
 
             local f = coroutine.wrap(f)
             for i = 1, 3 do
-                ngx.say("co resume")
+                njt.say("co resume")
                 local ret1, ret2 = f()
-                ngx.say("co yield: ", ret1, ", ", ret2)
+                njt.say("co yield: ", ret1, ", ", ret2)
             end
         }
     }
@@ -1604,7 +1604,7 @@ co yield: 2, 3
             local function f(step)
                 local cnt = 0
                 for i = 1, 20 do
-                    ngx.say("co yield: ", cnt)
+                    njt.say("co yield: ", cnt)
                     coroutine.yield()
                     cnt = cnt + step
                 end
@@ -1612,7 +1612,7 @@ co yield: 2, 3
 
             local f = coroutine.wrap(f)
             for i = 1, 3 do
-                ngx.say("co resume")
+                njt.say("co resume")
                 f(i)
             end
         }
@@ -1682,7 +1682,7 @@ co yield: 2
 
             local err = co()
 
-            ngx.log(ngx.CRIT, "err: ", err)
+            njt.log(njt.CRIT, "err: ", err)
         }
     }
 --- request
@@ -1708,7 +1708,7 @@ GET /t
 
         local err = co()
 
-        ngx.log(ngx.CRIT, "err: ", err)
+        njt.log(njt.CRIT, "err: ", err)
     }
 --- config
 
@@ -1728,8 +1728,8 @@ init_by_lua error: init_by_lua:7: init_by_lua:4: something went wrong
             end
 
             local ret1, ret2 = coroutine.resume(coroutine.create(f))
-            ngx.say(ret1)
-            ngx.say(ret2)
+            njt.say(ret1)
+            njt.say(ret2)
         }
     }
 --- request

@@ -24,21 +24,21 @@ __DATA__
 --- stream_server_config
 
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
 
         local data, err = sock:receive(5)
         if not data then
-            ngx.log(ngx.ERR, "server: failed to receive: ", err)
+            njt.log(njt.ERR, "server: failed to receive: ", err)
             return
         end
 
         local bytes, err = sock:send("1: received: " .. data .. "\n")
         if not bytes then
-            ngx.log(ngx.ERR, "server: failed to send: ", err)
+            njt.log(njt.ERR, "server: failed to send: ", err)
             return
         end
     }
@@ -55,14 +55,14 @@ stream lua socket tcp_nodelay
 === TEST 2: multiple raw req sockets
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
-        local sock2, err = ngx.req.socket(true)
+        local sock2, err = njt.req.socket(true)
         if not sock2 then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket2: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket2: ", err)
             return
         end
 
@@ -81,17 +81,17 @@ server: failed to get raw req socket2: duplicate call
 
 
 
-=== TEST 3: ngx.say after ngx.req.socket(true)
+=== TEST 3: njt.say after njt.req.socket(true)
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
-        local ok, err = ngx.say("ok")
+        local ok, err = njt.say("ok")
         if not ok then
-            ngx.log(ngx.ERR, "failed to say: ", err)
+            njt.log(njt.ERR, "failed to say: ", err)
             return
         end
     }
@@ -103,17 +103,17 @@ ok
 
 
 
-=== TEST 4: ngx.print after ngx.req.socket(true)
+=== TEST 4: njt.print after njt.req.socket(true)
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
-        local ok, err = ngx.print("ok")
+        local ok, err = njt.print("ok")
         if not ok then
-            ngx.log(ngx.ERR, "failed to print: ", err)
+            njt.log(njt.ERR, "failed to print: ", err)
             return
         end
     }
@@ -125,17 +125,17 @@ ok
 
 
 
-=== TEST 5: ngx.eof after ngx.req.socket(true)
+=== TEST 5: njt.eof after njt.req.socket(true)
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
-        local ok, err = ngx.eof()
+        local ok, err = njt.eof()
         if not ok then
-            ngx.log(ngx.ERR, "failed to eof: ", err)
+            njt.log(njt.ERR, "failed to eof: ", err)
             return
         end
     }
@@ -149,17 +149,17 @@ ok
 
 
 
-=== TEST 6: ngx.flush after ngx.req.socket(true)
+=== TEST 6: njt.flush after njt.req.socket(true)
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
-        local ok, err = ngx.flush()
+        local ok, err = njt.flush()
         if not ok then
-            ngx.log(ngx.ERR, "failed to flush: ", err)
+            njt.log(njt.ERR, "failed to flush: ", err)
             return
         end
     }
@@ -173,9 +173,9 @@ ok
 === TEST 7: receive timeout
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
 
@@ -183,15 +183,15 @@ ok
 
         local data, err, partial = sock:receive(10)
         if not data then
-            ngx.log(ngx.ERR, "server: 1: failed to receive: ", err, ", received: ", partial)
+            njt.log(njt.ERR, "server: 1: failed to receive: ", err, ", received: ", partial)
         end
 
         data, err, partial = sock:receive(10)
         if not data then
-            ngx.log(ngx.ERR, "server: 2: failed to receive: ", err, ", received: ", partial)
+            njt.log(njt.ERR, "server: 2: failed to receive: ", err, ", received: ", partial)
         end
 
-        ngx.exit(444)
+        njt.exit(444)
     }
 
 --- stream_request chomp
@@ -207,27 +207,27 @@ server: 2: failed to receive: timeout, received:
 
 
 
-=== TEST 8: on_abort called during ngx.sleep()
+=== TEST 8: on_abort called during njt.sleep()
 --- stream_server_config
     lua_check_client_abort on;
 
     content_by_lua_block {
-        local ok, err = ngx.on_abort(function (premature)
-            ngx.log(ngx.WARN, "mysock handler aborted") end)
+        local ok, err = njt.on_abort(function (premature)
+            njt.log(njt.WARN, "mysock handler aborted") end)
         if not ok then
-            ngx.log(ngx.ERR, "failed to set on_abort handler: ", err)
+            njt.log(njt.ERR, "failed to set on_abort handler: ", err)
             return
         end
 
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
 
         local data, err = sock:receive(5)
         if not data then
-            ngx.log(ngx.ERR, "server: failed to receive: ", err)
+            njt.log(njt.ERR, "server: failed to receive: ", err)
             return
         end
 
@@ -235,11 +235,11 @@ server: 2: failed to receive: timeout, received:
 
         local bytes, err = sock:send("1: received: " .. data .. "\n")
         if not bytes then
-            ngx.log(ngx.ERR, "server: failed to send: ", err)
+            njt.log(njt.ERR, "server: failed to send: ", err)
             return
         end
 
-        ngx.sleep(1)
+        njt.sleep(1)
     }
 
 --- stream_request chomp
@@ -262,21 +262,21 @@ msg received: hello
     lua_check_client_abort on;
 
     content_by_lua_block {
-        local ok, err = ngx.on_abort(function (premature) ngx.log(ngx.WARN, "mysock handler aborted") end)
+        local ok, err = njt.on_abort(function (premature) njt.log(njt.WARN, "mysock handler aborted") end)
         if not ok then
-            ngx.log(ngx.ERR, "failed to set on_abort handler: ", err)
+            njt.log(njt.ERR, "failed to set on_abort handler: ", err)
             return
         end
 
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
 
         local data, err = sock:receive(5)
         if not data then
-            ngx.log(ngx.ERR, "server: failed to receive: ", err)
+            njt.log(njt.ERR, "server: failed to receive: ", err)
             return
         end
 
@@ -284,13 +284,13 @@ msg received: hello
 
         local bytes, err = sock:send("1: received: " .. data .. "\n")
         if not bytes then
-            ngx.log(ngx.ERR, "server: failed to send: ", err)
+            njt.log(njt.ERR, "server: failed to send: ", err)
             return
         end
 
         local data, err = sock:receive()
         if not data then
-            ngx.log(ngx.WARN, "failed to receive a line: ", err)
+            njt.log(njt.WARN, "failed to receive a line: ", err)
             return
         end
     }
@@ -308,22 +308,22 @@ server: failed to receive: client aborted
 === TEST 10: receiveuntil
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
 
         local reader = sock:receiveuntil("rld")
         local data, err = reader()
         if not data then
-            ngx.log(ngx.ERR, "server: failed to receive: ", err)
+            njt.log(njt.ERR, "server: failed to receive: ", err)
             return
         end
 
         local bytes, err = sock:send("1: received: " .. data .. "\n")
         if not bytes then
-            ngx.log(ngx.ERR, "server: failed to send: ", err)
+            njt.log(njt.ERR, "server: failed to send: ", err)
             return
         end
 
@@ -332,17 +332,17 @@ server: failed to receive: client aborted
 
         local ok, err = sock:shutdown("send")
         if not ok then
-            ngx.log(ngx.ERR, "failed to shutdown ", err)
+            njt.log(njt.ERR, "failed to shutdown ", err)
             return
         end
 
-        local deadline = ngx.time() + LINGERING_TIME
+        local deadline = njt.time() + LINGERING_TIME
 
         sock:settimeouts(nil, nil, LINGERING_TIMEOUT)
 
         repeat
             local data, _, partial = sock:receive(1024)
-        until (not data and not partial) or ngx.time() >= deadline
+        until (not data and not partial) or njt.time() >= deadline
     }
 
 --- stream_request
@@ -358,27 +358,27 @@ attempt to receive data on a closed socket
 === TEST 11: request body not read yet
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
 
         local data, err = sock:receive(5)
         if not data then
-            ngx.log(ngx.ERR, "failed to receive: ", err)
+            njt.log(njt.ERR, "failed to receive: ", err)
             return
         end
 
         local ok, err = sock:send("HTTP/1.1 200 OK\r\nContent-Length: 5\r\n\r\n" .. data)
         if not ok then
-            ngx.log(ngx.ERR, "failed to send: ", err)
+            njt.log(njt.ERR, "failed to send: ", err)
             return
         end
 
         local res, err = sock:shutdown('send')
         if not res then
-            ngx.log(ngx.ERR, "server: failed to shutdown: ", err)
+            njt.log(njt.ERR, "server: failed to shutdown: ", err)
             return
         end
     }
@@ -399,14 +399,14 @@ hello"
 === TEST 12: read chunked request body with raw req socket
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "failed to new: ", err)
+            njt.log(njt.ERR, "failed to new: ", err)
             return
         end
         local function myerr(...)
-            ngx.log(ngx.ERR, ...)
-            return ngx.exit(400)
+            njt.log(njt.ERR, ...)
+            return njt.exit(400)
         end
         local num = tonumber
         local MAX_CHUNKS = 1000
@@ -490,45 +490,45 @@ request body: hey, hello world
 === TEST 13: shutdown can only be called once and prevents all further output
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
 
         local data, err = sock:receive(5)
         if not data then
-            ngx.log(ngx.ERR, "failed to receive: ", err)
+            njt.log(njt.ERR, "failed to receive: ", err)
             return
         end
 
         local ok, err = sock:send("it works\n")
         if not ok then
-            ngx.log(ngx.ERR, "failed to send: ", err)
+            njt.log(njt.ERR, "failed to send: ", err)
             return
         end
 
         local ok, err = sock:shutdown("send")
         if not ok then
-            ngx.log(ngx.ERR, "failed to shutdown ", err)
+            njt.log(njt.ERR, "failed to shutdown ", err)
             return
         end
 
         ok, err = sock:shutdown("send")
         if ok or err ~= "already shutdown" then
-            ngx.log(ngx.ERR, "shutdown called multiple times without proper error: ", err)
+            njt.log(njt.ERR, "shutdown called multiple times without proper error: ", err)
             return
         end
 
-        ok, err = ngx.say("this should not work")
+        ok, err = njt.say("this should not work")
         if ok or err ~= "seen eof" then
-            ngx.log(ngx.ERR, "ngx.say completed without proper error: ", err)
+            njt.log(njt.ERR, "njt.say completed without proper error: ", err)
             return
         end
 
         ok, err = sock:send("this should not work")
         if ok or err ~= "closed" then
-            ngx.log(ngx.ERR, "sock:send completed without proper error: ", err)
+            njt.log(njt.ERR, "sock:send completed without proper error: ", err)
             return
         end
     }
@@ -545,21 +545,21 @@ stream lua shutdown socket write direction
 === TEST 14: simulated lingering close
 --- stream_server_config
     content_by_lua_block {
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
 
         local data, err = sock:receive(5)
         if not data then
-            ngx.log(ngx.ERR, "failed to receive: ", err)
+            njt.log(njt.ERR, "failed to receive: ", err)
             return
         end
 
         local ok, err = sock:shutdown("send")
         if not ok then
-            ngx.log(ngx.ERR, "failed to shutdown ", err)
+            njt.log(njt.ERR, "failed to shutdown ", err)
             return
         end
 

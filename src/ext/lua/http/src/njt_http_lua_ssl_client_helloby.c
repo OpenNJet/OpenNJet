@@ -1,6 +1,6 @@
 /*
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 #ifndef DDEBUG
@@ -62,7 +62,7 @@ njt_http_lua_ssl_client_hello_handler_inline(njt_http_request_t *r,
                                        lscf->srv.ssl_client_hello_src.len,
                                        &lscf->srv.ssl_client_hello_src_ref,
                                        lscf->srv.ssl_client_hello_src_key,
-                                       "=ssl_client_hello_by_lua");
+                           (const char *) lscf->srv.ssl_client_hello_chunkname);
     if (rc != NJT_OK) {
         return rc;
     }
@@ -107,6 +107,8 @@ njt_http_lua_ssl_client_hello_by_lua(njt_conf_t *cf, njt_command_t *cmd,
 
 #else
 
+    size_t                       chunkname_len;
+    u_char                      *chunkname;
     u_char                      *cache_key = NULL;
     u_char                      *name;
     njt_str_t                   *value;
@@ -149,15 +151,24 @@ njt_http_lua_ssl_client_hello_by_lua(njt_conf_t *cf, njt_command_t *cmd,
         lscf->srv.ssl_client_hello_src.len = njt_strlen(name);
 
     } else {
-        cache_key = njt_http_lua_gen_file_cache_key(cf, value[1].data,
-                                                    value[1].len);
+        cache_key = njt_http_lua_gen_chunk_cache_key(cf,
+                                                     "ssl_client_hello_by_lua",
+                                                     value[1].data,
+                                                     value[1].len);
         if (cache_key == NULL) {
             return NJT_CONF_ERROR;
         }
 
-        /* Don't eval nginx variables for inline lua code */
-        lscf->srv.ssl_client_hello_src = value[1];
+        chunkname = njt_http_lua_gen_chunk_name(cf, "ssl_client_hello_by_lua",
+                                          sizeof("ssl_client_hello_by_lua")- 1,
+                                          &chunkname_len);
+        if (chunkname == NULL) {
+            return NJT_CONF_ERROR;
+        }
 
+        /* Don't eval njet variables for inline lua code */
+        lscf->srv.ssl_client_hello_src = value[1];
+        lscf->srv.ssl_client_hello_chunkname = chunkname;
     }
 
     lscf->srv.ssl_client_hello_src_key = cache_key;
@@ -380,7 +391,7 @@ njt_http_lua_ssl_client_hello_aborted(void *data)
 {
     njt_http_lua_ssl_ctx_t      *cctx = data;
 
-    dd("lua ssl client hello done");
+    dd("lua ssl client hello aborted");
 
     if (cctx->done) {
         /* completed successfully already */
@@ -439,7 +450,7 @@ njt_http_lua_ssl_client_hello_by_chunk(lua_State *L, njt_http_request_t *r)
     njt_int_t                rc;
     lua_State               *co;
     njt_http_lua_ctx_t      *ctx;
-    njt_http_cleanup_t      *cln;
+    njt_pool_cleanup_t      *cln;
 
     ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
 
@@ -479,7 +490,7 @@ njt_http_lua_ssl_client_hello_by_chunk(lua_State *L, njt_http_request_t *r)
     lua_setfenv(co, -2);
 #endif
 
-    /* save nginx request in coroutine globals table */
+    /* save njet request in coroutine globals table */
     njt_http_lua_set_req(co, r);
 
     ctx->cur_co_ctx = &ctx->entry_co_ctx;
@@ -493,7 +504,7 @@ njt_http_lua_ssl_client_hello_by_chunk(lua_State *L, njt_http_request_t *r)
 
     /* register request cleanup hooks */
     if (ctx->cleanup == NULL) {
-        cln = njt_http_cleanup_add(r, 0);
+        cln = njt_pool_cleanup_add(r->pool, 0);
         if (cln == NULL) {
             rc = NJT_ERROR;
             njt_http_lua_finalize_request(r, rc);

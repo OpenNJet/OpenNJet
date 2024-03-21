@@ -27,7 +27,7 @@ __DATA__
             local function tonum(ud)
                 return tonumber(ffi.cast("uintptr_t", ud))
             end
-            ngx.say(string.format("content req=%#x", tonum(exdata())))
+            njt.say(string.format("content req=%#x", tonum(exdata())))
         ';
     }
 --- request

@@ -1,1 +1,1 @@
-http-lua-module-0.10.21
+http-lua-module-0.10.26

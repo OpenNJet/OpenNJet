@@ -18,13 +18,13 @@ __DATA__
 --- config
     location /foo {
         rewrite_by_lua_block {
-            ngx.req.set_uri_args("a\rb")
+            njt.req.set_uri_args("a\rb")
         }
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT/echo;
     }
     location /echo {
         content_by_lua_block {
-            ngx.say(ngx.var.request_uri);
+            njt.say(njt.var.request_uri);
         }
     }
 --- request
@@ -39,13 +39,13 @@ GET /foo?world
 --- config
     location /foo {
         rewrite_by_lua_block {
-            ngx.req.set_uri_args("a\nb")
+            njt.req.set_uri_args("a\nb")
         }
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT/echo;
     }
     location /echo {
         content_by_lua_block {
-            ngx.say(ngx.var.request_uri);
+            njt.say(njt.var.request_uri);
         }
     }
 --- request
@@ -59,13 +59,13 @@ GET /foo?world
 --- config
     location /foo {
         rewrite_by_lua_block {
-            ngx.req.set_uri_args("a\0b")
+            njt.req.set_uri_args("a\0b")
         }
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT/echo;
     }
     location /echo {
         content_by_lua_block {
-            ngx.say(ngx.var.request_uri);
+            njt.say(njt.var.request_uri);
         }
     }
 --- request
@@ -76,15 +76,15 @@ GET /foo?world
 
 
 === TEST 4: rewrite args (string arg with 'lang=中文')
-ngx.req.set_uri_args with string argument should be carefully encoded.
+njt.req.set_uri_args with string argument should be carefully encoded.
 For backward compatibility, we are allowed to pass such parameters.
 --- config
     location /foo {
         rewrite_by_lua_block {
-            ngx.req.set_uri_args("lang=中文")
+            njt.req.set_uri_args("lang=中文")
         }
         content_by_lua_block {
-            ngx.say(ngx.var.arg_lang)
+            njt.say(njt.var.arg_lang)
         }
     }
 --- request
@@ -97,15 +97,15 @@ GET /foo?world
 
 
 === TEST 5: rewrite args (string arg with '语言=chinese')
-ngx.req.set_uri_args with string argument should be carefully encoded.
+njt.req.set_uri_args with string argument should be carefully encoded.
 For backward compatibility, we are allowed to pass such parameters.
 --- config
     location /foo {
         rewrite_by_lua_block {
-            ngx.req.set_uri_args("语言=chinese")
+            njt.req.set_uri_args("语言=chinese")
         }
         content_by_lua_block {
-            ngx.say(ngx.var.arg_语言)
+            njt.say(njt.var.arg_语言)
         }
     }
 --- request
@@ -118,15 +118,15 @@ chinese
 
 
 === TEST 6: rewrite args (string arg with '语言=中文')
-ngx.req.set_uri_args with string argument should be carefully encoded.
+njt.req.set_uri_args with string argument should be carefully encoded.
 For backward compatibility, we are allowed to pass such parameters.
 --- config
     location /foo {
         rewrite_by_lua_block {
-            ngx.req.set_uri_args("语言=中文")
+            njt.req.set_uri_args("语言=中文")
         }
         content_by_lua_block {
-            ngx.say(ngx.var.arg_语言)
+            njt.say(njt.var.arg_语言)
         }
     }
 --- request

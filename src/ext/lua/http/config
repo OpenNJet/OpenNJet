@@ -264,6 +264,7 @@ HTTP_LUA_SRCS=" \
             $njt_addon_dir/src/njt_http_lua_util.c \
             $njt_addon_dir/src/njt_http_lua_cache.c \
             $njt_addon_dir/src/njt_http_lua_contentby.c \
+            $njt_addon_dir/src/njt_http_lua_server_rewriteby.c \
             $njt_addon_dir/src/njt_http_lua_rewriteby.c \
             $njt_addon_dir/src/njt_http_lua_accessby.c \
             $njt_addon_dir/src/njt_http_lua_setby.c \
@@ -328,6 +329,7 @@ HTTP_LUA_DEPS=" \
             $njt_addon_dir/src/njt_http_lua_util.h \
             $njt_addon_dir/src/njt_http_lua_cache.h \
             $njt_addon_dir/src/njt_http_lua_contentby.h \
+            $njt_addon_dir/src/njt_http_lua_server_rewriteby.c \
             $njt_addon_dir/src/njt_http_lua_rewriteby.h \
             $njt_addon_dir/src/njt_http_lua_accessby.h \
             $njt_addon_dir/src/njt_http_lua_setby.h \

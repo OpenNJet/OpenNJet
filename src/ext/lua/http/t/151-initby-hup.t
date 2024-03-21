@@ -39,7 +39,7 @@ __DATA__
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say(foo)
+            njt.say(foo)
         }
     }
 --- request
@@ -59,7 +59,7 @@ hello, FOO
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say(foo)
+            njt.say(foo)
         }
     }
 --- request
@@ -80,7 +80,7 @@ failed to init
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say(foo)
+            njt.say(foo)
         }
     }
 --- request
@@ -92,20 +92,20 @@ hello, foo
 
 
 
-=== TEST 4: no error in init before HUP, used ngx.shared.DICT
+=== TEST 4: no error in init before HUP, used njt.shared.DICT
 --- http_config
     lua_shared_dict dogs 1m;
 
     init_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", "hello, FOO")
     }
 --- config
     location /lua {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local foo = dogs:get("foo")
-            ngx.say(foo)
+            njt.say(foo)
         }
     }
 --- request
@@ -122,7 +122,7 @@ hello, FOO
     lua_shared_dict dogs 1m;
 
     init_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("foo", "foo have changed")
 
         error("failed to init")
@@ -130,7 +130,7 @@ hello, FOO
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say("HUP reload failed")
+            njt.say("HUP reload failed")
         }
     }
 --- request
@@ -153,10 +153,10 @@ failed to init
 --- config
     location /lua {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             local foo = dogs:get("foo")
-            ngx.say(foo)
-            ngx.say("reload success")
+            njt.say(foo)
+            njt.say("reload success")
         }
     }
 --- request
