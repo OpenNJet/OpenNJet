@@ -554,7 +554,7 @@ njt_int_t njt_http_kv_get(njt_http_request_t *r, njt_http_variable_value_t *v, u
 {
     njt_str_t *var;
     njt_str_t dbm_val;
-    u_int32_t val_len;
+    u_int32_t val_len = 0;
 
     if (kv_evt_ctx == NULL) {
         v->not_found = 1;
@@ -916,11 +916,18 @@ error:
 
 int njt_db_kv_get(njt_str_t *key, njt_str_t *value)
 {
+    uint32_t val_len = 0;
     if (key == NULL || key->data == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_db_kv_get got wrong key:value data");
         return NJT_ERROR;
     }
-    int ret = njet_iot_client_kv_get((void *)key->data, key->len, (void **)&value->data, (uint32_t *)&value->len, kv_evt_ctx);
+    // type of njt_str_t.len is size_t, in 64bit arch, it is not uint32_t,  
+    // force type conversion will not work in big-endian arch, 
+    // and even in little-endian arch, if value->len is not initialized, only low bytes will be set
+    // so use temporary variable when invoke lib api, and then assign to value->len 
+    int ret = njet_iot_client_kv_get((void *)key->data, key->len, (void **)&value->data, &val_len, kv_evt_ctx);
+    value->len=val_len;
+
     if (ret < 0) {
         return NJT_ERROR;
     }
