@@ -245,7 +245,8 @@ typedef struct {
     njt_str_t   name;
     njt_array_t *ori_conf;
     njt_http_map_ctx_t *map;
-    njt_int_t    dynamic;
+    unsigned     no_cacheable : 1;
+    unsigned     dynamic      : 1;
 } njt_http_map_var_hash_t;
 #endif
 

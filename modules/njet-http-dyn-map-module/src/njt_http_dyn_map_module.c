@@ -156,7 +156,13 @@ static njt_int_t njt_http_dyn_add_map(njt_pool_t  *pool,httpmap_maps_item_t *ite
     hostnames = get_httpmap_maps_item_hostnames(item) ? 1 : 0;
 
     njt_memzero(buffer.data,buffer.len);
-    p = njt_snprintf(buffer.data,buffer.len, "map %V  $%V {\n",keyFrom,keyTo);
+    if(hostnames == 1 && no_cacheable == 1) {
+        p = njt_snprintf(buffer.data,buffer.len, "map %V  $%V {\n hostnames;\n volatile; \n",keyFrom,keyTo);
+    } else  if(no_cacheable == 1) {
+        p = njt_snprintf(buffer.data,buffer.len, "map %V  $%V {\n volatile; \n",keyFrom,keyTo);
+    } else  if(hostnames == 1) {
+        p = njt_snprintf(buffer.data,buffer.len, "map %V  $%V {\n hostnames;\n",keyFrom,keyTo);
+    }
     msg = buffer;
     msg.len = p - buffer.data;
 
@@ -198,13 +204,7 @@ static njt_int_t njt_http_dyn_add_map(njt_pool_t  *pool,httpmap_maps_item_t *ite
         }
     }
     njt_str_set(&msg,"}\n");
-    if(hostnames == 1 && no_cacheable == 1) {
-        njt_str_set(&msg,"hostnames; \n volatile; \n  }");
-    } else  if(no_cacheable == 1) {
-        njt_str_set(&msg,"volatile; \n }");
-    } else  if(hostnames == 1) {
-        njt_str_set(&msg,"hostnames; \n }");
-    }
+    
     
     rlen = njt_write_fd(fd, msg.data,msg.len);
     if(rlen < 0) {
@@ -297,8 +297,7 @@ static njt_str_t *njt_http_dyn_map_dump_maps(njt_cycle_t *cycle, njt_pool_t *poo
                 njt_memcpy(keyTo->data + 1, v[i].name.data, v[i].name.len);
                 set_httpmap_maps_item_keyTo(item, keyTo);
                 set_httpmap_maps_item_keyFrom(item, &map->value.value);
-                //zyg todo set_httpmap_maps_item_isVolatile(item, v[i].flags & NJT_HTTP_VAR_NOCACHEABLE ? true : false);
-                set_httpmap_maps_item_isVolatile(item,true);
+                set_httpmap_maps_item_isVolatile(item,var_hash_item->no_cacheable ? true : false);
                 set_httpmap_maps_item_hostnames(item, map->hostnames ? true : false);
                 values = create_httpmap_maps_item_values(pool, 4);
                 set_httpmap_maps_item_values(item, values);
@@ -596,7 +595,7 @@ static njt_int_t njt_http_dyn_map_update_existed_var(njt_pool_t *pool, njt_pool_
     ctx.hostnames = 0;
     ctx.no_cacheable = 0;
 
-    rc = njt_http_map_create_ctx_from_apidata(mcf, item, &ctx, pool, temp_pool);
+   rc = njt_http_map_create_ctx_from_apidata(mcf, item, &ctx, pool, temp_pool);
     if (rc != NJT_OK) {
         goto error;
     }
@@ -629,6 +628,7 @@ static njt_int_t njt_http_dyn_map_update_existed_var(njt_pool_t *pool, njt_pool_
     }
     var_hash_item->dynamic = 1;
     var_hash_item->ori_conf = ctx.ori_conf;
+    var_hash_item->no_cacheable = ctx.no_cacheable;
     return NJT_OK;
 
 error:
@@ -692,8 +692,10 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, httpmap_t *api
     njt_http_conf_ctx_t *conf_ctx;
     njt_http_map_conf_t *mcf;
     njt_http_map_var_hash_t *var_hash_item;
-    njt_int_t rc;
-    njt_uint_t i,have,oper;  //oper -1:none, 0:update, 1 add, 2 del.
+    njt_int_t rc,find_rc;
+    njt_uint_t i,have;  
+    njt_int_t oper_type;  //oper -1:none, 0:update, 1 add, 2 del.
+    njt_int_t oper;  //oper -1:none, 0:update, 1 add, 2 del.
     u_char data_buf[1024] = { 0 };
     u_char *end;
     njt_str_t *type,msg;
@@ -733,39 +735,47 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, httpmap_t *api
         rpc_data_str.len = 0;
         njt_str_null(&msg);
         oper = -1;
-
+        oper_type = -1;
         httpmap_maps_item_t *item = get_httpmap_maps_item(api_data->maps, i);
         njt_str_t *keyFrom = (njt_str_t *)get_httpmap_maps_item_keyFrom(item);
         njt_str_t *keyTo = (njt_str_t *)get_httpmap_maps_item_keyTo(item);
-        if (keyTo->data[0] == '$') {
+        if (keyTo->data[0] == '$' && keyFrom->data[0] == '$') {
             keyTo->data++;
             keyTo->len--;
 
-            
             have =  0;
             type = (njt_str_t *)get_httpmap_maps_item_type(item);
-            rc = njt_lvlhsh_map_get(&mcf->var_hash, keyTo, (intptr_t *)&var_hash_item);
-            if (rc == NJT_OK && keyFrom->len == var_hash_item->key_from.len  && njt_memcmp(var_hash_item->key_from.data,keyFrom->data,var_hash_item->key_from.len) == 0) {
+            if (type == NULL || type->len == 0) {
+                oper_type = 0;
+            } else if (add.len == type->len && njt_memcmp(add.data,type->data,del.len) == 0) {
+               oper_type = 1;
+            } else if (del.len == type->len && njt_memcmp(del.data,type->data,del.len) == 0) {
+                oper_type = 2;
+            }
+
+            find_rc = njt_lvlhsh_map_get(&mcf->var_hash, keyTo, (intptr_t *)&var_hash_item);
+            if (find_rc == NJT_OK && keyFrom->len == var_hash_item->key_from.len  && njt_memcmp(var_hash_item->key_from.data,keyFrom->data,var_hash_item->key_from.len) == 0) {
                    have = 1;
             }
-            if (type != NULL && add.len == type->len && njt_memcmp(add.data,type->data,del.len) == 0) {
-                oper = 1;
+            if (oper_type == 1) {
                 if (have == 1) {
                     oper = 0;  //一样走更新。
-                } 
-            } else if (type != NULL && del.len == type->len && njt_memcmp(del.data,type->data,del.len) == 0) {
+                } else if (find_rc != NJT_OK) {
+                     oper = 1; // add
+                }
+            } else if (oper_type == 2 && have == 1) {
                 oper = 2; 
-            } else if (have == 1) {
+            } else if (have == 1 && oper_type == 0) {
                 oper = 0;
             }
-            if (rc != NJT_OK && is_change == 1) {
+            if (find_rc != NJT_OK && is_change == 1) {
                 oper = 1;
             }
-            if (oper == 2 && have == 1) {  //del
+            if (oper == 2 ) {  //del
                  rc = njt_http_dyn_check_del_map(pool,keyTo,&msg);
             } else  if (oper == 0) {  //update
                  rc = njt_http_dyn_map_update_existed_var(pool, temp_pool, conf_ctx, item, mcf, var_hash_item, rpc_result);
-            } else if (oper == 1 && rc != NJT_OK) {  //add 
+            } else if (oper == 1 ) {  //add 
                     rc = njt_http_dyn_add_map(pool,item);
                     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_add_map map=%V,rc=%d",keyTo,rc);
             } else {
@@ -779,10 +789,14 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, httpmap_t *api
                     }
                     if(msg.len > 0 ) {
                         end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"%V",&msg);
-                    } else if (oper == 1 && rc == NJT_OK){
+                    } else if (oper_type == -1) {
+                        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "unknow type:%V",type);
+                    } else if (oper_type == 1 && find_rc == NJT_OK){
                         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " keyTo %V is exsit!",keyTo);
-                    } else if ((oper == 2 || oper == 0) && have != 1){
-                        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " keyFrom:%V  or keyTo:%V is not exsit!",keyFrom,keyTo);
+                    } else if ((oper_type == 2 || oper_type == 0) && find_rc == NJT_OK) {
+                        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " not find map,keyFrom:%V!",keyFrom);
+                    } else if ((oper_type == 2 || oper_type == 0) && find_rc != NJT_OK) {
+                        end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " not find map,keyTo:%V!",keyTo);
                     } 
                     else {
                         end = njt_snprintf(data_buf, sizeof(data_buf) - 1, " not find map,keyFrom:%V,keyTo:%V !",keyFrom,keyTo);
@@ -792,7 +806,16 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, httpmap_t *api
                     njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
             } 
         } else {
-            end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "keyTo %V is invalid, it should start with $", keyTo);
+             if(api_data->maps->nelts != 1) {
+                    njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_PARTIAL_SUCCESS);
+            } else {
+                    njt_rpc_result_set_code(rpc_result, NJT_RPC_RSP_ERR);
+            }
+            if(keyTo->data[0] != '$') {
+                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "keyTo %V is invalid, it should start with $", keyTo);
+            } else {
+                end = njt_snprintf(data_buf, sizeof(data_buf) - 1, "keyFrom %V is invalid, it should start with $", keyFrom);
+            }
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         }

@@ -428,6 +428,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     var_hash_item->ori_conf = ctx.ori_conf;
     var_hash_item->dynamic = 0;
     var_hash_item->key_from = from;
+    var_hash_item->no_cacheable = ctx.no_cacheable;
 
 #endif
 
