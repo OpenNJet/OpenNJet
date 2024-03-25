@@ -1326,10 +1326,10 @@ static njt_int_t njt_dynvts_update_locs(njt_array_t *locs, njt_queue_t *q, njt_r
                     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "change location %V vhost_traffic_status to %i", &dlil->location, dlil->vhost_traffic_status);
                 }
                 njt_rpc_result_add_success_count(rpc_result);
-            }
-
-            if (dlil->is_locations_set && dlil->locations && dlil->locations->nelts > 0) {
-                njt_dynvts_update_locs(dlil->locations, clcf->old_locations, rpc_result);
+          
+                if (dlil->is_locations_set && dlil->locations && dlil->locations->nelts > 0) {
+                    njt_dynvts_update_locs(dlil->locations, clcf->old_locations, rpc_result);
+                }
             }
         }
 
