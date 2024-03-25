@@ -116,7 +116,7 @@ static njt_int_t njt_http_dyn_add_map(njt_pool_t  *pool,httpmap_maps_item_t *ite
       njt_str_t *keyTo, *keyFrom;
      u_char *p; 
      njt_uint_t   j;
-     njt_fd_t fd;
+     njt_fd_t fd = NJT_INVALID_FILE;
      njt_str_t  map_path = njt_string("map.txt");
     njt_str_t value[2];
     httpmap_maps_item_values_item_t *vi;
