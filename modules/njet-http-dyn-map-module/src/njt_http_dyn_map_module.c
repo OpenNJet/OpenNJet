@@ -550,6 +550,7 @@ static njt_int_t njt_http_dyn_map_update_existed_var(njt_pool_t *pool, njt_pool_
     njt_http_variable_t *v;
     njt_http_core_main_conf_t *cmcf;
     njt_uint_t i;
+    njt_hash_key_t             *key;
     njt_http_map_conf_t old_cf;
     njt_http_map_conf_ctx_t            ctx;
     njt_http_map_ctx_t *map = var_hash_item->map;
@@ -600,20 +601,40 @@ static njt_int_t njt_http_dyn_map_update_existed_var(njt_pool_t *pool, njt_pool_
         goto error;
     }
 
-    if (ctx.no_cacheable) {
+    
         cmcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_core_module);
         if (cmcf != NULL) {
             v = cmcf->variables.elts;
             if (v != NULL) {
                 for (i = 0; i < cmcf->variables.nelts; i++) {
-                    if (var_hash_item->name.len == v[i].name.len && njt_strncmp(var_hash_item->name.data, v[i].name.data, v[i].name.len) == 0) {
-                        v[i].flags |= NJT_HTTP_VAR_NOCACHEABLE;
+                    if (var_hash_item->name.len == v[i].name.len && njt_strncasecmp(var_hash_item->name.data, v[i].name.data, v[i].name.len) == 0) {
+                        if (ctx.no_cacheable) {
+                            v[i].flags |= NJT_HTTP_VAR_NOCACHEABLE;
+                        } else {
+                            v[i].flags &= ~NJT_HTTP_VAR_NOCACHEABLE;
+                        }
                         break;
                     }
                 }
             }
+
+             key = cmcf->variables_keys->keys.elts;
+             for (i = 0; i < cmcf->variables_keys->keys.nelts; i++) {
+                 v = key[i].value;
+                 if(v == NULL){
+                    continue;
+                 }
+                if (var_hash_item->name.len == v->name.len && njt_strncasecmp(var_hash_item->name.data, v->name.data, v->name.len) == 0) {
+                    if (ctx.no_cacheable) {
+                        v->flags |= NJT_HTTP_VAR_NOCACHEABLE;
+                    } else {
+                        v->flags &= ~NJT_HTTP_VAR_NOCACHEABLE;
+                    }
+                    break;
+                }
+            }
         }
-    }
+    
 
     rc = njt_http_map_create_hash_from_ctx(mcf, map, &ctx, pool, temp_pool);
     if (rc != NJT_OK) {
