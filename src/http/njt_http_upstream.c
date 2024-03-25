@@ -1864,7 +1864,7 @@ njt_http_upstream_ssl_init_connection(njt_http_request_t *r,
 
         if (!c->write->timer_set) {
             // njt_add_timer(c->write, u->conf->connect_timeout); openresty patch
-            njt_add_timer(c->write, u->conf->connect_timeout); // openresty patch
+            njt_add_timer(c->write, u->connect_timeout); // openresty patch
         }
 
         c->ssl->handler = njt_http_upstream_ssl_handshake_handler;
@@ -2296,7 +2296,7 @@ njt_http_upstream_send_request(njt_http_request_t *r, njt_http_upstream_t *u,
     if (rc == NJT_AGAIN) {
         if (!c->write->ready || u->request_body_blocked) {
             // njt_add_timer(c->write, u->conf->send_timeout); openresty patch
-            njt_add_timer(c->write, u->conf->send_timeout); // openresty patch
+            njt_add_timer(c->write, u->send_timeout); // openresty patch
 
         } else if (c->write->timer_set) {
             njt_del_timer(c->write);
@@ -2363,7 +2363,7 @@ njt_http_upstream_send_request(njt_http_request_t *r, njt_http_upstream_t *u,
         }
 
         // njt_add_timer(c->read, u->conf->read_timeout); openresty patch
-        njt_add_timer(c->read, u->conf->read_timeout); // openresty patch
+        njt_add_timer(c->read, u->read_timeout); // openresty patch
 
         if (c->read->ready) {
             njt_http_upstream_process_header(r, u);
