@@ -479,7 +479,11 @@ njt_ssl_get_certificate_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
     X509            *x509;
     EVP_PKEY        *pkey;
     STACK_OF(X509)  *chain;
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    // size_t          pidx; for tongsuo8.4.0
+#else
     size_t          pidx;
+#endif
 #if (NJT_HAVE_NTLS)
     njt_uint_t       type;
 #endif
@@ -507,6 +511,8 @@ njt_ssl_get_certificate_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
 
 #endif
     pkey = X509_get0_pubkey(x509);
+
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     if (SSL_CTX_get_certificate_type(pkey, &pidx) == NULL) {
         njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0, "unknown certificate type");
         X509_free(x509);
@@ -521,6 +527,20 @@ njt_ssl_get_certificate_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
     }else if(pidx == 3){
         *cert_type = 2;       //ECC type
     }
+
+#else
+    // https://github.com/openssl/openssl/issues/11720
+    if (EVP_PKEY_is_a(pkey, "RSA")) {
+        *cert_type = 0;          //RSA type
+    } else if (EVP_PKEY_is_a(pkey, "EC")) {
+        *cert_type = 2;          //ECC type
+    } else {
+        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0, "unknown certificate type");
+        X509_free(x509);
+        sk_X509_pop_free(chain, X509_free);
+        return NJT_ERROR;
+    }
+#endif
 
     X509_free(x509);
     sk_X509_pop_free(chain, X509_free);
