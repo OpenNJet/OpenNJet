@@ -563,9 +563,9 @@ static njt_str_t *njt_http_dyn_range_dump_conf(njt_cycle_t *cycle,njt_pool_t *po
         }
 
         if(njt_strncmp(rule_item->family.data, "ipv4", 4) == 0){
-            set_dyn_range_ranges_item_family(range_item, DYN_RANGE_API_FAMILY_IPV_4);
+            set_dyn_range_ranges_item_family(range_item, DYN_RANGE_RANGES_ITEM_FAMILY_IPV_4);
         }else{
-            set_dyn_range_ranges_item_family(range_item, DYN_RANGE_API_FAMILY_IPV_6);
+            set_dyn_range_ranges_item_family(range_item, DYN_RANGE_RANGES_ITEM_FAMILY_IPV_6);
         }        
         
         //set src_ports
