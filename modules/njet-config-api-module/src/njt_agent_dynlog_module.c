@@ -136,17 +136,17 @@ static njt_int_t njt_dynlog_update_locs_log(dynlog_servers_item_locations_t *loc
                 } else {
                     njt_rpc_result_add_success_count(rpc_result);
                 }
-            }
-
-            if(daal->is_locations_set && daal->locations != NULL && daal->locations->nelts > 0){
-                if(rpc_result){
-                    conf_path = rpc_result->conf_path;
+           
+                if(daal->is_locations_set && daal->locations != NULL && daal->locations->nelts > 0){
+                    if(rpc_result){
+                        conf_path = rpc_result->conf_path;
+                    }
+                    njt_dynlog_update_locs_log(daal->locations, clcf->old_locations, ctx, rpc_result);
+                    if(rpc_result){
+                        rpc_result->conf_path = conf_path;
+                    }
                 }
-                njt_dynlog_update_locs_log(daal->locations, clcf->old_locations, ctx, rpc_result);
-                if(rpc_result){
-                    rpc_result->conf_path = conf_path;
-                }
-            }
+             }
         }
 
         if (!loc_found) {
