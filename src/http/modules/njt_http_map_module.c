@@ -74,6 +74,27 @@ njt_module_t  njt_http_map_module = {
     NULL,                                 /* exit master */
     NJT_MODULE_V1_PADDING
 };
+ njt_int_t njt_http_dyn_show_map_hash()
+{
+    return NJT_OK;
+njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "========= begin ===========" );
+#if NJT_HTTP_DYN_MAP_MODULE
+    njt_uint_t i;
+    njt_http_map_conf_t *mcf;
+    mcf = njt_http_cycle_get_module_main_conf(njt_cycle, njt_http_map_module);
+    if (mcf == NULL) {
+        return NJT_OK;
+    }
+    njt_http_map_var_hash_t *item = mcf->var_hash_items->elts;
+    for (i = 0;i < mcf->var_hash_items->nelts;i++) {
+        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_show_map_hash  item=%p, from=%V,to=%V,data=%p!",&item[i],&item[i].key_from,&item[i].name,item[i].name.data);
+    }
+    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "========= end ===========" );
+    return NJT_OK;
+#else
+    return NJT_OK;
+#endif
+}
 
 static njt_int_t njt_http_map_init_worker(njt_cycle_t *cycle)
 {
@@ -288,6 +309,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     old_pool = cf->pool;
     new_map_pool = cf->pool;
 #if (NJT_HTTP_DYN_MAP_MODULE)
+    /*
     if(cf->dynamic == 1) {
         new_map_pool = njt_create_pool(NJT_DEFAULT_POOL_SIZE, cf->log);
         if (new_map_pool == NULL) {
@@ -295,7 +317,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
         }
         njt_sub_pool(njt_cycle->pool, new_map_pool);
         cf->pool = new_map_pool;
-    } 
+    } */
 #endif
     map = njt_pcalloc(cf->pool, sizeof(njt_http_map_ctx_t));
     if (map == NULL) {
@@ -429,6 +451,7 @@ njt_http_map_block(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     var_hash_item->dynamic = 0;
     var_hash_item->key_from = from;
     var_hash_item->no_cacheable = ctx.no_cacheable;
+    //njt_conf_log_error(NJT_LOG_INFO, cf, 0, "malloc var_hash_items size=%d,from=%V,to=%V ",mcf->var_hash_items->nelts,&from,&name);
 
 #endif
 
@@ -686,11 +709,17 @@ void njt_http_map_del_by_name(njt_str_t name)
     for (i = 0;i < mcf->var_hash_items->nelts;i++) {
         if(item[i].name.len == name.len && njt_memcmp(item[i].name.data,name.data,name.len) == 0) {
             njt_lvlhsh_map_remove(&mcf->var_hash, &item[i].name);
+	    if (item[i].dynamic && item[i].ori_conf->pool) {
+                   //njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_check_del_map ori_conf  name=%V Succ!",&name);
+		    njt_destroy_pool(item[i].ori_conf->pool);
+	    }
+
             if(item[i].map->pool != NULL) {
                 njt_destroy_pool(item[i].map->pool);
-                 njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_check_del_map Succ!");
+                 //njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_check_del_map map name=%V Succ!",&name);
             }
             njt_array_delete_idx(mcf->var_hash_items,i);
+            //njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_check_del_map size=%d!",mcf->var_hash_items->nelts);
             
             break;
         }
