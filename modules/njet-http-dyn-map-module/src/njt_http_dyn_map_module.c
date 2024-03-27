@@ -13,7 +13,7 @@
 extern njt_module_t njt_http_map_module;
 extern njt_int_t
 njt_http_map_create_hash_from_ctx(njt_http_map_conf_t *mcf, njt_http_map_ctx_t *map, njt_http_map_conf_ctx_t *p_ctx, njt_pool_t *pool, njt_pool_t *temp_pool);
-
+extern njt_int_t njt_http_dyn_show_map_hash();
 
 
 static njt_int_t njt_http_dyn_update_map_hash()
@@ -28,10 +28,11 @@ static njt_int_t njt_http_dyn_update_map_hash()
     njt_http_map_var_hash_t *item = mcf->var_hash_items->elts;
     njt_http_map_var_hash_t *old_var_hash_item;
 
-    njt_memzero(&mcf->var_hash,sizeof(njt_lvlhash_map_t)); //njt_lvlhash_map_t
+    //njt_memzero(&mcf->var_hash,sizeof(njt_lvlhash_map_t)); //njt_lvlhash_map_t
     for (i = 0;i < mcf->var_hash_items->nelts;i++) {
         njt_lvlhsh_map_put(&mcf->var_hash, &item[i].name, (intptr_t)&item[i], (intptr_t *)&old_var_hash_item);
     }
+    njt_http_dyn_show_map_hash();
     return NJT_OK;
 #else 
     return NJT_OK;
@@ -39,9 +40,6 @@ static njt_int_t njt_http_dyn_update_map_hash()
 }
 
 static njt_int_t njt_http_dyn_check_del_map(njt_pool_t  *pool,njt_str_t *name,njt_str_t *msg) {
-
-
-
     njt_http_variable_t        *v;
     njt_http_core_main_conf_t  *cmcf;
     njt_conf_t  conf;
@@ -64,6 +62,7 @@ static njt_int_t njt_http_dyn_check_del_map(njt_pool_t  *pool,njt_str_t *name,nj
 
     low = njt_pnalloc(pool,keyTo->len);
 	if (low == NULL) {
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_http_dyn_check_del_map  njt_pnalloc error ");
 		return NJT_ERROR;
 	}
 	key = njt_hash_strlow(low,keyTo->data, keyTo->len);
@@ -96,7 +95,7 @@ static njt_int_t njt_http_dyn_check_del_map(njt_pool_t  *pool,njt_str_t *name,nj
         }
         njt_http_map_del_by_name(*keyTo);
         njt_http_dyn_update_map_hash();
-    }
+    } 
    
     return rc;
 }
@@ -648,6 +647,7 @@ static njt_int_t njt_http_dyn_map_update_existed_var(njt_pool_t *pool, njt_pool_
         njt_destroy_pool(var_hash_item->ori_conf->pool);
     }
     var_hash_item->dynamic = 1;
+    //njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "update name=%V",&var_hash_item->name);
     var_hash_item->ori_conf = ctx.ori_conf;
     var_hash_item->no_cacheable = ctx.no_cacheable;
     return NJT_OK;
@@ -840,7 +840,8 @@ static njt_int_t njt_dyn_map_update_values(njt_pool_t *temp_pool, httpmap_t *api
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
         }
-        if (oper == 2 && have == 1){
+	njt_http_dyn_show_map_hash();
+        if (oper_type == 2 || rc != NJT_OK){
                 //del
                 njt_destroy_pool(pool);
         } else {
@@ -865,7 +866,7 @@ static int njt_http_dyn_map_put_handler_internal(njt_str_t *key, njt_str_t *valu
         return NJT_OK;
     }
 
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_map_put_handler_internal value=%V",value);
+    //njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "njt_http_dyn_map_put_handler_internal value=%V",value);
     njt_memzero(&json_manager, sizeof(njt_json_manager));
     rpc_result = njt_rpc_result_create();
     if (!rpc_result) {
