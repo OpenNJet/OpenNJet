@@ -215,12 +215,14 @@ typedef struct {
 njt_int_t njt_http_log_dyn_set_log(njt_pool_t *pool, njt_http_dyn_access_api_loc_t *data,njt_http_conf_ctx_t* ctx,njt_str_t * msg,njt_uint_t msg_capacity);
 
 njt_int_t njt_http_log_dyn_set_format(njt_http_dyn_access_log_format_t *data);
+void njt_http_map_del_by_name(njt_str_t name);
 
 typedef struct {
     njt_http_map_t              map;
     njt_http_complex_value_t    value;
     njt_http_variable_value_t *default_value;
     njt_uint_t                  hostnames;      /* unsigned  hostnames:1 */
+    njt_pool_t                  *pool;
 } njt_http_map_ctx_t;
 
 typedef struct {
@@ -239,10 +241,12 @@ typedef struct {
 } njt_http_map_ori_conf_item_t;
 
 typedef struct {
+    njt_str_t   key_from;
     njt_str_t   name;
     njt_array_t *ori_conf;
     njt_http_map_ctx_t *map;
-    njt_int_t    dynamic;
+    unsigned     no_cacheable : 1;
+    unsigned     dynamic      : 1;
 } njt_http_map_var_hash_t;
 #endif
 
