@@ -516,7 +516,6 @@ njt_http_add_variable(njt_conf_t *cf, njt_str_t *name, njt_uint_t flags)
     if (rc == NJT_ERROR) {
         return NULL;
     }
-	
     if (rc == NJT_BUSY) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "conflicting variable name \"%V\"", name);
@@ -937,7 +936,7 @@ njt_http_variable_headers_internal(njt_http_request_t *r,
     njt_http_variable_value_t *v, uintptr_t data, u_char sep)
 {
     size_t            len;
-    u_char           *p;
+    u_char           *p, *end;
     njt_table_elt_t  *h, *th;
 
     h = *(njt_table_elt_t **) ((char *) r + data);
@@ -979,6 +978,8 @@ njt_http_variable_headers_internal(njt_http_request_t *r,
     v->len = len;
     v->data = p;
 
+    end = p + len;
+
     for (th = h; th; th = th->next) {
 
         if (th->hash == 0) {
@@ -987,7 +988,7 @@ njt_http_variable_headers_internal(njt_http_request_t *r,
 
         p = njt_copy(p, th->value.data, th->value.len);
 
-        if (th->next == NULL) {
+        if (p == end) {
             break;
         }
 
@@ -2903,6 +2904,9 @@ njt_http_variables_init_vars_proc(njt_conf_t *cf, njt_uint_t dyn)
     key = cmcf->variables_keys->keys.elts;
 
     for (i = 0; i < cmcf->variables.nelts; i++) {
+        if (v[i].name.len == 0 || v[i].name.data == NULL) {
+            continue;
+        }
 
         for (n = 0; n < cmcf->variables_keys->keys.nelts; n++) {
 

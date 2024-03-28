@@ -23,9 +23,9 @@ __DATA__
     lua_socket_connect_timeout 1ms;
     lua_socket_log_errors off;
     content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.2", 12345)
-            ngx.say(err)
+            njt.say(err)
     }
 
 --- config
@@ -42,9 +42,9 @@ timeout
     lua_socket_connect_timeout 1ms;
     lua_socket_log_errors on;
     content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.2", 12345)
-            ngx.say(err)
+            njt.say(err)
     }
 
 --- config
@@ -61,10 +61,10 @@ stream lua tcp socket connect timed out, when connecting to 127.0.0.2:12345
     lua_socket_log_errors on;
     lua_socket_read_timeout 1ms;
     content_by_lua_block {
-            local sock = ngx.socket.udp()
+            local sock = njt.socket.udp()
             local ok, err = sock:setpeername("127.0.0.2", 12345)
             ok, err = sock:receive()
-            ngx.say(err)
+            njt.say(err)
     }
 
 --- config
@@ -81,10 +81,10 @@ lua udp socket read timed out
     lua_socket_log_errors off;
     lua_socket_read_timeout 1ms;
     content_by_lua_block {
-            local sock = ngx.socket.udp()
+            local sock = njt.socket.udp()
             local ok, err = sock:setpeername("127.0.0.2", 12345)
             ok, err = sock:receive()
-            ngx.say(err)
+            njt.say(err)
     }
 
 --- config

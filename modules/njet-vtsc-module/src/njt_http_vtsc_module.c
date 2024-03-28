@@ -1311,7 +1311,7 @@ static njt_int_t njt_dynvts_update_locs(njt_array_t *locs, njt_queue_t *q, njt_r
         for (; tq!= njt_queue_sentinel(q); tq = njt_queue_next(tq)) {
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
-            if (name->len == clcf->full_name.len && njt_strncmp(name->data, clcf->full_name.data, name->len) == 0) {
+            if (clcf != NULL && njt_http_location_full_name_cmp(clcf->full_name, *name) == 0) {
                 if(rpc_result){
                     njt_rpc_result_set_conf_path(rpc_result, &parent_conf_path);
                     end = njt_snprintf(data_buf,sizeof(data_buf) - 1, ".locations[%V]", &clcf->full_name);
@@ -1326,10 +1326,10 @@ static njt_int_t njt_dynvts_update_locs(njt_array_t *locs, njt_queue_t *q, njt_r
                     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "change location %V vhost_traffic_status to %i", &dlil->location, dlil->vhost_traffic_status);
                 }
                 njt_rpc_result_add_success_count(rpc_result);
-            }
-
-            if (dlil->is_locations_set && dlil->locations && dlil->locations->nelts > 0) {
-                njt_dynvts_update_locs(dlil->locations, clcf->old_locations, rpc_result);
+          
+                if (dlil->is_locations_set && dlil->locations && dlil->locations->nelts > 0) {
+                    njt_dynvts_update_locs(dlil->locations, clcf->old_locations, rpc_result);
+                }
             }
         }
 
@@ -1613,11 +1613,11 @@ static njt_int_t njt_dynvts_update(njt_pool_t *pool, dyn_vts_t *api_data, njt_rp
         for (i = 0; i < api_data->servers->nelts; ++i) {
             dsi = get_dyn_vts_servers_item(api_data->servers, i);
             if (dsi == NULL || !dsi->is_listens_set || !dsi->is_serverNames_set 
-                    || !dsi->is_locations_set || dsi->listens->nelts < 1 
-                    || dsi->serverNames->nelts < 1 || dsi->locations->nelts < 1) {
+                    || dsi->listens->nelts < 1 
+                    || dsi->serverNames->nelts < 1) {
                 // listens or server_names is empty
                 end = njt_snprintf(data_buf, sizeof(data_buf) - 1, 
-                    " server parameters error, listens or serverNames or locations is empty,at position %d", i);
+                    " server parameters error, listens or serverNames is empty,at position %d", i);
                 rpc_data_str.len = end - data_buf;
                 njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
                 continue;

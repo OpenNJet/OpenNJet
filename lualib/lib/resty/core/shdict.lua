@@ -72,9 +72,39 @@ size_t njt_http_lua_ffi_shdict_capacity(void *zone);
 void *njt_http_lua_ffi_shdict_udata_to_zone(void *zone_udata);
     ]]
 
-    njt_lua_ffi_shdict_get = C.njt_http_lua_ffi_shdict_get
-    njt_lua_ffi_shdict_incr = C.njt_http_lua_ffi_shdict_incr
-    njt_lua_ffi_shdict_store = C.njt_http_lua_ffi_shdict_store
+    njt_lua_ffi_shdict_get = function(zone, key, key_len, value_type,
+                                      str_value_buf, value_len,
+                                      num_value, user_flags,
+                                      get_stale, is_stale, errmsg)
+
+        return C.njt_http_lua_ffi_shdict_get(zone, key, key_len, value_type,
+                                             str_value_buf, value_len,
+                                             num_value, user_flags,
+                                             get_stale, is_stale, errmsg)
+    end
+
+    njt_lua_ffi_shdict_incr = function(zone, key,
+                                       key_len, value, err, has_init,
+                                       init, init_ttl, forcible)
+
+        return C.njt_http_lua_ffi_shdict_incr(zone, key,
+                                              key_len, value, err, has_init,
+                                              init, init_ttl, forcible)
+    end
+
+    njt_lua_ffi_shdict_store = function(zone, op,
+                                        key, key_len, value_type,
+                                        str_value_buf, str_value_len,
+                                        num_value, exptime, user_flags,
+                                        errmsg, forcible)
+
+        return C.njt_http_lua_ffi_shdict_store(zone, op,
+                                               key, key_len, value_type,
+                                               str_value_buf, str_value_len,
+                                               num_value, exptime, user_flags,
+                                               errmsg, forcible)
+    end
+
     njt_lua_ffi_shdict_flush_all = C.njt_http_lua_ffi_shdict_flush_all
     njt_lua_ffi_shdict_get_ttl = C.njt_http_lua_ffi_shdict_get_ttl
     njt_lua_ffi_shdict_set_expire = C.njt_http_lua_ffi_shdict_set_expire
@@ -126,9 +156,39 @@ size_t njt_stream_lua_ffi_shdict_capacity(void *zone);
 void *njt_stream_lua_ffi_shdict_udata_to_zone(void *zone_udata);
     ]]
 
-    njt_lua_ffi_shdict_get = C.njt_stream_lua_ffi_shdict_get
-    njt_lua_ffi_shdict_incr = C.njt_stream_lua_ffi_shdict_incr
-    njt_lua_ffi_shdict_store = C.njt_stream_lua_ffi_shdict_store
+    njt_lua_ffi_shdict_get = function(zone, key, key_len, value_type,
+                                      str_value_buf, value_len,
+                                      num_value, user_flags,
+                                      get_stale, is_stale, errmsg)
+
+        return C.njt_stream_lua_ffi_shdict_get(zone, key, key_len, value_type,
+                                               str_value_buf, value_len,
+                                               num_value, user_flags,
+                                               get_stale, is_stale, errmsg)
+    end
+
+    njt_lua_ffi_shdict_incr = function(zone, key,
+                                       key_len, value, err, has_init,
+                                       init, init_ttl, forcible)
+
+        return C.njt_stream_lua_ffi_shdict_incr(zone, key,
+                                                key_len, value, err, has_init,
+                                                init, init_ttl, forcible)
+    end
+
+    njt_lua_ffi_shdict_store = function(zone, op,
+                                        key, key_len, value_type,
+                                        str_value_buf, str_value_len,
+                                        num_value, exptime, user_flags,
+                                        errmsg, forcible)
+
+        return C.njt_stream_lua_ffi_shdict_store(zone, op,
+                                                 key, key_len, value_type,
+                                                 str_value_buf, str_value_len,
+                                                 num_value, exptime, user_flags,
+                                                 errmsg, forcible)
+    end
+
     njt_lua_ffi_shdict_flush_all = C.njt_stream_lua_ffi_shdict_flush_all
     njt_lua_ffi_shdict_get_ttl = C.njt_stream_lua_ffi_shdict_get_ttl
     njt_lua_ffi_shdict_set_expire = C.njt_stream_lua_ffi_shdict_set_expire
@@ -152,6 +212,240 @@ size_t njt_stream_lua_ffi_shdict_free_space(void *zone);
 else
     error("unknown subsystem: " .. subsystem)
 end
+
+
+local MACOS = jit and jit.os == "OSX"
+
+if MACOS and subsystem == 'http' then
+    ffi.cdef[[
+typedef struct {
+    void                  *zone;
+    const unsigned char   *key;
+    size_t                 key_len;
+    int                   *value_type;
+    unsigned char        **str_value_buf;
+    size_t                *str_value_len;
+    double                *num_value;
+    int                   *user_flags;
+    int                    get_stale;
+    int                   *is_stale;
+    char                 **errmsg;
+} njt_http_lua_shdict_get_params_t;
+
+typedef struct {
+    void                  *zone;
+    int                    op;
+    const unsigned char   *key;
+    size_t                 key_len;
+    int                    value_type;
+    const unsigned char   *str_value_buf;
+    size_t                 str_value_len;
+    double                 num_value;
+    long                   exptime;
+    int                    user_flags;
+    char                 **errmsg;
+    int                   *forcible;
+} njt_http_lua_shdict_store_params_t;
+
+typedef struct {
+    void                  *zone;
+    const unsigned char   *key;
+    size_t                 key_len;
+    double                *num_value;
+    char                 **errmsg;
+    int                    has_init;
+    double                 init;
+    long                   init_ttl;
+    int                   *forcible;
+} njt_http_lua_shdict_incr_params_t;
+
+int njt_http_lua_ffi_shdict_get_macos(
+        njt_http_lua_shdict_get_params_t *p);
+int njt_http_lua_ffi_shdict_store_macos(
+        njt_http_lua_shdict_store_params_t *p);
+int njt_http_lua_ffi_shdict_incr_macos(
+        njt_http_lua_shdict_incr_params_t *p);
+    ]]
+
+    local get_params = ffi_new("njt_http_lua_shdict_get_params_t")
+    local incr_params = ffi_new("njt_http_lua_shdict_incr_params_t")
+    local store_params = ffi_new("njt_http_lua_shdict_store_params_t")
+
+    njt_lua_ffi_shdict_get = function(zone, key, key_len, value_type,
+                                      str_value_buf, value_len,
+                                      num_value, user_flags,
+                                      get_stale, is_stale, errmsg)
+
+        get_params.zone = zone
+        get_params.key = key
+        get_params.key_len = key_len
+        get_params.value_type = value_type
+        get_params.str_value_buf = str_value_buf
+        get_params.str_value_len = value_len
+        get_params.num_value = num_value
+        get_params.user_flags = user_flags
+        get_params.get_stale = get_stale
+        get_params.is_stale = is_stale
+        get_params.errmsg = errmsg
+
+        return C.njt_http_lua_ffi_shdict_get_macos(get_params)
+    end
+
+    njt_lua_ffi_shdict_incr = function(zone, key,
+                                       key_len, value, err, has_init,
+                                       init, init_ttl, forcible)
+
+        incr_params.zone = zone
+        incr_params.key = key
+        incr_params.key_len = key_len
+        incr_params.num_value = value
+        incr_params.errmsg = err
+        incr_params.has_init = has_init
+        incr_params.init = init
+        incr_params.init_ttl = init_ttl
+        incr_params.forcible = forcible
+
+        return C.njt_http_lua_ffi_shdict_incr_macos(incr_params)
+    end
+
+    njt_lua_ffi_shdict_store = function(zone, op,
+                                        key, key_len, value_type,
+                                        str_value_buf, str_value_len,
+                                        num_value, exptime, user_flags,
+                                        errmsg, forcible)
+
+        store_params.zone = zone
+        store_params.op = op
+        store_params.key = key
+        store_params.key_len = key_len
+        store_params.value_type = value_type
+        store_params.str_value_buf = str_value_buf
+        store_params.str_value_len = str_value_len
+        store_params.num_value = num_value
+        store_params.exptime = exptime
+        store_params.user_flags = user_flags
+        store_params.errmsg = errmsg
+        store_params.forcible = forcible
+
+        return C.njt_http_lua_ffi_shdict_store_macos(store_params)
+    end
+end
+
+if MACOS and subsystem == 'stream' then
+    ffi.cdef[[
+typedef struct {
+    void                  *zone;
+    const unsigned char   *key;
+    size_t                 key_len;
+    int                   *value_type;
+    unsigned char        **str_value_buf;
+    size_t                *str_value_len;
+    double                *num_value;
+    int                   *user_flags;
+    int                    get_stale;
+    int                   *is_stale;
+    char                 **errmsg;
+} njt_stream_lua_shdict_get_params_t;
+
+typedef struct {
+    void                  *zone;
+    int                    op;
+    const unsigned char   *key;
+    size_t                 key_len;
+    int                    value_type;
+    const unsigned char   *str_value_buf;
+    size_t                 str_value_len;
+    double                 num_value;
+    long                   exptime;
+    int                    user_flags;
+    char                 **errmsg;
+    int                   *forcible;
+} njt_stream_lua_shdict_store_params_t;
+
+typedef struct {
+    void                  *zone;
+    const unsigned char   *key;
+    size_t                 key_len;
+    double                *num_value;
+    char                 **errmsg;
+    int                    has_init;
+    double                 init;
+    long                   init_ttl;
+    int                   *forcible;
+} njt_stream_lua_shdict_incr_params_t;
+
+int njt_stream_lua_ffi_shdict_get_macos(
+        njt_stream_lua_shdict_get_params_t *p);
+int njt_stream_lua_ffi_shdict_store_macos(
+        njt_stream_lua_shdict_store_params_t *p);
+int njt_stream_lua_ffi_shdict_incr_macos(
+        njt_stream_lua_shdict_incr_params_t *p);
+    ]]
+
+    local get_params = ffi_new("njt_stream_lua_shdict_get_params_t")
+    local store_params = ffi_new("njt_stream_lua_shdict_store_params_t")
+    local incr_params = ffi_new("njt_stream_lua_shdict_incr_params_t")
+
+    njt_lua_ffi_shdict_get = function(zone, key, key_len, value_type,
+                                      str_value_buf, value_len,
+                                      num_value, user_flags,
+                                      get_stale, is_stale, errmsg)
+
+        get_params.zone = zone
+        get_params.key = key
+        get_params.key_len = key_len
+        get_params.value_type = value_type
+        get_params.str_value_buf = str_value_buf
+        get_params.str_value_len = value_len
+        get_params.num_value = num_value
+        get_params.user_flags = user_flags
+        get_params.get_stale = get_stale
+        get_params.is_stale = is_stale
+        get_params.errmsg = errmsg
+
+        return C.njt_stream_lua_ffi_shdict_get_macos(get_params)
+    end
+
+    njt_lua_ffi_shdict_incr = function(zone, key,
+                                       key_len, value, err, has_init,
+                                       init, init_ttl, forcible)
+
+        incr_params.zone = zone
+        incr_params.key = key
+        incr_params.key_len = key_len
+        incr_params.num_value = value
+        incr_params.errmsg = err
+        incr_params.has_init = has_init
+        incr_params.init = init
+        incr_params.init_ttl = init_ttl
+        incr_params.forcible = forcible
+
+        return C.njt_stream_lua_ffi_shdict_incr_macos(incr_params)
+    end
+
+    njt_lua_ffi_shdict_store = function(zone, op,
+                                        key, key_len, value_type,
+                                        str_value_buf, str_value_len,
+                                        num_value, exptime, user_flags,
+                                        errmsg, forcible)
+
+        store_params.zone = zone
+        store_params.op = op
+        store_params.key = key
+        store_params.key_len = key_len
+        store_params.value_type = value_type
+        store_params.str_value_buf = str_value_buf
+        store_params.str_value_len = str_value_len
+        store_params.num_value = num_value
+        store_params.exptime = exptime
+        store_params.user_flags = user_flags
+        store_params.errmsg = errmsg
+        store_params.forcible = forcible
+
+        return C.njt_stream_lua_ffi_shdict_store_macos(store_params)
+    end
+end
+
 
 if not pcall(function () return C.free end) then
     ffi.cdef[[

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Xiaozhe Wang (chaoslawful)
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -34,6 +34,7 @@
 #define NJT_HTTP_LUA_ESCAPE_HEADER_VALUE  8
 
 #define NJT_HTTP_LUA_CONTEXT_YIELDABLE (NJT_HTTP_LUA_CONTEXT_REWRITE         \
+                                | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE        \
                                 | NJT_HTTP_LUA_CONTEXT_ACCESS                \
                                 | NJT_HTTP_LUA_CONTEXT_CONTENT               \
                                 | NJT_HTTP_LUA_CONTEXT_TIMER                 \
@@ -49,6 +50,7 @@
 #define njt_http_lua_context_name(c)                                         \
     ((c) == NJT_HTTP_LUA_CONTEXT_SET ? "set_by_lua*"                         \
      : (c) == NJT_HTTP_LUA_CONTEXT_REWRITE ? "rewrite_by_lua*"               \
+     : (c) == NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE ? "server_rewrite_by_lua*" \
      : (c) == NJT_HTTP_LUA_CONTEXT_ACCESS ? "access_by_lua*"                 \
      : (c) == NJT_HTTP_LUA_CONTEXT_CONTENT ? "content_by_lua*"               \
      : (c) == NJT_HTTP_LUA_CONTEXT_LOG ? "log_by_lua*"                       \
@@ -260,6 +262,8 @@ void njt_http_lua_cleanup_free(njt_http_request_t *r,
 #if (NJT_HTTP_LUA_HAVE_SA_RESTART)
 void njt_http_lua_set_sa_restart(njt_log_t *log);
 #endif
+
+njt_addr_t *njt_http_lua_parse_addr(lua_State *L, u_char *text, size_t len);
 
 size_t njt_http_lua_escape_log(u_char *dst, u_char *src, size_t size);
 
@@ -565,7 +569,7 @@ njt_http_lua_free_thread(njt_http_request_t *r, lua_State *L, int co_ref,
 {
 #ifdef HAVE_LUA_RESETTHREAD
     njt_queue_t                 *q;
-    njt_http_lua_thread_ref_t   *tref ;
+    njt_http_lua_thread_ref_t   *tref;
     njt_http_lua_ctx_t          *ctx;
 
     njt_log_debug2(NJT_LOG_DEBUG_HTTP,
@@ -683,6 +687,43 @@ njt_http_lua_new_cached_thread(lua_State *L, lua_State **out_co,
     *out_co = co;
 
     return co_ref;
+}
+
+
+static njt_inline void *
+njt_http_lua_hash_find_lc(njt_hash_t *hash, njt_uint_t key, u_char *name,
+    size_t len)
+{
+    njt_uint_t       i;
+    njt_hash_elt_t  *elt;
+
+    elt = hash->buckets[key % hash->size];
+
+    if (elt == NULL) {
+        return NULL;
+    }
+
+    while (elt->value) {
+        if (len != (size_t) elt->len) {
+            goto next;
+        }
+
+        for (i = 0; i < len; i++) {
+            if (njt_tolower(name[i]) != elt->name[i]) {
+                goto next;
+            }
+        }
+
+        return elt->value;
+
+    next:
+
+        elt = (njt_hash_elt_t *) njt_align_ptr(&elt->name[0] + elt->len,
+                                               sizeof(void *));
+        continue;
+    }
+
+    return NULL;
 }
 
 

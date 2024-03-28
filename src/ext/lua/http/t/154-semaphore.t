@@ -37,28 +37,28 @@ __DATA__
         content_by_lua_block {
             local function test(pre)
 
-                local semaphore = require "ngx.semaphore"
+                local semaphore = require "njt.semaphore"
                 local sem = semaphore.new()
 
                 local function sem_wait()
 
                     local ok, err = sem:wait(10)
                     if not ok then
-                        ngx.log(ngx.ERR, "err: ", err)
+                        njt.log(njt.ERR, "err: ", err)
                     else
-                        ngx.log(ngx.ERR, "wait success")
+                        njt.log(njt.ERR, "wait success")
                     end
                 end
 
-                while not ngx.worker.exiting() do
-                    local co = ngx.thread.spawn(sem_wait)
-                    ngx.thread.wait(co)
+                while not njt.worker.exiting() do
+                    local co = njt.thread.spawn(sem_wait)
+                    njt.thread.wait(co)
                 end
             end
 
-            local ok, err = ngx.timer.at(0, test)
-            ngx.log(ngx.ERR, "hello, world")
-            ngx.say("time: ", ok)
+            local ok, err = njt.timer.at(0, test)
+            njt.log(njt.ERR, "hello, world")
+            njt.say("time: ", ok)
         }
     }
 --- request
@@ -83,28 +83,28 @@ FIXME: this test case leaks memory.
         content_by_lua_block {
             local function test(pre)
 
-                local semaphore = require "ngx.semaphore"
+                local semaphore = require "njt.semaphore"
                 local sem = semaphore.new()
 
                 local function sem_wait()
 
                     local ok, err = sem:wait(10)
                     if not ok then
-                        ngx.log(ngx.ERR, "err: ", err)
+                        njt.log(njt.ERR, "err: ", err)
                     else
-                        ngx.log(ngx.ERR, "wait success")
+                        njt.log(njt.ERR, "wait success")
                     end
                 end
 
-                while not ngx.worker.exiting() do
-                    local co = ngx.thread.spawn(sem_wait)
-                    ngx.thread.wait(co)
+                while not njt.worker.exiting() do
+                    local co = njt.thread.spawn(sem_wait)
+                    njt.thread.wait(co)
                 end
             end
 
-            local ok, err = ngx.timer.at(0, test)
-            ngx.log(ngx.ERR, "hello, world")
-            ngx.say("time: ", ok)
+            local ok, err = njt.timer.at(0, test)
+            njt.log(njt.ERR, "hello, world")
+            njt.say("time: ", ok)
         }
     }
 --- request
@@ -122,38 +122,38 @@ semaphore gc wait queue is not empty
 
 
 === TEST 3: exit before post_handler was called
-If gc is called before the ngx_http_lua_sema_handler and free the sema memory
-ngx_http_lua_sema_handler would use the freed memory.
+If gc is called before the njt_http_lua_sema_handler and free the sema memory
+njt_http_lua_sema_handler would use the freed memory.
 --- config
     location /up {
         content_by_lua_block {
-            local semaphore = require "ngx.semaphore"
+            local semaphore = require "njt.semaphore"
             local sem = semaphore.new()
 
             local function sem_wait()
-                ngx.log(ngx.ERR, "ngx.sem wait start")
+                njt.log(njt.ERR, "njt.sem wait start")
                 local ok, err = sem:wait(10)
                 if not ok then
-                    ngx.log(ngx.ERR, "ngx.sem wait err: ", err)
+                    njt.log(njt.ERR, "njt.sem wait err: ", err)
                 else
-                    ngx.log(ngx.ERR, "ngx.sem wait success")
+                    njt.log(njt.ERR, "njt.sem wait success")
                 end
             end
-            local co = ngx.thread.spawn(sem_wait)
-            ngx.log(ngx.ERR, "ngx.sem post start")
+            local co = njt.thread.spawn(sem_wait)
+            njt.log(njt.ERR, "njt.sem post start")
             sem:post()
-            ngx.log(ngx.ERR, "ngx.sem post end")
-            ngx.say("hello")
-            ngx.exit(200)
-            ngx.say("not reach here")
+            njt.log(njt.ERR, "njt.sem post end")
+            njt.say("hello")
+            njt.exit(200)
+            njt.say("not reach here")
         }
     }
 
     location /t {
         content_by_lua_block {
-            local res = ngx.location.capture("/up")
+            local res = njt.location.capture("/up")
             collectgarbage()
-            ngx.print(res.body)
+            njt.print(res.body)
         }
     }
 
@@ -161,10 +161,10 @@ ngx_http_lua_sema_handler would use the freed memory.
 GET /t
 --- response_body
 hello
---- grep_error_log eval: qr/(ngx.sem .*?,|http close request|semaphore handler: wait queue: empty, resource count: 1|in lua gc, semaphore)/
+--- grep_error_log eval: qr/(njt.sem .*?,|http close request|semaphore handler: wait queue: empty, resource count: 1|in lua gc, semaphore)/
 --- grep_error_log_out
-ngx.sem wait start,
-ngx.sem post start,
-ngx.sem post end,
+njt.sem wait start,
+njt.sem post start,
+njt.sem post end,
 in lua gc, semaphore
 http close request

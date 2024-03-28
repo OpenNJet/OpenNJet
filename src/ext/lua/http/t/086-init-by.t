@@ -23,7 +23,7 @@ __DATA__
     init_by_lua 'foo = "hello, FOO"';
 --- config
     location /lua {
-        content_by_lua 'ngx.say(foo)';
+        content_by_lua 'njt.say(foo)';
     }
 --- request
 GET /lua
@@ -39,7 +39,7 @@ hello, FOO
     init_by_lua_file html/init.lua;
 --- config
     location /lua {
-        content_by_lua 'ngx.say(foo)';
+        content_by_lua 'njt.say(foo)';
     }
 --- user_files
 >>> init.lua
@@ -68,7 +68,7 @@ hello, FOO
 module(..., package.seeall)
 
 function go()
-    ngx.say("hello, blah")
+    njt.say("hello, blah")
 end
 --- request
 GET /lua
@@ -83,15 +83,15 @@ hello, blah
 --- http_config
     lua_shared_dict dogs 1m;
     init_by_lua '
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("Jim", 6)
         dogs:get("Jim")
     ';
 --- config
     location /lua {
         content_by_lua '
-            local dogs = ngx.shared.dogs
-            ngx.say("Jim: ", dogs:get("Jim"))
+            local dogs = njt.shared.dogs
+            njt.say("Jim: ", dogs:get("Jim"))
         ';
     }
 --- request
@@ -108,18 +108,18 @@ Jim: 6
     lua_shared_dict dogs 1m;
     lua_shared_dict cats 1m;
     init_by_lua '
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         dogs:set("Jim", 6)
         dogs:get("Jim")
-        local cats = ngx.shared.cats
+        local cats = njt.shared.cats
         cats:set("Tom", 2)
         dogs:get("Tom")
     ';
 --- config
     location /lua {
         content_by_lua '
-            local dogs = ngx.shared.dogs
-            ngx.say("Jim: ", dogs:get("Jim"))
+            local dogs = njt.shared.dogs
+            njt.say("Jim: ", dogs:get("Jim"))
         ';
     }
 --- request
@@ -153,12 +153,12 @@ log from init_by_lua
 
 
 
-=== TEST 7: ngx.log
+=== TEST 7: njt.log
 --- http_config
     lua_shared_dict dogs 1m;
     lua_shared_dict cats 1m;
     init_by_lua '
-        ngx.log(ngx.NOTICE, "log from init_by_lua")
+        njt.log(njt.NOTICE, "log from init_by_lua")
     ';
 --- config
     location /lua {
@@ -191,7 +191,7 @@ log from init_by_lua
 module(..., package.seeall)
 
 function go()
-    ngx.say("hello, blah")
+    njt.say("hello, blah")
 end
 --- request
 GET /lua
@@ -222,9 +222,9 @@ hello, blah
 --- config
     location /lua {
         content_by_lua '
-            ngx.say("foo = ", foo)
-            ngx.say("bar = ", bar)
-            ngx.say("baz = ", baz)
+            njt.say("foo = ", foo)
+            njt.say("bar = ", bar)
+            njt.say("baz = ", baz)
         ';
     }
 --- request
@@ -246,9 +246,9 @@ Failed to resume our co:
 --- config
     location /lua {
         content_by_lua '
-            ngx.say("foo = ", foo)
-            ngx.say("bar = ", bar)
-            ngx.say("baz = ", baz)
+            njt.say("foo = ", foo)
+            njt.say("bar = ", bar)
+            njt.say("baz = ", baz)
         ';
     }
 --- request
@@ -279,12 +279,12 @@ Failed to resume our co:
 
 
 
-=== TEST 11: access a field in the ngx. table
+=== TEST 11: access a field in the njt. table
 --- http_config
     init_by_lua '
-        print("INIT 1: foo = ", ngx.foo)
-        ngx.foo = 3
-        print("INIT 2: foo = ", ngx.foo)
+        print("INIT 1: foo = ", njt.foo)
+        njt.foo = 3
+        print("INIT 2: foo = ", njt.foo)
     ';
 --- config
     location /t {

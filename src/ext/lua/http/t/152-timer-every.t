@@ -27,19 +27,19 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local begin = ngx.now()
+            local begin = njt.now()
             local function f(premature)
-                print("elapsed: ", ngx.now() - begin)
+                print("elapsed: ", njt.now() - begin)
                 print("timer prematurely expired: ", premature)
             end
 
-            local ok, err = ngx.timer.every(0.05, f)
+            local ok, err = njt.timer.every(0.05, f)
             if not ok then
-                ngx.say("failed to set timer: ", err)
+                njt.say("failed to set timer: ", err)
                 return
             end
 
-            ngx.say("registered timer")
+            njt.say("registered timer")
         }
     }
 --- request
@@ -54,9 +54,9 @@ registered timer
 timer prematurely expired: true
 --- error_log eval
 [
-qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0\.0(?:4[4-9]|5[0-6])\d*, context: ngx\.timer, client: \d+\.\d+\.\d+\.\d+, server: 0\.0\.0\.0:\d+/,
-qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0\.(?:09|10)\d*, context: ngx\.timer, client: \d+\.\d+\.\d+\.\d+, server: 0\.0\.0\.0:\d+/,
-"lua ngx.timer expired",
+qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0\.0(?:4[4-9]|5[0-6])\d*, context: njt\.timer, client: \d+\.\d+\.\d+\.\d+, server: 0\.0\.0\.0:\d+/,
+qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0\.(?:09|10)\d*, context: njt\.timer, client: \d+\.\d+\.\d+\.\d+, server: 0\.0\.0\.0:\d+/,
+"lua njt.timer expired",
 "http lua close fake http connection",
 "timer prematurely expired: false",
 ]
@@ -67,18 +67,18 @@ qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: elapsed: 0\.(?:09|10)\d*, cont
 --- config
     location /t {
         content_by_lua_block {
-            local begin = ngx.now()
+            local begin = njt.now()
             local function f()
                 foo = 3
                 print("foo in timer: ", foo)
             end
-            local ok, err = ngx.timer.every(0.05, f)
+            local ok, err = njt.timer.every(0.05, f)
             if not ok then
-                ngx.say("failed to set timer: ", err)
+                njt.say("failed to set timer: ", err)
                 return
             end
-            ngx.sleep(0.11)
-            ngx.say("foo = ", foo)
+            njt.sleep(0.11)
+            njt.say("foo = ", foo)
         }
     }
 --- request
@@ -93,7 +93,7 @@ foo = 3
 --- error_log eval
 [
 qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: foo in timer: 3/,
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "http lua close fake http connection"
 ]
 
@@ -103,20 +103,20 @@ qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: foo in timer: 3/,
 --- config
     location /t {
         content_by_lua_block {
-            local begin = ngx.now()
+            local begin = njt.now()
             local foo = 0
             local function f()
                 foo = foo + 3
                 print("foo in timer: ", foo)
             end
-            local ok, err = ngx.timer.every(0.05, f)
+            local ok, err = njt.timer.every(0.05, f)
             if not ok then
-                ngx.say("failed to set timer: ", err)
+                njt.say("failed to set timer: ", err)
                 return
             end
-            ngx.say("registered timer")
-            ngx.sleep(0.11)
-            ngx.say("foo = ", foo)
+            njt.say("registered timer")
+            njt.sleep(0.11)
+            njt.say("foo = ", foo)
         }
     }
 --- request
@@ -133,7 +133,7 @@ foo = 6
 [
 qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: foo in timer: 3/,
 qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: foo in timer: 6/,
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "http lua close fake http connection"
 ]
 
@@ -143,22 +143,22 @@ qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: foo in timer: 6/,
 --- config
     location /t {
         content_by_lua_block {
-            local begin = ngx.now()
+            local begin = njt.now()
             local foo = 0
             local function f()
                 foo = foo + 3
                 print("foo in timer: ", foo)
 
-                ngx.sleep(0.1)
+                njt.sleep(0.1)
             end
-            local ok, err = ngx.timer.every(0.05, f)
+            local ok, err = njt.timer.every(0.05, f)
             if not ok then
-                ngx.say("failed to set timer: ", err)
+                njt.say("failed to set timer: ", err)
                 return
             end
-            ngx.say("registered timer")
-            ngx.sleep(0.11)
-            ngx.say("foo = ", foo)
+            njt.say("registered timer")
+            njt.sleep(0.11)
+            njt.say("foo = ", foo)
         }
     }
 --- request
@@ -175,7 +175,7 @@ foo = 6
 [
 qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: foo in timer: 3/,
 qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: foo in timer: 6/,
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "http lua close fake http connection"
 ]
 
@@ -194,14 +194,14 @@ qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):\d+: foo in timer: 6/,
                 a, b, c = 0, 0, 0
             end
 
-            local ok, err = ngx.timer.every(0.05, f, 1, 2)
+            local ok, err = njt.timer.every(0.05, f, 1, 2)
             if not ok then
-                ngx.say("failed to set timer: ", err)
+                njt.say("failed to set timer: ", err)
                 return
             end
 
-            ngx.say("registered timer")
-            ngx.sleep(0.11)
+            njt.say("registered timer")
+            njt.sleep(0.11)
         }
     }
 --- request
@@ -217,7 +217,7 @@ registered timer
 [
 "the 1 time, args: 1, 2, nil",
 "the 2 time, args: 1, 2, nil",
-"lua ngx.timer expired",
+"lua njt.timer expired",
 "http lua close fake http connection"
 ]
 
@@ -233,29 +233,29 @@ registered timer
             end
 
             for i = 1, 100 do
-                local ok, err = ngx.timer.every(0.1, f)
+                local ok, err = njt.timer.every(0.1, f)
                 if not ok then
-                    ngx.say("failed to set timer: ", err)
+                    njt.say("failed to set timer: ", err)
                     return
                 end
             end
 
-            ngx.say("registered timer")
+            njt.say("registered timer")
 
             collectgarbage("collect")
             local start = collectgarbage("count")
 
-            ngx.sleep(0.21)
+            njt.sleep(0.21)
 
             collectgarbage("collect")
             local growth1 = collectgarbage("count") - start
 
-            ngx.sleep(0.51)
+            njt.sleep(0.51)
 
             collectgarbage("collect")
             local growth2 = collectgarbage("count") - start
 
-            ngx.say("growth1 == growth2: ", growth1 == growth2)
+            njt.say("growth1 == growth2: ", growth1 == growth2)
         }
     }
 --- request
@@ -283,14 +283,14 @@ growth1 == growth2: true
             end
 
             for i = 1, 11 do
-                local ok, err = ngx.timer.every(0.1, f)
+                local ok, err = njt.timer.every(0.1, f)
                 if not ok then
-                    ngx.say("failed to set timer: ", err)
+                    njt.say("failed to set timer: ", err)
                     return
                 end
             end
 
-            ngx.say("registered 10 timers")
+            njt.say("registered 10 timers")
         }
     }
 --- request
@@ -313,21 +313,21 @@ failed to set timer: too many pending timers
         content_by_lua_block {
             local function f()
                 local a = 1
-                ngx.sleep(0.02)
+                njt.sleep(0.02)
                 -- do nothing
             end
 
             for i = 1, 10 do
-                local ok, err = ngx.timer.every(0.01, f)
+                local ok, err = njt.timer.every(0.01, f)
                 if not ok then
-                    ngx.say("failed to set timer: ", err)
+                    njt.say("failed to set timer: ", err)
                     return
                 end
             end
 
-            ngx.say("registered 10 timers")
+            njt.say("registered 10 timers")
 
-            ngx.sleep(0.03)
+            njt.sleep(0.03)
         }
     }
 --- request
@@ -355,23 +355,23 @@ so we skip it in the "check leak" testing mode.
                 -- do nothing
             end
 
-            local ok, err = ngx.timer.every(0.01, f)
+            local ok, err = njt.timer.every(0.01, f)
             if not ok then
-                ngx.say("failed to set timer: ", err)
+                njt.say("failed to set timer: ", err)
                 return
             end
 
             collectgarbage("collect")
-            ngx.say("registered timer")
+            njt.say("registered timer")
 
-            ngx.sleep(0.03)
-
-            collectgarbage("collect")
-
-            ngx.sleep(0.03)
+            njt.sleep(0.03)
 
             collectgarbage("collect")
-            ngx.say("ok")
+
+            njt.sleep(0.03)
+
+            collectgarbage("collect")
+            njt.say("ok")
         }
     }
 --- request

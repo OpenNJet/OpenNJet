@@ -39,13 +39,13 @@ __DATA__
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
             dogs:set("foo", 32)
             dogs:set("bah", 10502)
             local val = dogs:get("foo")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
             val = dogs:get("bah")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
         ';
     }
 --- request
@@ -64,15 +64,15 @@ GET /test
 --- config
     location = /test {
         content_by_lua '
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             -- dogs:set("foo", 32)
             -- dogs:set("bah", 10502)
 
             local val = dogs:get("foo")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
             val = dogs:get("bah")
-            ngx.say(val, " ", type(val))
+            njt.say(val, " ", type(val))
         ';
     }
 --- request

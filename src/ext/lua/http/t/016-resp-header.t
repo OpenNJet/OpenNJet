@@ -21,8 +21,8 @@ __DATA__
 --- config
     location /read {
         content_by_lua '
-            ngx.header.content_type = "text/my-plain";
-            ngx.say("Hi");
+            njt.header.content_type = "text/my-plain";
+            njt.say("Hi");
         ';
     }
 --- request
@@ -38,8 +38,8 @@ Hi
 --- config
     location /read {
         content_by_lua '
-            ngx.header.content_length = "text/my-plain";
-            ngx.say("Hi");
+            njt.header.content_length = "text/my-plain";
+            njt.say("Hi");
         ';
     }
 --- request
@@ -55,8 +55,8 @@ Content-Type: text/html
 --- config
     location /read {
         content_by_lua '
-            ngx.header.content_length = 3
-            ngx.say("Hello")
+            njt.header.content_length = 3
+            njt.say("Hello")
         ';
     }
 --- request
@@ -72,8 +72,8 @@ Hel
 --- config
     location /read {
         content_by_lua '
-            ngx.status = 302;
-            ngx.header["Location"] = "http://agentzh.org/foo";
+            njt.status = 302;
+            njt.header["Location"] = "http://agentzh.org/foo";
         ';
     }
 --- request
@@ -89,9 +89,9 @@ Location: http://agentzh.org/foo
 --- config
     location /read {
         content_by_lua '
-            ngx.header.content_length = 3
-            ngx.header.content_length = nil
-            ngx.say("Hello")
+            njt.header.content_length = 3
+            njt.header.content_length = nil
+            njt.say("Hello")
         ';
     }
 --- request
@@ -107,8 +107,8 @@ Hello
 --- config
     location /read {
         content_by_lua '
-            ngx.header["X-Foo"] = {"a", "bc"}
-            ngx.say("Hello")
+            njt.header["X-Foo"] = {"a", "bc"}
+            njt.say("Hello")
         ';
     }
 --- request
@@ -124,8 +124,8 @@ Hello
 --- config
     location /read {
         content_by_lua '
-            ngx.header.content_type = {"a", "bc"}
-            ngx.say("Hello")
+            njt.header.content_type = {"a", "bc"}
+            njt.say("Hello")
         ';
     }
 --- request
@@ -141,9 +141,9 @@ Hello
 --- config
     location /read {
         content_by_lua '
-            ngx.header["X-Foo"] = {"a", "bc"}
-            ngx.header["X-Foo"] = {}
-            ngx.say("Hello")
+            njt.header["X-Foo"] = {"a", "bc"}
+            njt.header["X-Foo"] = {}
+            njt.say("Hello")
         ';
     }
 --- request
@@ -159,9 +159,9 @@ Hello
 --- config
     location /read {
         content_by_lua '
-            ngx.header["X-Foo"] = {"a", "bc"}
-            ngx.header["X-Foo"] = nil
-            ngx.say("Hello")
+            njt.header["X-Foo"] = {"a", "bc"}
+            njt.header["X-Foo"] = nil
+            njt.say("Hello")
         ';
     }
 --- request
@@ -177,9 +177,9 @@ Hello
 --- config
     location /read {
         content_by_lua '
-            ngx.header["X-Foo"] = {"a", "bc"}
-            ngx.header["X-Foo"] = {"a", "abc"}
-            ngx.say("Hello")
+            njt.header["X-Foo"] = {"a", "bc"}
+            njt.header["X-Foo"] = {"a", "abc"}
+            njt.say("Hello")
         ';
     }
 --- request
@@ -195,9 +195,9 @@ Hello
 --- config
     location /lua {
         content_by_lua '
-            ngx.header["Foo"] = {}
-            ngx.header["Foo"] = {"a", "b"}
-            ngx.send_headers()
+            njt.header["Foo"] = {}
+            njt.header["Foo"] = {"a", "b"}
+            njt.send_headers()
         ';
     }
 --- request
@@ -213,10 +213,10 @@ Foo: b.*"
 --- config
     location /lua {
         content_by_lua '
-            ngx.header["Foo"] = {"c", "d"}
-            ngx.header["Foo"] = {}
-            ngx.header["Foo"] = {"a", "b"}
-            ngx.send_headers()
+            njt.header["Foo"] = {"c", "d"}
+            njt.header["Foo"] = {}
+            njt.header["Foo"] = {"a", "b"}
+            njt.send_headers()
         ';
     }
 --- request
@@ -232,9 +232,9 @@ Foo: b.*"
 --- config
     location /lua {
         content_by_lua '
-            ngx.header["Foox"] = "barx"
-            ngx.header["Fooy"] = "bary"
-            ngx.send_headers()
+            njt.header["Foox"] = "barx"
+            njt.header["Fooy"] = "bary"
+            njt.send_headers()
         ';
     }
 --- request
@@ -249,9 +249,9 @@ Fooy: bary
 --- config
     location /lua {
         content_by_lua '
-            ngx.header["Foox"] = {"conx1", "conx2" }
-            ngx.header["Fooy"] = {"cony1", "cony2" }
-            ngx.send_headers()
+            njt.header["Foox"] = {"conx1", "conx2" }
+            njt.header["Fooy"] = {"cony1", "cony2" }
+            njt.send_headers()
         ';
     }
 --- request
@@ -262,13 +262,13 @@ Fooy: cony1, cony2
 
 
 
-=== TEST 15: set header after ngx.print
+=== TEST 15: set header after njt.print
 --- config
     location /lua {
         default_type "text/plain";
         content_by_lua '
-            ngx.print("hello")
-            ngx.header.content_type = "text/foo"
+            njt.print("hello")
+            njt.header.content_type = "text/foo"
         ';
     }
 --- request
@@ -276,19 +276,19 @@ Fooy: cony1, cony2
 --- response_body chop
 hello
 --- error_log
-attempt to set ngx.header.HEADER after sending out response headers
+attempt to set njt.header.HEADER after sending out response headers
 --- no_error_log eval
 ["alert", "warn"]
 
 
 
-=== TEST 16: get content-type header after ngx.print
+=== TEST 16: get content-type header after njt.print
 --- config
     location /lua {
         default_type "text/my-plain";
         content_by_lua '
-            ngx.print("hello, ")
-            ngx.say(ngx.header.content_type)
+            njt.print("hello, ")
+            njt.say(njt.header.content_type)
         ';
     }
 --- request
@@ -304,8 +304,8 @@ hello, text/my-plain
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.content_length = 2;
-            ngx.say(ngx.header.content_length);
+            njt.header.content_length = 2;
+            njt.say(njt.header.content_length);
         ';
     }
 --- request
@@ -321,8 +321,8 @@ Content-Length: 2
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.foo = "bar";
-            ngx.say(ngx.header.foo);
+            njt.header.foo = "bar";
+            njt.say(njt.header.foo);
         ';
     }
 --- request
@@ -340,12 +340,12 @@ bar
         set $footer '';
         proxy_pass http://127.0.0.1:$server_port/echo;
         header_filter_by_lua '
-            ngx.var.footer = ngx.header.content_length
+            njt.var.footer = njt.header.content_length
         ';
         echo_after_body $footer;
     }
     location /echo {
-        content_by_lua 'ngx.print("Hello")';
+        content_by_lua 'njt.print("Hello")';
     }
 --- request
     GET /main
@@ -362,13 +362,13 @@ Hello5
         set $footer '';
         proxy_pass http://127.0.0.1:$server_port/echo;
         header_filter_by_lua '
-            ngx.header.content_length = 27
-            ngx.var.footer = ngx.header.content_length
+            njt.header.content_length = 27
+            njt.var.footer = njt.header.content_length
         ';
         echo_after_body $footer;
     }
     location /echo {
-        content_by_lua 'ngx.print("Hello")';
+        content_by_lua 'njt.print("Hello")';
     }
 --- request
     GET /main
@@ -385,13 +385,13 @@ Hello27
         set $footer '';
         proxy_pass http://127.0.0.1:$server_port/echo;
         header_filter_by_lua '
-            ngx.var.footer = ngx.header.content_type
+            njt.var.footer = njt.header.content_type
         ';
         echo_after_body $footer;
     }
     location /echo {
         default_type 'abc/foo';
-        content_by_lua 'ngx.print("Hello")';
+        content_by_lua 'njt.print("Hello")';
     }
 --- request
     GET /main
@@ -408,14 +408,14 @@ Helloabc/foo
         set $footer '';
         proxy_pass http://127.0.0.1:$server_port/echo;
         header_filter_by_lua '
-            ngx.header.content_type = "text/blah"
-            ngx.var.footer = ngx.header.content_type
+            njt.header.content_type = "text/blah"
+            njt.var.footer = njt.header.content_type
         ';
         echo_after_body $footer;
     }
     location /echo {
         default_type 'abc/foo';
-        content_by_lua 'ngx.print("Hello")';
+        content_by_lua 'njt.print("Hello")';
     }
 --- request
     GET /main
@@ -432,14 +432,14 @@ Hellotext/blah
         set $footer '';
         proxy_pass http://127.0.0.1:$server_port/echo;
         header_filter_by_lua '
-            ngx.var.footer = ngx.header.baz
+            njt.var.footer = njt.header.baz
         ';
         echo_after_body $footer;
     }
     location /echo {
         content_by_lua '
-            ngx.header.baz = "bah"
-            ngx.print("Hello")
+            njt.header.baz = "bah"
+            njt.print("Hello")
         ';
     }
 --- request
@@ -457,15 +457,15 @@ Hellobah
         set $footer '';
         proxy_pass http://127.0.0.1:$server_port/echo;
         header_filter_by_lua '
-            ngx.header.baz = "foo"
-            ngx.var.footer = ngx.header.baz
+            njt.header.baz = "foo"
+            njt.var.footer = njt.header.baz
         ';
         echo_after_body $footer;
     }
     location /echo {
         content_by_lua '
-            ngx.header.baz = "bah"
-            ngx.print("Hello")
+            njt.header.baz = "bah"
+            njt.print("Hello")
         ';
     }
 --- request
@@ -483,14 +483,14 @@ Hellofoo
         set $footer '';
         proxy_pass http://127.0.0.1:$server_port/echo;
         header_filter_by_lua '
-            ngx.var.footer = table.concat(ngx.header.baz, ", ")
+            njt.var.footer = table.concat(njt.header.baz, ", ")
         ';
         echo_after_body $footer;
     }
     location /echo {
         content_by_lua '
-            ngx.header.baz = {"bah", "blah"}
-            ngx.print("Hello")
+            njt.header.baz = {"bah", "blah"}
+            njt.print("Hello")
         ';
     }
 --- request
@@ -509,15 +509,15 @@ Hellobah, blah
         set $footer '';
         proxy_pass http://127.0.0.1:$server_port/echo;
         header_filter_by_lua '
-            ngx.header.baz = {"foo", "baz"}
-            ngx.var.footer = table.concat(ngx.header.baz, ", ")
+            njt.header.baz = {"foo", "baz"}
+            njt.var.footer = table.concat(njt.header.baz, ", ")
         ';
         echo_after_body $footer;
     }
     location /echo {
         content_by_lua '
-            ngx.header.baz = {"bah", "hah"}
-            ngx.print("Hello")
+            njt.header.baz = {"bah", "hah"}
+            njt.print("Hello")
         ';
     }
 --- request
@@ -534,7 +534,7 @@ Hellofoo, baz
 --- config
     location /lua {
         content_by_lua '
-            ngx.say(ngx.header.foo);
+            njt.say(njt.header.foo);
         ';
     }
 --- request
@@ -550,9 +550,9 @@ nil
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.foo = {"bah", "baz", "blah"}
-            ngx.header.foo = nil
-            ngx.say(ngx.header.foo);
+            njt.header.foo = {"bah", "baz", "blah"}
+            njt.header.foo = nil
+            njt.say(njt.header.foo);
         ';
     }
 --- request
@@ -575,7 +575,7 @@ nil
     location /main {
         proxy_pass http://127.0.0.1:$server_port/foo;
         header_filter_by_lua '
-            local cookies = ngx.header.set_cookie
+            local cookies = njt.header.set_cookie
             if not cookies then return end
             if type(cookies) ~= "table" then cookies = {cookies} end
             local newcookies = {}
@@ -584,7 +584,7 @@ nil
                           "%1=external.domain.com")
                 table.insert(newcookies, newval)
             end
-            ngx.header.set_cookie = newcookies
+            njt.header.set_cookie = newcookies
         ';
     }
 --- request
@@ -600,8 +600,8 @@ hello
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.cache_control = "private"
-            ngx.say("Cache-Control: ", ngx.var.sent_http_cache_control)
+            njt.header.cache_control = "private"
+            njt.say("Cache-Control: ", njt.var.sent_http_cache_control)
         ';
     }
 --- request
@@ -617,8 +617,8 @@ Cache-Control: private
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.cache_control = { "private", "no-store" }
-            ngx.say("Cache-Control: ", ngx.var.sent_http_cache_control)
+            njt.header.cache_control = { "private", "no-store" }
+            njt.say("Cache-Control: ", njt.var.sent_http_cache_control)
         ';
     }
 --- request
@@ -634,8 +634,8 @@ Cache-Control: private, no-store
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.header.link = "</foo.jpg>; rel=preload"
-            ngx.say("Link: ", ngx.var.sent_http_link)
+            njt.header.link = "</foo.jpg>; rel=preload"
+            njt.say("Link: ", njt.var.sent_http_link)
         }
     }
 --- request
@@ -651,12 +651,12 @@ Link: </foo.jpg>; rel=preload
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.header.link = {
+            njt.header.link = {
                 "</foo.jpg>; rel=preload",
                 "</bar.css>; rel=preload; as=style"
             }
 
-            ngx.say("Link: ", ngx.var.sent_http_link)
+            njt.say("Link: ", njt.var.sent_http_link)
         }
     }
 --- request
@@ -673,10 +673,10 @@ Link: </foo.jpg>; rel=preload, </bar.css>; rel=preload; as=style
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.cache_control = { "private", "no-store" }
-            ngx.header.cache_control = { "no-cache" }
-            ngx.say("Cache-Control: ", ngx.var.sent_http_cache_control)
-            ngx.say("Cache-Control: ", ngx.header.cache_control)
+            njt.header.cache_control = { "private", "no-store" }
+            njt.header.cache_control = { "no-cache" }
+            njt.say("Cache-Control: ", njt.var.sent_http_cache_control)
+            njt.say("Cache-Control: ", njt.header.cache_control)
         ';
     }
 --- request
@@ -693,13 +693,13 @@ Cache-Control: no-cache
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.header.link = {
+            njt.header.link = {
                 "</foo.jpg>; rel=preload",
                 "</bar.css>; rel=preload; as=style"
             }
-            ngx.header.link = "</hello.jpg>; rel=preload"
-            ngx.say("Link: ", ngx.var.sent_http_link)
-            ngx.say("Link: ", ngx.header.link)
+            njt.header.link = "</hello.jpg>; rel=preload"
+            njt.say("Link: ", njt.var.sent_http_link)
+            njt.say("Link: ", njt.header.link)
         }
     }
 --- request
@@ -716,10 +716,10 @@ Link: </hello.jpg>; rel=preload
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.cache_control = { "private", "no-store" }
-            ngx.header.cache_control = { "no-cache", "blah", "foo" }
-            ngx.say("Cache-Control: ", ngx.var.sent_http_cache_control)
-            ngx.say("Cache-Control: ", table.concat(ngx.header.cache_control, ", "))
+            njt.header.cache_control = { "private", "no-store" }
+            njt.header.cache_control = { "no-cache", "blah", "foo" }
+            njt.say("Cache-Control: ", njt.var.sent_http_cache_control)
+            njt.say("Cache-Control: ", table.concat(njt.header.cache_control, ", "))
         ';
     }
 --- request
@@ -738,17 +738,17 @@ Cache-Control: no-cache[;,] blah[;,] foo$
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.header.link = {
+            njt.header.link = {
                 "</foo.jpg>; rel=preload",
                 "</bar.css>; rel=preload; as=style"
             }
-            ngx.header.link = {
+            njt.header.link = {
                 "</foo.jpg>; rel=preload",
                 "</hello.css>; rel=preload",
                 "</bar.css>; rel=preload; as=style"
             }
-            ngx.say("Link: ", ngx.var.sent_http_link)
-            ngx.say("Link: ", table.concat(ngx.header.link, ", "))
+            njt.say("Link: ", njt.var.sent_http_link)
+            njt.say("Link: ", table.concat(njt.header.link, ", "))
         }
     }
 --- request
@@ -768,8 +768,8 @@ Link: </foo.jpg>; rel=preload[;,] </hello.css>; rel=preload[;,] </bar.css>; rel=
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.www_authenticate = "blah"
-            ngx.say("WWW-Authenticate: ", ngx.var.sent_http_www_authenticate)
+            njt.header.www_authenticate = "blah"
+            njt.say("WWW-Authenticate: ", njt.var.sent_http_www_authenticate)
         ';
     }
 --- request
@@ -785,9 +785,9 @@ WWW-Authenticate: blah
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.foo = "blah"
-            ngx.header.foo = nil
-            ngx.say("Foo: ", ngx.var.sent_http_foo)
+            njt.header.foo = "blah"
+            njt.header.foo = nil
+            njt.say("Foo: ", njt.var.sent_http_foo)
         ';
     }
 --- request
@@ -803,10 +803,10 @@ Foo: nil
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.cache_control = { "private", "no-store", "foo", "bar", "baz" }
-            ngx.header.cache_control = {}
-            ngx.send_headers()
-            ngx.say("Cache-Control: ", ngx.var.sent_http_cache_control)
+            njt.header.cache_control = { "private", "no-store", "foo", "bar", "baz" }
+            njt.header.cache_control = {}
+            njt.send_headers()
+            njt.say("Cache-Control: ", njt.var.sent_http_cache_control)
         ';
         add_header Cache-Control "blah";
     }
@@ -823,8 +823,8 @@ Cache-Control: blah
 --- config
   location /lua {
         content_by_lua '
-            ngx.header["Last-Modified"] = ngx.http_time(1290079655)
-            ngx.say(ngx.header["Last-Modified"])
+            njt.header["Last-Modified"] = njt.http_time(1290079655)
+            njt.say(njt.header["Last-Modified"])
         ';
     }
 --- request
@@ -841,8 +841,8 @@ Last-Modified: Thu, 18 Nov 2010 11:27:35 GMT
 --- config
   location /lua {
         content_by_lua '
-            ngx.header["Last-Modified"] = ngx.http_time(1290079655)
-            ngx.say(ngx.header["Last-Modified"])
+            njt.header["Last-Modified"] = njt.http_time(1290079655)
+            njt.say(njt.header["Last-Modified"])
         ';
     }
 --- request
@@ -856,7 +856,7 @@ Thu, 18 Nov 2010 11:27:35 GMT
 
 
 
-=== TEST 43: set response content-encoding header should bypass ngx_http_gzip_filter_module
+=== TEST 43: set response content-encoding header should bypass njt_http_gzip_filter_module
 --- config
     default_type text/plain;
     gzip             on;
@@ -864,8 +864,8 @@ Thu, 18 Nov 2010 11:27:35 GMT
     gzip_types       text/plain;
     location /read {
         content_by_lua '
-            ngx.header.content_encoding = "gzip";
-            ngx.say("Hello, world, my dear friend!");
+            njt.header.content_encoding = "gzip";
+            njt.say("Hello, world, my dear friend!");
         ';
     }
 --- request
@@ -887,9 +887,9 @@ Hello, world, my dear friend!
     lua_transform_underscores_in_response_headers off;
     location = /t {
         content_by_lua '
-            ngx.header.foo_bar = "Hello"
-            ngx.say(ngx.header.foo_bar)
-            ngx.say(ngx.header["foo-bar"])
+            njt.header.foo_bar = "Hello"
+            njt.say(njt.header.foo_bar)
+            njt.say(njt.header["foo-bar"])
         ';
     }
 --- request
@@ -907,9 +907,9 @@ nil
     lua_transform_underscores_in_response_headers on;
     location = /t {
         content_by_lua '
-            ngx.header.foo_bar = "Hello"
-            ngx.say(ngx.header.foo_bar)
-            ngx.say(ngx.header["foo-bar"])
+            njt.header.foo_bar = "Hello"
+            njt.say(njt.header.foo_bar)
+            njt.say(njt.header["foo-bar"])
         ';
     }
 --- request
@@ -926,7 +926,7 @@ Hello
 --- config
     location /read {
         content_by_lua '
-          ngx.header.content_type = "text/my-plain"
+          njt.header.content_type = "text/my-plain"
 
           local results = {}
           results.something = "hello"
@@ -937,7 +937,7 @@ Hello
           for k in pairs(results) do table.insert(arr, k) end
           table.sort(arr)
           for i, k in ipairs(arr) do
-            ngx.say(k .. ": " .. results[k])
+            njt.say(k .. ": " .. results[k])
           end
         ';
     }
@@ -960,10 +960,10 @@ something_else: hi
     location /read {
         content_by_lua '
             for i = 1, 50 do
-                ngx.header["X-Direct-" .. i] = "text/my-plain-" .. i;
+                njt.header["X-Direct-" .. i] = "text/my-plain-" .. i;
             end
 
-            ngx.say(ngx.header["X-Direct-50"]);
+            njt.say(njt.header["X-Direct-50"]);
         ';
     }
 --- request
@@ -980,18 +980,18 @@ text/my-plain-50
     location /read {
         content_by_lua '
             for i = 1, 50 do
-                ngx.header["X-Direct-" .. i] = "text/my-plain-" .. i;
+                njt.header["X-Direct-" .. i] = "text/my-plain-" .. i;
             end
 
             for i = 1, 50 do
-                ngx.header["X-Direct-" .. i] = "text/my-plain"
+                njt.header["X-Direct-" .. i] = "text/my-plain"
             end
 
             for i = 1, 50 do
-                ngx.header["X-Direct-" .. i] = nil
+                njt.header["X-Direct-" .. i] = nil
             end
 
-            ngx.say("ok");
+            njt.say("ok");
         ';
     }
 --- request
@@ -1008,9 +1008,9 @@ ok
 --- config
     location /read {
         content_by_lua '
-            ngx.header.content_type = "text/my-plain";
-            ngx.header.content_type = "text/my-plain-2";
-            ngx.say("Hi");
+            njt.header.content_type = "text/my-plain";
+            njt.header.content_type = "text/my-plain-2";
+            njt.say("Hi");
         ';
     }
 --- request
@@ -1026,9 +1026,9 @@ Hi
 --- config
     location /read {
         content_by_lua '
-            ngx.header.last_modified = ngx.http_time(1290079655)
-            ngx.header.last_modified = ngx.http_time(1290079654)
-            ngx.say("ok");
+            njt.header.last_modified = njt.http_time(1290079655)
+            njt.header.last_modified = njt.http_time(1290079654)
+            njt.say("ok");
         ';
     }
 --- request
@@ -1044,9 +1044,9 @@ ok
 --- config
     location /read {
         content_by_lua '
-            ngx.header.last_modified = ngx.http_time(1290079655)
-            ngx.header.last_modified = nil
-            ngx.say("ok");
+            njt.header.last_modified = njt.http_time(1290079655)
+            njt.header.last_modified = nil
+            njt.say("ok");
         ';
     }
 --- request
@@ -1062,7 +1062,7 @@ ok
 --- config
     location = /t/ {
         header_filter_by_lua '
-            ngx.header.foo = 1
+            njt.header.foo = 1
         ';
         proxy_pass http://127.0.0.1:$server_port;
     }
@@ -1084,7 +1084,7 @@ Location: http://localhost:$ServerPort/t/
 --- config
     location = /t/ {
         header_filter_by_lua '
-            local v = ngx.header.foo
+            local v = njt.header.foo
         ';
         proxy_pass http://127.0.0.1:$server_port;
     }
@@ -1106,7 +1106,7 @@ Location: http://localhost:$ServerPort/t/
 --- config
     location = /t/ {
         header_filter_by_lua '
-            ngx.header.Foo = ngx.header.location
+            njt.header.Foo = njt.header.location
         ';
         proxy_pass http://127.0.0.1:$server_port;
     }
@@ -1129,8 +1129,8 @@ Foo: /t/
 --- config
     location = /t/ {
         header_filter_by_lua '
-            ngx.header.Foo = 3
-            ngx.header.Foo = ngx.header.location
+            njt.header.Foo = 3
+            njt.header.Foo = njt.header.location
         ';
         proxy_pass http://127.0.0.1:$server_port;
     }
@@ -1153,8 +1153,8 @@ Foo: /t/
 --- config
     location /lua {
         content_by_lua '
-            ngx.header["cache-Control"] = "private"
-            ngx.say("Cache-Control: ", ngx.var.sent_http_cache_control)
+            njt.header["cache-Control"] = "private"
+            njt.say("Cache-Control: ", njt.var.sent_http_cache_control)
         ';
     }
 --- request
@@ -1170,8 +1170,8 @@ Cache-Control: private
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.header["link"] = "</foo.jpg>; rel=preload"
-            ngx.say("Link: ", ngx.var.sent_http_link)
+            njt.header["link"] = "</foo.jpg>; rel=preload"
+            njt.say("Link: ", njt.var.sent_http_link)
         }
     }
 --- request
@@ -1187,8 +1187,8 @@ Link: </foo.jpg>; rel=preload
 --- config
     location /lua {
         content_by_lua '
-            ngx.header["Cache-Control"] = nil
-            ngx.say("Cache-Control: ", ngx.var.sent_http_cache_control)
+            njt.header["Cache-Control"] = nil
+            njt.say("Cache-Control: ", njt.var.sent_http_cache_control)
         ';
     }
 --- request
@@ -1204,8 +1204,8 @@ Cache-Control: nil
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.header["Link"] = nil
-            ngx.say("Link: ", ngx.var.sent_http_link)
+            njt.header["Link"] = nil
+            njt.say("Link: ", njt.var.sent_http_link)
         }
     }
 --- request
@@ -1222,8 +1222,8 @@ Link: nil
     location /read {
         content_by_lua '
             local s = "content_type"
-            local v = ngx.header[s]
-            ngx.say("s = ", s)
+            local v = njt.header[s]
+            njt.say("s = ", s)
         ';
     }
 --- request
@@ -1240,8 +1240,8 @@ s = content_type
 --- config
     location /lua {
         content_by_lua '
-            ngx.header[32] = "private"
-            ngx.say("32: ", ngx.var.sent_http_32)
+            njt.header[32] = "private"
+            njt.say("32: ", njt.var.sent_http_32)
         ';
     }
 --- request
@@ -1259,8 +1259,8 @@ s = content_type
 --- config
     location /lua {
         content_by_lua '
-            ngx.header.foo = {32}
-            ngx.say("foo: ", ngx.var.sent_http_foo)
+            njt.header.foo = {32}
+            njt.say("foo: ", njt.var.sent_http_foo)
         ';
     }
 --- request
@@ -1278,25 +1278,25 @@ foo: 32
 --- config
     location /resp-header {
         content_by_lua '
-            ngx.header["Foo"] = "bar"
-            ngx.header["Bar"] = "baz"
-            local headers, err = ngx.resp.get_headers()
+            njt.header["Foo"] = "bar"
+            njt.header["Bar"] = "baz"
+            local headers, err = njt.resp.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("Foo: ", headers["Foo"] or "nil")
-            ngx.say("foo: ", headers["foo"] or "nil")
-            ngx.say("Bar: ", headers["Bar"] or "nil")
+            njt.say("Foo: ", headers["Foo"] or "nil")
+            njt.say("foo: ", headers["foo"] or "nil")
+            njt.say("Bar: ", headers["Bar"] or "nil")
 
-            headers, err = ngx.resp.get_headers()
+            headers, err = njt.resp.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("bar: ", headers["bar"] or "nil")
+            njt.say("bar: ", headers["bar"] or "nil")
         ';
     }
 --- request
@@ -1318,23 +1318,23 @@ bar: baz
 --- config
     location /resp-header {
         content_by_lua '
-            ngx.header["Foo"] = "bar"
-            ngx.header["Bar"] = "baz"
+            njt.header["Foo"] = "bar"
+            njt.header["Bar"] = "baz"
 
-            local headers, err = ngx.resp.get_headers(nil, true)
+            local headers, err = njt.resp.get_headers(nil, true)
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             local h = {}
             for k, v in pairs(headers) do
                 h[k] = v
             end
-            ngx.say("Foo: ", h["Foo"] or "nil")
-            ngx.say("foo: ", h["foo"] or "nil")
-            ngx.say("Bar: ", h["Bar"] or "nil")
-            ngx.say("bar: ", h["bar"] or "nil")
+            njt.say("Foo: ", h["Foo"] or "nil")
+            njt.say("foo: ", h["foo"] or "nil")
+            njt.say("Bar: ", h["Bar"] or "nil")
+            njt.say("bar: ", h["bar"] or "nil")
         ';
     }
 --- request
@@ -1354,20 +1354,20 @@ bar: nil
 --- config
     location /resp-header {
         content_by_lua '
-            ngx.header["Foo"] = "bar"
-            ngx.header["Foo"] = nil
-            ngx.header["Bar"] = "baz"
+            njt.header["Foo"] = "bar"
+            njt.header["Foo"] = nil
+            njt.header["Bar"] = "baz"
 
-            local headers, err = ngx.resp.get_headers()
+            local headers, err = njt.resp.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
-            ngx.say("Foo: ", headers["Foo"] or "nil")
-            ngx.say("foo: ", headers["foo"] or "nil")
-            ngx.say("Bar: ", headers["Bar"] or "nil")
-            ngx.say("bar: ", headers["bar"] or "nil")
+            njt.say("Foo: ", headers["Foo"] or "nil")
+            njt.say("foo: ", headers["foo"] or "nil")
+            njt.say("Bar: ", headers["Bar"] or "nil")
+            njt.say("bar: ", headers["bar"] or "nil")
         ';
     }
 --- request
@@ -1387,14 +1387,14 @@ bar: baz
 --- config
     location = /t {
         content_by_lua '
-            ngx.say("hi")
+            njt.say("hi")
         ';
 
         header_filter_by_lua '
-            local hs, err = ngx.resp.get_headers()
+            local hs, err = njt.resp.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             print("my Content-Type: ", hs["Content-Type"])
@@ -1420,14 +1420,14 @@ my content_type: text/plain
 --- config
     location = /t {
         content_by_lua '
-            ngx.say("hi")
+            njt.say("hi")
         ';
 
         header_filter_by_lua '
-            local hs, err = ngx.resp.get_headers()
+            local hs, err = njt.resp.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             print("my Content-Length: ", hs["Content-Length"])
@@ -1453,14 +1453,14 @@ my content_length: 3
 --- config
     location = /t {
         content_by_lua '
-            ngx.say("hi")
+            njt.say("hi")
         ';
 
         header_filter_by_lua '
-            local hs, err = ngx.resp.get_headers()
+            local hs, err = njt.resp.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             print("my Connection: ", hs["Connection"])
@@ -1484,14 +1484,14 @@ my connection: close
 --- config
     location = /t {
         content_by_lua '
-            ngx.say("hi")
+            njt.say("hi")
         ';
 
         body_filter_by_lua '
-            local hs, err = ngx.resp.get_headers()
+            local hs, err = njt.resp.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             print("my Transfer-Encoding: ", hs["Transfer-Encoding"])
@@ -1516,14 +1516,14 @@ my transfer-encoding: chunked
 --- config
     location = /t {
         content_by_lua '
-            ngx.say("hi")
+            njt.say("hi")
         ';
 
         body_filter_by_lua '
-            local hs, err = ngx.resp.get_headers()
+            local hs, err = njt.resp.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             print("my Transfer-Encoding: ", hs["Transfer-Encoding"])
@@ -1549,8 +1549,8 @@ my transfer_encoding: nil
 --- config
     location = /t {
         content_by_lua '
-            ngx.header.location = "/foo/bar"
-            return ngx.exit(301)
+            njt.header.location = "/foo/bar"
+            return njt.exit(301)
         ';
     }
 --- request
@@ -1568,8 +1568,8 @@ Location: /foo/bar
 --- config
     location = /t {
         content_by_lua '
-            ngx.header.location = "http://test.com/foo/bar"
-            return ngx.exit(301)
+            njt.header.location = "http://test.com/foo/bar"
+            return njt.exit(301)
         ';
     }
 --- request
@@ -1583,14 +1583,14 @@ Location: http://test.com/foo/bar
 
 
 
-=== TEST 73: ngx.header["Content-Type"] with ngx_gzip
+=== TEST 73: njt.header["Content-Type"] with njt_gzip
 --- config
     gzip             on;
     gzip_min_length  1;
     location = /test2 {
         content_by_lua '
-            ngx.header["Content-Type"] = "text/html; charset=utf-8"
-            ngx.say("test")
+            njt.header["Content-Type"] = "text/html; charset=utf-8"
+            njt.say("test")
         ';
     }
 --- request
@@ -1607,12 +1607,12 @@ Content-Type: text/html; charset=utf-8
 
 
 
-=== TEST 74: ngx.header["Content-Type"] with "; blah"
+=== TEST 74: njt.header["Content-Type"] with "; blah"
 --- config
     location = /test2 {
         content_by_lua '
-            ngx.header["Content-Type"] = "; blah"
-            ngx.say("test")
+            njt.header["Content-Type"] = "; blah"
+            njt.say("test")
         ';
     }
 --- request
@@ -1632,12 +1632,12 @@ test
     location /resp-header {
         content_by_lua_block {
             for i = 1, 100 do
-                ngx.header["Foo" .. i] = "Foo"
+                njt.header["Foo" .. i] = "Foo"
             end
 
-            local headers, err = ngx.resp.get_headers()
+            local headers, err = njt.resp.get_headers()
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local cnt = 0
@@ -1645,7 +1645,7 @@ test
                 cnt = cnt + 1
             end
 
-            ngx.say("found ", cnt, " resp headers");
+            njt.say("found ", cnt, " resp headers");
         }
     }
 --- request
@@ -1666,12 +1666,12 @@ lua exceeding response header limit 101 > 100
     location /resp-header {
         content_by_lua_block {
             for i = 1, 99 do
-                ngx.header["Foo" .. i] = "Foo"
+                njt.header["Foo" .. i] = "Foo"
             end
 
-            local headers, err = ngx.resp.get_headers()
+            local headers, err = njt.resp.get_headers()
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local cnt = 0
@@ -1679,7 +1679,7 @@ lua exceeding response header limit 101 > 100
                 cnt = cnt + 1
             end
 
-            ngx.say("found ", cnt, " resp headers");
+            njt.say("found ", cnt, " resp headers");
         }
     }
 --- request
@@ -1698,12 +1698,12 @@ lua exceeding response header limit
     location /resp-header {
         content_by_lua_block {
             for i = 1, 3 do
-                ngx.header["Foo" .. i] = "Foo"
+                njt.header["Foo" .. i] = "Foo"
             end
 
-            local headers, err = ngx.resp.get_headers(3)
+            local headers, err = njt.resp.get_headers(3)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local cnt = 0
@@ -1711,7 +1711,7 @@ lua exceeding response header limit
                 cnt = cnt + 1
             end
 
-            ngx.say("found ", cnt, " resp headers");
+            njt.say("found ", cnt, " resp headers");
         }
     }
 --- request
@@ -1732,12 +1732,12 @@ lua exceeding response header limit 4 > 3
     location /resp-header {
         content_by_lua_block {
             for i = 1, 2 do
-                ngx.header["Foo" .. i] = "Foo"
+                njt.header["Foo" .. i] = "Foo"
             end
 
-            local headers, err = ngx.resp.get_headers(3)
+            local headers, err = njt.resp.get_headers(3)
             if err then
-                ngx.say("err: ", err)
+                njt.say("err: ", err)
             end
 
             local cnt = 0
@@ -1745,7 +1745,7 @@ lua exceeding response header limit 4 > 3
                 cnt = cnt + 1
             end
 
-            ngx.say("found ", cnt, " resp headers");
+            njt.say("found ", cnt, " resp headers");
         }
     }
 --- request
@@ -1763,8 +1763,8 @@ lua exceeding response header limit
     location /t {
         default_type text/html;
         content_by_lua_block {
-            ngx.log(ngx.WARN, "Content-Type: ", ngx.header["content-type"])
-            ngx.say("Content-Type: ", ngx.header["content-type"])
+            njt.log(njt.WARN, "Content-Type: ", njt.header["content-type"])
+            njt.say("Content-Type: ", njt.header["content-type"])
         }
     }
 --- request
@@ -1784,17 +1784,17 @@ Content-Type: nil
 --- config
     location = /backend {
         content_by_lua_block {
-            ngx.say("foo")
+            njt.say("foo")
         }
         header_filter_by_lua_block {
-            ngx.header.content_type = nil
+            njt.header.content_type = nil
         }
     }
 
     location = /t {
         default_type text/html;
         rewrite_by_lua_block {
-            ngx.header.blah = "foo"
+            njt.header.blah = "foo"
         }
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT/backend;
     }
@@ -1814,17 +1814,17 @@ blah: foo
 --- config
     location = /backend {
         content_by_lua_block {
-            ngx.say("foo")
+            njt.say("foo")
         }
         header_filter_by_lua_block {
-            ngx.header.content_type = nil
+            njt.header.content_type = nil
         }
     }
 
     location = /t {
         default_type text/html;
         rewrite_by_lua_block {
-            local h = ngx.header.content_length
+            local h = njt.header.content_length
         }
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT/backend;
     }
@@ -1843,17 +1843,17 @@ foo
 --- config
     location = /backend {
         content_by_lua_block {
-            ngx.say("foo")
+            njt.say("foo")
         }
         header_filter_by_lua_block {
-            ngx.header.content_type = nil
+            njt.header.content_type = nil
         }
     }
 
     location /t {
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT/backend;
         header_filter_by_lua_block {
-            ngx.log(ngx.WARN, "Content-Type: ", ngx.header["content-type"])
+            njt.log(njt.WARN, "Content-Type: ", njt.header["content-type"])
         }
     }
 --- request
@@ -1874,8 +1874,8 @@ Content-Type: nil
     location = /t {
         default_type text/html;
         content_by_lua_block {
-            ngx.header.blah = "foo"
-            ngx.say("foo")
+            njt.header.blah = "foo"
+            njt.say("foo")
         }
     }
 --- request
@@ -1890,27 +1890,27 @@ Content-Type: text/html
 
 
 
-=== TEST 84: don't generate Content-Type when calling ngx.resp.get_headers()
+=== TEST 84: don't generate Content-Type when calling njt.resp.get_headers()
 --- config
     location = /backend {
         content_by_lua_block {
-            ngx.say("foo")
+            njt.say("foo")
         }
         header_filter_by_lua_block {
-            ngx.header.content_type = nil
+            njt.header.content_type = nil
         }
     }
 
     location /t {
         proxy_pass http://127.0.0.1:$TEST_NGINX_SERVER_PORT/backend;
         header_filter_by_lua_block {
-            local h, err = ngx.resp.get_headers()
+            local h, err = njt.resp.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
+                njt.log(njt.ERR, "err: ", err)
                 return
             end
 
-            ngx.log(ngx.WARN, "Content-Type: ", h["content-type"])
+            njt.log(njt.WARN, "Content-Type: ", h["content-type"])
         }
     }
 --- request
@@ -1931,8 +1931,8 @@ Content-Type: nil
     location = /t {
         default_type text/html;
         content_by_lua_block {
-            ngx.header["Content-Type"] = nil
-            ngx.say("foo")
+            njt.header["Content-Type"] = nil
+            njt.say("foo")
         }
     }
 --- request
@@ -1951,8 +1951,8 @@ foo
     location = /t {
         default_type text/html;
         content_by_lua_block {
-            ngx.header["Content-Type"] = "application/json"
-            ngx.say("foo")
+            njt.header["Content-Type"] = "application/json"
+            njt.say("foo")
         }
     }
 --- request
@@ -1970,8 +1970,8 @@ Content-Type: application/json
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.header.header = "value\rfoo:bar\nbar:foo"
-            ngx.say("foo")
+            njt.header.header = "value\rfoo:bar\nbar:foo"
+            njt.say("foo")
         }
     }
 --- request
@@ -1989,8 +1989,8 @@ bar:
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.header.header = "value\nfoo:bar\rbar:foo"
-            ngx.say("foo")
+            njt.header.header = "value\nfoo:bar\rbar:foo"
+            njt.say("foo")
         }
     }
 --- request
@@ -2008,8 +2008,8 @@ bar:
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.header["header: value\rfoo:bar\nbar:foo"] = "xx"
-            ngx.say("foo")
+            njt.header["header: value\rfoo:bar\nbar:foo"] = "xx"
+            njt.say("foo")
         }
     }
 --- request
@@ -2028,8 +2028,8 @@ bar:
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.header["header: value\nfoo:bar\rbar:foo"] = "xx"
-            ngx.say("foo")
+            njt.header["header: value\nfoo:bar\rbar:foo"] = "xx"
+            njt.say("foo")
         }
     }
 --- request
@@ -2048,8 +2048,8 @@ bar:
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.header["\rheader: value\rfoo:bar\nbar:foo"] = "xx"
-            ngx.say("foo")
+            njt.header["\rheader: value\rfoo:bar\nbar:foo"] = "xx"
+            njt.say("foo")
         }
     }
 --- request
@@ -2068,8 +2068,8 @@ bar:
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.header["\nheader: value\nfoo:bar\rbar:foo"] = "xx"
-            ngx.say("foo")
+            njt.header["\nheader: value\nfoo:bar\rbar:foo"] = "xx"
+            njt.say("foo")
         }
     }
 --- request
@@ -2088,11 +2088,11 @@ bar:
 --- config
     location = /t {
         content_by_lua_block {
-            ngx.header["foo"] = {
+            njt.header["foo"] = {
                 "foo\nxx:bar",
                 "bar\rxxx:foo",
             }
-            ngx.say("foo")
+            njt.say("foo")
         }
     }
 --- request
@@ -2111,8 +2111,8 @@ foo: foo%0Axx:bar\r\nfoo: bar%0Dxxx:foo\r\n
 --- config
     location = /big-upstream {
         content_by_lua_block {
-            ngx.header['Content-Length'] = math.pow(2, 33) - 1
-            ngx.say('hi')
+            njt.header['Content-Length'] = math.pow(2, 33) - 1
+            njt.say('hi')
         }
     }
 
@@ -2121,15 +2121,15 @@ foo: foo%0Axx:bar\r\nfoo: bar%0Dxxx:foo\r\n
         proxy_buffering off;
 
         header_filter_by_lua_block {
-            local hs, err = ngx.resp.get_headers()
+            local hs, err = njt.resp.get_headers()
             if err then
-                ngx.log(ngx.ERR, "err: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "err: ", err)
+                return njt.exit(500)
             end
 
             print("my Content-Length: ", hs["Content-Length"])
 
-            ngx.header['Content-Length'] = 3
+            njt.header['Content-Length'] = 3
         }
     }
 --- request

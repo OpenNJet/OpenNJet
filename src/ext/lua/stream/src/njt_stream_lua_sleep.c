@@ -62,12 +62,7 @@ njt_stream_lua_njt_sleep(lua_State *L)
         return luaL_error(L, "no request ctx found");
     }
 
-    njt_stream_lua_check_context(L, ctx, NJT_STREAM_LUA_CONTEXT_CONTENT
-
-                               | NJT_STREAM_LUA_CONTEXT_PREREAD
-                               | NJT_STREAM_LUA_CONTEXT_SSL_CLIENT_HELLO
-                               | NJT_STREAM_LUA_CONTEXT_SSL_CERT
-                               | NJT_STREAM_LUA_CONTEXT_TIMER);
+    njt_stream_lua_check_context(L, ctx, NJT_STREAM_LUA_CONTEXT_YIELDABLE);
 
     coctx = ctx->cur_co_ctx;
     if (coctx == NULL) {

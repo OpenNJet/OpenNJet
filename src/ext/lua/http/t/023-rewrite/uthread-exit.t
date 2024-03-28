@@ -25,15 +25,15 @@ __DATA__
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
-            ngx.sleep(1)
-            ngx.say("end")
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
+            njt.sleep(1)
+            njt.say("end")
         ';
     }
 --- request
@@ -83,21 +83,21 @@ hello in thread
 
 
 
-=== TEST 2: exit in user thread (entry thread is still pending on ngx.sleep)
+=== TEST 2: exit in user thread (entry thread is still pending on njt.sleep)
 --- config
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
-            ngx.sleep(1)
-            ngx.say("end")
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
+            njt.sleep(1)
+            njt.say("end")
         ';
     }
 --- request
@@ -108,7 +108,7 @@ GET /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -140,7 +140,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_sleep_cleanup) {
+F(njt_http_lua_sleep_cleanup) {
     println("lua sleep cleanup")
 }
 _EOC_
@@ -168,24 +168,24 @@ after
 
 
 
-=== TEST 3: exit in a user thread (another user thread is still pending on ngx.sleep)
+=== TEST 3: exit in a user thread (another user thread is still pending on njt.sleep)
 --- config
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.say("f")
-                ngx.exit(0)
+                njt.sleep(0.1)
+                njt.say("f")
+                njt.exit(0)
             end
 
             local function g()
-                ngx.sleep(1)
-                ngx.say("g")
+                njt.sleep(1)
+                njt.say("g")
             end
 
-            ngx.thread.spawn(f)
-            ngx.thread.spawn(g)
-            ngx.say("end")
+            njt.thread.spawn(f)
+            njt.thread.spawn(g)
+            njt.say("end")
         ';
     }
 --- request
@@ -196,7 +196,7 @@ GET /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -228,7 +228,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_sleep_cleanup) {
+F(njt_http_lua_sleep_cleanup) {
     println("lua sleep cleanup")
 }
 _EOC_
@@ -263,14 +263,14 @@ f
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.say("exiting the user thread")
-                ngx.exit(0)
+                njt.sleep(0.1)
+                njt.say("exiting the user thread")
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
         ';
     }
 --- request
@@ -295,28 +295,28 @@ exiting the user thread
 
 
 
-=== TEST 5: exit in user thread (entry thread is still pending on the DNS resolver for ngx.socket.tcp)
+=== TEST 5: exit in user thread (entry thread is still pending on the DNS resolver for njt.socket.tcp)
 --- config
     location /lua {
         resolver 127.0.0.2:12345;
         resolver_timeout 12s;
         rewrite_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.sleep(0.001)
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.sleep(0.001)
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
-            local sock = ngx.socket.tcp()
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.2", 12345)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 --- request
@@ -327,19 +327,19 @@ GET /lua
 
 global timers
 
-F(ngx_resolve_start) {
+F(njt_resolve_start) {
     println("resolver started")
 }
 
-F(ngx_http_lua_socket_resolve_handler) {
+F(njt_http_lua_socket_resolve_handler) {
     println("resolver done")
 }
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
-F(ngx_resolve_name) {
+F(njt_resolve_name) {
     printf("resolving %s\n", user_string_n($ctx->name->data, $ctx->name->len))
 }
 
@@ -371,7 +371,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_tcp_resolve_cleanup) {
+F(njt_http_lua_tcp_resolve_cleanup) {
     println("lua tcp resolve cleanup")
 }
 _EOC_
@@ -400,7 +400,7 @@ after
 
 
 
-=== TEST 6: exit in user thread (entry thread is still pending on the DNS resolver for ngx.socket.udp)
+=== TEST 6: exit in user thread (entry thread is still pending on the DNS resolver for njt.socket.udp)
 --- config
     location /lua {
         resolver 127.0.0.2:12345;
@@ -408,21 +408,21 @@ after
         resolver_timeout 12s;
         rewrite_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.sleep(0.001)
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.sleep(0.001)
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
-            local sock = ngx.socket.udp()
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
+            local sock = njt.socket.udp()
             local ok, err = sock:setpeername("agentzh.org", 80)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 --- request
@@ -433,19 +433,19 @@ GET /lua
 
 global timers
 
-F(ngx_resolve_start) {
+F(njt_resolve_start) {
     println("resolver started")
 }
 
-F(ngx_http_lua_socket_resolve_handler) {
+F(njt_http_lua_socket_resolve_handler) {
     println("resolver done")
 }
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
-F(ngx_resolve_name) {
+F(njt_resolve_name) {
     printf("resolving %s\n", user_string_n($ctx->name->data, $ctx->name->len))
 }
 
@@ -477,7 +477,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_udp_resolve_cleanup) {
+F(njt_http_lua_udp_resolve_cleanup) {
     println("lua udp resolve cleanup")
 }
 _EOC_
@@ -511,22 +511,22 @@ after
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
-            local sock = ngx.socket.tcp()
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
+            local sock = njt.socket.tcp()
             sock:settimeout(12000)
             local ok, err = sock:connect("127.0.0.2", 12345)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 --- request
@@ -537,7 +537,7 @@ GET /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -569,7 +569,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_coctx_cleanup) {
+F(njt_http_lua_coctx_cleanup) {
     println("lua tcp socket cleanup")
 }
 _EOC_
@@ -601,25 +601,25 @@ after
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
-            local sock = ngx.socket.tcp()
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
             local bytes, ok = sock:send("blpop not_exists 2\\r\\n")
             if not bytes then
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 return
             end
 
@@ -627,11 +627,11 @@ after
 
             local data, err = sock:receive()
             if not data then
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
                 return
             end
 
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 --- request
@@ -642,7 +642,7 @@ GET /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -669,7 +669,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_coctx_cleanup) {
+F(njt_http_lua_coctx_cleanup) {
     println("lua tcp socket cleanup")
 }
 _EOC_
@@ -701,31 +701,31 @@ after
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
-            local sock = ngx.socket.tcp()
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
             local bytes, ok = sock:send("blpop not_exists 2\\r\\n")
             if not bytes then
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 return
             end
 
             local it, err = sock:receiveuntil("\\r\\n")
             if not it then
-                ngx.say("failed to receive until: ", err)
+                njt.say("failed to receive until: ", err)
                 return
             end
 
@@ -733,11 +733,11 @@ after
 
             local data, err = it()
             if not data then
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
                 return
             end
 
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 --- request
@@ -748,7 +748,7 @@ GET /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -775,7 +775,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_coctx_cleanup) {
+F(njt_http_lua_coctx_cleanup) {
     println("lua tcp socket cleanup")
 }
 _EOC_
@@ -807,19 +807,19 @@ after
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
-            local sock = ngx.socket.udp()
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
+            local sock = njt.socket.udp()
 
             local ok, err = sock:setpeername("8.8.8.8", 12345)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
@@ -827,11 +827,11 @@ after
 
             local data, err = sock:receive()
             if not data then
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
                 return
             end
 
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 --- request
@@ -842,7 +842,7 @@ GET /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -869,7 +869,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_udp_socket_cleanup) {
+F(njt_http_lua_udp_socket_cleanup) {
     println("lua udp socket cleanup")
 }
 _EOC_
@@ -902,25 +902,25 @@ after
     location /lua {
         rewrite_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
-            local sock = ngx.req.socket()
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
+            local sock = njt.req.socket()
 
             sock:settimeout(12000)
 
             local data, err = sock:receive(1024)
             if not data then
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
                 return
             end
 
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 --- request
@@ -935,7 +935,7 @@ Content-Length: 1024
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -962,7 +962,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_coctx_cleanup) {
+F(njt_http_lua_coctx_cleanup) {
     println("lua tcp socket cleanup")
 }
 _EOC_
@@ -990,24 +990,24 @@ after
 
 
 
-=== TEST 12: exit in user thread (entry thread is still pending on ngx.req.read_body)
+=== TEST 12: exit in user thread (entry thread is still pending on njt.req.read_body)
 --- config
     location /lua {
         client_body_timeout 12000ms;
         rewrite_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
 
-            ngx.req.read_body()
+            njt.req.read_body()
 
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 --- request
@@ -1020,7 +1020,7 @@ Content-Length: 1024
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -1047,7 +1047,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_req_body_cleanup) {
+F(njt_http_lua_req_body_cleanup) {
     println("lua req body cleanup")
 }
 _EOC_
@@ -1075,24 +1075,24 @@ after
 
 
 
-=== TEST 13: exit in user thread (entry thread is still pending on ngx.location.capture), with pending output
+=== TEST 13: exit in user thread (entry thread is still pending on njt.location.capture), with pending output
 --- config
     location /lua {
         client_body_timeout 12000ms;
         rewrite_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
 
-            ngx.location.capture("/sleep")
+            njt.location.capture("/sleep")
 
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 
@@ -1107,7 +1107,7 @@ POST /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -1159,20 +1159,20 @@ attempt to abort with pending subrequests
 
 
 
-=== TEST 14: exit in user thread (entry thread is still pending on ngx.location.capture), without pending output
+=== TEST 14: exit in user thread (entry thread is still pending on njt.location.capture), without pending output
 --- config
     location /lua {
         client_body_timeout 12000ms;
         rewrite_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
-            ngx.thread.spawn(f)
+            njt.thread.spawn(f)
 
-            ngx.location.capture("/sleep")
-            ngx.say("end")
+            njt.location.capture("/sleep")
+            njt.say("end")
         ';
     }
 
@@ -1187,7 +1187,7 @@ POST /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -1214,8 +1214,8 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_post_subrequest) {
-    printf("post subreq %s\n", ngx_http_req_uri($r))
+F(njt_http_lua_post_subrequest) {
+    printf("post subreq %s\n", njt_http_req_uri($r))
 }
 
 _EOC_
@@ -1242,23 +1242,23 @@ attempt to abort with pending subrequests
 
 
 
-=== TEST 15: exit in user thread (entry thread is still pending on ngx.location.capture_multi), without pending output
+=== TEST 15: exit in user thread (entry thread is still pending on njt.location.capture_multi), without pending output
 --- config
     location /lua {
         client_body_timeout 12000ms;
         rewrite_by_lua '
             local function f()
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
-            ngx.thread.spawn(f)
+            njt.thread.spawn(f)
 
-            ngx.location.capture_multi{
+            njt.location.capture_multi{
                 {"/echo"},
                 {"/sleep"}
             }
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 
@@ -1277,7 +1277,7 @@ POST /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -1304,8 +1304,8 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_post_subrequest) {
-    printf("post subreq %s\n", ngx_http_req_uri($r))
+F(njt_http_lua_post_subrequest) {
+    printf("post subreq %s\n", njt_http_req_uri($r))
 }
 _EOC_
 

@@ -21,7 +21,7 @@ __DATA__
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say("worker id: ", ngx.worker.id())
+            njt.say("worker id: ", njt.worker.id())
         }
     }
 --- request

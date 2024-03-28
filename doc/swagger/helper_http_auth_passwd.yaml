@@ -1,0 +1,116 @@
+openapi: 3.0.3
+info:
+  title: auth password kv config api
+  description: auth kv密码配置
+  version: 1.1.0
+
+servers:
+  - url: '/api'
+paths:
+  /v1/auth_kv/password:
+    put:
+      tags:
+        - auth password kv config
+      summary: set auth password in kv
+      description: set auth password in kv
+      operationId: setUserAuthPassword
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPasswdConf'
+          required: true
+      responses:
+        '204':
+          description: Success
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+  '/v1/auth_kv/password/{prefix}/{user_name}':
+    parameters:
+      - name: prefix
+        in: path
+        description: The prefix of user.
+        required: true
+        type: string
+      - name: user_name
+        in: path
+        description: The name of user.
+        required: true
+        type: string
+    patch:
+      summary: Modify password of user
+      description: Modify password of user
+      operationId: PatchUserAuthPassword
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordMsg'
+          required: true
+      responses:
+        '204':
+          description: Success
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+    delete:
+      summary: delete password of user
+      description: delete password of user.
+      operationId: delete password of user
+      produces:
+        - application/json
+      responses:
+        '204':
+          description: Success
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+        ###DEFINITIONS
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+    UserPasswdConf:
+      title:     UserPasswdConf
+      description: 用户认证kv密码配置
+      type: object
+      properties:
+        prefix:
+          type: string
+          description: 用户所属前缀
+        user_name:
+          type: string
+          description: 用户名
+        password:
+          type: string
+          description: 密码
+    PasswordMsg:
+      title:     PasswordMsg
+      description: 用户认证kv密码修改
+      type: object
+      properties:
+        password:
+          type: string
+          description: 密码

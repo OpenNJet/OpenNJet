@@ -11,8 +11,8 @@ fi
 # we need the re.pl script here:
 #   https://github.com/openresty/sregex/blob/dfa-multi-re/re.pl
 re.pl -W --no-main -c --cc="clang -O2" \
-    --func-name ngx_http_lua_lex \
-    --header ngx_http_lua_lex.h -o src/ngx_http_lua_lex.c \
+    --func-name njt_http_lua_lex \
+    --header njt_http_lua_lex.h -o src/njt_http_lua_lex.c \
     --debug=$level -n 8 \
     -- '{' '}' '\[=*\[' '--\[=*\[' '\]=*\]' '--[^\n]*' '"(?:\\[^\n]|[^"\n\\])*"' $'\'(?:\\\\[^\\n]|[^\'\\n\\\\])*\'' \
     || exit 1

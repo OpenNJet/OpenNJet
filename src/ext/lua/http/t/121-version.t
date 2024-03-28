@@ -21,7 +21,7 @@ __DATA__
 --- config
     location /lua {
         content_by_lua '
-            ngx.say("version: ", ngx.config.njet_version)
+            njt.say("version: ", njt.config.njet_version)
         ';
     }
 --- request
@@ -33,11 +33,11 @@ GET /lua
 
 
 
-=== TEST 2: ngx_lua_version
+=== TEST 2: njt_lua_version
 --- config
     location /lua {
         content_by_lua '
-            ngx.say("version: ", ngx.config.ngx_lua_version)
+            njt.say("version: ", njt.config.njt_lua_version)
         ';
     }
 --- request

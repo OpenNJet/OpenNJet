@@ -29,7 +29,7 @@ __DATA__
 module("foo", package.seeall)
 
 function go()
-    ngx.say("Greetings from module foo.")
+    njt.say("Greetings from module foo.")
 end
 --- stream_response
 Greetings from module foo.
@@ -50,7 +50,7 @@ Greetings from module foo.
 module("foo", package.seeall)
 
 function go()
-    ngx.say("Greetings from module foo.")
+    njt.say("Greetings from module foo.")
 end
 --- stream_response
 Greetings from module foo.

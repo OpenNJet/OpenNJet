@@ -28,12 +28,12 @@ __DATA__
 === TEST 1: simple exit_worker_by_lua_block with hup
 --- http_config
     exit_worker_by_lua_block {
-        ngx.log(ngx.NOTICE, "log from exit_worker_by_lua_block")
+        njt.log(njt.NOTICE, "log from exit_worker_by_lua_block")
     }
 --- config
     location /t {
         content_by_lua_block {
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request
@@ -50,7 +50,7 @@ log from exit_worker_by_lua_block
     worker_shutdown_timeout 1;
 --- http_config
     exit_worker_by_lua_block {
-        ngx.log(ngx.NOTICE, "log from exit_worker_by_lua_block")
+        njt.log(njt.NOTICE, "log from exit_worker_by_lua_block")
     }
 
     server {
@@ -63,17 +63,17 @@ log from exit_worker_by_lua_block
 --- config
     location /t {
         content_by_lua_block {
-            ngx.timer.at(0, function ()
-                local sock = ngx.socket.tcp()
+            njt.timer.at(0, function ()
+                local sock = njt.socket.tcp()
                 sock:connect("127.0.0.1", 12345)
                 local reader = sock:receiveuntil("unknow")
-                ngx.log(ngx.NOTICE, "reading to block the exiting")
+                njt.log(njt.NOTICE, "reading to block the exiting")
                 reader()
             end)
 
-            ngx.sleep(0)
+            njt.sleep(0)
 
-            ngx.say("ok")
+            njt.say("ok")
         }
     }
 --- request

@@ -34,16 +34,16 @@ __DATA__
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local ok, err = ngx.on_abort(function ()
-            ngx.log(ngx.NOTICE, "on abort called")
+        local ok, err = njt.on_abort(function ()
+            njt.log(njt.NOTICE, "on abort called")
         end)
 
         if not ok then
             error("cannot set on_abort: " .. err)
         end
 
-        ngx.sleep(0.7)
-        ngx.log(ngx.NOTICE, "main handler done")
+        njt.sleep(0.7)
+        njt.log(njt.NOTICE, "main handler done")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -75,17 +75,17 @@ main handler done
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local ok, err = ngx.on_abort(function ()
-            ngx.log(ngx.NOTICE, "on abort called")
-            ngx.exit(444)
+        local ok, err = njt.on_abort(function ()
+            njt.log(njt.NOTICE, "on abort called")
+            njt.exit(444)
         end)
 
         if not ok then
             error("cannot set on_abort: " .. err)
         end
 
-        ngx.sleep(0.7)
-        ngx.log(ngx.NOTICE, "main handler done")
+        njt.sleep(0.7)
+        njt.log(njt.NOTICE, "main handler done")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -115,35 +115,35 @@ on abort called
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local ok, err = ngx.on_abort(function ()
-            ngx.log(ngx.NOTICE, "on abort called")
-            local sock = ngx.socket.tcp()
+        local ok, err = njt.on_abort(function ()
+            njt.log(njt.NOTICE, "on abort called")
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_REDIS_PORT)
             if not ok then
-                ngx.log(ngx.ERR, "failed to connect to redis: ", err)
-                ngx.exit(499)
+                njt.log(njt.ERR, "failed to connect to redis: ", err)
+                njt.exit(499)
             end
             local bytes, err = sock:send("flushall\r\n")
             if not bytes then
-                ngx.log(ngx.ERR, "failed to send query: ", err)
-                ngx.exit(499)
+                njt.log(njt.ERR, "failed to send query: ", err)
+                njt.exit(499)
             end
 
             local res, err = sock:receive()
             if not res then
-                ngx.log(ngx.ERR, "failed to receive: ", err)
-                ngx.exit(499)
+                njt.log(njt.ERR, "failed to receive: ", err)
+                njt.exit(499)
             end
-            ngx.log(ngx.NOTICE, "callback done: ", res)
-            ngx.exit(499)
+            njt.log(njt.NOTICE, "callback done: ", res)
+            njt.exit(499)
         end)
 
         if not ok then
             error("cannot set on_abort: " .. err)
         end
 
-        ngx.sleep(0.7)
-        ngx.log(ngx.NOTICE, "main handler done")
+        njt.sleep(0.7)
+        njt.log(njt.NOTICE, "main handler done")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -174,17 +174,17 @@ callback done: +OK
 --- stream_server_config
         lua_check_client_abort off;
     content_by_lua_block {
-        local ok, err = ngx.on_abort(function ()
-            ngx.log(ngx.NOTICE, "on abort called")
+        local ok, err = njt.on_abort(function ()
+            njt.log(njt.NOTICE, "on abort called")
         end)
 
         if not ok then
-            ngx.say("cannot set on_abort: ", err)
+            njt.say("cannot set on_abort: ", err)
             return
         end
 
-        ngx.sleep(0.7)
-        ngx.log(ngx.NOTICE, "main handler done")
+        njt.sleep(0.7)
+        njt.log(njt.NOTICE, "main handler done")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -208,15 +208,15 @@ main handler done
 --- stream_server_config
         lua_check_client_abort on;
     content_by_lua_block {
-        local ok, err = ngx.on_abort(function ()
-            ngx.log(ngx.NOTICE, "on abort called")
+        local ok, err = njt.on_abort(function ()
+            njt.log(njt.NOTICE, "on abort called")
         end)
 
         if not ok then
             error("cannot set on_abort: " .. err)
         end
 
-        ngx.say("done")
+        njt.say("done")
     }
 --- stap2 eval: $::StapScript
 --- stap eval: $::GCScript
@@ -241,17 +241,17 @@ main handler done
 --- stream_server_config
         lua_check_client_abort on;
     content_by_lua_block {
-        local ok, err = ngx.on_abort(function ()
-            ngx.log(ngx.NOTICE, "on abort called")
+        local ok, err = njt.on_abort(function ()
+            njt.log(njt.NOTICE, "on abort called")
         end)
 
         if not ok then
             error("cannot set on_abort: " .. err)
         end
 
-        ngx.thread.spawn(function ()
-            ngx.sleep(0.7)
-            ngx.log(ngx.NOTICE, "main handler done")
+        njt.thread.spawn(function ()
+            njt.sleep(0.7)
+            njt.log(njt.NOTICE, "main handler done")
         end)
     }
 --- stap2 eval: $::StapScript
@@ -287,18 +287,18 @@ main handler done
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local ok, err = ngx.on_abort(function ()
-            ngx.log(ngx.NOTICE, "on abort called")
-            ngx.exit(444)
+        local ok, err = njt.on_abort(function ()
+            njt.log(njt.NOTICE, "on abort called")
+            njt.exit(444)
         end)
 
         if not ok then
             error("cannot set on_abort: " .. err)
         end
 
-        ngx.thread.spawn(function ()
-            ngx.sleep(0.7)
-            ngx.log(ngx.NOTICE, "main handler done")
+        njt.thread.spawn(function ()
+            njt.sleep(0.7)
+            njt.log(njt.NOTICE, "main handler done")
         end)
     }
 --- stap2 eval: $::StapScript
@@ -333,17 +333,17 @@ on abort called
 --- stream_server_config
         lua_check_client_abort on;
     content_by_lua_block {
-        local ok, err = ngx.on_abort(function ()
-            ngx.log(ngx.NOTICE, "on abort called")
+        local ok, err = njt.on_abort(function ()
+            njt.log(njt.NOTICE, "on abort called")
         end)
 
         if not ok then
             error("cannot set on_abort: " .. err)
         end
 
-        ngx.thread.spawn(function ()
-            ngx.sleep(0.1)
-            ngx.say("done")
+        njt.thread.spawn(function ()
+            njt.sleep(0.1)
+            njt.say("done")
         end)
     }
 --- stap2 eval: $::StapScript
@@ -373,27 +373,27 @@ main handler done
 --- stream_server_config
         lua_check_client_abort on;
     content_by_lua_block {
-        local ok, err = ngx.on_abort(function ()
-            ngx.log(ngx.NOTICE, "on abort called")
+        local ok, err = njt.on_abort(function ()
+            njt.log(njt.NOTICE, "on abort called")
         end)
 
         if not ok then
-            ngx.say("1: cannot set on_abort: " .. err)
+            njt.say("1: cannot set on_abort: " .. err)
             return
         end
 
-        local ok, err = ngx.on_abort(function ()
-            ngx.log(ngx.NOTICE, "on abort called")
+        local ok, err = njt.on_abort(function ()
+            njt.log(njt.NOTICE, "on abort called")
         end)
 
         if not ok then
-            ngx.say("2: cannot set on_abort: " .. err)
+            njt.say("2: cannot set on_abort: " .. err)
             return
         end
 
-        ngx.thread.spawn(function ()
-            ngx.sleep(0.1)
-            ngx.say("done")
+        njt.thread.spawn(function ()
+            njt.sleep(0.1)
+            njt.say("done")
         end)
     }
 --- stap2 eval: $::StapScript
@@ -417,22 +417,22 @@ delete thread 2
 --- stream_server_config
     lua_check_client_abort on;
     content_by_lua_block {
-        local ok, err = ngx.on_abort(function ()
-            ngx.log(ngx.NOTICE, "on abort called")
+        local ok, err = njt.on_abort(function ()
+            njt.log(njt.NOTICE, "on abort called")
         end)
 
         if not ok then
             error("cannot set on_abort: " .. err)
         end
 
-        ngx.thread.spawn(function ()
-            ngx.sleep(0.1)
-            ngx.say("done")
-            ngx.exit(200)
+        njt.thread.spawn(function ()
+            njt.sleep(0.1)
+            njt.say("done")
+            njt.exit(200)
         end)
 
-        ngx.thread.spawn(function ()
-            ngx.sleep(100)
+        njt.thread.spawn(function ()
+            njt.sleep(100)
         end)
     }
 --- stap2 eval: $::StapScript

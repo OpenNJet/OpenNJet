@@ -25,8 +25,8 @@ __DATA__
 --- config
     location = /cache_on {
         content_by_lua_block {
-            local delayed_load = require("ngx.delayed_load")
-            ngx.say(type(delayed_load.get_function))
+            local delayed_load = require("njt.delayed_load")
+            njt.say(type(delayed_load.get_function))
         }
     }
 --- request
@@ -44,8 +44,8 @@ function
 --- config
     location = /cache_off {
         content_by_lua_block {
-            local delayed_load = require("ngx.delayed_load")
-            ngx.say(type(delayed_load.get_function))
+            local delayed_load = require("njt.delayed_load")
+            njt.say(type(delayed_load.get_function))
         }
     }
 --- request

@@ -29,7 +29,7 @@
 
 
 #if !(NDK)
-#error At least one module requires the Nginx Development Kit to be compiled with \
+#error At least one module requires the NJet Development Kit to be compiled with \
 the source (add --with-module=/path/to/devel/kit/src to configure command)
 #endif
 

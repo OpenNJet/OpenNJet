@@ -22,9 +22,9 @@ __DATA__
     location = /test {
         set $var 32;
         content_by_lua '
-            ngx.say("old: ", ngx.var.var)
-            ngx.var.var = nil
-            ngx.say("new: ", ngx.var.var)
+            njt.say("old: ", njt.var.var)
+            njt.var.var = nil
+            njt.say("new: ", njt.var.var)
         ';
     }
 --- request
@@ -39,9 +39,9 @@ new: nil
 --- config
     location = /test {
         content_by_lua '
-            ngx.say("old: ", ngx.var.args)
-            ngx.var.args = nil
-            ngx.say("new: ", ngx.var.args)
+            njt.say("old: ", njt.var.args)
+            njt.var.args = nil
+            njt.say("new: ", njt.var.args)
         ';
     }
 --- request
@@ -57,7 +57,7 @@ new: nil
     location = /test {
         set $var 32;
         content_by_lua '
-            ngx.say("value: ", ngx.var.notfound)
+            njt.say("value: ", njt.var.notfound)
         ';
     }
 --- request
@@ -72,7 +72,7 @@ value: nil
     location = /test {
         proxy_pass http://127.0.0.1:$server_port/foo;
         header_filter_by_lua '
-            ngx.header["X-My-Host"] = ngx.var.proxy_host
+            njt.header["X-My-Host"] = njt.var.proxy_host
         ';
     }
 
@@ -94,7 +94,7 @@ foo
     location = /test {
         set $Var 32;
         content_by_lua '
-            ngx.say("value: ", ngx.var.VAR)
+            njt.say("value: ", njt.var.VAR)
         ';
     }
 --- request
@@ -110,8 +110,8 @@ github issue #239
     location = /t {
         valid_referers www.foo.com;
         content_by_lua '
-            ngx.say("invalid referer: ", ngx.var.invalid_referer)
-            ngx.exit(200)
+            njt.say("invalid referer: ", njt.var.invalid_referer)
+            njt.exit(200)
         ';
         #echo $invalid_referer;
     }
@@ -135,8 +135,8 @@ github issue #239
     location = /t {
         valid_referers www.foo.com;
         content_by_lua '
-            ngx.say("invalid referer: ", ngx.var.invalid_referer)
-            ngx.exit(200)
+            njt.say("invalid referer: ", njt.var.invalid_referer)
+            njt.exit(200)
         ';
         #echo $invalid_referer;
     }
@@ -159,9 +159,9 @@ invalid referer: 1
     location = /t {
         proxy_pass http://127.0.0.1:$server_port/back;
         header_filter_by_lua_block {
-            ngx.header["Proxy-Host"] = ngx.var.proxy_host
-            ngx.header["Proxy-Port"] = ngx.var.proxy_port
-            ngx.header["Proxy-Add-X-Forwarded-For"] = ngx.var.proxy_add_x_forwarded_for
+            njt.header["Proxy-Host"] = njt.var.proxy_host
+            njt.header["Proxy-Port"] = njt.var.proxy_port
+            njt.header["Proxy-Add-X-Forwarded-For"] = njt.var.proxy_add_x_forwarded_for
         }
     }
 
@@ -186,7 +186,7 @@ hello
     location = /test {
         set $true 32;
         content_by_lua '
-            ngx.say("value: ", ngx.var[true])
+            njt.say("value: ", njt.var[true])
         ';
     }
 --- request
@@ -203,7 +203,7 @@ bad variable name
     location = /test {
         set $true 32;
         content_by_lua '
-            ngx.var[true] = 56
+            njt.var[true] = 56
         ';
     }
 --- request
@@ -219,7 +219,7 @@ bad variable name
 --- config
     location = /test {
         content_by_lua '
-            ngx.var.query_string = 56
+            njt.var.query_string = 56
         ';
     }
 --- request
@@ -236,13 +236,13 @@ variable "query_string" not changeable
     upstream balancer {
         server 127.0.0.1;
         balancer_by_lua_block {
-            local balancer = require "ngx.balancer"
+            local balancer = require "njt.balancer"
             local host = "127.0.0.1"
-            local port = ngx.var.port;
+            local port = njt.var.port;
             local ok, err = balancer.set_current_peer(host, port)
             if not ok then
-                ngx.log(ngx.ERR, "failed to set the current peer: ", err)
-                return ngx.exit(500)
+                njt.log(njt.ERR, "failed to set the current peer: ", err)
+                return njt.exit(500)
             end
         }
     }
@@ -251,7 +251,7 @@ variable "query_string" not changeable
         listen 8091;
         location / {
             content_by_lua_block{
-                ngx.print("this is backend peer 8091")
+                njt.print("this is backend peer 8091")
             }
         }
     }
@@ -260,7 +260,7 @@ variable "query_string" not changeable
         listen 8092;
         location / {
             content_by_lua_block{
-                ngx.print("this is backend peer 8092")
+                njt.print("this is backend peer 8092")
             }
         }
     }
@@ -268,7 +268,7 @@ variable "query_string" not changeable
     location =/balancer {
         set $port '';
         set_by_lua_block $port {
-            local args, _ = ngx.req.get_uri_args()
+            local args, _ = njt.req.get_uri_args()
             local port = args['port']
             return port
         }

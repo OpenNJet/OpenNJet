@@ -48,11 +48,11 @@ __DATA__
     postpone_output 1;
     location = /t {
         content_by_lua '
-            ngx.send_headers()
-            ngx.req.read_body()
-            local sock, err = ngx.req.socket(true)
+            njt.send_headers()
+            njt.req.read_body()
+            local sock, err = njt.req.socket(true)
             if not sock then
-                ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+                njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
                 return
             end
         ';
@@ -66,10 +66,10 @@ Connection: close\r
 \r
 "
 --- stap2
-F(ngx_http_header_filter) {
+F(njt_http_header_filter) {
     println("header filter")
 }
-F(ngx_http_lua_req_socket) {
+F(njt_http_lua_req_socket) {
     println("lua req socket")
 }
 --- response_body
@@ -84,20 +84,20 @@ server: failed to get raw req socket: pending data to write
     postpone_output 1;
     location = /t {
         content_by_lua '
-            ngx.send_headers()
-            ngx.req.read_body()
-            ngx.flush(true)
-            local sock, err = ngx.req.socket(true)
+            njt.send_headers()
+            njt.req.read_body()
+            njt.flush(true)
+            local sock, err = njt.req.socket(true)
             if not sock then
-                ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+                njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
                 return
             end
             sock:settimeout(100)
             local ok, err = sock:send("hello, world!")
             if not ok then
-                ngx.log(ngx.ERR, "server: failed to send: ", err)
+                njt.log(njt.ERR, "server: failed to send: ", err)
             end
-            ngx.exit(444)
+            njt.exit(444)
         ';
     }
 

@@ -22,7 +22,6 @@ njt_int_t njt_http_lua_body_filter_inline(njt_http_request_t *r,
     njt_chain_t *in);
 njt_int_t njt_http_lua_body_filter_file(njt_http_request_t *r,
     njt_chain_t *in);
-int njt_http_lua_body_filter_param_get(lua_State *L, njt_http_request_t *r);
 int njt_http_lua_body_filter_param_set(lua_State *L, njt_http_request_t *r,
     njt_http_lua_ctx_t *ctx);
 

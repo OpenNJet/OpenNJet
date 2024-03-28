@@ -300,6 +300,10 @@ typedef struct {
 typedef struct {
     njt_http_listen_opt_t      opt;
 
+    unsigned                   protocols:3;
+    unsigned                   protocols_set:1;
+    unsigned                   protocols_changed:1;
+
     njt_hash_t                 hash;
     njt_hash_wildcard_t       *wc_head;
     njt_hash_wildcard_t       *wc_tail;
@@ -330,6 +334,14 @@ typedef struct njt_http_location_destroy_s {
 } njt_http_location_destroy_t;
 #endif
 //end
+
+//add by clb, used for ctrl api module
+typedef struct {
+    njt_str_t       module_key;
+    uint32_t        api_limit_except;
+    void            **limit_except_loc_conf;
+} njt_http_api_limit_except_t;
+//end add by clb
 
 struct njt_http_core_loc_conf_s {
     njt_str_t     name;          /* location name */
@@ -370,6 +382,10 @@ struct njt_http_core_loc_conf_s {
 
     /* pointer to the modules' loc_conf */
     void        **loc_conf;
+
+    //add by clb, used for ctrl api module
+    njt_array_t  *api_limit_excepts;
+    //end add by clb
 
     uint32_t      limit_except;
     void        **limit_except_loc_conf;
@@ -534,8 +550,8 @@ struct njt_http_location_tree_node_s {
     njt_pool_t   *parent_pool;
 #endif
 //end by clb
+    u_short                          len;
     u_char                           auto_redirect;
-    u_char                           len;
     u_char                           name[1];
 };
 
@@ -588,6 +604,8 @@ njt_int_t njt_http_location_cleanup_add(njt_http_core_loc_conf_t *clcf, void(*ha
 void njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf);
 void njt_http_server_delete_dyn_var(njt_http_core_srv_conf_t *cscf);
 njt_int_t njt_http_add_location_pre_process(njt_conf_t *cf,njt_queue_t **locations,njt_pool_t *pool);
+njt_int_t njt_http_del_variable(njt_http_variable_t *fv);
+void njt_http_refresh_variables_keys();
 #endif
 //end
 

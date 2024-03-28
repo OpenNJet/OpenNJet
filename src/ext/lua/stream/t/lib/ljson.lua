@@ -1,4 +1,4 @@
-local njt_null = ngx.null
+local njt_null = njt.null
 local tostring = tostring
 local byte = string.byte
 local gsub = string.gsub

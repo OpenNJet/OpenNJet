@@ -36,7 +36,7 @@ http://mailman.nginx.org/pipermail/nginx-devel/2012-May/002223.html
 --- config
     location /t {
         set $vv $http_host;
-        set_by_lua $i 'return ngx.var.http_host';
+        set_by_lua $i 'return njt.var.http_host';
         echo $i;
     }
 --- request
@@ -53,7 +53,7 @@ http://mailman.nginx.org/pipermail/nginx-devel/2012-May/002223.html
 --- config
     location /t {
         #set $vv $http_host;
-        set_by_lua $i 'return ngx.var.http_host';
+        set_by_lua $i 'return njt.var.http_host';
         echo $i;
     }
 --- request

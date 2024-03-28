@@ -99,7 +99,7 @@ static njt_int_t njt_dynlog_update_locs_log(dynlog_servers_item_locations_t *loc
         for (;tq!= njt_queue_sentinel(q);tq = njt_queue_next(tq)) {
             hlq = njt_queue_data(tq, njt_http_location_queue_t, queue);
             clcf = hlq->exact == NULL ? hlq->inclusive : hlq->exact;
-            if (name->len == clcf->full_name.len && njt_strncmp(name->data, clcf->full_name.data, name->len) == 0) {
+            if (clcf != NULL && njt_http_location_full_name_cmp(clcf->full_name, *name) == 0) {
                 aal = njt_api_loc_with_loc_item(locs->pool, daal);
                 if(!aal){
                     njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,"njt_api_loc_with_loc_item error");
@@ -136,17 +136,17 @@ static njt_int_t njt_dynlog_update_locs_log(dynlog_servers_item_locations_t *loc
                 } else {
                     njt_rpc_result_add_success_count(rpc_result);
                 }
-            }
-
-            if(daal->is_locations_set && daal->locations != NULL && daal->locations->nelts > 0){
-                if(rpc_result){
-                    conf_path = rpc_result->conf_path;
+           
+                if(daal->is_locations_set && daal->locations != NULL && daal->locations->nelts > 0){
+                    if(rpc_result){
+                        conf_path = rpc_result->conf_path;
+                    }
+                    njt_dynlog_update_locs_log(daal->locations, clcf->old_locations, ctx, rpc_result);
+                    if(rpc_result){
+                        rpc_result->conf_path = conf_path;
+                    }
                 }
-                njt_dynlog_update_locs_log(daal->locations, clcf->old_locations, ctx, rpc_result);
-                if(rpc_result){
-                    rpc_result->conf_path = conf_path;
-                }
-            }
+             }
         }
 
         if (!loc_found) {

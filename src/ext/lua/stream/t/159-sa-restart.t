@@ -25,7 +25,7 @@ add_block_preprocessor(sub {
 
             for _, signame in ipairs(signals) do
                 local cmd = string.format("kill -s %s %d && sleep 0.01",
-                                          signame, ngx.worker.pid())
+                                          signame, njt.worker.pid())
                 local err = select(2, io.popen(cmd):read("*a"))
                 if err then
                     error("SIG" .. signame .. " caused: " .. err)
@@ -40,7 +40,7 @@ _EOC_
     if (!defined $block->stream_server_config) {
         my $stream_config = <<_EOC_;
             content_by_lua_block {
-                ngx.say("ok")
+                njt.say("ok")
             }
 _EOC_
 
@@ -105,7 +105,7 @@ Interrupted system call
 === TEST 5: lua_sa_restart on (default) - SA_RESTART is effective in log_by_lua*
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("ok")
+        njt.say("ok")
     }
 
     log_by_lua_block {
@@ -117,9 +117,9 @@ Interrupted system call
 === TEST 6: lua_sa_restart on (default) - SA_RESTART is effective in timer phase
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("ok")
+        njt.say("ok")
     }
 
     log_by_lua_block {
-        ngx.timer.at(0, test_sa_restart)
+        njt.timer.at(0, test_sa_restart)
     }

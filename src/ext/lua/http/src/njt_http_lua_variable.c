@@ -71,6 +71,18 @@ njt_http_lua_ffi_var_get(njt_http_request_t *r, u_char *name_data,
     }
 #endif
 
+#if (NJT_HTTP_V3)
+    if (name_len == 9
+        && r->http_version == NJT_HTTP_VERSION_30
+        && njt_strncasecmp(name_data, (u_char *) "http_host", 9) == 0
+        && r->headers_in.server.data != NULL)
+    {
+        *value = r->headers_in.server.data;
+        *value_len = r->headers_in.server.len;
+        return NJT_OK;
+    }
+#endif
+
     hash = njt_hash_strlow(lowcase_buf, name_data, name_len);
 
     name.data = lowcase_buf;

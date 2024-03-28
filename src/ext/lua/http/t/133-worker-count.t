@@ -21,7 +21,7 @@ __DATA__
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say("workers: ", ngx.worker.count())
+            njt.say("workers: ", njt.worker.count())
         }
     }
 --- request
@@ -36,12 +36,12 @@ workers: 1
 === TEST 2: init_by_lua
 --- http_config
     init_by_lua_block {
-        package.loaded.count = ngx.worker.count()
+        package.loaded.count = njt.worker.count()
     }
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say("workers: ", package.loaded.count)
+            njt.say("workers: ", package.loaded.count)
         }
     }
 --- request
@@ -56,12 +56,12 @@ workers: 1
 === TEST 3: init_worker_by_lua
 --- http_config
     init_worker_by_lua_block {
-        init_worker_count = ngx.worker.count()
+        init_worker_count = njt.worker.count()
     }
 --- config
     location /lua {
         content_by_lua_block {
-            ngx.say("workers: ", init_worker_count)
+            njt.say("workers: ", init_worker_count)
         }
     }
 --- request

@@ -1,9 +1,9 @@
 
 /*
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  * Copyright (C) cuiweixie
- * I hereby assign copyright in this code to the lua-nginx-module project,
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
+ * I hereby assign copyright in this code to the lua-njet-module project,
  * to be licensed under the same terms as the rest of the code.
  */
 
@@ -345,8 +345,8 @@ njt_http_lua_ffi_sema_post(njt_http_lua_sema_t *sem, int n)
 
     if (!njt_queue_empty(&sem->wait_queue)) {
         /* we need the extra parentheses around the first argument of
-         * njt_post_event() just to work around macro issues in nginx
-         * cores older than nginx 1.7.12 (exclusive).
+         * njt_post_event() just to work around macro issues in njet
+         * cores older than njet 1.7.12 (exclusive).
          */
         njt_post_event((&sem->sem_event), &njt_posted_events);
     }

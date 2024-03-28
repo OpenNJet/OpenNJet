@@ -21,7 +21,7 @@ __DATA__
     location /echo_body {
         lua_need_request_body on;
         content_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
     }
 --- request eval
@@ -39,7 +39,7 @@ world\x03\x04\xff"
     location /echo_body {
         lua_need_request_body off;
         content_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
     }
 --- request eval
@@ -55,7 +55,7 @@ world\x03\x04\xff"
 --- config
     location /echo_body {
         content_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
     }
 --- request eval
@@ -73,7 +73,7 @@ world\x03\x04\xff"
 --- config
     location /echo_body {
         content_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
     }
 --- request eval
@@ -92,7 +92,7 @@ world\x03\x04\xff"
 
     location /echo_body {
         content_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
     }
 --- request eval
@@ -112,7 +112,7 @@ world\x03\x04\xff"
     location /echo_body {
         lua_need_request_body off;
         content_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
     }
 --- request eval
@@ -131,7 +131,7 @@ world\x03\x04\xff"
     location /echo_body {
         lua_need_request_body off;
         content_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
     }
 --- request eval
@@ -154,13 +154,13 @@ world\x03\x04\xff"
     location /echo_body {
         lua_need_request_body off;
         content_by_lua '
-            ngx.say(ngx.var.request_body or "nil")
-            local res = ngx.location.capture(
+            njt.say(njt.var.request_body or "nil")
+            local res = njt.location.capture(
                 "/proxy",
-                { method = ngx.HTTP_POST,
-                  body = ngx.var.request_body })
+                { method = njt.HTTP_POST,
+                  body = njt.var.request_body })
 
-            ngx.say(res.status)
+            njt.say(res.status)
         ';
     }
 --- request eval
@@ -183,13 +183,13 @@ nil
     location /echo_body {
         lua_need_request_body on;
         content_by_lua '
-            ngx.say(ngx.var.request_body or "nil")
-            local res = ngx.location.capture(
+            njt.say(njt.var.request_body or "nil")
+            local res = njt.location.capture(
                 "/proxy",
-                { method = ngx.HTTP_POST,
-                  body = ngx.var.request_body })
+                { method = njt.HTTP_POST,
+                  body = njt.var.request_body })
 
-            ngx.say(res.status)
+            njt.say(res.status)
         ';
     }
 --- request eval
@@ -217,11 +217,11 @@ nil
         sendfile on;
 
         content_by_lua '
-            local res = ngx.location.capture(
+            local res = njt.location.capture(
                 "/proxy",
-                { method = ngx.HTTP_POST,
-                  body = ngx.var.request_body })
-            ngx.print(res.body)
+                { method = njt.HTTP_POST,
+                  body = njt.var.request_body })
+            njt.print(res.body)
         ';
     }
 --- request eval
@@ -235,8 +235,8 @@ nil
 --- config
     location /foo {
         content_by_lua '
-            ngx.location.capture("/other", {body = "hello"})
-            ngx.say(ngx.req.get_headers()["Content-Length"] or "nil")
+            njt.location.capture("/other", {body = "hello"})
+            njt.say(njt.req.get_headers()["Content-Length"] or "nil")
         ';
     }
     location /other {
@@ -255,7 +255,7 @@ hi
     location /echo_body {
         lua_need_request_body on;
         content_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
     }
 --- request

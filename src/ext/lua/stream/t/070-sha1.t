@@ -17,7 +17,7 @@ __DATA__
 
 === TEST 1: set sha1 hello
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.encode_base64(ngx.sha1_bin("hello"))) }
+    content_by_lua_block { njt.say(njt.encode_base64(njt.sha1_bin("hello"))) }
 --- stream_response
 qvTGHdzF6KLavt4PO0gs2a6pQ00=
 
@@ -25,7 +25,7 @@ qvTGHdzF6KLavt4PO0gs2a6pQ00=
 
 === TEST 2: set sha1 ""
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.encode_base64(ngx.sha1_bin(""))) }
+    content_by_lua_block { njt.say(njt.encode_base64(njt.sha1_bin(""))) }
 --- stream_response
 2jmj7l5rSw0yVb/vlWAYkK/YBwk=
 
@@ -33,7 +33,7 @@ qvTGHdzF6KLavt4PO0gs2a6pQ00=
 
 === TEST 3: set sha1 nil
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.encode_base64(ngx.sha1_bin(nil))) }
+    content_by_lua_block { njt.say(njt.encode_base64(njt.sha1_bin(nil))) }
 --- stream_response
 2jmj7l5rSw0yVb/vlWAYkK/YBwk=
 
@@ -41,7 +41,7 @@ qvTGHdzF6KLavt4PO0gs2a6pQ00=
 
 === TEST 4: set sha1 number
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.encode_base64(ngx.sha1_bin(512))) }
+    content_by_lua_block { njt.say(njt.encode_base64(njt.sha1_bin(512))) }
 --- stream_response
 zgmxJ9SPg4aKRWReJG07UvS97L4=
 --- no_error_log

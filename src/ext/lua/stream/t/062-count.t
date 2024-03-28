@@ -20,32 +20,32 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: entries under ngx. (content by lua)
+=== TEST 1: entries under njt. (content by lua)
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        for k, v in pairs(ngx) do
+        for k, v in pairs(njt) do
             n = n + 1
         end
-        ngx.say("ngx: ", n)
+        njt.say("njt: ", n)
     }
 --- stream_response
-ngx: 53
+njt: 53
 --- no_error_log
 [error]
 
 
 
-=== TEST 2: entries under ngx.req (content by lua)
+=== TEST 2: entries under njt.req (content by lua)
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        for k, v in pairs(ngx.req) do
+        for k, v in pairs(njt.req) do
             n = n + 1
         end
-        -- ngx.req.socket
-        -- ngx.req.start_time
-        ngx.say("n = ", n)
+        -- njt.req.socket
+        -- njt.req.start_time
+        njt.say("n = ", n)
     }
 --- stream_response
 n = 2
@@ -54,14 +54,14 @@ n = 2
 
 
 
-=== TEST 3: entries under ngx.socket
+=== TEST 3: entries under njt.socket
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        for k, v in pairs(ngx.socket) do
+        for k, v in pairs(njt.socket) do
             n = n + 1
         end
-        ngx.say("n = ", n)
+        njt.say("n = ", n)
     }
 --- stream_response
 n = 4
@@ -70,15 +70,15 @@ n = 4
 
 
 
-=== TEST 4: entries under ngx._tcp_meta
+=== TEST 4: entries under njt._tcp_meta
 --- SKIP
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        for k, v in pairs(ngx._tcp_meta) do
+        for k, v in pairs(njt._tcp_meta) do
             n = n + 1
         end
-        ngx.say("n = ", n)
+        njt.say("n = ", n)
     }
 --- stream_response
 n = 10
@@ -91,16 +91,16 @@ n = 10
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        local sock, err = ngx.req.socket()
+        local sock, err = njt.req.socket()
         if not sock then
-            ngx.say("failed to get the request socket: ", err)
+            njt.say("failed to get the request socket: ", err)
         end
 
         for k, v in pairs(getmetatable(sock)) do
             print("key: ", k)
             n = n + 1
         end
-        assert(ngx.say("n = ", n))
+        assert(njt.say("n = ", n))
     }
 --- stream_response
 n = 9
@@ -114,13 +114,13 @@ n = 9
     lua_shared_dict dogs 1m;
 --- stream_server_config
     content_by_lua_block {
-        local dogs = ngx.shared.dogs
+        local dogs = njt.shared.dogs
         local mt = dogs.__index
         local n = 0
         for k, v in pairs(mt) do
             n = n + 1
         end
-        ngx.say("n = ", n)
+        njt.say("n = ", n)
     }
 --- stream_response
 n = 22
@@ -129,14 +129,14 @@ n = 22
 
 
 
-=== TEST 7: entries under ngx.timer
+=== TEST 7: entries under njt.timer
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        for k, v in pairs(ngx.timer) do
+        for k, v in pairs(njt.timer) do
             n = n + 1
         end
-        ngx.say("n = ", n)
+        njt.say("n = ", n)
     }
 --- stream_response
 n = 4
@@ -145,14 +145,14 @@ n = 4
 
 
 
-=== TEST 8: entries under ngx.config
+=== TEST 8: entries under njt.config
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        for k, v in pairs(ngx.config) do
+        for k, v in pairs(njt.config) do
             n = n + 1
         end
-        ngx.say("n = ", n)
+        njt.say("n = ", n)
     }
 --- stream_response
 n = 6
@@ -161,14 +161,14 @@ n = 6
 
 
 
-=== TEST 9: entries under ngx.re
+=== TEST 9: entries under njt.re
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        for k, v in pairs(ngx.re) do
+        for k, v in pairs(njt.re) do
             n = n + 1
         end
-        ngx.say("n = ", n)
+        njt.say("n = ", n)
     }
 --- stream_response
 n = 5
@@ -184,7 +184,7 @@ n = 5
         for k, v in pairs(coroutine) do
             n = n + 1
         end
-        ngx.say("coroutine: ", n)
+        njt.say("coroutine: ", n)
     }
 --- stap2
 global c
@@ -201,14 +201,14 @@ coroutine: 16
 
 
 
-=== TEST 11: entries under ngx.thread. (content by lua)
+=== TEST 11: entries under njt.thread. (content by lua)
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        for k, v in pairs(ngx.thread) do
+        for k, v in pairs(njt.thread) do
             n = n + 1
         end
-        ngx.say("thread: ", n)
+        njt.say("thread: ", n)
     }
 --- stap2
 global c
@@ -224,14 +224,14 @@ thread: 3
 
 
 
-=== TEST 12: entries under ngx.worker
+=== TEST 12: entries under njt.worker
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        for k, v in pairs(ngx.worker) do
+        for k, v in pairs(njt.worker) do
             n = n + 1
         end
-        ngx.say("worker: ", n)
+        njt.say("worker: ", n)
     }
 --- stream_response
 worker: 4
@@ -244,11 +244,11 @@ worker: 4
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        local sock = ngx.socket.tcp()
+        local sock = njt.socket.tcp()
         for k, v in pairs(getmetatable(sock)) do
             n = n + 1
         end
-        ngx.say("n = ", n)
+        njt.say("n = ", n)
     }
 --- stream_response
 n = 14
@@ -261,11 +261,11 @@ n = 14
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        local sock = ngx.socket.udp()
+        local sock = njt.socket.udp()
         for k, v in pairs(getmetatable(sock)) do
             n = n + 1
         end
-        ngx.say("n = ", n)
+        njt.say("n = ", n)
     }
 --- stream_response
 n = 6
@@ -278,9 +278,9 @@ n = 6
 --- stream_server_config
     content_by_lua_block {
         local n = 0
-        local sock, err = ngx.req.socket(true)
+        local sock, err = njt.req.socket(true)
         if not sock then
-            ngx.log(ngx.ERR, "server: failed to get raw req socket: ", err)
+            njt.log(njt.ERR, "server: failed to get raw req socket: ", err)
             return
         end
 
@@ -290,7 +290,7 @@ n = 6
 
         local ok, err = sock:send("n = " .. n .. "\n")
         if not ok then
-            ngx.log(ngx.ERR, "failed to send: ", err)
+            njt.log(njt.ERR, "failed to send: ", err)
             return
         end
     }

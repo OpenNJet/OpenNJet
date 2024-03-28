@@ -63,6 +63,7 @@ njt_http_lua_njt_echo(lua_State *L, unsigned newline)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 
@@ -499,6 +500,7 @@ njt_http_lua_njt_flush(lua_State *L)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 
@@ -653,6 +655,7 @@ njt_http_lua_njt_eof(lua_State *L)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 
@@ -715,6 +718,7 @@ njt_http_lua_njt_send_headers(lua_State *L)
     }
 
     njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_REWRITE
+                               | NJT_HTTP_LUA_CONTEXT_SERVER_REWRITE
                                | NJT_HTTP_LUA_CONTEXT_ACCESS
                                | NJT_HTTP_LUA_CONTEXT_CONTENT);
 

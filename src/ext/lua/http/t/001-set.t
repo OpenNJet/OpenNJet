@@ -61,7 +61,7 @@ GET /lua
 === TEST 4: inlined script with arguments
 --- config
     location /lua {
-        set_by_lua $res "return ngx.arg[1] + ngx.arg[2]" $arg_a $arg_b;
+        set_by_lua $res "return njt.arg[1] + njt.arg[2]" $arg_a $arg_b;
         echo $res;
     }
 --- request
@@ -76,7 +76,7 @@ GET /lua?a=1&b=2
 === TEST 5: fib by arg
 --- config
     location /fib {
-        set_by_lua $res "local function fib(n) if n > 2 then return fib(n-1)+fib(n-2) else return 1 end end return fib(tonumber(ngx.arg[1]))" $arg_n;
+        set_by_lua $res "local function fib(n) if n > 2 then return fib(n-1)+fib(n-2) else return 1 end end return fib(tonumber(njt.arg[1]))" $arg_n;
         echo $res;
     }
 --- request
@@ -92,8 +92,8 @@ GET /fib?n=10
 --- config
     location = /adder {
         set_by_lua $res
-            "local a = tonumber(ngx.arg[1])
-             local b = tonumber(ngx.arg[2])
+            "local a = tonumber(njt.arg[1])
+             local b = tonumber(njt.arg[2])
              return a + b" $arg_a $arg_b;
 
         echo $res;
@@ -111,7 +111,7 @@ GET /adder?a=25&b=75
 --- config
     location = /set-both {
         set $b 32;
-        set_by_lua $a "return tonumber(ngx.var.b) + 1";
+        set_by_lua $a "return tonumber(njt.var.b) + 1";
 
         echo "a = $a";
     }
@@ -128,7 +128,7 @@ a = 33
 --- config
     location = /set-both {
         set $b "";
-        set_by_lua $a "ngx.var.b = 32; return 7";
+        set_by_lua $a "njt.var.b = 32; return 7";
 
         echo "a = $a";
         echo "b = $b";
@@ -147,7 +147,7 @@ b = 32
 --- config
     location = /set-both {
         #set $b "";
-        set_by_lua $a "ngx.var.b = 32; return 7";
+        set_by_lua $a "njt.var.b = 32; return 7";
 
         echo "a = $a";
     }
@@ -164,7 +164,7 @@ variable "b" not found for writing; maybe it is a built-in variable that is not 
 --- config
     location = /set {
         set $a "";
-        set_by_lua $a "return ngx.quote_sql_str(ngx.var.a)";
+        set_by_lua $a "return njt.quote_sql_str(njt.var.a)";
         echo $a;
     }
 --- request
@@ -179,7 +179,7 @@ GET /set
 === TEST 11: set md5
 --- config
     location = /md5 {
-        set_by_lua $a 'return ngx.md5("hello")';
+        set_by_lua $a 'return njt.md5("hello")';
         echo $a;
     }
 --- request
@@ -191,10 +191,10 @@ GET /md5
 
 
 
-=== TEST 12: no ngx.print
+=== TEST 12: no njt.print
 --- config
     location /lua {
-        set_by_lua $res "ngx.print(32) return 1";
+        set_by_lua $res "njt.print(32) return 1";
         echo $res;
     }
 --- request
@@ -206,10 +206,10 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 13: no ngx.say
+=== TEST 13: no njt.say
 --- config
     location /lua {
-        set_by_lua $res "ngx.say(32) return 1";
+        set_by_lua $res "njt.say(32) return 1";
         echo $res;
     }
 --- request
@@ -221,10 +221,10 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 14: no ngx.flush
+=== TEST 14: no njt.flush
 --- config
     location /lua {
-        set_by_lua $res "ngx.flush()";
+        set_by_lua $res "njt.flush()";
         echo $res;
     }
 --- request
@@ -236,10 +236,10 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 15: no ngx.eof
+=== TEST 15: no njt.eof
 --- config
     location /lua {
-        set_by_lua $res "ngx.eof()";
+        set_by_lua $res "njt.eof()";
         echo $res;
     }
 --- request
@@ -251,10 +251,10 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 16: no ngx.send_headers
+=== TEST 16: no njt.send_headers
 --- config
     location /lua {
-        set_by_lua $res "ngx.send_headers()";
+        set_by_lua $res "njt.send_headers()";
         echo $res;
     }
 --- request
@@ -266,29 +266,10 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 17: no ngx.location.capture
+=== TEST 17: no njt.location.capture
 --- config
     location /lua {
-        set_by_lua $res 'ngx.location.capture("/sub")';
-        echo $res;
-    }
-
-    location /sub {
-        echo sub;
-    }
---- request
-GET /lua
---- response_body_like: 500 Internal Server Error
---- error_code: 500
---- error_log
-API disabled in the context of set_by_lua*
-
-
-
-=== TEST 18: no ngx.location.capture_multi
---- config
-    location /lua {
-        set_by_lua $res 'ngx.location.capture_multi{{"/sub"}}';
+        set_by_lua $res 'njt.location.capture("/sub")';
         echo $res;
     }
 
@@ -304,10 +285,29 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 19: no ngx.exit
+=== TEST 18: no njt.location.capture_multi
 --- config
     location /lua {
-        set_by_lua $res 'ngx.exit(0)';
+        set_by_lua $res 'njt.location.capture_multi{{"/sub"}}';
+        echo $res;
+    }
+
+    location /sub {
+        echo sub;
+    }
+--- request
+GET /lua
+--- response_body_like: 500 Internal Server Error
+--- error_code: 500
+--- error_log
+API disabled in the context of set_by_lua*
+
+
+
+=== TEST 19: no njt.exit
+--- config
+    location /lua {
+        set_by_lua $res 'njt.exit(0)';
         echo $res;
     }
 --- request
@@ -319,10 +319,10 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 20: no ngx.redirect
+=== TEST 20: no njt.redirect
 --- config
     location /lua {
-        set_by_lua $res 'ngx.redirect("/blah")';
+        set_by_lua $res 'njt.redirect("/blah")';
         echo $res;
     }
 --- request
@@ -334,10 +334,10 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 21: no ngx.exec
+=== TEST 21: no njt.exec
 --- config
     location /lua {
-        set_by_lua $res 'ngx.exec("/blah")';
+        set_by_lua $res 'njt.exec("/blah")';
         echo $res;
     }
 --- request
@@ -349,10 +349,10 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 22: no ngx.req.set_uri(uri, true)
+=== TEST 22: no njt.req.set_uri(uri, true)
 --- config
     location /lua {
-        set_by_lua $res 'ngx.req.set_uri("/blah", true)';
+        set_by_lua $res 'njt.req.set_uri("/blah", true)';
         echo $res;
     }
 --- request
@@ -364,10 +364,10 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 23: ngx.req.set_uri(uri) exists
+=== TEST 23: njt.req.set_uri(uri) exists
 --- config
     location /lua {
-        set_by_lua $res 'ngx.req.set_uri("/blah") return 1';
+        set_by_lua $res 'njt.req.set_uri("/blah") return 1';
         echo $uri;
     }
 --- request
@@ -379,10 +379,10 @@ GET /lua
 
 
 
-=== TEST 24: no ngx.req.read_body()
+=== TEST 24: no njt.req.read_body()
 --- config
     location /lua {
-        set_by_lua $res 'ngx.req.read_body()';
+        set_by_lua $res 'njt.req.read_body()';
         echo $res;
     }
 --- request
@@ -394,10 +394,10 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 25: no ngx.req.socket()
+=== TEST 25: no njt.req.socket()
 --- config
     location /lua {
-        set_by_lua $res 'return ngx.req.socket()';
+        set_by_lua $res 'return njt.req.socket()';
         echo $res;
     }
 --- request
@@ -409,10 +409,10 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 26: no ngx.socket.tcp()
+=== TEST 26: no njt.socket.tcp()
 --- config
     location /lua {
-        set_by_lua $res 'return ngx.socket.tcp()';
+        set_by_lua $res 'return njt.socket.tcp()';
         echo $res;
     }
 --- request
@@ -424,10 +424,10 @@ API disabled in the context of set_by_lua*
 
 
 
-=== TEST 27: no ngx.socket.connect()
+=== TEST 27: no njt.socket.connect()
 --- config
     location /lua {
-        set_by_lua $res 'return ngx.socket.connect("127.0.0.1", 80)';
+        set_by_lua $res 'return njt.socket.connect("127.0.0.1", 80)';
         echo $res;
     }
 --- request
@@ -444,7 +444,7 @@ API disabled in the context of set_by_lua*
     location /lua {
         set $limit_rate 1000;
         rewrite_by_lua '
-            ngx.var.limit_rate = 180;
+            njt.var.limit_rate = 180;
         ';
         echo "limit rate = $limit_rate";
     }
@@ -462,7 +462,7 @@ limit rate = 180
     location /lua {
         set $args 'hello';
         rewrite_by_lua '
-            ngx.var.args = "world";
+            njt.var.args = "world";
         ';
         echo $query_string;
     }
@@ -479,7 +479,7 @@ world
 --- config
     location /lua {
         rewrite_by_lua '
-            ngx.var.arg_foo = "world";
+            njt.var.arg_foo = "world";
         ';
         echo $arg_foo;
     }
@@ -533,7 +533,7 @@ $unknown
     }
 --- user_files
 >>> a.lua
-return ngx.arg[1] + ngx.arg[2]
+return njt.arg[1] + njt.arg[2]
 --- request
 GET /lua?a=5&b=2
 --- response_body
@@ -552,7 +552,7 @@ GET /lua?a=5&b=2
     }
 --- user_files
 >>> a.lua
-return ngx.arg[1] + ngx.arg[2]
+return njt.arg[1] + njt.arg[2]
 --- request
 GET /lua?a=5&b=2
 --- response_body
@@ -599,7 +599,7 @@ failed to run set_by_lua*: unknown reason
             if not foo then
                 foo = 1
             else
-                ngx.log(ngx.INFO, "old foo: ", foo)
+                njt.log(njt.INFO, "old foo: ", foo)
                 foo = foo + 1
             end
             return foo
@@ -619,7 +619,7 @@ GET /lua
 
 
 
-=== TEST 38: user modules using ngx.arg
+=== TEST 38: user modules using njt.arg
 --- http_config
     lua_package_path "$prefix/html/?.lua;;";
 --- config
@@ -632,7 +632,7 @@ GET /lua
 module("foo", package.seeall)
 
 function go()
-    return ngx.arg[1] + ngx.arg[2]
+    return njt.arg[1] + njt.arg[2]
 end
 --- request
 GET /lua?a=1&b=2
@@ -794,8 +794,8 @@ in function 'foo'
     }
 --- user_files
 >>> test.lua
-v = ngx.var["request_uri"]
-ngx.print("request_uri: ", v, "\n")
+v = njt.var["request_uri"]
+njt.print("request_uri: ", v, "\n")
 --- request
 GET /lua?a=1&b=2
 --- response_body_like: 500 Internal Server Error

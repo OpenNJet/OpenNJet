@@ -35,12 +35,12 @@ __DATA__
                 end
 
                 local res = {pcall(f, 0, 0)}
-                ngx.say("res len: ", #res)
-                ngx.say("res: ", unpack(res))
+                njt.say("res len: ", #res)
+                njt.say("res: ", unpack(res))
 
                 res = {pcall(f, 0)}
-                ngx.say("res len: ", #res)
-                ngx.say("res: ", unpack(res))
+                njt.say("res len: ", #res)
+                njt.say("res: ", unpack(res))
             ';
         }
 --- request
@@ -79,17 +79,17 @@ $/s
                 end
 
                 local function err(...)
-                    ngx.say("error handler called: ", ...)
+                    njt.say("error handler called: ", ...)
                     return "this is the new err"
                 end
 
                 local res = {xpcall(g, err)}
-                ngx.say("res len: ", #res)
-                ngx.say("res: ", unpack(res))
+                njt.say("res len: ", #res)
+                njt.say("res: ", unpack(res))
 
                 res = {xpcall(h, err)}
-                ngx.say("res len: ", #res)
-                ngx.say("res: ", unpack(res))
+                njt.say("res len: ", #res)
+                njt.say("res: ", unpack(res))
             ';
         }
 --- request

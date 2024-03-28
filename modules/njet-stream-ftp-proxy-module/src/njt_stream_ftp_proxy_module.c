@@ -381,7 +381,7 @@ njt_int_t njt_stream_ftp_proxy_replace_upstream(njt_stream_session_t *s,
 
     //need get real port
     //sf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
-    if(s->connection && s->connection->listening && s->connection->listening->mesh) {
+    if(s->connection->listening && s->connection->listening->mesh) {
         name_low.len = name.len;
         name_low.data = njt_pcalloc(s->connection->pool,name_low.len);
         proto_hash = njt_hash_strlow(name_low.data,name.data,name.len);
@@ -871,7 +871,7 @@ njt_stream_ftp_data_proxy_cleanup(njt_stream_session_t *s)
 
     //need get real port
     //sf = njt_stream_get_module_srv_conf(s, njt_stream_proto_module);
-    if(s->connection && s->connection->listening && s->connection->listening->mesh) {
+    if(s->connection->listening && s->connection->listening->mesh) {
         name_low.len = name.len;
         name_low.data = njt_pcalloc(s->connection->pool,name_low.len);
         proto_hash = njt_hash_strlow(name_low.data,name.data,name.len);

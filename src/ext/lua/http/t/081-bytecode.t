@@ -17,18 +17,18 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: bytecode ("ngx.say('hello');")
+=== TEST 1: bytecode ("njt.say('hello');")
 --- config
     root html;
     location /save_call {
         content_by_lua '
-            ngx.req.read_body();
-            local b = ngx.req.get_body_data();
-            local f = io.open(ngx.var.realpath_root.."/test.lua", "w");
+            njt.req.read_body();
+            local b = njt.req.get_body_data();
+            local f = io.open(njt.var.realpath_root.."/test.lua", "w");
             -- luajit bytecode: sub(149,-1), lua bytecode: sub(1,147)
             if jit then
                 if not string.find(jit.version, "LuaJIT 2.0") then
-                    ngx.say("test skipped")
+                    njt.say("test skipped")
                     return
                 end
                 f:write(string.sub(b, 149));
@@ -36,8 +36,8 @@ __DATA__
                 f:write(string.sub(b, 1, 147));
             end
             f:close();
-            local res = ngx.location.capture("/call");
-            ngx.print(res.body)
+            local res = njt.location.capture("/call");
+            njt.print(res.body)
         ';
     }
     location /call {
@@ -59,9 +59,9 @@ __DATA__
     root html;
     location /save_call {
         content_by_lua '
-            ngx.req.read_body();
-            local b = ngx.req.get_body_data();
-            local f = io.open(ngx.var.realpath_root.."/test.lua", "w");
+            njt.req.read_body();
+            local b = njt.req.get_body_data();
+            local f = io.open(njt.var.realpath_root.."/test.lua", "w");
             -- luajit bytecode: sub(149,-1), lua bytecode: sub(1,147)
             if not package.loaded["jit"] then
                 f:write(string.sub(b, 149));
@@ -69,11 +69,11 @@ __DATA__
                 f:write(string.sub(b, 1, 147));
             end
             f:close();
-            local res = ngx.location.capture("/call");
+            local res = njt.location.capture("/call");
             if res.status == 200 then
-                ngx.print(res.body)
+                njt.print(res.body)
             else
-                ngx.say("error")
+                njt.say("error")
             end
         ';
     }
@@ -96,9 +96,9 @@ qr/failed to load external Lua file ".*?test\.lua": .* cannot load incompatible 
     root html;
     location /save_call {
         content_by_lua '
-            ngx.req.read_body();
-            local b = ngx.req.get_body_data();
-            local f = io.open(ngx.var.realpath_root.."/test.lua", "w");
+            njt.req.read_body();
+            local b = njt.req.get_body_data();
+            local f = io.open(njt.var.realpath_root.."/test.lua", "w");
             -- luajit bytecode: sub(149,-1), lua bytecode: sub(1,147)
             if package.loaded["jit"] then
                 f:write(string.sub(b, 149));
@@ -106,11 +106,11 @@ qr/failed to load external Lua file ".*?test\.lua": .* cannot load incompatible 
                 f:write(string.sub(b, 1, 147));
             end
             f:close();
-            local res = ngx.location.capture("/call");
+            local res = njt.location.capture("/call");
             if res.status == 200 then
-                ngx.print(res.body)
+                njt.print(res.body)
             else
-                ngx.say("error")
+                njt.say("error")
             end
         ';
     }
@@ -133,14 +133,14 @@ cannot load incompatible bytecode
     root html;
     location /save_call {
         content_by_lua '
-            ngx.req.read_body();
-            local b = ngx.req.get_body_data();
-            local f = io.open(ngx.var.realpath_root.."/test.lua", "w");
+            njt.req.read_body();
+            local b = njt.req.get_body_data();
+            local f = io.open(njt.var.realpath_root.."/test.lua", "w");
             -- luajit bytecode: sub(149,-1), lua bytecode: sub(1,147)
             local do_jit
             if jit then
                 if not string.find(jit.version, "LuaJIT 2.0") then
-                    ngx.say("test skipped")
+                    njt.say("test skipped")
                     return
                 end
 
@@ -148,13 +148,13 @@ cannot load incompatible bytecode
             else
                 f:write(string.sub(b, 1, 147));
             end
-            f:close(); res = ngx.location.capture("/call");
+            f:close(); res = njt.location.capture("/call");
             if do_jit and res.status == 200 then
-                ngx.say("ok")
+                njt.say("ok")
             elseif not do_jit and res.status == 500 then
-                ngx.say("ok")
+                njt.say("ok")
             else
-                ngx.say("error")
+                njt.say("error")
             end
         ';
     }
@@ -177,9 +177,9 @@ cannot load incompatible bytecode
     root html;
     location /save_call {
         content_by_lua '
-            ngx.req.read_body();
-            local b = ngx.req.get_body_data();
-            local f = io.open(ngx.var.realpath_root.."/test.lua", "w");
+            njt.req.read_body();
+            local b = njt.req.get_body_data();
+            local f = io.open(njt.var.realpath_root.."/test.lua", "w");
             -- luajit bytecode: sub(149,-1), lua bytecode: sub(1,147)
             local jit;
             if package.loaded["jit"] then
@@ -189,16 +189,16 @@ cannot load incompatible bytecode
                 f:write(string.sub(b, 1, 147));
             end
             if not jit then
-                f:close(); res = ngx.location.capture("/call");
+                f:close(); res = njt.location.capture("/call");
                 if res.status == 200 then
-                    ngx.print("ok")
+                    njt.print("ok")
                 else
-                    ngx.say("error")
+                    njt.say("error")
                 end
             else
             -- luajit will get a segmentation fault with bad bytecode,
             -- so here just skip this case for luajit
-                ngx.say("error")
+                njt.say("error")
             end
         ';
     }
@@ -221,13 +221,13 @@ error
     root html;
     location /save_call {
         content_by_lua '
-            ngx.req.read_body();
-            local b = ngx.req.get_body_data();
-            local f = io.open(ngx.var.realpath_root.."/test.lua", "w");
+            njt.req.read_body();
+            local b = njt.req.get_body_data();
+            local f = io.open(njt.var.realpath_root.."/test.lua", "w");
             -- luajit bytecode: sub(149,-1), lua bytecode: sub(1,147)
             if jit then
                 if not string.find(jit.version, "LuaJIT 2.0") then
-                    ngx.say("test skipped")
+                    njt.say("test skipped")
                     return
                 end
 
@@ -235,8 +235,8 @@ error
             else
                 f:write(string.sub(b, 1, 117));
             end
-            f:close(); res = ngx.location.capture("/call");
-            ngx.print(res.body)
+            f:close(); res = njt.location.capture("/call");
+            njt.print(res.body)
         ';
     }
     location /call {
@@ -263,10 +263,10 @@ error
                 local infile = prefix .. "/html/a.lua"
                 local outfile = prefix .. "/html/a.luac"
                 bcsave.start("-s", infile, outfile)
-                return ngx.exec("/call")
+                return njt.exec("/call")
             end
 
-            ngx.say("test skipped!")
+            njt.say("test skipped!")
         ';
     }
     location = /call {
@@ -277,7 +277,7 @@ error
 
 --- user_files
 >>> a.lua
-ngx.status = 201 ngx.say("hello from Lua!")
+njt.status = 201 njt.say("hello from Lua!")
 --- response_body_like chop
 ^(?:hello from Lua!|test skipped!)$
 --- no_error_log
@@ -296,10 +296,10 @@ ngx.status = 201 ngx.say("hello from Lua!")
                 local infile = prefix .. "/html/a.lua"
                 local outfile = prefix .. "/html/a.luac"
                 bcsave.start("-g", infile, outfile)
-                return ngx.exec("/call")
+                return njt.exec("/call")
             end
 
-            ngx.say("test skipped!")
+            njt.say("test skipped!")
         ';
     }
     location = /call {
@@ -310,7 +310,7 @@ ngx.status = 201 ngx.say("hello from Lua!")
 
 --- user_files
 >>> a.lua
-ngx.status = 201 ngx.say("hello from Lua!")
+njt.status = 201 njt.say("hello from Lua!")
 --- response_body_like chop
 ^(?:hello from Lua!|test skipped!)$
 --- no_error_log
@@ -323,7 +323,7 @@ ngx.status = 201 ngx.say("hello from Lua!")
 --- config
     location = /t {
         content_by_lua_block {
-            local f = assert(loadstring("local a = 1 ngx.say('a = ', a)", "=code"))
+            local f = assert(loadstring("local a = 1 njt.say('a = ', a)", "=code"))
             local bc = string.dump(f)
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/a.luac", "w"))
             f:write(bc)
@@ -352,7 +352,7 @@ a = 1
 --- config
     location = /t {
         content_by_lua_block {
-            local f = assert(loadstring("local a = 1 ngx.say('a = ', a)", "=code"))
+            local f = assert(loadstring("local a = 1 njt.say('a = ', a)", "=code"))
             local bc = string.dump(f, true)
             local f = assert(io.open("$TEST_NGINX_SERVER_ROOT/html/a.luac", "w"))
             f:write(bc)

@@ -11,7 +11,7 @@ __DATA__
 
 === TEST 1: running count with no running timers
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.timer.running_count()) }
+    content_by_lua_block { njt.say(njt.timer.running_count()) }
 --- stream_response
 0
 --- no_error_log
@@ -21,7 +21,7 @@ __DATA__
 
 === TEST 2: running count with no pending timers
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.timer.pending_count()) }
+    content_by_lua_block { njt.say(njt.timer.pending_count()) }
 --- stream_response
 0
 --- no_error_log
@@ -32,8 +32,8 @@ __DATA__
 === TEST 3: pending count with one pending timer
 --- stream_server_config
     content_by_lua_block {
-        ngx.timer.at(3, function() end)
-        ngx.say(ngx.timer.pending_count())
+        njt.timer.at(3, function() end)
+        njt.say(njt.timer.pending_count())
     }
 --- stream_response
 1
@@ -45,10 +45,10 @@ __DATA__
 === TEST 4: pending count with 3 pending timers
 --- stream_server_config
     content_by_lua_block {
-        ngx.timer.at(4, function() end)
-        ngx.timer.at(2, function() end)
-        ngx.timer.at(1, function() end)
-        ngx.say(ngx.timer.pending_count())
+        njt.timer.at(4, function() end)
+        njt.timer.at(2, function() end)
+        njt.timer.at(1, function() end)
+        njt.say(njt.timer.pending_count())
     }
 --- stream_response
 3
@@ -60,9 +60,9 @@ __DATA__
 === TEST 5: one running timer
 --- stream_server_config
     content_by_lua_block {
-        ngx.timer.at(0.1, function() ngx.sleep(0.3) end)
-        ngx.sleep(0.2)
-        ngx.say(ngx.timer.running_count())
+        njt.timer.at(0.1, function() njt.sleep(0.3) end)
+        njt.sleep(0.2)
+        njt.say(njt.timer.running_count())
     }
 --- stream_response
 1
@@ -74,11 +74,11 @@ __DATA__
 === TEST 6: 3 running timers
 --- stream_server_config
     content_by_lua_block {
-        ngx.timer.at(0.1, function() ngx.sleep(0.3) end)
-        ngx.timer.at(0.11, function() ngx.sleep(0.3) end)
-        ngx.timer.at(0.09, function() ngx.sleep(0.3) end)
-        ngx.sleep(0.2)
-        ngx.say(ngx.timer.running_count())
+        njt.timer.at(0.1, function() njt.sleep(0.3) end)
+        njt.timer.at(0.11, function() njt.sleep(0.3) end)
+        njt.timer.at(0.09, function() njt.sleep(0.3) end)
+        njt.sleep(0.2)
+        njt.say(njt.timer.running_count())
     }
 --- stream_response
 3

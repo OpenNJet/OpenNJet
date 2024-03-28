@@ -21,7 +21,6 @@
 
 
 typedef struct {
-    njt_flag_t       enable;
     njt_flag_t       prefer_server_ciphers;
 
     njt_ssl_t        ssl;

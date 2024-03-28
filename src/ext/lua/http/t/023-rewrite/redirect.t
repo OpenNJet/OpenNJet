@@ -22,8 +22,8 @@ __DATA__
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.redirect("http://www.taobao.com/foo");
-            ngx.say("hi")
+            njt.redirect("http://www.taobao.com/foo");
+            njt.say("hi")
         ';
         content_by_lua 'return';
     }
@@ -40,8 +40,8 @@ Location: http://www.taobao.com/foo
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.redirect("http://www.taobao.com/foo", ngx.HTTP_MOVED_TEMPORARILY);
-            ngx.say("hi")
+            njt.redirect("http://www.taobao.com/foo", njt.HTTP_MOVED_TEMPORARILY);
+            njt.say("hi")
         ';
         content_by_lua 'return';
     }
@@ -58,8 +58,8 @@ Location: http://www.taobao.com/foo
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.redirect("http://www.taobao.com/foo", ngx.HTTP_MOVED_PERMANENTLY);
-            ngx.say("hi")
+            njt.redirect("http://www.taobao.com/foo", njt.HTTP_MOVED_PERMANENTLY);
+            njt.say("hi")
         ';
         content_by_lua 'return';
     }
@@ -76,8 +76,8 @@ Location: http://www.taobao.com/foo
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.redirect("http://www.taobao.com/foo", 404);
-            ngx.say("hi")
+            njt.redirect("http://www.taobao.com/foo", 404);
+            njt.say("hi")
         ';
         content_by_lua 'return';
     }
@@ -94,8 +94,8 @@ GET /read
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.redirect()
-            ngx.say("hi")
+            njt.redirect()
+            njt.say("hi")
         ';
         content_by_lua 'return';
     }
@@ -112,8 +112,8 @@ GET /read
 --- config
     location /read {
         rewrite_by_lua '
-            ngx.redirect("/foo")
-            ngx.say("hi")
+            njt.redirect("/foo")
+            njt.say("hi")
         ';
         content_by_lua 'return';
     }
@@ -150,7 +150,7 @@ qr{\[error\] .*?/html/url2".*?No such file or directory}
     rewrite_by_lua_no_postpone on;
 --- config
 	rewrite_by_lua_block {
-        ngx.sleep(0.001)
+        njt.sleep(0.001)
 	}
 
 	location /url1 {

@@ -31,8 +31,7 @@ typedef struct njt_http_location_info_s {
     njt_http_core_srv_conf_t *cscf;
     njt_str_t     msg;
 	njt_array_t   *location_array;
-	u_char *buffer;
-	int32_t buffer_len;
+	njt_str_t     buffer;
 } njt_http_location_info_t;
 
 typedef struct njt_http_location_loc_conf_s {
@@ -40,5 +39,4 @@ typedef struct njt_http_location_loc_conf_s {
 } njt_http_location_loc_conf_t;
 
 njt_http_location_info_t * njt_http_parser_location_data(njt_str_t json_str,njt_uint_t method);
-njt_int_t njt_http_check_upstream_exist(njt_cycle_t *cycle,njt_pool_t *pool, njt_str_t *name);
 #endif

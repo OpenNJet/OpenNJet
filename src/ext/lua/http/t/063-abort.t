@@ -20,7 +20,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: ngx.exit(400) should abort print
+=== TEST 1: njt.exit(400) should abort print
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -41,13 +41,13 @@ __DATA__
 --- user_files
 >>> test.lua
 local memd = require 'memd'
-ngx.exit(400)
+njt.exit(400)
 local res = memd.query( { cmd = 'get', key = id } )
 >>> memd.lua
 module('memd', package.seeall)
 
 local URL = '/memc_query'
-local capture = ngx.location.capture
+local capture = njt.location.capture
 
 function query(arg)
     if type(arg) ~= 'table' then
@@ -66,7 +66,7 @@ GET /test?a
 
 
 
-=== TEST 2: ngx.exit(400) should abort ngx.log
+=== TEST 2: njt.exit(400) should abort njt.log
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -87,15 +87,15 @@ GET /test?a
 --- user_files
 >>> test.lua
 local memd = require 'memd'
-ngx.exit(400)
+njt.exit(400)
 local res = memd.query( { cmd = 'get', key = id } )
 >>> memd.lua
 module('memd', package.seeall)
 
 local URL = '/memc_query'
-local capture = ngx.location.capture
-local log = ngx.log
-local level = ngx.ERR
+local capture = njt.location.capture
+local log = njt.log
+local level = njt.ERR
 
 function query(arg)
     if type(arg) ~= 'table' then
@@ -114,7 +114,7 @@ GET /test?a
 
 
 
-=== TEST 3: ngx.exit(400) should abort ngx.location.capture
+=== TEST 3: njt.exit(400) should abort njt.location.capture
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -135,13 +135,13 @@ GET /test?a
 --- user_files
 >>> test.lua
 local memd = require 'memd'
-ngx.exit(400)
+njt.exit(400)
 local res = memd.query( { cmd = 'get', key = id } )
 >>> memd.lua
 module('memd', package.seeall)
 
 local URL = '/memc_query'
-local capture = ngx.location.capture
+local capture = njt.location.capture
 
 function query(arg)
     if type(arg) ~= 'table' then
@@ -159,7 +159,7 @@ the "$memc_key" variable is not set
 
 
 
-=== TEST 4: ngx.exit(400) should abort ngx.location.capture_multi
+=== TEST 4: njt.exit(400) should abort njt.location.capture_multi
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -180,13 +180,13 @@ the "$memc_key" variable is not set
 --- user_files
 >>> test.lua
 local memd = require 'memd'
-ngx.exit(400)
+njt.exit(400)
 local res = memd.query( { cmd = 'get', key = id } )
 >>> memd.lua
 module('memd', package.seeall)
 
 local URL = '/memc_query'
-local capture_multi = ngx.location.capture_multi
+local capture_multi = njt.location.capture_multi
 
 function query(arg)
     if type(arg) ~= 'table' then
@@ -204,14 +204,14 @@ the "$memc_key" variable is not set
 
 
 
-=== TEST 5: ngx.exit(400) should abort ngx.redirect
+=== TEST 5: njt.exit(400) should abort njt.redirect
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -220,7 +220,7 @@ the "$memc_key" variable is not set
 module('test', package.seeall)
 
 function go()
-    ngx.redirect("/blah")
+    njt.redirect("/blah")
 end
 --- request
 GET /test
@@ -231,14 +231,14 @@ lua redirect to "/blah" with code 302
 
 
 
-=== TEST 6: ngx.exit(400) should abort ngx.exit
+=== TEST 6: njt.exit(400) should abort njt.exit
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -247,7 +247,7 @@ lua redirect to "/blah" with code 302
 module('test', package.seeall)
 
 function go()
-    ngx.exit(503)
+    njt.exit(503)
 end
 --- request
 GET /test
@@ -258,14 +258,14 @@ lua exit with code 503
 
 
 
-=== TEST 7: ngx.exit(400) should abort ngx.exec
+=== TEST 7: njt.exit(400) should abort njt.exec
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -274,7 +274,7 @@ lua exit with code 503
 module('test', package.seeall)
 
 function go()
-    ngx.exec("/blah")
+    njt.exec("/blah")
 end
 --- request
 GET /test
@@ -285,14 +285,14 @@ lua exec "/blah?"
 
 
 
-=== TEST 8: ngx.exit(400) should abort ngx.send_headers
+=== TEST 8: njt.exit(400) should abort njt.send_headers
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -301,7 +301,7 @@ lua exec "/blah?"
 module('test', package.seeall)
 
 function go()
-    ngx.send_headers()
+    njt.send_headers()
 end
 --- request
 GET /test
@@ -312,14 +312,14 @@ lua send headers
 
 
 
-=== TEST 9: ngx.exit(400) should abort ngx.print
+=== TEST 9: njt.exit(400) should abort njt.print
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -328,7 +328,7 @@ lua send headers
 module('test', package.seeall)
 
 function go()
-    ngx.print("HELLO WORLD")
+    njt.print("HELLO WORLD")
 end
 --- request
 GET /test
@@ -339,14 +339,14 @@ lua print response
 
 
 
-=== TEST 10: ngx.exit(400) should abort ngx.say
+=== TEST 10: njt.exit(400) should abort njt.say
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -355,7 +355,7 @@ lua print response
 module('test', package.seeall)
 
 function go()
-    ngx.say("HELLO WORLD")
+    njt.say("HELLO WORLD")
 end
 --- request
 GET /test
@@ -366,14 +366,14 @@ lua say response
 
 
 
-=== TEST 11: ngx.exit(400) should abort ngx.flush
+=== TEST 11: njt.exit(400) should abort njt.flush
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -382,7 +382,7 @@ lua say response
 module('test', package.seeall)
 
 function go()
-    ngx.flush()
+    njt.flush()
 end
 --- request
 GET /test
@@ -393,14 +393,14 @@ lua flush asynchronously
 
 
 
-=== TEST 12: ngx.exit(400) should abort ngx.eof
+=== TEST 12: njt.exit(400) should abort njt.eof
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -409,7 +409,7 @@ lua flush asynchronously
 module('test', package.seeall)
 
 function go()
-    ngx.eof()
+    njt.eof()
 end
 --- request
 GET /test
@@ -420,14 +420,14 @@ lua send eof
 
 
 
-=== TEST 13: ngx.exit(400) should abort ngx.re.match
+=== TEST 13: njt.exit(400) should abort njt.re.match
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -436,7 +436,7 @@ lua send eof
 module('test', package.seeall)
 
 function go()
-    ngx.re.match("a", "a", "jo")
+    njt.re.match("a", "a", "jo")
 end
 --- request
 GET /test
@@ -447,14 +447,14 @@ lua compiling match regex "a" with options "jo"
 
 
 
-=== TEST 14: ngx.exit(400) should abort ngx.re.gmatch
+=== TEST 14: njt.exit(400) should abort njt.re.gmatch
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -463,7 +463,7 @@ lua compiling match regex "a" with options "jo"
 module('test', package.seeall)
 
 function go()
-    ngx.re.gmatch("a", "a", "jo")
+    njt.re.gmatch("a", "a", "jo")
 end
 --- request
 GET /test
@@ -474,14 +474,14 @@ lua compiling gmatch regex "a" with options "jo"
 
 
 
-=== TEST 15: ngx.exit(400) should abort ngx.re.sub
+=== TEST 15: njt.exit(400) should abort njt.re.sub
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -490,7 +490,7 @@ lua compiling gmatch regex "a" with options "jo"
 module('test', package.seeall)
 
 function go()
-    ngx.re.sub("a", "a", "", "jo")
+    njt.re.sub("a", "a", "", "jo")
 end
 --- request
 GET /test
@@ -501,14 +501,14 @@ lua compiling sub regex "a" with options "jo"
 
 
 
-=== TEST 16: ngx.exit(400) should abort ngx.re.gsub
+=== TEST 16: njt.exit(400) should abort njt.re.gsub
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -517,7 +517,7 @@ lua compiling sub regex "a" with options "jo"
 module('test', package.seeall)
 
 function go()
-    ngx.re.gsub("a", "a", "", "jo")
+    njt.re.gsub("a", "a", "", "jo")
 end
 --- request
 GET /test
@@ -528,17 +528,17 @@ lua compiling gsub regex "a" with options "jo"
 
 
 
-=== TEST 17: ngx.exit(400) should abort ngx.shared.DICT (set)
+=== TEST 17: njt.exit(400) should abort njt.shared.DICT (set)
 --- http_config eval
     "lua_shared_dict dogs 1m; lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                local dogs = ngx.shared.dogs
+                local dogs = njt.shared.dogs
                 print("foo = ", dogs:get("foo"))
                 dogs:set("foo", 32)
-                ngx.exit(400)
+                njt.exit(400)
                 test.go(dogs)
             ';
         }
@@ -558,17 +558,17 @@ foo = 56
 
 
 
-=== TEST 18: ngx.exit(400) should abort ngx.shared.DICT (replace)
+=== TEST 18: njt.exit(400) should abort njt.shared.DICT (replace)
 --- http_config eval
     "lua_shared_dict dogs 1m; lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                local dogs = ngx.shared.dogs
+                local dogs = njt.shared.dogs
                 print("foo = ", dogs:get("foo"))
                 dogs:set("foo", 32)
-                ngx.exit(400)
+                njt.exit(400)
                 test.go(dogs)
             ';
         }
@@ -588,17 +588,17 @@ foo = 56
 
 
 
-=== TEST 19: ngx.exit(400) should abort ngx.shared.DICT (incr)
+=== TEST 19: njt.exit(400) should abort njt.shared.DICT (incr)
 --- http_config eval
     "lua_shared_dict dogs 1m; lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                local dogs = ngx.shared.dogs
+                local dogs = njt.shared.dogs
                 print("foo = ", dogs:get("foo"))
                 dogs:set("foo", 32)
-                ngx.exit(400)
+                njt.exit(400)
                 test.go(dogs)
             ';
         }
@@ -618,16 +618,16 @@ foo = 88
 
 
 
-=== TEST 20: ngx.exit(400) should abort ngx.shared.DICT (get)
+=== TEST 20: njt.exit(400) should abort njt.shared.DICT (get)
 --- http_config eval
     "lua_shared_dict dogs 1m; lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                local dogs = ngx.shared.dogs
+                local dogs = njt.shared.dogs
                 dogs:set("foo", 32)
-                ngx.exit(400)
+                njt.exit(400)
                 test.go(dogs)
             ';
         }
@@ -647,14 +647,14 @@ fetching key "foo" in shared dict "dogs"
 
 
 
-=== TEST 21: ngx.exit(400) should skip os.execute
+=== TEST 21: njt.exit(400) should skip os.execute
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                ngx.exit(400)
+                njt.exit(400)
                 test.go()
             ';
         }
@@ -677,14 +677,14 @@ GET /test
 
 
 
-=== TEST 22: ngx.exit(400) should break pcall and skip os.execute
+=== TEST 22: njt.exit(400) should break pcall and skip os.execute
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
         location = /test {
             content_by_lua '
                 local test = require "test"
-                pcall(ngx.exit, 400)
+                pcall(njt.exit, 400)
                 test.go()
             ';
         }
@@ -707,7 +707,7 @@ fetching key "foo" in shared dict "dogs"
 
 
 
-=== TEST 23: ngx.exit(400) should break pcall and skip os.execute (all in user module)
+=== TEST 23: njt.exit(400) should break pcall and skip os.execute (all in user module)
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -724,7 +724,7 @@ module('test', package.seeall)
 local exec = os.execute
 
 function go()
-    pcall(ngx.exit, 400)
+    pcall(njt.exit, 400)
     exec("sleep 5")
 end
 --- request
@@ -737,7 +737,7 @@ GET /test
 
 
 
-=== TEST 24: ngx.redirect() should break pcall and skip os.execute (all in user module)
+=== TEST 24: njt.redirect() should break pcall and skip os.execute (all in user module)
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -754,7 +754,7 @@ module('test', package.seeall)
 local exec = os.execute
 
 function go()
-    pcall(ngx.redirect, "/blah")
+    pcall(njt.redirect, "/blah")
     exec("sleep 5")
 end
 --- request
@@ -767,7 +767,7 @@ GET /test
 
 
 
-=== TEST 25: ngx.redirect() should skip os.execute (all in user module)
+=== TEST 25: njt.redirect() should skip os.execute (all in user module)
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -784,7 +784,7 @@ module('test', package.seeall)
 local exec = os.execute
 
 function go()
-    ngx.redirect("/blah")
+    njt.redirect("/blah")
     exec("sleep 5")
 end
 --- request
@@ -797,7 +797,7 @@ GET /test
 
 
 
-=== TEST 26: ngx.exec() should break pcall and skip os.execute (all in user module)
+=== TEST 26: njt.exec() should break pcall and skip os.execute (all in user module)
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -817,7 +817,7 @@ module('test', package.seeall)
 local exec = os.execute
 
 function go()
-    pcall(ngx.exec, "/foo")
+    pcall(njt.exec, "/foo")
     exec("sleep 5")
 end
 --- request
@@ -830,7 +830,7 @@ foo
 
 
 
-=== TEST 27: ngx.exec() should skip os.execute (all in user module)
+=== TEST 27: njt.exec() should skip os.execute (all in user module)
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -850,7 +850,7 @@ module('test', package.seeall)
 local exec = os.execute
 
 function go()
-    ngx.exec("/foo")
+    njt.exec("/foo")
     exec("sleep 5")
 end
 --- request
@@ -863,7 +863,7 @@ foo
 
 
 
-=== TEST 28: ngx.set_uri(uri, true) should break pcall and skip os.execute (all in user module)
+=== TEST 28: njt.set_uri(uri, true) should break pcall and skip os.execute (all in user module)
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -884,9 +884,9 @@ module('test', package.seeall)
 local exec = os.execute
 
 function go()
-    local ok, err = pcall(ngx.req.set_uri, "/foo", true)
+    local ok, err = pcall(njt.req.set_uri, "/foo", true)
     if not ok then
-        ngx.log(ngx.ERR, "error: ", err)
+        njt.log(njt.ERR, "error: ", err)
     end
 
     exec("sleep 5")
@@ -904,9 +904,9 @@ foo
 === TEST 29: abort does not affect following coroutines
 --- config
         location = /test {
-            rewrite_by_lua 'ngx.exit(0)';
+            rewrite_by_lua 'njt.exit(0)';
             content_by_lua '
-                pcall(ngx.say, "hello world")
+                pcall(njt.say, "hello world")
             ';
         }
 --- request
@@ -919,7 +919,7 @@ hello world
 
 
 
-=== TEST 30: ngx.exit(400) should break xpcall and skip os.execute (all in user module)
+=== TEST 30: njt.exit(400) should break xpcall and skip os.execute (all in user module)
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -936,7 +936,7 @@ module('test', package.seeall)
 local exec = os.execute
 
 function myexit()
-    ngx.exit(400)
+    njt.exit(400)
 end
 
 function go()
@@ -953,7 +953,7 @@ GET /test
 
 
 
-=== TEST 31: ngx.exec() should skip os.execute (all in user module)
+=== TEST 31: njt.exec() should skip os.execute (all in user module)
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -969,11 +969,11 @@ GET /test
 --- user_files
 >>> test.lua
 local os_exec = os.execute
-local ngx_exec = ngx.exec
+local njt_exec = njt.exec
 module('test')
 
 function go()
-    ngx_exec("/foo")
+    njt_exec("/foo")
     os_exec("sleep 5")
 end
 --- request
@@ -986,7 +986,7 @@ foo
 
 
 
-=== TEST 32: ngx.exec() should break pcall and skip os.execute (all in user module)
+=== TEST 32: njt.exec() should break pcall and skip os.execute (all in user module)
 --- http_config eval
     "lua_package_path '$::HtmlDir/?.lua;./?.lua;;';"
 --- config
@@ -1002,12 +1002,12 @@ foo
 --- user_files
 >>> test.lua
 local os_exec = os.execute
-local ngx_exec = ngx.exec
+local njt_exec = njt.exec
 local pcall = pcall
 module('test')
 
 function go()
-    pcall(ngx_exec, "/foo")
+    pcall(njt_exec, "/foo")
     os_exec("sleep 5")
 end
 --- request

@@ -2,7 +2,7 @@
 #define NDK_DEBUG_H
 
 
-/* TODO : use the Nginx printf function */
+/* TODO : use the NJet printf function */
 
 
 #include <njt_core.h>

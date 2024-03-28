@@ -19,11 +19,11 @@ __DATA__
 === TEST 1: matched with j
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, 1234", "([0-9]+)", "j")
+        m = njt.re.match("hello, 1234", "([0-9]+)", "j")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -36,11 +36,11 @@ pcre JIT compiling result: 1
 === TEST 2: not matched with j
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, world", "([0-9]+)", "j")
+        m = njt.re.match("hello, world", "([0-9]+)", "j")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -53,11 +53,11 @@ pcre JIT compiling result: 1
 === TEST 3: matched with jo
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, 1234", "([0-9]+)", "jo")
+        m = njt.re.match("hello, 1234", "([0-9]+)", "jo")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -74,11 +74,11 @@ qr/pcre JIT compiling result: \d+/
 === TEST 4: not matched with jo
 --- stream_server_config
     content_by_lua_block {
-        m = ngx.re.match("hello, world", "([0-9]+)", "jo")
+        m = njt.re.match("hello, world", "([0-9]+)", "jo")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
         else
-            ngx.say("not matched!")
+            njt.say("not matched!")
         end
     }
 --- stream_response
@@ -95,16 +95,16 @@ qr/pcre JIT compiling result: \d+/
 === TEST 5: bad pattern
 --- stream_server_config
     content_by_lua_block {
-        local m, err = ngx.re.match("hello\\nworld", "(abc", "j")
+        local m, err = njt.re.match("hello\\nworld", "(abc", "j")
         if m then
-            ngx.say(m[0])
+            njt.say(m[0])
 
         else
             if err then
-                ngx.say("error: ", err)
+                njt.say("error: ", err)
 
             else
-                ngx.say("not matched: ", m)
+                njt.say("not matched: ", m)
             end
         end
     }
@@ -127,22 +127,22 @@ local re = [==[(?i:([\s'\"`´’‘\(\)]*)?([\d\w]+)([\s'\"`´’‘\(\)]*)?(?:=
 
 s = string.rep([[ABCDEFG]], 21)
 
-local start = ngx.now()
+local start = njt.now()
 
-local res, err = ngx.re.match(s, re, "jo")
+local res, err = njt.re.match(s, re, "jo")
 
 --[[
-ngx.update_time()
-local elapsed = ngx.now() - start
-ngx.say(elapsed, " sec elapsed.")
+njt.update_time()
+local elapsed = njt.now() - start
+njt.say(elapsed, " sec elapsed.")
 ]]
 
 if not res then
     if err then
-        ngx.say("error: ", err)
+        njt.say("error: ", err)
         return
     end
-    ngx.say("failed to match")
+    njt.say("failed to match")
     return
 end
 
@@ -163,22 +163,22 @@ local re = [==[(?i:([\s'\"`´’‘\(\)]*)?([\d\w]+)([\s'\"`´’‘\(\)]*)?(?:=
 
 s = string.rep([[ABCDEFG]], 21)
 
-local start = ngx.now()
+local start = njt.now()
 
-local res, err = ngx.re.match(s, re, "jo")
+local res, err = njt.re.match(s, re, "jo")
 
 --[[
-ngx.update_time()
-local elapsed = ngx.now() - start
-ngx.say(elapsed, " sec elapsed.")
+njt.update_time()
+local elapsed = njt.now() - start
+njt.say(elapsed, " sec elapsed.")
 ]]
 
 if not res then
     if err then
-        ngx.say("error: ", err)
+        njt.say("error: ", err)
         return
     end
-    ngx.say("failed to match")
+    njt.say("failed to match")
     return
 end
 

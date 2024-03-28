@@ -15,18 +15,18 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: ngx.say()
+=== TEST 1: njt.say()
 --- stream_server_config
     content_by_lua_block {
         local function f()
-            ngx.say("hello")
+            njt.say("hello")
         end
-        local ok, err = ngx.timer.at(0.05, f)
+        local ok, err = njt.timer.at(0.05, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
+        njt.say("registered timer")
     }
 
 --- config
@@ -45,25 +45,25 @@ registered timer
 
 --- error_log eval
 [
-qr/\[error\] .*? runtime error: content_by_lua\(nginx\.conf:\d+\):3: API disabled in the context of ngx\.timer/,
-"lua ngx.timer expired",
+qr/\[error\] .*? runtime error: content_by_lua\(nginx\.conf:\d+\):3: API disabled in the context of njt\.timer/,
+"lua njt.timer expired",
 "stream lua close fake stream connection"
 ]
 
 
 
-=== TEST 2: ngx.print()
+=== TEST 2: njt.print()
 --- stream_server_config
     content_by_lua_block {
         local function f()
-            ngx.print("hello")
+            njt.print("hello")
         end
-        local ok, err = ngx.timer.at(0.05, f)
+        local ok, err = njt.timer.at(0.05, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
+        njt.say("registered timer")
     }
 
 --- config
@@ -82,25 +82,25 @@ registered timer
 
 --- error_log eval
 [
-qr/\[error\] .*? runtime error: content_by_lua\(nginx\.conf:\d+\):3: API disabled in the context of ngx\.timer/,
-"lua ngx.timer expired",
+qr/\[error\] .*? runtime error: content_by_lua\(nginx\.conf:\d+\):3: API disabled in the context of njt\.timer/,
+"lua njt.timer expired",
 "stream lua close fake stream connection"
 ]
 
 
 
-=== TEST 3: ngx.flush()
+=== TEST 3: njt.flush()
 --- stream_server_config
     content_by_lua_block {
         local function f()
-            ngx.flush()
+            njt.flush()
         end
-        local ok, err = ngx.timer.at(0.05, f)
+        local ok, err = njt.timer.at(0.05, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
+        njt.say("registered timer")
     }
 
 --- config
@@ -119,25 +119,25 @@ registered timer
 
 --- error_log eval
 [
-qr/\[error\] .*? runtime error: content_by_lua\(nginx\.conf:\d+\):3: API disabled in the context of ngx\.timer/,
-"lua ngx.timer expired",
+qr/\[error\] .*? runtime error: content_by_lua\(nginx\.conf:\d+\):3: API disabled in the context of njt\.timer/,
+"lua njt.timer expired",
 "stream lua close fake stream connection"
 ]
 
 
 
-=== TEST 4: ngx.on_abort
+=== TEST 4: njt.on_abort
 --- stream_server_config
     content_by_lua_block {
         local function f()
-            ngx.on_abort(f)
+            njt.on_abort(f)
         end
-        local ok, err = ngx.timer.at(0.05, f)
+        local ok, err = njt.timer.at(0.05, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
+        njt.say("registered timer")
     }
 
 --- config
@@ -156,25 +156,25 @@ registered timer
 
 --- error_log eval
 [
-qr/\[error\] .*? runtime error: content_by_lua\(nginx\.conf:\d+\):3: API disabled in the context of ngx\.timer/,
-"lua ngx.timer expired",
+qr/\[error\] .*? runtime error: content_by_lua\(nginx\.conf:\d+\):3: API disabled in the context of njt\.timer/,
+"lua njt.timer expired",
 "stream lua close fake stream connection"
 ]
 
 
 
-=== TEST 5: ngx.eof
+=== TEST 5: njt.eof
 --- stream_server_config
     content_by_lua_block {
         local function f()
-            ngx.eof()
+            njt.eof()
         end
-        local ok, err = ngx.timer.at(0.05, f)
+        local ok, err = njt.timer.at(0.05, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
+        njt.say("registered timer")
     }
 
 --- config
@@ -193,28 +193,28 @@ registered timer
 
 --- error_log eval
 [
-qr/\[error\] .*? runtime error: content_by_lua\(nginx\.conf:\d+\):3: API disabled in the context of ngx\.timer/,
-"lua ngx.timer expired",
+qr/\[error\] .*? runtime error: content_by_lua\(nginx\.conf:\d+\):3: API disabled in the context of njt\.timer/,
+"lua njt.timer expired",
 "stream lua close fake stream connection"
 ]
 
 
 
-=== TEST 6: ngx.req.socket
+=== TEST 6: njt.req.socket
 --- stream_server_config
     content_by_lua_block {
         local function f()
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
             if not sock then
-                ngx.log(ngx.ERR, "failed to get req sock: ", err)
+                njt.log(njt.ERR, "failed to get req sock: ", err)
             end
         end
-        local ok, err = ngx.timer.at(0.05, f)
+        local ok, err = njt.timer.at(0.05, f)
         if not ok then
-            ngx.say("failed to set timer: ", err)
+            njt.say("failed to set timer: ", err)
             return
         end
-        ngx.say("registered timer")
+        njt.say("registered timer")
     }
 
 --- config
@@ -233,7 +233,7 @@ registered timer
 
 --- error_log eval
 [
-qr/\[error\] .*? runtime error: content_by_lua\(nginx\.conf:\d+\):3: API disabled in the context of ngx\.timer/,
-"lua ngx.timer expired",
+qr/\[error\] .*? runtime error: content_by_lua\(nginx\.conf:\d+\):3: API disabled in the context of njt\.timer/,
+"lua njt.timer expired",
 "stream lua close fake stream connection"
 ]

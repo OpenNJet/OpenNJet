@@ -26,7 +26,7 @@ __DATA__
         echo -n hiya globe;
 
         body_filter_by_lua '
-            local chunk, eof = ngx.arg[1], ngx.arg[2]
+            local chunk, eof = njt.arg[1], njt.arg[2]
             print("chunk: [", chunk, "], eof: ", eof)
         ';
     }
@@ -53,7 +53,7 @@ chunk: [], eof: true
     }
 --- user_files
 >>> a.lua
-local chunk, eof = ngx.arg[1], ngx.arg[2]
+local chunk, eof = njt.arg[1], njt.arg[2]
 print("chunk: [", chunk, "], eof: ", eof)
 --- request
 GET /read
@@ -86,8 +86,8 @@ chunk: [], eof: true
 module("foo", package.seeall)
 
 function go()
-    -- ngx.say("Hello")
-    local chunk, eof = ngx.arg[1], ngx.arg[2]
+    -- njt.say("Hello")
+    local chunk, eof = njt.arg[1], njt.arg[2]
     print("chunk: [", chunk, "], eof: ", eof)
 end
 --- request
@@ -110,7 +110,7 @@ chunk: [], eof: true
         echo hiya globe;
 
         body_filter_by_lua '
-            ngx.arg[1] = string.upper(ngx.arg[1])
+            njt.arg[1] = string.upper(njt.arg[1])
         ';
     }
 --- request
@@ -130,14 +130,14 @@ HIYA GLOBE
         echo hiya globe;
 
         body_filter_by_lua '
-            local chunk = ngx.arg[1]
+            local chunk = njt.arg[1]
             if string.match(chunk, "hello") then
-                ngx.arg[1] = string.upper(chunk)
-                ngx.arg[2] = true
+                njt.arg[1] = string.upper(chunk)
+                njt.arg[2] = true
                 return
             end
 
-            ngx.arg[1] = nil
+            njt.arg[1] = nil
         ';
     }
 --- request
@@ -156,18 +156,18 @@ HELLO WORLD
         echo hiya globe;
 
         body_filter_by_lua '
-            local chunk = ngx.arg[1]
+            local chunk = njt.arg[1]
             if string.match(chunk, "hello") then
-                ngx.arg[1] = string.upper(chunk)
-                ngx.arg[2] = true
-                ngx.arg[2] = false
-                ngx.arg[2] = true
+                njt.arg[1] = string.upper(chunk)
+                njt.arg[2] = true
+                njt.arg[2] = false
+                njt.arg[2] = true
                 return
             end
 
-            ngx.arg[1] = nil
-            ngx.arg[2] = true
-            ngx.arg[2] = false
+            njt.arg[1] = nil
+            njt.arg[2] = true
+            njt.arg[2] = false
         ';
     }
 --- request
@@ -186,8 +186,8 @@ HELLO WORLD
         echo hiya globe;
 
         body_filter_by_lua '
-            local chunk, eof = ngx.arg[1], ngx.arg[2]
-            ngx.arg[2] = eof
+            local chunk, eof = njt.arg[1], njt.arg[2]
+            njt.arg[2] = eof
         ';
     }
 --- request
@@ -207,8 +207,8 @@ hiya globe
         echo hiya globe;
 
         body_filter_by_lua '
-            local chunk, eof = ngx.arg[1], ngx.arg[2]
-            ngx.arg[2] = eof
+            local chunk, eof = njt.arg[1], njt.arg[2]
+            njt.arg[2] = eof
         ';
     }
 --- request
@@ -228,12 +228,12 @@ hiya globe
         echo hiya globe;
 
         body_filter_by_lua '
-            local chunk, eof = ngx.arg[1], ngx.arg[2]
-            local buf = ngx.ctx.buf
+            local chunk, eof = njt.arg[1], njt.arg[2]
+            local buf = njt.ctx.buf
 
             if eof then
                 if buf then
-                    ngx.arg[1] = "[" .. buf .. chunk .. "]"
+                    njt.arg[1] = "[" .. buf .. chunk .. "]"
                     return
                 end
 
@@ -241,12 +241,12 @@ hiya globe
             end
 
             if buf then
-                ngx.ctx.buf = buf .. chunk
+                njt.ctx.buf = buf .. chunk
             else
-                ngx.ctx.buf = chunk
+                njt.ctx.buf = chunk
             end
 
-            ngx.arg[1] = nil
+            njt.arg[1] = nil
         ';
     }
 --- request
@@ -267,12 +267,12 @@ hiya globe
         echo hiya globe;
 
         body_filter_by_lua '
-            local chunk, eof = ngx.arg[1], ngx.arg[2]
-            local buf = ngx.ctx.buf
+            local chunk, eof = njt.arg[1], njt.arg[2]
+            local buf = njt.ctx.buf
 
             if eof then
                 if buf then
-                    ngx.arg[1] = {"[", buf, chunk, "]"}
+                    njt.arg[1] = {"[", buf, chunk, "]"}
                     return
                 end
 
@@ -280,12 +280,12 @@ hiya globe
             end
 
             if buf then
-                ngx.ctx.buf = {buf, chunk}
+                njt.ctx.buf = {buf, chunk}
             else
-                ngx.ctx.buf = chunk
+                njt.ctx.buf = chunk
             end
 
-            ngx.arg[1] = nil
+            njt.arg[1] = nil
         ';
     }
 --- request
@@ -307,7 +307,7 @@ hiya globe
         echo hiya globe;
 
         body_filter_by_lua '
-            local chunk, eof = ngx.arg[1], ngx.arg[2]
+            local chunk, eof = njt.arg[1], njt.arg[2]
             if eof then
                 error("something bad happened!")
             end
@@ -329,7 +329,7 @@ failed to run body_filter_by_lua*: body_filter_by_lua:4: something bad happened!
         echo hiya globe;
 
         body_filter_by_lua '
-            local chunk, eof = ngx.arg[1], ngx.arg[2]
+            local chunk, eof = njt.arg[1], njt.arg[2]
             if eof then
                 error(nil)
             end
@@ -351,9 +351,9 @@ failed to run body_filter_by_lua*: unknown reason
         echo hiya globe;
 
         body_filter_by_lua '
-            local chunk, eof = ngx.arg[1], ngx.arg[2]
+            local chunk, eof = njt.arg[1], njt.arg[2]
             if eof then
-                return ngx.ERROR
+                return njt.ERROR
             end
         ';
     }
@@ -369,14 +369,14 @@ GET /t
 --- config
     location /t {
         content_by_lua '
-            ngx.header.content_length = 12
-            ngx.say("Hello World")
+            njt.header.content_length = 12
+            njt.say("Hello World")
         ';
 
-        header_filter_by_lua 'ngx.header.content_length = nil';
+        header_filter_by_lua 'njt.header.content_length = nil';
 
         body_filter_by_lua '
-            ngx.arg[1] = ngx.arg[1] .. "aaa"
+            njt.arg[1] = njt.arg[1] .. "aaa"
         ';
     }
 --- request
@@ -391,14 +391,14 @@ aaaaaa
 
 
 
-=== TEST 15: table arguments to ngx.arg[1] (github issue #54)
+=== TEST 15: table arguments to njt.arg[1] (github issue #54)
 --- config
     location /t {
         echo -n hello;
 
         body_filter_by_lua '
-            if ngx.arg[1] ~= "" then
-                ngx.arg[1] = {{ngx.arg[1]}, "!", "\\n"}
+            if njt.arg[1] ~= "" then
+                njt.arg[1] = {{njt.arg[1]}, "!", "\\n"}
             end
         ';
     }
@@ -411,7 +411,7 @@ hello!
 
 
 
-=== TEST 16: fully buffered output (string scalar, buffering to disk by ngx_proxy)
+=== TEST 16: fully buffered output (string scalar, buffering to disk by njt_proxy)
 --- config
     location /t {
         proxy_pass http://127.0.0.1:$server_port/stub;
@@ -420,12 +420,12 @@ hello!
         proxy_buffer_size 256;
 
         body_filter_by_lua '
-            local chunk, eof = ngx.arg[1], ngx.arg[2]
-            local buf = ngx.ctx.buf
+            local chunk, eof = njt.arg[1], njt.arg[2]
+            local buf = njt.ctx.buf
 
             if eof then
                 if buf then
-                    ngx.arg[1] = "[" .. buf .. chunk .. "]"
+                    njt.arg[1] = "[" .. buf .. chunk .. "]"
                     return
                 end
 
@@ -433,12 +433,12 @@ hello!
             end
 
             if buf then
-                ngx.ctx.buf = buf .. chunk
+                njt.ctx.buf = buf .. chunk
             else
-                ngx.ctx.buf = chunk
+                njt.ctx.buf = chunk
             end
 
-            ngx.arg[1] = nil
+            njt.arg[1] = nil
         ';
     }
 
@@ -497,7 +497,7 @@ in function 'foo'
         echo -n hiya globe;
 
         body_filter_by_lua '
-            ngx.arg[2] = 1
+            njt.arg[2] = 1
         ';
     }
 --- request
@@ -517,8 +517,8 @@ hello worldhello world
     }
 --- user_files
 >>> test.lua
-v = ngx.var["request_uri"]
-ngx.print("request_uri: ", v, "\n")
+v = njt.var["request_uri"]
+njt.print("request_uri: ", v, "\n")
 --- request
 GET /lua?a=1&b=2
 --- ignore_response
@@ -533,17 +533,17 @@ qr/failed to load external Lua file ".*?test2\.lua": cannot open .*? No such fil
         return 200 "hello world";
 
         body_filter_by_lua '
-            local chunk, eof = ngx.arg[1], ngx.arg[2]
+            local chunk, eof = njt.arg[1], njt.arg[2]
             if eof then
-                ngx.arg[2] = false
+                njt.arg[2] = false
             end
         ';
     }
 
     location = /t {
         content_by_lua '
-            local res = ngx.location.capture("/read")
-            ngx.say("truncated: ", res.truncated)
+            local res = njt.location.capture("/read")
+            njt.say("truncated: ", res.truncated)
         ';
     }
 --- request
@@ -563,7 +563,7 @@ truncated: true
         echo world;
 
         body_filter_by_lua '
-            ngx.arg[1] = ""
+            njt.arg[1] = ""
         ';
     }
 --- request
@@ -575,31 +575,31 @@ GET /t
 
 
 
-=== TEST 22: body filter + ngx.say() (github issue #386)
+=== TEST 22: body filter + njt.say() (github issue #386)
 --- config
     postpone_output 1;
     location = /t {
-        header_filter_by_lua 'ngx.header.content_length = nil';
+        header_filter_by_lua 'njt.header.content_length = nil';
 
         body_filter_by_lua '
             -- do return end
-            if not ngx.ctx.chunks then
-                ngx.ctx.chunks = {}
+            if not njt.ctx.chunks then
+                njt.ctx.chunks = {}
             end
 
-            table.insert(ngx.ctx.chunks, ngx.arg[1])
-            print("got chunk ", ngx.arg[1])
-            ngx.arg[1] = nil
+            table.insert(njt.ctx.chunks, njt.arg[1])
+            print("got chunk ", njt.arg[1])
+            njt.arg[1] = nil
 
-            if ngx.arg[2] then
-                print("seen eof: ", string.upper(table.concat(ngx.ctx.chunks)))
-                ngx.arg[1] = string.upper(table.concat(ngx.ctx.chunks))
+            if njt.arg[2] then
+                print("seen eof: ", string.upper(table.concat(njt.ctx.chunks)))
+                njt.arg[1] = string.upper(table.concat(njt.ctx.chunks))
             end
         ';
 
         content_by_lua '
             for i = 1, 10 do
-                assert(ngx.say("hello world"))
+                assert(njt.say("hello world"))
             end
         ';
     }
@@ -610,30 +610,30 @@ GET /t
 
 --- stap2
 global active = 1
-F(ngx_http_lua_body_filter_by_chunk) {
-    printf("body filter by lua: %p: %s\n", $in, ngx_chain_dump($in))
+F(njt_http_lua_body_filter_by_chunk) {
+    printf("body filter by lua: %p: %s\n", $in, njt_chain_dump($in))
 }
 
-F(ngx_http_write_filter) {
-    printf("write filter: %p: %s\n", $in, ngx_chain_dump($in))
+F(njt_http_write_filter) {
+    printf("write filter: %p: %s\n", $in, njt_chain_dump($in))
 }
 
 
-F(ngx_output_chain) {
-    #printf("ctx->in: %s\n", ngx_chain_dump($ctx->in))
-    #printf("ctx->busy: %s\n", ngx_chain_dump($ctx->busy))
-    printf("output chain %p: %s\n", $in, ngx_chain_dump($in))
+F(njt_output_chain) {
+    #printf("ctx->in: %s\n", njt_chain_dump($ctx->in))
+    #printf("ctx->busy: %s\n", njt_chain_dump($ctx->busy))
+    printf("output chain %p: %s\n", $in, njt_chain_dump($in))
 }
-F(ngx_linux_sendfile_chain) {
-    printf("linux sendfile chain: %s\n", ngx_chain_dump($in))
+F(njt_linux_sendfile_chain) {
+    printf("linux sendfile chain: %s\n", njt_chain_dump($in))
 }
-F(ngx_chain_writer) {
+F(njt_chain_writer) {
     printf("chain writer ctx out: %p\n", $data)
-    printf("nginx chain writer: %s\n", ngx_chain_dump($in))
+    printf("nginx chain writer: %s\n", njt_chain_dump($in))
 }
 probe syscall.writev {
     if (active && pid() == target()) {
-        printf("writev(%s)", ngx_iovec_dump($vec, $vlen))
+        printf("writev(%s)", njt_iovec_dump($vec, $vlen))
         /*
         for (i = 0; i < $vlen; i++) {
             printf(" %p [%s]", $vec[i]->iov_base, text_str(user_string_n($vec[i]->iov_base, $vec[i]->iov_len)))
@@ -654,31 +654,31 @@ probe syscall.writev.return {
 
 
 
-=== TEST 23: body filter + ngx.say() (github issue #386), with flush
+=== TEST 23: body filter + njt.say() (github issue #386), with flush
 --- config
     location = /t {
-        header_filter_by_lua 'ngx.header.content_length = nil';
+        header_filter_by_lua 'njt.header.content_length = nil';
 
         body_filter_by_lua '
             -- do return end
-            if not ngx.ctx.chunks then
-                ngx.ctx.chunks = {}
+            if not njt.ctx.chunks then
+                njt.ctx.chunks = {}
             end
 
-            table.insert(ngx.ctx.chunks, ngx.arg[1])
-            print("got chunk ", ngx.arg[1])
-            ngx.arg[1] = nil
+            table.insert(njt.ctx.chunks, njt.arg[1])
+            print("got chunk ", njt.arg[1])
+            njt.arg[1] = nil
 
-            if ngx.arg[2] then
-                print("seen eof: ", string.upper(table.concat(ngx.ctx.chunks)))
-                ngx.arg[1] = string.upper(table.concat(ngx.ctx.chunks))
+            if njt.arg[2] then
+                print("seen eof: ", string.upper(table.concat(njt.ctx.chunks)))
+                njt.arg[1] = string.upper(table.concat(njt.ctx.chunks))
             end
         ';
 
         content_by_lua '
             for i = 1, 10 do
-                assert(ngx.say("hello world"))
-                ngx.flush(true)
+                assert(njt.say("hello world"))
+                njt.flush(true)
             end
         ';
     }
@@ -688,13 +688,13 @@ GET /t
 "HELLO WORLD\n" x 10
 
 --- stap
-F(ngx_http_write_filter) {
-    for (cl = $in; cl; cl = @cast(cl, "ngx_chain_t")->next) {
-        if (@cast(cl, "ngx_chain_t")->buf->flush) {
+F(njt_http_write_filter) {
+    for (cl = $in; cl; cl = @cast(cl, "njt_chain_t")->next) {
+        if (@cast(cl, "njt_chain_t")->buf->flush) {
             printf("seen flush buf.\n")
         }
 
-        if (@cast(cl, "ngx_chain_t")->buf->last_buf) {
+        if (@cast(cl, "njt_chain_t")->buf->last_buf) {
             printf("seen last buf.\n")
         }
     }
@@ -707,36 +707,36 @@ $/
 
 --- stap2
 global active = 1
-F(ngx_http_lua_body_filter_by_chunk) {
-    printf("body filter by lua: %p: %s\n", $in, ngx_chain_dump($in))
+F(njt_http_lua_body_filter_by_chunk) {
+    printf("body filter by lua: %p: %s\n", $in, njt_chain_dump($in))
 }
 
-F(ngx_http_write_filter) {
-    printf("write filter: %p: %s\n", $in, ngx_chain_dump($in))
+F(njt_http_write_filter) {
+    printf("write filter: %p: %s\n", $in, njt_chain_dump($in))
 }
 
-F(ngx_http_charset_body_filter) {
-    printf("charset body filter: %p: %s\n", $in, ngx_chain_dump($in))
+F(njt_http_charset_body_filter) {
+    printf("charset body filter: %p: %s\n", $in, njt_chain_dump($in))
 }
 
-F(ngx_output_chain) {
-    #printf("ctx->in: %s\n", ngx_chain_dump($ctx->in))
-    #printf("ctx->busy: %s\n", ngx_chain_dump($ctx->busy))
-    printf("output chain %p: %s\n", $in, ngx_chain_dump($in))
+F(njt_output_chain) {
+    #printf("ctx->in: %s\n", njt_chain_dump($ctx->in))
+    #printf("ctx->busy: %s\n", njt_chain_dump($ctx->busy))
+    printf("output chain %p: %s\n", $in, njt_chain_dump($in))
 }
 
-F(ngx_linux_sendfile_chain) {
-    printf("linux sendfile chain: %s\n", ngx_chain_dump($in))
+F(njt_linux_sendfile_chain) {
+    printf("linux sendfile chain: %s\n", njt_chain_dump($in))
 }
 
-F(ngx_chain_writer) {
+F(njt_chain_writer) {
     printf("chain writer ctx out: %p\n", $data)
-    printf("nginx chain writer: %s\n", ngx_chain_dump($in))
+    printf("nginx chain writer: %s\n", njt_chain_dump($in))
 }
 
 probe syscall.writev {
     if (active && pid() == target()) {
-        printf("writev(%s)", ngx_iovec_dump($vec, $vlen))
+        printf("writev(%s)", njt_iovec_dump($vec, $vlen))
         /*
         for (i = 0; i < $vlen; i++) {
             printf(" %p [%s]", $vec[i]->iov_base, text_str(user_string_n($vec[i]->iov_base, $vec[i]->iov_len)))
@@ -758,19 +758,19 @@ probe syscall.writev.return {
 
 
 
-=== TEST 24: clear ngx.arg[1] and then read it
+=== TEST 24: clear njt.arg[1] and then read it
 --- config
     location /t {
         echo hello;
         echo world;
 
         body_filter_by_lua '
-            ngx.arg[1] = nil
-            local data = ngx.arg[1]
+            njt.arg[1] = nil
+            local data = njt.arg[1]
             print([[data chunk: "]], data, [["]])
 
-            ngx.arg[1] = ""
-            data = ngx.arg[1]
+            njt.arg[1] = ""
+            data = njt.arg[1]
             print([[data chunk 2: "]], data, [["]])
         ';
     }
@@ -792,19 +792,19 @@ data chunk 2: ""
 
 
 
-=== TEST 25: clear ngx.arg[1] and then read ngx.arg[2]
+=== TEST 25: clear njt.arg[1] and then read njt.arg[2]
 --- config
     location /t {
         echo hello;
         echo world;
 
         body_filter_by_lua '
-            ngx.arg[1] = nil
-            local eof = ngx.arg[2]
+            njt.arg[1] = nil
+            local eof = njt.arg[2]
             print([[eof: ]], eof)
 
-            ngx.arg[1] = ""
-            eof = ngx.arg[2]
+            njt.arg[1] = ""
+            eof = njt.arg[2]
             print([[eof 2: ]], eof)
         ';
     }
@@ -827,11 +827,11 @@ eof 2: true
 
 
 
-=== TEST 26: no ngx.print
+=== TEST 26: no njt.print
 --- config
     location /lua {
         echo ok;
-        body_filter_by_lua "ngx.print(32) return 1";
+        body_filter_by_lua "njt.print(32) return 1";
     }
 --- request
 GET /lua

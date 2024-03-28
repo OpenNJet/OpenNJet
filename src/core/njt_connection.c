@@ -725,8 +725,7 @@ njt_open_listening_sockets(njt_cycle_t *cycle)
                 /*
                  * on OpenVZ after suspend/resume EADDRINUSE
                  * may be returned by listen() instead of bind(), see
-                 * https://bugzilla.openvz.org/show_bug.cgi?id=2470
-                 */
+                 * hhttps://bugs.openvz.org/browse/OVZ-5587                 */
 
                 if (err != NJT_EADDRINUSE || !njt_test_config) {
                     njt_log_error(NJT_LOG_EMERG, log, err,
@@ -1173,6 +1172,14 @@ njt_close_listening_sockets(njt_cycle_t *cycle)
 
     ls = cycle->listening.elts;
     for (i = 0; i < cycle->listening.nelts; i++) {
+        // openresty patch
+#if (NJT_HAVE_REUSEPORT)
+        if (ls[i].fd == (njt_socket_t) -1) {
+            continue;
+        }
+#endif
+        // openresty patch end
+
 
         c = ls[i].connection;
 

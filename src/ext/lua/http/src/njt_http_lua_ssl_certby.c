@@ -1,7 +1,7 @@
 
 /*
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -71,7 +71,8 @@ njt_http_lua_ssl_cert_handler_inline(njt_http_request_t *r,
                                        lscf->srv.ssl_cert_src.len,
                                        &lscf->srv.ssl_cert_src_ref,
                                        lscf->srv.ssl_cert_src_key,
-                                       "=ssl_certificate_by_lua");
+                                       (const char *)
+                                       lscf->srv.ssl_cert_chunkname);
     if (rc != NJT_OK) {
         return rc;
     }
@@ -116,6 +117,8 @@ njt_http_lua_ssl_cert_by_lua(njt_conf_t *cf, njt_command_t *cmd,
 
 #else
 
+    size_t                       chunkname_len;
+    u_char                      *chunkname;
     u_char                      *cache_key = NULL;
     u_char                      *name;
     njt_str_t                   *value;
@@ -164,8 +167,15 @@ njt_http_lua_ssl_cert_by_lua(njt_conf_t *cf, njt_command_t *cmd,
             return NJT_CONF_ERROR;
         }
 
-        /* Don't eval nginx variables for inline lua code */
+        chunkname = njt_http_lua_gen_chunk_name(cf, "ssl_certificate_by_lua",
+                          sizeof("ssl_certificate_by_lua") - 1, &chunkname_len);
+        if (chunkname == NULL) {
+            return NJT_CONF_ERROR;
+        }
+
+        /* Don't eval njet variables for inline lua code */
         lscf->srv.ssl_cert_src = value[1];
+        lscf->srv.ssl_cert_chunkname = chunkname;
     }
 
     lscf->srv.ssl_cert_src_key = cache_key;
@@ -444,7 +454,7 @@ njt_http_lua_ssl_cert_by_chunk(lua_State *L, njt_http_request_t *r)
     njt_int_t                rc;
     lua_State               *co;
     njt_http_lua_ctx_t      *ctx;
-    njt_http_cleanup_t      *cln;
+    njt_pool_cleanup_t      *cln;
 
     ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
 
@@ -484,7 +494,7 @@ njt_http_lua_ssl_cert_by_chunk(lua_State *L, njt_http_request_t *r)
     lua_setfenv(co, -2);
 #endif
 
-    /* save nginx request in coroutine globals table */
+    /* save njet request in coroutine globals table */
     njt_http_lua_set_req(co, r);
 
     ctx->cur_co_ctx = &ctx->entry_co_ctx;
@@ -498,7 +508,7 @@ njt_http_lua_ssl_cert_by_chunk(lua_State *L, njt_http_request_t *r)
 
     /* register request cleanup hooks */
     if (ctx->cleanup == NULL) {
-        cln = njt_http_cleanup_add(r, 0);
+        cln = njt_pool_cleanup_add(r->pool, 0);
         if (cln == NULL) {
             rc = NJT_ERROR;
             njt_http_lua_finalize_request(r, rc);
@@ -1043,7 +1053,7 @@ njt_http_lua_ffi_cert_pem_to_der(const u_char *pem, size_t pem_len, u_char *der,
 
 int
 njt_http_lua_ffi_priv_key_pem_to_der(const u_char *pem, size_t pem_len,
-    u_char *der, char **err)
+    const u_char *passphrase, u_char *der, char **err)
 {
     int          len;
     BIO         *in;
@@ -1056,7 +1066,7 @@ njt_http_lua_ffi_priv_key_pem_to_der(const u_char *pem, size_t pem_len,
         return NJT_ERROR;
     }
 
-    pkey = PEM_read_bio_PrivateKey(in, NULL, NULL, NULL);
+    pkey = PEM_read_bio_PrivateKey(in, NULL, NULL, (void *) passphrase);
     if (pkey == NULL) {
         BIO_free(in);
         *err = "PEM_read_bio_PrivateKey() failed";
@@ -1477,6 +1487,17 @@ failed:
 
     return NJT_ERROR;
 #endif
+}
+
+
+njt_ssl_conn_t *
+njt_http_lua_ffi_get_req_ssl_pointer(njt_http_request_t *r)
+{
+    if (r->connection == NULL || r->connection->ssl == NULL) {
+        return NULL;
+    }
+
+    return r->connection->ssl->connection;
 }
 
 

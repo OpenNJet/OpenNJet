@@ -4,7 +4,7 @@ discussions, please join the openresty-en mailing list instead: https://openrest
 Ensure you have provided the following details while reporting a problem:
 
 * The exact version of the related software, including but not limited to the OpenResty version
-(if any), the NGINX core version, the `ngx_lua` module version,
+(if any), the NGINX core version, the `njt_lua` module version,
 and your operating system version.
 * A minimal and standalone test case that others can easily run on their side and
 reproduce the issue you are seeing.

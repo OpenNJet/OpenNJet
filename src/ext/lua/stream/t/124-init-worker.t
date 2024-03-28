@@ -34,11 +34,11 @@ __DATA__
 === TEST 1: set a global lua var
 --- stream_config
     init_worker_by_lua_block {
-        foo = ngx.md5("hello world")
+        foo = njt.md5("hello world")
     }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("foo = ", foo)
+        njt.say("foo = ", foo)
     }
 --- stream_response
 foo = 5eb63bbbe01eeed093cb22bb8f5acdc3
@@ -47,14 +47,14 @@ foo = 5eb63bbbe01eeed093cb22bb8f5acdc3
 
 
 
-=== TEST 2: no ngx.say()
+=== TEST 2: no njt.say()
 --- stream_config
     init_worker_by_lua_block {
-        ngx.say("hello")
+        njt.say("hello")
     }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("foo = ", foo)
+        njt.say("foo = ", foo)
     }
 --- stream_response
 foo = nil
@@ -68,23 +68,23 @@ API disabled in the context of init_worker_by_lua*
     init_worker_by_lua_block {
         _G.my_counter = 0
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
         local function handler(premature)
             warn("timer expired (premature: ", premature, "; counter: ",
                  _G.my_counter, ")")
             _G.my_counter = _G.my_counter + 1
         end
-        local ok, err = ngx.timer.at(0, handler)
+        local ok, err = njt.timer.at(0, handler)
         if not ok then
-            ngx.log(ngx.ERR, "failed to create timer: ", err)
+            njt.log(njt.ERR, "failed to create timer: ", err)
         end
         warn("created timer: ", ok)
     }
 --- stream_server_config
     content_by_lua_block {
-        -- ngx.sleep(0.001)
-        ngx.say("my_counter = ", _G.my_counter)
+        -- njt.sleep(0.001)
+        njt.say("my_counter = ", _G.my_counter)
         _G.my_counter = _G.my_counter + 1
     }
 --- stream_response
@@ -104,15 +104,15 @@ warn(): timer expired (premature: false; counter: 0)
     init_worker_by_lua_block {
         _G.done = false
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
         local function error(...)
-            ngx.log(ngx.ERR, ...)
+            njt.log(njt.ERR, ...)
         end
         local function handler(premature)
             warn("timer expired (premature: ", premature, ")")
 
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
                 error("failed to connect: ", err)
@@ -140,7 +140,7 @@ warn(): timer expired (premature: false; counter: 0)
             _G.done = true
         end
 
-        local ok, err = ngx.timer.at(0, handler)
+        local ok, err = njt.timer.at(0, handler)
         if not ok then
             error("failed to create timer: ", err)
         end
@@ -149,17 +149,17 @@ warn(): timer expired (premature: false; counter: 0)
 --- stream_server_config
     content_by_lua_block {
         local waited = 0
-        local sleep = ngx.sleep
+        local sleep = njt.sleep
         while not _G.done do
             local delay = 0.001
             sleep(delay)
             waited = waited + delay
             if waited > 1 then
-                ngx.say("timed out")
+                njt.say("timed out")
                 return
             end
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 ok
@@ -185,11 +185,11 @@ lua tcp socket read timeout: 60000
     init_worker_by_lua_file html/foo.lua;
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("foo = ", foo)
+        njt.say("foo = ", foo)
     }
 --- user_files
 >>> foo.lua
-foo = ngx.md5("hello world")
+foo = njt.md5("hello world")
 --- stream_response
 foo = 5eb63bbbe01eeed093cb22bb8f5acdc3
 --- no_error_log
@@ -206,15 +206,15 @@ env TEST_NGINX_MEMCACHED_PORT;
 >>> foo.lua
 _G.done = false
 local function warn(...)
-    ngx.log(ngx.WARN, ...)
+    njt.log(njt.WARN, ...)
 end
 local function error(...)
-    ngx.log(ngx.ERR, ...)
+    njt.log(njt.ERR, ...)
 end
 local function handler(premature)
     warn("timer expired (premature: ", premature, ")")
 
-    local sock = ngx.socket.tcp()
+    local sock = njt.socket.tcp()
     local ok, err = sock:connect("127.0.0.1",
                                  os.getenv("TEST_NGINX_MEMCACHED_PORT"))
     if not ok then
@@ -243,7 +243,7 @@ local function handler(premature)
     _G.done = true
 end
 
-local ok, err = ngx.timer.at(0, handler)
+local ok, err = njt.timer.at(0, handler)
 if not ok then
     error("failed to create timer: ", err)
 end
@@ -252,17 +252,17 @@ warn("created timer: ", ok)
 --- stream_server_config
     content_by_lua_block {
         local waited = 0
-        local sleep = ngx.sleep
+        local sleep = njt.sleep
         while not _G.done do
             local delay = 0.001
             sleep(delay)
             waited = waited + delay
             if waited > 1 then
-                ngx.say("timed out")
+                njt.say("timed out")
                 return
             end
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- stream_response
 ok
@@ -283,18 +283,18 @@ lua tcp socket read timeout: 60000
 
 
 
-=== TEST 7: ngx.ctx
+=== TEST 7: njt.ctx
 --- stream_config
     init_worker_by_lua_block {
-        ngx.ctx.foo = "hello world"
+        njt.ctx.foo = "hello world"
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
-        warn("foo = ", ngx.ctx.foo)
+        warn("foo = ", njt.ctx.foo)
     }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say('ok')
+        njt.say('ok')
     }
 --- stream_response
 ok
@@ -309,11 +309,11 @@ warn(): foo = hello world
 === TEST 8: print
 --- stream_config
     init_worker_by_lua_block {
-        print("md5 = ", ngx.md5("hello world"))
+        print("md5 = ", njt.md5("hello world"))
     }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say('ok')
+        njt.say('ok')
     }
 --- stream_response
 ok
@@ -328,14 +328,14 @@ md5 = 5eb63bbbe01eeed093cb22bb8f5acdc3
 --- stream_config
     init_worker_by_lua_block {
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
 
-        warn(ngx.unescape_uri("hello%20world"))
+        warn(njt.unescape_uri("hello%20world"))
     }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say('ok')
+        njt.say('ok')
     }
 --- stream_response
 ok
@@ -351,14 +351,14 @@ warn(): hello world
 --- stream_config
     init_worker_by_lua_block {
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
 
-        warn(ngx.escape_uri("hello world"))
+        warn(njt.escape_uri("hello world"))
     }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say('ok')
+        njt.say('ok')
     }
 --- stream_response
 ok
@@ -370,18 +370,18 @@ warn(): hello%20world
 
 
 
-=== TEST 11: ngx.re
+=== TEST 11: njt.re
 --- stream_config
     init_worker_by_lua_block {
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
 
-        warn((ngx.re.sub("hello world", "world", "XXX", "jo")))
+        warn((njt.re.sub("hello world", "world", "XXX", "jo")))
     }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say('ok')
+        njt.say('ok')
     }
 --- stream_response
 ok
@@ -393,18 +393,18 @@ warn(): hello XXX
 
 
 
-=== TEST 12: ngx.time
+=== TEST 12: njt.time
 --- stream_config
     init_worker_by_lua_block {
         local function warn(...)
-            ngx.log(ngx.WARN, ...)
+            njt.log(njt.WARN, ...)
         end
 
-        warn("time: ", ngx.time())
+        warn("time: ", njt.time())
     }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say('ok')
+        njt.say('ok')
     }
 --- stream_response
 ok
@@ -431,7 +431,7 @@ qr/warn\(\): time: \d+/
         end
 
         local function handler()
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local port = 80
             local ok, err = sock:connect("agentzh.org", port)
             if not ok then
@@ -473,7 +473,7 @@ qr/warn\(\): time: \d+/
             done = true
         end
 
-        local ok, err = ngx.timer.at(0, handler)
+        local ok, err = njt.timer.at(0, handler)
         if not ok then
             say("failed to create timer: ", err)
         else
@@ -485,10 +485,10 @@ qr/warn\(\): time: \d+/
     content_by_lua_block {
         local i = 0
         while not done and i < 3000 do
-            ngx.sleep(0.001)
+            njt.sleep(0.001)
             i = i + 1
         end
-        ngx.print(logs)
+        njt.print(logs)
     }
 --- stream_response_like
 timer created
@@ -512,7 +512,7 @@ second line received: (?:Date|Server): .*?
         end
 
         local function handler()
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", 16787)
             if not ok then
                 say("failed to connect: ", err)
@@ -522,7 +522,7 @@ second line received: (?:Date|Server): .*?
             done = true
         end
 
-        local ok, err = ngx.timer.at(0, handler)
+        local ok, err = njt.timer.at(0, handler)
         if not ok then
             say("failed to create timer: ", err)
         else
@@ -534,17 +534,17 @@ second line received: (?:Date|Server): .*?
     content_by_lua_block {
         local i = 0
         while not done and i < 1000 do
-            ngx.sleep(0.001)
+            njt.sleep(0.001)
             i = i + 1
         end
-        ngx.print(logs)
+        njt.print(logs)
     }
 
 --- stream_response
 timer created
 failed to connect: connection refused
 --- error_log eval
-qr/connect\(\) failed \(\d+: Connection refused\), context: ngx\.timer$/
+qr/connect\(\) failed \(\d+: Connection refused\), context: njt\.timer$/
 
 
 
@@ -559,7 +559,7 @@ qr/connect\(\) failed \(\d+: Connection refused\), context: ngx\.timer$/
         end
 
         local function handler()
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", 16787)
             if not ok then
                 say("failed to connect: ", err)
@@ -569,7 +569,7 @@ qr/connect\(\) failed \(\d+: Connection refused\), context: ngx\.timer$/
             done = true
         end
 
-        local ok, err = ngx.timer.at(0, handler)
+        local ok, err = njt.timer.at(0, handler)
         if not ok then
             say("failed to create timer: ", err)
         else
@@ -581,10 +581,10 @@ qr/connect\(\) failed \(\d+: Connection refused\), context: ngx\.timer$/
     content_by_lua_block {
         local i = 0
         while not done and i < 1000 do
-            ngx.sleep(0.001)
+            njt.sleep(0.001)
             i = i + 1
         end
-        ngx.print(logs)
+        njt.print(logs)
     }
 
 --- stream_response
@@ -606,7 +606,7 @@ qr/connect\(\) failed \(\d+: Connection refused\)/
         end
 
         local function handler()
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", 16787)
             if not ok then
                 say("failed to connect: ", err)
@@ -616,7 +616,7 @@ qr/connect\(\) failed \(\d+: Connection refused\)/
             done = true
         end
 
-        local ok, err = ngx.timer.at(0, handler)
+        local ok, err = njt.timer.at(0, handler)
         if not ok then
             say("failed to create timer: ", err)
         else
@@ -628,10 +628,10 @@ qr/connect\(\) failed \(\d+: Connection refused\)/
     content_by_lua_block {
         local i = 0
         while not done and i < 1000 do
-            ngx.sleep(0.001)
+            njt.sleep(0.001)
             i = i + 1
         end
-        ngx.print(logs)
+        njt.print(logs)
     }
 
 --- stream_response
@@ -656,7 +656,7 @@ qq!
 !
 --- stream_server_config
     content_by_lua_block {
-        ngx.say('ok')
+        njt.say('ok')
     }
 --- stream_response
 ok
@@ -673,15 +673,15 @@ ok
     init_worker_by_lua_block {
         done = false
         os.execute("sleep 0.1")
-        ngx.log(ngx.ERR, "Bad bad bad")
+        njt.log(njt.ERR, "Bad bad bad")
         done = true
     }
 --- stream_server_config
     content_by_lua_block {
         while not done do
-            ngx.sleep(0.001)
+            njt.sleep(0.001)
         end
-        ngx.say("ok")
+        njt.say("ok")
     }
 --- log_level: error
 --- error_log_file: syslog:server=127.0.0.1:12345
@@ -703,7 +703,7 @@ This also affects merge_loc_conf
     init_worker_by_lua_block { return }
 --- stream_server_config
     content_by_lua_block {
-        ngx.say('ok')
+        njt.say('ok')
     }
 --- stream_response
 ok
@@ -719,36 +719,36 @@ ok
     lua_ssl_verify_depth 2;
 
     init_worker_by_lua_block {
-        local semaphore = require "ngx.semaphore"
+        local semaphore = require "njt.semaphore"
         local sem = semaphore:new(0)
         package.loaded.sem = sem
 
         local function test_ssl_verify()
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeout(2000)
             local ok, err = sock:connect("openresty.org", 443)
             if not ok then
-                ngx.log(ngx.ERR, "failed to connect: ", err)
+                njt.log(njt.ERR, "failed to connect: ", err)
                 return
             end
 
-            ngx.log(ngx.WARN, "connected: ", ok)
+            njt.log(njt.WARN, "connected: ", ok)
 
             local session, err = sock:sslhandshake(nil, "openresty.org", true)
             if not session then
-                ngx.log(ngx.ERR, "failed to do SSL handshake: ", err)
+                njt.log(njt.ERR, "failed to do SSL handshake: ", err)
                 return
             end
 
-            ngx.log(ngx.WARN, "ssl handshake: ", type(session))
+            njt.log(njt.WARN, "ssl handshake: ", type(session))
 
             local ok, err = sock:close()
-            ngx.log(ngx.WARN, "close: ", ok, " ", err)
+            njt.log(njt.WARN, "close: ", ok, " ", err)
 
             sem:post(1)
         end
 
-        ngx.timer.at(0, test_ssl_verify)
+        njt.timer.at(0, test_ssl_verify)
     }
 
 --- stream_server_config
@@ -756,10 +756,10 @@ ok
         local sem = package.loaded.sem
         local ok, err = sem:wait(3)
         if not ok then
-            ngx.say("wait test_ssl_verify failed: ", err)
+            njt.say("wait test_ssl_verify failed: ", err)
         end
 
-        ngx.say('ok')
+        njt.say('ok')
     }
 --- user_files eval
 ">>> trusted.crt

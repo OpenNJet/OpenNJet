@@ -21,17 +21,17 @@ __DATA__
 --- config
     location /other {
         content_by_lua '
-            ngx.say("dog = ", ngx.var.dog)
-            ngx.say("cat = ", ngx.var.cat)
+            njt.say("dog = ", njt.var.dog)
+            njt.say("cat = ", njt.var.cat)
         ';
     }
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/other",
+            local res = njt.location.capture("/other",
                 { vars = { dog = "hello", cat = 32 }});
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 
@@ -39,26 +39,26 @@ __DATA__
 
 global delta = "  "
 
-F(ngx_http_finalize_request) {
-    uri = ngx_http_req_uri($r)
+F(njt_http_finalize_request) {
+    uri = njt_http_req_uri($r)
     printf("finalize req %s: %d\n", uri, $rc)
     if ($rc == 500) {
         print_ubacktrace()
     }
 }
 
-F(ngx_http_lua_run_thread) {
-    uri = ngx_http_req_uri($r)
+F(njt_http_lua_run_thread) {
+    uri = njt_http_req_uri($r)
     printf("lua run thread %s\n", uri)
 }
 
 M(http-subrequest-start) {
     r = $arg1
-    n = ngx_http_subreq_depth(r)
-    pr = ngx_http_req_parent(r)
-    printf("%sbegin %s -> %s (%d)\n", ngx_indent(n, delta),
-        ngx_http_req_uri(pr),
-        ngx_http_req_uri(r),
+    n = njt_http_subreq_depth(r)
+    pr = njt_http_req_parent(r)
+    printf("%sbegin %s -> %s (%d)\n", njt_indent(n, delta),
+        njt_http_req_uri(pr),
+        njt_http_req_uri(r),
         n)
 }
 --- request
@@ -74,18 +74,18 @@ qr/variable "(dog|cat)" cannot be assigned a value \(maybe you forgot to define 
 --- config
     location /other {
         content_by_lua '
-            ngx.say("dog = ", ngx.var.dog)
-            ngx.say("cat = ", ngx.var.cat)
+            njt.say("dog = ", njt.var.dog)
+            njt.say("cat = ", njt.var.cat)
         ';
     }
 
     location /lua {
         set $dog '';
         content_by_lua '
-            local res = ngx.location.capture("/other",
+            local res = njt.location.capture("/other",
                 { vars = { dog = "hello", cat = 32 }});
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -101,8 +101,8 @@ variable "cat" cannot be assigned a value (maybe you forgot to define it first?)
 --- config
     location /other {
         content_by_lua '
-            ngx.say("dog = ", ngx.var.dog)
-            ngx.say("cat = ", ngx.var.cat)
+            njt.say("dog = ", njt.var.dog)
+            njt.say("cat = ", njt.var.cat)
         ';
     }
 
@@ -110,10 +110,10 @@ variable "cat" cannot be assigned a value (maybe you forgot to define it first?)
         set $dog '';
         set $cat '';
         content_by_lua '
-            local res = ngx.location.capture("/other",
+            local res = njt.location.capture("/other",
                 { vars = { dog = "hello", cat = 32 }});
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -128,8 +128,8 @@ cat = 32
 --- config
     location /other {
         content_by_lua '
-            ngx.say("dog = ", ngx.var.dog)
-            ngx.say("cat = ", ngx.var.cat)
+            njt.say("dog = ", njt.var.dog)
+            njt.say("cat = ", njt.var.cat)
         ';
     }
 
@@ -137,10 +137,10 @@ cat = 32
         set $dog '';
         set $cat '';
         content_by_lua '
-            local res = ngx.location.capture("/other",
+            local res = njt.location.capture("/other",
                 { vars = "hello" });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -156,8 +156,8 @@ Bad vars option value
 --- config
     location /other {
         content_by_lua '
-            ngx.say("dog = ", ngx.var.dog)
-            ngx.say("cat = ", ngx.var.cat)
+            njt.say("dog = ", njt.var.dog)
+            njt.say("cat = ", njt.var.cat)
         ';
     }
 
@@ -165,10 +165,10 @@ Bad vars option value
         set $dog '';
         set $cat '';
         content_by_lua '
-            local res = ngx.location.capture("/other",
+            local res = njt.location.capture("/other",
                 { vars = { cat = true } });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -188,10 +188,10 @@ attempt to use bad variable value type boolean
 
     location /lua {
         content_by_lua '
-            local res = ngx.location.capture("/other",
+            local res = njt.location.capture("/other",
                 { vars = { args = "a=hello&b=32" }});
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -209,10 +209,10 @@ args: a=hello&b=32
 
     location /lua {
         content_by_lua '
-            res = ngx.location.capture("/other",
+            res = njt.location.capture("/other",
                 { vars = { query_string = "hello" } });
 
-            ngx.print(res.body)
+            njt.print(res.body)
         ';
     }
 --- request
@@ -234,11 +234,11 @@ variable "query_string" not changeable
     location /lua {
         set $dog 'hello';
         content_by_lua '
-            local res = ngx.location.capture("/other",
+            local res = njt.location.capture("/other",
                 { copy_all_vars = true });
 
-            ngx.print(res.body)
-            ngx.say(ngx.var.uri, ": ", ngx.var.dog)
+            njt.print(res.body)
+            njt.say(njt.var.uri, ": ", njt.var.dog)
         ';
     }
 --- request
@@ -259,11 +259,11 @@ GET /lua
     location /lua {
         set $dog 'hello';
         content_by_lua '
-            local res = ngx.location.capture("/other",
+            local res = njt.location.capture("/other",
                 { share_all_vars = true });
 
-            ngx.print(res.body)
-            ngx.say(ngx.var.uri, ": ", ngx.var.dog)
+            njt.print(res.body)
+            njt.say(njt.var.uri, ": ", njt.var.dog)
         ';
     }
 --- request
@@ -284,11 +284,11 @@ GET /lua
     location /lua {
         set $dog 'hello';
         content_by_lua '
-            local res = ngx.location.capture("/other",
+            local res = njt.location.capture("/other",
                 { vars = { dog = "hiya" }, copy_all_vars = true });
 
-            ngx.print(res.body)
-            ngx.say(ngx.var.uri, ": ", ngx.var.dog)
+            njt.print(res.body)
+            njt.say(njt.var.uri, ": ", njt.var.dog)
         ';
     }
 --- request
@@ -303,8 +303,8 @@ GET /lua
 --- config
     location /other {
         content_by_lua '
-            ngx.say("dog = ", ngx.var.dog)
-            ngx.say("cat = ", ngx.var.cat)
+            njt.say("dog = ", njt.var.dog)
+            njt.say("cat = ", njt.var.cat)
         ';
     }
 
@@ -312,7 +312,7 @@ GET /lua
         set $dog 'blah';
         set $cat 'foo';
         content_by_lua '
-            local res1, res2 = ngx.location.capture_multi{
+            local res1, res2 = njt.location.capture_multi{
                 {"/other/1",
                     { vars = { dog = "hello", cat = 32 }}
                 },
@@ -321,10 +321,10 @@ GET /lua
                 }
             };
 
-            ngx.print(res1.body)
-            ngx.print(res2.body)
-            ngx.say("parent dog: ", ngx.var.dog)
-            ngx.say("parent cat: ", ngx.var.cat)
+            njt.print(res1.body)
+            njt.print(res2.body)
+            njt.say("parent dog: ", njt.var.dog)
+            njt.say("parent cat: ", njt.var.cat)
         ';
     }
 --- request

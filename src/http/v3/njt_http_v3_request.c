@@ -59,30 +59,20 @@ static const struct {
 void
 njt_http_v3_init_stream(njt_connection_t *c)
 {
-    njt_http_v3_session_t     *h3c;
     njt_http_connection_t     *hc, *phc;
     njt_http_v3_srv_conf_t    *h3scf;
     njt_http_core_loc_conf_t  *clcf;
-    njt_http_core_srv_conf_t  *cscf;
 
     hc = c->data;
 
     hc->ssl = 1;
 
     clcf = njt_http_get_module_loc_conf(hc->conf_ctx, njt_http_core_module);
-    cscf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_core_module);
-    h3scf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_v3_module);
 
     if (c->quic == NULL) {
-        if (njt_http_v3_init_session(c) != NJT_OK) {
-            njt_http_close_connection(c);
-            return;
-        }
+        h3scf = njt_http_get_module_srv_conf(hc->conf_ctx, njt_http_v3_module);
+        h3scf->quic.idle_timeout = clcf->keepalive_timeout;
 
-        h3c = hc->v3_session;
-        njt_add_timer(&h3c->keepalive, cscf->client_header_timeout);
-
-        h3scf->quic.timeout = clcf->keepalive_timeout;
         njt_quic_run(c, &h3scf->quic);
         return;
     }
@@ -118,6 +108,10 @@ njt_http_v3_init(njt_connection_t *c)
     njt_http_core_loc_conf_t  *clcf;
 
     njt_log_debug0(NJT_LOG_DEBUG_HTTP, c->log, 0, "http3 init");
+
+    if (njt_http_v3_init_session(c) != NJT_OK) {
+        return NJT_ERROR;
+    }
 
     h3c = njt_http_v3_get_session(c);
     clcf = njt_http_v3_get_module_loc_conf(c, njt_http_core_module);
@@ -1015,14 +1009,12 @@ njt_http_v3_process_request_header(njt_http_request_t *r)
     h3c = njt_http_v3_get_session(c);
     h3scf = njt_http_get_module_srv_conf(r, njt_http_v3_module);
 
-    if (!r->http_connection->addr_conf->http3) {
-        if ((h3c->hq && !h3scf->enable_hq) || (!h3c->hq && !h3scf->enable)) {
-            njt_log_error(NJT_LOG_INFO, c->log, 0,
-                          "client attempted to request the server name "
-                          "for which the negotiated protocol is disabled");
-            njt_http_finalize_request(r, NJT_HTTP_MISDIRECTED_REQUEST);
-            return NJT_ERROR;
-        }
+    if ((h3c->hq && !h3scf->enable_hq) || (!h3c->hq && !h3scf->enable)) {
+        njt_log_error(NJT_LOG_INFO, c->log, 0,
+                      "client attempted to request the server name "
+                      "for which the negotiated protocol is disabled");
+        njt_http_finalize_request(r, NJT_HTTP_MISDIRECTED_REQUEST);
+        return NJT_ERROR;
     }
 
     if (njt_http_v3_construct_cookie_header(r) != NJT_OK) {

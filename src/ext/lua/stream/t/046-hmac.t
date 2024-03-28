@@ -20,8 +20,8 @@ __DATA__
 === TEST 1: sanity
 --- stream_server_config
     content_by_lua_block {
-        local digest = ngx.hmac_sha1("thisisverysecretstuff", "some string we want to sign")
-        ngx.say(ngx.encode_base64(digest))
+        local digest = njt.hmac_sha1("thisisverysecretstuff", "some string we want to sign")
+        njt.say(njt.encode_base64(digest))
     }
 --- stream_response
 R/pvxzHC4NLtj7S+kXFg/NePTmk=

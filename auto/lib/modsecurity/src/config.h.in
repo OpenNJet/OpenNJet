@@ -34,9 +34,6 @@
    --with-maxmind=no */
 #undef HAVE_MAXMIND
 
-/* Define to 1 if you have the <memory.h> header file. */
-#undef HAVE_MEMORY_H
-
 /* Support for PCRE2 was disabled by the utilization of --without-pcre2 or
    --with-pcre2=no */
 #undef HAVE_PCRE2
@@ -47,6 +44,9 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -121,7 +121,9 @@
 /* Define if the operating system is SOLARIS */
 #undef SOLARIS
 
-/* Define to 1 if you have the ANSI C header files. */
+/* Define to 1 if all of the C90 standard headers exist (not just the ones
+   required in a freestanding environment). This macro is provided for
+   backward compatibility; new code need not use it. */
 #undef STDC_HEADERS
 
 /* Version number of package */

@@ -21,7 +21,7 @@ __DATA__
 --- config
     location /lua {
         content_by_lua '
-            ngx.say(ngx.cookie_time(1290079655))
+            njt.say(njt.cookie_time(1290079655))
         ';
     }
 --- request
@@ -35,7 +35,7 @@ Thu, 18-Nov-10 11:27:35 GMT
 --- config
     location /lua {
         set_by_lua $a '
-            return ngx.cookie_time(1290079655)
+            return njt.cookie_time(1290079655)
         ';
         echo $a;
     }

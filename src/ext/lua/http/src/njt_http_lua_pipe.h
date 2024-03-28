@@ -1,6 +1,7 @@
 
 /*
  * Copyright (C) by OpenResty Inc.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
 
@@ -57,6 +58,8 @@ struct njt_http_lua_pipe_s {
     njt_http_lua_pipe_ctx_t            *stdout_ctx;
     njt_http_lua_pipe_ctx_t            *stderr_ctx;
     njt_http_lua_pipe_retval_handler    retval_handler;
+    njt_http_cleanup_pt                *cleanup;
+    njt_http_request_t                 *r;
     size_t                              buffer_size;
     unsigned                            closed:1;
     unsigned                            dead:1;

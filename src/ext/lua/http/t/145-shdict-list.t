@@ -24,26 +24,26 @@ __DATA__
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local len, err = dogs:lpush("foo", "bar")
             if len then
-                ngx.say("push success")
+                njt.say("push success")
             else
-                ngx.say("push err: ", err)
+                njt.say("push err: ", err)
             end
 
             local val, err = dogs:llen("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
 
             local val, err = dogs:lpop("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
 
             local val, err = dogs:llen("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
 
             local val, err = dogs:lpop("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
         }
     }
 --- request
@@ -65,17 +65,17 @@ nil nil
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local len, err = dogs:lpush("foo", "bar")
             if len then
-                ngx.say("push success")
+                njt.say("push success")
             else
-                ngx.say("push err: ", err)
+                njt.say("push err: ", err)
             end
 
             local val, err = dogs:get("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
         }
     }
 --- request
@@ -94,20 +94,20 @@ nil value is a list
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local len, err = dogs:lpush("foo", "bar")
             if len then
-                ngx.say("push success")
+                njt.say("push success")
             else
-                ngx.say("push err: ", err)
+                njt.say("push err: ", err)
             end
 
             local ok, err = dogs:set("foo", "bar")
-            ngx.say(ok, " ", err)
+            njt.say(ok, " ", err)
 
             local val, err = dogs:get("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
         }
     }
 --- request
@@ -127,20 +127,20 @@ bar nil
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local len, err = dogs:lpush("foo", "bar")
             if len then
-                ngx.say("push success")
+                njt.say("push success")
             else
-                ngx.say("push err: ", err)
+                njt.say("push err: ", err)
             end
 
             local ok, err = dogs:replace("foo", "bar")
-            ngx.say(ok, " ", err)
+            njt.say(ok, " ", err)
 
             local val, err = dogs:get("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
         }
     }
 --- request
@@ -160,20 +160,20 @@ bar nil
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local len, err = dogs:lpush("foo", "bar")
             if len then
-                ngx.say("push success")
+                njt.say("push success")
             else
-                ngx.say("push err: ", err)
+                njt.say("push err: ", err)
             end
 
             local ok, err = dogs:add("foo", "bar")
-            ngx.say(ok, " ", err)
+            njt.say(ok, " ", err)
 
             local val, err = dogs:get("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
         }
     }
 --- request
@@ -193,20 +193,20 @@ nil value is a list
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local len, err = dogs:lpush("foo", "bar")
             if len then
-                ngx.say("push success")
+                njt.say("push success")
             else
-                ngx.say("push err: ", err)
+                njt.say("push err: ", err)
             end
 
             local ok, err = dogs:delete("foo")
-            ngx.say(ok, " ", err)
+            njt.say(ok, " ", err)
 
             local val, err = dogs:get("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
         }
     }
 --- request
@@ -226,20 +226,20 @@ nil nil
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local len, err = dogs:lpush("foo", "bar")
             if len then
-                ngx.say("push success")
+                njt.say("push success")
             else
-                ngx.say("push err: ", err)
+                njt.say("push err: ", err)
             end
 
             local ok, err = dogs:incr("foo", 1)
-            ngx.say(ok, " ", err)
+            njt.say(ok, " ", err)
 
             local val, err = dogs:get("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
         }
     }
 --- request
@@ -259,17 +259,17 @@ nil value is a list
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local len, err = dogs:lpush("foo", "bar")
             if len then
-                ngx.say("push success")
+                njt.say("push success")
             else
-                ngx.say("push err: ", err)
+                njt.say("push err: ", err)
             end
 
             local keys, err = dogs:get_keys()
-            ngx.say("key: ", keys[1])
+            njt.say("key: ", keys[1])
         }
     }
 --- request
@@ -288,20 +288,20 @@ key: foo
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local ok, err = dogs:set("foo", "bar")
             if ok then
-                ngx.say("set success")
+                njt.say("set success")
             else
-                ngx.say("set err: ", err)
+                njt.say("set err: ", err)
             end
 
             local len, err = dogs:lpush("foo", "bar")
-            ngx.say(len, " ", err)
+            njt.say(len, " ", err)
 
             local val, err = dogs:get("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
         }
     }
 --- request
@@ -321,20 +321,20 @@ bar nil
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local ok, err = dogs:set("foo", "bar")
             if ok then
-                ngx.say("set success")
+                njt.say("set success")
             else
-                ngx.say("set err: ", err)
+                njt.say("set err: ", err)
             end
 
             local val, err = dogs:lpop("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
 
             local val, err = dogs:get("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
         }
     }
 --- request
@@ -354,20 +354,20 @@ bar nil
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local ok, err = dogs:set("foo", "bar")
             if ok then
-                ngx.say("set success")
+                njt.say("set success")
             else
-                ngx.say("set err: ", err)
+                njt.say("set err: ", err)
             end
 
             local val, err = dogs:llen("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
 
             local val, err = dogs:get("foo")
-            ngx.say(val, " ", err)
+            njt.say(val, " ", err)
         }
     }
 --- request
@@ -387,12 +387,12 @@ bar nil
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             for i = 1, 3 do
                 local len, err = dogs:lpush("foo", i)
                 if len ~= i then
-                    ngx.say("push err: ", err)
+                    njt.say("push err: ", err)
                     break
                 end
             end
@@ -400,10 +400,10 @@ bar nil
             for i = 1, 3 do
                 local val, err = dogs:lpop("foo")
                 if not val then
-                    ngx.say("pop err: ", err)
+                    njt.say("pop err: ", err)
                     break
                 else
-                    ngx.say(val)
+                    njt.say(val)
                 end
             end
         }
@@ -425,12 +425,12 @@ GET /test
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             for i = 1, 3 do
                 local len, err = dogs:lpush("foo", i)
                 if len ~= i then
-                    ngx.say("push err: ", err)
+                    njt.say("push err: ", err)
                     break
                 end
             end
@@ -438,10 +438,10 @@ GET /test
             for i = 1, 3 do
                 local val, err = dogs:rpop("foo")
                 if not val then
-                    ngx.say("pop err: ", err)
+                    njt.say("pop err: ", err)
                     break
                 else
-                    ngx.say(val)
+                    njt.say(val)
                 end
             end
         }
@@ -463,12 +463,12 @@ GET /test
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             for i = 1, 3 do
                 local len, err = dogs:rpush("foo", i)
                 if len ~= i then
-                    ngx.say("push err: ", err)
+                    njt.say("push err: ", err)
                     break
                 end
             end
@@ -476,10 +476,10 @@ GET /test
             for i = 1, 3 do
                 local val, err = dogs:lpop("foo")
                 if not val then
-                    ngx.say("pop err: ", err)
+                    njt.say("pop err: ", err)
                     break
                 else
-                    ngx.say(val)
+                    njt.say(val)
                 end
             end
         }
@@ -501,7 +501,7 @@ GET /test
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local N = 100000
             local max = 0
@@ -518,20 +518,20 @@ GET /test
 
             local keys = dogs:get_keys(0)
 
-            ngx.say("max - 1 matched keys length: ", max - 1 == #keys)
+            njt.say("max - 1 matched keys length: ", max - 1 == #keys)
 
             dogs:flush_all()
 
             local keys = dogs:get_keys(0)
 
-            ngx.say("keys all expired, left number: ", #keys)
+            njt.say("keys all expired, left number: ", #keys)
 
             for i = 100000, 1, -1 do
                 local key = string.format("%05d", i)
 
                 local len, err = dogs:lpush(key, i)
                 if not len then
-                    ngx.say("loop again, max matched: ", N + 1 - i == max)
+                    njt.say("loop again, max matched: ", N + 1 - i == max)
                     break
                 end
             end
@@ -545,7 +545,7 @@ GET /test
 
                 local len, err = dogs:lpush(key, i)
                 if not len then
-                    ngx.say("loop again, max matched: ", i == max)
+                    njt.say("loop again, max matched: ", i == max)
                     break
                 end
             end
@@ -570,7 +570,7 @@ loop again, max matched: true
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local N = 200000
             local max = 0
@@ -584,14 +584,14 @@ loop again, max matched: true
 
             local two = dogs:get(2)
 
-            ngx.say("two == number 2: ", two == 2)
+            njt.say("two == number 2: ", two == 2)
 
             dogs:flush_all()
             dogs:flush_expired()
 
             local keys = dogs:get_keys(0)
 
-            ngx.say("no one left: ", #keys)
+            njt.say("no one left: ", #keys)
 
             for i = 1, N do
                 local key = string.format("%05d", i)
@@ -605,14 +605,14 @@ loop again, max matched: true
             for i = 1, max do
                 local ok, err = dogs:set(i, i)
                 if not ok then
-                    ngx.say("set err: ", err)
+                    njt.say("set err: ", err)
                     break
                 end
             end
 
             local two = dogs:get(2)
 
-            ngx.say("two == number 2: ", two == 2)
+            njt.say("two == number 2: ", two == 2)
         }
     }
 --- request
@@ -633,27 +633,27 @@ two == number 2: true
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local len, err = dogs:lpush("list", "foo")
             if not len then
-                ngx.say("push err: ", err)
+                njt.say("push err: ", err)
             end
 
             local ok, err = dogs:set("key", "bar")
             if not ok then
-                ngx.say("set err: ", err)
+                njt.say("set err: ", err)
             end
 
             local keys = dogs:get_keys(0)
 
-            ngx.say("keys number: ", #keys)
+            njt.say("keys number: ", #keys)
 
             dogs:flush_all()
 
             local keys = dogs:get_keys(0)
 
-            ngx.say("keys number: ", #keys)
+            njt.say("keys number: ", #keys)
         }
     }
 --- request
@@ -672,21 +672,21 @@ keys number: 0
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local long_str = string.rep("foo", 10)
 
             for i = 1, 3 do
                 local len, err = dogs:lpush("list", long_str)
                 if not len then
-                    ngx.say("push err: ", err)
+                    njt.say("push err: ", err)
                 end
             end
 
             for i = 1, 3 do
                 local val, err = dogs:lpop("list")
                 if val then
-                    ngx.say(val)
+                    njt.say(val)
                 end
             end
         }
@@ -708,7 +708,7 @@ foofoofoofoofoofoofoofoofoofoo
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
+            local dogs = njt.shared.dogs
 
             local long_str = string.rep("foo", 10 * 1024) -- 30k
 
@@ -717,7 +717,7 @@ foofoofoofoofoofoofoofoofoofoo
                     local key = "list" .. j
                     local len, err = dogs:lpush(key, long_str)
                     if not len then
-                        ngx.say("push err: ", err)
+                        njt.say("push err: ", err)
                     end
                 end
 
@@ -727,14 +727,14 @@ foofoofoofoofoofoofoofoofoofoo
                     local key = "list" .. j
                     local newval, err = dogs:incr(key, 1, 0)
                     if not newval then
-                        ngx.say("incr err: ", err)
+                        njt.say("incr err: ", err)
                     end
                 end
 
                 dogs:flush_all()
             end
 
-            ngx.say("done")
+            njt.say("done")
         }
     }
 --- request
@@ -752,29 +752,29 @@ done
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
-            local len, err = dogs:lpush("cc", "1") --add another list to avoid key"aa" be cleaned (run ‘ngx_http_lua_shdict_expire(ctx, 1)’ may clean key ,ensure key'aa' not clean ,just expired))
+            local dogs = njt.shared.dogs
+            local len, err = dogs:lpush("cc", "1") --add another list to avoid key"aa" be cleaned (run ‘njt_http_lua_shdict_expire(ctx, 1)’ may clean key ,ensure key'aa' not clean ,just expired))
             if not len then
-                ngx.say("push cc  err: ", err)
+                njt.say("push cc  err: ", err)
             end
             local len, err = dogs:lpush("aa", "1")
             if not len then
-                ngx.say("push1 err: ", err)
+                njt.say("push1 err: ", err)
             end
             local succ, err = dogs:expire("aa", 0.2)
             if not succ then
-                ngx.say("expire err: ",err)
+                njt.say("expire err: ",err)
             end
-            ngx.sleep(0.3) -- list aa expired
+            njt.sleep(0.3) -- list aa expired
             local len, err = dogs:lpush("aa", "2") --push to an expired list may set as a new list
             if not len then
-                ngx.say("push2 err: ", err)
+                njt.say("push2 err: ", err)
             end
             local len, err = dogs:llen("aa") -- new list len is 1
             if not len then
-                ngx.say("llen err: ", err)
+                njt.say("llen err: ", err)
             else
-            ngx.say("aa:len :", dogs:llen("aa"))
+            njt.say("aa:len :", dogs:llen("aa"))
             end
         }
     }
@@ -794,30 +794,30 @@ aa:len :1
 --- config
     location = /test {
         content_by_lua_block {
-            local dogs = ngx.shared.dogs
-            local len, err = dogs:lpush("cc", "1") --add another list to avoid key"aa" be cleaned (run ‘ngx_http_lua_shdict_expire(ctx, 1)’ may clean key ,ensure key'aa' not clean ,just expired))
+            local dogs = njt.shared.dogs
+            local len, err = dogs:lpush("cc", "1") --add another list to avoid key"aa" be cleaned (run ‘njt_http_lua_shdict_expire(ctx, 1)’ may clean key ,ensure key'aa' not clean ,just expired))
             if not len then
-                ngx.say("push cc  err: ", err)
+                njt.say("push cc  err: ", err)
             end
             local len, err = dogs:lpush("aa", "1")
             if not len then
-                ngx.say("push1 err: ", err)
+                njt.say("push1 err: ", err)
             end
             local succ, err = dogs:expire("aa", 0.2)
             if not succ then
-            ngx.say("expire err: ",err)
+            njt.say("expire err: ",err)
             end
-            ngx.sleep(0.3) -- list aa expired
+            njt.sleep(0.3) -- list aa expired
             local len, err = dogs:lpush("aa", "2") --push to an expired list may set as a new list
             if not len then
-                ngx.say("push2 err: ", err)
+                njt.say("push2 err: ", err)
             end
             local val, err = dogs:lpop("aa") 
             if not val then
-                ngx.say("llen err: ", err)
+                njt.say("llen err: ", err)
             end
             local val, err = dogs:lpop("aa")  -- val == nil
-            ngx.say("aa list value: ", val)
+            njt.say("aa list value: ", val)
         }
     }
 

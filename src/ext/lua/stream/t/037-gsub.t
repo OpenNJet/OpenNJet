@@ -19,9 +19,9 @@ __DATA__
 === TEST 1: sanity
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("[hello, world]", "[a-z]+", "howdy")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("[hello, world]", "[a-z]+", "howdy")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 [howdy, howdy]
@@ -32,9 +32,9 @@ __DATA__
 === TEST 2: trimmed
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("hello, world", "[a-z]+", "howdy")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("hello, world", "[a-z]+", "howdy")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 howdy, howdy
@@ -45,9 +45,9 @@ howdy, howdy
 === TEST 3: not matched
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("hello, world", "[A-Z]+", "howdy")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("hello, world", "[A-Z]+", "howdy")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 hello, world
@@ -62,9 +62,9 @@ hello, world
             return "[" .. m[0] .. "," .. m[1] .. "]"
         end
 
-        local s, n = ngx.re.gsub("hello, world", "([a-z])[a-z]+", f)
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("hello, world", "([a-z])[a-z]+", f)
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 [hello,h], [world,w]
@@ -79,9 +79,9 @@ hello, world
             return "[" .. m[0] .. "," .. m[1] .. "]"
         end
 
-        local s, n = ngx.re.gsub("{hello, world}", "([a-z])[a-z]+", f)
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("{hello, world}", "([a-z])[a-z]+", f)
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 {[hello,h], [world,w]}
@@ -92,9 +92,9 @@ hello, world
 === TEST 6: replace by script (trimmed)
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("hello, world", "([a-z])[a-z]+", "[$0,$1]")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("hello, world", "([a-z])[a-z]+", "[$0,$1]")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 [hello,h], [world,w]
@@ -105,9 +105,9 @@ hello, world
 === TEST 7: replace by script (not trimmed)
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("{hello, world}", "([a-z])[a-z]+", "[$0,$1]")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("{hello, world}", "([a-z])[a-z]+", "[$0,$1]")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 {[hello,h], [world,w]}
@@ -118,9 +118,9 @@ hello, world
 === TEST 8: look-behind assertion
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("{foobarbaz}", "(?<=foo)bar|(?<=bar)baz", "h$0")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("{foobarbaz}", "(?<=foo)bar|(?<=bar)baz", "h$0")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 {foohbarhbaz}
@@ -131,9 +131,9 @@ hello, world
 === TEST 9: gsub with a patch matching an empty substring (string template)
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("hello", "a|", "b")
-        ngx.say("s: ", s)
-        ngx.say("n: ", n)
+        local s, n = njt.re.gsub("hello", "a|", "b")
+        njt.say("s: ", s)
+        njt.say("n: ", n)
     }
 --- stream_response
 s: bhbeblblbob
@@ -146,9 +146,9 @@ n: 6
 === TEST 10: gsub with a patch matching an empty substring (string template, empty subj)
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("", "a|", "b")
-        ngx.say("s: ", s)
-        ngx.say("n: ", n)
+        local s, n = njt.re.gsub("", "a|", "b")
+        njt.say("s: ", s)
+        njt.say("n: ", n)
     }
 --- stream_response
 s: b
@@ -161,9 +161,9 @@ n: 1
 === TEST 11: gsub with a patch matching an empty substring (func)
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("hello", "a|", function () return "b" end)
-        ngx.say("s: ", s)
-        ngx.say("n: ", n)
+        local s, n = njt.re.gsub("hello", "a|", function () return "b" end)
+        njt.say("s: ", s)
+        njt.say("n: ", n)
     }
 --- stream_response
 s: bhbeblblbob
@@ -176,9 +176,9 @@ n: 6
 === TEST 12: gsub with a patch matching an empty substring (func, empty subj)
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("", "a|", function () return "b" end)
-        ngx.say("s: ", s)
-        ngx.say("n: ", n)
+        local s, n = njt.re.gsub("", "a|", function () return "b" end)
+        njt.say("s: ", s)
+        njt.say("n: ", n)
     }
 --- stream_response
 s: b
@@ -201,9 +201,9 @@ n: 1
             return string.rep("c", string.len(m[0]))
         end
 
-        local s, n = ngx.re.gsub(subj, "b+", repl)
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub(subj, "b+", repl)
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response eval
 ("a" x 8000) . ("c" x 1000) . ("a" x 8000) . ("c" x 1000)
@@ -227,9 +227,9 @@ n: 1
             return string.rep("c", string.len(m[0]))
         end
 
-        local s, n = ngx.re.gsub(subj, "b+", repl)
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub(subj, "b+", repl)
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response eval
 ("a" x 8000) . ("c" x 1000) . ("a" x 8000) . ("c" x 1000)
@@ -248,9 +248,9 @@ n: 1
             .. string.rep("b", 1000)
             .. "aaa"
 
-        local s, n = ngx.re.gsub(subj, "b(b+)(b)", "$1 $2")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub(subj, "b(b+)(b)", "$1 $2")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response eval
 ("a" x 8000) . ("b" x 998) . " b" . ("a" x 8000) . ("b" x 998) . " baaa
@@ -269,9 +269,9 @@ n: 1
             .. string.rep("a", 8000)
             .. string.rep("b", 1000)
 
-        local s, n = ngx.re.gsub(subj, "b(b+)(b)", "$1 $2")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub(subj, "b(b+)(b)", "$1 $2")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response eval
 ("a" x 8000) . ("b" x 998) . " b" . ("a" x 8000) . ("b" x 998) . " b\n2\n"
@@ -287,9 +287,9 @@ n: 1
             return "[" .. m[0] .. "," .. m["first"] .. "]"
         end
 
-        local s, n = ngx.re.gsub("hello, world", "(?<first>[a-z])[a-z]+", repl)
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("hello, world", "(?<first>[a-z])[a-z]+", repl)
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 [hello,h], [world,w]
@@ -300,9 +300,9 @@ n: 1
 === TEST 18: $0 without parens
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("a b c d", [[\w]], "[$0]")
-        ngx.say(s)
-        ngx.say(n)
+        local s, n = njt.re.gsub("a b c d", [[\w]], "[$0]")
+        njt.say(s)
+        njt.say(n)
     }
 --- stream_response
 [a] [b] [c] [d]
@@ -319,12 +319,12 @@ n: 1
         local regex = "你好"
 
         -- Note the D here
-        local s, n, err = ngx.re.gsub(string.sub(target, 1, 4), regex, "", "u")
+        local s, n, err = njt.re.gsub(string.sub(target, 1, 4), regex, "", "u")
 
         if s then
-            ngx.say(s, ": ", n)
+            njt.say(s, ": ", n)
         else
-            ngx.say("error: ", err)
+            njt.say("error: ", err)
         end
     }
 --- stream_response_like chop
@@ -338,9 +338,9 @@ error: pcre_exec\(\) failed: -10
 === TEST 20: UTF-8 mode without UTF-8 sequence checks
 --- stream_server_config
     content_by_lua_block {
-        local s, n, err = ngx.re.gsub("你好", ".", "a", "U")
+        local s, n, err = njt.re.gsub("你好", ".", "a", "U")
         if s then
-            ngx.say("s: ", s)
+            njt.say("s: ", s)
         end
     }
 --- stap
@@ -368,9 +368,9 @@ s: aa
 === TEST 21: UTF-8 mode with UTF-8 sequence checks
 --- stream_server_config
     content_by_lua_block {
-        local s, n, err = ngx.re.gsub("你好", ".", "a", "u")
+        local s, n, err = njt.re.gsub("你好", ".", "a", "u")
         if s then
-            ngx.say("s: ", s)
+            njt.say("s: ", s)
         end
     }
 --- stap
@@ -407,21 +407,21 @@ local re = [==[(?i:([\s'\"`´’‘\(\)]*)?([\d\w]+)([\s'\"`´’‘\(\)]*)?(?:=
 
 s = string.rep([[ABCDEFG]], 10)
 
-local start = ngx.now()
+local start = njt.now()
 
-local res, cnt, err = ngx.re.gsub(s, re, "", "o")
+local res, cnt, err = njt.re.gsub(s, re, "", "o")
 
 --[[
-ngx.update_time()
-local elapsed = ngx.now() - start
-ngx.say(elapsed, " sec elapsed.")
+njt.update_time()
+local elapsed = njt.now() - start
+njt.say(elapsed, " sec elapsed.")
 ]]
 
 if err then
-    ngx.say("error: ", err)
+    njt.say("error: ", err)
     return
 end
-ngx.say("gsub: ", cnt)
+njt.say("gsub: ", cnt)
 
 --- stream_response
 error: pcre_exec() failed: -8
@@ -440,21 +440,21 @@ local re = [==[(?i:([\s'\"`´’‘\(\)]*)?([\d\w]+)([\s'\"`´’‘\(\)]*)?(?:=
 
 local s = string.rep([[ABCDEFG]], 10)
 
-local start = ngx.now()
+local start = njt.now()
 
-local res, cnt, err = ngx.re.gsub(s, re, "", "o")
+local res, cnt, err = njt.re.gsub(s, re, "", "o")
 
 --[[
-ngx.update_time()
-local elapsed = ngx.now() - start
-ngx.say(elapsed, " sec elapsed.")
+njt.update_time()
+local elapsed = njt.now() - start
+njt.say(elapsed, " sec elapsed.")
 ]]
 
 if err then
-    ngx.say("error: ", err)
+    njt.say("error: ", err)
     return
 end
-ngx.say("gsub: ", cnt)
+njt.say("gsub: ", cnt)
 
 --- stream_response
 gsub: 0
@@ -466,9 +466,9 @@ gsub: 0
 Original bad result: estCase
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("TestCase", "^ *", "", "o")
+        local s, n = njt.re.gsub("TestCase", "^ *", "", "o")
         if s then
-            ngx.say(s)
+            njt.say(s)
         end
     }
 --- stream_response
@@ -480,9 +480,9 @@ TestCase
 Original bad result: .b.d
 --- stream_server_config
     content_by_lua_block {
-        local s, n = ngx.re.gsub("abcd", "a|(?=c)", ".")
+        local s, n = njt.re.gsub("abcd", "a|(?=c)", ".")
         if s then
-            ngx.say(s)
+            njt.say(s)
         end
     }
 --- stream_response

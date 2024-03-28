@@ -18,7 +18,7 @@ __DATA__
 === TEST 1: short sanity
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.crc32_short("hello, world"))
+        njt.say(njt.crc32_short("hello, world"))
     }
 --- stream_response
 4289425978
@@ -28,7 +28,7 @@ __DATA__
 === TEST 2: long sanity
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.crc32_long("hello, world"))
+        njt.say(njt.crc32_long("hello, world"))
     }
 --- stream_response
 4289425978
@@ -38,7 +38,7 @@ __DATA__
 === TEST 3: long sanity (empty)
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.crc32_long(""))
+        njt.say(njt.crc32_long(""))
     }
 --- stream_response
 0

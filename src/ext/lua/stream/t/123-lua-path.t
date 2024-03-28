@@ -30,8 +30,8 @@ env LUA_CPATH;
 
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(package.path)
-        ngx.say(package.cpath)
+        njt.say(package.path)
+        njt.say(package.cpath)
     }
 --- stream_response_like
 (?:\.\.\/lua-resty-core\/lib\/\?\.lua;\.\.\/lua-resty-lrucache\/lib\/\?\.lua;){1,2}\/foo\/bar\/baz
@@ -50,8 +50,8 @@ env LUA_CPATH;
 --- stream_server_config
     lua_code_cache off;
     content_by_lua_block {
-        ngx.say(package.path)
-        ngx.say(package.cpath)
+        njt.say(package.path)
+        njt.say(package.cpath)
     }
 --- stream_response_like
 (?:\.\.\/lua-resty-core\/lib\/\?\.lua;\.\.\/lua-resty-lrucache\/lib\/\?\.lua;){1,2}\/foo\/bar\/baz

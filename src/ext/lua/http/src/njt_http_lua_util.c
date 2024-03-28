@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Xiaozhe Wang (chaoslawful)
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -120,7 +120,6 @@ static int njt_http_lua_thread_traceback(lua_State *L, lua_State *co,
 static void njt_http_lua_inject_njt_api(lua_State *L,
     njt_http_lua_main_conf_t *lmcf, njt_log_t *log);
 static void njt_http_lua_inject_arg_api(lua_State *L);
-static int njt_http_lua_param_get(lua_State *L);
 static int njt_http_lua_param_set(lua_State *L);
 static njt_int_t njt_http_lua_output_filter(njt_http_request_t *r,
     njt_chain_t *in);
@@ -150,7 +149,7 @@ static int njt_http_lua_get_raw_phase_context(lua_State *L);
 
 
 #if !defined(LUA_DEFAULT_PATH) 
-#define LUA_DEFAULT_PATH "/etc/njet/lualib/lib/?.lua;lualib/lib/?.lua;"             
+#define LUA_DEFAULT_PATH "/usr/local/njet/lualib/lib/?.lua;lualib/lib/?.lua;"             
                          //"/etc/njet/lua-resty-lrucache/lib/?.lua"
 #endif
 
@@ -282,7 +281,6 @@ njt_http_lua_new_state(lua_State *parent_vm, njt_cycle_t *cycle,
 
         lua_pushliteral(L, LUA_DEFAULT_CPATH ";"); /* package default */
         lua_getfield(L, -2, "cpath"); /* package default old */
-        old_cpath = lua_tolstring(L, -1, &old_cpath_len);
         lua_concat(L, 2); /* package new */
         lua_setfield(L, -2, "cpath"); /* package */
 #endif
@@ -828,7 +826,7 @@ static void
 njt_http_lua_inject_njt_api(lua_State *L, njt_http_lua_main_conf_t *lmcf,
     njt_log_t *log)
 {
-    lua_createtable(L, 0 /* narr */, 113 /* nrec */);    /* njt.* */
+    lua_createtable(L, 0 /* narr */, 115 /* nrec */);    /* njt.* */
 
     lua_pushcfunction(L, njt_http_lua_get_raw_phase_context);
     lua_setfield(L, -2, "_phase_ctx");
@@ -1006,6 +1004,7 @@ njt_http_lua_reset_ctx(njt_http_request_t *r, lua_State *L,
 
     ctx->entry_co_ctx.co_ref = LUA_NOREF;
 
+    ctx->entered_server_rewrite_phase = 0;
     ctx->entered_rewrite_phase = 0;
     ctx->entered_access_phase = 0;
     ctx->entered_content_phase = 0;
@@ -3101,9 +3100,6 @@ njt_http_lua_inject_arg_api(lua_State *L)
 
     lua_createtable(L, 0 /* narr */, 2 /* nrec */);    /*  the metatable */
 
-    lua_pushcfunction(L, njt_http_lua_param_get);
-    lua_setfield(L, -2, "__index");
-
     lua_pushcfunction(L, njt_http_lua_param_set);
     lua_setfield(L, -2, "__newindex");
 
@@ -3112,35 +3108,6 @@ njt_http_lua_inject_arg_api(lua_State *L)
     dd("top: %d, type -1: %s", lua_gettop(L), luaL_typename(L, -1));
 
     lua_rawset(L, -3);    /*  set njt.arg table */
-}
-
-
-static int
-njt_http_lua_param_get(lua_State *L)
-{
-    njt_http_lua_ctx_t          *ctx;
-    njt_http_request_t          *r;
-
-    r = njt_http_lua_get_req(L);
-    if (r == NULL) {
-        return 0;
-    }
-
-    ctx = njt_http_get_module_ctx(r, njt_http_lua_module);
-    if (ctx == NULL) {
-        return luaL_error(L, "ctx not found");
-    }
-
-    njt_http_lua_check_context(L, ctx, NJT_HTTP_LUA_CONTEXT_SET
-                               | NJT_HTTP_LUA_CONTEXT_BODY_FILTER);
-
-    if (ctx->context & (NJT_HTTP_LUA_CONTEXT_SET)) {
-        return njt_http_lua_setby_param_get(L, r);
-    }
-
-    /* ctx->context & (NJT_HTTP_LUA_CONTEXT_BODY_FILTER) */
-
-    return njt_http_lua_body_filter_param_get(L, r);
 }
 
 
@@ -4429,5 +4396,78 @@ njt_http_lua_copy_escaped_header(njt_http_request_t *r,
 
     return NJT_OK;
 }
+
+
+njt_addr_t *
+njt_http_lua_parse_addr(lua_State *L, u_char *text, size_t len)
+{
+    njt_addr_t           *addr;
+    size_t                socklen;
+    in_addr_t             inaddr;
+    njt_uint_t            family;
+    struct sockaddr_in   *sin;
+#if (NJT_HAVE_INET6)
+    struct in6_addr       inaddr6;
+    struct sockaddr_in6  *sin6;
+
+    /*
+     * prevent MSVC8 warning:
+     *    potentially uninitialized local variable 'inaddr6' used
+     */
+    njt_memzero(&inaddr6, sizeof(struct in6_addr));
+#endif
+
+    inaddr = njt_inet_addr(text, len);
+
+    if (inaddr != INADDR_NONE) {
+        family = AF_INET;
+        socklen = sizeof(struct sockaddr_in);
+
+#if (NJT_HAVE_INET6)
+
+    } else if (njt_inet6_addr(text, len, inaddr6.s6_addr) == NJT_OK) {
+        family = AF_INET6;
+        socklen = sizeof(struct sockaddr_in6);
+#endif
+
+    } else {
+        return NULL;
+    }
+
+    addr = lua_newuserdata(L, sizeof(njt_addr_t) + socklen + len);
+    if (addr == NULL) {
+        luaL_error(L, "no memory");
+        return NULL;
+    }
+
+    addr->sockaddr = (struct sockaddr *) ((u_char *) addr + sizeof(njt_addr_t));
+
+    njt_memzero(addr->sockaddr, socklen);
+
+    addr->sockaddr->sa_family = (u_char) family;
+    addr->socklen = socklen;
+
+    switch (family) {
+
+#if (NJT_HAVE_INET6)
+    case AF_INET6:
+        sin6 = (struct sockaddr_in6 *) addr->sockaddr;
+        njt_memcpy(sin6->sin6_addr.s6_addr, inaddr6.s6_addr, 16);
+        break;
+#endif
+
+    default: /* AF_INET */
+        sin = (struct sockaddr_in *) addr->sockaddr;
+        sin->sin_addr.s_addr = inaddr;
+        break;
+    }
+
+    addr->name.data = (u_char *) addr->sockaddr + socklen;
+    addr->name.len = len;
+    njt_memcpy(addr->name.data, text, len);
+
+    return addr;
+}
+
 
 /* vi:set ft=c ts=4 sw=4 et fdm=marker: */

@@ -23,10 +23,13 @@
 #define NJT_DEBUG_POINTS_ABORT  2
 #define HAVE_PRIVILEGED_PROCESS_PATCH   1
 
+#define HAVE_INTERCEPT_ERROR_LOG_PATCH // openresty patch
 
 typedef struct njt_shm_zone_s  njt_shm_zone_t;
 
 typedef njt_int_t (*njt_shm_zone_init_pt) (njt_shm_zone_t *zone, void *data);
+typedef njt_int_t (*njt_log_intercept_pt) (njt_log_t *log, njt_uint_t level, 
+    u_char *buf, size_t len); // openresty patch
 
 struct njt_shm_zone_s {
     void                     *data;
@@ -87,7 +90,12 @@ struct njt_cycle_s {
     njt_str_t                 error_log;
     njt_str_t                 lock_file;
     njt_str_t                 hostname;
-    void                     *conf_root;
+    void                     *conf_root; // by lcm for dyn conf
+    
+    njt_log_intercept_pt      intercept_error_log_handler;  // openresy patch
+    void                     *intercept_error_log_data; // openresty patch
+    unsigned                  entered_logger;    /* :1 */ // openresty patch
+
 };
 
 

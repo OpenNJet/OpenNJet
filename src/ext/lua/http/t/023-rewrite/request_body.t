@@ -20,9 +20,9 @@ __DATA__
     location /echo_body {
         lua_need_request_body on;
         rewrite_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request eval
 "POST /echo_body
@@ -39,9 +39,9 @@ world\x03\x04\xff"
     location /echo_body {
         lua_need_request_body off;
         rewrite_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request eval
 "POST /echo_body
@@ -56,9 +56,9 @@ world\x03\x04\xff"
 --- config
     location /echo_body {
         rewrite_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request eval
 "POST /echo_body
@@ -75,9 +75,9 @@ world\x03\x04\xff"
 --- config
     location /echo_body {
         rewrite_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request eval
 "POST /echo_body
@@ -95,9 +95,9 @@ world\x03\x04\xff"
 
     location /echo_body {
         rewrite_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request eval
 "POST /echo_body
@@ -116,9 +116,9 @@ world\x03\x04\xff"
     location /echo_body {
         lua_need_request_body off;
         rewrite_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request eval
 "POST /echo_body
@@ -136,9 +136,9 @@ world\x03\x04\xff"
     location /echo_body {
         lua_need_request_body off;
         rewrite_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
+            njt.print(njt.var.request_body or "nil")
         ';
-        content_by_lua 'ngx.exit(ngx.OK)';
+        content_by_lua 'njt.exit(njt.OK)';
     }
 --- request eval
 "POST /echo_body
@@ -154,8 +154,8 @@ world\x03\x04\xff"
     location /echo_body {
         lua_need_request_body on;
         rewrite_by_lua '
-            ngx.print(ngx.var.request_body or "nil")
-            ngx.exit(200)
+            njt.print(njt.var.request_body or "nil")
+            njt.exit(200)
         ';
     }
 --- request

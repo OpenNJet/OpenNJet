@@ -88,6 +88,10 @@ struct njt_event_s {
     unsigned         channel:1;
     unsigned         resolver:1;
 
+#if (HAVE_SOCKET_CLOEXEC_PATCH) // openresty patch
+    unsigned         skip_socket_leak_check:1;
+#endif // openresty patch end
+
     unsigned         cancelable:1;
 
 #if (NJT_HAVE_KQUEUE)

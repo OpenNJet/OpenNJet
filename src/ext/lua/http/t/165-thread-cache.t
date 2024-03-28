@@ -27,9 +27,9 @@ __DATA__
         # NOTE: the newline escape sequence must be double-escaped, as nginx config
         # parser will unescape first!
         content_by_lua '
-            local ok, err = ngx.print("Hello, Lua!\\n")
+            local ok, err = njt.print("Hello, Lua!\\n")
             if not ok then
-                ngx.log(ngx.ERR, "print failed: ", err)
+                njt.log(njt.ERR, "print failed: ", err)
             end
         ';
     }
@@ -59,9 +59,9 @@ lua caching unused lua thread
         # NOTE: the newline escape sequence must be double-escaped, as nginx config
         # parser will unescape first!
         content_by_lua '
-            local ok, err = ngx.print("Hello, Lua!\\n")
+            local ok, err = njt.print("Hello, Lua!\\n")
             if not ok then
-                ngx.log(ngx.ERR, "print failed: ", err)
+                njt.log(njt.ERR, "print failed: ", err)
             end
         ';
     }

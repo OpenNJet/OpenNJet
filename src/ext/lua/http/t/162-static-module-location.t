@@ -16,9 +16,9 @@ __DATA__
     server_tokens off;
     location = /t {
         rewrite_by_lua_block {
-            ngx.req.read_body();
-            local args, _ = ngx.req.get_post_args();
-            ngx.req.set_uri(args["url"], true, true);
+            njt.req.read_body();
+            local args, _ = njt.req.get_post_args();
+            njt.req.set_uri(args["url"], true, true);
         }
     }
 --- request

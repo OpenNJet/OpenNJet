@@ -16,16 +16,16 @@
 #include "njt_http_lua_util.h"
 
 
-/*  longjmp mark for restoring nginx execution after Lua VM crashing */
+/*  longjmp mark for restoring njet execution after Lua VM crashing */
 jmp_buf njt_http_lua_exception;
 
 /**
- * Override default Lua panic handler, output VM crash reason to nginx error
+ * Override default Lua panic handler, output VM crash reason to njet error
  * log, and restore execution to the nearest jmp-mark.
  *
  * @param L Lua state pointer
  * @retval Long jump to the nearest jmp-mark, never returns.
- * @note nginx request pointer should be stored in Lua thread's globals table
+ * @note njet request pointer should be stored in Lua thread's globals table
  * in order to make logging working.
  * */
 int
@@ -49,7 +49,7 @@ njt_http_lua_atpanic(lua_State *L)
     njt_log_stderr(0, "lua atpanic: Lua VM crashed, reason: %*s", len, s);
     njt_quit = 1;
 
-    /*  restore nginx execution */
+    /*  restore njet execution */
     NJT_LUA_EXCEPTION_THROW(1);
 
     /* impossible to reach here */

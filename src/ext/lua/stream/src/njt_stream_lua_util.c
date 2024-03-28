@@ -132,7 +132,7 @@ static int njt_stream_lua_req_socket(lua_State *L);
 
 
 #if !defined(LUA_DEFAULT_PATH)
-#define LUA_DEFAULT_PATH "/etc/njet/lualib/lib/?.lua;lualib/lib/?.lua;"                      
+#define LUA_DEFAULT_PATH "/usr/local/njet/lualib/lib/?.lua;lualib/lib/?.lua;"                      
                          //"/etc/njet/lua-resty-lrucache/lib/?.lua"
 #endif
 
@@ -802,7 +802,7 @@ njt_stream_lua_run_thread(lua_State *L, njt_stream_lua_request_t *r,
                ctx->cur_co_ctx->is_wrap);
 
 #if (NJT_PCRE)
-            /* XXX: work-around to nginx regex subsystem */
+            /* XXX: work-around to njet regex subsystem */
             old_pool = njt_stream_lua_pcre_malloc_init(r->pool);
 #endif
 
@@ -836,7 +836,7 @@ njt_stream_lua_run_thread(lua_State *L, njt_stream_lua_request_t *r,
             rv = lua_resume(orig_coctx->co, nrets);
 
 #if (NJT_PCRE)
-            /* XXX: work-around to nginx regex subsystem */
+            /* XXX: work-around to njet regex subsystem */
             njt_stream_lua_pcre_malloc_done(old_pool);
 #endif
 
@@ -2591,6 +2591,9 @@ njt_stream_lua_traceback(lua_State *L)
 njt_stream_lua_co_ctx_t *
 njt_stream_lua_get_co_ctx(lua_State *L, njt_stream_lua_ctx_t *ctx)
 {
+#ifdef HAVE_LUA_EXDATA2
+    return (njt_stream_lua_co_ctx_t *) lua_getexdata2(L);
+#else
     njt_uint_t                   i;
     njt_list_part_t             *part;
 
@@ -2627,6 +2630,7 @@ njt_stream_lua_get_co_ctx(lua_State *L, njt_stream_lua_ctx_t *ctx)
     }
 
     return NULL;
+#endif
 }
 
 

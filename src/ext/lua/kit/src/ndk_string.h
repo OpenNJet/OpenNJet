@@ -1,7 +1,7 @@
 
 
 #if 1
-/* TODO : set ndk_hex_dump for older versions of Nginx */
+/* TODO : set ndk_hex_dump for older versions of NJet */
 #define     ndk_hex_dump                    njt_hex_dump
 #endif
 

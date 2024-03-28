@@ -313,13 +313,13 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         return NULL;
     }
 
-    //by lcm ---------------------------------------------------
+#if (NJT_HELPER_GO_DYNCONF) // by lcm
     njt_conf_element_t *conf_root;
     cycle->conf_root = njt_pcalloc(cycle->pool, sizeof(njt_conf_element_t));
     conf_root = cycle->conf_root;
     njt_memzero(conf_root, sizeof(njt_conf_element_t));
     njt_conf_init_conf_parse(cycle->conf_root, cycle->pool);
-    //----------------------------------------------------------
+#endif
 
 
 
@@ -329,11 +329,10 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         return NULL;
     }
 
-    // add for dyn_conf
+#if (NJT_HELPER_GO_DYNCONF) // by lcm
     njt_conf_finish_conf_parse();
     njt_conf_check_svrname_listen(pool, conf_root);
-    // end for dyn_conf
-
+#endif
 
     if (njt_conf_parse_post(cycle) != NJT_CONF_OK) {
         environ = senv;
@@ -840,6 +839,12 @@ old_shm_zone_done:
 #endif
     //end
     if (njt_process == NJT_PROCESS_MASTER || njt_is_init_cycle(old_cycle)) {
+
+        // openresty patch
+        if (njt_is_init_cycle(old_cycle)) {
+            saved_init_cycle_pool = NULL;
+        }
+        // openresty patch end
 
         njt_destroy_pool(old_cycle->pool);
         cycle->old_cycle = NULL;

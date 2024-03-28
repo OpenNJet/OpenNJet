@@ -13,7 +13,7 @@ __DATA__
 === TEST 1: running count with no running timers
 --- config
     location /timers {
-        content_by_lua_block { ngx.say(ngx.timer.running_count()) }
+        content_by_lua_block { njt.say(njt.timer.running_count()) }
     }
 --- request
 GET /timers
@@ -27,7 +27,7 @@ GET /timers
 === TEST 2: running count with no pending timers
 --- config
     location /timers {
-        content_by_lua_block { ngx.say(ngx.timer.pending_count()) }
+        content_by_lua_block { njt.say(njt.timer.pending_count()) }
     }
 --- request
 GET /timers
@@ -42,8 +42,8 @@ GET /timers
 --- config
     location /timers {
         content_by_lua_block {
-            ngx.timer.at(3, function() end)
-            ngx.say(ngx.timer.pending_count())
+            njt.timer.at(3, function() end)
+            njt.say(njt.timer.pending_count())
         }
     }
 --- request
@@ -59,10 +59,10 @@ GET /timers
 --- config
     location /timers {
         content_by_lua_block {
-            ngx.timer.at(4, function() end)
-            ngx.timer.at(2, function() end)
-            ngx.timer.at(1, function() end)
-            ngx.say(ngx.timer.pending_count())
+            njt.timer.at(4, function() end)
+            njt.timer.at(2, function() end)
+            njt.timer.at(1, function() end)
+            njt.say(njt.timer.pending_count())
         }
     }
 --- request
@@ -78,9 +78,9 @@ GET /timers
 --- config
     location /timers {
         content_by_lua_block {
-            ngx.timer.at(0.1, function() ngx.sleep(0.3) end)
-            ngx.sleep(0.2)
-            ngx.say(ngx.timer.running_count())
+            njt.timer.at(0.1, function() njt.sleep(0.3) end)
+            njt.sleep(0.2)
+            njt.say(njt.timer.running_count())
         }
     }
 --- request
@@ -96,11 +96,11 @@ GET /timers
 --- config
     location /timers {
         content_by_lua_block {
-            ngx.timer.at(0.1, function() ngx.sleep(0.3) end)
-            ngx.timer.at(0.11, function() ngx.sleep(0.3) end)
-            ngx.timer.at(0.09, function() ngx.sleep(0.3) end)
-            ngx.sleep(0.2)
-            ngx.say(ngx.timer.running_count())
+            njt.timer.at(0.1, function() njt.sleep(0.3) end)
+            njt.timer.at(0.11, function() njt.sleep(0.3) end)
+            njt.timer.at(0.09, function() njt.sleep(0.3) end)
+            njt.sleep(0.2)
+            njt.say(njt.timer.running_count())
         }
     }
 --- request

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) Xiaozhe Wang (chaoslawful)
  * Copyright (C) Yichun Zhang (agentzh)
- * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
+ * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.yy
  */
 
 
@@ -171,7 +171,7 @@ njt_http_lua_sleep_cleanup(void *data)
         /*
         * We need the extra parentheses around the argument
         * of njt_delete_posted_event() just to work around macro issues in
-        * nginx cores older than 1.7.5 (exclusive).
+        * njet cores older than 1.7.5 (exclusive).
         */
         njt_delete_posted_event((&coctx->sleep));
     }

@@ -45,7 +45,8 @@ static int njt_quic_add_handshake_data(njt_ssl_conn_t *ssl_conn,
 static int njt_quic_flush_flight(njt_ssl_conn_t *ssl_conn);
 static int njt_quic_send_alert(njt_ssl_conn_t *ssl_conn,
     enum ssl_encryption_level_t level, uint8_t alert);
-static njt_int_t njt_quic_crypto_input(njt_connection_t *c, njt_chain_t *data);
+static njt_int_t njt_quic_crypto_input(njt_connection_t *c, njt_chain_t *data,
+    enum ssl_encryption_level_t level);
 
 
 #if (NJT_QUIC_BORINGSSL_API)
@@ -356,7 +357,7 @@ njt_quic_handle_crypto_frame(njt_connection_t *c, njt_quic_header_t *pkt,
     }
 
     if (f->offset == ctx->crypto.offset) {
-        if (njt_quic_crypto_input(c, frame->data) != NJT_OK) {
+        if (njt_quic_crypto_input(c, frame->data, pkt->level) != NJT_OK) {
             return NJT_ERROR;
         }
 
@@ -374,7 +375,7 @@ njt_quic_handle_crypto_frame(njt_connection_t *c, njt_quic_header_t *pkt,
     cl = njt_quic_read_buffer(c, &ctx->crypto, (uint64_t) -1);
 
     if (cl) {
-        if (njt_quic_crypto_input(c, cl) != NJT_OK) {
+        if (njt_quic_crypto_input(c, cl, pkt->level) != NJT_OK) {
             return NJT_ERROR;
         }
 
@@ -386,7 +387,8 @@ njt_quic_handle_crypto_frame(njt_connection_t *c, njt_quic_header_t *pkt,
 
 
 static njt_int_t
-njt_quic_crypto_input(njt_connection_t *c, njt_chain_t *data)
+njt_quic_crypto_input(njt_connection_t *c, njt_chain_t *data,
+    enum ssl_encryption_level_t level)
 {
     int                     n, sslerr;
     njt_buf_t              *b;
@@ -399,17 +401,10 @@ njt_quic_crypto_input(njt_connection_t *c, njt_chain_t *data)
 
     ssl_conn = c->ssl->connection;
 
-    njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
-                   "quic SSL_quic_read_level:%d SSL_quic_write_level:%d",
-                   (int) SSL_quic_read_level(ssl_conn),
-                   (int) SSL_quic_write_level(ssl_conn));
-
     for (cl = data; cl; cl = cl->next) {
         b = cl->buf;
 
-        if (!SSL_provide_quic_data(ssl_conn, SSL_quic_read_level(ssl_conn),
-                                   b->pos, b->last - b->pos))
-        {
+        if (!SSL_provide_quic_data(ssl_conn, level, b->pos, b->last - b->pos)) {
             njt_ssl_error(NJT_LOG_INFO, c->log, 0,
                           "SSL_provide_quic_data() failed");
             return NJT_ERROR;
@@ -417,11 +412,6 @@ njt_quic_crypto_input(njt_connection_t *c, njt_chain_t *data)
     }
 
     n = SSL_do_handshake(ssl_conn);
-
-    njt_log_debug2(NJT_LOG_DEBUG_EVENT, c->log, 0,
-                   "quic SSL_quic_read_level:%d SSL_quic_write_level:%d",
-                   (int) SSL_quic_read_level(ssl_conn),
-                   (int) SSL_quic_write_level(ssl_conn));
 
     njt_log_debug1(NJT_LOG_DEBUG_EVENT, c->log, 0, "SSL_do_handshake: %d", n);
 
@@ -446,7 +436,7 @@ njt_quic_crypto_input(njt_connection_t *c, njt_chain_t *data)
     }
 
     if (n <= 0 || SSL_in_init(ssl_conn)) {
-        if (njt_quic_keys_available(qc->keys, ssl_encryption_early_data)
+        if (njt_quic_keys_available(qc->keys, ssl_encryption_early_data, 0)
             && qc->client_tp_done)
         {
             if (njt_quic_init_streams(c) != NJT_OK) {
@@ -484,9 +474,7 @@ njt_quic_crypto_input(njt_connection_t *c, njt_chain_t *data)
      * Generating next keys before a key update is received.
      */
 
-    if (njt_quic_keys_update(c, qc->keys) != NJT_OK) {
-        return NJT_ERROR;
-    }
+    njt_post_event(&qc->key_update, &njt_posted_events);
 
     /*
      * RFC 9001, 4.9.2.  Discarding Handshake Keys

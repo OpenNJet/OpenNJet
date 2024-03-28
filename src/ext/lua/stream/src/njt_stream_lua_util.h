@@ -72,6 +72,13 @@ extern char njt_stream_lua_headers_metatable_key;
 #endif
 
 
+#define NJT_STREAM_LUA_CONTEXT_YIELDABLE (NJT_STREAM_LUA_CONTEXT_PREREAD     \
+                                | NJT_STREAM_LUA_CONTEXT_CONTENT             \
+                                | NJT_STREAM_LUA_CONTEXT_TIMER               \
+                                | NJT_STREAM_LUA_CONTEXT_SSL_CLIENT_HELLO    \
+                                | NJT_STREAM_LUA_CONTEXT_SSL_CERT)
+
+
 #define njt_stream_lua_context_name(c)                                       \
     ((c) == NJT_STREAM_LUA_CONTEXT_CONTENT ? "content_by_lua*"               \
      : (c) == NJT_STREAM_LUA_CONTEXT_LOG ? "log_by_lua*"                     \
@@ -184,6 +191,16 @@ njt_int_t njt_stream_lua_open_and_stat_file(u_char *name,
 
 njt_chain_t *njt_stream_lua_chain_get_free_buf(njt_log_t *log, njt_pool_t *p,
     njt_chain_t **free, size_t len);
+
+
+static njt_inline void
+njt_stream_lua_attach_co_ctx_to_L(lua_State *L, njt_stream_lua_co_ctx_t *coctx)
+{
+#ifdef HAVE_LUA_EXDATA2
+    lua_setexdata2(L, (void *) coctx);
+#endif
+}
+
 
 #ifndef OPENRESTY_LUAJIT
 void njt_stream_lua_create_new_globals_table(lua_State *L, int narr, int nrec);

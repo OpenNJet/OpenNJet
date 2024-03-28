@@ -20,9 +20,9 @@ __DATA__
 === TEST 1: basic print
 --- stream_server_config
     content_by_lua_block {
-        local ok, err = ngx.print("Hello, Lua!\n")
+        local ok, err = njt.print("Hello, Lua!\n")
         if not ok then
-            ngx.log(ngx.ERR, "print failed: ", err)
+            njt.log(njt.ERR, "print failed: ", err)
         end
     }
 --- stream_response
@@ -35,14 +35,14 @@ Hello, Lua!
 === TEST 2: basic say
 --- stream_server_config
     content_by_lua_block {
-        local ok, err = ngx.say("Hello, Lua!")
+        local ok, err = njt.say("Hello, Lua!")
         if not ok then
-            ngx.log(ngx.ERR, "say failed: ", err)
+            njt.log(njt.ERR, "say failed: ", err)
             return
         end
-        local ok, err = ngx.say("Yay! ", 123)
+        local ok, err = njt.say("Yay! ", 123)
         if not ok then
-            ngx.log(ngx.ERR, "say failed: ", err)
+            njt.log(njt.ERR, "say failed: ", err)
             return
         end
     }
@@ -54,9 +54,9 @@ Yay! 123
 
 
 
-=== TEST 3: no ngx.echo
+=== TEST 3: no njt.echo
 --- stream_server_config
-    content_by_lua_block { ngx.echo("Hello, Lua!\n") }
+    content_by_lua_block { njt.echo("Hello, Lua!\n") }
 --- stream_response
 --- error_log eval
 qr/content_by_lua\(nginx\.conf:\d+\):1: attempt to call field 'echo' \(a nil value\)/
@@ -85,14 +85,14 @@ local exp_str = 1+2*math.sin(3)/math.exp(4)-math.sqrt(2)
 local status, res
 status, res = pcall(uri_unescape, exp_str)
 if not status then
-    ngx.print("error: ", res, "\n")
+    njt.print("error: ", res, "\n")
     return
 end
 status, res = pcall(eval_exp, res)
 if status then
-    ngx.print("result: ", res, "\n")
+    njt.print("result: ", res, "\n")
 else
-    ngx.print("error: ", res, "\n")
+    njt.print("error: ", res, "\n")
 end
 
 --- stream_response
@@ -104,7 +104,7 @@ result: -0.4090441561579
 
 === TEST 5: nil is "nil"
 --- stream_server_config
-    content_by_lua_block { ngx.say(nil) }
+    content_by_lua_block { njt.say(nil) }
 --- stream_response
 nil
 --- no_error_log
@@ -114,7 +114,7 @@ nil
 
 === TEST 6: write boolean
 --- stream_server_config
-    content_by_lua_block { ngx.say(true, " ", false) }
+    content_by_lua_block { njt.say(true, " ", false) }
 --- stream_response
 true false
 --- no_error_log
@@ -124,7 +124,7 @@ true false
 
 === TEST 7: nginx quote sql string 1
 --- stream_server_config
-   content_by_lua_block { ngx.say(ngx.quote_sql_str('hello\n\r\'"\\')) }
+   content_by_lua_block { njt.say(njt.quote_sql_str('hello\n\r\'"\\')) }
 --- stream_response
 'hello\n\r\'\"\\'
 --- no_error_log
@@ -134,7 +134,7 @@ true false
 
 === TEST 8: nginx quote sql string 2
 --- stream_server_config
-    content_by_lua_block { ngx.say(ngx.quote_sql_str("hello\n\r'\"\\")) }
+    content_by_lua_block { njt.say(njt.quote_sql_str("hello\n\r'\"\\")) }
 --- stream_response
 'hello\n\r\'\"\\'
 --- no_error_log
@@ -145,17 +145,17 @@ true false
 === TEST 9: multiple eof
 --- stream_server_config
     content_by_lua_block {
-        ngx.say("Hi")
+        njt.say("Hi")
 
-        local ok, err = ngx.eof()
+        local ok, err = njt.eof()
         if not ok then
-            ngx.log(ngx.WARN, "eof failed: ", err)
+            njt.log(njt.WARN, "eof failed: ", err)
             return
         end
 
-        ok, err = ngx.eof()
+        ok, err = njt.eof()
         if not ok then
-            ngx.log(ngx.WARN, "eof failed: ", err)
+            njt.log(njt.WARN, "eof failed: ", err)
             return
         end
     }
@@ -169,18 +169,18 @@ eof failed: seen eof
 
 
 
-=== TEST 10: ngx.eof before ngx.say
+=== TEST 10: njt.eof before njt.say
 --- stream_server_config
     content_by_lua_block {
-        local ok, err = ngx.eof()
+        local ok, err = njt.eof()
         if not ok then
-            ngx.log(ngx.ERR, "eof failed: ", err)
+            njt.log(njt.ERR, "eof failed: ", err)
             return
         end
 
-        ok, err = ngx.say(ngx.headers_sent)
+        ok, err = njt.say(njt.headers_sent)
         if not ok then
-            ngx.log(ngx.WARN, "failed to say: ", err)
+            njt.log(njt.WARN, "failed to say: ", err)
             return
         end
     }
@@ -192,9 +192,9 @@ failed to say: seen eof
 
 
 
-=== TEST 11: ngx.print table arguments (github issue #54)
+=== TEST 11: njt.print table arguments (github issue #54)
 --- stream_server_config
-    content_by_lua_block { ngx.print({10, {0, 5}, 15}, 32) }
+    content_by_lua_block { njt.print({10, {0, 5}, 15}, 32) }
 --- stream_response chop
 10051532
 --- no_error_log
@@ -202,9 +202,9 @@ failed to say: seen eof
 
 
 
-=== TEST 12: ngx.say table arguments (github issue #54)
+=== TEST 12: njt.say table arguments (github issue #54)
 --- stream_server_config
-    content_by_lua_block { ngx.say({10, {0, "5"}, 15}, 32) }
+    content_by_lua_block { njt.say({10, {0, "5"}, 15}, 32) }
 --- stream_response
 10051532
 --- no_error_log
@@ -217,8 +217,8 @@ failed to say: seen eof
     content_by_lua_file html/test2.lua;
 --- user_files
 >>> test.lua
-v = ngx.var["request_uri"]
-ngx.print("request_uri: ", v, "\n")
+v = njt.var["request_uri"]
+njt.print("request_uri: ", v, "\n")
 --- stream_response
 --- error_log eval
 qr/failed to load external Lua file ".*?test2\.lua": cannot open .*? No such file or directory/
@@ -232,7 +232,7 @@ qr/failed to load external Lua file ".*?test2\.lua": cannot open .*? No such fil
 >>> test.lua
 #!/bin/lua
 
-ngx.say("line ", debug.getinfo(1).currentline)
+njt.say("line ", debug.getinfo(1).currentline)
 --- stream_response
 line 3
 --- no_error_log

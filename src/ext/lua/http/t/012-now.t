@@ -16,10 +16,10 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: use ngx.localtime in content_by_lua
+=== TEST 1: use njt.localtime in content_by_lua
 --- config
     location = /now {
-        content_by_lua 'ngx.say(ngx.localtime())';
+        content_by_lua 'njt.say(njt.localtime())';
     }
 --- request
 GET /now
@@ -27,10 +27,10 @@ GET /now
 
 
 
-=== TEST 2: use ngx.localtime in set_by_lua
+=== TEST 2: use njt.localtime in set_by_lua
 --- config
     location = /now {
-        set_by_lua $a 'return ngx.localtime()';
+        set_by_lua $a 'return njt.localtime()';
         echo $a;
     }
 --- request
@@ -39,10 +39,10 @@ GET /now
 
 
 
-=== TEST 3: use ngx.time in set_by_lua
+=== TEST 3: use njt.time in set_by_lua
 --- config
     location = /time {
-        set_by_lua $a 'return ngx.time()';
+        set_by_lua $a 'return njt.time()';
         echo $a;
     }
 --- request
@@ -51,10 +51,10 @@ GET /time
 
 
 
-=== TEST 4: use ngx.time in content_by_lua
+=== TEST 4: use njt.time in content_by_lua
 --- config
     location = /time {
-        content_by_lua 'ngx.say(ngx.time())';
+        content_by_lua 'njt.say(njt.time())';
     }
 --- request
 GET /time
@@ -62,14 +62,14 @@ GET /time
 
 
 
-=== TEST 5: use ngx.time in content_by_lua
+=== TEST 5: use njt.time in content_by_lua
 --- config
     location = /time {
         content_by_lua '
-            ngx.say(ngx.time())
-            ngx.say(ngx.localtime())
-            ngx.say(ngx.utctime())
-            ngx.say(ngx.cookie_time(ngx.time()))
+            njt.say(njt.time())
+            njt.say(njt.localtime())
+            njt.say(njt.utctime())
+            njt.say(njt.cookie_time(njt.time()))
         ';
     }
 --- request
@@ -82,10 +82,10 @@ GET /time
 
 
 
-=== TEST 6: use ngx.now in set_by_lua
+=== TEST 6: use njt.now in set_by_lua
 --- config
     location = /time {
-        set_by_lua $a 'return ngx.now()';
+        set_by_lua $a 'return njt.now()';
         echo $a;
     }
 --- request
@@ -94,10 +94,10 @@ GET /time
 
 
 
-=== TEST 7: use ngx.now in content_by_lua
+=== TEST 7: use njt.now in content_by_lua
 --- config
     location = /time {
-        content_by_lua 'ngx.say(ngx.now())';
+        content_by_lua 'njt.say(njt.now())';
     }
 --- request
 GET /time
@@ -105,12 +105,12 @@ GET /time
 
 
 
-=== TEST 8: use ngx.update_time & ngx.now in content_by_lua
+=== TEST 8: use njt.update_time & njt.now in content_by_lua
 --- config
     location = /time {
         content_by_lua '
-            ngx.update_time()
-            ngx.say(ngx.now())
+            njt.update_time()
+            njt.say(njt.now())
         ';
     }
 --- request

@@ -20,9 +20,9 @@ __DATA__
 --- config
     location /log {
         content_by_lua '
-            ngx.say("before log")
-            ngx.log(ngx.STDERR, "hello, log", 1234, 3.14159)
-            ngx.say("after log")
+            njt.say("before log")
+            njt.log(njt.STDERR, "hello, log", 1234, 3.14159)
+            njt.say("after log")
         ';
     }
 --- request
@@ -39,9 +39,9 @@ qr/\[\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, log12343.14
 --- config
     location /log {
         content_by_lua '
-            ngx.say("before log")
-            ngx.log(ngx.EMERG, "hello, log", 1234, 3.14159)
-            ngx.say("after log")
+            njt.say("before log")
+            njt.log(njt.EMERG, "hello, log", 1234, 3.14159)
+            njt.say("after log")
         ';
     }
 --- request
@@ -58,9 +58,9 @@ qr/\[emerg\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, log123
 --- config
     location /log {
         content_by_lua '
-            ngx.say("before log")
-            ngx.log(ngx.ALERT, "hello, log", 1234, 3.14159)
-            ngx.say("after log")
+            njt.say("before log")
+            njt.log(njt.ALERT, "hello, log", 1234, 3.14159)
+            njt.say("after log")
         ';
     }
 --- request
@@ -77,9 +77,9 @@ qr/\[alert\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, log123
 --- config
     location /log {
         content_by_lua '
-            ngx.say("before log")
-            ngx.log(ngx.CRIT, "hello, log", 1234, 3.14159)
-            ngx.say("after log")
+            njt.say("before log")
+            njt.log(njt.CRIT, "hello, log", 1234, 3.14159)
+            njt.say("after log")
         ';
     }
 --- request
@@ -96,9 +96,9 @@ qr/\[crit\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, log1234
 --- config
     location /log {
         content_by_lua '
-            ngx.say("before log")
-            ngx.log(ngx.ERR, "hello, log", 1234, 3.14159)
-            ngx.say("after log")
+            njt.say("before log")
+            njt.log(njt.ERR, "hello, log", 1234, 3.14159)
+            njt.say("after log")
         ';
     }
 --- request
@@ -115,9 +115,9 @@ qr/\[error\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, log123
 --- config
     location /log {
         content_by_lua '
-            ngx.say("before log")
-            ngx.log(ngx.WARN, "hello, log", 1234, 3.14159)
-            ngx.say("after log")
+            njt.say("before log")
+            njt.log(njt.WARN, "hello, log", 1234, 3.14159)
+            njt.say("after log")
         ';
     }
 --- request
@@ -134,9 +134,9 @@ qr/\[warn\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, log1234
 --- config
     location /log {
         content_by_lua '
-            ngx.say("before log")
-            ngx.log(ngx.NOTICE, "hello, log", 1234, 3.14159)
-            ngx.say("after log")
+            njt.say("before log")
+            njt.log(njt.NOTICE, "hello, log", 1234, 3.14159)
+            njt.say("after log")
         ';
     }
 --- request
@@ -153,9 +153,9 @@ qr/\[notice\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, log12
 --- config
     location /log {
         content_by_lua '
-            ngx.say("before log")
-            ngx.log(ngx.INFO, "hello, log", 1234, 3.14159)
-            ngx.say("after log")
+            njt.say("before log")
+            njt.log(njt.INFO, "hello, log", 1234, 3.14159)
+            njt.say("after log")
         ';
     }
 --- request
@@ -172,9 +172,9 @@ qr/\[info\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, log1234
 --- config
     location /log {
         content_by_lua '
-            ngx.say("before log")
-            ngx.log(ngx.DEBUG, "hello, log", 1234, 3.14159)
-            ngx.say("after log")
+            njt.say("before log")
+            njt.log(njt.DEBUG, "hello, log", 1234, 3.14159)
+            njt.say("after log")
         ';
     }
 --- request
@@ -191,9 +191,9 @@ qr/\[debug\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, log123
 --- config
     location /log {
         content_by_lua '
-            ngx.say("before log")
+            njt.say("before log")
             print("hello, log", 1234, 3.14159)
-            ngx.say("after log")
+            njt.say("after log")
         ';
     }
 --- request
@@ -213,7 +213,7 @@ qr/\[notice\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):3: hello, log12
             print()
             print(nil)
             print("nil: ", nil)
-            ngx.say("hi");
+            njt.say("hi");
         ';
     }
 --- request
@@ -229,11 +229,11 @@ qr/\[lua\] content_by_lua\(nginx\.conf:\d+\):4: nil: nil,/,
 
 
 
-=== TEST 12: ngx.log in set_by_lua
+=== TEST 12: njt.log in set_by_lua
 --- config
     location /log {
         set_by_lua $a '
-            ngx.log(ngx.ERR, "HELLO")
+            njt.log(njt.ERR, "HELLO")
             return 32;
         ';
         echo $a;
@@ -251,7 +251,7 @@ qr/\[error\] \S+: \S+ \[lua\] set_by_lua:2: HELLO,/
 --- config
     location /log {
         set_by_lua $a '
-            ngx.log(ngx.ERR, true, false, nil)
+            njt.log(njt.ERR, true, false, nil)
             return 32;
         ';
         echo $a;
@@ -269,14 +269,14 @@ qr/\[error\] \S+: \S+ \[lua\] set_by_lua:2: truefalsenil,/
 --- config
     location /log {
         content_by_lua_block {
-            ngx.say("before log")
+            njt.say("before log")
             local t = setmetatable({v = "value"}, {
                 __tostring = function(self)
                     return "tostring "..self.v
                 end
             })
-            ngx.log(ngx.ERR, t)
-            ngx.say("after log")
+            njt.log(njt.ERR, t)
+            njt.say("after log")
         }
     }
 --- request
@@ -293,8 +293,8 @@ qr/\[error\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):8: tostring valu
 --- config
     location /log {
         content_by_lua_block {
-            ngx.log(ngx.ERR, {})
-            ngx.say("done")
+            njt.log(njt.ERR, {})
+            njt.say("done")
         }
     }
 --- request
@@ -310,14 +310,14 @@ bad argument #1 to 'log' (expected table to have __tostring metamethod)
 --- config
     location /log {
         content_by_lua_block {
-            ngx.say("before log")
+            njt.say("before log")
             local t = setmetatable({v = "value"}, {
                 __tostring = function(self)
                     return "tostring: "..self.v
                 end
             })
-            ngx.log(ngx.ERR, t, " hello ", t)
-            ngx.say("after log")
+            njt.log(njt.ERR, t, " hello ", t)
+            njt.say("after log")
         }
     }
 --- request
@@ -334,14 +334,14 @@ qr/\[error\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):8: tostring: val
 --- config
     location /log {
         content_by_lua_block {
-            ngx.say("before log")
+            njt.say("before log")
             local t = setmetatable({v = "value"}, {
                 __tostring = function(self)
                     return "tostring: "..self.v
                 end
             })
             print(t, " hello ", t)
-            ngx.say("after log")
+            njt.say("after log")
         }
     }
 --- request
@@ -359,7 +359,7 @@ qr/\[notice\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):8: tostring: va
     location /log {
         header_filter_by_lua '
             print("hello world")
-            ngx.header.foo = 32
+            njt.header.foo = 32
         ';
         echo hi;
     }
@@ -374,12 +374,12 @@ hi
 
 
 
-=== TEST 19: ngx.log in header filter
+=== TEST 19: njt.log in header filter
 --- config
     location /log {
         header_filter_by_lua '
-            ngx.log(ngx.ERR, "howdy, lua!")
-            ngx.header.foo = 32
+            njt.log(njt.ERR, "howdy, lua!")
+            njt.header.foo = 32
         ';
         echo hi;
     }
@@ -394,12 +394,12 @@ qr/\[error\] .*? \[lua\] header_filter_by_lua:2: howdy, lua!/
 
 
 
-=== TEST 20: ngx.log big data
+=== TEST 20: njt.log big data
 --- config
     location /log {
         content_by_lua '
-            ngx.log(ngx.ERR, "a" .. string.rep("h", 1970) .. "b")
-            ngx.say("hi")
+            njt.log(njt.ERR, "a" .. string.rep("h", 1970) .. "b")
+            njt.say("hi")
         ';
     }
 --- request
@@ -410,7 +410,7 @@ GET /log
 
 
 
-=== TEST 21: ngx.log in Lua function calls & inlined lua
+=== TEST 21: njt.log in Lua function calls & inlined lua
 --- config
     location /log {
         content_by_lua '
@@ -421,11 +421,11 @@ GET /log
             end
 
             function bar()
-                ngx.log(ngx.ERR, "hello, log", 1234, 3.14159)
+                njt.log(njt.ERR, "hello, log", 1234, 3.14159)
             end
 
             foo()
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -437,7 +437,7 @@ qr/\[error\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):9: bar\(\): hell
 
 
 
-=== TEST 22: ngx.log in Lua function tail-calls & inlined lua
+=== TEST 22: njt.log in Lua function tail-calls & inlined lua
 --- config
     location /log {
         content_by_lua '
@@ -449,7 +449,7 @@ qr/\[error\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):9: bar\(\): hell
 
             function bar(n)
                 if n < 1 then
-                    ngx.log(ngx.ERR, "hello, log", 1234, 3.14159)
+                    njt.log(njt.ERR, "hello, log", 1234, 3.14159)
                     return n
                 end
 
@@ -457,7 +457,7 @@ qr/\[error\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):9: bar\(\): hell
             end
 
             foo()
-            ngx.say("done")
+            njt.say("done")
         ';
     }
 --- request
@@ -469,7 +469,7 @@ qr/\[error\] \S+: \S+ \[lua\] content_by_lua\(nginx\.conf:\d+\):10:(?: foo\(\):)
 
 
 
-=== TEST 23: ngx.log in Lua files
+=== TEST 23: njt.log in Lua files
 --- config
     location /log {
         content_by_lua_file 'html/test.lua';
@@ -483,11 +483,11 @@ function foo()
 end
 
 function bar()
-    ngx.log(ngx.ERR, "hello, log", 1234, 3.14159)
+    njt.log(njt.ERR, "hello, log", 1234, 3.14159)
 end
 
 foo()
-ngx.say("done")
+njt.say("done")
 
 --- request
 GET /log
@@ -498,12 +498,12 @@ qr/\[error\] \S+: \S+ \[lua\] test.lua:8: bar\(\): hello, log12343.14159/
 
 
 
-=== TEST 24: ngx.log with bad levels (ngx.ERROR, -1)
+=== TEST 24: njt.log with bad levels (njt.ERROR, -1)
 --- config
     location /log {
         content_by_lua '
-            ngx.log(ngx.ERROR, "hello lua")
-            ngx.say("done")
+            njt.log(njt.ERROR, "hello lua")
+            njt.say("done")
         ';
     }
 --- request
@@ -515,12 +515,12 @@ bad log level: -1
 
 
 
-=== TEST 25: ngx.log with bad levels (9)
+=== TEST 25: njt.log with bad levels (9)
 --- config
     location /log {
         content_by_lua '
-            ngx.log(9, "hello lua")
-            ngx.say("done")
+            njt.log(9, "hello lua")
+            njt.say("done")
         ';
     }
 --- request
@@ -536,8 +536,8 @@ bad log level: 9
 --- config
     location = /t {
         content_by_lua '
-            ngx.log(ngx.WARN, "hello\\0world")
-            ngx.say("ok")
+            njt.log(njt.WARN, "hello\\0world")
+            njt.say("ok")
         ';
     }
 --- request
@@ -556,9 +556,9 @@ Note: maximum number of digits after the decimal-point character is 13
 --- config
     location /log {
         content_by_lua_block {
-            ngx.say("before log")
-            ngx.log(ngx.STDERR, 3.14159265357939723846)
-            ngx.say("after log")
+            njt.say("before log")
+            njt.log(njt.STDERR, 3.14159265357939723846)
+            njt.say("after log")
         }
     }
 --- request

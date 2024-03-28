@@ -22,7 +22,7 @@ __DATA__
 --- config
     location /t {
         content_by_lua '
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
             sock.receive("l")
         ';
     }
@@ -40,7 +40,7 @@ bad argument #1 to 'receive' (table expected, got string)
 --- config
     location /t {
         content_by_lua '
-            local sock, err = ngx.req.socket()
+            local sock, err = njt.req.socket()
             sock.receiveuntil(32, "ab")
         ';
     }
@@ -58,7 +58,7 @@ bad argument #1 to 'receiveuntil' (table expected, got number)
 --- config
     location /t {
         content_by_lua '
-            local sock, err = ngx.socket.tcp()
+            local sock, err = njt.socket.tcp()
             sock.send("hello")
         ';
     }
@@ -75,7 +75,7 @@ expecting 2 arguments (including the object), but got 1
 --- config
     location /t {
         content_by_lua '
-            local sock, err = ngx.socket.tcp()
+            local sock, err = njt.socket.tcp()
             sock.send("hello", 32)
         ';
     }
@@ -92,7 +92,7 @@ bad argument #1 to 'send' (table expected, got string)
 --- config
     location /t {
         content_by_lua '
-            local sock, err = ngx.socket.tcp()
+            local sock, err = njt.socket.tcp()
             sock.getreusedtimes(2)
         ';
     }
@@ -109,7 +109,7 @@ bad argument #1 to 'getreusedtimes' (table expected, got number)
 --- config
     location /t {
         content_by_lua '
-            local sock, err = ngx.socket.tcp()
+            local sock, err = njt.socket.tcp()
             sock.close(2)
         ';
     }
@@ -126,7 +126,7 @@ bad argument #1 to 'close' (table expected, got number)
 --- config
     location /t {
         content_by_lua '
-            local sock, err = ngx.socket.tcp()
+            local sock, err = njt.socket.tcp()
             sock.setkeepalive(2)
         ';
     }

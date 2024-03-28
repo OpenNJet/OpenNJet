@@ -50,14 +50,14 @@ __DATA__
     resolver_timeout 3s;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.2", 12345)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
         ';
     }
 --- request
@@ -79,15 +79,15 @@ lua tcp socket connect timed out, when connecting to 127.0.0.2:12345
     resolver_timeout 3s;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeout(150)
             local ok, err = sock:connect("127.0.0.2", 12345)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
         ';
     }
 --- request
@@ -108,15 +108,15 @@ lua tcp socket connect timed out, when connecting to 127.0.0.2:12345
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeout(nil)
             local ok, err = sock:connect("127.0.0.2", 12345)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
         ';
     }
 --- request
@@ -137,15 +137,15 @@ lua tcp socket connect timed out, when connecting to 127.0.0.2:12345
     resolver_timeout 3s;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeout(0)
             local ok, err = sock:connect("127.0.0.2", 12345)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
         ';
     }
 --- request
@@ -166,15 +166,15 @@ lua tcp socket connect timed out, when connecting to 127.0.0.2:12345
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             sock:settimeout(-1)
             local ok, err = sock:connect("127.0.0.2", 12345)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
         ';
     }
 --- request
@@ -194,21 +194,21 @@ bad timeout value
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local line
             line, err = sock:receive()
             if line then
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             else
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
             end
         ';
     }
@@ -231,23 +231,23 @@ lua tcp socket read timed out
     #resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             sock:settimeout(150)
 
             local line
             line, err = sock:receive()
             if line then
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             else
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
             end
         ';
     }
@@ -270,23 +270,23 @@ lua tcp socket read timed out
     #resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             sock:settimeout(nil)
 
             local line
             line, err = sock:receive()
             if line then
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             else
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
             end
         ';
     }
@@ -309,23 +309,23 @@ lua tcp socket read timed out
     #resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             sock:settimeout(0)
 
             local line
             line, err = sock:receive()
             if line then
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             else
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
             end
 
         ';
@@ -349,10 +349,10 @@ lua tcp socket read timed out
     #resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
@@ -361,9 +361,9 @@ lua tcp socket read timed out
             local line
             line, err = sock:receive()
             if line then
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             else
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
             end
         ';
     }
@@ -384,21 +384,21 @@ bad timeout value
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local bytes
             bytes, err = sock:send("get helloworld!")
             if bytes then
-                ngx.say("sent: ", bytes)
+                njt.say("sent: ", bytes)
             else
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
             end
         ';
     }
@@ -406,7 +406,7 @@ bad timeout value
 GET /t
 --- stap2
 global active = 0
-F(ngx_http_lua_socket_send) {
+F(njt_http_lua_socket_send) {
     active = 1
     println(probefunc())
 }
@@ -435,23 +435,23 @@ lua tcp socket write timed out
     #resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             sock:settimeout(150)
 
             local bytes
             bytes, err = sock:send("get helloworld!")
             if bytes then
-                ngx.say("sent: ", bytes)
+                njt.say("sent: ", bytes)
             else
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
             end
         ';
     }
@@ -474,23 +474,23 @@ lua tcp socket write timed out
     #resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             sock:settimeout(nil)
 
             local bytes
             bytes, err = sock:send("get helloworld!")
             if bytes then
-                ngx.say("sent: ", bytes)
+                njt.say("sent: ", bytes)
             else
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
             end
         ';
     }
@@ -513,23 +513,23 @@ lua tcp socket write timed out
     #resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             sock:settimeout(0)
 
             local bytes
             bytes, err = sock:send("get helloworld!")
             if bytes then
-                ngx.say("sent: ", bytes)
+                njt.say("sent: ", bytes)
             else
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
             end
         ';
     }
@@ -552,10 +552,10 @@ lua tcp socket write timed out
     #resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
@@ -564,9 +564,9 @@ lua tcp socket write timed out
             local bytes
             bytes, err = sock:send("get helloworld!")
             if bytes then
-                ngx.say("sent: ", bytes)
+                njt.say("sent: ", bytes)
             else
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
             end
         ';
     }
@@ -585,19 +585,19 @@ bad timeout value
     location /lua {
         content_by_lua '
             local function f()
-                ngx.say("hello in thread")
-                ngx.sleep(0.1)
-                ngx.exit(0)
+                njt.say("hello in thread")
+                njt.sleep(0.1)
+                njt.exit(0)
             end
 
-            ngx.say("before")
-            ngx.thread.spawn(f)
-            ngx.say("after")
-            local sock = ngx.socket.tcp()
+            njt.say("before")
+            njt.thread.spawn(f)
+            njt.say("after")
+            local sock = njt.socket.tcp()
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
@@ -605,11 +605,11 @@ bad timeout value
 
             local bytes, ok = sock:send("get helloworld!")
             if not bytes then
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 return
             end
 
-            ngx.say("end")
+            njt.say("end")
         ';
     }
 --- request
@@ -620,7 +620,7 @@ GET /lua
 
 global timers
 
-F(ngx_http_free_request) {
+F(njt_http_free_request) {
     println("free request")
 }
 
@@ -647,7 +647,7 @@ M(timer-expire) {
     }
 }
 
-F(ngx_http_lua_coctx_cleanup) {
+F(njt_http_lua_coctx_cleanup) {
     println("lua tcp socket cleanup")
 }
 _EOC_
@@ -682,22 +682,22 @@ after
     resolver_timeout 3s;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.2", 12345)
             if not ok then
-                ngx.say("1: failed to connect: ", err)
+                njt.say("1: failed to connect: ", err)
 
-                local ok, err = sock:connect("127.0.0.1", ngx.var.server_port)
+                local ok, err = sock:connect("127.0.0.1", njt.var.server_port)
                 if not ok then
-                    ngx.say("2: failed to connect: ", err)
+                    njt.say("2: failed to connect: ", err)
                     return
                 end
 
-                ngx.say("2: connected: ", ok)
+                njt.say("2: connected: ", ok)
                 return
             end
 
-            ngx.say("1: connected: ", ok)
+            njt.say("1: connected: ", ok)
         ';
     }
 --- request
@@ -719,24 +719,24 @@ lua tcp socket connect timed out, when connecting to 127.0.0.2:12345
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             local bytes
             bytes, err = sock:send("get helloworld!")
             if bytes then
-                ngx.say("sent: ", bytes)
+                njt.say("sent: ", bytes)
             else
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
                 bytes, err = sock:send("blah")
                 if not bytes then
-                    ngx.say("failed to send again: ", err)
+                    njt.say("failed to send again: ", err)
                 end
             end
         ';
@@ -745,7 +745,7 @@ lua tcp socket connect timed out, when connecting to 127.0.0.2:12345
 GET /t
 --- stap2
 global active = 0
-F(ngx_http_lua_socket_send) {
+F(njt_http_lua_socket_send) {
     active = 1
     println(probefunc())
 }
@@ -774,23 +774,23 @@ lua tcp socket write timed out
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             sock:settimeout(100)
-            ngx.thread.spawn(function () ngx.sleep(0.001) ngx.say("done") ngx.exit(200) end)
+            njt.thread.spawn(function () njt.sleep(0.001) njt.say("done") njt.exit(200) end)
             local bytes
             bytes, err = sock:send("get helloworld!")
             if bytes then
-                ngx.say("sent: ", bytes)
+                njt.say("sent: ", bytes)
             else
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
             end
         ';
     }
@@ -798,7 +798,7 @@ lua tcp socket write timed out
 GET /t
 --- stap2
 global active = 0
-F(ngx_http_lua_socket_send) {
+F(njt_http_lua_socket_send) {
     active = 1
     println(probefunc())
 }
@@ -827,26 +827,26 @@ lua tcp socket write timed out
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            ngx.send_headers()
-            ngx.flush(true)
-            local sock, err = ngx.req.socket(true)
+            njt.send_headers()
+            njt.flush(true)
+            local sock, err = njt.req.socket(true)
             if not sock then
-                ngx.say("failed to acquire the req socket: ", err)
+                njt.say("failed to acquire the req socket: ", err)
                 return
             end
 
             sock:settimeout(100)
-            ngx.thread.spawn(function ()
-                ngx.sleep(0.001)
-                ngx.log(ngx.WARN, "quitting request now")
-                ngx.exit(200)
+            njt.thread.spawn(function ()
+                njt.sleep(0.001)
+                njt.log(njt.WARN, "quitting request now")
+                njt.exit(200)
             end)
             local bytes
             bytes, err = sock:send("e\\r\\nget helloworld!")
             if bytes then
-                ngx.say("sent: ", bytes)
+                njt.say("sent: ", bytes)
             else
-                ngx.say("failed to send: ", err)
+                njt.say("failed to send: ", err)
             end
         ';
     }
@@ -854,7 +854,7 @@ lua tcp socket write timed out
 GET /t
 --- stap2
 global active = 0
-F(ngx_http_lua_socket_send) {
+F(njt_http_lua_socket_send) {
     active = 1
     println(probefunc())
 }
@@ -883,23 +883,23 @@ lua tcp socket write timed out
     resolver $TEST_NGINX_RESOLVER ipv6=off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
             if not ok then
-                ngx.say("failed to connect: ", err)
+                njt.say("failed to connect: ", err)
                 return
             end
 
-            ngx.say("connected: ", ok)
+            njt.say("connected: ", ok)
 
             sock:settimeout(10)
 
             local line
             line, err = sock:receive(3)
             if line then
-                ngx.say("received: ", line)
+                njt.say("received: ", line)
             else
-                ngx.say("failed to receive: ", err)
+                njt.say("failed to receive: ", err)
             end
         ';
     }
@@ -921,53 +921,53 @@ lua tcp socket read timed out
     lua_socket_log_errors off;
     location /t {
         content_by_lua '
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ready = false
 
             local function f()
                 while not ready do
-                    ngx.sleep(0.001)
+                    njt.sleep(0.001)
                 end
 
                 local bytes, err = sock:send("flush_all")
-                ngx.say("send: ", bytes, " ", err)
+                njt.say("send: ", bytes, " ", err)
 
                 local ok, err = sock:close()
-                ngx.say("close: ", ok, " ", err)
+                njt.say("close: ", ok, " ", err)
 
                 local ok, err = sock:getreusedtimes()
-                ngx.say("getreusedtimes: ", ok, " ", err)
+                njt.say("getreusedtimes: ", ok, " ", err)
 
                 local ok, err = sock:setkeepalive()
-                ngx.say("setkeepalive: ", ok, " ", err)
+                njt.say("setkeepalive: ", ok, " ", err)
 
                 local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
-                ngx.say("connect: ", ok, " ", err)
+                njt.say("connect: ", ok, " ", err)
 
                 sock:settimeout(1)
                 local res, err = sock:receive(1)
-                ngx.say("receive: ", res, " ", err)
+                njt.say("receive: ", res, " ", err)
             end
 
-            local ok, err = ngx.thread.spawn(f)
+            local ok, err = njt.thread.spawn(f)
             if not ok then
-                ngx.say("failed to spawn writer thread: ", err)
+                njt.say("failed to spawn writer thread: ", err)
                 return
             end
 
             local ok, err = sock:connect("127.0.0.1", $TEST_NGINX_MEMCACHED_PORT)
-            ngx.say("connect: ", ok, " ", err)
+            njt.say("connect: ", ok, " ", err)
 
             ready = true
 
             sock:settimeout(300)
             local bytes, err = sock:send("get helloworld!")
             if not bytes then
-                ngx.say("send failed: ", err)
+                njt.say("send failed: ", err)
             end
 
             local ok, err = sock:close()
-            ngx.say("close: ", ok, " ", err)
+            njt.say("close: ", ok, " ", err)
         ';
     }
 
@@ -993,19 +993,19 @@ close: 1 nil
 --- config
     location /t {
         content_by_lua_block {
-            local sock = ngx.socket.tcp()
+            local sock = njt.socket.tcp()
             local ok, err = pcall(sock.settimeout, sock, (2 ^ 31) - 1)
             if not ok then
-                ngx.say("failed to set timeout: ", err)
+                njt.say("failed to set timeout: ", err)
             else
-                ngx.say("settimeout: ok")
+                njt.say("settimeout: ok")
             end
 
             ok, err = pcall(sock.settimeout, sock, 2 ^ 31)
             if not ok then
-                ngx.say("failed to set timeout: ", err)
+                njt.say("failed to set timeout: ", err)
             else
-                ngx.say("settimeout: ok")
+                njt.say("settimeout: ok")
             end
         }
     }

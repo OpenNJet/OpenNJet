@@ -86,7 +86,7 @@ njt_http_lua_ffi_set_resp_status(njt_http_request_t *r, int status)
 
     if (status == 101) {
         /*
-         * XXX work-around a bug in the Nginx core older than 1.5.5
+         * XXX work-around a bug in the NJet core older than 1.5.5
          * that 101 does not have a default status line
          */
 
@@ -97,6 +97,17 @@ njt_http_lua_ffi_set_resp_status(njt_http_request_t *r, int status)
     }
 
     return NJT_OK;
+}
+
+
+int
+njt_http_lua_ffi_req_is_internal(njt_http_request_t *r)
+{
+    if (r->connection->fd == (njt_socket_t) -1) {
+        return NJT_HTTP_LUA_FFI_BAD_CONTEXT;
+    }
+
+    return r->internal;
 }
 
 

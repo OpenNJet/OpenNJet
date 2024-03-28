@@ -9,6 +9,7 @@
 #include "njt_http_sendmsg_module.h"
 #include <njt_mqconf_module.h>
 #include <njt_hash_util.h>
+#include "njt_http_api_register_module.h"
 
 #define RPC_TOPIC_PREFIX "/dyn/"
 #define RPC_TOPIC_PREFIX_LEN 5
@@ -30,7 +31,6 @@ typedef struct
     njt_str_t conf_file;
     njt_uint_t off;
     njt_msec_t rpc_timeout;
-    njt_uint_t kv_api_enabled;
 } njt_http_sendmsg_conf_t;
 
 typedef struct
@@ -55,14 +55,11 @@ static void njt_http_sendmsg_loop_mqtt(njt_event_t *ev);
 static void njt_http_sendmsg_iot_register_outside_reader(njt_event_handler_pt h, struct evt_ctx_t *ctx);
 static njt_int_t sendmsg_init_worker(njt_cycle_t *cycle);
 static void sendmsg_exit_worker(njt_cycle_t *cycle);
-static void *njt_http_sendmsg_create_conf(njt_conf_t *cf);
-static char *njt_http_sendmsg_merge_loc_conf(njt_conf_t *cf, void *parent, void *child);
 static char *njt_dyn_sendmsg_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static char *njt_dyn_sendmsg_rpc_timeout_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static njt_int_t njt_http_sendmsg_init(njt_conf_t *cf);
 static njt_int_t njt_http_sendmsg_handler(njt_http_request_t *r);
-static void *njt_http_sendmsg_create_loc_conf(njt_conf_t *cf);
-static char *njt_dyn_kv_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+static void *njt_http_sendmsg_create_conf(njt_conf_t *cf);
 static int njt_reg_rpc_msg_handler(int msg_session_id, int invoker_session_id, rpc_msg_handler handler, void *data, njt_event_t *ev);
 static void invoke_rpc_msg_handler(int rc, int session_id, const char *msg, int msg_len);
 static void sendmsg_get_session_id_str(int session_id, njt_str_t *sk);
@@ -80,8 +77,8 @@ static njt_http_module_t njt_http_sendmsg_module_ctx = {
     NULL, /* create server configuration */
     NULL, /* merge server configuration */
 
-    njt_http_sendmsg_create_loc_conf, /* create location configuration */
-    njt_http_sendmsg_merge_loc_conf   /* merge location configuration */
+    NULL, /* create location configuration */
+    NULL  /* merge location configuration */
 };
 
 static njt_command_t njt_sendmsg_commands[] = {
@@ -96,12 +93,6 @@ static njt_command_t njt_sendmsg_commands[] = {
      NJT_HTTP_MAIN_CONF | NJT_CONF_TAKE1,
      njt_dyn_sendmsg_rpc_timeout_set,
      0,
-     0,
-     NULL},
-    {njt_string("dyn_sendmsg_kv"),
-     NJT_HTTP_LOC_CONF | NJT_CONF_NOARGS,
-     njt_dyn_kv_api_set,
-     NJT_HTTP_LOC_CONF_OFFSET,
      0,
      NULL},
     njt_null_command /* command termination */
@@ -232,17 +223,14 @@ static void njt_http_sendmsg_iot_set_timer(njt_event_handler_pt h, int interval,
 static njt_int_t
 njt_http_sendmsg_init(njt_conf_t *cf)
 {
-    njt_http_core_main_conf_t *cmcf;
-    njt_http_handler_pt *h;
+    njt_http_api_reg_info_t             h;
 
-    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
-    h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
-    if (h == NULL)
-    {
-        return NJT_ERROR;
-    }
+    njt_str_t  module_key = njt_string("/v1/kv");
+    njt_memzero(&h, sizeof(njt_http_api_reg_info_t));
+    h.key = &module_key;
+    h.handler = njt_http_sendmsg_handler;
+    njt_http_api_module_reg_handler(&h);
 
-    *h = njt_http_sendmsg_handler;
     return NJT_OK;
 }
 
@@ -532,13 +520,6 @@ njt_http_sendmsg_handler(njt_http_request_t *r)
 {
     njt_int_t rc;
 
-    njt_http_sendmsg_conf_t *smcf = njt_http_get_module_loc_conf(r, njt_http_sendmsg_module);
-
-    if (!smcf || smcf->kv_api_enabled != 1)
-    {
-        return NJT_DECLINED;
-    }
-
     if (r->method == NJT_HTTP_GET)
     {
         njt_http_discard_request_body(r);
@@ -689,33 +670,6 @@ njt_http_sendmsg_create_conf(njt_conf_t *cf)
     return conf;
 }
 
-static void *
-njt_http_sendmsg_create_loc_conf(njt_conf_t *cf)
-{
-    njt_http_sendmsg_conf_t *conf;
-
-    conf = njt_pcalloc(cf->pool, sizeof(njt_http_sendmsg_conf_t));
-
-    if (conf == NULL)
-    {
-        return NULL;
-    }
-
-    conf->kv_api_enabled = NJT_CONF_UNSET_UINT;
-    return conf;
-}
-
-static char *njt_http_sendmsg_merge_loc_conf(njt_conf_t *cf,
-        void *parent, void *child)
-{
-    njt_http_sendmsg_conf_t *prev = parent;
-    njt_http_sendmsg_conf_t *conf = child;
-
-    njt_conf_merge_uint_value(conf->kv_api_enabled, prev->kv_api_enabled, 0);
-
-    return NJT_CONF_OK;
-}
-
 static char *njt_dyn_sendmsg_rpc_timeout_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
     njt_str_t *value;
@@ -776,14 +730,6 @@ njt_dyn_sendmsg_conf_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 
     smcf->conf_file.data = dst.data;
     smcf->conf_file.len = dst.len;
-    return NJT_CONF_OK;
-}
-
-static char *
-njt_dyn_kv_api_set(njt_conf_t *cf, njt_command_t *cmd, void *conf)
-{
-    njt_http_sendmsg_conf_t *smcf = conf;
-    smcf->kv_api_enabled = 1;
     return NJT_CONF_OK;
 }
 
@@ -921,12 +867,19 @@ error:
 
 int njt_dyn_kv_get(njt_str_t *key, njt_str_t *value)
 {
-    if (key->data == NULL)
+    uint32_t val_len = 0;
+    if (key == NULL || key->data == NULL || value == NULL)
     {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_dyn_kv_get got wrong key:value data");
         return NJT_ERROR;
     }
-    int ret = njet_iot_client_kv_get((void *)key->data, key->len, (void **)&value->data, (uint32_t *)&value->len, sendmsg_mqtt_ctx);
+    // type of njt_str_t.len is size_t, in 64bit arch, it is not uint32_t,  
+    // force type conversion will not work in big-endian arch, 
+    // and even in little-endian arch, if value->len is not initialized, only low bytes will be set
+    // so use temporary variable when invoke lib api, and then assign to value->len 
+    int ret = njet_iot_client_kv_get((void *)key->data, key->len, (void **)&value->data, &val_len, sendmsg_mqtt_ctx);
+    value->len=val_len;
+
     if (ret < 0)
     {
         return NJT_ERROR;

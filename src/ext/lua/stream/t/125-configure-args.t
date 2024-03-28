@@ -18,7 +18,7 @@ __DATA__
 === TEST 1: nginx configure
 --- stream_server_config
     content_by_lua_block {
-        ngx.say(ngx.config.nginx_configure())
+        njt.say(njt.config.nginx_configure())
     }
 --- stream_response_like chop
 ^\s*\-\-[^-]+

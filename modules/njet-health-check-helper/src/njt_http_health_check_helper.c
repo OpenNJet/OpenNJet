@@ -17,6 +17,8 @@
 #include <njt_http_sendmsg_module.h>
 #include "njt_hc_parser.h"
 #include "njt_hc_ctrl_parser.h"
+#include "njt_http_api_register_module.h"
+
 
 #define NJT_HTTP_SERVER_PORT        5688
 #define NJT_HTTP_HC_INTERVAL        5000
@@ -158,10 +160,6 @@ typedef struct {
 
 } njt_health_checker_t;
 
-typedef struct {
-    njt_uint_t hc_enabled;
-} njt_health_checker_conf_t;
-
 
 /*Structure used for holding http parser internal info*/
 struct njt_health_check_http_parse_s {
@@ -260,7 +258,7 @@ typedef struct njt_stream_health_check_conf_ctx_s {
 } njt_stream_health_check_conf_ctx_t;
 
 
-static char *njt_http_health_check_conf(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+// static char *njt_http_health_check_conf(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r);
 
@@ -4745,7 +4743,7 @@ static void njt_http_hc_api_read_data(njt_http_request_t *r){
         goto out;
     }
     uri = path->elts;
-    if (path->nelts < 2 || (uri[0].len != 1 || uri[0].data[0] != '1')
+    if (path->nelts < 2
         || (uri[1].len != 2 || njt_strncmp(uri[1].data, "hc", 2) != 0)) {
         hrc = HC_PATH_NOT_FOUND;
         goto out;
@@ -5066,10 +5064,11 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
     njt_helper_hc_api_data_t *api_data = NULL;
     njt_array_t *path;
 
-    njt_health_checker_conf_t * hc_flag = njt_http_get_module_loc_conf(r, njt_helper_health_check_module);
-    if(hc_flag == NULL  || hc_flag->hc_enabled == NJT_CONF_UNSET_UINT || hc_flag->hc_enabled == 0){
-        return NJT_DECLINED;
-    }
+    // njt_health_checker_conf_t * hc_flag = njt_http_get_module_loc_conf(r, njt_helper_health_check_module);
+    // if(hc_flag == NULL  || hc_flag->hc_enabled == NJT_CONF_UNSET_UINT || hc_flag->hc_enabled == 0){
+    //     return NJT_DECLINED;
+    // }
+
     hrc = HC_SUCCESS;
     if (r->method == NJT_HTTP_GET || r->method == NJT_HTTP_DELETE) {
         api_data = njt_pcalloc(r->pool, sizeof(njt_helper_hc_api_data_t));
@@ -5103,11 +5102,12 @@ static njt_int_t njt_http_health_check_conf_handler(njt_http_request_t *r) {
         goto out;
     }
     uri = path->elts;
-    if (path->nelts < 2 || (uri[0].len != 1 || uri[0].data[0] != '1')
+    if (path->nelts < 2 
         || (uri[1].len != 2 || njt_strncmp(uri[1].data, "hc", 2) != 0)) {
         hrc = HC_PATH_NOT_FOUND;
         goto out;
     }
+
     hrc = HC_PATH_NOT_FOUND;
     if (path->nelts == 2 && r->method == NJT_HTTP_GET) {
         hrc = njt_hc_api_get_hcs(r);
@@ -5704,64 +5704,22 @@ end:
     }
 }
 
-static char *njt_http_health_check_conf(njt_conf_t *cf, njt_command_t *cmd, void *conf) {
-//    njt_http_core_loc_conf_t *clcf;
-//    clcf = njt_http_conf_get_module_loc_conf(cf, njt_http_core_module);
-//    clcf->handler = njt_http_health_check_conf_handler;
-
-    njt_health_checker_conf_t *hflag;
-    hflag = njt_http_conf_get_module_loc_conf(cf, njt_helper_health_check_module);
-    hflag->hc_enabled = 1;
-    return NJT_CONF_OK;
-}
-
-
-static njt_command_t njt_helper_health_check_module_commands[] = {
-        {
-                njt_string("health_check_api"),
-                NJT_HTTP_LOC_CONF | NJT_CONF_NOARGS,
-                njt_http_health_check_conf,
-                0,
-                0,
-                NULL
-        },
-        njt_null_command
-};
-
 static njt_int_t   njt_ctrl_hc_postconfiguration(njt_conf_t *cf){
-    njt_http_core_main_conf_t  *cmcf;
-    njt_http_handler_pt        *h;
-    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
-    //njt_http_upstream_api_handler
-    h = njt_array_push(&cmcf->phases[NJT_HTTP_CONTENT_PHASE].handlers);
-    if (h == NULL) {
-        return NJT_ERROR;
-    }
+    njt_http_api_reg_info_t             h;
 
-    *h = njt_http_health_check_conf_handler;
+    njt_str_t  module_key = njt_string("/v1/hc");
+    njt_memzero(&h, sizeof(njt_http_api_reg_info_t));
+    h.key = &module_key;
+    h.handler = njt_http_health_check_conf_handler;
+    njt_http_api_module_reg_handler(&h);
 
     return NJT_OK;
 }
 
-static void * njt_ctrl_hc_create_loc_conf(njt_conf_t *cf){
-    njt_health_checker_conf_t *conf;
-    conf = njt_palloc(cf->pool,sizeof(njt_health_checker_conf_t));
-    if(!conf) return NULL;
-    conf->hc_enabled = NJT_CONF_UNSET_UINT;
-    return conf;
-
-}
-static char * njt_ctrl_hc_merge_loc_conf(njt_conf_t *cf, void *parent, void *child){
-    njt_health_checker_conf_t *prev = parent;
-    njt_health_checker_conf_t *conf = child;
-
-    njt_conf_merge_uint_value(conf->hc_enabled, prev->hc_enabled, 0);
-    return NJT_CONF_OK;
-}
 
 static njt_http_module_t njt_helper_health_check_module_ctx = {
         NULL,                                   /* preconfiguration */
-        njt_ctrl_hc_postconfiguration,                                   /* postconfiguration */
+        njt_ctrl_hc_postconfiguration,          /* postconfiguration */
 
         NULL,                                   /* create main configuration */
         NULL,                                  /* init main configuration */
@@ -5769,14 +5727,14 @@ static njt_http_module_t njt_helper_health_check_module_ctx = {
         NULL,                                  /* create server configuration */
         NULL,                                  /* merge server configuration */
 
-        njt_ctrl_hc_create_loc_conf,                                   /* create location configuration */
-        njt_ctrl_hc_merge_loc_conf                                    /* merge location configuration */
+        NULL,                                   /* create location configuration */
+        NULL                                    /* merge location configuration */
 };
 
 njt_module_t njt_helper_health_check_module = {
         NJT_MODULE_V1,
         &njt_helper_health_check_module_ctx,      /* module context */
-        njt_helper_health_check_module_commands,  /* module directives */
+        NULL,                                   /* module directives */
         NJT_HTTP_MODULE,                        /* module type */
         NULL,                                   /* init master */
         njt_hc_helper_module_init,              /* init module */

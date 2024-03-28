@@ -39,7 +39,14 @@ njt_event_connect_peer(njt_peer_connection_t *pc)
 
     type = (pc->type ? pc->type : SOCK_STREAM);
 
-    s = njt_socket(pc->sockaddr->sa_family, type, 0);
+#if (NJT_HAVE_SOCKET_CLOEXEC) // openresty patch
+    s = njt_socket(pc->sockaddr->sa_family, type | SOCK_CLOEXEC, 0);
+
+#else
+     s = njt_socket(pc->sockaddr->sa_family, type, 0);
+
+#endif // openresty patch end
+    // s = njt_socket(pc->sockaddr->sa_family, type, 0); openresty patch
 
     njt_log_debug2(NJT_LOG_DEBUG_EVENT, pc->log, 0, "%s socket %d",
                    (type == SOCK_STREAM) ? "stream" : "dgram", s);
@@ -92,6 +99,15 @@ njt_event_connect_peer(njt_peer_connection_t *pc)
 
         goto failed;
     }
+
+#if (NJT_HAVE_FD_CLOEXEC) // openresty patch
+    if (njt_cloexec(s) == -1) {
+        njt_log_error(NJT_LOG_ALERT, pc->log, njt_socket_errno,
+                      njt_cloexec_n " failed");
+
+        goto failed;
+    }
+#endif // openresty patch end
 
     if (pc->local) {
 
