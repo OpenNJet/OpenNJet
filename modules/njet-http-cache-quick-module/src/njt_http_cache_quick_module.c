@@ -952,49 +952,37 @@ void njt_http_cache_quick_start_success_handler(void *data){
 }
 
 void njt_http_cache_quick_parse_line(void *data, njt_int_t rc){
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                        "============parse line");
-}
-
-
-void njt_http_cache_quick_parse_header(void *data, njt_int_t rc){
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                        "============parse header");
-}
-
-
-void njt_http_cache_quick_parse_body(void *data, njt_int_t rc){
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                        "============parse body");
-}
-
-
-void njt_http_cache_quick_write_timeout_handler(void *data){
     njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                        "============write_timeout_handler");
-    njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_ERROR);
-}
 
-
-void njt_http_cache_quick_read_timeout_handler(void *data){
-    njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                        "============read_timeout_handler");
-    njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_ERROR);
-}
-
-
-void njt_http_cache_quick_read_event_result(void *data, njt_int_t rc){
-    njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                        "============read_event_result");
     switch (rc)
     {
         case NJT_ERROR:
             /*log the case and update the peer status.*/
             njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                        "read action error for cache_quick");
+                        "read line action error for cache_quick");
+            njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_ERROR);
+            return;
+        case NJT_DONE:
+            njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_ERROR);
+            return;
+        case NJT_ABORT:
+            njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_DOWNLOAD_ERROR);
+            return;
+        default:
+            break;
+    }
+}
+
+
+void njt_http_cache_quick_parse_header(void *data, njt_int_t rc){
+    njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
+
+    switch (rc)
+    {
+        case NJT_ERROR:
+            /*log the case and update the peer status.*/
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "read header action error for cache_quick");
             njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_ERROR);
             return;
         case NJT_DONE:
@@ -1008,12 +996,64 @@ void njt_http_cache_quick_read_event_result(void *data, njt_int_t rc){
     }
 }
 
-void njt_http_cache_quick_update_download_status(njt_http_cache_resouce_metainfo_t  *cache_info, cache_quick_status_t status){
-    njt_http_cache_quick_update_download_status_str(cache_info, CACHE_QUICK_STATUS_ERROR);
-    cache_info->client_util = NULL;
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                        "============update_download_status");
 
+void njt_http_cache_quick_parse_body(void *data, njt_int_t rc){
+    njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
+
+    switch (rc)
+    {
+        case NJT_ERROR:
+            /*log the case and update the peer status.*/
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "read body action error for cache_quick");
+            njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_ERROR);
+            return;
+        case NJT_DONE:
+            njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_OK);
+            return;
+        case NJT_ABORT:
+            njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_DOWNLOAD_ERROR);
+            return;
+        default:
+            break;
+    }
+}
+
+
+void njt_http_cache_quick_write_timeout_handler(void *data){
+    njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
+    njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_ERROR);
+}
+
+
+void njt_http_cache_quick_read_timeout_handler(void *data){
+    njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
+    njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_ERROR);
+}
+
+
+void njt_http_cache_quick_read_event_result(void *data, njt_int_t rc){
+    njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
+
+    switch (rc)
+    {
+        case NJT_ERROR:
+            /*log the case and update the peer status.*/
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "read action error for cache_quick");
+            njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_ERROR);
+            return;
+        case NJT_ABORT:
+            njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_DOWNLOAD_ERROR);
+            return;
+        default:
+            break;
+    }
+}
+
+void njt_http_cache_quick_update_download_status(njt_http_cache_resouce_metainfo_t  *cache_info, cache_quick_status_t status){
+    njt_http_cache_quick_update_download_status_str(cache_info, status);
+    cache_info->client_util = NULL;
 }
 
 //每一次write事件调用处理，rc为每次调用write事件的返回值，可供使用者状态更新
@@ -1023,8 +1063,7 @@ void njt_http_cache_quick_update_download_status(njt_http_cache_resouce_metainfo
 //其他，继续write事件循环
 void njt_http_cache_quick_write_event_result(void *data, njt_int_t rc){
     njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
-    njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                        "============write_event_result");
+
     if(rc == NJT_ERROR){
         njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_ERROR);
     }
@@ -1033,8 +1072,7 @@ void njt_http_cache_quick_write_event_result(void *data, njt_int_t rc){
 
 void njt_http_cache_quick_parse_header_data(void *data, njt_table_elt_t *h){
     njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                        "============parse_header_data key:%V   value:%V", &h->key, &h->value);
+
     //get content length header
     if (h->key.len == njt_strlen("Content-Length")
         && njt_strncasecmp(h->key.data, (u_char *) "Content-Length",
@@ -1047,9 +1085,6 @@ void njt_http_cache_quick_parse_header_data(void *data, njt_table_elt_t *h){
 void njt_http_cache_quick_parse_body_data(void *data, u_char *start, u_char *end){
     // njt_lvlhsh_query_t                  lhq;
     size_t                              n;
-
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                        "============parse_body_data");
 
     njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
 
@@ -1086,16 +1121,12 @@ void njt_http_cache_quick_parse_body_data(void *data, u_char *start, u_char *end
 
 void njt_http_cache_quick_ssl_handshake_success_handler(void *data){
     njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                        "============ssl_handshake_success_handler");
     njt_http_cache_quick_update_download_status_str(cache_info, CACHE_QUICK_STATUS_DOWNLOAD_ING);
 }
 
 
 void njt_http_cache_quick_ssl_handshake_fail_handler(void *data){
     njt_http_cache_resouce_metainfo_t *cache_info = (njt_http_cache_resouce_metainfo_t *)data;
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-                        "============ssl_handshake_fail_handler");
     njt_http_cache_quick_update_download_status(cache_info, CACHE_QUICK_STATUS_ERROR);
 }
 

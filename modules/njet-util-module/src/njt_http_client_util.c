@@ -79,9 +79,6 @@ njt_http_client_util_t *njt_http_client_util_create(NJT_HTTP_CLIENT_UTIL_METHOD 
         }
     }
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "============http client util create");
-
     pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
     if (pool == NULL) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
@@ -99,6 +96,7 @@ njt_http_client_util_t *njt_http_client_util_create(NJT_HTTP_CLIENT_UTIL_METHOD 
     }
 
     client_util->pool = pool;
+    client_util->method = method;
 
     if(NJT_HTTP_CLIENT_UTIL_METHOD_PUT == method || NJT_HTTP_CLIENT_UTIL_METHOD_POST == method){
         client_util->post_data.data = njt_palloc(pool, post_data.len);
@@ -160,6 +158,7 @@ njt_http_client_util_t *njt_http_client_util_create(NJT_HTTP_CLIENT_UTIL_METHOD 
 
     u.url.len = url.len - add;
     u.url.data = url.data + add;
+    
     u.default_port = port;
     u.uri_part = 1;
     u.no_resolve = 1;
@@ -175,8 +174,23 @@ njt_http_client_util_t *njt_http_client_util_create(NJT_HTTP_CLIENT_UTIL_METHOD 
         return NULL;
     }
 
-    client_util->metadata.host = u.host;
-    client_util->metadata.uri = u.uri;
+    client_util->metadata.host.data = njt_pcalloc(pool, u.host.len);
+    if(client_util->metadata.host.data == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "http_client_util host data malloc error, host:%V", &u.host);
+        njt_destroy_pool(pool);
+    }
+    njt_memcpy(client_util->metadata.host.data, u.host.data, u.host.len);
+    client_util->metadata.host.len = u.host.len;
+
+    client_util->metadata.uri.data = njt_pcalloc(pool, u.uri.len);
+    if(client_util->metadata.uri.data == NULL){
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
+                        "http_client_util uri data malloc error, uri:%V", &u.uri);
+        njt_destroy_pool(pool);
+    }
+    njt_memcpy(client_util->metadata.uri.data, u.uri.data, u.uri.len);
+    client_util->metadata.uri.len = u.uri.len;
 
     peer->sockaddr = u.addrs[0].sockaddr;
     peer->socklen = u.addrs[0].socklen;
@@ -365,9 +379,6 @@ njt_int_t njt_http_client_util_start(njt_http_client_util_t *client_util){
         return NJT_ERROR;
     }
 
-    njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                    "============http client util start");
-
 	//connect
     rc = njt_event_connect_peer(client_util->peer);
 
@@ -378,8 +389,13 @@ njt_int_t njt_http_client_util_start(njt_http_client_util_t *client_util){
         return NJT_ERROR;
     }
 
-    client_util->peer->connection->data = client_util->data;
+    client_util->peer->connection->data = client_util;
     client_util->peer->connection->pool = client_util->pool;
+
+
+    if(client_util->start_success_handler){
+        client_util->start_success_handler(client_util->data);
+    }
 
 #if (NJT_HTTP_SSL)
     if (client_util->ssl.ssl_enable && client_util->ssl.ssl->ctx && client_util->peer->connection->ssl == NULL) {
@@ -398,10 +414,9 @@ njt_int_t njt_http_client_util_start(njt_http_client_util_t *client_util){
     client_util->peer->connection->write->handler = njt_http_client_util_write_handler;
     client_util->peer->connection->read->handler = njt_http_client_util_read_handler;
 
-    // njt_add_timer(client_util->peer->connection->write, 5000);
-    // njt_add_timer(client_util->peer->connection->read, 5000);
-    if(client_util->start_success_handler){
-        client_util->start_success_handler(client_util->data);
+    if(rc == NJT_AGAIN){
+        njt_add_timer(client_util->peer->connection->write, 20000);
+        return NJT_OK;
     }
 
     njt_http_client_util_write_handler(client_util->peer->connection->write);
@@ -433,7 +448,7 @@ njt_http_client_util_prepare_search_param(njt_http_client_util_t *client_util, n
 
     query_param = client_util->metadata.query_params.elts;
     for(i = 0; i < client_util->metadata.query_params.nelts; i++){
-        tmp_size = query_param[i].key.len + query_param[i].value.len + 1;
+        tmp_size = query_param[i].key.len + query_param[i].value.len + 2;
         if(tmp_size > empty_size){
             njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0, "http client util request query param too long");
             break;
@@ -441,11 +456,14 @@ njt_http_client_util_prepare_search_param(njt_http_client_util_t *client_util, n
 
         if(i == 0){
             last = njt_snprintf(last, empty_size,
-                "?%V=%V" CRLF, &query_param[i].key, &query_param[i].value);
+                "?%V=%V", &query_param[i].key, &query_param[i].value);
         }else{
             last = njt_snprintf(last, empty_size,
-                "&%V=%V" CRLF, &query_param[i].key, &query_param[i].value);
+                "&%V=%V", &query_param[i].key, &query_param[i].value);
         }
+
+        used_size += tmp_size;
+        empty_size -= tmp_size;
     }    
 
     query_params->data = njt_pcalloc(client_util->pool, used_size);
@@ -456,6 +474,9 @@ njt_http_client_util_prepare_search_param(njt_http_client_util_t *client_util, n
 
     njt_memcpy(query_params->data, temp_buf, used_size);
     query_params->len = used_size;
+
+
+    njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0, "========query_params:%V", query_params);
 
     return NJT_OK;
 }
@@ -471,10 +492,9 @@ njt_http_client_util_http_write_handler(njt_event_t *wev) {
     njt_str_t                               search_param;
     njt_flag_t                              has_query_param = 0;
 
+
     c = wev->data;
     client_util = c->data;
-
-    njt_log_error(NJT_LOG_INFO, c->log, 0, "http client util request send.");
 
     if (client_util->metadata.send_buf == NULL) {
         client_util->metadata.send_buf = njt_create_temp_buf(client_util->pool, njt_pagesize);
@@ -524,9 +544,23 @@ njt_http_client_util_http_write_handler(njt_event_t *wev) {
         client_util->metadata.send_buf->last = njt_snprintf(client_util->metadata.send_buf->last,
                                                client_util->metadata.send_buf->end - client_util->metadata.send_buf->last, "Host: %V" CRLF,
                                                &client_util->metadata.host);
+
         client_util->metadata.send_buf->last = njt_snprintf(client_util->metadata.send_buf->last,
                                                client_util->metadata.send_buf->end - client_util->metadata.send_buf->last,
                                                "User-Agent: njet" CRLF);
+
+        if(NJT_HTTP_CLIENT_UTIL_METHOD_PUT == client_util->method || NJT_HTTP_CLIENT_UTIL_METHOD_POST == client_util->method){ 
+            // client_util->metadata.send_buf->last = njt_snprintf(client_util->metadata.send_buf->last,
+            //                                     client_util->metadata.send_buf->end - client_util->metadata.send_buf->last,
+            //                                     "Content-Type: application/json" CRLF);
+            // client_util->metadata.send_buf->last = njt_snprintf(client_util->metadata.send_buf->last,
+            //                                     client_util->metadata.send_buf->end - client_util->metadata.send_buf->last,
+            //                                     "Accept: application/json" CRLF);
+            client_util->metadata.send_buf->last = njt_snprintf(client_util->metadata.send_buf->last,
+                                               client_util->metadata.send_buf->end - client_util->metadata.send_buf->last,
+                                               "Content-Length: %d" CRLF, client_util->post_data.len);
+        }
+
 
         addtional_header = client_util->metadata.additinal_send_header.elts;
         for(i = 0; i < client_util->metadata.additinal_send_header.nelts; i++){
@@ -548,7 +582,7 @@ njt_http_client_util_http_write_handler(njt_event_t *wev) {
     size = client_util->metadata.send_buf->last - client_util->metadata.send_buf->pos;
 
     n = c->send(c, client_util->metadata.send_buf->pos,
-                client_util->metadata.send_buf->last - client_util->metadata.send_buf->pos);
+                size);
     if (n == NJT_ERROR) {
         return NJT_ERROR;
     }
@@ -564,6 +598,8 @@ njt_http_client_util_http_write_handler(njt_event_t *wev) {
                                "http client util write event handle error");
                 return NJT_ERROR;
             }
+
+            njt_log_error(NJT_LOG_INFO, c->log, 0, "http client util request send.");
             return NJT_DONE;
         }
     }
@@ -575,7 +611,7 @@ njt_http_client_util_http_write_handler(njt_event_t *wev) {
 
 static void njt_http_client_util_write_handler(njt_event_t *wev) {
     njt_connection_t                        *c;
-    njt_http_client_util_t    *client_util;
+    njt_http_client_util_t                  *client_util;
     njt_int_t                               rc;
     
     c = wev->data;
@@ -590,7 +626,7 @@ static void njt_http_client_util_write_handler(njt_event_t *wev) {
         njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
                        "http client util write action timeout");
 		if(client_util->write_timeout_handler){
-			client_util->write_timeout_handler(client_util);
+			client_util->write_timeout_handler(client_util->data);
 		}
 
         njt_http_client_util_close_connection(client_util->peer->connection);
@@ -610,26 +646,35 @@ static void njt_http_client_util_write_handler(njt_event_t *wev) {
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                        "http client util write action error");
         if(client_util->write_event_result_handler){
-            client_util->write_event_result_handler(client_util, rc);
+            client_util->write_event_result_handler(client_util->data, rc);
         }
 
         njt_http_client_util_close_connection(client_util->peer->connection);
         return;
     } else if (rc == NJT_DONE || rc == NJT_OK) {
         if(client_util->write_event_result_handler){
-            client_util->write_event_result_handler(client_util, rc);
+            client_util->write_event_result_handler(client_util->data, rc);
         }
 
-        njt_http_client_util_close_connection(client_util->peer->connection);
         return;
     } else {
         /*AGAIN*/
     }
 
+    if (!wev->ready){
+        if (!wev->timer_set) {
+            njt_add_timer(wev, 20000);
+        }
 
-    if (!wev->timer_set) {
-        njt_add_timer(wev, 20000);
+        return;
+    }else{
+        if (njt_handle_write_event(wev, 0)!= NJT_OK)
+        {
+            njt_http_client_util_close_connection(client_util->peer->connection);
+            return;
+        }
     }
+
 
     return;
 }
@@ -698,10 +743,8 @@ static njt_int_t njt_http_client_util_ssl_init_connection(njt_connection_t *c,
         c->ssl->handler = njt_http_client_util_ssl_handshake_handler;
         return NJT_OK;
     }
-    // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-    //     "==============directive set ssl handshake handler");
+
     return njt_http_client_util_ssl_handshake(c, client_util);
-//    return NJT_OK;
 }
 #endif
 
@@ -1146,7 +1189,7 @@ njt_http_client_util_process_headers(njt_http_client_util_t *client_util) {
 
                 //need call parse every header callback
                 if(client_util->parse_header_data_handler){
-                    client_util->parse_header_data_handler(client_util, h);
+                    client_util->parse_header_data_handler(client_util->data, h);
                 }
             }
 
@@ -1169,7 +1212,7 @@ njt_http_client_util_process_headers(njt_http_client_util_t *client_util) {
 
     //need call parse header end callback
     if(client_util->parse_header_handler){
-        client_util->parse_header_handler(client_util, NJT_OK);
+        client_util->parse_header_handler(client_util->data, NJT_OK);
     }
 
     /*TODO check if the first buffer is used out*/
@@ -1190,17 +1233,12 @@ njt_http_client_util_process_body(njt_http_client_util_t *client_util) {
 
     //need call parse body data callback
 	if(client_util->parse_body_data_handler){
-		client_util->parse_body_data_handler(client_util, b->pos, b->last);
+		client_util->parse_body_data_handler(client_util->data, b->pos, b->last);
 	}
 
     b->pos = b->last;
 
     if (hp->done) {
-        //need call parse body end callback
-        if(client_util->parse_body_handler){
-            client_util->parse_body_handler(client_util, NJT_OK);
-        }
-
         return NJT_DONE;
     }
     return NJT_OK;
@@ -1418,7 +1456,7 @@ njt_http_client_util_parse_status_line(njt_http_client_util_t *client_util) {
     /*begin to process headers*/
     //end parse line, need call parse line callback
     if(client_util->parse_line_handler){
-        client_util->parse_line_handler(client_util, NJT_OK);
+        client_util->parse_line_handler(client_util->data, NJT_OK);
     }
 
     hp->stage = NJT_HTTP_CLIENT_UTIL_PARSE_HEADER;
