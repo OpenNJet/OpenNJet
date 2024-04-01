@@ -888,6 +888,10 @@ njt_stream_lua_conf_lua_block_parse(njt_conf_t *cf, njt_command_t *cmd)
 
                 cf->args = saved;
 
+#if (NJT_HELPER_GO_DYNCONF) // by lcm
+                njt_conf_add_lua_block(cf->pool, cf);
+#endif
+
                 rv = (*cf->handler)(cf, cmd, cf->handler_conf);
                 if (rv == NJT_CONF_OK) {
                     goto done;
