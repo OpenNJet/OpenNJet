@@ -1135,7 +1135,12 @@ static void njt_http_cache_quick_download_timer_handler(njt_event_t *ev)
 
     //create client util
     njt_str_null(&post_data);
-    last = njt_snprintf(url_buffer, 1024, "%V%V", &cache_info->proxy_pass, &cache_info->location_name);
+    if(CACHE_QUICK_SERVER_SSL_TYPE_SSL == cache_info->ssl_type){
+        last = njt_snprintf(url_buffer, 1024, "https://%V%V", &cache_info->addr_port, &cache_info->location_name);
+    }else{
+        last = njt_snprintf(url_buffer, 1024, "http://%V%V", &cache_info->addr_port, &cache_info->location_name);
+    }
+    
     url.data = url_buffer;
     url.len = last - url_buffer;
 

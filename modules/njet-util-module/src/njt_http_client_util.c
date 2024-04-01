@@ -442,7 +442,24 @@ njt_http_client_util_prepare_search_param(njt_http_client_util_t *client_util, n
     size_t                          used_size = 0;
     size_t                          tmp_size;
 
-    last = njt_snprintf(temp_buf, empty_size, "GET %V", &client_util->metadata.uri);
+
+    switch (client_util->method)
+    {
+    case NJT_HTTP_CLIENT_UTIL_METHOD_GET:
+        last = njt_snprintf(temp_buf, empty_size, "GET %V", &client_util->metadata.uri);
+        break;
+    case NJT_HTTP_CLIENT_UTIL_METHOD_PUT:
+        last = njt_snprintf(temp_buf, empty_size, "PUT %V", &client_util->metadata.uri);
+        break;
+    case NJT_HTTP_CLIENT_UTIL_METHOD_POST:
+        last = njt_snprintf(temp_buf, empty_size, "POST %V", &client_util->metadata.uri);
+        break;
+    default:
+        njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0, "http client util method is not support");
+        return NJT_ERROR;
+    }
+
+
     used_size = last - temp_buf;
     empty_size -= used_size;
 
@@ -487,8 +504,6 @@ njt_http_client_util_http_write_handler(njt_event_t *wev) {
     njt_uint_t                              i;
     njt_http_client_header_param_t          *addtional_header;
     njt_str_t                               search_param;
-    njt_flag_t                              has_query_param = 0;
-
 
     c = wev->data;
     client_util = c->data;
@@ -502,39 +517,14 @@ njt_http_client_util_http_write_handler(njt_event_t *wev) {
             return NJT_ERROR;
         }
 
-        switch (client_util->method)
-        {
-        case NJT_HTTP_CLIENT_UTIL_METHOD_GET:
-            if(client_util->metadata.query_params.nelts > 0){
-                has_query_param = 1;
-                if(NJT_OK != njt_http_client_util_prepare_search_param(client_util, &search_param)){
-                    return NJT_ERROR;
-                }
-            }else{
-                njt_str_set(&search_param, "GET");
-            }
-            
-            break;
-        case NJT_HTTP_CLIENT_UTIL_METHOD_PUT:
-            njt_str_set(&search_param, "PUT ");
-            break;
-        case NJT_HTTP_CLIENT_UTIL_METHOD_POST:
-            njt_str_set(&search_param, "POST");
-            break;
-        default:
-            njt_str_set(&search_param, "GET");
-            break;
+        if(NJT_OK != njt_http_client_util_prepare_search_param(client_util, &search_param)){
+            return NJT_ERROR;
         }
 
-        if(has_query_param){
-            client_util->metadata.send_buf->last = njt_snprintf(client_util->metadata.send_buf->last,
+        client_util->metadata.send_buf->last = njt_snprintf(client_util->metadata.send_buf->last,
                                                 client_util->metadata.send_buf->end - client_util->metadata.send_buf->last, "%V HTTP/1.1" CRLF,
                                                 &search_param);
-        }else{
-            client_util->metadata.send_buf->last = njt_snprintf(client_util->metadata.send_buf->last,
-                                                client_util->metadata.send_buf->end - client_util->metadata.send_buf->last, "%V %V HTTP/1.1" CRLF,
-                                                &search_param, &client_util->metadata.uri);
-        }
+
         client_util->metadata.send_buf->last = njt_snprintf(client_util->metadata.send_buf->last,
                                                client_util->metadata.send_buf->end - client_util->metadata.send_buf->last,
                                                "Connection: close" CRLF);
@@ -557,7 +547,6 @@ njt_http_client_util_http_write_handler(njt_event_t *wev) {
                                                client_util->metadata.send_buf->end - client_util->metadata.send_buf->last,
                                                "Content-Length: %d" CRLF, client_util->post_data.len);
         }
-
 
         addtional_header = client_util->metadata.additinal_send_header.elts;
         for(i = 0; i < client_util->metadata.additinal_send_header.nelts; i++){
