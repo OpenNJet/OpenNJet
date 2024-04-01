@@ -599,6 +599,7 @@ static void njt_http_client_util_write_handler(njt_event_t *wev) {
     njt_connection_t                        *c;
     njt_http_client_util_t                  *client_util;
     njt_int_t                               rc;
+    // void                                    *custom_data;
     
     c = wev->data;
     client_util = c->data;
@@ -697,10 +698,14 @@ njt_http_client_util_ssl_handshake(njt_connection_t *c,
 
 static void njt_http_client_util_ssl_handshake_handler(njt_connection_t *c){
     njt_http_client_util_t    *client_util;
+    njt_int_t                 rc;
 
     client_util = c->data;
 
-    njt_http_client_util_ssl_handshake(c, client_util);
+    rc = njt_http_client_util_ssl_handshake(c, client_util);
+    if (rc != NJT_OK) {
+        njt_http_client_util_close_connection(client_util->peer->connection);
+    }
 }
 
 static njt_int_t njt_http_client_util_ssl_init_connection(njt_connection_t *c,
