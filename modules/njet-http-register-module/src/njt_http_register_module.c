@@ -1,9 +1,6 @@
 /*
  * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
  */
-// #include <njt_config.h>
-// #include <njt_core.h>
-// #include <njt_http_kv_module.h>
 
 #include <njt_core.h>
 #include <njt_http_kv_module.h>
@@ -13,8 +10,6 @@
 
 
 static void *njt_http_register_module_create_main_conf(njt_conf_t *cf);
-// static char *
-// njt_http_register_module_init_main_conf(njt_conf_t *cf, void *conf);
 static char *njt_http_register(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static njt_int_t njt_http_register_init_process(njt_cycle_t *cycle);
 static void njt_http_register_timer_handler(njt_event_t *ev);
@@ -40,7 +35,6 @@ static njt_http_module_t njt_http_register_module_ctx = {
     NULL,          /* postconfiguration */
 
     njt_http_register_module_create_main_conf, /* create main configuration */
-    // njt_http_register_module_init_main_conf, /* init main configuration */
     NULL, /* init main configuration */
 
     NULL, /* create server configuration */
@@ -81,7 +75,6 @@ typedef struct {
     size_t                          len;
     njt_peer_connection_t           *peer;
     njt_buf_t                       *send_buf;
-    // njt_str_t                       url;
     njt_http_register_main_conf_t        *ccf;
 } njt_http_register_data_t;
 
@@ -404,7 +397,6 @@ static njt_int_t njt_send_http_register_info(njt_http_register_main_conf_t *ccf,
         njt_destroy_pool(pool);
         return NJT_ERROR;
     }
-
 
     //create client util
     last = njt_snprintf(url_buffer, 1024, "http://%V:%d%V", &ccf->server, ccf->port, &ccf->location);

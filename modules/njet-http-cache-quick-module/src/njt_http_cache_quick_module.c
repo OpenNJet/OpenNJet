@@ -534,7 +534,6 @@ static int njt_http_cache_quicky_del_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
         }
     }
 
-
     if(res->rc == RPC_RC_OK){
         tmp_pool = njt_create_pool(NJT_MIN_POOL_SIZE, njt_cycle->log);
         if(tmp_pool == NULL){
@@ -583,7 +582,7 @@ static int njt_http_cache_quicky_del_dynloc_rpc_msg_handler(njt_dyn_rpc_res_t* r
 static njt_int_t njt_http_cache_item_add_dyn_location(
         njt_http_cache_resouce_metainfo_t *cache_info, njt_http_cache_quick_main_conf_t *cqmf){
     njt_int_t                       rc = NJT_OK;
-    cache_add_dyn_location_t            dyn_location;
+    cache_add_dyn_location_t        dyn_location;
     njt_pool_t                      *pool = NULL;
     njt_str_t                       tmp_str;
     njt_str_t                       *msg;
@@ -1091,30 +1090,6 @@ void njt_http_cache_quick_parse_body_data(void *data, u_char *start, u_char *end
     n = end - start;
     cache_info->current_size += n;
     cache_info->download_ratio = (cache_info->current_size * 1.0) / (cache_info->resource_size * 1.0) * 100;
-
-
-    // lhq.key = cache_info->crc32_str;
-    // lhq.key_hash = njt_murmur_hash2(lhq.key.data, lhq.key.len);
-    // lhq.proto = &njt_http_cache_quick_lvlhsh_proto;
-    // lhq.pool = cqmf->cache_pool;
-    // if(NJT_OK == njt_lvlhsh_find(&cqmf->resource_to_metainfo, &lhq)){
-    //     cache_info = lhq.value;
-    //     if(total_flag){
-    //         cache_info->resource_size = n;
-    //         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-    //             "update download process, file size:%uA", n);
-    //     }else{
-    //         cache_info->current_size += n;
-    //         cache_info->download_ratio = (cache_info->current_size * 1.0) / (cache_info->resource_size * 1.0) * 100;
-    //     }
-
-    //     return;
-    // }else{
-    //     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-    //         "update download process, not find cache info, crc32:%V", &cache_info->crc32_str);
-        
-    //     return;
-    // }
 
     return;    
 }

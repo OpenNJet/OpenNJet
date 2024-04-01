@@ -147,7 +147,6 @@ typedef struct njt_http_client_util_parse_s {
  *  (IN) custom_data: custom data, self function can get the data； use client_util->data
  *  (OUT) if has error, return NULL; if success, return client_util object
 */
-
 njt_http_client_util_t *njt_http_client_util_create(NJT_HTTP_CLIENT_UTIL_METHOD method,
     njt_str_t url, njt_str_t post_data, void *custom_data);
 
@@ -157,9 +156,7 @@ njt_int_t njt_http_client_util_add_header(njt_http_client_util_t *client_util, n
 //if method is get, you can add query_param
 njt_int_t njt_http_client_util_add_query_param(njt_http_client_util_t *client_util, njt_str_t key, njt_str_t value);
 
-/*
- * start http client request, if has error, will free client_util pool memory
-*/
+// start http client request, if has error, will free client_util pool memory
 njt_int_t njt_http_client_util_start(njt_http_client_util_t *client_util);
 
 #endif //NJET_MAIN_NJT_HTTP_CLIENT_UTIL_H

@@ -340,7 +340,7 @@ njt_int_t njt_http_client_util_add_query_param(njt_http_client_util_t *client_ut
     param_info = njt_array_push(&client_util->metadata.query_params);
     if(param_info == NULL){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "http_client_util header array push error");
+                "http_client_util query param array push error");
         return NJT_ERROR;
     }
 
@@ -348,14 +348,14 @@ njt_int_t njt_http_client_util_add_query_param(njt_http_client_util_t *client_ut
     param_info->key.data = njt_pcalloc(client_util->pool, key.len);
     if(param_info->key.data == NULL){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "http_client_util header data malloc error");
+                "http_client_util query param key malloc error");
         return NJT_ERROR;
     }
 
     param_info->value.data = njt_pcalloc(client_util->pool, value.len);
     if(param_info->value.data == NULL){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                "http_client_util header data malloc error");
+                "http_client_util query param data malloc error");
         return NJT_ERROR;
     }
 
@@ -450,7 +450,7 @@ njt_http_client_util_prepare_search_param(njt_http_client_util_t *client_util, n
     for(i = 0; i < client_util->metadata.query_params.nelts; i++){
         tmp_size = query_param[i].key.len + query_param[i].value.len + 2;
         if(tmp_size > empty_size){
-            njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0, "http client util request query param too long");
+            njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0, "http client util query param too long");
             break;
         }
 
@@ -475,9 +475,6 @@ njt_http_client_util_prepare_search_param(njt_http_client_util_t *client_util, n
     njt_memcpy(query_params->data, temp_buf, used_size);
     query_params->len = used_size;
 
-
-    njt_log_error(NJT_LOG_WARN, njt_cycle->log, 0, "========query_params:%V", query_params);
-
     return NJT_OK;
 }
 
@@ -501,7 +498,7 @@ njt_http_client_util_http_write_handler(njt_event_t *wev) {
         if (client_util->metadata.send_buf == NULL) {
             /*log the send buf allocation failure*/
             njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                           "malloc failure of the send buffer");
+                           "http client util malloc failure of the send buffer");
             return NJT_ERROR;
         }
 
@@ -623,7 +620,7 @@ static void njt_http_client_util_write_handler(njt_event_t *wev) {
             njt_del_timer(wev);
         }
 
-        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_INFO, c->log, 0,
                        "http client util write action timeout");
 		if(client_util->write_timeout_handler){
 			client_util->write_timeout_handler(client_util->data);
@@ -726,20 +723,19 @@ static njt_int_t njt_http_client_util_ssl_init_connection(njt_connection_t *c,
     // }
     if (njt_ssl_create_connection(client_util->ssl.ssl, c,
                                   NJT_SSL_BUFFER | NJT_SSL_CLIENT) != NJT_OK) {
-        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0, "http client util ssl init create connection ");
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "http client util ssl init create connection ");
         return NJT_ERROR;
     }
 
     c->sendfile = 0;
-    c->log->action = "SSL handshaking to hc";
+    c->log->action = "SSL handshaking of http client util";
 
     rc = njt_ssl_handshake(c);
     if (rc == NJT_AGAIN) {
         if (!c->write->timer_set) {
             njt_add_timer(c->write, 20000);
         }
-        njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0,
-            "set ssl handshake handler");
+
         c->ssl->handler = njt_http_client_util_ssl_handshake_handler;
         return NJT_OK;
     }
@@ -764,7 +760,7 @@ static void njt_http_client_util_read_handler(njt_event_t *rev) {
             njt_del_timer(rev);
         }
         /*log the case and update the peer status.*/
-        njt_log_debug0(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
+        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
                        "http client util read action timeout");
 
 		if(client_util->read_timeout_handler){
