@@ -689,10 +689,6 @@ njt_http_client_util_ssl_handshake(njt_connection_t *c,
 		client_util->ssl_handshake_fail_handler(client_util->data);
 	}
 
-    if (c->write->timedout) {
-        return NJT_ERROR;
-    }
-
     return NJT_ERROR;
 }
 
