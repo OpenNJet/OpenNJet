@@ -231,8 +231,6 @@ static njt_int_t njt_dyn_auth_set_auth_config(njt_http_core_loc_conf_t *clcf,
     cf->pool = pool;
     cf->temp_pool = pool;
     cf->dynamic = 1;
-    ccv.cf = cf;
-    
     alcf->dynamic = 1;
     alcf->pool = pool;
 
@@ -256,8 +254,11 @@ static njt_int_t njt_dyn_auth_set_auth_config(njt_http_core_loc_conf_t *clcf,
     }
     njt_memcpy(tmp_str.data, data->auth_basic.data,  data->auth_basic.len);
 
+    njt_memzero(&ccv, sizeof(njt_http_compile_complex_value_t));
+    ccv.cf = cf;
     ccv.value = &tmp_str;
     ccv.complex_value = alcf->realm;
+
     if (njt_http_compile_complex_value(&ccv) != NJT_OK) {
         end = njt_snprintf(data_buf,sizeof(data_buf) - 1," realm compile error");
         rpc_data_str.len = end - data_buf;
@@ -266,6 +267,8 @@ static njt_int_t njt_dyn_auth_set_auth_config(njt_http_core_loc_conf_t *clcf,
         goto auth_config_fail;
     }
 
+    njt_memzero(&ccv, sizeof(njt_http_compile_complex_value_t));
+    ccv.cf = cf;
     if(data->auth_type.len == 4){
         alcf->user_file = njt_pcalloc(pool, sizeof(njt_http_complex_value_t));
         if (alcf->user_file == NULL) {
@@ -276,6 +279,8 @@ static njt_int_t njt_dyn_auth_set_auth_config(njt_http_core_loc_conf_t *clcf,
             goto auth_config_fail;
         }
 
+        ccv.zero = 1;
+        ccv.conf_prefix = 1;
         ccv.complex_value = alcf->user_file;
     }
     else{
