@@ -392,7 +392,6 @@ njt_int_t njt_http_client_util_start(njt_http_client_util_t *client_util){
     client_util->peer->connection->data = client_util;
     client_util->peer->connection->pool = client_util->pool;
 
-
     if(client_util->start_success_handler){
         client_util->start_success_handler(client_util->data);
     }
@@ -414,12 +413,17 @@ njt_int_t njt_http_client_util_start(njt_http_client_util_t *client_util){
     client_util->peer->connection->write->handler = njt_http_client_util_write_handler;
     client_util->peer->connection->read->handler = njt_http_client_util_read_handler;
 
-    if(rc == NJT_AGAIN){
-        njt_add_timer(client_util->peer->connection->write, 20000);
-        return NJT_OK;
-    }
+    // if(rc == NJT_AGAIN){
+    //     njt_add_timer(client_util->peer->connection->write, 20000);
+    //     return NJT_OK;
+    // }
 
-    njt_http_client_util_write_handler(client_util->peer->connection->write);
+    njt_add_timer(client_util->peer->connection->write, 20000);
+    njt_add_timer(client_util->peer->connection->read, 20000);
+
+    if (rc == NJT_OK) {
+        njt_http_client_util_write_handler(client_util->peer->connection->write);
+    }
 
     return NJT_OK;
 }
@@ -1480,6 +1484,7 @@ njt_http_client_util_close_connection(njt_connection_t *c)
     c->destroyed = 1;
 
     pool = c->pool;
+    c->pool = NULL;
 
     njt_close_connection(c);
 
