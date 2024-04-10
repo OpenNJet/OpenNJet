@@ -921,6 +921,7 @@ int njt_db_kv_get(njt_str_t *key, njt_str_t *value)
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_db_kv_get got wrong key:value data");
         return NJT_ERROR;
     }
+
     // type of njt_str_t.len is size_t, in 64bit arch, it is not uint32_t,  
     // force type conversion will not work in big-endian arch, 
     // and even in little-endian arch, if value->len is not initialized, only low bytes will be set

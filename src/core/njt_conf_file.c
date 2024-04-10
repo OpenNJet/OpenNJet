@@ -531,7 +531,7 @@ invalid:
 static njt_int_t
 njt_conf_read_token(njt_conf_t *cf)
 {
-    u_char      *start, ch, *src, *dst;
+    u_char      *start, ch, *src, *dst, need_space_ch;
     off_t        file_size;
     size_t       len;
     ssize_t      n, size;
@@ -777,6 +777,7 @@ njt_conf_read_token(njt_conf_t *cf)
                 if (ch == '"') {
                     d_quoted = 0;
                     need_space = 1;
+                    need_space_ch = ch;
                     found = 1;
                 }
 
@@ -784,6 +785,7 @@ njt_conf_read_token(njt_conf_t *cf)
                 if (ch == '\'') {
                     s_quoted = 0;
                     need_space = 1;
+                    need_space_ch = ch;
                     found = 1;
                 }
 
@@ -851,7 +853,11 @@ njt_conf_read_token(njt_conf_t *cf)
                     return NJT_ERROR;
                 }
 
-                njt_memcpy(word->data,start - need_space,word->len);
+                if (need_space) {
+                    *(word->data) = need_space_ch;
+                }
+
+                njt_memcpy(word->data + need_space, start, word->len - need_space);
                 //word->data = start - need_space;
                
 

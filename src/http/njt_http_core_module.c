@@ -2893,6 +2893,7 @@ njt_http_set_del_variable_flag(njt_http_variable_t *fv)
                 njt_pfree(cmcf->variables.pool,v[fv->index].name.data);
                 v[fv->index].name.data = NULL;
                 v[fv->index].name.len =  0;
+                v[fv->index].get_handler = NULL;
 
         } else {  //zyg 正常不会走到这里。走到这里表示，变量被提前删除了，或名字变了。
             njt_log_error(NJT_LOG_WARN, njt_cycle->pool->log, 0, "njt_http_set_del_variable_flag can't find variable %V by index!",&fv->name);
@@ -2905,6 +2906,7 @@ njt_http_set_del_variable_flag(njt_http_variable_t *fv)
                 njt_pfree(cmcf->variables.pool,v[i].name.data);
                 v[i].name.data = NULL;
                 v[i].name.len =  0;
+                v[i].get_handler = NULL;
                 break;
             }
         }
@@ -2936,16 +2938,18 @@ njt_http_set_del_variables_keys_flag(njt_http_variable_t *fv)
     } else {
        for (i = 0; i < cmcf->variables_keys->keys.nelts; i++) {
         v = key[i].value;
-        if( v->index != fv->index ) {
+        if(fv != v) {
             continue;
         }
-        if(v != NULL && v->name.data != NULL) {
+         if(v != NULL && v->name.data != NULL) {
             njt_pfree(cmcf->dyn_var_pool,v->name.data);
             v->name.data = NULL;
             v->name.len = 0;
             v->index = 0;
+            v->get_handler = NULL;
         }
-        return;
+         return;
+        
        }
        if (i == cmcf->variables_keys->keys.nelts) {
             njt_log_error(NJT_LOG_WARN, njt_cycle->pool->log, 0, "njt_http_set_del_variables_keys_flag can't find variable %V by index!",&fv->name);
@@ -2954,7 +2958,7 @@ njt_http_set_del_variables_keys_flag(njt_http_variable_t *fv)
 }
 
 
-static void njt_http_refresh_variables_keys(){
+ void njt_http_refresh_variables_keys(){
 	
     njt_uint_t                  i,count;
     njt_http_variable_t        *v,*newv;
@@ -3058,14 +3062,9 @@ static njt_int_t njt_http_rewrite_delete_dyn_var(njt_http_rewrite_loc_conf_t *rl
 	ip = rlcf->var_names.elts;
 
 	for(i=0; i < rlcf->var_names.nelts; i++) {   //var_names，location 上内存不需要释放。
-		ip[i]->ref_count--;
-		//printf("%s",ip[i]->name.data);
-		if( (ip[i]->ref_count == 0 && ip[i]->flags &  NJT_HTTP_DYN_VAR) ){
-			//printf("%s",ip[i]->name.data);
-			njt_http_set_del_variable_flag(ip[i]);
-			njt_http_set_del_variables_keys_flag(ip[i]);
-			rf = 1;
-		}
+        if (njt_http_del_variable(ip[i]) == NJT_OK) {
+            rf = 1;
+        }
 	}
 	return rf;
 
@@ -6689,4 +6688,18 @@ void njt_http_server_delete_dyn_var(njt_http_core_srv_conf_t *cscf) {
 	if(rf == 1 || rf2 == 1) {
 		njt_http_refresh_variables_keys();
 	}
+}
+
+
+njt_int_t njt_http_del_variable(njt_http_variable_t *fv) {
+        if(fv == NULL) {
+            return NJT_ERROR;
+        }
+        fv->ref_count--;
+		if( (fv->ref_count == 0 && fv->flags &  NJT_HTTP_DYN_VAR) ){
+			njt_http_set_del_variable_flag(fv);
+			njt_http_set_del_variables_keys_flag(fv);
+			return NJT_OK;
+		}
+        return NJT_ERROR;
 }

@@ -123,6 +123,21 @@ static bool parse_httpmap_maps_item(njt_pool_t *pool, parse_state_t *parse_state
             }
             out->is_keyTo_set = 1;
             parse_state->current_key = saved_key;
+        } else if (current_string_is(parse_state, "type")) {
+            js2c_check_field_set(out->is_type_set);
+            parse_state->current_token += 1;
+            const char* saved_key = parse_state->current_key;
+            parse_state->current_key = "type";
+            js2c_null_check();
+            int token_size =  CURRENT_STRING_LENGTH(parse_state) ;
+            ((&out->type))->data = (u_char*)njt_pcalloc(pool, (size_t)(token_size + 1));
+            js2c_malloc_check(((&out->type))->data);
+            ((&out->type))->len = token_size;
+            if (builtin_parse_string(pool, parse_state, (&out->type), 0, ((&out->type))->len, err_ret)) {
+                return true;
+            }
+            out->is_type_set = 1;
+            parse_state->current_key = saved_key;
         } else if (current_string_is(parse_state, "values")) {
             js2c_check_field_set(out->is_values_set);
             parse_state->current_token += 1;
@@ -176,6 +191,19 @@ static bool parse_httpmap_maps_item(njt_pool_t *pool, parse_state_t *parse_state
     if (!out->is_values_set) {
         LOG_ERROR_JSON_PARSE(MISSING_REQUIRED_FIELD_ERR, parse_state->current_key, CURRENT_TOKEN(parse_state).start, "Missing required field in '%s': values", parse_state->current_key);
         return true;
+    }
+    // set default
+    if (!out->is_type_set) {
+        size_t token_size = strlen("");
+        (out->type).data = (u_char*)njt_pcalloc(pool, token_size + 1);
+        js2c_malloc_check((out->type).data);
+        (out->type).len = token_size;
+        if (out->type.len == 0) {
+            (out->type).data[0] = 0;
+        }
+        if (token_size > 0) {
+            njt_memcpy(out->type.data, "", token_size);
+        }
     }
     // set default
     if (!out->is_isVolatile_set) {
@@ -251,6 +279,11 @@ static void get_json_length_httpmap_maps_item_keyFrom(njt_pool_t *pool, httpmap_
 }
 
 static void get_json_length_httpmap_maps_item_keyTo(njt_pool_t *pool, httpmap_maps_item_keyTo_t *out, size_t *length, njt_int_t flags) {
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    *length += dst->len + 2; //  "str" 
+}
+
+static void get_json_length_httpmap_maps_item_type(njt_pool_t *pool, httpmap_maps_item_type_t *out, size_t *length, njt_int_t flags) {
     njt_str_t *dst = handle_escape_on_write(pool, out);
     *length += dst->len + 2; //  "str" 
 }
@@ -363,6 +396,15 @@ static void get_json_length_httpmap_maps_item(njt_pool_t *pool, httpmap_maps_ite
         count++;
     }
     omit = 0;
+    omit = out->is_type_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->type.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        *length += (4 + 3); // "type": 
+        get_json_length_httpmap_maps_item_type(pool, (&out->type), length, flags);
+        *length += 1; // ","
+        count++;
+    }
+    omit = 0;
     omit = out->is_values_set ? 0 : 1;
     omit = (flags & OMIT_NULL_ARRAY) && (out->values) == NULL ? 1 : omit;
     if (omit == 0) {
@@ -459,6 +501,10 @@ httpmap_maps_item_keyTo_t* get_httpmap_maps_item_keyTo(httpmap_maps_item_t *out)
     return &out->keyTo;
 }
 
+httpmap_maps_item_type_t* get_httpmap_maps_item_type(httpmap_maps_item_t *out) {
+    return &out->type;
+}
+
 httpmap_maps_item_values_t* get_httpmap_maps_item_values(httpmap_maps_item_t *out) {
     return out->values;
 }
@@ -485,6 +531,10 @@ void set_httpmap_maps_item_keyFrom(httpmap_maps_item_t* obj, httpmap_maps_item_k
 void set_httpmap_maps_item_keyTo(httpmap_maps_item_t* obj, httpmap_maps_item_keyTo_t* field) {
     njt_memcpy(&obj->keyTo, field, sizeof(njt_str_t));
     obj->is_keyTo_set = 1;
+}
+void set_httpmap_maps_item_type(httpmap_maps_item_t* obj, httpmap_maps_item_type_t* field) {
+    njt_memcpy(&obj->type, field, sizeof(njt_str_t));
+    obj->is_type_set = 1;
 }
 void set_httpmap_maps_item_values_item_valueFrom(httpmap_maps_item_values_item_t* obj, httpmap_maps_item_values_item_valueFrom_t* field) {
     njt_memcpy(&obj->valueFrom, field, sizeof(njt_str_t));
@@ -555,6 +605,13 @@ static void to_oneline_json_httpmap_maps_item_keyFrom(njt_pool_t *pool, httpmap_
 }
 
 static void to_oneline_json_httpmap_maps_item_keyTo(njt_pool_t *pool, httpmap_maps_item_keyTo_t *out, njt_str_t *buf, njt_int_t flags) {
+    u_char* cur = buf->data + buf->len;
+    njt_str_t *dst = handle_escape_on_write(pool, out);
+    cur = njt_sprintf(cur, "\"%V\"", dst);
+    buf->len = cur - buf->data;
+}
+
+static void to_oneline_json_httpmap_maps_item_type(njt_pool_t *pool, httpmap_maps_item_type_t *out, njt_str_t *buf, njt_int_t flags) {
     u_char* cur = buf->data + buf->len;
     njt_str_t *dst = handle_escape_on_write(pool, out);
     cur = njt_sprintf(cur, "\"%V\"", dst);
@@ -698,6 +755,17 @@ static void to_oneline_json_httpmap_maps_item(njt_pool_t *pool, httpmap_maps_ite
         cur = njt_sprintf(cur, "\"keyTo\":");
         buf->len = cur - buf->data;
         to_oneline_json_httpmap_maps_item_keyTo(pool, (&out->keyTo), buf, flags);
+        cur = buf->data + buf->len;
+        cur = njt_sprintf(cur, ",");
+        buf->len ++;
+    }
+    omit = 0;
+    omit = out->is_type_set ? 0 : 1;
+    omit = (flags & OMIT_NULL_STR) && (out->type.data) == NULL ? 1 : omit;
+    if (omit == 0) {
+        cur = njt_sprintf(cur, "\"type\":");
+        buf->len = cur - buf->data;
+        to_oneline_json_httpmap_maps_item_type(pool, (&out->type), buf, flags);
         cur = buf->data + buf->len;
         cur = njt_sprintf(cur, ",");
         buf->len ++;
