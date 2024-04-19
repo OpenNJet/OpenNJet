@@ -604,6 +604,8 @@ njt_int_t njt_http_location_cleanup_add(njt_http_core_loc_conf_t *clcf, void(*ha
 void njt_http_location_delete_dyn_var(njt_http_core_loc_conf_t *clcf);
 void njt_http_server_delete_dyn_var(njt_http_core_srv_conf_t *cscf);
 njt_int_t njt_http_add_location_pre_process(njt_conf_t *cf,njt_queue_t **locations,njt_pool_t *pool);
+njt_int_t njt_http_del_variable(njt_http_variable_t *fv);
+void njt_http_refresh_variables_keys();
 #endif
 //end
 
