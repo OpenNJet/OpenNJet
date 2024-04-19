@@ -141,8 +141,9 @@ static njt_int_t  njt_dyn_sts_get_filter_token(njt_str_t *str, njt_str_t *filter
     u_char *p, *end, tmpchar;
     njt_uint_t i;
 
-    if (!str || str->len == 0) {
+    if (!str || !str->data || str->len == 0) {
         njt_str_set(filter_token, "");
+        return NJT_OK;
     }
     end = str->data + str->len;
     for (i = 0; str->data[i] == ' ' && i < str->len; i++);
@@ -176,7 +177,7 @@ static njt_int_t  njt_dyn_sts_get_filter_key_name(njt_str_t *filter_str, njt_str
     njt_str_t tmpstr;
     njt_int_t rc;
 
-    if (!filter_str || filter_str->len == 0) {
+    if (!filter_str || !filter_str->data || filter_str->len == 0) {
         return NJT_ERROR;
     }
     tmpstr.data = filter_str->data;
@@ -304,6 +305,7 @@ static njt_int_t  njt_dyn_sts_update_filters(njt_pool_t *pool, njt_stream_server
         stscf->filter_keys = filter_keys;
         for (i = 0;i < filters->nelts;i++) {
             filter_str = get_dynsts_servers_item_server_traffic_status_filter_by_set_key_item(filters, i);
+           // " aa$remote_add bb  $server_name"
             rc = njt_dyn_sts_check_filter_variable(filter_str, rpc_result);
             if (rc != NJT_OK) {
                 continue;
