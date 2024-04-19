@@ -62,17 +62,17 @@ flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --build=$GIT_TAG --with-stream --
 if [ "$DEBUG" = "True" ]; then
     LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm "
     if [ "$WITH_TONGSUO_8_4" = "True" ]; then
-        CC_OPT="-O0 -ggdb -Wno-deprecated-declarations -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
+        CC_OPT="-O0 -ggdb -Wno-deprecated-declarations -Wno-implicit-fallthrough -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
     else
-        CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
+        CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -Wno-implicit-fallthrough -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
     fi
     flags="$flags --with-debug"
 else 
     LD_OPT="-ldl -lm -Wl,-z,relro -Wl,-z,now -pie"
     if [ "$WITH_TONGSUO_8_4" = "True" ]; then
-        CC_OPT="-O2 -g -pipe -Wall -Wno-deprecated-declarations -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC"
+        CC_OPT="-O2 -g -pipe -Wall -Wno-deprecated-declarations -Wno-implicit-fallthrough  -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC"
     else
-        CC_OPT="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC"
+        CC_OPT="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2  -Wno-implicit-fallthrough -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC"
     fi
 fi
 

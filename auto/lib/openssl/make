@@ -58,7 +58,7 @@ END
 
 $OPENSSL/.openssl/include/openssl/ssl.h:	$NJT_MAKEFILE
 	cd $OPENSSL \\
-	&& if [ ! -f Makefile ]; then ./config --prefix=$njt_prefix  $openssl_build_opt  no-threads $OPENSSL_OPT ; fi \\
+	&& if [ ! -f Makefile ]; then ./config  no-tests --prefix=$njt_prefix  $openssl_build_opt  no-threads $OPENSSL_OPT ; fi \\
 	&& \$(MAKE) \\
 	&& \$(MAKE) $make_opt
 
