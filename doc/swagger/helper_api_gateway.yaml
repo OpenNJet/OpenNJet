@@ -1,0 +1,602 @@
+openapi: 3.0.3
+info:
+  title: api gateway
+  description: api网关提供的用户及角色授权的API
+  version: 1.0.0
+
+servers:
+  - url: '/api_gateway'
+paths:
+  /identities/users:
+    post:
+      tags: 
+        - user/group/role
+      summary: 新增用户
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/userData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+        '500':
+          description: Internal Server Error
+  /identities/users/{id}:  
+    get:
+      tags: 
+        - user/group/role
+      summary: 用户查询
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/userData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - user/group/role
+      summary: 修改用户
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/userData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+    delete:
+      tags: 
+        - user/group/role
+      summary: 删除用户
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error    
+  /identities/users/name/{name}:  
+    get:
+      tags: 
+        - user/group/role
+      summary: 通过用户名查询用户
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+          description: 用户名
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/userData'
+        '500':
+          description: Internal Server Error      
+  /identities/users/{id}/groups:  
+    get:
+      tags: 
+        - user/group/role
+      summary: 获取用户与组的关系
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/userGroupRelData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - user/group/role
+      summary: 修改用户与组的关系
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/userGroupRelData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+  /identities/groups:
+    post:
+      tags: 
+        - user/group/role
+      summary: 新增用户组
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/groupData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+        '500':
+          description: Internal Server Error
+  /identities/groups/{id}:  
+    get:
+      tags: 
+        - user/group/role
+      summary: 用户组查询
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户组ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/groupData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - user/group/role
+      summary: 修改用户组
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户组ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/groupData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+    delete:
+      tags: 
+        - user/group/role
+      summary: 删除用户组
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error    
+  /identities/groups/name/{name}:  
+    get:
+      tags: 
+        - user/group/role
+      summary: 通过组名查询用户组
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+          description: 用户组名称
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/groupData'
+        '500':
+          description: Internal Server Error      
+  /identities/groups/{id}/roles:  
+    get:
+      tags: 
+        - user/group/role
+      summary: 获取组与角色的关系
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户组ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/groupRoleRelData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - user/group/role
+      summary: 修改组与角色的关系
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户组ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/groupRoleRelData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+  /identities/roles:
+    post:
+      tags: 
+        - user/group/role
+      summary: 新增角色
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/roleData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+        '500':
+          description: Internal Server Error
+  /identities/roles/{id}:  
+    get:
+      tags: 
+        - user/group/role
+      summary: 角色查询
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 角色ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/roleData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - user/group/role
+      summary: 修改角色
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 角色ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/roleData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+    delete:
+      tags: 
+        - user/group/role
+      summary: 删除角色
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 角色ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error    
+components:
+  schemas:
+    userData:
+      title: user data
+      type: object
+      required: ["name", "password"]
+      properties:
+        name:
+          type: string 
+        password: 
+          type: string 
+          format: password
+        email: 
+          type: string
+          format: email
+          example: "test@test.com"
+        mobile: 
+          type: string
+          example: "13312345678"
+    groupData:
+      title: group data
+      type: object
+      required: ["name", "desc"]
+      properties:
+        name:
+          type: string 
+        desc: 
+          type: string 
+    roleData:
+      title: group data
+      type: object
+      required: ["name", "desc"]
+      properties:
+        name:
+          type: string 
+        desc: 
+          type: string 
+    userGroupRelData:
+      title: user group rel data
+      type: object
+      required: ["groups"]
+      properties:
+        groups:
+          type: array 
+          items: 
+            type: integer
+    groupRoleRelData:
+      title: group role rel data
+      type: object
+      required: ["roles"]
+      properties:
+        groups:
+          type: array 
+          items: 
+            type: integer
+
