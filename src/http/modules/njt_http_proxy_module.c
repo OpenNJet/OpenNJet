@@ -10,6 +10,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 #include <njt_http_proxy_module.h>
+#include <njt_http_util.h>
 
 // #if (NJT_HTTP_FAULT_INJECT)
 #include <njt_http_fault_inject_module.h>
@@ -132,7 +133,7 @@ static char *
 njt_http_proxy_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 #endif
 
-static void njt_http_proxy_set_vars(njt_url_t *u, njt_http_proxy_vars_t *v);
+ 
 
 
 static njt_conf_post_t  njt_http_proxy_lowat_post =
@@ -4225,7 +4226,6 @@ njt_http_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     url = &value[1];
 
     n = njt_http_script_variables_count(url);
-
     if (n) {
 
         njt_memzero(&sc, sizeof(njt_http_script_compile_t));
@@ -4245,7 +4245,9 @@ njt_http_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #if (NJT_HTTP_SSL)
         plcf->ssl = 1;
 #endif
-
+#if(NJT_HTTP_DYN_PROXY_PASS)
+   plcf->ori_url = *url;
+#endif
         return NJT_CONF_OK;
     }
 
@@ -4312,6 +4314,9 @@ njt_http_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     plcf->url = *url;
+#if(NJT_HTTP_DYN_PROXY_PASS)
+   plcf->ori_url = *url;
+#endif
 
     return NJT_CONF_OK;
 }
@@ -5288,7 +5293,7 @@ skip:
 #endif
 
 
-static void
+ void
 njt_http_proxy_set_vars(njt_url_t *u, njt_http_proxy_vars_t *v)
 {
     if (u->family != AF_UNIX) {
@@ -5375,3 +5380,6 @@ njt_http_proxy_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #endif
 }
 #endif
+
+
+
