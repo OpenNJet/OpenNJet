@@ -459,8 +459,8 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
     proxy_vars = plcf->vars;
 
     
-    //schema.len = add;
-    //schema.data = url->data;
+    schema.len = add;
+    schema.data = url->data;
     proxy_vars.key_start = schema;
     njt_http_proxy_set_vars(&u, &proxy_vars);
 
