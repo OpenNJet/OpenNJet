@@ -51,7 +51,8 @@ END
             openssl_build_opt=" no-shared "
             make_opt="install_sw LIBDIR=lib"
         else
-            openssl_build_opt=" --static -static "
+            # openssl_build_opt=" --static -static "
+            openssl_build_opt=" no-shared "
             make_opt="install LIBDIR=lib"
         fi
         cat << END                                            >> $NJT_MAKEFILE

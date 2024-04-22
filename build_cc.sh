@@ -12,22 +12,37 @@ NJET_MODULES_PATH=/usr/local/njet/modules
 
 GIT_TAG=""
 DEBUG="False"
-WITH_TONGSUO_8_4="False"
+WITH_TONGSUO_8_4="True"
 
-while getopts "t:dl" option; do
+while getopts "t:d-:" option; do
    case "${option}" in
+      -)
+         case "${OPTARG}" in
+                with_tongsuo_8_4)
+                    WITH_TONGSUO_8_4="True"
+                    echo "Parsing option: '--${OPTARG}'" >&2;
+                    ;;
+                with_tongsuo_8_3)
+                    WITH_TONGSUO_8_4="False"
+                    echo "Parsing option: '--${OPTARG}'" >&2;
+                    ;;
+                *)
+                    if [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ]; then
+                        echo "Unknown option --${OPTARG}" >&2
+                        echo "$0 [-t <COMMITID>] [-d] [--with_tongsuo_8_4(default)|--with_tongsuo_8_3] [conf[igure]|make|install|clean|release]"
+                        exit
+                    fi
+                    ;;
+            esac;;
       t) 
          GIT_TAG="NJT_${OPTARG}"
          ;;
       d) 
          DEBUG="True"
          ;;
-      l)
-         WITH_TONGSUO_8_4="True"
-         ;;
      \?) # Invalid option
          echo "Error: Invalid option"
-         echo "$0 [-t <COMMITID>] [-d] [-l] [conf[igure]|make|install|clean|release]"
+         echo "$0 [-t <COMMITID>] [-d] [--with_tongsuo_8_4(default)|--with_tongsuo_8_3] [conf[igure]|make|install|clean|release]"
          exit;;
    esac
 done
