@@ -140,16 +140,18 @@ local function createUser(req, res, next)
             retObj.code = RETURN_CODE.WRONG_POST_DATA
             retObj.msg = "name and password fields are mandatory"
             inputObj = nil
-        end
-        if inputObj.email and not util.checkEmail(inputObj.email) then
-            retObj.code = RETURN_CODE.WRONG_POST_DATA
-            retObj.msg = "email is not valid"
-            inputObj = nil
-        end
-        if inputObj.mobile and not util.checkMobile(inputObj.mobile) then
-            retObj.code = RETURN_CODE.WRONG_POST_DATA
-            retObj.msg = "mobile is not valid"
-            inputObj = nil
+        else 
+            if inputObj.email and not util.checkEmail(inputObj.email) then
+                retObj.code = RETURN_CODE.WRONG_POST_DATA
+                retObj.msg = "email is not valid"
+                inputObj = nil
+            else 
+                if inputObj.mobile and not util.checkMobile(inputObj.mobile) then
+                    retObj.code = RETURN_CODE.WRONG_POST_DATA
+                    retObj.msg = "mobile is not valid"
+                    inputObj = nil
+                end
+            end
         end
     end
 

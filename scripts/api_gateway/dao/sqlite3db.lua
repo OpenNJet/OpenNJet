@@ -1,8 +1,7 @@
-
 local lsqlite3=require("lsqlite3complete")
 local config=require("api_gateway.config.config")
 
-_M = {}
+local _M = {}
 setmetatable(_M, { __index = lsqlite3 })
 
 -- in sqlite3, now it open and close db file everytime, should find a better way to access db and improve performance

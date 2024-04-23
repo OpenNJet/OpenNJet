@@ -1,6 +1,6 @@
 local sqlite3db = require("api_gateway.dao.sqlite3db")
 
-_M = {}
+local _M = {}
 
 function _M.createRole(roleObj)
     local insertOk =false
@@ -115,7 +115,6 @@ function _M.updateRole(roleObj)
     sql = sql .. table.concat(setFields, " , ") .. " where id = ?"
 
     local stmt = db:prepare(sql)
-    njt.log(njt.ERR, sql)
     if not stmt then
         sqlite3db.finish()
         return false, "can't open api_role table"
@@ -137,6 +136,8 @@ function _M.updateRole(roleObj)
 end
 
 function _M.deleteRoleById(id)
+    local deleteOk = true
+    local retObj = ""
     local ok, db = sqlite3db.init()
     if not ok then
         return false, "can't open db"
@@ -151,17 +152,17 @@ function _M.deleteRoleById(id)
         stmt:bind_values(id)
         local result = stmt:step()
         if result == sqlite3db.DONE then
-            updateOk = true
+            deleteOk = true
         else
             retObj = db:errmsg()
-            updateOk = false
+            deleteOk = false
         end     
 
     end
     stmt:finalize()
     sqlite3db.finish()
     
-    return true, ""
+    return deleteOk, retObj
 end
 
 return _M

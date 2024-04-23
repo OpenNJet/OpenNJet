@@ -10,7 +10,7 @@ paths:
   /identities/users:
     post:
       tags: 
-        - user/group/role
+        - identities
       summary: 新增用户
       requestBody:
           content:
@@ -42,7 +42,7 @@ paths:
   /identities/users/{id}:  
     get:
       tags: 
-        - user/group/role
+        - identities
       summary: 用户查询
       parameters:
         - in: path
@@ -70,7 +70,7 @@ paths:
           description: Internal Server Error      
     put:
       tags: 
-        - user/group/role
+        - identities
       summary: 修改用户
       parameters:
         - in: path
@@ -102,7 +102,7 @@ paths:
           description: Internal Server Error      
     delete:
       tags: 
-        - user/group/role
+        - identities
       summary: 删除用户
       parameters:
         - in: path
@@ -129,7 +129,7 @@ paths:
   /identities/users/name/{name}:  
     get:
       tags: 
-        - user/group/role
+        - identities
       summary: 通过用户名查询用户
       parameters:
         - in: path
@@ -158,7 +158,7 @@ paths:
   /identities/users/{id}/groups:  
     get:
       tags: 
-        - user/group/role
+        - identities
       summary: 获取用户与组的关系
       parameters:
         - in: path
@@ -186,7 +186,7 @@ paths:
           description: Internal Server Error      
     put:
       tags: 
-        - user/group/role
+        - identities
       summary: 修改用户与组的关系
       parameters:
         - in: path
@@ -219,7 +219,7 @@ paths:
   /identities/groups:
     post:
       tags: 
-        - user/group/role
+        - identities
       summary: 新增用户组
       requestBody:
           content:
@@ -251,7 +251,7 @@ paths:
   /identities/groups/{id}:  
     get:
       tags: 
-        - user/group/role
+        - identities
       summary: 用户组查询
       parameters:
         - in: path
@@ -279,7 +279,7 @@ paths:
           description: Internal Server Error      
     put:
       tags: 
-        - user/group/role
+        - identities
       summary: 修改用户组
       parameters:
         - in: path
@@ -311,7 +311,7 @@ paths:
           description: Internal Server Error      
     delete:
       tags: 
-        - user/group/role
+        - identities
       summary: 删除用户组
       parameters:
         - in: path
@@ -338,7 +338,7 @@ paths:
   /identities/groups/name/{name}:  
     get:
       tags: 
-        - user/group/role
+        - identities
       summary: 通过组名查询用户组
       parameters:
         - in: path
@@ -367,7 +367,7 @@ paths:
   /identities/groups/{id}/roles:  
     get:
       tags: 
-        - user/group/role
+        - identities
       summary: 获取组与角色的关系
       parameters:
         - in: path
@@ -395,7 +395,7 @@ paths:
           description: Internal Server Error      
     put:
       tags: 
-        - user/group/role
+        - identities
       summary: 修改组与角色的关系
       parameters:
         - in: path
@@ -428,7 +428,7 @@ paths:
   /identities/roles:
     post:
       tags: 
-        - user/group/role
+        - identities
       summary: 新增角色
       requestBody:
           content:
@@ -460,7 +460,7 @@ paths:
   /identities/roles/{id}:  
     get:
       tags: 
-        - user/group/role
+        - identities
       summary: 角色查询
       parameters:
         - in: path
@@ -488,7 +488,7 @@ paths:
           description: Internal Server Error      
     put:
       tags: 
-        - user/group/role
+        - identities
       summary: 修改角色
       parameters:
         - in: path
@@ -520,7 +520,7 @@ paths:
           description: Internal Server Error      
     delete:
       tags: 
-        - user/group/role
+        - identities
       summary: 删除角色
       parameters:
         - in: path
@@ -544,6 +544,221 @@ paths:
                     example: "success"
         '500':
           description: Internal Server Error    
+  /entities/api_groups:
+    post:
+      tags: 
+        - entities
+      summary: 新增API Group
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/apiGroupData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+        '500':
+          description: Internal Server Error
+  /entities/api_groups/{id}:  
+    get:
+      tags: 
+        - entities
+      summary: API Group查询
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: API Group ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/apiGroupData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - entities
+      summary: 修改API Group
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: API Group ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/apiGroupData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+    delete:
+      tags: 
+        - entities
+      summary: 删除API Group
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: API Group ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error    
+  /entities/api_groups/name/{name}:  
+    get:
+      tags: 
+        - entities
+      summary: 通过API Group名查询API Group
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+          description: API Group名称
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/apiGroupData'
+        '500':
+          description: Internal Server Error      
+  /entities/api_groups/{id}/oas3:
+    post:
+      tags: 
+        - entities
+      summary: 通过Open API 3.0 格式文档导入API
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: API Group ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  type: object
+                  additionalProperties: true
+                  description: 传递的参数需要时合法的Open API 3.0 格式文档
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+  /entities/api_groups/{id}/apis:
+    get:
+      tags: 
+        - entities
+      summary: 获取API Group下定义的所有api
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: API Group ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data:
+                    type: array
+                    items: 
+                      type: object
+                      $ref: '#/components/schemas/apiData'
+        '500':
+          description: Internal Server Error
 components:
   schemas:
     userData:
@@ -566,16 +781,16 @@ components:
     groupData:
       title: group data
       type: object
-      required: ["name", "desc"]
+      required: ["name"]
       properties:
         name:
           type: string 
         desc: 
           type: string 
     roleData:
-      title: group data
+      title: role data
       type: object
-      required: ["name", "desc"]
+      required: ["name"]
       properties:
         name:
           type: string 
@@ -599,4 +814,34 @@ components:
           type: array 
           items: 
             type: integer
-
+    apiGroupData:
+      title: api group data
+      type: object
+      required: ["name", "base_path"]
+      properties:
+        name:
+          type: string 
+        base_path:
+          type: string 
+          example: "/app1"
+        desc: 
+          type: string 
+    apiData:
+      title: api data
+      type: object
+      required: ["name", "group_id", "path", "method"]
+      properties:
+        name:
+          type: string 
+        group_id:
+          type: integer 
+        path:
+          type: string
+        method: 
+          type: string
+        desc: 
+          type: string 
+        param_mode:
+          type: integer
+        sign_validation:
+          type: integer

@@ -1,6 +1,6 @@
 local sqlite3db = require("api_gateway.dao.sqlite3db")
 
-_M = {}
+local _M = {}
 
 function _M.getUserById(id)
     local userObj = {}
@@ -64,6 +64,39 @@ function _M.getUserByName(name)
     end
     return true, userObj
 end
+
+function _M.getUserByNameAndPassword(name, password)
+    local userObj = {}
+    local ok, db = sqlite3db.init()
+    if not ok then
+        return false, "can't open db"
+    end
+
+    local sql = "SELECT * FROM api_user WHERE name = ? and password = ?"
+    local stmt = db:prepare(sql)
+    if not stmt then
+        sqlite3db.finish()
+        return false, "can't open api_user table"
+    else
+        stmt:bind_values(name, password)
+        -- in db schema, name is UNIQUE, one record will be return 
+        for row in stmt:nrows() do
+            userObj.id = row.id
+            userObj.name = row.name
+            userObj.email = row.email or ""
+            userObj.mobile = row.mobile or ""
+        end
+        stmt:finalize()
+    end
+
+    sqlite3db.finish()
+
+    if not userObj.id then
+        return false, "can't get user"
+    end
+    return true, userObj
+end
+
 
 function _M.deleteUserById(id)
     local deleteOk = true
@@ -138,7 +171,6 @@ function _M.updateUser(userObj)
     sql = sql .. table.concat(setFields, " , ") .. " where id = ?"
 
     local stmt = db:prepare(sql)
-    njt.log(njt.ERR, sql)
     if not stmt then
         sqlite3db.finish()
         return false, "can't open api_user table"
@@ -157,6 +189,31 @@ function _M.updateUser(userObj)
     stmt:finalize()
     sqlite3db.finish()
     return updateOk, retObj
+end
+
+function _M.getUserRoleRel(id)
+    local userRoleObj = {roles={}}
+    local ok, db = sqlite3db.init()
+    if not ok then
+        return false, "can't open db"
+    end
+
+    local sql = "select augrr.role_id from api_user u, api_user_group_rel augr, api_user_group_role_rel augrr where u.id= ? and augr.user_id = u.id and augr.group_id=augrr.group_id"
+    local stmt = db:prepare(sql)
+    if not stmt then
+        sqlite3db.finish()
+        return false, "can't open db tables"
+    else
+        stmt:bind_values(id)
+        for row in stmt:nrows() do
+            table.insert(userRoleObj.roles, row.role_id)
+        end
+        stmt:finalize()
+    end
+
+    sqlite3db.finish()
+
+    return true, userRoleObj
 end
 
 function _M.getUserGroupRel(id)

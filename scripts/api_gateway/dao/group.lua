@@ -1,6 +1,6 @@
 local sqlite3db = require("api_gateway.dao.sqlite3db")
 
-_M = {}
+local _M = {}
 
 function _M.createGroup(groupObj)
     local insertOk = false
@@ -115,7 +115,6 @@ function _M.updateGroup(groupObj)
     sql = sql .. table.concat(setFields, " , ") .. " where id = ?"
 
     local stmt = db:prepare(sql)
-    njt.log(njt.ERR, sql)
     if not stmt then
         sqlite3db.finish()
         return false, "can't open api_user_group table"

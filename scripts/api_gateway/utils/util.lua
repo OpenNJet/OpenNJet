@@ -1,6 +1,6 @@
 local md5 = require("api_gateway.utils.md5")
 
-_M = {}
+local _M = {}
 
 function _M.checkEmail(email)
     if not email or type(email) ~= "string" then
