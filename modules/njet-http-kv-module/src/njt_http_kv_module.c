@@ -508,6 +508,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/dyn/#");
         njet_iot_client_add_topic(kv_evt_ctx, "$share/njet//rpc/#");
         snprintf(worker_topic, 31, "/worker_%d/#", (int)njt_worker);
@@ -516,6 +517,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/dyn/#");
         snprintf(worker_topic, 31, "/worker_a/#");
         njet_iot_client_add_topic(kv_evt_ctx, worker_topic);

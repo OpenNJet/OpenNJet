@@ -1272,6 +1272,55 @@ njt_ssl_crl(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *crl)
     return NJT_OK;
 }
 
+//add by clb
+njt_int_t
+njt_dyn_ssl_crl(njt_ssl_t *ssl, njt_str_t *crl)
+{
+    X509_STORE   *store;
+    X509_LOOKUP  *lookup;
+    u_char        file_name[1024];
+    u_char       *p;
+    njt_str_t    dst_crl;
+
+    if (crl->len == 0) {
+        return NJT_OK;
+    }
+
+    njt_memzero(file_name, 1024);
+    p = njt_sprintf(file_name, "%V/data/%V", (njt_str_t *)&njt_cycle->prefix, crl);
+    dst_crl.len = p - file_name;
+    dst_crl.data = file_name;
+
+    store = SSL_CTX_get_cert_store(ssl->ctx);
+
+    if (store == NULL) {
+        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                      "SSL_CTX_get_cert_store() failed");
+        return NJT_ERROR;
+    }
+
+    lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
+
+    if (lookup == NULL) {
+        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                      "X509_STORE_add_lookup() failed");
+        return NJT_ERROR;
+    }
+
+    if (X509_LOOKUP_load_file(lookup, (char *) dst_crl.data, X509_FILETYPE_DYN_CRL_PEM)
+        == 0)
+    {
+        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                      "X509_LOOKUP_load_file(\"%s\") failed", dst_crl.data);
+        return NJT_ERROR;
+    }
+
+    X509_STORE_set_flags(store,
+                         X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
+
+    return NJT_OK;
+}
+//end add by clb
 
 static int
 njt_ssl_verify_callback(int ok, X509_STORE_CTX *x509_store)

@@ -1,0 +1,126 @@
+openapi: 3.0.3
+info:
+  title: dyn crl api
+  description: 动态crl证书吊销列表配置
+  version: 1.1.0
+
+servers:
+  - url: '/api'
+paths:
+  /v1/crl:
+    get:
+      tags:
+        - dyn http crl config
+      summary: return http crl config
+      description: get http crl config
+      operationId: getDynHttpC人类
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MainConf'
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+    put:
+      tags:
+        - dyn http crl config
+      summary: set http crl conf
+      description: set http crl conf
+      operationId: setDynHttpCrl
+      requestBody:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServerConf'
+          required: true
+      responses:
+        '204':
+          description: Success
+        '500':
+          description: server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommonMsg'
+
+
+        ###DEFINITIONS
+components:
+  schemas:
+    CommonMsg:
+      title: commonMsg
+      description: 公共提示信息
+      type: object
+      properties:
+        code:
+          type: string
+          description: 状态码
+        msg:
+          type: string
+          description: 提示信息
+
+    MainConf:
+      title: main Conf
+      description: 动态http crl main 级别配置
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/GetServerConf'
+
+
+    GetServerConf:
+      title:     GetServerConf
+      description: 动态 http crl server 级别配置
+      type: object
+      properties:
+        listens:
+          type: array
+          description: server listen 端口列表
+          items:
+            type: string
+        serverNames:
+          type: array
+          description: server Name 列表.
+          items:
+            type: string
+        ssl_crls:
+          type: array
+          items:
+            $ref: '#/components/schemas/SslCrl'
+    SslCrl:
+      title: SslCrlConf
+      description: 证书吊销列表配置信息
+      type: object
+      properties:
+        ssl_crl:
+          type: string
+          description: 证书吊销列表路径
+
+    ServerConf:
+      title:     ServerConf
+      description: 动态 http crl server 级别配置
+      type: object
+      properties:
+        listens:
+          type: array
+          description: server listen 端口列表
+          items:
+            type: string
+        serverNames:
+          type: array
+          description: server Name 列表.
+          items:
+            type: string
+        ssl_crl:
+          type: string
+          description: 证书吊销列表路径
+

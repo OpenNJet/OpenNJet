@@ -84,3 +84,9 @@
 ./modules/njet-http-auth-api-module
 #optional
 ./modules/njet-http-dyn-auth-module
+# optional
+./modules/njet-http-dyn-crl-module
+# optional
+./modules/njet-http-crl-api-module
+# optional
+./modules/njet-http-upload-module
