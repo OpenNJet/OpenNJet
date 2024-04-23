@@ -51,11 +51,11 @@ flags=" $NJET_MODULES $PATH_INFO $LIB_SRC_PATH --build=$GIT_TAG --with-stream --
 
 if [ "$DEBUG" = "True" ]; then
   LD_OPT="-fsanitize=address -static-libgcc -static-libasan -ldl -lm "
-  CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow"
+  CC_OPT="-O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -static-libgcc -static-libasan -Wall -Wextra -Wshadow -Wno-implicit-fallthrough"
   flags="$flags --with-debug"
 else 
   LD_OPT="-ldl -lm -Wl,-z,relro -Wl,-z,now -pie"  
-  CC_OPT="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC"
+  CC_OPT="-O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches -m64 -mtune=generic -fPIC -Wno-implicit-fallthrough"
 fi
 
 #api doc make tar file
