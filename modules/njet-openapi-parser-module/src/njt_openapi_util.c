@@ -213,10 +213,11 @@ njt_openapi_push_sql(njt_openapi_api_item_t *item, njt_int_t in_api,
     }
 
     if (in_api == 0) {
-        end = njt_snprintf(buf, sizeof(buf) - 1, 
-            "INSERT INTO api (name, group_id, path, method, desc, param_mode) VALUES(\"%s\", %d, \"%s\", \"%s\", \"%s\", 0);",
-            item->title, item->group_id, item->path, item->method, item->desc);
-        
+
+        end = njt_snprintf(buf, sizeof(buf) - 1,
+            "DELETE FROM api_grant_mode WHERE api_id IN (SELECT api_id FROM api WHERE group_id=%d AND path=\"%s\" AND method=\"%s\");",
+            item->group_id, item->path, item->method);
+
         sql = njt_array_push(sqls);
         if (sqls == NULL) {
             return NJT_ERROR;
@@ -232,13 +233,62 @@ njt_openapi_push_sql(njt_openapi_api_item_t *item, njt_int_t in_api,
         njt_memcpy(sql->data, buf, sql->len);
         sql->data[sql->len] = 0;
         sql->len += 1;
-        printf("add sql: %s \n", sql->data);
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add sql: %V", &sql);
+        // printf("add sql: %s \n", sql->data);
+
+
+
+        end = njt_snprintf(buf, sizeof(buf) - 1,
+            "INSERT OR IGNORE INTO api (name, group_id, path, method, desc, param_mode) VALUES(\"%s\", %d, \"%s\", \"%s\", \"%s\", 0);",
+            item->title, item->group_id, item->path, item->method, item->desc);
+
+        sql = njt_array_push(sqls);
+        if (sqls == NULL) {
+            return NJT_ERROR;
+        }
+
+        sql->len = end - buf;
+        sql->data = njt_palloc(pool, sql->len + 1);
+
+        if (sql->data == NULL) {
+            return NJT_ERROR;
+        }
+
+        njt_memcpy(sql->data, buf, sql->len);
+        sql->data[sql->len] = 0;
+        sql->len += 1;
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add sql: %V", &sql);
+        // printf("add sql: %s \n", sql->data);
+
+
+        end = njt_snprintf(buf, sizeof(buf) - 1,
+            "UPDATE api SET name=\"%s\", desc=\"%s\", param_mode=%d WHERE group_id=%d AND path=\"%s\" AND method=\"%s\";",
+            item->title, item->desc, 0, item->group_id, item->path, item->method);
+
+        sql = njt_array_push(sqls);
+        if (sqls == NULL) {
+            return NJT_ERROR;
+        }
+
+        sql->len = end - buf;
+        sql->data = njt_palloc(pool, sql->len + 1);
+
+        if (sql->data == NULL) {
+            return NJT_ERROR;
+        }
+
+        njt_memcpy(sql->data, buf, sql->len);
+        sql->data[sql->len] = 0;
+        sql->len += 1;
+        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add sql: %V", &sql);
+        // printf("add sql: %s \n", sql->data);
+
     }
 
-    end = njt_snprintf(buf, sizeof(buf) - 1, 
-        "INSERT INTO api_grant_mode (api_id, grant_mode) SELECT MAX(id), %d FROM api;",
-        grant_mode);
-    
+    end = njt_snprintf(buf, sizeof(buf) - 1,
+        "INSERT INTO api_grant_mode (grant_mode, api_id)  VALUES (%d, (SELECT api.id FROM api WHERE group_id=%d AND path=\"%s\" AND method=\"%s\"));",
+        grant_mode, item->group_id, item->path, item->method);
+
     sql = njt_array_push(sqls);
     if (sqls == NULL) {
         return NJT_ERROR;
@@ -257,7 +307,7 @@ njt_openapi_push_sql(njt_openapi_api_item_t *item, njt_int_t in_api,
 
 
     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "add sql: %V", &sql);
-    printf("add sql: %s \n", sql->data);
+    // printf("add sql: %s \n", sql->data);
 
     return NJT_OK;
 
