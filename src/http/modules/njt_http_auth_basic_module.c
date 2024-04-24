@@ -11,20 +11,12 @@
 #include <njt_http.h>
 #include <njt_crypt.h>
 //add by clb
+#include <njt_http_dyn_module.h>
 #include <njt_http_kv_module.h>
 //end add by clb
 
 
 #define NJT_HTTP_AUTH_BUF_SIZE  2048
-
-
-typedef struct {
-    njt_http_complex_value_t  *realm;
-    njt_http_complex_value_t  *user_file;
-//add by clb
-    njt_http_complex_value_t  *kv_prefix;
-//end add by clb
-} njt_http_auth_basic_loc_conf_t;
 
 
 static njt_int_t njt_http_auth_basic_handler(njt_http_request_t *r);

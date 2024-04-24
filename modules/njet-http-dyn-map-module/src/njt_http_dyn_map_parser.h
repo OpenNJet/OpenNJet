@@ -6,8 +6,8 @@
  * Copyright (C) 2021-2023  TMLake(Beijing) Technology Co., Ltd.
  */
 
-#ifndef PARSER_HTTPMAP_H
-#define PARSER_HTTPMAP_H
+#ifndef PARSER_H
+#define PARSER_H
 #include <stdint.h>
 #include <stdbool.h>
 #include "njt_core.h"
@@ -16,6 +16,8 @@
 typedef njt_str_t httpmap_maps_item_keyFrom_t;
 
 typedef njt_str_t httpmap_maps_item_keyTo_t;
+
+typedef njt_str_t httpmap_maps_item_type_t;
 
 typedef njt_str_t httpmap_maps_item_values_item_valueFrom_t;
 
@@ -34,11 +36,13 @@ typedef bool httpmap_maps_item_hostnames_t;
 typedef struct httpmap_maps_item_t_s {
     httpmap_maps_item_keyFrom_t keyFrom;
     httpmap_maps_item_keyTo_t keyTo;
+    httpmap_maps_item_type_t type;
     httpmap_maps_item_values_t *values;
     httpmap_maps_item_isVolatile_t isVolatile;
     httpmap_maps_item_hostnames_t hostnames;
     unsigned int is_keyFrom_set:1;
     unsigned int is_keyTo_set:1;
+    unsigned int is_type_set:1;
     unsigned int is_values_set:1;
     unsigned int is_isVolatile_set:1;
     unsigned int is_hostnames_set:1;
@@ -55,6 +59,7 @@ httpmap_maps_item_values_item_valueTo_t* get_httpmap_maps_item_values_item_value
 httpmap_maps_item_values_item_t* get_httpmap_maps_item_values_item(httpmap_maps_item_values_t *out, size_t idx);
 httpmap_maps_item_keyFrom_t* get_httpmap_maps_item_keyFrom(httpmap_maps_item_t *out);
 httpmap_maps_item_keyTo_t* get_httpmap_maps_item_keyTo(httpmap_maps_item_t *out);
+httpmap_maps_item_type_t* get_httpmap_maps_item_type(httpmap_maps_item_t *out);
 // CHECK ARRAY not exceeding bounds before calling this func
 httpmap_maps_item_values_t* get_httpmap_maps_item_values(httpmap_maps_item_t *out);
 httpmap_maps_item_isVolatile_t get_httpmap_maps_item_isVolatile(httpmap_maps_item_t *out);
@@ -64,6 +69,7 @@ httpmap_maps_item_t* get_httpmap_maps_item(httpmap_maps_t *out, size_t idx);
 httpmap_maps_t* get_httpmap_maps(httpmap_t *out);
 void set_httpmap_maps_item_keyFrom(httpmap_maps_item_t* obj, httpmap_maps_item_keyFrom_t* field);
 void set_httpmap_maps_item_keyTo(httpmap_maps_item_t* obj, httpmap_maps_item_keyTo_t* field);
+void set_httpmap_maps_item_type(httpmap_maps_item_t* obj, httpmap_maps_item_type_t* field);
 void set_httpmap_maps_item_values_item_valueFrom(httpmap_maps_item_values_item_t* obj, httpmap_maps_item_values_item_valueFrom_t* field);
 void set_httpmap_maps_item_values_item_valueTo(httpmap_maps_item_values_item_t* obj, httpmap_maps_item_values_item_valueTo_t* field);
 httpmap_maps_item_values_item_t* create_httpmap_maps_item_values_item(njt_pool_t *pool);
@@ -79,4 +85,4 @@ void set_httpmap_maps(httpmap_t* obj, httpmap_maps_t* field);
 httpmap_t* create_httpmap(njt_pool_t *pool);
 httpmap_t* json_parse_httpmap(njt_pool_t *pool, const njt_str_t *json_string, js2c_parse_error_t *err_ret);
 njt_str_t* to_json_httpmap(njt_pool_t *pool, httpmap_t *out, njt_int_t flags);
-#endif /* PARSER_HTTPMAP_H */
+#endif /* PARSER_H */

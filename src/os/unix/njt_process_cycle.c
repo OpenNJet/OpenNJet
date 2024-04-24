@@ -2154,7 +2154,9 @@ njt_helper_process_exit(njt_cycle_t *cycle)
                 && !c[i].read->accept
                 && !c[i].read->channel
                 && !c[i].read->resolver) {
+                    if(c[i].pool){
                         njt_destroy_pool(c[i].pool);
+                    }
                 }
         }
 #endif

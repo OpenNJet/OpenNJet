@@ -516,7 +516,6 @@ njt_http_add_variable(njt_conf_t *cf, njt_str_t *name, njt_uint_t flags)
     if (rc == NJT_ERROR) {
         return NULL;
     }
-	
     if (rc == NJT_BUSY) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
                            "conflicting variable name \"%V\"", name);
@@ -2905,6 +2904,9 @@ njt_http_variables_init_vars_proc(njt_conf_t *cf, njt_uint_t dyn)
     key = cmcf->variables_keys->keys.elts;
 
     for (i = 0; i < cmcf->variables.nelts; i++) {
+        if (v[i].name.len == 0 || v[i].name.data == NULL) {
+            continue;
+        }
 
         for (n = 0; n < cmcf->variables_keys->keys.nelts; n++) {
 

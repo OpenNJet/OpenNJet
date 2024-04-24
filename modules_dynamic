@@ -82,3 +82,5 @@
 ./modules/njet-http-dyn-lua-module
 #optional
 ./modules/njet-http-auth-api-module
+#optional
+./modules/njet-http-dyn-auth-module

@@ -1,30 +1,19 @@
 /*
  * Copyright (C) 2021-2023 TMLake(Beijing) Technology Co., Ltd.
  */
-// #include <njt_config.h>
-// #include <njt_core.h>
-// #include <njt_http_kv_module.h>
 
 #include <njt_core.h>
 #include <njt_http_kv_module.h>
 #include <njt_http.h>
+#include <njt_http_client_util.h>
 #include <njt_http_sendmsg_module.h>
 
 
 static void *njt_http_register_module_create_main_conf(njt_conf_t *cf);
-// static char *
-// njt_http_register_module_init_main_conf(njt_conf_t *cf, void *conf);
 static char *njt_http_register(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 static njt_int_t njt_http_register_init_process(njt_cycle_t *cycle);
 static void njt_http_register_timer_handler(njt_event_t *ev);
-static void njt_http_register_check_write_handler(njt_event_t *wev);
-static void njt_http_register_check_read_handler(njt_event_t *rev);
-static njt_int_t
-njt_http_register_http_write_handler(njt_event_t *wev);
-static void
-njt_http_register_dummy_handler(njt_event_t *ev);
-static void
-njt_http_register_close_connection(njt_connection_t *c);
+
 
 
 static njt_command_t  njt_http_register_commands[] = {
@@ -46,7 +35,6 @@ static njt_http_module_t njt_http_register_module_ctx = {
     NULL,          /* postconfiguration */
 
     njt_http_register_module_create_main_conf, /* create main configuration */
-    // njt_http_register_module_init_main_conf, /* init main configuration */
     NULL, /* init main configuration */
 
     NULL, /* create server configuration */
@@ -87,7 +75,6 @@ typedef struct {
     size_t                          len;
     njt_peer_connection_t           *peer;
     njt_buf_t                       *send_buf;
-    // njt_str_t                       url;
     njt_http_register_main_conf_t        *ccf;
 } njt_http_register_data_t;
 
@@ -371,9 +358,13 @@ failed:
 static njt_int_t njt_send_http_register_info(njt_http_register_main_conf_t *ccf, njt_str_t *http_register_info){
     njt_int_t                       rc;
     njt_pool_t                      *pool;
-    njt_peer_connection_t           *peer;
     njt_http_register_data_t        *data;
-    njt_url_t                       u;
+    u_char                          url_buffer[1024];
+    njt_str_t                       url;
+    u_char                          *last;
+    njt_http_client_util_t          *client_util;
+    njt_str_t                       header_key, header_value;
+
 
     njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, 
         "send http_register info to lua:%V", http_register_info);
@@ -402,257 +393,40 @@ static njt_int_t njt_send_http_register_info(njt_http_register_main_conf_t *ccf,
     if(rc != NJT_OK){
         njt_log_error(NJT_LOG_ERR, pool->log, 0,
                         "register module read config error.");
+
+        njt_destroy_pool(pool);
         return NJT_ERROR;
     }
 
-    peer = njt_pcalloc(pool, sizeof(njt_peer_connection_t));
-    if (peer == NULL) {
-        /*log the malloc failure*/
+    //create client util
+    last = njt_snprintf(url_buffer, 1024, "http://%V:%d%V", &ccf->server, ccf->port, &ccf->location);
+    url.data = url_buffer;
+    url.len = last - url_buffer;
+
+    client_util = njt_http_client_util_create(NJT_HTTP_CLIENT_UTIL_METHOD_POST, url, data->data, NULL);
+    if (client_util == NULL) {
+
+        njt_destroy_pool(pool);
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                        "memory allocate peer failure for register module.");
-        njt_destroy_pool(pool);
+                        " http register create client util error, url:%V", &ccf->location);
         return NJT_ERROR;
     }
-    data->peer = peer;
 
-    peer->sockaddr = njt_pcalloc(pool, sizeof(struct sockaddr));
-    if (peer->sockaddr == NULL) {
-        /*log the malloc failure*/
+    njt_str_set(&header_key, "Content-Type");
+    njt_str_set(&header_value, "application/json");
+    njt_http_client_util_add_header(client_util, header_key, header_value);
+
+    njt_str_set(&header_key, "Accept");
+    njt_str_set(&header_value, "application/json");
+    njt_http_client_util_add_header(client_util, header_key, header_value);
+
+    if(NJT_OK != njt_http_client_util_start(client_util)){
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                        "memory allocate sockaddr failure for register module.");
+                        " http register client util start error, url:%V", &ccf->location);
         njt_destroy_pool(pool);
         return NJT_ERROR;
     }
-
-    njt_memzero(&u, sizeof(njt_url_t));
-    u.url = ccf->server;
-    if (njt_parse_url(pool, &u) != NJT_OK) {
-        if (u.err) {
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                               "%s in \"%V\" of parse register server",
-                               u.err, &u.url);
-        }
-
-        njt_destroy_pool(pool);
-        return NJT_ERROR;
-    }
-
-    //set sockaddr
-    // njt_memcpy(peer->sockaddr, u.addrs[0].sockaddr, sizeof(struct sockaddr));
-    peer->sockaddr = u.addrs[0].sockaddr;
-    peer->socklen = u.addrs[0].socklen;
-    //set port
-    njt_inet_set_port(peer->sockaddr, ccf->port);
-    peer->name = &u.addrs[0].name;
-    peer->get = njt_event_get_peer;
-    peer->log = njt_cycle->log;
-    peer->log_error = NJT_ERROR_ERR;
-
-    // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-    //         "register connect to peer of %V port:%d", peer->name, ccf->port);
-    rc = njt_event_connect_peer(peer);
-
-    if (rc == NJT_ERROR || rc == NJT_DECLINED || rc == NJT_BUSY) {
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                        "register connect to peer of %V errror.", &peer->name);
-        /*release the memory and update the statistics*/
-        njt_destroy_pool(pool);
-        return NJT_ERROR;
-    }
-
-    peer->connection->data = data;
-    peer->connection->pool = pool;
-    peer->connection->write->handler = njt_http_register_check_write_handler;
-    peer->connection->read->handler = njt_http_register_check_read_handler;
-
-    njt_add_timer(peer->connection->write, 5000);
-    // njt_http_register_check_write_handler(peer->connection->write);
-    njt_add_timer(peer->connection->read, 5000);
-
-
-    //send config json to lua server's location
-
-    return NJT_OK;
-}
-
-
-static void
-njt_http_register_close_connection(njt_connection_t *c)
-{
-    njt_pool_t  *pool;
-
-    njt_log_debug1(NJT_LOG_DEBUG_HTTP, c->log, 0,
-                   "close http connection: %d", c->fd);
-
-#if (NJT_HTTP_SSL)
-
-    if (c->ssl) {
-        if (njt_ssl_shutdown(c) == NJT_AGAIN) {
-            c->ssl->handler = njt_http_register_close_connection;
-            return;
-        }
-    }
-
-#endif
-
-#if (NJT_HTTP_V3)
-    if (c->quic) {
-        njt_http_v3_reset_stream(c);
-    }
-#endif
-
-    c->destroyed = 1;
-
-    pool = c->pool;
-
-    njt_close_connection(c);
 
     njt_destroy_pool(pool);
-}
-
-
-static void njt_http_register_check_write_handler(njt_event_t *wev) {
-    njt_connection_t                    *c;
-    njt_int_t                           rc;
-
-    c = wev->data;
-    if (wev->timedout) {
-        /*log the case and update the peer status.*/
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                       "write action for register timeout");
-        njt_http_register_close_connection(c);
-        return;
-    }
-
-    if (wev->timer_set) {
-        njt_del_timer(wev);
-    }
-
-    rc = njt_http_register_http_write_handler(wev);
-    if (rc == NJT_ERROR) {
-
-        /*log the case and update the peer status.*/
-        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                       "write action error for register");
-        njt_http_register_close_connection(c);
-        return;
-    } else if (rc == NJT_DONE || rc == NJT_OK) {
-        return;
-    } else {
-        if (!wev->timer_set) {
-            njt_add_timer(wev, 5000);
-        }
-    }
-
-    return;
-}
-
-
-static void njt_http_register_check_read_handler(njt_event_t *rev) {
-    njt_connection_t                    *c;
-    u_char      buf[4096];
-    // njt_str_t   tmp_str;
-    // ssize_t n;
-
-    c = rev->data;
-
-    c->recv(c, buf, 4096);
-    // tmp_str.data = buf;
-    // tmp_str.len = n;
-
-    // njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-    //                 "register recv:%V", &tmp_str);
-    
-    //just close
-    njt_http_register_close_connection(c);
-
-    return;
-}
-
-
-static njt_int_t
-njt_http_register_http_write_handler(njt_event_t *wev) {
-    njt_connection_t                    *c;
-    ssize_t                             n, size;
-    njt_http_register_data_t            *register_data;
-    njt_str_t                           tmp_str;
-
-    c = wev->data;
-    register_data = c->data;
-
-    njt_log_error(NJT_LOG_INFO, c->log, 0, "register http check send.");
-
-    if (register_data->send_buf == NULL) {
-        register_data->send_buf = njt_create_temp_buf(register_data->pool, njt_pagesize);
-        if (register_data->send_buf == NULL) {
-            njt_log_error(NJT_LOG_DEBUG_HTTP, njt_cycle->log, 0,
-                           "malloc failure of the send buffer for register.");
-            return NJT_ERROR;
-        }
-        /*Fill in the buff*/
-        register_data->send_buf->last = njt_snprintf(register_data->send_buf->last,
-                                               register_data->send_buf->end - register_data->send_buf->last, "POST %V HTTP/1.1" CRLF,
-                                               &register_data->ccf->location);
-        register_data->send_buf->last = njt_snprintf(register_data->send_buf->last,
-                                               register_data->send_buf->end - register_data->send_buf->last,
-                                               "Connection: close" CRLF);
-        register_data->send_buf->last = njt_snprintf(register_data->send_buf->last,
-                                               register_data->send_buf->end - register_data->send_buf->last, "Host: %V:%d" CRLF,
-                                               &register_data->ccf->server, register_data->ccf->port);
-        register_data->send_buf->last = njt_snprintf(register_data->send_buf->last,
-                                               register_data->send_buf->end - register_data->send_buf->last,
-                                               "User-Agent: njet (health-register)" CRLF);
-        register_data->send_buf->last = njt_snprintf(register_data->send_buf->last,
-                                               register_data->send_buf->end - register_data->send_buf->last,
-                                               "Content-Type: application/json" CRLF);
-        register_data->send_buf->last = njt_snprintf(register_data->send_buf->last,
-                                               register_data->send_buf->end - register_data->send_buf->last,
-                                               "Accept: application/json" CRLF);
-        register_data->send_buf->last = njt_snprintf(register_data->send_buf->last,
-                                               register_data->send_buf->end - register_data->send_buf->last,
-                                               "Content-Length: %d" CRLF, register_data->data.len);
-        register_data->send_buf->last = njt_snprintf(register_data->send_buf->last,
-                                               register_data->send_buf->end - register_data->send_buf->last, CRLF);
-        register_data->send_buf->last = njt_snprintf(register_data->send_buf->last,
-                                               register_data->send_buf->end - register_data->send_buf->last,
-                                               "%V", &register_data->data);    
-    }
-
-    
-
-    size = register_data->send_buf->last - register_data->send_buf->pos;
-    tmp_str.data = register_data->send_buf->pos;
-    tmp_str.len = size;
-    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,
-                    "register send:%V", &tmp_str);
-
-    n = c->send(c, register_data->send_buf->pos,
-                register_data->send_buf->last - register_data->send_buf->pos);
-
-    if (n == NJT_ERROR) {
-        return NJT_ERROR;
-    }
-
-    if (n > 0) {
-        register_data->send_buf->pos += n;
-        if (n == size) {
-            wev->handler = njt_http_register_dummy_handler;
-
-            if (njt_handle_write_event(wev, 0) != NJT_OK) {
-                /*LOG the failure*/
-                njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0,
-                               "write event handle error for register");
-                return NJT_ERROR;
-            }
-            return NJT_DONE;
-        }
-    }
-
-    return NJT_AGAIN;
-}
-
-static void
-njt_http_register_dummy_handler(njt_event_t *ev) {
-    njt_log_error(NJT_LOG_DEBUG_EVENT, ev->log, 0,
-                   "register check dummy handler");
+    return NJT_OK;
 }
