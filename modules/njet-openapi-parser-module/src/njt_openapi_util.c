@@ -215,7 +215,7 @@ njt_openapi_push_sql(njt_openapi_api_item_t *item, njt_int_t in_api,
     if (in_api == 0) {
 
         end = njt_snprintf(buf, sizeof(buf) - 1,
-            "DELETE FROM api_grant_mode WHERE api_id IN (SELECT api_id FROM api WHERE group_id=%d AND path=\"%s\" AND method=\"%s\");",
+            "DELETE FROM api_grant_mode WHERE api_id IN (SELECT api.id FROM api WHERE group_id=%d AND path=\"%s\" AND method=\"%s\");",
             item->group_id, item->path, item->method);
 
         sql = njt_array_push(sqls);
