@@ -638,8 +638,9 @@ static void njt_dyn_proxy_pass_dump_locs(njt_pool_t *pool, njt_queue_t *location
              
              set_proxypass_locationDef_proxy_pass(loc_item,&defalut);
         }
-
-        add_item_proxypass_servers_item_locations(loc_items, loc_item);
+	if(clcf->noname != 1) {
+        	add_item_proxypass_servers_item_locations(loc_items, loc_item);
+	}
 
         if (clcf->old_locations) {
             set_proxypass_locationDef_locations(loc_item, create_proxypass_locationDef_locations(pool, 4));
