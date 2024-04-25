@@ -121,6 +121,7 @@ njt_int_t njt_conf_delete_block(njt_pool_t *pool, njt_conf_element_t *block);
 njt_int_t njt_conf_save_to_file(njt_pool_t *pool, njt_log_t *log,
     njt_conf_element_t *root, njt_str_t *fname);
 njt_int_t njt_conf_check_svrname_listen(njt_pool_t *pool, njt_conf_element_t *root);
+njt_int_t njt_conf_add_lua_block(njt_pool_t *pool, njt_conf_t *cf);
 
 void njt_conf_init_conf_parse(njt_conf_element_t *root, njt_pool_t* pool);
 void njt_conf_finish_conf_parse(); 
