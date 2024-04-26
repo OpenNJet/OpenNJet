@@ -318,6 +318,7 @@ njt_http_dyn_set_proxy_pass(njt_http_core_loc_conf_t *clcf, njt_str_t  pass_url,
             end = njt_snprintf(data_buf, sizeof(data_buf) - 1,"proxy_pass[%V]  unknown variable %V",&pass_url,&var_name);
             rpc_data_str.len = end - data_buf;
             njt_rpc_result_add_error_data(rpc_result, &rpc_data_str);
+            return NJT_CONF_ERROR;
         }
     }
 
