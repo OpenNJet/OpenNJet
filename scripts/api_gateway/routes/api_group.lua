@@ -165,7 +165,7 @@ local function oas3import(req, res, next)
         retObj.msg = "apiGroupId is not valid"
     else
         local inputObj = nil
-        local ok, decodedObj = pcall(cjson.decode, req.body_raw)
+        local ok, decodedObj = pcall(cjson.decode, util.getBodyData())
         if not ok then
             retObj.code = RETURN_CODE.WRONG_POST_DATA
             retObj.msg = "post data is not a valid json"
@@ -182,7 +182,7 @@ local function oas3import(req, res, next)
         end 
 
         if inputObj then
-            retObj.code, retObj.msg = oas3util.oas3_json_import(req.body_raw, config.db_file, groupId)
+            retObj.code, retObj.msg = oas3util.oas3_json_import(util.getBodyData(), config.db_file, groupId)
             njt.log(njt.ERR, retObj.code, retObj.msg)
         end
     end

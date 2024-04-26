@@ -12,6 +12,8 @@ paths:
       tags: 
         - identities
       summary: 新增用户
+      security:
+        - bearerAuth: []
       requestBody:
           content:
             application/json:
@@ -44,6 +46,8 @@ paths:
       tags: 
         - identities
       summary: 用户查询
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -72,6 +76,8 @@ paths:
       tags: 
         - identities
       summary: 修改用户
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -104,6 +110,8 @@ paths:
       tags: 
         - identities
       summary: 删除用户
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -131,6 +139,8 @@ paths:
       tags: 
         - identities
       summary: 通过用户名查询用户
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: name
@@ -160,6 +170,8 @@ paths:
       tags: 
         - identities
       summary: 获取用户与组的关系
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -188,6 +200,8 @@ paths:
       tags: 
         - identities
       summary: 修改用户与组的关系
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -221,6 +235,8 @@ paths:
       tags: 
         - identities
       summary: 新增用户组
+      security:
+        - bearerAuth: []
       requestBody:
           content:
             application/json:
@@ -253,6 +269,8 @@ paths:
       tags: 
         - identities
       summary: 用户组查询
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -281,6 +299,8 @@ paths:
       tags: 
         - identities
       summary: 修改用户组
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -313,6 +333,8 @@ paths:
       tags: 
         - identities
       summary: 删除用户组
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -340,6 +362,8 @@ paths:
       tags: 
         - identities
       summary: 通过组名查询用户组
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: name
@@ -369,6 +393,8 @@ paths:
       tags: 
         - identities
       summary: 获取组与角色的关系
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -397,6 +423,8 @@ paths:
       tags: 
         - identities
       summary: 修改组与角色的关系
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -430,6 +458,8 @@ paths:
       tags: 
         - identities
       summary: 新增角色
+      security:
+        - bearerAuth: []
       requestBody:
           content:
             application/json:
@@ -462,6 +492,8 @@ paths:
       tags: 
         - identities
       summary: 角色查询
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -490,6 +522,8 @@ paths:
       tags: 
         - identities
       summary: 修改角色
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -522,6 +556,8 @@ paths:
       tags: 
         - identities
       summary: 删除角色
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -549,6 +585,8 @@ paths:
       tags: 
         - entities
       summary: 新增API Group
+      security:
+        - bearerAuth: []
       requestBody:
           content:
             application/json:
@@ -581,6 +619,8 @@ paths:
       tags: 
         - entities
       summary: API Group查询
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -609,6 +649,8 @@ paths:
       tags: 
         - entities
       summary: 修改API Group
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -641,6 +683,8 @@ paths:
       tags: 
         - entities
       summary: 删除API Group
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -668,6 +712,8 @@ paths:
       tags: 
         - entities
       summary: 通过API Group名查询API Group
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: name
@@ -697,6 +743,8 @@ paths:
       tags: 
         - entities
       summary: 通过Open API 3.0 格式文档导入API
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -732,6 +780,8 @@ paths:
       tags: 
         - entities
       summary: 获取API Group下定义的所有api
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: id
@@ -753,12 +803,102 @@ paths:
                     type: string 
                     example: "success"
                   data:
-                    type: array
-                    items: 
-                      type: object
                       $ref: '#/components/schemas/apiData'
         '500':
           description: Internal Server Error
+  /identities/roles/{id}/apis:  
+    get:
+      tags: 
+        - rbac
+      summary: 通过 role_id 查询对应role 授权的 API 列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 角色ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/roleApiRelData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - rbac
+      summary: 通过 role_id 更新对应role 授权的 API 列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 角色ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/roleApiRelData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+  /auth/login:  
+    post:
+      tags: 
+        - auth
+      summary: 登录
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/loginData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  token:
+                    type: string
+        '500':
+          description: Internal Server Error      
 components:
   schemas:
     userData:
@@ -810,7 +950,7 @@ components:
       type: object
       required: ["roles"]
       properties:
-        groups:
+        roles:
           type: array 
           items: 
             type: integer
@@ -845,3 +985,32 @@ components:
           type: integer
         sign_validation:
           type: integer
+    roleApiRelData:
+      title: role api rel data
+      type: object
+      required: ["apis"]
+      properties:
+        apis:
+          type: array 
+          items: 
+            type: integer
+    loginData:
+      title: login data
+      type: object
+      required: ["login_data"]
+      properties:
+        api_group_name:
+          type: string 
+        login_type:
+          type: string 
+        login_data:
+          type: object 
+          properties:
+            username:
+              type: string
+            password: 
+              type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

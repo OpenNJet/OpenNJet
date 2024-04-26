@@ -95,6 +95,38 @@ function _M.getApiGroupByName(name)
     return true, apiGroupObj
 end
 
+function _M.getApiGroupByBasePath(base_path)
+    local apiGroupObj = {}
+    local ok, db = sqlite3db.init()
+    if not ok then
+        return false, "can't open db"
+    end
+
+    local sql = "SELECT * FROM api_group WHERE base_path = ?"
+    local stmt = db:prepare(sql)
+    if not stmt then
+        sqlite3db.finish()
+        return false, "can't open api_group table"
+    else
+        stmt:bind_values(base_path)
+        -- in db schema, name is UNIQUE, one record will be return 
+        for row in stmt:nrows() do
+            apiGroupObj.id = row.id
+            apiGroupObj.name = row.name
+            apiGroupObj.base_path = row.base_path
+            apiGroupObj.desc = row.desc or ""
+        end
+        stmt:finalize()
+    end
+
+    sqlite3db.finish()
+
+    if not apiGroupObj.id then
+        return false, "api_group is not existed"
+    end
+    return true, apiGroupObj
+end
+
 function _M.updateApiGroup(apiGroupObj)
     local updateOk =false
     local retMsg= ""
@@ -146,7 +178,7 @@ function _M.deleteApiGroupById(id)
     end
 
     -- id has been valided in caller
-    local sql = string.format("DELETE FROM api_grant_mode where exists (select 1 from api where api.group_id= %d and api.id = api_grant_mode.api_id) ; DELETE FROM api WHERE group_id = %d; DELETE FROM api_group where id = %d", id, id, id)
+    local sql = string.format("DELETE FROM api_grant_rbac where exists (select 1 from api where api.group_id= %d and api.id = api_grant_rbac.api_id) ; DELETE FROM api_grant_mode where exists (select 1 from api where api.group_id= %d and api.id = api_grant_mode.api_id) ; DELETE FROM api WHERE group_id = %d; DELETE FROM api_group where id = %d", id, id, id, id)
     local result = db:exec(sql)
     if result ~= sqlite3db.OK then
         deleteOk = false

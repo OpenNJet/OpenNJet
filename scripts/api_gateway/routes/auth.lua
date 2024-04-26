@@ -1,5 +1,6 @@
 local lor = require("lor.index")
 local cjson = require("cjson")
+local socket = require("socket")
 local uuid = require("api_gateway.utils.uuid")
 local config = require("api_gateway.config.config")
 local authDao = require("api_gateway.dao.auth")
@@ -37,7 +38,7 @@ local function loginFunc(req, res, next)
         if not inputObj.api_group_name or not inputObj.login_type or inputObj.login_type == "internal" then
             loginService = require("api_gateway.service.internal_login")
         else
-            -- create login service object based on login_type
+            -- TODO: create login service object based on login_type, such as external
         end
         if loginService then
             local ok, role_ids = loginService.login(inputObj.login_data)

@@ -165,4 +165,58 @@ function _M.deleteRoleById(id)
     return deleteOk, retObj
 end
 
+function _M.getRoleApiRel(id)
+    local roleApiObj = {apis={}}
+    local ok, db = sqlite3db.init()
+    if not ok then
+        return false, "can't open db"
+    end
+
+    local sql = "SELECT * FROM api_grant_rbac WHERE role_id = ?"
+    local stmt = db:prepare(sql)
+    if not stmt then
+        sqlite3db.finish()
+        return false, "can't open api_grant_rbac table"
+    else
+        stmt:bind_values(id)
+        for row in stmt:nrows() do
+            table.insert(roleApiObj.apis, row.api_id)
+        end
+        stmt:finalize()
+    end
+
+    sqlite3db.finish()
+
+    return true, roleApiObj
+end
+
+function _M.updateRoleApiRel(relObj)
+    local updateOk = false
+    local retObj = ""
+    local ok, db = sqlite3db.init()
+    if not ok then
+        return false, "can't open db"
+    end
+
+    local sqls = {}
+    --roleId  have been verified in caller, here just assume roleId is always correct 
+    table.insert(sqls,string.format("delete from api_grant_rbac where role_id = %d ;", relObj.id))
+    for _,v in ipairs(relObj.apis) do
+        table.insert(sqls, string.format("insert into api_grant_rbac(role_id, api_id) values(%d, %d);", relObj.id, v ))
+    end
+
+    local sql =table.concat(sqls, "\n");
+    local result = db:exec(sql)
+    if result ~= sqlite3db.OK then
+        retObj = db:errmsg()
+        updateOk = false
+    else 
+        updateOk = true
+    end
+
+    sqlite3db.finish()
+    return updateOk, retObj
+end
+
+
 return _M

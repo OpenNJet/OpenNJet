@@ -1,6 +1,5 @@
-local md5 = require("api_gateway.utils.md5")
-
 local _M = {}
+local HMAC_KEY = "xItp/m24fxz49pnm1wy"
 
 function _M.checkEmail(email)
     if not email or type(email) ~= "string" then
@@ -26,7 +25,7 @@ function _M.checkMobile(mobile)
 end
 
 function _M.encryptPassword(msg)
-    return md5.sumhexa(msg)
+    return njt.encode_base64(njt.hmac_sha1(HMAC_KEY, msg))
 end
 
 function _M.isArray(t)
@@ -41,6 +40,28 @@ function _M.isArray(t)
         end
     end
     return true
+end
+
+local function read_from_file(file_name)
+    local f = io.open(file_name, "r")
+    if not f then 
+      return nil
+    end
+    local string = f:read("*all")
+    f:close()
+    return string
+end
+
+function _M.getBodyData()
+    njt.req.read_body()
+    local req_body = njt.req.get_body_data()
+    if not req_body then
+       local body_file = njt.req.get_body_file()
+       if body_file then
+         req_body = read_from_file(body_file)
+       end
+    end
+    return req_body
 end
 
 return _M
