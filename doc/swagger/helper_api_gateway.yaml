@@ -895,6 +895,32 @@ paths:
                   msg: 
                     type: string 
                     example: "success"
+        '500':
+          description: Internal Server Error      
+  /auth/verification:  
+    post:
+      tags: 
+        - auth
+      summary: 发送验证码
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/verificationData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
                   token:
                     type: string
         '500':
@@ -994,6 +1020,24 @@ components:
           type: array 
           items: 
             type: integer
+    userPassLogin:
+      title: username/password login data
+      type: object
+      required: ["username", "password"]
+      properties:
+        username:
+          type: string
+        password: 
+          type: string
+    emailLogin:
+      title: email login data
+      type: object
+      required: ["email", "verification_code"]
+      properties:
+        email: 
+          type: string
+        verification_code:
+          type: string
     loginData:
       title: login data
       type: object
@@ -1001,15 +1045,20 @@ components:
       properties:
         api_group_name:
           type: string 
+          example: "app"
         login_type:
           type: string 
+          example: "internal"
         login_data:
-          type: object 
-          properties:
-            username:
-              type: string
-            password: 
-              type: string
+          oneOf:
+            - $ref: '#/components/schemas/userPassLogin'
+            - $ref: '#/components/schemas/emailLogin'
+    verificationData:
+      title: verification data
+      type: object
+      properties:
+        email:
+          type: string 
   securitySchemes:
     bearerAuth:
       type: http

@@ -65,6 +65,38 @@ function _M.getUserByName(name)
     return true, userObj
 end
 
+function _M.getUserByEmail(email)
+    local userObj = {}
+    local ok, db = sqlite3db.init()
+    if not ok then
+        return false, "can't open db"
+    end
+
+    local sql = "SELECT * FROM api_user WHERE email = ?"
+    local stmt = db:prepare(sql)
+    if not stmt then
+        sqlite3db.finish()
+        return false, "can't open api_user table"
+    else
+        stmt:bind_values(email)
+        -- in db schema, name is UNIQUE, one record will be return 
+        for row in stmt:nrows() do
+            userObj.id = row.id
+            userObj.name = row.name
+            userObj.email = row.email or ""
+            userObj.mobile = row.mobile or ""
+        end
+        stmt:finalize()
+    end
+
+    sqlite3db.finish()
+
+    if not userObj.id then
+        return false, "user is not existed"
+    end
+    return true, userObj
+end
+
 function _M.getUserByNameAndPassword(name, password)
     local userObj = {}
     local ok, db = sqlite3db.init()
