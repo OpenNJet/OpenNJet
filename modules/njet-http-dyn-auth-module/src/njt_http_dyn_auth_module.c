@@ -17,58 +17,6 @@ extern njt_module_t njt_http_auth_basic_module;
 njt_str_t dyn_auth_update_srv_err_msg = njt_string("{\"code\":500,\"msg\":\"server error\"}");
 
 
-njt_int_t njt_dyn_auth_check_var(njt_conf_t *cf, njt_str_t *var){
-    njt_http_core_main_conf_t  *cmcf;
-    njt_http_variable_t        *v;
-    njt_uint_t                  i;
-    size_t                      var_len;
-    bool                        found = false;
-
-    if(var == NULL || var->len < 1){
-        return NJT_ERROR;
-    }
-
-    if(var->data[0] == ' '){
-        return NJT_ERROR;
-    } 
-
-    if(var->data[0] != '$'){
-        return NJT_OK;
-    }
-
-    if(var->len < 2){
-        return NJT_ERROR;
-    }
-
-    cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
-    if(cmcf == NULL){
-        return NJT_ERROR;
-    }
-    v = cmcf->variables.elts;
-    var_len = var->len - 1;
-    for (i = 0; i < cmcf->variables.nelts; i++) {
-        if(v[i].name.len == var_len
-            && njt_strncmp(v[i].name.data, var->data + 1, v[i].name.len)
-              == 0)
-        {
-            if (v[i].get_handler == NULL) {
-                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                    "njt_dyn_auth_rate unknown \"%V\" variable", &v[i].name);
-                
-                return NJT_ERROR;
-            }
-
-            found = true;
-        }
-    }
-
-    if(found){
-        return NJT_OK;
-    }
-
-    return NJT_ERROR;
-}
-
 //if modify return NJT_OK, not modify return NJT_ERROR
 static njt_int_t njt_dyn_auth_check_modify(dyn_auth_servers_item_locations_item_t *data, 
     njt_http_auth_basic_loc_conf_t      *alcf){
@@ -187,6 +135,7 @@ static njt_int_t njt_dyn_auth_set_auth_config(njt_http_core_loc_conf_t *clcf,
         .ctx = ctx,
     };
     cf = &cf_data;
+    
 
     alcf = njt_http_conf_get_module_loc_conf(cf, njt_http_auth_basic_module);
     if(alcf == NULL){
@@ -231,6 +180,7 @@ static njt_int_t njt_dyn_auth_set_auth_config(njt_http_core_loc_conf_t *clcf,
     cf->pool = pool;
     cf->temp_pool = pool;
     cf->dynamic = 1;
+    cf->ctx = (njt_http_conf_ctx_t *)njt_get_conf(njt_cycle->conf_ctx, njt_http_module);
     alcf->dynamic = 1;
     alcf->pool = pool;
 
@@ -316,6 +266,8 @@ static njt_int_t njt_dyn_auth_set_auth_config(njt_http_core_loc_conf_t *clcf,
 
         goto auth_config_fail;
     }
+
+    njt_http_variables_init_vars_dyn(cf);
 
     if(old_alcf.dynamic == 1){
         if(old_alcf.pool != NULL){

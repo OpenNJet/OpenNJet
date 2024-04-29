@@ -30,6 +30,10 @@ Contributors:
 #include "misc_mosq.h"
 #include "njet_iot_util_mosq.h"
 
+#ifdef WITH_TLS
+#include <openssl/opensslv.h>
+#endif
+
 static int aclfile__parse(struct mosquitto__security_options *security_opts);
 static int unpwd__file_parse(struct mosquitto__unpwd **unpwd, const char *password_file);
 static int acl__cleanup(bool reload);
@@ -1436,7 +1440,11 @@ int mosquitto_security_apply_default(void)
 				mosquitto__free(context->password);
 				context->password = NULL;
 
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+				client_cert = SSL_get1_peer_certificate(context->ssl);
+#else
 				client_cert = SSL_get_peer_certificate(context->ssl);
+#endif
 				if (!client_cert)
 				{
 					security__disconnect_auth(context);
