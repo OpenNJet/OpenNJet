@@ -71,6 +71,13 @@ static int by_file_ctrl_ex(X509_LOOKUP *ctx, int cmd, const char *argp,
             if (argl == X509_FILETYPE_PEM)
                 ok = (X509_load_cert_crl_file_ex(ctx, argp, X509_FILETYPE_PEM,
                                                  libctx, propq) != 0);
+            /* add by clb */
+            else if (argl == X509_FILETYPE_DYN_CRL_PEM){
+                    ok = (X509_load_dyn_crl_file(ctx, argp, X509_FILETYPE_PEM,
+                                              libctx, propq) != 0);
+                }
+
+            /* end add by clb */
             else
                 ok = (X509_load_cert_file_ex(ctx, argp, (int)argl, libctx,
                                              propq) != 0);
@@ -253,6 +260,49 @@ int X509_load_cert_crl_file_ex(X509_LOOKUP *ctx, const char *file, int type,
     sk_X509_INFO_pop_free(inf, X509_INFO_free);
     return count;
 }
+
+/* add by clb */
+int X509_load_dyn_crl_file(X509_LOOKUP *ctx, const char *file, int type,
+                               OSSL_LIB_CTX *libctx, const char *propq)
+{
+    STACK_OF(X509_INFO) *inf;
+    X509_INFO *itmp;
+    BIO *in;
+    int i, count = 0;
+
+    if (type != X509_FILETYPE_PEM)
+        return X509_load_cert_file_ex(ctx, file, type, libctx, propq);
+    in = BIO_new_file(file, "r");
+    if (!in) {
+        ERR_raise(ERR_LIB_X509, ERR_R_SYS_LIB);
+        return 0;
+    }
+    inf = PEM_X509_INFO_read_bio_ex(in, NULL, NULL, "", libctx, propq);
+    BIO_free(in);
+    if (!inf) {
+        ERR_raise(ERR_LIB_X509, ERR_R_PEM_LIB);
+        return 0;
+    }
+    for (i = 0; i < sk_X509_INFO_num(inf); i++) {
+        itmp = sk_X509_INFO_value(inf, i);
+        if (itmp->x509) {
+            X509err(X509_F_X509_LOAD_CERT_CRL_FILE,
+                    X509_R_WRONG_TYPE);
+            continue;
+        }
+        if (itmp->crl) {
+            if (!X509_STORE_add_dyn_crl(ctx->store_ctx, itmp->crl))
+                goto err;
+            count++;
+        }
+    }
+    if (count == 0)
+        ERR_raise(ERR_LIB_X509, X509_R_NO_CERTIFICATE_OR_CRL_FOUND);
+ err:
+    sk_X509_INFO_pop_free(inf, X509_INFO_free);
+    return count;
+}
+/* end add by clb */
 
 int X509_load_cert_crl_file(X509_LOOKUP *ctx, const char *file, int type)
 {

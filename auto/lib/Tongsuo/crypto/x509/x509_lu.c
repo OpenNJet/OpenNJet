@@ -447,6 +447,47 @@ static int x509_store_add(X509_STORE *store, void *x, int crl) {
     return ret;
 }
 
+/* add by clb */
+int X509_STORE_add_dyn_crl(X509_STORE *store, X509_CRL *x) 
+{
+    X509_OBJECT *obj, *old_obj;
+    int ret = 0, added = 0;
+    if (x == NULL)
+        return 0;
+    obj = X509_OBJECT_new();
+    if (obj == NULL)
+        return 0;
+
+    obj->type = X509_LU_CRL;
+    obj->data.crl = x;
+
+    if (!X509_OBJECT_up_ref_count(obj)) {
+        obj->type = X509_LU_NONE;
+        X509_OBJECT_free(obj);
+        return 0;
+    }
+
+
+    X509_STORE_lock(store);
+    old_obj = X509_OBJECT_retrieve_match(store->objs, obj);
+    if(old_obj != NULL) {
+        sk_X509_OBJECT_delete_ptr(store->objs, old_obj);
+        /* free old obj memory */
+        X509_OBJECT_free(old_obj);
+        ret = 1;
+    }
+
+    added = sk_X509_OBJECT_push(store->objs, obj);
+    ret = added != 0;
+    X509_STORE_unlock(store);
+
+    if (added == 0)             /* obj not pushed */
+        X509_OBJECT_free(obj);
+
+    return ret;
+}
+/* end add by clb */
+
 int X509_STORE_add_cert(X509_STORE *ctx, X509 *x)
 {
     if (!x509_store_add(ctx, x, 0)) {
