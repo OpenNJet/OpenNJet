@@ -334,7 +334,6 @@ static int X509_REVOKED_cmp(const X509_REVOKED *const *a,
 int X509_CRL_add0_revoked(X509_CRL *crl, X509_REVOKED *rev)
 {
     X509_CRL_INFO *inf;
-
     inf = &crl->crl;
     if (inf->revoked == NULL)
         inf->revoked = sk_X509_REVOKED_new(X509_REVOKED_cmp);
@@ -412,7 +411,6 @@ static int def_crl_lookup(X509_CRL *crl,
 
     if (crl->crl.revoked == NULL)
         return 0;
-
     /*
      * Sort revoked into serial number order if not already sorted. Do this
      * under a lock to avoid race condition.

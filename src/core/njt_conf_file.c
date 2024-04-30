@@ -1131,7 +1131,7 @@ char *
 njt_conf_set_str_slot(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
     char  *p = conf;
-
+    
     njt_str_t        *field, *value;
     njt_conf_post_t  *post;
 

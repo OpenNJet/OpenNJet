@@ -673,6 +673,7 @@ njt_http_ssl_create_srv_conf(njt_conf_t *cf)
     sscf->verify_depth = NJT_CONF_UNSET_UINT;
     sscf->certificates = NJT_CONF_UNSET_PTR;
     sscf->certificate_keys = NJT_CONF_UNSET_PTR;
+    sscf->crls_path = NJT_CONF_UNSET_PTR;        //add by clb
     sscf->dyn_cert_crc32 = NJT_CONF_UNSET_PTR;   //add by clb
     sscf->cert_types = NJT_CONF_UNSET_PTR;   //add by clb
     sscf->passwords = NJT_CONF_UNSET_PTR;
@@ -729,10 +730,13 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
                          NULL);
 
     //add by clb
+    njt_conf_merge_ptr_value(conf->crls_path, prev->crls_path,
+                         NULL);
     njt_conf_merge_ptr_value(conf->dyn_cert_crc32, prev->dyn_cert_crc32,
                          NULL);
     njt_conf_merge_ptr_value(conf->cert_types, prev->cert_types,
                          NULL);
+    //end add by clb
 
     njt_conf_merge_ptr_value(conf->passwords, prev->passwords, NULL);
 
@@ -878,6 +882,16 @@ njt_http_ssl_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
     conf->ssl.buffer_size = conf->buffer_size;
 
     if (conf->verify) {
+        //add by clb
+        if(conf->crls_path == NULL){
+            conf->crls_path = njt_array_create(cf->pool, 4, sizeof(njt_str_t));
+            if (conf->crls_path == NULL) {
+                njt_log_error(NJT_LOG_EMERG, cf->log, 0,
+                          "crls_path create error");
+                return NJT_CONF_ERROR;
+            }
+        }
+        //end add by clb
 
         if (conf->client_certificate.len == 0 && conf->verify != 3) {
             njt_log_error(NJT_LOG_EMERG, cf->log, 0,
