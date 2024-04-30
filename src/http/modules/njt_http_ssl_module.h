@@ -47,6 +47,9 @@ typedef struct {
     njt_str_t                       client_certificate;
     njt_str_t                       trusted_certificate;
     njt_str_t                       crl;
+//add by clb
+    njt_array_t                     *crls_path;    //save all crl path
+//end add by clb
 
     njt_str_t                       ciphers;
 

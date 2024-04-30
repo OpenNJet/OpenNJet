@@ -47,13 +47,21 @@ END
             *)  njt_prefix="$PWD/$OPENSSL/.openssl" ;;
         esac
 
+        if case $OPENSSL in *tongsuo) ;; *) false;; esac; then
+            openssl_build_opt=" no-shared "
+            make_opt="install_sw LIBDIR=lib"
+        else
+            # openssl_build_opt=" --static -static "
+            openssl_build_opt=" no-shared "
+            make_opt="install LIBDIR=lib"
+        fi
         cat << END                                            >> $NJT_MAKEFILE
 
 $OPENSSL/.openssl/include/openssl/ssl.h:	$NJT_MAKEFILE
 	cd $OPENSSL \\
-	&& if [ ! -f Makefile ]; then ./config --prefix=$njt_prefix no-shared no-threads $OPENSSL_OPT ; fi \\
+	&& if [ ! -f Makefile ]; then ./config  no-tests --prefix=$njt_prefix  $openssl_build_opt  no-threads $OPENSSL_OPT ; fi \\
 	&& \$(MAKE) \\
-	&& \$(MAKE) install_sw LIBDIR=lib
+	&& \$(MAKE) $make_opt
 
 END
 

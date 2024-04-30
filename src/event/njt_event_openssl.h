@@ -226,6 +226,7 @@ njt_int_t njt_ssl_client_certificate(njt_conf_t *cf, njt_ssl_t *ssl,
 njt_int_t njt_ssl_trusted_certificate(njt_conf_t *cf, njt_ssl_t *ssl,
     njt_str_t *cert, njt_int_t depth);
 njt_int_t njt_ssl_crl(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *crl);
+njt_int_t njt_dyn_ssl_crl(njt_ssl_t *ssl, njt_str_t *crl);   //add by clb
 njt_int_t njt_ssl_stapling(njt_conf_t *cf, njt_ssl_t *ssl,
     njt_str_t *file, njt_str_t *responder, njt_uint_t verify);
 njt_int_t njt_ssl_stapling_resolver(njt_conf_t *cf, njt_ssl_t *ssl,

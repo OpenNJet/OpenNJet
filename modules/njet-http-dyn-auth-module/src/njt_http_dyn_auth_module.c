@@ -194,7 +194,7 @@ static njt_int_t njt_dyn_auth_set_auth_config(njt_http_core_loc_conf_t *clcf,
     }
 
     tmp_str.len = data->auth_basic.len;
-    tmp_str.data = njt_pcalloc(pool, data->auth_basic.len);
+    tmp_str.data = njt_pcalloc(pool, data->auth_basic.len + 1);
     if (tmp_str.data == NULL) {
         end = njt_snprintf(data_buf,sizeof(data_buf) - 1," realm data malloc error");
         rpc_data_str.len = end - data_buf;
@@ -247,7 +247,7 @@ static njt_int_t njt_dyn_auth_set_auth_config(njt_http_core_loc_conf_t *clcf,
     }
 
     tmp_str.len = data->auth_param.len;
-    tmp_str.data = njt_pcalloc(pool, data->auth_param.len);
+    tmp_str.data = njt_pcalloc(pool, data->auth_param.len + 1);
     if (tmp_str.data == NULL) {
         end = njt_snprintf(data_buf,sizeof(data_buf) - 1," user_file or kv malloc error");
         rpc_data_str.len = end - data_buf;

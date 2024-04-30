@@ -163,7 +163,6 @@ int X509_NAME_cmp(const X509_NAME *a, const X509_NAME *b)
     int ret;
 
     /* Ensure canonical encoding is present and up to date */
-
     if (!a->canon_enc || a->modified) {
         ret = i2d_X509_NAME((X509_NAME *)a, NULL);
         if (ret < 0)
@@ -180,7 +179,6 @@ int X509_NAME_cmp(const X509_NAME *a, const X509_NAME *b)
 
     if (ret != 0 || a->canon_enclen == 0)
         return ret;
-
     return memcmp(a->canon_enc, b->canon_enc, a->canon_enclen);
 
 }

@@ -1,7 +1,14 @@
-include_directories(../../tongsuo/include ${mosquitto_SOURCE_DIR} ${mosquitto_SOURCE_DIR}/src
-		${mosquitto_SOURCE_DIR}/include ${mosquitto_SOURCE_DIR}/lib
-		${STDBOOL_H_PATH} ${STDINT_H_PATH} )
-link_directories(../../tongsuo)
+if ( TONGSUO_8_4 )
+	include_directories(../../Tongsuo/.openssl/include ${mosquitto_SOURCE_DIR} ${mosquitto_SOURCE_DIR}/src
+			${mosquitto_SOURCE_DIR}/include ${mosquitto_SOURCE_DIR}/lib
+			${STDBOOL_H_PATH} ${STDINT_H_PATH} )
+	link_directories(../../Tongsuo/.openssl/lib)
+else( TONGSUO_8_4 )
+	include_directories(../../tongsuo/include ${mosquitto_SOURCE_DIR} ${mosquitto_SOURCE_DIR}/src
+			${mosquitto_SOURCE_DIR}/include ${mosquitto_SOURCE_DIR}/lib
+			${STDBOOL_H_PATH} ${STDINT_H_PATH} )
+	link_directories(../../tongsuo)
+endif( TONGSUO_8_4 )
 
 set (MOSQ_SRCS
 	../lib/mosquitto_internal.h

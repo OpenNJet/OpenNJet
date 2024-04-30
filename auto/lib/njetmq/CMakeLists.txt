@@ -10,6 +10,8 @@ cmake_policy(SET CMP0042 NEW)
 project(mosquitto)
 set (VERSION 2.0.9)
 
+SET(GCC_COMPILE_NO_DEPRECATED_FLAGS "-Wno-deprecated-declarations")
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 
 add_definitions (-DCMAKE -DVERSION=\"${VERSION}\")
@@ -35,6 +37,7 @@ option(WITH_EC
 if (WITH_TLS)
 	find_package(OpenSSL REQUIRED)
 	add_definitions("-DWITH_TLS")
+	add_definitions(${GCC_COMPILE_NO_DEPRECATED_FLAGS})
 
 	if (WITH_TLS_PSK)
 		add_definitions("-DWITH_TLS_PSK")
