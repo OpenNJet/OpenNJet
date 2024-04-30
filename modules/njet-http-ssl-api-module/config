@@ -9,7 +9,6 @@ njt_module_srcs=" \
 njt_module_incs=""
 njt_module_libs=""
 
-# have=NJT_HTTP_SSL_API . auto/have
 
 . auto/module
 

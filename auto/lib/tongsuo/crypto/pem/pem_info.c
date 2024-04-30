@@ -100,6 +100,7 @@ STACK_OF(X509_INFO) *PEM_X509_INFO_read_bio(BIO *bp, STACK_OF(X509_INFO) *sk,
                     goto err;
                 if ((xi = X509_INFO_new()) == NULL)
                     goto err;
+
                 goto start;
             }
             pp = &(xi->crl);
