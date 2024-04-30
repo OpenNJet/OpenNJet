@@ -456,7 +456,7 @@ done:
     }
 
     s = (size_t)(pool->end - (u_char *)pool);
-    if (p == 0 && pool->first != njt_cycle->shared_slab.header) {
+    if (p == 0 && pool->first != njt_cycle->shared_slab.header && njt_cycle->shared_slab.header != NULL) {
         new_pool = (njt_slab_pool_t *) njt_slab_alloc(njt_cycle->shared_slab.header, s);
         if (new_pool != NULL) {
             njt_slab_add_new_pool(pool->first, new_pool, s, njt_cycle->log);

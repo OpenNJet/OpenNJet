@@ -47,7 +47,7 @@ njt_helper_run(helper_param param)
         return ;
     }
 
-    init_cycle.shared_slab = njet_master_cycle->shared_slab;
+    init_cycle.shared_slab = njet_master_cycle->shared_slab; // for dyn slab
 
     cycle = &init_cycle;
 #else
