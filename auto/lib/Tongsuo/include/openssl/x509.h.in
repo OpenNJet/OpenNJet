@@ -63,6 +63,9 @@ extern "C" {
 # define X509_FILETYPE_PEM       1
 # define X509_FILETYPE_ASN1      2
 # define X509_FILETYPE_DEFAULT   3
+/* add by clb */
+# define X509_FILETYPE_DYN_CRL_PEM   9
+/* end add by clb */
 
 # define X509v3_KU_DIGITAL_SIGNATURE     0x0080
 # define X509v3_KU_NON_REPUDIATION       0x0040
