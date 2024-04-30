@@ -42,6 +42,11 @@ function _M.isArray(t)
     return true
 end
 
+function _M.fileExists(name)
+    local f=io.open(name,"r")
+    if f~=nil then io.close(f) return true else return false end
+ end
+
 local function read_from_file(file_name)
     local f = io.open(file_name, "r")
     if not f then 

@@ -116,7 +116,8 @@ INSERT INTO api (id,name,group_id,"path","method","desc",param_mode,sign_validat
          (26,'api gateway',1,'/identities/roles/{id}/apis','get','通过 role_id 查询对应role 授权的 API 列表',0,0),
          (27,'api gateway',1,'/identities/roles/{id}/apis','put','通过 role_id 更新对应role 授权的 API 列表',0,0),
          (28,'api gateway',1,'/auth/login','post','登录',0,0),
-         (29,'api gateway',1,'/auth/verification','post','登录',0,0)  ;
+         (29,'api gateway',1,'/auth/verification','post','登录',0,0),  
+         (30,'api gateway',1,'/deploy/app','post','部署已上传的应用',0,0)  ;
 INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
          (1,1,1),
          (2,2,1),
@@ -148,7 +149,8 @@ INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
          (26,26,1),
          (27,27,1),
          (28,28,0),
-          (29,29,0);
+          (29,29,0),
+          (30,30,1);
 INSERT INTO api_grant_rbac (id,role_id,api_id) VALUES
          (1,1,1),
          (2,1,2),
@@ -180,7 +182,8 @@ INSERT INTO api_grant_rbac (id,role_id,api_id) VALUES
          (26,1,26),
          (27,1,27),
          (28,1,28),
-         (29,1,29);
+         (29,1,29),
+         (30,1,30);
 INSERT INTO api_group (id,name,base_path,"desc") VALUES
          (1,'api_gateway','/api_gateway','API Gateway');
 INSERT INTO api_role (id,name,"desc") VALUES

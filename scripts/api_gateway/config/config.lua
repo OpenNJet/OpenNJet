@@ -7,5 +7,6 @@ return {
         port = 25,
         starttls = false
     },
-    email_from = "aa@aa.com"
+    email_from = "aa@aa.com",
+    ctrl_api_base = "http://127.0.0.1:8081/api/v1"
 }

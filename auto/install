@@ -172,6 +172,7 @@ install:	build $NJT_INSTALL_PERL_MODULES
 
 	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/logs'
 	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/data'
+	install -d -m 777 '\$(DESTDIR)$NJT_PREFIX/apps'
 	
 	test -d build/rpm/njet.conf.files/usr/local/njet/conf/modsec \\
                && cp -a build/rpm/njet.conf.files/usr/local/njet/conf/modsec \$(DESTDIR)$NJT_CONF_PREFIX/

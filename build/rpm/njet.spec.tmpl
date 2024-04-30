@@ -29,7 +29,7 @@ fi
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/usr/local/njet/{logs,data,modules,lib,sbin,lualib/lib,lualib/clib}
+mkdir -p %{buildroot}/usr/local/njet/{apps,logs,data,modules,lib,sbin,lualib/lib,lualib/clib}
 cp -a njet/build/rpm/njet.conf.files/* %{buildroot}
 cp -a njet/build/api_gateway.db %{buildroot}/usr/local/njet/data
 cp -a njet/objs/njet %{buildroot}/usr/local/njet/sbin/

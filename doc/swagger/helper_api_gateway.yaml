@@ -871,6 +871,35 @@ paths:
                     example: "success"
         '500':
           description: Internal Server Error      
+  /deploy/app:
+    post:
+      tags: 
+        - deploy
+      summary: 部署已上传的应用
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/deployAppData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+
   /auth/login:  
     post:
       tags: 
@@ -1059,6 +1088,21 @@ components:
       properties:
         email:
           type: string 
+    deployAppData:
+      title: deploy app data
+      type: object
+      required: ["uploaded_file", "app_type", "base_path"]
+      properties:
+        uploaded_file:
+          type: string
+        app_type:
+          type: string
+          enum: 
+            - lua
+        base_path:
+          type: string
+        server_name:
+          type: string
   securitySchemes:
     bearerAuth:
       type: http
