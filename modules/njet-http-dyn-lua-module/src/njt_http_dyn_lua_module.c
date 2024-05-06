@@ -543,8 +543,16 @@ njt_http_dyn_lua_init(njt_conf_t *cf)
 {
     njt_http_handler_pt        *h;
     njt_http_core_main_conf_t  *cmcf;
+    njt_http_lua_main_conf_t   *lmcf;
 
     cmcf = njt_http_conf_get_module_main_conf(cf, njt_http_core_module);
+    lmcf = njt_http_conf_get_module_main_conf(cf, njt_http_lua_module);
+
+    if ( lmcf != NULL && lmcf->requires_access) {
+        //there is access_by_lua in static conf file 
+        //let njt_http_lua_module add handler   
+        return NJT_OK;
+    }
 
     h = njt_array_push(&cmcf->phases[NJT_HTTP_ACCESS_PHASE].handlers);
     if (h == NULL) {
