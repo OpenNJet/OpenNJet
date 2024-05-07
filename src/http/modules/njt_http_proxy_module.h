@@ -124,6 +124,12 @@ typedef struct {
 #if(NJT_HTTP_DYNAMIC_UPSTREAM)
     unsigned  preserve:1;
 #endif
+
+#if(NJT_HTTP_DYN_PROXY_PASS)
+    njt_pool_t   *pool;
+    njt_str_t     ori_url;
+#endif
+
 } njt_http_proxy_loc_conf_t;
 
 
@@ -141,4 +147,6 @@ typedef struct {
     unsigned                       header_sent:1;
 } njt_http_proxy_ctx_t;
 
+
+void njt_http_proxy_set_vars(njt_url_t *u, njt_http_proxy_vars_t *v);
 #endif
