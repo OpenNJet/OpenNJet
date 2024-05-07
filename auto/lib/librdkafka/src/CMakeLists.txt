@@ -221,6 +221,7 @@ if(WITH_ZSTD)
 endif()
 
 if(WITH_SSL)
+  message(STATUS "=========================use ssl")
   if(WITH_BUNDLED_SSL) # option from 'h2o' parent project
     if(NOT TARGET bundled-ssl)
       message(FATAL_ERROR "bundled-ssl target not exist")

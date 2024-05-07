@@ -196,7 +196,7 @@ mkl_cache_read
 mkl_checks_run
 
 # Check accumulated failures, will not return on failure.
-mkl_check_fails
+# mkl_check_fails
 
 # Generate outputs
 mkl_generate

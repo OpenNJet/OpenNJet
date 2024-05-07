@@ -12,6 +12,7 @@ build_bin:
   #   DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
 #  image: gcc:4.8.5   # gcc 版本
   script:
+    - sudo yum -y install libzstd-devel  cyrus-sasl-devel lz4-devel.x86_64
     - sudo chmod +x ./build_cc.sh ./configure
     - sudo ./build_cc.sh -t $CI_COMMIT_SHA -d conf
     - sudo make -j `nproc`
@@ -38,7 +39,8 @@ build_rpm:
   #   DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
   when: manual
   script:
-    - cd ..  
+    - cd ..
+    - sudo yum -y install libzstd-devel  cyrus-sasl-devel lz4-devel.x86_64
     - tar cf /home/builder/rpm/njet_main.tar --exclude="njet_main/.git" njet_main
     - sudo chmod +x njet_main/build/rpm/generate_njet_spec.sh
     - cd njet_main
@@ -56,7 +58,8 @@ build_deb:
   stage: build_deb
   image: tmlake/njet-build:ubuntu18.04
   when: manual
-  script: 
+  script:
+    - sudo apt -y install libzstd-dev  libsasl2-de  liblz4-dev 
     - ./build_cc.sh -t $CI_COMMIT_SHA conf 
     - make -j `nproc` 
     - ./build_cc.sh install

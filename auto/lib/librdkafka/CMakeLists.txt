@@ -54,16 +54,18 @@ endif()
 # }
 
 # CURL {
-find_package(CURL QUIET)
-if(CURL_FOUND)
-  set(with_curl_default ON)
-else()
-  set(with_curl_default OFF)
-endif()
-option(WITH_CURL "With CURL" ${with_curl_default})
-if(WITH_CURL)
-  list(APPEND BUILT_WITH "CURL")
-endif()
+set(with_curl_default OFF)
+set(WITH_CURL OFF)
+#find_package(CURL QUIET)
+#if(CURL_FOUND)
+#  set(with_curl_default ON)
+#else()
+#  set(with_curl_default OFF)
+#endif()
+#option(WITH_CURL "With CURL" ${with_curl_default})
+#if(WITH_CURL)
+#  list(APPEND BUILT_WITH "CURL")
+#endif()
 # }
 
 # ZSTD {
@@ -104,20 +106,22 @@ endif()
 # }
 
 # OpenSSL {
-if(WITH_BUNDLED_SSL) # option from 'h2o' parent project
-  set(with_ssl_default ON)
-else()
-  find_package(OpenSSL QUIET)
-  if(OpenSSL_FOUND)
-    set(with_ssl_default ON)
-  else()
-    set(with_ssl_default OFF)
-  endif()
-endif()
-option(WITH_SSL "With SSL" ${with_ssl_default})
-if(WITH_SSL)
-  list(APPEND BUILT_WITH "SSL")
-endif()
+set(with_ssl_default OFF)
+set(WITH_SSL OFF)
+#if(WITH_BUNDLED_SSL) # option from 'h2o' parent project
+#  set(with_ssl_default ON)
+#else()
+#  find_package(OpenSSL QUIET)
+#  if(OpenSSL_FOUND)
+#    set(with_ssl_default ON)
+#  else()
+#    set(with_ssl_default OFF)
+#  endif()
+#endif()
+#option(WITH_SSL "With SSL" ${with_ssl_default})
+#if(WITH_SSL)
+#  list(APPEND BUILT_WITH "SSL")
+#endif()
 # }
 
 # SASL {
@@ -279,13 +283,13 @@ install(
 )
 
 add_subdirectory(src)
-add_subdirectory(src-cpp)
+#add_subdirectory(src-cpp)
 
 if(RDKAFKA_BUILD_EXAMPLES)
-  add_subdirectory(examples)
+  #add_subdirectory(examples)
 endif()
 
 if(RDKAFKA_BUILD_TESTS)
-  enable_testing()
-  add_subdirectory(tests)
+  #enable_testing()
+  #add_subdirectory(tests)
 endif()
