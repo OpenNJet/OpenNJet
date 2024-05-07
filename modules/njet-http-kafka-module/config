@@ -1,0 +1,38 @@
+njt_addon_name=njt_http_kafka_module
+njt_module_type=HTTP
+njt_module_name=$njt_addon_name
+njt_module_srcs="$njt_addon_dir/src/njt_http_kafka_module.c"
+# njt_module_libs="-lrdkafka -lz -lpthread"
+
+
+njt_module_incs="$njt_addon_dir/../../auto/lib/librdkafka/src"
+njt_module_libs="-L$njt_addon_dir/../../auto/lib/librdkafka/src/ -lrdkafka"
+NJT_HTTP_RDKAFKA="YES"
+
+. auto/module
+
+# if test -n "$njt_module_link"; then
+# 	njt_module_type=HTTP
+# 	njt_module_name=$njt_addon_name
+# 	njt_module_srcs="$njt_addon_dir/src/njt_http_kafka_module.c"
+# 	njt_module_libs="-lrdkafka -lz -lpthread"
+# 	. auto/module
+# else
+# 	HTTP_MODULES="$HTTP_MODULES njt_http_kafka_module"
+# 	NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_addon_dir/src/njt_http_kafka_module.c"
+# 	CORE_LIBS="$CORE_LIBS -lrdkafka -lz -lpthread"
+# fi
+
+# njt_addon_name=njt_http_kafka_module
+# njt_module_type=HTTP
+# njt_module_name=$njt_addon_name
+# njt_module_deps=""
+# njt_module_srcs=" \
+#   $njt_addon_dir/src/njt_http_kafka_module.c \
+# "
+# njt_module_incs=""
+# njt_module_libs=""
+
+# CORE_LIBS="$CORE_LIBS -lrdkafka -lz -lpthread"
+# CORE_INCS="$CORE_INCS $njt_addon_dir/src"
+# . auto/module
