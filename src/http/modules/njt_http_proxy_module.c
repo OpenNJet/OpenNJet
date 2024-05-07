@@ -10,6 +10,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 #include <njt_http_proxy_module.h>
+#include <njt_http_util.h>
 
 // #if (NJT_HTTP_FAULT_INJECT)
 #include <njt_http_fault_inject_module.h>
@@ -132,7 +133,7 @@ static char *
 njt_http_proxy_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 #endif
 
-static void njt_http_proxy_set_vars(njt_url_t *u, njt_http_proxy_vars_t *v);
+ 
 
 
 static njt_conf_post_t  njt_http_proxy_lowat_post =
@@ -857,7 +858,36 @@ static njt_conf_bitmask_t  njt_http_proxy_cookie_flags_masks[] = {
 
     { njt_null_string, 0 }
 };
+#if(NJT_HTTP_DYN_PROXY_PASS)
+    static njt_int_t
+    njt_http_proxy_copy_vars(njt_http_request_t *r,njt_http_proxy_vars_t *dst, njt_http_proxy_vars_t *src) {
+        njt_http_proxy_loc_conf_t   *plcf;
+        plcf = njt_http_get_module_loc_conf(r, njt_http_proxy_module);
+        if(plcf->pool == NULL) {  //原始的，不会释放。
+            return NJT_OK;
+        }
 
+        dst->key_start.len = src->key_start.len;
+        dst->key_start.data = njt_pstrdup(r->pool,&src->key_start);
+
+        dst->schema.len = src->schema.len;
+        dst->schema.data = njt_pstrdup(r->pool,&src->schema);
+
+        dst->host_header.len = src->host_header.len;
+        dst->host_header.data = njt_pstrdup(r->pool,&src->host_header);
+
+        dst->port.len = src->port.len;
+        dst->port.data = njt_pstrdup(r->pool,&src->port);
+
+        dst->uri.len = src->uri.len;
+        dst->uri.data = njt_pstrdup(r->pool,&src->uri);
+        if(dst->key_start.data == NULL || dst->schema.data == NULL || dst->host_header.data == NULL || dst->port.data == NULL || dst->uri.data == NULL) {
+             return NJT_HTTP_INTERNAL_SERVER_ERROR;
+        }
+
+    return NJT_OK;
+    }
+#endif
 
 static njt_int_t
 njt_http_proxy_handler(njt_http_request_t *r)
@@ -889,6 +919,11 @@ njt_http_proxy_handler(njt_http_request_t *r)
     if (plcf->proxy_lengths == NULL) {
         ctx->vars = plcf->vars;
         u->schema = plcf->vars.schema;
+#if(NJT_HTTP_DYN_PROXY_PASS)
+        njt_http_proxy_copy_vars(r,&ctx->vars,&plcf->vars);
+        u->schema = ctx->vars.schema;
+#endif
+
 #if (NJT_HTTP_SSL)
         u->ssl = plcf->ssl;
 #endif
@@ -4225,7 +4260,6 @@ njt_http_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     url = &value[1];
 
     n = njt_http_script_variables_count(url);
-
     if (n) {
 
         njt_memzero(&sc, sizeof(njt_http_script_compile_t));
@@ -4245,7 +4279,9 @@ njt_http_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #if (NJT_HTTP_SSL)
         plcf->ssl = 1;
 #endif
-
+#if(NJT_HTTP_DYN_PROXY_PASS)
+   plcf->ori_url = *url;
+#endif
         return NJT_CONF_OK;
     }
 
@@ -4312,6 +4348,9 @@ njt_http_proxy_pass(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     }
 
     plcf->url = *url;
+#if(NJT_HTTP_DYN_PROXY_PASS)
+   plcf->ori_url = *url;
+#endif
 
     return NJT_CONF_OK;
 }
@@ -5288,7 +5327,7 @@ skip:
 #endif
 
 
-static void
+ void
 njt_http_proxy_set_vars(njt_url_t *u, njt_http_proxy_vars_t *v)
 {
     if (u->family != AF_UNIX) {
@@ -5375,3 +5414,6 @@ njt_http_proxy_ssl_alpn(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 #endif
 }
 #endif
+
+
+

@@ -6611,8 +6611,10 @@ njt_http_upstream_add(njt_conf_t *cf, njt_url_t *u, njt_uint_t flags)
 
     uscf->flags = flags;
     uscf->host = u->host;
-    uscf->file_name = cf->conf_file->file.name.data;
-    uscf->line = cf->conf_file->line;
+    if(cf->conf_file != NULL) {
+        uscf->file_name = cf->conf_file->file.name.data;
+        uscf->line = cf->conf_file->line;
+    }
     uscf->port = u->port;
     uscf->no_port = u->no_port;
   

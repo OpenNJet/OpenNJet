@@ -84,6 +84,8 @@
 ./modules/njet-http-auth-api-module
 #optional
 ./modules/njet-http-dyn-auth-module
+#optional
+./modules/njet-http-dyn-proxy-pass-module
 # optional
 ./modules/njet-http-dyn-crl-module
 # optional
