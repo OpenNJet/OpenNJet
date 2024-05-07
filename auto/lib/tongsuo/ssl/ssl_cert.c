@@ -403,6 +403,7 @@ int ssl_verify_cert_chain(SSL *s, STACK_OF(X509) *sk)
     X509_STORE *verify_store;
     X509_STORE_CTX *ctx = NULL;
     X509_VERIFY_PARAM *param;
+    printf("=================ssl_verify_cert_chain\n");
 
     if ((sk == NULL) || (sk_X509_num(sk) == 0))
         return 0;

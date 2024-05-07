@@ -479,7 +479,11 @@ njt_ssl_get_certificate_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
     X509            *x509;
     EVP_PKEY        *pkey;
     STACK_OF(X509)  *chain;
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+    // size_t          pidx; for tongsuo8.4.0
+#else
     size_t          pidx;
+#endif
 #if (NJT_HAVE_NTLS)
     njt_uint_t       type;
 #endif
@@ -507,6 +511,8 @@ njt_ssl_get_certificate_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
 
 #endif
     pkey = X509_get0_pubkey(x509);
+
+#if OPENSSL_VERSION_NUMBER < 0x30000000L
     if (SSL_CTX_get_certificate_type(pkey, &pidx) == NULL) {
         njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0, "unknown certificate type");
         X509_free(x509);
@@ -521,6 +527,20 @@ njt_ssl_get_certificate_type(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *cert,
     }else if(pidx == 3){
         *cert_type = 2;       //ECC type
     }
+
+#else
+    // https://github.com/openssl/openssl/issues/11720
+    if (EVP_PKEY_is_a(pkey, "RSA")) {
+        *cert_type = 0;          //RSA type
+    } else if (EVP_PKEY_is_a(pkey, "EC")) {
+        *cert_type = 2;          //ECC type
+    } else {
+        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0, "unknown certificate type");
+        X509_free(x509);
+        sk_X509_pop_free(chain, X509_free);
+        return NJT_ERROR;
+    }
+#endif
 
     X509_free(x509);
     sk_X509_pop_free(chain, X509_free);
@@ -1272,6 +1292,55 @@ njt_ssl_crl(njt_conf_t *cf, njt_ssl_t *ssl, njt_str_t *crl)
     return NJT_OK;
 }
 
+//add by clb
+njt_int_t
+njt_dyn_ssl_crl(njt_ssl_t *ssl, njt_str_t *crl)
+{
+    X509_STORE   *store;
+    X509_LOOKUP  *lookup;
+    u_char        file_name[1024];
+    u_char       *p;
+    njt_str_t    dst_crl;
+
+    if (crl->len == 0) {
+        return NJT_OK;
+    }
+
+    njt_memzero(file_name, 1024);
+    p = njt_sprintf(file_name, "%V/data/%V", (njt_str_t *)&njt_cycle->prefix, crl);
+    dst_crl.len = p - file_name;
+    dst_crl.data = file_name;
+
+    store = SSL_CTX_get_cert_store(ssl->ctx);
+
+    if (store == NULL) {
+        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                      "SSL_CTX_get_cert_store() failed");
+        return NJT_ERROR;
+    }
+
+    lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
+
+    if (lookup == NULL) {
+        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                      "X509_STORE_add_lookup() failed");
+        return NJT_ERROR;
+    }
+
+    if (X509_LOOKUP_load_file(lookup, (char *) dst_crl.data, X509_FILETYPE_DYN_CRL_PEM)
+        == 0)
+    {
+        njt_ssl_error(NJT_LOG_EMERG, ssl->log, 0,
+                      "X509_LOOKUP_load_file(\"%s\") failed", dst_crl.data);
+        return NJT_ERROR;
+    }
+
+    X509_STORE_set_flags(store,
+                         X509_V_FLAG_CRL_CHECK|X509_V_FLAG_CRL_CHECK_ALL);
+
+    return NJT_OK;
+}
+//end add by clb
 
 static int
 njt_ssl_verify_callback(int ok, X509_STORE_CTX *x509_store)

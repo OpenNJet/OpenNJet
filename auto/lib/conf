@@ -33,6 +33,10 @@ if [ "$NJT_HTTP_MODSECURITY" = "YES" ]; then
    . auto/lib/modsecurity/conf
 fi
 
+if [ "$NJT_HTTP_RDKAFKA" = "YES" ]; then
+   . auto/lib/librdkafka/conf
+fi
+
 if [ $USE_ZLIB = YES ]; then
     . auto/lib/zlib/conf
 fi

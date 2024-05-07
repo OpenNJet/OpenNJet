@@ -30,6 +30,7 @@ Contributors:
 
 #ifdef WITH_TLS
 #include <openssl/ssl.h>
+#include <openssl/opensslv.h>
 #endif
 
 const char *mosquitto_client_address(const struct mosquitto *client)
@@ -85,7 +86,11 @@ void *mosquitto_client_certificate(const struct mosquitto *client)
 #ifdef WITH_TLS
 	if (client && client->ssl)
 	{
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+		return SSL_get1_peer_certificate(client->ssl);
+#else
 		return SSL_get_peer_certificate(client->ssl);
+#endif
 	}
 	else
 	{
