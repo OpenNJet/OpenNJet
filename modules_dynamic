@@ -17,7 +17,7 @@
 # optional
 ./modules/njet-helper-privilege-module
 # optional
-./modules/njet-helper-dynconf-update-module
+#./modules/njet-helper-dynconf-update-module
 # required
 ./modules/njet-helper-broker-module
 # optional
@@ -84,3 +84,11 @@
 ./modules/njet-http-auth-api-module
 #optional
 ./modules/njet-http-dyn-auth-module
+#optional
+./modules/njet-http-dyn-proxy-pass-module
+# optional
+./modules/njet-http-dyn-crl-module
+# optional
+./modules/njet-http-crl-api-module
+# optional
+./modules/njet-http-upload-module

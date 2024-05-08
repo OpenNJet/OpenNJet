@@ -45,8 +45,8 @@ static int by_file_ctrl(X509_LOOKUP *ctx, int cmd, const char *argp,
 
     switch (cmd) {
     case X509_L_FILE_LOAD:
-        if (argl == X509_FILETYPE_DEFAULT) {
             file = ossl_safe_getenv(X509_get_default_cert_file_env());
+        if (argl == X509_FILETYPE_DEFAULT) {
             if (file)
                 ok = (X509_load_cert_crl_file(ctx, file,
                                               X509_FILETYPE_PEM) != 0);
@@ -60,9 +60,18 @@ static int by_file_ctrl(X509_LOOKUP *ctx, int cmd, const char *argp,
                 X509err(X509_F_BY_FILE_CTRL, X509_R_LOADING_DEFAULTS);
             }
         } else {
-            if (argl == X509_FILETYPE_PEM)
-                ok = (X509_load_cert_crl_file(ctx, argp,
+            if (argl == X509_FILETYPE_PEM){
+                    ok = (X509_load_cert_crl_file(ctx, argp,
                                               X509_FILETYPE_PEM) != 0);
+                }
+
+            /* add by clb */
+            else if (argl == X509_FILETYPE_DYN_CRL_PEM){
+                    ok = (X509_load_dyn_crl_file(ctx, argp,
+                                              X509_FILETYPE_PEM) != 0);
+                }
+
+            /* end add by clb */
             else
                 ok = (X509_load_cert_file(ctx, argp, (int)argl) != 0);
         }
@@ -225,3 +234,46 @@ int X509_load_cert_crl_file(X509_LOOKUP *ctx, const char *file, int type)
     sk_X509_INFO_pop_free(inf, X509_INFO_free);
     return count;
 }
+
+/* add by clb */
+int X509_load_dyn_crl_file(X509_LOOKUP *ctx, const char *file, int type)
+{
+    STACK_OF(X509_INFO) *inf;
+    X509_INFO *itmp;
+    BIO *in;
+    int i, count = 0;
+
+    if (type != X509_FILETYPE_PEM)
+        return X509_load_cert_file(ctx, file, type);
+    in = BIO_new_file(file, "r");
+    if (!in) {
+        X509err(X509_F_X509_LOAD_CERT_CRL_FILE, ERR_R_SYS_LIB);
+        return 0;
+    }
+    inf = PEM_X509_INFO_read_bio(in, NULL, NULL, "");
+    BIO_free(in);
+    if (!inf) {
+        X509err(X509_F_X509_LOAD_CERT_CRL_FILE, ERR_R_PEM_LIB);
+        return 0;
+    }
+    for (i = 0; i < sk_X509_INFO_num(inf); i++) {
+        itmp = sk_X509_INFO_value(inf, i);
+        if (itmp->x509) {
+            X509err(X509_F_X509_LOAD_CERT_CRL_FILE,
+                    X509_R_WRONG_TYPE);
+            continue;
+        }
+        if (itmp->crl) {
+            if (!X509_STORE_add_dyn_crl(ctx->store_ctx, itmp->crl))
+                goto err;
+            count++;
+        }
+    }
+    if (count == 0)
+        X509err(X509_F_X509_LOAD_CERT_CRL_FILE,
+                X509_R_NO_CRL_FOUND);
+ err:
+    sk_X509_INFO_pop_free(inf, X509_INFO_free);
+    return count;
+}
+/* end add by clb */

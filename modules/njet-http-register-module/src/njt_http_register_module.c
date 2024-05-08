@@ -66,6 +66,7 @@ typedef struct {
     njt_int_t            port;
     njt_str_t            location;
     njt_int_t            interval;          //timer interval
+    njt_int_t            try_times;
     njt_str_t            register_file;
 } njt_http_register_main_conf_t;
 
@@ -96,6 +97,7 @@ njt_http_register_module_create_main_conf(njt_conf_t *cf)
     ccf->enable = NJT_CONF_UNSET;
     ccf->port = 8081;
     ccf->interval = 1000;
+    ccf->try_times = 20;
 
     njt_str_set(&ccf->server, "127.0.0.1");
     njt_str_set(&ccf->location, "/adc");
@@ -143,7 +145,7 @@ njt_http_register(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             value[i].data += 7;
             value[i].len -= 7;
 
-            ccf->register_file.data = njt_pcalloc(cf->pool, value[i].len);
+            ccf->register_file.data = njt_pcalloc(cf->pool, value[i].len + 1);
             njt_memcpy(ccf->register_file.data, value[i].data, value[i].len);
             ccf->register_file.len = value[i].len;
 
@@ -240,7 +242,16 @@ static void njt_http_register_timer_handler(njt_event_t *ev){
     rc = njt_dyn_kv_get(&http_register_info_k, &http_register_info_v);
     if (rc != NJT_OK || http_register_info_v.len < 1) {
         njt_log_error(NJT_LOG_INFO, njt_cycle->log, 0, "can't get http_register info from kv store");
-        goto next_http_register_timer;
+        ccf->try_times--;
+        if (ccf->try_times == 0){
+            if(ev->timer_set) {
+                njt_del_timer(ev);
+            }
+
+            return;
+        }else{
+            goto next_http_register_timer;
+        }
     }
 
     //send http_register info to adc location

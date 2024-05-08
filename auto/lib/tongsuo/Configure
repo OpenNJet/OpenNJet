@@ -134,6 +134,8 @@ my @gcc_devteam_warn = qw(
     -Wno-unused-parameter
     -Wno-missing-field-initializers
     -Wswitch
+    -Wno-array-bounds
+    -Wno-array-parameter
     -Wsign-compare
     -Wshadow
     -Wformat
