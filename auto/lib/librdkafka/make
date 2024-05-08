@@ -34,7 +34,7 @@ END
 $RDKAFKA/config.h:
 	cd $RDKAFKA \\
 	&& ./configure \\
-	&& $CMAKE   \\
+	&& $CMAKE .  \\
 	&& \$(MAKE) \\
     && \$(MAKE) install
 
