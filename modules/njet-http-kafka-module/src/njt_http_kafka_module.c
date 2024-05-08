@@ -9,7 +9,7 @@
 #include <njt_core.h>
 #include <njt_http.h>
 
-#include <librdkafka/rdkafka.h>
+#include <rdkafka.h>
 
 #define KAFKA_TOPIC_MAXLEN 256
 #define KAFKA_BROKER_MAXLEN 512
