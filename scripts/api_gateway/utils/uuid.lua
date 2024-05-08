@@ -189,7 +189,7 @@ end
 -- Seeds the random generator.
 -- It does so in 3 possible ways;
 --
--- 1. if in ngx_lua, use `ngx.time() + ngx.worker.pid()` to ensure a unique seed
+-- 1. if in njt_lua, use `njt.time() + njt.worker.pid()` to ensure a unique seed
 -- for each worker. It should ideally be called from the `init_worker` context.
 -- 2. use luasocket `gettime()` function, but it only does so when LuaSocket
 -- has been required already.

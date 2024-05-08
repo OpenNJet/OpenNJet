@@ -145,6 +145,9 @@ install:	build $NJT_INSTALL_PERL_MODULES
 	cp conf/scgi_params \\
 		'\$(DESTDIR)$NJT_CONF_PREFIX/scgi_params.default'
 
+	cp conf/*.example \\
+		'\$(DESTDIR)$NJT_CONF_PREFIX/'
+
 	test -f '\$(DESTDIR)$NJT_CONF_PATH' \\
 		|| sed -e "s|%%NJT_MODULES_PATH%%|$NJT_MODULES_PATH|g" \\
 			-e "s|%%NJT_CONF_PREFIX%%|$NJT_CONF_PREFIX|g" \\

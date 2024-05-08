@@ -2,7 +2,7 @@ LUA_INCLUDE_DIR ?= $(LUAJIT_INC)
 LUA_LIB_DIR ?= $(LUAJIT_LIB)
 LUAINC_linux ?= $(LUAJIT_INC)
 
-SUBDIRS = resty-cjson resty-http luasocket lsqlite3
+SUBDIRS = resty-cjson resty-http resty-balancer luasocket lsqlite3
 
 MYMAKEFLAGS = 'LUA_INCLUDE_DIR=$(LUA_INCLUDE_DIR)' 'LUA_LIB_DIR=$(LUA_LIB_DIR)' 'LUAINC_linux=$(LUAINC_linux)'
 

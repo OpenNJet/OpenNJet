@@ -928,5 +928,31 @@ if dict then
     end
 end
 
+local njt_parent_shared = njt.parent_shared
+if njt_parent_shared then
+    local _, dict = next(njt_parent_shared, nil)
+    if dict then
+        local mt = getmetatable(dict)
+        if mt then
+            mt = mt.__index
+            if mt then
+                mt.get = shdict_get
+                mt.get_stale = shdict_get_stale
+                mt.incr = shdict_incr
+                mt.set = shdict_set
+                mt.safe_set = shdict_safe_set
+                mt.add = shdict_add
+                mt.safe_add = shdict_safe_add
+                mt.replace = shdict_replace
+                mt.delete = shdict_delete
+                mt.flush_all = shdict_flush_all
+                mt.ttl = shdict_ttl
+                mt.expire = shdict_expire
+                mt.capacity = shdict_capacity
+                mt.free_space = shdict_free_space
+            end
+        end
+    end
+end
 
 return _M
