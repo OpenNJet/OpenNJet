@@ -16,12 +16,12 @@ if [ $OPENSSL != NONE -a $OPENSSL != NO -a $OPENSSL != YES ]; then
     fi
 fi
 
-if [ "$NJT_HTTP_MODSECURITY" = "YES" ]; then
-    . auto/lib/modsecurity/make
-fi
-
 if [ "$NJT_HTTP_RDKAFKA" = "YES" ]; then
     . auto/lib/librdkafka/make
+fi
+
+if [ "$NJT_HTTP_MODSECURITY" = "YES" ]; then
+    . auto/lib/modsecurity/make
 fi
 
 if [ $ZLIB != NONE -a $ZLIB != NO -a $ZLIB != YES ]; then
