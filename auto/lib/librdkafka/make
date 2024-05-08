@@ -28,7 +28,10 @@ END
 
     *)
 
-        CMAKE="cmake3"
+        CMAKE="cmake"
+        if command -v cmake3 > /dev/null; then
+           CMAKE="cmake3"
+        fi
         cat << END                                            >> $NJT_MAKEFILE
 
 $RDKAFKA/config.h:
