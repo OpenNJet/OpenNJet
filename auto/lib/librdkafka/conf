@@ -1,0 +1,26 @@
+
+# Copyright (C) Igor Sysoev
+# Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
+
+RDKAFKA="auto/lib/librdkafka"
+case "$CC" in
+
+    cl | bcc32)
+
+        CFLAGS="$CFLAGS -DNO_SYS_TYPES_H"
+
+        CORE_INCS="$CORE_INCS $RDKAFKA/src/"
+        CORE_DEPS="$CORE_DEPS $RDKAFKA/config.h"
+
+    ;;
+
+    *)
+        CORE_INCS="$CORE_INCS $RDKAFKA/src/"
+        CORE_DEPS="$CORE_DEPS $RDKAFKA/config.h"
+        # CORE_LIBS="$CORE_LIBS $RDKAFKA/src/librdkafka.a"
+        # CORE_LIBS="$CORE_LIBS -lm"
+    ;;
+esac
+
+
