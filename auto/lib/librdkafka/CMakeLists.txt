@@ -69,17 +69,19 @@ set(WITH_CURL OFF)
 # }
 
 # ZSTD {
-find_package(ZSTD QUIET)
-if(ZSTD_FOUND)
-  set(with_zstd_default ON)
-else()
-  set(with_zstd_default OFF)
-endif()
-option(WITH_ZSTD "With ZSTD" ${with_zstd_default})
-if(WITH_ZSTD)
-  list(APPEND BUILT_WITH "ZSTD")
-endif()
-# }
+set(with_zstd_default OFF)
+set(WITH_ZSTD OFF)
+# find_package(ZSTD QUIET)
+# if(ZSTD_FOUND)
+#   set(with_zstd_default ON)
+# else()
+#   set(with_zstd_default OFF)
+# endif()
+# option(WITH_ZSTD "With ZSTD" ${with_zstd_default})
+# if(WITH_ZSTD)
+#   list(APPEND BUILT_WITH "ZSTD")
+# endif()
+# # }
 
 # LibDL {
 try_compile(
@@ -125,44 +127,44 @@ set(WITH_SSL OFF)
 # }
 
 # SASL {
-if(WIN32)
-  set(with_sasl_default ON)
-else()
-  if(PkgConfig_FOUND)
-    pkg_check_modules(SASL libsasl2)
-    if(SASL_FOUND)
-      set(with_sasl_default ON)
-    else()
-      try_compile(
-          WITH_SASL_CYRUS_BOOL
-          "${CMAKE_CURRENT_BINARY_DIR}/try_compile"
-          "${TRYCOMPILE_SRC_DIR}/libsasl2_test.c"
-          LINK_LIBRARIES "-lsasl2"
-      )
-      if(WITH_SASL_CYRUS_BOOL)
-        set(with_sasl_default ON)
-        set(SASL_LIBRARIES "-lsasl2")
-      else()
-        set(with_sasl_default OFF)
-      endif()
-    endif()
-  endif()
-endif()
-option(WITH_SASL "With SASL" ${with_sasl_default})
-if(WITH_SASL)
-  if(SASL_FOUND)
-    link_directories(${SASL_LIBRARY_DIRS})
-  endif()
-  if(WITH_SSL)
-    set(WITH_SASL_SCRAM ON)
-    set(WITH_SASL_OAUTHBEARER ON)
-    list(APPEND BUILT_WITH "SASL_SCRAM SASL_OAUTHBEARER")
-  endif()
-  if(NOT WIN32)
-    set(WITH_SASL_CYRUS ON)
-    list(APPEND BUILT_WITH "SASL_CYRUS")
-  endif()
-endif()
+# if(WIN32)
+#   set(with_sasl_default ON)
+# else()
+#   if(PkgConfig_FOUND)
+#     pkg_check_modules(SASL libsasl2)
+#     if(SASL_FOUND)
+#       set(with_sasl_default ON)
+#     else()
+#       try_compile(
+#           WITH_SASL_CYRUS_BOOL
+#           "${CMAKE_CURRENT_BINARY_DIR}/try_compile"
+#           "${TRYCOMPILE_SRC_DIR}/libsasl2_test.c"
+#           LINK_LIBRARIES "-lsasl2"
+#       )
+#       if(WITH_SASL_CYRUS_BOOL)
+#         set(with_sasl_default ON)
+#         set(SASL_LIBRARIES "-lsasl2")
+#       else()
+#         set(with_sasl_default OFF)
+#       endif()
+#     endif()
+#   endif()
+# endif()
+# option(WITH_SASL "With SASL" ${with_sasl_default})
+# if(WITH_SASL)
+#   if(SASL_FOUND)
+#     link_directories(${SASL_LIBRARY_DIRS})
+#   endif()
+#   if(WITH_SSL)
+#     set(WITH_SASL_SCRAM ON)
+#     set(WITH_SASL_OAUTHBEARER ON)
+#     list(APPEND BUILT_WITH "SASL_SCRAM SASL_OAUTHBEARER")
+#   endif()
+#   if(NOT WIN32)
+#     set(WITH_SASL_CYRUS ON)
+#     list(APPEND BUILT_WITH "SASL_CYRUS")
+#   endif()
+# endif()
 # }
 
 if(WITH_SSL AND WITH_CURL)
@@ -170,7 +172,7 @@ if(WITH_SSL AND WITH_CURL)
 endif()
 
 # LZ4 {
-option(ENABLE_LZ4_EXT "Enable external LZ4 library support" ON)
+option(ENABLE_LZ4_EXT "Enable external LZ4 library support" OFF)
 set(WITH_LZ4_EXT OFF)
 if(ENABLE_LZ4_EXT)
   find_package(LZ4)
