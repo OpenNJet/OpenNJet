@@ -6,7 +6,7 @@ njt_module_srcs="$njt_addon_dir/src/njt_http_kafka_module.c"
 
 
 njt_module_incs="$njt_addon_dir/../../auto/lib/librdkafka/include"
-njt_module_libs="-L$njt_addon_dir/../../auto/lib/librdkafka/src/ -lrdkafka"
+njt_module_libs="-L$njt_addon_dir/../../auto/lib/librdkafka/build/src/ -lrdkafka"
 NJT_HTTP_RDKAFKA="YES"
 
 . auto/module
