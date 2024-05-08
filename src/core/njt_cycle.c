@@ -474,6 +474,72 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     //foreach
     njt_replace_pool_log(conf.pool, old_log, pool->log);
 
+    // for dyn slab
+    /* adjust global shared pool size, only increasing size is accepted */
+    njt_cycle = cycle;
+    new_main_slab_pool_size = njt_parse_size(&ccf->shared_slab_pool_size); /*if 0 or error, return -1*/
+
+    if (new_main_slab_pool_size > 0 && new_main_slab_pool_size < NJT_MIN_MAIN_SLAB_SIZE) {
+        new_main_slab_pool_size = NJT_MIN_MAIN_SLAB_SIZE;
+    }
+
+    njt_log_error(NJT_LOG_CRIT, log, 0,
+                    "dyn_slab new_slab_size %V, old_cycle slab size %d ",
+                    &ccf->shared_slab_pool_size, old_cycle->shared_slab.total_size);
+
+    cycle->shared_slab = old_cycle->shared_slab;
+
+    if (new_main_slab_pool_size > cycle->shared_slab.total_size) {
+        /*new process*/
+        if (cycle->shared_slab.total_size == 0) {
+            njt_main_slab_init(&cycle->shared_slab, new_main_slab_pool_size, cycle->log);
+
+            if (njt_shm_alloc(&cycle->shared_slab.shm) != NJT_OK) {
+                goto failed;
+            }
+
+            if (njt_init_shm_pool(cycle, &cycle->shared_slab.shm) != NJT_OK) {
+                njt_shm_free(&cycle->shared_slab.shm);
+                goto failed;
+            }
+
+            njt_log_error(NJT_LOG_CRIT, log, 0,
+                          "dyn_slab initialize dyn shared memory \"%V\", size %d ",
+                          &cycle->shared_slab.shm.name, new_main_slab_pool_size);
+
+            cycle->shared_slab.header = (njt_slab_pool_t *)cycle->shared_slab.shm.addr;
+        } else {
+
+            new_main_slab_pool_size -= cycle->shared_slab.total_size;
+
+            if (new_main_slab_pool_size < NJT_MIN_MAIN_SLAB_SIZE) {
+                new_main_slab_pool_size = NJT_MIN_MAIN_SLAB_SIZE;
+            }
+
+            cycle->shared_slab.shm.size = (size_t)new_main_slab_pool_size;
+
+            if (njt_shm_alloc(&cycle->shared_slab.shm) != NJT_OK) {
+                goto failed;
+            }
+
+            new_main_slab_pool = (njt_slab_pool_t *)cycle->shared_slab.shm.addr;
+
+            if (njt_slab_add_new_pool(cycle->shared_slab.header, new_main_slab_pool, new_main_slab_pool_size, log) != NJT_OK) {
+                njt_shm_free(&cycle->shared_slab.shm);
+                goto failed;
+            };
+
+            cycle->shared_slab.total_size += new_main_slab_pool_size;
+            cycle->shared_slab.count ++;
+
+            njt_log_error(NJT_LOG_CRIT, log, 0,
+                          "dyn_slab extend dyn shared memory \"%V\", to size %d, count %d ",
+                          &cycle->shared_slab.shm.name, cycle->shared_slab.total_size, cycle->shared_slab.count);
+
+        }
+    }
+    // end for dyn slab
+
     /* create shared memory */
 
     part = &cycle->shared_memory.part;
@@ -567,70 +633,6 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         continue;
     }
 
-    // for dyn slab
-    /* adjust global shared pool size, only increasing size is accepted */
-    new_main_slab_pool_size = njt_parse_size(&ccf->shared_slab_pool_size); /*if 0 or error, return -1*/
-
-    if (new_main_slab_pool_size > 0 && new_main_slab_pool_size < NJT_MIN_MAIN_SLAB_SIZE) {
-        new_main_slab_pool_size = NJT_MIN_MAIN_SLAB_SIZE;
-    }
-
-    njt_log_error(NJT_LOG_CRIT, log, 0,
-                    "dyn_slab new_slab_size %V, old_cycle slab size %d ",
-                    &ccf->shared_slab_pool_size, old_cycle->shared_slab.total_size);
-
-    cycle->shared_slab = old_cycle->shared_slab;
-
-    if (new_main_slab_pool_size > cycle->shared_slab.total_size) {
-        /*new process*/
-        if (cycle->shared_slab.total_size == 0) {
-            njt_main_slab_init(&cycle->shared_slab, new_main_slab_pool_size, cycle->log);
-
-            if (njt_shm_alloc(&cycle->shared_slab.shm) != NJT_OK) {
-                goto failed;
-            }
-
-            if (njt_init_shm_pool(cycle, &cycle->shared_slab.shm) != NJT_OK) {
-                njt_shm_free(&cycle->shared_slab.shm);
-                goto failed;
-            }
-
-            njt_log_error(NJT_LOG_CRIT, log, 0,
-                          "dyn_slab initialize dyn shared memory \"%V\", size %d ",
-                          &cycle->shared_slab.shm.name, new_main_slab_pool_size);
-
-            cycle->shared_slab.header = (njt_slab_pool_t *)cycle->shared_slab.shm.addr;
-        } else {
-
-            new_main_slab_pool_size -= cycle->shared_slab.total_size;
-
-            if (new_main_slab_pool_size < NJT_MIN_MAIN_SLAB_SIZE) {
-                new_main_slab_pool_size = NJT_MIN_MAIN_SLAB_SIZE;
-            }
-
-            cycle->shared_slab.shm.size = (size_t)new_main_slab_pool_size;
-
-            if (njt_shm_alloc(&cycle->shared_slab.shm) != NJT_OK) {
-                goto failed;
-            }
-
-            new_main_slab_pool = (njt_slab_pool_t *)cycle->shared_slab.shm.addr;
-
-            if (njt_slab_add_new_pool(cycle->shared_slab.header, new_main_slab_pool, new_main_slab_pool_size, log) != NJT_OK) {
-                njt_shm_free(&cycle->shared_slab.shm);
-                goto failed;
-            };
-
-            cycle->shared_slab.total_size += new_main_slab_pool_size;
-            cycle->shared_slab.count ++;
-
-            njt_log_error(NJT_LOG_CRIT, log, 0,
-                          "dyn_slab extend dyn shared memory \"%V\", to size %d, count %d ",
-                          &cycle->shared_slab.shm.name, cycle->shared_slab.total_size, cycle->shared_slab.count);
-
-        }
-    }
-    // end for dyn slab
 
     /* handle the listening sockets */
 

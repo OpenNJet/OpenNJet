@@ -461,7 +461,7 @@ done:
         if (new_pool != NULL) {
             njt_slab_add_new_pool(pool->first, new_pool, s, njt_cycle->log);
             njt_log_error(NJT_LOG_CRIT, njt_cycle->log, 0,
-                   "new slab pool alloc: %p, size %d", (void *) p, s);
+                   "new slab pool alloc: %p, size %d", (void *) new_pool, s);
             return njt_slab_alloc_locked(new_pool, size);
         } 
     }
