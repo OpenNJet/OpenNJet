@@ -40,7 +40,7 @@ build_rpm:
   when: manual
   script:
     - cd ..
-    - sudo yum -y install libzstd-devel  cyrus-sasl-devel lz4-devel.x86_64
+    # - sudo yum -y install libzstd-devel  cyrus-sasl-devel lz4-devel.x86_64
     - tar cf /home/builder/rpm/njet_main.tar --exclude="njet_main/.git" njet_main
     - sudo chmod +x njet_main/build/rpm/generate_njet_spec.sh
     - cd njet_main
@@ -59,7 +59,7 @@ build_deb:
   image: tmlake/njet-build:ubuntu18.04
   when: manual
   script:
-    - sudo apt -y install libzstd-dev  libsasl2-de  liblz4-dev 
+    # - sudo apt -y install libzstd-dev  libsasl2-de  liblz4-dev 
     - ./build_cc.sh -t $CI_COMMIT_SHA conf 
     - make -j `nproc` 
     - ./build_cc.sh install

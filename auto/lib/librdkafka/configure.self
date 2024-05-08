@@ -16,10 +16,10 @@ mkl_require pic
 mkl_require atomics
 mkl_require good_cflags
 mkl_require socket
-mkl_require zlib
-mkl_require libzstd
+# mkl_require zlib
+# mkl_require libzstd
 # mkl_require libssl
-mkl_require libsasl2
+# mkl_require libsasl2
 # mkl_require libcurl
 
 # Generate version variables from rdkafka.h hex version define
@@ -102,9 +102,9 @@ void foo (void) {
     fi
 
     # optional libs
-    mkl_check "zlib"
-    mkl_check "libssl"
-    mkl_check "libsasl2"
+    # mkl_check "zlib"
+    # mkl_check "libssl"
+    # mkl_check "libsasl2"
     # mkl_check "libzstd"
     # mkl_check "libcurl"
 
