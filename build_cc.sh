@@ -148,8 +148,8 @@ cdir=`cd $(dirname $0); pwd`
 		if [ -d auto/lib/keepalived/keepalived/emb/.libs ]; then
                   cd auto/lib/keepalived; make install; cd -;
                 fi 
-		if [ -f auto/lib/librdkafka/src/librdkafka.so ]; then
-                  cp -a auto/lib/librdkafka/src/librdkafka.so* /usr/local/lib
+		if [ -f auto/lib/librdkafka/build/src/librdkafka.so ]; then
+                  cp -a auto/lib/librdkafka/build/src/librdkafka.so* /usr/local/lib
                 fi
                 cd auto/lib/luapkg; PREFIX=/usr/local CDIR_linux=njet/lualib/clib LDIR_linux=njet/lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -;
 		ldconfig

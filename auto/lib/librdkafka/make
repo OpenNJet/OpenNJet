@@ -36,8 +36,10 @@ END
 
 $RDKAFKA/config.h:
 	cd $RDKAFKA \\
+    && mkdir build \\
 	&& ./configure \\
-	&& $CMAKE .  \\
+	&& cd build \\
+    && $CMAKE ../  \\
 	&& \$(MAKE) 
 
 END
