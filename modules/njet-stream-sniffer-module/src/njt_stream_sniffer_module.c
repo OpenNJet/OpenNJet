@@ -9,56 +9,27 @@
 #include <njt_stream.h>
 #include <sys/socket.h>
 #include "njt_stream_sniffer.h"
-#include "njt_stream_sniffer_parse.h"
-#include "njt_stream_sniffer_lex.h"
+#include "libtcc.h"
+
+//#define NJT_SNIFFER_BUFFER_SIZE  4096
+#define NJT_SNIFFER_TCC_PATH  "/usr/local/njet/lib/tcc"
+
+static njt_stream_session_t * stream_session = NULL;
 
 
-typedef struct {
-   
-}njt_stream_sniffer_ctx_t; 
 
-typedef struct {
-   njt_str_t sniffer_data;
-   njt_int_t sniffer_start_pos;
-   u_char    have_four_bit;
-}njt_stream_sniffer_data_t; 
 
 
 typedef struct {
-    njt_uint_t       max_read;
     njt_flag_t      sniffer_enabled;
-    njt_array_t     *sniffer_list;
-    sniffer_parse_ctx_t* ctx;
+    TCCState *s;
 }njt_stream_sniffer_srv_conf_t;
 
-static njt_int_t njt_stream_sniffer_add_variables(njt_conf_t *cf);
 static njt_int_t njt_stream_sniffer_init(njt_conf_t *cf);
 static void *njt_stream_sniffer_create_srv_conf(njt_conf_t *cf);
 static char *njt_stream_sniffer_merge_srv_conf(njt_conf_t *cf, void *parent, void *child);
 static char *
-njt_stream_set_sniffer_filter(njt_conf_t *cf, njt_command_t *cmd, void *conf);
-
-
-njt_int_t njt_stream_check_hex_str(njt_str_t data) {
-    njt_uint_t  i;
-    njt_uint_t  c1;
-    if(data.len < 2 || data.len % 2 == 1) {
-        return NJT_ERROR;
-    }
-    for(i=0; i < data.len; i++) {
-       c1 = data.data[i];
-       c1 = (c1 >= 'A' && c1 <= 'Z') ? (c1 | 0x20) : c1;
-       if((c1 >= '0' && c1 <= '9') || (c1 >= 'a' && c1 <= 'f')) {
-            continue;
-       }
-       return NJT_ERROR;
-    }
-    return NJT_OK;
-}
-
-
-
-
+njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *conf);
 
 /**
  * This module provide callback to istio for http traffic
@@ -66,15 +37,15 @@ njt_int_t njt_stream_check_hex_str(njt_str_t data) {
  */
 static njt_command_t njt_stream_sniffer_commands[] = {
     { njt_string("sniffer"),
-      NJT_STREAM_MAIN_CONF|NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
+      NJT_STREAM_SRV_CONF|NJT_CONF_FLAG,
       njt_conf_set_flag_slot,
       NJT_STREAM_SRV_CONF_OFFSET,
       offsetof(njt_stream_sniffer_srv_conf_t, sniffer_enabled),
       NULL },
     {
-      njt_string("sniffer_data"),
+      njt_string("sniffer_filter_file"),
       NJT_STREAM_MAIN_CONF | NJT_STREAM_SRV_CONF | NJT_CONF_TAKE1,
-      njt_stream_set_sniffer_filter,     // do custom config
+      njt_stream_read_sniffer_filter_file,     // do custom config
       NJT_STREAM_SRV_CONF_OFFSET,
       0,
       NULL
@@ -87,7 +58,7 @@ static njt_command_t njt_stream_sniffer_commands[] = {
 
 /* The module context. */
 static njt_stream_module_t njt_stream_sniffer_module_ctx = {
-    njt_stream_sniffer_add_variables, /* preconfiguration */
+    NULL, /* preconfiguration */
     njt_stream_sniffer_init, /* postconfiguration */
     NULL,
     NULL, /* init main configuration */
@@ -112,15 +83,17 @@ njt_module_t njt_stream_sniffer_module = {
     NJT_MODULE_V1_PADDING
 };
 
-// list of variables to add
-static njt_stream_variable_t  njt_stream_sniffer_vars[] = {
-
-
-    njt_stream_null_variable
-};
-
-
-
+static TCCState *njt_stream_sniffer_create_tcc(){
+    TCCState *tcc = tcc_new();
+    if(tcc == NULL) {
+        return NULL;
+    }
+    tcc_set_output_type(tcc, TCC_OUTPUT_MEMORY);
+    tcc_set_options(tcc,"-Werror");
+    tcc_set_lib_path(tcc,NJT_SNIFFER_TCC_PATH); 
+    tcc_add_include_path(tcc,NJT_SNIFFER_TCC_PATH); 
+	return tcc;
+}
 static void *njt_stream_sniffer_create_srv_conf(njt_conf_t *cf)
 {
     njt_stream_sniffer_srv_conf_t  *conf;
@@ -131,96 +104,48 @@ static void *njt_stream_sniffer_create_srv_conf(njt_conf_t *cf)
     if (conf == NULL) {
         return NULL;
     }
-
-
-    conf->sniffer_list = NJT_CONF_UNSET_PTR;
     conf->sniffer_enabled = NJT_CONF_UNSET;
-    conf->max_read = 0;
+    conf->s = NJT_CONF_UNSET_PTR;
     return conf;
 }
 
 
 static char *njt_stream_sniffer_merge_srv_conf(njt_conf_t *cf, void *parent, void *child)
 {
-
+     njt_stream_sniffer_srv_conf_t *prev = parent;
+     njt_stream_sniffer_srv_conf_t *conf = child;
+     njt_conf_merge_value(conf->sniffer_enabled, prev->sniffer_enabled, 0);
     njt_log_debug(NJT_LOG_DEBUG_EVENT, njt_cycle->log, 0, "nginmeshdest merge serv config");
-
-    njt_stream_sniffer_srv_conf_t *prev = parent;
-    njt_stream_sniffer_srv_conf_t *conf = child;
-
-    njt_conf_merge_ptr_value(conf->sniffer_list,
-                              prev->sniffer_list, NULL);
-    njt_conf_merge_value(conf->sniffer_enabled, prev->sniffer_enabled, 0);
     return NJT_CONF_OK;
 }
 
 
- njt_int_t njt_stream_sniffer_check_data(njt_stream_session_t *s,njt_stream_sniffer_data_t *sniffer){
-    njt_connection_t                   *c;
-    njt_int_t    len,rc;
-    njt_str_t    data;
-    u_char       val1,val2;
-    njt_uint_t   data_len;    
 
+ njt_int_t njt_stream_sniffer_tcc_check_data(njt_stream_session_t *s){
+    njt_connection_t                   *c;
+    njt_int_t    rc;
+    int          data_len; 
+    njt_stream_sniffer_srv_conf_t  *sscf;
+   
+    sscf = njt_stream_get_module_srv_conf(s, njt_stream_sniffer_module);
 
     c = s->connection;
     data_len = c->buffer->last -  c->buffer->pos;
-    if(data_len < sniffer->sniffer_data.len + sniffer->sniffer_start_pos) {
-        return NJT_ERROR;
-    }
-    data.len = sniffer->sniffer_data.len;
-    data.data = njt_pcalloc(c->pool,data.len);
-    if(data.data == NULL) {
-        return NJT_ERROR;
-    }
-    rc = NJT_OK;
-    len = sniffer->sniffer_data.len;
-    if(sniffer->have_four_bit) {
-        len--;
-    }
-     if(len > 0) {
-        if ( njt_memcmp(c->buffer->pos + sniffer->sniffer_start_pos,sniffer->sniffer_data.data,len) != 0) {
-            rc = NJT_ERROR;
-        }
-     }
-     if(rc == NJT_OK && sniffer->have_four_bit) {
-        val1 = c->buffer->pos[sniffer->sniffer_start_pos + len];
-        val2 = sniffer->sniffer_data.data[sniffer->sniffer_start_pos + len];
-        if((val1 & 0x0F) != (val2 & 0x0F)) {
-            rc = NJT_ERROR;
-        }
-     }
-      return rc;
+
+    stream_session = s;
+    int (* check_pack )(u_char *,int)=tcc_get_symbol(sscf->s,"check_pack");
+    rc=check_pack(c->buffer->pos,data_len);
+    stream_session = NULL;
+    return rc;
      
  }
-  int
-njt_stream_sniffer_callback(void *ctx,void *pdata)
-{
-    njt_uint_t                    i;
-     njt_int_t                           rc;
-    sniffer_exp_t *exp  = ctx;
-    njt_stream_sniffer_data_t  *sniffer_list, *sniffer;
-    njt_stream_session_t  **s = pdata;
-    njt_stream_sniffer_srv_conf_t  *sscf;
 
-    sscf = njt_stream_get_module_srv_conf(*s, njt_stream_sniffer_module);
-    i = exp->idx;
-     //zyg todo
-    //ret = 0;
-    sniffer_list = sscf->sniffer_list->elts;
-    if(sscf->sniffer_list->nelts > i){
-	    sniffer = &sniffer_list[i];
-         rc = njt_stream_sniffer_check_data(*s,sniffer);
-	    return (rc == NJT_OK ?1:0);
-    }
-    return NJT_DECLINED;
-}
 
  njt_int_t njt_stream_sniffer_handler(njt_stream_session_t *s)
 {
     // u_char                             *last, *p;
-    size_t                              len;
-    njt_int_t                           rc,ret;
+    //size_t                              len;
+    njt_int_t                           rc;
     njt_connection_t                   *c;
     njt_stream_sniffer_srv_conf_t  *sscf;
     //njt_uint_t   i;
@@ -243,17 +168,10 @@ njt_stream_sniffer_callback(void *ctx,void *pdata)
     if (c->buffer == NULL) {
         return NJT_AGAIN;
     }
-    len = c->buffer->last - c->buffer->pos;
-    if (len < sscf->max_read) {
-        return NJT_AGAIN;
-    }
-    rc = NJT_OK;
 
-    if (sscf->sniffer_list != NULL) {
-        ret = eval_sniffer_parse_tree((sniffer_exp_parse_node_t *)sscf->ctx->root,njt_stream_sniffer_callback,&s);
-        if(ret == 0) {
-           rc = NJT_ERROR;
-        }
+    rc = njt_stream_sniffer_tcc_check_data(s);
+    if(rc == NJT_AGAIN) {
+        return rc;
     }
     if(rc == NJT_ERROR) {
 #ifdef TCP_REPAIR
@@ -272,24 +190,6 @@ njt_stream_sniffer_callback(void *ctx,void *pdata)
 	return NJT_DECLINED;
 }
 
-static njt_int_t njt_stream_sniffer_add_variables(njt_conf_t *cf)
-{
-    njt_stream_variable_t  *var, *v;
-
-
-    for (v = njt_stream_sniffer_vars; v->name.len; v++) {
-        njt_log_debug2(NJT_LOG_DEBUG_EVENT, njt_cycle->log, 0, "ngin mesh var initialized: %*s",v->name.len,v->name.data);
-        var = njt_stream_add_variable(cf, &v->name, v->flags);
-        if (var == NULL) {
-            return NJT_ERROR;
-        }
-
-        var->get_handler = v->get_handler;
-        var->data = v->data;
-    }
-
-    return NJT_OK;
-}
 
 // add handler to pre-access
 // otherwise, handler can't be add as part of config handler if proxy handler is involved.
@@ -314,356 +214,268 @@ static njt_int_t njt_stream_sniffer_init(njt_conf_t *cf)
 
     return NJT_OK;
 }
-void 
-free_sniffer_exp(sniffer_exp_t* exp) {
-    if (exp) {
-        free(exp->exp);
-        free(exp);
-    }
-}
-
-int get_sniffer_exp_counts(sniffer_exp_parse_node_t* root) {
-    if (!root) return 0;
-    if (root->node_type == EXP_EXPRESSION) {
-        return 1;
-    } 
-    return get_sniffer_exp_counts(root->left) + get_sniffer_exp_counts(root->right);
-}
-
-void 
-dump_sniffer_tree(sniffer_exp_parse_node_t* root, int level) 
-{
-	int i;
-
-	if (!root) return;
-	
-    if  (root->left) {
-		dump_sniffer_tree(root->left, level+1);
-	}
-
-	for (i=0;i<level;i++) {
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"\t");
-    }
-    switch (root->node_type)
-    {
-    case EXP_EXPRESSION:
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"%s, idx: %d", root->loc_exp->exp, root->loc_exp->idx);
-        break;
-    case EXP_BOOL_OP_OR:
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"OR");
-        break;
-    case EXP_BOOL_OP_AND:
-        njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0,"AND\n");
-        break;
-    
-    default:
-        break;
-    }
-	if  (root->right) {
-		dump_sniffer_tree(root->right, level+1);
-	}
-}
-
-
-void 
-free_sniffer_tree(sniffer_exp_parse_node_t* root)
-{
-    if (!root) return;
-   
-  
-    switch (root->node_type)
-    {
-    case EXP_EXPRESSION:
-        free_sniffer_exp(root->loc_exp);
-        break;
-    case EXP_BOOL_OP_AND: case EXP_BOOL_OP_OR:
-        free_sniffer_tree(root->left);
-        free_sniffer_tree(root->right);
-        break;
-    default:
-        printf("internal error: free bad node %d\n", root->node_type);
-        break;
-    }
-    free(root);
-}
-void free_sniffer_bison_tree(sniffer_exp_parse_node_t* root){
-     if (!root) return;
-     free_sniffer_tree(root);
-}
-
-njt_int_t njt_stream_sniffer_cp_exp_parse_tree(sniffer_exp_parse_node_t * root, njt_pool_t   *pool,sniffer_exp_parse_node_t ** new_root)
-{
-   sniffer_exp_parse_node_t *new_node;
-   sniffer_exp_t               *loc_exp;
-   njt_int_t  rc;
-   if(root == NULL) {
-	*new_root = NULL;
-	return NJT_OK;
-    }
-    new_node = njt_pcalloc(pool, sizeof(sniffer_exp_parse_node_t));
-    if(new_node == NULL) {
-	return NJT_ERROR;
-    }
-    new_node->node_type = root->node_type;
-    *new_root = new_node;
-    switch (root->node_type)
-    {
-    case EXP_EXPRESSION:
-         loc_exp = njt_pcalloc(pool, sizeof(sniffer_exp_t));
-	 if(loc_exp == NULL) {
-        	return NJT_ERROR;
-    	 }
-	 loc_exp->idx = root->loc_exp->idx;
-	 loc_exp->exp = njt_pcalloc(pool,njt_strlen(root->loc_exp->exp) + 1);
-	 if(loc_exp->exp == NULL) {
-		return NJT_ERROR;
-	 }
-	 njt_memcpy(loc_exp->exp,root->loc_exp->exp,njt_strlen(root->loc_exp->exp));
-	 new_node->loc_exp = loc_exp;
-         return NJT_OK;
-    case EXP_BOOL_OP_OR:
-    case EXP_BOOL_OP_AND:
-          rc = njt_stream_sniffer_cp_exp_parse_tree(root->left,pool,&new_node->left);
-	  if(rc != NJT_OK) {
-		return rc;
-	  }
-          rc = njt_stream_sniffer_cp_exp_parse_tree(root->right,pool,&new_node->right);
-	  if(rc != NJT_OK) {
-                return rc;
-          }
-	  return NJT_OK;
-        break;
-    default:
-        break;
-    }
-    return NJT_ERROR;
-}
-
-
-sniffer_parse_ctx_t*
-njt_stream_sniffer_parse_tree_ctx(sniffer_exp_parse_node_t *root,njt_pool_t   *pool){
-    char** exps;
-    sniffer_parse_ctx_t* ctx;
-    int idx = 0;
-    int count = 0;
-    sniffer_exp_parse_node_t** stack;
-
-    // get exp count in ast tree;
-    count = get_sniffer_exp_counts(root);
-    exps = njt_pcalloc(pool,sizeof(char *)*count);
-    if (!exps) {
-        return NULL;
-    }
-    ctx = njt_pcalloc(pool,sizeof(sniffer_parse_ctx_t));
-    if (!ctx) {
-        return NULL;
-    }
-    stack = njt_alloc(sizeof(sniffer_exp_parse_node_t*)*count,njt_cycle->log); //malloc(sizeof(loc_parse_node_t*)*count);
-    if (!stack) {
-        return NULL;
-    }
-
-    sniffer_exp_parse_node_t* current = root;
-    int stack_size = 0;
-
-    // printf("start traverse tree \n");
-    while (current != NULL || stack_size != 0) {
-        if (current != NULL) {
-            stack[stack_size] = current;
-            stack_size++;
-            current = current->left;
-        } else {
-            current = stack[stack_size-1];
-            stack_size--;
-            if (current->node_type == EXP_EXPRESSION) {
-                if(idx != current->loc_exp->idx) {
-                    printf("idx: %d,  idx_exp: %d \n", idx, current->loc_exp->idx);
-                }
-		 njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_http_core_loc_parse_tree_ctx run idx=%d, %s",current->loc_exp->idx,current->loc_exp->exp);
-                exps[idx] = current->loc_exp->exp;
-                idx++;
-            }
-            current = current->right;
-        }
-    }
-
-    free(stack);
-
-    ctx->root = root;
-    ctx->exps = exps;
-    ctx->count = count;
-
-    return ctx;
-}
-
-int
-eval_sniffer_exp(sniffer_exp_t *exp, void* data){
-    if (!exp) {
-        //yyerror()
+int sniffer_get_data(int pos,char* buffer,int buffer_len) {
+    njt_int_t  len;
+    njt_connection_t                   *c;
+    if(stream_session == NULL) {
         return 0;
     }
-    // call njt_xxx
-    printf("exp: %s, %d \n", exp->exp, (exp->exp[1] > 'm') ? 1 : 0);
-    return (exp->exp[1] > 'm') ? 1 : 0;
+    c = stream_session->connection;
+    len = buffer_len;
+    if (len >  c->buffer->last - c->buffer->pos - pos) {
+            len = c->buffer->last - c->buffer->pos - pos;
+    }
+    if (len < 0) {
+        return 0;
+    }
+    njt_memcpy(buffer,c->buffer->pos,len);
+    return len;
 }
-
-int
-eval_sniffer_parse_tree(sniffer_exp_parse_node_t * root, sniffer_parse_cb_ptr handler, void * data)
+/*
+    dump 的长度，是16 进制字符数。 区别与 njt_hex_dump dump 的字节数。
+*/
+static u_char *
+njt_sniffer_hex_dump(u_char *dst, u_char *src, size_t len)
 {
-    switch (root->node_type)
-    {
-    case EXP_EXPRESSION:
-        if(handler){
-            return handler(root->loc_exp, data);
-        } else {      
-            return eval_sniffer_exp(root->loc_exp, data);
+    static u_char  hex[] = "0123456789abcdef";
+    if (len == 0) {
+        return dst;
+    }
+    for (;;) {
+        *dst++ = hex[*src >> 4];
+        len --;
+        if(len == 0) {
+            return dst;
         }
-        break;
-    case EXP_BOOL_OP_OR:
-        return   eval_sniffer_parse_tree(root->left, handler, data) 
-               ? 1 : eval_sniffer_parse_tree(root->right, handler, data);
-        break;
-    case EXP_BOOL_OP_AND:
-        return   eval_sniffer_parse_tree(root->left, handler, data) 
-               ? eval_sniffer_parse_tree(root->right, handler, data) : 0;
-        break;
-    default:
-        // yyerror()
-        break;
-    } 
-    // unreachable
-    return 0;
+        *dst++ = hex[*src++ & 0xf];
+        len --;
+        if(len == 0) {
+            return dst;
+        }
+    }
+
+    return dst;
 }
 
-
-static void *
-njt_stream_sniffer_parse_cmd(njt_conf_t *cf){
-    
-    njt_str_t                           *args;
-    njt_str_t  command; //*value;
-    sniffer_parse_ctx_t* ctx;
-    sniffer_exp_parse_node_t *loc_exp_dyn_parse_tree, *root;
-    njt_int_t rc;
-    njt_int_t   r;
-    //njt_stream_sniffer_data_t            *set_cmd;
-     
-    args = cf->args->elts;
-
-    command = args[1];
-    
-
-    snifferlex_destroy();
-    sniffer_scan_string((char *)command.data);
-    root = NULL;
-    r = snifferparse(&root);
-    if(r != NJT_OK || root == NULL) {
-    	free_sniffer_bison_tree(root);
-	return NJT_CONF_ERROR;
+int sniffer_get_hex_data(int pos,char* buffer,int buffer_len) {
+    njt_int_t  len;
+    njt_connection_t                   *c;
+    if(stream_session == NULL) {
+        return 0;
     }
-    rc = njt_stream_sniffer_cp_exp_parse_tree(root,cf->pool,&loc_exp_dyn_parse_tree);  
-    if(rc != NJT_OK || loc_exp_dyn_parse_tree == NULL) {
-    	free_sniffer_bison_tree(root);
-	return NJT_CONF_ERROR;
+    c = stream_session->connection;
+    len = (buffer_len/2) + (buffer_len%2);
+    if (len >  c->buffer->last - c->buffer->pos - pos) {
+            len = c->buffer->last - c->buffer->pos - pos;
     }
-    free_sniffer_bison_tree(root);
-    ctx = njt_stream_sniffer_parse_tree_ctx(loc_exp_dyn_parse_tree,cf->pool);
-    if(ctx == NULL){
-	return NJT_CONF_ERROR;
+    if (len < 0) {
+        return 0;
     }
-    return ctx;
+    len  = len * 2;
+    if (len > buffer_len) {
+        len = buffer_len;
+    }
+
+     njt_sniffer_hex_dump((u_char *)buffer,(u_char *)c->buffer->pos+pos,len);
+    return len;
 }
+int sniffer_get_hex_cmp(int pos, char* dst) {
+	 njt_pool_t *pool = NULL;
+     njt_int_t  rel_len,rc;
+     njt_str_t data,low_dst;
+     u_char* src;
+     njt_int_t  len;
+     njt_connection_t                   *c;
+     u_char *max_pos;
+    if(stream_session == NULL) {
+        return NJT_ERROR;
+    }
+     c = stream_session->connection;  //c->buffer->last - c->buffer->pos
+     src = c->buffer->pos;
+     len = njt_strlen(dst);
+     max_pos = (u_char *)src + pos + (len/2) + (len%2);
+
+    
+   
+    if ( max_pos >= c->buffer->last ) {
+        return  NJT_AGAIN;
+    }
+    
+     rel_len = len;
+     if(len % 2 == 1) {
+        rel_len = len + 1;
+     }
+    pool = njt_create_pool(njt_pagesize,njt_cycle->log);
+
+    if(pool == NULL){
+	    return  NJT_ERROR;
+    }
+    rc = NJT_DECLINED;
+    data.len = rel_len;
+    data.data = njt_pcalloc(pool,data.len);
+    low_dst.len = len;
+    low_dst.data = njt_pcalloc(pool,low_dst.len);
+    if(data.data == NULL ||  low_dst.data == NULL) {
+         njt_destroy_pool(pool);
+         rc = NJT_ERROR;
+         goto end;
+    }
+
+    njt_strlow(low_dst.data,(u_char *)dst,len);
+
+    njt_hex_dump(data.data,(u_char *)src+pos,rel_len/2);
+
+    if(njt_memcmp(data.data,low_dst.data,len) == 0) {
+         rc =  NJT_OK;
+    }
+end:
+    return  rc;
+} 
+
+ int sniffer_hex_cmp(char* src,int pos, char* dst) {
+	 njt_pool_t *pool = NULL;
+     njt_int_t  rel_len,rc;
+     njt_str_t data,low_dst;
+     njt_int_t  len;
+     njt_connection_t                   *c;
+     u_char *max_pos;
+
+     len = njt_strlen(dst);
+     max_pos = (u_char *)src + pos + (len/2) + (len%2);
+
+    if(stream_session != NULL) {
+        c = stream_session->connection;  //c->buffer->last - c->buffer->pos
+        if ((u_char *)src < c->buffer->pos || max_pos >= c->buffer->last ) {
+            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "sniffer_hex_cmp upper bound of c->buffer!");
+            return  NJT_ERROR;
+        }
+    }
+     rel_len = len;
+     if(len % 2 == 1) {
+        rel_len = len + 1;
+     }
+    pool = njt_create_pool(njt_pagesize,njt_cycle->log);
+
+    if(pool == NULL){
+	    return  NJT_ERROR;
+    }
+    rc = NJT_DECLINED;
+    data.len = rel_len;
+    data.data = njt_pcalloc(pool,data.len);
+    low_dst.len = len;
+    low_dst.data = njt_pcalloc(pool,low_dst.len);
+    if(data.data == NULL ||  low_dst.data == NULL) {
+         njt_destroy_pool(pool);
+         rc = NJT_ERROR;
+         goto end;
+    }
+
+    njt_strlow(low_dst.data,(u_char *)dst,len);
+
+    njt_hex_dump(data.data,(u_char *)src+pos,rel_len/2);
+
+    if(njt_memcmp(data.data,low_dst.data,len) == 0) {
+         rc =  NJT_OK;
+    }
+end:
+    return  rc;
+} 
+
 
 static char *
-njt_stream_set_sniffer_filter(njt_conf_t *cf, njt_command_t *cmd, void *conf)
+njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
-    //njt_array_t  **scf;
-    //char  *p = conf;
-    njt_str_t                           *args,*value,sub_str,sub_cmd,buffer;
-    njt_stream_sniffer_data_t            *set_cmd;
-    njt_int_t   i,idx,val;
-    njt_uint_t  j;
+    u_char              *data_info;
+    njt_fd_t            fd;
+    njt_file_info_t     fi;
+    size_t              size,pos;
+    ssize_t             n;
+    njt_str_t           full_name,sniffer_data,all_code,code_body;
+    njt_str_t  *value;
     njt_int_t  rc;
-    njt_stream_sniffer_srv_conf_t *sf;
-    sniffer_parse_ctx_t* ctx;
+    njt_str_t  header_code = njt_string("#include <tcclib.h>; extern int sniffer_get_hex_cmp(int pos, char* dst);extern int sniffer_get_hex_data(int pos,char* buffer,int buffer_len) ;extern int sniffer_get_data(int pos,char* buffer,int buffer_len);extern  int sniffer_hex_cmp(char* src,int src_len,char* dst); int check_pack(char *bytes,int len)");
+    //njt_str_t  header_code = njt_string("#include <tcclib.h>;extern int sniffer_get_hex_data(int pos,char* buffer,int buffer_len) ;extern int sniffer_get_data(int pos,char* buffer,int buffer_len);extern  int sniffer_hex_cmp(char* src,int src_len,char* dst); int check_pack(char *bytes,int len)");
+
+    njt_stream_sniffer_srv_conf_t *sscf = conf;
 
     
-    sf = njt_stream_conf_get_module_srv_conf(cf, njt_stream_sniffer_module);
-
-    args = cf->args->elts;
-    if(args[1].len == 0) {
-        return NJT_CONF_OK;
+    if(sscf->s != NJT_CONF_UNSET_PTR && sscf->s != NULL) {
+         return "is duplicate";
+    }
+    value = cf->args->elts;
+    full_name = value[1];
+    if(njt_conf_full_name((void *)cf->cycle, &full_name, 1) != NJT_OK) {
+       return NJT_CONF_ERROR;
     }
 
-    ctx = njt_stream_sniffer_parse_cmd(cf);
-    if(ctx == NULL) {
+    //get register info
+    fd = njt_open_file(full_name.data, NJT_FILE_RDONLY, NJT_FILE_OPEN, 0);
+    if(fd == NJT_INVALID_FILE) {
         return NJT_CONF_ERROR;
     }
 
-     if (sf->sniffer_list == NJT_CONF_UNSET_PTR || sf->sniffer_list  == NULL) {
-        sf->sniffer_list = njt_array_create(cf->pool, 4, sizeof(njt_stream_sniffer_data_t));
-        if (sf->sniffer_list == NULL) {
-            return NJT_CONF_ERROR;
-        }
-     }
-    sf->ctx = ctx;
-    
-    for(i =0; i < ctx->count; i++) {
-        sub_str.data = (u_char *)ctx->exps[i];
-        sub_str.len  = njt_strlen(sub_str.data);
-        rc = njt_conf_read_memory_token(cf,sub_str);	
-        if(rc == NJT_ERROR || cf->args->nelts == 0) {
-            return NJT_CONF_ERROR;
-        }
-        value = cf->args->elts;
-        sub_cmd.data = njt_pstrdup(cf->pool,&value[0]);
-        sub_cmd.len = value[0].len;
-
-        njt_strlow(sub_cmd.data,value[0].data,value[0].len);
-        if(sub_cmd.len <= 2) {  
-            return NJT_CONF_ERROR;
-        }
-        sub_cmd.data += 2;  //去掉十六进制  0x 前缀
-        sub_cmd.len  -= 2;
-        rc = njt_stream_check_hex_str(sub_cmd);
-        if(rc == NJT_ERROR) {
-            njt_log_error(NJT_LOG_EMERG, cf->log, 0,
-                            "%V invalid hex data",&args[1]);
-            return NJT_CONF_ERROR;
-        }
-        buffer.len = (sub_cmd.len / 2) + (sub_cmd.len % 2 );
-        buffer.data = njt_pcalloc(cf->pool,buffer.len);
-        if(buffer.data == NULL) {
-            return NJT_CONF_ERROR;
-        }
-
-        set_cmd = njt_array_push(sf->sniffer_list);
-        if (set_cmd == NULL) {
-            return NJT_CONF_ERROR;
-        }
-        njt_memzero(set_cmd,sizeof(njt_stream_sniffer_data_t));
-        idx = 0;
-        set_cmd->sniffer_data = buffer;
-        if(sub_cmd.len / 2 > 0) {
-           
-            for(j = 0; j < sub_cmd.len; j += 2) {
-                val = njt_hextoi((u_char *)&sub_cmd.data[j], 2);
-                if (val == NJT_ERROR || val > 255)
-                {
-                    return NJT_CONF_ERROR;
-                }
-                buffer.data[idx++] = val;
-            } 
-        } 
-        if (sub_cmd.len % 2 == 1) {
-            val = njt_hextoi((u_char *)&sub_cmd.data[sub_cmd.len - 1], 1);
-            buffer.data[idx++] = val;
-            set_cmd->have_four_bit = 1;
-        }
-        set_cmd->sniffer_start_pos = NJT_CONF_UNSET;
-        if(cf->args->nelts > 1) {
-            set_cmd->sniffer_start_pos = njt_atoi(value[1].data,value[1].len);
-        }
-
+    if(njt_fd_info(fd, &fi) == NJT_FILE_ERROR) {
+         return NJT_CONF_ERROR;
     }
+
+    size = njt_file_size(&fi);
+  
+
+    if(size < 1){
+        return NJT_CONF_ERROR;
+    }
+
+    data_info = (u_char *)njt_pcalloc(cf->pool, size);
+
+    all_code.len  = size + header_code.len + 20;
+    all_code.data = (u_char *)njt_pcalloc(cf->pool,all_code.len);
+    if(data_info == NULL || all_code.data == NULL){
+        return NJT_CONF_ERROR;
+    }
+   
+    for(pos = 0;pos < size;) {
+        //need_len = size - pos;
+        n = njt_read_fd(fd, data_info+pos, size - pos);
+
+        if (n < 0) {
+            return NJT_CONF_ERROR;
+        }
+        pos += n;
+    }
+
+    sniffer_data.data = data_info;
+    sniffer_data.len = size;
+
+    if (njt_close_file(fd) == NJT_FILE_ERROR) {
+
+        //return NJT_CONF_OK;
+    }
+    data_info = njt_snprintf(all_code.data,all_code.len,"%V {%V}\n",&header_code,&sniffer_data);
+    //data_info = njt_snprintf(export_code.data,export_code.len,"#include <tcclib.h>;int check_pack(char *bytes,int len) {%V}\n",&sniffer_data);
+    code_body.data = all_code.data;
+    code_body.len =  data_info - all_code.data;
+
+
+    sscf->s = njt_stream_sniffer_create_tcc();
+    if (sscf->s == NULL) {
+        return NJT_CONF_ERROR;
+    }
+
+ 
+    rc = tcc_compile_string(sscf->s,(const char *)code_body.data);
+    if(rc == NJT_ERROR) {
+        return NJT_CONF_ERROR;
+    }
+    //tcc_add_symbol(sscf->s,"sniffer_hex_cmp",sniffer_hex_cmp);
+    //tcc_add_symbol(sscf->s,"sniffer_get_hex_cmp",sniffer_get_hex_cmp);
+	tcc_relocate(sscf->s, TCC_RELOCATE_AUTO);
+
+
+    int (* pack_insp )(u_char *,int)=tcc_get_symbol(sscf->s,"check_pack");
+    int ret=pack_insp(code_body.data,(int)code_body.len);
+
+    printf("%d",ret);
+    
+
     return NJT_CONF_OK;
 }

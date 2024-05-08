@@ -4,22 +4,21 @@ njt_feature_run=no
 njt_feature_incs=
 njt_feature_libs=""
 njt_feature_path="$njt_addon_dir"
-njt_feature_deps=
+njt_feature_deps="$njt_addon_dir/../../auto/lib/tcc-0.9.26/libtcc.h"
 
 njt_feature_test="int a;"
 . auto/feature
-
 if [ $njt_found = yes ]; then
     have=NJT_STREAM_PROTO_MODULE . auto/have
     CORE_INCS="$CORE_INCS $njt_feature_path"
+    CORE_INCS="$CORE_INCS $njt_addon_dir/../../auto/lib/tcc-0.9.26/"
     njt_addon_name=njt_stream_sniffer_module
     njt_module_type=STREAM
+    CORE_LIBS="$CORE_LIBS $njt_addon_dir/../../auto/lib/tcc-0.9.26/libtcc.a"
     njt_module_name=$njt_addon_name
     STREAM_MODULES="$STREAM_MODULES njt_stream_sniffer_module"
     NJT_ADDON_DEPS="$NJT_ADDON_DEPS $njt_feature_deps"
     NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_addon_dir/src/njt_stream_sniffer_module.c"
-    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_addon_dir/src/njt_stream_sniffer_lex.c"
-    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_addon_dir/src/njt_stream_sniffer_parse.c"
 else
     cat << END
     $0: error: the njt_stream_sniffer_module addon error.
