@@ -83,6 +83,7 @@ njt_module_t njt_stream_sniffer_module = {
     NJT_MODULE_V1_PADDING
 };
 
+
 static TCCState *njt_stream_sniffer_create_tcc(){
     TCCState *tcc = tcc_new();
     if(tcc == NULL) {
@@ -279,12 +280,9 @@ int sniffer_get_hex_data(int pos,char* buffer,int buffer_len) {
      njt_sniffer_hex_dump((u_char *)buffer,(u_char *)c->buffer->pos+pos,len);
     return len;
 }
-int sniffer_get_hex_cmp(int pos, char* dst) {
-	 njt_pool_t *pool = NULL;
-     njt_int_t  rel_len,rc;
-     njt_str_t data,low_dst;
+int sniffer_get_hex_cmp(int pos, char* dst,int len) {
+     njt_int_t  rc;
      u_char* src;
-     njt_int_t  len;
      njt_connection_t                   *c;
      u_char *max_pos;
     if(stream_session == NULL) {
@@ -292,95 +290,34 @@ int sniffer_get_hex_cmp(int pos, char* dst) {
     }
      c = stream_session->connection;  //c->buffer->last - c->buffer->pos
      src = c->buffer->pos;
-     len = njt_strlen(dst);
-     max_pos = (u_char *)src + pos + (len/2) + (len%2);
-
-    
-   
+     max_pos = (u_char *)src + pos + len;
     if ( max_pos >= c->buffer->last ) {
         return  NJT_AGAIN;
     }
     
-     rel_len = len;
-     if(len % 2 == 1) {
-        rel_len = len + 1;
-     }
-    pool = njt_create_pool(njt_pagesize,njt_cycle->log);
-
-    if(pool == NULL){
-	    return  NJT_ERROR;
-    }
-    rc = NJT_DECLINED;
-    data.len = rel_len;
-    data.data = njt_pcalloc(pool,data.len);
-    low_dst.len = len;
-    low_dst.data = njt_pcalloc(pool,low_dst.len);
-    if(data.data == NULL ||  low_dst.data == NULL) {
-         njt_destroy_pool(pool);
-         rc = NJT_ERROR;
-         goto end;
-    }
-
-    njt_strlow(low_dst.data,(u_char *)dst,len);
-
-    njt_hex_dump(data.data,(u_char *)src+pos,rel_len/2);
-
-    if(njt_memcmp(data.data,low_dst.data,len) == 0) {
+    if(njt_memcmp(c->buffer->pos,dst,len) == 0) {
          rc =  NJT_OK;
     }
-end:
     return  rc;
 } 
 
- int sniffer_hex_cmp(char* src,int pos, char* dst) {
-	 njt_pool_t *pool = NULL;
-     njt_int_t  rel_len,rc;
-     njt_str_t data,low_dst;
-     njt_int_t  len;
-     njt_connection_t                   *c;
-     u_char *max_pos;
 
-     len = njt_strlen(dst);
-     max_pos = (u_char *)src + pos + (len/2) + (len%2);
+void sniffer_log(int level, const char *fmt, ...)
+{
+    u_char   buf[NJT_MAX_ERROR_STR] = {0};
+    va_list   args;
+    u_char   *p;
+    njt_str_t msg;
 
-    if(stream_session != NULL) {
-        c = stream_session->connection;  //c->buffer->last - c->buffer->pos
-        if ((u_char *)src < c->buffer->pos || max_pos >= c->buffer->last ) {
-            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "sniffer_hex_cmp upper bound of c->buffer!");
-            return  NJT_ERROR;
-        }
-    }
-     rel_len = len;
-     if(len % 2 == 1) {
-        rel_len = len + 1;
-     }
-    pool = njt_create_pool(njt_pagesize,njt_cycle->log);
+    va_start(args, fmt);
+    p = njt_vslprintf(buf, buf + NJT_MAX_ERROR_STR, fmt, args);
+    va_end(args);
 
-    if(pool == NULL){
-	    return  NJT_ERROR;
-    }
-    rc = NJT_DECLINED;
-    data.len = rel_len;
-    data.data = njt_pcalloc(pool,data.len);
-    low_dst.len = len;
-    low_dst.data = njt_pcalloc(pool,low_dst.len);
-    if(data.data == NULL ||  low_dst.data == NULL) {
-         njt_destroy_pool(pool);
-         rc = NJT_ERROR;
-         goto end;
-    }
+    msg.data = buf;
+    msg.len = p - buf;
 
-    njt_strlow(low_dst.data,(u_char *)dst,len);
-
-    njt_hex_dump(data.data,(u_char *)src+pos,rel_len/2);
-
-    if(njt_memcmp(data.data,low_dst.data,len) == 0) {
-         rc =  NJT_OK;
-    }
-end:
-    return  rc;
-} 
-
+   njt_log_error((njt_uint_t)level, njt_cycle->log, 0, "%V",&msg);
+}
 
 static char *
 njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *conf)
@@ -393,8 +330,11 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
     njt_str_t           full_name,sniffer_data,all_code,code_body;
     njt_str_t  *value;
     njt_int_t  rc;
-    njt_str_t  header_code = njt_string("#include <tcclib.h>; extern int sniffer_get_hex_cmp(int pos, char* dst);extern int sniffer_get_hex_data(int pos,char* buffer,int buffer_len) ;extern int sniffer_get_data(int pos,char* buffer,int buffer_len);extern  int sniffer_hex_cmp(char* src,int src_len,char* dst); int check_pack(char *bytes,int len)");
-    //njt_str_t  header_code = njt_string("#include <tcclib.h>;extern int sniffer_get_hex_data(int pos,char* buffer,int buffer_len) ;extern int sniffer_get_data(int pos,char* buffer,int buffer_len);extern  int sniffer_hex_cmp(char* src,int src_len,char* dst); int check_pack(char *bytes,int len)");
+    //njt_stream_sniffer_log(NJT_LOG_DEBUG,"%s","acb");
+
+    //#define GET_BIT(x,bit)  ((x & (1 << bit)) >> bit)
+    //njt_str_t  header_code = njt_string("#include <tcclib.h>; extern  int GET_BIT(char x,int bit);extern int sniffer_get_hex_cmp(int pos, char* dst,int);extern int sniffer_get_hex_data(int pos,char* buffer,int buffer_len) ;extern int sniffer_get_data(int pos,char* buffer,int buffer_len); int check_pack(char *bytes,int len) { int nn = 0;\n #define  NJT_OK          0 \n #define  NJT_ERROR          -1\n #define  NJT_AGAIN          -2\n");
+    njt_str_t  header_code = njt_string("#include <tcclib.h>; extern void sniffer_log(int level,const char *fmt, ...);extern int sniffer_get_hex_cmp(int pos, char* dst,int);extern int sniffer_get_hex_data(int pos,char* buffer,int buffer_len) ;extern int sniffer_get_data(int pos,char* buffer,int buffer_len); int check_pack(char *bytes,int len) { int nn = 0;\n #define  NJT_LOG_ERR          4 \n #define  NJT_LOG_DEBUG          8 \n #define  NJT_LOG_INFO          7 \n #define  NJT_OK          0 \n #define  NJT_ERROR          -1 \n #define  NJT_AGAIN          -2 \n #define GET_BIT(x,bit)  ((x & (1 << bit)) >> bit) \n");
 
     njt_stream_sniffer_srv_conf_t *sscf = conf;
 
@@ -450,7 +390,7 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
 
         //return NJT_CONF_OK;
     }
-    data_info = njt_snprintf(all_code.data,all_code.len,"%V {%V}\n",&header_code,&sniffer_data);
+    data_info = njt_snprintf(all_code.data,all_code.len,"%V %V}\n",&header_code,&sniffer_data);
     //data_info = njt_snprintf(export_code.data,export_code.len,"#include <tcclib.h>;int check_pack(char *bytes,int len) {%V}\n",&sniffer_data);
     code_body.data = all_code.data;
     code_body.len =  data_info - all_code.data;
