@@ -1,0 +1,15 @@
+
+# Copyright (C) Igor Sysoev
+# Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
+
+MODTCC="auto/lib/tcc-0.9.26"
+case "$CC" in
+    *)
+	CORE_INCS="$CORE_INCS $MODTCC"
+    CORE_DEPS="$CORE_DEPS $MODTCC/libtcc.a"
+    ;;
+esac
+
+
+

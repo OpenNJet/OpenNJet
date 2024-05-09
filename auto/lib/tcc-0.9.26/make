@@ -1,0 +1,39 @@
+
+# Copyright (C) Igor Sysoev
+# Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
+
+case "$CC" in
+
+    cl)
+
+cat << END
+
+$0: error:  not allow build use cl
+
+END
+
+    ;;
+
+    bcc32)
+
+cat << END
+
+$0: error:  not allow build use bcc32
+
+END
+
+    ;;
+
+    *)
+
+        cat << END                                            >> $NJT_MAKEFILE
+$MODTCC/libtcc.a:
+	cd  $MODTCC \\
+    && ./configure  --prefix=/usr/local/njet \\
+    && \$(MAKE) \\
+    && \$(MAKE) install
+END
+    ;;
+
+esac

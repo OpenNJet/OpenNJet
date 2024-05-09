@@ -338,7 +338,7 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
     //njt_stream_sniffer_log(NJT_LOG_DEBUG,"%s","acb");
 
     //#define GET_BIT(x,bit)  ((x & (1 << bit)) >> bit)
-    njt_str_t  header_code = njt_string("#include <tcclib.h>; extern void sniffer_log(int level,const char *fmt, ...);extern int sniffer_get_hex_cmp(int pos, char* src,int);extern int sniffer_get_hex_data(int pos,char* buffer,int buffer_len) ;extern int sniffer_get_data(int pos,char* buffer,int buffer_len); int check_pack(char *bytes,int bytes_len) { int nn = 0;\n #define  NJT_LOG_ERR          4 \n #define  NJT_LOG_DEBUG          8 \n #define  NJT_LOG_INFO          7 \n #define  NJT_OK          0 \n #define  NJT_ERROR          -1 \n #define  NJT_AGAIN   -2 \n #define  NJT_DECLINED   -5 \n #define GET_BIT(x,bit)  ((x & (1 << bit)) >> bit) \n");
+    njt_str_t  header_code = njt_string("#include <tcclib.h>; extern void sniffer_log(int level,const char *fmt, ...);extern int sniffer_get_hex_cmp(int pos, char* src,int);extern int sniffer_get_hex_data(int pos,char* buffer,int buffer_len) ;extern int sniffer_get_data(int pos,char* buffer,int buffer_len); int check_pack(char *bytes,int bytes_len) { \n #define  NJT_LOG_ERR          4 \n #define  NJT_LOG_DEBUG          8 \n #define  NJT_LOG_INFO          7 \n #define  NJT_OK          0 \n #define  NJT_ERROR          -1 \n #define  NJT_AGAIN   -2 \n #define  NJT_DECLINED   -5 \n #define GET_BIT(x,bit)  ((x & (1 << bit)) >> bit) \n");
 
     njt_stream_sniffer_srv_conf_t *sscf = conf;
 
