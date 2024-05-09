@@ -33,5 +33,4 @@
 # optional, required by njet-stream-stsd-module
 ./modules/njet-stream-stsc-module
 # required
-./modules/njet-stream-sniffer-module
 ./modules/njet-http-api-register-module

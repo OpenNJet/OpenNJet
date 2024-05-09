@@ -162,6 +162,9 @@ static char *njt_stream_sniffer_merge_srv_conf(njt_conf_t *cf, void *parent, voi
         return NJT_DECLINED;
     }
 
+    if (sscf->s == NJT_CONF_UNSET_PTR || sscf->s == NULL) {
+        return NJT_DECLINED;
+    }
     if (c->type != SOCK_STREAM) {
         return NJT_DECLINED;
     }
@@ -344,17 +347,23 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
     }
     value = cf->args->elts;
     full_name = value[1];
-    if(njt_conf_full_name((void *)cf->cycle, &full_name, 1) != NJT_OK) {
+    if(njt_conf_full_name((void *)cf->cycle, &full_name, 0) != NJT_OK) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+									"sniffer_filter_file \"%V\", njt_conf_full_name error!", &full_name);
        return NJT_CONF_ERROR;
     }
 
     //get register info
     fd = njt_open_file(full_name.data, NJT_FILE_RDONLY, NJT_FILE_OPEN, 0);
     if(fd == NJT_INVALID_FILE) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+									"sniffer_filter_file \"%V\", not find!", &full_name);
         return NJT_CONF_ERROR;
     }
 
     if(njt_fd_info(fd, &fi) == NJT_FILE_ERROR) {
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+									"sniffer_filter_file \"%V\", njt_fd_info error!", &full_name);
          return NJT_CONF_ERROR;
     }
 
@@ -362,6 +371,8 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
   
 
     if(size < 1){
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+									"sniffer_filter_file \"%V\", size  error!", &full_name);
         return NJT_CONF_ERROR;
     }
 
@@ -370,6 +381,8 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
     all_code.len  = size + header_code.len + 20;
     all_code.data = (u_char *)njt_pcalloc(cf->pool,all_code.len);
     if(data_info == NULL || all_code.data == NULL){
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+									"sniffer_filter_file \"%V\", malloc  error!", &full_name);
         return NJT_CONF_ERROR;
     }
    
@@ -378,6 +391,8 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
         n = njt_read_fd(fd, data_info+pos, size - pos);
 
         if (n < 0) {
+            njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+									"sniffer_filter_file \"%V\", read  error!", &full_name);
             return NJT_CONF_ERROR;
         }
         pos += n;
@@ -398,12 +413,16 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
 
     sscf->s = njt_stream_sniffer_create_tcc();
     if (sscf->s == NULL) {
+        njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+									"sniffer_filter_file \"%V\", njt_stream_sniffer_create_tcc  error!", &full_name);
         return NJT_CONF_ERROR;
     }
 
  
     rc = tcc_compile_string(sscf->s,(const char *)code_body.data);
     if(rc == NJT_ERROR) {
+         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
+									"sniffer_filter_file \"%V\", compile  error!", &full_name);
         return NJT_CONF_ERROR;
     }
     //tcc_add_symbol(sscf->s,"sniffer_hex_cmp",sniffer_hex_cmp);
