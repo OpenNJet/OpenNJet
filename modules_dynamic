@@ -84,5 +84,4 @@
 ./modules/njet-http-auth-api-module
 #optional
 ./modules/njet-http-dyn-auth-module
-./modules/njet-stream-sniffer-module
 

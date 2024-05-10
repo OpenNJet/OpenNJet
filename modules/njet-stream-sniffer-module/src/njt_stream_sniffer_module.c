@@ -84,15 +84,26 @@ njt_module_t njt_stream_sniffer_module = {
 };
 
 
-static TCCState *njt_stream_sniffer_create_tcc(){
+static TCCState *njt_stream_sniffer_create_tcc(njt_conf_t *cf){
+    u_char *p;
     TCCState *tcc = tcc_new();
     if(tcc == NULL) {
         return NULL;
+    } 
+    njt_str_t  full_path,path = njt_string("lib/tcc");
+
+    full_path.len = cf->cycle->prefix.len + path.len + 10; 
+    full_path.data = njt_pcalloc(cf->pool,full_path.len);
+    if(full_path.data == NULL)  {
+        return NULL;
     }
+    p = njt_snprintf(full_path.data,full_path.len,"%V%V\0",&cf->cycle->prefix,&path);
+    full_path.len = p - full_path.data;
+
     tcc_set_output_type(tcc, TCC_OUTPUT_MEMORY);
     tcc_set_options(tcc,"-Werror");
-    tcc_set_lib_path(tcc,NJT_SNIFFER_TCC_PATH); 
-    tcc_add_include_path(tcc,NJT_SNIFFER_TCC_PATH); 
+    tcc_set_lib_path(tcc,(const char *)full_path.data); 
+    tcc_add_include_path(tcc,(const char *)full_path.data); 
 	return tcc;
 }
 static void *njt_stream_sniffer_create_srv_conf(njt_conf_t *cf)
@@ -184,7 +195,9 @@ static char *njt_stream_sniffer_merge_srv_conf(njt_conf_t *cf, void *parent, voi
                 if ( setsockopt( c->fd, SOL_TCP, TCP_REPAIR, 
                                     &aux, sizeof( aux )) < 0 )
                 {
-                njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_stream_sniffer_handler");
+                    njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_stream_sniffer_handler");
+                } else {
+                     njt_log_error(NJT_LOG_DEBUG, njt_cycle->log, 0, "njt_stream_sniffer_handler qick close");
                 }
 #endif
         return NJT_ERROR;
@@ -338,7 +351,21 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
     //njt_stream_sniffer_log(NJT_LOG_DEBUG,"%s","acb");
 
     //#define GET_BIT(x,bit)  ((x & (1 << bit)) >> bit)
-    njt_str_t  header_code = njt_string("#include <tcclib.h>; extern void sniffer_log(int level,const char *fmt, ...);extern int sniffer_get_hex_cmp(int pos, char* src,int);extern int sniffer_get_hex_data(int pos,char* buffer,int buffer_len) ;extern int sniffer_get_data(int pos,char* buffer,int buffer_len); int check_pack(char *bytes,int bytes_len) { \n #define  NJT_LOG_ERR          4 \n #define  NJT_LOG_DEBUG          8 \n #define  NJT_LOG_INFO          7 \n #define  NJT_OK          0 \n #define  NJT_ERROR          -1 \n #define  NJT_AGAIN   -2 \n #define  NJT_DECLINED   -5 \n #define GET_BIT(x,bit)  ((x & (1 << bit)) >> bit) \n");
+    njt_str_t  header_code = njt_string("#include <tcclib.h>\n"
+     "extern void sniffer_log(int level,const char *fmt, ...);\n"
+     "extern int sniffer_get_hex_cmp(int pos, char* src,int);\n"
+     "extern int sniffer_get_hex_data(int pos,char* buffer,int buffer_len);\n"
+     "extern int sniffer_get_data(int pos,char* buffer,int buffer_len);\n"
+     "int check_pack(char *bytes,int bytes_len) {\n" 
+     "#define  NJT_LOG_ERR          4 \n"
+     " #define  NJT_LOG_DEBUG          8 \n"
+     " #define  NJT_LOG_INFO          7 \n"
+     " #define  NJT_OK          0 \n"
+     " #define  NJT_ERROR          -1 \n"
+     " #define  NJT_AGAIN   -2 \n"
+     " #define  NJT_DECLINED   -5 \n"
+     " #define GET_BIT(x,bit)  ((x & (1 << bit)) >> bit) \n"
+     );
 
     njt_stream_sniffer_srv_conf_t *sscf = conf;
 
@@ -412,7 +439,7 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
     code_body.len =  data_info - all_code.data;
 
 
-    sscf->s = njt_stream_sniffer_create_tcc();
+    sscf->s = njt_stream_sniffer_create_tcc(cf); //todo
     if (sscf->s == NULL) {
         njt_conf_log_error(NJT_LOG_EMERG, cf, 0,
 									"sniffer_filter_file \"%V\", njt_stream_sniffer_create_tcc  error!", &full_name);

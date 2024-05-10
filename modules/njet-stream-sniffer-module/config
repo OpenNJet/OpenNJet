@@ -1,20 +1,11 @@
-njt_feature_deps="$njt_addon_dir/../../auto/lib/tcc-0.9.26/libtcc.h"
-njt_module_deps=" \
-$njt_addon_dir/../../auto/lib/tcc-0.9.26/libtcc.h \
-"
-njt_module_incs="$njt_addon_dir/src"
-CORE_INCS="$CORE_INCS $njt_feature_path"
-CORE_INCS="$CORE_INCS $njt_addon_dir/../../auto/lib/tcc-0.9.26/"
-njt_addon_name=njt_stream_sniffer_module
 njt_module_type=STREAM
-CORE_LIBS="$CORE_LIBS $njt_addon_dir/../../auto/lib/tcc-0.9.26/libtcc.a"
-njt_module_name=$njt_addon_name
-STREAM_MODULES="$STREAM_MODULES njt_stream_sniffer_module"
-NJT_ADDON_DEPS="$NJT_ADDON_DEPS $njt_feature_deps"
-NJT_ADDON_SRCS="$NJT_ADDON_SRCS $njt_addon_dir/src/njt_stream_sniffer_module.c"
-have=NJT_STREAM_SNIFFER_MODULE . auto/have
+njt_module_name="njt_stream_sniffer_module"
+njt_module_srcs="$njt_addon_dir/src/njt_stream_sniffer_module.c"
+NJT_ADDON_DEPS="$njt_addon_dir/../../auto/lib/tcc-0.9.26/libtcc.a"
+CORE_INCS="$CORE_INCS $njt_addon_dir/../../auto/lib/tcc-0.9.26/"
+njt_module_libs="-llibtcc.a" 
+have=NJT_STREAM_DYN_MAP_MODULE . auto/have
 . auto/module
-
 
 
 

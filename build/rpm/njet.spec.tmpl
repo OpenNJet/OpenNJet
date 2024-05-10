@@ -29,7 +29,7 @@ fi
 
 %install
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/usr/local/njet/{logs,data,modules,lib,sbin,lualib/lib,lualib/clib}
+mkdir -p %{buildroot}/usr/local/njet/{logs,data,modules,lib/tcc,sbin,lualib/lib,lualib/clib}
 cp -a njet/build/rpm/njet.conf.files/* %{buildroot}
 cp -a njet/objs/njet %{buildroot}/usr/local/njet/sbin/
 cp -a njet/objs/*.so %{buildroot}/usr/local/njet/modules/
@@ -46,6 +46,15 @@ if [ -d njet/auto/lib/modsecurity/src/.libs/ ]; then
 fi
 if [ -d njet/auto/lib/keepalived/keepalived/emb/.libs ]; then
  cp -a njet/auto/lib/keepalived/keepalived/emb/.libs/libha_emb.so* %{buildroot}/usr/local/njet/lib 
+fi
+if [ -d njet/auto/lib/tcc-0.9.26/i386 ]; then
+ cp -a njet/auto/lib/tcc-0.9.26/i386  %{buildroot}/usr/local/njet/lib/tcc
+fi
+if [ -d njet/auto/lib/tcc-0.9.26/x86-64 ]; then
+ cp -a njet/auto/lib/tcc-0.9.26/x86-64  %{buildroot}/usr/local/njet/lib/tcc 
+fi
+if [ -d njet/auto/lib/tcc-0.9.26/arm64 ]; then
+ cp -a njet/auto/lib/tcc-0.9.26/arm64  %{buildroot}/usr/local/njet/lib/tcc 
 fi
 rm -f %{buildroot}/usr/local/njet/lib/*.a
 

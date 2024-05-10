@@ -111,6 +111,7 @@ cdir=`cd $(dirname $0); pwd`
 		if [ -d auto/lib/keepalived/keepalived/emb/.libs ]; then
                   cd auto/lib/keepalived; make install; cd -;
                 fi 
+		cd auto/lib/tcc-0.9.26;make install; cd -;
                 cd auto/lib/luapkg; PREFIX=/usr/local CDIR_linux=njet/lualib/clib LDIR_linux=njet/lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -;
 		ldconfig
                 ;;

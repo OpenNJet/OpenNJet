@@ -31,8 +31,7 @@ END
 $MODTCC/libtcc.a:
 	cd  $MODTCC \\
     && ./configure  --prefix=/usr/local/njet \\
-    && \$(MAKE) \\
-    && \$(MAKE) install
+    && \$(MAKE) 
 END
     ;;
 
