@@ -145,7 +145,7 @@ njt_http_register(njt_conf_t *cf, njt_command_t *cmd, void *conf)
             value[i].data += 7;
             value[i].len -= 7;
 
-            ccf->register_file.data = njt_pcalloc(cf->pool, value[i].len);
+            ccf->register_file.data = njt_pcalloc(cf->pool, value[i].len + 1);
             njt_memcpy(ccf->register_file.data, value[i].data, value[i].len);
             ccf->register_file.len = value[i].len;
 
