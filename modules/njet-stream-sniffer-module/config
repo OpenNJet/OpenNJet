@@ -1,9 +1,8 @@
 njt_module_type=STREAM
 njt_module_name="njt_stream_sniffer_module"
 njt_module_srcs="$njt_addon_dir/src/njt_stream_sniffer_module.c"
-NJT_ADDON_DEPS="$njt_addon_dir/../../auto/lib/tcc-0.9.26/libtcc.a"
-CORE_INCS="$CORE_INCS $njt_addon_dir/../../auto/lib/tcc-0.9.26/"
-njt_module_libs="" 
+NJT_ADDON_DEPS="$njt_addon_dir/src/njt_stream_sniffer.h auto/lib/tcc-0.9.26/libtcc.a"
+njt_module_libs="auto/lib/tcc-0.9.26/libtcc.a" 
 have=NJT_STREAM_DYN_MAP_MODULE . auto/have
 . auto/module
 

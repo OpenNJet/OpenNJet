@@ -7,8 +7,6 @@ MODTCC="auto/lib/tcc-0.9.26"
 case "$CC" in
     *)
 	CORE_INCS="$CORE_INCS $MODTCC"
-    CORE_DEPS="$CORE_DEPS $MODTCC/libtcc.a"
-    CORE_LIBS="$CORE_LIBS $MODTCC/libtcc.a"
     ;;
 esac
 
