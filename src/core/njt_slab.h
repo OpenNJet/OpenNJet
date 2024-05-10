@@ -86,10 +86,13 @@ void *njt_slab_calloc(njt_slab_pool_t *pool, size_t size);
 void *njt_slab_calloc_locked(njt_slab_pool_t *pool, size_t size);
 void njt_slab_free(njt_slab_pool_t *pool, void *p);
 void njt_slab_free_locked(njt_slab_pool_t *pool, void *p);
+njt_int_t njt_slab_add_main_pool(njt_slab_pool_t *first_pool,
+    njt_slab_pool_t *new_pool, size_t size, njt_log_t *log);
 njt_int_t njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
     njt_slab_pool_t *new_pool, size_t size, njt_log_t *log);
 void njt_shm_free_chain(njt_shm_t *shm, njt_slab_pool_t *shared_pool);
 void njt_main_slab_init(njt_main_slab_t *slab, size_t size, njt_log_t *log);
+void njt_share_slab_set_header(njt_slab_pool_t *header);
 
 
 #endif /* _NJT_SLAB_H_INCLUDED_ */

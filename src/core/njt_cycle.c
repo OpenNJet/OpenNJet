@@ -89,6 +89,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
     njt_log_t           *old_log;
     njt_slab_pool_t     *new_main_slab_pool; // for dyn slab
     ssize_t              new_main_slab_pool_size; // for dyn slab
+    njt_uint_t           new_main_slab_ceeated = 0; // for dyn slab, 1 new created, 2 extended
     char                 hostname[NJT_MAXHOSTNAMELEN];
 
     njt_timezone_update();
@@ -476,7 +477,6 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     // for dyn slab
     /* adjust global shared pool size, only increasing size is accepted */
-    njt_cycle = cycle;
     new_main_slab_pool_size = njt_parse_size(&ccf->shared_slab_pool_size); /*if 0 or error, return -1*/
 
     if (new_main_slab_pool_size > 0 && new_main_slab_pool_size < NJT_MIN_MAIN_SLAB_SIZE) {
@@ -489,8 +489,10 @@ njt_init_cycle(njt_cycle_t *old_cycle)
 
     cycle->shared_slab = old_cycle->shared_slab;
 
+    njt_share_slab_set_header(cycle->shared_slab.header);
     if (new_main_slab_pool_size > cycle->shared_slab.total_size) {
         /*new process*/
+        new_main_slab_ceeated = 1;
         if (cycle->shared_slab.total_size == 0) {
             njt_main_slab_init(&cycle->shared_slab, new_main_slab_pool_size, cycle->log);
 
@@ -508,7 +510,9 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                           &cycle->shared_slab.shm.name, new_main_slab_pool_size);
 
             cycle->shared_slab.header = (njt_slab_pool_t *)cycle->shared_slab.shm.addr;
+            njt_share_slab_set_header(cycle->shared_slab.header);
         } else {
+            new_main_slab_ceeated = 2;
 
             new_main_slab_pool_size -= cycle->shared_slab.total_size;
 
@@ -522,12 +526,13 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                 goto failed;
             }
 
-            new_main_slab_pool = (njt_slab_pool_t *)cycle->shared_slab.shm.addr;
-
-            if (njt_slab_add_new_pool(cycle->shared_slab.header, new_main_slab_pool, new_main_slab_pool_size, log) != NJT_OK) {
+            if (njt_init_shm_pool(cycle, &cycle->shared_slab.shm) != NJT_OK) {
                 njt_shm_free(&cycle->shared_slab.shm);
                 goto failed;
-            };
+            }
+
+            new_main_slab_pool = (njt_slab_pool_t *)cycle->shared_slab.shm.addr;
+            njt_share_slab_set_header(new_main_slab_pool);
 
             cycle->shared_slab.total_size += new_main_slab_pool_size;
             cycle->shared_slab.count ++;
@@ -603,6 +608,10 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                 if (shm_zone[i].init(&shm_zone[i], oshm_zone[n].data)
                     != NJT_OK)
                 {
+                    if (new_main_slab_ceeated == 2) {
+                        njt_shm_free(&cycle->shared_slab.shm);
+                        njt_share_slab_set_header(cycle->shared_slab.header);
+                    }
                     goto failed;
                 }
 
@@ -617,6 +626,10 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         }
 
         if (njt_shm_alloc(&shm_zone[i].shm) != NJT_OK) {
+            if (new_main_slab_ceeated == 2) {
+                njt_shm_free(&cycle->shared_slab.shm);
+                njt_share_slab_set_header(cycle->shared_slab.header);
+            }
             goto failed;
         }
 
@@ -625,6 +638,12 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         }
 
         if (shm_zone[i].init(&shm_zone[i], NULL) != NJT_OK) {
+            if (new_main_slab_ceeated == 2) {
+                njt_shm_free(&cycle->shared_slab.shm);
+            } else if (cycle->shared_slab.header != NULL) {
+                njt_shm_free_chain(&shm_zone[i].shm, cycle->shared_slab.header);
+            }
+            njt_share_slab_set_header(cycle->shared_slab.header);
             goto failed;
         }
 
@@ -633,6 +652,10 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         continue;
     }
 
+    njt_share_slab_set_header(cycle->shared_slab.header);
+    if (new_main_slab_ceeated ==2 ) {
+        njt_slab_add_main_pool(cycle->shared_slab.header, new_main_slab_pool, new_main_slab_pool_size, log);
+    }
 
     /* handle the listening sockets */
 

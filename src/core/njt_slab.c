@@ -81,7 +81,12 @@ static void njt_slab_error(njt_slab_pool_t *pool, njt_uint_t level,
 static njt_uint_t  njt_slab_max_size;
 static njt_uint_t  njt_slab_exact_size;
 static njt_uint_t  njt_slab_exact_shift;
+static njt_slab_pool_t *njt_shared_slab_header;
 
+
+void njt_share_slab_set_header(njt_slab_pool_t *header) {
+    njt_shared_slab_header = header;
+}
 
 njt_int_t
 njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
@@ -107,6 +112,20 @@ njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
     njt_log_error(NJT_LOG_CRIT, log, 0,
             "dyn_slab add new slab pool: %p, size %d", (void *) new_pool, size);
     njt_slab_init(new_pool);
+    return NJT_OK;
+}
+
+njt_int_t
+njt_slab_add_main_pool(njt_slab_pool_t *first_pool,
+    njt_slab_pool_t *new_pool, size_t size, njt_log_t *log)
+{
+    njt_slab_pool_t *pool;
+
+    for(pool = first_pool; pool->next != NULL; pool = pool->next) {/**/}
+
+    pool->next = new_pool;
+    new_pool->first = first_pool;
+
     return NJT_OK;
 }
 
@@ -456,8 +475,8 @@ done:
     }
 
     s = (size_t)(pool->end - (u_char *)pool);
-    if (p == 0 && pool->first != njt_cycle->shared_slab.header && njt_cycle->shared_slab.header != NULL) {
-        new_pool = (njt_slab_pool_t *) njt_slab_alloc(njt_cycle->shared_slab.header, s);
+    if (p == 0 && pool->first != njt_shared_slab_header && njt_shared_slab_header != NULL) {
+        new_pool = (njt_slab_pool_t *) njt_slab_alloc(njt_shared_slab_header, s);
         if (new_pool != NULL) {
             njt_slab_add_new_pool(pool->first, new_pool, s, njt_cycle->log);
             njt_log_error(NJT_LOG_CRIT, njt_cycle->log, 0,
