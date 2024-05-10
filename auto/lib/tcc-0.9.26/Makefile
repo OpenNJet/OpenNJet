@@ -169,14 +169,14 @@ PROGS_CROSS_LINK=$(foreach PROG_CROSS,$(PROGS_CROSS),$($(PROG_CROSS)_LINK))
 PROGS+=tiny_libmaker$(EXESUF)
 
 TCCLIBS = $(LIBTCC1) $(LIBTCC) $(LIBTCC_EXTRA)
-TCCDOCS = tcc.1 tcc-doc.html tcc-doc.info
+#TCCDOCS = tcc.1  tcc-doc.info
 
 ifdef CONFIG_CROSS
 PROGS+=$(PROGS_CROSS)
 TCCLIBS+=$(LIBTCC1_CROSS)
 endif
 
-all: $(PROGS) $(TCCLIBS) $(TCCDOCS)
+all: $(PROGS) $(TCCLIBS) 
 
 # Host Tiny C Compiler
 tcc$(EXESUF): tcc.o $(LIBTCC)
@@ -282,12 +282,11 @@ install-strip: install
 	strip $(foreach PROG,$(PROGS),"$(bindir)"/$(PROG))
 
 ifndef CONFIG_WIN
-install: $(PROGS) $(TCCLIBS) $(TCCDOCS)
+install: $(PROGS) $(TCCLIBS)
 	mkdir -p "$(bindir)"
 	$(INSTALLBIN) -m755 $(PROGS) "$(bindir)"
 	cp -P tcc$(EXESUF) "$(bindir)"
 	mkdir -p "$(mandir)/man1"
-	-$(INSTALL) -m644 tcc.1 "$(mandir)/man1"
 	mkdir -p "$(infodir)"
 	-$(INSTALL) -m644 tcc-doc.info "$(infodir)"
 	mkdir -p "$(tccdir)"
@@ -306,7 +305,6 @@ endif
 	mkdir -p "$(includedir)"
 	$(INSTALL) -m644 $(top_srcdir)/libtcc.h "$(includedir)"
 	mkdir -p "$(docdir)"
-	-$(INSTALL) -m644 tcc-doc.html "$(docdir)"
 ifdef CONFIG_CROSS
 	mkdir -p "$(tccdir)/win32/lib/32"
 	mkdir -p "$(tccdir)/win32/lib/64"
@@ -330,14 +328,13 @@ uninstall:
 	rm -fv "$(bindir)/tcc$(EXESUF)"
 	rm -fv $(foreach P,$(LIBTCC1),"$(tccdir)/$P")
 	rm -fv $(foreach P,$(TCC_INCLUDES),"$(tccdir)/include/$P")
-	rm -fv "$(mandir)/man1/tcc.1" "$(infodir)/tcc-doc.info"
 	rm -fv "$(libdir)/$(LIBTCC)" "$(includedir)/libtcc.h"
 	rm -fv "$(libdir)/libtcc.so*"
 	rm -rv "$(tccdir)"
 	rm -rv "$(docdir)"
 else
 # on windows
-install: $(PROGS) $(TCCLIBS) $(TCCDOCS)
+install: $(PROGS) $(TCCLIBS)
 	mkdir -p "$(tccdir)"
 	mkdir -p "$(tccdir)/lib"
 	mkdir -p "$(tccdir)/include"
@@ -350,7 +347,6 @@ install: $(PROGS) $(TCCLIBS) $(TCCDOCS)
 	cp -r $(top_srcdir)/win32/include/. "$(tccdir)/include"
 	cp -r $(top_srcdir)/win32/examples/. "$(tccdir)/examples"
 	$(INSTALL) -m644 $(addprefix $(top_srcdir)/include/,$(TCC_INCLUDES)) $(top_srcdir)/tcclib.h "$(tccdir)/include"
-	$(INSTALL) -m644 tcc-doc.html $(top_srcdir)/win32/tcc-win32.txt "$(tccdir)/doc"
 	$(INSTALL) -m644 $(top_srcdir)/libtcc.h $(LIBTCC_EXTRA) "$(tccdir)/libtcc"
 	$(INSTALL) -m644 $(LIBTCC) "$(tccdir)"
 ifdef CONFIG_CROSS
@@ -365,15 +361,8 @@ uninstall:
 endif
 
 # documentation and man page
-tcc-doc.html: tcc-doc.texi
-	-makeinfo --no-split --html --number-sections -o $@ $<
 
-tcc.1: tcc-doc.texi
-	-$(top_srcdir)/texi2pod.pl $< tcc.pod
-	-pod2man --section=1 --center="Tiny C Compiler" --release=`cat $(top_srcdir)/VERSION` tcc.pod > $@
 
-tcc-doc.info: tcc-doc.texi
-	-makeinfo $<
 
 # in tests subdir
 export LIBTCC1
@@ -395,7 +384,7 @@ ifneq ($(LIBTCC1),)
 endif
 
 distclean: clean
-	rm -vf config.h config.mak config.texi tcc.1 tcc-doc.info tcc-doc.html
+	rm -vf config.h config.mak 
 
 config.mak:
 	@echo "Please run ./configure."
@@ -410,16 +399,6 @@ TAGS:
 # create release tarball from *current* git branch (including tcc-doc.html
 # and converting two files to CRLF)
 TCC-VERSION := tcc-$(shell cat $(top_srcdir)/VERSION)
-tar:    tcc-doc.html
-	mkdir $(TCC-VERSION)
-	( cd $(TCC-VERSION) && git --git-dir ../.git checkout -f )
-	cp tcc-doc.html $(TCC-VERSION)
-	for f in tcc-win32.txt build-tcc.bat ; do \
-	    cat win32/$$f | sed 's,\(.*\),\1\r,g' > $(TCC-VERSION)/win32/$$f ; \
-	done
-	tar cjf $(TCC-VERSION).tar.bz2 $(TCC-VERSION)
-	rm -rf $(TCC-VERSION)
-	git reset
 
 .PHONY: all clean tar tags TAGS distclean install uninstall FORCE
 
