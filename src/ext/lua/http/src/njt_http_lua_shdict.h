@@ -107,7 +107,8 @@ void njt_http_lua_shdict_rbtree_insert_value(njt_rbtree_node_t *temp,
     njt_rbtree_node_t *node, njt_rbtree_node_t *sentinel);
 void njt_http_lua_inject_shdict_api(njt_http_lua_main_conf_t *lmcf,
     lua_State *L);
-
+void njt_http_lua_inject_parent_shdict_api(njt_cycle_t *njt_cycle, 
+    lua_State *L);
 
 #endif /* _NJT_HTTP_LUA_SHDICT_H_INCLUDED_ */
 
