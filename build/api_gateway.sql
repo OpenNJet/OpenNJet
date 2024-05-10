@@ -105,19 +105,26 @@ INSERT INTO api (id,name,group_id,"path","method","desc",param_mode,sign_validat
          (16,'api gateway',1,'/identities/roles/{id}','get','角色查询',0,0),
          (17,'api gateway',1,'/identities/roles/{id}','put','修改角色',0,0),
          (18,'api gateway',1,'/identities/roles/{id}','delete','删除角色',0,0),
-         (19,'api gateway',1,'/entities/api_groups','post','新增API Group',0,0),
-         (20,'api gateway',1,'/entities/api_groups/{id}','get','API Group查询',0,0);
+         (19,'api gateway',1,'/identities/roles/name/{name}','get','通过角色名查询角色',0,0),
+         (20,'api gateway',1,'/entities/api_groups','post','新增API Group',0,0);
 INSERT INTO api (id,name,group_id,"path","method","desc",param_mode,sign_validation) VALUES
-         (21,'api gateway',1,'/entities/api_groups/{id}','put','修改API Group',0,0),
-         (22,'api gateway',1,'/entities/api_groups/{id}','delete','删除API Group',0,0),
-         (23,'api gateway',1,'/entities/api_groups/name/{name}','get','通过API Group名查询API Group',0,0),
-         (24,'api gateway',1,'/entities/api_groups/{id}/oas3','post','通过Open API 3.0 格式文档导入API',0,0),
-         (25,'api gateway',1,'/entities/api_groups/{id}/apis','get','获取API Group下定义的所有api',0,0),
-         (26,'api gateway',1,'/identities/roles/{id}/apis','get','通过 role_id 查询对应role 授权的 API 列表',0,0),
-         (27,'api gateway',1,'/identities/roles/{id}/apis','put','通过 role_id 更新对应role 授权的 API 列表',0,0),
-         (28,'api gateway',1,'/auth/login','post','登录',0,0),
-         (29,'api gateway',1,'/auth/verification','post','登录',0,0),  
-         (30,'api gateway',1,'/deploy/app','post','部署已上传的应用',0,0)  ;
+         (21,'api gateway',1,'/entities/api_groups/{id}','get','API Group查询',0,0),
+         (22,'api gateway',1,'/entities/api_groups/{id}','put','修改API Group',0,0),
+         (23,'api gateway',1,'/entities/api_groups/{id}','delete','删除API Group',0,0),
+         (24,'api gateway',1,'/entities/api_groups/name/{name}','get','通过API Group名查询API Group',0,0),
+         (25,'api gateway',1,'/entities/api_groups/{id}/oas3','post','通过Open API 3.0 格式文档导入API',0,0),
+         (26,'api gateway',1,'/entities/api_groups/{id}/apis','get','获取API Group下定义的所有api',0,0),
+         (27,'api gateway',1,'/identities/roles/{id}/apis','get','通过 role_id 查询对应role 授权的 API 列表',0,0),
+         (28,'api gateway',1,'/identities/roles/{id}/apis','put','通过 role_id 更新对应role 授权的 API 列表',0,0),
+         (29,'api gateway',1,'/deploy/app','post','部署已上传的应用',0,0),
+         (30,'api gateway',1,'/deploy/app','delete','删除已部署的应用',0,0);
+INSERT INTO api (id,name,group_id,"path","method","desc",param_mode,sign_validation) VALUES
+         (31,'api gateway',1,'/conf/service','post','注册后端服务',0,0),
+         (32,'api gateway',1,'/conf/service','put','更新已注册的后端服务',0,0),
+         (33,'api gateway',1,'/conf/service','delete','删除已注册的服务',0,0),
+         (34,'api gateway',1,'/conf/upstreams','get','获取所有upstream的配置信息',0,0),
+         (35,'api gateway',1,'/auth/login','post','登录',0,0),
+         (36,'api gateway',1,'/auth/verification','post','发送验证码',0,0);
 INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
          (1,1,1),
          (2,2,1),
@@ -148,42 +155,17 @@ INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
          (25,25,1),
          (26,26,1),
          (27,27,1),
-         (28,28,0),
-          (29,29,0),
-          (30,30,1);
-INSERT INTO api_grant_rbac (id,role_id,api_id) VALUES
-         (1,1,1),
-         (2,1,2),
-         (3,1,3),
-         (4,1,4),
-         (5,1,5),
-         (6,1,6),
-         (7,1,7),
-         (8,1,8),
-         (9,1,9),
-         (10,1,10);
-INSERT INTO api_grant_rbac (id,role_id,api_id) VALUES
-         (11,1,11),
-         (12,1,12),
-         (13,1,13),
-         (14,1,14),
-         (15,1,15),
-         (16,1,16),
-         (17,1,17),
-         (18,1,18),
-         (19,1,19),
-         (20,1,20);
-INSERT INTO api_grant_rbac (id,role_id,api_id) VALUES
-         (21,1,21),
-         (22,1,22),
-         (23,1,23),
-         (24,1,24),
-         (25,1,25),
-         (26,1,26),
-         (27,1,27),
-         (28,1,28),
-         (29,1,29),
-         (30,1,30);
+         (28,28,1),
+         (29,29,1),
+         (30,30,1);
+INSERT INTO api_grant_mode (id,api_id,grant_mode) VALUES
+         (31,31,1),
+         (32,32,1),
+         (33,33,1),
+         (34,34,1),
+         (35,35,0),
+         (36,36,0);
+INSERT INTO api_grant_rbac(role_id, api_id) select 1, id from api order by id;
 INSERT INTO api_group (id,name,base_path,"desc") VALUES
          (1,'api_gateway','/api_gateway','API Gateway');
 INSERT INTO api_role (id,name,"desc") VALUES

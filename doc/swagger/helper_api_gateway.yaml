@@ -580,6 +580,37 @@ paths:
                     example: "success"
         '500':
           description: Internal Server Error    
+  /identities/roles/name/{name}:  
+    get:
+      tags: 
+        - identities
+      summary: 通过角色名查询角色
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+          description: 角色名称
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/roleData'
+        '500':
+          description: Internal Server Error       
   /entities/api_groups:
     post:
       tags: 
@@ -899,7 +930,157 @@ paths:
                     example: "success"
         '500':
           description: Internal Server Error
-
+    delete:
+      tags: 
+        - deploy
+      summary: 删除已部署的应用
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                type: object
+                required: ["base_path"]
+                properties: 
+                 base_path:
+                   type: string
+                   example: "/app2"
+                 server_name: 
+                   type: string
+                   example: ""
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+  /conf/service:
+    post:
+      tags: 
+        - conf
+      summary: 注册后端服务
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/regSrvData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+    put:
+      tags: 
+        - conf
+      summary: 更新已注册的后端服务
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/regSrvData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+    delete:
+      tags: 
+        - conf
+      summary: 删除已注册的服务
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                type: object
+                required: ["base_path"]
+                properties: 
+                 base_path:
+                   type: string
+                   example: "/app2"
+                 server_name: 
+                   type: string
+                   example: ""
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+  /conf/upstreams:
+    get:
+      tags: 
+        - conf
+      summary: 获取所有upstream的配置信息
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/upstreamData'
+        '500':
+          description: Internal Server Error
   /auth/login:  
     post:
       tags: 
@@ -1103,6 +1284,55 @@ components:
           type: string
         server_name:
           type: string
+    regSrvData:
+      title: register service data
+      type: object
+      required: [ "base_path", "upstream"]
+      properties:
+        base_path:
+          type: string
+        server_name:
+          type: string
+        upstream: 
+          $ref: '#/components/schemas/upstreamData'
+    upstreamData:
+      title: upstream data
+      type: object
+      required: [ "endpoints"]
+      properties:
+        endpoints:
+            type: array
+            items:
+              type: object
+              properties:
+                address:
+                  type: string
+                port: 
+                  type: string
+        load-balance:
+          description: default is round_robin
+          enum: 
+            - round_robin
+            - chash   
+        upstreamHashByConfig:
+          description: required if load-balancer is chash
+          type: object
+          properties:
+            upstream-hash-by: 
+              type: string
+        healthCheck:
+          type: object
+          properties:
+            interval: 
+              type: integer
+            path: 
+              type: string
+            fails: 
+              type: integer
+            passes:  
+              type: integer
+            statusMatch: 
+              type: string
   securitySchemes:
     bearerAuth:
       type: http

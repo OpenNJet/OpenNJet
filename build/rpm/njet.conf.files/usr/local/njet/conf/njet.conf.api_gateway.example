@@ -18,7 +18,6 @@ load_module modules/njt_http_location_module.so;
 load_module modules/njt_http_lua_module.so;
 load_module modules/njt_http_dyn_lua_module.so;
 
-
 events {
     worker_connections  1024;
 }
@@ -31,51 +30,10 @@ http {
     vhost_traffic_status_zone;
     lua_package_path "$prefix/lualib/lib/?.lua;$prefix/modules/?.lua;$prefix/apps/?.lua;;";
     lua_package_cpath "$prefix/lualib/clib/?.so;;";
+
     lua_shared_dict configuration_data 20M;
-
-    init_by_lua_block {
-        collectgarbage("collect")
-        local _=require("lor.index")
-        local _=require("lsqlite3complete")
-
-        -- init modules
-        local ok, res
-
-        ok, res = pcall(require, "configuration")
-        if not ok then
-            error("require failed: " .. tostring(res))
-        else
-            configuration = res
-            configuration.prohibited_localhost_port = '8080'
-        end
-
-        ok, res = pcall(require, "balancer")
-        if not ok then
-            error("require failed: " .. tostring(res))
-        else
-            balancer = res
-        end
-
-        ok, res = pcall(require, "health_check")
-        if not ok then
-            error("require failed: " .. tostring(res))
-        else
-            health_check = res
-        end
-
-        local process = require("njt.process")
-        local ok,err = process.enable_privileged_agent(10240) 
-        if not ok then
-            error("enable privileged agent failed")
-        end
-    }
-    init_worker_by_lua_block {
-        if require("njt.process").type() ~= "privileged agent" then
-         balancer.init_worker()
-        else 
-          health_check.init_worker(configuration, njt.shared.configuration_data)  
-        end
-    }
+    init_by_lua_file modules/api_gateway/init.lua;
+    init_worker_by_lua_file modules/api_gateway/init_worker.lua;
 
     upstream upstream_balancer {
         ### Attention!!!
@@ -105,17 +63,6 @@ http {
         location /api_gateway {
            content_by_lua_file modules/api_gateway/auth.lua;
         }
-
-        location /configuration {
-            client_max_body_size                    21M;
-            client_body_buffer_size                 21M;
-            proxy_buffering                         off;
-
-            content_by_lua_block {
-                configuration.call()
-            }
-        }
-
    }
 }
 
