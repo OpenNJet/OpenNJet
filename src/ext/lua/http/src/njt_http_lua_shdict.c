@@ -376,7 +376,7 @@ void
 njt_http_lua_inject_parent_shdict_api(njt_cycle_t *parent_cycle, lua_State *L)
 {
     njt_http_lua_shdict_ctx_t   *ctx;
-    njt_uint_t                   i;
+    njt_uint_t                   i, index;
     njt_shm_zone_t             **zone;
     njt_shm_zone_t             **zone_udata;
     njt_http_conf_ctx_t        *conf_ctx;
@@ -384,7 +384,21 @@ njt_http_lua_inject_parent_shdict_api(njt_cycle_t *parent_cycle, lua_State *L)
 
     conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(parent_cycle->conf_ctx, njt_http_module);
     if (conf_ctx == NULL) return;
-    lmcf = conf_ctx->main_conf[njt_http_lua_module.ctx_index];
+    index = NJT_MODULE_UNSET_INDEX;
+    //get njt_http_lua_module ctx_index from parent_cycle
+    //can't use njt_http_cycle_get_module_main_conf or njt_http_lua_module.ctx_index here because parent ctx_index could be different
+    for (i = 0; i < parent_cycle->modules_n; i++) {
+        if (njt_strcmp(parent_cycle->modules[i]->name, "njt_http_lua_module") != 0) {
+            continue;
+        } else {
+            index = parent_cycle->modules[i]->ctx_index;
+            break;
+        }
+    }
+    //if lua module is not loaded in parent cycle, don't inject parent shared dict
+    if (index == NJT_MODULE_UNSET_INDEX) return;
+
+    lmcf = conf_ctx->main_conf[index];
     if (lmcf == NULL) return;
 
     if (lmcf->shdict_zones != NULL) {
