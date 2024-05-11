@@ -47,15 +47,21 @@ fi
 if [ -d njet/auto/lib/keepalived/keepalived/emb/.libs ]; then
  cp -a njet/auto/lib/keepalived/keepalived/emb/.libs/libha_emb.so* %{buildroot}/usr/local/njet/lib 
 fi
-if [ -d njet/auto/lib/tcc-0.9.26/i386 ]; then
+if [ -d njet/auto/lib/tcc-0.9.26/i386/libtcc1.a ]; then
  cp -a njet/auto/lib/tcc-0.9.26/i386  %{buildroot}/usr/local/njet/lib/tcc
+ cp -a njet/auto/lib/tcc-0.9.26/libtcc1.a  %{buildroot}/usr/local/njet/lib/tcc/i386
 fi
-if [ -d njet/auto/lib/tcc-0.9.26/x86-64 ]; then
+if [ -d njet/auto/lib/tcc-0.9.26/x86-64/libtcc1.a ]; then
  cp -a njet/auto/lib/tcc-0.9.26/x86-64  %{buildroot}/usr/local/njet/lib/tcc 
+ cp -a njet/auto/lib/tcc-0.9.26/libtcc1.a  %{buildroot}/usr/local/njet/lib/tcc/x86-64
 fi
-if [ -d njet/auto/lib/tcc-0.9.26/arm64 ]; then
+if [ -d njet/auto/lib/tcc-0.9.26/arm64/libtcc1.a ]; then
  cp -a njet/auto/lib/tcc-0.9.26/arm64  %{buildroot}/usr/local/njet/lib/tcc 
+ cp -a njet/auto/lib/tcc-0.9.26/libtcc1.a  %{buildroot}/usr/local/njet/lib/tcc/arm64
 fi
+cp -a njet/auto/lib/tcc-0.9.26/include  %{buildroot}/usr/local/njet/lib/tcc
+cp -a njet/auto/lib/tcc-0.9.26/tcclib.h  %{buildroot}/usr/local/njet/lib/tcc/include
+
 rm -f %{buildroot}/usr/local/njet/lib/*.a
 
 %pre
