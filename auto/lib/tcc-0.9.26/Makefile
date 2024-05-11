@@ -20,6 +20,7 @@ CFLAGS_P=$(CFLAGS) -pg -static
 LIBS_P=
 LDFLAGS_P=$(LDFLAGS)
 
+CFLAGS+=-fPIC
 ifdef CONFIG_WIN64
 CONFIG_WIN32=yes
 endif
