@@ -104,6 +104,7 @@ static TCCState *njt_stream_sniffer_create_tcc(njt_conf_t *cf){
     tcc_set_options(tcc,"-Werror");
     tcc_set_lib_path(tcc,(const char *)full_path.data); 
     tcc_add_include_path(tcc,(const char *)full_path.data); 
+    tcc_add_sysinclude_path(tcc,(const char *)full_path.data);
 	return tcc;
 }
 static void *njt_stream_sniffer_create_srv_conf(njt_conf_t *cf)
@@ -352,6 +353,7 @@ njt_stream_read_sniffer_filter_file(njt_conf_t *cf, njt_command_t *cmd, void *co
 
     //#define GET_BIT(x,bit)  ((x & (1 << bit)) >> bit)
     njt_str_t  header_code = njt_string("#include <tcclib.h>\n"
+     " #include <arpa/inet.h> \n"
      "extern void sniffer_log(int level,const char *fmt, ...);\n"
      "extern int sniffer_get_hex_cmp(int pos, char* src,int);\n"
      "extern int sniffer_get_hex_data(int pos,char* buffer,int buffer_len);\n"
