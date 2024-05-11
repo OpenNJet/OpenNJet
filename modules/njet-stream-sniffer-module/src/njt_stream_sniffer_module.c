@@ -245,7 +245,7 @@ int sniffer_get_data(int pos,char* buffer,int buffer_len) {
     if (len < 0) {
         return 0;
     }
-    njt_memcpy(buffer,c->buffer->pos,len);
+    njt_memcpy(buffer,c->buffer->pos + pos,len);
     return len;
 }
 /*
@@ -313,7 +313,7 @@ int sniffer_get_hex_cmp(int pos, char* src,int len) {
         return  NJT_AGAIN;
     }
     
-    if(njt_memcmp(c->buffer->pos,src,len) == 0) {
+    if(njt_memcmp(c->buffer->pos + pos,src,len) == 0) {
          rc =  NJT_OK;
     }
     return  rc;
