@@ -109,7 +109,7 @@ njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
         return NJT_ERROR;
     }
 
-    njt_log_error(NJT_LOG_CRIT, log, 0,
+    njt_log_error(NJT_LOG_NOTICE, log, 0,
             "dyn_slab add new slab pool: %p, size %d", (void *) new_pool, size);
     njt_slab_init(new_pool);
     return NJT_OK;
@@ -479,7 +479,7 @@ done:
         new_pool = (njt_slab_pool_t *) njt_slab_alloc(njt_shared_slab_header, s);
         if (new_pool != NULL) {
             njt_slab_add_new_pool(pool->first, new_pool, s, njt_cycle->log);
-            njt_log_error(NJT_LOG_CRIT, njt_cycle->log, 0,
+            njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
                    "new slab pool alloc: %p, size %d", (void *) new_pool, s);
             return njt_slab_alloc_locked(new_pool, size);
         } 

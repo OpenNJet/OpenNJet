@@ -483,7 +483,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
         new_main_slab_pool_size = NJT_MIN_MAIN_SLAB_SIZE;
     }
 
-    njt_log_error(NJT_LOG_CRIT, log, 0,
+    njt_log_error(NJT_LOG_NOTICE, log, 0,
                     "dyn_slab new_slab_size %V, old_cycle slab size %d ",
                     &ccf->shared_slab_pool_size, old_cycle->shared_slab.total_size);
 
@@ -505,7 +505,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
                 goto failed;
             }
 
-            njt_log_error(NJT_LOG_CRIT, log, 0,
+            njt_log_error(NJT_LOG_NOTICE, log, 0,
                           "dyn_slab initialize dyn shared memory \"%V\", size %d ",
                           &cycle->shared_slab.shm.name, new_main_slab_pool_size);
 
@@ -537,7 +537,7 @@ njt_init_cycle(njt_cycle_t *old_cycle)
             cycle->shared_slab.total_size += new_main_slab_pool_size;
             cycle->shared_slab.count ++;
 
-            njt_log_error(NJT_LOG_CRIT, log, 0,
+            njt_log_error(NJT_LOG_NOTICE, log, 0,
                           "dyn_slab extend dyn shared memory \"%V\", to size %d, count %d ",
                           &cycle->shared_slab.shm.name, cycle->shared_slab.total_size, cycle->shared_slab.count);
 
