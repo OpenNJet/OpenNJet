@@ -113,15 +113,15 @@ cdir=`cd $(dirname $0); pwd`
                 fi 
 		mkdir -p $NJET_PREFIX/lib/tcc
 		if [ -f auto/lib/tcc-0.9.26/i386/libtcc1.a ]; then
-			cp -fr auto/lib/tcc-0.9.26/i386  /usr/local/njet/lib/tcc
+			mkdir -p /usr/local/njet/lib/tcc/i386
 			cp -fr auto/lib/tcc-0.9.26/libtcc1.a /usr/local/njet/lib/tcc/i386
 		fi
 		if [ -f auto/lib/tcc-0.9.26/x86-64/libtcc1.a ]; then
-			cp -fr auto/lib/tcc-0.9.26/x86-64  /usr/local/njet/lib/tcc
+			 mkdir -p /usr/local/njet/lib/tcc/x86-64
 			cp -fr auto/lib/tcc-0.9.26/libtcc1.a /usr/local/njet/lib/tcc/x86-64
 		fi
 		if [ -f auto/lib/tcc-0.9.26/arm64/libtcc1.a ]; then
-			cp -fr auto/lib/tcc-0.9.26/arm64  /usr/local/njet/lib/tcc
+			 mkdir -p /usr/local/njet/lib/tcc/arm64
 			cp -fr auto/lib/tcc-0.9.26/libtcc1.a  /usr/local/njet/lib/tcc/arm64
 		fi
 		cp -rf auto/lib/tcc-0.9.26/include  /usr/local/njet/lib/tcc
