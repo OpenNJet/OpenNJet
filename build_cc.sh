@@ -112,15 +112,15 @@ cdir=`cd $(dirname $0); pwd`
                   cd auto/lib/keepalived; make install; cd -;
                 fi 
 		mkdir -p $NJET_PREFIX/lib/tcc
-		if [ -d auto/lib/tcc-0.9.26/i386/libtcc1.a ]; then
+		if [ -f auto/lib/tcc-0.9.26/i386/libtcc1.a ]; then
 			cp -fr auto/lib/tcc-0.9.26/i386  /usr/local/njet/lib/tcc
 			cp -fr auto/lib/tcc-0.9.26/libtcc1.a /usr/local/njet/lib/tcc/i386
 		fi
-		if [ -d auto/lib/tcc-0.9.26/x86-64/libtcc1.a ]; then
+		if [ -f auto/lib/tcc-0.9.26/x86-64/libtcc1.a ]; then
 			cp -fr auto/lib/tcc-0.9.26/x86-64  /usr/local/njet/lib/tcc
 			cp -fr auto/lib/tcc-0.9.26/libtcc1.a /usr/local/njet/lib/tcc/x86-64
 		fi
-		if [ -d auto/lib/tcc-0.9.26/arm64/libtcc1.a ]; then
+		if [ -f auto/lib/tcc-0.9.26/arm64/libtcc1.a ]; then
 			cp -fr auto/lib/tcc-0.9.26/arm64  /usr/local/njet/lib/tcc
 			cp -fr auto/lib/tcc-0.9.26/libtcc1.a  /usr/local/njet/lib/tcc/arm64
 		fi
