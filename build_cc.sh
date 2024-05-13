@@ -111,7 +111,20 @@ cdir=`cd $(dirname $0); pwd`
 		if [ -d auto/lib/keepalived/keepalived/emb/.libs ]; then
                   cd auto/lib/keepalived; make install; cd -;
                 fi 
-		cd auto/lib/tcc-0.9.26;make install; cd -;
+		if [ -d auto/lib/tcc-0.9.26/i386/libtcc1.a ]; then
+			cp -fr auto/lib/tcc-0.9.26/i386  /usr/local/njet/lib/tcc
+			cp -fr auto/lib/tcc-0.9.26/libtcc1.a /usr/local/njet/lib/tcc/i386
+		fi
+		if [ -d auto/lib/tcc-0.9.26/x86-64/libtcc1.a ]; then
+			cp -fr auto/lib/tcc-0.9.26/x86-64  /usr/local/njet/lib/tcc
+			cp -fr auto/lib/tcc-0.9.26/libtcc1.a /usr/local/njet/lib/tcc/x86-64
+		fi
+		if [ -d auto/lib/tcc-0.9.26/arm64/libtcc1.a ]; then
+			cp -fr auto/lib/tcc-0.9.26/arm64  /usr/local/njet/lib/tcc
+			cp -fr auto/lib/tcc-0.9.26/libtcc1.a  /usr/local/njet/lib/tcc/arm64
+		fi
+		cp -rf auto/lib/tcc-0.9.26/include  /usr/local/njet/lib/tcc
+		cp -fr auto/lib/tcc-0.9.26/tcclib.h  /usr/local/njet/lib/tcc/include
                 cd auto/lib/luapkg; PREFIX=/usr/local CDIR_linux=njet/lualib/clib LDIR_linux=njet/lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -;
 		ldconfig
                 ;;

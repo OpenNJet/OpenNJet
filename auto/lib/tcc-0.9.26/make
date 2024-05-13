@@ -30,7 +30,7 @@ END
         cat << END                                            >> $NJT_MAKEFILE
 $MODTCC/libtcc.a:
 	cd  $MODTCC \\
-    && ./configure  --prefix=/usr/local/njet \\
+    && ./configure  --prefix=. \\
     && \$(MAKE) 
 END
     ;;
