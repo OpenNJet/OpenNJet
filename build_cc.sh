@@ -111,6 +111,7 @@ cdir=`cd $(dirname $0); pwd`
 		if [ -d auto/lib/keepalived/keepalived/emb/.libs ]; then
                   cd auto/lib/keepalived; make install; cd -;
                 fi 
+		mkdir -p NJET_PREFIX/lib/tcc
 		if [ -d auto/lib/tcc-0.9.26/i386/libtcc1.a ]; then
 			cp -fr auto/lib/tcc-0.9.26/i386  /usr/local/njet/lib/tcc
 			cp -fr auto/lib/tcc-0.9.26/libtcc1.a /usr/local/njet/lib/tcc/i386
