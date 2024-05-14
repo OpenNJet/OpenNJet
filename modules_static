@@ -36,3 +36,4 @@
 ./modules/njet-stream-stsc-module
 # required
 ./modules/njet-http-api-register-module
+./modules/njet-stream-sniffer-module
