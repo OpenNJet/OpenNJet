@@ -1,0 +1,79 @@
+njt_addon_name=njt_http_set_misc_module
+
+if test -n "$njt_module_link"; then
+    if test -n "$NDK_SRCS"; then
+        echo "found njt_devel_kit for njt_set_misc; looks good."
+    else
+        echo "error: njt_devel_kit is required to build njt_set_misc; please put it before njt_set_misc." 1>&2
+        exit 1
+    fi
+else
+    if echo $HTTP_MODULES | grep " ndk_http_module" > /dev/null; then
+        echo "found njt_devel_kit for njt_set_misc; looks good."
+    else
+        echo "error: njt_devel_kit is required to build njt_set_misc; please put it before njt_set_misc." 1>&2
+        exit 1
+    fi
+fi
+
+SET_MISC_SRCS="                                                             \
+            $njt_addon_dir/src/njt_http_set_base32.c                        \
+            $njt_addon_dir/src/njt_http_set_default_value.c                 \
+            $njt_addon_dir/src/njt_http_set_hashed_upstream.c               \
+            $njt_addon_dir/src/njt_http_set_quote_sql.c                     \
+            $njt_addon_dir/src/njt_http_set_quote_json.c                    \
+            $njt_addon_dir/src/njt_http_set_unescape_uri.c                  \
+            $njt_addon_dir/src/njt_http_set_misc_module.c                   \
+            $njt_addon_dir/src/njt_http_set_escape_uri.c                    \
+            $njt_addon_dir/src/njt_http_set_hash.c                          \
+            $njt_addon_dir/src/njt_http_set_local_today.c                   \
+            $njt_addon_dir/src/njt_http_set_hex.c                           \
+            $njt_addon_dir/src/njt_http_set_base64.c                        \
+            $njt_addon_dir/src/njt_http_set_base64url.c                     \
+            $njt_addon_dir/src/njt_http_set_random.c                        \
+            $njt_addon_dir/src/njt_http_set_secure_random.c                 \
+            $njt_addon_dir/src/njt_http_set_rotate.c
+            "
+
+SET_MISC_DEPS="                                                             \
+            $njt_addon_dir/src/ddebug.h                                     \
+            $njt_addon_dir/src/njt_http_set_default_value.h                 \
+            $njt_addon_dir/src/njt_http_set_hashed_upstream.h               \
+            $njt_addon_dir/src/njt_http_set_quote_sql.h                     \
+            $njt_addon_dir/src/njt_http_set_quote_json.h                    \
+            $njt_addon_dir/src/njt_http_set_unescape_uri.h                  \
+            $njt_addon_dir/src/njt_http_set_escape_uri.h                    \
+            $njt_addon_dir/src/njt_http_set_hash.h                          \
+            $njt_addon_dir/src/njt_http_set_local_today.h                   \
+            $njt_addon_dir/src/njt_http_set_hex.h                           \
+            $njt_addon_dir/src/njt_http_set_base64url.h                     \
+            $njt_addon_dir/src/njt_http_set_base64.h                        \
+            $njt_addon_dir/src/njt_http_set_random.h                        \
+            $njt_addon_dir/src/njt_http_set_rotate.h                        \
+            $njt_addon_dir/src/njt_http_set_secure_random.h                 \
+            $njt_addon_dir/src/njt_http_set_misc_module.h                   \
+            "
+
+if [ $USE_OPENSSL = YES -o $MAIL_SSL = YES ]; then
+    SET_MISC_DEPS="$SET_MISC_DEPS $njt_addon_dir/src/njt_http_set_hmac.h"
+    SET_MISC_SRCS="$SET_MISC_SRCS $njt_addon_dir/src/njt_http_set_hmac.c"
+fi
+
+CFLAGS="$CFLAGS -DNDK_SET_VAR -DNDK_UPSTREAM_LIST"
+USE_SHA1=YES
+USE_MD5=YES
+
+if test -n "$njt_module_link"; then
+    njt_module_type=HTTP
+    njt_module_name=$njt_addon_name
+    njt_module_incs=
+    njt_module_deps="$SET_MISC_DEPS"
+    njt_module_srcs="$SET_MISC_SRCS"
+    njt_module_libs=
+
+    . auto/module
+else
+    HTTP_MODULES="$HTTP_MODULES $njt_addon_name"
+    NJT_ADDON_SRCS="$NJT_ADDON_SRCS $SET_MISC_SRCS"
+    NJT_ADDON_DEPS="$NJT_ADDON_DEPS $SET_MISC_DEPS"
+fi
