@@ -60,3 +60,6 @@ fi
 if [ $NJT_LIBATOMIC != NO ]; then
     . auto/lib/libatomic/conf
 fi
+if [ $NJT_LIBTCC != NO ]; then
+    . auto/lib/tcc-0.9.26/conf
+fi
