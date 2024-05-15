@@ -32,8 +32,14 @@ http {
     lua_package_cpath "$prefix/lualib/clib/?.so;;";
 
     lua_shared_dict configuration_data 20M;
-    init_by_lua_file modules/api_gateway/init.lua;
-    init_worker_by_lua_file modules/api_gateway/init_worker.lua;
+    init_by_lua_block {
+        local api_gateway=require("api_gateway")
+        api_gateway.init_master()
+    }
+    init_worker_by_lua_block {
+        local api_gateway=require("api_gateway")
+        api_gateway.init_worker()
+    }
 
     upstream upstream_balancer {
         ### Attention!!!
@@ -61,7 +67,10 @@ http {
            root html;
         }
         location /api_gateway {
-           content_by_lua_file modules/api_gateway/auth.lua;
+           content_by_lua_block {
+                local api_gateway=require("api_gateway")
+                api_gateway.auth()
+           }
         }
    }
 }
