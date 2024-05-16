@@ -197,7 +197,7 @@ void kafka_callback_handler(rd_kafka_t *rk,
 {
     if (err != 0) {
         njt_log_error(NJT_LOG_ERR,
-                (njt_log_t *)msg_opaque, 0, rd_kafka_err2str(err));
+                njt_cycle->log, 0, rd_kafka_err2str(err));
     }
 }
 
@@ -441,7 +441,7 @@ static void njt_http_kafka_post_callback_handler(njt_http_request_t *r)
      * Thanks for engineers of www.360buy.com report me this bug.
      *
      * */
-    conn_log = r->connection->log;
+    conn_log = njt_cycle->log;
     rc = rd_kafka_produce(local_conf->rkt, (int32_t)local_conf->partition,
             RD_KAFKA_MSG_F_COPY, (void *)msg, len, NULL, 0, conn_log);
     if (rc != 0) {
