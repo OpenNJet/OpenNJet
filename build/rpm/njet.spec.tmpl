@@ -21,11 +21,7 @@ OpenNJet 应用引擎是基于 NGINX 的面向互联网和云原生应用提供�
 %build
 mv njet_main njet
 cd njet && sed -i 's/--strict-warnings//g' ./build_cc.sh && ./build_cc.sh {{NJT_BUILD_OPT}} conf && make -j `nproc`
-if [ -d scripts ]; then
-  for i in `find ./scripts -type f`; do
-    LUA_PATH="`pwd`/luajit/src/?.lua;;" luajit/src/luajit -bg $i $i 
-  done
-fi
+./build_lua.sh
 
 %install
 rm -rf %{buildroot}
@@ -36,9 +32,9 @@ cp -a njet/objs/njet %{buildroot}/usr/local/njet/sbin/
 cp -a njet/objs/*.so %{buildroot}/usr/local/njet/modules/
 cp -a njet/lualib/lib/* %{buildroot}/usr/local/njet/lualib/lib/
 cp -a njet/luajit/src/libluajit.so* %{buildroot}/usr/local/njet/lib/libluajit-5.1.so.2.1.0
-if [ -d njet/scripts ]; then
-  cp -a njet/scripts/* %{buildroot}/usr/local/njet/modules/
-fi
+cp -a njet/objs/scripts/so/* %{buildroot}/usr/local/njet/lualib/clib/
+rm -rf njet/objs/scripts/so
+cp -a njet/objs/scripts/* %{buildroot}/usr/local/njet/modules/
 ln -sf libluajit-5.1.so.2.1.0 %{buildroot}/usr/local/njet/lib/libluajit-5.1.so.2
 ln -sf libluajit-5.1.so.2.1.0 %{buildroot}/usr/local/njet/lib/libluajit-5.1.so
 cd njet/auto/lib/luapkg; DESTDIR=%{buildroot} PREFIX=/usr/local CDIR_linux=njet/lualib/clib LDIR_linux=njet/lualib/lib LUA_CMODULE_DIR=${PREFIX}/${CDIR_linux} LUA_MODULE_DIR=${PREFIX}/${LDIR_linux} make install; cd -
