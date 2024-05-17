@@ -1277,7 +1277,6 @@ void
 standard_output (Logs *logs) {
   char *csv = NULL, *json = NULL, *html = NULL;
 
-  LOG_DEBUG (("=======1=====standard_output, before into"));
   /* CSV */
   if (find_output_type (&csv, "csv", 1) == 0)
     output_csv (holder, csv);

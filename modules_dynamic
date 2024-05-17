@@ -24,6 +24,10 @@
 ./modules/njet-helper-ha-module
 # required
 ./modules/njet-config-api-module
+
+# optional
+./modules/njet-helper-access-data-module
+
 # required
 ./modules/njet-http-sendmsg-module
 # optional
