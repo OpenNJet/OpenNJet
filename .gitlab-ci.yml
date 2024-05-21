@@ -39,7 +39,7 @@ build_rpm:
   when: manual
   script:
     - cd ..  
-    - sudo yum install gd libgd-devel
+    - sudo yum install gd gd-devel
     - tar cf /home/builder/rpm/njet_main.tar --exclude="njet_main/.git" njet_main
     - sudo chmod +x njet_main/build/rpm/generate_njet_spec.sh
     - cd njet_main
