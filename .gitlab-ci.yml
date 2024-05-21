@@ -12,7 +12,7 @@ build_bin:
   #   DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
 #  image: gcc:4.8.5   # gcc 版本
   script:
-    - sudo yum  install gd gd-devel
+    - sudo yum  install gd gd-devel.x86_64
     - sudo chmod +x ./build_cc.sh ./configure
     - sudo ./build_cc.sh -t $CI_COMMIT_SHA -d conf
     - sudo make -j `nproc`
