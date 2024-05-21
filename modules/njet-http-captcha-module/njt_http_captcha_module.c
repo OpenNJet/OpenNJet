@@ -821,7 +821,7 @@ njt_http_captcha_limit_handler(njt_http_request_t *r)
             lc = (njt_http_captcha_node_t *)&node->color;
             if (lc != NULL)
             {
-                if ((njt_uint_t)(curr_time - lc->start_sec) > 1)
+                if ((njt_uint_t)(curr_time - lc->start_sec) > lccf->expire)
                 {
                     lc->conn_rate = 0;
                     lc->start_sec = curr_time;
@@ -1598,7 +1598,7 @@ static char *njt_http_captcha_merge_loc_conf(njt_conf_t *cf, void *parent, void 
     else
     {
         njt_str_t name;
-        
+
         name.len = conf->verfiy_code_name.len + sizeof("cookie_%V") - 1 - 2;
         if (!(name.data = njt_pnalloc(cf->pool, name.len)))
             return "!njt_pnalloc";
