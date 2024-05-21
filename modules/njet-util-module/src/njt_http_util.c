@@ -645,3 +645,25 @@ njt_int_t njt_http_parse_path(njt_str_t uri, njt_array_t *path){
 
     return NJT_OK;
 }
+
+
+
+njt_int_t
+njt_http_util_add_header(njt_http_request_t *r, njt_str_t key,
+    njt_str_t value)
+{
+    njt_table_elt_t  *h;
+
+    if (value.len) {
+        h = njt_list_push(&r->headers_out.headers);
+        if (h == NULL) {
+            return NJT_ERROR;
+        }
+
+        h->hash = 1;
+        h->key = key;
+        h->value = value;
+    }
+
+    return NJT_OK;
+}
