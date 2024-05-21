@@ -123,6 +123,12 @@ typedef struct {
     njt_http_log_op_run_pt      run;
 } njt_http_log_var_t;
 
+//add by clb
+typedef struct {
+    njt_str_t                   name;
+    // njt_http_log_op_run_pt      run;
+} njt_http_log_var_query_param_t;
+//end add by clb
 
 #define NJT_HTTP_LOG_ESCAPE_DEFAULT  0
 #define NJT_HTTP_LOG_ESCAPE_JSON     1
@@ -196,9 +202,13 @@ static char *njt_http_log_open_file_cache(njt_conf_t *cf, njt_command_t *cmd,
 static njt_int_t njt_http_log_init(njt_conf_t *cf);
 
 //add by clb
-static njt_int_t njt_http_log_filter(njt_http_request_t *r, uintptr_t data, njt_str_t *value);
+static njt_int_t njt_http_log_var_filter(njt_http_request_t *r, uintptr_t data, njt_str_t *value);
 static njt_int_t
 njt_http_log_interval_match(njt_http_request_t *r, njt_str_t name);
+static char *
+njt_http_log_set_log_data_hidden(njt_conf_t *cf, njt_command_t *cmd, void *conf);
+njt_uint_t
+njt_http_log_arg_query_param_hidden(njt_str_t *src_data, u_char *name, size_t len);
 //end add by clb
 
 static njt_command_t  njt_http_log_commands[] = {
@@ -298,6 +308,15 @@ static njt_http_log_var_t  njt_http_log_vars[] = {
 };
 
 //add by clb
+static njt_http_log_var_query_param_t  njt_http_log_vars_query_param[] = {
+    { njt_string("request")},
+    { njt_string("request_uri")},
+    { njt_string("args")},
+    { njt_string("query_string")},
+
+    { njt_null_string }
+};
+
 static njt_int_t
 njt_http_log_interval_match(njt_http_request_t *r, njt_str_t name){
     njt_http_log_var_t          *v;
@@ -347,9 +366,7 @@ njt_http_log_interval_match(njt_http_request_t *r, njt_str_t name){
  * output value, if filtered, return realvalue to value
  * return 1 when filtered; return 0 when not filtered
 */
-static njt_int_t njt_http_log_filter(njt_http_request_t *r, uintptr_t data, njt_str_t *value){
-    njt_str_t                   tmp_value;
-    njt_flag_t                  filtered;
+static njt_int_t njt_http_log_var_filter(njt_http_request_t *r, uintptr_t data, njt_str_t *value){
     njt_http_log_loc_conf_t    *lcf;
     njt_http_core_main_conf_t  *cmcf;
     njt_http_log_data_hidden_t *data_hidden;
@@ -375,6 +392,163 @@ static njt_int_t njt_http_log_filter(njt_http_request_t *r, uintptr_t data, njt_
 
                 return 1;
             }
+        }
+    }
+
+    return 0;
+}
+
+
+njt_uint_t
+njt_http_log_arg_query_param_hidden(njt_str_t *src_data, u_char *name, size_t len)
+{
+    u_char             *p, *tmp_p, *tmp_p2, *tmp_p3, *last;
+    njt_flag_t          found = 0;
+
+    if (src_data->len == 0) {
+        return NJT_DECLINED;
+    }
+
+    p = src_data->data;
+    last = p + src_data->len;
+
+    for ( /* void */ ; p < last; p++) {
+
+        /* we need '=' after name, so drop one char from last */
+
+        p = njt_strlcasestrn(p, last - 1, name, len - 1);
+
+        if (p == NULL) {
+            break;
+        }
+
+        if (*(p + len) == '=') {
+            found = 1;
+            p += len + 1;
+            tmp_p = njt_strlchr(p, last, '&');
+            if(tmp_p == NULL){
+                //check wether has empty char
+                tmp_p2 = njt_strlchr(p, last, ' ');
+                if(tmp_p2 == NULL){
+                    *p = '*';
+                    src_data->len = p - src_data->data;
+                }else{
+                    if(p != tmp_p2){
+                        src_data->len = src_data->len - (tmp_p2 - p) + 1;
+                        *p = '*';
+                        tmp_p3 = p + 1;
+                        for(; tmp_p2 < last; tmp_p2++){
+                            *tmp_p3++ = *tmp_p2;
+                        }
+
+                        last = src_data->data + src_data->len;
+                    }
+                }
+            }else{
+                if(p != tmp_p){
+                    src_data->len = src_data->len - (tmp_p - p) + 1;
+                    *p = '*';
+                    tmp_p3 = p + 1;
+                    for(; tmp_p < last; tmp_p++){
+                        *tmp_p3++ = *tmp_p;
+                    }
+
+                    last = src_data->data + src_data->len;
+                }
+            }
+        }
+    }
+
+    if(found){
+        return NJT_OK;
+    }
+    
+    return NJT_DECLINED;
+}
+
+/*
+ * input r, request
+ * input data, var index
+ * input var_value, var's value
+ * output ret_value, if filtered, return realvalue to value
+ * return 1 when filtered; return 0 when not filtered
+*/
+static njt_int_t njt_http_log_query_param_filter(njt_http_request_t *r, uintptr_t data,
+        njt_http_variable_value_t *var_value, njt_str_t *ret_value){
+    njt_http_log_loc_conf_t    *lcf;
+    njt_http_core_main_conf_t  *cmcf;
+    njt_http_log_data_hidden_t *data_hidden;
+    njt_uint_t                  i;
+    njt_http_variable_t        *v;
+    njt_http_log_var_query_param_t *query_param_v;
+    njt_flag_t                  found;
+    u_char                      *arg;
+    size_t                      len;
+
+    lcf = njt_http_get_module_loc_conf(r, njt_http_log_module);
+    //add filter
+    if(lcf != NULL && lcf->data_hidden != NULL
+        && lcf->data_hidden->nelts > 0){
+        cmcf = njt_http_get_module_main_conf(r, njt_http_core_module);
+        v = cmcf->variables.elts;
+
+        //check whether arg_ var
+        if(v[data].name.len > 4 && njt_strncmp(v[data].name.data, "arg_", 4) == 0){
+            len = v[data].name.len - (sizeof("arg_") - 1);
+            arg = v[data].name.data + sizeof("arg_") - 1;
+
+            data_hidden = lcf->data_hidden->elts;
+            for(i = 0; i < lcf->data_hidden->nelts; i++){
+                //filter variable
+                if(data_hidden[i].type == NJT_HTTP_LOG_DATA_HIDDEN_QUERY_PARAM_TYPE
+                    && data_hidden[i].data.len == len
+                    && njt_strncmp(data_hidden[i].data.data, arg, len) == 0){
+                    
+                    njt_str_set(ret_value, "*");
+                    return 1;
+                }
+            }
+
+            return 0;
+        }
+
+        found = 0;
+        //first compare var
+        for (query_param_v = njt_http_log_vars_query_param; query_param_v->name.len; query_param_v++) {
+            if (query_param_v->name.len == v[data].name.len
+                && njt_strncmp(query_param_v->name.data, v[data].name.data, query_param_v->name.len) == 0)
+            {
+                found = 1;
+                break;
+            }
+        }
+
+        if(!found){
+            return 0;
+        }
+
+        found = 0;
+        data_hidden = lcf->data_hidden->elts;
+        ret_value->data = njt_pcalloc(r->pool, var_value->len);
+        if(ret_value->data == NULL){
+            return 0;
+        }
+
+        njt_memcpy(ret_value->data, var_value->data, var_value->len);
+        ret_value->len = var_value->len;
+        for(i = 0; i < lcf->data_hidden->nelts; i++){
+            //filter variable
+            if(data_hidden[i].type == NJT_HTTP_LOG_DATA_HIDDEN_QUERY_PARAM_TYPE){
+                //find quey param
+                if(NJT_OK == njt_http_log_arg_query_param_hidden(ret_value, data_hidden[i].data.data, data_hidden[i].data.len)){
+                    found = 1;
+                }
+
+            }
+        }
+
+        if(found){
+            return 1;
         }
     }
 
@@ -437,7 +611,6 @@ njt_http_log_handler(njt_http_request_t *r)
             if (op[i].len == 0) {
                 //var type
                 len += op[i].getlen(r, op[i].data);
-
             } else {
                 //update by clb
                 if(op[i].type == NJT_HTTP_LOG_OP_CHAR_TYPE){
@@ -445,7 +618,7 @@ njt_http_log_handler(njt_http_request_t *r)
                 }else{
                     //internal type
                     if(njt_http_log_interval_match(r, op[i].name)){
-                        len = 1;
+                        len += 1;
                     }else{
                         len += op[i].len;
                     }
@@ -489,14 +662,20 @@ njt_http_log_handler(njt_http_request_t *r)
                 for (i = 0; i < log[l].format->ops->nelts; i++) {
                     //update by clb
                     if(op[i].type == NJT_HTTP_LOG_OP_INTERNAL_TYPE){
-                        //todo filter
+                        //internal type
                         if(njt_http_log_interval_match(r, op[i].name)){
                             *p++ = '*';
+                            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0 , "======get  index:%d type:%d name:%V",op[i].data, op[i].type, &op[i].name);
+
                         }else{
                             p = op[i].run(r, p, &op[i]);
+                            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0 , "======get  index:%d type:%d name:%V",op[i].data, op[i].type, &op[i].name);
+
                         }
                     }else{
                         p = op[i].run(r, p, &op[i]);
+                        njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0 , "======get  index:%d type:%d name:%V",op[i].data, op[i].type, &op[i].name);
+
                     }
                     //end upadate by clb
                 }
@@ -527,7 +706,19 @@ njt_http_log_handler(njt_http_request_t *r)
         }
 
         for (i = 0; i < log[l].format->ops->nelts; i++) {
-            p = op[i].run(r, p, &op[i]);
+            // p = op[i].run(r, p, &op[i]);
+            //update by clb
+            if(op[i].type == NJT_HTTP_LOG_OP_INTERNAL_TYPE){
+                //internal type
+                if(njt_http_log_interval_match(r, op[i].name)){
+                    *p++ = '*';
+                }else{
+                    p = op[i].run(r, p, &op[i]);
+                }
+            }else{
+                p = op[i].run(r, p, &op[i]);
+            }
+            //end upadate by clb
         }
 
         if (log[l].syslog_peer) {
@@ -1116,7 +1307,7 @@ njt_http_log_variable_getlen(njt_http_request_t *r, uintptr_t data)
     njt_http_variable_value_t  *value;
     //add by clb
     njt_str_t                   tmp_value;
-    njt_flag_t                  filtered;
+    njt_flag_t                  filtered, query_param_filtered;
     //end add by clb
 
     value = njt_http_get_indexed_variable(r, data);
@@ -1126,13 +1317,16 @@ njt_http_log_variable_getlen(njt_http_request_t *r, uintptr_t data)
     }
 
 //update by clb
-    filtered = njt_http_log_filter(r, data, &tmp_value);
-
+    //filter hidden var
+    filtered = njt_http_log_var_filter(r, data, &tmp_value);
     if(!filtered){
-        tmp_value.data = value->data;
-        tmp_value.len = value->len;
+        //need check hidden query param first
+        query_param_filtered = njt_http_log_query_param_filter(r, data, value, &tmp_value);
+        if(!query_param_filtered){
+            tmp_value.data = value->data;
+            tmp_value.len = value->len;
+        }
     }
-
 
     len = njt_http_log_escape(NULL, tmp_value.data, tmp_value.len);
 
@@ -1149,7 +1343,7 @@ njt_http_log_variable(njt_http_request_t *r, u_char *buf, njt_http_log_op_t *op)
     njt_http_variable_value_t  *value;
 //add by clb
     njt_str_t                   tmp_value;
-    njt_flag_t                  filtered;
+    njt_flag_t                  filtered, query_param_filtered;
 //end add by clb
 
     value = njt_http_get_indexed_variable(r, op->data);
@@ -1162,12 +1356,16 @@ njt_http_log_variable(njt_http_request_t *r, u_char *buf, njt_http_log_op_t *op)
 //update by clb
     filtered = 0;
     if(op->len == 0){
-        filtered = njt_http_log_filter(r, op->data, &tmp_value);
+        filtered = njt_http_log_var_filter(r, op->data, &tmp_value);
     }
 
     if(!filtered){
-        tmp_value.data = value->data;
-        tmp_value.len = value->len;
+        //need check hidden query param first
+        query_param_filtered = njt_http_log_query_param_filter(r, op->data, value, &tmp_value);
+        if(!query_param_filtered){
+            tmp_value.data = value->data;
+            tmp_value.len = value->len;
+        }
     }
 
     if (value->escape == 0) {
@@ -1178,7 +1376,6 @@ njt_http_log_variable(njt_http_request_t *r, u_char *buf, njt_http_log_op_t *op)
     }
 //end update by clb
 }
-
 
 
 static uintptr_t
@@ -1247,7 +1444,7 @@ njt_http_log_json_variable_getlen(njt_http_request_t *r, uintptr_t data)
     uintptr_t                   len;
     njt_http_variable_value_t  *value;
     //add by clb
-    njt_int_t                   filtered;
+    njt_int_t                   filtered, query_param_filtered;
     njt_str_t                   tmp_value;
     //end add by clb
 
@@ -1258,11 +1455,15 @@ njt_http_log_json_variable_getlen(njt_http_request_t *r, uintptr_t data)
     }
 
 //update by clb
-    filtered = njt_http_log_filter(r, data, &tmp_value);
+    filtered = njt_http_log_var_filter(r, data, &tmp_value);
 
     if(!filtered){
-        tmp_value.data = value->data;
-        tmp_value.len = value->len;
+        //need check hidden query param first
+        query_param_filtered = njt_http_log_query_param_filter(r, data, value, &tmp_value);
+        if(!query_param_filtered){
+            tmp_value.data = value->data;
+            tmp_value.len = value->len;
+        }
     }
 
     len = njt_escape_json(NULL, tmp_value.data, tmp_value.len);
@@ -1280,7 +1481,7 @@ njt_http_log_json_variable(njt_http_request_t *r, u_char *buf,
 {
     njt_http_variable_value_t  *value;
     //add by clb
-    njt_int_t                   filtered;
+    njt_int_t                   filtered, query_param_filtered;
     njt_str_t                   tmp_value;
     //end add by clb
 
@@ -1293,12 +1494,16 @@ njt_http_log_json_variable(njt_http_request_t *r, u_char *buf,
 //update by clb
     filtered = 0;
     if(op->len == 0){
-        filtered = njt_http_log_filter(r, op->data, &tmp_value);
+        filtered = njt_http_log_var_filter(r, op->data, &tmp_value);
     }
 
     if(!filtered){
-        tmp_value.data = value->data;
-        tmp_value.len = value->len;
+        //need check hidden query param first
+        query_param_filtered = njt_http_log_query_param_filter(r, op->data, value, &tmp_value);
+        if(!query_param_filtered){
+            tmp_value.data = value->data;
+            tmp_value.len = value->len;
+        }
     }
 
     if (value->escape == 0) {
@@ -1317,7 +1522,7 @@ njt_http_log_unescaped_variable_getlen(njt_http_request_t *r, uintptr_t data)
 {
     njt_http_variable_value_t  *value;
     //add by clb
-    njt_int_t                   filtered;
+    njt_int_t                   filtered, query_param_filtered;
     njt_str_t                   tmp_value;
     //end add by clb
 
@@ -1328,16 +1533,20 @@ njt_http_log_unescaped_variable_getlen(njt_http_request_t *r, uintptr_t data)
     }
 
 //update by clb
-    filtered = njt_http_log_filter(r, data, &tmp_value);
+    filtered = njt_http_log_var_filter(r, data, &tmp_value);
 
     if(!filtered){
-        tmp_value.data = value->data;
-        tmp_value.len = value->len;
+        //need check hidden query param first
+        query_param_filtered = njt_http_log_query_param_filter(r, data, value, &tmp_value);
+        if(!query_param_filtered){
+            tmp_value.data = value->data;
+            tmp_value.len = value->len;
+        }
     }
 
     value->escape = 0;
 
-    return tmp_value.len
+    return tmp_value.len;
 //end update by clb
 }
 
@@ -1348,7 +1557,7 @@ njt_http_log_unescaped_variable(njt_http_request_t *r, u_char *buf,
 {
     njt_http_variable_value_t  *value;
     //add by clb
-    njt_int_t                   filtered;
+    njt_int_t                   filtered, query_param_filtered;
     njt_str_t                   tmp_value;
     //end add by clb
 
@@ -1358,17 +1567,19 @@ njt_http_log_unescaped_variable(njt_http_request_t *r, u_char *buf,
         return buf;
     }
 
-    return njt_cpymem(buf, value->data, value->len);
-
 //update by clb
     filtered = 0;
     if(op->len == 0){
-        filtered = njt_http_log_filter(r, op->data, &tmp_value);
+        filtered = njt_http_log_var_filter(r, op->data, &tmp_value);
     }
 
     if(!filtered){
-        tmp_value.data = value->data;
-        tmp_value.len = value->len;
+        //need check hidden query param first
+        query_param_filtered = njt_http_log_query_param_filter(r, op->data, value, &tmp_value);
+        if(!query_param_filtered){
+            tmp_value.data = value->data;
+            tmp_value.len = value->len;
+        }
     }
 
     return njt_cpymem(buf, tmp_value.data, tmp_value.len);
@@ -1544,21 +1755,9 @@ njt_http_log_merge_loc_conf(njt_conf_t *cf, void *parent, void *child)
 static char *
 njt_http_log_set_log_data_hidden(njt_conf_t *cf, njt_command_t *cmd, void *conf)
 {
-    njt_http_log_loc_conf_t *llcf = conf;
-
-    ssize_t                            size;
-    njt_int_t                          gzip;
-    njt_uint_t                         i, n;
-    njt_msec_t                         flush;
-    njt_str_t                         *value, name, s;
-    njt_http_log_t                    *log;
-    njt_syslog_peer_t                 *peer;
-    njt_http_log_buf_t                *buffer;
-    njt_http_log_fmt_t                *fmt;
-    njt_http_log_main_conf_t          *lmcf;
-    njt_http_script_compile_t          sc;
-    njt_http_compile_complex_value_t   ccv;
-    njt_http_log_data_hidden_t         *data_hidden;
+    njt_http_log_loc_conf_t             *llcf = conf;
+    njt_str_t                           *value;
+    njt_http_log_data_hidden_t          *data_hidden;
 
     value = cf->args->elts;
 
