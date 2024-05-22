@@ -41,6 +41,9 @@ cd njet/auto/lib/luapkg; DESTDIR=%{buildroot} PREFIX=/usr/local CDIR_linux=njet/
 if [ -d njet/auto/lib/modsecurity/src/.libs/ ]; then
  cp -a njet/auto/lib/modsecurity/src/.libs/libmodsecurity.so* %{buildroot}/usr/local/njet/lib
 fi
+if [ -f njet/auto/lib/librdkafka/build/src/librdkafka.so ]; then
+ cp -a njet/auto/lib/librdkafka/build/src/librdkafka.so* %{buildroot}/usr/local/njet/lib
+fi
 if [ -d njet/auto/lib/keepalived/keepalived/emb/.libs ]; then
  cp -a njet/auto/lib/keepalived/keepalived/emb/.libs/libha_emb.so* %{buildroot}/usr/local/njet/lib 
 fi

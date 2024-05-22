@@ -29,6 +29,10 @@ if [ $USE_OPENSSL = YES ]; then
     . auto/lib/openssl/conf
 fi
 
+if [ "$NJT_HTTP_RDKAFKA" = "YES" ]; then
+   . auto/lib/librdkafka/conf
+fi
+
 if [ "$NJT_HTTP_MODSECURITY" = "YES" ]; then
    . auto/lib/modsecurity/conf
 fi
