@@ -167,7 +167,13 @@ static njt_command_t  njt_core_commands[] = {
       0,
       offsetof(njt_core_conf_t, privileged_agent_connections),
       NULL },
-    
+
+    { njt_string("shared_slab_pool_size"),  // for dyn slab
+      NJT_MAIN_CONF|NJT_DIRECT_CONF|NJT_CONF_TAKE1,
+      njt_conf_set_str_slot,
+      0,
+      offsetof(njt_core_conf_t, shared_slab_pool_size),
+      NULL },
 
       njt_null_command
 };

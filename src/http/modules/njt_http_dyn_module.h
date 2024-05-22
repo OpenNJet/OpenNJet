@@ -267,4 +267,15 @@ typedef struct {
 #endif
 } njt_http_map_conf_ctx_t;
 
+
+typedef struct {
+    njt_http_complex_value_t  *realm;
+    njt_http_complex_value_t  *user_file;
+//add by clb
+    njt_http_complex_value_t  *kv_prefix;
+    njt_int_t                  dynamic;
+    njt_pool_t                *pool;
+//end add by clb
+} njt_http_auth_basic_loc_conf_t;
+
 #endif //NJET_MAIN_NJT_HTTP_DYN_MODULE_H

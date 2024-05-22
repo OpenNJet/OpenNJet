@@ -447,6 +447,9 @@ X509_LOOKUP_get_by_alias_fn X509_LOOKUP_meth_get_get_by_alias(
 
 int X509_STORE_add_cert(X509_STORE *ctx, X509 *x);
 int X509_STORE_add_crl(X509_STORE *ctx, X509_CRL *x);
+/* add by clb */
+int X509_STORE_add_dyn_crl(X509_STORE *ctx, X509_CRL *x);
+/* end add by clb */
 
 int X509_STORE_CTX_get_by_subject(X509_STORE_CTX *vs, X509_LOOKUP_TYPE type,
                                   X509_NAME *name, X509_OBJECT *ret);
@@ -460,6 +463,9 @@ int X509_LOOKUP_ctrl(X509_LOOKUP *ctx, int cmd, const char *argc,
 int X509_load_cert_file(X509_LOOKUP *ctx, const char *file, int type);
 int X509_load_crl_file(X509_LOOKUP *ctx, const char *file, int type);
 int X509_load_cert_crl_file(X509_LOOKUP *ctx, const char *file, int type);
+/* add by clb */
+int X509_load_dyn_crl_file(X509_LOOKUP *ctx, const char *file, int type);
+/* end add by clb */
 
 X509_LOOKUP *X509_LOOKUP_new(X509_LOOKUP_METHOD *method);
 void X509_LOOKUP_free(X509_LOOKUP *ctx);

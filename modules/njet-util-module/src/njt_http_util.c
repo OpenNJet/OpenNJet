@@ -581,7 +581,7 @@ njt_http_core_srv_conf_t* njt_http_get_srv_by_port(njt_cycle_t *cycle,njt_str_t 
 	njt_str_t   name;
 	njt_http_core_srv_conf_t* srv;
 
-	njt_log_error(NJT_LOG_INFO, cycle->log, 0, "njt_http_get_srv_by_port server_name = %V",server_name);
+	njt_log_error(NJT_LOG_DEBUG, cycle->log, 0, "njt_http_get_srv_by_port server_name = %V",server_name);
 	pool = njt_create_pool(1024, njt_cycle->log);
 	if(pool == NULL) {
 		return NULL;

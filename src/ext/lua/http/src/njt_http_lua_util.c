@@ -156,6 +156,7 @@ static int njt_http_lua_get_raw_phase_context(lua_State *L);
 
 #define AUX_MARK "\1"
 
+extern njt_cycle_t *njet_master_cycle;
 
 static void
 njt_http_lua_set_path(njt_cycle_t *cycle, lua_State *L, int tab_idx,
@@ -847,6 +848,9 @@ njt_http_lua_inject_njt_api(lua_State *L, njt_http_lua_main_conf_t *lmcf,
     njt_http_lua_inject_resp_header_api(L);
     njt_http_lua_create_headers_metatable(log, L);
     njt_http_lua_inject_shdict_api(lmcf, L);
+    if (njet_master_cycle != NULL) {
+      njt_http_lua_inject_parent_shdict_api(njet_master_cycle, L);
+    }
     njt_http_lua_inject_socket_tcp_api(log, L);
     njt_http_lua_inject_socket_udp_api(log, L);
     njt_http_lua_inject_uthread_api(log, L);
@@ -863,6 +867,9 @@ njt_http_lua_inject_njt_api(lua_State *L, njt_http_lua_main_conf_t *lmcf,
     lua_pop(L, 2);
 
     lua_setglobal(L, "njt");
+    
+    lua_getglobal(L, "njt");
+    lua_setglobal(L, "ngx");
 
     njt_http_lua_inject_coroutine_api(log, L);
 }

@@ -372,6 +372,92 @@ njt_http_lua_inject_shdict_api(njt_http_lua_main_conf_t *lmcf, lua_State *L)
     lua_setfield(L, -2, "shared");
 }
 
+void
+njt_http_lua_inject_parent_shdict_api(njt_cycle_t *parent_cycle, lua_State *L)
+{
+    njt_http_lua_shdict_ctx_t   *ctx;
+    njt_uint_t                   i, index;
+    njt_shm_zone_t             **zone;
+    njt_shm_zone_t             **zone_udata;
+    njt_http_conf_ctx_t        *conf_ctx;
+    njt_http_lua_main_conf_t *lmcf;
+
+    conf_ctx = (njt_http_conf_ctx_t *)njt_get_conf(parent_cycle->conf_ctx, njt_http_module);
+    if (conf_ctx == NULL) return;
+    index = NJT_MODULE_UNSET_INDEX;
+    //get njt_http_lua_module ctx_index from parent_cycle
+    //can't use njt_http_cycle_get_module_main_conf or njt_http_lua_module.ctx_index here because parent ctx_index could be different
+    for (i = 0; i < parent_cycle->modules_n; i++) {
+        if (njt_strcmp(parent_cycle->modules[i]->name, "njt_http_lua_module") != 0) {
+            continue;
+        } else {
+            index = parent_cycle->modules[i]->ctx_index;
+            break;
+        }
+    }
+    //if lua module is not loaded in parent cycle, don't inject parent shared dict
+    if (index == NJT_MODULE_UNSET_INDEX) return;
+
+    lmcf = conf_ctx->main_conf[index];
+    if (lmcf == NULL) return;
+
+    if (lmcf->shdict_zones != NULL) {
+        lua_createtable(L, 0, lmcf->shdict_zones->nelts /* nrec */);
+                /* njt.shared */
+
+        lua_createtable(L, 0 /* narr */, 22 /* nrec */); /* shared mt */
+
+        lua_pushcfunction(L, njt_http_lua_shdict_lpush);
+        lua_setfield(L, -2, "lpush");
+
+        lua_pushcfunction(L, njt_http_lua_shdict_rpush);
+        lua_setfield(L, -2, "rpush");
+
+        lua_pushcfunction(L, njt_http_lua_shdict_lpop);
+        lua_setfield(L, -2, "lpop");
+
+        lua_pushcfunction(L, njt_http_lua_shdict_rpop);
+        lua_setfield(L, -2, "rpop");
+
+        lua_pushcfunction(L, njt_http_lua_shdict_llen);
+        lua_setfield(L, -2, "llen");
+
+        lua_pushcfunction(L, njt_http_lua_shdict_flush_expired);
+        lua_setfield(L, -2, "flush_expired");
+
+        lua_pushcfunction(L, njt_http_lua_shdict_get_keys);
+        lua_setfield(L, -2, "get_keys");
+
+        lua_pushvalue(L, -1); /* shared mt mt */
+        lua_setfield(L, -2, "__index"); /* shared mt */
+
+        zone = lmcf->shdict_zones->elts;
+
+        for (i = 0; i < lmcf->shdict_zones->nelts; i++) {
+            ctx = zone[i]->data;
+
+            lua_pushlstring(L, (char *) ctx->name.data, ctx->name.len);
+                /* shared mt key */
+
+            lua_createtable(L, 1 /* narr */, 0 /* nrec */);
+                /* table of zone[i] */
+            zone_udata = lua_newuserdata(L, sizeof(njt_shm_zone_t *));
+                /* shared mt key ud */
+            *zone_udata = zone[i];
+            lua_rawseti(L, -2, SHDICT_USERDATA_INDEX); /* {zone[i]} */
+            lua_pushvalue(L, -3); /* shared mt key ud mt */
+            lua_setmetatable(L, -2); /* shared mt key ud */
+            lua_rawset(L, -4); /* shared mt */
+        }
+
+        lua_pop(L, 1); /* shared */
+
+    } else {
+        lua_newtable(L);    /* njt.shared */
+    }
+
+    lua_setfield(L, -2, "parent_shared");
+}
 
 static njt_inline njt_shm_zone_t *
 njt_http_lua_shdict_get_zone(lua_State *L, int index)

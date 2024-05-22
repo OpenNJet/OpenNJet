@@ -28,9 +28,12 @@
 ./modules/njet-http-fault-inject-module
 # required
 ./modules/njet-alpn-module
-# optional
+# optional, required by njet-openapi-paser-module
 ./modules/njet-jwt-module
+# optional
+./modules/njet-openapi-parser-module
 # optional, required by njet-stream-stsd-module
 ./modules/njet-stream-stsc-module
 # required
 ./modules/njet-http-api-register-module
+./modules/njet-stream-sniffer-module

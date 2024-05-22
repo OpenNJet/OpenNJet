@@ -508,6 +508,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/dyn/#");
         njet_iot_client_add_topic(kv_evt_ctx, "$share/njet//rpc/#");
         snprintf(worker_topic, 31, "/worker_%d/#", (int)njt_worker);
@@ -516,6 +517,7 @@ static njt_int_t kv_init_worker(njt_cycle_t *cycle)
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/srv/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/loc/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/ins/ssl/#");
+        njet_iot_client_add_topic(kv_evt_ctx, "/ins/crl/#");
         njet_iot_client_add_topic(kv_evt_ctx, "/dyn/#");
         snprintf(worker_topic, 31, "/worker_a/#");
         njet_iot_client_add_topic(kv_evt_ctx, worker_topic);
@@ -841,23 +843,6 @@ static u_char *invoke_rpc_handler(const char *topic, const char *msg, int msg_le
                         }
                         njt_memcpy(send_topic.data, (u_char *)topic + 9, strlen(topic) - 9);
                     }
-                    // instructional api
-                    if (kv_handler->callbacks.api_type == NJT_KV_API_TYPE_INSTRUCTIONAL
-                        && kv_handler->callbacks.rpc_get_handler
-                        && strlen(topic) > 14 
-                        && (njt_strncmp(topic, "/worker_a/ins/", 14) == 0 || njt_strncmp(topic, "/worker_p/ins/", 14) == 0) ) {
-                        //change topic /worker_{a,p}/ins/# -> /dyn/# 
-                        send_full_conf = true;
-                        send_topic.len = 5 + hash_key.len; // /dyn/${hash_key}
-                        send_topic.data = njt_calloc(send_topic.len, njt_cycle->log);
-                        if (send_topic.data == NULL) {
-                            njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "can't malloc memory for send_topic in kv handler");
-                            send_full_conf = false;
-                        } else {
-                            njt_memcpy(send_topic.data, "/dyn/", 5);
-                            njt_memcpy(send_topic.data + 5, hash_key.data, hash_key.len);
-                        }
-                    }
                     if (send_full_conf) {
                         //get full configuration, all rpc get handler should response to empty get string
                         full_conf.data = kv_handler->callbacks.rpc_get_handler(&send_topic, &get_data, &full_conf_len, kv_handler->callbacks.data);
@@ -921,6 +906,7 @@ int njt_db_kv_get(njt_str_t *key, njt_str_t *value)
         njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0, "njt_db_kv_get got wrong key:value data");
         return NJT_ERROR;
     }
+
     // type of njt_str_t.len is size_t, in 64bit arch, it is not uint32_t,  
     // force type conversion will not work in big-endian arch, 
     // and even in little-endian arch, if value->len is not initialized, only low bytes will be set

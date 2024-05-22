@@ -39,6 +39,10 @@ Contributors:
 #include <libwebsockets.h>
 #endif
 
+#ifdef WITH_TLS
+#include <openssl/opensslv.h>
+#endif
+
 static char nibble_to_hex(uint8_t value)
 {
 	if (value < 0x0A)
@@ -868,7 +872,11 @@ int iot_handle__connect(struct mosq_iot *context)
 		else
 		{
 #endif /* FINAL_WITH_TLS_PSK */
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+			client_cert = SSL_get1_peer_certificate(context->ssl);
+#else
 			client_cert = SSL_get_peer_certificate(context->ssl);
+#endif
 			if (!client_cert)
 			{
 				if (context->protocol == mosq_p_mqtt5)

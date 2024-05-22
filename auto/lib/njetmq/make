@@ -33,6 +33,7 @@ END
             CMAKE="cmake3"
          fi
         echo "cmake use $CMAKE "
+        if case $OPENSSL in *tongsuo) ;; *) false;; esac; then
         cat << END                                            >> $NJT_MAKEFILE
 
 $NJETMQ/njetmq/njet_iot_emb.h:	$OPENSSL/.openssl/include/openssl/ssl.h
@@ -42,7 +43,17 @@ $NJETMQ/njetmq/njet_iot_emb.h:	$OPENSSL/.openssl/include/openssl/ssl.h
 	&& \$(MAKE)
 
 END
+        else
+        cat << END                                            >> $NJT_MAKEFILE
 
+$NJETMQ/njetmq/njet_iot_emb.h:	$OPENSSL/.openssl/include/openssl/ssl.h
+	mkdir -p $NJETMQ/build \\
+	&&  cd  $NJETMQ/build \\
+	&& $CMAKE ../  -DTONGSUO_8_4=True  \\
+	&& \$(MAKE)
+
+END
+fi
     ;;
 
 esac

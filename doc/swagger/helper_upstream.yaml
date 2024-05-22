@@ -2213,7 +2213,6 @@ definitions:
           The hostname is assigned automatically and cannot be changed.
         readOnly: true
     example:
-      id: 0
       server: 10.0.0.1:12348
       weight: 1
       max_conns: 0

@@ -81,6 +81,64 @@ static void njt_slab_error(njt_slab_pool_t *pool, njt_uint_t level,
 static njt_uint_t  njt_slab_max_size;
 static njt_uint_t  njt_slab_exact_size;
 static njt_uint_t  njt_slab_exact_shift;
+static njt_slab_pool_t *njt_shared_slab_header;
+
+
+void njt_share_slab_set_header(njt_slab_pool_t *header) {
+    njt_shared_slab_header = header;
+}
+
+njt_int_t
+njt_slab_add_new_pool(njt_slab_pool_t *first_pool,
+    njt_slab_pool_t *new_pool, size_t size, njt_log_t *log)
+{
+    njt_slab_pool_t *pool;
+
+    for(pool = first_pool; pool->next != NULL; pool = pool->next) {/**/}
+
+    new_pool->end = (u_char *) new_pool + size;
+    new_pool->min_shift = pool->min_shift;
+    new_pool->addr = new_pool;
+    new_pool->next = NULL;
+    new_pool->first = first_pool;
+    //将新slab_pool 挂到上一个slab_pool上
+    pool->next = new_pool;
+
+    // initialize new pool and mutex (mayble unuseable)
+    if (njt_shmtx_create(&new_pool->mutex, &new_pool->lock, NULL) != NJT_OK) {
+        return NJT_ERROR;
+    }
+
+    njt_log_error(NJT_LOG_NOTICE, log, 0,
+            "dyn_slab add new slab pool: %p, size %d", (void *) new_pool, size);
+    njt_slab_init(new_pool);
+    return NJT_OK;
+}
+
+njt_int_t
+njt_slab_add_main_pool(njt_slab_pool_t *first_pool,
+    njt_slab_pool_t *new_pool, size_t size, njt_log_t *log)
+{
+    njt_slab_pool_t *pool;
+
+    for(pool = first_pool; pool->next != NULL; pool = pool->next) {/**/}
+
+    pool->next = new_pool;
+    new_pool->first = first_pool;
+
+    return NJT_OK;
+}
+
+
+void
+njt_main_slab_init(njt_main_slab_t *slab, size_t size, njt_log_t *log)
+{
+    njt_str_set(&slab->shm.name, "main_slab");
+    slab->shm.size = size;
+    slab->total_size = size;
+    slab->count = 1;
+    slab->shm.log = log;
+}
 
 
 void
@@ -171,6 +229,7 @@ njt_slab_alloc(njt_slab_pool_t *pool, size_t size)
 {
     void  *p;
 
+    njt_cycle->log->action = "dyn slob";
     njt_shmtx_lock(&pool->mutex);
 
     p = njt_slab_alloc_locked(pool, size);
@@ -188,6 +247,7 @@ njt_slab_alloc_locked(njt_slab_pool_t *pool, size_t size)
     uintptr_t         p, m, mask, *bitmap;
     njt_uint_t        i, n, slot, shift, map;
     njt_slab_page_t  *page, *prev, *slots;
+    njt_slab_pool_t  *new_pool;
 
     if (size > njt_slab_max_size) {
 
@@ -410,6 +470,27 @@ njt_slab_alloc_locked(njt_slab_pool_t *pool, size_t size)
     pool->stats[slot].fails++;
 
 done:
+    if (p == 0 && pool->next != NULL) {
+        return njt_slab_alloc_locked(pool->next, size);
+    }
+
+    s = (size_t)(pool->end - (u_char *)pool);
+    if (p == 0 && pool->first != njt_shared_slab_header && njt_shared_slab_header != NULL) {
+        new_pool = (njt_slab_pool_t *) njt_slab_alloc(njt_shared_slab_header, s);
+        if (new_pool != NULL) {
+            njt_slab_add_new_pool(pool->first, new_pool, s, njt_cycle->log);
+            njt_log_error(NJT_LOG_NOTICE, njt_cycle->log, 0,
+                   "new slab pool alloc: %p, size %d", (void *) new_pool, s);
+            return njt_slab_alloc_locked(new_pool, size);
+        } 
+    }
+
+    if (p == 0) {
+        if (pool->log_nomem) {
+            njt_slab_error(pool, NJT_LOG_CRIT,
+                        "njt_slab_alloc() failed: no memory");
+        }
+    }
 
     njt_log_debug1(NJT_LOG_DEBUG_ALLOC, njt_cycle->log, 0,
                    "slab alloc: %p", (void *) p);
@@ -459,12 +540,19 @@ njt_slab_free(njt_slab_pool_t *pool, void *p)
 
 
 void
-njt_slab_free_locked(njt_slab_pool_t *pool, void *p)
+njt_slab_free_locked(njt_slab_pool_t *first_pool, void *p)
 {
     size_t            size;
     uintptr_t         slab, m, *bitmap;
     njt_uint_t        i, n, type, slot, shift, map;
     njt_slab_page_t  *slots, *page;
+    njt_slab_pool_t  *pool;
+
+    for (pool = first_pool; pool->next != NULL; pool = pool->next) {
+        if ((u_char *) p >= pool->start && (u_char *) p < pool->end) {
+            break;
+        }
+    }
 
     njt_log_debug1(NJT_LOG_DEBUG_ALLOC, njt_cycle->log, 0, "slab free: %p", p);
 
@@ -722,10 +810,10 @@ njt_slab_alloc_pages(njt_slab_pool_t *pool, njt_uint_t pages)
         }
     }
 
-    if (pool->log_nomem) {
-        njt_slab_error(pool, NJT_LOG_CRIT,
-                       "njt_slab_alloc() failed: no memory");
-    }
+    // if (pool->log_nomem) {
+    //     njt_slab_error(pool, NJT_LOG_CRIT,
+    //                    "njt_slab_alloc() failed: no memory");
+    // }
 
     return NULL;
 }
@@ -815,4 +903,21 @@ static void
 njt_slab_error(njt_slab_pool_t *pool, njt_uint_t level, char *text)
 {
     njt_log_error(level, njt_cycle->log, 0, "%s%s", text, pool->log_ctx);
+}
+
+
+void
+njt_shm_free_chain(njt_shm_t *shm, njt_slab_pool_t *shared_pool)
+{
+    njt_slab_pool_t *pool, *cur;
+
+    pool = (njt_slab_pool_t *)shm->addr;
+
+    for (cur = pool->next; cur != NULL;) {
+        pool = cur->next; // must set before free slab_pool
+        njt_slab_free(shared_pool, cur);
+        cur = pool;
+    }
+
+    njt_shm_free(shm);
 }

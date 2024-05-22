@@ -1,0 +1,1339 @@
+openapi: 3.0.3
+info:
+  title: api gateway
+  description: api网关提供的用户及角色授权的API
+  version: 1.0.0
+
+servers:
+  - url: '/api_gateway'
+paths:
+  /identities/users:
+    post:
+      tags: 
+        - identities
+      summary: 新增用户
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/userData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+        '500':
+          description: Internal Server Error
+  /identities/users/{id}:  
+    get:
+      tags: 
+        - identities
+      summary: 用户查询
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/userData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - identities
+      summary: 修改用户
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/userData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+    delete:
+      tags: 
+        - identities
+      summary: 删除用户
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error    
+  /identities/users/name/{name}:  
+    get:
+      tags: 
+        - identities
+      summary: 通过用户名查询用户
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+          description: 用户名
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/userData'
+        '500':
+          description: Internal Server Error      
+  /identities/users/{id}/groups:  
+    get:
+      tags: 
+        - identities
+      summary: 获取用户与组的关系
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/userGroupRelData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - identities
+      summary: 修改用户与组的关系
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/userGroupRelData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+  /identities/groups:
+    post:
+      tags: 
+        - identities
+      summary: 新增用户组
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/groupData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+        '500':
+          description: Internal Server Error
+  /identities/groups/{id}:  
+    get:
+      tags: 
+        - identities
+      summary: 用户组查询
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户组ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/groupData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - identities
+      summary: 修改用户组
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户组ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/groupData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+    delete:
+      tags: 
+        - identities
+      summary: 删除用户组
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error    
+  /identities/groups/name/{name}:  
+    get:
+      tags: 
+        - identities
+      summary: 通过组名查询用户组
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+          description: 用户组名称
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/groupData'
+        '500':
+          description: Internal Server Error      
+  /identities/groups/{id}/roles:  
+    get:
+      tags: 
+        - identities
+      summary: 获取组与角色的关系
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户组ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/groupRoleRelData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - identities
+      summary: 修改组与角色的关系
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 用户组ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/groupRoleRelData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+  /identities/roles:
+    post:
+      tags: 
+        - identities
+      summary: 新增角色
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/roleData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+        '500':
+          description: Internal Server Error
+  /identities/roles/{id}:  
+    get:
+      tags: 
+        - identities
+      summary: 角色查询
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 角色ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/roleData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - identities
+      summary: 修改角色
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 角色ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/roleData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+    delete:
+      tags: 
+        - identities
+      summary: 删除角色
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 角色ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error    
+  /identities/roles/name/{name}:  
+    get:
+      tags: 
+        - identities
+      summary: 通过角色名查询角色
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+          description: 角色名称
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/roleData'
+        '500':
+          description: Internal Server Error       
+  /entities/api_groups:
+    post:
+      tags: 
+        - entities
+      summary: 新增API Group
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/apiGroupData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+        '500':
+          description: Internal Server Error
+  /entities/api_groups/{id}:  
+    get:
+      tags: 
+        - entities
+      summary: API Group查询
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: API Group ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/apiGroupData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - entities
+      summary: 修改API Group
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: API Group ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/apiGroupData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+    delete:
+      tags: 
+        - entities
+      summary: 删除API Group
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: API Group ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error    
+  /entities/api_groups/name/{name}:  
+    get:
+      tags: 
+        - entities
+      summary: 通过API Group名查询API Group
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: name
+          schema:
+            type: string
+          required: true
+          description: API Group名称
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/apiGroupData'
+        '500':
+          description: Internal Server Error      
+  /entities/api_groups/{id}/oas3:
+    post:
+      tags: 
+        - entities
+      summary: 通过Open API 3.0 格式文档导入API
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: API Group ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  type: object
+                  additionalProperties: true
+                  description: 传递的参数需要时合法的Open API 3.0 格式文档
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+  /entities/api_groups/{id}/apis:
+    get:
+      tags: 
+        - entities
+      summary: 获取API Group下定义的所有api
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: API Group ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data:
+                      $ref: '#/components/schemas/apiData'
+        '500':
+          description: Internal Server Error
+  /identities/roles/{id}/apis:  
+    get:
+      tags: 
+        - rbac
+      summary: 通过 role_id 查询对应role 授权的 API 列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 角色ID
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data: 
+                      $ref: '#/components/schemas/roleApiRelData'
+        '500':
+          description: Internal Server Error      
+    put:
+      tags: 
+        - rbac
+      summary: 通过 role_id 更新对应role 授权的 API 列表
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+          description: 角色ID
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/roleApiRelData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+  /deploy/app:
+    post:
+      tags: 
+        - deploy
+      summary: 部署已上传的应用
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/deployAppData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+    delete:
+      tags: 
+        - deploy
+      summary: 删除已部署的应用
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                type: object
+                required: ["base_path"]
+                properties: 
+                 base_path:
+                   type: string
+                   example: "/app2"
+                 server_name: 
+                   type: string
+                   example: ""
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+  /conf/service:
+    post:
+      tags: 
+        - conf
+      summary: 注册后端服务
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/regSrvData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+    put:
+      tags: 
+        - conf
+      summary: 更新已注册的后端服务
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/regSrvData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+    delete:
+      tags: 
+        - conf
+      summary: 删除已注册的服务
+      security:
+        - bearerAuth: []
+      requestBody:
+          content:
+            application/json:
+              schema:
+                type: object
+                required: ["base_path"]
+                properties: 
+                 base_path:
+                   type: string
+                   example: "/app2"
+                 server_name: 
+                   type: string
+                   example: ""
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error
+  /conf/upstreams:
+    get:
+      tags: 
+        - conf
+      summary: 获取所有upstream的配置信息
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/upstreamData'
+        '500':
+          description: Internal Server Error
+  /auth/login:  
+    post:
+      tags: 
+        - auth
+      summary: 登录
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/loginData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+        '500':
+          description: Internal Server Error      
+  /auth/verification:  
+    post:
+      tags: 
+        - auth
+      summary: 发送验证码
+      requestBody:
+          content:
+            application/json:
+              schema:
+                  $ref: '#/components/schemas/verificationData'
+          required: true
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer 
+                  msg: 
+                    type: string 
+                    example: "success"
+                  token:
+                    type: string
+        '500':
+          description: Internal Server Error      
+components:
+  schemas:
+    userData:
+      title: user data
+      type: object
+      required: ["name", "password"]
+      properties:
+        name:
+          type: string 
+        password: 
+          type: string 
+          format: password
+        email: 
+          type: string
+          format: email
+          example: "test@test.com"
+        mobile: 
+          type: string
+          example: "13312345678"
+    groupData:
+      title: group data
+      type: object
+      required: ["name"]
+      properties:
+        name:
+          type: string 
+        desc: 
+          type: string 
+    roleData:
+      title: role data
+      type: object
+      required: ["name"]
+      properties:
+        name:
+          type: string 
+        desc: 
+          type: string 
+    userGroupRelData:
+      title: user group rel data
+      type: object
+      required: ["groups"]
+      properties:
+        groups:
+          type: array 
+          items: 
+            type: integer
+    groupRoleRelData:
+      title: group role rel data
+      type: object
+      required: ["roles"]
+      properties:
+        roles:
+          type: array 
+          items: 
+            type: integer
+    apiGroupData:
+      title: api group data
+      type: object
+      required: ["name", "base_path"]
+      properties:
+        name:
+          type: string 
+        base_path:
+          type: string 
+          example: "/app1"
+        desc: 
+          type: string 
+    apiData:
+      title: api data
+      type: object
+      required: ["name", "group_id", "path", "method"]
+      properties:
+        name:
+          type: string 
+        group_id:
+          type: integer 
+        path:
+          type: string
+        method: 
+          type: string
+        desc: 
+          type: string 
+        param_mode:
+          type: integer
+        sign_validation:
+          type: integer
+    roleApiRelData:
+      title: role api rel data
+      type: object
+      required: ["apis"]
+      properties:
+        apis:
+          type: array 
+          items: 
+            type: integer
+    userPassLogin:
+      title: username/password login data
+      type: object
+      required: ["username", "password"]
+      properties:
+        username:
+          type: string
+        password: 
+          type: string
+    emailLogin:
+      title: email login data
+      type: object
+      required: ["email", "verification_code"]
+      properties:
+        email: 
+          type: string
+        verification_code:
+          type: string
+    loginData:
+      title: login data
+      type: object
+      required: ["login_data"]
+      properties:
+        api_group_name:
+          type: string 
+          example: "app"
+        login_type:
+          type: string 
+          example: "internal"
+        login_data:
+          oneOf:
+            - $ref: '#/components/schemas/userPassLogin'
+            - $ref: '#/components/schemas/emailLogin'
+    verificationData:
+      title: verification data
+      type: object
+      properties:
+        email:
+          type: string 
+    deployAppData:
+      title: deploy app data
+      type: object
+      required: ["uploaded_file", "app_type", "base_path"]
+      properties:
+        uploaded_file:
+          type: string
+        app_type:
+          type: string
+          enum: 
+            - lua
+        base_path:
+          type: string
+        server_name:
+          type: string
+    regSrvData:
+      title: register service data
+      type: object
+      required: [ "base_path", "upstream"]
+      properties:
+        base_path:
+          type: string
+        server_name:
+          type: string
+        upstream: 
+          $ref: '#/components/schemas/upstreamData'
+    upstreamData:
+      title: upstream data
+      type: object
+      required: [ "endpoints"]
+      properties:
+        endpoints:
+            type: array
+            items:
+              type: object
+              properties:
+                address:
+                  type: string
+                port: 
+                  type: string
+        load-balance:
+          description: default is round_robin
+          enum: 
+            - round_robin
+            - chash   
+        upstreamHashByConfig:
+          description: required if load-balancer is chash
+          type: object
+          properties:
+            upstream-hash-by: 
+              type: string
+        healthCheck:
+          type: object
+          properties:
+            interval: 
+              type: integer
+            path: 
+              type: string
+            fails: 
+              type: integer
+            passes:  
+              type: integer
+            statusMatch: 
+              type: string
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer

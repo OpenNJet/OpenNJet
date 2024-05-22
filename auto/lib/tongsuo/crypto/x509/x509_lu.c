@@ -139,7 +139,6 @@ static int x509_object_cmp(const X509_OBJECT *const *a,
                            const X509_OBJECT *const *b)
 {
     int ret;
-
     ret = ((*a)->type - (*b)->type);
     if (ret)
         return ret;
@@ -160,11 +159,11 @@ static int x509_object_cmp(const X509_OBJECT *const *a,
 X509_STORE *X509_STORE_new(void)
 {
     X509_STORE *ret = OPENSSL_zalloc(sizeof(*ret));
-
     if (ret == NULL) {
         X509err(X509_F_X509_STORE_NEW, ERR_R_MALLOC_FAILURE);
         return NULL;
     }
+
     if ((ret->objs = sk_X509_OBJECT_new(x509_object_cmp)) == NULL) {
         X509err(X509_F_X509_STORE_NEW, ERR_R_MALLOC_FAILURE);
         goto err;
@@ -293,9 +292,9 @@ int X509_STORE_CTX_get_by_subject(X509_STORE_CTX *vs, X509_LOOKUP_TYPE type,
     X509_LOOKUP *lu;
     X509_OBJECT stmp, *tmp;
     int i, j;
-
-    if (store == NULL)
+    if (store == NULL){
         return 0;
+    }
 
     stmp.type = X509_LU_NONE;
     stmp.data.ptr = NULL;
@@ -314,23 +313,24 @@ int X509_STORE_CTX_get_by_subject(X509_STORE_CTX *vs, X509_LOOKUP_TYPE type,
                 break;
             }
         }
-        if (tmp == NULL)
+        if (tmp == NULL){
             return 0;
+        }
+
     }
 
-    if (!X509_OBJECT_up_ref_count(tmp))
+    if (!X509_OBJECT_up_ref_count(tmp)){
         return 0;
+    }
 
     ret->type = tmp->type;
     ret->data.ptr = tmp->data.ptr;
-
     return 1;
 }
 
 static int x509_store_add(X509_STORE *store, void *x, int crl) {
     X509_OBJECT *obj;
     int ret = 0, added = 0;
-
     if (x == NULL)
         return 0;
     obj = X509_OBJECT_new();
@@ -354,6 +354,7 @@ static int x509_store_add(X509_STORE *store, void *x, int crl) {
     if (X509_OBJECT_retrieve_match(store->objs, obj)) {
         ret = 1;
     } else {
+        
         added = sk_X509_OBJECT_push(store->objs, obj);
         ret = added != 0;
     }
@@ -382,6 +383,47 @@ int X509_STORE_add_crl(X509_STORE *ctx, X509_CRL *x)
     }
     return 1;
 }
+
+/* add by clb */
+int X509_STORE_add_dyn_crl(X509_STORE *store, X509_CRL *x) 
+{
+    X509_OBJECT *obj, *old_obj;
+    int ret = 0, added = 0;
+    if (x == NULL)
+        return 0;
+    obj = X509_OBJECT_new();
+    if (obj == NULL)
+        return 0;
+
+    obj->type = X509_LU_CRL;
+    obj->data.crl = x;
+
+    if (!X509_OBJECT_up_ref_count(obj)) {
+        obj->type = X509_LU_NONE;
+        X509_OBJECT_free(obj);
+        return 0;
+    }
+
+
+    X509_STORE_lock(store);
+    old_obj = X509_OBJECT_retrieve_match(store->objs, obj);
+    if(old_obj != NULL) {
+        sk_X509_OBJECT_delete_ptr(store->objs, old_obj);
+        /* free old obj memory */
+        X509_OBJECT_free(old_obj);
+        ret = 1;
+    }
+
+    added = sk_X509_OBJECT_push(store->objs, obj);
+    ret = added != 0;
+    X509_STORE_unlock(store);
+
+    if (added == 0)             /* obj not pushed */
+        X509_OBJECT_free(obj);
+
+    return ret;
+}
+/* end add by clb */
 
 int X509_OBJECT_up_ref_count(X509_OBJECT *a)
 {
@@ -522,8 +564,10 @@ X509_OBJECT *X509_OBJECT_retrieve_by_subject(STACK_OF(X509_OBJECT) *h,
 {
     int idx;
     idx = X509_OBJECT_idx_by_subject(h, type, name);
-    if (idx == -1)
+    if (idx == -1){
         return NULL;
+    }
+        
     return sk_X509_OBJECT_value(h, idx);
 }
 
@@ -596,7 +640,6 @@ STACK_OF(X509_CRL) *X509_STORE_CTX_get1_crls(X509_STORE_CTX *ctx, X509_NAME *nm)
     X509_CRL *x;
     X509_OBJECT *obj, *xobj = X509_OBJECT_new();
     X509_STORE *store = ctx->ctx;
-
     /* Always do lookup to possibly add new CRLs to cache */
     if (sk == NULL
             || xobj == NULL

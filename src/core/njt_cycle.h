@@ -91,6 +91,7 @@ struct njt_cycle_s {
     njt_str_t                 lock_file;
     njt_str_t                 hostname;
     void                     *conf_root; // by lcm for dyn conf
+    njt_main_slab_t           shared_slab; // for dyn slab
     
     njt_log_intercept_pt      intercept_error_log_handler;  // openresy patch
     void                     *intercept_error_log_data; // openresty patch
@@ -135,6 +136,8 @@ typedef struct {
     char                    **environment;
 
     njt_uint_t                transparent;  /* unsigned  transparent:1; */
+
+    njt_str_t                 shared_slab_pool_size; /* for dyn slab */
 } njt_core_conf_t;
 
 
