@@ -1563,6 +1563,9 @@ njt_http_captcha_session_zone(njt_conf_t *cf, njt_command_t *cmd, void *conf)
     //njt_http_captcha_main_t *cmf 
     umcf = njt_http_conf_get_module_main_conf(cf, njt_http_captcha_module);
 
+    if( umcf->ctx != NULL ) {
+         return "is duplicate";
+    }
     value = cf->args->elts;
 
     if (!value[1].len) {
