@@ -402,7 +402,7 @@ static njt_int_t njt_http_log_var_filter(njt_http_request_t *r, uintptr_t data, 
 njt_uint_t
 njt_http_log_arg_query_param_hidden(njt_str_t *src_data, u_char *name, size_t len)
 {
-    u_char             *p, *tmp_p, *tmp_p2, *tmp_p3, *last;
+    u_char             *p, *tmp_p, *tmp_p2, *tmp_p3, *last, *prev;
     njt_flag_t          found = 0;
 
     if (src_data->len == 0) {
@@ -423,6 +423,14 @@ njt_http_log_arg_query_param_hidden(njt_str_t *src_data, u_char *name, size_t le
         }
 
         if (*(p + len) == '=') {
+            //check last param ? or & or startindex
+            if(p != src_data->data){
+                prev = p - 1;
+                if(*prev != '&' && *prev != '?'){
+                    continue;
+                }
+            }
+    
             found = 1;
             p += len + 1;
             tmp_p = njt_strlchr(p, last, '&');
@@ -431,7 +439,7 @@ njt_http_log_arg_query_param_hidden(njt_str_t *src_data, u_char *name, size_t le
                 tmp_p2 = njt_strlchr(p, last, ' ');
                 if(tmp_p2 == NULL){
                     *p = '*';
-                    src_data->len = p - src_data->data;
+                    src_data->len = p - src_data->data + 1;
                 }else{
                     if(p != tmp_p2){
                         src_data->len = src_data->len - (tmp_p2 - p) + 1;
