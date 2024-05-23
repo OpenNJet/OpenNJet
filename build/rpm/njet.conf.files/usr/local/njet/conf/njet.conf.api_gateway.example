@@ -1,0 +1,77 @@
+worker_processes auto;
+
+cluster_name njet;
+node_name node1;
+
+error_log logs/error.log error;
+
+helper ctrl modules/njt_helper_ctrl_module.so conf/njet_ctrl.conf;
+helper broker modules/njt_helper_broker_module.so;
+
+load_module modules/njt_http_split_clients_2_module.so;  
+load_module modules/njt_agent_dynlog_module.so;  
+load_module modules/njt_http_dyn_bwlist_module.so; 
+load_module modules/njt_dyn_ssl_module.so;
+load_module modules/njt_http_vtsc_module.so;
+load_module modules/njt_stream_dyn_sts_module.so;
+load_module modules/njt_http_location_module.so;
+load_module modules/njt_http_lua_module.so;
+load_module modules/njt_http_dyn_lua_module.so;
+
+events {
+    worker_connections  1024;
+}
+
+
+http {
+    resolver 8.8.8.8;
+    include mime.types;
+    access_log off;
+    vhost_traffic_status_zone;
+    lua_package_path "$prefix/lualib/lib/?.lua;$prefix/modules/?.lua;$prefix/apps/?.lua;;";
+    lua_package_cpath "$prefix/lualib/clib/?.so;;";
+
+    lua_shared_dict configuration_data 20M;
+    init_by_lua_block {
+        local api_gateway=require("api_gateway")
+        api_gateway.init_master()
+    }
+    init_worker_by_lua_block {
+        local api_gateway=require("api_gateway")
+        api_gateway.init_worker()
+    }
+
+    upstream upstream_balancer {
+        ### Attention!!!
+        #
+        # We no longer create "upstream" section for every backend.
+        # Backends are handled dynamically using Lua.
+        #
+        ###
+
+        server 0.0.0.1; # placeholder
+
+        balancer_by_lua_block {
+            balancer.balance()
+        }
+
+        keepalive 320;
+        keepalive_time 1h;
+        keepalive_timeout  120s;
+        keepalive_requests 10000;
+    }
+
+    server {
+        listen       8080;
+        location / {
+           root html;
+        }
+        location /api_gateway {
+           content_by_lua_block {
+                local api_gateway=require("api_gateway")
+                api_gateway.auth()
+           }
+        }
+   }
+}
+
