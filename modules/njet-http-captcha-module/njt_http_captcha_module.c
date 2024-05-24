@@ -539,13 +539,12 @@ njt_int_t njt_http_captcha_session_add_cache(njt_http_request_t *r, njt_str_t ke
     }
     if (node == NULL) {
          njt_http_captcha_expire_sessions(cache,shpool,0);
-         node = njt_slab_alloc_locked(shpool,node_len);
+         node = njt_slab_calloc_locked(shpool,node_len);
 
         if (node == NULL) {
             njt_shmtx_unlock(&shpool->mutex);
             return NJT_ERROR;
         }
-         njt_shmtx_unlock(&shpool->mutex);
     }
 
     node->node.str.len = key.len;
@@ -554,6 +553,7 @@ njt_int_t njt_http_captcha_session_add_cache(njt_http_request_t *r, njt_str_t ke
     node->node.node.key = hash;
     node->expire = expire;
     njt_rbtree_insert(&cache->sh->rbtree, &node->node.node);
+
     njt_queue_insert_head(&cache->sh->expire_queue, &node->queue);
 
      njt_shmtx_unlock(&shpool->mutex);
@@ -766,6 +766,9 @@ njt_http_captcha_commit_handler(njt_http_request_t *r)
 
                 njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "get session  csrf=%V, captcha uri=%V", &csrf_val, &uri);
                 njt_rbtree_delete(&cmf->ctx->sh->rbtree,&session_node->node.node);
+                njt_queue_remove(&session_node->queue);
+
+                 njt_slab_free_locked(shpool, session_node);
             } 
              njt_shmtx_unlock(&shpool->mutex);
         }
@@ -954,7 +957,7 @@ njt_http_captcha_limit_handler(njt_http_request_t *r)
 
             n = offsetof(njt_rbtree_node_t, color) + offsetof(njt_http_captcha_node_t, data) + key.len;
 
-            node = njt_slab_alloc_locked(ctx->shpool, n);
+            node = njt_slab_calloc_locked(ctx->shpool, n);
 
             if (node == NULL)
             {
@@ -1463,7 +1466,7 @@ njt_http_captcha_session_init_zone(njt_shm_zone_t *shm_zone, void *data)
         return NJT_OK;
     }
 
-    ctx->sh = njt_slab_alloc(ctx->shpool, sizeof(njt_http_captcha_session_shctx_t));
+    ctx->sh = njt_slab_calloc(ctx->shpool, sizeof(njt_http_captcha_session_shctx_t));
     if (ctx->sh == NULL) {
         return NJT_ERROR;
     }
@@ -1477,7 +1480,7 @@ njt_http_captcha_session_init_zone(njt_shm_zone_t *shm_zone, void *data)
 
     len = sizeof(" in njt_http_captcha_module \"\"") + shm_zone->shm.name.len;
 
-    ctx->shpool->log_ctx = njt_slab_alloc(ctx->shpool, len);
+    ctx->shpool->log_ctx = njt_slab_calloc(ctx->shpool, len);
     if (ctx->shpool->log_ctx == NULL) {
         return NJT_ERROR;
     }
@@ -1526,7 +1529,7 @@ njt_http_captcha_init_zone(njt_shm_zone_t *shm_zone, void *data)
         return NJT_OK;
     }
 
-    ctx->sh = njt_slab_alloc(ctx->shpool,
+    ctx->sh = njt_slab_calloc(ctx->shpool,
                              sizeof(njt_http_captcha_shctx_t));
     if (ctx->sh == NULL)
     {
@@ -1540,7 +1543,7 @@ njt_http_captcha_init_zone(njt_shm_zone_t *shm_zone, void *data)
 
     len = sizeof(" in limit_conn_zone \"\"") + shm_zone->shm.name.len;
 
-    ctx->shpool->log_ctx = njt_slab_alloc(ctx->shpool, len);
+    ctx->shpool->log_ctx = njt_slab_calloc(ctx->shpool, len);
     if (ctx->shpool->log_ctx == NULL)
     {
         return NJT_ERROR;
