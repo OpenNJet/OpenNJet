@@ -408,7 +408,7 @@ static njt_uint_t njt_gossip_send_master_info_to_gossip_topic(njt_gossip_member_
 	njt_str_t   gossip_topic;
 
 	njt_memzero(msg, 1024);
-	p = njt_snprintf(msg, 1024, "master_ip:%d.%d.%d.%d, local_ip:%d.%d.%d.%d,sync_port:%d,ctrl_port:%d",
+	p = njt_snprintf(msg, 1024, "master_ip:%d.%d.%d.%d,local_ip:%d.%d.%d.%d,sync_port:%d,ctrl_port:%d",
 		master_member->node_info.ip[0],
 		master_member->node_info.ip[1],
 		master_member->node_info.ip[2],
