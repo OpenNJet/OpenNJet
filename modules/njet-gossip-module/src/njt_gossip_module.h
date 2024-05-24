@@ -57,8 +57,8 @@ enum node_state {
 
 typedef struct njt_gossip_member_node_info_s{
 	u_char					 		ip[4];
-	short 				 		 	sync_port;
-	short 				 		 	ctrl_port;
+	u_int16_t 				 		sync_port;
+	u_int16_t 				 		ctrl_port;
 }njt_gossip_member_node_info_t;
 
 typedef struct njt_gossip_member_list_s
@@ -128,6 +128,9 @@ struct njt_gossip_udp_ctx_s
 	njt_msec_t 					 last_seen;
 	bool						 need_syn;
 
+
+	njt_uint_t 					max_gossip_topic_send;
+	njt_uint_t 					try_gossip_topic;
 	//njt_array_t  *app_handle;
 };	
 
@@ -137,6 +140,7 @@ typedef struct
 	njt_str_t					*cluster_name;
 	njt_str_t					*node_name;
 	njt_gossip_member_node_info_t	 node_info;
+	njt_flag_t					node_info_set;
 
 	njt_str_t					*pid;
 	njt_gossip_req_ctx_t  		*req_ctx;
