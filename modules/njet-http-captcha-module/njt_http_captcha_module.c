@@ -569,7 +569,7 @@ njt_int_t njt_http_captcha_send_redirect(njt_http_request_t *r,njt_str_t uri,tim
     njt_str_t csrf_val, request_id;
     njt_uint_t curr_time;
     njt_http_complex_value_t text;
-    njt_str_t cook_val;
+    njt_str_t header;
     njt_http_captcha_location_t *lccf;
 
 
@@ -599,7 +599,7 @@ njt_int_t njt_http_captcha_send_redirect(njt_http_request_t *r,njt_str_t uri,tim
         request_id.len = value->len;
     }
 
-    len = request_id.len + (uri.len * 2);
+    len = lccf->csrf.len + 1 + (sizeof(header.len) * 2) + request_id.len  + (uri.len * 2) + 10;
 
     csrf_val.data = njt_pcalloc(r->pool, len);
     if (csrf_val.data == NULL)
@@ -608,10 +608,26 @@ njt_int_t njt_http_captcha_send_redirect(njt_http_request_t *r,njt_str_t uri,tim
     }
 
     csrf_val.len = len;
+    p = njt_snprintf(csrf_val.data, csrf_val.len, "%V=", &lccf->csrf);
+	 
+	header.len =  request_id.len + (uri.len * 2);
+	njt_hex_dump(p, (u_char *)&header.len, sizeof(header.len));
+	
+	p = p + (sizeof(header.len) * 2);
+	
+	
+    njt_memcpy(p, request_id.data, request_id.len);
+  
+	p = p + request_id.len;
+    njt_hex_dump(p , uri.data, uri.len);
+	p = p + (uri.len * 2);
+	
+	csrf_val.len = p - csrf_val.data;
+	
+	
 
-    njt_memcpy(csrf_val.data, request_id.data, request_id.len);
 
-    njt_hex_dump(csrf_val.data + request_id.len , uri.data, uri.len);
+    //njt_hex_dump(csrf_val.data + request_id.len , uri.data, urilen);
 
     // lc->captcha_sec = curr_time;
     //  njt_shmtx_unlock(&ctx->shpool->mutex);
@@ -626,23 +642,12 @@ njt_int_t njt_http_captcha_send_redirect(njt_http_request_t *r,njt_str_t uri,tim
     }
 
     r->headers_out.last_modified_time = curr_time;
-    cook_val.len = lccf->csrf.len + csrf_val.len + 10;
-    cook_val.data = njt_pcalloc(r->pool, cook_val.len);
-    if (cook_val.data == NULL)
-    {
-        return NJT_HTTP_INTERNAL_SERVER_ERROR;
-    }
+   
 
-    p = njt_snprintf(cook_val.data, cook_val.len, "%V=%V", &lccf->csrf, &csrf_val);
-    cook_val.len = p - cook_val.data;
+    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "send captchar %V,request_id=%V,cook_time=%i,uri=%V", &csrf_val, &request_id, curr_time, &uri);
 
-    njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "send captchar %V,request_id=%V,cook_time=%i,uri=%V", &cook_val, &request_id, curr_time, &uri);
-
-    njt_http_util_add_header(r, cook_key, cook_val);
-    if (cook_val.data && cook_key.data)
-    {
-        printf("1");
-    }
+    njt_http_util_add_header(r, cook_key, csrf_val);
+   
 
     njt_http_captcha_session_add_cache(r,request_id,expire);
    
@@ -668,6 +673,7 @@ njt_http_captcha_commit_handler(njt_http_request_t *r)
     njt_str_t secret, uri;
     njt_int_t rc, rc2;
     njt_str_t key;
+	njt_str_t header;
     njt_http_captcha_ctx_t **limits;
     njt_http_complex_value_t text;
     njt_int_t is_send;
@@ -675,9 +681,9 @@ njt_http_captcha_commit_handler(njt_http_request_t *r)
     njt_str_t csrf_val,request_id;
     time_t curr_time;
     njt_int_t request_id_len = 32;
-    u_char  byte_val;
+    u_char  *p, byte_val;
     njt_int_t expire;
-    njt_http_variable_value_t *csrf;
+    njt_str_t  csrf,captcha_hash;
     njt_http_variable_value_t *captcha;
 
     cmf = njt_http_get_module_main_conf(r, njt_http_captcha_module);
@@ -686,7 +692,7 @@ njt_http_captcha_commit_handler(njt_http_request_t *r)
     cache = cmf->shm_zone->data;
     shpool = cache->shpool;
 
-    csrf = njt_http_get_indexed_variable(r, lccf->cookie);                  // cscf
+    //csrf = njt_http_get_indexed_variable(r, lccf->cookie);                  // cscf
     captcha = njt_http_get_indexed_variable(r, lccf->cookie_captcha_index); // cookie_captcha_index
 
     njt_http_captcha_form_input_arg(r, lccf->verfiy_code_name.data, lccf->verfiy_code_name.len, &form_val, 0); // verfiy_code_name
@@ -694,19 +700,53 @@ njt_http_captcha_commit_handler(njt_http_request_t *r)
     rc = NJT_DECLINED;
     njt_str_null(&csrf_val);
     njt_str_null(&uri);
+	njt_str_null(&csrf);
     njt_str_null(&request_id);
-    if (csrf == NULL || captcha == NULL || csrf->len <= request_id_len)
+	 njt_str_null(&captcha_hash);
+	
+	if(captcha != NULL && captcha->len > (sizeof(header.len) * 2) +  request_id_len) {
+		 p = (u_char *)&header.len;  
+		 for (i = 0; i < sizeof(header.len); i++) {
+				byte_val = njt_hextoi(captcha->data + i * 2, 2);
+				p[i] = byte_val;
+			}
+		
+		request_id.data = captcha->data + (sizeof(header.len) * 2);
+		request_id.len = request_id_len;
+		
+		uri.len = header.len - request_id_len;  ///captcha->data + (sizeof(header.len) * 2) + request_id_len;
+		
+		if( captcha->len > (sizeof(header.len) * 2) + request_id_len +  uri.len  && header.len - request_id_len > 0) {
+	
+			captcha_hash.data = captcha->data + (sizeof(header.len) * 2) + request_id_len +  uri.len;
+			csrf.data = captcha->data;
+			csrf.len  = (sizeof(header.len) * 2) + request_id_len +  uri.len;
+			
+			
+			uri.len = uri.len/2;
+			uri.data = njt_pcalloc(r->pool, uri.len);
+            if (uri.data == NULL)
+            {
+                njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "uri.data  njt_pcalloc null");
+                njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
+                return;
+            }
+			for (i = 0; i < uri.len; i++)
+            {
+                byte_val = njt_hextoi(captcha->data + (sizeof(header.len) * 2) + request_id_len +  i * 2, 2);
+                uri.data[i] = byte_val;
+            }
+			captcha_hash.len = captcha->data + captcha->len - captcha_hash.data;
+			
+			
+		}	
+		
+	}
+    if (csrf.len == 0 || captcha == NULL )
     {
         rc = NJT_ERROR;
     }
-    else
-    {
-        csrf_val.data = csrf->data;
-        csrf_val.len = csrf->len;
-
-        request_id.data = csrf->data;
-        request_id.len = request_id_len;
-    }
+ 
     expire = 1;
     curr_time = njt_time();
     if (rc != NJT_ERROR)
@@ -720,36 +760,17 @@ njt_http_captcha_commit_handler(njt_http_request_t *r)
         }
         (void)njt_md5_update(&md5, (const void *)secret.data, secret.len);
         (void)njt_md5_update(&md5, (const void *)form_val.data, (size_t)form_val.len);
-        (void)njt_md5_update(&md5, (const void *)csrf->data, csrf->len);
+        (void)njt_md5_update(&md5, (const void *)csrf.data, csrf.len);
         u_char bhash[MD5_BHASH_LEN];
         (void)njt_md5_final(bhash, &md5);
         u_char captch_hash[MD5_HASH_LEN + 1];
         (u_char *)njt_hex_dump(captch_hash, bhash, MD5_BHASH_LEN);
         captch_hash[MD5_HASH_LEN] = '\0';
 
-       
-        if (csrf->len > request_id_len)
-        {
 
-            uri.len = csrf->len - request_id_len;
-            uri.len = uri.len / 2;
-
-            uri.data = njt_pcalloc(r->pool, uri.len);
-            if (uri.data == NULL)
-            {
-                njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "uri.data  njt_pcalloc null");
-                njt_http_finalize_request(r, NJT_HTTP_INTERNAL_SERVER_ERROR);
-                return;
-            }
-
-            for (i = 0; i < uri.len; i++)
-            {
-                byte_val = njt_hextoi(csrf->data + request_id_len + i * 2, 2);
-                uri.data[i] = byte_val;
-            }
-        }
+  
          rc = NJT_ERROR;
-         njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "get csrf=%V, captcha uri=%V", &csrf_val, &uri);
+         njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "get csrf=%V, captcha uri=%V", &csrf, &uri);
         if (request_id.len != 0) {
 
             hash = njt_hash_key(request_id.data, request_id.len);
@@ -764,7 +785,7 @@ njt_http_captcha_commit_handler(njt_http_request_t *r)
                 } 
                 rc = NJT_OK;
 
-                njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "get session  csrf=%V, captcha uri=%V", &csrf_val, &uri);
+                njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "get session  csrf=%V, captcha uri=%V", &csrf, &uri);
                 njt_rbtree_delete(&cmf->ctx->sh->rbtree,&session_node->node.node);
                 njt_queue_remove(&session_node->queue);
 
@@ -772,7 +793,7 @@ njt_http_captcha_commit_handler(njt_http_request_t *r)
             } 
              njt_shmtx_unlock(&shpool->mutex);
         }
-        if (rc == NJT_OK && captcha->len == njt_strlen(captch_hash) && njt_memcmp(captcha->data, captch_hash, captcha->len) == 0) {
+        if (rc == NJT_OK && captcha_hash.len == njt_strlen(captch_hash) && njt_memcmp(captcha_hash.data, captch_hash, captcha_hash.len) == 0) {
 
             rc = NJT_OK;
         } else {
@@ -885,7 +906,7 @@ njt_http_captcha_commit_handler(njt_http_request_t *r)
     }
 
 error:
-     njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "error get csrf=%V, captcha uri=%V", &csrf_val, &uri);
+     njt_log_error(NJT_LOG_DEBUG, r->connection->log, 0, "error get csrf=%V, captcha uri=%V", &csrf, &uri);
      njt_memzero(&text, sizeof(njt_http_complex_value_t));
     text.value = uri;
     rc2 = njt_http_send_response(r, NJT_HTTP_MOVED_TEMPORARILY, &njt_http_type, &text);
@@ -1150,7 +1171,7 @@ static njt_int_t njt_http_captcha_handler(njt_http_request_t *r)
     }
     set_cookie_name->hash = 1;
     njt_str_set(&set_cookie_name->key, "Set-Cookie");
-    set_cookie_name->value.len = location->name.len + MD5_HASH_LEN + sizeof("%V=%s; Max-Age=%d") - 1 - 6;
+    set_cookie_name->value.len = location->name.len + MD5_HASH_LEN + token.len + sizeof("%V=%s; Max-Age=%d") - 1 - 6;
     for (number = location->expire; number /= 10; set_cookie_name->value.len++)
         ;
     set_cookie_name->value.len++;
@@ -1159,7 +1180,7 @@ static njt_int_t njt_http_captcha_handler(njt_http_request_t *r)
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "!njt_pnalloc");
         return NJT_HTTP_INTERNAL_SERVER_ERROR;
     }
-    if (njt_snprintf(set_cookie_name->value.data, set_cookie_name->value.len, "%V=%s; Max-Age=%d", &location->name, hash, location->expire) != set_cookie_name->value.data + set_cookie_name->value.len)
+    if (njt_snprintf(set_cookie_name->value.data, set_cookie_name->value.len, "%V=%V%s; Max-Age=%d", &location->name, &token, hash, location->expire) != set_cookie_name->value.data + set_cookie_name->value.len)
     {
         njt_log_error(NJT_LOG_ERR, r->connection->log, 0, "njt_snprintf");
         return NJT_HTTP_INTERNAL_SERVER_ERROR;
