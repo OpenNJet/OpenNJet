@@ -475,16 +475,9 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 				if(p_member->uptime > master_member->uptime){
 					master_member = p_member;
 				}
-				njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0 , 
-					"================== for check is master:%V uptime:%p  pmem:%V uptime:%p", 
-					&master_member->node_name,
-					master_member->uptime,
-					&p_member->node_name,
-					p_member->uptime);
+
 				p_member = p_member->next;
 			}
-
-			njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0 , "================== check is master:%V", &master_member->node_name);
 
 			p_member = shared_ctx->sh->members->next;
 			while (p_member) {
@@ -501,11 +494,8 @@ static void njt_gossip_upd_member(njt_stream_session_t *s, njt_uint_t state, njt
 					
 					//if off line is master member, need notify gossip topic
 					if(p_member == master_member){
-						njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0 , "==================off line is master:%V", &p_member->node_name);
 						master_change = 1;
 					}
-
-						njt_log_error(NJT_LOG_ERR, njt_cycle->log, 0 , "==================off line is master2:%V", &p_member->node_name);
 
 					njt_slab_free_locked(shared_ctx->shpool, p_member->node_name.data);
 					njt_slab_free_locked(shared_ctx->shpool, p_member->pid.data);
