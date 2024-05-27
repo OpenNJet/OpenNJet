@@ -39,8 +39,7 @@ build_rpm:
   #   DOCKER_AUTH_CONFIG: '{"auths": {"192.168.30.226": {"auth": "emhhb3lnZjpaaGFveWdmMTIzNDU="}}}'
   when: manual
   script:
-    - cd ..  
-    - sudo yum -y install gd gd-devl
+    - cd ..
     - tar cf /home/builder/rpm/njet_main.tar --exclude="njet_main/.git" njet_main
     - sudo chmod +x njet_main/build/rpm/generate_njet_spec.sh
     - cd njet_main
@@ -58,7 +57,7 @@ build_deb:
   stage: build_deb
   image: tmlake/njet-build:ubuntu18.04
   when: manual
-  script: 
+  script:
     - ./build_cc.sh -t $CI_COMMIT_SHA conf 
     - make -j `nproc` 
     - ./build_cc.sh install
@@ -69,7 +68,10 @@ build_deb:
     - cp -a /usr/local/njet build/deb/usr/local
     - cp -a /usr/local/lib build/deb/usr/local/njet/
     - rm -f build/deb/usr/local/njet/lib/*.a
+    - cp -a objs/scripts/so/* build/deb/usr/local/njet/lualib/clib/
+    - rm -rf objs/scripts/so
     - cp -a objs/scripts/* build/deb/usr/local/njet/modules/
+    - cp -a build/api_gateway.db build/deb/usr/local/njet/data
     - cd build && ./generate_deb.sh && cd -
     - mkdir -p work
     - cp -a build/*.deb work/

@@ -92,9 +92,5 @@
 ./modules/njet-http-crl-api-module
 # optional
 ./modules/njet-http-upload-module
-# optional
-./modules/njet-http-captcha-module
-# optional
-./modules/njet-set-misc-module
-# optional
-./modules/njet-form-input-module
+#optional
+./modules/njet-http-kafka-module

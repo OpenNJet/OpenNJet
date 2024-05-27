@@ -205,10 +205,12 @@ static njt_int_t njt_dyn_http_lua_set_lua(njt_pool_t *pool, dynhttplua_servers_i
             
             llcf->content_src_key = cache_key;
         } else {
-           llcf->content_handler=NULL;
-           llcf->content_src.value.data = NULL;
-           llcf->content_src.value.len = 0;
-           llcf->content_src_key = NULL;
+            if (llcf->content_handler == njt_http_lua_content_handler_inline) {
+                llcf->content_handler = NULL;
+                llcf->content_src.value.data = NULL;
+                llcf->content_src.value.len = 0;
+                llcf->content_src_key = NULL;
+            }
         }
         if (httplua_obj->is_access_by_set) {
             lmcf->requires_capture_filter = 1;
@@ -240,7 +242,7 @@ static njt_int_t njt_dyn_http_lua_set_lua(njt_pool_t *pool, dynhttplua_servers_i
             lua_pop(L, 1);
             
             llcf->access_src_key = cache_key;
-        } else {
+        } else {            
             llcf->access_handler = NULL;
             llcf->access_src.value.data = NULL;
             llcf->access_src.value.len = 0;
