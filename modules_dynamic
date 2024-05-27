@@ -93,4 +93,8 @@
 # optional
 ./modules/njet-http-upload-module
 #optional
+./modules/njet-http-kafka-module
+# optional
+./modules/njet-http-ctrl-request-forward-module
+#optional
 ./modules/njet-helper-rsync-module

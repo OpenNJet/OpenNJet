@@ -1,0 +1,10 @@
+njt_addon_name=njt_openapi_util_module
+CORE_INCS="$CORE_INCS $njt_addon_dir/include"
+njt_module_type=CORE
+njt_module_name=njt_openapi_util_module
+
+module_core_src="";
+module_core_src="$module_core_src $njt_addon_dir/src/njt_openapi_util.c"
+module_core_src="$module_core_src $njt_addon_dir/src/sqlite3/sqlite3.c"
+
+NJT_ADDON_SRCS="$NJT_ADDON_SRCS $module_core_src"

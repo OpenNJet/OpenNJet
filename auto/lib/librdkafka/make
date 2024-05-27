@@ -1,0 +1,49 @@
+
+# Copyright (C) Igor Sysoev
+# Copyright (C) Nginx, Inc.
+# Copyright (C) TMLake, Inc.
+
+
+case "$CC" in
+
+    cl)
+
+cat << END
+
+$0: error:  not allow build use cl
+
+END
+
+    ;;
+
+    bcc32)
+
+cat << END
+
+$0: error:  not allow build use bcc32
+
+END
+
+    ;;
+
+    *)
+
+        CMAKE="cmake"
+        if command -v cmake3 > /dev/null; then
+           CMAKE="cmake3"
+        fi
+        cat << END                                            >> $NJT_MAKEFILE
+
+$RDKAFKA/config.h:
+	cd $RDKAFKA \\
+    && mkdir build \\
+	&& ./configure \\
+	&& cd build \\
+    && $CMAKE ../  \\
+	&& \$(MAKE) 
+
+END
+
+    ;;
+
+esac
