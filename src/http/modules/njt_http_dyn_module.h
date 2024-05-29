@@ -91,15 +91,28 @@ typedef struct {
 } njt_http_limit_conn_conf_t;
 
 
+typedef enum {
+    NJT_HTTP_LOG_DATA_HIDDEN_VAR_TYPE = 0,
+    NJT_HTTP_LOG_DATA_HIDDEN_QUERY_PARAM_TYPE
+    // NJT_HTTP_LOG_DATA_HIDDEN_URI_TYPE
+} njt_stream_ftp_proxy_mode_t;
+
 typedef struct {
-    njt_array_t *logs;       /* array of njt_http_log_t */
+    njt_stream_ftp_proxy_mode_t type;
+    njt_str_t                   data;
+} njt_http_log_data_hidden_t;
 
-    njt_open_file_cache_t *open_file_cache;
-    time_t                      open_file_cache_valid;
-    njt_uint_t                  open_file_cache_min_uses;
+typedef struct {
+    njt_array_t             *logs;       /* array of njt_http_log_t */
 
-    njt_uint_t                  off;        /* unsigned  off:1 */
-    njt_int_t dynamic;
+    njt_open_file_cache_t   *open_file_cache;
+    time_t                  open_file_cache_valid;
+    njt_uint_t              open_file_cache_min_uses;
+
+    njt_uint_t              off;        /* unsigned  off:1 */
+    njt_int_t               dynamic;
+
+    njt_array_t             *data_hidden;
 } njt_http_log_loc_conf_t;
 
 
