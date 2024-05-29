@@ -1069,10 +1069,7 @@ njt_http_captcha_limit_handler(njt_http_request_t *r)
                     njt_shmtx_unlock(&ctx->shpool->mutex);
                     return rc;
                 }
-                if (r->method == NJT_HTTP_GET)
-                {
-                    lc->conn_rate++;
-                }
+                lc->conn_rate++;
             }
         }
 
