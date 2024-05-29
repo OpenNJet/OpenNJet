@@ -570,7 +570,7 @@ njt_int_t njt_http_captcha_send_redirect(njt_http_request_t *r,njt_str_t uri,tim
     njt_http_complex_value_t text;
     //njt_str_t header;
     njt_http_captcha_location_t *lccf;
-    njt_int_t request_id_len = 32;
+    size_t request_id_len = 32;
 
 
     njt_str_t cook_key = njt_string("Set-Cookie");
