@@ -91,7 +91,6 @@ build_njet_image:
     - docker:20.10.11-dind
   before_script:
     - docker info
-    - docker login -u tmlake -p dckr_pat_0AX95kK-qlZRlTnBES4faMtol9g
   script:
     - export
     - sed -i 's/dl-cdn.alpinelinux.org/mirrors.ustc.edu.cn/g' /etc/apk/repositories
@@ -117,7 +116,6 @@ push_njet_image:
     - docker:20.10.11-dind
   before_script:
     - docker info
-    - docker login -u tmlake -p dckr_pat_0AX95kK-qlZRlTnBES4faMtol9g
   script:
     - docker images
     - ls docker-images
