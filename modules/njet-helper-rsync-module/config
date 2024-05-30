@@ -1,0 +1,37 @@
+njt_addon_name=njt_helper_rsync_module
+
+njt_module_type=CORE
+njt_module_name=njt_helper_rsync_module
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/njt_helper_rsync_module.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/blocks.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/client.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/compats.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/copy.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/downloader.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/fargs.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/flist.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/hash.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/ids.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/io.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/log.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/rsync_main.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/md4.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/misc.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/mkpath.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/mktemp.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/receiver.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/rmatch.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/rules.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/sender.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/server.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/session.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/socket.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/symlinks.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/tests.c"
+njt_module_srcs="$njt_module_srcs $njt_addon_dir/openrsync/uploader.c"
+
+
+have=NJT_HELPER_RSYNC . auto/have
+
+CORE_INCS="$CORE_INCS $njt_addon_dir"
+. auto/module
