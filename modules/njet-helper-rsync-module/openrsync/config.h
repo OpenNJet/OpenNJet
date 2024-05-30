@@ -48,12 +48,12 @@
 #define HAVE_CRYPT_NEWHASH 0
 #define HAVE_ENDIAN_H 1
 #define HAVE_ERR 0
-#define HAVE_EXPLICIT_BZERO 1
+#define HAVE_EXPLICIT_BZERO 0
 #define HAVE_FTS 1
 #define HAVE_GETEXECNAME 0
 #define HAVE_GETPROGNAME 0
 #define HAVE_INFTIM 0
-#define HAVE_LANDLOCK 1
+#define HAVE_LANDLOCK 0
 #define HAVE_MD5 0
 #define HAVE_MEMMEM 1
 #define HAVE_MEMRCHR 1
@@ -65,7 +65,7 @@
 #define HAVE_PLEDGE 0
 #define HAVE_PROGRAM_INVOCATION_SHORT_NAME 1
 #define HAVE_READPASSPHRASE 0
-#define HAVE_REALLOCARRAY 1
+#define HAVE_REALLOCARRAY 0
 #define HAVE_RECALLOCARRAY 0
 #define HAVE_SANDBOX_INIT 0
 #define HAVE_SCAN_SCALED 0
@@ -220,6 +220,11 @@ char *SHA512Data(const uint8_t *, size_t, char *);
 int	fmt_scaled(long long, char *);
 int	scan_scaled(char *, long long *);
 /*
+ * Compatibility for explicit_bzero(3).
+ */
+extern void explicit_bzero(void *, size_t);
+
+/*
  * Compatibility for getprogname(3).
  */
 extern const char *getprogname(void);
@@ -235,6 +240,11 @@ extern const char *getprogname(void);
 #define RPP_SEVENBIT 0x10
 #define RPP_STDIN 0x20
 char *readpassphrase(const char *, char *, size_t, int);
+
+/*
+ * Compatibility for reallocarray(3).
+ */
+extern void *reallocarray(void *, size_t, size_t);
 
 /*
  * Compatibility for recallocarray(3).

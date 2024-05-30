@@ -518,7 +518,7 @@ explicit_bzero(void *p, size_t n)
  * Indirect memset through a volatile pointer to hopefully avoid
  * dead-store optimisation eliminating the call.
  */
-static void (* volatile ssh_memset)(void *, int, size_t) = memset;
+static void (* volatile ssh_memset)(void *, int, size_t) = (void (* volatile)(void *, int, size_t))memset;
 
 void
 explicit_bzero(void *p, size_t n)

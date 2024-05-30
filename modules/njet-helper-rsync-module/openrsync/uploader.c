@@ -863,7 +863,7 @@ rsync_uploader(struct upload *u, int *fileinfd,
 	void		   *mbuf, *bufp;
 	ssize_t		    msz;
 	size_t		    i, pos, sz;
-	off_t		    offs, filesize;
+	off_t		    offs, filesize = 0;
 	int		    c;
 
 	/* Once finished this should never get called again. */

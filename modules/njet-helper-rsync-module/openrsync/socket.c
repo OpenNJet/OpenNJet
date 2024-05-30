@@ -281,7 +281,7 @@ rsync_connect(const struct opts *opts, int *sd, const struct fargs *f)
 	struct sess	  sess;
 	struct source	 *src = NULL, *bsrc = NULL;
 	size_t		  i, srcsz = 0, bsrcsz = 0;
-	int		  c, rc = 1;
+	int		  c, rc = 2;
 
 	if (pledge("stdio unix rpath wpath cpath dpath inet fattr chown dns getpw unveil",
 	    NULL) == -1)

@@ -412,12 +412,12 @@ const struct option	 lopts[] = {
 int njt_start_rsync(int argc, char *argv[]);
 
 
-int
-main(int argc, char *argv[])
-{
+// int
+// main(int argc, char *argv[])
+// {
 
-	return njt_start_rsync(argc, argv);
-}
+// 	return njt_start_rsync(argc, argv);
+// }
 
 // to do, set cwd first
 int
@@ -623,8 +623,9 @@ basedir:
 		opts.recursive = 1;
 		
 		opts.sender = 1;
-		const char *bing_address = "127.0.0.1";
-		int   port = 8873;
+		char *bing_address = opts.address;
+		int   port = atoi(opts.port);
+		printf("bind address: %s, port: %d \n", bing_address, port);
 		printf ("start call rsync_server_daemon\n");
 		rc = rsync_server_daemon(&opts, bing_address, port);
 		return rc;
