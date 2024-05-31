@@ -1680,7 +1680,7 @@ static void njt_dyn_limit_dump_locs_json(njt_pool_t *pool,
 
                     njt_memzero(delay_str->data, delay_max_len);
                     if(req_limits[i].delay == delay_max_comp){
-                        delay_str->len = sizeof("nodelay");
+                        delay_str->len = njt_strlen("nodelay");
                         njt_memcpy(delay_str->data, "nodelay", delay_str->len);
                     }else{
                         delay = req_limits[i].delay / 1000;
