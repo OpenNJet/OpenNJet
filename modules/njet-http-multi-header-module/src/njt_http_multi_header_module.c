@@ -258,13 +258,6 @@ njt_http_multi_write_header(njt_http_request_t *r)
 }
 
 static njt_int_t
-njt_http_multi_more_header(njt_http_request_t *r, njt_http_header_val_t *hv,
-    njt_str_t *value) {
-    return  njt_http_multi_add_header(r,&hv->key,value,1);
-}
-
-
-static njt_int_t
 njt_http_multi_cache_header(njt_http_request_t *r, njt_http_header_val_t *hv,
     njt_str_t *value)
 {
@@ -351,7 +344,6 @@ njt_http_multi_cache_header(njt_http_request_t *r, njt_http_header_val_t *hv,
     return NJT_OK;
 }
 
-
 /*
 
 njt_str_t key = njt_string("Set-Cookie");
@@ -391,10 +383,11 @@ njt_http_multi_add_header(njt_http_request_t *r, njt_str_t *key,
     return rc;
 }
 
-
-
-
-
+static njt_int_t
+njt_http_multi_more_header(njt_http_request_t *r, njt_http_header_val_t *hv,
+    njt_str_t *value) {
+    return  njt_http_multi_add_header(r,&hv->key,value,1);
+}
 
 static void *
 njt_http_multi_header_create_conf(njt_conf_t *cf)
