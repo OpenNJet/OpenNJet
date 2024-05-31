@@ -1833,7 +1833,7 @@ static njt_str_t *njt_dyn_limit_dump_limit_conf(njt_cycle_t *cycle, njt_pool_t *
 
         req_ctx = shm_zone[i].data;
         if(req_ctx == NULL){
-            rate_str.len = sizeof("0r/s");
+            rate_str.len = njt_strlen("0r/s");
             rate_str.data = njt_pcalloc(pool, rate_str.len);
             njt_memcpy(rate_str.data, "0r/s", rate_str.len);
         }else{
